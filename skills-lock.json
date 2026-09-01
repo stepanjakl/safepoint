@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "skills": {
+    "ai-sdk": {
+      "source": "vercel/ai",
+      "sourceType": "github",
+      "skillPath": "skills/use-ai-sdk/SKILL.md",
+      "computedHash": "0883204d11b055e968dee697c5858e68064c27dfd4deb6310212895daa65c5ad"
+    },
+    "aria-live-regions": {
+      "source": "mgifford/accessibility-skills",
+      "sourceType": "github",
+      "skillPath": "skills/aria-live-regions/SKILL.md",
+      "computedHash": "29a98faced7e59f4afa63a8805e5cf853e246419b09d2c2263efb609cc806024"
+    },
+    "drizzle-orm-patterns": {
+      "source": "giuseppe-trisciuoglio/developer-kit",
+      "sourceType": "github",
+      "skillPath": "plugins/developer-kit-typescript/skills/drizzle-orm-patterns/SKILL.md",
+      "computedHash": "d63e6d73a9f579b505a5694af2f3b3200c2b5eeea147e88b9b6d1e5fce23bcbb"
+    },
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "sourceType": "github",
+      "skillPath": "skills/find-skills/SKILL.md",
+      "computedHash": "b146008599c31057cef1c145774cea5d5afb30e8f43fa802e47a4b461419aaaf"
+    },
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/frontend-design/SKILL.md",
+      "computedHash": "4eabc66183767153e404b39d1b839b1c37f2d82d86f0a0d7e880a579d8d62336"
+    },
+    "keyboard": {
+      "source": "mgifford/accessibility-skills",
+      "sourceType": "github",
+      "skillPath": "skills/keyboard/SKILL.md",
+      "computedHash": "7f717ffaa2b07ad6fc7c7cffad3bb271640c60becdd507060df418e746d544b2"
+    },
+    "turso-cloud": {
+      "source": "tursodatabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/turso-cloud/SKILL.md",
+      "computedHash": "6bdc1ca45154caeb33e42ad232f760db7f5483f2a29f41339cbb3e998b519d5b"
+    },
+    "turso-db": {
+      "source": "tursodatabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/turso-db/SKILL.md",
+      "computedHash": "d1aa5693c437b9bb848642fe04d613097fe54200c8190f09e7351f7d473c6b83"
+    },
+    "typescript-best-practices": {
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "skillPath": "pstack/skills/typescript-best-practices/SKILL.md",
+      "computedHash": "f1c25fcfc1616686f387465824b1f4458782d962e64ef2e217b3ffb02bf3650a"
+    },
+    "vercel-react-best-practices": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/react-best-practices/SKILL.md",
+      "computedHash": "ca7b0c0c6e5f2750043f7f0cd72d16ac4e2abc48f9b5500d047a4b77a2506212"
+    },
+    "web-design-guidelines": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/web-design-guidelines/SKILL.md",
+      "computedHash": "f3bc47f890f42a44db1007ab390709ec368e4b8c089baee6b0007182236ac474"
+    }
+  }
+}

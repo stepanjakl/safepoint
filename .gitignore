@@ -1,0 +1,32 @@
+# macOS
+.DS_Store
+
+# Dependencies and build output
+node_modules/
+dist/
+build/
+.next/
+coverage/
+
+# Secrets. The Google service account key and the model API keys live here.
+.env
+.env.*
+!.env.example
+*-service-account.json
+
+# Local database files. Schemas and migrations are tracked; generated data is not.
+*.db
+*.db-shm
+*.db-wal
+
+# Private source material retained locally for provenance.
+Claude/
+
+# Local AI-agent configuration and installed skills.
+# Project-wide instructions should be added deliberately as a tracked root AGENTS.md.
+.agents/
+.claude/
+.codex/
+.cursor/
+
+# skills-lock.json remains tracked so project skills can be restored reproducibly.
