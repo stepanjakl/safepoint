@@ -42,10 +42,11 @@ The public demo uses synthetic data and accepts no arbitrary prompts or producti
 
 ## Running locally
 
-Requires [Node.js](https://nodejs.org) 24 LTS (see `.nvmrc`) and pnpm 10. pnpm reads the exact patch from `packageManager` in `package.json` and uses it automatically.
+Requires [Node.js](https://nodejs.org) 24 LTS (see `.nvmrc`) and pnpm 10.34.5. The exact pnpm version is recorded in `packageManager`; use Corepack or another version manager that honours that field.
 
 ```bash
-pnpm install
+corepack enable
+pnpm install --frozen-lockfile
 pnpm dev
 ```
 
@@ -56,7 +57,7 @@ Checks:
 ```bash
 pnpm build          # production build
 pnpm lint           # ESLint
-pnpm typecheck      # strict TypeScript, no emit
+pnpm typecheck      # generate Next.js route types, then run strict TypeScript
 pnpm format:check   # Prettier
 pnpm test           # Vitest (no tests exist yet)
 ```
