@@ -16,19 +16,24 @@ The detailed requirements remain in [`docs/`](docs/README.md). If this checklist
 ## Ordered build
 
 - [ ] **0. Establish the project foundation**
-  - Confirm the database choice before installing a driver. The current recommendation is Neon Postgres with Drizzle ORM.
-  - Choose and record the Node.js version and package manager.
+  - Follow the exact hand-off in [`docs/STAGE-0-BRIEF.md`](docs/STAGE-0-BRIEF.md).
+  - Use Node.js 24 LTS, an exact pnpm 10 patch, Next.js App Router, React, strict TypeScript, and Tailwind CSS.
+  - Record Neon Postgres with Drizzle ORM as the persistence choice and Vercel as the deployment target.
+  - Check current stable package compatibility before installing anything; do not copy release-candidate tags from examples accidentally.
+  - Keep the installed `neon`, `neon-postgres`, and `workflow` skills aligned with their current official documentation. The obsolete Turso skills have been removed.
   - Create the smallest viable Next.js and TypeScript application.
-  - Add formatting, linting, type-checking, unit-test, and environment-example commands.
-  - Keep model, database, and Google credentials out of this stage.
+  - Add formatting, linting, type-checking, unit-test, and environment-example commands. Do not add a dependency that no Stage 0 file uses.
+  - Keep model, database, workflow, connector, and Google code or credentials out of this stage.
   - **Gate:** a clean checkout installs, starts, checks, and tests with documented commands.
 
-- [ ] **1. Build the static review interface**
-  - Render the fixed 27-line scenario from one versioned replay fixture.
+- [ ] **1. Build the validated replay and static review interface**
+  - Add Zod, React Aria Components, Playwright, and axe when they are first used in this stage. Tailwind's native `data-*` variants are sufficient unless a concrete component proves that a helper package adds value.
+  - Define the first `PromotionReleasePlan` schema and validate one versioned 27-line replay fixture before rendering it.
   - Build the summary, candidate list, detail view, evidence and policy sections, and effects rail.
   - Include ready, adjusted, held, excluded, unverifiable, loading, empty, error, and conflict examples in a protected workbench.
   - Establish semantic design tokens, light and dark themes, responsive layout, visible focus, and semantic components.
-  - **Gate:** the complete scenario is understandable on desktop and mobile without an API or database.
+  - Derive every count from the validated fixture; do not repeat the expected totals as component constants.
+  - **Gate:** the scenario is understandable on desktop and mobile without an API or database, the fixture parses in a unit test, keyboard navigation works, and Playwright plus axe report no serious or critical accessibility findings on representative states.
 
 - [ ] **2. Add the local review workflow**
   - Add approve, hold, reject, permitted edit, filter, omission review, and commit-confirmation interactions.
@@ -39,43 +44,56 @@ The detailed requirements remain in [`docs/`](docs/README.md). If this checklist
 
 - [ ] **3. Extract and test the domain core**
   - Define the proposal, evidence, review decision, effect, execution, and audit types.
+  - Implement only `set_field`, `append_entry`, `invoke_command`, `transition_state`, and `send_message`. The first three are executable sandbox effects; the latter two are clearly simulated when used.
+  - Keep the promotion process as one directly imported typed module. Do not add string-ID registries, a generic process configuration language, or a connector router for the one implemented process.
   - Validate complete candidate accounting and reject unsupported model output.
   - Implement deterministic calculations, policy checks, gate obligations, effect planning, state transitions, and canonical value comparison.
   - Keep this layer free of React, Next.js, database, and provider imports.
   - **Gate:** unit tests cover valid plans, unsafe proposals, omissions, stale evidence, edits, and illegal transitions.
 
-- [ ] **4. Add persistence**
-  - Define Drizzle schemas and migrations for sessions, proposal batches, candidates, evidence, review events, effects, attempts, and execution jobs.
-  - Add a simple seed and reset path for local development.
-  - Confirm that data can be inspected through Drizzle Studio and the selected hosted database interface.
-  - **Gate:** a review survives reload and its history can be inspected without reading raw database files.
+- [ ] **4. Prove bounded live generation against the domain contract**
+  - Create a development-only feasibility harness around the fixed instruction, four read-only tools, and production Zod schema.
+  - Select the current stable AI SDK major and an available model through AI Gateway from version-matched documentation; record both as implementation decisions.
+  - Enforce tool-step, output-size, duration, and cost ceilings.
+  - Run a small representative suite containing a valid plan, an unsafe recommendation, an omission, ambiguous evidence, and a tool failure.
+  - Keep replay as the default application path. Do not add a public generation endpoint, persistence, or a long-lived human-review workflow in this stage.
+  - **Gate:** the feasibility report proves that model output can pass the real schema, makes failures visible, and does not select a replay because it was the most flattering run.
 
-- [ ] **5. Build deterministic execution with fake adapters**
-  - Implement durable jobs, leases, idempotency, ordering, retries, verification, and crash reconciliation.
+- [ ] **5. Add persistence and durable proposal generation**
+  - Provision a Neon development database with separate preview and production configuration reserved for later stages.
+  - Define Drizzle Postgres schemas and migrations for sessions, agent and workflow runs, proposal batches, candidates, evidence, review events, effects, attempts, and audit events.
+  - Before creating the Neon project, choose and record a supported Vercel and Neon region pair and measure the deployed path; do not assume Workflow is pinned to `iad1`.
+  - Compare `node-postgres` with Vercel Fluid compute against Neon's HTTP driver for the implemented access pattern. Use WebSockets only if an interactive transaction is actually required, and use the direct connection for migrations.
+  - Add a simple seed and reset path for local development.
+  - Confirm that data can be inspected through local Drizzle Studio and Neon's hosted Tables interface.
+  - Run live proposal generation as a separate Vercel Workflow that stores a validated proposal and ends before human review.
+  - Treat every `start()` call as a new run. Use a unique application operation and atomic first-step claim so duplicate starts cannot create two accepted batches or hide duplicate model cost.
+  - **Gate:** a review survives reload, its history is inspectable, and redeploying during generation cannot lose completed steps or grant the model write authority.
+
+- [ ] **6. Build deterministic execution with fake adapters**
+  - Add Vercel Workflow SDK and implement separate commit and compensation workflows.
+  - Keep orchestration in workflow functions and network or database side effects in workflow steps.
+  - Use a unique Neon operation record and an atomic first-step claim so duplicate workflow starts cannot both execute effects.
+  - Implement effect idempotency, ordering, retry classification, verification, and uncertain-write reconciliation in Safepoint's own domain and connector layers.
   - Start with an in-memory or fixture-backed Google Sheets adapter.
   - Demonstrate success, preflight conflict, partial failure, safe compensation, and intervention-required outcomes.
-  - **Gate:** execution can resume safely after an interrupted worker without duplicating an effect.
+  - Correlate Vercel workflow runs and steps with the persistent effects ledger; do not treat the workflow event history as the business audit record.
+  - **Gate:** execution can resume safely after an interrupted workflow step without blindly duplicating an uncertain external effect.
 
-- [ ] **6. Connect the isolated Google Sheets sandbox**
+- [ ] **7. Connect the isolated Google Sheets sandbox**
   - Give each session an isolated sheet or controlled range.
   - Resolve rows by stable product identifier rather than a remembered cell address.
   - Preflight expected values, write approved changes, immediately verify them, and support controlled external-edit injection.
   - Expose only a read-only viewer link to visitors.
   - **Gate:** the real sheet path demonstrates verified success, conflict detection, and compensation without exposing credentials.
 
-- [ ] **7. Add live proposal generation**
-  - Give the model exactly four read-only tools: catalogue and pricebook, sales, stock, and promotion-rule lookup.
-  - Require structured output and validate it before policy evaluation.
-  - Keep arithmetic, mandatory rules, approval, execution, and recovery outside the model.
-  - Evaluate correct proposals, unsafe proposals, omissions, stale data, ambiguous evidence, and tool failures.
-  - Fall back automatically to the labelled replay when live generation is unavailable.
-  - **Gate:** bounded model variation changes recommendations or explanations without changing source facts or bypassing safety rules.
-
 - [ ] **8. Harden and publish the portfolio application**
   - Add the thin storefront sandbox as the second real, verified effect target.
   - Complete WCAG 2.2 AA checks: automated, keyboard-only, zoom, reduced motion, and manual screen-reader testing.
   - Add session expiry, limits, timeouts, redacted logs, hashed retained network identifiers, dependency fallbacks, and a global kill switch.
+  - Inspect proposal, commit, compensation, and cleanup runs in Vercel's workflow dashboard while keeping the Neon ledger as the user-facing source of truth.
   - Deploy the public sandbox and write the case study. No video is required.
+  - Confirm bounded live generation falls back automatically to the labelled replay when a model or dependency is unavailable.
   - **Gate:** the release checklist in [`docs/DELIVERY-PLAN.md`](docs/DELIVERY-PLAN.md) passes in the deployed environment.
 
 ## Later product work

@@ -41,6 +41,8 @@ flowchart LR
 4. [`DELIVERY-PLAN.md`](DELIVERY-PLAN.md) sequences implementation through acceptance-gated milestones.
 5. [`PROJECT-REVIEW.md`](PROJECT-REVIEW.md) records corrections, alternatives, source coverage, assumptions, and rejected ideas.
 
+The immediate implementation hand-off is [`STAGE-0-BRIEF.md`](STAGE-0-BRIEF.md). It is intentionally narrower than the architecture: Stage 0 creates a clean project foundation and no later-stage integrations.
+
 ## Two project tracks
 
 ### Portfolio track
@@ -117,10 +119,13 @@ Maya and Alderton's are design hypotheses, not validated research participants o
 | UI structure | Master-detail review workspace with an effects rail |
 | Styling | Tailwind CSS plus semantic design tokens |
 | Interaction primitives | React Aria Components |
-| Persistence | Turso Cloud with Drizzle ORM |
+| Runtime and package manager | Node.js 24 LTS with pnpm 10 |
+| Persistence | Neon Postgres with Drizzle ORM |
+| Database connection | Chosen during persistence from the measured Vercel runtime; evaluate `node-postgres` with Fluid compute and Neon's HTTP path before using WebSockets |
 | External demonstration | Isolated Google Sheets and a working storefront sandbox; other targets are explicitly simulated or preview-only |
 | Recovery | Verified compensating actions, never an unqualified rollback promise |
-| Execution runtime | Durable background jobs with leases and crash reconciliation; never a browser- or request-owned batch |
+| Execution runtime | Separate Vercel Workflows for proposal generation and approved-effect execution; never a browser- or request-owned batch |
+| Workflow duplication | Each start creates a run; an application operation record and atomic first-step claim prevent duplicate business execution |
 | Duvo relationship | Complementary specialised review and execution boundary; optional runtime adapter is future work |
 | Public access | Fixed scenario, opaque session, strict limits, and replay fallback |
 | Themes | Light and dark from the first milestone |
@@ -173,7 +178,9 @@ Local AI-agent configuration, installed skills, and the private source archive a
 
 ## Implementation guidance
 
-The delivery sequence and acceptance criteria are in [`DELIVERY-PLAN.md`](DELIVERY-PLAN.md). During implementation, use the installed project skills for TypeScript, React, interface design, keyboard interaction, live regions, AI SDK integration, Drizzle, and Turso at the phases identified there.
+The delivery sequence and acceptance criteria are in [`DELIVERY-PLAN.md`](DELIVERY-PLAN.md). During implementation, use the installed project skills for TypeScript, React, interface design, keyboard interaction, live regions, AI SDK integration, Drizzle, Neon, and Vercel Workflow at the phases identified there. Skills guide the work; current official product documentation and the installed package versions remain authoritative.
+
+The canonical implementation order is replay-first: foundation, validated static replay, local review, deterministic domain core, a bounded live-generation feasibility pass, persistence and durable proposal generation, fake-adapter execution, Google Sheets, then storefront and release hardening. This order resolves the earlier conflict between the checklist and delivery plan.
 
 Implement the Core proof before Public-release completion and do not begin Stretch work while the central review-to-ledger flow is incomplete. This is the scope stop rule; the project still has no artificial calendar deadline.
 

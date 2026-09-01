@@ -37,17 +37,17 @@
       "skillPath": "skills/keyboard/SKILL.md",
       "computedHash": "7f717ffaa2b07ad6fc7c7cffad3bb271640c60becdd507060df418e746d544b2"
     },
-    "turso-cloud": {
-      "source": "tursodatabase/agent-skills",
+    "neon": {
+      "source": "neondatabase/agent-skills",
       "sourceType": "github",
-      "skillPath": "skills/turso-cloud/SKILL.md",
-      "computedHash": "6bdc1ca45154caeb33e42ad232f760db7f5483f2a29f41339cbb3e998b519d5b"
+      "skillPath": "skills/neon/SKILL.md",
+      "computedHash": "a008e354dade553f451dd1d8a33872cdeb8d3ff8ea1efbc3f561c7f3119c760a"
     },
-    "turso-db": {
-      "source": "tursodatabase/agent-skills",
+    "neon-postgres": {
+      "source": "neondatabase/agent-skills",
       "sourceType": "github",
-      "skillPath": "skills/turso-db/SKILL.md",
-      "computedHash": "d1aa5693c437b9bb848642fe04d613097fe54200c8190f09e7351f7d473c6b83"
+      "skillPath": "skills/neon-postgres/SKILL.md",
+      "computedHash": "9386efb7f97bd96f01d0c84f467e8e6e41be54f73cc1ece9c92f4f1dbd76f10f"
     },
     "typescript-best-practices": {
       "source": "cursor/plugins",
@@ -66,6 +66,12 @@
       "sourceType": "github",
       "skillPath": "skills/web-design-guidelines/SKILL.md",
       "computedHash": "f3bc47f890f42a44db1007ab390709ec368e4b8c089baee6b0007182236ac474"
+    },
+    "workflow": {
+      "source": "vercel/workflow",
+      "sourceType": "github",
+      "skillPath": "skills/workflow/SKILL.md",
+      "computedHash": "a6cadffb4a30e982ebc0c1a66ad259effbba18eea0b67960cc2bdd106a3ddb3b"
     }
   }
 }

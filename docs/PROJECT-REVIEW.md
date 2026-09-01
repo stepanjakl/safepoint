@@ -55,8 +55,8 @@ A subsequent adversarial review judged the Codex direction stronger but identifi
 | Audit finding | Decision | Resulting direction |
 | --- | --- | --- |
 | The seven-milestone plan risks becoming a small-team programme rather than a focused portfolio build. | Accepted with qualification | Keep no artificial calendar deadline, but introduce Core proof, Public-release completion, Stretch, and Future scope fences. Do not start stretch work before the central flow works. |
-| Browser-independent execution was promised without a runtime mechanism. | Accepted | Commit and compensation become durable jobs processed by a leased background worker, not a long route-handler request. |
-| A crash can strand an effect in `applying`. | Accepted | A reconciler re-reads the target and classifies the attempt before any retry. |
+| Browser-independent execution was promised without a runtime mechanism. | Accepted | Proposal generation, commit, compensation, and cleanup use Vercel Workflows rather than a long route-handler request or a hand-built lease worker. |
+| A crash can strand an effect in `applying`. | Accepted | Workflow replay restores orchestration, but the retried step must still re-read the external target and classify the attempt before any write. |
 | A future Duvo adapter could allow both Duvo and Safepoint to write after approval. | Accepted as a future constraint | Safepoint must be the sole production-effect executor. A resumed Duvo run may record the outcome but cannot possess equivalent production write authority for that workflow. |
 | Gate obligation cannot always be static for a process. | Accepted | Required, advisory, and not-applicable obligations are derived per line from process rules and server-owned context. |
 | Ordering promotion volume the day before launch is implausible. | Accepted | Main orders happen earlier; the checkpoint may propose only final top-up or amendment quantities. |
@@ -67,6 +67,25 @@ A subsequent adversarial review judged the Codex direction stronger but identifi
 | A hard career-driven calendar timebox should return. | Rejected as a canonical product constraint | Use a strict scope and stop rule. Private application timing does not belong in the public specification. |
 
 The audit's strongest strategic challenge is also retained: if deterministic code can produce the entire answer from complete structured fixtures, the model is decorative. The scenario must therefore include bounded ambiguous narrative evidence and safe alternatives that require judgement. Deterministic code still owns reproducible arithmetic, non-negotiable rules, and write execution.
+
+## Response to the Fable scaffolding audit
+
+A later implementation-readiness audit found the stack coherent and the first stage ready to scaffold, but exposed one real documentation conflict and several claims that needed qualification. The useful recommendations are retained below; assertions that were too broad are corrected rather than copied.
+
+| Audit finding | Decision | Resulting direction |
+| --- | --- | --- |
+| `TODO.md` deferred live generation until after Sheets while the delivery plan placed it before persistence. | Accepted | Use one replay-first sequence: static replay, local review, domain core, a small live-generation feasibility pass, persistence and durable generation, fake execution, Sheets, then release hardening. |
+| Milestone 1 required browser accessibility and visual checks while Playwright was described as a later dependency. | Accepted | Add Playwright and axe in the first interface milestone, when those checks first become real. |
+| Node.js 24, pnpm 10, Next.js, Tailwind, React Aria Components, Zod, Neon, Drizzle, AI SDK, and Workflow form a coherent stack. | Accepted with stage-time verification | Keep the stack, pin stable installed versions when each dependency is first used, and avoid beta or release-candidate examples unless deliberately chosen. |
+| Workflow should force the application and database into `iad1`. | Corrected | Do not assume one Workflow region. Before creating Neon, inspect the installed Workflow and Vercel region support, choose an available pair, and measure it. See Vercel's [function-region guidance](https://vercel.com/docs/functions/configuring-functions/region). |
+| The review-event transaction will probably require Neon's WebSocket driver. | Corrected | Fixed non-interactive transactions can use Neon's HTTP path. For Node.js on Vercel, evaluate `node-postgres` with Fluid compute first; use WebSockets only for a demonstrated interactive-transaction need. See Neon's [connection-method guidance](https://neon.com/docs/connect/choose-connection). |
+| Workflow `start()` is simply an at-least-once operation. | Qualified | Each `start()` call creates a run, so request retries can create duplicate runs; steps may also retry. A unique application operation and first-step claim prevent duplicate effects, not duplicate run records. See the official [idempotency guidance](https://github.com/vercel/workflow/blob/main/docs/content/docs/v4/foundations/idempotency.mdx). |
+| Workflow history has a fixed one-day Hobby and seven-day Pro retention period. | Not adopted | Do not encode unverified plan durations. Check the deployed plan at release and keep the Neon ledger authoritative regardless of operational-history retention. |
+| A React-Aria-specific Tailwind helper is required. | Qualified | Tailwind supports `data-*` state variants directly. Add a helper only when a real component benefits from it; React Aria imports may live in reviewed UI primitives or feature components where appropriate. |
+| The eight-kind effect taxonomy should be scaffolded now, even if only five kinds are used. | Revised | The portfolio union contains only five reviewed kinds: three executable sandbox effects and two simulated effects. Creation, deletion, and file transfer remain future concepts. |
+| String-based process, renderer, value-schema, and connector registries add generality. | Deferred | Use a directly imported typed promotion module, direct renderers, and explicit adapter selection. Introduce registries only after a second process or connector proves the need. |
+
+This audit is advisory input, not a new source of product truth. The canonical decisions are the reconciled documents and the behaviour verified during implementation.
 
 ## What is worth preserving
 
@@ -125,6 +144,8 @@ The revised scenario asks whether a promotion is operationally and commercially 
 | A fixed `edited` lifecycle state signals that a value changed. | Edits are immutable audit events attached to a change. | An approved or committed item may also have been edited. |
 | A successful recorded model run is the evaluation strategy. | Use a fixed evaluation suite with expected successes and failures. A replay is designated from the suite, not selected for looking impressive. | This reduces cherry-picking and makes regressions visible. |
 | The demo cannot fail. | Replay mode has no live dependency and must remain usable when live mode fails. | Absolute reliability claims are not credible; controlled degradation is. |
+| Turso and SQLite were selected before the need for a convenient hosted data interface and Postgres-style constraints was reconsidered. | Use Neon Postgres with Drizzle. Inspect data locally through Drizzle Studio and remotely through Neon's Tables interface. | This remains simple on Vercel while making application and audit data easier to inspect. See [Neon Tables](https://neon.com/docs/guides/tables) and [Drizzle's Neon integration](https://orm.drizzle.team/docs/connect-neon). |
+| The application should implement its own background queue, leases, heartbeats, and expired-lease reconciler. | Use separate Vercel Workflows for proposal generation and approved-effect execution. Keep the effects ledger and connector reconciliation in Safepoint. | Durable orchestration is generic infrastructure rather than the product's distinctive value. Workflow durability does not make external writes exactly once. See [Vercel Workflows](https://vercel.com/workflows). |
 | A development-state route is omitted from production builds. | Use a protected workbench with an explicit environment guard. | Route inclusion is a build and deployment decision, not a naming convention. |
 | Rehearsal is part of the first portfolio build. | Rehearsal moves to the future-product track. | Review, verified execution, and compensation already demonstrate the core thesis. |
 | The captured Automatic Ordering skill should be copied into the public demo. | Use Duvo's public [Auto-ordering documentation](https://docs.duvo.ai/user-guide/skills/available-skills/auto-ordering) to ground the seven-gate vocabulary, but write and version the project instruction independently. Do not copy the captured file unless publication rights are confirmed. | The high-level method is public; the exact captured artefact still has uncertain publication rights. |
@@ -151,6 +172,14 @@ The revised scenario asks whether a promotion is operationally and commercially 
 - Google Sheets and the storefront sandbox produce real, verified demonstration effects. Other systems disclose their simulation mode.
 - Both light and dark themes are present from the first interface milestone.
 - Email remains a simulated final effect.
+- Neon Postgres and Drizzle own durable application state, migrations, and the effects ledger.
+- Vercel Workflows own durable orchestration; they do not replace Safepoint's ledger, connector idempotency, verification, or compensation.
+- Each Workflow start creates a run. Application operation keys and atomic first-step claims prevent duplicate business execution when requests or starts repeat.
+- The Neon driver and Vercel/Neon region pair are selected from measured runtime needs during persistence, not assumed during scaffolding.
+- Vercel AI SDK uses AI Gateway for the live proposal path, with the configured and actual provider/model recorded for every run.
+- Node.js 24 LTS is the application runtime and pnpm 10 is the package manager. Bun remains a valid considered alternative, but adopting it only for package installation would add a second runtime toolchain without improving the portfolio's core proof.
+- Playwright and axe begin with the first interface milestone because accessibility and representative visual checks are part of that milestone's acceptance gate.
+- The first implementation uses one directly imported promotion process module and five effect kinds. General registries and broader effect taxonomies are future work.
 - The portfolio has no fixed calendar deadline. Progress is controlled by acceptance gates.
 - The public narrative is self-contained and contains no private career or application context.
 
@@ -179,8 +208,8 @@ The revised scenario asks whether a promotion is operationally and commercially 
 | Model output is malformed or unsupported. | Validate the complete proposal against a closed schema and show a recoverable error. |
 | Data changes during review. | Re-read expected values before every write and surface conflicts. |
 | One target succeeds and another fails. | Persist every effect, stop according to policy, and offer safe compensation. |
-| The execution worker stops after applying an effect but before verification. | Re-read the target under an expired-lease reconciler before recording success or retrying. |
-| A repeated request duplicates an effect. | Require an idempotency key for each batch and effect. |
+| A workflow step is interrupted after applying an effect but before verification. | On retry, re-read and classify the target before recording success or attempting another write. |
+| A repeated request or ambiguous Workflow start creates duplicate runs. | Reuse a unique application operation, atomically claim it in the first workflow step, and require a separate idempotency key for every effect. |
 | A paused approval outlives the operational deadline. | Expire commit eligibility, apply nothing automatically, and require a fresh proposal or explicit intervention. |
 | A platform-level disable switch stops future runs but not an active executor. | Maintain a separate Safepoint executor circuit breaker checked before every new external attempt. |
 | The model appears unnecessary because all evidence and conclusions are deterministic. | Include bounded ambiguous evidence and alternative policy-compliant plans; evaluate interpretation and uncertainty separately from arithmetic. |
@@ -233,11 +262,13 @@ The seven local source files were hashed before and after the move. The matching
 | `ChatGPT-CSS in JS Truth Check-20260831-1416.md` | `68d2565002e2a35979af6143de1c5943baaeb238572c2ed8be0bb92e29233504` |
 | `ChatGPT-Tailwind Design System Comparison-20260831-1417.md` | `afc72be93f66772cde5fce48b19cbe00bb8059597137eabe25015c1f8f868ab4` |
 
-## Optional documentation skills
+## Project skills
 
-No additional skill is required for this rewrite. Two mature optional skills may add value later:
+The project manifest includes the official `neon`, `neon-postgres`, and `workflow` implementation skills. The obsolete `turso-cloud` and `turso-db` skills were removed when persistence moved to Neon Postgres.
+
+Two optional documentation skills may add value later:
 
 - [`documentation-and-adrs`](https://www.skills.sh/addyosmani/agent-skills/documentation-and-adrs) can help maintain architectural decision records once implementation choices begin to change.
 - [`writing-for-agents`](https://www.skills.sh/mattpocock/skills/writing-for-agents) can help if the repository later introduces a neutral root `AGENTS.md`.
 
-They are recommendations only and are not installed by this documentation change.
+They are recommendations only and are not installed.

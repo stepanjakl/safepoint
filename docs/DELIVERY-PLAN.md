@@ -22,7 +22,7 @@ The milestones preserve the full release path, but they are not permission to bu
 - independent policy with a visible agent-policy disagreement;
 - approve, hold, reject, and allow-listed edit behaviour;
 - one Google Sheets adapter with stable-key lookup, preflight, apply, verification, controlled conflict, and compensation;
-- a durable execution job, crash reconciliation, and effects ledger;
+- a durable execution workflow, crash reconciliation, and effects ledger;
 - keyboard operation, both themes, representative responsive checks, and automated accessibility checks.
 
 ### Public-release completion
@@ -59,191 +59,188 @@ Do not start stretch work while a core-proof item is incomplete. If implementati
 - Review generated migrations and commit them. Do not use schema push for deployed environments.
 - Record architecture changes that contradict these canonical documents in a decision record before implementing them.
 
-## Milestone 1: foundation and complete static experience
+## Milestone 0: project foundation
 
 ### Build
 
-- Scaffold Next.js App Router with strict TypeScript settings and the current supported React version.
-- Install Tailwind CSS and React Aria Components using their version-matched documentation.
-- Create semantic light and dark tokens, the typography roles, and the effects-rail primitive.
-- Add the protected component and state workbench.
-- Design the versioned fictional evidence pack for all 27 lines, including upstream shortlist provenance, brief, catalogue, demand, supply, supplier, bounded operational notes, channel, and policy fixtures.
+- Follow [`STAGE-0-BRIEF.md`](STAGE-0-BRIEF.md).
+- Pin Node.js 24 LTS and an exact pnpm 10 patch. Record both `engines.node` and `packageManager` in `package.json`.
+- Scaffold the smallest Next.js App Router application with strict TypeScript, React, Tailwind CSS, linting, formatting, type-checking, and Vitest.
+- Add a secret-free environment example and concise local commands.
+- Add no model, database, Workflow, Google, connector, process registry, or speculative later-stage code.
+
+### Acceptance gate
+
+- A clean checkout can install, start, build, lint, type-check, format-check, and test with documented pnpm commands.
+- Installed versions are current stable releases with no accidental beta or release-candidate tags.
+- The initial page is useful but deliberately small; it does not pretend that the review experience already exists.
+- No unused dependency or empty architectural directory has been added “for later”.
+
+## Milestone 1: validated replay and static experience
+
+### Build
+
+- Add Zod, React Aria Components, Playwright, and axe-core when their first implementation requires them. Use Tailwind's native `data-*` variants unless an optional helper proves useful in real components.
+- Define the runtime schema and inferred type for the first `PromotionReleasePlan`.
+- Design the versioned fictional evidence pack for all 27 lines, including shortlist provenance, brief, catalogue, demand, supply, supplier, bounded operational notes, channel, and policy fixtures.
 - Record earlier bulk orders and frame any new quantity as a final top-up or amendment.
 - Encode the stable replay: 17 ready lines, six requiring adjustment or attention, and four held, excluded, or unverifiable.
-- Encode a test-only oracle for the deliberately seeded observations without exposing it to the UI or agent.
-- Build the desktop master-detail workspace and the mobile list-to-detail navigation.
-- Implement approve, hold, reject, and permitted edit interactions in local fixture state.
-- Build the core normal, blocked, omission, edit, commit, conflict, partial-result, compensation, and fallback states. Preserve the complete experience-specification inventory as the public-release regression checklist.
+- Encode a test-only oracle for deliberately seeded observations without exposing it to the UI or future agent.
+- Build the desktop master-detail workspace, mobile list-to-detail navigation, effects rail, and protected state workbench.
+- Create semantic light and dark tokens and representative normal, blocked, omission, conflict, completion, and fallback views.
 
 ### Acceptance gate
 
-- Counts reconcile across summary, filters, detail, exclusions, and commit confirmation.
+- The replay fixture parses through the production schema before rendering.
+- Counts are derived from the fixture and reconcile across summary, filters, detail, exclusions, and confirmation views.
 - Every seeded exception is supported by internally consistent numbers, timestamps, and source records.
-- The fictional promotion cycle and upstream shortlist approval are traceable from every candidate without implying real user research.
-- The replay can show agent recommendation and deterministic policy as separate facts.
-- Light and dark themes are complete, not colour-inverted placeholders.
-- The primary flow works at 320 CSS pixels and at 200% zoom; the full 400% zoom pass remains a public-release gate.
-- Every action is keyboard-operable with visible and unobscured focus.
-- Standard arrow-key behaviour works before optional `J` and `K` alternatives.
-- Automated accessibility tests have zero serious or critical findings.
-- Visual regression snapshots cover representative normal, blocked, conflict, and completion states in both themes; exhaustive coverage is release-hardening or stretch work.
-- No model, database, or external credential is required to run the interface locally.
+- Agent recommendation and deterministic policy appear as separate facts.
+- The primary flow works at 320 CSS pixels and 200% zoom; the full 400% pass remains a release gate.
+- Keyboard navigation has visible, unobscured focus, and representative Playwright plus axe checks have no serious or critical findings.
+- Representative visual snapshots cover both themes.
+- No model, database, or external credential is required.
 
-## Milestone 2: typed proposal generation and replay parity
+## Milestone 2: local review workflow
 
 ### Build
 
-- Define the runtime schema and inferred TypeScript type for `ProposalBatch`.
-- Define the process-specific `PromotionReleasePlan` contract within the proposal boundary.
-- Implement the four read-only tools against the controlled evidence pack.
-- Write and version a project-owned promotion-release instruction. Ground its gate vocabulary in Duvo's public Auto-ordering documentation, but do not copy the captured third-party skill file unless publication rights are confirmed.
-- Add the fixed server-owned instruction and bounded generation loop with the current AI SDK APIs.
-- Validate complete output, candidate uniqueness, allowed identifiers, evidence references, money, and dates.
-- Store a versioned replay fixture using exactly the same schema.
-- Add visible mode labels and automatic fallback reasons.
-- Create the first fixed evaluation suite and hidden oracle, including seeded observations, safe alternative recommendations, omissions, tool failures, and malformed results.
-- Include at least one ambiguous narrative case and one case with multiple policy-compliant alternatives so the model demonstrates judgement rather than arithmetic.
+- Add approve, hold, reject, permitted edit, filter, omission-review, and commit-confirmation interactions in resettable local state.
+- Use standard collection and dialog keyboard behaviour before supplemental `J` and `K` shortcuts.
+- Disable custom shortcuts in editable controls and document them in visible shortcut help.
+- Show how an edit resets approval and how a policy disagreement can block commitment.
+- Complete the local loading, empty, error, stale, and conflict behaviour needed to understand the review flow.
 
 ### Acceptance gate
 
-- The model has no write tool or path to a connector credential.
-- Both live and replay proposals enter the same validator and render through the same review components.
-- Invalid output is never partially accepted.
-- Missing or invented candidates fail validation.
-- Contradictory gate obligation and result combinations fail validation; required unavailable evidence blocks the affected line.
-- Tool-step, output-size, duration, and cost limits are enforced in tests.
-- Live failure falls back to a clearly labelled replay without losing the primary workflow.
-- The provider and exact model identifier are configuration, not embedded product copy.
-- Evaluation results identify model and prompt/schema versions.
-- A model that misses an enforceable seeded risk is recorded as an evaluation miss even when deterministic policy blocks it.
-- Live explanation and recommendations may vary without changing the layout, source facts, or deterministic safety result.
+- A keyboard-only user can account for all 27 lines and prepare only an eligible subset for commitment.
+- Editing a permitted value visibly returns the line to pending review.
+- Commit confirmation reconciles included, held, rejected, omitted, and blocked lines.
+- Reloading deliberately resets this milestone's state; persistence is not implied.
 
-## Milestone 3: policy, review persistence, and audit history
+## Milestone 3: deterministic domain core
 
 ### Build
 
-- Provision the Turso development database only after confirming project and billing context.
-- Define the Drizzle SQLite schema and generate the initial migration.
-- Add sandbox sessions, proposal batches, all candidate assessments, review events, evidence, and audit events.
-- Implement and version deterministic rules for margin, uplift provenance, earlier and top-up orders, stock position, minimum and multiple quantities, supplier timing, funding, channel dates, evidence completeness, and conflicts.
-- Derive required, advisory, and not-applicable gate obligations per line from process rules and server-owned context.
-- Make batch phase and review transitions server-authoritative.
-- Add expected-revision checks to review mutations.
-- Reset approval when an editable value changes and re-run policy.
-- Enforce release-deadline expiry in server-owned policy: a stale uncommitted batch moves to intervention required and cannot release automatically.
+- Define proposal, evidence, review-decision, batch-phase, effect-execution, edit, and audit types in plain TypeScript.
+- Keep the promotion process as one directly imported typed module. Do not build a string-ID registry, runtime process language, renderer registry, or generic connector router for one process.
+- Implement only five effect kinds: executable `set_field`, `append_entry`, and `invoke_command`, plus clearly simulated `transition_state` and `send_message`.
+- Implement complete candidate accounting, deterministic calculations, gate-obligation derivation, policy checks, effect planning, canonical value normalisation, state transitions, and release-deadline expiry.
+- Reuse the same policy functions after generation, after edits, and at commit preflight.
+- Keep the domain layer free of React, Next.js, database, model-provider, and connector imports.
 
 ### Acceptance gate
 
-- Database constraints prevent duplicate candidate records and effect idempotency keys.
-- Exactly 27 assessments persist for every accepted scenario proposal.
-- Invalid state transitions fail without a partial database update.
-- Review action and audit append happen in the same short database transaction.
-- Reloading or opening another browser tab produces the same server-authoritative state.
-- Concurrent edits return a conflict and current projection rather than last-write-wins data loss.
-- No network call occurs inside a database transaction.
-- Generated migration SQL is reviewed and a clean database can migrate from zero.
+- Unit tests cover valid plans, unsafe proposals, omissions, stale evidence, edits, deadline expiry, and every illegal transition.
+- Missing, duplicate, invented, or malformed candidates reject the whole proposal rather than being silently repaired.
+- Required unavailable evidence blocks its line; advisory evidence does not silently become mandatory.
+- Fixture arithmetic and the test oracle are recomputed in tests rather than restated as constants.
 
-## Milestone 4: isolated Google Sheets sandbox
+## Milestone 4: live-generation feasibility
+
+### Build
+
+- Implement the four read-only tools against the controlled evidence pack in a development-only harness.
+- Write and version a project-owned instruction. Ground its gate vocabulary in Duvo's public Auto-ordering documentation without copying the captured third-party skill file.
+- Select the installed stable AI SDK major and an available AI Gateway model from version-matched documentation; record the configured and actual provider/model.
+- Generate schema-bound output through the current `generateText` or `streamText` structured-output API.
+- Enforce tool-step, output-size, duration, and cost ceilings.
+- Run a small fixed suite covering a valid plan, an unsafe recommendation, an omission, ambiguous evidence, malformed output, and a tool failure.
+- Keep replay as the application default. Do not add a public generation route, database, or durable workflow in this milestone.
+
+### Acceptance gate
+
+- The model has exactly four read-only tools and no connector credential or write path.
+- A real result passes the same schema and policy used by replay; invalid output is wholly rejected.
+- Evaluation records model misses even when deterministic policy catches them.
+- The designated replay remains a reviewed fixture, not the most flattering captured model run.
+- The feasibility result is sufficient to shape the persisted agent contract without coupling the UI to a provider.
+
+## Milestone 5: persistence and durable proposal generation
+
+### Build
+
+- Before creating the Neon project, inspect current Workflow and Vercel region support, select an available Vercel and Neon pair, and measure the deployed database path. Do not assume Workflow is pinned to `iad1`.
+- Provision Neon with separate development, preview, and production configuration and define reviewed Drizzle migrations.
+- Choose the connection path from the implemented runtime: start by evaluating `node-postgres` with Vercel Fluid compute, compare Neon's HTTP driver where fixed non-interactive transactions suffice, and use WebSockets only for a demonstrated interactive-transaction need. Use a direct connection for migrations.
+- Add sandbox sessions, agent and workflow runs, tool evidence, proposal batches, all candidate assessments, review events, effects, attempts, audit events, and rate-limit records.
+- Make review mutations server-authoritative with expected revisions; append each review event and update its projection in one short Postgres transaction.
+- Wrap live proposal generation in a Vercel Workflow that stores the validated result and ends before human review.
+- Treat every Workflow `start()` call as creating a run. Use a unique application operation and atomic first-step claim so duplicate starts cannot create two accepted batches or conceal duplicate model cost.
+- Keep replay and live results on the same validation, policy, projection, and rendering path.
+
+### Acceptance gate
+
+- Database constraints prevent duplicate candidate records, operation keys, and effect idempotency keys.
+- Exactly 27 assessments persist for every accepted proposal.
+- A review survives reload and concurrent stale edits return the current projection rather than overwriting it.
+- No model or external network call occurs inside a database transaction.
+- Generated migration SQL is reviewed; a clean database migrates from zero; local Drizzle Studio and Neon's hosted interface can inspect the same development data.
+- Refreshing or redeploying during generation does not lose completed steps or grant the workflow write authority.
+
+## Milestone 6: durable execution with fake adapters
+
+### Build
+
+- Persist an immutable approved effect or compensation plan and uniquely keyed operation before starting a Vercel Workflow.
+- Implement separate commit and compensation workflows. Keep workflow functions focused on orchestration and put database or external side effects in retryable steps.
+- Atomically claim the operation in the first step. A duplicate run that loses the claim exits before any effect.
+- Implement effect idempotency, dependency ordering, retry classification, verification, uncertain-write reconciliation, deadline stops, and the executor circuit breaker.
+- Start with fixture-backed adapters and demonstrate success, preflight conflict, partial failure, compensation, and intervention-required outcomes.
+- Use the Neon projection and polling as the user-facing progress source. Treat the Workflow dashboard as operational evidence, not the business ledger.
+- Build the effects ledger and intervention views. Add persisted Server-sent Events (SSE) only after polling and durable recovery work.
+
+### Acceptance gate
+
+- Duplicate requests or duplicate workflow runs cannot pass the same operation claim and execute an effect twice.
+- Closing the browser or ending the initiating request does not abandon execution.
+- An interrupted step in `applying` re-reads and classifies external state before any retry.
+- A partial result distinguishes applied, failed, conflicted, compensated, and not-attempted effects.
+- Compensation never overwrites unrecognised later work, and the original effect history remains.
+- Simulated effects say Applied in simulation; preview-only effects never become applied.
+
+## Milestone 7: isolated Google Sheets sandbox
 
 ### Build
 
 - Create the controlled template spreadsheet and server-owned range map.
-- Use stable SKU and scenario-line keys to resolve current rows; do not persist row numbers as business identity.
-- Run an isolation spike comparing on-demand copies, a bounded pre-created copy pool, and protected per-session ranges. Select only an option that proves quota headroom, cleanup, and cross-session isolation; replay creates no Sheet.
-- Implement controlled Sheet operations for promotion records, top-up recommendations, and label-queue entries with preflight, apply, verify, and compensate behaviour.
-- Add the read-only, application-rendered Sheet view.
-- Add the one-use controlled conflict injection.
-- Implement 24-hour expiry and cleanup for sandbox resources.
+- Resolve rows from stable SKU and scenario-line keys rather than persisted row numbers.
+- Compare on-demand copies, a bounded pre-created pool, and protected per-session ranges. Select only an option that proves quota headroom, cleanup, and cross-session isolation; replay creates no Sheet.
+- Implement promotion-record, top-up-recommendation, and label-queue operations with preflight, apply, verify, and compensate behaviour.
+- Add the read-only application-rendered Sheet view, one-use controlled conflict injection, 24-hour expiry, and scheduled cleanup.
 
 ### Acceptance gate
 
 - A public request cannot choose a spreadsheet, range, or arbitrary value outside the validated proposal.
-- Browser code and logs contain no Google or Turso credential.
-- Preflight mismatch leaves the external value unchanged and records a conflict.
-- Apply success is reported only after a verification read.
+- Browser code and logs contain no Google or Neon credential.
+- A preflight mismatch leaves the external value unchanged; successful apply is reported only after verification.
 - One session cannot read or change another session's data.
-- Conflict injection is idempotent and affects only the documented cell.
-- Expired sessions reject operations and their external resources are queued for cleanup.
-- Tests distinguish atomic updates within one spreadsheet request from the non-atomic multi-target workflow.
+- Conflict injection is idempotent and cleanup failures are observable.
+- Tests distinguish one-request, one-spreadsheet atomicity from the non-atomic multi-target workflow.
 
-## Milestone 5: orchestration, ledger, storefront, and compensation
-
-### Build
-
-- Persist planned effects before execution.
-- Persist commit and compensation as durable jobs. Route handlers return after enqueueing; they do not own the batch lifetime.
-- Implement database-backed job leases, heartbeats, and a reconciler for expired leases.
-- Re-read and classify any effect stranded in `applying` before retrying it.
-- Execute required reversible effects before the simulated notification.
-- Add bounded retry classification and unique idempotency keys.
-- Add an executor circuit breaker that is checked before every new external attempt, including work from an already-running batch.
-- Use projection polling as the baseline progress and recovery path. Add persisted SSE with resumable event identifiers only after durable execution is proven.
-- Build the effects ledger and intervention views.
-- Implement reverse-order compensation with a fresh preflight for every target.
-- After that core flow works through Google Sheets, implement the thin session-isolated storefront service, allow-listed promotion API, verification read, compensation path, and read-only customer view.
-- Implement clearly labelled simulated SAP, dedicated label-service, and notification adapters only where they improve the effect demonstration.
-
-### Acceptance gate
-
-- A duplicate commit request cannot duplicate an effect.
-- Closing the browser or ending the initiating request does not abandon the durable job.
-- A worker crash after apply but before verification is reconciled by reading the target before any retry.
-- An approved storefront effect changes the separate customer view and is reported successful only after verification.
-- Simulated effects say Applied in simulation; preview-only effects never enter an applied state.
-- Every attempt has an immutable record and safe error code.
-- Baseline polling recovers progress from the persisted projection. If SSE is enabled, reconnection resumes from persisted events and then refreshes the projection.
-- The browser closing does not cancel or lose a server-owned execution.
-- A partial failure shows applied, failed, conflicted, and not-attempted effects separately.
-- If the release deadline passes during commit, the in-flight request settles and is verified, no new effect starts, and untouched effects show Not attempted — deadline reached.
-- Compensation never overwrites a value changed after Safepoint's original apply.
-- The original effect history remains after compensation.
-- Simulated notification is visibly non-recallable and never sends a real message.
-
-## Milestone 6: accessibility, security, reliability, and evaluation
+## Milestone 8: storefront, hardening, public release, and case study
 
 ### Build
 
-- Add skip navigation, route focus management, dialog focus behaviour, and stable status infrastructure.
-- Apply session-cookie, origin, cross-site request-forgery, content-security, and rate-limit controls.
-- Add per-session, per-IP, global model-cost, tool-step, output-size, and timeout ceilings through deployment configuration.
-- Add separate live-generation and executor controls; verify replay remains available when generation is disabled.
-- Complete the model and executor failure matrices.
-- Add structured redacted logs and correlation identifiers.
-- Run the fixed evaluation set against the selected provider configuration.
-- Complete the full visual-state regression set after the core flow and layouts stabilise.
+- Add the thin session-isolated storefront API, read-only customer view, verification read, and compensation path as the second genuine target.
+- Execute reversible targets first and keep the simulated, non-recallable notification last.
+- Apply session-cookie, origin, cross-site request-forgery, content-security, rate-limit, redaction, and correlation controls.
+- Add per-session, per-IP, global model-cost, tool-step, output-size, and timeout ceilings plus separate generation and executor kill controls.
+- Complete the model and executor failure matrices, evaluation suite, and full visual-state regression set.
+- Deploy separate preview and production configuration, monitoring, cost alerts, cleanup, and a manual kill-switch procedure.
+- Add an About this demo page and write the case study. No video is required.
 
 ### Acceptance gate
 
+- A first-time visitor can complete replay without an account; bounded live mode can be disabled without a deployment and falls back honestly.
+- An approved storefront effect changes the separate customer view and reports success only after verification.
 - Complete review, commit, conflict, and reverse flows pass keyboard-only testing.
 - VoiceOver with Safari and NVDA with Chrome can understand the collection, dialogs, statuses, and effects log.
-- The complete flow remains usable at 400% zoom without losing content or function.
-- Repeated or overlapping asynchronous actions do not announce stale or duplicate results.
-- Focus is not lost after filtering, deleting a temporary state, closing a dialog, or navigating back on mobile.
+- The complete flow remains usable at 400% zoom, with reduced motion and at narrow viewports.
 - Security tests reject changed session IDs, foreign batches, invalid origins, unknown fields, oversized bodies, and repeated idempotency keys.
-- Raw cookies, credentials, IP addresses, prompts containing secrets, and complete provider responses are absent from logs.
-- Both kill controls, release-deadline expiry, exhausted budget, model timeout, Sheets failure, progress-connection loss, and compensation conflict all have tested recovery behaviour.
-- Evaluation output includes failures and omissions, not only successful runs.
-
-## Milestone 7: public release and case study
-
-### Build
-
-- Deploy the application with separate preview and production configuration.
-- Verify function and database regions are appropriately colocated.
-- Configure monitoring, cost alerts, cleanup schedule, and a documented manual kill-switch procedure.
-- Write the case study around the problem, boundary decisions, design iterations, failure handling, evidence, and remaining limitations.
-- Add an About this demo page explaining fixed inputs, session expiry, simulated systems, live/replay modes, and data handling.
-
-### Acceptance gate
-
-- A first-time visitor can complete replay mode without an account.
-- Live mode is bounded, isolated, and can be disabled without a new deployment.
-- Production contains no development workbench unless its explicit protection is verified.
-- Expired resources are cleaned up and cleanup failures are observable.
-- The case study makes no claim of customer validation or production-grade arbitrary-agent safety.
-- The public narrative contains no private application context.
-- All canonical documentation matches the shipped behaviour.
-- A release checklist has been completed on desktop and mobile in light and dark themes.
+- Raw cookies, credentials, IP addresses, secrets, and complete provider responses are absent from logs.
+- Production exposes no unprotected workbench; expired resources are cleaned up; cleanup failures are observable.
+- The case study states synthetic research, storefront-verification, connector, and fixed-scenario limitations accurately.
+- All canonical documentation matches the deployed behaviour.
 
 ## Test strategy
 
@@ -261,7 +258,7 @@ Do not start stretch work while a core-proof item is incomplete. If implementati
 - retry classification;
 - release-deadline expiry and executor circuit-breaker transitions;
 - line-conditional gate-obligation derivation;
-- expired-lease reconciliation decisions;
+- interrupted-step external-state reconciliation decisions;
 - derived batch summaries;
 - log redaction and session hashing.
 
@@ -274,7 +271,7 @@ Do not start stretch work while a core-proof item is incomplete. If implementati
 - each connector contract with fake and sandbox implementations;
 - storefront apply, independent read verification, and customer-view projection;
 - preflight, apply, verify, and compensate sequences;
-- durable job claim, heartbeat, lease expiry, and crash reconciliation;
+- workflow start, replay, retry classification, step correlation, and interrupted-step reconciliation;
 - typed effect rendering and connector capability combinations;
 - Sheets request failure and collaborative-change simulation;
 - stable-key Sheet lookup after row insertion or sorting;
@@ -312,7 +309,11 @@ Do not start stretch work while a core-proof item is incomplete. If implementati
 ## Release and operational checklist
 
 - Confirm the live model identifier still exists and the installed AI SDK documentation matches the code.
-- Confirm Turso and Drizzle driver compatibility before upgrading either dependency.
+- Confirm AI Gateway routing, fallback, budget, and actual-provider recording match the release configuration.
+- Confirm Neon, the selected Postgres driver, Vercel Fluid compute when used, and Drizzle remain compatible before upgrading any of them.
+- Confirm the deployed Workflow SDK version matches the implementation guidance and inspect a complete proposal, commit, and compensation run in the Vercel dashboard.
+- Re-check Workflow plan limits and operational-history retention rather than relying on an assumed duration; keep the Neon ledger authoritative.
+- Confirm the recorded Vercel and Neon region pair still matches the deployed application and measured latency.
 - Review and apply migrations in preview before production.
 - Confirm only environment-variable names, never values, appear in diagnostic output.
 - Exercise the kill switch and deterministic replay in production.
@@ -334,8 +335,11 @@ Use the repository's installed skills at the point their rules apply:
 | Progress, filters, errors, effects log, and dynamic status | `aria-live-regions` |
 | UI review before each public milestone | `web-design-guidelines` |
 | Agent tools, structured output, and provider integration | `ai-sdk` |
-| Schema, queries, transactions, and migrations | `drizzle-orm-patterns` |
-| Hosted database connection and credentials | `turso-cloud` |
+| General schema, queries, transactions, and migrations | `drizzle-orm-patterns` |
+| Neon setup, connections, pooling, and platform behaviour | `neon`, `neon-postgres` |
+| Durable proposal, commit, and compensation orchestration | `workflow` |
+
+The official Neon and Vercel Workflow skills are installed, and the obsolete Turso skills have been removed. The `workflow` skill requires guidance matched to the installed SDK version; the Neon skills require current official documentation to be checked because platform capabilities change. Skills guide implementation but do not override this specification or the installed packages' documentation.
 
 The optional `documentation-and-adrs` and `writing-for-agents` skills remain recommendations only.
 
@@ -343,9 +347,9 @@ The optional `documentation-and-adrs` and `writing-for-agents` skills remain rec
 
 Do not begin this work until the public portfolio release meets its acceptance gate.
 
-1. Extract the grocery scenario into a versioned process definition without weakening compile-time validation.
-2. Formalise the closed effect union and renderer registry beyond the three portfolio effect kinds.
-3. Define a connector capability manifest and an allow-listed operation registry.
+1. Extract the directly imported grocery process module into a reusable versioned format without weakening compile-time validation.
+2. Expand the closed effect union and renderer set beyond the five portfolio effect kinds only when a second process needs them.
+3. Define a broader connector capability manifest and an allow-listed operation registry only when direct adapter selection becomes insufficient.
 4. Onboard a second process using the same review shell and measure where new effect or value renderers are genuinely required.
 5. Rehearse a proposal against a simulation and show predicted side effects.
 6. Generate and compare alternative plans under the same policy.

@@ -23,17 +23,16 @@ The system should also:
 flowchart LR
     Browser[Review workspace] --> Routes[Next.js route handlers]
     Routes --> Session[Sandbox session service]
-    Routes --> Agent[Proposal service]
+    Routes --> Generate[Vercel proposal workflow]
+    Generate --> Agent[Proposal service]
     Agent --> Model[Configured language model]
     Agent --> ReadTools[Four read-only tools]
     ReadTools --> Scenario[Controlled scenario data]
     Agent --> Validate[Schema validation]
     Validate --> Policy[Deterministic policy engine]
-    Policy --> Store[(Turso Cloud)]
-    Routes --> Jobs[Durable execution jobs]
-    Jobs --> Worker[Effect worker]
-    Reconciler[Lease reconciler] --> Jobs
-    Worker --> Executor[Effect orchestrator]
+    Policy --> Store[(Neon Postgres)]
+    Routes --> Execute[Vercel execution workflow]
+    Execute --> Executor[Effect orchestrator]
     Executor --> Sheet[Isolated Google Sheet<br/>live sandbox]
     Executor --> Storefront[Storefront service<br/>live sandbox]
     Executor -.-> Simulated[SAP, label service, and notification<br/>simulated or preview-only]
@@ -43,7 +42,9 @@ flowchart LR
     Replay[Versioned replay fixture] --> Validate
 ```
 
-The model and replay enter the application through the same validation boundary. Everything after validation is shared. A commit request persists a durable job before returning to the browser; external execution is not owned by the lifetime of a Next.js route handler.
+The model and replay enter the application through the same validation boundary. Everything after validation is shared.
+
+Proposal generation and approved-effect execution are separate durable workflows. The proposal workflow ends after it stores a validated proposal; it does not pause with write authority while a person reviews. A commit request first persists an immutable approved effect plan and operation record, then starts an execution workflow and returns to the browser. The workflow's first step atomically claims that operation in Neon and records its run identifier. A duplicate run for the same operation must exit without executing effects. External execution is therefore not owned by the lifetime of a browser or Next.js route handler.
 
 ## Generalisation model
 
@@ -57,10 +58,10 @@ flowchart LR
     Planner --> Effects[Typed planned effects]
     Effects --> UI[Shared review shell]
     UI --> Approval[Human decisions]
-    Approval --> Router[Connector router]
-    Router --> Sheets[Google Sheets operations]
-    Router --> SAP[SAP operation modules]
-    Router --> Other[Other supported services]
+    Approval --> Select[Deterministic adapter selection]
+    Select --> Sheets[Google Sheets operations]
+    Select --> Storefront[Storefront operations]
+    Select -. future .-> Other[Other reviewed services]
 ```
 
 ### Reusable review shell
@@ -74,27 +75,38 @@ The shell renders concepts shared by every supported process:
 - target effects and reversibility;
 - execution, conflict, verification, and compensation state.
 
-The shell does not render arbitrary model-authored UI. A process definition selects registered effect and value renderers such as money, date, quantity, enum, text diff, record preview, state transition, message preview, or file transfer. A new effect or data type needs a reviewed renderer before it can become executable.
+The shell does not render arbitrary model-authored UI. The portfolio imports a small, reviewed set of renderers for money, date, quantity, text diff, state transition, and message preview. A new effect or data type needs an explicit schema, renderer, policy treatment, and test before it can become executable.
 
 ### Process definition
 
-A versioned process definition supplies the domain-specific contract:
+A versioned process definition supplies the domain-specific contract. For the first process, use one directly imported typed module rather than string identifiers and registries:
 
 ```typescript
-type ProcessDefinition = {
-  id: string;
-  version: number;
-  proposalSchemaId: string;
-  candidateSetProvider: string;
-  allowedEffectKinds: EffectKind[];
-  editableFields: string[];
-  policySetId: string;
-  displayConfigurationId: string;
-  requiredConnectorCapabilities: ConnectorRequirement[];
-};
+const promotionReleaseProcess = {
+  id: 'promotion-release',
+  version: 1,
+  proposalSchema: promotionReleasePlanSchema,
+  getCandidateSet: getPromotionCandidates,
+  allowedEffectKinds: [
+    'set_field',
+    'append_entry',
+    'invoke_command',
+    'transition_state',
+    'send_message',
+  ],
+  editableFields: [
+    'promotionalSellingPricePence',
+    'startsAt',
+    'endsAt',
+    'recommendedTopUpQuantityUnits',
+  ],
+  evaluatePolicy: evaluatePromotionReleasePolicy,
+  planEffects: planPromotionReleaseEffects,
+  display: promotionReleaseDisplay,
+} as const;
 ```
 
-It defines what the model may propose, what the user may change, which deterministic rules apply, how values are presented, and which connector capabilities are required. It does not contain credentials or executable model-authored code.
+The module defines what the model may propose, what the user may change, which deterministic rules apply, and how values are presented. It does not contain credentials or executable model-authored code. Direct imports keep dependencies visible and preserve compile-time checking; a runtime registry is not justified until a second process proves that it is needed.
 
 The grocery promotion-release configuration is the first process definition. During the portfolio build it may remain a typed module rather than a general configuration language. A reusable format is justified only when onboarding a second process.
 
@@ -105,13 +117,10 @@ After proposal validation and policy evaluation, a deterministic planner maps al
 ```typescript
 type EffectKind =
   | 'set_field'
-  | 'create_resource'
-  | 'delete_resource'
   | 'append_entry'
-  | 'transition_state'
   | 'invoke_command'
-  | 'send_message'
-  | 'transfer_file';
+  | 'transition_state'
+  | 'send_message';
 
 type CanonicalValue =
   | null
@@ -142,18 +151,9 @@ type PlannedEffect =
   | (EffectBase & {
       kind: 'set_field';
       field: string;
-      valueSchemaId: string;
+      valueType: 'money_pence' | 'date_time' | 'quantity' | 'text' | 'boolean';
       expectedValue: CanonicalValue;
       proposedValue: CanonicalValue;
-    })
-  | (EffectBase & {
-      kind: 'create_resource';
-      proposedRecord: Record<string, unknown>;
-    })
-  | (EffectBase & {
-      kind: 'delete_resource';
-      expectedSnapshot: Record<string, unknown>;
-      impactSummary: string[];
     })
   | (EffectBase & {
       kind: 'append_entry';
@@ -176,20 +176,14 @@ type PlannedEffect =
       subject: string;
       contentPreview: string;
       recallSupport: 'none' | 'limited';
-    })
-  | (EffectBase & {
-      kind: 'transfer_file';
-      fileRef: string;
-      destination: string;
-      accessSummary: string;
     });
 ```
 
 The model does not choose raw connector methods, spreadsheet ranges, SAP endpoints, or credentials. The process definition and effect planner map validated business intent to an allow-listed operation.
 
-Every executable value is normalised through its registered value schema before storage or comparison. Object keys are sorted, invalid numbers are rejected, money remains integer pence, timestamps become ISO 8601 UTC, and connector-specific empty or formula values receive explicit representations. Preflight compares these canonical values rather than language-native object identity or display strings.
+Every executable value is normalised by the process-owned schema before storage or comparison. Object keys are sorted, invalid numbers are rejected, money remains integer pence, timestamps become ISO 8601 UTC, and connector-specific empty or formula values receive explicit representations. Preflight compares these canonical values rather than language-native object identity or display strings.
 
-The portfolio implements live-sandbox `set_field`, `append_entry`, and `invoke_command` effects for Google Sheets and the storefront. It may render simulated `transition_state` and `send_message` effects for SAP release and notification examples. Other kinds remain unavailable until their schemas, renderers, policies, adapters, and tests exist.
+The portfolio implements live-sandbox `set_field`, `append_entry`, and `invoke_command` effects for Google Sheets and the storefront. It renders simulated `transition_state` and `send_message` effects only when they help explain SAP release and notification consequences. Creation, deletion, and file-transfer effects remain future product concepts; they do not appear in the portfolio union, renderer code, or adapter branches.
 
 Every effect records `adapterMode: 'live_sandbox' | 'simulated' | 'preview_only' | 'unavailable'`. Execution state and adapter mode are separate facts. A preview-only effect cannot become `applied`; a simulated effect is labelled Applied in simulation rather than presented as an external change.
 
@@ -247,24 +241,30 @@ This adapter is not part of the portfolio build. The public application remains 
 
 ### Supported variability
 
-Prompts and input data may vary within a registered process definition. A completely new process is review-only until it has a proposal schema, policy set, display configuration, and allow-listed connector mapping. This is deliberate onboarding, not a runtime attempt to infer safety from an arbitrary prompt.
+Prompts and input data may vary within a reviewed process module. A completely new process is review-only until it has a proposal schema, policy set, display configuration, and allow-listed connector mapping. This is deliberate onboarding, not a runtime attempt to infer safety from an arbitrary prompt.
 
 ## Selected stack
 
+- Node.js 24 Long-Term Support (LTS), as listed in the official [Node.js release schedule](https://nodejs.org/en/about/previous-releases), and pnpm.
 - Next.js App Router, React, and TypeScript.
 - Tailwind CSS with semantic tokens for styling.
-- React Aria Components for accessible interaction primitives. React Aria is unstyled and supports Tailwind according to its [official getting-started guidance](https://react-aria.adobe.com/getting-started).
-- Vercel AI SDK for provider-neutral tool calling and typed output.
-- Turso Cloud for the application ledger and sandbox metadata.
-- Drizzle ORM for the SQLite schema, queries, and migrations.
+- React Aria Components for accessible interaction primitives. React Aria is unstyled and supports Tailwind according to its [official getting-started guidance](https://react-spectrum.adobe.com/react-aria/getting-started.html). Tailwind CSS supports `data-*` state variants directly, so an additional React-Aria-to-Tailwind helper is optional and should be installed only if the implemented components need it.
+- Zod for proposal, route, configuration, and connector-boundary validation.
+- Vercel AI SDK through [Vercel AI Gateway](https://vercel.com/docs/ai-gateway) for provider-neutral tool calling, structured output, spend controls, and model observability.
+- Neon Postgres for the application ledger and sandbox metadata.
+- Drizzle ORM for the Postgres schema, queries, and migrations.
 - Google Sheets API for controlled promotion, top-up-recommendation, and label-queue effects.
-- A durable background job runner with database-backed leases for external execution. The deployment-specific queue or workflow product is selected and load-tested before Milestone 5; request-scoped route handlers never perform the complete batch.
-- Polling as the baseline progress transport; Server-sent events (SSE) may improve responsiveness after the durable worker is proven.
+- Vercel Workflow SDK for durable proposal generation, approved-effect execution, retries, recovery, and operational workflow inspection. Safepoint still owns effect idempotency, external-state reconciliation, and its audit ledger.
+- Polling as the baseline progress transport; Server-sent events (SSE) may improve responsiveness after durable workflows are proven.
 - Vitest for unit and integration tests, Playwright for browser tests, and axe-core for automated accessibility checks.
 
-Exact dependency versions and model identifiers are selected and pinned when the application is scaffolded. The AI SDK changes frequently, so its installed, version-matched documentation is authoritative. Current official guidance supports schema-defined tools and validated structured output through `generateText` or `streamText` ([tool calling](https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling), [structured output](https://ai-sdk.dev/docs/reference/ai-sdk-core/output)).
+Exact dependency versions and model identifiers are selected and pinned when the application is scaffolded. Use current stable packages; do not copy release-candidate tags from an example without recording a deliberate decision. The AI SDK changes frequently, so its installed, version-matched documentation is authoritative. Current official guidance supports schema-defined tools and validated structured output through `generateText` or `streamText` ([tool calling](https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling), [structured output](https://ai-sdk.dev/docs/reference/ai-sdk-core/output)).
 
-For Turso with Drizzle, use the production-supported ORM path documented by [Turso's TypeScript guide](https://docs.turso.tech/sdk/ts/quickstart) and [Drizzle's Turso guide](https://orm.drizzle.team/docs/tutorials/drizzle-with-turso). Do not select a newer Turso client unless Drizzle officially supports it at implementation time.
+Choose the Neon connection path during the persistence milestone, against the deployed runtime and installed stable versions. For a Node.js application on Vercel, the current default candidate is `node-postgres` with a pooled Neon connection and Vercel Fluid compute; attach the pool as required by current platform guidance. Neon's HTTP driver remains a valid alternative for one-shot queries and fixed non-interactive transactions. Use its WebSocket transport only when the implemented mutation genuinely requires an interactive transaction. Drizzle remains the schema and query layer whichever supported driver is selected. Use the pooled application URL for normal traffic and the direct URL for migrations. See Neon's [connection-method guidance](https://neon.com/docs/connect/choose-connection), [serverless-driver guidance](https://neon.com/docs/serverless/serverless-driver), and [Drizzle integration](https://orm.drizzle.team/docs/connect-neon).
+
+Vercel Workflows supplies durable control flow and an operational event history; it does not become Safepoint's business audit record or make workflow starts or external writes exactly once. Each `start()` call creates a run, so a repeated or ambiguous start can create duplicate runs. Steps may also retry. Every proposal, commit, compensation, and cleanup workflow therefore uses a unique application operation record and atomic first-step claim. The claim prevents two runs from executing the same operation; it does not pretend that only one run was created. Workflow functions orchestrate deterministic control flow, while network calls and other side effects run in workflow steps. See the official [Vercel Workflows overview](https://vercel.com/workflows) and [idempotency guidance](https://github.com/vercel/workflow/blob/main/docs/content/docs/v4/foundations/idempotency.mdx).
+
+Do not pin Neon or the application to a region from an outdated Workflow assumption. Before the Neon project is created, inspect the regions supported by the installed Workflow version and the planned Vercel runtime, choose an available Vercel and Neon pair, and run a latency check from the deployed application. Record that pair as an implementation decision. Region choice belongs to the persistence milestone because a Neon project's region cannot be casually changed later. Vercel's [function-region guidance](https://vercel.com/docs/functions/configuring-functions/region) is the starting point; installed package documentation and deployed behaviour remain authoritative.
 
 ## Runtime modes
 
@@ -506,7 +506,7 @@ An edit records actor, time, field, previous value, new value, and resulting pol
 
 ## Persistence model
 
-Turso stores application state; Google Sheets remains an external target. The minimum schema is:
+Neon Postgres stores application state; Google Sheets remains an external target. Neon branches may isolate preview environments, but browser sessions are rows within the application schema rather than database branches. The minimum schema is:
 
 | Table | Purpose | Important constraints |
 | --- | --- | --- |
@@ -518,11 +518,11 @@ Turso stores application state; Google Sheets remains an external target. The mi
 | `review_events` | Append-only approve, hold, reject, and edit history | Monotonic sequence within batch |
 | `effects` | One intended effect per candidate and target, including adapter mode | Unique idempotency key; preview-only effects cannot be applied |
 | `effect_attempts` | Preflight, write, verification, retry, and compensation attempts | Append-only with redacted error detail |
-| `execution_jobs` | Durable commit or compensation work, lease owner, heartbeat, stop reason, and recovery state | One active job per batch operation; lease expiry index |
+| `workflow_runs` | Proposal, commit, compensation, or cleanup operation claim, workflow correlation, and outcome | Unique operation key and provider run ID; at most one claimed commit or compensation run per batch operation |
 | `audit_events` | Human-readable lifecycle history | Append-only; ordered by sequence, not timestamp alone |
 | `rate_limit_buckets` | Hashed actor and window counters | Automatic expiry |
 
-Use foreign keys, not-null constraints, and unique indexes for invariants that belong in storage. Use Drizzle's SQLite schema definitions and generated migrations. Review generated SQL and use committed migrations outside local prototyping; do not use schema push as the deployment workflow.
+Use foreign keys, not-null constraints, check constraints, and unique indexes for invariants that belong in storage. Use Drizzle's Postgres schema definitions and generated migrations. Review generated SQL and use committed migrations outside local prototyping; do not use schema push as the deployment workflow.
 
 A short database transaction may update a projection and append its audit event together. Never hold a database transaction open while calling a model, Google Sheets, or another network dependency.
 
@@ -536,8 +536,8 @@ The routes are internal application APIs, not a supported third-party API.
 | `POST /api/proposals` | Start live generation or explicit replay for the current session |
 | `GET /api/batches/:batchId` | Return the authorised review projection and evidence summaries |
 | `PATCH /api/batches/:batchId/changes/:changeId` | Approve, hold, reject, or edit with an expected revision |
-| `POST /api/batches/:batchId/commit` | Persist a commit job with an idempotency key and return `202 Accepted` |
-| `POST /api/batches/:batchId/reverse` | Persist a compensation job for eligible applied effects and return `202 Accepted` |
+| `POST /api/batches/:batchId/commit` | Create or reuse the approved operation record, start its execution workflow when needed, and return `202 Accepted` |
+| `POST /api/batches/:batchId/reverse` | Create or reuse a compensation operation record, start its workflow when needed, and return `202 Accepted` |
 | `POST /api/sessions/:sessionId/inject-conflict` | Apply the fixed, controlled demonstration conflict once |
 | `GET /api/batches/:batchId/events` | Stream authorised execution events using SSE |
 | `GET /sandbox/:sessionId/sheet` | Render a read-only, session-scoped view of controlled Sheet data |
@@ -551,21 +551,24 @@ Polling the batch projection is the required progress and recovery path. If SSE 
 
 ### Durable execution and crash recovery
 
-Commit and compensation run as durable jobs rather than long-lived browser or route-handler requests:
+Commit and compensation run as Vercel Workflows rather than long-lived browser or route-handler requests:
 
-1. The mutation route validates the request, persists planned effects and an execution job in one short database transaction, and returns `202 Accepted`.
-2. A background worker claims the job with a bounded lease and heartbeat. A lease is a temporary ownership record; the worker renews it regularly to show that it is still alive. Only the current lease owner may start an external attempt.
-3. Before each attempt, the worker records intent and checks the release deadline, executor circuit breaker, dependency state, and idempotency key.
-4. After an external response, it records the result and verifies the target before advancing.
-5. A scheduled reconciler—a recovery process that looks for unfinished work—finds expired leases and resumes them safely.
+1. The mutation route validates the request and persists the immutable approved effect plan plus a uniquely keyed operation record in one short Postgres transaction.
+2. It starts the appropriate workflow with the operation identifier and returns `202 Accepted`. If an earlier start returned ambiguously, a request retry may start another run rather than assume that no run exists.
+3. The workflow's first step atomically claims the operation record with its workflow run identifier. A run that loses this claim exits before any external effect.
+4. The claimed workflow checks the release deadline and executor circuit breaker before calling each effect step.
+5. Each step records its intent in Safepoint's ledger, performs preflight, applies the effect, and immediately verifies the target.
+6. The Workflow SDK journals completed steps and resumes the workflow after an interruption without rerunning completed work.
 
-An effect found in `applying` after a worker crash is never blindly retried. The reconciler first reads the target:
+A workflow retry does not prove that an interrupted external request had no effect. An effect found in `applying` is therefore never blindly written again. The next step invocation first reads the target:
 
 - if the intended value is present and attributable to the attempt, record it as applied and run verification;
 - if the staged expected value is still present, classify the previous attempt as not applied and permit a bounded retry;
 - if neither value is present, mark a conflict and require intervention.
 
-Every connector must define the stable identifier and evidence needed for this reconciliation. If it cannot distinguish these outcomes, automatic recovery is unsupported and the effect requires intervention. This mechanism is what allows execution to survive a closed browser; Next.js request lifetime alone does not.
+Every connector must define the stable identifier and evidence needed for this reconciliation. If it cannot distinguish these outcomes, automatic recovery is unsupported and the effect requires intervention. Workflow durability keeps orchestration alive after a closed browser or deployment; connector reconciliation keeps retries from silently duplicating uncertain external effects.
+
+The Workflow SDK's event history is operational evidence about orchestration. Safepoint's `effects`, `effect_attempts`, and `audit_events` remain the authoritative business record because they preserve expected, observed, applied, verified, conflicted, and compensated values across target systems.
 
 ### Connector contract
 
@@ -581,25 +584,17 @@ interface EffectAdapter {
 }
 
 type ConnectorCapabilities = {
-  executionPath:
-    | 'hosted_api'
-    | 'custom_mcp'
-    | 'browser_automation'
-    | 'computer_use'
-    | 'simulation';
   supportedEffectKinds: EffectKind[];
-  supportsPreflight: boolean;
-  supportsVerification: boolean;
   supportsCompensation: boolean;
   supportsIdempotency: boolean;
   atomicScope: 'none' | 'operation' | 'batch';
-  executionMode: 'synchronous' | 'asynchronous';
-  maximumBatchSize?: number;
   recoveryDescription: string;
 };
 ```
 
-Adapters return typed results. Expected business conflicts are data, not generic exceptions. Secrets and provider responses are translated into safe error codes before persistence. The UI uses declared capabilities to describe guarantees accurately, for example showing Reverse automatically only when compensation is supported or Waiting for target system for asynchronous work. `recoveryDescription` is registered application copy based on actual adapter behaviour; it is never written by the model.
+Preflight and verification are required by the portfolio adapter contract, so they are not optional capability flags. Adapters return typed results. Expected business conflicts are data, not generic exceptions. Secrets and provider responses are translated into safe error codes before persistence. The UI uses declared capabilities to describe guarantees accurately, for example showing Reverse automatically only when compensation is supported. `recoveryDescription` is application-owned copy based on actual adapter behaviour; it is never written by the model.
+
+A future connector manifest may add asynchronous execution, hosted API, custom Model Context Protocol (MCP), browser-automation, Computer Use, and batch-size metadata when an implemented adapter needs those distinctions. The portfolio does not carry unused capability fields merely to imply broader connector support.
 
 ### Execution order
 
@@ -662,12 +657,13 @@ Every compensation performs its own preflight and verification. If the current e
 
 - The server owns the prompt, tool inputs, scenario identifiers, connector identifiers, and allowed ranges.
 - Credentials remain server-side in deployment environment variables. They never enter browser bundles, logs, model context, or fixtures.
-- The Turso token is scoped to the application database and least privilege available. Token scopes and expiry follow [Turso authentication guidance](https://docs.turso.tech/sdk/authorization).
+- The Neon connection uses a dedicated least-privilege application role rather than the database-owner role. Preview and production credentials remain separate. See Neon's [roles and permissions guidance](https://neon.com/docs/manage/roles).
+- AI Gateway uses deployment OpenID Connect (OIDC) or a dedicated project key with an explicit budget. Application-level request, token, tool-step, duration, and cost ceilings still apply because a gateway budget is not a per-session policy.
 - Each browser receives a high-entropy opaque session cookie with `HttpOnly`, `Secure`, and `SameSite=Lax` attributes.
 - Store a digest of the session token, not the raw token. Rotate the browser token when a new session is created.
 - Mutation routes validate origin and use the session cookie plus an anti-cross-site request-forgery token where framework protections are insufficient.
 - Live sessions receive the isolation strategy selected by the measured Sheet spike: an on-demand copy, a leased pre-created copy, or isolated server-owned ranges. Replay creates no external Sheet. The selected strategy must prove cross-session isolation, quota headroom, and cleanup.
-- Sessions and their external sandbox resources expire after 24 hours. A scheduled cleanup job releases or removes the selected isolation resource and marks the session expired; audit summaries may retain only non-personal aggregate data.
+- Sessions and their external sandbox resources expire after 24 hours. A scheduled cleanup workflow releases or removes the selected isolation resource and marks the session expired; audit summaries may retain only non-personal aggregate data.
 - Any IP-derived rate-limit key is HMAC-hashed with a rotating server secret. Raw IP addresses are not persisted.
 - Apply per-session, per-IP, global request, token, tool-step, output-size, timeout, and cost ceilings through configuration.
 - A live-generation kill switch disables the model path without disabling replay.
@@ -690,6 +686,8 @@ Run evidence explains how the proposal was formed:
 - validation and fallback outcome;
 - bounded, redacted diagnostic data.
 
+Store the AI Gateway request identifier and actual provider/model result when available. A configured fallback must not make the executed model invisible.
+
 When evidence originates in an external runtime, also store its non-secret run, case, revision, human-request, message, and tool-call identifiers. Duvo's run transcript and case timeline are valuable upstream provenance, while Safepoint's own record remains responsible for effect-level expected, observed, applied, verified, and compensated values. Duvo documents the scope and limitations of its platform record in [Make Every Run Auditable](https://docs.duvo.ai/best-practices/auditable-runs).
 
 ### Effect ledger
@@ -705,6 +703,10 @@ The effects ledger explains what the application attempted:
 - actor type and timestamps.
 
 These records remain separate because model evidence and external effects answer different audit questions.
+
+Workflow run and step identifiers correlate Vercel's operational history with both records. The workflow dashboard helps diagnose orchestration, retries, and suspensions, but it is not the user-facing audit source and does not replace bounded records in Neon.
+
+Workflow plan limits, event allowances, and operational-history retention may change. Verify them against the deployed Vercel plan before release; do not encode an assumed one-day or seven-day retention period into product behaviour. Safepoint's own retention and audit requirements are enforced in Neon independently of the Workflow dashboard.
 
 Logs use correlation IDs for session, run, batch, effect, and attempt. Never log cookies, credentials, full provider payloads, or raw network identifiers.
 
@@ -722,7 +724,7 @@ Logs use correlation IDs for session, run, batch, effect, and attempt. Never log
 | Sheets preflight mismatch | Mark affected effects conflicted and leave external data unchanged. |
 | Transient connector error | Retry within the configured budget, then require intervention. |
 | Permanent connector error | Stop the dependent effect chain and explain the manual action. |
-| Worker lease expires with an effect in `applying` | Re-read the target before any retry; classify it as applied, not applied, or conflicted, then persist the recovery decision. |
+| Workflow step is interrupted with an effect in `applying` | On retry, re-read the target before any write; classify it as applied, not applied, or conflicted, then persist the recovery decision. |
 | Progress connection fails | Continue server execution and refresh the persisted projection through baseline polling; reconnect optional SSE when available. |
 | Compensation conflict | Preserve the newer external value and require intervention. |
 | Expired session | Reject further operations and invite the visitor to start a new scenario. |
@@ -760,13 +762,14 @@ The designated replay is a reviewed, hand-versioned plan and evidence fixture. I
 
 ## Architecture boundaries
 
-- Turso transactions make internal ledger updates atomic. They do not make external effects atomic.
+- A short Postgres transaction makes the internal ledger updates inside it atomic. It does not make external effects atomic.
+- Vercel Workflows makes orchestration durable. It does not make connector side effects exactly once or replace target-specific preflight, verification, idempotency, and compensation.
 - Google Sheets request atomicity applies only to one request against one spreadsheet.
 - Compensation may fail and must never overwrite unrecognised later work.
 - Replay demonstrates the product interaction, not model reliability.
 - The public sandbox demonstrates controls under a fixed scenario, not safe arbitrary agent execution.
 - Duvo already provides generic human requests, pre-flight patterns, run evidence, retries, and queues. Safepoint's architectural contribution is the process-specific typed review, independent policy, complete candidate accounting, and external-effects lifecycle.
-- The common review shell is reusable only for registered process definitions and effect renderers.
+- The common review shell is reusable only for reviewed process modules and effect renderers.
 - Connectors are reusable service integrations, but their operation modules remain explicit and allow-listed.
 - A shared effect lifecycle does not make field updates, commands, deletions, messages, and files semantically equivalent.
 - A future external runtime may propose and record work, but Safepoint remains the only production-effect writer for work committed through Safepoint.

@@ -52,6 +52,6 @@ The detailed specification lives in [`docs/`](docs/README.md):
 
 ## Next step
 
-Build the smallest complete path first: review a proposal, expose a policy disagreement, approve safe changes, apply them to Google Sheets, verify the result, demonstrate one conflict, and record the outcome.
+Start with the deliberately small [Stage 0 foundation brief](docs/STAGE-0-BRIEF.md). It creates a clean, testable application shell without prematurely adding the database, model, workflows, or connectors.
 
-The storefront, public-sandbox hardening, and case study follow once that core path works. The ordered implementation checklist is in [`TODO.md`](TODO.md).
+Then build the smallest complete path in acceptance-gated slices: validated replay, local review, deterministic policy, a bounded live-agent check, persistence, durable fake execution, Google Sheets, and finally the storefront and public-release hardening. The ordered checklist is in [`TODO.md`](TODO.md).
