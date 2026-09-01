@@ -7,6 +7,7 @@ dist/
 build/
 .next/
 coverage/
+*.tsbuildinfo
 
 # Secrets. The Google service account key and the model API keys live here.
 .env
