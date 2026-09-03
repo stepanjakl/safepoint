@@ -1,0 +1,210 @@
+{
+  "schemaVersion": 1,
+  "scenarioId": "aldertons-promotion-release-v1",
+  "fixtureVersion": "1.0.0",
+  "evidenceId": "ev-brief",
+  "sourceLabel": "Approved Fresh Food Weekend promotion brief",
+  "observedAt": "2026-09-03T07:15:00Z",
+  "campaign": {
+    "id": "fresh-food-weekend-2026-09",
+    "name": "Alderton's Fresh Food Weekend",
+    "timezone": "Europe/London",
+    "reviewAt": "2026-09-03T07:45:00Z",
+    "topUpCutoffAt": "2026-09-03T11:00:00Z",
+    "labelDeadlineAt": "2026-09-04T05:00:00Z",
+    "startsAt": "2026-09-04T23:00:00Z",
+    "endsAt": "2026-09-06T22:59:59Z",
+    "objective": "Make fresh weekend meals more affordable while protecting availability and the minimum funded margin."
+  },
+  "candidates": [
+    {
+      "sku": "ALD-0001",
+      "intendedPromotionalSellingPricePence": 250,
+      "expectedUpliftPercent": 56,
+      "status": "approved",
+      "statusReason": null
+    },
+    {
+      "sku": "ALD-0002",
+      "intendedPromotionalSellingPricePence": 200,
+      "expectedUpliftPercent": 50,
+      "status": "approved",
+      "statusReason": null
+    },
+    {
+      "sku": "ALD-0003",
+      "intendedPromotionalSellingPricePence": 180,
+      "expectedUpliftPercent": 50,
+      "status": "approved",
+      "statusReason": null
+    },
+    {
+      "sku": "ALD-0004",
+      "intendedPromotionalSellingPricePence": 200,
+      "expectedUpliftPercent": 47,
+      "status": "approved",
+      "statusReason": null
+    },
+    {
+      "sku": "ALD-0005",
+      "intendedPromotionalSellingPricePence": 200,
+      "expectedUpliftPercent": 38,
+      "status": "approved",
+      "statusReason": null
+    },
+    {
+      "sku": "ALD-0006",
+      "intendedPromotionalSellingPricePence": 175,
+      "expectedUpliftPercent": 46,
+      "status": "approved",
+      "statusReason": null
+    },
+    {
+      "sku": "ALD-0007",
+      "intendedPromotionalSellingPricePence": 150,
+      "expectedUpliftPercent": 52,
+      "status": "approved",
+      "statusReason": null
+    },
+    {
+      "sku": "ALD-0008",
+      "intendedPromotionalSellingPricePence": 240,
+      "expectedUpliftPercent": 54,
+      "status": "approved",
+      "statusReason": null
+    },
+    {
+      "sku": "ALD-0009",
+      "intendedPromotionalSellingPricePence": 140,
+      "expectedUpliftPercent": 56,
+      "status": "approved",
+      "statusReason": null
+    },
+    {
+      "sku": "ALD-0010",
+      "intendedPromotionalSellingPricePence": 130,
+      "expectedUpliftPercent": 52,
+      "status": "approved",
+      "statusReason": null
+    },
+    {
+      "sku": "ALD-0011",
+      "intendedPromotionalSellingPricePence": 200,
+      "expectedUpliftPercent": 38,
+      "status": "approved",
+      "statusReason": null
+    },
+    {
+      "sku": "ALD-0012",
+      "intendedPromotionalSellingPricePence": 150,
+      "expectedUpliftPercent": 52,
+      "status": "approved",
+      "statusReason": null
+    },
+    {
+      "sku": "ALD-0013",
+      "intendedPromotionalSellingPricePence": 200,
+      "expectedUpliftPercent": 52,
+      "status": "approved",
+      "statusReason": null
+    },
+    {
+      "sku": "ALD-0014",
+      "intendedPromotionalSellingPricePence": 125,
+      "expectedUpliftPercent": 43,
+      "status": "approved",
+      "statusReason": null
+    },
+    {
+      "sku": "ALD-0015",
+      "intendedPromotionalSellingPricePence": 175,
+      "expectedUpliftPercent": 50,
+      "status": "approved",
+      "statusReason": null
+    },
+    {
+      "sku": "ALD-0016",
+      "intendedPromotionalSellingPricePence": 250,
+      "expectedUpliftPercent": 38,
+      "status": "approved",
+      "statusReason": null
+    },
+    {
+      "sku": "ALD-0017",
+      "intendedPromotionalSellingPricePence": 120,
+      "expectedUpliftPercent": 33,
+      "status": "approved",
+      "statusReason": null
+    },
+    {
+      "sku": "ALD-0018",
+      "intendedPromotionalSellingPricePence": 160,
+      "expectedUpliftPercent": 48,
+      "status": "approved",
+      "statusReason": null
+    },
+    {
+      "sku": "ALD-0019",
+      "intendedPromotionalSellingPricePence": 275,
+      "expectedUpliftPercent": 42,
+      "status": "approved",
+      "statusReason": null
+    },
+    {
+      "sku": "ALD-0020",
+      "intendedPromotionalSellingPricePence": 175,
+      "expectedUpliftPercent": 39,
+      "status": "approved",
+      "statusReason": null
+    },
+    {
+      "sku": "ALD-0021",
+      "intendedPromotionalSellingPricePence": 175,
+      "expectedUpliftPercent": 50,
+      "status": "approved",
+      "statusReason": null
+    },
+    {
+      "sku": "ALD-0022",
+      "intendedPromotionalSellingPricePence": 120,
+      "expectedUpliftPercent": 56,
+      "status": "approved",
+      "statusReason": null
+    },
+    {
+      "sku": "ALD-0023",
+      "intendedPromotionalSellingPricePence": 225,
+      "expectedUpliftPercent": 46,
+      "status": "approved",
+      "statusReason": null
+    },
+    {
+      "sku": "ALD-0024",
+      "intendedPromotionalSellingPricePence": 450,
+      "expectedUpliftPercent": 46,
+      "status": "approved",
+      "statusReason": null
+    },
+    {
+      "sku": "ALD-0025",
+      "intendedPromotionalSellingPricePence": 500,
+      "expectedUpliftPercent": 43,
+      "status": "approved",
+      "statusReason": null
+    },
+    {
+      "sku": "ALD-0026",
+      "intendedPromotionalSellingPricePence": 200,
+      "expectedUpliftPercent": 59,
+      "status": "approved",
+      "statusReason": null
+    },
+    {
+      "sku": "ALD-0027",
+      "intendedPromotionalSellingPricePence": 350,
+      "expectedUpliftPercent": 48,
+      "status": "withdrawn",
+      "statusReason": "Withdrawn in brief amendment 3 after a packaging change delayed final artwork."
+    }
+  ]
+}

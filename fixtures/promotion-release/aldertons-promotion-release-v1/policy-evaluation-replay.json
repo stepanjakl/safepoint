@@ -1,0 +1,1279 @@
+{
+  "schemaVersion": 1,
+  "scenarioId": "aldertons-promotion-release-v1",
+  "fixtureVersion": "1.0.0",
+  "evaluationMode": "replay",
+  "policyVersion": "promotion-release-policy-v1",
+  "evaluatedAt": "2026-09-03T07:43:00Z",
+  "candidates": [
+    {
+      "sku": "ALD-0001",
+      "eligibility": "blocked",
+      "gateObligations": [
+        {
+          "gate": "forecast",
+          "obligation": "required",
+          "reason": "The forecast gate is required for this proposed release."
+        },
+        {
+          "gate": "inventory",
+          "obligation": "required",
+          "reason": "The inventory gate is required for this proposed release."
+        },
+        {
+          "gate": "supplier",
+          "obligation": "required",
+          "reason": "The supplier gate is required for this proposed release."
+        },
+        {
+          "gate": "financial",
+          "obligation": "required",
+          "reason": "The financial gate is required for this proposed release."
+        },
+        {
+          "gate": "logistics",
+          "obligation": "required",
+          "reason": "The logistics gate is required for this proposed release."
+        },
+        {
+          "gate": "business_rules",
+          "obligation": "required",
+          "reason": "The business rules gate is required for this proposed release."
+        },
+        {
+          "gate": "external_signals",
+          "obligation": "advisory",
+          "reason": "External signals inform judgement but do not override required source evidence."
+        }
+      ],
+      "findings": [
+        {
+          "id": "finding-late-supply",
+          "code": "late_supply",
+          "severity": "blocking",
+          "approvalConsequence": "block",
+          "explanation": "The supplier lead time extends beyond the promotion launch.",
+          "affectedFields": ["leadTimeHours", "startsAt"],
+          "evidenceRefs": ["ev-supplier-0001"]
+        },
+        {
+          "id": "finding-unconfirmed-allocation",
+          "code": "unconfirmed_allocation",
+          "severity": "blocking",
+          "approvalConsequence": "block",
+          "explanation": "The narrative mentions possible stock, but confirmed allocation is zero.",
+          "affectedFields": ["confirmedAdditionalAllocationUnits"],
+          "evidenceRefs": ["ev-supplier-0001", "ev-note-strawberry-allocation"]
+        }
+      ]
+    },
+    {
+      "sku": "ALD-0002",
+      "eligibility": "eligible",
+      "gateObligations": [
+        {
+          "gate": "forecast",
+          "obligation": "required",
+          "reason": "The forecast gate is required for this proposed release."
+        },
+        {
+          "gate": "inventory",
+          "obligation": "required",
+          "reason": "The inventory gate is required for this proposed release."
+        },
+        {
+          "gate": "supplier",
+          "obligation": "required",
+          "reason": "The supplier gate is required for this proposed release."
+        },
+        {
+          "gate": "financial",
+          "obligation": "required",
+          "reason": "The financial gate is required for this proposed release."
+        },
+        {
+          "gate": "logistics",
+          "obligation": "required",
+          "reason": "The logistics gate is required for this proposed release."
+        },
+        {
+          "gate": "business_rules",
+          "obligation": "required",
+          "reason": "The business rules gate is required for this proposed release."
+        },
+        {
+          "gate": "external_signals",
+          "obligation": "advisory",
+          "reason": "External signals inform judgement but do not override required source evidence."
+        }
+      ],
+      "findings": []
+    },
+    {
+      "sku": "ALD-0003",
+      "eligibility": "eligible",
+      "gateObligations": [
+        {
+          "gate": "forecast",
+          "obligation": "required",
+          "reason": "The forecast gate is required for this proposed release."
+        },
+        {
+          "gate": "inventory",
+          "obligation": "required",
+          "reason": "The inventory gate is required for this proposed release."
+        },
+        {
+          "gate": "supplier",
+          "obligation": "required",
+          "reason": "The supplier gate is required for this proposed release."
+        },
+        {
+          "gate": "financial",
+          "obligation": "required",
+          "reason": "The financial gate is required for this proposed release."
+        },
+        {
+          "gate": "logistics",
+          "obligation": "required",
+          "reason": "The logistics gate is required for this proposed release."
+        },
+        {
+          "gate": "business_rules",
+          "obligation": "required",
+          "reason": "The business rules gate is required for this proposed release."
+        },
+        {
+          "gate": "external_signals",
+          "obligation": "advisory",
+          "reason": "External signals inform judgement but do not override required source evidence."
+        }
+      ],
+      "findings": [
+        {
+          "id": "finding-uplift-once",
+          "code": "uplift_already_included",
+          "severity": "warning",
+          "approvalConsequence": "individual_approval",
+          "explanation": "The replay uses the supplied 450-unit forecast without applying the 50% uplift again.",
+          "affectedFields": [
+            "promotionAdjustedForecastUnits",
+            "recommendedTopUpQuantityUnits"
+          ],
+          "evidenceRefs": ["ev-demand-0003", "ev-note-blueberry-uplift"]
+        }
+      ]
+    },
+    {
+      "sku": "ALD-0004",
+      "eligibility": "eligible",
+      "gateObligations": [
+        {
+          "gate": "forecast",
+          "obligation": "required",
+          "reason": "The forecast gate is required for this proposed release."
+        },
+        {
+          "gate": "inventory",
+          "obligation": "required",
+          "reason": "The inventory gate is required for this proposed release."
+        },
+        {
+          "gate": "supplier",
+          "obligation": "not_applicable",
+          "reason": "No supplier top-up is proposed for this line."
+        },
+        {
+          "gate": "financial",
+          "obligation": "required",
+          "reason": "The financial gate is required for this proposed release."
+        },
+        {
+          "gate": "logistics",
+          "obligation": "not_applicable",
+          "reason": "No supplier top-up is proposed for this line."
+        },
+        {
+          "gate": "business_rules",
+          "obligation": "required",
+          "reason": "The business rules gate is required for this proposed release."
+        },
+        {
+          "gate": "external_signals",
+          "obligation": "advisory",
+          "reason": "External signals inform judgement but do not override required source evidence."
+        }
+      ],
+      "findings": [
+        {
+          "id": "finding-existing-supply",
+          "code": "existing_supply_covers_demand",
+          "severity": "warning",
+          "approvalConsequence": "individual_approval",
+          "explanation": "Confirmed stock and the earlier order cover forecast demand and safety stock.",
+          "affectedFields": [
+            "earlierPromotionOrderUnits",
+            "recommendedTopUpQuantityUnits"
+          ],
+          "evidenceRefs": ["ev-supply-0004", "ev-note-grape-inbound"]
+        }
+      ]
+    },
+    {
+      "sku": "ALD-0005",
+      "eligibility": "eligible",
+      "gateObligations": [
+        {
+          "gate": "forecast",
+          "obligation": "required",
+          "reason": "The forecast gate is required for this proposed release."
+        },
+        {
+          "gate": "inventory",
+          "obligation": "required",
+          "reason": "The inventory gate is required for this proposed release."
+        },
+        {
+          "gate": "supplier",
+          "obligation": "required",
+          "reason": "The supplier gate is required for this proposed release."
+        },
+        {
+          "gate": "financial",
+          "obligation": "required",
+          "reason": "The financial gate is required for this proposed release."
+        },
+        {
+          "gate": "logistics",
+          "obligation": "required",
+          "reason": "The logistics gate is required for this proposed release."
+        },
+        {
+          "gate": "business_rules",
+          "obligation": "required",
+          "reason": "The business rules gate is required for this proposed release."
+        },
+        {
+          "gate": "external_signals",
+          "obligation": "advisory",
+          "reason": "External signals inform judgement but do not override required source evidence."
+        }
+      ],
+      "findings": []
+    },
+    {
+      "sku": "ALD-0006",
+      "eligibility": "eligible",
+      "gateObligations": [
+        {
+          "gate": "forecast",
+          "obligation": "required",
+          "reason": "The forecast gate is required for this proposed release."
+        },
+        {
+          "gate": "inventory",
+          "obligation": "required",
+          "reason": "The inventory gate is required for this proposed release."
+        },
+        {
+          "gate": "supplier",
+          "obligation": "required",
+          "reason": "The supplier gate is required for this proposed release."
+        },
+        {
+          "gate": "financial",
+          "obligation": "required",
+          "reason": "The financial gate is required for this proposed release."
+        },
+        {
+          "gate": "logistics",
+          "obligation": "required",
+          "reason": "The logistics gate is required for this proposed release."
+        },
+        {
+          "gate": "business_rules",
+          "obligation": "required",
+          "reason": "The business rules gate is required for this proposed release."
+        },
+        {
+          "gate": "external_signals",
+          "obligation": "advisory",
+          "reason": "External signals inform judgement but do not override required source evidence."
+        }
+      ],
+      "findings": []
+    },
+    {
+      "sku": "ALD-0007",
+      "eligibility": "eligible",
+      "gateObligations": [
+        {
+          "gate": "forecast",
+          "obligation": "required",
+          "reason": "The forecast gate is required for this proposed release."
+        },
+        {
+          "gate": "inventory",
+          "obligation": "required",
+          "reason": "The inventory gate is required for this proposed release."
+        },
+        {
+          "gate": "supplier",
+          "obligation": "required",
+          "reason": "The supplier gate is required for this proposed release."
+        },
+        {
+          "gate": "financial",
+          "obligation": "required",
+          "reason": "The financial gate is required for this proposed release."
+        },
+        {
+          "gate": "logistics",
+          "obligation": "required",
+          "reason": "The logistics gate is required for this proposed release."
+        },
+        {
+          "gate": "business_rules",
+          "obligation": "required",
+          "reason": "The business rules gate is required for this proposed release."
+        },
+        {
+          "gate": "external_signals",
+          "obligation": "advisory",
+          "reason": "External signals inform judgement but do not override required source evidence."
+        }
+      ],
+      "findings": []
+    },
+    {
+      "sku": "ALD-0008",
+      "eligibility": "eligible",
+      "gateObligations": [
+        {
+          "gate": "forecast",
+          "obligation": "required",
+          "reason": "The forecast gate is required for this proposed release."
+        },
+        {
+          "gate": "inventory",
+          "obligation": "required",
+          "reason": "The inventory gate is required for this proposed release."
+        },
+        {
+          "gate": "supplier",
+          "obligation": "required",
+          "reason": "The supplier gate is required for this proposed release."
+        },
+        {
+          "gate": "financial",
+          "obligation": "required",
+          "reason": "The financial gate is required for this proposed release."
+        },
+        {
+          "gate": "logistics",
+          "obligation": "required",
+          "reason": "The logistics gate is required for this proposed release."
+        },
+        {
+          "gate": "business_rules",
+          "obligation": "required",
+          "reason": "The business rules gate is required for this proposed release."
+        },
+        {
+          "gate": "external_signals",
+          "obligation": "advisory",
+          "reason": "External signals inform judgement but do not override required source evidence."
+        }
+      ],
+      "findings": [
+        {
+          "id": "finding-order-multiple",
+          "code": "invalid_order_multiple_corrected",
+          "severity": "warning",
+          "approvalConsequence": "individual_approval",
+          "explanation": "The proposed 480 units satisfy the 240-unit minimum and 120-unit order multiple.",
+          "affectedFields": ["recommendedTopUpQuantityUnits"],
+          "evidenceRefs": [
+            "ev-supply-0008",
+            "ev-supplier-0008",
+            "ev-note-avocado-multiple"
+          ]
+        }
+      ]
+    },
+    {
+      "sku": "ALD-0009",
+      "eligibility": "blocked",
+      "gateObligations": [
+        {
+          "gate": "forecast",
+          "obligation": "required",
+          "reason": "The forecast gate is required for this proposed release."
+        },
+        {
+          "gate": "inventory",
+          "obligation": "required",
+          "reason": "The inventory gate is required for this proposed release."
+        },
+        {
+          "gate": "supplier",
+          "obligation": "not_applicable",
+          "reason": "No supplier top-up is proposed for this line."
+        },
+        {
+          "gate": "financial",
+          "obligation": "required",
+          "reason": "The financial gate is required for this proposed release."
+        },
+        {
+          "gate": "logistics",
+          "obligation": "not_applicable",
+          "reason": "No supplier top-up is proposed for this line."
+        },
+        {
+          "gate": "business_rules",
+          "obligation": "required",
+          "reason": "The business rules gate is required for this proposed release."
+        },
+        {
+          "gate": "external_signals",
+          "obligation": "advisory",
+          "reason": "External signals inform judgement but do not override required source evidence."
+        }
+      ],
+      "findings": [
+        {
+          "id": "finding-supply-unavailable",
+          "code": "required_evidence_unavailable",
+          "severity": "blocking",
+          "approvalConsequence": "block",
+          "explanation": "Current stock and inbound supply cannot be verified, so release is blocked.",
+          "affectedFields": ["supplyPosition"],
+          "evidenceRefs": ["ev-supply-0009", "ev-note-spinach-feed"]
+        }
+      ]
+    },
+    {
+      "sku": "ALD-0010",
+      "eligibility": "eligible",
+      "gateObligations": [
+        {
+          "gate": "forecast",
+          "obligation": "required",
+          "reason": "The forecast gate is required for this proposed release."
+        },
+        {
+          "gate": "inventory",
+          "obligation": "required",
+          "reason": "The inventory gate is required for this proposed release."
+        },
+        {
+          "gate": "supplier",
+          "obligation": "required",
+          "reason": "The supplier gate is required for this proposed release."
+        },
+        {
+          "gate": "financial",
+          "obligation": "required",
+          "reason": "The financial gate is required for this proposed release."
+        },
+        {
+          "gate": "logistics",
+          "obligation": "required",
+          "reason": "The logistics gate is required for this proposed release."
+        },
+        {
+          "gate": "business_rules",
+          "obligation": "required",
+          "reason": "The business rules gate is required for this proposed release."
+        },
+        {
+          "gate": "external_signals",
+          "obligation": "advisory",
+          "reason": "External signals inform judgement but do not override required source evidence."
+        }
+      ],
+      "findings": []
+    },
+    {
+      "sku": "ALD-0011",
+      "eligibility": "eligible",
+      "gateObligations": [
+        {
+          "gate": "forecast",
+          "obligation": "required",
+          "reason": "The forecast gate is required for this proposed release."
+        },
+        {
+          "gate": "inventory",
+          "obligation": "required",
+          "reason": "The inventory gate is required for this proposed release."
+        },
+        {
+          "gate": "supplier",
+          "obligation": "required",
+          "reason": "The supplier gate is required for this proposed release."
+        },
+        {
+          "gate": "financial",
+          "obligation": "required",
+          "reason": "The financial gate is required for this proposed release."
+        },
+        {
+          "gate": "logistics",
+          "obligation": "required",
+          "reason": "The logistics gate is required for this proposed release."
+        },
+        {
+          "gate": "business_rules",
+          "obligation": "required",
+          "reason": "The business rules gate is required for this proposed release."
+        },
+        {
+          "gate": "external_signals",
+          "obligation": "advisory",
+          "reason": "External signals inform judgement but do not override required source evidence."
+        }
+      ],
+      "findings": []
+    },
+    {
+      "sku": "ALD-0012",
+      "eligibility": "eligible",
+      "gateObligations": [
+        {
+          "gate": "forecast",
+          "obligation": "required",
+          "reason": "The forecast gate is required for this proposed release."
+        },
+        {
+          "gate": "inventory",
+          "obligation": "required",
+          "reason": "The inventory gate is required for this proposed release."
+        },
+        {
+          "gate": "supplier",
+          "obligation": "required",
+          "reason": "The supplier gate is required for this proposed release."
+        },
+        {
+          "gate": "financial",
+          "obligation": "required",
+          "reason": "The financial gate is required for this proposed release."
+        },
+        {
+          "gate": "logistics",
+          "obligation": "required",
+          "reason": "The logistics gate is required for this proposed release."
+        },
+        {
+          "gate": "business_rules",
+          "obligation": "required",
+          "reason": "The business rules gate is required for this proposed release."
+        },
+        {
+          "gate": "external_signals",
+          "obligation": "advisory",
+          "reason": "External signals inform judgement but do not override required source evidence."
+        }
+      ],
+      "findings": []
+    },
+    {
+      "sku": "ALD-0013",
+      "eligibility": "eligible",
+      "gateObligations": [
+        {
+          "gate": "forecast",
+          "obligation": "required",
+          "reason": "The forecast gate is required for this proposed release."
+        },
+        {
+          "gate": "inventory",
+          "obligation": "required",
+          "reason": "The inventory gate is required for this proposed release."
+        },
+        {
+          "gate": "supplier",
+          "obligation": "required",
+          "reason": "The supplier gate is required for this proposed release."
+        },
+        {
+          "gate": "financial",
+          "obligation": "required",
+          "reason": "The financial gate is required for this proposed release."
+        },
+        {
+          "gate": "logistics",
+          "obligation": "required",
+          "reason": "The logistics gate is required for this proposed release."
+        },
+        {
+          "gate": "business_rules",
+          "obligation": "required",
+          "reason": "The business rules gate is required for this proposed release."
+        },
+        {
+          "gate": "external_signals",
+          "obligation": "advisory",
+          "reason": "External signals inform judgement but do not override required source evidence."
+        }
+      ],
+      "findings": [
+        {
+          "id": "finding-channel-dates",
+          "code": "channel_dates_corrected",
+          "severity": "warning",
+          "approvalConsequence": "individual_approval",
+          "explanation": "The replay corrects storefront dates that belonged to the previous weekend.",
+          "affectedFields": ["startsAt", "endsAt"],
+          "evidenceRefs": ["ev-channel-0013", "ev-note-sourdough-dates"]
+        }
+      ]
+    },
+    {
+      "sku": "ALD-0014",
+      "eligibility": "eligible",
+      "gateObligations": [
+        {
+          "gate": "forecast",
+          "obligation": "required",
+          "reason": "The forecast gate is required for this proposed release."
+        },
+        {
+          "gate": "inventory",
+          "obligation": "required",
+          "reason": "The inventory gate is required for this proposed release."
+        },
+        {
+          "gate": "supplier",
+          "obligation": "required",
+          "reason": "The supplier gate is required for this proposed release."
+        },
+        {
+          "gate": "financial",
+          "obligation": "required",
+          "reason": "The financial gate is required for this proposed release."
+        },
+        {
+          "gate": "logistics",
+          "obligation": "required",
+          "reason": "The logistics gate is required for this proposed release."
+        },
+        {
+          "gate": "business_rules",
+          "obligation": "required",
+          "reason": "The business rules gate is required for this proposed release."
+        },
+        {
+          "gate": "external_signals",
+          "obligation": "advisory",
+          "reason": "External signals inform judgement but do not override required source evidence."
+        }
+      ],
+      "findings": []
+    },
+    {
+      "sku": "ALD-0015",
+      "eligibility": "eligible",
+      "gateObligations": [
+        {
+          "gate": "forecast",
+          "obligation": "required",
+          "reason": "The forecast gate is required for this proposed release."
+        },
+        {
+          "gate": "inventory",
+          "obligation": "required",
+          "reason": "The inventory gate is required for this proposed release."
+        },
+        {
+          "gate": "supplier",
+          "obligation": "required",
+          "reason": "The supplier gate is required for this proposed release."
+        },
+        {
+          "gate": "financial",
+          "obligation": "required",
+          "reason": "The financial gate is required for this proposed release."
+        },
+        {
+          "gate": "logistics",
+          "obligation": "required",
+          "reason": "The logistics gate is required for this proposed release."
+        },
+        {
+          "gate": "business_rules",
+          "obligation": "required",
+          "reason": "The business rules gate is required for this proposed release."
+        },
+        {
+          "gate": "external_signals",
+          "obligation": "advisory",
+          "reason": "External signals inform judgement but do not override required source evidence."
+        }
+      ],
+      "findings": []
+    },
+    {
+      "sku": "ALD-0016",
+      "eligibility": "eligible",
+      "gateObligations": [
+        {
+          "gate": "forecast",
+          "obligation": "required",
+          "reason": "The forecast gate is required for this proposed release."
+        },
+        {
+          "gate": "inventory",
+          "obligation": "required",
+          "reason": "The inventory gate is required for this proposed release."
+        },
+        {
+          "gate": "supplier",
+          "obligation": "required",
+          "reason": "The supplier gate is required for this proposed release."
+        },
+        {
+          "gate": "financial",
+          "obligation": "required",
+          "reason": "The financial gate is required for this proposed release."
+        },
+        {
+          "gate": "logistics",
+          "obligation": "required",
+          "reason": "The logistics gate is required for this proposed release."
+        },
+        {
+          "gate": "business_rules",
+          "obligation": "required",
+          "reason": "The business rules gate is required for this proposed release."
+        },
+        {
+          "gate": "external_signals",
+          "obligation": "advisory",
+          "reason": "External signals inform judgement but do not override required source evidence."
+        }
+      ],
+      "findings": []
+    },
+    {
+      "sku": "ALD-0017",
+      "eligibility": "eligible",
+      "gateObligations": [
+        {
+          "gate": "forecast",
+          "obligation": "required",
+          "reason": "The forecast gate is required for this proposed release."
+        },
+        {
+          "gate": "inventory",
+          "obligation": "required",
+          "reason": "The inventory gate is required for this proposed release."
+        },
+        {
+          "gate": "supplier",
+          "obligation": "required",
+          "reason": "The supplier gate is required for this proposed release."
+        },
+        {
+          "gate": "financial",
+          "obligation": "required",
+          "reason": "The financial gate is required for this proposed release."
+        },
+        {
+          "gate": "logistics",
+          "obligation": "required",
+          "reason": "The logistics gate is required for this proposed release."
+        },
+        {
+          "gate": "business_rules",
+          "obligation": "required",
+          "reason": "The business rules gate is required for this proposed release."
+        },
+        {
+          "gate": "external_signals",
+          "obligation": "advisory",
+          "reason": "External signals inform judgement but do not override required source evidence."
+        }
+      ],
+      "findings": []
+    },
+    {
+      "sku": "ALD-0018",
+      "eligibility": "eligible",
+      "gateObligations": [
+        {
+          "gate": "forecast",
+          "obligation": "required",
+          "reason": "The forecast gate is required for this proposed release."
+        },
+        {
+          "gate": "inventory",
+          "obligation": "required",
+          "reason": "The inventory gate is required for this proposed release."
+        },
+        {
+          "gate": "supplier",
+          "obligation": "required",
+          "reason": "The supplier gate is required for this proposed release."
+        },
+        {
+          "gate": "financial",
+          "obligation": "required",
+          "reason": "The financial gate is required for this proposed release."
+        },
+        {
+          "gate": "logistics",
+          "obligation": "required",
+          "reason": "The logistics gate is required for this proposed release."
+        },
+        {
+          "gate": "business_rules",
+          "obligation": "required",
+          "reason": "The business rules gate is required for this proposed release."
+        },
+        {
+          "gate": "external_signals",
+          "obligation": "advisory",
+          "reason": "External signals inform judgement but do not override required source evidence."
+        }
+      ],
+      "findings": []
+    },
+    {
+      "sku": "ALD-0019",
+      "eligibility": "eligible",
+      "gateObligations": [
+        {
+          "gate": "forecast",
+          "obligation": "required",
+          "reason": "The forecast gate is required for this proposed release."
+        },
+        {
+          "gate": "inventory",
+          "obligation": "required",
+          "reason": "The inventory gate is required for this proposed release."
+        },
+        {
+          "gate": "supplier",
+          "obligation": "required",
+          "reason": "The supplier gate is required for this proposed release."
+        },
+        {
+          "gate": "financial",
+          "obligation": "required",
+          "reason": "The financial gate is required for this proposed release."
+        },
+        {
+          "gate": "logistics",
+          "obligation": "required",
+          "reason": "The logistics gate is required for this proposed release."
+        },
+        {
+          "gate": "business_rules",
+          "obligation": "required",
+          "reason": "The business rules gate is required for this proposed release."
+        },
+        {
+          "gate": "external_signals",
+          "obligation": "advisory",
+          "reason": "External signals inform judgement but do not override required source evidence."
+        }
+      ],
+      "findings": []
+    },
+    {
+      "sku": "ALD-0020",
+      "eligibility": "eligible",
+      "gateObligations": [
+        {
+          "gate": "forecast",
+          "obligation": "required",
+          "reason": "The forecast gate is required for this proposed release."
+        },
+        {
+          "gate": "inventory",
+          "obligation": "required",
+          "reason": "The inventory gate is required for this proposed release."
+        },
+        {
+          "gate": "supplier",
+          "obligation": "required",
+          "reason": "The supplier gate is required for this proposed release."
+        },
+        {
+          "gate": "financial",
+          "obligation": "required",
+          "reason": "The financial gate is required for this proposed release."
+        },
+        {
+          "gate": "logistics",
+          "obligation": "required",
+          "reason": "The logistics gate is required for this proposed release."
+        },
+        {
+          "gate": "business_rules",
+          "obligation": "required",
+          "reason": "The business rules gate is required for this proposed release."
+        },
+        {
+          "gate": "external_signals",
+          "obligation": "advisory",
+          "reason": "External signals inform judgement but do not override required source evidence."
+        }
+      ],
+      "findings": []
+    },
+    {
+      "sku": "ALD-0021",
+      "eligibility": "eligible",
+      "gateObligations": [
+        {
+          "gate": "forecast",
+          "obligation": "required",
+          "reason": "The forecast gate is required for this proposed release."
+        },
+        {
+          "gate": "inventory",
+          "obligation": "required",
+          "reason": "The inventory gate is required for this proposed release."
+        },
+        {
+          "gate": "supplier",
+          "obligation": "required",
+          "reason": "The supplier gate is required for this proposed release."
+        },
+        {
+          "gate": "financial",
+          "obligation": "required",
+          "reason": "The financial gate is required for this proposed release."
+        },
+        {
+          "gate": "logistics",
+          "obligation": "required",
+          "reason": "The logistics gate is required for this proposed release."
+        },
+        {
+          "gate": "business_rules",
+          "obligation": "required",
+          "reason": "The business rules gate is required for this proposed release."
+        },
+        {
+          "gate": "external_signals",
+          "obligation": "advisory",
+          "reason": "External signals inform judgement but do not override required source evidence."
+        }
+      ],
+      "findings": []
+    },
+    {
+      "sku": "ALD-0022",
+      "eligibility": "eligible",
+      "gateObligations": [
+        {
+          "gate": "forecast",
+          "obligation": "required",
+          "reason": "The forecast gate is required for this proposed release."
+        },
+        {
+          "gate": "inventory",
+          "obligation": "required",
+          "reason": "The inventory gate is required for this proposed release."
+        },
+        {
+          "gate": "supplier",
+          "obligation": "required",
+          "reason": "The supplier gate is required for this proposed release."
+        },
+        {
+          "gate": "financial",
+          "obligation": "required",
+          "reason": "The financial gate is required for this proposed release."
+        },
+        {
+          "gate": "logistics",
+          "obligation": "required",
+          "reason": "The logistics gate is required for this proposed release."
+        },
+        {
+          "gate": "business_rules",
+          "obligation": "required",
+          "reason": "The business rules gate is required for this proposed release."
+        },
+        {
+          "gate": "external_signals",
+          "obligation": "advisory",
+          "reason": "External signals inform judgement but do not override required source evidence."
+        }
+      ],
+      "findings": []
+    },
+    {
+      "sku": "ALD-0023",
+      "eligibility": "eligible",
+      "gateObligations": [
+        {
+          "gate": "forecast",
+          "obligation": "required",
+          "reason": "The forecast gate is required for this proposed release."
+        },
+        {
+          "gate": "inventory",
+          "obligation": "required",
+          "reason": "The inventory gate is required for this proposed release."
+        },
+        {
+          "gate": "supplier",
+          "obligation": "required",
+          "reason": "The supplier gate is required for this proposed release."
+        },
+        {
+          "gate": "financial",
+          "obligation": "required",
+          "reason": "The financial gate is required for this proposed release."
+        },
+        {
+          "gate": "logistics",
+          "obligation": "required",
+          "reason": "The logistics gate is required for this proposed release."
+        },
+        {
+          "gate": "business_rules",
+          "obligation": "required",
+          "reason": "The business rules gate is required for this proposed release."
+        },
+        {
+          "gate": "external_signals",
+          "obligation": "advisory",
+          "reason": "External signals inform judgement but do not override required source evidence."
+        }
+      ],
+      "findings": [
+        {
+          "id": "finding-safe-alternative",
+          "code": "alternative_safe_plan",
+          "severity": "warning",
+          "approvalConsequence": "individual_approval",
+          "explanation": "The selected 240-unit plan is safe, but another policy-compliant option exists.",
+          "affectedFields": [
+            "promotionalSellingPricePence",
+            "recommendedTopUpQuantityUnits"
+          ],
+          "evidenceRefs": ["ev-note-mozzarella-options", "ev-supply-0023"]
+        }
+      ]
+    },
+    {
+      "sku": "ALD-0024",
+      "eligibility": "eligible",
+      "gateObligations": [
+        {
+          "gate": "forecast",
+          "obligation": "required",
+          "reason": "The forecast gate is required for this proposed release."
+        },
+        {
+          "gate": "inventory",
+          "obligation": "required",
+          "reason": "The inventory gate is required for this proposed release."
+        },
+        {
+          "gate": "supplier",
+          "obligation": "required",
+          "reason": "The supplier gate is required for this proposed release."
+        },
+        {
+          "gate": "financial",
+          "obligation": "required",
+          "reason": "The financial gate is required for this proposed release."
+        },
+        {
+          "gate": "logistics",
+          "obligation": "required",
+          "reason": "The logistics gate is required for this proposed release."
+        },
+        {
+          "gate": "business_rules",
+          "obligation": "required",
+          "reason": "The business rules gate is required for this proposed release."
+        },
+        {
+          "gate": "external_signals",
+          "obligation": "advisory",
+          "reason": "External signals inform judgement but do not override required source evidence."
+        }
+      ],
+      "findings": []
+    },
+    {
+      "sku": "ALD-0025",
+      "eligibility": "blocked",
+      "gateObligations": [
+        {
+          "gate": "forecast",
+          "obligation": "required",
+          "reason": "The forecast gate is required for this proposed release."
+        },
+        {
+          "gate": "inventory",
+          "obligation": "required",
+          "reason": "The inventory gate is required for this proposed release."
+        },
+        {
+          "gate": "supplier",
+          "obligation": "required",
+          "reason": "The supplier gate is required for this proposed release."
+        },
+        {
+          "gate": "financial",
+          "obligation": "required",
+          "reason": "The financial gate is required for this proposed release."
+        },
+        {
+          "gate": "logistics",
+          "obligation": "required",
+          "reason": "The logistics gate is required for this proposed release."
+        },
+        {
+          "gate": "business_rules",
+          "obligation": "required",
+          "reason": "The business rules gate is required for this proposed release."
+        },
+        {
+          "gate": "external_signals",
+          "obligation": "advisory",
+          "reason": "External signals inform judgement but do not override required source evidence."
+        }
+      ],
+      "findings": [
+        {
+          "id": "finding-margin-floor",
+          "code": "margin_below_floor",
+          "severity": "blocking",
+          "approvalConsequence": "block",
+          "explanation": "Without confirmed funding, £5.00 selling price against £4.54 cost produces 9.2% margin, below the 15% floor.",
+          "affectedFields": ["promotionalSellingPricePence", "costPricePence"],
+          "evidenceRefs": ["ev-catalogue-0025", "ev-supplier-0025", "ev-policy"]
+        },
+        {
+          "id": "finding-funding-status",
+          "code": "funding_unverified",
+          "severity": "blocking",
+          "approvalConsequence": "block",
+          "explanation": "The proposed supplier support has not been confirmed in writing.",
+          "affectedFields": ["fundingStatus"],
+          "evidenceRefs": ["ev-supplier-0025", "ev-note-salmon-funding"]
+        }
+      ]
+    },
+    {
+      "sku": "ALD-0026",
+      "eligibility": "eligible",
+      "gateObligations": [
+        {
+          "gate": "forecast",
+          "obligation": "required",
+          "reason": "The forecast gate is required for this proposed release."
+        },
+        {
+          "gate": "inventory",
+          "obligation": "required",
+          "reason": "The inventory gate is required for this proposed release."
+        },
+        {
+          "gate": "supplier",
+          "obligation": "required",
+          "reason": "The supplier gate is required for this proposed release."
+        },
+        {
+          "gate": "financial",
+          "obligation": "required",
+          "reason": "The financial gate is required for this proposed release."
+        },
+        {
+          "gate": "logistics",
+          "obligation": "required",
+          "reason": "The logistics gate is required for this proposed release."
+        },
+        {
+          "gate": "business_rules",
+          "obligation": "required",
+          "reason": "The business rules gate is required for this proposed release."
+        },
+        {
+          "gate": "external_signals",
+          "obligation": "advisory",
+          "reason": "External signals inform judgement but do not override required source evidence."
+        }
+      ],
+      "findings": [
+        {
+          "id": "finding-price-change",
+          "code": "large_price_change",
+          "severity": "warning",
+          "approvalConsequence": "individual_approval",
+          "explanation": "The price falls by 33.3%, above the 25% individual-review threshold while remaining above margin floor.",
+          "affectedFields": ["promotionalSellingPricePence"],
+          "evidenceRefs": [
+            "ev-catalogue-0026",
+            "ev-policy",
+            "ev-note-plant-price"
+          ]
+        }
+      ]
+    },
+    {
+      "sku": "ALD-0027",
+      "eligibility": "blocked",
+      "gateObligations": [
+        {
+          "gate": "forecast",
+          "obligation": "required",
+          "reason": "The forecast gate is required for this proposed release."
+        },
+        {
+          "gate": "inventory",
+          "obligation": "required",
+          "reason": "The inventory gate is required for this proposed release."
+        },
+        {
+          "gate": "supplier",
+          "obligation": "not_applicable",
+          "reason": "No supplier top-up is proposed for this line."
+        },
+        {
+          "gate": "financial",
+          "obligation": "required",
+          "reason": "The financial gate is required for this proposed release."
+        },
+        {
+          "gate": "logistics",
+          "obligation": "not_applicable",
+          "reason": "No supplier top-up is proposed for this line."
+        },
+        {
+          "gate": "business_rules",
+          "obligation": "required",
+          "reason": "The business rules gate is required for this proposed release."
+        },
+        {
+          "gate": "external_signals",
+          "obligation": "advisory",
+          "reason": "External signals inform judgement but do not override required source evidence."
+        }
+      ],
+      "findings": [
+        {
+          "id": "finding-brief-withdrawal",
+          "code": "promotion_withdrawn",
+          "severity": "blocking",
+          "approvalConsequence": "block",
+          "explanation": "Brief amendment 3 withdrew the line after shortlist approval.",
+          "affectedFields": ["status"],
+          "evidenceRefs": ["ev-brief", "ev-note-pizza-withdrawal"]
+        }
+      ]
+    }
+  ]
+}

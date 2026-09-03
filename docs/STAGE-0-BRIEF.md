@@ -1,6 +1,6 @@
 # Safepoint Stage 0 brief
 
-Status: ready for Fable proposal, then implementation review
+Status: completed
 
 Audience: the model scaffolding the first application slice and the model reviewing its diff
 

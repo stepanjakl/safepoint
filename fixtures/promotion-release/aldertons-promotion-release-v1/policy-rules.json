@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "scenarioId": "aldertons-promotion-release-v1",
+  "fixtureVersion": "1.0.0",
+  "evidenceId": "ev-policy",
+  "sourceLabel": "Fresh Food Weekend release policy",
+  "observedAt": "2026-09-01T09:00:00Z",
+  "policyVersion": "promotion-release-policy-v1",
+  "minimumMarginPercent": 15,
+  "individualApprovalPriceChangePercent": 25,
+  "maximumEvidenceAgeHours": 24,
+  "requiredChannels": ["pricebook", "storefront", "labels"]
+}

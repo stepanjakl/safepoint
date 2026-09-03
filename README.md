@@ -4,7 +4,7 @@ Safepoint helps people review changes proposed by an AI agent before those chang
 
 Instead of asking someone to approve a chat message, it presents a clear change set: what the agent inspected, what it wants to change, what it left out, what looks risky, and what happened after approval.
 
-> **Status:** product and engineering design. Application development has started at [Stage 0](docs/STAGE-0-BRIEF.md): the project foundation only, with no domain code yet.
+> **Status:** Stage 1A is implemented: the project now has a validated 27-line fictional evidence pack, agent replay, and separate policy replay. The next batch is the [Stage 1B static interface](docs/STAGE-1B-BRIEF.md).
 
 ## The idea
 
@@ -59,7 +59,7 @@ pnpm build          # production build
 pnpm lint           # ESLint
 pnpm typecheck      # generate Next.js route types, then run strict TypeScript
 pnpm format:check   # Prettier
-pnpm test           # Vitest (no tests exist yet)
+pnpm test           # Vitest contract and fixture tests
 ```
 
 ## Documentation
@@ -74,6 +74,6 @@ The detailed specification lives in [`docs/`](docs/README.md):
 
 ## Next step
 
-Start with the deliberately small [Stage 0 foundation brief](docs/STAGE-0-BRIEF.md). It creates a clean, testable application shell without prematurely adding the database, model, workflows, or connectors.
+Build the [Stage 1B static review interface](docs/STAGE-1B-BRIEF.md) against the accepted replay loader. This stage adds the master-detail workspace and its visual and accessible interaction foundation without changing the scenario contract.
 
-Then build the smallest complete path in acceptance-gated slices: validated replay, local review, deterministic policy, a bounded live-agent check, persistence, durable fake execution, Google Sheets, and finally the storefront and public-release hardening. The ordered checklist is in [`TODO.md`](TODO.md).
+The later sequence remains local review, deterministic policy, a bounded live-agent check, persistence, durable fake execution, Google Sheets, and finally the storefront and public-release hardening. The ordered checklist is in [`TODO.md`](TODO.md).

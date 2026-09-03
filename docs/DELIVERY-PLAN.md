@@ -78,27 +78,36 @@ Do not start stretch work while a core-proof item is incomplete. If implementati
 
 ## Milestone 1: validated replay and static experience
 
-### Build
+### Stage 1A: scenario data and contracts
 
-- Add Zod, React Aria Components, Playwright, and axe-core when their first implementation requires them. Use Tailwind's native `data-*` variants unless an optional helper proves useful in real components.
-- Define the runtime schema and inferred type for the first `PromotionReleasePlan`.
-- Design the versioned fictional evidence pack for all 27 lines, including shortlist provenance, brief, catalogue, demand, supply, supplier, bounded operational notes, channel, and policy fixtures.
-- Record earlier bulk orders and frame any new quantity as a final top-up or amendment.
-- Encode the stable replay: 17 ready lines, six requiring adjustment or attention, and four held, excluded, or unverifiable.
-- Encode a test-only oracle for deliberately seeded observations without exposing it to the UI or future agent.
-- Build the desktop master-detail workspace, mobile list-to-detail navigation, effects rail, and protected state workbench.
+- Add Zod and define the runtime schema and inferred type for the first `PromotionReleasePlan`.
+- Keep source facts outside the model proposal and join them only in the validated review projection.
+- Build the versioned 27-line Fresh Food Weekend evidence pack, including shortlist provenance, brief, catalogue, demand, supply, supplier, bounded operational notes, channel, and policy sources.
+- Record earlier bulk orders and frame every new quantity as a final top-up or amendment.
+- Encode 17 ready, six attention, two held, one excluded, and one unverifiable line.
+- Keep the agent proposal, replayed policy output, and test-only evaluation oracle as separate artefacts.
+- Validate complete accounting, evidence references, timestamps, seeded arithmetic, and malformed-input rejection in Vitest.
+
+Stage 1A is accepted when [`STAGE-1A-BRIEF.md`](STAGE-1A-BRIEF.md) and its repository checks pass. It adds no interface, model, database, policy engine, or external credential.
+
+### Stage 1B: static review interface
+
+- Follow [`STAGE-1B-BRIEF.md`](STAGE-1B-BRIEF.md).
+- Add React Aria Components when the implemented collection or disclosure behaviour first requires them.
+- Build the desktop master-detail workspace, mobile list-to-detail composition, effects rail, and protected state workbench.
 - Create semantic light and dark tokens and representative normal, blocked, omission, conflict, completion, and fallback views.
+- Consume only the validated replay loader; do not import raw fixtures or the test oracle.
 
-### Acceptance gate
+Stage 1B is accepted when the complete scenario is understandable at desktop and narrow widths, both themes are coherent, agent and policy results remain separate, and the structure supports the documented keyboard model.
 
-- The replay fixture parses through the production schema before rendering.
-- Counts are derived from the fixture and reconcile across summary, filters, detail, exclusions, and confirmation views.
-- Every seeded exception is supported by internally consistent numbers, timestamps, and source records.
-- Agent recommendation and deterministic policy appear as separate facts.
-- The primary flow works at 320 CSS pixels and 200% zoom; the full 400% pass remains a release gate.
-- Keyboard navigation has visible, unobscured focus, and representative Playwright plus axe checks have no serious or critical findings.
-- Representative visual snapshots cover both themes.
-- No model, database, or external credential is required.
+### Stage 1C: static integration and accessibility verification
+
+- Add Playwright and axe-core when the first representative checks are implemented.
+- Verify that counts reconcile across the summary, list, detail, and omission views without component constants.
+- Test representative keyboard paths, focus visibility, 320 CSS pixels, 200% zoom, and both themes. The complete 400% and screen-reader passes remain public-release gates.
+- Confirm no static destination or policy replay is presented as a live execution result.
+
+Stage 1C is accepted when representative Playwright and axe checks have no serious or critical accessibility findings and the complete repository gate passes without a model, database, or external credential.
 
 ## Milestone 2: local review workflow
 
@@ -125,6 +134,7 @@ Do not start stretch work while a core-proof item is incomplete. If implementati
 - Keep the promotion process as one directly imported typed module. Do not build a string-ID registry, runtime process language, renderer registry, or generic connector router for one process.
 - Implement only five effect kinds: executable `set_field`, `append_entry`, and `invoke_command`, plus clearly simulated `transition_state` and `send_message`.
 - Implement complete candidate accounting, deterministic calculations, gate-obligation derivation, policy checks, effect planning, canonical value normalisation, state transitions, and release-deadline expiry.
+- Replace the static policy replay as the runtime source of policy results and retain it as a regression expectation.
 - Reuse the same policy functions after generation, after edits, and at commit preflight.
 - Keep the domain layer free of React, Next.js, database, model-provider, and connector imports.
 

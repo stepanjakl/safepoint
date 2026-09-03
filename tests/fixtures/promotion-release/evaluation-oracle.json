@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "scenarioId": "aldertons-promotion-release-v1",
+  "fixtureVersion": "1.0.0",
+  "cases": [
+    {
+      "sku": "ALD-0001",
+      "expectedOutcome": "held",
+      "expectedObservationCodes": ["late_supply", "unconfirmed_allocation"],
+      "acceptableRecommendations": ["hold"]
+    },
+    {
+      "sku": "ALD-0003",
+      "expectedOutcome": "needs_attention",
+      "expectedObservationCodes": ["uplift_already_included"],
+      "acceptableRecommendations": ["adjust"]
+    },
+    {
+      "sku": "ALD-0004",
+      "expectedOutcome": "needs_attention",
+      "expectedObservationCodes": ["existing_supply_covers_demand"],
+      "acceptableRecommendations": ["adjust", "release"]
+    },
+    {
+      "sku": "ALD-0008",
+      "expectedOutcome": "needs_attention",
+      "expectedObservationCodes": ["invalid_order_multiple_corrected"],
+      "acceptableRecommendations": ["adjust"]
+    },
+    {
+      "sku": "ALD-0009",
+      "expectedOutcome": "unverifiable",
+      "expectedObservationCodes": ["required_evidence_unavailable"],
+      "acceptableRecommendations": ["hold"]
+    },
+    {
+      "sku": "ALD-0013",
+      "expectedOutcome": "needs_attention",
+      "expectedObservationCodes": ["channel_dates_corrected"],
+      "acceptableRecommendations": ["adjust"]
+    },
+    {
+      "sku": "ALD-0023",
+      "expectedOutcome": "needs_attention",
+      "expectedObservationCodes": ["alternative_safe_plan"],
+      "acceptableRecommendations": ["adjust"],
+      "acceptableTopUpQuantityUnits": [240, 320]
+    },
+    {
+      "sku": "ALD-0025",
+      "expectedOutcome": "held",
+      "expectedObservationCodes": ["margin_below_floor", "funding_unverified"],
+      "acceptableRecommendations": ["release", "hold"]
+    },
+    {
+      "sku": "ALD-0026",
+      "expectedOutcome": "needs_attention",
+      "expectedObservationCodes": ["large_price_change"],
+      "acceptableRecommendations": ["adjust"]
+    },
+    {
+      "sku": "ALD-0027",
+      "expectedOutcome": "excluded",
+      "expectedObservationCodes": ["promotion_withdrawn"],
+      "acceptableRecommendations": ["exclude"]
+    }
+  ]
+}

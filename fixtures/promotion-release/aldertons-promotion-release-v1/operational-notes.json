@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "scenarioId": "aldertons-promotion-release-v1",
+  "fixtureVersion": "1.0.0",
+  "records": [
+    {
+      "evidenceId": "ev-note-campaign-objective",
+      "sourceLabel": "Campaign manager note",
+      "observedAt": "2026-09-02T16:00:00Z",
+      "noteType": "campaign",
+      "relatedSkus": [
+        "ALD-0001",
+        "ALD-0002",
+        "ALD-0003",
+        "ALD-0004",
+        "ALD-0005",
+        "ALD-0006",
+        "ALD-0007",
+        "ALD-0008",
+        "ALD-0009",
+        "ALD-0010",
+        "ALD-0011",
+        "ALD-0012",
+        "ALD-0013",
+        "ALD-0014",
+        "ALD-0015",
+        "ALD-0016",
+        "ALD-0017",
+        "ALD-0018",
+        "ALD-0019",
+        "ALD-0020",
+        "ALD-0021",
+        "ALD-0022",
+        "ALD-0023",
+        "ALD-0024",
+        "ALD-0025",
+        "ALD-0026",
+        "ALD-0027"
+      ],
+      "text": "Prefer availability over the deepest possible discount when more than one compliant release plan exists.",
+      "trust": "untrusted_evidence"
+    },
+    {
+      "evidenceId": "ev-note-strawberry-allocation",
+      "sourceLabel": "Bounded operational note",
+      "observedAt": "2026-09-03T07:20:00Z",
+      "noteType": "supplier",
+      "relatedSkus": ["ALD-0001"],
+      "text": "An extra pallet may be available if confirmed today, but no allocation has been committed.",
+      "trust": "untrusted_evidence"
+    },
+    {
+      "evidenceId": "ev-note-blueberry-uplift",
+      "sourceLabel": "Bounded operational note",
+      "observedAt": "2026-09-03T07:20:00Z",
+      "noteType": "forecast",
+      "relatedSkus": ["ALD-0003"],
+      "text": "The promotional uplift is already included in the supplied 450-unit forecast.",
+      "trust": "untrusted_evidence"
+    },
+    {
+      "evidenceId": "ev-note-grape-inbound",
+      "sourceLabel": "Bounded operational note",
+      "observedAt": "2026-09-03T07:20:00Z",
+      "noteType": "buyer",
+      "relatedSkus": ["ALD-0004"],
+      "text": "Check the earlier promotion order before raising any final top-up amendment.",
+      "trust": "untrusted_evidence"
+    },
+    {
+      "evidenceId": "ev-note-avocado-multiple",
+      "sourceLabel": "Bounded operational note",
+      "observedAt": "2026-09-03T07:20:00Z",
+      "noteType": "supplier",
+      "relatedSkus": ["ALD-0008"],
+      "text": "Final amendments must be at least 240 units and ordered in multiples of 120.",
+      "trust": "untrusted_evidence"
+    },
+    {
+      "evidenceId": "ev-note-spinach-feed",
+      "sourceLabel": "Bounded operational note",
+      "observedAt": "2026-09-03T07:20:00Z",
+      "noteType": "forecast",
+      "relatedSkus": ["ALD-0009"],
+      "text": "Do not infer stock from yesterday’s number while today’s warehouse feed is unavailable.",
+      "trust": "untrusted_evidence"
+    },
+    {
+      "evidenceId": "ev-note-sourdough-dates",
+      "sourceLabel": "Bounded operational note",
+      "observedAt": "2026-09-03T07:20:00Z",
+      "noteType": "buyer",
+      "relatedSkus": ["ALD-0013"],
+      "text": "The storefront draft appears to have retained dates from the previous weekend.",
+      "trust": "untrusted_evidence"
+    },
+    {
+      "evidenceId": "ev-note-mozzarella-options",
+      "sourceLabel": "Bounded operational note",
+      "observedAt": "2026-09-03T07:20:00Z",
+      "noteType": "buyer",
+      "relatedSkus": ["ALD-0023"],
+      "text": "Either 240 units at £2.25 or 320 units at £2.35 protects margin; favour availability if evidence supports it.",
+      "trust": "untrusted_evidence"
+    },
+    {
+      "evidenceId": "ev-note-salmon-funding",
+      "sourceLabel": "Bounded operational note",
+      "observedAt": "2026-09-03T07:20:00Z",
+      "noteType": "supplier",
+      "relatedSkus": ["ALD-0025"],
+      "text": "The proposed £1 per unit support is awaiting written confirmation.",
+      "trust": "untrusted_evidence"
+    },
+    {
+      "evidenceId": "ev-note-plant-price",
+      "sourceLabel": "Bounded operational note",
+      "observedAt": "2026-09-03T07:20:00Z",
+      "noteType": "buyer",
+      "relatedSkus": ["ALD-0026"],
+      "text": "The stronger discount is intentional but should receive individual review because it exceeds the normal change threshold.",
+      "trust": "untrusted_evidence"
+    },
+    {
+      "evidenceId": "ev-note-pizza-withdrawal",
+      "sourceLabel": "Bounded operational note",
+      "observedAt": "2026-09-03T07:20:00Z",
+      "noteType": "buyer",
+      "relatedSkus": ["ALD-0027"],
+      "text": "Remove the pizza from this release because updated packaging artwork will not reach stores in time.",
+      "trust": "untrusted_evidence"
+    }
+  ]
+}

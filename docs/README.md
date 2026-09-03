@@ -6,7 +6,7 @@ This directory is the canonical project specification. Earlier source material i
 
 ## Status
 
-Safepoint is in product and engineering definition. The repository does not yet contain application code.
+Safepoint is in staged implementation. Stage 0 established the application foundation, and Stage 1A added the validated fictional evidence pack and replay contracts. The review interface begins in Stage 1B.
 
 The current specification is decision-complete for the first portfolio implementation. Assumptions that require real-user validation are labelled as such rather than presented as research findings.
 
@@ -41,7 +41,7 @@ flowchart LR
 4. [`DELIVERY-PLAN.md`](DELIVERY-PLAN.md) sequences implementation through acceptance-gated milestones.
 5. [`PROJECT-REVIEW.md`](PROJECT-REVIEW.md) records corrections, alternatives, source coverage, assumptions, and rejected ideas.
 
-The immediate implementation hand-off is [`STAGE-0-BRIEF.md`](STAGE-0-BRIEF.md). It is intentionally narrower than the architecture: Stage 0 creates a clean project foundation and no later-stage integrations.
+The immediate implementation hand-off is [`STAGE-1B-BRIEF.md`](STAGE-1B-BRIEF.md). [`STAGE-1A-BRIEF.md`](STAGE-1A-BRIEF.md) records the accepted data and contract foundation; [`STAGE-0-BRIEF.md`](STAGE-0-BRIEF.md) remains the completed scaffold record.
 
 ## Two project tracks
 
@@ -90,7 +90,7 @@ Truly arbitrary processes cannot be executed safely through the common interface
 
 ## Scenario in brief
 
-Maya, a fictional category-operations manager and release coordinator at the fictional UK grocer Alderton's, reviews whether a 27-line promotion is safe to release. At 08:45, a fictional cutoff for final top-up amendments is approaching and a fictional label-production deadline at 06:00 the next day is approximately 21 hours and 15 minutes away. Main promotion orders were placed earlier in the planning cycle.
+Maya, a fictional category-operations manager and release coordinator at the fictional UK grocer Alderton's, reviews whether the 27-line Fresh Food Weekend promotion is safe to release. The fixed scenario begins at 08:45 on Thursday 3 September 2026. A fictional final top-up cutoff is at 12:00, and the fictional label-production deadline is 06:00 the next day, exactly 21 hours and 15 minutes after review. Main promotion orders were placed earlier in the planning cycle.
 
 The agent derives a `PromotionReleasePlan` from a controlled evidence pack. Its four read-only capabilities expose:
 
@@ -158,6 +158,10 @@ Maya and Alderton's are design hypotheses, not validated research participants o
 
 ```text
 safepoint/
+├── app/                Next.js application shell
+├── fixtures/           Validated runtime scenario and replay data
+├── lib/                Runtime contracts and replay loader
+├── tests/              Test-only fixtures, including the evaluation oracle
 ├── docs/               Canonical product and engineering specification
 ├── .gitignore          Repository exclusions
 ├── README.md           Public project introduction

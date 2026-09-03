@@ -278,11 +278,13 @@ Live mode is unavailable when its kill switch is active, its budget is exhausted
 
 Replay mode loads a versioned `ProposalBatch` fixture and the matching evidence fixture. It does not imitate streaming model text or claim to be live.
 
+During the static-interface milestone, a separate `PolicyEvaluationReplay` supplies the reviewed expected policy output. This is an implementation bridge, not the policy engine and not model evidence. Stage 3 replaces it as the runtime source with calculated deterministic policy and retains it only as a regression expectation. The test-only evaluation oracle remains a fourth, separate artefact and is never imported by application code.
+
 The fixture must:
 
 - use the production proposal schema;
 - contain the same 27 candidates as live mode;
-- provide the reviewed baseline distribution of 17 ready lines, six requiring adjustment or attention, and four held, excluded, or unverifiable;
+- provide the reviewed baseline distribution of 17 ready lines, six requiring adjustment or attention, two held, one excluded, and one unverifiable;
 - pass the same policy engine;
 - support the complete review, conflict, execution, and compensation flow;
 - carry a visible Replay label and fixture version.
@@ -308,6 +310,7 @@ The initial fixture layout is:
 | `operational-notes.json` | Bounded promotion objectives, buyer notes, forecast commentary, and supplier qualifications that require interpretation |
 | `channel-state.json` | Pricebook, storefront, label, and release status with observed timestamps |
 | `policy-rules.json` | Margin floor, evidence requirements, date rules, quantity tolerances, and approval consequences |
+| `policy-evaluation-replay.json` | Reviewed static policy output used by the interface until the deterministic engine replaces it in Stage 3 |
 | `evaluation-oracle.json` | Test-only expected observations and acceptable outcomes for seeded cases |
 
 `evaluation-oracle.json` is never returned through an agent tool and is not a shortcut for runtime policy. Runtime rules independently calculate enforceable facts from the same source data. The oracle tests whether a model discovered expected conditions and whether policy produced the correct result.
@@ -389,7 +392,6 @@ type PromotionReleasePlan = {
 type PromotionLineAssessment = {
   sku: string;
   agentRecommendation: 'release' | 'adjust' | 'hold' | 'exclude';
-  current: RetailSnapshot;
   proposed: ProposedRelease | null;
   gateAssessments: GateAssessment[];
   rationale: string;
@@ -416,15 +418,6 @@ type GateAssessment = {
   evidenceRefs: string[];
 };
 
-type RetailSnapshot = {
-  regularSellingPricePence: number;
-  costPricePence: number;
-  stockOnHandUnits: number;
-  inboundUnits: number;
-  openPurchaseOrderUnits: number;
-  observedAt: string;
-};
-
 type ProposedRelease = {
   promotionalSellingPricePence: number;
   startsAt: string;
@@ -442,6 +435,10 @@ type ProposedRelease = {
 
 type GateObligation = 'required' | 'advisory' | 'not_applicable';
 ```
+
+The proposal does not echo current prices, costs, stock, supply, or channel state. Those facts remain application-owned evidence and are joined with the model assessment only when the server constructs a `ReviewLine`. This prevents a plausible model-authored snapshot from being mistaken for source truth and avoids storing two competing copies of the same current value.
+
+For the first interface milestone, each `ReviewLine` therefore keeps four named concerns separate: trusted source evidence, agent assessment, replayed policy evaluation, and derived presentation outcome. The outcome values `ready`, `needs_attention`, `held`, `excluded`, and `unverifiable` summarise the review view; they are not review-decision or execution lifecycle states.
 
 `GateAssessment` is model evidence. During validation, the server derives `GateObligation` by evaluating a versioned process rule against the server-owned line context; the model cannot supply or override that classification. For example, supplier and logistics checks become required when a top-up is proposed and not applicable when confirmed stock already covers the line. A `not_applicable` result is accepted only when the derived obligation is also `not_applicable` and the rule supplies a reason. A required gate that is failed, not checked, or unavailable blocks its line. An advisory gate may lower confidence or require attention without automatically blocking. The validator rejects contradictory combinations rather than silently repairing them.
 

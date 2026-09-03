@@ -1,0 +1,790 @@
+{
+  "schemaVersion": 1,
+  "scenarioId": "aldertons-promotion-release-v1",
+  "fixtureVersion": "1.0.0",
+  "records": [
+    {
+      "evidenceId": "ev-channel-0001",
+      "sourceLabel": "Promotion channel staging state",
+      "observedAt": "2026-09-03T07:30:00Z",
+      "sku": "ALD-0001",
+      "channels": [
+        {
+          "channel": "pricebook",
+          "status": "ready",
+          "promotionalSellingPricePence": 250,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "storefront",
+          "status": "ready",
+          "promotionalSellingPricePence": 250,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "labels",
+          "status": "ready",
+          "promotionalSellingPricePence": 250,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        }
+      ]
+    },
+    {
+      "evidenceId": "ev-channel-0002",
+      "sourceLabel": "Promotion channel staging state",
+      "observedAt": "2026-09-03T07:30:00Z",
+      "sku": "ALD-0002",
+      "channels": [
+        {
+          "channel": "pricebook",
+          "status": "ready",
+          "promotionalSellingPricePence": 200,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "storefront",
+          "status": "ready",
+          "promotionalSellingPricePence": 200,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "labels",
+          "status": "ready",
+          "promotionalSellingPricePence": 200,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        }
+      ]
+    },
+    {
+      "evidenceId": "ev-channel-0003",
+      "sourceLabel": "Promotion channel staging state",
+      "observedAt": "2026-09-03T07:30:00Z",
+      "sku": "ALD-0003",
+      "channels": [
+        {
+          "channel": "pricebook",
+          "status": "ready",
+          "promotionalSellingPricePence": 180,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "storefront",
+          "status": "ready",
+          "promotionalSellingPricePence": 180,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "labels",
+          "status": "ready",
+          "promotionalSellingPricePence": 180,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        }
+      ]
+    },
+    {
+      "evidenceId": "ev-channel-0004",
+      "sourceLabel": "Promotion channel staging state",
+      "observedAt": "2026-09-03T07:30:00Z",
+      "sku": "ALD-0004",
+      "channels": [
+        {
+          "channel": "pricebook",
+          "status": "ready",
+          "promotionalSellingPricePence": 200,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "storefront",
+          "status": "ready",
+          "promotionalSellingPricePence": 200,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "labels",
+          "status": "ready",
+          "promotionalSellingPricePence": 200,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        }
+      ]
+    },
+    {
+      "evidenceId": "ev-channel-0005",
+      "sourceLabel": "Promotion channel staging state",
+      "observedAt": "2026-09-03T07:30:00Z",
+      "sku": "ALD-0005",
+      "channels": [
+        {
+          "channel": "pricebook",
+          "status": "ready",
+          "promotionalSellingPricePence": 200,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "storefront",
+          "status": "ready",
+          "promotionalSellingPricePence": 200,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "labels",
+          "status": "ready",
+          "promotionalSellingPricePence": 200,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        }
+      ]
+    },
+    {
+      "evidenceId": "ev-channel-0006",
+      "sourceLabel": "Promotion channel staging state",
+      "observedAt": "2026-09-03T07:30:00Z",
+      "sku": "ALD-0006",
+      "channels": [
+        {
+          "channel": "pricebook",
+          "status": "ready",
+          "promotionalSellingPricePence": 175,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "storefront",
+          "status": "ready",
+          "promotionalSellingPricePence": 175,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "labels",
+          "status": "ready",
+          "promotionalSellingPricePence": 175,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        }
+      ]
+    },
+    {
+      "evidenceId": "ev-channel-0007",
+      "sourceLabel": "Promotion channel staging state",
+      "observedAt": "2026-09-03T07:30:00Z",
+      "sku": "ALD-0007",
+      "channels": [
+        {
+          "channel": "pricebook",
+          "status": "ready",
+          "promotionalSellingPricePence": 150,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "storefront",
+          "status": "ready",
+          "promotionalSellingPricePence": 150,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "labels",
+          "status": "ready",
+          "promotionalSellingPricePence": 150,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        }
+      ]
+    },
+    {
+      "evidenceId": "ev-channel-0008",
+      "sourceLabel": "Promotion channel staging state",
+      "observedAt": "2026-09-03T07:30:00Z",
+      "sku": "ALD-0008",
+      "channels": [
+        {
+          "channel": "pricebook",
+          "status": "ready",
+          "promotionalSellingPricePence": 240,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "storefront",
+          "status": "ready",
+          "promotionalSellingPricePence": 240,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "labels",
+          "status": "ready",
+          "promotionalSellingPricePence": 240,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        }
+      ]
+    },
+    {
+      "evidenceId": "ev-channel-0009",
+      "sourceLabel": "Promotion channel staging state",
+      "observedAt": "2026-09-03T07:30:00Z",
+      "sku": "ALD-0009",
+      "channels": [
+        {
+          "channel": "pricebook",
+          "status": "ready",
+          "promotionalSellingPricePence": 140,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "storefront",
+          "status": "ready",
+          "promotionalSellingPricePence": 140,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "labels",
+          "status": "ready",
+          "promotionalSellingPricePence": 140,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        }
+      ]
+    },
+    {
+      "evidenceId": "ev-channel-0010",
+      "sourceLabel": "Promotion channel staging state",
+      "observedAt": "2026-09-03T07:30:00Z",
+      "sku": "ALD-0010",
+      "channels": [
+        {
+          "channel": "pricebook",
+          "status": "ready",
+          "promotionalSellingPricePence": 130,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "storefront",
+          "status": "ready",
+          "promotionalSellingPricePence": 130,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "labels",
+          "status": "ready",
+          "promotionalSellingPricePence": 130,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        }
+      ]
+    },
+    {
+      "evidenceId": "ev-channel-0011",
+      "sourceLabel": "Promotion channel staging state",
+      "observedAt": "2026-09-03T07:30:00Z",
+      "sku": "ALD-0011",
+      "channels": [
+        {
+          "channel": "pricebook",
+          "status": "ready",
+          "promotionalSellingPricePence": 200,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "storefront",
+          "status": "ready",
+          "promotionalSellingPricePence": 200,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "labels",
+          "status": "ready",
+          "promotionalSellingPricePence": 200,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        }
+      ]
+    },
+    {
+      "evidenceId": "ev-channel-0012",
+      "sourceLabel": "Promotion channel staging state",
+      "observedAt": "2026-09-03T07:30:00Z",
+      "sku": "ALD-0012",
+      "channels": [
+        {
+          "channel": "pricebook",
+          "status": "ready",
+          "promotionalSellingPricePence": 150,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "storefront",
+          "status": "ready",
+          "promotionalSellingPricePence": 150,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "labels",
+          "status": "ready",
+          "promotionalSellingPricePence": 150,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        }
+      ]
+    },
+    {
+      "evidenceId": "ev-channel-0013",
+      "sourceLabel": "Promotion channel staging state",
+      "observedAt": "2026-09-03T07:30:00Z",
+      "sku": "ALD-0013",
+      "channels": [
+        {
+          "channel": "pricebook",
+          "status": "ready",
+          "promotionalSellingPricePence": 200,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "storefront",
+          "status": "mismatch",
+          "promotionalSellingPricePence": 200,
+          "startsAt": "2026-09-03T23:00:00Z",
+          "endsAt": "2026-09-05T22:59:59Z"
+        },
+        {
+          "channel": "labels",
+          "status": "ready",
+          "promotionalSellingPricePence": 200,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        }
+      ]
+    },
+    {
+      "evidenceId": "ev-channel-0014",
+      "sourceLabel": "Promotion channel staging state",
+      "observedAt": "2026-09-03T07:30:00Z",
+      "sku": "ALD-0014",
+      "channels": [
+        {
+          "channel": "pricebook",
+          "status": "ready",
+          "promotionalSellingPricePence": 125,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "storefront",
+          "status": "ready",
+          "promotionalSellingPricePence": 125,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "labels",
+          "status": "ready",
+          "promotionalSellingPricePence": 125,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        }
+      ]
+    },
+    {
+      "evidenceId": "ev-channel-0015",
+      "sourceLabel": "Promotion channel staging state",
+      "observedAt": "2026-09-03T07:30:00Z",
+      "sku": "ALD-0015",
+      "channels": [
+        {
+          "channel": "pricebook",
+          "status": "ready",
+          "promotionalSellingPricePence": 175,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "storefront",
+          "status": "ready",
+          "promotionalSellingPricePence": 175,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "labels",
+          "status": "ready",
+          "promotionalSellingPricePence": 175,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        }
+      ]
+    },
+    {
+      "evidenceId": "ev-channel-0016",
+      "sourceLabel": "Promotion channel staging state",
+      "observedAt": "2026-09-03T07:30:00Z",
+      "sku": "ALD-0016",
+      "channels": [
+        {
+          "channel": "pricebook",
+          "status": "ready",
+          "promotionalSellingPricePence": 250,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "storefront",
+          "status": "ready",
+          "promotionalSellingPricePence": 250,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "labels",
+          "status": "ready",
+          "promotionalSellingPricePence": 250,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        }
+      ]
+    },
+    {
+      "evidenceId": "ev-channel-0017",
+      "sourceLabel": "Promotion channel staging state",
+      "observedAt": "2026-09-03T07:30:00Z",
+      "sku": "ALD-0017",
+      "channels": [
+        {
+          "channel": "pricebook",
+          "status": "ready",
+          "promotionalSellingPricePence": 120,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "storefront",
+          "status": "ready",
+          "promotionalSellingPricePence": 120,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "labels",
+          "status": "ready",
+          "promotionalSellingPricePence": 120,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        }
+      ]
+    },
+    {
+      "evidenceId": "ev-channel-0018",
+      "sourceLabel": "Promotion channel staging state",
+      "observedAt": "2026-09-03T07:30:00Z",
+      "sku": "ALD-0018",
+      "channels": [
+        {
+          "channel": "pricebook",
+          "status": "ready",
+          "promotionalSellingPricePence": 160,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "storefront",
+          "status": "ready",
+          "promotionalSellingPricePence": 160,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "labels",
+          "status": "ready",
+          "promotionalSellingPricePence": 160,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        }
+      ]
+    },
+    {
+      "evidenceId": "ev-channel-0019",
+      "sourceLabel": "Promotion channel staging state",
+      "observedAt": "2026-09-03T07:30:00Z",
+      "sku": "ALD-0019",
+      "channels": [
+        {
+          "channel": "pricebook",
+          "status": "ready",
+          "promotionalSellingPricePence": 275,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "storefront",
+          "status": "ready",
+          "promotionalSellingPricePence": 275,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "labels",
+          "status": "ready",
+          "promotionalSellingPricePence": 275,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        }
+      ]
+    },
+    {
+      "evidenceId": "ev-channel-0020",
+      "sourceLabel": "Promotion channel staging state",
+      "observedAt": "2026-09-03T07:30:00Z",
+      "sku": "ALD-0020",
+      "channels": [
+        {
+          "channel": "pricebook",
+          "status": "ready",
+          "promotionalSellingPricePence": 175,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "storefront",
+          "status": "ready",
+          "promotionalSellingPricePence": 175,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "labels",
+          "status": "ready",
+          "promotionalSellingPricePence": 175,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        }
+      ]
+    },
+    {
+      "evidenceId": "ev-channel-0021",
+      "sourceLabel": "Promotion channel staging state",
+      "observedAt": "2026-09-03T07:30:00Z",
+      "sku": "ALD-0021",
+      "channels": [
+        {
+          "channel": "pricebook",
+          "status": "ready",
+          "promotionalSellingPricePence": 175,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "storefront",
+          "status": "ready",
+          "promotionalSellingPricePence": 175,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "labels",
+          "status": "ready",
+          "promotionalSellingPricePence": 175,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        }
+      ]
+    },
+    {
+      "evidenceId": "ev-channel-0022",
+      "sourceLabel": "Promotion channel staging state",
+      "observedAt": "2026-09-03T07:30:00Z",
+      "sku": "ALD-0022",
+      "channels": [
+        {
+          "channel": "pricebook",
+          "status": "ready",
+          "promotionalSellingPricePence": 120,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "storefront",
+          "status": "ready",
+          "promotionalSellingPricePence": 120,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "labels",
+          "status": "ready",
+          "promotionalSellingPricePence": 120,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        }
+      ]
+    },
+    {
+      "evidenceId": "ev-channel-0023",
+      "sourceLabel": "Promotion channel staging state",
+      "observedAt": "2026-09-03T07:30:00Z",
+      "sku": "ALD-0023",
+      "channels": [
+        {
+          "channel": "pricebook",
+          "status": "ready",
+          "promotionalSellingPricePence": 225,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "storefront",
+          "status": "ready",
+          "promotionalSellingPricePence": 225,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "labels",
+          "status": "ready",
+          "promotionalSellingPricePence": 225,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        }
+      ]
+    },
+    {
+      "evidenceId": "ev-channel-0024",
+      "sourceLabel": "Promotion channel staging state",
+      "observedAt": "2026-09-03T07:30:00Z",
+      "sku": "ALD-0024",
+      "channels": [
+        {
+          "channel": "pricebook",
+          "status": "ready",
+          "promotionalSellingPricePence": 450,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "storefront",
+          "status": "ready",
+          "promotionalSellingPricePence": 450,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "labels",
+          "status": "ready",
+          "promotionalSellingPricePence": 450,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        }
+      ]
+    },
+    {
+      "evidenceId": "ev-channel-0025",
+      "sourceLabel": "Promotion channel staging state",
+      "observedAt": "2026-09-03T07:30:00Z",
+      "sku": "ALD-0025",
+      "channels": [
+        {
+          "channel": "pricebook",
+          "status": "ready",
+          "promotionalSellingPricePence": 500,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "storefront",
+          "status": "ready",
+          "promotionalSellingPricePence": 500,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "labels",
+          "status": "ready",
+          "promotionalSellingPricePence": 500,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        }
+      ]
+    },
+    {
+      "evidenceId": "ev-channel-0026",
+      "sourceLabel": "Promotion channel staging state",
+      "observedAt": "2026-09-03T07:30:00Z",
+      "sku": "ALD-0026",
+      "channels": [
+        {
+          "channel": "pricebook",
+          "status": "ready",
+          "promotionalSellingPricePence": 200,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "storefront",
+          "status": "ready",
+          "promotionalSellingPricePence": 200,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "labels",
+          "status": "ready",
+          "promotionalSellingPricePence": 200,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        }
+      ]
+    },
+    {
+      "evidenceId": "ev-channel-0027",
+      "sourceLabel": "Promotion channel staging state",
+      "observedAt": "2026-09-03T07:30:00Z",
+      "sku": "ALD-0027",
+      "channels": [
+        {
+          "channel": "pricebook",
+          "status": "ready",
+          "promotionalSellingPricePence": 350,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "storefront",
+          "status": "ready",
+          "promotionalSellingPricePence": 350,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        },
+        {
+          "channel": "labels",
+          "status": "ready",
+          "promotionalSellingPricePence": 350,
+          "startsAt": "2026-09-04T23:00:00Z",
+          "endsAt": "2026-09-06T22:59:59Z"
+        }
+      ]
+    }
+  ]
+}

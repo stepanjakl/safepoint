@@ -1,0 +1,2121 @@
+{
+  "schemaVersion": 1,
+  "scenarioId": "aldertons-promotion-release-v1",
+  "instructionVersion": "promotion-release-instruction-v1",
+  "summary": "Review all 27 Fresh Food Weekend lines: 17 are ready, six need an adjustment or individual attention, and four cannot currently be released.",
+  "candidates": [
+    {
+      "sku": "ALD-0001",
+      "agentRecommendation": "hold",
+      "proposed": null,
+      "gateAssessments": [
+        {
+          "gate": "forecast",
+          "result": "passed",
+          "explanation": "The forecast evidence supports the proposed release.",
+          "evidenceRefs": ["ev-demand-0001"]
+        },
+        {
+          "gate": "inventory",
+          "result": "passed",
+          "explanation": "The inventory evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0001"]
+        },
+        {
+          "gate": "supplier",
+          "result": "failed",
+          "explanation": "No additional allocation is confirmed.",
+          "evidenceRefs": ["ev-supplier-0001"]
+        },
+        {
+          "gate": "financial",
+          "result": "passed",
+          "explanation": "The financial evidence supports the proposed release.",
+          "evidenceRefs": ["ev-catalogue-0001", "ev-supplier-0001", "ev-policy"]
+        },
+        {
+          "gate": "logistics",
+          "result": "failed",
+          "explanation": "The 48-hour lead time misses the promotion launch.",
+          "evidenceRefs": ["ev-supply-0001", "ev-supplier-0001"]
+        },
+        {
+          "gate": "business_rules",
+          "result": "passed",
+          "explanation": "The business rules evidence supports the proposed release.",
+          "evidenceRefs": ["ev-brief", "ev-channel-0001", "ev-policy"]
+        },
+        {
+          "gate": "external_signals",
+          "result": "passed",
+          "explanation": "The external signals evidence supports the proposed release.",
+          "evidenceRefs": ["ev-note-strawberry-allocation"]
+        }
+      ],
+      "rationale": "Hold this line because the available supply cannot support launch and the possible extra pallet is not confirmed.",
+      "uncertainties": [
+        "The supplier note describes possible stock but no confirmed allocation."
+      ],
+      "evidenceRefs": [
+        "ev-brief",
+        "ev-policy",
+        "ev-catalogue-0001",
+        "ev-demand-0001",
+        "ev-supply-0001",
+        "ev-supplier-0001",
+        "ev-channel-0001",
+        "ev-note-strawberry-allocation"
+      ]
+    },
+    {
+      "sku": "ALD-0002",
+      "agentRecommendation": "release",
+      "proposed": {
+        "promotionalSellingPricePence": 200,
+        "startsAt": "2026-09-04T23:00:00Z",
+        "endsAt": "2026-09-06T22:59:59Z",
+        "recommendedTopUpQuantityUnits": 156,
+        "semanticActions": [
+          "update_promotion_record",
+          "record_top_up_recommendation",
+          "schedule_storefront_promotion",
+          "queue_labels",
+          "release_top_up_amendment",
+          "send_notification"
+        ]
+      },
+      "gateAssessments": [
+        {
+          "gate": "forecast",
+          "result": "passed",
+          "explanation": "The forecast evidence supports the proposed release.",
+          "evidenceRefs": ["ev-demand-0002"]
+        },
+        {
+          "gate": "inventory",
+          "result": "passed",
+          "explanation": "The inventory evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0002"]
+        },
+        {
+          "gate": "supplier",
+          "result": "passed",
+          "explanation": "The supplier evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supplier-0002"]
+        },
+        {
+          "gate": "financial",
+          "result": "passed",
+          "explanation": "The financial evidence supports the proposed release.",
+          "evidenceRefs": ["ev-catalogue-0002", "ev-supplier-0002", "ev-policy"]
+        },
+        {
+          "gate": "logistics",
+          "result": "passed",
+          "explanation": "The logistics evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0002", "ev-supplier-0002"]
+        },
+        {
+          "gate": "business_rules",
+          "result": "passed",
+          "explanation": "The business rules evidence supports the proposed release.",
+          "evidenceRefs": ["ev-brief", "ev-channel-0002", "ev-policy"]
+        },
+        {
+          "gate": "external_signals",
+          "result": "passed",
+          "explanation": "The external signals evidence supports the proposed release.",
+          "evidenceRefs": ["ev-note-campaign-objective"]
+        }
+      ],
+      "rationale": "Release this line because the source evidence supports its price, supply, margin, dates, and channel setup.",
+      "uncertainties": [],
+      "evidenceRefs": [
+        "ev-brief",
+        "ev-policy",
+        "ev-catalogue-0002",
+        "ev-demand-0002",
+        "ev-supply-0002",
+        "ev-supplier-0002",
+        "ev-channel-0002",
+        "ev-note-campaign-objective"
+      ]
+    },
+    {
+      "sku": "ALD-0003",
+      "agentRecommendation": "adjust",
+      "proposed": {
+        "promotionalSellingPricePence": 180,
+        "startsAt": "2026-09-04T23:00:00Z",
+        "endsAt": "2026-09-06T22:59:59Z",
+        "recommendedTopUpQuantityUnits": 204,
+        "semanticActions": [
+          "update_promotion_record",
+          "record_top_up_recommendation",
+          "schedule_storefront_promotion",
+          "queue_labels",
+          "release_top_up_amendment",
+          "send_notification"
+        ]
+      },
+      "gateAssessments": [
+        {
+          "gate": "forecast",
+          "result": "passed",
+          "explanation": "The forecast evidence supports the proposed release.",
+          "evidenceRefs": ["ev-demand-0003"]
+        },
+        {
+          "gate": "inventory",
+          "result": "passed",
+          "explanation": "The inventory evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0003"]
+        },
+        {
+          "gate": "supplier",
+          "result": "passed",
+          "explanation": "The supplier evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supplier-0003"]
+        },
+        {
+          "gate": "financial",
+          "result": "passed",
+          "explanation": "The financial evidence supports the proposed release.",
+          "evidenceRefs": ["ev-catalogue-0003", "ev-supplier-0003", "ev-policy"]
+        },
+        {
+          "gate": "logistics",
+          "result": "passed",
+          "explanation": "The logistics evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0003", "ev-supplier-0003"]
+        },
+        {
+          "gate": "business_rules",
+          "result": "passed",
+          "explanation": "The business rules evidence supports the proposed release.",
+          "evidenceRefs": ["ev-brief", "ev-channel-0003", "ev-policy"]
+        },
+        {
+          "gate": "external_signals",
+          "result": "passed",
+          "explanation": "The external signals evidence supports the proposed release.",
+          "evidenceRefs": ["ev-note-blueberry-uplift"]
+        }
+      ],
+      "rationale": "Use the supplied 450-unit promotion forecast once and reduce the top-up rather than applying uplift twice.",
+      "uncertainties": [],
+      "evidenceRefs": [
+        "ev-brief",
+        "ev-policy",
+        "ev-catalogue-0003",
+        "ev-demand-0003",
+        "ev-supply-0003",
+        "ev-supplier-0003",
+        "ev-channel-0003",
+        "ev-note-blueberry-uplift"
+      ]
+    },
+    {
+      "sku": "ALD-0004",
+      "agentRecommendation": "adjust",
+      "proposed": {
+        "promotionalSellingPricePence": 200,
+        "startsAt": "2026-09-04T23:00:00Z",
+        "endsAt": "2026-09-06T22:59:59Z",
+        "recommendedTopUpQuantityUnits": 0,
+        "semanticActions": [
+          "update_promotion_record",
+          "record_top_up_recommendation",
+          "schedule_storefront_promotion",
+          "queue_labels",
+          "send_notification"
+        ]
+      },
+      "gateAssessments": [
+        {
+          "gate": "forecast",
+          "result": "passed",
+          "explanation": "The forecast evidence supports the proposed release.",
+          "evidenceRefs": ["ev-demand-0004"]
+        },
+        {
+          "gate": "inventory",
+          "result": "passed",
+          "explanation": "The inventory evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0004"]
+        },
+        {
+          "gate": "supplier",
+          "result": "not_applicable",
+          "explanation": "No supplier top-up is proposed for this line.",
+          "evidenceRefs": ["ev-supplier-0004"]
+        },
+        {
+          "gate": "financial",
+          "result": "passed",
+          "explanation": "The financial evidence supports the proposed release.",
+          "evidenceRefs": ["ev-catalogue-0004", "ev-supplier-0004", "ev-policy"]
+        },
+        {
+          "gate": "logistics",
+          "result": "not_applicable",
+          "explanation": "No supplier top-up is proposed for this line.",
+          "evidenceRefs": ["ev-supply-0004", "ev-supplier-0004"]
+        },
+        {
+          "gate": "business_rules",
+          "result": "passed",
+          "explanation": "The business rules evidence supports the proposed release.",
+          "evidenceRefs": ["ev-brief", "ev-channel-0004", "ev-policy"]
+        },
+        {
+          "gate": "external_signals",
+          "result": "passed",
+          "explanation": "The external signals evidence supports the proposed release.",
+          "evidenceRefs": ["ev-note-grape-inbound"]
+        }
+      ],
+      "rationale": "The earlier promotion order covers forecast demand and safety stock, so no final top-up is required.",
+      "uncertainties": [],
+      "evidenceRefs": [
+        "ev-brief",
+        "ev-policy",
+        "ev-catalogue-0004",
+        "ev-demand-0004",
+        "ev-supply-0004",
+        "ev-supplier-0004",
+        "ev-channel-0004",
+        "ev-note-grape-inbound"
+      ]
+    },
+    {
+      "sku": "ALD-0005",
+      "agentRecommendation": "release",
+      "proposed": {
+        "promotionalSellingPricePence": 200,
+        "startsAt": "2026-09-04T23:00:00Z",
+        "endsAt": "2026-09-06T22:59:59Z",
+        "recommendedTopUpQuantityUnits": 168,
+        "semanticActions": [
+          "update_promotion_record",
+          "record_top_up_recommendation",
+          "schedule_storefront_promotion",
+          "queue_labels",
+          "release_top_up_amendment",
+          "send_notification"
+        ]
+      },
+      "gateAssessments": [
+        {
+          "gate": "forecast",
+          "result": "passed",
+          "explanation": "The forecast evidence supports the proposed release.",
+          "evidenceRefs": ["ev-demand-0005"]
+        },
+        {
+          "gate": "inventory",
+          "result": "passed",
+          "explanation": "The inventory evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0005"]
+        },
+        {
+          "gate": "supplier",
+          "result": "passed",
+          "explanation": "The supplier evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supplier-0005"]
+        },
+        {
+          "gate": "financial",
+          "result": "passed",
+          "explanation": "The financial evidence supports the proposed release.",
+          "evidenceRefs": ["ev-catalogue-0005", "ev-supplier-0005", "ev-policy"]
+        },
+        {
+          "gate": "logistics",
+          "result": "passed",
+          "explanation": "The logistics evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0005", "ev-supplier-0005"]
+        },
+        {
+          "gate": "business_rules",
+          "result": "passed",
+          "explanation": "The business rules evidence supports the proposed release.",
+          "evidenceRefs": ["ev-brief", "ev-channel-0005", "ev-policy"]
+        },
+        {
+          "gate": "external_signals",
+          "result": "passed",
+          "explanation": "The external signals evidence supports the proposed release.",
+          "evidenceRefs": ["ev-note-campaign-objective"]
+        }
+      ],
+      "rationale": "Release this line because the source evidence supports its price, supply, margin, dates, and channel setup.",
+      "uncertainties": [],
+      "evidenceRefs": [
+        "ev-brief",
+        "ev-policy",
+        "ev-catalogue-0005",
+        "ev-demand-0005",
+        "ev-supply-0005",
+        "ev-supplier-0005",
+        "ev-channel-0005",
+        "ev-note-campaign-objective"
+      ]
+    },
+    {
+      "sku": "ALD-0006",
+      "agentRecommendation": "release",
+      "proposed": {
+        "promotionalSellingPricePence": 175,
+        "startsAt": "2026-09-04T23:00:00Z",
+        "endsAt": "2026-09-06T22:59:59Z",
+        "recommendedTopUpQuantityUnits": 190,
+        "semanticActions": [
+          "update_promotion_record",
+          "record_top_up_recommendation",
+          "schedule_storefront_promotion",
+          "queue_labels",
+          "release_top_up_amendment",
+          "send_notification"
+        ]
+      },
+      "gateAssessments": [
+        {
+          "gate": "forecast",
+          "result": "passed",
+          "explanation": "The forecast evidence supports the proposed release.",
+          "evidenceRefs": ["ev-demand-0006"]
+        },
+        {
+          "gate": "inventory",
+          "result": "passed",
+          "explanation": "The inventory evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0006"]
+        },
+        {
+          "gate": "supplier",
+          "result": "passed",
+          "explanation": "The supplier evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supplier-0006"]
+        },
+        {
+          "gate": "financial",
+          "result": "passed",
+          "explanation": "The financial evidence supports the proposed release.",
+          "evidenceRefs": ["ev-catalogue-0006", "ev-supplier-0006", "ev-policy"]
+        },
+        {
+          "gate": "logistics",
+          "result": "passed",
+          "explanation": "The logistics evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0006", "ev-supplier-0006"]
+        },
+        {
+          "gate": "business_rules",
+          "result": "passed",
+          "explanation": "The business rules evidence supports the proposed release.",
+          "evidenceRefs": ["ev-brief", "ev-channel-0006", "ev-policy"]
+        },
+        {
+          "gate": "external_signals",
+          "result": "passed",
+          "explanation": "The external signals evidence supports the proposed release.",
+          "evidenceRefs": ["ev-note-campaign-objective"]
+        }
+      ],
+      "rationale": "Release this line because the source evidence supports its price, supply, margin, dates, and channel setup.",
+      "uncertainties": [],
+      "evidenceRefs": [
+        "ev-brief",
+        "ev-policy",
+        "ev-catalogue-0006",
+        "ev-demand-0006",
+        "ev-supply-0006",
+        "ev-supplier-0006",
+        "ev-channel-0006",
+        "ev-note-campaign-objective"
+      ]
+    },
+    {
+      "sku": "ALD-0007",
+      "agentRecommendation": "release",
+      "proposed": {
+        "promotionalSellingPricePence": 150,
+        "startsAt": "2026-09-04T23:00:00Z",
+        "endsAt": "2026-09-06T22:59:59Z",
+        "recommendedTopUpQuantityUnits": 216,
+        "semanticActions": [
+          "update_promotion_record",
+          "record_top_up_recommendation",
+          "schedule_storefront_promotion",
+          "queue_labels",
+          "release_top_up_amendment",
+          "send_notification"
+        ]
+      },
+      "gateAssessments": [
+        {
+          "gate": "forecast",
+          "result": "passed",
+          "explanation": "The forecast evidence supports the proposed release.",
+          "evidenceRefs": ["ev-demand-0007"]
+        },
+        {
+          "gate": "inventory",
+          "result": "passed",
+          "explanation": "The inventory evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0007"]
+        },
+        {
+          "gate": "supplier",
+          "result": "passed",
+          "explanation": "The supplier evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supplier-0007"]
+        },
+        {
+          "gate": "financial",
+          "result": "passed",
+          "explanation": "The financial evidence supports the proposed release.",
+          "evidenceRefs": ["ev-catalogue-0007", "ev-supplier-0007", "ev-policy"]
+        },
+        {
+          "gate": "logistics",
+          "result": "passed",
+          "explanation": "The logistics evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0007", "ev-supplier-0007"]
+        },
+        {
+          "gate": "business_rules",
+          "result": "passed",
+          "explanation": "The business rules evidence supports the proposed release.",
+          "evidenceRefs": ["ev-brief", "ev-channel-0007", "ev-policy"]
+        },
+        {
+          "gate": "external_signals",
+          "result": "passed",
+          "explanation": "The external signals evidence supports the proposed release.",
+          "evidenceRefs": ["ev-note-campaign-objective"]
+        }
+      ],
+      "rationale": "Release this line because the source evidence supports its price, supply, margin, dates, and channel setup.",
+      "uncertainties": [],
+      "evidenceRefs": [
+        "ev-brief",
+        "ev-policy",
+        "ev-catalogue-0007",
+        "ev-demand-0007",
+        "ev-supply-0007",
+        "ev-supplier-0007",
+        "ev-channel-0007",
+        "ev-note-campaign-objective"
+      ]
+    },
+    {
+      "sku": "ALD-0008",
+      "agentRecommendation": "adjust",
+      "proposed": {
+        "promotionalSellingPricePence": 240,
+        "startsAt": "2026-09-04T23:00:00Z",
+        "endsAt": "2026-09-06T22:59:59Z",
+        "recommendedTopUpQuantityUnits": 480,
+        "semanticActions": [
+          "update_promotion_record",
+          "record_top_up_recommendation",
+          "schedule_storefront_promotion",
+          "queue_labels",
+          "release_top_up_amendment",
+          "send_notification"
+        ]
+      },
+      "gateAssessments": [
+        {
+          "gate": "forecast",
+          "result": "passed",
+          "explanation": "The forecast evidence supports the proposed release.",
+          "evidenceRefs": ["ev-demand-0008"]
+        },
+        {
+          "gate": "inventory",
+          "result": "passed",
+          "explanation": "The inventory evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0008"]
+        },
+        {
+          "gate": "supplier",
+          "result": "passed",
+          "explanation": "The supplier evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supplier-0008"]
+        },
+        {
+          "gate": "financial",
+          "result": "passed",
+          "explanation": "The financial evidence supports the proposed release.",
+          "evidenceRefs": ["ev-catalogue-0008", "ev-supplier-0008", "ev-policy"]
+        },
+        {
+          "gate": "logistics",
+          "result": "passed",
+          "explanation": "The logistics evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0008", "ev-supplier-0008"]
+        },
+        {
+          "gate": "business_rules",
+          "result": "passed",
+          "explanation": "The business rules evidence supports the proposed release.",
+          "evidenceRefs": ["ev-brief", "ev-channel-0008", "ev-policy"]
+        },
+        {
+          "gate": "external_signals",
+          "result": "passed",
+          "explanation": "The external signals evidence supports the proposed release.",
+          "evidenceRefs": ["ev-note-avocado-multiple"]
+        }
+      ],
+      "rationale": "Round the remaining shortfall to a compliant 480-unit amendment.",
+      "uncertainties": [],
+      "evidenceRefs": [
+        "ev-brief",
+        "ev-policy",
+        "ev-catalogue-0008",
+        "ev-demand-0008",
+        "ev-supply-0008",
+        "ev-supplier-0008",
+        "ev-channel-0008",
+        "ev-note-avocado-multiple"
+      ]
+    },
+    {
+      "sku": "ALD-0009",
+      "agentRecommendation": "hold",
+      "proposed": null,
+      "gateAssessments": [
+        {
+          "gate": "forecast",
+          "result": "passed",
+          "explanation": "The forecast evidence supports the proposed release.",
+          "evidenceRefs": ["ev-demand-0009"]
+        },
+        {
+          "gate": "inventory",
+          "result": "evidence_unavailable",
+          "explanation": "The required warehouse supply record is unavailable.",
+          "evidenceRefs": ["ev-supply-0009"]
+        },
+        {
+          "gate": "supplier",
+          "result": "not_checked",
+          "explanation": "This check cannot be completed until the supply position is restored.",
+          "evidenceRefs": ["ev-supplier-0009"]
+        },
+        {
+          "gate": "financial",
+          "result": "passed",
+          "explanation": "The financial evidence supports the proposed release.",
+          "evidenceRefs": ["ev-catalogue-0009", "ev-supplier-0009", "ev-policy"]
+        },
+        {
+          "gate": "logistics",
+          "result": "not_checked",
+          "explanation": "This check cannot be completed until the supply position is restored.",
+          "evidenceRefs": ["ev-supply-0009", "ev-supplier-0009"]
+        },
+        {
+          "gate": "business_rules",
+          "result": "passed",
+          "explanation": "The business rules evidence supports the proposed release.",
+          "evidenceRefs": ["ev-brief", "ev-channel-0009", "ev-policy"]
+        },
+        {
+          "gate": "external_signals",
+          "result": "passed",
+          "explanation": "The external signals evidence supports the proposed release.",
+          "evidenceRefs": ["ev-note-spinach-feed"]
+        }
+      ],
+      "rationale": "Hold this line because the current supply position cannot be verified.",
+      "uncertainties": [],
+      "evidenceRefs": [
+        "ev-brief",
+        "ev-policy",
+        "ev-catalogue-0009",
+        "ev-demand-0009",
+        "ev-supply-0009",
+        "ev-supplier-0009",
+        "ev-channel-0009",
+        "ev-note-spinach-feed"
+      ]
+    },
+    {
+      "sku": "ALD-0010",
+      "agentRecommendation": "release",
+      "proposed": {
+        "promotionalSellingPricePence": 130,
+        "startsAt": "2026-09-04T23:00:00Z",
+        "endsAt": "2026-09-06T22:59:59Z",
+        "recommendedTopUpQuantityUnits": 200,
+        "semanticActions": [
+          "update_promotion_record",
+          "record_top_up_recommendation",
+          "schedule_storefront_promotion",
+          "queue_labels",
+          "release_top_up_amendment",
+          "send_notification"
+        ]
+      },
+      "gateAssessments": [
+        {
+          "gate": "forecast",
+          "result": "passed",
+          "explanation": "The forecast evidence supports the proposed release.",
+          "evidenceRefs": ["ev-demand-0010"]
+        },
+        {
+          "gate": "inventory",
+          "result": "passed",
+          "explanation": "The inventory evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0010"]
+        },
+        {
+          "gate": "supplier",
+          "result": "passed",
+          "explanation": "The supplier evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supplier-0010"]
+        },
+        {
+          "gate": "financial",
+          "result": "passed",
+          "explanation": "The financial evidence supports the proposed release.",
+          "evidenceRefs": ["ev-catalogue-0010", "ev-supplier-0010", "ev-policy"]
+        },
+        {
+          "gate": "logistics",
+          "result": "passed",
+          "explanation": "The logistics evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0010", "ev-supplier-0010"]
+        },
+        {
+          "gate": "business_rules",
+          "result": "passed",
+          "explanation": "The business rules evidence supports the proposed release.",
+          "evidenceRefs": ["ev-brief", "ev-channel-0010", "ev-policy"]
+        },
+        {
+          "gate": "external_signals",
+          "result": "passed",
+          "explanation": "The external signals evidence supports the proposed release.",
+          "evidenceRefs": ["ev-note-campaign-objective"]
+        }
+      ],
+      "rationale": "Release this line because the source evidence supports its price, supply, margin, dates, and channel setup.",
+      "uncertainties": [],
+      "evidenceRefs": [
+        "ev-brief",
+        "ev-policy",
+        "ev-catalogue-0010",
+        "ev-demand-0010",
+        "ev-supply-0010",
+        "ev-supplier-0010",
+        "ev-channel-0010",
+        "ev-note-campaign-objective"
+      ]
+    },
+    {
+      "sku": "ALD-0011",
+      "agentRecommendation": "release",
+      "proposed": {
+        "promotionalSellingPricePence": 200,
+        "startsAt": "2026-09-04T23:00:00Z",
+        "endsAt": "2026-09-06T22:59:59Z",
+        "recommendedTopUpQuantityUnits": 150,
+        "semanticActions": [
+          "update_promotion_record",
+          "record_top_up_recommendation",
+          "schedule_storefront_promotion",
+          "queue_labels",
+          "release_top_up_amendment",
+          "send_notification"
+        ]
+      },
+      "gateAssessments": [
+        {
+          "gate": "forecast",
+          "result": "passed",
+          "explanation": "The forecast evidence supports the proposed release.",
+          "evidenceRefs": ["ev-demand-0011"]
+        },
+        {
+          "gate": "inventory",
+          "result": "passed",
+          "explanation": "The inventory evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0011"]
+        },
+        {
+          "gate": "supplier",
+          "result": "passed",
+          "explanation": "The supplier evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supplier-0011"]
+        },
+        {
+          "gate": "financial",
+          "result": "passed",
+          "explanation": "The financial evidence supports the proposed release.",
+          "evidenceRefs": ["ev-catalogue-0011", "ev-supplier-0011", "ev-policy"]
+        },
+        {
+          "gate": "logistics",
+          "result": "passed",
+          "explanation": "The logistics evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0011", "ev-supplier-0011"]
+        },
+        {
+          "gate": "business_rules",
+          "result": "passed",
+          "explanation": "The business rules evidence supports the proposed release.",
+          "evidenceRefs": ["ev-brief", "ev-channel-0011", "ev-policy"]
+        },
+        {
+          "gate": "external_signals",
+          "result": "passed",
+          "explanation": "The external signals evidence supports the proposed release.",
+          "evidenceRefs": ["ev-note-campaign-objective"]
+        }
+      ],
+      "rationale": "Release this line because the source evidence supports its price, supply, margin, dates, and channel setup.",
+      "uncertainties": [],
+      "evidenceRefs": [
+        "ev-brief",
+        "ev-policy",
+        "ev-catalogue-0011",
+        "ev-demand-0011",
+        "ev-supply-0011",
+        "ev-supplier-0011",
+        "ev-channel-0011",
+        "ev-note-campaign-objective"
+      ]
+    },
+    {
+      "sku": "ALD-0012",
+      "agentRecommendation": "release",
+      "proposed": {
+        "promotionalSellingPricePence": 150,
+        "startsAt": "2026-09-04T23:00:00Z",
+        "endsAt": "2026-09-06T22:59:59Z",
+        "recommendedTopUpQuantityUnits": 168,
+        "semanticActions": [
+          "update_promotion_record",
+          "record_top_up_recommendation",
+          "schedule_storefront_promotion",
+          "queue_labels",
+          "release_top_up_amendment",
+          "send_notification"
+        ]
+      },
+      "gateAssessments": [
+        {
+          "gate": "forecast",
+          "result": "passed",
+          "explanation": "The forecast evidence supports the proposed release.",
+          "evidenceRefs": ["ev-demand-0012"]
+        },
+        {
+          "gate": "inventory",
+          "result": "passed",
+          "explanation": "The inventory evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0012"]
+        },
+        {
+          "gate": "supplier",
+          "result": "passed",
+          "explanation": "The supplier evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supplier-0012"]
+        },
+        {
+          "gate": "financial",
+          "result": "passed",
+          "explanation": "The financial evidence supports the proposed release.",
+          "evidenceRefs": ["ev-catalogue-0012", "ev-supplier-0012", "ev-policy"]
+        },
+        {
+          "gate": "logistics",
+          "result": "passed",
+          "explanation": "The logistics evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0012", "ev-supplier-0012"]
+        },
+        {
+          "gate": "business_rules",
+          "result": "passed",
+          "explanation": "The business rules evidence supports the proposed release.",
+          "evidenceRefs": ["ev-brief", "ev-channel-0012", "ev-policy"]
+        },
+        {
+          "gate": "external_signals",
+          "result": "passed",
+          "explanation": "The external signals evidence supports the proposed release.",
+          "evidenceRefs": ["ev-note-campaign-objective"]
+        }
+      ],
+      "rationale": "Release this line because the source evidence supports its price, supply, margin, dates, and channel setup.",
+      "uncertainties": [],
+      "evidenceRefs": [
+        "ev-brief",
+        "ev-policy",
+        "ev-catalogue-0012",
+        "ev-demand-0012",
+        "ev-supply-0012",
+        "ev-supplier-0012",
+        "ev-channel-0012",
+        "ev-note-campaign-objective"
+      ]
+    },
+    {
+      "sku": "ALD-0013",
+      "agentRecommendation": "adjust",
+      "proposed": {
+        "promotionalSellingPricePence": 200,
+        "startsAt": "2026-09-04T23:00:00Z",
+        "endsAt": "2026-09-06T22:59:59Z",
+        "recommendedTopUpQuantityUnits": 192,
+        "semanticActions": [
+          "update_promotion_record",
+          "record_top_up_recommendation",
+          "schedule_storefront_promotion",
+          "queue_labels",
+          "release_top_up_amendment",
+          "send_notification"
+        ]
+      },
+      "gateAssessments": [
+        {
+          "gate": "forecast",
+          "result": "passed",
+          "explanation": "The forecast evidence supports the proposed release.",
+          "evidenceRefs": ["ev-demand-0013"]
+        },
+        {
+          "gate": "inventory",
+          "result": "passed",
+          "explanation": "The inventory evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0013"]
+        },
+        {
+          "gate": "supplier",
+          "result": "passed",
+          "explanation": "The supplier evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supplier-0013"]
+        },
+        {
+          "gate": "financial",
+          "result": "passed",
+          "explanation": "The financial evidence supports the proposed release.",
+          "evidenceRefs": ["ev-catalogue-0013", "ev-supplier-0013", "ev-policy"]
+        },
+        {
+          "gate": "logistics",
+          "result": "passed",
+          "explanation": "The logistics evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0013", "ev-supplier-0013"]
+        },
+        {
+          "gate": "business_rules",
+          "result": "passed",
+          "explanation": "The business rules evidence supports the proposed release.",
+          "evidenceRefs": ["ev-brief", "ev-channel-0013", "ev-policy"]
+        },
+        {
+          "gate": "external_signals",
+          "result": "passed",
+          "explanation": "The external signals evidence supports the proposed release.",
+          "evidenceRefs": ["ev-note-sourdough-dates"]
+        }
+      ],
+      "rationale": "Correct the stale storefront dates before releasing the promotion.",
+      "uncertainties": [],
+      "evidenceRefs": [
+        "ev-brief",
+        "ev-policy",
+        "ev-catalogue-0013",
+        "ev-demand-0013",
+        "ev-supply-0013",
+        "ev-supplier-0013",
+        "ev-channel-0013",
+        "ev-note-sourdough-dates"
+      ]
+    },
+    {
+      "sku": "ALD-0014",
+      "agentRecommendation": "release",
+      "proposed": {
+        "promotionalSellingPricePence": 125,
+        "startsAt": "2026-09-04T23:00:00Z",
+        "endsAt": "2026-09-06T22:59:59Z",
+        "recommendedTopUpQuantityUnits": 204,
+        "semanticActions": [
+          "update_promotion_record",
+          "record_top_up_recommendation",
+          "schedule_storefront_promotion",
+          "queue_labels",
+          "release_top_up_amendment",
+          "send_notification"
+        ]
+      },
+      "gateAssessments": [
+        {
+          "gate": "forecast",
+          "result": "passed",
+          "explanation": "The forecast evidence supports the proposed release.",
+          "evidenceRefs": ["ev-demand-0014"]
+        },
+        {
+          "gate": "inventory",
+          "result": "passed",
+          "explanation": "The inventory evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0014"]
+        },
+        {
+          "gate": "supplier",
+          "result": "passed",
+          "explanation": "The supplier evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supplier-0014"]
+        },
+        {
+          "gate": "financial",
+          "result": "passed",
+          "explanation": "The financial evidence supports the proposed release.",
+          "evidenceRefs": ["ev-catalogue-0014", "ev-supplier-0014", "ev-policy"]
+        },
+        {
+          "gate": "logistics",
+          "result": "passed",
+          "explanation": "The logistics evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0014", "ev-supplier-0014"]
+        },
+        {
+          "gate": "business_rules",
+          "result": "passed",
+          "explanation": "The business rules evidence supports the proposed release.",
+          "evidenceRefs": ["ev-brief", "ev-channel-0014", "ev-policy"]
+        },
+        {
+          "gate": "external_signals",
+          "result": "passed",
+          "explanation": "The external signals evidence supports the proposed release.",
+          "evidenceRefs": ["ev-note-campaign-objective"]
+        }
+      ],
+      "rationale": "Release this line because the source evidence supports its price, supply, margin, dates, and channel setup.",
+      "uncertainties": [],
+      "evidenceRefs": [
+        "ev-brief",
+        "ev-policy",
+        "ev-catalogue-0014",
+        "ev-demand-0014",
+        "ev-supply-0014",
+        "ev-supplier-0014",
+        "ev-channel-0014",
+        "ev-note-campaign-objective"
+      ]
+    },
+    {
+      "sku": "ALD-0015",
+      "agentRecommendation": "release",
+      "proposed": {
+        "promotionalSellingPricePence": 175,
+        "startsAt": "2026-09-04T23:00:00Z",
+        "endsAt": "2026-09-06T22:59:59Z",
+        "recommendedTopUpQuantityUnits": 168,
+        "semanticActions": [
+          "update_promotion_record",
+          "record_top_up_recommendation",
+          "schedule_storefront_promotion",
+          "queue_labels",
+          "release_top_up_amendment",
+          "send_notification"
+        ]
+      },
+      "gateAssessments": [
+        {
+          "gate": "forecast",
+          "result": "passed",
+          "explanation": "The forecast evidence supports the proposed release.",
+          "evidenceRefs": ["ev-demand-0015"]
+        },
+        {
+          "gate": "inventory",
+          "result": "passed",
+          "explanation": "The inventory evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0015"]
+        },
+        {
+          "gate": "supplier",
+          "result": "passed",
+          "explanation": "The supplier evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supplier-0015"]
+        },
+        {
+          "gate": "financial",
+          "result": "passed",
+          "explanation": "The financial evidence supports the proposed release.",
+          "evidenceRefs": ["ev-catalogue-0015", "ev-supplier-0015", "ev-policy"]
+        },
+        {
+          "gate": "logistics",
+          "result": "passed",
+          "explanation": "The logistics evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0015", "ev-supplier-0015"]
+        },
+        {
+          "gate": "business_rules",
+          "result": "passed",
+          "explanation": "The business rules evidence supports the proposed release.",
+          "evidenceRefs": ["ev-brief", "ev-channel-0015", "ev-policy"]
+        },
+        {
+          "gate": "external_signals",
+          "result": "passed",
+          "explanation": "The external signals evidence supports the proposed release.",
+          "evidenceRefs": ["ev-note-campaign-objective"]
+        }
+      ],
+      "rationale": "Release this line because the source evidence supports its price, supply, margin, dates, and channel setup.",
+      "uncertainties": [],
+      "evidenceRefs": [
+        "ev-brief",
+        "ev-policy",
+        "ev-catalogue-0015",
+        "ev-demand-0015",
+        "ev-supply-0015",
+        "ev-supplier-0015",
+        "ev-channel-0015",
+        "ev-note-campaign-objective"
+      ]
+    },
+    {
+      "sku": "ALD-0016",
+      "agentRecommendation": "release",
+      "proposed": {
+        "promotionalSellingPricePence": 250,
+        "startsAt": "2026-09-04T23:00:00Z",
+        "endsAt": "2026-09-06T22:59:59Z",
+        "recommendedTopUpQuantityUnits": 168,
+        "semanticActions": [
+          "update_promotion_record",
+          "record_top_up_recommendation",
+          "schedule_storefront_promotion",
+          "queue_labels",
+          "release_top_up_amendment",
+          "send_notification"
+        ]
+      },
+      "gateAssessments": [
+        {
+          "gate": "forecast",
+          "result": "passed",
+          "explanation": "The forecast evidence supports the proposed release.",
+          "evidenceRefs": ["ev-demand-0016"]
+        },
+        {
+          "gate": "inventory",
+          "result": "passed",
+          "explanation": "The inventory evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0016"]
+        },
+        {
+          "gate": "supplier",
+          "result": "passed",
+          "explanation": "The supplier evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supplier-0016"]
+        },
+        {
+          "gate": "financial",
+          "result": "passed",
+          "explanation": "The financial evidence supports the proposed release.",
+          "evidenceRefs": ["ev-catalogue-0016", "ev-supplier-0016", "ev-policy"]
+        },
+        {
+          "gate": "logistics",
+          "result": "passed",
+          "explanation": "The logistics evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0016", "ev-supplier-0016"]
+        },
+        {
+          "gate": "business_rules",
+          "result": "passed",
+          "explanation": "The business rules evidence supports the proposed release.",
+          "evidenceRefs": ["ev-brief", "ev-channel-0016", "ev-policy"]
+        },
+        {
+          "gate": "external_signals",
+          "result": "passed",
+          "explanation": "The external signals evidence supports the proposed release.",
+          "evidenceRefs": ["ev-note-campaign-objective"]
+        }
+      ],
+      "rationale": "Release this line because the source evidence supports its price, supply, margin, dates, and channel setup.",
+      "uncertainties": [],
+      "evidenceRefs": [
+        "ev-brief",
+        "ev-policy",
+        "ev-catalogue-0016",
+        "ev-demand-0016",
+        "ev-supply-0016",
+        "ev-supplier-0016",
+        "ev-channel-0016",
+        "ev-note-campaign-objective"
+      ]
+    },
+    {
+      "sku": "ALD-0017",
+      "agentRecommendation": "release",
+      "proposed": {
+        "promotionalSellingPricePence": 120,
+        "startsAt": "2026-09-04T23:00:00Z",
+        "endsAt": "2026-09-06T22:59:59Z",
+        "recommendedTopUpQuantityUnits": 252,
+        "semanticActions": [
+          "update_promotion_record",
+          "record_top_up_recommendation",
+          "schedule_storefront_promotion",
+          "queue_labels",
+          "release_top_up_amendment",
+          "send_notification"
+        ]
+      },
+      "gateAssessments": [
+        {
+          "gate": "forecast",
+          "result": "passed",
+          "explanation": "The forecast evidence supports the proposed release.",
+          "evidenceRefs": ["ev-demand-0017"]
+        },
+        {
+          "gate": "inventory",
+          "result": "passed",
+          "explanation": "The inventory evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0017"]
+        },
+        {
+          "gate": "supplier",
+          "result": "passed",
+          "explanation": "The supplier evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supplier-0017"]
+        },
+        {
+          "gate": "financial",
+          "result": "passed",
+          "explanation": "The financial evidence supports the proposed release.",
+          "evidenceRefs": ["ev-catalogue-0017", "ev-supplier-0017", "ev-policy"]
+        },
+        {
+          "gate": "logistics",
+          "result": "passed",
+          "explanation": "The logistics evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0017", "ev-supplier-0017"]
+        },
+        {
+          "gate": "business_rules",
+          "result": "passed",
+          "explanation": "The business rules evidence supports the proposed release.",
+          "evidenceRefs": ["ev-brief", "ev-channel-0017", "ev-policy"]
+        },
+        {
+          "gate": "external_signals",
+          "result": "passed",
+          "explanation": "The external signals evidence supports the proposed release.",
+          "evidenceRefs": ["ev-note-campaign-objective"]
+        }
+      ],
+      "rationale": "Release this line because the source evidence supports its price, supply, margin, dates, and channel setup.",
+      "uncertainties": [],
+      "evidenceRefs": [
+        "ev-brief",
+        "ev-policy",
+        "ev-catalogue-0017",
+        "ev-demand-0017",
+        "ev-supply-0017",
+        "ev-supplier-0017",
+        "ev-channel-0017",
+        "ev-note-campaign-objective"
+      ]
+    },
+    {
+      "sku": "ALD-0018",
+      "agentRecommendation": "release",
+      "proposed": {
+        "promotionalSellingPricePence": 160,
+        "startsAt": "2026-09-04T23:00:00Z",
+        "endsAt": "2026-09-06T22:59:59Z",
+        "recommendedTopUpQuantityUnits": 168,
+        "semanticActions": [
+          "update_promotion_record",
+          "record_top_up_recommendation",
+          "schedule_storefront_promotion",
+          "queue_labels",
+          "release_top_up_amendment",
+          "send_notification"
+        ]
+      },
+      "gateAssessments": [
+        {
+          "gate": "forecast",
+          "result": "passed",
+          "explanation": "The forecast evidence supports the proposed release.",
+          "evidenceRefs": ["ev-demand-0018"]
+        },
+        {
+          "gate": "inventory",
+          "result": "passed",
+          "explanation": "The inventory evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0018"]
+        },
+        {
+          "gate": "supplier",
+          "result": "passed",
+          "explanation": "The supplier evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supplier-0018"]
+        },
+        {
+          "gate": "financial",
+          "result": "passed",
+          "explanation": "The financial evidence supports the proposed release.",
+          "evidenceRefs": ["ev-catalogue-0018", "ev-supplier-0018", "ev-policy"]
+        },
+        {
+          "gate": "logistics",
+          "result": "passed",
+          "explanation": "The logistics evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0018", "ev-supplier-0018"]
+        },
+        {
+          "gate": "business_rules",
+          "result": "passed",
+          "explanation": "The business rules evidence supports the proposed release.",
+          "evidenceRefs": ["ev-brief", "ev-channel-0018", "ev-policy"]
+        },
+        {
+          "gate": "external_signals",
+          "result": "passed",
+          "explanation": "The external signals evidence supports the proposed release.",
+          "evidenceRefs": ["ev-note-campaign-objective"]
+        }
+      ],
+      "rationale": "Release this line because the source evidence supports its price, supply, margin, dates, and channel setup.",
+      "uncertainties": [],
+      "evidenceRefs": [
+        "ev-brief",
+        "ev-policy",
+        "ev-catalogue-0018",
+        "ev-demand-0018",
+        "ev-supply-0018",
+        "ev-supplier-0018",
+        "ev-channel-0018",
+        "ev-note-campaign-objective"
+      ]
+    },
+    {
+      "sku": "ALD-0019",
+      "agentRecommendation": "release",
+      "proposed": {
+        "promotionalSellingPricePence": 275,
+        "startsAt": "2026-09-04T23:00:00Z",
+        "endsAt": "2026-09-06T22:59:59Z",
+        "recommendedTopUpQuantityUnits": 160,
+        "semanticActions": [
+          "update_promotion_record",
+          "record_top_up_recommendation",
+          "schedule_storefront_promotion",
+          "queue_labels",
+          "release_top_up_amendment",
+          "send_notification"
+        ]
+      },
+      "gateAssessments": [
+        {
+          "gate": "forecast",
+          "result": "passed",
+          "explanation": "The forecast evidence supports the proposed release.",
+          "evidenceRefs": ["ev-demand-0019"]
+        },
+        {
+          "gate": "inventory",
+          "result": "passed",
+          "explanation": "The inventory evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0019"]
+        },
+        {
+          "gate": "supplier",
+          "result": "passed",
+          "explanation": "The supplier evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supplier-0019"]
+        },
+        {
+          "gate": "financial",
+          "result": "passed",
+          "explanation": "The financial evidence supports the proposed release.",
+          "evidenceRefs": ["ev-catalogue-0019", "ev-supplier-0019", "ev-policy"]
+        },
+        {
+          "gate": "logistics",
+          "result": "passed",
+          "explanation": "The logistics evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0019", "ev-supplier-0019"]
+        },
+        {
+          "gate": "business_rules",
+          "result": "passed",
+          "explanation": "The business rules evidence supports the proposed release.",
+          "evidenceRefs": ["ev-brief", "ev-channel-0019", "ev-policy"]
+        },
+        {
+          "gate": "external_signals",
+          "result": "passed",
+          "explanation": "The external signals evidence supports the proposed release.",
+          "evidenceRefs": ["ev-note-campaign-objective"]
+        }
+      ],
+      "rationale": "Release this line because the source evidence supports its price, supply, margin, dates, and channel setup.",
+      "uncertainties": [],
+      "evidenceRefs": [
+        "ev-brief",
+        "ev-policy",
+        "ev-catalogue-0019",
+        "ev-demand-0019",
+        "ev-supply-0019",
+        "ev-supplier-0019",
+        "ev-channel-0019",
+        "ev-note-campaign-objective"
+      ]
+    },
+    {
+      "sku": "ALD-0020",
+      "agentRecommendation": "release",
+      "proposed": {
+        "promotionalSellingPricePence": 175,
+        "startsAt": "2026-09-04T23:00:00Z",
+        "endsAt": "2026-09-06T22:59:59Z",
+        "recommendedTopUpQuantityUnits": 180,
+        "semanticActions": [
+          "update_promotion_record",
+          "record_top_up_recommendation",
+          "schedule_storefront_promotion",
+          "queue_labels",
+          "release_top_up_amendment",
+          "send_notification"
+        ]
+      },
+      "gateAssessments": [
+        {
+          "gate": "forecast",
+          "result": "passed",
+          "explanation": "The forecast evidence supports the proposed release.",
+          "evidenceRefs": ["ev-demand-0020"]
+        },
+        {
+          "gate": "inventory",
+          "result": "passed",
+          "explanation": "The inventory evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0020"]
+        },
+        {
+          "gate": "supplier",
+          "result": "passed",
+          "explanation": "The supplier evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supplier-0020"]
+        },
+        {
+          "gate": "financial",
+          "result": "passed",
+          "explanation": "The financial evidence supports the proposed release.",
+          "evidenceRefs": ["ev-catalogue-0020", "ev-supplier-0020", "ev-policy"]
+        },
+        {
+          "gate": "logistics",
+          "result": "passed",
+          "explanation": "The logistics evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0020", "ev-supplier-0020"]
+        },
+        {
+          "gate": "business_rules",
+          "result": "passed",
+          "explanation": "The business rules evidence supports the proposed release.",
+          "evidenceRefs": ["ev-brief", "ev-channel-0020", "ev-policy"]
+        },
+        {
+          "gate": "external_signals",
+          "result": "passed",
+          "explanation": "The external signals evidence supports the proposed release.",
+          "evidenceRefs": ["ev-note-campaign-objective"]
+        }
+      ],
+      "rationale": "Release this line because the source evidence supports its price, supply, margin, dates, and channel setup.",
+      "uncertainties": [],
+      "evidenceRefs": [
+        "ev-brief",
+        "ev-policy",
+        "ev-catalogue-0020",
+        "ev-demand-0020",
+        "ev-supply-0020",
+        "ev-supplier-0020",
+        "ev-channel-0020",
+        "ev-note-campaign-objective"
+      ]
+    },
+    {
+      "sku": "ALD-0021",
+      "agentRecommendation": "release",
+      "proposed": {
+        "promotionalSellingPricePence": 175,
+        "startsAt": "2026-09-04T23:00:00Z",
+        "endsAt": "2026-09-06T22:59:59Z",
+        "recommendedTopUpQuantityUnits": 216,
+        "semanticActions": [
+          "update_promotion_record",
+          "record_top_up_recommendation",
+          "schedule_storefront_promotion",
+          "queue_labels",
+          "release_top_up_amendment",
+          "send_notification"
+        ]
+      },
+      "gateAssessments": [
+        {
+          "gate": "forecast",
+          "result": "passed",
+          "explanation": "The forecast evidence supports the proposed release.",
+          "evidenceRefs": ["ev-demand-0021"]
+        },
+        {
+          "gate": "inventory",
+          "result": "passed",
+          "explanation": "The inventory evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0021"]
+        },
+        {
+          "gate": "supplier",
+          "result": "passed",
+          "explanation": "The supplier evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supplier-0021"]
+        },
+        {
+          "gate": "financial",
+          "result": "passed",
+          "explanation": "The financial evidence supports the proposed release.",
+          "evidenceRefs": ["ev-catalogue-0021", "ev-supplier-0021", "ev-policy"]
+        },
+        {
+          "gate": "logistics",
+          "result": "passed",
+          "explanation": "The logistics evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0021", "ev-supplier-0021"]
+        },
+        {
+          "gate": "business_rules",
+          "result": "passed",
+          "explanation": "The business rules evidence supports the proposed release.",
+          "evidenceRefs": ["ev-brief", "ev-channel-0021", "ev-policy"]
+        },
+        {
+          "gate": "external_signals",
+          "result": "passed",
+          "explanation": "The external signals evidence supports the proposed release.",
+          "evidenceRefs": ["ev-note-campaign-objective"]
+        }
+      ],
+      "rationale": "Release this line because the source evidence supports its price, supply, margin, dates, and channel setup.",
+      "uncertainties": [],
+      "evidenceRefs": [
+        "ev-brief",
+        "ev-policy",
+        "ev-catalogue-0021",
+        "ev-demand-0021",
+        "ev-supply-0021",
+        "ev-supplier-0021",
+        "ev-channel-0021",
+        "ev-note-campaign-objective"
+      ]
+    },
+    {
+      "sku": "ALD-0022",
+      "agentRecommendation": "release",
+      "proposed": {
+        "promotionalSellingPricePence": 120,
+        "startsAt": "2026-09-04T23:00:00Z",
+        "endsAt": "2026-09-06T22:59:59Z",
+        "recommendedTopUpQuantityUnits": 192,
+        "semanticActions": [
+          "update_promotion_record",
+          "record_top_up_recommendation",
+          "schedule_storefront_promotion",
+          "queue_labels",
+          "release_top_up_amendment",
+          "send_notification"
+        ]
+      },
+      "gateAssessments": [
+        {
+          "gate": "forecast",
+          "result": "passed",
+          "explanation": "The forecast evidence supports the proposed release.",
+          "evidenceRefs": ["ev-demand-0022"]
+        },
+        {
+          "gate": "inventory",
+          "result": "passed",
+          "explanation": "The inventory evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0022"]
+        },
+        {
+          "gate": "supplier",
+          "result": "passed",
+          "explanation": "The supplier evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supplier-0022"]
+        },
+        {
+          "gate": "financial",
+          "result": "passed",
+          "explanation": "The financial evidence supports the proposed release.",
+          "evidenceRefs": ["ev-catalogue-0022", "ev-supplier-0022", "ev-policy"]
+        },
+        {
+          "gate": "logistics",
+          "result": "passed",
+          "explanation": "The logistics evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0022", "ev-supplier-0022"]
+        },
+        {
+          "gate": "business_rules",
+          "result": "passed",
+          "explanation": "The business rules evidence supports the proposed release.",
+          "evidenceRefs": ["ev-brief", "ev-channel-0022", "ev-policy"]
+        },
+        {
+          "gate": "external_signals",
+          "result": "passed",
+          "explanation": "The external signals evidence supports the proposed release.",
+          "evidenceRefs": ["ev-note-campaign-objective"]
+        }
+      ],
+      "rationale": "Release this line because the source evidence supports its price, supply, margin, dates, and channel setup.",
+      "uncertainties": [],
+      "evidenceRefs": [
+        "ev-brief",
+        "ev-policy",
+        "ev-catalogue-0022",
+        "ev-demand-0022",
+        "ev-supply-0022",
+        "ev-supplier-0022",
+        "ev-channel-0022",
+        "ev-note-campaign-objective"
+      ]
+    },
+    {
+      "sku": "ALD-0023",
+      "agentRecommendation": "adjust",
+      "proposed": {
+        "promotionalSellingPricePence": 225,
+        "startsAt": "2026-09-04T23:00:00Z",
+        "endsAt": "2026-09-06T22:59:59Z",
+        "recommendedTopUpQuantityUnits": 240,
+        "semanticActions": [
+          "update_promotion_record",
+          "record_top_up_recommendation",
+          "schedule_storefront_promotion",
+          "queue_labels",
+          "release_top_up_amendment",
+          "send_notification"
+        ]
+      },
+      "gateAssessments": [
+        {
+          "gate": "forecast",
+          "result": "passed",
+          "explanation": "The forecast evidence supports the proposed release.",
+          "evidenceRefs": ["ev-demand-0023"]
+        },
+        {
+          "gate": "inventory",
+          "result": "passed",
+          "explanation": "The inventory evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0023"]
+        },
+        {
+          "gate": "supplier",
+          "result": "passed",
+          "explanation": "The supplier evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supplier-0023"]
+        },
+        {
+          "gate": "financial",
+          "result": "passed",
+          "explanation": "The financial evidence supports the proposed release.",
+          "evidenceRefs": ["ev-catalogue-0023", "ev-supplier-0023", "ev-policy"]
+        },
+        {
+          "gate": "logistics",
+          "result": "passed",
+          "explanation": "The logistics evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0023", "ev-supplier-0023"]
+        },
+        {
+          "gate": "business_rules",
+          "result": "passed",
+          "explanation": "The business rules evidence supports the proposed release.",
+          "evidenceRefs": ["ev-brief", "ev-channel-0023", "ev-policy"]
+        },
+        {
+          "gate": "external_signals",
+          "result": "passed",
+          "explanation": "The external signals evidence supports the proposed release.",
+          "evidenceRefs": ["ev-note-mozzarella-options"]
+        }
+      ],
+      "rationale": "Choose the 240-unit option at £2.25 because it meets the brief while avoiding unnecessary stock.",
+      "uncertainties": [
+        "A second policy-compliant price and quantity combination is available."
+      ],
+      "evidenceRefs": [
+        "ev-brief",
+        "ev-policy",
+        "ev-catalogue-0023",
+        "ev-demand-0023",
+        "ev-supply-0023",
+        "ev-supplier-0023",
+        "ev-channel-0023",
+        "ev-note-mozzarella-options"
+      ]
+    },
+    {
+      "sku": "ALD-0024",
+      "agentRecommendation": "release",
+      "proposed": {
+        "promotionalSellingPricePence": 450,
+        "startsAt": "2026-09-04T23:00:00Z",
+        "endsAt": "2026-09-06T22:59:59Z",
+        "recommendedTopUpQuantityUnits": 162,
+        "semanticActions": [
+          "update_promotion_record",
+          "record_top_up_recommendation",
+          "schedule_storefront_promotion",
+          "queue_labels",
+          "release_top_up_amendment",
+          "send_notification"
+        ]
+      },
+      "gateAssessments": [
+        {
+          "gate": "forecast",
+          "result": "passed",
+          "explanation": "The forecast evidence supports the proposed release.",
+          "evidenceRefs": ["ev-demand-0024"]
+        },
+        {
+          "gate": "inventory",
+          "result": "passed",
+          "explanation": "The inventory evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0024"]
+        },
+        {
+          "gate": "supplier",
+          "result": "passed",
+          "explanation": "The supplier evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supplier-0024"]
+        },
+        {
+          "gate": "financial",
+          "result": "passed",
+          "explanation": "The financial evidence supports the proposed release.",
+          "evidenceRefs": ["ev-catalogue-0024", "ev-supplier-0024", "ev-policy"]
+        },
+        {
+          "gate": "logistics",
+          "result": "passed",
+          "explanation": "The logistics evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0024", "ev-supplier-0024"]
+        },
+        {
+          "gate": "business_rules",
+          "result": "passed",
+          "explanation": "The business rules evidence supports the proposed release.",
+          "evidenceRefs": ["ev-brief", "ev-channel-0024", "ev-policy"]
+        },
+        {
+          "gate": "external_signals",
+          "result": "passed",
+          "explanation": "The external signals evidence supports the proposed release.",
+          "evidenceRefs": ["ev-note-campaign-objective"]
+        }
+      ],
+      "rationale": "Release this line because the source evidence supports its price, supply, margin, dates, and channel setup.",
+      "uncertainties": [],
+      "evidenceRefs": [
+        "ev-brief",
+        "ev-policy",
+        "ev-catalogue-0024",
+        "ev-demand-0024",
+        "ev-supply-0024",
+        "ev-supplier-0024",
+        "ev-channel-0024",
+        "ev-note-campaign-objective"
+      ]
+    },
+    {
+      "sku": "ALD-0025",
+      "agentRecommendation": "release",
+      "proposed": {
+        "promotionalSellingPricePence": 500,
+        "startsAt": "2026-09-04T23:00:00Z",
+        "endsAt": "2026-09-06T22:59:59Z",
+        "recommendedTopUpQuantityUnits": 138,
+        "semanticActions": [
+          "update_promotion_record",
+          "record_top_up_recommendation",
+          "schedule_storefront_promotion",
+          "queue_labels",
+          "release_top_up_amendment",
+          "send_notification"
+        ]
+      },
+      "gateAssessments": [
+        {
+          "gate": "forecast",
+          "result": "passed",
+          "explanation": "The forecast evidence supports the proposed release.",
+          "evidenceRefs": ["ev-demand-0025"]
+        },
+        {
+          "gate": "inventory",
+          "result": "passed",
+          "explanation": "The inventory evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0025"]
+        },
+        {
+          "gate": "supplier",
+          "result": "passed",
+          "explanation": "The supplier evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supplier-0025"]
+        },
+        {
+          "gate": "financial",
+          "result": "failed",
+          "explanation": "Unverified funding leaves projected margin below policy.",
+          "evidenceRefs": ["ev-catalogue-0025", "ev-supplier-0025", "ev-policy"]
+        },
+        {
+          "gate": "logistics",
+          "result": "passed",
+          "explanation": "The logistics evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0025", "ev-supplier-0025"]
+        },
+        {
+          "gate": "business_rules",
+          "result": "passed",
+          "explanation": "The business rules evidence supports the proposed release.",
+          "evidenceRefs": ["ev-brief", "ev-channel-0025", "ev-policy"]
+        },
+        {
+          "gate": "external_signals",
+          "result": "passed",
+          "explanation": "The external signals evidence supports the proposed release.",
+          "evidenceRefs": ["ev-note-salmon-funding"]
+        }
+      ],
+      "rationale": "Release at £5.00 assuming the noted supplier funding will be confirmed before commit.",
+      "uncertainties": ["Supplier funding remains unverified."],
+      "evidenceRefs": [
+        "ev-brief",
+        "ev-policy",
+        "ev-catalogue-0025",
+        "ev-demand-0025",
+        "ev-supply-0025",
+        "ev-supplier-0025",
+        "ev-channel-0025",
+        "ev-note-salmon-funding"
+      ]
+    },
+    {
+      "sku": "ALD-0026",
+      "agentRecommendation": "adjust",
+      "proposed": {
+        "promotionalSellingPricePence": 200,
+        "startsAt": "2026-09-04T23:00:00Z",
+        "endsAt": "2026-09-06T22:59:59Z",
+        "recommendedTopUpQuantityUnits": 160,
+        "semanticActions": [
+          "update_promotion_record",
+          "record_top_up_recommendation",
+          "schedule_storefront_promotion",
+          "queue_labels",
+          "release_top_up_amendment",
+          "send_notification"
+        ]
+      },
+      "gateAssessments": [
+        {
+          "gate": "forecast",
+          "result": "passed",
+          "explanation": "The forecast evidence supports the proposed release.",
+          "evidenceRefs": ["ev-demand-0026"]
+        },
+        {
+          "gate": "inventory",
+          "result": "passed",
+          "explanation": "The inventory evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0026"]
+        },
+        {
+          "gate": "supplier",
+          "result": "passed",
+          "explanation": "The supplier evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supplier-0026"]
+        },
+        {
+          "gate": "financial",
+          "result": "passed",
+          "explanation": "The financial evidence supports the proposed release.",
+          "evidenceRefs": ["ev-catalogue-0026", "ev-supplier-0026", "ev-policy"]
+        },
+        {
+          "gate": "logistics",
+          "result": "passed",
+          "explanation": "The logistics evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0026", "ev-supplier-0026"]
+        },
+        {
+          "gate": "business_rules",
+          "result": "passed",
+          "explanation": "The business rules evidence supports the proposed release.",
+          "evidenceRefs": ["ev-brief", "ev-channel-0026", "ev-policy"]
+        },
+        {
+          "gate": "external_signals",
+          "result": "passed",
+          "explanation": "The external signals evidence supports the proposed release.",
+          "evidenceRefs": ["ev-note-plant-price"]
+        }
+      ],
+      "rationale": "Use the approved £2.00 promotional price but require individual attention for the unusually large change.",
+      "uncertainties": [],
+      "evidenceRefs": [
+        "ev-brief",
+        "ev-policy",
+        "ev-catalogue-0026",
+        "ev-demand-0026",
+        "ev-supply-0026",
+        "ev-supplier-0026",
+        "ev-channel-0026",
+        "ev-note-plant-price"
+      ]
+    },
+    {
+      "sku": "ALD-0027",
+      "agentRecommendation": "exclude",
+      "proposed": null,
+      "gateAssessments": [
+        {
+          "gate": "forecast",
+          "result": "passed",
+          "explanation": "The forecast evidence supports the proposed release.",
+          "evidenceRefs": ["ev-demand-0027"]
+        },
+        {
+          "gate": "inventory",
+          "result": "passed",
+          "explanation": "The inventory evidence supports the proposed release.",
+          "evidenceRefs": ["ev-supply-0027"]
+        },
+        {
+          "gate": "supplier",
+          "result": "not_applicable",
+          "explanation": "No supplier top-up is proposed for this line.",
+          "evidenceRefs": ["ev-supplier-0027"]
+        },
+        {
+          "gate": "financial",
+          "result": "passed",
+          "explanation": "The financial evidence supports the proposed release.",
+          "evidenceRefs": ["ev-catalogue-0027", "ev-supplier-0027", "ev-policy"]
+        },
+        {
+          "gate": "logistics",
+          "result": "not_applicable",
+          "explanation": "No supplier top-up is proposed for this line.",
+          "evidenceRefs": ["ev-supply-0027", "ev-supplier-0027"]
+        },
+        {
+          "gate": "business_rules",
+          "result": "failed",
+          "explanation": "The amended brief withdraws this line.",
+          "evidenceRefs": ["ev-brief", "ev-channel-0027", "ev-policy"]
+        },
+        {
+          "gate": "external_signals",
+          "result": "passed",
+          "explanation": "The external signals evidence supports the proposed release.",
+          "evidenceRefs": ["ev-note-pizza-withdrawal"]
+        }
+      ],
+      "rationale": "Exclude this line because the latest brief amendment withdrew it from release.",
+      "uncertainties": [],
+      "evidenceRefs": [
+        "ev-brief",
+        "ev-policy",
+        "ev-catalogue-0027",
+        "ev-demand-0027",
+        "ev-supply-0027",
+        "ev-supplier-0027",
+        "ev-channel-0027",
+        "ev-note-pizza-withdrawal"
+      ]
+    }
+  ],
+  "evidenceRefs": [
+    "ev-brief",
+    "ev-policy",
+    "ev-catalogue-0001",
+    "ev-demand-0001",
+    "ev-supply-0001",
+    "ev-supplier-0001",
+    "ev-channel-0001",
+    "ev-note-strawberry-allocation",
+    "ev-catalogue-0002",
+    "ev-demand-0002",
+    "ev-supply-0002",
+    "ev-supplier-0002",
+    "ev-channel-0002",
+    "ev-note-campaign-objective",
+    "ev-catalogue-0003",
+    "ev-demand-0003",
+    "ev-supply-0003",
+    "ev-supplier-0003",
+    "ev-channel-0003",
+    "ev-note-blueberry-uplift",
+    "ev-catalogue-0004",
+    "ev-demand-0004",
+    "ev-supply-0004",
+    "ev-supplier-0004",
+    "ev-channel-0004",
+    "ev-note-grape-inbound",
+    "ev-catalogue-0005",
+    "ev-demand-0005",
+    "ev-supply-0005",
+    "ev-supplier-0005",
+    "ev-channel-0005",
+    "ev-catalogue-0006",
+    "ev-demand-0006",
+    "ev-supply-0006",
+    "ev-supplier-0006",
+    "ev-channel-0006",
+    "ev-catalogue-0007",
+    "ev-demand-0007",
+    "ev-supply-0007",
+    "ev-supplier-0007",
+    "ev-channel-0007",
+    "ev-catalogue-0008",
+    "ev-demand-0008",
+    "ev-supply-0008",
+    "ev-supplier-0008",
+    "ev-channel-0008",
+    "ev-note-avocado-multiple",
+    "ev-catalogue-0009",
+    "ev-demand-0009",
+    "ev-supply-0009",
+    "ev-supplier-0009",
+    "ev-channel-0009",
+    "ev-note-spinach-feed",
+    "ev-catalogue-0010",
+    "ev-demand-0010",
+    "ev-supply-0010",
+    "ev-supplier-0010",
+    "ev-channel-0010",
+    "ev-catalogue-0011",
+    "ev-demand-0011",
+    "ev-supply-0011",
+    "ev-supplier-0011",
+    "ev-channel-0011",
+    "ev-catalogue-0012",
+    "ev-demand-0012",
+    "ev-supply-0012",
+    "ev-supplier-0012",
+    "ev-channel-0012",
+    "ev-catalogue-0013",
+    "ev-demand-0013",
+    "ev-supply-0013",
+    "ev-supplier-0013",
+    "ev-channel-0013",
+    "ev-note-sourdough-dates",
+    "ev-catalogue-0014",
+    "ev-demand-0014",
+    "ev-supply-0014",
+    "ev-supplier-0014",
+    "ev-channel-0014",
+    "ev-catalogue-0015",
+    "ev-demand-0015",
+    "ev-supply-0015",
+    "ev-supplier-0015",
+    "ev-channel-0015",
+    "ev-catalogue-0016",
+    "ev-demand-0016",
+    "ev-supply-0016",
+    "ev-supplier-0016",
+    "ev-channel-0016",
+    "ev-catalogue-0017",
+    "ev-demand-0017",
+    "ev-supply-0017",
+    "ev-supplier-0017",
+    "ev-channel-0017",
+    "ev-catalogue-0018",
+    "ev-demand-0018",
+    "ev-supply-0018",
+    "ev-supplier-0018",
+    "ev-channel-0018",
+    "ev-catalogue-0019",
+    "ev-demand-0019",
+    "ev-supply-0019",
+    "ev-supplier-0019",
+    "ev-channel-0019",
+    "ev-catalogue-0020",
+    "ev-demand-0020",
+    "ev-supply-0020",
+    "ev-supplier-0020",
+    "ev-channel-0020",
+    "ev-catalogue-0021",
+    "ev-demand-0021",
+    "ev-supply-0021",
+    "ev-supplier-0021",
+    "ev-channel-0021",
+    "ev-catalogue-0022",
+    "ev-demand-0022",
+    "ev-supply-0022",
+    "ev-supplier-0022",
+    "ev-channel-0022",
+    "ev-catalogue-0023",
+    "ev-demand-0023",
+    "ev-supply-0023",
+    "ev-supplier-0023",
+    "ev-channel-0023",
+    "ev-note-mozzarella-options",
+    "ev-catalogue-0024",
+    "ev-demand-0024",
+    "ev-supply-0024",
+    "ev-supplier-0024",
+    "ev-channel-0024",
+    "ev-catalogue-0025",
+    "ev-demand-0025",
+    "ev-supply-0025",
+    "ev-supplier-0025",
+    "ev-channel-0025",
+    "ev-note-salmon-funding",
+    "ev-catalogue-0026",
+    "ev-demand-0026",
+    "ev-supply-0026",
+    "ev-supplier-0026",
+    "ev-channel-0026",
+    "ev-note-plant-price",
+    "ev-catalogue-0027",
+    "ev-demand-0027",
+    "ev-supply-0027",
+    "ev-supplier-0027",
+    "ev-channel-0027",
+    "ev-note-pizza-withdrawal"
+  ],
+  "generatedAt": "2026-09-03T07:42:00Z"
+}

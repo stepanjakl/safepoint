@@ -15,7 +15,7 @@ The detailed requirements remain in [`docs/`](docs/README.md). If this checklist
 
 ## Ordered build
 
-- [ ] **0. Establish the project foundation**
+- [x] **0. Establish the project foundation**
   - Follow the exact hand-off in [`docs/STAGE-0-BRIEF.md`](docs/STAGE-0-BRIEF.md).
   - Use Node.js 24 LTS, an exact pnpm 10 patch, Next.js App Router, React, strict TypeScript, and Tailwind CSS.
   - Record Neon Postgres with Drizzle ORM as the persistence choice and Vercel as the deployment target.
@@ -26,14 +26,27 @@ The detailed requirements remain in [`docs/`](docs/README.md). If this checklist
   - Keep model, database, workflow, connector, and Google code or credentials out of this stage.
   - **Gate:** a clean checkout installs, starts, checks, and tests with documented commands.
 
-- [ ] **1. Build the validated replay and static review interface**
-  - Add Zod, React Aria Components, Playwright, and axe when they are first used in this stage. Tailwind's native `data-*` variants are sufficient unless a concrete component proves that a helper package adds value.
-  - Define the first `PromotionReleasePlan` schema and validate one versioned 27-line replay fixture before rendering it.
+- [x] **1A. Build the scenario data and contract foundation**
+  - Add Zod and define the first `PromotionReleasePlan` schema without model-echoed source facts.
+  - Validate the complete versioned evidence pack, agent replay, and separate policy replay before exposing them to interface code.
+  - Keep the test-only evaluation oracle outside runtime fixtures.
+  - Derive the 17 ready, six attention, two held, one excluded, and one unverifiable counts from the validated replay.
+  - **Gate:** contract and fixture tests prove complete candidate accounting, evidence integrity, seeded arithmetic, and rejection of malformed input.
+
+- [ ] **1B. Build the static review interface**
+  - Follow [`docs/STAGE-1B-BRIEF.md`](docs/STAGE-1B-BRIEF.md).
+  - Add React Aria Components, Playwright, and axe when the implemented interface first requires them. Tailwind's native `data-*` variants are sufficient unless a concrete component proves that a helper package adds value.
+  - Consume `loadReviewedReplay()` rather than importing raw fixtures or the test oracle.
   - Build the summary, candidate list, detail view, evidence and policy sections, and effects rail.
   - Include ready, adjusted, held, excluded, unverifiable, loading, empty, error, and conflict examples in a protected workbench.
   - Establish semantic design tokens, light and dark themes, responsive layout, visible focus, and semantic components.
-  - Derive every count from the validated fixture; do not repeat the expected totals as component constants.
-  - **Gate:** the scenario is understandable on desktop and mobile without an API or database, the fixture parses in a unit test, keyboard navigation works, and Playwright plus axe report no serious or critical accessibility findings on representative states.
+  - **Gate:** the scenario is understandable on desktop and mobile without an API or database, and the component structure supports the required keyboard model.
+
+- [ ] **1C. Integrate and verify the static experience**
+  - Confirm every count, label, evidence reference, policy distinction, and outcome is derived from the Stage 1A loader.
+  - Complete representative keyboard, responsive, Playwright, and axe checks in both themes.
+  - Keep the existing policy replay clearly separate from the future calculated policy engine.
+  - **Gate:** representative states pass without serious or critical accessibility findings and without fixture facts duplicated in components.
 
 - [ ] **2. Add the local review workflow**
   - Add approve, hold, reject, permitted edit, filter, omission review, and commit-confirmation interactions.
@@ -48,6 +61,7 @@ The detailed requirements remain in [`docs/`](docs/README.md). If this checklist
   - Keep the promotion process as one directly imported typed module. Do not add string-ID registries, a generic process configuration language, or a connector router for the one implemented process.
   - Validate complete candidate accounting and reject unsupported model output.
   - Implement deterministic calculations, policy checks, gate obligations, effect planning, state transitions, and canonical value comparison.
+  - Replace the static policy replay as the runtime source of policy results; retain it as a regression expectation.
   - Keep this layer free of React, Next.js, database, and provider imports.
   - **Gate:** unit tests cover valid plans, unsafe proposals, omissions, stale evidence, edits, and illegal transitions.
 

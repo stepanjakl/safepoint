@@ -83,7 +83,7 @@ If the result is wrong, she needs to know which effects can be compensated autom
 
 ## Demonstration scenario
 
-At 08:45, Maya reviews whether Alderton's next grocery promotion is safe to release. A fictional cutoff for final supplier top-up amendments is approaching, and store labels must be ready by 06:00 the following day, approximately 21 hours and 15 minutes later. The timing is synthetic and exists to make operational sequencing visible.
+At 08:45 on Thursday 3 September 2026, Maya reviews whether Alderton's Fresh Food Weekend promotion is safe to release. The fictional final supplier top-up cutoff is at 12:00, and store labels must be ready by 06:00 the following day, exactly 21 hours and 15 minutes after review. The promotion runs on Saturday 5 and Sunday 6 September. The campaign and timing are synthetic and exist to make operational sequencing visible.
 
 The agent evaluates exactly 27 promotion lines against a coherent fictional evidence pack rather than receiving a pre-authored answer. It must consider:
 
@@ -98,7 +98,7 @@ The agent evaluates exactly 27 promotion lines against a coherent fictional evid
 
 The 27 lines represent an approved upstream shortlist, not products discovered by Safepoint. This follows a credible merchandising workflow: a promotion-selection agent identifies and ranks candidates, a pricing or replenishment stage prepares the commercial plan, and Safepoint reviews whether that plan is ready for operational release. Duvo publishes a comparable [Promo Product Selection playbook](https://docs.duvo.ai/user-guide/playbooks/merchandising/promo-product-selection) that hands approved stock keeping units (SKUs) to a pricing-agent queue. The fictional evidence pack therefore records the promotion cycle, shortlist source, selection rationale, upstream approval reference, and generation time.
 
-The stable replay contains 23 potentially releasable lines and four held, excluded, or unverifiable lines. Within the releasable set, some are ready unchanged and others require an adjustment or individual attention. A live run may differ slightly in explanation and recommendations, but all 27 lines must remain visible and deterministic blockers produce the same safety outcome.
+The stable replay contains 17 ready lines, six that require an adjustment or individual attention, two held lines, one excluded line, and one unverifiable line. This yields 23 potentially releasable lines and four that cannot currently be released. A live run may differ slightly in explanation and recommendations, but all 27 lines must remain visible and deterministic blockers produce the same safety outcome.
 
 Bulk promotional orders were placed earlier in the planning cycle. Any quantity proposed during this checkpoint is a final top-up or amendment against those existing orders, not the promotion's first supply order one day before launch. The evidence therefore shows the original order, confirmed allocation, open amendments, expected receipts, and the remaining launch shortfall.
 

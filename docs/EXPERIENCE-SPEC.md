@@ -20,11 +20,11 @@ The primary object is the change set. Conversation and tool traces are supportin
 
 ## Scenario
 
-At 08:45, Maya, the fictional release coordinator, opens the proposed release plan for Alderton's next grocery promotion. A fictional cutoff for final supplier top-up amendments is approaching, and the fictional label-production deadline is 06:00 the following day, approximately 21 hours and 15 minutes away. The main promotional orders were placed earlier in the planning cycle.
+At 08:45 on Thursday 3 September 2026, Maya, the fictional release coordinator, opens the proposed release plan for Alderton's Fresh Food Weekend. The fictional final supplier top-up cutoff is at 12:00, and the fictional label-production deadline is 06:00 the following day, exactly 21 hours and 15 minutes away. The promotion runs on Saturday 5 and Sunday 6 September, and the main promotional orders were placed earlier in the planning cycle.
 
 The 27 candidates arrive from a fictional approved promotion shortlist. This reflects the shape of Duvo's public [Promo Product Selection playbook](https://docs.duvo.ai/user-guide/playbooks/merchandising/promo-product-selection), which routes approved products to a pricing-agent queue. Safepoint is the downstream release checkpoint: it does not repeat product selection, and it keeps the originating cycle and approval visible as evidence.
 
-The case contains 27 promotion lines. The stable replay presents 17 ready to release, six requiring an adjustment or individual attention, and four held, excluded, or unverifiable. No line is hidden from the evaluation summary. A live run can recommend a different safe treatment for genuinely ambiguous evidence, so the summary uses run-derived counts rather than hard-coded copy.
+The case contains 27 promotion lines. The stable replay presents 17 ready to release, six requiring an adjustment or individual attention, two held, one excluded, and one unverifiable. No line is hidden from the evaluation summary. A live run can recommend a different safe treatment for genuinely ambiguous evidence, so the summary uses run-derived counts rather than hard-coded copy.
 
 The agent has used four read-only capabilities to inspect the promotion brief, prices and costs, demand evidence, stock and open orders, final top-up options, supplier constraints, funding, channel readiness, and bounded buyer, forecast, and supplier notes. It has not changed an external system. Safepoint then independently evaluates deterministic release policy. The interface keeps source facts, agent judgement, and the application policy result distinct.
 
@@ -48,16 +48,16 @@ A protected component workbench is available outside the public navigation. It r
 
 ```text
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ Safepoint       Promotion 24-09       LIVE SANDBOX       21h 15m remaining │
+│ Safepoint       Fresh Food Weekend    REPLAY             21h 15m remaining │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │ 27 evaluated   17 ready   6 need attention   4 held or unverified          │
 ├──────────────────────┬───────────────────────────────────────────────────────┤
-│ Filter: All  Risk... │ Olive Oil 1 litre                         BLOCKED     │
-│                      │ SKU 1189 · Cooking oils                              │
-│ ● Olive oil          │                                                       │
-│   Funding missing    │ Regular price       Promotional price                │
-│ ○ Tomato soup        │ £4.80               [ £3.00           ]              │
-│ ○ Granola            │                                                       │
+│ Filter: All  Risk... │ Salmon fillets 2 pack                    BLOCKED     │
+│                      │ ALD-0025 · Meat and fish                            │
+│ ● Salmon fillets     │                                                       │
+│   Funding unverified │ Regular price       Promotional price                │
+│ ○ Blueberries        │ £6.50               [ £5.00           ]              │
+│ ○ Sourdough bloomer  │                                                       │
 │ ◌ Strawberries       │ Agent: release       Policy: blocked below margin    │
 │   Held: late supply  │ Projected 9.2%       Policy minimum 15%              │
 │ ...                  │ Affected systems                                      │
@@ -83,7 +83,9 @@ The commit summary becomes an in-flow section. It must not be a sticky overlay t
 
 ## Visual direction
 
-The visual metaphor is an operations ledger, not a chat application. Calm neutral surfaces support dense comparison. Colour communicates state, not decoration.
+The visual metaphor is a precision instrument ledger, not a chat application. Calm, flat working surfaces support dense comparison; solid rules establish permanent structure; and carefully bounded controls communicate interaction priority. Colour communicates state rather than decoration.
+
+[`FABLE-VISUAL-DIRECTION.md`](FABLE-VISUAL-DIRECTION.md) is the authoritative Stage 1B visual handoff. It defines the reference synthesis, workspace composition, optical-edge system, component anatomy, workbench specimens, and visual acceptance checks. This specification retains the product and interaction constraints that the visual treatment must serve.
 
 ### Signature element: the effects rail
 
@@ -146,35 +148,49 @@ Notification       Cannot be unsent; a correction message would be a new action.
 
 ### Typography
 
-- **Headings and product moments**: Newsreader, used sparingly for the product thesis and batch title.
-- **Interface and body**: Public Sans for durable readability at compact sizes.
-- **Values, identifiers, and timestamps**: IBM Plex Mono with tabular numerals.
-- Use system fallbacks and avoid downloading fonts before meaningful content can render.
+- **Display or editorial role**: use sparingly for the product thesis and batch title.
+- **Interface sans role**: use for navigation, labels, explanations, evidence, and controls; it must remain readable at compact sizes and medium density.
+- **Tabular or monospaced utility role**: use for prices, percentages, quantities, identifiers, timestamps, thresholds, adapter modes, and effect states.
+- Exact families remain provisional. Components must depend on semantic typography roles so that the final selection does not require component redesign.
+- Use system fallbacks and avoid delaying meaningful content for font downloads.
+- Use sentence case for ordinary interface language. Reserve tracked uppercase for short legends, source classifications, and machine-like readouts.
 
 ### Colour tokens
 
-Colours are semantic tokens rather than utility colours embedded in components. Final values must pass contrast checks in context.
+Colours are semantic tokens rather than utility colours embedded in components. Exact values remain provisional and must be replaceable without changing component anatomy.
 
-| Token | Light | Dark | Purpose |
-| --- | --- | --- | --- |
-| `canvas` | `#F4F6F2` | `#0F1511` | Page background |
-| `surface` | `#FFFFFF` | `#17201A` | Primary working surface |
-| `text` | `#18211B` | `#EDF3EE` | Main text |
-| `muted` | `#5A655D` | `#ABB8AE` | Secondary text |
-| `line` | `#CCD3CE` | `#344239` | Dividers and control boundaries |
-| `accent` | `#1C6A47` | `#65D39B` | Selection and positive action |
-| `caution` | `#8A5200` | `#F2B45F` | Review-needed state |
-| `danger` | `#A33A42` | `#FF9299` | Failure and destructive action |
+| Role group | Required roles | Purpose |
+| --- | --- | --- |
+| Surfaces | Canvas, primary, inset, control, selected, dialog, disabled | Establish containment and editability without elevation |
+| Text | Primary, muted, inverse | Maintain a stable reading hierarchy across themes |
+| Rules | Faint, default, strong | Separate aligned values, sections, and major application regions |
+| Optical edges | Inner highlight, outer lowlight | Define selected high-priority controls without shadows |
+| Neutral interaction | Action, selected, focus | Keep action and selection distinct from safety outcomes |
+| Semantic state | Advisory, verified, caution, blocked, destructive, unavailable | Communicate policy and lifecycle meaning |
+| Adapter mode | Live sandbox, simulated, preview only, unavailable | Describe what a destination can genuinely do |
 
-Never communicate state by colour alone. Pair colour with text, icon shape, and programmatic state.
+Use neutral graphite treatments for action and selection. Reserve chromatic colour primarily for semantic meaning. Never communicate state by colour alone: pair colour with text, icon shape, and programmatic state.
+
+Final light and dark values must pass contrast checks in context, including at the weakest point of a gradient. The dark theme preserves the light theme's boundary hierarchy without relying on glow.
+
+### Optical edge treatment
+
+Selected high-priority controls may use a solid base border, an approximately 1px outer gradient lowlight, an inner gradient highlight, and an optional shallow face gradient. This treatment provides optical edge definition rather than conventional elevation.
+
+- Apply the complete treatment only to primary batch or confirmation actions, an important selected compound control, the effects-rail enclosure, or a genuinely floating dialog or toolbar.
+- Keep permanent panes, candidate rows, evidence, policy findings, tables, status messages, non-interactive badges, and disabled controls flat and solid-bordered.
+- Gradient presentation layers cannot replace a solid focus indicator, capture pointer events, change the hit area, or carry semantic state by themselves.
+- Unsupported masking, print, and forced-colours modes fall back to complete solid borders and system colours.
+- Opaque surfaces remain the default. Backdrop blur is limited to a rare floating layer with an opaque fallback.
 
 ### Shape, elevation, and spacing
 
-- Use square or modest 6px corners for working surfaces and controls.
-- Reserve pill shapes for compact statuses, not containers or buttons by default.
-- Use dividers and surface changes before shadows.
-- Use one restrained shadow only for modal or genuinely floating content.
+- Use square or 0–4px corners for major workspace regions, approximately 4–8px for section groups and inputs, and approximately 10–14px for deliberately encased primary or compound controls.
+- Reserve full capsules for compact statuses, filters, modes, and tightly bounded metadata rather than ordinary containers or buttons.
+- Use dividers, alignment, surface changes, and optical edges; do not use `box-shadow` for containment, selection, focus, or interaction priority.
+- Dialogs and genuinely floating content use backdrop contrast, a strong perimeter, and optional optical edging instead of shadow.
 - Use an 8px spacing rhythm with 4px adjustments for dense value rows.
+- Preserve at least a 44px target for interactive controls even when their visible content is compact.
 - Align numeric before-and-after values vertically and use tabular numerals.
 
 ### Motion
