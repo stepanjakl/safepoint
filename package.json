@@ -18,8 +18,10 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "geist": "1.7.2",
     "next": "16.3.4",
     "react": "19.2.8",
+    "react-aria-components": "1.21.0",
     "react-dom": "19.2.8",
     "zod": "4.5.4"
   },

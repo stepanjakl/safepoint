@@ -1,1 +1,238 @@
 @import 'tailwindcss';
+@import './tokens.css';
+
+@layer base {
+  html {
+    background-color: var(--sp-canvas);
+    color: var(--sp-text-primary);
+  }
+
+  body {
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--sp-focus);
+    outline-offset: 2px;
+  }
+
+  summary {
+    cursor: default;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+}
+
+/* Tracked uppercase readouts for legends, sources, modes and states. */
+@utility readout {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Tabular values: prices, quantities, percentages, identifiers, times. */
+@utility value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+/*
+  Optical edges. A solid base border always remains; the rims are
+  pointer-transparent pseudo-elements that disappear under forced colours,
+  print, or missing mask support. --edge-strength scales both rims and the
+  face gradient so intensity can be compared with one variable.
+*/
+@utility edge-1 {
+  position: relative;
+  border: 1px solid var(--sp-rule-default);
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(
+      in oklab,
+      var(--sp-edge-inner) calc(60% * var(--edge-strength)),
+      transparent
+    ),
+    transparent 45%
+  );
+}
+
+@utility edge-2 {
+  position: relative;
+  border: 1px solid var(--sp-rule-strong);
+  border-radius: var(--edge-radius, var(--radius-control));
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(
+      in oklab,
+      var(--sp-edge-inner) calc(28% * var(--edge-strength)),
+      transparent
+    ),
+    transparent 55%
+  );
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+    padding: 1px;
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+  }
+
+  /* Outer lowlight: one pixel outside the base border. */
+  &::before {
+    inset: -2px;
+    border-radius: calc(var(--edge-radius, var(--radius-control)) + 2px);
+    background: linear-gradient(
+      to bottom,
+      color-mix(
+        in oklab,
+        var(--sp-edge-outer) calc(20% * var(--edge-strength)),
+        transparent
+      ),
+      color-mix(
+        in oklab,
+        var(--sp-edge-outer) calc(100% * var(--edge-strength)),
+        transparent
+      )
+    );
+  }
+
+  /* Inner highlight: one pixel inside the base border. */
+  &::after {
+    inset: 0;
+    border-radius: calc(var(--edge-radius, var(--radius-control)) - 1px);
+    background: linear-gradient(
+      to bottom,
+      color-mix(
+        in oklab,
+        var(--sp-edge-inner) calc(100% * var(--edge-strength)),
+        transparent
+      ),
+      transparent 70%
+    );
+  }
+}
+
+@supports not (mask-composite: exclude) {
+  .edge-2::before,
+  .edge-2::after {
+    display: none;
+  }
+}
+
+@media (forced-colors: active), print {
+  .edge-1,
+  .edge-2 {
+    background-image: none;
+  }
+
+  .edge-2::before,
+  .edge-2::after {
+    display: none;
+  }
+}
+
+/* Master-detail panes. Both stay in the DOM; container width decides.
+   The hiding rules live inside the narrow query rather than being undone by
+   a wider one, so neither pane depends on out-specifying the other. */
+@layer components {
+  @container workspace (width < 48rem) {
+    .workspace[data-view='detail'] .pane-list {
+      display: none;
+    }
+
+    .workspace[data-view='list'] .pane-detail {
+      display: none;
+    }
+  }
+}
+
+/* Effects rail: one signal line, mode-shaped markers, vertical until the
+   detail pane is wide enough to hold every label. */
+@layer components {
+  .rail {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .rail::before {
+    content: '';
+    position: absolute;
+    left: 11px;
+    top: 12px;
+    bottom: 12px;
+    width: 2px;
+    background: var(--sp-rule-strong);
+  }
+
+  .rail-node {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .rail-marker {
+    position: relative;
+    display: flex;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid currentColor;
+    border-radius: 9999px;
+    background: var(--sp-surface-primary);
+  }
+
+  .rail-labels {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  @container (width >= 44rem) {
+    .rail {
+      flex-direction: row;
+      gap: 8px;
+    }
+
+    .rail::before {
+      top: 11px;
+      bottom: auto;
+      left: calc(50% / var(--rail-count, 1));
+      right: calc(50% / var(--rail-count, 1));
+      width: auto;
+      height: 2px;
+    }
+
+    .rail-node {
+      flex: 1 1 0;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      text-align: center;
+    }
+  }
+}

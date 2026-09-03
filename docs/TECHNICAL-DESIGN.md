@@ -297,21 +297,21 @@ Replay is the default fallback and the stable path for portfolio review, automat
 
 The agent derives its plan from a versioned fictional dataset. The data must be coherent enough that a reviewer can reproduce important calculations and understand why each line is safe, adjustable, blocked, or uncertain.
 
-The initial fixture layout is:
+The source evidence under `fixtures/promotion-release/aldertons-promotion-release-v1/` is:
 
 | Fixture | Contents |
 | --- | --- |
 | `promotion-brief.json` | Candidate SKUs, intended prices and dates, campaign, expected uplift, and release deadlines |
 | `shortlist-provenance.json` | Promotion cycle, upstream selection scores and reasons, source reference, approval reference, and approved-at time |
-| `catalogue-pricebook.json` | Product identity, regular and current promotional price, cost, case pack, and current channel state |
+| `catalogue-pricebook.json` | Product identity, regular and current promotional price, cost, and case pack |
 | `demand-evidence.json` | Sales history, baseline forecast, promotion-adjusted forecast, confidence, and uplift provenance |
-| `supply-position.json` | On-hand, reserved, inbound, earlier bulk orders, open top-up amendments, expected receipts, and location |
-| `supplier-terms.json` | Lead time, minimum order quantity, order multiple, confirmed allocation, top-up cutoff, price, and funding status |
+| `supply-position.json` | On-hand, reserved, confirmed inbound before launch, earlier promotion orders, open top-up amendments, safety stock, and location |
+| `supplier-terms.json` | Lead time, minimum order quantity, order multiple, confirmed allocation, top-up cutoff, and funding status |
 | `operational-notes.json` | Bounded promotion objectives, buyer notes, forecast commentary, and supplier qualifications that require interpretation |
-| `channel-state.json` | Pricebook, storefront, label, and release status with observed timestamps |
-| `policy-rules.json` | Margin floor, evidence requirements, date rules, quantity tolerances, and approval consequences |
-| `policy-evaluation-replay.json` | Reviewed static policy output used by the interface until the deterministic engine replaces it in Stage 3 |
-| `evaluation-oracle.json` | Test-only expected observations and acceptable outcomes for seeded cases |
+| `channel-state.json` | Current staged price, dates, and readiness status for the pricebook, storefront, and label queue, with observed timestamps |
+| `policy-rules.json` | Margin floor, individual-review price threshold, evidence freshness, and required channels |
+
+Reviewed outputs live separately under `replays/promotion-release/aldertons-promotion-release-v1/`: `promotion-release-plan.json` contains the agent proposal, and `policy-evaluation-replay.json` contains the temporary static policy output used until Stage 3. The test-only oracle lives under `tests/fixtures/promotion-release/`. See the [promotion-release data dictionary](PROMOTION-RELEASE-DATA-DICTIONARY.md) for field-level definitions.
 
 `evaluation-oracle.json` is never returned through an agent tool and is not a shortcut for runtime policy. Runtime rules independently calculate enforceable facts from the same source data. The oracle tests whether a model discovered expected conditions and whether policy produced the correct result.
 

@@ -20,8 +20,11 @@ Raw JSON is not trusted application state. The loader rejects incomplete candida
 
 ```mermaid
 flowchart LR
-    subgraph RuntimeData[Runtime fixtures]
+    subgraph EvidenceData[Source evidence in fixtures/]
         Evidence["Evidence JSON files<br/>brief · catalogue · demand · supply<br/>suppliers · notes · channels · policy"]
+    end
+
+    subgraph ReplayData[Reviewed outputs in replays/]
         Proposal["promotion-release-plan.json<br/>agent judgement and proposed intent"]
         PolicyReplay["policy-evaluation-replay.json<br/>reviewed temporary policy output"]
     end
@@ -53,17 +56,19 @@ flowchart LR
     Tests --> Loader
 ```
 
-Stage 1B does not read JSON files directly. `loadReviewedReplay()` treats every fixture as untrusted input, validates it against the Zod contracts, checks relationships across files, and joins matching records by stable stock keeping unit (SKU). It returns one `ReviewedReplay` containing 27 review lines and derived summary counts. Application code imports this result through `index.ts`; the evaluation oracle is available only to tests.
+Stage 1B does not read JSON files directly. `loadReviewedReplay()` treats the source evidence and replay files as untrusted input, validates them against the Zod contracts, checks relationships across files, and joins matching records by stable stock keeping unit (SKU). It returns one `ReviewedReplay` containing 27 review lines and derived summary counts. Application code imports this result through `index.ts`; the evaluation oracle is available only to tests.
 
 | Artefact | Responsibility |
 | --- | --- |
-| Evidence fixtures | Application-owned fictional source facts |
-| Promotion release plan | Agent judgement and proposed changes |
-| Policy evaluation replay | Temporary reviewed policy output for the static interface |
+| Evidence fixtures in `fixtures/` | Application-owned fictional source facts |
+| Promotion release plan in `replays/` | Agent judgement and proposed changes |
+| Policy evaluation in `replays/` | Temporary reviewed policy output for the static interface |
 | Zod schemas | Runtime shape and value validation |
 | Replay loader | Cross-file validation, joining, and summary derivation |
 | Runtime index | Supported import boundary for application code |
 | Evaluation oracle | Test expectations only |
+
+The [promotion-release data dictionary](PROMOTION-RELEASE-DATA-DICTIONARY.md) defines the business meaning of each field and controlled value used in this flow.
 
 ## Artefact separation
 

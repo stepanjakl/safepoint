@@ -37,9 +37,10 @@ flowchart LR
 
 1. [`PRODUCT-BRIEF.md`](PRODUCT-BRIEF.md) explains the problem, users, product principles, portfolio boundary, and future direction.
 2. [`EXPERIENCE-SPEC.md`](EXPERIENCE-SPEC.md) defines the scenario, interface, interaction model, visual system, responsive behaviour, and accessibility requirements.
-3. [`TECHNICAL-DESIGN.md`](TECHNICAL-DESIGN.md) defines system boundaries, contracts, persistence, execution, security, observability, and failure behaviour.
-4. [`DELIVERY-PLAN.md`](DELIVERY-PLAN.md) sequences implementation through acceptance-gated milestones.
-5. [`PROJECT-REVIEW.md`](PROJECT-REVIEW.md) records corrections, alternatives, source coverage, assumptions, and rejected ideas.
+3. [`PROMOTION-RELEASE-DATA-DICTIONARY.md`](PROMOTION-RELEASE-DATA-DICTIONARY.md) explains the implemented scenario fields and controlled values in business language.
+4. [`TECHNICAL-DESIGN.md`](TECHNICAL-DESIGN.md) defines system boundaries, contracts, persistence, execution, security, observability, and failure behaviour.
+5. [`DELIVERY-PLAN.md`](DELIVERY-PLAN.md) sequences implementation through acceptance-gated milestones.
+6. [`PROJECT-REVIEW.md`](PROJECT-REVIEW.md) records corrections, alternatives, source coverage, assumptions, and rejected ideas.
 
 The immediate implementation hand-off is [`STAGE-1B-BRIEF.md`](STAGE-1B-BRIEF.md). [`STAGE-1A-BRIEF.md`](STAGE-1A-BRIEF.md) records the accepted data and contract foundation; [`STAGE-0-BRIEF.md`](STAGE-0-BRIEF.md) remains the completed scaffold record.
 
@@ -159,7 +160,8 @@ Maya and Alderton's are design hypotheses, not validated research participants o
 ```text
 safepoint/
 ├── app/                Next.js application shell
-├── fixtures/           Validated runtime scenario and replay data
+├── fixtures/           Validated fictional source evidence
+├── replays/            Reviewed runtime replay outputs
 ├── lib/                Runtime contracts and replay loader
 ├── tests/              Test-only fixtures, including the evaluation oracle
 ├── docs/               Canonical product and engineering specification

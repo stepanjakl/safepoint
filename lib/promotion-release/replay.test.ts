@@ -2,13 +2,13 @@ import cataloguePricebookJson from '../../fixtures/promotion-release/aldertons-p
 import channelStateJson from '../../fixtures/promotion-release/aldertons-promotion-release-v1/channel-state.json';
 import demandEvidenceJson from '../../fixtures/promotion-release/aldertons-promotion-release-v1/demand-evidence.json';
 import operationalNotesJson from '../../fixtures/promotion-release/aldertons-promotion-release-v1/operational-notes.json';
-import policyEvaluationJson from '../../fixtures/promotion-release/aldertons-promotion-release-v1/policy-evaluation-replay.json';
 import policyRulesJson from '../../fixtures/promotion-release/aldertons-promotion-release-v1/policy-rules.json';
 import promotionBriefJson from '../../fixtures/promotion-release/aldertons-promotion-release-v1/promotion-brief.json';
-import promotionReleasePlanJson from '../../fixtures/promotion-release/aldertons-promotion-release-v1/promotion-release-plan.json';
 import shortlistProvenanceJson from '../../fixtures/promotion-release/aldertons-promotion-release-v1/shortlist-provenance.json';
 import supplierTermsJson from '../../fixtures/promotion-release/aldertons-promotion-release-v1/supplier-terms.json';
 import supplyPositionJson from '../../fixtures/promotion-release/aldertons-promotion-release-v1/supply-position.json';
+import policyEvaluationJson from '../../replays/promotion-release/aldertons-promotion-release-v1/policy-evaluation-replay.json';
+import promotionReleasePlanJson from '../../replays/promotion-release/aldertons-promotion-release-v1/promotion-release-plan.json';
 import evaluationOracleJson from '../../tests/fixtures/promotion-release/evaluation-oracle.json';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';

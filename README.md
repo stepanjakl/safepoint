@@ -68,6 +68,7 @@ The detailed specification lives in [`docs/`](docs/README.md):
 
 - [Product brief](docs/PRODUCT-BRIEF.md)
 - [Experience specification](docs/EXPERIENCE-SPEC.md)
+- [Promotion-release data dictionary](docs/PROMOTION-RELEASE-DATA-DICTIONARY.md)
 - [Technical design](docs/TECHNICAL-DESIGN.md)
 - [Delivery plan](docs/DELIVERY-PLAN.md)
 - [Project review and decisions](docs/PROJECT-REVIEW.md)

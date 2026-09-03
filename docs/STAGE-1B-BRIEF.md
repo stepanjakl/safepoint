@@ -15,9 +15,10 @@ Spend design effort on hierarchy, comparison, evidence legibility, the effects r
 1. [`EXPERIENCE-SPEC.md`](EXPERIENCE-SPEC.md), especially Primary workspace, Visual direction, Readiness and evidence presentation, Keyboard interaction, and Complete view-state inventory.
 2. [`FABLE-VISUAL-DIRECTION.md`](FABLE-VISUAL-DIRECTION.md), the authoritative visual handoff, component anatomy, optical-edge rules, workbench states, and paste-ready proposal prompt.
 3. [`STAGE-1A-BRIEF.md`](STAGE-1A-BRIEF.md).
-4. `lib/promotion-release/index.ts` and the return value of `loadReviewedReplay()`.
-5. [`PRODUCT-BRIEF.md`](PRODUCT-BRIEF.md), only Demonstration scenario and Product principles.
-6. [`TODO.md`](../TODO.md), Stage 1B and Fable and Codex collaboration.
+4. [`PROMOTION-RELEASE-DATA-DICTIONARY.md`](PROMOTION-RELEASE-DATA-DICTIONARY.md) for the meaning of fields and controlled values shown in the interface.
+5. `lib/promotion-release/index.ts` and the return value of `loadReviewedReplay()`.
+6. [`PRODUCT-BRIEF.md`](PRODUCT-BRIEF.md), only Demonstration scenario and Product principles.
+7. [`TODO.md`](../TODO.md), Stage 1B and Fable and Codex collaboration.
 
 ## In scope
 
@@ -35,7 +36,7 @@ Spend design effort on hierarchy, comparison, evidence legibility, the effects r
 - Import only `loadReviewedReplay()` and exported types from `lib/promotion-release`.
 - Load data in a server component and pass the smallest serialisable values required by client components.
 - Derive labels and counts from the returned review lines and summary.
-- Do not import raw files from `fixtures/`.
+- Do not import raw files from `fixtures/` or `replays/`.
 - Never import `tests/fixtures/promotion-release/evaluation-oracle.json`.
 - Do not move agent recommendation, policy eligibility, evidence, or outcome into one status field.
 - Treat `outcome` as a presentation classification, not a review decision or execution state.
@@ -57,7 +58,7 @@ The collection must also make the strawberries hold, baby-spinach unverifiable s
 - A calculated policy engine or changes to the policy replay.
 - Model prompts, AI SDK, tools, APIs, databases, workflows, sessions, adapters, or external writes.
 - A general component library, process registry, connector registry, state manager, animation package, or chart package.
-- Changes to fixture values, contracts, or canonical product decisions without raising a blocking issue first.
+- Changes to evidence, replay values, contracts, or canonical product decisions without raising a blocking issue first.
 - Screenshot review in this batch unless the user later asks for it.
 
 ## Acceptance gate
@@ -73,6 +74,19 @@ The collection must also make the strawberries hold, baby-spinach unverifiable s
 - Tab order follows reading order, focus is visible, and no static control falsely appears interactive.
 - Build, lint, type-check, formatting, unit tests, and representative component checks pass.
 - No API, model, database, credential, or later-stage abstraction appears in the diff.
+
+## Implementation sequence
+
+Stage 1B is delivered in passes so that the visual grammar emerges from the real interface rather than from a component system built ahead of it.
+
+1. **Visual vertical slice.** The real `/` workspace from `loadReviewedReplay()`: header, outcome strip, all 27 candidates, salmon selected, values, agent and policy shown separately, the funding and margin disagreement, one readiness treatment, one evidence treatment, the planned effects rail, the static reviewer summary, both themes, desktop and narrow layouts. One protected `/workbench` page compares the slice in light, dark, wide, and narrow contexts. No specimen files, dynamic workbench routes, dialog, invented states, or mutations.
+2. **Review.** Data correctness, component boundaries, React and Next.js structure, accessibility, keyboard behaviour, semantic-state separation, unnecessary abstractions.
+3. **Visual refinement.** One focused pass on the accepted slice.
+4. **Extension.** The accepted grammar is applied across the remaining evidence, gates, states, tests, and workbench specimens.
+
+Stage 1C then performs the formal interaction and accessibility verification.
+
+Decisions fixed for the slice: Geist Sans and Geist Mono; semantic tokens mapped to native Tailwind colours, with `stone` for surfaces and rules and `gray` for text and action; `held` is a presentation outcome and `blocked` is policy eligibility, never merged; unavailable-action reasons are visible text, not `aria-describedby` on a disabled control; on narrow layouts, opening a detail moves focus to the selected line's heading; effect destinations are scenario-specific, not a universal mapping. The current proposal is [`STAGE-1B-PROPOSAL.md`](STAGE-1B-PROPOSAL.md).
 
 ## Fable proposal prompt
 

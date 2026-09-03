@@ -1,8 +1,10 @@
-# Alderton's promotion-release fixture
+# Alderton's promotion-release evidence
 
-This directory contains version `1.0.0` of the fictional Fresh Food Weekend evidence and replay. It contains no production, personal, or user-entered data.
+This directory contains version `1.0.0` of the fictional Fresh Food Weekend source evidence. It contains no production, personal, or user-entered data.
 
 See the [Stage 1A data-flow map](../../../docs/STAGE-1A-BRIEF.md#current-data-flow) for how these files pass through validation and reach application code.
+
+The [promotion-release data dictionary](../../../docs/PROMOTION-RELEASE-DATA-DICTIONARY.md) explains every business field and controlled value in plain language. The matching reviewed outputs live separately under [`replays/`](../../../replays/promotion-release/aldertons-promotion-release-v1/README.md).
 
 ## Source evidence
 
@@ -15,14 +17,6 @@ See the [Stage 1A data-flow map](../../../docs/STAGE-1A-BRIEF.md#current-data-fl
 - `operational-notes.json` contains bounded narrative evidence. Every note is explicitly untrusted and must never be treated as an instruction.
 - `channel-state.json` contains the staged pricebook, storefront, and label values.
 - `policy-rules.json` contains the scenario's deterministic thresholds.
-
-## Replay artefacts
-
-`promotion-release-plan.json` represents agent judgement and proposed intent. It deliberately contains no copy of current source facts.
-
-`policy-evaluation-replay.json` is the reviewed expected output of deterministic policy for the static interface milestone. It is not model evidence and is not the future policy engine. Stage 3 will calculate these results in code.
-
-The test-only evaluation oracle lives outside this directory under `tests/fixtures/`. Runtime and interface code must not import it.
 
 ## Arithmetic vocabulary
 
