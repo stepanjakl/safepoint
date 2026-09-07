@@ -89,6 +89,7 @@ export type EvidenceRef = {
 };
 
 export type ValueRow = {
+  kind: 'change' | 'fact';
   label: string;
   current: string | null;
   proposed: string;
@@ -293,12 +294,12 @@ const EFFECT_DESTINATIONS: Record<
   release_top_up_amendment: {
     destination: 'Supplier order system',
     mode: 'simulated',
-    undo: 'Applied in simulation only; nothing to undo.',
+    undo: 'Simulation only. No external change would need recovery.',
   },
   send_notification: {
     destination: 'Supplier notification',
     mode: 'preview_only',
-    undo: 'Cannot be unsent; a correction would be a new message.',
+    undo: 'Preview only. No message will be sent.',
   },
 };
 
@@ -456,11 +457,19 @@ function presentLineDetail(line: ReviewLine, context: LineContext): LineDetail {
   const gates = presentGates(line, context.evidenceIndex);
   const passed = gates.filter((g) => g.result === 'passed').length;
   const failed = gates.filter((g) => g.result === 'failed').length;
-  const other = gates.length - passed - failed;
+  const unavailable = gates.filter(
+    (g) => g.result === 'evidence_unavailable',
+  ).length;
+  const notChecked = gates.filter((g) => g.result === 'not_checked').length;
+  const notApplicable = gates.filter(
+    (g) => g.result === 'not_applicable',
+  ).length;
   const gateSummary = [
     `${passed} passed`,
     failed > 0 ? `${failed} failed` : null,
-    other > 0 ? `${other} not checked or not applicable` : null,
+    unavailable > 0 ? `${unavailable} evidence unavailable` : null,
+    notChecked > 0 ? `${notChecked} not checked` : null,
+    notApplicable > 0 ? `${notApplicable} not applicable` : null,
   ]
     .filter(Boolean)
     .join(' · ');
@@ -553,7 +562,7 @@ function presentMargin({
     projectedLabel: formatPercent(projectedPercent),
     floorPercent,
     floorLabel: formatPercent(floorPercent),
-    meetsFloor: projectedPercent >= floorPercent,
+    meetsFloor: projected >= floorPercent,
     basis: `${formatMoney(sellingPence)} selling − ${formatMoney(costPence)} cost + ${formatMoney(confirmedFundingPence)} ${fundingNote}, ÷ ${formatMoney(sellingPence)}`,
   };
 }
@@ -581,6 +590,7 @@ function presentValues(
 
   const rows: ValueRow[] = [
     {
+      kind: 'change',
       label: 'Promotional price',
       current: currentLabel,
       proposed: formatMoney(proposed.promotionalSellingPricePence),
@@ -589,12 +599,14 @@ function presentValues(
         : changeLabel,
     },
     {
+      kind: 'fact',
       label: 'Cost price',
       current: null,
       proposed: formatMoney(catalogue.costPricePence),
       note: 'Source: catalogue and pricebook',
     },
     {
+      kind: 'fact',
       label: 'Supplier funding',
       current: null,
       proposed:
@@ -609,6 +621,7 @@ function presentValues(
             : null,
     },
     {
+      kind: 'change',
       label: 'Final top-up',
       current: null,
       proposed:
@@ -618,6 +631,7 @@ function presentValues(
       note: `MOQ ${supplier.minimumOrderQuantityUnits} · multiples of ${supplier.orderMultipleUnits} · cutoff ${formatLondonTime(supplier.topUpCutoffAt)}`,
     },
     {
+      kind: 'change',
       label: 'Promotion window',
       current: null,
       proposed: `${formatLondonDateTime(proposed.startsAt)} → ${formatLondonDateTime(proposed.endsAt)}`,
@@ -627,6 +641,7 @@ function presentValues(
 
   if (demand.kind === 'available') {
     rows.push({
+      kind: 'fact',
       label: 'Forecast demand',
       current: `${formatUnits(demand.baselineForecastUnits)} baseline`,
       proposed: `${formatUnits(demand.promotionAdjustedForecastUnits)} promotion-adjusted`,

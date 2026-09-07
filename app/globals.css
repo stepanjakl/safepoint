@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import './tokens.css';
+@import './review.css';
 
 @layer base {
   html {
@@ -12,6 +13,9 @@
     font-size: var(--text-body);
     line-height: var(--text-body--line-height);
     -webkit-font-smoothing: antialiased;
+    /* font-feature-settings: "ss02" 1; */
+    font-feature-settings: "ss01" 1, "ss02" 1, "ss03" 1, "ss04" 1;
+    /* font-feature-settings: "ss04" 1; */
   }
 
   :focus-visible {

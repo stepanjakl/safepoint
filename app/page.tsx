@@ -1,19 +1,57 @@
-import { ReviewWorkspace } from '@/components/review/review-workspace';
+import Link from 'next/link';
+import { ReplayReview } from '@/components/review/replay-review';
 import { loadReviewedReplay } from '@/lib/promotion-release';
 import { parseSkuParam, presentReview } from '@/lib/review-presentation';
-
-const DEFAULT_SKU = 'ALD-0025';
+import { presentPromotionBatch } from '@/lib/review/promotion-adapter';
 
 export default async function ReviewPage({ searchParams }: PageProps<'/'>) {
-  const presentation = presentReview(loadReviewedReplay());
-  const initialSku = parseSkuParam((await searchParams).sku) ?? DEFAULT_SKU;
+  const batch = presentPromotionBatch(presentReview(loadReviewedReplay()));
+  const initialItemId =
+    parseSkuParam((await searchParams).sku) ?? batch.initialItemId;
 
   return (
-    <ReviewWorkspace
-      presentation={presentation}
-      initialSku={initialSku}
-      mainId="main"
-      className="min-h-dvh"
-    />
+    <div className="chat-shell">
+      <header className="chat-header">
+        <span className="review-brand">
+          <span className="review-brand-mark" aria-hidden="true">
+            s.
+          </span>{' '}
+          Safepoint
+        </span>
+        <span className="text-meta text-muted">Interactive replay</span>
+      </header>
+      <main id="main" tabIndex={-1} className="chat-main">
+        <div className="chat-thread-heading">
+          <p className="text-meta text-muted">
+            Alderton’s · Promotion operations
+          </p>
+          <h1>Fresh Food Weekend</h1>
+        </div>
+        <div className="chat-request">
+          <p>Check the promotion release and show me what needs attention.</p>
+        </div>
+        <section aria-label="Safepoint response" className="chat-response">
+          <p className="chat-response-intro">
+            The release review is ready. Here’s where things stand.
+          </p>
+          <ReplayReview batch={batch} initialItemId={initialItemId} />
+          <p className="chat-caption">
+            Recorded on {batch.evaluatedAt} · Fictional data
+          </p>
+        </section>
+        <div className="chat-demo-note">
+          <p>
+            This conversation demonstrates how Safepoint can appear inside
+            another application.
+          </p>
+          <Link href="/examples/support">
+            Explore a support handoff <span aria-hidden="true">↗</span>
+          </Link>
+        </div>
+      </main>
+      <footer className="chat-footer">
+        The agent proposes. You review. Safepoint applies only approved changes.
+      </footer>
+    </div>
   );
 }
