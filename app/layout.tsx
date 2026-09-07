@@ -1,9 +1,12 @@
-import { GeistMono } from 'geist/font/mono';
-import { GeistSans } from 'geist/font/sans';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
+import { DesignControls } from '@/components/dev/design-controls';
+import { DesignPreferencesScript } from '@/components/dev/design-preferences-script';
+import { LocatorRuntime } from '@/components/dev/locator-runtime';
+
 import './globals.css';
+import { fontVariables } from './typography';
 
 export const metadata: Metadata = {
   title: 'Safepoint',
@@ -13,10 +16,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html
-      lang="en-GB"
-      className={`${GeistSans.variable} ${GeistMono.variable}`}
-    >
+    // suppressHydrationWarning: DesignPreferencesScript sets data-typeface,
+    // data-theme and --edge-strength here before React hydrates.
+    <html lang="en-GB" className={fontVariables} suppressHydrationWarning>
+      <head>
+        <DesignPreferencesScript />
+      </head>
       <body className="bg-canvas text-primary" suppressHydrationWarning>
         <a
           href="#main"
@@ -25,6 +30,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           Skip to review
         </a>
         {children}
+        <DesignControls />
+        <LocatorRuntime />
       </body>
     </html>
   );

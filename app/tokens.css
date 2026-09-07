@@ -121,7 +121,7 @@
     color-mix(in oklab, var(--color-white) 22%, transparent)
   );
   --sp-edge-outer: light-dark(
-    color-mix(in oklab, var(--color-gray-900) 28%, transparent),
+    color-mix(in oklab, var(--color-gray-300) 28%, transparent),
     color-mix(in oklab, var(--color-black) 30%, transparent)
   );
 
@@ -159,6 +159,138 @@
 
   /* Optical-edge intensity: 0 removes the rims, 1 is the strongest permitted */
   --edge-strength: 0.7;
+  /* The opaque face an encased edge is drawn around; see edge-2. */
+  --edge-face: var(--sp-surface-primary);
+  /* The rule the rim gradient is mixed into, and what remains at strength 0. */
+  --edge-rule: var(--sp-rule-strong);
+}
+
+/*
+  Registered so both interpolate. An unregistered custom property is a string
+  to the animation engine and snaps between values, which would make a control
+  that changes face colour or rim intensity on hover jump rather than settle.
+*/
+@property --edge-strength {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0.7;
+}
+
+@property --edge-face {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --edge-rule {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+
+/*
+  Typography roles, the three named in docs/EXPERIENCE-SPEC.md: display or
+  editorial, interface sans, and tabular utility. Components address a role and
+  never a family, so the final selection does not require component redesign.
+
+  data-typeface on any element re-resolves the roles for its subtree, mirroring
+  how data-theme works above -- which is what lets one page show two families
+  side by side. Plain var() indirection inherits, so unlike the colour tokens
+  these need no re-declaration per subtree.
+
+  Feature settings belong here rather than on body: `ss01` names a different
+  alternate in every family, so a global setting would silently corrupt the
+  others. The sans and the mono carry separate feature tokens for the same
+  reason, since data-mono below can pair them across families. Mono weight is
+  a token too, because not every mono can honour every weight.
+*/
+:root,
+[data-typeface='geist'] {
+  --sp-font-display: var(--font-geist-sans);
+  --sp-font-sans: var(--font-geist-sans);
+  --sp-font-mono: var(--font-geist-mono);
+
+  --sp-font-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-typeface='glide'] {
+  --sp-font-display: var(--font-glide);
+  --sp-font-sans: var(--font-glide);
+  --sp-font-mono: var(--font-glide-mono);
+
+  /* Glide has ss01-ss06 and ss08, but they are not Geist's alternates.
+     Left off until each has been looked at; see app/typography.ts. */
+  --sp-font-features: normal;
+  --sp-mono-features: normal;
+  /* Glide Mono ships a single weight. 500 would fall back to 400 harmlessly,
+     but 600 crosses the synthetic-bold threshold and smears at the small
+     tracked uppercase these roles use, so both are pinned to what exists. */
+  --sp-mono-weight: 400;
+  --sp-mono-weight-strong: 400;
+}
+
+[data-typeface='inter'] {
+  --sp-font-display: var(--font-inter-tight);
+  --sp-font-sans: var(--font-inter);
+  /*
+    Inter Tight is a display cut, not a mono companion, so rather than borrow a
+    third family the utility role is Inter with tabular figures -- which is what
+    "tabular or monospaced" in EXPERIENCE-SPEC.md allows. It suits what the role
+    actually carries here: the readout is short English labels in tracked
+    uppercase, where fixed advance widths only make word colour uneven, and the
+    figures need tnum rather than monospacing. data-mono puts a real mono back
+    for comparison.
+  */
+  --sp-font-mono: var(--font-inter);
+
+  --sp-font-features: normal;
+  --sp-mono-features: 'tnum' 1;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+/*
+  Utility-role override, independent of the set above. Equal specificity to the
+  set blocks and declared after them, so the cascade lets any mono pair with any
+  sans. No attribute means the set's own choice stands.
+*/
+[data-mono='sans'] {
+  --sp-font-mono: var(--sp-font-sans);
+  --sp-mono-features: 'tnum' 1;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-mono='geist'] {
+  --sp-font-mono: var(--font-geist-mono);
+  --sp-mono-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-mono='glide'] {
+  --sp-font-mono: var(--font-glide-mono);
+  --sp-mono-features: normal;
+  --sp-mono-weight: 400;
+  --sp-mono-weight-strong: 400;
+}
+
+[data-mono='jetbrains'] {
+  --sp-font-mono: var(--font-jetbrains-mono);
+  --sp-mono-features: normal;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-mono='commit'] {
+  --sp-font-mono: var(--font-commit-mono);
+  --sp-mono-features: normal;
+  /* Vendored at 400, 500 and 600: both weights below are real cuts. */
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
 }
 
 @theme inline {
@@ -197,10 +329,11 @@
   --color-mode-preview: var(--sp-mode-preview);
   --color-mode-unavailable: var(--sp-mode-unavailable);
 
+  --font-display:
+    var(--sp-font-display), system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-sans:
-    var(--font-geist-sans), system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono:
-    var(--font-geist-mono), ui-monospace, 'SF Mono', Menlo, monospace;
+    var(--sp-font-sans), system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: var(--sp-font-mono), ui-monospace, 'SF Mono', Menlo, monospace;
 
   --text-display: 22px;
   --text-display--line-height: 26px;

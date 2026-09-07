@@ -62,6 +62,39 @@ pnpm format:check   # Prettier
 pnpm test           # Vitest contract and fixture tests
 ```
 
+### Click-to-source in the browser
+
+Hold <kbd>Option</kbd>/<kbd>Alt</kbd>, hover any element in the running app, and click to open the JSX behind it in your editor. This is [LocatorJS](https://www.locatorjs.com), wired up in two dev-only pieces:
+
+- [`@locator/webpack-loader`](https://www.npmjs.com/package/@locator/webpack-loader) runs as a Turbopack rule in `next.config.ts` and stamps every JSX element with `data-locatorjs="<file>:<line>:<column>"`. React 19 removed the `_debugSource` fiber field LocatorJS used to read, so the location has to be baked into the markup instead. Because the attribute travels in the HTML, this covers server components, whose code never reaches the browser.
+- [`@locator/runtime`](https://www.npmjs.com/package/@locator/runtime) draws the overlay, loaded by [`LocatorRuntime`](components/dev/locator-runtime.tsx) in the root layout.
+
+**Do not install the browser extension** — disable it for `localhost` if you already have it. The published build (1.3.2, 2023) predates the path-based attribute format and only understands the older `data-locatorjs-id` scheme, so it reports *"No source info found for this element"*. It also injects its own copy of the overlay, and whichever runtime creates `#locatorjs-wrapper` first wins; the other silently gives up. `@locator/runtime` is that same overlay at a current version, so nothing is lost by leaving the extension off.
+
+Both pieces are conditioned on `development` and excluded from production builds; the loader also skips `node_modules`.
+
+### Switching typefaces in the browser
+
+The families are still provisional, so components address the three semantic roles from [the experience specification](docs/EXPERIENCE-SPEC.md) — display, interface sans, and tabular utility — and never a family name. A `data-typeface` attribute decides which family fills each role, alongside the existing `data-theme`:
+
+| Set | Display | Interface | Utility |
+| --- | --- | --- | --- |
+| `geist` (default) | Geist | Geist | Geist Mono |
+| `glide` | Glide | Glide | Glide Mono |
+| `inter` | Inter Tight | Inter | Inter, tabular figures |
+
+The utility role is a second axis, because which mono suits a given sans is the open question and every pairing has to be reachable. `data-mono` overrides just that role — `sans` (the interface family with `tnum`), `geist`, `glide`, `jetbrains`, or `commit` — and no attribute leaves the set's own choice in place.
+
+The Inter set deliberately has no separate mono. The spec asks for a "tabular **or** monospaced" utility role, and what the role carries here is mostly short English labels in tracked uppercase, where fixed advance widths only make word colour uneven, plus figures that need `tnum` rather than monospacing. `data-mono` puts a real mono back for comparison.
+
+The **Aa** control in the bottom-right corner of the running app switches the set, the utility family, the theme, and the optical-rim intensity, and remembers the choice. `?font=glide&mono=commit` pins a combination for a screenshot or a shared link, and [`/workbench`](app/workbench/page.tsx) shows every set and every utility candidate side by side. Next's own dev indicator has no extension point for this, so the control is separate and sits opposite it.
+
+Because both attributes resolve per subtree, any element can override the roles for its own contents — that is how the workbench compares them on one page.
+
+Only the default set is preloaded; the alternates emit `@font-face` rules but download nothing until a role selects them. To change the shipped default, edit `DEFAULT_TYPEFACE_SET` in [`lib/typography.ts`](lib/typography.ts) and the `:root` role block in [`app/tokens.css`](app/tokens.css). Stylistic sets and mono weights belong in those same blocks, and the sans and the mono carry separate feature tokens: `ss01` names a different alternate in every family, so a setting that is right for the interface family is wrong for a mono paired across from it. Weights are per-family too — Glide Mono has only one, so it pins both weight tokens to 400.
+
+Vendored under [SIL OFL 1.1](app/fonts/): [Glide](https://blode.co/glide) and [Commit Mono](https://commitmono.com/) (the [Fontsource](https://www.npmjs.com/package/@fontsource/commit-mono) build, which instances the variable source into real 400/500/600 cuts — the upstream release ships only 400 and 700). Inter, Inter Tight, and JetBrains Mono come from Google Fonts through `next/font`.
+
 ## Documentation
 
 The detailed specification lives in [`docs/`](docs/README.md):
