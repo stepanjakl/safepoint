@@ -58,9 +58,6 @@ export function isThemeChoice(value: unknown): value is ThemeChoice {
   return THEME_CHOICES.includes(value as ThemeChoice);
 }
 
-export const DEFAULT_EDGE_STRENGTH = 0.7;
-
 export const TYPEFACE_STORAGE_KEY = 'safepoint:typeface';
 export const MONO_STORAGE_KEY = 'safepoint:mono';
 export const THEME_STORAGE_KEY = 'safepoint:theme';
-export const EDGE_STRENGTH_STORAGE_KEY = 'safepoint:edge-strength';

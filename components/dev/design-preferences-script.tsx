@@ -1,5 +1,4 @@
 import {
-  EDGE_STRENGTH_STORAGE_KEY,
   MONO_CHOICES,
   MONO_STORAGE_KEY,
   THEME_STORAGE_KEY,
@@ -39,10 +38,6 @@ try {
   var theme = localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});
   if (theme === 'light' || theme === 'dark') {
     root.dataset.theme = theme;
-  }
-  var edge = parseFloat(localStorage.getItem(${JSON.stringify(EDGE_STRENGTH_STORAGE_KEY)}));
-  if (edge >= 0 && edge <= 1) {
-    root.style.setProperty('--edge-strength', String(edge));
   }
 } catch (error) {
   // No stored preference is readable; the token defaults stand.

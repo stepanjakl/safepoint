@@ -13,7 +13,7 @@ import {
 
 /*
   Protected comparison page: the implemented workspace in light and dark at
-  wide and narrow widths, plus the optical-rim intensities and the candidate
+  wide and narrow widths, plus the control faces and the candidate
   typeface sets. Development only unless SAFEPOINT_WORKBENCH=enabled.
 */
 export default async function WorkbenchPage({
@@ -115,30 +115,25 @@ export default async function WorkbenchPage({
           <div className="border-rule-strong bg-canvas text-primary w-[390px] border">
             <ReviewWorkspace presentation={presentation} initialSku={sku} />
           </div>
-          <h2 className="readout text-muted">
-            {theme} · optical rim intensity
-          </h2>
+          <h2 className="readout text-muted">{theme} · controls</h2>
           <div className="border-rule-strong bg-canvas text-primary flex flex-wrap items-center gap-6 border p-6">
-            {[0.4, 0.7, 1].map((strength) => (
-              <div key={strength} className="space-y-2">
-                <Button
-                  variant="primary"
-                  style={{ '--edge-strength': strength } as React.CSSProperties}
-                >
-                  Commit approved changes
-                </Button>
-                <p className="readout text-muted">strength {strength}</p>
-              </div>
-            ))}
             <div className="space-y-2">
-              <Button>Review omissions</Button>
-              <p className="readout text-muted">secondary · level 1</p>
+              <Button variant="primary">Commit approved changes</Button>
+              <p className="readout text-muted">primary</p>
             </div>
             <div className="space-y-2">
               <Button variant="primary" isDisabled>
                 Commit approved changes
               </Button>
-              <p className="readout text-muted">disabled · flat</p>
+              <p className="readout text-muted">primary · disabled</p>
+            </div>
+            <div className="space-y-2">
+              <Button>Review omissions</Button>
+              <p className="readout text-muted">secondary</p>
+            </div>
+            <div className="space-y-2">
+              <Button isDisabled>Review omissions</Button>
+              <p className="readout text-muted">secondary · disabled</p>
             </div>
           </div>
         </section>

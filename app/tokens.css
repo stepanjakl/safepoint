@@ -46,6 +46,8 @@
   --color-stone-900: oklch(21.6% 0.006 56.043);
   --color-stone-950: oklch(14.7% 0.004 49.25);
 
+  --color-gray-200: oklch(92.8% 0.006 264.531);
+  --color-gray-300: oklch(87.2% 0.01 258.338);
   --color-gray-400: oklch(70.7% 0.022 261.325);
   --color-gray-500: oklch(55.1% 0.027 264.364);
   --color-gray-700: oklch(37.3% 0.034 259.733);
@@ -70,6 +72,12 @@
 
   --color-teal-400: oklch(77.7% 0.152 181.912);
   --color-teal-600: oklch(60% 0.118 184.704);
+
+  --color-cyan-300: oklch(86.5% 0.127 207.078);
+  --color-cyan-400: oklch(78.9% 0.154 211.53);
+  --color-cyan-500: oklch(71.5% 0.143 215.221);
+  --color-cyan-600: oklch(60.9% 0.126 221.723);
+  --color-cyan-700: oklch(52% 0.105 223.128);
 
   --color-violet-400: oklch(70.2% 0.183 293.541);
   --color-violet-600: oklch(54.1% 0.281 293.009);
@@ -115,14 +123,10 @@
   --sp-action-hover: light-dark(var(--color-gray-700), var(--color-white));
   --sp-focus: light-dark(var(--color-blue-600), var(--color-blue-400));
 
-  /* Optical edges */
+  /* The top sheen on an enclosure. */
   --sp-edge-inner: light-dark(
     color-mix(in oklab, var(--color-white) 85%, transparent),
     color-mix(in oklab, var(--color-white) 22%, transparent)
-  );
-  --sp-edge-outer: light-dark(
-    color-mix(in oklab, var(--color-gray-300) 28%, transparent),
-    color-mix(in oklab, var(--color-black) 30%, transparent)
   );
 
   /* Semantic state */
@@ -157,35 +161,66 @@
     var(--color-stone-600)
   );
 
-  /* Optical-edge intensity: 0 removes the rims, 1 is the strongest permitted */
-  --edge-strength: 0.7;
-  /* The opaque face an encased edge is drawn around; see edge-2. */
-  --edge-face: var(--sp-surface-primary);
-  /* The rule the rim gradient is mixed into, and what remains at strength 0. */
-  --edge-rule: var(--sp-rule-strong);
-}
+  /*
+    Control faces. Each control is a two-stop face with a two-stop ring around
+    it; see the control-face utility for how the pair is painted. Kept as four
+    colours rather than a gradient token because light-dark() resolves colours,
+    not gradients, which is how every other role in this file is themed.
 
-/*
-  Registered so both interpolate. An unregistered custom property is a string
-  to the animation engine and snaps between values, which would make a control
-  that changes face colour or rim intensity on hover jump rather than settle.
-*/
-@property --edge-strength {
-  syntax: '<number>';
-  inherits: true;
-  initial-value: 0.7;
-}
+    The accent ramp is deliberately identical in both themes: it reads as the
+    same action on either canvas, and white text stays legible on all of it.
+  */
+  --sp-accent-face-top: var(--color-cyan-400);
+  --sp-accent-face-bottom: var(--color-cyan-600);
+  --sp-accent-ring-top: var(--color-cyan-500);
+  --sp-accent-ring-bottom: var(--color-cyan-700);
 
-@property --edge-face {
-  syntax: '<color>';
-  inherits: true;
-  initial-value: transparent;
-}
+  /* Hover lifts the whole control one step, ring included, so the edge
+     brightens with the face rather than staying put while it moves. */
+  --sp-accent-face-top-hover: var(--color-cyan-500);
+  --sp-accent-face-bottom-hover: var(--color-cyan-700);
+  --sp-accent-ring-top-hover: var(--color-cyan-600);
+  --sp-accent-ring-bottom-hover: var(--color-cyan-800);
 
-@property --edge-rule {
-  syntax: '<color>';
-  inherits: true;
-  initial-value: transparent;
+  --sp-quiet-face-top: light-dark(var(--color-white), var(--color-stone-700));
+  --sp-quiet-face-bottom: light-dark(
+    var(--color-gray-200),
+    var(--color-stone-800)
+  );
+  --sp-quiet-ring-top: light-dark(
+    var(--color-gray-200),
+    var(--color-stone-600)
+  );
+  --sp-quiet-ring-bottom: light-dark(
+    var(--color-gray-400),
+    var(--color-stone-500)
+  );
+
+  /* Light deepens on hover, dark lifts: on either canvas the control moves
+     toward the viewer rather than toward a fixed colour. */
+  --sp-quiet-face-top-hover: light-dark(
+    var(--color-white),
+    var(--color-stone-600)
+  );
+  --sp-quiet-face-bottom-hover: light-dark(
+    var(--color-gray-300),
+    var(--color-stone-700)
+  );
+  --sp-quiet-ring-top-hover: light-dark(
+    var(--color-gray-300),
+    var(--color-stone-500)
+  );
+  --sp-quiet-ring-bottom-hover: light-dark(
+    var(--color-gray-500),
+    var(--color-stone-400)
+  );
+
+  /* Flat: no ramp, so an unavailable control cannot read as a live one. */
+  --sp-off-face: light-dark(var(--color-stone-100), var(--color-stone-900));
+  --sp-off-ring: light-dark(var(--color-stone-300), var(--color-stone-700));
+
+  /* The hairline of light along the top inside edge of a raised control. */
+  --sp-face-highlight: color-mix(in oklab, var(--color-white) 25%, transparent);
 }
 
 /*

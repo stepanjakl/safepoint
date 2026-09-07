@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     // suppressHydrationWarning: DesignPreferencesScript sets data-typeface,
-    // data-theme and --edge-strength here before React hydrates.
+    // data-mono and data-theme here before React hydrates.
     <html lang="en-GB" className={fontVariables} suppressHydrationWarning>
       <head>
         <DesignPreferencesScript />

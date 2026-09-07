@@ -87,7 +87,7 @@ The utility role is a second axis, because which mono suits a given sans is the 
 
 The Inter set deliberately has no separate mono. The spec asks for a "tabular **or** monospaced" utility role, and what the role carries here is mostly short English labels in tracked uppercase, where fixed advance widths only make word colour uneven, plus figures that need `tnum` rather than monospacing. `data-mono` puts a real mono back for comparison.
 
-The **Aa** control in the bottom-right corner of the running app switches the set, the utility family, the theme, and the optical-rim intensity, and remembers the choice. `?font=glide&mono=commit` pins a combination for a screenshot or a shared link, and [`/workbench`](app/workbench/page.tsx) shows every set and every utility candidate side by side. Next's own dev indicator has no extension point for this, so the control is separate and sits opposite it.
+The **Aa** control in the bottom-right corner of the running app switches the set, the utility family, and the theme, and remembers the choice. `?font=glide&mono=commit` pins a combination for a screenshot or a shared link, and [`/workbench`](app/workbench/page.tsx) shows every set and every utility candidate side by side. Next's own dev indicator has no extension point for this, so the control is separate and sits opposite it.
 
 Because both attributes resolve per subtree, any element can override the roles for its own contents — that is how the workbench compares them on one page.
 

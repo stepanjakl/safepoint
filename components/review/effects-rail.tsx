@@ -25,7 +25,7 @@ export function EffectsRail({
         meta={`${effects.length} planned · none executed`}
       />
       <div className="px-4 pt-4 pb-3">
-        <div className="edge-2 rounded-control bg-surface-primary px-4 py-4">
+        <div className="enclosure rounded-control bg-surface-primary px-4 py-4">
           <ol
             className="rail"
             style={{ '--rail-count': effects.length } as React.CSSProperties}

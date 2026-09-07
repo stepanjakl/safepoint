@@ -6,20 +6,18 @@ import { cx } from '@/lib/cx';
 
 type Variant = 'primary' | 'secondary';
 
-// --edge-face and --edge-strength are registered in tokens.css, so listing them
-// here means the face and the rim settle with the colours instead of snapping.
+// No transition utility here: control-face owns the timing, because the
+// gradient stops it animates are its own contract.
 const base =
-  'inline-flex h-9 min-w-11 items-center justify-center gap-2 px-3.5 text-dense font-medium whitespace-nowrap transition-[background-color,border-color,color,--edge-face,--edge-strength] duration-150 outline-none data-[focus-visible]:outline-solid data-[focus-visible]:outline-2 data-[focus-visible]:outline-offset-2 data-[focus-visible]:outline-focus data-[disabled]:cursor-not-allowed data-[disabled]:bg-surface-disabled data-[disabled]:text-muted data-[disabled]:[--edge-strength:0] data-[disabled]:[--edge-rule:var(--sp-rule-default)]';
+  'inline-flex h-9 min-w-11 items-center justify-center gap-2 px-3.5 text-dense font-medium whitespace-nowrap outline-none data-[focus-visible]:outline-solid data-[focus-visible]:outline-2 data-[focus-visible]:outline-offset-2 data-[focus-visible]:outline-focus data-[disabled]:cursor-not-allowed data-[disabled]:control-off data-[disabled]:text-muted';
 
 const variants: Record<Variant, string> = {
-  // Graphite face inside the encased edge. --edge-face matches the fill so the
-  // rim stays confined to the ring; the two move together.
+  // The one accented control on a page: a lit face with a brighter ring.
   primary:
-    'edge-2 rounded-control bg-action [--edge-face:var(--sp-action)] text-white data-[hovered]:bg-action-hover data-[hovered]:[--edge-face:var(--sp-action-hover)] data-[pressed]:[--edge-strength:0.2] data-[disabled]:[--edge-face:var(--sp-surface-disabled)]',
-  // Flat control surface: a solid rule, no rim. The direction reserves the
-  // encased edge for high-priority actions.
+    'control-face control-accent rounded-control text-white data-[hovered]:control-accent-hover data-[pressed]:control-accent-hover',
+  // Everything else: the same construction, one step quieter.
   secondary:
-    'edge-1 rounded-section bg-surface-control text-primary data-[hovered]:border-rule-strong data-[pressed]:bg-surface-selected',
+    'control-face control-quiet rounded-section text-primary data-[hovered]:control-quiet-hover data-[pressed]:control-quiet-hover',
 };
 
 export function Button({

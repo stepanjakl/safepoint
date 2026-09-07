@@ -3,15 +3,12 @@
 import { useState, useSyncExternalStore } from 'react';
 
 import {
-  readEdgeStrength,
   readMono,
   readTheme,
   readTypeface,
-  serverEdgeStrength,
   serverMono,
   serverTheme,
   serverTypeface,
-  setEdgeStrength,
   setMono,
   setTheme,
   setTypeface,
@@ -27,8 +24,8 @@ import {
 
 /**
  * Development-only picker for the provisional parts of the visual language:
- * typeface set, theme, and optical-rim intensity. All three are already driven
- * by an attribute or a custom property, so this only writes to <html>.
+ * typeface set, utility family, and theme. Each is already driven by an
+ * attribute, so this only writes to <html>.
  *
  * Next's own dev indicator has no extension point -- `DevToolsConfig` is a
  * closed schema and its panels are internal components -- so this is a separate
@@ -46,11 +43,6 @@ export function DesignControls() {
   );
   const mono = useSyncExternalStore(subscribe, readMono, serverMono);
   const theme = useSyncExternalStore(subscribe, readTheme, serverTheme);
-  const edge = useSyncExternalStore(
-    subscribe,
-    readEdgeStrength,
-    serverEdgeStrength,
-  );
 
   if (process.env.NODE_ENV !== 'development') {
     return null;
@@ -124,21 +116,6 @@ export function DesignControls() {
             </label>
           ))}
         </fieldset>
-
-        <fieldset>
-          <legend>
-            Edge strength <span className="sp-devctl-readout">{edge}</span>
-          </legend>
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.05}
-            value={edge}
-            aria-label="Optical rim intensity"
-            onChange={(event) => setEdgeStrength(Number(event.target.value))}
-          />
-        </fieldset>
       </div>
     </div>
   );
@@ -201,12 +178,5 @@ const PANEL_CSS = `
   font-size: 10px;
 }
 .sp-devctl input[type='radio'] { margin: 2px 0 0; accent-color: #ededed; }
-.sp-devctl input[type='range'] { width: 100%; accent-color: #ededed; }
-.sp-devctl-readout {
-  color: #ededed;
-  font-variant-numeric: tabular-nums;
-  text-transform: none;
-  letter-spacing: 0;
-}
 .sp-devctl :focus-visible { outline: 2px solid #3b82f6; outline-offset: 2px; }
 `;

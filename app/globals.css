@@ -57,93 +57,147 @@
 }
 
 /*
-  Optical edges, in two levels. A visible rule always remains, and both drop to
-  a plain border under forced colours and print. --edge-strength scales the rim
-  and the face gradient together, so intensity is comparable with one variable.
+  The four stops the control face is built from, registered so they animate.
+
+  `background-image` is not an animatable property, so a gradient can never be
+  transitioned directly. A *registered* custom property can be, though: the
+  browser interpolates the colour and repaints the gradient from it each frame.
+  Unregistered, these would be plain strings to the animation engine and every
+  state change would snap. This is what lets both the face and the ring move.
 */
-@utility edge-1 {
-  position: relative;
-  /* border: 1px solid var(--sp-rule-default); */
-  /* background-image: linear-gradient(
-    to bottom,
-    color-mix(
-      in oklab,
-      var(--sp-edge-inner) calc(60% * var(--edge-strength)),
-      transparent
-    ),
-    transparent 45%
-  ); */
-  /* @apply bg-linear-to-t from-transparent to-gray-300 border border-transparent bg-origin-padding bg-clip-padding; */
-  border: 1px solid transparent;
-  border-radius: var(--edge-radius, var(--radius-control));
-  background-image:
-    linear-gradient(
-      to bottom,
-      var(--color-white),
-      var(--color-gray-200)
-    ),
-    linear-gradient(var(--color-white), var(--color-white)),
-    linear-gradient(
-      to bottom,
-      var(--color-gray-200),
-      var(--color-gray-400)
-    );
-  background-origin: padding-box, padding-box, border-box;
-  background-clip: padding-box, padding-box, border-box;
+@property --control-face-top {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: transparent;
+}
+
+@property --control-face-bottom {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: transparent;
+}
+
+@property --control-ring-top {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: transparent;
+}
+
+@property --control-ring-bottom {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: transparent;
+}
+
+@property --control-highlight {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: transparent;
 }
 
 /*
-  The encased edge: a gradient painted into the border ring, hidden across the
-  rest of the control by an opaque face layer stacked over it.
+  Raised control face. Two opaque background layers: the face, clipped to the
+  padding box, and the ring, clipped to the border box. Because the face is
+  opaque it hides the ring everywhere except the 1px border, which is what
+  leaves a lit edge around the control -- the same result a 1px padded wrapper
+  produces, without the extra element, and the border derives its own inner
+  radius so there is no radius arithmetic to keep in sync.
 
-  Three background layers, topmost first:
-    1. the face sheen, clipped to the padding box;
-    2. the opaque face colour, also padding box -- this is what confines the
-       rim to the ring, exactly as a 1px padded wrapper would;
-    3. the rim gradient, clipped to the border box.
-
-  Set --edge-face to the control's own surface; it defaults to the primary
-  surface in the token layer, so an ordinary panel needs nothing.
-
-  The ring gradient runs between the two rim colours mixed *into* the base
-  rule, not into transparency, so a vertical gradient never leaves the left and
-  right sides weaker than a plain border. --edge-strength therefore morphs the
-  control from an ordinary solid rule at 0 to fully encased at 1, and the flat
-  disabled state falls out of that without a separate border rule.
-
-  This replaces a pair of mask-composite pseudo-elements. Same result, no
-  masks, no @supports fallback, no extra element, and no inner-radius calc --
-  a bordered box derives its inner radius on its own.
+  Geometry only. A colour utility below supplies the four stops, so a variant
+  or a state restyles a control without restating any of this. The transition
+  lives here rather than on the component: the stops are this utility's own
+  contract, and nothing that sets them should have to remember to animate them.
+  The reduced-motion rule in the base layer still overrides all of it.
 */
-@utility edge-2 {
+@utility control-face {
   border: 1px solid transparent;
-  border-radius: var(--edge-radius, var(--radius-control));
-  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-white) 25%, transparent);
+  box-shadow: inset 0 0 0 1px var(--control-highlight);
   background-image:
     linear-gradient(
       to bottom,
-      var(--color-cyan-400),
-      var(--color-cyan-600)
+      var(--control-face-top),
+      var(--control-face-bottom)
     ),
-    linear-gradient(var(--color-white), var(--color-white)),
     linear-gradient(
       to bottom,
-      var(--color-cyan-500),
-      var(--color-cyan-700)
+      var(--control-ring-top),
+      var(--control-ring-bottom)
     );
-  background-origin: padding-box, padding-box, border-box;
-  background-clip: padding-box, padding-box, border-box;
+  background-origin: padding-box, border-box;
+  background-clip: padding-box, border-box;
+  transition-property:
+    color, background-color, box-shadow, --control-face-top,
+    --control-face-bottom, --control-ring-top, --control-ring-bottom,
+    --control-highlight;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
+
+/* The primary action. */
+@utility control-accent {
+  --control-face-top: var(--sp-accent-face-top);
+  --control-face-bottom: var(--sp-accent-face-bottom);
+  --control-ring-top: var(--sp-accent-ring-top);
+  --control-ring-bottom: var(--sp-accent-ring-bottom);
+  --control-highlight: var(--sp-face-highlight);
+}
+
+@utility control-accent-hover {
+  --control-face-top: var(--sp-accent-face-top-hover);
+  --control-face-bottom: var(--sp-accent-face-bottom-hover);
+  --control-ring-top: var(--sp-accent-ring-top-hover);
+  --control-ring-bottom: var(--sp-accent-ring-bottom-hover);
+}
+
+/* Ordinary controls. */
+@utility control-quiet {
+  --control-face-top: var(--sp-quiet-face-top);
+  --control-face-bottom: var(--sp-quiet-face-bottom);
+  --control-ring-top: var(--sp-quiet-ring-top);
+  --control-ring-bottom: var(--sp-quiet-ring-bottom);
+  --control-highlight: transparent;
+}
+
+@utility control-quiet-hover {
+  --control-face-top: var(--sp-quiet-face-top-hover);
+  --control-face-bottom: var(--sp-quiet-face-bottom-hover);
+  --control-ring-top: var(--sp-quiet-ring-top-hover);
+  --control-ring-bottom: var(--sp-quiet-ring-bottom-hover);
+}
+
+/* Unavailable: flat on both layers, so it cannot be mistaken for a live one. */
+@utility control-off {
+  --control-face-top: var(--sp-off-face);
+  --control-face-bottom: var(--sp-off-face);
+  --control-ring-top: var(--sp-off-ring);
+  --control-ring-bottom: var(--sp-off-ring);
+  --control-highlight: transparent;
+}
+
+/*
+  Panel enclosure. A plain bordered surface with a shallow top sheen -- it
+  encloses content rather than inviting a press, so it stays flat.
+*/
+@utility enclosure {
+  border: 1px solid var(--sp-rule-strong);
+  border-radius: var(--edge-radius, var(--radius-control));
+  background-image: linear-gradient(
+    to bottom,
+    var(--sp-edge-inner),
+    transparent 55%
+  );
 }
 
 @media (forced-colors: active), print {
-  .edge-1,
-  .edge-2 {
+  .control-face,
+  .enclosure {
     background-image: none;
   }
 
   /* The ring carries the boundary, so a real border has to come back. */
-  .edge-2 {
+  .control-face {
     border-color: currentColor;
+    box-shadow: none;
   }
 }
 

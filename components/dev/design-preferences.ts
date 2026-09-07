@@ -1,7 +1,5 @@
 import {
-  DEFAULT_EDGE_STRENGTH,
   DEFAULT_TYPEFACE_SET,
-  EDGE_STRENGTH_STORAGE_KEY,
   isMonoChoice,
   isThemeChoice,
   isTypefaceSet,
@@ -14,7 +12,7 @@ import {
 } from '@/lib/typography';
 
 /*
-  <html> is the store: data-typeface, data-theme and --edge-strength are what
+  <html> is the store: data-typeface, data-mono and data-theme are what
   the stylesheet actually reads, so mirroring them into React state would just
   create a second copy that can disagree. The picker subscribes to these
   through useSyncExternalStore, which also gives hydration the right shape --
@@ -56,13 +54,6 @@ export function readTheme(): ThemeChoice {
   return isThemeChoice(value) ? value : 'system';
 }
 
-export function readEdgeStrength(): number {
-  const value = Number.parseFloat(
-    document.documentElement.style.getPropertyValue('--edge-strength'),
-  );
-  return Number.isFinite(value) ? value : DEFAULT_EDGE_STRENGTH;
-}
-
 export function serverTypeface() {
   return DEFAULT_TYPEFACE_SET;
 }
@@ -73,10 +64,6 @@ export function serverMono(): MonoChoice {
 
 export function serverTheme(): ThemeChoice {
   return 'system';
-}
-
-export function serverEdgeStrength() {
-  return DEFAULT_EDGE_STRENGTH;
 }
 
 export function setTypeface(next: TypefaceSet) {
@@ -104,12 +91,6 @@ export function setTheme(next: ThemeChoice) {
     document.documentElement.dataset.theme = next;
   }
   persist(THEME_STORAGE_KEY, next);
-  emit();
-}
-
-export function setEdgeStrength(next: number) {
-  document.documentElement.style.setProperty('--edge-strength', String(next));
-  persist(EDGE_STRENGTH_STORAGE_KEY, String(next));
   emit();
 }
 
