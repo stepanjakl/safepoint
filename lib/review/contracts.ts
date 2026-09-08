@@ -1,59 +1,18 @@
 import { z } from 'zod';
 
+import { dispositionSchema, labelledDeltaSchema } from './plan-contract';
+
 // A presentation boundary, not an execution authorisation or a policy engine.
 // Process adapters own domain validation, calculations and source mapping.
-export const reviewGroupSchema = z.enum(['attention', 'blocked', 'ready']);
-export type ReviewGroup = z.infer<typeof reviewGroupSchema>;
-
-export const GROUP_LABELS: Record<ReviewGroup, string> = {
-  attention: 'Needs attention',
-  blocked: 'Cannot proceed',
-  ready: 'Ready for review',
-};
+// The plan contract owns the card; this owns the detail pane behind it.
 
 const itemSummarySchema = z.strictObject({
   id: z.string().min(1),
   title: z.string().min(1),
   subtitle: z.string(),
-  group: reviewGroupSchema,
+  disposition: dispositionSchema,
   outcome: z.string().min(1),
   reason: z.string().min(1),
-});
-
-export const reviewBatchSchema = z
-  .strictObject({
-    id: z.string().min(1),
-    revision: z.string().min(1),
-    title: z.string().min(1),
-    processLabel: z.string().min(1),
-    mode: z.literal('replay'),
-    evaluatedAt: z.string().min(1),
-    context: z.string(),
-    reviewLabel: z.string().min(1),
-    initialItemId: z.string().min(1),
-    items: z.array(itemSummarySchema).min(1),
-  })
-  .superRefine((batch, ctx) => {
-    const ids = new Set(batch.items.map((item) => item.id));
-    if (ids.size !== batch.items.length) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'Duplicate review item identifiers',
-      });
-    }
-    if (!ids.has(batch.initialItemId)) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'Initial item is missing from the batch',
-      });
-    }
-  });
-
-const changeSchema = z.strictObject({
-  label: z.string(),
-  before: z.string().nullable(),
-  after: z.string(),
-  note: z.string().nullable(),
 });
 
 export const reviewDetailSchema = itemSummarySchema.extend({
@@ -61,7 +20,7 @@ export const reviewDetailSchema = itemSummarySchema.extend({
   conclusion: z.string().min(1),
   explanation: z.string().min(1),
   nextAction: z.string().min(1),
-  changes: z.array(changeSchema),
+  deltas: z.array(labelledDeltaSchema),
   facts: z.array(
     z.strictObject({
       label: z.string(),
@@ -122,18 +81,8 @@ export const reviewDetailSchema = itemSummarySchema.extend({
   ),
 });
 
-export type ReviewBatch = z.infer<typeof reviewBatchSchema>;
-export type ReviewItem = ReviewBatch['items'][number];
 export type ReviewDetail = z.infer<typeof reviewDetailSchema>;
 export type LoadReviewDetail = (
   id: string,
   signal: AbortSignal,
 ) => Promise<ReviewDetail>;
-
-export function countReviewGroups(
-  items: ReviewItem[],
-): Record<ReviewGroup, number> {
-  const counts = { attention: 0, blocked: 0, ready: 0 };
-  for (const item of items) counts[item.group] += 1;
-  return counts;
-}

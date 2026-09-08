@@ -1,32 +1,33 @@
 'use client';
 
 import { useCallback } from 'react';
-import { reviewDetailSchema, type ReviewBatch } from '@/lib/review/contracts';
+import { reviewDetailSchema } from '@/lib/review/contracts';
+import type { ReleasePlan } from '@/lib/review/plan-contract';
 import { ReviewExperience } from './review-experience';
 
 // The local replay host owns transport. The shared UI knows no URL or SKU.
 export function ReplayReview({
-  batch,
+  plan,
   initialItemId,
 }: {
-  batch: ReviewBatch;
+  plan: ReleasePlan;
   initialItemId?: string;
 }) {
   const loadDetail = useCallback(
     async (id: string, signal: AbortSignal) => {
       const response = await fetch(
-        `/api/replays/${encodeURIComponent(batch.id)}/items/${encodeURIComponent(id)}`,
+        `/api/replays/${encodeURIComponent(plan.id)}/items/${encodeURIComponent(id)}`,
         { signal },
       );
       if (!response.ok) throw new Error('Replay detail request failed');
       const data: unknown = await response.json();
       return reviewDetailSchema.parse(data);
     },
-    [batch.id],
+    [plan.id],
   );
   return (
     <ReviewExperience
-      batch={batch}
+      plan={plan}
       loadDetail={loadDetail}
       initialItemId={initialItemId}
     />

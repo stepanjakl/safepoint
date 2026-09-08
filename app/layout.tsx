@@ -19,7 +19,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     // suppressHydrationWarning: DesignPreferencesScript sets data-typeface,
     // data-mono and data-theme here before React hydrates.
     <html lang="en-GB" className={fontVariables} suppressHydrationWarning>
-      <head>
+      {/* suppressHydrationWarning: the LocatorJS browser extension writes its
+          own data-locator-* status attributes onto <head> before React
+          hydrates, which React would otherwise report as a mismatch. */}
+      <head suppressHydrationWarning>
         <DesignPreferencesScript />
       </head>
       <body className="bg-canvas text-primary" suppressHydrationWarning>

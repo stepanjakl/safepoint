@@ -158,6 +158,37 @@
   --control-highlight: transparent;
 }
 
+/*
+  Enclosure faces: a control's two-layer construction at panel scale. The face
+  is flat, because a vertical ramp across a whole pane reads as a lighting
+  error rather than a lift, so the edge is carried by the ring and a top sheen.
+*/
+@utility surface-raised {
+  --control-face-top: var(--sp-surface-primary);
+  --control-face-bottom: var(--sp-surface-primary);
+  --control-ring-top: var(--sp-rule-default);
+  --control-ring-bottom: var(--sp-rule-faint);
+  --control-highlight: var(--sp-face-highlight-strong);
+}
+
+/* Above the raised face. The lift comes from the face rather than a heavier
+   ring, so it holds wherever the enclosure is placed. */
+@utility surface-floating {
+  --control-face-top: var(--sp-surface-floating);
+  --control-face-bottom: var(--sp-surface-floating);
+  --control-ring-top: var(--sp-rule-faint);
+  --control-ring-bottom: var(--sp-rule-faint);
+  --control-highlight: var(--sp-face-highlight-stronger);
+}
+
+@utility surface-recessed {
+  --control-face-top: var(--sp-surface-inset);
+  --control-face-bottom: var(--sp-surface-inset);
+  --control-ring-top: var(--sp-rule-default);
+  --control-ring-bottom: var(--sp-rule-faint);
+  --control-highlight: transparent;
+}
+
 @utility control-quiet-hover {
   --control-face-top: var(--sp-quiet-face-top-hover);
   --control-face-bottom: var(--sp-quiet-face-bottom-hover);

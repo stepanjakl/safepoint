@@ -1,37 +1,37 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
-import type {
-  LoadReviewDetail,
-  ReviewBatch,
-  ReviewGroup,
-} from '@/lib/review/contracts';
+import type { LoadReviewDetail } from '@/lib/review/contracts';
+import type { Disposition, ReleasePlan } from '@/lib/review/plan-contract';
+import { severityRank } from '@/lib/review/plan-contract';
 import { Button } from '@/components/ui/button';
-import { ReviewCard } from './review-card';
+import { ReleaseCard } from './release-card';
 import { ReviewPanel } from './review-panel';
 
 export function ReviewExperience({
-  batch,
+  plan,
   loadDetail,
   initialItemId,
 }: {
-  batch: ReviewBatch;
+  plan: ReleasePlan;
   loadDetail: LoadReviewDetail;
   initialItemId?: string;
 }) {
-  const [open, setOpen] = useState<{ group: ReviewGroup | 'all' } | null>(null);
+  const [open, setOpen] = useState<{ filter: Disposition | 'all' } | null>(
+    null,
+  );
   return (
     <>
-      <ReviewCard
-        batch={batch}
-        onOpen={(group) => setOpen({ group: group ?? 'all' })}
+      <ReleaseCard
+        plan={plan}
+        onOpen={(disposition) => setOpen({ filter: disposition ?? 'all' })}
       />
       {open ? (
         <ReviewDialog
-          batch={batch}
+          plan={plan}
           loadDetail={loadDetail}
           initialItemId={initialItemId}
-          group={open.group}
+          filter={open.filter}
           onClose={() => setOpen(null)}
         />
       ) : null}
@@ -40,16 +40,16 @@ export function ReviewExperience({
 }
 
 function ReviewDialog({
-  batch,
+  plan,
   loadDetail,
   initialItemId,
-  group,
+  filter,
   onClose,
 }: {
-  batch: ReviewBatch;
+  plan: ReleasePlan;
   loadDetail: LoadReviewDetail;
   initialItemId?: string;
-  group: ReviewGroup | 'all';
+  filter: Disposition | 'all';
   onClose: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -67,14 +67,18 @@ function ReviewDialog({
     };
   }, []);
 
+  // Lead with the most severe effect unless the host named one.
+  const leading = [...plan.effects].sort(
+    (a, b) => severityRank(a.disposition) - severityRank(b.disposition),
+  )[0];
+  const withinFilter = plan.effects.filter(
+    (effect) => filter === 'all' || effect.disposition === filter,
+  );
   const selected =
-    group === 'all'
-      ? (initialItemId ?? batch.initialItemId)
-      : (batch.items.find(
-          (item) => item.id === batch.initialItemId && item.group === group,
-        )?.id ??
-        batch.items.find((item) => item.group === group)?.id ??
-        batch.initialItemId);
+    withinFilter.find((effect) => effect.id === initialItemId)?.id ??
+    withinFilter[0]?.id ??
+    initialItemId ??
+    leading?.id;
 
   return (
     <dialog
@@ -86,11 +90,10 @@ function ReviewDialog({
       <header className="review-dialog-heading">
         <div>
           <p className="text-meta text-muted mb-1">
-            Safepoint <span aria-hidden="true">/</span> {batch.processLabel}{' '}
-            <span aria-hidden="true">/</span> Replay
+            Safepoint <span aria-hidden="true">/</span> {plan.source}
           </p>
           <h2 id={id} tabIndex={-1} ref={heading}>
-            {batch.title}
+            {plan.title}
           </h2>
         </div>
         <Button onPress={() => ref.current?.close()} aria-label="Close review">
@@ -98,10 +101,10 @@ function ReviewDialog({
         </Button>
       </header>
       <ReviewPanel
-        batch={batch}
+        plan={plan}
         loadDetail={loadDetail}
         initialItemId={selected}
-        initialGroup={group}
+        initialFilter={filter}
       />
     </dialog>
   );

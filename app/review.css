@@ -1,3 +1,150 @@
+/* App shell: two fixed panes on desktop, each scrolling independently, so the
+   conversation moves without taking the workspace furniture with it. */
+@layer components {
+  .app-shell {
+    display: grid;
+    grid-template-columns: 248px minmax(0, 1fr);
+    gap: 10px;
+    padding: 10px;
+    background: var(--sp-canvas);
+  }
+  /* The menu sits flat on the canvas; only the pane is a sheet, and it takes
+     the face and ring the controls use so the shell and the controls inside it
+     share one edge language. */
+  .app-sidebar {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px 12px 20px;
+  }
+  .app-pane {
+    @apply control-face surface-raised;
+    min-width: 0;
+    border-radius: 12px;
+    /* A containing block for its descendants. Absolutely positioned content --
+       every sr-only span among it -- otherwise resolves against the initial
+       containing block, escapes the clipping here, and drags the document's
+       scroll height out with it. */
+    position: relative;
+  }
+  .app-sidebar-brand {
+    padding: 4px 10px 16px;
+  }
+  .app-nav + .app-nav {
+    margin-top: 18px;
+  }
+  .app-nav-label {
+    padding: 0 10px 6px;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--sp-text-muted);
+  }
+  .app-nav-item {
+    display: block;
+    padding: 7px 10px;
+    border-radius: 7px;
+    font-size: 13px;
+    color: var(--sp-text-muted);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+  }
+  a.app-nav-item:hover {
+    background: var(--sp-surface-control);
+    color: var(--sp-text-primary);
+  }
+  .app-nav-item[aria-current='page'] {
+    background: var(--sp-surface-selected);
+    color: var(--sp-text-primary);
+    font-weight: 500;
+  }
+  /* Deliberately recessive: furniture, not a second thing to read. */
+  .app-nav-placeholder {
+    color: var(--sp-text-muted);
+    opacity: 0.55;
+  }
+  .app-sidebar-foot {
+    margin-top: auto;
+    padding: 16px 10px 0;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--sp-text-muted);
+    opacity: 0.8;
+  }
+  .app-pane {
+    min-width: 0;
+  }
+
+  /* Only fix the panes where there is room for both. Below that the page
+     scrolls as one document and the sidebar becomes a strip along the top. */
+  @media (width >= 900px) {
+    .app-shell {
+      height: 100dvh;
+      overflow: hidden;
+    }
+    .app-sidebar {
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+    .app-pane {
+      overflow: hidden;
+    }
+    .process {
+      height: 100%;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+    .process-body {
+      min-height: 0;
+    }
+    .process-runs,
+    .process-thread {
+      /* Grid items default to min-height: auto and refuse to shrink below
+         their content, which pushes the overflow onto the document instead of
+         scrolling here. */
+      min-height: 0;
+      min-width: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+  }
+  @media (width < 900px) {
+    .app-shell {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .app-sidebar {
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 10px 12px;
+    }
+    .app-sidebar-brand {
+      padding: 0 8px 0 0;
+    }
+    .app-nav {
+      display: contents;
+    }
+    /* Scoped to direct children: the brand mark is aria-hidden too, and it
+       stays. */
+    .app-nav + .app-nav,
+    .app-nav-label,
+    .app-sidebar-foot,
+    .app-sidebar > [aria-hidden='true'] {
+      display: none;
+    }
+    .app-nav ul {
+      display: flex;
+      gap: 4px;
+    }
+    .app-nav-item {
+      white-space: nowrap;
+      overflow-wrap: normal;
+    }
+  }
+}
+
 /* Embedded review: quiet outer summary, a working ledger when expanded. */
 @layer components {
   .chat-shell {
@@ -93,84 +240,321 @@
     font-size: 12px;
     padding: 24px;
   }
-  .review-card {
+  /* Colour binds to position on the severity scale, never to a label, so a
+     fifth bucket is a token change. */
+  .release-card,
+  .review-panel {
+    --review-severity-0: var(--sp-state-blocked);
+    --review-severity-1: var(--sp-state-caution);
+    --review-severity-2: var(--sp-state-unavailable);
+    --review-severity-3: var(--sp-state-verified);
+  }
+  [data-severity='0'] {
+    --severity: var(--review-severity-0);
+  }
+  [data-severity='1'] {
+    --severity: var(--review-severity-1);
+  }
+  [data-severity='2'] {
+    --severity: var(--review-severity-2);
+  }
+  [data-severity='3'] {
+    --severity: var(--review-severity-3);
+  }
+
+  .release-quiet {
+    color: var(--sp-text-muted);
+    font-size: 13px;
+    padding: 4px 0;
+  }
+  .release-stale {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    padding: 10px 16px;
+    margin-bottom: -1px;
+    border: 1px solid var(--sp-state-caution);
+    border-radius: 10px 10px 0 0;
+    background: color-mix(in oklch, var(--sp-state-caution) 8%, transparent);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .release-stale > span:first-child {
+    font-family: var(--font-mono);
+    font-weight: var(--sp-mono-weight-strong);
+    color: var(--sp-state-caution);
+  }
+  /* One step above the pane it sits on: the first thing found, not another
+     panel on the same plane. */
+  .release-card {
+    @apply control-face surface-floating;
     container-type: inline-size;
-    background: var(--sp-surface-primary);
-    border: 1px solid var(--sp-rule-default);
     border-radius: 10px;
     overflow: clip;
   }
-  .review-card-heading {
+  .release-card[data-danger] {
+    border-color: var(--sp-state-blocked);
+  }
+
+  /* Zone 1 */
+  .release-commit {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
-    gap: 12px;
-    padding: 16px 24px;
+    gap: 8px 12px;
+    padding: 12px 24px;
     border-bottom: 1px solid var(--sp-rule-faint);
+    box-shadow: 0 1px 0 var(--sp-face-highlight-stronger);
   }
-  .review-card-body {
+  .release-pill-state {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--sp-rule-default);
+    color: var(--sp-text-muted);
+    white-space: nowrap;
+  }
+  .release-source {
+    font-size: 12px;
+    color: var(--sp-text-muted);
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  /* Zone 2 */
+  .release-body {
     padding: 24px;
   }
-  .review-card-title {
+  .release-title {
     font-size: 25px;
     line-height: 1.2;
     letter-spacing: -0.035em;
     font-weight: 550;
+    overflow-wrap: anywhere;
   }
-  .review-counts {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    margin: 24px 0;
+  .release-verdict {
+    margin-top: 8px;
+    color: var(--sp-text-primary);
+    font-size: 14px;
+    line-height: 1.55;
+    text-wrap: pretty;
   }
-  .review-counts > div {
-    display: flex;
-    flex-direction: column-reverse;
-    gap: 6px;
-    padding-right: 12px;
-  }
-  .review-counts > div + div {
-    padding-left: 20px;
-    border-left: 1px solid var(--sp-rule-faint);
-  }
-  .review-counts dt {
+  .release-receipt-note {
+    margin-top: 4px;
     font-size: 12px;
-    line-height: 1.4;
     color: var(--sp-text-muted);
   }
-  .review-counts dd {
-    font-family: var(--font-mono);
-    font-size: 28px;
-    line-height: 1.15;
-    font-weight: 450;
-    font-variant-numeric: tabular-nums;
-    font-feature-settings: var(--sp-mono-features);
-    letter-spacing: -0.06em;
-  }
-  .review-card-finding {
+  .release-allclear {
     display: flex;
     gap: 10px;
     align-items: baseline;
-    font-size: 13px;
+    font-size: 14px;
     line-height: 1.55;
+    text-wrap: pretty;
   }
-  .review-card-finding > span:first-child {
-    flex-shrink: 0;
+  .release-check {
     font-family: var(--font-mono);
-    font-weight: var(--sp-mono-weight-strong);
+    color: var(--sp-state-verified);
+    flex-shrink: 0;
   }
-  .review-card-finding strong {
+
+  /* Zone 3 */
+  .release-distribution {
+    margin: 20px 0 4px;
+  }
+  .release-bar {
+    display: flex;
+    gap: 2px;
+    height: 6px;
+  }
+  .release-bar-segment {
+    min-width: 8px;
+    border-radius: 999px;
+    background: var(--severity);
+  }
+  .release-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .release-pill {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    min-height: 32px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--sp-rule-default);
+    font-size: 13px;
+    color: var(--sp-text-primary);
+    white-space: nowrap;
+  }
+  .release-pill .value {
+    color: var(--severity);
     font-weight: 550;
   }
-  .review-card-actions {
+  .release-pill:hover {
+    background: var(--sp-surface-inset);
+  }
+
+  /* Zone 4 */
+  .release-evidence {
+    margin-top: 20px;
+    border-top: 1px solid var(--sp-rule-faint);
+  }
+  .release-group {
+    border-bottom: 1px solid var(--sp-rule-faint);
+  }
+  .release-group > summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    padding: 8px 0;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    list-style: none;
+  }
+  .release-group > summary::-webkit-details-marker {
+    display: none;
+  }
+  .release-group-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: var(--severity);
+    flex-shrink: 0;
+  }
+  .release-group-count {
+    margin-left: auto;
+    color: var(--sp-text-muted);
+  }
+  .release-rows {
+    padding-bottom: 8px;
+  }
+  .release-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 12px;
+    padding: 6px 0 6px 17px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .release-row-subject {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .release-row-delta {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px;
+    margin-left: auto;
+    min-width: 0;
+    text-align: right;
+  }
+  .release-row-more {
+    color: var(--sp-text-muted);
+    font-size: 12px;
+  }
+  .release-row-more-link button {
+    min-height: 32px;
+    font-size: 13px;
+    color: var(--sp-text-muted);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .release-chip {
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    border: 1px solid var(--sp-rule-default);
+    color: var(--sp-text-muted);
+    white-space: nowrap;
+  }
+
+  /* Zone 5 */
+  .release-commitment {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 8px 20px;
+    gap: 8px 16px;
     margin-top: 24px;
   }
-  .review-card-actions > button:first-child {
+  .release-commitment > button {
     min-height: 44px;
   }
+  .release-safety {
+    font-size: 12px;
+    color: var(--sp-text-muted);
+    min-width: 0;
+  }
+
+  /* Deltas */
+  .delta {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 0;
+  }
+  .delta-arrow {
+    color: var(--sp-text-muted);
+  }
+  .delta-unobserved,
+  .delta-opaque,
+  .delta-set {
+    color: var(--sp-text-muted);
+    overflow-wrap: anywhere;
+  }
+  .delta-derived[data-direction='down'] {
+    color: var(--sp-state-verified);
+  }
+  .delta-derived[data-direction='up'] {
+    color: var(--sp-state-caution);
+  }
+  .delta-derived {
+    font-size: 12px;
+    color: var(--sp-text-muted);
+  }
+  .delta-chip {
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--sp-rule-default);
+    font-size: 12px;
+  }
+  .delta-chip[data-state='before'] {
+    color: var(--sp-text-muted);
+  }
+  .delta-create .value {
+    color: var(--sp-state-verified);
+  }
+  .delta-create > span[aria-hidden] {
+    color: var(--sp-state-verified);
+    font-family: var(--font-mono);
+  }
+  .delta-destroy .value {
+    text-decoration: line-through;
+    color: var(--sp-text-muted);
+  }
+  .delta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    justify-content: space-between;
+  }
+  .delta-label {
+    color: var(--sp-text-muted);
+    font-size: 13px;
+  }
+
   .review-text-button {
     min-height: 44px;
     text-align: left;
@@ -179,21 +563,34 @@
     text-decoration: underline;
     text-underline-offset: 4px;
   }
-  .review-text-button:disabled {
-    opacity: 0.65;
-    text-decoration: none;
-    cursor: default;
-  }
-  .review-card-footer {
+
+  /* Modal filters */
+  .review-filters {
     display: flex;
     flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 8px 16px;
-    padding: 12px 24px;
-    border-top: 1px solid var(--sp-rule-faint);
-    font-size: 12px;
-    color: var(--sp-text-muted);
+    gap: 6px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--sp-rule-faint);
   }
+  .review-filter {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    min-height: 32px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--sp-rule-default);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .review-filter[data-severity] .value {
+    color: var(--severity);
+  }
+  .review-filter[aria-pressed='true'] {
+    background: var(--sp-surface-selected);
+    border-color: var(--sp-rule-strong);
+  }
+
   .review-dialog {
     padding: 0;
     margin: auto;
@@ -264,24 +661,6 @@
     flex-direction: column;
     min-height: 0;
     border-right: 1px solid var(--sp-rule-default);
-  }
-  .review-list-controls {
-    display: grid;
-    gap: 8px;
-    padding: 20px 20px 16px;
-  }
-  .review-list-controls label {
-    font-size: 13px;
-    font-weight: 550;
-  }
-  .review-list-controls select {
-    min-height: 44px;
-    width: 100%;
-    border: 1px solid var(--sp-rule-default);
-    border-radius: 6px;
-    background: var(--sp-surface-control);
-    padding: 8px 12px;
-    font-size: 13px;
   }
   .review-item-list {
     flex: 1;
@@ -365,10 +744,10 @@
     padding-left: 16px;
     border-left: 2px solid var(--sp-state-advisory);
   }
-  .review-conclusion[data-group='blocked'] {
+  .review-conclusion[data-disposition='blocked'] {
     border-color: var(--sp-state-blocked);
   }
-  .review-conclusion[data-group='attention'] {
+  .review-conclusion[data-disposition='needs_decision'] {
     border-color: var(--sp-state-caution);
   }
   .review-conclusion-title {
@@ -379,10 +758,11 @@
     font-size: 15px;
     margin-bottom: 8px;
   }
-  .review-conclusion[data-group='blocked'] .review-conclusion-title {
+  .review-conclusion[data-disposition='blocked'] .review-conclusion-title {
     color: var(--sp-state-blocked);
   }
-  .review-conclusion[data-group='attention'] .review-conclusion-title {
+  .review-conclusion[data-disposition='needs_decision']
+    .review-conclusion-title {
     color: var(--sp-state-caution);
   }
   .review-conclusion > p:not(:first-child) {
@@ -418,13 +798,6 @@
     border-bottom: 1px solid var(--sp-rule-faint);
   }
   .review-change dt {
-    font-size: 13px;
-  }
-  .review-change-values {
-    display: flex;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: 4px 10px;
     font-size: 13px;
   }
   .review-disclosures {
@@ -553,21 +926,19 @@
     }
   }
   @container (width < 400px) {
-    .review-card-heading {
-      padding: 14px 16px;
-      flex-wrap: wrap;
+    .release-commit {
+      padding: 12px 16px;
     }
-    .review-card-body {
+    .release-body {
       padding: 20px 16px;
     }
-    .review-card-title {
-      font-size: 23px;
+    .release-title {
+      font-size: 22px;
     }
-    .review-counts > div + div {
-      padding-left: 12px;
-    }
-    .review-card-footer {
-      padding: 12px 16px;
+    .release-row-delta {
+      margin-left: 0;
+      text-align: left;
+      width: 100%;
     }
   }
   @media (width < 640px) {
@@ -611,6 +982,201 @@
       border-left-color: Highlight;
       outline: 1px solid Highlight;
       outline-offset: -2px;
+    }
+  }
+}
+
+@layer components {
+  .states-gallery {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+  .states-gallery-label {
+    margin-bottom: 10px;
+    color: var(--sp-text-muted);
+  }
+}
+
+/* Process chrome: what the surrounding application knows about this process,
+   above the run it is currently showing. */
+@layer components {
+  .process-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 24px;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--sp-rule-faint);
+  }
+  .process-name {
+    font-size: 15px;
+    font-weight: 550;
+    letter-spacing: -0.01em;
+  }
+  .process-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+  }
+  .process-connections {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .process-connections li {
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--sp-rule-faint);
+    font-size: 12px;
+    color: var(--sp-text-muted);
+    white-space: nowrap;
+  }
+  .process-body {
+    display: grid;
+    grid-template-columns: 232px minmax(0, 1fr);
+  }
+  .process-thread {
+    position: relative;
+  }
+  .process-runs {
+    position: relative;
+    padding: 16px 12px;
+    border-right: 1px solid var(--sp-rule-faint);
+  }
+  .run-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .run-item {
+    display: grid;
+    gap: 2px;
+    padding: 8px 10px;
+    border-radius: 7px;
+    font-size: 13px;
+  }
+  .run-item[aria-current] {
+    background: var(--sp-surface-selected);
+  }
+  .run-label {
+    color: var(--sp-text-primary);
+  }
+  .run-summary,
+  .run-drift {
+    font-size: 12px;
+    color: var(--sp-text-muted);
+  }
+  /* A run evaluated under older instructions is not comparable to this one. */
+  .run-drift {
+    color: var(--sp-state-caution);
+  }
+  .run-note {
+    margin-top: 12px;
+    padding: 0 10px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--sp-text-muted);
+    opacity: 0.8;
+  }
+
+  .instructions-dialog {
+    padding: 0;
+    /* Anchored near the top rather than centred: it belongs to the header that
+       opened it. */
+    margin: 84px auto auto;
+    width: min(560px, calc(100% - 48px));
+    max-height: min(70dvh, 640px);
+    overflow: clip;
+    border: 1px solid var(--sp-rule-default);
+    border-radius: 12px;
+    background: var(--sp-surface-floating);
+    color: var(--sp-text-primary);
+  }
+  .instructions-dialog::backdrop {
+    background: color-mix(in oklab, var(--sp-canvas) 55%, transparent);
+    backdrop-filter: blur(3px);
+  }
+  .instructions-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--sp-rule-faint);
+  }
+  .instructions-heading h2 {
+    font-size: 15px;
+    font-weight: 550;
+  }
+  .instructions-body {
+    padding: 16px 20px 20px;
+    overflow-y: auto;
+  }
+  .instructions-body ol {
+    display: grid;
+    gap: 10px;
+    padding-left: 18px;
+    list-style: decimal;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .instructions-body li::marker {
+    color: var(--sp-text-muted);
+  }
+  .instructions-note {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--sp-rule-faint);
+    font-size: 12px;
+    color: var(--sp-text-muted);
+  }
+
+  /* Below the three-column width the runs become a strip above the thread. */
+  @media (width < 1100px) {
+    .process-body {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  /* Stacked but still inside a fixed pane: the strip takes what it needs and
+     the thread takes the rest, so the thread scrolls instead of the document. */
+  @media (900px <= width < 1100px) {
+    .process-body {
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+  }
+  @media (width < 1100px) {
+    .process-runs {
+      border-right: 0;
+      border-bottom: 1px solid var(--sp-rule-faint);
+      padding: 12px;
+    }
+    .run-list {
+      flex-direction: row;
+      overflow-x: auto;
+      gap: 6px;
+    }
+    .run-item {
+      min-width: 168px;
+    }
+    .run-note {
+      display: none;
+    }
+  }
+  @media (width < 640px) {
+    .process-header {
+      padding: 12px 16px;
+    }
+    .instructions-dialog {
+      margin: 0;
+      width: 100%;
+      max-width: none;
+      height: 100dvh;
+      max-height: none;
+      border: 0;
+      border-radius: 0;
     }
   }
 }

@@ -11,10 +11,13 @@ export async function GET(
   const { process, id } = await params;
   if (process === 'promotion-release') {
     const sku = parseSkuParam(id);
-    if (sku) {
-      const presentation = presentReview(loadReviewedReplay());
+    const replay = loadReviewedReplay();
+    const line = replay.lines.find((candidate) => candidate.sku === sku);
+    if (sku && line) {
+      const presentation = presentReview(replay);
       return Response.json(
         presentPromotionDetail(
+          line,
           presentation.details[sku],
           presentation.batch.fixtureVersion,
         ),

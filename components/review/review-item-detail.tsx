@@ -1,4 +1,5 @@
 import type { ReviewDetail } from '@/lib/review/contracts';
+import { DeltaValue } from './delta';
 
 export function ReviewItemDetail({
   detail,
@@ -9,14 +10,16 @@ export function ReviewItemDetail({
 }) {
   return (
     <div className="review-item-content">
-      <div className="review-conclusion" data-group={detail.group}>
+      <div className="review-conclusion" data-disposition={detail.disposition}>
         <p className="review-conclusion-title">
           <span aria-hidden="true">
-            {detail.group === 'blocked'
+            {detail.disposition === 'blocked'
               ? '⊘'
-              : detail.group === 'attention'
+              : detail.disposition === 'needs_decision'
                 ? '!'
-                : '✓'}
+                : detail.disposition === 'deferred'
+                  ? '⏸'
+                  : '✓'}
           </span>
           {detail.conclusion}
         </p>
@@ -32,41 +35,17 @@ export function ReviewItemDetail({
       >
         <h3 id={`${idPrefix}-changes`}>
           Proposed changes{' '}
-          <span className="text-muted font-normal">
-            {detail.changes.length}
-          </span>
+          <span className="text-muted font-normal">{detail.deltas.length}</span>
         </h3>
-        {detail.changes.length ? (
+        {detail.deltas.length ? (
+          // The card shows the leading change and says how many it omits; the
+          // detail pane is where every change is accounted for.
           <dl>
-            {detail.changes.map((change) => (
-              <div key={change.label} className="review-change">
-                <dt>{change.label}</dt>
+            {detail.deltas.map((delta) => (
+              <div key={delta.label} className="review-change">
+                <dt>{delta.label}</dt>
                 <dd>
-                  <div className="review-change-values">
-                    {change.before !== null ? (
-                      <>
-                        <span className="value text-muted">
-                          <span className="sr-only">Current: </span>
-                          {change.before}
-                        </span>
-                        <span aria-hidden="true" className="text-muted">
-                          →
-                        </span>
-                      </>
-                    ) : null}
-                    <span className="value">
-                      <span className="sr-only">Proposed: </span>
-                      {change.after}
-                    </span>
-                  </div>
-                  {change.before === null ? (
-                    <p className="text-meta text-muted mt-1">
-                      Current target snapshot not supplied
-                    </p>
-                  ) : null}
-                  {change.note ? (
-                    <p className="text-meta text-muted mt-1">{change.note}</p>
-                  ) : null}
+                  <DeltaValue delta={delta} />
                 </dd>
               </div>
             ))}

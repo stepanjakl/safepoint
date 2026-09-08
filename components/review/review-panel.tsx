@@ -1,41 +1,41 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import type { LoadReviewDetail, ReviewDetail } from '@/lib/review/contracts';
 import {
-  countReviewGroups,
-  GROUP_LABELS,
-  type LoadReviewDetail,
-  type ReviewBatch,
-  type ReviewDetail,
-  type ReviewGroup,
-} from '@/lib/review/contracts';
+  DISPOSITIONS,
+  DISPOSITION_LABELS,
+  severityRank,
+  type Disposition,
+  type ReleasePlan,
+} from '@/lib/review/plan-contract';
+import { evaluationCounts } from '@/lib/review/plan-derivations';
 import { ReviewItemDetail } from './review-item-detail';
 
 type DetailState =
   | { kind: 'loaded'; detail: ReviewDetail }
   | { kind: 'error'; id: string }
   | { kind: 'loading' };
-const priority: Record<ReviewGroup, number> = {
-  blocked: 0,
-  attention: 1,
-  ready: 2,
-};
+
+type Filter = Disposition | 'all' | 'failures';
 
 export function ReviewPanel({
-  batch,
+  plan,
   loadDetail,
-  initialItemId = batch.initialItemId,
-  initialGroup = 'all',
+  initialItemId,
+  initialFilter = 'all',
 }: {
-  batch: ReviewBatch;
+  plan: ReleasePlan;
   loadDetail: LoadReviewDetail;
   initialItemId?: string;
-  initialGroup?: ReviewGroup | 'all';
+  initialFilter?: Filter;
 }) {
   const id = useId();
-  const [filter, setFilter] = useState<ReviewGroup | 'all'>(initialGroup);
-  const [selectedId, setSelectedId] = useState(initialItemId);
+  const [filter, setFilter] = useState<Filter>(initialFilter);
+  const [selectedId, setSelectedId] = useState(
+    initialItemId ?? plan.effects[0]?.id ?? '',
+  );
   const [showDetail, setShowDetail] = useState(true);
   const [state, setState] = useState<DetailState>({ kind: 'loading' });
   const [retry, setRetry] = useState(0);
@@ -44,15 +44,40 @@ export function ReviewPanel({
   const heading = useRef<HTMLHeadingElement>(null);
   const list = useRef<HTMLDivElement>(null);
   const moveFocus = useRef(false);
-  const counts = countReviewGroups(batch.items);
-  const selected = batch.items.find((item) => item.id === selectedId);
-  const visible = batch.items
-    .filter((item) => filter === 'all' || item.group === filter)
-    .toSorted((a, b) => priority[a.group] - priority[b.group]);
+
+  const counts = evaluationCounts(plan.effects);
+  const reasonLabels = useMemo(
+    () => new Map(plan.reasons.map((reason) => [reason.key, reason.label])),
+    [plan.reasons],
+  );
+  // Post-apply failures reuse the row contract, so they are a filter over the
+  // same list rather than a separate error view.
+  const failureIds = useMemo(
+    () =>
+      plan.status.kind === 'partially_applied'
+        ? new Set(plan.status.failures.map((failure) => failure.effectId))
+        : null,
+    [plan.status],
+  );
+
+  const matches = (disposition: Disposition, effectId: string) =>
+    filter === 'all'
+      ? true
+      : filter === 'failures'
+        ? (failureIds?.has(effectId) ?? false)
+        : disposition === filter;
+
+  const selected = plan.effects.find((effect) => effect.id === selectedId);
+  const visible = plan.effects
+    .filter((effect) => matches(effect.disposition, effect.id))
+    .toSorted(
+      (a, b) => severityRank(a.disposition) - severityRank(b.disposition),
+    );
 
   useEffect(() => {
+    if (!selectedId) return;
     const controller = new AbortController();
-    const key = `${batch.id}:${batch.revision}:${selectedId}`;
+    const key = `${plan.id}:${plan.revision}:${selectedId}`;
     const cached = cache.current.get(key);
     const pending = cached
       ? Promise.resolve(cached)
@@ -60,7 +85,7 @@ export function ReviewPanel({
     pending
       .then((detail) => {
         if (controller.signal.aborted) return;
-        if (detail.id !== selectedId || detail.revision !== batch.revision)
+        if (detail.id !== selectedId || detail.revision !== plan.revision)
           throw new Error('Review identity or revision changed');
         cache.current.set(key, detail);
         setState({ kind: 'loaded', detail });
@@ -70,7 +95,7 @@ export function ReviewPanel({
           setState({ kind: 'error', id: selectedId });
       });
     return () => controller.abort();
-  }, [batch.id, batch.revision, selectedId, loadDetail, retry]);
+  }, [plan.id, plan.revision, selectedId, loadDetail, retry]);
 
   useEffect(() => {
     if (moveFocus.current) {
@@ -85,93 +110,132 @@ export function ReviewPanel({
 
   if (!selected)
     return <p className="p-6">This item is not part of the review.</p>;
+
   const detail =
     state.kind === 'loaded' &&
     state.detail.id === selectedId &&
-    state.detail.revision === batch.revision
+    state.detail.revision === plan.revision
       ? state.detail
       : null;
   const failed = state.kind === 'error' && state.id === selectedId;
 
+  const applyFilter = (next: Filter, label: string) => {
+    setFilter(next);
+    const remaining = plan.effects.filter((effect) =>
+      next === 'all'
+        ? true
+        : next === 'failures'
+          ? (failureIds?.has(effect.id) ?? false)
+          : effect.disposition === next,
+    );
+    setAnnouncement(`${remaining.length} shown. ${label}.`);
+    if (remaining[0] && !remaining.some((effect) => effect.id === selectedId))
+      setSelectedId(remaining[0].id);
+  };
+
+  const filters: { key: Filter; label: string; count: number }[] = [
+    { key: 'all', label: `All ${plan.noun.other}`, count: plan.effects.length },
+    ...DISPOSITIONS.filter((disposition) => counts[disposition] > 0).map(
+      (disposition) => ({
+        key: disposition as Filter,
+        label: DISPOSITION_LABELS[disposition],
+        count: counts[disposition],
+      }),
+    ),
+    ...(failureIds
+      ? [
+          {
+            key: 'failures' as Filter,
+            label: 'Failures',
+            count: failureIds.size,
+          },
+        ]
+      : []),
+  ];
+
   return (
     <div className="review-panel">
       <div className="review-context">
-        <span>{batch.evaluatedAt} · Recorded review</span>
-        <span>{batch.context}</span>
+        <span>{plan.evaluatedAt} · Recorded review</span>
+        <span>{plan.context}</span>
       </div>
       <div className="review-body" data-view={showDetail ? 'detail' : 'list'}>
         <section className="review-list-pane" aria-label="Review items">
-          <div className="review-list-controls">
-            <label htmlFor={`${id}-filter`}>Items to review</label>
-            <select
-              id={`${id}-filter`}
-              value={filter}
-              onChange={(event) => {
-                const value = event.target.value;
-                if (
-                  value !== 'all' &&
-                  value !== 'attention' &&
-                  value !== 'blocked' &&
-                  value !== 'ready'
-                )
-                  return;
-                setFilter(value);
-                const next = batch.items
-                  .filter((item) => value === 'all' || item.group === value)
-                  .toSorted((a, b) => priority[a.group] - priority[b.group]);
-                setAnnouncement(
-                  `${next.length} items shown. ${value === 'all' ? 'All items' : GROUP_LABELS[value]}.`,
-                );
-                if (next[0] && !next.some((item) => item.id === selectedId))
-                  setSelectedId(next[0].id);
-              }}
-            >
-              <option value="all">All items · {batch.items.length}</option>
-              <option value="blocked">Cannot proceed · {counts.blocked}</option>
-              <option value="attention">
-                Needs attention · {counts.attention}
-              </option>
-              <option value="ready">Ready for review · {counts.ready}</option>
-            </select>
+          <div
+            className="review-filters"
+            role="group"
+            aria-label="Filter by disposition"
+          >
+            {filters.map((entry) => (
+              <button
+                key={entry.key}
+                type="button"
+                className="review-filter"
+                data-severity={
+                  entry.key === 'all' || entry.key === 'failures'
+                    ? undefined
+                    : severityRank(entry.key)
+                }
+                aria-pressed={filter === entry.key}
+                onClick={() => applyFilter(entry.key, entry.label)}
+              >
+                {entry.label} <span className="value">{entry.count}</span>
+              </button>
+            ))}
           </div>
           <div className="review-item-list" ref={list}>
             {visible.length === 0 ? (
-              <p className="text-muted p-5">No items in this group.</p>
+              <p className="text-muted p-5">
+                No {plan.noun.other} in this group.
+              </p>
             ) : null}
-            {(['blocked', 'attention', 'ready'] as const).map((group) => {
-              const items = visible.filter((item) => item.group === group);
+            {DISPOSITIONS.map((disposition) => {
+              const items = visible.filter(
+                (effect) => effect.disposition === disposition,
+              );
               return items.length ? (
-                <section key={group} aria-labelledby={`${id}-${group}`}>
-                  <h3 id={`${id}-${group}`} className="review-group-heading">
-                    {GROUP_LABELS[group]}
+                <section
+                  key={disposition}
+                  aria-labelledby={`${id}-${disposition}`}
+                >
+                  <h3
+                    id={`${id}-${disposition}`}
+                    className="review-group-heading"
+                  >
+                    {DISPOSITION_LABELS[disposition]}
                     <span className="value">{items.length}</span>
                   </h3>
                   <ul>
-                    {items.map((item) => (
-                      <li key={item.id}>
+                    {items.map((effect) => (
+                      <li key={effect.id}>
                         <button
                           className="review-item-button"
                           aria-current={
-                            selectedId === item.id ? 'true' : undefined
+                            selectedId === effect.id ? 'true' : undefined
                           }
                           onClick={() => {
-                            if (selectedId === item.id && showDetail) {
+                            if (selectedId === effect.id && showDetail) {
                               heading.current?.focus();
                               return;
                             }
                             moveFocus.current = true;
-                            setSelectedId(item.id);
+                            setSelectedId(effect.id);
                             setShowDetail(true);
                           }}
                         >
                           <span className="review-item-name">
-                            {item.title}
-                            <span className="text-meta text-muted font-normal">
-                              {item.outcome}
-                            </span>
+                            {effect.subject}
+                            {effect.requiresApproval ? (
+                              <span className="release-chip">
+                                Needs approval
+                              </span>
+                            ) : null}
                           </span>
                           <span className="review-item-reason">
-                            {item.reason}
+                            {effect.reasonKey
+                              ? (reasonLabels.get(effect.reasonKey) ??
+                                effect.reasonKey)
+                              : 'No recorded reason'}
                           </span>
                         </button>
                       </li>
@@ -182,7 +246,7 @@ export function ReviewPanel({
             })}
           </div>
           <p className="review-list-accounting">
-            {visible.length} of {batch.items.length} items shown
+            {visible.length} of {plan.effects.length} {plan.noun.other} shown
           </p>
         </section>
         <section
@@ -203,7 +267,7 @@ export function ReviewPanel({
               <span className="value">{selected.id}</span> · {selected.subtitle}
             </p>
             <h3 id={`${id}-item-title`} ref={heading} tabIndex={-1}>
-              {selected.title}
+              {selected.subject}
             </h3>
           </div>
           <div aria-busy={!detail && !failed}>
@@ -236,7 +300,7 @@ export function ReviewPanel({
             {failed
               ? 'Item details could not be loaded. Try again is available.'
               : detail
-                ? `Details loaded for ${selected.title}.`
+                ? `Details loaded for ${selected.subject}.`
                 : 'Loading item details.'}
           </p>
         </section>
@@ -244,12 +308,17 @@ export function ReviewPanel({
       <p className="sr-only" role="status">
         {announcement}
       </p>
+      {/* The counter is live from pass 2, when exclusion lands. It reads from
+          the plan today so it can never disagree with the list above it. */}
       <footer className="review-panel-footer">
         <span>
           <strong>Replay preview</strong> · Explore the recorded proposal and
           evidence.
         </span>
-        <span>Approval and execution are not enabled. Nothing applied.</span>
+        <span>
+          {plan.effects.length} of {plan.effects.length} {plan.noun.other}{' '}
+          selected · Nothing applied.
+        </span>
       </footer>
     </div>
   );
