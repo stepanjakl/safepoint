@@ -1,11 +1,17 @@
 /* App shell: two fixed panes on desktop, each scrolling independently, so the
    conversation moves without taking the workspace furniture with it. */
 @layer components {
+  :root {
+    /* The shell's inset and corner. The drawer sits in the top layer, outside
+       the shell, and still has to line up with it. */
+    --app-inset: 10px;
+    --app-radius: 12px;
+  }
   .app-shell {
     display: grid;
     grid-template-columns: 248px minmax(0, 1fr);
-    gap: 10px;
-    padding: 10px;
+    gap: var(--app-inset);
+    padding: var(--app-inset);
     background: var(--sp-canvas);
   }
   /* The menu sits flat on the canvas; only the pane is a sheet, and it takes
@@ -21,7 +27,7 @@
   .app-pane {
     @apply control-face surface-raised;
     min-width: 0;
-    border-radius: 12px;
+    border-radius: var(--app-radius);
     /* A containing block for its descendants. Absolutely positioned content --
        every sr-only span among it -- otherwise resolves against the initial
        containing block, escapes the clipping here, and drags the document's
@@ -197,7 +203,6 @@
     font-size: 22px;
     line-height: 1.3;
     font-weight: 550;
-    letter-spacing: -0.025em;
     margin-top: 6px;
   }
   .chat-request {
@@ -248,6 +253,29 @@
     --review-severity-1: var(--sp-state-caution);
     --review-severity-2: var(--sp-state-unavailable);
     --review-severity-3: var(--sp-state-verified);
+  }
+  /* Derived from --severity so a fifth bucket stays a token change: every
+     weight below is a mix of the one colour the scale position supplies.
+     Three weights, in the order they stack: the fill a pill rests on, the same
+     fill under the pointer, and the bar segment behind both. */
+  [data-severity] {
+    --severity-ink: var(--severity);
+    --severity-fill: color-mix(
+      in oklab,
+      var(--severity) 15%,
+      var(--sp-surface-floating)
+    );
+    --severity-fill-strong: color-mix(
+      in oklab,
+      var(--severity) 25%,
+      var(--sp-surface-floating)
+    );
+    /* The bar sits behind the pills, so it is pulled back from full strength. */
+    --severity-bar: color-mix(
+      in oklab,
+      var(--severity) 78%,
+      var(--sp-surface-floating)
+    );
   }
   [data-severity='0'] {
     --severity: var(--review-severity-0);
@@ -307,15 +335,19 @@
     border-bottom: 1px solid var(--sp-rule-faint);
     box-shadow: 0 1px 0 var(--sp-face-highlight-stronger);
   }
+  /* Filled and in sentence case: the commit state is the first thing read, so
+     it is a label rather than a system readout. */
   .release-pill-state {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    padding: 3px 8px;
+    padding: 5px 12px;
     border-radius: 999px;
-    border: 1px solid var(--sp-rule-default);
-    color: var(--sp-text-muted);
+    background: color-mix(
+      in oklab,
+      var(--sp-state-caution) 20%,
+      var(--sp-surface-floating)
+    );
+    color: var(--sp-state-caution);
+    font-size: 13px;
+    font-weight: 500;
     white-space: nowrap;
   }
   .release-source {
@@ -366,15 +398,26 @@
   .release-distribution {
     margin: 20px 0 4px;
   }
+  /* Taller box than the bar reads, with the extra pulled back by a negative
+     margin: a highlighted segment can grow without moving anything below it. */
   .release-bar {
     display: flex;
+    align-items: center;
     gap: 2px;
-    height: 6px;
+    height: 10px;
+    margin-block: -2px;
   }
   .release-bar-segment {
     min-width: 8px;
-    border-radius: 999px;
-    background: var(--severity);
+    height: 6px;
+    border-radius: 3px;
+    background: var(--severity-bar);
+    transition:
+      flex-grow 180ms ease-out,
+      height 180ms ease-out;
+  }
+  .release-bar-segment[data-active] {
+    height: 10px;
   }
   .release-pills {
     display: flex;
@@ -382,69 +425,107 @@
     gap: 8px;
     margin-top: 12px;
   }
+  /* Filled rather than outlined: the pill carries its bucket's colour at a
+     weight the bar segment can be read against, lightened enough to keep the
+     label legible on top of it. */
   .release-pill {
     display: inline-flex;
     align-items: baseline;
     gap: 6px;
-    min-height: 32px;
     padding: 4px 10px;
     border-radius: 999px;
-    border: 1px solid var(--sp-rule-default);
+    background: var(--severity-fill);
+    border: 0;
     font-size: 13px;
-    color: var(--sp-text-primary);
+    /* Count and label share one colour: the pill is a single object, not a
+       coloured number with a neutral caption beside it. */
+    color: var(--severity-ink);
+    font-weight: 500;
     white-space: nowrap;
+    transition:
+      background-color 140ms ease-out,
+      border-color 140ms ease-out,
+      transform 140ms ease-out;
   }
   .release-pill .value {
-    color: var(--severity);
+    color: inherit;
     font-weight: 550;
   }
-  .release-pill:hover {
-    background: var(--sp-surface-inset);
+  .release-pill[data-active] {
+    background: var(--severity-fill-strong);
+    transform: translateY(-1px);
   }
 
   /* Zone 4 */
+  /* Rows run the full width of the card: the separators are the structure, so
+     they cannot stop short of the edge. The negative margin pays back the
+     body's padding, and each row puts it back as its own inline padding. */
   .release-evidence {
-    margin-top: 20px;
+    margin: 20px -24px 0;
     border-top: 1px solid var(--sp-rule-faint);
+    box-shadow: 0 1px 0 var(--sp-face-highlight-stronger);
   }
   .release-group {
     border-bottom: 1px solid var(--sp-rule-faint);
+    box-shadow: 0 1px 0 var(--sp-face-highlight-stronger);
   }
   .release-group > summary {
     display: flex;
     align-items: center;
-    gap: 10px;
-    min-height: 44px;
-    padding: 8px 0;
+    gap: 12px;
+    min-height: 48px;
+    padding: 10px 24px;
     cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
+    font-size: 14px;
+    font-weight: 550;
     list-style: none;
+    /* One step back from the card face, so the group headers read as the
+       card's own structure rather than as rows of content. */
+    background-color: var(--sp-surface-primary);
+    box-shadow:
+      inset 1px 1px 0 var(--sp-face-highlight),
+      inset -1px 0 0 var(--sp-face-highlight-strong);
   }
   .release-group > summary::-webkit-details-marker {
     display: none;
   }
-  .release-group-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 999px;
-    background: var(--severity);
+  /* Drawn rather than typed: a rotated corner stays a chevron at any size and
+     needs no glyph from the text font. */
+  .release-group > summary::before {
+    content: '';
+    width: 6px;
+    height: 6px;
     flex-shrink: 0;
+    border-right: 1.5px solid var(--sp-text-muted);
+    border-bottom: 1.5px solid var(--sp-text-muted);
+    transform: rotate(-45deg);
+    transition: transform 160ms ease-out;
   }
+  .release-group[open] > summary::before {
+    transform: rotate(45deg);
+  }
+  /* Hover closes the gap to the card face rather than opening a new colour. */
+  .release-group > summary:hover {
+    background: var(--sp-surface-floating);
+  }
+  /* A well sunk into the summary. Deliberately uncoloured: the group's severity
+     is already carried by its rows, and a second coloured chip beside the
+     disposition label would compete with the pills for the same job. */
   .release-group-count {
-    margin-left: auto;
-    color: var(--sp-text-muted);
-  }
-  .release-rows {
-    padding-bottom: 8px;
+    font-size: 11px;
+    border-radius: 999px;
+    padding: 0 10px;
+    background-color: var(--sp-surface-inset);
+    color: var(--sp-text-primary);
   }
   .release-row {
     display: flex;
     flex-wrap: wrap;
-    align-items: baseline;
-    gap: 4px 12px;
-    padding: 6px 0 6px 17px;
-    font-size: 13px;
+    align-items: center;
+    gap: 6px 12px;
+    padding: 12px 24px;
+    border-top: 1px solid var(--sp-rule-faint);
+    font-size: 14px;
     line-height: 1.5;
   }
   .release-row-subject {
@@ -458,18 +539,39 @@
     gap: 6px;
     margin-left: auto;
     min-width: 0;
+    color: var(--sp-text-muted);
     text-align: right;
   }
   .release-row-more {
     color: var(--sp-text-muted);
     font-size: 12px;
   }
+  /* The reason, as a chip in its row's own severity. Pulled back from the
+     pill's weight: the pills are the navigation, a reason is an annotation. */
+  .release-row-reason {
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--severity-fill);
+    color: color-mix(in oklab, var(--severity-ink) 82%, var(--sp-text-primary));
+    font-size: 12px;
+    line-height: 1.4;
+    text-align: right;
+  }
+  .release-row-more-link {
+    padding: 0;
+  }
   .release-row-more-link button {
-    min-height: 32px;
-    font-size: 13px;
+    display: block;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 24px;
+    text-align: left;
+    font-size: 14px;
     color: var(--sp-text-muted);
-    text-decoration: underline;
-    text-underline-offset: 4px;
+  }
+  .release-row-more-link button:hover {
+    background: var(--sp-surface-inset);
+    color: var(--sp-text-primary);
   }
   .release-chip {
     font-size: 11px;
@@ -986,6 +1088,36 @@
   }
 }
 
+/* Modal footer: paging between items, and the one failure the modal renders
+   itself rather than delegating to a row. */
+@layer components {
+  .review-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 12px 20px;
+  }
+  .review-pagination button {
+    min-height: 36px;
+    padding: 4px 8px;
+  }
+  .review-pagination button:disabled {
+    opacity: 0.5;
+  }
+  .review-pagination button:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+  .review-execution-failure {
+    padding: 16px 24px;
+    color: var(--sp-state-blocked);
+  }
+}
+
+/* States gallery: the documentation surface that renders every card state at
+   once. Not part of the product shell. */
 @layer components {
   .states-gallery {
     display: flex;
@@ -1009,6 +1141,7 @@
     gap: 12px 24px;
     padding: 16px 24px;
     border-bottom: 1px solid var(--sp-rule-faint);
+    box-shadow: 0 1px 0 var(--sp-face-highlight-strong);
   }
   .process-name {
     font-size: 15px;
@@ -1021,19 +1154,6 @@
     align-items: center;
     gap: 8px 12px;
   }
-  .process-connections {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-  .process-connections li {
-    padding: 3px 9px;
-    border-radius: 999px;
-    border: 1px solid var(--sp-rule-faint);
-    font-size: 12px;
-    color: var(--sp-text-muted);
-    white-space: nowrap;
-  }
   .process-body {
     display: grid;
     grid-template-columns: 232px minmax(0, 1fr);
@@ -1045,6 +1165,7 @@
     position: relative;
     padding: 16px 12px;
     border-right: 1px solid var(--sp-rule-faint);
+    box-shadow: 1px 0 0 var(--sp-face-highlight-strong);
   }
   .run-list {
     display: flex;
@@ -1082,72 +1203,11 @@
     opacity: 0.8;
   }
 
-  .instructions-dialog {
-    padding: 0;
-    /* Anchored near the top rather than centred: it belongs to the header that
-       opened it. */
-    margin: 84px auto auto;
-    width: min(560px, calc(100% - 48px));
-    max-height: min(70dvh, 640px);
-    overflow: clip;
-    border: 1px solid var(--sp-rule-default);
-    border-radius: 12px;
-    background: var(--sp-surface-floating);
-    color: var(--sp-text-primary);
-  }
-  .instructions-dialog::backdrop {
-    background: color-mix(in oklab, var(--sp-canvas) 55%, transparent);
-    backdrop-filter: blur(3px);
-  }
-  .instructions-heading {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--sp-rule-faint);
-  }
-  .instructions-heading h2 {
-    font-size: 15px;
-    font-weight: 550;
-  }
-  .instructions-body {
-    padding: 16px 20px 20px;
-    overflow-y: auto;
-  }
-  .instructions-body ol {
-    display: grid;
-    gap: 10px;
-    padding-left: 18px;
-    list-style: decimal;
-    font-size: 13px;
-    line-height: 1.6;
-  }
-  .instructions-body li::marker {
-    color: var(--sp-text-muted);
-  }
-  .instructions-note {
-    margin-top: 16px;
-    padding-top: 12px;
-    border-top: 1px solid var(--sp-rule-faint);
-    font-size: 12px;
-    color: var(--sp-text-muted);
-  }
-
   /* Below the three-column width the runs become a strip above the thread. */
   @media (width < 1100px) {
     .process-body {
       grid-template-columns: minmax(0, 1fr);
     }
-  }
-  /* Stacked but still inside a fixed pane: the strip takes what it needs and
-     the thread takes the rest, so the thread scrolls instead of the document. */
-  @media (900px <= width < 1100px) {
-    .process-body {
-      grid-template-rows: auto minmax(0, 1fr);
-    }
-  }
-  @media (width < 1100px) {
     .process-runs {
       border-right: 0;
       border-bottom: 1px solid var(--sp-rule-faint);
@@ -1165,18 +1225,273 @@
       display: none;
     }
   }
+  /* Stacked but still inside a fixed pane: the strip takes what it needs and
+     the thread takes the rest, so the thread scrolls instead of the document. */
+  @media (900px <= width < 1100px) {
+    .process-body {
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+  }
   @media (width < 640px) {
     .process-header {
       padding: 12px 16px;
     }
-    .instructions-dialog {
-      margin: 0;
+  }
+}
+
+/* System clusters: what this process reads from and would write to. */
+@layer components {
+  .system-cluster {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  /* Wider than the gap inside a cluster, so the attention count reads as
+     belonging to the cluster it follows rather than the one it precedes. */
+  .system-cluster + .system-cluster {
+    margin-left: 10px;
+  }
+  .system-cluster-label {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--sp-text-muted);
+  }
+  /* Overlapped discs, with isolation so the stacking stays local. */
+  .system-discs {
+    display: flex;
+    isolation: isolate;
+  }
+  .system-discs > li + li {
+    margin-left: -5px;
+  }
+  /* The same enclosure as the release card: face, ring and top sheen from
+     `control-face`, so a disc reads as a small instance of the card rather
+     than a differently made object. */
+  .system-disc {
+    @apply control-face surface-floating;
+    /* The outer ring is separate work: it punches a gap between overlapping
+       discs and carries source state. Held in a variable so the state rules
+       below extend it without restating the sheen. */
+    --disc-ring: 0 0 0 2px var(--sp-surface-primary);
+    box-shadow:
+      inset 0 0 0 1px var(--control-highlight),
+      var(--disc-ring);
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    color: var(--sp-text-muted);
+    font-size: 14px;
+    cursor: default;
+    /* Declared after the utility on purpose: only the lift animates, the face
+       does not. */
+    transition: transform 120ms ease-out;
+  }
+  .system-disc svg {
+    width: 14px;
+    height: 14px;
+  }
+  /* Raising the hovered disc above its neighbours is the whole reason the list
+     needs a stacking context. */
+  .system-disc:hover,
+  .system-disc:focus-visible {
+    position: relative;
+    z-index: 1;
+    transform: translateY(-1px);
+    color: var(--sp-text-primary);
+  }
+  .system-disc[data-freshness='stale'] {
+    --disc-ring:
+      0 0 0 2px var(--sp-surface-primary), 0 0 0 3px var(--sp-state-caution);
+    color: var(--sp-state-caution);
+  }
+  .system-disc[data-freshness='unavailable'] {
+    --disc-ring:
+      0 0 0 2px var(--sp-surface-primary), 0 0 0 3px var(--sp-state-blocked);
+    color: var(--sp-state-blocked);
+  }
+  .system-attention {
+    font-size: 12px;
+    color: var(--sp-state-caution);
+    white-space: nowrap;
+  }
+  .system-attention[data-freshness='unavailable'] {
+    color: var(--sp-state-blocked);
+  }
+
+  /* The same enclosure as the discs it describes: face, ring and sheen from
+     `control-face`, so the pair reads as one object. */
+  .system-tooltip {
+    @apply control-face surface-floating;
+    display: grid;
+    gap: 2px;
+    max-width: 240px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    color: var(--sp-text-primary);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .system-tooltip-label {
+    font-weight: 500;
+  }
+  .system-tooltip-meta {
+    color: var(--sp-text-muted);
+  }
+  /* The fade is back: it was dropped only because opacity over a
+     backdrop-filtered box makes the compositor re-snapshot the backdrop every
+     frame, and there is no backdrop here now. */
+  .system-tooltip[data-entering] {
+    animation: tooltip-in 110ms ease-out both;
+  }
+  @keyframes tooltip-in {
+    from {
+      opacity: 0;
+      transform: translateY(3px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .system-tooltip[data-entering] {
+      animation: none;
+    }
+  }
+  @media (width < 640px) {
+    .system-cluster-label {
+      display: none;
+    }
+  }
+}
+
+/* Instructions drawer: a slide-over holding the reference material a run was
+   evaluated under, read alongside the run rather than over it. */
+@layer components {
+  .drawer-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    display: flex;
+    justify-content: flex-end;
+    /* Inset by the shell's own padding so the panel lines up with the panes. */
+    padding: var(--app-inset);
+  }
+  /*
+    The scrim is its own layer rather than the overlay's own background. Fading
+    the overlay would fade the panel with it -- the panel is its child -- so the
+    panel arrived washed out instead of sliding in solid. It also stops opacity
+    animating on a backdrop-filtered box, which is what makes the blur pop as
+    the compositor promotes the layer.
+  */
+  .drawer-overlay::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: color-mix(in oklab, var(--sp-canvas) 55%, transparent);
+    backdrop-filter: blur(3px);
+  }
+  .drawer-overlay[data-entering]::before {
+    animation: drawer-fade 160ms ease-out both;
+  }
+  .drawer-overlay[data-exiting]::before {
+    animation: drawer-fade 140ms ease-in reverse both;
+  }
+  @keyframes drawer-fade {
+    from {
+      opacity: 0;
+    }
+  }
+  /* The same enclosure as the card: face and ring, no drop shadow. Depth here
+     comes from the blurred backdrop behind it, not from a cast shadow. */
+  .drawer-modal {
+    @apply control-face surface-floating;
+    /* Above the scrim: the scrim is positioned, so the panel has to be too. */
+    position: relative;
+    width: min(420px, 100%);
+    height: 100%;
+    border-radius: var(--app-radius);
+    overflow: clip;
+    /* Promotes the layer before the first animated frame, which is where the
+       three-frame stall at the start of the slide was coming from. */
+    will-change: transform;
+  }
+  .drawer-modal[data-entering] {
+    animation: drawer-in 220ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  .drawer-modal[data-exiting] {
+    animation: drawer-in 180ms ease-in reverse both;
+  }
+  @keyframes drawer-in {
+    from {
+      transform: translateX(100%);
+    }
+  }
+  .drawer-dialog {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    height: 100%;
+    outline: none;
+  }
+  .drawer-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px;
+    border-bottom: 1px solid var(--sp-rule-faint);
+  }
+  .drawer-title {
+    font-size: 15px;
+    font-weight: 550;
+  }
+  .drawer-close {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    font-size: 18px;
+    color: var(--sp-text-muted);
+  }
+  .drawer-close[data-hovered] {
+    background: var(--sp-surface-control);
+    color: var(--sp-text-primary);
+  }
+  .drawer-body {
+    padding: 20px;
+    overflow-y: auto;
+  }
+  .drawer-body ol {
+    display: grid;
+    gap: 12px;
+    padding-left: 18px;
+    list-style: decimal;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .drawer-body li::marker {
+    color: var(--sp-text-muted);
+  }
+  .drawer-note {
+    margin-top: 20px;
+    padding-top: 12px;
+    border-top: 1px solid var(--sp-rule-faint);
+    font-size: 12px;
+    color: var(--sp-text-muted);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .drawer-overlay[data-entering]::before,
+    .drawer-overlay[data-exiting]::before,
+    .drawer-modal[data-entering],
+    .drawer-modal[data-exiting] {
+      animation: none;
+    }
+  }
+  @media (width < 640px) {
+    .drawer-modal {
       width: 100%;
-      max-width: none;
-      height: 100dvh;
-      max-height: none;
-      border: 0;
-      border-radius: 0;
     }
   }
 }

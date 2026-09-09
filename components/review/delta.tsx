@@ -25,7 +25,13 @@ function Arrow() {
   );
 }
 
-export function DeltaValue({ delta }: { delta: LabelledDelta }) {
+export function DeltaValue({
+  delta,
+  expanded = false,
+}: {
+  delta: LabelledDelta;
+  expanded?: boolean;
+}) {
   switch (delta.kind) {
     case 'scalar':
       return (
@@ -93,7 +99,20 @@ export function DeltaValue({ delta }: { delta: LabelledDelta }) {
       ].filter(Boolean);
       return (
         <span className="delta delta-set">
-          {parts.length > 0 ? parts.join(', ') : 'No membership change'}
+          {expanded && parts.length > 0 ? (
+            <>
+              {delta.added.length > 0 ? (
+                <span>Added: {delta.added.join(', ')}</span>
+              ) : null}
+              {delta.removed.length > 0 ? (
+                <span>Removed: {delta.removed.join(', ')}</span>
+              ) : null}
+            </>
+          ) : parts.length > 0 ? (
+            parts.join(', ')
+          ) : (
+            'No membership change'
+          )}
         </span>
       );
     }

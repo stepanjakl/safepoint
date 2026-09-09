@@ -1,8 +1,11 @@
 import { notFound } from 'next/navigation';
 
+import { SystemDiscGallery } from '@/components/dev/system-disc-gallery';
 import { ReviewWorkspace } from '@/components/review/review-workspace';
 import { Button } from '@/components/ui/button';
 import { loadReviewedReplay } from '@/lib/promotion-release';
+import { promotionProcess } from '@/lib/process/placeholder-process';
+import { presentPromotionSources } from '@/lib/process/system-links';
 import { parseSkuParam, presentReview } from '@/lib/review-presentation';
 import {
   MONO_CHOICE_LABELS,
@@ -13,8 +16,9 @@ import {
 
 /*
   Protected comparison page: the implemented workspace in light and dark at
-  wide and narrow widths, plus the control faces and the candidate
-  typeface sets. Development only unless SAFEPOINT_WORKBENCH=enabled.
+  wide and narrow widths, plus the control faces, the candidate typeface sets
+  and the candidate icon families. Development only unless
+  SAFEPOINT_WORKBENCH=enabled.
 */
 export default async function WorkbenchPage({
   searchParams,
@@ -26,7 +30,9 @@ export default async function WorkbenchPage({
     notFound();
   }
 
-  const presentation = presentReview(loadReviewedReplay());
+  const replay = loadReviewedReplay();
+  const presentation = presentReview(replay);
+  const sources = presentPromotionSources(replay);
   const sku = parseSkuParam((await searchParams).sku) ?? 'ALD-0025';
   const themes = ['light', 'dark'] as const;
 
@@ -68,6 +74,21 @@ export default async function WorkbenchPage({
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="readout text-muted">system discs</h2>
+        <p className="text-dense text-muted max-w-prose">
+          The reads and writes clusters from the process header, drawn by each
+          candidate icon family, plus the full fifteen-noun vocabulary. The
+          reads carry real freshness, so the caution and blocked rings are the
+          ones the app renders. Compare weight at 14px, how much of the disc the
+          glyph fills, and whether the family has a word for every noun.
+        </p>
+        <SystemDiscGallery
+          sources={sources}
+          destinations={promotionProcess.destinations}
+        />
       </section>
 
       <section className="space-y-3">

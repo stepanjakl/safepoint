@@ -7,10 +7,15 @@ import {
   DISPOSITIONS,
   DISPOSITION_LABELS,
   severityRank,
-  type Disposition,
   type ReleasePlan,
 } from '@/lib/review/plan-contract';
 import { evaluationCounts } from '@/lib/review/plan-derivations';
+import {
+  reviewEffects,
+  initialReviewId,
+  reviewPage,
+  type ReviewFilter,
+} from '@/lib/review/review-navigation';
 import { ReviewItemDetail } from './review-item-detail';
 
 type DetailState =
@@ -18,7 +23,7 @@ type DetailState =
   | { kind: 'error'; id: string }
   | { kind: 'loading' };
 
-type Filter = Disposition | 'all' | 'failures';
+type Filter = ReviewFilter;
 
 export function ReviewPanel({
   plan,
@@ -34,7 +39,8 @@ export function ReviewPanel({
   const id = useId();
   const [filter, setFilter] = useState<Filter>(initialFilter);
   const [selectedId, setSelectedId] = useState(
-    initialItemId ?? plan.effects[0]?.id ?? '',
+    () =>
+      initialReviewId(reviewEffects(plan, initialFilter), initialItemId) ?? '',
   );
   const [showDetail, setShowDetail] = useState(true);
   const [state, setState] = useState<DetailState>({ kind: 'loading' });
@@ -60,19 +66,17 @@ export function ReviewPanel({
     [plan.status],
   );
 
-  const matches = (disposition: Disposition, effectId: string) =>
-    filter === 'all'
-      ? true
-      : filter === 'failures'
-        ? (failureIds?.has(effectId) ?? false)
-        : disposition === filter;
-
   const selected = plan.effects.find((effect) => effect.id === selectedId);
-  const visible = plan.effects
-    .filter((effect) => matches(effect.disposition, effect.id))
-    .toSorted(
-      (a, b) => severityRank(a.disposition) - severityRank(b.disposition),
-    );
+  const visible = reviewEffects(plan, filter);
+  const pagination = reviewPage(visible, selectedId);
+  const executionFailures = new Map(
+    plan.status.kind === 'partially_applied'
+      ? plan.status.failures.map((failure) => [
+          failure.effectId,
+          failure.reason,
+        ])
+      : [],
+  );
 
   useEffect(() => {
     if (!selectedId) return;
@@ -121,16 +125,20 @@ export function ReviewPanel({
 
   const applyFilter = (next: Filter, label: string) => {
     setFilter(next);
-    const remaining = plan.effects.filter((effect) =>
-      next === 'all'
-        ? true
-        : next === 'failures'
-          ? (failureIds?.has(effect.id) ?? false)
-          : effect.disposition === next,
-    );
+    const remaining = reviewEffects(plan, next);
     setAnnouncement(`${remaining.length} shown. ${label}.`);
     if (remaining[0] && !remaining.some((effect) => effect.id === selectedId))
       setSelectedId(remaining[0].id);
+  };
+
+  const changePage = (direction: number) => {
+    const next = visible[pagination.start + direction * pagination.size];
+    if (!next) return;
+    setSelectedId(next.id);
+    setAnnouncement(
+      `Page ${pagination.page + direction + 1} of ${pagination.totalPages}.`,
+    );
+    list.current?.scrollTo({ top: 0 });
   };
 
   const filters: { key: Filter; label: string; count: number }[] = [
@@ -190,7 +198,7 @@ export function ReviewPanel({
               </p>
             ) : null}
             {DISPOSITIONS.map((disposition) => {
-              const items = visible.filter(
+              const items = pagination.items.filter(
                 (effect) => effect.disposition === disposition,
               );
               return items.length ? (
@@ -237,6 +245,12 @@ export function ReviewPanel({
                                 effect.reasonKey)
                               : 'No recorded reason'}
                           </span>
+                          {executionFailures.has(effect.id) ? (
+                            <span className="review-item-reason text-state-blocked">
+                              Application failed:{' '}
+                              {executionFailures.get(effect.id)}
+                            </span>
+                          ) : null}
                         </button>
                       </li>
                     ))}
@@ -245,8 +259,33 @@ export function ReviewPanel({
               ) : null;
             })}
           </div>
+          {pagination.totalPages > 1 ? (
+            <nav className="review-pagination" aria-label="Review pages">
+              <button
+                type="button"
+                disabled={pagination.page === 0}
+                onClick={() => changePage(-1)}
+              >
+                Previous page
+              </button>
+              <span>
+                Page {pagination.page + 1} of {pagination.totalPages}
+              </span>
+              <button
+                type="button"
+                disabled={pagination.page + 1 === pagination.totalPages}
+                onClick={() => changePage(1)}
+              >
+                Next page
+              </button>
+            </nav>
+          ) : null}
           <p className="review-list-accounting">
-            {visible.length} of {plan.effects.length} {plan.noun.other} shown
+            {visible.length
+              ? `${pagination.start + 1}–${pagination.start + pagination.items.length}`
+              : '0'}{' '}
+            of {visible.length} matching {plan.noun.other} shown ·{' '}
+            {plan.effects.length} total
           </p>
         </section>
         <section
@@ -270,6 +309,12 @@ export function ReviewPanel({
               {selected.subject}
             </h3>
           </div>
+          {executionFailures.has(selectedId) ? (
+            <p className="review-execution-failure">
+              <strong>Application failed</strong> ·{' '}
+              {executionFailures.get(selectedId)}
+            </p>
+          ) : null}
           <div aria-busy={!detail && !failed}>
             {detail ? (
               <ReviewItemDetail

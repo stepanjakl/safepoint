@@ -147,6 +147,7 @@
   --control-face-bottom: var(--sp-accent-face-bottom-hover);
   --control-ring-top: var(--sp-accent-ring-top-hover);
   --control-ring-bottom: var(--sp-accent-ring-bottom-hover);
+  --control-highlight: transparent;
 }
 
 /* Ordinary controls. */
@@ -155,6 +156,24 @@
   --control-face-bottom: var(--sp-quiet-face-bottom);
   --control-ring-top: var(--sp-quiet-ring-top);
   --control-ring-bottom: var(--sp-quiet-ring-bottom);
+  --control-highlight: transparent;
+}
+
+/* Face and ring only. A quiet control carries no inner highlight in either
+   state, so unlike the accent pair there is nothing here to turn off. */
+@utility control-quiet-hover {
+  --control-face-top: var(--sp-quiet-face-top-hover);
+  --control-face-bottom: var(--sp-quiet-face-bottom-hover);
+  --control-ring-top: var(--sp-quiet-ring-top-hover);
+  --control-ring-bottom: var(--sp-quiet-ring-bottom-hover);
+}
+
+/* Unavailable: flat on both layers, so it cannot be mistaken for a live one. */
+@utility control-off {
+  --control-face-top: var(--sp-off-face);
+  --control-face-bottom: var(--sp-off-face);
+  --control-ring-top: var(--sp-off-ring);
+  --control-ring-bottom: var(--sp-off-ring);
   --control-highlight: transparent;
 }
 
@@ -186,22 +205,6 @@
   --control-face-bottom: var(--sp-surface-inset);
   --control-ring-top: var(--sp-rule-default);
   --control-ring-bottom: var(--sp-rule-faint);
-  --control-highlight: transparent;
-}
-
-@utility control-quiet-hover {
-  --control-face-top: var(--sp-quiet-face-top-hover);
-  --control-face-bottom: var(--sp-quiet-face-bottom-hover);
-  --control-ring-top: var(--sp-quiet-ring-top-hover);
-  --control-ring-bottom: var(--sp-quiet-ring-bottom-hover);
-}
-
-/* Unavailable: flat on both layers, so it cannot be mistaken for a live one. */
-@utility control-off {
-  --control-face-top: var(--sp-off-face);
-  --control-face-bottom: var(--sp-off-face);
-  --control-ring-top: var(--sp-off-ring);
-  --control-ring-bottom: var(--sp-off-ring);
   --control-highlight: transparent;
 }
 

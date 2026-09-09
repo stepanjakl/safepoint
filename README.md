@@ -62,6 +62,39 @@ pnpm format:check   # Prettier
 pnpm test           # Vitest contract and fixture tests
 ```
 
+### Find a style's source in Chrome or Edge
+
+Stop the existing dev server, then run:
+
+```bash
+pnpm dev:styles
+```
+
+Open http://localhost:3000 in Chrome or Edge. In DevTools **Settings → Preferences → Sources**, enable **CSS source maps**, then reload the page. Right-click an element and choose **Inspect**. In **Elements → Styles**, click the filename and line number beside a rule to open its original CSS in the Sources panel. For a particular property, use **Computed**, expand the property, and follow the winning declaration's source link.
+
+This mode uses Webpack with development-only CSS source maps. The current Turbopack pipeline maps the combined Tailwind output to `globals.css`, losing the original imported file locations. `pnpm dev` remains available for normal Turbopack development.
+
+- `app/review.css` defines the app shell and review component styles.
+- `app/tokens.css` defines theme, colour, and typography tokens.
+- `app/globals.css` defines base styles and custom utilities.
+
+Generated Tailwind utilities do not map to the JSX `className` that uses them. Use Option/Alt-click below to open the component in your editor; CSS source links open in DevTools. Rules expanded with `@apply` may lead to the utility definition.
+
+Browser documentation: [Chrome source map settings](https://developer.chrome.com/docs/devtools/settings/preferences) and [Edge source maps](https://learn.microsoft.com/en-us/microsoft-edge/devtools/javascript/source-maps).
+
+#### Open the CSS file in VS Code
+
+Source maps alone open the original CSS inside DevTools. To send those clicks to VS Code, Microsoft Edge provides an **Open source files in Visual Studio Code** integration:
+
+1. In Edge DevTools, open **Settings → Experiments**, enable **Open source files in Visual Studio Code**, and restart DevTools.
+2. On localhost, choose **Set root folder**, select this repository's `safepoint` directory, and allow access. You can also add the folder under **Settings → Workspace**.
+3. Under **Settings → Workspace**, ensure **Open source files in Visual Studio Code** is enabled.
+4. Inspect an element and click its CSS filename in **Styles**. A linked file opens in VS Code at the selector's line.
+
+This is an Edge-specific integration; the source-map setting in Chrome does not itself launch VS Code. See [Microsoft's setup instructions](https://learn.microsoft.com/en-us/microsoft-edge/devtools/sources/opening-sources-in-vscode).
+
+The CSS debugging configuration emits `file:///` URLs for existing source files so DevTools can match them directly to the local Workspace. After changing this configuration, close and reopen DevTools and reload the page. If a style still points to `webpack:///app/review.css`, the browser is using the earlier map. Generated sources without a file on disk retain their virtual URLs.
+
 ### Click-to-source in the browser
 
 Hold <kbd>Option</kbd>/<kbd>Alt</kbd>, hover any element in the running app, and click to open the JSX behind it in your editor. This is [LocatorJS](https://www.locatorjs.com), wired up in two dev-only pieces:

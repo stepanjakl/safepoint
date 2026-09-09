@@ -32,7 +32,7 @@ The bucket is on the scale and nothing populates it. The natural producer is `re
 
 No control names an operation this slice cannot perform. Under `mode: 'replay'` apply, retry, undo and re-run render as receipt text, never buttons; the only live controls are navigation. Applied and partially applied states label themselves simulated receipts. When applying is genuinely impossible the action changes — `Resolve blockers` — rather than being greyed out.
 
-`/examples/states` renders all eight states plus a 2,000-effect plan as a harness: above five items in a group the evidence zone rolls up by reason, so the card's height does not track the item count.
+`/examples/states` renders all eight states plus a 2,000-effect plan as an interactive harness with synthetic detail payloads. Above five items in a group the card rolls up by reason. The modal pages lists exceeding 200 matching items in groups of 50, keeping the selected item on its rendered page. Set changes retain exact added and removed values in the detail pane, and execution failures show each item’s failure reason separately from its evaluation findings.
 
 ## Reuse boundary
 

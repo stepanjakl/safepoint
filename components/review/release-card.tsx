@@ -1,6 +1,6 @@
 'use client';
 
-import { useId } from 'react';
+import { useId, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   DISPOSITION_LABELS,
@@ -61,6 +61,16 @@ function Distribution({
   const counts = evaluationCounts(plan.effects);
   const segments = barSegments(counts);
   const total = totalOf(counts);
+  // Hovering either half of the pair lights both. The bar stays decorative --
+  // the pills carry the semantics -- so it answers to the pointer only, and a
+  // keyboard reaches the same link by focusing the pill.
+  const [active, setActive] = useState<Disposition | null>(null);
+  const pair = (disposition: Disposition) => ({
+    'data-severity': severityRank(disposition),
+    'data-active': active === disposition || undefined,
+    onMouseEnter: () => setActive(disposition),
+    onMouseLeave: () => setActive(null),
+  });
 
   return (
     <div className="release-distribution">
@@ -69,8 +79,16 @@ function Distribution({
           <span
             key={segment.disposition}
             className="release-bar-segment"
-            data-severity={severityRank(segment.disposition)}
-            style={{ flexGrow: segment.count }}
+            {...pair(segment.disposition)}
+            // Grown from the same count that sizes it, so the highlighted
+            // segment takes its extra width from its neighbours rather than
+            // from the bar changing size.
+            style={{
+              flexGrow:
+                active === segment.disposition
+                  ? segment.count * 1.2
+                  : segment.count,
+            }}
           />
         ))}
       </div>
@@ -82,7 +100,9 @@ function Distribution({
             <button
               type="button"
               className="release-pill"
-              data-severity={severityRank(disposition)}
+              {...pair(disposition)}
+              onFocus={() => setActive(disposition)}
+              onBlur={() => setActive(null)}
               onClick={() => onOpen(disposition)}
             >
               <span className="value">{counts[disposition]}</span>{' '}
@@ -103,10 +123,19 @@ function Distribution({
   );
 }
 
-function EffectRow({ effect }: { effect: Effect }) {
+function EffectRow({
+  effect,
+  reasonLabel,
+}: {
+  effect: Effect;
+  reasonLabel: string | null;
+}) {
   const [first, ...rest] = effect.deltas;
   return (
-    <li className="release-row">
+    <li
+      className="release-row"
+      data-severity={severityRank(effect.disposition)}
+    >
       <span className="release-row-subject">{effect.subject}</span>
       <span className="release-row-delta">
         {first ? (
@@ -120,6 +149,11 @@ function EffectRow({ effect }: { effect: Effect }) {
           </span>
         ) : null}
       </span>
+      {/* The row contract is subject, delta, reason, disposition. The reason
+          was only feeding the roll-up before; it belongs on the row too. */}
+      {reasonLabel ? (
+        <span className="release-row-reason">{reasonLabel}</span>
+      ) : null}
       {effect.requiresApproval ? (
         <span className="release-chip">Needs approval</span>
       ) : null}
@@ -152,20 +186,27 @@ function EvidenceGroup({
     ? rollUpByReason(effects, plan.reasons).length - reasonRows.length
     : 0;
 
+  const reasonLabels = new Map(
+    plan.reasons.map((reason) => [reason.key, reason.label]),
+  );
+
   return (
     <details className="release-group" open={open}>
-      <summary>
-        <span
-          className="release-group-dot"
-          data-severity={severityRank(disposition)}
-          aria-hidden="true"
-        />
+      <summary data-severity={severityRank(disposition)}>
         {DISPOSITION_LABELS[disposition]}
         <span className="release-group-count value">{effects.length}</span>
       </summary>
       <ul className="release-rows">
         {rows.map((effect) => (
-          <EffectRow key={effect.id} effect={effect} />
+          <EffectRow
+            key={effect.id}
+            effect={effect}
+            reasonLabel={
+              effect.reasonKey
+                ? (reasonLabels.get(effect.reasonKey) ?? null)
+                : null
+            }
+          />
         ))}
         {reasonRows.map((row) => (
           <li key={row.key} className="release-row release-row-rolled">
@@ -282,7 +323,11 @@ export function ReleaseCard({
           <Commitment
             label={plan.reviewLabel}
             onOpen={onOpen}
-            safety="Nothing is applied until you apply it."
+            safety={
+              plan.mode === 'replay'
+                ? 'This is a recorded replay. Reviewing changes nothing.'
+                : 'Nothing is applied until you apply it.'
+            }
           />
         </div>
       </article>

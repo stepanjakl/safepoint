@@ -258,6 +258,23 @@ export const releasePlanSchema = z
         : plan.status.kind === 'stale'
           ? plan.status.changedEffectIds
           : [];
+    if (new Set(referenced).size !== referenced.length) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['status'],
+        message: 'Duplicate status effect identifiers',
+      });
+    }
+    if (
+      plan.status.kind === 'incomplete' &&
+      plan.status.step > plan.status.of
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['status'],
+        message: 'Evaluation step exceeds total steps',
+      });
+    }
     for (const id of referenced) {
       if (!ids.has(id)) {
         ctx.addIssue({
@@ -268,7 +285,20 @@ export const releasePlanSchema = z
       }
     }
     if (plan.status.kind === 'partially_applied') {
+      const appliedIds = new Set(plan.status.appliedIds);
+      const failedIds = new Set<string>();
       for (const failure of plan.status.failures) {
+        if (
+          failedIds.has(failure.effectId) ||
+          appliedIds.has(failure.effectId)
+        ) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['status'],
+            message: 'Each effect must have one execution outcome',
+          });
+        }
+        failedIds.add(failure.effectId);
         if (!ids.has(failure.effectId)) {
           ctx.addIssue({
             code: 'custom',

@@ -5,15 +5,18 @@ import { ReplayReview } from '@/components/review/replay-review';
 import { loadReviewedReplay } from '@/lib/promotion-release';
 import { parseSkuParam } from '@/lib/review-presentation';
 import { promotionProcess } from '@/lib/process/placeholder-process';
+import { presentPromotionSources } from '@/lib/process/system-links';
 import { presentPromotionPlan } from '@/lib/review/promotion-adapter';
 
 export default async function ReviewPage({ searchParams }: PageProps<'/'>) {
-  const plan = presentPromotionPlan(loadReviewedReplay());
+  const replay = loadReviewedReplay();
+  const plan = presentPromotionPlan(replay);
+  const sources = presentPromotionSources(replay);
   const initialItemId = parseSkuParam((await searchParams).sku) ?? undefined;
 
   return (
     <AppShell current="/">
-      <ProcessView process={promotionProcess}>
+      <ProcessView process={promotionProcess} sources={sources}>
         <main id="main" tabIndex={-1} className="chat-main">
           <div className="chat-thread-heading">
             <p className="text-meta text-muted">

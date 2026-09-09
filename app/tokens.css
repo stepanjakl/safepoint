@@ -132,17 +132,17 @@
 
   /* Hover lifts the whole control one step, ring included, so the edge
      brightens with the face rather than staying put while it moves. */
-  --sp-accent-face-top-hover: var(--color-cyan-500);
-  --sp-accent-face-bottom-hover: var(--color-cyan-700);
+  --sp-accent-face-top-hover: var(--color-cyan-600);
+  --sp-accent-face-bottom-hover: var(--color-cyan-600);
   --sp-accent-ring-top-hover: var(--color-cyan-600);
-  --sp-accent-ring-bottom-hover: var(--color-cyan-800);
+  --sp-accent-ring-bottom-hover: var(--color-cyan-600);
 
   --sp-quiet-face-top: light-dark(var(--color-white), var(--color-zinc-700));
   --sp-quiet-face-bottom: light-dark(
     var(--color-zinc-200),
     var(--color-zinc-800)
   );
-  --sp-quiet-ring-top: light-dark(var(--color-zinc-200), var(--color-zinc-600));
+  --sp-quiet-ring-top: light-dark(var(--color-zinc-300), var(--color-zinc-600));
   --sp-quiet-ring-bottom: light-dark(
     var(--color-zinc-400),
     var(--color-zinc-500)
@@ -159,11 +159,11 @@
     var(--color-zinc-700)
   );
   --sp-quiet-ring-top-hover: light-dark(
-    var(--color-zinc-300),
+    var(--color-zinc-400),
     var(--color-zinc-500)
   );
   --sp-quiet-ring-bottom-hover: light-dark(
-    var(--color-zinc-500),
+    var(--color-zinc-600),
     var(--color-zinc-400)
   );
 

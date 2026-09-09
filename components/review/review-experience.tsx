@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { LoadReviewDetail } from '@/lib/review/contracts';
 import type { Disposition, ReleasePlan } from '@/lib/review/plan-contract';
-import { severityRank } from '@/lib/review/plan-contract';
+import { reviewEffects, initialReviewId } from '@/lib/review/review-navigation';
 import { Button } from '@/components/ui/button';
 import { ReleaseCard } from './release-card';
 import { ReviewPanel } from './review-panel';
@@ -67,18 +67,7 @@ function ReviewDialog({
     };
   }, []);
 
-  // Lead with the most severe effect unless the host named one.
-  const leading = [...plan.effects].sort(
-    (a, b) => severityRank(a.disposition) - severityRank(b.disposition),
-  )[0];
-  const withinFilter = plan.effects.filter(
-    (effect) => filter === 'all' || effect.disposition === filter,
-  );
-  const selected =
-    withinFilter.find((effect) => effect.id === initialItemId)?.id ??
-    withinFilter[0]?.id ??
-    initialItemId ??
-    leading?.id;
+  const selected = initialReviewId(reviewEffects(plan, filter), initialItemId);
 
   return (
     <dialog
@@ -101,6 +90,7 @@ function ReviewDialog({
         </Button>
       </header>
       <ReviewPanel
+        key={JSON.stringify([plan.id, plan.revision])}
         plan={plan}
         loadDetail={loadDetail}
         initialItemId={selected}

@@ -20,8 +20,8 @@ export default function SupportExamplePage() {
           </div>
           <section className="chat-response" aria-label="Safepoint response">
             <p className="chat-response-intro">
-              Three cases reviewed. One needs identity evidence before it can
-              move.
+              {supportPlan.effects.length} cases reviewed. Review the proposed
+              changes and recorded findings.
             </p>
             <ReplayReview plan={supportPlan} />
             <p className="chat-caption">

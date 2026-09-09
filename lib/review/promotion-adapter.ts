@@ -57,16 +57,15 @@ function promotionDeltas(
   ];
 
   // No prior top-up is recorded anywhere, so the before value is genuinely
-  // unobserved rather than zero. A zero recommendation proposes no change.
-  if (proposed.recommendedTopUpQuantityUnits > 0) {
-    deltas.push({
-      label: 'Final top-up',
-      kind: 'scalar',
-      before: null,
-      after: proposed.recommendedTopUpQuantityUnits,
-      display: { suffix: ' units' },
-    });
-  }
+  // unobserved rather than zero. Preserve an explicit zero recommendation too:
+  // without a prior snapshot we cannot conclude that it means no change.
+  deltas.push({
+    label: 'Final top-up',
+    kind: 'scalar',
+    before: null,
+    after: proposed.recommendedTopUpQuantityUnits,
+    display: { suffix: ' units' },
+  });
 
   // A date range is a formatted string in any representation, so taking the
   // presenter's rendering is not the same as parsing a number back out of one.

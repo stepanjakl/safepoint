@@ -1,12 +1,16 @@
 import type { ReactNode } from 'react';
 import type { ProcessSummary } from '@/lib/process/placeholder-process';
-import { InstructionsDialog } from './instructions-dialog';
+import type { SystemLink } from '@/lib/process/system-links';
+import { InstructionsDrawer } from './instructions-drawer';
+import { SystemCluster } from './system-cluster';
 
 export function ProcessView({
   process,
+  sources = [],
   children,
 }: {
   process: ProcessSummary;
+  sources?: SystemLink[];
   children: ReactNode;
 }) {
   const currentVersion = process.instructions.version;
@@ -19,14 +23,9 @@ export function ProcessView({
           <p className="text-meta text-muted">{process.trigger}</p>
         </div>
         <div className="process-controls">
-          {/* Inert: these name the systems the process would reach, and none of
-              them is a control until there is something to connect. */}
-          <ul className="process-connections" aria-label="Connections">
-            {process.connections.map((connection) => (
-              <li key={connection}>{connection}</li>
-            ))}
-          </ul>
-          <InstructionsDialog instructions={process.instructions} />
+          <SystemCluster label="Reads" links={sources} />
+          <SystemCluster label="Writes" links={process.destinations} />
+          <InstructionsDrawer instructions={process.instructions} />
         </div>
       </header>
       <div className="process-body">

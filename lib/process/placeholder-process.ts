@@ -7,6 +7,8 @@
 // that can move underneath a result -- a run evaluated under older instructions
 // is not comparable to one evaluated under the current set, and the list says so.
 
+import type { SystemLink } from './system-links';
+
 export type ProcessRun = {
   id: string;
   label: string;
@@ -18,9 +20,10 @@ export type ProcessRun = {
 export type ProcessSummary = {
   name: string;
   trigger: string;
-  // The systems this process would reach. Mirrors the destinations the effect
-  // planner already names, rather than inventing a second vocabulary.
-  connections: string[];
+  // Where this process would write. Mirrors the destinations the effect planner
+  // already names, rather than inventing a second vocabulary. Sources are not
+  // here: they are derived from the evidence the run actually cited.
+  destinations: SystemLink[];
   instructions: {
     version: string;
     updatedAt: string;
@@ -32,7 +35,27 @@ export type ProcessSummary = {
 export const promotionProcess: ProcessSummary = {
   name: 'Promotion release',
   trigger: 'Weekly · Thursday 09:00 · Europe/London',
-  connections: ['Pricebook', 'Storefront', 'Label queue', 'Supplier portal'],
+  destinations: [
+    {
+      id: 'pricebook',
+      label: 'Pricebook',
+      icon: 'pricebook',
+      direction: 'writes',
+    },
+    {
+      id: 'storefront',
+      label: 'Storefront',
+      icon: 'storefront',
+      direction: 'writes',
+    },
+    { id: 'labels', label: 'Label queue', icon: 'labels', direction: 'writes' },
+    {
+      id: 'portal',
+      label: 'Supplier portal',
+      icon: 'portal',
+      direction: 'writes',
+    },
+  ],
   instructions: {
     version: 'v4',
     updatedAt: 'Updated 2 Sep 2026',
@@ -75,7 +98,16 @@ export const promotionProcess: ProcessSummary = {
 export const supportProcess: ProcessSummary = {
   name: 'Support handoff',
   trigger: 'Daily · 09:00 · Europe/London',
-  connections: ['Support queue', 'Identity records', 'Billing'],
+  destinations: [
+    { id: 'queue', label: 'Support queue', icon: 'queue', direction: 'writes' },
+    {
+      id: 'identity',
+      label: 'Identity records',
+      icon: 'identity',
+      direction: 'writes',
+    },
+    { id: 'billing', label: 'Billing', icon: 'billing', direction: 'writes' },
+  ],
   instructions: {
     version: 'v2',
     updatedAt: 'Updated 1 Sep 2026',

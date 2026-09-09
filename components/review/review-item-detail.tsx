@@ -45,7 +45,7 @@ export function ReviewItemDetail({
               <div key={delta.label} className="review-change">
                 <dt>{delta.label}</dt>
                 <dd>
-                  <DeltaValue delta={delta} />
+                  <DeltaValue delta={delta} expanded />
                 </dd>
               </div>
             ))}
