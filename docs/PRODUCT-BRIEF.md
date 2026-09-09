@@ -8,6 +8,22 @@ Audience: product, design, engineering, and portfolio reviewers
 
 Safepoint is an interface for inspecting, approving, executing, and reversing changes proposed by an AI agent before those changes affect real systems.
 
+## Product terminology
+
+Use these terms consistently in interface copy, design specifications, and engineering discussions. **Processes** is the navigation section; each process contains **Runs**.
+
+| Term | Meaning | Usage |
+| --- | --- | --- |
+| Process | A repeatable business activity with defined instructions, inputs, policies, and permitted effects. | Name the activity, such as **Promotion release** or **Support handoff**. |
+| Run | One occurrence of a process, with its evaluated inputs, proposal, and associated review context. | Use **Runs** for history. A run can produce a proposal without applying any changes. |
+| Agent | The model-backed participant that interprets evidence and proposes changes. | Describe who produced a proposal; do not use as a synonym for the process containing it. |
+| Workflow | Technical orchestration of an operation, such as proposal generation or approved-effect execution. | Use in engineering documentation. A process can involve multiple workflows; it is not the menu label. |
+| Replay | A mode that presents recorded inputs and results rather than starting fresh live generation. | Label recorded demonstrations and simulated receipts explicitly. It is a mode, not a type of process. |
+| Automation | A general description of work performed automatically. | Avoid as the navigation noun: it does not express Safepoint's human review boundary. |
+| Session | The host or sandbox interaction context, which can contain runs and reviews. | Keep distinct from a run and from a durable workflow execution. |
+
+Process names remain stable across runs and modes. A navigation status describes the latest available run, not the permanent health of the process. Ready for review, approved, applied, and verified retain distinct meanings.
+
 ## The problem
 
 AI agents are increasingly able to use tools, edit records, and trigger business processes. A chat transcript can explain what an agent said, but it is a poor control surface for what the agent intends to change.

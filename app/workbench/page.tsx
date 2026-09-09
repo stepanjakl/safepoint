@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 
 import { SystemDiscGallery } from '@/components/dev/system-disc-gallery';
 import { ReviewWorkspace } from '@/components/review/review-workspace';
@@ -40,6 +41,12 @@ export default async function WorkbenchPage({
     <div className="space-y-10 p-6">
       <div>
         <h1 className="text-display font-semibold">Workbench</h1>
+        <Link
+          className="inline-flex min-h-11 items-center underline underline-offset-4"
+          href="/examples/states"
+        >
+          Open release card state gallery →
+        </Link>
         <p className="text-dense text-muted mt-1">
           The review workspace in both themes at wide and 390px widths. Add
           ?sku= to select a different line in every frame. Forced colours and

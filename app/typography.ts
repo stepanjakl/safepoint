@@ -1,6 +1,6 @@
 import { GeistMono } from 'geist/font/mono';
 import { GeistSans } from 'geist/font/sans';
-import { Inter, Inter_Tight, JetBrains_Mono } from 'next/font/google';
+import { Inter, Inter_Tight, JetBrains_Mono, Nunito } from 'next/font/google';
 import localFont from 'next/font/local';
 
 /*
@@ -92,7 +92,15 @@ const commitMono = localFont({
  * Class list for <html>. Declaring every family here keeps the choice a
  * one-attribute change at runtime rather than a change of markup.
  */
+const nunito = Nunito({
+  subsets: ['latin'],
+  variable: '--font-nunito',
+  display: 'swap',
+  weight: '800',
+});
+
 export const fontVariables = [
+  nunito.variable,
   GeistSans.variable,
   GeistMono.variable,
   glide.variable,

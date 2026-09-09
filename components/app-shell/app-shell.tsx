@@ -1,25 +1,13 @@
-import Link from 'next/link';
 import type { ReactNode } from 'react';
-
-// Placeholder furniture. These do nothing, so they stay out of the tab order
-// and out of the accessibility tree rather than presenting themselves as
-// controls that a keyboard or screen reader user can act on.
-const placeholderGroups = [
-  {
-    label: 'Workspace',
-    items: ['Inbox', 'Activity', 'Connections', 'Policies'],
-  },
-  {
-    label: 'Recent',
-    items: ['Weekly pricing', 'Supplier terms', 'Label queue'],
-  },
-];
-
-const routes = [
-  { href: '/', label: 'Promotion release' },
-  { href: '/examples/support', label: 'Support handoff' },
-  { href: '/examples/states', label: 'State gallery' },
-];
+import { loadReviewedReplay } from '@/lib/promotion-release';
+import {
+  promotionProcess,
+  supportProcess,
+} from '@/lib/process/placeholder-process';
+import { processNavigationItem } from '@/lib/process/navigation';
+import { presentPromotionPlan } from '@/lib/review/promotion-adapter';
+import { supportPlan } from '@/lib/review/support-fixture';
+import { ProcessMenu } from './process-menu';
 
 export function AppShell({
   current,
@@ -28,49 +16,24 @@ export function AppShell({
   current: string;
   children: ReactNode;
 }) {
+  // Only navigation summaries cross the client boundary, not the full plans.
+  const items = [
+    processNavigationItem({
+      id: 'promotion-release',
+      href: '/',
+      name: promotionProcess.name,
+      plan: presentPromotionPlan(loadReviewedReplay()),
+    }),
+    processNavigationItem({
+      id: 'support-handoff',
+      href: '/examples/support',
+      name: supportProcess.name,
+      plan: supportPlan,
+    }),
+  ];
   return (
     <div className="app-shell">
-      <div className="app-sidebar">
-        <div className="app-sidebar-brand">
-          <span className="review-brand">
-            <span className="review-brand-mark" aria-hidden="true">
-              s.
-            </span>{' '}
-            Safepoint
-          </span>
-        </div>
-        <nav className="app-nav" aria-label="Replays">
-          <p className="app-nav-label">Replays</p>
-          <ul>
-            {routes.map((route) => (
-              <li key={route.href}>
-                <Link
-                  href={route.href}
-                  className="app-nav-item"
-                  aria-current={route.href === current ? 'page' : undefined}
-                >
-                  {route.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-        {placeholderGroups.map((group) => (
-          <div className="app-nav" key={group.label} aria-hidden="true">
-            <p className="app-nav-label">{group.label}</p>
-            <ul>
-              {group.items.map((item) => (
-                <li key={item}>
-                  <span className="app-nav-item app-nav-placeholder">
-                    {item}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-        <p className="app-sidebar-foot">Replay workspace · Fictional data</p>
-      </div>
+      <ProcessMenu current={current} items={items} />
       <div className="app-pane">{children}</div>
     </div>
   );

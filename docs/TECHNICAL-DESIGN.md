@@ -48,6 +48,8 @@ Proposal generation and approved-effect execution are separate durable workflows
 
 ## Generalisation model
 
+The [product terminology](PRODUCT-BRIEF.md#product-terminology) defines **process**, **run**, **agent**, **workflow**, **replay**, and **session**. Interface navigation uses **Processes → Runs**. Preserve specific technical names such as agent runs and workflow runs when discussing their execution records; these are not interchangeable with the user-facing process or its review context.
+
 The portfolio implements one fixed process, but the architecture separates the reusable review experience from process and connector concerns.
 
 ```mermaid

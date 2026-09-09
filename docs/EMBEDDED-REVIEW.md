@@ -4,6 +4,44 @@ Status: current product and implementation direction, September 2026. This super
 
 Safepoint appears as a compact review response in an existing conversation. It expands into a focused review surface and eventually returns a durable result to that same conversation. The conversation provides context; the structured change set defines what a person reviews.
 
+## Process navigation and brand
+
+Status: implemented, 9 September 2026. Use the canonical [product terminology](PRODUCT-BRIEF.md#product-terminology).
+
+### Menu hierarchy
+
+The demonstration has two functioning menu levels. The root is **Workspace**, with one entry, **Processes**. Opening it reveals the process list. A **Back to workspace** button sits above that list and returns to the root. Start on the process level when opening an existing process route so the current selection is visible.
+
+Only actual process examples appear in the list: Promotion release and Support handoff. The unrelated Workspace and Recent placeholder groups have been removed. The state gallery is linked from the development workbench rather than listed among processes. The root level is intentionally minimal: it demonstrates navigation rather than implying additional product features.
+
+Changing menu levels preserves the open review, selected process, and saved order. Entering Processes slides the menu content to the left; returning to Workspace reverses the direction. Keep the brand stationary and clip motion to the menu viewport. The transition takes 220 ms and respects reduced-motion preferences. Only the active level is interactive and exposed to assistive technology. Keyboard focus follows the level change and returns to the Processes entry when going back; rapid direction changes must not leave duplicate controls or stranded focus.
+
+### Process list
+
+The section heading is muted uppercase with a fine divider. Process rows use the same semibold weight in every state, with slightly muted default text, darker active text, a subtle hover background, and a stronger active background. Rows are 40 px tall on a 42 px pitch. The back control uses a bold SVG arrow. A blue information box with an information icon explains that the workspace uses fictional replay data and makes no live changes.
+
+In normal mode, hovering highlights a row and clicking or pressing Enter opens its available run. Hover never opens a session. Keep the current process visibly selected. The existing replay slice only supplies the current recorded run; earlier placeholder runs must not appear newly navigable.
+
+The sliders icon, labelled **Customise** and explained by a tooltip, enables reordering and suspends row navigation. The icon becomes a visible **Done** action while editing. Reveal a six-dot drag handle on row hover or keyboard focus, with a subtle row background and a clear insertion indicator. Other rows respond as the target position changes. Provide keyboard reordering and tap-based move alternatives; keep handles visible on touch devices during customization. **Done** saves the order locally in the browser; **Cancel** restores the previous order. Returning to Workspace preserves an unfinished customization draft until Done or Cancel is used. If browser storage is unavailable, the order remains usable for the current visit and the save message explains that limit. Status changes never silently reorder a customized list.
+
+A compact coloured status shape retains its space when the process name overflows. The accessible name includes the process and status; hovering or keyboard-focusing it opens a structured tooltip on the right, with automatic placement fallback at narrow widths. The tooltip contains a status pill, labelled review counts, and replay context. Derive its information from the same review data as the main panel. Explain the latest available run's status and relevant counts in its tooltip, retaining replay context. Reveal a truncated process name in full on hover and keyboard focus. Essential status information remains available without hover, including on touchscreens.
+
+### Shared brand component
+
+The shared `Brand` component replaces the boxed `s.` mark with a teal pill containing the favicon's existing white checkmark geometry on the left and **SAFEPOINT** on the right. It uses Nunito at weight 800, 11 px, with 0.12 em tracking, independent of the development typeface selector. Next.js loads and self-hosts the font. The pill and favicon share teal `#007c78` with a white checkmark. No glyph distortion is used. The uppercase brand is an intentional exception to normal sentence-case interface labels.
+
+### Shared tooltip component
+
+The shared `Tooltip` component serves navigation names, the icon-only Customise button, status shapes, and connected-system discs. Every tooltip uses a placement-aware arrow. Rich content is optional, so short control hints retain the compact treatment. Its restrained entrance and exit motion takes inspiration from the [Ariakit Tooltip with Motion example](https://ariakit.com/examples/tooltip-framer-motion). Placement, spacing, surface, typography, dismissal, and reduced-motion behavior are consistent across consumers. Hover uses a 350 ms warmup and a 150 ms close delay; keyboard focus opens immediately. `OverflowTooltip` measures the rendered label and only reveals a name tooltip when it is truncated.
+
+The implementation uses the installed React Aria components. Ariakit supplies unstyled primitives and flexible composition through its `render` prop; its linked example adds Motion for animation. [React Aria supports custom styling and animation](https://react-aria.adobe.com/styling), so reproducing this interaction does not require a second accessibility library. React Aria entrance/exit states drive CSS opacity/transform animations. The menu and reorder preview also use CSS transforms; no additional animation or accessibility dependency is required.
+
+Tooltips open on hover and keyboard focus, dismiss on Escape, stay within the viewport, and remain hoverable. Keep accessible names on their triggers and associate supplemental descriptions without duplicate announcements. A tooltip is supporting information, not the only means of identifying a control or understanding a blocking status.
+
+### Verification
+
+Automated browser checks cover menu navigation, rapid reversal and focus restoration, current-route highlighting, pointer and keyboard reordering, Escape drag cancellation, Cancel, unfinished draft preservation, persistence across routes/reloads, unavailable browser storage, real touch move-button interaction, 320 px and 390 px layouts, truncated names, hover/focus tooltips, Escape dismissal, hoverable tooltip surfaces, and reduced motion. Light and dark layouts were visually inspected. Unit tests cover malformed saved preferences, changed process lists, reorder boundaries, and statuses derived from actual review plans. These checks do not replace testing with assistive technology.
+
 ## Two surfaces
 
 The inline response names the process and batch, accounts for every item in three groups, shows the leading blocker, and offers one primary review action. Ready means ready for human review, never approved or applied. Replay mode and the absence of applied changes remain visible.

@@ -1,6 +1,6 @@
 'use client';
 
-import { Focusable, Tooltip, TooltipTrigger } from 'react-aria-components';
+import { Tooltip } from '@/components/ui/tooltip';
 import type { Freshness, SystemLink } from '@/lib/process/system-links';
 import { SystemIcon } from './system-icon';
 
@@ -9,25 +9,18 @@ import { SystemIcon } from './system-icon';
 // freshness, which is not decoration.
 function Disc({ link }: { link: SystemLink }) {
   const meta = link.freshness?.label ?? link.detail;
-  const described = meta ? `${link.label}. ${meta}.` : link.label;
   return (
-    <TooltipTrigger delay={200}>
-      <Focusable>
-        <span
-          className="system-disc"
-          data-freshness={link.freshness?.state}
-          tabIndex={0}
-          role="img"
-          aria-label={described}
-        >
-          <SystemIcon icon={link.icon} />
-        </span>
-      </Focusable>
-      <Tooltip className="system-tooltip" offset={8}>
-        <span className="system-tooltip-label">{link.label}</span>
-        {meta ? <span className="system-tooltip-meta">{meta}</span> : null}
-      </Tooltip>
-    </TooltipTrigger>
+    <Tooltip label={link.label} description={meta}>
+      <span
+        className="system-disc"
+        data-freshness={link.freshness?.state}
+        tabIndex={0}
+        role="img"
+        aria-label={link.label}
+      >
+        <SystemIcon icon={link.icon} />
+      </span>
+    </Tooltip>
   );
 }
 

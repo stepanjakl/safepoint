@@ -9,7 +9,7 @@
   }
   .app-shell {
     display: grid;
-    grid-template-columns: 248px minmax(0, 1fr);
+    grid-template-columns: 272px minmax(0, 1fr);
     gap: var(--app-inset);
     padding: var(--app-inset);
     background: var(--sp-canvas);
@@ -37,38 +37,12 @@
   .app-sidebar-brand {
     padding: 4px 10px 16px;
   }
-  .app-nav + .app-nav {
-    margin-top: 18px;
-  }
   .app-nav-label {
     padding: 0 10px 6px;
     font-size: 11px;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--sp-text-muted);
-  }
-  .app-nav-item {
-    display: block;
-    padding: 7px 10px;
-    border-radius: 7px;
-    font-size: 13px;
-    color: var(--sp-text-muted);
-    text-decoration: none;
-    overflow-wrap: anywhere;
-  }
-  a.app-nav-item:hover {
-    background: var(--sp-surface-control);
-    color: var(--sp-text-primary);
-  }
-  .app-nav-item[aria-current='page'] {
-    background: var(--sp-surface-selected);
-    color: var(--sp-text-primary);
-    font-weight: 500;
-  }
-  /* Deliberately recessive: furniture, not a second thing to read. */
-  .app-nav-placeholder {
-    color: var(--sp-text-muted);
-    opacity: 0.55;
   }
   .app-sidebar-foot {
     margin-top: auto;
@@ -120,33 +94,10 @@
       grid-template-columns: minmax(0, 1fr);
     }
     .app-sidebar {
-      flex-direction: row;
-      align-items: center;
-      gap: 8px;
-      overflow-x: auto;
-      padding: 10px 12px;
+      padding: 10px 8px;
     }
-    .app-sidebar-brand {
-      padding: 0 8px 0 0;
-    }
-    .app-nav {
-      display: contents;
-    }
-    /* Scoped to direct children: the brand mark is aria-hidden too, and it
-       stays. */
-    .app-nav + .app-nav,
-    .app-nav-label,
-    .app-sidebar-foot,
-    .app-sidebar > [aria-hidden='true'] {
+    .app-sidebar-foot {
       display: none;
-    }
-    .app-nav ul {
-      display: flex;
-      gap: 4px;
-    }
-    .app-nav-item {
-      white-space: nowrap;
-      overflow-wrap: normal;
     }
   }
 }
@@ -166,26 +117,6 @@
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-  }
-  .review-brand {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 600;
-    letter-spacing: -0.025em;
-  }
-  .review-brand-mark {
-    display: inline-grid;
-    place-items: center;
-    width: 28px;
-    height: 28px;
-    border: 1px solid var(--sp-rule-strong);
-    border-radius: 7px;
-    font-size: 20px;
-    font-weight: 600;
-    line-height: 1;
-    letter-spacing: -0.08em;
-    padding-right: 2px;
   }
   .chat-main {
     width: min(100%, 760px);
@@ -1321,43 +1252,6 @@
     color: var(--sp-state-blocked);
   }
 
-  /* The same enclosure as the discs it describes: face, ring and sheen from
-     `control-face`, so the pair reads as one object. */
-  .system-tooltip {
-    @apply control-face surface-floating;
-    display: grid;
-    gap: 2px;
-    max-width: 240px;
-    padding: 6px 10px;
-    border-radius: 8px;
-    color: var(--sp-text-primary);
-    font-size: 12px;
-    line-height: 1.45;
-  }
-  .system-tooltip-label {
-    font-weight: 500;
-  }
-  .system-tooltip-meta {
-    color: var(--sp-text-muted);
-  }
-  /* The fade is back: it was dropped only because opacity over a
-     backdrop-filtered box makes the compositor re-snapshot the backdrop every
-     frame, and there is no backdrop here now. */
-  .system-tooltip[data-entering] {
-    animation: tooltip-in 110ms ease-out both;
-  }
-  @keyframes tooltip-in {
-    from {
-      opacity: 0;
-      transform: translateY(3px);
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .system-tooltip[data-entering] {
-      animation: none;
-    }
-  }
   @media (width < 640px) {
     .system-cluster-label {
       display: none;
