@@ -1,8 +1,13 @@
 'use client';
 
-import { useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { startMotionDebug } from './motion-debug';
 
 import {
+  readMotionSpeed,
+  serverMotionSpeed,
+  setMotionSpeed,
+  MOTION_SPEEDS,
   readMono,
   readTheme,
   readTypeface,
@@ -36,6 +41,16 @@ import {
  */
 export function DesignControls() {
   const [open, setOpen] = useState(false);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const motionSpeed = useSyncExternalStore(
+    subscribe,
+    readMotionSpeed,
+    serverMotionSpeed,
+  );
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'development') return;
+    return startMotionDebug(Number(motionSpeed));
+  }, [motionSpeed]);
   const typeface = useSyncExternalStore(
     subscribe,
     readTypeface,
@@ -49,20 +64,51 @@ export function DesignControls() {
   }
 
   return (
-    <div className="sp-devctl">
+    <div
+      className="sp-devctl"
+      onKeyDown={(event) => {
+        if (event.key === 'Escape' && open) {
+          event.stopPropagation();
+          setOpen(false);
+          toggleRef.current?.focus();
+        }
+      }}
+    >
       <style>{PANEL_CSS}</style>
       <button
         type="button"
+        ref={toggleRef}
         className="sp-devctl-toggle"
+        aria-label="Design and motion controls"
         aria-expanded={open}
         aria-controls="sp-devctl-panel"
         title="Design controls"
         onClick={() => setOpen((wasOpen) => !wasOpen)}
       >
-        Aa
+        {motionSpeed === '1' ? 'Aa' : `${1 / Number(motionSpeed)}×`}
       </button>
 
       <div id="sp-devctl-panel" className="sp-devctl-panel" hidden={!open}>
+        <fieldset>
+          <legend>Motion speed</legend>
+          {MOTION_SPEEDS.map((speed) => (
+            <label key={speed}>
+              <input
+                type="radio"
+                name="sp-devctl-motion"
+                checked={motionSpeed === speed}
+                onChange={() => setMotionSpeed(speed)}
+              />
+              <span>
+                {speed === '1' ? 'Normal' : `${1 / Number(speed)}× slower`}
+              </span>
+            </label>
+          ))}
+          <p className="sp-devctl-note">
+            CSS transitions and animations. Respects reduced motion; timers keep
+            normal speed.
+          </p>
+        </fieldset>
         <fieldset>
           <legend>Typeface</legend>
           {TYPEFACE_SETS.map((set) => (
@@ -148,6 +194,8 @@ const PANEL_CSS = `
 .sp-devctl-toggle:hover { background: #1a1a1a; }
 .sp-devctl-panel {
   width: 232px;
+  max-height: calc(100dvh - 80px);
+  overflow-y: auto;
   padding: 12px;
   border: 1px solid #333;
   border-radius: 10px;
@@ -156,6 +204,8 @@ const PANEL_CSS = `
   flex-direction: column;
   gap: 14px;
 }
+.sp-devctl-panel[hidden] { display: none; }
+.sp-devctl-note { font-size: 11px; line-height: 1.5; color: #aaa; margin-top: 6px; }
 .sp-devctl fieldset { border: 0; margin: 0; padding: 0; }
 .sp-devctl legend {
   padding: 0 0 6px;

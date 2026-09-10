@@ -410,6 +410,13 @@
   --breakpoint-shell: 900px;
   --breakpoint-runs: 1100px;
 
+  /*
+    The width below which the release card drops to one column of zones. A
+    container size rather than a breakpoint, because the card answers to the
+    pane it is embedded in and not to the viewport.
+  */
+  --container-card: 400px;
+
   --text-display: 22px;
   --text-display--line-height: 26px;
   --text-display--letter-spacing: -0.01em;
@@ -439,6 +446,12 @@
     var(--sp-face-highlight-strong);
   --shadow-control-highlight-solid: inset 0 0 0 1px
     var(--sp-face-highlight-solid);
+  /* Same colour, thinner line. A sub-pixel spread lands as a partially
+     covered device pixel, so the edge reads finer than the 1px steps without
+     dropping to a lighter stop -- for faces where a full 1px sheen is too
+     assertive at small radii. */
+  --shadow-control-highlight-medium-hairline: inset 0 0 0 0.75px
+    var(--sp-face-highlight-medium);
   --shadow-separator-bottom-strong: 0 1px 0 var(--sp-face-highlight-strong);
   --shadow-separator-bottom-solid: 0 1px 0 var(--sp-face-highlight-solid);
   --shadow-separator-right-strong: 1px 0 0 var(--sp-face-highlight-strong);

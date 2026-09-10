@@ -34,14 +34,14 @@ import { DeltaValue } from './delta';
 // One step above the pane it sits on: the first thing found, not another panel
 // on the same plane. `@container` makes the card the query root for its zones.
 const CARD =
-  'control-face surface-floating severity-scale @container data-[danger]:border-state-blocked overflow-clip rounded-[10px]';
-const BODY = 'p-6 @max-[400px]:px-4 @max-[400px]:py-5';
+  'control-face surface-floating severity-scale @container data-[danger]:border-state-blocked overflow-clip rounded-shell';
+const BODY = 'p-6 @max-card:px-4 @max-card:py-5';
 const TITLE =
-  'text-[25px] leading-[1.2] tracking-[-0.035em] [font-weight:550] [overflow-wrap:anywhere] @max-[400px]:text-[22px]';
-const VERDICT = 'text-primary mt-2 text-[14px] leading-[1.55] text-pretty';
+  'text-[25px] leading-[1.2] tracking-[-0.035em] [font-weight:550] [overflow-wrap:anywhere] @max-card:text-[22px]';
+const VERDICT = 'text-primary mt-2 text-body leading-[1.55] text-pretty';
 const RECEIPT_NOTE = 'text-muted mt-1 text-[12px]';
 const PILL_STATE =
-  'bg-commit-state text-state-caution rounded-full px-3 py-[5px] text-[13px] font-medium whitespace-nowrap';
+  'bg-commit-state text-state-caution rounded-full px-3 py-1.25 text-[13px] font-medium whitespace-nowrap';
 
 /*
   Filled rather than outlined: the tab carries its bucket's colour at a weight
@@ -57,15 +57,15 @@ const PILL =
 // with a negative margin and each row puts it back as its own inline padding.
 const ROW = 'border-rule-faint shadow-separator-bottom-solid border-b';
 const ROW_BUTTON =
-  'hover:bg-surface-inset focus-visible:outline-focus flex w-full cursor-pointer flex-wrap items-center gap-x-3 gap-y-1.5 px-6 py-3 text-left text-[14px] leading-[1.5] focus-visible:outline-2 focus-visible:-outline-offset-2';
+  'hover:bg-surface-inset focus-visible:outline-focus flex w-full cursor-pointer flex-wrap items-center gap-x-3 gap-y-1.5 px-6 py-3 text-left text-body leading-[1.5] focus-visible:outline-2 focus-visible:-outline-offset-2';
 const ROW_DELTA =
-  'text-muted ml-auto inline-flex min-w-0 flex-wrap items-baseline gap-1.5 text-right @max-[400px]:ml-0 @max-[400px]:w-full @max-[400px]:text-left';
+  'text-muted ml-auto inline-flex min-w-0 flex-wrap items-baseline gap-1.5 text-right @max-card:ml-0 @max-card:w-full @max-card:text-left';
 // The reason, as a chip in its row's own severity. Pulled back from the tab's
 // weight: the tabs are the navigation, a reason is an annotation.
 const ROW_REASON =
-  'bg-severity-fill text-severity-annotation rounded-full px-2.5 py-[3px] text-right text-[12px] leading-[1.4]';
+  'bg-severity-fill text-severity-annotation rounded-full px-2.5 py-0.75 text-right text-meta leading-[1.4]';
 const CHIP =
-  'border-rule-default text-muted rounded-full border px-[7px] py-0.5 text-[11px] whitespace-nowrap';
+  'border-rule-default text-muted rounded-full border px-1.75 py-0.5 text-[11px] whitespace-nowrap';
 
 // Opening the review can name a bucket, an item, or neither. One callback
 // rather than three: every route into the modal is the same operation with a
@@ -83,7 +83,7 @@ function CommitState({ plan }: { plan: ReleasePlan }) {
   const applied =
     plan.status.kind === 'applied' || plan.status.kind === 'partially_applied';
   return (
-    <div className="border-rule-faint shadow-separator-bottom-solid flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b px-6 py-3 @max-[400px]:px-4">
+    <div className="border-rule-faint shadow-separator-bottom-solid @max-card:px-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b px-6 py-3">
       {/* Filled and in sentence case: the commit state is the first thing read,
           so it is a label rather than a system readout. */}
       <span className={PILL_STATE} data-simulated={simulated}>
@@ -136,7 +136,7 @@ function Buckets({
           negative margin: the selected segment can grow without moving
           anything below it. */}
       <div
-        className="my-[-2px] flex h-2.5 items-center gap-0.5"
+        className="-my-0.5 flex h-2.5 items-center gap-0.5"
         aria-hidden="true"
       >
         {segments.map((segment) => (
@@ -179,7 +179,7 @@ function Buckets({
         <TabPanel
           key={disposition}
           id={disposition}
-          className="border-rule-faint shadow-separator-bottom-solid mx-[-24px] mt-4 border-t outline-none"
+          className="border-rule-faint shadow-separator-bottom-solid -mx-6 mt-4 border-t outline-none"
           data-severity={severityRank(disposition)}
         >
           <BucketPanel plan={plan} disposition={disposition} onOpen={onOpen} />
@@ -363,7 +363,7 @@ function StaleBanner({ plan }: { plan: ReleasePlan }) {
   return (
     // Above the header, because it invalidates everything below it, counts included.
     <p
-      className="border-state-caution bg-state-caution/8 -mb-px flex items-baseline gap-2.5 rounded-t-[10px] border px-4 py-2.5 text-[13px] leading-[1.5]"
+      className="border-state-caution bg-state-caution/8 rounded-t-shell text-dense -mb-px flex items-baseline gap-2.5 border px-4 py-2.5 leading-[1.5]"
       role="status"
     >
       <span
@@ -422,7 +422,7 @@ export function ReleaseCard({
       <article className={CARD} aria-labelledby={headingId}>
         <CommitState plan={plan} />
         <div className={BODY}>
-          <p className="flex items-baseline gap-2.5 text-[14px] leading-[1.55] text-pretty">
+          <p className="text-body flex items-baseline gap-2.5 leading-[1.55] text-pretty">
             <span
               aria-hidden="true"
               className="value text-state-verified shrink-0"

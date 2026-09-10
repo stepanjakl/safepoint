@@ -54,7 +54,7 @@ export default async function ReviewPage({ searchParams }: PageProps<'/'>) {
               </ThreadStep>
             ))}
           </ol>
-          <div className="border-rule-faint text-muted mt-10 border-t pt-5 text-[12px] leading-[1.6] max-sm:mt-7">
+          <div className="border-rule-faint text-muted text-meta mt-10 border-t pt-5 leading-[1.6] max-sm:mt-7">
             <p>
               This conversation demonstrates how Safepoint can appear inside
               another application.

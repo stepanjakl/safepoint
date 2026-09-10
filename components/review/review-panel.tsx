@@ -33,8 +33,8 @@ const FILTER =
 // 70px is the two-line row this list is built around, so a one-line item does
 // not make the column jump.
 const ITEM_BUTTON =
-  'hover:bg-surface-inset aria-[current=true]:bg-surface-selected aria-[current=true]:border-l-primary block min-h-[70px] w-full border-l-2 border-l-transparent px-4.5 py-3 text-left focus-visible:-outline-offset-[3px] forced-colors:aria-[current=true]:border-l-[Highlight] forced-colors:aria-[current=true]:outline forced-colors:aria-[current=true]:outline-[Highlight] forced-colors:aria-[current=true]:-outline-offset-2';
-const ITEM_REASON = 'text-muted mt-1 block text-[12px] leading-[1.5]';
+  'hover:bg-surface-inset aria-[current=true]:bg-surface-selected aria-[current=true]:border-l-primary block min-h-17.5 w-full border-l-2 border-l-transparent px-4.5 py-3 text-left focus-visible:-outline-offset-3 forced-colors:aria-[current=true]:border-l-[Highlight] forced-colors:aria-[current=true]:outline forced-colors:aria-[current=true]:outline-[Highlight] forced-colors:aria-[current=true]:-outline-offset-2';
+const ITEM_REASON = 'text-muted mt-1 block text-meta leading-[1.5]';
 
 export function ReviewPanel({
   plan,
@@ -257,7 +257,7 @@ export function ReviewPanel({
                           <span className="flex flex-wrap justify-between gap-x-2 gap-y-1 text-[13px] [font-weight:550]">
                             {effect.subject}
                             {effect.requiresApproval ? (
-                              <span className="border-rule-default text-muted rounded-full border px-[7px] py-0.5 text-[11px] whitespace-nowrap">
+                              <span className="border-rule-default text-muted rounded-full border px-1.75 py-0.5 text-[11px] whitespace-nowrap">
                                 Needs approval
                               </span>
                             ) : null}

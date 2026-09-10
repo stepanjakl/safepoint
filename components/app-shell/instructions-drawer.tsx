@@ -52,7 +52,7 @@ export function InstructionsDrawer({
               </AriaButton>
             </header>
             <div className="overflow-y-auto p-5">
-              <ol className="marker:text-muted grid list-decimal gap-3 pl-4.5 text-[13px] leading-[1.6]">
+              <ol className="marker:text-muted text-dense grid list-decimal gap-3 pl-4.5 leading-[1.6]">
                 {instructions.body.map((line) => (
                   <li key={line}>{line}</li>
                 ))}

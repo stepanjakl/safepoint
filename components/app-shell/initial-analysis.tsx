@@ -11,7 +11,7 @@ import type { ProcessAnalysis } from '@/lib/process/placeholder-process';
 */
 export function InitialAnalysis({ analysis }: { analysis: ProcessAnalysis }) {
   return (
-    <div className="control-face surface-floating rounded-shell px-5 py-4 text-[14px] leading-[1.6]">
+    <div className="control-face surface-floating rounded-shell text-body px-5 py-4 leading-[1.6]">
       <p className="text-primary">{analysis.summary}</p>
       {/* Observations are findings, not instructions, so they are marked with a
           rule rather than numbered: nothing here happens in sequence. */}

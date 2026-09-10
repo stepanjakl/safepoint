@@ -52,7 +52,7 @@ export function ProcessView({
               <li key={run.id}>
                 {/* Not a control: only the current run has a review to open. */}
                 <div
-                  className="aria-[current]:bg-surface-selected runs:min-w-0 grid min-w-[168px] gap-0.5 rounded-[7px] px-2.5 py-2 text-[13px]"
+                  className="aria-[current]:bg-surface-selected runs:min-w-0 grid min-w-42 gap-0.5 rounded-[7px] px-2.5 py-2 text-[13px]"
                   aria-current={run.current ? 'true' : undefined}
                 >
                   <span className="text-primary">{run.label}</span>

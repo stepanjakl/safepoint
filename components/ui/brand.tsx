@@ -11,7 +11,7 @@ const WORDMARK = 'font-brand font-extrabold [font-feature-settings:normal]';
 export function Brand() {
   return (
     <span
-      className={`${WORDMARK} inline-flex flex-none items-center gap-[3px] rounded-full bg-teal-600 py-[3px] pr-[15px] pl-[5px] text-[12px] leading-[26px] tracking-[0.125em] whitespace-nowrap text-white uppercase forced-colors:border forced-colors:border-[CanvasText]`}
+      className={`${WORDMARK} text-meta inline-flex flex-none items-center gap-0.75 rounded-full bg-teal-600 py-0.75 pr-3.75 pl-1.25 leading-6.5 tracking-[0.125em] whitespace-nowrap text-white uppercase forced-colors:border forced-colors:border-[CanvasText]`}
       aria-label="Safepoint"
     >
       <svg
@@ -37,7 +37,7 @@ export function Brand() {
 export function BrandSquare() {
   return (
     <span
-      className={`${WORDMARK} text-primary inline-flex flex-none items-center gap-[9px] text-[15px] leading-none tracking-[0.02em] whitespace-nowrap`}
+      className={`${WORDMARK} text-primary inline-flex flex-none items-center gap-2.25 text-[15px] leading-none tracking-[0.02em] whitespace-nowrap`}
       aria-label="Safepoint"
     >
       <span

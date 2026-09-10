@@ -26,7 +26,7 @@ import {
 } from './process-order-store';
 
 const ROW_HEIGHT = 42;
-const MENU_TITLE = 'text-menu-link text-[13px] leading-[18px] font-semibold';
+const MENU_TITLE = 'text-menu-link text-dense leading-4.5 font-semibold';
 const MENU_CHEVRON = 'size-5 flex-none [stroke-width:2]';
 
 /*
@@ -48,7 +48,7 @@ const ICON_BUTTON = `${ICON_BUTTON_SHAPE} ${ICON_BUTTON_QUIET}`;
 // A process name, in the row or in the rename field. Truncates rather than
 // wraps: the row is a fixed height, and OverflowTooltip supplies the full name.
 const MENU_LABEL =
-  'text-menu-link group-hover/row:text-primary group-focus-within/row:text-primary transition-colors duration-150 motion-reduce:transition-none group-data-[current]/row:text-primary block min-w-0 truncate rounded-md py-[11px] pr-0 text-[13px] leading-[18px] font-semibold tracking-[-0.01em] no-underline';
+  'text-menu-link group-hover/row:text-primary group-focus-within/row:text-primary transition-colors duration-150 motion-reduce:transition-none group-data-[current]/row:text-primary block min-w-0 truncate rounded-md py-2.75 pr-0 text-dense leading-4.5 font-semibold tracking-[-0.01em] no-underline';
 
 // The reorder handle, and its non-interactive preview.
 const GRIP = 'text-muted ml-0.5 grid h-8 w-6 flex-none place-items-center';
@@ -221,7 +221,7 @@ export function ProcessMenu({
       <div className="flex items-center justify-between gap-2 px-1 pt-1 pb-4">
         <BrandSquare />
         <div
-          className="ease-out-emphasized flex flex-none items-center gap-[3px] transition-[translate,opacity] duration-[220ms] data-[level=workspace]:pointer-events-none data-[level=workspace]:translate-x-4 data-[level=workspace]:opacity-0 motion-reduce:transition-none"
+          className="ease-out-emphasized flex flex-none items-center gap-0.75 transition-[translate,opacity] duration-[220ms] data-[level=workspace]:pointer-events-none data-[level=workspace]:translate-x-4 data-[level=workspace]:opacity-0 motion-reduce:transition-none"
           data-level={level}
           inert={level !== 'processes'}
           aria-hidden={level !== 'processes'}
@@ -297,9 +297,9 @@ export function ProcessMenu({
                 type="button"
                 onClick={() => navigate('processes')}
               >
-                <MenuIcon name="processes" className="text-muted w-[17px]" />
+                <MenuIcon name="processes" className="text-muted w-4.25" />
                 <span>Processes</span>
-                <span className="bg-menu-chip text-muted ml-auto inline-grid h-5.5 min-w-5.5 place-items-center rounded-md px-[5px] text-[11px] tabular-nums">
+                <span className="bg-menu-chip text-muted ml-auto inline-grid h-5.5 min-w-5.5 place-items-center rounded-md px-1.25 text-[11px] tabular-nums">
                   {items.length}
                 </span>
                 <MenuIcon name="right" className={MENU_CHEVRON} />
@@ -311,7 +311,7 @@ export function ProcessMenu({
               aria-hidden={level !== 'processes'}
             >
               <label className="border-rule-faint bg-menu-search text-muted focus-within:outline-focus mx-1 mb-3.5 flex min-h-9 items-center gap-2 rounded-lg border px-2.5 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 has-[input:disabled]:opacity-65">
-                <MenuIcon name="search" className="size-[15px] flex-none" />
+                <MenuIcon name="search" className="size-3.75 flex-none" />
                 <span className="sr-only">Search processes</span>
                 <input
                   type="search"
@@ -326,28 +326,23 @@ export function ProcessMenu({
                   onChange={(event) => setQuery(event.target.value)}
                 />
               </label>
-              <div className="hover:bg-menu-wash-strong focus-within:bg-menu-wash-strong group/heading mb-2 grid min-h-[38px] grid-cols-[40px_minmax(0,1fr)_40px] items-center rounded-lg p-[3px] transition-colors duration-150 motion-reduce:transition-none">
-                <Tooltip label="Back to menu">
-                  <button
-                    ref={backRef}
-                    type="button"
-                    className={ICON_BUTTON}
-                    aria-label="Back to menu"
-                    onClick={() => navigate('workspace')}
-                  >
-                    <MenuIcon name="left" className={MENU_CHEVRON} />
-                  </button>
-                </Tooltip>
-                <h2
-                  className={cx(
-                    MENU_TITLE,
-                    'group-hover/heading:text-primary group-focus-within/heading:text-primary text-center transition-colors duration-150 motion-reduce:transition-none',
-                  )}
-                >
-                  Processes
-                </h2>
+              <button
+                ref={backRef}
+                type="button"
+                className={cx(
+                  MENU_TITLE,
+                  'hover:bg-menu-wash-strong hover:text-primary focus-visible:text-primary mb-2 grid min-h-9.5 w-full cursor-pointer grid-cols-[40px_minmax(0,1fr)_40px] items-center rounded-lg p-0.75 transition-colors duration-150 motion-reduce:transition-none',
+                )}
+                aria-label="Back to workspace menu"
+                onClick={() => navigate('workspace')}
+              >
+                <MenuIcon
+                  name="left"
+                  className={cx(MENU_CHEVRON, 'justify-self-center')}
+                />
+                <span className="text-center">Processes</span>
                 <span aria-hidden="true" />
-              </div>
+              </button>
               {customising ? (
                 <span id="process-reorder-instructions" className="sr-only">
                   Use Up and Down arrow keys, Home or End to reorder.
@@ -484,7 +479,7 @@ export function ProcessMenu({
                           tabIndex={0}
                           role="img"
                           aria-label={`${item.name}: ${item.status.label}, ${item.status.totalLabel}`}
-                          className="text-muted data-[tone=blocked]:text-state-blocked data-[tone=caution]:text-state-caution data-[tone=verified]:text-state-verified relative z-[1] inline-flex min-h-7 min-w-8.5 flex-none cursor-help items-center justify-center gap-1 rounded-[5px] px-[5px] text-[11px] leading-4 font-semibold tabular-nums forced-colors:border forced-colors:border-[CanvasText]"
+                          className="text-muted data-[tone=blocked]:text-state-blocked data-[tone=caution]:text-state-caution data-[tone=verified]:text-state-verified relative z-1 inline-flex min-h-7 min-w-8.5 flex-none cursor-help items-center justify-center gap-1 rounded-[5px] px-1.25 text-[11px] leading-4 font-semibold tabular-nums forced-colors:border forced-colors:border-[CanvasText]"
                           data-tone={item.status.tone}
                         >
                           <Glyph
@@ -524,10 +519,10 @@ export function ProcessMenu({
       </nav>
       <div className="max-shell:gap-2.5 max-shell:pt-3 mx-1 mt-auto grid gap-3.5 pt-6">
         {/* Icon shares row one with the title; the caption sits under it. */}
-        <div className="control-face surface-notice shadow-control-highlight-medium bg-notice-face text-state-advisory max-shell:px-3 max-shell:py-[9px] grid grid-cols-[auto_1fr] items-center gap-x-[9px] rounded-[9px] border p-3 text-[11px] leading-[1.5] forced-colors:border-[CanvasText]">
+        <div className="control-face surface-notice shadow-control-highlight-medium-hairline bg-notice-face text-state-advisory max-shell:px-3 max-shell:py-2.25 grid grid-cols-[auto_1fr] items-center gap-x-2.25 rounded-[9px] border p-3 text-[11px] leading-[1.5] forced-colors:border-[CanvasText]">
           <MenuIcon name="info" />
           <p className="text-[11px] font-semibold">Demo application</p>
-          <span className="text-notice-caption col-start-2 mt-[3px] text-[10px] font-medium">
+          <span className="text-notice-caption col-start-2 mt-0.75 text-[10px] font-medium">
             Fictional data. No live changes.
           </span>
         </div>
@@ -543,7 +538,7 @@ export function ProcessMenu({
               colors={AVATAR_COLORS}
             />
           </span>
-          <p className="text-primary mr-auto text-[13px] leading-[18px] font-semibold">
+          <p className="text-primary text-dense mr-auto leading-4.5 font-semibold">
             Maya
           </p>
           <Tooltip label="Settings">
@@ -583,12 +578,12 @@ function ProcessStatusContent({
       <span
         className={cx(
           TONE_CHIP[status.tone],
-          'justify-self-start rounded-full px-2 py-[3px] text-[11px] font-semibold',
+          'justify-self-start rounded-full px-2 py-0.75 text-[11px] font-semibold',
         )}
       >
         {status.label}
       </span>
-      <dl className="grid grid-cols-2 gap-[5px]">
+      <dl className="grid grid-cols-2 gap-1.25">
         {counts.map(([tone, label, count]) => (
           <div
             key={tone}
@@ -604,8 +599,8 @@ function ProcessStatusContent({
           </div>
         ))}
       </dl>
-      <div className="border-rule-faint flex items-start gap-2 border-t pt-[9px]">
-        <span className="bg-state-advisory/10 text-state-advisory rounded-sm px-[5px] py-0.5 text-[10px] font-semibold">
+      <div className="border-rule-faint flex items-start gap-2 border-t pt-2.25">
+        <span className="bg-state-advisory/10 text-state-advisory rounded-sm px-1.25 py-0.5 text-[10px] font-semibold">
           {status.modeLabel}
         </span>
         <p className="text-muted text-[10px]">{status.modeDescription}</p>

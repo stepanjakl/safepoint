@@ -60,7 +60,7 @@ export function CandidateList({
                 key={row.sku}
                 id={row.sku}
                 textValue={`${row.name}, ${row.outcomeLabel}`}
-                className="group border-rule-faint before:bg-action data-[focus-visible]:outline-focus data-[hovered]:bg-surface-inset data-[selected]:bg-surface-selected relative flex min-h-11 cursor-default items-start gap-2.5 border-b py-2 pr-3 pl-4 outline-none before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:opacity-0 data-[focus-visible]:outline-2 data-[focus-visible]:-outline-offset-2 data-[focus-visible]:outline-solid data-[selected]:before:opacity-100"
+                className="group border-rule-faint before:bg-action data-[focus-visible]:outline-focus data-[hovered]:bg-surface-inset data-[selected]:bg-surface-selected relative flex min-h-11 cursor-default items-start gap-2.5 border-b py-2 pr-3 pl-4 outline-none before:absolute before:inset-y-0 before:left-0 before:w-0.75 before:opacity-0 data-[focus-visible]:outline-2 data-[focus-visible]:-outline-offset-2 data-[focus-visible]:outline-solid data-[selected]:before:opacity-100"
               >
                 <span
                   className={`mt-1 flex w-3 shrink-0 justify-center ${toneText[marker.tone]}`}

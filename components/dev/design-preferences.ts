@@ -102,3 +102,23 @@ function persist(key: string, value: string) {
     // A picker that cannot remember the choice is still a usable picker.
   }
 }
+
+export const MOTION_STORAGE_KEY = 'safepoint.dev.motion-speed';
+export const MOTION_SPEEDS = ['1', '0.5', '0.2', '0.1'] as const;
+export type MotionSpeed = (typeof MOTION_SPEEDS)[number];
+export const DEFAULT_MOTION_SPEED: MotionSpeed = '0.2';
+
+export function readMotionSpeed(): MotionSpeed {
+  const value = document.documentElement.dataset.motionSpeed;
+  return MOTION_SPEEDS.find((speed) => speed === value) ?? DEFAULT_MOTION_SPEED;
+}
+
+export function serverMotionSpeed(): MotionSpeed {
+  return DEFAULT_MOTION_SPEED;
+}
+
+export function setMotionSpeed(next: MotionSpeed) {
+  document.documentElement.dataset.motionSpeed = next;
+  persist(MOTION_STORAGE_KEY, next);
+  emit();
+}

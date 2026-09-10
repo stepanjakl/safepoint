@@ -56,7 +56,7 @@ export function SystemCluster({
       {/* Overlapped discs, isolated so the hover lift stays a local stack. */}
       <ul className="isolate flex">
         {links.map((link) => (
-          <li key={link.id} className="not-first:-ml-[5px]">
+          <li key={link.id} className="not-first:-ml-1.25">
             <Disc link={link} />
           </li>
         ))}

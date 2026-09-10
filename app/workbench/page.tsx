@@ -140,7 +140,7 @@ export default async function WorkbenchPage({
             <ReviewWorkspace presentation={presentation} initialSku={sku} />
           </div>
           <h2 className="readout text-muted">{theme} · 390px</h2>
-          <div className="border-rule-strong bg-canvas text-primary w-[390px] border">
+          <div className="border-rule-strong bg-canvas text-primary w-97.5 border">
             <ReviewWorkspace presentation={presentation} initialSku={sku} />
           </div>
           <h2 className="readout text-muted">{theme} · controls</h2>

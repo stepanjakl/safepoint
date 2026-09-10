@@ -9,7 +9,7 @@ import { DeltaValue } from './delta';
 const DISCLOSURE = 'disclosure border-rule-faint border-b';
 const SUMMARY =
   'flex min-h-12 cursor-pointer flex-wrap items-baseline gap-x-3 gap-y-1 py-3.5 text-[13px] [&>span]:text-muted [&>span]:ml-auto [&>span]:text-[12px]';
-const DISCLOSURE_BODY = 'pb-5 pl-[22px] text-[13px] leading-[1.6]';
+const DISCLOSURE_BODY = 'pb-5 pl-5.5 text-dense leading-[1.6]';
 // Each record inside a disclosure is a jump target for an evidence link, so it
 // keeps a scroll margin of its own.
 const RECORD = 'mt-5 scroll-mt-6 [&>h4]:mb-1 [&>h4]:[font-weight:550]';
@@ -24,7 +24,7 @@ export function ReviewItemDetail({
   return (
     <div className="px-8 pb-7 [overflow-wrap:anywhere] @max-3xl/review:px-5 @max-3xl/review:pb-6">
       <div
-        className="border-state-advisory data-[disposition=blocked]:border-state-blocked data-[disposition=needs_decision]:border-state-caution group/conclusion border-l-2 pl-4 [&>p:not(:first-child)]:text-[13px] [&>p:not(:first-child)]:leading-[1.6]"
+        className="border-state-advisory data-[disposition=blocked]:border-state-blocked data-[disposition=needs_decision]:border-state-caution group/conclusion [&>p:not(:first-child)]:text-dense border-l-2 pl-4 [&>p:not(:first-child)]:leading-[1.6]"
         data-disposition={detail.disposition}
       >
         <p className="group-data-[disposition=blocked]/conclusion:text-state-blocked group-data-[disposition=needs_decision]/conclusion:text-state-caution mb-2 flex items-baseline gap-2 text-[15px] [font-weight:550]">
@@ -80,7 +80,7 @@ export function ReviewItemDetail({
           <summary className={SUMMARY}>
             Supporting facts <span>{detail.facts.length}</span>
           </summary>
-          <dl className="pb-4 pl-[22px] text-[13px] [&_dt]:mb-1 [&_dt]:[font-weight:550] [&>div]:mb-4">
+          <dl className="pb-4 pl-5.5 text-[13px] [&_dt]:mb-1 [&_dt]:[font-weight:550] [&>div]:mb-4">
             {detail.facts.map((fact) => (
               <div key={fact.label}>
                 <dt>{fact.label}</dt>
@@ -253,7 +253,7 @@ function EvidenceLinks({
   prefix: string;
 }) {
   return (
-    <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[12px] [&_a]:inline-flex [&_a]:min-h-6 [&_a]:items-center [&_a]:underline [&_a]:underline-offset-[3px]">
+    <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[12px] [&_a]:inline-flex [&_a]:min-h-6 [&_a]:items-center [&_a]:underline [&_a]:underline-offset-3">
       {ids.map((id) => {
         const source = detail.sources.find((entry) => entry.id === id);
         return source ? (

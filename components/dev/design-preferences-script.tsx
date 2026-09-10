@@ -1,4 +1,9 @@
 import {
+  DEFAULT_MOTION_SPEED,
+  MOTION_SPEEDS,
+  MOTION_STORAGE_KEY,
+} from './design-preferences';
+import {
   MONO_CHOICES,
   MONO_STORAGE_KEY,
   THEME_STORAGE_KEY,
@@ -35,6 +40,10 @@ try {
   if (monos.indexOf(mono) !== -1) {
     root.dataset.mono = mono;
   }
+  var motionSpeeds = ${JSON.stringify(MOTION_SPEEDS)};
+  var motionSpeed = localStorage.getItem(${JSON.stringify(MOTION_STORAGE_KEY)});
+  root.dataset.motionSpeed = motionSpeeds.indexOf(motionSpeed) !== -1
+    ? motionSpeed : ${JSON.stringify(DEFAULT_MOTION_SPEED)};
   var theme = localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});
   if (theme === 'light' || theme === 'dark') {
     root.dataset.theme = theme;
