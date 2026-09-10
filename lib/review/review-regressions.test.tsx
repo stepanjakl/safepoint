@@ -89,7 +89,10 @@ describe('review regressions', () => {
         loadDetail={async (id) => galleryDetail(plan, id)}
       />,
     );
-    expect(markup.match(/class="review-item-button"/g)).toHaveLength(50);
+    // One mounted row per item on the page, counted through the row's own
+    // aria-current contract rather than a class name.
+    expect(markup.match(/<button [^>]*aria-current=/g) ?? []).toHaveLength(1);
+    expect(markup.match(/<li>/g) ?? []).toHaveLength(50);
     expect(markup).toContain('Next page');
     expect(markup).toContain('of 2000 matching items');
   });
@@ -121,6 +124,34 @@ describe('review regressions', () => {
     );
     expect(markup).toContain('First connector failed');
     expect(markup.match(/Second connector failed/g)).toHaveLength(2);
+  });
+
+  // The item is the reviewable unit, so every row the card lists has to be a
+  // way into it. Before the tabs landed only the overflow link was clickable.
+  it('renders every listed row as a control that opens its item', () => {
+    const plan = presentPromotionPlan(loadReviewedReplay());
+    const markup = renderToStaticMarkup(
+      <ReleaseCard plan={plan} onOpen={() => {}} />,
+    );
+    // Asserted through the row's own accessible name rather than a class, so
+    // the invariant survives a change of styling: the card's only list items
+    // are rows, and each one has to carry the control that opens it.
+    const rows = markup.match(/<li\b/g) ?? [];
+    const openers = markup.match(/Open in review/g) ?? [];
+    expect(rows.length).toBeGreaterThan(0);
+    expect(openers).toHaveLength(rows.length);
+  });
+
+  // One distribution, one place to read it. The line above the tabs used to
+  // enumerate the same buckets the tabs already carry.
+  it('states the attention count once, not once per bucket', () => {
+    const plan = presentPromotionPlan(loadReviewedReplay());
+    const markup = renderToStaticMarkup(
+      <ReleaseCard plan={plan} onOpen={() => {}} />,
+    );
+    expect(markup).toContain('need attention.');
+    expect(markup).not.toContain('are blocked.');
+    expect(markup).not.toContain('are awaiting a decision.');
   });
 
   it('uses replay safety copy in all-clear cards', () => {

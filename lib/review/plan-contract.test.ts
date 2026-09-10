@@ -9,14 +9,15 @@ import {
   type PlanStatus,
 } from './plan-contract';
 import {
-  ROLL_UP_THRESHOLD,
+  ROW_BUDGET,
   evaluationCounts,
   nonEmptyDispositions,
   planState,
   rollUpByReason,
   selectedCounts,
   totalOf,
-  verdictLine,
+  attentionLine,
+  bucketRows,
 } from './plan-derivations';
 
 const noun = { one: 'item', other: 'items' };
@@ -219,8 +220,8 @@ describe('planState precedence', () => {
   });
 });
 
-describe('verdict line', () => {
-  it('cannot disagree with the pills, because both derive from one count', () => {
+describe('attention line', () => {
+  it('counts what needs a person, and cannot disagree with the tabs', () => {
     const effects = [
       effect('a', 'blocked'),
       effect('b', 'blocked'),
@@ -228,31 +229,45 @@ describe('verdict line', () => {
       effect('d', 'will_apply'),
     ];
     const counts = evaluationCounts(effects);
-    expect(verdictLine(counts, noun)).toBe(
-      '2 items are blocked. 1 is awaiting a decision.',
-    );
+    expect(attentionLine(counts, noun)).toBe('3 of 4 items need attention.');
     expect(counts.blocked).toBe(2);
     expect(counts.needs_decision).toBe(1);
   });
 
-  it('agrees in the singular', () => {
-    expect(verdictLine(evaluationCounts([effect('a', 'blocked')]), noun)).toBe(
-      '1 item is blocked.',
-    );
-    expect(
-      verdictLine(evaluationCounts([effect('a', 'needs_decision')]), noun),
-    ).toBe('1 item is awaiting a decision.');
-    expect(verdictLine(evaluationCounts([effect('a', 'deferred')]), noun)).toBe(
-      '1 item is deferred.',
-    );
+  // The line used to enumerate every bucket, which put the same distribution
+  // on screen three times over. The tabs are the only place those digits live.
+  it('does not restate the per-bucket counts the tabs carry', () => {
+    const counts = evaluationCounts([
+      effect('a', 'blocked'),
+      effect('b', 'needs_decision'),
+      effect('c', 'deferred'),
+    ]);
+    const line = attentionLine(counts, noun);
+    for (const disposition of [
+      'blocked',
+      'needs_decision',
+      'deferred',
+    ] as const) {
+      expect(line).not.toContain(DISPOSITION_LABELS[disposition].toLowerCase());
+    }
   });
 
-  it('drops zero clauses and never mentions will_apply alongside others', () => {
+  it('agrees in the singular', () => {
+    expect(
+      attentionLine(
+        evaluationCounts([effect('a', 'blocked'), effect('b', 'will_apply')]),
+        noun,
+      ),
+    ).toBe('1 of 2 items needs attention.');
+  });
+
+  it('counts deferred and awaiting alongside blocked', () => {
     const counts = evaluationCounts([
       effect('a', 'deferred'),
-      effect('b', 'will_apply'),
+      effect('b', 'needs_decision'),
+      effect('c', 'will_apply'),
     ]);
-    expect(verdictLine(counts, noun)).toBe('1 item is deferred.');
+    expect(attentionLine(counts, noun)).toBe('2 of 3 items need attention.');
   });
 
   it('speaks plainly when everything will apply', () => {
@@ -260,35 +275,46 @@ describe('verdict line', () => {
       effect('a', 'will_apply'),
       effect('b', 'will_apply'),
     ]);
-    expect(verdictLine(counts, noun)).toBe(
+    expect(attentionLine(counts, noun)).toBe(
       '2 items will apply. Nothing needs attention.',
     );
   });
 
-  it("uses the same word for a bucket as that bucket's pill", () => {
-    // The verdict sits directly above the pills. If they conjugate a bucket
-    // differently, the reader has to work out that they mean the same thing.
-    const counts = evaluationCounts([
-      effect('a', 'blocked'),
-      effect('b', 'needs_decision'),
-      effect('c', 'deferred'),
-    ]);
-    const line = verdictLine(counts, noun);
-    for (const disposition of [
-      'blocked',
-      'needs_decision',
-      'deferred',
-    ] as const) {
-      expect(line).toContain(DISPOSITION_LABELS[disposition].toLowerCase());
-    }
-  });
-
   it('carries no domain noun beyond the supplied one', () => {
-    const rows = verdictLine(evaluationCounts([effect('a', 'blocked')]), {
+    const rows = attentionLine(evaluationCounts([effect('a', 'blocked')]), {
       one: 'row',
       other: 'rows',
     });
-    expect(rows).toBe('1 row is blocked.');
+    expect(rows).toBe('1 of 1 row needs attention.');
+  });
+});
+
+describe('bucket rows', () => {
+  it('shows every item at or below the row budget', () => {
+    const effects = Array.from({ length: ROW_BUDGET }, (_, i) =>
+      effect(`e${i}`, 'blocked'),
+    );
+    const rows = bucketRows(effects, []);
+    expect(rows.kind).toBe('items');
+    if (rows.kind !== 'items') return;
+    expect(rows.items).toHaveLength(ROW_BUDGET);
+    expect(rows.hidden).toBe(0);
+  });
+
+  it('rolls up past the budget and counts the remainder in items', () => {
+    const effects = Array.from({ length: 40 }, (_, i) =>
+      effect(`e${i}`, 'blocked', `r${i % 8}`),
+    );
+    const reasons = Array.from({ length: 8 }, (_, i) => ({
+      key: `r${i}`,
+      label: `Reason ${i}`,
+    }));
+    const rows = bucketRows(effects, reasons);
+    expect(rows.kind).toBe('reasons');
+    if (rows.kind !== 'reasons') return;
+    // "and N more" has to mean N things the reader could have looked at.
+    const shown = rows.reasons.reduce((sum, row) => sum + row.count, 0);
+    expect(shown + rows.hidden).toBe(40);
   });
 });
 
@@ -309,7 +335,7 @@ describe('roll up by reason', () => {
       { key: 'margin_floor', label: 'Below margin floor', count: 20 },
       { key: 'evidence_stale', label: 'Evidence out of date', count: 20 },
     ]);
-    expect(effects.length).toBeGreaterThan(ROLL_UP_THRESHOLD);
+    expect(effects.length).toBeGreaterThan(ROW_BUDGET);
   });
 
   it('surfaces unattributed rows rather than dropping them', () => {
@@ -343,9 +369,10 @@ describe('copy rules', () => {
   });
 
   it('bans apology and filler vocabulary', () => {
-    const corpus = [...actionish, verdictLine(evaluationCounts([]), noun)].join(
-      ' ',
-    );
+    const corpus = [
+      ...actionish,
+      attentionLine(evaluationCounts([]), noun),
+    ].join(' ');
     expect(corpus).not.toMatch(/successfully|please|sorry|!/i);
   });
 

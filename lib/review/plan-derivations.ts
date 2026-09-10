@@ -74,34 +74,37 @@ function plural(count: number, noun: Noun): string {
   return count === 1 ? noun.one : noun.other;
 }
 
-// Generated from the counts, never authored per domain. A hand-written summary
-// drifts out of sync with the numbers directly beneath it.
-export function verdictLine(counts: DispositionCounts, noun: Noun): string {
-  const clauses: string[] = [];
-  const push = (count: number, tail: (n: number) => string) => {
-    if (count === 0) return;
-    // The first clause names the domain noun; later clauses do not repeat it.
-    const subject =
-      clauses.length === 0 ? `${count} ${plural(count, noun)}` : `${count}`;
-    clauses.push(`${subject} ${tail(count)}`);
-  };
-
-  // Every clause takes the same shape, so a clause always agrees with the pill
-  // for the same bucket rather than conjugating its own way.
-  const be = (n: number) => (n === 1 ? 'is' : 'are');
-  push(counts.blocked, (n) => `${be(n)} blocked`);
-  push(counts.needs_decision, (n) => `${be(n)} awaiting a decision`);
-  push(counts.deferred, (n) => `${be(n)} deferred`);
-
-  // `will_apply` never gets a clause: a large clean count is not news.
-  if (clauses.length === 0) {
-    const total = counts.will_apply;
-    return `${total} ${plural(total, noun)} will apply. Nothing needs attention.`;
-  }
-  return `${clauses.join('. ')}.`;
+// Everything that is not `will_apply` is something a person has to look at.
+// One question, so one derivation: the tabs below the line answer which bucket.
+export function needingAttention(counts: DispositionCounts): number {
+  return counts.blocked + counts.needs_decision + counts.deferred;
 }
 
-export const ROLL_UP_THRESHOLD = 5;
+// Generated from the counts, never authored per domain. A hand-written summary
+// drifts out of sync with the numbers directly beneath it.
+//
+// Deliberately does not enumerate the buckets. The tabs carry each bucket's
+// count and are the only place those digits appear; a line that repeated them
+// made the reader check three renderings of one distribution against each other.
+export function attentionLine(counts: DispositionCounts, noun: Noun): string {
+  const needing = needingAttention(counts);
+  const total = totalOf(counts);
+  // A large clean count is not news, so the clean case says so and stops.
+  if (needing === 0) {
+    return `${total} ${plural(total, noun)} will apply. Nothing needs attention.`;
+  }
+  // The noun agrees with the total it qualifies; the verb agrees with the
+  // count in front of it. "1 of 27 items needs attention."
+  const verb = needing === 1 ? 'needs' : 'need';
+  return `${needing} of ${total} ${plural(total, noun)} ${verb} attention.`;
+}
+
+// A bucket at or below the budget shows every one of its items: the common
+// case is a handful, and truncating it made the card hide rows for no gain.
+// Past the budget the item list stops being readable at all, so the shape of
+// the problem -- the reason distribution -- is what the card shows instead.
+export const ROW_BUDGET = 8;
+export const MAX_REASON_ROWS = 5;
 
 export type ReasonRollUp = { key: string; label: string; count: number };
 
@@ -145,6 +148,28 @@ export function rollUpByReason(
     });
   }
   return rows;
+}
+
+// What one bucket's panel shows. Two shapes, because past the budget the rows
+// stop being items at all -- and a caller that has to tell them apart is what
+// keeps the card from rendering a reason row as if it were clickable evidence.
+export type BucketRows =
+  | { kind: 'items'; items: Effect[]; hidden: number }
+  | { kind: 'reasons'; reasons: ReasonRollUp[]; hidden: number };
+
+export function bucketRows(
+  effects: Effect[],
+  reasons: { key: string; label: string }[],
+): BucketRows {
+  if (effects.length <= ROW_BUDGET) {
+    return { kind: 'items', items: effects, hidden: 0 };
+  }
+  const all = rollUpByReason(effects, reasons);
+  const shown = all.slice(0, MAX_REASON_ROWS);
+  // Counted in items, not in reason rows: "and 11 more" has to mean eleven
+  // things the reader could have looked at, or the number is a lie.
+  const covered = shown.reduce((sum, row) => sum + row.count, 0);
+  return { kind: 'reasons', reasons: shown, hidden: effects.length - covered };
 }
 
 export function effectsByDisposition(

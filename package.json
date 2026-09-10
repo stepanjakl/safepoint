@@ -19,6 +19,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@outpacelabs/avatars": "^0.6.0",
     "@phosphor-icons/react": "^2.1.10",
     "@remixicon/react": "^4.9.0",
     "@tabler/icons-react": "^3.46.0",

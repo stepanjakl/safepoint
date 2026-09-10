@@ -16,10 +16,10 @@ function GalleryReview({ plan }: { plan: ReleasePlan }) {
 
 export function StatesGallery() {
   return (
-    <div className="states-gallery">
+    <div className="flex flex-col gap-10">
       {galleryPlans.map(([label, plan]) => (
         <section key={label} aria-label={label}>
-          <p className="readout states-gallery-label">
+          <p className="readout text-muted mb-2.5">
             {label} <span aria-hidden="true">·</span> {planState(plan)}
           </p>
           <GalleryReview plan={plan} />

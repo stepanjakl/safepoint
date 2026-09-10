@@ -1,7 +1,6 @@
 @import 'tailwindcss';
 @import './tokens.css';
-@import './review.css';
-@import './navigation.css';
+@import './components.css';
 
 @layer base {
   html {
@@ -93,7 +92,10 @@
 @property --control-highlight {
   syntax: '<color>';
   inherits: false;
-  initial-value: transparent;
+  /* Match --sp-face-highlight-subtle so shadow-control-highlight works on its own.
+     Registration requires a literal; var() is not valid as an initial value.
+     Control variants still override this, including explicitly transparent. */
+  initial-value: rgb(255 255 255 / 25%);
 }
 
 /*
@@ -111,8 +113,8 @@
   The reduced-motion rule in the base layer still overrides all of it.
 */
 @utility control-face {
+  @apply shadow-control-highlight;
   border: 1px solid transparent;
-  box-shadow: inset 0 0 0 1px var(--control-highlight);
   background-image:
     linear-gradient(
       to bottom,
@@ -140,7 +142,7 @@
   --control-face-bottom: var(--sp-accent-face-bottom);
   --control-ring-top: var(--sp-accent-ring-top);
   --control-ring-bottom: var(--sp-accent-ring-bottom);
-  --control-highlight: var(--sp-face-highlight);
+  --control-highlight: var(--sp-face-highlight-subtle);
 }
 
 @utility control-accent-hover {
@@ -198,7 +200,7 @@
   --control-face-bottom: var(--sp-surface-floating);
   --control-ring-top: var(--sp-rule-faint);
   --control-ring-bottom: var(--sp-rule-faint);
-  --control-highlight: var(--sp-face-highlight-stronger);
+  --control-highlight: var(--sp-face-highlight-solid);
 }
 
 @utility surface-recessed {
@@ -209,13 +211,21 @@
   --control-highlight: transparent;
 }
 
+@utility surface-notice {
+  --control-face-top: var(--sp-notice-face);
+  --control-face-bottom: var(--sp-notice-face);
+  --control-ring-top: var(--sp-notice-edge-top);
+  --control-ring-bottom: var(--sp-notice-edge-bottom);
+  --control-highlight: var(--sp-face-highlight-medium);
+}
+
 /*
   Panel enclosure. A plain bordered surface with a shallow top sheen -- it
   encloses content rather than inviting a press, so it stays flat.
 */
 @utility enclosure {
   border: 1px solid var(--sp-rule-strong);
-  border-radius: var(--edge-radius, var(--radius-control));
+  border-radius: var(--radius-control);
   background-image: linear-gradient(
     to bottom,
     var(--sp-edge-inner),
@@ -233,92 +243,5 @@
   .control-face {
     border-color: currentColor;
     box-shadow: none;
-  }
-}
-
-/* Master-detail panes. Both stay in the DOM; container width decides.
-   The hiding rules live inside the narrow query rather than being undone by
-   a wider one, so neither pane depends on out-specifying the other. */
-@layer components {
-  @container workspace (width < 48rem) {
-    .workspace[data-view='detail'] .pane-list {
-      display: none;
-    }
-
-    .workspace[data-view='list'] .pane-detail {
-      display: none;
-    }
-  }
-}
-
-/* Effects rail: one signal line, mode-shaped markers, vertical until the
-   detail pane is wide enough to hold every label. */
-@layer components {
-  .rail {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .rail::before {
-    content: '';
-    position: absolute;
-    left: 11px;
-    top: 12px;
-    bottom: 12px;
-    width: 2px;
-    background: var(--sp-rule-strong);
-  }
-
-  .rail-node {
-    position: relative;
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-  }
-
-  .rail-marker {
-    position: relative;
-    display: flex;
-    width: 24px;
-    height: 24px;
-    flex-shrink: 0;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid currentColor;
-    border-radius: 9999px;
-    background: var(--sp-surface-primary);
-  }
-
-  .rail-labels {
-    display: flex;
-    min-width: 0;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  @container (width >= 44rem) {
-    .rail {
-      flex-direction: row;
-      gap: 8px;
-    }
-
-    .rail::before {
-      top: 11px;
-      bottom: auto;
-      left: calc(50% / var(--rail-count, 1));
-      right: calc(50% / var(--rail-count, 1));
-      width: auto;
-      height: 2px;
-    }
-
-    .rail-node {
-      flex: 1 1 0;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      text-align: center;
-    }
   }
 }

@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@outpacelabs/avatars':
+        specifier: ^0.6.0
+        version: 0.6.0(react@19.2.8)
       '@phosphor-icons/react':
         specifier: ^2.1.10
         version: 2.1.10(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -1011,6 +1014,11 @@ packages:
   '@nolyfill/is-core-module@1.0.39':
     resolution: {integrity: sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA==}
     engines: {node: '>=12.4.0'}
+
+  '@outpacelabs/avatars@0.6.0':
+    resolution: {integrity: sha512-pTAezn9+Hc3uUIBoaDYjciUgSycbWiUEVlcap7YmTpurQMBTYIcPokvB2vP2YYGlE3jGXzuX6AgVEEC/E63ohw==}
+    peerDependencies:
+      react: '>=18'
 
   '@oxc-project/types@0.147.0':
     resolution: {integrity: sha512-IJ3s6ltHLp45S0bh7phkX+gJO7A1Wuz2EaqpAhb8WjqDwbzMiWKHhyyT42tskaWjEYXtHtVCPpnBJVT9+dcRLg==}
@@ -4545,6 +4553,10 @@ snapshots:
       fastq: 1.20.3
 
   '@nolyfill/is-core-module@1.0.39': {}
+
+  '@outpacelabs/avatars@0.6.0(react@19.2.8)':
+    dependencies:
+      react: 19.2.8
 
   '@oxc-project/types@0.147.0': {}
 

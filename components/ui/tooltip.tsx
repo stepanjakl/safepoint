@@ -35,12 +35,12 @@ export function Tooltip({
     <TooltipTrigger delay={350} closeDelay={150} isDisabled={isDisabled}>
       <Focusable>{children}</Focusable>
       <AriaTooltip
-        className="app-tooltip"
+        className="app-tooltip group"
         offset={10}
         placement={placement}
         data-rich={content ? true : undefined}
       >
-        <OverlayArrow className="app-tooltip-arrow">
+        <OverlayArrow className="app-tooltip-arrow flex">
           <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
             <path
               className="tooltip-arrow-fill"
@@ -56,10 +56,10 @@ export function Tooltip({
             />
           </svg>
         </OverlayArrow>
-        <span className="app-tooltip-label">{label}</span>
-        {description ? (
-          <span className="app-tooltip-description">{description}</span>
-        ) : null}
+        <span className="font-medium group-data-[rich]:text-[13px] group-data-[rich]:[font-weight:650]">
+          {label}
+        </span>
+        {description ? <span className="text-muted">{description}</span> : null}
         {content}
       </AriaTooltip>
     </TooltipTrigger>
@@ -91,7 +91,7 @@ export function OverflowTooltip({
     };
   }, [label]);
   return (
-    <span ref={ref} className="overflow-tooltip-anchor">
+    <span ref={ref} className="block min-w-0 flex-1">
       <Tooltip label={label} isDisabled={!overflowing}>
         {children}
       </Tooltip>

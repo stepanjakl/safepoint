@@ -1,6 +1,19 @@
 import type { ReviewDetail } from '@/lib/review/contracts';
 import { DeltaValue } from './delta';
 
+/*
+  The disclosure stack. Each `<details>` is a rule with a mono +/- in the
+  gutter, which is a pseudo element on the summary and so stays in CSS; the
+  `disclosure` class is that hook. Everything the markup can hold is here.
+*/
+const DISCLOSURE = 'disclosure border-rule-faint border-b';
+const SUMMARY =
+  'flex min-h-12 cursor-pointer flex-wrap items-baseline gap-x-3 gap-y-1 py-3.5 text-[13px] [&>span]:text-muted [&>span]:ml-auto [&>span]:text-[12px]';
+const DISCLOSURE_BODY = 'pb-5 pl-[22px] text-[13px] leading-[1.6]';
+// Each record inside a disclosure is a jump target for an evidence link, so it
+// keeps a scroll margin of its own.
+const RECORD = 'mt-5 scroll-mt-6 [&>h4]:mb-1 [&>h4]:[font-weight:550]';
+
 export function ReviewItemDetail({
   detail,
   idPrefix,
@@ -9,9 +22,12 @@ export function ReviewItemDetail({
   idPrefix: string;
 }) {
   return (
-    <div className="review-item-content">
-      <div className="review-conclusion" data-disposition={detail.disposition}>
-        <p className="review-conclusion-title">
+    <div className="px-8 pb-7 [overflow-wrap:anywhere] @max-3xl/review:px-5 @max-3xl/review:pb-6">
+      <div
+        className="border-state-advisory data-[disposition=blocked]:border-state-blocked data-[disposition=needs_decision]:border-state-caution group/conclusion border-l-2 pl-4 [&>p:not(:first-child)]:text-[13px] [&>p:not(:first-child)]:leading-[1.6]"
+        data-disposition={detail.disposition}
+      >
+        <p className="group-data-[disposition=blocked]/conclusion:text-state-blocked group-data-[disposition=needs_decision]/conclusion:text-state-caution mb-2 flex items-baseline gap-2 text-[15px] [font-weight:550]">
           <span aria-hidden="true">
             {detail.disposition === 'blocked'
               ? '⊘'
@@ -24,16 +40,17 @@ export function ReviewItemDetail({
           {detail.conclusion}
         </p>
         <p>{detail.explanation}</p>
-        <p className="review-next-action">
-          <strong>Next step</strong> {detail.nextAction}
+        <p className="mt-3">
+          <strong className="block [font-weight:550]">Next step</strong>{' '}
+          {detail.nextAction}
         </p>
       </div>
 
-      <section
-        className="review-changes"
-        aria-labelledby={`${idPrefix}-changes`}
-      >
-        <h3 id={`${idPrefix}-changes`}>
+      <section className="mt-7" aria-labelledby={`${idPrefix}-changes`}>
+        <h3
+          id={`${idPrefix}-changes`}
+          className="border-rule-default border-b pb-3 text-[14px] [font-weight:550] [&>span]:ml-2 [&>span]:font-mono [&>span]:text-[12px]"
+        >
           Proposed changes{' '}
           <span className="text-muted font-normal">{detail.deltas.length}</span>
         </h3>
@@ -42,8 +59,11 @@ export function ReviewItemDetail({
           // detail pane is where every change is accounted for.
           <dl>
             {detail.deltas.map((delta) => (
-              <div key={delta.label} className="review-change">
-                <dt>{delta.label}</dt>
+              <div
+                key={delta.label}
+                className="border-rule-faint grid grid-cols-[130px_minmax(0,1fr)] gap-x-4 gap-y-2 border-b py-3.5 @max-3xl/review:grid-cols-[minmax(0,1fr)]"
+              >
+                <dt className="text-[13px]">{delta.label}</dt>
                 <dd>
                   <DeltaValue delta={delta} expanded />
                 </dd>
@@ -55,12 +75,12 @@ export function ReviewItemDetail({
         )}
       </section>
 
-      <div className="review-disclosures">
-        <details>
-          <summary>
+      <div className="mt-6">
+        <details className={DISCLOSURE}>
+          <summary className={SUMMARY}>
             Supporting facts <span>{detail.facts.length}</span>
           </summary>
-          <dl className="review-facts">
+          <dl className="pb-4 pl-[22px] text-[13px] [&_dt]:mb-1 [&_dt]:[font-weight:550] [&>div]:mb-4">
             {detail.facts.map((fact) => (
               <div key={fact.label}>
                 <dt>{fact.label}</dt>
@@ -74,18 +94,18 @@ export function ReviewItemDetail({
             ))}
           </dl>
         </details>
-        <details>
-          <summary>
+        <details className={DISCLOSURE}>
+          <summary className={SUMMARY}>
             Policy findings <span>{detail.findings.length} recorded</span>
           </summary>
-          <div className="review-disclosure-body">
+          <div className={DISCLOSURE_BODY}>
             <p className="text-meta text-muted">
               Recorded policy replay. These findings are separate from the
               agent’s assessments.
             </p>
             {detail.findings.length ? (
               detail.findings.map((finding) => (
-                <div key={finding.id} className="review-record">
+                <div key={finding.id} className={RECORD}>
                   <h4>{finding.title}</h4>
                   <p>{finding.explanation}</p>
                   <EvidenceLinks
@@ -100,16 +120,16 @@ export function ReviewItemDetail({
             )}
           </div>
         </details>
-        <details>
-          <summary>
+        <details className={DISCLOSURE}>
+          <summary className={SUMMARY}>
             Agent readiness checks <span>{detail.checks.length}</span>
           </summary>
-          <div className="review-disclosure-body">
+          <div className={DISCLOSURE_BODY}>
             <p className="text-meta text-muted">
               {detail.checkSummary}. Requirements come from the policy replay.
             </p>
             {detail.checks.map((check) => (
-              <div key={check.id} className="review-record">
+              <div key={check.id} className={RECORD}>
                 <h4>
                   {check.label}{' '}
                   <span className="text-muted font-normal">
@@ -136,11 +156,11 @@ export function ReviewItemDetail({
             ))}
           </div>
         </details>
-        <details>
-          <summary>
+        <details className={DISCLOSURE}>
+          <summary className={SUMMARY}>
             Agent recommendation <span>{detail.agent.recommendation}</span>
           </summary>
-          <div className="review-disclosure-body">
+          <div className={DISCLOSURE_BODY}>
             <p>{detail.agent.rationale}</p>
             {detail.agent.uncertainties.length ? (
               <>
@@ -154,12 +174,12 @@ export function ReviewItemDetail({
             ) : null}
           </div>
         </details>
-        <details>
-          <summary>
+        <details className={DISCLOSURE}>
+          <summary className={SUMMARY}>
             Affected systems{' '}
             <span>{detail.effects.length} intended · none executed</span>
           </summary>
-          <div className="review-disclosure-body">
+          <div className={DISCLOSURE_BODY}>
             <p className="text-meta text-muted">
               Proposed destinations only. Execution order and current target
               values have not been verified.
@@ -167,7 +187,7 @@ export function ReviewItemDetail({
             {detail.effects.length ? (
               <ul>
                 {detail.effects.map((effect) => (
-                  <li key={effect.id} className="review-record">
+                  <li key={effect.id} className={RECORD}>
                     <h4>{effect.destination}</h4>
                     <p className="text-meta text-muted">
                       {effect.modeLabel} · Not executed
@@ -183,13 +203,13 @@ export function ReviewItemDetail({
             )}
           </div>
         </details>
-        <details id={`${idPrefix}-sources`}>
-          <summary>
+        <details id={`${idPrefix}-sources`} className={DISCLOSURE}>
+          <summary className={SUMMARY}>
             Evidence and provenance <span>{detail.sources.length} sources</span>
           </summary>
-          <div className="review-disclosure-body">
+          <div className={DISCLOSURE_BODY}>
             {detail.narrative ? (
-              <div className="review-record">
+              <div className={RECORD}>
                 <h4>Narrative note · untrusted evidence</h4>
                 <blockquote>“{detail.narrative.text}”</blockquote>
                 <p className="text-meta text-muted mt-1">
@@ -202,7 +222,7 @@ export function ReviewItemDetail({
                 key={source.id}
                 id={`${idPrefix}-source-${source.id}`}
                 tabIndex={-1}
-                className="review-record"
+                className={RECORD}
               >
                 <h4>{source.label}</h4>
                 <p className="text-meta text-muted">
@@ -233,7 +253,7 @@ function EvidenceLinks({
   prefix: string;
 }) {
   return (
-    <ul className="review-evidence-links">
+    <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[12px] [&_a]:inline-flex [&_a]:min-h-6 [&_a]:items-center [&_a]:underline [&_a]:underline-offset-[3px]">
       {ids.map((id) => {
         const source = detail.sources.find((entry) => entry.id === id);
         return source ? (

@@ -25,6 +25,17 @@ type DetailState =
 
 type Filter = ReviewFilter;
 
+// A filter pill carries its bucket's colour on the count alone: the label is
+// navigation, the figure is the quantity being filtered to.
+const FILTER =
+  'border-rule-default aria-pressed:bg-surface-selected aria-pressed:border-rule-strong inline-flex min-h-8 items-baseline gap-1.5 rounded-full border px-2.5 py-1 text-[12px] whitespace-nowrap [&[data-severity]_.value]:text-severity-ink';
+
+// 70px is the two-line row this list is built around, so a one-line item does
+// not make the column jump.
+const ITEM_BUTTON =
+  'hover:bg-surface-inset aria-[current=true]:bg-surface-selected aria-[current=true]:border-l-primary block min-h-[70px] w-full border-l-2 border-l-transparent px-4.5 py-3 text-left focus-visible:-outline-offset-[3px] forced-colors:aria-[current=true]:border-l-[Highlight] forced-colors:aria-[current=true]:outline forced-colors:aria-[current=true]:outline-[Highlight] forced-colors:aria-[current=true]:-outline-offset-2';
+const ITEM_REASON = 'text-muted mt-1 block text-[12px] leading-[1.5]';
+
 export function ReviewPanel({
   plan,
   loadDetail,
@@ -162,15 +173,24 @@ export function ReviewPanel({
   ];
 
   return (
-    <div className="review-panel">
-      <div className="review-context">
+    <div className="severity-scale @container/review flex min-h-0 flex-1 flex-col">
+      <div className="bg-surface-inset border-rule-faint text-muted flex shrink-0 flex-wrap justify-between gap-x-5 gap-y-1 border-b px-6 py-2.5 text-[12px] @max-3xl/review:px-5">
         <span>{plan.evaluatedAt} · Recorded review</span>
         <span>{plan.context}</span>
       </div>
-      <div className="review-body" data-view={showDetail ? 'detail' : 'list'}>
-        <section className="review-list-pane" aria-label="Review items">
+      {/* Both panes stay in the DOM; the container's width decides which is
+          shown, and the hiding lives inside the narrow query so neither pane
+          depends on out-specifying the other. */}
+      <div
+        className="group/view grid min-h-0 flex-1 grid-cols-[300px_minmax(0,1fr)] @max-3xl/review:grid-cols-[minmax(0,1fr)]"
+        data-view={showDetail ? 'detail' : 'list'}
+      >
+        <section
+          className="border-rule-default flex min-h-0 flex-col border-r @max-3xl/review:border-r-0 group-data-[view=detail]/view:@max-3xl/review:hidden"
+          aria-label="Review items"
+        >
           <div
-            className="review-filters"
+            className="border-rule-faint flex flex-wrap gap-1.5 border-b px-4 py-3"
             role="group"
             aria-label="Filter by disposition"
           >
@@ -178,7 +198,7 @@ export function ReviewPanel({
               <button
                 key={entry.key}
                 type="button"
-                className="review-filter"
+                className={FILTER}
                 data-severity={
                   entry.key === 'all' || entry.key === 'failures'
                     ? undefined
@@ -191,7 +211,10 @@ export function ReviewPanel({
               </button>
             ))}
           </div>
-          <div className="review-item-list" ref={list}>
+          <div
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain py-0.5"
+            ref={list}
+          >
             {visible.length === 0 ? (
               <p className="text-muted p-5">
                 No {plan.noun.other} in this group.
@@ -208,7 +231,7 @@ export function ReviewPanel({
                 >
                   <h3
                     id={`${id}-${disposition}`}
-                    className="review-group-heading"
+                    className="text-muted flex items-center justify-between px-5 pt-4 pb-2 text-[12px] font-medium"
                   >
                     {DISPOSITION_LABELS[disposition]}
                     <span className="value">{items.length}</span>
@@ -217,7 +240,7 @@ export function ReviewPanel({
                     {items.map((effect) => (
                       <li key={effect.id}>
                         <button
-                          className="review-item-button"
+                          className={ITEM_BUTTON}
                           aria-current={
                             selectedId === effect.id ? 'true' : undefined
                           }
@@ -231,22 +254,24 @@ export function ReviewPanel({
                             setShowDetail(true);
                           }}
                         >
-                          <span className="review-item-name">
+                          <span className="flex flex-wrap justify-between gap-x-2 gap-y-1 text-[13px] [font-weight:550]">
                             {effect.subject}
                             {effect.requiresApproval ? (
-                              <span className="release-chip">
+                              <span className="border-rule-default text-muted rounded-full border px-[7px] py-0.5 text-[11px] whitespace-nowrap">
                                 Needs approval
                               </span>
                             ) : null}
                           </span>
-                          <span className="review-item-reason">
+                          <span className={ITEM_REASON}>
                             {effect.reasonKey
                               ? (reasonLabels.get(effect.reasonKey) ??
                                 effect.reasonKey)
                               : 'No recorded reason'}
                           </span>
                           {executionFailures.has(effect.id) ? (
-                            <span className="review-item-reason text-state-blocked">
+                            <span
+                              className={`${ITEM_REASON} text-state-blocked`}
+                            >
                               Application failed:{' '}
                               {executionFailures.get(effect.id)}
                             </span>
@@ -260,7 +285,10 @@ export function ReviewPanel({
             })}
           </div>
           {pagination.totalPages > 1 ? (
-            <nav className="review-pagination" aria-label="Review pages">
+            <nav
+              className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 [&_button]:min-h-9 [&_button]:px-2 [&_button]:py-1 [&_button:disabled]:opacity-50 [&_button:focus-visible]:outline [&_button:focus-visible]:outline-2 [&_button:focus-visible]:outline-offset-2 [&_button:focus-visible]:outline-current"
+              aria-label="Review pages"
+            >
               <button
                 type="button"
                 disabled={pagination.page === 0}
@@ -280,7 +308,7 @@ export function ReviewPanel({
               </button>
             </nav>
           ) : null}
-          <p className="review-list-accounting">
+          <p className="border-rule-faint text-muted border-t px-5 py-3 text-[12px]">
             {visible.length
               ? `${pagination.start + 1}–${pagination.start + pagination.items.length}`
               : '0'}{' '}
@@ -289,12 +317,12 @@ export function ReviewPanel({
           </p>
         </section>
         <section
-          className="review-detail-pane"
+          className="min-h-0 min-w-0 scroll-p-6 overflow-y-auto overscroll-contain group-data-[view=list]/view:@max-3xl/review:hidden"
           aria-labelledby={`${id}-item-title`}
         >
-          <div className="review-detail-heading">
+          <div className="px-8 pt-7 pb-5 @max-3xl/review:px-5 @max-3xl/review:pt-3">
             <button
-              className="review-back review-text-button"
+              className="text-muted mb-3 inline-flex min-h-11 items-center text-left text-[13px] underline underline-offset-4 @3xl/review:hidden"
               onClick={() => {
                 moveFocus.current = true;
                 setShowDetail(false);
@@ -305,12 +333,17 @@ export function ReviewPanel({
             <p className="text-meta text-muted mb-2">
               <span className="value">{selected.id}</span> · {selected.subtitle}
             </p>
-            <h3 id={`${id}-item-title`} ref={heading} tabIndex={-1}>
+            <h3
+              id={`${id}-item-title`}
+              ref={heading}
+              tabIndex={-1}
+              className="text-[26px] leading-[1.25] [font-weight:550] tracking-[-0.035em] @max-3xl/review:text-[24px]"
+            >
               {selected.subject}
             </h3>
           </div>
           {executionFailures.has(selectedId) ? (
-            <p className="review-execution-failure">
+            <p className="text-state-blocked px-6 py-4">
               <strong>Application failed</strong> ·{' '}
               {executionFailures.get(selectedId)}
             </p>
@@ -355,7 +388,7 @@ export function ReviewPanel({
       </p>
       {/* The counter is live from pass 2, when exclusion lands. It reads from
           the plan today so it can never disagree with the list above it. */}
-      <footer className="review-panel-footer">
+      <footer className="border-rule-default bg-surface-inset text-muted [&_strong]:text-primary flex shrink-0 flex-wrap justify-between gap-x-5 gap-y-1 border-t px-6 py-3.5 text-[12px] @max-3xl/review:px-5 [&_strong]:[font-weight:550]">
         <span>
           <strong>Replay preview</strong> · Explore the recorded proposal and
           evidence.

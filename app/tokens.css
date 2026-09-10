@@ -171,8 +171,18 @@
   --sp-off-face: light-dark(var(--color-zinc-100), var(--color-zinc-900));
   --sp-off-ring: light-dark(var(--color-zinc-300), var(--color-zinc-700));
 
-  /* The hairline of light along the top inside edge of a raised control. */
-  --sp-face-highlight: color-mix(in oklab, var(--color-white) 25%, transparent);
+  /* Shared white highlight scale: subtle 25%, medium 50%, strong 75%, solid 100%. */
+  --sp-face-highlight-subtle: color-mix(
+    in oklab,
+    var(--color-white) 25%,
+    transparent
+  );
+
+  --sp-face-highlight-medium: color-mix(
+    in oklab,
+    var(--color-white) 50%,
+    transparent
+  );
 
   --sp-face-highlight-strong: color-mix(
     in oklab,
@@ -180,7 +190,52 @@
     transparent
   );
 
-  --sp-face-highlight-stronger: var(--color-white);
+  --sp-face-highlight-solid: var(--color-white);
+
+  /*
+    The current row in the process menu. It borrows the pane's geometry but
+    keeps its own stops, so it can be tuned on its own -- a warmer face, a
+    quieter ring, no highlight -- without moving any shared surface.
+  */
+  --sp-menu-current-face-top: var(--color-zinc-100);
+  --sp-menu-current-face-bottom: var(--color-zinc-100);
+  --sp-menu-current-ring-top: transparent;
+  --sp-menu-current-ring-bottom: var(--color-zinc-300);
+  --sp-menu-current-highlight: transparent;
+
+  /* The commit-state label. A caution wash mixed into the card's face rather
+     than into transparency, so it stays opaque over the ring beneath it. */
+  --sp-commit-state: color-mix(
+    in oklab,
+    var(--sp-state-caution) 20%,
+    var(--sp-surface-floating)
+  );
+
+  /* Native zinc steps for menu surfaces and interaction states. */
+  --sp-menu-wash-faint: light-dark(
+    var(--color-zinc-200),
+    var(--color-zinc-900)
+  );
+  --sp-menu-wash: light-dark(var(--color-zinc-300), var(--color-zinc-800));
+  --sp-menu-wash-strong: light-dark(
+    var(--color-zinc-300),
+    var(--color-zinc-700)
+  );
+  --sp-menu-chip: light-dark(var(--color-zinc-300), var(--color-zinc-800));
+  --sp-menu-link: light-dark(var(--color-zinc-700), var(--color-zinc-300));
+  --sp-menu-search: light-dark(var(--color-zinc-100), var(--color-zinc-800));
+
+  /* Advisory notice face and separate stops for its graduated edge. */
+  --sp-notice-face: light-dark(var(--color-zinc-150), var(--color-blue-950));
+  --sp-notice-edge-top: light-dark(
+    var(--color-zinc-300),
+    var(--color-blue-800)
+  );
+  --sp-notice-edge-bottom: light-dark(
+    var(--color-zinc-300),
+    var(--color-blue-900)
+  );
+  --sp-notice-caption: light-dark(var(--color-zinc-600), var(--color-blue-200));
 }
 
 /*
@@ -323,12 +378,37 @@
   --color-mode-simulated: var(--sp-mode-simulated);
   --color-mode-preview: var(--sp-mode-preview);
   --color-mode-unavailable: var(--sp-mode-unavailable);
+  --color-commit-state: var(--sp-commit-state);
+  --color-menu-wash-faint: var(--sp-menu-wash-faint);
+  --color-menu-wash: var(--sp-menu-wash);
+  --color-menu-wash-strong: var(--sp-menu-wash-strong);
+  --color-menu-chip: var(--sp-menu-chip);
+  --color-menu-link: var(--sp-menu-link);
+  --color-menu-search: var(--sp-menu-search);
+  --color-notice-face: var(--sp-notice-face);
+  --color-notice-edge-top: var(--sp-notice-edge-top);
+  --color-notice-edge-bottom: var(--sp-notice-edge-bottom);
+  --color-notice-caption: var(--sp-notice-caption);
 
   --font-display:
     var(--sp-font-display), system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-sans:
     var(--sp-font-sans), system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: var(--sp-font-mono), ui-monospace, 'SF Mono', Menlo, monospace;
+  /*
+    The wordmark is fixed to one family on purpose: it is a mark rather than
+    interface text, so it does not follow data-typeface like the roles above.
+  */
+  --font-brand: var(--font-nunito), sans-serif;
+
+  /*
+    Two layout thresholds the shell actually turns on, named for what changes
+    rather than for a device. `shell` is where the sidebar and the pane can sit
+    side by side and each scroll on its own; `runs` is where the run strip has
+    room to become a third column.
+  */
+  --breakpoint-shell: 900px;
+  --breakpoint-runs: 1100px;
 
   --text-display: 22px;
   --text-display--line-height: 26px;
@@ -347,4 +427,28 @@
   --radius-region: 2px;
   --radius-section: 6px;
   --radius-control: 12px;
+
+  /* Inline so element-local control colours resolve on the painted element. */
+  --shadow-control-highlight: inset 0 0 0 1px var(--control-highlight);
+  /* Explicit strengths are independent of the current control state. */
+  --shadow-control-highlight-subtle: inset 0 0 0 1px
+    var(--sp-face-highlight-subtle);
+  --shadow-control-highlight-medium: inset 0 0 0 1px
+    var(--sp-face-highlight-medium);
+  --shadow-control-highlight-strong: inset 0 0 0 1px
+    var(--sp-face-highlight-strong);
+  --shadow-control-highlight-solid: inset 0 0 0 1px
+    var(--sp-face-highlight-solid);
+  --shadow-separator-bottom-strong: 0 1px 0 var(--sp-face-highlight-strong);
+  --shadow-separator-bottom-solid: 0 1px 0 var(--sp-face-highlight-solid);
+  --shadow-separator-right-strong: 1px 0 0 var(--sp-face-highlight-strong);
+
+  --ease-out-emphasized: cubic-bezier(0.22, 1, 0.36, 1);
+  /*
+    The shell's own inset and corner. Named rather than repeated because the
+    instructions drawer sits in the top layer, outside the shell, and still has
+    to line up with the panes inside it.
+  */
+  --radius-shell: 10px;
+  --spacing-shell-inset: 10px;
 }

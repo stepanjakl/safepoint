@@ -1,3 +1,4 @@
+import type { StepStatus } from '@/lib/process/placeholder-process';
 import type { ReviewOutcome } from '@/lib/promotion-release';
 import type { AdapterMode, PresentedGate } from '@/lib/review-presentation';
 import type { GlyphName } from '@/components/ui/glyph';
@@ -19,6 +20,19 @@ export const outcomeMarker: Record<
   unverifiable: { glyph: 'struck', tone: 'unavailable' },
   excluded: { glyph: 'dash', tone: 'unavailable' },
 };
+
+// A thread step's own outcome. `attention` and `held` share the triangle and
+// the square with the row states above on purpose: the marks mean the same
+// thing one level up, and a step that needs a person is the same news whether
+// it is a step or a line.
+export const stepMarker: Record<StepStatus, { glyph: GlyphName; tone: Tone }> =
+  {
+    complete: { glyph: 'check', tone: 'verified' },
+    attention: { glyph: 'triangle', tone: 'caution' },
+    blocked: { glyph: 'square', tone: 'blocked' },
+    running: { glyph: 'dotted', tone: 'advisory' },
+    pending: { glyph: 'minus', tone: 'unavailable' },
+  };
 
 export const eligibilityMarker: Record<
   'eligible' | 'blocked',
