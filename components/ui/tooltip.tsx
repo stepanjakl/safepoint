@@ -56,7 +56,7 @@ export function Tooltip({
             />
           </svg>
         </OverlayArrow>
-        <span className="group-data-[rich]:text-dense text-zinc-700 font-medium group-data-[rich]:[font-weight:650]">
+        <span className="group-data-[rich]:text-dense font-medium text-zinc-700 group-data-[rich]:[font-weight:650]">
           {label}
         </span>
         {description ? <span className="text-muted">{description}</span> : null}

@@ -25,6 +25,7 @@
     "@tabler/icons-react": "^3.46.0",
     "blode-icons-react": "^1.0.0",
     "geist": "1.7.2",
+    "motion": "^13.2.0",
     "next": "16.3.4",
     "react": "19.2.8",
     "react-aria-components": "1.21.0",

@@ -16,6 +16,8 @@ import {
   readTypescale,
   readTheme,
   readMotionSpeed,
+  readRailGuides,
+  setRailGuides,
   setTypeface,
   setMono,
   setTypescale,
@@ -34,6 +36,7 @@ function readPreferences() {
     typescale: readTypescale(),
     theme: readTheme(),
     speed: readMotionSpeed(),
+    railGuides: readRailGuides(),
   };
 }
 
@@ -93,6 +96,16 @@ export function mountDesignPane(host: HTMLElement) {
   speedBinding.element.title =
     'CSS transitions and animations; respects reduced motion. Timers keep normal speed.';
 
+  const debug = pane.addFolder({ title: 'Debug' });
+  const railBinding = debug
+    .addBinding(model, 'railGuides', { label: 'Icon axis' })
+    .on('change', (event) => setRailGuides(event.value));
+  railBinding.element.title =
+    'Draws the sidebar icon axis and a crosshair through each icon centred on it.';
+  railBinding.element
+    .querySelector('input')
+    ?.setAttribute('aria-label', 'Icon axis guides');
+
   // Bindings use native selects. Name them explicitly for screen readers.
   for (const binding of [...bindings, speedBinding]) {
     binding.element
@@ -106,6 +119,7 @@ export function mountDesignPane(host: HTMLElement) {
     setTypescale(DEFAULT_TYPESCALE);
     setTheme('system');
     setMotionSpeed(DEFAULT_MOTION_SPEED);
+    setRailGuides(false);
   });
 
   let activeSpeed = model.speed;
@@ -127,7 +141,7 @@ export function mountDesignPane(host: HTMLElement) {
   const unsubscribe = subscribe(sync);
   const toggle = pane.element.querySelector('button');
   function syncExpanded() {
-    for (const folder of [pane, appearance, motion]) {
+    for (const folder of [pane, appearance, motion, debug]) {
       folder.element
         .querySelector('button')
         ?.setAttribute('aria-expanded', String(folder.expanded));
@@ -137,7 +151,7 @@ export function mountDesignPane(host: HTMLElement) {
         child.element.inert = !folder.expanded;
     }
   }
-  for (const folder of [pane, appearance, motion])
+  for (const folder of [pane, appearance, motion, debug])
     folder.on('fold', syncExpanded);
   syncExpanded();
   function onKeyDown(event: KeyboardEvent) {

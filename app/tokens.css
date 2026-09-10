@@ -35,6 +35,19 @@
 }
 
 /*
+  Motion durations. Three steps, named for what moves rather than for their
+  length: a whole pane travelling, a row settling into a new position, and one
+  control answering a pointer. Outside @theme because Tailwind has no
+  --duration-* namespace to generate names from -- reach them in markup as
+  duration-(--duration-pane), which is still a token rather than a bracket.
+*/
+:root {
+  --duration-state: 150ms;
+  --duration-row: 180ms;
+  --duration-pane: 220ms;
+}
+
+/*
   Declared on :root and on every data-theme element. Lightning CSS polyfills
   light-dark() with inherited custom properties that resolve where a token is
   declared, so a themed subtree must re-declare the tokens to pick up its own
@@ -197,10 +210,19 @@
     keeps its own stops, so it can be tuned on its own -- a warmer face, a
     quieter ring, no highlight -- without moving any shared surface.
   */
-  --sp-menu-current-face-top: var(--color-zinc-100);
-  --sp-menu-current-face-bottom: var(--color-zinc-100);
+  --sp-menu-current-face-top: light-dark(
+    var(--color-zinc-100),
+    var(--color-zinc-750)
+  );
+  --sp-menu-current-face-bottom: light-dark(
+    var(--color-zinc-100),
+    var(--color-zinc-750)
+  );
   --sp-menu-current-ring-top: transparent;
-  --sp-menu-current-ring-bottom: var(--color-zinc-300);
+  --sp-menu-current-ring-bottom: light-dark(
+    var(--color-zinc-300),
+    var(--color-zinc-600)
+  );
   --sp-menu-current-highlight: transparent;
 
   /* The commit-state label. A caution wash mixed into the card's face rather
@@ -223,7 +245,70 @@
   );
   --sp-menu-chip: light-dark(var(--color-zinc-300), var(--color-zinc-800));
   --sp-menu-link: light-dark(var(--color-zinc-700), var(--color-zinc-300));
-  --sp-menu-search: light-dark(var(--color-zinc-100), var(--color-zinc-800));
+
+  /*
+    The Save-order button. The one accented control in the sidebar, and the
+    only one that owns its stops outright rather than borrowing
+    control-accent: it is the affirmative end of a mode, so it answers to the
+    brand teal, and it can be tuned without moving every other accented button
+    in the interface with it.
+  */
+  --sp-menu-commit-face-top: light-dark(
+    var(--color-teal-600),
+    var(--color-teal-500)
+  );
+  --sp-menu-commit-face-bottom: light-dark(
+    var(--color-teal-700),
+    var(--color-teal-600)
+  );
+  --sp-menu-commit-ring-top: light-dark(
+    var(--color-teal-700),
+    var(--color-teal-400)
+  );
+  --sp-menu-commit-ring-bottom: light-dark(
+    var(--color-teal-800),
+    var(--color-teal-700)
+  );
+  --sp-menu-commit-face-top-hover: light-dark(
+    var(--color-teal-700),
+    var(--color-teal-400)
+  );
+  --sp-menu-commit-face-bottom-hover: light-dark(
+    var(--color-teal-800),
+    var(--color-teal-500)
+  );
+  --sp-menu-commit-ring-top-hover: light-dark(
+    var(--color-teal-800),
+    var(--color-teal-300)
+  );
+  --sp-menu-commit-ring-bottom-hover: light-dark(
+    var(--color-teal-900),
+    var(--color-teal-600)
+  );
+
+  /*
+    Form fields. One set of edges for every input in the interface. The field
+    carries its focus on its own border rather than on the global outline, so
+    the border *is* the indicator: each step has to be visibly different from
+    the one before it, and the focused step has to clear 3:1 both against the
+    face behind it and against the resting edge it replaces, because that
+    *change* is what tells a keyboard user where they are.
+
+    The focus step stays in zinc rather than taking the accent: a field is not
+    an action, and a blue edge reads as one. It earns its contrast by being
+    much darker instead -- 7.02:1 on the face and 5.23:1 against rest in light,
+    10.07:1 and 7.07:1 in dark.
+  */
+  --sp-field-face: light-dark(var(--color-zinc-100), var(--color-zinc-800));
+  --sp-field-edge: light-dark(var(--color-zinc-300), var(--color-zinc-700));
+  --sp-field-edge-hover: light-dark(
+    var(--color-zinc-400),
+    var(--color-zinc-500)
+  );
+  --sp-field-edge-active: light-dark(
+    var(--color-zinc-600),
+    var(--color-zinc-300)
+  );
 
   /* Advisory notice face and separate stops for its graduated edge. */
   --sp-notice-face: light-dark(var(--color-zinc-150), var(--color-blue-950));
@@ -453,7 +538,10 @@
   --color-menu-wash-strong: var(--sp-menu-wash-strong);
   --color-menu-chip: var(--sp-menu-chip);
   --color-menu-link: var(--sp-menu-link);
-  --color-menu-search: var(--sp-menu-search);
+  --color-field-face: var(--sp-field-face);
+  --color-field-edge: var(--sp-field-edge);
+  --color-field-edge-hover: var(--sp-field-edge-hover);
+  --color-field-edge-active: var(--sp-field-edge-active);
   --color-notice-face: var(--sp-notice-face);
   --color-notice-edge-top: var(--sp-notice-edge-top);
   --color-notice-edge-bottom: var(--sp-notice-edge-bottom);
@@ -564,4 +652,21 @@
   */
   --radius-shell: 0.625rem; /* 10px  panes, cards, dialogs */
   --spacing-shell-inset: 10px;
+  /*
+    The sidebar's own inset, and the width of the gradient that sits in it.
+    This used to be the grid gap between the sidebar and the sheet; it moved
+    inside the sidebar so a pane in flight has something to dissolve into
+    rather than a hard clip, and so nothing sits under the gradient at rest.
+  */
+  --spacing-menu-fade: 0.875rem; /* 14px */
+  /*
+    The leading column every band in the sidebar starts with, and the reason the
+    brand mark, a menu item's icon, the notice icon and the avatar all share one
+    vertical axis: each sits in a cell of this width with `place-items-center`,
+    so they centre on the same line without any of them knowing its own size.
+
+    Wide enough for the largest of them -- the 34px avatar -- so nothing has to
+    shrink to fit. The axis is half of it; nothing needs to say where that is.
+  */
+  --spacing-menu-rail: 2.125rem; /* 34px */
 }

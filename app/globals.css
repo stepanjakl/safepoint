@@ -156,6 +156,28 @@
   --control-highlight: transparent;
 }
 
+/*
+  The sidebar's Save-order button. It takes control-face's geometry like every
+  other control, but its stops are its own rather than control-accent's: it is
+  the only teal control in the interface, and the arrange mode it closes should
+  be tunable without dragging every primary action along with it.
+*/
+@utility control-commit {
+  --control-face-top: var(--sp-menu-commit-face-top);
+  --control-face-bottom: var(--sp-menu-commit-face-bottom);
+  --control-ring-top: var(--sp-menu-commit-ring-top);
+  --control-ring-bottom: var(--sp-menu-commit-ring-bottom);
+  --control-highlight: var(--sp-face-highlight-subtle);
+}
+
+@utility control-commit-hover {
+  --control-face-top: var(--sp-menu-commit-face-top-hover);
+  --control-face-bottom: var(--sp-menu-commit-face-bottom-hover);
+  --control-ring-top: var(--sp-menu-commit-ring-top-hover);
+  --control-ring-bottom: var(--sp-menu-commit-ring-bottom-hover);
+  --control-highlight: transparent;
+}
+
 /* Ordinary controls. */
 @utility control-quiet {
   --control-face-top: var(--sp-quiet-face-top);

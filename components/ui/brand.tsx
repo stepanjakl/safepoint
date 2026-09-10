@@ -11,7 +11,7 @@ const WORDMARK = 'font-brand font-extrabold [font-feature-settings:normal]';
 export function Brand() {
   return (
     <span
-      className={`${WORDMARK} text-lockup inline-flex flex-none items-center gap-0.75 rounded-full bg-teal-600 py-0.75 pr-3.75 pl-1.25 whitespace-nowrap text-white uppercase forced-colors:border forced-colors:border-[CanvasText]`}
+      className={`${WORDMARK} text-lockup inline-flex flex-none items-center gap-0.75 rounded-full bg-cyan-600 py-0.75 pr-3.75 pl-1.25 whitespace-nowrap text-white uppercase forced-colors:border forced-colors:border-[CanvasText]`}
       aria-label="Safepoint"
     >
       <svg
@@ -33,15 +33,21 @@ export function Brand() {
   );
 }
 
-/** Alternative lockup: the same check set in a rounded square, wordmark beside it. */
-export function BrandSquare() {
+/**
+ * Alternative lockup: the same check set in a rounded square, wordmark beside it.
+ *
+ * `markClassName` reaches the mark on its own. The lockup glues the mark to the
+ * wordmark, so anything that needs to address just the mark -- the sidebar's
+ * alignment guide, for one -- cannot get at it from outside.
+ */
+export function BrandSquare({ markClassName }: { markClassName?: string }) {
   return (
     <span
       className={`${WORDMARK} text-wordmark text-primary inline-flex flex-none items-center gap-2.25 whitespace-nowrap`}
       aria-label="Safepoint"
     >
       <span
-        className="rounded-control grid size-6.5 flex-none place-items-center bg-teal-600 text-white forced-colors:border forced-colors:border-[CanvasText]"
+        className={`rounded-control grid size-6.5 flex-none place-items-center bg-cyan-600 text-white forced-colors:border forced-colors:border-[CanvasText] ${markClassName ?? ''}`}
         aria-hidden="true"
       >
         <svg viewBox="0 0 32 32" fill="none" className="size-6">
@@ -54,7 +60,7 @@ export function BrandSquare() {
           />
         </svg>
       </span>
-      <span aria-hidden="true" className="text-teal-950">
+      <span aria-hidden="true" className="text-cyan-950">
         Safepoint
       </span>
     </span>

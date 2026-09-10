@@ -1,2 +1,4 @@
 @import 'tailwindcss';
-@source inline("border border-2 ring ring-2 shadow-sm shadow-md outline-2 sm:block lg:block @sm:block divide-y");
+@source inline(
+  'border border-2 ring ring-2 shadow-sm shadow-md outline-2 sm:block lg:block @sm:block divide-y'
+);

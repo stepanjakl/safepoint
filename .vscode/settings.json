@@ -1,39 +1,39 @@
 {
-    "cssVarHover.watchedFiles": [ "components/ui/button.tsx" ],
+  "cssVarHover.watchedFiles": ["components/ui/button.tsx"],
 
-    // Keeps compiled Tailwind output out of the workspace index, so CSS-variable
-    // hovers resolve to app/tokens.css instead of .next/static/chunks/*.css.
-    // workspace.findFiles ignores .gitignore but honours files.exclude.
-    "files.exclude": {
-        "**/.next": true
-    },
+  // Keeps compiled Tailwind output out of the workspace index, so CSS-variable
+  // hovers resolve to app/tokens.css instead of .next/static/chunks/*.css.
+  // workspace.findFiles ignores .gitignore but honours files.exclude.
+  "files.exclude": {
+    "**/.next": true
+  },
 
-    "search.exclude": {
-        "**/.next": true
-    },
+  "search.exclude": {
+    "**/.next": true
+  },
 
-    // vscode-css-variables globs the filesystem directly (fast-glob), so
-    // files.exclude does not reach it. These are the extension's own defaults
-    // plus **/.next.
-    "cssVariables.blacklistFolders": [
-        "**/.git",
-        "**/.svn",
-        "**/.hg",
-        "**/CVS",
-        "**/.DS_Store",
-        "**/node_modules",
-        "**/bower_components",
-        "**/tmp",
-        "**/dist",
-        "**/tests",
-        "**/.next"
-    ],
+  // vscode-css-variables globs the filesystem directly (fast-glob), so
+  // files.exclude does not reach it. These are the extension's own defaults
+  // plus **/.next.
+  "cssVariables.blacklistFolders": [
+    "**/.git",
+    "**/.svn",
+    "**/.hg",
+    "**/CVS",
+    "**/.DS_Store",
+    "**/node_modules",
+    "**/bower_components",
+    "**/tmp",
+    "**/dist",
+    "**/tests",
+    "**/.next"
+  ],
 
-    "files.associations": {
-        "*.css": "tailwindcss"
-    },
-    "tailwindCSS.experimental.configFile": "app/globals.css",
-    "editor.quickSuggestions": {
-        "strings": "on"
-    }
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  "tailwindCSS.experimental.configFile": "app/globals.css",
+  "editor.quickSuggestions": {
+    "strings": "on"
+  }
 }

@@ -191,7 +191,8 @@ Selected high-priority controls may use a solid base border, an approximately 1p
 - Use dividers, alignment, surface changes, and optical edges; do not use `box-shadow` for containment, selection, focus, or interaction priority.
 - Dialogs and genuinely floating content use backdrop contrast, a strong perimeter, and optional optical edging instead of shadow.
 - Use an 8px spacing rhythm with 4px adjustments for dense value rows.
-- Preserve at least a 44px target for interactive controls even when their visible content is compact.
+- Preserve at least a 44px target for standalone interactive controls even when their visible content is compact.
+- Dense navigation and list rows may compact to 40px, on two conditions: the whole row is the hit area, and any icon-sized control inside it inherits the row's height rather than carrying its own smaller target. A row that is only partly clickable does not qualify.
 - Align numeric before-and-after values vertically and use tabular numerals.
 
 ### Motion
@@ -303,6 +304,8 @@ All functionality must work without custom shortcuts.
 | Shortcut help | A visible Keyboard shortcuts button opens the reference. No shortcut is required to find it. |
 
 Do not use positive `tabindex`. DOM order and visual order must agree. If a focused item disappears after filtering, move focus to the nearest remaining candidate or the filter summary. Focus indicators must remain fully visible against every surface, including high-contrast and forced-colours modes.
+
+A control may carry its focus on its own border instead of the shared outline, which is what text fields do. Doing so takes on three obligations rather than removing one: the focused border must reach 3:1 against both the control's face and what surrounds it, it must differ from the resting border by 3:1 so the *change* is perceivable and not only the colour, and because forced-colours modes override author border colours the control must restore a real outline there. A border that only darkens slightly is not a focus indicator.
 
 ## Dynamic updates and announcements
 

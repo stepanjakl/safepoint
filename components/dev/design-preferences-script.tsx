@@ -2,6 +2,7 @@ import {
   DEFAULT_MOTION_SPEED,
   MOTION_SPEEDS,
   MOTION_STORAGE_KEY,
+  RAIL_GUIDES_STORAGE_KEY,
 } from './design-preferences';
 import {
   MONO_CHOICES,
@@ -51,6 +52,9 @@ try {
     || localStorage.getItem(${JSON.stringify(TYPESCALE_STORAGE_KEY)});
   if (scales.indexOf(scale) !== -1) {
     root.dataset.typescale = scale;
+  }
+  if (localStorage.getItem(${JSON.stringify(RAIL_GUIDES_STORAGE_KEY)}) === 'on') {
+    root.dataset.railGuides = 'on';
   }
   var theme = localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});
   if (theme === 'light' || theme === 'dark') {

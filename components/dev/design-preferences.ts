@@ -141,3 +141,29 @@ export function setMotionSpeed(next: MotionSpeed) {
   persist(MOTION_STORAGE_KEY, next);
   emit();
 }
+
+/*
+  Alignment guides. A development-only overlay that draws the sidebar's icon
+  axis and a crosshair through the centre of every icon sitting on it, so the
+  rail can be checked rather than trusted. Kept on <html> like every other
+  preference here, which is also what lets the guides be pure CSS.
+*/
+export const RAIL_GUIDES_STORAGE_KEY = 'safepoint.dev.rail-guides';
+
+export function readRailGuides(): boolean {
+  return document.documentElement.dataset.railGuides === 'on';
+}
+
+export function serverRailGuides(): boolean {
+  return false;
+}
+
+export function setRailGuides(next: boolean) {
+  if (next) {
+    document.documentElement.dataset.railGuides = 'on';
+  } else {
+    delete document.documentElement.dataset.railGuides;
+  }
+  persist(RAIL_GUIDES_STORAGE_KEY, next ? 'on' : 'off');
+  emit();
+}

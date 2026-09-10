@@ -4,6 +4,8 @@ How styling is organised, what is settled, and the conventions that keep it that
 
 This supersedes the styling sections of [`STAGE-1B-PROPOSAL.md`](STAGE-1B-PROPOSAL.md), which records what was proposed rather than what was built: the palette moved from `stone`/`gray` to `zinc`, and `globals.css` became three files.
 
+An alternative is under evaluation in [Component styling: proposal and trial](COMPONENT-STYLING-PROPOSAL.md). It records the navigation goals, a selective CSS Modules recommendation, and an independent-review prompt for a one-component trial. It does not replace the conventions below app-wide.
+
 ## The division
 
 Three stylesheets, each with one job. `globals.css` imports the other two.
@@ -21,10 +23,10 @@ Everything else is a utility in the component.
 Only these. If a rule is not one of them, it belongs in markup.
 
 - **Token derivations a utility cannot compute.** The severity scale reads `--severity` from the element's own `data-severity`, so no build-time utility can resolve it. It derives four weights, and an `@theme inline` block republishes each as a colour so markup can still say `bg-severity-fill`.
-- **Pseudo-elements**, which have no element to hang a class on: `::backdrop`, the disclosure `+`/`−` marker, the thread connector, the drawer scrim, the effects rail's line.
+- **Pseudo-elements**, which have no element to hang a class on: `::backdrop`, the disclosure `+`/`−` marker, the thread connector, the drawer scrim, the effects rail's line, the sidebar's edge gradients (`.process-menu-fade`), the fades at the two ends of its list (`.process-list-fade`), and the development alignment guides (`.rail-axis`, `.rail-mark`).
 - **Keyframe animations** and their reduced-motion answers.
 - **Shadow compositions a state extends rather than restates** — the system disc holds its outer ring in `--disc-ring` so the freshness states can extend it without repeating the sheen.
-- **Multi-speed transitions** — the reorder row moves at 180ms and tints at 120ms.
+- **Multi-speed transitions** — the reorder row travels at `--duration-row` and tints at 120ms.
 
 ## Type scale
 
@@ -100,6 +102,33 @@ Four exceptions remain, all of them values no scale could hold: `border-[CanvasT
 `border-l-[Highlight]` and `outline-[Highlight]` are forced-colors system keywords
 rather than lengths, and the review dialog's `h-[min(820px,calc(100dvh-64px))]` is a
 composite clamp.
+
+Durations are the one part of the scale Tailwind cannot name for us: there is no
+`--duration-*` theme namespace, so `duration-pane` would never generate. The three steps
+live outside `@theme` and markup reaches them with Tailwind's custom-property syntax —
+`duration-(--duration-pane)`. Still a token, still one definition, and `duration-[220ms]`
+stays out of markup.
+
+| Token | Value | For |
+| --- | --- | --- |
+| `--duration-state` | 150ms | one control answering a pointer |
+| `--duration-row` | 180ms | a row settling into a new position |
+| `--duration-pane` | 220ms | a whole pane travelling |
+
+### The sidebar's two spacing tokens
+
+`--spacing-menu-fade` is the width of the gradient at each edge of the sidebar, and the
+inset the aside holds so nothing sits under one at rest. It is also the height of the
+fades at the two ends of the list, and the padding inside the scroller that keeps the
+first and last rows clear of them.
+
+`--spacing-menu-rail` is the leading column every band starts with — the brand mark, a
+menu item's icon, the notice icon, the avatar. Each sits in a cell of that width with
+`place-items-center`, so they share one vertical axis without any of them knowing its own
+size, and the axis is simply half the rail. Wide enough for the largest of them, so
+nothing shrinks to fit. Switch the guides on from the design pane's **Debug → Icon axis**
+to check it: a green crosshair is drawn from each box's own centre, and any that misses
+the red axis line is genuinely misaligned.
 
 ### rem for what scales, px for what must not
 

@@ -35,7 +35,12 @@ export function AppShell({
     // Two fixed panes wherever there is room for both, so the conversation
     // scrolls without taking the workspace furniture with it. Below that the
     // page scrolls as one document and the sidebar becomes a strip on top.
-    <div className="bg-canvas p-shell-inset shell:h-dvh shell:grid-cols-[250px_minmax(0,1fr)] shell:overflow-hidden grid grid-cols-[minmax(0,1fr)] gap-3.5">
+    //
+    // No column gap above the breakpoint: the separation the sidebar needs is
+    // inside the sidebar now, as the gradient strips a travelling pane
+    // dissolves into, and a gap here would double it. Below the breakpoint the
+    // two stack, so the row gap still has to be there.
+    <div className="bg-canvas p-shell-inset max-shell:gap-3.5 shell:h-dvh shell:grid-cols-[250px_minmax(0,1fr)] shell:overflow-hidden grid grid-cols-[minmax(0,1fr)]">
       <ProcessMenu current={current} items={items} />
       {/*
         A containing block for its descendants. Absolutely positioned content --

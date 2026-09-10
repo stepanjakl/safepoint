@@ -331,10 +331,11 @@
 /*
   What is left here once the menu moved to utilities: the reorder machinery,
   whose rows are absolutely positioned and translated by inline transform so
-  the list can reorder without reflowing, and the tooltip, whose SVG arrow has
-  to continue the box's face, edge and inner highlight. Both are cases where
-  CSS carries something markup cannot -- a two-speed transition, a pseudo
-  element, or a value shared between a box and the shape hanging off it.
+  the list can reorder without reflowing, the pair of gradient strips at the
+  sidebar's edges, and the tooltip, whose SVG arrow has to continue the box's
+  face, edge and inner highlight. All three are cases where CSS carries
+  something markup cannot -- a two-speed transition, a pseudo element, or a
+  value shared between a box and the shape hanging off it.
 */
 
 @layer components {
@@ -344,21 +345,27 @@
     display: flex;
     align-items: center;
     gap: 0.25rem;
-    height: 2.5rem;
+    /* One definition of the row's height. --row-pitch is set on the list from
+       the same constant the translate maths uses, so the two cannot drift; the
+       2px it gives back is the gap between one row and the next. */
+    height: calc(var(--row-pitch) - 2px);
     padding: 0 0.4375rem 0 0;
-    /* Carried by every row, not just the current one, so gaining the sheet's
+    /* Carried by every row, not just the current or dragged one, so gaining an
        edge does not shift the label by the width of the border. */
-    border: 1px solid transparent;
+    border: 1.5px solid transparent;
     border-radius: var(--radius-control);
-    transition: background 120ms ease;
+    transition:
+      background 120ms ease,
+      border-color 120ms ease;
   }
   /* Reordering moves the row and tints it at different speeds: the travel is
-     eased over 180ms so a swap is followable, while the tint keeps the 120ms
-     every other hover in the menu uses. */
+     eased over --duration-row so a swap is followable, while the tint keeps
+     the 120ms every other hover in the menu uses. */
   .process-menu-row[data-editing] {
     transition:
-      transform 180ms --theme(--ease-out-emphasized),
-      background 120ms ease;
+      transform var(--duration-row) --theme(--ease-out-emphasized),
+      background 120ms ease,
+      border-color 120ms ease;
   }
   .process-menu-row:not([data-current]):hover,
   .process-menu-row:not([data-current]):focus-within {
@@ -370,7 +377,10 @@
      different ring -- without touching the pane or any other surface. */
   .process-menu-row[data-current] {
     @apply control-face;
-    border-bottom: 1.5px solid transparent;
+    /* control-face declares its own 1px border; restated here so the current
+       row keeps the 1.5px every other row carries and the label does not shift
+       half a pixel when a row becomes current. */
+    border-width: 1.5px;
     --control-face-top: var(--sp-menu-current-face-top);
     --control-face-bottom: var(--sp-menu-current-face-bottom);
     --control-ring-top: var(--sp-menu-current-ring-top);
@@ -379,23 +389,23 @@
   }
   /* Lifted out of the list while dragged, so it passes over its neighbours
      rather than through them, and eased transitions come off: the row has to
-     track the pointer exactly. */
+     track the pointer exactly. The lift is carried by the face and the edge
+     the row already reserves -- no shadow, which the experience spec does not
+     allow for containment or interaction priority. */
   .process-menu-row[data-dragging] {
     z-index: 2;
     background: var(--sp-surface-floating);
-    box-shadow:
-      0 0 0 1px var(--sp-rule-strong),
-      0 5px 12px #0002;
+    border-color: var(--sp-rule-strong);
     transition: none;
   }
-  /* Where the dragged row will land. Dashed on three sides and solid on the
-     fourth, which is a per-side border style rather than a border utility. */
+  /* Where the dragged row will land. Dashed on every side and in the same rule
+     colour as the dragged row's edge, so the pair reads as one object leaving a
+     space rather than as two differently-lit boxes. */
   .process-drop-slot {
     position: absolute;
     inset: 0 0 auto;
-    height: 2.5rem;
-    border: 1px dashed var(--sp-rule-strong);
-    border-bottom: 2px solid var(--sp-focus);
+    height: calc(var(--row-pitch) - 2px);
+    border: 1.5px dashed var(--sp-rule-strong);
     border-radius: var(--radius-control);
     background: var(--sp-surface-inset);
   }
@@ -408,12 +418,166 @@
     border-radius: var(--radius-control);
   }
 
+  /*
+    The gap that used to sit between the sidebar and the sheet, moved inside the
+    sidebar. It is there from the start rather than appearing when a pane starts
+    to travel, so the panes have a soft boundary to dissolve into instead of the
+    hard clip `overflow-clip` gives them; the edge the menu is moving toward
+    deepens while a pane is in flight. Both strips overlay the aside's own
+    --spacing-menu-fade inset, so nothing sits under them at rest and no focus
+    ring is ever eaten.
+
+    Only above the shell breakpoint (--breakpoint-shell, 56.25rem, restated
+    because @media cannot read a theme value): below it the sidebar is a strip
+    across the top and there is no side boundary to soften.
+  */
+  @media (width >= 56.25rem) {
+    .process-menu-fade::before,
+    .process-menu-fade::after {
+      content: '';
+      position: absolute;
+      inset-block: 0;
+      /* Above the dragged row, which lifts itself to 2 to clear its
+         neighbours. The edge of the sidebar is in front of everything in it. */
+      z-index: 3;
+      width: var(--spacing-menu-fade);
+      pointer-events: none;
+      transition: width var(--duration-pane) --theme(--ease-out-emphasized);
+    }
+    .process-menu-fade::before {
+      left: 0;
+      background: linear-gradient(to right, var(--sp-canvas), transparent);
+    }
+    .process-menu-fade::after {
+      right: 0;
+      background: linear-gradient(to left, var(--sp-canvas), transparent);
+    }
+    /* The leading edge, widened while a pane travels toward it. */
+    .process-menu-fade[data-level='processes']::before,
+    .process-menu-fade[data-level='workspace']::after {
+      width: calc(var(--spacing-menu-fade) * 1.5);
+    }
+  }
+
+  /*
+    The list's two ends, softened the same way its sides are. Rows dissolve into
+    the fixed chrome above and the footer below instead of stopping at a hard
+    line, which is also what lets the space those two were holding come back --
+    a fade reads as an edge, so the gap does not have to.
+
+    Overlaid rather than masked, because a mask on the scroll container would
+    take the scrollbar with it. Behind the side gradients (z-index 3) so the
+    corners stay theirs, and above the breakpoint only -- below it the list does
+    not scroll, so there is nothing for an end to fade into.
+  */
+  @media (width >= 56.25rem) {
+    .process-list-fade::before,
+    .process-list-fade::after {
+      content: '';
+      position: absolute;
+      inset-inline: 0;
+      z-index: 2;
+      height: var(--spacing-menu-fade);
+      pointer-events: none;
+    }
+    .process-list-fade::before {
+      top: 0;
+      background: linear-gradient(to bottom, var(--sp-canvas), transparent);
+    }
+    .process-list-fade::after {
+      bottom: 0;
+      background: linear-gradient(to top, var(--sp-canvas), transparent);
+    }
+  }
+
+  @media (forced-colors: active) {
+    .process-list-fade::before,
+    .process-list-fade::after {
+      display: none;
+    }
+  }
+
+  @media print {
+    .process-list-fade::before,
+    .process-list-fade::after {
+      display: none;
+    }
+  }
+
+  /*
+    Development alignment guides, switched on from the design pane's Debug
+    folder. `data-rail-guides` on <html> is the only thing that turns any of
+    this on, so the markup that carries it costs nothing when it is off.
+
+    A dark blue against the axis's red, because the whole point is telling the
+    two apart at a glance: a crosshair sharing the line's hue is exactly the
+    case where a miss by a pixel stops being visible.
+
+    Two parts: one line down the sidebar's icon axis, and a crosshair through
+    the centre of every box that is supposed to sit on it. The crosshair is
+    drawn from the box's own 50%, so it reports where the icon actually is
+    rather than where a hardcoded offset says it should be -- if the two lines
+    do not meet on the axis, the alignment is wrong.
+  */
+  .rail-axis {
+    display: none;
+  }
+  :root[data-rail-guides='on'] .rail-axis {
+    display: block;
+    position: absolute;
+    inset-block: 0;
+    left: calc(var(--spacing-menu-fade) + var(--spacing-menu-rail) / 2);
+    z-index: 5;
+    width: 1px;
+    background: color-mix(in oklab, red 60%, transparent);
+    pointer-events: none;
+  }
+  :root[data-rail-guides='on'] .rail-mark {
+    position: relative;
+  }
+  :root[data-rail-guides='on'] .rail-mark::before,
+  :root[data-rail-guides='on'] .rail-mark::after {
+    content: '';
+    position: absolute;
+    z-index: 5;
+    background: #1d4ed8;
+    pointer-events: none;
+  }
+  /* Horizontal arm, then vertical, each centred on the box it is drawn from. */
+  :root[data-rail-guides='on'] .rail-mark::before {
+    top: 50%;
+    left: 50%;
+    width: 30px;
+    height: 1px;
+    translate: -50% 0;
+  }
+  :root[data-rail-guides='on'] .rail-mark::after {
+    top: 50%;
+    left: 50%;
+    width: 1px;
+    height: 30px;
+    translate: 0 -50%;
+  }
+
   @media (forced-colors: active) {
     .process-menu-row[data-current] {
       outline: 1px solid Highlight;
     }
     .process-menu-row[data-dragging] {
       outline: 2px solid Highlight;
+    }
+    /* A gradient cannot survive forced colours, and it must never be the only
+       thing carrying a boundary. */
+    .process-menu-fade::before,
+    .process-menu-fade::after {
+      display: none;
+    }
+  }
+
+  @media print {
+    .process-menu-fade::before,
+    .process-menu-fade::after {
+      display: none;
     }
   }
 }
