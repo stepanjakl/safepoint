@@ -21,12 +21,16 @@ export function Glyph({
   size = 12,
   ...props
 }: { name: GlyphName; size?: number } & Omit<SVGProps<SVGSVGElement>, 'name'>) {
+  // `size` stays a pixel intent at the default root size, but is emitted in rem
+  // so a glyph grows with the text beside it when the reader enlarges type.
+  // Set as a style rather than a class: the value is dynamic, and Tailwind
+  // cannot see a class name that is built at runtime.
+  const edge = `${size / 16}rem`;
   return (
     <svg
       aria-hidden="true"
       focusable="false"
-      width={size}
-      height={size}
+      style={{ width: edge, height: edge }}
       viewBox="0 0 12 12"
       fill="none"
       stroke="currentColor"

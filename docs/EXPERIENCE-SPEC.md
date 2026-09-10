@@ -152,6 +152,7 @@ Notification       Cannot be unsent; a correction message would be a new action.
 - **Interface sans role**: use for navigation, labels, explanations, evidence, and controls; it must remain readable at compact sizes and medium density.
 - **Tabular or monospaced utility role**: use for prices, percentages, quantities, identifiers, timestamps, thresholds, adapter modes, and effect states.
 - Exact families remain provisional. Components must depend on semantic typography roles so that the final selection does not require component redesign.
+- The roles are now implemented as a constructed scale — rem sizes, line-heights locked to a 2px baseline, tracking carried by the role. The values and the construction rule are in [`STYLING-SYSTEM.md`](STYLING-SYSTEM.md).
 - Use system fallbacks and avoid delaying meaningful content for font downloads.
 - Use sentence case for ordinary interface language. Reserve tracked uppercase for short legends, source classifications, and machine-like readouts.
 

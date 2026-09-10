@@ -11,11 +11,11 @@ import type { ProcessAnalysis } from '@/lib/process/placeholder-process';
 */
 export function InitialAnalysis({ analysis }: { analysis: ProcessAnalysis }) {
   return (
-    <div className="control-face surface-floating rounded-shell text-body px-5 py-4 leading-[1.6]">
+    <div className="control-face surface-floating rounded-shell text-body px-5 py-4 leading-relaxed">
       <p className="text-primary">{analysis.summary}</p>
       {/* Observations are findings, not instructions, so they are marked with a
           rule rather than numbered: nothing here happens in sequence. */}
-      <ul className="border-rule-faint text-muted mt-3 grid gap-1.5 border-t pt-3 text-[13px]">
+      <ul className="border-rule-faint text-muted text-dense mt-3 grid gap-1.5 border-t pt-3">
         {analysis.observations.map((observation) => (
           <li
             key={observation}
@@ -25,7 +25,7 @@ export function InitialAnalysis({ analysis }: { analysis: ProcessAnalysis }) {
           </li>
         ))}
       </ul>
-      <p className="text-muted mt-3 text-[12px] opacity-80">
+      <p className="text-muted text-meta mt-3 opacity-80">
         Placeholder. The engine does not yet publish the analysis it ran.
       </p>
     </div>

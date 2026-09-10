@@ -1,5 +1,9 @@
 import {
   DEFAULT_TYPEFACE_SET,
+  DEFAULT_TYPESCALE,
+  isTypescale,
+  TYPESCALE_STORAGE_KEY,
+  type Typescale,
   isMonoChoice,
   isThemeChoice,
   isTypefaceSet,
@@ -49,6 +53,11 @@ export function readMono(): MonoChoice {
   return isMonoChoice(value) ? value : 'match';
 }
 
+export function readTypescale(): Typescale {
+  const value = document.documentElement.dataset.typescale;
+  return isTypescale(value) ? value : DEFAULT_TYPESCALE;
+}
+
 export function readTheme(): ThemeChoice {
   const value = document.documentElement.dataset.theme;
   return isThemeChoice(value) ? value : 'system';
@@ -60,6 +69,10 @@ export function serverTypeface() {
 
 export function serverMono(): MonoChoice {
   return 'match';
+}
+
+export function serverTypescale(): Typescale {
+  return DEFAULT_TYPESCALE;
 }
 
 export function serverTheme(): ThemeChoice {
@@ -80,6 +93,12 @@ export function setMono(next: MonoChoice) {
     document.documentElement.dataset.mono = next;
   }
   persist(MONO_STORAGE_KEY, next);
+  emit();
+}
+
+export function setTypescale(next: Typescale) {
+  document.documentElement.dataset.typescale = next;
+  persist(TYPESCALE_STORAGE_KEY, next);
   emit();
 }
 

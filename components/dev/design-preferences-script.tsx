@@ -5,6 +5,8 @@ import {
 } from './design-preferences';
 import {
   MONO_CHOICES,
+  TYPESCALES,
+  TYPESCALE_STORAGE_KEY,
   MONO_STORAGE_KEY,
   THEME_STORAGE_KEY,
   TYPEFACE_SETS,
@@ -44,6 +46,12 @@ try {
   var motionSpeed = localStorage.getItem(${JSON.stringify(MOTION_STORAGE_KEY)});
   root.dataset.motionSpeed = motionSpeeds.indexOf(motionSpeed) !== -1
     ? motionSpeed : ${JSON.stringify(DEFAULT_MOTION_SPEED)};
+  var scales = ${JSON.stringify([...TYPESCALES])};
+  var scale = params.get('scale')
+    || localStorage.getItem(${JSON.stringify(TYPESCALE_STORAGE_KEY)});
+  if (scales.indexOf(scale) !== -1) {
+    root.dataset.typescale = scale;
+  }
   var theme = localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});
   if (theme === 'light' || theme === 'dark') {
     root.dataset.theme = theme;

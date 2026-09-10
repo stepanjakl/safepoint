@@ -28,13 +28,13 @@ type Filter = ReviewFilter;
 // A filter pill carries its bucket's colour on the count alone: the label is
 // navigation, the figure is the quantity being filtered to.
 const FILTER =
-  'border-rule-default aria-pressed:bg-surface-selected aria-pressed:border-rule-strong inline-flex min-h-8 items-baseline gap-1.5 rounded-full border px-2.5 py-1 text-[12px] whitespace-nowrap [&[data-severity]_.value]:text-severity-ink';
+  'border-rule-default aria-pressed:bg-surface-selected aria-pressed:border-rule-strong inline-flex min-h-8 items-baseline gap-1.5 rounded-full border px-2.5 py-1 text-meta whitespace-nowrap [&[data-severity]_.value]:text-severity-ink';
 
 // 70px is the two-line row this list is built around, so a one-line item does
 // not make the column jump.
 const ITEM_BUTTON =
   'hover:bg-surface-inset aria-[current=true]:bg-surface-selected aria-[current=true]:border-l-primary block min-h-17.5 w-full border-l-2 border-l-transparent px-4.5 py-3 text-left focus-visible:-outline-offset-3 forced-colors:aria-[current=true]:border-l-[Highlight] forced-colors:aria-[current=true]:outline forced-colors:aria-[current=true]:outline-[Highlight] forced-colors:aria-[current=true]:-outline-offset-2';
-const ITEM_REASON = 'text-muted mt-1 block text-meta leading-[1.5]';
+const ITEM_REASON = 'text-muted mt-1 block text-meta leading-normal';
 
 export function ReviewPanel({
   plan,
@@ -174,7 +174,7 @@ export function ReviewPanel({
 
   return (
     <div className="severity-scale @container/review flex min-h-0 flex-1 flex-col">
-      <div className="bg-surface-inset border-rule-faint text-muted flex shrink-0 flex-wrap justify-between gap-x-5 gap-y-1 border-b px-6 py-2.5 text-[12px] @max-3xl/review:px-5">
+      <div className="bg-surface-inset border-rule-faint text-muted text-meta flex shrink-0 flex-wrap justify-between gap-x-5 gap-y-1 border-b px-6 py-2.5 @max-3xl/review:px-5">
         <span>{plan.evaluatedAt} · Recorded review</span>
         <span>{plan.context}</span>
       </div>
@@ -231,7 +231,7 @@ export function ReviewPanel({
                 >
                   <h3
                     id={`${id}-${disposition}`}
-                    className="text-muted flex items-center justify-between px-5 pt-4 pb-2 text-[12px] font-medium"
+                    className="text-muted text-meta flex items-center justify-between px-5 pt-4 pb-2 font-medium"
                   >
                     {DISPOSITION_LABELS[disposition]}
                     <span className="value">{items.length}</span>
@@ -254,10 +254,10 @@ export function ReviewPanel({
                             setShowDetail(true);
                           }}
                         >
-                          <span className="flex flex-wrap justify-between gap-x-2 gap-y-1 text-[13px] [font-weight:550]">
+                          <span className="text-dense flex flex-wrap justify-between gap-x-2 gap-y-1 [font-weight:550]">
                             {effect.subject}
                             {effect.requiresApproval ? (
-                              <span className="border-rule-default text-muted rounded-full border px-1.75 py-0.5 text-[11px] whitespace-nowrap">
+                              <span className="border-rule-default text-muted text-micro rounded-full border px-1.75 py-0.5 whitespace-nowrap">
                                 Needs approval
                               </span>
                             ) : null}
@@ -308,7 +308,7 @@ export function ReviewPanel({
               </button>
             </nav>
           ) : null}
-          <p className="border-rule-faint text-muted border-t px-5 py-3 text-[12px]">
+          <p className="border-rule-faint text-muted text-meta border-t px-5 py-3">
             {visible.length
               ? `${pagination.start + 1}–${pagination.start + pagination.items.length}`
               : '0'}{' '}
@@ -322,7 +322,7 @@ export function ReviewPanel({
         >
           <div className="px-8 pt-7 pb-5 @max-3xl/review:px-5 @max-3xl/review:pt-3">
             <button
-              className="text-muted mb-3 inline-flex min-h-11 items-center text-left text-[13px] underline underline-offset-4 @3xl/review:hidden"
+              className="text-muted text-dense mb-3 inline-flex min-h-11 items-center text-left underline underline-offset-4 @3xl/review:hidden"
               onClick={() => {
                 moveFocus.current = true;
                 setShowDetail(false);
@@ -337,7 +337,7 @@ export function ReviewPanel({
               id={`${id}-item-title`}
               ref={heading}
               tabIndex={-1}
-              className="text-[26px] leading-[1.25] [font-weight:550] tracking-[-0.035em] @max-3xl/review:text-[24px]"
+              className="text-display [font-weight:550]"
             >
               {selected.subject}
             </h3>
@@ -388,7 +388,7 @@ export function ReviewPanel({
       </p>
       {/* The counter is live from pass 2, when exclusion lands. It reads from
           the plan today so it can never disagree with the list above it. */}
-      <footer className="border-rule-default bg-surface-inset text-muted [&_strong]:text-primary flex shrink-0 flex-wrap justify-between gap-x-5 gap-y-1 border-t px-6 py-3.5 text-[12px] @max-3xl/review:px-5 [&_strong]:[font-weight:550]">
+      <footer className="border-rule-default bg-surface-inset text-muted [&_strong]:text-primary text-meta flex shrink-0 flex-wrap justify-between gap-x-5 gap-y-1 border-t px-6 py-3.5 @max-3xl/review:px-5 [&_strong]:[font-weight:550]">
         <span>
           <strong>Replay preview</strong> · Explore the recorded proposal and
           evidence.

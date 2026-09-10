@@ -96,7 +96,7 @@ export function DeltaValue({
           <Term numeric>{formatScalar(delta.after, delta.display)}</Term>
           {delta.derived ? (
             <span
-              className="text-muted data-[direction=down]:text-state-verified data-[direction=up]:text-state-caution text-[12px]"
+              className="text-muted data-[direction=down]:text-state-verified data-[direction=up]:text-state-caution text-meta"
               data-direction={delta.derivedDirection ?? 'none'}
             >
               {delta.derived}
@@ -180,7 +180,7 @@ export function DeltaValue({
 export function DeltaRow({ delta }: { delta: LabelledDelta }) {
   return (
     <div className="flex flex-wrap justify-between gap-x-4 gap-y-1">
-      <span className="text-muted text-[13px]">{delta.label}</span>
+      <span className="text-muted text-dense">{delta.label}</span>
       <DeltaValue delta={delta} />
     </div>
   );

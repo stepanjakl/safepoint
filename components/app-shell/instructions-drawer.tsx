@@ -35,7 +35,7 @@ export function InstructionsDrawer({
           <Dialog className="grid h-full grid-rows-[auto_minmax(0,1fr)] outline-none">
             <header className="border-rule-faint flex items-start justify-between gap-4 border-b p-5">
               <div>
-                <Heading slot="title" className="text-[15px] [font-weight:550]">
+                <Heading slot="title" className="text-title [font-weight:550]">
                   Instructions
                 </Heading>
                 <p className="text-meta text-muted">
@@ -45,19 +45,19 @@ export function InstructionsDrawer({
               </div>
               <AriaButton
                 slot="close"
-                className="text-muted data-[hovered]:bg-surface-control data-[hovered]:text-primary grid size-8 place-items-center rounded-lg text-[18px]"
+                className="text-muted data-[hovered]:bg-surface-control data-[hovered]:text-primary text-title rounded-control grid size-8 place-items-center"
               >
                 <span aria-hidden="true">×</span>
                 <span className="sr-only">Close instructions</span>
               </AriaButton>
             </header>
             <div className="overflow-y-auto p-5">
-              <ol className="marker:text-muted text-dense grid list-decimal gap-3 pl-4.5 leading-[1.6]">
+              <ol className="marker:text-muted text-dense grid list-decimal gap-3 pl-4.5 leading-relaxed">
                 {instructions.body.map((line) => (
                   <li key={line}>{line}</li>
                 ))}
               </ol>
-              <p className="border-rule-faint text-muted mt-5 border-t pt-3 text-[12px]">
+              <p className="border-rule-faint text-muted text-meta mt-5 border-t pt-3">
                 Placeholder text. The engine does not yet publish the
                 instructions it ran under.
               </p>

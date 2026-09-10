@@ -54,7 +54,7 @@ export default async function ReviewPage({ searchParams }: PageProps<'/'>) {
               </ThreadStep>
             ))}
           </ol>
-          <div className="border-rule-faint text-muted text-meta mt-10 border-t pt-5 leading-[1.6] max-sm:mt-7">
+          <div className="border-rule-faint text-muted text-meta mt-10 border-t pt-5 leading-relaxed max-sm:mt-7">
             <p>
               This conversation demonstrates how Safepoint can appear inside
               another application.
@@ -67,7 +67,7 @@ export default async function ReviewPage({ searchParams }: PageProps<'/'>) {
             </Link>
           </div>
         </ThreadPage>
-        <footer className="text-muted p-6 text-center text-[12px]">
+        <footer className="text-muted text-meta p-6 text-center">
           The agent proposes. You review. Safepoint applies only approved
           changes.
         </footer>

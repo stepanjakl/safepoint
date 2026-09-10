@@ -41,6 +41,7 @@ flowchart LR
 4. [`TECHNICAL-DESIGN.md`](TECHNICAL-DESIGN.md) defines system boundaries, contracts, persistence, execution, security, observability, and failure behaviour.
 5. [`DELIVERY-PLAN.md`](DELIVERY-PLAN.md) sequences implementation through acceptance-gated milestones.
 6. [`PROJECT-REVIEW.md`](PROJECT-REVIEW.md) records corrections, alternatives, source coverage, assumptions, and rejected ideas.
+7. [`STYLING-SYSTEM.md`](STYLING-SYSTEM.md) records the implemented styling system: the three stylesheets and what belongs in each, the type and radius scales and how they are constructed, and the conventions that keep markup free of arbitrary values.
 
 The immediate implementation hand-off is [`STAGE-1B-BRIEF.md`](STAGE-1B-BRIEF.md). [`STAGE-1A-BRIEF.md`](STAGE-1A-BRIEF.md) records the accepted data and contract foundation; [`STAGE-0-BRIEF.md`](STAGE-0-BRIEF.md) remains the completed scaffold record.
 

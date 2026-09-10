@@ -82,7 +82,7 @@ function ReviewDialog({
     // markup of its own. Everything else about the dialog is here.
     <dialog
       ref={ref}
-      className="review-dialog text-primary bg-surface-primary border-rule-strong m-auto h-[min(820px,calc(100dvh-64px))] max-h-none w-[min(1120px,calc(100%-64px))] max-w-none overflow-hidden rounded-xl border p-0 open:flex open:flex-col max-sm:h-dvh max-sm:w-full max-sm:rounded-none max-sm:border-0"
+      className="review-dialog text-primary bg-surface-primary border-rule-strong rounded-shell m-auto h-[min(820px,calc(100dvh-64px))] max-h-none w-[min(1120px,calc(100%-64px))] max-w-none overflow-hidden border p-0 open:flex open:flex-col max-sm:h-dvh max-sm:w-full max-sm:rounded-none max-sm:border-0"
       aria-labelledby={id}
       onClose={onClose}
     >
@@ -95,7 +95,7 @@ function ReviewDialog({
             id={id}
             tabIndex={-1}
             ref={heading}
-            className="text-[22px] leading-[1.3] [font-weight:550] tracking-[-0.025em] max-sm:text-[19px]"
+            className="text-display max-sm:text-title [font-weight:550]"
           >
             {plan.title}
           </h2>

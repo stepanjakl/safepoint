@@ -26,7 +26,7 @@ import {
 } from './process-order-store';
 
 const ROW_HEIGHT = 42;
-const MENU_TITLE = 'text-menu-link text-dense leading-4.5 font-semibold';
+const MENU_TITLE = 'text-menu-link text-dense font-semibold';
 const MENU_CHEVRON = 'size-5 flex-none [stroke-width:2]';
 
 /*
@@ -40,7 +40,7 @@ const MENU_CHEVRON = 'size-5 flex-none [stroke-width:2]';
 // heading's hover, which is why that tint is a named group variant: an icon
 // button elsewhere in the sidebar must not pick it up.
 const ICON_BUTTON_SHAPE =
-  'text-muted transition-colors duration-150 motion-reduce:transition-none inline-grid size-7.5 flex-none cursor-pointer place-items-center rounded-[7px] p-0 aria-disabled:cursor-default';
+  'text-muted transition-colors duration-150 motion-reduce:transition-none inline-grid size-7.5 flex-none cursor-pointer place-items-center rounded-control p-0 aria-disabled:cursor-default';
 const ICON_BUTTON_QUIET =
   'hover:bg-surface-selected hover:text-primary group-hover/heading:bg-menu-wash-faint group-hover/heading:text-primary group-focus-within/heading:bg-menu-wash-faint group-focus-within/heading:text-primary';
 const ICON_BUTTON = `${ICON_BUTTON_SHAPE} ${ICON_BUTTON_QUIET}`;
@@ -48,7 +48,7 @@ const ICON_BUTTON = `${ICON_BUTTON_SHAPE} ${ICON_BUTTON_QUIET}`;
 // A process name, in the row or in the rename field. Truncates rather than
 // wraps: the row is a fixed height, and OverflowTooltip supplies the full name.
 const MENU_LABEL =
-  'text-menu-link group-hover/row:text-primary group-focus-within/row:text-primary transition-colors duration-150 motion-reduce:transition-none group-data-[current]/row:text-primary block min-w-0 truncate rounded-md py-2.75 pr-0 text-dense leading-4.5 font-semibold tracking-[-0.01em] no-underline';
+  'text-menu-link group-hover/row:text-primary group-focus-within/row:text-primary transition-colors duration-150 motion-reduce:transition-none group-data-[current]/row:text-primary block min-w-0 truncate rounded-control py-2.75 pr-0 text-dense font-semibold no-underline';
 
 // The reorder handle, and its non-interactive preview.
 const GRIP = 'text-muted ml-0.5 grid h-8 w-6 flex-none place-items-center';
@@ -288,34 +288,43 @@ export function ProcessMenu({
               inert={level !== 'workspace'}
               aria-hidden={level !== 'workspace'}
             >
-              <button
-                ref={enterRef}
-                className={cx(
-                  MENU_TITLE,
-                  'hover:bg-surface-control hover:text-primary focus-visible:text-primary flex min-h-11 w-full cursor-pointer items-center gap-2.5 rounded-lg p-2.5 text-left transition-colors duration-150 motion-reduce:transition-none',
-                )}
-                type="button"
-                onClick={() => navigate('processes')}
-              >
-                <MenuIcon name="processes" className="text-muted w-4.25" />
-                <span>Processes</span>
-                <span className="bg-menu-chip text-muted ml-auto inline-grid h-5.5 min-w-5.5 place-items-center rounded-md px-1.25 text-[11px] tabular-nums">
-                  {items.length}
-                </span>
-                <MenuIcon name="right" className={MENU_CHEVRON} />
-              </button>
+              {/* TEMPORARY: icon shortlist for the Processes root item. Pick one,
+                  then delete ICON_CANDIDATES, this map, and the unused MenuIcon
+                  cases, leaving a single button with the chosen glyph. */}
+              {ICON_CANDIDATES.map((icon, index) => (
+                <button
+                  key={icon}
+                  ref={index === 0 ? enterRef : undefined}
+                  className={cx(
+                    MENU_TITLE,
+                    'hover:bg-surface-control hover:text-primary focus-visible:text-primary rounded-control flex min-h-11 w-full cursor-pointer items-center gap-2.5 p-2.5 text-left transition-colors duration-150 motion-reduce:transition-none',
+                  )}
+                  type="button"
+                  onClick={() => navigate('processes')}
+                >
+                  <MenuIcon name={icon} className="text-muted w-4.25" />
+                  <span>Processes</span>
+                  <span className="text-muted text-micro font-normal">
+                    {icon}
+                  </span>
+                  <span className="bg-menu-chip text-muted text-micro rounded-control ml-auto inline-grid h-5.5 min-w-5.5 place-items-center px-1.25 tabular-nums">
+                    {items.length}
+                  </span>
+                  <MenuIcon name="right" className={MENU_CHEVRON} />
+                </button>
+              ))}
             </div>
             <div
               className="ease-out-emphasized min-w-0 p-1 opacity-100 transition-opacity duration-[220ms] aria-hidden:opacity-0 motion-reduce:transition-none"
               inert={level !== 'processes'}
               aria-hidden={level !== 'processes'}
             >
-              <label className="border-rule-faint bg-menu-search text-muted focus-within:outline-focus mx-1 mb-3.5 flex min-h-9 items-center gap-2 rounded-lg border px-2.5 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 has-[input:disabled]:opacity-65">
+              <label className="border-rule-faint bg-menu-search text-muted focus-within:outline-focus rounded-control mx-1 mb-3.5 flex min-h-9 items-center gap-2 border px-2.5 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 has-[input:disabled]:opacity-65">
                 <MenuIcon name="search" className="size-3.75 flex-none" />
                 <span className="sr-only">Search processes</span>
                 <input
                   type="search"
-                  className="text-primary placeholder:text-muted min-h-8.5 w-full min-w-0 border-none bg-transparent text-[12px] outline-none"
+                  className="text-primary placeholder:text-muted text-meta min-h-8.5 w-full min-w-0 border-none bg-transparent outline-none"
                   placeholder={
                     customising
                       ? 'Finish arranging to search'
@@ -331,7 +340,7 @@ export function ProcessMenu({
                 type="button"
                 className={cx(
                   MENU_TITLE,
-                  'hover:bg-menu-wash-strong hover:text-primary focus-visible:text-primary mb-2 grid min-h-9.5 w-full cursor-pointer grid-cols-[40px_minmax(0,1fr)_40px] items-center rounded-lg p-0.75 transition-colors duration-150 motion-reduce:transition-none',
+                  'hover:bg-menu-wash-strong hover:text-primary focus-visible:text-primary rounded-control mb-2 grid min-h-9.5 w-full cursor-pointer grid-cols-[40px_minmax(0,1fr)_40px] items-center p-0.75 transition-colors duration-150 motion-reduce:transition-none',
                 )}
                 aria-label="Back to workspace menu"
                 onClick={() => navigate('workspace')}
@@ -394,7 +403,7 @@ export function ProcessMenu({
                             type="button"
                             className={
                               GRIP +
-                              ' hover:bg-surface-selected hover:text-primary focus-visible:bg-surface-selected focus-visible:text-primary cursor-grab touch-none rounded-[5px] group-data-[dragging]/row:cursor-grabbing'
+                              ' hover:bg-surface-selected hover:text-primary focus-visible:bg-surface-selected focus-visible:text-primary rounded-section cursor-grab touch-none group-data-[dragging]/row:cursor-grabbing'
                             }
                             aria-label={`Reorder ${item.name}`}
                             aria-describedby="process-reorder-instructions"
@@ -479,7 +488,7 @@ export function ProcessMenu({
                           tabIndex={0}
                           role="img"
                           aria-label={`${item.name}: ${item.status.label}, ${item.status.totalLabel}`}
-                          className="text-muted data-[tone=blocked]:text-state-blocked data-[tone=caution]:text-state-caution data-[tone=verified]:text-state-verified relative z-1 inline-flex min-h-7 min-w-8.5 flex-none cursor-help items-center justify-center gap-1 rounded-[5px] px-1.25 text-[11px] leading-4 font-semibold tabular-nums forced-colors:border forced-colors:border-[CanvasText]"
+                          className="text-muted data-[tone=blocked]:text-state-blocked data-[tone=caution]:text-state-caution data-[tone=verified]:text-state-verified text-micro rounded-section relative z-1 inline-flex min-h-7 min-w-8.5 flex-none cursor-help items-center justify-center gap-1 px-1.25 font-semibold tabular-nums forced-colors:border forced-colors:border-[CanvasText]"
                           data-tone={item.status.tone}
                         >
                           <Glyph
@@ -509,7 +518,7 @@ export function ProcessMenu({
                 })}
               </ol>
               {visibleOrder.length === 0 ? (
-                <p className="text-muted px-2.5 py-3 text-[12px]">
+                <p className="text-muted text-meta px-2.5 py-3">
                   No matching processes.
                 </p>
               ) : null}
@@ -519,10 +528,10 @@ export function ProcessMenu({
       </nav>
       <div className="max-shell:gap-2.5 max-shell:pt-3 mx-1 mt-auto grid gap-3.5 pt-6">
         {/* Icon shares row one with the title; the caption sits under it. */}
-        <div className="control-face surface-notice shadow-control-highlight-medium-hairline bg-notice-face text-state-advisory max-shell:px-3 max-shell:py-2.25 grid grid-cols-[auto_1fr] items-center gap-x-2.25 rounded-[9px] border p-3 text-[11px] leading-[1.5] forced-colors:border-[CanvasText]">
+        <div className="control-face surface-notice shadow-control-highlight-medium-hairline bg-notice-face text-state-advisory max-shell:px-3 max-shell:py-2.25 text-micro rounded-shell grid grid-cols-[auto_1fr] items-center gap-x-2.25 border p-3 leading-normal forced-colors:border-[CanvasText]">
           <MenuIcon name="info" />
-          <p className="text-[11px] font-semibold">Demo application</p>
-          <span className="text-notice-caption col-start-2 mt-0.75 text-[10px] font-medium">
+          <p className="text-micro font-semibold">Demo application</p>
+          <span className="text-notice-caption text-micro col-start-2 mt-0.75 font-medium">
             Fictional data. No live changes.
           </span>
         </div>
@@ -538,9 +547,7 @@ export function ProcessMenu({
               colors={AVATAR_COLORS}
             />
           </span>
-          <p className="text-primary text-dense mr-auto leading-4.5 font-semibold">
-            Maya
-          </p>
+          <p className="text-primary text-dense mr-auto font-semibold">Maya</p>
           <Tooltip label="Settings">
             <button
               type="button"
@@ -571,14 +578,14 @@ function ProcessStatusContent({
 
   return (
     <div className="grid gap-2.5">
-      <div className="text-muted mt-0.5 flex justify-between gap-2.5 text-[10px]">
+      <div className="text-muted text-micro mt-0.5 flex justify-between gap-2.5">
         <span>Latest available run</span>
         <span>{status.totalLabel}</span>
       </div>
       <span
         className={cx(
           TONE_CHIP[status.tone],
-          'justify-self-start rounded-full px-2 py-0.75 text-[11px] font-semibold',
+          'text-micro justify-self-start rounded-full px-2 py-0.75 font-semibold',
         )}
       >
         {status.label}
@@ -589,21 +596,21 @@ function ProcessStatusContent({
             key={tone}
             className={cx(
               TONE_CHIP[tone],
-              'flex items-center justify-between gap-2 rounded-[5px] px-2 py-1.5',
+              'rounded-section flex items-center justify-between gap-2 px-2 py-1.5',
             )}
           >
-            <dt className="text-[10px]">{label}</dt>
-            <dd className="text-[12px] [font-weight:650] tabular-nums">
+            <dt className="text-micro">{label}</dt>
+            <dd className="text-meta [font-weight:650] tabular-nums">
               {count}
             </dd>
           </div>
         ))}
       </dl>
       <div className="border-rule-faint flex items-start gap-2 border-t pt-2.25">
-        <span className="bg-state-advisory/10 text-state-advisory rounded-sm px-1.25 py-0.5 text-[10px] font-semibold">
+        <span className="bg-state-advisory/10 text-state-advisory text-micro rounded-section px-1.25 py-0.5 font-semibold">
           {status.modeLabel}
         </span>
-        <p className="text-muted text-[10px]">{status.modeDescription}</p>
+        <p className="text-muted text-micro">{status.modeDescription}</p>
       </div>
     </div>
   );
@@ -625,21 +632,45 @@ const TONE_CHIP: Record<
 };
 
 const AVATAR_COLORS = ['#0d9488', '#22d3ee', '#0284c7', '#3f3f46', '#5eead4'];
+type MenuIconName =
+  | 'plus'
+  | 'check'
+  | 'arrange'
+  | 'search'
+  | 'processes'
+  | 'left'
+  | 'right'
+  | 'more'
+  | 'info'
+  // TEMPORARY: shortlist for the Processes root item.
+  | 'layers'
+  | 'flow'
+  | 'checklist'
+  | 'stack'
+  | 'route'
+  | 'boxes'
+  | 'steps'
+  | 'pipeline';
+
+// TEMPORARY: delete alongside the shortlist loop in the workspace pane.
+const ICON_CANDIDATES = [
+  'processes',
+  'layers',
+  'flow',
+  'checklist',
+  'stack',
+  'route',
+  'boxes',
+  'steps',
+  'pipeline',
+] as const satisfies readonly MenuIconName[];
+
 function MenuIcon({
   name,
   className,
 }: {
   className?: string;
-  name:
-    | 'plus'
-    | 'check'
-    | 'arrange'
-    | 'search'
-    | 'processes'
-    | 'left'
-    | 'right'
-    | 'more'
-    | 'info';
+  name: MenuIconName;
 }) {
   return (
     <svg
@@ -690,6 +721,64 @@ function MenuIcon({
           <circle cx="5" cy="12" r="1" />
           <circle cx="12" cy="12" r="1" />
           <circle cx="19" cy="12" r="1" />
+        </>
+      ) : null}
+
+      {/* TEMPORARY: Processes root-item shortlist. Keep the chosen one, delete
+          the rest along with their entries in MenuIconName. */}
+      {name === 'layers' ? (
+        <>
+          <path d="M12 3 3 7.5 12 12l9-4.5L12 3Z" />
+          <path d="m3 12 9 4.5 9-4.5" />
+          <path d="m3 16.5 9 4.5 9-4.5" />
+        </>
+      ) : null}
+      {name === 'flow' ? (
+        <>
+          <rect x="3" y="4" width="7" height="6" rx="2" />
+          <rect x="14" y="14" width="7" height="6" rx="2" />
+          <path d="M6.5 10v4a3 3 0 0 0 3 3H14" />
+        </>
+      ) : null}
+      {name === 'checklist' ? (
+        <>
+          <path d="m3 6.25 1.5 1.5L7.5 4" />
+          <path d="m3 12.25 1.5 1.5L7.5 10" />
+          <path d="m3 18.25 1.5 1.5L7.5 16" />
+          <path d="M11 6h10M11 12h10M11 18h10" />
+        </>
+      ) : null}
+      {name === 'stack' ? (
+        <>
+          <rect x="3" y="4" width="18" height="4.5" rx="1.5" />
+          <rect x="3" y="9.75" width="18" height="4.5" rx="1.5" />
+          <rect x="3" y="15.5" width="18" height="4.5" rx="1.5" />
+        </>
+      ) : null}
+      {name === 'route' ? (
+        <>
+          <circle cx="5" cy="5" r="2" />
+          <circle cx="19" cy="9" r="2" />
+          <circle cx="19" cy="19" r="2" />
+          <path d="M5 7v10a2 2 0 0 0 2 2h10" />
+          <path d="M5 9h12" />
+        </>
+      ) : null}
+      {name === 'boxes' ? (
+        <>
+          <rect x="3" y="3" width="7.5" height="7.5" rx="2" />
+          <rect x="13.5" y="3" width="7.5" height="7.5" rx="2" />
+          <rect x="3" y="13.5" width="7.5" height="7.5" rx="2" />
+          <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2" />
+        </>
+      ) : null}
+      {name === 'steps' ? <path d="M4 19h5v-5h5V9h5V4" /> : null}
+      {name === 'pipeline' ? (
+        <>
+          <circle cx="5" cy="12" r="2" />
+          <circle cx="12" cy="12" r="2" />
+          <circle cx="19" cy="12" r="2" />
+          <path d="M7 12h3M14 12h3" />
         </>
       ) : null}
     </svg>

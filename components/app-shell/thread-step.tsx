@@ -61,9 +61,7 @@ export function ThreadStep({
       <p className="thread-step-name">
         {step.name}
         {step.label ? (
-          <span className="text-muted text-[12px] font-normal">
-            {step.label}
-          </span>
+          <span className="text-muted text-meta font-normal">{step.label}</span>
         ) : null}
       </p>
       <div className="thread-step-body">{children}</div>

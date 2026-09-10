@@ -39,8 +39,11 @@
 /* Tracked uppercase readouts for legends, sources, modes and states. */
 @utility readout {
   font-family: var(--font-mono);
-  font-size: 11px;
-  line-height: 14px;
+  /* The micro role, in the utility family. Read from --sp-* rather than the
+     theme name because `@theme inline` substitutes those only into generated
+     utilities, never into a hand-written one like this. */
+  font-size: var(--sp-text-micro);
+  line-height: var(--sp-text-micro--lh);
   font-weight: var(--sp-mono-weight);
   /* Not inherited from body: the utility family can differ from the sans. */
   font-feature-settings: var(--sp-mono-features);

@@ -50,9 +50,7 @@ export function SystemCluster({
     // attention count reads as belonging to the cluster it follows rather than
     // the one it precedes.
     <div className="flex items-center gap-2 not-first:ml-2.5">
-      <span className="text-muted text-[11px] tracking-[0.06em] uppercase max-sm:hidden">
-        {label}
-      </span>
+      <span className="readout text-muted max-sm:hidden">{label}</span>
       {/* Overlapped discs, isolated so the hover lift stays a local stack. */}
       <ul className="isolate flex">
         {links.map((link) => (
@@ -65,7 +63,7 @@ export function SystemCluster({
           number rather than living only inside a tooltip. */}
       {attention > 0 ? (
         <span
-          className="text-state-caution data-[freshness=unavailable]:text-state-blocked text-[12px] whitespace-nowrap"
+          className="text-state-caution data-[freshness=unavailable]:text-state-blocked text-meta whitespace-nowrap"
           data-freshness={worst}
         >
           {attention} {attention === 1 ? 'needs' : 'need'} attention

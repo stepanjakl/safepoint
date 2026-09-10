@@ -50,6 +50,27 @@ export const MONO_CHOICE_LABELS: Record<MonoChoice, string> = {
   commit: 'Commit Mono',
 };
 
+/*
+  Two constructions of the same scale, compared live rather than argued about.
+  'base' is the 2px-baseline scale; 'sharp' keeps the dense lower half and
+  pushes the upper half for stronger hierarchy contrast. See the typescale
+  blocks in app/tokens.css.
+*/
+export const TYPESCALES = ['base', 'sharp'] as const;
+
+export type Typescale = (typeof TYPESCALES)[number];
+
+export const DEFAULT_TYPESCALE: Typescale = 'base';
+
+export function isTypescale(value: unknown): value is Typescale {
+  return TYPESCALES.includes(value as Typescale);
+}
+
+export const TYPESCALE_LABELS: Record<Typescale, string> = {
+  base: 'title 17 · display 22',
+  sharp: 'title 18 · display 24, tighter',
+};
+
 export const THEME_CHOICES = ['system', 'light', 'dark'] as const;
 
 export type ThemeChoice = (typeof THEME_CHOICES)[number];
@@ -61,3 +82,4 @@ export function isThemeChoice(value: unknown): value is ThemeChoice {
 export const TYPEFACE_STORAGE_KEY = 'safepoint:typeface';
 export const MONO_STORAGE_KEY = 'safepoint:mono';
 export const THEME_STORAGE_KEY = 'safepoint:theme';
+export const TYPESCALE_STORAGE_KEY = 'safepoint:typescale';

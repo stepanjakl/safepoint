@@ -101,6 +101,11 @@ Weights are 400, 500, and 600 only. Uppercase readouts are always mono; sentence
 
 ### Colour: native Tailwind, stone for surfaces, gray for elements
 
+> **Superseded.** The implemented palette is `zinc` throughout, not `stone` and
+> `gray`. The token architecture below — one `light-dark()` declaration per role,
+> exposed through `@theme inline`, with `data-theme` overriding a subtree — is
+> what shipped. See [`STYLING-SYSTEM.md`](STYLING-SYSTEM.md).
+
 No invented hex values. Semantic tokens map to Tailwind's `stone` (warm, for surfaces and rules) and `gray` (cool, for text and action), so the ground reads as paper and the ink reads as instrument.
 
 | Role | Light | Dark |
@@ -189,6 +194,11 @@ The header is one 48px row: product mark, batch title in display, then mode and 
 The first screen is the outcome strip and list. The detail screen keeps this order: back link and line title, verdict columns stacked with policy first, the margin ledger, values, vertical rail, then closed readiness and evidence disclosures. The reviewer summary is in flow at the end.
 
 ## Structure
+
+> **Superseded for styling.** `globals.css` is now three files: `tokens.css`,
+> `components.css` and `globals.css`, each with one job. The component list below
+> also predates the release-card and process-shell work. See
+> [`STYLING-SYSTEM.md`](STYLING-SYSTEM.md).
 
 ```text
 app/

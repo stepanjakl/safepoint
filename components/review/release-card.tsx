@@ -36,12 +36,11 @@ import { DeltaValue } from './delta';
 const CARD =
   'control-face surface-floating severity-scale @container data-[danger]:border-state-blocked overflow-clip rounded-shell';
 const BODY = 'p-6 @max-card:px-4 @max-card:py-5';
-const TITLE =
-  'text-[25px] leading-[1.2] tracking-[-0.035em] [font-weight:550] [overflow-wrap:anywhere] @max-card:text-[22px]';
-const VERDICT = 'text-primary mt-2 text-body leading-[1.55] text-pretty';
-const RECEIPT_NOTE = 'text-muted mt-1 text-[12px]';
+const TITLE = 'text-display [font-weight:550] [overflow-wrap:anywhere]';
+const VERDICT = 'text-primary mt-2 text-body leading-normal text-pretty';
+const RECEIPT_NOTE = 'text-muted mt-1 text-meta';
 const PILL_STATE =
-  'bg-commit-state text-state-caution rounded-full px-3 py-1.25 text-[13px] font-medium whitespace-nowrap';
+  'bg-commit-state text-state-caution rounded-full px-3 py-1.25 text-dense font-medium whitespace-nowrap';
 
 /*
   Filled rather than outlined: the tab carries its bucket's colour at a weight
@@ -50,22 +49,22 @@ const PILL_STATE =
   as an edge, so the ring is what says "these rows", not the fill weight alone.
 */
 const PILL =
-  'bg-severity-fill text-severity-ink data-[hovered]:bg-severity-fill-strong data-[selected]:bg-severity-fill-strong data-[selected]:shadow-severity-ring data-[focus-visible]:outline-focus inline-flex cursor-pointer items-baseline gap-1.5 rounded-full border-0 px-2.5 py-1 text-[13px] font-medium whitespace-nowrap transition-[background-color,box-shadow] duration-[140ms] ease-out data-[focus-visible]:outline-2 data-[focus-visible]:outline-offset-2 [&_.value]:text-inherit [&_.value]:[font-weight:550]';
+  'bg-severity-fill text-severity-ink data-[hovered]:bg-severity-fill-strong data-[selected]:bg-severity-fill-strong data-[selected]:shadow-severity-ring data-[focus-visible]:outline-focus inline-flex cursor-pointer items-baseline gap-1.5 rounded-full border-0 px-2.5 py-1 text-dense font-medium whitespace-nowrap transition-[background-color,box-shadow] duration-[140ms] ease-out data-[focus-visible]:outline-2 data-[focus-visible]:outline-offset-2 [&_.value]:text-inherit [&_.value]:[font-weight:550]';
 
 // Rows run the full width of the card: the separators are the structure, so
 // they cannot stop short of the edge. The panel pays back the body's padding
 // with a negative margin and each row puts it back as its own inline padding.
 const ROW = 'border-rule-faint shadow-separator-bottom-solid border-b';
 const ROW_BUTTON =
-  'hover:bg-surface-inset focus-visible:outline-focus flex w-full cursor-pointer flex-wrap items-center gap-x-3 gap-y-1.5 px-6 py-3 text-left text-body leading-[1.5] focus-visible:outline-2 focus-visible:-outline-offset-2';
+  'hover:bg-surface-inset focus-visible:outline-focus flex w-full cursor-pointer flex-wrap items-center gap-x-3 gap-y-1.5 px-6 py-3 text-left text-body leading-normal focus-visible:outline-2 focus-visible:-outline-offset-2';
 const ROW_DELTA =
   'text-muted ml-auto inline-flex min-w-0 flex-wrap items-baseline gap-1.5 text-right @max-card:ml-0 @max-card:w-full @max-card:text-left';
 // The reason, as a chip in its row's own severity. Pulled back from the tab's
 // weight: the tabs are the navigation, a reason is an annotation.
 const ROW_REASON =
-  'bg-severity-fill text-severity-annotation rounded-full px-2.5 py-0.75 text-right text-meta leading-[1.4]';
+  'bg-severity-fill text-severity-annotation rounded-full px-2.5 py-0.75 text-right text-meta ';
 const CHIP =
-  'border-rule-default text-muted rounded-full border px-1.75 py-0.5 text-[11px] whitespace-nowrap';
+  'border-rule-default text-muted rounded-full border px-1.75 py-0.5 text-micro whitespace-nowrap';
 
 // Opening the review can name a bucket, an item, or neither. One callback
 // rather than three: every route into the modal is the same operation with a
@@ -95,7 +94,7 @@ function CommitState({ plan }: { plan: ReleasePlan }) {
             ? 'Preview · nothing applied'
             : 'Preview'}
       </span>
-      <span className="text-muted min-w-0 text-[12px] [overflow-wrap:anywhere]">
+      <span className="text-muted text-meta min-w-0 [overflow-wrap:anywhere]">
         {plan.source}
       </span>
     </div>
@@ -142,7 +141,7 @@ function Buckets({
         {segments.map((segment) => (
           <span
             key={segment.disposition}
-            className="bg-severity-bar h-1.5 min-w-2 rounded-[3px] transition-[flex-grow,height] duration-[180ms] ease-out data-[active]:h-2.5"
+            className="bg-severity-bar h-1.5 min-w-2 rounded-full transition-[flex-grow,height] duration-[180ms] ease-out data-[active]:h-2.5"
             data-severity={severityRank(segment.disposition)}
             data-active={segment.disposition === selected || undefined}
             // Grown from the same count that sizes it, so the selected segment
@@ -241,7 +240,7 @@ function BucketPanel({
       {rows.hidden > 0 ? (
         <button
           type="button"
-          className="text-muted hover:bg-surface-inset hover:text-primary focus-visible:outline-focus block min-h-11 w-full cursor-pointer px-6 py-2.5 text-left text-[14px] focus-visible:outline-2 focus-visible:-outline-offset-2"
+          className="text-muted hover:bg-surface-inset hover:text-primary focus-visible:outline-focus text-body block min-h-11 w-full cursor-pointer px-6 py-2.5 text-left focus-visible:outline-2 focus-visible:-outline-offset-2"
           onClick={() => onOpen(disposition)}
         >
           and {rows.hidden} more <span aria-hidden="true">↗</span>
@@ -288,7 +287,7 @@ function EffectRow({
             />
           )}
           {rest.length > 0 ? (
-            <span className="text-muted text-[12px]">
+            <span className="text-muted text-meta">
               +{rest.length} more {rest.length === 1 ? 'change' : 'changes'}
             </span>
           ) : null}
@@ -352,7 +351,7 @@ function Commitment({
         {label}
         <span aria-hidden="true">↗</span>
       </Button>
-      <p className="text-muted min-w-0 text-[12px]">{safety}</p>
+      <p className="text-muted text-meta min-w-0">{safety}</p>
     </div>
   );
 }
@@ -363,7 +362,7 @@ function StaleBanner({ plan }: { plan: ReleasePlan }) {
   return (
     // Above the header, because it invalidates everything below it, counts included.
     <p
-      className="border-state-caution bg-state-caution/8 rounded-t-shell text-dense -mb-px flex items-baseline gap-2.5 border px-4 py-2.5 leading-[1.5]"
+      className="border-state-caution bg-state-caution/8 rounded-t-shell text-dense -mb-px flex items-baseline gap-2.5 border px-4 py-2.5 leading-normal"
       role="status"
     >
       <span
@@ -394,7 +393,7 @@ export function ReleaseCard({
   // Nothing to do is not a card. One muted line in the thread.
   if (state === 'empty') {
     return (
-      <p className="text-muted py-1 text-[13px]">
+      <p className="text-muted text-dense py-1">
         Rule pass produced no changes. Nothing to review.
       </p>
     );
@@ -422,7 +421,7 @@ export function ReleaseCard({
       <article className={CARD} aria-labelledby={headingId}>
         <CommitState plan={plan} />
         <div className={BODY}>
-          <p className="text-body flex items-baseline gap-2.5 leading-[1.55] text-pretty">
+          <p className="text-body flex items-baseline gap-2.5 leading-normal text-pretty">
             <span
               aria-hidden="true"
               className="value text-state-verified shrink-0"

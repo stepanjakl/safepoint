@@ -24,7 +24,7 @@ export function ThreadPage({
         <p className="text-meta text-muted">{eyebrow}</p>
         {/* The batch title is the one editorial line here, per the display
             role in docs/EXPERIENCE-SPEC.md. Everything else stays sans. */}
-        <h1 className="font-display mt-1.5 text-[22px] leading-[1.3] [font-weight:550]">
+        <h1 className="font-display text-display mt-1.5 [font-weight:550]">
           {title}
         </h1>
       </div>
@@ -36,7 +36,7 @@ export function ThreadPage({
 /** What the operator asked for, as the one right-aligned box in the thread. */
 export function RequestBubble({ children }: { children: ReactNode }) {
   return (
-    <div className="border-rule-faint bg-surface-primary ml-auto max-w-[84%] rounded-[12px_12px_2px_12px] border px-4.5 py-3.5 max-sm:max-w-[94%]">
+    <div className="border-rule-faint bg-surface-primary rounded-shell rounded-br-region ml-auto max-w-[84%] border px-4.5 py-3.5 max-sm:max-w-[94%]">
       {children}
     </div>
   );
@@ -53,7 +53,7 @@ export function ResponseSection({
   return (
     <section aria-label="Safepoint response" className="mt-7">
       {children}
-      <p className="text-muted mt-3 text-[12px]">{caption}</p>
+      <p className="text-muted text-meta mt-3">{caption}</p>
     </section>
   );
 }

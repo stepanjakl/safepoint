@@ -11,7 +11,7 @@ const WORDMARK = 'font-brand font-extrabold [font-feature-settings:normal]';
 export function Brand() {
   return (
     <span
-      className={`${WORDMARK} text-meta inline-flex flex-none items-center gap-0.75 rounded-full bg-teal-600 py-0.75 pr-3.75 pl-1.25 leading-6.5 tracking-[0.125em] whitespace-nowrap text-white uppercase forced-colors:border forced-colors:border-[CanvasText]`}
+      className={`${WORDMARK} text-lockup inline-flex flex-none items-center gap-0.75 rounded-full bg-teal-600 py-0.75 pr-3.75 pl-1.25 whitespace-nowrap text-white uppercase forced-colors:border forced-colors:border-[CanvasText]`}
       aria-label="Safepoint"
     >
       <svg
@@ -37,11 +37,11 @@ export function Brand() {
 export function BrandSquare() {
   return (
     <span
-      className={`${WORDMARK} text-primary inline-flex flex-none items-center gap-2.25 text-[15px] leading-none tracking-[0.02em] whitespace-nowrap`}
+      className={`${WORDMARK} text-wordmark text-primary inline-flex flex-none items-center gap-2.25 whitespace-nowrap`}
       aria-label="Safepoint"
     >
       <span
-        className="grid size-6.5 flex-none place-items-center rounded-lg bg-teal-600 text-white forced-colors:border forced-colors:border-[CanvasText]"
+        className="rounded-control grid size-6.5 flex-none place-items-center bg-teal-600 text-white forced-colors:border forced-colors:border-[CanvasText]"
         aria-hidden="true"
       >
         <svg viewBox="0 0 32 32" fill="none" className="size-6">
