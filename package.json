@@ -16,9 +16,11 @@
     "typecheck": "next typegen && tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "check:rail": "node scripts/check-rail-alignment.ts"
   },
   "dependencies": {
+    "@mingcute/react": "^3.0.2",
     "@outpacelabs/avatars": "^0.6.0",
     "@phosphor-icons/react": "^2.1.10",
     "@remixicon/react": "^4.9.0",
@@ -27,6 +29,12 @@
     "geist": "1.7.2",
     "motion": "^13.2.0",
     "next": "16.3.4",
+    "nucleo-arcade": "^1.0.2",
+    "nucleo-credit-cards": "^1.0.4",
+    "nucleo-flags": "^1.1.4",
+    "nucleo-glass": "^1.4.1",
+    "nucleo-isometric": "^1.1.1",
+    "nucleo-social-media": "^1.0.3",
     "react": "19.2.8",
     "react-aria-components": "1.21.0",
     "react-dom": "19.2.8",

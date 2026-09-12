@@ -12,20 +12,23 @@ import {
 } from 'react';
 import { BrandSquare } from '@/components/ui/brand';
 import { GradientAvatar } from '@outpacelabs/avatars';
-import {
-  IconArrowsSort,
-  IconBinaryTree,
-  IconChevronLeft,
-  IconChevronRight,
-  IconDotsFilled,
-  IconGripVertical,
-  IconInfoCircle,
-  IconPlus,
-  IconSearch,
-} from '@tabler/icons-react';
+// Deep imports: Blode's barrel is the whole ~4000-icon library and is not on
+// Next's `optimizePackageImports` list, so the subpath export is what keeps the
+// sidebar from compiling the entire set.
+import ChevronLeft from 'blode-icons-react/icons/chevron-left';
+import ChevronRight from 'blode-icons-react/icons/chevron-right';
+import CircleInfo from 'blode-icons-react/icons/circle-info';
+import CodeTree from 'blode-icons-react/icons/code-tree';
+import CodeTreeFilled from 'blode-icons-react/icons/code-tree-filled';
+import DotGrid1x3HorizontalFilled from 'blode-icons-react/icons/dot-grid-1x3-horizontal-filled';
+import DotGrid2x3Filled from 'blode-icons-react/icons/dot-grid-2x3-filled';
+import MagnifyingGlass from 'blode-icons-react/icons/magnifying-glass';
+import PlusMedium from 'blode-icons-react/icons/plus-medium';
+import SortArrowUpDown from 'blode-icons-react/icons/sort-arrow-up-down';
 import { motion, useReducedMotion } from 'motion/react';
 import { cx } from '@/lib/cx';
 import { Glyph } from '@/components/ui/glyph';
+import { ICON_QUIET, ICON_SHAPE } from '@/components/ui/button';
 import { OverflowTooltip, Tooltip } from '@/components/ui/tooltip';
 import {
   moveProcess,
@@ -69,14 +72,81 @@ const MENU_CHEVRON_BOX = 'rail-mark inline-grid flex-none place-items-center';
   and wrapping those would cost more than it saves.
 */
 
-// Quiet square icon button. Inside a section heading it also answers to the
-// heading's hover, which is why that tint is a named group variant: an icon
-// button elsewhere in the sidebar must not pick it up.
-const ICON_BUTTON_SHAPE =
-  'text-muted transition-colors duration-150 motion-reduce:transition-none inline-grid size-7.5 flex-none cursor-pointer place-items-center rounded-control p-0 aria-disabled:cursor-default';
-const ICON_BUTTON_QUIET =
-  'hover:bg-surface-selected hover:text-primary group-hover/heading:bg-menu-wash-faint group-hover/heading:text-primary group-focus-within/heading:bg-menu-wash-faint group-focus-within/heading:text-primary';
+// Quiet square icon button: the shared shape and face, at the sidebar's size.
+// Inside a section heading it also answers to the heading's hover, which is
+// why that tint is a named group variant -- an icon button elsewhere in the
+// sidebar must not pick it up.
+const ICON_BUTTON_SHAPE = `${ICON_SHAPE} rail-mark size-7.5`;
+const ICON_BUTTON_QUIET = `${ICON_QUIET} group-hover/heading:bg-menu-wash-faint group-hover/heading:text-primary group-focus-within/heading:bg-menu-wash-faint group-focus-within/heading:text-primary`;
 const ICON_BUTTON = `${ICON_BUTTON_SHAPE} ${ICON_BUTTON_QUIET}`;
+
+/*
+  The platform is fixed for the life of the document, so this store has nothing
+  to publish and its subscribe is a no-op that never fires. It exists only to
+  give useSyncExternalStore a server snapshot and a client one.
+*/
+const subscribeNothing = () => () => {};
+const serverModifierKey = () => '⌘';
+const readModifierKey = () =>
+  /mac|iphone|ipad|ipod/i.test(
+    (navigator as Navigator & { userAgentData?: { platform?: string } })
+      .userAgentData?.platform ??
+      navigator.platform ??
+      '',
+  )
+    ? '⌘'
+    : 'Ctrl';
+
+/*
+  Every state in which the field paints its own face, which is every state in
+  which the key would otherwise vanish into it: the resting keycap face and the
+  lit field face are the same value, so the key has to step whenever the field
+  does -- not only under the pointer. Focus is the case that exposed it.
+
+  Three variants carrying one value, so nothing depends on the order Tailwind
+  emits them in. The utility keeps the house -hover suffix, which already means
+  the engaged step rather than the pointer literally (control-quiet-hover is
+  spent on data-[pressed] too).
+*/
+const SEARCH_KEYCAP_LIT =
+  'group-hover:surface-keycap-hover group-focus-within:surface-keycap-hover group-has-[input:not(:placeholder-shown)]:surface-keycap-hover';
+
+/*
+  The keycap face, shared by the search field's shortcut and every row's status
+  badge so the two read as one kind of object and cannot drift apart: the face,
+  the pill, the height and the utility type. Only what each lights with, and how
+  wide each is, differs.
+
+  A pill rather than a badge-step corner, and the mono family, because both
+  hold something the reader matches rather than reads as prose -- a shortcut
+  to press, a count to compare. The search key dims with its field, because
+  the label's disabled rule covers everything inside it.
+*/
+const KEYCAP_FACE =
+  'control-face surface-keycap rounded-full text-micro font-mono inline-flex h-5 flex-none items-center justify-center [font-weight:var(--sp-mono-weight-strong)] select-none';
+
+const SEARCH_KEYCAP = `${KEYCAP_FACE} ${SEARCH_KEYCAP_LIT} group-focus-within:opacity-0 rail-mark min-w-menu-rail px-1.75 tracking-widest`;
+
+/*
+  A row's badge steps with its row for the same reason the search key steps with
+  its field: the current row's face and the keycap's resting face are the same
+  value, and the hover wash is close to it, so a key that only answered its own
+  pointer would vanish into the row exactly when the row lit.
+*/
+const ROW_BADGE_LIT =
+  'group-hover/row:surface-keycap-hover group-focus-within/row:surface-keycap-hover group-data-[current]/row:surface-keycap-hover';
+
+/*
+  One fixed box for every badge -- a rail cell wide, the keycap's height -- so a
+  two-digit count does not widen its row's badge past its neighbours', and the
+  cell stays centred on the trailing axis. The tone colours the glyph and count.
+*/
+const ROW_BADGE = cx(
+  KEYCAP_FACE,
+  ROW_BADGE_LIT,
+  'process-menu-row-end rail-mark w-menu-rail relative z-1 cursor-help gap-1 px-0 tabular-nums',
+  'text-muted data-[tone=blocked]:text-state-blocked data-[tone=caution]:text-state-caution data-[tone=verified]:text-state-verified',
+);
 
 /*
   A process name, in the row or in the rename field. Truncates rather than
@@ -88,7 +158,7 @@ const ICON_BUTTON = `${ICON_BUTTON_SHAPE} ${ICON_BUTTON_QUIET}`;
   finished sliding in.
 */
 const MENU_LABEL =
-  'text-menu-link group-hover/row:text-primary group-focus-within/row:text-primary transition-colors duration-150 motion-reduce:transition-none group-data-[current]/row:text-primary block min-w-0 truncate rounded-control py-2.75 pr-0 pl-2.5 text-dense font-semibold no-underline';
+  'text-menu-link group-hover/row:text-primary group-focus-within/row:text-primary control-wash group-data-[current]/row:text-primary block min-w-0 truncate rounded-control py-2.75 pr-0 pl-2.5 text-dense font-semibold no-underline select-none';
 
 /*
   The reorder handle and its non-interactive preview share one box, so the label
@@ -101,7 +171,7 @@ const MENU_LABEL =
   class: there is no frame on which the old value was ever applied.
 */
 const GRIP_BOX =
-  'rounded-section grid h-8 w-6 flex-none place-items-center border-[1.5px] border-transparent transition-[color,border-color] duration-(--duration-state) motion-reduce:transition-none';
+  'control-wash rounded-section grid h-8 w-6 flex-none place-items-center border-menu-edge border-transparent';
 
 /*
   Two weights. The preview -- what the Arrange button shows on hover -- is the
@@ -116,20 +186,23 @@ const GRIP_PREVIEW = `${GRIP_BOX} text-muted pointer-events-none opacity-55`;
   list. Keyboard focus is left to the global :focus-visible outline rather than
   restyled, so it stays the same indicator as everywhere else.
 */
-const GRIP_HANDLE = `${GRIP_BOX} text-muted hover:text-primary focus-visible:text-primary group-data-[dragging]/row:border-rule-strong group-data-[dragging]/row:text-primary group-data-[dragging]/row:cursor-grabbing cursor-grab touch-none`;
-
-// The width the handle occupies, and the row gap it has to cancel while it has
-// no width at all, so a row with no handle is no wider than it used to be.
-const GRIP_WIDTH = 24;
-const GRIP_GAP = 4;
+const GRIP_HANDLE = `${GRIP_BOX} text-muted hover:text-primary focus-visible:text-primary group-data-[dragging]/row:text-primary group-data-[dragging]/row:cursor-grabbing cursor-grab touch-none`;
 
 /*
-  The row box, shared by the workspace item and by `.process-menu-row` in
-  app/components.css. The two panes have to agree on height and on both insets
-  or the eye jumps as the menu slides between them; the transparent edge is
-  carried here for the same reason it is carried on every process row, so a row
-  that gains a visible edge does not shift its label to make room for it.
+  One rail cell, the same leading column the brand mark, a row's icon, the
+  notice and the avatar all sit in -- in arrange mode the handle is the row's
+  leading icon, so it belongs on that axis rather than in a box of its own
+  size. Named here because motion animates the width from JS and cannot read
+  --spacing-menu-rail; this is the same JS-to-CSS duplication ROW_HEIGHT makes,
+  in the same direction, and the checker is what keeps the two honest.
+
+  GRIP_GAP is the row's own gap, cancelled while the cell has no width at all
+  so a row with no handle is no wider than it used to be.
 */
+const RAIL_CELL = 34;
+const GRIP_WIDTH = RAIL_CELL;
+const GRIP_GAP = 4;
+
 /*
   The leading cell of every band. Its icon centres inside it, so the brand mark,
   a menu item's icon, the notice icon and the avatar all land on the rail's
@@ -137,6 +210,29 @@ const GRIP_GAP = 4;
   the box, not by arithmetic on each glyph.
 */
 const MENU_RAIL = 'rail-mark w-menu-rail grid flex-none place-items-center';
+
+/*
+  The tile behind the workspace menu's Processes icon, and the two glyphs it
+  cross-fades between. At rest the tile is a raised face around the outline;
+  while the item is hovered or focused the face fades to bare and the filled
+  glyph fades in over the outline.
+
+  Each timing belongs to the element it moves. control-face transitions the
+  tile's stops, so the tile carries no transition utility of its own -- one
+  here would replace control-face's property list and leave the face to snap.
+  The glyphs are plain elements and take control-wash, the same step and curve.
+
+  Both glyphs share one grid cell, so the swap moves nothing. An even box, so
+  it centres on the rail's integer axis.
+*/
+const MENU_TILE =
+  'control-face surface-menu-tile group-hover/enter:surface-menu-tile-hover group-focus-visible/enter:surface-menu-tile-hover rounded-control grid size-7 flex-none place-items-center';
+const MENU_TILE_GLYPH =
+  'control-wash text-menu-tile-glyph col-start-1 row-start-1 size-4.5 flex-none';
+const MENU_TILE_GLYPH_AT_REST =
+  'group-hover/enter:opacity-0 group-focus-visible/enter:opacity-0';
+const MENU_TILE_GLYPH_ENGAGED =
+  'opacity-0 group-hover/enter:opacity-100 group-focus-visible/enter:opacity-100';
 
 /*
   The title row that leads with a chevron. Symmetric padding and no edge of its
@@ -159,9 +255,7 @@ type Drag = {
 };
 
 function Grip() {
-  return (
-    <IconGripVertical aria-hidden fill="currentColor" size={20} stroke="none" />
-  );
+  return <DotGrid2x3Filled aria-hidden size={20} />;
 }
 
 export function ProcessMenu({
@@ -212,11 +306,39 @@ export function ProcessMenu({
   const [drag, setDrag] = useState<Drag | null>(null);
   const dragRef = useRef<Drag | null>(null);
   const handles = useRef(new Map<string, HTMLButtonElement>());
+  // One stable ref object per row, which the row's status tooltip positions
+  // against. State rather than a ref so render can read the map; the objects
+  // inside it are mutated by the rows' ref callbacks, never replaced.
+  const [rowAnchors] = useState(
+    () => new Map<string, { current: HTMLLIElement | null }>(),
+  );
+  const rowAnchor = (id: string) => {
+    let anchor = rowAnchors.get(id);
+    if (!anchor) {
+      anchor = { current: null };
+      rowAnchors.set(id, anchor);
+    }
+    return anchor;
+  };
   const focusHandle = useRef<string | null>(null);
   const backRef = useRef<HTMLButtonElement>(null);
   const enterRef = useRef<HTMLButtonElement>(null);
   const editRef = useRef<HTMLButtonElement>(null);
   const focusLevel = useRef(false);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const focusSearch = useRef(false);
+  /*
+    ⌘ on Apple platforms, Ctrl everywhere else. Read through the store rather
+    than set from an effect: the platform cannot change while the document is
+    open, so there is nothing to subscribe to, and this is the one shape that
+    lets the server and the client render different values without either a
+    hydration mismatch or a second render.
+  */
+  const modifier = useSyncExternalStore(
+    subscribeNothing,
+    readModifierKey,
+    serverModifierKey,
+  );
   // The scrolling list, and the two values a drag has to keep reading off it.
   const scrollRef = useRef<HTMLDivElement>(null);
   const pointerY = useRef(0);
@@ -228,6 +350,31 @@ export function ProcessMenu({
     });
     focusLevel.current = false;
   }, [level]);
+  // The field lives in the processes level, which is inert while the workspace
+  // level is showing, so a jump from there has to land after the swap.
+  useLayoutEffect(() => {
+    if (!focusSearch.current) return;
+    searchRef.current?.focus({ preventScroll: true });
+    focusSearch.current = false;
+  }, [level]);
+  useEffect(() => {
+    function jumpToSearch(event: KeyboardEvent) {
+      if (event.key !== 'k' && event.key !== 'K') return;
+      if (event.altKey || !(event.metaKey || event.ctrlKey)) return;
+      // Arranging disables the field. Leave the key to the browser rather than
+      // swallowing it to do nothing.
+      if (customising) return;
+      event.preventDefault();
+      if (level === 'processes') {
+        searchRef.current?.focus({ preventScroll: true });
+        return;
+      }
+      focusSearch.current = true;
+      setLevel('processes');
+    }
+    document.addEventListener('keydown', jumpToSearch);
+    return () => document.removeEventListener('keydown', jumpToSearch);
+  }, [level, customising]);
   useLayoutEffect(() => {
     const id = focusHandle.current;
     if (id !== null) {
@@ -377,9 +524,8 @@ export function ProcessMenu({
 
   return (
     <aside
-      className="process-menu-fade max-shell:px-2 max-shell:py-2.5 shell:px-menu-fade shell:h-full shell:min-h-0 shell:overflow-hidden relative flex min-w-0 flex-col"
+      className="max-shell:px-2 max-shell:py-2.5 shell:px-menu-fade shell:h-full shell:min-h-0 shell:overflow-hidden relative flex min-w-0 flex-col"
       aria-label="Workspace navigation"
-      data-level={level}
     >
       {/* Alignment guides; the design pane's Debug folder switches them on. */}
       <div className="rail-axis" aria-hidden="true" />
@@ -394,14 +540,17 @@ export function ProcessMenu({
         is done by the box rather than by arithmetic on each glyph.
       */}
       <div
-        // pl-1 is (rail - mark) / 2. The lockup glues its mark to its wordmark,
-        // so the mark cannot sit in a rail cell of its own and the row carries
-        // the offset instead.
-        className="flex flex-none items-center justify-between gap-2 pt-1 pr-2 pb-4 pl-1"
+        // Both ends sit on a rail axis. The trailing one gets a rail cell and
+        // so needs nothing from this row; the leading one cannot have a cell of
+        // its own, because the lockup glues the mark to its wordmark, so it
+        // carries the offset instead -- and that offset is -1px, not a positive
+        // inset: (rail - mark) / 2 where the mark is 36px and the rail 34, so
+        // it overhangs the content edge rather than clearing it.
+        className="flex flex-none items-center justify-between gap-2 pt-1 pr-0 pb-4 pl-0"
       >
-        <BrandSquare markClassName="rail-mark" />
+        <BrandSquare markClassName="rail-mark -ml-px" />
         <div
-          className="ease-out-emphasized flex flex-none items-center gap-0.75 transition-[translate,opacity] duration-(--duration-pane) data-[level=workspace]:pointer-events-none data-[level=workspace]:translate-x-4 data-[level=workspace]:opacity-0 motion-reduce:transition-none"
+          className="ease-out-emphasized flex flex-none items-center gap-0.75 transition-[translate,opacity] duration-(--duration-pane) data-[level=workspace]:pointer-events-none data-[level=workspace]:translate-x-4 data-[level=workspace]:opacity-0"
           data-level={level}
           inert={level !== 'processes'}
           aria-hidden={level !== 'processes'}
@@ -416,43 +565,48 @@ export function ProcessMenu({
               <MenuIcon name="plus" />
             </button>
           </Tooltip>
-          <Tooltip label={customising ? 'Save order' : 'Arrange processes'}>
-            <button
-              ref={editRef}
-              type="button"
-              className={cx(
-                ICON_BUTTON_SHAPE,
-                // The one accented control in the sidebar, and only while
-                // arranging: it is the way back out of the mode. It takes its
-                // own face instead of the quiet hover, not as well as it --
-                // the two would fight over the same background.
-                customising
-                  ? 'control-face control-commit hover:control-commit-hover text-white'
-                  : ICON_BUTTON_QUIET,
-              )}
-              aria-label={customising ? 'Save order' : 'Arrange processes'}
-              aria-pressed={customising}
-              onMouseEnter={() => setPreviewHandles(true)}
-              onMouseLeave={() => setPreviewHandles(false)}
-              onFocus={() => setPreviewHandles(true)}
-              onBlur={() => setPreviewHandles(false)}
-              onClick={() => {
-                if (customising) finishCustomising();
-                else {
-                  setQuery('');
-                  setLevel('processes');
-                  setDraft(savedOrder);
-                }
-              }}
-            >
-              {/*
+          <span className={MENU_RAIL}>
+            <Tooltip label={customising ? 'Save order' : 'Arrange processes'}>
+              <button
+                ref={editRef}
+                type="button"
+                className={cx(
+                  ICON_BUTTON_SHAPE,
+                  // The one accented control in the sidebar, and only while
+                  // arranging: it is the way back out of the mode. It takes its
+                  // own face instead of the quiet hover, not as well as it --
+                  // the two would fight over the same background.
+                  // No transition utility on this branch: control-face owns
+                  // the timing, and a `transition-colors` alongside it would
+                  // win the property list and leave the face and ring to snap.
+                  customising
+                    ? 'control-face control-commit hover:control-commit-hover text-white'
+                    : ICON_BUTTON_QUIET,
+                )}
+                aria-label={customising ? 'Save order' : 'Arrange processes'}
+                aria-pressed={customising}
+                onMouseEnter={() => setPreviewHandles(true)}
+                onMouseLeave={() => setPreviewHandles(false)}
+                onFocus={() => setPreviewHandles(true)}
+                onBlur={() => setPreviewHandles(false)}
+                onClick={() => {
+                  if (customising) finishCustomising();
+                  else {
+                    setQuery('');
+                    setLevel('processes');
+                    setDraft(savedOrder);
+                  }
+                }}
+              >
+                {/*
                   One glyph in both states. The button is a toggle and says so
                   through aria-pressed and its own label; swapping in a tick
                   would only repeat the brand mark two elements to the left.
                 */}
-              <MenuIcon name="arrange" />
-            </button>
-          </Tooltip>
+                <MenuIcon name="arrange" />
+              </button>
+            </Tooltip>
+          </span>
         </div>
       </div>
       {/*
@@ -466,17 +620,20 @@ export function ProcessMenu({
         processes column, so it leaves on the pane's transform -- the same
         movement, at the same moment, and nothing about its own box changes.
       */}
+      {/* The side fades live here rather than on the aside: only the panes
+          travel, and the brand row above must not sit under a gradient. */}
       <nav
-        className="shell:-mx-menu-fade shell:min-h-0 shell:flex-1 min-w-0"
+        className="process-menu-fade shell:-mx-menu-fade shell:min-h-0 shell:flex-1 relative min-w-0"
         aria-label={level === 'processes' ? 'Processes' : 'Workspace'}
+        data-level={level}
       >
         <div className="shell:h-full overflow-clip">
           <div
-            className="ease-out-emphasized shell:h-full grid w-[200%] translate-x-0 grid-cols-2 items-start transition-transform duration-(--duration-pane) data-[level=processes]:-translate-x-1/2 motion-reduce:transition-none"
+            className="ease-out-emphasized shell:h-full grid w-[200%] translate-x-0 grid-cols-2 items-start transition-transform duration-(--duration-pane) data-[level=processes]:-translate-x-1/2"
             data-level={level}
           >
             <div
-              className="ease-out-emphasized max-shell:px-1 shell:px-menu-fade shell:h-full shell:min-h-0 flex min-w-0 flex-col py-1 opacity-100 transition-opacity duration-(--duration-pane) aria-hidden:opacity-0 motion-reduce:transition-none"
+              className="ease-out-emphasized max-shell:px-1 shell:px-menu-fade shell:h-full shell:min-h-0 flex min-w-0 flex-col py-1 opacity-100 transition-opacity duration-(--duration-pane) aria-hidden:opacity-0"
               inert={level !== 'workspace'}
               aria-hidden={level !== 'workspace'}
             >
@@ -487,19 +644,22 @@ export function ProcessMenu({
                   // No transparent edge here, unlike a process row: the rail
                   // has to start at the band's own left edge for its midpoint
                   // to be the same axis every other band centres on.
-                  'rounded-control hover:bg-menu-wash hover:text-primary focus-visible:text-primary mt-2 flex h-10 w-full cursor-pointer items-center gap-1.5 pr-1.75 text-left transition-colors duration-150 motion-reduce:transition-none',
+                  'group/enter rounded-control hover:bg-menu-wash hover:text-primary focus-visible:text-primary control-wash mt-2 flex h-10 w-full items-center gap-1.5 pr-1.75 text-left',
                 )}
                 type="button"
                 onClick={() => navigate('processes')}
               >
                 <span className={MENU_RAIL}>
-                  {/* Both axes and flex-none: a width alone left the glyph
-                      squarish-but-not-square and let the flex row compress it
-                      whenever the label and the count needed the space. */}
-                  <MenuIcon
-                    name="processes"
-                    className="text-muted size-4.5 flex-none"
-                  />
+                  <span className={MENU_TILE}>
+                    <MenuIcon
+                      name="processes"
+                      className={cx(MENU_TILE_GLYPH, MENU_TILE_GLYPH_AT_REST)}
+                    />
+                    <MenuIcon
+                      name="processesFilled"
+                      className={cx(MENU_TILE_GLYPH, MENU_TILE_GLYPH_ENGAGED)}
+                    />
+                  </span>
                 </span>
                 <span>Processes</span>
                 <span className="bg-menu-chip text-muted text-micro rounded-control ml-auto inline-grid h-5.5 min-w-5.5 place-items-center px-1.25 tabular-nums">
@@ -515,24 +675,32 @@ export function ProcessMenu({
               </button>
             </div>
             <div
-              className="ease-out-emphasized max-shell:px-1 shell:px-menu-fade shell:h-full shell:min-h-0 flex min-w-0 flex-col py-1 opacity-100 transition-opacity duration-(--duration-pane) aria-hidden:opacity-0 motion-reduce:transition-none"
+              className="ease-out-emphasized max-shell:px-1 shell:px-menu-fade shell:h-full shell:min-h-0 flex min-w-0 flex-col py-1 opacity-100 transition-opacity duration-(--duration-pane) aria-hidden:opacity-0"
               inert={level !== 'processes'}
               aria-hidden={level !== 'processes'}
             >
               {/* Fixed chrome of this level: the field, its rule, and the
                   title. Only the list under them scrolls. */}
-              <label className="group border-field-edge bg-field-face text-muted rounded-control ease-out-emphasized focus-within:border-field-edge-active hover:border-field-edge-hover flex h-9 items-center gap-2 border-[1.5px] pr-2.5 pl-1.75 transition-[border-color] duration-(--duration-state) has-[input:disabled]:opacity-65 motion-reduce:transition-none focus-within:forced-colors:outline-2 focus-within:forced-colors:outline-offset-2 focus-within:forced-colors:outline-[Highlight]">
-                <span className="rail-mark inline-grid flex-none place-items-center">
+              <label className="menu-search-field group flex h-9 items-center gap-2 pl-1.75">
+                {/*
+                    An even-width box, though the glyph in it is 17px. A box of
+                    odd width centres on a half pixel wherever it is placed, so
+                    it can never sit on an integer axis -- which is the whole
+                    reason the rail cells elsewhere carry a width of their own
+                    rather than shrink-wrapping their glyph.
+                  */}
+                <span className="rail-mark inline-grid w-4.5 flex-none place-items-center">
                   <MenuIcon
                     name="search"
-                    className="ease-out-emphasized group-focus-within:text-primary size-4.25 flex-none transition-colors duration-(--duration-state) motion-reduce:transition-none"
+                    className="control-wash size-4.25 flex-none"
                     strokeWidth={2}
                   />
                 </span>
                 <span className="sr-only">Search processes</span>
                 <input
+                  ref={searchRef}
                   type="search"
-                  className="text-primary placeholder:text-muted text-meta min-h-8.5 w-full min-w-0 border-none bg-transparent outline-none"
+                  className="text-primary text-meta min-h-menu-rail w-full min-w-0 border-none bg-transparent font-medium outline-none"
                   placeholder={
                     customising
                       ? 'Finish arranging to search'
@@ -540,8 +708,14 @@ export function ProcessMenu({
                   }
                   value={query}
                   disabled={customising}
+                  /* The shortcut belongs on the control it reaches, not in its
+                     name: the keycap below is the sighted half of this. */
+                  aria-keyshortcuts="Meta+K Control+K"
                   onChange={(event) => setQuery(event.target.value)}
                 />
+                <kbd className={SEARCH_KEYCAP} aria-hidden="true">
+                  {modifier}K
+                </kbd>
               </label>
               <div
                 className="border-rule-faint mt-3.5 border-t"
@@ -553,7 +727,7 @@ export function ProcessMenu({
                 className={cx(
                   MENU_TITLE,
                   MENU_BACK_BOX,
-                  'hover:bg-menu-wash-strong hover:text-primary focus-visible:text-primary flex w-full cursor-pointer items-center transition-colors duration-150 motion-reduce:transition-none mt-2',
+                  'hover:bg-menu-wash-strong hover:text-primary focus-visible:text-primary control-wash mt-2 flex w-full items-center',
                 )}
                 aria-label="Back to workspace menu"
                 onClick={() => navigate('workspace')}
@@ -629,6 +803,9 @@ export function ProcessMenu({
                       return (
                         <li
                           key={id}
+                          ref={(element) => {
+                            rowAnchor(id).current = element;
+                          }}
                           className="process-menu-row group/row"
                           data-current={current === item.href || undefined}
                           data-editing={customising || undefined}
@@ -644,7 +821,7 @@ export function ProcessMenu({
                         inside it while it is open.
                       */}
                           <motion.div
-                            className="grid flex-none place-items-center overflow-hidden"
+                            className="process-menu-row-start rail-mark grid flex-none place-items-center overflow-hidden"
                             initial={false}
                             animate={{
                               width: showGrip ? GRIP_WIDTH : 0,
@@ -731,6 +908,10 @@ export function ProcessMenu({
                           <Tooltip
                             label={item.name}
                             placement="right"
+                            // Placed against the row, not the badge: the
+                            // default gap is then measured from the row's
+                            // edge, with no inset arithmetic to go stale.
+                            triggerRef={rowAnchor(id)}
                             content={
                               <ProcessStatusContent status={item.status} />
                             }
@@ -739,7 +920,7 @@ export function ProcessMenu({
                               tabIndex={0}
                               role="img"
                               aria-label={`${item.name}: ${item.status.label}, ${item.status.totalLabel}`}
-                              className="text-muted data-[tone=blocked]:text-state-blocked data-[tone=caution]:text-state-caution data-[tone=verified]:text-state-verified text-micro rounded-section relative z-1 inline-flex min-h-7 min-w-8.5 flex-none cursor-help items-center justify-center gap-1 px-1.25 font-semibold tabular-nums forced-colors:border forced-colors:border-[CanvasText]"
+                              className={ROW_BADGE}
                               data-tone={item.status.tone}
                             >
                               <Glyph
@@ -780,19 +961,14 @@ export function ProcessMenu({
         </div>
       </nav>
       <div className="max-shell:gap-2.5 max-shell:pt-3 mt-auto grid flex-none gap-3.5 pt-2">
-        {/* Icon shares row one with the title; the caption sits under it. */}
-        <div className="control-face surface-notice shadow-control-highlight-medium-hairline bg-notice-face text-state-advisory max-shell:py-2.25 text-micro rounded-shell grid grid-cols-[auto_1fr] items-center gap-x-1.5 border py-3 pr-3 pl-0 leading-normal forced-colors:border-[CanvasText]">
-          {/* -ml-px cancels the card's own 1px edge, so the rail starts where
-              every other band's rail starts. */}
-          <span className={cx(MENU_RAIL, '-ml-px')}>
-            <MenuIcon name="info" />
-          </span>
-          <p className="text-micro font-semibold">Demo application</p>
-          <span className="text-notice-caption text-micro col-start-2 mt-0.75 font-medium">
-            Fictional data. No live changes.
-          </span>
-        </div>
-        <div className="border-rule-faint max-shell:pt-2.5 flex items-center justify-between gap-1.5 border-t pt-3.5 pr-1.75 pl-0">
+        <SidebarNotice />
+        {/*
+          Both ends are rail cells now, so the row states no offsets of its own:
+          the avatar fills the leading cell and the settings button centres in
+          the trailing one. The 2px that used to sit in `pr-0.5` was (rail -
+          button) / 2 worked out by hand; the cell does that arithmetic itself.
+        */}
+        <div className="border-rule-faint max-shell:pt-2.5 flex items-center justify-between gap-1.5 border-t pt-3.5 pr-0 pl-0">
           <span
             role="img"
             aria-label="Maya’s demo avatar"
@@ -800,24 +976,73 @@ export function ProcessMenu({
           >
             <GradientAvatar
               seed="safepoint-maya"
-              size={34}
+              size={RAIL_CELL}
               colors={AVATAR_COLORS}
             />
           </span>
           <p className="text-primary text-dense mr-auto font-semibold">Maya</p>
-          <Tooltip label="Settings">
-            <button
-              type="button"
-              className={ICON_BUTTON}
-              aria-label="Settings"
-              aria-disabled="true"
-            >
-              <MenuIcon name="more" />
-            </button>
-          </Tooltip>
+          <span className={MENU_RAIL}>
+            <Tooltip label="Settings">
+              <button
+                type="button"
+                className={ICON_BUTTON}
+                aria-label="Settings"
+                aria-disabled="true"
+              >
+                <MenuIcon name="more" />
+              </button>
+            </Tooltip>
+          </span>
         </div>
       </div>
     </aside>
+  );
+}
+
+/*
+  The sidebar's standing advisory, and the block whose whole definition is
+  worth reading at once. Its classes are grouped by what each group decides --
+  the face it borrows, the box it draws, the type it sets -- rather than left
+  in the order a sorter happened to leave them. Each group is a complete string
+  literal, so Tailwind's plain-text scanner still reads every class in it, and
+  the name is a definition the editor can jump to from the call site.
+
+  Two properties that used to be stated here are gone, because in both cases
+  something else already owned them and won.
+
+  `border` was never doing anything: `control-face` declares the whole
+  shorthand, and Tailwind emits it after the plain `border` utility, so the
+  width, style and colour were always control-face's.
+
+  Neither is there a forced-colors border. The fallback at the foot of
+  globals.css sits outside every cascade layer, and unlayered normal
+  declarations outrank layered ones whatever their specificity, so
+  `.control-face { border-color: currentColor }` beat the variant utility that
+  was written here. The edge is globals.css's to set.
+*/
+const NOTICE_BOX = cx(
+  // The face: control-face's geometry, the notice's own stops, its sheen.
+  'control-face surface-notice shadow-control-highlight-medium-hairline bg-notice-face',
+  // The box: the rail column and the text column, tighter below the shell
+  // breakpoint. `max-shell:py-2.25` is the only responsive rule in the block.
+  'rounded-shell grid grid-cols-[auto_1fr] items-center gap-x-1.5 py-3 pr-3 pl-0 max-shell:py-2.25',
+  // The type. `leading-normal` is the box's own; both text children re-assert
+  // `text-micro` and so carry micro's tighter 14px line instead.
+  'text-state-advisory text-micro leading-normal',
+);
+
+// Icon shares row one with the title; the caption sits under it.
+function SidebarNotice() {
+  return (
+    <div className={NOTICE_BOX}>
+      <span className={cx(MENU_RAIL, 'process-menu-notice-rail')}>
+        <MenuIcon name="info" />
+      </span>
+      <p className="text-micro font-semibold">Demo application</p>
+      <span className="text-notice-caption text-micro col-start-2 mt-0.75 font-medium">
+        Fictional data. No live changes.
+      </span>
+    </div>
   );
 }
 
@@ -892,20 +1117,21 @@ const AVATAR_COLORS = ['#0d9488', '#22d3ee', '#0284c7', '#3f3f46', '#5eead4'];
 type MenuIconName = keyof typeof MENU_ICONS;
 
 /*
-  Every glyph in the menu comes from Tabler, the same library the system and
+  Every glyph in the menu comes from Blode, the same library the system and
   destination icons already use. Nothing here is drawn by hand: a one-off path
   drifts from the set's optical weight the moment the set is updated, and the
   menu sits directly beside those system icons.
 */
 const MENU_ICONS = {
-  plus: IconPlus,
-  arrange: IconArrowsSort,
-  search: IconSearch,
-  processes: IconBinaryTree,
-  left: IconChevronLeft,
-  right: IconChevronRight,
-  more: IconDotsFilled,
-  info: IconInfoCircle,
+  plus: PlusMedium,
+  arrange: SortArrowUpDown,
+  search: MagnifyingGlass,
+  processes: CodeTree,
+  processesFilled: CodeTreeFilled,
+  left: ChevronLeft,
+  right: ChevronRight,
+  more: DotGrid1x3HorizontalFilled,
+  info: CircleInfo,
 } as const;
 
 function MenuIcon({
@@ -919,6 +1145,11 @@ function MenuIcon({
 }) {
   const Icon = MENU_ICONS[name];
   return (
-    <Icon aria-hidden className={className} size={18} stroke={strokeWidth} />
+    <Icon
+      aria-hidden
+      className={className}
+      size={18}
+      strokeWidth={strokeWidth}
+    />
   );
 }

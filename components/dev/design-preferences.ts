@@ -143,6 +143,60 @@ export function setMotionSpeed(next: MotionSpeed) {
 }
 
 /*
+  Neutral palettes. Every neutral role in tokens.css reads a step from a ramp
+  rather than from zinc directly, and these two attributes rebind the ramps:
+  data-neutral for surfaces, rules, text and menus, and data-control-neutral
+  for the faces that answer a press -- buttons, fields, keycaps and the badges
+  built on the keycap. 'match' means no attribute, leaving the controls on
+  whatever the surfaces use.
+*/
+export const NEUTRAL_STORAGE_KEY = 'safepoint.dev.neutral';
+export const CONTROL_NEUTRAL_STORAGE_KEY = 'safepoint.dev.control-neutral';
+export const NEUTRAL_PALETTES = [
+  'slate',
+  'gray',
+  'zinc',
+  'neutral',
+  'stone',
+  'taupe',
+  'mauve',
+  'mist',
+  'olive',
+] as const;
+export type NeutralPalette = (typeof NEUTRAL_PALETTES)[number];
+export const DEFAULT_NEUTRAL: NeutralPalette = 'zinc';
+export const CONTROL_NEUTRAL_CHOICES = ['match', ...NEUTRAL_PALETTES] as const;
+export type ControlNeutralChoice = (typeof CONTROL_NEUTRAL_CHOICES)[number];
+
+export function readNeutral(): NeutralPalette {
+  const value = document.documentElement.dataset.neutral;
+  return (
+    NEUTRAL_PALETTES.find((palette) => palette === value) ?? DEFAULT_NEUTRAL
+  );
+}
+
+export function setNeutral(next: NeutralPalette) {
+  document.documentElement.dataset.neutral = next;
+  persist(NEUTRAL_STORAGE_KEY, next);
+  emit();
+}
+
+export function readControlNeutral(): ControlNeutralChoice {
+  const value = document.documentElement.dataset.controlNeutral;
+  return NEUTRAL_PALETTES.find((palette) => palette === value) ?? 'match';
+}
+
+export function setControlNeutral(next: ControlNeutralChoice) {
+  if (next === 'match') {
+    delete document.documentElement.dataset.controlNeutral;
+  } else {
+    document.documentElement.dataset.controlNeutral = next;
+  }
+  persist(CONTROL_NEUTRAL_STORAGE_KEY, next);
+  emit();
+}
+
+/*
   Alignment guides. A development-only overlay that draws the sidebar's icon
   axis and a crosshair through the centre of every icon sitting on it, so the
   rail can be checked rather than trusted. Kept on <html> like every other

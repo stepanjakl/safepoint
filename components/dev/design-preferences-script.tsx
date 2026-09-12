@@ -1,7 +1,10 @@
 import {
+  CONTROL_NEUTRAL_STORAGE_KEY,
   DEFAULT_MOTION_SPEED,
   MOTION_SPEEDS,
   MOTION_STORAGE_KEY,
+  NEUTRAL_PALETTES,
+  NEUTRAL_STORAGE_KEY,
   RAIL_GUIDES_STORAGE_KEY,
 } from './design-preferences';
 import {
@@ -52,6 +55,17 @@ try {
     || localStorage.getItem(${JSON.stringify(TYPESCALE_STORAGE_KEY)});
   if (scales.indexOf(scale) !== -1) {
     root.dataset.typescale = scale;
+  }
+  var palettes = ${JSON.stringify(NEUTRAL_PALETTES)};
+  var neutral = params.get('neutral')
+    || localStorage.getItem(${JSON.stringify(NEUTRAL_STORAGE_KEY)});
+  if (palettes.indexOf(neutral) !== -1) {
+    root.dataset.neutral = neutral;
+  }
+  var controlNeutral = params.get('controls')
+    || localStorage.getItem(${JSON.stringify(CONTROL_NEUTRAL_STORAGE_KEY)});
+  if (palettes.indexOf(controlNeutral) !== -1) {
+    root.dataset.controlNeutral = controlNeutral;
   }
   if (localStorage.getItem(${JSON.stringify(RAIL_GUIDES_STORAGE_KEY)}) === 'on') {
     root.dataset.railGuides = 'on';

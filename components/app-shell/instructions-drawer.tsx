@@ -8,7 +8,8 @@ import {
   Modal,
   ModalOverlay,
 } from 'react-aria-components';
-import { Button } from '@/components/ui/button';
+import { Button, ICON_QUIET, ICON_SHAPE } from '@/components/ui/button';
+import { cx } from '@/lib/cx';
 import type { ProcessSummary } from '@/lib/process/placeholder-process';
 
 // A slide-over rather than a centred dialog: the instructions are reference
@@ -45,7 +46,10 @@ export function InstructionsDrawer({
               </div>
               <AriaButton
                 slot="close"
-                className="text-muted data-[hovered]:bg-surface-control data-[hovered]:text-primary text-title rounded-control grid size-8 place-items-center"
+                // The same icon square the sidebar uses, at header size: the
+                // shared shape and quiet face, so the wash and its timing are
+                // one definition rather than a second one that drifted.
+                className={cx(ICON_SHAPE, ICON_QUIET, 'text-title size-8')}
               >
                 <span aria-hidden="true">×</span>
                 <span className="sr-only">Close instructions</span>

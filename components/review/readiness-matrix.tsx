@@ -46,7 +46,7 @@ export function ReadinessMatrix({
                 </span>
                 <span
                   aria-hidden="true"
-                  className="text-muted transition-transform duration-150 group-open:rotate-90"
+                  className="text-muted transition-transform duration-(--duration-state) ease-out group-open:rotate-90"
                 >
                   ›
                 </span>

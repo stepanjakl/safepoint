@@ -1,9 +1,9 @@
 /*
   Safepoint semantic tokens.
 
-  Every role is declared once with light-dark() over Tailwind's native palette:
-  zinc for surfaces, rules, text and action, and Tailwind hues for semantic
-  state. Exact values are provisional and replaceable here without touching
+  Every role is declared once with light-dark() over a neutral ramp -- zinc
+  unless a development switch names another palette -- for surfaces, rules,
+  text and action, and Tailwind hues for semantic state. Exact values are provisional and replaceable here without touching
   component anatomy.
 
   data-theme on any element overrides the system preference for its subtree.
@@ -22,16 +22,343 @@
 }
 
 /*
-  Intermediate zinc steps, each the oklab midpoint of its neighbours. Outside
-  @theme so they stay out of the utility surface: reach them through an --sp-*
-  role. 350 inherits a 16.6-point gap between 300 and 400, so it sits 8.3
-  points from each -- a midpoint, not the same increment 150 and 250 give.
+  The neutral ramps. No role names a neutral palette: each reads a step from a
+  ramp, and the ramp names the palette. Re-basing the interface on any of
+  Tailwind's neutrals is then a matter of rebinding the ramp, and every role
+  keeps the step it was tuned on.
+
+  --sp-neutral-* carries canvas, surfaces, text, rules, menus and notices.
+  --sp-control-* carries the faces that answer a press -- quiet and unavailable
+  buttons, fields, keycaps and the badges built on the keycap -- and follows
+  the neutral ramp unless data-control-neutral gives it a palette of its own.
+
+  Outside @theme so they stay out of the utility surface: reach them through an
+  --sp-* role. Like data-theme, each attribute resolves for its own subtree.
 */
-:root {
-  --color-zinc-150: oklch(94.35% 0.0025 286.331);
-  --color-zinc-250: oklch(89.55% 0.005 286.3);
-  --color-zinc-350: oklch(78.8% 0.0105 286.13);
-  --color-zinc-750: oklch(32.2% 0.0095 285.877);
+:root,
+[data-neutral='zinc'] {
+  --sp-neutral-50: var(--color-zinc-50);
+  --sp-neutral-100: var(--color-zinc-100);
+  --sp-neutral-200: var(--color-zinc-200);
+  --sp-neutral-300: var(--color-zinc-300);
+  --sp-neutral-400: var(--color-zinc-400);
+  --sp-neutral-500: var(--color-zinc-500);
+  --sp-neutral-600: var(--color-zinc-600);
+  --sp-neutral-700: var(--color-zinc-700);
+  --sp-neutral-800: var(--color-zinc-800);
+  --sp-neutral-900: var(--color-zinc-900);
+  --sp-neutral-950: var(--color-zinc-950);
+}
+
+[data-neutral='slate'] {
+  --sp-neutral-50: var(--color-slate-50);
+  --sp-neutral-100: var(--color-slate-100);
+  --sp-neutral-200: var(--color-slate-200);
+  --sp-neutral-300: var(--color-slate-300);
+  --sp-neutral-400: var(--color-slate-400);
+  --sp-neutral-500: var(--color-slate-500);
+  --sp-neutral-600: var(--color-slate-600);
+  --sp-neutral-700: var(--color-slate-700);
+  --sp-neutral-800: var(--color-slate-800);
+  --sp-neutral-900: var(--color-slate-900);
+  --sp-neutral-950: var(--color-slate-950);
+}
+
+[data-neutral='gray'] {
+  --sp-neutral-50: var(--color-gray-50);
+  --sp-neutral-100: var(--color-gray-100);
+  --sp-neutral-200: var(--color-gray-200);
+  --sp-neutral-300: var(--color-gray-300);
+  --sp-neutral-400: var(--color-gray-400);
+  --sp-neutral-500: var(--color-gray-500);
+  --sp-neutral-600: var(--color-gray-600);
+  --sp-neutral-700: var(--color-gray-700);
+  --sp-neutral-800: var(--color-gray-800);
+  --sp-neutral-900: var(--color-gray-900);
+  --sp-neutral-950: var(--color-gray-950);
+}
+
+[data-neutral='neutral'] {
+  --sp-neutral-50: var(--color-neutral-50);
+  --sp-neutral-100: var(--color-neutral-100);
+  --sp-neutral-200: var(--color-neutral-200);
+  --sp-neutral-300: var(--color-neutral-300);
+  --sp-neutral-400: var(--color-neutral-400);
+  --sp-neutral-500: var(--color-neutral-500);
+  --sp-neutral-600: var(--color-neutral-600);
+  --sp-neutral-700: var(--color-neutral-700);
+  --sp-neutral-800: var(--color-neutral-800);
+  --sp-neutral-900: var(--color-neutral-900);
+  --sp-neutral-950: var(--color-neutral-950);
+}
+
+[data-neutral='stone'] {
+  --sp-neutral-50: var(--color-stone-50);
+  --sp-neutral-100: var(--color-stone-100);
+  --sp-neutral-200: var(--color-stone-200);
+  --sp-neutral-300: var(--color-stone-300);
+  --sp-neutral-400: var(--color-stone-400);
+  --sp-neutral-500: var(--color-stone-500);
+  --sp-neutral-600: var(--color-stone-600);
+  --sp-neutral-700: var(--color-stone-700);
+  --sp-neutral-800: var(--color-stone-800);
+  --sp-neutral-900: var(--color-stone-900);
+  --sp-neutral-950: var(--color-stone-950);
+}
+
+[data-neutral='taupe'] {
+  --sp-neutral-50: var(--color-taupe-50);
+  --sp-neutral-100: var(--color-taupe-100);
+  --sp-neutral-200: var(--color-taupe-200);
+  --sp-neutral-300: var(--color-taupe-300);
+  --sp-neutral-400: var(--color-taupe-400);
+  --sp-neutral-500: var(--color-taupe-500);
+  --sp-neutral-600: var(--color-taupe-600);
+  --sp-neutral-700: var(--color-taupe-700);
+  --sp-neutral-800: var(--color-taupe-800);
+  --sp-neutral-900: var(--color-taupe-900);
+  --sp-neutral-950: var(--color-taupe-950);
+}
+
+[data-neutral='mauve'] {
+  --sp-neutral-50: var(--color-mauve-50);
+  --sp-neutral-100: var(--color-mauve-100);
+  --sp-neutral-200: var(--color-mauve-200);
+  --sp-neutral-300: var(--color-mauve-300);
+  --sp-neutral-400: var(--color-mauve-400);
+  --sp-neutral-500: var(--color-mauve-500);
+  --sp-neutral-600: var(--color-mauve-600);
+  --sp-neutral-700: var(--color-mauve-700);
+  --sp-neutral-800: var(--color-mauve-800);
+  --sp-neutral-900: var(--color-mauve-900);
+  --sp-neutral-950: var(--color-mauve-950);
+}
+
+[data-neutral='mist'] {
+  --sp-neutral-50: var(--color-mist-50);
+  --sp-neutral-100: var(--color-mist-100);
+  --sp-neutral-200: var(--color-mist-200);
+  --sp-neutral-300: var(--color-mist-300);
+  --sp-neutral-400: var(--color-mist-400);
+  --sp-neutral-500: var(--color-mist-500);
+  --sp-neutral-600: var(--color-mist-600);
+  --sp-neutral-700: var(--color-mist-700);
+  --sp-neutral-800: var(--color-mist-800);
+  --sp-neutral-900: var(--color-mist-900);
+  --sp-neutral-950: var(--color-mist-950);
+}
+
+[data-neutral='olive'] {
+  --sp-neutral-50: var(--color-olive-50);
+  --sp-neutral-100: var(--color-olive-100);
+  --sp-neutral-200: var(--color-olive-200);
+  --sp-neutral-300: var(--color-olive-300);
+  --sp-neutral-400: var(--color-olive-400);
+  --sp-neutral-500: var(--color-olive-500);
+  --sp-neutral-600: var(--color-olive-600);
+  --sp-neutral-700: var(--color-olive-700);
+  --sp-neutral-800: var(--color-olive-800);
+  --sp-neutral-900: var(--color-olive-900);
+  --sp-neutral-950: var(--color-olive-950);
+}
+
+/*
+  Intermediate steps, each the oklab midpoint of its neighbours. Computed rather
+  than written, so every palette has them. 350 inherits the wider gap between
+  300 and 400, so it is a midpoint of that gap rather than the same increment
+  150 and 250 give.
+
+  Re-declared on every element that rebinds a ramp: a custom property
+  substitutes its var()s where it is declared, so a midpoint declared only on
+  :root would carry :root's palette into the subtree.
+*/
+:root,
+[data-neutral] {
+  --sp-neutral-150: color-mix(
+    in oklab,
+    var(--sp-neutral-100),
+    var(--sp-neutral-200)
+  );
+  --sp-neutral-250: color-mix(
+    in oklab,
+    var(--sp-neutral-200),
+    var(--sp-neutral-300)
+  );
+  --sp-neutral-350: color-mix(
+    in oklab,
+    var(--sp-neutral-300),
+    var(--sp-neutral-400)
+  );
+  --sp-neutral-750: color-mix(
+    in oklab,
+    var(--sp-neutral-700),
+    var(--sp-neutral-800)
+  );
+
+  --sp-control-50: var(--sp-neutral-50);
+  --sp-control-100: var(--sp-neutral-100);
+  --sp-control-150: var(--sp-neutral-150);
+  --sp-control-200: var(--sp-neutral-200);
+  --sp-control-250: var(--sp-neutral-250);
+  --sp-control-300: var(--sp-neutral-300);
+  --sp-control-350: var(--sp-neutral-350);
+  --sp-control-400: var(--sp-neutral-400);
+  --sp-control-500: var(--sp-neutral-500);
+  --sp-control-600: var(--sp-neutral-600);
+  --sp-control-700: var(--sp-neutral-700);
+  --sp-control-750: var(--sp-neutral-750);
+  --sp-control-800: var(--sp-neutral-800);
+  --sp-control-900: var(--sp-neutral-900);
+  --sp-control-950: var(--sp-neutral-950);
+}
+
+[data-control-neutral='zinc'] {
+  --sp-control-50: var(--color-zinc-50);
+  --sp-control-100: var(--color-zinc-100);
+  --sp-control-200: var(--color-zinc-200);
+  --sp-control-300: var(--color-zinc-300);
+  --sp-control-400: var(--color-zinc-400);
+  --sp-control-500: var(--color-zinc-500);
+  --sp-control-600: var(--color-zinc-600);
+  --sp-control-700: var(--color-zinc-700);
+  --sp-control-800: var(--color-zinc-800);
+  --sp-control-900: var(--color-zinc-900);
+  --sp-control-950: var(--color-zinc-950);
+}
+
+[data-control-neutral='slate'] {
+  --sp-control-50: var(--color-slate-50);
+  --sp-control-100: var(--color-slate-100);
+  --sp-control-200: var(--color-slate-200);
+  --sp-control-300: var(--color-slate-300);
+  --sp-control-400: var(--color-slate-400);
+  --sp-control-500: var(--color-slate-500);
+  --sp-control-600: var(--color-slate-600);
+  --sp-control-700: var(--color-slate-700);
+  --sp-control-800: var(--color-slate-800);
+  --sp-control-900: var(--color-slate-900);
+  --sp-control-950: var(--color-slate-950);
+}
+
+[data-control-neutral='gray'] {
+  --sp-control-50: var(--color-gray-50);
+  --sp-control-100: var(--color-gray-100);
+  --sp-control-200: var(--color-gray-200);
+  --sp-control-300: var(--color-gray-300);
+  --sp-control-400: var(--color-gray-400);
+  --sp-control-500: var(--color-gray-500);
+  --sp-control-600: var(--color-gray-600);
+  --sp-control-700: var(--color-gray-700);
+  --sp-control-800: var(--color-gray-800);
+  --sp-control-900: var(--color-gray-900);
+  --sp-control-950: var(--color-gray-950);
+}
+
+[data-control-neutral='neutral'] {
+  --sp-control-50: var(--color-neutral-50);
+  --sp-control-100: var(--color-neutral-100);
+  --sp-control-200: var(--color-neutral-200);
+  --sp-control-300: var(--color-neutral-300);
+  --sp-control-400: var(--color-neutral-400);
+  --sp-control-500: var(--color-neutral-500);
+  --sp-control-600: var(--color-neutral-600);
+  --sp-control-700: var(--color-neutral-700);
+  --sp-control-800: var(--color-neutral-800);
+  --sp-control-900: var(--color-neutral-900);
+  --sp-control-950: var(--color-neutral-950);
+}
+
+[data-control-neutral='stone'] {
+  --sp-control-50: var(--color-stone-50);
+  --sp-control-100: var(--color-stone-100);
+  --sp-control-200: var(--color-stone-200);
+  --sp-control-300: var(--color-stone-300);
+  --sp-control-400: var(--color-stone-400);
+  --sp-control-500: var(--color-stone-500);
+  --sp-control-600: var(--color-stone-600);
+  --sp-control-700: var(--color-stone-700);
+  --sp-control-800: var(--color-stone-800);
+  --sp-control-900: var(--color-stone-900);
+  --sp-control-950: var(--color-stone-950);
+}
+
+[data-control-neutral='taupe'] {
+  --sp-control-50: var(--color-taupe-50);
+  --sp-control-100: var(--color-taupe-100);
+  --sp-control-200: var(--color-taupe-200);
+  --sp-control-300: var(--color-taupe-300);
+  --sp-control-400: var(--color-taupe-400);
+  --sp-control-500: var(--color-taupe-500);
+  --sp-control-600: var(--color-taupe-600);
+  --sp-control-700: var(--color-taupe-700);
+  --sp-control-800: var(--color-taupe-800);
+  --sp-control-900: var(--color-taupe-900);
+  --sp-control-950: var(--color-taupe-950);
+}
+
+[data-control-neutral='mauve'] {
+  --sp-control-50: var(--color-mauve-50);
+  --sp-control-100: var(--color-mauve-100);
+  --sp-control-200: var(--color-mauve-200);
+  --sp-control-300: var(--color-mauve-300);
+  --sp-control-400: var(--color-mauve-400);
+  --sp-control-500: var(--color-mauve-500);
+  --sp-control-600: var(--color-mauve-600);
+  --sp-control-700: var(--color-mauve-700);
+  --sp-control-800: var(--color-mauve-800);
+  --sp-control-900: var(--color-mauve-900);
+  --sp-control-950: var(--color-mauve-950);
+}
+
+[data-control-neutral='mist'] {
+  --sp-control-50: var(--color-mist-50);
+  --sp-control-100: var(--color-mist-100);
+  --sp-control-200: var(--color-mist-200);
+  --sp-control-300: var(--color-mist-300);
+  --sp-control-400: var(--color-mist-400);
+  --sp-control-500: var(--color-mist-500);
+  --sp-control-600: var(--color-mist-600);
+  --sp-control-700: var(--color-mist-700);
+  --sp-control-800: var(--color-mist-800);
+  --sp-control-900: var(--color-mist-900);
+  --sp-control-950: var(--color-mist-950);
+}
+
+[data-control-neutral='olive'] {
+  --sp-control-50: var(--color-olive-50);
+  --sp-control-100: var(--color-olive-100);
+  --sp-control-200: var(--color-olive-200);
+  --sp-control-300: var(--color-olive-300);
+  --sp-control-400: var(--color-olive-400);
+  --sp-control-500: var(--color-olive-500);
+  --sp-control-600: var(--color-olive-600);
+  --sp-control-700: var(--color-olive-700);
+  --sp-control-800: var(--color-olive-800);
+  --sp-control-900: var(--color-olive-900);
+  --sp-control-950: var(--color-olive-950);
+}
+
+[data-control-neutral] {
+  --sp-control-150: color-mix(
+    in oklab,
+    var(--sp-control-100),
+    var(--sp-control-200)
+  );
+  --sp-control-250: color-mix(
+    in oklab,
+    var(--sp-control-200),
+    var(--sp-control-300)
+  );
+  --sp-control-350: color-mix(
+    in oklab,
+    var(--sp-control-300),
+    var(--sp-control-400)
+  );
+  --sp-control-750: color-mix(
+    in oklab,
+    var(--sp-control-700),
+    var(--sp-control-800)
+  );
 }
 
 /*
@@ -52,43 +379,57 @@
   light-dark() with inherited custom properties that resolve where a token is
   declared, so a themed subtree must re-declare the tokens to pick up its own
   colour scheme. The same selector list is also correct with native light-dark().
+
+  The ramp attributes need the same for a plainer reason: a role substitutes
+  its ramp step where it is declared, so without re-declaration a subtree would
+  keep :root's palette whatever it asked for.
 */
 :root,
-[data-theme] {
+[data-theme],
+[data-neutral],
+[data-control-neutral] {
   /* Surfaces */
-  --sp-canvas: light-dark(var(--color-zinc-200), var(--color-zinc-900));
+  --sp-canvas: light-dark(var(--sp-neutral-200), var(--sp-neutral-900));
   --sp-surface-primary: light-dark(
-    var(--color-zinc-100),
-    var(--color-zinc-800)
+    var(--sp-neutral-100),
+    var(--sp-neutral-800)
   );
   --sp-surface-floating: light-dark(
-    var(--color-zinc-50),
-    var(--color-zinc-750)
+    var(--sp-neutral-50),
+    var(--sp-neutral-750)
   );
-  --sp-surface-inset: light-dark(var(--color-zinc-200), var(--color-zinc-950));
-  --sp-surface-control: light-dark(var(--color-zinc-50), var(--color-zinc-700));
+  --sp-surface-inset: light-dark(var(--sp-neutral-200), var(--sp-neutral-950));
+  --sp-surface-control: light-dark(var(--sp-control-50), var(--sp-control-700));
   --sp-surface-selected: light-dark(
-    var(--color-zinc-300),
-    var(--color-zinc-700)
+    var(--sp-neutral-300),
+    var(--sp-neutral-700)
   );
   --sp-surface-disabled: light-dark(
-    var(--color-zinc-100),
-    var(--color-zinc-900)
+    var(--sp-neutral-100),
+    var(--sp-neutral-900)
   );
 
   /* Text */
-  --sp-text-primary: light-dark(var(--color-zinc-900), var(--color-zinc-100));
-  --sp-text-muted: light-dark(var(--color-zinc-500), var(--color-zinc-300));
-  --sp-text-inverse: light-dark(var(--color-zinc-50), var(--color-zinc-900));
+  --sp-text-primary: light-dark(var(--sp-neutral-900), var(--sp-neutral-100));
+  --sp-text-muted: light-dark(var(--sp-neutral-500), var(--sp-neutral-300));
+  /* The muted role, one step toward primary. Not "darker": in dark mode the
+     step that reads as more present goes lighter, and the pair has to say the
+     same thing on either canvas. Spent on hover, where a control has to answer
+     the pointer without jumping all the way to the weight of body text. */
+  --sp-text-muted-strong: light-dark(
+    var(--sp-neutral-600),
+    var(--sp-neutral-200)
+  );
+  --sp-text-inverse: light-dark(var(--sp-neutral-50), var(--sp-neutral-900));
 
   /* Rules */
-  --sp-rule-faint: light-dark(var(--color-zinc-300), var(--color-zinc-700));
-  --sp-rule-default: light-dark(var(--color-zinc-350), var(--color-zinc-600));
-  --sp-rule-strong: var(--color-zinc-500);
+  --sp-rule-faint: light-dark(var(--sp-neutral-300), var(--sp-neutral-700));
+  --sp-rule-default: light-dark(var(--sp-neutral-350), var(--sp-neutral-600));
+  --sp-rule-strong: var(--sp-neutral-500);
 
   /* Neutral interaction */
-  --sp-action: light-dark(var(--color-zinc-900), var(--color-zinc-100));
-  --sp-action-hover: light-dark(var(--color-zinc-700), var(--color-white));
+  --sp-action: light-dark(var(--sp-neutral-900), var(--sp-neutral-100));
+  --sp-action-hover: light-dark(var(--sp-neutral-700), var(--color-white));
   --sp-focus: light-dark(var(--color-blue-600), var(--color-blue-400));
 
   /* The top sheen on an enclosure. */
@@ -113,8 +454,8 @@
     var(--color-red-500)
   );
   --sp-state-unavailable: light-dark(
-    var(--color-zinc-500),
-    var(--color-zinc-400)
+    var(--sp-neutral-500),
+    var(--sp-neutral-400)
   );
 
   /* Adapter mode */
@@ -123,10 +464,10 @@
     var(--color-violet-600),
     var(--color-violet-400)
   );
-  --sp-mode-preview: light-dark(var(--color-zinc-500), var(--color-zinc-400));
+  --sp-mode-preview: light-dark(var(--sp-neutral-500), var(--sp-neutral-400));
   --sp-mode-unavailable: light-dark(
-    var(--color-zinc-400),
-    var(--color-zinc-600)
+    var(--sp-neutral-400),
+    var(--sp-neutral-600)
   );
 
   /*
@@ -150,41 +491,69 @@
   --sp-accent-ring-top-hover: var(--color-cyan-600);
   --sp-accent-ring-bottom-hover: var(--color-cyan-600);
 
-  --sp-quiet-face-top: light-dark(var(--color-white), var(--color-zinc-700));
+  --sp-quiet-face-top: light-dark(var(--color-white), var(--sp-control-700));
   --sp-quiet-face-bottom: light-dark(
-    var(--color-zinc-200),
-    var(--color-zinc-800)
+    var(--sp-control-200),
+    var(--sp-control-800)
   );
-  --sp-quiet-ring-top: light-dark(var(--color-zinc-300), var(--color-zinc-600));
+  --sp-quiet-ring-top: light-dark(var(--sp-control-300), var(--sp-control-600));
   --sp-quiet-ring-bottom: light-dark(
-    var(--color-zinc-400),
-    var(--color-zinc-500)
+    var(--sp-control-400),
+    var(--sp-control-500)
   );
 
   /* Light deepens on hover, dark lifts: on either canvas the control moves
      toward the viewer rather than toward a fixed colour. */
   --sp-quiet-face-top-hover: light-dark(
     var(--color-white),
-    var(--color-zinc-600)
+    var(--sp-control-600)
   );
   --sp-quiet-face-bottom-hover: light-dark(
-    var(--color-zinc-300),
-    var(--color-zinc-700)
+    var(--sp-control-300),
+    var(--sp-control-700)
   );
   --sp-quiet-ring-top-hover: light-dark(
-    var(--color-zinc-400),
-    var(--color-zinc-500)
+    var(--sp-control-400),
+    var(--sp-control-500)
   );
   --sp-quiet-ring-bottom-hover: light-dark(
-    var(--color-zinc-600),
-    var(--color-zinc-400)
+    var(--sp-control-600),
+    var(--sp-control-400)
   );
 
+  /*
+    The keycap in the search field. Flat, like every other surface face: a ramp
+    across 20px reads as a gradient artefact rather than a lift. The ring is a
+    step darker than the field's own edge so the key sits *on* the field rather
+    than being cut into it, and the sheen is a hairline because a full pixel on
+    a box this small is a second border.
+  */
+  --sp-keycap-face: light-dark(var(--sp-control-100), var(--sp-control-750));
+  --sp-keycap-ring: light-dark(var(--sp-control-300), var(--sp-control-600));
+  --sp-keycap-highlight: var(--sp-face-highlight-medium);
+
+  /* The step the key takes whenever the field lights -- hovered, focused, or
+     holding a query. It has to move with the field rather than only with the
+     pointer: the resting face above is the field's own lit face, so a key that
+     stayed put would disappear into it the moment the field came on. */
+  --sp-keycap-face-hover: light-dark(
+    var(--sp-control-250),
+    var(--sp-control-700)
+  );
+  --sp-keycap-ring-hover: light-dark(transparent, var(--sp-control-500));
+  --sp-keycap-highlight-hover: transparent;
+
   /* Flat: no ramp, so an unavailable control cannot read as a live one. */
-  --sp-off-face: light-dark(var(--color-zinc-100), var(--color-zinc-900));
-  --sp-off-ring: light-dark(var(--color-zinc-300), var(--color-zinc-700));
+  --sp-off-face: light-dark(var(--sp-control-100), var(--sp-control-900));
+  --sp-off-ring: light-dark(var(--sp-control-300), var(--sp-control-700));
 
   /* Shared white highlight scale: subtle 25%, medium 50%, strong 75%, solid 100%. */
+  --sp-face-highlight-faint: color-mix(
+    in oklab,
+    var(--color-white) 17.5%,
+    transparent
+  );
+
   --sp-face-highlight-subtle: color-mix(
     in oklab,
     var(--color-white) 25%,
@@ -211,19 +580,62 @@
     quieter ring, no highlight -- without moving any shared surface.
   */
   --sp-menu-current-face-top: light-dark(
-    var(--color-zinc-100),
-    var(--color-zinc-750)
+    var(--sp-neutral-100),
+    var(--sp-neutral-750)
   );
   --sp-menu-current-face-bottom: light-dark(
-    var(--color-zinc-100),
-    var(--color-zinc-750)
+    var(--sp-neutral-100),
+    var(--sp-neutral-750)
   );
   --sp-menu-current-ring-top: transparent;
   --sp-menu-current-ring-bottom: light-dark(
-    var(--color-zinc-300),
-    var(--color-zinc-600)
+    var(--sp-neutral-300),
+    var(--sp-neutral-600)
   );
   --sp-menu-current-highlight: transparent;
+
+  /*
+    The tile behind the workspace menu's Processes icon, and the glyph in it.
+    Its own hue on every layer -- face, ring and glyph -- rather than a neutral
+    surface, so the entry into the processes is the one coloured object in the
+    workspace menu. Green, from Tailwind's green rather than the emerald the
+    verified state uses, and spent on a filled tile rather than on a glyph or a
+    count, so it does not read as a verdict beside the rows' status badges.
+
+    The face is a full step into the hue, not a tint over the canvas: a tint
+    left the tile reading as zinc with a coloured edge.
+
+    The sheen is a step fainter in dark: a 75% white line on a deep green face
+    reads as a glare rather than a lift.
+
+    The hover stops are all transparent: under the pointer the tile dissolves
+    into the row's wash while the glyph fills, so the emphasis hands over from
+    the tile to the icon rather than stacking the two. The glyph keeps its hue
+    in both states, which is what carries the colour once the tile has gone.
+  */
+  --sp-menu-tile-face: light-dark(
+    var(--color-green-100),
+    var(--color-green-900)
+  );
+  --sp-menu-tile-ring-top: light-dark(
+    var(--color-green-300),
+    var(--color-green-700)
+  );
+  --sp-menu-tile-ring-bottom: light-dark(
+    var(--color-green-400),
+    var(--color-green-800)
+  );
+  --sp-menu-tile-highlight: light-dark(
+    var(--sp-face-highlight-strong),
+    var(--sp-face-highlight-faint)
+  );
+  --sp-menu-tile-glyph: light-dark(
+    var(--color-green-700),
+    var(--color-green-300)
+  );
+  --sp-menu-tile-face-hover: transparent;
+  --sp-menu-tile-ring-hover: transparent;
+  --sp-menu-tile-highlight-hover: transparent;
 
   /* The commit-state label. A caution wash mixed into the card's face rather
      than into transparency, so it stays opaque over the ring beneath it. */
@@ -233,18 +645,18 @@
     var(--sp-surface-floating)
   );
 
-  /* Native zinc steps for menu surfaces and interaction states. */
+  /* Neutral steps for menu surfaces and interaction states. */
   --sp-menu-wash-faint: light-dark(
-    var(--color-zinc-200),
-    var(--color-zinc-900)
+    var(--sp-neutral-200),
+    var(--sp-neutral-900)
   );
-  --sp-menu-wash: light-dark(var(--color-zinc-300), var(--color-zinc-800));
+  --sp-menu-wash: light-dark(var(--sp-neutral-300), var(--sp-neutral-800));
   --sp-menu-wash-strong: light-dark(
-    var(--color-zinc-300),
-    var(--color-zinc-700)
+    var(--sp-neutral-300),
+    var(--sp-neutral-700)
   );
-  --sp-menu-chip: light-dark(var(--color-zinc-300), var(--color-zinc-800));
-  --sp-menu-link: light-dark(var(--color-zinc-700), var(--color-zinc-300));
+  --sp-menu-chip: light-dark(var(--sp-control-300), var(--sp-control-800));
+  --sp-menu-link: light-dark(var(--sp-neutral-700), var(--sp-neutral-300));
 
   /*
     The Save-order button. The one accented control in the sidebar, and the
@@ -254,7 +666,7 @@
     in the interface with it.
   */
   --sp-menu-commit-face-top: light-dark(
-    var(--color-teal-600),
+    var(--color-teal-500),
     var(--color-teal-500)
   );
   --sp-menu-commit-face-bottom: light-dark(
@@ -278,11 +690,11 @@
     var(--color-teal-500)
   );
   --sp-menu-commit-ring-top-hover: light-dark(
-    var(--color-teal-800),
+    var(--color-teal-700),
     var(--color-teal-300)
   );
   --sp-menu-commit-ring-bottom-hover: light-dark(
-    var(--color-teal-900),
+    var(--color-teal-800),
     var(--color-teal-600)
   );
 
@@ -294,33 +706,33 @@
     face behind it and against the resting edge it replaces, because that
     *change* is what tells a keyboard user where they are.
 
-    The focus step stays in zinc rather than taking the accent: a field is not
+    The focus step stays neutral rather than taking the accent: a field is not
     an action, and a blue edge reads as one. It earns its contrast by being
     much darker instead -- 7.02:1 on the face and 5.23:1 against rest in light,
-    10.07:1 and 7.07:1 in dark.
+    10.07:1 and 7.07:1 in dark, measured on zinc.
   */
-  --sp-field-face: light-dark(var(--color-zinc-100), var(--color-zinc-800));
-  --sp-field-edge: light-dark(var(--color-zinc-300), var(--color-zinc-700));
+  --sp-field-face: light-dark(var(--sp-control-100), var(--sp-control-800));
+  --sp-field-edge: light-dark(var(--sp-control-300), var(--sp-control-700));
   --sp-field-edge-hover: light-dark(
-    var(--color-zinc-400),
-    var(--color-zinc-500)
+    var(--sp-control-350),
+    var(--sp-control-500)
   );
   --sp-field-edge-active: light-dark(
-    var(--color-zinc-600),
-    var(--color-zinc-300)
+    var(--sp-control-500),
+    var(--sp-control-300)
   );
 
   /* Advisory notice face and separate stops for its graduated edge. */
-  --sp-notice-face: light-dark(var(--color-zinc-150), var(--color-blue-950));
+  --sp-notice-face: light-dark(var(--sp-neutral-150), var(--color-blue-950));
   --sp-notice-edge-top: light-dark(
-    var(--color-zinc-300),
+    var(--sp-neutral-300),
     var(--color-blue-800)
   );
   --sp-notice-edge-bottom: light-dark(
-    var(--color-zinc-300),
+    var(--sp-neutral-300),
     var(--color-blue-900)
   );
-  --sp-notice-caption: light-dark(var(--color-zinc-600), var(--color-blue-200));
+  --sp-notice-caption: light-dark(var(--sp-neutral-600), var(--color-blue-200));
 }
 
 /*
@@ -502,7 +914,7 @@
     Tailwind's palette is deliberately left in place. `--color-*: initial`
     would drop it from the emitted variables, and because this block is
     `inline` those names are substituted only inside generated utilities --
-    the var(--color-zinc-100) references in the token block above would
+    the var(--color-zinc-100) references in the ramps above would
     then resolve to nothing and every --sp-* role would be unset.
   */
   --color-white: #fff;
@@ -515,6 +927,7 @@
   --color-surface-disabled: var(--sp-surface-disabled);
   --color-primary: var(--sp-text-primary);
   --color-muted: var(--sp-text-muted);
+  --color-muted-strong: var(--sp-text-muted-strong);
   --color-inverse: var(--sp-text-inverse);
   --color-rule-faint: var(--sp-rule-faint);
   --color-rule-default: var(--sp-rule-default);
@@ -538,6 +951,7 @@
   --color-menu-wash-strong: var(--sp-menu-wash-strong);
   --color-menu-chip: var(--sp-menu-chip);
   --color-menu-link: var(--sp-menu-link);
+  --color-menu-tile-glyph: var(--sp-menu-tile-glyph);
   --color-field-face: var(--sp-field-face);
   --color-field-edge: var(--sp-field-edge);
   --color-field-edge-hover: var(--sp-field-edge-hover);
@@ -624,7 +1038,10 @@
   --radius-control: 0.375rem; /*  6px  anything pressable */
 
   /* Inline so element-local control colours resolve on the painted element. */
-  --shadow-control-highlight: inset 0 0 0 1px var(--control-highlight);
+  /* Width is a variable so a small face can ask for a hairline; every existing
+     caller omits it and keeps the 1px it already had. */
+  --shadow-control-highlight: inset 0 0 0 var(--control-highlight-width, 1px)
+    var(--control-highlight);
   /* Explicit strengths are independent of the current control state. */
   --shadow-control-highlight-subtle: inset 0 0 0 1px
     var(--sp-face-highlight-subtle);
@@ -669,4 +1086,28 @@
     shrink to fit. The axis is half of it; nothing needs to say where that is.
   */
   --spacing-menu-rail: 2.125rem; /* 34px */
+  /*
+    The trailing column, and the mirror of the rail. A row's status badge and
+    the search field's keycap both sit one cell in from the pane's content
+    edge, so they share an axis the way every leading icon shares the rail's.
+    One token because the two are on different elements in different files and
+    a drift between them is exactly what the axis exists to catch.
+  */
+  --spacing-menu-end: 0.625rem; /* 10px */
+  /*
+    The hairline a row and the search field each draw. A whole pixel because a
+    fractional border-width is floored for layout -- Chrome lays 1.5px out as
+    1px -- so anything measured from it has to use the width that is really
+    there, not the one that was asked for.
+  */
+  --spacing-menu-edge: 1px;
+  /*
+    The same hairline, published again under the one namespace `border-*` reads
+    its width from. Tailwind resolves a border width from --border-width-* and
+    never from --spacing-*, so without this line `border-menu-edge` would fall
+    through to the colour branch and silently mean nothing. It points at the
+    spacing token rather than repeating the value, so there is still one
+    definition of the hairline and the two cannot drift.
+  */
+  --border-width-menu-edge: var(--spacing-menu-edge);
 }

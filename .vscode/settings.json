@@ -1,5 +1,8 @@
 {
-  "cssVarHover.watchedFiles": ["components/ui/button.tsx"],
+  "cssVarHover.watchedFiles": [
+    "components/ui/button.tsx",
+    "components/app-shell/process-menu.tsx"
+  ],
 
   // Keeps compiled Tailwind output out of the workspace index, so CSS-variable
   // hovers resolve to app/tokens.css instead of .next/static/chunks/*.css.
@@ -28,6 +31,12 @@
     "**/tests",
     "**/.next"
   ],
+
+  // Hover, completion and linting inside cx() calls, not just className="".
+  // Without this, a class list named as a constant -- MENU_LABEL, NOTICE_BOX,
+  // every shape in process-menu.tsx -- gets no IntelliSense at all, because
+  // classAttributes only covers attribute positions.
+  "tailwindCSS.classFunctions": ["cx"],
 
   "files.associations": {
     "*.css": "tailwindcss"

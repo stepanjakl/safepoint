@@ -26,10 +26,36 @@
     cursor: default;
   }
 
+  /*
+    Every control is a press, not a passage of text. The pointer and the
+    selection rule belong here rather than on each button: a control that is
+    styled by hand -- a pagination link, an icon square, a filter pill -- is
+    then born with both, and nothing has to remember to opt in.
+
+    An unavailable control says so through its own cursor. Both rules below
+    are utilities in components (`cursor-not-allowed`, `cursor-default`), so
+    they already outrank this layer; these are the fallbacks for a disabled
+    control that states nothing of its own.
+  */
+  :where(button, [role='button']) {
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  :where(
+    button:disabled,
+    button[aria-disabled='true'],
+    [role='button'][aria-disabled='true']
+  ) {
+    cursor: default;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *,
     ::before,
-    ::after {
+    ::after,
+    ::placeholder {
       transition: none !important;
       animation: none !important;
     }
@@ -117,7 +143,8 @@
 */
 @utility control-face {
   @apply shadow-control-highlight;
-  border: 1px solid transparent;
+  --control-face-border-width: 1px;
+  border: var(--control-face-border-width) solid transparent;
   background-image:
     linear-gradient(
       to bottom,
@@ -132,10 +159,28 @@
   background-origin: padding-box, border-box;
   background-clip: padding-box, border-box;
   transition-property:
-    color, background-color, box-shadow, --control-face-top,
+    color, background-color, box-shadow, opacity, --control-face-top,
     --control-face-bottom, --control-ring-top, --control-ring-bottom,
     --control-highlight;
-  transition-duration: 150ms;
+  transition-duration: var(--duration-state);
+  transition-timing-function: ease-out;
+}
+
+/*
+  The flat half of the same contract. A filter pill, a list row, a text button
+  -- controls that answer a pointer with a wash rather than with a lit face --
+  are not built from the stops above, so they cannot inherit that transition
+  and have each been restating one by hand. This is that one, named: the same
+  step and the same curve, so a row and the button beside it settle together.
+
+  Reduced motion is not restated per call site; the base layer drops every
+  transition in the document.
+*/
+@utility control-wash {
+  transition-property:
+    color, background-color, border-color, box-shadow, text-decoration-color,
+    opacity;
+  transition-duration: var(--duration-state);
   transition-timing-function: ease-out;
 }
 
@@ -167,7 +212,7 @@
   --control-face-bottom: var(--sp-menu-commit-face-bottom);
   --control-ring-top: var(--sp-menu-commit-ring-top);
   --control-ring-bottom: var(--sp-menu-commit-ring-bottom);
-  --control-highlight: var(--sp-face-highlight-subtle);
+  --control-highlight: var(--sp-face-highlight-faint);
 }
 
 @utility control-commit-hover {
@@ -226,6 +271,50 @@
   --control-ring-top: var(--sp-rule-faint);
   --control-ring-bottom: var(--sp-rule-faint);
   --control-highlight: var(--sp-face-highlight-solid);
+}
+
+/*
+  A keycap: the smallest raised face in the interface, and the only one that
+  asks for a hairline sheen rather than a full pixel. Paired with a hover step
+  because it lives inside a field and has to move when that field does.
+*/
+@utility surface-keycap {
+  --control-face-top: var(--sp-keycap-face);
+  --control-face-bottom: var(--sp-keycap-face);
+  --control-ring-top: var(--sp-keycap-ring);
+  --control-ring-bottom: var(--sp-keycap-ring);
+  --control-highlight: var(--sp-keycap-highlight);
+  --control-highlight-width: 0.75px;
+}
+
+@utility surface-keycap-hover {
+  --control-face-top: var(--sp-keycap-face-hover);
+  --control-face-bottom: var(--sp-keycap-face-hover);
+  --control-ring-top: var(--sp-keycap-ring-hover);
+  --control-ring-bottom: var(--sp-keycap-ring-hover);
+  --control-highlight: var(--sp-keycap-highlight-hover);
+}
+
+/*
+  The tile behind the workspace menu's Processes icon: surface-raised's
+  construction at icon scale, on stops of its own. The hover step is bare, and
+  because control-face transitions the stops the tile fades out on the same step
+  and curve as every other control rather than snapping away.
+*/
+@utility surface-menu-tile {
+  --control-face-top: var(--sp-menu-tile-face);
+  --control-face-bottom: var(--sp-menu-tile-face);
+  --control-ring-top: var(--sp-menu-tile-ring-top);
+  --control-ring-bottom: var(--sp-menu-tile-ring-bottom);
+  --control-highlight: var(--sp-menu-tile-highlight);
+}
+
+@utility surface-menu-tile-hover {
+  --control-face-top: var(--sp-menu-tile-face-hover);
+  --control-face-bottom: var(--sp-menu-tile-face-hover);
+  --control-ring-top: var(--sp-menu-tile-ring-hover);
+  --control-ring-bottom: var(--sp-menu-tile-ring-hover);
+  --control-highlight: var(--sp-menu-tile-highlight-hover);
 }
 
 @utility surface-recessed {

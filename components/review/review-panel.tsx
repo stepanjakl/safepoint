@@ -28,12 +28,12 @@ type Filter = ReviewFilter;
 // A filter pill carries its bucket's colour on the count alone: the label is
 // navigation, the figure is the quantity being filtered to.
 const FILTER =
-  'border-rule-default aria-pressed:bg-surface-selected aria-pressed:border-rule-strong inline-flex min-h-8 items-baseline gap-1.5 rounded-full border px-2.5 py-1 text-meta whitespace-nowrap [&[data-severity]_.value]:text-severity-ink';
+  'control-wash border-rule-default hover:bg-surface-inset aria-pressed:bg-surface-selected aria-pressed:border-rule-strong inline-flex min-h-8 items-baseline gap-1.5 rounded-full border px-2.5 py-1 text-meta whitespace-nowrap [&[data-severity]_.value]:text-severity-ink';
 
 // 70px is the two-line row this list is built around, so a one-line item does
 // not make the column jump.
 const ITEM_BUTTON =
-  'hover:bg-surface-inset aria-[current=true]:bg-surface-selected aria-[current=true]:border-l-primary block min-h-17.5 w-full border-l-2 border-l-transparent px-4.5 py-3 text-left focus-visible:-outline-offset-3 forced-colors:aria-[current=true]:border-l-[Highlight] forced-colors:aria-[current=true]:outline forced-colors:aria-[current=true]:outline-[Highlight] forced-colors:aria-[current=true]:-outline-offset-2';
+  'control-wash hover:bg-surface-inset aria-[current=true]:bg-surface-selected aria-[current=true]:border-l-primary block min-h-17.5 w-full border-l-2 border-l-transparent px-4.5 py-3 text-left focus-visible:-outline-offset-3 forced-colors:aria-[current=true]:border-l-[Highlight] forced-colors:aria-[current=true]:outline forced-colors:aria-[current=true]:outline-[Highlight] forced-colors:aria-[current=true]:-outline-offset-2';
 const ITEM_REASON = 'text-muted mt-1 block text-meta leading-normal';
 
 export function ReviewPanel({
@@ -284,28 +284,30 @@ export function ReviewPanel({
               ) : null;
             })}
           </div>
+          {/* Ordinary controls, so they wear the ordinary control face rather
+              than a set of bare buttons dressed by the nav around them: the
+              disabled end of the range then reads as the same off face every
+              other unavailable control in the app uses. */}
           {pagination.totalPages > 1 ? (
             <nav
-              className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 [&_button]:min-h-9 [&_button]:px-2 [&_button]:py-1 [&_button:disabled]:opacity-50 [&_button:focus-visible]:outline [&_button:focus-visible]:outline-2 [&_button:focus-visible]:outline-offset-2 [&_button:focus-visible]:outline-current"
+              className="flex flex-wrap items-center justify-between gap-2 px-5 py-3"
               aria-label="Review pages"
             >
-              <button
-                type="button"
-                disabled={pagination.page === 0}
-                onClick={() => changePage(-1)}
+              <Button
+                isDisabled={pagination.page === 0}
+                onPress={() => changePage(-1)}
               >
                 Previous page
-              </button>
+              </Button>
               <span>
                 Page {pagination.page + 1} of {pagination.totalPages}
               </span>
-              <button
-                type="button"
-                disabled={pagination.page + 1 === pagination.totalPages}
-                onClick={() => changePage(1)}
+              <Button
+                isDisabled={pagination.page + 1 === pagination.totalPages}
+                onPress={() => changePage(1)}
               >
                 Next page
-              </button>
+              </Button>
             </nav>
           ) : null}
           <p className="border-rule-faint text-muted text-meta border-t px-5 py-3">
@@ -322,7 +324,7 @@ export function ReviewPanel({
         >
           <div className="px-8 pt-7 pb-5 @max-3xl/review:px-5 @max-3xl/review:pt-3">
             <button
-              className="text-muted text-dense mb-3 inline-flex min-h-11 items-center text-left underline underline-offset-4 @3xl/review:hidden"
+              className="control-wash text-muted hover:text-primary text-dense mb-3 inline-flex min-h-11 items-center text-left underline underline-offset-4 @3xl/review:hidden"
               onClick={() => {
                 moveFocus.current = true;
                 setShowDetail(false);

@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 
+import { IconMenuGallery } from '@/components/dev/icon-menu-gallery';
+import { NucleoGallery } from '@/components/dev/nucleo-gallery';
 import { SystemDiscGallery } from '@/components/dev/system-disc-gallery';
 import { ReviewWorkspace } from '@/components/review/review-workspace';
 import { Button } from '@/components/ui/button';
@@ -96,6 +98,27 @@ export default async function WorkbenchPage({
           sources={sources}
           destinations={promotionProcess.destinations}
         />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="readout text-muted">menu icons</h2>
+        <p className="text-dense text-muted max-w-prose">
+          The same seven menu items in each family, outlined at rest and filled
+          under the pointer or keyboard focus. Hover down a column to compare
+          how far each fill departs from its outline — a pair drawn together
+          keeps its silhouette, a pair drawn separately shifts.
+        </p>
+        <IconMenuGallery />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="readout text-muted">nucleo free families</h2>
+        <p className="text-dense text-muted max-w-prose">
+          Nucleo&apos;s six free React packages at 32px. Illustrative sets
+          rather than interface icons, so they are shown as specimens and not as
+          system-disc candidates.
+        </p>
+        <NucleoGallery />
       </section>
 
       <section className="space-y-3">

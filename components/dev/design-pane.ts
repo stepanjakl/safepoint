@@ -26,6 +26,13 @@ import {
   DEFAULT_MOTION_SPEED,
   MOTION_SPEEDS,
   subscribe,
+  CONTROL_NEUTRAL_CHOICES,
+  DEFAULT_NEUTRAL,
+  NEUTRAL_PALETTES,
+  readControlNeutral,
+  readNeutral,
+  setControlNeutral,
+  setNeutral,
 } from './design-preferences';
 import { startMotionDebug } from './motion-debug';
 
@@ -35,6 +42,8 @@ function readPreferences() {
     mono: readMono(),
     typescale: readTypescale(),
     theme: readTheme(),
+    neutral: readNeutral(),
+    controlNeutral: readControlNeutral(),
     speed: readMotionSpeed(),
     railGuides: readRailGuides(),
   };
@@ -55,6 +64,21 @@ export function mountDesignPane(host: HTMLElement) {
         options: THEME_CHOICES.map((value) => ({ text: value, value })),
       })
       .on('change', (event) => setTheme(event.value)),
+    appearance
+      .addBinding(model, 'neutral', {
+        label: 'Neutrals',
+        options: NEUTRAL_PALETTES.map((value) => ({ text: value, value })),
+      })
+      .on('change', (event) => setNeutral(event.value)),
+    appearance
+      .addBinding(model, 'controlNeutral', {
+        label: 'Control neutrals',
+        options: CONTROL_NEUTRAL_CHOICES.map((value) => ({
+          text: value === 'match' ? 'Match neutrals' : value,
+          value,
+        })),
+      })
+      .on('change', (event) => setControlNeutral(event.value)),
     appearance
       .addBinding(model, 'typeface', {
         label: 'Typeface',
@@ -118,6 +142,8 @@ export function mountDesignPane(host: HTMLElement) {
     setMono('match');
     setTypescale(DEFAULT_TYPESCALE);
     setTheme('system');
+    setNeutral(DEFAULT_NEUTRAL);
+    setControlNeutral('match');
     setMotionSpeed(DEFAULT_MOTION_SPEED);
     setRailGuides(false);
   });

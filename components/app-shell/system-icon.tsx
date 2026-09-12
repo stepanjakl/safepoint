@@ -7,36 +7,30 @@ import {
   type ComponentType,
   type ReactNode,
 } from 'react';
-// Barrel import on purpose: Tabler ships no per-icon type declarations, and
-// `@tabler/icons-react` is in Next's default `optimizePackageImports` list, so
-// this is rewritten to per-icon imports at build time.
-//
-// Tabler's filled set is ~1000 of its ~6000 icons and skews to UI primitives,
-// so a few of these are the nearest filled noun rather than the exact one the
-// stroke set offered: boxes for a stock position, a cart for a storefront, a
-// message for an operational note.
-import {
-  IconBookFilled,
-  IconBoxMultipleFilled,
-  IconChartAreaFilled,
-  IconClipboardListFilled,
-  IconCreditCardFilled,
-  IconFileInvoiceFilled,
-  IconIdFilled,
-  IconLabelFilled,
-  IconMailFilled,
-  IconMessageFilled,
-  IconScaleFilled,
-  IconShoppingCartFilled,
-  IconTagFilled,
-  IconTruckFilled,
-} from '@tabler/icons-react';
+// Deep imports: Blode's barrel is the whole ~4000-icon library and is not on
+// Next's `optimizePackageImports` list, so the subpath export is what keeps the
+// app from compiling the entire set.
+import BarcodeFilled from 'blode-icons-react/icons/barcode-filled';
+import BookFilled from 'blode-icons-react/icons/book-filled';
+import Box2Filled from 'blode-icons-react/icons/box-2-filled';
+import Chart2Filled from 'blode-icons-react/icons/chart-2-filled';
+import ChatBubble7Filled from 'blode-icons-react/icons/chat-bubble-7-filled';
+import ChecklistFilled from 'blode-icons-react/icons/checklist-filled';
+import ContactsFilled from 'blode-icons-react/icons/contacts-filled';
+import CreditCard1Filled from 'blode-icons-react/icons/credit-card-1-filled';
+import Email1Filled from 'blode-icons-react/icons/email-1-filled';
+import LawFilled from 'blode-icons-react/icons/law-filled';
+import ReceiptBillFilled from 'blode-icons-react/icons/receipt-bill-filled';
+import ShoppingBag1Filled from 'blode-icons-react/icons/shopping-bag-1-filled';
+import Store1Filled from 'blode-icons-react/icons/store-1-filled';
+import TagFilled from 'blode-icons-react/icons/tag-filled';
+import TruckFilled from 'blode-icons-react/icons/truck-filled';
 import type { IconKey } from '@/lib/process/system-links';
 
-// Narrow on purpose. A disc passes nothing but the hidden flag, and the four
+// Narrow on purpose. A disc passes nothing but the hidden flag, and the
 // candidate families type their props differently — Tabler omits `stroke`,
 // Phosphor adds `weight`, Blode adds `absoluteStrokeWidth`. Asking only for
-// what is actually passed is what lets all four satisfy one type. React's own
+// what is actually passed is what lets all of them satisfy one type. React's own
 // `aria-hidden` is what widens it: Remix's icons are class components, whose
 // `defaultProps` make the prop invariant, so a literal `'true'` would exclude
 // the family for a reason that has nothing to do with how it draws.
@@ -49,27 +43,30 @@ export type SystemIconComponent = ComponentType<
 // rather than fall through to another family's glyph.
 export type IconSet = Record<IconKey, SystemIconComponent>;
 
-export const TABLER_ICONS: IconSet = {
-  catalogue: IconBookFilled,
-  shortlist: IconClipboardListFilled,
-  forecast: IconChartAreaFilled,
-  supply: IconBoxMultipleFilled,
-  supplier: IconFileInvoiceFilled,
-  channel: IconShoppingCartFilled,
-  note: IconMessageFilled,
-  policy: IconScaleFilled,
-  pricebook: IconTagFilled,
-  storefront: IconShoppingCartFilled,
-  labels: IconLabelFilled,
-  portal: IconTruckFilled,
-  queue: IconMailFilled,
-  identity: IconIdFilled,
-  billing: IconCreditCardFilled,
+export const BLODE_ICONS: IconSet = {
+  catalogue: BookFilled,
+  shortlist: ChecklistFilled,
+  forecast: Chart2Filled,
+  supply: Box2Filled,
+  // No invoice; a receipt is the nearest document with a total on it.
+  supplier: ReceiptBillFilled,
+  // No cart in the filled set, so a bag stands for the sales channel.
+  channel: ShoppingBag1Filled,
+  note: ChatBubble7Filled,
+  policy: LawFilled,
+  storefront: Store1Filled,
+  pricebook: TagFilled,
+  labels: BarcodeFilled,
+  portal: TruckFilled,
+  queue: Email1Filled,
+  // No ID card; a contact record is the nearest thing that identifies a person.
+  identity: ContactsFilled,
+  billing: CreditCard1Filled,
 };
 
 // Defaulted rather than required, so nothing outside the workbench has to know
 // that a choice exists — and so the alternates stay out of the app's bundle.
-const IconSetContext = createContext<IconSet>(TABLER_ICONS);
+const IconSetContext = createContext<IconSet>(BLODE_ICONS);
 
 export function IconSetProvider({
   set,

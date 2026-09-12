@@ -22,6 +22,7 @@ export function Tooltip({
   description,
   content,
   placement = 'top',
+  triggerRef,
   isDisabled = false,
 }: {
   children: ComponentProps<typeof Focusable>['children'];
@@ -29,14 +30,20 @@ export function Tooltip({
   description?: string;
   content?: ReactNode;
   placement?: TooltipProps['placement'];
+  /**
+   * The element the tooltip is placed against, when that is not the trigger
+   * itself -- a badge inside a row that should keep its gap from the row.
+   */
+  triggerRef?: TooltipProps['triggerRef'];
   isDisabled?: boolean;
 }) {
   return (
-    <TooltipTrigger delay={350} closeDelay={150} isDisabled={isDisabled}>
+    <TooltipTrigger delay={0} closeDelay={0} isDisabled={isDisabled}>
       <Focusable>{children}</Focusable>
       <AriaTooltip
         className="app-tooltip group"
         offset={10}
+        triggerRef={triggerRef}
         placement={placement}
         data-rich={content ? true : undefined}
       >

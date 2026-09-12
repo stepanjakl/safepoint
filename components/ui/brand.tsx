@@ -43,14 +43,14 @@ export function Brand() {
 export function BrandSquare({ markClassName }: { markClassName?: string }) {
   return (
     <span
-      className={`${WORDMARK} text-wordmark text-primary inline-flex flex-none items-center gap-2.25 whitespace-nowrap`}
+      className={`${WORDMARK} text-wordmark text-primary inline-flex flex-none items-center gap-1.5 whitespace-nowrap`}
       aria-label="Safepoint"
     >
       <span
-        className={`rounded-control grid size-6.5 flex-none place-items-center bg-cyan-600 text-white forced-colors:border forced-colors:border-[CanvasText] ${markClassName ?? ''}`}
+        className={`grid h-5.5 w-9 flex-none place-items-center rounded-full bg-cyan-600 text-white forced-colors:border forced-colors:border-[CanvasText] ${markClassName ?? ''}`}
         aria-hidden="true"
       >
-        <svg viewBox="0 0 32 32" fill="none" className="size-6">
+        <svg viewBox="0 0 32 32" fill="none" className="size-5.5">
           <path
             d="M10 16.5l4 4 8-8"
             stroke="currentColor"
