@@ -137,9 +137,21 @@ setting enables it. What does navigate is a name: Cmd+click `NOTICE_BOX` or
 `ICON_SHAPE` and you land on the definition. That is the whole reason class
 lists worth reading are given names.
 
-CSS custom properties navigate too, through the css-variables extension, which
-is why `.next` is excluded in `.vscode/settings.json` — without it `var(--sp-*)`
-resolves into compiled chunks instead of `tokens.css`.
+CSS custom properties navigate too, through the css-variables extension, and it
+needs two things from `.vscode/settings.json`. `.next` is excluded, or
+`var(--sp-*)` resolves into compiled chunks instead of `tokens.css`. And
+`tailwindcss` is in `cssVariables.languages`: the `*.css → tailwindcss`
+association changes every CSS file's language id, the extension only answers for
+the ids in that list, and its default list omits `tailwindcss`. Without the entry,
+Cmd+click and completion on variables go silent in CSS files while still working
+in TSX.
+
+The Unused CSS Classes extension is switched off for this workspace
+(`"unusedCssClasses.enable": false`). It reads every `@utility` name as a class,
+but counts a class as used only when it appears as a bare token in `className`
+or a `cx()`-style call. A utility named in a plain constant, or reached only
+through a variant such as `group-hover/enter:surface-menu-tile-hover`, is
+reported unused when it is not. Tailwind's build decides what is used.
 
 Where a value is genuinely dynamic, use a `style` prop rather than an interpolated class. `Glyph` does this: its numeric `size` becomes an inline `rem` width.
 
@@ -238,6 +250,38 @@ signed off — it is still watched, and reported again if it moves.
 
 `--json` for structure, `--screenshot` for a picture. The numbers are cheaper to read than
 the picture and strictly more informative; reach for the screenshot to show a person.
+
+### The notch and slanted controls
+
+`Notch` (`components/ui/notch.tsx`) is the bite a pane's corner takes so controls can sit
+on the canvas beside a header. `Button`'s `slant` prop — `left`, `right` or `both` — leans
+a control's edges to sit parallel to it; `both` is for the first of two that share a seam.
+
+Both are built from bordered boxes, not drawn, so they keep the edge and sheen of what they
+are cut from and take any height. A skew is an angle, so the run it produces follows the
+element's own height and nothing needs to know how tall the header is. The notch is the last
+cell of a header row: it stretches with the row, so its floor lands on the rule the other
+cell draws however the heading wraps.
+
+| Token | Default | Decides |
+| --- | --- | --- |
+| `--notch-angle` | 25deg | the lean of every slanted edge, from vertical |
+| `--notch-bend-top` / `--notch-bend-bottom` | 0.5rem | where the slope leaves the top edge and lands on the floor |
+| `--notch-corner` | `--radius-shell` | where the floor turns down the pane's side |
+| `--notch-gap` | `--spacing-shell-inset` | canvas held around the content, square to each edge |
+| `--slant-gap` | 0.25rem | between two slants sharing a seam, square to it |
+| `--slant-angle` / `--slant-radius` | the notch angle / `--radius-control` | a slant that should differ from its notch |
+| `--notch-face` / `--notch-edge` / `--notch-highlight` | `--sp-notch-*` | colours, per instance |
+
+Override any of them on an element — `[--notch-angle:30deg]` — and everything inside
+follows. Slant angle and radius are read with fallbacks rather than declared on `:root`, so
+changing the notch's angle on a subtree still reaches the buttons in it.
+
+Two things this asks of the pane. Its face is a layer behind the content rather than its
+own background, because a clip never reaches a border and the notch has to cover the edge it
+bites through. And the content steps in by `--spacing-control-edge`, the width
+`control-face` draws, which the notch pulls back over with `-mt-control-edge
+-mr-control-edge`.
 
 ### rem for what scales, px for what must not
 

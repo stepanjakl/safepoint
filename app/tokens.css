@@ -375,6 +375,33 @@
 }
 
 /*
+  Notch and slant geometry. The notch is the bite a pane's corner can take to
+  seat controls on the canvas; a slant is a control whose edge leans to sit
+  parallel to it. Outside @theme for the same reason as the durations -- no
+  namespace generates names from an angle -- and overridable on any element,
+  `[--notch-angle:30deg]`, because every rule reads them where it paints.
+
+  One lean for both, so a slanted button keeps an even gap to the notch it sits
+  in at any height: a slope is an angle, and the run it produces follows the
+  element's own height. --slant-angle and --slant-radius fall back to these
+  inside the rules rather than being declared here, so an override of the
+  notch's angle on a subtree still reaches the buttons in it.
+*/
+:root {
+  /* Lean of every slanted edge, measured from vertical. */
+  --notch-angle: 25deg;
+  /* Where the slope leaves the pane's top edge, and where it lands on the floor. */
+  --notch-bend-top: 0.5rem;
+  --notch-bend-bottom: 0.5rem;
+  /* Where the floor turns down into the pane's side. */
+  --notch-corner: var(--radius-shell);
+  /* Canvas held around the notch's content, measured square to each edge. */
+  --notch-gap: var(--spacing-shell-inset);
+  /* Between two slanted controls that share a seam, measured square to it. */
+  --slant-gap: 0.25rem;
+}
+
+/*
   Declared on :root and on every data-theme element. Lightning CSS polyfills
   light-dark() with inherited custom properties that resolve where a token is
   declared, so a themed subtree must re-declare the tokens to pick up its own
@@ -437,6 +464,13 @@
     color-mix(in oklab, var(--color-white) 85%, transparent),
     color-mix(in oklab, var(--color-white) 22%, transparent)
   );
+
+  /* The notch: canvas showing through a pane's corner, edged the way the
+     header rule is -- a hairline with the pane's sheen on its inner side -- so
+     the floor and the rule it lands on read as one line. */
+  --sp-notch-face: var(--sp-canvas);
+  --sp-notch-edge: var(--sp-rule-faint);
+  --sp-notch-highlight: var(--sp-face-highlight-strong);
 
   /* Semantic state */
   --sp-state-advisory: light-dark(var(--color-blue-600), var(--color-blue-400));
@@ -622,15 +656,15 @@
     var(--color-green-700)
   );
   --sp-menu-tile-ring-bottom: light-dark(
-    var(--color-green-400),
+    var(--color-green-300),
     var(--color-green-800)
   );
   --sp-menu-tile-highlight: light-dark(
-    var(--sp-face-highlight-strong),
+    var(--sp-face-highlight-medium),
     var(--sp-face-highlight-faint)
   );
   --sp-menu-tile-glyph: light-dark(
-    var(--color-green-700),
+    var(--color-green-600),
     var(--color-green-300)
   );
   --sp-menu-tile-face-hover: transparent;
@@ -1110,4 +1144,10 @@
     definition of the hairline and the two cannot drift.
   */
   --border-width-menu-edge: var(--spacing-menu-edge);
+  /*
+    The edge `control-face` draws, named so layout can measure from it. A pane
+    whose content has to reach over that edge -- the notch covers it -- pulls
+    back by this rather than by a 1px written beside it.
+  */
+  --spacing-control-edge: 1px;
 }

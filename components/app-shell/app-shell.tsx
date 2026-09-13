@@ -47,8 +47,20 @@ export function AppShell({
         every sr-only span among it -- otherwise resolves against the initial
         containing block, escapes the clipping here, and drags the document's
         scroll height out with it.
+
+        The face is a layer behind the content rather than this element's own
+        background. Its edge is a border, and a clip never reaches a border, so
+        a notch in the content could not cover the edge it bites through. Here
+        the clip is the whole box and the content steps in by the edge instead,
+        so everything sits where it did and a notch can pull back over it.
+        Clipped at every width, not only where the pane scrolls: the notch's
+        slope runs on past the pane's side.
       */}
-      <div className="control-face surface-raised rounded-shell shell:overflow-hidden relative min-w-0">
+      <div className="rounded-shell p-control-edge shell:overflow-hidden relative isolate min-w-0 overflow-clip">
+        <div
+          aria-hidden="true"
+          className="control-face surface-raised rounded-shell pointer-events-none absolute inset-0 -z-10"
+        />
         {children}
       </div>
     </div>

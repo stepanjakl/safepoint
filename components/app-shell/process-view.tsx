@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { ProcessSummary } from '@/lib/process/placeholder-process';
 import type { SystemLink } from '@/lib/process/system-links';
+import { Notch } from '@/components/ui/notch';
 import { InstructionsDrawer } from './instructions-drawer';
 import { SystemCluster } from './system-cluster';
 
@@ -17,16 +18,26 @@ export function ProcessView({
 
   return (
     <div className="shell:grid shell:h-full shell:grid-rows-[auto_minmax(0,1fr)]">
-      <header className="border-rule-faint shadow-separator-bottom-strong flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b px-4 py-3 sm:px-6 sm:py-4">
-        <div>
-          <h2 className="text-title [font-weight:550]">{process.name}</h2>
-          <p className="text-meta text-muted">{process.trigger}</p>
+      {/*
+        Two cells on one row: the heading and its systems, then the notch the
+        instructions sit in. The row takes the taller of the two, and both draw
+        their bottom edge on the same line, so the notch's floor is the header's
+        rule however the heading wraps.
+      */}
+      <header className="grid grid-cols-[minmax(0,1fr)_auto]">
+        <div className="border-rule-faint shadow-separator-bottom-strong flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b px-4 py-3 sm:px-6 sm:py-4">
+          <div>
+            <h2 className="text-title [font-weight:550]">{process.name}</h2>
+            <p className="text-meta text-muted">{process.trigger}</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <SystemCluster label="Reads" links={sources} />
+            <SystemCluster label="Writes" links={process.destinations} />
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          <SystemCluster label="Reads" links={sources} />
-          <SystemCluster label="Writes" links={process.destinations} />
+        <Notch className="-mt-control-edge -mr-control-edge">
           <InstructionsDrawer instructions={process.instructions} />
-        </div>
+        </Notch>
       </header>
       {/*
         Three columns where there is room, otherwise the runs become a strip

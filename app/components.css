@@ -333,6 +333,206 @@
 }
 
 /*
+  Notch and slant. A notch is the bite a pane's corner takes so controls can
+  sit on the canvas beside its header; a slant is a control whose edges lean
+  to sit parallel to that bite. Both are built from boxes with borders rather
+  than drawn, so they keep the edge and the sheen of what they are cut from,
+  and so they take any height: a skew is an angle, and the run it produces is
+  always the element's own height times its tangent. Nothing here knows how
+  tall anything is.
+
+  Geometry is in tokens.css (`--notch-*`, `--slant-*`) and can be overridden on
+  any element. What is here is pseudo elements, and a set of states on one
+  selector.
+*/
+@layer components {
+  /*
+    The notch is a cell at the end of a header row. It stretches with the row,
+    so its floor -- its own bottom edge -- is always on the line the rest of
+    the header draws, and it holds its content centred, a gap clear of every
+    edge. The inline-start gap is divided by the lean's cosine because it is
+    measured across the slope, not along the floor.
+  */
+  .notch {
+    --notch-face-color: var(--notch-face, var(--sp-notch-face));
+    --notch-edge-color: var(--notch-edge, var(--sp-notch-edge));
+    --notch-highlight-color: var(--notch-highlight, var(--sp-notch-highlight));
+    --notch-edge-width: var(--spacing-control-edge);
+    position: relative;
+    /* Above the pane content below it, which the floor's corner hangs over. */
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: calc(var(--slant-gap) / cos(var(--notch-angle)));
+    padding-block: var(--notch-gap);
+    padding-inline: calc(var(--notch-gap) / cos(var(--notch-angle)))
+      var(--notch-gap);
+    border-bottom: var(--notch-edge-width) solid var(--notch-edge-color);
+    box-shadow: 0 var(--notch-edge-width) 0 var(--notch-highlight-color);
+  }
+
+  /*
+    The canvas, and the slope that bounds it. Skewed about its centre, so the
+    slope crosses the cell's start edge at mid-height whatever the height is
+    -- the same point a slant control's edge crosses its own box -- which is
+    what keeps the gap between them even. It runs on past the pane's edge,
+    which clips it, so its far side needs no geometry.
+
+    The sheen is the box itself, one edge-width to the side: only the sliver
+    that clears the box shows, down the slope and round the bend, and none of
+    it lands on the floor below.
+  */
+  .notch-slant {
+    position: absolute;
+    z-index: -1;
+    inset-block: 0;
+    left: 0;
+    right: -50%;
+    background: var(--notch-face-color);
+    border-left: var(--notch-edge-width) solid var(--notch-edge-color);
+    border-bottom-left-radius: var(--notch-bend-bottom);
+    box-shadow: calc(var(--notch-edge-width) * -1) 0 0 0
+      var(--notch-highlight-color);
+    transform: skewX(var(--notch-angle));
+    pointer-events: none;
+  }
+
+  /*
+    The two bends that turn the other way -- where the slope leaves the pane's
+    top edge, and where the floor turns down its side. Neither can be a
+    border-radius on the canvas, because the canvas is the outside of them. So
+    each is a box whose rounded corner is the pane, edged and sheened on its
+    inner side, with a canvas spread filling the rest of the box and a clip
+    holding the spread inside it. The top one is a child of the slope, so it
+    leans with it.
+  */
+  .notch-slant::before,
+  .notch::after {
+    content: '';
+    position: absolute;
+    border-top: var(--notch-edge-width) solid var(--notch-edge-color);
+    border-right: var(--notch-edge-width) solid var(--notch-edge-color);
+    box-shadow:
+      0 0 0 var(--notch-bend-size) var(--notch-face-color),
+      inset calc(var(--notch-edge-width) * -1) var(--notch-edge-width) 0 0
+        var(--notch-highlight-color);
+    clip-path: inset(0);
+    pointer-events: none;
+  }
+  /* An absolute child is measured from the padding box, which starts where the
+     slope's border ends -- so a box ending at 0 puts its right border exactly
+     on the slope's. */
+  .notch-slant::before {
+    --notch-bend-size: var(--notch-bend-top);
+    top: 0;
+    left: calc(var(--notch-bend-top) * -1);
+    width: var(--notch-bend-top);
+    height: var(--notch-bend-top);
+    border-top-right-radius: var(--notch-bend-top);
+  }
+  /* Hung from the top of the floor's border, so its edge starts on it. */
+  .notch::after {
+    --notch-bend-size: var(--notch-corner);
+    top: 100%;
+    right: 0;
+    width: var(--notch-corner);
+    height: var(--notch-corner);
+    border-top-right-radius: var(--notch-corner);
+  }
+
+  /*
+    A slanted control. The element paints nothing; two layers behind its
+    label do, each a whole `control-face` reading the element's stops, so a
+    variant, a hover or a disabled state restyles them exactly as it would a
+    square button, and they animate on control-face's own step.
+
+    ::before is the parallelogram, skewed about its centre. ::after is the
+    square half, laid over the parallelogram's far side so that side's edge
+    is never seen, with its own near edge taken off and clipped away. The two
+    tops and bottoms are the same rows in the same colours, so there is no
+    seam. `both` is the parallelogram alone -- the first of two slants that
+    share a seam.
+  */
+  .slant {
+    --slant-lean: var(--slant-angle, var(--notch-angle));
+    position: relative;
+    isolation: isolate;
+  }
+  .slant::before,
+  .slant::after {
+    @apply control-face;
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    --control-face-top: inherit;
+    --control-face-bottom: inherit;
+    --control-ring-top: inherit;
+    --control-ring-bottom: inherit;
+    --control-highlight: inherit;
+    border-radius: var(--slant-radius, var(--radius-control));
+    pointer-events: none;
+  }
+  .slant::before {
+    transform: skewX(var(--slant-lean));
+  }
+  .slant[data-slant='both']::after {
+    display: none;
+  }
+  /*
+    The halves overlap across the middle quarter. Each clip is generous on the
+    three sides it keeps, so the focus outline survives, and the
+    parallelogram's clip is in its own skewed space -- it takes off the far
+    edge and that edge's outline, which would otherwise show as a stub between
+    the outline and the box.
+  */
+  .slant[data-slant='left']::before {
+    right: 50%;
+    clip-path: inset(-1rem 25% -1rem -1rem);
+  }
+  .slant[data-slant='left']::after {
+    left: 25%;
+    border-left-width: 0;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    clip-path: inset(-1rem -1rem -1rem var(--control-highlight-width, 1px));
+  }
+  .slant[data-slant='right']::before {
+    left: 50%;
+    clip-path: inset(-1rem -1rem -1rem 25%);
+  }
+  .slant[data-slant='right']::after {
+    right: 25%;
+    border-right-width: 0;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    clip-path: inset(-1rem var(--control-highlight-width, 1px) -1rem -1rem);
+  }
+  /* The focus ring follows the shape, so it is drawn by the layers. */
+  .slant[data-focus-visible]::before,
+  .slant[data-focus-visible]::after {
+    outline: 2px solid var(--sp-focus);
+    outline-offset: 2px;
+  }
+
+  @media (forced-colors: active) {
+    /* Spread shadows do not survive forced colours: square corners instead
+       of canvas-coloured gaps. */
+    .notch-slant::before,
+    .notch::after {
+      display: none;
+    }
+    .notch-slant {
+      border-left-color: CanvasText;
+    }
+    .notch {
+      border-bottom-color: CanvasText;
+    }
+  }
+}
+
+/*
   What is left here once the menu moved to utilities: the reorder machinery,
   whose rows are absolutely positioned and translated by inline transform so
   the list can reorder without reflowing, the pair of gradient strips at the

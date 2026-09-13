@@ -6,27 +6,59 @@ import { cx } from '@/lib/cx';
 
 type Variant = 'primary' | 'secondary';
 
+/*
+  Which edges lean. A slanted button sits in a Notch, parallel to its slope;
+  `both` is for the first of two that share a seam. Physical sides, because a
+  skew is physical.
+*/
+export type Slant = 'left' | 'right' | 'both';
+
 // No transition utility here: control-face owns the timing, because the
 // gradient stops it animates are its own contract.
 const base =
-  'inline-flex h-9 min-w-11 items-center justify-center gap-2 px-3.5 text-dense font-medium whitespace-nowrap outline-none data-[focus-visible]:outline-solid data-[focus-visible]:outline-2 data-[focus-visible]:outline-offset-2 data-[focus-visible]:outline-focus data-[disabled]:cursor-not-allowed data-[disabled]:control-off data-[disabled]:text-muted';
+  'inline-flex h-9 min-w-11 items-center justify-center gap-2 px-3.5 text-dense font-medium whitespace-nowrap outline-none data-[disabled]:cursor-not-allowed data-[disabled]:control-off data-[disabled]:text-muted';
 
-const variants: Record<Variant, string> = {
+// A square button draws its own ring. A slanted one cannot -- the element is a
+// rectangle and the shape is not -- so its layers draw it instead.
+const focusRing =
+  'data-[focus-visible]:outline-solid data-[focus-visible]:outline-2 data-[focus-visible]:outline-offset-2 data-[focus-visible]:outline-focus';
+
+/*
+  Each variant in two halves: the stops, which say what colour the face is in
+  each state, and the shape they are painted onto. A square button is its own
+  shape; a slanted one hands the stops to the `slant` layers.
+*/
+const faces: Record<Variant, string> = {
   // The one accented control on a page: a lit face with a brighter ring.
   primary:
-    'control-face control-accent rounded-control text-white data-[hovered]:control-accent-hover data-[pressed]:control-accent-hover',
+    'control-accent text-white data-[hovered]:control-accent-hover data-[pressed]:control-accent-hover',
   // Everything else: the same construction, one step quieter.
   secondary:
-    'control-face control-quiet rounded-section text-primary data-[hovered]:control-quiet-hover data-[pressed]:control-quiet-hover',
+    'control-quiet text-primary data-[hovered]:control-quiet-hover data-[pressed]:control-quiet-hover',
+};
+
+const shapes: Record<Variant, string> = {
+  primary: 'control-face rounded-control',
+  secondary: 'control-face rounded-section',
 };
 
 export function Button({
   variant = 'secondary',
+  slant,
   className,
   ...props
-}: ButtonProps & { variant?: Variant; className?: string }) {
+}: ButtonProps & { variant?: Variant; slant?: Slant; className?: string }) {
   return (
-    <AriaButton {...props} className={cx(base, variants[variant], className)} />
+    <AriaButton
+      {...props}
+      data-slant={slant}
+      className={cx(
+        base,
+        faces[variant],
+        slant ? 'slant' : cx(shapes[variant], focusRing),
+        className,
+      )}
+    />
   );
 }
 

@@ -32,6 +32,36 @@
     "**/.next"
   ],
 
+  // files.associations below makes every .css file the "tailwindcss" language,
+  // and vscode-css-variables registers only for the language ids in this list.
+  // Its default omits tailwindcss, so without this entry var(--sp-*) in CSS
+  // files loses Cmd+click and completion. The extension's defaults, plus it.
+  "cssVariables.languages": [
+    "astro",
+    "svelte",
+    "vue",
+    "vue-html",
+    "vue-postcss",
+    "scss",
+    "postcss",
+    "less",
+    "css",
+    "tailwindcss",
+    "html",
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact",
+    "source.css.styled"
+  ],
+
+  // Unused CSS Classes (rcore) reads @utility names as classes but indexes
+  // only whitespace-separated [\w-] tokens inside className and cx()-style
+  // calls. A utility named in a plain constant, or used only behind a variant
+  // (group-hover/enter:surface-menu-tile-hover), is reported unused when it is
+  // not. Tailwind's own build is the authority on what is used here.
+  "unusedCssClasses.enable": false,
+
   // Hover, completion and linting inside cx() calls, not just className="".
   // Without this, a class list named as a constant -- MENU_LABEL, NOTICE_BOX,
   // every shape in process-menu.tsx -- gets no IntelliSense at all, because

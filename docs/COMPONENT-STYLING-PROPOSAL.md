@@ -157,6 +157,31 @@ the comments (`control-face's geometry`) break the string extraction, yielding
 phantom classes like `"s geometry, the notice"`. Covering a joined array needs
 that regex. Covering a `cx()` call needs one setting. That decided the form.
 
+### Editor findings, second round
+
+Three more reports after the settings were restored, each traced to its source
+rather than worked around.
+
+**`var(--sp-*)` lost Cmd+click and completion in CSS files.** Caused by the
+restored `files.associations`, which makes every `.css` file the `tailwindcss`
+language. vscode-css-variables builds its document selector from
+`cssVariables.languages`, whose default omits `tailwindcss`, so it stopped
+answering in CSS files. Fixed by adding `tailwindcss` to that list. Verified
+against the extension's own language server: `--sp-menu-tile-face` in
+`globals.css` resolves to `app/tokens.css:616`, and completion after `var(--`
+returns 286 variables including it. The client-side routing fix itself needs a
+window reload to confirm.
+
+**`surface-menu-tile` reported as unused.** From Unused CSS Classes (rcore). It
+reads `@utility` names as classes, but indexes only `[\w-]` tokens inside
+`className` and `cx()`-style calls. `MENU_TILE` is a plain constant, so the
+utility was never seen; and `surface-menu-tile-hover` appears only behind a
+variant, which the extension discards outright, so it would be flagged even
+inside `cx()`. The extension cannot model Tailwind usage, so it is disabled for
+this workspace rather than fed a safelist that would need maintaining.
+
+**Cmd+click on utility class names** remains unavailable, as recorded above.
+
 ### Limitations
 
 Completion inside `cx()` was not separately confirmed and should behave as hover

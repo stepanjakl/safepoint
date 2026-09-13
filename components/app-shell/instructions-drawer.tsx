@@ -24,7 +24,8 @@ export function InstructionsDrawer({
 }) {
   return (
     <DialogTrigger>
-      <Button>
+      {/* Slanted on the side that faces the notch's slope. */}
+      <Button slant="left">
         Instructions <span className="value">{instructions.version}</span>
       </Button>
       {/* Inset by the shell's own padding so the panel lines up with the panes. */}
