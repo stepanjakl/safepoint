@@ -3,6 +3,7 @@ import type { ProcessSummary } from '@/lib/process/placeholder-process';
 import type { SystemLink } from '@/lib/process/system-links';
 import { Notch } from '@/components/ui/notch';
 import { InstructionsDrawer } from './instructions-drawer';
+import { RefineInstructions } from './refine-instructions';
 import { SystemCluster } from './system-cluster';
 
 export function ProcessView({
@@ -20,12 +21,17 @@ export function ProcessView({
     <div className="shell:grid shell:h-full shell:grid-rows-[auto_minmax(0,1fr)]">
       {/*
         Two cells on one row: the heading and its systems, then the notch the
-        instructions sit in. The row takes the taller of the two, and both draw
-        their bottom edge on the same line, so the notch's floor is the header's
-        rule however the heading wraps.
+        instructions sit in. The row takes the taller of the two, and the
+        notch reaches down over the header's rule, so its floor is that rule
+        however the heading wraps.
+
+        The rule and its sheen belong to the header, whole width, not to the
+        heading cell. The notch starts wherever the button's text width puts
+        it, usually on a fraction of a pixel, and a translucent sheen drawn by
+        two elements meeting there double-paints that pixel into a bright dot.
       */}
-      <header className="grid grid-cols-[minmax(0,1fr)_auto]">
-        <div className="border-rule-faint shadow-separator-bottom-strong flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b px-4 py-3 sm:px-6 sm:py-4">
+      <header className="border-rule-faint shadow-separator-bottom-strong grid grid-cols-[minmax(0,1fr)_auto] border-b">
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-3 sm:px-6 sm:py-4">
           <div>
             <h2 className="text-title [font-weight:550]">{process.name}</h2>
             <p className="text-meta text-muted">{process.trigger}</p>
@@ -35,8 +41,17 @@ export function ProcessView({
             <SystemCluster label="Writes" links={process.destinations} />
           </div>
         </div>
-        <Notch className="-mt-control-edge -mr-control-edge">
-          <InstructionsDrawer instructions={process.instructions} />
+        {/* Two slants sharing a seam: the first leans on both sides, the last
+            keeps its far side square against the pane's edge. */}
+        <Notch className="-mt-control-edge -mr-control-edge -mb-control-edge">
+          <InstructionsDrawer
+            instructions={process.instructions}
+            slant="both"
+          />
+          <RefineInstructions
+            version={process.instructions.version}
+            slant="left"
+          />
         </Notch>
       </header>
       {/*

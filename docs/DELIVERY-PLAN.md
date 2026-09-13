@@ -363,11 +363,12 @@ Do not begin this work until the public portfolio release meets its acceptance g
 4. Onboard a second process using the same review shell and measure where new effect or value renderers are genuinely required.
 5. Rehearse a proposal against a simulation and show predicted side effects.
 6. Generate and compare alternative plans under the same policy.
-7. Support connector-specific permission and compensation capabilities.
-8. Add organisation-level policy configuration and separation of duties.
-9. Add authenticated collaborative review and comments.
-10. Evaluate additional domains with representative users.
-11. Add an optional Duvo runtime adapter that preserves run, case, request, revision, and tool provenance while keeping Safepoint's executor authoritative. Duvo may retain read and staging access, but not duplicate production write authority for the same workflow.
-12. Investigate multi-agent planning only where separate roles create a measurable benefit.
+7. Draft instruction revisions from review decisions. Propose a new instruction version whose every edit cites the holds, rejections and reasons that motivated it; accept it through review as a versioned change, and record the version on every later run. Reviewer-written text stays untrusted evidence and is never copied into the server-owned instruction. The process header already carries an `aria-disabled` placeholder, `RefineInstructions` in `components/app-shell/refine-instructions.tsx`, beside the Instructions drawer.
+8. Support connector-specific permission and compensation capabilities.
+9. Add organisation-level policy configuration and separation of duties.
+10. Add authenticated collaborative review and comments.
+11. Evaluate additional domains with representative users.
+12. Add an optional Duvo runtime adapter that preserves run, case, request, revision, and tool provenance while keeping Safepoint's executor authoritative. Duvo may retain read and staging access, but not duplicate production write authority for the same workflow.
+13. Investigate multi-agent planning only where separate roles create a measurable benefit.
 
 Each future capability requires its own threat model, evaluation set, and evidence that it improves decisions rather than merely adding agent complexity.

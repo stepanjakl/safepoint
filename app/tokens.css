@@ -391,8 +391,8 @@
   /* Lean of every slanted edge, measured from vertical. */
   --notch-angle: 25deg;
   /* Where the slope leaves the pane's top edge, and where it lands on the floor. */
-  --notch-bend-top: 0.5rem;
-  --notch-bend-bottom: 0.5rem;
+  --notch-bend-top: var(--radius-shell);
+  --notch-bend-bottom: var(--radius-shell);
   /* Where the floor turns down into the pane's side. */
   --notch-corner: var(--radius-shell);
   /* Canvas held around the notch's content, measured square to each edge. */
@@ -453,6 +453,13 @@
   --sp-rule-faint: light-dark(var(--sp-neutral-300), var(--sp-neutral-700));
   --sp-rule-default: light-dark(var(--sp-neutral-350), var(--sp-neutral-600));
   --sp-rule-strong: var(--sp-neutral-500);
+  /* The lit line under a rule, so a divider reads as cut into the canvas
+     rather than drawn on it. White in both themes and much fainter in dark,
+     where a strong sheen under a light rule reads as a second rule. */
+  --sp-rule-etch: light-dark(
+    var(--sp-face-highlight-strong),
+    color-mix(in oklab, var(--color-white) 6%, transparent)
+  );
 
   /* Neutral interaction */
   --sp-action: light-dark(var(--sp-neutral-900), var(--sp-neutral-100));
@@ -465,12 +472,14 @@
     color-mix(in oklab, var(--color-white) 22%, transparent)
   );
 
-  /* The notch: canvas showing through a pane's corner, edged the way the
-     header rule is -- a hairline with the pane's sheen on its inner side -- so
-     the floor and the rule it lands on read as one line. */
+  /* The notch: canvas showing through a pane's corner. Its outline is the
+     pane's own edge carried round the bite, so it takes surface-raised's ring,
+     sheen and face -- the face lies under the sheen where the bite's corner
+     crosses the header's own, so the white is laid once. */
   --sp-notch-face: var(--sp-canvas);
-  --sp-notch-edge: var(--sp-rule-faint);
+  --sp-notch-edge: var(--sp-rule-default);
   --sp-notch-highlight: var(--sp-face-highlight-strong);
+  --sp-notch-pane: var(--sp-surface-primary);
 
   /* Semantic state */
   --sp-state-advisory: light-dark(var(--color-blue-600), var(--color-blue-400));
@@ -556,26 +565,30 @@
   );
 
   /*
-    The keycap in the search field. Flat, like every other surface face: a ramp
-    across 20px reads as a gradient artefact rather than a lift. The ring is a
-    step darker than the field's own edge so the key sits *on* the field rather
-    than being cut into it, and the sheen is a hairline because a full pixel on
-    a box this small is a second border.
+    The keycap a row's status badge rests on. Flat, like every other surface
+    face: a ramp across 20px reads as a gradient artefact rather than a lift.
+    Its ring is a step darker than the row's ground so the key sits *on* it
+    rather than being cut into it.
   */
   --sp-keycap-face: light-dark(var(--sp-control-100), var(--sp-control-750));
   --sp-keycap-ring: light-dark(var(--sp-control-300), var(--sp-control-600));
   --sp-keycap-highlight: var(--sp-face-highlight-medium);
 
-  /* The step the key takes whenever the field lights -- hovered, focused, or
-     holding a query. It has to move with the field rather than only with the
-     pointer: the resting face above is the field's own lit face, so a key that
-     stayed put would disappear into it the moment the field came on. */
-  --sp-keycap-face-hover: light-dark(
-    var(--sp-control-250),
-    var(--sp-control-700)
+  /*
+    The search field's shortcut: a plain face, a step darker than the canvas it
+    rests on so it reads against it, and darker again whenever the field lights
+    -- hovered, focused, or holding a query -- so it still reads against the
+    field's own face. Darker in both themes; in dark the ramp ends at 950, so
+    the lit step mixes on toward black.
+  */
+  --sp-search-key-face: light-dark(
+    var(--sp-control-300),
+    var(--sp-control-950)
   );
-  --sp-keycap-ring-hover: light-dark(transparent, var(--sp-control-500));
-  --sp-keycap-highlight-hover: transparent;
+  --sp-search-key-face-hover: light-dark(
+    var(--sp-control-300),
+    color-mix(in oklab, var(--sp-control-950) 60%, var(--color-black))
+  );
 
   /* Flat: no ramp, so an unavailable control cannot read as a live one. */
   --sp-off-face: light-dark(var(--sp-control-100), var(--sp-control-900));
@@ -629,43 +642,23 @@
   --sp-menu-current-highlight: transparent;
 
   /*
-    The tile behind the workspace menu's Processes icon, and the glyph in it.
-    Its own hue on every layer -- face, ring and glyph -- rather than a neutral
-    surface, so the entry into the processes is the one coloured object in the
-    workspace menu. Green, from Tailwind's green rather than the emerald the
-    verified state uses, and spent on a filled tile rather than on a glyph or a
-    count, so it does not read as a verdict beside the rows' status badges.
+    The tiles behind the workspace menu's icons. Each item names its own hue --
+    a `menu-tile-*` utility in globals.css -- and `surface-menu-tile` reads the
+    steps from that hue where the tile paints, so every tile is one construction
+    in a different colour: the face a full step into the hue, the ring a few
+    steps further, the glyph further still. What does not follow the hue is
+    here.
 
-    The face is a full step into the hue, not a tint over the canvas: a tint
-    left the tile reading as zinc with a coloured edge.
-
-    The sheen is a step fainter in dark: a 75% white line on a deep green face
-    reads as a glare rather than a lift.
+    The sheen is a step fainter in dark: a 75% white line on a deep face reads
+    as a glare rather than a lift.
 
     The hover stops are all transparent: under the pointer the tile dissolves
     into the row's wash while the glyph fills, so the emphasis hands over from
-    the tile to the icon rather than stacking the two. The glyph keeps its hue
-    in both states, which is what carries the colour once the tile has gone.
+    the tile to the icon rather than stacking the two.
   */
-  --sp-menu-tile-face: light-dark(
-    var(--color-green-100),
-    var(--color-green-900)
-  );
-  --sp-menu-tile-ring-top: light-dark(
-    var(--color-green-300),
-    var(--color-green-700)
-  );
-  --sp-menu-tile-ring-bottom: light-dark(
-    var(--color-green-300),
-    var(--color-green-800)
-  );
   --sp-menu-tile-highlight: light-dark(
     var(--sp-face-highlight-medium),
     var(--sp-face-highlight-faint)
-  );
-  --sp-menu-tile-glyph: light-dark(
-    var(--color-green-600),
-    var(--color-green-300)
   );
   --sp-menu-tile-face-hover: transparent;
   --sp-menu-tile-ring-hover: transparent;
@@ -985,7 +978,8 @@
   --color-menu-wash-strong: var(--sp-menu-wash-strong);
   --color-menu-chip: var(--sp-menu-chip);
   --color-menu-link: var(--sp-menu-link);
-  --color-menu-tile-glyph: var(--sp-menu-tile-glyph);
+  --color-search-key: var(--sp-search-key-face);
+  --color-search-key-hover: var(--sp-search-key-face-hover);
   --color-field-face: var(--sp-field-face);
   --color-field-edge: var(--sp-field-edge);
   --color-field-edge-hover: var(--sp-field-edge-hover);
@@ -1064,17 +1058,26 @@
 
   /*
     Pulled in from Tailwind's 4/8/12/16 so corners read crisper and more
-    instrument-like, which is what the tabular, dense brief asks for. Four
-    steps, each named for what it encloses rather than for its size.
+    instrument-like, which is what the tabular, dense brief asks for. Each
+    step is named for what it encloses rather than for its size.
   */
   --radius-region: 0.125rem; /*  2px  hairline: bar segments, chips */
   --radius-section: 0.25rem; /*  4px  small chrome: badges, grips */
   --radius-control: 0.375rem; /*  6px  anything pressable */
+  --radius-icon: 0.5rem; /*  8px  icon squares, and the tiles beside them */
 
   /* Inline so element-local control colours resolve on the painted element. */
-  /* Width is a variable so a small face can ask for a hairline; every existing
-     caller omits it and keeps the 1px it already had. */
-  --shadow-control-highlight: inset 0 0 0 var(--control-highlight-width, 1px)
+  /*
+    The sheen's two widths. A whole pixel for panes and cards; a hairline for
+    anything icon- or button-sized, where a full pixel of white inside a 1px
+    ring reads as a second border. A sub-pixel spread lands as a partly covered
+    device pixel, so the line reads finer without dropping to a fainter stop.
+    `control-hairline` asks for the second.
+  */
+  --spacing-control-highlight: 1px;
+  --spacing-control-highlight-hairline: 0.75px;
+  --shadow-control-highlight: inset 0 0 0
+    var(--control-highlight-width, var(--spacing-control-highlight))
     var(--control-highlight);
   /* Explicit strengths are independent of the current control state. */
   --shadow-control-highlight-subtle: inset 0 0 0 1px
@@ -1085,15 +1088,18 @@
     var(--sp-face-highlight-strong);
   --shadow-control-highlight-solid: inset 0 0 0 1px
     var(--sp-face-highlight-solid);
-  /* Same colour, thinner line. A sub-pixel spread lands as a partially
-     covered device pixel, so the edge reads finer than the 1px steps without
-     dropping to a lighter stop -- for faces where a full 1px sheen is too
-     assertive at small radii. */
-  --shadow-control-highlight-medium-hairline: inset 0 0 0 0.75px
-    var(--sp-face-highlight-medium);
+  /* The medium strength at the hairline width above. */
+  --shadow-control-highlight-medium-hairline: inset 0 0 0
+    var(--spacing-control-highlight-hairline) var(--sp-face-highlight-medium);
   --shadow-separator-bottom-strong: 0 1px 0 var(--sp-face-highlight-strong);
   --shadow-separator-bottom-solid: 0 1px 0 var(--sp-face-highlight-solid);
   --shadow-separator-right-strong: 1px 0 0 var(--sp-face-highlight-strong);
+  /* The lit line under a menu divider, at the hairline width. A shadow rather
+     than a border: Chrome snaps a border to whole device pixels, so a 0.75px
+     border draws as 0.5px on a 2x screen, while a shadow's offset is painted at
+     the width it asks for. */
+  --shadow-rule-etch: 0 var(--spacing-control-highlight-hairline) 0
+    var(--sp-rule-etch);
 
   --ease-out-emphasized: cubic-bezier(0.22, 1, 0.36, 1);
   /*
@@ -1129,12 +1135,22 @@
   */
   --spacing-menu-end: 0.625rem; /* 10px */
   /*
-    The hairline a row and the search field each draw. A whole pixel because a
-    fractional border-width is floored for layout -- Chrome lays 1.5px out as
-    1px -- so anything measured from it has to use the width that is really
-    there, not the one that was asked for.
+    The edge a row and a grip each draw. Everything measured from it -- the
+    trailing axis, the leading cell's give-back -- reads this token rather than
+    a number written beside it, and it is a whole pixel because that is the one
+    width that lays out the same everywhere: Chrome snaps a border to whole
+    device pixels, so 1.5px is 1.5px on a 2x screen and 1px on a 1x one.
   */
   --spacing-menu-edge: 1px;
+  /*
+    The two heavier edges, each placed where it cannot move an axis. The
+    current row's bottom edge, which the sheet sits on, runs along the row
+    rather than across the rail. A field's edge does cross the axes, so the
+    search field takes the difference back out of its own insets instead of
+    carrying its glyph and keycap with it.
+  */
+  --spacing-menu-current-edge: 1.5px;
+  --spacing-field-edge: 1.5px;
   /*
     The same hairline, published again under the one namespace `border-*` reads
     its width from. Tailwind resolves a border width from --border-width-* and

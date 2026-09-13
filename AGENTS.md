@@ -39,9 +39,10 @@ Put the icon in a rail cell (`MENU_RAIL` in
 A cell centres what is in it and needs no arithmetic; a hand-derived offset goes
 stale the moment a token moves.
 
-A fractional `border-width` is floored for layout — Chrome lays `1.5px` out as
-`1px` — so an offset measured against a declared fraction is wrong while looking
-right in the source. Use `--spacing-menu-edge` / `border-menu-edge`.
+Chrome snaps a `border-width` to whole device pixels — `1.5px` lays out as
+`1.5px` at 2× and `1px` at 1× — so never measure against a number written beside
+a border. Read `--spacing-menu-edge` / `border-menu-edge`, which the rail axes
+read too.
 
 ## Conventions worth knowing before editing styles
 

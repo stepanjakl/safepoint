@@ -184,6 +184,15 @@
   transition-timing-function: ease-out;
 }
 
+/*
+  The hairline sheen, for a face at icon or button size. A width only -- the
+  colour stays whatever the face's own stops say -- so it combines with any
+  control or surface utility rather than being a variant of each.
+*/
+@utility control-hairline {
+  --control-highlight-width: var(--spacing-control-highlight-hairline);
+}
+
 /* The primary action. */
 @utility control-accent {
   --control-face-top: var(--sp-accent-face-top);
@@ -274,47 +283,104 @@
 }
 
 /*
-  A keycap: the smallest raised face in the interface, and the only one that
-  asks for a hairline sheen rather than a full pixel. Paired with a hover step
-  because it lives inside a field and has to move when that field does.
+  A row's status badge: the smallest raised face in the interface, on the
+  keycap's stops at rest. Keycap-shaped, but its stops are read from the row it
+  sits in: `.process-menu-row` in app/components.css publishes them for each of
+  its states, so the badge follows the row -- a keycap at rest, bare once the
+  row lights -- with no variant of its own, and control-face animates it. The fallbacks are
+  the keycap, so a badge outside a row still paints.
 */
-@utility surface-keycap {
-  --control-face-top: var(--sp-keycap-face);
-  --control-face-bottom: var(--sp-keycap-face);
-  --control-ring-top: var(--sp-keycap-ring);
-  --control-ring-bottom: var(--sp-keycap-ring);
-  --control-highlight: var(--sp-keycap-highlight);
-  --control-highlight-width: 0.75px;
-}
-
-@utility surface-keycap-hover {
-  --control-face-top: var(--sp-keycap-face-hover);
-  --control-face-bottom: var(--sp-keycap-face-hover);
-  --control-ring-top: var(--sp-keycap-ring-hover);
-  --control-ring-bottom: var(--sp-keycap-ring-hover);
-  --control-highlight: var(--sp-keycap-highlight-hover);
+@utility surface-menu-badge {
+  --control-face-top: var(--menu-badge-face, var(--sp-keycap-face));
+  --control-face-bottom: var(--menu-badge-face, var(--sp-keycap-face));
+  --control-ring-top: var(--menu-badge-ring, var(--sp-keycap-ring));
+  --control-ring-bottom: var(--menu-badge-ring, var(--sp-keycap-ring));
+  --control-highlight: var(--menu-badge-highlight, var(--sp-keycap-highlight));
+  --control-highlight-width: var(--spacing-control-highlight-hairline);
 }
 
 /*
-  The tile behind the workspace menu's Processes icon: surface-raised's
-  construction at icon scale, on stops of its own. The hover step is bare, and
-  because control-face transitions the stops the tile fades out on the same step
-  and curve as every other control rather than snapping away.
+  The tile behind a workspace menu item's icon: surface-raised's construction
+  at icon scale, in the hue a `menu-tile-*` utility names on the same element.
+  light-dark() is resolved here, where the tile paints, because a hue chosen
+  per element cannot be resolved on :root. The glyph takes the hue through
+  `color`, which control-face already transitions, so the tile and its glyph
+  move on one step and curve.
 */
 @utility surface-menu-tile {
-  --control-face-top: var(--sp-menu-tile-face);
-  --control-face-bottom: var(--sp-menu-tile-face);
-  --control-ring-top: var(--sp-menu-tile-ring-top);
-  --control-ring-bottom: var(--sp-menu-tile-ring-bottom);
+  --control-face-top: light-dark(var(--tile-100), var(--tile-900));
+  --control-face-bottom: light-dark(var(--tile-100), var(--tile-900));
+  --control-ring-top: light-dark(var(--tile-300), var(--tile-700));
+  --control-ring-bottom: light-dark(var(--tile-300), var(--tile-800));
   --control-highlight: var(--sp-menu-tile-highlight);
+  color: light-dark(var(--tile-600), var(--tile-300));
 }
 
+/* Bare, with the glyph a step deeper in light and brighter in dark: once the
+   tile has gone the filled icon is the only thing carrying the hue. */
 @utility surface-menu-tile-hover {
   --control-face-top: var(--sp-menu-tile-face-hover);
   --control-face-bottom: var(--sp-menu-tile-face-hover);
   --control-ring-top: var(--sp-menu-tile-ring-hover);
   --control-ring-bottom: var(--sp-menu-tile-ring-hover);
   --control-highlight: var(--sp-menu-tile-highlight-hover);
+  color: light-dark(var(--tile-700), var(--tile-200));
+}
+
+/*
+  The hues a tile can take: Tailwind's own ramps, at the seven steps the tile
+  reads. Green is the processes entry, from green rather than the emerald the
+  verified state uses so it does not read as a verdict; the others stay clear
+  of the state hues for the same reason.
+*/
+@utility menu-tile-green {
+  --tile-100: var(--color-green-100);
+  --tile-200: var(--color-green-200);
+  --tile-300: var(--color-green-300);
+  --tile-600: var(--color-green-600);
+  --tile-700: var(--color-green-700);
+  --tile-800: var(--color-green-800);
+  --tile-900: var(--color-green-900);
+}
+
+@utility menu-tile-sky {
+  --tile-100: var(--color-sky-100);
+  --tile-200: var(--color-sky-200);
+  --tile-300: var(--color-sky-300);
+  --tile-600: var(--color-sky-600);
+  --tile-700: var(--color-sky-700);
+  --tile-800: var(--color-sky-800);
+  --tile-900: var(--color-sky-900);
+}
+
+@utility menu-tile-violet {
+  --tile-100: var(--color-violet-100);
+  --tile-200: var(--color-violet-200);
+  --tile-300: var(--color-violet-300);
+  --tile-600: var(--color-violet-600);
+  --tile-700: var(--color-violet-700);
+  --tile-800: var(--color-violet-800);
+  --tile-900: var(--color-violet-900);
+}
+
+@utility menu-tile-orange {
+  --tile-100: var(--color-orange-100);
+  --tile-200: var(--color-orange-200);
+  --tile-300: var(--color-orange-300);
+  --tile-600: var(--color-orange-600);
+  --tile-700: var(--color-orange-700);
+  --tile-800: var(--color-orange-800);
+  --tile-900: var(--color-orange-900);
+}
+
+@utility menu-tile-pink {
+  --tile-100: var(--color-pink-100);
+  --tile-200: var(--color-pink-200);
+  --tile-300: var(--color-pink-300);
+  --tile-600: var(--color-pink-600);
+  --tile-700: var(--color-pink-700);
+  --tile-800: var(--color-pink-800);
+  --tile-900: var(--color-pink-900);
 }
 
 @utility surface-recessed {

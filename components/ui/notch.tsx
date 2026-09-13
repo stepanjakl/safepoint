@@ -11,6 +11,9 @@ import { cx } from '@/lib/cx';
   Controls inside it lean with it when they are slanted -- `<Button slant>` --
   and keep an even gap to the slope, because both read `--notch-angle`.
   Geometry and colour are tokens; override any of them on this element.
+
+  The spans are the painted layers, each nested in the wrapper that computes
+  the outline at its offset: see `.notch` in app/components.css.
 */
 export function Notch({
   children,
@@ -21,7 +24,16 @@ export function Notch({
 }) {
   return (
     <div className={cx('notch', className)}>
-      <span aria-hidden="true" className="notch-slant" />
+      <span aria-hidden="true" className="notch-shape">
+        <span className="notch-paint notch-face" />
+        <span className="notch-at" data-k="1">
+          <span className="notch-at" data-k="2">
+            <span className="notch-paint notch-under" />
+            <span className="notch-paint notch-sheen" />
+          </span>
+          <span className="notch-paint notch-edge" />
+        </span>
+      </span>
       {children}
     </div>
   );

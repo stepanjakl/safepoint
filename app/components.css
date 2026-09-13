@@ -167,7 +167,7 @@
      from `control-face`, with the outer ring punching a gap in the connector
      so the line reads as passing behind the marker rather than through it. */
   .thread-dot {
-    @apply control-face surface-floating;
+    @apply control-face control-hairline surface-floating;
     box-shadow:
       --theme(--shadow-control-highlight),
       0 0 0 3px var(--sp-surface-primary);
@@ -229,7 +229,7 @@
    than restated with the sheen each time. */
 @layer components {
   .system-disc {
-    @apply control-face surface-floating;
+    @apply control-face control-hairline surface-floating;
     --disc-ring: 0 0 0 2px var(--sp-surface-primary);
     box-shadow: --theme(--shadow-control-highlight), var(--disc-ring);
     display: grid;
@@ -335,199 +335,446 @@
 /*
   Notch and slant. A notch is the bite a pane's corner takes so controls can
   sit on the canvas beside its header; a slant is a control whose edges lean
-  to sit parallel to that bite. Both are built from boxes with borders rather
-  than drawn, so they keep the edge and the sheen of what they are cut from,
-  and so they take any height: a skew is an angle, and the run it produces is
-  always the element's own height times its tangent. Nothing here knows how
-  tall anything is.
+  to sit parallel to that bite.
 
-  Geometry is in tokens.css (`--notch-*`, `--slant-*`) and can be overridden on
-  any element. What is here is pseudo elements, and a set of states on one
-  selector.
+  Both are drawn with `clip-path: shape()` rather than a skewed box. A skew
+  thins every slanted border to cos(angle) of its width and shears the corners
+  into ellipses, so the edge and the sheen would swell and pinch around each
+  bend. Here each band is its own layer, clipped between two copies of one
+  outline offset square to every edge, so a hairline is a hairline all the way
+  round -- down a slope, around an acute corner and an obtuse one.
+
+  One outline is written once, as custom properties that read an offset. A
+  wrapper sets the offset and computes the outline at it; the painted layers
+  below read the outlines their wrappers computed, which is how one layer gets
+  two offsets to clip between. Custom properties substitute where they are
+  declared, so the copy has to be taken on the wrapper, not on the layer.
+
+  Geometry reads the size of the box through container units, so nothing here
+  knows how tall anything is, and every angle, bend and gap is a token in
+  tokens.css that any element can override.
 */
 @layer components {
-  /*
-    The notch is a cell at the end of a header row. It stretches with the row,
-    so its floor -- its own bottom edge -- is always on the line the rest of
-    the header draws, and it holds its content centred, a gap clear of every
-    edge. The inline-start gap is divided by the lean's cosine because it is
-    measured across the slope, not along the floor.
-  */
   .notch {
     --notch-face-color: var(--notch-face, var(--sp-notch-face));
     --notch-edge-color: var(--notch-edge, var(--sp-notch-edge));
     --notch-highlight-color: var(--notch-highlight, var(--sp-notch-highlight));
+    --notch-pane-color: var(--notch-pane, var(--sp-notch-pane));
     --notch-edge-width: var(--spacing-control-edge);
     position: relative;
-    /* Above the pane content below it, which the floor's corner hangs over. */
+    /* Above the header cell its slope overhangs, and the pane below the floor
+       its corner hangs into. */
     z-index: 1;
     display: flex;
     align-items: center;
     justify-content: flex-end;
+    /* Gaps measured square to the slope, so the along-the-floor distance is
+       divided by the lean's cosine. */
     gap: calc(var(--slant-gap) / cos(var(--notch-angle)));
     padding-block: var(--notch-gap);
     padding-inline: calc(var(--notch-gap) / cos(var(--notch-angle)))
       var(--notch-gap);
-    border-bottom: var(--notch-edge-width) solid var(--notch-edge-color);
-    box-shadow: 0 var(--notch-edge-width) 0 var(--notch-highlight-color);
   }
 
   /*
-    The canvas, and the slope that bounds it. Skewed about its centre, so the
-    slope crosses the cell's start edge at mid-height whatever the height is
-    -- the same point a slant control's edge crosses its own box -- which is
-    what keeps the gap between them even. It runs on past the pane's edge,
-    which clips it, so its far side needs no geometry.
+    The outline, in the notch's own box: W wide, H tall, the pane's top edge
+    at 0 and the header rule's top at H - e. The slope crosses the notch's
+    start edge at mid-height -- the same point a slant control's edge crosses
+    its own box -- which keeps the gap between them even at any height.
 
-    The sheen is the box itself, one edge-width to the side: only the sliver
-    that clears the box shows, down the slope and round the bend, and none of
-    it lands on the floor below.
+    --n-k is the offset toward the pane. Offsetting a slope moves it by k/cos
+    along the floor; the top bend is convex for the pane, so its radius
+    shrinks by k, and the foot bend is convex for the canvas, so it grows. All
+    three copies share their centres, which is what keeps a band's width
+    constant through a bend. c/(1+s) is 1/tan(45deg + angle/2), the tangent
+    length of a bend of radius 1 at this lean.
   */
-  .notch-slant {
-    position: absolute;
-    z-index: -1;
-    inset-block: 0;
-    left: 0;
-    right: -50%;
-    background: var(--notch-face-color);
-    border-left: var(--notch-edge-width) solid var(--notch-edge-color);
-    border-bottom-left-radius: var(--notch-bend-bottom);
-    box-shadow: calc(var(--notch-edge-width) * -1) 0 0 0
-      var(--notch-highlight-color);
-    transform: skewX(var(--notch-angle));
-    pointer-events: none;
-  }
-
-  /*
-    The two bends that turn the other way -- where the slope leaves the pane's
-    top edge, and where the floor turns down its side. Neither can be a
-    border-radius on the canvas, because the canvas is the outside of them. So
-    each is a box whose rounded corner is the pane, edged and sheened on its
-    inner side, with a canvas spread filling the rest of the box and a clip
-    holding the spread inside it. The top one is a child of the slope, so it
-    leans with it.
-  */
-  .notch-slant::before,
-  .notch::after {
-    content: '';
-    position: absolute;
-    border-top: var(--notch-edge-width) solid var(--notch-edge-color);
-    border-right: var(--notch-edge-width) solid var(--notch-edge-color);
-    box-shadow:
-      0 0 0 var(--notch-bend-size) var(--notch-face-color),
-      inset calc(var(--notch-edge-width) * -1) var(--notch-edge-width) 0 0
-        var(--notch-highlight-color);
-    clip-path: inset(0);
-    pointer-events: none;
-  }
-  /* An absolute child is measured from the padding box, which starts where the
-     slope's border ends -- so a box ending at 0 puts its right border exactly
-     on the slope's. */
-  .notch-slant::before {
-    --notch-bend-size: var(--notch-bend-top);
-    top: 0;
-    left: calc(var(--notch-bend-top) * -1);
-    width: var(--notch-bend-top);
-    height: var(--notch-bend-top);
-    border-top-right-radius: var(--notch-bend-top);
-  }
-  /* Hung from the top of the floor's border, so its edge starts on it. */
-  .notch::after {
-    --notch-bend-size: var(--notch-corner);
-    top: 100%;
-    right: 0;
-    width: var(--notch-corner);
-    height: var(--notch-corner);
-    border-top-right-radius: var(--notch-corner);
-  }
-
-  /*
-    A slanted control. The element paints nothing; two layers behind its
-    label do, each a whole `control-face` reading the element's stops, so a
-    variant, a hover or a disabled state restyles them exactly as it would a
-    square button, and they animate on control-face's own step.
-
-    ::before is the parallelogram, skewed about its centre. ::after is the
-    square half, laid over the parallelogram's far side so that side's edge
-    is never seen, with its own near edge taken off and clipped away. The two
-    tops and bottoms are the same rows in the same colours, so there is no
-    seam. `both` is the parallelogram alone -- the first of two slants that
-    share a seam.
-  */
-  .slant {
-    --slant-lean: var(--slant-angle, var(--notch-angle));
-    position: relative;
-    isolation: isolate;
-  }
-  .slant::before,
-  .slant::after {
-    @apply control-face;
-    content: '';
+  .notch-shape {
+    container-type: size;
+    --n-t: tan(var(--notch-angle));
+    --n-s: sin(var(--notch-angle));
+    --n-c: cos(var(--notch-angle));
+    --n-m: calc(var(--n-c) / (1 + var(--n-s)));
+    --n-h: 100cqh;
+    --n-w: 100cqw;
+    --n-e: var(--notch-edge-width);
+    --n-rt: var(--notch-bend-top);
+    --n-rb: var(--notch-bend-bottom);
+    /* How far the painted layers reach back over the header cell. */
+    --n-x: calc(var(--n-h) / 2 * var(--n-t) + var(--n-rt));
+    /* Where the floor hands over to the corner below it. */
+    --n-end: calc(var(--n-x) + var(--n-w) - var(--notch-corner));
+    --n-k: 0px;
     position: absolute;
     inset: 0;
     z-index: -1;
+    pointer-events: none;
+  }
+  .notch-shape,
+  .notch-at {
+    --n-v1: calc(
+      (var(--n-k) - var(--n-h) / 2) * var(--n-t) - var(--n-k) / var(--n-c)
+    );
+    --n-v2: calc(
+      (var(--n-h) / 2 - var(--n-e) + var(--n-k)) * var(--n-t) - var(--n-k) /
+        var(--n-c)
+    );
+    --n-dt: calc((var(--n-rt) - var(--n-k)) * var(--n-m));
+    --n-db: calc((var(--n-rb) + var(--n-k)) * var(--n-m));
+    --n-fy: calc(var(--n-h) - var(--n-e) + var(--n-k));
+    /* Down: from the top edge, round the bend, down the slope, round the
+       foot, along the floor. */
+    --n-start: calc(var(--n-x) + var(--n-v1) - var(--n-dt)) var(--n-k);
+    --n-down:
+      arc to calc(var(--n-x) + var(--n-v1) + var(--n-dt) * var(--n-s))
+        calc(var(--n-k) + var(--n-dt) * var(--n-c)) of
+        calc(var(--n-rt) - var(--n-k)) cw,
+      line to calc(var(--n-x) + var(--n-v2) - var(--n-db) * var(--n-s))
+        calc(var(--n-fy) - var(--n-db) * var(--n-c)),
+      arc to calc(var(--n-x) + var(--n-v2) + var(--n-db)) var(--n-fy) of
+        calc(var(--n-rb) + var(--n-k)) ccw,
+      line to var(--n-end) var(--n-fy);
+    /* Up: the same path walked back, to close a band. */
+    --n-up:
+      line to var(--n-end) var(--n-fy),
+      line to calc(var(--n-x) + var(--n-v2) + var(--n-db)) var(--n-fy),
+      arc to calc(var(--n-x) + var(--n-v2) - var(--n-db) * var(--n-s))
+        calc(var(--n-fy) - var(--n-db) * var(--n-c)) of
+        calc(var(--n-rb) + var(--n-k)) cw,
+      line to calc(var(--n-x) + var(--n-v1) + var(--n-dt) * var(--n-s))
+        calc(var(--n-k) + var(--n-dt) * var(--n-c)),
+      arc to calc(var(--n-x) + var(--n-v1) - var(--n-dt)) var(--n-k) of
+        calc(var(--n-rt) - var(--n-k)) ccw;
+  }
+  .notch-shape {
+    --n-start-0: var(--n-start);
+    --n-down-0: var(--n-down);
+  }
+  .notch-shape span {
+    position: absolute;
+  }
+  .notch-at {
+    inset: 0;
+  }
+  .notch-at[data-k='1'] {
+    --n-k: var(--n-e);
+    --n-start-1: var(--n-start);
+    --n-down-1: var(--n-down);
+  }
+  .notch-at[data-k='2'] {
+    --n-k: calc(var(--n-e) * 2);
+  }
+  .notch-paint {
+    top: 0;
+    right: 0;
+    bottom: calc(var(--n-e) * -2);
+    left: calc(var(--n-x) * -1);
+  }
+
+  /* The canvas: everything on the far side of the outline, to the pane's
+     edge. */
+  .notch-face {
+    background: var(--notch-face-color);
+    clip-path: shape(
+      from var(--n-start-0),
+      var(--n-down-0),
+      line to calc(var(--n-x) + var(--n-w)) calc(var(--n-h) - var(--n-e)),
+      line to calc(var(--n-x) + var(--n-w)) 0,
+      close
+    );
+  }
+  /*
+    The edge, between offsets 0 and e, in the pane's ring colour. The header's
+    own rule runs underneath the whole width; this is opaque, so along the
+    floor it simply takes the rule over, and under the slope the rule is left
+    to show on its own as far as the foot.
+  */
+  .notch-edge {
+    background: var(--notch-edge-color);
+    clip-path: shape(
+      from var(--n-start-0),
+      var(--n-down-0),
+      var(--n-up),
+      close
+    );
+  }
+  /*
+    The sheen, between offsets e and 2e. Along the floor that band is exactly
+    the row the header's own sheen already lies in, so this layer's box stops
+    at the rule: below it the white would be laid twice. What reaches the rule
+    round the foot is covered by the edge, painted after.
+  */
+  .notch-sheen,
+  .notch-under {
+    clip-path: shape(
+      from var(--n-start-1),
+      var(--n-down-1),
+      var(--n-up),
+      close
+    );
+  }
+  .notch-sheen {
+    bottom: 0;
+    background: var(--notch-highlight-color);
+  }
+  /* The same at the top: the pane's own sheen runs along its top edge under
+     the start of the bend, so for its first two rows the band is laid on the
+     pane's face rather than on that sheen. */
+  .notch-under {
+    bottom: auto;
+    height: calc(var(--n-e) * 2);
+    background: var(--notch-pane-color);
+  }
+
+  /*
+    Where the floor turns down the pane's side: a true quarter circle, so a
+    box rather than a path. Its rounded corner is the pane, edged and sheened
+    like control-face -- a border and an inset spread, both even through the
+    turn -- with a canvas spread filling the rest of the box. It reaches one
+    edge-width past the floor's end and below its own bottom, and the clip
+    takes that back off, so the sheen's two unwanted sides are never seen.
+
+    The header's sheen runs on under this box. Outside the turn the canvas
+    covers it; inside, a second spread in the pane's face lies under this
+    sheen, so the turn's first pixels are not white laid on white.
+  */
+  .notch::after {
+    content: '';
+    position: absolute;
+    top: calc(100% - var(--notch-edge-width));
+    right: 0;
+    width: calc(var(--notch-corner) + var(--notch-edge-width));
+    height: calc(var(--notch-corner) + var(--notch-edge-width));
+    border-top: var(--notch-edge-width) solid var(--notch-edge-color);
+    border-right: var(--notch-edge-width) solid var(--notch-edge-color);
+    border-top-right-radius: var(--notch-corner);
+    box-shadow:
+      0 0 0 var(--notch-corner) var(--notch-face-color),
+      inset 0 0 0 var(--notch-edge-width) var(--notch-highlight-color),
+      inset 0 0 0 calc(var(--notch-edge-width) * 2) var(--notch-pane-color);
+    clip-path: inset(0 0 var(--notch-edge-width) var(--notch-edge-width));
+    pointer-events: none;
+  }
+
+  /*
+    A slanted control. The element keeps control-face's box, border width and
+    transition list, so it is laid out and animates exactly like a square
+    button, but paints nothing itself: four layers behind its label do, each
+    reading the element's stops. Registered stops do not inherit, so every
+    layer asks for them.
+
+      focus   between offsets -4px and -2px: outline-2 at outline-offset-2
+      ring    offset 0, the ring gradient over the whole height
+      face    offset e, the face gradient over the padding box
+      sheen   between e and e + highlight width, over the face
+
+    Physical sides, because a lean is physical. `both` is for the first of two
+    slants that share a seam.
+  */
+  .slant {
+    @apply control-face;
+    --slant-lean: var(--slant-angle, var(--notch-angle));
+    --slant-l: 0deg;
+    --slant-r: 0deg;
+    position: relative;
+    isolation: isolate;
+  }
+  @supports (clip-path: shape(from 0 0, line to 1px 1px)) {
+    .slant {
+      background-image: none;
+      box-shadow: none;
+    }
+  }
+  .slant[data-slant='left'],
+  .slant[data-slant='both'] {
+    --slant-l: var(--slant-lean);
+  }
+  .slant[data-slant='right'],
+  .slant[data-slant='both'] {
+    --slant-r: var(--slant-lean);
+  }
+
+  /*
+    The outline, in the control's own box. Each side is a line crossing its
+    edge at mid-height, leaning by its own angle -- 0deg for a square side. A
+    corner of interior angle 90deg -/+ a has tangent length r/tan(45deg -/+
+    a/2), and tan(45deg + a/2) is 1/tan(45deg - a/2), so one q per side covers
+    both of its corners. The painted layers reach past the box by the lean's
+    overhang and the focus ring's width; --s-px and --s-f carry that offset.
+  */
+  .slant-shape {
+    container-type: size;
+    --s-h: 100cqh;
+    --s-w: 100cqw;
+    --s-e: var(--control-face-border-width);
+    --s-hw: var(--control-highlight-width, 1px);
+    --s-r: var(--slant-radius, var(--radius-control));
+    --s-f: 4px;
+    --s-px: calc(var(--s-h) / 2 * tan(var(--slant-lean)) + var(--s-f));
+    --s-tl: tan(var(--slant-l));
+    --s-sl: sin(var(--slant-l));
+    --s-cl: cos(var(--slant-l));
+    --s-ql: tan(45deg - var(--slant-l) / 2);
+    --s-tr: tan(var(--slant-r));
+    --s-sr: sin(var(--slant-r));
+    --s-cr: cos(var(--slant-r));
+    --s-qr: tan(45deg - var(--slant-r) / 2);
+    --s-d: -4px;
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+  }
+  .slant-shape,
+  .slant-shape span {
     --control-face-top: inherit;
     --control-face-bottom: inherit;
     --control-ring-top: inherit;
     --control-ring-bottom: inherit;
     --control-highlight: inherit;
-    border-radius: var(--slant-radius, var(--radius-control));
-    pointer-events: none;
   }
-  .slant::before {
-    transform: skewX(var(--slant-lean));
+  .slant-shape,
+  .slant-at {
+    --s-rho: calc(var(--s-r) - var(--s-d));
+    --s-top: calc(var(--s-f) + var(--s-d));
+    --s-bot: calc(var(--s-f) + var(--s-h) - var(--s-d));
+    --s-tlx: calc(
+      var(--s-px) + (var(--s-d) - var(--s-h) / 2) * var(--s-tl) + var(--s-d) /
+        var(--s-cl)
+    );
+    --s-blx: calc(
+      var(--s-px) + (var(--s-h) / 2 - var(--s-d)) * var(--s-tl) + var(--s-d) /
+        var(--s-cl)
+    );
+    --s-trx: calc(
+      var(--s-px) + var(--s-w) + (var(--s-d) - var(--s-h) / 2) * var(--s-tr) -
+        var(--s-d) / var(--s-cr)
+    );
+    --s-brx: calc(
+      var(--s-px) + var(--s-w) + (var(--s-h) / 2 - var(--s-d)) * var(--s-tr) -
+        var(--s-d) / var(--s-cr)
+    );
+    --s-atl: calc(var(--s-rho) / var(--s-ql));
+    --s-abl: calc(var(--s-rho) * var(--s-ql));
+    --s-atr: calc(var(--s-rho) * var(--s-qr));
+    --s-abr: calc(var(--s-rho) / var(--s-qr));
+    --s-start: calc(var(--s-tlx) + var(--s-atl)) var(--s-top);
+    --s-path:
+      line to calc(var(--s-trx) - var(--s-atr)) var(--s-top),
+      arc to calc(var(--s-trx) + var(--s-atr) * var(--s-sr))
+        calc(var(--s-top) + var(--s-atr) * var(--s-cr)) of var(--s-rho) cw,
+      line to calc(var(--s-brx) - var(--s-abr) * var(--s-sr))
+        calc(var(--s-bot) - var(--s-abr) * var(--s-cr)),
+      arc to calc(var(--s-brx) - var(--s-abr)) var(--s-bot) of var(--s-rho) cw,
+      line to calc(var(--s-blx) + var(--s-abl)) var(--s-bot),
+      arc to calc(var(--s-blx) - var(--s-abl) * var(--s-sl))
+        calc(var(--s-bot) - var(--s-abl) * var(--s-cl)) of var(--s-rho) cw,
+      line to calc(var(--s-tlx) + var(--s-atl) * var(--s-sl))
+        calc(var(--s-top) + var(--s-atl) * var(--s-cl)),
+      arc to calc(var(--s-tlx) + var(--s-atl)) var(--s-top) of var(--s-rho) cw,
+      close;
   }
-  .slant[data-slant='both']::after {
-    display: none;
+  .slant-shape {
+    --s-out-start: var(--s-start);
+    --s-out-path: var(--s-path);
   }
-  /*
-    The halves overlap across the middle quarter. Each clip is generous on the
-    three sides it keeps, so the focus outline survives, and the
-    parallelogram's clip is in its own skewed space -- it takes off the far
-    edge and that edge's outline, which would otherwise show as a stub between
-    the outline and the box.
-  */
-  .slant[data-slant='left']::before {
-    right: 50%;
-    clip-path: inset(-1rem 25% -1rem -1rem);
+  .slant-shape span {
+    position: absolute;
   }
-  .slant[data-slant='left']::after {
-    left: 25%;
-    border-left-width: 0;
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-    clip-path: inset(-1rem -1rem -1rem var(--control-highlight-width, 1px));
+  .slant-at {
+    inset: 0;
   }
-  .slant[data-slant='right']::before {
-    left: 50%;
-    clip-path: inset(-1rem -1rem -1rem 25%);
+  .slant-at[data-d='focus'] {
+    --s-d: -2px;
   }
-  .slant[data-slant='right']::after {
-    right: 25%;
-    border-right-width: 0;
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-    clip-path: inset(-1rem var(--control-highlight-width, 1px) -1rem -1rem);
+  .slant-at[data-d='edge'] {
+    --s-d: 0px;
   }
-  /* The focus ring follows the shape, so it is drawn by the layers. */
-  .slant[data-focus-visible]::before,
-  .slant[data-focus-visible]::after {
-    outline: 2px solid var(--sp-focus);
-    outline-offset: 2px;
+  .slant-at[data-d='face'] {
+    --s-d: var(--s-e);
+    --s-face-start: var(--s-start);
+    --s-face-path: var(--s-path);
+  }
+  .slant-at[data-d='sheen'] {
+    --s-d: calc(var(--s-e) + var(--s-hw));
+  }
+  .slant-paint {
+    inset: calc(var(--s-f) * -1) calc(var(--s-px) * -1);
+  }
+  .slant-focus {
+    visibility: hidden;
+    background: var(--sp-focus);
+    clip-path: shape(
+      evenodd from var(--s-out-start),
+      var(--s-out-path),
+      move to var(--s-start),
+      var(--s-path)
+    );
+  }
+  .slant[data-focus-visible] .slant-focus {
+    visibility: visible;
+  }
+  .slant-ring {
+    background: linear-gradient(
+        to bottom,
+        var(--control-ring-top),
+        var(--control-ring-bottom)
+      )
+      0 var(--s-f) / 100% var(--s-h) no-repeat;
+    clip-path: shape(from var(--s-start), var(--s-path));
+  }
+  .slant-face {
+    background: linear-gradient(
+        to bottom,
+        var(--control-face-top),
+        var(--control-face-bottom)
+      )
+      0 calc(var(--s-f) + var(--s-e)) / 100% calc(var(--s-h) - var(--s-e) * 2)
+      no-repeat;
+    clip-path: shape(from var(--s-start), var(--s-path));
+  }
+  .slant-sheen {
+    background: var(--control-highlight);
+    clip-path: shape(
+      evenodd from var(--s-face-start),
+      var(--s-face-path),
+      move to var(--s-start),
+      var(--s-path)
+    );
+  }
+
+  /* Without shape() the layers cannot be clipped: the notch stays flat and a
+     slant keeps control-face's own square face. */
+  @supports not (clip-path: shape(from 0 0, line to 1px 1px)) {
+    .notch-shape,
+    .notch::after,
+    .slant-shape {
+      display: none;
+    }
   }
 
   @media (forced-colors: active) {
-    /* Spread shadows do not survive forced colours: square corners instead
-       of canvas-coloured gaps. */
-    .notch-slant::before,
+    .notch-shape span,
+    .slant-shape span {
+      forced-color-adjust: none;
+    }
+    .notch-face {
+      background: Canvas;
+    }
+    .notch-edge,
+    .slant-ring {
+      background: CanvasText;
+    }
+    .slant-face {
+      background: ButtonFace;
+    }
+    .slant-focus {
+      background: Highlight;
+    }
+    .notch-sheen,
+    .slant-sheen,
     .notch::after {
       display: none;
-    }
-    .notch-slant {
-      border-left-color: CanvasText;
-    }
-    .notch {
-      border-bottom-color: CanvasText;
     }
   }
 }
@@ -566,11 +813,25 @@
   */
   .menu-search-field {
     @apply control-wash;
-    /* The same hairline and the same trailing inset a row draws, so the keycap
-       and a row's status badge land on one axis rather than near each other. */
-    border: var(--spacing-menu-edge) solid transparent;
+    /* The glyph's box: even, so it can centre on an integer axis. Published
+       here because the inset below measures from it and the markup sizes the
+       box from it -- one width, read by both. */
+    --menu-search-glyph: calc(var(--spacing) * 4.5);
+    /* A field's edge, heavier than a row's. Both insets below take the
+       difference back, so the keycap and a row's status badge still land on
+       one trailing axis and the glyph on the rail's. */
+    border: var(--spacing-field-edge) solid transparent;
     border-radius: var(--radius-control);
-    padding-inline-end: var(--spacing-menu-end);
+    padding-inline-end: calc(
+      var(--spacing-menu-end) - var(--spacing-field-edge) +
+        var(--spacing-menu-edge)
+    );
+    /* Half a rail, less the edge and half the glyph. Derived rather than
+       written, because a written value goes stale the moment an edge moves. */
+    padding-inline-start: calc(
+      var(--spacing-menu-rail) / 2 - var(--spacing-field-edge) -
+        var(--menu-search-glyph) / 2
+    );
     /* Held here rather than as a utility on the label, because the hover step
        below has to outrank it and a utility never loses to this layer. The
        glyph and the keycap both inherit it, so one declaration moves all
@@ -683,10 +944,13 @@
      different ring -- without touching the pane or any other surface. */
   .process-menu-row[data-current] {
     @apply control-face;
-    /* control-face declares its own 1px border; restated here so the current
-       row keeps the width every other row carries and the label does not shift
-       half a pixel when a row becomes current. */
+    /* control-face declares its own border; restated so the sides keep the
+       width every other row carries -- the label does not shift sideways when
+       a row becomes current -- and the bottom takes the heavier edge the sheet
+       sits on. That leaves the label centred in a box a quarter pixel higher,
+       which nothing resolves. */
     border-width: var(--spacing-menu-edge);
+    border-bottom-width: var(--spacing-menu-current-edge);
     --control-face-top: var(--sp-menu-current-face-top);
     --control-face-bottom: var(--sp-menu-current-face-bottom);
     --control-ring-top: var(--sp-menu-current-ring-top);
@@ -725,6 +989,27 @@
     border-color: var(--sp-rule-strong);
     transition: none;
   }
+  /*
+    The badge's face, published by the row for `surface-menu-badge` to read.
+    Held here with the row's other states because it is one of them: the badge
+    rests as a keycap and, whenever its row lights -- under the pointer, holding
+    focus, or current -- gives its face, ring and sheen up entirely, so the row
+    shows through it. It fades on control-face's step and curve, the same step
+    the row's own wash arrives on, so the two settle together.
+  */
+  .process-menu-row {
+    --menu-badge-face: var(--sp-keycap-face);
+    --menu-badge-ring: var(--sp-keycap-ring);
+    --menu-badge-highlight: var(--sp-keycap-highlight);
+  }
+  .process-menu-row:hover,
+  .process-menu-row:focus-within,
+  .process-menu-row[data-current] {
+    --menu-badge-face: transparent;
+    --menu-badge-ring: transparent;
+    --menu-badge-highlight: transparent;
+  }
+
   /*
     The status badge at a row's end. The row carries no end padding, so the
     badge sets its own inset: one --spacing-menu-end in from the row's edge,
@@ -796,7 +1081,6 @@
       z-index: 3;
       width: var(--spacing-menu-fade);
       pointer-events: none;
-      transition: width var(--duration-pane) --theme(--ease-out-emphasized);
     }
     .process-menu-fade::before {
       left: 0;
@@ -806,10 +1090,26 @@
       right: 0;
       background: linear-gradient(to left, var(--sp-canvas), transparent);
     }
-    /* The leading edge, widened while a pane travels toward it. */
-    .process-menu-fade[data-level='processes']::before,
-    .process-menu-fade[data-level='workspace']::after {
-      width: calc(var(--spacing-menu-fade) * 1.5);
+    /*
+      The leading edge, widened while a pane travels toward it and back to the
+      inset as it lands. An animation rather than a width keyed to the level:
+      the level stays set once the pane has arrived, so a width held on it left
+      the strip half again as wide as the inset at rest -- over the end of the
+      Processes item, and over the leading edge of every row.
+
+      Keyed on data-travel, which the menu sets only once something has
+      navigated, so first paint does not play a journey that never happened.
+      A new level re-matches the selector, which is what restarts it.
+    */
+    .process-menu-fade[data-travel='processes']::before,
+    .process-menu-fade[data-travel='workspace']::after {
+      animation: menu-fade-lead var(--duration-pane)
+        --theme(--ease-out-emphasized);
+    }
+    @keyframes menu-fade-lead {
+      50% {
+        width: calc(var(--spacing-menu-fade) * 1.5);
+      }
     }
   }
 

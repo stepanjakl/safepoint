@@ -8,7 +8,14 @@ import {
   Modal,
   ModalOverlay,
 } from 'react-aria-components';
-import { Button, ICON_QUIET, ICON_SHAPE } from '@/components/ui/button';
+// Deep import: Blode's barrel is the whole icon library.
+import Lab from 'blode-icons-react/icons/lab';
+import {
+  Button,
+  ICON_QUIET,
+  ICON_SHAPE,
+  type Slant,
+} from '@/components/ui/button';
 import { cx } from '@/lib/cx';
 import type { ProcessSummary } from '@/lib/process/placeholder-process';
 
@@ -19,13 +26,16 @@ import type { ProcessSummary } from '@/lib/process/placeholder-process';
 // the slide, both of which stay in CSS. Everything else is here.
 export function InstructionsDrawer({
   instructions,
+  slant,
 }: {
   instructions: ProcessSummary['instructions'];
+  // Which edges lean depends on where the trigger sits, so the caller says.
+  slant?: Slant;
 }) {
   return (
     <DialogTrigger>
-      {/* Slanted on the side that faces the notch's slope. */}
-      <Button slant="left">
+      <Button slant={slant}>
+        <Lab aria-hidden size={16} strokeWidth={1.8} className="flex-none" />
         Instructions <span className="value">{instructions.version}</span>
       </Button>
       {/* Inset by the shell's own padding so the panel lines up with the panes. */}

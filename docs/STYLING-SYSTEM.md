@@ -205,19 +205,23 @@ them, so nothing shrinks to fit.
 this sidebar has been wrong at least once: a 30px button in a 34px rail needs 2px, a 36px
 mark needs *minus* one, and both numbers go stale the moment the rail moves. A cell needs
 no arithmetic and cannot go stale. Two boxes still carry an offset — the brand mark, whose
-lockup glues it to its wordmark so it cannot take a cell, and the search glyph — and both
-say why in a comment.
+lockup glues it to its wordmark so it cannot take a cell, and the search glyph, whose field
+derives its inset in `.menu-search-field` from the rail, the edge and the glyph's own box
+rather than stating it — and both say why in a comment.
 
 `--spacing-menu-end` is the trailing column, the rail's mirror. A row's status badge and
 the search field's keycap both sit one cell in from the pane's content edge. It is one
 token because those two live in different files, and drift between them is exactly what
 the axis exists to catch.
 
-`--spacing-menu-edge` is the hairline a row and the search field each draw. **A whole
-pixel, because a fractional `border-width` is floored for layout** — Chrome lays `1.5px`
-out as `1px`, and `0.5px` as `1px` too — so anything measured from that edge has to use
-the width that is really there rather than the one that was asked for. An offset computed
-against a declared `1.5px` is half a pixel wrong and looks correct in the source.
+`--spacing-menu-edge` is the edge a row and a grip each draw, and it is a whole pixel.
+Everything measured from that edge reads the token, never a number written beside it.
+**Chrome snaps a `border-width` to whole device pixels and lays it out at the snapped
+width** — `1.5px` is `1.5px` on a 2× screen and `1px` on a 1× one — so only a whole pixel
+lays out the same everywhere. The two heavier edges sit where they cannot move an axis:
+`--spacing-menu-current-edge` runs along the current row's bottom, and
+`--spacing-field-edge` is taken back out of the search field's own insets. `pnpm
+check:rail` measures at 2× by default; `--scale 1` shows the other case.
 
 Published a second time as `--border-width-menu-edge`, because `border-*` resolves its
 width from that namespace and never from `--spacing-*`; without it `border-menu-edge`
@@ -257,9 +261,13 @@ the picture and strictly more informative; reach for the screenshot to show a pe
 on the canvas beside a header. `Button`'s `slant` prop — `left`, `right` or `both` — leans
 a control's edges to sit parallel to it; `both` is for the first of two that share a seam.
 
-Both are built from bordered boxes, not drawn, so they keep the edge and sheen of what they
-are cut from and take any height. A skew is an angle, so the run it produces follows the
-element's own height and nothing needs to know how tall the header is. The notch is the last
+Both are clipped with `clip-path: shape()`, one layer per band: face, edge and sheen, each
+between two copies of the outline offset square to every side. That is what keeps a
+hairline one pixel wide down a slope and round an acute or obtuse corner — a skewed box
+thins its slanted border to cos(angle) and shears its corners into ellipses. A slant
+control's layers read its `control-face` stops, so variants, hover and disabled restyle and
+animate it as they would a square button. The outlines read the box through container
+units, so nothing needs to know how tall the header is. The notch is the last
 cell of a header row: it stretches with the row, so its floor lands on the rule the other
 cell draws however the heading wraps.
 
@@ -271,7 +279,15 @@ cell draws however the heading wraps.
 | `--notch-gap` | `--spacing-shell-inset` | canvas held around the content, square to each edge |
 | `--slant-gap` | 0.25rem | between two slants sharing a seam, square to it |
 | `--slant-angle` / `--slant-radius` | the notch angle / `--radius-control` | a slant that should differ from its notch |
-| `--notch-face` / `--notch-edge` / `--notch-highlight` | `--sp-notch-*` | colours, per instance |
+| `--notch-face` / `--notch-edge` / `--notch-highlight` / `--notch-pane` | `--sp-notch-*` | colours, per instance: canvas, the pane's ring, its sheen, its face |
+
+Which edges lean is decided where the controls sit, not inside them. The process header
+holds two: the Instructions drawer as `slant="both"`, then the icon-only placeholder for
+drafting the next instructions as `slant="left"`, whose far side stays square against the
+pane's edge (`components/app-shell/process-view.tsx`). An icon-only slant takes `px-3` over
+the button's own padding and needs an `aria-label`; it is a placeholder, so it is
+`aria-disabled` but still focusable, like the sidebar's placeholders, so its tooltip is
+reachable.
 
 Override any of them on an element — `[--notch-angle:30deg]` — and everything inside
 follows. Slant angle and radius are read with fallbacks rather than declared on `:root`, so

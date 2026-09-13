@@ -54,9 +54,13 @@ export function AppShell({
         the clip is the whole box and the content steps in by the edge instead,
         so everything sits where it did and a notch can pull back over it.
         Clipped at every width, not only where the pane scrolls: the notch's
-        slope runs on past the pane's side.
+        canvas runs on to the pane's side.
+
+        Square at the top right when a notch is in there: the notch paints
+        that corner itself, and a rounded clip over it would leave the face's
+        own anti-aliased corner showing through as a ghost.
       */}
-      <div className="rounded-shell p-control-edge shell:overflow-hidden relative isolate min-w-0 overflow-clip">
+      <div className="rounded-shell p-control-edge shell:overflow-hidden relative isolate min-w-0 overflow-clip has-[.notch]:rounded-tr-none">
         <div
           aria-hidden="true"
           className="control-face surface-raised rounded-shell pointer-events-none absolute inset-0 -z-10"

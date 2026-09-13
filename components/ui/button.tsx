@@ -14,12 +14,13 @@ type Variant = 'primary' | 'secondary';
 export type Slant = 'left' | 'right' | 'both';
 
 // No transition utility here: control-face owns the timing, because the
-// gradient stops it animates are its own contract.
+// gradient stops it animates are its own contract. The hairline sheen because
+// at this size a full pixel of white inside the ring reads as a second edge.
 const base =
-  'inline-flex h-9 min-w-11 items-center justify-center gap-2 px-3.5 text-dense font-medium whitespace-nowrap outline-none data-[disabled]:cursor-not-allowed data-[disabled]:control-off data-[disabled]:text-muted';
+  'control-hairline inline-flex h-9 min-w-11 items-center justify-center gap-2 px-3.5 text-dense font-medium whitespace-nowrap outline-none data-[disabled]:cursor-not-allowed data-[disabled]:control-off data-[disabled]:text-muted';
 
-// A square button draws its own ring. A slanted one cannot -- the element is a
-// rectangle and the shape is not -- so its layers draw it instead.
+// A square button draws its own focus ring. A slanted one cannot -- the element
+// is a rectangle and the shape is not -- so one of its layers draws it.
 const focusRing =
   'data-[focus-visible]:outline-solid data-[focus-visible]:outline-2 data-[focus-visible]:outline-offset-2 data-[focus-visible]:outline-focus';
 
@@ -42,10 +43,33 @@ const shapes: Record<Variant, string> = {
   secondary: 'control-face rounded-section',
 };
 
+/*
+  A slant's painted layers, each nested in the wrapper that computes its
+  outline at one offset. The nesting is the mechanism, not decoration: see
+  `.slant` in app/components.css.
+*/
+const SLANT_LAYERS = (
+  <span aria-hidden="true" className="slant-shape">
+    <span className="slant-at" data-d="focus">
+      <span className="slant-paint slant-focus" />
+    </span>
+    <span className="slant-at" data-d="edge">
+      <span className="slant-paint slant-ring" />
+      <span className="slant-at" data-d="face">
+        <span className="slant-paint slant-face" />
+        <span className="slant-at" data-d="sheen">
+          <span className="slant-paint slant-sheen" />
+        </span>
+      </span>
+    </span>
+  </span>
+);
+
 export function Button({
   variant = 'secondary',
   slant,
   className,
+  children,
   ...props
 }: ButtonProps & { variant?: Variant; slant?: Slant; className?: string }) {
   return (
@@ -58,7 +82,14 @@ export function Button({
         slant ? 'slant' : cx(shapes[variant], focusRing),
         className,
       )}
-    />
+    >
+      {(values) => (
+        <>
+          {slant ? SLANT_LAYERS : null}
+          {typeof children === 'function' ? children(values) : children}
+        </>
+      )}
+    </AriaButton>
   );
 }
 
@@ -71,9 +102,15 @@ export function Button({
   The shape states no size. A square is sized by the rail or the header it
   sits in, and two size utilities in one concatenated string would be settled
   by stylesheet order rather than by the call site.
+
+  The pointer holds even while a square is aria-disabled. The squares disabled
+  today are the sidebar's placeholders -- Add process, Settings -- which are
+  drawn as live controls, and a default cursor over something drawn as live
+  reads as a dead spot rather than as unavailability. Assistive technology
+  still hears that they are unavailable.
 */
 export const ICON_SHAPE =
-  'inline-grid flex-none place-items-center rounded-control p-0 aria-disabled:cursor-default';
+  'inline-grid flex-none cursor-pointer place-items-center rounded-icon p-0';
 
 /*
   The quiet face: a wash on hover, nothing at rest. It carries the transition,

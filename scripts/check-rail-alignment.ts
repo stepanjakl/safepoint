@@ -74,6 +74,7 @@ type Options = {
   screenshot: string | null;
   attach: number | null;
   selfTest: boolean;
+  scale: number;
 };
 
 const HELP = `
@@ -87,6 +88,8 @@ check-rail-alignment — measure the sidebar against its own guide axes
                         default processes. 'arrange' opens the reorder mode,
                         the only state the drag handles exist in.
   --width <px>          default 1440; must exceed the 900px shell: breakpoint
+  --scale <n>           device pixel ratio, default 2. Borders snap to whole
+                        device pixels, so a 1.5px edge lays out differently at 1
   --tolerance <px>      default 0.01
   --strict              treat warnings as failures
   --json                emit the report as JSON and nothing else
@@ -118,6 +121,7 @@ function parseArgs(argv: string[]): Options {
     screenshot: null,
     attach: null,
     selfTest: false,
+    scale: 2,
   };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
@@ -141,6 +145,7 @@ function parseArgs(argv: string[]): Options {
     else if (arg === '--screenshot') options.screenshot = next();
     else if (arg === '--attach') options.attach = Number(next());
     else if (arg === '--self-test') options.selfTest = true;
+    else if (arg === '--scale') options.scale = Number(next());
     else fail(`unknown option ${arg} (try --help)`);
   }
   if (options.routes.length === 0) options.routes.push('/examples/states');
@@ -151,6 +156,7 @@ function parseArgs(argv: string[]): Options {
   // vertical axes mean nothing, so measuring there would report noise.
   if (options.width < 901)
     fail(`--width must exceed the 900px shell breakpoint`);
+  if (!(options.scale > 0)) fail(`--scale must be a positive number`);
   return options;
 }
 
@@ -185,7 +191,10 @@ async function findDevServer(preferred: string): Promise<string> {
 
 type Browser = { port: number; stop: () => void };
 
-async function startChrome(attach: number | null): Promise<Browser> {
+async function startChrome(
+  attach: number | null,
+  scale: number,
+): Promise<Browser> {
   if (attach !== null) return { port: attach, stop: () => {} };
   if (!existsSync(CHROME)) fail(`Chrome not found at ${CHROME}`);
   const profile = mkdtempSync(join(tmpdir(), 'safepoint-rail-'));
@@ -194,6 +203,13 @@ async function startChrome(attach: number | null): Promise<Browser> {
     [
       '--headless=new',
       '--disable-gpu',
+      /*
+        The real scale factor, not only the emulated one below. Emulation
+        changes devicePixelRatio but not the scale borders snap to, so under
+        emulation alone a 1.5px edge still laid out as 1px at "2x" and every
+        axis measured from it reported half a pixel that no screen shows.
+      */
+      `--force-device-scale-factor=${scale}`,
       // Port 0 asks for a free one. A fixed port would collide with the Chrome
       // that .vscode/launch.json opens on 9222, which may well be running.
       '--remote-debugging-port=0',
@@ -354,6 +370,7 @@ function measureInPage(args: {
   allowlist: Allowance[];
   driftDefault: number;
   selfTest: boolean;
+  scale: number;
 }): Report {
   const empty: Report = { axes: [], marks: [], borders: [], skippedSheets: 0 };
 
@@ -620,7 +637,19 @@ function measureInPage(args: {
       */
       for (const property of ['border', ...widthProperties]) {
         const value = style.getPropertyValue(property);
-        if (!value || !fractional.test(value)) continue;
+        const found = value ? value.match(fractional) : null;
+        if (!found) continue;
+        /*
+          Chrome snaps a border to whole device pixels, so a width that is
+          already a whole number of them at this scale lays out as declared --
+          1.5px at 2x is three device pixels and nothing is lost.
+        */
+        const rootSize = parseFloat(
+          getComputedStyle(document.documentElement).fontSize,
+        );
+        const declared =
+          parseFloat(found[1] ?? '0') * (found[2] === 'rem' ? rootSize : 1);
+        if (Number.isInteger(declared * args.scale)) continue;
         /*
           Only if the rule is actually on the page. Tailwind scans every source
           file, so naming an arbitrary utility anywhere -- a comment, a design
@@ -663,7 +692,7 @@ function measureInPage(args: {
 async function main() {
   const options = parseArgs(process.argv.slice(2));
   const base = await findDevServer(options.url);
-  const browser = await startChrome(options.attach);
+  const browser = await startChrome(options.attach, options.scale);
   let exitCode = 0;
   try {
     const cdp = await connect(browser.port);
@@ -672,7 +701,7 @@ async function main() {
     await cdp.send('Emulation.setDeviceMetricsOverride', {
       width: options.width,
       height: options.height,
-      deviceScaleFactor: 1,
+      deviceScaleFactor: options.scale,
       mobile: false,
     });
     /*
@@ -732,6 +761,7 @@ async function main() {
           allowlist: ALLOWLIST,
           driftDefault: DRIFT_DEFAULT,
           selfTest: options.selfTest,
+          scale: options.scale,
         });
         const report = await evaluate<Report>(
           cdp,
@@ -858,7 +888,7 @@ function render(
     }
     for (const b of report.borders) {
       process.stdout.write(
-        `borders  ${b.where}: ${b.property} ${b.declared} — laid out floored to a whole pixel\n`,
+        `borders  ${b.where}: ${b.property} ${b.declared} — snaps to whole device pixels at ${options.scale}×\n`,
       );
     }
     if (report.skippedSheets > 0) {

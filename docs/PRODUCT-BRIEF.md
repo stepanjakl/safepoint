@@ -285,11 +285,12 @@ The broader direction adds capabilities only after the review and execution boun
 4. Onboard a second process to prove that the review shell generalises without becoming a raw JSON viewer.
 5. Rehearse a plan against a model of the environment before approval.
 6. Compare alternative plans and expose trade-offs.
-7. Configure organisation-level risk and approval policies.
-8. Add connector-specific concurrency and reversal strategies.
-9. Support multiple reviewers, separation of duties, and enterprise identity.
-10. Add optional runtime adapters for agent platforms. A Duvo adapter could ingest run and case provenance, receive run webhooks, and resolve the corresponding human request after Safepoint review without giving the model direct write authority.
-11. Extend beyond the grocery scenario without weakening the typed-effect model.
+7. Draft the next instruction version from review decisions. Holds, rejections and their written reasons show where a process's instructions are wrong; Safepoint proposes specific edits, each traced to the review items that prompted it. The draft is itself a proposal: it is reviewed and accepted as a new version, and later runs record the version they ran under. Reviewer text is evidence for the draft, never instruction text copied into it. A placeholder control for this sits beside the Instructions button in the process header.
+8. Configure organisation-level risk and approval policies.
+9. Add connector-specific concurrency and reversal strategies.
+10. Support multiple reviewers, separation of duties, and enterprise identity.
+11. Add optional runtime adapters for agent platforms. A Duvo adapter could ingest run and case provenance, receive run webhooks, and resolve the corresponding human request after Safepoint review without giving the model direct write authority.
+12. Extend beyond the grocery scenario without weakening the typed-effect model.
 
 Safepoint may be embedded as a specialised review surface inside a wider agent runtime, or run as a focused application beside one. Its distinctive contribution is effect-level review: typed before-and-after values, explicit omissions, per-target execution state, conflict handling, and compensation. It does not depend on claiming that wider automation platforms lack approvals or audit trails.
 
@@ -301,5 +302,6 @@ Safepoint may be embedded as a specialised review surface inside a wider agent r
 - Reviewers can make useful decisions with compact evidence and request deeper evidence only when needed.
 - Bounded ambiguous evidence makes the agent's judgement useful rather than decorative.
 - A rehearsal step adds enough confidence to justify its time and complexity.
+- Review decisions carry enough signal to improve instructions, and reviewers trust a suggested revision when every edit is traced to the decisions behind it.
 
 These assumptions should become research questions if Safepoint moves beyond a portfolio project.

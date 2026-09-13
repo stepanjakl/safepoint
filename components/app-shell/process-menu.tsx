@@ -20,10 +20,18 @@ import ChevronRight from 'blode-icons-react/icons/chevron-right';
 import CircleInfo from 'blode-icons-react/icons/circle-info';
 import CodeTree from 'blode-icons-react/icons/code-tree';
 import CodeTreeFilled from 'blode-icons-react/icons/code-tree-filled';
+import Connectors1 from 'blode-icons-react/icons/connectors-1';
+import Connectors1Filled from 'blode-icons-react/icons/connectors-1-filled';
 import DotGrid1x3HorizontalFilled from 'blode-icons-react/icons/dot-grid-1x3-horizontal-filled';
 import DotGrid2x3Filled from 'blode-icons-react/icons/dot-grid-2x3-filled';
+import FileText from 'blode-icons-react/icons/file-text';
+import FileTextFilled from 'blode-icons-react/icons/file-text-filled';
+import History from 'blode-icons-react/icons/history';
+import HistoryFilled from 'blode-icons-react/icons/history-filled';
 import MagnifyingGlass from 'blode-icons-react/icons/magnifying-glass';
 import PlusMedium from 'blode-icons-react/icons/plus-medium';
+import ShieldCheck from 'blode-icons-react/icons/shield-check';
+import ShieldCheckFilled from 'blode-icons-react/icons/shield-check-filled';
 import SortArrowUpDown from 'blode-icons-react/icons/sort-arrow-up-down';
 import { motion, useReducedMotion } from 'motion/react';
 import { cx } from '@/lib/cx';
@@ -98,52 +106,53 @@ const readModifierKey = () =>
     : 'Ctrl';
 
 /*
-  Every state in which the field paints its own face, which is every state in
-  which the key would otherwise vanish into it: the resting keycap face and the
-  lit field face are the same value, so the key has to step whenever the field
-  does -- not only under the pointer. Focus is the case that exposed it.
-
-  Three variants carrying one value, so nothing depends on the order Tailwind
-  emits them in. The utility keeps the house -hover suffix, which already means
-  the engaged step rather than the pointer literally (control-quiet-hover is
-  spent on data-[pressed] too).
-*/
-const SEARCH_KEYCAP_LIT =
-  'group-hover:surface-keycap-hover group-focus-within:surface-keycap-hover group-has-[input:not(:placeholder-shown)]:surface-keycap-hover';
-
-/*
-  The keycap face, shared by the search field's shortcut and every row's status
-  badge so the two read as one kind of object and cannot drift apart: the face,
-  the pill, the height and the utility type. Only what each lights with, and how
-  wide each is, differs.
+  The shape shared by the search field's shortcut and every row's status badge,
+  so the two read as one kind of object and cannot drift apart: the pill, the
+  height and the utility type. What each is painted with differs -- see below.
 
   A pill rather than a badge-step corner, and the mono family, because both
   hold something the reader matches rather than reads as prose -- a shortcut
   to press, a count to compare. The search key dims with its field, because
   the label's disabled rule covers everything inside it.
 */
-const KEYCAP_FACE =
-  'control-face surface-keycap rounded-full text-micro font-mono inline-flex h-5 flex-none items-center justify-center [font-weight:var(--sp-mono-weight-strong)] select-none';
-
-const SEARCH_KEYCAP = `${KEYCAP_FACE} ${SEARCH_KEYCAP_LIT} group-focus-within:opacity-0 rail-mark min-w-menu-rail px-1.75 tracking-widest`;
+const KEYCAP_SHAPE =
+  'rounded-full text-micro font-mono inline-flex h-5 flex-none items-center justify-center [font-weight:var(--sp-mono-weight-strong)] select-none';
 
 /*
-  A row's badge steps with its row for the same reason the search key steps with
-  its field: the current row's face and the keycap's resting face are the same
-  value, and the hover wash is close to it, so a key that only answered its own
-  pointer would vanish into the row exactly when the row lit.
+  The shortcut is a plain background: no ring, no sheen. It sits inside a field
+  that already draws an edge, and an edge inside that edge was furniture.
+
+  It rests a step darker than the canvas and steps darker again in every state
+  in which the field paints its own face, so it reads against whichever ground
+  it is on -- not only under the pointer. Three variants carrying one value, so
+  nothing depends on the order Tailwind emits them in.
+
+  The space between the modifier and the letter is a gap between two spans
+  rather than tracking. Tracking also lands after the last glyph, so the wider
+  it got the further the pair sat left of the pill's centre.
+
+  Out of the layout while the field is disabled, so the placeholder that says
+  why has the whole width.
 */
-const ROW_BADGE_LIT =
-  'group-hover/row:surface-keycap-hover group-focus-within/row:surface-keycap-hover group-data-[current]/row:surface-keycap-hover';
+const SEARCH_KEYCAP = cx(
+  KEYCAP_SHAPE,
+  'control-wash bg-search-key group-hover:bg-search-key-hover group-focus-within:bg-search-key-hover group-has-[input:not(:placeholder-shown)]:bg-search-key-hover',
+  'rail-mark min-w-menu-rail gap-0.75 px-1.75 group-focus-within:opacity-0 group-has-[input:disabled]:hidden',
+);
 
 /*
   One fixed box for every badge -- a rail cell wide, the keycap's height -- so a
   two-digit count does not widen its row's badge past its neighbours', and the
   cell stays centred on the trailing axis. The tone colours the glyph and count.
+
+  The face follows the row rather than its own pointer: `surface-menu-badge`
+  reads stops `.process-menu-row` publishes for each of its states, so the
+  badge gives its face up and lets the row show through whenever the row
+  lights -- hovered, focused or current.
 */
 const ROW_BADGE = cx(
-  KEYCAP_FACE,
-  ROW_BADGE_LIT,
+  KEYCAP_SHAPE,
+  'control-face surface-menu-badge',
   'process-menu-row-end rail-mark w-menu-rail relative z-1 cursor-help gap-1 px-0 tabular-nums',
   'text-muted data-[tone=blocked]:text-state-blocked data-[tone=caution]:text-state-caution data-[tone=verified]:text-state-verified',
 );
@@ -212,7 +221,7 @@ const GRIP_GAP = 4;
 const MENU_RAIL = 'rail-mark w-menu-rail grid flex-none place-items-center';
 
 /*
-  The tile behind the workspace menu's Processes icon, and the two glyphs it
+  The tile behind a workspace menu item's icon, and the two glyphs it
   cross-fades between. At rest the tile is a raised face around the outline;
   while the item is hovered or focused the face fades to bare and the filled
   glyph fades in over the outline.
@@ -224,11 +233,15 @@ const MENU_RAIL = 'rail-mark w-menu-rail grid flex-none place-items-center';
 
   Both glyphs share one grid cell, so the swap moves nothing. An even box, so
   it centres on the rail's integer axis.
+
+  The hairline sheen, like every face this small, and the icon squares' corner
+  rather than a control's, so it matches the buttons beside the brand. The glyph
+  takes its colour from the tile, which is where the hue is named, and steps on
+  the tile's hover with it.
 */
 const MENU_TILE =
-  'control-face surface-menu-tile group-hover/enter:surface-menu-tile-hover group-focus-visible/enter:surface-menu-tile-hover rounded-control grid size-7 flex-none place-items-center';
-const MENU_TILE_GLYPH =
-  'control-wash text-menu-tile-glyph col-start-1 row-start-1 size-4.5 flex-none';
+  'control-face control-hairline surface-menu-tile group-hover/enter:surface-menu-tile-hover group-focus-visible/enter:surface-menu-tile-hover rounded-icon grid size-6.5 flex-none place-items-center';
+const MENU_TILE_GLYPH = 'control-wash col-start-1 row-start-1 size-4 flex-none';
 const MENU_TILE_GLYPH_AT_REST =
   'group-hover/enter:opacity-0 group-focus-visible/enter:opacity-0';
 const MENU_TILE_GLYPH_ENGAGED =
@@ -245,6 +258,74 @@ const MENU_TILE_GLYPH_ENGAGED =
 */
 const MENU_BACK_BOX = 'rounded-control h-10 px-1.75';
 
+/*
+  A divider in the menu: the rule, with a hairline lit line under it, so it
+  reads as a cut in the canvas rather than a line laid on top. Its own element
+  rather than a border on a neighbour, because the lit line is a shadow the
+  rule casts below itself -- see --shadow-rule-etch for why not a border.
+*/
+const MENU_RULE = 'border-rule-faint border-t shadow-rule-etch';
+
+/*
+  An item in the workspace menu. No transparent edge here, unlike a process
+  row: the rail has to start at the band's own left edge for its midpoint to be
+  the same axis every other band centres on.
+
+  The wash and the group that engages the tile are on every item, the disabled
+  ones included. :hover still matches a disabled button, so a placeholder
+  answers the pointer exactly as the live item does; only the label's colour
+  and the cursor say it leads nowhere yet.
+*/
+const MENU_ITEM = cx(
+  MENU_TITLE,
+  'group/enter rounded-control control-wash hover:bg-menu-wash flex h-10 w-full items-center gap-1.5 pr-1.75 text-left',
+);
+
+/*
+  The count on the Processes item. It gives its chip up under the pointer, on
+  the item's own step, so the item's wash shows through rather than a darker
+  box sitting on it.
+*/
+const MENU_COUNT =
+  'bg-menu-chip text-muted text-micro rounded-control control-wash group-hover/enter:bg-transparent group-focus-visible/enter:bg-transparent ml-auto inline-grid h-5.5 min-w-5.5 place-items-center px-1.25 tabular-nums';
+
+/*
+  Placeholders for what the workspace menu will hold, so its shape can be judged
+  with more than one entry. Disabled: none of them leads anywhere yet. Each
+  names its tile's hue as a whole class, so the scanner sees it.
+*/
+const WORKSPACE_PLACEHOLDERS: {
+  label: string;
+  icon: MenuIconName;
+  iconFilled: MenuIconName;
+  hue: string;
+}[] = [
+  {
+    label: 'Runs',
+    icon: 'runs',
+    iconFilled: 'runsFilled',
+    hue: 'menu-tile-sky',
+  },
+  {
+    label: 'Systems',
+    icon: 'systems',
+    iconFilled: 'systemsFilled',
+    hue: 'menu-tile-violet',
+  },
+  {
+    label: 'Approvals',
+    icon: 'approvals',
+    iconFilled: 'approvalsFilled',
+    hue: 'menu-tile-orange',
+  },
+  {
+    label: 'Audit log',
+    icon: 'audit',
+    iconFilled: 'auditFilled',
+    hue: 'menu-tile-pink',
+  },
+];
+
 type Drag = {
   id: string;
   startY: number;
@@ -256,6 +337,33 @@ type Drag = {
 
 function Grip() {
   return <DotGrid2x3Filled aria-hidden size={20} />;
+}
+
+// A workspace item's leading cell: its tile, and the outline and filled glyphs
+// the tile cross-fades between when the item engages.
+function MenuTile({
+  hue,
+  icon,
+  iconFilled,
+}: {
+  hue: string;
+  icon: MenuIconName;
+  iconFilled: MenuIconName;
+}) {
+  return (
+    <span className={MENU_RAIL}>
+      <span className={cx(MENU_TILE, hue)}>
+        <MenuIcon
+          name={icon}
+          className={cx(MENU_TILE_GLYPH, MENU_TILE_GLYPH_AT_REST)}
+        />
+        <MenuIcon
+          name={iconFilled}
+          className={cx(MENU_TILE_GLYPH, MENU_TILE_GLYPH_ENGAGED)}
+        />
+      </span>
+    </span>
+  );
 }
 
 export function ProcessMenu({
@@ -301,8 +409,23 @@ export function ProcessMenu({
   // The handles are out while the mode is on, and previewed while the button
   // that turns it on is under the pointer.
   const showGrip = customising || previewHandles;
+  /*
+    The handles' fade runs in sequence with the travel rather than alongside
+    it. Coming out, the label moves aside first and the handles fade into the
+    space it left; going back, they fade out first and only then does the label
+    close the gap. Together, the handles were half drawn while still sliding
+    under a label on its way. The fade is --duration-state, as the travel above
+    is --duration-pane.
+  */
+  const fade = { duration: reduceMotion ? 0 : 0.15, ease: 'easeOut' } as const;
+  const gripTransition = showGrip
+    ? { default: collapse, opacity: { ...fade, delay: collapse.duration } }
+    : { default: { ...collapse, delay: fade.duration }, opacity: fade };
 
   const [level, setLevel] = useState<'workspace' | 'processes'>('processes');
+  // Whether either level has been travelled to yet. The side fades animate on
+  // a journey, and the first level is where the menu starts, not a journey.
+  const [travelled, setTravelled] = useState(false);
   const [drag, setDrag] = useState<Drag | null>(null);
   const dragRef = useRef<Drag | null>(null);
   const handles = useRef(new Map<string, HTMLButtonElement>());
@@ -370,6 +493,7 @@ export function ProcessMenu({
         return;
       }
       focusSearch.current = true;
+      setTravelled(true);
       setLevel('processes');
     }
     document.addEventListener('keydown', jumpToSearch);
@@ -385,6 +509,7 @@ export function ProcessMenu({
 
   function navigate(next: typeof level) {
     focusLevel.current = true;
+    setTravelled(true);
     setLevel(next);
     setQuery('');
     setPreviewHandles(false);
@@ -523,8 +648,12 @@ export function ProcessMenu({
   }
 
   return (
+    // Pulled out over the shell's inset on its outer side. The sidebar already
+    // holds --spacing-menu-fade on both sides for its gradients; with the
+    // shell's inset added on the left as well, the content sat further from the
+    // window than from the sheet and read as off-centre in its column.
     <aside
-      className="max-shell:px-2 max-shell:py-2.5 shell:px-menu-fade shell:h-full shell:min-h-0 shell:overflow-hidden relative flex min-w-0 flex-col"
+      className="max-shell:px-2 max-shell:py-2.5 shell:px-menu-fade shell:-ml-shell-inset shell:h-full shell:min-h-0 shell:overflow-hidden relative flex min-w-0 flex-col"
       aria-label="Workspace navigation"
     >
       {/* Alignment guides; the design pane's Debug folder switches them on. */}
@@ -626,6 +755,7 @@ export function ProcessMenu({
         className="process-menu-fade shell:-mx-menu-fade shell:min-h-0 shell:flex-1 relative min-w-0"
         aria-label={level === 'processes' ? 'Processes' : 'Workspace'}
         data-level={level}
+        data-travel={travelled ? level : undefined}
       >
         <div className="shell:h-full overflow-clip">
           <div
@@ -637,42 +767,53 @@ export function ProcessMenu({
               inert={level !== 'workspace'}
               aria-hidden={level !== 'workspace'}
             >
-              <button
-                ref={enterRef}
-                className={cx(
-                  MENU_TITLE,
-                  // No transparent edge here, unlike a process row: the rail
-                  // has to start at the band's own left edge for its midpoint
-                  // to be the same axis every other band centres on.
-                  'group/enter rounded-control hover:bg-menu-wash hover:text-primary focus-visible:text-primary control-wash mt-2 flex h-10 w-full items-center gap-1.5 pr-1.75 text-left',
-                )}
-                type="button"
-                onClick={() => navigate('processes')}
-              >
-                <span className={MENU_RAIL}>
-                  <span className={MENU_TILE}>
-                    <MenuIcon
-                      name="processes"
-                      className={cx(MENU_TILE_GLYPH, MENU_TILE_GLYPH_AT_REST)}
+              <ul className="mt-2 grid gap-0.5">
+                <li>
+                  <button
+                    ref={enterRef}
+                    className={cx(
+                      MENU_ITEM,
+                      'hover:text-primary focus-visible:text-primary',
+                    )}
+                    type="button"
+                    onClick={() => navigate('processes')}
+                  >
+                    <MenuTile
+                      hue="menu-tile-green"
+                      icon="processes"
+                      iconFilled="processesFilled"
                     />
-                    <MenuIcon
-                      name="processesFilled"
-                      className={cx(MENU_TILE_GLYPH, MENU_TILE_GLYPH_ENGAGED)}
-                    />
-                  </span>
-                </span>
-                <span>Processes</span>
-                <span className="bg-menu-chip text-muted text-micro rounded-control ml-auto inline-grid h-5.5 min-w-5.5 place-items-center px-1.25 tabular-nums">
-                  {items.length}
-                </span>
-                <span className={MENU_CHEVRON_BOX}>
-                  <MenuIcon
-                    name="right"
-                    className={MENU_CHEVRON}
-                    strokeWidth={2}
-                  />
-                </span>
-              </button>
+                    <span>Processes</span>
+                    <span className={MENU_COUNT}>{items.length}</span>
+                    <span className={MENU_CHEVRON_BOX}>
+                      <MenuIcon
+                        name="right"
+                        className={MENU_CHEVRON}
+                        strokeWidth={2}
+                      />
+                    </span>
+                  </button>
+                </li>
+                {WORKSPACE_PLACEHOLDERS.map((placeholder) => (
+                  <li key={placeholder.label}>
+                    <button
+                      type="button"
+                      className={cx(
+                        MENU_ITEM,
+                        'disabled:text-muted disabled:hover:text-muted-strong',
+                      )}
+                      disabled
+                    >
+                      <MenuTile
+                        hue={placeholder.hue}
+                        icon={placeholder.icon}
+                        iconFilled={placeholder.iconFilled}
+                      />
+                      <span>{placeholder.label}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </div>
             <div
               className="ease-out-emphasized max-shell:px-1 shell:px-menu-fade shell:h-full shell:min-h-0 flex min-w-0 flex-col py-1 opacity-100 transition-opacity duration-(--duration-pane) aria-hidden:opacity-0"
@@ -681,15 +822,19 @@ export function ProcessMenu({
             >
               {/* Fixed chrome of this level: the field, its rule, and the
                   title. Only the list under them scrolls. */}
-              <label className="menu-search-field group flex h-9 items-center gap-2 pl-1.75">
+              {/* No leading padding here: `.menu-search-field` derives it
+                  from the rail, the edge and this glyph's box, so the glyph
+                  stays on the axis whatever the edge is. */}
+              <label className="menu-search-field group flex h-9 cursor-text items-center gap-2 has-[input:disabled]:cursor-default">
                 {/*
                     An even-width box, though the glyph in it is 17px. A box of
                     odd width centres on a half pixel wherever it is placed, so
                     it can never sit on an integer axis -- which is the whole
                     reason the rail cells elsewhere carry a width of their own
-                    rather than shrink-wrapping their glyph.
+                    rather than shrink-wrapping their glyph. The width is the
+                    field's own --menu-search-glyph, which its inset reads.
                   */}
-                <span className="rail-mark inline-grid w-4.5 flex-none place-items-center">
+                <span className="rail-mark inline-grid w-(--menu-search-glyph) flex-none place-items-center">
                   <MenuIcon
                     name="search"
                     className="control-wash size-4.25 flex-none"
@@ -714,13 +859,11 @@ export function ProcessMenu({
                   onChange={(event) => setQuery(event.target.value)}
                 />
                 <kbd className={SEARCH_KEYCAP} aria-hidden="true">
-                  {modifier}K
+                  <span>{modifier}</span>
+                  <span>K</span>
                 </kbd>
               </label>
-              <div
-                className="border-rule-faint mt-3.5 border-t"
-                aria-hidden="true"
-              />
+              <div className={cx(MENU_RULE, 'mt-3.5')} aria-hidden="true" />
               <button
                 ref={backRef}
                 type="button"
@@ -828,7 +971,7 @@ export function ProcessMenu({
                               marginRight: showGrip ? 0 : -GRIP_GAP,
                               opacity: showGrip ? 1 : 0,
                             }}
-                            transition={collapse}
+                            transition={gripTransition}
                           >
                             {customising ? (
                               <button
@@ -967,8 +1110,13 @@ export function ProcessMenu({
           the avatar fills the leading cell and the settings button centres in
           the trailing one. The 2px that used to sit in `pr-0.5` was (rail -
           button) / 2 worked out by hand; the cell does that arithmetic itself.
+
+          The rule is a grid item of its own, so the grid's gap spaces it from
+          both neighbours -- the distance the row's own top padding used to
+          hold below it.
         */}
-        <div className="border-rule-faint max-shell:pt-2.5 flex items-center justify-between gap-1.5 border-t pt-3.5 pr-0 pl-0">
+        <div className={MENU_RULE} aria-hidden="true" />
+        <div className="group/account flex cursor-pointer items-center justify-between gap-2.5">
           <span
             role="img"
             aria-label="Maya’s demo avatar"
@@ -985,7 +1133,13 @@ export function ProcessMenu({
             <Tooltip label="Settings">
               <button
                 type="button"
-                className={ICON_BUTTON}
+                className={cx(
+                  ICON_BUTTON,
+                  // The whole account row lights the button as its own hover
+                  // does. The tooltip stays on the button, which is the only
+                  // part of the row a pointer can actually press.
+                  'group-hover/account:bg-surface-selected group-hover/account:text-primary',
+                )}
                 aria-label="Settings"
                 aria-disabled="true"
               >
@@ -1131,6 +1285,14 @@ const MENU_ICONS = {
   left: ChevronLeft,
   right: ChevronRight,
   more: DotGrid1x3HorizontalFilled,
+  runs: History,
+  runsFilled: HistoryFilled,
+  systems: Connectors1,
+  systemsFilled: Connectors1Filled,
+  approvals: ShieldCheck,
+  approvalsFilled: ShieldCheckFilled,
+  audit: FileText,
+  auditFilled: FileTextFilled,
   info: CircleInfo,
 } as const;
 
