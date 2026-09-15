@@ -29,7 +29,7 @@ export function ReadinessMatrix({
               open={gate.openByDefault}
               className="group"
             >
-              <summary className="focus-visible:outline-focus flex min-h-10 list-none items-center gap-3 px-4 py-2 outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid [&::-webkit-details-marker]:hidden">
+              <summary className="control-wash focus-visible:bg-surface-inset flex min-h-10 list-none items-center gap-3 px-4 py-2 focus-visible:-outline-offset-2 [&::-webkit-details-marker]:hidden">
                 <span
                   className={`flex w-3 shrink-0 justify-center ${toneText[marker.tone]}`}
                 >

@@ -22,14 +22,16 @@ export function Tooltip({
   description,
   content,
   placement = 'top',
+  offset = 10,
   triggerRef,
   isDisabled = false,
 }: {
   children: ComponentProps<typeof Focusable>['children'];
   label: string;
-  description?: string;
+  description?: ReactNode;
   content?: ReactNode;
   placement?: TooltipProps['placement'];
+  offset?: TooltipProps['offset'];
   /**
    * The element the tooltip is placed against, when that is not the trigger
    * itself -- a badge inside a row that should keep its gap from the row.
@@ -42,7 +44,7 @@ export function Tooltip({
       <Focusable>{children}</Focusable>
       <AriaTooltip
         className="app-tooltip group"
-        offset={10}
+        offset={offset}
         triggerRef={triggerRef}
         placement={placement}
         data-rich={content ? true : undefined}
@@ -63,7 +65,7 @@ export function Tooltip({
             />
           </svg>
         </OverlayArrow>
-        <span className="group-data-[rich]:text-dense font-medium text-zinc-700 group-data-[rich]:[font-weight:650]">
+        <span className="group-data-[rich]:text-dense text-primary font-medium group-data-[rich]:[font-weight:650]">
           {label}
         </span>
         {description ? <span className="text-muted">{description}</span> : null}

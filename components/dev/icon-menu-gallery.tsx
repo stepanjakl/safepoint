@@ -242,10 +242,9 @@ const MENU_FAMILIES: MenuFamily[] = [
 const MENU_ITEM = cx(
   // The row: an icon cell and a label, in the sidebar's type and link colour.
   'group/item flex w-full items-center gap-2.5 rounded-control px-2.5 py-2 text-left text-dense font-semibold text-menu-link select-none',
-  // The wash, answering the pointer and the keyboard alike.
-  'control-wash hover:bg-menu-wash hover:text-primary focus-visible:bg-menu-wash focus-visible:text-primary',
-  // The focus ring.
-  'outline-none focus-visible:outline-focus focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid',
+  // The wash, answering the pointer and the keyboard alike. The offset places
+  // the outline forced-colours modes draw instead, inside the row.
+  'control-wash hover:bg-menu-wash hover:text-primary focus-visible:bg-menu-wash focus-visible:text-primary focus-visible:-outline-offset-2',
 );
 
 // Both halves are mounted and one is hidden, so the swap is a display change

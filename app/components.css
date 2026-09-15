@@ -701,18 +701,18 @@
   .slant-paint {
     inset: calc(var(--s-f) * -1) calc(var(--s-px) * -1);
   }
+  /* The outline a slanted control needs in forced-colours modes, and only
+     there. Elsewhere focus is the hover face, carried by the stops. There the
+     stops are overridden and the system outline would trace the rectangle, not
+     the shape -- so this layer draws it on the shape instead (see below). */
   .slant-focus {
     visibility: hidden;
-    background: var(--sp-focus);
     clip-path: shape(
       evenodd from var(--s-out-start),
       var(--s-out-path),
       move to var(--s-start),
       var(--s-path)
     );
-  }
-  .slant[data-focus-visible] .slant-focus {
-    visibility: visible;
   }
   .slant-ring {
     background: linear-gradient(
@@ -771,6 +771,14 @@
     .slant-focus {
       background: Highlight;
     }
+    .slant[data-focus-visible] .slant-focus {
+      visibility: visible;
+    }
+    /* The layer above traces the shape; the global outline would add a second
+       one around the rectangle. */
+    .slant:focus-visible {
+      outline: none;
+    }
     .notch-sheen,
     .slant-sheen,
     .notch::after {
@@ -818,8 +826,8 @@
        box from it -- one width, read by both. */
     --menu-search-glyph: calc(var(--spacing) * 4.5);
     /* A field's edge, heavier than a row's. Both insets below take the
-       difference back, so the keycap and a row's status badge still land on
-       one trailing axis and the glyph on the rail's. */
+       difference back, so the typed text ends where a row's status badge
+       does and the glyph lands on the rail's axis. */
     border: var(--spacing-field-edge) solid transparent;
     border-radius: var(--radius-control);
     padding-inline-end: calc(
@@ -869,18 +877,17 @@
   .menu-search-field:focus-within ::placeholder {
     color: var(--sp-text-muted-strong);
   }
-  /* The hint has said its piece once you are in the field. It fades rather
-     than unmounting, so the input never widens under the caret. */
-  .menu-search-field:focus-within kbd {
-    opacity: 0;
-  }
-  .menu-search-field:has(input:disabled) {
-    opacity: 0.65;
+  /* The browser's own clear button draws in its own colour, and only in some
+     browsers; the field carries a button of its own instead. */
+  .menu-search-field input::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
   }
   @media (forced-colors: active) {
+    /* Inset, because the band the field opens in clips at its edges. */
     .menu-search-field:focus-within {
       outline: 2px solid Highlight;
-      outline-offset: 2px;
+      outline-offset: -2px;
     }
   }
 
@@ -1475,5 +1482,138 @@
     --nc-arcade-color-1: currentColor;
     --nc-arcade-color-2: color-mix(in oklab, currentColor 25%, transparent);
     --nc-arcade-color-3: transparent;
+  }
+}
+
+/*
+  The sheet's moving edge. Geometry is shared by the grid, the unclipped menu
+  and its separator; keeping the states here also keeps the fade's sequencing
+  and direct manipulation from inheriting contradictory transitions.
+*/
+@layer components {
+  .resizable-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @media (width >= 56.25rem) {
+    .resizable-shell {
+      --sidebar-width: var(--spacing-sidebar-default);
+      --sidebar-track: var(--sidebar-width);
+      grid-template-columns: var(--sidebar-track) minmax(0, 1fr);
+      transition: grid-template-columns var(--duration-pane)
+        var(--ease-out-emphasized);
+    }
+
+    .resizable-shell[data-collapsed] {
+      --sidebar-track: var(--spacing-sidebar-closed);
+    }
+
+    .sidebar-navigation {
+      width: var(--sidebar-width);
+      isolation: isolate;
+      opacity: 1;
+      translate: 0;
+      transition:
+        opacity var(--duration-state) ease-out
+          calc(var(--duration-pane) - var(--duration-state)),
+        translate var(--duration-pane) var(--ease-out-emphasized);
+    }
+
+    .resizable-shell[data-collapsed] .sidebar-navigation {
+      opacity: 0;
+      translate: calc(-1 * var(--spacing-menu-fade));
+      transition-delay: 0s;
+    }
+
+    .resizable-shell[data-resizing] {
+      --sidebar-track: var(--sidebar-drag-track);
+      transition: none;
+      cursor: col-resize;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .resizable-shell[data-resizing] .sidebar-navigation {
+      opacity: var(--sidebar-drag-opacity);
+      translate: 0;
+      transition: none;
+    }
+
+    .resizable-shell[data-dragging] * {
+      cursor: col-resize !important;
+    }
+  }
+
+  .sidebar-handle {
+    position: absolute;
+    z-index: 10;
+    top: var(--spacing-menu-fade);
+    bottom: var(--spacing-menu-fade);
+    left: 0;
+    width: var(--spacing-sidebar-handle);
+    translate: -50%;
+    cursor: col-resize;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    color: var(--sp-text-muted);
+    outline: none;
+  }
+
+  .sidebar-handle-mark {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: var(--spacing-sidebar-grip);
+    cursor: pointer;
+    translate: calc(-1 * var(--spacing-sidebar-grip-offset)) -50%;
+    border-radius: var(--radius-control);
+    opacity: 0;
+    transition: opacity var(--duration-state) ease-out;
+  }
+
+  /* One joined stroke: the centre stays continuous while the line bends. */
+  .sidebar-handle-stroke {
+    stroke: currentColor;
+    stroke-width: 3.5px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .sidebar-handle:is([data-hovered], :focus-visible) .sidebar-handle-mark,
+  .resizable-shell:is([data-resizing], [data-collapsed]) .sidebar-handle-mark {
+    opacity: 1;
+  }
+
+  /* Controlled hover ignores the settling edge beneath a stationary pointer. */
+  .sidebar-handle:is([data-hovered], :focus-visible),
+  .resizable-shell[data-resizing] .sidebar-handle {
+    color: var(--sp-text-muted-strong);
+  }
+
+  @media (hover: none) {
+    .sidebar-handle-mark {
+      opacity: 1;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .sidebar-handle-mark {
+      color: ButtonText;
+      opacity: 1;
+      forced-color-adjust: none;
+    }
+    .sidebar-handle:focus-visible .sidebar-handle-mark {
+      outline-color: Highlight;
+    }
+  }
+
+  @media print {
+    .sidebar-handle {
+      display: none;
+    }
   }
 }

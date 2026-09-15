@@ -75,6 +75,9 @@ importers:
       '@locator/webpack-loader':
         specifier: ^0.5.1
         version: 0.5.1(webpack@5.110.3(postcss@8.5.26))
+      '@radix-ui/colors':
+        specifier: 3.0.0
+        version: 3.0.0
       '@tailwindcss/postcss':
         specifier: 4.3.3
         version: 4.3.3
@@ -1067,6 +1070,9 @@ packages:
     peerDependencies:
       react: '>= 16.8'
       react-dom: '>= 16.8'
+
+  '@radix-ui/colors@3.0.0':
+    resolution: {integrity: sha512-FUOsGBkHrYJwCSEtWRCIfQbZG7q1e6DgxCIOe1SUQzDe/7rXXeA47s8yCn6fuTNQAj1Zq4oTFi9Yjp3wzElcxg==}
 
   '@react-types/shared@3.36.1':
     resolution: {integrity: sha512-AzsuD9OfxTOZMMvTRhlN3oHBwOmFN7tDh27LzqmHt4+uOgPhJT7ZM7/kVs/8/o0WxayMUIk3hBmCFRHv1FUoag==}
@@ -4679,6 +4685,8 @@ snapshots:
     dependencies:
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
+
+  '@radix-ui/colors@3.0.0': {}
 
   '@react-types/shared@3.36.1(react@19.2.8)':
     dependencies:

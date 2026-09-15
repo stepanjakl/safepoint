@@ -37,7 +37,7 @@ export function LineDetail({
         <Link
           href="/"
           scroll={false}
-          className="text-meta text-muted mb-2 inline-flex min-h-6 items-center gap-1 underline-offset-4 hover:underline @3xl:hidden"
+          className="text-meta text-muted mb-2 inline-flex min-h-6 items-center gap-1 underline-offset-4 hover:underline focus-visible:underline @3xl:hidden"
         >
           <span aria-hidden="true">←</span> Back to candidates
         </Link>
@@ -47,7 +47,7 @@ export function LineDetail({
               id={headingId}
               ref={headingRef}
               tabIndex={-1}
-              className="text-title focus-visible:outline-focus font-semibold outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-solid"
+              className="text-title font-semibold focus-visible:outline-offset-4"
             >
               {detail.name}{' '}
               <span className="text-muted font-normal">{detail.unit}</span>

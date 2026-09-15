@@ -16,7 +16,7 @@ export function AppHeader({
         <h1
           id={headingId}
           tabIndex={-1}
-          className="text-display focus-visible:outline-focus font-semibold outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-solid"
+          className="text-display font-semibold focus-visible:outline-offset-4"
         >
           {batch.title}
         </h1>

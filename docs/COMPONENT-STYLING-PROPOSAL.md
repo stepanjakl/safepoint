@@ -170,7 +170,8 @@ answering in CSS files. Fixed by adding `tailwindcss` to that list. Verified
 against the extension's own language server: `--sp-menu-tile-face` in
 `globals.css` resolves to `app/tokens.css:616`, and completion after `var(--`
 returns 286 variables including it. The client-side routing fix itself needs a
-window reload to confirm.
+window reload to confirm. (`--sp-menu-tile-face` has since been replaced by
+per-hue tile roles; the finding is about the extension and is unaffected.)
 
 **`surface-menu-tile` reported as unused.** From Unused CSS Classes (rcore). It
 reads `@utility` names as classes, but indexes only `[\w-]` tokens inside

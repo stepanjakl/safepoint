@@ -17,25 +17,25 @@ export type Slant = 'left' | 'right' | 'both';
 // gradient stops it animates are its own contract. The hairline sheen because
 // at this size a full pixel of white inside the ring reads as a second edge.
 const base =
-  'control-hairline inline-flex h-9 min-w-11 items-center justify-center gap-2 px-3.5 text-dense font-medium whitespace-nowrap outline-none data-[disabled]:cursor-not-allowed data-[disabled]:control-off data-[disabled]:text-muted';
-
-// A square button draws its own focus ring. A slanted one cannot -- the element
-// is a rectangle and the shape is not -- so one of its layers draws it.
-const focusRing =
-  'data-[focus-visible]:outline-solid data-[focus-visible]:outline-2 data-[focus-visible]:outline-offset-2 data-[focus-visible]:outline-focus';
+  'control-hairline inline-flex h-9 min-w-11 items-center justify-center gap-2 px-3.5 text-dense font-medium whitespace-nowrap data-[disabled]:cursor-not-allowed data-[disabled]:control-off data-[disabled]:text-muted';
 
 /*
   Each variant in two halves: the stops, which say what colour the face is in
   each state, and the shape they are painted onto. A square button is its own
   shape; a slanted one hands the stops to the `slant` layers.
+
+  Keyboard focus takes the hover stops. The app draws no focus outline of its
+  own (see :focus-visible in app/globals.css), and because focus is carried by
+  the stops rather than by the box, a slanted button shows it on its slanted
+  shape with nothing extra to draw.
 */
 const faces: Record<Variant, string> = {
   // The one accented control on a page: a lit face with a brighter ring.
   primary:
-    'control-accent text-white data-[hovered]:control-accent-hover data-[pressed]:control-accent-hover',
+    'control-accent text-white data-[hovered]:control-accent-hover data-[focus-visible]:control-accent-hover data-[pressed]:control-accent-hover',
   // Everything else: the same construction, one step quieter.
   secondary:
-    'control-quiet text-primary data-[hovered]:control-quiet-hover data-[pressed]:control-quiet-hover',
+    'control-quiet text-primary data-[hovered]:control-quiet-hover data-[focus-visible]:control-quiet-hover data-[pressed]:control-quiet-hover',
 };
 
 const shapes: Record<Variant, string> = {
@@ -79,7 +79,7 @@ export function Button({
       className={cx(
         base,
         faces[variant],
-        slant ? 'slant' : cx(shapes[variant], focusRing),
+        slant ? 'slant' : shapes[variant],
         className,
       )}
     >
@@ -113,13 +113,15 @@ export const ICON_SHAPE =
   'inline-grid flex-none cursor-pointer place-items-center rounded-icon p-0';
 
 /*
-  The quiet face: a wash on hover, nothing at rest. It carries the transition,
+  The quiet face: a wash on hover or keyboard focus, nothing at rest. The two
+  are one state -- the app draws no focus outline of its own, so focus is this
+  wash (see :focus-visible in app/globals.css). It carries the transition,
   so a square that swaps this out for control-face -- the sidebar's Save-order
   button does exactly that -- is left with control-face's own timing rather
   than a `transition-colors` that names none of the gradient stops and so
   snaps every one of them.
 */
 export const ICON_QUIET =
-  'control-wash text-muted hover:bg-surface-selected hover:text-primary';
+  'control-wash text-muted hover:bg-surface-selected hover:text-primary focus-visible:bg-surface-selected focus-visible:text-primary';
 
 export const ICON_BUTTON = `${ICON_SHAPE} ${ICON_QUIET}`;

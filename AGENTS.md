@@ -51,6 +51,16 @@ job each, a sharp test for what earns a place in `app/components.css`, no
 arbitrary values in markup, and never two utilities for the same property on one
 element.
 
+## Colours
+
+`app/radix-colors.css` is generated: run `pnpm colors:radix`, never edit it by
+hand. Tailwind scans source as plain text, so do not write a real theme variable
+name in a comment — it would be emitted as though a style read it; use a
+placeholder such as `--color-radix-<scale>-<step>`. The techniques behind the
+workspace menu's decorative hues — `light-dark()` resolved where the colour
+paints, saturation ceilings through relative colour syntax, and keeping clear of
+the state hues — are under Colour in `docs/STYLING-SYSTEM.md`.
+
 ## Checks
 
 ```

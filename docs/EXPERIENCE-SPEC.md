@@ -172,6 +172,8 @@ Colours are semantic tokens rather than utility colours embedded in components. 
 
 Use neutral graphite treatments for action and selection. Reserve chromatic colour primarily for semantic meaning. Never communicate state by colour alone: pair colour with text, icon shape, and programmatic state.
 
+Navigation may carry decorative hue for wayfinding — the workspace menu's icon tiles do — on two conditions: it stays clear of the semantic state hues, and it stays below their saturation, so a decorative colour can never be read as a verdict. [`STYLING-SYSTEM.md`](STYLING-SYSTEM.md) records how the tiles meet both.
+
 Final light and dark values must pass contrast checks in context, including at the weakest point of a gradient. The dark theme preserves the light theme's boundary hierarchy without relying on glow.
 
 ### Optical edge treatment
@@ -305,7 +307,9 @@ All functionality must work without custom shortcuts.
 
 Do not use positive `tabindex`. DOM order and visual order must agree. If a focused item disappears after filtering, move focus to the nearest remaining candidate or the filter summary. Focus indicators must remain fully visible against every surface, including high-contrast and forced-colours modes.
 
-A control may carry its focus on its own border instead of the shared outline, which is what text fields do. Doing so takes on three obligations rather than removing one: the focused border must reach 3:1 against both the control's face and what surrounds it, it must differ from the resting border by 3:1 so the *change* is perceivable and not only the colour, and because forced-colours modes override author border colours the control must restore a real outline there. A border that only darkens slightly is not a focus indicator.
+There is no shared focus outline. A focused control looks exactly as it does under the pointer — the same wash, face step or colour step — so the keyboard and the pointer light it the same way. A focusable control with no hover state takes the wash its surface uses for hover; text fields carry focus on their own border; headings that receive focus programmatically and cannot be operated show none. Forced-colours modes drop author backgrounds and override border colours, so a wash shows nothing there: every focusable element restores a real system outline in those modes (`:focus-visible` in `app/globals.css`), and a control whose shape is not its box draws that outline on its shape.
+
+This is a deliberate trade. A hover wash does not differ from the resting state by 3:1, so the indicator is quieter than WCAG 2.4.13 Focus Appearance asks, and on the lightest washes it is the weakest part of keyboard use. Revisit it before claiming conformance beyond 2.4.7 Focus Visible.
 
 ## Dynamic updates and announcements
 

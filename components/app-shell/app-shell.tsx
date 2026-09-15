@@ -8,6 +8,7 @@ import { processNavigationItem } from '@/lib/process/navigation';
 import { presentPromotionPlan } from '@/lib/review/promotion-adapter';
 import { supportPlan } from '@/lib/review/support-fixture';
 import { ProcessMenu } from './process-menu';
+import { ResizableShell } from './resizable-shell';
 
 export function AppShell({
   current,
@@ -32,16 +33,9 @@ export function AppShell({
     }),
   ];
   return (
-    // Two fixed panes wherever there is room for both, so the conversation
-    // scrolls without taking the workspace furniture with it. Below that the
-    // page scrolls as one document and the sidebar becomes a strip on top.
-    //
-    // No column gap above the breakpoint: the separation the sidebar needs is
-    // inside the sidebar now, as the gradient strips a travelling pane
-    // dissolves into, and a gap here would double it. Below the breakpoint the
-    // two stack, so the row gap still has to be there.
-    <div className="bg-canvas p-shell-inset max-shell:gap-3.5 shell:h-dvh shell:grid-cols-[250px_minmax(0,1fr)] shell:overflow-hidden grid grid-cols-[minmax(0,1fr)]">
-      <ProcessMenu current={current} items={items} />
+    <ResizableShell
+      navigation={<ProcessMenu current={current} items={items} />}
+    >
       {/*
         A containing block for its descendants. Absolutely positioned content --
         every sr-only span among it -- otherwise resolves against the initial
@@ -60,13 +54,13 @@ export function AppShell({
         that corner itself, and a rounded clip over it would leave the face's
         own anti-aliased corner showing through as a ghost.
       */}
-      <div className="rounded-shell p-control-edge shell:overflow-hidden relative isolate min-w-0 overflow-clip has-[.notch]:rounded-tr-none">
+      <div className="rounded-shell p-control-edge shell:h-full shell:overflow-hidden relative isolate min-w-0 overflow-clip has-[.notch]:rounded-tr-none">
         <div
           aria-hidden="true"
           className="control-face surface-raised rounded-shell pointer-events-none absolute inset-0 -z-10"
         />
         {children}
       </div>
-    </div>
+    </ResizableShell>
   );
 }

@@ -28,12 +28,12 @@ type Filter = ReviewFilter;
 // A filter pill carries its bucket's colour on the count alone: the label is
 // navigation, the figure is the quantity being filtered to.
 const FILTER =
-  'control-wash border-rule-default hover:bg-surface-inset aria-pressed:bg-surface-selected aria-pressed:border-rule-strong inline-flex min-h-8 items-baseline gap-1.5 rounded-full border px-2.5 py-1 text-meta whitespace-nowrap [&[data-severity]_.value]:text-severity-ink';
+  'control-wash border-rule-default hover:bg-surface-inset focus-visible:bg-surface-inset aria-pressed:bg-surface-selected aria-pressed:border-rule-strong inline-flex min-h-8 items-baseline gap-1.5 rounded-full border px-2.5 py-1 text-meta whitespace-nowrap [&[data-severity]_.value]:text-severity-ink';
 
 // 70px is the two-line row this list is built around, so a one-line item does
 // not make the column jump.
 const ITEM_BUTTON =
-  'control-wash hover:bg-surface-inset aria-[current=true]:bg-surface-selected aria-[current=true]:border-l-primary block min-h-17.5 w-full border-l-2 border-l-transparent px-4.5 py-3 text-left focus-visible:-outline-offset-3 forced-colors:aria-[current=true]:border-l-[Highlight] forced-colors:aria-[current=true]:outline forced-colors:aria-[current=true]:outline-[Highlight] forced-colors:aria-[current=true]:-outline-offset-2';
+  'control-wash hover:bg-surface-inset focus-visible:bg-surface-inset aria-[current=true]:bg-surface-selected aria-[current=true]:border-l-primary block min-h-17.5 w-full border-l-2 border-l-transparent px-4.5 py-3 text-left focus-visible:-outline-offset-3 forced-colors:aria-[current=true]:border-l-[Highlight] forced-colors:aria-[current=true]:outline forced-colors:aria-[current=true]:outline-[Highlight] forced-colors:aria-[current=true]:-outline-offset-2';
 const ITEM_REASON = 'text-muted mt-1 block text-meta leading-normal';
 
 export function ReviewPanel({

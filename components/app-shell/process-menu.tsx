@@ -33,8 +33,14 @@ import PlusMedium from 'blode-icons-react/icons/plus-medium';
 import ShieldCheck from 'blode-icons-react/icons/shield-check';
 import ShieldCheckFilled from 'blode-icons-react/icons/shield-check-filled';
 import SortArrowUpDown from 'blode-icons-react/icons/sort-arrow-up-down';
+import X from 'blode-icons-react/icons/x';
 import { motion, useReducedMotion } from 'motion/react';
 import { cx } from '@/lib/cx';
+import {
+  DURATION_PANE,
+  DURATION_STATE,
+  EASE_OUT_EMPHASIZED,
+} from '@/lib/motion';
 import { Glyph } from '@/components/ui/glyph';
 import { ICON_QUIET, ICON_SHAPE } from '@/components/ui/button';
 import { OverflowTooltip, Tooltip } from '@/components/ui/tooltip';
@@ -106,42 +112,11 @@ const readModifierKey = () =>
     : 'Ctrl';
 
 /*
-  The shape shared by the search field's shortcut and every row's status badge,
-  so the two read as one kind of object and cannot drift apart: the pill, the
-  height and the utility type. What each is painted with differs -- see below.
+  A row's status badge. A pill rather than a badge-step corner, and the mono
+  family, because it holds something the reader compares rather than reads as
+  prose -- a count.
 
-  A pill rather than a badge-step corner, and the mono family, because both
-  hold something the reader matches rather than reads as prose -- a shortcut
-  to press, a count to compare. The search key dims with its field, because
-  the label's disabled rule covers everything inside it.
-*/
-const KEYCAP_SHAPE =
-  'rounded-full text-micro font-mono inline-flex h-5 flex-none items-center justify-center [font-weight:var(--sp-mono-weight-strong)] select-none';
-
-/*
-  The shortcut is a plain background: no ring, no sheen. It sits inside a field
-  that already draws an edge, and an edge inside that edge was furniture.
-
-  It rests a step darker than the canvas and steps darker again in every state
-  in which the field paints its own face, so it reads against whichever ground
-  it is on -- not only under the pointer. Three variants carrying one value, so
-  nothing depends on the order Tailwind emits them in.
-
-  The space between the modifier and the letter is a gap between two spans
-  rather than tracking. Tracking also lands after the last glyph, so the wider
-  it got the further the pair sat left of the pill's centre.
-
-  Out of the layout while the field is disabled, so the placeholder that says
-  why has the whole width.
-*/
-const SEARCH_KEYCAP = cx(
-  KEYCAP_SHAPE,
-  'control-wash bg-search-key group-hover:bg-search-key-hover group-focus-within:bg-search-key-hover group-has-[input:not(:placeholder-shown)]:bg-search-key-hover',
-  'rail-mark min-w-menu-rail gap-0.75 px-1.75 group-focus-within:opacity-0 group-has-[input:disabled]:hidden',
-);
-
-/*
-  One fixed box for every badge -- a rail cell wide, the keycap's height -- so a
+  One fixed box for every badge -- a rail cell wide, 20px high -- so a
   two-digit count does not widen its row's badge past its neighbours', and the
   cell stays centred on the trailing axis. The tone colours the glyph and count.
 
@@ -151,7 +126,7 @@ const SEARCH_KEYCAP = cx(
   lights -- hovered, focused or current.
 */
 const ROW_BADGE = cx(
-  KEYCAP_SHAPE,
+  'rounded-full text-micro font-mono inline-flex h-5 flex-none items-center justify-center [font-weight:var(--sp-mono-weight-strong)] select-none',
   'control-face surface-menu-badge',
   'process-menu-row-end rail-mark w-menu-rail relative z-1 cursor-help gap-1 px-0 tabular-nums',
   'text-muted data-[tone=blocked]:text-state-blocked data-[tone=caution]:text-state-caution data-[tone=verified]:text-state-verified',
@@ -267,6 +242,18 @@ const MENU_BACK_BOX = 'rounded-control h-10 px-1.75';
 const MENU_RULE = 'border-rule-faint border-t shadow-rule-etch';
 
 /*
+  The search field's clear button, in place of the browser's own (hidden in
+  app/components.css), which drew in its own colour and only in some browsers.
+  A chip in the field's edge colours, with no colour of its own on the glyph:
+  it inherits the field's text colour, so it steps with the magnifier at the
+  other end -- muted at rest, stronger under the pointer, primary while the
+  field is focused. Pointer and keyboard focus on the button itself step the
+  chip and lift the glyph to primary alike.
+*/
+const SEARCH_CLEAR =
+  'control-wash bg-search-clear hover:bg-search-clear-hover hover:text-primary focus-visible:bg-search-clear-hover focus-visible:text-primary grid size-4 place-items-center rounded-full';
+
+/*
   An item in the workspace menu. No transparent edge here, unlike a process
   row: the rail has to start at the band's own left edge for its midpoint to be
   the same axis every other band centres on.
@@ -278,7 +265,7 @@ const MENU_RULE = 'border-rule-faint border-t shadow-rule-etch';
 */
 const MENU_ITEM = cx(
   MENU_TITLE,
-  'group/enter rounded-control control-wash hover:bg-menu-wash flex h-10 w-full items-center gap-1.5 pr-1.75 text-left',
+  'group/enter rounded-control control-wash hover:bg-menu-wash focus-visible:bg-menu-wash flex h-10 w-full items-center gap-1.5 pr-1.75 text-left',
 );
 
 /*
@@ -304,19 +291,19 @@ const WORKSPACE_PLACEHOLDERS: {
     label: 'Runs',
     icon: 'runs',
     iconFilled: 'runsFilled',
-    hue: 'menu-tile-sky',
+    hue: 'menu-tile-green',
   },
   {
     label: 'Systems',
     icon: 'systems',
     iconFilled: 'systemsFilled',
-    hue: 'menu-tile-violet',
+    hue: 'menu-tile-sky',
   },
   {
     label: 'Approvals',
     icon: 'approvals',
     iconFilled: 'approvalsFilled',
-    hue: 'menu-tile-orange',
+    hue: 'menu-tile-violet',
   },
   {
     label: 'Audit log',
@@ -386,6 +373,7 @@ export function ProcessMenu({
   const order = draft ?? savedOrder;
   const customising = draft !== null;
   const [query, setQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
   const [previewHandles, setPreviewHandles] = useState(false);
   const search = query.trim().toLocaleLowerCase();
   const visibleOrder = customising
@@ -404,8 +392,10 @@ export function ProcessMenu({
     code path and still ends on the same layout.
   */
   const reduceMotion = useReducedMotion();
-  const ease = [0.22, 1, 0.36, 1] as const;
-  const collapse = { duration: reduceMotion ? 0 : 0.22, ease };
+  const collapse = {
+    duration: reduceMotion ? 0 : DURATION_PANE,
+    ease: EASE_OUT_EMPHASIZED,
+  };
   // The handles are out while the mode is on, and previewed while the button
   // that turns it on is under the pointer.
   const showGrip = customising || previewHandles;
@@ -414,12 +404,24 @@ export function ProcessMenu({
     it. Coming out, the label moves aside first and the handles fade into the
     space it left; going back, they fade out first and only then does the label
     close the gap. Together, the handles were half drawn while still sliding
-    under a label on its way. The fade is --duration-state, as the travel above
-    is --duration-pane.
+    under a label on its way.
   */
-  const fade = { duration: reduceMotion ? 0 : 0.15, ease: 'easeOut' } as const;
+  const fade = {
+    duration: reduceMotion ? 0 : DURATION_STATE,
+    ease: 'easeOut',
+  } as const;
   const gripTransition = showGrip
     ? { default: collapse, opacity: { ...fade, delay: collapse.duration } }
+    : { default: { ...collapse, delay: fade.duration }, opacity: fade };
+  /*
+    The search band in the same order, with one difference going in: the field
+    and its rule fade in from halfway through the band's travel rather than
+    after it. ⌘K puts the caret in the field at once, and a caret blinking in a
+    blank band for the whole travel read as the shortcut having missed. The
+    two fade as one -- a rule arriving after its field read as a lag.
+  */
+  const searchTransition = searchOpen
+    ? { default: collapse, opacity: { ...fade, delay: collapse.duration / 2 } }
     : { default: { ...collapse, delay: fade.duration }, opacity: fade };
 
   const [level, setLevel] = useState<'workspace' | 'processes'>('processes');
@@ -449,6 +451,7 @@ export function ProcessMenu({
   const editRef = useRef<HTMLButtonElement>(null);
   const focusLevel = useRef(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  const searchButtonRef = useRef<HTMLButtonElement>(null);
   const focusSearch = useRef(false);
   /*
     ⌘ on Apple platforms, Ctrl everywhere else. Read through the store rather
@@ -473,32 +476,35 @@ export function ProcessMenu({
     });
     focusLevel.current = false;
   }, [level]);
-  // The field lives in the processes level, which is inert while the workspace
-  // level is showing, so a jump from there has to land after the swap.
+  // The field is inert while its band is closed, and its level is inert while
+  // the workspace level is showing, so a jump has to land after both lift.
   useLayoutEffect(() => {
     if (!focusSearch.current) return;
     searchRef.current?.focus({ preventScroll: true });
     focusSearch.current = false;
-  }, [level]);
+  }, [level, searchOpen]);
   useEffect(() => {
     function jumpToSearch(event: KeyboardEvent) {
       if (event.key !== 'k' && event.key !== 'K') return;
       if (event.altKey || !(event.metaKey || event.ctrlKey)) return;
-      // Arranging disables the field. Leave the key to the browser rather than
-      // swallowing it to do nothing.
+      // Arranging keeps the field closed. Leave the key to the browser rather
+      // than swallowing it to do nothing.
       if (customising) return;
       event.preventDefault();
-      if (level === 'processes') {
+      if (level === 'processes' && searchOpen) {
         searchRef.current?.focus({ preventScroll: true });
         return;
       }
       focusSearch.current = true;
-      setTravelled(true);
-      setLevel('processes');
+      if (level !== 'processes') {
+        setTravelled(true);
+        setLevel('processes');
+      }
+      setSearchOpen(true);
     }
     document.addEventListener('keydown', jumpToSearch);
     return () => document.removeEventListener('keydown', jumpToSearch);
-  }, [level, customising]);
+  }, [level, customising, searchOpen]);
   useLayoutEffect(() => {
     const id = focusHandle.current;
     if (id !== null) {
@@ -507,11 +513,29 @@ export function ProcessMenu({
     }
   }, [draft, drag]);
 
+  function openSearch() {
+    focusSearch.current = true;
+    setSearchOpen(true);
+  }
+
+  /*
+    Closing always clears -- a filter the field is no longer there to show is a
+    list with rows missing for no visible reason -- but not until the band has
+    finished closing. The query is dropped from the band's onAnimationComplete,
+    so the text and the list it filters hold still while the field fades out
+    rather than emptying under it. A band already closed has nothing to wait
+    for.
+  */
+  function closeSearch() {
+    if (!searchOpen) setQuery('');
+    setSearchOpen(false);
+  }
+
   function navigate(next: typeof level) {
     focusLevel.current = true;
     setTravelled(true);
     setLevel(next);
-    setQuery('');
+    closeSearch();
     setPreviewHandles(false);
   }
 
@@ -684,14 +708,53 @@ export function ProcessMenu({
           inert={level !== 'processes'}
           aria-hidden={level !== 'processes'}
         >
-          <Tooltip label="Add process">
+          {/*
+            A disclosure, not a toggle: it opens a region rather than switching
+            a mode, so it says so through aria-expanded -- and lights for as
+            long as the field is out, which is also as long as a filter can be
+            on. The shortcut lives in its tooltip, where it is read before the
+            field opens rather than inside a field that is already open.
+          */}
+          <Tooltip
+            label={
+              customising ? 'Finish arranging to search' : 'Search processes'
+            }
+            description={
+              customising
+                ? undefined
+                : modifier === '⌘'
+                  ? '⌘K'
+                  : `${modifier}+K`
+            }
+          >
             <button
+              ref={searchButtonRef}
               type="button"
-              className={ICON_BUTTON}
-              aria-label="Add process"
-              aria-disabled="true"
+              className={cx(
+                ICON_BUTTON,
+                'aria-expanded:bg-surface-selected aria-expanded:text-primary',
+              )}
+              aria-label="Search processes"
+              aria-expanded={searchOpen}
+              aria-controls="process-search"
+              aria-keyshortcuts="Meta+K Control+K"
+              aria-disabled={customising || undefined}
+              // Keeps focus in the field on a click, so the field's blur does
+              // not close it a moment before this click would open it again.
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => {
+                if (customising) return;
+                if (!searchOpen) {
+                  openSearch();
+                  return;
+                }
+                // The field held focus through the press; hand it to this
+                // button before the field goes inert, not to the page.
+                closeSearch();
+                searchButtonRef.current?.focus();
+              }}
             >
-              <MenuIcon name="plus" />
+              <MenuIcon name="search" />
             </button>
           </Tooltip>
           <span className={MENU_RAIL}>
@@ -709,7 +772,7 @@ export function ProcessMenu({
                   // the timing, and a `transition-colors` alongside it would
                   // win the property list and leave the face and ring to snap.
                   customising
-                    ? 'control-face control-commit hover:control-commit-hover text-white'
+                    ? 'control-face control-commit hover:control-commit-hover focus-visible:control-commit-hover text-white'
                     : ICON_BUTTON_QUIET,
                 )}
                 aria-label={customising ? 'Save order' : 'Arrange processes'}
@@ -721,7 +784,7 @@ export function ProcessMenu({
                 onClick={() => {
                   if (customising) finishCustomising();
                   else {
-                    setQuery('');
+                    closeSearch();
                     setLevel('processes');
                     setDraft(savedOrder);
                   }
@@ -779,7 +842,7 @@ export function ProcessMenu({
                     onClick={() => navigate('processes')}
                   >
                     <MenuTile
-                      hue="menu-tile-green"
+                      hue="menu-tile-yellow"
                       icon="processes"
                       iconFilled="processesFilled"
                     />
@@ -822,11 +885,50 @@ export function ProcessMenu({
             >
               {/* Fixed chrome of this level: the field, its rule, and the
                   title. Only the list under them scrolls. */}
-              {/* No leading padding here: `.menu-search-field` derives it
-                  from the rail, the edge and this glyph's box, so the glyph
-                  stays on the axis whatever the edge is. */}
-              <label className="menu-search-field group flex h-9 cursor-text items-center gap-2 has-[input:disabled]:cursor-default">
+              {/*
+                The field and its rule, as one band the search button opens.
+                Kept mounted and inert while closed rather than unmounted, so
+                ⌘K has an element to focus in the same commit that opens it.
+                The band animates its height and its opacity, so the field and
+                the rule inside it arrive and leave together, and nothing in it
+                slides.
+
+                It clips for good, so nothing about its overflow changes at
+                either end of the travel. That is what the rule's blink was:
+                the rule's lit line is a shadow cast below the rule's own box,
+                and a band that clipped only while travelling cut the line off
+                as it started and let it pop back as it stopped. The band now
+                carries a hairline of bottom padding, so the shadow is inside
+                what it clips, and takes the same hairline back as a negative
+                margin, so nothing below it moves.
+              */}
+              <motion.div
+                id="process-search"
+                className="pb-control-highlight-hairline -mb-control-highlight-hairline overflow-hidden"
+                inert={!searchOpen}
+                initial={false}
+                animate={{
+                  height: searchOpen ? 'auto' : 0,
+                  opacity: searchOpen ? 1 : 0,
+                }}
+                transition={searchTransition}
+                onAnimationComplete={(definition) => {
+                  if ((definition as { height?: unknown }).height === 0) {
+                    setQuery('');
+                  }
+                }}
+              >
                 {/*
+                  A div rather than the label itself, because the clear button
+                  sits inside the field's edge and a label may not contain a
+                  second labelable element. No leading padding here:
+                  `.menu-search-field` derives it from the rail, the edge and
+                  the glyph's box, so the glyph stays on the axis whatever the
+                  edge is.
+                */}
+                <div className="menu-search-field flex h-9 items-center gap-2">
+                  <label className="flex h-full min-w-0 flex-1 cursor-text items-center gap-2">
+                    {/*
                     An even-width box, though the glyph in it is 17px. A box of
                     odd width centres on a half pixel wherever it is placed, so
                     it can never sit on an integer axis -- which is the whole
@@ -834,58 +936,127 @@ export function ProcessMenu({
                     rather than shrink-wrapping their glyph. The width is the
                     field's own --menu-search-glyph, which its inset reads.
                   */}
-                <span className="rail-mark inline-grid w-(--menu-search-glyph) flex-none place-items-center">
-                  <MenuIcon
-                    name="search"
-                    className="control-wash size-4.25 flex-none"
-                    strokeWidth={2}
-                  />
+                    <span className="rail-mark inline-grid w-(--menu-search-glyph) flex-none place-items-center">
+                      <MenuIcon
+                        name="search"
+                        className="control-wash size-4.25 flex-none"
+                        strokeWidth={2}
+                      />
+                    </span>
+                    <span className="sr-only">Search processes</span>
+                    <input
+                      ref={searchRef}
+                      type="search"
+                      className="text-primary text-meta min-h-menu-rail w-full min-w-0 border-none bg-transparent font-medium outline-none"
+                      placeholder="Search processes…"
+                      value={query}
+                      /* The shortcut belongs on the control it reaches, not in its
+                     name: the search button's tooltip is the sighted half. */
+                      aria-keyshortcuts="Meta+K Control+K"
+                      onChange={(event) => setQuery(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key !== 'Escape') return;
+                        // Also stops the browser's own clear, so the two steps
+                        // below are the only thing Escape does here.
+                        event.preventDefault();
+                        if (query !== '') {
+                          setQuery('');
+                          return;
+                        }
+                        closeSearch();
+                        searchButtonRef.current?.focus();
+                      }}
+                      onBlur={() => {
+                        // Leaving the window is not leaving the field.
+                        if (!document.hasFocus()) return;
+                        if (query === '') closeSearch();
+                      }}
+                    />
+                  </label>
+                  {/*
+                  In a rail cell, where the shortcut keycap used to sit, so it
+                  centres on the trailing axis the row badges share. Only
+                  while there is something to clear.
+                */}
+                  {query !== '' ? (
+                    <span className={MENU_RAIL}>
+                      <button
+                        type="button"
+                        className={SEARCH_CLEAR}
+                        aria-label="Clear search"
+                        // Keeps the caret in the field through the press.
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => {
+                          setQuery('');
+                          searchRef.current?.focus({ preventScroll: true });
+                        }}
+                      >
+                        <MenuIcon
+                          name="clear"
+                          className="size-2.5 flex-none"
+                          strokeWidth={2.6}
+                        />
+                      </button>
+                    </span>
+                  ) : null}
+                </div>
+                <div className={cx(MENU_RULE, 'mt-3.5')} aria-hidden="true" />
+              </motion.div>
+              {/*
+                The title, and the one action that adds to what it names. Two
+                siblings stacked in one grid cell, not a button inside a
+                button: the back button still spans the row, so its title
+                centres against the spacer that balances the chevron, and the
+                add button sits over that spacer in a rail cell of its own, on
+                the trailing axis. Later in the cell, so it is on top -- and a
+                pointer on it is off the back button, so the two washes never
+                stack.
+              */}
+              <div className="mt-2 grid">
+                <button
+                  ref={backRef}
+                  type="button"
+                  className={cx(
+                    MENU_TITLE,
+                    MENU_BACK_BOX,
+                    'hover:bg-menu-wash-strong hover:text-primary focus-visible:bg-menu-wash-strong focus-visible:text-primary control-wash col-start-1 row-start-1 flex w-full items-center',
+                  )}
+                  aria-label="Back to workspace menu"
+                  onClick={() => navigate('workspace')}
+                >
+                  <span className={MENU_CHEVRON_BOX}>
+                    <MenuIcon
+                      name="left"
+                      className={MENU_CHEVRON}
+                      strokeWidth={2}
+                    />
+                  </span>
+                  <span className="flex-1 text-center">Processes</span>
+                  {/* Balances the chevron so the title centres on the row,
+                      and is the slot the add button sits over. */}
+                  <span className={MENU_CHEVRON} aria-hidden="true" />
+                </button>
+                {/* The cell passes the pointer through, so the sliver of it
+                    either side of the button still belongs to the back
+                    button underneath. */}
+                <span
+                  className={cx(
+                    MENU_RAIL,
+                    'pointer-events-none col-start-1 row-start-1 self-center justify-self-end',
+                  )}
+                >
+                  <Tooltip label="Add process">
+                    <button
+                      type="button"
+                      className={cx(ICON_BUTTON, 'pointer-events-auto')}
+                      aria-label="Add process"
+                      aria-disabled="true"
+                    >
+                      <MenuIcon name="plus" />
+                    </button>
+                  </Tooltip>
                 </span>
-                <span className="sr-only">Search processes</span>
-                <input
-                  ref={searchRef}
-                  type="search"
-                  className="text-primary text-meta min-h-menu-rail w-full min-w-0 border-none bg-transparent font-medium outline-none"
-                  placeholder={
-                    customising
-                      ? 'Finish arranging to search'
-                      : 'Search processes…'
-                  }
-                  value={query}
-                  disabled={customising}
-                  /* The shortcut belongs on the control it reaches, not in its
-                     name: the keycap below is the sighted half of this. */
-                  aria-keyshortcuts="Meta+K Control+K"
-                  onChange={(event) => setQuery(event.target.value)}
-                />
-                <kbd className={SEARCH_KEYCAP} aria-hidden="true">
-                  <span>{modifier}</span>
-                  <span>K</span>
-                </kbd>
-              </label>
-              <div className={cx(MENU_RULE, 'mt-3.5')} aria-hidden="true" />
-              <button
-                ref={backRef}
-                type="button"
-                className={cx(
-                  MENU_TITLE,
-                  MENU_BACK_BOX,
-                  'hover:bg-menu-wash-strong hover:text-primary focus-visible:text-primary control-wash mt-2 flex w-full items-center',
-                )}
-                aria-label="Back to workspace menu"
-                onClick={() => navigate('workspace')}
-              >
-                <span className={MENU_CHEVRON_BOX}>
-                  <MenuIcon
-                    name="left"
-                    className={MENU_CHEVRON}
-                    strokeWidth={2}
-                  />
-                </span>
-                <span className="flex-1 text-center">Processes</span>
-                {/* Balances the chevron so the title centres on the row. */}
-                <span className={MENU_CHEVRON} aria-hidden="true" />
-              </button>
+              </div>
               {customising ? (
                 <span id="process-reorder-instructions" className="sr-only">
                   Use Up and Down arrow keys, Home or End to reorder.
@@ -1280,6 +1451,7 @@ const MENU_ICONS = {
   plus: PlusMedium,
   arrange: SortArrowUpDown,
   search: MagnifyingGlass,
+  clear: X,
   processes: CodeTree,
   processesFilled: CodeTreeFilled,
   left: ChevronLeft,

@@ -1,11 +1,16 @@
 import {
   CONTROL_NEUTRAL_STORAGE_KEY,
   DEFAULT_MOTION_SPEED,
+  DEFAULT_TILE_CHROMA_SCALE,
   MOTION_SPEEDS,
   MOTION_STORAGE_KEY,
   NEUTRAL_PALETTES,
   NEUTRAL_STORAGE_KEY,
   RAIL_GUIDES_STORAGE_KEY,
+  TILE_CHROMA_SCALE_MAX,
+  TILE_CHROMA_SCALE_MIN,
+  TILE_CHROMA_SCALE_STORAGE_KEY,
+  TILE_PALETTE_STORAGE_KEY,
 } from './design-preferences';
 import {
   MONO_CHOICES,
@@ -66,6 +71,22 @@ try {
     || localStorage.getItem(${JSON.stringify(CONTROL_NEUTRAL_STORAGE_KEY)});
   if (palettes.indexOf(controlNeutral) !== -1) {
     root.dataset.controlNeutral = controlNeutral;
+  }
+  var tilePalette = params.get('tiles')
+    || localStorage.getItem(${JSON.stringify(TILE_PALETTE_STORAGE_KEY)});
+  if (tilePalette === 'radix') {
+    root.dataset.tilePalette = tilePalette;
+  }
+  // Number(null) is 0, so an unset key falls outside the range and is skipped.
+  var chromaScale = Number(
+    localStorage.getItem(${JSON.stringify(TILE_CHROMA_SCALE_STORAGE_KEY)})
+  );
+  if (
+    chromaScale >= ${TILE_CHROMA_SCALE_MIN} &&
+    chromaScale <= ${TILE_CHROMA_SCALE_MAX} &&
+    chromaScale !== ${DEFAULT_TILE_CHROMA_SCALE}
+  ) {
+    root.style.setProperty('--tile-chroma-scale', String(chromaScale));
   }
   if (localStorage.getItem(${JSON.stringify(RAIL_GUIDES_STORAGE_KEY)}) === 'on') {
     root.dataset.railGuides = 'on';

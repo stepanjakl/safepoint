@@ -50,11 +50,11 @@ type Allowance = {
 
 const ALLOWLIST: Allowance[] = [
   {
-    selector: 'button[aria-label="Add process"]',
+    selector: 'button[aria-label="Search processes"]',
     reason:
       'The inner button of a side-by-side pair. Only the trailing button of a group can sit on an axis; this one is a gap and a button width inside it.',
-    // Re-signed off when the trailing button moved into a rail cell, which
-    // widened the pair by the 2px the row used to hold as padding.
+    // Carried over from Add process, which held this slot until it moved to
+    // the Processes title; the pair's geometry is unchanged.
     observed: -24,
   },
 ];
@@ -65,7 +65,7 @@ const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 type Options = {
   url: string;
   routes: string[];
-  level: 'processes' | 'workspace' | 'arrange' | 'all';
+  level: 'processes' | 'search' | 'workspace' | 'arrange' | 'all';
   width: number;
   height: number;
   tolerance: number;
@@ -84,9 +84,11 @@ check-rail-alignment — measure the sidebar against its own guide axes
 
   --url <url>           default http://localhost:3000 (falls back to :3001)
   --route <path>        repeatable; default /examples/states
-  --level <name>        processes | workspace | arrange | all
-                        default processes. 'arrange' opens the reorder mode,
-                        the only state the drag handles exist in.
+  --level <name>        processes | search | workspace | arrange | all
+                        default processes. 'search' opens the search field,
+                        which is closed and unmeasured at rest; 'arrange' opens
+                        the reorder mode, the only state the drag handles
+                        exist in.
   --width <px>          default 1440; must exceed the 900px shell: breakpoint
   --scale <n>           device pixel ratio, default 2. Borders snap to whole
                         device pixels, so a 1.5px edge lays out differently at 1
@@ -149,8 +151,12 @@ function parseArgs(argv: string[]): Options {
     else fail(`unknown option ${arg} (try --help)`);
   }
   if (options.routes.length === 0) options.routes.push('/examples/states');
-  if (!['processes', 'workspace', 'arrange', 'all'].includes(options.level)) {
-    fail(`--level must be processes, workspace, arrange or all`);
+  if (
+    !['processes', 'search', 'workspace', 'arrange', 'all'].includes(
+      options.level,
+    )
+  ) {
+    fail(`--level must be processes, search, workspace, arrange or all`);
   }
   // Below the shell: breakpoint the sidebar becomes a strip on top and the
   // vertical axes mean nothing, so measuring there would report noise.
@@ -722,8 +728,10 @@ async function main() {
 
     const reports: { route: string; level: string; report: Report }[] = [];
     const levels =
+      // In an order each opener can reach from the level before it: arranging
+      // closes the field that 'search' opened.
       options.level === 'all'
-        ? ['processes', 'arrange', 'workspace']
+        ? ['processes', 'search', 'arrange', 'workspace']
         : [options.level];
 
     for (const route of options.routes) {
@@ -742,9 +750,11 @@ async function main() {
         const opener =
           level === 'workspace'
             ? '[aria-label="Back to workspace menu"]'
-            : level === 'arrange'
-              ? '[aria-label="Arrange processes"]'
-              : null;
+            : level === 'search'
+              ? 'button[aria-label="Search processes"]'
+              : level === 'arrange'
+                ? '[aria-label="Arrange processes"]'
+                : null;
         if (opener) {
           const opened = await evaluate<boolean>(
             cdp,

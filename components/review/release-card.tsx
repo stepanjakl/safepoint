@@ -49,14 +49,14 @@ const PILL_STATE =
   as an edge, so the ring is what says "these rows", not the fill weight alone.
 */
 const PILL =
-  'bg-severity-fill text-severity-ink data-[hovered]:bg-severity-fill-strong data-[selected]:bg-severity-fill-strong data-[selected]:shadow-severity-ring data-[focus-visible]:outline-focus inline-flex items-baseline gap-1.5 rounded-full border-0 px-2.5 py-1 text-dense font-medium whitespace-nowrap control-wash data-[focus-visible]:outline-2 data-[focus-visible]:outline-offset-2 [&_.value]:text-inherit [&_.value]:[font-weight:550]';
+  'bg-severity-fill text-severity-ink data-[hovered]:bg-severity-fill-strong data-[focus-visible]:bg-severity-fill-strong data-[selected]:bg-severity-fill-strong data-[selected]:shadow-severity-ring inline-flex items-baseline gap-1.5 rounded-full border-0 px-2.5 py-1 text-dense font-medium whitespace-nowrap control-wash data-[focus-visible]:outline-offset-2 [&_.value]:text-inherit [&_.value]:[font-weight:550]';
 
 // Rows run the full width of the card: the separators are the structure, so
 // they cannot stop short of the edge. The panel pays back the body's padding
 // with a negative margin and each row puts it back as its own inline padding.
 const ROW = 'border-rule-faint shadow-separator-bottom-solid border-b';
 const ROW_BUTTON =
-  'control-wash hover:bg-surface-inset focus-visible:outline-focus flex w-full flex-wrap items-center gap-x-3 gap-y-1.5 px-6 py-3 text-left text-body leading-normal focus-visible:outline-2 focus-visible:-outline-offset-2';
+  'control-wash hover:bg-surface-inset focus-visible:bg-surface-inset flex w-full flex-wrap items-center gap-x-3 gap-y-1.5 px-6 py-3 text-left text-body leading-normal focus-visible:-outline-offset-2';
 const ROW_DELTA =
   'text-muted ml-auto inline-flex min-w-0 flex-wrap items-baseline gap-1.5 text-right @max-card:ml-0 @max-card:w-full @max-card:text-left';
 // The reason, as a chip in its row's own severity. Pulled back from the tab's
@@ -240,7 +240,7 @@ function BucketPanel({
       {rows.hidden > 0 ? (
         <button
           type="button"
-          className="control-wash text-muted hover:bg-surface-inset hover:text-primary focus-visible:outline-focus text-body block min-h-11 w-full px-6 py-2.5 text-left focus-visible:outline-2 focus-visible:-outline-offset-2"
+          className="control-wash text-muted hover:bg-surface-inset hover:text-primary focus-visible:bg-surface-inset focus-visible:text-primary text-body block min-h-11 w-full px-6 py-2.5 text-left focus-visible:-outline-offset-2"
           onClick={() => onOpen(disposition)}
         >
           and {rows.hidden} more <span aria-hidden="true">↗</span>

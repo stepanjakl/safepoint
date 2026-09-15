@@ -26,10 +26,10 @@ Only these. If a rule is not one of them, it belongs in markup.
 - **Pseudo-elements**, which have no element to hang a class on: `::backdrop`, the disclosure `+`/`−` marker, the thread connector, the drawer scrim, the effects rail's line, the sidebar's edge gradients (`.process-menu-fade`), the fades at the two ends of its list (`.process-list-fade`), and the development alignment guides (`.rail-axis`, `.rail-mark`).
 - **Keyframe animations** and their reduced-motion answers.
 - **Shadow compositions a state extends rather than restates** — the system disc holds its outer ring in `--disc-ring` so the freshness states can extend it without repeating the sheen.
-- **Multi-speed transitions** — the reorder row travels at `--duration-row` and tints at 120ms.
+- **Multi-speed transitions** — the reorder row travels at `--duration-row` and tints at `--duration-state`.
 - **A set of states on one selector**, where pulling one arm into markup scatters the rest. `.process-menu-row` is base, `[data-editing]`, `[data-current]`, `[data-dragging]`, and hover/focus-within; a lone `hover:` utility on the element reads as the sixth state but is filed somewhere else, and it applies to the arms the CSS deliberately excludes. Add the state to the rule, not to the class list.
 - **A value two elements must share.** The tooltip's face, edge and highlight are read by both the box and the arrow SVG hanging off it, so they are declared once as `--tooltip-*` rather than repeated in two places that can drift.
-- **Custom properties as the payload.** `.process-menu-row[data-current]` overrides five `--control-*` stops to retune `control-face`; as utilities that is five `[--control-face-top:…]` brackets.
+- **Custom properties as the payload.** `.process-menu-row[data-current]` overrides five `--control-*` stops to retune `control-face`; as utilities that is five `[--control-face-top:…]` brackets. The same row publishes `--menu-badge-face`, `--menu-badge-ring` and `--menu-badge-highlight` for its status badge, whose `surface-menu-badge` utility reads them, so the badge follows the row's states without a variant of its own.
 
 Two more tests, neither of which is about the rule itself. An element that already carries a JS-driven inline `style` gains nothing from co-location, because its most important values are not in the class list either. And a utility that lands on an element whose other states live in `components.css` will be read as belonging to neither file — put it where its siblings are.
 
@@ -61,13 +61,14 @@ An alternate `sharp` scale exists for comparison — same lower half, larger and
 
 ## Radius
 
-Four steps, named for what they enclose. Pulled in from Tailwind's 4/8/12/16 so corners read crisper.
+Named for what they enclose. Pulled in from Tailwind's 4/8/12/16 so corners read crisper.
 
 | Token | Value | Encloses |
 | --- | --- | --- |
 | `region` | 2px | hairline: bar segments, chips |
 | `section` | 4px | small chrome: badges, grips |
 | `control` | 6px | anything pressable |
+| `icon` | 8px | icon squares, and the tiles beside them |
 | `shell` | 10px | panes, cards, dialogs, the drawer |
 
 ## Colour
@@ -84,6 +85,35 @@ A role never names a neutral palette. It reads a step from one of two ramps, and
 `--sp-control-*` follows `--sp-neutral-*` unless `data-control-neutral` gives it a palette of its own. The intermediate steps (150, 250, 350, 750) are computed as oklab midpoints of their neighbours, so every palette has them. Moving a role between the groups is a change to the ramp name on that one line.
 
 `data-theme`, `data-neutral` and `data-control-neutral` each re-resolve the tokens for their subtree. Because Lightning CSS polyfills `light-dark()` with inherited custom properties, and a custom property substitutes its `var()`s where it is declared, any subtree that changes one must re-declare the tokens. That is why the token block targets `:root, [data-theme], [data-neutral], [data-control-neutral]`.
+
+### Faces and edges
+
+- **`control-face` is a face and a ring built from registered stops** (`--control-face-top`, `--control-face-bottom`, `--control-ring-top`, `--control-ring-bottom`, `--control-highlight`), so a colour utility restyles it and it animates its own stops. Never put a `transition-*` utility beside it: the utility replaces its property list and the face snaps. Flat controls that answer with a wash take `control-wash` instead.
+- **The sheen has two widths.** `--spacing-control-highlight`, a whole pixel, for panes and cards. `control-hairline` asks for `--spacing-control-highlight-hairline` on anything icon- or button-sized, where a full pixel of white inside the ring reads as a second border.
+- **A child can follow its parent's state through custom properties.** A row's status badge rests as a keycap and goes bare whenever its row is hovered, focused or current, so the row shows through it: `.process-menu-row` publishes the badge's stops per state and `surface-menu-badge` reads them. The priority between states is then the rule's reading order rather than Tailwind's emission order, and there is no variant per state on the child.
+- **A lit line under a rule is a shadow, not a border.** `shadow-rule-etch` offsets `--sp-rule-etch` by the hairline width. A fractional border snaps to whole device pixels, so a 0.75px border draws as 0.5px on a 2× screen; a shadow's offset paints at the width it asks for.
+
+### Decorative hue: the workspace menu tiles
+
+The tiles beside the workspace menu's items are the one place colour is decorative rather than semantic. The techniques below are what made them even, and they apply to any per-element hue.
+
+**Resolve `light-dark()` where the colour paints.** A token on `:root` substitutes its `var()`s there, so a hue chosen by a class on one element cannot be resolved on `:root`. Each `menu-tile-<hue>` utility sets five roles, each a light and a dark value — `--tile-face-*`, `--tile-ring-top-*`, `--tile-ring-bottom-*`, `--tile-glyph-*` and `--tile-glyph-hover-*` — and `surface-menu-tile` chooses between each pair with `light-dark()` on the tile itself. The glyph takes the hue through `color`, which `control-face` already transitions.
+
+**Keep palettes behind one set of roles.** Every hue fills its roles from Tailwind's ramps, and again from Radix Colors under a nested `:root[data-tile-palette='radix'] &` inside the same utility. Switching palettes changes values and nothing about how a tile is built.
+
+**Generate Radix; do not import it.** Radix's own stylesheets switch themes with a `.dark` class and reuse the light names for the dark scale, which cannot coexist with `light-dark()` theming. `pnpm colors:radix` runs `scripts/generate-radix-colors.ts` over the installed `@radix-ui/colors` and writes `app/radix-colors.css`: every scale at every step, as `--color-radix-<scale>-<step>` and `--color-radix-<scale>-dark-<step>`, in P3, inside `@theme`. Tailwind emits a theme variable only when something reads it, so the whole set costs nothing until a step is used. Never edit that file by hand; rerun the script after changing the package version.
+
+**Tailwind reads comments too.** It scans source as plain text, so a real theme variable name written in prose — in a stylesheet or a script — is emitted as though a style read it. Write placeholders such as `--color-radix-<scale>-<step>` instead.
+
+**Equal lightness is not equal brightness.** OKLCH lightness is perceptual, but saturated colours look brighter than their lightness says, and by a different amount per hue: most in reds, magentas and blues, least in yellows (the Helmholtz–Kohlrausch effect). No colour space or palette in use corrects for it, which is why both Tailwind's and Radix's scales look uneven across hues. Judge evenness in context and by eye. A greyscale filter measures luminance, which is exactly what this effect makes misleading.
+
+**Cap saturation; keep lightness and hue.** Every tile colour passes through `oklch(from <colour> l min(c, <ceiling>) h)`. A hue already below its ceiling comes through untouched, and only the loud ones are pulled back. The ceilings are tokens in `tokens.css`, one per part per theme — `--tile-chroma-face-*`, `--tile-chroma-ring-*` and `--tile-chroma-glyph-*`, since a face, a ring and a glyph sit far apart in chroma — and `--tile-chroma-scale` multiplies all of them, so the design pane tunes the set with one slider without changing their proportions. The engaged glyph shares the glyph's ceiling.
+
+**Read a Radix step's role before spending it on colour.** Steps 9 and 10 are solids, 11 is low-contrast text, and 12 is high-contrast text and close to neutral: in light it is darker and duller than step 11, so an engaged glyph mapped to it lost its colour under the pointer. An engaged step should be no darker or duller than the resting one in either theme.
+
+**Keep decorative hues clear of the state hues** — blocked red, caution amber, verified emerald and advisory blue — so a tile never reads as a verdict. The processes entry is yellow by choice, the one tile meant to stand out; orange left the set rather than crowd it. Green is Tailwind's and Radix's green, not the emerald the verified state uses.
+
+To add a hue, add a `menu-tile-<hue>` block in `globals.css` that fills every role from both palettes, and name the class whole in markup so the scanner sees it.
 
 ## Conventions
 
@@ -307,7 +337,7 @@ bites through. And the content steps in by `--spacing-control-edge`, the width
 | breakpoints and container sizes | shadow offsets, blurs and spreads |
 | component geometry that holds text | drawn rules and connector lines |
 | icon sizes | `999px` / `9999px` pill sentinels |
-| | border widths, and **whole** ones: fractions are floored |
+| | border widths, and **whole** ones: a fraction snaps to whole device pixels, so it lays out differently at 1× and 2× |
 | | sub-pixel optical nudges |
 
 Tailwind itself follows this split: its breakpoints are rem, its border and ring widths are px. A `0.0625rem` hairline at a 20px root becomes 1.25px and renders blurred.
@@ -318,7 +348,7 @@ Named thresholds: `shell` (56.25rem) is where the sidebar and pane can sit side 
 
 ## Development switches
 
-All of them are attributes on `<html>`, applied before first paint and persisted to `localStorage`. The picker in the bottom-right writes them; none ships to production.
+All of them live on `<html>` — attributes, apart from one inline custom property — applied before first paint and persisted to `localStorage`. The design pane in the bottom-right writes them; none ships to production.
 
 | Attribute | Choices |
 | --- | --- |
@@ -328,3 +358,7 @@ All of them are attributes on `<html>`, applied before first paint and persisted
 | `data-typeface` | geist, glide, inter |
 | `data-mono` | the utility-role family, independent of the set |
 | `data-typescale` | base, sharp |
+| `data-tile-palette` | the workspace menu tiles' palette: Tailwind (no attribute) or `radix`; also `?tiles=radix` |
+| `--tile-chroma-scale` | inline on `<html>`: the multiplier on the tiles' saturation ceilings; the default leaves no inline value, so the tokens stand |
+| `data-motion-speed` | CSS transition and animation playback: 1, 0.5, 0.2, 0.1 |
+| `data-rail-guides` | `on` draws the sidebar's icon axes; see Checking the rail |

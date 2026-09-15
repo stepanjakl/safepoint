@@ -33,6 +33,16 @@ import {
   readNeutral,
   setControlNeutral,
   setNeutral,
+  DEFAULT_TILE_PALETTE,
+  TILE_PALETTES,
+  TILE_PALETTE_LABELS,
+  readTilePalette,
+  setTilePalette,
+  DEFAULT_TILE_CHROMA_SCALE,
+  TILE_CHROMA_SCALE_MAX,
+  TILE_CHROMA_SCALE_MIN,
+  readTileChromaScale,
+  setTileChromaScale,
 } from './design-preferences';
 import { startMotionDebug } from './motion-debug';
 
@@ -44,6 +54,8 @@ function readPreferences() {
     theme: readTheme(),
     neutral: readNeutral(),
     controlNeutral: readControlNeutral(),
+    tilePalette: readTilePalette(),
+    tileChromaScale: readTileChromaScale(),
     speed: readMotionSpeed(),
     railGuides: readRailGuides(),
   };
@@ -107,6 +119,33 @@ export function mountDesignPane(host: HTMLElement) {
       })
       .on('change', (event) => setTypescale(event.value)),
   ];
+
+  // The workspace menu's tiles: which palette they read, and how hard the
+  // saturation ceilings in tokens.css hold it back.
+  const tiles = pane.addFolder({ title: 'Menu tiles' });
+  const paletteBinding = tiles
+    .addBinding(model, 'tilePalette', {
+      label: 'Palette',
+      options: TILE_PALETTES.map((value) => ({
+        text: TILE_PALETTE_LABELS[value],
+        value,
+      })),
+    })
+    .on('change', (event) => setTilePalette(event.value));
+  const chromaBinding = tiles
+    .addBinding(model, 'tileChromaScale', {
+      label: 'Saturation cap',
+      min: TILE_CHROMA_SCALE_MIN,
+      max: TILE_CHROMA_SCALE_MAX,
+      step: 0.05,
+    })
+    .on('change', (event) => setTileChromaScale(event.value));
+  chromaBinding.element.title =
+    '1 is the ceilings in tokens.css. Lower mutes every tile, at rest and under the pointer; the far right leaves them uncapped.';
+  for (const input of chromaBinding.element.querySelectorAll('input')) {
+    input.setAttribute('aria-label', 'Tile saturation cap');
+  }
+
   const motion = pane.addFolder({ title: 'Motion' });
   const speedBinding = motion
     .addBinding(model, 'speed', {
@@ -131,7 +170,7 @@ export function mountDesignPane(host: HTMLElement) {
     ?.setAttribute('aria-label', 'Icon axis guides');
 
   // Bindings use native selects. Name them explicitly for screen readers.
-  for (const binding of [...bindings, speedBinding]) {
+  for (const binding of [...bindings, paletteBinding, speedBinding]) {
     binding.element
       .querySelector('select')
       ?.setAttribute('aria-label', binding.label ?? 'Design preference');
@@ -144,6 +183,8 @@ export function mountDesignPane(host: HTMLElement) {
     setTheme('system');
     setNeutral(DEFAULT_NEUTRAL);
     setControlNeutral('match');
+    setTilePalette(DEFAULT_TILE_PALETTE);
+    setTileChromaScale(DEFAULT_TILE_CHROMA_SCALE);
     setMotionSpeed(DEFAULT_MOTION_SPEED);
     setRailGuides(false);
   });
@@ -166,8 +207,9 @@ export function mountDesignPane(host: HTMLElement) {
   sync();
   const unsubscribe = subscribe(sync);
   const toggle = pane.element.querySelector('button');
+  const folders = [pane, appearance, tiles, motion, debug];
   function syncExpanded() {
-    for (const folder of [pane, appearance, motion, debug]) {
+    for (const folder of folders) {
       folder.element
         .querySelector('button')
         ?.setAttribute('aria-expanded', String(folder.expanded));
@@ -177,8 +219,7 @@ export function mountDesignPane(host: HTMLElement) {
         child.element.inert = !folder.expanded;
     }
   }
-  for (const folder of [pane, appearance, motion, debug])
-    folder.on('fold', syncExpanded);
+  for (const folder of folders) folder.on('fold', syncExpanded);
   syncExpanded();
   function onKeyDown(event: KeyboardEvent) {
     if (event.key !== 'Escape' || !pane.expanded) return;

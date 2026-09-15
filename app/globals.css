@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import './tokens.css';
+@import './radix-colors.css';
 @import './components.css';
 
 @layer base {
@@ -17,9 +18,23 @@
     font-feature-settings: var(--sp-font-features);
   }
 
+  /*
+    No outline of the app's own. A control draws keyboard focus in the face its
+    hover already has -- a wash, a colour step -- so the keyboard and the
+    pointer light it the same way; see EXPERIENCE-SPEC's focus section.
+
+    Forced-colours modes are the exception. They drop author backgrounds, so a
+    wash draws nothing there, and the system colour's outline comes back. An
+    offset utility on a control still places it.
+  */
   :focus-visible {
-    outline: 2px solid var(--sp-focus);
-    outline-offset: 2px;
+    outline: none;
+  }
+  @media (forced-colors: active) {
+    :focus-visible {
+      outline: 2px solid Highlight;
+      outline-offset: 2px;
+    }
   }
 
   summary {
@@ -302,85 +317,233 @@
 /*
   The tile behind a workspace menu item's icon: surface-raised's construction
   at icon scale, in the hue a `menu-tile-*` utility names on the same element.
-  light-dark() is resolved here, where the tile paints, because a hue chosen
-  per element cannot be resolved on :root. The glyph takes the hue through
-  `color`, which control-face already transitions, so the tile and its glyph
-  move on one step and curve.
+  It reads five roles, each a light and a dark colour, and light-dark() picks
+  between them here, where the tile paints: a hue chosen per element cannot be
+  resolved on :root. The glyph takes the hue through `color`, which
+  control-face already transitions, so the tile and its glyph move on one step
+  and curve.
+
+  Every resting colour passes through its part's saturation ceiling on the way
+  in (--tile-chroma-* in tokens.css, times --tile-chroma-scale): relative
+  colour syntax keeps the palette's own lightness and hue and lowers only a
+  chroma above the ceiling, so a hue that was already quiet comes through
+  untouched.
 */
 @utility surface-menu-tile {
-  --control-face-top: light-dark(var(--tile-100), var(--tile-900));
-  --control-face-bottom: light-dark(var(--tile-100), var(--tile-900));
-  --control-ring-top: light-dark(var(--tile-300), var(--tile-700));
-  --control-ring-bottom: light-dark(var(--tile-300), var(--tile-800));
+  --tile-cap-face-light: calc(
+    var(--tile-chroma-face-light) * var(--tile-chroma-scale)
+  );
+  --tile-cap-face-dark: calc(
+    var(--tile-chroma-face-dark) * var(--tile-chroma-scale)
+  );
+  --tile-cap-ring-light: calc(
+    var(--tile-chroma-ring-light) * var(--tile-chroma-scale)
+  );
+  --tile-cap-ring-dark: calc(
+    var(--tile-chroma-ring-dark) * var(--tile-chroma-scale)
+  );
+  --tile-cap-glyph-light: calc(
+    var(--tile-chroma-glyph-light) * var(--tile-chroma-scale)
+  );
+  --tile-cap-glyph-dark: calc(
+    var(--tile-chroma-glyph-dark) * var(--tile-chroma-scale)
+  );
+  --control-face-top: light-dark(
+    oklch(from var(--tile-face-light) l min(c, var(--tile-cap-face-light)) h),
+    oklch(from var(--tile-face-dark) l min(c, var(--tile-cap-face-dark)) h)
+  );
+  --control-face-bottom: light-dark(
+    oklch(from var(--tile-face-light) l min(c, var(--tile-cap-face-light)) h),
+    oklch(from var(--tile-face-dark) l min(c, var(--tile-cap-face-dark)) h)
+  );
+  --control-ring-top: light-dark(
+    oklch(
+      from var(--tile-ring-top-light) l min(c, var(--tile-cap-ring-light)) h
+    ),
+    oklch(from var(--tile-ring-top-dark) l min(c, var(--tile-cap-ring-dark)) h)
+  );
+  --control-ring-bottom: light-dark(
+    oklch(
+      from var(--tile-ring-bottom-light) l min(c, var(--tile-cap-ring-light)) h
+    ),
+    oklch(
+      from var(--tile-ring-bottom-dark) l min(c, var(--tile-cap-ring-dark)) h
+    )
+  );
   --control-highlight: var(--sp-menu-tile-highlight);
-  color: light-dark(var(--tile-600), var(--tile-300));
+  color: light-dark(
+    oklch(from var(--tile-glyph-light) l min(c, var(--tile-cap-glyph-light)) h),
+    oklch(from var(--tile-glyph-dark) l min(c, var(--tile-cap-glyph-dark)) h)
+  );
 }
 
 /* Bare, with the glyph a step deeper in light and brighter in dark: once the
-   tile has gone the filled icon is the only thing carrying the hue. */
+   tile has gone the filled icon is the only thing carrying the hue. It passes
+   through the glyph's ceiling, which surface-menu-tile computes on this same
+   element, so the resting and engaged icon are held back alike. */
 @utility surface-menu-tile-hover {
   --control-face-top: var(--sp-menu-tile-face-hover);
   --control-face-bottom: var(--sp-menu-tile-face-hover);
   --control-ring-top: var(--sp-menu-tile-ring-hover);
   --control-ring-bottom: var(--sp-menu-tile-ring-hover);
   --control-highlight: var(--sp-menu-tile-highlight-hover);
-  color: light-dark(var(--tile-700), var(--tile-200));
+  color: light-dark(
+    oklch(
+      from var(--tile-glyph-hover-light) l min(c, var(--tile-cap-glyph-light)) h
+    ),
+    oklch(
+      from var(--tile-glyph-hover-dark) l min(c, var(--tile-cap-glyph-dark)) h
+    )
+  );
 }
 
 /*
-  The hues a tile can take: Tailwind's own ramps, at the seven steps the tile
-  reads. Green is the processes entry, from green rather than the emerald the
-  verified state uses so it does not read as a verdict; the others stay clear
-  of the state hues for the same reason.
+  The hues a tile can take, in menu order around the colour wheel. Yellow is
+  the processes entry and the one tile meant to stand out. It sits nearer the
+  caution amber than any other hue here, which the entry point can carry;
+  orange left the set rather than crowd it. Green -- Tailwind's and Radix's
+  green, not the emerald the verified state uses -- and the rest stay clear of
+  the state hues so they do not read as verdicts.
+
+  Radix's engaged glyph reads step 8 in light and step 12 in dark -- in each
+  theme the lighter of the two. Step 12 in light is Radix's high-contrast text
+  step, nearly neutral and darker than the resting glyph, so under the pointer
+  the icon lost its colour instead of gaining it.
+
+  Each hue fills the five roles from two palettes, for comparing them: Tailwind's
+  ramps by default, and the Radix Colors steps in app/radix-colors.css while the
+  design pane sets data-tile-palette="radix". Both are held in the hue rather
+  than in the tile, so switching palettes changes values and nothing about how
+  a tile is built.
 */
+@utility menu-tile-yellow {
+  --tile-face-light: var(--color-yellow-100);
+  --tile-face-dark: var(--color-yellow-900);
+  --tile-ring-top-light: var(--color-yellow-300);
+  --tile-ring-top-dark: var(--color-yellow-700);
+  --tile-ring-bottom-light: var(--color-yellow-300);
+  --tile-ring-bottom-dark: var(--color-yellow-800);
+  --tile-glyph-light: var(--color-yellow-600);
+  --tile-glyph-dark: var(--color-yellow-300);
+  --tile-glyph-hover-light: var(--color-yellow-700);
+  --tile-glyph-hover-dark: var(--color-yellow-200);
+
+  :root[data-tile-palette='radix'] & {
+    --tile-face-light: var(--color-radix-yellow-3);
+    --tile-face-dark: var(--color-radix-yellow-dark-3);
+    --tile-ring-top-light: var(--color-radix-yellow-6);
+    --tile-ring-top-dark: var(--color-radix-yellow-dark-6);
+    --tile-ring-bottom-light: var(--color-radix-yellow-7);
+    --tile-ring-bottom-dark: var(--color-radix-yellow-dark-7);
+    --tile-glyph-light: var(--color-radix-yellow-11);
+    --tile-glyph-dark: var(--color-radix-yellow-dark-11);
+    --tile-glyph-hover-light: var(--color-radix-yellow-11);
+    --tile-glyph-hover-dark: var(--color-radix-yellow-dark-12);
+  }
+}
+
 @utility menu-tile-green {
-  --tile-100: var(--color-green-100);
-  --tile-200: var(--color-green-200);
-  --tile-300: var(--color-green-300);
-  --tile-600: var(--color-green-600);
-  --tile-700: var(--color-green-700);
-  --tile-800: var(--color-green-800);
-  --tile-900: var(--color-green-900);
+  --tile-face-light: var(--color-green-100);
+  --tile-face-dark: var(--color-green-900);
+  --tile-ring-top-light: var(--color-green-300);
+  --tile-ring-top-dark: var(--color-green-700);
+  --tile-ring-bottom-light: var(--color-green-300);
+  --tile-ring-bottom-dark: var(--color-green-800);
+  --tile-glyph-light: var(--color-green-600);
+  --tile-glyph-dark: var(--color-green-300);
+  --tile-glyph-hover-light: var(--color-green-700);
+  --tile-glyph-hover-dark: var(--color-green-200);
+
+  :root[data-tile-palette='radix'] & {
+    --tile-face-light: var(--color-radix-green-3);
+    --tile-face-dark: var(--color-radix-green-dark-3);
+    --tile-ring-top-light: var(--color-radix-green-6);
+    --tile-ring-top-dark: var(--color-radix-green-dark-6);
+    --tile-ring-bottom-light: var(--color-radix-green-7);
+    --tile-ring-bottom-dark: var(--color-radix-green-dark-7);
+    --tile-glyph-light: var(--color-radix-green-11);
+    --tile-glyph-dark: var(--color-radix-green-dark-11);
+    --tile-glyph-hover-light: var(--color-radix-green-11);
+    --tile-glyph-hover-dark: var(--color-radix-green-dark-12);
+  }
 }
 
 @utility menu-tile-sky {
-  --tile-100: var(--color-sky-100);
-  --tile-200: var(--color-sky-200);
-  --tile-300: var(--color-sky-300);
-  --tile-600: var(--color-sky-600);
-  --tile-700: var(--color-sky-700);
-  --tile-800: var(--color-sky-800);
-  --tile-900: var(--color-sky-900);
+  --tile-face-light: var(--color-sky-100);
+  --tile-face-dark: var(--color-sky-900);
+  --tile-ring-top-light: var(--color-sky-300);
+  --tile-ring-top-dark: var(--color-sky-700);
+  --tile-ring-bottom-light: var(--color-sky-300);
+  --tile-ring-bottom-dark: var(--color-sky-800);
+  --tile-glyph-light: var(--color-sky-600);
+  --tile-glyph-dark: var(--color-sky-300);
+  --tile-glyph-hover-light: var(--color-sky-700);
+  --tile-glyph-hover-dark: var(--color-sky-200);
+
+  :root[data-tile-palette='radix'] & {
+    --tile-face-light: var(--color-radix-sky-3);
+    --tile-face-dark: var(--color-radix-sky-dark-3);
+    --tile-ring-top-light: var(--color-radix-sky-6);
+    --tile-ring-top-dark: var(--color-radix-sky-dark-6);
+    --tile-ring-bottom-light: var(--color-radix-sky-7);
+    --tile-ring-bottom-dark: var(--color-radix-sky-dark-7);
+    --tile-glyph-light: var(--color-radix-sky-11);
+    --tile-glyph-dark: var(--color-radix-sky-dark-11);
+    --tile-glyph-hover-light: var(--color-radix-sky-11);
+    --tile-glyph-hover-dark: var(--color-radix-sky-dark-12);
+  }
 }
 
 @utility menu-tile-violet {
-  --tile-100: var(--color-violet-100);
-  --tile-200: var(--color-violet-200);
-  --tile-300: var(--color-violet-300);
-  --tile-600: var(--color-violet-600);
-  --tile-700: var(--color-violet-700);
-  --tile-800: var(--color-violet-800);
-  --tile-900: var(--color-violet-900);
-}
+  --tile-face-light: var(--color-violet-100);
+  --tile-face-dark: var(--color-violet-900);
+  --tile-ring-top-light: var(--color-violet-300);
+  --tile-ring-top-dark: var(--color-violet-700);
+  --tile-ring-bottom-light: var(--color-violet-300);
+  --tile-ring-bottom-dark: var(--color-violet-800);
+  --tile-glyph-light: var(--color-violet-600);
+  --tile-glyph-dark: var(--color-violet-300);
+  --tile-glyph-hover-light: var(--color-violet-700);
+  --tile-glyph-hover-dark: var(--color-violet-200);
 
-@utility menu-tile-orange {
-  --tile-100: var(--color-orange-100);
-  --tile-200: var(--color-orange-200);
-  --tile-300: var(--color-orange-300);
-  --tile-600: var(--color-orange-600);
-  --tile-700: var(--color-orange-700);
-  --tile-800: var(--color-orange-800);
-  --tile-900: var(--color-orange-900);
+  :root[data-tile-palette='radix'] & {
+    --tile-face-light: var(--color-radix-violet-3);
+    --tile-face-dark: var(--color-radix-violet-dark-3);
+    --tile-ring-top-light: var(--color-radix-violet-6);
+    --tile-ring-top-dark: var(--color-radix-violet-dark-6);
+    --tile-ring-bottom-light: var(--color-radix-violet-7);
+    --tile-ring-bottom-dark: var(--color-radix-violet-dark-7);
+    --tile-glyph-light: var(--color-radix-violet-11);
+    --tile-glyph-dark: var(--color-radix-violet-dark-11);
+    --tile-glyph-hover-light: var(--color-radix-violet-11);
+    --tile-glyph-hover-dark: var(--color-radix-violet-dark-12);
+  }
 }
 
 @utility menu-tile-pink {
-  --tile-100: var(--color-pink-100);
-  --tile-200: var(--color-pink-200);
-  --tile-300: var(--color-pink-300);
-  --tile-600: var(--color-pink-600);
-  --tile-700: var(--color-pink-700);
-  --tile-800: var(--color-pink-800);
-  --tile-900: var(--color-pink-900);
+  --tile-face-light: var(--color-pink-100);
+  --tile-face-dark: var(--color-pink-900);
+  --tile-ring-top-light: var(--color-pink-300);
+  --tile-ring-top-dark: var(--color-pink-700);
+  --tile-ring-bottom-light: var(--color-pink-300);
+  --tile-ring-bottom-dark: var(--color-pink-800);
+  --tile-glyph-light: var(--color-pink-600);
+  --tile-glyph-dark: var(--color-pink-300);
+  --tile-glyph-hover-light: var(--color-pink-700);
+  --tile-glyph-hover-dark: var(--color-pink-200);
+
+  :root[data-tile-palette='radix'] & {
+    --tile-face-light: var(--color-radix-pink-3);
+    --tile-face-dark: var(--color-radix-pink-dark-3);
+    --tile-ring-top-light: var(--color-radix-pink-6);
+    --tile-ring-top-dark: var(--color-radix-pink-dark-6);
+    --tile-ring-bottom-light: var(--color-radix-pink-7);
+    --tile-ring-bottom-dark: var(--color-radix-pink-dark-7);
+    --tile-glyph-light: var(--color-radix-pink-11);
+    --tile-glyph-dark: var(--color-radix-pink-dark-11);
+    --tile-glyph-hover-light: var(--color-radix-pink-11);
+    --tile-glyph-hover-dark: var(--color-radix-pink-dark-12);
+  }
 }
 
 @utility surface-recessed {

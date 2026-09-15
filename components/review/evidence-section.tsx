@@ -52,7 +52,7 @@ export function EvidenceSection({
         </LedgerRow>
       </Ledger>
       <details className="border-rule-default border-t">
-        <summary className="readout text-muted focus-visible:outline-focus flex min-h-10 list-none items-center gap-2 px-4 outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid [&::-webkit-details-marker]:hidden">
+        <summary className="readout text-muted control-wash focus-visible:bg-surface-inset flex min-h-10 list-none items-center gap-2 px-4 focus-visible:-outline-offset-2 [&::-webkit-details-marker]:hidden">
           <span aria-hidden="true">›</span>
           Source records ({evidence.sources.length})
         </summary>

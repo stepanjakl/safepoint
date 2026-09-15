@@ -375,6 +375,33 @@
 }
 
 /*
+  Saturation ceilings for the workspace menu's tiles, as OKLCH chroma. A tile
+  keeps its palette's lightness and hue and gives up only the chroma above
+  these, so a palette's loudest hues -- Radix's oranges, reds and pinks run
+  about twice the chroma of its greens and blues -- come back to the level of
+  the rest while the quieter hues are left as they were.
+
+  One ceiling per part per theme: a face, a ring and a glyph sit about five
+  times apart in chroma, so one number cannot fit all three. Each value is set
+  just under where Radix's orange and pink stood out. The engaged glyph shares
+  the glyph's ceiling, so a tile is held back alike at rest and under the
+  pointer.
+
+  --tile-chroma-scale multiplies all six, so the design pane tunes them with
+  one slider without changing how far apart they sit. Outside @theme for the
+  same reason as the durations -- they are numbers, not a namespace.
+*/
+:root {
+  --tile-chroma-face-light: 0.025;
+  --tile-chroma-face-dark: 0.06;
+  --tile-chroma-ring-light: 0.085;
+  --tile-chroma-ring-dark: 0.1;
+  --tile-chroma-glyph-light: 0.12;
+  --tile-chroma-glyph-dark: 0.13;
+  --tile-chroma-scale: 1;
+}
+
+/*
   Notch and slant geometry. The notch is the bite a pane's corner can take to
   seat controls on the canvas; a slant is a control whose edge leans to sit
   parallel to it. Outside @theme for the same reason as the durations -- no
@@ -464,7 +491,6 @@
   /* Neutral interaction */
   --sp-action: light-dark(var(--sp-neutral-900), var(--sp-neutral-100));
   --sp-action-hover: light-dark(var(--sp-neutral-700), var(--color-white));
-  --sp-focus: light-dark(var(--color-blue-600), var(--color-blue-400));
 
   /* The top sheen on an enclosure. */
   --sp-edge-inner: light-dark(
@@ -575,20 +601,14 @@
   --sp-keycap-highlight: var(--sp-face-highlight-medium);
 
   /*
-    The search field's shortcut: a plain face, a step darker than the canvas it
-    rests on so it reads against it, and darker again whenever the field lights
-    -- hovered, focused, or holding a query -- so it still reads against the
-    field's own face. Darker in both themes; in dark the ramp ends at 950, so
-    the lit step mixes on toward black.
+    The search field's clear button: a chip in the field's own edge colours, so
+    it reads as part of the field rather than a control laid on it. It sits on
+    the field's lit face -- it exists only while the field holds a query -- and
+    steps with the edge's own hover step under the pointer or keyboard focus.
+    Aliases rather than values, so a retuned field edge carries the chip with it.
   */
-  --sp-search-key-face: light-dark(
-    var(--sp-control-300),
-    var(--sp-control-950)
-  );
-  --sp-search-key-face-hover: light-dark(
-    var(--sp-control-300),
-    color-mix(in oklab, var(--sp-control-950) 60%, var(--color-black))
-  );
+  --sp-search-clear-face: var(--sp-field-edge);
+  --sp-search-clear-face-hover: var(--sp-field-edge-hover);
 
   /* Flat: no ramp, so an unavailable control cannot read as a live one. */
   --sp-off-face: light-dark(var(--sp-control-100), var(--sp-control-900));
@@ -961,7 +981,6 @@
   --color-rule-strong: var(--sp-rule-strong);
   --color-action: var(--sp-action);
   --color-action-hover: var(--sp-action-hover);
-  --color-focus: var(--sp-focus);
   --color-state-advisory: var(--sp-state-advisory);
   --color-state-verified: var(--sp-state-verified);
   --color-state-caution: var(--sp-state-caution);
@@ -978,8 +997,8 @@
   --color-menu-wash-strong: var(--sp-menu-wash-strong);
   --color-menu-chip: var(--sp-menu-chip);
   --color-menu-link: var(--sp-menu-link);
-  --color-search-key: var(--sp-search-key-face);
-  --color-search-key-hover: var(--sp-search-key-face-hover);
+  --color-search-clear: var(--sp-search-clear-face);
+  --color-search-clear-hover: var(--sp-search-clear-face-hover);
   --color-field-face: var(--sp-field-face);
   --color-field-edge: var(--sp-field-edge);
   --color-field-edge-hover: var(--sp-field-edge-hover);
@@ -1109,6 +1128,18 @@
   */
   --radius-shell: 0.625rem; /* 10px  panes, cards, dialogs */
   --spacing-shell-inset: 10px;
+  /* Adjustable navigation: protect the sheet's reading width near the shell
+     breakpoint. These also size the probes read by the pointer/keyboard code. */
+  --spacing-sidebar-min: 14rem;
+  --spacing-sidebar-default: 15.625rem;
+  --spacing-sidebar-max: max(
+    var(--spacing-sidebar-min),
+    min(21rem, calc(100vw - 40rem - 2 * var(--spacing-shell-inset)))
+  );
+  --spacing-sidebar-handle: 1.75rem;
+  --spacing-sidebar-closed: calc(var(--spacing-sidebar-handle) / 2);
+  --spacing-sidebar-grip: 2.75rem;
+  --spacing-sidebar-grip-offset: 0.5625rem;
   /*
     The sidebar's own inset, and the width of the gradient that sits in it.
     This used to be the grid gap between the sidebar and the sheet; it moved
