@@ -26,9 +26,17 @@ export function RefineInstructions({
   slant?: Slant;
 }) {
   return (
+    // Under the notch rather than above it -- the pane's top edge is at the
+    // viewport's -- with its top on the notch's floor and its end on the
+    // pane's side, which this control's end already is. No container padding:
+    // react-aria's 12px would hold the box short of a pane inset by less.
     <Tooltip
       label="Draft the next instructions"
       description={`Suggests edits to ${version} from this run's review decisions. Coming soon.`}
+      placement="bottom end"
+      offset={0}
+      containerPadding={0}
+      anchor="notch"
     >
       <Button
         slant={slant}
@@ -36,7 +44,14 @@ export function RefineInstructions({
         aria-disabled="true"
         className="px-3"
       >
-        <MagicEdit aria-hidden size={16} strokeWidth={1.8} />
+        {/* Lifted with the Instructions button's icon, so the two glyphs
+            share a line across the seam. */}
+        <MagicEdit
+          aria-hidden
+          size={16}
+          strokeWidth={1.8}
+          className="flex-none -translate-y-px"
+        />
       </Button>
     </Tooltip>
   );

@@ -91,6 +91,7 @@ A role never names a neutral palette. It reads a step from one of two ramps, and
 - **`control-face` is a face and a ring built from registered stops** (`--control-face-top`, `--control-face-bottom`, `--control-ring-top`, `--control-ring-bottom`, `--control-highlight`), so a colour utility restyles it and it animates its own stops. Never put a `transition-*` utility beside it: the utility replaces its property list and the face snaps. Flat controls that answer with a wash take `control-wash` instead.
 - **The sheen has two widths.** `--spacing-control-highlight`, a whole pixel, for panes and cards. `control-hairline` asks for `--spacing-control-highlight-hairline` on anything icon- or button-sized, where a full pixel of white inside the ring reads as a second border.
 - **A child can follow its parent's state through custom properties.** A row's status badge rests as a keycap and goes bare whenever its row is hovered, focused or current, so the row shows through it: `.process-menu-row` publishes the badge's stops per state and `surface-menu-badge` reads them. The priority between states is then the rule's reading order rather than Tailwind's emission order, and there is no variant per state on the child.
+- **A fill laid on a face is a ramp step, not a `color-mix()`.** Give a chip or pill inside a control its own role over `--sp-control-*` (or `--sp-neutral-*`), picked one step off the face where the fill sits — `--sp-value-pill` is `control-200` / `control-800` against the quiet face's white→200 and 700→800. A mix resolves against whatever is under it, so its colour is nowhere on the ramp and cannot be matched or reused by name; a step can. Translucent mixes stay for what has to show a surface through it: sheens, washes, highlights.
 - **A lit line under a rule is a shadow, not a border.** `shadow-rule-etch` offsets `--sp-rule-etch` by the hairline width. A fractional border snaps to whole device pixels, so a 0.75px border draws as 0.5px on a 2× screen; a shadow's offset paints at the width it asks for.
 
 ### Decorative hue: the workspace menu tiles
@@ -304,17 +305,21 @@ cell draws however the heading wraps.
 | Token | Default | Decides |
 | --- | --- | --- |
 | `--notch-angle` | 25deg | the lean of every slanted edge, from vertical |
-| `--notch-bend-top` / `--notch-bend-bottom` | 0.5rem | where the slope leaves the top edge and lands on the floor |
+| `--notch-bend-top` | `--radius-shell` | where the slope leaves the top edge |
+| `--notch-bend-bottom` | unset: the first control's bottom-left radius + `--notch-gap` | where the slope lands on the floor; unset, it stays concentric with the control beside it |
+| `--slant-height` | one title line + 2 × (`--spacing-shell-inset` + `--spacing-control-edge`) | a slanted control's height, sized so the heading centred in the header keeps at least the shell inset above and below; the edge-width either side gives back the icons' 1px optical lift evenly |
 | `--notch-corner` | `--radius-shell` | where the floor turns down the pane's side |
-| `--notch-gap` | `--spacing-shell-inset` | canvas held around the content, square to each edge |
+| `--notch-gap` | 0.375rem | canvas held below the controls and along the slope, square to each; the controls sit against the pane's top edge and side |
 | `--slant-gap` | 0.25rem | between two slants sharing a seam, square to it |
-| `--slant-angle` / `--slant-radius` | the notch angle / `--radius-control` | a slant that should differ from its notch |
+| `--slant-corner-balance` | 0.5 | how far a slanted corner's radius follows its angle: 0 is one radius on every corner, 1 gives each the tangent length of a square corner |
+| `--notch-bend-balance` | 0.5 | the same for the notch's top bend, held lower so it stays no softer than the pane's corners |
+| `--slant-angle` / `--slant-radius` | the notch angle / `--radius-shell` | a slant that should differ from its notch |
 | `--notch-face` / `--notch-edge` / `--notch-highlight` / `--notch-pane` | `--sp-notch-*` | colours, per instance: canvas, the pane's ring, its sheen, its face |
 
 Which edges lean is decided where the controls sit, not inside them. The process header
-holds two: the Instructions drawer as `slant="both"`, then the icon-only placeholder for
-drafting the next instructions as `slant="left"`, whose far side stays square against the
-pane's edge (`components/app-shell/process-view.tsx`). An icon-only slant takes `px-3` over
+holds two: the Instructions button, which opens the process setup drawer, as `slant="both"`,
+then the icon-only placeholder for drafting the next instructions as `slant="left"`, whose
+far side stays square against the pane's edge (`components/app-shell/process-header.tsx`). An icon-only slant takes `px-3` over
 the button's own padding and needs an `aria-label`; it is a placeholder, so it is
 `aria-disabled` but still focusable, like the sidebar's placeholders, so its tooltip is
 reachable.

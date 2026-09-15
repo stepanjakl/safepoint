@@ -9,6 +9,7 @@ import {
   TYPESCALES,
   TYPESCALE_LABELS,
   THEME_CHOICES,
+  DEFAULT_THEME,
 } from '@/lib/typography';
 import {
   readTypeface,
@@ -43,6 +44,14 @@ import {
   TILE_CHROMA_SCALE_MIN,
   readTileChromaScale,
   setTileChromaScale,
+  DEFAULT_CORNER_BALANCE,
+  readCornerBalance,
+  setCornerBalance,
+  DEFAULT_SLANT_RADIUS,
+  SLANT_RADIUS_MAX,
+  SLANT_RADIUS_MIN,
+  readSlantRadius,
+  setSlantRadius,
 } from './design-preferences';
 import { startMotionDebug } from './motion-debug';
 
@@ -56,6 +65,8 @@ function readPreferences() {
     controlNeutral: readControlNeutral(),
     tilePalette: readTilePalette(),
     tileChromaScale: readTileChromaScale(),
+    slantRadius: readSlantRadius(),
+    cornerBalance: readCornerBalance(),
     speed: readMotionSpeed(),
     railGuides: readRailGuides(),
   };
@@ -66,7 +77,7 @@ export function mountDesignPane(host: HTMLElement) {
   const pane = new Pane({
     container: host,
     title: 'Design controls',
-    expanded: true,
+    expanded: false,
   });
   const appearance = pane.addFolder({ title: 'Appearance' });
   const bindings = [
@@ -119,6 +130,32 @@ export function mountDesignPane(host: HTMLElement) {
       })
       .on('change', (event) => setTypescale(event.value)),
   ];
+  const radiusBinding = appearance
+    .addBinding(model, 'slantRadius', {
+      label: 'Corner radius',
+      min: SLANT_RADIUS_MIN,
+      max: SLANT_RADIUS_MAX,
+      step: 0.5,
+    })
+    .on('change', (event) => setSlantRadius(event.value));
+  radiusBinding.element.title =
+    'The radius a slanted control’s corners start from, in px. Corner balance then scales each corner by its angle, and the notch’s foot follows.';
+  for (const input of radiusBinding.element.querySelectorAll('input')) {
+    input.setAttribute('aria-label', 'Slanted corner radius');
+  }
+  const cornerBinding = appearance
+    .addBinding(model, 'cornerBalance', {
+      label: 'Corner balance',
+      min: 0,
+      max: 1,
+      step: 0.05,
+    })
+    .on('change', (event) => setCornerBalance(event.value));
+  cornerBinding.element.title =
+    'How far a slanted corner’s radius follows its angle. 0 is one radius everywhere; 1 gives every corner the same bite out of its edges.';
+  for (const input of cornerBinding.element.querySelectorAll('input')) {
+    input.setAttribute('aria-label', 'Slanted corner balance');
+  }
 
   // The workspace menu's tiles: which palette they read, and how hard the
   // saturation ceilings in tokens.css hold it back.
@@ -180,11 +217,13 @@ export function mountDesignPane(host: HTMLElement) {
     setTypeface(DEFAULT_TYPEFACE_SET);
     setMono('match');
     setTypescale(DEFAULT_TYPESCALE);
-    setTheme('system');
+    setTheme(DEFAULT_THEME);
     setNeutral(DEFAULT_NEUTRAL);
     setControlNeutral('match');
     setTilePalette(DEFAULT_TILE_PALETTE);
     setTileChromaScale(DEFAULT_TILE_CHROMA_SCALE);
+    setSlantRadius(DEFAULT_SLANT_RADIUS);
+    setCornerBalance(DEFAULT_CORNER_BALANCE);
     setMotionSpeed(DEFAULT_MOTION_SPEED);
     setRailGuides(false);
   });

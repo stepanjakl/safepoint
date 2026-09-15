@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { AppShell } from '@/components/app-shell/app-shell';
 import {
   RequestBubble,
   ResponseSection,
@@ -30,18 +29,16 @@ export default function SupportExamplePage() {
   };
 
   return (
-    <AppShell current="/examples/support">
-      <ProcessView process={supportProcess}>
-        <ThreadPage eyebrow="Support operations" title="Morning handoff">
-          <ol className="thread">
-            {supportProcess.steps.map((step) => (
-              <ThreadStep key={step.id} step={step}>
-                {boxes[step.id]}
-              </ThreadStep>
-            ))}
-          </ol>
-        </ThreadPage>
-      </ProcessView>
-    </AppShell>
+    <ProcessView process={supportProcess}>
+      <ThreadPage eyebrow="Support operations" title="Morning handoff">
+        <ol className="thread">
+          {supportProcess.steps.map((step) => (
+            <ThreadStep key={step.id} step={step}>
+              {boxes[step.id]}
+            </ThreadStep>
+          ))}
+        </ol>
+      </ThreadPage>
+    </ProcessView>
   );
 }

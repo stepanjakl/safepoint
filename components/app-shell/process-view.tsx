@@ -1,10 +1,8 @@
 import type { ReactNode } from 'react';
 import type { ProcessSummary } from '@/lib/process/placeholder-process';
 import type { SystemLink } from '@/lib/process/system-links';
-import { Notch } from '@/components/ui/notch';
-import { InstructionsDrawer } from './instructions-drawer';
-import { RefineInstructions } from './refine-instructions';
-import { SystemCluster } from './system-cluster';
+import { ProcessHeader } from './process-header';
+import { ScheduleControl } from './schedule-control';
 
 export function ProcessView({
   process,
@@ -19,41 +17,7 @@ export function ProcessView({
 
   return (
     <div className="shell:grid shell:h-full shell:grid-rows-[auto_minmax(0,1fr)]">
-      {/*
-        Two cells on one row: the heading and its systems, then the notch the
-        instructions sit in. The row takes the taller of the two, and the
-        notch reaches down over the header's rule, so its floor is that rule
-        however the heading wraps.
-
-        The rule and its sheen belong to the header, whole width, not to the
-        heading cell. The notch starts wherever the button's text width puts
-        it, usually on a fraction of a pixel, and a translucent sheen drawn by
-        two elements meeting there double-paints that pixel into a bright dot.
-      */}
-      <header className="border-rule-faint shadow-separator-bottom-strong grid grid-cols-[minmax(0,1fr)_auto] border-b">
-        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-3 sm:px-6 sm:py-4">
-          <div>
-            <h2 className="text-title [font-weight:550]">{process.name}</h2>
-            <p className="text-meta text-muted">{process.trigger}</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <SystemCluster label="Reads" links={sources} />
-            <SystemCluster label="Writes" links={process.destinations} />
-          </div>
-        </div>
-        {/* Two slants sharing a seam: the first leans on both sides, the last
-            keeps its far side square against the pane's edge. */}
-        <Notch className="-mt-control-edge -mr-control-edge -mb-control-edge">
-          <InstructionsDrawer
-            instructions={process.instructions}
-            slant="both"
-          />
-          <RefineInstructions
-            version={process.instructions.version}
-            slant="left"
-          />
-        </Notch>
-      </header>
+      <ProcessHeader process={process} sources={sources} />
       {/*
         Three columns where there is room, otherwise the runs become a strip
         above the thread. Between the two thresholds the strip takes what it
@@ -65,9 +29,15 @@ export function ProcessView({
           aria-labelledby="runs-heading"
           className="border-rule-faint shadow-separator-right-strong runs:border-b-0 runs:border-r runs:px-3 runs:py-4 shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative border-b p-3"
         >
-          <p id="runs-heading" className="readout text-muted px-2.5 pb-1.5">
-            Runs
-          </p>
+          <div className="flex items-center justify-between gap-2 pr-1 pb-1.5 pl-2.5">
+            <p id="runs-heading" className="readout text-muted">
+              Runs
+            </p>
+            <ScheduleControl
+              processId={process.id}
+              schedule={process.schedule}
+            />
+          </div>
           <ol className="runs:flex-col runs:gap-0.5 runs:overflow-visible flex flex-row gap-1.5 overflow-x-auto">
             {process.runs.map((run) => (
               <li key={run.id}>

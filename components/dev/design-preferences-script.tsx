@@ -1,5 +1,7 @@
 import {
   CONTROL_NEUTRAL_STORAGE_KEY,
+  CORNER_BALANCE_STORAGE_KEY,
+  DEFAULT_CORNER_BALANCE,
   DEFAULT_MOTION_SPEED,
   DEFAULT_TILE_CHROMA_SCALE,
   MOTION_SPEEDS,
@@ -7,10 +9,15 @@ import {
   NEUTRAL_PALETTES,
   NEUTRAL_STORAGE_KEY,
   RAIL_GUIDES_STORAGE_KEY,
+  DEFAULT_SLANT_RADIUS,
+  SLANT_RADIUS_MAX,
+  SLANT_RADIUS_MIN,
+  SLANT_RADIUS_STORAGE_KEY,
   TILE_CHROMA_SCALE_MAX,
   TILE_CHROMA_SCALE_MIN,
   TILE_CHROMA_SCALE_STORAGE_KEY,
   TILE_PALETTE_STORAGE_KEY,
+  TILE_PALETTES,
 } from './design-preferences';
 import {
   MONO_CHOICES,
@@ -74,7 +81,8 @@ try {
   }
   var tilePalette = params.get('tiles')
     || localStorage.getItem(${JSON.stringify(TILE_PALETTE_STORAGE_KEY)});
-  if (tilePalette === 'radix') {
+  // The layout renders the default; a stored or linked choice replaces it.
+  if (${JSON.stringify(TILE_PALETTES)}.indexOf(tilePalette) !== -1) {
     root.dataset.tilePalette = tilePalette;
   }
   // Number(null) is 0, so an unset key falls outside the range and is skipped.
@@ -88,12 +96,30 @@ try {
   ) {
     root.style.setProperty('--tile-chroma-scale', String(chromaScale));
   }
+  // An unset key is null, which the range check below would read as 0.
+  var balanceValue = localStorage.getItem(${JSON.stringify(CORNER_BALANCE_STORAGE_KEY)});
+  var balance = balanceValue === null ? NaN : Number(balanceValue);
+  if (balance >= 0 && balance <= 1 && balance !== ${DEFAULT_CORNER_BALANCE}) {
+    root.style.setProperty('--slant-corner-balance', String(balance));
+  }
+  var radiusValue = localStorage.getItem(${JSON.stringify(SLANT_RADIUS_STORAGE_KEY)});
+  var radius = radiusValue === null ? NaN : Number(radiusValue);
+  if (
+    radius >= ${SLANT_RADIUS_MIN} &&
+    radius <= ${SLANT_RADIUS_MAX} &&
+    radius !== ${DEFAULT_SLANT_RADIUS}
+  ) {
+    root.style.setProperty('--slant-radius', radius + 'px');
+  }
   if (localStorage.getItem(${JSON.stringify(RAIL_GUIDES_STORAGE_KEY)}) === 'on') {
     root.dataset.railGuides = 'on';
   }
   var theme = localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});
+  // The layout renders the default theme; 'system' is the absence of one.
   if (theme === 'light' || theme === 'dark') {
     root.dataset.theme = theme;
+  } else if (theme === 'system') {
+    delete root.dataset.theme;
   }
 } catch (error) {
   // No stored preference is readable; the token defaults stand.

@@ -79,6 +79,10 @@ export function isThemeChoice(value: unknown): value is ThemeChoice {
   return THEME_CHOICES.includes(value as ThemeChoice);
 }
 
+// Rendered on <html> by the layout. 'system' is the absence of the attribute,
+// so it is a choice a person makes, never the default.
+export const DEFAULT_THEME: ThemeChoice = 'light';
+
 export const TYPEFACE_STORAGE_KEY = 'safepoint:typeface';
 export const MONO_STORAGE_KEY = 'safepoint:mono';
 export const THEME_STORAGE_KEY = 'safepoint:theme';

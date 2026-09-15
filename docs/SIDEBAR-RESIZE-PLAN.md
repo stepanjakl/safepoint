@@ -12,7 +12,10 @@ The closed handle points right on hover. After a drag release, hover waits for
 actual pointer movement so the settling sheet cannot briefly flip the arrow.
 The stroke is 36px tall, with the softer muted-strong color on hover. Keyboard focus lights it as hover does.
 When hidden, the straight resting grip remains visible so reopening is discoverable.
-The menu's existing top row gains no icons.
+The menu's existing top row gains no icons. Pointer hover uses approach speed:
+slow entry reveals immediately; fast entry waits for 90ms of rest and leaving
+cancels it. The tooltip follows the same intent, while keyboard focus and
+clicks remain immediate.
 
 ## Implementation plan
 
@@ -52,9 +55,11 @@ The menu's existing top row gains no icons.
   from before the gesture. Releasing a drag never becomes an additional click.
 - Double-click opens at the design default width (250px at the default text
   size). The Default width preset provides the same action without double-clicking.
-  Pointer single-click waits 350ms so the edge stays under a second click;
-  keyboard activation remains immediate. A second click, drag, focus change,
-  keyboard action or unmount cancels any pending single-click.
+  Clicks respond immediately. For 500ms, a temporary pointer target at the old
+  grip position accepts the second click while the sheet moves. Once the second
+  press starts, its target stays alive until release or cancellation. Leaving that
+  target, changing focus, or using the keyboard clears it. Pressing keeps the
+  pointer cursor; only movement beyond the drag slop activates the resize cursor.
 - Sidebar icon geometry remains owned by its existing rail cells and axes.
 - Width and collapse preferences are local to the browser and shared across
   routes/tabs. They are presentation preferences, never navigation URL state.
@@ -82,7 +87,8 @@ The menu's existing top row gains no icons.
   compact and wide widths. The existing deliberate Add-process offset remains
   allowed; no rail coordinates or offsets were changed.
 
-The development motion picker defaults to 5× slower playback. Set it to Normal
-to assess the intended 220ms transition; the implementation follows that picker.
+The development motion picker defaults to Normal playback, the intended 220ms
+transition; slower settings are for inspecting it, and the implementation
+follows that picker.
 Browser automation covers Chrome; native Safari/VoiceOver and physical touch
 devices have not been manually tested.

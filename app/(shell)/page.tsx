@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { AppShell } from '@/components/app-shell/app-shell';
 import {
   RequestBubble,
   ResponseSection,
@@ -30,7 +29,9 @@ export default async function ReviewPage({ searchParams }: PageProps<'/'>) {
         <p>Check the promotion release and show me what needs attention.</p>
       </RequestBubble>
     ),
-    analysis: <InitialAnalysis analysis={promotionProcess.analysis} />,
+    analysis: (
+      <InitialAnalysis analysis={promotionProcess.analysis} sources={sources} />
+    ),
     review: (
       <ResponseSection
         caption={`Recorded on ${plan.evaluatedAt} · Fictional data`}
@@ -41,37 +42,35 @@ export default async function ReviewPage({ searchParams }: PageProps<'/'>) {
   };
 
   return (
-    <AppShell current="/">
-      <ProcessView process={promotionProcess} sources={sources}>
-        <ThreadPage
-          eyebrow="Alderton’s · Promotion operations"
-          title="Fresh Food Weekend"
-        >
-          <ol className="thread">
-            {promotionProcess.steps.map((step) => (
-              <ThreadStep key={step.id} step={step}>
-                {boxes[step.id]}
-              </ThreadStep>
-            ))}
-          </ol>
-          <div className="border-rule-faint text-muted text-meta mt-10 border-t pt-5 leading-relaxed max-sm:mt-7">
-            <p>
-              This conversation demonstrates how Safepoint can appear inside
-              another application.
-            </p>
-            <Link
-              href="/examples/support"
-              className="inline-flex min-h-11 items-center underline underline-offset-4"
-            >
-              Explore a support handoff <span aria-hidden="true">↗</span>
-            </Link>
-          </div>
-        </ThreadPage>
-        <footer className="text-muted text-meta p-6 text-center">
-          The agent proposes. You review. Safepoint applies only approved
-          changes.
-        </footer>
-      </ProcessView>
-    </AppShell>
+    <ProcessView process={promotionProcess} sources={sources}>
+      <ThreadPage
+        eyebrow="Alderton’s · Promotion operations"
+        title="Fresh Food Weekend"
+      >
+        <ol className="thread">
+          {promotionProcess.steps.map((step) => (
+            <ThreadStep key={step.id} step={step}>
+              {boxes[step.id]}
+            </ThreadStep>
+          ))}
+        </ol>
+        <div className="border-rule-faint text-muted text-meta mt-10 border-t pt-5 leading-relaxed max-sm:mt-7">
+          <p>
+            This conversation demonstrates how Safepoint can appear inside
+            another application.
+          </p>
+          <Link
+            href="/examples/support"
+            className="inline-flex min-h-11 items-center underline underline-offset-4"
+          >
+            Explore a support handoff <span aria-hidden="true">↗</span>
+          </Link>
+        </div>
+      </ThreadPage>
+      <footer className="text-muted text-meta p-6 text-center">
+        The agent proposes. You review. Safepoint applies only approved
+        changes.
+      </footer>
+    </ProcessView>
   );
 }

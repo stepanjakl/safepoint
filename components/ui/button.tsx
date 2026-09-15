@@ -17,7 +17,7 @@ export type Slant = 'left' | 'right' | 'both';
 // gradient stops it animates are its own contract. The hairline sheen because
 // at this size a full pixel of white inside the ring reads as a second edge.
 const base =
-  'control-hairline inline-flex h-9 min-w-11 items-center justify-center gap-2 px-3.5 text-dense font-medium whitespace-nowrap data-[disabled]:cursor-not-allowed data-[disabled]:control-off data-[disabled]:text-muted';
+  'control-hairline inline-flex min-w-11 items-center justify-center gap-2 px-3.5 text-dense font-medium whitespace-nowrap data-[disabled]:cursor-not-allowed data-[disabled]:control-off data-[disabled]:text-muted';
 
 /*
   Each variant in two halves: the stops, which say what colour the face is in
@@ -79,7 +79,10 @@ export function Button({
       className={cx(
         base,
         faces[variant],
-        slant ? 'slant' : shapes[variant],
+        // Height with the shape, not in `base`: a slant's is a token sized to
+        // the header it sits in, and two height utilities on one element
+        // would be settled by stylesheet order.
+        slant ? 'slant h-(--slant-height)' : `${shapes[variant]} h-9`,
         className,
       )}
     >

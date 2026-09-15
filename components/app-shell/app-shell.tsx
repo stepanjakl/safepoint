@@ -1,32 +1,33 @@
 import type { ReactNode } from 'react';
+import { cookies } from 'next/headers';
 import { loadReviewedReplay } from '@/lib/promotion-release';
 import {
   promotionProcess,
   supportProcess,
 } from '@/lib/process/placeholder-process';
-import { processNavigationItem } from '@/lib/process/navigation';
+import {
+  PROCESS_ORDER_KEY,
+  processNavigationItem,
+} from '@/lib/process/navigation';
 import { presentPromotionPlan } from '@/lib/review/promotion-adapter';
 import { supportPlan } from '@/lib/review/support-fixture';
 import { ProcessMenu } from './process-menu';
 import { ResizableShell } from './resizable-shell';
 
-export function AppShell({
-  current,
-  children,
-}: {
-  current: string;
-  children: ReactNode;
-}) {
+export async function AppShell({ children }: { children: ReactNode }) {
+  // The saved order, so the first paint already has the rows where the reader
+  // left them rather than hydration moving them there.
+  const savedOrder = (await cookies()).get(PROCESS_ORDER_KEY)?.value ?? null;
   // Only navigation summaries cross the client boundary, not the full plans.
   const items = [
     processNavigationItem({
-      id: 'promotion-release',
+      id: promotionProcess.id,
       href: '/',
       name: promotionProcess.name,
       plan: presentPromotionPlan(loadReviewedReplay()),
     }),
     processNavigationItem({
-      id: 'support-handoff',
+      id: supportProcess.id,
       href: '/examples/support',
       name: supportProcess.name,
       plan: supportPlan,
@@ -34,7 +35,7 @@ export function AppShell({
   ];
   return (
     <ResizableShell
-      navigation={<ProcessMenu current={current} items={items} />}
+      navigation={<ProcessMenu items={items} initialOrder={savedOrder} />}
     >
       {/*
         A containing block for its descendants. Absolutely positioned content --

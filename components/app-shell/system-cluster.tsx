@@ -1,7 +1,11 @@
 'use client';
 
 import { Tooltip } from '@/components/ui/tooltip';
-import type { Freshness, SystemLink } from '@/lib/process/system-links';
+import {
+  needsAttention,
+  worstFreshness,
+  type SystemLink,
+} from '@/lib/process/system-links';
 import { SystemIcon } from './system-icon';
 
 // The name is revealed on hover *and* on focus. A hover-only reveal would put
@@ -32,18 +36,11 @@ export function SystemCluster({
   links: SystemLink[];
 }) {
   if (links.length === 0) return null;
-  const needing = links.filter(
-    (link) => link.freshness && link.freshness.state !== 'fresh',
-  );
-  const attention = needing.length;
-  // The count spans two states, so it takes the colour of the worse one. Named
-  // for freshness, not severity: `data-severity` is the review layer's numeric
-  // rank, and reusing it here would put two vocabularies on one attribute.
-  const worst: Freshness['state'] = needing.some(
-    (link) => link.freshness?.state === 'unavailable',
-  )
-    ? 'unavailable'
-    : 'stale';
+  const attention = links.filter(needsAttention).length;
+  // Named for freshness, not severity: `data-severity` is the review layer's
+  // numeric rank, and reusing it here would put two vocabularies on one
+  // attribute.
+  const worst = worstFreshness(links) ?? undefined;
 
   return (
     // The gap between two clusters is wider than the gap inside one, so an

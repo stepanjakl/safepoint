@@ -253,7 +253,7 @@ const OBLIGATION_LABELS: Record<GateObligation, string> = {
   not_applicable: 'Not applicable',
 };
 
-const MODE_LABELS: Record<AdapterMode, string> = {
+export const MODE_LABELS: Record<AdapterMode, string> = {
   live_sandbox: 'Live sandbox',
   simulated: 'Simulated',
   preview_only: 'Preview only',

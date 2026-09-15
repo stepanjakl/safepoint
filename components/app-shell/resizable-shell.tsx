@@ -43,7 +43,9 @@ type Drag = {
 };
 
 // Briefly retain the old click target while the sheet moves immediately.
-const DOUBLE_CLICK_WINDOW = 350;
+const DOUBLE_CLICK_WINDOW = 500;
+const HOVER_SETTLE_MS = 90;
+const HOVER_SPEED_LIMIT = 0.35; // CSS pixels per millisecond.
 
 /** The server-rendered menu and sheet remain opaque children during a drag. */
 export function ResizableShell({
@@ -62,10 +64,16 @@ export function ResizableShell({
   const [bounds, setBounds] = useState<Bounds | null>(null);
   const [preview, setPreview] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [gripPressed, setGripPressed] = useState(false);
   const [clickTarget, setClickTarget] = useState<DOMRect | null>(null);
   const [directionArmed, setDirectionArmed] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const [keyboardFocused, setKeyboardFocused] = useState(false);
+  const pointerSample = useRef<{ x: number; y: number; time: number } | null>(
+    null,
+  );
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reduceMotion = useReducedMotion();
   const probes = useRef<HTMLDivElement>(null);
   const handle = useRef<HTMLDivElement>(null);
@@ -78,6 +86,33 @@ export function ResizableShell({
   const pendingClick = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigationId = useId();
   const helpId = useId();
+
+  useEffect(() => {
+    // Track the approach outside the narrow edge, without rendering on moves.
+    const sample = (event: globalThis.PointerEvent) => {
+      if (event.pointerType === 'touch') return;
+      pointerSample.current = {
+        x: event.clientX,
+        y: event.clientY,
+        time: event.timeStamp,
+      };
+    };
+    document.addEventListener('pointermove', sample, { passive: true });
+    return () => {
+      document.removeEventListener('pointermove', sample);
+      if (hoverTimer.current !== null) clearTimeout(hoverTimer.current);
+    };
+  }, []);
+
+  function clearHoverTimer() {
+    if (hoverTimer.current !== null) clearTimeout(hoverTimer.current);
+    hoverTimer.current = null;
+  }
+
+  function leaveHover() {
+    clearHoverTimer();
+    setHovered(false);
+  }
 
   // Resolve lengths in the browser, including the viewport cap and rem scale.
   // CSS owns every width and the breakpoint; a hidden probe has zero width
@@ -102,6 +137,7 @@ export function ResizableShell({
         if (pendingClick.current !== null) clearTimeout(pendingClick.current);
         pendingClick.current = null;
         setIsDragging(false);
+        setGripPressed(false);
         setPreview(null);
         setOptionsOpen(false);
       }
@@ -199,6 +235,7 @@ export function ResizableShell({
     drag.current = null;
     suppressClick.current = true;
     setIsDragging(false);
+    setGripPressed(false);
     setPreview(null);
   }
 
@@ -220,6 +257,11 @@ export function ResizableShell({
     if (event.button !== 0 || !event.isPrimary || !bounds) return;
     cancelPendingClick();
     suppressClick.current = false;
+    clearHoverTimer();
+    setKeyboardFocused(false);
+    setGripPressed(
+      event.target instanceof Node && !!grip.current?.contains(event.target),
+    );
     event.currentTarget.focus();
     event.currentTarget.setPointerCapture(event.pointerId);
     drag.current = {
@@ -242,6 +284,7 @@ export function ResizableShell({
   }
 
   function updateHover(event: PointerEvent<HTMLDivElement>) {
+    if (event.pointerType === 'touch' || drag.current) return;
     // A settling edge can enter the stationary pointer after release. Only
     // actual pointer movement should re-enable its hover treatment.
     const released = releasedAt.current;
@@ -252,7 +295,26 @@ export function ResizableShell({
     )
       return;
     releasedAt.current = null;
-    setHovered(event.pointerType !== 'touch');
+    if (hovered) return;
+    clearHoverTimer();
+    const previous = pointerSample.current;
+    const elapsed = previous ? event.timeStamp - previous.time : 0;
+    if (
+      previous &&
+      elapsed > 0 &&
+      elapsed <= HOVER_SETTLE_MS &&
+      Math.hypot(event.clientX - previous.x, event.clientY - previous.y) /
+        elapsed <=
+        HOVER_SPEED_LIMIT
+    ) {
+      setHovered(true);
+    } else {
+      // A fast arrival can still be intentional if it comes to rest here.
+      hoverTimer.current = setTimeout(() => {
+        hoverTimer.current = null;
+        setHovered(true);
+      }, HOVER_SETTLE_MS);
+    }
   }
 
   function moveDrag(event: PointerEvent<HTMLDivElement>) {
@@ -294,7 +356,7 @@ export function ResizableShell({
     suppressClick.current = session.moved;
     if (session.moved) {
       releasedAt.current = { x: event.clientX, y: event.clientY };
-      setHovered(false);
+      leaveHover();
     }
     if (session.moved && bounds) {
       if (session.next <= snapThreshold) {
@@ -307,6 +369,7 @@ export function ResizableShell({
       }
     }
     setIsDragging(false);
+    setGripPressed(false);
     setPreview(null);
     event.currentTarget.releasePointerCapture(event.pointerId);
   }
@@ -341,10 +404,17 @@ export function ResizableShell({
             height: clickTarget.height,
           }}
           onPointerDown={(event) => {
+            if (event.button !== 0 || !event.isPrimary) return;
+            // Once the second press starts, keep its target alive through
+            // release even if the double-click window expires meanwhile.
+            if (pendingClick.current !== null)
+              clearTimeout(pendingClick.current);
+            pendingClick.current = null;
             event.preventDefault();
             event.currentTarget.setPointerCapture(event.pointerId);
           }}
           onClick={() => resize(null)}
+          onPointerCancel={cancelPendingClick}
           onPointerLeave={cancelPendingClick}
         />
       ) : null}
@@ -385,6 +455,15 @@ export function ResizableShell({
           triggerRef={grip}
           offset={4}
           isDisabled={preview !== null || optionsOpen}
+          isOpen={
+            (hovered || keyboardFocused) && preview === null && !optionsOpen
+          }
+          onOpenChange={(open) => {
+            if (!open) {
+              leaveHover();
+              setKeyboardFocused(false);
+            }
+          }}
         >
           <div
             ref={handle}
@@ -414,9 +493,16 @@ export function ResizableShell({
             }
             className="sidebar-handle max-shell:hidden"
             data-hovered={hovered || undefined}
+            data-grip-pressed={gripPressed || undefined}
             onPointerEnter={updateHover}
-            onPointerLeave={() => setHovered(false)}
-            onBlur={cancelPendingClick}
+            onPointerLeave={leaveHover}
+            onFocus={(event) =>
+              setKeyboardFocused(event.currentTarget.matches(':focus-visible'))
+            }
+            onBlur={() => {
+              cancelPendingClick();
+              setKeyboardFocused(false);
+            }}
             onPointerDown={startDrag}
             onPointerMove={moveDrag}
             onPointerUp={endDrag}

@@ -410,9 +410,10 @@
   step, nearly neutral and darker than the resting glyph, so under the pointer
   the icon lost its colour instead of gaining it.
 
-  Each hue fills the five roles from two palettes, for comparing them: Tailwind's
-  ramps by default, and the Radix Colors steps in app/radix-colors.css while the
-  design pane sets data-tile-palette="radix". Both are held in the hue rather
+  Each hue fills the five roles from two palettes, for comparing them: the Radix
+  Colors steps in app/radix-colors.css while <html> carries
+  data-tile-palette="radix" -- the layout's default -- and Tailwind's ramps
+  otherwise. Both are held in the hue rather
   than in the tile, so switching palettes changes values and nothing about how
   a tile is built.
 */

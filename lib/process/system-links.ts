@@ -1,4 +1,5 @@
 import type { ReviewedReplay } from '../promotion-release';
+import type { AdapterMode } from '../review-presentation/present-review';
 
 // The list is the declaration and the type is derived from it, so an icon set
 // can be checked for completeness against the same vocabulary the links use.
@@ -35,12 +36,44 @@ export type SystemLink = {
   label: string;
   icon: IconKey;
   direction: 'reads' | 'writes';
-  // Sources only. A destination's interesting property is its mode and its
-  // recovery, neither of which exists until something can be applied.
+  // Sources only, and a property of the run that read them rather than of the
+  // connection: the same source is fresh for one run and stale for the next.
   freshness?: Freshness;
+  // Destinations only: what the connection can genuinely do. Unlike freshness
+  // this belongs to the connection, so it holds for every run.
+  mode?: AdapterMode;
   // For an input whose currency is a version rather than an observation time.
   detail?: string;
 };
+
+export function needsAttention(link: SystemLink): boolean {
+  return link.freshness !== undefined && link.freshness.state !== 'fresh';
+}
+
+// A count that spans two states takes the colour of the worse one.
+export function worstFreshness(
+  links: SystemLink[],
+): Exclude<Freshness['state'], 'fresh'> | null {
+  const needing = links.filter(needsAttention);
+  if (needing.length === 0) return null;
+  return needing.some((link) => link.freshness?.state === 'unavailable')
+    ? 'unavailable'
+    : 'stale';
+}
+
+const ATTENTION_RANK: Record<Freshness['state'], number> = {
+  unavailable: 0,
+  stale: 1,
+  fresh: 2,
+};
+
+// Worst first, and otherwise in the order given: the sort is stable, so the
+// derivation's own order (oldest observation first) survives within a state.
+export function byAttention(a: SystemLink, b: SystemLink): number {
+  const rank = (link: SystemLink) =>
+    link.freshness ? ATTENTION_RANK[link.freshness.state] : 2;
+  return rank(a) - rank(b);
+}
 
 function ageLabel(ms: number): string {
   const hours = Math.round(ms / 3_600_000);

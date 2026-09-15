@@ -419,13 +419,38 @@
   --notch-angle: 25deg;
   /* Where the slope leaves the pane's top edge, and where it lands on the floor. */
   --notch-bend-top: var(--radius-shell);
-  --notch-bend-bottom: var(--radius-shell);
+  /* --notch-bend-bottom is not declared: unset, the foot follows the control
+     beside it -- its bottom-left radius plus --notch-gap -- so the gap between
+     them holds round the corner. Set it on an element to fix the radius. */
   /* Where the floor turns down into the pane's side. */
   --notch-corner: var(--radius-shell);
-  /* Canvas held around the notch's content, measured square to each edge. */
-  --notch-gap: var(--spacing-shell-inset);
+  /* Canvas held between the notch's controls and its slope and floor,
+     measured square to each. The controls sit against the pane's top edge
+     and its side, so nothing is held there. */
+  --notch-gap: 0.375rem;
   /* Between two slanted controls that share a seam, measured square to it. */
   --slant-gap: 0.25rem;
+  /* How far a slanted corner's radius follows its angle, 0 to 1. At 0 every
+     corner of a slant has the plain radius; at 1 each takes the same length of
+     its edges as a square corner would. */
+  --slant-corner-balance: 0.5;
+  /* The same for the notch's top bend, held lower: the bend is wide, and at
+     full balance its arc reads softer than the pane's own corners. */
+  --notch-bend-balance: 0.5;
+  /*
+    A slanted control's height: one title line plus the shell inset and one
+    edge-width on either side. The edge-width is the 1px optical lift the
+    controls' icons take (-translate-y-px), given back evenly above and below
+    so a lifted glyph still clears the shell inset at its top. The header is
+    the controls plus the notch's gap below them, and the heading is centred
+    in it, so this keeps at least the shell inset above and below the heading.
+    --slant-radius is not declared; the rules fall back to --radius-shell, so
+    the last control reads as the pane's corner carried out onto the canvas.
+  */
+  --slant-height: calc(
+    var(--sp-text-title) * var(--sp-text-title--lh) + 2 *
+      (var(--spacing-shell-inset) + var(--spacing-control-edge))
+  );
 }
 
 /*
@@ -609,6 +634,20 @@
   */
   --sp-search-clear-face: var(--sp-field-edge);
   --sp-search-clear-face-hover: var(--sp-field-edge-hover);
+
+  /*
+    A value pill inside a quiet control -- the instructions version in the
+    header notch. One step below the face at mid-height, where the pill sits:
+    the quiet face ramps white to 200 in light and 700 to 800 in dark. Its
+    hover step only lightens the face; the pill steps down with it, on the
+    same hover, focus and press states. Solid ramp stops rather than a
+    color-mix over the face: see Colour in docs/STYLING-SYSTEM.md.
+  */
+  --sp-value-pill: light-dark(var(--sp-control-200), var(--sp-control-800));
+  --sp-value-pill-hover: light-dark(
+    var(--sp-control-300),
+    var(--sp-control-800)
+  );
 
   /* Flat: no ramp, so an unavailable control cannot read as a live one. */
   --sp-off-face: light-dark(var(--sp-control-100), var(--sp-control-900));
@@ -999,6 +1038,8 @@
   --color-menu-link: var(--sp-menu-link);
   --color-search-clear: var(--sp-search-clear-face);
   --color-search-clear-hover: var(--sp-search-clear-face-hover);
+  --color-value-pill: var(--sp-value-pill);
+  --color-value-pill-hover: var(--sp-value-pill-hover);
   --color-field-face: var(--sp-field-face);
   --color-field-edge: var(--sp-field-edge);
   --color-field-edge-hover: var(--sp-field-edge-hover);
@@ -1181,6 +1222,22 @@
     carrying its glyph and keycap with it.
   */
   --spacing-menu-current-edge: 1.5px;
+  /*
+    The edge a row in flight and its drop slot draw, on every side. Heavier
+    than the resting hairline, so the pair reads as picked up. The difference
+    is grown outward from the box rather than inward, so the label and the
+    handle stay exactly where they were when the drag began.
+  */
+  --spacing-menu-drag-edge: 1.5px;
+  /*
+    How far a row in flight reaches past the list on each side. The scrolling
+    list clips on both axes, so it pads its sides by this and takes the same
+    amount back as a negative margin: the reach stays visible, and nothing at
+    rest moves.
+  */
+  --spacing-menu-drag-grow: calc(
+    var(--spacing-menu-drag-edge) - var(--spacing-menu-edge)
+  );
   --spacing-field-edge: 1.5px;
   /*
     The same hairline, published again under the one namespace `border-*` reads

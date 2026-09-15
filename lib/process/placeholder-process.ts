@@ -7,6 +7,7 @@
 // that can move underneath a result -- a run evaluated under older instructions
 // is not comparable to one evaluated under the current set, and the list says so.
 
+import type { ProcessSchedule } from './schedule';
 import type { SystemLink } from './system-links';
 
 // A step in the run's thread. The thread is the process made visible: the
@@ -53,8 +54,10 @@ export type ProcessRun = {
 };
 
 export type ProcessSummary = {
+  // Stable across renames: the key a person's schedule change is saved under.
+  id: string;
   name: string;
-  trigger: string;
+  schedule: ProcessSchedule;
   // Where this process would write. Mirrors the destinations the effect planner
   // already names, rather than inventing a second vocabulary. Sources are not
   // here: they are derived from the evidence the run actually cited.
@@ -72,27 +75,45 @@ export type ProcessSummary = {
 };
 
 export const promotionProcess: ProcessSummary = {
+  id: 'promotion-release',
   name: 'Promotion release',
-  trigger: 'Weekly · Thursday 09:00 · Europe/London',
+  schedule: {
+    enabled: true,
+    cadence: 'weekly',
+    day: 'Thursday',
+    time: '09:00',
+    timezone: 'Europe/London',
+  },
   destinations: [
+    // Modes from the effect planner's destination table; see
+    // EFFECT_DESTINATIONS in lib/review-presentation/present-review.ts.
     {
       id: 'pricebook',
       label: 'Pricebook',
       icon: 'pricebook',
       direction: 'writes',
+      mode: 'live_sandbox',
     },
     {
       id: 'storefront',
       label: 'Storefront',
       icon: 'storefront',
       direction: 'writes',
+      mode: 'live_sandbox',
     },
-    { id: 'labels', label: 'Label queue', icon: 'labels', direction: 'writes' },
+    {
+      id: 'labels',
+      label: 'Label queue',
+      icon: 'labels',
+      direction: 'writes',
+      mode: 'live_sandbox',
+    },
     {
       id: 'portal',
       label: 'Supplier portal',
       icon: 'portal',
       direction: 'writes',
+      mode: 'simulated',
     },
   ],
   instructions: {
@@ -167,17 +188,38 @@ export const promotionProcess: ProcessSummary = {
 };
 
 export const supportProcess: ProcessSummary = {
+  id: 'support-handoff',
   name: 'Support handoff',
-  trigger: 'Daily · 09:00 · Europe/London',
+  schedule: {
+    enabled: true,
+    cadence: 'daily',
+    day: 'Monday',
+    time: '09:00',
+    timezone: 'Europe/London',
+  },
   destinations: [
-    { id: 'queue', label: 'Support queue', icon: 'queue', direction: 'writes' },
+    // Nothing in the support example reaches a real system.
+    {
+      id: 'queue',
+      label: 'Support queue',
+      icon: 'queue',
+      direction: 'writes',
+      mode: 'simulated',
+    },
     {
       id: 'identity',
       label: 'Identity records',
       icon: 'identity',
       direction: 'writes',
+      mode: 'preview_only',
     },
-    { id: 'billing', label: 'Billing', icon: 'billing', direction: 'writes' },
+    {
+      id: 'billing',
+      label: 'Billing',
+      icon: 'billing',
+      direction: 'writes',
+      mode: 'preview_only',
+    },
   ],
   instructions: {
     version: 'v2',

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   useEffect,
   useLayoutEffect,
@@ -52,7 +53,6 @@ import {
 import {
   readProcessOrder,
   saveProcessOrder,
-  serverProcessOrder,
   subscribeProcessOrder,
 } from './process-order-store';
 
@@ -354,16 +354,20 @@ function MenuTile({
 }
 
 export function ProcessMenu({
-  current,
   items,
+  initialOrder,
 }: {
-  current: string;
   items: ProcessNavigationItem[];
+  /** The order the server read from the cookie, for SSR and hydration. */
+  initialOrder: string | null;
 }) {
+  // The shell is a layout that stays mounted across navigation, so the current
+  // process is read here rather than handed down by each page.
+  const current = usePathname();
   const saved = useSyncExternalStore(
     subscribeProcessOrder,
     readProcessOrder,
-    serverProcessOrder,
+    () => initialOrder,
   );
   const savedOrder = restoreProcessOrder(
     items.map((item) => item.id),
@@ -1078,7 +1082,10 @@ export function ProcessMenu({
               <div className="process-list-fade shell:min-h-0 shell:flex-1 relative flex flex-col">
                 <div
                   ref={scrollRef}
-                  className="shell:min-h-0 shell:flex-1 shell:overflow-y-auto shell:overscroll-contain shell:py-menu-fade"
+                  // An overflow on one axis clips the other as well, so the
+                  // sides carry the dragged row's reach as padding and give it
+                  // straight back as margin.
+                  className="shell:min-h-0 shell:flex-1 shell:overflow-y-auto shell:overscroll-contain shell:py-menu-fade shell:-mx-menu-drag-grow shell:px-menu-drag-grow"
                 >
                   <ol
                     className="relative"

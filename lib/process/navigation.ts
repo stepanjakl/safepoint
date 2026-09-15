@@ -85,6 +85,16 @@ export function processNavigationItem({
   };
 }
 
+/*
+  Where the saved process order lives. localStorage stays the client's source,
+  and a cookie mirrors it so the server can render the saved order too -- read
+  only from localStorage, the first paint was always the default order and
+  hydration swapped the rows into place a moment later. Here rather than in the
+  client store, because a server component importing a constant from a
+  'use client' module receives a reference, not the string.
+*/
+export const PROCESS_ORDER_KEY = 'safepoint.process-order.v1';
+
 /** Keep known saved IDs, drop duplicates, and append newly available processes. */
 export function restoreProcessOrder(
   ids: string[],
