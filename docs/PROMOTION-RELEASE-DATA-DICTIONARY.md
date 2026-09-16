@@ -69,21 +69,21 @@ flowchart LR
 
 The model may interpret evidence and propose a plan, but it does not decide what policy permits and it cannot write to an external service. Safepoint validates the proposal, calculates policy, joins each result back to the source facts, and only then exposes the review model to the interface. During Stage 1, the policy result is also replayed; Stage 3 replaces that temporary input with the calculated policy path shown above.
 
-### Evidence files as input snapshots
+### Evidence files as inputs
 
-In the [read path](TECHNICAL-DESIGN.md#read-path-from-connection-to-snapshot), a run reads immutable snapshots rather than live sources. The evidence files are those snapshots for the recorded run: nothing ingests them, and no connection stands behind them. The process setup interface groups records by `sourceLabel`, so one file can present more than one source.
+Each evidence file is one **input** to the run: an analysed extract treated as the run's source of truth. Producing and updating the files is outside Safepoint's scope, so nothing ingests them and no connection stands behind them. The process setup names each input for what its file holds; `sourceLabel` is kept as provenance and shown as **From**, so a file whose records carry more than one label is still one input.
 
-| File | Source labels | Input it satisfies | Notes |
-| --- | --- | --- | --- |
-| `promotion-brief.json` | Approved Fresh Food Weekend promotion brief | The campaign and its candidate lines | One record: the brief as a whole |
-| `shortlist-provenance.json` | Approved upstream promotion shortlist | Why each candidate was selected, and by whom | 27 records |
-| `catalogue-pricebook.json` | Alderton’s catalogue and pricebook | Product identity, regular and current promotional price, cost, and case pack | 27 records |
-| `demand-evidence.json` | Promotion demand forecast | Sales history and forecasts | 27 records |
-| `supply-position.json` | Distribution-centre supply position | Stock, reservations, and inbound supply | 27 records; one is `unavailable`, which is a coverage condition |
-| `supplier-terms.json` | Supplier trading terms | Lead times, order constraints, allocation, and funding | 27 records |
-| `operational-notes.json` | Campaign manager note; Bounded operational note | Narrative context that needs interpretation | Unstructured and always untrusted evidence |
-| `channel-state.json` | Promotion channel staging state | What each channel currently has staged | 27 records; also the expected values the outputs are preflighted against |
-| `policy-rules.json` | Fresh Food Weekend release policy | — | Versioned process configuration, not an observation: its currency is `policyVersion`, not `observedAt` |
+| File | Input | Records | Source labels (provenance) | Notes |
+| --- | --- | --- | --- | --- |
+| `promotion-brief.json` | Campaign brief | 1 | Approved Fresh Food Weekend promotion brief | The campaign and its candidate lines in one record |
+| `shortlist-provenance.json` | Shortlist provenance | 27 | Approved upstream promotion shortlist | Why each candidate was selected, and by whom |
+| `catalogue-pricebook.json` | Catalogue and pricebook | 27 | Alderton’s catalogue and pricebook | Product identity, prices, cost, and case pack |
+| `demand-evidence.json` | Demand forecast | 27 | Promotion demand forecast | Sales history and forecasts |
+| `supply-position.json` | Supply position | 27 | Distribution-centre supply position | One record is `unavailable`: a coverage condition |
+| `supplier-terms.json` | Supplier terms | 27 | Supplier trading terms | Lead times, order constraints, allocation, and funding |
+| `channel-state.json` | Channel state | 27 | Promotion channel staging state | Also the staged values outputs are preflighted against |
+| `operational-notes.json` | Operational notes | 11 | Campaign manager note; Bounded operational note | Narrative that needs interpretation; always untrusted evidence |
+| `policy-rules.json` | Policy rules | 1 | Fresh Food Weekend release policy | Versioned rather than time-observed: its currency is `policyVersion`, not `observedAt` |
 
 Freshness is derived by comparing each record's `observedAt` with `maximumEvidenceAgeHours` at the campaign's review time; a source is only as current as its oldest record.
 

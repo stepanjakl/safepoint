@@ -10,8 +10,8 @@ import {
 } from '@/components/review/review-item-detail';
 import { Glyph } from '@/components/ui/glyph';
 import { Ledger, LedgerRow } from '@/components/ui/ledger';
-import type { SourceDetail } from '@/lib/process/source-details';
-import { RemoveSourceDialog } from './source-connections';
+import type { InputDetail } from '@/lib/process/input-details';
+import { RemoveInputDialog } from './input-connections';
 
 // A filter earns its place once the records outrun a glance.
 const FILTER_FROM = 8;
@@ -23,23 +23,24 @@ const CHIP =
   'value control-wash border-rule-default text-muted hover:bg-surface-inset hover:text-primary focus-visible:bg-surface-inset focus-visible:text-primary inline-flex min-h-7 items-center rounded-full border px-2 text-meta';
 
 /*
-  One read system, as this run read it: the file it came from, when, what it
-  held, and which review items leaned on each record. The body of the side
-  panel; the panel's header carries the source's name and state.
+  One input, as this run read it: its JSON file, when its records were
+  observed -- or, for the policy rules, which version -- what it held, and
+  which review items leaned on each record. The body of the side panel; the
+  panel's header carries the input's name and condition.
 
-  What this view never offers is a link to the live system. The scenario is
-  fictional, and a link that opened nothing -- or opened today's values under
-  a heading about the run's -- would be worse than saying so.
+  The file is the source of truth for the run. Where its records came from is
+  provenance, shown as From, and nothing here offers to open a live system:
+  there is none behind a fictional scenario.
 */
-export function SourceDetailView({
+export function InputDetailView({
   detail,
   onNavigate,
   onRemove,
 }: {
-  detail: SourceDetail;
+  detail: InputDetail;
   // Opening a review item closes the panels the item would be hidden behind.
   onNavigate: () => void;
-  // Absent where the process's connections cannot be changed.
+  // Absent where the process's inputs cannot be changed.
   onRemove?: () => void;
 }) {
   const [removing, setRemoving] = useState(false);
@@ -61,9 +62,15 @@ export function SourceDetailView({
         <LedgerRow label="File" className="px-5">
           <span className="value">{detail.file}</span>
         </LedgerRow>
-        <LedgerRow label="Observed" className="px-5">
-          {detail.observedAtLabel}
-        </LedgerRow>
+        {detail.version ? (
+          <LedgerRow label="Version" className="px-5">
+            <span className="value">{detail.version}</span>
+          </LedgerRow>
+        ) : (
+          <LedgerRow label="Observed" className="px-5">
+            {detail.observedAtLabel}
+          </LedgerRow>
+        )}
         <LedgerRow label="Records" className="px-5">
           {total}
           {detail.unavailableCount > 0 ? (
@@ -82,10 +89,8 @@ export function SourceDetailView({
             {detail.checks.join(', ')}
           </LedgerRow>
         ) : null}
-        <LedgerRow label="Live system" className="px-5">
-          <span className="text-muted">
-            None. Fictional scenario data, so there is nothing to open.
-          </span>
+        <LedgerRow label="From" className="px-5">
+          <span className="text-muted">{detail.sources.join(' · ')}</span>
         </LedgerRow>
       </Ledger>
 
@@ -93,11 +98,12 @@ export function SourceDetailView({
         <div className="-mt-2 flex justify-end">
           <AriaButton
             onPress={() => setRemoving(true)}
-            className="control-wash text-muted hover:bg-surface-selected hover:text-primary focus-visible:bg-surface-selected focus-visible:text-primary rounded-control text-meta -mx-1.5 inline-flex min-h-8 cursor-pointer items-center px-1.5"
+            className="control-wash text-muted hover:bg-surface-selected hover:text-primary focus-visible:bg-surface-selected focus-visible:text-primary rounded-control text-meta -mx-1.5 inline-flex min-h-8 cursor-pointer items-center gap-1.5 px-1.5"
           >
-            Remove from process
+            Remove input
+            <span className="readout text-muted">Preview</span>
           </AriaButton>
-          <RemoveSourceDialog
+          <RemoveInputDialog
             isOpen={removing}
             onOpenChange={setRemoving}
             detail={detail}
@@ -106,9 +112,9 @@ export function SourceDetailView({
         </div>
       ) : null}
 
-      <section aria-labelledby="source-records">
+      <section aria-labelledby="input-records">
         <div className="flex items-baseline justify-between gap-3 pb-1.5">
-          <h3 id="source-records" className="readout text-muted">
+          <h3 id="input-records" className="readout text-muted">
             Records <span className="value">{total}</span>
           </h3>
           <p className="text-meta text-muted">As read by this run</p>

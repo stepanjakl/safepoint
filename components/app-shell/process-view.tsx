@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
+import type { InputDetail } from '@/lib/process/input-details';
 import type { ProcessSummary } from '@/lib/process/placeholder-process';
-import type { SourceDetail } from '@/lib/process/source-details';
 import type { SystemLink } from '@/lib/process/system-links';
 import { ProcessHeader } from './process-header';
 import { RunsList } from './runs-list';
@@ -8,21 +8,21 @@ import { ScheduleControl } from './schedule-control';
 
 export function ProcessView({
   process,
-  sources = [],
-  sourceDetails,
+  inputs = [],
+  inputDetails,
   children,
 }: {
   process: ProcessSummary;
-  sources?: SystemLink[];
-  sourceDetails?: Record<string, SourceDetail>;
+  inputs?: SystemLink[];
+  inputDetails?: Record<string, InputDetail>;
   children: ReactNode;
 }) {
   return (
     <div className="shell:grid shell:h-full shell:grid-rows-[auto_minmax(0,1fr)]">
       <ProcessHeader
         process={process}
-        sources={sources}
-        sourceDetails={sourceDetails}
+        inputs={inputs}
+        inputDetails={inputDetails}
       />
       {/*
         Three columns where there is room, otherwise the runs become a strip

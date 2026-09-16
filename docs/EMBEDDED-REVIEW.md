@@ -50,77 +50,63 @@ Automated browser checks cover menu navigation, rapid reversal and focus restora
 
 ## Process header and setup
 
-Status: direction agreed 15 September 2026. The editable title, setup drawer, side panel, and Settings tab are implemented; the data status and Data tab replace the current systems summary and Systems tab next. Use the [product terminology](PRODUCT-BRIEF.md#product-terminology) and the [read path](TECHNICAL-DESIGN.md#read-path-from-connection-to-snapshot).
+Status: direction agreed 15 September 2026. The editable title, setup drawer, side panel, and Settings tab are implemented; the Inputs and Outputs header buttons and tabs replace the systems summary and Systems tab next. Use the [product terminology](PRODUCT-BRIEF.md#product-terminology).
 
-A process page answers two questions before any run is opened: will the next run have what it needs, and what can it change? The header states that; the setup drawer explains it. What a particular run read belongs to that run's thread and evidence, not to the header.
+The portfolio has no live source systems. A run's **inputs** are its JSON evidence files: analysed extracts that serve as the run's source of truth, produced and updated outside Safepoint. Its **outputs** are the APIs the process may call once changes are approved. The header and the setup drawer describe both for what they are, as the recorded run used them.
 
 ### Header
 
-One row, flush with the notch: the process title, the data status, then the notch holding **Instructions** with its version and the refine placeholder.
+One row, flush with the notch: the process title, an **Inputs** button and an **Outputs** button, then the notch holding **Instructions** with its version and the refine placeholder.
 
 The **title** is an input dressed as the heading. Pointing at it shows a field face lighter than the sheet; clicking places the caret at the end of the name. Enter or leaving the field keeps a change, Escape restores the name, and an empty name keeps the old one. The name is shared with the sidebar and the drawer.
 
-The **data status** replaces the stacked system discs, which say which systems exist but not whether the next run is safe to start:
+The two buttons replace the stacked system discs, which named systems without saying what they were:
 
 ```text
-Promotion release   In 9 · ▲ 1 stale  →  Out 4 · sandbox   ╱ Instructions v4 ╲
+Promotion release   [⇥ Inputs 9 · ▲ 1]  [⇄ Outputs 4 · ◇ 1]   ╱ Instructions v4 ╲
 ```
 
-- **In** gives the count of inputs and the worst condition in words — "1 stale", "login expired", "2 need mapping". With nothing to report it is only the count.
-- **Out** gives the count of outputs and the least real adapter mode among them — "sandbox", "simulated" — and nothing when every output is live.
-- It describes readiness for the next scheduled or manual run, for example "Ready for Thu 09:00".
-- Each half opens the setup drawer at its own section. State is never carried by colour or shape alone.
-- At narrow widths both halves collapse to counts; a condition that needs attention stays visible.
+- Both are built like the Instructions button — the same lit face, icon weight, text and count pill — at pill size and without an edge, so they read as its siblings rather than as outlined controls of their own.
+- **Inputs** shows its icon, the word, and the number of input files. When a file is older than the policy's maximum evidence age or holds unavailable records, a dot in the condition's colour follows the count; the button's accessible name says how many and which condition.
+- **Outputs** shows its icon, the word, and the number of APIs. Adapter mode is not a header state: which calls are simulated or preview only belongs to the Outputs tab, beside what each call does and how it is undone.
+- A condition never borrows the review's marks. Square and triangle mean a held line and a line needing attention; a stale file is neither, so the header carries a dot, the lists carry the disc's ring, and the words stay in the rows.
+- Both describe the recorded run's data. There is no live source, so there is no "next run" readiness to report.
+- State is never carried by colour or shape alone: each button's accessible name states its counts. As the row narrows the labels go, then the counts; at phone width the buttons give way to the name altogether, and their tabs are reached through the drawer.
 
 ### Setup drawer
 
-A slide-over with three tabs: **Instructions**, **Data**, and **Settings**. A detail opened from the drawer opens in a second panel on its left; the control that opened it closes it again, and choosing another item swaps the content in place.
+A slide-over with four tabs: **Instructions**, **Inputs**, **Outputs**, and **Settings**. A detail opened from the drawer opens in a second panel on its left; the control that opened it closes it again, and choosing another item swaps the content in place.
 
-#### Data tab
+#### Instructions tab
 
-A list, not a canvas: it has to stay legible at 50 inputs.
+The current text, what changed between versions, the editor, and the version history. It does not list policy rules, which are an input, or the parts of every instruction that the server adds, which are documented under [Fixed input](TECHNICAL-DESIGN.md#fixed-input).
+
+#### Inputs tab
+
+Opens with one line saying what inputs are: the JSON files the run read, each an analysed extract treated as the source of truth, produced outside Safepoint. Then one row per file — nine in the promotion scenario — named for what the file holds rather than for a system:
 
 ```text
-INPUTS                                    Ready for Thu 09:00
-● Current shelf price     Shopify · Products          18 min ago
-▲ Supply position         Postgres · dc_supply        26 h · limit 24 h
-○ Supplier terms          No source                   Connect…
-◐ Policy rules            policy.pdf · extracted      3 passages low confidence
-
-OUTPUTS
-Promotion price           Storefront        sandbox · restores automatically
-Shelf labels              Label service     simulated · manual follow-up
+INPUTS 9                                              + Add input · Preview
+Campaign brief         promotion-brief.json · 1 record
+▲ Supply position      1 of 27 records unavailable
+Policy rules           Version promotion-release-policy-v1
 ```
 
-- An input row reads requirement, then source, then condition. An input with no source is a row with a Connect action, not an absence.
-- An output row reads what changes, then the target, then adapter mode and reversibility in consequence language.
-- Conditions follow the four in the technical design — connection, binding, freshness, coverage — each with its own words and its own fix.
-- Future: a map view with inputs on the left, the process and its instruction version in the middle, and outputs on the right, lines coloured by condition. It is an overview of the list, not an editor.
+- A row gives the file, its record count, and when it was observed, or the condition that needs attention. Two conditions apply: freshness, when records are older than the policy's maximum evidence age at the review time, and coverage, when records are marked unavailable. Policy rules show their version instead of an age.
+- Opening a row shows its detail in the side panel: the file, observed time or version, record count, the review items and checks that cite it, and **From** — the source labels recorded in the file, as provenance. Records can be filtered and each keeps its raw JSON one disclosure away.
+- Adding and removing an input is a **Preview**: saved in the browser, limited to the scenario's own files, and changing no recorded run, review, or citation.
 
-#### Input detail
+#### Outputs tab
 
-Opens in the side panel, with five sections:
-
-1. **Records** — normalised records, with the raw source record available, filterable, and linked to the review items that cite them.
-2. **Mapping** — source fields against the input's schema, with changes shown when the source's structure moves.
-3. **History** — snapshots by run, with what changed between them.
-4. **Usage** — the checks that depend on the input and what a run would do without it.
-5. **Access** — the connection, its owner, scopes, credential expiry, and Reconnect.
-
-#### Adding an input
-
-A guided flow in the side panel: choose a connector, with the workspace's existing connections first; authenticate or reuse a connection; choose the resource and preview it; confirm suggested field mappings; set required, maximum age, and read mode; then test the read ("1,284 records · 2 failed validation") before attaching. Adding an output follows the same flow, starts in sandbox mode, and becomes live only after a successful sandbox run.
+Opens with one line saying what outputs are: the APIs the process may call once changes are approved. One row per API gives what it changes, the API, its adapter mode — live sandbox, simulated, or preview only — and how a call is undone, in consequence language such as "Restores automatically if the row has not changed again". Outputs cannot be added or changed.
 
 #### Settings tab
 
-In the order it is reached for: the name, the schedule (the same control and store as the runs rail), notifications, and last archive or delete. Archive is the ordinary way to end a process: it stops the schedule and hides the process but keeps its runs and reviews. Permanent deletion takes the record of what runs changed with it, so it is only for a process that has never run.
+In the order it is reached for: the name, the schedule (the same control and store as the runs rail), notifications, and last archive or delete. Archive is the ordinary way to end a process: it stops the schedule and hides the process but keeps its runs and reviews. Permanent deletion takes the record of what runs changed with it, so it is only for a process that has never run. The name and schedule are saved in the browser, and nothing starts a run from the schedule; notifications, archive, and delete are unavailable placeholders.
 
-### Portfolio boundary
+### Future
 
-- Connections live at workspace level; the drawer shows a process's bindings and links to the connection. Workspace connection management is Future.
-- The scenario's evidence files stand in for snapshots. Adding and removing inputs is a browser-local mock over those files and changes no recorded run, review, or citation.
-- Outputs cannot be changed. Notifications, archive, and delete are unavailable placeholders.
-- The schedule and the process name are saved in the browser; nothing starts a run from the schedule.
+Live source systems belong to the future-product track: workspace connections, field mapping, snapshot history, access and reconnection, a guided flow for adding an input, and a map view of inputs, process, and outputs. See [Read path: from connection to snapshot](TECHNICAL-DESIGN.md#read-path-from-connection-to-snapshot). Editing policy, with a preview of its effect on the latest run, needs the deterministic policy engine and is also Future.
 
 ## Two surfaces
 

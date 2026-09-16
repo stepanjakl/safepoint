@@ -2,60 +2,51 @@
 
 import { Dialog, Heading, Modal, ModalOverlay } from 'react-aria-components';
 import { Button } from '@/components/ui/button';
-import type { SourceDetail } from '@/lib/process/source-details';
+import type { InputDetail } from '@/lib/process/input-details';
 import type { SystemLink } from '@/lib/process/system-links';
 import { SystemDisc } from './system-parts';
 
 /*
-  Connecting and removing read systems. Adding is a side panel, a list to
+  Adding and removing inputs, as a preview. Adding is a side panel, a list to
   browse next to the one it adds to. Removing stays a centred dialog over both
   panels: it is the one step here that should stop everything until it is
   decided.
 
-  A mock. The choices are saved in this browser and change what the process
-  shows; the recorded run and the review cite what they cite.
+  Only the scenario's own files can be added back. Inputs are produced outside
+  Safepoint, so there is nothing else to add. The choices are saved in this
+  browser and change what the process shows; the recorded run and the review
+  cite what they cite.
 */
 
 const NOTE = 'border-rule-faint text-muted text-meta border-t pt-3';
-
-// Where connections would come from in a real process. Listed so the panel
-// shows the shape of the feature; none has an adapter in this demo.
-const INTEGRATIONS = [
-  'Google Sheets',
-  'SAP S/4HANA',
-  'Salesforce',
-  'Snowflake',
-];
 
 function joinChecks(checks: string[]): string {
   if (checks.length < 2) return checks.join('');
   return `${checks.slice(0, -1).join(', ')} and ${checks.at(-1)}`;
 }
 
-export function AddReadSystemPanel({
+export function AddInputPanel({
   available,
   details,
-  onConnect,
+  onAdd,
 }: {
   available: SystemLink[];
-  details: Record<string, SourceDetail>;
-  onConnect: (id: string) => void;
+  details: Record<string, InputDetail>;
+  onAdd: (id: string) => void;
 }) {
   return (
     <div className="grid gap-6 p-5">
-      <section aria-labelledby="add-scenario-files">
+      <section aria-labelledby="add-input-files">
         <div className="flex items-baseline justify-between gap-3 pb-1.5">
-          <h3 id="add-scenario-files" className="readout text-muted">
+          <h3 id="add-input-files" className="readout text-muted">
             Scenario files
           </h3>
-          <p className="text-meta text-muted">
-            Only these can be connected in this demo
-          </p>
+          <p className="text-meta text-muted">Removed from this process</p>
         </div>
         {available.length === 0 ? (
           <p className="text-dense text-muted py-2">
-            Every source in this scenario is already connected. Remove one to
-            see it here.
+            Every file in this scenario is already an input. Remove one to see
+            it here.
           </p>
         ) : (
           <ul>
@@ -80,10 +71,10 @@ export function AddReadSystemPanel({
                     ) : null}
                   </span>
                   <Button
-                    onPress={() => onConnect(link.id)}
-                    aria-label={`Connect ${link.label}`}
+                    onPress={() => onAdd(link.id)}
+                    aria-label={`Add ${link.label}`}
                   >
-                    Connect
+                    Add
                   </Button>
                 </li>
               );
@@ -92,32 +83,15 @@ export function AddReadSystemPanel({
         )}
       </section>
 
-      <section aria-labelledby="add-integrations">
-        <h3 id="add-integrations" className="readout text-muted pb-1.5">
-          Integrations
-        </h3>
-        <ul>
-          {INTEGRATIONS.map((name) => (
-            <li
-              key={name}
-              className="border-rule-faint flex min-h-10 items-center justify-between gap-3 border-b py-2 last:border-b-0"
-            >
-              <span className="text-dense text-muted">{name}</span>
-              <span className="text-meta text-muted">Not in this demo</span>
-            </li>
-          ))}
-        </ul>
-      </section>
-
       <p className={NOTE}>
-        Mock. Saved in this browser only; the recorded run and its review don’t
-        change.
+        Preview. Saved in this browser only; the recorded run and its review
+        don’t change.
       </p>
     </div>
   );
 }
 
-export function RemoveSourceDialog({
+export function RemoveInputDialog({
   isOpen,
   onOpenChange,
   detail,
@@ -125,7 +99,7 @@ export function RemoveSourceDialog({
 }: {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  detail: SourceDetail;
+  detail: InputDetail;
   onRemove: () => void;
 }) {
   const cited = detail.records.filter(
@@ -159,7 +133,7 @@ export function RemoveSourceDialog({
                   .
                 </p>
                 <p>
-                  Without it the next run could not read that evidence
+                  Without it a run could not read that evidence
                   {detail.checks.length > 0
                     ? ', and a line whose required check depends on it would be blocked'
                     : ''}
@@ -171,8 +145,8 @@ export function RemoveSourceDialog({
                 </p>
               </div>
               <p className={NOTE}>
-                Mock. Saved in this browser only; connect it again from Add a
-                read system.
+                Preview. Saved in this browser only; add it again from Add
+                input.
               </p>
               <div className="flex justify-end gap-2">
                 <Button onPress={close} autoFocus>

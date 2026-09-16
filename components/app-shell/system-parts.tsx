@@ -1,9 +1,9 @@
 'use client';
 
-import { Glyph, type GlyphName } from '@/components/ui/glyph';
+import { Glyph } from '@/components/ui/glyph';
 import { modeMarker, toneText } from '@/components/review/markers';
 import { cx } from '@/lib/cx';
-import type { Freshness, SystemLink } from '@/lib/process/system-links';
+import type { SystemLink } from '@/lib/process/system-links';
 import { MODE_LABELS } from '@/lib/review-presentation/present-review';
 import { SystemIcon } from './system-icon';
 
@@ -34,16 +34,8 @@ export function SystemDisc({
   );
 }
 
-const FRESHNESS_MARKER: Record<
-  Exclude<Freshness['state'], 'fresh'>,
-  { glyph: GlyphName; tone: 'caution' | 'blocked' }
-> = {
-  stale: { glyph: 'triangle', tone: 'caution' },
-  unavailable: { glyph: 'square', tone: 'blocked' },
-};
-
-// What is worth knowing about a system, beside its name: freshness for a
-// source, the adapter mode for a destination, a version for a ruleset. Shape
+// What is worth knowing beside a name: freshness for an input, the adapter
+// mode for an output, a version for the policy rules. Shape
 // as well as colour, so the state survives without the hue.
 export function SystemMeta({ link }: { link: SystemLink }) {
   if (link.mode) {
@@ -67,15 +59,20 @@ export function SystemMeta({ link }: { link: SystemLink }) {
       <span className="text-meta text-muted whitespace-nowrap">{text}</span>
     ) : null;
   }
-  const marker = FRESHNESS_MARKER[freshness.state];
+  /*
+    No glyph here. Square and triangle are the review's own marks -- a held
+    line, a line needing attention -- and an input whose file is a few hours
+    old is not a held line. The condition says itself in words, and in a list
+    the disc beside it carries the ring that makes the state visible without
+    relying on the colour of this text.
+  */
   return (
     <span
       className={cx(
-        'text-meta inline-flex items-center gap-1.5 whitespace-nowrap',
-        toneText[marker.tone],
+        'text-meta whitespace-nowrap',
+        toneText[freshness.state === 'unavailable' ? 'blocked' : 'caution'],
       )}
     >
-      <Glyph name={marker.glyph} size={10} />
       {freshness.label}
     </span>
   );

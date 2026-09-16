@@ -50,6 +50,24 @@
     track's paint and its state transitions, while this rule keeps the related
     switch states together.
   */
+  .switch {
+    --switch-track-inline: var(--spacing-switch-md-track-inline);
+    --switch-track-block: var(--spacing-switch-md-track-block);
+    --switch-thumb: var(--spacing-switch-md-thumb);
+  }
+
+  .switch[data-size='sm'] {
+    --switch-track-inline: var(--spacing-switch-sm-track-inline);
+    --switch-track-block: var(--spacing-switch-sm-track-block);
+    --switch-thumb: var(--spacing-switch-sm-thumb);
+  }
+
+  .switch[data-size='lg'] {
+    --switch-track-inline: var(--spacing-switch-lg-track-inline);
+    --switch-track-block: var(--spacing-switch-lg-track-block);
+    --switch-thumb: var(--spacing-switch-lg-thumb);
+  }
+
   .switch-track {
     --control-face-top: var(--sp-quiet-face-top);
     --control-face-bottom: var(--sp-quiet-face-bottom);
@@ -57,10 +75,15 @@
     --control-ring-bottom: var(--sp-quiet-ring-bottom);
     --control-highlight: transparent;
     --switch-thumb-face: var(--control-ring-bottom);
+    --switch-thumb-off-face: linear-gradient(
+      to bottom,
+      var(--control-ring-top),
+      var(--control-ring-bottom)
+    );
     position: relative;
     flex: none;
-    inline-size: var(--spacing-switch-track-inline);
-    block-size: var(--spacing-switch-track-block);
+    inline-size: var(--switch-track-inline);
+    block-size: var(--switch-track-block);
   }
 
   .switch-thumb {
@@ -71,8 +94,8 @@
     inset-inline-start: calc(
       var(--spacing-switch-thumb-gap) - var(--spacing-control-edge)
     );
-    inline-size: var(--spacing-switch-thumb);
-    block-size: var(--spacing-switch-thumb);
+    inline-size: var(--switch-thumb);
+    block-size: var(--switch-thumb);
     border-radius: 9999px;
     background-color: var(--switch-thumb-face);
     transition: transform var(--duration-state) ease-out;
@@ -115,7 +138,7 @@
     background-color: var(--sp-switch-thumb-selected);
     transform: translateX(
       calc(
-        var(--spacing-switch-track-inline) - var(--spacing-switch-thumb) - 2 *
+        var(--switch-track-inline) - var(--switch-thumb) - 2 *
           var(--spacing-switch-thumb-gap)
       )
     );
@@ -124,10 +147,14 @@
   :dir(rtl) .switch[data-selected] .switch-thumb {
     transform: translateX(
       calc(
-        var(--spacing-switch-thumb) + 2 * var(--spacing-switch-thumb-gap) -
-          var(--spacing-switch-track-inline)
+        var(--switch-thumb) + 2 * var(--spacing-switch-thumb-gap) -
+          var(--switch-track-inline)
       )
     );
+  }
+
+  .switch:not([data-selected]):not([data-disabled]) .switch-thumb {
+    background-image: var(--switch-thumb-off-face);
   }
 
   .switch[data-disabled] .switch-thumb {
@@ -1162,6 +1189,49 @@
       outline: 2px solid Highlight;
       outline-offset: 2px;
     }
+  }
+
+  /*
+    The process header's data buttons (components/app-shell/process-header.tsx).
+    Geometry only: their stops are utilities, and their layout is in the markup.
+
+    The count pill sits the same distance from three of the button's edges.
+    Vertically that distance is whatever the pill leaves inside the face, halved
+    -- so the end padding has to be that same figure rather than a step from the
+    spacing scale, and it is a step shorter because the face's own border is
+    part of the distance on that side. Derived here because a utility cannot
+    compute it, and because a written value goes stale the moment the button's
+    height, the pill's height or the control edge moves.
+  */
+  .header-button {
+    --header-button-height: calc(var(--spacing) * 8);
+    --header-button-pill: calc(var(--spacing) * 5);
+    height: var(--header-button-height);
+    padding-inline-end: calc(
+      (
+          var(--header-button-height) - 2 * var(--spacing-control-edge) -
+            var(--header-button-pill)
+        ) /
+        2
+    );
+  }
+
+  .header-button-count {
+    height: var(--header-button-pill);
+    min-width: var(--header-button-pill);
+  }
+
+  /* The condition dot replaces the count pill at the button's trailing edge.
+     Its smaller size needs a matching derived inset to keep its clearance from
+     the end equal to its clearance above and below. */
+  .header-button:has(.header-button-state-dot) {
+    padding-inline-end: calc(
+      (
+          var(--header-button-height) - 2 * var(--spacing-control-edge) -
+            var(--spacing) * 1.5
+        ) /
+        2
+    );
   }
 
   .process-menu-row {

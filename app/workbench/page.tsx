@@ -1,14 +1,17 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 
+import { AgentNameGallery } from '@/components/dev/agent-name-gallery';
 import { IconMenuGallery } from '@/components/dev/icon-menu-gallery';
+import { IconPairGallery } from '@/components/dev/icon-pair-gallery';
 import { NucleoGallery } from '@/components/dev/nucleo-gallery';
 import { SystemDiscGallery } from '@/components/dev/system-disc-gallery';
 import { ReviewWorkspace } from '@/components/review/review-workspace';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { loadReviewedReplay } from '@/lib/promotion-release';
 import { promotionProcess } from '@/lib/process/placeholder-process';
-import { presentPromotionSources } from '@/lib/process/system-links';
+import { presentPromotionInputs } from '@/lib/process/system-links';
 import { parseSkuParam, presentReview } from '@/lib/review-presentation';
 import {
   MONO_CHOICE_LABELS,
@@ -35,7 +38,7 @@ export default async function WorkbenchPage({
 
   const replay = loadReviewedReplay();
   const presentation = presentReview(replay);
-  const sources = presentPromotionSources(replay);
+  const inputs = presentPromotionInputs(replay);
   const sku = parseSkuParam((await searchParams).sku) ?? 'ALD-0025';
   const themes = ['light', 'dark'] as const;
 
@@ -88,16 +91,35 @@ export default async function WorkbenchPage({
       <section className="space-y-3">
         <h2 className="readout text-muted">system discs</h2>
         <p className="text-dense text-muted max-w-prose">
-          The reads and writes clusters from the process header, drawn by each
-          candidate icon family, plus the full fifteen-noun vocabulary. The
-          reads carry real freshness, so the caution and blocked rings are the
+          The promotion process&apos;s inputs and outputs, drawn by each
+          candidate icon family, plus the full sixteen-noun vocabulary. The
+          inputs carry real freshness, so the caution and blocked rings are the
           ones the app renders. Compare weight at 14px, how much of the disc the
           glyph fills, and whether the family has a word for every noun.
         </p>
-        <SystemDiscGallery
-          sources={sources}
-          destinations={promotionProcess.destinations}
-        />
+        <SystemDiscGallery inputs={inputs} outputs={promotionProcess.outputs} />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="readout text-muted">input / output icons</h2>
+        <p className="text-dense text-muted max-w-prose">
+          Candidates for the header&apos;s two data controls, drawn in the
+          control they sit in and at the size they are drawn there. A pair only
+          counts if the two are one drawing with the direction reversed; each
+          note says where the pair falls short.
+        </p>
+        <IconPairGallery />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="readout text-muted">global agent</h2>
+        <p className="text-dense text-muted max-w-prose">
+          Names and icons for the helper the notch would hold, with the word and
+          without it. A name is a promise about authority: this helper answers
+          and opens things, and can neither approve nor write, so each note says
+          where a candidate promises more than that.
+        </p>
+        <AgentNameGallery />
       </section>
 
       <section className="space-y-3">
@@ -168,6 +190,20 @@ export default async function WorkbenchPage({
           </div>
           <h2 className="readout text-muted">{theme} · controls</h2>
           <div className="border-rule-strong bg-canvas text-primary flex flex-wrap items-center gap-6 border p-6">
+            <div className="basis-full space-y-2">
+              <p className="readout text-muted">switch sizes</p>
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                <Switch size="sm" defaultSelected>
+                  Small
+                </Switch>
+                <Switch size="md" defaultSelected>
+                  Medium
+                </Switch>
+                <Switch size="lg" defaultSelected>
+                  Large
+                </Switch>
+              </div>
+            </div>
             <div className="space-y-2">
               <Button variant="primary">Commit approved changes</Button>
               <p className="readout text-muted">primary</p>

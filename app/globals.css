@@ -265,6 +265,65 @@
   --control-ring-bottom: var(--sp-quiet-ring-bottom-hover);
 }
 
+/*
+  The process header's data buttons: the Instructions button's construction on
+  stops of their own (--sp-header-button-*), and no edge. The ring is what
+  draws a control's border, so spending it on transparent leaves the lit face
+  and its sheen with nothing around them -- raised, but not outlined.
+*/
+@utility control-header-button {
+  --control-face-top: var(--sp-header-button-face-top);
+  --control-face-bottom: var(--sp-header-button-face-bottom);
+  --control-ring-top: transparent;
+  --control-ring-bottom: transparent;
+  --control-highlight: transparent;
+}
+
+@utility control-header-button-hover {
+  --control-face-top: var(--sp-header-button-face-top-hover);
+  --control-face-bottom: var(--sp-header-button-face-bottom-hover);
+}
+
+/*
+  A button with something to report spends its ring on the condition's colour,
+  so the edge and the dot inside it say the same thing twice -- the dot for a
+  reader who is looking at the button, the edge for one scanning the row.
+  Utilities rather than a rule in components.css: the ring stops are set by
+  control-header-button in the utilities layer, and only another utility can
+  outrank it.
+*/
+/*
+  A button whose list has something to report. Its whole face takes the
+  condition's colour rather than an edge taking it: these replace
+  control-header-button, so exactly one face utility ever lands on a button and
+  nothing depends on which order the classes are written in.
+*/
+@utility control-header-button-caution {
+  --control-face-top: var(--sp-header-button-face-top-caution);
+  --control-face-bottom: var(--sp-header-button-face-bottom-caution);
+  --control-ring-top: transparent;
+  --control-ring-bottom: transparent;
+  --control-highlight: transparent;
+}
+
+@utility control-header-button-caution-hover {
+  --control-face-top: var(--sp-header-button-face-top-caution-hover);
+  --control-face-bottom: var(--sp-header-button-face-bottom-caution-hover);
+}
+
+@utility control-header-button-blocked {
+  --control-face-top: var(--sp-header-button-face-top-blocked);
+  --control-face-bottom: var(--sp-header-button-face-bottom-blocked);
+  --control-ring-top: transparent;
+  --control-ring-bottom: transparent;
+  --control-highlight: transparent;
+}
+
+@utility control-header-button-blocked-hover {
+  --control-face-top: var(--sp-header-button-face-top-blocked-hover);
+  --control-face-bottom: var(--sp-header-button-face-bottom-blocked-hover);
+}
+
 /* Unavailable: flat on both layers, so it cannot be mistaken for a live one. */
 @utility control-off {
   --control-face-top: var(--sp-off-face);

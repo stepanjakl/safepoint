@@ -21,10 +21,10 @@ Use these terms consistently in interface copy, design specifications, and engin
 | Replay | A mode that presents recorded inputs and results rather than starting fresh live generation. | Label recorded demonstrations and simulated receipts explicitly. It is a mode, not a type of process. |
 | Automation | A general description of work performed automatically. | Avoid as the navigation noun: it does not express Safepoint's human review boundary. |
 | Session | The host or sandbox interaction context, which can contain runs and reviews. | Keep distinct from a run and from a durable workflow execution. |
-| Input | Something a process needs to know, such as current shelf price per SKU, with a required flag and a maximum age. | Name the information, not the system that supplies it. **Inputs** is the process-setup heading. |
-| Output | A target system a process may change after review, with its permitted operations, adapter mode, and reversibility. | **Outputs** is the process-setup heading. Avoid *actions*, which names a connector's executable implementation. |
-| Connection | An authorised account for an external service, shared across the workspace and bound to a process's inputs or outputs. | Keep distinct from the connector or integration it is an instance of. Avoid *systems* as a heading for what a process reads and writes. |
-| Snapshot | The frozen, validated records one run read for one input. | Freshness and coverage describe a snapshot, not a connection or a process. |
+| Input | Data a run reads, supplied as a validated evidence file — a JSON file in the portfolio — and treated as the run's source of truth. | Name the information, not the system that produced it. **Inputs** is the drawer tab and header control. |
+| Output | An API a process may call once changes are approved, with its adapter mode and how a call is undone. | **Outputs** is the drawer tab and header control. Avoid *actions*, which names a connector's executable implementation. |
+| Connection | Future: an authorised account for an external service, shared across the workspace. | Not part of the portfolio, where inputs are produced outside Safepoint. Avoid *systems* as a heading for inputs and outputs. |
+| Snapshot | The frozen, validated records one run read for one input. In the portfolio, the evidence files themselves. | Freshness and coverage describe a snapshot, not a process. |
 
 Process names remain stable across runs and modes. A navigation status describes the latest available run, not the permanent health of the process. Ready for review, approved, applied, and verified retain distinct meanings.
 

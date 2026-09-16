@@ -20,15 +20,10 @@ import {
 } from 'react-aria-components';
 // Deep import: Blode's barrel is the whole icon library.
 import X from 'blode-icons-react/icons/x';
-import { Glyph } from '@/components/ui/glyph';
 import { cx } from '@/lib/cx';
+import type { InputDetail } from '@/lib/process/input-details';
 import type { ProcessSummary } from '@/lib/process/placeholder-process';
-import type { SourceDetail } from '@/lib/process/source-details';
-import {
-  byAttention,
-  worstFreshness,
-  type SystemLink,
-} from '@/lib/process/system-links';
+import { byAttention, type SystemLink } from '@/lib/process/system-links';
 import {
   CLOSE_BUTTON,
   DrawerAside,
@@ -38,6 +33,8 @@ import {
   type AsideView,
   type SwapDirection,
 } from './drawer-aside';
+import { AddInputPanel } from './input-connections';
+import { InputDetailView } from './input-detail';
 import {
   InstructionChanges,
   InstructionEditor,
@@ -46,19 +43,20 @@ import {
 import { useInstructions } from './instructions-store';
 import { useProcessName } from './process-names-store';
 import { ProcessSettings } from './process-settings';
-import { AddReadSystemPanel } from './source-connections';
-import { SourceDetailView } from './source-detail';
 import { SystemDisc, SystemMeta } from './system-parts';
 
-export type ProcessDrawerTab = 'instructions' | 'systems' | 'settings';
+export type ProcessDrawerTab =
+  'instructions' | 'inputs' | 'outputs' | 'settings';
 
 // A filter field earns its place once the list is longer than a glance takes in.
 const FILTER_FROM = 12;
-// The Reads heading's Add button, where focus goes after a source is removed.
-const ADD_READ_ID = 'add-read-system';
+// The Inputs heading's Add button, where focus goes after an input is removed.
+const ADD_INPUT_ID = 'add-input';
 
 const TAB =
   'control-wash border-rule-default text-muted data-[hovered]:bg-surface-inset data-[hovered]:text-primary data-[focus-visible]:bg-surface-inset data-[focus-visible]:text-primary data-[selected]:bg-surface-selected data-[selected]:border-rule-strong data-[selected]:text-primary inline-flex min-h-8 cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 text-meta whitespace-nowrap';
+
+const NOTE = 'border-rule-faint text-muted text-meta border-t pt-3';
 
 // Both panels are sized against the viewport rather than each other: the
 // modal hugs them, so a click beside them lands on the scrim and dismisses.
@@ -68,50 +66,53 @@ const MAIN_WIDTH =
 type AsidePanel = Omit<AsideLayer, 'key'>;
 
 /*
-  The process's setup: what it is told to do, and what it reads and writes. A
-  slide-over rather than a centred dialog: this is reference material read
-  alongside the run, not a decision that should block it.
+  The process's setup: what it is told to do, what it reads, and what it may
+  write. A slide-over rather than a centred dialog: this is reference material
+  read alongside the run, not a decision that should block it.
+
+  Four tabs. Inputs are the JSON evidence files the run read, and outputs the
+  APIs the process may call once changes are approved; each has its own tab so
+  the two are never read as one list of systems.
 
   Two panels. This one, on the right, holds the process; a detail opened from
-  it -- a source's records, what a version changed, the editor, adding a
-  system -- opens in a second panel on its left (see drawer-aside.tsx). The
-  control that opened a detail closes it again; choosing another swaps the
-  content in place. Escape closes the side panel first and the drawer second,
-  and closing the side panel returns focus to whatever opened it.
+  it -- an input's records, what a version changed, the editor, adding an input
+  -- opens in a second panel on its left (see drawer-aside.tsx). The control
+  that opened a detail closes it again; choosing another swaps the content in
+  place. Escape closes the side panel first and the drawer second, and closing
+  the side panel returns focus to whatever opened it.
 
-  Controlled, because it has two triggers in the header and each opens it on
-  its own tab. react-aria drives the transition through data-entering /
+  Controlled, because it has several triggers in the header and each opens it
+  on its own tab. react-aria drives the transition through data-entering /
   data-exiting; the `drawer-overlay` and `drawer-modal` classes are the hooks
   for the scrim and the slide, both of which stay in CSS.
 */
 export function ProcessDrawer({
   process,
-  sources,
-  availableSources = [],
-  sourceDetails = {},
-  onRemoveSource,
-  onConnectSource,
+  inputs,
+  availableInputs = [],
+  inputDetails = {},
+  onRemoveInput,
+  onAddInput,
   isOpen,
   onOpenChange,
   tab,
   onTabChange,
 }: {
   process: ProcessSummary;
-  // Connected sources only; removed ones arrive as availableSources.
-  sources: SystemLink[];
-  availableSources?: SystemLink[];
-  sourceDetails?: Record<string, SourceDetail>;
-  onRemoveSource?: (id: string) => void;
-  onConnectSource?: (id: string) => void;
+  // The process's inputs only; removed ones arrive as availableInputs.
+  inputs: SystemLink[];
+  availableInputs?: SystemLink[];
+  inputDetails?: Record<string, InputDetail>;
+  onRemoveInput?: (id: string) => void;
+  onAddInput?: (id: string) => void;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   tab: ProcessDrawerTab;
   onTabChange: (tab: ProcessDrawerTab) => void;
 }) {
-  const { instructions, destinations } = process;
+  const { instructions, outputs } = process;
   const { versions, current, next } = useInstructions(process.id, instructions);
   const { name } = useProcessName(process.id, process.name);
-  const worst = worstFreshness(sources);
   const run = process.runs.find((entry) => entry.current);
 
   // The view on show. It stays set while the panel animates out, with
@@ -208,14 +209,14 @@ export function ProcessDrawer({
   };
 
   // Where one view sits relative to another in the list it was chosen from:
-  // read systems in the order the Systems tab lists them, versions oldest
-  // first, as the pager steps through them. Anything else keeps the default.
+  // inputs in the order the Inputs tab lists them, versions oldest first, as
+  // the pager steps through them. Anything else keeps the default.
   function swapDirection(from: AsideView, to: AsideView): SwapDirection {
     const place = (view: AsideView) => {
-      if (view.kind === 'source') {
-        return [...sources]
+      if (view.kind === 'input') {
+        return [...inputs]
           .sort(byAttention)
-          .findIndex((source) => source.id === view.id);
+          .findIndex((input) => input.id === view.id);
       }
       if (view.kind === 'changes') {
         return versions.findIndex((entry) => entry.version === view.version);
@@ -237,30 +238,30 @@ export function ProcessDrawer({
 
   function asidePanel(view: AsideView): AsidePanel | null {
     switch (view.kind) {
-      case 'source': {
-        const link = sources.find((source) => source.id === view.id);
-        const detail = sourceDetails[view.id];
+      case 'input': {
+        const link = inputs.find((input) => input.id === view.id);
+        const detail = inputDetails[view.id];
         if (!link || !detail) return null;
         return {
-          eyebrow: 'Read system',
+          eyebrow: 'Input',
           title: detail.label,
           announce: detail.label,
           leading: <SystemDisc link={link} />,
           meta: <SystemMeta link={link} />,
           body: (
-            <SourceDetailView
+            <InputDetailView
               detail={detail}
               onNavigate={closeAll}
               onRemove={
-                onRemoveSource
+                onRemoveInput
                   ? () => {
-                      // The source leaves the list with this, so the panel
+                      // The input leaves the list with this, so the panel
                       // goes at once rather than animating an empty face.
-                      onRemoveSource(view.id);
+                      onRemoveInput(view.id);
                       opener.current = null;
                       finishExit();
                       requestAnimationFrame(() =>
-                        document.getElementById(ADD_READ_ID)?.focus(),
+                        document.getElementById(ADD_INPUT_ID)?.focus(),
                       );
                     }
                   : undefined
@@ -269,18 +270,18 @@ export function ProcessDrawer({
           ),
         };
       }
-      case 'add-source':
-        return onConnectSource
+      case 'add-input':
+        return onAddInput
           ? {
-              eyebrow: 'Read systems',
-              title: 'Add a read system',
-              announce: 'Add a read system',
-              meta: 'A source the agent may read from on its next run.',
+              eyebrow: 'Inputs · Preview',
+              title: 'Add an input',
+              announce: 'Add an input',
+              meta: 'One of the scenario’s own evidence files.',
               body: (
-                <AddReadSystemPanel
-                  available={availableSources}
-                  details={sourceDetails}
-                  onConnect={onConnectSource}
+                <AddInputPanel
+                  available={availableInputs}
+                  details={inputDetails}
+                  onAdd={onAddInput}
                 />
               ),
             }
@@ -404,30 +405,19 @@ export function ProcessDrawer({
                       <span className="sr-only">Close process setup</span>
                     </AriaButton>
                   </div>
-                  <TabList aria-label="Process setup" className="flex gap-1.5">
+                  <TabList
+                    aria-label="Process setup"
+                    className="flex flex-wrap gap-1.5"
+                  >
                     <Tab id="instructions" className={TAB}>
                       Instructions{' '}
                       <span className="value">{current.version}</span>
                     </Tab>
-                    <Tab id="systems" className={TAB}>
-                      Systems{' '}
-                      <span className="value">
-                        {sources.length + destinations.length}
-                      </span>
-                      {worst ? (
-                        <span
-                          className="text-state-caution data-[freshness=unavailable]:text-state-blocked inline-flex"
-                          data-freshness={worst}
-                        >
-                          <Glyph
-                            name={
-                              worst === 'unavailable' ? 'square' : 'triangle'
-                            }
-                            size={10}
-                          />
-                          <span className="sr-only">, some need attention</span>
-                        </span>
-                      ) : null}
+                    <Tab id="inputs" className={TAB}>
+                      Inputs <span className="value">{inputs.length}</span>
+                    </Tab>
+                    <Tab id="outputs" className={TAB}>
+                      Outputs <span className="value">{outputs.length}</span>
                     </Tab>
                     <Tab id="settings" className={TAB}>
                       Settings
@@ -440,9 +430,6 @@ export function ProcessDrawer({
                 >
                   <InstructionsPanel
                     process={process}
-                    policy={Object.values(sourceDetails).find(
-                      (detail) => detail.icon === 'policy',
-                    )}
                     aside={exiting ? null : aside}
                     onShowChanges={(version) =>
                       openAside({ kind: 'changes', version })
@@ -450,23 +437,25 @@ export function ProcessDrawer({
                     onEdit={() => openAside({ kind: 'edit' })}
                   />
                 </TabPanel>
-                <TabPanel id="systems" className="overflow-y-auto outline-none">
-                  <SystemsList
-                    sources={sources}
-                    destinations={destinations}
-                    details={sourceDetails}
+                <TabPanel id="inputs" className="overflow-y-auto outline-none">
+                  <InputsList
+                    inputs={inputs}
+                    details={inputDetails}
                     runLabel={run?.label}
-                    openSourceId={
-                      !exiting && aside?.kind === 'source' ? aside.id : null
+                    openId={
+                      !exiting && aside?.kind === 'input' ? aside.id : null
                     }
-                    adding={!exiting && aside?.kind === 'add-source'}
-                    onOpenSource={(id) => openAside({ kind: 'source', id })}
-                    onAddSource={
-                      onConnectSource
-                        ? () => openAside({ kind: 'add-source' })
+                    adding={!exiting && aside?.kind === 'add-input'}
+                    onOpen={(id) => openAside({ kind: 'input', id })}
+                    onAdd={
+                      onAddInput
+                        ? () => openAside({ kind: 'add-input' })
                         : undefined
                     }
                   />
+                </TabPanel>
+                <TabPanel id="outputs" className="overflow-y-auto outline-none">
+                  <OutputsList outputs={outputs} />
                 </TabPanel>
                 <TabPanel
                   id="settings"
@@ -483,132 +472,211 @@ export function ProcessDrawer({
   );
 }
 
-function SystemsList({
-  sources,
-  destinations,
+function InputsList({
+  inputs,
   details,
   runLabel,
-  openSourceId,
+  openId,
   adding,
-  onOpenSource,
-  onAddSource,
+  onOpen,
+  onAdd,
 }: {
-  sources: SystemLink[];
-  destinations: SystemLink[];
-  details: Record<string, SourceDetail>;
+  inputs: SystemLink[];
+  details: Record<string, InputDetail>;
   runLabel: string | undefined;
-  openSourceId: string | null;
+  openId: string | null;
   adding: boolean;
-  onOpenSource: (id: string) => void;
-  onAddSource?: () => void;
+  onOpen: (id: string) => void;
+  onAdd?: () => void;
 }) {
   const [query, setQuery] = useState('');
   const needle = query.trim().toLocaleLowerCase();
-  const matches = (link: SystemLink) =>
-    link.label.toLocaleLowerCase().includes(needle);
-  const reads = [...sources].sort(byAttention).filter(matches);
-  const writes = destinations.filter(matches);
-  const total = sources.length + destinations.length;
+  const shown = [...inputs]
+    .sort(byAttention)
+    .filter((link) => link.label.toLocaleLowerCase().includes(needle));
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-6 p-5">
-      {total > FILTER_FROM ? (
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5 p-5">
+      <p className="text-dense text-muted leading-relaxed">
+        The JSON files this run read. Each is an analysed extract, treated as
+        the source of truth; producing and updating them happens outside
+        Safepoint.
+      </p>
+      {inputs.length > FILTER_FROM ? (
         <input
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Filter systems"
-          aria-label="Filter systems"
+          placeholder="Filter inputs"
+          aria-label="Filter inputs"
           className="text-dense text-primary placeholder:text-muted border-rule-default bg-surface-inset rounded-control min-h-9 w-full border px-3"
         />
       ) : null}
-      {/* Freshness is a fact about a read, so the list says which read. */}
-      <SystemGroup
-        title="Reads"
+      <LinkGroup
+        id="inputs-heading"
+        title="Inputs"
+        count={inputs.length}
         meta={runLabel ? `As read by the run of ${runLabel}` : undefined}
-        links={reads}
-        count={sources.length}
-        openId={openSourceId}
-        onOpen={onOpenSource}
-        canOpen={(id) => Boolean(details[id])}
         action={
-          onAddSource ? (
+          onAdd ? (
             <button
               type="button"
-              id={ADD_READ_ID}
-              onClick={onAddSource}
+              id={ADD_INPUT_ID}
+              onClick={onAdd}
               aria-expanded={adding}
               className="control-wash text-muted hover:bg-surface-selected hover:text-primary focus-visible:bg-surface-selected focus-visible:text-primary aria-expanded:bg-surface-selected aria-expanded:text-primary rounded-control text-meta -my-1 inline-flex min-h-7 cursor-pointer items-center gap-1 px-1.5"
             >
               <span aria-hidden="true">+</span> Add
-              <span className="sr-only"> a read system</span>
+              <span className="sr-only"> an input, preview</span>
             </button>
           ) : null
         }
-      />
-      <SystemGroup
-        title="Writes"
-        meta="What each connection can do"
-        links={writes}
-        count={destinations.length}
-      />
-      {needle && reads.length + writes.length === 0 ? (
-        <p className="text-dense text-muted">No systems match “{query}”.</p>
-      ) : null}
-      <p className="border-rule-faint text-muted text-meta border-t pt-3">
-        {onAddSource
-          ? 'Reads open to the records this run used, from the scenario’s files. Adding and removing a read system is a mock saved in this browser; the recorded run and its review don’t change. Writes can’t be changed yet.'
-          : 'Connecting, removing or re-authorising a system is not built yet.'}
+      >
+        {inputs.length === 0 ? (
+          <p className="text-dense text-muted py-2">
+            This process lists no input files.
+          </p>
+        ) : shown.length === 0 ? (
+          <p className="text-dense text-muted py-2">
+            No inputs match “{query}”.
+          </p>
+        ) : (
+          <ul>
+            {shown.map((link) => (
+              <li
+                key={link.id}
+                className="border-rule-faint border-b last:border-b-0"
+              >
+                {details[link.id] ? (
+                  <button
+                    type="button"
+                    id={`input-row-${link.id}`}
+                    className={ROW_BUTTON}
+                    aria-expanded={openId === link.id}
+                    onClick={() => onOpen(link.id)}
+                  >
+                    <InputRow link={link} />
+                    <span aria-hidden="true" className="text-muted text-dense">
+                      ‹
+                    </span>
+                  </button>
+                ) : (
+                  <div className="flex min-h-11 items-center gap-3 py-2">
+                    <InputRow link={link} />
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </LinkGroup>
+      <p className={NOTE}>
+        {onAdd
+          ? 'Adding and removing an input is a preview saved in this browser; the recorded run and its review don’t change.'
+          : 'Inputs can’t be changed in this demo.'}
       </p>
     </div>
   );
 }
 
-function SystemRow({ link }: { link: SystemLink }) {
+// Name above its file and condition rather than beside them: names and
+// condition labels are both long, and side by side one of them is always the
+// one cut short.
+function InputRow({ link }: { link: SystemLink }) {
   return (
     <>
       <SystemDisc link={link} />
       <span className="grid min-w-0 flex-1 gap-0.5">
         <span className="text-dense text-primary truncate">{link.label}</span>
-        <SystemMeta link={link} />
+        <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+          <SystemMeta link={link} />
+          {link.file ? (
+            <span className="value text-micro text-muted truncate">
+              {link.file}
+            </span>
+          ) : null}
+        </span>
       </span>
     </>
   );
 }
 
-// A row that opens its source: the wash reaches past the row's text by the
+function OutputsList({ outputs }: { outputs: SystemLink[] }) {
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5 p-5">
+      <p className="text-dense text-muted leading-relaxed">
+        The APIs this process may call once changes are approved, what each call
+        can genuinely do, and how it is undone.
+      </p>
+      <LinkGroup
+        id="outputs-heading"
+        title="Outputs"
+        count={outputs.length}
+        meta="Nothing is called until a review is approved"
+      >
+        {outputs.length === 0 ? (
+          <p className="text-dense text-muted py-2">None.</p>
+        ) : (
+          <ul>
+            {outputs.map((link) => (
+              <li
+                key={link.id}
+                className="border-rule-faint flex items-start gap-3 border-b py-3 last:border-b-0"
+              >
+                <SystemDisc link={link} />
+                <span className="grid min-w-0 flex-1 gap-0.5">
+                  <span className="flex flex-wrap items-baseline justify-between gap-x-3">
+                    <span className="text-dense text-primary">
+                      {link.label}
+                    </span>
+                    <SystemMeta link={link} />
+                  </span>
+                  {link.api ? (
+                    <span className="value text-micro text-muted">
+                      {link.api}
+                    </span>
+                  ) : null}
+                  {link.undo ? (
+                    <span className="text-meta text-muted leading-normal">
+                      {link.undo}
+                    </span>
+                  ) : null}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </LinkGroup>
+      <p className={NOTE}>Outputs can’t be changed in this demo.</p>
+    </div>
+  );
+}
+
+// A row that opens its input: the wash reaches past the row's text by the
 // amount it pads back in, so the disc and name stay where a plain row has them.
 // aria-expanded holds the selected face while its panel is open.
 const ROW_BUTTON =
   'control-wash hover:bg-surface-inset focus-visible:bg-surface-inset aria-expanded:bg-surface-selected rounded-control -mx-2 flex min-h-11 w-[calc(100%+1rem)] cursor-pointer items-center gap-3 px-2 py-2 text-left';
 
-function SystemGroup({
+function LinkGroup({
+  id,
   title,
-  meta,
-  links,
   count,
-  openId = null,
-  onOpen,
-  canOpen = () => false,
+  meta,
   action,
+  children,
 }: {
+  id: string;
   title: string;
-  meta?: string;
-  links: SystemLink[];
   count: number;
-  openId?: string | null;
-  onOpen?: (id: string) => void;
-  canOpen?: (id: string) => boolean;
+  meta?: string;
   action?: ReactNode;
+  children: ReactNode;
 }) {
-  // A group the filter has emptied disappears; one that was always empty says
-  // so, because "reads nothing" is itself worth knowing.
-  if (links.length === 0 && count > 0) return null;
-  const headingId = `systems-${title.toLowerCase()}`;
   return (
-    <section aria-labelledby={headingId}>
+    <section aria-labelledby={id}>
       <div className="flex items-baseline justify-between gap-3 pb-1.5">
-        <h3 id={headingId} className="readout text-muted">
+        <h3 id={id} className="readout text-muted">
           {title} <span className="value">{count}</span>
         </h3>
         <div className="flex items-baseline gap-2">
@@ -616,40 +684,7 @@ function SystemGroup({
           {action}
         </div>
       </div>
-      {links.length === 0 ? (
-        <p className="text-dense text-muted py-2">None.</p>
-      ) : (
-        <ul>
-          {links.map((link) => (
-            // Name above its state rather than beside it: source names and
-            // freshness labels are both long, and side by side one of them
-            // is always the one cut short.
-            <li
-              key={link.id}
-              className="border-rule-faint border-b last:border-b-0"
-            >
-              {canOpen(link.id) ? (
-                <button
-                  type="button"
-                  id={`system-row-${link.id}`}
-                  className={ROW_BUTTON}
-                  aria-expanded={openId === link.id}
-                  onClick={() => onOpen?.(link.id)}
-                >
-                  <SystemRow link={link} />
-                  <span aria-hidden="true" className="text-muted text-dense">
-                    ‹
-                  </span>
-                </button>
-              ) : (
-                <div className="flex min-h-11 items-center gap-3 py-2">
-                  <SystemRow link={link} />
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+      {children}
     </section>
   );
 }

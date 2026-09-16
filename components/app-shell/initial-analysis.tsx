@@ -12,21 +12,21 @@ import { SystemDisc, SystemMeta } from './system-parts';
   and because a reader who disagrees with the plan needs to see the reasoning
   that produced it without opening anything.
 
-  The sources that needed attention are listed here, not only counted in the
-  header: staleness is a fact about this run's reads, and this is where the
-  reads happened.
+  The inputs that needed attention are listed here, not only counted in the
+  header: staleness is a fact about what this run read, and this is where the
+  reading happened.
 
   Placeholder: the engine does not publish this yet. The box is real so it can
   be styled and argued with; the words in it are not.
 */
 export function InitialAnalysis({
   analysis,
-  sources = [],
+  inputs = [],
 }: {
   analysis: ProcessAnalysis;
-  sources?: SystemLink[];
+  inputs?: SystemLink[];
 }) {
-  const needing = sources.filter(needsAttention).sort(byAttention);
+  const needing = inputs.filter(needsAttention).sort(byAttention);
   return (
     <div className="control-face surface-floating rounded-shell text-body px-5 py-4 leading-relaxed">
       <p className="text-primary">{analysis.summary}</p>
@@ -44,11 +44,11 @@ export function InitialAnalysis({
       </ul>
       {needing.length > 0 ? (
         <section
-          aria-labelledby="analysis-sources"
+          aria-labelledby="analysis-inputs"
           className="border-rule-faint mt-3 border-t pt-3"
         >
-          <h3 id="analysis-sources" className="readout text-muted pb-1.5">
-            Sources needing attention
+          <h3 id="analysis-inputs" className="readout text-muted pb-1.5">
+            Inputs needing attention
           </h3>
           <ul className="grid gap-1.5">
             {needing.map((link) => (

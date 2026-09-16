@@ -9,7 +9,7 @@ import {
 import { SystemIcon } from './system-icon';
 
 // The name is revealed on hover *and* on focus. A hover-only reveal would put
-// every label out of reach of a keyboard, and for sources the tooltip carries
+// every label out of reach of a keyboard, and for inputs the tooltip carries
 // freshness, which is not decoration.
 function Disc({ link }: { link: SystemLink }) {
   const meta = link.freshness?.label ?? link.detail;

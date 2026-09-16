@@ -183,9 +183,10 @@ The revised scenario asks whether a promotion is operationally and commercially 
 - Node.js 24 LTS is the application runtime and pnpm 10 is the package manager. Bun remains a valid considered alternative, but adopting it only for package installation would add a second runtime toolchain without improving the portfolio's core proof.
 - Playwright and axe begin with the first interface milestone because accessibility and representative visual checks are part of that milestone's acceptance gate.
 - The first implementation uses one directly imported promotion process module and five effect kinds. General registries and broader effect taxonomies are future work.
-- A process declares inputs as requirements and outputs as permitted targets; it does not present a flat list of systems. Connections satisfy inputs through reviewed bindings, and runs read immutable snapshots, never live sources. See [Read path: from connection to snapshot](TECHNICAL-DESIGN.md#read-path-from-connection-to-snapshot).
-- Source problems are reported as four separate conditions — connection, binding, freshness, and coverage — because each has a different fix and a different effect on a run.
-- The process header reports readiness for the next run; what a past run read belongs to that run. See [Process header and setup](EMBEDDED-REVIEW.md#process-header-and-setup).
+- In the portfolio, a run's inputs are its JSON evidence files: analysed extracts treated as the source of truth. Producing and updating them is outside Safepoint's scope; connections and ingestion are Future. See [Read path: from connection to snapshot](TECHNICAL-DESIGN.md#read-path-from-connection-to-snapshot).
+- A run's outputs are the APIs the process may call once changes are approved, each with its adapter mode and how a call is undone.
+- Inputs and outputs have their own header buttons and drawer tabs, describing the recorded run. There is no combined list of systems and no Policy tab: policy rules are an input, and editing them is Future. See [Process header and setup](EMBEDDED-REVIEW.md#process-header-and-setup).
+- Two input conditions apply in the portfolio: freshness against the policy's maximum evidence age, and coverage from unavailable records.
 - Archive, which keeps runs and reviews, is the ordinary way to end a process. Permanent deletion is only for a process that has never run.
 - The portfolio has no fixed calendar deadline. Progress is controlled by acceptance gates.
 - The public narrative is self-contained and contains no private career or application context.

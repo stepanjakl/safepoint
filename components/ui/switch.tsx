@@ -10,6 +10,8 @@ import { cx } from '@/lib/cx';
 const TRACK = 'switch-track control-face control-hairline rounded-full';
 const THUMB = 'switch-thumb';
 
+export type SwitchSize = 'sm' | 'md' | 'lg';
+
 /*
   An on/off switch: its label, then the track. The label is whatever the
   children are -- a word beside the track, or a whole row of title and
@@ -22,16 +24,19 @@ const THUMB = 'switch-thumb';
 export function Switch({
   children,
   className,
+  size = 'md',
   ...props
-}: Omit<AriaSwitchProps, 'children' | 'className'> & {
+}: Omit<AriaSwitchProps, 'children' | 'className' | 'size'> & {
   children?: ReactNode;
   className?: string;
+  size?: SwitchSize;
 }) {
   return (
     <AriaSwitch
       {...props}
+      data-size={size}
       className={cx(
-        'switch text-meta text-muted inline-flex cursor-pointer items-center gap-2 data-[disabled]:cursor-not-allowed',
+        'switch text-meta text-muted inline-flex min-h-6 cursor-pointer items-center gap-2 data-[disabled]:cursor-not-allowed',
         className,
       )}
     >

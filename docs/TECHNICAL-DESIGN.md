@@ -218,7 +218,7 @@ Safepoint may reuse an external action only when deterministic application code 
 
 ### Read path: from connection to snapshot
 
-Status: Decided as the model for how a process reads; Future as live ingestion. The portfolio's evidence files already stand in for the last stage of this path. See [evidence files as input snapshots](PROMOTION-RELEASE-DATA-DICTIONARY.md#evidence-files-as-input-snapshots).
+Status: Future. The portfolio builds none of this path: its inputs are the JSON evidence files, produced outside Safepoint. See [Portfolio mapping](#portfolio-mapping) and [evidence files as inputs](PROMOTION-RELEASE-DATA-DICTIONARY.md#evidence-files-as-inputs). This section records how inputs would be read once live sources exist.
 
 The write side above keeps integration, connection, action, and adapter apart. The read side needs the same discipline. In a live product, sources vary — a commerce platform, a warehouse database, a spreadsheet, a policy PDF, an inbox, a manual upload — and the agent must never read any of them directly. Every source passes through one path, and the agent's read-only tools see only its end:
 
@@ -253,7 +253,7 @@ A process declares **inputs** — "current shelf price per SKU, no older than 24
 - an input with no binding is visible as an unmet requirement rather than an absent row;
 - configuration (what the process needs) stays separate from observation (what a particular run read).
 
-Each input declares a read mode: read at run time, synced on a schedule, or uploaded by a person. Its declared maximum age and whether it is required decide what an unmet or stale input does to a run. Policy rules are not an input from a source: they are versioned process configuration, and their currency is their version rather than an observation time.
+Each input declares a read mode: read at run time, synced on a schedule, or uploaded by a person. Its declared maximum age and whether it is required decide what an unmet or stale input does to a run. Policy rules are an input too; their currency is their version rather than an observation time.
 
 The process's permitted writes are its **outputs**: a target, the allow-listed operations on it, the adapter mode, and reversibility, as the effect protocol and connector contract already define. Outputs do not use the word *action* in the interface because a connector action is the executable implementation of an operation.
 
@@ -282,10 +282,13 @@ Connection and binding are properties of the setup and can be known before a run
 
 #### Portfolio mapping
 
-- The evidence files under `fixtures/` are snapshots. Nothing ingests them and there are no connections.
-- The four read-only tools already read only these snapshots and never accept a connection, resource, or query from the model.
-- Freshness is derived from each record's `observedAt` against `maximumEvidenceAgeHours` at the scenario's review time; coverage from records whose `kind` is `unavailable`.
-- The process setup interface may mock adding and removing inputs against the scenario's files. Such a mock changes no recorded run, review, or citation, and says so.
+None of the path above exists in the portfolio, deliberately:
+
+- The JSON evidence files under `fixtures/` are the run's inputs: analysed extracts treated as the source of truth. Producing and updating them is outside Safepoint's scope, so there are no connections, bindings, or ingestion.
+- The four read-only tools read only these files and never accept a connection, resource, or query from the model.
+- Only freshness and coverage apply. Freshness compares each record's `observedAt` with `maximumEvidenceAgeHours` at the scenario's review time; coverage counts records whose `kind` is `unavailable`. Policy rules are an input whose currency is its version.
+- Outputs are the APIs behind the Google Sheets and storefront sandbox adapters and the simulated or preview-only destinations.
+- The process setup may preview adding and removing inputs over the scenario's files. The preview changes no recorded run, review, or citation, and says so.
 
 This aligns with the evaluation envelope in the [reuse boundary](EMBEDDED-REVIEW.md#reuse-boundary): a versioned input snapshot, evaluation time, policy version, findings, and evidence references.
 

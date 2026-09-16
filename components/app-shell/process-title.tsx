@@ -66,7 +66,9 @@ export function ProcessTitle({
 
   return (
     <>
-      <h2 className="text-title flex min-w-0 [font-weight:550]">
+      {/* It claims what the row's controls leave: they are sized by their
+          content, and the name is what should take the rest and truncate. */}
+      <h2 className="text-title flex min-w-0 flex-1 [font-weight:550]">
         <span
           onMouseDown={onMouseDown}
           className="title-field inline-grid min-w-0 cursor-text grid-cols-[minmax(0,max-content)] items-center"

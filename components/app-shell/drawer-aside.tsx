@@ -12,7 +12,7 @@ import { cx } from '@/lib/cx';
 
 /*
   The setup drawer's second panel. The drawer on the right holds what a
-  process is -- its instructions, its systems -- and stays put; anything that
+  process is -- its instructions, inputs and outputs -- and stays put; anything that
   opens from it opens here, beside it on the left, in the same face. Two
   panels side by side rather than one stacked on the other, so the list a
   detail came from is still in view and choosing another item swaps the detail
@@ -34,15 +34,15 @@ import { cx } from '@/lib/cx';
 export type SwapDirection = 'up' | 'down';
 
 export type AsideView =
-  | { kind: 'source'; id: string }
-  | { kind: 'add-source' }
+  | { kind: 'input'; id: string }
+  | { kind: 'add-input' }
   | { kind: 'changes'; version: string }
   | { kind: 'edit' };
 
 export function viewKey(view: AsideView): string {
   switch (view.kind) {
-    case 'source':
-      return `source:${view.id}`;
+    case 'input':
+      return `input:${view.id}`;
     case 'changes':
       return `changes:${view.version}`;
     default:

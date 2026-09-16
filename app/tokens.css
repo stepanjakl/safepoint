@@ -647,6 +647,91 @@
     same hover, focus and press states. Solid ramp stops rather than a
     color-mix over the face: see Colour in docs/STYLING-SYSTEM.md.
   */
+  /*
+    The process header's data buttons. They are built like the Instructions
+    button but are not it: they sit on the header's face rather than in the
+    notch, and they are the row's quietest controls. Their stops are their own
+    so that tuning them cannot move every quiet button in the interface; they
+    start from the quiet ones, which is where they were drawn from.
+  */
+  --sp-header-button-face-top: light-dark(
+    var(--sp-control-150),
+    var(--sp-control-900)
+  );
+  --sp-header-button-face-bottom: light-dark(
+    var(--sp-control-250),
+    var(--sp-control-900)
+  );
+  --sp-header-button-face-top-hover: light-dark(
+    var(--sp-control-200),
+    var(--sp-control-900)
+  );
+  --sp-header-button-face-bottom-hover: light-dark(
+    var(--sp-control-300),
+    var(--sp-control-900)
+  );
+  /*
+    The count pill inside them, one colour rather than a face. Its own, not the
+    version pill's:
+    this pill sits on the header button's face, so the two are tuned against
+    each other, and moving one must not move the pill in the notch.
+  */
+  --sp-header-button-count: light-dark(
+    var(--sp-control-100),
+    var(--sp-control-800)
+  );
+  --sp-header-button-count-hover: light-dark(
+    var(--sp-control-100),
+    var(--sp-control-750)
+  );
+  /*
+    A button whose list has something to report tints its own face with the
+    condition's colour rather than drawing an edge in it: the same two stops,
+    mixed towards the state, so the button reads as coloured without gaining an
+    outline the other controls in the row do not have. The bottom stop carries
+    more of it, which is where the face is darkest anyway.
+  */
+  --sp-header-button-face-top-caution: color-mix(
+    in oklab,
+    var(--sp-state-caution) 10%,
+    var(--sp-header-button-face-top)
+  );
+  --sp-header-button-face-bottom-caution: color-mix(
+    in oklab,
+    var(--sp-state-caution) 16%,
+    var(--sp-header-button-face-bottom)
+  );
+  --sp-header-button-face-top-caution-hover: color-mix(
+    in oklab,
+    var(--sp-state-caution) 16%,
+    var(--sp-header-button-face-top-hover)
+  );
+  --sp-header-button-face-bottom-caution-hover: color-mix(
+    in oklab,
+    var(--sp-state-caution) 22%,
+    var(--sp-header-button-face-bottom-hover)
+  );
+  --sp-header-button-face-top-blocked: color-mix(
+    in oklab,
+    var(--sp-state-blocked) 10%,
+    var(--sp-header-button-face-top)
+  );
+  --sp-header-button-face-bottom-blocked: color-mix(
+    in oklab,
+    var(--sp-state-blocked) 16%,
+    var(--sp-header-button-face-bottom)
+  );
+  --sp-header-button-face-top-blocked-hover: color-mix(
+    in oklab,
+    var(--sp-state-blocked) 16%,
+    var(--sp-header-button-face-top-hover)
+  );
+  --sp-header-button-face-bottom-blocked-hover: color-mix(
+    in oklab,
+    var(--sp-state-blocked) 22%,
+    var(--sp-header-button-face-bottom-hover)
+  );
+
   --sp-value-pill: light-dark(var(--sp-control-200), var(--sp-control-800));
   --sp-value-pill-hover: light-dark(
     var(--sp-control-300),
@@ -1057,6 +1142,8 @@
   --color-search-clear-hover: var(--sp-search-clear-face-hover);
   --color-value-pill: var(--sp-value-pill);
   --color-value-pill-hover: var(--sp-value-pill-hover);
+  --color-header-button-count: var(--sp-header-button-count);
+  --color-header-button-count-hover: var(--sp-header-button-count-hover);
   --color-field-face: var(--sp-field-face);
   --color-field-edge: var(--sp-field-edge);
   --color-field-edge-hover: var(--sp-field-edge-hover);
@@ -1154,12 +1241,18 @@
   --spacing-control-highlight: 1px;
   --spacing-control-highlight-hairline: 0.75px;
   /*
-    A switch's four geometric inputs. Its thumb travel is derived from these
-    in components.css, so a size change cannot leave one end misaligned.
+    Switch presets. Each carries the track's two dimensions and the thumb's
+    diameter; components.css derives its resting gap and selected travel.
   */
-  --spacing-switch-track-inline: 2.125rem;
-  --spacing-switch-track-block: 1.25rem;
-  --spacing-switch-thumb: 0.75rem;
+  --spacing-switch-sm-track-inline: 1.75rem;
+  --spacing-switch-sm-track-block: 1rem;
+  --spacing-switch-sm-thumb: 0.5rem;
+  --spacing-switch-md-track-inline: 2.25rem;
+  --spacing-switch-md-track-block: 1.375rem;
+  --spacing-switch-md-thumb: 0.875rem;
+  --spacing-switch-lg-track-inline: 2.5rem;
+  --spacing-switch-lg-track-block: 1.5rem;
+  --spacing-switch-lg-thumb: 1rem;
   --spacing-switch-thumb-gap: 0.25rem;
   --shadow-control-highlight: inset 0 0 0
     var(--control-highlight-width, var(--spacing-control-highlight))

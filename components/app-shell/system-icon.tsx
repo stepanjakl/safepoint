@@ -20,6 +20,7 @@ import ContactsFilled from 'blode-icons-react/icons/contacts-filled';
 import CreditCard1Filled from 'blode-icons-react/icons/credit-card-1-filled';
 import Email1Filled from 'blode-icons-react/icons/email-1-filled';
 import LawFilled from 'blode-icons-react/icons/law-filled';
+import MegaphoneFilled from 'blode-icons-react/icons/megaphone-filled';
 import ReceiptBillFilled from 'blode-icons-react/icons/receipt-bill-filled';
 import ShoppingBag1Filled from 'blode-icons-react/icons/shopping-bag-1-filled';
 import Store1Filled from 'blode-icons-react/icons/store-1-filled';
@@ -44,6 +45,7 @@ export type SystemIconComponent = ComponentType<
 export type IconSet = Record<IconKey, SystemIconComponent>;
 
 export const BLODE_ICONS: IconSet = {
+  brief: MegaphoneFilled,
   catalogue: BookFilled,
   shortlist: ChecklistFilled,
   forecast: Chart2Filled,

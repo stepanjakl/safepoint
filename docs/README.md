@@ -156,11 +156,11 @@ Maya and Alderton's are design hypotheses, not validated research participants o
 
 **Effects ledger:** the append-only record of what the application attempted, verified, failed, or compensated.
 
-**Input:** something a process needs to know, declared with a schema, a required flag, and a maximum age, and satisfied by a connection rather than named after one.
+**Input:** data a run reads, supplied as a validated evidence file — a JSON file in the portfolio — and treated as the run's source of truth. Producing and updating it happens outside Safepoint.
 
-**Output:** a target a process may change after review, with its permitted operations, adapter mode, and reversibility.
+**Output:** an API a process may call once changes are approved, with its adapter mode and how a call is undone.
 
-**Snapshot:** the frozen, validated records one run read for one input. Agent tools and policy read snapshots, never live sources. See [`TECHNICAL-DESIGN.md`](TECHNICAL-DESIGN.md#read-path-from-connection-to-snapshot).
+**Snapshot:** the frozen, validated records one run read for one input; in the portfolio, the evidence files themselves. Agent tools and policy read snapshots, never live sources. See [`TECHNICAL-DESIGN.md`](TECHNICAL-DESIGN.md#read-path-from-connection-to-snapshot).
 
 ## Repository layout
 

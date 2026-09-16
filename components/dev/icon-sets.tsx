@@ -4,7 +4,7 @@
 // the shipped Blode set so that only the workbench pulls them in. The app
 // imports `BLODE_ICONS` and never reaches this module.
 //
-// Every set spells the same fifteen nouns. Where a family has no word for one,
+// Every set spells the same sixteen nouns. Where a family has no word for one,
 // the substitute is named in a comment: that gap is the thing being compared,
 // and it is the reason a set is a complete record rather than a partial one.
 import {
@@ -17,6 +17,7 @@ import {
   Envelope,
   IdentificationCard,
   Invoice,
+  Megaphone,
   Package,
   Scales,
   ShoppingCart,
@@ -35,6 +36,7 @@ import {
   RiIdCardFill,
   RiLineChartFill,
   RiMailFill,
+  RiMegaphoneFill,
   RiPriceTag3Fill,
   RiScales3Fill,
   RiShoppingCartFill,
@@ -52,6 +54,7 @@ import {
   IconClipboardListFilled,
   IconCreditCardFilled,
   IconFileInvoiceFilled,
+  IconFlagFilled,
   IconIdFilled,
   IconLabelFilled,
   IconMailFilled,
@@ -63,6 +66,7 @@ import {
 } from '@tabler/icons-react';
 // Deep imports: MingCute's barrel re-exports both styles, several thousand
 // modules, and is not on Next's `optimizePackageImports` list.
+import MingcuteAnnouncement from '@mingcute/react/core-filled/announcement';
 import MingcuteBankCard from '@mingcute/react/core-filled/bank-card';
 import MingcuteBarcode from '@mingcute/react/core-filled/barcode';
 import MingcuteBill from '@mingcute/react/core-filled/bill';
@@ -89,6 +93,9 @@ import {
 // stroke set offered: boxes for a stock position, a cart for a storefront, a
 // message for an operational note.
 const TABLER_ICONS: IconSet = {
+  // No filled megaphone -- its speakerphone is stroke-only -- so a flag stands
+  // for the campaign brief.
+  brief: IconFlagFilled,
   catalogue: IconBookFilled,
   shortlist: IconClipboardListFilled,
   forecast: IconChartAreaFilled,
@@ -115,6 +122,7 @@ const filled = (Component: PhosphorIcon): SystemIconComponent =>
   };
 
 const PHOSPHOR_ICONS: IconSet = {
+  brief: filled(Megaphone),
   catalogue: filled(Book),
   shortlist: filled(ClipboardText),
   forecast: filled(ChartLine),
@@ -133,6 +141,7 @@ const PHOSPHOR_ICONS: IconSet = {
 };
 
 const REMIX_ICONS: IconSet = {
+  brief: RiMegaphoneFill,
   catalogue: RiBookFill,
   shortlist: RiFileListFill,
   forecast: RiLineChartFill,
@@ -151,6 +160,8 @@ const REMIX_ICONS: IconSet = {
 };
 
 const MINGCUTE_ICONS: IconSet = {
+  // No megaphone; its announcement glyph is the same idea.
+  brief: MingcuteAnnouncement,
   catalogue: MingcuteBook,
   shortlist: MingcuteClipboard,
   forecast: MingcuteChartLine,
@@ -198,7 +209,7 @@ export const ICON_LIBRARY_NOTES: Record<
   },
   tabler: {
     label: 'Tabler',
-    note: 'Filled set is ~1000 of ~6000. No storefront and no barcode, so the channel cart is reused for the storefront and a label tag stands in for the print queue.',
+    note: 'Filled set is ~1000 of ~6000. No storefront, no barcode and no megaphone, so the channel cart is reused for the storefront, a label tag stands in for the print queue and a flag for the campaign brief.',
   },
   phosphor: {
     label: 'Phosphor',
@@ -210,6 +221,6 @@ export const ICON_LIBRARY_NOTES: Record<
   },
   mingcute: {
     label: 'MingCute',
-    note: 'Paired Regular/Filled styles on a 24px grid with softly rounded corners. Spells every noun directly — bill, scale, store, barcode and ID card included.',
+    note: 'Paired Regular/Filled styles on a 24px grid with softly rounded corners. Spells every noun directly — bill, scale, store, barcode and ID card included — apart from a megaphone, where its announcement glyph stands in for the campaign brief.',
   },
 };

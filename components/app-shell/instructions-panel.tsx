@@ -12,7 +12,6 @@ import { Ledger, LedgerRow } from '@/components/ui/ledger';
 import { cx } from '@/lib/cx';
 import { diffText, paragraphsOf } from '@/lib/process/instruction-diff';
 import type { ProcessSummary } from '@/lib/process/placeholder-process';
-import type { SourceDetail } from '@/lib/process/source-details';
 import type { AsideView } from './drawer-aside';
 import { useInstructions, type InstructionVersion } from './instructions-store';
 import { TextDiff } from './text-diff';
@@ -25,22 +24,6 @@ const QUIET =
 const FIELD =
   'text-dense text-primary placeholder:text-muted border-rule-default bg-surface-inset rounded-control field-sizing-content w-full resize-none border px-3 py-2.5 leading-relaxed';
 const NOTE = 'border-rule-faint text-muted text-meta border-t pt-3';
-
-/*
-  What every run's instruction carries whatever the process says: built by the
-  server, versioned with it, and not editable here. Listed so a person editing
-  the instructions knows what they add to and cannot take away. See "Fixed
-  input" in docs/TECHNICAL-DESIGN.md.
-*/
-const SET_BY_SAFEPOINT = [
-  'The task, and the exact scenario it runs against',
-  'The read-only tools the agent may call, and what each returns',
-  'The proposal schema every answer must match',
-  'Account for every candidate, and never invent a missing value',
-  'Cite the evidence behind every claim',
-  'Only the allowed recommendations and actions',
-  'Tell failed, skipped and unavailable checks apart',
-];
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -55,13 +38,11 @@ const pad = (n: number) => String(n).padStart(2, '0');
 */
 export function InstructionsPanel({
   process,
-  policy,
   aside,
   onShowChanges,
   onEdit,
 }: {
   process: ProcessSummary;
-  policy?: SourceDetail;
   aside: AsideView | null;
   onShowChanges: (version: string) => void;
   onEdit: () => void;
@@ -127,46 +108,6 @@ export function InstructionsPanel({
       ) : null}
 
       <div>
-        <details className={DISCLOSURE}>
-          <summary className={SUMMARY}>
-            Set by Safepoint <span>Not editable</span>
-          </summary>
-          <div className={DISCLOSURE_BODY}>
-            <p className="text-muted mb-2">
-              Every run’s instruction also carries these, built by the server.
-              The text above adds to them and cannot replace them.
-            </p>
-            <ul className="marker:text-muted grid list-disc gap-1.5 pl-4">
-              {SET_BY_SAFEPOINT.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        </details>
-        {policy?.records[0] ? (
-          <details className={DISCLOSURE}>
-            <summary className={SUMMARY}>
-              Policy <span>Enforced in code</span>
-            </summary>
-            <div className={DISCLOSURE_BODY}>
-              <p className="text-muted mb-1">
-                Checked after the agent answers, whatever the instructions say.
-                From <span className="value">{policy.file}</span>.
-              </p>
-              <Ledger>
-                {policy.records[0].fields.map((field) => (
-                  <LedgerRow
-                    key={field.label}
-                    label={field.label}
-                    className="px-0"
-                  >
-                    {field.value}
-                  </LedgerRow>
-                ))}
-              </Ledger>
-            </div>
-          </details>
-        ) : null}
         <details className={DISCLOSURE}>
           <summary className={SUMMARY}>
             History{' '}

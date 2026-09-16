@@ -73,10 +73,11 @@ export type ProcessSummary = {
   id: string;
   name: string;
   schedule: ProcessSchedule;
-  // Where this process would write. Mirrors the destinations the effect planner
-  // already names, rather than inventing a second vocabulary. Sources are not
-  // here: they are derived from the evidence the run actually cited.
-  destinations: SystemLink[];
+  // The APIs this process may call once changes are approved. Mirrors the
+  // destinations the effect planner already names, rather than inventing a
+  // second vocabulary. Inputs are not here: they are derived from the evidence
+  // files the run read.
+  outputs: SystemLink[];
   instructions: InstructionsVersion & {
     // Earlier versions, oldest first. A run that ran under one says so, and
     // the setup drawer shows what changed from each to the next.
@@ -99,35 +100,43 @@ export const promotionProcess: ProcessSummary = {
     time: '09:00',
     timezone: 'Europe/London',
   },
-  destinations: [
-    // Modes from the effect planner's destination table; see
+  outputs: [
+    // Modes and undo copy from the effect planner's destination table; see
     // EFFECT_DESTINATIONS in lib/review-presentation/present-review.ts.
     {
       id: 'pricebook',
       label: 'Pricebook',
+      api: 'Google Sheets API · promotion pricebook',
+      undo: 'Restores automatically if the row has not changed again.',
       icon: 'pricebook',
-      direction: 'writes',
+      direction: 'output',
       mode: 'live_sandbox',
     },
     {
       id: 'storefront',
       label: 'Storefront',
+      api: 'Storefront sandbox API',
+      undo: 'Restores automatically before a later promotion replaces it.',
       icon: 'storefront',
-      direction: 'writes',
+      direction: 'output',
       mode: 'live_sandbox',
     },
     {
       id: 'labels',
       label: 'Label queue',
+      api: 'Google Sheets API · label queue',
+      undo: 'Can be removed until label production begins at 06:00.',
       icon: 'labels',
-      direction: 'writes',
+      direction: 'output',
       mode: 'live_sandbox',
     },
     {
       id: 'portal',
       label: 'Supplier portal',
+      api: 'Supplier order API',
+      undo: 'Simulation only. No external change would need recovery.',
       icon: 'portal',
-      direction: 'writes',
+      direction: 'output',
       mode: 'simulated',
     },
   ],
@@ -270,27 +279,33 @@ export const supportProcess: ProcessSummary = {
     time: '09:00',
     timezone: 'Europe/London',
   },
-  destinations: [
+  outputs: [
     // Nothing in the support example reaches a real system.
     {
       id: 'queue',
       label: 'Support queue',
+      api: 'Support queue API',
+      undo: 'Simulation only. No case would move.',
       icon: 'queue',
-      direction: 'writes',
+      direction: 'output',
       mode: 'simulated',
     },
     {
       id: 'identity',
       label: 'Identity records',
+      api: 'Identity records API',
+      undo: 'Preview only. Nothing would change.',
       icon: 'identity',
-      direction: 'writes',
+      direction: 'output',
       mode: 'preview_only',
     },
     {
       id: 'billing',
       label: 'Billing',
+      api: 'Billing API',
+      undo: 'Preview only. Nothing would change.',
       icon: 'billing',
-      direction: 'writes',
+      direction: 'output',
       mode: 'preview_only',
     },
   ],

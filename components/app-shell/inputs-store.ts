@@ -4,16 +4,16 @@ import { useMemo, useSyncExternalStore } from 'react';
 import { z } from 'zod';
 
 /*
-  Which read sources a person has removed from a process, keyed by process id.
-  A mock of connection management: what is stored is only the removals, so a
-  process shows every source its scenario files hold until someone removes one,
-  and a source added to the files later appears without a migration.
+  Which inputs a person has removed from a process, keyed by process id. A
+  preview of managing inputs: what is stored is only the removals, so a process
+  shows every evidence file its scenario holds until someone removes one, and a
+  file added to the scenario later appears without a migration.
 
   Nothing reads this but the interface. The recorded run and its review are
-  fixtures, and removing a source here does not change what they cite.
+  fixtures, and removing an input here does not change what they cite.
 */
-const KEY = 'safepoint.connections.v1';
-const CHANGE = 'safepoint:connections';
+const KEY = 'safepoint.inputs.v1';
+const CHANGE = 'safepoint:inputs';
 const schema = z.record(z.string(), z.array(z.string()));
 type Removals = z.infer<typeof schema>;
 let temporary: string | null = null;
@@ -23,7 +23,7 @@ function parse(value: string | null): Removals {
     const parsed = schema.safeParse(JSON.parse(value ?? 'null'));
     if (parsed.success) return parsed.data;
   } catch {
-    // An old or edited preference must never hide the process's sources.
+    // An old or edited preference must never hide the process's inputs.
   }
   return {};
 }
@@ -60,7 +60,7 @@ function save(removals: Removals) {
   window.dispatchEvent(new Event(CHANGE));
 }
 
-export function useRemovedSources(processId: string) {
+export function useRemovedInputs(processId: string) {
   // The raw string is the snapshot, so an unchanged value is the same value
   // and nothing re-renders; the server has no removals.
   const raw = useSyncExternalStore(subscribe, read, () => null);

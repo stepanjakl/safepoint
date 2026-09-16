@@ -14,24 +14,24 @@ import {
 // data, and the gallery resolves the families itself.
 
 // Every noun in the vocabulary, whether or not the promotion run happens to
-// touch it. Sources and destinations between them leave three keys unexercised,
+// touch it. Its inputs and outputs between them leave three keys unexercised,
 // and an icon that is only wrong in the support process is still wrong.
 const VOCABULARY: SystemLink[] = ICON_KEYS.map((icon) => ({
   id: icon,
   label: icon,
   icon,
-  direction: 'writes',
+  direction: 'output',
 }));
 
-// The real reads carry freshness, so those discs also show the caution and
+// The real inputs carry freshness, so those discs also show the caution and
 // blocked rings — the states where the glyph has to stay legible under a colour
 // it did not choose.
 export function SystemDiscGallery({
-  sources,
-  destinations,
+  inputs,
+  outputs,
 }: {
-  sources: SystemLink[];
-  destinations: SystemLink[];
+  inputs: SystemLink[];
+  outputs: SystemLink[];
 }) {
   return (
     <div className="space-y-4">
@@ -50,8 +50,8 @@ export function SystemDiscGallery({
           </div>
           <IconSetProvider set={ICON_LIBRARY_SETS[library]}>
             <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-              <SystemCluster label="Reads" links={sources} />
-              <SystemCluster label="Writes" links={destinations} />
+              <SystemCluster label="Inputs" links={inputs} />
+              <SystemCluster label="Outputs" links={outputs} />
             </div>
             <SystemCluster label="All" links={VOCABULARY} />
           </IconSetProvider>

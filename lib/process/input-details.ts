@@ -11,31 +11,33 @@ import {
 } from '../review-presentation/present-review';
 import {
   PROMOTION_PACKS,
-  sourceIdFor,
+  inputIdFor,
   type IconKey,
   type PromotionPack,
 } from './system-links';
 
 /*
-  What a read system actually gave this run: its records, as the fixture files
-  hold them, with the facts a reviewer checks pulled out and the review items
-  that cited each one. Built on the server from the same replay the review
-  reads, so the detail can never disagree with the evidence the review cites.
+  What an input actually gave this run: the records its JSON file holds, with
+  the facts a reviewer checks pulled out and the review items that cited each
+  one. Built on the server from the same replay the review reads, so the
+  detail can never disagree with the evidence the review cites.
 
-  Fictional data. There is no live system behind any of these sources, so the
-  view shows what was read and nothing claims to open the source itself.
+  One detail per file. The files are analysed extracts, treated as the run's
+  source of truth and produced outside Safepoint; the source labels their
+  records carry are kept as provenance, so a file whose records name two
+  sources is still one input.
 */
 
-export type SourceField = { label: string; value: string };
+export type InputField = { label: string; value: string };
 
-export type SourceRecordDetail = {
+export type InputRecordDetail = {
   evidenceId: string;
   title: string;
   // The SKU or SKUs the record is about; null for a record about the whole run.
   subject: string | null;
   unavailableReason: string | null;
-  fields: SourceField[];
-  // Free text from the source. Notes are untrusted evidence: shown, never
+  fields: InputField[];
+  // Free text from the file. Notes are untrusted evidence: shown, never
   // treated as instruction.
   text: string | null;
   untrusted: boolean;
@@ -44,13 +46,17 @@ export type SourceRecordDetail = {
   citedBy: { sku: Sku; label: string }[];
 };
 
-export type SourceDetail = {
+export type InputDetail = {
   id: string;
   label: string;
   icon: IconKey;
   file: string;
   observedAtLabel: string;
-  records: SourceRecordDetail[];
+  // For an input whose currency is a version rather than an observation time.
+  version: string | null;
+  // The source labels the file's records carry, as provenance.
+  sources: string[];
+  records: InputRecordDetail[];
   unavailableCount: number;
   citedByCount: number;
   checks: string[];
@@ -68,7 +74,7 @@ type PackRecord<K extends PackKey> = Scenario[K] extends {
 }
   ? R
   : Scenario[K];
-type Presented = Omit<SourceRecordDetail, 'evidenceId' | 'raw' | 'citedBy'>;
+type Presented = Omit<InputRecordDetail, 'evidenceId' | 'raw' | 'citedBy'>;
 type Name = (sku: Sku) => string;
 
 const readable = (value: string) => {
@@ -101,6 +107,24 @@ function presented(
 const PRESENTERS: {
   [K in PackKey]: (record: PackRecord<K>, name: Name) => Presented;
 } = {
+  promotionBrief: (r) =>
+    presented(r.campaign.name, null, [
+      ['Objective', r.campaign.objective],
+      [
+        'Runs',
+        `${formatLondonDateTime(r.campaign.startsAt)} – ${formatLondonDateTime(r.campaign.endsAt)}`,
+      ],
+      ['Review', formatLondonDateTime(r.campaign.reviewAt)],
+      ['Top-up cutoff', formatLondonDateTime(r.campaign.topUpCutoffAt)],
+      ['Label deadline', formatLondonDateTime(r.campaign.labelDeadlineAt)],
+      [
+        'Candidates',
+        `${r.candidates.length} lines · ${
+          r.candidates.filter((candidate) => candidate.status === 'withdrawn')
+            .length
+        } withdrawn`,
+      ],
+    ]),
   cataloguePricebook: (r) =>
     presented(r.productName, r.sku, [
       ['Category', readable(r.category)],
@@ -239,9 +263,9 @@ function citations(replay: ReviewedReplay) {
   return { skus, checks };
 }
 
-export function presentPromotionSourceDetails(
+export function presentPromotionInputDetails(
   replay: ReviewedReplay,
-): Record<string, SourceDetail> {
+): Record<string, InputDetail> {
   const names = new Map(
     replay.scenario.cataloguePricebook.records.map((r) => [
       r.sku,
@@ -250,10 +274,7 @@ export function presentPromotionSourceDetails(
   );
   const name: Name = (sku) => names.get(sku) ?? sku;
   const cited = citations(replay);
-  const details: Record<string, SourceDetail> = {};
-  const observed = new Map<string, string>();
-  const citedSkus = new Map<string, Set<Sku>>();
-  const checks = new Map<string, Set<string>>();
+  const details: Record<string, InputDetail> = {};
 
   const collect = <K extends PackKey>(
     pack: Extract<PromotionPack, { key: K }>,
@@ -262,49 +283,52 @@ export function presentPromotionSourceDetails(
       record: PackRecord<K>,
       name: Name,
     ) => Presented;
-    for (const record of recordsOf(replay.scenario, pack.key)) {
-      // A file can hold more than one source -- the notes file holds a note
-      // per author -- so records group by the source that wrote them.
-      const id = sourceIdFor(record.sourceLabel);
-      const detail = (details[id] ??= {
-        id,
-        label: record.sourceLabel,
-        icon: pack.icon,
-        file: pack.file,
-        observedAtLabel: '',
-        records: [],
-        unavailableCount: 0,
-        citedByCount: 0,
-        checks: [],
-      });
+    const sources = new Set<string>();
+    const citedSkus = new Set<Sku>();
+    const checks = new Set<string>();
+    let oldest: string | null = null;
+    let unavailableCount = 0;
+
+    const records = recordsOf(replay.scenario, pack.key).map((record) => {
       const shown = present(record, name);
       const skus = [...(cited.skus.get(record.evidenceId) ?? [])].sort();
-      detail.records.push({
+      sources.add(record.sourceLabel);
+      // An input is only as current as its oldest record.
+      if (oldest === null || record.observedAt < oldest) {
+        oldest = record.observedAt;
+      }
+      if (shown.unavailableReason !== null) unavailableCount += 1;
+      for (const sku of skus) citedSkus.add(sku);
+      for (const check of cited.checks.get(record.evidenceId) ?? []) {
+        checks.add(check);
+      }
+      return {
         ...shown,
         evidenceId: record.evidenceId,
         raw: JSON.stringify(record, null, 2),
         citedBy: skus.map((sku) => ({ sku, label: `${sku} · ${name(sku)}` })),
-      });
-      if (shown.unavailableReason !== null) detail.unavailableCount += 1;
-      // A source is only as current as its oldest record.
-      const oldest = observed.get(id);
-      if (!oldest || record.observedAt < oldest)
-        observed.set(id, record.observedAt);
-      const sourceSkus = citedSkus.get(id) ?? new Set<Sku>();
-      for (const sku of skus) sourceSkus.add(sku);
-      citedSkus.set(id, sourceSkus);
-      const sourceChecks = checks.get(id) ?? new Set<string>();
-      for (const check of cited.checks.get(record.evidenceId) ?? [])
-        sourceChecks.add(check);
-      checks.set(id, sourceChecks);
-    }
+      };
+    });
+
+    const id = inputIdFor(pack.key);
+    details[id] = {
+      id,
+      label: pack.label,
+      icon: pack.icon,
+      file: pack.file,
+      observedAtLabel: oldest === null ? '' : formatLondonDateTime(oldest),
+      version:
+        pack.key === 'policyRules'
+          ? replay.scenario.policyRules.policyVersion
+          : null,
+      sources: [...sources],
+      records,
+      unavailableCount,
+      citedByCount: citedSkus.size,
+      checks: [...checks].sort(),
+    };
   };
   for (const pack of PROMOTION_PACKS) collect(pack);
 
-  for (const detail of Object.values(details)) {
-    detail.observedAtLabel = formatLondonDateTime(observed.get(detail.id)!);
-    detail.citedByCount = citedSkus.get(detail.id)?.size ?? 0;
-    detail.checks = [...(checks.get(detail.id) ?? [])].sort();
-  }
   return details;
 }

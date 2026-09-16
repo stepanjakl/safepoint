@@ -12,14 +12,14 @@ import { ReplayReview } from '@/components/review/replay-review';
 import { loadReviewedReplay } from '@/lib/promotion-release';
 import { parseSkuParam } from '@/lib/review-presentation';
 import { promotionProcess } from '@/lib/process/placeholder-process';
-import { presentPromotionSourceDetails } from '@/lib/process/source-details';
-import { presentPromotionSources } from '@/lib/process/system-links';
+import { presentPromotionInputDetails } from '@/lib/process/input-details';
+import { presentPromotionInputs } from '@/lib/process/system-links';
 import { presentPromotionPlan } from '@/lib/review/promotion-adapter';
 
 export default async function ReviewPage({ searchParams }: PageProps<'/'>) {
   const replay = loadReviewedReplay();
   const plan = presentPromotionPlan(replay);
-  const sources = presentPromotionSources(replay);
+  const inputs = presentPromotionInputs(replay);
   const initialItemId = parseSkuParam((await searchParams).sku) ?? undefined;
 
   // Order comes from the process; the box for each step comes from here. A new
@@ -31,7 +31,7 @@ export default async function ReviewPage({ searchParams }: PageProps<'/'>) {
       </RequestBubble>
     ),
     analysis: (
-      <InitialAnalysis analysis={promotionProcess.analysis} sources={sources} />
+      <InitialAnalysis analysis={promotionProcess.analysis} inputs={inputs} />
     ),
     review: (
       <ResponseSection
@@ -45,8 +45,8 @@ export default async function ReviewPage({ searchParams }: PageProps<'/'>) {
   return (
     <ProcessView
       process={promotionProcess}
-      sources={sources}
-      sourceDetails={presentPromotionSourceDetails(replay)}
+      inputs={inputs}
+      inputDetails={presentPromotionInputDetails(replay)}
     >
       <ThreadPage
         eyebrow="Alderton’s · Promotion operations"
