@@ -289,7 +289,7 @@ The broader direction adds capabilities only after the review and execution boun
 4. Onboard a second process to prove that the review shell generalises without becoming a raw JSON viewer.
 5. Rehearse a plan against a model of the environment before approval.
 6. Compare alternative plans and expose trade-offs.
-7. Draft the next instruction version from review decisions. Holds, rejections and their written reasons show where a process's instructions are wrong; Safepoint proposes specific edits, each traced to the review items that prompted it. The draft is itself a proposal: it is reviewed and accepted as a new version, and later runs record the version they ran under. Reviewer text is evidence for the draft, never instruction text copied into it. A placeholder control for this sits beside the Instructions button in the process header.
+7. Draft the next instruction version from review decisions. Holds, rejections and their written reasons show where a process's instructions are wrong; Safepoint proposes specific edits, each traced to the review items that prompted it. The draft is itself a proposal: it is reviewed and accepted as a new version, and later runs record the version they ran under. Reviewer text is evidence for the draft, never instruction text copied into it. A placeholder for this sits in the process header's notch as the assistant, which also answers questions about the run it is opened from.
 8. Configure organisation-level risk and approval policies.
 9. Add connector-specific concurrency and reversal strategies.
 10. Support multiple reviewers, separation of duties, and enterprise identity.

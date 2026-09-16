@@ -56,7 +56,9 @@ The portfolio has no live source systems. A run's **inputs** are its JSON eviden
 
 ### Header
 
-One row, flush with the notch: the process title, an **Inputs** button and an **Outputs** button, then the notch holding **Instructions** with its version and the refine placeholder.
+One row, flush with the notch: the process title, then the controls for the process itself — **Instructions** with its version, **Inputs** and **Outputs** — and last, in the notch, the **Assistant**.
+
+The row divides by who is speaking. The pills belong to the process being read and share one construction; the assistant belongs to the application and sits in the notch, where the slanted shape rather than a colour of its own is what sets it apart. It is also where anything global goes later: it is on every screen, whatever the screen is about.
 
 The **title** is an input dressed as the heading. Pointing at it shows a field face lighter than the sheet; clicking places the caret at the end of the name. Enter or leaving the field keeps a change, Escape restores the name, and an empty name keeps the old one. The name is shared with the sidebar and the drawer.
 
@@ -66,16 +68,24 @@ The two buttons replace the stacked system discs, which named systems without sa
 Promotion release   [⇥ Inputs 9 · ▲ 1]  [⇄ Outputs 4 · ◇ 1]   ╱ Instructions v4 ╲
 ```
 
-- Both are built like the Instructions button — the same lit face, icon weight, text and count pill — at pill size and without an edge, so they read as its siblings rather than as outlined controls of their own.
+- The four sit in one group, which carries the face: a pill lit from below, where every other face in the interface is lit from above, so a container reads as a container rather than as one very wide button. An item inside it is transparent at rest, takes a face under the pointer or keyboard focus, and takes a darker one while its tab is the one the drawer is showing.
+- Labels go before the row runs out of room, counts and icons stay, and below the phone breakpoint the group gives way to the name entirely.
 - **Inputs** shows its icon, the word, and the number of input files. When a file is older than the policy's maximum evidence age or holds unavailable records, a dot in the condition's colour follows the count; the button's accessible name says how many and which condition.
-- **Outputs** shows its icon, the word, and the number of APIs. Adapter mode is not a header state: which calls are simulated or preview only belongs to the Outputs tab, beside what each call does and how it is undone.
+- **Outputs** shows its icon, the word, and the number of APIs.
+- **Settings** is the same control without the word: it is reached a few times in a process's life where the others are read every run, so it keeps the face, drops the label, and carries its name in a tooltip and its accessible name. It opens the Settings tab. Adapter mode is not a header state: which calls are simulated or preview only belongs to the Outputs tab, beside what each call does and how it is undone.
 - A condition never borrows the review's marks. Square and triangle mean a held line and a line needing attention; a stale file is neither, so the header carries a dot, the lists carry the disc's ring, and the words stay in the rows.
 - Both describe the recorded run's data. There is no live source, so there is no "next run" readiness to report.
 - State is never carried by colour or shape alone: each button's accessible name states its counts. As the row narrows the labels go, then the counts; at phone width the buttons give way to the name altogether, and their tabs are reached through the drawer.
 
-### Setup drawer
+### The sheet's tabs
 
-A slide-over with four tabs: **Instructions**, **Inputs**, **Outputs**, and **Settings**. A detail opened from the drawer opens in a second panel on its left; the control that opened it closes it again, and choosing another item swaps the content in place.
+The menu chooses what the sheet shows: the **Run** — the list of runs beside the thread of the current one — or one of **Instructions**, **Inputs**, **Outputs** and **Settings**. There is no drawer. A modal was being used as a menu: it blocked the page, trapped focus, and every screen inside it is a list beside a detail, which is a shape that wants a page.
+
+A tab is state, not a route: it is a way of looking at one process rather than a place to link to. The run is built on the server and handed to the sheet, so choosing a tab never re-fetches it, and returning to the Run finds it as it was.
+
+Panels replace the run entirely, rail and all. The rail lists runs, which is the run's own furniture, and the panels need the width.
+
+Each panel is a list beside a detail, and the detail is the same panel the drawer used — its swap, its direction and its focus handling unchanged. Choosing another item swaps the content in place; the control that opened it closes it again; Escape closes it. Where a tab's rows open nothing — Outputs, Settings — the list takes the full width rather than holding a column open for nothing. Below the two-column width the detail takes the list's place.
 
 #### Instructions tab
 

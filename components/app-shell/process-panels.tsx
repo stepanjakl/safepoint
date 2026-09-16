@@ -7,27 +7,12 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from 'react';
-import {
-  Button as AriaButton,
-  Dialog,
-  Heading,
-  Modal,
-  ModalOverlay,
-  Tab,
-  TabList,
-  TabPanel,
-  Tabs,
-} from 'react-aria-components';
-// Deep import: Blode's barrel is the whole icon library.
-import X from 'blode-icons-react/icons/x';
 import { cx } from '@/lib/cx';
 import type { InputDetail } from '@/lib/process/input-details';
 import type { ProcessSummary } from '@/lib/process/placeholder-process';
 import { byAttention, type SystemLink } from '@/lib/process/system-links';
 import {
-  CLOSE_BUTTON,
   DrawerAside,
-  PANEL,
   viewKey,
   type AsideLayer,
   type AsideView,
@@ -41,78 +26,68 @@ import {
   InstructionsPanel,
 } from './instructions-panel';
 import { useInstructions } from './instructions-store';
-import { useProcessName } from './process-names-store';
 import { ProcessSettings } from './process-settings';
+import type { ProcessTab } from './process-tab-store';
 import { SystemDisc, SystemMeta } from './system-parts';
 
-export type ProcessDrawerTab =
-  'instructions' | 'inputs' | 'outputs' | 'settings';
+/*
+  What the process is, in the sheet rather than over it. The header's menu
+  chooses which of these is showing; the run itself is the other half of that
+  choice and lives in process-sheet.tsx.
 
+  Each one is a list beside a detail. The detail is the same panel the drawer
+  used, with its swap, its direction and its focus handling unchanged -- only
+  where it sits has changed. Below the two-column width the detail takes the
+  list's place, as it did in the drawer.
+*/
 // A filter field earns its place once the list is longer than a glance takes in.
 const FILTER_FROM = 12;
 // The Inputs heading's Add button, where focus goes after an input is removed.
 const ADD_INPUT_ID = 'add-input';
 
-const TAB =
-  'control-wash border-rule-default text-muted data-[hovered]:bg-surface-inset data-[hovered]:text-primary data-[focus-visible]:bg-surface-inset data-[focus-visible]:text-primary data-[selected]:bg-surface-selected data-[selected]:border-rule-strong data-[selected]:text-primary inline-flex min-h-8 cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 text-meta whitespace-nowrap';
-
 const NOTE = 'border-rule-faint text-muted text-meta border-t pt-3';
 
-// Both panels are sized against the viewport rather than each other: the
-// modal hugs them, so a click beside them lands on the scrim and dismisses.
-const MAIN_WIDTH =
-  'w-[min(420px,calc(100vw_-_2_*_var(--spacing-shell-inset)))]';
+/*
+  The list keeps a readable measure and the detail takes the rest. One column
+  below that, where the detail replaces the list rather than squeezing it --
+  and one column at any width for the tabs whose rows do not open anything,
+  which would otherwise hold a second column open for nothing.
+*/
+const COLUMNS = 'grid h-full min-h-0 grid-cols-[minmax(0,1fr)]';
+const TWO_COLUMNS =
+  'lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:[&>*]:min-w-0';
+
+// Which tabs have a detail to put beside their list.
+const OPENS_DETAIL = new Set<ProcessTab>(['instructions', 'inputs']);
 
 type AsidePanel = Omit<AsideLayer, 'key'>;
 
-/*
-  The process's setup: what it is told to do, what it reads, and what it may
-  write. A slide-over rather than a centred dialog: this is reference material
-  read alongside the run, not a decision that should block it.
-
-  Four tabs. Inputs are the JSON evidence files the run read, and outputs the
-  APIs the process may call once changes are approved; each has its own tab so
-  the two are never read as one list of systems.
-
-  Two panels. This one, on the right, holds the process; a detail opened from
-  it -- an input's records, what a version changed, the editor, adding an input
-  -- opens in a second panel on its left (see drawer-aside.tsx). The control
-  that opened a detail closes it again; choosing another swaps the content in
-  place. Escape closes the side panel first and the drawer second, and closing
-  the side panel returns focus to whatever opened it.
-
-  Controlled, because it has several triggers in the header and each opens it
-  on its own tab. react-aria drives the transition through data-entering /
-  data-exiting; the `drawer-overlay` and `drawer-modal` classes are the hooks
-  for the scrim and the slide, both of which stay in CSS.
-*/
-export function ProcessDrawer({
+export function ProcessPanels({
   process,
+  tab,
   inputs,
   availableInputs = [],
   inputDetails = {},
   onRemoveInput,
   onAddInput,
-  isOpen,
-  onOpenChange,
-  tab,
-  onTabChange,
+  onLeave,
 }: {
   process: ProcessSummary;
+  tab: Exclude<ProcessTab, 'runs'>;
   // The process's inputs only; removed ones arrive as availableInputs.
   inputs: SystemLink[];
   availableInputs?: SystemLink[];
   inputDetails?: Record<string, InputDetail>;
   onRemoveInput?: (id: string) => void;
   onAddInput?: (id: string) => void;
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-  tab: ProcessDrawerTab;
-  onTabChange: (tab: ProcessDrawerTab) => void;
+  // Back to the run, for a link that leaves this panel behind.
+  onLeave: () => void;
 }) {
-  const { instructions, outputs } = process;
-  const { versions, current, next } = useInstructions(process.id, instructions);
-  const { name } = useProcessName(process.id, process.name);
+  const { outputs } = process;
+  const { versions, current, next } = useInstructions(
+    process.id,
+    process.instructions,
+  );
   const run = process.runs.find((entry) => entry.current);
 
   // The view on show. It stays set while the panel animates out, with
@@ -124,8 +99,8 @@ export function ProcessDrawer({
   // Which way the swap travels: towards an item further down its list or
   // back up it.
   const [direction, setDirection] = useState<SwapDirection>('down');
-  // What opened the side panel, so closing it puts focus back there. A choice
-  // made inside the panel -- paging to another change -- keeps the original.
+  // What opened the panel, so closing it puts focus back there. A choice made
+  // inside the panel -- paging to another change -- keeps the original.
   const opener = useRef<HTMLElement | null>(null);
   // Where focus returns once a closing panel is gone.
   const returnTo = useRef<HTMLElement | null>(null);
@@ -135,6 +110,9 @@ export function ProcessDrawer({
     setLeaving(null);
     setExiting(false);
   };
+  // Changing tab takes the detail with it -- what it was showing belongs to a
+  // list that is no longer here -- and the sheet does that by keying this
+  // component on the tab, so there is no state to reset by hand.
   // Focus moved back when the close began. If the panel took it with it on
   // the way out -- it held focus, and unmounting drops focus to the body --
   // put it back once the panel is actually gone.
@@ -149,13 +127,12 @@ export function ProcessDrawer({
   }, [aside]);
   const closeAside = (focusId?: string) => {
     if (aside === null || exiting) return;
-    // Where focus goes back to: the element named, or else the drawer control
-    // marked as having this panel open -- the opener by definition, and the
-    // only reliable one, since some browsers (Safari) do not focus a button on
-    // click and the dialog itself holds focus when the drawer first opens.
-    // The element focused when the panel opened is the last resort.
+    // Where focus goes back to: the element named, or else the row marked as
+    // having this panel open -- the opener by definition, and the only
+    // reliable one, since some browsers (Safari) do not focus a button on
+    // click. The element focused when the panel opened is the last resort.
     const expanded = document.querySelector<HTMLElement>(
-      '.drawer-modal [aria-expanded="true"]',
+      '.process-panels [aria-expanded="true"]',
     );
     const recorded = opener.current?.isConnected ? opener.current : null;
     const target = focusId
@@ -194,15 +171,14 @@ export function ProcessDrawer({
     setExiting(false);
     setAside(view);
   };
-  // Leaving the drawer altogether -- for a review item, or by closing it --
-  // takes the side panel with it at once; the drawer's own exit animates.
-  const closeAll = () => {
+  // Opening a review item leaves this panel behind: the item is in the run.
+  const leaveForRun = () => {
     finishExit();
-    onOpenChange(false);
+    onLeave();
   };
   const onKeyDownCapture = (event: KeyboardEvent) => {
     if (event.key !== 'Escape' || aside === null || exiting) return;
-    // A dialog centred over both panels answers its own Escape.
+    // A dialog centred over the sheet answers its own Escape.
     if (document.querySelector('[role=alertdialog]')) return;
     event.stopPropagation();
     closeAside();
@@ -251,7 +227,7 @@ export function ProcessDrawer({
           body: (
             <InputDetailView
               detail={detail}
-              onNavigate={closeAll}
+              onNavigate={leaveForRun}
               onRemove={
                 onRemoveInput
                   ? () => {
@@ -335,140 +311,73 @@ export function ProcessDrawer({
     }
   }
 
+  const list =
+    tab === 'instructions' ? (
+      <InstructionsPanel
+        process={process}
+        aside={exiting ? null : aside}
+        onShowChanges={(version) => openAside({ kind: 'changes', version })}
+        onEdit={() => openAside({ kind: 'edit' })}
+      />
+    ) : tab === 'inputs' ? (
+      <InputsList
+        inputs={inputs}
+        details={inputDetails}
+        runLabel={run?.label}
+        openId={!exiting && aside?.kind === 'input' ? aside.id : null}
+        adding={!exiting && aside?.kind === 'add-input'}
+        onOpen={(id) => openAside({ kind: 'input', id })}
+        onAdd={onAddInput ? () => openAside({ kind: 'add-input' }) : undefined}
+      />
+    ) : tab === 'outputs' ? (
+      <OutputsList outputs={outputs} />
+    ) : (
+      <ProcessSettings process={process} />
+    );
+
   return (
-    // Inset by the shell's own padding so the panels line up with the panes.
-    <ModalOverlay
-      isOpen={isOpen}
-      onOpenChange={(open) => {
-        if (!open) finishExit();
-        onOpenChange(open);
-      }}
-      isDismissable
-      className="drawer-overlay p-shell-inset fixed inset-0 z-40 flex justify-end"
+    <div
+      className={cx(
+        'process-panels',
+        COLUMNS,
+        OPENS_DETAIL.has(tab) && TWO_COLUMNS,
+      )}
+      onKeyDownCapture={onKeyDownCapture}
     >
-      <Modal className="drawer-modal flex h-full max-w-full">
-        <Dialog className="h-full outline-none">
-          <div
-            className="gap-shell-inset flex h-full justify-end"
-            onKeyDownCapture={onKeyDownCapture}
-          >
-            {aside && panel ? (
-              <DrawerAside
-                current={{ key: viewKey(aside), ...panel }}
-                leaving={
-                  leaving && leavingPanel
-                    ? { key: viewKey(leaving), ...leavingPanel }
-                    : null
-                }
-                direction={direction}
-                exiting={exiting}
-                onExited={finishExit}
-                onLeft={() => setLeaving(null)}
-              />
-            ) : null}
-            <div
-              className={cx(
-                PANEL,
-                MAIN_WIDTH,
-                // Where both do not fit, the side panel takes this one's place.
-                panel ? 'max-lg:hidden' : null,
-              )}
-            >
-              <Tabs
-                selectedKey={tab}
-                onSelectionChange={(key) => {
-                  closeAside();
-                  onTabChange(key as ProcessDrawerTab);
-                }}
-                // The column is bounded too: an unsized grid column grows to
-                // its widest unwrappable row and pushes the list past the panel.
-                className="grid h-full grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)]"
-              >
-                <header className="border-rule-faint grid gap-4 border-b p-5">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <Heading
-                        slot="title"
-                        className="text-title [font-weight:550]"
-                      >
-                        {name}
-                      </Heading>
-                      <p className="text-meta text-muted">Process setup</p>
-                    </div>
-                    <AriaButton slot="close" className={CLOSE_BUTTON}>
-                      <X
-                        aria-hidden
-                        size={18}
-                        strokeWidth={2.2}
-                        className="size-3.5 flex-none"
-                      />
-                      <span className="sr-only">Close process setup</span>
-                    </AriaButton>
-                  </div>
-                  <TabList
-                    aria-label="Process setup"
-                    className="flex flex-wrap gap-1.5"
-                  >
-                    <Tab id="instructions" className={TAB}>
-                      Instructions{' '}
-                      <span className="value">{current.version}</span>
-                    </Tab>
-                    <Tab id="inputs" className={TAB}>
-                      Inputs <span className="value">{inputs.length}</span>
-                    </Tab>
-                    <Tab id="outputs" className={TAB}>
-                      Outputs <span className="value">{outputs.length}</span>
-                    </Tab>
-                    <Tab id="settings" className={TAB}>
-                      Settings
-                    </Tab>
-                  </TabList>
-                </header>
-                <TabPanel
-                  id="instructions"
-                  className="overflow-y-auto outline-none"
-                >
-                  <InstructionsPanel
-                    process={process}
-                    aside={exiting ? null : aside}
-                    onShowChanges={(version) =>
-                      openAside({ kind: 'changes', version })
-                    }
-                    onEdit={() => openAside({ kind: 'edit' })}
-                  />
-                </TabPanel>
-                <TabPanel id="inputs" className="overflow-y-auto outline-none">
-                  <InputsList
-                    inputs={inputs}
-                    details={inputDetails}
-                    runLabel={run?.label}
-                    openId={
-                      !exiting && aside?.kind === 'input' ? aside.id : null
-                    }
-                    adding={!exiting && aside?.kind === 'add-input'}
-                    onOpen={(id) => openAside({ kind: 'input', id })}
-                    onAdd={
-                      onAddInput
-                        ? () => openAside({ kind: 'add-input' })
-                        : undefined
-                    }
-                  />
-                </TabPanel>
-                <TabPanel id="outputs" className="overflow-y-auto outline-none">
-                  <OutputsList outputs={outputs} />
-                </TabPanel>
-                <TabPanel
-                  id="settings"
-                  className="overflow-y-auto outline-none"
-                >
-                  <ProcessSettings process={process} />
-                </TabPanel>
-              </Tabs>
-            </div>
-          </div>
-        </Dialog>
-      </Modal>
-    </ModalOverlay>
+      <div
+        // Where the detail is showing and the two do not fit, it takes this
+        // column's place rather than squeezing beside it.
+        className={cx(
+          'shell:min-h-0 shell:overflow-y-auto shell:overscroll-contain border-rule-faint min-w-0',
+          OPENS_DETAIL.has(tab) ? 'lg:border-r' : null,
+          panel ? 'max-lg:hidden' : null,
+        )}
+      >
+        {list}
+      </div>
+      {aside && panel ? (
+        <DrawerAside
+          current={{ key: viewKey(aside), ...panel }}
+          leaving={
+            leaving && leavingPanel
+              ? { key: viewKey(leaving), ...leavingPanel }
+              : null
+          }
+          direction={direction}
+          exiting={exiting}
+          onExited={finishExit}
+          onLeft={() => setLeaving(null)}
+        />
+      ) : OPENS_DETAIL.has(tab) ? (
+        // Only where a row opens something: a column that can never fill is
+        // not an empty state, it is a mistake.
+        <p className="text-muted text-meta hidden place-self-center p-8 lg:block">
+          {tab === 'inputs'
+            ? 'Choose an input to read the records it gave this run.'
+            : 'Open a version to see what changed, or edit the current one.'}
+        </p>
+      ) : null}
+    </div>
   );
 }
 
@@ -557,7 +466,7 @@ function InputsList({
                   >
                     <InputRow link={link} />
                     <span aria-hidden="true" className="text-muted text-dense">
-                      ‹
+                      ›
                     </span>
                   </button>
                 ) : (

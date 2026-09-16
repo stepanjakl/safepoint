@@ -663,11 +663,11 @@
     var(--sp-control-900)
   );
   --sp-header-button-face-top-hover: light-dark(
-    var(--sp-control-200),
+    var(--sp-control-250),
     var(--sp-control-900)
   );
   --sp-header-button-face-bottom-hover: light-dark(
-    var(--sp-control-300),
+    var(--sp-control-350),
     var(--sp-control-900)
   );
   /*
@@ -676,6 +676,24 @@
     this pill sits on the header button's face, so the two are tuned against
     each other, and moving one must not move the pill in the notch.
   */
+  /*
+    The item whose tab is open. Darker than the group in light, lighter in
+    dark: in both it is the step further from the group, which is what makes
+    it read as lifted out of the row rather than pressed into it.
+  */
+  /*
+    One step past the hover face. It does not need to be heavier than that:
+    the open tab is the only item wearing a face at all, and it never takes a
+    hover step of its own, so nothing the pointer does can be mistaken for it.
+  */
+  --sp-header-button-face-top-selected: light-dark(
+    var(--sp-control-300),
+    var(--sp-control-700)
+  );
+  --sp-header-button-face-bottom-selected: light-dark(
+    var(--sp-control-350),
+    var(--sp-control-750)
+  );
   --sp-header-button-count: light-dark(
     var(--sp-control-100),
     var(--sp-control-800)

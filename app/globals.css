@@ -298,6 +298,27 @@
   control-header-button, so exactly one face utility ever lands on a button and
   nothing depends on which order the classes are written in.
 */
+/*
+  An item at rest keeps the data button's original face. It takes a different
+  face only when it is pointed at, opened, or has something to report.
+*/
+@utility control-header-item {
+  --control-face-top: var(--sp-header-button-face-top);
+  --control-face-bottom: var(--sp-header-button-face-bottom);
+  --control-ring-top: transparent;
+  --control-ring-bottom: transparent;
+  --control-highlight: transparent;
+}
+
+/* The item whose tab the drawer is showing. */
+@utility control-header-button-selected {
+  --control-face-top: var(--sp-header-button-face-top-selected);
+  --control-face-bottom: var(--sp-header-button-face-bottom-selected);
+  --control-ring-top: transparent;
+  --control-ring-bottom: transparent;
+  --control-highlight: transparent;
+}
+
 @utility control-header-button-caution {
   --control-face-top: var(--sp-header-button-face-top-caution);
   --control-face-bottom: var(--sp-header-button-face-bottom-caution);

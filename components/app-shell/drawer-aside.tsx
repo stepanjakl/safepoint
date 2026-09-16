@@ -177,7 +177,9 @@ export function DrawerAside({
       }}
       className={cx(
         PANEL,
-        'drawer-aside grid w-[min(35rem,calc(100vw_-_2_*_var(--spacing-shell-inset)))] grid-cols-[minmax(0,1fr)] grid-rows-[minmax(0,1fr)]',
+        // It fills the column it is given: the sheet decides how wide the
+        // detail is, from the width the list beside it leaves.
+        'drawer-aside grid min-w-0 grid-cols-[minmax(0,1fr)] grid-rows-[minmax(0,1fr)]',
       )}
     >
       <p className="sr-only" aria-live="polite">

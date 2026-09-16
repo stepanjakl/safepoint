@@ -1224,7 +1224,7 @@
   /* The condition dot replaces the count pill at the button's trailing edge.
      Its smaller size needs a matching derived inset to keep its clearance from
      the end equal to its clearance above and below. */
-  .header-button:has(.header-button-state-dot) {
+  .header-button[data-has-state-dot] {
     padding-inline-end: calc(
       (
           var(--header-button-height) - 2 * var(--spacing-control-edge) -

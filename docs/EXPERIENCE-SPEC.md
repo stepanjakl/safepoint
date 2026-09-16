@@ -42,6 +42,8 @@ The portfolio application has five user-facing destinations:
 
 A protected component workbench is available outside the public navigation. It requires an explicit development or preview environment flag and contains no credentials or production data.
 
+Decided, September 2026: a process page is a sheet with tabs rather than a page with a setup drawer over it. The header's menu chooses between the run and the four views of the process itself — instructions, inputs, outputs, settings — each a list beside a detail. The overlay that the drawer used belongs to the review, which is the one surface a reviewer toggles over a run rather than travels to. See [Process header and setup](EMBEDDED-REVIEW.md#process-header-and-setup), which supersedes the drawer described here.
+
 ## Primary workspace
 
 ### Desktop composition

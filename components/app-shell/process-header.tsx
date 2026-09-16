@@ -1,111 +1,164 @@
 'use client';
 
-import { useState } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
 // Deep imports: Blode's barrel is the whole icon library. The two data icons
 // are one drawing: the same tray, with the arrow turned in or out, so the pair
 // reads as a direction rather than as two unrelated pictures.
 import ArrowInbox from 'blode-icons-react/icons/arrow-inbox';
 import ArrowOutOfBox from 'blode-icons-react/icons/arrow-out-of-box';
+import History from 'blode-icons-react/icons/history';
 import Lab from 'blode-icons-react/icons/lab';
-import { Button } from '@/components/ui/button';
+import SettingsGear from 'blode-icons-react/icons/settings-gear-1';
 import { Notch } from '@/components/ui/notch';
 import { cx } from '@/lib/cx';
-import type { InputDetail } from '@/lib/process/input-details';
 import type { ProcessSummary } from '@/lib/process/placeholder-process';
 import {
   needsAttention,
   worstFreshness,
   type SystemLink,
 } from '@/lib/process/system-links';
-import { useInstructions } from './instructions-store';
-import { useRemovedInputs } from './inputs-store';
-import { ProcessDrawer, type ProcessDrawerTab } from './process-drawer';
+import type { ProcessTab } from './process-tab-store';
 import { ProcessTitle } from './process-title';
-import { RefineInstructions } from './refine-instructions';
+import { Assistant } from './assistant';
 
 /*
-  The Instructions button's construction at pill size: the same lit face, the
-  same icon weight and text, and no edge, so the face floats in the row rather
-  than being outlined in it. The notch keeps the outlined shape; these are its
-  siblings, not copies.
-
-  Their stops are their own -- `--sp-header-button-*`, read by
-  control-header-button -- so this row can be retuned without moving every
-  quiet control in the interface.
+  The process's own controls, as one object rather than five. Each keeps the
+  data button's face, while the group only holds their spacing. Whichever tab
+  the sheet is showing is the darker one, so the row says where you already
+  are.
 */
-const DATA_BUTTON =
+const MENU = 'flex flex-none items-center gap-1 rounded-full p-1 max-sm:hidden';
+
+const ITEM =
   'group/data header-button control-face text-primary text-dense inline-flex flex-none cursor-pointer items-center gap-2 rounded-full ps-3 font-medium whitespace-nowrap';
 
 /*
-  One face utility per button, chosen by what its list has to report. Written
-  as whole class lists rather than added to the line above, because two face
-  utilities on one element would be settled by the order they were emitted in
-  the stylesheet rather than by the order they are written here.
+  One face utility per item, chosen by what it has to report and whether its
+  tab is showing. Written as whole class lists rather than added to the line
+  above, because two face utilities on one element would be settled by the
+  order the stylesheet emitted them, not by the order they are written here.
+
+  Selected outranks a condition -- the open tab is where the reader is, and the
+  dot still says the list has something in it -- and it takes no hover step of
+  its own: hover says "this can be pressed", which an item you are already
+  reading has nothing to answer.
 */
 const FACE = {
-  none: 'control-header-button data-[hovered]:control-header-button-hover data-[focus-visible]:control-header-button-hover data-[pressed]:control-header-button-hover',
+  none: 'control-header-item data-[hovered]:control-header-button-hover data-[focus-visible]:control-header-button-hover data-[pressed]:control-header-button-hover',
   stale:
     'control-header-button-caution data-[hovered]:control-header-button-caution-hover data-[focus-visible]:control-header-button-caution-hover data-[pressed]:control-header-button-caution-hover',
   unavailable:
     'control-header-button-blocked data-[hovered]:control-header-button-blocked-hover data-[focus-visible]:control-header-button-blocked-hover data-[pressed]:control-header-button-blocked-hover',
+  selected: 'control-header-button-selected',
 } as const;
 
 /*
-  The count, in one colour rather than a face, stepping with the button. Its
-  size and the button's end padding are derived together (`.header-button` in
-  app/components.css), so with nothing after it the pill sits the same distance
-  from the button's end as from its top and bottom.
+  The count, in one colour rather than a face. Its size and the item's end
+  padding are derived together (`.header-button` in app/components.css), so
+  with nothing after it the pill sits the same distance from the item's end as
+  from its top and bottom.
 */
 const COUNT =
   'value header-button-count bg-header-button-count control-wash group-data-[hovered]/data:bg-header-button-count-hover group-data-[focus-visible]/data:bg-header-button-count-hover group-data-[pressed]/data:bg-header-button-count-hover text-meta inline-grid place-items-center rounded-full px-1.5';
+
+/*
+  The same item with nothing to say. Settings is reached a few times in a
+  process's life, where the others are read every run, so it drops the word
+  rather than claiming the same width; its name is its accessible name. Square,
+  so its icon sits the same distance from all four edges: the derived end
+  padding the labelled items use is exactly what it must not have.
+*/
+const ICON_ITEM =
+  'group/data header-button control-face inline-grid aspect-square flex-none cursor-pointer place-items-center rounded-full ps-0 pe-0';
 
 const STATE_DOT = {
   stale: 'bg-state-caution',
   unavailable: 'bg-state-blocked',
 } as const;
 
+// The word goes before the row runs out of it.
+const LABEL = 'max-lg:hidden';
+
 const plural = (count: number, one: string, many: string) =>
   `${count} ${count === 1 ? one : many}`;
 
 /*
-  What the process reads and what it may write, as two controls rather than a
-  cluster of discs. The discs named systems without saying what they were; the
-  buttons say it -- input files, output APIs -- and each opens its own tab.
+  The run, what the process is told to do, what it reads, what it may write,
+  and how it is set up: five views of one process, and the menu that chooses
+  between them. The run comes first because it is what the page is for.
 
   A condition is a dot, not a word and not a mark: whether anything needs
-  looking at is all the header owes a reader, and the button's name says what
-  and how many. Square and triangle stay with the review, where they mean a
-  held line and a line needing attention.
+  looking at is all the header owes a reader, and the item's name says what and
+  how many. Square and triangle stay with the review, where they mean a held
+  line and a line needing attention.
 
-  Both describe the recorded run's data. There is no live source behind the
-  inputs, so there is no "next run" readiness to report.
+  All of it describes the recorded run's data. There is no live source behind
+  the inputs, so there is no "next run" readiness to report.
 */
-function DataButtons({
+function ProcessMenu({
+  version,
   inputs,
   outputs,
-  onShow,
+  tab,
+  onTabChange,
 }: {
+  version: string;
   inputs: SystemLink[];
   outputs: SystemLink[];
-  onShow: (tab: ProcessDrawerTab) => void;
+  tab: ProcessTab;
+  onTabChange: (tab: ProcessTab) => void;
 }) {
   const attention = inputs.filter(needsAttention).length;
   const worst = worstFreshness(inputs);
   const condition = worst === 'unavailable' ? 'unavailable' : 'stale';
+  const face = (item: ProcessTab, state: keyof typeof FACE = 'none') =>
+    tab === item ? FACE.selected : FACE[state];
 
   return (
-    // Below the phone breakpoint the row cannot hold the name, two controls
-    // and the notch, and the name has first claim: the buttons give way and
-    // what they carry is a tab away, in the drawer the notch opens.
-    <div className="flex flex-none items-center gap-2 max-sm:hidden">
+    // Below the phone breakpoint the row cannot hold the name, the group and
+    // the notch, and the name has first claim.
+    <div className={MENU}>
+      {/* It ends in its word rather than a count, so it ends in the padding it
+          starts with: the derived end inset belongs to the items whose last
+          thing is a pill. */}
+      <AriaButton
+        onPress={() => onTabChange('runs')}
+        aria-label="Runs"
+        aria-current={tab === 'runs' ? 'true' : undefined}
+        className={cx(ITEM, 'pe-3', face('runs'))}
+      >
+        <History
+          aria-hidden
+          size={16}
+          strokeWidth={1.8}
+          className="flex-none"
+        />
+        <span className={LABEL}>Runs</span>
+      </AriaButton>
+      <AriaButton
+        onPress={() => onTabChange('instructions')}
+        aria-label={`Instructions: version ${version}`}
+        aria-current={tab === 'instructions' ? 'true' : undefined}
+        className={cx(ITEM, face('instructions'))}
+      >
+        <Lab
+          aria-hidden
+          size={16}
+          strokeWidth={1.8}
+          className="flex-none -translate-y-px"
+        />
+        <span className={LABEL}>Instructions</span>
+        <span className={COUNT}>{version}</span>
+      </AriaButton>
       {inputs.length > 0 ? (
         <AriaButton
-          onPress={() => onShow('inputs')}
+          onPress={() => onTabChange('inputs')}
           aria-label={`Inputs: ${plural(inputs.length, 'file', 'files')}${
             attention ? `, ${attention} ${condition}` : ''
           }`}
-          className={cx(DATA_BUTTON, FACE[worst ?? 'none'])}
+          aria-current={tab === 'inputs' ? 'true' : undefined}
+          data-has-state-dot={worst || undefined}
+          className={cx(ITEM, face('inputs', worst ?? 'none'))}
         >
           <ArrowInbox
             aria-hidden
@@ -113,23 +166,28 @@ function DataButtons({
             strokeWidth={1.8}
             className="flex-none -translate-y-px"
           />
-          <span className="max-md:hidden">Inputs</span>
-          <span className={COUNT}>{inputs.length}</span>
+          <span className={LABEL}>Inputs</span>
           {worst ? (
-            <span
-              aria-hidden="true"
-              className={cx(
-                'header-button-state-dot size-1.5 flex-none rounded-full',
-                STATE_DOT[worst],
-              )}
-            />
-          ) : null}
+            <span className="inline-flex items-center gap-1.5">
+              <span className={COUNT}>{inputs.length}</span>
+              <span
+                aria-hidden="true"
+                className={cx(
+                  'header-button-state-dot size-1.5 flex-none rounded-full',
+                  STATE_DOT[worst],
+                )}
+              />
+            </span>
+          ) : (
+            <span className={COUNT}>{inputs.length}</span>
+          )}
         </AriaButton>
       ) : null}
       <AriaButton
-        onPress={() => onShow('outputs')}
+        onPress={() => onTabChange('outputs')}
         aria-label={`Outputs: ${plural(outputs.length, 'API', 'APIs')}`}
-        className={cx(DATA_BUTTON, FACE.none)}
+        aria-current={tab === 'outputs' ? 'true' : undefined}
+        className={cx(ITEM, face('outputs'))}
       >
         <ArrowOutOfBox
           aria-hidden
@@ -137,53 +195,54 @@ function DataButtons({
           strokeWidth={1.8}
           className="flex-none -translate-y-px"
         />
-        <span className="max-md:hidden">Outputs</span>
+        <span className={LABEL}>Outputs</span>
         <span className={COUNT}>{outputs.length}</span>
+      </AriaButton>
+      <AriaButton
+        onPress={() => onTabChange('settings')}
+        aria-label="Settings"
+        aria-current={tab === 'settings' ? 'true' : undefined}
+        className={cx(ICON_ITEM, face('settings'))}
+      >
+        {/* No optical lift: the lift aligns an icon with text on a baseline,
+            and this one has no text to align to -- it is centred in its own
+            square instead. */}
+        <SettingsGear aria-hidden size={16} strokeWidth={1.8} />
       </AriaButton>
     </div>
   );
 }
 
 /*
-  Two cells on one row: the heading and the data buttons, then the notch the
-  instructions sit in. The notch sets the row's height -- the heading cell is
-  a single line with no vertical padding of its own, so it stays shorter than
-  the notch at any control height -- and reaches down over the header's rule,
-  so its floor is that rule.
+  Two cells on one row: the heading and the process's menu, then the notch the
+  assistant sits in. The notch sets the row's height -- the heading cell is a
+  single line with no vertical padding of its own, so it stays shorter than the
+  notch at any control height -- and reaches down over the header's rule, so
+  its floor is that rule.
 
-  The rule and its sheen belong to the header, whole width, not to the
-  heading cell. The notch starts wherever the button's text width puts it,
-  usually on a fraction of a pixel, and a translucent sheen drawn by two
-  elements meeting there double-paints that pixel into a bright dot.
+  The rule and its sheen belong to the header, whole width, not to the heading
+  cell. The notch starts wherever the button's text width puts it, usually on a
+  fraction of a pixel, and a translucent sheen drawn by two elements meeting
+  there double-paints that pixel into a bright dot.
 
-  A client component because several triggers in different cells open one
-  drawer, each on its own tab.
+  The tab itself belongs to the sheet: both the menu here and the body below it
+  answer to the same choice.
 */
 export function ProcessHeader({
   process,
+  version,
   inputs,
-  inputDetails,
+  outputs,
+  tab,
+  onTabChange,
 }: {
   process: ProcessSummary;
+  version: string;
   inputs: SystemLink[];
-  inputDetails?: Record<string, InputDetail>;
+  outputs: SystemLink[];
+  tab: ProcessTab;
+  onTabChange: (tab: ProcessTab) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<ProcessDrawerTab>('instructions');
-  // Inputs can be changed, as a preview, only where they have details to
-  // show: the promotion scenario's files. Everything downstream reads the kept
-  // set, so a removed input leaves the count and the list together.
-  const { removed, remove, restore } = useRemovedInputs(process.id);
-  // The current version, which a publish in this browser can move on.
-  const { version } = useInstructions(process.id, process.instructions).current;
-  const kept = inputs.filter((input) => !removed.has(input.id));
-  const available = inputs.filter((input) => removed.has(input.id));
-  const editable = inputDetails !== undefined;
-  const show = (next: ProcessDrawerTab) => {
-    setTab(next);
-    setOpen(true);
-  };
-
   return (
     <header className="border-rule-faint shadow-separator-bottom-strong grid grid-cols-[minmax(0,1fr)_auto] border-b">
       {/* Centred in the row. The notch holds the same inset above its
@@ -193,52 +252,20 @@ export function ProcessHeader({
           optical lift on top of this. */}
       <div className="flex min-w-0 items-center justify-between gap-x-4 px-4 sm:px-6">
         <ProcessTitle processId={process.id} fallback={process.name} />
-        <DataButtons inputs={kept} outputs={process.outputs} onShow={show} />
+        <ProcessMenu
+          version={version}
+          inputs={inputs}
+          outputs={outputs}
+          tab={tab}
+          onTabChange={onTabChange}
+        />
       </div>
-      {/* Two slants sharing a seam: the first leans on both sides, the last
-          keeps its far side square, parallel to the pane's side and the
-          notch's gap in from it. */}
+      {/* One slanted control now that the process's own buttons are in the
+          row: it leans towards them on its left and keeps its far side
+          square, parallel to the pane's side and the notch's gap in from it. */}
       <Notch className="-mt-control-edge -mr-control-edge -mb-control-edge">
-        <Button
-          slant="both"
-          onPress={() => show('instructions')}
-          className="group/instructions"
-        >
-          <Lab
-            aria-hidden
-            size={16}
-            strokeWidth={1.8}
-            className="flex-none -translate-y-px"
-          />
-          {/* The word goes at phone width; the flask and the version say
-              enough there, and the row needs the space for the name. */}
-          <span className="max-sm:hidden">Instructions</span>{' '}
-          {/* 20px tall in a 42px face (see --slant-height): 11px above and
-              below. The end margin leaves 13px to the slope at mid-height,
-              about 12px measured square to it -- the way the notch measures
-              its gaps -- so the pill reads as far from the slope as from the
-              top and bottom.
-              It steps to its hover fill with the face's hover stops -- hover,
-              keyboard focus and press, the same three the button uses -- and
-              fades on the wash's timing. */}
-          <span className="value bg-value-pill text-meta control-wash group-data-[hovered]/instructions:bg-value-pill-hover group-data-[focus-visible]/instructions:bg-value-pill-hover group-data-[pressed]/instructions:bg-value-pill-hover -me-px inline-grid h-5 place-items-center rounded-full px-1.5">
-            {version}
-          </span>
-        </Button>
-        <RefineInstructions version={version} slant="left" />
+        <Assistant slant="left" />
       </Notch>
-      <ProcessDrawer
-        process={process}
-        inputs={kept}
-        availableInputs={available}
-        inputDetails={inputDetails}
-        onRemoveInput={editable ? remove : undefined}
-        onAddInput={editable ? restore : undefined}
-        isOpen={open}
-        onOpenChange={setOpen}
-        tab={tab}
-        onTabChange={setTab}
-      />
     </header>
   );
 }
