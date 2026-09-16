@@ -1,16 +1,17 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import {
   Button as AriaButton,
   Dialog,
   DialogTrigger,
   Heading,
   Popover,
-  Switch,
 } from 'react-aria-components';
 // Deep import: Blode's barrel is the whole icon library.
 import CalendarClock from 'blode-icons-react/icons/calendar-clock';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { Tooltip } from '@/components/ui/tooltip';
 import {
   WEEKDAYS,
@@ -66,102 +67,122 @@ export function ScheduleControl({
         className="control-face surface-floating rounded-shell w-[min(18rem,calc(100vw-2rem))]"
       >
         <Dialog className="grid gap-4 p-4 outline-none">
-          <div className="flex items-center justify-between gap-3">
-            <Heading slot="title" className="text-dense font-medium">
-              Schedule
-            </Heading>
-            <Switch
-              isSelected={schedule.enabled}
-              onChange={(enabled) => update({ enabled })}
-              className="group text-meta text-muted inline-flex cursor-pointer items-center gap-2"
-            >
-              {schedule.enabled ? 'On' : 'Off'}
-              {/* control-face owns its timing, so the track swaps faces and
-                  animates nothing itself; only the thumb travels. */}
-              <span
-                aria-hidden="true"
-                className="control-face control-quiet group-data-[selected]:control-accent relative h-5 w-8.5 rounded-full"
-              >
-                <span className="absolute top-1/2 left-0.75 size-3.5 -translate-y-1/2 rounded-full bg-white shadow-sm transition-transform duration-(--duration-state) ease-out group-data-[selected]:translate-x-3.5 motion-reduce:transition-none" />
-              </span>
-            </Switch>
-          </div>
-
-          {schedule.enabled ? (
-            <>
-              <div
-                role="group"
-                aria-label="Repeats"
-                className="grid grid-cols-2 gap-1.5"
-              >
-                {(['daily', 'weekly'] as const).map((cadence) => (
-                  <button
-                    key={cadence}
-                    type="button"
-                    className={CHOICE}
-                    aria-pressed={schedule.cadence === cadence}
-                    onClick={() => update({ cadence })}
-                  >
-                    {cadence === 'daily' ? 'Daily' : 'Weekly'}
-                  </button>
-                ))}
-              </div>
-              {schedule.cadence === 'weekly' ? (
-                <div
-                  role="group"
-                  aria-label="Day"
-                  className="grid grid-cols-7 gap-1"
-                >
-                  {WEEKDAYS.map((day) => (
-                    <button
-                      key={day}
-                      type="button"
-                      className={`${CHOICE} px-0`}
-                      aria-pressed={schedule.day === day}
-                      aria-label={day}
-                      onClick={() => update({ day })}
-                    >
-                      {day.slice(0, 1)}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-              <label className="text-meta text-muted flex items-center justify-between gap-3">
-                Time
-                <input
-                  type="time"
-                  value={schedule.time}
-                  required
-                  onChange={(event) => {
-                    if (event.target.value)
-                      update({ time: event.target.value });
-                  }}
-                  className="value text-primary border-rule-default bg-surface-inset rounded-control min-h-8 border px-2 [color-scheme:inherit]"
-                />
-              </label>
-              <p className="text-meta text-muted -mt-2 text-right">
-                {schedule.timezone}
-              </p>
-            </>
-          ) : (
-            <div className="grid gap-3">
-              <p className="text-meta text-muted leading-normal">
-                Runs only when someone starts one. Earlier runs are kept.
-              </p>
-              <Tooltip
-                label="Run now"
-                description="Starts a run under the current instructions. Coming soon."
-              >
-                <Button aria-disabled="true">Run now</Button>
-              </Tooltip>
-            </div>
-          )}
-
+          <ScheduleFields
+            schedule={schedule}
+            update={update}
+            title={
+              <Heading slot="title" className="text-dense font-medium">
+                Schedule
+              </Heading>
+            }
+          />
           <p className="border-rule-faint text-muted text-micro border-t pt-3 leading-normal">
             Placeholder. Saved in this browser; nothing starts a run from it.
           </p>
         </Dialog>
       </Popover>
     </DialogTrigger>
+  );
+}
+
+/*
+  The schedule's fields, for both places it is set: the popover on the runs
+  rail and the Settings tab of the setup drawer. The two read and write one
+  store, so a change in either is already in the other.
+*/
+export function ScheduleFields({
+  schedule,
+  update,
+  title,
+}: {
+  schedule: ProcessSchedule;
+  update: ReturnType<typeof useProcessSchedule>[1];
+  // The heading, which is the popover's dialog title in one place and a
+  // section heading in the other.
+  title: ReactNode;
+}) {
+  return (
+    <>
+      <div className="flex items-center justify-between gap-3">
+        {title}
+        <Switch
+          isSelected={schedule.enabled}
+          onChange={(enabled) => update({ enabled })}
+        >
+          {schedule.enabled ? 'On' : 'Off'}
+        </Switch>
+      </div>
+
+      {schedule.enabled ? (
+        <>
+          <div
+            role="group"
+            aria-label="Repeats"
+            className="grid grid-cols-2 gap-1.5"
+          >
+            {(['daily', 'weekly'] as const).map((cadence) => (
+              <button
+                key={cadence}
+                type="button"
+                className={CHOICE}
+                aria-pressed={schedule.cadence === cadence}
+                onClick={() => update({ cadence })}
+              >
+                {cadence === 'daily' ? 'Daily' : 'Weekly'}
+              </button>
+            ))}
+          </div>
+          {schedule.cadence === 'weekly' ? (
+            <div
+              role="group"
+              aria-label="Day"
+              className="grid grid-cols-7 gap-1"
+            >
+              {WEEKDAYS.map((day) => (
+                <button
+                  key={day}
+                  type="button"
+                  className={`${CHOICE} px-0`}
+                  aria-pressed={schedule.day === day}
+                  aria-label={day}
+                  onClick={() => update({ day })}
+                >
+                  {day.slice(0, 1)}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          <label className="text-meta text-muted flex items-center justify-between gap-3">
+            Time
+            <input
+              type="time"
+              value={schedule.time}
+              required
+              onChange={(event) => {
+                if (event.target.value) update({ time: event.target.value });
+              }}
+              className="value text-primary border-rule-default bg-surface-inset rounded-control min-h-8 border px-2 [color-scheme:inherit]"
+            />
+          </label>
+          <p className="text-meta text-muted -mt-2 text-right">
+            {schedule.timezone}
+          </p>
+        </>
+      ) : (
+        <div className="grid gap-3">
+          <p className="text-meta text-muted leading-normal">
+            Runs only when someone starts one. Earlier runs are kept.
+          </p>
+          <Tooltip
+            label="Run now"
+            description="Starts a run under the current instructions. Coming soon."
+          >
+            <Button aria-disabled="true" className="justify-self-start">
+              Run now
+            </Button>
+          </Tooltip>
+        </div>
+      )}
+    </>
   );
 }

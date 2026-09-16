@@ -1,4 +1,7 @@
-import type { ReviewedReplay } from '../promotion-release';
+import type {
+  ReviewedReplay,
+  ScenarioEvidencePack,
+} from '../promotion-release';
 import type { AdapterMode } from '../review-presentation/present-review';
 
 // The list is the declaration and the type is derived from it, so an icon set
@@ -45,6 +48,49 @@ export type SystemLink = {
   // For an input whose currency is a version rather than an observation time.
   detail?: string;
 };
+
+/*
+  The scenario's evidence files, each with the icon its source is drawn with.
+  One table for every reader -- the header's summary and the source detail
+  view -- so a file cannot be listed under one icon in one place and another
+  elsewhere.
+*/
+export const PROMOTION_PACKS = [
+  {
+    key: 'cataloguePricebook',
+    icon: 'catalogue',
+    file: 'catalogue-pricebook.json',
+  },
+  {
+    key: 'shortlistProvenance',
+    icon: 'shortlist',
+    file: 'shortlist-provenance.json',
+  },
+  { key: 'demandEvidence', icon: 'forecast', file: 'demand-evidence.json' },
+  { key: 'supplyPosition', icon: 'supply', file: 'supply-position.json' },
+  { key: 'supplierTerms', icon: 'supplier', file: 'supplier-terms.json' },
+  { key: 'channelState', icon: 'channel', file: 'channel-state.json' },
+  { key: 'operationalNotes', icon: 'note', file: 'operational-notes.json' },
+  { key: 'policyRules', icon: 'policy', file: 'policy-rules.json' },
+] as const satisfies readonly {
+  key: keyof ScenarioEvidencePack;
+  icon: IconKey;
+  file: string;
+}[];
+
+export type PromotionPack = (typeof PROMOTION_PACKS)[number];
+
+// Keyed by the source's name rather than its position, so a choice saved
+// against a source -- removing it, say -- still finds it when the list is
+// reordered or another source appears.
+export function sourceIdFor(label: string): string {
+  const slug = label
+    .normalize('NFKD')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return `source-${slug}`;
+}
 
 export function needsAttention(link: SystemLink): boolean {
   return link.freshness !== undefined && link.freshness.state !== 'fresh';
@@ -95,16 +141,10 @@ type Collected = {
 // source list is derived rather than declared: it cannot drift from the evidence
 // the review is actually citing.
 export function presentPromotionSources(replay: ReviewedReplay): SystemLink[] {
-  const packs: [IconKey, unknown][] = [
-    ['catalogue', replay.scenario.cataloguePricebook],
-    ['shortlist', replay.scenario.shortlistProvenance],
-    ['forecast', replay.scenario.demandEvidence],
-    ['supply', replay.scenario.supplyPosition],
-    ['supplier', replay.scenario.supplierTerms],
-    ['channel', replay.scenario.channelState],
-    ['note', replay.scenario.operationalNotes],
-    ['policy', replay.scenario.policyRules],
-  ];
+  const packs: [IconKey, unknown][] = PROMOTION_PACKS.map((pack) => [
+    pack.icon,
+    replay.scenario[pack.key],
+  ]);
 
   const collected = new Map<string, Collected>();
   for (const [icon, pack] of packs) {
@@ -147,9 +187,9 @@ export function presentPromotionSources(replay: ReviewedReplay): SystemLink[] {
 
   return [...collected.values()]
     .sort((a, b) => a.observedAt.localeCompare(b.observedAt))
-    .map((source, index) => {
+    .map((source) => {
       const link: SystemLink = {
-        id: `source-${index}`,
+        id: sourceIdFor(source.label),
         label: source.label,
         icon: source.icon,
         direction: 'reads',

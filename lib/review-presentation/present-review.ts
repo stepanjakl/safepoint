@@ -229,7 +229,7 @@ const NEXT_ACTIONS: Partial<Record<FindingCode, string>> = {
   required_evidence_unavailable: 'Hold until the supply position is verified',
 };
 
-const GATE_LABELS: Record<Gate, string> = {
+export const GATE_LABELS: Record<Gate, string> = {
   forecast: 'Forecast',
   inventory: 'Inventory',
   supplier: 'Supplier',

@@ -216,6 +216,79 @@ Duvo confirms that its standard and custom connections are MCP servers under the
 
 Safepoint may reuse an external action only when deterministic application code can invoke it with a stable typed schema, bounded credentials, and auditable results. Routing an approved effect through a second autonomous executor agent would reintroduce non-determinism at the write boundary and is not an accepted implementation.
 
+### Read path: from connection to snapshot
+
+Status: Decided as the model for how a process reads; Future as live ingestion. The portfolio's evidence files already stand in for the last stage of this path. See [evidence files as input snapshots](PROMOTION-RELEASE-DATA-DICTIONARY.md#evidence-files-as-input-snapshots).
+
+The write side above keeps integration, connection, action, and adapter apart. The read side needs the same discipline. In a live product, sources vary — a commerce platform, a warehouse database, a spreadsheet, a policy PDF, an inbox, a manual upload — and the agent must never read any of them directly. Every source passes through one path, and the agent's read-only tools see only its end:
+
+```mermaid
+flowchart LR
+    Connector[Integration definition] --> Connection[Connection instance]
+    Connection --> Resource[Resource<br/>table, sheet, folder, endpoint]
+    Resource --> Normalise[Normalise to the input's schema<br/>with provenance]
+    Normalise --> Validate[Validate<br/>required fields, ranges, duplicates]
+    Validate --> Snapshot[Immutable snapshot<br/>per run]
+    Snapshot --> Tools[Read-only tools]
+    Tools --> Agent[Agent]
+    Snapshot --> Policy[Deterministic policy]
+```
+
+| Stage | Responsibility |
+| --- | --- |
+| Integration definition | Describes a service, how it authenticates, and which resources it can read |
+| Connection instance | An authorised account with scopes, an owner, and a credential reference. Held at workspace level and reused by every process that binds it |
+| Resource | The specific table, sheet tab, folder, or endpoint a binding reads |
+| Input | What the process needs to know, declared by the process definition: a schema, whether it is required, a maximum age, and a read mode |
+| Binding | The mapping from one resource's fields to one input's schema, reviewed when the source's structure changes |
+| Normalisation | Produces typed records in the input's schema, each carrying source, resource, fetched-at, source version where one exists, and uncertainty |
+| Validation | Deterministic data-quality checks before any record reaches the agent or policy |
+| Snapshot | The frozen, hashed set of records one run read, with record counts, schema version, and validation results |
+
+#### Inputs are requirements, not systems
+
+A process declares **inputs** — "current shelf price per SKU, no older than 24 hours" — rather than naming systems. A connection satisfies an input through a binding. This keeps three things independent that a list of systems conflates:
+
+- the instructions and policy refer to inputs, so replacing a spreadsheet with a database changes a binding, not the process;
+- an input with no binding is visible as an unmet requirement rather than an absent row;
+- configuration (what the process needs) stays separate from observation (what a particular run read).
+
+Each input declares a read mode: read at run time, synced on a schedule, or uploaded by a person. Its declared maximum age and whether it is required decide what an unmet or stale input does to a run. Policy rules are not an input from a source: they are versioned process configuration, and their currency is their version rather than an observation time.
+
+The process's permitted writes are its **outputs**: a target, the allow-listed operations on it, the adapter mode, and reversibility, as the effect protocol and connector contract already define. Outputs do not use the word *action* in the interface because a connector action is the executable implementation of an operation.
+
+#### Unstructured sources
+
+Documents, notes, and messages pass through extraction instead of field mapping. An extracted record keeps the quoted passage, its location in the source, and an extraction confidence, and it is always untrusted evidence: it may inform the agent's judgement but never overrides a structured fact or instructs the system. The portfolio's operational notes follow this rule already.
+
+#### Snapshots
+
+A run reads snapshots, never live sources. Every evidence identifier the agent or policy cites resolves to a record in a snapshot, so a review remains explainable after the source changes. A snapshot is immutable for as long as the run's review and effects ledger exist. Preflight still re-reads each target before an effect; a snapshot records what the proposal was based on, not what is true at execution time.
+
+The portfolio persists this as `tool_evidence`. A live product adds a snapshot record per input per run — binding, resource, fetched-at, record count, schema version, content hash, and validation results — so that the difference between two runs' snapshots can be shown.
+
+#### Four conditions, reported separately
+
+A source can fail in ways that need different fixes. Report them as separate facts rather than one health state:
+
+| Condition | Examples | Fix | Effect on a run |
+| --- | --- | --- | --- |
+| Connection | Credential expired, scope revoked, rate limited, service unavailable | Reconnect, or notify the connection owner | A required input cannot be read; the run does not start or the input is marked unavailable |
+| Binding | A mapped column renamed or removed, a type changed | Review the mapping | Blocks the input until the mapping is confirmed |
+| Freshness | Records older than the input's maximum age | Sync now | Warns or blocks according to the input's declaration |
+| Coverage | Records missing or unavailable for some candidates | Inspect records | Affected lines become unverifiable; others proceed |
+
+Connection and binding are properties of the setup and can be known before a run. Freshness and coverage are properties of a snapshot: the same source is fresh for one run and stale for the next.
+
+#### Portfolio mapping
+
+- The evidence files under `fixtures/` are snapshots. Nothing ingests them and there are no connections.
+- The four read-only tools already read only these snapshots and never accept a connection, resource, or query from the model.
+- Freshness is derived from each record's `observedAt` against `maximumEvidenceAgeHours` at the scenario's review time; coverage from records whose `kind` is `unavailable`.
+- The process setup interface may mock adding and removing inputs against the scenario's files. Such a mock changes no recorded run, review, or citation, and says so.
+
+This aligns with the evaluation envelope in the [reuse boundary](EMBEDDED-REVIEW.md#reuse-boundary): a versioned input snapshot, evaluation time, policy version, findings, and evidence references.
+
 ### Optional Duvo runtime adapter
 
 Future product work may add an adapter between Duvo's runtime and Safepoint. Duvo's public API can start and monitor runs, read messages and tool results, receive run webhooks, manage queues and cases, and respond to human requests. See the [Developer Platform API](https://docs.duvo.ai/user-guide/running-assignments/api-overview) and [run monitoring guidance](https://docs.duvo.ai/user-guide/running-assignments/api-monitoring).

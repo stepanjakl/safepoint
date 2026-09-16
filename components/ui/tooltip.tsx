@@ -69,7 +69,8 @@ export function Tooltip({
   containerPadding?: TooltipProps['containerPadding'];
   /**
    * What the box is measured to, when not the trigger's own edge. `notch`
-   * lands it on the notch's floor: pass `offset={0}` with it, and see
+   * lands it on the pane's edges round a notch's control -- the floor, and
+   * the pane's side at its end: pass `offset={0}` with it, and see
    * `.app-tooltip[data-anchor]` in app/components.css.
    */
   anchor?: 'notch';

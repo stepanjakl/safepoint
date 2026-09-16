@@ -69,6 +69,24 @@ flowchart LR
 
 The model may interpret evidence and propose a plan, but it does not decide what policy permits and it cannot write to an external service. Safepoint validates the proposal, calculates policy, joins each result back to the source facts, and only then exposes the review model to the interface. During Stage 1, the policy result is also replayed; Stage 3 replaces that temporary input with the calculated policy path shown above.
 
+### Evidence files as input snapshots
+
+In the [read path](TECHNICAL-DESIGN.md#read-path-from-connection-to-snapshot), a run reads immutable snapshots rather than live sources. The evidence files are those snapshots for the recorded run: nothing ingests them, and no connection stands behind them. The process setup interface groups records by `sourceLabel`, so one file can present more than one source.
+
+| File | Source labels | Input it satisfies | Notes |
+| --- | --- | --- | --- |
+| `promotion-brief.json` | Approved Fresh Food Weekend promotion brief | The campaign and its candidate lines | One record: the brief as a whole |
+| `shortlist-provenance.json` | Approved upstream promotion shortlist | Why each candidate was selected, and by whom | 27 records |
+| `catalogue-pricebook.json` | Alderton’s catalogue and pricebook | Product identity, regular and current promotional price, cost, and case pack | 27 records |
+| `demand-evidence.json` | Promotion demand forecast | Sales history and forecasts | 27 records |
+| `supply-position.json` | Distribution-centre supply position | Stock, reservations, and inbound supply | 27 records; one is `unavailable`, which is a coverage condition |
+| `supplier-terms.json` | Supplier trading terms | Lead times, order constraints, allocation, and funding | 27 records |
+| `operational-notes.json` | Campaign manager note; Bounded operational note | Narrative context that needs interpretation | Unstructured and always untrusted evidence |
+| `channel-state.json` | Promotion channel staging state | What each channel currently has staged | 27 records; also the expected values the outputs are preflighted against |
+| `policy-rules.json` | Fresh Food Weekend release policy | — | Versioned process configuration, not an observation: its currency is `policyVersion`, not `observedAt` |
+
+Freshness is derived by comparing each record's `observedAt` with `maximumEvidenceAgeHours` at the campaign's review time; a source is only as current as its oldest record.
+
 ## Shared identity and provenance
 
 These fields appear in several files.

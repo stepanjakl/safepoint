@@ -53,6 +53,21 @@ export type ProcessRun = {
   current?: boolean;
 };
 
+// Instructions are prose, paragraphs separated by a blank line: that is how
+// they are written and how a change to them is read.
+export type InstructionsVersion = {
+  version: string;
+  updatedAt: string;
+  author: string;
+  // Why this version replaced the one before it.
+  note: string | null;
+  // The run or event that showed the previous version was wrong.
+  promptedBy: string | null;
+  // The change log: one line per change, in the words of whoever made it.
+  changes: string[];
+  text: string;
+};
+
 export type ProcessSummary = {
   // Stable across renames: the key a person's schedule change is saved under.
   id: string;
@@ -62,10 +77,10 @@ export type ProcessSummary = {
   // already names, rather than inventing a second vocabulary. Sources are not
   // here: they are derived from the evidence the run actually cited.
   destinations: SystemLink[];
-  instructions: {
-    version: string;
-    updatedAt: string;
-    body: string[];
+  instructions: InstructionsVersion & {
+    // Earlier versions, oldest first. A run that ran under one says so, and
+    // the setup drawer shows what changed from each to the next.
+    previous: InstructionsVersion[];
   };
   // Ordered. The thread renders in this order and the page supplies each
   // step's box by id, so adding a step is a change here and nowhere else.
@@ -116,14 +131,72 @@ export const promotionProcess: ProcessSummary = {
       mode: 'simulated',
     },
   ],
+  /*
+    Three versions, each written in answer to a run that went wrong. The dates
+    agree with the runs below: the runs of 14 and 21 Aug ran under v3, and v4
+    was published between the run of 21 Aug and the next one.
+  */
   instructions: {
     version: 'v4',
-    updatedAt: 'Updated 2 Sep 2026',
-    body: [
-      'Evaluate every shortlisted candidate against the recorded promotion brief and the current pricebook.',
-      'Propose a promotional price, a top-up quantity and a promotion window for each candidate that clears policy.',
-      'Hold any candidate whose projected margin falls below the floor, and any candidate whose supporting evidence is unavailable or out of date.',
-      'Never apply a change. Produce a release plan for a person to review.',
+    updatedAt: 'Updated 24 Aug 2026',
+    author: 'Maya, Promotion operations',
+    note: 'The 21 Aug run priced two lines on week-old supply data and reported nothing blocked. Stale or unavailable evidence now holds a line instead of pricing it, and unverified supplier funding no longer props up a margin.',
+    promptedBy: 'Run of Thu 21 Aug · 26 items · 2 lines priced on stale supply',
+    changes: [
+      "Top-up quantities never exceed the supplier's confirmed allocation.",
+      'A candidate whose evidence is unavailable or older than the policy window is held, not priced.',
+      'A held line names the evidence that was missing or stale.',
+      'Unverified supplier funding no longer counts towards the margin.',
+    ],
+    text: `Evaluate every shortlisted candidate against the recorded promotion brief and the current pricebook. Treat the brief as the source of truth for which candidates are in scope, and the pricebook for regular prices and cost.
+
+Propose a promotional price, a top-up quantity and a promotion window for each candidate that clears policy. Round top-up quantities to the supplier's order multiple, and never above the supplier's confirmed allocation.
+
+Hold any candidate whose projected margin falls below the floor, and any candidate whose supporting evidence is unavailable or older than the policy window. Say which evidence was missing or stale, so a reviewer can chase it rather than rediscover it.
+
+Where supplier funding is unverified, price as if it were not offered and note the difference.
+
+Never apply a change. Produce a release plan for a person to review.`,
+    previous: [
+      {
+        version: 'v2',
+        updatedAt: 'Updated 27 Jul 2026',
+        author: 'Maya, Promotion operations',
+        note: 'Replaces the spreadsheet checklist the team worked through by hand before each weekly release, so the agent does the first pass and a person reviews it.',
+        promptedBy: null,
+        changes: [
+          'Candidates are evaluated against the current pricebook.',
+          'Every candidate that clears policy gets a price, a top-up and a promotion window.',
+          'Candidates below the margin floor are held.',
+          'Nothing is applied: the output is a plan for a person to review.',
+        ],
+        text: `Evaluate every shortlisted candidate against the current pricebook.
+
+Propose a promotional price, a top-up quantity and a promotion window for each candidate that clears policy.
+
+Hold any candidate whose projected margin falls below the floor.
+
+Never apply a change. Produce a release plan for a person to review.`,
+      },
+      {
+        version: 'v3',
+        updatedAt: 'Updated 10 Aug 2026',
+        author: 'Maya, Promotion operations',
+        note: 'The 7 Aug run priced two candidates that had already been withdrawn from the brief, and proposed top-ups in single units the supplier could not accept.',
+        promptedBy: 'Run of Thu 7 Aug · 25 items · 2 withdrawn lines priced',
+        changes: [
+          'Candidates in scope come from the recorded promotion brief, not from the shortlist alone.',
+          'Regular price and cost are read from the pricebook, never from the brief.',
+          "Top-up quantities round to the supplier's order multiple.",
+        ],
+        text: `Evaluate every shortlisted candidate against the recorded promotion brief and the current pricebook. Treat the brief as the source of truth for which candidates are in scope, and the pricebook for regular prices and cost.
+
+Propose a promotional price, a top-up quantity and a promotion window for each candidate that clears policy. Round top-up quantities to the supplier's order multiple.
+
+Hold any candidate whose projected margin falls below the floor.
+
+Never apply a change. Produce a release plan for a person to review.`,
+      },
     ],
   },
   steps: [
@@ -221,14 +294,45 @@ export const supportProcess: ProcessSummary = {
       mode: 'preview_only',
     },
   ],
+  // v2 was published after the run of 5 Sep, the last under v1.
   instructions: {
     version: 'v2',
-    updatedAt: 'Updated 1 Sep 2026',
-    body: [
-      'Review the overnight support queue and propose a receiving team for each open case.',
-      'Draft a customer reply only where the case already carries a verified identity record.',
-      'Hold any case whose identity evidence is missing, and any refund above the agent limit.',
-      'Never move a case or send a message. Produce a handoff plan for a person to review.',
+    updatedAt: 'Updated 5 Sep 2026',
+    author: 'Sam, Support operations',
+    note: 'Replies are drafted only where identity is already verified, and refunds above the agent limit are held for approval.',
+    promptedBy:
+      'Run of Sat 5 Sep · 3 cases · reply drafted for an unverified identity',
+    changes: [
+      'Customer replies are drafted only where a verified identity record exists.',
+      'Refunds above the agent limit are held for approval.',
+    ],
+    text: `Review the overnight support queue and propose a receiving team for each open case.
+
+Draft a customer reply only where the case already carries a verified identity record.
+
+Hold any case whose identity evidence is missing, and any refund above the agent limit.
+
+Never move a case or send a message. Produce a handoff plan for a person to review.`,
+    previous: [
+      {
+        version: 'v1',
+        updatedAt: 'Updated 24 Aug 2026',
+        author: 'Sam, Support operations',
+        note: 'First version: a morning pass over the overnight queue before the day team takes over.',
+        promptedBy: null,
+        changes: [
+          'Each open case gets a proposed receiving team.',
+          'A customer reply is drafted for each case.',
+          'Nothing is moved or sent: the output is a plan for a person to review.',
+        ],
+        text: `Review the overnight support queue and propose a receiving team for each open case.
+
+Draft a customer reply for each case.
+
+Hold any case whose identity evidence is missing.
+
+Never move a case or send a message. Produce a handoff plan for a person to review.`,
+      },
     ],
   },
   steps: [

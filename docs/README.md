@@ -82,7 +82,7 @@ The core review experience can remain consistent when prompts, processes, and ta
 | --- | --- | --- |
 | Review shell | Summary, candidate list, before-and-after values, risk, evidence, decisions, execution, and compensation | Shared across supported processes |
 | Process definition | Proposal schema, allowed effects, editable fields, policies, labels, and field renderers | Defined once for each process type |
-| Connector | Authentication, preflight, write, verification, errors, and compensation for an external service | Reused across processes that use the same supported operations |
+| Connector | Authentication, reads into validated snapshots, preflight, write, verification, errors, and compensation for an external service | Reused across processes that use the same supported operations |
 
 A process does not need a new connector for every prompt. Google Sheets and SAP need different connectors because their authentication, data models, guarantees, and write operations differ. A process then maps its allowed effects to the capabilities already exposed by those connectors.
 
@@ -155,6 +155,12 @@ Maya and Alderton's are design hypotheses, not validated research participants o
 **Run evidence:** the bounded tool and model record that explains how a proposal was produced.
 
 **Effects ledger:** the append-only record of what the application attempted, verified, failed, or compensated.
+
+**Input:** something a process needs to know, declared with a schema, a required flag, and a maximum age, and satisfied by a connection rather than named after one.
+
+**Output:** a target a process may change after review, with its permitted operations, adapter mode, and reversibility.
+
+**Snapshot:** the frozen, validated records one run read for one input. Agent tools and policy read snapshots, never live sources. See [`TECHNICAL-DESIGN.md`](TECHNICAL-DESIGN.md#read-path-from-connection-to-snapshot).
 
 ## Repository layout
 

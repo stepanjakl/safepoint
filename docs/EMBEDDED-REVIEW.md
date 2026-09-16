@@ -48,6 +48,80 @@ Tooltips open on hover and keyboard focus, dismiss on Escape, stay within the vi
 
 Automated browser checks cover menu navigation, rapid reversal and focus restoration, current-route highlighting, pointer and keyboard reordering, Escape drag cancellation, unfinished draft preservation, persistence across routes/reloads, unavailable browser storage, 320 px and 390 px layouts, truncated names, hover/focus tooltips, Escape dismissal, hoverable tooltip surfaces, and reduced motion. Light and dark layouts were visually inspected. Unit tests cover malformed saved preferences, changed process lists, reorder boundaries, and statuses derived from actual review plans. These checks do not replace testing with assistive technology.
 
+## Process header and setup
+
+Status: direction agreed 15 September 2026. The editable title, setup drawer, side panel, and Settings tab are implemented; the data status and Data tab replace the current systems summary and Systems tab next. Use the [product terminology](PRODUCT-BRIEF.md#product-terminology) and the [read path](TECHNICAL-DESIGN.md#read-path-from-connection-to-snapshot).
+
+A process page answers two questions before any run is opened: will the next run have what it needs, and what can it change? The header states that; the setup drawer explains it. What a particular run read belongs to that run's thread and evidence, not to the header.
+
+### Header
+
+One row, flush with the notch: the process title, the data status, then the notch holding **Instructions** with its version and the refine placeholder.
+
+The **title** is an input dressed as the heading. Pointing at it shows a field face lighter than the sheet; clicking places the caret at the end of the name. Enter or leaving the field keeps a change, Escape restores the name, and an empty name keeps the old one. The name is shared with the sidebar and the drawer.
+
+The **data status** replaces the stacked system discs, which say which systems exist but not whether the next run is safe to start:
+
+```text
+Promotion release   In 9 · ▲ 1 stale  →  Out 4 · sandbox   ╱ Instructions v4 ╲
+```
+
+- **In** gives the count of inputs and the worst condition in words — "1 stale", "login expired", "2 need mapping". With nothing to report it is only the count.
+- **Out** gives the count of outputs and the least real adapter mode among them — "sandbox", "simulated" — and nothing when every output is live.
+- It describes readiness for the next scheduled or manual run, for example "Ready for Thu 09:00".
+- Each half opens the setup drawer at its own section. State is never carried by colour or shape alone.
+- At narrow widths both halves collapse to counts; a condition that needs attention stays visible.
+
+### Setup drawer
+
+A slide-over with three tabs: **Instructions**, **Data**, and **Settings**. A detail opened from the drawer opens in a second panel on its left; the control that opened it closes it again, and choosing another item swaps the content in place.
+
+#### Data tab
+
+A list, not a canvas: it has to stay legible at 50 inputs.
+
+```text
+INPUTS                                    Ready for Thu 09:00
+● Current shelf price     Shopify · Products          18 min ago
+▲ Supply position         Postgres · dc_supply        26 h · limit 24 h
+○ Supplier terms          No source                   Connect…
+◐ Policy rules            policy.pdf · extracted      3 passages low confidence
+
+OUTPUTS
+Promotion price           Storefront        sandbox · restores automatically
+Shelf labels              Label service     simulated · manual follow-up
+```
+
+- An input row reads requirement, then source, then condition. An input with no source is a row with a Connect action, not an absence.
+- An output row reads what changes, then the target, then adapter mode and reversibility in consequence language.
+- Conditions follow the four in the technical design — connection, binding, freshness, coverage — each with its own words and its own fix.
+- Future: a map view with inputs on the left, the process and its instruction version in the middle, and outputs on the right, lines coloured by condition. It is an overview of the list, not an editor.
+
+#### Input detail
+
+Opens in the side panel, with five sections:
+
+1. **Records** — normalised records, with the raw source record available, filterable, and linked to the review items that cite them.
+2. **Mapping** — source fields against the input's schema, with changes shown when the source's structure moves.
+3. **History** — snapshots by run, with what changed between them.
+4. **Usage** — the checks that depend on the input and what a run would do without it.
+5. **Access** — the connection, its owner, scopes, credential expiry, and Reconnect.
+
+#### Adding an input
+
+A guided flow in the side panel: choose a connector, with the workspace's existing connections first; authenticate or reuse a connection; choose the resource and preview it; confirm suggested field mappings; set required, maximum age, and read mode; then test the read ("1,284 records · 2 failed validation") before attaching. Adding an output follows the same flow, starts in sandbox mode, and becomes live only after a successful sandbox run.
+
+#### Settings tab
+
+In the order it is reached for: the name, the schedule (the same control and store as the runs rail), notifications, and last archive or delete. Archive is the ordinary way to end a process: it stops the schedule and hides the process but keeps its runs and reviews. Permanent deletion takes the record of what runs changed with it, so it is only for a process that has never run.
+
+### Portfolio boundary
+
+- Connections live at workspace level; the drawer shows a process's bindings and links to the connection. Workspace connection management is Future.
+- The scenario's evidence files stand in for snapshots. Adding and removing inputs is a browser-local mock over those files and changes no recorded run, review, or citation.
+- Outputs cannot be changed. Notifications, archive, and delete are unavailable placeholders.
+- The schedule and the process name are saved in the browser; nothing starts a run from the schedule.
+
 ## Two surfaces
 
 The inline response names the process and batch, accounts for every item in three groups, shows the leading blocker, and offers one primary review action. Ready means ready for human review, never approved or applied. Replay mode and the absence of applied changes remain visible.

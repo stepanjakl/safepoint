@@ -9,13 +9,17 @@ import { Glyph } from '@/components/ui/glyph';
 import { Notch } from '@/components/ui/notch';
 import { cx } from '@/lib/cx';
 import type { ProcessSummary } from '@/lib/process/placeholder-process';
+import type { SourceDetail } from '@/lib/process/source-details';
 import {
   byAttention,
   needsAttention,
   worstFreshness,
   type SystemLink,
 } from '@/lib/process/system-links';
+import { useRemovedSources } from './connections-store';
+import { useInstructions } from './instructions-store';
 import { ProcessDrawer, type ProcessDrawerTab } from './process-drawer';
+import { ProcessTitle } from './process-title';
 import { RefineInstructions } from './refine-instructions';
 import { SystemDisc } from './system-parts';
 
@@ -91,8 +95,8 @@ function SystemsSummary({
   Two cells on one row: the heading and its systems, then the notch the
   instructions sit in. The notch sets the row's height -- the heading cell is
   a single line with no vertical padding of its own, so it stays shorter than
-  the notch whether the notch holds a gap above its controls or not -- and
-  reaches down over the header's rule, so its floor is that rule.
+  the notch at any control height -- and reaches down over the header's rule,
+  so its floor is that rule.
 
   The rule and its sheen belong to the header, whole width, not to the
   heading cell. The notch starts wherever the button's text width puts it,
@@ -105,12 +109,23 @@ function SystemsSummary({
 export function ProcessHeader({
   process,
   sources,
+  sourceDetails,
 }: {
   process: ProcessSummary;
   sources: SystemLink[];
+  sourceDetails?: Record<string, SourceDetail>;
 }) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<ProcessDrawerTab>('instructions');
+  // Connections can be changed only where the sources have details to show:
+  // the promotion scenario's files. Everything downstream reads the connected
+  // set, so a removed source leaves the count and the list together.
+  const { removed, remove, restore } = useRemovedSources(process.id);
+  // The current version, which a publish in this browser can move on.
+  const { version } = useInstructions(process.id, process.instructions).current;
+  const connected = sources.filter((source) => !removed.has(source.id));
+  const available = sources.filter((source) => removed.has(source.id));
+  const editable = sourceDetails !== undefined;
   const show = (next: ProcessDrawerTab) => {
     setTab(next);
     setOpen(true);
@@ -118,29 +133,34 @@ export function ProcessHeader({
 
   return (
     <header className="border-rule-faint shadow-separator-bottom-strong grid grid-cols-[minmax(0,1fr)_auto] border-b">
-      {/* Centred in the row, not on the notch's controls. The controls sit
-          against the pane's top edge with the notch's gap below them, so their
-          labels ride half that gap higher; the heading is read against the
-          header's own box, and the slope between them hides the difference. */}
+      {/* Centred in the row. The notch holds the same inset above its
+          controls as below them, so their centre is the row's too and the
+          heading lines up with them at any control height or gap, with even
+          space above and below. The controls' icons keep their own 1px
+          optical lift on top of this. */}
       <div className="flex min-w-0 items-center justify-between gap-x-4 px-4 sm:px-6">
-        <h2 className="text-title truncate [font-weight:550]">
-          {process.name}
-        </h2>
+        <ProcessTitle processId={process.id} fallback={process.name} />
         <SystemsSummary
-          sources={sources}
+          sources={connected}
           destinations={process.destinations}
           onPress={() => show('systems')}
         />
       </div>
       {/* Two slants sharing a seam: the first leans on both sides, the last
-          keeps its far side square against the pane's edge. */}
+          keeps its far side square, parallel to the pane's side and the
+          notch's gap in from it. */}
       <Notch className="-mt-control-edge -mr-control-edge -mb-control-edge">
         <Button
           slant="both"
           onPress={() => show('instructions')}
           className="group/instructions"
         >
-          <Lab aria-hidden size={16} strokeWidth={1.8} className="flex-none -translate-y-px" />
+          <Lab
+            aria-hidden
+            size={16}
+            strokeWidth={1.8}
+            className="flex-none -translate-y-px"
+          />
           Instructions{' '}
           {/* 20px tall in a 42px face (see --slant-height): 11px above and
               below. The end margin leaves 13px to the slope at mid-height,
@@ -151,17 +171,18 @@ export function ProcessHeader({
               keyboard focus and press, the same three the button uses -- and
               fades on the wash's timing. */}
           <span className="value bg-value-pill text-meta control-wash group-data-[hovered]/instructions:bg-value-pill-hover group-data-[focus-visible]/instructions:bg-value-pill-hover group-data-[pressed]/instructions:bg-value-pill-hover -me-px inline-grid h-5 place-items-center rounded-full px-1.5">
-            {process.instructions.version}
+            {version}
           </span>
         </Button>
-        <RefineInstructions
-          version={process.instructions.version}
-          slant="left"
-        />
+        <RefineInstructions version={version} slant="left" />
       </Notch>
       <ProcessDrawer
         process={process}
-        sources={sources}
+        sources={connected}
+        availableSources={available}
+        sourceDetails={sourceDetails}
+        onRemoveSource={editable ? remove : undefined}
+        onConnectSource={editable ? restore : undefined}
         isOpen={open}
         onOpenChange={setOpen}
         tab={tab}

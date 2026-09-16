@@ -42,8 +42,6 @@ type Drag = {
   startedClosed: boolean;
 };
 
-// Briefly retain the old click target while the sheet moves immediately.
-const DOUBLE_CLICK_WINDOW = 500;
 const HOVER_SETTLE_MS = 90;
 const HOVER_SPEED_LIMIT = 0.35; // CSS pixels per millisecond.
 
@@ -65,10 +63,10 @@ export function ResizableShell({
   const [preview, setPreview] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [gripPressed, setGripPressed] = useState(false);
-  const [clickTarget, setClickTarget] = useState<DOMRect | null>(null);
   const [directionArmed, setDirectionArmed] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const [gripHovered, setGripHovered] = useState(false);
   const [keyboardFocused, setKeyboardFocused] = useState(false);
   const pointerSample = useRef<{ x: number; y: number; time: number } | null>(
     null,
@@ -81,9 +79,7 @@ export function ResizableShell({
   const navigationRef = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
   const releasedAt = useRef<{ x: number; y: number } | null>(null);
-  const suppressClick = useRef(false);
   const hold = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingClick = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigationId = useId();
   const helpId = useId();
 
@@ -131,11 +127,8 @@ export function ResizableShell({
       );
       if (!minimum) {
         drag.current = null;
-        suppressClick.current = true;
         if (hold.current !== null) clearTimeout(hold.current);
         hold.current = null;
-        if (pendingClick.current !== null) clearTimeout(pendingClick.current);
-        pendingClick.current = null;
         setIsDragging(false);
         setGripPressed(false);
         setPreview(null);
@@ -148,7 +141,6 @@ export function ResizableShell({
     return () => {
       observer.disconnect();
       if (hold.current !== null) clearTimeout(hold.current);
-      if (pendingClick.current !== null) clearTimeout(pendingClick.current);
     };
   }, []);
 
@@ -222,18 +214,10 @@ export function ResizableShell({
     hold.current = null;
   }
 
-  function cancelPendingClick() {
-    if (pendingClick.current !== null) clearTimeout(pendingClick.current);
-    pendingClick.current = null;
-    setClickTarget(null);
-  }
-
   function cancelDrag() {
-    cancelPendingClick();
     stopHold();
     if (!drag.current) return;
     drag.current = null;
-    suppressClick.current = true;
     setIsDragging(false);
     setGripPressed(false);
     setPreview(null);
@@ -245,7 +229,6 @@ export function ResizableShell({
   }
 
   function resize(next: number | null) {
-    cancelPendingClick();
     if (!bounds) return;
     saveSidebarPreferences({
       width: next === null ? null : clamp(next) / bounds.unit,
@@ -255,8 +238,6 @@ export function ResizableShell({
 
   function startDrag(event: PointerEvent<HTMLDivElement>) {
     if (event.button !== 0 || !event.isPrimary || !bounds) return;
-    cancelPendingClick();
-    suppressClick.current = false;
     clearHoverTimer();
     setKeyboardFocused(false);
     setGripPressed(
@@ -353,7 +334,6 @@ export function ResizableShell({
     if (!session || session.pointer !== event.pointerId) return;
     stopHold();
     drag.current = null;
-    suppressClick.current = session.moved;
     if (session.moved) {
       releasedAt.current = { x: event.clientX, y: event.clientY };
       leaveHover();
@@ -372,6 +352,10 @@ export function ResizableShell({
     setGripPressed(false);
     setPreview(null);
     event.currentTarget.releasePointerCapture(event.pointerId);
+    if (!session.moved) {
+      if (event.altKey) resize(null);
+      else toggle();
+    }
   }
 
   const style: CSSProperties & {
@@ -393,31 +377,6 @@ export function ResizableShell({
       data-dragging={isDragging || undefined}
       data-close-pending={willClose || undefined}
     >
-      {clickTarget ? (
-        <div
-          aria-hidden="true"
-          className="fixed z-50 cursor-pointer"
-          style={{
-            left: clickTarget.left,
-            top: clickTarget.top,
-            width: clickTarget.width,
-            height: clickTarget.height,
-          }}
-          onPointerDown={(event) => {
-            if (event.button !== 0 || !event.isPrimary) return;
-            // Once the second press starts, keep its target alive through
-            // release even if the double-click window expires meanwhile.
-            if (pendingClick.current !== null)
-              clearTimeout(pendingClick.current);
-            pendingClick.current = null;
-            event.preventDefault();
-            event.currentTarget.setPointerCapture(event.pointerId);
-          }}
-          onClick={() => resize(null)}
-          onPointerCancel={cancelPendingClick}
-          onPointerLeave={cancelPendingClick}
-        />
-      ) : null}
       <div
         ref={probes}
         aria-hidden="true"
@@ -448,7 +407,7 @@ export function ResizableShell({
               <span className="block">
                 {collapsed ? 'Drag right to open' : 'Drag to resize'}
               </span>
-              <span className="block">Double-click to reset</span>
+              <span className="block">Alt-click to reset</span>
             </>
           }
           placement="right"
@@ -456,7 +415,9 @@ export function ResizableShell({
           offset={4}
           isDisabled={preview !== null || optionsOpen}
           isOpen={
-            (hovered || keyboardFocused) && preview === null && !optionsOpen
+            ((hovered && gripHovered) || keyboardFocused) &&
+            preview === null &&
+            !optionsOpen
           }
           onOpenChange={(open) => {
             if (!open) {
@@ -500,35 +461,29 @@ export function ResizableShell({
               setKeyboardFocused(event.currentTarget.matches(':focus-visible'))
             }
             onBlur={() => {
-              cancelPendingClick();
               setKeyboardFocused(false);
             }}
             onPointerDown={startDrag}
             onPointerMove={moveDrag}
             onPointerUp={endDrag}
             onPointerCancel={cancelDrag}
-            onLostPointerCapture={cancelDrag}
-            onClick={(event) => {
-              if (suppressClick.current) {
-                suppressClick.current = false;
-                return;
-              }
-              const target = grip.current?.getBoundingClientRect();
-              if (event.detail <= 1) {
-                toggle();
-                if (event.detail === 1 && target) {
-                  setClickTarget(target);
-                  pendingClick.current = setTimeout(
-                    cancelPendingClick,
-                    DOUBLE_CLICK_WINDOW,
-                  );
-                }
-              }
+            onLostPointerCapture={() => {
+              // Capture loss after release must not cancel a completed gesture.
+              if (drag.current) cancelDrag();
             }}
-            onDoubleClick={(event) => {
-              event.preventDefault();
-              cancelDrag();
-              resize(null);
+            onClick={(event) => {
+              // Pointer gestures activate on release. Keep virtual activation
+              // for assistive technology, which has no preceding pointer pair.
+              if (
+                event.detail === 0 &&
+                !(
+                  event.nativeEvent instanceof globalThis.PointerEvent &&
+                  event.nativeEvent.pointerType
+                )
+              ) {
+                if (event.altKey) resize(null);
+                else toggle();
+              }
             }}
             onContextMenu={(event) => {
               event.preventDefault();
@@ -537,7 +492,6 @@ export function ResizableShell({
               setOptionsOpen(true);
             }}
             onKeyDown={(event) => {
-              cancelPendingClick();
               if (event.key === 'Escape') {
                 cancelDrag();
                 return;
@@ -550,7 +504,10 @@ export function ResizableShell({
                 setOptionsOpen(true);
               } else if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
-                if (!event.repeat) toggle();
+                if (!event.repeat) {
+                  if (event.altKey && event.key === 'Enter') resize(null);
+                  else toggle();
+                }
               } else if (
                 bounds &&
                 ['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)
@@ -567,7 +524,15 @@ export function ResizableShell({
               }
             }}
           >
-            <span ref={grip} className="sidebar-handle-mark" aria-hidden="true">
+            <span
+              ref={grip}
+              className="sidebar-handle-mark"
+              aria-hidden="true"
+              onPointerEnter={(event) =>
+                setGripHovered(event.pointerType !== 'touch')
+              }
+              onPointerLeave={() => setGripHovered(false)}
+            >
               <svg className="h-11 w-6" viewBox="0 0 24 44" fill="none">
                 <motion.path
                   className="sidebar-handle-stroke"
@@ -587,9 +552,9 @@ export function ResizableShell({
           maximum. Enter or Space hides or restores the sidebar. Escape cancels
           a drag. Right-click, touch and hold, or Shift F10 opens width presets.
           Drag left past halfway and release to hide; drag right to restore. A
-          partial opening snaps to the minimum width. Double-click resets to the
-          default width; choose Default in the width presets for the same
-          action.
+          partial opening snaps to the minimum width. Alt-click or Alt+Enter
+          resets to the default width; choose Default in the width presets for
+          the same action.
         </span>
         {children}
         <Popover

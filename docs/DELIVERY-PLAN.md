@@ -359,7 +359,7 @@ Do not begin this work until the public portfolio release meets its acceptance g
 
 1. Extract the directly imported grocery process module into a reusable versioned format without weakening compile-time validation.
 2. Expand the closed effect union and renderer set beyond the five portfolio effect kinds only when a second process needs them.
-3. Define a broader connector capability manifest and an allow-listed operation registry only when direct adapter selection becomes insufficient.
+3. Define a broader connector capability manifest and an allow-listed operation registry only when direct adapter selection becomes insufficient. Build the read path in the same step: workspace connections, input bindings with reviewed field mapping, validation, and immutable per-run snapshots, as described in [Read path: from connection to snapshot](TECHNICAL-DESIGN.md#read-path-from-connection-to-snapshot). The agent's tools keep reading snapshots only.
 4. Onboard a second process using the same review shell and measure where new effect or value renderers are genuinely required.
 5. Rehearse a proposal against a simulation and show predicted side effects.
 6. Generate and compare alternative plans under the same policy.

@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 
 /**
- * Boots the LocatorJS overlay (option-click an element to open its JSX).
+ * Boots the LocatorJS overlay (Alt+Shift-click an element to open its JSX).
  *
  * The published browser extension (1.3.2, 2023) predates the path-based
  * `data-locatorjs` attributes that `@locator/webpack-loader` emits, so it
@@ -19,6 +19,10 @@ export function LocatorRuntime() {
     if (process.env.NODE_ENV !== 'development') {
       return;
     }
+
+    // Alt-click belongs to sidebar reset. Locator reads this attribute for
+    // both keyboard activation and mouse events, so its overlay cannot steal it.
+    document.documentElement.dataset.locatorMouseModifiers = 'alt+shift';
 
     // Dynamic so the package never enters the server or production bundle.
     void import('@locator/runtime').then(({ default: setup }) => {

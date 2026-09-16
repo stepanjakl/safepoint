@@ -183,6 +183,10 @@ The revised scenario asks whether a promotion is operationally and commercially 
 - Node.js 24 LTS is the application runtime and pnpm 10 is the package manager. Bun remains a valid considered alternative, but adopting it only for package installation would add a second runtime toolchain without improving the portfolio's core proof.
 - Playwright and axe begin with the first interface milestone because accessibility and representative visual checks are part of that milestone's acceptance gate.
 - The first implementation uses one directly imported promotion process module and five effect kinds. General registries and broader effect taxonomies are future work.
+- A process declares inputs as requirements and outputs as permitted targets; it does not present a flat list of systems. Connections satisfy inputs through reviewed bindings, and runs read immutable snapshots, never live sources. See [Read path: from connection to snapshot](TECHNICAL-DESIGN.md#read-path-from-connection-to-snapshot).
+- Source problems are reported as four separate conditions — connection, binding, freshness, and coverage — because each has a different fix and a different effect on a run.
+- The process header reports readiness for the next run; what a past run read belongs to that run. See [Process header and setup](EMBEDDED-REVIEW.md#process-header-and-setup).
+- Archive, which keeps runs and reviews, is the ordinary way to end a process. Permanent deletion is only for a process that has never run.
 - The portfolio has no fixed calendar deadline. Progress is controlled by acceptance gates.
 - The public narrative is self-contained and contains no private career or application context.
 
@@ -200,6 +204,7 @@ The revised scenario asks whether a promotion is operationally and commercially 
 - Rehearse proposed plans against a simulation before execution.
 - Compare alternative plans and explain trade-offs.
 - Add richer connectors and organisation-level approval policies.
+- Ingest live sources through workspace connections into validated per-run snapshots, with field mapping, extraction for unstructured sources, and snapshot history.
 - Support collaborative review and enterprise identity.
 - Investigate stronger connector-specific concurrency controls.
 - Add an optional Duvo runtime adapter only after the provider-independent portfolio workflow is proven.

@@ -12,6 +12,7 @@ import { ReplayReview } from '@/components/review/replay-review';
 import { loadReviewedReplay } from '@/lib/promotion-release';
 import { parseSkuParam } from '@/lib/review-presentation';
 import { promotionProcess } from '@/lib/process/placeholder-process';
+import { presentPromotionSourceDetails } from '@/lib/process/source-details';
 import { presentPromotionSources } from '@/lib/process/system-links';
 import { presentPromotionPlan } from '@/lib/review/promotion-adapter';
 
@@ -42,7 +43,11 @@ export default async function ReviewPage({ searchParams }: PageProps<'/'>) {
   };
 
   return (
-    <ProcessView process={promotionProcess} sources={sources}>
+    <ProcessView
+      process={promotionProcess}
+      sources={sources}
+      sourceDetails={presentPromotionSourceDetails(replay)}
+    >
       <ThreadPage
         eyebrow="Alderton’s · Promotion operations"
         title="Fresh Food Weekend"
@@ -68,8 +73,7 @@ export default async function ReviewPage({ searchParams }: PageProps<'/'>) {
         </div>
       </ThreadPage>
       <footer className="text-muted text-meta p-6 text-center">
-        The agent proposes. You review. Safepoint applies only approved
-        changes.
+        The agent proposes. You review. Safepoint applies only approved changes.
       </footer>
     </ProcessView>
   );

@@ -53,13 +53,12 @@ clicks remain immediate.
 - Closing preserves the last open width. Dragging right from the closed edge uses
   the same threshold to reopen. Escape and pointer cancellation restore the state
   from before the gesture. Releasing a drag never becomes an additional click.
-- Double-click opens at the design default width (250px at the default text
-  size). The Default width preset provides the same action without double-clicking.
-  Clicks respond immediately. For 500ms, a temporary pointer target at the old
-  grip position accepts the second click while the sheet moves. Once the second
-  press starts, its target stays alive until release or cancellation. Leaving that
-  target, changing focus, or using the keyboard clears it. Pressing keeps the
-  pointer cursor; only movement beyond the drag slop activates the resize cursor.
+- Single-click hides or restores immediately. Alt-click resets to the design
+  default width (250px at the default text size) without toggling first.
+  Alt+Enter and the Default width preset provide the same reset from the keyboard.
+  There is no double-click action, click timer, or temporary pointer target.
+  Pressing keeps the pointer cursor; only movement beyond the drag slop
+  activates the resize cursor.
 - Sidebar icon geometry remains owned by its existing rail cells and axes.
 - Width and collapse preferences are local to the browser and shared across
   routes/tabs. They are presentation preferences, never navigation URL state.
@@ -76,8 +75,8 @@ clicks remain immediate.
   releases on both sides of the close threshold, and drag-to-reopen pass browser
   checks. The menu is inert during direct manipulation.
 - Snap-open direction and minimum-width release pass from both a wide sidebar
-  and a closed sidebar. Real pointer double-clicks reset both open and closed
-  states without an extra delayed toggle; keyboard and drag cancellation also pass.
+  and a closed sidebar. Alt-click and Alt+Enter reset both open and closed
+  states without an intermediate toggle; keyboard and drag cancellation also pass.
 - The existing Cmd/Ctrl+K shortcut restores a hidden sidebar before focusing
   search. Reduced motion disables the transition.
 - Checked the 600px stacked layout and the 900px desktop threshold, including

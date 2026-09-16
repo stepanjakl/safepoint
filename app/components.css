@@ -9,6 +9,8 @@
   - shadow compositions a state has to extend rather than restate, on the
     system disc and the menu row
   - a two-speed transition on the reorder row
+  - a component's connected state and geometry, when splitting them across
+    markup would let the pieces drift
 
   Everything else about these components lives in their own file.
 */
@@ -39,6 +41,98 @@
   --review-severity-1: var(--sp-state-caution);
   --review-severity-2: var(--sp-state-unavailable);
   --review-severity-3: var(--sp-state-verified);
+}
+
+@layer components {
+  /*
+    The track owns the switch's four dimensions; the thumb derives both
+    resting insets and its selected travel from them. `control-face` keeps the
+    track's paint and its state transitions, while this rule keeps the related
+    switch states together.
+  */
+  .switch-track {
+    --control-face-top: var(--sp-quiet-face-top);
+    --control-face-bottom: var(--sp-quiet-face-bottom);
+    --control-ring-top: var(--sp-quiet-ring-top);
+    --control-ring-bottom: var(--sp-quiet-ring-bottom);
+    --control-highlight: transparent;
+    --switch-thumb-face: var(--control-ring-bottom);
+    position: relative;
+    flex: none;
+    inline-size: var(--spacing-switch-track-inline);
+    block-size: var(--spacing-switch-track-block);
+  }
+
+  .switch-thumb {
+    position: absolute;
+    inset-block-start: calc(
+      var(--spacing-switch-thumb-gap) - var(--spacing-control-edge)
+    );
+    inset-inline-start: calc(
+      var(--spacing-switch-thumb-gap) - var(--spacing-control-edge)
+    );
+    inline-size: var(--spacing-switch-thumb);
+    block-size: var(--spacing-switch-thumb);
+    border-radius: 9999px;
+    background-color: var(--switch-thumb-face);
+    transition: transform var(--duration-state) ease-out;
+  }
+
+  .switch[data-selected] .switch-track {
+    --control-face-top: var(--sp-accent-face-top);
+    --control-face-bottom: var(--sp-accent-face-bottom);
+    --control-ring-top: var(--sp-accent-ring-top);
+    --control-ring-bottom: var(--sp-accent-ring-bottom);
+    --control-highlight: var(--sp-face-highlight-subtle);
+  }
+
+  .switch[data-disabled] .switch-track {
+    --control-face-top: var(--sp-off-face);
+    --control-face-bottom: var(--sp-off-face);
+    --control-ring-top: var(--sp-off-ring);
+    --control-ring-bottom: var(--sp-off-ring);
+    --control-highlight: transparent;
+  }
+
+  .switch[data-focus-visible]:not([data-selected]):not([data-disabled])
+    .switch-track {
+    --control-face-top: var(--sp-quiet-face-top-hover);
+    --control-face-bottom: var(--sp-quiet-face-bottom-hover);
+    --control-ring-top: var(--sp-quiet-ring-top-hover);
+    --control-ring-bottom: var(--sp-quiet-ring-bottom-hover);
+  }
+
+  .switch[data-focus-visible][data-selected]:not([data-disabled])
+    .switch-track {
+    --control-face-top: var(--sp-accent-face-top-hover);
+    --control-face-bottom: var(--sp-accent-face-bottom-hover);
+    --control-ring-top: var(--sp-accent-ring-top-hover);
+    --control-ring-bottom: var(--sp-accent-ring-bottom-hover);
+    --control-highlight: var(--sp-face-highlight-subtle);
+  }
+
+  .switch[data-selected] .switch-thumb {
+    background-color: var(--sp-switch-thumb-selected);
+    transform: translateX(
+      calc(
+        var(--spacing-switch-track-inline) - var(--spacing-switch-thumb) - 2 *
+          var(--spacing-switch-thumb-gap)
+      )
+    );
+  }
+
+  :dir(rtl) .switch[data-selected] .switch-thumb {
+    transform: translateX(
+      calc(
+        var(--spacing-switch-thumb) + 2 * var(--spacing-switch-thumb-gap) -
+          var(--spacing-switch-track-inline)
+      )
+    );
+  }
+
+  .switch[data-disabled] .switch-thumb {
+    opacity: 0.6;
+  }
 }
 
 @layer components {
@@ -321,13 +415,95 @@
       transform: translateX(100%);
     }
   }
+  /*
+    The side panel beside the drawer (components/app-shell/drawer-aside.tsx).
+    It animates on mount and on data-exiting rather than on react-aria's
+    states, because it is a part of the drawer's dialog, not a dialog of its
+    own; the component unmounts what has finished leaving.
+
+    The panel travels in from the left, the side it opens towards, and leaves
+    the same way -- in on the pane's step and curve, out shorter and easing in
+    like the drawer's own exit. The content it opens with fades in once the
+    panel is in place, so the panel reads as arriving and then filling.
+
+    Choosing another item keeps the panel still. The old content leaves,
+    quick and easing in; the new content arrives on the pane's curve. The two
+    share one grid cell while they cross, and travel the way the list does:
+    rising for an item further down, falling for one further up. The travel
+    is one signed distance, so a direction swapped mid-flight never restarts
+    an animation.
+  */
+  .drawer-aside {
+    --aside-swap-travel: 1rem;
+    animation: drawer-aside-in var(--duration-pane)
+      --theme(--ease-out-emphasized) both;
+  }
+  .drawer-aside[data-direction='up'] {
+    --aside-swap-travel: -1rem;
+  }
+  .drawer-aside[data-exiting] {
+    pointer-events: none;
+    animation: drawer-aside-out 180ms ease-in both;
+  }
+  @keyframes drawer-aside-in {
+    from {
+      opacity: 0;
+      transform: translateX(-1.5rem);
+    }
+  }
+  @keyframes drawer-aside-out {
+    to {
+      opacity: 0;
+      transform: translateX(-1.5rem);
+    }
+  }
+  /* The content it opens with fades in once the panel is in place: delayed by
+     the panel's own travel, so the two read as arriving and then filling. */
+  .drawer-aside-content[data-enter='open'] {
+    animation: drawer-aside-content-in var(--duration-state) ease-out
+      var(--duration-pane) both;
+  }
+  @keyframes drawer-aside-content-in {
+    from {
+      opacity: 0;
+    }
+  }
+  /* A short delay, so the old content is mostly gone before the new one is
+     legible: two texts both readable at once in one place read as a glitch. */
+  .drawer-aside-content[data-enter='swap'] {
+    animation: drawer-aside-content-rise var(--duration-pane)
+      --theme(--ease-out-emphasized) 60ms both;
+  }
+  @keyframes drawer-aside-content-rise {
+    from {
+      opacity: 0;
+      transform: translateY(var(--aside-swap-travel));
+    }
+  }
+  .drawer-aside-leave {
+    pointer-events: none;
+    animation: drawer-aside-content-leave 120ms ease-in both;
+  }
+  @keyframes drawer-aside-content-leave {
+    to {
+      opacity: 0;
+      transform: translateY(calc(-1 * var(--aside-swap-travel)));
+    }
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .drawer-overlay[data-entering]::before,
     .drawer-overlay[data-exiting]::before,
     .drawer-modal[data-entering],
-    .drawer-modal[data-exiting] {
+    .drawer-modal[data-exiting],
+    .drawer-aside,
+    .drawer-aside[data-exiting],
+    .drawer-aside-content[data-enter] {
       animation: none;
+    }
+    /* Never shown without motion; hidden too, in case it is ever rendered. */
+    .drawer-aside-leave {
+      display: none;
     }
   }
 }
@@ -372,25 +548,23 @@
        divided by the lean's cosine. */
     gap: calc(var(--slant-gap) / cos(var(--notch-angle)));
     /*
-      The controls sit against the pane's top edge and its side; the gap is
-      held below them and along the slope. The bottom is measured to the
-      floor's edge, which is drawn inside the box's last edge-width, so it
-      takes that width on top of the gap -- otherwise the floor would sit one
-      edge closer than the slope.
+      One gap on every side, measured from the inner face of the line it is
+      held off. The floor's edge is drawn inside the box's last edge-width,
+      and the pane's top edge and side inside its first -- the notch is
+      pulled back over them (-mt-control-edge -mr-control-edge) -- so each of
+      those sides takes that width on top of the gap. Without it the controls
+      would sit one edge closer to those lines than to the slope.
 
-      The start side leans. With nothing above the controls and the gap below,
-      their mid-height -- where a slant's edge crosses its box -- sits half the
-      bottom above the notch's, where the slope crosses its box. The slope
-      runs tan(angle) along the floor per unit of height, so the start gap
-      gives that back and the gap along the slope stays even.
+      The start side leans. The inset is the same above and below, so the
+      controls' mid-height -- where a slant's edge crosses its box -- is the
+      notch's own, where the slope crosses its box. Two parallel lines that
+      cross one height d apart are d times cos(angle) apart square to each
+      other, so the gap along the floor is the gap over that cosine.
     */
-    --notch-bottom: calc(var(--notch-gap) + var(--notch-edge-width));
-    padding-block: 0 var(--notch-bottom);
-    padding-inline: calc(
-        var(--notch-gap) / cos(var(--notch-angle)) - var(--notch-bottom) / 2 *
-          tan(var(--notch-angle))
-      )
-      0;
+    --notch-inset: calc(var(--notch-gap) + var(--notch-edge-width));
+    padding-block: var(--notch-inset);
+    padding-inline: calc(var(--notch-gap) / cos(var(--notch-angle)))
+      var(--notch-inset);
   }
 
   /*
@@ -947,6 +1121,49 @@
     }
   }
 
+  /*
+    The process title's field (components/app-shell/process-title.tsx), on
+    the search field's pattern: quiet at rest, a face and an edge under the
+    pointer, a darker edge while it is typed into, and focus last so a pointer
+    resting on it never repaints the edge that is the only focus indicator.
+    Its face is lighter than the sheet (see --sp-title-field-face).
+
+    The face reaches out past the name by its padding and its edge, and the
+    margins take both back, so the name sits exactly where the heading puts
+    it and nothing beside it moves when the face arrives.
+  */
+  .title-field {
+    @apply control-wash;
+    --title-field-pad-inline: calc(var(--spacing) * 2.5);
+    --title-field-pad-block: calc(var(--spacing) * 1.5);
+    --title-field-reach-inline: calc(
+      var(--title-field-pad-inline) + var(--spacing-field-edge)
+    );
+    --title-field-reach-block: calc(
+      var(--title-field-pad-block) + var(--spacing-field-edge)
+    );
+    border: var(--spacing-field-edge) solid transparent;
+    border-radius: var(--radius-control);
+    padding: var(--title-field-pad-block) var(--title-field-pad-inline);
+    margin: calc(-1 * var(--title-field-reach-block))
+      calc(-1 * var(--title-field-reach-inline));
+    max-width: calc(100% + 2 * var(--title-field-reach-inline));
+  }
+  .title-field:hover {
+    border-color: var(--sp-title-field-edge-hover);
+    background-color: var(--sp-title-field-face);
+  }
+  .title-field:focus-within {
+    border-color: var(--sp-title-field-edge-active);
+    background-color: var(--sp-title-field-face);
+  }
+  @media (forced-colors: active) {
+    .title-field:focus-within {
+      outline: 2px solid Highlight;
+      outline-offset: 2px;
+    }
+  }
+
   .process-menu-row {
     position: absolute;
     inset: 0 0 auto;
@@ -1422,17 +1639,30 @@
     padding: var(--spacing-shell-inset);
   }
   /*
-    A tooltip under a notch's control sits on the notch's floor, not a fixed
-    distance under the control: its offset is 0 and this margin is the gap
-    the notch holds under its controls. Not the whole --notch-bottom: that
-    adds the floor's edge, which is drawn inside the notch's last edge-width,
-    so the box's top border lands on that edge and the two read as one line
-    rather than stacking. Rebuilt from the root token because the tooltip is
-    portalled out of .notch. Bottom only: flipped above, the control's top is
-    the pane's edge already.
+    A tooltip on a notch's control lands on the pane's edges round the notch,
+    not a fixed distance from the control: its offset is 0 and these take it
+    out by what the notch holds round its controls (see .notch). Its border
+    lies on each edge's line rather than beside it, so the two read as one:
+    across the floor or the pane's top edge that is the gap alone, since the
+    line is inside the notch's inset; along the pane's side it is the whole
+    inset, gap and edge-width, to the pane's outer edge.
+
+    Translated rather than offset through react-aria, which takes only a
+    number, so the tokens stay the source -- rebuilt from the root ones,
+    because the tooltip is portalled out of .notch. The arrow is moved back
+    along the edge by the same amount, so it still points at its control.
   */
+  .app-tooltip[data-anchor='notch'] {
+    --tooltip-notch-side: calc(var(--notch-gap) + var(--spacing-control-edge));
+  }
   .app-tooltip[data-anchor='notch'][data-placement='bottom'] {
-    margin-block-start: var(--notch-gap);
+    translate: var(--tooltip-notch-side) var(--notch-gap);
+  }
+  .app-tooltip[data-anchor='notch'][data-placement='top'] {
+    translate: var(--tooltip-notch-side) calc(var(--notch-gap) * -1);
+  }
+  .app-tooltip[data-anchor='notch'] .app-tooltip-arrow {
+    translate: calc(var(--tooltip-notch-side) * -1) 0;
   }
   /*
     Quick and slight, and out before it is noticed. A plain ease-out rather
@@ -1614,6 +1844,7 @@
       opacity: 1;
       translate: 0;
       transition:
+        width var(--duration-pane) var(--ease-out-emphasized),
         opacity var(--duration-state) ease-out
           calc(var(--duration-pane) - var(--duration-state)),
         translate var(--duration-pane) var(--ease-out-emphasized);

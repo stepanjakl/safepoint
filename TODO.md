@@ -116,6 +116,7 @@ The detailed requirements remain in [`docs/`](docs/README.md). If this checklist
 - [ ] Compare alternative plans and explain trade-offs.
 - [ ] Draft the next instruction version from review decisions, each edit traced to the items behind it, and review it like any other proposal. The placeholder button beside Instructions (`components/app-shell/refine-instructions.tsx`) is where it starts.
 - [ ] Add richer connector capabilities and organisation-level policy.
+- [ ] Replace the process header's system discs with the next-run data status, and the Systems tab with a Data tab of inputs and outputs, as specified in [`docs/EMBEDDED-REVIEW.md`](docs/EMBEDDED-REVIEW.md#process-header-and-setup). Live ingestion through connections and snapshots stays future work.
 - [ ] Add collaborative review and enterprise identity.
 - [ ] Explore an optional Duvo runtime adapter after the provider-independent workflow is proven.
 

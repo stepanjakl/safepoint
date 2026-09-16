@@ -28,7 +28,8 @@ export function RefineInstructions({
   return (
     // Under the notch rather than above it -- the pane's top edge is at the
     // viewport's -- with its top on the notch's floor and its end on the
-    // pane's side, which this control's end already is. No container padding:
+    // pane's side, past the gap the notch holds this control in by (see
+    // .app-tooltip[data-anchor] in app/components.css). No container padding:
     // react-aria's 12px would hold the box short of a pane inset by less.
     <Tooltip
       label="Draft the next instructions"

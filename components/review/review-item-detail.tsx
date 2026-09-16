@@ -6,13 +6,15 @@ import { DeltaValue } from './delta';
   gutter, which is a pseudo element on the summary and so stays in CSS; the
   `disclosure` class is that hook. Everything the markup can hold is here.
 */
-const DISCLOSURE = 'disclosure border-rule-faint border-b';
+// Exported for the other disclosure stacks -- the source detail view lists
+// records the same way -- so there is one definition of the stack's rhythm.
+export const DISCLOSURE = 'disclosure border-rule-faint border-b';
 // Keyboard focus is a wash, so the summary reaches out past the text by the
 // same amount it pads back in: the wash has room at both ends and the marker
 // and label stay where they were.
-const SUMMARY =
+export const SUMMARY =
   'control-wash rounded-control focus-visible:bg-surface-inset -mx-2 flex min-h-12 cursor-pointer flex-wrap items-baseline gap-x-3 gap-y-1 px-2 py-3.5 text-dense [&>span]:text-muted [&>span]:ml-auto [&>span]:text-meta';
-const DISCLOSURE_BODY = 'pb-5 pl-5.5 text-dense leading-relaxed';
+export const DISCLOSURE_BODY = 'pb-5 pl-5.5 text-dense leading-relaxed';
 // Each record inside a disclosure is a jump target for an evidence link, so it
 // keeps a scroll margin of its own.
 const RECORD = 'mt-5 scroll-mt-6 [&>h4]:mb-1 [&>h4]:[font-weight:550]';

@@ -21,6 +21,10 @@ Use these terms consistently in interface copy, design specifications, and engin
 | Replay | A mode that presents recorded inputs and results rather than starting fresh live generation. | Label recorded demonstrations and simulated receipts explicitly. It is a mode, not a type of process. |
 | Automation | A general description of work performed automatically. | Avoid as the navigation noun: it does not express Safepoint's human review boundary. |
 | Session | The host or sandbox interaction context, which can contain runs and reviews. | Keep distinct from a run and from a durable workflow execution. |
+| Input | Something a process needs to know, such as current shelf price per SKU, with a required flag and a maximum age. | Name the information, not the system that supplies it. **Inputs** is the process-setup heading. |
+| Output | A target system a process may change after review, with its permitted operations, adapter mode, and reversibility. | **Outputs** is the process-setup heading. Avoid *actions*, which names a connector's executable implementation. |
+| Connection | An authorised account for an external service, shared across the workspace and bound to a process's inputs or outputs. | Keep distinct from the connector or integration it is an instance of. Avoid *systems* as a heading for what a process reads and writes. |
+| Snapshot | The frozen, validated records one run read for one input. | Freshness and coverage describe a snapshot, not a connection or a process. |
 
 Process names remain stable across runs and modes. A navigation status describes the latest available run, not the permanent health of the process. Ready for review, approved, applied, and verified retain distinct meanings.
 
@@ -281,7 +285,7 @@ The broader direction adds capabilities only after the review and execution boun
 
 1. Extract the grocery configuration into a versioned process-definition format.
 2. Define a closed typed-effect protocol for field changes, record operations, state transitions, commands, messages, and files.
-3. Add a connector capability model and reusable operation modules for supported services.
+3. Add a connector capability model and reusable operation modules for supported services. On the read side, describe what a process needs as inputs bound to workspace connections, read through normalised, validated, immutable snapshots rather than directly from source systems. See [Read path: from connection to snapshot](TECHNICAL-DESIGN.md#read-path-from-connection-to-snapshot).
 4. Onboard a second process to prove that the review shell generalises without becoming a raw JSON viewer.
 5. Rehearse a plan against a model of the environment before approval.
 6. Compare alternative plans and expose trade-offs.

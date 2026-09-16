@@ -1,23 +1,29 @@
 import type { ReactNode } from 'react';
 import type { ProcessSummary } from '@/lib/process/placeholder-process';
+import type { SourceDetail } from '@/lib/process/source-details';
 import type { SystemLink } from '@/lib/process/system-links';
 import { ProcessHeader } from './process-header';
+import { RunsList } from './runs-list';
 import { ScheduleControl } from './schedule-control';
 
 export function ProcessView({
   process,
   sources = [],
+  sourceDetails,
   children,
 }: {
   process: ProcessSummary;
   sources?: SystemLink[];
+  sourceDetails?: Record<string, SourceDetail>;
   children: ReactNode;
 }) {
-  const currentVersion = process.instructions.version;
-
   return (
     <div className="shell:grid shell:h-full shell:grid-rows-[auto_minmax(0,1fr)]">
-      <ProcessHeader process={process} sources={sources} />
+      <ProcessHeader
+        process={process}
+        sources={sources}
+        sourceDetails={sourceDetails}
+      />
       {/*
         Three columns where there is room, otherwise the runs become a strip
         above the thread. Between the two thresholds the strip takes what it
@@ -38,27 +44,7 @@ export function ProcessView({
               schedule={process.schedule}
             />
           </div>
-          <ol className="runs:flex-col runs:gap-0.5 runs:overflow-visible flex flex-row gap-1.5 overflow-x-auto">
-            {process.runs.map((run) => (
-              <li key={run.id}>
-                {/* Not a control: only the current run has a review to open. */}
-                <div
-                  className="aria-[current]:bg-surface-selected runs:min-w-0 text-dense rounded-control grid min-w-42 gap-0.5 px-2.5 py-2"
-                  aria-current={run.current ? 'true' : undefined}
-                >
-                  <span className="text-primary">{run.label}</span>
-                  <span className="text-muted text-meta">{run.summary}</span>
-                  {run.instructionsVersion !== currentVersion ? (
-                    // A run evaluated under older instructions is not
-                    // comparable to this one.
-                    <span className="text-state-caution text-meta">
-                      Ran under {run.instructionsVersion}
-                    </span>
-                  ) : null}
-                </div>
-              </li>
-            ))}
-          </ol>
+          <RunsList process={process} />
           <p className="text-muted runs:block text-micro mt-3 hidden px-2.5 leading-normal opacity-80">
             Only the current run is recorded. Earlier runs are placeholder data.
           </p>

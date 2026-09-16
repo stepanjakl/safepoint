@@ -55,6 +55,7 @@ import {
   saveProcessOrder,
   subscribeProcessOrder,
 } from './process-order-store';
+import { useProcessNames } from './process-names-store';
 
 /*
   The pitch of the list: a row plus the 2px gap to the next one. The single
@@ -354,13 +355,19 @@ function MenuTile({
 }
 
 export function ProcessMenu({
-  items,
+  items: scenarioItems,
   initialOrder,
 }: {
   items: ProcessNavigationItem[];
   /** The order the server read from the cookie, for SSR and hydration. */
   initialOrder: string | null;
 }) {
+  // Each row under the name it was last given in this browser.
+  const names = useProcessNames();
+  const items = scenarioItems.map((item) => ({
+    ...item,
+    name: names[item.id] ?? item.name,
+  }));
   // The shell is a layout that stays mounted across navigation, so the current
   // process is read here rather than handed down by each page.
   const current = usePathname();

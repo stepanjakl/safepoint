@@ -424,12 +424,13 @@
      them holds round the corner. Set it on an element to fix the radius. */
   /* Where the floor turns down into the pane's side. */
   --notch-corner: var(--radius-shell);
-  /* Canvas held between the notch's controls and its slope and floor,
-     measured square to each. The controls sit against the pane's top edge
-     and its side, so nothing is held there. */
-  --notch-gap: 0.375rem;
+  /* Canvas held between the notch's controls and every edge round them --
+     the slope, the floor, the pane's top edge and its side -- measured square
+     to each from the edge's inner face, so the controls sit evenly in the
+     bite. */
+  --notch-gap: 0.3125rem;
   /* Between two slanted controls that share a seam, measured square to it. */
-  --slant-gap: 0.25rem;
+  --slant-gap: 0.1875rem;
   /* How far a slanted corner's radius follows its angle, 0 to 1. At 0 every
      corner of a slant has the plain radius; at 1 each takes the same length of
      its edges as a square corner would. */
@@ -442,8 +443,9 @@
     edge-width on either side. The edge-width is the 1px optical lift the
     controls' icons take (-translate-y-px), given back evenly above and below
     so a lifted glyph still clears the shell inset at its top. The header is
-    the controls plus the notch's gap below them, and the heading is centred
-    in it, so this keeps at least the shell inset above and below the heading.
+    the controls plus the notch's inset above and below them, and the heading
+    is centred in it -- on the controls' centre too, since the inset is even
+    -- so this keeps at least the shell inset above and below the heading.
     --slant-radius is not declared; the rules fall back to --radius-shell, so
     the last control reads as the pane's corner carried out onto the canvas.
   */
@@ -577,6 +579,8 @@
   --sp-accent-face-bottom: var(--color-cyan-600);
   --sp-accent-ring-top: var(--color-cyan-500);
   --sp-accent-ring-bottom: var(--color-cyan-700);
+  /* The active switch thumb is deliberately lighter than its accent track. */
+  --sp-switch-thumb-selected: var(--color-cyan-50);
 
   /* Hover lifts the whole control one step, ring included, so the edge
      brightens with the face rather than staying put while it moves. */
@@ -806,6 +810,19 @@
   --sp-field-edge-active: light-dark(
     var(--sp-control-500),
     var(--sp-control-300)
+  );
+  /* The process title's field. Lighter than the sheet it sits in rather than
+     the field face, which is the sheet's own step, so it lifts out of the
+     header instead of sinking into it. Its edges step with it: a lighter hover
+     edge on the lighter face, and the focus edge still well clear of both. */
+  --sp-title-field-face: var(--sp-surface-floating);
+  --sp-title-field-edge-hover: light-dark(
+    var(--sp-control-300),
+    var(--sp-control-600)
+  );
+  --sp-title-field-edge-active: light-dark(
+    var(--sp-control-500),
+    var(--sp-control-400)
   );
 
   /* Advisory notice face and separate stops for its graduated edge. */
@@ -1136,6 +1153,14 @@
   */
   --spacing-control-highlight: 1px;
   --spacing-control-highlight-hairline: 0.75px;
+  /*
+    A switch's four geometric inputs. Its thumb travel is derived from these
+    in components.css, so a size change cannot leave one end misaligned.
+  */
+  --spacing-switch-track-inline: 2.125rem;
+  --spacing-switch-track-block: 1.25rem;
+  --spacing-switch-thumb: 0.75rem;
+  --spacing-switch-thumb-gap: 0.25rem;
   --shadow-control-highlight: inset 0 0 0
     var(--control-highlight-width, var(--spacing-control-highlight))
     var(--control-highlight);

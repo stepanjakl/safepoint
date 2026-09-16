@@ -307,9 +307,9 @@ cell draws however the heading wraps.
 | `--notch-angle` | 25deg | the lean of every slanted edge, from vertical |
 | `--notch-bend-top` | `--radius-shell` | where the slope leaves the top edge |
 | `--notch-bend-bottom` | unset: the first control's bottom-left radius + `--notch-gap` | where the slope lands on the floor; unset, it stays concentric with the control beside it |
-| `--slant-height` | one title line + 2 × (`--spacing-shell-inset` + `--spacing-control-edge`) | a slanted control's height, sized so the heading centred in the header keeps at least the shell inset above and below; the edge-width either side gives back the icons' 1px optical lift evenly |
+| `--slant-height` | one title line + 2 × (`--spacing-shell-inset` + `--spacing-control-edge`) | a slanted control's height, sized so the heading -- centred in a header that holds the notch's inset evenly above and below the controls -- keeps at least the shell inset above and below; the edge-width either side gives back the icons' 1px optical lift evenly |
 | `--notch-corner` | `--radius-shell` | where the floor turns down the pane's side |
-| `--notch-gap` | 0.375rem | canvas held below the controls and along the slope, square to each; the controls sit against the pane's top edge and side |
+| `--notch-gap` | 0.375rem | canvas held between the controls and every edge round them -- the slope, the floor, the pane's top edge and side -- square to each; `.notch` insets by the gap plus `--spacing-control-edge` where the edge is drawn inside its box, and by the gap over cos(angle) along the slope |
 | `--slant-gap` | 0.25rem | between two slants sharing a seam, square to it |
 | `--slant-corner-balance` | 0.5 | how far a slanted corner's radius follows its angle: 0 is one radius on every corner, 1 gives each the tangent length of a square corner |
 | `--notch-bend-balance` | 0.5 | the same for the notch's top bend, held lower so it stays no softer than the pane's corners |
@@ -319,7 +319,7 @@ cell draws however the heading wraps.
 Which edges lean is decided where the controls sit, not inside them. The process header
 holds two: the Instructions button, which opens the process setup drawer, as `slant="both"`,
 then the icon-only placeholder for drafting the next instructions as `slant="left"`, whose
-far side stays square against the pane's edge (`components/app-shell/process-header.tsx`). An icon-only slant takes `px-3` over
+far side stays square, parallel to the pane's side and the notch's gap in from it (`components/app-shell/process-header.tsx`). An icon-only slant takes `px-3` over
 the button's own padding and needs an `aria-label`; it is a placeholder, so it is
 `aria-disabled` but still focusable, like the sidebar's placeholders, so its tooltip is
 reachable.
