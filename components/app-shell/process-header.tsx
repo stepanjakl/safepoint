@@ -29,8 +29,13 @@ import { Assistant } from './assistant';
 */
 const MENU = 'flex flex-none items-center gap-1 rounded-full p-1 max-sm:hidden';
 
+/*
+  No ink here: which of the three steps an item is written in belongs with the
+  face it wears, so that one element never carries two text colours and the
+  order the stylesheet happened to emit them in decides nothing.
+*/
 const ITEM =
-  'group/data header-button control-face text-primary text-dense inline-flex flex-none cursor-pointer items-center gap-2 rounded-full ps-3 font-medium whitespace-nowrap';
+  'group/data header-button control-face text-dense inline-flex flex-none cursor-pointer items-center gap-2 rounded-full ps-3 font-medium whitespace-nowrap';
 
 /*
   One face utility per item, chosen by what it has to report and whether its
@@ -44,12 +49,12 @@ const ITEM =
   reading has nothing to answer.
 */
 const FACE = {
-  none: 'control-header-item data-[hovered]:control-header-button-hover data-[focus-visible]:control-header-button-hover data-[pressed]:control-header-button-hover',
+  none: 'control-header-item text-header-ink data-[hovered]:control-header-button-hover data-[hovered]:text-header-ink-hover data-[focus-visible]:control-header-button-hover data-[focus-visible]:text-header-ink-hover data-[pressed]:control-header-button-hover data-[pressed]:text-header-ink-hover',
   stale:
-    'control-header-button-caution data-[hovered]:control-header-button-caution-hover data-[focus-visible]:control-header-button-caution-hover data-[pressed]:control-header-button-caution-hover',
+    'control-header-button-caution text-header-ink data-[hovered]:control-header-button-caution-hover data-[hovered]:text-header-ink-hover data-[focus-visible]:control-header-button-caution-hover data-[focus-visible]:text-header-ink-hover data-[pressed]:control-header-button-caution-hover data-[pressed]:text-header-ink-hover',
   unavailable:
-    'control-header-button-blocked data-[hovered]:control-header-button-blocked-hover data-[focus-visible]:control-header-button-blocked-hover data-[pressed]:control-header-button-blocked-hover',
-  selected: 'control-header-button-selected',
+    'control-header-button-blocked text-header-ink data-[hovered]:control-header-button-blocked-hover data-[hovered]:text-header-ink-hover data-[focus-visible]:control-header-button-blocked-hover data-[focus-visible]:text-header-ink-hover data-[pressed]:control-header-button-blocked-hover data-[pressed]:text-header-ink-hover',
+  selected: 'control-header-button-selected text-header-ink-selected',
 } as const;
 
 /*

@@ -694,6 +694,21 @@
     var(--sp-control-350),
     var(--sp-control-750)
   );
+  /*
+    The ink on a header item, in three steps: at rest, under the pointer, and
+    while its tab is the open one. Like --sp-text-muted-strong, the step is
+    "toward presence" rather than "darker" -- in dark the same three read as
+    lighter -- so the pair says the same thing on either canvas.
+  */
+  --sp-header-ink: light-dark(var(--sp-control-800), var(--sp-control-200));
+  --sp-header-ink-hover: light-dark(
+    var(--sp-control-900),
+    var(--sp-control-100)
+  );
+  --sp-header-ink-selected: light-dark(
+    var(--sp-control-950),
+    var(--sp-control-50)
+  );
   --sp-header-button-count: light-dark(
     var(--sp-control-100),
     var(--sp-control-800)
@@ -1160,6 +1175,9 @@
   --color-search-clear-hover: var(--sp-search-clear-face-hover);
   --color-value-pill: var(--sp-value-pill);
   --color-value-pill-hover: var(--sp-value-pill-hover);
+  --color-header-ink: var(--sp-header-ink);
+  --color-header-ink-hover: var(--sp-header-ink-hover);
+  --color-header-ink-selected: var(--sp-header-ink-selected);
   --color-header-button-count: var(--sp-header-button-count);
   --color-header-button-count-hover: var(--sp-header-button-count-hover);
   --color-field-face: var(--sp-field-face);

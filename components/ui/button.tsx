@@ -125,6 +125,6 @@ export const ICON_SHAPE =
   snaps every one of them.
 */
 export const ICON_QUIET =
-  'control-wash text-muted hover:bg-surface-selected hover:text-primary focus-visible:bg-surface-selected focus-visible:text-primary';
+  'control-wash text-header-ink hover:bg-surface-selected hover:text-header-ink-hover focus-visible:bg-surface-selected focus-visible:text-header-ink-hover';
 
 export const ICON_BUTTON = `${ICON_SHAPE} ${ICON_QUIET}`;
