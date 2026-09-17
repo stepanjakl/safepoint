@@ -33,8 +33,11 @@ const FILTER =
 // 70px is the two-line row this list is built around, so a one-line item does
 // not make the column jump.
 const ITEM_BUTTON =
-  'control-wash hover:bg-surface-inset focus-visible:bg-surface-inset aria-[current=true]:bg-surface-selected aria-[current=true]:border-l-primary block min-h-17.5 w-full border-l-2 border-l-transparent px-4.5 py-3 text-left focus-visible:-outline-offset-3 forced-colors:aria-[current=true]:border-l-[Highlight] forced-colors:aria-[current=true]:outline forced-colors:aria-[current=true]:outline-[Highlight] forced-colors:aria-[current=true]:-outline-offset-2';
-const ITEM_REASON = 'text-muted mt-1 block text-meta leading-normal';
+  'group control-wash hover:bg-surface-inset focus-visible:bg-surface-inset aria-[current=true]:bg-surface-selected aria-[current=true]:border-l-primary block min-h-17.5 w-full border-l-2 border-l-transparent px-4.5 py-3 text-left focus-visible:-outline-offset-3 forced-colors:aria-[current=true]:border-l-[Highlight] forced-colors:aria-[current=true]:outline forced-colors:aria-[current=true]:outline-[Highlight] forced-colors:aria-[current=true]:-outline-offset-2';
+// Its ink moves with the row's fill. Current takes the selected ground, which
+// is the darkest a light theme puts text on -- see --sp-surface-selected.
+const ITEM_REASON =
+  'text-muted group-aria-[current=true]:text-primary mt-1 block text-meta leading-normal';
 
 export function ReviewPanel({
   plan,
@@ -173,7 +176,7 @@ export function ReviewPanel({
   ];
 
   return (
-    <div className="severity-scale @container/review flex min-h-0 flex-1 flex-col">
+    <div className="@container/review flex min-h-0 flex-1 flex-col">
       <div className="bg-surface-inset border-rule-faint text-muted text-meta flex shrink-0 flex-wrap justify-between gap-x-5 gap-y-1 border-b px-6 py-2.5 @max-3xl/review:px-5">
         <span>{plan.evaluatedAt} · Recorded review</span>
         <span>{plan.context}</span>

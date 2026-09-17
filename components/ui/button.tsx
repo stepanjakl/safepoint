@@ -2,6 +2,8 @@
 
 import { Button as AriaButton, type ButtonProps } from 'react-aria-components';
 
+import type { Ref } from 'react';
+
 import { cx } from '@/lib/cx';
 
 type Variant = 'primary' | 'secondary';
@@ -71,7 +73,12 @@ export function Button({
   className,
   children,
   ...props
-}: ButtonProps & { variant?: Variant; slant?: Slant; className?: string }) {
+}: ButtonProps & {
+  variant?: Variant;
+  slant?: Slant;
+  className?: string;
+  ref?: Ref<HTMLButtonElement>;
+}) {
   return (
     <AriaButton
       {...props}

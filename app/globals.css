@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import './tokens.css';
 @import './radix-colors.css';
+@import './neutral-palettes.css';
 @import './components.css';
 
 @layer base {
@@ -297,25 +298,21 @@
   condition's colour rather than an edge taking it: these replace
   control-header-button, so exactly one face utility ever lands on a button and
   nothing depends on which order the classes are written in.
+
+  An item at rest is control-header-button itself -- it is the original face,
+  and it took a second name for a while that declared the same five properties.
+  The rest of the family is control-header-button-*, so the rest state being
+  control-header-item was the one member whose name did not say what it was.
 */
-/*
-  An item at rest keeps the data button's original face. It takes a different
-  face only when it is pointed at, opened, or has something to report.
-*/
-@utility control-header-item {
-  --control-face-top: var(--sp-header-button-face-top);
-  --control-face-bottom: var(--sp-header-button-face-bottom);
-  --control-ring-top: transparent;
-  --control-ring-bottom: transparent;
-  --control-highlight: transparent;
-}
 
 /* The item whose tab the drawer is showing. */
 @utility control-header-button-selected {
   --control-face-top: var(--sp-header-button-face-top-selected);
   --control-face-bottom: var(--sp-header-button-face-bottom-selected);
-  --control-ring-top: transparent;
-  --control-ring-bottom: transparent;
+  /* Transparent until --sp-header-button-ring-*-selected are given values;
+     the border is already there, waiting to be painted. */
+  --control-ring-top: var(--sp-header-button-ring-top-selected);
+  --control-ring-bottom: var(--sp-header-button-ring-bottom-selected);
   --control-highlight: transparent;
 }
 

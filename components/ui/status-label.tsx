@@ -9,6 +9,7 @@ export type Tone =
   | 'advisory'
   | 'verified'
   | 'caution'
+  | 'decision'
   | 'blocked'
   | 'unavailable'
   | 'live'
@@ -20,6 +21,7 @@ const toneClass: Record<Tone, string> = {
   advisory: 'text-state-advisory',
   verified: 'text-state-verified',
   caution: 'text-state-caution',
+  decision: 'text-state-decision',
   blocked: 'text-state-blocked',
   unavailable: 'text-state-unavailable',
   live: 'text-mode-live',

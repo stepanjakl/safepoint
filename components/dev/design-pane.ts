@@ -52,6 +52,10 @@ import {
   SLANT_RADIUS_MIN,
   readSlantRadius,
   setSlantRadius,
+  readStatePalette,
+  setStatePalette,
+  STATE_PALETTES,
+  STATE_PALETTE_LABELS,
 } from './design-preferences';
 import { startMotionDebug } from './motion-debug';
 
@@ -64,6 +68,7 @@ function readPreferences() {
     neutral: readNeutral(),
     controlNeutral: readControlNeutral(),
     tilePalette: readTilePalette(),
+    statePalette: readStatePalette(),
     tileChromaScale: readTileChromaScale(),
     slantRadius: readSlantRadius(),
     cornerBalance: readCornerBalance(),
@@ -156,6 +161,23 @@ export function mountDesignPane(host: HTMLElement) {
   for (const input of cornerBinding.element.querySelectorAll('input')) {
     input.setAttribute('aria-label', 'Slanted corner balance');
   }
+
+  // The semantic states -- verified, caution, blocked and the rest -- in the
+  // shipped ramps or in Radix's. It sits on its own rather than in the tiles
+  // folder because it moves the review, the runs rail and every status mark
+  // in the app, which the tiles do not.
+  const states = pane.addFolder({ title: 'State colours' });
+  const stateBinding = states
+    .addBinding(model, 'statePalette', {
+      label: 'Palette',
+      options: STATE_PALETTES.map((value) => ({
+        text: STATE_PALETTE_LABELS[value],
+        value,
+      })),
+    })
+    .on('change', (event) => setStatePalette(event.value));
+  stateBinding.element.title =
+    'Radix maps each state to a scale whose step 11 is guaranteed readable on its own step 4.';
 
   // The workspace menu's tiles: which palette they read, and how hard the
   // saturation ceilings in tokens.css hold it back.

@@ -130,7 +130,7 @@ const ROW_BADGE = cx(
   'rounded-full text-micro font-mono inline-flex h-5 flex-none items-center justify-center [font-weight:var(--sp-mono-weight-strong)] select-none',
   'control-face surface-menu-badge',
   'process-menu-row-end rail-mark w-menu-rail relative z-1 cursor-help gap-1 px-0 tabular-nums',
-  'text-muted data-[tone=blocked]:text-state-blocked data-[tone=caution]:text-state-caution data-[tone=verified]:text-state-verified',
+  'text-muted data-[tone=blocked]:text-state-blocked data-[tone=decision]:text-state-decision data-[tone=caution]:text-state-caution data-[tone=verified]:text-state-verified',
 );
 
 /*
@@ -1392,7 +1392,7 @@ function ProcessStatusContent({
 }) {
   const counts = [
     ['blocked', 'Blocked', status.counts.blocked],
-    ['caution', 'Needs a decision', status.counts.needs_decision],
+    ['decision', 'Needs a decision', status.counts.needs_decision],
     ['neutral', 'Deferred', status.counts.deferred],
     ['verified', 'Ready for review', status.counts.will_apply],
   ] as const;
@@ -1442,11 +1442,18 @@ function ProcessStatusContent({
   the same map, so a tone cannot mean one colour in one and another in the
   other. The 8% wash is what the tone's own text colour is legible on.
 */
+/*
+  The preview's chips. `decision` is the tone a line waiting on a person takes
+  -- see --sp-state-decision in tokens.css for why it is not caution's amber --
+  and the runs rail paints the same three counts in the same three tones and
+  the same order, so the two readings of one run agree.
+*/
 const TONE_CHIP: Record<
-  ProcessNavigationItem['status']['tone'] | 'neutral',
+  ProcessNavigationItem['status']['tone'] | 'neutral' | 'decision',
   string
 > = {
   blocked: 'text-state-blocked bg-state-blocked/8',
+  decision: 'text-state-decision bg-state-decision/8',
   caution: 'text-state-caution bg-state-caution/8',
   verified: 'text-state-verified bg-state-verified/8',
   neutral: 'text-muted bg-surface-inset',

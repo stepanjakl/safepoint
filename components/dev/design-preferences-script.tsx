@@ -16,6 +16,8 @@ import {
   TILE_CHROMA_SCALE_MAX,
   TILE_CHROMA_SCALE_MIN,
   TILE_CHROMA_SCALE_STORAGE_KEY,
+  STATE_PALETTES,
+  STATE_PALETTE_STORAGE_KEY,
   TILE_PALETTE_STORAGE_KEY,
   TILE_PALETTES,
 } from './design-preferences';
@@ -81,6 +83,11 @@ try {
   }
   var tilePalette = params.get('tiles')
     || localStorage.getItem(${JSON.stringify(TILE_PALETTE_STORAGE_KEY)});
+  var statePalette = params.get('states')
+    || localStorage.getItem(${JSON.stringify(STATE_PALETTE_STORAGE_KEY)});
+  if (${JSON.stringify(STATE_PALETTES)}.indexOf(statePalette) !== -1) {
+    root.dataset.statePalette = statePalette;
+  }
   // The layout renders the default; a stored or linked choice replaces it.
   if (${JSON.stringify(TILE_PALETTES)}.indexOf(tilePalette) !== -1) {
     root.dataset.tilePalette = tilePalette;

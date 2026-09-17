@@ -7,7 +7,7 @@ import {
   type ProcessRun,
   type RunStatus,
 } from '@/lib/process/placeholder-process';
-import { RunRow } from '@/components/app-shell/runs-list';
+import { RunRow } from '@/components/app-shell/run-row';
 
 /*
   The run lifecycle, in the two places it is drawn and at the size that shows
@@ -89,6 +89,8 @@ const RUNS: ProcessRun[] = ORDER.map((status, index) => ({
 export function RunStatusGallery() {
   return (
     <div className="grid gap-4 lg:grid-cols-[232px_minmax(0,1fr)_auto]">
+      {/* The rail at its real width, so a state whose name does not fit shows
+          up here rather than in the app. */}
       {/* The rail at its real width, so a state whose name does not fit shows
           up here rather than in the app. */}
       <div className="border-rule-default bg-surface-primary overflow-hidden border">

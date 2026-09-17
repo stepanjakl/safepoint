@@ -85,6 +85,7 @@ export function DrawerAside({
   exiting,
   onExited,
   onLeft,
+  className,
 }: {
   current: AsideLayer;
   // The content being swapped out, for as long as it takes to leave.
@@ -95,6 +96,9 @@ export function DrawerAside({
   exiting: boolean;
   onExited: () => void;
   onLeft: () => void;
+  // A width, where the caller has one to give. In a sheet column the column
+  // decides; over the sheet, the panel has to state its own.
+  className?: string;
 }) {
   const heading = useRef<HTMLHeadingElement>(null);
   // The content the panel opened with arrives from the side; anything chosen
@@ -177,9 +181,10 @@ export function DrawerAside({
       }}
       className={cx(
         PANEL,
-        // It fills the column it is given: the sheet decides how wide the
-        // detail is, from the width the list beside it leaves.
+        // It fills the column it is given: in the sheet the column decides how
+        // wide the detail is, from the width the list beside it leaves.
         'drawer-aside grid min-w-0 grid-cols-[minmax(0,1fr)] grid-rows-[minmax(0,1fr)]',
+        className,
       )}
     >
       <p className="sr-only" aria-live="polite">

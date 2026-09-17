@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { InputDetail } from '@/lib/process/input-details';
 import type { ProcessSummary } from '@/lib/process/placeholder-process';
 import type { SystemLink } from '@/lib/process/system-links';
@@ -8,9 +8,10 @@ import { useInstructions } from './instructions-store';
 import { useRemovedInputs } from './inputs-store';
 import { ProcessHeader } from './process-header';
 import { ProcessPanels } from './process-panels';
-import { useProcessTab } from './process-tab-store';
+import { useProcessTab, type ProcessTab } from './process-tab-store';
 import { RunsList } from './runs-list';
 import { ScheduleControl } from './schedule-control';
+import { SectionRow } from './section-row';
 
 /*
   The sheet, and what it is showing. The header's menu chooses between the run
@@ -38,6 +39,21 @@ export function ProcessSheet({
   run: ReactNode;
 }) {
   const [tab, setTab] = useProcessTab(process.id);
+  /*
+    A version whose change log the sheet has been asked to open, from a
+    boundary in the runs rail. It is a request rather than a place: the panels
+    own which detail is open, so this only says which one to mount with, and it
+    is cleared the moment the reader chooses a tab themselves.
+  */
+  const [openChanges, setOpenChanges] = useState<string | null>(null);
+  const chooseTab = (next: ProcessTab) => {
+    setOpenChanges(null);
+    setTab(next);
+  };
+  const showVersion = (version: string) => {
+    setOpenChanges(version);
+    setTab('instructions');
+  };
   // Inputs can be changed, as a preview, only where they have details to
   // show: the promotion scenario's files. Everything downstream reads the kept
   // set, so a removed input leaves the count and the list together.
@@ -56,7 +72,7 @@ export function ProcessSheet({
         inputs={kept}
         outputs={process.outputs}
         tab={tab}
-        onTabChange={setTab}
+        onTabChange={chooseTab}
       />
       {tab === 'runs' ? (
         /*
@@ -65,25 +81,23 @@ export function ProcessSheet({
           needs and the thread takes the rest, so the thread scrolls rather than
           the document.
         */
-        <div className="shell:max-runs:grid-rows-[auto_minmax(0,1fr)] shell:min-h-0 runs:grid-cols-[232px_minmax(0,1fr)] grid grid-cols-[minmax(0,1fr)]">
+        // Clipped to the pane's inner radius. The lists inside are full-bleed
+        // and carry fills of their own, and at the pane's own radius they
+        // paint over the edge its face draws in the bottom corners.
+        <div className="shell:@max-sheet-wide/sheet:grid-rows-[auto_minmax(0,1fr)] shell:min-h-0 @sheet-wide/sheet:grid-cols-[232px_minmax(0,1fr)] rounded-b-shell-inner grid grid-cols-[minmax(0,1fr)] overflow-clip">
+          {/* Full-bleed: the list draws its own rules edge to edge, and
+              padding on the column would leave them floating short of it. */}
           <aside
             aria-labelledby="runs-heading"
-            className="border-rule-faint shadow-separator-right-strong runs:border-b-0 runs:border-r runs:px-3 runs:py-4 shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative border-b p-3"
+            className="border-rule-faint shadow-separator-right-strong @sheet-wide/sheet:border-b-0 @sheet-wide/sheet:border-r shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative border-b"
           >
-            <div className="flex items-center justify-between gap-2 pr-1 pb-1.5 pl-2.5">
-              <p id="runs-heading" className="readout text-muted">
-                Runs
-              </p>
+            <SectionRow id="runs-heading" title="Runs">
               <ScheduleControl
                 processId={process.id}
                 schedule={process.schedule}
               />
-            </div>
-            <RunsList process={process} />
-            <p className="text-muted runs:block text-micro mt-3 hidden px-2.5 leading-normal opacity-80">
-              Only the current run is recorded. Earlier runs are placeholder
-              data.
-            </p>
+            </SectionRow>
+            <RunsList process={process} onShowVersion={showVersion} />
           </aside>
           <div className="shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative">
             {run}
@@ -91,17 +105,20 @@ export function ProcessSheet({
         </div>
       ) : (
         <ProcessPanels
-          // Keyed by tab: a new tab is a new panel, so the detail it had open
-          // goes with the list it belonged to and nothing has to reset it.
-          key={tab}
+          // Keyed by tab, and by the version the rail asked for: a new tab is
+          // a new panel, so the detail it had open goes with the list it
+          // belonged to and nothing has to reset it -- and a second request
+          // for a different version remounts rather than being ignored.
+          key={`${tab}:${openChanges ?? ''}`}
           process={process}
           tab={tab}
+          openChanges={openChanges}
           inputs={kept}
           availableInputs={available}
           inputDetails={inputDetails}
           onRemoveInput={editable ? remove : undefined}
           onAddInput={editable ? restore : undefined}
-          onLeave={() => setTab('runs')}
+          onLeave={() => chooseTab('runs')}
         />
       )}
     </div>

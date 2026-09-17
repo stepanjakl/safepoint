@@ -17,6 +17,7 @@ import {
   worstFreshness,
   type SystemLink,
 } from '@/lib/process/system-links';
+import { OverlayDemo } from './overlay-demo';
 import type { ProcessTab } from './process-tab-store';
 import { ProcessTitle } from './process-title';
 import { Assistant } from './assistant';
@@ -49,7 +50,7 @@ const ITEM =
   reading has nothing to answer.
 */
 const FACE = {
-  none: 'control-header-item text-header-ink data-[hovered]:control-header-button-hover data-[hovered]:text-header-ink-hover data-[focus-visible]:control-header-button-hover data-[focus-visible]:text-header-ink-hover data-[pressed]:control-header-button-hover data-[pressed]:text-header-ink-hover',
+  none: 'control-header-button text-header-ink data-[hovered]:control-header-button-hover data-[hovered]:text-header-ink-hover data-[focus-visible]:control-header-button-hover data-[focus-visible]:text-header-ink-hover data-[pressed]:control-header-button-hover data-[pressed]:text-header-ink-hover',
   stale:
     'control-header-button-caution text-header-ink data-[hovered]:control-header-button-caution-hover data-[hovered]:text-header-ink-hover data-[focus-visible]:control-header-button-caution-hover data-[focus-visible]:text-header-ink-hover data-[pressed]:control-header-button-caution-hover data-[pressed]:text-header-ink-hover',
   unavailable:
@@ -76,9 +77,19 @@ const COUNT =
 const ICON_ITEM =
   'group/data header-button control-face inline-grid aspect-square flex-none cursor-pointer place-items-center rounded-full ps-0 pe-0';
 
+const ICON = {
+  none: 'text-header-icon group-data-[hovered]/data:text-header-icon-hover group-data-[focus-visible]/data:text-header-icon-hover group-data-[pressed]/data:text-header-icon-hover',
+  selected: 'text-header-icon-selected',
+} as const;
+
+/*
+  Not the bare state colour. The face under the dot is mixed from that same
+  colour, so at the bare token the mark and its ground are one colour at two
+  strengths -- see --sp-header-button-dot-caution.
+*/
 const STATE_DOT = {
-  stale: 'bg-state-caution',
-  unavailable: 'bg-state-blocked',
+  stale: 'bg-header-button-dot-caution',
+  unavailable: 'bg-header-button-dot-blocked',
 } as const;
 
 // The word goes before the row runs out of it.
@@ -118,6 +129,7 @@ function ProcessMenu({
   const condition = worst === 'unavailable' ? 'unavailable' : 'stale';
   const face = (item: ProcessTab, state: keyof typeof FACE = 'none') =>
     tab === item ? FACE.selected : FACE[state];
+  const icon = (item: ProcessTab) => (tab === item ? ICON.selected : ICON.none);
 
   return (
     // Below the phone breakpoint the row cannot hold the name, the group and
@@ -136,7 +148,7 @@ function ProcessMenu({
           aria-hidden
           size={16}
           strokeWidth={1.8}
-          className="flex-none"
+          className={cx('flex-none', icon('runs'))}
         />
         <span className={LABEL}>Runs</span>
       </AriaButton>
@@ -150,7 +162,7 @@ function ProcessMenu({
           aria-hidden
           size={16}
           strokeWidth={1.8}
-          className="flex-none -translate-y-px"
+          className={cx('flex-none -translate-y-px', icon('instructions'))}
         />
         <span className={LABEL}>Instructions</span>
         <span className={COUNT}>{version}</span>
@@ -169,7 +181,7 @@ function ProcessMenu({
             aria-hidden
             size={16}
             strokeWidth={1.8}
-            className="flex-none -translate-y-px"
+            className={cx('flex-none -translate-y-px', icon('inputs'))}
           />
           <span className={LABEL}>Inputs</span>
           {worst ? (
@@ -178,7 +190,7 @@ function ProcessMenu({
               <span
                 aria-hidden="true"
                 className={cx(
-                  'header-button-state-dot size-1.5 flex-none rounded-full',
+                  'size-1.5 flex-none rounded-full',
                   STATE_DOT[worst],
                 )}
               />
@@ -198,7 +210,7 @@ function ProcessMenu({
           aria-hidden
           size={16}
           strokeWidth={1.8}
-          className="flex-none -translate-y-px"
+          className={cx('flex-none -translate-y-px', icon('outputs'))}
         />
         <span className={LABEL}>Outputs</span>
         <span className={COUNT}>{outputs.length}</span>
@@ -211,7 +223,8 @@ function ProcessMenu({
       >
         {/* No optical lift: the lift aligns an icon with text on a baseline,
             and this one has no text to align to -- it is centred in its own
-            square instead. */}
+            square instead. As the whole control's content, it inherits the
+            button's ink rather than taking the secondary icon colour. */}
         <SettingsGear aria-hidden size={16} strokeWidth={1.8} />
       </AriaButton>
     </div>
@@ -249,7 +262,10 @@ export function ProcessHeader({
   onTabChange: (tab: ProcessTab) => void;
 }) {
   return (
-    <header className="border-rule-faint shadow-separator-bottom-strong grid grid-cols-[minmax(0,1fr)_auto] border-b">
+    // The separator shadow extends into the first list row. Paint this header
+    // above the sticky section headings so their opaque fills cannot cover it;
+    // the notch stays in the same layer as the edge it continues.
+    <header className="border-rule-faint shadow-separator-bottom-strong relative z-10 grid grid-cols-[minmax(0,1fr)_auto] border-b">
       {/* Centred in the row. The notch holds the same inset above its
           controls as below them, so their centre is the row's too and the
           heading lines up with them at any control height or gap, with even
@@ -257,18 +273,25 @@ export function ProcessHeader({
           optical lift on top of this. */}
       <div className="flex min-w-0 items-center justify-between gap-x-4 px-4 sm:px-6">
         <ProcessTitle processId={process.id} fallback={process.name} />
-        <ProcessMenu
-          version={version}
-          inputs={inputs}
-          outputs={outputs}
-          tab={tab}
-          onTabChange={onTabChange}
-        />
+        {/* The demo sits beside the menu rather than in it: it opens an
+            overlay, not a tab, and the group is a set of tabs. */}
+        <div className="flex flex-none items-center gap-2">
+          <ProcessMenu
+            version={version}
+            inputs={inputs}
+            outputs={outputs}
+            tab={tab}
+            onTabChange={onTabChange}
+          />
+          <OverlayDemo />
+        </div>
       </div>
       {/* One slanted control now that the process's own buttons are in the
           row: it leans towards them on its left and keeps its far side
-          square, parallel to the pane's side and the notch's gap in from it. */}
-      <Notch className="-mt-control-edge -mr-control-edge -mb-control-edge">
+          square, parallel to the pane's side and the notch's gap in from it.
+          Top and right recover the pane inset; the bottom overlaps only the
+          header's border, keeping its rule and sheen level with the notch. */}
+      <Notch className="-mt-pane-inset -mr-pane-inset -mb-control-edge">
         <Assistant slant="left" />
       </Notch>
     </header>

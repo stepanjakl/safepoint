@@ -5,7 +5,7 @@ import { cx } from '@/lib/cx';
 /*
   The bite a pane's corner takes, so controls can sit on the canvas beside a
   header. Place it as the last cell of a header row, pulled over the pane's
-  edge (`-mt-control-edge -mr-control-edge`): it stretches with the row, so its
+  edge (`-mt-pane-inset -mr-pane-inset`): it stretches with the row, so its
   floor lands on whatever rule the rest of the row draws, at any height.
 
   Controls inside it lean with it when they are slanted -- `<Button slant>` --

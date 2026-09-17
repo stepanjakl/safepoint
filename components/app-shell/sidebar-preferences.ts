@@ -13,6 +13,7 @@ let temporary: string | null = null;
 
 export function parseSidebarPreferences(
   value: string | null,
+  fallback: SidebarPreferences = { width: null, collapsed: false },
 ): SidebarPreferences {
   try {
     const parsed = schema.safeParse(JSON.parse(value ?? 'null'));
@@ -20,7 +21,7 @@ export function parseSidebarPreferences(
   } catch {
     // An old or edited preference must never make navigation unavailable.
   }
-  return { width: null, collapsed: false };
+  return fallback;
 }
 
 export function readSidebarPreferences() {

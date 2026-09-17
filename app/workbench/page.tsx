@@ -5,6 +5,7 @@ import { AgentNameGallery } from '@/components/dev/agent-name-gallery';
 import { IconMenuGallery } from '@/components/dev/icon-menu-gallery';
 import { IconPairGallery } from '@/components/dev/icon-pair-gallery';
 import { NucleoGallery } from '@/components/dev/nucleo-gallery';
+import { RunStatusGallery } from '@/components/dev/run-status-gallery';
 import { SystemDiscGallery } from '@/components/dev/system-disc-gallery';
 import { ReviewWorkspace } from '@/components/review/review-workspace';
 import { Button } from '@/components/ui/button';
@@ -86,6 +87,19 @@ export default async function WorkbenchPage({
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="readout text-muted">run states</h2>
+        <p className="text-dense text-muted max-w-prose">
+          The nine states a run moves through, drawn as one circle whose
+          interior changes rather than as nine separate marks: a ring while the
+          run is still open, a solid disc with the mark knocked out of it once
+          it is settled. Read the sequence straight down first — a family is
+          wrong when one of them is a stranger — then check the 12px pill, which
+          is the size the runs rail actually draws.
+        </p>
+        <RunStatusGallery />
       </section>
 
       <section className="space-y-3">

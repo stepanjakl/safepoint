@@ -53,8 +53,13 @@ element.
 
 ## Colours
 
-`app/radix-colors.css` is generated: run `pnpm colors:radix`, never edit it by
-hand. Tailwind scans source as plain text, so do not write a real theme variable
+`app/radix-colors.css` and `app/neutral-palettes.css` are generated: run
+`pnpm colors:radix` and `pnpm colors:neutrals`, never edit either by hand. The
+four neutrals Tailwind does not ship are tuned through the signature table in
+`scripts/generate-neutral-palettes.ts`, not by editing the emitted steps. After
+touching a token, run `pnpm check:tokens`: it fails on any `var(--…)` in the
+app's CSS that nothing defines, which otherwise unsets a whole subtree in
+silence rather than erroring. Tailwind scans source as plain text, so do not write a real theme variable
 name in a comment — it would be emitted as though a style read it; use a
 placeholder such as `--color-radix-<scale>-<step>`. The techniques behind the
 workspace menu's decorative hues — `light-dark()` resolved where the colour

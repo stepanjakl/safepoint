@@ -31,7 +31,17 @@ export function SectionRow({
 }) {
   return (
     <div className="sheet-head">
-      <h2 id={id} className="readout text-muted">
+      {/*
+        The readout one step up, through the utility face's own strong weight
+        rather than a number. Each typeface set decides what that step is for
+        the mono it ships -- Geist and Inter have a real 600, and Glide, which
+        ships a single weight, pins strong to its 400 so the step quietly
+        becomes no step instead of a synthetic bold smearing at this size.
+      */}
+      <h2
+        id={id}
+        className="readout text-muted [font-weight:var(--sp-mono-weight-strong)]"
+      >
         {title}
         {count !== undefined ? (
           <>

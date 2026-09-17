@@ -2,7 +2,10 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
 import { DesignControls } from '@/components/dev/design-controls';
-import { DEFAULT_TILE_PALETTE } from '@/components/dev/design-preferences';
+import {
+  DEFAULT_STATE_PALETTE,
+  DEFAULT_TILE_PALETTE,
+} from '@/components/dev/design-preferences';
 import { DesignPreferencesScript } from '@/components/dev/design-preferences-script';
 import { LocatorRuntime } from '@/components/dev/locator-runtime';
 import { DEFAULT_THEME } from '@/lib/typography';
@@ -20,13 +23,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     // The defaults are rendered, not left to the preferences script, so they
     // hold where it does not run. suppressHydrationWarning: the script
-    // replaces data-typeface, data-mono, data-theme and data-tile-palette
-    // with a stored choice before React hydrates.
+    // replaces data-typeface, data-mono, data-theme, data-tile-palette and
+    // data-state-palette with a stored choice before React hydrates.
     <html
       lang="en-GB"
       className={fontVariables}
       data-theme={DEFAULT_THEME}
       data-tile-palette={DEFAULT_TILE_PALETTE}
+      data-state-palette={DEFAULT_STATE_PALETTE}
       suppressHydrationWarning
     >
       {/* suppressHydrationWarning: the LocatorJS browser extension writes its

@@ -3,8 +3,9 @@
 
   Every role is declared once with light-dark() over a neutral ramp -- zinc
   unless a development switch names another palette -- for surfaces, rules,
-  text and action, and Tailwind hues for semantic state. Exact values are provisional and replaceable here without touching
-  component anatomy.
+  text and action. State scales use Radix by default, with a Tailwind fallback.
+  Bare state names are text-role aliases to explicit step-11 tokens; palette
+  values live in the numbered steps.
 
   data-theme on any element overrides the system preference for its subtree.
 */
@@ -31,6 +32,11 @@
   --sp-control-* carries the faces that answer a press -- quiet and unavailable
   buttons, fields, keycaps and the badges built on the keycap -- and follows
   the neutral ramp unless data-control-neutral gives it a palette of its own.
+
+  Five palettes are Tailwind's own. Taupe, mauve, mist and olive are generated
+  into neutral-palettes.css from the lightness curve Tailwind's five share --
+  `pnpm colors:neutrals` -- so a ramp here binds all nine the same way and
+  cannot tell them apart.
 
   Outside @theme so they stay out of the utility surface: reach them through an
   --sp-* role. Like data-theme, each attribute resolves for its own subtree.
@@ -163,10 +169,12 @@
 }
 
 /*
-  Intermediate steps, each the oklab midpoint of its neighbours. Computed rather
-  than written, so every palette has them. 350 inherits the wider gap between
-  300 and 400, so it is a midpoint of that gap rather than the same increment
-  150 and 250 give.
+  Intermediate steps, each the oklab midpoint of its neighbours. Computed
+  rather than written, so every palette has them. 350 inherits the wider gap
+  between 300 and 400, as 450 does the gap between 400 and 500, so each is a
+  midpoint of that gap rather than the same increment 150 and 250 give. 325 is
+  the midpoint of 300 and 350 again, a quarter of the way into that wide gap,
+  for the one place a half-step was still too far.
 
   Re-declared on every element that rebinds a ramp: a custom property
   substitutes its var()s where it is declared, so a midpoint declared only on
@@ -174,6 +182,11 @@
 */
 :root,
 [data-neutral] {
+  --sp-neutral-75: color-mix(
+    in oklab,
+    var(--sp-neutral-50),
+    var(--sp-neutral-100)
+  );
   --sp-neutral-150: color-mix(
     in oklab,
     var(--sp-neutral-100),
@@ -184,32 +197,120 @@
     var(--sp-neutral-200),
     var(--sp-neutral-300)
   );
+  --sp-neutral-325: color-mix(
+    in oklab,
+    var(--sp-neutral-300),
+    var(--sp-neutral-350)
+  );
   --sp-neutral-350: color-mix(
     in oklab,
     var(--sp-neutral-300),
     var(--sp-neutral-400)
+  );
+  --sp-neutral-450: color-mix(
+    in oklab,
+    var(--sp-neutral-400),
+    var(--sp-neutral-500)
+  );
+  --sp-neutral-550: color-mix(
+    in oklab,
+    var(--sp-neutral-500),
+    var(--sp-neutral-600)
+  );
+  --sp-neutral-650: color-mix(
+    in oklab,
+    var(--sp-neutral-600),
+    var(--sp-neutral-700)
   );
   --sp-neutral-750: color-mix(
     in oklab,
     var(--sp-neutral-700),
     var(--sp-neutral-800)
   );
+  --sp-neutral-850: color-mix(
+    in oklab,
+    var(--sp-neutral-800),
+    var(--sp-neutral-900)
+  );
+}
 
+/*
+  The control ramp. Its whole steps alias the neutral ones until a palette is
+  chosen for controls alone, and its midpoints are mixed from its own whole
+  steps rather than aliased from neutral's -- which is what they used to do,
+  and the reason a switched control palette came out with eight steps of one
+  ramp and ten of another. Declared alongside [data-control-neutral] for the
+  same reason the neutral midpoints are declared alongside [data-neutral].
+*/
+:root,
+[data-neutral],
+[data-control-neutral] {
   --sp-control-50: var(--sp-neutral-50);
   --sp-control-100: var(--sp-neutral-100);
-  --sp-control-150: var(--sp-neutral-150);
   --sp-control-200: var(--sp-neutral-200);
-  --sp-control-250: var(--sp-neutral-250);
   --sp-control-300: var(--sp-neutral-300);
-  --sp-control-350: var(--sp-neutral-350);
   --sp-control-400: var(--sp-neutral-400);
   --sp-control-500: var(--sp-neutral-500);
   --sp-control-600: var(--sp-neutral-600);
   --sp-control-700: var(--sp-neutral-700);
-  --sp-control-750: var(--sp-neutral-750);
   --sp-control-800: var(--sp-neutral-800);
   --sp-control-900: var(--sp-neutral-900);
   --sp-control-950: var(--sp-neutral-950);
+}
+
+:root,
+[data-neutral],
+[data-control-neutral] {
+  --sp-control-75: color-mix(
+    in oklab,
+    var(--sp-control-50),
+    var(--sp-control-100)
+  );
+  --sp-control-150: color-mix(
+    in oklab,
+    var(--sp-control-100),
+    var(--sp-control-200)
+  );
+  --sp-control-250: color-mix(
+    in oklab,
+    var(--sp-control-200),
+    var(--sp-control-300)
+  );
+  --sp-control-325: color-mix(
+    in oklab,
+    var(--sp-control-300),
+    var(--sp-control-350)
+  );
+  --sp-control-350: color-mix(
+    in oklab,
+    var(--sp-control-300),
+    var(--sp-control-400)
+  );
+  --sp-control-450: color-mix(
+    in oklab,
+    var(--sp-control-400),
+    var(--sp-control-500)
+  );
+  --sp-control-550: color-mix(
+    in oklab,
+    var(--sp-control-500),
+    var(--sp-control-600)
+  );
+  --sp-control-650: color-mix(
+    in oklab,
+    var(--sp-control-600),
+    var(--sp-control-700)
+  );
+  --sp-control-750: color-mix(
+    in oklab,
+    var(--sp-control-700),
+    var(--sp-control-800)
+  );
+  --sp-control-850: color-mix(
+    in oklab,
+    var(--sp-control-800),
+    var(--sp-control-900)
+  );
 }
 
 [data-control-neutral='zinc'] {
@@ -354,6 +455,11 @@
     var(--sp-control-300),
     var(--sp-control-400)
   );
+  --sp-control-450: color-mix(
+    in oklab,
+    var(--sp-control-400),
+    var(--sp-control-500)
+  );
   --sp-control-750: color-mix(
     in oklab,
     var(--sp-control-700),
@@ -481,6 +587,13 @@
   );
   --sp-surface-inset: light-dark(var(--sp-neutral-200), var(--sp-neutral-950));
   --sp-surface-control: light-dark(var(--sp-control-50), var(--sp-control-700));
+  /*
+    The darkest ground a light theme puts text on, which makes it the one that
+    decides how dark --sp-text-muted has to be. Muted reads 5.2:1 here, so it
+    holds -- but with less room than on any other surface, so a control that
+    takes this fill should move its ink with it rather than leaving a muted
+    label sitting on it. Every control that uses it does.
+  */
   --sp-surface-selected: light-dark(
     var(--sp-neutral-300),
     var(--sp-neutral-700)
@@ -492,14 +605,54 @@
 
   /* Text */
   --sp-text-primary: light-dark(var(--sp-neutral-900), var(--sp-neutral-100));
-  --sp-text-muted: light-dark(var(--sp-neutral-500), var(--sp-neutral-300));
+  /*
+    Labels, captions and every readout in the app. The light half is a half step
+    down from the ramp's middle because the role has to clear 4.5:1 on the
+    surfaces it lands on, and at neutral-500 it did not: 3.8:1 on
+    --sp-surface-inset, under AA at the micro size the readout is set in.
+    neutral-550 reads 4.8:1 there.
+
+    Half a step rather than a whole one. A whole step clears the same bar with
+    room to spare, but this role is most of the small text in the app, and the
+    quiet it is chosen for is a thing it can be given too much of -- past a
+    point a label stops being quiet and starts being a second voice beside the
+    text it labels. 4.8:1 is the lightest that still passes, which is the value
+    the role actually wants.
+
+    The margin is thin enough to be a constraint on what goes under it: a light
+    surface darker than --sp-surface-selected (neutral-300, where this reads
+    5.2:1 -- see the note on that token) would put the role back under AA, and
+    is the reason surface-selected pairs with a primary ink rather than leaving
+    muted on it.
+
+    The dark half is untouched. It already reads above 13:1 on the inset, and a
+    step there would push a label to the same weight as the row content beside
+    it -- the two canvases are not failing the same way and do not take the same
+    correction.
+  */
+  --sp-text-muted: light-dark(var(--sp-neutral-550), var(--sp-neutral-300));
   /* The muted role, one step toward primary. Not "darker": in dark mode the
      step that reads as more present goes lighter, and the pair has to say the
      same thing on either canvas. Spent on hover, where a control has to answer
-     the pointer without jumping all the way to the weight of body text. */
+     the pointer without jumping all the way to the weight of body text.
+
+     It moves with muted rather than staying put: the step is the whole point,
+     and a half step down for muted with this one left where it was would have
+     closed the gap between them by half. */
   --sp-text-muted-strong: light-dark(
-    var(--sp-neutral-600),
+    var(--sp-neutral-650),
     var(--sp-neutral-200)
+  );
+  /*
+    A step below muted, for text in a list row at rest. It exists so a row has
+    three steps to move through rather than two: everything in the row darkens
+    a little under the pointer and further again on the row a reader is on, and
+    with only muted and muted-strong to work with, hover and current came out
+    the same colour.
+  */
+  --sp-text-muted-soft: light-dark(
+    var(--sp-neutral-500),
+    var(--sp-neutral-400)
   );
   --sp-text-inverse: light-dark(var(--sp-neutral-50), var(--sp-neutral-900));
 
@@ -534,24 +687,283 @@
   --sp-notch-highlight: var(--sp-face-highlight-strong);
   --sp-notch-pane: var(--sp-surface-primary);
 
-  /* Semantic state */
-  --sp-state-advisory: light-dark(var(--color-blue-600), var(--color-blue-400));
-  --sp-state-verified: light-dark(
-    var(--color-emerald-700),
-    var(--color-emerald-400)
+  /*
+    State text roles. Keep these aliases in each palette scope so they resolve
+    against that scope's numbered steps rather than an inherited value.
+    Destructive is an action text role; it only needs step 11, not a full scale.
+  */
+  --sp-state-advisory: var(--sp-state-advisory-11);
+  --sp-state-verified: var(--sp-state-verified-11);
+  --sp-state-caution: var(--sp-state-caution-11);
+  --sp-state-blocked: var(--sp-state-blocked-11);
+  --sp-state-destructive: var(--sp-state-destructive-11);
+  --sp-state-destructive-11: light-dark(
+    var(--color-rose-800),
+    var(--color-rose-300)
   );
-  --sp-state-caution: light-dark(
+  --sp-state-decision: var(--sp-state-decision-11);
+  --sp-state-unavailable: var(--sp-state-unavailable-11);
+
+  /*
+    Each semantic state as a scale rather than a colour, in the shape the menu
+    tiles already use. The suffix is the rung, numbered after Radix's scale --
+    which is the palette the app runs on. Numbers identify roles, not equal
+    lightness increments:
+
+      1   the lightest ground, and the figure on a dark one
+      3   a subtle background        5   a background already lit
+      4   the same under a pointer   6   and the same under a pointer
+      7   an active or selected ground
+      9   a shape drawn solid       10  the same, one step on
+      11  state text               12  high-contrast text
+
+    The bare state token aliases step 11; it never defines a second colour.
+
+    The Tailwind fallback preserves the existing role colours. Numbered steps
+    are role mappings, not distinct shades or contrast guarantees: steps 10
+    and 11 can coincide. Neutral rides --sp-neutral-*, which has rungs of its
+    own again.
+
+    Nothing is mixed at use time, which is the point: a mix is a different
+    colour on every ground it lands on, and the release card, the runs rail and
+    the review panel do not share a ground.
+  */
+  --sp-state-advisory-1: light-dark(
+    var(--color-blue-50),
+    var(--color-blue-950)
+  );
+  --sp-state-advisory-3: light-dark(
+    var(--color-blue-100),
+    var(--color-blue-950)
+  );
+  --sp-state-advisory-4: light-dark(
+    var(--color-blue-200),
+    var(--color-blue-900)
+  );
+  --sp-state-advisory-5: light-dark(
+    var(--color-blue-300),
+    var(--color-blue-800)
+  );
+  --sp-state-advisory-6: light-dark(
+    var(--color-blue-400),
+    var(--color-blue-700)
+  );
+  --sp-state-advisory-7: light-dark(
+    var(--color-blue-500),
+    var(--color-blue-600)
+  );
+  --sp-state-advisory-9: light-dark(
+    var(--color-blue-600),
+    var(--color-blue-500)
+  );
+  --sp-state-advisory-10: light-dark(
+    var(--color-blue-700),
+    var(--color-blue-400)
+  );
+  --sp-state-advisory-11: light-dark(
+    var(--color-blue-600),
+    var(--color-blue-400)
+  );
+  --sp-state-advisory-12: light-dark(
+    var(--color-blue-900),
+    var(--color-blue-200)
+  );
+  --sp-state-verified-1: light-dark(
+    var(--color-green-50),
+    var(--color-green-950)
+  );
+  --sp-state-verified-3: light-dark(
+    var(--color-green-100),
+    var(--color-green-950)
+  );
+  --sp-state-verified-4: light-dark(
+    var(--color-green-200),
+    var(--color-green-900)
+  );
+  --sp-state-verified-5: light-dark(
+    var(--color-green-300),
+    var(--color-green-800)
+  );
+  --sp-state-verified-6: light-dark(
+    var(--color-green-400),
+    var(--color-green-700)
+  );
+  --sp-state-verified-7: light-dark(
+    var(--color-green-500),
+    var(--color-green-600)
+  );
+  --sp-state-verified-9: light-dark(
+    var(--color-green-600),
+    var(--color-green-500)
+  );
+  --sp-state-verified-10: light-dark(
+    var(--color-green-700),
+    var(--color-green-400)
+  );
+  --sp-state-verified-11: light-dark(
+    var(--color-green-700),
+    var(--color-green-400)
+  );
+  --sp-state-verified-12: light-dark(
+    var(--color-green-900),
+    var(--color-green-200)
+  );
+  --sp-state-caution-1: light-dark(
+    var(--color-amber-50),
+    var(--color-amber-950)
+  );
+  --sp-state-caution-3: light-dark(
+    var(--color-amber-100),
+    var(--color-amber-950)
+  );
+  --sp-state-caution-4: light-dark(
+    var(--color-amber-200),
+    var(--color-amber-900)
+  );
+  --sp-state-caution-5: light-dark(
+    var(--color-amber-300),
+    var(--color-amber-800)
+  );
+  --sp-state-caution-6: light-dark(
+    var(--color-amber-400),
+    var(--color-amber-700)
+  );
+  --sp-state-caution-7: light-dark(
+    var(--color-amber-500),
+    var(--color-amber-600)
+  );
+  --sp-state-caution-9: light-dark(
+    var(--color-amber-600),
+    var(--color-amber-500)
+  );
+  --sp-state-caution-10: light-dark(
     var(--color-amber-700),
     var(--color-amber-400)
   );
-  --sp-state-blocked: light-dark(var(--color-red-600), var(--color-red-400));
-  --sp-state-destructive: light-dark(
-    var(--color-red-700),
-    var(--color-red-500)
+  --sp-state-caution-11: light-dark(
+    var(--color-amber-700),
+    var(--color-amber-400)
   );
-  --sp-state-unavailable: light-dark(
+  --sp-state-caution-12: light-dark(
+    var(--color-amber-900),
+    var(--color-amber-200)
+  );
+  --sp-state-decision-1: light-dark(
+    var(--color-violet-50),
+    var(--color-violet-950)
+  );
+  --sp-state-decision-3: light-dark(
+    var(--color-violet-100),
+    var(--color-violet-950)
+  );
+  --sp-state-decision-4: light-dark(
+    var(--color-violet-200),
+    var(--color-violet-900)
+  );
+  --sp-state-decision-5: light-dark(
+    var(--color-violet-300),
+    var(--color-violet-800)
+  );
+  --sp-state-decision-6: light-dark(
+    var(--color-violet-400),
+    var(--color-violet-700)
+  );
+  --sp-state-decision-7: light-dark(
+    var(--color-violet-500),
+    var(--color-violet-600)
+  );
+  --sp-state-decision-9: light-dark(
+    var(--color-violet-600),
+    var(--color-violet-500)
+  );
+  --sp-state-decision-10: light-dark(
+    var(--color-violet-700),
+    var(--color-violet-400)
+  );
+  --sp-state-decision-11: light-dark(
+    var(--color-violet-700),
+    var(--color-violet-400)
+  );
+  --sp-state-decision-12: light-dark(
+    var(--color-violet-900),
+    var(--color-violet-200)
+  );
+  --sp-state-blocked-1: light-dark(var(--color-rose-50), var(--color-rose-950));
+  --sp-state-blocked-3: light-dark(
+    var(--color-rose-100),
+    var(--color-rose-950)
+  );
+  --sp-state-blocked-4: light-dark(
+    var(--color-rose-200),
+    var(--color-rose-900)
+  );
+  --sp-state-blocked-5: light-dark(
+    var(--color-rose-300),
+    var(--color-rose-800)
+  );
+  --sp-state-blocked-6: light-dark(
+    var(--color-rose-400),
+    var(--color-rose-700)
+  );
+  --sp-state-blocked-7: light-dark(
+    var(--color-rose-500),
+    var(--color-rose-600)
+  );
+  --sp-state-blocked-9: light-dark(
+    var(--color-rose-600),
+    var(--color-rose-500)
+  );
+  --sp-state-blocked-10: light-dark(
+    var(--color-rose-700),
+    var(--color-rose-400)
+  );
+  --sp-state-blocked-11: light-dark(
+    var(--color-rose-700),
+    var(--color-rose-400)
+  );
+  --sp-state-blocked-12: light-dark(
+    var(--color-rose-900),
+    var(--color-rose-200)
+  );
+  --sp-state-unavailable-1: light-dark(
+    var(--sp-neutral-50),
+    var(--sp-neutral-950)
+  );
+  --sp-state-unavailable-3: light-dark(
+    var(--sp-neutral-200),
+    var(--sp-neutral-900)
+  );
+  --sp-state-unavailable-4: light-dark(
+    var(--sp-neutral-250),
+    var(--sp-neutral-800)
+  );
+  --sp-state-unavailable-5: light-dark(
+    var(--sp-neutral-300),
+    var(--sp-neutral-750)
+  );
+  --sp-state-unavailable-6: light-dark(
+    var(--sp-neutral-350),
+    var(--sp-neutral-700)
+  );
+  --sp-state-unavailable-7: light-dark(
+    var(--sp-neutral-400),
+    var(--sp-neutral-600)
+  );
+  --sp-state-unavailable-9: light-dark(
     var(--sp-neutral-500),
     var(--sp-neutral-400)
+  );
+  --sp-state-unavailable-10: light-dark(
+    var(--sp-neutral-600),
+    var(--sp-neutral-350)
+  );
+  --sp-state-unavailable-11: light-dark(
+    var(--sp-neutral-500),
+    var(--sp-neutral-400)
+  );
+  --sp-state-unavailable-12: light-dark(
+    var(--sp-neutral-800),
+    var(--sp-neutral-200)
   );
 
   /* Adapter mode */
@@ -560,7 +972,7 @@
     var(--color-violet-600),
     var(--color-violet-400)
   );
-  --sp-mode-preview: light-dark(var(--sp-neutral-500), var(--sp-neutral-400));
+  --sp-mode-preview: var(--sp-state-unavailable);
   --sp-mode-unavailable: light-dark(
     var(--sp-neutral-400),
     var(--sp-neutral-600)
@@ -663,7 +1075,7 @@
     var(--sp-control-900)
   );
   --sp-header-button-face-top-hover: light-dark(
-    var(--sp-control-250),
+    var(--sp-control-200),
     var(--sp-control-900)
   );
   --sp-header-button-face-bottom-hover: light-dark(
@@ -686,8 +1098,23 @@
     the open tab is the only item wearing a face at all, and it never takes a
     hover step of its own, so nothing the pointer does can be mistaken for it.
   */
+  /*
+    An edge for the open tab, if it turns out to want one. Two stops like every
+    other ring in the interface, so a border set here is lit the same way a
+    face is rather than being a flat outline; transparent until they are given
+    values, which is the whole of what makes this pair a switch.
+  */
+  --sp-header-button-ring-top-selected: light-dark(
+    transparent,
+    var(--sp-control-600)
+  );
+  --sp-header-button-ring-bottom-selected: light-dark(
+    transparent,
+    var(--sp-control-700)
+  );
+
   --sp-header-button-face-top-selected: light-dark(
-    var(--sp-control-300),
+    var(--sp-control-200),
     var(--sp-control-700)
   );
   --sp-header-button-face-bottom-selected: light-dark(
@@ -709,12 +1136,26 @@
     var(--sp-control-950),
     var(--sp-control-50)
   );
+  /* Icons sit one step behind their labels in every header-item state: a
+     supporting mark rather than a second line of equally strong ink. */
+  --sp-header-icon: light-dark(var(--sp-control-700), var(--sp-control-300));
+  --sp-header-icon-hover: light-dark(
+    var(--sp-control-800),
+    var(--sp-control-200)
+  );
+  --sp-header-icon-selected: light-dark(
+    var(--sp-control-900),
+    var(--sp-control-100)
+  );
   --sp-header-button-count: light-dark(
     var(--sp-control-100),
     var(--sp-control-800)
   );
+  /* Both halves move: the light one sat on --sp-control-100, the same step as
+     the rest token above it, so the pill named for hover held still while the
+     face under it moved. Half a step either way, matching the dark half. */
   --sp-header-button-count-hover: light-dark(
-    var(--sp-control-100),
+    var(--sp-control-150),
     var(--sp-control-750)
   );
   /*
@@ -763,6 +1204,41 @@
     in oklab,
     var(--sp-state-blocked) 22%,
     var(--sp-header-button-face-bottom-hover)
+  );
+
+  /*
+    The dot that reports the condition, which is the one thing on the button
+    whose whole job is to be seen against the face behind it -- and that face is
+    mixed from the same state colour. The two are one colour at two strengths,
+    so the tint that announces the condition also crowds the mark announcing it:
+    the bare token reads 3.1:1 at rest and 2.4:1 under the pointer, where the
+    mix goes to 22%.
+
+    A third of the way to step 12, and no further. The dot's message IS its hue
+    -- amber means stale, red means blocked -- so contrast bought by draining
+    the colour buys nothing: step 12 itself clears 7:1 and arrives as brown
+    (chroma 0.049 against amber's 0.144), which is legible and says nothing.
+    At 35% the light dot keeps 77-84% of its chroma and clears 3:1 in both
+    state palettes, at rest and on hover.
+
+    Light only. Dark already reads 5.6-8.9:1 -- its face is barely tinted -- so
+    the same mix there would spend a fifth of the hue on contrast it has.
+  */
+  --sp-header-button-dot-caution: light-dark(
+    color-mix(
+      in oklab,
+      var(--sp-state-caution-12) 35%,
+      var(--sp-state-caution)
+    ),
+    var(--sp-state-caution)
+  );
+  --sp-header-button-dot-blocked: light-dark(
+    color-mix(
+      in oklab,
+      var(--sp-state-blocked-12) 35%,
+      var(--sp-state-blocked)
+    ),
+    var(--sp-state-blocked)
   );
 
   --sp-value-pill: light-dark(var(--sp-control-200), var(--sp-control-800));
@@ -864,6 +1340,85 @@
     var(--sp-neutral-700)
   );
   --sp-menu-chip: light-dark(var(--sp-control-300), var(--sp-control-800));
+  /*
+    A list row's own text and its tag, on the control ramp rather than on the
+    shared text roles they used to borrow.
+
+    A run row is a control -- the whole row is a button -- and --sp-control-*
+    exists precisely so controls can be retuned without moving body text with
+    them; it tracks the neutral palette by default and can be switched to
+    another in the development picker, so this still answers to the theme. The
+    text roles these borrowed are tuned for prose on a page, which is why they
+    could not be corrected here without dragging half the interface along.
+
+    Three rungs each, one per row state. The day sits darker than the time
+    throughout, so the pair reads as one stamp at two resolutions rather than
+    as two lines of equal weight.
+  */
+  --sp-sheet-date: light-dark(var(--sp-control-700), var(--sp-control-150));
+  --sp-sheet-date-hover: light-dark(
+    var(--sp-control-800),
+    var(--sp-control-100)
+  );
+  --sp-sheet-date-current: light-dark(
+    var(--sp-control-900),
+    var(--sp-control-50)
+  );
+  --sp-sheet-time: light-dark(var(--sp-control-600), var(--sp-control-400));
+  --sp-sheet-time-hover: light-dark(
+    var(--sp-control-700),
+    var(--sp-control-300)
+  );
+  --sp-sheet-time-current: light-dark(
+    var(--sp-control-800),
+    var(--sp-control-200)
+  );
+
+  /*
+    The tally's last segment: the total. It is not an outcome -- it is what the
+    outcomes are out of -- so it takes the control ramp rather than a severity
+    tone, and reads as the one neutral piece of a coloured bar.
+
+    Three faces, one per row state. It is the one part of the bar that may move
+    with the row: it counts rather than reports, so it is chrome, where the
+    segments beside it state an outcome and hold still. The completed total is
+    the exception that proves it -- once the count and the outcome are the same
+    fact, it stops moving too.
+  */
+  --sp-sheet-total-face: light-dark(
+    var(--sp-control-250),
+    var(--sp-control-350)
+  );
+  --sp-sheet-total-face-hover: light-dark(
+    var(--sp-control-325),
+    var(--sp-control-400)
+  );
+  --sp-sheet-total-face-current: light-dark(
+    var(--sp-control-325),
+    var(--sp-control-450)
+  );
+  /*
+    Dark in both themes, because the faces above are light in both. The total
+    is the inverse of the segments beside it -- light ground, dark figure,
+    where they are dark ground and light figure -- which is what marks it as
+    the one piece of the bar that is not an outcome.
+
+    Three rungs, paired with the three faces above: ground and figure move
+    together, so a face can be pulled in either direction without leaving its
+    own figure behind. Every pair clears 6:1.
+  */
+  --sp-sheet-total-ink: light-dark(
+    var(--sp-control-700),
+    var(--sp-control-900)
+  );
+  --sp-sheet-total-ink-hover: light-dark(
+    var(--sp-control-800),
+    var(--sp-control-950)
+  );
+  --sp-sheet-total-ink-current: light-dark(
+    var(--sp-control-850),
+    var(--sp-control-950)
+  );
   --sp-menu-link: light-dark(var(--sp-neutral-700), var(--sp-neutral-300));
 
   /*
@@ -1158,6 +1713,7 @@
   --color-state-advisory: var(--sp-state-advisory);
   --color-state-verified: var(--sp-state-verified);
   --color-state-caution: var(--sp-state-caution);
+  --color-state-decision: var(--sp-state-decision);
   --color-state-blocked: var(--sp-state-blocked);
   --color-state-destructive: var(--sp-state-destructive);
   --color-state-unavailable: var(--sp-state-unavailable);
@@ -1178,6 +1734,11 @@
   --color-header-ink: var(--sp-header-ink);
   --color-header-ink-hover: var(--sp-header-ink-hover);
   --color-header-ink-selected: var(--sp-header-ink-selected);
+  --color-header-icon: var(--sp-header-icon);
+  --color-header-icon-hover: var(--sp-header-icon-hover);
+  --color-header-icon-selected: var(--sp-header-icon-selected);
+  --color-header-button-dot-caution: var(--sp-header-button-dot-caution);
+  --color-header-button-dot-blocked: var(--sp-header-button-dot-blocked);
   --color-header-button-count: var(--sp-header-button-count);
   --color-header-button-count-hover: var(--sp-header-button-count-hover);
   --color-field-face: var(--sp-field-face);
@@ -1325,6 +1886,18 @@
   --spacing-shell-inset: 10px;
   /* Adjustable navigation: protect the sheet's reading width near the shell
      breakpoint. These also size the probes read by the pointer/keyboard code. */
+  --spacing-assistant-min: 17.5rem;
+  --spacing-assistant-default: 20rem;
+  --spacing-assistant-max: 30rem;
+  --spacing-assistant-limit: var(--assistant-limit);
+  /*
+    Two tiers, because the sheet answers to the pane it is in and that pane
+    loses a third of itself the moment the assistant docks beside it. At the
+    wide tier the list keeps its full measure; at the narrow one it gives some
+    back rather than dropping the detail into a second screen.
+  */
+  --container-sheet-narrow: 44rem;
+  --container-sheet-wide: 52rem;
   --spacing-sidebar-min: 14rem;
   --spacing-sidebar-default: 15.625rem;
   --spacing-sidebar-max: max(
@@ -1359,6 +1932,47 @@
     One token because the two are on different elements in different files and
     a drift between them is exactly what the axis exists to catch.
   */
+  /*
+    The inset a list row holds on all four sides. One value, because the status
+    mark sits in the row's corner and is read against it: an inset that is not
+    the same top and side puts the mark somewhere a reader has to work out.
+  */
+  --spacing-sheet-inset: 0.625rem;
+  /*
+    The height of a section's first row, set once so the four sections cannot
+    disagree about it. Two control heights would be too tall for a label and
+    one too short for the schedule button that sits in it; 2.5rem clears a 28px
+    control with a quarter of its own height either side.
+  */
+  --spacing-sheet-head: 2.5rem;
+  /*
+    The lit line a sheet divider carries. A whole pixel, not the control
+    highlight's three quarters: at 0.75px a 1x display paints a partial line
+    or none at all, and this one has to be seen to do its job.
+  */
+  --spacing-sheet-highlight: 1px;
+  /* The height of the status mark beside the day. One of the row's two fixed
+     measures -- the bar's height is the other -- and everything else in the
+     row is set by its type. */
+  --spacing-sheet-mark: 1rem;
+  /*
+    The release bar's own height, a little under the line it shares with the
+    day and the time, which the row centres it against.
+
+    Not a nudge. They were the same height and already centred as boxes, so no
+    vertical offset could make them read as a pair -- moving one down only made
+    it look dropped. What was wrong is that they are not the same kind of
+    object: the tag is a label, a word at reading size, where the bar is a
+    readout of small figures, and a readout set to a label's height has to pad
+    its figures out to fill it, which makes it the louder of the two. Shorter
+    and centred, it nests inside the tag's line instead of competing with it.
+  */
+  --spacing-sheet-tally: 1rem;
+  /* The gap between a row's two bands. Named because it is one of the four
+     terms a row's height is the sum of -- see `.sheet-row` -- and a row height
+     assembled from three tokens and a number written in the rule is a row
+     height nobody can predict. */
+  --spacing-sheet-band-gap: 0.4375rem;
   --spacing-menu-end: 0.625rem; /* 10px */
   /*
     The edge a row and a grip each draw. Everything measured from it -- the
@@ -1408,4 +2022,296 @@
     back by this rather than by a 1px written beside it.
   */
   --spacing-control-edge: 1px;
+  /*
+    What a pane holds its content back by. Not the edge alone: `control-face`
+    draws a lit ring one --spacing-control-highlight wide just inside that
+    edge, and that ring is as much a part of the pane's edge as the border is.
+    Content stepped in by the border only sits on top of it -- invisible while
+    the content is transparent, obvious the moment anything in there is
+    full-bleed and opaque, such as a list row under the pointer or a section
+    header in the corner.
+
+    Anything reaching back over the pane's edge -- the notch -- pulls back by
+    this rather than by the border, so it still lands on the outer corner.
+  */
+  --spacing-pane-inset: calc(
+    var(--spacing-control-edge) + var(--spacing-control-highlight)
+  );
+  /*
+    The radius content inside the pane clips to. The pane rounds at
+    --radius-shell and its content is held back by --spacing-pane-inset, so a
+    fill inside it has to round one step tighter -- at the outer radius it
+    paints over the edge in the corners, which is only visible once something
+    in there has a fill of its own.
+  */
+  --radius-shell-inner: calc(var(--radius-shell) - var(--spacing-pane-inset));
+}
+
+/*
+  Default state palette. Numbered tokens map directly to Radix steps in both
+  themes. The bare text roles alias step 11 in this scope as well as in the
+  Tailwind fallback above. Switch with the development picker or ?states=tailwind.
+
+  Decision uses iris, blocked red, caution amber, verified grass, advisory blue,
+  unavailable slate, and destructive ruby. Component anatomy is palette-independent.
+*/
+[data-state-palette='radix'] {
+  /* Text-role aliases resolve in the same scope as their palette steps. */
+  --sp-state-advisory: var(--sp-state-advisory-11);
+  --sp-state-verified: var(--sp-state-verified-11);
+  --sp-state-caution: var(--sp-state-caution-11);
+  --sp-state-decision: var(--sp-state-decision-11);
+  --sp-state-blocked: var(--sp-state-blocked-11);
+  --sp-state-destructive: var(--sp-state-destructive-11);
+  --sp-state-destructive-11: light-dark(
+    var(--color-radix-ruby-11),
+    var(--color-radix-ruby-dark-11)
+  );
+  --sp-state-unavailable: var(--sp-state-unavailable-11);
+
+  --sp-state-advisory-1: light-dark(
+    var(--color-radix-blue-1),
+    var(--color-radix-blue-dark-1)
+  );
+  --sp-state-advisory-3: light-dark(
+    var(--color-radix-blue-3),
+    var(--color-radix-blue-dark-3)
+  );
+  --sp-state-advisory-4: light-dark(
+    var(--color-radix-blue-4),
+    var(--color-radix-blue-dark-4)
+  );
+  --sp-state-advisory-5: light-dark(
+    var(--color-radix-blue-5),
+    var(--color-radix-blue-dark-5)
+  );
+  --sp-state-advisory-6: light-dark(
+    var(--color-radix-blue-6),
+    var(--color-radix-blue-dark-6)
+  );
+  --sp-state-advisory-7: light-dark(
+    var(--color-radix-blue-7),
+    var(--color-radix-blue-dark-7)
+  );
+  --sp-state-advisory-9: light-dark(
+    var(--color-radix-blue-9),
+    var(--color-radix-blue-dark-9)
+  );
+  --sp-state-advisory-10: light-dark(
+    var(--color-radix-blue-10),
+    var(--color-radix-blue-dark-10)
+  );
+  --sp-state-advisory-11: light-dark(
+    var(--color-radix-blue-11),
+    var(--color-radix-blue-dark-11)
+  );
+  --sp-state-advisory-12: light-dark(
+    var(--color-radix-blue-12),
+    var(--color-radix-blue-dark-12)
+  );
+
+  --sp-state-verified-1: light-dark(
+    var(--color-radix-grass-1),
+    var(--color-radix-grass-dark-1)
+  );
+  --sp-state-verified-3: light-dark(
+    var(--color-radix-grass-3),
+    var(--color-radix-grass-dark-3)
+  );
+  --sp-state-verified-4: light-dark(
+    var(--color-radix-grass-4),
+    var(--color-radix-grass-dark-4)
+  );
+  --sp-state-verified-5: light-dark(
+    var(--color-radix-grass-5),
+    var(--color-radix-grass-dark-5)
+  );
+  --sp-state-verified-6: light-dark(
+    var(--color-radix-grass-6),
+    var(--color-radix-grass-dark-6)
+  );
+  --sp-state-verified-7: light-dark(
+    var(--color-radix-grass-7),
+    var(--color-radix-grass-dark-7)
+  );
+  --sp-state-verified-9: light-dark(
+    var(--color-radix-grass-9),
+    var(--color-radix-grass-dark-9)
+  );
+  --sp-state-verified-10: light-dark(
+    var(--color-radix-grass-10),
+    var(--color-radix-grass-dark-10)
+  );
+  --sp-state-verified-11: light-dark(
+    var(--color-radix-grass-11),
+    var(--color-radix-grass-dark-11)
+  );
+  --sp-state-verified-12: light-dark(
+    var(--color-radix-grass-12),
+    var(--color-radix-grass-dark-12)
+  );
+
+  --sp-state-caution-1: light-dark(
+    var(--color-radix-amber-1),
+    var(--color-radix-amber-dark-1)
+  );
+  --sp-state-caution-3: light-dark(
+    var(--color-radix-amber-3),
+    var(--color-radix-amber-dark-3)
+  );
+  --sp-state-caution-4: light-dark(
+    var(--color-radix-amber-4),
+    var(--color-radix-amber-dark-4)
+  );
+  --sp-state-caution-5: light-dark(
+    var(--color-radix-amber-5),
+    var(--color-radix-amber-dark-5)
+  );
+  --sp-state-caution-6: light-dark(
+    var(--color-radix-amber-6),
+    var(--color-radix-amber-dark-6)
+  );
+  --sp-state-caution-7: light-dark(
+    var(--color-radix-amber-7),
+    var(--color-radix-amber-dark-7)
+  );
+  --sp-state-caution-9: light-dark(
+    var(--color-radix-amber-9),
+    var(--color-radix-amber-dark-9)
+  );
+  --sp-state-caution-10: light-dark(
+    var(--color-radix-amber-10),
+    var(--color-radix-amber-dark-10)
+  );
+  --sp-state-caution-11: light-dark(
+    var(--color-radix-amber-11),
+    var(--color-radix-amber-dark-11)
+  );
+  --sp-state-caution-12: light-dark(
+    var(--color-radix-amber-12),
+    var(--color-radix-amber-dark-12)
+  );
+
+  --sp-state-decision-1: light-dark(
+    var(--color-radix-iris-1),
+    var(--color-radix-iris-dark-1)
+  );
+  --sp-state-decision-3: light-dark(
+    var(--color-radix-iris-3),
+    var(--color-radix-iris-dark-3)
+  );
+  --sp-state-decision-4: light-dark(
+    var(--color-radix-iris-4),
+    var(--color-radix-iris-dark-4)
+  );
+  --sp-state-decision-5: light-dark(
+    var(--color-radix-iris-5),
+    var(--color-radix-iris-dark-5)
+  );
+  --sp-state-decision-6: light-dark(
+    var(--color-radix-iris-6),
+    var(--color-radix-iris-dark-6)
+  );
+  --sp-state-decision-7: light-dark(
+    var(--color-radix-iris-7),
+    var(--color-radix-iris-dark-7)
+  );
+  --sp-state-decision-9: light-dark(
+    var(--color-radix-iris-9),
+    var(--color-radix-iris-dark-9)
+  );
+  --sp-state-decision-10: light-dark(
+    var(--color-radix-iris-10),
+    var(--color-radix-iris-dark-10)
+  );
+  --sp-state-decision-11: light-dark(
+    var(--color-radix-iris-11),
+    var(--color-radix-iris-dark-11)
+  );
+  --sp-state-decision-12: light-dark(
+    var(--color-radix-iris-12),
+    var(--color-radix-iris-dark-12)
+  );
+
+  --sp-state-blocked-1: light-dark(
+    var(--color-radix-red-1),
+    var(--color-radix-red-dark-1)
+  );
+  --sp-state-blocked-3: light-dark(
+    var(--color-radix-red-3),
+    var(--color-radix-red-dark-3)
+  );
+  --sp-state-blocked-4: light-dark(
+    var(--color-radix-red-4),
+    var(--color-radix-red-dark-4)
+  );
+  --sp-state-blocked-5: light-dark(
+    var(--color-radix-red-5),
+    var(--color-radix-red-dark-5)
+  );
+  --sp-state-blocked-6: light-dark(
+    var(--color-radix-red-6),
+    var(--color-radix-red-dark-6)
+  );
+  --sp-state-blocked-7: light-dark(
+    var(--color-radix-red-7),
+    var(--color-radix-red-dark-7)
+  );
+  --sp-state-blocked-9: light-dark(
+    var(--color-radix-red-9),
+    var(--color-radix-red-dark-9)
+  );
+  --sp-state-blocked-10: light-dark(
+    var(--color-radix-red-10),
+    var(--color-radix-red-dark-10)
+  );
+  --sp-state-blocked-11: light-dark(
+    var(--color-radix-red-11),
+    var(--color-radix-red-dark-11)
+  );
+  --sp-state-blocked-12: light-dark(
+    var(--color-radix-red-12),
+    var(--color-radix-red-dark-12)
+  );
+
+  --sp-state-unavailable-1: light-dark(
+    var(--color-radix-slate-1),
+    var(--color-radix-slate-dark-1)
+  );
+  --sp-state-unavailable-3: light-dark(
+    var(--color-radix-slate-3),
+    var(--color-radix-slate-dark-3)
+  );
+  --sp-state-unavailable-4: light-dark(
+    var(--color-radix-slate-4),
+    var(--color-radix-slate-dark-4)
+  );
+  --sp-state-unavailable-5: light-dark(
+    var(--color-radix-slate-5),
+    var(--color-radix-slate-dark-5)
+  );
+  --sp-state-unavailable-6: light-dark(
+    var(--color-radix-slate-6),
+    var(--color-radix-slate-dark-6)
+  );
+  --sp-state-unavailable-7: light-dark(
+    var(--color-radix-slate-7),
+    var(--color-radix-slate-dark-7)
+  );
+  --sp-state-unavailable-9: light-dark(
+    var(--color-radix-slate-9),
+    var(--color-radix-slate-dark-9)
+  );
+  --sp-state-unavailable-10: light-dark(
+    var(--color-radix-slate-10),
+    var(--color-radix-slate-dark-10)
+  );
+  --sp-state-unavailable-11: light-dark(
+    var(--color-radix-slate-11),
+    var(--color-radix-slate-dark-11)
+  );
+  --sp-state-unavailable-12: light-dark(
+    var(--color-radix-slate-12),
+    var(--color-radix-slate-dark-12)
+  );
 }

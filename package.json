@@ -17,8 +17,11 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
+    "check:sidebars": "node scripts/check-sidebars.mjs",
     "check:rail": "node scripts/check-rail-alignment.ts",
-    "colors:radix": "node scripts/generate-radix-colors.ts"
+    "check:tokens": "node scripts/check-token-refs.mjs",
+    "colors:radix": "node scripts/generate-radix-colors.ts",
+    "colors:neutrals": "node scripts/generate-neutral-palettes.ts"
   },
   "dependencies": {
     "@mingcute/react": "^3.0.2",

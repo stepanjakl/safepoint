@@ -55,8 +55,16 @@ export function SystemMeta({ link }: { link: SystemLink }) {
   const freshness = link.freshness;
   if (!freshness || freshness.state === 'fresh') {
     const text = freshness?.label ?? link.detail;
+    /*
+      The named-group variant is inert wherever no such group is above it, which
+      is everywhere but the input row: there the row takes the selected fill
+      when its panel opens, and muted on that ground is the one pairing that
+      falls under AA -- see the note on --sp-surface-selected.
+    */
     return text ? (
-      <span className="text-meta text-muted whitespace-nowrap">{text}</span>
+      <span className="text-meta text-muted group-aria-expanded/input-row:text-primary whitespace-nowrap">
+        {text}
+      </span>
     ) : null;
   }
   /*

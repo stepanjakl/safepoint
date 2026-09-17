@@ -72,11 +72,14 @@ export function CandidateList({
                     <span className="text-dense truncate group-data-[selected]:font-medium">
                       {row.name}
                     </span>
-                    <span className="value text-meta text-muted shrink-0">
+                    <span className="value text-meta text-muted group-data-[selected]:text-primary shrink-0">
                       {row.sku}
                     </span>
                   </span>
-                  <span className="text-meta text-muted block truncate">
+                  {/* Selected takes the row's quiet ink up with its fill:
+                      the selected ground is the darkest a light theme puts
+                      text on -- see the note on --sp-surface-selected. */}
+                  <span className="text-meta text-muted group-data-[selected]:text-primary block truncate">
                     <span className={`font-medium ${toneText[marker.tone]}`}>
                       {row.outcomeLabel}
                     </span>

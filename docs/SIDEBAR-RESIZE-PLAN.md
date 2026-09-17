@@ -1,5 +1,7 @@
 # Adjustable sidebar
 
+The shared implementation now also powers the [assistant sidebar](ASSISTANT-SIDEBAR.md).
+
 Accepted direction: a handle attached to the sheet's left edge. It reveals on
 hover or keyboard focus, adjusts the navigation width on drag, and collapses
 navigation on click. The grip is centred vertically and drawn as one continuous,
@@ -8,8 +10,12 @@ and at the beginning of every drag. Starting open, the arrows activate only afte
 crossing the close threshold; starting closed, only after crossing the open
 threshold. Once activated, left/right indicate the release state for the rest of
 that drag, even when reversing direction. The next drag starts straight again.
-The closed handle points right on hover. After a drag release, hover waits for
-actual pointer movement so the settling sheet cannot briefly flip the arrow.
+At rest the hovered handle points at what a click would do: the closed one
+points into the sheet to open, the open one back toward the edge to hide. After
+a drag release, hover waits for actual pointer movement so the settling sheet
+cannot briefly flip the arrow. Hover also ends when the grip loses its box --
+below the shell breakpoint, or with the assistant's panel -- so the tooltip
+never re-anchors to a zero rect in the viewport's corner.
 The stroke is 36px tall, with the softer muted-strong color on hover. Keyboard focus lights it as hover does.
 When hidden, the straight resting grip remains visible so reopening is discoverable.
 The menu's existing top row gains no icons. Pointer hover uses approach speed:

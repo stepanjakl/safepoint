@@ -225,6 +225,36 @@ export function setTilePalette(next: TilePalette) {
 }
 
 /*
+  The semantic state colours. Radix is what the app runs on -- see the
+  [data-state-palette='radix'] block in tokens.css for the mapping and why --
+  and 'tailwind' drops back to the ramps written into the tokens themselves,
+  so the two can be judged against each other.
+
+  The default is Radix, so the layout renders the attribute and a choice always
+  writes it: without it the stylesheet would fall back to Tailwind, not to the
+  default.
+*/
+export const STATE_PALETTE_STORAGE_KEY = 'safepoint.dev.state-palette';
+export const STATE_PALETTES = ['tailwind', 'radix'] as const;
+export type StatePalette = (typeof STATE_PALETTES)[number];
+export const DEFAULT_STATE_PALETTE: StatePalette = 'radix';
+export const STATE_PALETTE_LABELS: Record<StatePalette, string> = {
+  tailwind: 'Tailwind',
+  radix: 'Radix',
+};
+
+export function readStatePalette(): StatePalette {
+  const value = document.documentElement.dataset.statePalette;
+  return value === 'tailwind' ? 'tailwind' : 'radix';
+}
+
+export function setStatePalette(next: StatePalette) {
+  document.documentElement.dataset.statePalette = next;
+  persist(STATE_PALETTE_STORAGE_KEY, next);
+  emit();
+}
+
+/*
   One multiplier for all six of the tiles' saturation ceilings in tokens.css.
   1 is the ceilings as written, and means no attribute: the default moves with
   the tokens. Anything else is an inline --tile-chroma-scale on <html>, which

@@ -18,29 +18,27 @@
 /*
   The severity scale, and the review surfaces that read it.
 
-  A weight is derived from `--severity`, which `[data-severity]` sets from the
+  A weight is a step of whichever tone `[data-severity]` names for the
   element's own rank, so the value cannot be resolved anywhere but here. The
   @theme block below republishes each weight as a colour, which is what lets
   markup say `bg-severity-fill` and still get the row's own severity.
 */
 @theme inline {
-  --color-severity-ink: var(--severity-ink);
-  --color-severity-fill: var(--severity-fill);
-  --color-severity-fill-strong: var(--severity-fill-strong);
-  --color-severity-bar: var(--severity-bar);
-  --color-severity-annotation: var(--severity-annotation);
-  --shadow-severity-ring: inset 0 0 0 1px var(--severity-ink);
-}
-
-/* Colour binds to position on the severity scale, never to a label, so a fifth
-   bucket is a token change. Declared by whichever surface owns a scale -- the
-   card and the review panel each own one -- and read by every [data-severity]
-   inside it. */
-@utility severity-scale {
-  --review-severity-0: var(--sp-state-blocked);
-  --review-severity-1: var(--sp-state-caution);
-  --review-severity-2: var(--sp-state-unavailable);
-  --review-severity-3: var(--sp-state-verified);
+  /* The names markup already says, each pinned to a rung. A pill rests on 3
+     and lifts to 4; the bar behind it is the solid 9; text on a neutral ground
+     is step 11, and an annotation is 12. */
+  --color-severity-ink: var(--severity-11);
+  --color-severity-fill: var(--severity-3);
+  --color-severity-fill-strong: var(--severity-4);
+  --color-severity-bar: var(--severity-9);
+  --color-severity-annotation: var(--severity-12);
+  /* The same rung, for the opposite reason: text that has to hold its own on
+     a ground a step darker than the one it rests on. A selected tab's ground
+     moves to rung 4 and its text has to move with it -- rung 11 measures
+     4.07:1 there on blocked and 4.24 on ready, both under the 4.5 that 13px
+     text is held to, where rung 12 clears 7.8 across every tone. */
+  --color-severity-strong: var(--severity-12);
+  --shadow-severity-ring: inset 0 0 0 1px var(--severity);
 }
 
 @layer components {
@@ -163,47 +161,70 @@
 }
 
 @layer components {
-  /* Derived from --severity so a fifth bucket stays a token change: every
-     weight below is a mix of the one colour the scale position supplies.
-     Three weights, in the order they stack: the fill a pill rests on, the same
-     fill under the pointer, and the bar segment behind both. */
-  [data-severity] {
-    --severity-ink: var(--severity);
-    --severity-fill: color-mix(
-      in oklab,
-      var(--severity) 15%,
-      var(--sp-surface-floating)
-    );
-    --severity-fill-strong: color-mix(
-      in oklab,
-      var(--severity) 25%,
-      var(--sp-surface-floating)
-    );
-    /* The bar sits behind the pills, so it is pulled back from full strength. */
-    --severity-bar: color-mix(
-      in oklab,
-      var(--severity) 78%,
-      var(--sp-surface-floating)
-    );
-    /* An annotation rather than navigation: the reason chip's text is pulled
-       toward the body colour so it cannot compete with a tab. */
-    --severity-annotation: color-mix(
-      in oklab,
-      var(--severity-ink) 82%,
-      var(--sp-text-primary)
-    );
-  }
+  /*
+    Colour binds to position on the severity scale, never to a label, so a
+    fifth bucket is one block here and nothing anywhere else.
+
+    A bucket names a tone and republishes that tone's rungs under a neutral
+    name, so a rule or a utility can ask for `severity-5` without knowing which
+    bucket it is in. Two things to change, one place each: which tone a bucket
+    is, below; what a rung looks like, in `--sp-state-*` in tokens.css.
+  */
+  /* blocked */
   [data-severity='0'] {
-    --severity: var(--review-severity-0);
+    --severity: var(--severity-11);
+    --severity-1: var(--sp-state-blocked-1);
+    --severity-3: var(--sp-state-blocked-3);
+    --severity-4: var(--sp-state-blocked-4);
+    --severity-5: var(--sp-state-blocked-5);
+    --severity-6: var(--sp-state-blocked-6);
+    --severity-7: var(--sp-state-blocked-7);
+    --severity-9: var(--sp-state-blocked-9);
+    --severity-10: var(--sp-state-blocked-10);
+    --severity-11: var(--sp-state-blocked-11);
+    --severity-12: var(--sp-state-blocked-12);
   }
+  /* needs a decision */
   [data-severity='1'] {
-    --severity: var(--review-severity-1);
+    --severity: var(--severity-11);
+    --severity-1: var(--sp-state-decision-1);
+    --severity-3: var(--sp-state-decision-3);
+    --severity-4: var(--sp-state-decision-4);
+    --severity-5: var(--sp-state-decision-5);
+    --severity-6: var(--sp-state-decision-6);
+    --severity-7: var(--sp-state-decision-7);
+    --severity-9: var(--sp-state-decision-9);
+    --severity-10: var(--sp-state-decision-10);
+    --severity-11: var(--sp-state-decision-11);
+    --severity-12: var(--sp-state-decision-12);
   }
+  /* deferred */
   [data-severity='2'] {
-    --severity: var(--review-severity-2);
+    --severity: var(--severity-11);
+    --severity-1: var(--sp-state-unavailable-1);
+    --severity-3: var(--sp-state-unavailable-3);
+    --severity-4: var(--sp-state-unavailable-4);
+    --severity-5: var(--sp-state-unavailable-5);
+    --severity-6: var(--sp-state-unavailable-6);
+    --severity-7: var(--sp-state-unavailable-7);
+    --severity-9: var(--sp-state-unavailable-9);
+    --severity-10: var(--sp-state-unavailable-10);
+    --severity-11: var(--sp-state-unavailable-11);
+    --severity-12: var(--sp-state-unavailable-12);
   }
+  /* ready */
   [data-severity='3'] {
-    --severity: var(--review-severity-3);
+    --severity: var(--severity-11);
+    --severity-1: var(--sp-state-verified-1);
+    --severity-3: var(--sp-state-verified-3);
+    --severity-4: var(--sp-state-verified-4);
+    --severity-5: var(--sp-state-verified-5);
+    --severity-6: var(--sp-state-verified-6);
+    --severity-7: var(--sp-state-verified-7);
+    --severity-9: var(--sp-state-verified-9);
+    --severity-10: var(--sp-state-verified-10);
+    --severity-11: var(--sp-state-verified-11);
+    --severity-12: var(--sp-state-verified-12);
   }
 
   /*
@@ -767,13 +788,15 @@
     Where the floor turns down the pane's side: a true quarter circle, so a
     box rather than a path. Its rounded corner is the pane, edged and sheened
     like control-face -- a border and an inset spread, both even through the
-    turn -- with a canvas spread filling the rest of the box. It reaches one
-    edge-width past the floor's end and below its own bottom, and the clip
-    takes that back off, so the sheen's two unwanted sides are never seen.
+    turn -- with a canvas spread filling the rest of the box. The box extends
+    by one edge-width on its left and bottom, and the clip removes that
+    extension so the inset shadows' unwanted sides are never seen.
 
     The header's sheen runs on under this box. Outside the turn the canvas
-    covers it; inside, a second spread in the pane's face lies under this
-    sheen, so the turn's first pixels are not white laid on white.
+    covers it; inside, a spread in the pane's face backs the sheen, so the
+    turn's first pixels are not white laid on white. Both inset spreads must
+    have the same width: a wider backing paints a pale band inside the curve
+    when the section underneath has a darker fill than the pane.
   */
   .notch::after {
     content: '';
@@ -788,7 +811,7 @@
     box-shadow:
       0 0 0 var(--notch-corner) var(--notch-face-color),
       inset 0 0 0 var(--notch-edge-width) var(--notch-highlight-color),
-      inset 0 0 0 calc(var(--notch-edge-width) * 2) var(--notch-pane-color);
+      inset 0 0 0 var(--notch-edge-width) var(--notch-pane-color);
     clip-path: inset(0 0 var(--notch-edge-width) var(--notch-edge-width));
     pointer-events: none;
   }
@@ -1990,13 +2013,13 @@
   }
 
   .sidebar-handle:is([data-hovered], :focus-visible) .sidebar-handle-mark,
-  .resizable-shell:is([data-resizing], [data-collapsed]) .sidebar-handle-mark {
+  .sidebar-handle:is([data-resizing], [data-collapsed]) .sidebar-handle-mark {
     opacity: 1;
   }
 
   /* Controlled hover ignores the settling edge beneath a stationary pointer. */
   .sidebar-handle:is([data-hovered], :focus-visible),
-  .resizable-shell[data-resizing] .sidebar-handle {
+  .sidebar-handle[data-resizing] {
     color: var(--sp-text-muted-strong);
   }
 
@@ -2019,6 +2042,666 @@
 
   @media print {
     .sidebar-handle {
+      display: none;
+    }
+  }
+}
+
+/* The assistant shares the menu canvas and grip, on the opposite sheet edge. */
+@layer components {
+  .resizable-shell {
+    --assistant-limit: min(
+      var(--spacing-assistant-max),
+      calc(100vw - 2 * var(--spacing-shell-inset))
+    );
+  }
+  .assistant-mode-probe {
+    width: 0;
+  }
+  .sidebar-handle[data-side='right'] .sidebar-handle-mark {
+    translate: var(--spacing-sidebar-grip-offset) -50%;
+  }
+  .assistant-content {
+    width: var(--assistant-width, var(--spacing-assistant-default));
+    opacity: 1;
+    transition:
+      width var(--duration-pane) var(--ease-out-emphasized),
+      opacity var(--duration-state) ease-out
+        calc(var(--duration-pane) - var(--duration-state));
+  }
+  .assistant-dock {
+    visibility: hidden;
+    transition: visibility 0s var(--duration-pane);
+  }
+  .assistant-dock[data-open] {
+    visibility: visible;
+    transition-delay: 0s;
+  }
+  .assistant-dock:not([data-open]) .assistant-content {
+    opacity: 0;
+    transition-delay: 0s;
+  }
+  .resizable-shell[data-assistant-resizing] {
+    transition: none;
+    user-select: none;
+  }
+  .resizable-shell[data-assistant-resizing] .assistant-content,
+  .assistant-overlay[data-resizing] .assistant-content {
+    opacity: var(--assistant-opacity);
+    transition: none;
+  }
+  .assistant-overlay[data-dragging] * {
+    cursor: col-resize !important;
+  }
+  .assistant-modal {
+    width: var(--assistant-track, var(--spacing-assistant-default));
+    transition: width var(--duration-pane) var(--ease-out-emphasized);
+  }
+  .assistant-overlay[data-resizing] .assistant-modal {
+    transition: none;
+  }
+  .assistant-overlay[data-entering] .assistant-modal {
+    animation: assistant-enter var(--duration-pane) var(--ease-out-emphasized);
+  }
+  .assistant-overlay[data-exiting] .assistant-modal {
+    animation: assistant-enter var(--duration-pane) var(--ease-out-emphasized)
+      reverse;
+  }
+  @keyframes assistant-enter {
+    from {
+      translate: 100%;
+      opacity: 0;
+    }
+    to {
+      translate: 0;
+      opacity: 1;
+    }
+  }
+  @media (width >= 80rem) {
+    .assistant-mode-probe {
+      width: 1px;
+    }
+    .resizable-shell {
+      --assistant-limit: max(
+        var(--spacing-assistant-min),
+        min(
+          var(--spacing-assistant-max),
+          calc(
+            100vw - var(--sidebar-track) - 40rem - 2 *
+              var(--spacing-shell-inset)
+          )
+        )
+      );
+      grid-template-columns: var(--sidebar-track) minmax(0, 1fr) var(
+          --assistant-track,
+          0px
+        );
+    }
+  }
+  @media (width < 56.25rem) {
+    .assistant-modal,
+    .assistant-content {
+      width: 100%;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .assistant-overlay .assistant-modal {
+      animation: none;
+      transition: none;
+    }
+  }
+  @media print {
+    .assistant-dock,
+    .assistant-overlay {
+      display: none;
+    }
+  }
+}
+
+@layer components {
+  .assistant-overlay {
+    height: var(--assistant-viewport-height, 100dvh);
+    top: var(--assistant-viewport-top, 0px);
+  }
+  .resizable-shell[data-resizing] .assistant-content {
+    transition: none;
+  }
+}
+
+/*
+  The divided list every section of the sheet is built from: a sticky first row
+  naming the section, then rows separated by hairlines. It replaces the padded
+  cards the runs rail used, which spent about twenty pixels of a 232px column
+  on a radius and a gutter that carried no meaning.
+
+  The section name is a row of the list rather than a header above it so that
+  the four sections -- runs, inputs, outputs, settings -- can each say what they
+  are without any of them paying for the space twice. Sticky, so it keeps
+  saying it while the list scrolls; a header outside the scroller cannot.
+*/
+@layer components {
+  .sheet-list {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  /*
+    Hairlines between rows, drawn by the row that follows rather than by the
+    one before, so the list never ends on a rule hanging over empty space.
+
+    One weight with the rule the sheet draws down its own side -- rule-faint --
+    because a reader seeing two different hairlines a centimetre apart reads
+    them as two different kinds of boundary. The lit line under each is the
+    same etch every other divider in the interface carries; inset, so it falls
+    inside the row below rather than over the row above.
+  */
+  .sheet-list > li + li {
+    border-top: 1px solid var(--sp-rule-faint);
+  }
+  /* And one to close the list. The list does not run to the bottom of its
+     column -- a note sits under it -- so the last row needs a rule of its own
+     or it reads as trailing off rather than ending. */
+  .sheet-list > li:last-child {
+    border-bottom: 1px solid var(--sp-rule-faint);
+  }
+  /*
+    The section name, and the one control that belongs to it.
+
+    A set height rather than a minimum: the four sections put different things
+    in the trailing slot -- a schedule button, an Add button, a version chip,
+    nothing at all -- and on a minimum each of those would set the row's height
+    itself, so the label moved as the reader changed section. The controls are
+    all shorter than this and centre in it.
+  */
+  .sheet-head {
+    position: sticky;
+    top: 0;
+    /* Over the rows that scroll beneath it, under any panel that opens above
+       the list. */
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    box-sizing: border-box;
+    height: var(--spacing-sheet-head);
+    /* Its title starts where every row's text under it starts. The row is the
+       list's first row rather than a header above it, and a first row that
+       indents differently from the rows after it says the opposite of that.
+       The trailing side is shorter because what sits there is a control: its
+       face reaches past its ink, and holding the face to the mark's axis would
+       push the word inside it further in than the marks it lines up with. */
+    padding-inline: var(--spacing-sheet-inset) 0.5rem;
+    /* Opaque, not a wash: rows pass underneath it. */
+    background: var(--sp-surface-inset);
+    /* Carry the lit line below the rule on the header itself so it stays
+       visible with any following content and while the header is sticky.
+       The pane's own highlight beside it is the pane's to draw: content is
+       held back past it -- see --spacing-pane-inset. */
+    border-bottom: 1px solid var(--sp-rule-faint);
+    box-shadow: 0 var(--spacing-sheet-highlight) 0 var(--sp-rule-etch);
+  }
+  /* Run rows draw their own inset highlight. An outward header shadow would
+     cover the first row's line and prevent it from following that row's state. */
+  .sheet-head:has(+ .sheet-list) {
+    box-shadow: none;
+  }
+  /* Nothing in the trailing slot may grow the row it sits in. */
+  .sheet-head > * {
+    flex: 0 0 auto;
+    min-width: 0;
+  }
+  /*
+    A boundary in the list that is not a row: the instructions moved between
+    the run above and the run below, and the two are not comparable. Banded
+    between its own rule and the next row's, because what it marks is the gap
+    rather than either run.
+
+    It opens that version's change log, so the rail answers the question it
+    raises instead of only posing it.
+  */
+  .sheet-break {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    width: 100%;
+    /* On the rows' axis, not its own: it is read in the run of the list, and
+       the rows above and below it are what it is read against. */
+    padding: 0.4375rem var(--spacing-sheet-inset);
+    border-top: 1px solid var(--sp-rule-faint);
+    box-shadow: inset 0 var(--spacing-sheet-highlight) 0 var(--sp-rule-etch);
+    background: var(--sp-surface-inset);
+    color: var(--sp-text-muted);
+    text-align: start;
+    transition: color var(--duration-state) ease-out;
+  }
+  button.sheet-break {
+    cursor: pointer;
+  }
+  button.sheet-break:hover,
+  button.sheet-break:focus-visible {
+    color: var(--sp-text-primary);
+  }
+  /* The arrow that says the boundary opens something, held back until the
+     pointer or the keyboard is on it: a list of runs should not be dotted with
+     chevrons for a row that is not the reader's errand. */
+  button.sheet-break::after {
+    content: '\203A';
+    margin-inline-start: auto;
+    opacity: 0;
+    transition: opacity var(--duration-state) ease-out;
+  }
+  button.sheet-break:hover::after,
+  button.sheet-break:focus-visible::after {
+    opacity: 1;
+  }
+  /*
+    One row of the list. Every state lives here rather than in the class list:
+    base, hover, keyboard focus and the current row are one machine, and an
+    arm of it filed in markup reads as belonging to neither place.
+
+    Nothing in the row is tinted by its state except the mark and its name:
+    the state is said in words at the top of the row, and a row that also
+    carried its colour on an edge and behind its text would be saying the one
+    thing three times.
+  */
+  /*
+    One inset on all four sides. The status mark sits in the corner of that
+    box, so the inset is what a reader measures it against -- an inset that
+    differs top from right puts the mark somewhere that has to be explained.
+  */
+  /*
+    Every row is the same height, and none of them says what that height is.
+    It is the sum of four named terms:
+
+      inset + mark + band gap + bar + inset
+
+    The first line is the day against the status mark, which is pinned to
+    --spacing-sheet-mark; the second is the time against the bar, which is
+    pinned to --spacing-sheet-tally. Nothing in the row is free to change its
+    own height, which is what makes them equal; a `height` on the row would
+    only hide a row that disagreed by clipping it.
+
+    Four pieces on two rows and two columns: the day over the time on the left,
+    the state over the bar on the right. A grid rather than stacked bands
+    because the column edges have to line up -- both right-hand cells end on
+    the row's inset, so the state's mark and the bar share one edge.
+  */
+  .sheet-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 0.625rem;
+    row-gap: var(--spacing-sheet-band-gap);
+    width: 100%;
+    padding: var(--spacing-sheet-inset);
+    text-align: start;
+    cursor: pointer;
+    /* The lit line under the rule above it. Carried by the row rather than by
+       the list item, because an inset shadow on the item is painted beneath
+       its children's backgrounds -- so the row's own ground covered it the
+       moment the row was hovered or current, which is exactly when it is
+       wanted. Every row has one, the first included. */
+    --sheet-row-highlight: var(--sp-rule-etch);
+    box-shadow: inset 0 var(--spacing-sheet-highlight) 0
+      var(--sheet-row-highlight);
+    transition:
+      background var(--duration-state) ease-out,
+      box-shadow var(--duration-state) ease-out;
+  }
+  /*
+    Everything in the row moves on one step and one curve. Declared here rather
+    than restated on each part: the day, the time, the tag, its glyph, the
+    status mark and every segment of the bar all change at once when the row
+    does, and a part that settled on its own timing would arrive late to a
+    change it is part of.
+
+    `color` and `background-color` cover all of them -- nothing in a row
+    animates anything else -- and a part that never changes simply never
+    transitions.
+  */
+  .sheet-row *,
+  .sheet-row::before {
+    transition:
+      color var(--duration-state) ease-out,
+      background-color var(--duration-state) ease-out;
+  }
+  /* The whole row is the target, so the pointer must not change over the parts
+     inside it -- a text cursor over the date and a help cursor over the status
+     read as three things stacked rather than one row. */
+  .sheet-row * {
+    cursor: inherit;
+  }
+  /*
+    A row's own ink, three rungs deep: at rest, under the pointer, and on the
+    row a reader is on. Every part moves together -- a row that darkens its
+    ground and leaves its contents where they were reads as a row with
+    something printed on it rather than one that has been picked up.
+
+    The ground does not take the third rung. Hover and current share it, so a
+    row does not jump when the pointer crosses the one already chosen, which
+    leaves the ink to say which is which.
+
+    Every value is one of the row's own tokens on the control ramp -- see
+    --sp-sheet-date in tokens.css for why these do not borrow the page's text
+    roles. The day sits two rungs under the time throughout.
+  */
+  .sheet-row {
+    --sheet-ink: var(--sp-sheet-date);
+    --sheet-ink-quiet: var(--sp-sheet-time);
+    --sheet-total-face: var(--sp-sheet-total-face);
+    --sheet-total-ink: var(--sp-sheet-total-ink);
+  }
+  .sheet-row:hover,
+  .sheet-row:focus-visible,
+  .sheet-row:focus-within,
+  .sheet-row[data-current] {
+    /* Soften the light-theme sheen; keep the existing faint dark-theme etch. */
+    --sheet-row-highlight: light-dark(
+      var(--sp-face-highlight-medium),
+      var(--sp-rule-etch)
+    );
+  }
+  .sheet-row:not([data-current]):hover,
+  .sheet-row:not([data-current]):focus-visible,
+  .sheet-row:not([data-current]):focus-within {
+    background: var(--sp-menu-wash-faint);
+    --sheet-ink: var(--sp-sheet-date-hover);
+    --sheet-ink-quiet: var(--sp-sheet-time-hover);
+    --sheet-total-face: var(--sp-sheet-total-face-hover);
+    --sheet-total-ink: var(--sp-sheet-total-ink-hover);
+  }
+  .sheet-row[data-current] {
+    background: var(--sp-menu-wash-faint);
+    --sheet-ink: var(--sp-sheet-date-current);
+    --sheet-ink-quiet: var(--sp-sheet-time-current);
+    --sheet-total-face: var(--sp-sheet-total-face-current);
+    --sheet-total-ink: var(--sp-sheet-total-ink-current);
+  }
+  /* The day. Its line is the mark's own height, and the row centres the two,
+     so the pair reads as one line however the type scale is set. */
+  .sheet-row-day {
+    min-width: 0;
+    line-height: var(--spacing-sheet-mark);
+    color: var(--sheet-ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /*
+    When it ran, and what started it. The trigger is a glyph rather than a
+    word: it is a fact nobody acts on, and as a pill with a label it was the
+    widest object in the row for the least said. The word survives in the
+    row's tooltip and in its label, which is where a reader who wants it
+    looks. A step back from the time beside it, taken as a fraction of that
+    time's own colour so the two stay one step apart through every state.
+  */
+  .sheet-row-when {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3125rem;
+    min-width: 0;
+    color: var(--sheet-ink-quiet);
+  }
+  .sheet-row-when svg {
+    opacity: 0.75;
+  }
+  /* Both right-hand cells end on the row's inset, so the state's mark and the
+     bar under it share one edge. */
+  .sheet-row-status,
+  .sheet-tally {
+    justify-self: end;
+  }
+
+  /*
+    The state: its name, then its mark in the corner. The mark goes last in the
+    source as well as on screen, so what a screen reader hears is the order the
+    row is written in.
+
+    No optical nudge. The box is exactly the mark's own height, and the day
+    opposite it is set to the same, so its top edge is the row's padding edge
+    and the mark is the same distance from the top of the row as from its side.
+  */
+  .sheet-row-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    flex: 0 0 auto;
+    height: var(--spacing-sheet-mark);
+    /* The one thing in the row meant to be read first, so it is set heavier
+       than anything else in it -- and at one weight in every state, because a
+       weight that changed under the pointer would resize the word and
+       re-truncate the day beside it. Its prominence comes from the tag
+       receding, not from it moving. */
+    font-weight: 550;
+    /* The one thing in the head that could wrap. It does not shrink either --
+       the day beside it truncates first -- so a long state name cannot put a
+       second line into a row and make it taller than its neighbours. */
+    white-space: nowrap;
+  }
+  /*
+    The status reads at its full weight from the start -- it is what the row is
+    for -- and holds that one colour through every state. Its mark takes the
+    word's own colour too: one thing said twice, in a shape and in a word,
+    should not be said in two colours. The row's ground moves under it, which
+    is enough to say the row has been picked up; the state itself has not
+    changed, and a state that darkens when a pointer crosses it is saying so.
+  */
+  .sheet-row-status {
+    color: var(--sheet-status);
+  }
+  .sheet-row-status svg {
+    color: inherit;
+  }
+
+  /*
+    What started the run. Grey on every row: it is a fact about the run, not a
+    state of it, and a second coloured pill in the foot would compete with the
+    one thing in the row that is meant to be read first.
+
+    Its own edge is on the row's content edge, with the day and the time above
+    it -- the pill is an object in the row, and an object that hangs out into
+    the inset reads as a mistake rather than as alignment. Its glyph is filled
+    rather than outlined, because at 11px an outlined glyph on a tinted ground
+    is a smudge.
+  */
+  /*
+    The release, counted: one pill broken into segments, each an outcome that
+    stops a line going out. They sit flush so the bar reads as one thing
+    divided rather than as three badges in a row.
+
+    It takes its colours from the same `[data-severity]` rules the release
+    card's pills read, rather than deriving a second set that would answer the
+    same question in a different colour. The bucket numbers are the review's,
+    in the review's order: 0 blocked, 1 needs a decision, 2 deferred, 3 ready.
+    Its three faces are the tone's own steps -- one at rest, one under the
+    pointer, one on the row a reader is on -- with the tone itself as the
+    figure on all three.
+
+    The total is the last segment of the same pill, not a pill of its own. It
+    is not another outcome -- it is what the outcomes are out of -- so it is
+    set off by a wider gap than the hairline between the others and nothing
+    else. On a run that came through cleanly it is the only segment there is,
+    and it becomes the whole pill.
+  */
+  .sheet-tally {
+    display: flex;
+    align-items: stretch;
+    flex: 0 0 auto;
+    /* One height for every segment, whatever is in them -- they stretch to it
+       -- and a little under the tag's, which the foot centres it against. See
+       --spacing-sheet-tally for why the two are deliberately unequal. */
+    height: var(--spacing-sheet-tally);
+  }
+  .sheet-seg {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.125rem;
+    /* The tight inset, for an edge that meets another segment square on.
+       A curved end takes more, below: padding follows the corners, because a
+       figure set the same distance from a curve as from a straight join looks
+       closer to the curve. Named because every other inset on this element is
+       written as this plus an amount, so moving it moves the whole set rather
+       than opening a gap between the base and the rules that meant to follow
+       it. In rem throughout, so the insets answer to the reader's type size
+       the way the figures inside them already do. */
+    --sheet-seg-inset: 0.25rem;
+    padding-inline: var(--sheet-seg-inset);
+    /*
+      A dark ground with a light figure, held at one rung through every state
+      of the row -- like the status above it, and for the same reason: this is
+      a fact about the run, not about the pointer, and a readout that darkens
+      when a pointer crosses it is claiming something changed. The row's own
+      ground moves under the bar, which is what says the row has been picked
+      up.
+
+      Rung 10, chosen knowingly. A light figure on it measures 3.44:1 at the
+      worst hue in light, which clears the 3:1 Radix designs its solid rungs
+      for but not the 4.5:1 that text is held to. Rung 11 is the first that
+      does -- 4.99:1 -- and was too heavy at this size; rung 3 with the tone
+      itself as the figure is the other legal pair, at 4.54:1, and reads as
+      washed. There is no rung that is both lighter and compliant, so the
+      choice was made with the numbers in hand rather than around them.
+    */
+    background: var(--severity-10);
+    color: var(--severity-1);
+    white-space: nowrap;
+  }
+  /*
+    Two objects, not one. The outcomes are a single divided pill -- rounded at
+    both ends, square at every join inside it -- and the total is a pill of its
+    own, set off from them. They answer different questions, and a bar that ran
+    the two together invited the total to be read as a fourth outcome.
+
+    Each segment carries its own corners rather than being clipped by the
+    group, because the group no longer has a box to clip with: the first
+    outcome rounds its leading edge, the last rounds its trailing one, and a
+    lone outcome does both.
+  */
+  .sheet-seg:first-child {
+    border-start-start-radius: 999px;
+    border-end-start-radius: 999px;
+    padding-inline-start: calc(var(--sheet-seg-inset) + 0.25rem);
+  }
+  .sheet-seg:nth-last-child(2) {
+    border-start-end-radius: 999px;
+    border-end-end-radius: 999px;
+    padding-inline: calc(var(--sheet-seg-inset) + 0.125rem);
+  }
+  /*
+    A lone outcome: first and second-from-last at once, so both of the rules
+    above land on it and the later one takes its leading inset back. It is a
+    pill in its own right, and it is set as one rather than as two halves that
+    happened to meet -- wider at the glyph, tighter at the figure, which is
+    where the tabular digits already carry their own space.
+
+    Written as the two selectors it actually is, so it outranks both without
+    anything having to be ordered around it.
+  */
+  /*
+    A middle outcome -- square at both ends, which only happens once the bar
+    carries three of them. It takes two pixels more at the start than the tight
+    inset, because a square leading edge sits right against the hairline before
+    it, where a curved one has its own corner for daylight -- which lands it on
+    the same inset the last outcome uses. Only the start: its trailing edge
+    meets the next hairline the same way, and adding at both ends would widen
+    the piece rather than centre what is in it.
+  */
+  .sheet-seg:not(:first-child):not(:nth-last-child(2)):not(.sheet-seg-total) {
+    padding-inline-start: calc(var(--sheet-seg-inset) + 0.1875rem);
+  }
+  .sheet-seg:first-child:nth-last-child(2) {
+    padding-inline: calc(var(--sheet-seg-inset) + 0.1875rem)
+      calc(var(--sheet-seg-inset) + 0.0625rem);
+  }
+  /* Its own pill: both ends curve, so both ends take the wider inset and the
+     figure sits centred in it. */
+  .sheet-seg-total {
+    border-radius: 999px;
+    padding-inline: calc(var(--sheet-seg-inset) + 0.1875rem);
+  }
+
+  /*
+    Every segment carrying a mark is the same width, whether its count is one
+    digit or two: the bar is read as a set of parts, and parts that changed
+    width with their own value would make two runs with the same outcomes look
+    like different shapes. Two digits' worth of the figure's own measure, which
+    grows with the type rather than being a pixel guess -- a third digit still
+    grows the segment, but at that point the number is the news.
+  */
+  .sheet-seg > .value {
+    min-width: 2ch;
+    text-align: center;
+  }
+  /* A hairline of the row's own ground between segments, so two faces that
+     meet do not read as one band of a third colour. */
+  .sheet-seg + .sheet-seg {
+    margin-inline-start: 1.5px;
+  }
+  /* A gap rather than a hairline, because what it separates is not another
+     outcome -- wide enough to read as two objects now that both ends curve
+     into it. */
+  .sheet-seg + .sheet-seg-total {
+    margin-inline-start: 5px;
+  }
+  /*
+    The total is not an outcome -- it is what the outcomes are out of -- so it
+    is not a severity either. It takes the control ramp, which makes it the one
+    neutral piece of a coloured bar, and its own token moves it without
+    touching any of the four tones. Neutral in every state of the run, too: a
+    total that borrowed a fifth colour on completion would be one more thing to
+    decode in a bar whose whole point is that its colours mean something.
+  */
+  .sheet-seg-total {
+    background: var(--sheet-total-face);
+    color: var(--sheet-total-ink);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sheet-row,
+    .sheet-row *,
+    .sheet-break,
+    button.sheet-break::after {
+      transition: none;
+    }
+  }
+  @media (forced-colors: active) {
+    /* Forced colours flatten the current row's fill, and there is no rail left
+       to fall back on, so the row states it as an edge instead -- inset, so
+       gaining it does not move anything in the row. */
+    .sheet-row[data-current] {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
+    }
+    /* Forced colours repaint every fill as one system colour, which would
+       merge the bar's segments into a single block. An edge on each keeps the
+       parts countable even when their tones are gone. */
+    .sheet-seg {
+      box-shadow: inset 0 0 0 1px CanvasText;
+    }
+  }
+  /*
+    Where the sheet is too narrow for three columns the rail stops being a
+    column and becomes a strip above the thread, as it did before -- a full
+    list there would push the thread off the screen. The divider moves to the
+    leading edge with them, and the version boundary comes off, since a
+    boundary between two runs means nothing once they sit side by side.
+  */
+  @container sheet (width < 52rem) {
+    .sheet-list {
+      flex-direction: row;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+    }
+    .sheet-list > li {
+      flex: 0 0 auto;
+      min-width: 11.5rem;
+    }
+    .sheet-list > li + li {
+      border-top: 0;
+      border-inline-start: 1px solid var(--sp-rule-default);
+    }
+    .sheet-break {
       display: none;
     }
   }

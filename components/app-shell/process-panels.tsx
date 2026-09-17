@@ -10,6 +10,7 @@ import {
 import { cx } from '@/lib/cx';
 import type { InputDetail } from '@/lib/process/input-details';
 import type { ProcessSummary } from '@/lib/process/placeholder-process';
+import { runStamp } from '@/lib/process/run-time';
 import { byAttention, type SystemLink } from '@/lib/process/system-links';
 import {
   DrawerAside,
@@ -27,6 +28,7 @@ import {
 } from './instructions-panel';
 import { useInstructions } from './instructions-store';
 import { ProcessSettings } from './process-settings';
+import { SectionRow } from './section-row';
 import type { ProcessTab } from './process-tab-store';
 import { SystemDisc, SystemMeta } from './system-parts';
 
@@ -42,8 +44,27 @@ import { SystemDisc, SystemMeta } from './system-parts';
 */
 // A filter field earns its place once the list is longer than a glance takes in.
 const FILTER_FROM = 12;
-// The Inputs heading's Add button, where focus goes after an input is removed.
+// The Inputs section row's Add button, where focus goes after an input is
+// removed.
 const ADD_INPUT_ID = 'add-input';
+const ADD_BUTTON =
+  'control-wash text-muted hover:bg-surface-selected hover:text-primary focus-visible:bg-surface-selected focus-visible:text-primary aria-expanded:bg-surface-selected aria-expanded:text-primary rounded-control text-meta inline-flex min-h-7 cursor-pointer items-center gap-1 px-1.5';
+
+/*
+  What each section calls itself, in one place. The heading is rendered once,
+  by the section row, and the list below points at it -- so a list is labelled
+  by the row a reader can actually see rather than by a heading of its own that
+  says the same word again.
+*/
+const SECTION: Record<
+  Exclude<ProcessTab, 'runs'>,
+  { id: string; title: string }
+> = {
+  instructions: { id: 'instructions-heading', title: 'Instructions' },
+  inputs: { id: 'inputs-heading', title: 'Inputs' },
+  outputs: { id: 'outputs-heading', title: 'Outputs' },
+  settings: { id: 'settings-heading', title: 'Settings' },
+};
 
 const NOTE = 'border-rule-faint text-muted text-meta border-t pt-3';
 
@@ -55,7 +76,7 @@ const NOTE = 'border-rule-faint text-muted text-meta border-t pt-3';
 */
 const COLUMNS = 'grid h-full min-h-0 grid-cols-[minmax(0,1fr)]';
 const TWO_COLUMNS =
-  'lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:[&>*]:min-w-0';
+  '@sheet-narrow/sheet:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] @sheet-narrow/sheet:[&>*]:min-w-0 @sheet-wide/sheet:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]';
 
 // Which tabs have a detail to put beside their list.
 const OPENS_DETAIL = new Set<ProcessTab>(['instructions', 'inputs']);
@@ -65,6 +86,7 @@ type AsidePanel = Omit<AsideLayer, 'key'>;
 export function ProcessPanels({
   process,
   tab,
+  openChanges = null,
   inputs,
   availableInputs = [],
   inputDetails = {},
@@ -74,6 +96,9 @@ export function ProcessPanels({
 }: {
   process: ProcessSummary;
   tab: Exclude<ProcessTab, 'runs'>;
+  // A version whose change log to open with, asked for by the runs rail. The
+  // panel is keyed on it upstream, so it is read once, at mount.
+  openChanges?: string | null;
   // The process's inputs only; removed ones arrive as availableInputs.
   inputs: SystemLink[];
   availableInputs?: SystemLink[];
@@ -84,15 +109,21 @@ export function ProcessPanels({
   onLeave: () => void;
 }) {
   const { outputs } = process;
-  const { versions, current, next } = useInstructions(
-    process.id,
-    process.instructions,
-  );
+  // Aliased away from `current`: a bare `current` read in render is what a
+  // misread ref looks like, both to a reader and to the lint rule that guards
+  // against one.
+  const {
+    versions,
+    current: version,
+    next,
+  } = useInstructions(process.id, process.instructions);
   const run = process.runs.find((entry) => entry.current);
 
   // The view on show. It stays set while the panel animates out, with
   // `exiting` marking that, so the panel leaves with its content in it.
-  const [aside, setAside] = useState<AsideView | null>(null);
+  const [aside, setAside] = useState<AsideView | null>(
+    openChanges ? { kind: 'changes', version: openChanges } : null,
+  );
   const [exiting, setExiting] = useState(false);
   // The view being swapped out, kept while its content leaves.
   const [leaving, setLeaving] = useState<AsideView | null>(null);
@@ -299,7 +330,7 @@ export function ProcessPanels({
           meta: (
             <>
               Draft of <span className="value">{next}</span> from{' '}
-              <span className="value">{current.version}</span> · saved as you
+              <span className="value">{version.version}</span> · saved as you
               type
             </>
           ),
@@ -323,11 +354,10 @@ export function ProcessPanels({
       <InputsList
         inputs={inputs}
         details={inputDetails}
-        runLabel={run?.label}
+        runLabel={run ? runStamp(run.startedAt) : undefined}
         openId={!exiting && aside?.kind === 'input' ? aside.id : null}
-        adding={!exiting && aside?.kind === 'add-input'}
+        editable={onAddInput !== undefined}
         onOpen={(id) => openAside({ kind: 'input', id })}
-        onAdd={onAddInput ? () => openAside({ kind: 'add-input' }) : undefined}
       />
     ) : tab === 'outputs' ? (
       <OutputsList outputs={outputs} />
@@ -349,10 +379,41 @@ export function ProcessPanels({
         // column's place rather than squeezing beside it.
         className={cx(
           'shell:min-h-0 shell:overflow-y-auto shell:overscroll-contain border-rule-faint min-w-0',
-          OPENS_DETAIL.has(tab) ? 'lg:border-r' : null,
-          panel ? 'max-lg:hidden' : null,
+          OPENS_DETAIL.has(tab) ? '@sheet-narrow/sheet:border-r' : null,
+          panel ? '@max-sheet-narrow/sheet:hidden' : null,
         )}
       >
+        {/* The same first row the runs rail has, so every section of the
+            sheet names itself in the same place and none of them spends a
+            header on it. Its one control is the section's own. */}
+        <SectionRow
+          id={SECTION[tab].id}
+          title={SECTION[tab].title}
+          count={
+            tab === 'inputs'
+              ? inputs.length
+              : tab === 'outputs'
+                ? outputs.length
+                : undefined
+          }
+        >
+          {tab === 'instructions' ? (
+            <span className="bg-menu-chip value text-micro text-muted rounded-control px-1.5 py-0.5">
+              {version.version}
+            </span>
+          ) : tab === 'inputs' && onAddInput ? (
+            <button
+              type="button"
+              id={ADD_INPUT_ID}
+              onClick={() => openAside({ kind: 'add-input' })}
+              aria-expanded={!exiting && aside?.kind === 'add-input'}
+              className={ADD_BUTTON}
+            >
+              <span aria-hidden="true">+</span> Add
+              <span className="sr-only"> an input, preview</span>
+            </button>
+          ) : null}
+        </SectionRow>
         {list}
       </div>
       {aside && panel ? (
@@ -371,7 +432,7 @@ export function ProcessPanels({
       ) : OPENS_DETAIL.has(tab) ? (
         // Only where a row opens something: a column that can never fill is
         // not an empty state, it is a mistake.
-        <p className="text-muted text-meta hidden place-self-center p-8 lg:block">
+        <p className="text-muted text-meta @sheet-wide/sheet:block hidden place-self-center p-8">
           {tab === 'inputs'
             ? 'Choose an input to read the records it gave this run.'
             : 'Open a version to see what changed, or edit the current one.'}
@@ -386,17 +447,17 @@ function InputsList({
   details,
   runLabel,
   openId,
-  adding,
+  editable,
   onOpen,
-  onAdd,
 }: {
   inputs: SystemLink[];
   details: Record<string, InputDetail>;
   runLabel: string | undefined;
   openId: string | null;
-  adding: boolean;
+  // Whether this scenario's inputs can be changed at all -- the Add control
+  // itself is in the section row, and this only decides what the note says.
+  editable: boolean;
   onOpen: (id: string) => void;
-  onAdd?: () => void;
 }) {
   const [query, setQuery] = useState('');
   const needle = query.trim().toLocaleLowerCase();
@@ -421,25 +482,9 @@ function InputsList({
           className="text-dense text-primary placeholder:text-muted border-rule-default bg-surface-inset rounded-control min-h-9 w-full border px-3"
         />
       ) : null}
-      <LinkGroup
-        id="inputs-heading"
-        title="Inputs"
-        count={inputs.length}
+      <Group
+        labelledBy={SECTION.inputs.id}
         meta={runLabel ? `As read by the run of ${runLabel}` : undefined}
-        action={
-          onAdd ? (
-            <button
-              type="button"
-              id={ADD_INPUT_ID}
-              onClick={onAdd}
-              aria-expanded={adding}
-              className="control-wash text-muted hover:bg-surface-selected hover:text-primary focus-visible:bg-surface-selected focus-visible:text-primary aria-expanded:bg-surface-selected aria-expanded:text-primary rounded-control text-meta -my-1 inline-flex min-h-7 cursor-pointer items-center gap-1 px-1.5"
-            >
-              <span aria-hidden="true">+</span> Add
-              <span className="sr-only"> an input, preview</span>
-            </button>
-          ) : null
-        }
       >
         {inputs.length === 0 ? (
           <p className="text-dense text-muted py-2">
@@ -478,9 +523,9 @@ function InputsList({
             ))}
           </ul>
         )}
-      </LinkGroup>
+      </Group>
       <p className={NOTE}>
-        {onAdd
+        {editable
           ? 'Adding and removing an input is a preview saved in this browser; the recorded run and its review don’t change.'
           : 'Inputs can’t be changed in this demo.'}
       </p>
@@ -500,7 +545,7 @@ function InputRow({ link }: { link: SystemLink }) {
         <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
           <SystemMeta link={link} />
           {link.file ? (
-            <span className="value text-micro text-muted truncate">
+            <span className="value text-micro text-muted group-aria-expanded/input-row:text-primary truncate">
               {link.file}
             </span>
           ) : null}
@@ -517,10 +562,8 @@ function OutputsList({ outputs }: { outputs: SystemLink[] }) {
         The APIs this process may call once changes are approved, what each call
         can genuinely do, and how it is undone.
       </p>
-      <LinkGroup
-        id="outputs-heading"
-        title="Outputs"
-        count={outputs.length}
+      <Group
+        labelledBy={SECTION.outputs.id}
         meta="Nothing is called until a review is approved"
       >
         {outputs.length === 0 ? (
@@ -555,7 +598,7 @@ function OutputsList({ outputs }: { outputs: SystemLink[] }) {
             ))}
           </ul>
         )}
-      </LinkGroup>
+      </Group>
       <p className={NOTE}>Outputs can’t be changed in this demo.</p>
     </div>
   );
@@ -563,36 +606,37 @@ function OutputsList({ outputs }: { outputs: SystemLink[] }) {
 
 // A row that opens its input: the wash reaches past the row's text by the
 // amount it pads back in, so the disc and name stay where a plain row has them.
-// aria-expanded holds the selected face while its panel is open.
+// It bleeds by the list inset rather than by a number of its own, which puts
+// its edge on the section row's axis above it -- the panel's body keeps its
+// own reading margin, and the two things that are rows agree on one edge.
+// aria-expanded holds the selected face while its panel is open, and takes the
+// row's ink up with it. Every other control that reaches for the selected fill
+// moves its ink in the same breath: it is the darkest ground a light theme puts
+// text on, and a muted label left sitting on it is what puts the role back
+// under AA -- see the note on --sp-surface-selected.
+// Named group, so the two quiet parts of the row can answer a state held on the
+// button around them.
 const ROW_BUTTON =
-  'control-wash hover:bg-surface-inset focus-visible:bg-surface-inset aria-expanded:bg-surface-selected rounded-control -mx-2 flex min-h-11 w-[calc(100%+1rem)] cursor-pointer items-center gap-3 px-2 py-2 text-left';
+  'group/input-row control-wash hover:bg-surface-inset focus-visible:bg-surface-inset aria-expanded:bg-surface-selected aria-expanded:text-primary rounded-control -mx-sheet-inset px-sheet-inset flex min-h-11 w-[calc(100%+2*var(--spacing-sheet-inset))] cursor-pointer items-center gap-3 py-2 text-left';
 
-function LinkGroup({
-  id,
-  title,
-  count,
+/*
+  A list and the one line of context above it. It no longer carries a heading:
+  the section row does, and a second heading repeating the same word is a
+  reader's cue that they have moved somewhere, which they have not. The list
+  points back at the row instead.
+*/
+function Group({
+  labelledBy,
   meta,
-  action,
   children,
 }: {
-  id: string;
-  title: string;
-  count: number;
+  labelledBy: string;
   meta?: string;
-  action?: ReactNode;
   children: ReactNode;
 }) {
   return (
-    <section aria-labelledby={id}>
-      <div className="flex items-baseline justify-between gap-3 pb-1.5">
-        <h3 id={id} className="readout text-muted">
-          {title} <span className="value">{count}</span>
-        </h3>
-        <div className="flex items-baseline gap-2">
-          {meta ? <p className="text-meta text-muted">{meta}</p> : null}
-          {action}
-        </div>
-      </div>
+    <section aria-labelledby={labelledBy}>
+      {meta ? <p className="text-meta text-muted pb-1.5">{meta}</p> : null}
       {children}
     </section>
   );

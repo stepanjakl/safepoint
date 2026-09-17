@@ -34,7 +34,7 @@ import { DeltaValue } from './delta';
 // One step above the pane it sits on: the first thing found, not another panel
 // on the same plane. `@container` makes the card the query root for its zones.
 const CARD =
-  'control-face surface-floating severity-scale @container data-[danger]:border-state-blocked overflow-clip rounded-shell';
+  'control-face surface-floating @container data-[danger]:border-state-blocked overflow-clip rounded-shell';
 const BODY = 'p-6 @max-card:px-4 @max-card:py-5';
 const TITLE = 'text-display [font-weight:550] [overflow-wrap:anywhere]';
 const VERDICT = 'text-primary mt-2 text-body leading-normal text-pretty';
@@ -49,7 +49,7 @@ const PILL_STATE =
   as an edge, so the ring is what says "these rows", not the fill weight alone.
 */
 const PILL =
-  'bg-severity-fill text-severity-ink data-[hovered]:bg-severity-fill-strong data-[focus-visible]:bg-severity-fill-strong data-[selected]:bg-severity-fill-strong data-[selected]:shadow-severity-ring inline-flex items-baseline gap-1.5 rounded-full border-0 px-2.5 py-1 text-dense font-medium whitespace-nowrap control-wash data-[focus-visible]:outline-offset-2 [&_.value]:text-inherit [&_.value]:[font-weight:550]';
+  'bg-severity-fill text-severity-ink data-[hovered]:bg-severity-fill-strong data-[focus-visible]:bg-severity-fill-strong data-[selected]:bg-severity-fill-strong data-[selected]:text-severity-strong data-[selected]:shadow-severity-ring inline-flex items-baseline gap-1.5 rounded-full border-0 px-2.5 py-1 text-dense font-medium whitespace-nowrap control-wash data-[focus-visible]:outline-offset-2 [&_.value]:text-inherit [&_.value]:[font-weight:550]';
 
 // Rows run the full width of the card: the separators are the structure, so
 // they cannot stop short of the edge. The panel pays back the body's padding

@@ -344,7 +344,7 @@ export function TextDiff({
                 onClick={() =>
                   setUnfolded((open) => new Set(open).add(block.start))
                 }
-                className="control-wash text-muted hover:bg-surface-inset hover:text-primary focus-visible:bg-surface-inset focus-visible:text-primary rounded-control text-meta -mx-2 grid w-[calc(100%+1rem)] cursor-pointer grid-cols-[2rem_minmax(0,1fr)] gap-x-3 px-2 py-2 text-left"
+                className="control-wash text-muted hover:bg-surface-inset hover:text-primary focus-visible:bg-surface-inset focus-visible:text-primary rounded-control text-meta -mx-sheet-inset px-sheet-inset grid w-[calc(100%+2*var(--spacing-sheet-inset))] cursor-pointer grid-cols-[2rem_minmax(0,1fr)] gap-x-3 py-2 text-left"
               >
                 <span className="value">
                   {pad(block.rows[0]!.number!)}–
