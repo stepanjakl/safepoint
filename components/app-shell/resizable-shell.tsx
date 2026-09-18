@@ -236,6 +236,7 @@ export function ResizableShell({
         data-assistant-open={open || undefined}
         data-assistant-resizing={right.preview !== null || undefined}
       >
+        <div className="shell-axis" aria-hidden="true" />
         <div
           ref={modeProbe}
           className="assistant-mode-probe pointer-events-none invisible absolute h-0"

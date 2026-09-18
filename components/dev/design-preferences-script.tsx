@@ -26,7 +26,7 @@ import {
   TYPESCALE_STORAGE_KEY,
   MONO_STORAGE_KEY,
   THEME_STORAGE_KEY,
-  TYPEFACE_SETS,
+  TYPEFACE_PICKER_SETS,
   TYPEFACE_STORAGE_KEY,
 } from '@/lib/typography';
 
@@ -47,7 +47,7 @@ export function DesignPreferencesScript() {
 try {
   var root = document.documentElement;
   var params = new URLSearchParams(location.search);
-  var sets = ${JSON.stringify([...TYPEFACE_SETS])};
+  var sets = ${JSON.stringify([...TYPEFACE_PICKER_SETS])};
   var monos = ${JSON.stringify(MONO_CHOICES.filter((choice) => choice !== 'match'))};
   var typeface = params.get('font')
     || localStorage.getItem(${JSON.stringify(TYPEFACE_STORAGE_KEY)});

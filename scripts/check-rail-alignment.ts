@@ -10,7 +10,7 @@
 
   THE RULE THIS SCRIPT IS BUILT ON: no geometry is written down here. Every axis
   position is read back from the computed style of the live `.rail-axis`
-  element, so the stylesheet is the only place an axis is defined and this file
+  element (and `.shell-axis` for horizontal guides), so CSS defines every axis. This file
   cannot disagree with it. Change a token and the expected values move on their
   own. The moment a constant appears below, the tool has become the thing it
   replaced.
@@ -83,7 +83,7 @@ check-rail-alignment — measure the sidebar against its own guide axes
   node scripts/check-rail-alignment.ts [options]
 
   --url <url>           default http://localhost:3000 (falls back to :3001)
-  --route <path>        repeatable; default /examples/states
+  --route <path>        repeatable; default /examples/states; use / for the sheet header
   --level <name>        processes | search | workspace | arrange | all
                         default processes. 'search' opens the search field,
                         which is closed and unmeasured at rest; 'arrange' opens
@@ -349,7 +349,8 @@ async function evaluate<T>(cdp: Cdp, expression: string): Promise<T> {
 type Axis = { name: string; centre: number; probe?: number };
 type Mark = {
   label: string;
-  width: number;
+  size: number;
+  direction: 'x' | 'y';
   centre: number;
   axis: string;
   delta: number;
@@ -417,6 +418,30 @@ function measureInPage(args: {
     return null;
   };
 
+  const paintedEdge = (
+    raw: string,
+    extent: number,
+    lineSize: number,
+  ): number | null => {
+    const keyword = raw.match(/^(left|right|top|bottom)\s+(.+)$/);
+    if (keyword) {
+      const offset = px(keyword[2] ?? '', extent - lineSize);
+      if (offset === null) return null;
+      return keyword[1] === 'left' || keyword[1] === 'top'
+        ? offset
+        : extent - lineSize - offset;
+    }
+    if (raw === 'center') return (extent - lineSize) / 2;
+    if (raw.startsWith('calc(')) {
+      const match = raw.slice(5, -1).match(/^([\d.]+)%\s*([+-])\s*([\d.]+)px$/);
+      if (!match) return null;
+      const pct = (parseFloat(match[1] ?? '0') / 100) * (extent - lineSize);
+      const len = parseFloat(match[3] ?? '0');
+      return match[2] === '+' ? pct + len : pct - len;
+    }
+    return px(raw, extent - lineSize);
+  };
+
   const positions = layers(axisStyle.backgroundPositionX);
   const sizes = layers(axisStyle.backgroundSize);
   const images = layers(axisStyle.backgroundImage);
@@ -443,29 +468,11 @@ function measureInPage(args: {
       centre is the very bug this tool was built to catch: a 1px line placed at
       31 paints across 31..32, so its centre is 31.5.
     */
-    let leftEdge: number | null = null;
-    const raw = (positions[i] ?? '').trim();
-    const keyword = raw.match(/^(left|right)\s+(.+)$/);
-    if (keyword) {
-      const offset = px(keyword[2] ?? '', area.width - width);
-      if (offset !== null) {
-        leftEdge = keyword[1] === 'left' ? offset : area.width - width - offset;
-      }
-    } else if (raw === 'center') {
-      leftEdge = (area.width - width) / 2;
-    } else if (raw.startsWith('calc(')) {
-      // calc(P% +/- L) — including calc(100% - L), the other shape Chrome may
-      // serialise `right L` as. Both reduce to the same number.
-      const inner = raw.slice(5, -1);
-      const match = inner.match(/^([\d.]+)%\s*([+-])\s*([\d.]+)px$/);
-      if (match) {
-        const pct = (parseFloat(match[1] ?? '0') / 100) * (area.width - width);
-        const len = parseFloat(match[3] ?? '0');
-        leftEdge = match[2] === '+' ? pct + len : pct - len;
-      }
-    } else {
-      leftEdge = px(raw, area.width - width);
-    }
+    const leftEdge = paintedEdge(
+      (positions[i] ?? '').trim(),
+      area.width,
+      width,
+    );
     if (leftEdge === null) {
       return {
         ...empty,
@@ -478,9 +485,11 @@ function measureInPage(args: {
   // Name them by where they ended up, not by the order they were declared.
   axes.sort((a, b) => a.centre - b.centre);
   const names =
-    axes.length === 3
-      ? ['rail-left', 'end-right', 'rail-right']
-      : axes.map((_, i) => `axis-${i}`);
+    axes.length === 4
+      ? ['rail-left', 'end-left', 'end-right', 'rail-right']
+      : axes.length === 3
+        ? ['rail-left', 'end-right', 'rail-right']
+        : axes.map((_, i) => `axis-${i}`);
   axes.forEach((axis, i) => {
     axis.name = names[i] ?? `axis-${i}`;
   });
@@ -493,7 +502,9 @@ function measureInPage(args: {
   if (args.selfTest) {
     for (const [property, matchName] of [
       ['--rail-axis-rail', 'rail-left'],
+      ['--rail-axis-end', 'end-left'],
       ['--rail-axis-end', 'end-right'],
+      ['--rail-axis-rail', 'rail-right'],
     ] as const) {
       const probe = document.createElement('div');
       probe.style.cssText = `position:absolute;height:0;width:var(${property})`;
@@ -502,10 +513,9 @@ function measureInPage(args: {
       probe.remove();
       const axis = axes.find((a) => a.name === matchName);
       if (axis) {
-        axis.probe =
-          matchName === 'rail-left'
-            ? area.left + measured + 0.5
-            : area.right - measured - 0.5;
+        axis.probe = matchName.endsWith('-left')
+          ? area.left + measured + 0.5
+          : area.right - measured - 0.5;
       }
     }
   }
@@ -567,7 +577,8 @@ function measureInPage(args: {
       const moved = Math.abs(delta - allowed.observed) > drift;
       marks.push({
         label: describe,
-        width: rect.width,
+        size: rect.width,
+        direction: 'x',
         centre,
         axis: nearest.name,
         delta,
@@ -583,7 +594,8 @@ function measureInPage(args: {
     if (Math.abs(delta) <= args.tolerance) {
       marks.push({
         label: describe,
-        width: rect.width,
+        size: rect.width,
+        direction: 'x',
         centre,
         axis: nearest.name,
         delta,
@@ -594,7 +606,8 @@ function measureInPage(args: {
       // half pixel wherever it is put, so it can never sit on an integer axis.
       marks.push({
         label: describe,
-        width: rect.width,
+        size: rect.width,
+        direction: 'x',
         centre,
         axis: nearest.name,
         delta,
@@ -604,11 +617,94 @@ function measureInPage(args: {
     } else {
       marks.push({
         label: describe,
-        width: rect.width,
+        size: rect.width,
+        direction: 'x',
         centre,
         axis: nearest.name,
         delta,
         verdict: 'fail',
+      });
+    }
+  }
+
+  /* Horizontal guides share the shell's header frame, mirrored at the foot. */
+  const shellAxis = document.querySelector('.shell-axis');
+  if (!shellAxis)
+    return { ...empty, error: 'no .shell-axis element on the page' };
+  const shellStyle = getComputedStyle(shellAxis);
+  const shellArea = shellAxis.getBoundingClientRect();
+  if (shellStyle.display === 'none') {
+    return {
+      ...empty,
+      error: 'the horizontal guides are not visible at this width',
+    };
+  }
+  const yPositions = layers(shellStyle.backgroundPositionY);
+  const ySizes = layers(shellStyle.backgroundSize);
+  const yImages = layers(shellStyle.backgroundImage);
+  if (yImages.length !== 2 || yPositions.length !== 2 || ySizes.length !== 2) {
+    return {
+      ...empty,
+      error: 'expected header and profile background guide layers',
+    };
+  }
+  const horizontal: Axis[] = [];
+  for (let i = 0; i < yImages.length; i += 1) {
+    const height = px(
+      (ySizes[i] ?? '').split(/\s+/)[1] ?? '',
+      shellArea.height,
+    );
+    const top =
+      height === null
+        ? null
+        : paintedEdge((yPositions[i] ?? '').trim(), shellArea.height, height);
+    if (height === null || top === null) {
+      return { ...empty, error: `could not read horizontal guide layer ${i}` };
+    }
+    horizontal.push({ name: '', centre: shellArea.top + top + height / 2 });
+  }
+  horizontal.sort((a, b) => a.centre - b.centre);
+  horizontal.forEach((axis, index) => {
+    axis.name = index === 0 ? 'header' : 'profile';
+    if (args.selfTest) {
+      const probe = document.createElement('div');
+      probe.style.cssText = `position:absolute;height:var(--shell-axis-width);width:0;${index === 0 ? 'top' : 'bottom'}:var(--shell-axis-offset)`;
+      shellAxis.appendChild(probe);
+      const rect = probe.getBoundingClientRect();
+      axis.probe = rect.top + rect.height / 2;
+      probe.remove();
+    }
+  });
+  axes.push(...horizontal);
+
+  for (const [name, selector] of [
+    [
+      'header',
+      '.shell-header-row [aria-label="Safepoint"], .shell-header-row button, .process-header input[aria-label="Process name"], .process-header button',
+    ],
+    [
+      'profile',
+      '.shell-profile-row [role="img"], .shell-profile-row p, .shell-profile-row button',
+    ],
+  ]) {
+    const axis = horizontal.find((axis) => axis.name === name);
+    if (!axis) continue;
+    for (const el of document.querySelectorAll(selector ?? '')) {
+      if (el.closest('[inert]')) continue;
+      const rect = el.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) continue;
+      const centre = rect.top + rect.height / 2;
+      const delta = centre - axis.centre;
+      marks.push({
+        label: (el.getAttribute('aria-label') ?? el.textContent ?? el.tagName)
+          .trim()
+          .slice(0, 26),
+        size: rect.height,
+        direction: 'y',
+        centre,
+        axis: axis.name,
+        delta,
+        verdict: Math.abs(delta) <= args.tolerance ? 'ok' : 'fail',
       });
     }
   }
@@ -889,7 +985,7 @@ function render(
     for (const m of report.marks) {
       const note = m.note ? `  ${m.note}` : '';
       process.stdout.write(
-        `${mark[m.verdict]}  ${m.label.padEnd(26)} ${`${m.width}`.padStart(5)}w  c ${m.centre
+        `${mark[m.verdict]}  ${m.label.padEnd(26)} ${`${m.size}`.padStart(5)}${m.direction === 'x' ? 'w' : 'h'}  c ${m.centre
           .toFixed(2)
           .padStart(
             7,

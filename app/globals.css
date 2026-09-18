@@ -78,7 +78,7 @@
   font-weight: var(--sp-mono-weight);
   /* Not inherited from body: the utility family can differ from the sans. */
   font-feature-settings: var(--sp-mono-features);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -88,6 +88,8 @@
   font-variant-numeric: tabular-nums;
   font-weight: var(--sp-mono-weight);
   font-feature-settings: var(--sp-mono-features);
+  --tw-tracking: var(--sp-mono-spacing, 0em);
+  letter-spacing: var(--sp-mono-spacing, 0em);
 }
 
 /* ── Control face ───────────────────────────────────────────────────────────
@@ -297,8 +299,14 @@
   --control-highlight: var(--sp-face-highlight-strong);
 }
 
-/* Above the raised face. The lift comes from the face rather than a heavier
-   ring, so it holds wherever the enclosure is placed. */
+@utility surface-analysis {
+  --control-face-top: var(--sp-analysis-face);
+  --control-face-bottom: var(--sp-analysis-face);
+  --control-ring-top: var(--sp-analysis-edge-top);
+  --control-ring-bottom: var(--sp-analysis-edge-bottom);
+  --control-highlight: var(--sp-analysis-highlight);
+}
+
 @utility surface-floating {
   --control-face-top: var(--sp-surface-floating);
   --control-face-bottom: var(--sp-surface-floating);
@@ -394,13 +402,13 @@
     --tile-face-light: var(--color-radix-yellow-3);
     --tile-face-dark: var(--color-radix-yellow-dark-3);
     --tile-ring-top-light: var(--color-radix-yellow-6);
-    --tile-ring-top-dark: var(--color-radix-yellow-dark-6);
+    --tile-ring-top-dark: var(--color-radix-yellow-dark-5);
     --tile-ring-bottom-light: var(--color-radix-yellow-7);
-    --tile-ring-bottom-dark: var(--color-radix-yellow-dark-7);
+    --tile-ring-bottom-dark: var(--color-radix-yellow-dark-6);
     --tile-glyph-light: var(--color-radix-yellow-11);
     --tile-glyph-dark: var(--color-radix-yellow-dark-11);
     --tile-glyph-hover-light: var(--color-radix-yellow-11);
-    --tile-glyph-hover-dark: var(--color-radix-yellow-dark-12);
+    --tile-glyph-hover-dark: var(--color-radix-yellow-dark-11);
   }
 }
 
@@ -420,13 +428,13 @@
     --tile-face-light: var(--color-radix-green-3);
     --tile-face-dark: var(--color-radix-green-dark-3);
     --tile-ring-top-light: var(--color-radix-green-6);
-    --tile-ring-top-dark: var(--color-radix-green-dark-6);
+    --tile-ring-top-dark: var(--color-radix-green-dark-5);
     --tile-ring-bottom-light: var(--color-radix-green-7);
-    --tile-ring-bottom-dark: var(--color-radix-green-dark-7);
+    --tile-ring-bottom-dark: var(--color-radix-green-dark-6);
     --tile-glyph-light: var(--color-radix-green-11);
     --tile-glyph-dark: var(--color-radix-green-dark-11);
     --tile-glyph-hover-light: var(--color-radix-green-11);
-    --tile-glyph-hover-dark: var(--color-radix-green-dark-12);
+    --tile-glyph-hover-dark: var(--color-radix-green-dark-11);
   }
 }
 
@@ -446,13 +454,13 @@
     --tile-face-light: var(--color-radix-sky-3);
     --tile-face-dark: var(--color-radix-sky-dark-3);
     --tile-ring-top-light: var(--color-radix-sky-6);
-    --tile-ring-top-dark: var(--color-radix-sky-dark-6);
+    --tile-ring-top-dark: var(--color-radix-sky-dark-5);
     --tile-ring-bottom-light: var(--color-radix-sky-7);
-    --tile-ring-bottom-dark: var(--color-radix-sky-dark-7);
+    --tile-ring-bottom-dark: var(--color-radix-sky-dark-6);
     --tile-glyph-light: var(--color-radix-sky-11);
     --tile-glyph-dark: var(--color-radix-sky-dark-11);
     --tile-glyph-hover-light: var(--color-radix-sky-11);
-    --tile-glyph-hover-dark: var(--color-radix-sky-dark-12);
+    --tile-glyph-hover-dark: var(--color-radix-sky-dark-11);
   }
 }
 
@@ -472,13 +480,13 @@
     --tile-face-light: var(--color-radix-violet-3);
     --tile-face-dark: var(--color-radix-violet-dark-3);
     --tile-ring-top-light: var(--color-radix-violet-6);
-    --tile-ring-top-dark: var(--color-radix-violet-dark-6);
+    --tile-ring-top-dark: var(--color-radix-violet-dark-5);
     --tile-ring-bottom-light: var(--color-radix-violet-7);
-    --tile-ring-bottom-dark: var(--color-radix-violet-dark-7);
+    --tile-ring-bottom-dark: var(--color-radix-violet-dark-6);
     --tile-glyph-light: var(--color-radix-violet-11);
     --tile-glyph-dark: var(--color-radix-violet-dark-11);
     --tile-glyph-hover-light: var(--color-radix-violet-11);
-    --tile-glyph-hover-dark: var(--color-radix-violet-dark-12);
+    --tile-glyph-hover-dark: var(--color-radix-violet-dark-11);
   }
 }
 
@@ -498,13 +506,13 @@
     --tile-face-light: var(--color-radix-pink-3);
     --tile-face-dark: var(--color-radix-pink-dark-3);
     --tile-ring-top-light: var(--color-radix-pink-6);
-    --tile-ring-top-dark: var(--color-radix-pink-dark-6);
+    --tile-ring-top-dark: var(--color-radix-pink-dark-5);
     --tile-ring-bottom-light: var(--color-radix-pink-7);
-    --tile-ring-bottom-dark: var(--color-radix-pink-dark-7);
+    --tile-ring-bottom-dark: var(--color-radix-pink-dark-6);
     --tile-glyph-light: var(--color-radix-pink-11);
     --tile-glyph-dark: var(--color-radix-pink-dark-11);
     --tile-glyph-hover-light: var(--color-radix-pink-11);
-    --tile-glyph-hover-dark: var(--color-radix-pink-dark-12);
+    --tile-glyph-hover-dark: var(--color-radix-pink-dark-11);
   }
 }
 
@@ -521,7 +529,7 @@
   --control-face-bottom: var(--sp-notice-face);
   --control-ring-top: var(--sp-notice-edge-top);
   --control-ring-bottom: var(--sp-notice-edge-bottom);
-  --control-highlight: var(--sp-face-highlight-medium);
+  --control-highlight: var(--sp-notice-highlight);
 }
 
 /* A plain bordered surface with a shallow top sheen: it encloses content
@@ -542,5 +550,12 @@
   .control-face {
     border-color: currentColor;
     box-shadow: none;
+  }
+}
+
+@utility release-bucket-bar {
+  background-color: var(--severity-9);
+  &[data-severity='3']:not([data-active]) {
+    background-color: light-dark(var(--severity-9), var(--severity-7));
   }
 }

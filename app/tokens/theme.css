@@ -40,6 +40,10 @@
   --color-mode-simulated: var(--sp-mode-simulated);
   --color-mode-preview: var(--sp-mode-preview);
   --color-mode-unavailable: var(--sp-mode-unavailable);
+  --color-analysis-rule: var(--sp-analysis-rule);
+  --color-notice-title: var(--sp-notice-title);
+  --color-replay-state-face: var(--sp-replay-state-face);
+  --color-replay-state-ink: var(--sp-replay-state-ink);
   --color-commit-state: var(--sp-commit-state);
   --color-menu-wash-faint: var(--sp-menu-wash-faint);
   --color-menu-wash: var(--sp-menu-wash);
@@ -64,7 +68,6 @@
   --color-field-edge: var(--sp-field-edge);
   --color-field-edge-hover: var(--sp-field-edge-hover);
   --color-field-edge-active: var(--sp-field-edge-active);
-  --color-notice-face: var(--sp-notice-face);
   --color-notice-edge-top: var(--sp-notice-edge-top);
   --color-notice-edge-bottom: var(--sp-notice-edge-bottom);
   --color-notice-caption: var(--sp-notice-caption);
@@ -73,13 +76,13 @@
   --font-sans: var(--sp-font-sans), system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: var(--sp-font-mono), ui-monospace, 'SF Mono', Menlo, monospace;
   /* A mark, not interface text: fixed family, does not follow data-typeface. */
-  --font-brand: var(--font-nunito), sans-serif;
+  --font-brand: var(--font-orbitron), sans-serif;
 
   /* The lockups, set optically rather than on the scale: neither follows
      data-typescale, so a mark does not move when the interface is retuned. */
-  --text-wordmark: 0.9375rem; /* 15px, the square lockup beside the mark */
+  --text-wordmark: 12px;
   --text-wordmark--line-height: 1;
-  --text-wordmark--letter-spacing: 0.02em;
+  --text-wordmark--letter-spacing: 0.21875em;
 
   --text-lockup: 0.75rem; /* 12px, the pill lockup; the tall line sets its height */
   --text-lockup--line-height: calc(1.625 / 0.75);
@@ -166,6 +169,10 @@
      shell, and still has to line up with the panes inside it. */
   --radius-shell: 0.625rem; /* 10px  panes, cards, dialogs */
   --spacing-shell-inset: 10px;
+  /* Sidebar end rows share the notch's full frame, including both insets. */
+  --spacing-shell-header: calc(
+    var(--slant-height) + 2 * (var(--notch-gap) + var(--spacing-control-edge))
+  );
   /* Adjustable navigation: protect the sheet's reading width near the shell
      breakpoint. These also size the probes read by the pointer/keyboard code. */
   --spacing-assistant-min: 17.5rem;

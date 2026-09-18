@@ -1,6 +1,19 @@
 import { GeistMono } from 'geist/font/mono';
 import { GeistSans } from 'geist/font/sans';
-import { Inter, Inter_Tight, JetBrains_Mono, Nunito } from 'next/font/google';
+import {
+  IBM_Plex_Mono,
+  IBM_Plex_Sans,
+  Inter,
+  Inter_Tight,
+  JetBrains_Mono,
+  Michroma,
+  Orbitron,
+  Roboto,
+  Source_Code_Pro,
+  Source_Sans_3,
+  Space_Mono,
+  Syne,
+} from 'next/font/google';
 import localFont from 'next/font/local';
 
 /*
@@ -74,6 +87,56 @@ const jetBrainsMono = JetBrains_Mono({
   preload: false,
 });
 
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  variable: '--font-ibm-plex-mono',
+  display: 'swap',
+  weight: ['500', '600'],
+  preload: false,
+});
+
+const sourceCodePro = Source_Code_Pro({
+  subsets: ['latin'],
+  variable: '--font-source-code-pro',
+  display: 'swap',
+  weight: 'variable',
+  preload: false,
+});
+
+// Space Mono provides only 400 and 700; the utility tokens select those real
+// cuts rather than asking the browser to synthesize the usual 500 and 600.
+const spaceMono = Space_Mono({
+  subsets: ['latin'],
+  variable: '--font-space-mono',
+  display: 'swap',
+  weight: ['400', '700'],
+  preload: false,
+});
+
+const ibmPlexSans = IBM_Plex_Sans({
+  subsets: ['latin'],
+  variable: '--font-ibm-plex-sans',
+  display: 'swap',
+  weight: 'variable',
+  preload: false,
+});
+
+const sourceSans = Source_Sans_3({
+  subsets: ['latin'],
+  variable: '--font-source-sans',
+  display: 'swap',
+  weight: 'variable',
+  preload: false,
+});
+
+const roboto = Roboto({
+  subsets: ['latin'],
+  variable: '--font-roboto',
+  display: 'swap',
+  weight: 'variable',
+  preload: false,
+});
+
 // Not on Google Fonts. Vendored from the Fontsource build, which instances the
 // variable source into real 400/500/600 cuts -- the release zip ships only 400
 // and 700, so 600 would otherwise jump a step too far.
@@ -88,19 +151,35 @@ const commitMono = localFont({
   preload: false,
 });
 
-/**
- * Class list for <html>. Declaring every family here keeps the choice a
- * one-attribute change at runtime rather than a change of markup.
- */
-const nunito = Nunito({
+// Development wordmark candidates. Each is exposed independently so the
+// workbench can compare the real outlines at identical optical settings.
+const michroma = Michroma({
   subsets: ['latin'],
-  variable: '--font-nunito',
+  variable: '--font-michroma',
   display: 'swap',
-  weight: '800',
+  weight: '400',
+  preload: false,
 });
 
+const syne = Syne({
+  subsets: ['latin'],
+  variable: '--font-syne',
+  display: 'swap',
+  weight: 'variable',
+  preload: false,
+});
+
+// The selected brand family is preloaded; the workbench uses its full weight range.
+const orbitron = Orbitron({
+  subsets: ['latin'],
+  variable: '--font-orbitron',
+  display: 'swap',
+  weight: 'variable',
+  preload: true,
+});
+
+/** Class list for <html>, including the fixed brand family. */
 export const fontVariables = [
-  nunito.variable,
   GeistSans.variable,
   GeistMono.variable,
   glide.variable,
@@ -108,5 +187,14 @@ export const fontVariables = [
   inter.variable,
   interTight.variable,
   jetBrainsMono.variable,
+  ibmPlexMono.variable,
+  sourceCodePro.variable,
+  spaceMono.variable,
+  ibmPlexSans.variable,
+  sourceSans.variable,
+  roboto.variable,
   commitMono.variable,
+  michroma.variable,
+  syne.variable,
+  orbitron.variable,
 ].join(' ');

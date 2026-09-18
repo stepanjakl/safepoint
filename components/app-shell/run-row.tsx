@@ -78,6 +78,7 @@ export function RunRow({
       aria-label={announce(run, noun, status, trigger, stamp)}
       aria-pressed={onSelect ? selected : undefined}
       data-current={selected ? '' : undefined}
+      data-run-status={run.status}
       aria-current={onSelect ? undefined : selected ? 'true' : undefined}
     >
       {/* Mono, so the day and the time under it set on one measure. It is a
@@ -108,7 +109,7 @@ export function RunRow({
       </span>
       <span aria-hidden="true" className="sheet-row-when">
         <TriggerIcon size={11} className="flex-none" />
-        <span className="value text-micro">{runTime(run.startedAt)}</span>
+        <span className="value text-micro tracking-wider">{runTime(run.startedAt)}</span>
       </span>
       <Tally
         counts={run.counts}

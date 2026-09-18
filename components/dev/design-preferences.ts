@@ -7,7 +7,7 @@ import {
   type Typescale,
   isMonoChoice,
   isThemeChoice,
-  isTypefaceSet,
+  isTypefacePickerSet,
   MONO_STORAGE_KEY,
   THEME_STORAGE_KEY,
   TYPEFACE_STORAGE_KEY,
@@ -46,7 +46,7 @@ function emit() {
 /** Snapshots return primitives, so React compares them by value. */
 export function readTypeface(): TypefaceSet {
   const value = document.documentElement.dataset.typeface;
-  return isTypefaceSet(value) ? value : DEFAULT_TYPEFACE_SET;
+  return isTypefacePickerSet(value) ? value : DEFAULT_TYPEFACE_SET;
 }
 
 export function readMono(): MonoChoice {

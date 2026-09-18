@@ -1,4 +1,5 @@
 import type { ProcessAnalysis } from '@/lib/process/placeholder-process';
+import { styleDebug } from '@/lib/style-debug';
 import {
   byAttention,
   needsAttention,
@@ -28,11 +29,17 @@ export function InitialAnalysis({
 }) {
   const needing = inputs.filter(needsAttention).sort(byAttention);
   return (
-    <div className="control-face surface-floating rounded-shell text-body px-5 py-4 leading-relaxed">
+    <div
+      {...styleDebug({
+        component: 'InitialAnalysis',
+        appearance: 'surface-analysis',
+      })}
+      className="control-face surface-analysis rounded-shell text-body px-5 py-4 leading-relaxed"
+    >
       <p className="text-primary">{analysis.summary}</p>
       {/* Observations are findings, not instructions, so they are marked with a
           rule rather than numbered: nothing here happens in sequence. */}
-      <ul className="border-rule-faint text-muted text-dense mt-3 grid gap-1.5 border-t pt-3">
+      <ul className="border-analysis-rule text-muted text-dense mt-3 grid gap-1.5 border-t pt-3">
         {analysis.observations.map((observation) => (
           <li
             key={observation}
@@ -45,7 +52,7 @@ export function InitialAnalysis({
       {needing.length > 0 ? (
         <section
           aria-labelledby="analysis-inputs"
-          className="border-rule-faint mt-3 border-t pt-3"
+          className="border-analysis-rule mt-3 border-t pt-3"
         >
           <h3 id="analysis-inputs" className="readout text-muted pb-1.5">
             Inputs needing attention

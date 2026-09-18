@@ -4,9 +4,32 @@
   font loading into the client bundle; app/typography.ts does the loading.
 */
 
-export const TYPEFACE_SETS = ['geist', 'glide', 'inter'] as const;
+export const TYPEFACE_SETS = [
+  'geist',
+  'geist-orbitron',
+  'geist-tabular',
+  'geist-inter-tabular',
+  'geist-ibm-plex-sans',
+  'geist-source-sans',
+  'geist-roboto',
+  'geist-glide',
+  'geist-jetbrains',
+  'geist-ibm-plex',
+  'geist-source-code',
+  'geist-space',
+  'geist-commit',
+  'glide',
+  'inter',
+] as const;
 
 export type TypefaceSet = (typeof TYPEFACE_SETS)[number];
+
+export const TYPEFACE_PICKER_SETS = [
+  'geist-tabular',
+  'geist',
+  'glide',
+  'inter',
+] as const satisfies readonly TypefaceSet[];
 
 export const DEFAULT_TYPEFACE_SET: TypefaceSet = 'geist';
 
@@ -14,9 +37,25 @@ export function isTypefaceSet(value: unknown): value is TypefaceSet {
   return TYPEFACE_SETS.includes(value as TypefaceSet);
 }
 
+export function isTypefacePickerSet(value: unknown): value is TypefaceSet {
+  return TYPEFACE_PICKER_SETS.includes(value as (typeof TYPEFACE_PICKER_SETS)[number]);
+}
+
 /** display role · interface sans role · tabular utility role. */
 export const TYPEFACE_SET_LABELS: Record<TypefaceSet, string> = {
-  geist: 'Geist · Geist · Geist Mono',
+  geist: 'Geist · Geist Mono',
+  'geist-orbitron': 'Geist · Geist · Orbitron tabular',
+  'geist-tabular': 'Geist · Geist Sans tabular',
+  'geist-inter-tabular': 'Geist · Inter tabular',
+  'geist-ibm-plex-sans': 'Geist · IBM Plex Sans tabular',
+  'geist-source-sans': 'Geist · Source Sans 3 tabular',
+  'geist-roboto': 'Geist · Roboto tabular',
+  'geist-glide': 'Geist · Geist · Glide Mono',
+  'geist-jetbrains': 'Geist · Geist · JetBrains Mono',
+  'geist-ibm-plex': 'Geist · Geist · IBM Plex Mono',
+  'geist-source-code': 'Geist · Geist · Source Code Pro',
+  'geist-space': 'Geist · Geist · Space Mono',
+  'geist-commit': 'Geist · Geist · Commit Mono',
   glide: 'Glide · Glide · Glide Mono',
   inter: 'Inter Tight · Inter · Inter tabular',
 };
@@ -32,6 +71,9 @@ export const MONO_CHOICES = [
   'geist',
   'glide',
   'jetbrains',
+  'ibm-plex',
+  'source-code',
+  'space',
   'commit',
 ] as const;
 
@@ -47,6 +89,9 @@ export const MONO_CHOICE_LABELS: Record<MonoChoice, string> = {
   geist: 'Geist Mono',
   glide: 'Glide Mono, one weight',
   jetbrains: 'JetBrains Mono',
+  'ibm-plex': 'IBM Plex Mono',
+  'source-code': 'Source Code Pro',
+  space: 'Space Mono, 400 / 700',
   commit: 'Commit Mono',
 };
 

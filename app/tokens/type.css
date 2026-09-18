@@ -16,6 +16,130 @@
 
   --sp-font-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
   --sp-mono-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-spacing: 0em;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-typeface='geist-orbitron'] {
+  --sp-font-display: var(--font-geist-sans);
+  --sp-font-sans: var(--font-geist-sans);
+  --sp-font-mono: var(--font-orbitron);
+
+  --sp-font-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-features: 'tnum' 1, 'lnum' 1;
+  --sp-mono-weight: 600;
+  --sp-mono-weight-strong: 700;
+}
+
+[data-typeface='geist-tabular'] {
+  --sp-font-display: var(--font-geist-sans);
+  --sp-font-sans: var(--font-geist-sans);
+  --sp-font-mono: var(--font-geist-sans);
+  --sp-font-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1, 'tnum' 1, 'lnum' 1;
+  --sp-mono-spacing: .015em;
+  --sp-mono-weight: 600;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-typeface='geist-inter-tabular'] {
+  --sp-font-display: var(--font-geist-sans);
+  --sp-font-sans: var(--font-geist-sans);
+  --sp-font-mono: var(--font-inter);
+  --sp-font-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-features: 'tnum' 1, 'lnum' 1;
+  --sp-mono-spacing: .01em;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-typeface='geist-ibm-plex-sans'] {
+  --sp-font-display: var(--font-geist-sans);
+  --sp-font-sans: var(--font-geist-sans);
+  --sp-font-mono: var(--font-ibm-plex-sans);
+  --sp-font-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-features: 'tnum' 1, 'lnum' 1;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-typeface='geist-source-sans'] {
+  --sp-font-display: var(--font-geist-sans);
+  --sp-font-sans: var(--font-geist-sans);
+  --sp-font-mono: var(--font-source-sans);
+  --sp-font-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-features: 'tnum' 1, 'lnum' 1;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-typeface='geist-roboto'] {
+  --sp-font-display: var(--font-geist-sans);
+  --sp-font-sans: var(--font-geist-sans);
+  --sp-font-mono: var(--font-roboto);
+  --sp-font-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-features: 'tnum' 1, 'lnum' 1;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-typeface='geist-glide'] {
+  --sp-font-display: var(--font-geist-sans);
+  --sp-font-sans: var(--font-geist-sans);
+  --sp-font-mono: var(--font-glide-mono);
+  --sp-font-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-features: normal;
+  --sp-mono-weight: 400;
+  --sp-mono-weight-strong: 400;
+}
+
+[data-typeface='geist-jetbrains'] {
+  --sp-font-display: var(--font-geist-sans);
+  --sp-font-sans: var(--font-geist-sans);
+  --sp-font-mono: var(--font-jetbrains-mono);
+  --sp-font-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-features: normal;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-typeface='geist-ibm-plex'] {
+  --sp-font-display: var(--font-geist-sans);
+  --sp-font-sans: var(--font-geist-sans);
+  --sp-font-mono: var(--font-ibm-plex-mono);
+  --sp-font-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-features: normal;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-typeface='geist-source-code'] {
+  --sp-font-display: var(--font-geist-sans);
+  --sp-font-sans: var(--font-geist-sans);
+  --sp-font-mono: var(--font-source-code-pro);
+  --sp-font-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-features: normal;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-typeface='geist-space'] {
+  --sp-font-display: var(--font-geist-sans);
+  --sp-font-sans: var(--font-geist-sans);
+  --sp-font-mono: var(--font-space-mono);
+  --sp-font-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-features: normal;
+  --sp-mono-weight: 400;
+  --sp-mono-weight-strong: 700;
+}
+
+[data-typeface='geist-commit'] {
+  --sp-font-display: var(--font-geist-sans);
+  --sp-font-sans: var(--font-geist-sans);
+  --sp-font-mono: var(--font-commit-mono);
+  --sp-font-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-features: normal;
   --sp-mono-weight: 500;
   --sp-mono-weight-strong: 600;
 }
@@ -86,12 +210,44 @@
   --sp-mono-weight-strong: 600;
 }
 
+[data-mono='ibm-plex'] {
+  --sp-font-mono: var(--font-ibm-plex-mono);
+  --sp-mono-features: normal;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-mono='source-code'] {
+  --sp-font-mono: var(--font-source-code-pro);
+  --sp-mono-features: normal;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-mono='space'] {
+  --sp-font-mono: var(--font-space-mono);
+  --sp-mono-features: normal;
+  --sp-mono-weight: 400;
+  --sp-mono-weight-strong: 700;
+}
+
 [data-mono='commit'] {
   --sp-font-mono: var(--font-commit-mono);
   --sp-mono-features: normal;
   /* Vendored at 400, 500 and 600: both weights below are real cuts. */
   --sp-mono-weight: 500;
   --sp-mono-weight-strong: 600;
+}
+
+/* Theme aliases resolve where they are declared; scoped specimens need their
+   own aliases so a parent selection cannot freeze every card to one family. */
+[data-typeface],
+[data-mono] {
+  --font-display: var(--sp-font-display), system-ui, -apple-system, 'Segoe UI',
+    sans-serif;
+  --font-sans: var(--sp-font-sans), system-ui, -apple-system, 'Segoe UI',
+    sans-serif;
+  --font-mono: var(--sp-font-mono), ui-monospace, 'SF Mono', Menlo, monospace;
 }
 
 /* Sizes in rem, line-heights as unitless ratios on a 2px baseline --

@@ -78,8 +78,55 @@ workspace menu's decorative hues — `light-dark()` resolved where the colour
 paints, saturation ceilings through relative colour syntax, and keeping clear of
 the state hues — are under Colour in `docs/STYLING-SYSTEM.md`.
 
-## Checks
+## Verification matched to the change
 
-```
-pnpm lint && pnpm typecheck && pnpm format:check && pnpm test
-```
+Choose checks by the possible consequences, not the number of edited lines.
+During iteration, run the smallest check that can detect the relevant regression.
+Combine the applicable rows below; broader verification is warranted when a
+shared dependency or invariant makes the impact uncertain.
+
+| Change                                                                    | Verification                                                                                                                                                      |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Documentation, comments, agent instructions                               | Check accuracy, links, and formatting of changed files. Validate skill metadata when changing skills. No application suite.                                       |
+| Static UI wording                                                         | Format and lint changed source files. Inspect the affected UI when wrapping or accessible naming could change.                                                    |
+| Local spacing or styling                                                  | Format changed files and inspect the affected component and relevant responsive states. Run `pnpm check:rail` when sidebar geometry changes.                      |
+| Colours or tokens                                                         | Run `pnpm check:tokens`; inspect affected light/dark states and relevant contrast checks. Run the rail checker if spacing tokens affect sidebar geometry.         |
+| Component behaviour or local logic                                        | Lint changed source files, run `pnpm typecheck` and relevant tests. Exercise changed interactions, including keyboard/focus and announcements where applicable.   |
+| Shared logic, routing, dependencies, build configuration, broad refactors | Run `pnpm lint`, `pnpm typecheck`, `pnpm format:check`, and `pnpm test` once at completion. Run `pnpm build` when production compilation or bundling is affected. |
+
+Use `pnpm exec prettier --check <files>`, `pnpm exec eslint <source-files>`,
+and `pnpm exec vitest run <test-files>` for targeted checks. Typechecking remains
+project-wide; passing individual files to `tsc` is not an equivalent substitute.
+Markdown is excluded by `.prettierignore`; explicitly check edited Markdown with
+`pnpm exec prettier --ignore-path /dev/null --check <markdown-files>`.
+Add regression tests for changed behaviour when they provide meaningful proof;
+do not create tests that merely mirror static text, styling, or implementation.
+
+Do not repeat a passing check unless relevant inputs changed, a failure needs
+investigation, or the user requests verification. Reuse a suitable running dev
+server. Start a server, build, browser audit, or full suite only for a specific
+verification need. Once the applicable checks pass and the requested result is
+verified, stop. Report what was actually checked and any remaining limitation.
+
+## Context and command discipline
+
+- Start with named files and symbols using `rg`; widen the search only when
+  needed. Read enough surrounding code to understand dependencies and invariants,
+  without arbitrary line limits or rereading unchanged material.
+- Read the relevant sections of `docs/STYLING-SYSTEM.md` for styling and
+  `docs/TECHNICAL-DESIGN.md` for architecture or domain behaviour. Do not load
+  both entire guides for every task.
+- Use the local `tailwindcss` skill as the styling entry point when available;
+  otherwise use `docs/STYLING-SYSTEM.md` directly. Load specialist skills only for
+  the behaviour or integration being changed; read their references selectively.
+  Preserve keyboard access, visible focus, and correct status announcements.
+- Prefer supported summary reporters. For verbose commands, save the full log
+  outside the repository and return the exit status, summary, and decisive failure
+  details. Preserve the original command's exit status; do not blindly pipe through
+  `head` or `tail`. Retrieve more of the saved log before rerunning for detail.
+- Keep updates and final replies concise and clear. Summarize results without
+  repeating tool output; retain relevant errors, uncertainty, and verification limits.
+- Inspect the working tree once before editing. Preserve pre-existing changes,
+  distinguish them from this task, and review the task's diff. Investigate unrelated
+  failures only when they block the requested work; report them without expanding
+  the task into cleanup. Do not classify a failure as pre-existing without evidence.

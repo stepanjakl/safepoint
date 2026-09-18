@@ -1,8 +1,8 @@
 import { Pane } from 'tweakpane';
 import {
   DEFAULT_TYPEFACE_SET,
+  TYPEFACE_PICKER_SETS,
   DEFAULT_TYPESCALE,
-  TYPEFACE_SETS,
   TYPEFACE_SET_LABELS,
   MONO_CHOICES,
   MONO_CHOICE_LABELS,
@@ -97,7 +97,7 @@ export function mountDesignPane(host: HTMLElement) {
     appearance
       .addBinding(model, 'typeface', {
         label: 'Typeface',
-        options: TYPEFACE_SETS.map((value) => ({
+        options: TYPEFACE_PICKER_SETS.map((value) => ({
           text: TYPEFACE_SET_LABELS[value],
           value,
         })),
@@ -210,7 +210,7 @@ export function mountDesignPane(host: HTMLElement) {
     .addBinding(model, 'railGuides', { label: 'Icon axis' })
     .on('change', (event) => setRailGuides(event.value));
   railBinding.element.title =
-    'Draws the sidebar icon axis and a crosshair through each icon centred on it.';
+    'Draws sidebar icon axes, crosshairs, and shared header and profile centrelines.';
   railBinding.element
     .querySelector('input')
     ?.setAttribute('aria-label', 'Icon axis guides');

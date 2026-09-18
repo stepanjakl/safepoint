@@ -1328,15 +1328,31 @@
      where a miss by a pixel stops being visible.
      `pnpm check:rail` reads the axis out of this rule's computed background,
      so this stylesheet stays the only place an axis is defined. */
-  .rail-axis {
+  .rail-axis,
+  .shell-axis {
     display: none;
   }
-  /*
-    Two axes now, so the element is the frame and each line is an edge of it.
-    They are mirror images -- one rail inset from each side -- because what the
-    pair is for is reading whether the right-hand column is set in by the same
-    amount the left one is. A single line could only ever answer half of that.
-  */
+  /* The header and profile guides mirror the same frame inside the shell inset. */
+  @media (width >= 56.25rem) {
+    :root[data-rail-guides='on'] .shell-axis {
+      --shell-axis-width: 1px;
+      --shell-axis-offset: calc(var(--spacing-shell-header) / 2 - var(--shell-axis-width) / 2);
+      display: block;
+      position: absolute;
+      inset: var(--spacing-shell-inset);
+      z-index: 50;
+      pointer-events: none;
+      background-image:
+        linear-gradient(color-mix(in oklab, red 60%, transparent) 0 100%),
+        linear-gradient(color-mix(in oklab, red 60%, transparent) 0 100%);
+      background-size: 100% var(--shell-axis-width);
+      background-repeat: no-repeat;
+      background-position:
+        left 0 top var(--shell-axis-offset),
+        left 0 bottom var(--shell-axis-offset);
+    }
+  }
+  /* Both guide pairs mirror the same spacing tokens across the sidebar. */
   :root[data-rail-guides='on'] .rail-axis {
     display: block;
     position: absolute;
@@ -1346,8 +1362,7 @@
   }
   /*
     One hairline per axis, as background layers rather than pseudo-elements:
-    there are two pseudo-elements and three axes, and a layer list takes a
-    fourth without restructuring anything.
+    there are two pseudo-elements and four axes.
 
     Each position names the line's own near edge, and a guide has to be centred
     on what it measures rather than start there -- naming the axis alone paints
@@ -1370,11 +1385,13 @@
     inset: 0;
     z-index: 5;
     pointer-events: none;
-    background-image: var(--rail-axis-line), var(--rail-axis-line), var(--rail-axis-line);
+    background-image:
+      var(--rail-axis-line), var(--rail-axis-line), var(--rail-axis-line), var(--rail-axis-line);
     background-size: var(--rail-axis-width) 100%;
     background-repeat: no-repeat;
     background-position:
       left var(--rail-axis-rail) top 0,
+      left var(--rail-axis-end) top 0,
       right var(--rail-axis-rail) top 0,
       right var(--rail-axis-end) top 0;
   }
@@ -1443,7 +1460,7 @@
   .app-tooltip {
     --tooltip-face: var(--sp-surface-floating);
     --tooltip-edge: var(--sp-rule-default);
-    --tooltip-highlight: var(--sp-edge-inner);
+    --tooltip-highlight: light-dark(var(--sp-edge-inner), var(--sp-rule-etch));
     /* A one-line box as tall as the controls it labels (min-h-7): what the
        line and both borders leave of that height, split above and below. */
     --tooltip-padding-block: calc((var(--spacing) * 7 - 1lh - 2px) / 2);
@@ -1644,6 +1661,40 @@
    The workbench is the one place these are rendered.
    ────────────────────────────────────────────────────────────────────── */
 @layer components {
+  .logo-candidate {
+    display: flex;
+    min-height: 2.5rem;
+    align-items: center;
+    gap: 0.875rem;
+    font-size: 0.8125rem;
+    font-synthesis: none;
+    line-height: 1;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .logo-candidate[data-logo-family='michroma'] {
+    font-family: var(--font-michroma), sans-serif;
+  }
+
+  .logo-candidate[data-logo-family='syne'] {
+    font-family: var(--font-syne), sans-serif;
+    font-size: 0.875rem;
+    letter-spacing: 0.18em;
+  }
+
+  .logo-candidate[data-logo-family='orbitron'] {
+    font-family: var(--font-orbitron), sans-serif;
+    letter-spacing: 0.2em;
+  }
+
+  .logo-candidate-symbol {
+    width: 2rem;
+    height: 2rem;
+    flex: none;
+  }
+
   /* Nucleo Arcade strokes fall back to a fixed #212121 and vanish on a dark
      ground. currentColor lets them follow the text like every other family;
      the other two stops keep the set's own 25% and transparent pixels. */
@@ -1725,6 +1776,7 @@
     -webkit-user-select: none;
     color: var(--sp-text-muted);
     outline: none;
+    transition: color var(--duration-state) ease-out;
   }
 
   .sidebar-handle-mark {
@@ -1762,8 +1814,15 @@
   }
 
   /* Controlled hover ignores the settling edge beneath a stationary pointer. */
-  .sidebar-handle:is([data-hovered], :focus-visible),
-  .sidebar-handle[data-resizing] {
+  .sidebar-handle[data-collapsed] {
+    color: var(--sp-text-muted-soft);
+  }
+
+  .sidebar-handle:is([data-hovered], [data-resizing]) {
+    color: var(--sp-text-muted);
+  }
+
+  .sidebar-handle:focus-visible {
     color: var(--sp-text-muted-strong);
   }
 
@@ -2083,7 +2142,7 @@
     --sheet-total-ink: var(--sp-sheet-total-ink-hover);
   }
   .sheet-row[data-current] {
-    background: var(--sp-menu-wash-faint);
+    background: var(--sp-sheet-current);
     --sheet-ink: var(--sp-sheet-date-current);
     --sheet-ink-quiet: var(--sp-sheet-time-current);
     --sheet-total-face: var(--sp-sheet-total-face-current);
@@ -2146,6 +2205,12 @@
   .sheet-row-status svg {
     color: inherit;
   }
+  .sheet-row[data-run-status='completed']:not([data-current]) .sheet-row-status {
+    color: var(--sp-sheet-completed-label);
+  }
+  .sheet-row[data-run-status='completed'] .sheet-row-status svg {
+    color: var(--sp-state-verified);
+  }
 
   /* Grey on every row: a fact about the run, not a state of it, and a second
      coloured pill would compete with the one thing meant to be read first.
@@ -2187,16 +2252,15 @@
     display: inline-flex;
     align-items: center;
     gap: 0.125rem;
-    /* Dark ground, light figure, one rung through every state of the row.
-       Rung 10 knowingly: a light figure reads 3.44:1 at the worst hue in
-       light -- clears the 3:1 Radix designs solid rungs for, not the 4.5:1
-       text is held to. Rung 11 (4.99:1) was too heavy at this size, and rung 3
-       with the tone as figure (4.54:1) reads washed. No rung is both lighter
-       and compliant. */
-    background: var(--severity-10);
-    /* Dark state step 1 misses 4.5:1 on decision and unavailable solids. */
-    color: light-dark(var(--severity-1), var(--color-black));
+    /* Unselected dark tallies use tinted faces; selection restores a solid.
+       The total overrides both colours with neutral roles. */
+    background: light-dark(var(--severity-10), var(--severity-5));
+    color: light-dark(var(--severity-1), var(--severity-11));
     white-space: nowrap;
+  }
+  .sheet-row[data-current] .sheet-seg[data-severity] {
+    background: var(--severity-10);
+    color: light-dark(var(--severity-1), var(--color-white));
   }
   /* Both sides use the header's angle. Overlapping their rectangular boxes
      keeps the visible gap constant along the parallel diagonal edges. */

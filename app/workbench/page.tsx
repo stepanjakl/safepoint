@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { AgentNameGallery } from '@/components/dev/agent-name-gallery';
 import { IconMenuGallery } from '@/components/dev/icon-menu-gallery';
 import { IconPairGallery } from '@/components/dev/icon-pair-gallery';
+import { LogoGallery } from '@/components/dev/logo-gallery';
 import { NucleoGallery } from '@/components/dev/nucleo-gallery';
 import { RunStatusGallery } from '@/components/dev/run-status-gallery';
 import { SystemDiscGallery } from '@/components/dev/system-disc-gallery';
@@ -90,6 +91,16 @@ export default async function WorkbenchPage({
       </section>
 
       <section className="space-y-3">
+        <h2 className="readout text-muted">logo candidates</h2>
+        <p className="text-dense text-muted max-w-prose">
+          Balanced and Soft with threefold symmetry, shown at display size and
+          16–48px in both themes. Soft is the selected symbol; compare it with
+          each wordmark family and its available weights below.
+        </p>
+        <LogoGallery />
+      </section>
+
+      <section className="space-y-3">
         <h2 className="readout text-muted">run states</h2>
         <p className="text-dense text-muted max-w-prose">
           The nine states a run moves through, drawn as one circle whose
@@ -160,7 +171,7 @@ export default async function WorkbenchPage({
       <section className="space-y-3">
         <h2 className="readout text-muted">utility role</h2>
         <p className="text-dense text-muted">
-          Every candidate for the tabular role, all against Inter so only the
+          Every candidate for the tabular role, all against Geist so only the
           utility family changes. The readout line is what the role mostly
           carries: short English labels in tracked uppercase, not code.
         </p>
@@ -168,7 +179,7 @@ export default async function WorkbenchPage({
           {MONO_CHOICES.filter((choice) => choice !== 'match').map((choice) => (
             <div
               key={choice}
-              data-typeface="inter"
+              data-typeface="geist"
               data-mono={choice}
               className="border-rule-default bg-surface-primary space-y-2 border p-4"
             >

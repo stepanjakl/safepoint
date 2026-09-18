@@ -12,7 +12,7 @@ import {
   type CSSProperties,
   type PointerEvent,
 } from 'react';
-import { BrandSquare } from '@/components/ui/brand';
+import { Brand } from '@/components/ui/brand';
 import { GradientAvatar } from '@outpacelabs/avatars';
 // Deep imports: Blode's barrel is the whole ~4000-icon library and is not on
 // Next's `optimizePackageImports` list, so the subpath export is what keeps the
@@ -714,15 +714,10 @@ export function ProcessMenu({
         is done by the box rather than by arithmetic on each glyph.
       */}
       <div
-        // Both ends sit on a rail axis. The trailing one gets a rail cell and
-        // so needs nothing from this row; the leading one cannot have a cell of
-        // its own, because the lockup glues the mark to its wordmark, so it
-        // carries the offset instead -- and that offset is -1px, not a positive
-        // inset: (rail - mark) / 2 where the mark is 36px and the rail 34, so
-        // it overhangs the content edge rather than clearing it.
-        className="flex flex-none items-center justify-between gap-2 pt-1 pr-0 pb-4 pl-0"
+        // Both ends use rail cells, so mark sizing never changes their axes.
+        className="shell-header-row shell:h-shell-header max-shell:pt-1 max-shell:pb-4 flex flex-none items-center justify-between gap-2 px-0"
       >
-        <BrandSquare markClassName="rail-mark -ml-px" />
+        <Brand markCellClassName={MENU_RAIL} />
         <div
           className="ease-out-emphasized flex flex-none items-center gap-0.75 transition-[translate,opacity] duration-(--duration-pane) data-[level=workspace]:pointer-events-none data-[level=workspace]:translate-x-4 data-[level=workspace]:opacity-0"
           data-level={level}
@@ -1426,7 +1421,7 @@ export function ProcessMenu({
           className={MENU_RULE}
           aria-hidden="true"
         />
-        <div className="group/account flex cursor-pointer items-center justify-between gap-2.5">
+        <div className="shell-profile-row group/account shell:h-shell-header flex cursor-pointer items-center justify-between gap-2.5">
           <span
             role="img"
             aria-label="Maya’s demo avatar"
@@ -1500,10 +1495,7 @@ export function ProcessMenu({
 */
 const NOTICE_BOX = cx(
   // The face: control-face's geometry, the notice's own stops, its sheen.
-  'control-face surface-notice shadow-control-highlight-medium-hairline bg-notice-face',
-  // The box: the rail column and the text column, tighter below the shell
-  // breakpoint. `max-shell:py-2.25` is the only responsive rule in the block.
-  'rounded-shell grid grid-cols-[auto_1fr] items-center gap-x-1.5 py-3 pr-3 pl-0 max-shell:py-2.25',
+  'control-face surface-notice rounded-shell grid grid-cols-[min-content_auto] items-center gap-x-3 p-3 max-shell:py-sidebar-grip-offset',
   // The type. `leading-normal` is the box's own; both text children re-assert
   // `text-micro` and so carry micro's tighter 14px line instead.
   'text-state-advisory text-micro leading-normal',
@@ -1519,10 +1511,12 @@ function SidebarNotice() {
       })}
       className={NOTICE_BOX}
     >
-      <span className={cx(MENU_RAIL, 'process-menu-notice-rail')}>
+      <span className="process-menu-notice-rail grid flex-none place-items-center">
         <MenuIcon name="info" />
       </span>
-      <p className="text-micro font-semibold">Demo application</p>
+      <p className="text-notice-title text-micro font-semibold">
+        Demo application
+      </p>
       <span
         {...styleDebug({
           component: 'SidebarNotice',

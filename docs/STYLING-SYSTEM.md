@@ -217,12 +217,20 @@ Dark primary text uses neutral-175, secondary text neutral-350, and stronger
 secondary text neutral-250. Header labels and supporting icons, menu links,
 run dates and neutral tally numbers follow the same softer hierarchy through
 rest, hover and selection. The quietest text stays at neutral-400. Coloured
-tally segments use black ink in dark mode: their state-1 ink fell below
-4.5:1 on the decision and unavailable solids. Light-mode text is unchanged.
+tally segments use state step 5 backgrounds and step 11 ink in dark mode when
+unselected. Selected runs use solid step 10 backgrounds with white ink across
+all statuses. Totals stay neutral. Light-mode text is unchanged.
 
 Floating surfaces use neutral-775 for clearer separation from primary panels.
 The quiet-button hover top uses neutral-675 to soften its lift and give muted
 labels more contrast margin; its bottom remains neutral-750.
+
+The accepted dark hierarchy uses a recessed analysis face with a visible edge,
+quieter resting header tabs, a lighter selected run, and muted historical
+status labels. Replay badges use neutral surfaces, and unselected ready segments
+are quieter than exceptions. These roles live in the shared tokens and utilities;
+there is no development comparison switch. The notice keeps its existing face
+and uses internal icon alignment in dark mode. Light-mode appearance is preserved.
 
 ### State colours
 
@@ -421,7 +429,7 @@ fades at the two ends of the list, and the padding inside the scroller that keep
 first and last rows clear of them.
 
 `--spacing-menu-rail` is the leading column every band starts with — the brand mark, a
-menu item's icon, the reorder handle, the notice icon, the avatar. Each sits in a cell of
+menu item's icon, the reorder handle, the avatar. Each sits in a cell of
 that width with `place-items-center`, so they share one vertical axis without any of them
 knowing its own size, and the axis is simply half the rail. Wide enough for the largest of
 them, so nothing shrinks to fit.
@@ -455,9 +463,11 @@ token rather than repeating the value, so there is still one definition.
 
 ### Checking the rail
 
-Switch the guides on from the design pane's **Debug → Icon axis**: three red axis lines,
+Switch the guides on from the design pane's **Debug → Icon axis**: four red axis lines,
 and a blue crosshair drawn from each marked box's own centre. If the two do not meet, the
-box is misaligned.
+box is misaligned. The inner-left guide mirrors the inner-right guide using the
+same spacing tokens. The demo notice is a self-contained card; its dark
+layout centres the icon in its own column and does not carry a rail marker.
 
 For numbers rather than eyes, start `pnpm dev` and run:
 

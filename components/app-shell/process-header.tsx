@@ -333,14 +333,11 @@ export function ProcessHeader({
     // the notch stays in the same layer as the edge it continues.
     <header
       {...styleDebug({ component: 'ProcessHeader' })}
-      className="border-rule-faint shadow-separator-bottom-strong relative z-10 grid grid-cols-[minmax(0,1fr)_auto] border-b"
+      className="process-header border-rule-faint shadow-separator-bottom-strong relative z-10 grid grid-cols-[minmax(0,1fr)_auto] border-b"
     >
-      {/* Centred in the row. The notch holds the same inset above its
-          controls as below them, so their centre is the row's too and the
-          heading lines up with them at any control height or gap, with even
-          space above and below. The controls' icons keep their own 1px
-          optical lift on top of this. */}
-      <div className="flex min-w-0 items-center justify-between gap-x-4 px-4 sm:px-6">
+      {/* Both cells recover the same top inset and bottom edge, so their
+          centres agree even when the pane's highlight thickness changes. */}
+      <div className="-mt-pane-inset -mb-control-edge flex min-w-0 items-center justify-between gap-x-4 px-4 sm:px-6">
         <ProcessTitle processId={process.id} fallback={process.name} />
         {/* The demo sits beside the menu rather than in it: it opens an
             overlay, not a tab, and the group is a set of tabs. */}

@@ -41,7 +41,7 @@ const TITLE = 'text-display [font-weight:550] [overflow-wrap:anywhere]';
 const VERDICT = 'text-primary mt-2 text-body leading-normal text-pretty';
 const RECEIPT_NOTE = 'text-muted mt-1 text-meta';
 const PILL_STATE =
-  'bg-commit-state text-state-caution rounded-full px-3 py-1.25 text-dense font-medium whitespace-nowrap';
+  'bg-commit-state text-state-caution data-[simulated=true]:bg-replay-state-face data-[simulated=true]:text-replay-state-ink rounded-full px-3 py-1.25 text-dense font-medium whitespace-nowrap';
 
 /*
   Filled rather than outlined: the tab carries its bucket's colour at a weight
@@ -153,9 +153,9 @@ function Buckets({
             {...styleDebug({
               component: 'ReleaseCard',
               part: 'bucket-bar',
-              appearance: 'bg-severity-bar',
+              appearance: 'release-bucket-bar',
             })}
-            className="bg-severity-bar h-1.5 min-w-2 rounded-full transition-[flex-grow,height] duration-(--duration-row) ease-out data-[active]:h-2.5"
+            className="release-bucket-bar h-1.5 min-w-2 rounded-full transition-[flex-grow,height] duration-(--duration-row) ease-out data-[active]:h-2.5"
             data-severity={severityRank(segment.disposition)}
             data-active={segment.disposition === selected || undefined}
             // Grown from the same count that sizes it, so the selected segment

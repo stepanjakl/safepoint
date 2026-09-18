@@ -12,6 +12,20 @@
 :root,
 [data-theme],
 [data-neutral] {
+  --sp-analysis-face: light-dark(var(--sp-surface-floating), var(--sp-neutral-875));
+  --sp-analysis-edge-top: light-dark(var(--sp-rule-faint), var(--sp-neutral-725));
+  --sp-analysis-edge-bottom: light-dark(var(--sp-rule-faint), var(--sp-neutral-775));
+  --sp-analysis-highlight: light-dark(
+    var(--sp-face-highlight-solid),
+    var(--sp-face-highlight-medium)
+  );
+  --sp-analysis-rule: light-dark(var(--sp-rule-faint), var(--sp-neutral-775));
+  --sp-sheet-current: light-dark(var(--sp-menu-wash-faint), var(--sp-neutral-750));
+  --sp-sheet-completed-label: light-dark(var(--sp-state-verified), var(--sp-text-muted));
+  --sp-notice-title: light-dark(var(--sp-state-advisory), var(--sp-text-muted));
+  --sp-replay-state-face: light-dark(var(--sp-commit-state), var(--sp-neutral-800));
+  --sp-replay-state-ink: light-dark(var(--sp-state-caution), var(--sp-neutral-250));
+
   /* ── Accent: the primary action ──────────────────────────────────────── */
   /* Dark faces stay at least three quarters toward shade 700 from 600 so
      white labels clear 4.5:1 at both gradient endpoints. */
@@ -116,7 +130,7 @@
      lifts, because a control set under a dark ground reads as a hole. Dark held
      one flat step (neutral-900 on all four stops), so it had neither a ramp nor
      any hover response at all. */
-  --sp-header-button-face-top: light-dark(var(--sp-neutral-150), var(--sp-neutral-700));
+  --sp-header-button-face-top: light-dark(var(--sp-neutral-150), var(--sp-neutral-750));
   --sp-header-button-face-bottom: light-dark(var(--sp-neutral-250), var(--sp-neutral-800));
   --sp-header-button-face-top-hover: light-dark(var(--sp-neutral-200), var(--sp-neutral-650));
   --sp-header-button-face-bottom-hover: light-dark(var(--sp-neutral-350), var(--sp-neutral-750));
@@ -144,15 +158,13 @@
 
   /* A button with something to report tints its own face rather than drawing
      an edge, so it gains colour without gaining an outline the rest lack. */
-  --sp-header-button-face-top-caution: color-mix(
-    in oklab,
-    var(--sp-state-caution) 10%,
-    var(--sp-header-button-face-top)
+  --sp-header-button-face-top-caution: light-dark(
+    color-mix(in oklab, var(--sp-state-caution) 10%, var(--sp-header-button-face-top)),
+    color-mix(in oklab, var(--sp-state-caution) 4%, var(--sp-header-button-face-top))
   );
-  --sp-header-button-face-bottom-caution: color-mix(
-    in oklab,
-    var(--sp-state-caution) 16%,
-    var(--sp-header-button-face-bottom)
+  --sp-header-button-face-bottom-caution: light-dark(
+    color-mix(in oklab, var(--sp-state-caution) 16%, var(--sp-header-button-face-bottom)),
+    color-mix(in oklab, var(--sp-state-caution) 6%, var(--sp-header-button-face-bottom))
   );
   --sp-header-button-face-top-caution-hover: color-mix(
     in oklab,
@@ -164,15 +176,13 @@
     var(--sp-state-caution) 22%,
     var(--sp-header-button-face-bottom-hover)
   );
-  --sp-header-button-face-top-blocked: color-mix(
-    in oklab,
-    var(--sp-state-blocked) 10%,
-    var(--sp-header-button-face-top)
+  --sp-header-button-face-top-blocked: light-dark(
+    color-mix(in oklab, var(--sp-state-blocked) 10%, var(--sp-header-button-face-top)),
+    color-mix(in oklab, var(--sp-state-blocked) 4%, var(--sp-header-button-face-top))
   );
-  --sp-header-button-face-bottom-blocked: color-mix(
-    in oklab,
-    var(--sp-state-blocked) 16%,
-    var(--sp-header-button-face-bottom)
+  --sp-header-button-face-bottom-blocked: light-dark(
+    color-mix(in oklab, var(--sp-state-blocked) 16%, var(--sp-header-button-face-bottom)),
+    color-mix(in oklab, var(--sp-state-blocked) 6%, var(--sp-header-button-face-bottom))
   );
   --sp-header-button-face-top-blocked-hover: color-mix(
     in oklab,
@@ -221,7 +231,7 @@
   --sp-menu-wash: light-dark(var(--sp-neutral-300), var(--sp-neutral-850));
   --sp-menu-wash-strong: light-dark(var(--sp-neutral-300), var(--sp-neutral-750));
   --sp-menu-chip: light-dark(var(--sp-neutral-300), var(--sp-neutral-850));
-  --sp-menu-link: light-dark(var(--sp-neutral-700), var(--sp-neutral-350));
+  --sp-menu-link: light-dark(var(--sp-neutral-700), var(--sp-neutral-250));
 
   /* The Save-order button: the one teal control, with stops of its own so the
      arrange mode can be tuned without moving every accented button. */
@@ -267,7 +277,7 @@
      brighter than the content it labels. */
   --sp-sheet-date: light-dark(var(--sp-neutral-700), var(--sp-neutral-250));
   --sp-sheet-date-hover: light-dark(var(--sp-neutral-800), var(--sp-neutral-200));
-  --sp-sheet-date-current: light-dark(var(--sp-neutral-900), var(--sp-neutral-150));
+  --sp-sheet-date-current: light-dark(var(--sp-neutral-900), var(--sp-neutral-100));
   --sp-sheet-time: light-dark(var(--sp-neutral-600), var(--sp-neutral-400));
   --sp-sheet-time-hover: light-dark(var(--sp-neutral-700), var(--sp-neutral-350));
   --sp-sheet-time-current: light-dark(var(--sp-neutral-800), var(--sp-neutral-250));
@@ -305,8 +315,12 @@
   --sp-title-field-edge-active: light-dark(var(--sp-neutral-500), var(--sp-neutral-400));
 
   /* Advisory notice: face, and separate stops for its graduated edge. */
-  --sp-notice-face: light-dark(var(--sp-neutral-150), var(--color-blue-950));
-  --sp-notice-edge-top: light-dark(var(--sp-neutral-300), var(--color-blue-800));
-  --sp-notice-edge-bottom: light-dark(var(--sp-neutral-300), var(--color-blue-900));
-  --sp-notice-caption: light-dark(var(--sp-neutral-600), var(--color-blue-200));
+  --sp-notice-face: light-dark(var(--sp-neutral-150), var(--sp-neutral-875));
+  --sp-notice-edge-top: light-dark(var(--sp-neutral-300), var(--sp-neutral-800));
+  --sp-notice-edge-bottom: light-dark(var(--sp-neutral-300), var(--sp-neutral-800));
+  --sp-notice-highlight: light-dark(
+    var(--sp-face-highlight-medium),
+    var(--sp-face-highlight-subtle)
+  );
+  --sp-notice-caption: light-dark(var(--sp-neutral-600), var(--sp-text-muted));
 }
