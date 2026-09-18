@@ -144,15 +144,12 @@ export function setMotionSpeed(next: MotionSpeed) {
 }
 
 /*
-  Neutral palettes. Every neutral role in tokens.css reads a step from a ramp
-  rather than from zinc directly, and these two attributes rebind the ramps:
-  data-neutral for surfaces, rules, text and menus, and data-control-neutral
-  for the faces that answer a press -- buttons, fields, keycaps and the badges
-  built on the keycap. 'match' means no attribute, leaving the controls on
-  whatever the surfaces use.
+  Neutral palettes. Every neutral role in tokens/ reads a step from the
+  --sp-neutral-* ramp rather than from zinc directly, and data-neutral rebinds
+  that ramp for its own subtree -- surfaces, rules, text, menus and the faces
+  that answer a press alike.
 */
 export const NEUTRAL_STORAGE_KEY = 'safepoint.dev.neutral';
-export const CONTROL_NEUTRAL_STORAGE_KEY = 'safepoint.dev.control-neutral';
 export const NEUTRAL_PALETTES = [
   'slate',
   'gray',
@@ -166,8 +163,6 @@ export const NEUTRAL_PALETTES = [
 ] as const;
 export type NeutralPalette = (typeof NEUTRAL_PALETTES)[number];
 export const DEFAULT_NEUTRAL: NeutralPalette = 'zinc';
-export const CONTROL_NEUTRAL_CHOICES = ['match', ...NEUTRAL_PALETTES] as const;
-export type ControlNeutralChoice = (typeof CONTROL_NEUTRAL_CHOICES)[number];
 
 export function readNeutral(): NeutralPalette {
   const value = document.documentElement.dataset.neutral;
@@ -179,21 +174,6 @@ export function readNeutral(): NeutralPalette {
 export function setNeutral(next: NeutralPalette) {
   document.documentElement.dataset.neutral = next;
   persist(NEUTRAL_STORAGE_KEY, next);
-  emit();
-}
-
-export function readControlNeutral(): ControlNeutralChoice {
-  const value = document.documentElement.dataset.controlNeutral;
-  return NEUTRAL_PALETTES.find((palette) => palette === value) ?? 'match';
-}
-
-export function setControlNeutral(next: ControlNeutralChoice) {
-  if (next === 'match') {
-    delete document.documentElement.dataset.controlNeutral;
-  } else {
-    document.documentElement.dataset.controlNeutral = next;
-  }
-  persist(CONTROL_NEUTRAL_STORAGE_KEY, next);
   emit();
 }
 
@@ -226,7 +206,7 @@ export function setTilePalette(next: TilePalette) {
 
 /*
   The semantic state colours. Radix is what the app runs on -- see the
-  [data-state-palette='radix'] block in tokens.css for the mapping and why --
+  [data-state-palette='radix'] block in tokens/state.css for the mapping and why --
   and 'tailwind' drops back to the ramps written into the tokens themselves,
   so the two can be judged against each other.
 
@@ -255,7 +235,7 @@ export function setStatePalette(next: StatePalette) {
 }
 
 /*
-  One multiplier for all six of the tiles' saturation ceilings in tokens.css.
+  One multiplier for all six of the tiles' saturation ceilings in tokens/geometry.css.
   1 is the ceilings as written, and means no attribute: the default moves with
   the tokens. Anything else is an inline --tile-chroma-scale on <html>, which
   outranks :root. TILE_CHROMA_SCALE_MAX puts the highest ceiling above any
@@ -290,7 +270,7 @@ export function setTileChromaScale(next: number) {
 /*
   How far a slanted corner's radius follows its angle, for tuning by eye. 0.5
   is the token as written and means no inline value, so the default moves with
-  tokens.css; anything else is an inline --slant-corner-balance on <html>.
+  tokens/geometry.css; anything else is an inline --slant-corner-balance on <html>.
 */
 export const CORNER_BALANCE_STORAGE_KEY = 'safepoint.dev.corner-balance';
 export const DEFAULT_CORNER_BALANCE = 0.5;

@@ -1,5 +1,6 @@
 'use client';
 
+import { styleDebug } from '@/lib/style-debug';
 import { Tooltip } from '@/components/ui/tooltip';
 import {
   needsAttention,
@@ -16,6 +17,11 @@ function Disc({ link }: { link: SystemLink }) {
   return (
     <Tooltip label={link.label} description={meta}>
       <span
+        {...styleDebug({
+          component: 'SystemCluster',
+          part: 'disc',
+          appearance: 'system-disc',
+        })}
         className="system-disc"
         data-freshness={link.freshness?.state}
         tabIndex={0}
@@ -46,7 +52,10 @@ export function SystemCluster({
     // The gap between two clusters is wider than the gap inside one, so an
     // attention count reads as belonging to the cluster it follows rather than
     // the one it precedes.
-    <div className="flex items-center gap-2 not-first:ml-2.5">
+    <div
+      {...styleDebug({ component: 'SystemCluster' })}
+      className="flex items-center gap-2 not-first:ml-2.5"
+    >
       <span className="readout text-muted max-sm:hidden">{label}</span>
       {/* Overlapped discs, isolated so the hover lift stays a local stack. */}
       <ul className="isolate flex">

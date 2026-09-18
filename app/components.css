@@ -1,28 +1,15 @@
-/*
-  What styling is left in CSS after the components moved to utilities, and why
-  each piece is still here:
+/* ═══ components.css ════════════════════════════════════════════════════════
+   What markup cannot express. Everything else is a utility in the component.
+   docs/STYLING-SYSTEM.md → What earns a place in components.css is the test;
+   if a rule is not on that list, it belongs in markup.
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-  - token derivations a utility cannot compute, like the severity scale
-  - pseudo elements, which have no markup to hang a class on: ::backdrop, the
-    disclosure marker, the thread connector, the drawer scrim, the rail line
-  - keyframe animations and their reduced-motion answers
-  - shadow compositions a state has to extend rather than restate, on the
-    system disc and the menu row
-  - a two-speed transition on the reorder row
-  - a component's connected state and geometry, when splitting them across
-    markup would let the pieces drift
-
-  Everything else about these components lives in their own file.
-*/
-
-/*
-  The severity scale, and the review surfaces that read it.
-
-  A weight is a step of whichever tone `[data-severity]` names for the
-  element's own rank, so the value cannot be resolved anywhere but here. The
-  @theme block below republishes each weight as a colour, which is what lets
-  markup say `bg-severity-fill` and still get the row's own severity.
-*/
+/* ── Severity ───────────────────────────────────────────────────────────────
+   A weight is a step of whichever tone [data-severity] names for the element's
+   own rank, so no build-time utility can resolve it. The @theme block below
+   republishes each weight as a colour, so markup can still say
+   `bg-severity-fill` and get the row's own severity.
+   ────────────────────────────────────────────────────────────────────────── */
 @theme inline {
   /* The names markup already says, each pinned to a rung. A pill rests on 3
      and lifts to 4; the bar behind it is the solid 9; text on a neutral ground
@@ -32,22 +19,15 @@
   --color-severity-fill-strong: var(--severity-4);
   --color-severity-bar: var(--severity-9);
   --color-severity-annotation: var(--severity-12);
-  /* The same rung, for the opposite reason: text that has to hold its own on
-     a ground a step darker than the one it rests on. A selected tab's ground
-     moves to rung 4 and its text has to move with it -- rung 11 measures
-     4.07:1 there on blocked and 4.24 on ready, both under the 4.5 that 13px
-     text is held to, where rung 12 clears 7.8 across every tone. */
+  /* Text on rung 4, a step darker than rung 3: rung 11 reads 4.07-4.24:1
+     there, under AA at 13px, where rung 12 clears 7.8 across every tone. */
   --color-severity-strong: var(--severity-12);
   --shadow-severity-ring: inset 0 0 0 1px var(--severity);
 }
 
 @layer components {
-  /*
-    The track owns the switch's four dimensions; the thumb derives both
-    resting insets and its selected travel from them. `control-face` keeps the
-    track's paint and its state transitions, while this rule keeps the related
-    switch states together.
-  */
+  /* The track owns the four dimensions; the thumb derives its resting insets
+     and selected travel from them. */
   .switch {
     --switch-track-inline: var(--spacing-switch-md-track-inline);
     --switch-track-block: var(--spacing-switch-md-track-block);
@@ -86,12 +66,8 @@
 
   .switch-thumb {
     position: absolute;
-    inset-block-start: calc(
-      var(--spacing-switch-thumb-gap) - var(--spacing-control-edge)
-    );
-    inset-inline-start: calc(
-      var(--spacing-switch-thumb-gap) - var(--spacing-control-edge)
-    );
+    inset-block-start: calc(var(--spacing-switch-thumb-gap) - var(--spacing-control-edge));
+    inset-inline-start: calc(var(--spacing-switch-thumb-gap) - var(--spacing-control-edge));
     inline-size: var(--switch-thumb);
     block-size: var(--switch-thumb);
     border-radius: 9999px;
@@ -115,16 +91,14 @@
     --control-highlight: transparent;
   }
 
-  .switch[data-focus-visible]:not([data-selected]):not([data-disabled])
-    .switch-track {
+  .switch[data-focus-visible]:not([data-selected]):not([data-disabled]) .switch-track {
     --control-face-top: var(--sp-quiet-face-top-hover);
     --control-face-bottom: var(--sp-quiet-face-bottom-hover);
     --control-ring-top: var(--sp-quiet-ring-top-hover);
     --control-ring-bottom: var(--sp-quiet-ring-bottom-hover);
   }
 
-  .switch[data-focus-visible][data-selected]:not([data-disabled])
-    .switch-track {
+  .switch[data-focus-visible][data-selected]:not([data-disabled]) .switch-track {
     --control-face-top: var(--sp-accent-face-top-hover);
     --control-face-bottom: var(--sp-accent-face-bottom-hover);
     --control-ring-top: var(--sp-accent-ring-top-hover);
@@ -135,19 +109,13 @@
   .switch[data-selected] .switch-thumb {
     background-color: var(--sp-switch-thumb-selected);
     transform: translateX(
-      calc(
-        var(--switch-track-inline) - var(--switch-thumb) - 2 *
-          var(--spacing-switch-thumb-gap)
-      )
+      calc(var(--switch-track-inline) - var(--switch-thumb) - 2 * var(--spacing-switch-thumb-gap))
     );
   }
 
   :dir(rtl) .switch[data-selected] .switch-thumb {
     transform: translateX(
-      calc(
-        var(--switch-thumb) + 2 * var(--spacing-switch-thumb-gap) -
-          var(--switch-track-inline)
-      )
+      calc(var(--switch-thumb) + 2 * var(--spacing-switch-thumb-gap) - var(--switch-track-inline))
     );
   }
 
@@ -161,15 +129,9 @@
 }
 
 @layer components {
-  /*
-    Colour binds to position on the severity scale, never to a label, so a
-    fifth bucket is one block here and nothing anywhere else.
-
-    A bucket names a tone and republishes that tone's rungs under a neutral
-    name, so a rule or a utility can ask for `severity-5` without knowing which
-    bucket it is in. Two things to change, one place each: which tone a bucket
-    is, below; what a rung looks like, in `--sp-state-*` in tokens.css.
-  */
+  /* A bucket names a tone and republishes its rungs under a neutral name, so
+     a rule can ask for `severity-5` without knowing which bucket it is in.
+     Which tone a bucket is, here; what a rung looks like, in tokens/state.css. */
   /* blocked */
   [data-severity='0'] {
     --severity: var(--severity-11);
@@ -227,19 +189,14 @@
     --severity-12: var(--sp-state-verified-12);
   }
 
-  /*
-    The review dialog's scrim. `::backdrop` has no element of its own, so it
-    cannot be reached from markup; `review-dialog` is the hook and nothing else.
-  */
+  /* `::backdrop` has no element of its own, so it cannot be reached from
+     markup; `review-dialog` is the hook and nothing else. */
   .review-dialog::backdrop {
     background: color-mix(in oklab, var(--sp-text-primary) 26%, transparent);
     backdrop-filter: blur(3px);
   }
 
-  /*
-    The +/- in a disclosure's gutter. A generated marker, and the native one it
-    replaces, so both ends of it are pseudo elements.
-  */
+  /* A generated marker and the native one it replaces: both pseudo elements. */
   .disclosure > summary {
     list-style: none;
   }
@@ -265,9 +222,11 @@
   }
 }
 
-/* Run thread: the steps of the run as a timeline. The rail is one column of
-   markers on a line; every box in the thread hangs off a named step, so the
-   order of work is readable without opening anything. */
+/* ── Run thread ──────────────────────────────────────────────────────────────
+   The steps of a run as a timeline. The rail is one column of markers on a
+   line, and every box hangs off a named step, so the order of work is
+   readable without opening anything.
+   ────────────────────────────────────────────────────────────────────── */
 @layer components {
   .thread {
     /* Shared by the row gap and by the connector, so the line always reaches
@@ -338,10 +297,8 @@
     grid-row: 2;
     min-width: 0;
   }
-  /* Below the rail width the timeline costs more than it explains: the marker
-     moves up beside the name and the boxes take the full width. In rem to
-     match Tailwind's own breakpoints -- this is the `sm` threshold, and a px
-     copy of it would drift from the utilities at a non-default font size. */
+  /* Below the rail width the timeline costs more than it explains. rem, not
+     px: a px copy of `sm` drifts from the utilities at a non-default root. */
   @media (width < 40rem) {
     .thread-step {
       grid-template-columns: minmax(0, 1fr);
@@ -365,10 +322,11 @@
   }
 }
 
-/* System discs: the enclosure a control wears, at 1.75rem. The outer ring is
-   separate work -- it punches a gap between overlapping discs and carries
-   source state -- so it is held in a variable the state rules extend rather
-   than restated with the sheen each time. */
+/* ── System disc ────────────────────────────────────────────────────────────
+   The outer ring punches a gap between overlapping discs and carries source
+   state, so it is held in --disc-ring for the state rules to extend rather
+   than restated with the sheen each time.
+   ────────────────────────────────────────────────────────────────────────── */
 @layer components {
   .system-disc {
     @apply control-face control-hairline surface-floating;
@@ -400,31 +358,23 @@
     color: var(--sp-text-primary);
   }
   .system-disc[data-freshness='stale'] {
-    --disc-ring:
-      0 0 0 2px var(--sp-surface-primary), 0 0 0 3px var(--sp-state-caution);
+    --disc-ring: 0 0 0 2px var(--sp-surface-primary), 0 0 0 3px var(--sp-state-caution);
     color: var(--sp-state-caution);
   }
   .system-disc[data-freshness='unavailable'] {
-    --disc-ring:
-      0 0 0 2px var(--sp-surface-primary), 0 0 0 3px var(--sp-state-blocked);
+    --disc-ring: 0 0 0 2px var(--sp-surface-primary), 0 0 0 3px var(--sp-state-blocked);
     color: var(--sp-state-blocked);
   }
 }
 
-/*
-  Process setup drawer. Only the two things markup cannot hold are left here:
-  the scrim, which is a pseudo element, and the slide, which is a keyframe
-  animation with its own reduced-motion answer. The panel's own box is in
-  components/app-shell/process-drawer.tsx.
-*/
+/* ── Drawer ─────────────────────────────────────────────────────────────────
+   Only what markup cannot hold: the scrim (a pseudo element) and the slide (a
+   keyframe animation). The panel's box is in process-drawer.tsx.
+   ────────────────────────────────────────────────────────────────────────── */
 @layer components {
-  /*
-    The scrim is its own layer rather than the overlay's own background. Fading
-    the overlay would fade the panel with it -- the panel is its child -- so the
-    panel arrived washed out instead of sliding in solid. It also stops opacity
-    animating on a backdrop-filtered box, which is what makes the blur pop as
-    the compositor promotes the layer.
-  */
+  /* Its own layer, not the overlay's background: fading the overlay would
+     fade the panel with it, and it keeps opacity off a backdrop-filtered box,
+     which is what makes the blur pop as the compositor promotes it. */
   .drawer-overlay::before {
     content: '';
     position: absolute;
@@ -452,8 +402,7 @@
      and curve. The exits here and on the scrim stay shorter and ease in: a
      dismissal should be out of the way before it is watched. */
   .drawer-modal[data-entering] {
-    animation: drawer-in var(--duration-pane) --theme(--ease-out-emphasized)
-      both;
+    animation: drawer-in var(--duration-pane) --theme(--ease-out-emphasized) both;
   }
   .drawer-modal[data-exiting] {
     animation: drawer-in 180ms ease-in reverse both;
@@ -463,28 +412,16 @@
       transform: translateX(100%);
     }
   }
-  /*
-    The side panel beside the drawer (components/app-shell/drawer-aside.tsx).
-    It animates on mount and on data-exiting rather than on react-aria's
-    states, because it is a part of the drawer's dialog, not a dialog of its
-    own; the component unmounts what has finished leaving.
+  /* The drawer's side panel (drawer-aside.tsx). Animates on mount and on
+     data-exiting rather than react-aria's states: it is part of the drawer's
+     dialog, not a dialog of its own.
 
-    The panel travels in from the left, the side it opens towards, and leaves
-    the same way -- in on the pane's step and curve, out shorter and easing in
-    like the drawer's own exit. The content it opens with fades in once the
-    panel is in place, so the panel reads as arriving and then filling.
-
-    Choosing another item keeps the panel still. The old content leaves,
-    quick and easing in; the new content arrives on the pane's curve. The two
-    share one grid cell while they cross, and travel the way the list does:
-    rising for an item further down, falling for one further up. The travel
-    is one signed distance, so a direction swapped mid-flight never restarts
-    an animation.
-  */
+     Swapping items keeps the panel still -- the two contents share one grid
+     cell while they cross, travelling the way the list does. The travel is one
+     signed distance, so a direction swapped mid-flight never restarts. */
   .drawer-aside {
     --aside-swap-travel: 1rem;
-    animation: drawer-aside-in var(--duration-pane)
-      --theme(--ease-out-emphasized) both;
+    animation: drawer-aside-in var(--duration-pane) --theme(--ease-out-emphasized) both;
   }
   .drawer-aside[data-direction='up'] {
     --aside-swap-travel: -1rem;
@@ -508,8 +445,7 @@
   /* The content it opens with fades in once the panel is in place: delayed by
      the panel's own travel, so the two read as arriving and then filling. */
   .drawer-aside-content[data-enter='open'] {
-    animation: drawer-aside-content-in var(--duration-state) ease-out
-      var(--duration-pane) both;
+    animation: drawer-aside-content-in var(--duration-state) ease-out var(--duration-pane) both;
   }
   @keyframes drawer-aside-content-in {
     from {
@@ -519,8 +455,8 @@
   /* A short delay, so the old content is mostly gone before the new one is
      legible: two texts both readable at once in one place read as a glitch. */
   .drawer-aside-content[data-enter='swap'] {
-    animation: drawer-aside-content-rise var(--duration-pane)
-      --theme(--ease-out-emphasized) 60ms both;
+    animation: drawer-aside-content-rise var(--duration-pane) --theme(--ease-out-emphasized) 60ms
+      both;
   }
   @keyframes drawer-aside-content-rise {
     from {
@@ -556,28 +492,24 @@
   }
 }
 
-/*
-  Notch and slant. A notch is the bite a pane's corner takes so controls can
-  sit on the canvas beside its header; a slant is a control whose edges lean
-  to sit parallel to that bite.
+/* ── Notch and slant ────────────────────────────────────────────────────────
+   A notch is the bite a pane's corner takes so controls can sit on the canvas
+   beside its header; a slant is a control whose edges lean to match it.
 
-  Both are drawn with `clip-path: shape()` rather than a skewed box. A skew
-  thins every slanted border to cos(angle) of its width and shears the corners
-  into ellipses, so the edge and the sheen would swell and pinch around each
-  bend. Here each band is its own layer, clipped between two copies of one
-  outline offset square to every edge, so a hairline is a hairline all the way
-  round -- down a slope, around an acute corner and an obtuse one.
+   Both are `clip-path: shape()`, never a skewed box: a skew thins a slanted
+   border to cos(angle) and shears corners into ellipses. Each band is its own
+   layer, clipped between two copies of one outline offset square to every
+   edge, so a hairline stays a hairline through every bend.
 
-  One outline is written once, as custom properties that read an offset. A
-  wrapper sets the offset and computes the outline at it; the painted layers
-  below read the outlines their wrappers computed, which is how one layer gets
-  two offsets to clip between. Custom properties substitute where they are
-  declared, so the copy has to be taken on the wrapper, not on the layer.
+   The outline is written once as custom properties that read an offset. A
+   wrapper sets the offset and computes the outline; the layers below read what
+   their wrapper computed. Custom properties substitute where declared, so the
+   copy must be taken on the wrapper, not the layer.
 
-  Geometry reads the size of the box through container units, so nothing here
-  knows how tall anything is, and every angle, bend and gap is a token in
-  tokens.css that any element can override.
-*/
+   Geometry reads the box through container units, so nothing knows how tall
+   anything is. Every angle, bend and gap is a token in tokens/geometry.css.
+   See docs/STYLING-SYSTEM.md → The notch and slanted controls.
+   ────────────────────────────────────────────────────────────────────────── */
 @layer components {
   .notch {
     --notch-face-color: var(--notch-face, var(--sp-notch-face));
@@ -595,39 +527,24 @@
     /* Gaps measured square to the slope, so the along-the-floor distance is
        divided by the lean's cosine. */
     gap: calc(var(--slant-gap) / cos(var(--notch-angle)));
-    /*
-      One gap on every side, measured from the inner face of the line it is
-      held off. The floor's edge is drawn inside the box's last edge-width,
-      and the pane's top edge and side inside its first -- the notch is
-      pulled back over them (-mt-control-edge -mr-control-edge) -- so each of
-      those sides takes that width on top of the gap. Without it the controls
-      would sit one edge closer to those lines than to the slope.
-
-      The start side leans. The inset is the same above and below, so the
-      controls' mid-height -- where a slant's edge crosses its box -- is the
-      notch's own, where the slope crosses its box. Two parallel lines that
-      cross one height d apart are d times cos(angle) apart square to each
-      other, so the gap along the floor is the gap over that cosine.
-    */
+    /* One gap on every side, from the inner face of the line it is held off.
+       The floor, top edge and side each draw inside an edge-width, so those
+       sides take that width on top of the gap.
+       The start side leans: two parallel lines crossing d apart in height are
+       d*cos(angle) apart square to each other, so the gap along the floor is
+       the gap over that cosine. */
     --notch-inset: calc(var(--notch-gap) + var(--notch-edge-width));
     padding-block: var(--notch-inset);
-    padding-inline: calc(var(--notch-gap) / cos(var(--notch-angle)))
-      var(--notch-inset);
+    padding-inline: calc(var(--notch-gap) / cos(var(--notch-angle))) var(--notch-inset);
   }
 
-  /*
-    The outline, in the notch's own box: W wide, H tall, the pane's top edge
-    at 0 and the header rule's top at H - e. The slope crosses the notch's
-    start edge at mid-height -- the same point a slant control's edge crosses
-    its own box -- which keeps the gap between them even at any height.
-
-    --n-k is the offset toward the pane. Offsetting a slope moves it by k/cos
-    along the floor; the top bend is convex for the pane, so its radius
-    shrinks by k, and the foot bend is convex for the canvas, so it grows. All
-    three copies share their centres, which is what keeps a band's width
-    constant through a bend. c/(1+s) is 1/tan(45deg + angle/2), the tangent
-    length of a bend of radius 1 at this lean.
-  */
+  /* The outline in the notch's box: W wide, H tall, pane's top edge at 0 and
+     the header rule's top at H - e. The slope crosses the start edge at
+     mid-height, the same point a slant's edge crosses its own box.
+     --n-k is the offset toward the pane: a slope moves by k/cos along the
+     floor, the top bend's radius shrinks by k and the foot's grows. All three
+     copies share centres, which holds a band's width through a bend.
+     c/(1+s) is 1/tan(45deg + angle/2), the tangent length at this lean. */
   .notch-shape {
     container-type: size;
     --n-t: tan(var(--notch-angle));
@@ -637,25 +554,18 @@
     --n-h: 100cqh;
     --n-w: 100cqw;
     --n-e: var(--notch-edge-width);
-    /* The top bend is obtuse -- 90deg + angle, on the pane's side -- so it
-       scales the way a slant's obtuse corners do (see .slant-shape), by its
-       own balance: at 1 its arc runs as far along the edges as the pane's
-       square corners do. */
-    --n-rt: calc(
-      var(--notch-bend-top) / pow(var(--n-m), var(--notch-bend-balance, 0))
-    );
-    /* The foot wraps the first control's bottom-left corner, the same obtuse
-       angle on the canvas's side, at --notch-gap from it on both edges. A
-       corner nested in another keeps an even gap only when the two share a
-       centre, which makes the outer radius the inner one plus the gap. The
-       inner one is the slant's own obtuse radius (see .slant-shape), read
-       from the same tokens, so the foot follows the control's radius, its
-       balance and the layout's gap. --notch-bend-bottom overrides it. */
+    /* Obtuse (90deg + angle, pane's side), so it scales like a slant's obtuse
+       corners -- see .slant-shape -- by its own balance. */
+    --n-rt: calc(var(--notch-bend-top) / pow(var(--n-m), var(--notch-bend-balance, 0)));
+    /* The foot wraps the first control's bottom-left corner at --notch-gap.
+       Nested corners keep an even gap only when they share a centre, so the
+       outer radius is the inner plus the gap; the inner is the slant's own
+       obtuse radius. --notch-bend-bottom overrides it. */
     --n-rb: var(
       --notch-bend-bottom,
       calc(
-        var(--slant-radius, var(--radius-shell)) /
-          pow(var(--n-m), var(--slant-corner-balance, 0)) + var(--notch-gap)
+        var(--slant-radius, var(--radius-shell)) / pow(var(--n-m), var(--slant-corner-balance, 0)) +
+          var(--notch-gap)
       )
     );
     /* How far the painted layers reach back over the header cell. */
@@ -670,13 +580,8 @@
   }
   .notch-shape,
   .notch-at {
-    --n-v1: calc(
-      (var(--n-k) - var(--n-h) / 2) * var(--n-t) - var(--n-k) / var(--n-c)
-    );
-    --n-v2: calc(
-      (var(--n-h) / 2 - var(--n-e) + var(--n-k)) * var(--n-t) - var(--n-k) /
-        var(--n-c)
-    );
+    --n-v1: calc((var(--n-k) - var(--n-h) / 2) * var(--n-t) - var(--n-k) / var(--n-c));
+    --n-v2: calc((var(--n-h) / 2 - var(--n-e) + var(--n-k)) * var(--n-t) - var(--n-k) / var(--n-c));
     --n-dt: calc((var(--n-rt) - var(--n-k)) * var(--n-m));
     --n-db: calc((var(--n-rb) + var(--n-k)) * var(--n-m));
     --n-fy: calc(var(--n-h) - var(--n-e) + var(--n-k));
@@ -685,8 +590,7 @@
     --n-start: calc(var(--n-x) + var(--n-v1) - var(--n-dt)) var(--n-k);
     --n-down:
       arc to calc(var(--n-x) + var(--n-v1) + var(--n-dt) * var(--n-s))
-        calc(var(--n-k) + var(--n-dt) * var(--n-c)) of
-        calc(var(--n-rt) - var(--n-k)) cw,
+        calc(var(--n-k) + var(--n-dt) * var(--n-c)) of calc(var(--n-rt) - var(--n-k)) cw,
       line to calc(var(--n-x) + var(--n-v2) - var(--n-db) * var(--n-s))
         calc(var(--n-fy) - var(--n-db) * var(--n-c)),
       arc to calc(var(--n-x) + var(--n-v2) + var(--n-db)) var(--n-fy) of
@@ -697,8 +601,7 @@
       line to var(--n-end) var(--n-fy),
       line to calc(var(--n-x) + var(--n-v2) + var(--n-db)) var(--n-fy),
       arc to calc(var(--n-x) + var(--n-v2) - var(--n-db) * var(--n-s))
-        calc(var(--n-fy) - var(--n-db) * var(--n-c)) of
-        calc(var(--n-rb) + var(--n-k)) cw,
+        calc(var(--n-fy) - var(--n-db) * var(--n-c)) of calc(var(--n-rb) + var(--n-k)) cw,
       line to calc(var(--n-x) + var(--n-v1) + var(--n-dt) * var(--n-s))
         calc(var(--n-k) + var(--n-dt) * var(--n-c)),
       arc to calc(var(--n-x) + var(--n-v1) - var(--n-dt)) var(--n-k) of
@@ -741,35 +644,18 @@
       close
     );
   }
-  /*
-    The edge, between offsets 0 and e, in the pane's ring colour. The header's
-    own rule runs underneath the whole width; this is opaque, so along the
-    floor it simply takes the rule over, and under the slope the rule is left
-    to show on its own as far as the foot.
-  */
+  /* Between offsets 0 and e, in the pane's ring colour. Opaque, so along the
+     floor it takes the header's rule over; under the slope the rule shows. */
   .notch-edge {
     background: var(--notch-edge-color);
-    clip-path: shape(
-      from var(--n-start-0),
-      var(--n-down-0),
-      var(--n-up),
-      close
-    );
+    clip-path: shape(from var(--n-start-0), var(--n-down-0), var(--n-up), close);
   }
-  /*
-    The sheen, between offsets e and 2e. Along the floor that band is exactly
-    the row the header's own sheen already lies in, so this layer's box stops
-    at the rule: below it the white would be laid twice. What reaches the rule
-    round the foot is covered by the edge, painted after.
-  */
+  /* Between offsets e and 2e. Along the floor that band is the row the
+     header's sheen already lies in, so the box stops at the rule -- below it
+     the white would be laid twice. */
   .notch-sheen,
   .notch-under {
-    clip-path: shape(
-      from var(--n-start-1),
-      var(--n-down-1),
-      var(--n-up),
-      close
-    );
+    clip-path: shape(from var(--n-start-1), var(--n-down-1), var(--n-up), close);
   }
   .notch-sheen {
     bottom: 0;
@@ -784,20 +670,12 @@
     background: var(--notch-pane-color);
   }
 
-  /*
-    Where the floor turns down the pane's side: a true quarter circle, so a
-    box rather than a path. Its rounded corner is the pane, edged and sheened
-    like control-face -- a border and an inset spread, both even through the
-    turn -- with a canvas spread filling the rest of the box. The box extends
-    by one edge-width on its left and bottom, and the clip removes that
-    extension so the inset shadows' unwanted sides are never seen.
-
-    The header's sheen runs on under this box. Outside the turn the canvas
-    covers it; inside, a spread in the pane's face backs the sheen, so the
-    turn's first pixels are not white laid on white. Both inset spreads must
-    have the same width: a wider backing paints a pale band inside the curve
-    when the section underneath has a darker fill than the pane.
-  */
+  /* Where the floor turns down the pane's side: a true quarter circle, so a
+     box rather than a path, edged and sheened like control-face. It extends by
+     one edge-width left and bottom and the clip removes that, so the inset
+     shadows' unwanted sides are never seen.
+     Both inset spreads must be the same width: a wider backing paints a pale
+     band inside the curve when the section beneath is darker than the pane. */
   .notch::after {
     content: '';
     position: absolute;
@@ -854,21 +732,13 @@
     --slant-r: var(--slant-lean);
   }
 
-  /*
-    The outline, in the control's own box. Each side is a line crossing its
-    edge at mid-height, leaning by its own angle -- 0deg for a square side. A
-    corner of interior angle 90deg -/+ a has tangent length r/tan(45deg -/+
-    a/2), and tan(45deg + a/2) is 1/tan(45deg - a/2), so one q per side covers
-    both of its corners. The painted layers reach past the box by the lean's
-    overhang and the focus ring's width; --s-px and --s-f carry that offset.
-
-    One radius on every corner does not look like one radius. The acute
-    corner's arc runs 1/q along its edges and the obtuse one's only q, so at
-    25deg the first reads soft and the second nearly square. Each corner's
-    radius is scaled by q to the power of --slant-corner-balance: at 0 they
-    share the radius, at 1 they share the tangent length of a square corner
-    of that radius, so every corner takes the same bite out of its edges.
-  */
+  /* The outline in the control's own box. Each side crosses its edge at
+     mid-height, leaning by its own angle. A corner of interior angle
+     90deg -/+ a has tangent length r/tan(45deg -/+ a/2), and
+     tan(45deg + a/2) = 1/tan(45deg - a/2), so one q per side covers both.
+     One radius on every corner does not look like one radius: the acute arc
+     runs 1/q along its edges and the obtuse only q. Each is scaled by q to the
+     power of --slant-corner-balance, so every corner bites its edges alike. */
   .slant-shape {
     container-type: size;
     --s-h: 100cqh;
@@ -919,20 +789,18 @@
     --s-top: calc(var(--s-f) + var(--s-d));
     --s-bot: calc(var(--s-f) + var(--s-h) - var(--s-d));
     --s-tlx: calc(
-      var(--s-px) + (var(--s-d) - var(--s-h) / 2) * var(--s-tl) + var(--s-d) /
-        var(--s-cl)
+      var(--s-px) + (var(--s-d) - var(--s-h) / 2) * var(--s-tl) + var(--s-d) / var(--s-cl)
     );
     --s-blx: calc(
-      var(--s-px) + (var(--s-h) / 2 - var(--s-d)) * var(--s-tl) + var(--s-d) /
-        var(--s-cl)
+      var(--s-px) + (var(--s-h) / 2 - var(--s-d)) * var(--s-tl) + var(--s-d) / var(--s-cl)
     );
     --s-trx: calc(
-      var(--s-px) + var(--s-w) + (var(--s-d) - var(--s-h) / 2) * var(--s-tr) -
-        var(--s-d) / var(--s-cr)
+      var(--s-px) + var(--s-w) + (var(--s-d) - var(--s-h) / 2) * var(--s-tr) - var(--s-d) /
+        var(--s-cr)
     );
     --s-brx: calc(
-      var(--s-px) + var(--s-w) + (var(--s-h) / 2 - var(--s-d)) * var(--s-tr) -
-        var(--s-d) / var(--s-cr)
+      var(--s-px) + var(--s-w) + (var(--s-h) / 2 - var(--s-d)) * var(--s-tr) - var(--s-d) /
+        var(--s-cr)
     );
     --s-atl: calc(var(--s-otl) / var(--s-ql));
     --s-abl: calc(var(--s-obl) * var(--s-ql));
@@ -951,8 +819,7 @@
         calc(var(--s-bot) - var(--s-abl) * var(--s-cl)) of var(--s-obl) cw,
       line to calc(var(--s-tlx) + var(--s-atl) * var(--s-sl))
         calc(var(--s-top) + var(--s-atl) * var(--s-cl)),
-      arc to calc(var(--s-tlx) + var(--s-atl)) var(--s-top) of var(--s-otl) cw,
-      close;
+      arc to calc(var(--s-tlx) + var(--s-atl)) var(--s-top) of var(--s-otl) cw, close;
   }
   .slant-shape {
     --s-out-start: var(--s-start);
@@ -995,22 +862,13 @@
     );
   }
   .slant-ring {
-    background: linear-gradient(
-        to bottom,
-        var(--control-ring-top),
-        var(--control-ring-bottom)
-      )
-      0 var(--s-f) / 100% var(--s-h) no-repeat;
+    background: linear-gradient(to bottom, var(--control-ring-top), var(--control-ring-bottom)) 0
+      var(--s-f) / 100% var(--s-h) no-repeat;
     clip-path: shape(from var(--s-start), var(--s-path));
   }
   .slant-face {
-    background: linear-gradient(
-        to bottom,
-        var(--control-face-top),
-        var(--control-face-bottom)
-      )
-      0 calc(var(--s-f) + var(--s-e)) / 100% calc(var(--s-h) - var(--s-e) * 2)
-      no-repeat;
+    background: linear-gradient(to bottom, var(--control-face-top), var(--control-face-bottom)) 0
+      calc(var(--s-f) + var(--s-e)) / 100% calc(var(--s-h) - var(--s-e) * 2) no-repeat;
     clip-path: shape(from var(--s-start), var(--s-path));
   }
   .slant-sheen {
@@ -1067,15 +925,12 @@
   }
 }
 
-/*
-  What is left here once the menu moved to utilities: the reorder machinery,
-  whose rows are absolutely positioned and translated by inline transform so
-  the list can reorder without reflowing, the pair of gradient strips at the
-  sidebar's edges, and the tooltip, whose SVG arrow has to continue the box's
-  face, edge and inner highlight. All three are cases where CSS carries
-  something markup cannot -- a two-speed transition, a pseudo element, or a
-  value shared between a box and the shape hanging off it.
-*/
+/* ── Workspace menu ─────────────────────────────────────────────────────────
+   Three things markup cannot carry: the reorder machinery (a two-speed
+   transition over absolutely positioned rows), the sidebar's edge gradients
+   (pseudo elements), and the tooltip (a face shared between a box and the SVG
+   arrow hanging off it).
+   ────────────────────────────────────────────────────────────────────────── */
 
 @layer components {
   /* The notice icon belongs to the sidebar rail, which starts at the card's
@@ -1085,20 +940,11 @@
     margin-inline-start: calc(var(--control-face-border-width) * -1);
   }
 
-  /*
-    The search field. Quiet at rest, lit only while it is being used, in four
-    states whose priority *is* this block's reading order:
-
-      holding a query  <  pointer on it  <  focused
-
-    Focus outranks the other two because the border is this field's only focus
-    indicator -- it carries no global outline -- so nothing may paint over it
-    while a keyboard user is in there. As three variants in markup that order
-    was whichever Tailwind happened to emit last, and hover was winning.
-
-    The border keeps its width at rest and spends only its colour, so nothing
-    beside the field moves when the face arrives.
-  */
+  /* Four states whose priority *is* this block's reading order:
+       holding a query  <  pointer on it  <  focused
+     Focus outranks the rest because the border is this field's only focus
+     indicator. As markup variants the order was Tailwind's emission order, and
+     hover was winning. The border spends only colour, never width. */
   .menu-search-field {
     @apply control-wash;
     /* The glyph's box: even, so it can centre on an integer axis. Published
@@ -1111,14 +957,12 @@
     border: var(--spacing-field-edge) solid transparent;
     border-radius: var(--radius-control);
     padding-inline-end: calc(
-      var(--spacing-menu-end) - var(--spacing-field-edge) +
-        var(--spacing-menu-edge)
+      var(--spacing-menu-end) - var(--spacing-field-edge) + var(--spacing-menu-edge)
     );
     /* Half a rail, less the edge and half the glyph. Derived rather than
        written, because a written value goes stale the moment an edge moves. */
     padding-inline-start: calc(
-      var(--spacing-menu-rail) / 2 - var(--spacing-field-edge) -
-        var(--menu-search-glyph) / 2
+      var(--spacing-menu-rail) / 2 - var(--spacing-field-edge) - var(--menu-search-glyph) / 2
     );
     /* Held here rather than as a utility on the label, because the hover step
        below has to outrank it and a utility never loses to this layer. The
@@ -1171,32 +1015,19 @@
     }
   }
 
-  /*
-    The process title's field (components/app-shell/process-title.tsx), on
-    the search field's pattern: quiet at rest, a face and an edge under the
-    pointer, a darker edge while it is typed into, and focus last so a pointer
-    resting on it never repaints the edge that is the only focus indicator.
-    Its face is lighter than the sheet (see --sp-title-field-face).
-
-    The face reaches out past the name by its padding and its edge, and the
-    margins take both back, so the name sits exactly where the heading puts
-    it and nothing beside it moves when the face arrives.
-  */
+  /* On the search field's pattern, focus last for the same reason. The face
+     reaches past the name by its padding and edge and the margins take both
+     back, so the name sits where the heading puts it. */
   .title-field {
     @apply control-wash;
     --title-field-pad-inline: calc(var(--spacing) * 2.5);
     --title-field-pad-block: calc(var(--spacing) * 1.5);
-    --title-field-reach-inline: calc(
-      var(--title-field-pad-inline) + var(--spacing-field-edge)
-    );
-    --title-field-reach-block: calc(
-      var(--title-field-pad-block) + var(--spacing-field-edge)
-    );
+    --title-field-reach-inline: calc(var(--title-field-pad-inline) + var(--spacing-field-edge));
+    --title-field-reach-block: calc(var(--title-field-pad-block) + var(--spacing-field-edge));
     border: var(--spacing-field-edge) solid transparent;
     border-radius: var(--radius-control);
     padding: var(--title-field-pad-block) var(--title-field-pad-inline);
-    margin: calc(-1 * var(--title-field-reach-block))
-      calc(-1 * var(--title-field-reach-inline));
+    margin: calc(-1 * var(--title-field-reach-block)) calc(-1 * var(--title-field-reach-inline));
     max-width: calc(100% + 2 * var(--title-field-reach-inline));
   }
   .title-field:hover {
@@ -1214,27 +1045,18 @@
     }
   }
 
-  /*
-    The process header's data buttons (components/app-shell/process-header.tsx).
-    Geometry only: their stops are utilities, and their layout is in the markup.
-
-    The count pill sits the same distance from three of the button's edges.
-    Vertically that distance is whatever the pill leaves inside the face, halved
-    -- so the end padding has to be that same figure rather than a step from the
-    spacing scale, and it is a step shorter because the face's own border is
-    part of the distance on that side. Derived here because a utility cannot
-    compute it, and because a written value goes stale the moment the button's
-    height, the pill's height or the control edge moves.
-  */
+  /* Geometry only; the stops are utilities. The count pill sits the same
+     distance from three edges: vertically that is what the pill leaves inside
+     the face, halved, so the end padding must be that figure rather than a
+     scale step -- minus the border, which is part of the distance on that
+     side. Derived because a utility cannot compute it and a written value
+     goes stale the moment any of the three inputs moves. */
   .header-button {
     --header-button-height: calc(var(--spacing) * 8);
     --header-button-pill: calc(var(--spacing) * 5);
     height: var(--header-button-height);
     padding-inline-end: calc(
-      (
-          var(--header-button-height) - 2 * var(--spacing-control-edge) -
-            var(--header-button-pill)
-        ) /
+      (var(--header-button-height) - 2 * var(--spacing-control-edge) - var(--header-button-pill)) /
         2
     );
   }
@@ -1249,12 +1071,26 @@
      the end equal to its clearance above and below. */
   .header-button[data-has-state-dot] {
     padding-inline-end: calc(
-      (
-          var(--header-button-height) - 2 * var(--spacing-control-edge) -
-            var(--spacing) * 1.5
-        ) /
-        2
+      (var(--header-button-height) - 2 * var(--spacing-control-edge) - var(--spacing) * 1.5) / 2
     );
+  }
+
+  .process-menu-back {
+    @apply control-wash;
+    color: var(--sp-menu-link);
+  }
+
+  /* Preserve the hover-capable-device guard of the former Tailwind variant. */
+  @media (hover: hover) {
+    .process-menu-back:hover {
+      color: var(--sp-text-primary);
+      background-color: var(--sp-menu-wash);
+    }
+  }
+
+  .process-menu-back:focus-visible {
+    color: var(--sp-text-primary);
+    background-color: var(--sp-menu-wash-strong);
   }
 
   .process-menu-row {
@@ -1287,27 +1123,19 @@
       background var(--duration-state) ease-out,
       border-color var(--duration-state) ease-out;
   }
-  /* Hover and keyboard focus, on rows that are neither the current one nor in
-     flight: a wash and nothing else. The edge every row reserves stays
-     transparent -- an outline on hover read as a second current row. The
-     current row is excluded because it is a lit sheet already, and a dragged
-     row because it keeps its own face and edge while it sits under the pointer
-     for the whole drag -- without the guard this rule outranks [data-dragging]
-     and would repaint it. */
+  /* A wash and nothing else; the reserved edge stays transparent, since an
+     outline on hover read as a second current row. Both exclusions are load
+     bearing: without them this rule outranks [data-dragging] and repaints it. */
   .process-menu-row:not([data-current], [data-dragging]):hover,
   .process-menu-row:not([data-current], [data-dragging]):focus-within {
     background: var(--sp-menu-wash);
   }
-  /* Arranging is not navigating. In that mode every row is a drag target, so
-     every row has to answer the pointer -- the current one included, even
-     though the rule above holds it out. It cannot take the background the
-     others take, because control-face paints its face as a gradient layer over
-     it. So it moves the face's own two stops to the same wash instead, which
-     control-face already transitions. */
+  /* While arranging, every row is a drag target and must answer the pointer,
+     the current one included. It cannot take the others' background --
+     control-face paints a gradient layer over it -- so it moves the face's own
+     two stops to the same wash, which control-face already transitions. */
   .process-menu-row[data-editing][data-current]:not([data-dragging]):hover,
-  .process-menu-row[data-editing][data-current]:not(
-      [data-dragging]
-    ):focus-within {
+  .process-menu-row[data-editing][data-current]:not([data-dragging]):focus-within {
     --control-face-top: var(--sp-menu-wash);
     --control-face-bottom: var(--sp-menu-wash);
   }
@@ -1317,11 +1145,8 @@
      different ring -- without touching the pane or any other surface. */
   .process-menu-row[data-current] {
     @apply control-face;
-    /* control-face declares its own border; restated so the sides keep the
-       width every other row carries -- the label does not shift sideways when
-       a row becomes current -- and the bottom takes the heavier edge the sheet
-       sits on. That leaves the label centred in a box a quarter pixel higher,
-       which nothing resolves. */
+    /* Restated over control-face's own border so the sides keep every other
+       row's width and the bottom takes the heavier edge. */
     border-width: var(--spacing-menu-edge);
     border-bottom-width: var(--spacing-menu-current-edge);
     --control-face-top: var(--sp-menu-current-face-top);
@@ -1330,14 +1155,10 @@
     --control-ring-bottom: var(--sp-menu-current-ring-bottom);
     --control-highlight: var(--sp-menu-current-highlight);
   }
-  /* The current row while arranging. The rule above applies control-face, whose
-     transition list outranks [data-editing]'s -- so without this the current
-     row alone had no transform transition, and snapped to its new slot while
-     every row around it travelled. Restated in full because a transition list
-     cannot be extended, only replaced: the travel from [data-editing], then
-     control-face's own properties at its own step and curve. Keep the second
-     half in step with control-face in app/globals.css. Held off a dragged row,
-     which must track the pointer rather than ease after it. */
+  /* control-face's transition list outranks [data-editing]'s, so without this
+     the current row alone snapped to its new slot. Restated in full because a
+     transition list can only be replaced, never extended.
+     Keep the second half in step with control-face in app/globals.css. */
   .process-menu-row[data-editing][data-current]:not([data-dragging]) {
     transition:
       transform var(--duration-row) --theme(--ease-out-emphasized),
@@ -1351,37 +1172,27 @@
       --control-ring-bottom var(--duration-state) ease-out,
       --control-highlight var(--duration-state) ease-out;
   }
-  /* Lifted out of the list while dragged, so it passes over its neighbours
-     rather than through them, and eased transitions come off: the row has to
-     track the pointer exactly. The lift is carried by the face and the edge
-     the row already reserves -- no shadow, which the experience spec does not
-     allow for containment or interaction priority. */
+  /* Lifted over its neighbours, with eased transitions off so the row tracks
+     the pointer exactly. Carried by the face and the reserved edge -- no
+     shadow, which the experience spec does not allow. */
   .process-menu-row[data-dragging] {
     z-index: 2;
     background: var(--sp-surface-floating);
     border-color: var(--sp-rule-strong);
     transition: none;
   }
-  /* The heavier drag edge, on every side -- the current row's heavier bottom
-     included, so a picked-up current row is not lopsided. The box grows
-     outward by the difference instead of the border eating into it, so the
-     content does not shift when the drag starts. Shared with the drop slot, so
-     the two stay one object at one weight. */
+  /* The heavier drag edge on every side. The box grows outward by the
+     difference rather than the border eating in, so nothing shifts when the
+     drag starts. Shared with the drop slot, so the two stay one object. */
   .process-menu-row[data-dragging],
   .process-drop-slot {
-    inset: calc(var(--spacing-menu-drag-grow) * -1)
-      calc(var(--spacing-menu-drag-grow) * -1) auto;
+    inset: calc(var(--spacing-menu-drag-grow) * -1) calc(var(--spacing-menu-drag-grow) * -1) auto;
     height: calc(var(--row-pitch) - 2px + var(--spacing-menu-drag-grow) * 2);
     border-width: var(--spacing-menu-drag-edge);
   }
-  /*
-    The badge's face, published by the row for `surface-menu-badge` to read.
-    Held here with the row's other states because it is one of them: the badge
-    rests as a keycap and, whenever its row lights -- under the pointer, holding
-    focus, or current -- gives its face, ring and sheen up entirely, so the row
-    shows through it. It fades on control-face's step and curve, the same step
-    the row's own wash arrives on, so the two settle together.
-  */
+  /* The badge's stops, published for `surface-menu-badge` to read. Here with
+     the row's other states because it is one of them: a keycap at rest, bare
+     whenever the row lights, so the row shows through it. */
   .process-menu-row {
     --menu-badge-face: var(--sp-keycap-face);
     --menu-badge-ring: var(--sp-keycap-ring);
@@ -1395,24 +1206,15 @@
     --menu-badge-highlight: transparent;
   }
 
-  /*
-    The status badge at a row's end. The row carries no end padding, so the
-    badge sets its own inset: one --spacing-menu-end in from the row's edge,
-    the same inset the search field gives its keycap, which is what puts the
-    two on one trailing axis.
-  */
+  /* The row carries no end padding, so the badge sets its own inset: one
+     --spacing-menu-end in, the same the search field gives its keycap. */
   .process-menu-row-end {
     margin-inline-end: var(--spacing-menu-end);
   }
 
-  /*
-    The cell at a row's start, and the mirror of the rule above. The leading
-    axis is measured from the pane's content edge and knows nothing of the row,
-    so a cell sitting inside the row's own edge would centre a whole hairline
-    late. The trailing axis solves the same problem by counting the edge into
-    its own calc; here there is nothing to count it into, so the cell gives it
-    back instead.
-  */
+  /* The mirror of the rule above. The leading axis is measured from the
+     pane's content edge and knows nothing of the row, so a cell inside the
+     row's edge would centre a hairline late -- the cell gives it back. */
   .process-menu-row-start {
     margin-inline-start: calc(var(--spacing-menu-edge) * -1);
   }
@@ -1437,24 +1239,12 @@
     border-radius: var(--radius-control);
   }
 
-  /*
-    The gap that used to sit between the sidebar and the sheet, moved inside the
-    sidebar. It is there from the start rather than appearing when a pane starts
-    to travel, so the panes have a soft boundary to dissolve into instead of the
-    hard clip `overflow-clip` gives them; the edge the menu is moving toward
-    deepens while a pane is in flight. Both strips overlay the
-    --spacing-menu-fade inset the panes hold, so nothing sits under them at rest
-    and no focus ring is ever eaten.
-
-    They hang off the <nav> that holds the panes, not the whole aside. Only the
-    panes travel, and on the aside the strips ran the full height -- over the
-    brand mark, which overhangs the content edge, and further still while the
-    leading strip is widened.
-
-    Only above the shell breakpoint (--breakpoint-shell, 56.25rem, restated
-    because @media cannot read a theme value): below it the sidebar is a strip
-    across the top and there is no side boundary to soften.
-  */
+  /* A soft boundary for panes to dissolve into, rather than the hard clip
+     `overflow-clip` gives them. Both strips overlay the --spacing-menu-fade
+     inset the panes hold, so nothing sits under them and no focus ring is
+     eaten. They hang off the <nav>, not the aside: only the panes travel.
+     56.25rem is --breakpoint-shell, restated because @media cannot read a
+     theme value. Below it there is no side boundary to soften. */
   @media (width >= 56.25rem) {
     .process-menu-fade::before,
     .process-menu-fade::after {
@@ -1475,21 +1265,14 @@
       right: 0;
       background: linear-gradient(to left, var(--sp-canvas), transparent);
     }
-    /*
-      The leading edge, widened while a pane travels toward it and back to the
-      inset as it lands. An animation rather than a width keyed to the level:
-      the level stays set once the pane has arrived, so a width held on it left
-      the strip half again as wide as the inset at rest -- over the end of the
-      Processes item, and over the leading edge of every row.
-
-      Keyed on data-travel, which the menu sets only once something has
-      navigated, so first paint does not play a journey that never happened.
-      A new level re-matches the selector, which is what restarts it.
-    */
+    /* Widened while a pane travels toward it, back to the inset as it lands.
+       An animation, not a width keyed to the level: the level stays set once
+       the pane arrives, which left the strip permanently wide.
+       data-travel is set only once something has navigated, so first paint
+       plays no journey; a new level re-matches and restarts it. */
     .process-menu-fade[data-travel='processes']::before,
     .process-menu-fade[data-travel='workspace']::after {
-      animation: menu-fade-lead var(--duration-pane)
-        --theme(--ease-out-emphasized);
+      animation: menu-fade-lead var(--duration-pane) --theme(--ease-out-emphasized);
     }
     @keyframes menu-fade-lead {
       50% {
@@ -1498,17 +1281,10 @@
     }
   }
 
-  /*
-    The list's two ends, softened the same way its sides are. Rows dissolve into
-    the fixed chrome above and the footer below instead of stopping at a hard
-    line, which is also what lets the space those two were holding come back --
-    a fade reads as an edge, so the gap does not have to.
-
-    Overlaid rather than masked, because a mask on the scroll container would
-    take the scrollbar with it. Behind the side gradients (z-index 3) so the
-    corners stay theirs, and above the breakpoint only -- below it the list does
-    not scroll, so there is nothing for an end to fade into.
-  */
+  /* The list's two ends, softened the way its sides are. Overlaid rather than
+     masked: a mask on the scroll container takes the scrollbar with it. Behind
+     the side gradients so the corners stay theirs, and above the breakpoint
+     only, since below it the list does not scroll. */
   @media (width >= 56.25rem) {
     .process-list-fade::before,
     .process-list-fade::after {
@@ -1543,21 +1319,15 @@
     }
   }
 
-  /*
-    Development alignment guides, switched on from the design pane's Debug
-    folder. `data-rail-guides` on <html> is the only thing that turns any of
-    this on, so the markup that carries it costs nothing when it is off.
-
-    A dark blue against the axis's red, because the whole point is telling the
-    two apart at a glance: a crosshair sharing the line's hue is exactly the
-    case where a miss by a pixel stops being visible.
-
-    Two parts: one line down the sidebar's icon axis, and a crosshair through
-    the centre of every box that is supposed to sit on it. The crosshair is
-    drawn from the box's own 50%, so it reports where the icon actually is
-    rather than where a hardcoded offset says it should be -- if the two lines
-    do not meet on the axis, the alignment is wrong.
-  */
+  /* ── Rail guides (development) ────────────────────────────────────────
+     A line down each icon axis, and a crosshair through the centre of every
+     box meant to sit on it. The crosshair is drawn from the box's own 50%, so
+     it reports where the icon is rather than where an offset says it should
+     be: if the two do not meet, the alignment is wrong.
+     Blue against the axis's red -- a crosshair sharing the hue is exactly
+     where a miss by a pixel stops being visible.
+     `pnpm check:rail` reads the axis out of this rule's computed background,
+     so this stylesheet stays the only place an axis is defined. */
   .rail-axis {
     display: none;
   }
@@ -1586,26 +1356,21 @@
   */
   :root[data-rail-guides='on'] .rail-axis {
     --rail-axis-width: 1px;
-    --rail-axis-line: linear-gradient(
-      color-mix(in oklab, red 60%, transparent) 0 100%
-    );
+    --rail-axis-line: linear-gradient(color-mix(in oklab, red 60%, transparent) 0 100%);
     /* The leading rail, from either edge, and the trailing cell inside it. */
     --rail-axis-rail: calc(
-      var(--spacing-menu-fade) + var(--spacing-menu-rail) / 2 -
-        var(--rail-axis-width) / 2
+      var(--spacing-menu-fade) + var(--spacing-menu-rail) / 2 - var(--rail-axis-width) / 2
     );
     --rail-axis-end: calc(
-      var(--spacing-menu-fade) + var(--spacing-menu-edge) +
-        var(--spacing-menu-end) + var(--spacing-menu-rail) / 2 -
-        var(--rail-axis-width) / 2
+      var(--spacing-menu-fade) + var(--spacing-menu-edge) + var(--spacing-menu-end) +
+        var(--spacing-menu-rail) / 2 - var(--rail-axis-width) / 2
     );
     display: block;
     position: absolute;
     inset: 0;
     z-index: 5;
     pointer-events: none;
-    background-image:
-      var(--rail-axis-line), var(--rail-axis-line), var(--rail-axis-line);
+    background-image: var(--rail-axis-line), var(--rail-axis-line), var(--rail-axis-line);
     background-size: var(--rail-axis-width) 100%;
     background-repeat: no-repeat;
     background-position:
@@ -1669,12 +1434,11 @@
   }
 }
 
-/*
-  Tooltip. The box and its arrow are one object drawn as two: the arrow's SVG
-  reads the same three values the box paints itself with, so face, edge and
-  highlight are declared here once rather than repeated across both, and the
-  forced-colors override can restate all three in a single place.
-*/
+/* ── Tooltip ────────────────────────────────────────────────────────────────
+   The box and its arrow are one object drawn as two: the SVG reads the same
+   --tooltip-* values the box paints with, declared once so the pair cannot
+   drift and forced-colors can restate all three in one place.
+   ────────────────────────────────────────────────────────────────────────── */
 @layer components {
   .app-tooltip {
     --tooltip-face: var(--sp-surface-floating);
@@ -1688,13 +1452,10 @@
        tooltip.tsx. */
     --tooltip-arrow-span: 16px;
     z-index: 100;
-    /* Inert to the pointer. A tooltip is a label, never a target -- the ARIA
-       pattern forbids interactive content inside one, so nothing in here has
-       a use for a pointer event. Being inert is what lets it sit close to,
-       or across, its trigger without swallowing the click underneath, and it
-       is what keeps a zero close-delay from flickering: without it, a box
-       overlapping its own trigger takes the pointer off that trigger, closes,
-       hands the pointer back, and reopens. */
+    /* A label, never a target. Being inert is what lets it overlap its
+       trigger without swallowing the click, and what stops a zero close-delay
+       flickering: otherwise the box takes the pointer off the trigger, closes,
+       hands it back and reopens. */
     pointer-events: none;
     display: grid;
     gap: 0.125rem;
@@ -1715,12 +1476,9 @@
     /* Grows out of the edge it is anchored to rather than out of its centre. */
     transform-origin: var(--trigger-anchor-point);
   }
-  /* Placed beside its trigger, the arrow runs along the box's short side, and
-     its ends have to land on straight edge: past the start of a corner's curve,
-     the fill it lays over the border shows outside the box. So rather than the
-     corner giving way, a side-placed box is never shorter than the arrow plus
-     both corners. Only a one-line box falls short of that, so only it grows,
-     and its content stays centred on the arrow. */
+  /* Side-placed, the arrow's ends must land on straight edge -- past a
+     corner's curve the fill it lays over the border shows outside the box. So
+     the box is never shorter than the arrow plus both corners. */
   .app-tooltip:is([data-placement='left'], [data-placement='right']) {
     min-block-size: calc(var(--tooltip-arrow-span) + 2 * var(--tooltip-radius));
     align-content: center;
@@ -1731,20 +1489,13 @@
     max-width: min(17.75rem, calc(100vw - 1.5rem));
     padding: var(--spacing-shell-inset);
   }
-  /*
-    A tooltip on a notch's control lands on the pane's edges round the notch,
-    not a fixed distance from the control: its offset is 0 and these take it
-    out by what the notch holds round its controls (see .notch). Its border
-    lies on each edge's line rather than beside it, so the two read as one:
-    across the floor or the pane's top edge that is the gap alone, since the
-    line is inside the notch's inset; along the pane's side it is the whole
-    inset, gap and edge-width, to the pane's outer edge.
-
-    Translated rather than offset through react-aria, which takes only a
-    number, so the tokens stay the source -- rebuilt from the root ones,
-    because the tooltip is portalled out of .notch. The arrow is moved back
-    along the edge by the same amount, so it still points at its control.
-  */
+  /* A tooltip on a notch's control lands on the pane's edges round the notch,
+     not a fixed distance from it: offset 0, and these take it out by what the
+     notch holds (see .notch). Its border lies on each edge's line, so the two
+     read as one.
+     Translated rather than offset through react-aria, which takes only a
+     number, so the tokens stay the source -- rebuilt from the root ones,
+     because the tooltip is portalled out of .notch. */
   .app-tooltip[data-anchor='notch'] {
     --tooltip-notch-side: calc(var(--notch-gap) + var(--spacing-control-edge));
   }
@@ -1757,23 +1508,17 @@
   .app-tooltip[data-anchor='notch'] .app-tooltip-arrow {
     translate: calc(var(--tooltip-notch-side) * -1) 0;
   }
-  /*
-    Quick and slight, and out before it is noticed. A plain ease-out rather
-    than the emphasized curve the panes use: over this distance that curve
-    spends itself in the first few frames and the rest reads as a tail.
-  */
+  /* A plain ease-out, not the panes' emphasized curve: over this distance
+     that curve spends itself in the first frames and the rest reads as tail. */
   .app-tooltip[data-entering] {
     animation: app-tooltip-in 110ms ease-out both;
   }
   .app-tooltip[data-exiting] {
     animation: app-tooltip-in 80ms ease-in reverse both;
   }
-  /*
-    Scale alone, grown from --trigger-anchor-point above. That origin is the
-    edge the tooltip is anchored to, so the box always opens away from its
-    trigger whichever side it took -- which a fixed translate could only get
-    right for one placement, and these tooltips are placed top and right.
-  */
+  /* Scale alone, from --trigger-anchor-point: that origin is the anchored
+     edge, so the box opens away from its trigger on any placement, which a
+     fixed translate could only get right for one. */
   @keyframes app-tooltip-in {
     from {
       opacity: 0;
@@ -1821,8 +1566,10 @@
   }
 }
 
-/* Effects rail: one signal line, mode-shaped markers, vertical until the
-   detail pane is wide enough to hold every label. */
+/* ── Effects rail ────────────────────────────────────────────────────────────
+   One signal line with mode-shaped markers, vertical until the detail pane
+   is wide enough to hold every label.
+   ────────────────────────────────────────────────────────────────────── */
 @layer components {
   .rail {
     position: relative;
@@ -1893,14 +1640,13 @@
   }
 }
 
+/* ── Icon families (development) ─────────────────────────────────────────────
+   The workbench is the one place these are rendered.
+   ────────────────────────────────────────────────────────────────────── */
 @layer components {
-  /*
-    Nucleo Arcade strokes read three custom properties and fall back to a fixed
-    #212121, so on a dark ground they vanish. Pointing them at currentColor lets
-    the glyphs follow the text colour like every other family; the second and
-    third stops keep the set's own 25% and transparent pixels. Development only:
-    the workbench is the one place Arcade is rendered.
-  */
+  /* Nucleo Arcade strokes fall back to a fixed #212121 and vanish on a dark
+     ground. currentColor lets them follow the text like every other family;
+     the other two stops keep the set's own 25% and transparent pixels. */
   .nucleo-arcade {
     --nc-arcade-color-1: currentColor;
     --nc-arcade-color-2: color-mix(in oklab, currentColor 25%, transparent);
@@ -1908,11 +1654,11 @@
   }
 }
 
-/*
-  The sheet's moving edge. Geometry is shared by the grid, the unclipped menu
-  and its separator; keeping the states here also keeps the fade's sequencing
-  and direct manipulation from inheriting contradictory transitions.
-*/
+/* ── Sheet edge ─────────────────────────────────────────────────────────────
+   Geometry shared by the grid, the unclipped menu and its separator. The
+   states are here so the fade's sequencing and direct manipulation cannot
+   inherit contradictory transitions.
+   ────────────────────────────────────────────────────────────────────────── */
 @layer components {
   .resizable-shell {
     grid-template-columns: minmax(0, 1fr);
@@ -1923,8 +1669,7 @@
       --sidebar-width: var(--spacing-sidebar-default);
       --sidebar-track: var(--sidebar-width);
       grid-template-columns: var(--sidebar-track) minmax(0, 1fr);
-      transition: grid-template-columns var(--duration-pane)
-        var(--ease-out-emphasized);
+      transition: grid-template-columns var(--duration-pane) var(--ease-out-emphasized);
     }
 
     .resizable-shell[data-collapsed] {
@@ -1938,8 +1683,7 @@
       translate: 0;
       transition:
         width var(--duration-pane) var(--ease-out-emphasized),
-        opacity var(--duration-state) ease-out
-          calc(var(--duration-pane) - var(--duration-state)),
+        opacity var(--duration-state) ease-out calc(var(--duration-pane) - var(--duration-state)),
         translate var(--duration-pane) var(--ease-out-emphasized);
     }
 
@@ -2047,7 +1791,9 @@
   }
 }
 
-/* The assistant shares the menu canvas and grip, on the opposite sheet edge. */
+/* ── Assistant panel ─────────────────────────────────────────────────────────
+   It shares the menu's canvas and grip, on the opposite sheet edge.
+   ────────────────────────────────────────────────────────────────────── */
 @layer components {
   .resizable-shell {
     --assistant-limit: min(
@@ -2066,8 +1812,7 @@
     opacity: 1;
     transition:
       width var(--duration-pane) var(--ease-out-emphasized),
-      opacity var(--duration-state) ease-out
-        calc(var(--duration-pane) - var(--duration-state));
+      opacity var(--duration-state) ease-out calc(var(--duration-pane) - var(--duration-state));
   }
   .assistant-dock {
     visibility: hidden;
@@ -2104,8 +1849,7 @@
     animation: assistant-enter var(--duration-pane) var(--ease-out-emphasized);
   }
   .assistant-overlay[data-exiting] .assistant-modal {
-    animation: assistant-enter var(--duration-pane) var(--ease-out-emphasized)
-      reverse;
+    animation: assistant-enter var(--duration-pane) var(--ease-out-emphasized) reverse;
   }
   @keyframes assistant-enter {
     from {
@@ -2126,16 +1870,10 @@
         var(--spacing-assistant-min),
         min(
           var(--spacing-assistant-max),
-          calc(
-            100vw - var(--sidebar-track) - 40rem - 2 *
-              var(--spacing-shell-inset)
-          )
+          calc(100vw - var(--sidebar-track) - 40rem - 2 * var(--spacing-shell-inset))
         )
       );
-      grid-template-columns: var(--sidebar-track) minmax(0, 1fr) var(
-          --assistant-track,
-          0px
-        );
+      grid-template-columns: var(--sidebar-track) minmax(0, 1fr) var(--assistant-track, 0px);
     }
   }
   @media (width < 56.25rem) {
@@ -2158,6 +1896,7 @@
   }
 }
 
+/* Below the shell breakpoint the assistant is an overlay rather than a column. */
 @layer components {
   .assistant-overlay {
     height: var(--assistant-viewport-height, 100dvh);
@@ -2168,33 +1907,21 @@
   }
 }
 
-/*
-  The divided list every section of the sheet is built from: a sticky first row
-  naming the section, then rows separated by hairlines. It replaces the padded
-  cards the runs rail used, which spent about twenty pixels of a 232px column
-  on a radius and a gutter that carried no meaning.
-
-  The section name is a row of the list rather than a header above it so that
-  the four sections -- runs, inputs, outputs, settings -- can each say what they
-  are without any of them paying for the space twice. Sticky, so it keeps
-  saying it while the list scrolls; a header outside the scroller cannot.
-*/
+/* ── Sheet list ─────────────────────────────────────────────────────────────
+   A sticky first row naming the section, then rows separated by hairlines.
+   The name is a row of the list rather than a header above it, so the four
+   sections each say what they are without paying for the space twice -- and
+   sticky, so it keeps saying it while the list scrolls.
+   ────────────────────────────────────────────────────────────────────────── */
 @layer components {
   .sheet-list {
     display: flex;
     flex-direction: column;
     min-width: 0;
   }
-  /*
-    Hairlines between rows, drawn by the row that follows rather than by the
-    one before, so the list never ends on a rule hanging over empty space.
-
-    One weight with the rule the sheet draws down its own side -- rule-faint --
-    because a reader seeing two different hairlines a centimetre apart reads
-    them as two different kinds of boundary. The lit line under each is the
-    same etch every other divider in the interface carries; inset, so it falls
-    inside the row below rather than over the row above.
-  */
+  /* Drawn by the row that follows, so the list never ends on a rule hanging
+     over empty space. One weight with the sheet's own side rule: two different
+     hairlines a centimetre apart read as two kinds of boundary. */
   .sheet-list > li + li {
     border-top: 1px solid var(--sp-rule-faint);
   }
@@ -2204,15 +1931,9 @@
   .sheet-list > li:last-child {
     border-bottom: 1px solid var(--sp-rule-faint);
   }
-  /*
-    The section name, and the one control that belongs to it.
-
-    A set height rather than a minimum: the four sections put different things
-    in the trailing slot -- a schedule button, an Add button, a version chip,
-    nothing at all -- and on a minimum each of those would set the row's height
-    itself, so the label moved as the reader changed section. The controls are
-    all shorter than this and centre in it.
-  */
+  /* A set height, not a minimum: the four sections put different controls in
+     the trailing slot, and on a minimum each would set the row's height, so
+     the label moved as the reader changed section. */
   .sheet-head {
     position: sticky;
     top: 0;
@@ -2225,15 +1946,11 @@
     gap: 0.5rem;
     box-sizing: border-box;
     height: var(--spacing-sheet-head);
-    /* Its title starts where every row's text under it starts. The row is the
-       list's first row rather than a header above it, and a first row that
-       indents differently from the rows after it says the opposite of that.
-       The trailing side is shorter because what sits there is a control: its
-       face reaches past its ink, and holding the face to the mark's axis would
-       push the word inside it further in than the marks it lines up with. */
+    /* The title starts where every row's text under it starts. The trailing
+       side is shorter because a control's face reaches past its ink. */
     padding-inline: var(--spacing-sheet-inset) 0.5rem;
     /* Opaque, not a wash: rows pass underneath it. */
-    background: var(--sp-surface-inset);
+    background: var(--sp-sheet-band);
     /* Carry the lit line below the rule on the header itself so it stays
        visible with any following content and while the header is sticky.
        The pane's own highlight beside it is the pane's to draw: content is
@@ -2251,15 +1968,9 @@
     flex: 0 0 auto;
     min-width: 0;
   }
-  /*
-    A boundary in the list that is not a row: the instructions moved between
-    the run above and the run below, and the two are not comparable. Banded
-    between its own rule and the next row's, because what it marks is the gap
-    rather than either run.
-
-    It opens that version's change log, so the rail answers the question it
-    raises instead of only posing it.
-  */
+  /* A boundary that is not a row: the instructions moved between the run
+     above and the one below, so the two are not comparable. Banded between its
+     own rule and the next row's, because it marks the gap, not either run. */
   .sheet-break {
     display: flex;
     align-items: center;
@@ -2270,7 +1981,7 @@
     padding: 0.4375rem var(--spacing-sheet-inset);
     border-top: 1px solid var(--sp-rule-faint);
     box-shadow: inset 0 var(--spacing-sheet-highlight) 0 var(--sp-rule-etch);
-    background: var(--sp-surface-inset);
+    background: var(--sp-sheet-band);
     color: var(--sp-text-muted);
     text-align: start;
     transition: color var(--duration-state) ease-out;
@@ -2295,38 +2006,17 @@
   button.sheet-break:focus-visible::after {
     opacity: 1;
   }
-  /*
-    One row of the list. Every state lives here rather than in the class list:
-    base, hover, keyboard focus and the current row are one machine, and an
-    arm of it filed in markup reads as belonging to neither place.
-
-    Nothing in the row is tinted by its state except the mark and its name:
-    the state is said in words at the top of the row, and a row that also
-    carried its colour on an edge and behind its text would be saying the one
-    thing three times.
-  */
-  /*
-    One inset on all four sides. The status mark sits in the corner of that
-    box, so the inset is what a reader measures it against -- an inset that
-    differs top from right puts the mark somewhere that has to be explained.
-  */
-  /*
-    Every row is the same height, and none of them says what that height is.
-    It is the sum of four named terms:
-
-      inset + mark + band gap + bar + inset
-
-    The first line is the day against the status mark, which is pinned to
-    --spacing-sheet-mark; the second is the time against the bar, which is
-    pinned to --spacing-sheet-tally. Nothing in the row is free to change its
-    own height, which is what makes them equal; a `height` on the row would
-    only hide a row that disagreed by clipping it.
-
-    Four pieces on two rows and two columns: the day over the time on the left,
-    the state over the bar on the right. A grid rather than stacked bands
-    because the column edges have to line up -- both right-hand cells end on
-    the row's inset, so the state's mark and the bar share one edge.
-  */
+  /* Base, hover, focus and current are one machine; an arm of it filed in
+     markup belongs to neither place. Nothing in the row is tinted by its state
+     except the mark and its name -- the state is already said in words. */
+  /* One inset on all four sides: the status mark sits in the corner of that
+     box and is measured against it. */
+  /* Every row is the same height and none of them states it. It is the sum of
+     four named terms:  inset + mark + band gap + bar + inset.
+     Nothing in the row is free to change its own height, which is what makes
+     them equal; a `height` would only clip a row that disagreed.
+     A grid, not stacked bands: both right-hand cells end on the row's inset,
+     so the state's mark and the bar share one edge. */
   .sheet-row {
     position: relative;
     display: grid;
@@ -2338,29 +2028,18 @@
     padding: var(--spacing-sheet-inset);
     text-align: start;
     cursor: pointer;
-    /* The lit line under the rule above it. Carried by the row rather than by
-       the list item, because an inset shadow on the item is painted beneath
-       its children's backgrounds -- so the row's own ground covered it the
-       moment the row was hovered or current, which is exactly when it is
-       wanted. Every row has one, the first included. */
+    /* On the row, not the list item: an inset shadow on the item paints
+       beneath its children's backgrounds, so the row's ground covered it
+       exactly when it was wanted. */
     --sheet-row-highlight: var(--sp-rule-etch);
-    box-shadow: inset 0 var(--spacing-sheet-highlight) 0
-      var(--sheet-row-highlight);
+    box-shadow: inset 0 var(--spacing-sheet-highlight) 0 var(--sheet-row-highlight);
     transition:
       background var(--duration-state) ease-out,
       box-shadow var(--duration-state) ease-out;
   }
-  /*
-    Everything in the row moves on one step and one curve. Declared here rather
-    than restated on each part: the day, the time, the tag, its glyph, the
-    status mark and every segment of the bar all change at once when the row
-    does, and a part that settled on its own timing would arrive late to a
-    change it is part of.
-
-    `color` and `background-color` cover all of them -- nothing in a row
-    animates anything else -- and a part that never changes simply never
-    transitions.
-  */
+  /* One step and one curve for everything in the row: a part on its own
+     timing arrives late to a change it is part of. color and background-color
+     cover all of them; a part that never changes never transitions. */
   .sheet-row *,
   .sheet-row::before {
     transition:
@@ -2373,20 +2052,13 @@
   .sheet-row * {
     cursor: inherit;
   }
-  /*
-    A row's own ink, three rungs deep: at rest, under the pointer, and on the
-    row a reader is on. Every part moves together -- a row that darkens its
-    ground and leaves its contents where they were reads as a row with
-    something printed on it rather than one that has been picked up.
-
-    The ground does not take the third rung. Hover and current share it, so a
-    row does not jump when the pointer crosses the one already chosen, which
-    leaves the ink to say which is which.
-
-    Every value is one of the row's own tokens on the control ramp -- see
-    --sp-sheet-date in tokens.css for why these do not borrow the page's text
-    roles. The day sits two rungs under the time throughout.
-  */
+  /* Three rungs of ink: rest, pointer, current. Every part moves together --
+     a row that darkens its ground and leaves its contents reads as a row with
+     something printed on it rather than one picked up.
+     The ground takes only two: hover and current share it, so the row does not
+     jump when the pointer crosses the chosen one, and the ink says which is
+     which. Values are the row's own tokens (--sp-sheet-* in tokens/faces.css),
+     not the page's prose text roles. */
   .sheet-row {
     --sheet-ink: var(--sp-sheet-date);
     --sheet-ink-quiet: var(--sp-sheet-time);
@@ -2397,11 +2069,9 @@
   .sheet-row:focus-visible,
   .sheet-row:focus-within,
   .sheet-row[data-current] {
-    /* Soften the light-theme sheen; keep the existing faint dark-theme etch. */
-    --sheet-row-highlight: light-dark(
-      var(--sp-face-highlight-medium),
-      var(--sp-rule-etch)
-    );
+    /* Softer than the resting etch in light; in dark the etch already reads
+       correctly against the lit row, so it holds. */
+    --sheet-row-highlight: light-dark(var(--sp-face-highlight-medium), var(--sp-rule-etch));
   }
   .sheet-row:not([data-current]):hover,
   .sheet-row:not([data-current]):focus-visible,
@@ -2428,14 +2098,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  /*
-    When it ran, and what started it. The trigger is a glyph rather than a
-    word: it is a fact nobody acts on, and as a pill with a label it was the
-    widest object in the row for the least said. The word survives in the
-    row's tooltip and in its label, which is where a reader who wants it
-    looks. A step back from the time beside it, taken as a fraction of that
-    time's own colour so the two stay one step apart through every state.
-  */
+  /* The trigger is a glyph, not a word: a fact nobody acts on, and as a
+     labelled pill it was the widest object in the row for the least said. A
+     step back from the time, as a fraction of that time's own colour so the
+     two stay one step apart through every state. */
   .sheet-row-when {
     display: inline-flex;
     align-items: center;
@@ -2453,40 +2119,27 @@
     justify-self: end;
   }
 
-  /*
-    The state: its name, then its mark in the corner. The mark goes last in the
-    source as well as on screen, so what a screen reader hears is the order the
-    row is written in.
-
-    No optical nudge. The box is exactly the mark's own height, and the day
-    opposite it is set to the same, so its top edge is the row's padding edge
-    and the mark is the same distance from the top of the row as from its side.
-  */
+  /* Name, then mark. The mark is last in source as well as on screen, so a
+     screen reader hears the written order. No optical nudge: the box is the
+     mark's own height and the day opposite is set to the same. */
   .sheet-row-status {
     display: inline-flex;
     align-items: center;
     gap: 0.375rem;
     flex: 0 0 auto;
     height: var(--spacing-sheet-mark);
-    /* The one thing in the row meant to be read first, so it is set heavier
-       than anything else in it -- and at one weight in every state, because a
-       weight that changed under the pointer would resize the word and
-       re-truncate the day beside it. Its prominence comes from the tag
-       receding, not from it moving. */
+    /* Read first, so heavier than anything else in the row -- and at one
+       weight in every state: a weight that changed under the pointer would
+       resize the word and re-truncate the day beside it. */
     font-weight: 550;
     /* The one thing in the head that could wrap. It does not shrink either --
        the day beside it truncates first -- so a long state name cannot put a
        second line into a row and make it taller than its neighbours. */
     white-space: nowrap;
   }
-  /*
-    The status reads at its full weight from the start -- it is what the row is
-    for -- and holds that one colour through every state. Its mark takes the
-    word's own colour too: one thing said twice, in a shape and in a word,
-    should not be said in two colours. The row's ground moves under it, which
-    is enough to say the row has been picked up; the state itself has not
-    changed, and a state that darkens when a pointer crosses it is saying so.
-  */
+  /* Full weight from the start, one colour through every state -- including
+     its mark, since one thing said in a shape and a word should not be said in
+     two colours. A state that darkens under a pointer claims it changed. */
   .sheet-row-status {
     color: var(--sheet-status);
   }
@@ -2494,169 +2147,116 @@
     color: inherit;
   }
 
-  /*
-    What started the run. Grey on every row: it is a fact about the run, not a
-    state of it, and a second coloured pill in the foot would compete with the
-    one thing in the row that is meant to be read first.
-
-    Its own edge is on the row's content edge, with the day and the time above
-    it -- the pill is an object in the row, and an object that hangs out into
-    the inset reads as a mistake rather than as alignment. Its glyph is filled
-    rather than outlined, because at 11px an outlined glyph on a tinted ground
-    is a smudge.
-  */
-  /*
-    The release, counted: one pill broken into segments, each an outcome that
-    stops a line going out. They sit flush so the bar reads as one thing
-    divided rather than as three badges in a row.
-
-    It takes its colours from the same `[data-severity]` rules the release
-    card's pills read, rather than deriving a second set that would answer the
-    same question in a different colour. The bucket numbers are the review's,
-    in the review's order: 0 blocked, 1 needs a decision, 2 deferred, 3 ready.
-    Its three faces are the tone's own steps -- one at rest, one under the
-    pointer, one on the row a reader is on -- with the tone itself as the
-    figure on all three.
-
-    The total is the last segment of the same pill, not a pill of its own. It
-    is not another outcome -- it is what the outcomes are out of -- so it is
-    set off by a wider gap than the hairline between the others and nothing
-    else. On a run that came through cleanly it is the only segment there is,
-    and it becomes the whole pill.
-  */
+  /* Grey on every row: a fact about the run, not a state of it, and a second
+     coloured pill would compete with the one thing meant to be read first.
+     Its edge sits on the row's content edge. Filled glyph, because at 11px an
+     outlined one on a tinted ground is a smudge. */
+  /* Separate outcome faces and a labelled total. The gaps expose the row,
+     with more breathing room before the total than between outcomes. */
   .sheet-tally {
+    /* Content clearance from a straight edge; the edge shape adds to it. */
+    --sheet-seg-inset: 0.125rem;
+    --sheet-seg-padding-rounded: calc(var(--sheet-seg-inset) + 0.1875rem);
+    --sheet-seg-padding-slanted: calc(var(--sheet-seg-inset) + var(--sheet-seg-slant));
+    /* Original optical insets by outcome position, plus clearance wherever
+       an edge is now slanted. Each end can be tuned independently. */
+    --sheet-seg-first-start: calc(var(--sheet-seg-inset) + 0.375rem);
+    --sheet-seg-first-end: var(--sheet-seg-padding-slanted);
+    /* Middle and last outcomes have the same two slanted edges.
+       Keep separate controls, with matching defaults for matching geometry. */
+    --sheet-seg-middle-start: calc(var(--sheet-seg-padding-slanted) + 0.125rem);
+    --sheet-seg-middle-end: var(--sheet-seg-padding-slanted);
+    --sheet-seg-last-start: calc(var(--sheet-seg-padding-slanted) + 0.125rem);
+    --sheet-seg-last-end: var(--sheet-seg-padding-slanted);
+    --sheet-total-start: var(--sheet-seg-padding-slanted);
+    --sheet-total-end: var(--sheet-seg-padding-rounded);
+    --sheet-total-only-start: calc(var(--sheet-seg-padding-rounded) + 0.125rem);
+    --sheet-total-only-end: calc(var(--sheet-seg-padding-rounded) + 0.125rem);
+    /* Gaps BETWEEN faces, separate from the padding INSIDE each face. */
+    --sheet-seg-gap: 0.125rem;
+    --sheet-total-gap: 0.25rem;
+    --sheet-seg-slant: calc(var(--spacing-sheet-tally) * tan(var(--notch-angle)));
     display: flex;
     align-items: stretch;
     flex: 0 0 auto;
-    /* One height for every segment, whatever is in them -- they stretch to it
-       -- and a little under the tag's, which the foot centres it against. See
-       --spacing-sheet-tally for why the two are deliberately unequal. */
     height: var(--spacing-sheet-tally);
+    border-radius: 999px;
+    overflow: hidden;
   }
   .sheet-seg {
     display: inline-flex;
     align-items: center;
     gap: 0.125rem;
-    /* The tight inset, for an edge that meets another segment square on.
-       A curved end takes more, below: padding follows the corners, because a
-       figure set the same distance from a curve as from a straight join looks
-       closer to the curve. Named because every other inset on this element is
-       written as this plus an amount, so moving it moves the whole set rather
-       than opening a gap between the base and the rules that meant to follow
-       it. In rem throughout, so the insets answer to the reader's type size
-       the way the figures inside them already do. */
-    --sheet-seg-inset: 0.25rem;
-    padding-inline: var(--sheet-seg-inset);
-    /*
-      A dark ground with a light figure, held at one rung through every state
-      of the row -- like the status above it, and for the same reason: this is
-      a fact about the run, not about the pointer, and a readout that darkens
-      when a pointer crosses it is claiming something changed. The row's own
-      ground moves under the bar, which is what says the row has been picked
-      up.
-
-      Rung 10, chosen knowingly. A light figure on it measures 3.44:1 at the
-      worst hue in light, which clears the 3:1 Radix designs its solid rungs
-      for but not the 4.5:1 that text is held to. Rung 11 is the first that
-      does -- 4.99:1 -- and was too heavy at this size; rung 3 with the tone
-      itself as the figure is the other legal pair, at 4.54:1, and reads as
-      washed. There is no rung that is both lighter and compliant, so the
-      choice was made with the numbers in hand rather than around them.
-    */
+    /* Dark ground, light figure, one rung through every state of the row.
+       Rung 10 knowingly: a light figure reads 3.44:1 at the worst hue in
+       light -- clears the 3:1 Radix designs solid rungs for, not the 4.5:1
+       text is held to. Rung 11 (4.99:1) was too heavy at this size, and rung 3
+       with the tone as figure (4.54:1) reads washed. No rung is both lighter
+       and compliant. */
     background: var(--severity-10);
-    color: var(--severity-1);
+    /* Dark state step 1 misses 4.5:1 on decision and unavailable solids. */
+    color: light-dark(var(--severity-1), var(--color-black));
     white-space: nowrap;
   }
-  /*
-    Two objects, not one. The outcomes are a single divided pill -- rounded at
-    both ends, square at every join inside it -- and the total is a pill of its
-    own, set off from them. They answer different questions, and a bar that ran
-    the two together invited the total to be read as a fourth outcome.
-
-    Each segment carries its own corners rather than being clipped by the
-    group, because the group no longer has a box to clip with: the first
-    outcome rounds its leading edge, the last rounds its trailing one, and a
-    lone outcome does both.
-  */
-  .sheet-seg:first-child {
-    border-start-start-radius: 999px;
-    border-end-start-radius: 999px;
-    padding-inline-start: calc(var(--sheet-seg-inset) + 0.25rem);
+  /* Both sides use the header's angle. Overlapping their rectangular boxes
+     keeps the visible gap constant along the parallel diagonal edges. */
+  .sheet-seg:not(.sheet-seg-total) {
+    clip-path: polygon(
+      var(--sheet-seg-slant) 0,
+      100% 0,
+      calc(100% - var(--sheet-seg-slant)) 100%,
+      0 100%
+    );
   }
-  .sheet-seg:nth-last-child(2) {
-    border-start-end-radius: 999px;
-    border-end-end-radius: 999px;
-    padding-inline: calc(var(--sheet-seg-inset) + 0.125rem);
+  .sheet-seg:first-child:not(.sheet-seg-total) {
+    /* First outcome, including one that is also the last. */
+    padding-inline-start: var(--sheet-seg-first-start);
+    padding-inline-end: var(--sheet-seg-first-end);
+    clip-path: polygon(0 0, 100% 0, calc(100% - var(--sheet-seg-slant)) 100%, 0 100%);
   }
-  /*
-    A lone outcome: first and second-from-last at once, so both of the rules
-    above land on it and the later one takes its leading inset back. It is a
-    pill in its own right, and it is set as one rather than as two halves that
-    happened to meet -- wider at the glyph, tighter at the figure, which is
-    where the tabular digits already carry their own space.
-
-    Written as the two selectors it actually is, so it outranks both without
-    anything having to be ordered around it.
-  */
-  /*
-    A middle outcome -- square at both ends, which only happens once the bar
-    carries three of them. It takes two pixels more at the start than the tight
-    inset, because a square leading edge sits right against the hairline before
-    it, where a curved one has its own corner for daylight -- which lands it on
-    the same inset the last outcome uses. Only the start: its trailing edge
-    meets the next hairline the same way, and adding at both ends would widen
-    the piece rather than centre what is in it.
-  */
+  /* Middle outcomes exclude the first and the one immediately before total. */
   .sheet-seg:not(:first-child):not(:nth-last-child(2)):not(.sheet-seg-total) {
-    padding-inline-start: calc(var(--sheet-seg-inset) + 0.1875rem);
+    padding-inline-start: var(--sheet-seg-middle-start);
+    padding-inline-end: var(--sheet-seg-middle-end);
   }
-  .sheet-seg:first-child:nth-last-child(2) {
-    padding-inline: calc(var(--sheet-seg-inset) + 0.1875rem)
-      calc(var(--sheet-seg-inset) + 0.0625rem);
+  /* Last outcome: second-to-last child because the total always follows it. */
+  .sheet-seg:nth-last-child(2):not(:first-child):not(.sheet-seg-total) {
+    padding-inline-start: var(--sheet-seg-last-start);
+    padding-inline-end: var(--sheet-seg-last-end);
   }
-  /* Its own pill: both ends curve, so both ends take the wider inset and the
-     figure sits centred in it. */
+  .sheet-seg + .sheet-seg {
+    margin-inline-start: calc(var(--sheet-seg-gap) - var(--sheet-seg-slant));
+  }
+  /* A matching slanted leading edge, separated from the last outcome. */
   .sheet-seg-total {
-    border-radius: 999px;
-    padding-inline: calc(var(--sheet-seg-inset) + 0.1875rem);
+    /* The value utility reads this weight; labels inherit the same semibold. */
+    --sp-mono-weight: var(--font-weight-semibold);
+    /* Total after outcomes: slanted start, rounded end. */
+    padding-inline-start: var(--sheet-total-start);
+    padding-inline-end: var(--sheet-total-end);
+    gap: 0.25rem;
+    background: var(--sheet-total-face);
+    color: var(--sheet-total-ink);
+    clip-path: polygon(var(--sheet-seg-slant) 0, 100% 0, 100% 100%, 0 100%);
+  }
+  .sheet-seg + .sheet-seg-total {
+    margin-inline-start: calc(var(--sheet-total-gap) - var(--sheet-seg-slant));
+  }
+  .sheet-seg-total:only-child {
+    /* Total alone: rounded at both ends, with equal content clearance. */
+    padding-inline-start: var(--sheet-total-only-start);
+    padding-inline-end: var(--sheet-total-only-end);
+    clip-path: none;
   }
 
-  /*
-    Every segment carrying a mark is the same width, whether its count is one
-    digit or two: the bar is read as a set of parts, and parts that changed
-    width with their own value would make two runs with the same outcomes look
-    like different shapes. Two digits' worth of the figure's own measure, which
-    grows with the type rather than being a pixel guess -- a third digit still
-    grows the segment, but at that point the number is the news.
-  */
-  .sheet-seg > .value {
+  /* One width whether the count is one digit or two: parts that changed width
+     with their value would make two runs with the same outcomes look like
+     different shapes. Two digits of the figure's own measure, so it grows with
+     the type rather than being a pixel guess. */
+  .sheet-seg:not(.sheet-seg-total) > .value {
     min-width: 2ch;
     text-align: center;
   }
-  /* A hairline of the row's own ground between segments, so two faces that
-     meet do not read as one band of a third colour. */
-  .sheet-seg + .sheet-seg {
-    margin-inline-start: 1.5px;
-  }
-  /* A gap rather than a hairline, because what it separates is not another
-     outcome -- wide enough to read as two objects now that both ends curve
-     into it. */
-  .sheet-seg + .sheet-seg-total {
-    margin-inline-start: 5px;
-  }
-  /*
-    The total is not an outcome -- it is what the outcomes are out of -- so it
-    is not a severity either. It takes the control ramp, which makes it the one
-    neutral piece of a coloured bar, and its own token moves it without
-    touching any of the four tones. Neutral in every state of the run, too: a
-    total that borrowed a fifth colour on completion would be one more thing to
-    decode in a bar whose whole point is that its colours mean something.
-  */
-  .sheet-seg-total {
-    background: var(--sheet-total-face);
-    color: var(--sheet-total-ink);
-  }
-
   @media (prefers-reduced-motion: reduce) {
     .sheet-row,
     .sheet-row *,
@@ -2679,14 +2279,22 @@
     .sheet-seg {
       box-shadow: inset 0 0 0 1px CanvasText;
     }
+    /* Keep complete outlines when system colours replace the coloured faces. */
+    .sheet-seg:not(.sheet-seg-total),
+    .sheet-seg:first-child:not(.sheet-seg-total),
+    .sheet-seg-total {
+      clip-path: none;
+    }
+    .sheet-seg + .sheet-seg {
+      margin-inline-start: var(--sheet-seg-gap);
+    }
+    .sheet-seg + .sheet-seg-total {
+      margin-inline-start: var(--sheet-total-gap);
+    }
   }
-  /*
-    Where the sheet is too narrow for three columns the rail stops being a
-    column and becomes a strip above the thread, as it did before -- a full
-    list there would push the thread off the screen. The divider moves to the
-    leading edge with them, and the version boundary comes off, since a
-    boundary between two runs means nothing once they sit side by side.
-  */
+  /* Too narrow for three columns: the rail becomes a strip above the thread,
+     the divider moves to the leading edge, and the version boundary comes off
+     -- it means nothing once two runs sit side by side. */
   @container sheet (width < 52rem) {
     .sheet-list {
       flex-direction: row;

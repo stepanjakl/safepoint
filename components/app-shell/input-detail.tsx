@@ -20,7 +20,7 @@ const FILTER_FROM = 8;
 const CITED_SHOWN = 8;
 
 const CHIP =
-  'value control-wash border-rule-default text-muted hover:bg-surface-inset hover:text-primary focus-visible:bg-surface-inset focus-visible:text-primary inline-flex min-h-7 items-center rounded-full border px-2 text-meta';
+  'value control-wash border-rule-default text-muted hover:bg-surface-hover hover:text-primary focus-visible:bg-surface-hover focus-visible:text-primary inline-flex min-h-7 items-center rounded-full border px-2 text-meta';
 
 /*
   One input, as this run read it: its JSON file, when its records were

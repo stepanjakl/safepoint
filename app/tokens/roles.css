@@ -1,0 +1,62 @@
+/* ── Roles ──────────────────────────────────────────────────────────────────
+   The ground the interface is built on: surfaces, text, rules, action.
+   Control and component faces are in faces.css; state colour in state.css.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root,
+[data-theme],
+[data-neutral] {
+  /* Surfaces */
+  --sp-canvas: light-dark(var(--sp-neutral-200), var(--sp-neutral-900));
+  --sp-surface-primary: light-dark(var(--sp-neutral-100), var(--sp-neutral-850));
+  --sp-surface-floating: light-dark(var(--sp-neutral-50), var(--sp-neutral-775));
+  --sp-surface-inset: light-dark(var(--sp-neutral-200), var(--sp-neutral-950));
+  --sp-surface-control: light-dark(var(--sp-neutral-50), var(--sp-neutral-750));
+  /* The darkest light-theme ground. --sp-text-muted reads 5.2:1 here, its
+     thinnest margin anywhere, so a control taking this fill moves its ink too. */
+  --sp-surface-selected: light-dark(var(--sp-neutral-300), var(--sp-neutral-750));
+  /* The wash a control takes under the pointer. Light deepens, dark lifts --
+     --sp-surface-inset is the deepest step on the ramp, so using it as a hover
+     state put a hole under the pointer in dark. */
+  --sp-surface-hover: light-dark(var(--sp-neutral-200), var(--sp-neutral-800));
+  --sp-surface-disabled: light-dark(var(--sp-neutral-100), var(--sp-neutral-925));
+
+  /* Text */
+  --sp-text-primary: light-dark(var(--sp-neutral-900), var(--sp-neutral-175));
+  /* Half a step below the ramp's middle: 500 reads 3.8:1 on --sp-surface-inset,
+     under AA at micro. 550 reads 4.8:1 -- the lightest that still passes. */
+  --sp-text-muted: light-dark(var(--sp-neutral-550), var(--sp-neutral-350));
+  /* Muted, one step toward primary. Moves with muted rather than staying put. */
+  --sp-text-muted-strong: light-dark(var(--sp-neutral-650), var(--sp-neutral-250));
+  /* A third step, so a row has rest, hover and current rather than two. */
+  --sp-text-muted-soft: light-dark(var(--sp-neutral-500), var(--sp-neutral-400));
+  --sp-text-inverse: light-dark(var(--sp-neutral-50), var(--sp-neutral-900));
+
+  /* Rules */
+  --sp-rule-faint: light-dark(var(--sp-neutral-300), var(--sp-neutral-750));
+  --sp-rule-default: light-dark(var(--sp-neutral-350), var(--sp-neutral-650));
+  --sp-rule-strong: light-dark(var(--sp-neutral-500), var(--sp-neutral-550));
+  /* The line beside a rule. Named separately from the sheen it reads because
+     the two are different objects -- a rule's companion line, not a face's lit
+     edge -- but the scale now covers both, so these are aliases rather than
+     values of their own. */
+  --sp-rule-etch: var(--sp-face-highlight-strong);
+  --sp-rule-etch-solid: var(--sp-face-highlight-solid);
+
+  /* Neutral interaction */
+  --sp-action: light-dark(var(--sp-neutral-900), var(--sp-neutral-150));
+  --sp-action-hover: light-dark(var(--sp-neutral-700), var(--sp-neutral-100));
+
+  /* The top sheen on an enclosure. */
+  --sp-edge-inner: light-dark(
+    color-mix(in oklab, var(--color-white) 85%, transparent),
+    color-mix(in oklab, var(--color-white) 16%, transparent)
+  );
+
+  /* The notch: canvas through a pane's corner, outlined in the pane's own
+     edge. Takes surface-raised's ring, sheen and face. */
+  --sp-notch-face: var(--sp-canvas);
+  --sp-notch-edge: light-dark(var(--sp-rule-default), var(--sp-rule-faint));
+  --sp-notch-highlight: var(--sp-face-highlight-strong);
+  --sp-notch-pane: var(--sp-surface-primary);
+}

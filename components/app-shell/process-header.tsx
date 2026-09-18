@@ -1,5 +1,6 @@
 'use client';
 
+import { styleDebug } from '@/lib/style-debug';
 import { Button as AriaButton } from 'react-aria-components';
 // Deep imports: Blode's barrel is the whole icon library. The two data icons
 // are one drawing: the same tray, with the arrow turned in or out, so the pair
@@ -78,8 +79,9 @@ const ICON_ITEM =
   'group/data header-button control-face inline-grid aspect-square flex-none cursor-pointer place-items-center rounded-full ps-0 pe-0';
 
 const ICON = {
-  none: 'text-header-icon group-data-[hovered]/data:text-header-icon-hover group-data-[focus-visible]/data:text-header-icon-hover group-data-[pressed]/data:text-header-icon-hover',
-  selected: 'text-header-icon-selected',
+  none: 'text-header-icon transition-colors duration-(--duration-state) ease-out group-data-[hovered]/data:text-header-icon-hover group-data-[focus-visible]/data:text-header-icon-hover group-data-[pressed]/data:text-header-icon-hover',
+  selected:
+    'text-header-icon-selected transition-colors duration-(--duration-state) ease-out',
 } as const;
 
 /*
@@ -134,7 +136,10 @@ function ProcessMenu({
   return (
     // Below the phone breakpoint the row cannot hold the name, the group and
     // the notch, and the name has first claim.
-    <div className={MENU}>
+    <div
+      {...styleDebug({ component: 'ProcessHeader', part: 'menu' })}
+      className={MENU}
+    >
       {/* It ends in its word rather than a count, so it ends in the padding it
           starts with: the derived end inset belongs to the items whose last
           thing is a pill. */}
@@ -142,6 +147,11 @@ function ProcessMenu({
         onPress={() => onTabChange('runs')}
         aria-label="Runs"
         aria-current={tab === 'runs' ? 'true' : undefined}
+        {...styleDebug({
+          component: 'ProcessHeader',
+          part: 'runs',
+          appearance: 'header-button',
+        })}
         className={cx(ITEM, 'pe-3', face('runs'))}
       >
         <History
@@ -156,6 +166,11 @@ function ProcessMenu({
         onPress={() => onTabChange('instructions')}
         aria-label={`Instructions: version ${version}`}
         aria-current={tab === 'instructions' ? 'true' : undefined}
+        {...styleDebug({
+          component: 'ProcessHeader',
+          part: 'instructions',
+          appearance: 'header-button',
+        })}
         className={cx(ITEM, face('instructions'))}
       >
         <Lab
@@ -165,7 +180,16 @@ function ProcessMenu({
           className={cx('flex-none -translate-y-px', icon('instructions'))}
         />
         <span className={LABEL}>Instructions</span>
-        <span className={COUNT}>{version}</span>
+        <span
+          {...styleDebug({
+            component: 'ProcessHeader',
+            part: 'count',
+            appearance: 'header-button-count',
+          })}
+          className={COUNT}
+        >
+          {version}
+        </span>
       </AriaButton>
       {inputs.length > 0 ? (
         <AriaButton
@@ -175,6 +199,11 @@ function ProcessMenu({
           }`}
           aria-current={tab === 'inputs' ? 'true' : undefined}
           data-has-state-dot={worst || undefined}
+          {...styleDebug({
+            component: 'ProcessHeader',
+            part: 'inputs',
+            appearance: 'header-button',
+          })}
           className={cx(ITEM, face('inputs', worst ?? 'none'))}
         >
           <ArrowInbox
@@ -186,7 +215,16 @@ function ProcessMenu({
           <span className={LABEL}>Inputs</span>
           {worst ? (
             <span className="inline-flex items-center gap-1.5">
-              <span className={COUNT}>{inputs.length}</span>
+              <span
+                {...styleDebug({
+                  component: 'ProcessHeader',
+                  part: 'count',
+                  appearance: 'header-button-count',
+                })}
+                className={COUNT}
+              >
+                {inputs.length}
+              </span>
               <span
                 aria-hidden="true"
                 className={cx(
@@ -196,7 +234,16 @@ function ProcessMenu({
               />
             </span>
           ) : (
-            <span className={COUNT}>{inputs.length}</span>
+            <span
+              {...styleDebug({
+                component: 'ProcessHeader',
+                part: 'count',
+                appearance: 'header-button-count',
+              })}
+              className={COUNT}
+            >
+              {inputs.length}
+            </span>
           )}
         </AriaButton>
       ) : null}
@@ -204,6 +251,11 @@ function ProcessMenu({
         onPress={() => onTabChange('outputs')}
         aria-label={`Outputs: ${plural(outputs.length, 'API', 'APIs')}`}
         aria-current={tab === 'outputs' ? 'true' : undefined}
+        {...styleDebug({
+          component: 'ProcessHeader',
+          part: 'outputs',
+          appearance: 'header-button',
+        })}
         className={cx(ITEM, face('outputs'))}
       >
         <ArrowOutOfBox
@@ -213,12 +265,26 @@ function ProcessMenu({
           className={cx('flex-none -translate-y-px', icon('outputs'))}
         />
         <span className={LABEL}>Outputs</span>
-        <span className={COUNT}>{outputs.length}</span>
+        <span
+          {...styleDebug({
+            component: 'ProcessHeader',
+            part: 'count',
+            appearance: 'header-button-count',
+          })}
+          className={COUNT}
+        >
+          {outputs.length}
+        </span>
       </AriaButton>
       <AriaButton
         onPress={() => onTabChange('settings')}
         aria-label="Settings"
         aria-current={tab === 'settings' ? 'true' : undefined}
+        {...styleDebug({
+          component: 'ProcessHeader',
+          part: 'settings',
+          appearance: 'header-button',
+        })}
         className={cx(ICON_ITEM, face('settings'))}
       >
         {/* No optical lift: the lift aligns an icon with text on a baseline,
@@ -265,7 +331,10 @@ export function ProcessHeader({
     // The separator shadow extends into the first list row. Paint this header
     // above the sticky section headings so their opaque fills cannot cover it;
     // the notch stays in the same layer as the edge it continues.
-    <header className="border-rule-faint shadow-separator-bottom-strong relative z-10 grid grid-cols-[minmax(0,1fr)_auto] border-b">
+    <header
+      {...styleDebug({ component: 'ProcessHeader' })}
+      className="border-rule-faint shadow-separator-bottom-strong relative z-10 grid grid-cols-[minmax(0,1fr)_auto] border-b"
+    >
       {/* Centred in the row. The notch holds the same inset above its
           controls as below them, so their centre is the row's too and the
           heading lines up with them at any control height or gap, with even

@@ -1,5 +1,6 @@
 'use client';
 
+import { styleDebug } from '@/lib/style-debug';
 import {
   useEffect,
   useRef,
@@ -174,6 +175,7 @@ export function DrawerAside({
   return (
     <section
       aria-labelledby="drawer-aside-title"
+      {...styleDebug({ component: 'DrawerAside', appearance: 'drawer-aside' })}
       data-exiting={exiting || undefined}
       data-direction={direction}
       onAnimationEnd={(event) => {
@@ -214,6 +216,11 @@ function AsideContent({
 }) {
   return (
     <div
+      {...styleDebug({
+        component: 'DrawerAside',
+        part: 'panel',
+        appearance: className,
+      })}
       // Leaving content can be neither reached nor read.
       inert={inert}
       aria-hidden={inert || undefined}

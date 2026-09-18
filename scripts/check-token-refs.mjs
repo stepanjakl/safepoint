@@ -1,7 +1,7 @@
 /*
   Every var(--…) in the app's CSS resolves to something.
 
-  The bug this exists for: a ramp in tokens.css bound nine palettes by name,
+  The bug this exists for: a ramp in tokens/ramps.css bound nine palettes by name,
   four of which were never defined anywhere -- not by Tailwind, not by the
   generators -- so selecting one made every --sp-* role in that subtree invalid
   at computed-value time. CSS says nothing about it, the build says nothing

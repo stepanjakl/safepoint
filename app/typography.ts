@@ -5,7 +5,7 @@ import localFont from 'next/font/local';
 
 /*
   Every candidate family is declared here; `data-typeface` on <html> decides
-  which one each semantic role resolves to (see the role blocks in tokens.css).
+  which one each semantic role resolves to (see the role blocks in tokens/type.css).
 
   Only the default set is preloaded. The others still emit @font-face rules --
   a few hundred bytes of CSS -- but the browser fetches a file only if a role
@@ -35,7 +35,7 @@ const glide = localFont({
   preload: false,
 });
 
-// Single weight (400), no axes -- see --sp-mono-weight in tokens.css.
+// Single weight (400), no axes -- see --sp-mono-weight in tokens/type.css.
 // Available feature tags, none enabled by default: case, frac, hist, jalt,
 // ss01-ss05, zero.
 const glideMono = localFont({

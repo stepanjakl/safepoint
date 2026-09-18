@@ -4,6 +4,7 @@
 // as `children` and is never touched here.
 'use client';
 
+import { styleDebug } from '@/lib/style-debug';
 import type { ReactNode } from 'react';
 import { Glyph } from '@/components/ui/glyph';
 import { Tooltip } from '@/components/ui/tooltip';
@@ -32,6 +33,11 @@ function Marker({ step }: { step: ProcessStep }) {
   return (
     <Tooltip label={status} description={step.note} placement="right">
       <span
+        {...styleDebug({
+          component: 'ThreadStep',
+          part: 'status-marker',
+          appearance: 'thread-dot',
+        })}
         className={cx('thread-dot', toneText[marker.tone])}
         tabIndex={0}
         role="img"
@@ -51,8 +57,18 @@ export function ThreadStep({
   children: ReactNode;
 }) {
   return (
-    <li className="thread-step">
-      <span className="thread-marker">
+    <li
+      {...styleDebug({ component: 'ThreadStep', appearance: 'thread-step' })}
+      className="thread-step"
+    >
+      <span
+        {...styleDebug({
+          component: 'ThreadStep',
+          part: 'connector',
+          appearance: 'thread-marker',
+        })}
+        className="thread-marker"
+      >
         <Marker step={step} />
       </span>
       {/* The name sits above the box rather than inside it, so the box stays
@@ -64,7 +80,16 @@ export function ThreadStep({
           <span className="text-muted text-meta font-normal">{step.label}</span>
         ) : null}
       </p>
-      <div className="thread-step-body">{children}</div>
+      <div
+        {...styleDebug({
+          component: 'ThreadStep',
+          part: 'body',
+          appearance: 'thread-step-body',
+        })}
+        className="thread-step-body"
+      >
+        {children}
+      </div>
     </li>
   );
 }

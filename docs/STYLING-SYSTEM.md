@@ -8,15 +8,105 @@ Colocated CSS Modules were proposed as an alternative, trialled on one component
 
 ## The division
 
-Three stylesheets, each with one job. `globals.css` imports the other two.
+Three jobs. `globals.css` imports the rest, in the order listed below.
 
 | File | Holds | Test for belonging |
 | --- | --- | --- |
-| `app/tokens.css` | every design token, and the `@theme inline` block that publishes them as utilities | is it a value the system decides once? |
+| `app/tokens/` | every design token, and the `@theme inline` block that publishes them as utilities | is it a value the system decides once? |
 | `app/globals.css` | the base layer, the `@utility` extensions, `@property` registrations, forced-colors and print fallbacks | is it a Tailwind extension or a document default? |
 | `app/components.css` | what markup cannot express | see below |
 
 Everything else is a utility in the component.
+
+`app/tokens/` is seven files, each named for one job, and the import order in
+`globals.css` is the order they are listed in:
+
+| File | Holds |
+| --- | --- |
+| `ramps.css` | `color-scheme`, the nine `[data-neutral=…]` palettes, the half steps |
+| `roles.css` | canvas, surfaces, text, rules, action, edges, notch colours |
+| `faces.css` | every control and component face, and the ink on it |
+| `state.css` | the six state scales, the adapter modes, the Radix palette |
+| `type.css` | the families and the type scale |
+| `geometry.css` | durations, tile chroma ceilings, notch and slant geometry |
+| `theme.css` | the `@theme inline` block: everything published to Tailwind |
+
+Each file that declares themed roles repeats the selector header
+`:root, [data-theme], [data-neutral]`, so the re-declaration contract is visible
+in each rather than implied once.
+
+### Finding an element's styles
+
+Use `styleDebug` from `lib/style-debug.ts` on an existing DOM element or a
+component that forwards data attributes to its DOM root:
+
+```tsx
+<div
+  {...styleDebug({
+    component: 'ProcessMenu',
+    part: 'row',
+    appearance: 'process-menu-row',
+  })}
+>
+```
+
+In development this emits `data-component`, `data-part` and `data-appearance`.
+The helper returns nothing outside development. It adds no elements or browser
+listeners; it does not promise build-time removal of every helper call.
+
+- **Component** names the owning component. A part may be rendered by a private
+  helper, but keeps the public owner's identity where that makes navigation clearer.
+- **Part** names a meaningful styled region: row, badge, track, ring. Omit it
+  on the component root. Do not annotate every layout wrapper or glyph.
+- **Appearance** names the exact CSS selector or utility defining the treatment,
+  without a leading dot. If independently meaningful treatments share an element,
+  list their names separated by spaces (for example, `process-menu-link text-menu-link`).
+  These are search terms, not a copy of the full class list. Omit it for ordinary utility compositions that have
+  no single named treatment. Button retains the short family names `quiet`
+  and `accent`, matching `control-quiet` / `control-accent` and their token families.
+- **Variant** comes from existing props or the configuration that chooses the
+  classes. StatusLabel uses its tone; menu tiles use their hue class.
+
+When an interactive treatment is difficult to trace across utility constants,
+put its resting and interactive states together under one searchable class in
+`components.css`, inside `@layer components`. This qualifies under the existing
+"set of states on one selector" rule below. Keep layout and simple typography in
+markup and keep values in tokens. `.process-menu-back` is the reference example:
+its rule applies the shared transition and directly names its text and background
+tokens for rest, hover and keyboard focus. Its metadata names only
+`process-menu-back`; it does not duplicate the state classes or token list.
+
+Preserve the original state semantics when moving rules. Tailwind's `hover:`
+variant is guarded by `(hover: hover)`; a bare CSS `:hover` is not equivalent on
+touch devices. React Aria's data states are also distinct from native pseudo-classes.
+
+Inspect the element or its nearest marked ancestor, then search the component
+name or appearance. LocatorJS provides the source location. Keep paths, line
+numbers and token lists out of metadata so they cannot become stale.
+
+| Inspected identity | Where the treatment lives |
+| --- | --- |
+| ProcessMenu / row / `process-menu-row` | `app/components.css`: the row's states and the custom properties it publishes |
+| ProcessMenu / status-badge / `surface-menu-badge` | `app/globals.css`: reads the badge stops inherited from the row |
+| ProcessMenu / tile / `surface-menu-tile` | `app/globals.css`: tile face; the hue variant supplies its colour roles |
+| ProcessMenu / row-label / `text-menu-link` | `app/tokens/theme.css`: publishes the utility colour; `app/tokens/faces.css`: defines `--sp-menu-link` |
+| ProcessMenu / back-heading / `process-menu-back` | `app/components.css`: all appearance states together, directly referencing `--sp-menu-link`, `--sp-text-primary` and `--sp-menu-wash-strong` |
+| Button / secondary / `quiet` | `control-quiet` in `app/globals.css`, then `--sp-quiet-*` in `app/tokens/faces.css` |
+| Button / ring / `slant-ring` | `app/components.css`: paints the ring using stops inherited from the Button |
+| ProcessHeader / count / `header-button-count` | `app/components.css`: geometry; the adjacent `bg-header-button-count` utility supplies colour |
+| RunRow / tally-segment / `sheet-seg` | `app/components.css`: segment treatment, with existing state attributes selecting colours |
+
+Appearance describes the configured treatment, not the complete computed style.
+Disabled and interaction states, inherited values and caller classes can override
+it. Use existing state attributes to see the active state; do not mirror hover,
+selection, freshness or disabled state in diagnostic metadata. Shared appearances
+are not tokens unique to the element's accessible name.
+
+Diagnostic attributes must never be CSS selectors or behavior hooks. Functional
+attributes such as `data-slant`, `data-size`, `data-tone` on the menu badge, and
+React Aria's state attributes remain in production. Keep class strings literal
+so Tailwind can discover them. When adding a treatment, annotate its meaningful
+root and independently painted parts using this convention.
 
 ### What earns a place in `components.css`
 
@@ -75,24 +165,68 @@ Named for what they enclose. Pulled in from Tailwind's 4/8/12/16 so corners read
 
 Every role is declared once with `light-dark()` over a neutral ramp for surfaces, rules, text and action, and palette-independent scales for semantic state (Radix by default, Tailwind as a development alternative). `@theme inline` publishes them as `bg-canvas`, `border-rule-strong`, `text-muted` and so on.
 
-A role never names a neutral palette. It reads a step from one of two ramps, and the ramp names the palette — `zinc` by default:
+A role never names a neutral palette. It reads a step from `--sp-neutral-*`, and the ramp names the palette — `zinc` by default. One ramp carries everything: canvas, surfaces, text, rules, menus and notices, and equally the faces that answer a press — quiet and unavailable buttons, fields, keycaps, the badges built on the keycap, the menu count chip.
 
-| Ramp | Carries |
-| --- | --- |
-| `--sp-neutral-*` | canvas, surfaces, text, rules, menus, notices |
-| `--sp-control-*` | the faces that answer a press: quiet and unavailable buttons, fields, keycaps and the badges built on the keycap, the menu count chip |
+There used to be two. `--sp-control-*` existed so `data-control-neutral` could give controls a palette of their own, and it cost 230 lines of duplicated ramp, a fourth selector on every role block, and a split token API in which "is this a control role?" was a thing to remember rather than to read. It was removed in favour of one ramp and one switch; every step it carried resolved to the identical `--sp-neutral-*` step whenever the attribute was absent, which was always in production.
 
-`--sp-control-*` follows `--sp-neutral-*` unless `data-control-neutral` gives it a palette of its own. The intermediate steps (150, 250, 350, 450, 750) are computed as oklab midpoints of their neighbours, so every palette has them. Moving a role between the groups is a change to the ramp name on that one line.
+Every neutral palette exposes steps at 25-point intervals from 75 through 925,
+as well as the 50 and 950 endpoints. Native hundred steps stay unchanged;
+half steps are OKLab midpoints of their anchors and quarter steps are midpoints
+of the adjacent half/hundred steps. Existing intermediate values are preserved.
 
 The midpoints stay `color-mix()` at runtime rather than baked values so they can never disagree with the neighbours they sit between — if Tailwind retunes a step, they follow. Note that a half step is not a fixed distance: Tailwind's ramp is uneven, so 150 and 250 are ~2.4% in lightness while 350 and 450 are ~8%, wider than several named steps. Lightning CSS emits the neighbour below as a fallback, so a browser without `color-mix()` loses the midpoint rather than the colour.
 
 Five of the nine palettes are Tailwind's. The other four — taupe, mauve, mist, olive — are generated by `pnpm colors:neutrals` into `app/neutral-palettes.css`, because Tailwind's five neutrals agree on lightness at every step to within half a percent and differ only in chroma and hue. Each is a hue plus a borrowed chroma curve over that shared curve; the signatures are the tuning surface at the top of `scripts/generate-neutral-palettes.ts`. `pnpm check:tokens` then verifies that every `var(--…)` in the app's CSS resolves against something — the app's stylesheets, Tailwind's installed theme, a property set from TypeScript, or a dependency — so a palette bound by a name nothing defines fails a check rather than silently unsetting a subtree.
 
-`data-theme`, `data-neutral` and `data-control-neutral` each re-resolve the tokens for their subtree. Because Lightning CSS polyfills `light-dark()` with inherited custom properties, and a custom property substitutes its `var()`s where it is declared, any subtree that changes one must re-declare the tokens. That is why the token block targets `:root, [data-theme], [data-neutral], [data-control-neutral]`.
+`data-theme` and `data-neutral` each re-resolve the tokens for their subtree. Because Lightning CSS polyfills `light-dark()` with inherited custom properties, and a custom property substitutes its `var()`s where it is declared, any subtree that changes one must re-declare the tokens. That is why every themed block targets `:root, [data-theme], [data-neutral]`.
+
+The Playwright/axe browser contrast suite is `pnpm check:contrast`. Its tested
+states, reports and limitations are in [CONTRAST-CHECKER.md](CONTRAST-CHECKER.md).
+
+### Tuning a theme
+
+Run **`pnpm dev:styles`** (webpack) rather than `pnpm dev` (Turbopack) when the work is colour. Two things only that mode gives you, and both matter when you are moving between the editor and DevTools:
+
+- **CSS source maps.** `next.config.ts` registers `SourceMapDevToolPlugin` inside its `webpack()` block, which Turbopack never calls, and hands DevTools a `file://` identity so a workspace folder maps a rule back to the file on disk.
+- **Readable custom properties.** Tailwind v4 hardcodes its Lightning CSS targets at Chrome 111 / Safari 16.4 / Firefox 128 and reads no `browserslist`, so `light-dark()` is polyfilled into a space toggle no configuration can turn off:
+
+  ```
+  --sp-canvas: var(--lightningcss-light, var(--sp-neutral-200))
+               var(--lightningcss-dark, var(--sp-neutral-900));
+  ```
+
+  `tools/postcss-light-dark` folds that back into `light-dark(…)` so the Styles pane reads character-for-character like `app/tokens/`. It is a postcss plugin, and under Turbopack postcss runs *before* Lightning CSS, so there is nothing to fold yet — hence webpack. It is gated on `NODE_ENV`, so production keeps the polyfill and the browser support that comes with it.
+
+Ink steps are **toward presence**, never "darker": the dark half of a pair moves lighter as the light half moves darker, so a role says the same thing on either canvas. `--sp-text-muted-strong`, `--sp-header-ink` and the sheet's three rungs all read this way, and a pair that moves only one half opens or closes the gap between two roles by half a step without saying so.
+
+Two light-theme values are near their contrast floor and constrain what can go under them. `--sp-text-muted` is `neutral-550` because `neutral-500` reads 3.8:1 on `--sp-surface-inset`, under AA at the micro size the readout is set in; 550 reads 4.8:1, the lightest that still passes. Half a step rather than a whole one, because this role is most of the small text in the app and the quiet it is chosen for can be overdone. The margin is thin enough to be a rule about surfaces: a light surface darker than `--sp-surface-selected` (`neutral-300`, where muted reads 5.2:1) puts the role back under AA, which is why that surface pairs with a primary ink rather than leaving muted on it. The dark halves of both are untouched — they read above 13:1 already, and the two canvases are not failing the same way.
+
+### Dark surface tuning
+
+Dark neutral faces and decorative edges are shifted 50 ramp points deeper,
+including their hover and selected states. Unavailable faces use the 900/950
+midpoint, 925; the canvas uses 900 and inset uses 950. Status scales and active
+field edges retain their existing values. Cyan and teal action faces deepen
+further in dark mode to keep white labels above 4.5:1 across their gradients.
+
+The enclosure's white sheen drops from 22% to 16%. Black face highlights use
+10%, 20%, 30%, 35% and 40% opacity so their named strengths remain ordered.
+These translucent edges are tuned separately from opaque ramp steps.
+
+Dark primary text uses neutral-175, secondary text neutral-350, and stronger
+secondary text neutral-250. Header labels and supporting icons, menu links,
+run dates and neutral tally numbers follow the same softer hierarchy through
+rest, hover and selection. The quietest text stays at neutral-400. Coloured
+tally segments use black ink in dark mode: their state-1 ink fell below
+4.5:1 on the decision and unavailable solids. Light-mode text is unchanged.
+
+Floating surfaces use neutral-775 for clearer separation from primary panels.
+The quiet-button hover top uses neutral-675 to soften its lift and give muted
+labels more contrast margin; its bottom remains neutral-750.
 
 ### State colours
 
-State colours have two layers in `app/tokens.css`:
+State colours have two layers in `app/tokens/state.css`:
 
 - **Numbered steps** hold palette values: `--sp-state-verified-11` is Radix grass 11 in the default palette, with light and dark variants.
 - **Bare names** are text-role aliases: `--sp-state-verified: var(--sp-state-verified-11)`. Use the bare name for state text and icons; use a numbered step when choosing a surface or a specific contrast role.
@@ -112,7 +246,7 @@ For example, a completed run’s state label uses verified 11 through its bare a
 - **`control-face` is a face and a ring built from registered stops** (`--control-face-top`, `--control-face-bottom`, `--control-ring-top`, `--control-ring-bottom`, `--control-highlight`), so a colour utility restyles it and it animates its own stops. Never put a `transition-*` utility beside it: the utility replaces its property list and the face snaps. Flat controls that answer with a wash take `control-wash` instead.
 - **The sheen has two widths.** `--spacing-control-highlight`, a whole pixel, for panes and cards. `control-hairline` asks for `--spacing-control-highlight-hairline` on anything icon- or button-sized, where a full pixel of white inside the ring reads as a second border.
 - **A child can follow its parent's state through custom properties.** A row's status badge rests as a keycap and goes bare whenever its row is hovered, focused or current, so the row shows through it: `.process-menu-row` publishes the badge's stops per state and `surface-menu-badge` reads them. The priority between states is then the rule's reading order rather than Tailwind's emission order, and there is no variant per state on the child.
-- **A fill laid on a face is a ramp step, not a `color-mix()`.** Give a chip or pill inside a control its own role over `--sp-control-*` (or `--sp-neutral-*`), picked one step off the face where the fill sits — `--sp-value-pill` is `control-200` / `control-800` against the quiet face's white→200 and 700→800. A mix resolves against whatever is under it, so its colour is nowhere on the ramp and cannot be matched or reused by name; a step can. Translucent mixes stay for what has to show a surface through it: sheens, washes, highlights.
+- **A fill laid on a face is a ramp step, not a `color-mix()`.** Give a chip or pill inside a control its own role over `--sp-neutral-*`, picked one step off the face where the fill sits — `--sp-value-pill` is `neutral-200` / `neutral-800` against the quiet face's white→200 and 700→800. A mix resolves against whatever is under it, so its colour is nowhere on the ramp and cannot be matched or reused by name; a step can. Translucent mixes stay for what has to show a surface through it: sheens, washes, highlights.
 - **A lit line under a rule is a shadow, not a border.** `shadow-rule-etch` offsets `--sp-rule-etch` by the hairline width. A fractional border snaps to whole device pixels, so a 0.75px border draws as 0.5px on a 2× screen; a shadow's offset paints at the width it asks for.
 
 ### Header-control hierarchy
@@ -149,7 +283,7 @@ The tiles beside the workspace menu's items are the one place colour is decorati
 
 **Equal lightness is not equal brightness.** OKLCH lightness is perceptual, but saturated colours look brighter than their lightness says, and by a different amount per hue: most in reds, magentas and blues, least in yellows (the Helmholtz–Kohlrausch effect). No colour space or palette in use corrects for it, which is why both Tailwind's and Radix's scales look uneven across hues. Judge evenness in context and by eye. A greyscale filter measures luminance, which is exactly what this effect makes misleading.
 
-**Cap saturation; keep lightness and hue.** Every tile colour passes through `oklch(from <colour> l min(c, <ceiling>) h)`. A hue already below its ceiling comes through untouched, and only the loud ones are pulled back. The ceilings are tokens in `tokens.css`, one per part per theme — `--tile-chroma-face-*`, `--tile-chroma-ring-*` and `--tile-chroma-glyph-*`, since a face, a ring and a glyph sit far apart in chroma — and `--tile-chroma-scale` multiplies all of them, so the design pane tunes the set with one slider without changing their proportions. The engaged glyph shares the glyph's ceiling.
+**Cap saturation; keep lightness and hue.** Every tile colour passes through `oklch(from <colour> l min(c, <ceiling>) h)`. A hue already below its ceiling comes through untouched, and only the loud ones are pulled back. The ceilings are tokens in `tokens/geometry.css`, one per part per theme — `--tile-chroma-face-*`, `--tile-chroma-ring-*` and `--tile-chroma-glyph-*`, since a face, a ring and a glyph sit far apart in chroma — and `--tile-chroma-scale` multiplies all of them, so the design pane tunes the set with one slider without changing their proportions. The engaged glyph shares the glyph's ceiling.
 
 **Read a Radix step's role before spending it on colour.** Steps 9 and 10 are solids, 11 is low-contrast text, and 12 is high-contrast text and close to neutral: in light it is darker and duller than step 11, so an engaged glyph mapped to it lost its colour under the pointer. An engaged step should be no darker or duller than the resting one in either theme.
 
@@ -158,6 +292,25 @@ The tiles beside the workspace menu's items are the one place colour is decorati
 To add a hue, add a `menu-tile-<hue>` block in `globals.css` that fills every role from both palettes, and name the class whole in markup so the scanner sees it.
 
 ## Conventions
+
+### A comment earns its place by preventing a wrong edit
+
+A comment in a stylesheet stays only if it would stop a specific wrong edit: a
+measured constraint (`4.8:1 on --sp-surface-inset; 500 fails AA at micro`), a
+browser behaviour (`Chrome snaps a border to whole device pixels`), or a
+dependency another file relies on. Two lines, three where it carries a formula.
+
+Anything longer is a design decision and belongs in this document, under the
+section for that part of the system. The stylesheets were 28% comment, with a
+22-line essay sitting on one token — which put the prose between the values and
+the person tuning them, exactly where it helps least.
+
+Section banners are the exception, and are not per-token prose. One form, so
+`Cmd+F` on `/* ──` steps through a file:
+
+```css
+/* ── Faces: header button ──────────────────────────────────── */
+```
 
 ### Never build a class name at runtime
 
@@ -211,7 +364,7 @@ lists worth reading are given names.
 
 CSS custom properties navigate too, through the css-variables extension, and it
 needs two things from `.vscode/settings.json`. `.next` is excluded, or
-`var(--sp-*)` resolves into compiled chunks instead of `tokens.css`. And
+`var(--sp-*)` resolves into compiled chunks instead of `app/tokens/`. And
 `tailwindcss` is in `cssVariables.languages`: the `*.css → tailwindcss`
 association changes every CSS file's language id, the extension only answers for
 the ids in that list, and its default list omits `tailwindcss`. Without the entry,
@@ -233,7 +386,7 @@ Where a value is genuinely dynamic, use a `style` prop rather than an interpolat
 
 ### Reach for a token before an arbitrary value
 
-Markup carries no arbitrary sizing or typography values. Before writing `text-[13px]`, check for a role; before `rounded-[8px]`, check the ladder. If nothing fits, the scale is missing a step — add it in `tokens.css` rather than a bracket in markup.
+Markup carries no arbitrary sizing or typography values. Before writing `text-[13px]`, check for a role; before `rounded-[8px]`, check the ladder. If nothing fits, the scale is missing a step — add it in `app/tokens/` rather than a bracket in markup.
 
 The rule is about values a scale could hold — a size, a radius, a type role, a duration.
 What legitimately stays in brackets is everything a scale could not:
@@ -399,8 +552,7 @@ All of them live on `<html>` — attributes, apart from one inline custom proper
 | Attribute | Choices |
 | --- | --- |
 | `data-theme` | system, light, dark |
-| `data-neutral` | the palette under `--sp-neutral-*`: slate, gray, zinc, neutral, stone, taupe, mauve, mist, olive; also `?neutral=` |
-| `data-control-neutral` | the palette under `--sp-control-*`, or match (no attribute); also `?controls=` |
+| `data-neutral` | the one neutral palette: slate, gray, zinc, neutral, stone, taupe, mauve, mist, olive; also `?neutral=` |
 | `data-typeface` | geist, glide, inter |
 | `data-mono` | the utility-role family, independent of the set |
 | `data-typescale` | base, sharp |

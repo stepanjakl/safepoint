@@ -1,7 +1,7 @@
 /*
   The motion tokens, for the animations Motion drives from JS. Motion takes a
   duration in seconds and a curve as an array, so it cannot read the custom
-  properties app/tokens.css defines; these mirror them, in the same direction
+  properties app/tokens/geometry.css defines; these mirror them, in the same direction
   RAIL_CELL mirrors --spacing-menu-rail, and motion.test.ts fails the moment a
   token moves and its mirror does not.
 */

@@ -109,7 +109,7 @@ const css = `/*
   \`pnpm colors:neutrals\` after changing a signature there.
 
   Inside @theme so Tailwind emits only the steps something reads, and so these
-  sit beside --color-zinc-* under the same name shape: the ramps in tokens.css
+  sit beside --color-zinc-* under the same name shape: the ramps in tokens/ramps.css
   bind a palette by name and cannot tell a generated one from a shipped one.
 */
 @theme {

@@ -1,5 +1,6 @@
 'use client';
 
+import { styleDebug } from '@/lib/style-debug';
 import { useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -37,7 +38,10 @@ export function ProcessSettings({ process }: { process: ProcessSummary }) {
   const runCount = `${runs} ${runs === 1 ? 'run' : 'runs'}`;
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-5 p-5">
+    <div
+      {...styleDebug({ component: 'ProcessSettings' })}
+      className="grid grid-cols-[minmax(0,1fr)] gap-5 p-5"
+    >
       <Section id="settings-name" title="Name">
         <NameField processId={process.id} fallback={process.name} />
       </Section>
@@ -168,6 +172,7 @@ function NameField({
             setDraft(null);
           }
         }}
+        {...styleDebug({ component: 'ProcessSettings', part: 'name-field' })}
         className={FIELD}
       />
       <p id="settings-name-hint" className="text-meta text-muted">

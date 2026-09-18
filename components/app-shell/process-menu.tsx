@@ -1,5 +1,6 @@
 'use client';
 
+import { styleDebug } from '@/lib/style-debug';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -340,7 +341,15 @@ function MenuTile({
 }) {
   return (
     <span className={MENU_RAIL}>
-      <span className={cx(MENU_TILE, hue)}>
+      <span
+        {...styleDebug({
+          component: 'ProcessMenu',
+          part: 'tile',
+          appearance: 'surface-menu-tile',
+          variant: hue,
+        })}
+        className={cx(MENU_TILE, hue)}
+      >
         <MenuIcon
           name={icon}
           className={cx(MENU_TILE_GLYPH, MENU_TILE_GLYPH_AT_REST)}
@@ -688,6 +697,7 @@ export function ProcessMenu({
     // shell's inset added on the left as well, the content sat further from the
     // window than from the sheet and read as off-centre in its column.
     <aside
+      {...styleDebug({ component: 'ProcessMenu' })}
       className="max-shell:px-2 max-shell:py-2.5 shell:px-menu-fade shell:-ml-shell-inset shell:h-full shell:min-h-0 shell:overflow-hidden relative flex min-w-0 flex-col"
       aria-label="Workspace navigation"
     >
@@ -739,6 +749,11 @@ export function ProcessMenu({
             }
           >
             <button
+              {...styleDebug({
+                component: 'ProcessMenu',
+                part: 'search-toggle',
+                appearance: 'control-wash text-header-ink',
+              })}
               ref={searchButtonRef}
               type="button"
               className={cx(
@@ -771,6 +786,13 @@ export function ProcessMenu({
           <span className={MENU_RAIL}>
             <Tooltip label={customising ? 'Save order' : 'Arrange processes'}>
               <button
+                {...styleDebug({
+                  component: 'ProcessMenu',
+                  part: 'arrange-toggle',
+                  appearance: customising
+                    ? 'control-commit'
+                    : 'control-wash text-header-ink',
+                })}
                 ref={editRef}
                 type="button"
                 className={cx(
@@ -826,6 +848,11 @@ export function ProcessMenu({
       {/* The side fades live here rather than on the aside: only the panes
           travel, and the brand row above must not sit under a gradient. */}
       <nav
+        {...styleDebug({
+          component: 'ProcessMenu',
+          part: 'outer-fade',
+          appearance: 'process-menu-fade',
+        })}
         className="process-menu-fade shell:-mx-menu-fade shell:min-h-0 shell:flex-1 relative min-w-0"
         aria-label={level === 'processes' ? 'Processes' : 'Workspace'}
         data-level={level}
@@ -844,6 +871,11 @@ export function ProcessMenu({
               <ul className="mt-2 grid gap-0.5">
                 <li>
                   <button
+                    {...styleDebug({
+                      component: 'ProcessMenu',
+                      part: 'workspace-entry',
+                      appearance: 'text-menu-link control-wash',
+                    })}
                     ref={enterRef}
                     className={cx(
                       MENU_ITEM,
@@ -858,7 +890,16 @@ export function ProcessMenu({
                       iconFilled="processesFilled"
                     />
                     <span>Processes</span>
-                    <span className={MENU_COUNT}>{items.length}</span>
+                    <span
+                      {...styleDebug({
+                        component: 'ProcessMenu',
+                        part: 'workspace-count',
+                        appearance: 'bg-menu-chip',
+                      })}
+                      className={MENU_COUNT}
+                    >
+                      {items.length}
+                    </span>
                     <span className={MENU_CHEVRON_BOX}>
                       <MenuIcon
                         name="right"
@@ -872,6 +913,11 @@ export function ProcessMenu({
                   <li key={placeholder.label}>
                     <button
                       type="button"
+                      {...styleDebug({
+                        component: 'ProcessMenu',
+                        part: 'workspace-placeholder',
+                        appearance: 'text-menu-link control-wash',
+                      })}
                       className={cx(
                         MENU_ITEM,
                         'disabled:text-muted disabled:hover:text-muted-strong',
@@ -937,7 +983,14 @@ export function ProcessMenu({
                   the glyph's box, so the glyph stays on the axis whatever the
                   edge is.
                 */}
-                <div className="menu-search-field flex h-9 items-center gap-2">
+                <div
+                  {...styleDebug({
+                    component: 'ProcessMenu',
+                    part: 'search-field',
+                    appearance: 'menu-search-field',
+                  })}
+                  className="menu-search-field flex h-9 items-center gap-2"
+                >
                   <label className="flex h-full min-w-0 flex-1 cursor-text items-center gap-2">
                     {/*
                     An even-width box, though the glyph in it is 17px. A box of
@@ -958,6 +1011,11 @@ export function ProcessMenu({
                     <input
                       ref={searchRef}
                       type="search"
+                      {...styleDebug({
+                        component: 'ProcessMenu',
+                        part: 'search-input',
+                        appearance: 'text-primary',
+                      })}
                       className="text-primary text-meta min-h-menu-rail w-full min-w-0 border-none bg-transparent font-medium outline-none"
                       placeholder="Search processes…"
                       value={query}
@@ -993,6 +1051,10 @@ export function ProcessMenu({
                     <span className={MENU_RAIL}>
                       <button
                         type="button"
+                        {...styleDebug({
+                          component: 'ProcessMenu',
+                          part: 'search-clear',
+                        })}
                         className={SEARCH_CLEAR}
                         aria-label="Clear search"
                         // Keeps the caret in the field through the press.
@@ -1011,7 +1073,15 @@ export function ProcessMenu({
                     </span>
                   ) : null}
                 </div>
-                <div className={cx(MENU_RULE, 'mt-3.5')} aria-hidden="true" />
+                <div
+                  {...styleDebug({
+                    component: 'ProcessMenu',
+                    part: 'search-separator',
+                    appearance: 'border-rule-faint shadow-rule-etch',
+                  })}
+                  className={cx(MENU_RULE, 'mt-3.5')}
+                  aria-hidden="true"
+                />
               </motion.div>
               {/*
                 The title, and the one action that adds to what it names. Two
@@ -1025,12 +1095,17 @@ export function ProcessMenu({
               */}
               <div className="mt-2 grid">
                 <button
+                  {...styleDebug({
+                    component: 'ProcessMenu',
+                    part: 'back-heading',
+                    appearance: 'process-menu-back',
+                  })}
                   ref={backRef}
                   type="button"
                   className={cx(
-                    MENU_TITLE,
+                    'process-menu-back',
                     MENU_BACK_BOX,
-                    'hover:bg-menu-wash-strong hover:text-primary focus-visible:bg-menu-wash-strong focus-visible:text-primary control-wash col-start-1 row-start-1 flex w-full items-center',
+                    'text-dense col-start-1 row-start-1 flex w-full items-center font-semibold',
                   )}
                   aria-label="Back to workspace menu"
                   onClick={() => navigate('workspace')}
@@ -1059,6 +1134,11 @@ export function ProcessMenu({
                   <Tooltip label="Add process">
                     <button
                       type="button"
+                      {...styleDebug({
+                        component: 'ProcessMenu',
+                        part: 'add-process',
+                        appearance: 'control-wash text-header-ink',
+                      })}
                       className={cx(ICON_BUTTON, 'pointer-events-auto')}
                       aria-label="Add process"
                       aria-disabled="true"
@@ -1086,7 +1166,14 @@ export function ProcessMenu({
                 first row permanently, which reads as the row being greyed out
                 rather than as the list continuing.
               */}
-              <div className="process-list-fade shell:min-h-0 shell:flex-1 relative flex flex-col">
+              <div
+                {...styleDebug({
+                  component: 'ProcessMenu',
+                  part: 'list-fade',
+                  appearance: 'process-list-fade',
+                })}
+                className="process-list-fade shell:min-h-0 shell:flex-1 relative flex flex-col"
+              >
                 <div
                   ref={scrollRef}
                   // An overflow on one axis clips the other as well, so the
@@ -1114,6 +1201,11 @@ export function ProcessMenu({
                     {drag ? (
                       <li
                         aria-hidden="true"
+                        {...styleDebug({
+                          component: 'ProcessMenu',
+                          part: 'drop-slot',
+                          appearance: 'process-drop-slot',
+                        })}
                         className="process-drop-slot"
                         style={{
                           transform: `translateY(${order.indexOf(drag.id) * ROW_HEIGHT}px)`,
@@ -1134,6 +1226,11 @@ export function ProcessMenu({
                           ref={(element) => {
                             rowAnchor(id).current = element;
                           }}
+                          {...styleDebug({
+                            component: 'ProcessMenu',
+                            part: 'row',
+                            appearance: 'process-menu-row',
+                          })}
                           className="process-menu-row group/row"
                           data-current={current === item.href || undefined}
                           data-editing={customising || undefined}
@@ -1165,6 +1262,10 @@ export function ProcessMenu({
                                   else handles.current.delete(id);
                                 }}
                                 type="button"
+                                {...styleDebug({
+                                  component: 'ProcessMenu',
+                                  part: 'reorder-handle',
+                                })}
                                 className={GRIP_HANDLE}
                                 aria-label={`Reorder ${item.name}`}
                                 aria-describedby="process-reorder-instructions"
@@ -1212,6 +1313,11 @@ export function ProcessMenu({
                           {customising ? (
                             <OverflowTooltip label={item.name}>
                               <span
+                                {...styleDebug({
+                                  component: 'ProcessMenu',
+                                  part: 'row-label',
+                                  appearance: 'text-menu-link',
+                                })}
                                 className={cx(MENU_LABEL, 'flex-1')}
                                 tabIndex={0}
                                 role="img"
@@ -1223,6 +1329,12 @@ export function ProcessMenu({
                           ) : (
                             <OverflowTooltip label={item.name}>
                               <Link
+                                {...styleDebug({
+                                  component: 'ProcessMenu',
+                                  part: 'row-link',
+                                  appearance:
+                                    'process-menu-link text-menu-link',
+                                })}
                                 className={cx(MENU_LABEL, 'process-menu-link')}
                                 href={item.href}
                                 aria-current={
@@ -1248,6 +1360,11 @@ export function ProcessMenu({
                               tabIndex={0}
                               role="img"
                               aria-label={`${item.name}: ${item.status.label}, ${item.status.totalLabel}`}
+                              {...styleDebug({
+                                component: 'ProcessMenu',
+                                part: 'status-badge',
+                                appearance: 'surface-menu-badge',
+                              })}
                               className={ROW_BADGE}
                               data-tone={item.status.tone}
                             >
@@ -1300,7 +1417,15 @@ export function ProcessMenu({
           both neighbours -- the distance the row's own top padding used to
           hold below it.
         */}
-        <div className={MENU_RULE} aria-hidden="true" />
+        <div
+          {...styleDebug({
+            component: 'ProcessMenu',
+            part: 'account-separator',
+            appearance: 'border-rule-faint shadow-rule-etch',
+          })}
+          className={MENU_RULE}
+          aria-hidden="true"
+        />
         <div className="group/account flex cursor-pointer items-center justify-between gap-2.5">
           <span
             role="img"
@@ -1313,7 +1438,16 @@ export function ProcessMenu({
               colors={AVATAR_COLORS}
             />
           </span>
-          <p className="text-primary text-dense mr-auto font-semibold">Maya</p>
+          <p
+            {...styleDebug({
+              component: 'ProcessMenu',
+              part: 'account-name',
+              appearance: 'text-primary',
+            })}
+            className="text-primary text-dense mr-auto font-semibold"
+          >
+            Maya
+          </p>
           <span className={MENU_RAIL}>
             <Tooltip label="Settings">
               <button
@@ -1325,6 +1459,11 @@ export function ProcessMenu({
                   // part of the row a pointer can actually press.
                   'group-hover/account:bg-surface-selected group-hover/account:text-primary',
                 )}
+                {...styleDebug({
+                  component: 'ProcessMenu',
+                  part: 'account-settings',
+                  appearance: 'control-wash text-header-ink',
+                })}
                 aria-label="Settings"
                 aria-disabled="true"
               >
@@ -1373,12 +1512,25 @@ const NOTICE_BOX = cx(
 // Icon shares row one with the title; the caption sits under it.
 function SidebarNotice() {
   return (
-    <div className={NOTICE_BOX}>
+    <div
+      {...styleDebug({
+        component: 'SidebarNotice',
+        appearance: 'surface-notice',
+      })}
+      className={NOTICE_BOX}
+    >
       <span className={cx(MENU_RAIL, 'process-menu-notice-rail')}>
         <MenuIcon name="info" />
       </span>
       <p className="text-micro font-semibold">Demo application</p>
-      <span className="text-notice-caption text-micro col-start-2 mt-0.75 font-medium">
+      <span
+        {...styleDebug({
+          component: 'SidebarNotice',
+          part: 'caption',
+          appearance: 'text-notice-caption',
+        })}
+        className="text-notice-caption text-micro col-start-2 mt-0.75 font-medium"
+      >
         Fictional data. No live changes.
       </span>
     </div>
@@ -1398,12 +1550,20 @@ function ProcessStatusContent({
   ] as const;
 
   return (
-    <div className="grid gap-2.5">
+    <div
+      {...styleDebug({ component: 'ProcessStatusContent' })}
+      className="grid gap-2.5"
+    >
       <div className="text-muted text-micro mt-0.5 flex justify-between gap-2.5">
         <span>Latest available run</span>
         <span>{status.totalLabel}</span>
       </div>
       <span
+        {...styleDebug({
+          component: 'ProcessStatusContent',
+          part: 'status-chip',
+          variant: status.tone,
+        })}
         className={cx(
           TONE_CHIP[status.tone],
           'text-micro justify-self-start rounded-full px-2 py-0.75 font-semibold',
@@ -1415,6 +1575,11 @@ function ProcessStatusContent({
         {counts.map(([tone, label, count]) => (
           <div
             key={tone}
+            {...styleDebug({
+              component: 'ProcessStatusContent',
+              part: 'count',
+              variant: tone,
+            })}
             className={cx(
               TONE_CHIP[tone],
               'rounded-section flex items-center justify-between gap-2 px-2 py-1.5',
@@ -1444,7 +1609,7 @@ function ProcessStatusContent({
 */
 /*
   The preview's chips. `decision` is the tone a line waiting on a person takes
-  -- see --sp-state-decision in tokens.css for why it is not caution's amber --
+  -- see --sp-state-decision in tokens/state.css for why it is not caution's amber --
   and the runs rail paints the same three counts in the same three tones and
   the same order, so the two readings of one run agree.
 */

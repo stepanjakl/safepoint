@@ -1,5 +1,4 @@
 import {
-  CONTROL_NEUTRAL_STORAGE_KEY,
   CORNER_BALANCE_STORAGE_KEY,
   DEFAULT_CORNER_BALANCE,
   DEFAULT_MOTION_SPEED,
@@ -75,11 +74,6 @@ try {
     || localStorage.getItem(${JSON.stringify(NEUTRAL_STORAGE_KEY)});
   if (palettes.indexOf(neutral) !== -1) {
     root.dataset.neutral = neutral;
-  }
-  var controlNeutral = params.get('controls')
-    || localStorage.getItem(${JSON.stringify(CONTROL_NEUTRAL_STORAGE_KEY)});
-  if (palettes.indexOf(controlNeutral) !== -1) {
-    root.dataset.controlNeutral = controlNeutral;
   }
   var tilePalette = params.get('tiles')
     || localStorage.getItem(${JSON.stringify(TILE_PALETTE_STORAGE_KEY)});

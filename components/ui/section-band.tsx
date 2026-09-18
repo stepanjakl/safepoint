@@ -1,3 +1,4 @@
+import { styleDebug } from '@/lib/style-debug';
 import type { ReactNode } from 'react';
 
 import { cx } from '@/lib/cx';
@@ -21,6 +22,7 @@ export function SectionBand({
 }) {
   return (
     <div
+      {...styleDebug({ component: 'SectionBand' })}
       className={cx(
         'border-rule-default bg-surface-inset flex min-h-8 items-center justify-between gap-4 border-b px-4 py-1.5',
         className,

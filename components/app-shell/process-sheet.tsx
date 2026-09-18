@@ -1,5 +1,6 @@
 'use client';
 
+import { styleDebug } from '@/lib/style-debug';
 import { useState, type ReactNode } from 'react';
 import type { InputDetail } from '@/lib/process/input-details';
 import type { ProcessSummary } from '@/lib/process/placeholder-process';
@@ -65,7 +66,10 @@ export function ProcessSheet({
   const editable = inputDetails !== undefined;
 
   return (
-    <div className="shell:grid shell:h-full shell:grid-rows-[auto_minmax(0,1fr)]">
+    <div
+      {...styleDebug({ component: 'ProcessSheet' })}
+      className="shell:grid shell:h-full shell:grid-rows-[auto_minmax(0,1fr)]"
+    >
       <ProcessHeader
         process={process}
         version={version}
@@ -89,6 +93,7 @@ export function ProcessSheet({
               padding on the column would leave them floating short of it. */}
           <aside
             aria-labelledby="runs-heading"
+            {...styleDebug({ component: 'ProcessSheet', part: 'runs-sidebar' })}
             className="border-rule-faint shadow-separator-right-strong @sheet-wide/sheet:border-b-0 @sheet-wide/sheet:border-r shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative border-b"
           >
             <SectionRow id="runs-heading" title="Runs">

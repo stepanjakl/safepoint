@@ -1,3 +1,4 @@
+import { styleDebug } from '@/lib/style-debug';
 import type { ReactNode } from 'react';
 
 import { cx } from '@/lib/cx';
@@ -13,7 +14,14 @@ export function Ledger({
   children: ReactNode;
   className?: string;
 }) {
-  return <dl className={cx('@container', className)}>{children}</dl>;
+  return (
+    <dl
+      {...styleDebug({ component: 'Ledger' })}
+      className={cx('@container', className)}
+    >
+      {children}
+    </dl>
+  );
 }
 
 export function LedgerRow({
@@ -27,6 +35,7 @@ export function LedgerRow({
 }) {
   return (
     <div
+      {...styleDebug({ component: 'LedgerRow' })}
       className={cx(
         'border-rule-faint grid gap-x-4 gap-y-1 border-b px-4 py-2 last:border-b-0 @md:grid-cols-[9rem_minmax(0,1fr)]',
         className,

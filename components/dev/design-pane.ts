@@ -27,12 +27,9 @@ import {
   DEFAULT_MOTION_SPEED,
   MOTION_SPEEDS,
   subscribe,
-  CONTROL_NEUTRAL_CHOICES,
   DEFAULT_NEUTRAL,
   NEUTRAL_PALETTES,
-  readControlNeutral,
   readNeutral,
-  setControlNeutral,
   setNeutral,
   DEFAULT_TILE_PALETTE,
   TILE_PALETTES,
@@ -66,7 +63,6 @@ function readPreferences() {
     typescale: readTypescale(),
     theme: readTheme(),
     neutral: readNeutral(),
-    controlNeutral: readControlNeutral(),
     tilePalette: readTilePalette(),
     statePalette: readStatePalette(),
     tileChromaScale: readTileChromaScale(),
@@ -98,15 +94,6 @@ export function mountDesignPane(host: HTMLElement) {
         options: NEUTRAL_PALETTES.map((value) => ({ text: value, value })),
       })
       .on('change', (event) => setNeutral(event.value)),
-    appearance
-      .addBinding(model, 'controlNeutral', {
-        label: 'Control neutrals',
-        options: CONTROL_NEUTRAL_CHOICES.map((value) => ({
-          text: value === 'match' ? 'Match neutrals' : value,
-          value,
-        })),
-      })
-      .on('change', (event) => setControlNeutral(event.value)),
     appearance
       .addBinding(model, 'typeface', {
         label: 'Typeface',
@@ -180,7 +167,7 @@ export function mountDesignPane(host: HTMLElement) {
     'Radix maps each state to a scale whose step 11 is guaranteed readable on its own step 4.';
 
   // The workspace menu's tiles: which palette they read, and how hard the
-  // saturation ceilings in tokens.css hold it back.
+  // saturation ceilings in tokens/geometry.css hold it back.
   const tiles = pane.addFolder({ title: 'Menu tiles' });
   const paletteBinding = tiles
     .addBinding(model, 'tilePalette', {
@@ -200,7 +187,7 @@ export function mountDesignPane(host: HTMLElement) {
     })
     .on('change', (event) => setTileChromaScale(event.value));
   chromaBinding.element.title =
-    '1 is the ceilings in tokens.css. Lower mutes every tile, at rest and under the pointer; the far right leaves them uncapped.';
+    '1 is the ceilings in tokens/geometry.css. Lower mutes every tile, at rest and under the pointer; the far right leaves them uncapped.';
   for (const input of chromaBinding.element.querySelectorAll('input')) {
     input.setAttribute('aria-label', 'Tile saturation cap');
   }
@@ -241,7 +228,6 @@ export function mountDesignPane(host: HTMLElement) {
     setTypescale(DEFAULT_TYPESCALE);
     setTheme(DEFAULT_THEME);
     setNeutral(DEFAULT_NEUTRAL);
-    setControlNeutral('match');
     setTilePalette(DEFAULT_TILE_PALETTE);
     setTileChromaScale(DEFAULT_TILE_CHROMA_SCALE);
     setSlantRadius(DEFAULT_SLANT_RADIUS);

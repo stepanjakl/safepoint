@@ -617,7 +617,7 @@ function OutputsList({ outputs }: { outputs: SystemLink[] }) {
 // Named group, so the two quiet parts of the row can answer a state held on the
 // button around them.
 const ROW_BUTTON =
-  'group/input-row control-wash hover:bg-surface-inset focus-visible:bg-surface-inset aria-expanded:bg-surface-selected aria-expanded:text-primary rounded-control -mx-sheet-inset px-sheet-inset flex min-h-11 w-[calc(100%+2*var(--spacing-sheet-inset))] cursor-pointer items-center gap-3 py-2 text-left';
+  'group/input-row control-wash hover:bg-surface-hover focus-visible:bg-surface-hover aria-expanded:bg-surface-selected aria-expanded:text-primary rounded-control -mx-sheet-inset px-sheet-inset flex min-h-11 w-[calc(100%+2*var(--spacing-sheet-inset))] cursor-pointer items-center gap-3 py-2 text-left';
 
 /*
   A list and the one line of context above it. It no longer carries a heading:

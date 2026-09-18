@@ -1,5 +1,6 @@
 'use client';
 
+import { styleDebug } from '@/lib/style-debug';
 import {
   useEffect,
   useCallback,
@@ -495,6 +496,10 @@ export function SidebarResizeHandle({
                   ? 'Hidden'
                   : `${Math.round(preview ?? width)} pixels wide`
           }
+          {...styleDebug({
+            component: 'SidebarResizeHandle',
+            appearance: 'sidebar-handle',
+          })}
           className="sidebar-handle max-shell:hidden"
           data-side={side}
           data-collapsed={collapsed || undefined}
@@ -578,6 +583,11 @@ export function SidebarResizeHandle({
         >
           <span
             ref={grip}
+            {...styleDebug({
+              component: 'SidebarResizeHandle',
+              part: 'mark',
+              appearance: 'sidebar-handle-mark',
+            })}
             className="sidebar-handle-mark"
             aria-hidden="true"
             onPointerEnter={(event) =>
@@ -616,6 +626,11 @@ export function SidebarResizeHandle({
         triggerRef={handle}
         placement={side === 'left' ? 'right' : 'left'}
         offset={8}
+        {...styleDebug({
+          component: 'SidebarResizeHandle',
+          part: 'popover',
+          appearance: 'surface-floating',
+        })}
         className="control-face surface-floating rounded-shell p-2"
       >
         <Dialog aria-label="Sidebar width" className="grid gap-1 outline-none">

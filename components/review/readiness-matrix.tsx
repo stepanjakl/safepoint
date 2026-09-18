@@ -1,3 +1,4 @@
+import { styleDebug } from '@/lib/style-debug';
 import { Glyph } from '@/components/ui/glyph';
 import { SectionBand } from '@/components/ui/section-band';
 import type { PresentedGate } from '@/lib/review-presentation';
@@ -18,7 +19,10 @@ export function ReadinessMatrix({
   headingId: string;
 }) {
   return (
-    <section aria-labelledby={headingId}>
+    <section
+      {...styleDebug({ component: 'ReadinessMatrix' })}
+      aria-labelledby={headingId}
+    >
       <SectionBand id={headingId} title="Readiness" meta={summary} />
       <div className="divide-rule-faint divide-y">
         {gates.map((gate) => {
@@ -27,9 +31,17 @@ export function ReadinessMatrix({
             <details
               key={gate.gate}
               open={gate.openByDefault}
+              {...styleDebug({ component: 'ReadinessMatrix', part: 'gate' })}
               className="group"
             >
-              <summary className="control-wash focus-visible:bg-surface-inset flex min-h-10 list-none items-center gap-3 px-4 py-2 focus-visible:-outline-offset-2 [&::-webkit-details-marker]:hidden">
+              <summary
+                {...styleDebug({
+                  component: 'ReadinessMatrix',
+                  part: 'gate-trigger',
+                  appearance: 'control-wash',
+                })}
+                className="control-wash focus-visible:bg-surface-hover flex min-h-10 list-none items-center gap-3 px-4 py-2 focus-visible:-outline-offset-2 [&::-webkit-details-marker]:hidden"
+              >
                 <span
                   className={`flex w-3 shrink-0 justify-center ${toneText[marker.tone]}`}
                 >

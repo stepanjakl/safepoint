@@ -1,0 +1,61 @@
+/* ── Geometry ───────────────────────────────────────────────────────────────
+   Numbers rather than colours: durations, the tiles' saturation ceilings, and
+   the notch and slant geometry. All outside @theme, because Tailwind has no
+   namespace to generate names from a duration, a chroma or an angle -- markup
+   reaches them as duration-(--duration-pane) or [--notch-angle:30deg].
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Named for what moves, not for how long. */
+:root {
+  --duration-state: 150ms;
+  --duration-row: 180ms;
+  --duration-pane: 220ms;
+}
+
+/* Tile saturation ceilings, as OKLCH chroma. A tile keeps its lightness and
+   hue and gives up only the chroma above these, so only the loud hues move.
+   One per part per theme -- a face, a ring and a glyph sit ~5x apart in chroma.
+   --tile-chroma-scale multiplies all six for the design pane's slider. */
+:root {
+  --tile-chroma-face-light: 0.025;
+  --tile-chroma-face-dark: 0.06;
+  --tile-chroma-ring-light: 0.085;
+  --tile-chroma-ring-dark: 0.1;
+  --tile-chroma-glyph-light: 0.12;
+  --tile-chroma-glyph-dark: 0.13;
+  --tile-chroma-scale: 1;
+}
+
+/* The notch is the bite a pane's corner takes to seat controls on the canvas;
+   a slant is a control whose edge leans to sit parallel to it. One lean for
+   both. --slant-angle and --slant-radius are read with fallbacks inside the
+   rules rather than declared here, so overriding the notch's angle on a
+   subtree still reaches the buttons in it.
+   See docs/STYLING-SYSTEM.md → The notch and slanted controls. */
+:root {
+  /* Lean of every slanted edge, measured from vertical. */
+  --notch-angle: 25deg;
+  /* Where the slope leaves the pane's top edge, and where it lands on the floor. */
+  --notch-bend-top: var(--radius-shell);
+  /* --notch-bend-bottom is deliberately undeclared: unset, the foot follows
+     the control beside it, so the gap holds round the corner. */
+  /* Where the floor turns down into the pane's side. */
+  --notch-corner: var(--radius-shell);
+  /* Canvas between the controls and every edge round them, square to each. */
+  --notch-gap: 0.3125rem;
+  /* Between two slanted controls that share a seam, measured square to it. */
+  --slant-gap: 0.1875rem;
+  /* How far a slanted corner's radius follows its angle: 0 is the plain
+     radius on every corner, 1 the tangent length of a square corner. */
+  --slant-corner-balance: 0.5;
+  /* The same for the notch's top bend, held lower so it stays no softer than
+     the pane's own corners. */
+  --notch-bend-balance: 0.5;
+  /* One title line plus the shell inset and one edge-width either side. The
+     edge-width gives back the icons' 1px optical lift evenly, so a lifted
+     glyph still clears the inset. */
+  --slant-height: calc(
+    var(--sp-text-title) * var(--sp-text-title--lh) + 2 *
+      (var(--spacing-shell-inset) + var(--spacing-control-edge))
+  );
+}

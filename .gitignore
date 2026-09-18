@@ -32,3 +32,7 @@ Claude/
 .cursor/
 
 # skills-lock.json remains tracked so project skills can be restored reproducibly.
+
+# Playwright reports and browser-test artifacts
+/playwright-report/
+/test-results/

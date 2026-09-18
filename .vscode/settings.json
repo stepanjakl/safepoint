@@ -3,5 +3,51 @@
     "components/ui/button.tsx",
     "components/app-shell/process-menu.tsx",
     "components/ui/switch.tsx"
-  ]
+  ],
+  "files.exclude": {
+    "**/.next": true
+  },
+  "search.exclude": {
+    "**/.next": true
+  },
+  "cssVariables.blacklistFolders": [
+    "**/.git",
+    "**/.svn",
+    "**/.hg",
+    "**/CVS",
+    "**/.DS_Store",
+    "**/node_modules",
+    "**/bower_components",
+    "**/tmp",
+    "**/dist",
+    "**/tests",
+    "**/.next/**"
+  ],
+  "cssVariables.languages": [
+    "astro",
+    "svelte",
+    "vue",
+    "vue-html",
+    "vue-postcss",
+    "scss",
+    "postcss",
+    "less",
+    "css",
+    "html",
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact",
+    "source.css.styled",
+    "tailwindcss"
+  ],
+  "unusedCssClasses.enable": false,
+  "tailwindCSS.classFunctions": ["cx"],
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  "tailwindCSS.experimental.configFile": "app/globals.css",
+  "editor.quickSuggestions": {
+    "strings": "on"
+  }
 }

@@ -1,5 +1,11 @@
 @import 'tailwindcss';
-@import './tokens.css';
+@import './tokens/ramps.css';
+@import './tokens/roles.css';
+@import './tokens/faces.css';
+@import './tokens/state.css';
+@import './tokens/type.css';
+@import './tokens/geometry.css';
+@import './tokens/theme.css';
 @import './radix-colors.css';
 @import './neutral-palettes.css';
 @import './components.css';
@@ -19,15 +25,9 @@
     font-feature-settings: var(--sp-font-features);
   }
 
-  /*
-    No outline of the app's own. A control draws keyboard focus in the face its
-    hover already has -- a wash, a colour step -- so the keyboard and the
-    pointer light it the same way; see EXPERIENCE-SPEC's focus section.
-
-    Forced-colours modes are the exception. They drop author backgrounds, so a
-    wash draws nothing there, and the system colour's outline comes back. An
-    offset utility on a control still places it.
-  */
+  /* No outline of the app's own: a control draws keyboard focus in the face
+     its hover already has. Forced colours drop author backgrounds, so there
+     the system outline comes back. */
   :focus-visible {
     outline: none;
   }
@@ -42,28 +42,16 @@
     cursor: default;
   }
 
-  /*
-    Every control is a press, not a passage of text. The pointer and the
-    selection rule belong here rather than on each button: a control that is
-    styled by hand -- a pagination link, an icon square, a filter pill -- is
-    then born with both, and nothing has to remember to opt in.
-
-    An unavailable control says so through its own cursor. Both rules below
-    are utilities in components (`cursor-not-allowed`, `cursor-default`), so
-    they already outrank this layer; these are the fallbacks for a disabled
-    control that states nothing of its own.
-  */
+  /* Here rather than on each button, so a hand-styled control is born with
+     both and nothing has to opt in. The components layer outranks this, so
+     these are fallbacks for a control that states no cursor of its own. */
   :where(button, [role='button']) {
     cursor: pointer;
     user-select: none;
     -webkit-user-select: none;
   }
 
-  :where(
-    button:disabled,
-    button[aria-disabled='true'],
-    [role='button'][aria-disabled='true']
-  ) {
+  :where(button:disabled, button[aria-disabled='true'], [role='button'][aria-disabled='true']) {
     cursor: default;
   }
 
@@ -78,12 +66,13 @@
   }
 }
 
+/* ── Type utilities ─────────────────────────────────────────────────────── */
+
 /* Tracked uppercase readouts for legends, sources, modes and states. */
 @utility readout {
   font-family: var(--font-mono);
-  /* The micro role, in the utility family. Read from --sp-* rather than the
-     theme name because `@theme inline` substitutes those only into generated
-     utilities, never into a hand-written one like this. */
+  /* Read from --sp-* rather than the theme name: `@theme inline` substitutes
+     those only into generated utilities, never a hand-written one. */
   font-size: var(--sp-text-micro);
   line-height: var(--sp-text-micro--lh);
   font-weight: var(--sp-mono-weight);
@@ -101,15 +90,12 @@
   font-feature-settings: var(--sp-mono-features);
 }
 
-/*
-  The four stops the control face is built from, registered so they animate.
-
-  `background-image` is not an animatable property, so a gradient can never be
-  transitioned directly. A *registered* custom property can be, though: the
-  browser interpolates the colour and repaints the gradient from it each frame.
-  Unregistered, these would be plain strings to the animation engine and every
-  state change would snap. This is what lets both the face and the ring move.
-*/
+/* ── Control face ───────────────────────────────────────────────────────────
+   The four stops, registered so they animate. `background-image` cannot be
+   transitioned, but a *registered* custom property can: the browser
+   interpolates the colour and repaints the gradient each frame. Unregistered,
+   every state change would snap.
+   ────────────────────────────────────────────────────────────────────────── */
 @property --control-face-top {
   syntax: '<color>';
   inherits: false;
@@ -137,74 +123,45 @@
 @property --control-highlight {
   syntax: '<color>';
   inherits: false;
-  /* Match --sp-face-highlight-subtle so shadow-control-highlight works on its own.
-     Registration requires a literal; var() is not valid as an initial value.
-     Control variants still override this, including explicitly transparent. */
+  /* Matches --sp-face-highlight-subtle. Registration requires a literal;
+     var() is not valid as an initial value. */
   initial-value: rgb(255 255 255 / 25%);
 }
 
-/*
-  Raised control face. Two opaque background layers: the face, clipped to the
-  padding box, and the ring, clipped to the border box. Because the face is
-  opaque it hides the ring everywhere except the 1px border, which is what
-  leaves a lit edge around the control -- the same result a 1px padded wrapper
-  produces, without the extra element, and the border derives its own inner
-  radius so there is no radius arithmetic to keep in sync.
-
-  Geometry only. A colour utility below supplies the four stops, so a variant
-  or a state restyles a control without restating any of this. The transition
-  lives here rather than on the component: the stops are this utility's own
-  contract, and nothing that sets them should have to remember to animate them.
-  The reduced-motion rule in the base layer still overrides all of it.
-*/
+/* Two opaque layers: the face clipped to the padding box, the ring to the
+   border box. The opaque face hides the ring everywhere but the 1px border,
+   which is the lit edge -- and the border derives its own inner radius, so
+   there is no radius arithmetic to keep in sync.
+   Geometry only; a colour utility below supplies the stops. Never put a
+   transition-* utility beside this -- it replaces the list and the face snaps. */
 @utility control-face {
   @apply shadow-control-highlight;
   --control-face-border-width: var(--spacing-control-edge);
   border: var(--control-face-border-width) solid transparent;
   background-image:
-    linear-gradient(
-      to bottom,
-      var(--control-face-top),
-      var(--control-face-bottom)
-    ),
-    linear-gradient(
-      to bottom,
-      var(--control-ring-top),
-      var(--control-ring-bottom)
-    );
+    linear-gradient(to bottom, var(--control-face-top), var(--control-face-bottom)),
+    linear-gradient(to bottom, var(--control-ring-top), var(--control-ring-bottom));
   background-origin: padding-box, border-box;
   background-clip: padding-box, border-box;
   transition-property:
-    color, background-color, box-shadow, opacity, --control-face-top,
-    --control-face-bottom, --control-ring-top, --control-ring-bottom,
-    --control-highlight;
+    color, background-color, box-shadow, opacity, --control-face-top, --control-face-bottom,
+    --control-ring-top, --control-ring-bottom, --control-highlight;
   transition-duration: var(--duration-state);
   transition-timing-function: ease-out;
 }
 
-/*
-  The flat half of the same contract. A filter pill, a list row, a text button
-  -- controls that answer a pointer with a wash rather than with a lit face --
-  are not built from the stops above, so they cannot inherit that transition
-  and have each been restating one by hand. This is that one, named: the same
-  step and the same curve, so a row and the button beside it settle together.
-
-  Reduced motion is not restated per call site; the base layer drops every
-  transition in the document.
-*/
+/* The flat half of the same contract, for controls that answer with a wash
+   rather than a lit face. Same step and curve, so a row and the button beside
+   it settle together. */
 @utility control-wash {
   transition-property:
-    color, background-color, border-color, box-shadow, text-decoration-color,
-    opacity;
+    color, background-color, border-color, box-shadow, text-decoration-color, opacity;
   transition-duration: var(--duration-state);
   transition-timing-function: ease-out;
 }
 
-/*
-  The hairline sheen, for a face at icon or button size. A width only -- the
-  colour stays whatever the face's own stops say -- so it combines with any
-  control or surface utility rather than being a variant of each.
-*/
+/* A width only, so it combines with any face utility rather than being a
+   variant of each. */
 @utility control-hairline {
   --control-highlight-width: var(--spacing-control-highlight-hairline);
 }
@@ -226,25 +183,21 @@
   --control-highlight: transparent;
 }
 
-/*
-  The sidebar's Save-order button. It takes control-face's geometry like every
-  other control, but its stops are its own rather than control-accent's: it is
-  the only teal control in the interface, and the arrange mode it closes should
-  be tunable without dragging every primary action along with it.
-*/
+/* The sidebar's Save-order button: the only teal control, on stops of its own
+   so the arrange mode can be tuned without moving every primary action. */
 @utility control-commit {
-  --control-face-top: var(--sp-menu-commit-face-top);
-  --control-face-bottom: var(--sp-menu-commit-face-bottom);
-  --control-ring-top: var(--sp-menu-commit-ring-top);
-  --control-ring-bottom: var(--sp-menu-commit-ring-bottom);
+  --control-face-top: var(--sp-commit-face-top);
+  --control-face-bottom: var(--sp-commit-face-bottom);
+  --control-ring-top: var(--sp-commit-ring-top);
+  --control-ring-bottom: var(--sp-commit-ring-bottom);
   --control-highlight: var(--sp-face-highlight-faint);
 }
 
 @utility control-commit-hover {
-  --control-face-top: var(--sp-menu-commit-face-top-hover);
-  --control-face-bottom: var(--sp-menu-commit-face-bottom-hover);
-  --control-ring-top: var(--sp-menu-commit-ring-top-hover);
-  --control-ring-bottom: var(--sp-menu-commit-ring-bottom-hover);
+  --control-face-top: var(--sp-commit-face-top-hover);
+  --control-face-bottom: var(--sp-commit-face-bottom-hover);
+  --control-ring-top: var(--sp-commit-ring-top-hover);
+  --control-ring-bottom: var(--sp-commit-ring-bottom-hover);
   --control-highlight: transparent;
 }
 
@@ -266,12 +219,8 @@
   --control-ring-bottom: var(--sp-quiet-ring-bottom-hover);
 }
 
-/*
-  The process header's data buttons: the Instructions button's construction on
-  stops of their own (--sp-header-button-*), and no edge. The ring is what
-  draws a control's border, so spending it on transparent leaves the lit face
-  and its sheen with nothing around them -- raised, but not outlined.
-*/
+/* The header's data buttons: their own stops, and no edge. The ring draws a
+   control's border, so a transparent ring leaves it raised but not outlined. */
 @utility control-header-button {
   --control-face-top: var(--sp-header-button-face-top);
   --control-face-bottom: var(--sp-header-button-face-bottom);
@@ -285,25 +234,9 @@
   --control-face-bottom: var(--sp-header-button-face-bottom-hover);
 }
 
-/*
-  A button with something to report spends its ring on the condition's colour,
-  so the edge and the dot inside it say the same thing twice -- the dot for a
-  reader who is looking at the button, the edge for one scanning the row.
-  Utilities rather than a rule in components.css: the ring stops are set by
-  control-header-button in the utilities layer, and only another utility can
-  outrank it.
-*/
-/*
-  A button whose list has something to report. Its whole face takes the
-  condition's colour rather than an edge taking it: these replace
-  control-header-button, so exactly one face utility ever lands on a button and
-  nothing depends on which order the classes are written in.
-
-  An item at rest is control-header-button itself -- it is the original face,
-  and it took a second name for a while that declared the same five properties.
-  The rest of the family is control-header-button-*, so the rest state being
-  control-header-item was the one member whose name did not say what it was.
-*/
+/* A button with something to report takes the condition into its whole face
+   rather than into an edge. These replace control-header-button, so exactly
+   one face utility lands on a button and class order cannot matter. */
 
 /* The item whose tab the drawer is showing. */
 @utility control-header-button-selected {
@@ -351,15 +284,15 @@
   --control-highlight: transparent;
 }
 
-/*
-  Enclosure faces: a control's two-layer construction at panel scale. The face
-  is flat, because a vertical ramp across a whole pane reads as a lighting
-  error rather than a lift, so the edge is carried by the ring and a top sheen.
-*/
+/* ── Surfaces ───────────────────────────────────────────────────────────────
+   The same two-layer construction at panel scale. The face is flat -- a
+   vertical ramp across a whole pane reads as a lighting error rather than a
+   lift -- so the edge is carried by the ring and a top sheen.
+   ────────────────────────────────────────────────────────────────────────── */
 @utility surface-raised {
   --control-face-top: var(--sp-surface-primary);
   --control-face-bottom: var(--sp-surface-primary);
-  --control-ring-top: var(--sp-rule-default);
+  --control-ring-top: light-dark(var(--sp-rule-default), var(--sp-rule-faint));
   --control-ring-bottom: var(--sp-rule-faint);
   --control-highlight: var(--sp-face-highlight-strong);
 }
@@ -374,14 +307,10 @@
   --control-highlight: var(--sp-face-highlight-solid);
 }
 
-/*
-  A row's status badge: the smallest raised face in the interface, on the
-  keycap's stops at rest. Keycap-shaped, but its stops are read from the row it
-  sits in: `.process-menu-row` in app/components.css publishes them for each of
-  its states, so the badge follows the row -- a keycap at rest, bare once the
-  row lights -- with no variant of its own, and control-face animates it. The fallbacks are
-  the keycap, so a badge outside a row still paints.
-*/
+/* A row's status badge. Its stops are read from the row: `.process-menu-row`
+   in components.css publishes them per state, so the badge follows the row
+   with no variant of its own. The fallbacks are the keycap, so a badge
+   outside a row still paints. */
 @utility surface-menu-badge {
   --control-face-top: var(--menu-badge-face, var(--sp-keycap-face));
   --control-face-bottom: var(--menu-badge-face, var(--sp-keycap-face));
@@ -391,40 +320,23 @@
   --control-highlight-width: var(--spacing-control-highlight-hairline);
 }
 
-/*
-  The tile behind a workspace menu item's icon: surface-raised's construction
-  at icon scale, in the hue a `menu-tile-*` utility names on the same element.
-  It reads five roles, each a light and a dark colour, and light-dark() picks
-  between them here, where the tile paints: a hue chosen per element cannot be
-  resolved on :root. The glyph takes the hue through `color`, which
-  control-face already transitions, so the tile and its glyph move on one step
-  and curve.
+/* ── Menu tiles ─────────────────────────────────────────────────────────────
+   The tile behind a workspace menu item's icon, in the hue a `menu-tile-*`
+   utility names on the same element. light-dark() resolves here, where the
+   tile paints -- a hue chosen per element cannot be resolved on :root.
 
-  Every resting colour passes through its part's saturation ceiling on the way
-  in (--tile-chroma-* in tokens.css, times --tile-chroma-scale): relative
-  colour syntax keeps the palette's own lightness and hue and lowers only a
-  chroma above the ceiling, so a hue that was already quiet comes through
-  untouched.
-*/
+   Every colour passes through its part's saturation ceiling
+   (--tile-chroma-* in tokens/geometry.css): relative colour syntax keeps the
+   lightness and hue and lowers only a chroma above the ceiling.
+   See docs/STYLING-SYSTEM.md → Decorative hue.
+   ────────────────────────────────────────────────────────────────────────── */
 @utility surface-menu-tile {
-  --tile-cap-face-light: calc(
-    var(--tile-chroma-face-light) * var(--tile-chroma-scale)
-  );
-  --tile-cap-face-dark: calc(
-    var(--tile-chroma-face-dark) * var(--tile-chroma-scale)
-  );
-  --tile-cap-ring-light: calc(
-    var(--tile-chroma-ring-light) * var(--tile-chroma-scale)
-  );
-  --tile-cap-ring-dark: calc(
-    var(--tile-chroma-ring-dark) * var(--tile-chroma-scale)
-  );
-  --tile-cap-glyph-light: calc(
-    var(--tile-chroma-glyph-light) * var(--tile-chroma-scale)
-  );
-  --tile-cap-glyph-dark: calc(
-    var(--tile-chroma-glyph-dark) * var(--tile-chroma-scale)
-  );
+  --tile-cap-face-light: calc(var(--tile-chroma-face-light) * var(--tile-chroma-scale));
+  --tile-cap-face-dark: calc(var(--tile-chroma-face-dark) * var(--tile-chroma-scale));
+  --tile-cap-ring-light: calc(var(--tile-chroma-ring-light) * var(--tile-chroma-scale));
+  --tile-cap-ring-dark: calc(var(--tile-chroma-ring-dark) * var(--tile-chroma-scale));
+  --tile-cap-glyph-light: calc(var(--tile-chroma-glyph-light) * var(--tile-chroma-scale));
+  --tile-cap-glyph-dark: calc(var(--tile-chroma-glyph-dark) * var(--tile-chroma-scale));
   --control-face-top: light-dark(
     oklch(from var(--tile-face-light) l min(c, var(--tile-cap-face-light)) h),
     oklch(from var(--tile-face-dark) l min(c, var(--tile-cap-face-dark)) h)
@@ -434,18 +346,12 @@
     oklch(from var(--tile-face-dark) l min(c, var(--tile-cap-face-dark)) h)
   );
   --control-ring-top: light-dark(
-    oklch(
-      from var(--tile-ring-top-light) l min(c, var(--tile-cap-ring-light)) h
-    ),
+    oklch(from var(--tile-ring-top-light) l min(c, var(--tile-cap-ring-light)) h),
     oklch(from var(--tile-ring-top-dark) l min(c, var(--tile-cap-ring-dark)) h)
   );
   --control-ring-bottom: light-dark(
-    oklch(
-      from var(--tile-ring-bottom-light) l min(c, var(--tile-cap-ring-light)) h
-    ),
-    oklch(
-      from var(--tile-ring-bottom-dark) l min(c, var(--tile-cap-ring-dark)) h
-    )
+    oklch(from var(--tile-ring-bottom-light) l min(c, var(--tile-cap-ring-light)) h),
+    oklch(from var(--tile-ring-bottom-dark) l min(c, var(--tile-cap-ring-dark)) h)
   );
   --control-highlight: var(--sp-menu-tile-highlight);
   color: light-dark(
@@ -454,10 +360,8 @@
   );
 }
 
-/* Bare, with the glyph a step deeper in light and brighter in dark: once the
-   tile has gone the filled icon is the only thing carrying the hue. It passes
-   through the glyph's ceiling, which surface-menu-tile computes on this same
-   element, so the resting and engaged icon are held back alike. */
+/* Bare: once the tile has gone the filled icon is the only thing carrying the
+   hue. Through the same glyph ceiling, so rest and engaged are held alike. */
 @utility surface-menu-tile-hover {
   --control-face-top: var(--sp-menu-tile-face-hover);
   --control-face-bottom: var(--sp-menu-tile-face-hover);
@@ -465,35 +369,15 @@
   --control-ring-bottom: var(--sp-menu-tile-ring-hover);
   --control-highlight: var(--sp-menu-tile-highlight-hover);
   color: light-dark(
-    oklch(
-      from var(--tile-glyph-hover-light) l min(c, var(--tile-cap-glyph-light)) h
-    ),
-    oklch(
-      from var(--tile-glyph-hover-dark) l min(c, var(--tile-cap-glyph-dark)) h
-    )
+    oklch(from var(--tile-glyph-hover-light) l min(c, var(--tile-cap-glyph-light)) h),
+    oklch(from var(--tile-glyph-hover-dark) l min(c, var(--tile-cap-glyph-dark)) h)
   );
 }
 
-/*
-  The hues a tile can take, in menu order around the colour wheel. Yellow is
-  the processes entry and the one tile meant to stand out. It sits nearer the
-  caution amber than any other hue here, which the entry point can carry;
-  orange left the set rather than crowd it. Green -- Tailwind's and Radix's
-  green, not the emerald the verified state uses -- and the rest stay clear of
-  the state hues so they do not read as verdicts.
-
-  Radix's engaged glyph reads step 8 in light and step 12 in dark -- in each
-  theme the lighter of the two. Step 12 in light is Radix's high-contrast text
-  step, nearly neutral and darker than the resting glyph, so under the pointer
-  the icon lost its colour instead of gaining it.
-
-  Each hue fills the five roles from two palettes, for comparing them: the Radix
-  Colors steps in app/radix-colors.css while <html> carries
-  data-tile-palette="radix" -- the layout's default -- and Tailwind's ramps
-  otherwise. Both are held in the hue rather
-  than in the tile, so switching palettes changes values and nothing about how
-  a tile is built.
-*/
+/* The hues, in menu order round the wheel, each kept clear of the state hues
+   so a tile never reads as a verdict. Every hue fills its five roles from both
+   palettes -- Tailwind's ramps, and Radix under data-tile-palette="radix" --
+   so switching changes values and nothing about how a tile is built. */
 @utility menu-tile-yellow {
   --tile-face-light: var(--color-yellow-100);
   --tile-face-dark: var(--color-yellow-900);
@@ -640,18 +524,12 @@
   --control-highlight: var(--sp-face-highlight-medium);
 }
 
-/*
-  Panel enclosure. A plain bordered surface with a shallow top sheen -- it
-  encloses content rather than inviting a press, so it stays flat.
-*/
+/* A plain bordered surface with a shallow top sheen: it encloses content
+   rather than inviting a press, so it stays flat. */
 @utility enclosure {
   border: 1px solid var(--sp-rule-strong);
   border-radius: var(--radius-control);
-  background-image: linear-gradient(
-    to bottom,
-    var(--sp-edge-inner),
-    transparent 55%
-  );
+  background-image: linear-gradient(to bottom, var(--sp-edge-inner), transparent 55%);
 }
 
 @media (forced-colors: active), print {

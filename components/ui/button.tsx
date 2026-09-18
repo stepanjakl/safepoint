@@ -1,5 +1,6 @@
 'use client';
 
+import { styleDebug } from '@/lib/style-debug';
 import { Button as AriaButton, type ButtonProps } from 'react-aria-components';
 
 import type { Ref } from 'react';
@@ -31,14 +32,20 @@ const base =
   the stops rather than by the box, a slanted button shows it on its slanted
   shape with nothing extra to draw.
 */
-const faces: Record<Variant, string> = {
+const faces = {
   // The one accented control on a page: a lit face with a brighter ring.
-  primary:
-    'control-accent text-white data-[hovered]:control-accent-hover data-[focus-visible]:control-accent-hover data-[pressed]:control-accent-hover',
+  primary: {
+    appearance: 'accent',
+    className:
+      'control-accent text-white data-[hovered]:control-accent-hover data-[focus-visible]:control-accent-hover data-[pressed]:control-accent-hover',
+  },
   // Everything else: the same construction, one step quieter.
-  secondary:
-    'control-quiet text-primary data-[hovered]:control-quiet-hover data-[focus-visible]:control-quiet-hover data-[pressed]:control-quiet-hover',
-};
+  secondary: {
+    appearance: 'quiet',
+    className:
+      'control-quiet text-primary data-[hovered]:control-quiet-hover data-[focus-visible]:control-quiet-hover data-[pressed]:control-quiet-hover',
+  },
+} satisfies Record<Variant, { appearance: string; className: string }>;
 
 const shapes: Record<Variant, string> = {
   primary: 'control-face rounded-control',
@@ -53,14 +60,42 @@ const shapes: Record<Variant, string> = {
 const SLANT_LAYERS = (
   <span aria-hidden="true" className="slant-shape">
     <span className="slant-at" data-d="focus">
-      <span className="slant-paint slant-focus" />
+      <span
+        {...styleDebug({
+          component: 'Button',
+          part: 'focus',
+          appearance: 'slant-focus',
+        })}
+        className="slant-paint slant-focus"
+      />
     </span>
     <span className="slant-at" data-d="edge">
-      <span className="slant-paint slant-ring" />
+      <span
+        {...styleDebug({
+          component: 'Button',
+          part: 'ring',
+          appearance: 'slant-ring',
+        })}
+        className="slant-paint slant-ring"
+      />
       <span className="slant-at" data-d="face">
-        <span className="slant-paint slant-face" />
+        <span
+          {...styleDebug({
+            component: 'Button',
+            part: 'face',
+            appearance: 'slant-face',
+          })}
+          className="slant-paint slant-face"
+        />
         <span className="slant-at" data-d="sheen">
-          <span className="slant-paint slant-sheen" />
+          <span
+            {...styleDebug({
+              component: 'Button',
+              part: 'sheen',
+              appearance: 'slant-sheen',
+            })}
+            className="slant-paint slant-sheen"
+          />
         </span>
       </span>
     </span>
@@ -82,10 +117,15 @@ export function Button({
   return (
     <AriaButton
       {...props}
+      {...styleDebug({
+        component: 'Button',
+        variant,
+        appearance: faces[variant].appearance,
+      })}
       data-slant={slant}
       className={cx(
         base,
-        faces[variant],
+        faces[variant].className,
         // Height with the shape, not in `base`: a slant's is a token sized to
         // the header it sits in, and two height utilities on one element
         // would be settled by stylesheet order.

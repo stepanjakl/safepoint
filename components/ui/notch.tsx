@@ -1,3 +1,4 @@
+import { styleDebug } from '@/lib/style-debug';
 import type { ReactNode } from 'react';
 
 import { cx } from '@/lib/cx';
@@ -23,15 +24,46 @@ export function Notch({
   className?: string;
 }) {
   return (
-    <div className={cx('notch', className)}>
+    <div
+      {...styleDebug({ component: 'Notch', appearance: 'notch' })}
+      className={cx('notch', className)}
+    >
       <span aria-hidden="true" className="notch-shape">
-        <span className="notch-paint notch-face" />
+        <span
+          {...styleDebug({
+            component: 'Notch',
+            part: 'face',
+            appearance: 'notch-face',
+          })}
+          className="notch-paint notch-face"
+        />
         <span className="notch-at" data-k="1">
           <span className="notch-at" data-k="2">
-            <span className="notch-paint notch-under" />
-            <span className="notch-paint notch-sheen" />
+            <span
+              {...styleDebug({
+                component: 'Notch',
+                part: 'under',
+                appearance: 'notch-under',
+              })}
+              className="notch-paint notch-under"
+            />
+            <span
+              {...styleDebug({
+                component: 'Notch',
+                part: 'sheen',
+                appearance: 'notch-sheen',
+              })}
+              className="notch-paint notch-sheen"
+            />
           </span>
-          <span className="notch-paint notch-edge" />
+          <span
+            {...styleDebug({
+              component: 'Notch',
+              part: 'edge',
+              appearance: 'notch-edge',
+            })}
+            className="notch-paint notch-edge"
+          />
         </span>
       </span>
       {children}

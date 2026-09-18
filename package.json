@@ -19,6 +19,8 @@
     "test": "vitest run",
     "check:sidebars": "node scripts/check-sidebars.mjs",
     "check:rail": "node scripts/check-rail-alignment.ts",
+    "check:contrast": "playwright test",
+    "check:contrast:report": "playwright show-report",
     "check:tokens": "node scripts/check-token-refs.mjs",
     "colors:radix": "node scripts/generate-radix-colors.ts",
     "colors:neutrals": "node scripts/generate-neutral-palettes.ts"
@@ -45,9 +47,11 @@
     "zod": "4.5.4"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@babel/preset-typescript": "^7.29.7",
     "@locator/runtime": "^0.5.1",
     "@locator/webpack-loader": "^0.5.1",
+    "@playwright/test": "^1.63.0",
     "@radix-ui/colors": "3.0.0",
     "@tailwindcss/postcss": "4.3.3",
     "@tweakpane/core": "2.0.5",
@@ -57,6 +61,7 @@
     "eslint": "9.39.5",
     "eslint-config-next": "16.3.4",
     "postcss": "8.5.26",
+    "postcss-light-dark": "link:./tools/postcss-light-dark",
     "prettier": "3.9.6",
     "prettier-plugin-tailwindcss": "0.8.1",
     "tailwindcss": "4.3.3",

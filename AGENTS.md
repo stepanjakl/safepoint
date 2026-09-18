@@ -46,15 +46,27 @@ read too.
 
 ## Conventions worth knowing before editing styles
 
-`docs/STYLING-SYSTEM.md` is authoritative. In short: three stylesheets with one
-job each, a sharp test for what earns a place in `app/components.css`, no
-arbitrary values in markup, and never two utilities for the same property on one
-element.
+`docs/STYLING-SYSTEM.md` is authoritative. In short: three jobs -- tokens in
+`app/tokens/` (seven files), Tailwind extensions in `app/globals.css`, and what
+markup cannot express in `app/components.css` -- a sharp test for what earns a
+place in that last one, no arbitrary values in markup, and never two utilities
+for the same property on one element.
+
+A comment in a stylesheet earns its place only by preventing a specific wrong
+edit: a measured constraint, a browser behaviour, or a cross-file dependency.
+Two lines. Longer reasoning goes in `docs/STYLING-SYSTEM.md`, not in the CSS.
+
+When the work is colour, run `pnpm dev:styles` rather than `pnpm dev`. Only the
+webpack path gets CSS source maps and `tools/postcss-light-dark`, which folds
+Lightning CSS's `light-dark()` polyfill back so DevTools reads like the source.
 
 ## Colours
 
 `app/radix-colors.css` and `app/neutral-palettes.css` are generated: run
-`pnpm colors:radix` and `pnpm colors:neutrals`, never edit either by hand. The
+`pnpm colors:radix` and `pnpm colors:neutrals`, never edit either by hand.
+There is one neutral ramp, `--sp-neutral-*`; the second one (`--sp-control-*`,
+`data-control-neutral`) was removed, and control faces follow `data-neutral`
+with everything else. The
 four neutrals Tailwind does not ship are tuned through the signature table in
 `scripts/generate-neutral-palettes.ts`, not by editing the emitted steps. After
 touching a token, run `pnpm check:tokens`: it fails on any `var(--…)` in the

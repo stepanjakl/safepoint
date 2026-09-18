@@ -1,5 +1,6 @@
 'use client';
 
+import { styleDebug } from '@/lib/style-debug';
 import { useEffect, useRef, type RefObject } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAssistant } from './assistant-state';
@@ -25,7 +26,10 @@ export function AssistantPanel({
     if (initialFocus.current) composer.current?.focus({ preventScroll: true });
   }, [composer]);
   return (
-    <div className="flex h-full min-h-0 flex-col gap-5 p-5">
+    <div
+      {...styleDebug({ component: 'AssistantPanel' })}
+      className="flex h-full min-h-0 flex-col gap-5 p-5"
+    >
       <header className="flex shrink-0 items-center justify-between gap-3">
         <h2 className="text-title font-medium">Assistant</h2>
         <Button
@@ -58,6 +62,11 @@ export function AssistantPanel({
             <button
               key={prompt}
               type="button"
+              {...styleDebug({
+                component: 'AssistantPanel',
+                part: 'suggestion',
+                appearance: 'control-wash',
+              })}
               className="control-wash border-rule-default hover:bg-surface-selected focus-visible:bg-surface-selected rounded-control text-dense border px-3 py-2.5 text-left"
               onClick={() => {
                 onDraftChange(prompt);
@@ -76,7 +85,14 @@ export function AssistantPanel({
         >
           Message
         </label>
-        <div className="border-rule-default surface-recessed rounded-control border p-3">
+        <div
+          {...styleDebug({
+            component: 'AssistantPanel',
+            part: 'composer',
+            appearance: 'surface-recessed',
+          })}
+          className="border-rule-default surface-recessed rounded-control border p-3"
+        >
           <textarea
             ref={composer}
             id={`${assistant.id}-message`}

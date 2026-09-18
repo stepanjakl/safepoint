@@ -13,7 +13,7 @@ export const DISCLOSURE = 'disclosure border-rule-faint border-b';
 // same amount it pads back in: the wash has room at both ends and the marker
 // and label stay where they were.
 export const SUMMARY =
-  'control-wash rounded-control focus-visible:bg-surface-inset -mx-2 flex min-h-12 cursor-pointer flex-wrap items-baseline gap-x-3 gap-y-1 px-2 py-3.5 text-dense [&>span]:text-muted [&>span]:ml-auto [&>span]:text-meta';
+  'control-wash rounded-control focus-visible:bg-surface-hover -mx-2 flex min-h-12 cursor-pointer flex-wrap items-baseline gap-x-3 gap-y-1 px-2 py-3.5 text-dense [&>span]:text-muted [&>span]:ml-auto [&>span]:text-meta';
 export const DISCLOSURE_BODY = 'pb-5 pl-5.5 text-dense leading-relaxed';
 // Each record inside a disclosure is a jump target for an evidence link, so it
 // keeps a scroll margin of its own.

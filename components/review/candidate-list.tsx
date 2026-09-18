@@ -1,5 +1,6 @@
 'use client';
 
+import { styleDebug } from '@/lib/style-debug';
 import {
   Header,
   ListBox,
@@ -44,6 +45,7 @@ export function CandidateList({
         const [key] = keys;
         if (typeof key === 'string') onSelect(key as Sku);
       }}
+      {...styleDebug({ component: 'CandidateList' })}
       className="outline-none"
     >
       {categories.map((group) => (
@@ -60,7 +62,11 @@ export function CandidateList({
                 key={row.sku}
                 id={row.sku}
                 textValue={`${row.name}, ${row.outcomeLabel}`}
-                className="group border-rule-faint before:bg-action data-[hovered]:bg-surface-inset data-[focus-visible]:bg-surface-inset data-[selected]:bg-surface-selected relative flex min-h-11 cursor-default items-start gap-2.5 border-b py-2 pr-3 pl-4 before:absolute before:inset-y-0 before:left-0 before:w-0.75 before:opacity-0 data-[focus-visible]:-outline-offset-2 data-[selected]:before:opacity-100"
+                {...styleDebug({
+                  component: 'CandidateList',
+                  part: 'candidate',
+                })}
+                className="group border-rule-faint before:bg-action data-[hovered]:bg-surface-hover data-[focus-visible]:bg-surface-hover data-[selected]:bg-surface-selected relative flex min-h-11 cursor-default items-start gap-2.5 border-b py-2 pr-3 pl-4 before:absolute before:inset-y-0 before:left-0 before:w-0.75 before:opacity-0 data-[focus-visible]:-outline-offset-2 data-[selected]:before:opacity-100"
               >
                 <span
                   className={`mt-1 flex w-3 shrink-0 justify-center ${toneText[marker.tone]}`}

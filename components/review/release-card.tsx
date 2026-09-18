@@ -1,5 +1,6 @@
 'use client';
 
+import { styleDebug } from '@/lib/style-debug';
 import { useId, useState } from 'react';
 import { Tab, TabList, TabPanel, Tabs } from 'react-aria-components';
 import { Button } from '@/components/ui/button';
@@ -56,7 +57,7 @@ const PILL =
 // with a negative margin and each row puts it back as its own inline padding.
 const ROW = 'border-rule-faint shadow-separator-bottom-solid border-b';
 const ROW_BUTTON =
-  'control-wash hover:bg-surface-inset focus-visible:bg-surface-inset flex w-full flex-wrap items-center gap-x-3 gap-y-1.5 px-6 py-3 text-left text-body leading-normal focus-visible:-outline-offset-2';
+  'control-wash hover:bg-surface-hover focus-visible:bg-surface-hover flex w-full flex-wrap items-center gap-x-3 gap-y-1.5 px-6 py-3 text-left text-body leading-normal focus-visible:-outline-offset-2';
 const ROW_DELTA =
   'text-muted ml-auto inline-flex min-w-0 flex-wrap items-baseline gap-1.5 text-right @max-card:ml-0 @max-card:w-full @max-card:text-left';
 // The reason, as a chip in its row's own severity. Pulled back from the tab's
@@ -85,7 +86,15 @@ function CommitState({ plan }: { plan: ReleasePlan }) {
     <div className="border-rule-faint shadow-separator-bottom-solid @max-card:px-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b px-6 py-3">
       {/* Filled and in sentence case: the commit state is the first thing read,
           so it is a label rather than a system readout. */}
-      <span className={PILL_STATE} data-simulated={simulated}>
+      <span
+        {...styleDebug({
+          component: 'ReleaseCard',
+          part: 'commit-state',
+          appearance: 'bg-commit-state',
+        })}
+        className={PILL_STATE}
+        data-simulated={simulated}
+      >
         {applied
           ? simulated
             ? 'Replay · simulated receipt'
@@ -141,6 +150,11 @@ function Buckets({
         {segments.map((segment) => (
           <span
             key={segment.disposition}
+            {...styleDebug({
+              component: 'ReleaseCard',
+              part: 'bucket-bar',
+              appearance: 'bg-severity-bar',
+            })}
             className="bg-severity-bar h-1.5 min-w-2 rounded-full transition-[flex-grow,height] duration-(--duration-row) ease-out data-[active]:h-2.5"
             data-severity={severityRank(segment.disposition)}
             data-active={segment.disposition === selected || undefined}
@@ -164,6 +178,11 @@ function Buckets({
           <Tab
             key={disposition}
             id={disposition}
+            {...styleDebug({
+              component: 'ReleaseCard',
+              part: 'bucket-tab',
+              appearance: 'bg-severity-fill',
+            })}
             className={PILL}
             data-severity={severityRank(disposition)}
           >
@@ -240,7 +259,7 @@ function BucketPanel({
       {rows.hidden > 0 ? (
         <button
           type="button"
-          className="control-wash text-muted hover:bg-surface-inset hover:text-primary focus-visible:bg-surface-inset focus-visible:text-primary text-body block min-h-11 w-full px-6 py-2.5 text-left focus-visible:-outline-offset-2"
+          className="control-wash text-muted hover:bg-surface-hover hover:text-primary focus-visible:bg-surface-hover focus-visible:text-primary text-body block min-h-11 w-full px-6 py-2.5 text-left focus-visible:-outline-offset-2"
           onClick={() => onOpen(disposition)}
         >
           and {rows.hidden} more <span aria-hidden="true">↗</span>
@@ -270,7 +289,16 @@ function EffectRow({
   const [first, ...rest] = effect.deltas;
   return (
     <li className={ROW} data-severity={severityRank(effect.disposition)}>
-      <button type="button" className={ROW_BUTTON} onClick={onOpen}>
+      <button
+        type="button"
+        {...styleDebug({
+          component: 'ReleaseCard',
+          part: 'review-row',
+          appearance: 'control-wash',
+        })}
+        className={ROW_BUTTON}
+        onClick={onOpen}
+      >
         <span className="min-w-0 [overflow-wrap:anywhere]">
           {effect.subject}
         </span>
@@ -294,7 +322,18 @@ function EffectRow({
         </span>
         {/* The row contract is subject, delta, reason, disposition. The reason
             was only feeding the roll-up before; it belongs on the row too. */}
-        {reasonLabel ? <span className={ROW_REASON}>{reasonLabel}</span> : null}
+        {reasonLabel ? (
+          <span
+            {...styleDebug({
+              component: 'ReleaseCard',
+              part: 'reason',
+              appearance: 'bg-severity-fill',
+            })}
+            className={ROW_REASON}
+          >
+            {reasonLabel}
+          </span>
+        ) : null}
         {effect.requiresApproval ? (
           <span className={CHIP}>Needs approval</span>
         ) : null}
@@ -318,7 +357,16 @@ function ReasonRow({
 }) {
   return (
     <li className={ROW}>
-      <button type="button" className={ROW_BUTTON} onClick={onOpen}>
+      <button
+        type="button"
+        {...styleDebug({
+          component: 'ReleaseCard',
+          part: 'review-row',
+          appearance: 'control-wash',
+        })}
+        className={ROW_BUTTON}
+        onClick={onOpen}
+      >
         {/* A reason stands for items rather than being one, so it reads as a
             summary line: the count leads and the label carries no severity
             chip of its own. */}
@@ -401,7 +449,14 @@ export function ReleaseCard({
 
   if (state === 'incomplete' && plan.status.kind === 'incomplete') {
     return (
-      <article className={CARD} aria-labelledby={headingId}>
+      <article
+        {...styleDebug({
+          component: 'ReleaseCard',
+          appearance: 'surface-floating',
+        })}
+        className={CARD}
+        aria-labelledby={headingId}
+      >
         <CommitState plan={plan} />
         <div className={BODY}>
           <h2 id={headingId} className={TITLE}>
@@ -418,7 +473,14 @@ export function ReleaseCard({
 
   if (state === 'all_clear') {
     return (
-      <article className={CARD} aria-labelledby={headingId}>
+      <article
+        {...styleDebug({
+          component: 'ReleaseCard',
+          appearance: 'surface-floating',
+        })}
+        className={CARD}
+        aria-labelledby={headingId}
+      >
         <CommitState plan={plan} />
         <div className={BODY}>
           <p className="text-body flex items-baseline gap-2.5 leading-normal text-pretty">
@@ -453,6 +515,10 @@ export function ReleaseCard({
     <>
       <StaleBanner plan={plan} />
       <article
+        {...styleDebug({
+          component: 'ReleaseCard',
+          appearance: 'surface-floating',
+        })}
         className={CARD}
         data-danger={blockedOnly || undefined}
         aria-labelledby={headingId}

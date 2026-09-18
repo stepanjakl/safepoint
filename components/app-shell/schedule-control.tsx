@@ -1,5 +1,6 @@
 'use client';
 
+import { styleDebug } from '@/lib/style-debug';
 import type { ReactNode } from 'react';
 import {
   Button as AriaButton,
@@ -23,7 +24,7 @@ import { useProcessSchedule } from './schedule-store';
 
 // The review panel's filter pill, at the size of a choice in a popover.
 const CHOICE =
-  'control-wash border-rule-default hover:bg-surface-inset focus-visible:bg-surface-inset aria-pressed:bg-surface-selected aria-pressed:border-rule-strong inline-flex min-h-8 items-center justify-center rounded-full border px-2.5 py-1 text-meta whitespace-nowrap';
+  'control-wash border-rule-default hover:bg-surface-hover focus-visible:bg-surface-hover aria-pressed:bg-surface-selected aria-pressed:border-rule-strong inline-flex min-h-8 items-center justify-center rounded-full border px-2.5 py-1 text-meta whitespace-nowrap';
 
 /*
   The schedule, beside the runs it produces. It moved here from under the
@@ -48,6 +49,11 @@ export function ScheduleControl({
       <Tooltip label="Schedule" description={scheduleLabel(schedule)}>
         <AriaButton
           aria-label={`Schedule: ${scheduleLabel(schedule)}`}
+          {...styleDebug({
+            component: 'ScheduleControl',
+            part: 'trigger',
+            appearance: 'control-wash',
+          })}
           className="control-wash text-muted hover:bg-surface-selected hover:text-primary focus-visible:bg-surface-selected focus-visible:text-primary data-[pressed]:bg-surface-selected rounded-control text-meta -my-1 inline-flex min-h-7 items-center gap-1.5 px-1.5 whitespace-nowrap"
           data-off={schedule.enabled ? undefined : ''}
         >
@@ -64,6 +70,11 @@ export function ScheduleControl({
         // Opens over the thread, not back over the sidebar the rail sits beside.
         placement="bottom start"
         offset={6}
+        {...styleDebug({
+          component: 'ScheduleControl',
+          part: 'popover',
+          appearance: 'surface-floating',
+        })}
         className="control-face surface-floating rounded-shell w-[min(18rem,calc(100vw-2rem))]"
       >
         <Dialog className="grid gap-4 p-4 outline-none">
@@ -124,6 +135,10 @@ export function ScheduleFields({
               <button
                 key={cadence}
                 type="button"
+                {...styleDebug({
+                  component: 'ScheduleFields',
+                  part: 'frequency-choice',
+                })}
                 className={CHOICE}
                 aria-pressed={schedule.cadence === cadence}
                 onClick={() => update({ cadence })}
@@ -142,6 +157,10 @@ export function ScheduleFields({
                 <button
                   key={day}
                   type="button"
+                  {...styleDebug({
+                    component: 'ScheduleFields',
+                    part: 'weekday-choice',
+                  })}
                   className={`${CHOICE} px-0`}
                   aria-pressed={schedule.day === day}
                   aria-label={day}

@@ -54,7 +54,7 @@ export const MONO_CHOICE_LABELS: Record<MonoChoice, string> = {
   Two constructions of the same scale, compared live rather than argued about.
   'base' is the 2px-baseline scale; 'sharp' keeps the dense lower half and
   pushes the upper half for stronger hierarchy contrast. See the typescale
-  blocks in app/tokens.css.
+  blocks in app/tokens/type.css.
 */
 export const TYPESCALES = ['base', 'sharp'] as const;
 

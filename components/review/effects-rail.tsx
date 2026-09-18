@@ -1,3 +1,4 @@
+import { styleDebug } from '@/lib/style-debug';
 import { Glyph } from '@/components/ui/glyph';
 import { Ledger, LedgerRow } from '@/components/ui/ledger';
 import { SectionBand } from '@/components/ui/section-band';
@@ -18,23 +19,53 @@ export function EffectsRail({
   headingId: string;
 }) {
   return (
-    <section aria-labelledby={headingId}>
+    <section
+      {...styleDebug({ component: 'EffectsRail' })}
+      aria-labelledby={headingId}
+    >
       <SectionBand
         id={headingId}
         title="Affected systems"
         meta={`${effects.length} planned · none executed`}
       />
       <div className="px-4 pt-4 pb-3">
-        <div className="enclosure rounded-control bg-surface-primary px-4 py-4">
+        <div
+          {...styleDebug({
+            component: 'EffectsRail',
+            part: 'enclosure',
+            appearance: 'enclosure',
+          })}
+          className="enclosure rounded-control bg-surface-primary px-4 py-4"
+        >
           <ol
+            {...styleDebug({
+              component: 'EffectsRail',
+              part: 'connector',
+              appearance: 'rail',
+            })}
             className="rail"
             style={{ '--rail-count': effects.length } as React.CSSProperties}
           >
             {effects.map((node) => {
               const marker = modeMarker[node.mode];
               return (
-                <li key={node.id} className="rail-node">
-                  <span className={`rail-marker ${toneText[marker.tone]}`}>
+                <li
+                  key={node.id}
+                  {...styleDebug({
+                    component: 'EffectsRail',
+                    part: 'node',
+                    appearance: 'rail-node',
+                  })}
+                  className="rail-node"
+                >
+                  <span
+                    {...styleDebug({
+                      component: 'EffectsRail',
+                      part: 'marker',
+                      appearance: 'rail-marker',
+                    })}
+                    className={`rail-marker ${toneText[marker.tone]}`}
+                  >
                     <Glyph name={marker.glyph} size={14} />
                   </span>
                   <span className="rail-labels">
