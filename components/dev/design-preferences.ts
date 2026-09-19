@@ -160,8 +160,31 @@ export const NEUTRAL_PALETTES = [
   'mauve',
   'mist',
   'olive',
+  'radix-gray',
+  'radix-mauve',
+  'radix-slate',
+  'radix-sage',
+  'radix-olive',
+  'radix-sand',
 ] as const;
 export type NeutralPalette = (typeof NEUTRAL_PALETTES)[number];
+export const NEUTRAL_PALETTE_LABELS: Record<NeutralPalette, string> = {
+  slate: 'Slate',
+  gray: 'Gray',
+  zinc: 'Zinc',
+  neutral: 'Neutral',
+  stone: 'Stone',
+  taupe: 'Taupe',
+  mauve: 'Mauve',
+  mist: 'Mist',
+  olive: 'Olive',
+  'radix-gray': 'Radix / Gray',
+  'radix-mauve': 'Radix / Mauve',
+  'radix-slate': 'Radix / Slate',
+  'radix-sage': 'Radix / Sage',
+  'radix-olive': 'Radix / Olive',
+  'radix-sand': 'Radix / Sand',
+};
 export const DEFAULT_NEUTRAL: NeutralPalette = 'zinc';
 
 export function readNeutral(): NeutralPalette {

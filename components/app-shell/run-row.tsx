@@ -85,7 +85,7 @@ export function RunRow({
             word half the time -- Today, Yesterday -- but it is read as a stamp
             either way, and a proportional day over a tabular time made two
             columns out of one fact. */}
-      <span aria-hidden="true" className="sheet-row-day value text-dense">
+      <span aria-hidden="true" className="sheet-row-day value">
         {runDay(run.startedAt)}
       </span>
       <span

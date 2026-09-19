@@ -38,7 +38,7 @@
   --sp-font-mono: var(--font-geist-sans);
   --sp-font-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
   --sp-mono-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1, 'tnum' 1, 'lnum' 1;
-  --sp-mono-spacing: .015em;
+  --sp-mono-spacing: .01em;
   --sp-mono-weight: 600;
   --sp-mono-weight-strong: 600;
 }
@@ -266,6 +266,8 @@
   --sp-text-dense: 0.8125rem; /* 13 / 18 */
   --sp-text-dense--lh: calc(1.125 / 0.8125);
   --sp-text-dense--ls: 0em;
+
+  --sp-text-sheet-date: 0.78125rem; /* 12.5px */
 
   --sp-text-body: 0.875rem; /* 14 / 20 */
   --sp-text-body--lh: calc(1.25 / 0.875);

@@ -29,6 +29,7 @@ import {
   subscribe,
   DEFAULT_NEUTRAL,
   NEUTRAL_PALETTES,
+  NEUTRAL_PALETTE_LABELS,
   readNeutral,
   setNeutral,
   DEFAULT_TILE_PALETTE,
@@ -91,7 +92,10 @@ export function mountDesignPane(host: HTMLElement) {
     appearance
       .addBinding(model, 'neutral', {
         label: 'Neutrals',
-        options: NEUTRAL_PALETTES.map((value) => ({ text: value, value })),
+        options: NEUTRAL_PALETTES.map((value) => ({
+          text: NEUTRAL_PALETTE_LABELS[value],
+          value,
+        })),
       })
       .on('change', (event) => setNeutral(event.value)),
     appearance

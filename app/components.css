@@ -2152,6 +2152,7 @@
      so the pair reads as one line however the type scale is set. */
   .sheet-row-day {
     min-width: 0;
+    font-size: var(--sp-text-sheet-date);
     line-height: var(--spacing-sheet-mark);
     color: var(--sheet-ink);
     overflow: hidden;

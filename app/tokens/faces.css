@@ -273,10 +273,8 @@
   /* A run row is a control, so its stamp reads the ramp rather than the prose
      text roles. Three rungs each, one per row state; the day sits darker than
      the time, so the pair reads as one stamp at two resolutions. */
-  /* Keep the current date near primary ink; neutral-50 made the timestamp
-     brighter than the content it labels. */
-  --sp-sheet-date: light-dark(var(--sp-neutral-700), var(--sp-neutral-250));
-  --sp-sheet-date-hover: light-dark(var(--sp-neutral-800), var(--sp-neutral-200));
+  --sp-sheet-date: light-dark(var(--sp-neutral-750), var(--sp-neutral-325));
+  --sp-sheet-date-hover: light-dark(var(--sp-neutral-800), var(--sp-neutral-300));
   --sp-sheet-date-current: light-dark(var(--sp-neutral-900), var(--sp-neutral-100));
   --sp-sheet-time: light-dark(var(--sp-neutral-600), var(--sp-neutral-400));
   --sp-sheet-time-hover: light-dark(var(--sp-neutral-700), var(--sp-neutral-350));
