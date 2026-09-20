@@ -8,6 +8,7 @@
 @import './tokens/theme.css';
 @import './radix-colors.css';
 @import './neutral-palettes.css';
+@import './custom-colours.css';
 @import './components.css';
 
 @layer base {
@@ -174,7 +175,7 @@
   --control-face-bottom: var(--sp-accent-face-bottom);
   --control-ring-top: var(--sp-accent-ring-top);
   --control-ring-bottom: var(--sp-accent-ring-bottom);
-  --control-highlight: var(--sp-face-highlight-subtle);
+  --control-highlight: var(--sp-accent-edge);
 }
 
 @utility control-accent-hover {
@@ -192,7 +193,7 @@
   --control-face-bottom: var(--sp-commit-face-bottom);
   --control-ring-top: var(--sp-commit-ring-top);
   --control-ring-bottom: var(--sp-commit-ring-bottom);
-  --control-highlight: var(--sp-face-highlight-faint);
+  --control-highlight: var(--sp-commit-edge);
 }
 
 @utility control-commit-hover {
@@ -296,7 +297,7 @@
   --control-face-bottom: var(--sp-surface-primary);
   --control-ring-top: light-dark(var(--sp-rule-default), var(--sp-rule-faint));
   --control-ring-bottom: var(--sp-rule-faint);
-  --control-highlight: var(--sp-face-highlight-strong);
+  --control-highlight: var(--sp-raised-edge);
 }
 
 @utility surface-analysis {
@@ -312,7 +313,7 @@
   --control-face-bottom: var(--sp-surface-floating);
   --control-ring-top: var(--sp-rule-faint);
   --control-ring-bottom: var(--sp-rule-faint);
-  --control-highlight: var(--sp-face-highlight-solid);
+  --control-highlight: var(--sp-floating-edge);
 }
 
 /* A row's status badge. Its stops are read from the row: `.process-menu-row`
@@ -537,7 +538,7 @@
 @utility enclosure {
   border: 1px solid var(--sp-rule-strong);
   border-radius: var(--radius-control);
-  background-image: linear-gradient(to bottom, var(--sp-edge-inner), transparent 55%);
+  background-image: var(--sp-enclosure-sheen);
 }
 
 @media (forced-colors: active), print {
@@ -558,4 +559,15 @@
   &[data-severity='3']:not([data-active]) {
     background-color: light-dark(var(--severity-9), var(--severity-7));
   }
+}
+
+/* The decorative tiles' sheen, opaque. It cannot be a root token: the mix
+   needs --tile-face-*, which a hue utility sets on the element, and a custom
+   property's var() references resolve where the property is declared. Left
+   unlayered so it outranks the utility it overrides. */
+:root[data-colour-system='custom'][data-edge-treatment='opaque'] .surface-menu-tile {
+  --control-highlight: light-dark(
+    color-mix(in oklab, var(--color-white) 50%, var(--tile-face-light)),
+    color-mix(in oklab, var(--color-black) 25%, var(--tile-face-dark))
+  );
 }

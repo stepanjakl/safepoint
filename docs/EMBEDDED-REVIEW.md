@@ -12,7 +12,7 @@ Status: implemented, 9 September 2026. Use the canonical [product terminology](P
 
 The demonstration has two functioning menu levels. The root contains one **Processes** entry with a process icon, a rounded count badge, and a right chevron; there is no Workspace label. Opening it reveals the process list. A left chevron, labelled **Back to menu**, sits beside the centred **Processes** heading and returns to the root. Start on the process level when opening an existing process route so the current selection is visible.
 
-Only actual process examples appear in the list: Promotion release and Support handoff. The unrelated Workspace and Recent placeholder groups have been removed. The state gallery is linked from the development workbench rather than listed among processes. The root level is intentionally minimal: it demonstrates navigation rather than implying additional product features.
+Only actual process examples appear in the list: Promotion release and Support handoff. The unrelated Workspace and Recent placeholder groups have been removed. The development state gallery is not listed among processes. The root level is intentionally minimal: it demonstrates navigation rather than implying additional product features.
 
 Changing menu levels preserves the open review, selected process, and saved order. Entering Processes slides the menu content to the left; returning to Workspace reverses the direction. Keep the brand stationary and clip motion to the menu viewport. The transition takes 220 ms and respects reduced-motion preferences. Only the active level is interactive and exposed to assistive technology. Keyboard focus follows the level change and returns to the Processes entry when going back; rapid direction changes must not leave duplicate controls or stranded focus.
 
@@ -134,7 +134,7 @@ No approval, edits, commitment or execution are implemented in this replay slice
 
 Colour is bound to a bucket's position on the scale, never to its label, so a fifth bucket is a token change. Approval is a property on the row rendered as a chip, not a bucket: a fifth pill would break the ordinal read.
 
-Deltas are built from typed source values, never parsed back out of display text. `before: null` means the prior value was not observed; `create` means no prior value exists. Collapsing those is how invented before-values get in. An unrecognised delta kind degrades to `opaque` so a row never renders as a gap, but a malformed *known* kind still fails validation, because swallowing it would hide an adapter bug behind a plausible-looking row.
+Deltas are built from typed source values, never parsed back out of display text. `before: null` means the prior value was not observed; `create` means no prior value exists. Collapsing those is how invented before-values get in. An unrecognised delta kind degrades to `opaque` so a row never renders as a gap, but a malformed _known_ kind still fails validation, because swallowing it would hide an adapter bug behind a plausible-looking row.
 
 Exclusion, when it lands, adjusts `selectedCounts` only. `evaluationCounts` ignores it and drives the bar, the pills, the verdict and the state, so excluding the last blocker can never turn a blocked plan into "all clear".
 

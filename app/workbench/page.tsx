@@ -1,255 +1,144 @@
-import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 
-import { AgentNameGallery } from '@/components/dev/agent-name-gallery';
-import { IconMenuGallery } from '@/components/dev/icon-menu-gallery';
-import { IconPairGallery } from '@/components/dev/icon-pair-gallery';
-import { LogoGallery } from '@/components/dev/logo-gallery';
-import { NucleoGallery } from '@/components/dev/nucleo-gallery';
-import { RunStatusGallery } from '@/components/dev/run-status-gallery';
-import { SystemDiscGallery } from '@/components/dev/system-disc-gallery';
-import { ReviewWorkspace } from '@/components/review/review-workspace';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { loadReviewedReplay } from '@/lib/promotion-release';
-import { promotionProcess } from '@/lib/process/placeholder-process';
-import { presentPromotionInputs } from '@/lib/process/system-links';
-import { parseSkuParam, presentReview } from '@/lib/review-presentation';
+import report from '@/docs/generated/colour-theme-report.json';
 import {
-  MONO_CHOICE_LABELS,
-  MONO_CHOICES,
-  TYPEFACE_SET_LABELS,
-  TYPEFACE_SETS,
-} from '@/lib/typography';
+  RampWorkbench,
+  type WorkbenchRevision,
+  type WorkbenchRole,
+  type WorkbenchTheme,
+} from '@/components/dev/ramp-workbench';
 
-/*
-  Protected comparison page: the implemented workspace in light and dark at
-  wide and narrow widths, plus the control faces, the candidate typeface sets
-  and the candidate icon families. Development only unless
-  SAFEPOINT_WORKBENCH=enabled.
-*/
-export default async function WorkbenchPage({
-  searchParams,
-}: PageProps<'/workbench'>) {
-  if (
-    process.env.NODE_ENV !== 'development' &&
-    process.env.SAFEPOINT_WORKBENCH !== 'enabled'
-  ) {
-    notFound();
-  }
+const THEMES = ['light', 'dark'] as const;
 
-  const replay = loadReviewedReplay();
-  const presentation = presentReview(replay);
-  const inputs = presentPromotionInputs(replay);
-  const sku = parseSkuParam((await searchParams).sku) ?? 'ALD-0025';
-  const themes = ['light', 'dark'] as const;
+type Theme = (typeof THEMES)[number];
+type Ramps = Record<Theme, WorkbenchTheme['steps']>;
+type Spacing = Record<
+  Theme,
+  Pick<
+    WorkbenchTheme,
+    'gapSpread' | 'medianGapDeltaE' | 'narrowestGapDeltaE' | 'widestGapDeltaE'
+  >
+>;
+
+function scales(ramps: Ramps, spacing: Spacing, roles: WorkbenchRole[]) {
+  return Object.fromEntries(
+    THEMES.map((theme) => [
+      theme,
+      {
+        steps: ramps[theme],
+        ...spacing[theme],
+        canvasStep: roles.find((role) => role.id === 'canvas')![theme].step,
+        textStep: roles.find((role) => role.id === 'textPrimary')![theme].step,
+      },
+    ]),
+  ) as Record<Theme, WorkbenchTheme>;
+}
+
+export default function WorkbenchPage() {
+  if (process.env.NODE_ENV !== 'development') notFound();
+
+  const activeRoles: WorkbenchRole[] = Object.entries(report.roles).map(
+    ([id, assignment]) => ({
+      id,
+      light: { step: assignment.light },
+      dark: { step: assignment.dark },
+    }),
+  );
+
+  const rolesByRevision: Record<string, WorkbenchRole[]> = {};
+
+  /* Every family shares one ramp shape and one set of role assignments, so
+     they are the same page five times over at different hues. */
+  const revisions: WorkbenchRevision[] = report.families.map((family) => {
+    rolesByRevision[family.id] = activeRoles;
+    const ramp = family.ramp as WorkbenchTheme['steps'];
+    return {
+      id: family.id,
+      name: family.name,
+      summary: `${family.note} Hue ${family.hue}, chroma x${family.chromaScale}.`,
+      active: family.id === report.defaultFamily,
+      ...scales(
+        { light: ramp, dark: ramp } as Ramps,
+        report.spacing as Spacing,
+        activeRoles,
+      ),
+      chromaRatio: family.crossTheme.surfaceChroma.ratio ?? 0,
+      crossThemeContrast: family.crossTheme.contrast,
+      warnings: family.warnings,
+    };
+  });
 
   return (
-    <div className="space-y-10 p-6">
-      <div>
-        <h1 className="text-display font-semibold">Workbench</h1>
+    <main className="bg-canvas text-primary min-h-dvh p-6 sm:p-10">
+      <header className="border-rule-default mx-auto max-w-screen-2xl border-b pb-6">
+        <p className="readout text-muted">Generated colour systems</p>
+        <h1 className="text-display mt-2 font-semibold">41-step workbench</h1>
+        <p className="text-body text-muted mt-3 max-w-3xl">
+          Every generated step of the shared ramp shape and every neutral
+          family, with the measurements behind them. All values are read from{' '}
+          <code>docs/generated/colour-theme-report.json</code>; nothing here
+          computes a colour.
+        </p>
         <Link
-          className="inline-flex min-h-11 items-center underline underline-offset-4"
-          href="/examples/states"
+          href="/"
+          className="text-dense text-muted-strong mt-4 inline-flex min-h-11 items-center underline underline-offset-4"
         >
-          Open release card state gallery →
+          Return to the application
         </Link>
-        <p className="text-dense text-muted mt-1">
-          The review workspace in both themes at wide and 390px widths. Add
-          ?sku= to select a different line in every frame. Forced colours and
-          reduced motion are checked with browser rendering emulation.
-        </p>
-      </div>
+      </header>
 
-      <section className="space-y-3">
-        <h2 className="readout text-muted">typeface sets</h2>
-        <p className="text-dense text-muted">
-          The three semantic roles under each candidate. data-typeface resolves
-          per subtree, so these are the real families, not a mock-up. The
-          floating control switches the whole page; ?font= links one choice.
-        </p>
-        <div className="grid gap-4 sm:grid-cols-3">
-          {TYPEFACE_SETS.map((set) => (
-            <div
-              key={set}
-              data-typeface={set}
-              className="border-rule-default bg-surface-primary space-y-3 border p-4"
-            >
-              <p className="readout text-muted">{TYPEFACE_SET_LABELS[set]}</p>
-              <p className="text-display font-display font-semibold">
-                Fresh Food Weekend
-              </p>
-              <p className="text-body">
-                Salmon fillets hold at £6.50 — supplier funding covers the
-                shortfall, so the margin floor is not breached.
-              </p>
-              <p className="value text-dense">£6.50 · −12.5% · 1,408 units</p>
-              <p className="readout text-muted">held · simulated · ALD-0025</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="readout text-muted">logo candidates</h2>
-        <p className="text-dense text-muted max-w-prose">
-          Balanced and Soft with threefold symmetry, shown at display size and
-          16–48px in both themes. Soft is the selected symbol; compare it with
-          each wordmark family and its available weights below.
-        </p>
-        <LogoGallery />
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="readout text-muted">run states</h2>
-        <p className="text-dense text-muted max-w-prose">
-          The nine states a run moves through, drawn as one circle whose
-          interior changes rather than as nine separate marks: a ring while the
-          run is still open, a solid disc with the mark knocked out of it once
-          it is settled. Read the sequence straight down first — a family is
-          wrong when one of them is a stranger — then check the 12px pill, which
-          is the size the runs rail actually draws.
-        </p>
-        <RunStatusGallery />
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="readout text-muted">system discs</h2>
-        <p className="text-dense text-muted max-w-prose">
-          The promotion process&apos;s inputs and outputs, drawn by each
-          candidate icon family, plus the full sixteen-noun vocabulary. The
-          inputs carry real freshness, so the caution and blocked rings are the
-          ones the app renders. Compare weight at 14px, how much of the disc the
-          glyph fills, and whether the family has a word for every noun.
-        </p>
-        <SystemDiscGallery inputs={inputs} outputs={promotionProcess.outputs} />
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="readout text-muted">input / output icons</h2>
-        <p className="text-dense text-muted max-w-prose">
-          Candidates for the header&apos;s two data controls, drawn in the
-          control they sit in and at the size they are drawn there. A pair only
-          counts if the two are one drawing with the direction reversed; each
-          note says where the pair falls short.
-        </p>
-        <IconPairGallery />
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="readout text-muted">global agent</h2>
-        <p className="text-dense text-muted max-w-prose">
-          Names and icons for the helper the notch would hold, with the word and
-          without it. A name is a promise about authority: this helper answers
-          and opens things, and can neither approve nor write, so each note says
-          where a candidate promises more than that.
-        </p>
-        <AgentNameGallery />
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="readout text-muted">menu icons</h2>
-        <p className="text-dense text-muted max-w-prose">
-          The same seven menu items in each family, outlined at rest and filled
-          under the pointer or keyboard focus. Hover down a column to compare
-          how far each fill departs from its outline — a pair drawn together
-          keeps its silhouette, a pair drawn separately shifts.
-        </p>
-        <IconMenuGallery />
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="readout text-muted">nucleo free families</h2>
-        <p className="text-dense text-muted max-w-prose">
-          Nucleo&apos;s six free React packages at 32px. Illustrative sets
-          rather than interface icons, so they are shown as specimens and not as
-          system-disc candidates.
-        </p>
-        <NucleoGallery />
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="readout text-muted">utility role</h2>
-        <p className="text-dense text-muted">
-          Every candidate for the tabular role, all against Geist so only the
-          utility family changes. The readout line is what the role mostly
-          carries: short English labels in tracked uppercase, not code.
-        </p>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {MONO_CHOICES.filter((choice) => choice !== 'match').map((choice) => (
-            <div
-              key={choice}
-              data-typeface="geist"
-              data-mono={choice}
-              className="border-rule-default bg-surface-primary space-y-2 border p-4"
-            >
-              <p className="text-meta text-muted">
-                {choice} — {MONO_CHOICE_LABELS[choice]}
-              </p>
-              <p className="readout text-muted">
-                policy result · held · simulated
-              </p>
-              <p className="value text-dense">
-                £6.50 · −12.5% · 1,408 · ALD-0025
-              </p>
-              <p
-                className="value text-dense"
-                style={{ fontWeight: 'var(--sp-mono-weight-strong)' }}
-              >
-                0123456789 · 09:41 UTC
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {themes.map((theme) => (
-        <section key={theme} data-theme={theme} className="space-y-6">
-          <h2 className="readout text-muted">{theme} · wide</h2>
-          <div className="border-rule-strong bg-canvas text-primary border">
-            <ReviewWorkspace presentation={presentation} initialSku={sku} />
-          </div>
-          <h2 className="readout text-muted">{theme} · 390px</h2>
-          <div className="border-rule-strong bg-canvas text-primary w-97.5 border">
-            <ReviewWorkspace presentation={presentation} initialSku={sku} />
-          </div>
-          <h2 className="readout text-muted">{theme} · controls</h2>
-          <div className="border-rule-strong bg-canvas text-primary flex flex-wrap items-center gap-6 border p-6">
-            <div className="basis-full space-y-2">
-              <p className="readout text-muted">switch sizes</p>
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-                <Switch size="sm" defaultSelected>
-                  Small
-                </Switch>
-                <Switch size="md" defaultSelected>
-                  Medium
-                </Switch>
-                <Switch size="lg" defaultSelected>
-                  Large
-                </Switch>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Button variant="primary">Commit approved changes</Button>
-              <p className="readout text-muted">primary</p>
-            </div>
-            <div className="space-y-2">
-              <Button variant="primary" isDisabled>
-                Commit approved changes
-              </Button>
-              <p className="readout text-muted">primary · disabled</p>
-            </div>
-            <div className="space-y-2">
-              <Button>Review omissions</Button>
-              <p className="readout text-muted">secondary</p>
-            </div>
-            <div className="space-y-2">
-              <Button isDisabled>Review omissions</Button>
-              <p className="readout text-muted">secondary · disabled</p>
-            </div>
-          </div>
+      <div className="mx-auto max-w-screen-2xl">
+        <section className="border-rule-default border-b py-6">
+          <h2 className="text-title font-semibold">How a ramp is computed</h2>
+          <ol className="text-dense text-muted mt-3 grid max-w-3xl gap-2">
+            <li>
+              <strong className="text-primary">1. Anchors.</strong> A curve is a
+              short list of OKLCH anchors — step, lightness, chroma, hue — in{' '}
+              <code>scripts/colour-theme/config.ts</code>. Lightness must
+              decrease as the step number rises.
+            </li>
+            <li>
+              <strong className="text-primary">2. Sampling.</strong> All 41
+              steps are interpolated piecewise-linearly between anchors, with
+              hue taken over the shorter arc. Linear rather than spline, so a
+              curve cannot overshoot between two anchors.
+            </li>
+            <li>
+              <strong className="text-primary">3. Gamut.</strong> Each sample is
+              mapped into sRGB with the CSS algorithm before anything is
+              measured, so contrast is calculated on the colour that will
+              actually paint rather than on one the browser would clip.
+            </li>
+            <li>
+              <strong className="text-primary">4. Serialization.</strong>{' '}
+              Written as <code>rgb()</code> with three decimals, then parsed
+              back and re-measured. Every figure below describes the reparsed
+              value, not the sampled one.
+            </li>
+            <li>
+              <strong className="text-primary">5. Contracts.</strong> Roles map
+              names to steps. Contrast contracts are WCAG 2.x ratios with a
+              required minimum and sometimes a higher design target; visual
+              contracts are ΔEOK separations. Spacing and cross-theme criteria
+              judge the ramp&rsquo;s own shape.
+            </li>
+          </ol>
+          <p className="text-meta text-muted mt-4 max-w-3xl">
+            ΔEOK is perceptual distance in OKLab; roughly 0.01 is near the
+            threshold of noticing on large areas and 0.02 is comfortably
+            visible. Step numbers express ordering only — equal index distances
+            are not equal contrast, and never equal across themes.
+          </p>
         </section>
-      ))}
-    </div>
+
+        <div className="mt-8">
+          <RampWorkbench
+            revisions={revisions}
+            rolesByRevision={rolesByRevision}
+          />
+        </div>
+      </div>
+    </main>
   );
 }

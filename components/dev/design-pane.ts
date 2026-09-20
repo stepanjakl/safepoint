@@ -12,6 +12,13 @@ import {
   DEFAULT_THEME,
 } from '@/lib/typography';
 import {
+  COLOUR_SYSTEMS,
+  COLOUR_SYSTEM_LABELS,
+  DEFAULT_EDGE_TREATMENT,
+  DEFAULT_COLOUR_SYSTEM,
+  DEFAULT_STATE_PALETTE,
+  EDGE_TREATMENTS,
+  EDGE_TREATMENT_LABELS,
   readTypeface,
   readMono,
   readTypescale,
@@ -44,7 +51,17 @@ import {
   setTileChromaScale,
   DEFAULT_CORNER_BALANCE,
   readCornerBalance,
+  readColourSystem,
+  CUSTOM_NEUTRALS,
+  CUSTOM_NEUTRAL_LABELS,
+  DEFAULT_CUSTOM_NEUTRAL,
+  isGeneratedColourSystem,
+  readCustomNeutral,
+  readEdgeTreatment,
+  setCustomNeutral,
   setCornerBalance,
+  setColourSystem,
+  setEdgeTreatment,
   DEFAULT_SLANT_RADIUS,
   SLANT_RADIUS_MAX,
   SLANT_RADIUS_MIN,
@@ -63,6 +80,9 @@ function readPreferences() {
     mono: readMono(),
     typescale: readTypescale(),
     theme: readTheme(),
+    colourSystem: readColourSystem(),
+    customNeutral: readCustomNeutral(),
+    edgeTreatment: readEdgeTreatment(),
     neutral: readNeutral(),
     tilePalette: readTilePalette(),
     statePalette: readStatePalette(),
@@ -82,22 +102,60 @@ export function mountDesignPane(host: HTMLElement) {
     expanded: false,
   });
   const appearance = pane.addFolder({ title: 'Appearance' });
+  const themeBinding = appearance
+    .addBinding(model, 'theme', {
+      label: 'Theme',
+      options: THEME_CHOICES.map((value) => ({ text: value, value })),
+    })
+    .on('change', (event) => setTheme(event.value));
+  const colourSystemBinding = appearance
+    .addBinding(model, 'colourSystem', {
+      label: 'Colour system',
+      options: COLOUR_SYSTEMS.map((value) => ({
+        text: COLOUR_SYSTEM_LABELS[value],
+        value,
+      })),
+    })
+    .on('change', (event) => setColourSystem(event.value));
+  const neutralBinding = appearance
+    .addBinding(model, 'neutral', {
+      label: 'Neutrals',
+      options: NEUTRAL_PALETTES.map((value) => ({
+        text: NEUTRAL_PALETTE_LABELS[value],
+        value,
+      })),
+    })
+    .on('change', (event) => setNeutral(event.value));
+  neutralBinding.element.title =
+    'Chooses the neutral family for Original. Custom has families of its own.';
+  const customNeutralBinding = appearance
+    .addBinding(model, 'customNeutral', {
+      label: 'Custom neutrals',
+      options: CUSTOM_NEUTRALS.map((value) => ({
+        text: CUSTOM_NEUTRAL_LABELS[value],
+        value,
+      })),
+    })
+    .on('change', (event) => setCustomNeutral(event.value));
+  customNeutralBinding.element.title =
+    'Chooses the neutral family for Custom. One ramp shape at five hues; Ash has no tint at all.';
+  const edgeTreatmentBinding = appearance
+    .addBinding(model, 'edgeTreatment', {
+      label: 'Edge treatment',
+      options: EDGE_TREATMENTS.map((value) => ({
+        text: EDGE_TREATMENT_LABELS[value],
+        value,
+      })),
+    })
+    .on('change', (event) => setEdgeTreatment(event.value));
+  edgeTreatmentBinding.element.title =
+    'Compares the Phase A edge baseline with opaque surface recipes. Opaque recipes are added in Phase B2.';
   const bindings = [
-    appearance
-      .addBinding(model, 'theme', {
-        label: 'Theme',
-        options: THEME_CHOICES.map((value) => ({ text: value, value })),
-      })
-      .on('change', (event) => setTheme(event.value)),
-    appearance
-      .addBinding(model, 'neutral', {
-        label: 'Neutrals',
-        options: NEUTRAL_PALETTES.map((value) => ({
-          text: NEUTRAL_PALETTE_LABELS[value],
-          value,
-        })),
-      })
-      .on('change', (event) => setNeutral(event.value)),
+    themeBinding,
+    colourSystemBinding,
+    edgeTreatmentBinding,
+    neutralBinding,
+    customNeutralBinding,
     appearance
       .addBinding(model, 'typeface', {
         label: 'Typeface',
@@ -220,7 +278,12 @@ export function mountDesignPane(host: HTMLElement) {
     ?.setAttribute('aria-label', 'Icon axis guides');
 
   // Bindings use native selects. Name them explicitly for screen readers.
-  for (const binding of [...bindings, paletteBinding, speedBinding]) {
+  for (const binding of [
+    ...bindings,
+    stateBinding,
+    paletteBinding,
+    speedBinding,
+  ]) {
     binding.element
       .querySelector('select')
       ?.setAttribute('aria-label', binding.label ?? 'Design preference');
@@ -231,8 +294,12 @@ export function mountDesignPane(host: HTMLElement) {
     setMono('match');
     setTypescale(DEFAULT_TYPESCALE);
     setTheme(DEFAULT_THEME);
+    setColourSystem(DEFAULT_COLOUR_SYSTEM);
+    setEdgeTreatment(DEFAULT_EDGE_TREATMENT);
     setNeutral(DEFAULT_NEUTRAL);
+    setCustomNeutral(DEFAULT_CUSTOM_NEUTRAL);
     setTilePalette(DEFAULT_TILE_PALETTE);
+    setStatePalette(DEFAULT_STATE_PALETTE);
     setTileChromaScale(DEFAULT_TILE_CHROMA_SCALE);
     setSlantRadius(DEFAULT_SLANT_RADIUS);
     setCornerBalance(DEFAULT_CORNER_BALANCE);
@@ -244,6 +311,13 @@ export function mountDesignPane(host: HTMLElement) {
   let stopMotion = startMotionDebug(Number(activeSpeed));
   function sync() {
     Object.assign(model, readPreferences());
+    neutralBinding.disabled = isGeneratedColourSystem(model.colourSystem);
+    customNeutralBinding.disabled = !isGeneratedColourSystem(
+      model.colourSystem,
+    );
+    edgeTreatmentBinding.disabled = !isGeneratedColourSystem(
+      model.colourSystem,
+    );
     if (model.speed !== activeSpeed) {
       stopMotion();
       activeSpeed = model.speed;
@@ -258,7 +332,7 @@ export function mountDesignPane(host: HTMLElement) {
   sync();
   const unsubscribe = subscribe(sync);
   const toggle = pane.element.querySelector('button');
-  const folders = [pane, appearance, tiles, motion, debug];
+  const folders = [pane, appearance, states, tiles, motion, debug];
   function syncExpanded() {
     for (const folder of folders) {
       folder.element

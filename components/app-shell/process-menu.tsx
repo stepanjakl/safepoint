@@ -276,7 +276,7 @@ const MENU_ITEM = cx(
   box sitting on it.
 */
 const MENU_COUNT =
-  'bg-menu-chip text-muted text-micro rounded-control control-wash group-hover/enter:bg-transparent group-focus-visible/enter:bg-transparent ml-auto inline-grid h-5.5 min-w-5.5 place-items-center px-1.25 tabular-nums';
+  'bg-menu-chip text-muted-strong text-micro rounded-control control-wash group-hover/enter:bg-transparent group-focus-visible/enter:bg-transparent ml-auto inline-grid h-5.5 min-w-5.5 place-items-center px-1.25 tabular-nums';
 
 /*
   Placeholders for what the workspace menu will hold, so its shape can be judged

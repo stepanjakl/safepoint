@@ -114,6 +114,138 @@ export function setTheme(next: ThemeChoice) {
   emit();
 }
 
+export const COLOUR_SYSTEM_STORAGE_KEY = 'safepoint.dev.colour-system';
+export const COLOUR_SYSTEMS = ['original', 'custom'] as const;
+export type ColourSystem = (typeof COLOUR_SYSTEMS)[number];
+export const DEFAULT_COLOUR_SYSTEM: ColourSystem = 'original';
+export const COLOUR_SYSTEM_LABELS: Record<ColourSystem, string> = {
+  original: 'Original',
+  custom: 'Custom',
+};
+
+/* Original is the absence of the attribute; every other system is a generated
+   custom family, and only those offer the edge-treatment comparison. */
+export function isGeneratedColourSystem(value: ColourSystem) {
+  return value !== DEFAULT_COLOUR_SYSTEM;
+}
+
+/* Derived from the list rather than restated: written as literals, adding a
+   system to COLOUR_SYSTEMS left the guard rejecting it, and the picker fell
+   silently back to Original. */
+export function isColourSystem(value: unknown): value is ColourSystem {
+  return COLOUR_SYSTEMS.includes(value as ColourSystem);
+}
+
+export function resolveColourSystem(
+  urlValue: string | null,
+  storedValue: string | null,
+): ColourSystem {
+  if (isColourSystem(urlValue)) return urlValue;
+  return isColourSystem(storedValue) ? storedValue : DEFAULT_COLOUR_SYSTEM;
+}
+
+export function readColourSystem(): ColourSystem {
+  const value = document.documentElement.dataset.colourSystem;
+  return isColourSystem(value) ? value : DEFAULT_COLOUR_SYSTEM;
+}
+
+export function setColourSystem(next: ColourSystem) {
+  // Original is the absence of an attribute, keeping production on its baseline.
+  if (next === DEFAULT_COLOUR_SYSTEM) {
+    delete document.documentElement.dataset.colourSystem;
+  } else {
+    document.documentElement.dataset.colourSystem = next;
+  }
+  persist(COLOUR_SYSTEM_STORAGE_KEY, next);
+  emit();
+}
+
+/* Custom's own neutral families. A separate attribute from data-neutral, not
+   a shared one: the two systems name different colours, and keeping them apart
+   lets each remember its own choice across a switch. */
+export const CUSTOM_NEUTRAL_STORAGE_KEY = 'safepoint.dev.custom-neutral';
+export const CUSTOM_NEUTRALS = [
+  'graphite',
+  'steel',
+  'clay',
+  'moss',
+  'ash',
+] as const;
+export type CustomNeutral = (typeof CUSTOM_NEUTRALS)[number];
+export const DEFAULT_CUSTOM_NEUTRAL: CustomNeutral = 'graphite';
+export const CUSTOM_NEUTRAL_LABELS: Record<CustomNeutral, string> = {
+  graphite: 'Graphite',
+  steel: 'Steel',
+  clay: 'Clay',
+  moss: 'Moss',
+  ash: 'Ash',
+};
+
+export function isCustomNeutral(value: unknown): value is CustomNeutral {
+  return CUSTOM_NEUTRALS.includes(value as CustomNeutral);
+}
+
+export function resolveCustomNeutral(
+  urlValue: string | null,
+  storedValue: string | null,
+): CustomNeutral {
+  if (isCustomNeutral(urlValue)) return urlValue;
+  return isCustomNeutral(storedValue) ? storedValue : DEFAULT_CUSTOM_NEUTRAL;
+}
+
+export function readCustomNeutral(): CustomNeutral {
+  const value = document.documentElement.dataset.customNeutral;
+  return isCustomNeutral(value) ? value : DEFAULT_CUSTOM_NEUTRAL;
+}
+
+export function setCustomNeutral(next: CustomNeutral) {
+  // The default family binds on the bare selector, so it needs no attribute.
+  if (next === DEFAULT_CUSTOM_NEUTRAL) {
+    delete document.documentElement.dataset.customNeutral;
+  } else {
+    document.documentElement.dataset.customNeutral = next;
+  }
+  persist(CUSTOM_NEUTRAL_STORAGE_KEY, next);
+  emit();
+}
+
+export const EDGE_TREATMENT_STORAGE_KEY = 'safepoint.dev.edge-treatment';
+export const EDGE_TREATMENTS = ['existing', 'opaque'] as const;
+export type EdgeTreatment = (typeof EDGE_TREATMENTS)[number];
+export const DEFAULT_EDGE_TREATMENT: EdgeTreatment = 'existing';
+export const EDGE_TREATMENT_LABELS: Record<EdgeTreatment, string> = {
+  existing: 'Existing',
+  opaque: 'Opaque recipes',
+};
+
+export function isEdgeTreatment(value: unknown): value is EdgeTreatment {
+  return value === 'existing' || value === 'opaque';
+}
+
+export function resolveEdgeTreatment(
+  urlValue: string | null,
+  storedValue: string | null,
+): EdgeTreatment {
+  if (isEdgeTreatment(urlValue)) return urlValue;
+  return isEdgeTreatment(storedValue) ? storedValue : DEFAULT_EDGE_TREATMENT;
+}
+
+export function readEdgeTreatment(): EdgeTreatment {
+  const value = document.documentElement.dataset.edgeTreatment;
+  return isEdgeTreatment(value) ? value : DEFAULT_EDGE_TREATMENT;
+}
+
+export function setEdgeTreatment(next: EdgeTreatment) {
+  // Existing is the absence of an attribute, preserving the Phase A baseline.
+  if (next === DEFAULT_EDGE_TREATMENT) {
+    delete document.documentElement.dataset.edgeTreatment;
+  } else {
+    document.documentElement.dataset.edgeTreatment = next;
+  }
+  persist(EDGE_TREATMENT_STORAGE_KEY, next);
+  emit();
+}
+
 /** Private browsing and blocked site data throw rather than no-op. */
 function persist(key: string, value: string) {
   try {

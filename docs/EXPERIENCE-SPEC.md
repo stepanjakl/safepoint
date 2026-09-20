@@ -40,7 +40,7 @@ The portfolio application has five user-facing destinations:
 - **Storefront**: a read-only customer view of the promotion currently published in the session's sandbox.
 - **About this demo**: mode, scenario limitations, data handling, and replay controls.
 
-A protected component workbench is available outside the public navigation. It requires an explicit development or preview environment flag and contains no credentials or production data.
+The development-only workbench is limited to generated 41-step colour ramps. Component and semantic review uses the real application routes and focused automated coverage rather than a parallel preview application.
 
 Decided, September 2026: a process page is a sheet with tabs rather than a page with a setup drawer over it. The header's menu chooses between the run and the four views of the process itself — instructions, inputs, outputs, settings — each a list beside a detail. The overlay that the drawer used belongs to the review, which is the one surface a reviewer toggles over a run rather than travels to. See [Process header and setup](EMBEDDED-REVIEW.md#process-header-and-setup), which supersedes the drawer described here.
 
@@ -126,16 +126,16 @@ Policy result           Hold top-up until allocation is confirmed
 
 The workspace keeps one layout and lifecycle across services, but the detail presentation follows the effect kind:
 
-| Effect kind | Primary review presentation |
-| --- | --- |
-| Set field | Expected and proposed values with field-level validation |
-| Create resource | Proposed record and consequences of creation |
-| Delete resource | Current snapshot, dependencies, retention, and deletion impact |
-| Append entry | New entry and its position or destination |
-| Transition state | Current state, target state, prerequisites, and consequences |
-| Invoke command | Inputs, expected outcome, duration, and downstream effects |
-| Send message | Recipients, subject, content preview, and recall limitation |
-| Transfer file | File identity, destination, version, and resulting access |
+| Effect kind      | Primary review presentation                                    |
+| ---------------- | -------------------------------------------------------------- |
+| Set field        | Expected and proposed values with field-level validation       |
+| Create resource  | Proposed record and consequences of creation                   |
+| Delete resource  | Current snapshot, dependencies, retention, and deletion impact |
+| Append entry     | New entry and its position or destination                      |
+| Transition state | Current state, target state, prerequisites, and consequences   |
+| Invoke command   | Inputs, expected outcome, duration, and downstream effects     |
+| Send message     | Recipients, subject, content preview, and recall limitation    |
+| Transfer file    | File identity, destination, version, and resulting access      |
 
 Unregistered kinds or renderers are review-only and cannot be committed. Do not fall back to an executable raw JSON editor. Connector capabilities control language and actions: the interface says automatic compensation, manual follow-up, partial completion possible, or waiting for target system only when those descriptions are true.
 
@@ -162,15 +162,15 @@ Notification       Cannot be unsent; a correction message would be a new action.
 
 Colours are semantic tokens rather than utility colours embedded in components. Exact values remain provisional and must be replaceable without changing component anatomy.
 
-| Role group | Required roles | Purpose |
-| --- | --- | --- |
-| Surfaces | Canvas, primary, inset, control, selected, dialog, disabled | Establish containment and editability without elevation |
-| Text | Primary, muted, inverse | Maintain a stable reading hierarchy across themes |
-| Rules | Faint, default, strong | Separate aligned values, sections, and major application regions |
-| Optical edges | Inner highlight, outer lowlight | Define selected high-priority controls without shadows |
-| Neutral interaction | Action, selected, focus | Keep action and selection distinct from safety outcomes |
-| Semantic state | Advisory, verified, caution, blocked, destructive, unavailable | Communicate policy and lifecycle meaning |
-| Adapter mode | Live sandbox, simulated, preview only, unavailable | Describe what a destination can genuinely do |
+| Role group          | Required roles                                                 | Purpose                                                          |
+| ------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Surfaces            | Canvas, primary, inset, control, selected, dialog, disabled    | Establish containment and editability without elevation          |
+| Text                | Primary, muted, inverse                                        | Maintain a stable reading hierarchy across themes                |
+| Rules               | Faint, default, strong                                         | Separate aligned values, sections, and major application regions |
+| Optical edges       | Inner highlight, outer lowlight                                | Define selected high-priority controls without shadows           |
+| Neutral interaction | Action, selected, focus                                        | Keep action and selection distinct from safety outcomes          |
+| Semantic state      | Advisory, verified, caution, blocked, destructive, unavailable | Communicate policy and lifecycle meaning                         |
+| Adapter mode        | Live sandbox, simulated, preview only, unavailable             | Describe what a destination can genuinely do                     |
 
 Use neutral graphite treatments for action and selection. Reserve chromatic colour primarily for semantic meaning. Never communicate state by colour alone: pair colour with text, icon shape, and programmatic state.
 
@@ -296,16 +296,16 @@ Reverse opens a new confirmation showing which effects are eligible for automati
 
 All functionality must work without custom shortcuts.
 
-| Context | Required behaviour |
-| --- | --- |
-| Page | A skip link is the first focusable item and moves focus to the main heading. |
-| Candidate collection | Tab enters and leaves the collection; Up and Down move the active candidate according to the selected React Aria collection pattern. |
-| Candidate actions | Native buttons use Enter and Space. |
-| Tabs, if used | Left and Right change tabs; Tab enters the active panel. |
-| Dialog | Focus enters at a logical point, remains inside, Escape closes, and focus returns to the trigger. |
-| Commit | The visible button is always available. Ctrl+Enter and Command+Enter may be supplemental when focus is outside an editable field. |
-| Candidate movement | `J` and `K` are optional alternatives only while the candidate collection itself has focus. They never fire from an input, textarea, select, contenteditable region, or outside the collection. |
-| Shortcut help | A visible Keyboard shortcuts button opens the reference. No shortcut is required to find it. |
+| Context              | Required behaviour                                                                                                                                                                              |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Page                 | A skip link is the first focusable item and moves focus to the main heading.                                                                                                                    |
+| Candidate collection | Tab enters and leaves the collection; Up and Down move the active candidate according to the selected React Aria collection pattern.                                                            |
+| Candidate actions    | Native buttons use Enter and Space.                                                                                                                                                             |
+| Tabs, if used        | Left and Right change tabs; Tab enters the active panel.                                                                                                                                        |
+| Dialog               | Focus enters at a logical point, remains inside, Escape closes, and focus returns to the trigger.                                                                                               |
+| Commit               | The visible button is always available. Ctrl+Enter and Command+Enter may be supplemental when focus is outside an editable field.                                                               |
+| Candidate movement   | `J` and `K` are optional alternatives only while the candidate collection itself has focus. They never fire from an input, textarea, select, contenteditable region, or outside the collection. |
+| Shortcut help        | A visible Keyboard shortcuts button opens the reference. No shortcut is required to find it.                                                                                                    |
 
 Do not use positive `tabindex`. DOM order and visual order must agree. If a focused item disappears after filtering, move focus to the nearest remaining candidate or the filter summary. Focus indicators must remain fully visible against every surface, including high-contrast and forced-colours modes.
 
@@ -317,22 +317,22 @@ This is a deliberate trade. A hover wash does not differ from the resting state 
 
 Visible content is the primary feedback. Announcements supplement it without moving focus unnecessarily.
 
-| Update | Accessible treatment |
-| --- | --- |
-| Proposal generation | Visible native progress where determinate; one stable `role="status"` for meaningful milestones and completion. |
-| Filter result | A concise visible count using `role="status"`, debounced for typed filtering. |
-| Item approved or held | Update the control state and batch summary; announce one concise polite result. |
-| Commit progress | The visible effects ledger uses an accessibly named `role="log"` for appended, independently understandable events. Interactive controls remain outside it. |
-| Commit completed | One visible polite status summarising applied, conflicted, and failed counts. |
-| Form validation | Visible error summary receives focus; errors are associated with fields. Do not alert on every keystroke. |
-| Connection loss during execution | A visible alert is permitted because the condition is time-sensitive. Routine failures use an error summary or status. |
-| Conflict requiring a decision | Present a modal decision dialog and move focus into it rather than relying on an alert announcement. |
+| Update                           | Accessible treatment                                                                                                                                        |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Proposal generation              | Visible native progress where determinate; one stable `role="status"` for meaningful milestones and completion.                                             |
+| Filter result                    | A concise visible count using `role="status"`, debounced for typed filtering.                                                                               |
+| Item approved or held            | Update the control state and batch summary; announce one concise polite result.                                                                             |
+| Commit progress                  | The visible effects ledger uses an accessibly named `role="log"` for appended, independently understandable events. Interactive controls remain outside it. |
+| Commit completed                 | One visible polite status summarising applied, conflicted, and failed counts.                                                                               |
+| Form validation                  | Visible error summary receives focus; errors are associated with fields. Do not alert on every keystroke.                                                   |
+| Connection loss during execution | A visible alert is permitted because the condition is time-sensitive. Routine failures use an error summary or status.                                      |
+| Conflict requiring a decision    | Present a modal decision dialog and move focus into it rather than relying on an alert announcement.                                                        |
 
 Live regions must be mounted before the update they announce. Do not clear and reinsert messages with fixed delays. Suppress stale asynchronous results and reset `aria-busy` on success and failure.
 
 ## Complete view-state inventory
 
-The protected workbench and automated visual tests cover:
+Automated visual tests and review of the real application routes cover:
 
 - initial scenario introduction;
 - generating with progress;

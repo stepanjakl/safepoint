@@ -157,12 +157,12 @@
     var(--sp-face-highlight-medium);
   /* Always drawn beside border-rule-faint, so these are the etch rather than a
      face sheen and invert with it in dark. */
-  --shadow-separator-bottom-strong: 0 1px 0 var(--sp-rule-etch);
-  --shadow-separator-bottom-solid: 0 1px 0 var(--sp-rule-etch-solid);
-  --shadow-separator-right-strong: 1px 0 0 var(--sp-rule-etch);
+  --shadow-separator-bottom-strong: 0 1px 0 var(--sp-divider-etch);
+  --shadow-separator-bottom-solid: 0 1px 0 var(--sp-card-etch);
+  --shadow-separator-right-strong: 1px 0 0 var(--sp-divider-etch);
   /* A shadow, not a border: Chrome snaps a border to whole device pixels, so
      0.75px draws as 0.5px at 2x. A shadow's offset paints at its own width. */
-  --shadow-rule-etch: 0 var(--spacing-control-highlight-hairline) 0 var(--sp-rule-etch);
+  --shadow-rule-etch: 0 var(--spacing-control-highlight-hairline) 0 var(--sp-divider-etch);
 
   --ease-out-emphasized: cubic-bezier(0.22, 1, 0.36, 1);
   /* Named rather than repeated: the drawer sits in the top layer, outside the

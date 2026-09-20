@@ -312,6 +312,39 @@
   --sp-title-field-edge-hover: light-dark(var(--sp-neutral-300), var(--sp-neutral-650));
   --sp-title-field-edge-active: light-dark(var(--sp-neutral-500), var(--sp-neutral-400));
 
+  /* One edge role per surface that paints one, rather than five shared
+     strengths: the same strength currently paints over different faces, so a
+     single opaque value for each could not be right on all of them. These
+     alias the existing sheens, which keeps Existing byte-for-byte what it was;
+     the opaque block at the end of this file is where they diverge. */
+  /* Dividers, named for the ground they paint on rather than the element that
+     declares them: a shadow cast outside a box lands on its neighbour. Most of
+     them land on the canvas, so they share one role; the band and the lit row
+     have their own because their ground differs. */
+  /* The coloured controls' sheens, and the enclosure's. Mixed against the
+     stop they actually lie on rather than against transparency, so the painted
+     colour is knowable without knowing what is behind the control -- the same
+     objection that keeps neutral fills on ramp steps. A gradient has no single
+     background, so each pairs with the stop its edge sits on. */
+  --sp-accent-edge: var(--sp-face-highlight-subtle);
+  --sp-commit-edge: var(--sp-face-highlight-faint);
+
+  --sp-divider-etch: var(--sp-rule-etch);
+  --sp-card-etch: var(--sp-rule-etch-solid);
+  --sp-sheet-break-etch: var(--sp-rule-etch);
+  --sp-sheet-row-etch: var(--sp-rule-etch);
+  --sp-sheet-row-etch-active: light-dark(var(--sp-face-highlight-medium), var(--sp-rule-etch));
+  --sp-tooltip-highlight: light-dark(var(--sp-edge-inner), var(--sp-rule-etch));
+
+  --sp-raised-edge: var(--sp-face-highlight-strong);
+  --sp-floating-edge: var(--sp-face-highlight-solid);
+
+  /* The tooltip's boundary. An alias of the default rule for Original, which
+     is what it has always painted; the generated systems give it a step of its
+     own because the tooltip's face equals the floating surface, so over a
+     floating panel the edge is the only thing separating the two. */
+  --sp-tooltip-edge: var(--sp-rule-default);
+
   /* Advisory notice: face, and separate stops for its graduated edge. */
   --sp-notice-face: light-dark(var(--sp-neutral-150), var(--sp-neutral-875));
   --sp-notice-edge-top: light-dark(var(--sp-neutral-300), var(--sp-neutral-800));
@@ -321,4 +354,142 @@
     var(--sp-face-highlight-subtle)
   );
   --sp-notice-caption: light-dark(var(--sp-neutral-600), var(--sp-text-muted));
+}
+
+/* ── The generated ramp's role assignments ───────────────────────────────────
+   Custom reads one uniform ramp where a step is a colour, not a colour per
+   theme, so the whole light/dark relationship is stated here rather than
+   halfway inside the ramp. Step numbers are that ramp's coordinates and do not
+   correspond to Original's; the base block above still serves Original.
+   Keyed on the attribute existing, because Original is its absence.
+   Generated once from the previous assignments and tuned by hand since; the
+   generator checks every entry against scripts/colour-theme/config.ts.
+   ────────────────────────────────────────────────────────────────────────── */
+:root[data-colour-system] {
+  --sp-analysis-face: light-dark(var(--sp-surface-floating), var(--sp-neutral-850));
+  --sp-analysis-edge-top: light-dark(var(--sp-rule-faint), var(--sp-neutral-675));
+  --sp-analysis-edge-bottom: light-dark(var(--sp-rule-faint), var(--sp-neutral-750));
+  --sp-analysis-rule: light-dark(var(--sp-rule-faint), var(--sp-neutral-750));
+  --sp-sheet-current: light-dark(var(--sp-menu-wash-faint), var(--sp-neutral-725));
+  --sp-replay-state-face: light-dark(var(--sp-commit-state), var(--sp-neutral-775));
+  --sp-replay-state-ink: light-dark(var(--sp-state-caution), var(--sp-neutral-150));
+  /* The ramp's lightest step, not #fff: on a tinted family a pure-white
+     control top is the one face that does not belong to the palette. */
+  --sp-quiet-face-top: light-dark(var(--sp-neutral-0), var(--sp-neutral-725));
+  --sp-quiet-face-bottom: light-dark(var(--sp-neutral-75), var(--sp-neutral-825));
+  --sp-quiet-ring-top: light-dark(var(--sp-neutral-200), var(--sp-neutral-575));
+  --sp-quiet-ring-bottom: light-dark(var(--sp-neutral-300), var(--sp-neutral-725));
+  --sp-quiet-face-top-hover: light-dark(var(--sp-neutral-0), var(--sp-neutral-650));
+  --sp-quiet-face-bottom-hover: light-dark(var(--sp-neutral-200), var(--sp-neutral-775));
+  --sp-quiet-ring-top-hover: light-dark(var(--sp-neutral-300), var(--sp-neutral-450));
+  --sp-quiet-ring-bottom-hover: light-dark(var(--sp-neutral-625), var(--sp-neutral-575));
+  --sp-off-face: light-dark(var(--sp-neutral-25), var(--sp-neutral-925));
+  --sp-off-ring: light-dark(var(--sp-neutral-200), var(--sp-neutral-725));
+  --sp-keycap-face: light-dark(var(--sp-neutral-25), var(--sp-neutral-775));
+  --sp-keycap-ring: light-dark(var(--sp-neutral-200), var(--sp-neutral-650));
+  --sp-value-pill: light-dark(var(--sp-neutral-75), var(--sp-neutral-825));
+  --sp-value-pill-hover: light-dark(var(--sp-neutral-200), var(--sp-neutral-825));
+  --sp-header-button-face-top: light-dark(var(--sp-neutral-50), var(--sp-neutral-725));
+  --sp-header-button-face-bottom: light-dark(var(--sp-neutral-150), var(--sp-neutral-775));
+  --sp-header-button-face-top-hover: light-dark(var(--sp-neutral-75), var(--sp-neutral-575));
+  --sp-header-button-face-bottom-hover: light-dark(var(--sp-neutral-250), var(--sp-neutral-725));
+  --sp-header-button-ring-top-selected: light-dark(var(--sp-neutral-200), var(--sp-neutral-450));
+  --sp-header-button-ring-bottom-selected: light-dark(var(--sp-neutral-300), var(--sp-neutral-575));
+  --sp-header-button-face-top-selected: light-dark(var(--sp-neutral-75), var(--sp-neutral-575));
+  --sp-header-button-face-bottom-selected: light-dark(var(--sp-neutral-250), var(--sp-neutral-725));
+  --sp-header-ink: light-dark(var(--sp-neutral-825), var(--sp-neutral-150));
+  --sp-header-ink-hover: light-dark(var(--sp-neutral-925), var(--sp-neutral-100));
+  --sp-header-ink-selected: light-dark(var(--sp-neutral-950), var(--sp-neutral-50));
+  --sp-header-icon: light-dark(var(--sp-neutral-725), var(--sp-neutral-225));
+  --sp-header-icon-hover: light-dark(var(--sp-neutral-825), var(--sp-neutral-150));
+  --sp-header-icon-selected: light-dark(var(--sp-neutral-925), var(--sp-neutral-100));
+  --sp-header-button-count: light-dark(var(--sp-neutral-25), var(--sp-neutral-825));
+  --sp-header-button-count-hover: light-dark(var(--sp-neutral-50), var(--sp-neutral-900));
+  --sp-menu-current-face-top: light-dark(var(--sp-neutral-25), var(--sp-neutral-775));
+  --sp-menu-current-face-bottom: light-dark(var(--sp-neutral-25), var(--sp-neutral-775));
+  --sp-menu-current-ring-bottom: light-dark(var(--sp-neutral-200), var(--sp-neutral-925));
+  --sp-menu-wash-faint: light-dark(var(--sp-neutral-75), var(--sp-neutral-775));
+  --sp-menu-wash: light-dark(var(--sp-neutral-200), var(--sp-neutral-825));
+  --sp-menu-wash-strong: light-dark(var(--sp-neutral-200), var(--sp-neutral-725));
+  --sp-menu-chip: light-dark(var(--sp-neutral-200), var(--sp-neutral-825));
+  --sp-menu-link: light-dark(var(--sp-neutral-725), var(--sp-neutral-150));
+  --sp-sheet-band: light-dark(var(--sp-neutral-50), var(--sp-neutral-800));
+  --sp-sheet-date: light-dark(var(--sp-neutral-800), var(--sp-neutral-200));
+  --sp-sheet-date-hover: light-dark(var(--sp-neutral-825), var(--sp-neutral-200));
+  --sp-sheet-date-current: light-dark(var(--sp-neutral-925), var(--sp-neutral-50));
+  --sp-sheet-time: light-dark(var(--sp-neutral-625), var(--sp-neutral-275));
+  --sp-sheet-time-hover: light-dark(var(--sp-neutral-725), var(--sp-neutral-225));
+  --sp-sheet-time-current: light-dark(var(--sp-neutral-825), var(--sp-neutral-150));
+  --sp-sheet-total-face: light-dark(var(--sp-neutral-200), var(--sp-neutral-725));
+  --sp-sheet-total-face-hover: light-dark(var(--sp-neutral-250), var(--sp-neutral-650));
+  --sp-sheet-total-face-current: light-dark(var(--sp-neutral-250), var(--sp-neutral-575));
+  --sp-sheet-total-ink: light-dark(var(--sp-neutral-825), var(--sp-neutral-100));
+  --sp-sheet-total-ink-hover: light-dark(var(--sp-neutral-875), var(--sp-neutral-50));
+  --sp-sheet-total-ink-current: light-dark(var(--sp-neutral-925), var(--sp-neutral-50));
+  --sp-field-face: light-dark(var(--sp-neutral-25), var(--sp-neutral-825));
+  --sp-field-edge: light-dark(var(--sp-neutral-200), var(--sp-neutral-725));
+  --sp-field-edge-hover: light-dark(var(--sp-neutral-250), var(--sp-neutral-450));
+  --sp-field-edge-active: light-dark(var(--sp-neutral-575), var(--sp-neutral-200));
+  --sp-title-field-edge-hover: light-dark(var(--sp-neutral-200), var(--sp-neutral-575));
+  --sp-title-field-edge-active: light-dark(var(--sp-neutral-475), var(--sp-neutral-275));
+  --sp-tooltip-edge: light-dark(var(--sp-neutral-450), var(--sp-neutral-450));
+  --sp-notice-face: light-dark(var(--sp-neutral-50), var(--sp-neutral-825));
+  --sp-notice-edge-top: light-dark(var(--sp-neutral-200), var(--sp-neutral-775));
+  --sp-notice-edge-bottom: light-dark(var(--sp-neutral-200), var(--sp-neutral-775));
+  --sp-notice-caption: light-dark(var(--sp-neutral-625), var(--sp-text-muted));
+}
+
+/* ── Opaque edge recipes ─────────────────────────────────────────────────────
+   Every structural edge as a ramp step instead of white or black at a
+   percentage, so its colour no longer depends on what lies beneath it.
+
+   Both themes darken. Light cannot do otherwise: its faces sit within two
+   steps of the ramp's white end, so a lit edge has nowhere to go -- the
+   existing white sheens composite to the face itself on any face at step 0.
+   Dark's values are what its black sheens already composite to, measured
+   rather than chosen, so the dark half of Opaque restates Existing exactly.
+
+   Floating and analysis have no light edge at all: their faces are step 0 and
+   there is no lighter step to reach for. Their rings carry the boundary, as
+   the recessed surface's already does.
+   ────────────────────────────────────────────────────────────────────────── */
+:root[data-colour-system='custom'][data-edge-treatment='opaque'] {
+  --sp-raised-edge: light-dark(var(--sp-neutral-0), var(--sp-neutral-875));
+  --sp-floating-edge: light-dark(transparent, var(--sp-neutral-825));
+  --sp-analysis-highlight: light-dark(transparent, var(--sp-neutral-875));
+  --sp-notice-highlight: light-dark(var(--sp-neutral-25), var(--sp-neutral-850));
+  --sp-keycap-highlight: light-dark(var(--sp-neutral-0), var(--sp-neutral-825));
+
+  /* Dividers. Each is what its own alpha already composites to on the ground
+     it actually lands on, so Opaque restates the line rather than redrawing
+     it. The notch sheen is declared in roles.css and overridden here with the
+     rest of the edge work.
+
+     The sheet row's resting and hover etches composite six values apart out of
+     255, and one ramp step at that lightness is eight, so restating them
+     faithfully would leave the line unchanged. The active step is chosen
+     rather than measured for that reason -- see the note beside it. */
+  --sp-divider-etch: light-dark(var(--sp-neutral-25), var(--sp-neutral-925));
+  --sp-card-etch: light-dark(var(--sp-neutral-0), var(--sp-neutral-825));
+  --sp-sheet-break-etch: light-dark(var(--sp-neutral-0), var(--sp-neutral-850));
+  --sp-sheet-row-etch: light-dark(var(--sp-neutral-25), var(--sp-neutral-925));
+  /* Light softens by a whole step rather than by the composite, which rounds
+     back onto the resting step and left the line holding still while the row
+     lit up. One step is the least this ramp can say near white. */
+  --sp-sheet-row-etch-active: light-dark(var(--sp-neutral-50), var(--sp-neutral-800));
+  --sp-notch-highlight: light-dark(var(--sp-neutral-25), var(--sp-neutral-925));
+  --sp-tooltip-highlight: light-dark(var(--sp-neutral-0), var(--sp-neutral-825));
+
+  /* Coloured controls keep their own family: a neutral step on a cyan face
+     would read as a smear rather than an edge. Light lifts a step rather than
+     restating the composite, which lands back on the face's own colour and
+     draws nothing -- the same finding as the light surfaces. */
+  --sp-accent-edge: light-dark(
+    var(--color-cyan-300),
+    color-mix(in oklab, var(--color-black) 20%, var(--sp-accent-face-top))
+  );
+  --sp-commit-edge: light-dark(
+    var(--color-teal-400),
+    color-mix(in oklab, var(--color-black) 10%, var(--sp-commit-face-top))
+  );
 }

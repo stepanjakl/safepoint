@@ -6,13 +6,11 @@ import {
   Inter,
   Inter_Tight,
   JetBrains_Mono,
-  Michroma,
   Orbitron,
   Roboto,
   Source_Code_Pro,
   Source_Sans_3,
   Space_Mono,
-  Syne,
 } from 'next/font/google';
 import localFont from 'next/font/local';
 
@@ -151,25 +149,8 @@ const commitMono = localFont({
   preload: false,
 });
 
-// Development wordmark candidates. Each is exposed independently so the
-// workbench can compare the real outlines at identical optical settings.
-const michroma = Michroma({
-  subsets: ['latin'],
-  variable: '--font-michroma',
-  display: 'swap',
-  weight: '400',
-  preload: false,
-});
-
-const syne = Syne({
-  subsets: ['latin'],
-  variable: '--font-syne',
-  display: 'swap',
-  weight: 'variable',
-  preload: false,
-});
-
-// The selected brand family is preloaded; the workbench uses its full weight range.
+// The selected brand family is preloaded and also remains available to the
+// development typeface picker as a utility face.
 const orbitron = Orbitron({
   subsets: ['latin'],
   variable: '--font-orbitron',
@@ -194,7 +175,5 @@ export const fontVariables = [
   sourceSans.variable,
   roboto.variable,
   commitMono.variable,
-  michroma.variable,
-  syne.variable,
   orbitron.variable,
 ].join(' ');

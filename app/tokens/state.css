@@ -187,3 +187,26 @@
     var(--color-radix-slate-dark-12)
   );
 }
+
+/* ── The generated ramp's role assignments ───────────────────────────────────
+   Custom reads one uniform ramp where a step is a colour, not a colour per
+   theme, so the whole light/dark relationship is stated here rather than
+   halfway inside the ramp. Step numbers are that ramp's coordinates and do not
+   correspond to Original's; the base block above still serves Original.
+   Keyed on the attribute existing, because Original is its absence.
+   Generated once from the previous assignments and tuned by hand since; the
+   generator checks every entry against scripts/colour-theme/config.ts.
+   ────────────────────────────────────────────────────────────────────────── */
+:root[data-colour-system] {
+  --sp-state-unavailable-1: light-dark(var(--sp-neutral-0), var(--sp-neutral-950));
+  --sp-state-unavailable-3: light-dark(var(--sp-neutral-75), var(--sp-neutral-900));
+  --sp-state-unavailable-4: light-dark(var(--sp-neutral-150), var(--sp-neutral-775));
+  --sp-state-unavailable-5: light-dark(var(--sp-neutral-200), var(--sp-neutral-725));
+  --sp-state-unavailable-6: light-dark(var(--sp-neutral-250), var(--sp-neutral-650));
+  --sp-state-unavailable-7: light-dark(var(--sp-neutral-300), var(--sp-neutral-525));
+  --sp-state-unavailable-9: light-dark(var(--sp-neutral-475), var(--sp-neutral-275));
+  --sp-state-unavailable-10: light-dark(var(--sp-neutral-625), var(--sp-neutral-225));
+  --sp-state-unavailable-11: light-dark(var(--sp-neutral-475), var(--sp-neutral-275));
+  --sp-state-unavailable-12: light-dark(var(--sp-neutral-825), var(--sp-neutral-125));
+  --sp-mode-unavailable: light-dark(var(--sp-neutral-300), var(--sp-neutral-525));
+}

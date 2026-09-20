@@ -23,8 +23,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     // The defaults are rendered, not left to the preferences script, so they
     // hold where it does not run. suppressHydrationWarning: the script
-    // replaces data-typeface, data-mono, data-theme, data-tile-palette and
-    // data-state-palette with a stored choice before React hydrates.
+    // replaces the rendered design defaults and may add data-colour-system or
+    // data-edge-treatment from a development preference before React hydrates.
     <html
       lang="en-GB"
       className={fontVariables}

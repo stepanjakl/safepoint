@@ -8,6 +8,7 @@ rendered colour contrast in Chromium against the real home page.
 ```sh
 pnpm exec playwright install chromium   # once, and after Playwright upgrades
 pnpm check:contrast
+pnpm check:colour-system
 pnpm check:contrast:report
 ```
 
@@ -77,3 +78,17 @@ issue or report it explicitly.
 
 Vitest excludes `e2e/`; browser tests run through `pnpm check:contrast` separately
 from `pnpm test`.
+
+`pnpm check:colour-system` is the focused Original/Custom regression layer. It
+checks the committed Original Zinc computed-colour fixture, colour-system and
+edge-treatment preference precedence, blocked storage, Tweakpane and keyboard
+behaviour, the captured Phase A edge baseline, workbench primitives, forced
+colours, narrow layout, and rendered contrast on the home, workspace, search,
+review, and tooltip states. Custom must not introduce a violation target absent
+from Original.
+
+The current fictional home data has two confirmed Original findings that are not
+caused by the neutral system: the decorative `aria-hidden` pale wordmark and the
+simulated commit-state label. The focused comparison reports and matches these
+instead of suppressing selectors. The broader `check:contrast` suite continues to
+fail on confirmed violations until those existing state treatments are resolved.

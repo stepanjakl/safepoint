@@ -10,26 +10,30 @@ Colocated CSS Modules were proposed as an alternative, trialled on one component
 
 Three jobs. `globals.css` imports the rest, in the order listed below.
 
-| File | Holds | Test for belonging |
-| --- | --- | --- |
-| `app/tokens/` | every design token, and the `@theme inline` block that publishes them as utilities | is it a value the system decides once? |
-| `app/globals.css` | the base layer, the `@utility` extensions, `@property` registrations, forced-colors and print fallbacks | is it a Tailwind extension or a document default? |
-| `app/components.css` | what markup cannot express | see below |
+| File                 | Holds                                                                                                   | Test for belonging                                |
+| -------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| `app/tokens/`        | every design token, and the `@theme inline` block that publishes them as utilities                      | is it a value the system decides once?            |
+| `app/globals.css`    | the base layer, the `@utility` extensions, `@property` registrations, forced-colors and print fallbacks | is it a Tailwind extension or a document default? |
+| `app/components.css` | what markup cannot express                                                                              | see below                                         |
 
 Everything else is a utility in the component.
 
 `app/tokens/` is seven files, each named for one job, and the import order in
 `globals.css` is the order they are listed in:
 
-| File | Holds |
-| --- | --- |
-| `ramps.css` | `color-scheme`, the fifteen `[data-neutral=…]` palettes, the half steps |
-| `roles.css` | canvas, surfaces, text, rules, action, edges, notch colours |
-| `faces.css` | every control and component face, and the ink on it |
-| `state.css` | the six state scales, the adapter modes, the Radix palette |
-| `type.css` | the families and the type scale |
-| `geometry.css` | durations, tile chroma ceilings, notch and slant geometry |
-| `theme.css` | the `@theme inline` block: everything published to Tailwind |
+| File           | Holds                                                                   |
+| -------------- | ----------------------------------------------------------------------- |
+| `ramps.css`    | `color-scheme`, the fifteen `[data-neutral=…]` palettes, the half steps |
+| `roles.css`    | canvas, surfaces, text, rules, action, edges, notch colours             |
+| `faces.css`    | every control and component face, and the ink on it                     |
+| `state.css`    | the six state scales, the adapter modes, the Radix palette              |
+| `type.css`     | the families and the type scale                                         |
+| `geometry.css` | durations, tile chroma ceilings, notch and slant geometry               |
+| `theme.css`    | the `@theme inline` block: everything published to Tailwind             |
+
+`app/custom-colours.css` is generated outside the seven authored token files. It
+contains opaque primitives and the mechanical Custom binding; semantic ownership
+stays in `roles.css` and `faces.css`.
 
 Each file that declares themed roles repeats the selector header
 `:root, [data-theme], [data-neutral]`, so the re-declaration contract is visible
@@ -84,17 +88,17 @@ Inspect the element or its nearest marked ancestor, then search the component
 name or appearance. LocatorJS provides the source location. Keep paths, line
 numbers and token lists out of metadata so they cannot become stale.
 
-| Inspected identity | Where the treatment lives |
-| --- | --- |
-| ProcessMenu / row / `process-menu-row` | `app/components.css`: the row's states and the custom properties it publishes |
-| ProcessMenu / status-badge / `surface-menu-badge` | `app/globals.css`: reads the badge stops inherited from the row |
-| ProcessMenu / tile / `surface-menu-tile` | `app/globals.css`: tile face; the hue variant supplies its colour roles |
-| ProcessMenu / row-label / `text-menu-link` | `app/tokens/theme.css`: publishes the utility colour; `app/tokens/faces.css`: defines `--sp-menu-link` |
-| ProcessMenu / back-heading / `process-menu-back` | `app/components.css`: all appearance states together, directly referencing `--sp-menu-link`, `--sp-text-primary` and `--sp-menu-wash-strong` |
-| Button / secondary / `quiet` | `control-quiet` in `app/globals.css`, then `--sp-quiet-*` in `app/tokens/faces.css` |
-| Button / ring / `slant-ring` | `app/components.css`: paints the ring using stops inherited from the Button |
-| ProcessHeader / count / `header-button-count` | `app/components.css`: geometry; the adjacent `bg-header-button-count` utility supplies colour |
-| RunRow / tally-segment / `sheet-seg` | `app/components.css`: segment treatment, with existing state attributes selecting colours |
+| Inspected identity                                | Where the treatment lives                                                                                                                    |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| ProcessMenu / row / `process-menu-row`            | `app/components.css`: the row's states and the custom properties it publishes                                                                |
+| ProcessMenu / status-badge / `surface-menu-badge` | `app/globals.css`: reads the badge stops inherited from the row                                                                              |
+| ProcessMenu / tile / `surface-menu-tile`          | `app/globals.css`: tile face; the hue variant supplies its colour roles                                                                      |
+| ProcessMenu / row-label / `text-menu-link`        | `app/tokens/theme.css`: publishes the utility colour; `app/tokens/faces.css`: defines `--sp-menu-link`                                       |
+| ProcessMenu / back-heading / `process-menu-back`  | `app/components.css`: all appearance states together, directly referencing `--sp-menu-link`, `--sp-text-primary` and `--sp-menu-wash-strong` |
+| Button / secondary / `quiet`                      | `control-quiet` in `app/globals.css`, then `--sp-quiet-*` in `app/tokens/faces.css`                                                          |
+| Button / ring / `slant-ring`                      | `app/components.css`: paints the ring using stops inherited from the Button                                                                  |
+| ProcessHeader / count / `header-button-count`     | `app/components.css`: geometry; the adjacent `bg-header-button-count` utility supplies colour                                                |
+| RunRow / tally-segment / `sheet-seg`              | `app/components.css`: segment treatment, with existing state attributes selecting colours                                                    |
 
 Appearance describes the configured treatment, not the complete computed style.
 Disabled and interaction states, inherited values and caller classes can override
@@ -133,15 +137,15 @@ Constructed, not picked. Three properties, all of which Tailwind's own scale has
 
 The one deliberate departure from Tailwind: a **2px baseline** rather than 4px. At 13px a 4px grid offers only 16px (cramped) or 20px (loose), and this interface wants 18px.
 
-| Role | Size | Line | Tracking | Use |
-| --- | --- | --- | --- | --- |
-| `micro` | 11 | 14 | +0.01em | badges, counts, captions |
-| `meta` | 12 | 16 | 0 | secondary and supporting lines |
-| `dense` | 13 | 18 | 0 | the interface default for lists and rows |
-| `body` | 14 | 20 | 0 | prose and primary copy |
-| `title` | 17 | 22 | −0.01em | section and panel titles |
-| `counter` | 20 | 24 | −0.02em | figures read at a glance |
-| `display` | 22 | 26 | −0.02em | the one editorial line on a screen |
+| Role      | Size | Line | Tracking | Use                                      |
+| --------- | ---- | ---- | -------- | ---------------------------------------- |
+| `micro`   | 11   | 14   | +0.01em  | badges, counts, captions                 |
+| `meta`    | 12   | 16   | 0        | secondary and supporting lines           |
+| `dense`   | 13   | 18   | 0        | the interface default for lists and rows |
+| `body`    | 14   | 20   | 0        | prose and primary copy                   |
+| `title`   | 17   | 22   | −0.01em  | section and panel titles                 |
+| `counter` | 20   | 24   | −0.02em  | figures read at a glance                 |
+| `display` | 22   | 26   | −0.02em  | the one editorial line on a screen       |
 
 Roles are addressed by name and never by family or size, so the final typeface selection needs no component redesign. `readout` is the same `micro` metric in the utility family, tracked and uppercased, for legends, sources, modes and states.
 
@@ -153,13 +157,13 @@ An alternate `sharp` scale exists for comparison — same lower half, larger and
 
 Named for what they enclose. Pulled in from Tailwind's 4/8/12/16 so corners read crisper.
 
-| Token | Value | Encloses |
-| --- | --- | --- |
-| `region` | 2px | hairline: bar segments, chips |
-| `section` | 4px | small chrome: badges, grips |
-| `control` | 6px | anything pressable |
-| `icon` | 8px | icon squares, and the tiles beside them |
-| `shell` | 10px | panes, cards, dialogs, the drawer |
+| Token     | Value | Encloses                                |
+| --------- | ----- | --------------------------------------- |
+| `region`  | 2px   | hairline: bar segments, chips           |
+| `section` | 4px   | small chrome: badges, grips             |
+| `control` | 6px   | anything pressable                      |
+| `icon`    | 8px   | icon squares, and the tiles beside them |
+| `shell`   | 10px  | panes, cards, dialogs, the drawer       |
 
 ## Colour
 
@@ -180,8 +184,108 @@ Five of the fifteen palettes are Tailwind's. Four — taupe, mauve, mist, olive 
 
 `data-theme` and `data-neutral` each re-resolve the tokens for their subtree. Because Lightning CSS polyfills `light-dark()` with inherited custom properties, and a custom property substitutes its `var()`s where it is declared, any subtree that changes one must re-declare the tokens. That is why every themed block targets `:root, [data-theme], [data-neutral]`.
 
-The Playwright/axe browser contrast suite is `pnpm check:contrast`. Its tested
-states, reports and limitations are in [CONTRAST-CHECKER.md](CONTRAST-CHECKER.md).
+### Generated Custom colour system
+
+Custom is one restrained, slightly warm, Zinc-adjacent family on a **single
+ramp**: 41 fixed steps from 0 through 1000 in increments of 25, 0 always the
+lightest, read by both themes. A step is therefore a colour, not a colour per
+theme — the whole light/dark relationship lives in the role assignments, where
+it can be read, rather than halfway inside the ramp. Source anchors, the
+semantic inventory and the contrast contracts live in
+`scripts/colour-theme/config.ts`. Color.js maps the sampled OKLCH colours to
+sRGB, and `pnpm colors:custom` writes `app/custom-colours.css` plus
+`docs/generated/colour-theme-report.json`. `pnpm check:colours` regenerates in
+memory and fails on stale output, invalid or duplicate steps, reversed
+lightness, mismatched CSS role assignments, or failed required contrast
+contracts.
+
+Lightness falls by a flat 0.02237 per step, so one index means the same
+everywhere and a structural edge can be stated as an offset rather than measured
+at every face. Chroma follows Tailwind zinc's own chroma-against-lightness
+curve: near-achromatic where surfaces sit, humped through the midtones where
+text and edges live, easing off again at the dark end. That shape is why the
+light surfaces read as grey rather than tinted.
+
+**Five families share that one shape**, differing only in hue and a chroma
+multiplier, so adding one costs a pair of numbers rather than a ramp. Because
+contrast follows lightness, a family costs no contrast retuning — rotating hue
+at fixed lightness moves every measured ratio by a fraction of a percent.
+
+| Family   | Hue | Chroma | Character                                                                 |
+| -------- | --- | ------ | ------------------------------------------------------------------------- |
+| Graphite | 286 | ×1     | Cool violet-grey on Tailwind zinc's hue. The default.                     |
+| Steel    | 250 | ×2.4   | Blue and colder, earning distinctness with chroma as Tailwind slate does. |
+| Clay     | 70  | ×1.5   | Warm amber-grey, near Tailwind stone.                                     |
+| Moss     | 155 | ×1.5   | Green-grey, between Radix sage and olive.                                 |
+| Ash      | —   | ×0     | No tint at all.                                                           |
+
+The multipliers are measured, not guessed: equal chroma at different hues does
+not read as equally tinted, and a family nobody can tell apart is not a family.
+Every chromatic pair clears the threshold of noticing on a light surface, above
+Tailwind's own zinc-against-slate separation of 0.0133 ΔEOK there. Graphite and
+Ash sit below it at 0.0090, which is the point of Ash — it is Graphite with the
+tint removed.
+
+Families select with `data-custom-neutral`, a separate attribute from
+Original's `data-neutral`, because the two systems name different colours and
+each should keep its own choice across a switch. Graphite binds on the bare
+colour-system selector, so the attribute is only needed to leave the default.
+Every family is generated and contract-checked independently — raising chroma
+moves contrast slightly, and two families once missed a tooltip-edge minimum by
+a thousandth while the default passed.
+
+Custom's step numbers are that ramp's coordinates and do **not** correspond to
+Original's. Its role assignments live in a `:root[data-colour-system]` block at
+the end of `roles.css`, `faces.css` and `state.css`; the base blocks above them
+still serve Original. The selector is keyed on the attribute _existing_, not on
+one of its values, because Original is the attribute's absence — scoped to
+`'custom'` alone, the light inset's recess failed to reach a second generated
+system and sat on the canvas step. If a system ever needs an override the others
+must not take, the generator's scope test has to resolve per system instead of
+treating every such rule as Custom's.
+
+That duplication exists only while Original does. Retiring Original collapses
+the two blocks into one.
+
+Duplicate detection compares the 8-bit colour a display receives, not the
+serialized `rgb()` string: at three decimals of a 0–255 channel two steps can
+never collide once lightness is required to decrease, so the string comparison
+proved nothing. Spacing is judged on the ramp's own shape rather than against an
+absolute band — how far the widest adjacent gap is from the narrowest, and how
+abruptly spacing changes between neighbouring gaps. A separate set of criteria
+compares the two themes to each other, because a theme can pass every absolute
+contract and still carry twice its counterpart's separation or half its text
+hierarchy. All of these warn; none fail.
+
+The role validator reads the stylesheets in import order and takes the last
+declaration in each scope, as the cascade does, skipping `@media` and `@supports`
+so a forced-colours override is not mistaken for the baseline. It also skips
+declarations written straight into `@utility`, which are templates rather than
+values — `--control-face-top` alone is declared in fifteen of them.
+
+Five cross-theme warnings are expected and left standing. Light's surfaces sit
+against the ramp's white ceiling — floating is step 0 — so light text on them
+reaches ratios dark cannot, and light's canvas-to-floating span is one step
+where dark's is three. Closing them would mean darkening the light theme. They
+are warnings precisely so visual margin does not become an undocumented
+compliance rule.
+
+#### Ink that a surface cannot carry
+
+`--sp-text-muted` reads below AA on `--sp-surface-selected` in light. That is
+safe only because every consumer of that fill swaps its ink to primary in the
+same rule, and for a long time four hand-written class pairs held that invariant
+with nothing checking it. A Playwright test now asserts that no element painting
+the selected fill has muted-coloured text anywhere inside it; it found a real
+failure the first time it ran, where `--sp-menu-chip` fills at the same depth
+and carried a micro-size count in muted ink. That count reads
+`--sp-text-muted-strong` now, and the pairing has a contract.
+
+Prefer a step that works on every ground it actually paints on over ink that
+adapts to its surface. Contextual ink is possible — custom properties inherit,
+and `surface-menu-badge` already reads stops its row publishes — but it makes
+"muted" stop being a colour, it cannot be reasoned about locally, and it does
+not survive a portal. Keep it for declared, contract-checked exceptions.
 
 ### Tuning a theme
 
@@ -195,7 +299,7 @@ Run **`pnpm dev:styles`** (webpack) rather than `pnpm dev` (Turbopack) when the 
                var(--lightningcss-dark, var(--sp-neutral-900));
   ```
 
-  `tools/postcss-light-dark` folds that back into `light-dark(…)` so the Styles pane reads character-for-character like `app/tokens/`. It is a postcss plugin, and under Turbopack postcss runs *before* Lightning CSS, so there is nothing to fold yet — hence webpack. It is gated on `NODE_ENV`, so production keeps the polyfill and the browser support that comes with it.
+  `tools/postcss-light-dark` folds that back into `light-dark(…)` so the Styles pane reads character-for-character like `app/tokens/`. It is a postcss plugin, and under Turbopack postcss runs _before_ Lightning CSS, so there is nothing to fold yet — hence webpack. It is gated on `NODE_ENV`, so production keeps the polyfill and the browser support that comes with it.
 
 Ink steps are **toward presence**, never "darker": the dark half of a pair moves lighter as the light half moves darker, so a role says the same thing on either canvas. `--sp-text-muted-strong`, `--sp-header-ink` and the sheet's three rungs all read this way, and a pair that moves only one half opens or closes the gap between two roles by half a step without saying so.
 
@@ -415,11 +519,11 @@ live outside `@theme` and markup reaches them with Tailwind's custom-property sy
 `duration-(--duration-pane)`. Still a token, still one definition, and `duration-[220ms]`
 stays out of markup.
 
-| Token | Value | For |
-| --- | --- | --- |
-| `--duration-state` | 150ms | one control answering a pointer |
-| `--duration-row` | 180ms | a row settling into a new position |
-| `--duration-pane` | 220ms | a whole pane travelling |
+| Token              | Value | For                                |
+| ------------------ | ----- | ---------------------------------- |
+| `--duration-state` | 150ms | one control answering a pointer    |
+| `--duration-row`   | 180ms | a row settling into a new position |
+| `--duration-pane`  | 220ms | a whole pane travelling            |
 
 ### The sidebar's four spacing tokens
 
@@ -436,7 +540,7 @@ them, so nothing shrinks to fit.
 
 **Put the icon in a cell rather than working out its offset.** Every hand-derived inset in
 this sidebar has been wrong at least once: a 30px button in a 34px rail needs 2px, a 36px
-mark needs *minus* one, and both numbers go stale the moment the rail moves. A cell needs
+mark needs _minus_ one, and both numbers go stale the moment the rail moves. A cell needs
 no arithmetic and cannot go stale. Two boxes still carry an offset — the brand mark, whose
 lockup glues it to its wordmark so it cannot take a cell, and the search glyph, whose field
 derives its inset in `.menu-search-field` from the rail, the edge and the glyph's own box
@@ -506,19 +610,19 @@ units, so nothing needs to know how tall the header is. The notch is the last
 cell of a header row: it stretches with the row, so its floor lands on the rule the other
 cell draws however the heading wraps.
 
-| Token | Default | Decides |
-| --- | --- | --- |
-| `--notch-angle` | 25deg | the lean of every slanted edge, from vertical |
-| `--notch-bend-top` | `--radius-shell` | where the slope leaves the top edge |
-| `--notch-bend-bottom` | unset: the first control's bottom-left radius + `--notch-gap` | where the slope lands on the floor; unset, it stays concentric with the control beside it |
-| `--slant-height` | one title line + 2 × (`--spacing-shell-inset` + `--spacing-control-edge`) | a slanted control's height, sized so the heading -- centred in a header that holds the notch's inset evenly above and below the controls -- keeps at least the shell inset above and below; the edge-width either side gives back the icons' 1px optical lift evenly |
-| `--notch-corner` | `--radius-shell` | where the floor turns down the pane's side |
-| `--notch-gap` | 0.375rem | canvas held between the controls and every edge round them -- the slope, the floor, the pane's top edge and side -- square to each; `.notch` insets by the gap plus `--spacing-control-edge` where the edge is drawn inside its box, and by the gap over cos(angle) along the slope |
-| `--slant-gap` | 0.25rem | between two slants sharing a seam, square to it |
-| `--slant-corner-balance` | 0.5 | how far a slanted corner's radius follows its angle: 0 is one radius on every corner, 1 gives each the tangent length of a square corner |
-| `--notch-bend-balance` | 0.5 | the same for the notch's top bend, held lower so it stays no softer than the pane's corners |
-| `--slant-angle` / `--slant-radius` | the notch angle / `--radius-shell` | a slant that should differ from its notch |
-| `--notch-face` / `--notch-edge` / `--notch-highlight` / `--notch-pane` | `--sp-notch-*` | colours, per instance: canvas, the pane's ring, its sheen, its face |
+| Token                                                                  | Default                                                                   | Decides                                                                                                                                                                                                                                                                             |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--notch-angle`                                                        | 25deg                                                                     | the lean of every slanted edge, from vertical                                                                                                                                                                                                                                       |
+| `--notch-bend-top`                                                     | `--radius-shell`                                                          | where the slope leaves the top edge                                                                                                                                                                                                                                                 |
+| `--notch-bend-bottom`                                                  | unset: the first control's bottom-left radius + `--notch-gap`             | where the slope lands on the floor; unset, it stays concentric with the control beside it                                                                                                                                                                                           |
+| `--slant-height`                                                       | one title line + 2 × (`--spacing-shell-inset` + `--spacing-control-edge`) | a slanted control's height, sized so the heading -- centred in a header that holds the notch's inset evenly above and below the controls -- keeps at least the shell inset above and below; the edge-width either side gives back the icons' 1px optical lift evenly                |
+| `--notch-corner`                                                       | `--radius-shell`                                                          | where the floor turns down the pane's side                                                                                                                                                                                                                                          |
+| `--notch-gap`                                                          | 0.375rem                                                                  | canvas held between the controls and every edge round them -- the slope, the floor, the pane's top edge and side -- square to each; `.notch` insets by the gap plus `--spacing-control-edge` where the edge is drawn inside its box, and by the gap over cos(angle) along the slope |
+| `--slant-gap`                                                          | 0.25rem                                                                   | between two slants sharing a seam, square to it                                                                                                                                                                                                                                     |
+| `--slant-corner-balance`                                               | 0.5                                                                       | how far a slanted corner's radius follows its angle: 0 is one radius on every corner, 1 gives each the tangent length of a square corner                                                                                                                                            |
+| `--notch-bend-balance`                                                 | 0.5                                                                       | the same for the notch's top bend, held lower so it stays no softer than the pane's corners                                                                                                                                                                                         |
+| `--slant-angle` / `--slant-radius`                                     | the notch angle / `--radius-shell`                                        | a slant that should differ from its notch                                                                                                                                                                                                                                           |
+| `--notch-face` / `--notch-edge` / `--notch-highlight` / `--notch-pane` | `--sp-notch-*`                                                            | colours, per instance: canvas, the pane's ring, its sheen, its face                                                                                                                                                                                                                 |
 
 Which edges lean is decided where the controls sit, not inside them. The process header
 holds two: the Instructions button, which opens the process setup drawer, as `slant="both"`,
@@ -540,18 +644,18 @@ bites through. And the content steps in by `--spacing-control-edge`, the width
 
 ### rem for what scales, px for what must not
 
-| Convert to `rem` | Keep in `px` |
-| --- | --- |
-| font sizes, spacing, radii | border, ring and outline widths |
-| breakpoints and container sizes | shadow offsets, blurs and spreads |
-| component geometry that holds text | drawn rules and connector lines |
-| icon sizes | `999px` / `9999px` pill sentinels |
-| | border widths, and **whole** ones: a fraction snaps to whole device pixels, so it lays out differently at 1× and 2× |
-| | sub-pixel optical nudges |
+| Convert to `rem`                   | Keep in `px`                                                                                                        |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| font sizes, spacing, radii         | border, ring and outline widths                                                                                     |
+| breakpoints and container sizes    | shadow offsets, blurs and spreads                                                                                   |
+| component geometry that holds text | drawn rules and connector lines                                                                                     |
+| icon sizes                         | `999px` / `9999px` pill sentinels                                                                                   |
+|                                    | border widths, and **whole** ones: a fraction snaps to whole device pixels, so it lays out differently at 1× and 2× |
+|                                    | sub-pixel optical nudges                                                                                            |
 
 Tailwind itself follows this split: its breakpoints are rem, its border and ring widths are px. A `0.0625rem` hairline at a 20px root becomes 1.25px and renders blurred.
 
-**Breakpoints must be rem.** A media-query `rem` resolves against the browser's *default* font size, not the root element. A px threshold mixed into a rem scale keeps its position while the others move, so Tailwind's build-time sort order stops matching the runtime order and the mobile-first cascade can resolve backwards.
+**Breakpoints must be rem.** A media-query `rem` resolves against the browser's _default_ font size, not the root element. A px threshold mixed into a rem scale keeps its position while the others move, so Tailwind's build-time sort order stops matching the runtime order and the mobile-first cascade can resolve backwards.
 
 Named thresholds: `shell` (56.25rem) is where the sidebar and pane can sit side by side and scroll independently; `runs` (68.75rem) is where the run strip becomes a third column; `card` (25rem) is the container width below which the release card drops to one column.
 
@@ -559,15 +663,17 @@ Named thresholds: `shell` (56.25rem) is where the sidebar and pane can sit side 
 
 All of them live on `<html>` — attributes, apart from one inline custom property — applied before first paint and persisted to `localStorage`. The design pane in the bottom-right writes them; none ships to production.
 
-| Attribute | Choices |
-| --- | --- |
-| `data-theme` | system, light, dark |
-| `data-neutral` | the one neutral palette: slate, gray, zinc, neutral, stone, taupe, mauve, mist, olive, or a `radix-*` neutral; also `?neutral=` |
-| `data-typeface` | geist, glide, inter |
-| `data-mono` | the utility-role family, independent of the set |
-| `data-typescale` | base, sharp |
-| `data-state-palette` | the semantic state palette: `radix` (default) or `tailwind`; also `?states=tailwind` |
-| `data-tile-palette` | the workspace menu tiles' palette: Tailwind (no attribute) or `radix`; also `?tiles=radix` |
-| `--tile-chroma-scale` | inline on `<html>`: the multiplier on the tiles' saturation ceilings; the default leaves no inline value, so the tokens stand |
-| `data-motion-speed` | CSS transition and animation playback: 1, 0.5, 0.2, 0.1 |
-| `data-rail-guides` | `on` draws the sidebar's icon axes; see Checking the rail |
+| Attribute             | Choices                                                                                                                             |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `data-theme`          | system, light, dark                                                                                                                 |
+| `data-colour-system`  | `original` (no attribute, default) or `custom`; also `?colours=`                                                                    |
+| `data-edge-treatment` | `existing` (no attribute, default) or `opaque`; also `?edges=`; enabled only for Custom, with opaque recipes introduced in Phase B2 |
+| `data-neutral`        | the one neutral palette: slate, gray, zinc, neutral, stone, taupe, mauve, mist, olive, or a `radix-*` neutral; also `?neutral=`     |
+| `data-typeface`       | geist, glide, inter                                                                                                                 |
+| `data-mono`           | the utility-role family, independent of the set                                                                                     |
+| `data-typescale`      | base, sharp                                                                                                                         |
+| `data-state-palette`  | the semantic state palette: `radix` (default) or `tailwind`; also `?states=tailwind`                                                |
+| `data-tile-palette`   | the workspace menu tiles' palette: Tailwind (no attribute) or `radix`; also `?tiles=radix`                                          |
+| `--tile-chroma-scale` | inline on `<html>`: the multiplier on the tiles' saturation ceilings; the default leaves no inline value, so the tokens stand       |
+| `data-motion-speed`   | CSS transition and animation playback: 1, 0.5, 0.2, 0.1                                                                             |
+| `data-rail-guides`    | `on` draws the sidebar's icon axes; see Checking the rail                                                                           |

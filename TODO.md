@@ -38,7 +38,7 @@ The detailed requirements remain in [`docs/`](docs/README.md). If this checklist
   - Add React Aria Components, Playwright, and axe when the implemented interface first requires them. Tailwind's native `data-*` variants are sufficient unless a concrete component proves that a helper package adds value.
   - Consume `loadReviewedReplay()` rather than importing raw fixtures or the test oracle.
   - Build the summary, candidate list, detail view, evidence and policy sections, and effects rail.
-  - Include ready, adjusted, held, excluded, unverifiable, loading, empty, error, and conflict examples in a protected workbench.
+  - Cover ready, adjusted, held, excluded, unverifiable, loading, empty, error, and conflict states through real routes and focused automated fixtures.
   - Establish semantic design tokens, light and dark themes, responsive layout, visible focus, and semantic components.
   - **Gate:** the scenario is understandable on desktop and mobile without an API or database, and the component structure supports the required keyboard model.
 

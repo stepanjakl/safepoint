@@ -398,7 +398,7 @@ export function ProcessPanels({
           }
         >
           {tab === 'instructions' ? (
-            <span className="bg-menu-chip value text-micro text-muted rounded-control px-1.5 py-0.5">
+            <span className="bg-menu-chip value text-micro text-muted-strong rounded-control px-1.5 py-0.5">
               {version.version}
             </span>
           ) : tab === 'inputs' && onAddInput ? (

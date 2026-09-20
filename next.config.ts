@@ -32,24 +32,6 @@ const nextConfig: NextConfig = {
   // repositioned: nothing it reports is worth a corner of the shell.
   devIndicators: false,
 
-  experimental: {
-    // Tabler is on Next's default list; the workbench's candidate families are
-    // not, and their barrels are thousands of modules each. Without this the
-    // icon comparison alone dominates the dev compile of /workbench. Blode and
-    // MingCute are reached through per-icon subpaths instead, so they need no
-    // entry; Nucleo publishes only a barrel.
-    optimizePackageImports: [
-      '@phosphor-icons/react',
-      '@remixicon/react',
-      'nucleo-arcade',
-      'nucleo-credit-cards',
-      'nucleo-flags',
-      'nucleo-glass',
-      'nucleo-isometric',
-      'nucleo-social-media',
-    ],
-  },
-
   webpack(config, { dev, webpack }) {
     if (dev) {
       // Emit CSS maps separately from Next's JavaScript devtool setting.

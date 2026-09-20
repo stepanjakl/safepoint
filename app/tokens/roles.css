@@ -47,11 +47,13 @@
   --sp-action: light-dark(var(--sp-neutral-900), var(--sp-neutral-150));
   --sp-action-hover: light-dark(var(--sp-neutral-700), var(--sp-neutral-100));
 
-  /* The top sheen on an enclosure. */
+  /* The top sheen on an enclosure. The colour and the image are separate
+     because light-dark() resolves colours and not gradients. */
   --sp-edge-inner: light-dark(
     color-mix(in oklab, var(--color-white) 85%, transparent),
     color-mix(in oklab, var(--color-white) 16%, transparent)
   );
+  --sp-enclosure-sheen: linear-gradient(to bottom, var(--sp-edge-inner), transparent 55%);
 
   /* The notch: canvas through a pane's corner, outlined in the pane's own
      edge. Takes surface-raised's ring, sheen and face. */
@@ -59,4 +61,43 @@
   --sp-notch-edge: light-dark(var(--sp-rule-default), var(--sp-rule-faint));
   --sp-notch-highlight: var(--sp-face-highlight-strong);
   --sp-notch-pane: var(--sp-surface-primary);
+}
+
+/* ── The generated ramp's role assignments ───────────────────────────────────
+   Custom reads one uniform ramp where a step is a colour, not a colour per
+   theme, so the whole light/dark relationship is stated here rather than
+   halfway inside the ramp. Step numbers are that ramp's coordinates and do not
+   correspond to Original's; the base block above still serves Original.
+   Keyed on the attribute existing, because Original is its absence.
+   Generated once from the previous assignments and tuned by hand since; the
+   generator checks every entry against scripts/colour-theme/config.ts.
+   ────────────────────────────────────────────────────────────────────────── */
+:root[data-colour-system] {
+  --sp-canvas: light-dark(var(--sp-neutral-75), var(--sp-neutral-900));
+  --sp-surface-primary: light-dark(var(--sp-neutral-25), var(--sp-neutral-825));
+  --sp-surface-floating: light-dark(var(--sp-neutral-0), var(--sp-neutral-750));
+  --sp-surface-inset: light-dark(var(--sp-neutral-100), var(--sp-neutral-950));
+  --sp-surface-control: light-dark(var(--sp-neutral-0), var(--sp-neutral-725));
+  --sp-surface-selected: light-dark(var(--sp-neutral-200), var(--sp-neutral-700));
+  --sp-surface-hover: light-dark(var(--sp-neutral-75), var(--sp-neutral-775));
+  --sp-surface-disabled: light-dark(var(--sp-neutral-25), var(--sp-neutral-925));
+  --sp-text-primary: light-dark(var(--sp-neutral-925), var(--sp-neutral-100));
+  --sp-text-muted: light-dark(var(--sp-neutral-575), var(--sp-neutral-325));
+  --sp-text-muted-strong: light-dark(var(--sp-neutral-675), var(--sp-neutral-225));
+  --sp-text-muted-soft: light-dark(var(--sp-neutral-475), var(--sp-neutral-425));
+  --sp-text-inverse: light-dark(var(--sp-neutral-0), var(--sp-neutral-900));
+  --sp-rule-faint: light-dark(var(--sp-neutral-200), var(--sp-neutral-625));
+  --sp-rule-default: light-dark(var(--sp-neutral-250), var(--sp-neutral-575));
+  --sp-rule-strong: light-dark(var(--sp-neutral-475), var(--sp-neutral-450));
+  --sp-action: light-dark(var(--sp-neutral-925), var(--sp-neutral-100));
+  --sp-action-hover: light-dark(var(--sp-neutral-725), var(--sp-neutral-50));
+}
+
+/* The enclosure's fade becomes a line. A fade to transparent is the one edge
+   whose colour genuinely depends on what lies under it, so making it opaque
+   means changing the effect, not just the value: a one-pixel band where there
+   was a gradient. */
+:root[data-colour-system='custom'][data-edge-treatment='opaque'] {
+  --sp-enclosure-edge: light-dark(var(--sp-neutral-0), var(--sp-neutral-675));
+  --sp-enclosure-sheen: linear-gradient(to bottom, var(--sp-enclosure-edge) 0 1px, transparent 1px);
 }

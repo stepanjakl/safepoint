@@ -60,7 +60,17 @@ pnpm lint           # ESLint
 pnpm typecheck      # generate Next.js route types, then run strict TypeScript
 pnpm format:check   # Prettier
 pnpm test           # Vitest contract and fixture tests
+pnpm check:colours  # custom-ramp contracts and generated output
+pnpm check:colour-system # Original/Custom browser and workbench checks
 ```
+
+In development, `/workbench` shows every step of each generated custom colour
+family. Use the `Colour system` control in the design pane, or
+`?colours=original` / `?colours=custom`, to compare semantic use on the real
+application. The Neutrals control applies only to Original.
+For Custom, `?edges=existing` / `?edges=opaque` selects the development edge
+comparison. The Opaque option intentionally preserves the existing paint until
+the Phase B2 surface recipes are introduced.
 
 ### Find a style's source in Chrome or Edge
 
@@ -102,7 +112,7 @@ Hold <kbd>Option</kbd>/<kbd>Alt</kbd>, hover any element in the running app, and
 - [`@locator/webpack-loader`](https://www.npmjs.com/package/@locator/webpack-loader) runs as a Turbopack rule in `next.config.ts` and stamps every JSX element with `data-locatorjs="<file>:<line>:<column>"`. React 19 removed the `_debugSource` fiber field LocatorJS used to read, so the location has to be baked into the markup instead. Because the attribute travels in the HTML, this covers server components, whose code never reaches the browser.
 - [`@locator/runtime`](https://www.npmjs.com/package/@locator/runtime) draws the overlay, loaded by [`LocatorRuntime`](components/dev/locator-runtime.tsx) in the root layout.
 
-**Do not install the browser extension** — disable it for `localhost` if you already have it. The published build (1.3.2, 2023) predates the path-based attribute format and only understands the older `data-locatorjs-id` scheme, so it reports *"No source info found for this element"*. It also injects its own copy of the overlay, and whichever runtime creates `#locatorjs-wrapper` first wins; the other silently gives up. `@locator/runtime` is that same overlay at a current version, so nothing is lost by leaving the extension off.
+**Do not install the browser extension** — disable it for `localhost` if you already have it. The published build (1.3.2, 2023) predates the path-based attribute format and only understands the older `data-locatorjs-id` scheme, so it reports _"No source info found for this element"_. It also injects its own copy of the overlay, and whichever runtime creates `#locatorjs-wrapper` first wins; the other silently gives up. `@locator/runtime` is that same overlay at a current version, so nothing is lost by leaving the extension off.
 
 Both pieces are conditioned on `development` and excluded from production builds; the loader also skips `node_modules`.
 
@@ -110,21 +120,19 @@ Both pieces are conditioned on `development` and excluded from production builds
 
 The families are still provisional, so components address the three semantic roles from [the experience specification](docs/EXPERIENCE-SPEC.md) — display, interface sans, and tabular utility — and never a family name. A `data-typeface` attribute decides which family fills each role, alongside the existing `data-theme`:
 
-| Set | Display | Interface | Utility |
-| --- | --- | --- | --- |
-| `geist` (default) | Geist | Geist | Geist Mono |
-| `glide` | Glide | Glide | Glide Mono |
-| `inter` | Inter Tight | Inter | Inter, tabular figures |
+| Set               | Display     | Interface | Utility                |
+| ----------------- | ----------- | --------- | ---------------------- |
+| `geist` (default) | Geist       | Geist     | Geist Mono             |
+| `glide`           | Glide       | Glide     | Glide Mono             |
+| `inter`           | Inter Tight | Inter     | Inter, tabular figures |
 
 The utility role is a second axis, because which mono suits a given sans is the open question and every pairing has to be reachable. `data-mono` overrides just that role — `sans` (the interface family with `tnum`), `geist`, `glide`, `jetbrains`, or `commit` — and no attribute leaves the set's own choice in place.
 
 The Inter set deliberately has no separate mono. The spec asks for a "tabular **or** monospaced" utility role, and what the role carries here is mostly short English labels in tracked uppercase, where fixed advance widths only make word colour uneven, plus figures that need `tnum` rather than monospacing. `data-mono` puts a real mono back for comparison.
 
-The **Aa** control in the bottom-right corner of the running app switches the set, the utility family, and the theme, and remembers the choice. `?font=glide&mono=commit` pins a combination for a screenshot or a shared link, and [`/workbench`](app/workbench/page.tsx) shows every set and every utility candidate side by side. Next's own dev indicator has no extension point for this, so the control is separate and sits opposite it.
+The **Aa** control in the bottom-right corner of the running app switches the set, the utility family, and the theme, and remembers the choice. `?font=glide&mono=commit` pins a combination for a screenshot or a shared link. Next's own dev indicator has no extension point for this, so the control is separate and sits opposite it.
 
-Because both attributes resolve per subtree, any element can override the roles for its own contents — that is how the workbench compares them on one page.
-
-Only the default set is preloaded; the alternates emit `@font-face` rules but download nothing until a role selects them. To change the shipped default, edit `DEFAULT_TYPEFACE_SET` in [`lib/typography.ts`](lib/typography.ts) and the `:root` role block in [`app/tokens.css`](app/tokens.css). Stylistic sets and mono weights belong in those same blocks, and the sans and the mono carry separate feature tokens: `ss01` names a different alternate in every family, so a setting that is right for the interface family is wrong for a mono paired across from it. Weights are per-family too — Glide Mono has only one, so it pins both weight tokens to 400.
+Only the default set is preloaded; the alternates emit `@font-face` rules but download nothing until a role selects them. To change the shipped default, edit `DEFAULT_TYPEFACE_SET` in [`lib/typography.ts`](lib/typography.ts) and the `:root` role block in [`app/tokens/type.css`](app/tokens/type.css). Stylistic sets and mono weights belong in those same blocks, and the sans and the mono carry separate feature tokens: `ss01` names a different alternate in every family, so a setting that is right for the interface family is wrong for a mono paired across from it. Weights are per-family too — Glide Mono has only one, so it pins both weight tokens to 400.
 
 Vendored under [SIL OFL 1.1](app/fonts/): [Glide](https://blode.co/glide) and [Commit Mono](https://commitmono.com/) (the [Fontsource](https://www.npmjs.com/package/@fontsource/commit-mono) build, which instances the variable source into real 400/500/600 cuts — the upstream release ships only 400 and 700). Inter, Inter Tight, and JetBrains Mono come from Google Fonts through `next/font`.
 

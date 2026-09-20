@@ -1,6 +1,13 @@
 import {
+  COLOUR_SYSTEMS,
+  COLOUR_SYSTEM_STORAGE_KEY,
   CORNER_BALANCE_STORAGE_KEY,
+  CUSTOM_NEUTRALS,
+  CUSTOM_NEUTRAL_STORAGE_KEY,
+  DEFAULT_COLOUR_SYSTEM,
+  DEFAULT_CUSTOM_NEUTRAL,
   DEFAULT_CORNER_BALANCE,
+  DEFAULT_EDGE_TREATMENT,
   DEFAULT_MOTION_SPEED,
   DEFAULT_TILE_CHROMA_SCALE,
   MOTION_SPEEDS,
@@ -9,6 +16,8 @@ import {
   NEUTRAL_STORAGE_KEY,
   RAIL_GUIDES_STORAGE_KEY,
   DEFAULT_SLANT_RADIUS,
+  EDGE_TREATMENTS,
+  EDGE_TREATMENT_STORAGE_KEY,
   SLANT_RADIUS_MAX,
   SLANT_RADIUS_MIN,
   SLANT_RADIUS_STORAGE_KEY,
@@ -44,9 +53,53 @@ export function DesignPreferencesScript() {
   }
 
   const source = `
+var root = document.documentElement;
+var params = new URLSearchParams(location.search);
+var colourSystems = ${JSON.stringify(COLOUR_SYSTEMS)};
+var colourSystem = params.get('colours');
+if (colourSystems.indexOf(colourSystem) === -1) {
+  try {
+    colourSystem = localStorage.getItem(${JSON.stringify(COLOUR_SYSTEM_STORAGE_KEY)});
+  } catch (error) {
+    colourSystem = null;
+  }
+}
+if (colourSystem && colourSystem !== ${JSON.stringify(DEFAULT_COLOUR_SYSTEM)}
+    && colourSystems.indexOf(colourSystem) !== -1) {
+  root.dataset.colourSystem = colourSystem;
+} else {
+  delete root.dataset.colourSystem;
+}
+var customNeutrals = ${JSON.stringify(CUSTOM_NEUTRALS)};
+var customNeutral = params.get('customNeutral');
+if (customNeutrals.indexOf(customNeutral) === -1) {
+  try {
+    customNeutral = localStorage.getItem(${JSON.stringify(CUSTOM_NEUTRAL_STORAGE_KEY)});
+  } catch (error) {
+    customNeutral = null;
+  }
+}
+if (customNeutral && customNeutral !== ${JSON.stringify(DEFAULT_CUSTOM_NEUTRAL)}
+    && customNeutrals.indexOf(customNeutral) !== -1) {
+  root.dataset.customNeutral = customNeutral;
+} else {
+  delete root.dataset.customNeutral;
+}
+var edgeTreatments = ${JSON.stringify(EDGE_TREATMENTS)};
+var edgeTreatment = params.get('edges');
+if (edgeTreatments.indexOf(edgeTreatment) === -1) {
+  try {
+    edgeTreatment = localStorage.getItem(${JSON.stringify(EDGE_TREATMENT_STORAGE_KEY)});
+  } catch (error) {
+    edgeTreatment = null;
+  }
+}
+if (edgeTreatment === 'opaque') {
+  root.dataset.edgeTreatment = 'opaque';
+} else if (edgeTreatment === ${JSON.stringify(DEFAULT_EDGE_TREATMENT)}) {
+  delete root.dataset.edgeTreatment;
+}
 try {
-  var root = document.documentElement;
-  var params = new URLSearchParams(location.search);
   var sets = ${JSON.stringify([...TYPEFACE_PICKER_SETS])};
   var monos = ${JSON.stringify(MONO_CHOICES.filter((choice) => choice !== 'match'))};
   var typeface = params.get('font')

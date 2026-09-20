@@ -80,7 +80,7 @@
     --control-face-bottom: var(--sp-accent-face-bottom);
     --control-ring-top: var(--sp-accent-ring-top);
     --control-ring-bottom: var(--sp-accent-ring-bottom);
-    --control-highlight: var(--sp-face-highlight-subtle);
+    --control-highlight: var(--sp-accent-edge);
   }
 
   .switch[data-disabled] .switch-track {
@@ -103,7 +103,7 @@
     --control-face-bottom: var(--sp-accent-face-bottom-hover);
     --control-ring-top: var(--sp-accent-ring-top-hover);
     --control-ring-bottom: var(--sp-accent-ring-bottom-hover);
-    --control-highlight: var(--sp-face-highlight-subtle);
+    --control-highlight: var(--sp-accent-edge);
   }
 
   .switch[data-selected] .switch-thumb {
@@ -1459,8 +1459,8 @@
 @layer components {
   .app-tooltip {
     --tooltip-face: var(--sp-surface-floating);
-    --tooltip-edge: var(--sp-rule-default);
-    --tooltip-highlight: light-dark(var(--sp-edge-inner), var(--sp-rule-etch));
+    --tooltip-edge: var(--sp-tooltip-edge);
+    --tooltip-highlight: var(--sp-tooltip-highlight);
     /* A one-line box as tall as the controls it labels (min-h-7): what the
        line and both borders leave of that height, split above and below. */
     --tooltip-padding-block: calc((var(--spacing) * 7 - 1lh - 2px) / 2);
@@ -1654,54 +1654,6 @@
       gap: 0.5rem;
       text-align: center;
     }
-  }
-}
-
-/* ── Icon families (development) ─────────────────────────────────────────────
-   The workbench is the one place these are rendered.
-   ────────────────────────────────────────────────────────────────────── */
-@layer components {
-  .logo-candidate {
-    display: flex;
-    min-height: 2.5rem;
-    align-items: center;
-    gap: 0.875rem;
-    font-size: 0.8125rem;
-    font-synthesis: none;
-    line-height: 1;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    white-space: nowrap;
-  }
-
-  .logo-candidate[data-logo-family='michroma'] {
-    font-family: var(--font-michroma), sans-serif;
-  }
-
-  .logo-candidate[data-logo-family='syne'] {
-    font-family: var(--font-syne), sans-serif;
-    font-size: 0.875rem;
-    letter-spacing: 0.18em;
-  }
-
-  .logo-candidate[data-logo-family='orbitron'] {
-    font-family: var(--font-orbitron), sans-serif;
-    letter-spacing: 0.2em;
-  }
-
-  .logo-candidate-symbol {
-    width: 2rem;
-    height: 2rem;
-    flex: none;
-  }
-
-  /* Nucleo Arcade strokes fall back to a fixed #212121 and vanish on a dark
-     ground. currentColor lets them follow the text like every other family;
-     the other two stops keep the set's own 25% and transparent pixels. */
-  .nucleo-arcade {
-    --nc-arcade-color-1: currentColor;
-    --nc-arcade-color-2: color-mix(in oklab, currentColor 25%, transparent);
-    --nc-arcade-color-3: transparent;
   }
 }
 
@@ -2015,7 +1967,7 @@
        The pane's own highlight beside it is the pane's to draw: content is
        held back past it -- see --spacing-pane-inset. */
     border-bottom: 1px solid var(--sp-rule-faint);
-    box-shadow: 0 var(--spacing-sheet-highlight) 0 var(--sp-rule-etch);
+    box-shadow: 0 var(--spacing-sheet-highlight) 0 var(--sp-divider-etch);
   }
   /* Run rows draw their own inset highlight. An outward header shadow would
      cover the first row's line and prevent it from following that row's state. */
@@ -2039,7 +1991,7 @@
        the rows above and below it are what it is read against. */
     padding: 0.4375rem var(--spacing-sheet-inset);
     border-top: 1px solid var(--sp-rule-faint);
-    box-shadow: inset 0 var(--spacing-sheet-highlight) 0 var(--sp-rule-etch);
+    box-shadow: inset 0 var(--spacing-sheet-highlight) 0 var(--sp-sheet-break-etch);
     background: var(--sp-sheet-band);
     color: var(--sp-text-muted);
     text-align: start;
@@ -2090,7 +2042,7 @@
     /* On the row, not the list item: an inset shadow on the item paints
        beneath its children's backgrounds, so the row's ground covered it
        exactly when it was wanted. */
-    --sheet-row-highlight: var(--sp-rule-etch);
+    --sheet-row-highlight: var(--sp-sheet-row-etch);
     box-shadow: inset 0 var(--spacing-sheet-highlight) 0 var(--sheet-row-highlight);
     transition:
       background var(--duration-state) ease-out,
@@ -2130,7 +2082,7 @@
   .sheet-row[data-current] {
     /* Softer than the resting etch in light; in dark the etch already reads
        correctly against the lit row, so it holds. */
-    --sheet-row-highlight: light-dark(var(--sp-face-highlight-medium), var(--sp-rule-etch));
+    --sheet-row-highlight: var(--sp-sheet-row-etch-active);
   }
   .sheet-row:not([data-current]):hover,
   .sheet-row:not([data-current]):focus-visible,
