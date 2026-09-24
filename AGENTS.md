@@ -5,6 +5,10 @@ Instructions for coding agents working in this repository. Humans should read
 [`docs/TECHNICAL-DESIGN.md`](docs/TECHNICAL-DESIGN.md) first; this file only
 records the things an agent would otherwise have to rediscover.
 
+`docs/archive/` holds finished plans and trial records. They describe code that
+has since changed; never follow a path, token or switch named there without
+checking it against `docs/STYLING-SYSTEM.md` and the tree.
+
 ## Checking sidebar alignment
 
 The sidebar's icons sit on three vertical axes. Do not measure them by hand and
@@ -35,7 +39,7 @@ again if it moves.
 ## Alignment, when you are changing layout
 
 Put the icon in a rail cell (`MENU_RAIL` in
-`components/app-shell/process-menu.tsx`) rather than computing an inset for it.
+`components/app-shell/sidebar/menu-parts.tsx`) rather than computing an inset for it.
 A cell centres what is in it and needs no arithmetic; a hand-derived offset goes
 stale the moment a token moves.
 
@@ -46,11 +50,21 @@ read too.
 
 ## Conventions worth knowing before editing styles
 
-`docs/STYLING-SYSTEM.md` is authoritative. In short: three jobs -- tokens in
-`app/tokens/` (seven files), Tailwind extensions in `app/globals.css`, and what
-markup cannot express in `app/components.css` -- a sharp test for what earns a
-place in that last one, no arbitrary values in markup, and never two utilities
+`docs/STYLING-SYSTEM.md` is authoritative. In short: `app/styles/index.css` is
+the one entry and its import order is the cascade order; shared tokens and
+foundations live in `app/styles/`; a component's own roles, `@utility` faces and
+`@layer components` rules live in a plain `.css` beside its `.tsx` (not a CSS
+Module) and are imported from the entry. A sharp test decides what earns a place
+in a stylesheet at all, no arbitrary values in markup, and never two utilities
 for the same property on one element.
+
+`components/app-shell/` is grouped by feature (`sidebar/`, `process/`, `runs/`,
+`thread/`, `assistant/`, `inputs/`, `instructions/`, `system/`; the shell itself
+at the root). A new file goes in the folder of the feature it serves; a folder
+earns its place when three or more files change together. The sidebar is split
+into one component per part it draws, with shared shapes and icons in
+`sidebar/menu-parts.tsx`; `e2e/process-menu.spec.ts` covers its search, level
+travel and reordering, focus included -- run it after touching any of them.
 
 A comment in a stylesheet earns its place only by preventing a specific wrong
 edit: a measured constraint, a browser behaviour, or a cross-file dependency.
@@ -62,21 +76,24 @@ Lightning CSS's `light-dark()` polyfill back so DevTools reads like the source.
 
 ## Colours
 
-`app/radix-colors.css` and `app/neutral-palettes.css` are generated: run
-`pnpm colors:radix` and `pnpm colors:neutrals`, never edit either by hand.
-There is one neutral ramp, `--sp-neutral-*`; the second one (`--sp-control-*`,
-`data-control-neutral`) was removed, and control faces follow `data-neutral`
-with everything else. The
-four neutrals Tailwind does not ship are tuned through the signature table in
-`scripts/generate-neutral-palettes.ts`, not by editing the emitted steps. After
-touching a token, run `pnpm check:tokens`: it fails on any `var(--…)` in the
-app's CSS that nothing defines, which otherwise unsets a whole subtree in
-silence rather than erroring. Tailwind scans source as plain text, so do not write a real theme variable
-name in a comment — it would be emitted as though a style read it; use a
-placeholder such as `--color-radix-<scale>-<step>`. The techniques behind the
-workspace menu's decorative hues — `light-dark()` resolved where the colour
-paints, saturation ceilings through relative colour syntax, and keeping clear of
-the state hues — are under Colour in `docs/STYLING-SYSTEM.md`.
+One colour system. Neutrals are the generated ramp in `app/styles/generated/ramp.css`
+(`pnpm colors:custom`, tuned in `scripts/colour-theme/config.ts`); every hue is
+Radix, generated into `app/styles/generated/radix.css` by `pnpm colors:radix` from the
+scales the stylesheets read. Never edit either by hand. Tailwind's palette is
+reset (`--color-*: initial`), so there is no `bg-zinc-*`; markup names roles.
+`data-neutral` picks one of five families on `<html>`; nothing else switches
+colour.
+
+Every role is declared once and is at most two reads from a colour: read a ramp
+or state step (`--sp-neutral-N`, `--sp-state-<scale>-N`) or alias one role that
+does. Every edge is an opaque step. After touching a token, run
+`pnpm check:tokens` -- it fails on any `var(--…)` nothing defines (which would
+otherwise unset a subtree in silence) and on any longer chain -- and
+`pnpm check:colours`, which checks role steps and contrast contracts. Tailwind
+scans source as plain text, so do not write a real utility or theme variable
+name in a comment; use a placeholder such as `--color-<role>`.
+`pnpm trace:token <role>` prints where a role is declared and what it resolves
+to in each theme; use it instead of reading stylesheets hop by hop.
 
 ## Verification matched to the change
 

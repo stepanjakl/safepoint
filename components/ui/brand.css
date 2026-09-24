@@ -1,0 +1,16 @@
+/* ── Brand ──────────────────────────────────────────────────────────────────
+   The lockup's two colours.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* The mark is one colour in both themes, like a logo. The word is the
+     near-white end of sage on dark and the near-black end on light: sage 4 on
+     the light canvas read 1:1, invisible. */
+  --sp-brand-mark: var(--radix-cyan-8);
+  --sp-brand-wordmark: light-dark(var(--radix-sage-12), var(--radix-sage-4));
+}
+
+@theme inline {
+  --color-brand-wordmark: var(--sp-brand-wordmark);
+  --color-brand-mark: var(--sp-brand-mark);
+}

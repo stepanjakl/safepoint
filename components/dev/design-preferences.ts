@@ -114,66 +114,13 @@ export function setTheme(next: ThemeChoice) {
   emit();
 }
 
-export const COLOUR_SYSTEM_STORAGE_KEY = 'safepoint.dev.colour-system';
-export const COLOUR_SYSTEMS = ['original', 'custom'] as const;
-export type ColourSystem = (typeof COLOUR_SYSTEMS)[number];
-export const DEFAULT_COLOUR_SYSTEM: ColourSystem = 'original';
-export const COLOUR_SYSTEM_LABELS: Record<ColourSystem, string> = {
-  original: 'Original',
-  custom: 'Custom',
-};
-
-/* Original is the absence of the attribute; every other system is a generated
-   custom family, and only those offer the edge-treatment comparison. */
-export function isGeneratedColourSystem(value: ColourSystem) {
-  return value !== DEFAULT_COLOUR_SYSTEM;
-}
-
-/* Derived from the list rather than restated: written as literals, adding a
-   system to COLOUR_SYSTEMS left the guard rejecting it, and the picker fell
-   silently back to Original. */
-export function isColourSystem(value: unknown): value is ColourSystem {
-  return COLOUR_SYSTEMS.includes(value as ColourSystem);
-}
-
-export function resolveColourSystem(
-  urlValue: string | null,
-  storedValue: string | null,
-): ColourSystem {
-  if (isColourSystem(urlValue)) return urlValue;
-  return isColourSystem(storedValue) ? storedValue : DEFAULT_COLOUR_SYSTEM;
-}
-
-export function readColourSystem(): ColourSystem {
-  const value = document.documentElement.dataset.colourSystem;
-  return isColourSystem(value) ? value : DEFAULT_COLOUR_SYSTEM;
-}
-
-export function setColourSystem(next: ColourSystem) {
-  // Original is the absence of an attribute, keeping production on its baseline.
-  if (next === DEFAULT_COLOUR_SYSTEM) {
-    delete document.documentElement.dataset.colourSystem;
-  } else {
-    document.documentElement.dataset.colourSystem = next;
-  }
-  persist(COLOUR_SYSTEM_STORAGE_KEY, next);
-  emit();
-}
-
-/* Custom's own neutral families. A separate attribute from data-neutral, not
-   a shared one: the two systems name different colours, and keeping them apart
-   lets each remember its own choice across a switch. */
-export const CUSTOM_NEUTRAL_STORAGE_KEY = 'safepoint.dev.custom-neutral';
-export const CUSTOM_NEUTRALS = [
-  'graphite',
-  'steel',
-  'clay',
-  'moss',
-  'ash',
-] as const;
-export type CustomNeutral = (typeof CUSTOM_NEUTRALS)[number];
-export const DEFAULT_CUSTOM_NEUTRAL: CustomNeutral = 'graphite';
-export const CUSTOM_NEUTRAL_LABELS: Record<CustomNeutral, string> = {
+/* The neutral family: which hue the one generated ramp is sampled at. The
+   default binds on :root, so it is the absence of the attribute. */
+export const NEUTRAL_STORAGE_KEY = 'safepoint.dev.neutral';
+export const NEUTRALS = ['graphite', 'steel', 'clay', 'moss', 'ash'] as const;
+export type Neutral = (typeof NEUTRALS)[number];
+export const DEFAULT_NEUTRAL: Neutral = 'graphite';
+export const NEUTRAL_LABELS: Record<Neutral, string> = {
   graphite: 'Graphite',
   steel: 'Steel',
   clay: 'Clay',
@@ -181,68 +128,30 @@ export const CUSTOM_NEUTRAL_LABELS: Record<CustomNeutral, string> = {
   ash: 'Ash',
 };
 
-export function isCustomNeutral(value: unknown): value is CustomNeutral {
-  return CUSTOM_NEUTRALS.includes(value as CustomNeutral);
+export function isNeutral(value: unknown): value is Neutral {
+  return NEUTRALS.includes(value as Neutral);
 }
 
-export function resolveCustomNeutral(
+export function resolveNeutral(
   urlValue: string | null,
   storedValue: string | null,
-): CustomNeutral {
-  if (isCustomNeutral(urlValue)) return urlValue;
-  return isCustomNeutral(storedValue) ? storedValue : DEFAULT_CUSTOM_NEUTRAL;
+): Neutral {
+  if (isNeutral(urlValue)) return urlValue;
+  return isNeutral(storedValue) ? storedValue : DEFAULT_NEUTRAL;
 }
 
-export function readCustomNeutral(): CustomNeutral {
-  const value = document.documentElement.dataset.customNeutral;
-  return isCustomNeutral(value) ? value : DEFAULT_CUSTOM_NEUTRAL;
+export function readNeutral(): Neutral {
+  const value = document.documentElement.dataset.neutral;
+  return isNeutral(value) ? value : DEFAULT_NEUTRAL;
 }
 
-export function setCustomNeutral(next: CustomNeutral) {
-  // The default family binds on the bare selector, so it needs no attribute.
-  if (next === DEFAULT_CUSTOM_NEUTRAL) {
-    delete document.documentElement.dataset.customNeutral;
+export function setNeutral(next: Neutral) {
+  if (next === DEFAULT_NEUTRAL) {
+    delete document.documentElement.dataset.neutral;
   } else {
-    document.documentElement.dataset.customNeutral = next;
+    document.documentElement.dataset.neutral = next;
   }
-  persist(CUSTOM_NEUTRAL_STORAGE_KEY, next);
-  emit();
-}
-
-export const EDGE_TREATMENT_STORAGE_KEY = 'safepoint.dev.edge-treatment';
-export const EDGE_TREATMENTS = ['existing', 'opaque'] as const;
-export type EdgeTreatment = (typeof EDGE_TREATMENTS)[number];
-export const DEFAULT_EDGE_TREATMENT: EdgeTreatment = 'existing';
-export const EDGE_TREATMENT_LABELS: Record<EdgeTreatment, string> = {
-  existing: 'Existing',
-  opaque: 'Opaque recipes',
-};
-
-export function isEdgeTreatment(value: unknown): value is EdgeTreatment {
-  return value === 'existing' || value === 'opaque';
-}
-
-export function resolveEdgeTreatment(
-  urlValue: string | null,
-  storedValue: string | null,
-): EdgeTreatment {
-  if (isEdgeTreatment(urlValue)) return urlValue;
-  return isEdgeTreatment(storedValue) ? storedValue : DEFAULT_EDGE_TREATMENT;
-}
-
-export function readEdgeTreatment(): EdgeTreatment {
-  const value = document.documentElement.dataset.edgeTreatment;
-  return isEdgeTreatment(value) ? value : DEFAULT_EDGE_TREATMENT;
-}
-
-export function setEdgeTreatment(next: EdgeTreatment) {
-  // Existing is the absence of an attribute, preserving the Phase A baseline.
-  if (next === DEFAULT_EDGE_TREATMENT) {
-    delete document.documentElement.dataset.edgeTreatment;
-  } else {
-    document.documentElement.dataset.edgeTreatment = next;
-  }
-  persist(EDGE_TREATMENT_STORAGE_KEY, next);
+  persist(NEUTRAL_STORAGE_KEY, next);
   emit();
 }
 
@@ -276,121 +185,7 @@ export function setMotionSpeed(next: MotionSpeed) {
 }
 
 /*
-  Neutral palettes. Every neutral role in tokens/ reads a step from the
-  --sp-neutral-* ramp rather than from zinc directly, and data-neutral rebinds
-  that ramp for its own subtree -- surfaces, rules, text, menus and the faces
-  that answer a press alike.
-*/
-export const NEUTRAL_STORAGE_KEY = 'safepoint.dev.neutral';
-export const NEUTRAL_PALETTES = [
-  'slate',
-  'gray',
-  'zinc',
-  'neutral',
-  'stone',
-  'taupe',
-  'mauve',
-  'mist',
-  'olive',
-  'radix-gray',
-  'radix-mauve',
-  'radix-slate',
-  'radix-sage',
-  'radix-olive',
-  'radix-sand',
-] as const;
-export type NeutralPalette = (typeof NEUTRAL_PALETTES)[number];
-export const NEUTRAL_PALETTE_LABELS: Record<NeutralPalette, string> = {
-  slate: 'Slate',
-  gray: 'Gray',
-  zinc: 'Zinc',
-  neutral: 'Neutral',
-  stone: 'Stone',
-  taupe: 'Taupe',
-  mauve: 'Mauve',
-  mist: 'Mist',
-  olive: 'Olive',
-  'radix-gray': 'Radix / Gray',
-  'radix-mauve': 'Radix / Mauve',
-  'radix-slate': 'Radix / Slate',
-  'radix-sage': 'Radix / Sage',
-  'radix-olive': 'Radix / Olive',
-  'radix-sand': 'Radix / Sand',
-};
-export const DEFAULT_NEUTRAL: NeutralPalette = 'zinc';
-
-export function readNeutral(): NeutralPalette {
-  const value = document.documentElement.dataset.neutral;
-  return (
-    NEUTRAL_PALETTES.find((palette) => palette === value) ?? DEFAULT_NEUTRAL
-  );
-}
-
-export function setNeutral(next: NeutralPalette) {
-  document.documentElement.dataset.neutral = next;
-  persist(NEUTRAL_STORAGE_KEY, next);
-  emit();
-}
-
-/*
-  The workspace menu's tile colours, for comparing palettes by eye. 'radix'
-  swaps in the Radix Colors steps copied into app/radix-colors.css; anything
-  else leaves the tiles on Tailwind's ramps as they ship. The default is Radix,
-  so the layout renders the attribute and a choice always writes it: without
-  it the stylesheet would fall back to Tailwind, not to the default.
-*/
-export const TILE_PALETTE_STORAGE_KEY = 'safepoint.dev.tile-palette';
-export const TILE_PALETTES = ['tailwind', 'radix'] as const;
-export type TilePalette = (typeof TILE_PALETTES)[number];
-export const DEFAULT_TILE_PALETTE: TilePalette = 'radix';
-export const TILE_PALETTE_LABELS: Record<TilePalette, string> = {
-  tailwind: 'Tailwind',
-  radix: 'Radix',
-};
-
-export function readTilePalette(): TilePalette {
-  const value = document.documentElement.dataset.tilePalette;
-  return value === 'radix' ? 'radix' : 'tailwind';
-}
-
-export function setTilePalette(next: TilePalette) {
-  document.documentElement.dataset.tilePalette = next;
-  persist(TILE_PALETTE_STORAGE_KEY, next);
-  emit();
-}
-
-/*
-  The semantic state colours. Radix is what the app runs on -- see the
-  [data-state-palette='radix'] block in tokens/state.css for the mapping and why --
-  and 'tailwind' drops back to the ramps written into the tokens themselves,
-  so the two can be judged against each other.
-
-  The default is Radix, so the layout renders the attribute and a choice always
-  writes it: without it the stylesheet would fall back to Tailwind, not to the
-  default.
-*/
-export const STATE_PALETTE_STORAGE_KEY = 'safepoint.dev.state-palette';
-export const STATE_PALETTES = ['tailwind', 'radix'] as const;
-export type StatePalette = (typeof STATE_PALETTES)[number];
-export const DEFAULT_STATE_PALETTE: StatePalette = 'radix';
-export const STATE_PALETTE_LABELS: Record<StatePalette, string> = {
-  tailwind: 'Tailwind',
-  radix: 'Radix',
-};
-
-export function readStatePalette(): StatePalette {
-  const value = document.documentElement.dataset.statePalette;
-  return value === 'tailwind' ? 'tailwind' : 'radix';
-}
-
-export function setStatePalette(next: StatePalette) {
-  document.documentElement.dataset.statePalette = next;
-  persist(STATE_PALETTE_STORAGE_KEY, next);
-  emit();
-}
-
-/*
-  One multiplier for all six of the tiles' saturation ceilings in tokens/geometry.css.
+  One multiplier for all six of the tiles' saturation ceilings in app/styles/geometry.css.
   1 is the ceilings as written, and means no attribute: the default moves with
   the tokens. Anything else is an inline --tile-chroma-scale on <html>, which
   outranks :root. TILE_CHROMA_SCALE_MAX puts the highest ceiling above any
@@ -425,7 +220,7 @@ export function setTileChromaScale(next: number) {
 /*
   How far a slanted corner's radius follows its angle, for tuning by eye. 0.5
   is the token as written and means no inline value, so the default moves with
-  tokens/geometry.css; anything else is an inline --slant-corner-balance on <html>.
+  app/styles/geometry.css; anything else is an inline --slant-corner-balance on <html>.
 */
 export const CORNER_BALANCE_STORAGE_KEY = 'safepoint.dev.corner-balance';
 export const DEFAULT_CORNER_BALANCE = 0.5;

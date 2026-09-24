@@ -1,0 +1,448 @@
+/* ── Notch and slant ────────────────────────────────────────────────────────
+   A notch is the bite a pane's corner takes so controls can sit on the canvas
+   beside its header; a slant is a control whose edges lean to match it.
+
+   Both are `clip-path: shape()`, never a skewed box: a skew thins a slanted
+   border to cos(angle) and shears corners into ellipses. Each band is its own
+   layer, clipped between two copies of one outline offset square to every
+   edge, so a hairline stays a hairline through every bend.
+
+   The outline is written once as custom properties that read an offset. A
+   wrapper sets the offset and computes the outline; the layers below read what
+   their wrapper computed. Custom properties substitute where declared, so the
+   copy must be taken on the wrapper, not the layer.
+
+   Geometry reads the box through container units, so nothing knows how tall
+   anything is. Every angle, bend and gap is a token in app/styles/geometry.css.
+   See docs/STYLING-SYSTEM.md → The notch and slanted controls.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* The notch: canvas through a pane's corner, outlined in the pane's own
+     edge. Takes surface-raised's ring, sheen and face. */
+  --sp-notch-face: var(--sp-canvas);
+  --sp-notch-edge: light-dark(var(--sp-rule-default), var(--sp-rule-faint));
+  /* The pane's own sheen, continued round the bend: the band lies on the pane
+     face just as the pane's edge does, so it is the same colour. */
+  --sp-notch-highlight: var(--sp-raised-edge);
+  --sp-notch-pane: var(--sp-surface-primary);
+}
+
+@layer components {
+  .notch {
+    --notch-face-color: var(--notch-face, var(--sp-notch-face));
+    --notch-edge-color: var(--notch-edge, var(--sp-notch-edge));
+    --notch-highlight-color: var(--notch-highlight, var(--sp-notch-highlight));
+    --notch-pane-color: var(--notch-pane, var(--sp-notch-pane));
+    --notch-edge-width: var(--spacing-control-edge);
+    position: relative;
+    /* Above the header cell its slope overhangs, and the pane below the floor
+       its corner hangs into. */
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    /* Gaps measured square to the slope, so the along-the-floor distance is
+       divided by the lean's cosine. */
+    gap: calc(var(--slant-gap) / cos(var(--notch-angle)));
+    /* One gap on every side, from the inner face of the line it is held off.
+       The floor, top edge and side each draw inside an edge-width, so those
+       sides take that width on top of the gap.
+       The start side leans: two parallel lines crossing d apart in height are
+       d*cos(angle) apart square to each other, so the gap along the floor is
+       the gap over that cosine. */
+    --notch-inset: calc(var(--notch-gap) + var(--notch-edge-width));
+    padding-block: var(--notch-inset);
+    padding-inline: calc(var(--notch-gap) / cos(var(--notch-angle))) var(--notch-inset);
+  }
+
+  /* The outline in the notch's box: W wide, H tall, pane's top edge at 0 and
+     the header rule's top at H - e. The slope crosses the start edge at
+     mid-height, the same point a slant's edge crosses its own box.
+     --n-k is the offset toward the pane: a slope moves by k/cos along the
+     floor, the top bend's radius shrinks by k and the foot's grows. All three
+     copies share centres, which holds a band's width through a bend.
+     c/(1+s) is 1/tan(45deg + angle/2), the tangent length at this lean. */
+  .notch-shape {
+    container-type: size;
+    --n-t: tan(var(--notch-angle));
+    --n-s: sin(var(--notch-angle));
+    --n-c: cos(var(--notch-angle));
+    --n-m: calc(var(--n-c) / (1 + var(--n-s)));
+    --n-h: 100cqh;
+    --n-w: 100cqw;
+    --n-e: var(--notch-edge-width);
+    /* Obtuse (90deg + angle, pane's side), so it scales like a slant's obtuse
+       corners -- see .slant-shape -- by its own balance. */
+    --n-rt: calc(var(--notch-bend-top) / pow(var(--n-m), var(--notch-bend-balance, 0)));
+    /* The foot wraps the first control's bottom-left corner at --notch-gap.
+       Nested corners keep an even gap only when they share a centre, so the
+       outer radius is the inner plus the gap; the inner is the slant's own
+       obtuse radius. --notch-bend-bottom overrides it. */
+    --n-rb: var(
+      --notch-bend-bottom,
+      calc(
+        var(--slant-radius, var(--radius-shell)) / pow(var(--n-m), var(--slant-corner-balance, 0)) +
+          var(--notch-gap)
+      )
+    );
+    /* How far the painted layers reach back over the header cell. */
+    --n-x: calc(var(--n-h) / 2 * var(--n-t) + var(--n-rt));
+    /* Where the floor hands over to the corner below it. */
+    --n-end: calc(var(--n-x) + var(--n-w) - var(--notch-corner));
+    --n-k: 0px;
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+  }
+  .notch-shape,
+  .notch-at {
+    --n-v1: calc((var(--n-k) - var(--n-h) / 2) * var(--n-t) - var(--n-k) / var(--n-c));
+    --n-v2: calc((var(--n-h) / 2 - var(--n-e) + var(--n-k)) * var(--n-t) - var(--n-k) / var(--n-c));
+    --n-dt: calc((var(--n-rt) - var(--n-k)) * var(--n-m));
+    --n-db: calc((var(--n-rb) + var(--n-k)) * var(--n-m));
+    --n-fy: calc(var(--n-h) - var(--n-e) + var(--n-k));
+    /* Down: from the top edge, round the bend, down the slope, round the
+       foot, along the floor. */
+    --n-start: calc(var(--n-x) + var(--n-v1) - var(--n-dt)) var(--n-k);
+    --n-down:
+      arc to calc(var(--n-x) + var(--n-v1) + var(--n-dt) * var(--n-s))
+        calc(var(--n-k) + var(--n-dt) * var(--n-c)) of calc(var(--n-rt) - var(--n-k)) cw,
+      line to calc(var(--n-x) + var(--n-v2) - var(--n-db) * var(--n-s))
+        calc(var(--n-fy) - var(--n-db) * var(--n-c)),
+      arc to calc(var(--n-x) + var(--n-v2) + var(--n-db)) var(--n-fy) of
+        calc(var(--n-rb) + var(--n-k)) ccw,
+      line to var(--n-end) var(--n-fy);
+    /* Up: the same path walked back, to close a band. */
+    --n-up:
+      line to var(--n-end) var(--n-fy),
+      line to calc(var(--n-x) + var(--n-v2) + var(--n-db)) var(--n-fy),
+      arc to calc(var(--n-x) + var(--n-v2) - var(--n-db) * var(--n-s))
+        calc(var(--n-fy) - var(--n-db) * var(--n-c)) of calc(var(--n-rb) + var(--n-k)) cw,
+      line to calc(var(--n-x) + var(--n-v1) + var(--n-dt) * var(--n-s))
+        calc(var(--n-k) + var(--n-dt) * var(--n-c)),
+      arc to calc(var(--n-x) + var(--n-v1) - var(--n-dt)) var(--n-k) of
+        calc(var(--n-rt) - var(--n-k)) ccw;
+  }
+  .notch-shape {
+    --n-start-0: var(--n-start);
+    --n-down-0: var(--n-down);
+  }
+  .notch-shape span {
+    position: absolute;
+  }
+  .notch-at {
+    inset: 0;
+  }
+  .notch-at[data-k='1'] {
+    --n-k: var(--n-e);
+    --n-start-1: var(--n-start);
+    --n-down-1: var(--n-down);
+  }
+  .notch-at[data-k='2'] {
+    --n-k: calc(var(--n-e) * 2);
+  }
+  .notch-paint {
+    top: 0;
+    right: 0;
+    bottom: calc(var(--n-e) * -2);
+    left: calc(var(--n-x) * -1);
+  }
+
+  /* The canvas: everything on the far side of the outline, to the pane's
+     edge. */
+  .notch-face {
+    background: var(--notch-face-color);
+    clip-path: shape(
+      from var(--n-start-0),
+      var(--n-down-0),
+      line to calc(var(--n-x) + var(--n-w)) calc(var(--n-h) - var(--n-e)),
+      line to calc(var(--n-x) + var(--n-w)) 0,
+      close
+    );
+  }
+  /* Between offsets 0 and e, in the pane's ring colour. Opaque, so along the
+     floor it takes the header's rule over; under the slope the rule shows. */
+  .notch-edge {
+    background: var(--notch-edge-color);
+    clip-path: shape(from var(--n-start-0), var(--n-down-0), var(--n-up), close);
+  }
+  /* Between offsets e and 2e. Along the floor that band is the row the
+     header's sheen already lies in, so the box stops at the rule -- below it
+     the white would be laid twice. */
+  .notch-sheen,
+  .notch-under {
+    clip-path: shape(from var(--n-start-1), var(--n-down-1), var(--n-up), close);
+  }
+  .notch-sheen {
+    bottom: 0;
+    background: linear-gradient(
+      to bottom,
+      var(--notch-highlight-color) var(--notch-sheen-fade),
+      transparent
+    );
+  }
+  /* The same at the top: the pane's own sheen runs along its top edge under
+     the start of the bend, so for its first two rows the band is laid on the
+     pane's face rather than on that sheen. */
+  .notch-under {
+    bottom: auto;
+    height: calc(var(--n-e) * 2);
+    background: var(--notch-pane-color);
+  }
+
+  /* Where the floor turns down the pane's side: a true quarter circle, so a
+     box rather than a path, edged like control-face. It extends by one
+     edge-width left and bottom and the clip removes that, so the inset
+     shadow's unwanted sides are never seen. The inset backs the edge with the
+     pane's face, so a section beneath darker than the pane shows no seam. */
+  .notch::after {
+    content: '';
+    position: absolute;
+    top: calc(100% - var(--notch-edge-width));
+    right: 0;
+    width: calc(var(--notch-corner) + var(--notch-edge-width));
+    height: calc(var(--notch-corner) + var(--notch-edge-width));
+    border-top: var(--notch-edge-width) solid var(--notch-edge-color);
+    border-right: var(--notch-edge-width) solid var(--notch-edge-color);
+    border-top-right-radius: var(--notch-corner);
+    /* No sheen: the corner is below the floor, where the notch's sheen has
+       already faded out, so a lit line here would restart it. */
+    box-shadow:
+      0 0 0 var(--notch-corner) var(--notch-face-color),
+      inset 0 0 0 var(--notch-edge-width) var(--notch-pane-color);
+    clip-path: inset(0 0 var(--notch-edge-width) var(--notch-edge-width));
+    pointer-events: none;
+  }
+
+  /*
+    A slanted control. The element keeps control-face's box, border width and
+    transition list, so it is laid out and animates exactly like a square
+    button, but paints nothing itself: four layers behind its label do, each
+    reading the element's stops. Registered stops do not inherit, so every
+    layer asks for them.
+
+      focus   between offsets -4px and -2px: outline-2 at outline-offset-2
+      ring    offset 0, the ring gradient over the whole height
+      face    offset e, the face gradient over the padding box
+      sheen   between e and e + highlight width, over the face
+
+    Physical sides, because a lean is physical. `both` is for the first of two
+    slants that share a seam.
+  */
+  .slant {
+    @apply control-face;
+    --slant-lean: var(--slant-angle, var(--notch-angle));
+    --slant-l: 0deg;
+    --slant-r: 0deg;
+    position: relative;
+    isolation: isolate;
+  }
+  @supports (clip-path: shape(from 0 0, line to 1px 1px)) {
+    .slant {
+      background-image: none;
+      box-shadow: none;
+    }
+  }
+  .slant[data-slant='left'],
+  .slant[data-slant='both'] {
+    --slant-l: var(--slant-lean);
+  }
+  .slant[data-slant='right'],
+  .slant[data-slant='both'] {
+    --slant-r: var(--slant-lean);
+  }
+
+  /* The outline in the control's own box. Each side crosses its edge at
+     mid-height, leaning by its own angle. A corner of interior angle
+     90deg -/+ a has tangent length r/tan(45deg -/+ a/2), and
+     tan(45deg + a/2) = 1/tan(45deg - a/2), so one q per side covers both.
+     One radius on every corner does not look like one radius: the acute arc
+     runs 1/q along its edges and the obtuse only q. Each is scaled by q to the
+     power of --slant-corner-balance, so every corner bites its edges alike. */
+  .slant-shape {
+    container-type: size;
+    --s-h: 100cqh;
+    --s-w: 100cqw;
+    --s-e: var(--control-face-border-width);
+    --s-hw: var(--control-highlight-width, 1px);
+    --s-r: var(--slant-radius, var(--radius-shell));
+    --s-f: 4px;
+    --s-px: calc(var(--s-h) / 2 * tan(var(--slant-lean)) + var(--s-f));
+    --s-tl: tan(var(--slant-l));
+    --s-sl: sin(var(--slant-l));
+    --s-cl: cos(var(--slant-l));
+    --s-ql: tan(45deg - var(--slant-l) / 2);
+    --s-tr: tan(var(--slant-r));
+    --s-sr: sin(var(--slant-r));
+    --s-cr: cos(var(--slant-r));
+    --s-qr: tan(45deg - var(--slant-r) / 2);
+    --s-k: var(--slant-corner-balance, 0);
+    /* Per corner: top and bottom on the left side are 90deg - l and 90deg + l,
+       on the right 90deg + r and 90deg - r. A square side has q = 1, so its
+       corners keep the radius at any balance. */
+    --s-rtl: calc(var(--s-r) * pow(var(--s-ql), var(--s-k)));
+    --s-rbl: calc(var(--s-r) / pow(var(--s-ql), var(--s-k)));
+    --s-rtr: calc(var(--s-r) / pow(var(--s-qr), var(--s-k)));
+    --s-rbr: calc(var(--s-r) * pow(var(--s-qr), var(--s-k)));
+    --s-d: -4px;
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+  }
+  .slant-shape,
+  .slant-shape span {
+    --control-face-top: inherit;
+    --control-face-bottom: inherit;
+    --control-ring-top: inherit;
+    --control-ring-bottom: inherit;
+    --control-highlight: inherit;
+  }
+  .slant-shape,
+  .slant-at {
+    /* Each corner's radius at this offset. Floored at 0: an inner layer of a
+       small acute corner would otherwise turn inside out. */
+    --s-otl: max(0px, var(--s-rtl) - var(--s-d));
+    --s-obl: max(0px, var(--s-rbl) - var(--s-d));
+    --s-otr: max(0px, var(--s-rtr) - var(--s-d));
+    --s-obr: max(0px, var(--s-rbr) - var(--s-d));
+    --s-top: calc(var(--s-f) + var(--s-d));
+    --s-bot: calc(var(--s-f) + var(--s-h) - var(--s-d));
+    --s-tlx: calc(
+      var(--s-px) + (var(--s-d) - var(--s-h) / 2) * var(--s-tl) + var(--s-d) / var(--s-cl)
+    );
+    --s-blx: calc(
+      var(--s-px) + (var(--s-h) / 2 - var(--s-d)) * var(--s-tl) + var(--s-d) / var(--s-cl)
+    );
+    --s-trx: calc(
+      var(--s-px) + var(--s-w) + (var(--s-d) - var(--s-h) / 2) * var(--s-tr) - var(--s-d) /
+        var(--s-cr)
+    );
+    --s-brx: calc(
+      var(--s-px) + var(--s-w) + (var(--s-h) / 2 - var(--s-d)) * var(--s-tr) - var(--s-d) /
+        var(--s-cr)
+    );
+    --s-atl: calc(var(--s-otl) / var(--s-ql));
+    --s-abl: calc(var(--s-obl) * var(--s-ql));
+    --s-atr: calc(var(--s-otr) * var(--s-qr));
+    --s-abr: calc(var(--s-obr) / var(--s-qr));
+    --s-start: calc(var(--s-tlx) + var(--s-atl)) var(--s-top);
+    --s-path:
+      line to calc(var(--s-trx) - var(--s-atr)) var(--s-top),
+      arc to calc(var(--s-trx) + var(--s-atr) * var(--s-sr))
+        calc(var(--s-top) + var(--s-atr) * var(--s-cr)) of var(--s-otr) cw,
+      line to calc(var(--s-brx) - var(--s-abr) * var(--s-sr))
+        calc(var(--s-bot) - var(--s-abr) * var(--s-cr)),
+      arc to calc(var(--s-brx) - var(--s-abr)) var(--s-bot) of var(--s-obr) cw,
+      line to calc(var(--s-blx) + var(--s-abl)) var(--s-bot),
+      arc to calc(var(--s-blx) - var(--s-abl) * var(--s-sl))
+        calc(var(--s-bot) - var(--s-abl) * var(--s-cl)) of var(--s-obl) cw,
+      line to calc(var(--s-tlx) + var(--s-atl) * var(--s-sl))
+        calc(var(--s-top) + var(--s-atl) * var(--s-cl)),
+      arc to calc(var(--s-tlx) + var(--s-atl)) var(--s-top) of var(--s-otl) cw, close;
+  }
+  .slant-shape {
+    --s-out-start: var(--s-start);
+    --s-out-path: var(--s-path);
+  }
+  .slant-shape span {
+    position: absolute;
+  }
+  .slant-at {
+    inset: 0;
+  }
+  .slant-at[data-d='focus'] {
+    --s-d: -2px;
+  }
+  .slant-at[data-d='edge'] {
+    --s-d: 0px;
+  }
+  .slant-at[data-d='face'] {
+    --s-d: var(--s-e);
+    --s-face-start: var(--s-start);
+    --s-face-path: var(--s-path);
+  }
+  .slant-at[data-d='sheen'] {
+    --s-d: calc(var(--s-e) + var(--s-hw));
+  }
+  .slant-paint {
+    inset: calc(var(--s-f) * -1) calc(var(--s-px) * -1);
+  }
+  /* The outline a slanted control needs in forced-colours modes, and only
+     there. Elsewhere focus is the hover face, carried by the stops. There the
+     stops are overridden and the system outline would trace the rectangle, not
+     the shape -- so this layer draws it on the shape instead (see below). */
+  .slant-focus {
+    visibility: hidden;
+    clip-path: shape(
+      evenodd from var(--s-out-start),
+      var(--s-out-path),
+      move to var(--s-start),
+      var(--s-path)
+    );
+  }
+  .slant-ring {
+    background: linear-gradient(to bottom, var(--control-ring-top), var(--control-ring-bottom)) 0
+      var(--s-f) / 100% var(--s-h) no-repeat;
+    clip-path: shape(from var(--s-start), var(--s-path));
+  }
+  .slant-face {
+    background: linear-gradient(to bottom, var(--control-face-top), var(--control-face-bottom)) 0
+      calc(var(--s-f) + var(--s-e)) / 100% calc(var(--s-h) - var(--s-e) * 2) no-repeat;
+    clip-path: shape(from var(--s-start), var(--s-path));
+  }
+  .slant-sheen {
+    background: var(--control-highlight);
+    clip-path: shape(
+      evenodd from var(--s-face-start),
+      var(--s-face-path),
+      move to var(--s-start),
+      var(--s-path)
+    );
+  }
+
+  /* Without shape() the layers cannot be clipped: the notch stays flat and a
+     slant keeps control-face's own square face. */
+  @supports not (clip-path: shape(from 0 0, line to 1px 1px)) {
+    .notch-shape,
+    .notch::after,
+    .slant-shape {
+      display: none;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .notch-shape span,
+    .slant-shape span {
+      forced-color-adjust: none;
+    }
+    .notch-face {
+      background: Canvas;
+    }
+    .notch-edge,
+    .slant-ring {
+      background: CanvasText;
+    }
+    .slant-face {
+      background: ButtonFace;
+    }
+    .slant-focus {
+      background: Highlight;
+    }
+    .slant[data-focus-visible] .slant-focus {
+      visibility: visible;
+    }
+    /* The layer above traces the shape; the global outline would add a second
+       one around the rectangle. */
+    .slant:focus-visible {
+      outline: none;
+    }
+    .notch-sheen,
+    .slant-sheen,
+    .notch::after {
+      display: none;
+    }
+  }
+}

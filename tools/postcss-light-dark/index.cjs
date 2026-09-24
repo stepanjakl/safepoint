@@ -7,7 +7,7 @@
                  var(--lightningcss-dark, var(--sp-neutral-900));
 
   This folds it back, so a value read in the browser is a value that can be
-  searched for in app/tokens/. Development only -- the production build keeps
+  searched for in app/styles/. Development only -- the production build keeps
   the polyfill and the browser support that comes with it.
 */
 

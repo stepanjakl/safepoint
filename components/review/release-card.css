@@ -1,0 +1,39 @@
+/* ── Release card ───────────────────────────────────────────────────────────
+   The commit and replay states, the card's row etch, and the bucket bar.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Light takes the commit state's tint, restated rather than aliased so the
+     role stays two reads from a step. */
+  --sp-replay-state-face: light-dark(
+    color-mix(in oklab, var(--sp-state-caution-11) 20%, var(--sp-surface-floating)),
+    var(--sp-neutral-800)
+  );
+  /* Step 12, not 11, on the tint in light: 11 read 3.5:1 there, 12 reads
+     8.7:1 without touching the face. */
+  --sp-replay-state-ink: light-dark(var(--sp-state-caution-12), var(--sp-neutral-150));
+  /* Mixed into the card's face rather than into transparency, so it stays
+     opaque over the ring beneath it. */
+  --sp-commit-state: color-mix(
+    in oklab,
+    var(--sp-state-caution-11) 20%,
+    var(--sp-surface-floating)
+  );
+  --sp-commit-state-ink: light-dark(var(--sp-state-caution-12), var(--sp-state-caution-11));
+  --sp-card-etch: light-dark(var(--sp-neutral-0), var(--sp-neutral-850));
+}
+
+@theme inline {
+  --color-replay-state-face: var(--sp-replay-state-face);
+  --color-replay-state-ink: var(--sp-replay-state-ink);
+  --color-commit-state: var(--sp-commit-state);
+  --color-commit-state-ink: var(--sp-commit-state-ink);
+  --shadow-separator-bottom-solid: 0 1px 0 var(--sp-card-etch);
+}
+
+@utility release-bucket-bar {
+  background-color: var(--severity-9);
+  &[data-severity='3']:not([data-active]) {
+    background-color: light-dark(var(--severity-9), var(--severity-7));
+  }
+}

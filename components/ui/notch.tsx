@@ -14,7 +14,7 @@ import { cx } from '@/lib/cx';
   Geometry and colour are tokens; override any of them on this element.
 
   The spans are the painted layers, each nested in the wrapper that computes
-  the outline at its offset: see `.notch` in app/components.css.
+  the outline at its offset: see `.notch` in notch.css beside this file.
 */
 export function Notch({
   children,

@@ -10,13 +10,8 @@ describe('custom colour generation', () => {
 
     expect(second).toEqual(first);
     expect(first.failures).toEqual([]);
-    for (const family of NEUTRAL_FAMILIES) {
-      for (const step of COLOUR_STEPS) {
-        expect(first.css).toContain(`--sp-custom-${family.id}-${step}:`);
-      }
-    }
     for (const step of COLOUR_STEPS) {
-      expect(first.css).toContain(`--sp-neutral-${step}:`);
+      expect(first.css).toContain(`--sp-neutral-${step}: rgb(`);
     }
   });
 
@@ -26,9 +21,20 @@ describe('custom colour generation', () => {
        here would mean the ramp had quietly grown a second dimension again. */
     const { css } = await buildArtifacts();
     expect(css).not.toContain('light-dark(');
-    for (const family of NEUTRAL_FAMILIES) {
-      const pattern = new RegExp(`--sp-custom-${family.id}-\\d+:`, 'g');
-      expect(css.match(pattern), family.id).toHaveLength(COLOUR_STEPS.length);
+    /* Values, not aliases: a step one read away from a role. */
+    expect(css).not.toContain('var(');
+    const blocks = css.split(/^(?=:root)/m).slice(1);
+    expect(blocks).toHaveLength(NEUTRAL_FAMILIES.length);
+    for (const [index, family] of NEUTRAL_FAMILIES.entries()) {
+      const block = blocks[index]!;
+      expect(
+        block.startsWith(
+          index === 0 ? ':root {' : `:root[data-neutral='${family.id}']`,
+        ),
+      ).toBe(true);
+      expect(block.match(/--sp-neutral-\d+:/g), family.id).toHaveLength(
+        COLOUR_STEPS.length,
+      );
     }
   });
 

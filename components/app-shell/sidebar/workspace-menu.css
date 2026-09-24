@@ -1,0 +1,136 @@
+/* ── Workspace menu ─────────────────────────────────────────────────────────
+   The workspace level's tiles, in one hue per item.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* What a tile does not take from its hue. Hover is transparent throughout:
+     the tile dissolves as the glyph fills. */
+  --sp-menu-tile-face-hover: transparent;
+  --sp-menu-tile-ring-hover: transparent;
+  --sp-menu-tile-highlight-hover: transparent;
+}
+
+/* ── Menu tiles ─────────────────────────────────────────────────────────────
+   The tile behind a workspace menu item's icon, in the hue a `menu-tile-*`
+   utility names on the same element. light-dark() resolves here, where the
+   tile paints -- a hue chosen per element cannot be resolved on :root.
+
+   Every colour passes through its part's saturation ceiling
+   (--tile-chroma-* in app/styles/geometry.css): relative colour syntax keeps the
+   lightness and hue and lowers only a chroma above the ceiling.
+   See docs/STYLING-SYSTEM.md → Decorative hue.
+   ────────────────────────────────────────────────────────────────────────── */
+@utility surface-menu-tile {
+  --tile-cap-face-light: calc(var(--tile-chroma-face-light) * var(--tile-chroma-scale));
+  --tile-cap-face-dark: calc(var(--tile-chroma-face-dark) * var(--tile-chroma-scale));
+  --tile-cap-ring-light: calc(var(--tile-chroma-ring-light) * var(--tile-chroma-scale));
+  --tile-cap-ring-dark: calc(var(--tile-chroma-ring-dark) * var(--tile-chroma-scale));
+  --tile-cap-glyph-light: calc(var(--tile-chroma-glyph-light) * var(--tile-chroma-scale));
+  --tile-cap-glyph-dark: calc(var(--tile-chroma-glyph-dark) * var(--tile-chroma-scale));
+  --control-face-top: light-dark(
+    oklch(from var(--tile-face-light) l min(c, var(--tile-cap-face-light)) h),
+    oklch(from var(--tile-face-dark) l min(c, var(--tile-cap-face-dark)) h)
+  );
+  --control-face-bottom: light-dark(
+    oklch(from var(--tile-face-light) l min(c, var(--tile-cap-face-light)) h),
+    oklch(from var(--tile-face-dark) l min(c, var(--tile-cap-face-dark)) h)
+  );
+  --control-ring-top: light-dark(
+    oklch(from var(--tile-ring-top-light) l min(c, var(--tile-cap-ring-light)) h),
+    oklch(from var(--tile-ring-top-dark) l min(c, var(--tile-cap-ring-dark)) h)
+  );
+  --control-ring-bottom: light-dark(
+    oklch(from var(--tile-ring-bottom-light) l min(c, var(--tile-cap-ring-light)) h),
+    oklch(from var(--tile-ring-bottom-dark) l min(c, var(--tile-cap-ring-dark)) h)
+  );
+  /* The sheen, mixed into the tile's own face so it is opaque. */
+  --control-highlight: light-dark(
+    color-mix(in oklab, white 50%, var(--tile-face-light)),
+    color-mix(in oklab, black 25%, var(--tile-face-dark))
+  );
+  color: light-dark(
+    oklch(from var(--tile-glyph-light) l min(c, var(--tile-cap-glyph-light)) h),
+    oklch(from var(--tile-glyph-dark) l min(c, var(--tile-cap-glyph-dark)) h)
+  );
+}
+
+/* Bare: once the tile has gone the filled icon is the only thing carrying the
+   hue. Through the same glyph ceiling, so rest and engaged are held alike. */
+@utility surface-menu-tile-hover {
+  --control-face-top: var(--sp-menu-tile-face-hover);
+  --control-face-bottom: var(--sp-menu-tile-face-hover);
+  --control-ring-top: var(--sp-menu-tile-ring-hover);
+  --control-ring-bottom: var(--sp-menu-tile-ring-hover);
+  --control-highlight: var(--sp-menu-tile-highlight-hover);
+  color: light-dark(
+    oklch(from var(--tile-glyph-hover-light) l min(c, var(--tile-cap-glyph-light)) h),
+    oklch(from var(--tile-glyph-hover-dark) l min(c, var(--tile-cap-glyph-dark)) h)
+  );
+}
+
+/* The hues, in menu order round the wheel, each kept clear of the state hues
+   so a tile never reads as a verdict. Every hue fills the same five roles. */
+@utility menu-tile-yellow {
+  --tile-face-light: var(--radix-yellow-3);
+  --tile-face-dark: var(--radix-yellow-dark-3);
+  --tile-ring-top-light: var(--radix-yellow-6);
+  --tile-ring-top-dark: var(--radix-yellow-dark-5);
+  --tile-ring-bottom-light: var(--radix-yellow-7);
+  --tile-ring-bottom-dark: var(--radix-yellow-dark-6);
+  --tile-glyph-light: var(--radix-yellow-11);
+  --tile-glyph-dark: var(--radix-yellow-dark-11);
+  --tile-glyph-hover-light: var(--radix-yellow-11);
+  --tile-glyph-hover-dark: var(--radix-yellow-dark-11);
+}
+
+@utility menu-tile-green {
+  --tile-face-light: var(--radix-green-3);
+  --tile-face-dark: var(--radix-green-dark-3);
+  --tile-ring-top-light: var(--radix-green-6);
+  --tile-ring-top-dark: var(--radix-green-dark-5);
+  --tile-ring-bottom-light: var(--radix-green-7);
+  --tile-ring-bottom-dark: var(--radix-green-dark-6);
+  --tile-glyph-light: var(--radix-green-11);
+  --tile-glyph-dark: var(--radix-green-dark-11);
+  --tile-glyph-hover-light: var(--radix-green-11);
+  --tile-glyph-hover-dark: var(--radix-green-dark-11);
+}
+
+@utility menu-tile-sky {
+  --tile-face-light: var(--radix-sky-3);
+  --tile-face-dark: var(--radix-sky-dark-3);
+  --tile-ring-top-light: var(--radix-sky-6);
+  --tile-ring-top-dark: var(--radix-sky-dark-5);
+  --tile-ring-bottom-light: var(--radix-sky-7);
+  --tile-ring-bottom-dark: var(--radix-sky-dark-6);
+  --tile-glyph-light: var(--radix-sky-11);
+  --tile-glyph-dark: var(--radix-sky-dark-11);
+  --tile-glyph-hover-light: var(--radix-sky-11);
+  --tile-glyph-hover-dark: var(--radix-sky-dark-11);
+}
+
+@utility menu-tile-violet {
+  --tile-face-light: var(--radix-violet-3);
+  --tile-face-dark: var(--radix-violet-dark-3);
+  --tile-ring-top-light: var(--radix-violet-6);
+  --tile-ring-top-dark: var(--radix-violet-dark-5);
+  --tile-ring-bottom-light: var(--radix-violet-7);
+  --tile-ring-bottom-dark: var(--radix-violet-dark-6);
+  --tile-glyph-light: var(--radix-violet-11);
+  --tile-glyph-dark: var(--radix-violet-dark-11);
+  --tile-glyph-hover-light: var(--radix-violet-11);
+  --tile-glyph-hover-dark: var(--radix-violet-dark-11);
+}
+
+@utility menu-tile-pink {
+  --tile-face-light: var(--radix-pink-3);
+  --tile-face-dark: var(--radix-pink-dark-3);
+  --tile-ring-top-light: var(--radix-pink-6);
+  --tile-ring-top-dark: var(--radix-pink-dark-5);
+  --tile-ring-bottom-light: var(--radix-pink-7);
+  --tile-ring-bottom-dark: var(--radix-pink-dark-6);
+  --tile-glyph-light: var(--radix-pink-11);
+  --tile-glyph-dark: var(--radix-pink-dark-11);
+  --tile-glyph-hover-light: var(--radix-pink-11);
+  --tile-glyph-hover-dark: var(--radix-pink-dark-11);
+}

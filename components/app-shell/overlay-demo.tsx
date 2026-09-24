@@ -27,7 +27,7 @@ import {
 
   Everything here is the drawer's own machinery at the drawer's own
   proportions: the same scrim and slide (`drawer-overlay` and `drawer-modal` in
-  app/components.css), the same two widths, the same `DrawerAside` the Inputs
+  app/styles/drawer.css), the same two widths, the same `DrawerAside` the Inputs
   and Instructions tabs use, the same close control, and the same rule that
   Escape closes the second panel before the first.
 */

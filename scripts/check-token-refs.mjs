@@ -1,10 +1,9 @@
 /*
   Every var(--…) in the app's CSS resolves to something.
 
-  The bug this exists for: a ramp in tokens/ramps.css can bind a palette by
-  name that nothing defines -- not Tailwind, not a generator, not the app -- so
-  selecting one makes every --sp-* role in that subtree invalid at computed-value
-  time. CSS says nothing about it, the build says nothing about it, and the page
+  The bug this exists for: a role that reads a name nothing defines -- not
+  Tailwind, not a generator, not the app -- is invalid at computed-value time.
+  CSS says nothing about it, the build says nothing about it, and the page
   quietly loses its colours. A typo in a token name fails exactly the same way.
 
   Two passes, so that neither rots into an allow list:
@@ -19,7 +18,17 @@
      cost is paid on the rare run that needs it.
 
   A reference carrying a fallback -- var(--x, 1rem) -- is left alone; that is
-  the syntax for "may not exist". Run `pnpm check:tokens`.
+  the syntax for "may not exist".
+
+  It also holds every --sp-* role to MAX_DEPTH reads from a step: a ramp step
+  (--sp-neutral-N), a state step (--sp-state-<scale>-N), or a primitive
+  outside --sp-*. A role may alias one other role, never a chain of them, so
+  what paints is never more than two lookups from the role an element names.
+
+  And every stylesheet must be imported by app/styles/index.css. A component's
+  .css is only ever reached through that list, so one left out of it is
+  silently ignored -- the same silent failure as an unresolved token.
+  Run `pnpm check:tokens`.
 */
 
 import { readFileSync, readdirSync, statSync } from 'node:fs';
@@ -27,7 +36,7 @@ import { join, relative } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 const root = new URL('..', import.meta.url).pathname;
-const stylesheets = ['app'];
+const stylesheets = ['app', 'components'];
 const sources = ['app', 'components', 'lib'];
 
 function walk(dir, extensions) {
@@ -58,13 +67,17 @@ for (const path of cssFiles) {
 
 /*
   Tailwind's theme, read from the installed package rather than assumed: a
-  palette it drops then surfaces here rather than at runtime.
+  palette it drops then surfaces here rather than at runtime. Its colours are
+  not among them -- app/styles/theme.css resets --color-* -- so a stylesheet that
+  reads one fails here instead of painting nothing.
 */
 const tailwind = readFileSync(
   new URL(import.meta.resolve('tailwindcss/theme.css')),
   'utf8',
 );
-for (const [, name] of tailwind.matchAll(/(--[\w-]+)\s*:/g)) defined.add(name);
+for (const [, name] of tailwind.matchAll(/(--[\w-]+)\s*:/g)) {
+  if (!name.startsWith('--color-')) defined.add(name);
+}
 
 /*
   Properties the app sets from TypeScript: an inline style object, an explicit
@@ -119,7 +132,11 @@ if (leftovers.length > 0) {
   }
 }
 
-const broken = references.filter(({ name }) => !fromPackages.has(name));
+/* Tailwind's package still declares its palette, but this app resets it, so
+   a --color-* name found there is not a definition. */
+const broken = references.filter(
+  ({ name }) => name.startsWith('--color-') || !fromPackages.has(name),
+);
 
 if (broken.length > 0) {
   for (const { path, line, name } of broken) {
@@ -135,9 +152,75 @@ if (broken.length > 0) {
   process.exit(1);
 }
 
+/* Pass three: every stylesheet is reachable from the entry. */
+const entry = 'app/styles/index.css';
+const imported = new Set(
+  [...read(entry).matchAll(/^@import '(\.[^']+)';$/gm)].map(([, path]) =>
+    relative(root, join(root, 'app/styles', path)),
+  ),
+);
+const orphans = cssFiles.filter(
+  (path) => path !== entry && !imported.has(path),
+);
+if (orphans.length > 0) {
+  for (const path of orphans) {
+    process.stderr.write(`${path}  is not imported by ${entry}\n`);
+  }
+  process.stderr.write(
+    `\n${orphans.length} stylesheet${orphans.length === 1 ? '' : 's'} the app ` +
+      `never loads. Import ${orphans.length === 1 ? 'it' : 'them'} in cascade order.\n`,
+  );
+  process.exit(1);
+}
+
+/* Pass four: how far each role is from a colour. */
+const MAX_DEPTH = 2;
+const roleValues = new Map();
+for (const path of cssFiles) {
+  for (const [, name, value] of read(path).matchAll(
+    /(--sp-[\w-]+)\s*:\s*([^;]*);/g,
+  )) {
+    if (!roleValues.has(name)) roleValues.set(name, []);
+    roleValues.get(name).push(value);
+  }
+}
+const isStep = (name) =>
+  /^--sp-neutral-\d+$/.test(name) ||
+  /^--sp-state-[a-z]+-\d+$/.test(name) ||
+  !name.startsWith('--sp-');
+const chains = new Map();
+function chainOf(name, seen = []) {
+  if (isStep(name)) return [name];
+  if (chains.has(name)) return chains.get(name);
+  let longest = [name];
+  for (const value of roleValues.get(name) ?? []) {
+    for (const [, next] of value.matchAll(/var\(\s*(--[\w-]+)/g)) {
+      if (seen.includes(next)) continue;
+      const chain = [name, ...chainOf(next, [...seen, name])];
+      if (chain.length > longest.length) longest = chain;
+    }
+  }
+  chains.set(name, longest);
+  return longest;
+}
+const deep = [...roleValues.keys()]
+  .map((name) => chainOf(name))
+  .filter((chain) => chain.length - 1 > MAX_DEPTH);
+if (deep.length > 0) {
+  for (const chain of deep) {
+    process.stderr.write(`${chain.join(' → ')}\n`);
+  }
+  process.stderr.write(
+    `\n${deep.length} role${deep.length === 1 ? '' : 's'} more than ` +
+      `${MAX_DEPTH} reads from a step. Read the step, or alias a role that ` +
+      `reads one directly.\n`,
+  );
+  process.exit(1);
+}
+
 const provided = fromPackages.size;
 process.stdout.write(
   `${cssFiles.length} stylesheets, ${defined.size} properties in scope` +
     (provided > 0 ? `, ${provided} provided by dependencies` : '') +
-    `, no unresolved references\n`,
+    `, all imported, no unresolved references, every role within ${MAX_DEPTH} reads of a step\n`,
 );

@@ -1,0 +1,139 @@
+/* ── Tooltip ────────────────────────────────────────────────────────────────
+   The box and its arrow are one object drawn as two: the SVG reads the same
+   --tooltip-* values the box paints with, declared once so the pair cannot
+   drift and forced-colors can restate all three in one place.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* The face equals the floating surface, so over a floating panel the edge
+     is the only thing separating the two -- contracts tooltip-edge-*. */
+  --sp-tooltip-edge: light-dark(var(--sp-neutral-475), var(--sp-neutral-475));
+  --sp-tooltip-highlight: light-dark(var(--sp-neutral-0), var(--sp-neutral-850));
+}
+
+@layer components {
+  .app-tooltip {
+    --tooltip-face: var(--sp-surface-floating);
+    --tooltip-edge: var(--sp-tooltip-edge);
+    --tooltip-highlight: var(--sp-tooltip-highlight);
+    /* A one-line box as tall as the controls it labels (min-h-7): what the
+       line and both borders leave of that height, split above and below. */
+    --tooltip-padding-block: calc((var(--spacing) * 7 - 1lh - 2px) / 2);
+    --tooltip-radius: var(--radius-icon);
+    /* How far the arrow runs along the box's edge: its SVG's width in
+       tooltip.tsx. */
+    --tooltip-arrow-span: 16px;
+    z-index: 100;
+    /* A label, never a target. Being inert is what lets it overlap its
+       trigger without swallowing the click, and what stops a zero close-delay
+       flickering: otherwise the box takes the pointer off the trigger, closes,
+       hands it back and reopens. */
+    pointer-events: none;
+    display: grid;
+    gap: 0.125rem;
+    max-width: min(15rem, calc(100vw - 1.5rem));
+    padding: var(--tooltip-padding-block) 0.5rem;
+    border: 1px solid var(--tooltip-edge);
+    border-radius: var(--tooltip-radius);
+    background: var(--tooltip-face);
+    /* Edge only, no cast shadow: the tooltip is anchored to its trigger rather
+       than floating above the page, and the arrow can draw an edge but not a
+       shadow -- a drop shadow on the box alone would detach the two. */
+    box-shadow: inset 0 0 0 1px var(--tooltip-highlight);
+    color: var(--sp-text-primary);
+    font-size: var(--sp-text-meta);
+    line-height: var(--sp-text-meta--lh);
+    letter-spacing: var(--sp-text-meta--ls);
+    overflow-wrap: anywhere;
+    /* Grows out of the edge it is anchored to rather than out of its centre. */
+    transform-origin: var(--trigger-anchor-point);
+  }
+  /* Side-placed, the arrow's ends must land on straight edge -- past a
+     corner's curve the fill it lays over the border shows outside the box. So
+     the box is never shorter than the arrow plus both corners. */
+  .app-tooltip:is([data-placement='left'], [data-placement='right']) {
+    min-block-size: calc(var(--tooltip-arrow-span) + 2 * var(--tooltip-radius));
+    align-content: center;
+  }
+  .app-tooltip[data-rich] {
+    --tooltip-radius: var(--radius-shell);
+    width: 17.75rem;
+    max-width: min(17.75rem, calc(100vw - 1.5rem));
+    padding: var(--spacing-shell-inset);
+  }
+  /* A tooltip on a notch's control lands on the pane's edges round the notch,
+     not a fixed distance from it: offset 0, and these take it out by what the
+     notch holds (see .notch). Its border lies on each edge's line, so the two
+     read as one.
+     Translated rather than offset through react-aria, which takes only a
+     number, so the tokens stay the source -- rebuilt from the root ones,
+     because the tooltip is portalled out of .notch. */
+  .app-tooltip[data-anchor='notch'] {
+    --tooltip-notch-side: calc(var(--notch-gap) + var(--spacing-control-edge));
+  }
+  .app-tooltip[data-anchor='notch'][data-placement='bottom'] {
+    translate: var(--tooltip-notch-side) var(--notch-gap);
+  }
+  .app-tooltip[data-anchor='notch'][data-placement='top'] {
+    translate: var(--tooltip-notch-side) calc(var(--notch-gap) * -1);
+  }
+  .app-tooltip[data-anchor='notch'] .app-tooltip-arrow {
+    translate: calc(var(--tooltip-notch-side) * -1) 0;
+  }
+  /* A plain ease-out, not the panes' emphasized curve: over this distance
+     that curve spends itself in the first frames and the rest reads as tail. */
+  .app-tooltip[data-entering] {
+    animation: app-tooltip-in 110ms ease-out both;
+  }
+  .app-tooltip[data-exiting] {
+    animation: app-tooltip-in 80ms ease-in reverse both;
+  }
+  /* Scale alone, from --trigger-anchor-point: that origin is the anchored
+     edge, so the box opens away from its trigger on any placement, which a
+     fixed translate could only get right for one. */
+  @keyframes app-tooltip-in {
+    from {
+      opacity: 0;
+      scale: 0.97;
+    }
+    to {
+      opacity: 1;
+      scale: 1;
+    }
+  }
+  .app-tooltip-arrow svg {
+    display: block;
+    overflow: visible;
+    transform: translateY(-0.5px);
+  }
+  .tooltip-arrow-fill {
+    fill: var(--tooltip-face);
+  }
+  .tooltip-arrow-edge {
+    fill: none;
+    stroke: var(--tooltip-edge);
+    stroke-width: 1;
+  }
+  .tooltip-arrow-highlight {
+    fill: none;
+    stroke: var(--tooltip-highlight);
+    stroke-width: 1;
+  }
+  .app-tooltip-arrow[data-placement='bottom'] svg {
+    transform: translateY(0.5px) rotate(180deg);
+  }
+  .app-tooltip-arrow[data-placement='left'] svg {
+    transform: translateX(-0.5px) rotate(-90deg);
+  }
+  .app-tooltip-arrow[data-placement='right'] svg {
+    transform: translateX(0.5px) rotate(90deg);
+  }
+
+  @media (forced-colors: active) {
+    .app-tooltip {
+      --tooltip-face: Canvas;
+      --tooltip-edge: CanvasText;
+      --tooltip-highlight: Canvas;
+    }
+  }
+}

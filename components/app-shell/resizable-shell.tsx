@@ -25,8 +25,8 @@ import {
   readAssistantPreferences,
   saveAssistantPreferences,
   subscribeAssistantPreferences,
-} from './assistant-state';
-import { AssistantPanel } from './assistant-panel';
+} from '@/components/app-shell/assistant/assistant-state';
+import { AssistantPanel } from '@/components/app-shell/assistant/assistant-panel';
 import {
   SidebarResizeHandle,
   SidebarSizeProbes,

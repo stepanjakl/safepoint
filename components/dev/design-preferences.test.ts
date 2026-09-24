@@ -1,32 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  resolveColourSystem,
-  resolveEdgeTreatment,
-} from './design-preferences';
+import { resolveNeutral } from './design-preferences';
 
-describe('colour-system preference resolution', () => {
+describe('neutral family preference resolution', () => {
   it('gives a valid URL choice precedence over storage', () => {
-    expect(resolveColourSystem('original', 'custom')).toBe('original');
-    expect(resolveColourSystem('custom', 'original')).toBe('custom');
+    expect(resolveNeutral('steel', 'clay')).toBe('steel');
+    expect(resolveNeutral('clay', 'steel')).toBe('clay');
   });
 
-  it('falls through invalid URL and storage values to Original', () => {
-    expect(resolveColourSystem('unknown', 'custom')).toBe('custom');
-    expect(resolveColourSystem('unknown', 'unknown')).toBe('original');
-    expect(resolveColourSystem(null, null)).toBe('original');
-  });
-});
-
-describe('edge-treatment preference resolution', () => {
-  it('gives a valid URL choice precedence over storage', () => {
-    expect(resolveEdgeTreatment('existing', 'opaque')).toBe('existing');
-    expect(resolveEdgeTreatment('opaque', 'existing')).toBe('opaque');
-  });
-
-  it('falls through invalid URL and storage values to Existing', () => {
-    expect(resolveEdgeTreatment('unknown', 'opaque')).toBe('opaque');
-    expect(resolveEdgeTreatment('unknown', 'unknown')).toBe('existing');
-    expect(resolveEdgeTreatment(null, null)).toBe('existing');
+  it('falls through invalid URL and storage values to Graphite', () => {
+    expect(resolveNeutral('zinc', 'moss')).toBe('moss');
+    expect(resolveNeutral('unknown', 'zinc')).toBe('graphite');
+    expect(resolveNeutral(null, null)).toBe('graphite');
   });
 });

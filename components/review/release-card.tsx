@@ -41,7 +41,7 @@ const TITLE = 'text-display [font-weight:550] [overflow-wrap:anywhere]';
 const VERDICT = 'text-primary mt-2 text-body leading-normal text-pretty';
 const RECEIPT_NOTE = 'text-muted mt-1 text-meta';
 const PILL_STATE =
-  'bg-commit-state text-state-caution data-[simulated=true]:bg-replay-state-face data-[simulated=true]:text-replay-state-ink rounded-full px-3 py-1.25 text-dense font-medium whitespace-nowrap';
+  'bg-commit-state text-commit-state-ink data-[simulated=true]:bg-replay-state-face data-[simulated=true]:text-replay-state-ink rounded-full px-3 py-1.25 text-dense font-medium whitespace-nowrap';
 
 /*
   Filled rather than outlined: the tab carries its bucket's colour at a weight

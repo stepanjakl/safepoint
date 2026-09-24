@@ -11,7 +11,7 @@ import {
 } from '@/lib/process/navigation';
 import { presentPromotionPlan } from '@/lib/review/promotion-adapter';
 import { supportPlan } from '@/lib/review/support-fixture';
-import { ProcessMenu } from './process-menu';
+import { ProcessMenu } from '@/components/app-shell/sidebar/process-menu';
 import { ResizableShell } from './resizable-shell';
 
 export async function AppShell({ children }: { children: ReactNode }) {

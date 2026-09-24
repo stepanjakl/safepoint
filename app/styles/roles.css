@@ -1,0 +1,58 @@
+/* ── Roles ──────────────────────────────────────────────────────────────────
+   The ground the interface is built on: surfaces, text, rules, action.
+   Shared control faces are in controls.css, a component's own beside its
+   .tsx; state colour in state.css.
+
+   Every role reads a step of the one neutral ramp (generated/ramp.css) and
+   is declared once, here. See docs/STYLING-SYSTEM.md → Colour.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  color-scheme: light dark;
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+:root {
+  /* Surfaces */
+  --sp-canvas: light-dark(var(--sp-neutral-75), var(--sp-neutral-900));
+  --sp-surface-primary: light-dark(var(--sp-neutral-50), var(--sp-neutral-850));
+  --sp-surface-floating: light-dark(var(--sp-neutral-25), var(--sp-neutral-775));
+  --sp-surface-inset: light-dark(var(--sp-neutral-125), var(--sp-neutral-975));
+  --sp-surface-control: light-dark(var(--sp-neutral-25), var(--sp-neutral-750));
+  /* The darkest light-theme ground and muted ink's thinnest margin, so a
+     control taking this fill moves its ink to primary too. */
+  --sp-surface-selected: light-dark(var(--sp-neutral-225), var(--sp-neutral-725));
+  /* The wash a control takes under the pointer. Light deepens, dark lifts --
+     --sp-surface-inset is the deepest step on the ramp, so using it as a hover
+     state put a hole under the pointer in dark. */
+  --sp-surface-hover: light-dark(var(--sp-neutral-100), var(--sp-neutral-800));
+  --sp-surface-disabled: light-dark(var(--sp-neutral-50), var(--sp-neutral-950));
+
+  /* Text */
+  --sp-text-primary: light-dark(var(--sp-neutral-925), var(--sp-neutral-100));
+  /* Most of the small text in the app, so as quiet as AA at micro allows on
+     --sp-surface-inset -- contract muted-on-inset-surface. */
+  --sp-text-muted: light-dark(var(--sp-neutral-575), var(--sp-neutral-325));
+  /* Muted, one step toward primary. Moves with muted rather than staying put. */
+  --sp-text-muted-strong: light-dark(var(--sp-neutral-675), var(--sp-neutral-225));
+  /* A third step, so a row has rest, hover and current rather than two. */
+  --sp-text-muted-soft: light-dark(var(--sp-neutral-475), var(--sp-neutral-425));
+  --sp-text-inverse: light-dark(var(--sp-neutral-0), var(--sp-neutral-900));
+
+  /* Rules. Dark sits about 1.6:1 off the pane for faint and 1.9:1 for
+     default -- present, not bright; a divider should be found, not seen first. */
+  --sp-rule-faint: light-dark(var(--sp-neutral-225), var(--sp-neutral-700));
+  --sp-rule-default: light-dark(var(--sp-neutral-275), var(--sp-neutral-650));
+  --sp-rule-strong: light-dark(var(--sp-neutral-500), var(--sp-neutral-475));
+
+  /* Neutral interaction */
+  --sp-action: light-dark(var(--sp-neutral-925), var(--sp-neutral-100));
+  --sp-action-hover: light-dark(var(--sp-neutral-725), var(--sp-neutral-50));
+}

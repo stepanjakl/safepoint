@@ -61,32 +61,17 @@ pnpm typecheck      # generate Next.js route types, then run strict TypeScript
 pnpm format:check   # Prettier
 pnpm test           # Vitest contract and fixture tests
 pnpm check:colours  # custom-ramp contracts and generated output
-pnpm check:colour-system # Original/Custom browser and workbench checks
+pnpm check:colour-system # colour-system browser checks
+pnpm trace:token <role>  # where a role is declared and what it paints
 ```
 
-In development, `/workbench` shows every step of each generated custom colour
-family. Use the `Colour system` control in the design pane, or
-`?colours=original` / `?colours=custom`, to compare semantic use on the real
-application. The Neutrals control applies only to Original.
-For Custom, `?edges=existing` / `?edges=opaque` selects the development edge
-comparison. The Opaque option intentionally preserves the existing paint until
-the Phase B2 surface recipes are introduced.
+In development, the design pane's Neutrals control (or `?neutral=`) switches
+between the five generated neutral families on the real application.
 
-### Find a style's source in Chrome or Edge
+This mode uses Webpack with development-only CSS source maps. The current Turbopack pipeline maps the combined Tailwind output to `app/styles/index.css`, losing the original imported file locations. `pnpm dev` remains available for normal Turbopack development.
 
-Stop the existing dev server, then run:
-
-```bash
-pnpm dev:styles
-```
-
-Open http://localhost:3000 in Chrome or Edge. In DevTools **Settings → Preferences → Sources**, enable **CSS source maps**, then reload the page. Right-click an element and choose **Inspect**. In **Elements → Styles**, click the filename and line number beside a rule to open its original CSS in the Sources panel. For a particular property, use **Computed**, expand the property, and follow the winning declaration's source link.
-
-This mode uses Webpack with development-only CSS source maps. The current Turbopack pipeline maps the combined Tailwind output to `globals.css`, losing the original imported file locations. `pnpm dev` remains available for normal Turbopack development.
-
-- `app/review.css` defines the app shell and review component styles.
-- `app/tokens.css` defines theme, colour, and typography tokens.
-- `app/globals.css` defines base styles and custom utilities.
+- `app/styles/` holds the shared tokens and foundations; `app/styles/index.css` imports everything in cascade order.
+- A component's own styles sit in a `.css` beside its `.tsx`, such as `components/app-shell/sidebar/process-list.css`. `components/app-shell/` is grouped by feature: `sidebar/`, `process/`, `runs/`, `thread/`, `assistant/`, `inputs/`, `instructions/`, `system/`, with the shell itself at the root.
 
 Generated Tailwind utilities do not map to the JSX `className` that uses them. Use Option/Alt-click below to open the component in your editor; CSS source links open in DevTools. Rules expanded with `@apply` may lead to the utility definition.
 

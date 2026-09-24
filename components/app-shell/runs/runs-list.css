@@ -1,0 +1,453 @@
+/* ── Sheet list ─────────────────────────────────────────────────────────────
+   A sticky first row naming the section, then rows separated by hairlines.
+   The name is a row of the list rather than a header above it, so the four
+   sections each say what they are without paying for the space twice -- and
+   sticky, so it keeps saying it while the list scrolls.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --sp-sheet-current: light-dark(var(--sp-neutral-100), var(--sp-neutral-750));
+  /* A row under the pointer: its own step rather than the sidebar's wash,
+     because its ground is the pane, not the canvas. */
+  --sp-sheet-hover: light-dark(var(--sp-neutral-100), var(--sp-neutral-800));
+  --sp-sheet-completed-label: light-dark(var(--sp-state-verified), var(--sp-text-muted));
+  /* A band in the sheet: the sticky section head and the version break. Not a
+     recess -- --sp-surface-inset is the deepest step on the ramp, and in dark
+     it put the head in a pit below the rows it heads. */
+  --sp-sheet-band: light-dark(var(--sp-neutral-75), var(--sp-neutral-825));
+  /* A run row is a control, so its stamp reads the ramp rather than the prose
+     text roles. Three rungs each, one per row state; the day sits darker than
+     the time, so the pair reads as one stamp at two resolutions. */
+  --sp-sheet-date: light-dark(var(--sp-neutral-800), var(--sp-neutral-200));
+  --sp-sheet-date-hover: light-dark(var(--sp-neutral-825), var(--sp-neutral-200));
+  --sp-sheet-date-current: light-dark(var(--sp-neutral-925), var(--sp-neutral-50));
+  --sp-sheet-time: light-dark(var(--sp-neutral-625), var(--sp-neutral-275));
+  --sp-sheet-time-hover: light-dark(var(--sp-neutral-725), var(--sp-neutral-225));
+  --sp-sheet-time-current: light-dark(var(--sp-neutral-825), var(--sp-neutral-150));
+  /* The tally's total. Not an outcome but what the outcomes are out of, so it
+     takes the ramp rather than a severity tone, and moves with the row where
+     the coloured segments hold still. Neutral in both themes: an inverted
+     chip glared on a dark row. The "of" inside it is ink at 75% opacity, so
+     the face is held dark enough for that to clear 4.5:1 at 11px -- current
+     in dark is 625, not 575, for exactly that reason. */
+  --sp-sheet-total-face: light-dark(var(--sp-neutral-225), var(--sp-neutral-750));
+  --sp-sheet-total-face-hover: light-dark(var(--sp-neutral-275), var(--sp-neutral-675));
+  --sp-sheet-total-face-current: light-dark(var(--sp-neutral-275), var(--sp-neutral-650));
+  --sp-sheet-total-ink: light-dark(var(--sp-neutral-825), var(--sp-neutral-100));
+  --sp-sheet-total-ink-hover: light-dark(var(--sp-neutral-875), var(--sp-neutral-50));
+  --sp-sheet-total-ink-current: light-dark(var(--sp-neutral-925), var(--sp-neutral-50));
+  --sp-sheet-break-etch: light-dark(var(--sp-neutral-25), var(--sp-neutral-875));
+  --sp-sheet-row-etch: light-dark(var(--sp-neutral-25), var(--sp-neutral-950));
+  /* A step further from the row than the resting etch, so the line
+     strengthens as the row lights up. Resting, it is one step above the pane
+     the row lies on. */
+  --sp-sheet-row-etch-active: light-dark(var(--sp-neutral-0), var(--sp-neutral-850));
+}
+
+@layer components {
+  .sheet-list {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  /* Drawn by the row that follows, so the list never ends on a rule hanging
+     over empty space. One weight with the sheet's own side rule: two different
+     hairlines a centimetre apart read as two kinds of boundary. */
+  .sheet-list > li + li {
+    border-top: 1px solid var(--sp-rule-faint);
+  }
+  /* And one to close the list. The list does not run to the bottom of its
+     column -- a note sits under it -- so the last row needs a rule of its own
+     or it reads as trailing off rather than ending. */
+  .sheet-list > li:last-child {
+    border-bottom: 1px solid var(--sp-rule-faint);
+  }
+  /* A set height, not a minimum: the four sections put different controls in
+     the trailing slot, and on a minimum each would set the row's height, so
+     the label moved as the reader changed section. */
+  .sheet-head {
+    position: sticky;
+    top: 0;
+    /* Over the rows that scroll beneath it, under any panel that opens above
+       the list. */
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    box-sizing: border-box;
+    height: var(--spacing-sheet-head);
+    /* The title starts where every row's text under it starts. The trailing
+       side is shorter because a control's face reaches past its ink. */
+    padding-inline: var(--spacing-sheet-inset) 0.5rem;
+    /* Opaque, not a wash: rows pass underneath it. */
+    background: var(--sp-sheet-band);
+    /* Carry the lit line below the rule on the header itself so it stays
+       visible with any following content and while the header is sticky.
+       The pane's own highlight beside it is the pane's to draw: content is
+       held back past it -- see --spacing-pane-inset. */
+    border-bottom: 1px solid var(--sp-rule-faint);
+    box-shadow: 0 var(--spacing-sheet-highlight) 0 var(--sp-raised-edge);
+  }
+  /* Run rows draw their own inset highlight. An outward header shadow would
+     cover the first row's line and prevent it from following that row's state. */
+  .sheet-head:has(+ .sheet-list) {
+    box-shadow: none;
+  }
+  /* Nothing in the trailing slot may grow the row it sits in. */
+  .sheet-head > * {
+    flex: 0 0 auto;
+    min-width: 0;
+  }
+  /* A boundary that is not a row: the instructions moved between the run
+     above and the one below, so the two are not comparable. Banded between its
+     own rule and the next row's, because it marks the gap, not either run. */
+  .sheet-break {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    width: 100%;
+    /* On the rows' axis, not its own: it is read in the run of the list, and
+       the rows above and below it are what it is read against. */
+    padding: 0.4375rem var(--spacing-sheet-inset);
+    border-top: 1px solid var(--sp-rule-faint);
+    box-shadow: inset 0 var(--spacing-sheet-highlight) 0 var(--sp-sheet-break-etch);
+    background: var(--sp-sheet-band);
+    color: var(--sp-text-muted);
+    text-align: start;
+    transition: color var(--duration-state) ease-out;
+  }
+  button.sheet-break {
+    cursor: pointer;
+  }
+  button.sheet-break:hover,
+  button.sheet-break:focus-visible {
+    color: var(--sp-text-primary);
+  }
+  /* The arrow that says the boundary opens something, held back until the
+     pointer or the keyboard is on it: a list of runs should not be dotted with
+     chevrons for a row that is not the reader's errand. */
+  button.sheet-break::after {
+    content: '\203A';
+    margin-inline-start: auto;
+    opacity: 0;
+    transition: opacity var(--duration-state) ease-out;
+  }
+  button.sheet-break:hover::after,
+  button.sheet-break:focus-visible::after {
+    opacity: 1;
+  }
+  /* Base, hover, focus and current are one machine; an arm of it filed in
+     markup belongs to neither place. Nothing in the row is tinted by its state
+     except the mark and its name -- the state is already said in words. */
+  /* One inset on all four sides: the status mark sits in the corner of that
+     box and is measured against it. */
+  /* Every row is the same height and none of them states it. It is the sum of
+     four named terms:  inset + mark + band gap + bar + inset.
+     Nothing in the row is free to change its own height, which is what makes
+     them equal; a `height` would only clip a row that disagreed.
+     A grid, not stacked bands: both right-hand cells end on the row's inset,
+     so the state's mark and the bar share one edge. */
+  .sheet-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 0.625rem;
+    row-gap: var(--spacing-sheet-band-gap);
+    width: 100%;
+    padding: var(--spacing-sheet-inset);
+    text-align: start;
+    cursor: pointer;
+    /* On the row, not the list item: an inset shadow on the item paints
+       beneath its children's backgrounds, so the row's ground covered it
+       exactly when it was wanted. */
+    --sheet-row-highlight: var(--sp-sheet-row-etch);
+    box-shadow: inset 0 var(--spacing-sheet-highlight) 0 var(--sheet-row-highlight);
+    transition:
+      background var(--duration-state) ease-out,
+      box-shadow var(--duration-state) ease-out;
+  }
+  /* One step and one curve for everything in the row: a part on its own
+     timing arrives late to a change it is part of. color and background-color
+     cover all of them; a part that never changes never transitions. */
+  .sheet-row *,
+  .sheet-row::before {
+    transition:
+      color var(--duration-state) ease-out,
+      background-color var(--duration-state) ease-out;
+  }
+  /* The whole row is the target, so the pointer must not change over the parts
+     inside it -- a text cursor over the date and a help cursor over the status
+     read as three things stacked rather than one row. */
+  .sheet-row * {
+    cursor: inherit;
+  }
+  /* Three rungs of ink: rest, pointer, current. Every part moves together --
+     a row that darkens its ground and leaves its contents reads as a row with
+     something printed on it rather than one picked up.
+     The ground takes only two: hover and current share it, so the row does not
+     jump when the pointer crosses the chosen one, and the ink says which is
+     which. Values are the row's own tokens (--sp-sheet-* at the top of this file),
+     not the page's prose text roles. */
+  .sheet-row {
+    --sheet-ink: var(--sp-sheet-date);
+    --sheet-ink-quiet: var(--sp-sheet-time);
+    --sheet-total-face: var(--sp-sheet-total-face);
+    --sheet-total-ink: var(--sp-sheet-total-ink);
+  }
+  .sheet-row:hover,
+  .sheet-row:focus-visible,
+  .sheet-row:focus-within,
+  .sheet-row[data-current] {
+    /* Softer than the resting etch in light; in dark the etch already reads
+       correctly against the lit row, so it holds. */
+    --sheet-row-highlight: var(--sp-sheet-row-etch-active);
+  }
+  .sheet-row:not([data-current]):hover,
+  .sheet-row:not([data-current]):focus-visible,
+  .sheet-row:not([data-current]):focus-within {
+    background: var(--sp-sheet-hover);
+    --sheet-ink: var(--sp-sheet-date-hover);
+    --sheet-ink-quiet: var(--sp-sheet-time-hover);
+    --sheet-total-face: var(--sp-sheet-total-face-hover);
+    --sheet-total-ink: var(--sp-sheet-total-ink-hover);
+  }
+  .sheet-row[data-current] {
+    background: var(--sp-sheet-current);
+    --sheet-ink: var(--sp-sheet-date-current);
+    --sheet-ink-quiet: var(--sp-sheet-time-current);
+    --sheet-total-face: var(--sp-sheet-total-face-current);
+    --sheet-total-ink: var(--sp-sheet-total-ink-current);
+  }
+  /* The day. Its line is the mark's own height, and the row centres the two,
+     so the pair reads as one line however the type scale is set. */
+  .sheet-row-day {
+    min-width: 0;
+    font-size: var(--sp-text-sheet-date);
+    line-height: var(--spacing-sheet-mark);
+    color: var(--sheet-ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* The trigger is a glyph, not a word: a fact nobody acts on, and as a
+     labelled pill it was the widest object in the row for the least said. A
+     step back from the time, as a fraction of that time's own colour so the
+     two stay one step apart through every state. */
+  .sheet-row-when {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3125rem;
+    min-width: 0;
+    color: var(--sheet-ink-quiet);
+  }
+  .sheet-row-when svg {
+    opacity: 0.75;
+  }
+  /* Both right-hand cells end on the row's inset, so the state's mark and the
+     bar under it share one edge. */
+  .sheet-row-status,
+  .sheet-tally {
+    justify-self: end;
+  }
+
+  /* Name, then mark. The mark is last in source as well as on screen, so a
+     screen reader hears the written order. No optical nudge: the box is the
+     mark's own height and the day opposite is set to the same. */
+  .sheet-row-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    flex: 0 0 auto;
+    height: var(--spacing-sheet-mark);
+    /* Read first, so heavier than anything else in the row -- and at one
+       weight in every state: a weight that changed under the pointer would
+       resize the word and re-truncate the day beside it. */
+    font-weight: 550;
+    /* The one thing in the head that could wrap. It does not shrink either --
+       the day beside it truncates first -- so a long state name cannot put a
+       second line into a row and make it taller than its neighbours. */
+    white-space: nowrap;
+  }
+  /* Full weight from the start, one colour through every state -- including
+     its mark, since one thing said in a shape and a word should not be said in
+     two colours. A state that darkens under a pointer claims it changed. */
+  .sheet-row-status {
+    color: var(--sheet-status);
+  }
+  .sheet-row-status svg {
+    color: inherit;
+  }
+  .sheet-row[data-run-status='completed']:not([data-current]) .sheet-row-status {
+    color: var(--sp-sheet-completed-label);
+  }
+  .sheet-row[data-run-status='completed'] .sheet-row-status svg {
+    color: var(--sp-state-verified);
+  }
+
+  /* Grey on every row: a fact about the run, not a state of it, and a second
+     coloured pill would compete with the one thing meant to be read first.
+     Its edge sits on the row's content edge. Filled glyph, because at 11px an
+     outlined one on a tinted ground is a smudge. */
+  /* Separate outcome faces and a labelled total. The gaps expose the row,
+     with more breathing room before the total than between outcomes. */
+  .sheet-tally {
+    /* Content clearance from a straight edge; the edge shape adds to it. */
+    --sheet-seg-inset: 0.125rem;
+    --sheet-seg-padding-rounded: calc(var(--sheet-seg-inset) + 0.1875rem);
+    --sheet-seg-padding-slanted: calc(var(--sheet-seg-inset) + var(--sheet-seg-slant));
+    /* Original optical insets by outcome position, plus clearance wherever
+       an edge is now slanted. Each end can be tuned independently. */
+    --sheet-seg-first-start: calc(var(--sheet-seg-inset) + 0.375rem);
+    --sheet-seg-first-end: var(--sheet-seg-padding-slanted);
+    /* Middle and last outcomes have the same two slanted edges.
+       Keep separate controls, with matching defaults for matching geometry. */
+    --sheet-seg-middle-start: calc(var(--sheet-seg-padding-slanted) + 0.125rem);
+    --sheet-seg-middle-end: var(--sheet-seg-padding-slanted);
+    --sheet-seg-last-start: calc(var(--sheet-seg-padding-slanted) + 0.125rem);
+    --sheet-seg-last-end: var(--sheet-seg-padding-slanted);
+    --sheet-total-start: var(--sheet-seg-padding-slanted);
+    --sheet-total-end: var(--sheet-seg-padding-rounded);
+    --sheet-total-only-start: calc(var(--sheet-seg-padding-rounded) + 0.125rem);
+    --sheet-total-only-end: calc(var(--sheet-seg-padding-rounded) + 0.125rem);
+    /* Gaps BETWEEN faces, separate from the padding INSIDE each face. */
+    --sheet-seg-gap: 0.125rem;
+    --sheet-total-gap: 0.25rem;
+    --sheet-seg-slant: calc(var(--spacing-sheet-tally) * tan(var(--notch-angle)));
+    display: flex;
+    align-items: stretch;
+    flex: 0 0 auto;
+    height: var(--spacing-sheet-tally);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .sheet-seg {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.125rem;
+    /* Unselected dark tallies use tinted faces; selection restores a solid.
+       The total overrides both colours with neutral roles. */
+    background: light-dark(var(--severity-10), var(--severity-5));
+    color: light-dark(var(--severity-1), var(--severity-11));
+    white-space: nowrap;
+  }
+  .sheet-row[data-current] .sheet-seg[data-severity] {
+    background: var(--severity-10);
+    color: light-dark(var(--severity-1), white);
+  }
+  /* Both sides use the header's angle. Overlapping their rectangular boxes
+     keeps the visible gap constant along the parallel diagonal edges. */
+  .sheet-seg:not(.sheet-seg-total) {
+    clip-path: polygon(
+      var(--sheet-seg-slant) 0,
+      100% 0,
+      calc(100% - var(--sheet-seg-slant)) 100%,
+      0 100%
+    );
+  }
+  .sheet-seg:first-child:not(.sheet-seg-total) {
+    /* First outcome, including one that is also the last. */
+    padding-inline-start: var(--sheet-seg-first-start);
+    padding-inline-end: var(--sheet-seg-first-end);
+    clip-path: polygon(0 0, 100% 0, calc(100% - var(--sheet-seg-slant)) 100%, 0 100%);
+  }
+  /* Middle outcomes exclude the first and the one immediately before total. */
+  .sheet-seg:not(:first-child):not(:nth-last-child(2)):not(.sheet-seg-total) {
+    padding-inline-start: var(--sheet-seg-middle-start);
+    padding-inline-end: var(--sheet-seg-middle-end);
+  }
+  /* Last outcome: second-to-last child because the total always follows it. */
+  .sheet-seg:nth-last-child(2):not(:first-child):not(.sheet-seg-total) {
+    padding-inline-start: var(--sheet-seg-last-start);
+    padding-inline-end: var(--sheet-seg-last-end);
+  }
+  .sheet-seg + .sheet-seg {
+    margin-inline-start: calc(var(--sheet-seg-gap) - var(--sheet-seg-slant));
+  }
+  /* A matching slanted leading edge, separated from the last outcome. */
+  .sheet-seg-total {
+    /* The value utility reads this weight; labels inherit the same semibold. */
+    --sp-mono-weight: var(--font-weight-semibold);
+    /* Total after outcomes: slanted start, rounded end. */
+    padding-inline-start: var(--sheet-total-start);
+    padding-inline-end: var(--sheet-total-end);
+    gap: 0.25rem;
+    background: var(--sheet-total-face);
+    color: var(--sheet-total-ink);
+    clip-path: polygon(var(--sheet-seg-slant) 0, 100% 0, 100% 100%, 0 100%);
+  }
+  .sheet-seg + .sheet-seg-total {
+    margin-inline-start: calc(var(--sheet-total-gap) - var(--sheet-seg-slant));
+  }
+  .sheet-seg-total:only-child {
+    /* Total alone: rounded at both ends, with equal content clearance. */
+    padding-inline-start: var(--sheet-total-only-start);
+    padding-inline-end: var(--sheet-total-only-end);
+    clip-path: none;
+  }
+
+  /* One width whether the count is one digit or two: parts that changed width
+     with their value would make two runs with the same outcomes look like
+     different shapes. Two digits of the figure's own measure, so it grows with
+     the type rather than being a pixel guess. */
+  .sheet-seg:not(.sheet-seg-total) > .value {
+    min-width: 2ch;
+    text-align: center;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sheet-row,
+    .sheet-row *,
+    .sheet-break,
+    button.sheet-break::after {
+      transition: none;
+    }
+  }
+  @media (forced-colors: active) {
+    /* Forced colours flatten the current row's fill, and there is no rail left
+       to fall back on, so the row states it as an edge instead -- inset, so
+       gaining it does not move anything in the row. */
+    .sheet-row[data-current] {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
+    }
+    /* Forced colours repaint every fill as one system colour, which would
+       merge the bar's segments into a single block. An edge on each keeps the
+       parts countable even when their tones are gone. */
+    .sheet-seg {
+      box-shadow: inset 0 0 0 1px CanvasText;
+    }
+    /* Keep complete outlines when system colours replace the coloured faces. */
+    .sheet-seg:not(.sheet-seg-total),
+    .sheet-seg:first-child:not(.sheet-seg-total),
+    .sheet-seg-total {
+      clip-path: none;
+    }
+    .sheet-seg + .sheet-seg {
+      margin-inline-start: var(--sheet-seg-gap);
+    }
+    .sheet-seg + .sheet-seg-total {
+      margin-inline-start: var(--sheet-total-gap);
+    }
+  }
+  /* Too narrow for three columns: the rail becomes a strip above the thread,
+     the divider moves to the leading edge, and the version boundary comes off
+     -- it means nothing once two runs sit side by side. */
+  @container sheet (width < 52rem) {
+    .sheet-list {
+      flex-direction: row;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+    }
+    .sheet-list > li {
+      flex: 0 0 auto;
+      min-width: 11.5rem;
+    }
+    .sheet-list > li + li {
+      border-top: 0;
+      border-inline-start: 1px solid var(--sp-rule-default);
+    }
+    .sheet-break {
+      display: none;
+    }
+  }
+}

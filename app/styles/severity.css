@@ -1,0 +1,86 @@
+/* ── Severity ───────────────────────────────────────────────────────────────
+   A weight is a step of whichever tone [data-severity] names for the element's
+   own rank, so no build-time utility can resolve it. The @theme block below
+   republishes each weight as a colour, so markup can still say
+   `bg-severity-fill` and get the row's own severity.
+   ────────────────────────────────────────────────────────────────────────── */
+@theme inline {
+  /* The names markup already says, each pinned to a rung. A pill rests on 3
+     and lifts to 4; the bar behind it is the solid 9; text is step 11 --
+     deepened a third toward 12 in light, as state text is, so it clears AA on
+     the panes as well as on its own fill -- and an annotation is 12. */
+  --color-severity-ink: light-dark(
+    color-mix(in oklab, var(--severity-12) 35%, var(--severity-11)),
+    var(--severity-11)
+  );
+  --color-severity-fill: var(--severity-3);
+  --color-severity-fill-strong: var(--severity-4);
+  --color-severity-bar: var(--severity-9);
+  --color-severity-annotation: var(--severity-12);
+  /* Text on rung 4, a step darker than rung 3: rung 11 reads 4.07-4.24:1
+     there, under AA at 13px, where rung 12 clears 7.8 across every tone. */
+  --color-severity-strong: var(--severity-12);
+  --shadow-severity-ring: inset 0 0 0 1px var(--severity);
+}
+
+@layer components {
+  /* A bucket names a tone and republishes its rungs under a neutral name, so
+     a rule can ask for `severity-5` without knowing which bucket it is in.
+     Which tone a bucket is, here; what a rung looks like, in state.css. */
+  /* blocked */
+  [data-severity='0'] {
+    --severity: var(--severity-11);
+    --severity-1: var(--sp-state-blocked-1);
+    --severity-3: var(--sp-state-blocked-3);
+    --severity-4: var(--sp-state-blocked-4);
+    --severity-5: var(--sp-state-blocked-5);
+    --severity-6: var(--sp-state-blocked-6);
+    --severity-7: var(--sp-state-blocked-7);
+    --severity-9: var(--sp-state-blocked-9);
+    --severity-10: var(--sp-state-blocked-10);
+    --severity-11: var(--sp-state-blocked-11);
+    --severity-12: var(--sp-state-blocked-12);
+  }
+  /* needs a decision */
+  [data-severity='1'] {
+    --severity: var(--severity-11);
+    --severity-1: var(--sp-state-decision-1);
+    --severity-3: var(--sp-state-decision-3);
+    --severity-4: var(--sp-state-decision-4);
+    --severity-5: var(--sp-state-decision-5);
+    --severity-6: var(--sp-state-decision-6);
+    --severity-7: var(--sp-state-decision-7);
+    --severity-9: var(--sp-state-decision-9);
+    --severity-10: var(--sp-state-decision-10);
+    --severity-11: var(--sp-state-decision-11);
+    --severity-12: var(--sp-state-decision-12);
+  }
+  /* deferred */
+  [data-severity='2'] {
+    --severity: var(--severity-11);
+    --severity-1: var(--sp-state-unavailable-1);
+    --severity-3: var(--sp-state-unavailable-3);
+    --severity-4: var(--sp-state-unavailable-4);
+    --severity-5: var(--sp-state-unavailable-5);
+    --severity-6: var(--sp-state-unavailable-6);
+    --severity-7: var(--sp-state-unavailable-7);
+    --severity-9: var(--sp-state-unavailable-9);
+    --severity-10: var(--sp-state-unavailable-10);
+    --severity-11: var(--sp-state-unavailable-11);
+    --severity-12: var(--sp-state-unavailable-12);
+  }
+  /* ready */
+  [data-severity='3'] {
+    --severity: var(--severity-11);
+    --severity-1: var(--sp-state-verified-1);
+    --severity-3: var(--sp-state-verified-3);
+    --severity-4: var(--sp-state-verified-4);
+    --severity-5: var(--sp-state-verified-5);
+    --severity-6: var(--sp-state-verified-6);
+    --severity-7: var(--sp-state-verified-7);
+    --severity-9: var(--sp-state-verified-9);
+    --severity-10: var(--sp-state-verified-10);
+    --severity-11: var(--sp-state-verified-11);
+    --severity-12: var(--sp-state-verified-12);
+  }
+}

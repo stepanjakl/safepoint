@@ -1,0 +1,22 @@
+/* ── Disclosure ─────────────────────────────────────────────────────────────
+   The +/− marker on a <details> summary, for every disclosure in the review.
+   ────────────────────────────────────────────────────────────────────────── */
+
+@layer components {
+  /* A generated marker and the native one it replaces: both pseudo elements. */
+  .disclosure > summary {
+    list-style: none;
+  }
+  .disclosure > summary::-webkit-details-marker {
+    display: none;
+  }
+  .disclosure > summary::before {
+    content: '+';
+    font-family: var(--font-mono);
+    color: var(--sp-text-muted);
+    width: 0.625rem;
+  }
+  .disclosure[open] > summary::before {
+    content: '−';
+  }
+}

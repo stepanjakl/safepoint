@@ -1,4 +1,4 @@
-import { ThreadPage } from '@/components/app-shell/thread-page';
+import { ThreadPage } from '@/components/app-shell/thread/thread-page';
 import { StatesGallery } from '@/components/review/states-gallery';
 
 // A rendering harness for the eight card states, not a product surface.

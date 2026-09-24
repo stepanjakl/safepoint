@@ -1,33 +1,21 @@
 import {
-  COLOUR_SYSTEMS,
-  COLOUR_SYSTEM_STORAGE_KEY,
   CORNER_BALANCE_STORAGE_KEY,
-  CUSTOM_NEUTRALS,
-  CUSTOM_NEUTRAL_STORAGE_KEY,
-  DEFAULT_COLOUR_SYSTEM,
-  DEFAULT_CUSTOM_NEUTRAL,
+  DEFAULT_NEUTRAL,
+  NEUTRALS,
   DEFAULT_CORNER_BALANCE,
-  DEFAULT_EDGE_TREATMENT,
   DEFAULT_MOTION_SPEED,
   DEFAULT_TILE_CHROMA_SCALE,
   MOTION_SPEEDS,
   MOTION_STORAGE_KEY,
-  NEUTRAL_PALETTES,
   NEUTRAL_STORAGE_KEY,
   RAIL_GUIDES_STORAGE_KEY,
   DEFAULT_SLANT_RADIUS,
-  EDGE_TREATMENTS,
-  EDGE_TREATMENT_STORAGE_KEY,
   SLANT_RADIUS_MAX,
   SLANT_RADIUS_MIN,
   SLANT_RADIUS_STORAGE_KEY,
   TILE_CHROMA_SCALE_MAX,
   TILE_CHROMA_SCALE_MIN,
   TILE_CHROMA_SCALE_STORAGE_KEY,
-  STATE_PALETTES,
-  STATE_PALETTE_STORAGE_KEY,
-  TILE_PALETTE_STORAGE_KEY,
-  TILE_PALETTES,
 } from './design-preferences';
 import {
   MONO_CHOICES,
@@ -55,49 +43,21 @@ export function DesignPreferencesScript() {
   const source = `
 var root = document.documentElement;
 var params = new URLSearchParams(location.search);
-var colourSystems = ${JSON.stringify(COLOUR_SYSTEMS)};
-var colourSystem = params.get('colours');
-if (colourSystems.indexOf(colourSystem) === -1) {
+var neutrals = ${JSON.stringify(NEUTRALS)};
+var neutral = params.get('neutral');
+if (neutrals.indexOf(neutral) === -1) {
   try {
-    colourSystem = localStorage.getItem(${JSON.stringify(COLOUR_SYSTEM_STORAGE_KEY)});
+    neutral = localStorage.getItem(${JSON.stringify(NEUTRAL_STORAGE_KEY)});
   } catch (error) {
-    colourSystem = null;
+    neutral = null;
   }
 }
-if (colourSystem && colourSystem !== ${JSON.stringify(DEFAULT_COLOUR_SYSTEM)}
-    && colourSystems.indexOf(colourSystem) !== -1) {
-  root.dataset.colourSystem = colourSystem;
+// The default family binds on :root, so it needs no attribute.
+if (neutral && neutral !== ${JSON.stringify(DEFAULT_NEUTRAL)}
+    && neutrals.indexOf(neutral) !== -1) {
+  root.dataset.neutral = neutral;
 } else {
-  delete root.dataset.colourSystem;
-}
-var customNeutrals = ${JSON.stringify(CUSTOM_NEUTRALS)};
-var customNeutral = params.get('customNeutral');
-if (customNeutrals.indexOf(customNeutral) === -1) {
-  try {
-    customNeutral = localStorage.getItem(${JSON.stringify(CUSTOM_NEUTRAL_STORAGE_KEY)});
-  } catch (error) {
-    customNeutral = null;
-  }
-}
-if (customNeutral && customNeutral !== ${JSON.stringify(DEFAULT_CUSTOM_NEUTRAL)}
-    && customNeutrals.indexOf(customNeutral) !== -1) {
-  root.dataset.customNeutral = customNeutral;
-} else {
-  delete root.dataset.customNeutral;
-}
-var edgeTreatments = ${JSON.stringify(EDGE_TREATMENTS)};
-var edgeTreatment = params.get('edges');
-if (edgeTreatments.indexOf(edgeTreatment) === -1) {
-  try {
-    edgeTreatment = localStorage.getItem(${JSON.stringify(EDGE_TREATMENT_STORAGE_KEY)});
-  } catch (error) {
-    edgeTreatment = null;
-  }
-}
-if (edgeTreatment === 'opaque') {
-  root.dataset.edgeTreatment = 'opaque';
-} else if (edgeTreatment === ${JSON.stringify(DEFAULT_EDGE_TREATMENT)}) {
-  delete root.dataset.edgeTreatment;
+  delete root.dataset.neutral;
 }
 try {
   var sets = ${JSON.stringify([...TYPEFACE_PICKER_SETS])};
@@ -121,23 +81,6 @@ try {
     || localStorage.getItem(${JSON.stringify(TYPESCALE_STORAGE_KEY)});
   if (scales.indexOf(scale) !== -1) {
     root.dataset.typescale = scale;
-  }
-  var palettes = ${JSON.stringify(NEUTRAL_PALETTES)};
-  var neutral = params.get('neutral')
-    || localStorage.getItem(${JSON.stringify(NEUTRAL_STORAGE_KEY)});
-  if (palettes.indexOf(neutral) !== -1) {
-    root.dataset.neutral = neutral;
-  }
-  var tilePalette = params.get('tiles')
-    || localStorage.getItem(${JSON.stringify(TILE_PALETTE_STORAGE_KEY)});
-  var statePalette = params.get('states')
-    || localStorage.getItem(${JSON.stringify(STATE_PALETTE_STORAGE_KEY)});
-  if (${JSON.stringify(STATE_PALETTES)}.indexOf(statePalette) !== -1) {
-    root.dataset.statePalette = statePalette;
-  }
-  // The layout renders the default; a stored or linked choice replaces it.
-  if (${JSON.stringify(TILE_PALETTES)}.indexOf(tilePalette) !== -1) {
-    root.dataset.tilePalette = tilePalette;
   }
   // Number(null) is 0, so an unset key falls outside the range and is skipped.
   var chromaScale = Number(

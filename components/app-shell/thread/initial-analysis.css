@@ -1,0 +1,24 @@
+/* ── Initial analysis ───────────────────────────────────────────────────────
+   The recessed face the analysis sits on, and its rule.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --sp-analysis-face: light-dark(var(--sp-surface-floating), var(--sp-neutral-875));
+  --sp-analysis-edge-top: light-dark(var(--sp-rule-faint), var(--sp-neutral-700));
+  --sp-analysis-edge-bottom: light-dark(var(--sp-rule-faint), var(--sp-neutral-775));
+  /* One step above its face, as every light edge is. */
+  --sp-analysis-highlight: light-dark(var(--sp-neutral-0), var(--sp-neutral-900));
+  --sp-analysis-rule: light-dark(var(--sp-rule-faint), var(--sp-neutral-725));
+}
+
+@theme inline {
+  --color-analysis-rule: var(--sp-analysis-rule);
+}
+
+@utility surface-analysis {
+  --control-face-top: var(--sp-analysis-face);
+  --control-face-bottom: var(--sp-analysis-face);
+  --control-ring-top: var(--sp-analysis-edge-top);
+  --control-ring-bottom: var(--sp-analysis-edge-bottom);
+  --control-highlight: var(--sp-analysis-highlight);
+}

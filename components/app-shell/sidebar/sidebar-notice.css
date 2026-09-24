@@ -1,0 +1,36 @@
+/* ── Sidebar notice ─────────────────────────────────────────────────────────
+   The standing advisory at the foot of the sidebar.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --sp-notice-title: light-dark(var(--sp-state-advisory), var(--sp-text-muted));
+  --sp-notice-face: light-dark(var(--sp-neutral-50), var(--sp-neutral-825));
+  --sp-notice-edge-top: light-dark(var(--sp-neutral-200), var(--sp-neutral-775));
+  --sp-notice-edge-bottom: light-dark(var(--sp-neutral-200), var(--sp-neutral-775));
+  --sp-notice-highlight: light-dark(var(--sp-neutral-25), var(--sp-neutral-850));
+  --sp-notice-caption: light-dark(var(--sp-neutral-625), var(--sp-text-muted));
+}
+
+@theme inline {
+  --color-notice-title: var(--sp-notice-title);
+  --color-notice-edge-top: var(--sp-notice-edge-top);
+  --color-notice-edge-bottom: var(--sp-notice-edge-bottom);
+  --color-notice-caption: var(--sp-notice-caption);
+}
+
+@utility surface-notice {
+  --control-face-top: var(--sp-notice-face);
+  --control-face-bottom: var(--sp-notice-face);
+  --control-ring-top: var(--sp-notice-edge-top);
+  --control-ring-bottom: var(--sp-notice-edge-bottom);
+  --control-highlight: var(--sp-notice-highlight);
+}
+
+@layer components {
+  /* The notice icon belongs to the sidebar rail, which starts at the card's
+     border edge. Its grid starts after control-face's edge, so recover that
+     width from the primitive rather than duplicating it in markup. */
+  .process-menu-notice-rail {
+    margin-inline-start: calc(var(--control-face-border-width) * -1);
+  }
+}

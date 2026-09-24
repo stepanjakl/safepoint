@@ -1,0 +1,264 @@
+/* ── Process menu ───────────────────────────────────────────────────────────
+   The sidebar's frame: the roles every part of it reads (washes and link ink),
+   the Save-order face, the back heading, the side fades the panes travel under,
+   and the development rail guides. Each part it composes styles itself in the
+   file beside its own .tsx.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --sp-menu-wash-faint: light-dark(var(--sp-neutral-75), var(--sp-neutral-775));
+  --sp-menu-wash: light-dark(var(--sp-neutral-200), var(--sp-neutral-825));
+  --sp-menu-wash-strong: light-dark(var(--sp-neutral-200), var(--sp-neutral-725));
+  --sp-menu-link: light-dark(var(--sp-neutral-725), var(--sp-neutral-150));
+  /* The Save-order button: the one teal control, with stops of its own so the
+     arrange mode can be tuned without moving every accented button. Fitted to
+     Tailwind's teal as the accent is to its cyan. */
+  --sp-commit-face-top: light-dark(
+    color-mix(in oklab, var(--radix-teal-dark-10) 80%, var(--radix-teal-dark-11)),
+    color-mix(in oklab, var(--radix-teal-dark-7) 5%, var(--radix-teal-dark-8))
+  );
+  --sp-commit-face-bottom: light-dark(
+    color-mix(in oklab, var(--radix-teal-dark-7) 40%, var(--radix-teal-dark-8)),
+    color-mix(in oklab, var(--radix-teal-dark-7) 95%, var(--radix-teal-dark-8))
+  );
+  --sp-commit-ring-top: light-dark(
+    color-mix(in oklab, var(--radix-teal-dark-7) 40%, var(--radix-teal-dark-8)),
+    color-mix(in oklab, var(--radix-teal-dark-10) 45%, var(--radix-teal-dark-11))
+  );
+  --sp-commit-ring-bottom: light-dark(
+    color-mix(in oklab, var(--radix-teal-dark-6) 60%, var(--radix-teal-dark-7)),
+    color-mix(in oklab, var(--radix-teal-dark-7) 95%, var(--radix-teal-dark-8))
+  );
+  --sp-commit-edge: light-dark(
+    color-mix(in oklab, var(--radix-teal-dark-10) 10%, var(--radix-teal-dark-11)),
+    color-mix(in oklab, black 20%, var(--sp-commit-face-top))
+  );
+  --sp-commit-hover: light-dark(
+    color-mix(in oklab, var(--radix-teal-dark-7) 40%, var(--radix-teal-dark-8)),
+    color-mix(in oklab, var(--radix-teal-dark-7) 40%, var(--radix-teal-dark-8))
+  );
+}
+
+@theme inline {
+  --color-menu-wash-faint: var(--sp-menu-wash-faint);
+  --color-menu-wash: var(--sp-menu-wash);
+  --color-menu-wash-strong: var(--sp-menu-wash-strong);
+  --color-menu-link: var(--sp-menu-link);
+}
+
+/* The sidebar's Save-order button: the only teal control, on stops of its own
+   so the arrange mode can be tuned without moving every primary action. */
+@utility control-commit {
+  --control-face-top: var(--sp-commit-face-top);
+  --control-face-bottom: var(--sp-commit-face-bottom);
+  --control-ring-top: var(--sp-commit-ring-top);
+  --control-ring-bottom: var(--sp-commit-ring-bottom);
+  --control-highlight: var(--sp-commit-edge);
+}
+
+@utility control-commit-hover {
+  --control-face-top: var(--sp-commit-hover);
+  --control-face-bottom: var(--sp-commit-hover);
+  --control-ring-top: var(--sp-commit-hover);
+  --control-ring-bottom: var(--sp-commit-hover);
+  --control-highlight: var(--sp-commit-hover);
+}
+
+@layer components {
+  .process-menu-back {
+    @apply control-wash;
+    color: var(--sp-menu-link);
+  }
+
+  /* Preserve the hover-capable-device guard of the former Tailwind variant. */
+  @media (hover: hover) {
+    .process-menu-back:hover {
+      color: var(--sp-text-primary);
+      background-color: var(--sp-menu-wash);
+    }
+  }
+
+  .process-menu-back:focus-visible {
+    color: var(--sp-text-primary);
+    background-color: var(--sp-menu-wash-strong);
+  }
+
+  /* A soft boundary for panes to dissolve into, rather than the hard clip
+     `overflow-clip` gives them. Both strips overlay the --spacing-menu-fade
+     inset the panes hold, so nothing sits under them and no focus ring is
+     eaten. They hang off the <nav>, not the aside: only the panes travel.
+     56.25rem is --breakpoint-shell, restated because @media cannot read a
+     theme value. Below it there is no side boundary to soften. */
+  @media (width >= 56.25rem) {
+    .process-menu-fade::before,
+    .process-menu-fade::after {
+      content: '';
+      position: absolute;
+      inset-block: 0;
+      /* Above the dragged row, which lifts itself to 2 to clear its
+         neighbours. The edge of the sidebar is in front of everything in it. */
+      z-index: 3;
+      width: var(--spacing-menu-fade);
+      pointer-events: none;
+    }
+    .process-menu-fade::before {
+      left: 0;
+      background: linear-gradient(to right, var(--sp-canvas), transparent);
+    }
+    .process-menu-fade::after {
+      right: 0;
+      background: linear-gradient(to left, var(--sp-canvas), transparent);
+    }
+    /* Widened while a pane travels toward it, back to the inset as it lands.
+       An animation, not a width keyed to the level: the level stays set once
+       the pane arrives, which left the strip permanently wide.
+       data-travel is set only once something has navigated, so first paint
+       plays no journey; a new level re-matches and restarts it. */
+    .process-menu-fade[data-travel='processes']::before,
+    .process-menu-fade[data-travel='workspace']::after {
+      animation: menu-fade-lead var(--duration-pane) --theme(--ease-out-emphasized);
+    }
+    @keyframes menu-fade-lead {
+      50% {
+        width: calc(var(--spacing-menu-fade) * 1.5);
+      }
+    }
+  }
+
+  /* ── Rail guides (development) ────────────────────────────────────────
+     A line down each icon axis, and a crosshair through the centre of every
+     box meant to sit on it. The crosshair is drawn from the box's own 50%, so
+     it reports where the icon is rather than where an offset says it should
+     be: if the two do not meet, the alignment is wrong.
+     Blue against the axis's red -- a crosshair sharing the hue is exactly
+     where a miss by a pixel stops being visible.
+     `pnpm check:rail` reads the axis out of this rule's computed background,
+     so this stylesheet stays the only place an axis is defined. */
+  .rail-axis,
+  .shell-axis {
+    display: none;
+  }
+
+  /* The header and profile guides mirror the same frame inside the shell inset. */
+  @media (width >= 56.25rem) {
+    :root[data-rail-guides='on'] .shell-axis {
+      --shell-axis-width: 1px;
+      --shell-axis-offset: calc(var(--spacing-shell-header) / 2 - var(--shell-axis-width) / 2);
+      display: block;
+      position: absolute;
+      inset: var(--spacing-shell-inset);
+      z-index: 50;
+      pointer-events: none;
+      background-image:
+        linear-gradient(color-mix(in oklab, red 60%, transparent) 0 100%),
+        linear-gradient(color-mix(in oklab, red 60%, transparent) 0 100%);
+      background-size: 100% var(--shell-axis-width);
+      background-repeat: no-repeat;
+      background-position:
+        left 0 top var(--shell-axis-offset),
+        left 0 bottom var(--shell-axis-offset);
+    }
+  }
+
+  /* Both guide pairs mirror the same spacing tokens across the sidebar. */
+  :root[data-rail-guides='on'] .rail-axis {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+  }
+
+  /*
+    One hairline per axis, as background layers rather than pseudo-elements:
+    there are two pseudo-elements and four axes.
+
+    Each position names the line's own near edge, and a guide has to be centred
+    on what it measures rather than start there -- naming the axis alone paints
+    a 1px line half a pixel late, and a guide that is itself half a pixel out is
+    worse than none, because everything held against it inherits the error.
+  */
+  :root[data-rail-guides='on'] .rail-axis {
+    --rail-axis-width: 1px;
+    --rail-axis-line: linear-gradient(color-mix(in oklab, red 60%, transparent) 0 100%);
+    /* The leading rail, from either edge, and the trailing cell inside it. */
+    --rail-axis-rail: calc(
+      var(--spacing-menu-fade) + var(--spacing-menu-rail) / 2 - var(--rail-axis-width) / 2
+    );
+    --rail-axis-end: calc(
+      var(--spacing-menu-fade) + var(--spacing-menu-edge) + var(--spacing-menu-end) +
+        var(--spacing-menu-rail) / 2 - var(--rail-axis-width) / 2
+    );
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+    background-image:
+      var(--rail-axis-line), var(--rail-axis-line), var(--rail-axis-line), var(--rail-axis-line);
+    background-size: var(--rail-axis-width) 100%;
+    background-repeat: no-repeat;
+    background-position:
+      left var(--rail-axis-rail) top 0,
+      left var(--rail-axis-end) top 0,
+      right var(--rail-axis-rail) top 0,
+      right var(--rail-axis-end) top 0;
+  }
+
+  :root[data-rail-guides='on'] .rail-mark {
+    position: relative;
+  }
+
+  :root[data-rail-guides='on'] .rail-mark::before,
+  :root[data-rail-guides='on'] .rail-mark::after {
+    content: '';
+    position: absolute;
+    z-index: 5;
+    background: #1d4ed8;
+    pointer-events: none;
+  }
+
+  /*
+    Horizontal arm, then vertical. Both translate on both axes: each bar is 1px
+    thick, and a bar pulled back on its long axis only still hangs that 1px off
+    the centre on its short one -- which put the crosshair's intersection half a
+    pixel down and half a pixel right of the box it claims to mark.
+  */
+  :root[data-rail-guides='on'] .rail-mark::before {
+    top: 50%;
+    left: 50%;
+    width: 30px;
+    height: 1px;
+    translate: -50% -50%;
+  }
+
+  :root[data-rail-guides='on'] .rail-mark::after {
+    top: 50%;
+    left: 50%;
+    width: 1px;
+    height: 30px;
+    translate: -50% -50%;
+  }
+
+  @media (forced-colors: active) {
+    .process-menu-row[data-current] {
+      outline: 1px solid Highlight;
+    }
+    .process-menu-row[data-dragging] {
+      outline: 2px solid Highlight;
+    }
+    /* A gradient cannot survive forced colours, and it must never be the only
+       thing carrying a boundary. */
+    .process-menu-fade::before,
+    .process-menu-fade::after {
+      display: none;
+    }
+  }
+
+  @media print {
+    .process-menu-fade::before,
+    .process-menu-fade::after {
+      display: none;
+    }
+  }
+}

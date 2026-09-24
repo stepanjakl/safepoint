@@ -1,0 +1,73 @@
+/* ── Effects rail ────────────────────────────────────────────────────────────
+   One signal line with mode-shaped markers, vertical until the detail pane
+   is wide enough to hold every label.
+   ────────────────────────────────────────────────────────────────────── */
+@layer components {
+  .rail {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .rail::before {
+    content: '';
+    position: absolute;
+    left: 0.6875rem;
+    top: 0.75rem;
+    bottom: 0.75rem;
+    width: 2px;
+    background: var(--sp-rule-strong);
+  }
+
+  .rail-node {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .rail-marker {
+    position: relative;
+    display: flex;
+    width: 1.5rem;
+    height: 1.5rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid currentColor;
+    border-radius: 9999px;
+    background: var(--sp-surface-primary);
+  }
+
+  .rail-labels {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  @container (width >= 44rem) {
+    .rail {
+      flex-direction: row;
+      gap: 0.5rem;
+    }
+
+    .rail::before {
+      top: 0.6875rem;
+      bottom: auto;
+      left: calc(50% / var(--rail-count, 1));
+      right: calc(50% / var(--rail-count, 1));
+      width: auto;
+      height: 2px;
+    }
+
+    .rail-node {
+      flex: 1 1 0;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      text-align: center;
+    }
+  }
+}

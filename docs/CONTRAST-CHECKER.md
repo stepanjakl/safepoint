@@ -79,16 +79,14 @@ issue or report it explicitly.
 Vitest excludes `e2e/`; browser tests run through `pnpm check:contrast` separately
 from `pnpm test`.
 
-`pnpm check:colour-system` is the focused Original/Custom regression layer. It
-checks the committed Original Zinc computed-colour fixture, colour-system and
-edge-treatment preference precedence, blocked storage, Tweakpane and keyboard
-behaviour, the captured Phase A edge baseline, workbench primitives, forced
-colours, narrow layout, and rendered contrast on the home, workspace, search,
-review, and tooltip states. Custom must not introduce a violation target absent
-from Original.
+`pnpm check:colour-system` is the focused colour-system regression layer. It
+checks the neutral-family preference contract (URL, storage, blocked storage,
+the design pane and reset), that every family paints its own ramp, that every
+structural edge is opaque, that the primary action is flat under the pointer,
+that muted ink never sits on the selected surface, and forced colours and
+narrow layout.
 
-The current fictional home data has two confirmed Original findings that are not
-caused by the neutral system: the decorative `aria-hidden` pale wordmark and the
-simulated commit-state label. The focused comparison reports and matches these
-instead of suppressing selectors. The broader `check:contrast` suite continues to
+The current fictional home data has two confirmed findings that predate the
+2026-09-24 colour refactor: the decorative `aria-hidden` pale wordmark and the
+simulated commit-state label. The broader `check:contrast` suite continues to
 fail on confirmed violations until those existing state treatments are resolved.

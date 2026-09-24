@@ -23,7 +23,7 @@ import { cx } from '@/lib/cx';
   press it again -- and so do Escape and the scrim. Below the width where both
   fit, the panel takes the drawer's place instead of squeezing it.
 
-  Motion, in components.css: the panel comes in from the left and leaves the
+  Motion, in app/styles/drawer.css: the panel comes in from the left and leaves the
   same way, and its first content fades in once it is in place. Choosing another
   item keeps the panel still and swaps what is in it, travelling the way the
   list does: an item further down makes the old content rise out as the new

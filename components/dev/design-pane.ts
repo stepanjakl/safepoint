@@ -12,13 +12,6 @@ import {
   DEFAULT_THEME,
 } from '@/lib/typography';
 import {
-  COLOUR_SYSTEMS,
-  COLOUR_SYSTEM_LABELS,
-  DEFAULT_EDGE_TREATMENT,
-  DEFAULT_COLOUR_SYSTEM,
-  DEFAULT_STATE_PALETTE,
-  EDGE_TREATMENTS,
-  EDGE_TREATMENT_LABELS,
   readTypeface,
   readMono,
   readTypescale,
@@ -35,15 +28,10 @@ import {
   MOTION_SPEEDS,
   subscribe,
   DEFAULT_NEUTRAL,
-  NEUTRAL_PALETTES,
-  NEUTRAL_PALETTE_LABELS,
+  NEUTRALS,
+  NEUTRAL_LABELS,
   readNeutral,
   setNeutral,
-  DEFAULT_TILE_PALETTE,
-  TILE_PALETTES,
-  TILE_PALETTE_LABELS,
-  readTilePalette,
-  setTilePalette,
   DEFAULT_TILE_CHROMA_SCALE,
   TILE_CHROMA_SCALE_MAX,
   TILE_CHROMA_SCALE_MIN,
@@ -51,26 +39,12 @@ import {
   setTileChromaScale,
   DEFAULT_CORNER_BALANCE,
   readCornerBalance,
-  readColourSystem,
-  CUSTOM_NEUTRALS,
-  CUSTOM_NEUTRAL_LABELS,
-  DEFAULT_CUSTOM_NEUTRAL,
-  isGeneratedColourSystem,
-  readCustomNeutral,
-  readEdgeTreatment,
-  setCustomNeutral,
   setCornerBalance,
-  setColourSystem,
-  setEdgeTreatment,
   DEFAULT_SLANT_RADIUS,
   SLANT_RADIUS_MAX,
   SLANT_RADIUS_MIN,
   readSlantRadius,
   setSlantRadius,
-  readStatePalette,
-  setStatePalette,
-  STATE_PALETTES,
-  STATE_PALETTE_LABELS,
 } from './design-preferences';
 import { startMotionDebug } from './motion-debug';
 
@@ -80,12 +54,7 @@ function readPreferences() {
     mono: readMono(),
     typescale: readTypescale(),
     theme: readTheme(),
-    colourSystem: readColourSystem(),
-    customNeutral: readCustomNeutral(),
-    edgeTreatment: readEdgeTreatment(),
     neutral: readNeutral(),
-    tilePalette: readTilePalette(),
-    statePalette: readStatePalette(),
     tileChromaScale: readTileChromaScale(),
     slantRadius: readSlantRadius(),
     cornerBalance: readCornerBalance(),
@@ -108,54 +77,20 @@ export function mountDesignPane(host: HTMLElement) {
       options: THEME_CHOICES.map((value) => ({ text: value, value })),
     })
     .on('change', (event) => setTheme(event.value));
-  const colourSystemBinding = appearance
-    .addBinding(model, 'colourSystem', {
-      label: 'Colour system',
-      options: COLOUR_SYSTEMS.map((value) => ({
-        text: COLOUR_SYSTEM_LABELS[value],
-        value,
-      })),
-    })
-    .on('change', (event) => setColourSystem(event.value));
   const neutralBinding = appearance
     .addBinding(model, 'neutral', {
       label: 'Neutrals',
-      options: NEUTRAL_PALETTES.map((value) => ({
-        text: NEUTRAL_PALETTE_LABELS[value],
+      options: NEUTRALS.map((value) => ({
+        text: NEUTRAL_LABELS[value],
         value,
       })),
     })
     .on('change', (event) => setNeutral(event.value));
   neutralBinding.element.title =
-    'Chooses the neutral family for Original. Custom has families of its own.';
-  const customNeutralBinding = appearance
-    .addBinding(model, 'customNeutral', {
-      label: 'Custom neutrals',
-      options: CUSTOM_NEUTRALS.map((value) => ({
-        text: CUSTOM_NEUTRAL_LABELS[value],
-        value,
-      })),
-    })
-    .on('change', (event) => setCustomNeutral(event.value));
-  customNeutralBinding.element.title =
-    'Chooses the neutral family for Custom. One ramp shape at five hues; Ash has no tint at all.';
-  const edgeTreatmentBinding = appearance
-    .addBinding(model, 'edgeTreatment', {
-      label: 'Edge treatment',
-      options: EDGE_TREATMENTS.map((value) => ({
-        text: EDGE_TREATMENT_LABELS[value],
-        value,
-      })),
-    })
-    .on('change', (event) => setEdgeTreatment(event.value));
-  edgeTreatmentBinding.element.title =
-    'Compares the Phase A edge baseline with opaque surface recipes. Opaque recipes are added in Phase B2.';
+    'One ramp shape at five hues; Ash has no tint at all.';
   const bindings = [
     themeBinding,
-    colourSystemBinding,
-    edgeTreatmentBinding,
     neutralBinding,
-    customNeutralBinding,
     appearance
       .addBinding(model, 'typeface', {
         label: 'Typeface',
@@ -211,35 +146,9 @@ export function mountDesignPane(host: HTMLElement) {
     input.setAttribute('aria-label', 'Slanted corner balance');
   }
 
-  // The semantic states -- verified, caution, blocked and the rest -- in the
-  // shipped ramps or in Radix's. It sits on its own rather than in the tiles
-  // folder because it moves the review, the runs rail and every status mark
-  // in the app, which the tiles do not.
-  const states = pane.addFolder({ title: 'State colours' });
-  const stateBinding = states
-    .addBinding(model, 'statePalette', {
-      label: 'Palette',
-      options: STATE_PALETTES.map((value) => ({
-        text: STATE_PALETTE_LABELS[value],
-        value,
-      })),
-    })
-    .on('change', (event) => setStatePalette(event.value));
-  stateBinding.element.title =
-    'Radix maps each state to a scale whose step 11 is guaranteed readable on its own step 4.';
-
-  // The workspace menu's tiles: which palette they read, and how hard the
-  // saturation ceilings in tokens/geometry.css hold it back.
+  // How hard the saturation ceilings in app/styles/geometry.css hold the
+  // workspace menu's tile hues back.
   const tiles = pane.addFolder({ title: 'Menu tiles' });
-  const paletteBinding = tiles
-    .addBinding(model, 'tilePalette', {
-      label: 'Palette',
-      options: TILE_PALETTES.map((value) => ({
-        text: TILE_PALETTE_LABELS[value],
-        value,
-      })),
-    })
-    .on('change', (event) => setTilePalette(event.value));
   const chromaBinding = tiles
     .addBinding(model, 'tileChromaScale', {
       label: 'Saturation cap',
@@ -249,7 +158,7 @@ export function mountDesignPane(host: HTMLElement) {
     })
     .on('change', (event) => setTileChromaScale(event.value));
   chromaBinding.element.title =
-    '1 is the ceilings in tokens/geometry.css. Lower mutes every tile, at rest and under the pointer; the far right leaves them uncapped.';
+    '1 is the ceilings in app/styles/geometry.css. Lower mutes every tile, at rest and under the pointer; the far right leaves them uncapped.';
   for (const input of chromaBinding.element.querySelectorAll('input')) {
     input.setAttribute('aria-label', 'Tile saturation cap');
   }
@@ -278,12 +187,7 @@ export function mountDesignPane(host: HTMLElement) {
     ?.setAttribute('aria-label', 'Icon axis guides');
 
   // Bindings use native selects. Name them explicitly for screen readers.
-  for (const binding of [
-    ...bindings,
-    stateBinding,
-    paletteBinding,
-    speedBinding,
-  ]) {
+  for (const binding of [...bindings, speedBinding]) {
     binding.element
       .querySelector('select')
       ?.setAttribute('aria-label', binding.label ?? 'Design preference');
@@ -294,12 +198,7 @@ export function mountDesignPane(host: HTMLElement) {
     setMono('match');
     setTypescale(DEFAULT_TYPESCALE);
     setTheme(DEFAULT_THEME);
-    setColourSystem(DEFAULT_COLOUR_SYSTEM);
-    setEdgeTreatment(DEFAULT_EDGE_TREATMENT);
     setNeutral(DEFAULT_NEUTRAL);
-    setCustomNeutral(DEFAULT_CUSTOM_NEUTRAL);
-    setTilePalette(DEFAULT_TILE_PALETTE);
-    setStatePalette(DEFAULT_STATE_PALETTE);
     setTileChromaScale(DEFAULT_TILE_CHROMA_SCALE);
     setSlantRadius(DEFAULT_SLANT_RADIUS);
     setCornerBalance(DEFAULT_CORNER_BALANCE);
@@ -311,13 +210,6 @@ export function mountDesignPane(host: HTMLElement) {
   let stopMotion = startMotionDebug(Number(activeSpeed));
   function sync() {
     Object.assign(model, readPreferences());
-    neutralBinding.disabled = isGeneratedColourSystem(model.colourSystem);
-    customNeutralBinding.disabled = !isGeneratedColourSystem(
-      model.colourSystem,
-    );
-    edgeTreatmentBinding.disabled = !isGeneratedColourSystem(
-      model.colourSystem,
-    );
     if (model.speed !== activeSpeed) {
       stopMotion();
       activeSpeed = model.speed;
@@ -332,7 +224,7 @@ export function mountDesignPane(host: HTMLElement) {
   sync();
   const unsubscribe = subscribe(sync);
   const toggle = pane.element.querySelector('button');
-  const folders = [pane, appearance, states, tiles, motion, debug];
+  const folders = [pane, appearance, tiles, motion, debug];
   function syncExpanded() {
     for (const folder of folders) {
       folder.element

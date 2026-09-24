@@ -28,7 +28,7 @@ const base =
   shape; a slanted one hands the stops to the `slant` layers.
 
   Keyboard focus takes the hover stops. The app draws no focus outline of its
-  own (see :focus-visible in app/globals.css), and because focus is carried by
+  own (see :focus-visible in app/styles/base.css), and because focus is carried by
   the stops rather than by the box, a slanted button shows it on its slanted
   shape with nothing extra to draw.
 */
@@ -55,7 +55,7 @@ const shapes: Record<Variant, string> = {
 /*
   A slant's painted layers, each nested in the wrapper that computes its
   outline at one offset. The nesting is the mechanism, not decoration: see
-  `.slant` in app/components.css.
+  `.slant` in components/ui/notch.css.
 */
 const SLANT_LAYERS = (
   <span aria-hidden="true" className="slant-shape">
@@ -165,7 +165,7 @@ export const ICON_SHAPE =
 /*
   The quiet face: a wash on hover or keyboard focus, nothing at rest. The two
   are one state -- the app draws no focus outline of its own, so focus is this
-  wash (see :focus-visible in app/globals.css). It carries the transition,
+  wash (see :focus-visible in app/styles/base.css). It carries the transition,
   so a square that swaps this out for control-face -- the sidebar's Save-order
   button does exactly that -- is left with control-face's own timing rather
   than a `transition-colors` that names none of the gradient stops and so

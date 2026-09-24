@@ -24,11 +24,9 @@
       "note": "Cool violet-grey on Tailwind zinc's hue and chroma. The restrained default.",
       "failures": [],
       "warnings": [
-        "primary-on-floating-surface: light and dark differ 2.004x in contrast (18.941:1 vs 9.452:1); the hierarchy is not the same in both themes.",
-        "field-focus-from-resting-edge: light and dark differ 1.756x in contrast (3.697:1 vs 6.492:1); the hierarchy is not the same in both themes.",
-        "tooltip-ink: light and dark differ 2.004x in contrast (18.941:1 vs 9.452:1); the hierarchy is not the same in both themes.",
-        "primary-to-floating-surface: light and dark differ 3.001x in separation (0.022398 vs 0.06721).",
-        "surface-chroma: dark surfaces average 2.669x the chroma of light surfaces (0.003026 vs 0.008077)."
+        "light muted-on-inset-surface: 4.606:1 is below target 4.75:1.",
+        "dark faint-rule-on-floating-surface: 1.291:1 is below target 1.5:1.",
+        "primary-to-floating-surface: light and dark differ 2.998x in separation (0.022398 vs 0.067155)."
       ],
       "ramp": [
         {
@@ -575,27 +573,27 @@
           },
           {
             "id": "primary-on-primary-surface",
-            "light": 17.749,
-            "dark": 11.848,
-            "ratio": 1.498
+            "light": 16.611,
+            "dark": 12.609,
+            "ratio": 1.317
           },
           {
             "id": "primary-on-floating-surface",
-            "light": 18.941,
-            "dark": 9.452,
-            "ratio": 2.004
+            "light": 17.749,
+            "dark": 10.249,
+            "ratio": 1.732
           },
           {
             "id": "primary-on-inset-surface",
-            "light": 14.492,
-            "dark": 14.937,
-            "ratio": 1.031
+            "light": 13.508,
+            "dark": 15.282,
+            "ratio": 1.131
           },
           {
             "id": "primary-on-selected-surface",
-            "light": 10.842,
-            "dark": 7.937,
-            "ratio": 1.366
+            "light": 10.045,
+            "dark": 8.677,
+            "ratio": 1.158
           },
           {
             "id": "muted-on-canvas",
@@ -605,15 +603,15 @@
           },
           {
             "id": "muted-on-inset-surface",
-            "light": 4.941,
-            "dark": 7.508,
-            "ratio": 1.52
+            "light": 4.606,
+            "dark": 7.681,
+            "ratio": 1.668
           },
           {
             "id": "muted-on-analysis",
-            "light": 6.458,
-            "dark": 6.338,
-            "ratio": 1.019
+            "light": 6.052,
+            "dark": 6.693,
+            "ratio": 1.106
           },
           {
             "id": "muted-on-notice",
@@ -629,64 +627,64 @@
           },
           {
             "id": "field-focus-on-face",
-            "light": 6.052,
-            "dark": 8.864,
-            "ratio": 1.465
+            "light": 6.237,
+            "dark": 8.74,
+            "ratio": 1.401
           },
           {
             "id": "field-focus-from-resting-edge",
-            "light": 3.697,
-            "dark": 6.492,
-            "ratio": 1.756
+            "light": 3.772,
+            "dark": 6.552,
+            "ratio": 1.737
           },
           {
             "id": "menu-chip-ink",
-            "light": 5.416,
-            "dark": 8.212,
-            "ratio": 1.516
+            "light": 5.018,
+            "dark": 8.74,
+            "ratio": 1.742
           },
           { "id": "keycap-ink", "light": 8.866, "dark": 7.104, "ratio": 1.248 },
           {
             "id": "tooltip-ink",
-            "light": 18.941,
-            "dark": 9.452,
-            "ratio": 2.004
+            "light": 17.749,
+            "dark": 10.249,
+            "ratio": 1.732
           },
           {
             "id": "tooltip-edge-over-canvas",
-            "light": 3.302,
-            "dark": 4.525,
-            "ratio": 1.37
+            "light": 3.621,
+            "dark": 4.127,
+            "ratio": 1.14
           },
           {
             "id": "tooltip-edge-over-primary-surface",
-            "light": 3.775,
-            "dark": 3.844,
-            "ratio": 1.018
+            "light": 3.874,
+            "dark": 3.731,
+            "ratio": 1.038
           },
           {
             "id": "tooltip-edge-over-floating-surface",
-            "light": 4.029,
-            "dark": 3.066,
-            "ratio": 1.314
+            "light": 4.14,
+            "dark": 3.032,
+            "ratio": 1.365
           },
           {
             "id": "tooltip-edge-on-own-face",
-            "light": 4.029,
-            "dark": 3.066,
-            "ratio": 1.314
+            "light": 4.14,
+            "dark": 3.032,
+            "ratio": 1.365
           },
           {
             "id": "faint-rule-on-floating-surface",
-            "light": 1.747,
-            "dark": 1.578,
-            "ratio": 1.107
+            "light": 1.767,
+            "dark": 1.291,
+            "ratio": 1.369
           },
           {
             "id": "faint-rule-on-primary-surface",
-            "light": 1.637,
-            "dark": 1.978,
-            "ratio": 1.208
+            "light": 1.654,
+            "dark": 1.589,
+            "ratio": 1.041
           },
           {
             "id": "keycap-ring-on-face",
@@ -696,35 +694,35 @@
           },
           {
             "id": "default-rule-on-canvas",
-            "light": 1.671,
-            "dark": 2.823,
-            "ratio": 1.689
+            "light": 1.809,
+            "dark": 2.117,
+            "ratio": 1.17
           }
         ],
         "separation": [
           {
             "id": "canvas-to-primary-surface",
-            "light": 0.044797,
-            "dark": 0.067129,
-            "ratio": 1.499
+            "light": 0.022399,
+            "dark": 0.044752,
+            "ratio": 1.998
           },
           {
             "id": "primary-to-floating-surface",
             "light": 0.022398,
-            "dark": 0.06721,
-            "ratio": 3.001
+            "dark": 0.067155,
+            "ratio": 2.998
           },
           {
             "id": "canvas-to-inset-surface",
-            "light": 0.022399,
-            "dark": 0.044751,
-            "ratio": 1.998
+            "light": 0.0448,
+            "dark": 0.067124,
+            "ratio": 1.498
           },
           {
             "id": "selected-from-canvas",
-            "light": 0.112008,
-            "dark": 0.179145,
-            "ratio": 1.599
+            "light": 0.134413,
+            "dark": 0.156724,
+            "ratio": 1.166
           }
         ],
         "surfaceChroma": {
@@ -737,9 +735,9 @@
             "surfaceSelected",
             "surfaceDisabled"
           ],
-          "light": 0.003026,
-          "dark": 0.008077,
-          "ratio": 2.669
+          "light": 0.00394,
+          "dark": 0.007304,
+          "ratio": 1.854
         }
       },
       "contrastContracts": [
@@ -768,8 +766,8 @@
           "target": 7,
           "rationale": "Ordinary body text on raised panels.",
           "foregroundStep": 925,
-          "backgroundStep": 25,
-          "ratio": 17.749,
+          "backgroundStep": 50,
+          "ratio": 16.611,
           "passed": true,
           "metTarget": true
         },
@@ -783,8 +781,8 @@
           "target": 7,
           "rationale": "Ordinary text in dialogs, tooltips, and floating panels.",
           "foregroundStep": 925,
-          "backgroundStep": 0,
-          "ratio": 18.941,
+          "backgroundStep": 25,
+          "ratio": 17.749,
           "passed": true,
           "metTarget": true
         },
@@ -798,8 +796,8 @@
           "target": 7,
           "rationale": "Ordinary text in recessed regions.",
           "foregroundStep": 925,
-          "backgroundStep": 100,
-          "ratio": 14.492,
+          "backgroundStep": 125,
+          "ratio": 13.508,
           "passed": true,
           "metTarget": true
         },
@@ -813,8 +811,8 @@
           "target": 7,
           "rationale": "Selected rows retain ordinary text readability.",
           "foregroundStep": 925,
-          "backgroundStep": 200,
-          "ratio": 10.842,
+          "backgroundStep": 225,
+          "ratio": 10.045,
           "passed": true,
           "metTarget": true
         },
@@ -843,10 +841,10 @@
           "target": 4.75,
           "rationale": "The weakest recurring secondary-text pairing.",
           "foregroundStep": 575,
-          "backgroundStep": 100,
-          "ratio": 4.941,
+          "backgroundStep": 125,
+          "ratio": 4.606,
           "passed": true,
-          "metTarget": true
+          "metTarget": false
         },
         {
           "theme": "light",
@@ -857,8 +855,8 @@
           "minimum": 4.5,
           "rationale": "Secondary analysis copy is ordinary-size text.",
           "foregroundStep": 575,
-          "backgroundStep": 0,
-          "ratio": 6.458,
+          "backgroundStep": 25,
+          "ratio": 6.052,
           "passed": true,
           "metTarget": true
         },
@@ -899,9 +897,9 @@
           "background": "fieldFace",
           "minimum": 3,
           "rationale": "The active field border is the visible focus indicator.",
-          "foregroundStep": 575,
-          "backgroundStep": 25,
-          "ratio": 6.052,
+          "foregroundStep": 600,
+          "backgroundStep": 50,
+          "ratio": 6.237,
           "passed": true,
           "metTarget": true
         },
@@ -913,9 +911,9 @@
           "background": "fieldEdge",
           "minimum": 3,
           "rationale": "Focus must remain distinguishable from the resting boundary.",
-          "foregroundStep": 575,
-          "backgroundStep": 200,
-          "ratio": 3.697,
+          "foregroundStep": 600,
+          "backgroundStep": 225,
+          "ratio": 3.772,
           "passed": true,
           "metTarget": true
         },
@@ -928,8 +926,8 @@
           "minimum": 4.5,
           "rationale": "The chip fills at the selected ground's depth, where plain muted ink falls under AA at the micro size its count is set in.",
           "foregroundStep": 675,
-          "backgroundStep": 200,
-          "ratio": 5.416,
+          "backgroundStep": 225,
+          "ratio": 5.018,
           "passed": true,
           "metTarget": true
         },
@@ -957,8 +955,8 @@
           "target": 7,
           "rationale": "Tooltip copy uses the primary text role.",
           "foregroundStep": 925,
-          "backgroundStep": 0,
-          "ratio": 18.941,
+          "backgroundStep": 25,
+          "ratio": 17.749,
           "passed": true,
           "metTarget": true
         },
@@ -970,9 +968,9 @@
           "background": "canvas",
           "minimum": 3,
           "rationale": "A project requirement, not a WCAG citation: the tooltip must read as a separate object over what it covers.",
-          "foregroundStep": 450,
+          "foregroundStep": 475,
           "backgroundStep": 75,
-          "ratio": 3.302,
+          "ratio": 3.621,
           "passed": true,
           "metTarget": true
         },
@@ -984,9 +982,9 @@
           "background": "surfacePrimary",
           "minimum": 3,
           "rationale": "Tooltips routinely open over raised panels.",
-          "foregroundStep": 450,
-          "backgroundStep": 25,
-          "ratio": 3.775,
+          "foregroundStep": 475,
+          "backgroundStep": 50,
+          "ratio": 3.874,
           "passed": true,
           "metTarget": true
         },
@@ -998,9 +996,9 @@
           "background": "surfaceFloating",
           "minimum": 3,
           "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-          "foregroundStep": 450,
-          "backgroundStep": 0,
-          "ratio": 4.029,
+          "foregroundStep": 475,
+          "backgroundStep": 25,
+          "ratio": 4.14,
           "passed": true,
           "metTarget": true
         },
@@ -1013,9 +1011,9 @@
           "minimum": 1.5,
           "target": 3,
           "rationale": "The box must read as bounded, not as a floating block of ink.",
-          "foregroundStep": 450,
-          "backgroundStep": 0,
-          "ratio": 4.029,
+          "foregroundStep": 475,
+          "backgroundStep": 25,
+          "ratio": 4.14,
           "passed": true,
           "metTarget": true
         },
@@ -1028,9 +1026,9 @@
           "minimum": 1.2,
           "target": 1.5,
           "rationale": "The floating panel ring; in dark it had fallen to 1.10:1 and the boundary was carried almost entirely by an alpha sheen.",
-          "foregroundStep": 200,
-          "backgroundStep": 0,
-          "ratio": 1.747,
+          "foregroundStep": 225,
+          "backgroundStep": 25,
+          "ratio": 1.767,
           "passed": true,
           "metTarget": true
         },
@@ -1043,9 +1041,9 @@
           "minimum": 1.2,
           "target": 1.5,
           "rationale": "The raised panel ring.",
-          "foregroundStep": 200,
-          "backgroundStep": 25,
-          "ratio": 1.637,
+          "foregroundStep": 225,
+          "backgroundStep": 50,
+          "ratio": 1.654,
           "passed": true,
           "metTarget": true
         },
@@ -1073,9 +1071,9 @@
           "minimum": 1.25,
           "target": 1.5,
           "rationale": "Decorative dividers need presence, not a WCAG text minimum.",
-          "foregroundStep": 250,
+          "foregroundStep": 275,
           "backgroundStep": 75,
-          "ratio": 1.671,
+          "ratio": 1.809,
           "passed": true,
           "metTarget": true
         },
@@ -1104,8 +1102,8 @@
           "target": 7,
           "rationale": "Ordinary body text on raised panels.",
           "foregroundStep": 100,
-          "backgroundStep": 825,
-          "ratio": 11.848,
+          "backgroundStep": 850,
+          "ratio": 12.609,
           "passed": true,
           "metTarget": true
         },
@@ -1119,8 +1117,8 @@
           "target": 7,
           "rationale": "Ordinary text in dialogs, tooltips, and floating panels.",
           "foregroundStep": 100,
-          "backgroundStep": 750,
-          "ratio": 9.452,
+          "backgroundStep": 775,
+          "ratio": 10.249,
           "passed": true,
           "metTarget": true
         },
@@ -1134,8 +1132,8 @@
           "target": 7,
           "rationale": "Ordinary text in recessed regions.",
           "foregroundStep": 100,
-          "backgroundStep": 950,
-          "ratio": 14.937,
+          "backgroundStep": 975,
+          "ratio": 15.282,
           "passed": true,
           "metTarget": true
         },
@@ -1149,8 +1147,8 @@
           "target": 7,
           "rationale": "Selected rows retain ordinary text readability.",
           "foregroundStep": 100,
-          "backgroundStep": 700,
-          "ratio": 7.937,
+          "backgroundStep": 725,
+          "ratio": 8.677,
           "passed": true,
           "metTarget": true
         },
@@ -1179,8 +1177,8 @@
           "target": 4.75,
           "rationale": "The weakest recurring secondary-text pairing.",
           "foregroundStep": 325,
-          "backgroundStep": 950,
-          "ratio": 7.508,
+          "backgroundStep": 975,
+          "ratio": 7.681,
           "passed": true,
           "metTarget": true
         },
@@ -1193,8 +1191,8 @@
           "minimum": 4.5,
           "rationale": "Secondary analysis copy is ordinary-size text.",
           "foregroundStep": 325,
-          "backgroundStep": 850,
-          "ratio": 6.338,
+          "backgroundStep": 875,
+          "ratio": 6.693,
           "passed": true,
           "metTarget": true
         },
@@ -1235,9 +1233,9 @@
           "background": "fieldFace",
           "minimum": 3,
           "rationale": "The active field border is the visible focus indicator.",
-          "foregroundStep": 200,
-          "backgroundStep": 825,
-          "ratio": 8.864,
+          "foregroundStep": 225,
+          "backgroundStep": 850,
+          "ratio": 8.74,
           "passed": true,
           "metTarget": true
         },
@@ -1249,9 +1247,9 @@
           "background": "fieldEdge",
           "minimum": 3,
           "rationale": "Focus must remain distinguishable from the resting boundary.",
-          "foregroundStep": 200,
-          "backgroundStep": 725,
-          "ratio": 6.492,
+          "foregroundStep": 225,
+          "backgroundStep": 750,
+          "ratio": 6.552,
           "passed": true,
           "metTarget": true
         },
@@ -1264,8 +1262,8 @@
           "minimum": 4.5,
           "rationale": "The chip fills at the selected ground's depth, where plain muted ink falls under AA at the micro size its count is set in.",
           "foregroundStep": 225,
-          "backgroundStep": 825,
-          "ratio": 8.212,
+          "backgroundStep": 850,
+          "ratio": 8.74,
           "passed": true,
           "metTarget": true
         },
@@ -1293,8 +1291,8 @@
           "target": 7,
           "rationale": "Tooltip copy uses the primary text role.",
           "foregroundStep": 100,
-          "backgroundStep": 750,
-          "ratio": 9.452,
+          "backgroundStep": 775,
+          "ratio": 10.249,
           "passed": true,
           "metTarget": true
         },
@@ -1306,9 +1304,9 @@
           "background": "canvas",
           "minimum": 3,
           "rationale": "A project requirement, not a WCAG citation: the tooltip must read as a separate object over what it covers.",
-          "foregroundStep": 450,
+          "foregroundStep": 475,
           "backgroundStep": 900,
-          "ratio": 4.525,
+          "ratio": 4.127,
           "passed": true,
           "metTarget": true
         },
@@ -1320,9 +1318,9 @@
           "background": "surfacePrimary",
           "minimum": 3,
           "rationale": "Tooltips routinely open over raised panels.",
-          "foregroundStep": 450,
-          "backgroundStep": 825,
-          "ratio": 3.844,
+          "foregroundStep": 475,
+          "backgroundStep": 850,
+          "ratio": 3.731,
           "passed": true,
           "metTarget": true
         },
@@ -1334,9 +1332,9 @@
           "background": "surfaceFloating",
           "minimum": 3,
           "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-          "foregroundStep": 450,
-          "backgroundStep": 750,
-          "ratio": 3.066,
+          "foregroundStep": 475,
+          "backgroundStep": 775,
+          "ratio": 3.032,
           "passed": true,
           "metTarget": true
         },
@@ -1349,9 +1347,9 @@
           "minimum": 1.5,
           "target": 3,
           "rationale": "The box must read as bounded, not as a floating block of ink.",
-          "foregroundStep": 450,
-          "backgroundStep": 750,
-          "ratio": 3.066,
+          "foregroundStep": 475,
+          "backgroundStep": 775,
+          "ratio": 3.032,
           "passed": true,
           "metTarget": true
         },
@@ -1364,11 +1362,11 @@
           "minimum": 1.2,
           "target": 1.5,
           "rationale": "The floating panel ring; in dark it had fallen to 1.10:1 and the boundary was carried almost entirely by an alpha sheen.",
-          "foregroundStep": 625,
-          "backgroundStep": 750,
-          "ratio": 1.578,
+          "foregroundStep": 700,
+          "backgroundStep": 775,
+          "ratio": 1.291,
           "passed": true,
-          "metTarget": true
+          "metTarget": false
         },
         {
           "theme": "dark",
@@ -1379,9 +1377,9 @@
           "minimum": 1.2,
           "target": 1.5,
           "rationale": "The raised panel ring.",
-          "foregroundStep": 625,
-          "backgroundStep": 825,
-          "ratio": 1.978,
+          "foregroundStep": 700,
+          "backgroundStep": 850,
+          "ratio": 1.589,
           "passed": true,
           "metTarget": true
         },
@@ -1409,9 +1407,9 @@
           "minimum": 1.25,
           "target": 1.5,
           "rationale": "Decorative dividers need presence, not a WCAG text minimum.",
-          "foregroundStep": 575,
+          "foregroundStep": 650,
           "backgroundStep": 900,
-          "ratio": 2.823,
+          "ratio": 2.117,
           "passed": true,
           "metTarget": true
         }
@@ -1425,11 +1423,9 @@
       "note": "Blue and colder. Earns its distinctness with chroma, as Tailwind slate does against zinc.",
       "failures": [],
       "warnings": [
-        "primary-on-floating-surface: light and dark differ 2.007x in contrast (18.927:1 vs 9.432:1); the hierarchy is not the same in both themes.",
-        "field-focus-from-resting-edge: light and dark differ 1.761x in contrast (3.682:1 vs 6.485:1); the hierarchy is not the same in both themes.",
-        "tooltip-ink: light and dark differ 2.007x in contrast (18.927:1 vs 9.432:1); the hierarchy is not the same in both themes.",
-        "primary-to-floating-surface: light and dark differ 3.004x in separation (0.02251 vs 0.067627).",
-        "surface-chroma: dark surfaces average 2.67x the chroma of light surfaces (0.007262 vs 0.019386)."
+        "light muted-on-inset-surface: 4.581:1 is below target 4.75:1.",
+        "dark faint-rule-on-floating-surface: 1.294:1 is below target 1.5:1.",
+        "primary-to-floating-surface: light and dark differ 2.99x in separation (0.022508 vs 0.067291)."
       ],
       "ramp": [
         {
@@ -1976,27 +1972,27 @@
           },
           {
             "id": "primary-on-primary-surface",
-            "light": 17.743,
-            "dark": 11.844,
-            "ratio": 1.498
+            "light": 16.612,
+            "dark": 12.609,
+            "ratio": 1.317
           },
           {
             "id": "primary-on-floating-surface",
-            "light": 18.927,
-            "dark": 9.432,
-            "ratio": 2.007
+            "light": 17.743,
+            "dark": 10.235,
+            "ratio": 1.734
           },
           {
             "id": "primary-on-inset-surface",
-            "light": 14.504,
-            "dark": 14.953,
-            "ratio": 1.031
+            "light": 13.525,
+            "dark": 15.301,
+            "ratio": 1.131
           },
           {
             "id": "primary-on-selected-surface",
-            "light": 10.871,
-            "dark": 7.907,
-            "ratio": 1.375
+            "light": 10.077,
+            "dark": 8.652,
+            "ratio": 1.165
           },
           {
             "id": "muted-on-canvas",
@@ -2006,15 +2002,15 @@
           },
           {
             "id": "muted-on-inset-surface",
-            "light": 4.913,
-            "dark": 7.548,
-            "ratio": 1.536
+            "light": 4.581,
+            "dark": 7.724,
+            "ratio": 1.686
           },
           {
             "id": "muted-on-analysis",
-            "light": 6.411,
-            "dark": 6.365,
-            "ratio": 1.007
+            "light": 6.01,
+            "dark": 6.723,
+            "ratio": 1.119
           },
           {
             "id": "muted-on-notice",
@@ -2030,64 +2026,64 @@
           },
           {
             "id": "field-focus-on-face",
-            "light": 6.01,
-            "dark": 8.878,
-            "ratio": 1.477
+            "light": 6.196,
+            "dark": 8.761,
+            "ratio": 1.414
           },
           {
             "id": "field-focus-from-resting-edge",
-            "light": 3.682,
-            "dark": 6.485,
-            "ratio": 1.761
+            "light": 3.759,
+            "dark": 6.553,
+            "ratio": 1.743
           },
           {
             "id": "menu-chip-ink",
-            "light": 5.402,
-            "dark": 8.229,
-            "ratio": 1.523
+            "light": 5.008,
+            "dark": 8.761,
+            "ratio": 1.749
           },
           { "id": "keycap-ink", "light": 8.817, "dark": 7.112, "ratio": 1.24 },
           {
             "id": "tooltip-ink",
-            "light": 18.927,
-            "dark": 9.432,
-            "ratio": 2.007
+            "light": 17.743,
+            "dark": 10.235,
+            "ratio": 1.734
           },
           {
             "id": "tooltip-edge-over-canvas",
-            "light": 3.284,
-            "dark": 4.552,
-            "ratio": 1.386
+            "light": 3.6,
+            "dark": 4.151,
+            "ratio": 1.153
           },
           {
             "id": "tooltip-edge-over-primary-surface",
-            "light": 3.751,
-            "dark": 3.863,
-            "ratio": 1.03
+            "light": 3.85,
+            "dark": 3.751,
+            "ratio": 1.026
           },
           {
             "id": "tooltip-edge-over-floating-surface",
-            "light": 4.001,
-            "dark": 3.076,
-            "ratio": 1.301
+            "light": 4.113,
+            "dark": 3.045,
+            "ratio": 1.351
           },
           {
             "id": "tooltip-edge-on-own-face",
-            "light": 4.001,
-            "dark": 3.076,
-            "ratio": 1.301
+            "light": 4.113,
+            "dark": 3.045,
+            "ratio": 1.351
           },
           {
             "id": "faint-rule-on-floating-surface",
-            "light": 1.741,
-            "dark": 1.583,
-            "ratio": 1.1
+            "light": 1.761,
+            "dark": 1.294,
+            "ratio": 1.361
           },
           {
             "id": "faint-rule-on-primary-surface",
-            "light": 1.632,
-            "dark": 1.988,
-            "ratio": 1.218
+            "light": 1.648,
+            "dark": 1.595,
+            "ratio": 1.033
           },
           {
             "id": "keycap-ring-on-face",
@@ -2097,35 +2093,35 @@
           },
           {
             "id": "default-rule-on-canvas",
-            "light": 1.665,
-            "dark": 2.841,
-            "ratio": 1.706
+            "light": 1.802,
+            "dark": 2.128,
+            "ratio": 1.181
           }
         ],
         "separation": [
           {
             "id": "canvas-to-primary-surface",
-            "light": 0.045017,
-            "dark": 0.067137,
-            "ratio": 1.491
-          },
-          {
-            "id": "primary-to-floating-surface",
-            "light": 0.02251,
-            "dark": 0.067627,
-            "ratio": 3.004
-          },
-          {
-            "id": "canvas-to-inset-surface",
             "light": 0.022509,
             "dark": 0.044758,
             "ratio": 1.988
           },
           {
+            "id": "primary-to-floating-surface",
+            "light": 0.022508,
+            "dark": 0.067291,
+            "ratio": 2.99
+          },
+          {
+            "id": "canvas-to-inset-surface",
+            "light": 0.045038,
+            "dark": 0.067136,
+            "ratio": 1.491
+          },
+          {
             "id": "selected-from-canvas",
-            "light": 0.112628,
-            "dark": 0.17983,
-            "ratio": 1.597
+            "light": 0.135189,
+            "dark": 0.157192,
+            "ratio": 1.163
           }
         ],
         "surfaceChroma": {
@@ -2138,9 +2134,9 @@
             "surfaceSelected",
             "surfaceDisabled"
           ],
-          "light": 0.007262,
-          "dark": 0.019386,
-          "ratio": 2.67
+          "light": 0.009457,
+          "dark": 0.01753,
+          "ratio": 1.854
         }
       },
       "contrastContracts": [
@@ -2169,8 +2165,8 @@
           "target": 7,
           "rationale": "Ordinary body text on raised panels.",
           "foregroundStep": 925,
-          "backgroundStep": 25,
-          "ratio": 17.743,
+          "backgroundStep": 50,
+          "ratio": 16.612,
           "passed": true,
           "metTarget": true
         },
@@ -2184,8 +2180,8 @@
           "target": 7,
           "rationale": "Ordinary text in dialogs, tooltips, and floating panels.",
           "foregroundStep": 925,
-          "backgroundStep": 0,
-          "ratio": 18.927,
+          "backgroundStep": 25,
+          "ratio": 17.743,
           "passed": true,
           "metTarget": true
         },
@@ -2199,8 +2195,8 @@
           "target": 7,
           "rationale": "Ordinary text in recessed regions.",
           "foregroundStep": 925,
-          "backgroundStep": 100,
-          "ratio": 14.504,
+          "backgroundStep": 125,
+          "ratio": 13.525,
           "passed": true,
           "metTarget": true
         },
@@ -2214,8 +2210,8 @@
           "target": 7,
           "rationale": "Selected rows retain ordinary text readability.",
           "foregroundStep": 925,
-          "backgroundStep": 200,
-          "ratio": 10.871,
+          "backgroundStep": 225,
+          "ratio": 10.077,
           "passed": true,
           "metTarget": true
         },
@@ -2244,10 +2240,10 @@
           "target": 4.75,
           "rationale": "The weakest recurring secondary-text pairing.",
           "foregroundStep": 575,
-          "backgroundStep": 100,
-          "ratio": 4.913,
+          "backgroundStep": 125,
+          "ratio": 4.581,
           "passed": true,
-          "metTarget": true
+          "metTarget": false
         },
         {
           "theme": "light",
@@ -2258,8 +2254,8 @@
           "minimum": 4.5,
           "rationale": "Secondary analysis copy is ordinary-size text.",
           "foregroundStep": 575,
-          "backgroundStep": 0,
-          "ratio": 6.411,
+          "backgroundStep": 25,
+          "ratio": 6.01,
           "passed": true,
           "metTarget": true
         },
@@ -2300,9 +2296,9 @@
           "background": "fieldFace",
           "minimum": 3,
           "rationale": "The active field border is the visible focus indicator.",
-          "foregroundStep": 575,
-          "backgroundStep": 25,
-          "ratio": 6.01,
+          "foregroundStep": 600,
+          "backgroundStep": 50,
+          "ratio": 6.196,
           "passed": true,
           "metTarget": true
         },
@@ -2314,9 +2310,9 @@
           "background": "fieldEdge",
           "minimum": 3,
           "rationale": "Focus must remain distinguishable from the resting boundary.",
-          "foregroundStep": 575,
-          "backgroundStep": 200,
-          "ratio": 3.682,
+          "foregroundStep": 600,
+          "backgroundStep": 225,
+          "ratio": 3.759,
           "passed": true,
           "metTarget": true
         },
@@ -2329,8 +2325,8 @@
           "minimum": 4.5,
           "rationale": "The chip fills at the selected ground's depth, where plain muted ink falls under AA at the micro size its count is set in.",
           "foregroundStep": 675,
-          "backgroundStep": 200,
-          "ratio": 5.402,
+          "backgroundStep": 225,
+          "ratio": 5.008,
           "passed": true,
           "metTarget": true
         },
@@ -2358,8 +2354,8 @@
           "target": 7,
           "rationale": "Tooltip copy uses the primary text role.",
           "foregroundStep": 925,
-          "backgroundStep": 0,
-          "ratio": 18.927,
+          "backgroundStep": 25,
+          "ratio": 17.743,
           "passed": true,
           "metTarget": true
         },
@@ -2371,9 +2367,9 @@
           "background": "canvas",
           "minimum": 3,
           "rationale": "A project requirement, not a WCAG citation: the tooltip must read as a separate object over what it covers.",
-          "foregroundStep": 450,
+          "foregroundStep": 475,
           "backgroundStep": 75,
-          "ratio": 3.284,
+          "ratio": 3.6,
           "passed": true,
           "metTarget": true
         },
@@ -2385,9 +2381,9 @@
           "background": "surfacePrimary",
           "minimum": 3,
           "rationale": "Tooltips routinely open over raised panels.",
-          "foregroundStep": 450,
-          "backgroundStep": 25,
-          "ratio": 3.751,
+          "foregroundStep": 475,
+          "backgroundStep": 50,
+          "ratio": 3.85,
           "passed": true,
           "metTarget": true
         },
@@ -2399,9 +2395,9 @@
           "background": "surfaceFloating",
           "minimum": 3,
           "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-          "foregroundStep": 450,
-          "backgroundStep": 0,
-          "ratio": 4.001,
+          "foregroundStep": 475,
+          "backgroundStep": 25,
+          "ratio": 4.113,
           "passed": true,
           "metTarget": true
         },
@@ -2414,9 +2410,9 @@
           "minimum": 1.5,
           "target": 3,
           "rationale": "The box must read as bounded, not as a floating block of ink.",
-          "foregroundStep": 450,
-          "backgroundStep": 0,
-          "ratio": 4.001,
+          "foregroundStep": 475,
+          "backgroundStep": 25,
+          "ratio": 4.113,
           "passed": true,
           "metTarget": true
         },
@@ -2429,9 +2425,9 @@
           "minimum": 1.2,
           "target": 1.5,
           "rationale": "The floating panel ring; in dark it had fallen to 1.10:1 and the boundary was carried almost entirely by an alpha sheen.",
-          "foregroundStep": 200,
-          "backgroundStep": 0,
-          "ratio": 1.741,
+          "foregroundStep": 225,
+          "backgroundStep": 25,
+          "ratio": 1.761,
           "passed": true,
           "metTarget": true
         },
@@ -2444,9 +2440,9 @@
           "minimum": 1.2,
           "target": 1.5,
           "rationale": "The raised panel ring.",
-          "foregroundStep": 200,
-          "backgroundStep": 25,
-          "ratio": 1.632,
+          "foregroundStep": 225,
+          "backgroundStep": 50,
+          "ratio": 1.648,
           "passed": true,
           "metTarget": true
         },
@@ -2474,9 +2470,9 @@
           "minimum": 1.25,
           "target": 1.5,
           "rationale": "Decorative dividers need presence, not a WCAG text minimum.",
-          "foregroundStep": 250,
+          "foregroundStep": 275,
           "backgroundStep": 75,
-          "ratio": 1.665,
+          "ratio": 1.802,
           "passed": true,
           "metTarget": true
         },
@@ -2505,8 +2501,8 @@
           "target": 7,
           "rationale": "Ordinary body text on raised panels.",
           "foregroundStep": 100,
-          "backgroundStep": 825,
-          "ratio": 11.844,
+          "backgroundStep": 850,
+          "ratio": 12.609,
           "passed": true,
           "metTarget": true
         },
@@ -2520,8 +2516,8 @@
           "target": 7,
           "rationale": "Ordinary text in dialogs, tooltips, and floating panels.",
           "foregroundStep": 100,
-          "backgroundStep": 750,
-          "ratio": 9.432,
+          "backgroundStep": 775,
+          "ratio": 10.235,
           "passed": true,
           "metTarget": true
         },
@@ -2535,8 +2531,8 @@
           "target": 7,
           "rationale": "Ordinary text in recessed regions.",
           "foregroundStep": 100,
-          "backgroundStep": 950,
-          "ratio": 14.953,
+          "backgroundStep": 975,
+          "ratio": 15.301,
           "passed": true,
           "metTarget": true
         },
@@ -2550,8 +2546,8 @@
           "target": 7,
           "rationale": "Selected rows retain ordinary text readability.",
           "foregroundStep": 100,
-          "backgroundStep": 700,
-          "ratio": 7.907,
+          "backgroundStep": 725,
+          "ratio": 8.652,
           "passed": true,
           "metTarget": true
         },
@@ -2580,8 +2576,8 @@
           "target": 4.75,
           "rationale": "The weakest recurring secondary-text pairing.",
           "foregroundStep": 325,
-          "backgroundStep": 950,
-          "ratio": 7.548,
+          "backgroundStep": 975,
+          "ratio": 7.724,
           "passed": true,
           "metTarget": true
         },
@@ -2594,8 +2590,8 @@
           "minimum": 4.5,
           "rationale": "Secondary analysis copy is ordinary-size text.",
           "foregroundStep": 325,
-          "backgroundStep": 850,
-          "ratio": 6.365,
+          "backgroundStep": 875,
+          "ratio": 6.723,
           "passed": true,
           "metTarget": true
         },
@@ -2636,9 +2632,9 @@
           "background": "fieldFace",
           "minimum": 3,
           "rationale": "The active field border is the visible focus indicator.",
-          "foregroundStep": 200,
-          "backgroundStep": 825,
-          "ratio": 8.878,
+          "foregroundStep": 225,
+          "backgroundStep": 850,
+          "ratio": 8.761,
           "passed": true,
           "metTarget": true
         },
@@ -2650,9 +2646,9 @@
           "background": "fieldEdge",
           "minimum": 3,
           "rationale": "Focus must remain distinguishable from the resting boundary.",
-          "foregroundStep": 200,
-          "backgroundStep": 725,
-          "ratio": 6.485,
+          "foregroundStep": 225,
+          "backgroundStep": 750,
+          "ratio": 6.553,
           "passed": true,
           "metTarget": true
         },
@@ -2665,8 +2661,8 @@
           "minimum": 4.5,
           "rationale": "The chip fills at the selected ground's depth, where plain muted ink falls under AA at the micro size its count is set in.",
           "foregroundStep": 225,
-          "backgroundStep": 825,
-          "ratio": 8.229,
+          "backgroundStep": 850,
+          "ratio": 8.761,
           "passed": true,
           "metTarget": true
         },
@@ -2694,8 +2690,8 @@
           "target": 7,
           "rationale": "Tooltip copy uses the primary text role.",
           "foregroundStep": 100,
-          "backgroundStep": 750,
-          "ratio": 9.432,
+          "backgroundStep": 775,
+          "ratio": 10.235,
           "passed": true,
           "metTarget": true
         },
@@ -2707,9 +2703,9 @@
           "background": "canvas",
           "minimum": 3,
           "rationale": "A project requirement, not a WCAG citation: the tooltip must read as a separate object over what it covers.",
-          "foregroundStep": 450,
+          "foregroundStep": 475,
           "backgroundStep": 900,
-          "ratio": 4.552,
+          "ratio": 4.151,
           "passed": true,
           "metTarget": true
         },
@@ -2721,9 +2717,9 @@
           "background": "surfacePrimary",
           "minimum": 3,
           "rationale": "Tooltips routinely open over raised panels.",
-          "foregroundStep": 450,
-          "backgroundStep": 825,
-          "ratio": 3.863,
+          "foregroundStep": 475,
+          "backgroundStep": 850,
+          "ratio": 3.751,
           "passed": true,
           "metTarget": true
         },
@@ -2735,9 +2731,9 @@
           "background": "surfaceFloating",
           "minimum": 3,
           "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-          "foregroundStep": 450,
-          "backgroundStep": 750,
-          "ratio": 3.076,
+          "foregroundStep": 475,
+          "backgroundStep": 775,
+          "ratio": 3.045,
           "passed": true,
           "metTarget": true
         },
@@ -2750,9 +2746,9 @@
           "minimum": 1.5,
           "target": 3,
           "rationale": "The box must read as bounded, not as a floating block of ink.",
-          "foregroundStep": 450,
-          "backgroundStep": 750,
-          "ratio": 3.076,
+          "foregroundStep": 475,
+          "backgroundStep": 775,
+          "ratio": 3.045,
           "passed": true,
           "metTarget": true
         },
@@ -2765,11 +2761,11 @@
           "minimum": 1.2,
           "target": 1.5,
           "rationale": "The floating panel ring; in dark it had fallen to 1.10:1 and the boundary was carried almost entirely by an alpha sheen.",
-          "foregroundStep": 625,
-          "backgroundStep": 750,
-          "ratio": 1.583,
+          "foregroundStep": 700,
+          "backgroundStep": 775,
+          "ratio": 1.294,
           "passed": true,
-          "metTarget": true
+          "metTarget": false
         },
         {
           "theme": "dark",
@@ -2780,9 +2776,9 @@
           "minimum": 1.2,
           "target": 1.5,
           "rationale": "The raised panel ring.",
-          "foregroundStep": 625,
-          "backgroundStep": 825,
-          "ratio": 1.988,
+          "foregroundStep": 700,
+          "backgroundStep": 850,
+          "ratio": 1.595,
           "passed": true,
           "metTarget": true
         },
@@ -2810,9 +2806,9 @@
           "minimum": 1.25,
           "target": 1.5,
           "rationale": "Decorative dividers need presence, not a WCAG text minimum.",
-          "foregroundStep": 575,
+          "foregroundStep": 650,
           "backgroundStep": 900,
-          "ratio": 2.841,
+          "ratio": 2.128,
           "passed": true,
           "metTarget": true
         }
@@ -2826,11 +2822,9 @@
       "note": "Warm amber-grey, near Tailwind stone.",
       "failures": [],
       "warnings": [
-        "primary-on-floating-surface: light and dark differ 2.004x in contrast (18.941:1 vs 9.453:1); the hierarchy is not the same in both themes.",
-        "field-focus-from-resting-edge: light and dark differ 1.756x in contrast (3.698:1 vs 6.493:1); the hierarchy is not the same in both themes.",
-        "tooltip-ink: light and dark differ 2.004x in contrast (18.941:1 vs 9.453:1); the hierarchy is not the same in both themes.",
-        "primary-to-floating-surface: light and dark differ 3.002x in separation (0.022427 vs 0.067321).",
-        "surface-chroma: dark surfaces average 2.669x the chroma of light surfaces (0.004539 vs 0.012116)."
+        "light muted-on-inset-surface: 4.607:1 is below target 4.75:1.",
+        "dark faint-rule-on-floating-surface: 1.291:1 is below target 1.5:1.",
+        "primary-to-floating-surface: light and dark differ 2.996x in separation (0.022428 vs 0.067188)."
       ],
       "ramp": [
         {
@@ -3377,27 +3371,27 @@
           },
           {
             "id": "primary-on-primary-surface",
-            "light": 17.75,
-            "dark": 11.848,
-            "ratio": 1.498
+            "light": 16.612,
+            "dark": 12.61,
+            "ratio": 1.317
           },
           {
             "id": "primary-on-floating-surface",
-            "light": 18.941,
-            "dark": 9.453,
-            "ratio": 2.004
+            "light": 17.75,
+            "dark": 10.25,
+            "ratio": 1.732
           },
           {
             "id": "primary-on-inset-surface",
-            "light": 14.492,
-            "dark": 14.938,
-            "ratio": 1.031
+            "light": 13.508,
+            "dark": 15.282,
+            "ratio": 1.131
           },
           {
             "id": "primary-on-selected-surface",
-            "light": 10.842,
-            "dark": 7.939,
-            "ratio": 1.366
+            "light": 10.045,
+            "dark": 8.679,
+            "ratio": 1.157
           },
           {
             "id": "muted-on-canvas",
@@ -3407,15 +3401,15 @@
           },
           {
             "id": "muted-on-inset-surface",
-            "light": 4.943,
-            "dark": 7.507,
-            "ratio": 1.519
+            "light": 4.607,
+            "dark": 7.681,
+            "ratio": 1.667
           },
           {
             "id": "muted-on-analysis",
-            "light": 6.46,
-            "dark": 6.337,
-            "ratio": 1.019
+            "light": 6.054,
+            "dark": 6.693,
+            "ratio": 1.106
           },
           {
             "id": "muted-on-notice",
@@ -3431,64 +3425,64 @@
           },
           {
             "id": "field-focus-on-face",
-            "light": 6.054,
-            "dark": 8.864,
-            "ratio": 1.464
+            "light": 6.239,
+            "dark": 8.74,
+            "ratio": 1.401
           },
           {
             "id": "field-focus-from-resting-edge",
-            "light": 3.698,
-            "dark": 6.493,
-            "ratio": 1.756
+            "light": 3.773,
+            "dark": 6.552,
+            "ratio": 1.737
           },
           {
             "id": "menu-chip-ink",
-            "light": 5.417,
-            "dark": 8.213,
-            "ratio": 1.516
+            "light": 5.019,
+            "dark": 8.74,
+            "ratio": 1.741
           },
           { "id": "keycap-ink", "light": 8.868, "dark": 7.105, "ratio": 1.248 },
           {
             "id": "tooltip-ink",
-            "light": 18.941,
-            "dark": 9.453,
-            "ratio": 2.004
+            "light": 17.75,
+            "dark": 10.25,
+            "ratio": 1.732
           },
           {
             "id": "tooltip-edge-over-canvas",
-            "light": 3.303,
-            "dark": 4.524,
-            "ratio": 1.37
+            "light": 3.622,
+            "dark": 4.126,
+            "ratio": 1.139
           },
           {
             "id": "tooltip-edge-over-primary-surface",
-            "light": 3.776,
-            "dark": 3.843,
-            "ratio": 1.018
+            "light": 3.875,
+            "dark": 3.73,
+            "ratio": 1.039
           },
           {
             "id": "tooltip-edge-over-floating-surface",
-            "light": 4.03,
-            "dark": 3.066,
-            "ratio": 1.314
+            "light": 4.141,
+            "dark": 3.032,
+            "ratio": 1.366
           },
           {
             "id": "tooltip-edge-on-own-face",
-            "light": 4.03,
-            "dark": 3.066,
-            "ratio": 1.314
+            "light": 4.141,
+            "dark": 3.032,
+            "ratio": 1.366
           },
           {
             "id": "faint-rule-on-floating-surface",
-            "light": 1.747,
-            "dark": 1.578,
-            "ratio": 1.107
+            "light": 1.767,
+            "dark": 1.291,
+            "ratio": 1.369
           },
           {
             "id": "faint-rule-on-primary-surface",
-            "light": 1.637,
-            "dark": 1.977,
-            "ratio": 1.208
+            "light": 1.654,
+            "dark": 1.588,
+            "ratio": 1.042
           },
           {
             "id": "keycap-ring-on-face",
@@ -3498,35 +3492,35 @@
           },
           {
             "id": "default-rule-on-canvas",
-            "light": 1.671,
-            "dark": 2.822,
-            "ratio": 1.689
+            "light": 1.809,
+            "dark": 2.116,
+            "ratio": 1.17
           }
         ],
         "separation": [
           {
             "id": "canvas-to-primary-surface",
-            "light": 0.044856,
-            "dark": 0.067128,
-            "ratio": 1.497
-          },
-          {
-            "id": "primary-to-floating-surface",
-            "light": 0.022427,
-            "dark": 0.067321,
-            "ratio": 3.002
-          },
-          {
-            "id": "canvas-to-inset-surface",
             "light": 0.022428,
-            "dark": 0.044755,
+            "dark": 0.044753,
             "ratio": 1.995
           },
           {
+            "id": "primary-to-floating-surface",
+            "light": 0.022428,
+            "dark": 0.067188,
+            "ratio": 2.996
+          },
+          {
+            "id": "canvas-to-inset-surface",
+            "light": 0.044862,
+            "dark": 0.067131,
+            "ratio": 1.496
+          },
+          {
             "id": "selected-from-canvas",
-            "light": 0.112169,
-            "dark": 0.179322,
-            "ratio": 1.599
+            "light": 0.134617,
+            "dark": 0.156846,
+            "ratio": 1.165
           }
         ],
         "surfaceChroma": {
@@ -3539,9 +3533,9 @@
             "surfaceSelected",
             "surfaceDisabled"
           ],
-          "light": 0.004539,
-          "dark": 0.012116,
-          "ratio": 2.669
+          "light": 0.005911,
+          "dark": 0.010956,
+          "ratio": 1.853
         }
       },
       "contrastContracts": [
@@ -3570,8 +3564,8 @@
           "target": 7,
           "rationale": "Ordinary body text on raised panels.",
           "foregroundStep": 925,
-          "backgroundStep": 25,
-          "ratio": 17.75,
+          "backgroundStep": 50,
+          "ratio": 16.612,
           "passed": true,
           "metTarget": true
         },
@@ -3585,8 +3579,8 @@
           "target": 7,
           "rationale": "Ordinary text in dialogs, tooltips, and floating panels.",
           "foregroundStep": 925,
-          "backgroundStep": 0,
-          "ratio": 18.941,
+          "backgroundStep": 25,
+          "ratio": 17.75,
           "passed": true,
           "metTarget": true
         },
@@ -3600,8 +3594,8 @@
           "target": 7,
           "rationale": "Ordinary text in recessed regions.",
           "foregroundStep": 925,
-          "backgroundStep": 100,
-          "ratio": 14.492,
+          "backgroundStep": 125,
+          "ratio": 13.508,
           "passed": true,
           "metTarget": true
         },
@@ -3615,8 +3609,8 @@
           "target": 7,
           "rationale": "Selected rows retain ordinary text readability.",
           "foregroundStep": 925,
-          "backgroundStep": 200,
-          "ratio": 10.842,
+          "backgroundStep": 225,
+          "ratio": 10.045,
           "passed": true,
           "metTarget": true
         },
@@ -3645,10 +3639,10 @@
           "target": 4.75,
           "rationale": "The weakest recurring secondary-text pairing.",
           "foregroundStep": 575,
-          "backgroundStep": 100,
-          "ratio": 4.943,
+          "backgroundStep": 125,
+          "ratio": 4.607,
           "passed": true,
-          "metTarget": true
+          "metTarget": false
         },
         {
           "theme": "light",
@@ -3659,8 +3653,8 @@
           "minimum": 4.5,
           "rationale": "Secondary analysis copy is ordinary-size text.",
           "foregroundStep": 575,
-          "backgroundStep": 0,
-          "ratio": 6.46,
+          "backgroundStep": 25,
+          "ratio": 6.054,
           "passed": true,
           "metTarget": true
         },
@@ -3701,9 +3695,9 @@
           "background": "fieldFace",
           "minimum": 3,
           "rationale": "The active field border is the visible focus indicator.",
-          "foregroundStep": 575,
-          "backgroundStep": 25,
-          "ratio": 6.054,
+          "foregroundStep": 600,
+          "backgroundStep": 50,
+          "ratio": 6.239,
           "passed": true,
           "metTarget": true
         },
@@ -3715,9 +3709,9 @@
           "background": "fieldEdge",
           "minimum": 3,
           "rationale": "Focus must remain distinguishable from the resting boundary.",
-          "foregroundStep": 575,
-          "backgroundStep": 200,
-          "ratio": 3.698,
+          "foregroundStep": 600,
+          "backgroundStep": 225,
+          "ratio": 3.773,
           "passed": true,
           "metTarget": true
         },
@@ -3730,8 +3724,8 @@
           "minimum": 4.5,
           "rationale": "The chip fills at the selected ground's depth, where plain muted ink falls under AA at the micro size its count is set in.",
           "foregroundStep": 675,
-          "backgroundStep": 200,
-          "ratio": 5.417,
+          "backgroundStep": 225,
+          "ratio": 5.019,
           "passed": true,
           "metTarget": true
         },
@@ -3759,8 +3753,8 @@
           "target": 7,
           "rationale": "Tooltip copy uses the primary text role.",
           "foregroundStep": 925,
-          "backgroundStep": 0,
-          "ratio": 18.941,
+          "backgroundStep": 25,
+          "ratio": 17.75,
           "passed": true,
           "metTarget": true
         },
@@ -3772,9 +3766,9 @@
           "background": "canvas",
           "minimum": 3,
           "rationale": "A project requirement, not a WCAG citation: the tooltip must read as a separate object over what it covers.",
-          "foregroundStep": 450,
+          "foregroundStep": 475,
           "backgroundStep": 75,
-          "ratio": 3.303,
+          "ratio": 3.622,
           "passed": true,
           "metTarget": true
         },
@@ -3786,9 +3780,9 @@
           "background": "surfacePrimary",
           "minimum": 3,
           "rationale": "Tooltips routinely open over raised panels.",
-          "foregroundStep": 450,
-          "backgroundStep": 25,
-          "ratio": 3.776,
+          "foregroundStep": 475,
+          "backgroundStep": 50,
+          "ratio": 3.875,
           "passed": true,
           "metTarget": true
         },
@@ -3800,9 +3794,9 @@
           "background": "surfaceFloating",
           "minimum": 3,
           "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-          "foregroundStep": 450,
-          "backgroundStep": 0,
-          "ratio": 4.03,
+          "foregroundStep": 475,
+          "backgroundStep": 25,
+          "ratio": 4.141,
           "passed": true,
           "metTarget": true
         },
@@ -3815,9 +3809,9 @@
           "minimum": 1.5,
           "target": 3,
           "rationale": "The box must read as bounded, not as a floating block of ink.",
-          "foregroundStep": 450,
-          "backgroundStep": 0,
-          "ratio": 4.03,
+          "foregroundStep": 475,
+          "backgroundStep": 25,
+          "ratio": 4.141,
           "passed": true,
           "metTarget": true
         },
@@ -3830,9 +3824,9 @@
           "minimum": 1.2,
           "target": 1.5,
           "rationale": "The floating panel ring; in dark it had fallen to 1.10:1 and the boundary was carried almost entirely by an alpha sheen.",
-          "foregroundStep": 200,
-          "backgroundStep": 0,
-          "ratio": 1.747,
+          "foregroundStep": 225,
+          "backgroundStep": 25,
+          "ratio": 1.767,
           "passed": true,
           "metTarget": true
         },
@@ -3845,9 +3839,9 @@
           "minimum": 1.2,
           "target": 1.5,
           "rationale": "The raised panel ring.",
-          "foregroundStep": 200,
-          "backgroundStep": 25,
-          "ratio": 1.637,
+          "foregroundStep": 225,
+          "backgroundStep": 50,
+          "ratio": 1.654,
           "passed": true,
           "metTarget": true
         },
@@ -3875,9 +3869,9 @@
           "minimum": 1.25,
           "target": 1.5,
           "rationale": "Decorative dividers need presence, not a WCAG text minimum.",
-          "foregroundStep": 250,
+          "foregroundStep": 275,
           "backgroundStep": 75,
-          "ratio": 1.671,
+          "ratio": 1.809,
           "passed": true,
           "metTarget": true
         },
@@ -3906,8 +3900,8 @@
           "target": 7,
           "rationale": "Ordinary body text on raised panels.",
           "foregroundStep": 100,
-          "backgroundStep": 825,
-          "ratio": 11.848,
+          "backgroundStep": 850,
+          "ratio": 12.61,
           "passed": true,
           "metTarget": true
         },
@@ -3921,8 +3915,8 @@
           "target": 7,
           "rationale": "Ordinary text in dialogs, tooltips, and floating panels.",
           "foregroundStep": 100,
-          "backgroundStep": 750,
-          "ratio": 9.453,
+          "backgroundStep": 775,
+          "ratio": 10.25,
           "passed": true,
           "metTarget": true
         },
@@ -3936,8 +3930,8 @@
           "target": 7,
           "rationale": "Ordinary text in recessed regions.",
           "foregroundStep": 100,
-          "backgroundStep": 950,
-          "ratio": 14.938,
+          "backgroundStep": 975,
+          "ratio": 15.282,
           "passed": true,
           "metTarget": true
         },
@@ -3951,8 +3945,8 @@
           "target": 7,
           "rationale": "Selected rows retain ordinary text readability.",
           "foregroundStep": 100,
-          "backgroundStep": 700,
-          "ratio": 7.939,
+          "backgroundStep": 725,
+          "ratio": 8.679,
           "passed": true,
           "metTarget": true
         },
@@ -3981,8 +3975,8 @@
           "target": 4.75,
           "rationale": "The weakest recurring secondary-text pairing.",
           "foregroundStep": 325,
-          "backgroundStep": 950,
-          "ratio": 7.507,
+          "backgroundStep": 975,
+          "ratio": 7.681,
           "passed": true,
           "metTarget": true
         },
@@ -3995,8 +3989,8 @@
           "minimum": 4.5,
           "rationale": "Secondary analysis copy is ordinary-size text.",
           "foregroundStep": 325,
-          "backgroundStep": 850,
-          "ratio": 6.337,
+          "backgroundStep": 875,
+          "ratio": 6.693,
           "passed": true,
           "metTarget": true
         },
@@ -4037,9 +4031,9 @@
           "background": "fieldFace",
           "minimum": 3,
           "rationale": "The active field border is the visible focus indicator.",
-          "foregroundStep": 200,
-          "backgroundStep": 825,
-          "ratio": 8.864,
+          "foregroundStep": 225,
+          "backgroundStep": 850,
+          "ratio": 8.74,
           "passed": true,
           "metTarget": true
         },
@@ -4051,9 +4045,9 @@
           "background": "fieldEdge",
           "minimum": 3,
           "rationale": "Focus must remain distinguishable from the resting boundary.",
-          "foregroundStep": 200,
-          "backgroundStep": 725,
-          "ratio": 6.493,
+          "foregroundStep": 225,
+          "backgroundStep": 750,
+          "ratio": 6.552,
           "passed": true,
           "metTarget": true
         },
@@ -4066,8 +4060,8 @@
           "minimum": 4.5,
           "rationale": "The chip fills at the selected ground's depth, where plain muted ink falls under AA at the micro size its count is set in.",
           "foregroundStep": 225,
-          "backgroundStep": 825,
-          "ratio": 8.213,
+          "backgroundStep": 850,
+          "ratio": 8.74,
           "passed": true,
           "metTarget": true
         },
@@ -4095,8 +4089,8 @@
           "target": 7,
           "rationale": "Tooltip copy uses the primary text role.",
           "foregroundStep": 100,
-          "backgroundStep": 750,
-          "ratio": 9.453,
+          "backgroundStep": 775,
+          "ratio": 10.25,
           "passed": true,
           "metTarget": true
         },
@@ -4108,9 +4102,9 @@
           "background": "canvas",
           "minimum": 3,
           "rationale": "A project requirement, not a WCAG citation: the tooltip must read as a separate object over what it covers.",
-          "foregroundStep": 450,
+          "foregroundStep": 475,
           "backgroundStep": 900,
-          "ratio": 4.524,
+          "ratio": 4.126,
           "passed": true,
           "metTarget": true
         },
@@ -4122,9 +4116,9 @@
           "background": "surfacePrimary",
           "minimum": 3,
           "rationale": "Tooltips routinely open over raised panels.",
-          "foregroundStep": 450,
-          "backgroundStep": 825,
-          "ratio": 3.843,
+          "foregroundStep": 475,
+          "backgroundStep": 850,
+          "ratio": 3.73,
           "passed": true,
           "metTarget": true
         },
@@ -4136,9 +4130,9 @@
           "background": "surfaceFloating",
           "minimum": 3,
           "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-          "foregroundStep": 450,
-          "backgroundStep": 750,
-          "ratio": 3.066,
+          "foregroundStep": 475,
+          "backgroundStep": 775,
+          "ratio": 3.032,
           "passed": true,
           "metTarget": true
         },
@@ -4151,9 +4145,9 @@
           "minimum": 1.5,
           "target": 3,
           "rationale": "The box must read as bounded, not as a floating block of ink.",
-          "foregroundStep": 450,
-          "backgroundStep": 750,
-          "ratio": 3.066,
+          "foregroundStep": 475,
+          "backgroundStep": 775,
+          "ratio": 3.032,
           "passed": true,
           "metTarget": true
         },
@@ -4166,11 +4160,11 @@
           "minimum": 1.2,
           "target": 1.5,
           "rationale": "The floating panel ring; in dark it had fallen to 1.10:1 and the boundary was carried almost entirely by an alpha sheen.",
-          "foregroundStep": 625,
-          "backgroundStep": 750,
-          "ratio": 1.578,
+          "foregroundStep": 700,
+          "backgroundStep": 775,
+          "ratio": 1.291,
           "passed": true,
-          "metTarget": true
+          "metTarget": false
         },
         {
           "theme": "dark",
@@ -4181,9 +4175,9 @@
           "minimum": 1.2,
           "target": 1.5,
           "rationale": "The raised panel ring.",
-          "foregroundStep": 625,
-          "backgroundStep": 825,
-          "ratio": 1.977,
+          "foregroundStep": 700,
+          "backgroundStep": 850,
+          "ratio": 1.588,
           "passed": true,
           "metTarget": true
         },
@@ -4211,9 +4205,9 @@
           "minimum": 1.25,
           "target": 1.5,
           "rationale": "Decorative dividers need presence, not a WCAG text minimum.",
-          "foregroundStep": 575,
+          "foregroundStep": 650,
           "backgroundStep": 900,
-          "ratio": 2.822,
+          "ratio": 2.116,
           "passed": true,
           "metTarget": true
         }
@@ -4227,11 +4221,11 @@
       "note": "Green-grey, between Radix sage and olive.",
       "failures": [],
       "warnings": [
-        "primary-on-floating-surface: light and dark differ 2.011x in contrast (18.91:1 vs 9.405:1); the hierarchy is not the same in both themes.",
-        "field-focus-from-resting-edge: light and dark differ 1.767x in contrast (3.662:1 vs 6.471:1); the hierarchy is not the same in both themes.",
-        "tooltip-ink: light and dark differ 2.011x in contrast (18.91:1 vs 9.405:1); the hierarchy is not the same in both themes.",
-        "primary-to-floating-surface: light and dark differ 3.002x in separation (0.022427 vs 0.067322).",
-        "surface-chroma: dark surfaces average 2.67x the chroma of light surfaces (0.004539 vs 0.012117)."
+        "light muted-on-inset-surface: 4.549:1 is below target 4.75:1.",
+        "dark faint-rule-on-floating-surface: 1.299:1 is below target 1.5:1.",
+        "field-focus-from-resting-edge: light and dark differ 1.752x in contrast (3.739:1 vs 6.55:1); the hierarchy is not the same in both themes.",
+        "menu-chip-ink: light and dark differ 1.759x in contrast (4.991:1 vs 8.778:1); the hierarchy is not the same in both themes.",
+        "primary-to-floating-surface: light and dark differ 2.996x in separation (0.022427 vs 0.067189)."
       ],
       "ramp": [
         {
@@ -4778,27 +4772,27 @@
           },
           {
             "id": "primary-on-primary-surface",
-            "light": 17.733,
-            "dark": 11.837,
-            "ratio": 1.498
+            "light": 16.608,
+            "dark": 12.604,
+            "ratio": 1.318
           },
           {
             "id": "primary-on-floating-surface",
-            "light": 18.91,
-            "dark": 9.405,
-            "ratio": 2.011
+            "light": 17.733,
+            "dark": 10.216,
+            "ratio": 1.736
           },
           {
             "id": "primary-on-inset-surface",
-            "light": 14.511,
-            "dark": 14.964,
-            "ratio": 1.031
+            "light": 13.537,
+            "dark": 15.316,
+            "ratio": 1.131
           },
           {
             "id": "primary-on-selected-surface",
-            "light": 10.896,
-            "dark": 7.867,
-            "ratio": 1.385
+            "light": 10.106,
+            "dark": 8.617,
+            "ratio": 1.173
           },
           {
             "id": "muted-on-canvas",
@@ -4808,15 +4802,15 @@
           },
           {
             "id": "muted-on-inset-surface",
-            "light": 4.876,
-            "dark": 7.589,
-            "ratio": 1.556
+            "light": 4.549,
+            "dark": 7.767,
+            "ratio": 1.707
           },
           {
             "id": "muted-on-analysis",
-            "light": 6.355,
-            "dark": 6.392,
-            "ratio": 1.006
+            "light": 5.959,
+            "dark": 6.754,
+            "ratio": 1.133
           },
           {
             "id": "muted-on-notice",
@@ -4832,64 +4826,64 @@
           },
           {
             "id": "field-focus-on-face",
-            "light": 5.959,
-            "dark": 8.888,
-            "ratio": 1.492
+            "light": 6.145,
+            "dark": 8.778,
+            "ratio": 1.428
           },
           {
             "id": "field-focus-from-resting-edge",
-            "light": 3.662,
-            "dark": 6.471,
-            "ratio": 1.767
+            "light": 3.739,
+            "dark": 6.55,
+            "ratio": 1.752
           },
           {
             "id": "menu-chip-ink",
-            "light": 5.381,
-            "dark": 8.244,
-            "ratio": 1.532
+            "light": 4.991,
+            "dark": 8.778,
+            "ratio": 1.759
           },
           { "id": "keycap-ink", "light": 8.757, "dark": 7.115, "ratio": 1.231 },
           {
             "id": "tooltip-ink",
-            "light": 18.91,
-            "dark": 9.405,
-            "ratio": 2.011
+            "light": 17.733,
+            "dark": 10.216,
+            "ratio": 1.736
           },
           {
             "id": "tooltip-edge-over-canvas",
-            "light": 3.262,
-            "dark": 4.581,
-            "ratio": 1.404
+            "light": 3.576,
+            "dark": 4.179,
+            "ratio": 1.169
           },
           {
             "id": "tooltip-edge-over-primary-surface",
-            "light": 3.724,
-            "dark": 3.884,
-            "ratio": 1.043
+            "light": 3.823,
+            "dark": 3.774,
+            "ratio": 1.013
           },
           {
             "id": "tooltip-edge-over-floating-surface",
-            "light": 3.971,
-            "dark": 3.086,
-            "ratio": 1.287
+            "light": 4.082,
+            "dark": 3.059,
+            "ratio": 1.334
           },
           {
             "id": "tooltip-edge-on-own-face",
-            "light": 3.971,
-            "dark": 3.086,
-            "ratio": 1.287
+            "light": 4.082,
+            "dark": 3.059,
+            "ratio": 1.334
           },
           {
             "id": "faint-rule-on-floating-surface",
-            "light": 1.735,
-            "dark": 1.59,
-            "ratio": 1.091
+            "light": 1.755,
+            "dark": 1.299,
+            "ratio": 1.351
           },
           {
             "id": "faint-rule-on-primary-surface",
-            "light": 1.627,
-            "dark": 2.001,
-            "ratio": 1.23
+            "light": 1.643,
+            "dark": 1.602,
+            "ratio": 1.026
           },
           {
             "id": "keycap-ring-on-face",
@@ -4899,35 +4893,35 @@
           },
           {
             "id": "default-rule-on-canvas",
-            "light": 1.66,
-            "dark": 2.863,
-            "ratio": 1.725
+            "light": 1.795,
+            "dark": 2.143,
+            "ratio": 1.194
           }
         ],
         "separation": [
           {
             "id": "canvas-to-primary-surface",
-            "light": 0.044855,
-            "dark": 0.067127,
-            "ratio": 1.497
+            "light": 0.022428,
+            "dark": 0.044751,
+            "ratio": 1.995
           },
           {
             "id": "primary-to-floating-surface",
             "light": 0.022427,
-            "dark": 0.067322,
-            "ratio": 3.002
+            "dark": 0.067189,
+            "ratio": 2.996
           },
           {
             "id": "canvas-to-inset-surface",
-            "light": 0.022429,
-            "dark": 0.044754,
-            "ratio": 1.995
+            "light": 0.044864,
+            "dark": 0.067129,
+            "ratio": 1.496
           },
           {
             "id": "selected-from-canvas",
-            "light": 0.11217,
-            "dark": 0.179324,
-            "ratio": 1.599
+            "light": 0.134618,
+            "dark": 0.156846,
+            "ratio": 1.165
           }
         ],
         "surfaceChroma": {
@@ -4940,9 +4934,9 @@
             "surfaceSelected",
             "surfaceDisabled"
           ],
-          "light": 0.004539,
-          "dark": 0.012117,
-          "ratio": 2.67
+          "light": 0.005911,
+          "dark": 0.010957,
+          "ratio": 1.854
         }
       },
       "contrastContracts": [
@@ -4971,8 +4965,8 @@
           "target": 7,
           "rationale": "Ordinary body text on raised panels.",
           "foregroundStep": 925,
-          "backgroundStep": 25,
-          "ratio": 17.733,
+          "backgroundStep": 50,
+          "ratio": 16.608,
           "passed": true,
           "metTarget": true
         },
@@ -4986,8 +4980,8 @@
           "target": 7,
           "rationale": "Ordinary text in dialogs, tooltips, and floating panels.",
           "foregroundStep": 925,
-          "backgroundStep": 0,
-          "ratio": 18.91,
+          "backgroundStep": 25,
+          "ratio": 17.733,
           "passed": true,
           "metTarget": true
         },
@@ -5001,8 +4995,8 @@
           "target": 7,
           "rationale": "Ordinary text in recessed regions.",
           "foregroundStep": 925,
-          "backgroundStep": 100,
-          "ratio": 14.511,
+          "backgroundStep": 125,
+          "ratio": 13.537,
           "passed": true,
           "metTarget": true
         },
@@ -5016,8 +5010,8 @@
           "target": 7,
           "rationale": "Selected rows retain ordinary text readability.",
           "foregroundStep": 925,
-          "backgroundStep": 200,
-          "ratio": 10.896,
+          "backgroundStep": 225,
+          "ratio": 10.106,
           "passed": true,
           "metTarget": true
         },
@@ -5046,10 +5040,10 @@
           "target": 4.75,
           "rationale": "The weakest recurring secondary-text pairing.",
           "foregroundStep": 575,
-          "backgroundStep": 100,
-          "ratio": 4.876,
+          "backgroundStep": 125,
+          "ratio": 4.549,
           "passed": true,
-          "metTarget": true
+          "metTarget": false
         },
         {
           "theme": "light",
@@ -5060,8 +5054,8 @@
           "minimum": 4.5,
           "rationale": "Secondary analysis copy is ordinary-size text.",
           "foregroundStep": 575,
-          "backgroundStep": 0,
-          "ratio": 6.355,
+          "backgroundStep": 25,
+          "ratio": 5.959,
           "passed": true,
           "metTarget": true
         },
@@ -5102,9 +5096,9 @@
           "background": "fieldFace",
           "minimum": 3,
           "rationale": "The active field border is the visible focus indicator.",
-          "foregroundStep": 575,
-          "backgroundStep": 25,
-          "ratio": 5.959,
+          "foregroundStep": 600,
+          "backgroundStep": 50,
+          "ratio": 6.145,
           "passed": true,
           "metTarget": true
         },
@@ -5116,9 +5110,9 @@
           "background": "fieldEdge",
           "minimum": 3,
           "rationale": "Focus must remain distinguishable from the resting boundary.",
-          "foregroundStep": 575,
-          "backgroundStep": 200,
-          "ratio": 3.662,
+          "foregroundStep": 600,
+          "backgroundStep": 225,
+          "ratio": 3.739,
           "passed": true,
           "metTarget": true
         },
@@ -5131,8 +5125,8 @@
           "minimum": 4.5,
           "rationale": "The chip fills at the selected ground's depth, where plain muted ink falls under AA at the micro size its count is set in.",
           "foregroundStep": 675,
-          "backgroundStep": 200,
-          "ratio": 5.381,
+          "backgroundStep": 225,
+          "ratio": 4.991,
           "passed": true,
           "metTarget": true
         },
@@ -5160,8 +5154,8 @@
           "target": 7,
           "rationale": "Tooltip copy uses the primary text role.",
           "foregroundStep": 925,
-          "backgroundStep": 0,
-          "ratio": 18.91,
+          "backgroundStep": 25,
+          "ratio": 17.733,
           "passed": true,
           "metTarget": true
         },
@@ -5173,9 +5167,9 @@
           "background": "canvas",
           "minimum": 3,
           "rationale": "A project requirement, not a WCAG citation: the tooltip must read as a separate object over what it covers.",
-          "foregroundStep": 450,
+          "foregroundStep": 475,
           "backgroundStep": 75,
-          "ratio": 3.262,
+          "ratio": 3.576,
           "passed": true,
           "metTarget": true
         },
@@ -5187,9 +5181,9 @@
           "background": "surfacePrimary",
           "minimum": 3,
           "rationale": "Tooltips routinely open over raised panels.",
-          "foregroundStep": 450,
-          "backgroundStep": 25,
-          "ratio": 3.724,
+          "foregroundStep": 475,
+          "backgroundStep": 50,
+          "ratio": 3.823,
           "passed": true,
           "metTarget": true
         },
@@ -5201,9 +5195,9 @@
           "background": "surfaceFloating",
           "minimum": 3,
           "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-          "foregroundStep": 450,
-          "backgroundStep": 0,
-          "ratio": 3.971,
+          "foregroundStep": 475,
+          "backgroundStep": 25,
+          "ratio": 4.082,
           "passed": true,
           "metTarget": true
         },
@@ -5216,9 +5210,9 @@
           "minimum": 1.5,
           "target": 3,
           "rationale": "The box must read as bounded, not as a floating block of ink.",
-          "foregroundStep": 450,
-          "backgroundStep": 0,
-          "ratio": 3.971,
+          "foregroundStep": 475,
+          "backgroundStep": 25,
+          "ratio": 4.082,
           "passed": true,
           "metTarget": true
         },
@@ -5231,9 +5225,9 @@
           "minimum": 1.2,
           "target": 1.5,
           "rationale": "The floating panel ring; in dark it had fallen to 1.10:1 and the boundary was carried almost entirely by an alpha sheen.",
-          "foregroundStep": 200,
-          "backgroundStep": 0,
-          "ratio": 1.735,
+          "foregroundStep": 225,
+          "backgroundStep": 25,
+          "ratio": 1.755,
           "passed": true,
           "metTarget": true
         },
@@ -5246,9 +5240,9 @@
           "minimum": 1.2,
           "target": 1.5,
           "rationale": "The raised panel ring.",
-          "foregroundStep": 200,
-          "backgroundStep": 25,
-          "ratio": 1.627,
+          "foregroundStep": 225,
+          "backgroundStep": 50,
+          "ratio": 1.643,
           "passed": true,
           "metTarget": true
         },
@@ -5276,9 +5270,9 @@
           "minimum": 1.25,
           "target": 1.5,
           "rationale": "Decorative dividers need presence, not a WCAG text minimum.",
-          "foregroundStep": 250,
+          "foregroundStep": 275,
           "backgroundStep": 75,
-          "ratio": 1.66,
+          "ratio": 1.795,
           "passed": true,
           "metTarget": true
         },
@@ -5307,8 +5301,8 @@
           "target": 7,
           "rationale": "Ordinary body text on raised panels.",
           "foregroundStep": 100,
-          "backgroundStep": 825,
-          "ratio": 11.837,
+          "backgroundStep": 850,
+          "ratio": 12.604,
           "passed": true,
           "metTarget": true
         },
@@ -5322,8 +5316,8 @@
           "target": 7,
           "rationale": "Ordinary text in dialogs, tooltips, and floating panels.",
           "foregroundStep": 100,
-          "backgroundStep": 750,
-          "ratio": 9.405,
+          "backgroundStep": 775,
+          "ratio": 10.216,
           "passed": true,
           "metTarget": true
         },
@@ -5337,8 +5331,8 @@
           "target": 7,
           "rationale": "Ordinary text in recessed regions.",
           "foregroundStep": 100,
-          "backgroundStep": 950,
-          "ratio": 14.964,
+          "backgroundStep": 975,
+          "ratio": 15.316,
           "passed": true,
           "metTarget": true
         },
@@ -5352,8 +5346,8 @@
           "target": 7,
           "rationale": "Selected rows retain ordinary text readability.",
           "foregroundStep": 100,
-          "backgroundStep": 700,
-          "ratio": 7.867,
+          "backgroundStep": 725,
+          "ratio": 8.617,
           "passed": true,
           "metTarget": true
         },
@@ -5382,8 +5376,8 @@
           "target": 4.75,
           "rationale": "The weakest recurring secondary-text pairing.",
           "foregroundStep": 325,
-          "backgroundStep": 950,
-          "ratio": 7.589,
+          "backgroundStep": 975,
+          "ratio": 7.767,
           "passed": true,
           "metTarget": true
         },
@@ -5396,8 +5390,8 @@
           "minimum": 4.5,
           "rationale": "Secondary analysis copy is ordinary-size text.",
           "foregroundStep": 325,
-          "backgroundStep": 850,
-          "ratio": 6.392,
+          "backgroundStep": 875,
+          "ratio": 6.754,
           "passed": true,
           "metTarget": true
         },
@@ -5438,9 +5432,9 @@
           "background": "fieldFace",
           "minimum": 3,
           "rationale": "The active field border is the visible focus indicator.",
-          "foregroundStep": 200,
-          "backgroundStep": 825,
-          "ratio": 8.888,
+          "foregroundStep": 225,
+          "backgroundStep": 850,
+          "ratio": 8.778,
           "passed": true,
           "metTarget": true
         },
@@ -5452,9 +5446,9 @@
           "background": "fieldEdge",
           "minimum": 3,
           "rationale": "Focus must remain distinguishable from the resting boundary.",
-          "foregroundStep": 200,
-          "backgroundStep": 725,
-          "ratio": 6.471,
+          "foregroundStep": 225,
+          "backgroundStep": 750,
+          "ratio": 6.55,
           "passed": true,
           "metTarget": true
         },
@@ -5467,8 +5461,8 @@
           "minimum": 4.5,
           "rationale": "The chip fills at the selected ground's depth, where plain muted ink falls under AA at the micro size its count is set in.",
           "foregroundStep": 225,
-          "backgroundStep": 825,
-          "ratio": 8.244,
+          "backgroundStep": 850,
+          "ratio": 8.778,
           "passed": true,
           "metTarget": true
         },
@@ -5496,8 +5490,8 @@
           "target": 7,
           "rationale": "Tooltip copy uses the primary text role.",
           "foregroundStep": 100,
-          "backgroundStep": 750,
-          "ratio": 9.405,
+          "backgroundStep": 775,
+          "ratio": 10.216,
           "passed": true,
           "metTarget": true
         },
@@ -5509,9 +5503,9 @@
           "background": "canvas",
           "minimum": 3,
           "rationale": "A project requirement, not a WCAG citation: the tooltip must read as a separate object over what it covers.",
-          "foregroundStep": 450,
+          "foregroundStep": 475,
           "backgroundStep": 900,
-          "ratio": 4.581,
+          "ratio": 4.179,
           "passed": true,
           "metTarget": true
         },
@@ -5523,9 +5517,9 @@
           "background": "surfacePrimary",
           "minimum": 3,
           "rationale": "Tooltips routinely open over raised panels.",
-          "foregroundStep": 450,
-          "backgroundStep": 825,
-          "ratio": 3.884,
+          "foregroundStep": 475,
+          "backgroundStep": 850,
+          "ratio": 3.774,
           "passed": true,
           "metTarget": true
         },
@@ -5537,9 +5531,9 @@
           "background": "surfaceFloating",
           "minimum": 3,
           "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-          "foregroundStep": 450,
-          "backgroundStep": 750,
-          "ratio": 3.086,
+          "foregroundStep": 475,
+          "backgroundStep": 775,
+          "ratio": 3.059,
           "passed": true,
           "metTarget": true
         },
@@ -5552,9 +5546,9 @@
           "minimum": 1.5,
           "target": 3,
           "rationale": "The box must read as bounded, not as a floating block of ink.",
-          "foregroundStep": 450,
-          "backgroundStep": 750,
-          "ratio": 3.086,
+          "foregroundStep": 475,
+          "backgroundStep": 775,
+          "ratio": 3.059,
           "passed": true,
           "metTarget": true
         },
@@ -5567,11 +5561,11 @@
           "minimum": 1.2,
           "target": 1.5,
           "rationale": "The floating panel ring; in dark it had fallen to 1.10:1 and the boundary was carried almost entirely by an alpha sheen.",
-          "foregroundStep": 625,
-          "backgroundStep": 750,
-          "ratio": 1.59,
+          "foregroundStep": 700,
+          "backgroundStep": 775,
+          "ratio": 1.299,
           "passed": true,
-          "metTarget": true
+          "metTarget": false
         },
         {
           "theme": "dark",
@@ -5582,9 +5576,9 @@
           "minimum": 1.2,
           "target": 1.5,
           "rationale": "The raised panel ring.",
-          "foregroundStep": 625,
-          "backgroundStep": 825,
-          "ratio": 2.001,
+          "foregroundStep": 700,
+          "backgroundStep": 850,
+          "ratio": 1.602,
           "passed": true,
           "metTarget": true
         },
@@ -5612,9 +5606,9 @@
           "minimum": 1.25,
           "target": 1.5,
           "rationale": "Decorative dividers need presence, not a WCAG text minimum.",
-          "foregroundStep": 575,
+          "foregroundStep": 650,
           "backgroundStep": 900,
-          "ratio": 2.863,
+          "ratio": 2.143,
           "passed": true,
           "metTarget": true
         }
@@ -5628,10 +5622,9 @@
       "note": "No tint at all. Graphite with the chroma removed, for a true neutral.",
       "failures": [],
       "warnings": [
-        "primary-on-floating-surface: light and dark differ 2.006x in contrast (18.934:1 vs 9.441:1); the hierarchy is not the same in both themes.",
-        "field-focus-from-resting-edge: light and dark differ 1.758x in contrast (3.689:1 vs 6.487:1); the hierarchy is not the same in both themes.",
-        "tooltip-ink: light and dark differ 2.006x in contrast (18.934:1 vs 9.441:1); the hierarchy is not the same in both themes.",
-        "primary-to-floating-surface: light and dark differ 3x in separation (0.022376 vs 0.067123)."
+        "light muted-on-inset-surface: 4.593:1 is below target 4.75:1.",
+        "dark faint-rule-on-floating-surface: 1.293:1 is below target 1.5:1.",
+        "primary-to-floating-surface: light and dark differ 3x in separation (0.022376 vs 0.067127)."
       ],
       "ramp": [
         {
@@ -6178,27 +6171,27 @@
           },
           {
             "id": "primary-on-primary-surface",
-            "light": 17.745,
-            "dark": 11.845,
-            "ratio": 1.498
+            "light": 16.61,
+            "dark": 12.608,
+            "ratio": 1.317
           },
           {
             "id": "primary-on-floating-surface",
-            "light": 18.934,
-            "dark": 9.441,
-            "ratio": 2.006
+            "light": 17.745,
+            "dark": 10.242,
+            "ratio": 1.733
           },
           {
             "id": "primary-on-inset-surface",
-            "light": 14.496,
-            "dark": 14.943,
-            "ratio": 1.031
+            "light": 13.514,
+            "dark": 15.289,
+            "ratio": 1.131
           },
           {
             "id": "primary-on-selected-surface",
-            "light": 10.854,
-            "dark": 7.921,
-            "ratio": 1.37
+            "light": 10.058,
+            "dark": 8.664,
+            "ratio": 1.161
           },
           {
             "id": "muted-on-canvas",
@@ -6208,15 +6201,15 @@
           },
           {
             "id": "muted-on-inset-surface",
-            "light": 4.927,
-            "dark": 7.526,
-            "ratio": 1.528
+            "light": 4.593,
+            "dark": 7.7,
+            "ratio": 1.676
           },
           {
             "id": "muted-on-analysis",
-            "light": 6.435,
-            "dark": 6.35,
-            "ratio": 1.013
+            "light": 6.031,
+            "dark": 6.706,
+            "ratio": 1.112
           },
           {
             "id": "muted-on-notice",
@@ -6232,64 +6225,64 @@
           },
           {
             "id": "field-focus-on-face",
-            "light": 6.031,
-            "dark": 8.869,
-            "ratio": 1.471
+            "light": 6.216,
+            "dark": 8.748,
+            "ratio": 1.407
           },
           {
             "id": "field-focus-from-resting-edge",
-            "light": 3.689,
-            "dark": 6.487,
-            "ratio": 1.758
+            "light": 3.764,
+            "dark": 6.551,
+            "ratio": 1.74
           },
           {
             "id": "menu-chip-ink",
-            "light": 5.408,
-            "dark": 8.219,
-            "ratio": 1.52
+            "light": 5.011,
+            "dark": 8.748,
+            "ratio": 1.746
           },
           { "id": "keycap-ink", "light": 8.842, "dark": 7.107, "ratio": 1.244 },
           {
             "id": "tooltip-ink",
-            "light": 18.934,
-            "dark": 9.441,
-            "ratio": 2.006
+            "light": 17.745,
+            "dark": 10.242,
+            "ratio": 1.733
           },
           {
             "id": "tooltip-edge-over-canvas",
-            "light": 3.293,
-            "dark": 4.537,
-            "ratio": 1.378
+            "light": 3.611,
+            "dark": 4.138,
+            "ratio": 1.146
           },
           {
             "id": "tooltip-edge-over-primary-surface",
-            "light": 3.764,
-            "dark": 3.853,
-            "ratio": 1.024
+            "light": 3.863,
+            "dark": 3.74,
+            "ratio": 1.033
           },
           {
             "id": "tooltip-edge-over-floating-surface",
-            "light": 4.016,
-            "dark": 3.071,
-            "ratio": 1.308
+            "light": 4.127,
+            "dark": 3.038,
+            "ratio": 1.358
           },
           {
             "id": "tooltip-edge-on-own-face",
-            "light": 4.016,
-            "dark": 3.071,
-            "ratio": 1.308
+            "light": 4.127,
+            "dark": 3.038,
+            "ratio": 1.358
           },
           {
             "id": "faint-rule-on-floating-surface",
-            "light": 1.744,
-            "dark": 1.581,
-            "ratio": 1.103
+            "light": 1.764,
+            "dark": 1.293,
+            "ratio": 1.364
           },
           {
             "id": "faint-rule-on-primary-surface",
-            "light": 1.635,
-            "dark": 1.983,
-            "ratio": 1.213
+            "light": 1.651,
+            "dark": 1.592,
+            "ratio": 1.037
           },
           {
             "id": "keycap-ring-on-face",
@@ -6299,35 +6292,35 @@
           },
           {
             "id": "default-rule-on-canvas",
-            "light": 1.668,
-            "dark": 2.832,
-            "ratio": 1.698
+            "light": 1.806,
+            "dark": 2.123,
+            "ratio": 1.176
           }
         ],
         "separation": [
           {
             "id": "canvas-to-primary-surface",
-            "light": 0.044751,
-            "dark": 0.067125,
-            "ratio": 1.5
+            "light": 0.022375,
+            "dark": 0.044749,
+            "ratio": 2
           },
           {
             "id": "primary-to-floating-surface",
             "light": 0.022376,
-            "dark": 0.067123,
+            "dark": 0.067127,
             "ratio": 3
           },
           {
             "id": "canvas-to-inset-surface",
-            "light": 0.022374,
-            "dark": 0.044751,
-            "ratio": 2
+            "light": 0.044749,
+            "dark": 0.067124,
+            "ratio": 1.5
           },
           {
             "id": "selected-from-canvas",
-            "light": 0.111873,
-            "dark": 0.179002,
-            "ratio": 1.6
+            "light": 0.134249,
+            "dark": 0.156624,
+            "ratio": 1.167
           }
         ],
         "surfaceChroma": {
@@ -6371,8 +6364,8 @@
           "target": 7,
           "rationale": "Ordinary body text on raised panels.",
           "foregroundStep": 925,
-          "backgroundStep": 25,
-          "ratio": 17.745,
+          "backgroundStep": 50,
+          "ratio": 16.61,
           "passed": true,
           "metTarget": true
         },
@@ -6386,8 +6379,8 @@
           "target": 7,
           "rationale": "Ordinary text in dialogs, tooltips, and floating panels.",
           "foregroundStep": 925,
-          "backgroundStep": 0,
-          "ratio": 18.934,
+          "backgroundStep": 25,
+          "ratio": 17.745,
           "passed": true,
           "metTarget": true
         },
@@ -6401,8 +6394,8 @@
           "target": 7,
           "rationale": "Ordinary text in recessed regions.",
           "foregroundStep": 925,
-          "backgroundStep": 100,
-          "ratio": 14.496,
+          "backgroundStep": 125,
+          "ratio": 13.514,
           "passed": true,
           "metTarget": true
         },
@@ -6416,8 +6409,8 @@
           "target": 7,
           "rationale": "Selected rows retain ordinary text readability.",
           "foregroundStep": 925,
-          "backgroundStep": 200,
-          "ratio": 10.854,
+          "backgroundStep": 225,
+          "ratio": 10.058,
           "passed": true,
           "metTarget": true
         },
@@ -6446,10 +6439,10 @@
           "target": 4.75,
           "rationale": "The weakest recurring secondary-text pairing.",
           "foregroundStep": 575,
-          "backgroundStep": 100,
-          "ratio": 4.927,
+          "backgroundStep": 125,
+          "ratio": 4.593,
           "passed": true,
-          "metTarget": true
+          "metTarget": false
         },
         {
           "theme": "light",
@@ -6460,8 +6453,8 @@
           "minimum": 4.5,
           "rationale": "Secondary analysis copy is ordinary-size text.",
           "foregroundStep": 575,
-          "backgroundStep": 0,
-          "ratio": 6.435,
+          "backgroundStep": 25,
+          "ratio": 6.031,
           "passed": true,
           "metTarget": true
         },
@@ -6502,9 +6495,9 @@
           "background": "fieldFace",
           "minimum": 3,
           "rationale": "The active field border is the visible focus indicator.",
-          "foregroundStep": 575,
-          "backgroundStep": 25,
-          "ratio": 6.031,
+          "foregroundStep": 600,
+          "backgroundStep": 50,
+          "ratio": 6.216,
           "passed": true,
           "metTarget": true
         },
@@ -6516,9 +6509,9 @@
           "background": "fieldEdge",
           "minimum": 3,
           "rationale": "Focus must remain distinguishable from the resting boundary.",
-          "foregroundStep": 575,
-          "backgroundStep": 200,
-          "ratio": 3.689,
+          "foregroundStep": 600,
+          "backgroundStep": 225,
+          "ratio": 3.764,
           "passed": true,
           "metTarget": true
         },
@@ -6531,8 +6524,8 @@
           "minimum": 4.5,
           "rationale": "The chip fills at the selected ground's depth, where plain muted ink falls under AA at the micro size its count is set in.",
           "foregroundStep": 675,
-          "backgroundStep": 200,
-          "ratio": 5.408,
+          "backgroundStep": 225,
+          "ratio": 5.011,
           "passed": true,
           "metTarget": true
         },
@@ -6560,8 +6553,8 @@
           "target": 7,
           "rationale": "Tooltip copy uses the primary text role.",
           "foregroundStep": 925,
-          "backgroundStep": 0,
-          "ratio": 18.934,
+          "backgroundStep": 25,
+          "ratio": 17.745,
           "passed": true,
           "metTarget": true
         },
@@ -6573,9 +6566,9 @@
           "background": "canvas",
           "minimum": 3,
           "rationale": "A project requirement, not a WCAG citation: the tooltip must read as a separate object over what it covers.",
-          "foregroundStep": 450,
+          "foregroundStep": 475,
           "backgroundStep": 75,
-          "ratio": 3.293,
+          "ratio": 3.611,
           "passed": true,
           "metTarget": true
         },
@@ -6587,9 +6580,9 @@
           "background": "surfacePrimary",
           "minimum": 3,
           "rationale": "Tooltips routinely open over raised panels.",
-          "foregroundStep": 450,
-          "backgroundStep": 25,
-          "ratio": 3.764,
+          "foregroundStep": 475,
+          "backgroundStep": 50,
+          "ratio": 3.863,
           "passed": true,
           "metTarget": true
         },
@@ -6601,9 +6594,9 @@
           "background": "surfaceFloating",
           "minimum": 3,
           "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-          "foregroundStep": 450,
-          "backgroundStep": 0,
-          "ratio": 4.016,
+          "foregroundStep": 475,
+          "backgroundStep": 25,
+          "ratio": 4.127,
           "passed": true,
           "metTarget": true
         },
@@ -6616,9 +6609,9 @@
           "minimum": 1.5,
           "target": 3,
           "rationale": "The box must read as bounded, not as a floating block of ink.",
-          "foregroundStep": 450,
-          "backgroundStep": 0,
-          "ratio": 4.016,
+          "foregroundStep": 475,
+          "backgroundStep": 25,
+          "ratio": 4.127,
           "passed": true,
           "metTarget": true
         },
@@ -6631,9 +6624,9 @@
           "minimum": 1.2,
           "target": 1.5,
           "rationale": "The floating panel ring; in dark it had fallen to 1.10:1 and the boundary was carried almost entirely by an alpha sheen.",
-          "foregroundStep": 200,
-          "backgroundStep": 0,
-          "ratio": 1.744,
+          "foregroundStep": 225,
+          "backgroundStep": 25,
+          "ratio": 1.764,
           "passed": true,
           "metTarget": true
         },
@@ -6646,9 +6639,9 @@
           "minimum": 1.2,
           "target": 1.5,
           "rationale": "The raised panel ring.",
-          "foregroundStep": 200,
-          "backgroundStep": 25,
-          "ratio": 1.635,
+          "foregroundStep": 225,
+          "backgroundStep": 50,
+          "ratio": 1.651,
           "passed": true,
           "metTarget": true
         },
@@ -6676,9 +6669,9 @@
           "minimum": 1.25,
           "target": 1.5,
           "rationale": "Decorative dividers need presence, not a WCAG text minimum.",
-          "foregroundStep": 250,
+          "foregroundStep": 275,
           "backgroundStep": 75,
-          "ratio": 1.668,
+          "ratio": 1.806,
           "passed": true,
           "metTarget": true
         },
@@ -6707,8 +6700,8 @@
           "target": 7,
           "rationale": "Ordinary body text on raised panels.",
           "foregroundStep": 100,
-          "backgroundStep": 825,
-          "ratio": 11.845,
+          "backgroundStep": 850,
+          "ratio": 12.608,
           "passed": true,
           "metTarget": true
         },
@@ -6722,8 +6715,8 @@
           "target": 7,
           "rationale": "Ordinary text in dialogs, tooltips, and floating panels.",
           "foregroundStep": 100,
-          "backgroundStep": 750,
-          "ratio": 9.441,
+          "backgroundStep": 775,
+          "ratio": 10.242,
           "passed": true,
           "metTarget": true
         },
@@ -6737,8 +6730,8 @@
           "target": 7,
           "rationale": "Ordinary text in recessed regions.",
           "foregroundStep": 100,
-          "backgroundStep": 950,
-          "ratio": 14.943,
+          "backgroundStep": 975,
+          "ratio": 15.289,
           "passed": true,
           "metTarget": true
         },
@@ -6752,8 +6745,8 @@
           "target": 7,
           "rationale": "Selected rows retain ordinary text readability.",
           "foregroundStep": 100,
-          "backgroundStep": 700,
-          "ratio": 7.921,
+          "backgroundStep": 725,
+          "ratio": 8.664,
           "passed": true,
           "metTarget": true
         },
@@ -6782,8 +6775,8 @@
           "target": 4.75,
           "rationale": "The weakest recurring secondary-text pairing.",
           "foregroundStep": 325,
-          "backgroundStep": 950,
-          "ratio": 7.526,
+          "backgroundStep": 975,
+          "ratio": 7.7,
           "passed": true,
           "metTarget": true
         },
@@ -6796,8 +6789,8 @@
           "minimum": 4.5,
           "rationale": "Secondary analysis copy is ordinary-size text.",
           "foregroundStep": 325,
-          "backgroundStep": 850,
-          "ratio": 6.35,
+          "backgroundStep": 875,
+          "ratio": 6.706,
           "passed": true,
           "metTarget": true
         },
@@ -6838,9 +6831,9 @@
           "background": "fieldFace",
           "minimum": 3,
           "rationale": "The active field border is the visible focus indicator.",
-          "foregroundStep": 200,
-          "backgroundStep": 825,
-          "ratio": 8.869,
+          "foregroundStep": 225,
+          "backgroundStep": 850,
+          "ratio": 8.748,
           "passed": true,
           "metTarget": true
         },
@@ -6852,9 +6845,9 @@
           "background": "fieldEdge",
           "minimum": 3,
           "rationale": "Focus must remain distinguishable from the resting boundary.",
-          "foregroundStep": 200,
-          "backgroundStep": 725,
-          "ratio": 6.487,
+          "foregroundStep": 225,
+          "backgroundStep": 750,
+          "ratio": 6.551,
           "passed": true,
           "metTarget": true
         },
@@ -6867,8 +6860,8 @@
           "minimum": 4.5,
           "rationale": "The chip fills at the selected ground's depth, where plain muted ink falls under AA at the micro size its count is set in.",
           "foregroundStep": 225,
-          "backgroundStep": 825,
-          "ratio": 8.219,
+          "backgroundStep": 850,
+          "ratio": 8.748,
           "passed": true,
           "metTarget": true
         },
@@ -6896,8 +6889,8 @@
           "target": 7,
           "rationale": "Tooltip copy uses the primary text role.",
           "foregroundStep": 100,
-          "backgroundStep": 750,
-          "ratio": 9.441,
+          "backgroundStep": 775,
+          "ratio": 10.242,
           "passed": true,
           "metTarget": true
         },
@@ -6909,9 +6902,9 @@
           "background": "canvas",
           "minimum": 3,
           "rationale": "A project requirement, not a WCAG citation: the tooltip must read as a separate object over what it covers.",
-          "foregroundStep": 450,
+          "foregroundStep": 475,
           "backgroundStep": 900,
-          "ratio": 4.537,
+          "ratio": 4.138,
           "passed": true,
           "metTarget": true
         },
@@ -6923,9 +6916,9 @@
           "background": "surfacePrimary",
           "minimum": 3,
           "rationale": "Tooltips routinely open over raised panels.",
-          "foregroundStep": 450,
-          "backgroundStep": 825,
-          "ratio": 3.853,
+          "foregroundStep": 475,
+          "backgroundStep": 850,
+          "ratio": 3.74,
           "passed": true,
           "metTarget": true
         },
@@ -6937,9 +6930,9 @@
           "background": "surfaceFloating",
           "minimum": 3,
           "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-          "foregroundStep": 450,
-          "backgroundStep": 750,
-          "ratio": 3.071,
+          "foregroundStep": 475,
+          "backgroundStep": 775,
+          "ratio": 3.038,
           "passed": true,
           "metTarget": true
         },
@@ -6952,9 +6945,9 @@
           "minimum": 1.5,
           "target": 3,
           "rationale": "The box must read as bounded, not as a floating block of ink.",
-          "foregroundStep": 450,
-          "backgroundStep": 750,
-          "ratio": 3.071,
+          "foregroundStep": 475,
+          "backgroundStep": 775,
+          "ratio": 3.038,
           "passed": true,
           "metTarget": true
         },
@@ -6967,11 +6960,11 @@
           "minimum": 1.2,
           "target": 1.5,
           "rationale": "The floating panel ring; in dark it had fallen to 1.10:1 and the boundary was carried almost entirely by an alpha sheen.",
-          "foregroundStep": 625,
-          "backgroundStep": 750,
-          "ratio": 1.581,
+          "foregroundStep": 700,
+          "backgroundStep": 775,
+          "ratio": 1.293,
           "passed": true,
-          "metTarget": true
+          "metTarget": false
         },
         {
           "theme": "dark",
@@ -6982,9 +6975,9 @@
           "minimum": 1.2,
           "target": 1.5,
           "rationale": "The raised panel ring.",
-          "foregroundStep": 625,
-          "backgroundStep": 825,
-          "ratio": 1.983,
+          "foregroundStep": 700,
+          "backgroundStep": 850,
+          "ratio": 1.592,
           "passed": true,
           "metTarget": true
         },
@@ -7012,9 +7005,9 @@
           "minimum": 1.25,
           "target": 1.5,
           "rationale": "Decorative dividers need presence, not a WCAG text minimum.",
-          "foregroundStep": 575,
+          "foregroundStep": 650,
           "backgroundStep": 900,
-          "ratio": 2.832,
+          "ratio": 2.123,
           "passed": true,
           "metTarget": true
         }
@@ -7211,27 +7204,27 @@
       },
       {
         "id": "primary-on-primary-surface",
-        "light": 17.749,
-        "dark": 11.848,
-        "ratio": 1.498
+        "light": 16.611,
+        "dark": 12.609,
+        "ratio": 1.317
       },
       {
         "id": "primary-on-floating-surface",
-        "light": 18.941,
-        "dark": 9.452,
-        "ratio": 2.004
+        "light": 17.749,
+        "dark": 10.249,
+        "ratio": 1.732
       },
       {
         "id": "primary-on-inset-surface",
-        "light": 14.492,
-        "dark": 14.937,
-        "ratio": 1.031
+        "light": 13.508,
+        "dark": 15.282,
+        "ratio": 1.131
       },
       {
         "id": "primary-on-selected-surface",
-        "light": 10.842,
-        "dark": 7.937,
-        "ratio": 1.366
+        "light": 10.045,
+        "dark": 8.677,
+        "ratio": 1.158
       },
       {
         "id": "muted-on-canvas",
@@ -7241,15 +7234,15 @@
       },
       {
         "id": "muted-on-inset-surface",
-        "light": 4.941,
-        "dark": 7.508,
-        "ratio": 1.52
+        "light": 4.606,
+        "dark": 7.681,
+        "ratio": 1.668
       },
       {
         "id": "muted-on-analysis",
-        "light": 6.458,
-        "dark": 6.338,
-        "ratio": 1.019
+        "light": 6.052,
+        "dark": 6.693,
+        "ratio": 1.106
       },
       {
         "id": "muted-on-notice",
@@ -7265,54 +7258,54 @@
       },
       {
         "id": "field-focus-on-face",
-        "light": 6.052,
-        "dark": 8.864,
-        "ratio": 1.465
+        "light": 6.237,
+        "dark": 8.74,
+        "ratio": 1.401
       },
       {
         "id": "field-focus-from-resting-edge",
-        "light": 3.697,
-        "dark": 6.492,
-        "ratio": 1.756
+        "light": 3.772,
+        "dark": 6.552,
+        "ratio": 1.737
       },
-      { "id": "menu-chip-ink", "light": 5.416, "dark": 8.212, "ratio": 1.516 },
+      { "id": "menu-chip-ink", "light": 5.018, "dark": 8.74, "ratio": 1.742 },
       { "id": "keycap-ink", "light": 8.866, "dark": 7.104, "ratio": 1.248 },
-      { "id": "tooltip-ink", "light": 18.941, "dark": 9.452, "ratio": 2.004 },
+      { "id": "tooltip-ink", "light": 17.749, "dark": 10.249, "ratio": 1.732 },
       {
         "id": "tooltip-edge-over-canvas",
-        "light": 3.302,
-        "dark": 4.525,
-        "ratio": 1.37
+        "light": 3.621,
+        "dark": 4.127,
+        "ratio": 1.14
       },
       {
         "id": "tooltip-edge-over-primary-surface",
-        "light": 3.775,
-        "dark": 3.844,
-        "ratio": 1.018
+        "light": 3.874,
+        "dark": 3.731,
+        "ratio": 1.038
       },
       {
         "id": "tooltip-edge-over-floating-surface",
-        "light": 4.029,
-        "dark": 3.066,
-        "ratio": 1.314
+        "light": 4.14,
+        "dark": 3.032,
+        "ratio": 1.365
       },
       {
         "id": "tooltip-edge-on-own-face",
-        "light": 4.029,
-        "dark": 3.066,
-        "ratio": 1.314
+        "light": 4.14,
+        "dark": 3.032,
+        "ratio": 1.365
       },
       {
         "id": "faint-rule-on-floating-surface",
-        "light": 1.747,
-        "dark": 1.578,
-        "ratio": 1.107
+        "light": 1.767,
+        "dark": 1.291,
+        "ratio": 1.369
       },
       {
         "id": "faint-rule-on-primary-surface",
-        "light": 1.637,
-        "dark": 1.978,
-        "ratio": 1.208
+        "light": 1.654,
+        "dark": 1.589,
+        "ratio": 1.041
       },
       {
         "id": "keycap-ring-on-face",
@@ -7322,35 +7315,35 @@
       },
       {
         "id": "default-rule-on-canvas",
-        "light": 1.671,
-        "dark": 2.823,
-        "ratio": 1.689
+        "light": 1.809,
+        "dark": 2.117,
+        "ratio": 1.17
       }
     ],
     "separation": [
       {
         "id": "canvas-to-primary-surface",
-        "light": 0.044797,
-        "dark": 0.067129,
-        "ratio": 1.499
+        "light": 0.022399,
+        "dark": 0.044752,
+        "ratio": 1.998
       },
       {
         "id": "primary-to-floating-surface",
         "light": 0.022398,
-        "dark": 0.06721,
-        "ratio": 3.001
+        "dark": 0.067155,
+        "ratio": 2.998
       },
       {
         "id": "canvas-to-inset-surface",
-        "light": 0.022399,
-        "dark": 0.044751,
-        "ratio": 1.998
+        "light": 0.0448,
+        "dark": 0.067124,
+        "ratio": 1.498
       },
       {
         "id": "selected-from-canvas",
-        "light": 0.112008,
-        "dark": 0.179145,
-        "ratio": 1.599
+        "light": 0.134413,
+        "dark": 0.156724,
+        "ratio": 1.166
       }
     ],
     "surfaceChroma": {
@@ -7363,9 +7356,9 @@
         "surfaceSelected",
         "surfaceDisabled"
       ],
-      "light": 0.003026,
-      "dark": 0.008077,
-      "ratio": 2.669
+      "light": 0.00394,
+      "dark": 0.007304,
+      "ratio": 1.854
     }
   },
   "curves": {
@@ -7400,33 +7393,33 @@
     "canvas": { "cssVariable": "--sp-canvas", "light": 75, "dark": 900 },
     "surfacePrimary": {
       "cssVariable": "--sp-surface-primary",
-      "light": 25,
-      "dark": 825
+      "light": 50,
+      "dark": 850
     },
     "surfaceFloating": {
       "cssVariable": "--sp-surface-floating",
-      "light": 0,
-      "dark": 750
+      "light": 25,
+      "dark": 775
     },
     "surfaceInset": {
       "cssVariable": "--sp-surface-inset",
-      "light": 100,
-      "dark": 950
+      "light": 125,
+      "dark": 975
     },
     "surfaceControl": {
       "cssVariable": "--sp-surface-control",
-      "light": 0,
-      "dark": 725
+      "light": 25,
+      "dark": 750
     },
     "surfaceSelected": {
       "cssVariable": "--sp-surface-selected",
-      "light": 200,
-      "dark": 700
+      "light": 225,
+      "dark": 725
     },
     "surfaceDisabled": {
       "cssVariable": "--sp-surface-disabled",
-      "light": 25,
-      "dark": 925
+      "light": 50,
+      "dark": 950
     },
     "textPrimary": {
       "cssVariable": "--sp-text-primary",
@@ -7451,19 +7444,19 @@
     "action": { "cssVariable": "--sp-action", "light": 925, "dark": 100 },
     "ruleDefault": {
       "cssVariable": "--sp-rule-default",
-      "light": 250,
-      "dark": 575
+      "light": 275,
+      "dark": 650
     },
-    "fieldFace": { "cssVariable": "--sp-field-face", "light": 25, "dark": 825 },
+    "fieldFace": { "cssVariable": "--sp-field-face", "light": 50, "dark": 850 },
     "fieldEdge": {
       "cssVariable": "--sp-field-edge",
-      "light": 200,
-      "dark": 725
+      "light": 225,
+      "dark": 750
     },
     "fieldEdgeActive": {
       "cssVariable": "--sp-field-edge-active",
-      "light": 575,
-      "dark": 200
+      "light": 600,
+      "dark": 225
     },
     "keycapFace": {
       "cssVariable": "--sp-keycap-face",
@@ -7472,31 +7465,96 @@
     },
     "analysisFace": {
       "cssVariable": "--sp-analysis-face",
-      "light": 0,
-      "dark": 850
+      "light": 25,
+      "dark": 875
     },
     "noticeFace": {
       "cssVariable": "--sp-notice-face",
       "light": 50,
       "dark": 825
     },
-    "tooltipFace": { "cssVariable": "--tooltip-face", "light": 0, "dark": 750 },
+    "tooltipFace": {
+      "cssVariable": "--tooltip-face",
+      "light": 25,
+      "dark": 775
+    },
     "tooltipEdge": {
       "cssVariable": "--tooltip-edge",
-      "light": 450,
-      "dark": 450
+      "light": 475,
+      "dark": 475
     },
     "ruleFaint": {
       "cssVariable": "--sp-rule-faint",
-      "light": 200,
-      "dark": 625
+      "light": 225,
+      "dark": 700
     },
     "keycapRing": {
       "cssVariable": "--sp-keycap-ring",
       "light": 200,
       "dark": 650
     },
-    "menuChip": { "cssVariable": "--sp-menu-chip", "light": 200, "dark": 825 }
+    "menuChip": { "cssVariable": "--sp-menu-chip", "light": 225, "dark": 850 },
+    "floatingEdge": {
+      "cssVariable": "--sp-floating-edge",
+      "light": 0,
+      "dark": 850
+    },
+    "analysisHighlight": {
+      "cssVariable": "--sp-analysis-highlight",
+      "light": 0,
+      "dark": 900
+    },
+    "raisedEdge": {
+      "cssVariable": "--sp-raised-edge",
+      "light": 25,
+      "dark": 900
+    },
+    "keycapHighlight": {
+      "cssVariable": "--sp-keycap-highlight",
+      "light": 0,
+      "dark": 825
+    },
+    "noticeHighlight": {
+      "cssVariable": "--sp-notice-highlight",
+      "light": 25,
+      "dark": 850
+    },
+    "tooltipHighlight": {
+      "cssVariable": "--sp-tooltip-highlight",
+      "light": 0,
+      "dark": 850
+    },
+    "notchHighlight": {
+      "cssVariable": "--sp-notch-highlight",
+      "light": 25,
+      "dark": 900
+    },
+    "enclosureEdge": {
+      "cssVariable": "--sp-enclosure-edge",
+      "light": 25,
+      "dark": 700
+    },
+    "dividerEtch": {
+      "cssVariable": "--sp-divider-etch",
+      "light": 25,
+      "dark": 925
+    },
+    "cardEtch": { "cssVariable": "--sp-card-etch", "light": 0, "dark": 850 },
+    "sheetBreakEtch": {
+      "cssVariable": "--sp-sheet-break-etch",
+      "light": 25,
+      "dark": 875
+    },
+    "sheetRowEtch": {
+      "cssVariable": "--sp-sheet-row-etch",
+      "light": 25,
+      "dark": 950
+    },
+    "sheetRowEtchActive": {
+      "cssVariable": "--sp-sheet-row-etch-active",
+      "light": 0,
+      "dark": 850
+    }
   },
   "roleAssignmentValidation": [
     {
@@ -7519,96 +7577,96 @@
       "id": "surfacePrimary",
       "cssVariable": "--sp-surface-primary",
       "theme": "light",
-      "expected": 25,
-      "actual": 25,
+      "expected": 50,
+      "actual": 50,
       "passed": true
     },
     {
       "id": "surfacePrimary",
       "cssVariable": "--sp-surface-primary",
       "theme": "dark",
-      "expected": 825,
-      "actual": 825,
+      "expected": 850,
+      "actual": 850,
       "passed": true
     },
     {
       "id": "surfaceFloating",
       "cssVariable": "--sp-surface-floating",
-      "theme": "light",
-      "expected": 0,
-      "actual": 0,
-      "passed": true
-    },
-    {
-      "id": "surfaceFloating",
-      "cssVariable": "--sp-surface-floating",
-      "theme": "dark",
-      "expected": 750,
-      "actual": 750,
-      "passed": true
-    },
-    {
-      "id": "surfaceInset",
-      "cssVariable": "--sp-surface-inset",
-      "theme": "light",
-      "expected": 100,
-      "actual": 100,
-      "passed": true
-    },
-    {
-      "id": "surfaceInset",
-      "cssVariable": "--sp-surface-inset",
-      "theme": "dark",
-      "expected": 950,
-      "actual": 950,
-      "passed": true
-    },
-    {
-      "id": "surfaceControl",
-      "cssVariable": "--sp-surface-control",
-      "theme": "light",
-      "expected": 0,
-      "actual": 0,
-      "passed": true
-    },
-    {
-      "id": "surfaceControl",
-      "cssVariable": "--sp-surface-control",
-      "theme": "dark",
-      "expected": 725,
-      "actual": 725,
-      "passed": true
-    },
-    {
-      "id": "surfaceSelected",
-      "cssVariable": "--sp-surface-selected",
-      "theme": "light",
-      "expected": 200,
-      "actual": 200,
-      "passed": true
-    },
-    {
-      "id": "surfaceSelected",
-      "cssVariable": "--sp-surface-selected",
-      "theme": "dark",
-      "expected": 700,
-      "actual": 700,
-      "passed": true
-    },
-    {
-      "id": "surfaceDisabled",
-      "cssVariable": "--sp-surface-disabled",
       "theme": "light",
       "expected": 25,
       "actual": 25,
       "passed": true
     },
     {
+      "id": "surfaceFloating",
+      "cssVariable": "--sp-surface-floating",
+      "theme": "dark",
+      "expected": 775,
+      "actual": 775,
+      "passed": true
+    },
+    {
+      "id": "surfaceInset",
+      "cssVariable": "--sp-surface-inset",
+      "theme": "light",
+      "expected": 125,
+      "actual": 125,
+      "passed": true
+    },
+    {
+      "id": "surfaceInset",
+      "cssVariable": "--sp-surface-inset",
+      "theme": "dark",
+      "expected": 975,
+      "actual": 975,
+      "passed": true
+    },
+    {
+      "id": "surfaceControl",
+      "cssVariable": "--sp-surface-control",
+      "theme": "light",
+      "expected": 25,
+      "actual": 25,
+      "passed": true
+    },
+    {
+      "id": "surfaceControl",
+      "cssVariable": "--sp-surface-control",
+      "theme": "dark",
+      "expected": 750,
+      "actual": 750,
+      "passed": true
+    },
+    {
+      "id": "surfaceSelected",
+      "cssVariable": "--sp-surface-selected",
+      "theme": "light",
+      "expected": 225,
+      "actual": 225,
+      "passed": true
+    },
+    {
+      "id": "surfaceSelected",
+      "cssVariable": "--sp-surface-selected",
+      "theme": "dark",
+      "expected": 725,
+      "actual": 725,
+      "passed": true
+    },
+    {
+      "id": "surfaceDisabled",
+      "cssVariable": "--sp-surface-disabled",
+      "theme": "light",
+      "expected": 50,
+      "actual": 50,
+      "passed": true
+    },
+    {
       "id": "surfaceDisabled",
       "cssVariable": "--sp-surface-disabled",
       "theme": "dark",
-      "expected": 925,
-      "actual": 925,
+      "expected": 950,
+      "actual": 950,
       "passed": true
     },
     {
@@ -7695,64 +7753,64 @@
       "id": "ruleDefault",
       "cssVariable": "--sp-rule-default",
       "theme": "light",
-      "expected": 250,
-      "actual": 250,
+      "expected": 275,
+      "actual": 275,
       "passed": true
     },
     {
       "id": "ruleDefault",
       "cssVariable": "--sp-rule-default",
       "theme": "dark",
-      "expected": 575,
-      "actual": 575,
+      "expected": 650,
+      "actual": 650,
       "passed": true
     },
     {
       "id": "fieldFace",
       "cssVariable": "--sp-field-face",
       "theme": "light",
-      "expected": 25,
-      "actual": 25,
+      "expected": 50,
+      "actual": 50,
       "passed": true
     },
     {
       "id": "fieldFace",
       "cssVariable": "--sp-field-face",
       "theme": "dark",
-      "expected": 825,
-      "actual": 825,
+      "expected": 850,
+      "actual": 850,
       "passed": true
     },
     {
       "id": "fieldEdge",
       "cssVariable": "--sp-field-edge",
       "theme": "light",
-      "expected": 200,
-      "actual": 200,
+      "expected": 225,
+      "actual": 225,
       "passed": true
     },
     {
       "id": "fieldEdge",
       "cssVariable": "--sp-field-edge",
       "theme": "dark",
-      "expected": 725,
-      "actual": 725,
+      "expected": 750,
+      "actual": 750,
       "passed": true
     },
     {
       "id": "fieldEdgeActive",
       "cssVariable": "--sp-field-edge-active",
       "theme": "light",
-      "expected": 575,
-      "actual": 575,
+      "expected": 600,
+      "actual": 600,
       "passed": true
     },
     {
       "id": "fieldEdgeActive",
       "cssVariable": "--sp-field-edge-active",
       "theme": "dark",
-      "expected": 200,
-      "actual": 200,
+      "expected": 225,
+      "actual": 225,
       "passed": true
     },
     {
@@ -7775,16 +7833,16 @@
       "id": "analysisFace",
       "cssVariable": "--sp-analysis-face",
       "theme": "light",
-      "expected": 0,
-      "actual": 0,
+      "expected": 25,
+      "actual": 25,
       "passed": true
     },
     {
       "id": "analysisFace",
       "cssVariable": "--sp-analysis-face",
       "theme": "dark",
-      "expected": 850,
-      "actual": 850,
+      "expected": 875,
+      "actual": 875,
       "passed": true
     },
     {
@@ -7807,48 +7865,48 @@
       "id": "tooltipFace",
       "cssVariable": "--tooltip-face",
       "theme": "light",
-      "expected": 0,
-      "actual": 0,
+      "expected": 25,
+      "actual": 25,
       "passed": true
     },
     {
       "id": "tooltipFace",
       "cssVariable": "--tooltip-face",
       "theme": "dark",
-      "expected": 750,
-      "actual": 750,
+      "expected": 775,
+      "actual": 775,
       "passed": true
     },
     {
       "id": "tooltipEdge",
       "cssVariable": "--tooltip-edge",
       "theme": "light",
-      "expected": 450,
-      "actual": 450,
+      "expected": 475,
+      "actual": 475,
       "passed": true
     },
     {
       "id": "tooltipEdge",
       "cssVariable": "--tooltip-edge",
       "theme": "dark",
-      "expected": 450,
-      "actual": 450,
+      "expected": 475,
+      "actual": 475,
       "passed": true
     },
     {
       "id": "ruleFaint",
       "cssVariable": "--sp-rule-faint",
       "theme": "light",
-      "expected": 200,
-      "actual": 200,
+      "expected": 225,
+      "actual": 225,
       "passed": true
     },
     {
       "id": "ruleFaint",
       "cssVariable": "--sp-rule-faint",
       "theme": "dark",
-      "expected": 625,
-      "actual": 625,
+      "expected": 700,
+      "actual": 700,
       "passed": true
     },
     {
@@ -7871,16 +7929,224 @@
       "id": "menuChip",
       "cssVariable": "--sp-menu-chip",
       "theme": "light",
-      "expected": 200,
-      "actual": 200,
+      "expected": 225,
+      "actual": 225,
       "passed": true
     },
     {
       "id": "menuChip",
       "cssVariable": "--sp-menu-chip",
       "theme": "dark",
+      "expected": 850,
+      "actual": 850,
+      "passed": true
+    },
+    {
+      "id": "floatingEdge",
+      "cssVariable": "--sp-floating-edge",
+      "theme": "light",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "floatingEdge",
+      "cssVariable": "--sp-floating-edge",
+      "theme": "dark",
+      "expected": 850,
+      "actual": 850,
+      "passed": true
+    },
+    {
+      "id": "analysisHighlight",
+      "cssVariable": "--sp-analysis-highlight",
+      "theme": "light",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "analysisHighlight",
+      "cssVariable": "--sp-analysis-highlight",
+      "theme": "dark",
+      "expected": 900,
+      "actual": 900,
+      "passed": true
+    },
+    {
+      "id": "raisedEdge",
+      "cssVariable": "--sp-raised-edge",
+      "theme": "light",
+      "expected": 25,
+      "actual": 25,
+      "passed": true
+    },
+    {
+      "id": "raisedEdge",
+      "cssVariable": "--sp-raised-edge",
+      "theme": "dark",
+      "expected": 900,
+      "actual": 900,
+      "passed": true
+    },
+    {
+      "id": "keycapHighlight",
+      "cssVariable": "--sp-keycap-highlight",
+      "theme": "light",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "keycapHighlight",
+      "cssVariable": "--sp-keycap-highlight",
+      "theme": "dark",
       "expected": 825,
       "actual": 825,
+      "passed": true
+    },
+    {
+      "id": "noticeHighlight",
+      "cssVariable": "--sp-notice-highlight",
+      "theme": "light",
+      "expected": 25,
+      "actual": 25,
+      "passed": true
+    },
+    {
+      "id": "noticeHighlight",
+      "cssVariable": "--sp-notice-highlight",
+      "theme": "dark",
+      "expected": 850,
+      "actual": 850,
+      "passed": true
+    },
+    {
+      "id": "tooltipHighlight",
+      "cssVariable": "--sp-tooltip-highlight",
+      "theme": "light",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "tooltipHighlight",
+      "cssVariable": "--sp-tooltip-highlight",
+      "theme": "dark",
+      "expected": 850,
+      "actual": 850,
+      "passed": true
+    },
+    {
+      "id": "notchHighlight",
+      "cssVariable": "--sp-notch-highlight",
+      "theme": "light",
+      "expected": 25,
+      "actual": 25,
+      "passed": true
+    },
+    {
+      "id": "notchHighlight",
+      "cssVariable": "--sp-notch-highlight",
+      "theme": "dark",
+      "expected": 900,
+      "actual": 900,
+      "passed": true
+    },
+    {
+      "id": "enclosureEdge",
+      "cssVariable": "--sp-enclosure-edge",
+      "theme": "light",
+      "expected": 25,
+      "actual": 25,
+      "passed": true
+    },
+    {
+      "id": "enclosureEdge",
+      "cssVariable": "--sp-enclosure-edge",
+      "theme": "dark",
+      "expected": 700,
+      "actual": 700,
+      "passed": true
+    },
+    {
+      "id": "dividerEtch",
+      "cssVariable": "--sp-divider-etch",
+      "theme": "light",
+      "expected": 25,
+      "actual": 25,
+      "passed": true
+    },
+    {
+      "id": "dividerEtch",
+      "cssVariable": "--sp-divider-etch",
+      "theme": "dark",
+      "expected": 925,
+      "actual": 925,
+      "passed": true
+    },
+    {
+      "id": "cardEtch",
+      "cssVariable": "--sp-card-etch",
+      "theme": "light",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "cardEtch",
+      "cssVariable": "--sp-card-etch",
+      "theme": "dark",
+      "expected": 850,
+      "actual": 850,
+      "passed": true
+    },
+    {
+      "id": "sheetBreakEtch",
+      "cssVariable": "--sp-sheet-break-etch",
+      "theme": "light",
+      "expected": 25,
+      "actual": 25,
+      "passed": true
+    },
+    {
+      "id": "sheetBreakEtch",
+      "cssVariable": "--sp-sheet-break-etch",
+      "theme": "dark",
+      "expected": 875,
+      "actual": 875,
+      "passed": true
+    },
+    {
+      "id": "sheetRowEtch",
+      "cssVariable": "--sp-sheet-row-etch",
+      "theme": "light",
+      "expected": 25,
+      "actual": 25,
+      "passed": true
+    },
+    {
+      "id": "sheetRowEtch",
+      "cssVariable": "--sp-sheet-row-etch",
+      "theme": "dark",
+      "expected": 950,
+      "actual": 950,
+      "passed": true
+    },
+    {
+      "id": "sheetRowEtchActive",
+      "cssVariable": "--sp-sheet-row-etch-active",
+      "theme": "light",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "sheetRowEtchActive",
+      "cssVariable": "--sp-sheet-row-etch-active",
+      "theme": "dark",
+      "expected": 850,
+      "actual": 850,
       "passed": true
     }
   ],
@@ -8982,8 +9248,8 @@
       "target": 7,
       "rationale": "Ordinary body text on raised panels.",
       "foregroundStep": 925,
-      "backgroundStep": 25,
-      "ratio": 17.749,
+      "backgroundStep": 50,
+      "ratio": 16.611,
       "passed": true,
       "metTarget": true
     },
@@ -8997,8 +9263,8 @@
       "target": 7,
       "rationale": "Ordinary text in dialogs, tooltips, and floating panels.",
       "foregroundStep": 925,
-      "backgroundStep": 0,
-      "ratio": 18.941,
+      "backgroundStep": 25,
+      "ratio": 17.749,
       "passed": true,
       "metTarget": true
     },
@@ -9012,8 +9278,8 @@
       "target": 7,
       "rationale": "Ordinary text in recessed regions.",
       "foregroundStep": 925,
-      "backgroundStep": 100,
-      "ratio": 14.492,
+      "backgroundStep": 125,
+      "ratio": 13.508,
       "passed": true,
       "metTarget": true
     },
@@ -9027,8 +9293,8 @@
       "target": 7,
       "rationale": "Selected rows retain ordinary text readability.",
       "foregroundStep": 925,
-      "backgroundStep": 200,
-      "ratio": 10.842,
+      "backgroundStep": 225,
+      "ratio": 10.045,
       "passed": true,
       "metTarget": true
     },
@@ -9057,10 +9323,10 @@
       "target": 4.75,
       "rationale": "The weakest recurring secondary-text pairing.",
       "foregroundStep": 575,
-      "backgroundStep": 100,
-      "ratio": 4.941,
+      "backgroundStep": 125,
+      "ratio": 4.606,
       "passed": true,
-      "metTarget": true
+      "metTarget": false
     },
     {
       "theme": "light",
@@ -9071,8 +9337,8 @@
       "minimum": 4.5,
       "rationale": "Secondary analysis copy is ordinary-size text.",
       "foregroundStep": 575,
-      "backgroundStep": 0,
-      "ratio": 6.458,
+      "backgroundStep": 25,
+      "ratio": 6.052,
       "passed": true,
       "metTarget": true
     },
@@ -9113,9 +9379,9 @@
       "background": "fieldFace",
       "minimum": 3,
       "rationale": "The active field border is the visible focus indicator.",
-      "foregroundStep": 575,
-      "backgroundStep": 25,
-      "ratio": 6.052,
+      "foregroundStep": 600,
+      "backgroundStep": 50,
+      "ratio": 6.237,
       "passed": true,
       "metTarget": true
     },
@@ -9127,9 +9393,9 @@
       "background": "fieldEdge",
       "minimum": 3,
       "rationale": "Focus must remain distinguishable from the resting boundary.",
-      "foregroundStep": 575,
-      "backgroundStep": 200,
-      "ratio": 3.697,
+      "foregroundStep": 600,
+      "backgroundStep": 225,
+      "ratio": 3.772,
       "passed": true,
       "metTarget": true
     },
@@ -9142,8 +9408,8 @@
       "minimum": 4.5,
       "rationale": "The chip fills at the selected ground's depth, where plain muted ink falls under AA at the micro size its count is set in.",
       "foregroundStep": 675,
-      "backgroundStep": 200,
-      "ratio": 5.416,
+      "backgroundStep": 225,
+      "ratio": 5.018,
       "passed": true,
       "metTarget": true
     },
@@ -9171,8 +9437,8 @@
       "target": 7,
       "rationale": "Tooltip copy uses the primary text role.",
       "foregroundStep": 925,
-      "backgroundStep": 0,
-      "ratio": 18.941,
+      "backgroundStep": 25,
+      "ratio": 17.749,
       "passed": true,
       "metTarget": true
     },
@@ -9184,9 +9450,9 @@
       "background": "canvas",
       "minimum": 3,
       "rationale": "A project requirement, not a WCAG citation: the tooltip must read as a separate object over what it covers.",
-      "foregroundStep": 450,
+      "foregroundStep": 475,
       "backgroundStep": 75,
-      "ratio": 3.302,
+      "ratio": 3.621,
       "passed": true,
       "metTarget": true
     },
@@ -9198,9 +9464,9 @@
       "background": "surfacePrimary",
       "minimum": 3,
       "rationale": "Tooltips routinely open over raised panels.",
-      "foregroundStep": 450,
-      "backgroundStep": 25,
-      "ratio": 3.775,
+      "foregroundStep": 475,
+      "backgroundStep": 50,
+      "ratio": 3.874,
       "passed": true,
       "metTarget": true
     },
@@ -9212,9 +9478,9 @@
       "background": "surfaceFloating",
       "minimum": 3,
       "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-      "foregroundStep": 450,
-      "backgroundStep": 0,
-      "ratio": 4.029,
+      "foregroundStep": 475,
+      "backgroundStep": 25,
+      "ratio": 4.14,
       "passed": true,
       "metTarget": true
     },
@@ -9227,9 +9493,9 @@
       "minimum": 1.5,
       "target": 3,
       "rationale": "The box must read as bounded, not as a floating block of ink.",
-      "foregroundStep": 450,
-      "backgroundStep": 0,
-      "ratio": 4.029,
+      "foregroundStep": 475,
+      "backgroundStep": 25,
+      "ratio": 4.14,
       "passed": true,
       "metTarget": true
     },
@@ -9242,9 +9508,9 @@
       "minimum": 1.2,
       "target": 1.5,
       "rationale": "The floating panel ring; in dark it had fallen to 1.10:1 and the boundary was carried almost entirely by an alpha sheen.",
-      "foregroundStep": 200,
-      "backgroundStep": 0,
-      "ratio": 1.747,
+      "foregroundStep": 225,
+      "backgroundStep": 25,
+      "ratio": 1.767,
       "passed": true,
       "metTarget": true
     },
@@ -9257,9 +9523,9 @@
       "minimum": 1.2,
       "target": 1.5,
       "rationale": "The raised panel ring.",
-      "foregroundStep": 200,
-      "backgroundStep": 25,
-      "ratio": 1.637,
+      "foregroundStep": 225,
+      "backgroundStep": 50,
+      "ratio": 1.654,
       "passed": true,
       "metTarget": true
     },
@@ -9287,9 +9553,9 @@
       "minimum": 1.25,
       "target": 1.5,
       "rationale": "Decorative dividers need presence, not a WCAG text minimum.",
-      "foregroundStep": 250,
+      "foregroundStep": 275,
       "backgroundStep": 75,
-      "ratio": 1.671,
+      "ratio": 1.809,
       "passed": true,
       "metTarget": true
     },
@@ -9318,8 +9584,8 @@
       "target": 7,
       "rationale": "Ordinary body text on raised panels.",
       "foregroundStep": 100,
-      "backgroundStep": 825,
-      "ratio": 11.848,
+      "backgroundStep": 850,
+      "ratio": 12.609,
       "passed": true,
       "metTarget": true
     },
@@ -9333,8 +9599,8 @@
       "target": 7,
       "rationale": "Ordinary text in dialogs, tooltips, and floating panels.",
       "foregroundStep": 100,
-      "backgroundStep": 750,
-      "ratio": 9.452,
+      "backgroundStep": 775,
+      "ratio": 10.249,
       "passed": true,
       "metTarget": true
     },
@@ -9348,8 +9614,8 @@
       "target": 7,
       "rationale": "Ordinary text in recessed regions.",
       "foregroundStep": 100,
-      "backgroundStep": 950,
-      "ratio": 14.937,
+      "backgroundStep": 975,
+      "ratio": 15.282,
       "passed": true,
       "metTarget": true
     },
@@ -9363,8 +9629,8 @@
       "target": 7,
       "rationale": "Selected rows retain ordinary text readability.",
       "foregroundStep": 100,
-      "backgroundStep": 700,
-      "ratio": 7.937,
+      "backgroundStep": 725,
+      "ratio": 8.677,
       "passed": true,
       "metTarget": true
     },
@@ -9393,8 +9659,8 @@
       "target": 4.75,
       "rationale": "The weakest recurring secondary-text pairing.",
       "foregroundStep": 325,
-      "backgroundStep": 950,
-      "ratio": 7.508,
+      "backgroundStep": 975,
+      "ratio": 7.681,
       "passed": true,
       "metTarget": true
     },
@@ -9407,8 +9673,8 @@
       "minimum": 4.5,
       "rationale": "Secondary analysis copy is ordinary-size text.",
       "foregroundStep": 325,
-      "backgroundStep": 850,
-      "ratio": 6.338,
+      "backgroundStep": 875,
+      "ratio": 6.693,
       "passed": true,
       "metTarget": true
     },
@@ -9449,9 +9715,9 @@
       "background": "fieldFace",
       "minimum": 3,
       "rationale": "The active field border is the visible focus indicator.",
-      "foregroundStep": 200,
-      "backgroundStep": 825,
-      "ratio": 8.864,
+      "foregroundStep": 225,
+      "backgroundStep": 850,
+      "ratio": 8.74,
       "passed": true,
       "metTarget": true
     },
@@ -9463,9 +9729,9 @@
       "background": "fieldEdge",
       "minimum": 3,
       "rationale": "Focus must remain distinguishable from the resting boundary.",
-      "foregroundStep": 200,
-      "backgroundStep": 725,
-      "ratio": 6.492,
+      "foregroundStep": 225,
+      "backgroundStep": 750,
+      "ratio": 6.552,
       "passed": true,
       "metTarget": true
     },
@@ -9478,8 +9744,8 @@
       "minimum": 4.5,
       "rationale": "The chip fills at the selected ground's depth, where plain muted ink falls under AA at the micro size its count is set in.",
       "foregroundStep": 225,
-      "backgroundStep": 825,
-      "ratio": 8.212,
+      "backgroundStep": 850,
+      "ratio": 8.74,
       "passed": true,
       "metTarget": true
     },
@@ -9507,8 +9773,8 @@
       "target": 7,
       "rationale": "Tooltip copy uses the primary text role.",
       "foregroundStep": 100,
-      "backgroundStep": 750,
-      "ratio": 9.452,
+      "backgroundStep": 775,
+      "ratio": 10.249,
       "passed": true,
       "metTarget": true
     },
@@ -9520,9 +9786,9 @@
       "background": "canvas",
       "minimum": 3,
       "rationale": "A project requirement, not a WCAG citation: the tooltip must read as a separate object over what it covers.",
-      "foregroundStep": 450,
+      "foregroundStep": 475,
       "backgroundStep": 900,
-      "ratio": 4.525,
+      "ratio": 4.127,
       "passed": true,
       "metTarget": true
     },
@@ -9534,9 +9800,9 @@
       "background": "surfacePrimary",
       "minimum": 3,
       "rationale": "Tooltips routinely open over raised panels.",
-      "foregroundStep": 450,
-      "backgroundStep": 825,
-      "ratio": 3.844,
+      "foregroundStep": 475,
+      "backgroundStep": 850,
+      "ratio": 3.731,
       "passed": true,
       "metTarget": true
     },
@@ -9548,9 +9814,9 @@
       "background": "surfaceFloating",
       "minimum": 3,
       "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-      "foregroundStep": 450,
-      "backgroundStep": 750,
-      "ratio": 3.066,
+      "foregroundStep": 475,
+      "backgroundStep": 775,
+      "ratio": 3.032,
       "passed": true,
       "metTarget": true
     },
@@ -9563,9 +9829,9 @@
       "minimum": 1.5,
       "target": 3,
       "rationale": "The box must read as bounded, not as a floating block of ink.",
-      "foregroundStep": 450,
-      "backgroundStep": 750,
-      "ratio": 3.066,
+      "foregroundStep": 475,
+      "backgroundStep": 775,
+      "ratio": 3.032,
       "passed": true,
       "metTarget": true
     },
@@ -9578,11 +9844,11 @@
       "minimum": 1.2,
       "target": 1.5,
       "rationale": "The floating panel ring; in dark it had fallen to 1.10:1 and the boundary was carried almost entirely by an alpha sheen.",
-      "foregroundStep": 625,
-      "backgroundStep": 750,
-      "ratio": 1.578,
+      "foregroundStep": 700,
+      "backgroundStep": 775,
+      "ratio": 1.291,
       "passed": true,
-      "metTarget": true
+      "metTarget": false
     },
     {
       "theme": "dark",
@@ -9593,9 +9859,9 @@
       "minimum": 1.2,
       "target": 1.5,
       "rationale": "The raised panel ring.",
-      "foregroundStep": 625,
-      "backgroundStep": 825,
-      "ratio": 1.978,
+      "foregroundStep": 700,
+      "backgroundStep": 850,
+      "ratio": 1.589,
       "passed": true,
       "metTarget": true
     },
@@ -9623,9 +9889,9 @@
       "minimum": 1.25,
       "target": 1.5,
       "rationale": "Decorative dividers need presence, not a WCAG text minimum.",
-      "foregroundStep": 575,
+      "foregroundStep": 650,
       "backgroundStep": 900,
-      "ratio": 2.823,
+      "ratio": 2.117,
       "passed": true,
       "metTarget": true
     }
@@ -9640,8 +9906,8 @@
       "targetDeltaE": 0.015,
       "rationale": "Raised panels should remain perceptibly layered over canvas.",
       "firstStep": 75,
-      "secondStep": 25,
-      "deltaE": 0.044797,
+      "secondStep": 50,
+      "deltaE": 0.022399,
       "metTarget": true
     },
     {
@@ -9652,8 +9918,8 @@
       "second": "surfaceFloating",
       "targetDeltaE": 0.015,
       "rationale": "Floating surfaces should remain distinct from raised panels.",
-      "firstStep": 25,
-      "secondStep": 0,
+      "firstStep": 50,
+      "secondStep": 25,
       "deltaE": 0.022398,
       "metTarget": true
     },
@@ -9666,8 +9932,8 @@
       "targetDeltaE": 0.015,
       "rationale": "Inset regions should not collapse into the canvas.",
       "firstStep": 75,
-      "secondStep": 100,
-      "deltaE": 0.022399,
+      "secondStep": 125,
+      "deltaE": 0.0448,
       "metTarget": true
     },
     {
@@ -9678,9 +9944,9 @@
       "second": "canvas",
       "targetDeltaE": 0.02,
       "rationale": "Selection must remain visible in addition to its non-colour cue.",
-      "firstStep": 200,
+      "firstStep": 225,
       "secondStep": 75,
-      "deltaE": 0.112008,
+      "deltaE": 0.134413,
       "metTarget": true
     },
     {
@@ -9692,8 +9958,8 @@
       "targetDeltaE": 0.015,
       "rationale": "Raised panels should remain perceptibly layered over canvas.",
       "firstStep": 900,
-      "secondStep": 825,
-      "deltaE": 0.067129,
+      "secondStep": 850,
+      "deltaE": 0.044752,
       "metTarget": true
     },
     {
@@ -9704,9 +9970,9 @@
       "second": "surfaceFloating",
       "targetDeltaE": 0.015,
       "rationale": "Floating surfaces should remain distinct from raised panels.",
-      "firstStep": 825,
-      "secondStep": 750,
-      "deltaE": 0.06721,
+      "firstStep": 850,
+      "secondStep": 775,
+      "deltaE": 0.067155,
       "metTarget": true
     },
     {
@@ -9718,8 +9984,8 @@
       "targetDeltaE": 0.015,
       "rationale": "Inset regions should not collapse into the canvas.",
       "firstStep": 900,
-      "secondStep": 950,
-      "deltaE": 0.044751,
+      "secondStep": 975,
+      "deltaE": 0.067124,
       "metTarget": true
     },
     {
@@ -9730,37 +9996,30 @@
       "second": "canvas",
       "targetDeltaE": 0.02,
       "rationale": "Selection must remain visible in addition to its non-colour cue.",
-      "firstStep": 700,
+      "firstStep": 725,
       "secondStep": 900,
-      "deltaE": 0.179145,
+      "deltaE": 0.156724,
       "metTarget": true
     }
   ],
   "failures": [],
   "warnings": [
-    "graphite: primary-on-floating-surface: light and dark differ 2.004x in contrast (18.941:1 vs 9.452:1); the hierarchy is not the same in both themes.",
-    "graphite: field-focus-from-resting-edge: light and dark differ 1.756x in contrast (3.697:1 vs 6.492:1); the hierarchy is not the same in both themes.",
-    "graphite: tooltip-ink: light and dark differ 2.004x in contrast (18.941:1 vs 9.452:1); the hierarchy is not the same in both themes.",
-    "graphite: primary-to-floating-surface: light and dark differ 3.001x in separation (0.022398 vs 0.06721).",
-    "graphite: surface-chroma: dark surfaces average 2.669x the chroma of light surfaces (0.003026 vs 0.008077).",
-    "steel: primary-on-floating-surface: light and dark differ 2.007x in contrast (18.927:1 vs 9.432:1); the hierarchy is not the same in both themes.",
-    "steel: field-focus-from-resting-edge: light and dark differ 1.761x in contrast (3.682:1 vs 6.485:1); the hierarchy is not the same in both themes.",
-    "steel: tooltip-ink: light and dark differ 2.007x in contrast (18.927:1 vs 9.432:1); the hierarchy is not the same in both themes.",
-    "steel: primary-to-floating-surface: light and dark differ 3.004x in separation (0.02251 vs 0.067627).",
-    "steel: surface-chroma: dark surfaces average 2.67x the chroma of light surfaces (0.007262 vs 0.019386).",
-    "clay: primary-on-floating-surface: light and dark differ 2.004x in contrast (18.941:1 vs 9.453:1); the hierarchy is not the same in both themes.",
-    "clay: field-focus-from-resting-edge: light and dark differ 1.756x in contrast (3.698:1 vs 6.493:1); the hierarchy is not the same in both themes.",
-    "clay: tooltip-ink: light and dark differ 2.004x in contrast (18.941:1 vs 9.453:1); the hierarchy is not the same in both themes.",
-    "clay: primary-to-floating-surface: light and dark differ 3.002x in separation (0.022427 vs 0.067321).",
-    "clay: surface-chroma: dark surfaces average 2.669x the chroma of light surfaces (0.004539 vs 0.012116).",
-    "moss: primary-on-floating-surface: light and dark differ 2.011x in contrast (18.91:1 vs 9.405:1); the hierarchy is not the same in both themes.",
-    "moss: field-focus-from-resting-edge: light and dark differ 1.767x in contrast (3.662:1 vs 6.471:1); the hierarchy is not the same in both themes.",
-    "moss: tooltip-ink: light and dark differ 2.011x in contrast (18.91:1 vs 9.405:1); the hierarchy is not the same in both themes.",
-    "moss: primary-to-floating-surface: light and dark differ 3.002x in separation (0.022427 vs 0.067322).",
-    "moss: surface-chroma: dark surfaces average 2.67x the chroma of light surfaces (0.004539 vs 0.012117).",
-    "ash: primary-on-floating-surface: light and dark differ 2.006x in contrast (18.934:1 vs 9.441:1); the hierarchy is not the same in both themes.",
-    "ash: field-focus-from-resting-edge: light and dark differ 1.758x in contrast (3.689:1 vs 6.487:1); the hierarchy is not the same in both themes.",
-    "ash: tooltip-ink: light and dark differ 2.006x in contrast (18.934:1 vs 9.441:1); the hierarchy is not the same in both themes.",
-    "ash: primary-to-floating-surface: light and dark differ 3x in separation (0.022376 vs 0.067123)."
+    "graphite: light muted-on-inset-surface: 4.606:1 is below target 4.75:1.",
+    "graphite: dark faint-rule-on-floating-surface: 1.291:1 is below target 1.5:1.",
+    "graphite: primary-to-floating-surface: light and dark differ 2.998x in separation (0.022398 vs 0.067155).",
+    "steel: light muted-on-inset-surface: 4.581:1 is below target 4.75:1.",
+    "steel: dark faint-rule-on-floating-surface: 1.294:1 is below target 1.5:1.",
+    "steel: primary-to-floating-surface: light and dark differ 2.99x in separation (0.022508 vs 0.067291).",
+    "clay: light muted-on-inset-surface: 4.607:1 is below target 4.75:1.",
+    "clay: dark faint-rule-on-floating-surface: 1.291:1 is below target 1.5:1.",
+    "clay: primary-to-floating-surface: light and dark differ 2.996x in separation (0.022428 vs 0.067188).",
+    "moss: light muted-on-inset-surface: 4.549:1 is below target 4.75:1.",
+    "moss: dark faint-rule-on-floating-surface: 1.299:1 is below target 1.5:1.",
+    "moss: field-focus-from-resting-edge: light and dark differ 1.752x in contrast (3.739:1 vs 6.55:1); the hierarchy is not the same in both themes.",
+    "moss: menu-chip-ink: light and dark differ 1.759x in contrast (4.991:1 vs 8.778:1); the hierarchy is not the same in both themes.",
+    "moss: primary-to-floating-surface: light and dark differ 2.996x in separation (0.022427 vs 0.067189).",
+    "ash: light muted-on-inset-surface: 4.593:1 is below target 4.75:1.",
+    "ash: dark faint-rule-on-floating-surface: 1.293:1 is below target 1.5:1.",
+    "ash: primary-to-floating-surface: light and dark differ 3x in separation (0.022376 vs 0.067127)."
   ]
 }

@@ -101,7 +101,7 @@ export const toneVar: Record<Tone, string> = {
 /*
   A rung of a tone's scale, for the places a colour is the payload of a custom
   property rather than the colour of text -- a row publishing its state to a
-  mark. The number is the rung; see --sp-state-* in tokens/state.css for what each
+  mark. The number is the rung; see --sp-state-* in app/styles/state.css for what each
   one is for.
 
   Written out per tone rather than built from the tone name, so a tone that

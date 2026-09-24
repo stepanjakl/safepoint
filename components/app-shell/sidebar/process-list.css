@@ -1,0 +1,230 @@
+/* ── Process list ───────────────────────────────────────────────────────────
+   The rows: their states and the reorder machinery (a two-speed transition over
+   absolutely positioned rows), the drop slot, the status badge the row
+   publishes stops for, and the fades at the list's two ends.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Flat, like every surface face: a ramp across 20px reads as an artefact.
+     Its ring is a step darker than the row, so the key sits on it. */
+  --sp-keycap-face: light-dark(var(--sp-neutral-25), var(--sp-neutral-775));
+  --sp-keycap-ring: light-dark(var(--sp-neutral-200), var(--sp-neutral-650));
+  --sp-keycap-highlight: light-dark(var(--sp-neutral-0), var(--sp-neutral-825));
+  /* The current row. Borrows the pane's geometry, keeps its own stops. */
+  --sp-menu-current-face-top: light-dark(var(--sp-neutral-25), var(--sp-neutral-775));
+  --sp-menu-current-face-bottom: light-dark(var(--sp-neutral-25), var(--sp-neutral-775));
+  --sp-menu-current-ring-top: transparent;
+  --sp-menu-current-ring-bottom: light-dark(var(--sp-neutral-200), var(--sp-neutral-925));
+  /* Light lifts the current row's top edge a step, as a pane's is; dark's
+     row is lit by its face alone. */
+  --sp-menu-current-highlight: light-dark(var(--sp-neutral-0), transparent);
+}
+
+/* A row's status badge. Its stops are read from the row: `.process-menu-row`
+   below publishes them per state, so the badge follows the row
+   with no variant of its own. The fallbacks are the keycap, so a badge
+   outside a row still paints. */
+@utility surface-menu-badge {
+  --control-face-top: var(--menu-badge-face, var(--sp-keycap-face));
+  --control-face-bottom: var(--menu-badge-face, var(--sp-keycap-face));
+  --control-ring-top: var(--menu-badge-ring, var(--sp-keycap-ring));
+  --control-ring-bottom: var(--menu-badge-ring, var(--sp-keycap-ring));
+  --control-highlight: var(--menu-badge-highlight, var(--sp-keycap-highlight));
+  --control-highlight-width: var(--spacing-control-highlight-hairline);
+}
+
+@layer components {
+  .process-menu-row {
+    position: absolute;
+    inset: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    /* One definition of the row's height. --row-pitch is set on the list from
+       the same constant the translate maths uses, so the two cannot drift; the
+       2px it gives back is the gap between one row and the next. */
+    height: calc(var(--row-pitch) - 2px);
+    /* No end padding: the badge at the row's end is one rail cell wide and has
+       to reach the pane's content edge to centre on the mirrored axis. */
+    padding: 0;
+    /* Carried by every row, not just the current or dragged one, so gaining an
+       edge does not shift the label by the width of the border. */
+    border: var(--spacing-menu-edge) solid transparent;
+    border-radius: var(--radius-control);
+    transition:
+      background var(--duration-state) ease-out,
+      border-color var(--duration-state) ease-out;
+  }
+
+  /* Reordering moves the row and tints it at different speeds: the travel is
+     eased over --duration-row so a swap is followable, while the tint keeps
+     --duration-state, the step every other control in the menu answers on. */
+  .process-menu-row[data-editing] {
+    transition:
+      transform var(--duration-row) --theme(--ease-out-emphasized),
+      background var(--duration-state) ease-out,
+      border-color var(--duration-state) ease-out;
+  }
+
+  /* A wash and nothing else; the reserved edge stays transparent, since an
+     outline on hover read as a second current row. Both exclusions are load
+     bearing: without them this rule outranks [data-dragging] and repaints it. */
+  .process-menu-row:not([data-current], [data-dragging]):hover,
+  .process-menu-row:not([data-current], [data-dragging]):focus-within {
+    background: var(--sp-menu-wash);
+  }
+
+  /* While arranging, every row is a drag target and must answer the pointer,
+     the current one included. It cannot take the others' background --
+     control-face paints a gradient layer over it -- so it moves the face's own
+     two stops to the same wash, which control-face already transitions. */
+  .process-menu-row[data-editing][data-current]:not([data-dragging]):hover,
+  .process-menu-row[data-editing][data-current]:not([data-dragging]):focus-within {
+    --control-face-top: var(--sp-menu-wash);
+    --control-face-bottom: var(--sp-menu-wash);
+  }
+
+  /* The current row reads as a small sheet, borrowing the pane's face-and-ring
+     geometry from `control-face`. It keeps its own four stops rather than
+     `@apply surface-raised`, so this row can be tuned -- lighter, darker, a
+     different ring -- without touching the pane or any other surface. */
+  .process-menu-row[data-current] {
+    @apply control-face;
+    /* Restated over control-face's own border so the sides keep every other
+       row's width and the bottom takes the heavier edge. */
+    border-width: var(--spacing-menu-edge);
+    border-bottom-width: var(--spacing-menu-current-edge);
+    --control-face-top: var(--sp-menu-current-face-top);
+    --control-face-bottom: var(--sp-menu-current-face-bottom);
+    --control-ring-top: var(--sp-menu-current-ring-top);
+    --control-ring-bottom: var(--sp-menu-current-ring-bottom);
+    --control-highlight: var(--sp-menu-current-highlight);
+  }
+
+  /* control-face's transition list outranks [data-editing]'s, so without this
+     the current row alone snapped to its new slot. Restated in full because a
+     transition list can only be replaced, never extended.
+     Keep the second half in step with control-face in app/styles/controls.css. */
+  .process-menu-row[data-editing][data-current]:not([data-dragging]) {
+    transition:
+      transform var(--duration-row) --theme(--ease-out-emphasized),
+      color var(--duration-state) ease-out,
+      background-color var(--duration-state) ease-out,
+      box-shadow var(--duration-state) ease-out,
+      opacity var(--duration-state) ease-out,
+      --control-face-top var(--duration-state) ease-out,
+      --control-face-bottom var(--duration-state) ease-out,
+      --control-ring-top var(--duration-state) ease-out,
+      --control-ring-bottom var(--duration-state) ease-out,
+      --control-highlight var(--duration-state) ease-out;
+  }
+
+  /* Lifted over its neighbours, with eased transitions off so the row tracks
+     the pointer exactly. Carried by the face and the reserved edge -- no
+     shadow, which the experience spec does not allow. */
+  .process-menu-row[data-dragging] {
+    z-index: 2;
+    background: var(--sp-surface-floating);
+    border-color: var(--sp-rule-strong);
+    transition: none;
+  }
+
+  /* The heavier drag edge on every side. The box grows outward by the
+     difference rather than the border eating in, so nothing shifts when the
+     drag starts. Shared with the drop slot, so the two stay one object. */
+  .process-menu-row[data-dragging],
+  .process-drop-slot {
+    inset: calc(var(--spacing-menu-drag-grow) * -1) calc(var(--spacing-menu-drag-grow) * -1) auto;
+    height: calc(var(--row-pitch) - 2px + var(--spacing-menu-drag-grow) * 2);
+    border-width: var(--spacing-menu-drag-edge);
+  }
+
+  /* The badge's stops, published for `surface-menu-badge` to read. Here with
+     the row's other states because it is one of them: a keycap at rest, bare
+     whenever the row lights, so the row shows through it. */
+  .process-menu-row {
+    --menu-badge-face: var(--sp-keycap-face);
+    --menu-badge-ring: var(--sp-keycap-ring);
+    --menu-badge-highlight: var(--sp-keycap-highlight);
+  }
+
+  .process-menu-row:hover,
+  .process-menu-row:focus-within,
+  .process-menu-row[data-current] {
+    --menu-badge-face: transparent;
+    --menu-badge-ring: transparent;
+    --menu-badge-highlight: transparent;
+  }
+
+  /* The row carries no end padding, so the badge sets its own inset: one
+     --spacing-menu-end in, the same the search field gives its keycap. */
+  .process-menu-row-end {
+    margin-inline-end: var(--spacing-menu-end);
+  }
+
+  /* The mirror of the rule above. The leading axis is measured from the
+     pane's content edge and knows nothing of the row, so a cell inside the
+     row's edge would centre a hairline late -- the cell gives it back. */
+  .process-menu-row-start {
+    margin-inline-start: calc(var(--spacing-menu-edge) * -1);
+  }
+
+  /* Where the dragged row will land. Dashed on every side and in the same rule
+     colour as the dragged row's edge, so the pair reads as one object leaving a
+     space rather than as two differently-lit boxes. Its box and edge width
+     come from the drag-edge rule it shares with the dragged row. */
+  .process-drop-slot {
+    position: absolute;
+    border-style: dashed;
+    border-color: var(--sp-rule-strong);
+    border-radius: var(--radius-control);
+    background: var(--sp-surface-inset);
+  }
+
+  /* The link fills the row behind the badge; the badge remains an independent
+     focus/hover target above it. No nested interactive elements. */
+  .process-menu-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-control);
+  }
+
+  /* The list's two ends, softened the way its sides are. Overlaid rather than
+     masked: a mask on the scroll container takes the scrollbar with it. Behind
+     the side gradients so the corners stay theirs, and above the breakpoint
+     only, since below it the list does not scroll. */
+  @media (width >= 56.25rem) {
+    .process-list-fade::before,
+    .process-list-fade::after {
+      content: '';
+      position: absolute;
+      inset-inline: 0;
+      z-index: 2;
+      height: var(--spacing-menu-fade);
+      pointer-events: none;
+    }
+    .process-list-fade::before {
+      top: 0;
+      background: linear-gradient(to bottom, var(--sp-canvas), transparent);
+    }
+    .process-list-fade::after {
+      bottom: 0;
+      background: linear-gradient(to top, var(--sp-canvas), transparent);
+    }
+  }
+
+  @media (forced-colors: active) {
+    .process-list-fade::before,
+    .process-list-fade::after {
+      display: none;
+    }
+  }
+
+  @media print {
+    .process-list-fade::before,
+    .process-list-fade::after {
+      display: none;
+    }
+  }
+}

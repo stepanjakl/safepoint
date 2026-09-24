@@ -20,21 +20,21 @@ import {
   curvesFor,
 } from './config.ts';
 
-const CSS_OUTPUT = new URL('../../app/custom-colours.css', import.meta.url);
+const CSS_OUTPUT = new URL(
+  '../../app/styles/generated/ramp.css',
+  import.meta.url,
+);
 const REPORT_OUTPUT = new URL(
   '../../docs/generated/colour-theme-report.json',
   import.meta.url,
 );
-/* Stylesheet import order, so "last declaration in a scope wins" matches the
-   cascade. Files that only declare --sp-neutral-* are omitted: resolution
-   terminates at a ramp step. */
+/* Every stylesheet in import order, so "last declaration wins" matches the
+   cascade. Read from the entry's @import list rather than restated here, so
+   a component stylesheet is validated the moment it is imported. */
+const STYLE_ENTRY = new URL('../../app/styles/index.css', import.meta.url);
 const ROLE_SOURCES = [
-  new URL('../../app/tokens/roles.css', import.meta.url),
-  new URL('../../app/tokens/faces.css', import.meta.url),
-  new URL('../../app/tokens/theme.css', import.meta.url),
-  new URL('../../app/components.css', import.meta.url),
-  new URL('../../app/globals.css', import.meta.url),
-] as const;
+  ...readFileSync(STYLE_ENTRY, 'utf8').matchAll(/^@import '(\.[^']+)';$/gm),
+].map(([, path]) => new URL(path!, STYLE_ENTRY));
 
 const SERIALIZED_PRECISION = 3;
 /* Warning criteria. Absolute bands cannot distinguish a curve that is merely
@@ -67,8 +67,6 @@ type GeneratedTheme = {
   steps: GeneratedStep[];
   colours: Map<number, Color>;
 };
-
-type RoleDeclaration = { base?: string; custom?: string };
 
 export type GeneratedArtifacts = {
   css: string;
@@ -237,16 +235,6 @@ function colourAt(
   return { colour, step };
 }
 
-/* Quote style and whitespace are formatter decisions, so the scope test runs
-   over a normalized selector rather than the source text. Any rule keyed on
-   the attribute is a generated-system rule, valued or not, because Original is
-   the attribute's absence. If a single system ever needs an override the other
-   generated systems must not take, this has to resolve per system instead. */
-function selectsCustomSystem(selector: string) {
-  const normalized = selector.replace(/\s+/g, '').replaceAll('"', "'");
-  return normalized.includes('[data-colour-system');
-}
-
 /* A rule inside @media or @supports paints only under that condition --
    forced colours restate all three tooltip roles as system keywords -- so it
    is not the baseline this contract describes. @layer is unconditional. */
@@ -264,7 +252,7 @@ function isConditional(node: Container | Document | undefined): boolean {
 }
 
 function validateRoleAssignments() {
-  const declarations = new Map<string, RoleDeclaration>();
+  const declarations = new Map<string, string>();
   for (const source of ROLE_SOURCES) {
     const root = parse(readFileSync(source, 'utf8'), {
       from: fileURLToPath(source),
@@ -275,15 +263,9 @@ function validateRoleAssignments() {
          and `--control-face-top` alone is declared in fifteen of them. */
       if (declaration.parent?.type !== 'rule') return;
       if (isConditional(declaration.parent)) return;
-      const existing = declarations.get(declaration.prop) ?? {};
-      /* Last in source order wins within its scope, as the cascade resolves
-         it. Taking the first silently validated a superseded value. */
-      if (selectsCustomSystem(declaration.parent.selector)) {
-        existing.custom = declaration.value;
-      } else {
-        existing.base = declaration.value;
-      }
-      declarations.set(declaration.prop, existing);
+      /* Last in source order wins, as the cascade resolves it. Taking the
+         first silently validated a superseded value. */
+      declarations.set(declaration.prop, declaration.value);
     });
   }
 
@@ -296,8 +278,7 @@ function validateRoleAssignments() {
       throw new Error(`Circular role alias at ${variable}.`);
     const ramp = /^--sp-neutral-(\d+)$/.exec(variable);
     if (ramp?.[1]) return Number(ramp[1]);
-    const values = declarations.get(variable);
-    const value = values?.custom ?? values?.base;
+    const value = declarations.get(variable);
     if (!value) throw new Error(`No CSS declaration found for ${variable}.`);
     const nextSeen = new Set(seen).add(variable);
     const alias = /^var\((--[\w-]+)\)$/.exec(value.trim());
@@ -332,28 +313,21 @@ function validateRoleAssignments() {
 function renderCss(families: Map<string, Record<Theme, GeneratedTheme>>) {
   /* One list per family, not one per theme: both themes read the same ramp, so
      a step is a colour. Which step each theme picks is stated in the role
-     assignments. The default family binds on the bare colour-system selector
-     so the attribute is only needed to leave it. */
+     assignments. The default family binds on :root, so data-neutral is only
+     needed to leave it. The steps are written as values, not as aliases of a
+     per-family name, so DevTools shows a colour one read away from a role. */
   const blocks = NEUTRAL_FAMILIES.map((family) => {
-    const steps = families.get(family.id)!.light.steps;
-    const primitives = steps
-      .map(({ step, css }) => `  --sp-custom-${family.id}-${step}: ${css};`)
+    const steps = families
+      .get(family.id)!
+      .light.steps.map(({ step, css }) => `  --sp-neutral-${step}: ${css};`)
       .join('\n');
-    const bindings = COLOUR_STEPS.map(
-      (step) =>
-        `  --sp-neutral-${step}: var(--sp-custom-${family.id}-${step});`,
-    ).join('\n');
     const selector =
       family.id === DEFAULT_NEUTRAL_FAMILY
-        ? `:root[data-colour-system='custom'],\n:root[data-colour-system='custom'][data-custom-neutral='${family.id}']`
-        : `:root[data-colour-system='custom'][data-custom-neutral='${family.id}']`;
+        ? ':root'
+        : `:root[data-neutral='${family.id}']`;
     return `/* ${family.name}: ${family.note} */
-:root {
-${primitives}
-}
-
 ${selector} {
-${bindings}
+${steps}
 }
 `;
   }).join('\n');

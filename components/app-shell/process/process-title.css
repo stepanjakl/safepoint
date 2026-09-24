@@ -1,0 +1,43 @@
+/* ── Process title ──────────────────────────────────────────────────────────
+   The editable title field in the process header.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* The process title's field: lighter than the sheet it sits in, so it lifts
+     out of the header rather than sinking into it. */
+  --sp-title-field-face: var(--sp-surface-floating);
+  --sp-title-field-edge-hover: light-dark(var(--sp-neutral-225), var(--sp-neutral-600));
+  --sp-title-field-edge-active: light-dark(var(--sp-neutral-500), var(--sp-neutral-300));
+}
+
+@layer components {
+  /* On the search field's pattern, focus last for the same reason. The face
+     reaches past the name by its padding and edge and the margins take both
+     back, so the name sits where the heading puts it. */
+  .title-field {
+    @apply control-wash;
+    --title-field-pad-inline: calc(var(--spacing) * 2.5);
+    --title-field-pad-block: calc(var(--spacing) * 1.5);
+    --title-field-reach-inline: calc(var(--title-field-pad-inline) + var(--spacing-field-edge));
+    --title-field-reach-block: calc(var(--title-field-pad-block) + var(--spacing-field-edge));
+    border: var(--spacing-field-edge) solid transparent;
+    border-radius: var(--radius-control);
+    padding: var(--title-field-pad-block) var(--title-field-pad-inline);
+    margin: calc(-1 * var(--title-field-reach-block)) calc(-1 * var(--title-field-reach-inline));
+    max-width: calc(100% + 2 * var(--title-field-reach-inline));
+  }
+  .title-field:hover {
+    border-color: var(--sp-title-field-edge-hover);
+    background-color: var(--sp-title-field-face);
+  }
+  .title-field:focus-within {
+    border-color: var(--sp-title-field-edge-active);
+    background-color: var(--sp-title-field-face);
+  }
+  @media (forced-colors: active) {
+    .title-field:focus-within {
+      outline: 2px solid Highlight;
+      outline-offset: 2px;
+    }
+  }
+}

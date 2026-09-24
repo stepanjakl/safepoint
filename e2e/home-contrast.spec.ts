@@ -1,15 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { expectContrast, openHome, scanContrast } from './contrast';
 
-const RADIX_NEUTRALS = [
-  'radix-gray',
-  'radix-mauve',
-  'radix-slate',
-  'radix-sage',
-  'radix-olive',
-  'radix-sand',
-] as const;
-
 test.beforeEach(async ({ page, colorScheme }) => {
   if (colorScheme !== 'light' && colorScheme !== 'dark')
     throw new Error('A contrast project must select a light or dark theme.');
@@ -21,37 +12,6 @@ test('home page', async ({ page }, testInfo) => {
     page.getByRole('heading', { name: 'Fresh Food Weekend', exact: true }),
   ).toBeVisible();
   await expectContrast(page, testInfo, 'home');
-});
-
-test('Radix neutral choices resolve the app ramp', async ({
-  page,
-  colorScheme,
-}, testInfo) => {
-  if (colorScheme !== 'light' && colorScheme !== 'dark')
-    throw new Error('A contrast project must select a light or dark theme.');
-  await openHome(page, colorScheme);
-  const baselineViolations = (
-    await scanContrast(page, testInfo, 'radix-neutral-baseline')
-  ).violations.length;
-  for (const neutral of RADIX_NEUTRALS) {
-    await page.goto(`/?neutral=${neutral}`);
-    await expect(
-      page.getByRole('heading', { name: 'Fresh Food Weekend', exact: true }),
-    ).toBeVisible();
-    await expect(page.locator('html')).toHaveAttribute('data-neutral', neutral);
-    const ramp = await page.locator('html').evaluate((element) => {
-      const styles = getComputedStyle(element);
-      return [
-        styles.getPropertyValue('--sp-neutral-50'),
-        styles.getPropertyValue('--sp-neutral-950'),
-      ];
-    });
-    expect(ramp.every((value) => value.trim().length > 0)).toBe(true);
-    const violations = (
-      await scanContrast(page, testInfo, `radix-neutral-${neutral}`)
-    ).violations;
-    expect(violations.length).toBeLessThanOrEqual(baselineViolations);
-  }
 });
 
 test('workspace menu', async ({ page }, testInfo) => {

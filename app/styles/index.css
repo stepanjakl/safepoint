@@ -1,0 +1,46 @@
+/* ── Styles ─────────────────────────────────────────────────────────────────
+   The one stylesheet the app loads. Shared foundations live beside this file;
+   a component's own roles, utilities and rules live beside its .tsx.
+   See docs/STYLING-SYSTEM.md → The division.
+   ────────────────────────────────────────────────────────────────────────── */
+
+@import 'tailwindcss';
+
+/* Tokens: the ramps, the roles that read them, and what Tailwind publishes. */
+@import './generated/ramp.css';
+@import './generated/radix.css';
+@import './roles.css';
+@import './state.css';
+@import './type.css';
+@import './geometry.css';
+@import './theme.css';
+
+/* Foundations: the document, and the face every control is painted with. */
+@import './base.css';
+@import './controls.css';
+
+/* Treatments more than one component reads. */
+@import './severity.css';
+@import './disclosure.css';
+@import './drawer.css';
+
+/* Components. The order is the cascade order of their layered rules. */
+@import '../../components/ui/switch.css';
+@import '../../components/review/review-experience.css';
+@import '../../components/app-shell/thread/thread-step.css';
+@import '../../components/app-shell/system/system-parts.css';
+@import '../../components/ui/notch.css';
+@import '../../components/app-shell/sidebar/sidebar-notice.css';
+@import '../../components/app-shell/sidebar/process-search.css';
+@import '../../components/app-shell/sidebar/process-menu.css';
+@import '../../components/app-shell/sidebar/process-list.css';
+@import '../../components/app-shell/sidebar/workspace-menu.css';
+@import '../../components/app-shell/process/process-title.css';
+@import '../../components/app-shell/process/process-header.css';
+@import '../../components/ui/tooltip.css';
+@import '../../components/review/effects-rail.css';
+@import '../../components/app-shell/resizable-shell.css';
+@import '../../components/app-shell/runs/runs-list.css';
+@import '../../components/app-shell/thread/initial-analysis.css';
+@import '../../components/review/release-card.css';
+@import '../../components/ui/brand.css';

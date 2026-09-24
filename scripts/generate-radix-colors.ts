@@ -1,30 +1,32 @@
 /*
-  Radix Colors, as Tailwind theme variables.
+  Radix Colors, as plain custom properties: every hue the app paints.
 
-  Writes app/radix-colors.css from the installed @radix-ui/colors package: every
-  scale, all twelve steps, light and dark. Run it after changing the package
-  version -- `pnpm colors:radix` -- and commit the result.
+  Writes app/styles/generated/radix.css from the installed @radix-ui/colors package. Run
+  it after changing the package version, or after a stylesheet starts reading
+  a scale it did not read before -- `pnpm colors:radix` -- and commit the
+  result. `pnpm check:tokens` fails on a step read from a scale not emitted.
 
   Why generated rather than imported. Radix's own stylesheets switch themes with
   a .dark class and reuse the light names for the dark scale, while this app
-  themes with light-dark(), driven by the colour scheme of whichever subtree a
-  colour is used in. So both themes are published side by side under their own
-  names -- --color-radix-<scale>-<step> and --color-radix-<scale>-dark-<step>
-  -- and whatever reads them picks between the two with light-dark() like every
-  other token. (Placeholders rather than a real name: Tailwind scans this file,
-  and a real one here would be emitted as though a style read it.)
+  themes with light-dark(). So both themes are published side by side --
+  --radix-<scale>-<step> and --radix-<scale>-dark-<step> -- and a role picks
+  between the two with light-dark() like every other token.
 
-  Why @theme, and why P3. Tailwind emits a theme variable only if something
-  uses it, so the whole set costs nothing until a colour is actually read. A
-  theme variable holds one value, so each step takes Radix's P3 value: exact on
-  a wide-gamut display, and mapped into gamut by the browser elsewhere. The
-  alpha scales are left out until something needs them.
+  Why not @theme. A theme variable becomes a utility, and markup reaches colour
+  through a role, never a palette step. So these are plain properties on
+  :root, and only the scales some stylesheet reads are written: the list is
+  derived from the CSS rather than kept here. P3 values, exact on a wide-gamut
+  display and mapped into gamut by the browser elsewhere.
 */
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import * as radix from '@radix-ui/colors';
 
-const OUTPUT = new URL('../app/radix-colors.css', import.meta.url);
+const ROOT = fileURLToPath(new URL('..', import.meta.url));
+const OUTPUT = join(ROOT, 'app/styles/generated/radix.css');
+const STYLESHEETS = ['app', 'components'];
 const STEPS = 12;
 
 type Scale = Record<string, string>;
@@ -39,26 +41,40 @@ const version = (
   ) as { version: string }
 ).version;
 
-/*
-  A scale is any export with a P3 light variant and a P3 dark one. Derived from
-  the package rather than listed here, so a scale Radix adds is picked up on
-  the next run. blackP3A and whiteP3A are alpha-only and have no dark pair.
-*/
-const scales = Object.keys(exports)
-  .map((name) => /^([a-z]+)P3$/.exec(name)?.[1])
-  .filter((name): name is string => Boolean(name))
-  .filter((name) => exports[`${name}DarkP3`] !== undefined)
-  .sort();
+function walk(dir: string): string[] {
+  return readdirSync(join(ROOT, dir)).flatMap((entry) => {
+    const path = join(dir, entry);
+    if (statSync(join(ROOT, path)).isDirectory()) return walk(path);
+    return entry.endsWith('.css') ? [path] : [];
+  });
+}
+
+const read = new Set<string>();
+for (const path of STYLESHEETS.flatMap(walk)) {
+  if (join(ROOT, path) === OUTPUT) continue;
+  const css = readFileSync(join(ROOT, path), 'utf8');
+  for (const [, scale] of css.matchAll(
+    /var\(--radix-([a-z]+)-(?:dark-)?\d+\)/g,
+  )) {
+    read.add(scale!);
+  }
+}
+
+const scales = [...read].sort();
+for (const name of scales) {
+  if (!exports[`${name}P3`] || !exports[`${name}DarkP3`]) {
+    throw new Error(`@radix-ui/colors has no P3 light and dark ${name} scale`);
+  }
+}
 
 function declarations(name: string, theme: 'light' | 'dark') {
-  const scale = exports[theme === 'light' ? `${name}P3` : `${name}DarkP3`];
-  if (!scale) throw new Error(`@radix-ui/colors has no ${theme} ${name} scale`);
+  const scale = exports[theme === 'light' ? `${name}P3` : `${name}DarkP3`]!;
   const infix = theme === 'light' ? '' : 'dark-';
   return Array.from({ length: STEPS }, (_, index) => {
     const step = index + 1;
     const value = scale[`${name}${step}`];
     if (!value) throw new Error(`${name} ${theme} is missing step ${step}`);
-    return `  --color-radix-${name}-${infix}${step}: ${value};`;
+    return `  --radix-${name}-${infix}${step}: ${value};`;
   });
 }
 
@@ -67,20 +83,17 @@ const blocks = scales.map((name) =>
 );
 
 const css = `/*
-  Radix Colors ${version} (MIT), every scale at all twelve steps, light and dark.
+  Radix Colors ${version} (MIT): ${scales.join(', ')}.
   Generated by scripts/generate-radix-colors.ts -- do not edit by hand; run
-  \`pnpm colors:radix\` after changing the package version.
-
-  The dark scale is named \`-dark-\` rather than sharing the light names under a
-  .dark class, so a colour picks its theme with light-dark(). P3 values, and
-  inside @theme, so Tailwind emits only the variables something reads.
+  \`pnpm colors:radix\` after changing the package version or reading a new
+  scale.
 */
-@theme {
+:root {
 ${blocks.join('\n\n')}
 }
 `;
 
 writeFileSync(OUTPUT, css);
 process.stdout.write(
-  `app/radix-colors.css: ${scales.length} scales, ${scales.length * STEPS * 2} colours (Radix ${version})\n`,
+  `app/styles/generated/radix.css: ${scales.length} scales, ${scales.length * STEPS * 2} colours (Radix ${version})\n`,
 );

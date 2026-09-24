@@ -3,10 +3,10 @@ import {
   RequestBubble,
   ResponseSection,
   ThreadPage,
-} from '@/components/app-shell/thread-page';
-import { InitialAnalysis } from '@/components/app-shell/initial-analysis';
-import { ProcessView } from '@/components/app-shell/process-view';
-import { ThreadStep } from '@/components/app-shell/thread-step';
+} from '@/components/app-shell/thread/thread-page';
+import { InitialAnalysis } from '@/components/app-shell/thread/initial-analysis';
+import { ProcessView } from '@/components/app-shell/process/process-view';
+import { ThreadStep } from '@/components/app-shell/thread/thread-step';
 import { ReplayReview } from '@/components/review/replay-review';
 import { supportProcess } from '@/lib/process/placeholder-process';
 import { supportPlan } from '@/lib/review/support-fixture';

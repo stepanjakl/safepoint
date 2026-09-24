@@ -1,0 +1,99 @@
+/* ── Run thread ──────────────────────────────────────────────────────────────
+   The steps of a run as a timeline. The rail is one column of markers on a
+   line, and every box hangs off a named step, so the order of work is
+   readable without opening anything.
+   ────────────────────────────────────────────────────────────────────── */
+@layer components {
+  .thread {
+    /* Shared by the row gap and by the connector, so the line always reaches
+       the next marker no matter what the spacing becomes. */
+    --thread-gap: 1.75rem;
+    --thread-rail: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: var(--thread-gap);
+    margin-top: 1.5rem;
+  }
+  .thread-step {
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--thread-rail) minmax(0, 1fr);
+    column-gap: 0.75rem;
+    row-gap: 0.5rem;
+  }
+  /* The connector runs from under this step's marker to the next one, so the
+     line is drawn by the steps themselves and needs no separate element. The
+     last step has nothing to reach, so it draws none. */
+  .thread-step:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: calc(var(--thread-rail) / 2);
+    top: var(--thread-rail);
+    bottom: calc(var(--thread-gap) * -1);
+    width: 1px;
+    background: var(--sp-rule-faint);
+  }
+  .thread-marker {
+    grid-column: 1;
+    grid-row: 1;
+    display: grid;
+    place-items: center;
+    height: var(--thread-rail);
+  }
+  /* The same enclosure as a system disc, one size down: face, ring and sheen
+     from `control-face`, with the outer ring punching a gap in the connector
+     so the line reads as passing behind the marker rather than through it. */
+  .thread-dot {
+    @apply control-face control-hairline surface-floating;
+    box-shadow:
+      --theme(--shadow-control-highlight),
+      0 0 0 3px var(--sp-surface-primary);
+    display: grid;
+    place-items: center;
+    width: var(--thread-rail);
+    height: var(--thread-rail);
+    border-radius: 999px;
+    cursor: default;
+  }
+  .thread-step-name {
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.625rem;
+    min-height: var(--thread-rail);
+    align-content: center;
+    font-size: var(--sp-text-dense);
+    line-height: var(--sp-text-dense--lh);
+    font-weight: 550;
+  }
+  .thread-step-body {
+    grid-column: 2;
+    grid-row: 2;
+    min-width: 0;
+  }
+  /* Below the rail width the timeline costs more than it explains. rem, not
+     px: a px copy of `sm` drifts from the utilities at a non-default root. */
+  @media (width < 40rem) {
+    .thread-step {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .thread-step:not(:last-child)::before {
+      display: none;
+    }
+    .thread-marker {
+      grid-column: 1;
+      grid-row: 1;
+      justify-self: start;
+    }
+    .thread-step-name {
+      grid-column: 1;
+      grid-row: 2;
+    }
+    .thread-step-body {
+      grid-column: 1;
+      grid-row: 3;
+    }
+  }
+}

@@ -1,0 +1,301 @@
+/* ── Type ───────────────────────────────────────────────────────────────────
+   Three families -- display, interface sans, tabular utility -- and the scale
+   over them. A component addresses a role, never a family or a size.
+
+   Feature settings live on the role, not on body: `ss01` names a different
+   alternate in every family, so a global setting would corrupt the others.
+   These inherit through plain var(), so unlike the colour tokens they need no
+   re-declaration per subtree.
+   See docs/STYLING-SYSTEM.md → Type scale.
+   ────────────────────────────────────────────────────────────────────────── */
+:root,
+[data-typeface='geist'] {
+  --sp-font-display: var(--font-geist-sans);
+  --sp-font-sans: var(--font-geist-sans);
+  --sp-font-mono: var(--font-geist-mono);
+
+  --sp-font-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-spacing: 0em;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-typeface='geist-orbitron'] {
+  --sp-font-display: var(--font-geist-sans);
+  --sp-font-sans: var(--font-geist-sans);
+  --sp-font-mono: var(--font-orbitron);
+
+  --sp-font-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-features: 'tnum' 1, 'lnum' 1;
+  --sp-mono-weight: 600;
+  --sp-mono-weight-strong: 700;
+}
+
+[data-typeface='geist-tabular'] {
+  --sp-font-display: var(--font-geist-sans);
+  --sp-font-sans: var(--font-geist-sans);
+  --sp-font-mono: var(--font-geist-sans);
+  --sp-font-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1, 'tnum' 1, 'lnum' 1;
+  --sp-mono-spacing: 0.01em;
+  --sp-mono-weight: 600;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-typeface='geist-inter-tabular'] {
+  --sp-font-display: var(--font-geist-sans);
+  --sp-font-sans: var(--font-geist-sans);
+  --sp-font-mono: var(--font-inter);
+  --sp-font-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-features: 'tnum' 1, 'lnum' 1;
+  --sp-mono-spacing: 0.01em;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-typeface='geist-ibm-plex-sans'] {
+  --sp-font-display: var(--font-geist-sans);
+  --sp-font-sans: var(--font-geist-sans);
+  --sp-font-mono: var(--font-ibm-plex-sans);
+  --sp-font-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-features: 'tnum' 1, 'lnum' 1;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-typeface='geist-source-sans'] {
+  --sp-font-display: var(--font-geist-sans);
+  --sp-font-sans: var(--font-geist-sans);
+  --sp-font-mono: var(--font-source-sans);
+  --sp-font-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-features: 'tnum' 1, 'lnum' 1;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-typeface='geist-roboto'] {
+  --sp-font-display: var(--font-geist-sans);
+  --sp-font-sans: var(--font-geist-sans);
+  --sp-font-mono: var(--font-roboto);
+  --sp-font-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-features: 'tnum' 1, 'lnum' 1;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-typeface='geist-glide'] {
+  --sp-font-display: var(--font-geist-sans);
+  --sp-font-sans: var(--font-geist-sans);
+  --sp-font-mono: var(--font-glide-mono);
+  --sp-font-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-features: normal;
+  --sp-mono-weight: 400;
+  --sp-mono-weight-strong: 400;
+}
+
+[data-typeface='geist-jetbrains'] {
+  --sp-font-display: var(--font-geist-sans);
+  --sp-font-sans: var(--font-geist-sans);
+  --sp-font-mono: var(--font-jetbrains-mono);
+  --sp-font-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-features: normal;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-typeface='geist-ibm-plex'] {
+  --sp-font-display: var(--font-geist-sans);
+  --sp-font-sans: var(--font-geist-sans);
+  --sp-font-mono: var(--font-ibm-plex-mono);
+  --sp-font-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-features: normal;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-typeface='geist-source-code'] {
+  --sp-font-display: var(--font-geist-sans);
+  --sp-font-sans: var(--font-geist-sans);
+  --sp-font-mono: var(--font-source-code-pro);
+  --sp-font-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-features: normal;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-typeface='geist-space'] {
+  --sp-font-display: var(--font-geist-sans);
+  --sp-font-sans: var(--font-geist-sans);
+  --sp-font-mono: var(--font-space-mono);
+  --sp-font-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-features: normal;
+  --sp-mono-weight: 400;
+  --sp-mono-weight-strong: 700;
+}
+
+[data-typeface='geist-commit'] {
+  --sp-font-display: var(--font-geist-sans);
+  --sp-font-sans: var(--font-geist-sans);
+  --sp-font-mono: var(--font-commit-mono);
+  --sp-font-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-features: normal;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-typeface='glide'] {
+  --sp-font-display: var(--font-glide);
+  --sp-font-sans: var(--font-glide);
+  --sp-font-mono: var(--font-glide-mono);
+
+  /* Glide has ss01-ss06 and ss08, but they are not Geist's alternates.
+     Left off until each has been looked at; see app/typography.ts. */
+  --sp-font-features: normal;
+  --sp-mono-features: normal;
+  /* Glide Mono ships a single weight. 500 would fall back to 400 harmlessly,
+     but 600 crosses the synthetic-bold threshold and smears at the small
+     tracked uppercase these roles use, so both are pinned to what exists. */
+  --sp-mono-weight: 400;
+  --sp-mono-weight-strong: 400;
+}
+
+[data-typeface='inter'] {
+  --sp-font-display: var(--font-inter-tight);
+  --sp-font-sans: var(--font-inter);
+  /*
+    Inter Tight is a display cut, not a mono companion, so rather than borrow a
+    third family the utility role is Inter with tabular figures -- which is what
+    "tabular or monospaced" in EXPERIENCE-SPEC.md allows. It suits what the role
+    actually carries here: the readout is short English labels in tracked
+    uppercase, where fixed advance widths only make word colour uneven, and the
+    figures need tnum rather than monospacing. data-mono puts a real mono back
+    for comparison.
+  */
+  --sp-font-mono: var(--font-inter);
+
+  --sp-font-features: normal;
+  --sp-mono-features: 'tnum' 1;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+/* The utility family, independent of the set: equal specificity and declared
+   after, so any mono can pair with any sans. No attribute, the set stands. */
+[data-mono='sans'] {
+  --sp-font-mono: var(--sp-font-sans);
+  --sp-mono-features: 'tnum' 1;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-mono='geist'] {
+  --sp-font-mono: var(--font-geist-mono);
+  --sp-mono-features: 'ss01' 1, 'ss02' 1, 'ss03' 1, 'ss04' 1;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-mono='glide'] {
+  --sp-font-mono: var(--font-glide-mono);
+  --sp-mono-features: normal;
+  --sp-mono-weight: 400;
+  --sp-mono-weight-strong: 400;
+}
+
+[data-mono='jetbrains'] {
+  --sp-font-mono: var(--font-jetbrains-mono);
+  --sp-mono-features: normal;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-mono='ibm-plex'] {
+  --sp-font-mono: var(--font-ibm-plex-mono);
+  --sp-mono-features: normal;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-mono='source-code'] {
+  --sp-font-mono: var(--font-source-code-pro);
+  --sp-mono-features: normal;
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+[data-mono='space'] {
+  --sp-font-mono: var(--font-space-mono);
+  --sp-mono-features: normal;
+  --sp-mono-weight: 400;
+  --sp-mono-weight-strong: 700;
+}
+
+[data-mono='commit'] {
+  --sp-font-mono: var(--font-commit-mono);
+  --sp-mono-features: normal;
+  /* Vendored at 400, 500 and 600: both weights below are real cuts. */
+  --sp-mono-weight: 500;
+  --sp-mono-weight-strong: 600;
+}
+
+/* Theme aliases resolve where they are declared; scoped specimens need their
+   own aliases so a parent selection cannot freeze every card to one family. */
+[data-typeface],
+[data-mono] {
+  --font-display: var(--sp-font-display), system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-sans: var(--sp-font-sans), system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: var(--sp-font-mono), ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+/* Sizes in rem, line-heights as unitless ratios on a 2px baseline --
+   `calc(1.125 / 0.8125)` reads as "18px on 13px". Tracking is on the role, so
+   no component sets letter-spacing. */
+:root,
+[data-typescale='base'] {
+  --sp-text-micro: 0.6875rem; /* 11 / 14 */
+  --sp-text-micro--lh: calc(0.875 / 0.6875);
+  --sp-text-micro--ls: 0.01em;
+
+  --sp-text-meta: 0.75rem; /* 12 / 16 */
+  --sp-text-meta--lh: calc(1 / 0.75);
+  --sp-text-meta--ls: 0em;
+
+  --sp-text-dense: 0.8125rem; /* 13 / 18 */
+  --sp-text-dense--lh: calc(1.125 / 0.8125);
+  --sp-text-dense--ls: 0em;
+
+  --sp-text-sheet-date: 0.78125rem; /* 12.5px */
+
+  --sp-text-body: 0.875rem; /* 14 / 20 */
+  --sp-text-body--lh: calc(1.25 / 0.875);
+  --sp-text-body--ls: 0em;
+
+  --sp-text-title: 1.0625rem; /* 17 / 22 */
+  --sp-text-title--lh: calc(1.375 / 1.0625);
+  --sp-text-title--ls: -0.01em;
+
+  --sp-text-counter: 1.25rem; /* 20 / 24 */
+  --sp-text-counter--lh: calc(1.5 / 1.25);
+  --sp-text-counter--ls: -0.02em;
+
+  --sp-text-display: 1.375rem; /* 22 / 26 */
+  --sp-text-display--lh: calc(1.625 / 1.375);
+  --sp-text-display--ls: -0.02em;
+}
+
+/* The alternate scale: same lower half, larger and tighter above body. */
+[data-typescale='sharp'] {
+  --sp-text-micro--ls: 0.02em;
+  --sp-text-meta--ls: 0.01em;
+
+  --sp-text-title: 1.125rem; /* 18 / 24 */
+  --sp-text-title--lh: calc(1.5 / 1.125);
+  --sp-text-title--ls: -0.02em;
+
+  --sp-text-counter--ls: -0.03em;
+
+  --sp-text-display: 1.5rem; /* 24 / 28 */
+  --sp-text-display--lh: calc(1.75 / 1.5);
+  --sp-text-display--ls: -0.03em;
+}

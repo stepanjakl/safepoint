@@ -10,12 +10,10 @@ export function Brand({ markCellClassName }: { markCellClassName?: string }) {
       <span className={markCellClassName} aria-hidden="true">
         <BiomorphicSymbol
           variant="soft-radial"
-          className="block size-7 flex-none text-[var(--color-radix-cyan-8)]"
+          className="text-brand-mark block size-7 flex-none"
         />
       </span>
-      <span className="text-[var(--color-radix-sage-4)]" aria-hidden="true">
-        Safepoint
-      </span>
+      <span aria-hidden="true">Safepoint</span>
     </span>
   );
 }

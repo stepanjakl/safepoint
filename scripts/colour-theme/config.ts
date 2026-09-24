@@ -150,33 +150,33 @@ export const ROLE_ASSIGNMENTS = {
   canvas: { cssVariable: '--sp-canvas', light: 75, dark: 900 },
   surfacePrimary: {
     cssVariable: '--sp-surface-primary',
-    light: 25,
-    dark: 825,
+    light: 50,
+    dark: 850,
   },
   surfaceFloating: {
     cssVariable: '--sp-surface-floating',
-    light: 0,
-    dark: 750,
+    light: 25,
+    dark: 775,
   },
   surfaceInset: {
     cssVariable: '--sp-surface-inset',
-    light: 100,
-    dark: 950,
+    light: 125,
+    dark: 975,
   },
   surfaceControl: {
     cssVariable: '--sp-surface-control',
-    light: 0,
-    dark: 725,
+    light: 25,
+    dark: 750,
   },
   surfaceSelected: {
     cssVariable: '--sp-surface-selected',
-    light: 200,
-    dark: 700,
+    light: 225,
+    dark: 725,
   },
   surfaceDisabled: {
     cssVariable: '--sp-surface-disabled',
-    light: 25,
-    dark: 925,
+    light: 50,
+    dark: 950,
   },
   textPrimary: {
     cssVariable: '--sp-text-primary',
@@ -201,34 +201,85 @@ export const ROLE_ASSIGNMENTS = {
   action: { cssVariable: '--sp-action', light: 925, dark: 100 },
   ruleDefault: {
     cssVariable: '--sp-rule-default',
-    light: 250,
-    dark: 575,
+    light: 275,
+    dark: 650,
   },
-  fieldFace: { cssVariable: '--sp-field-face', light: 25, dark: 825 },
-  fieldEdge: { cssVariable: '--sp-field-edge', light: 200, dark: 725 },
+  fieldFace: { cssVariable: '--sp-field-face', light: 50, dark: 850 },
+  fieldEdge: { cssVariable: '--sp-field-edge', light: 225, dark: 750 },
   fieldEdgeActive: {
     cssVariable: '--sp-field-edge-active',
-    light: 575,
-    dark: 200,
+    light: 600,
+    dark: 225,
   },
   keycapFace: { cssVariable: '--sp-keycap-face', light: 25, dark: 775 },
   analysisFace: {
     cssVariable: '--sp-analysis-face',
-    light: 0,
-    dark: 850,
+    light: 25,
+    dark: 875,
   },
   noticeFace: { cssVariable: '--sp-notice-face', light: 50, dark: 825 },
   tooltipFace: {
     cssVariable: '--tooltip-face',
-    light: 0,
-    dark: 750,
+    light: 25,
+    dark: 775,
   },
   /* Edges, so a boundary can be measured against the face it bounds and the
      ground it lies on rather than trusted because it is a border. */
-  tooltipEdge: { cssVariable: '--tooltip-edge', light: 450, dark: 450 },
-  ruleFaint: { cssVariable: '--sp-rule-faint', light: 200, dark: 625 },
+  tooltipEdge: { cssVariable: '--tooltip-edge', light: 475, dark: 475 },
+  ruleFaint: { cssVariable: '--sp-rule-faint', light: 225, dark: 700 },
   keycapRing: { cssVariable: '--sp-keycap-ring', light: 200, dark: 650 },
-  menuChip: { cssVariable: '--sp-menu-chip', light: 200, dark: 825 },
+  menuChip: { cssVariable: '--sp-menu-chip', light: 225, dark: 850 },
+  /* Sheens and etches: every structural edge is a step, so each is pinned
+     here rather than left to whatever it composites to. */
+  floatingEdge: {
+    cssVariable: '--sp-floating-edge',
+    light: 0,
+    dark: 850,
+  },
+  analysisHighlight: {
+    cssVariable: '--sp-analysis-highlight',
+    light: 0,
+    dark: 900,
+  },
+  raisedEdge: { cssVariable: '--sp-raised-edge', light: 25, dark: 900 },
+  keycapHighlight: {
+    cssVariable: '--sp-keycap-highlight',
+    light: 0,
+    dark: 825,
+  },
+  noticeHighlight: {
+    cssVariable: '--sp-notice-highlight',
+    light: 25,
+    dark: 850,
+  },
+  tooltipHighlight: {
+    cssVariable: '--sp-tooltip-highlight',
+    light: 0,
+    dark: 850,
+  },
+  notchHighlight: {
+    cssVariable: '--sp-notch-highlight',
+    light: 25,
+    dark: 900,
+  },
+  enclosureEdge: {
+    cssVariable: '--sp-enclosure-edge',
+    light: 25,
+    dark: 700,
+  },
+  dividerEtch: { cssVariable: '--sp-divider-etch', light: 25, dark: 925 },
+  cardEtch: { cssVariable: '--sp-card-etch', light: 0, dark: 850 },
+  sheetBreakEtch: {
+    cssVariable: '--sp-sheet-break-etch',
+    light: 25,
+    dark: 875,
+  },
+  sheetRowEtch: { cssVariable: '--sp-sheet-row-etch', light: 25, dark: 950 },
+  sheetRowEtchActive: {
+    cssVariable: '--sp-sheet-row-etch-active',
+    light: 0,
+    dark: 850,
+  },
 } as const satisfies Record<string, RoleAssignment>;
 
 export const CONTRAST_CONTRACTS: readonly ContrastContract[] = [

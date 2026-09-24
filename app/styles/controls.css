@@ -1,0 +1,253 @@
+/* ── Controls ───────────────────────────────────────────────────────────────
+   The face every control and surface is painted with: registered stops, the
+   control-face and control-wash utilities, and the accent, quiet and off
+   families that fill them. Fields, shared chips and the structural edges too.
+   A component with a face of its own keeps it beside its .tsx.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Radix fitted to Tailwind's cyan: each stop blends the two adjacent steps
+     nearest the original. Radix keeps its vivid mid-tones in the dark scale,
+     so the light theme reads from it too. */
+  --sp-accent-face-top: light-dark(
+    var(--radix-cyan-dark-11),
+    color-mix(in oklab, var(--radix-cyan-dark-7) 15%, var(--radix-cyan-dark-8))
+  );
+  --sp-accent-face-bottom: light-dark(
+    color-mix(in oklab, var(--radix-cyan-10) 80%, var(--radix-cyan-11)),
+    color-mix(in oklab, var(--radix-cyan-dark-7) 90%, var(--radix-cyan-dark-8))
+  );
+  --sp-accent-ring-top: light-dark(
+    color-mix(in oklab, var(--radix-cyan-dark-10) 80%, var(--radix-cyan-dark-11)),
+    color-mix(in oklab, var(--radix-cyan-dark-9) 95%, var(--radix-cyan-dark-10))
+  );
+  --sp-accent-ring-bottom: light-dark(
+    color-mix(in oklab, var(--radix-cyan-dark-7) 45%, var(--radix-cyan-dark-8)),
+    color-mix(in oklab, var(--radix-cyan-dark-7) 90%, var(--radix-cyan-dark-8))
+  );
+  /* Coloured controls keep their own family: a neutral step on a cyan face
+     reads as a smear rather than an edge. Dark darkens instead of lighting, as
+     a light line on a lit dark face reads as glare. */
+  --sp-accent-edge: light-dark(
+    color-mix(in oklab, var(--radix-cyan-dark-11) 50%, var(--radix-cyan-dark-12)),
+    color-mix(in oklab, black 20%, var(--sp-accent-face-top))
+  );
+  /* Flat under the pointer: face, ring and highlight all take this one
+     colour. */
+  --sp-accent-hover: light-dark(
+    color-mix(in oklab, var(--radix-cyan-10) 80%, var(--radix-cyan-11)),
+    color-mix(in oklab, var(--radix-cyan-dark-7) 45%, var(--radix-cyan-dark-8))
+  );
+  /* A ramp step, not #fff: on a tinted family a pure-white control top is
+     the one face that does not belong to the palette. Every fill sits one
+     step under where it first did, so the surfaces read a shade darker with
+     every offset between them unchanged. */
+  --sp-quiet-face-top: light-dark(var(--sp-neutral-25), var(--sp-neutral-750));
+  --sp-quiet-face-bottom: light-dark(var(--sp-neutral-100), var(--sp-neutral-850));
+  --sp-quiet-ring-top: light-dark(var(--sp-neutral-225), var(--sp-neutral-600));
+  --sp-quiet-ring-bottom: light-dark(var(--sp-neutral-325), var(--sp-neutral-750));
+  /* Light deepens, dark lifts: on either canvas the control comes forward. */
+  --sp-quiet-face-top-hover: light-dark(var(--sp-neutral-25), var(--sp-neutral-675));
+  --sp-quiet-face-bottom-hover: light-dark(var(--sp-neutral-225), var(--sp-neutral-800));
+  --sp-quiet-ring-top-hover: light-dark(var(--sp-neutral-325), var(--sp-neutral-475));
+  --sp-quiet-ring-bottom-hover: light-dark(var(--sp-neutral-650), var(--sp-neutral-600));
+  /* Unavailable. Flat: no ramp, so it cannot read as a live control. */
+  --sp-off-face: light-dark(var(--sp-neutral-50), var(--sp-neutral-950));
+  --sp-off-ring: light-dark(var(--sp-neutral-225), var(--sp-neutral-750));
+  --sp-menu-chip: light-dark(var(--sp-neutral-225), var(--sp-neutral-850));
+  /* The border is the focus indicator, so the focused step must clear 3:1
+     against both the face and the resting edge -- contracts field-focus-* in
+     scripts/colour-theme/config.ts. Neutral: a field is not an action. */
+  --sp-field-face: light-dark(var(--sp-neutral-50), var(--sp-neutral-850));
+  --sp-field-edge: light-dark(var(--sp-neutral-225), var(--sp-neutral-750));
+  --sp-field-edge-hover: light-dark(var(--sp-neutral-275), var(--sp-neutral-475));
+  --sp-field-edge-active: light-dark(var(--sp-neutral-600), var(--sp-neutral-225));
+  /* One edge role per surface that paints one: the same strength over
+     different faces cannot be right on all of them. In light every edge is
+     one step lighter than the face it lies on, so even the lightest face,
+     floating at 25, keeps a visible top edge at 0. */
+  --sp-raised-edge: light-dark(var(--sp-neutral-25), var(--sp-neutral-900));
+  --sp-floating-edge: light-dark(var(--sp-neutral-0), var(--sp-neutral-850));
+  /* The lit line under a rule on the canvas, such as the sidebar's. Dividers
+     inside a pane take --sp-raised-edge instead: their ground is the pane. */
+  --sp-divider-etch: light-dark(var(--sp-neutral-25), var(--sp-neutral-925));
+  /* The enclosure's top edge: a one-pixel band rather than a fade, because a
+     fade to transparent is the one edge whose colour depends on what lies
+     under it. The colour and the image are separate because light-dark()
+     resolves colours and not gradients. */
+  --sp-enclosure-edge: light-dark(var(--sp-neutral-25), var(--sp-neutral-700));
+  --sp-enclosure-sheen: linear-gradient(to bottom, var(--sp-enclosure-edge) 0 1px, transparent 1px);
+}
+
+/* ── Control face ───────────────────────────────────────────────────────────
+   The four stops, registered so they animate. `background-image` cannot be
+   transitioned, but a *registered* custom property can: the browser
+   interpolates the colour and repaints the gradient each frame. Unregistered,
+   every state change would snap.
+   ────────────────────────────────────────────────────────────────────────── */
+@property --control-face-top {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: transparent;
+}
+
+@property --control-face-bottom {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: transparent;
+}
+
+@property --control-ring-top {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: transparent;
+}
+
+@property --control-ring-bottom {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: transparent;
+}
+
+@property --control-highlight {
+  syntax: '<color>';
+  inherits: false;
+  /* A face with no colour utility still gets a visible sheen. Registration
+     requires a literal; var() is not valid as an initial value. */
+  initial-value: rgb(255 255 255 / 25%);
+}
+
+/* Two opaque layers: the face clipped to the padding box, the ring to the
+   border box. The opaque face hides the ring everywhere but the 1px border,
+   which is the lit edge -- and the border derives its own inner radius, so
+   there is no radius arithmetic to keep in sync.
+   Geometry only; a colour utility below supplies the stops. Never put a
+   transition-* utility beside this -- it replaces the list and the face snaps. */
+@utility control-face {
+  @apply shadow-control-highlight;
+  --control-face-border-width: var(--spacing-control-edge);
+  border: var(--control-face-border-width) solid transparent;
+  background-image:
+    linear-gradient(to bottom, var(--control-face-top), var(--control-face-bottom)),
+    linear-gradient(to bottom, var(--control-ring-top), var(--control-ring-bottom));
+  background-origin: padding-box, border-box;
+  background-clip: padding-box, border-box;
+  transition-property:
+    color, background-color, box-shadow, opacity, --control-face-top, --control-face-bottom,
+    --control-ring-top, --control-ring-bottom, --control-highlight;
+  transition-duration: var(--duration-state);
+  transition-timing-function: ease-out;
+}
+
+/* The flat half of the same contract, for controls that answer with a wash
+   rather than a lit face. Same step and curve, so a row and the button beside
+   it settle together. */
+@utility control-wash {
+  transition-property:
+    color, background-color, border-color, box-shadow, text-decoration-color, opacity;
+  transition-duration: var(--duration-state);
+  transition-timing-function: ease-out;
+}
+
+/* A width only, so it combines with any face utility rather than being a
+   variant of each. */
+@utility control-hairline {
+  --control-highlight-width: var(--spacing-control-highlight-hairline);
+}
+
+/* The primary action. */
+@utility control-accent {
+  --control-face-top: var(--sp-accent-face-top);
+  --control-face-bottom: var(--sp-accent-face-bottom);
+  --control-ring-top: var(--sp-accent-ring-top);
+  --control-ring-bottom: var(--sp-accent-ring-bottom);
+  --control-highlight: var(--sp-accent-edge);
+}
+
+@utility control-accent-hover {
+  --control-face-top: var(--sp-accent-hover);
+  --control-face-bottom: var(--sp-accent-hover);
+  --control-ring-top: var(--sp-accent-hover);
+  --control-ring-bottom: var(--sp-accent-hover);
+  --control-highlight: var(--sp-accent-hover);
+}
+
+/* Ordinary controls. */
+@utility control-quiet {
+  --control-face-top: var(--sp-quiet-face-top);
+  --control-face-bottom: var(--sp-quiet-face-bottom);
+  --control-ring-top: var(--sp-quiet-ring-top);
+  --control-ring-bottom: var(--sp-quiet-ring-bottom);
+  --control-highlight: transparent;
+}
+
+/* Face and ring only. A quiet control carries no inner highlight in either
+   state, so unlike the accent pair there is nothing here to turn off. */
+@utility control-quiet-hover {
+  --control-face-top: var(--sp-quiet-face-top-hover);
+  --control-face-bottom: var(--sp-quiet-face-bottom-hover);
+  --control-ring-top: var(--sp-quiet-ring-top-hover);
+  --control-ring-bottom: var(--sp-quiet-ring-bottom-hover);
+}
+
+/* Unavailable: flat on both layers, so it cannot be mistaken for a live one. */
+@utility control-off {
+  --control-face-top: var(--sp-off-face);
+  --control-face-bottom: var(--sp-off-face);
+  --control-ring-top: var(--sp-off-ring);
+  --control-ring-bottom: var(--sp-off-ring);
+  --control-highlight: transparent;
+}
+
+/* ── Surfaces ───────────────────────────────────────────────────────────────
+   The same two-layer construction at panel scale. The face is flat -- a
+   vertical ramp across a whole pane reads as a lighting error rather than a
+   lift -- so the edge is carried by the ring and a top sheen.
+   ────────────────────────────────────────────────────────────────────────── */
+@utility surface-raised {
+  --control-face-top: var(--sp-surface-primary);
+  --control-face-bottom: var(--sp-surface-primary);
+  --control-ring-top: light-dark(var(--sp-rule-default), var(--sp-rule-faint));
+  --control-ring-bottom: var(--sp-rule-faint);
+  --control-highlight: var(--sp-raised-edge);
+}
+
+/* Dark's floating face sits two steps nearer the rules than a pane does, so
+   the faint rule reads 1.3:1 there; its ring takes the default rung to hold
+   the same presence as a pane's edge. */
+@utility surface-floating {
+  --control-face-top: var(--sp-surface-floating);
+  --control-face-bottom: var(--sp-surface-floating);
+  --control-ring-top: light-dark(var(--sp-rule-faint), var(--sp-rule-default));
+  --control-ring-bottom: light-dark(var(--sp-rule-faint), var(--sp-rule-default));
+  --control-highlight: var(--sp-floating-edge);
+}
+
+@utility surface-recessed {
+  --control-face-top: var(--sp-surface-inset);
+  --control-face-bottom: var(--sp-surface-inset);
+  --control-ring-top: var(--sp-rule-default);
+  --control-ring-bottom: var(--sp-rule-faint);
+  --control-highlight: transparent;
+}
+
+/* A plain bordered surface with a shallow top sheen: it encloses content
+   rather than inviting a press, so it stays flat. */
+@utility enclosure {
+  border: 1px solid var(--sp-rule-strong);
+  border-radius: var(--radius-control);
+  background-image: var(--sp-enclosure-sheen);
+}
+
+@media (forced-colors: active), print {
+  .control-face,
+  .enclosure {
+    background-image: none;
+  }
+
+  /* The ring carries the boundary, so a real border has to come back. */
+  .control-face {
+    border-color: currentColor;
+    box-shadow: none;
+  }
+}

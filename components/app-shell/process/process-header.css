@@ -1,0 +1,183 @@
+/* ── Process header ─────────────────────────────────────────────────────────
+   The header's data buttons: their faces, ink, count pill and condition dot.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Drawn from the quiet stops but kept separate, so tuning the header cannot
+     move every quiet button in the interface. Light recesses the face under
+     the header and deepens it on hover; dark lifts, because a control set
+     under a dark ground reads as a hole. */
+  --sp-header-button-face-top: light-dark(var(--sp-neutral-75), var(--sp-neutral-750));
+  --sp-header-button-face-bottom: light-dark(var(--sp-neutral-175), var(--sp-neutral-800));
+  --sp-header-button-face-top-hover: light-dark(var(--sp-neutral-100), var(--sp-neutral-600));
+  --sp-header-button-face-bottom-hover: light-dark(var(--sp-neutral-275), var(--sp-neutral-750));
+  --sp-header-button-ring-top-selected: light-dark(var(--sp-neutral-225), var(--sp-neutral-475));
+  --sp-header-button-ring-bottom-selected: light-dark(var(--sp-neutral-325), var(--sp-neutral-600));
+  --sp-header-button-face-top-selected: light-dark(var(--sp-neutral-100), var(--sp-neutral-600));
+  --sp-header-button-face-bottom-selected: light-dark(var(--sp-neutral-275), var(--sp-neutral-750));
+  /* Ink in three steps: rest, pointer, open tab. The step is toward presence,
+     so in dark all three read lighter. */
+  --sp-header-ink: light-dark(var(--sp-neutral-825), var(--sp-neutral-150));
+  --sp-header-ink-hover: light-dark(var(--sp-neutral-925), var(--sp-neutral-100));
+  --sp-header-ink-selected: light-dark(var(--sp-neutral-950), var(--sp-neutral-50));
+  /* Icons one step behind their labels in every state: supporting, not a
+     second line of equally strong ink. */
+  --sp-header-icon: light-dark(var(--sp-neutral-725), var(--sp-neutral-225));
+  --sp-header-icon-hover: light-dark(var(--sp-neutral-825), var(--sp-neutral-150));
+  --sp-header-icon-selected: light-dark(var(--sp-neutral-925), var(--sp-neutral-100));
+  /* The pill sits off the face it lies on, and the two move apart on hover:
+     lighter than the face in light, darker in dark, because the face itself
+     reverses which way it steps. */
+  --sp-header-button-count: light-dark(var(--sp-neutral-50), var(--sp-neutral-850));
+  --sp-header-button-count-hover: light-dark(var(--sp-neutral-75), var(--sp-neutral-925));
+  /* A button with something to report tints its own face rather than drawing
+     an edge, so it gains colour without gaining an outline the rest lack. */
+  --sp-header-button-face-top-caution: light-dark(
+    color-mix(in oklab, var(--sp-state-caution-11) 10%, var(--sp-header-button-face-top)),
+    color-mix(in oklab, var(--sp-state-caution-11) 4%, var(--sp-header-button-face-top))
+  );
+  --sp-header-button-face-bottom-caution: light-dark(
+    color-mix(in oklab, var(--sp-state-caution-11) 16%, var(--sp-header-button-face-bottom)),
+    color-mix(in oklab, var(--sp-state-caution-11) 6%, var(--sp-header-button-face-bottom))
+  );
+  --sp-header-button-face-top-caution-hover: color-mix(
+    in oklab,
+    var(--sp-state-caution-11) 16%,
+    var(--sp-header-button-face-top-hover)
+  );
+  --sp-header-button-face-bottom-caution-hover: color-mix(
+    in oklab,
+    var(--sp-state-caution-11) 22%,
+    var(--sp-header-button-face-bottom-hover)
+  );
+  --sp-header-button-face-top-blocked: light-dark(
+    color-mix(in oklab, var(--sp-state-blocked-11) 10%, var(--sp-header-button-face-top)),
+    color-mix(in oklab, var(--sp-state-blocked-11) 4%, var(--sp-header-button-face-top))
+  );
+  --sp-header-button-face-bottom-blocked: light-dark(
+    color-mix(in oklab, var(--sp-state-blocked-11) 16%, var(--sp-header-button-face-bottom)),
+    color-mix(in oklab, var(--sp-state-blocked-11) 6%, var(--sp-header-button-face-bottom))
+  );
+  --sp-header-button-face-top-blocked-hover: color-mix(
+    in oklab,
+    var(--sp-state-blocked-11) 16%,
+    var(--sp-header-button-face-top-hover)
+  );
+  --sp-header-button-face-bottom-blocked-hover: color-mix(
+    in oklab,
+    var(--sp-state-blocked-11) 22%,
+    var(--sp-header-button-face-bottom-hover)
+  );
+  /* The dot sits on a face mixed from its own colour, so the bare token reads
+     only 3.1:1 at rest. A third of the way to step 12 clears 3:1 while keeping
+     77-84% of the chroma -- the hue is the message. Light only; dark's face is
+     barely tinted and already reads 5.6-8.9:1. */
+  --sp-header-button-dot-caution: light-dark(
+    color-mix(in oklab, var(--sp-state-caution-12) 35%, var(--sp-state-caution-11)),
+    var(--sp-state-caution-11)
+  );
+  --sp-header-button-dot-blocked: light-dark(
+    color-mix(in oklab, var(--sp-state-blocked-12) 35%, var(--sp-state-blocked-11)),
+    var(--sp-state-blocked-11)
+  );
+}
+
+@theme inline {
+  --color-header-ink: var(--sp-header-ink);
+  --color-header-ink-hover: var(--sp-header-ink-hover);
+  --color-header-ink-selected: var(--sp-header-ink-selected);
+  --color-header-icon: var(--sp-header-icon);
+  --color-header-icon-hover: var(--sp-header-icon-hover);
+  --color-header-icon-selected: var(--sp-header-icon-selected);
+  --color-header-button-dot-caution: var(--sp-header-button-dot-caution);
+  --color-header-button-dot-blocked: var(--sp-header-button-dot-blocked);
+  --color-header-button-count: var(--sp-header-button-count);
+  --color-header-button-count-hover: var(--sp-header-button-count-hover);
+}
+
+/* The header's data buttons: their own stops, and no edge. The ring draws a
+   control's border, so a transparent ring leaves it raised but not outlined. */
+@utility control-header-button {
+  --control-face-top: var(--sp-header-button-face-top);
+  --control-face-bottom: var(--sp-header-button-face-bottom);
+  --control-ring-top: transparent;
+  --control-ring-bottom: transparent;
+  --control-highlight: transparent;
+}
+
+@utility control-header-button-hover {
+  --control-face-top: var(--sp-header-button-face-top-hover);
+  --control-face-bottom: var(--sp-header-button-face-bottom-hover);
+}
+
+/* A button with something to report takes the condition into its whole face
+   rather than into an edge. These replace control-header-button, so exactly
+   one face utility lands on a button and class order cannot matter. */
+/* The item whose tab the drawer is showing. */
+@utility control-header-button-selected {
+  --control-face-top: var(--sp-header-button-face-top-selected);
+  --control-face-bottom: var(--sp-header-button-face-bottom-selected);
+  /* Transparent until --sp-header-button-ring-*-selected are given values;
+     the border is already there, waiting to be painted. */
+  --control-ring-top: var(--sp-header-button-ring-top-selected);
+  --control-ring-bottom: var(--sp-header-button-ring-bottom-selected);
+  --control-highlight: transparent;
+}
+
+@utility control-header-button-caution {
+  --control-face-top: var(--sp-header-button-face-top-caution);
+  --control-face-bottom: var(--sp-header-button-face-bottom-caution);
+  --control-ring-top: transparent;
+  --control-ring-bottom: transparent;
+  --control-highlight: transparent;
+}
+
+@utility control-header-button-caution-hover {
+  --control-face-top: var(--sp-header-button-face-top-caution-hover);
+  --control-face-bottom: var(--sp-header-button-face-bottom-caution-hover);
+}
+
+@utility control-header-button-blocked {
+  --control-face-top: var(--sp-header-button-face-top-blocked);
+  --control-face-bottom: var(--sp-header-button-face-bottom-blocked);
+  --control-ring-top: transparent;
+  --control-ring-bottom: transparent;
+  --control-highlight: transparent;
+}
+
+@utility control-header-button-blocked-hover {
+  --control-face-top: var(--sp-header-button-face-top-blocked-hover);
+  --control-face-bottom: var(--sp-header-button-face-bottom-blocked-hover);
+}
+
+@layer components {
+  /* Geometry only; the stops are utilities. The count pill sits the same
+     distance from three edges: vertically that is what the pill leaves inside
+     the face, halved, so the end padding must be that figure rather than a
+     scale step -- minus the border, which is part of the distance on that
+     side. Derived because a utility cannot compute it and a written value
+     goes stale the moment any of the three inputs moves. */
+  .header-button {
+    --header-button-height: calc(var(--spacing) * 8);
+    --header-button-pill: calc(var(--spacing) * 5);
+    height: var(--header-button-height);
+    padding-inline-end: calc(
+      (var(--header-button-height) - 2 * var(--spacing-control-edge) - var(--header-button-pill)) /
+        2
+    );
+  }
+
+  .header-button-count {
+    height: var(--header-button-pill);
+    min-width: var(--header-button-pill);
+  }
+
+  /* The condition dot replaces the count pill at the button's trailing edge.
+     Its smaller size needs a matching derived inset to keep its clearance from
+     the end equal to its clearance above and below. */
+  .header-button[data-has-state-dot] {
+    padding-inline-end: calc(
+      (var(--header-button-height) - 2 * var(--spacing-control-edge) - var(--spacing) * 1.5) / 2
+    );
+  }
+}

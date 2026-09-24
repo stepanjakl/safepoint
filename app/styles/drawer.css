@@ -1,0 +1,124 @@
+/* ── Drawer ─────────────────────────────────────────────────────────────────
+   Only what markup cannot hold: the scrim (a pseudo element) and the slide (a
+   keyframe animation). The panel's box is in process-drawer.tsx.
+   ────────────────────────────────────────────────────────────────────────── */
+@layer components {
+  /* Its own layer, not the overlay's background: fading the overlay would
+     fade the panel with it, and it keeps opacity off a backdrop-filtered box,
+     which is what makes the blur pop as the compositor promotes it. */
+  .drawer-overlay::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: color-mix(in oklab, var(--sp-canvas) 55%, transparent);
+    backdrop-filter: blur(3px);
+  }
+  .drawer-overlay[data-entering]::before {
+    animation: drawer-fade 160ms ease-out both;
+  }
+  .drawer-overlay[data-exiting]::before {
+    animation: drawer-fade 140ms ease-in reverse both;
+  }
+  @keyframes drawer-fade {
+    from {
+      opacity: 0;
+    }
+  }
+  /* Promotes the layer before the first animated frame, which is where the
+     three-frame stall at the start of the slide was coming from. */
+  .drawer-modal {
+    will-change: transform;
+  }
+  /* The slide is a whole pane travelling, so it takes the sidebar panes' step
+     and curve. The exits here and on the scrim stay shorter and ease in: a
+     dismissal should be out of the way before it is watched. */
+  .drawer-modal[data-entering] {
+    animation: drawer-in var(--duration-pane) --theme(--ease-out-emphasized) both;
+  }
+  .drawer-modal[data-exiting] {
+    animation: drawer-in 180ms ease-in reverse both;
+  }
+  @keyframes drawer-in {
+    from {
+      transform: translateX(100%);
+    }
+  }
+  /* The drawer's side panel (drawer-aside.tsx). Animates on mount and on
+     data-exiting rather than react-aria's states: it is part of the drawer's
+     dialog, not a dialog of its own.
+
+     Swapping items keeps the panel still -- the two contents share one grid
+     cell while they cross, travelling the way the list does. The travel is one
+     signed distance, so a direction swapped mid-flight never restarts. */
+  .drawer-aside {
+    --aside-swap-travel: 1rem;
+    animation: drawer-aside-in var(--duration-pane) --theme(--ease-out-emphasized) both;
+  }
+  .drawer-aside[data-direction='up'] {
+    --aside-swap-travel: -1rem;
+  }
+  .drawer-aside[data-exiting] {
+    pointer-events: none;
+    animation: drawer-aside-out 180ms ease-in both;
+  }
+  @keyframes drawer-aside-in {
+    from {
+      opacity: 0;
+      transform: translateX(-1.5rem);
+    }
+  }
+  @keyframes drawer-aside-out {
+    to {
+      opacity: 0;
+      transform: translateX(-1.5rem);
+    }
+  }
+  /* The content it opens with fades in once the panel is in place: delayed by
+     the panel's own travel, so the two read as arriving and then filling. */
+  .drawer-aside-content[data-enter='open'] {
+    animation: drawer-aside-content-in var(--duration-state) ease-out var(--duration-pane) both;
+  }
+  @keyframes drawer-aside-content-in {
+    from {
+      opacity: 0;
+    }
+  }
+  /* A short delay, so the old content is mostly gone before the new one is
+     legible: two texts both readable at once in one place read as a glitch. */
+  .drawer-aside-content[data-enter='swap'] {
+    animation: drawer-aside-content-rise var(--duration-pane) --theme(--ease-out-emphasized) 60ms
+      both;
+  }
+  @keyframes drawer-aside-content-rise {
+    from {
+      opacity: 0;
+      transform: translateY(var(--aside-swap-travel));
+    }
+  }
+  .drawer-aside-leave {
+    pointer-events: none;
+    animation: drawer-aside-content-leave 120ms ease-in both;
+  }
+  @keyframes drawer-aside-content-leave {
+    to {
+      opacity: 0;
+      transform: translateY(calc(-1 * var(--aside-swap-travel)));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .drawer-overlay[data-entering]::before,
+    .drawer-overlay[data-exiting]::before,
+    .drawer-modal[data-entering],
+    .drawer-modal[data-exiting],
+    .drawer-aside,
+    .drawer-aside[data-exiting],
+    .drawer-aside-content[data-enter] {
+      animation: none;
+    }
+    /* Never shown without motion; hidden too, in case it is ever rendered. */
+    .drawer-aside-leave {
+      display: none;
+    }
+  }
+}

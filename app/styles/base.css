@@ -1,0 +1,84 @@
+/* ── Base ───────────────────────────────────────────────────────────────────
+   Document defaults, and the two type treatments Tailwind has no utility for.
+   ────────────────────────────────────────────────────────────────────────── */
+
+@layer base {
+  html {
+    background-color: var(--sp-canvas);
+    color: var(--sp-text-primary);
+  }
+
+  body {
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    -webkit-font-smoothing: antialiased;
+    /* Per-family; the tag numbers are not portable between typefaces. */
+    font-feature-settings: var(--sp-font-features);
+  }
+
+  /* No outline of the app's own: a control draws keyboard focus in the face
+     its hover already has. Forced colours drop author backgrounds, so there
+     the system outline comes back. */
+  :focus-visible {
+    outline: none;
+  }
+  @media (forced-colors: active) {
+    :focus-visible {
+      outline: 2px solid Highlight;
+      outline-offset: 2px;
+    }
+  }
+
+  summary {
+    cursor: default;
+  }
+
+  /* Here rather than on each button, so a hand-styled control is born with
+     both and nothing has to opt in. The components layer outranks this, so
+     these are fallbacks for a control that states no cursor of its own. */
+  :where(button, [role='button']) {
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  :where(button:disabled, button[aria-disabled='true'], [role='button'][aria-disabled='true']) {
+    cursor: default;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after,
+    ::placeholder {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+}
+
+/* ── Type utilities ─────────────────────────────────────────────────────── */
+/* Tracked uppercase readouts for legends, sources, modes and states. */
+@utility readout {
+  font-family: var(--font-mono);
+  /* Read from --sp-* rather than the theme name: `@theme inline` substitutes
+     those only into generated utilities, never a hand-written one. */
+  font-size: var(--sp-text-micro);
+  line-height: var(--sp-text-micro--lh);
+  font-weight: var(--sp-mono-weight);
+  /* Not inherited from body: the utility family can differ from the sans. */
+  font-feature-settings: var(--sp-mono-features);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Tabular values: prices, quantities, percentages, identifiers, times. */
+@utility value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--sp-mono-weight);
+  font-feature-settings: var(--sp-mono-features);
+  --tw-tracking: var(--sp-mono-spacing, 0em);
+  letter-spacing: var(--sp-mono-spacing, 0em);
+}

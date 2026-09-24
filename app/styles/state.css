@@ -1,0 +1,122 @@
+/* ── State ──────────────────────────────────────────────────────────────────
+   Six state scales and the adapter modes. Rungs are numbered after Radix; a
+   number names a role, never an equal lightness increment:
+
+     1  lightest ground      3  subtle bg      4  the same, hovered
+     5  a lit bg             6  the same, hovered
+     7  active or selected   9  solid         10  solid, one step on
+    11  state text          12  high-contrast text
+
+   Iris for decision, red blocked, amber caution, grass verified, blue
+   advisory, ruby destructive, all at the same step number in both themes.
+   Unavailable is the neutral ramp. The bare name aliases step 11 and is for
+   markup; token files read the numbered step.
+   See docs/STYLING-SYSTEM.md → State colours.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* State text. In light, a third of the way from step 11 to 12: Radix sets
+     11 against its own palest steps, and on the panes it read 4.0-4.5:1. This
+     clears AA on every surface while keeping most of the hue, which is the
+     message. Dark's 11 already clears it. Fills read the numbered steps. */
+  --sp-state-advisory: light-dark(
+    color-mix(in oklab, var(--sp-state-advisory-12) 35%, var(--sp-state-advisory-11)),
+    var(--sp-state-advisory-11)
+  );
+  --sp-state-verified: light-dark(
+    color-mix(in oklab, var(--sp-state-verified-12) 35%, var(--sp-state-verified-11)),
+    var(--sp-state-verified-11)
+  );
+  --sp-state-caution: light-dark(
+    color-mix(in oklab, var(--sp-state-caution-12) 35%, var(--sp-state-caution-11)),
+    var(--sp-state-caution-11)
+  );
+  --sp-state-decision: light-dark(
+    color-mix(in oklab, var(--sp-state-decision-12) 35%, var(--sp-state-decision-11)),
+    var(--sp-state-decision-11)
+  );
+  --sp-state-blocked: light-dark(
+    color-mix(in oklab, var(--sp-state-blocked-12) 35%, var(--sp-state-blocked-11)),
+    var(--sp-state-blocked-11)
+  );
+  --sp-state-unavailable: var(--sp-state-unavailable-11);
+  /* Destructive is an action text role: steps 11 and 12 only, not a scale. */
+  --sp-state-destructive: light-dark(
+    color-mix(in oklab, var(--sp-state-destructive-12) 35%, var(--sp-state-destructive-11)),
+    var(--sp-state-destructive-11)
+  );
+  --sp-state-destructive-11: light-dark(var(--radix-ruby-11), var(--radix-ruby-dark-11));
+  --sp-state-destructive-12: light-dark(var(--radix-ruby-12), var(--radix-ruby-dark-12));
+
+  --sp-state-advisory-1: light-dark(var(--radix-blue-1), var(--radix-blue-dark-1));
+  --sp-state-advisory-3: light-dark(var(--radix-blue-3), var(--radix-blue-dark-3));
+  --sp-state-advisory-4: light-dark(var(--radix-blue-4), var(--radix-blue-dark-4));
+  --sp-state-advisory-5: light-dark(var(--radix-blue-5), var(--radix-blue-dark-5));
+  --sp-state-advisory-6: light-dark(var(--radix-blue-6), var(--radix-blue-dark-6));
+  --sp-state-advisory-7: light-dark(var(--radix-blue-7), var(--radix-blue-dark-7));
+  --sp-state-advisory-9: light-dark(var(--radix-blue-9), var(--radix-blue-dark-9));
+  --sp-state-advisory-10: light-dark(var(--radix-blue-10), var(--radix-blue-dark-10));
+  --sp-state-advisory-11: light-dark(var(--radix-blue-11), var(--radix-blue-dark-11));
+  --sp-state-advisory-12: light-dark(var(--radix-blue-12), var(--radix-blue-dark-12));
+
+  --sp-state-verified-1: light-dark(var(--radix-grass-1), var(--radix-grass-dark-1));
+  --sp-state-verified-3: light-dark(var(--radix-grass-3), var(--radix-grass-dark-3));
+  --sp-state-verified-4: light-dark(var(--radix-grass-4), var(--radix-grass-dark-4));
+  --sp-state-verified-5: light-dark(var(--radix-grass-5), var(--radix-grass-dark-5));
+  --sp-state-verified-6: light-dark(var(--radix-grass-6), var(--radix-grass-dark-6));
+  --sp-state-verified-7: light-dark(var(--radix-grass-7), var(--radix-grass-dark-7));
+  --sp-state-verified-9: light-dark(var(--radix-grass-9), var(--radix-grass-dark-9));
+  --sp-state-verified-10: light-dark(var(--radix-grass-10), var(--radix-grass-dark-10));
+  --sp-state-verified-11: light-dark(var(--radix-grass-11), var(--radix-grass-dark-11));
+  --sp-state-verified-12: light-dark(var(--radix-grass-12), var(--radix-grass-dark-12));
+
+  --sp-state-caution-1: light-dark(var(--radix-amber-1), var(--radix-amber-dark-1));
+  --sp-state-caution-3: light-dark(var(--radix-amber-3), var(--radix-amber-dark-3));
+  --sp-state-caution-4: light-dark(var(--radix-amber-4), var(--radix-amber-dark-4));
+  --sp-state-caution-5: light-dark(var(--radix-amber-5), var(--radix-amber-dark-5));
+  --sp-state-caution-6: light-dark(var(--radix-amber-6), var(--radix-amber-dark-6));
+  --sp-state-caution-7: light-dark(var(--radix-amber-7), var(--radix-amber-dark-7));
+  --sp-state-caution-9: light-dark(var(--radix-amber-9), var(--radix-amber-dark-9));
+  --sp-state-caution-10: light-dark(var(--radix-amber-10), var(--radix-amber-dark-10));
+  --sp-state-caution-11: light-dark(var(--radix-amber-11), var(--radix-amber-dark-11));
+  --sp-state-caution-12: light-dark(var(--radix-amber-12), var(--radix-amber-dark-12));
+
+  --sp-state-decision-1: light-dark(var(--radix-iris-1), var(--radix-iris-dark-1));
+  --sp-state-decision-3: light-dark(var(--radix-iris-3), var(--radix-iris-dark-3));
+  --sp-state-decision-4: light-dark(var(--radix-iris-4), var(--radix-iris-dark-4));
+  --sp-state-decision-5: light-dark(var(--radix-iris-5), var(--radix-iris-dark-5));
+  --sp-state-decision-6: light-dark(var(--radix-iris-6), var(--radix-iris-dark-6));
+  --sp-state-decision-7: light-dark(var(--radix-iris-7), var(--radix-iris-dark-7));
+  --sp-state-decision-9: light-dark(var(--radix-iris-9), var(--radix-iris-dark-9));
+  --sp-state-decision-10: light-dark(var(--radix-iris-10), var(--radix-iris-dark-10));
+  --sp-state-decision-11: light-dark(var(--radix-iris-11), var(--radix-iris-dark-11));
+  --sp-state-decision-12: light-dark(var(--radix-iris-12), var(--radix-iris-dark-12));
+
+  --sp-state-blocked-1: light-dark(var(--radix-red-1), var(--radix-red-dark-1));
+  --sp-state-blocked-3: light-dark(var(--radix-red-3), var(--radix-red-dark-3));
+  --sp-state-blocked-4: light-dark(var(--radix-red-4), var(--radix-red-dark-4));
+  --sp-state-blocked-5: light-dark(var(--radix-red-5), var(--radix-red-dark-5));
+  --sp-state-blocked-6: light-dark(var(--radix-red-6), var(--radix-red-dark-6));
+  --sp-state-blocked-7: light-dark(var(--radix-red-7), var(--radix-red-dark-7));
+  --sp-state-blocked-9: light-dark(var(--radix-red-9), var(--radix-red-dark-9));
+  --sp-state-blocked-10: light-dark(var(--radix-red-10), var(--radix-red-dark-10));
+  --sp-state-blocked-11: light-dark(var(--radix-red-11), var(--radix-red-dark-11));
+  --sp-state-blocked-12: light-dark(var(--radix-red-12), var(--radix-red-dark-12));
+
+  --sp-state-unavailable-1: light-dark(var(--sp-neutral-0), var(--sp-neutral-950));
+  --sp-state-unavailable-3: light-dark(var(--sp-neutral-75), var(--sp-neutral-900));
+  --sp-state-unavailable-4: light-dark(var(--sp-neutral-150), var(--sp-neutral-775));
+  --sp-state-unavailable-5: light-dark(var(--sp-neutral-200), var(--sp-neutral-725));
+  --sp-state-unavailable-6: light-dark(var(--sp-neutral-250), var(--sp-neutral-650));
+  --sp-state-unavailable-7: light-dark(var(--sp-neutral-300), var(--sp-neutral-525));
+  --sp-state-unavailable-9: light-dark(var(--sp-neutral-475), var(--sp-neutral-275));
+  --sp-state-unavailable-10: light-dark(var(--sp-neutral-625), var(--sp-neutral-225));
+  --sp-state-unavailable-11: light-dark(var(--sp-neutral-475), var(--sp-neutral-275));
+  --sp-state-unavailable-12: light-dark(var(--sp-neutral-825), var(--sp-neutral-125));
+
+  /* Adapter mode */
+  --sp-mode-live: light-dark(var(--radix-teal-11), var(--radix-teal-dark-11));
+  --sp-mode-simulated: light-dark(var(--radix-violet-11), var(--radix-violet-dark-11));
+  --sp-mode-preview: var(--sp-state-unavailable);
+  --sp-mode-unavailable: light-dark(var(--sp-neutral-300), var(--sp-neutral-525));
+}

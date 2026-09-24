@@ -1,0 +1,44 @@
+/* ── System disc ────────────────────────────────────────────────────────────
+   The outer ring punches a gap between overlapping discs and carries source
+   state, so it is held in --disc-ring for the state rules to extend rather
+   than restated with the sheen each time.
+   ────────────────────────────────────────────────────────────────────────── */
+@layer components {
+  .system-disc {
+    @apply control-face control-hairline surface-floating;
+    --disc-ring: 0 0 0 2px var(--sp-surface-primary);
+    box-shadow: --theme(--shadow-control-highlight), var(--disc-ring);
+    display: grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 999px;
+    color: var(--sp-text-muted);
+    font-size: var(--sp-text-body);
+    cursor: default;
+    /* Declared after the utility on purpose: only the lift animates, the face
+       does not. */
+    transition: transform var(--duration-state) ease-out;
+  }
+  .system-disc svg {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+  /* Raising the hovered disc above its neighbours is the whole reason the list
+     needs a stacking context. */
+  .system-disc:hover,
+  .system-disc:focus-visible {
+    position: relative;
+    z-index: 1;
+    transform: translateY(-1px);
+    color: var(--sp-text-primary);
+  }
+  .system-disc[data-freshness='stale'] {
+    --disc-ring: 0 0 0 2px var(--sp-surface-primary), 0 0 0 3px var(--sp-state-caution);
+    color: var(--sp-state-caution);
+  }
+  .system-disc[data-freshness='unavailable'] {
+    --disc-ring: 0 0 0 2px var(--sp-surface-primary), 0 0 0 3px var(--sp-state-blocked);
+    color: var(--sp-state-blocked);
+  }
+}

@@ -38,7 +38,9 @@ export function isTypefaceSet(value: unknown): value is TypefaceSet {
 }
 
 export function isTypefacePickerSet(value: unknown): value is TypefaceSet {
-  return TYPEFACE_PICKER_SETS.includes(value as (typeof TYPEFACE_PICKER_SETS)[number]);
+  return TYPEFACE_PICKER_SETS.includes(
+    value as (typeof TYPEFACE_PICKER_SETS)[number],
+  );
 }
 
 /** display role · interface sans role · tabular utility role. */
@@ -99,7 +101,7 @@ export const MONO_CHOICE_LABELS: Record<MonoChoice, string> = {
   Two constructions of the same scale, compared live rather than argued about.
   'base' is the 2px-baseline scale; 'sharp' keeps the dense lower half and
   pushes the upper half for stronger hierarchy contrast. See the typescale
-  blocks in app/tokens/type.css.
+  blocks in app/styles/type.css.
 */
 export const TYPESCALES = ['base', 'sharp'] as const;
 

@@ -24,9 +24,9 @@
     "check:colour-system": "playwright test e2e/colour-system.spec.ts",
     "check:colours": "node scripts/colour-theme/generate.ts --check",
     "check:tokens": "node scripts/check-token-refs.mjs",
+    "trace:token": "node scripts/trace-token.mjs",
     "colors:custom": "node scripts/colour-theme/generate.ts",
-    "colors:radix": "node scripts/generate-radix-colors.ts",
-    "colors:neutrals": "node scripts/generate-neutral-palettes.ts"
+    "colors:radix": "node scripts/generate-radix-colors.ts"
   },
   "dependencies": {
     "@outpacelabs/avatars": "^0.6.0",

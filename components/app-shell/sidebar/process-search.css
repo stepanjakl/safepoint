@@ -1,0 +1,99 @@
+/* ── Process search ─────────────────────────────────────────────────────────
+   The search field: four states whose priority is the rule order.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* The search field's clear chip. Aliases, so a retuned edge carries it. */
+  --sp-search-clear-face: var(--sp-field-edge);
+  --sp-search-clear-face-hover: var(--sp-field-edge-hover);
+}
+
+@theme inline {
+  --color-search-clear: var(--sp-search-clear-face);
+  --color-search-clear-hover: var(--sp-search-clear-face-hover);
+}
+
+@layer components {
+  /* Four states whose priority *is* this block's reading order:
+       holding a query  <  pointer on it  <  focused
+     Focus outranks the rest because the border is this field's only focus
+     indicator. As markup variants the order was Tailwind's emission order, and
+     hover was winning. The border spends only colour, never width. */
+  .menu-search-field {
+    @apply control-wash;
+    /* The glyph's box: even, so it can centre on an integer axis. Published
+       here because the inset below measures from it and the markup sizes the
+       box from it -- one width, read by both. */
+    --menu-search-glyph: calc(var(--spacing) * 4.5);
+    /* A field's edge, heavier than a row's. Both insets below take the
+       difference back, so the typed text ends where a row's status badge
+       does and the glyph lands on the rail's axis. */
+    border: var(--spacing-field-edge) solid transparent;
+    border-radius: var(--radius-control);
+    padding-inline-end: calc(
+      var(--spacing-menu-end) - var(--spacing-field-edge) + var(--spacing-menu-edge)
+    );
+    /* Half a rail, less the edge and half the glyph. Derived rather than
+       written, because a written value goes stale the moment an edge moves. */
+    padding-inline-start: calc(
+      var(--spacing-menu-rail) / 2 - var(--spacing-field-edge) - var(--menu-search-glyph) / 2
+    );
+    /* Held here rather than as a utility on the label, because the hover step
+       below has to outrank it and a utility never loses to this layer. The
+       glyph and the keycap both inherit it, so one declaration moves all
+       three; only the typed text opts out, at full strength. */
+    color: var(--sp-text-muted);
+  }
+
+  .menu-search-field ::placeholder {
+    color: var(--sp-text-muted);
+    transition: color var(--duration-state) ease-out;
+  }
+
+  /* A filtered list whose filter has gone invisible is the one state worth an
+     edge on unprompted, so a field holding a query stays lit on its own. */
+  .menu-search-field:has(input:not(:placeholder-shown)) {
+    border-color: var(--sp-field-edge);
+    background-color: var(--sp-field-face);
+  }
+
+  .menu-search-field:hover {
+    border-color: var(--sp-field-edge-hover);
+    background-color: var(--sp-field-face);
+    color: var(--sp-text-muted-strong);
+  }
+
+  .menu-search-field:hover ::placeholder {
+    color: var(--sp-text-muted-strong);
+  }
+
+  /* Last of the three, so it settles the colour as well as the edge: a field
+     being typed into must not be repainted by the pointer that happens to be
+     resting on it. */
+  .menu-search-field:focus-within {
+    border-color: var(--sp-field-edge-active);
+    background-color: var(--sp-field-face);
+    color: var(--sp-text-primary);
+  }
+
+  /* The placeholder stops one step short of primary even here. At full weight
+     it stops reading as a prompt and starts reading as something typed. */
+  .menu-search-field:focus-within ::placeholder {
+    color: var(--sp-text-muted-strong);
+  }
+
+  /* The browser's own clear button draws in its own colour, and only in some
+     browsers; the field carries a button of its own instead. */
+  .menu-search-field input::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  @media (forced-colors: active) {
+    /* Inset, because the band the field opens in clips at its edges. */
+    .menu-search-field:focus-within {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
+    }
+  }
+}

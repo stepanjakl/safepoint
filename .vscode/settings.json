@@ -1,7 +1,8 @@
 {
   "cssVarHover.watchedFiles": [
     "components/ui/button.tsx",
-    "components/app-shell/process-menu.tsx",
+    "components/app-shell/sidebar/process-menu.tsx",
+    "components/app-shell/sidebar/process-list.tsx",
     "components/ui/switch.tsx"
   ],
   "files.exclude": {
@@ -46,7 +47,7 @@
   "files.associations": {
     "*.css": "tailwindcss"
   },
-  "tailwindCSS.experimental.configFile": "app/globals.css",
+  "tailwindCSS.experimental.configFile": "app/styles/index.css",
   "editor.quickSuggestions": {
     "strings": "on"
   }

@@ -1,0 +1,111 @@
+/* ── Switch ─────────────────────────────────────────────────────────────────
+   A track painted with control-face, and a thumb that travels along it.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Deliberately lighter than its accent track. */
+  --sp-switch-thumb-selected: var(--radix-cyan-2);
+}
+
+@layer components {
+  /* The track owns the four dimensions; the thumb derives its resting insets
+     and selected travel from them. */
+  .switch {
+    --switch-track-inline: var(--spacing-switch-md-track-inline);
+    --switch-track-block: var(--spacing-switch-md-track-block);
+    --switch-thumb: var(--spacing-switch-md-thumb);
+  }
+
+  .switch[data-size='sm'] {
+    --switch-track-inline: var(--spacing-switch-sm-track-inline);
+    --switch-track-block: var(--spacing-switch-sm-track-block);
+    --switch-thumb: var(--spacing-switch-sm-thumb);
+  }
+
+  .switch[data-size='lg'] {
+    --switch-track-inline: var(--spacing-switch-lg-track-inline);
+    --switch-track-block: var(--spacing-switch-lg-track-block);
+    --switch-thumb: var(--spacing-switch-lg-thumb);
+  }
+
+  .switch-track {
+    --control-face-top: var(--sp-quiet-face-top);
+    --control-face-bottom: var(--sp-quiet-face-bottom);
+    --control-ring-top: var(--sp-quiet-ring-top);
+    --control-ring-bottom: var(--sp-quiet-ring-bottom);
+    --control-highlight: transparent;
+    --switch-thumb-face: var(--control-ring-bottom);
+    --switch-thumb-off-face: linear-gradient(
+      to bottom,
+      var(--control-ring-top),
+      var(--control-ring-bottom)
+    );
+    position: relative;
+    flex: none;
+    inline-size: var(--switch-track-inline);
+    block-size: var(--switch-track-block);
+  }
+
+  .switch-thumb {
+    position: absolute;
+    inset-block-start: calc(var(--spacing-switch-thumb-gap) - var(--spacing-control-edge));
+    inset-inline-start: calc(var(--spacing-switch-thumb-gap) - var(--spacing-control-edge));
+    inline-size: var(--switch-thumb);
+    block-size: var(--switch-thumb);
+    border-radius: 9999px;
+    background-color: var(--switch-thumb-face);
+    transition: transform var(--duration-state) ease-out;
+  }
+
+  .switch[data-selected] .switch-track {
+    --control-face-top: var(--sp-accent-face-top);
+    --control-face-bottom: var(--sp-accent-face-bottom);
+    --control-ring-top: var(--sp-accent-ring-top);
+    --control-ring-bottom: var(--sp-accent-ring-bottom);
+    --control-highlight: var(--sp-accent-edge);
+  }
+
+  .switch[data-disabled] .switch-track {
+    --control-face-top: var(--sp-off-face);
+    --control-face-bottom: var(--sp-off-face);
+    --control-ring-top: var(--sp-off-ring);
+    --control-ring-bottom: var(--sp-off-ring);
+    --control-highlight: transparent;
+  }
+
+  .switch[data-focus-visible]:not([data-selected]):not([data-disabled]) .switch-track {
+    --control-face-top: var(--sp-quiet-face-top-hover);
+    --control-face-bottom: var(--sp-quiet-face-bottom-hover);
+    --control-ring-top: var(--sp-quiet-ring-top-hover);
+    --control-ring-bottom: var(--sp-quiet-ring-bottom-hover);
+  }
+
+  .switch[data-focus-visible][data-selected]:not([data-disabled]) .switch-track {
+    --control-face-top: var(--sp-accent-hover);
+    --control-face-bottom: var(--sp-accent-hover);
+    --control-ring-top: var(--sp-accent-hover);
+    --control-ring-bottom: var(--sp-accent-hover);
+    --control-highlight: var(--sp-accent-hover);
+  }
+
+  .switch[data-selected] .switch-thumb {
+    background-color: var(--sp-switch-thumb-selected);
+    transform: translateX(
+      calc(var(--switch-track-inline) - var(--switch-thumb) - 2 * var(--spacing-switch-thumb-gap))
+    );
+  }
+
+  :dir(rtl) .switch[data-selected] .switch-thumb {
+    transform: translateX(
+      calc(var(--switch-thumb) + 2 * var(--spacing-switch-thumb-gap) - var(--switch-track-inline))
+    );
+  }
+
+  .switch:not([data-selected]):not([data-disabled]) .switch-thumb {
+    background-image: var(--switch-thumb-off-face);
+  }
+
+  .switch[data-disabled] .switch-thumb {
+    opacity: 0.6;
+  }
+}
