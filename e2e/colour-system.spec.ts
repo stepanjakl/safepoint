@@ -209,6 +209,95 @@ test('muted ink never paints on a selected surface', async ({ page }) => {
   expect(result.offenders).toEqual([]);
 });
 
+/* Coloured text and white labels, measured as the page resolves them. The
+   colour contracts in scripts/colour-theme cover the neutral ramp only; these
+   are mixes of Radix steps, so they are read here rather than restated. */
+async function contrastOf(page: Page, pairs: [string, string][]) {
+  return page.evaluate((list) => {
+    const canvas = document.createElement('canvas').getContext('2d', {
+      willReadFrequently: true,
+    })!;
+    const probe = document.createElement('span');
+    document.body.append(probe);
+    const rgb = (token: string) => {
+      probe.style.color = token.startsWith('--') ? `var(${token})` : token;
+      canvas.clearRect(0, 0, 1, 1);
+      canvas.fillStyle = getComputedStyle(probe).color;
+      canvas.fillRect(0, 0, 1, 1);
+      return [...canvas.getImageData(0, 0, 1, 1).data].slice(0, 3);
+    };
+    const luminance = (channels: number[]) => {
+      const [r, g, b] = channels.map((channel) => {
+        const c = channel / 255;
+        return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
+    };
+    const result = list.map(([fg, bg]) => {
+      const [a, b] = [luminance(rgb(fg)), luminance(rgb(bg))];
+      return `${fg} on ${bg}: ${((Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05)).toFixed(2)}`;
+    });
+    probe.remove();
+    return result;
+  }, pairs);
+}
+
+const ratio = (line: string) => {
+  const value = Number(line.split(': ').at(-1));
+  // A value the page could not resolve reads as no contrast, never a pass.
+  return Number.isFinite(value) ? value : 0;
+};
+
+test('state text clears AA on every surface it can sit on', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await waitForHome(page);
+  const states = [
+    'advisory',
+    'verified',
+    'caution',
+    'decision',
+    'blocked',
+    'destructive',
+  ];
+  const grounds = [
+    '--sp-surface-floating',
+    '--sp-surface-primary',
+    '--sp-canvas',
+    '--sp-sheet-band',
+    '--sp-surface-inset',
+  ];
+  const measured = await contrastOf(
+    page,
+    states.flatMap((state) =>
+      grounds.map(
+        (ground) => [`--sp-state-${state}`, ground] as [string, string],
+      ),
+    ),
+  );
+  const failing = measured.filter((line) => ratio(line) < 4.5);
+  expect(failing, measured.join('\n')).toEqual([]);
+});
+
+test('white labels hold their measured floor on the coloured faces', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await waitForHome(page);
+  /* The glowing top stop is a chosen trade -- Radix fitted to Tailwind's cyan
+     and teal, about 1.9:1 in light -- so it is not held here. The bottom stop
+     and the flat hover carry the label and hold the non-text floor. */
+  const measured = await contrastOf(page, [
+    ['white', '--sp-accent-face-bottom'],
+    ['white', '--sp-accent-hover'],
+    ['white', '--sp-commit-face-bottom'],
+    ['white', '--sp-commit-hover'],
+  ]);
+  const failing = measured.filter((line) => ratio(line) < 3);
+  expect(failing, measured.join('\n')).toEqual([]);
+});
+
 test('usable in forced colours and at a narrow viewport', async ({ page }) => {
   await page.emulateMedia({ forcedColors: 'active' });
   await page.goto('/');

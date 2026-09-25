@@ -116,7 +116,7 @@ The detailed requirements remain in [`docs/`](docs/README.md). If this checklist
 - [ ] Compare alternative plans and explain trade-offs.
 - [ ] Draft the next instruction version from review decisions, each edit traced to the items behind it, and review it like any other proposal. The assistant placeholder in the process header's notch (`components/app-shell/assistant/assistant.tsx`) is where it starts.
 - [ ] Add richer connector capabilities and organisation-level policy.
-- [ ] Replace the process header's system discs with Inputs and Outputs buttons, and the Systems tab with Inputs and Outputs tabs, as specified in [`docs/EMBEDDED-REVIEW.md`](docs/EMBEDDED-REVIEW.md#process-header-and-setup). Live source systems and ingestion stay future work.
+- [x] Replace the process header's system discs with Inputs and Outputs buttons, and the Systems tab with Inputs and Outputs tabs, as specified in [`docs/EMBEDDED-REVIEW.md`](docs/EMBEDDED-REVIEW.md#process-header-and-setup). Live source systems and ingestion stay future work.
 - [ ] Add collaborative review and enterprise identity.
 - [ ] Explore an optional Duvo runtime adapter after the provider-independent workflow is proven.
 

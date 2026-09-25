@@ -51,6 +51,40 @@ test('release review', async ({ page }, testInfo) => {
   await expectContrast(page, testInfo, 'review');
 });
 
+test('arranging the process list', async ({ page }, testInfo) => {
+  await page.getByRole('button', { name: 'Arrange processes' }).click();
+  await expect(page.getByRole('button', { name: 'Save order' })).toBeVisible();
+  await expectContrast(page, testInfo, 'arrange');
+});
+
+test('a tooltip', async ({ page }, testInfo) => {
+  await page
+    .getByRole('button', { name: 'Search processes', exact: true })
+    .focus();
+  await expect(page.locator('.app-tooltip')).toBeVisible();
+  await expectContrast(page, testInfo, 'tooltip');
+});
+
+/* The example pages put states the home page never shows side by side --
+   every run outcome, every freshness -- so a colour that fails only in one
+   of them is still found. */
+for (const [name, path] of [
+  ['states example', '/examples/states'],
+  ['support example', '/examples/support'],
+] as const) {
+  test(name, async ({ page, colorScheme }, testInfo) => {
+    await page.goto(path);
+    await expect(
+      page.getByRole('button', { name: 'Search processes', exact: true }),
+    ).toBeVisible();
+    await page.evaluate((value) => {
+      document.documentElement.dataset.theme = value;
+    }, colorScheme as string);
+    await page.evaluate(() => document.fonts.ready);
+    await expectContrast(page, testInfo, name);
+  });
+}
+
 test('scanner detects an injected contrast regression', async ({
   page,
 }, testInfo) => {

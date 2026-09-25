@@ -17,6 +17,7 @@ misalignments were shipped, each invisible until something measured it.
 
 ```
 pnpm dev                                    # the guides are development-only
+pnpm exec playwright test e2e/rail.spec.ts  # pass/fail, in the suite
 pnpm check:rail
 pnpm check:rail -- --level all --self-test
 pnpm check:rail -- --help
@@ -28,7 +29,13 @@ between them. Exit 0 aligned, 1 something is off, 2 it could not run.
 It reads the axis positions out of the live `.rail-axis` element's computed
 background rather than from any constant, so the stylesheet is the only place an
 axis is defined. **Keep it that way.** The moment a coordinate is written into
-`scripts/check-rail-alignment.ts`, it has become the thing it replaced.
+`scripts/rail-alignment/measure.ts`, it has become the thing it replaced.
+
+The measurement is shared: the CLI prints it as a table for reading, and
+`e2e/rail.spec.ts` runs the same function at every level of both routes so the
+suite holds it. Both launch Chrome with `--force-device-scale-factor=2`;
+emulating the pixel ratio alone leaves border snapping at 1x, and the 1.5px
+search field edge then lays out as 1px.
 
 Two reported states are not failures. A box of **odd width** centres on a half
 pixel wherever it is placed and can never sit on an integer axis — the fix is an
@@ -94,8 +101,18 @@ scans source as plain text, so do not write a real utility or theme variable
 name in a comment; use a placeholder such as `--color-<role>`.
 `pnpm trace:token <role>` prints where a role is declared and what it resolves
 to in each theme; use it instead of reading stylesheets hop by hop.
+`/workbench` (development only) is the live colour reference: surfaces, text
+and edges on their grounds with measured contrast, state scales and the ramp,
+re-read whenever the theme or neutral family changes. Compare colour options
+there, where the user can see them, rather than in screenshots.
 
 ## Verification matched to the change
+
+`pnpm check:visual` compares every element's painted colours and box, in twelve
+states and both themes, with `e2e/visual-baseline/`. A difference you intended
+is recorded with `pnpm check:visual:update`, and the baseline diff goes in the
+same commit; one you did not intend is a regression. Record the baseline on
+the machine that checks it -- text metrics depend on installed fonts.
 
 Choose checks by the possible consequences, not the number of edited lines.
 During iteration, run the smallest check that can detect the relevant regression.
@@ -106,8 +123,8 @@ shared dependency or invariant makes the impact uncertain.
 | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Documentation, comments, agent instructions                               | Check accuracy, links, and formatting of changed files. Validate skill metadata when changing skills. No application suite.                                       |
 | Static UI wording                                                         | Format and lint changed source files. Inspect the affected UI when wrapping or accessible naming could change.                                                    |
-| Local spacing or styling                                                  | Format changed files and inspect the affected component and relevant responsive states. Run `pnpm check:rail` when sidebar geometry changes.                      |
-| Colours or tokens                                                         | Run `pnpm check:tokens`; inspect affected light/dark states and relevant contrast checks. Run the rail checker if spacing tokens affect sidebar geometry.         |
+| Local spacing or styling                                                  | Format changed files and inspect the affected component and relevant responsive states. Run `pnpm check:visual`, and `pnpm check:rail` when sidebar geometry changes.                      |
+| Colours or tokens                                                         | Run `pnpm check:tokens`, `pnpm check:colours` and `pnpm check:visual`; inspect affected light/dark states and contrast. Rail checker if spacing tokens move.         |
 | Component behaviour or local logic                                        | Lint changed source files, run `pnpm typecheck` and relevant tests. Exercise changed interactions, including keyboard/focus and announcements where applicable.   |
 | Shared logic, routing, dependencies, build configuration, broad refactors | Run `pnpm lint`, `pnpm typecheck`, `pnpm format:check`, and `pnpm test` once at completion. Run `pnpm build` when production compilation or bundling is affected. |
 

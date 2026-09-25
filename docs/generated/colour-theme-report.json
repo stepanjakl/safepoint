@@ -24,7 +24,6 @@
       "note": "Cool violet-grey on Tailwind zinc's hue and chroma. The restrained default.",
       "failures": [],
       "warnings": [
-        "light muted-on-inset-surface: 4.606:1 is below target 4.75:1.",
         "dark faint-rule-on-floating-surface: 1.291:1 is below target 1.5:1.",
         "primary-to-floating-surface: light and dark differ 2.998x in separation (0.022398 vs 0.067155)."
       ],
@@ -597,27 +596,27 @@
           },
           {
             "id": "muted-on-canvas",
-            "light": 5.294,
+            "light": 5.83,
             "dark": 7.011,
-            "ratio": 1.324
+            "ratio": 1.203
           },
           {
             "id": "muted-on-inset-surface",
-            "light": 4.606,
+            "light": 5.072,
             "dark": 7.681,
-            "ratio": 1.668
+            "ratio": 1.514
           },
           {
             "id": "muted-on-analysis",
-            "light": 6.052,
+            "light": 6.665,
             "dark": 6.693,
-            "ratio": 1.106
+            "ratio": 1.004
           },
           {
             "id": "muted-on-notice",
-            "light": 5.664,
+            "light": 6.237,
             "dark": 5.955,
-            "ratio": 1.051
+            "ratio": 1.047
           },
           {
             "id": "inverse-on-action",
@@ -825,9 +824,9 @@
           "minimum": 4.5,
           "target": 4.75,
           "rationale": "Dense secondary text on the canvas.",
-          "foregroundStep": 575,
+          "foregroundStep": 600,
           "backgroundStep": 75,
-          "ratio": 5.294,
+          "ratio": 5.83,
           "passed": true,
           "metTarget": true
         },
@@ -840,11 +839,11 @@
           "minimum": 4.5,
           "target": 4.75,
           "rationale": "The weakest recurring secondary-text pairing.",
-          "foregroundStep": 575,
+          "foregroundStep": 600,
           "backgroundStep": 125,
-          "ratio": 4.606,
+          "ratio": 5.072,
           "passed": true,
-          "metTarget": false
+          "metTarget": true
         },
         {
           "theme": "light",
@@ -854,9 +853,9 @@
           "background": "analysisFace",
           "minimum": 4.5,
           "rationale": "Secondary analysis copy is ordinary-size text.",
-          "foregroundStep": 575,
+          "foregroundStep": 600,
           "backgroundStep": 25,
-          "ratio": 6.052,
+          "ratio": 6.665,
           "passed": true,
           "metTarget": true
         },
@@ -868,9 +867,9 @@
           "background": "noticeFace",
           "minimum": 4.5,
           "rationale": "Notice captions are ordinary-size text.",
-          "foregroundStep": 575,
+          "foregroundStep": 600,
           "backgroundStep": 50,
-          "ratio": 5.664,
+          "ratio": 6.237,
           "passed": true,
           "metTarget": true
         },
@@ -1423,7 +1422,6 @@
       "note": "Blue and colder. Earns its distinctness with chroma, as Tailwind slate does against zinc.",
       "failures": [],
       "warnings": [
-        "light muted-on-inset-surface: 4.581:1 is below target 4.75:1.",
         "dark faint-rule-on-floating-surface: 1.294:1 is below target 1.5:1.",
         "primary-to-floating-surface: light and dark differ 2.99x in separation (0.022508 vs 0.067291)."
       ],
@@ -1996,27 +1994,27 @@
           },
           {
             "id": "muted-on-canvas",
-            "light": 5.261,
+            "light": 5.794,
             "dark": 7.045,
-            "ratio": 1.339
+            "ratio": 1.216
           },
           {
             "id": "muted-on-inset-surface",
-            "light": 4.581,
+            "light": 5.045,
             "dark": 7.724,
-            "ratio": 1.686
+            "ratio": 1.531
           },
           {
             "id": "muted-on-analysis",
-            "light": 6.01,
+            "light": 6.618,
             "dark": 6.723,
-            "ratio": 1.119
+            "ratio": 1.016
           },
           {
             "id": "muted-on-notice",
-            "light": 5.627,
+            "light": 6.196,
             "dark": 5.979,
-            "ratio": 1.063
+            "ratio": 1.036
           },
           {
             "id": "inverse-on-action",
@@ -2224,9 +2222,9 @@
           "minimum": 4.5,
           "target": 4.75,
           "rationale": "Dense secondary text on the canvas.",
-          "foregroundStep": 575,
+          "foregroundStep": 600,
           "backgroundStep": 75,
-          "ratio": 5.261,
+          "ratio": 5.794,
           "passed": true,
           "metTarget": true
         },
@@ -2239,11 +2237,11 @@
           "minimum": 4.5,
           "target": 4.75,
           "rationale": "The weakest recurring secondary-text pairing.",
-          "foregroundStep": 575,
+          "foregroundStep": 600,
           "backgroundStep": 125,
-          "ratio": 4.581,
+          "ratio": 5.045,
           "passed": true,
-          "metTarget": false
+          "metTarget": true
         },
         {
           "theme": "light",
@@ -2253,9 +2251,9 @@
           "background": "analysisFace",
           "minimum": 4.5,
           "rationale": "Secondary analysis copy is ordinary-size text.",
-          "foregroundStep": 575,
+          "foregroundStep": 600,
           "backgroundStep": 25,
-          "ratio": 6.01,
+          "ratio": 6.618,
           "passed": true,
           "metTarget": true
         },
@@ -2267,9 +2265,9 @@
           "background": "noticeFace",
           "minimum": 4.5,
           "rationale": "Notice captions are ordinary-size text.",
-          "foregroundStep": 575,
+          "foregroundStep": 600,
           "backgroundStep": 50,
-          "ratio": 5.627,
+          "ratio": 6.196,
           "passed": true,
           "metTarget": true
         },
@@ -2822,7 +2820,6 @@
       "note": "Warm amber-grey, near Tailwind stone.",
       "failures": [],
       "warnings": [
-        "light muted-on-inset-surface: 4.607:1 is below target 4.75:1.",
         "dark faint-rule-on-floating-surface: 1.291:1 is below target 1.5:1.",
         "primary-to-floating-surface: light and dark differ 2.996x in separation (0.022428 vs 0.067188)."
       ],
@@ -3395,27 +3392,27 @@
           },
           {
             "id": "muted-on-canvas",
-            "light": 5.295,
+            "light": 5.832,
             "dark": 7.011,
-            "ratio": 1.324
+            "ratio": 1.202
           },
           {
             "id": "muted-on-inset-surface",
-            "light": 4.607,
+            "light": 5.074,
             "dark": 7.681,
-            "ratio": 1.667
+            "ratio": 1.514
           },
           {
             "id": "muted-on-analysis",
-            "light": 6.054,
+            "light": 6.667,
             "dark": 6.693,
-            "ratio": 1.106
+            "ratio": 1.004
           },
           {
             "id": "muted-on-notice",
-            "light": 5.666,
+            "light": 6.239,
             "dark": 5.955,
-            "ratio": 1.051
+            "ratio": 1.048
           },
           {
             "id": "inverse-on-action",
@@ -3623,9 +3620,9 @@
           "minimum": 4.5,
           "target": 4.75,
           "rationale": "Dense secondary text on the canvas.",
-          "foregroundStep": 575,
+          "foregroundStep": 600,
           "backgroundStep": 75,
-          "ratio": 5.295,
+          "ratio": 5.832,
           "passed": true,
           "metTarget": true
         },
@@ -3638,11 +3635,11 @@
           "minimum": 4.5,
           "target": 4.75,
           "rationale": "The weakest recurring secondary-text pairing.",
-          "foregroundStep": 575,
+          "foregroundStep": 600,
           "backgroundStep": 125,
-          "ratio": 4.607,
+          "ratio": 5.074,
           "passed": true,
-          "metTarget": false
+          "metTarget": true
         },
         {
           "theme": "light",
@@ -3652,9 +3649,9 @@
           "background": "analysisFace",
           "minimum": 4.5,
           "rationale": "Secondary analysis copy is ordinary-size text.",
-          "foregroundStep": 575,
+          "foregroundStep": 600,
           "backgroundStep": 25,
-          "ratio": 6.054,
+          "ratio": 6.667,
           "passed": true,
           "metTarget": true
         },
@@ -3666,9 +3663,9 @@
           "background": "noticeFace",
           "minimum": 4.5,
           "rationale": "Notice captions are ordinary-size text.",
-          "foregroundStep": 575,
+          "foregroundStep": 600,
           "backgroundStep": 50,
-          "ratio": 5.666,
+          "ratio": 6.239,
           "passed": true,
           "metTarget": true
         },
@@ -4221,7 +4218,6 @@
       "note": "Green-grey, between Radix sage and olive.",
       "failures": [],
       "warnings": [
-        "light muted-on-inset-surface: 4.549:1 is below target 4.75:1.",
         "dark faint-rule-on-floating-surface: 1.299:1 is below target 1.5:1.",
         "field-focus-from-resting-edge: light and dark differ 1.752x in contrast (3.739:1 vs 6.55:1); the hierarchy is not the same in both themes.",
         "menu-chip-ink: light and dark differ 1.759x in contrast (4.991:1 vs 8.778:1); the hierarchy is not the same in both themes.",
@@ -4796,27 +4792,27 @@
           },
           {
             "id": "muted-on-canvas",
-            "light": 5.22,
+            "light": 5.748,
             "dark": 7.079,
-            "ratio": 1.356
+            "ratio": 1.232
           },
           {
             "id": "muted-on-inset-surface",
-            "light": 4.549,
+            "light": 5.009,
             "dark": 7.767,
-            "ratio": 1.707
+            "ratio": 1.551
           },
           {
             "id": "muted-on-analysis",
-            "light": 5.959,
+            "light": 6.561,
             "dark": 6.754,
-            "ratio": 1.133
+            "ratio": 1.029
           },
           {
             "id": "muted-on-notice",
-            "light": 5.581,
+            "light": 6.145,
             "dark": 6.003,
-            "ratio": 1.076
+            "ratio": 1.024
           },
           {
             "id": "inverse-on-action",
@@ -5024,9 +5020,9 @@
           "minimum": 4.5,
           "target": 4.75,
           "rationale": "Dense secondary text on the canvas.",
-          "foregroundStep": 575,
+          "foregroundStep": 600,
           "backgroundStep": 75,
-          "ratio": 5.22,
+          "ratio": 5.748,
           "passed": true,
           "metTarget": true
         },
@@ -5039,11 +5035,11 @@
           "minimum": 4.5,
           "target": 4.75,
           "rationale": "The weakest recurring secondary-text pairing.",
-          "foregroundStep": 575,
+          "foregroundStep": 600,
           "backgroundStep": 125,
-          "ratio": 4.549,
+          "ratio": 5.009,
           "passed": true,
-          "metTarget": false
+          "metTarget": true
         },
         {
           "theme": "light",
@@ -5053,9 +5049,9 @@
           "background": "analysisFace",
           "minimum": 4.5,
           "rationale": "Secondary analysis copy is ordinary-size text.",
-          "foregroundStep": 575,
+          "foregroundStep": 600,
           "backgroundStep": 25,
-          "ratio": 5.959,
+          "ratio": 6.561,
           "passed": true,
           "metTarget": true
         },
@@ -5067,9 +5063,9 @@
           "background": "noticeFace",
           "minimum": 4.5,
           "rationale": "Notice captions are ordinary-size text.",
-          "foregroundStep": 575,
+          "foregroundStep": 600,
           "backgroundStep": 50,
-          "ratio": 5.581,
+          "ratio": 6.145,
           "passed": true,
           "metTarget": true
         },
@@ -5622,7 +5618,6 @@
       "note": "No tint at all. Graphite with the chroma removed, for a true neutral.",
       "failures": [],
       "warnings": [
-        "light muted-on-inset-surface: 4.593:1 is below target 4.75:1.",
         "dark faint-rule-on-floating-surface: 1.293:1 is below target 1.5:1.",
         "primary-to-floating-surface: light and dark differ 3x in separation (0.022376 vs 0.067127)."
       ],
@@ -6195,27 +6190,27 @@
           },
           {
             "id": "muted-on-canvas",
-            "light": 5.277,
+            "light": 5.811,
             "dark": 7.026,
-            "ratio": 1.331
+            "ratio": 1.209
           },
           {
             "id": "muted-on-inset-surface",
-            "light": 4.593,
+            "light": 5.057,
             "dark": 7.7,
-            "ratio": 1.676
+            "ratio": 1.523
           },
           {
             "id": "muted-on-analysis",
-            "light": 6.031,
+            "light": 6.641,
             "dark": 6.706,
-            "ratio": 1.112
+            "ratio": 1.01
           },
           {
             "id": "muted-on-notice",
-            "light": 5.645,
+            "light": 6.216,
             "dark": 5.966,
-            "ratio": 1.057
+            "ratio": 1.042
           },
           {
             "id": "inverse-on-action",
@@ -6423,9 +6418,9 @@
           "minimum": 4.5,
           "target": 4.75,
           "rationale": "Dense secondary text on the canvas.",
-          "foregroundStep": 575,
+          "foregroundStep": 600,
           "backgroundStep": 75,
-          "ratio": 5.277,
+          "ratio": 5.811,
           "passed": true,
           "metTarget": true
         },
@@ -6438,11 +6433,11 @@
           "minimum": 4.5,
           "target": 4.75,
           "rationale": "The weakest recurring secondary-text pairing.",
-          "foregroundStep": 575,
+          "foregroundStep": 600,
           "backgroundStep": 125,
-          "ratio": 4.593,
+          "ratio": 5.057,
           "passed": true,
-          "metTarget": false
+          "metTarget": true
         },
         {
           "theme": "light",
@@ -6452,9 +6447,9 @@
           "background": "analysisFace",
           "minimum": 4.5,
           "rationale": "Secondary analysis copy is ordinary-size text.",
-          "foregroundStep": 575,
+          "foregroundStep": 600,
           "backgroundStep": 25,
-          "ratio": 6.031,
+          "ratio": 6.641,
           "passed": true,
           "metTarget": true
         },
@@ -6466,9 +6461,9 @@
           "background": "noticeFace",
           "minimum": 4.5,
           "rationale": "Notice captions are ordinary-size text.",
-          "foregroundStep": 575,
+          "foregroundStep": 600,
           "backgroundStep": 50,
-          "ratio": 5.645,
+          "ratio": 6.216,
           "passed": true,
           "metTarget": true
         },
@@ -7226,29 +7221,24 @@
         "dark": 8.677,
         "ratio": 1.158
       },
-      {
-        "id": "muted-on-canvas",
-        "light": 5.294,
-        "dark": 7.011,
-        "ratio": 1.324
-      },
+      { "id": "muted-on-canvas", "light": 5.83, "dark": 7.011, "ratio": 1.203 },
       {
         "id": "muted-on-inset-surface",
-        "light": 4.606,
+        "light": 5.072,
         "dark": 7.681,
-        "ratio": 1.668
+        "ratio": 1.514
       },
       {
         "id": "muted-on-analysis",
-        "light": 6.052,
+        "light": 6.665,
         "dark": 6.693,
-        "ratio": 1.106
+        "ratio": 1.004
       },
       {
         "id": "muted-on-notice",
-        "light": 5.664,
+        "light": 6.237,
         "dark": 5.955,
-        "ratio": 1.051
+        "ratio": 1.047
       },
       {
         "id": "inverse-on-action",
@@ -7428,7 +7418,7 @@
     },
     "textMuted": {
       "cssVariable": "--sp-text-muted",
-      "light": 575,
+      "light": 600,
       "dark": 325
     },
     "textMutedStrong": {
@@ -7689,8 +7679,8 @@
       "id": "textMuted",
       "cssVariable": "--sp-text-muted",
       "theme": "light",
-      "expected": 575,
-      "actual": 575,
+      "expected": 600,
+      "actual": 600,
       "passed": true
     },
     {
@@ -9307,9 +9297,9 @@
       "minimum": 4.5,
       "target": 4.75,
       "rationale": "Dense secondary text on the canvas.",
-      "foregroundStep": 575,
+      "foregroundStep": 600,
       "backgroundStep": 75,
-      "ratio": 5.294,
+      "ratio": 5.83,
       "passed": true,
       "metTarget": true
     },
@@ -9322,11 +9312,11 @@
       "minimum": 4.5,
       "target": 4.75,
       "rationale": "The weakest recurring secondary-text pairing.",
-      "foregroundStep": 575,
+      "foregroundStep": 600,
       "backgroundStep": 125,
-      "ratio": 4.606,
+      "ratio": 5.072,
       "passed": true,
-      "metTarget": false
+      "metTarget": true
     },
     {
       "theme": "light",
@@ -9336,9 +9326,9 @@
       "background": "analysisFace",
       "minimum": 4.5,
       "rationale": "Secondary analysis copy is ordinary-size text.",
-      "foregroundStep": 575,
+      "foregroundStep": 600,
       "backgroundStep": 25,
-      "ratio": 6.052,
+      "ratio": 6.665,
       "passed": true,
       "metTarget": true
     },
@@ -9350,9 +9340,9 @@
       "background": "noticeFace",
       "minimum": 4.5,
       "rationale": "Notice captions are ordinary-size text.",
-      "foregroundStep": 575,
+      "foregroundStep": 600,
       "backgroundStep": 50,
-      "ratio": 5.664,
+      "ratio": 6.237,
       "passed": true,
       "metTarget": true
     },
@@ -10004,21 +9994,16 @@
   ],
   "failures": [],
   "warnings": [
-    "graphite: light muted-on-inset-surface: 4.606:1 is below target 4.75:1.",
     "graphite: dark faint-rule-on-floating-surface: 1.291:1 is below target 1.5:1.",
     "graphite: primary-to-floating-surface: light and dark differ 2.998x in separation (0.022398 vs 0.067155).",
-    "steel: light muted-on-inset-surface: 4.581:1 is below target 4.75:1.",
     "steel: dark faint-rule-on-floating-surface: 1.294:1 is below target 1.5:1.",
     "steel: primary-to-floating-surface: light and dark differ 2.99x in separation (0.022508 vs 0.067291).",
-    "clay: light muted-on-inset-surface: 4.607:1 is below target 4.75:1.",
     "clay: dark faint-rule-on-floating-surface: 1.291:1 is below target 1.5:1.",
     "clay: primary-to-floating-surface: light and dark differ 2.996x in separation (0.022428 vs 0.067188).",
-    "moss: light muted-on-inset-surface: 4.549:1 is below target 4.75:1.",
     "moss: dark faint-rule-on-floating-surface: 1.299:1 is below target 1.5:1.",
     "moss: field-focus-from-resting-edge: light and dark differ 1.752x in contrast (3.739:1 vs 6.55:1); the hierarchy is not the same in both themes.",
     "moss: menu-chip-ink: light and dark differ 1.759x in contrast (4.991:1 vs 8.778:1); the hierarchy is not the same in both themes.",
     "moss: primary-to-floating-surface: light and dark differ 2.996x in separation (0.022427 vs 0.067189).",
-    "ash: light muted-on-inset-surface: 4.593:1 is below target 4.75:1.",
     "ash: dark faint-rule-on-floating-surface: 1.293:1 is below target 1.5:1.",
     "ash: primary-to-floating-surface: light and dark differ 3x in separation (0.022376 vs 0.067127)."
   ]

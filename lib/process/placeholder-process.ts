@@ -184,7 +184,7 @@ export const promotionProcess: ProcessSummary = {
   },
   outputs: [
     // Modes and undo copy from the effect planner's destination table; see
-    // EFFECT_DESTINATIONS in lib/review-presentation/present-review.ts.
+    // EFFECT_DESTINATIONS in lib/review-presentation/labels.ts.
     {
       id: 'pricebook',
       label: 'Pricebook',

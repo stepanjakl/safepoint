@@ -37,9 +37,10 @@
 
   /* Text */
   --sp-text-primary: light-dark(var(--sp-neutral-925), var(--sp-neutral-100));
-  /* Most of the small text in the app, so as quiet as AA at micro allows on
-     --sp-surface-inset -- contract muted-on-inset-surface. */
-  --sp-text-muted: light-dark(var(--sp-neutral-575), var(--sp-neutral-325));
+  /* Most of the small text in the app: as quiet as it can be while clearing
+     the 4.75:1 target on --sp-surface-inset, the darkest ground it sits on --
+     contract muted-on-inset-surface. It moved a step darker with the panes. */
+  --sp-text-muted: light-dark(var(--sp-neutral-600), var(--sp-neutral-325));
   /* Muted, one step toward primary. Moves with muted rather than staying put. */
   --sp-text-muted-strong: light-dark(var(--sp-neutral-675), var(--sp-neutral-225));
   /* A third step, so a row has rest, hover and current rather than two. */

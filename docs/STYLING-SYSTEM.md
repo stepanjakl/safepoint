@@ -191,7 +191,7 @@ Lightness falls by a flat 0.02237 per step, so one index means the same everywhe
 
 Graphite binds on `:root`; the others on `:root[data-neutral='<family>']`, so the attribute is only needed to leave the default. Every family is generated and contract-checked independently.
 
-Every fill and edge on a pane sits one step under where the ramp was first assigned (2026-09-24): the panes read a shade darker, and because the ramp's lightness falls by the same amount per step, every offset between a pane and what is painted on it is exactly what it was. The canvas kept its original step, and so did what lies directly on it -- the sidebar's washes, current row, badges and notice, and the canvas rule etch -- so the sidebar is unchanged and a pane now stands one step nearer the canvas. Ink did not move. Light floats at step 25, primary at 50, canvas at 75, inset at 125; dark at 775, 850, 900, 975.
+Every fill and edge on a pane sits one step under where the ramp was first assigned (2026-09-24): the panes read a shade darker, and because the ramp's lightness falls by the same amount per step, every offset between a pane and what is painted on it is exactly what it was. The canvas kept its original step, and so did what lies directly on it -- the sidebar's washes, current row, badges and notice, and the canvas rule etch -- so the sidebar is unchanged and a pane now stands one step nearer the canvas. Ink did not move, except muted text, which went one step darker in light to hold its margin on the inset surface. Light floats at step 25, primary at 50, canvas at 75, inset at 125; dark at 775, 850, 900, 975.
 
 Dividers inside a pane (the header's rule, the runs column's edge, the sheet head's line) take `--sp-raised-edge`, the pane's own edge colour, because their ground is the pane; `--sp-divider-etch` is only for rules on the canvas.
 
@@ -211,6 +211,8 @@ Both are **flat under the pointer**: `--sp-accent-hover` and `--sp-commit-hover`
 
 `--sp-text-muted` reads below AA on `--sp-surface-selected` in light. That is safe only because every consumer of that fill swaps its ink to primary in the same rule. A Playwright test asserts that no element painting the selected fill has muted-coloured text anywhere inside it.
 
+Quieten text with a role, never with `opacity`. The contrast contracts measure a role's colour, not what an opacity leaves of it, so faded ink escapes them; `text-muted` is already the quietest text that clears AA. The one exception, the "of" in a run's tally, is measured and noted beside its face.
+
 Prefer a step that works on every ground it actually paints on over ink that adapts to its surface. Contextual ink is possible -- custom properties inherit, and `surface-menu-badge` already reads stops its row publishes -- but it makes "muted" stop being a colour, it cannot be reasoned about locally, and it does not survive a portal. Keep it for declared, contract-checked exceptions.
 
 ### Tuning a theme
@@ -229,14 +231,14 @@ Run **`pnpm dev:styles`** (webpack) rather than `pnpm dev` (Turbopack) when the 
 
 Ink steps are **toward presence**, never "darker": the dark half of a pair moves lighter as the light half moves darker, so a role says the same thing on either canvas. `--sp-text-muted-strong`, `--sp-header-ink` and the sheet's three rungs all read this way, and a pair that moves only one half opens or closes the gap between two roles by half a step without saying so.
 
-`--sp-text-muted` is as quiet as AA at micro allows on `--sp-surface-inset` (contract `muted-on-inset-surface`). It is most of the small text in the app, so the quiet it is chosen for can be overdone, and a light surface darker than `--sp-surface-selected` puts it back under AA -- which is why that surface pairs with a primary ink.
+`--sp-text-muted` is as quiet as it can be while clearing the 4.75:1 target on `--sp-surface-inset` (contract `muted-on-inset-surface`); it moved one step darker when the panes did, the one ink that followed them. It is most of the small text in the app, so the quiet it is chosen for can be overdone, and a light surface darker than `--sp-surface-selected` puts it back under AA -- which is why that surface pairs with a primary ink.
 
 ### State colours
 
 State colours have two layers in `app/styles/state.css`:
 
 - **Numbered steps** hold Radix values: `--sp-state-verified-11` is Radix grass 11, with light and dark variants. Unavailable is the neutral ramp.
-- **Bare names** are the text role: `--sp-state-verified` is step 11 in dark and, in light, a third of the way from 11 to 12. Radix tunes 11 against its own palest steps, and on the app's panes it read 4.0-4.5:1; the mix clears AA on every surface while keeping most of the hue. `text-severity-ink` is deepened the same way. Use the bare name (or a role built on it) for any state text; fills and tints read the numbered steps.
+- **Bare names** are the text role: `--sp-state-verified` is step 11 in dark and, in light, two fifths of the way from 11 to 12. Radix tunes 11 against its own palest steps, and on the app's panes it read 4.0-4.5:1; the mix clears AA on every surface while keeping most of the hue. `text-severity-ink` is deepened the same way. Use the bare name (or a role built on it) for any state text; fills and tints read the numbered steps.
 
 The six state scales (advisory, verified, caution, decision, blocked and unavailable) expose steps **1, 3, 4, 5, 6, 7, 9, 10, 11 and 12**. Destructive is an action text role and exposes only steps 11 and 12 and its bare alias. Steps 2 and 8 are not part of the app's token API. Every scale uses the same step number in each theme.
 

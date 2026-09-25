@@ -6,7 +6,7 @@ import {
   formatLondonDateTime,
   formatMoney,
   presentReview,
-} from './present-review';
+} from './index';
 
 const replay = loadReviewedReplay();
 const presentation = presentReview(replay);

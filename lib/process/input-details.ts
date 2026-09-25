@@ -8,7 +8,7 @@ import {
   formatLondonDateTime,
   formatMoney,
   formatPercent,
-} from '../review-presentation/present-review';
+} from '../review-presentation';
 import {
   PROMOTION_PACKS,
   inputIdFor,

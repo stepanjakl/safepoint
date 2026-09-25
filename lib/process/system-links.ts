@@ -2,7 +2,7 @@ import type {
   ReviewedReplay,
   ScenarioEvidencePack,
 } from '../promotion-release';
-import type { AdapterMode } from '../review-presentation/present-review';
+import type { AdapterMode } from '../review-presentation';
 
 // The list is the declaration and the type is derived from it, so an icon set
 // can be checked for completeness against the same vocabulary the links use.

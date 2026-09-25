@@ -50,7 +50,7 @@ Automated browser checks cover menu navigation, rapid reversal and focus restora
 
 ## Process header and setup
 
-Status: direction agreed 15 September 2026. The editable title, setup drawer, side panel, and Settings tab are implemented; the Inputs and Outputs header buttons and tabs replace the systems summary and Systems tab next. Use the [product terminology](PRODUCT-BRIEF.md#product-terminology).
+Status: direction agreed 15 September 2026. The editable title, setup drawer, side panel, Settings tab, and the Inputs and Outputs header buttons and tabs are implemented. Use the [product terminology](PRODUCT-BRIEF.md#product-terminology).
 
 The portfolio has no live source systems. A run's **inputs** are its JSON evidence files: analysed extracts that serve as the run's source of truth, produced and updated outside Safepoint. Its **outputs** are the APIs the process may call once changes are approved. The header and the setup drawer describe both for what they are, as the recorded run used them.
 

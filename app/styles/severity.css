@@ -7,10 +7,10 @@
 @theme inline {
   /* The names markup already says, each pinned to a rung. A pill rests on 3
      and lifts to 4; the bar behind it is the solid 9; text is step 11 --
-     deepened a third toward 12 in light, as state text is, so it clears AA on
+     deepened two fifths toward 12 in light, as state text is, so it clears AA on
      the panes as well as on its own fill -- and an annotation is 12. */
   --color-severity-ink: light-dark(
-    color-mix(in oklab, var(--severity-12) 35%, var(--severity-11)),
+    color-mix(in oklab, var(--severity-12) 40%, var(--severity-11)),
     var(--severity-11)
   );
   --color-severity-fill: var(--severity-3);

@@ -1,386 +1,220 @@
 import { notFound } from 'next/navigation';
-import SortArrowUpDown from 'blode-icons-react/icons/sort-arrow-up-down';
 
-import { Button, ICON_SHAPE } from '@/components/ui/button';
-import { cx } from '@/lib/cx';
+import report from '@/docs/generated/colour-theme-report.json';
 
-import { ContrastReadout } from './contrast-readout';
+import { Pair, Swatch } from './measure';
 
 /*
-  Development only: the accent (cyan) and Save-order (teal) faces under
-  candidate palettes, side by side in both themes, as live controls.
-
-  Each panel declares its own stops with native light-dark() in a runtime
-  <style>, so a light and a dark panel can sit on one page: the stops resolve
-  against the panel's own colour scheme rather than the root's.
-
-  Every option is flat under the pointer: both face stops and both ring stops
-  take one colour, and the highlight goes transparent over it, so face, edge
-  and sheen read as a single fill.
+  Development only: the colour system as the page paints it. Every swatch and
+  every ratio is read live, so switching theme or neutral family in the design
+  pane updates the page in place. Step numbers come from the generated colour
+  report, which `pnpm check:colours` keeps in step with the stylesheets.
 */
 
-type Hue = 'cyan' | 'teal';
-/* One theme's stops. A hover colour stands for all five hover values. */
-type Theme = {
-  top: string;
-  bottom: string;
-  ringTop: string;
-  ringBottom: string;
-  edge: string;
-  hover: string;
-};
-type Family = { light: Theme; dark: Theme };
-
-const mix = (a: string, b: string, share = 50) =>
-  `color-mix(in oklab, ${a} ${share}%, ${b})`;
-
-/*
-  A Radix step in shorthand: `9` is the light scale's step 9, `d9` the dark
-  scale's, and `d7@45+d8` is 45% of dark 7 mixed with dark 8. Radix keeps its
-  vivid mid-tones in the dark scale, which is where Tailwind's cyan and teal
-  sit, so the light theme reads from it too.
-*/
-function radix(hue: Hue, spec: string): string {
-  const step = (part: string) =>
-    part.startsWith('d')
-      ? `var(--radix-${hue}-dark-${part.slice(1)})`
-      : `var(--radix-${hue}-${part})`;
-  const blend = /^(d?\d+)@(\d+)\+(d?\d+)$/.exec(spec);
-  if (blend) return mix(step(blend[1]!), step(blend[3]!), Number(blend[2]));
-  return step(spec);
-}
-
-type Specs = Omit<Theme, 'edge'> & { edge?: string };
-
-function fromRadix(hue: Hue, specs: { light: Specs; dark: Specs }): Family {
-  const theme = (which: 'light' | 'dark'): Theme => {
-    const s = specs[which];
-    const top = radix(hue, s.top);
-    return {
-      top,
-      bottom: radix(hue, s.bottom),
-      ringTop: radix(hue, s.ringTop),
-      ringBottom: radix(hue, s.ringBottom),
-      /* Dark's sheen is the face itself, a fifth darker: a light line on a
-         lit face in dark reads as glare. */
-      edge: s.edge ? radix(hue, s.edge) : mix('black', top, 20),
-      hover: radix(hue, s.hover),
-    };
-  };
-  return { light: theme('light'), dark: theme('dark') };
-}
-
-/* Tailwind v4's cyan and teal, as shipped before the move to Radix. */
-const TW = {
-  c300: 'oklch(86.5% 0.127 207.078)',
-  c400: 'oklch(78.9% 0.154 211.53)',
-  c500: 'oklch(71.5% 0.143 215.221)',
-  c600: 'oklch(60.9% 0.126 221.723)',
-  c700: 'oklch(52% 0.105 223.128)',
-  c800: 'oklch(45% 0.085 224.283)',
-  t400: 'oklch(77.7% 0.152 181.912)',
-  t500: 'oklch(70.4% 0.14 182.503)',
-  t600: 'oklch(60% 0.118 184.704)',
-  t700: 'oklch(51.1% 0.096 186.391)',
-  t800: 'oklch(43.7% 0.078 188.216)',
+type Role = { cssVariable: string; light: number; dark: number };
+const roles = report.roles as Record<string, Role>;
+const stepsOf = (variable: string) => {
+  const role = Object.values(roles).find(
+    (entry) => entry.cssVariable === variable,
+  );
+  return role ? `${role.light} / ${role.dark}` : undefined;
 };
 
-const TAILWIND: Record<Hue, Family> = {
-  cyan: {
-    light: {
-      top: TW.c400,
-      bottom: TW.c600,
-      ringTop: TW.c500,
-      ringBottom: TW.c700,
-      edge: TW.c300,
-      hover: TW.c600,
-    },
-    dark: {
-      top: mix(TW.c600, TW.c700, 25),
-      bottom: mix(TW.c700, TW.c800),
-      ringTop: mix(TW.c500, TW.c600),
-      ringBottom: mix(TW.c700, TW.c800),
-      edge: mix('black', mix(TW.c600, TW.c700, 25), 20),
-      hover: TW.c700,
-    },
-  },
-  teal: {
-    light: {
-      top: TW.t500,
-      bottom: TW.t700,
-      ringTop: TW.t700,
-      ringBottom: TW.t800,
-      edge: TW.t400,
-      hover: TW.t700,
-    },
-    dark: {
-      top: mix(TW.t600, TW.t700, 25),
-      bottom: mix(TW.t700, TW.t800),
-      ringTop: mix(TW.t400, TW.t500),
-      ringBottom: mix(TW.t700, TW.t800),
-      edge: mix('black', mix(TW.t600, TW.t700, 25), 10),
-      hover: TW.t700,
-    },
-  },
-};
+const SURFACES = [
+  ['--sp-surface-floating', 'Floating'],
+  ['--sp-surface-primary', 'Primary (panes)'],
+  ['--sp-canvas', 'Canvas'],
+  ['--sp-surface-inset', 'Inset'],
+  ['--sp-surface-control', 'Control'],
+  ['--sp-surface-selected', 'Selected'],
+  ['--sp-surface-hover', 'Hover'],
+  ['--sp-surface-disabled', 'Disabled'],
+] as const;
 
-type Option = {
-  id: string;
-  name: string;
-  note: string;
-  accent: Family;
-  commit: Family;
-};
+const INKS = [
+  ['--sp-text-primary', 'Primary', 4.5],
+  ['--sp-text-muted-strong', 'Muted strong', 4.5],
+  ['--sp-text-muted', 'Muted', 4.5],
+] as const;
 
-const OPTIONS: Option[] = [
-  {
-    id: 'tailwind',
-    name: 'A · Tailwind, flat hover',
-    note: 'Today’s stops, the reference. Only the hover changes: one flat colour.',
-    accent: TAILWIND.cyan,
-    commit: TAILWIND.teal,
-  },
-  {
-    id: 'fitted',
-    name: 'B · Radix fitted to Tailwind',
-    note: 'Each stop is the blend of two adjacent Radix steps closest to its Tailwind original — within ΔE 0.015 for most, about the threshold of noticing.',
-    accent: fromRadix('cyan', {
-      light: {
-        top: 'd11',
-        bottom: '10@80+11',
-        ringTop: 'd10@80+d11',
-        ringBottom: 'd7@45+d8',
-        edge: 'd11@50+d12',
-        hover: '10@80+11',
-      },
-      dark: {
-        top: 'd7@15+d8',
-        bottom: 'd7@90+d8',
-        ringTop: 'd9@95+d10',
-        ringBottom: 'd7@90+d8',
-        hover: 'd7@45+d8',
-      },
-    }),
-    commit: fromRadix('teal', {
-      light: {
-        top: 'd10@80+d11',
-        bottom: 'd7@40+d8',
-        ringTop: 'd7@40+d8',
-        ringBottom: 'd6@60+d7',
-        edge: 'd10@10+d11',
-        hover: 'd7@40+d8',
-      },
-      dark: {
-        top: 'd7@5+d8',
-        bottom: 'd7@95+d8',
-        ringTop: 'd10@45+d11',
-        ringBottom: 'd7@95+d8',
-        hover: 'd7@40+d8',
-      },
-    }),
-  },
-  {
-    id: 'nearest',
-    name: 'C · Radix nearest steps',
-    note: 'Each stop is the single Radix step closest to Tailwind: no blends, within ΔE 0.015–0.04.',
-    accent: fromRadix('cyan', {
-      light: {
-        top: 'd11',
-        bottom: '10',
-        ringTop: 'd10',
-        ringBottom: '11',
-        edge: 'd12',
-        hover: '10',
-      },
-      dark: {
-        top: 'd8',
-        bottom: 'd7',
-        ringTop: '9',
-        ringBottom: 'd7',
-        hover: 'd8',
-      },
-    }),
-    commit: fromRadix('teal', {
-      light: {
-        top: 'd10',
-        bottom: 'd8',
-        ringTop: 'd8',
-        ringBottom: 'd6',
-        edge: 'd11',
-        hover: 'd8',
-      },
-      dark: {
-        top: 'd8',
-        bottom: 'd7',
-        ringTop: 'd11',
-        ringBottom: 'd7',
-        hover: 'd8',
-      },
-    }),
-  },
-  {
-    id: 'fitted-calmer',
-    name: 'D · Radix fitted, calmer top',
-    note: 'B, with light’s glowing top brought down to Radix’s solid 9: less neon, and the label gains contrast where Tailwind is weakest.',
-    accent: fromRadix('cyan', {
-      light: {
-        top: '9',
-        bottom: '10@80+11',
-        ringTop: 'd10@80+d11',
-        ringBottom: 'd7@45+d8',
-        edge: '8',
-        hover: '10@80+11',
-      },
-      dark: {
-        top: 'd7@15+d8',
-        bottom: 'd7@90+d8',
-        ringTop: 'd9@95+d10',
-        ringBottom: 'd7@90+d8',
-        hover: 'd7@45+d8',
-      },
-    }),
-    commit: fromRadix('teal', {
-      light: {
-        top: '9',
-        bottom: 'd7@40+d8',
-        ringTop: 'd7@40+d8',
-        ringBottom: 'd6@60+d7',
-        edge: '8',
-        hover: 'd7@40+d8',
-      },
-      dark: {
-        top: 'd7@5+d8',
-        bottom: 'd7@95+d8',
-        ringTop: 'd10@45+d11',
-        ringBottom: 'd7@95+d8',
-        hover: 'd7@40+d8',
-      },
-    }),
-  },
-  {
-    id: 'solids',
-    name: 'E · Radix solids',
-    note: 'Radix’s own solid steps, 9 and 10, each theme from its own scale.',
-    accent: fromRadix('cyan', {
-      light: {
-        top: '9',
-        bottom: '10',
-        ringTop: '10',
-        ringBottom: '11',
-        edge: '8',
-        hover: '10',
-      },
-      dark: {
-        top: 'd10',
-        bottom: 'd9',
-        ringTop: 'd11',
-        ringBottom: 'd8',
-        hover: 'd9',
-      },
-    }),
-    commit: fromRadix('teal', {
-      light: {
-        top: '9',
-        bottom: '10',
-        ringTop: '10',
-        ringBottom: '11',
-        edge: '8',
-        hover: '10',
-      },
-      dark: {
-        top: 'd10',
-        bottom: 'd9',
-        ringTop: 'd11',
-        ringBottom: 'd8',
-        hover: 'd9',
-      },
-    }),
-  },
-];
+const TEXT_GROUNDS = [
+  '--sp-surface-floating',
+  '--sp-surface-primary',
+  '--sp-canvas',
+  '--sp-surface-inset',
+] as const;
 
-function declarations(prefix: string, { light, dark }: Family) {
-  const pair = (key: keyof Theme) => `light-dark(${light[key]}, ${dark[key]})`;
-  const tokens: Record<string, string> = {
-    'face-top': pair('top'),
-    'face-bottom': pair('bottom'),
-    'ring-top': pair('ringTop'),
-    'ring-bottom': pair('ringBottom'),
-    edge: pair('edge'),
-    'face-top-hover': pair('hover'),
-    'face-bottom-hover': pair('hover'),
-    'ring-top-hover': pair('hover'),
-    'ring-bottom-hover': pair('hover'),
-  };
-  return Object.entries(tokens)
-    .map(([name, value]) => `--sp-${prefix}-${name}: ${value};`)
-    .join(' ');
-}
+const STATES = [
+  'advisory',
+  'verified',
+  'caution',
+  'decision',
+  'blocked',
+] as const;
+const STATE_STEPS = [1, 3, 4, 5, 6, 7, 9, 10, 11, 12] as const;
 
-const STYLE = OPTIONS.map(
-  (option) =>
-    `[data-accent-option='${option.id}'] { ${declarations('accent', option.accent)} ${declarations('commit', option.commit)} background: light-dark(var(--sp-neutral-25), var(--sp-neutral-825)); color: light-dark(var(--sp-neutral-925), var(--sp-neutral-100)); }`,
-).join('\n');
+/* Each structural edge on the face it is drawn over. */
+/* Sheens are one ramp step above their face by design -- present, not
+   prominent -- so they are held to a step's worth, not to a divider's floor. */
+const SHEENS = [
+  ['--sp-raised-edge', '--sp-surface-primary', 'Pane sheen and dividers'],
+  ['--sp-floating-edge', '--sp-surface-floating', 'Floating sheen'],
+  ['--sp-divider-etch', '--sp-canvas', 'Canvas rule etch'],
+] as const;
 
-const THEMES = ['light', 'dark'] as const;
+const EDGES = [
+  ['--sp-rule-faint', '--sp-surface-primary', 'Faint rule on a pane'],
+  ['--sp-rule-default', '--sp-surface-primary', 'Default rule on a pane'],
+  ['--sp-rule-faint', '--sp-surface-floating', 'Faint rule on floating'],
+  ['--sp-field-edge', '--sp-field-face', 'Field edge'],
+  ['--sp-field-edge-active', '--sp-field-face', 'Field edge, focused'],
+] as const;
+
+const RAMP = Array.from({ length: 41 }, (_, index) => index * 25);
+
+const SECTION = 'grid gap-3';
+const HEADING = 'text-title font-semibold';
+const NOTE = 'text-meta text-muted max-w-3xl';
 
 export default function WorkbenchPage() {
   if (process.env.NODE_ENV !== 'development') notFound();
 
   return (
-    <main id="main" className="bg-canvas text-primary min-h-dvh p-6">
-      <style>{STYLE}</style>
-      <h1 className="text-title font-semibold">Accent comparison</h1>
-      <p className="text-meta text-muted mt-1 max-w-2xl">
-        The primary action and the Save-order toggle under each candidate
-        palette, flat under the pointer. Hover and tab through them: every state
-        is live. Figures are white-label contrast on the face&rsquo;s top,
-        bottom and hover colour, measured from what the page paints.
-      </p>
-      <div className="mt-6 grid gap-5">
-        {OPTIONS.map((option) => (
-          <section key={option.id} aria-labelledby={`option-${option.id}`}>
-            <h2 id={`option-${option.id}`} className="text-dense font-semibold">
-              {option.name}
-            </h2>
-            <p className="text-meta text-muted max-w-3xl">{option.note}</p>
-            <div className="mt-2 grid gap-3 sm:grid-cols-2">
-              {THEMES.map((theme) => (
-                <div
-                  key={theme}
-                  data-theme={theme}
-                  data-accent-option={option.id}
-                  className="rounded-shell border-rule-faint grid gap-3 border p-4"
-                >
-                  <span className="readout">{theme}</span>
-                  <div className="flex items-center gap-4">
-                    <Button variant="primary">Review release</Button>
-                    <button
-                      type="button"
-                      aria-label="Save order"
-                      className={cx(
-                        ICON_SHAPE,
-                        'control-face control-commit hover:control-commit-hover focus-visible:control-commit-hover size-7.5 text-white',
-                      )}
-                    >
-                      <SortArrowUpDown className="size-4" aria-hidden="true" />
-                    </button>
-                  </div>
-                  <dl className="text-micro grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">
-                    <dt className="opacity-70">Accent</dt>
-                    <dd>
-                      <ContrastReadout family="accent" />
-                    </dd>
-                    <dt className="opacity-70">Save order</dt>
-                    <dd>
-                      <ContrastReadout family="commit" />
-                    </dd>
-                  </dl>
-                </div>
+    <main
+      id="main"
+      className="bg-canvas text-primary grid min-h-dvh content-start gap-10 p-6"
+    >
+      <header className="grid gap-1">
+        <h1 className="text-display font-semibold">Colour reference</h1>
+        <p className={NOTE}>
+          The colour system as this page paints it. Switch theme and neutral
+          family from the design pane: every swatch and ratio re-reads. Steps
+          are light / dark on the one neutral ramp.
+        </p>
+      </header>
+
+      <section className={SECTION} aria-labelledby="surfaces">
+        <h2 id="surfaces" className={HEADING}>
+          Surfaces
+        </h2>
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-3">
+          {SURFACES.map(([token, name]) => (
+            <Swatch
+              key={token}
+              token={token}
+              label={`${name}${stepsOf(token) ? ` · ${stepsOf(token)}` : ''}`}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section className={SECTION} aria-labelledby="text">
+        <h2 id="text" className={HEADING}>
+          Text on surfaces
+        </h2>
+        <p className={NOTE}>
+          Neutral ink and state text on every ground they sit on, against the AA
+          floor for body text.
+        </p>
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-2">
+          {TEXT_GROUNDS.flatMap((ground) => [
+            ...INKS.map(([ink, name, floor]) => (
+              <Pair
+                key={`${ink}${ground}`}
+                fg={ink}
+                bg={ground}
+                floor={floor}
+                label={`${name} on ${ground.replace('--sp-', '')}`}
+              />
+            )),
+            ...STATES.map((state) => (
+              <Pair
+                key={`${state}${ground}`}
+                fg={`--sp-state-${state}`}
+                bg={ground}
+                floor={4.5}
+                label={`${state} on ${ground.replace('--sp-', '')}`}
+              />
+            )),
+          ])}
+        </div>
+      </section>
+
+      <section className={SECTION} aria-labelledby="edges">
+        <h2 id="edges" className={HEADING}>
+          Edges and rules
+        </h2>
+        <p className={NOTE}>
+          Each structural line on the face it is drawn over. Sheens sit one ramp
+          step above their face, about 1.06:1 by design; dividers are decorative
+          and hold 1.2:1; a field&rsquo;s focused edge is its focus indicator
+          and holds 3:1.
+        </p>
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-2">
+          {SHEENS.map(([edge, face, name]) => (
+            <Pair
+              key={`${edge}${face}`}
+              fg={edge}
+              bg={face}
+              floor={1.04}
+              kind="line"
+              label={`${name} · one step`}
+            />
+          ))}
+          {EDGES.map(([edge, face, name]) => (
+            <Pair
+              key={`${edge}${face}`}
+              fg={edge}
+              bg={face}
+              floor={edge === '--sp-field-edge-active' ? 3 : 1.2}
+              kind="line"
+              label={name}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section className={SECTION} aria-labelledby="states">
+        <h2 id="states" className={HEADING}>
+          State scales
+        </h2>
+        <div className="grid gap-2">
+          {STATES.map((state) => (
+            <div
+              key={state}
+              className="grid grid-cols-[6rem_repeat(10,minmax(0,1fr))] items-end gap-2"
+            >
+              <span className="text-meta text-muted pb-5">{state}</span>
+              {STATE_STEPS.map((step) => (
+                <Swatch
+                  key={step}
+                  token={`--sp-state-${state}-${step}`}
+                  label={String(step)}
+                />
               ))}
             </div>
-          </section>
-        ))}
-      </div>
+          ))}
+        </div>
+      </section>
+
+      <section className={SECTION} aria-labelledby="ramp">
+        <h2 id="ramp" className={HEADING}>
+          Neutral ramp
+        </h2>
+        <p className={NOTE}>
+          All 41 steps of the active family. Lightness falls by the same amount
+          at every step, so one step is the same difference anywhere on it.
+        </p>
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(4.5rem,1fr))] gap-2">
+          {RAMP.map((step) => (
+            <Swatch
+              key={step}
+              token={`--sp-neutral-${step}`}
+              label={String(step)}
+            />
+          ))}
+        </div>
+      </section>
     </main>
   );
 }

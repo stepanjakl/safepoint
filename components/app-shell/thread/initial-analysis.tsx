@@ -74,7 +74,7 @@ export function InitialAnalysis({
           </ul>
         </section>
       ) : null}
-      <p className="text-muted text-meta mt-3 opacity-80">
+      <p className="text-muted text-meta mt-3">
         Placeholder. The engine does not yet publish the analysis it ran.
       </p>
     </div>

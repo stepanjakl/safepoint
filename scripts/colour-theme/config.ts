@@ -185,7 +185,7 @@ export const ROLE_ASSIGNMENTS = {
   },
   textMuted: {
     cssVariable: '--sp-text-muted',
-    light: 575,
+    light: 600,
     dark: 325,
   },
   textMutedStrong: {

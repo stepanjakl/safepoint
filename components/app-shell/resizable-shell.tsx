@@ -27,11 +27,8 @@ import {
   subscribeAssistantPreferences,
 } from '@/components/app-shell/assistant/assistant-state';
 import { AssistantPanel } from '@/components/app-shell/assistant/assistant-panel';
-import {
-  SidebarResizeHandle,
-  SidebarSizeProbes,
-  useResizableSidebar,
-} from './sidebar-resize';
+import { SidebarResizeHandle, SidebarSizeProbes } from './sidebar-resize';
+import { useResizableSidebar } from './use-resizable-sidebar';
 
 /** Layout owns the two independent panels; server-rendered children stay opaque. */
 export function ResizableShell({

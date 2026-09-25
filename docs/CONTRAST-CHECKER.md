@@ -83,8 +83,15 @@ from `pnpm test`.
 checks the neutral-family preference contract (URL, storage, blocked storage,
 the design pane and reset), that every family paints its own ramp, that every
 structural edge is opaque, that the primary action is flat under the pointer,
-that muted ink never sits on the selected surface, and forced colours and
+that muted ink never sits on the selected surface, that state text clears
+4.5:1 on every surface it can sit on and white labels hold 3:1 on the accent
+and commit faces -- measured as the page resolves them, since those are mixes
+of Radix steps the ramp contracts do not cover -- and forced colours and
 narrow layout.
+
+The axe sweep covers home, the workspace menu, search, arrange mode, a
+tooltip, the release review, and both example pages, which put every run
+outcome and freshness side by side.
 
 The current fictional home data has two confirmed findings that predate the
 2026-09-24 colour refactor: the decorative `aria-hidden` pale wordmark and the

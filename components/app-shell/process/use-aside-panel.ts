@@ -1,0 +1,136 @@
+'use client';
+
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+
+import {
+  viewKey,
+  type AsideView,
+  type SwapDirection,
+} from '@/components/app-shell/drawer-aside';
+
+/**
+ * The detail drawer beside a tab's list: which view it shows, the one leaving
+ * while another arrives, which way the swap travels, and where focus goes when
+ * it closes. The tab supplies `place`, where a view sits in the list it was
+ * chosen from, so a swap toward an earlier item travels up.
+ */
+export function useAsidePanel({
+  initial,
+  place,
+}: {
+  initial: AsideView | null;
+  place: (view: AsideView) => number;
+}) {
+  // The view on show. It stays set while the panel animates out, with
+  // `exiting` marking that, so the panel leaves with its content in it.
+  const [aside, setAside] = useState<AsideView | null>(initial);
+  const [exiting, setExiting] = useState(false);
+  // The view being swapped out, kept while its content leaves.
+  const [leaving, setLeaving] = useState<AsideView | null>(null);
+  // Which way the swap travels: towards an item further down its list or
+  // back up it.
+  const [direction, setDirection] = useState<SwapDirection>('down');
+  // What opened the panel, so closing it puts focus back there. A choice made
+  // inside the panel -- paging to another change -- keeps the original.
+  const opener = useRef<HTMLElement | null>(null);
+  // Where focus returns once a closing panel is gone.
+  const returnTo = useRef<HTMLElement | null>(null);
+
+  const finishExit = () => {
+    setAside(null);
+    setLeaving(null);
+    setExiting(false);
+  };
+  // Changing tab takes the detail with it -- what it was showing belongs to a
+  // list that is no longer here -- and the sheet does that by keying this
+  // component on the tab, so there is no state to reset by hand.
+  // Focus moved back when the close began. If the panel took it with it on
+  // the way out -- it held focus, and unmounting drops focus to the body --
+  // put it back once the panel is actually gone.
+  useEffect(() => {
+    if (aside !== null) return;
+    const target = returnTo.current;
+    returnTo.current = null;
+    const active = document.activeElement;
+    if (target?.isConnected && (!active || active === document.body)) {
+      target.focus();
+    }
+  }, [aside]);
+  const closeAside = (focusId?: string) => {
+    if (aside === null || exiting) return;
+    // Where focus goes back to: the element named, or else the row marked as
+    // having this panel open -- the opener by definition, and the only
+    // reliable one, since some browsers (Safari) do not focus a button on
+    // click. The element focused when the panel opened is the last resort.
+    const expanded = document.querySelector<HTMLElement>(
+      '.process-panels [aria-expanded="true"]',
+    );
+    const recorded = opener.current?.isConnected ? opener.current : null;
+    const target = focusId
+      ? document.getElementById(focusId)
+      : (expanded ?? recorded);
+    opener.current = null;
+    returnTo.current = target;
+    requestAnimationFrame(() => target?.focus());
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      finishExit();
+      return;
+    }
+    // DrawerAside unmounts itself through finishExit when its exit has run.
+    setLeaving(null);
+    setExiting(true);
+  };
+  const openAside = (view: AsideView) => {
+    // The control that opened the panel closes it.
+    if (aside && !exiting && viewKey(aside) === viewKey(view)) {
+      closeAside();
+      return;
+    }
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && !active.closest('.drawer-aside')) {
+      opener.current = active;
+    }
+    returnTo.current = null;
+    // Swapping one detail for another lets the old content leave while the
+    // new one arrives. With reduced motion it is simply replaced: two layers
+    // with nothing moving would only overlap.
+    const reduce = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
+    setLeaving(aside && !exiting && !reduce ? aside : null);
+    if (aside && !exiting) setDirection(swapDirection(aside, view));
+    setExiting(false);
+    setAside(view);
+  };
+  const onKeyDownCapture = (event: KeyboardEvent) => {
+    if (event.key !== 'Escape' || aside === null || exiting) return;
+    // A dialog centred over the sheet answers its own Escape.
+    if (document.querySelector('[role=alertdialog]')) return;
+    event.stopPropagation();
+    closeAside();
+  };
+
+  function swapDirection(from: AsideView, to: AsideView): SwapDirection {
+    const was = place(from);
+    const is = place(to);
+    return from.kind === to.kind && was >= 0 && is >= 0 && is < was
+      ? 'up'
+      : 'down';
+  }
+
+  return {
+    aside,
+    exiting,
+    leaving,
+    direction,
+    openAside,
+    closeAside,
+    finishExit,
+    onKeyDownCapture,
+    /** The opener no longer exists, so focus is placed by the caller. */
+    forgetOpener: () => {
+      opener.current = null;
+    },
+    settleLeaving: () => setLeaving(null),
+  };
+}

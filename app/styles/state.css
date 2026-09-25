@@ -15,34 +15,35 @@
    ────────────────────────────────────────────────────────────────────────── */
 
 :root {
-  /* State text. In light, a third of the way from step 11 to 12: Radix sets
-     11 against its own palest steps, and on the panes it read 4.0-4.5:1. This
-     clears AA on every surface while keeping most of the hue, which is the
-     message. Dark's 11 already clears it. Fills read the numbered steps. */
+  /* State text. In light, two fifths of the way from step 11 to 12: Radix
+     sets 11 against its own palest steps, and on the panes it read 4.0-4.5:1.
+     This clears AA on every surface, the inset included -- caution is the
+     tightest, at 4.7:1 -- while keeping most of the hue, which is the message.
+     Dark's 11 already clears it. Fills read the numbered steps. */
   --sp-state-advisory: light-dark(
-    color-mix(in oklab, var(--sp-state-advisory-12) 35%, var(--sp-state-advisory-11)),
+    color-mix(in oklab, var(--sp-state-advisory-12) 40%, var(--sp-state-advisory-11)),
     var(--sp-state-advisory-11)
   );
   --sp-state-verified: light-dark(
-    color-mix(in oklab, var(--sp-state-verified-12) 35%, var(--sp-state-verified-11)),
+    color-mix(in oklab, var(--sp-state-verified-12) 40%, var(--sp-state-verified-11)),
     var(--sp-state-verified-11)
   );
   --sp-state-caution: light-dark(
-    color-mix(in oklab, var(--sp-state-caution-12) 35%, var(--sp-state-caution-11)),
+    color-mix(in oklab, var(--sp-state-caution-12) 40%, var(--sp-state-caution-11)),
     var(--sp-state-caution-11)
   );
   --sp-state-decision: light-dark(
-    color-mix(in oklab, var(--sp-state-decision-12) 35%, var(--sp-state-decision-11)),
+    color-mix(in oklab, var(--sp-state-decision-12) 40%, var(--sp-state-decision-11)),
     var(--sp-state-decision-11)
   );
   --sp-state-blocked: light-dark(
-    color-mix(in oklab, var(--sp-state-blocked-12) 35%, var(--sp-state-blocked-11)),
+    color-mix(in oklab, var(--sp-state-blocked-12) 40%, var(--sp-state-blocked-11)),
     var(--sp-state-blocked-11)
   );
   --sp-state-unavailable: var(--sp-state-unavailable-11);
   /* Destructive is an action text role: steps 11 and 12 only, not a scale. */
   --sp-state-destructive: light-dark(
-    color-mix(in oklab, var(--sp-state-destructive-12) 35%, var(--sp-state-destructive-11)),
+    color-mix(in oklab, var(--sp-state-destructive-12) 40%, var(--sp-state-destructive-11)),
     var(--sp-state-destructive-11)
   );
   --sp-state-destructive-11: light-dark(var(--radix-ruby-11), var(--radix-ruby-dark-11));

@@ -1,3 +1,5 @@
 pnpm-lock.yaml
 *.md
 next-env.d.ts
+# Written by pnpm check:visual:update
+e2e/visual-baseline/
