@@ -47,6 +47,7 @@ import {
   setSlantRadius,
 } from './design-preferences';
 import { startMotionDebug } from './motion-debug';
+import { INSPECT_EVENT } from './style-lookup';
 
 function readPreferences() {
   return {
@@ -185,6 +186,9 @@ export function mountDesignPane(host: HTMLElement) {
   railBinding.element
     .querySelector('input')
     ?.setAttribute('aria-label', 'Icon axis guides');
+  debug
+    .addButton({ title: 'Inspect styles', label: 'Hold ⌥' })
+    .on('click', () => window.dispatchEvent(new Event(INSPECT_EVENT)));
 
   // Bindings use native selects. Name them explicitly for screen readers.
   for (const binding of [...bindings, speedBinding]) {

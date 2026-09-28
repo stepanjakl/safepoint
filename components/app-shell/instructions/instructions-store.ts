@@ -2,7 +2,7 @@
 
 import { useMemo, useSyncExternalStore } from 'react';
 import { z } from 'zod';
-import type { ProcessSummary } from '@/lib/process/placeholder-process';
+import type { ProcessSummary } from '@/lib/process/model';
 
 /*
   Instruction versions a person has published, and the draft they are working

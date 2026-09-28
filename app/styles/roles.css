@@ -28,7 +28,7 @@
   --sp-surface-control: light-dark(var(--sp-neutral-25), var(--sp-neutral-750));
   /* The darkest light-theme ground and muted ink's thinnest margin, so a
      control taking this fill moves its ink to primary too. */
-  --sp-surface-selected: light-dark(var(--sp-neutral-225), var(--sp-neutral-725));
+  --sp-surface-selected: light-dark(var(--sp-neutral-175), var(--sp-neutral-725));
   /* The wash a control takes under the pointer. Light deepens, dark lifts --
      --sp-surface-inset is the deepest step on the ramp, so using it as a hover
      state put a hole under the pointer in dark. */

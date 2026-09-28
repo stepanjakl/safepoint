@@ -76,7 +76,7 @@ function plural(count: number, noun: Noun): string {
 
 // Everything that is not `will_apply` is something a person has to look at.
 // One question, so one derivation: the tabs below the line answer which bucket.
-export function needingAttention(counts: DispositionCounts): number {
+function needingAttention(counts: DispositionCounts): number {
   return counts.blocked + counts.needs_decision + counts.deferred;
 }
 
@@ -104,7 +104,7 @@ export function attentionLine(counts: DispositionCounts, noun: Noun): string {
 // Past the budget the item list stops being readable at all, so the shape of
 // the problem -- the reason distribution -- is what the card shows instead.
 export const ROW_BUDGET = 8;
-export const MAX_REASON_ROWS = 5;
+const MAX_REASON_ROWS = 5;
 
 export type ReasonRollUp = { key: string; label: string; count: number };
 

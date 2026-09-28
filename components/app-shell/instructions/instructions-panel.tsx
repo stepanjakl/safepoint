@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Ledger, LedgerRow } from '@/components/ui/ledger';
 import { cx } from '@/lib/cx';
 import { diffText, paragraphsOf } from '@/lib/process/instruction-diff';
-import type { ProcessSummary } from '@/lib/process/placeholder-process';
+import type { ProcessSummary } from '@/lib/process/model';
 import type { AsideView } from '@/components/app-shell/drawer-aside';
 import { useInstructions, type InstructionVersion } from './instructions-store';
 import { TextDiff } from './text-diff';

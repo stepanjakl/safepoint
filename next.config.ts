@@ -12,14 +12,9 @@ import { pathToFileURL } from 'node:url';
 //
 // Dev only, and never on `node_modules` — the attributes are debug metadata and
 // the Babel pass is pure overhead in a production build.
-const locatorRule = {
-  condition: { all: ['development' as const, { not: 'foreign' as const }] },
-  loaders: [
-    {
-      loader: '@locator/webpack-loader',
-      options: { env: 'development' },
-    },
-  ],
+const locatorLoader = {
+  loader: '@locator/webpack-loader',
+  options: { env: 'development' },
 };
 
 const nextConfig: NextConfig = {
@@ -32,6 +27,10 @@ const nextConfig: NextConfig = {
   // repositioned: nothing it reports is worth a corner of the shell.
   devIndicators: false,
 
+  // `pnpm dev` is webpack, not Turbopack: under Turbopack Tailwind has already
+  // inlined every @import, so each rule's source map names app/styles/index.css
+  // rather than the component stylesheet it is written in (Next 16.3), and
+  // tools/postcss-light-dark runs before the polyfill it folds exists.
   webpack(config, { dev, webpack }) {
     if (dev) {
       // Emit CSS maps separately from Next's JavaScript devtool setting.
@@ -51,18 +50,15 @@ const nextConfig: NextConfig = {
       config.module.rules.push({
         test: /\.[jt]sx$/,
         exclude: /node_modules/,
-        use: locatorRule.loaders,
+        use: [locatorLoader],
       });
     }
     return config;
   },
 
-  turbopack: {
-    rules: {
-      '*.tsx': locatorRule,
-      '*.jsx': locatorRule,
-    },
-  },
+  // Builds stay on Turbopack, which needs none of the above. Declared, because
+  // Next 16 refuses a Turbopack build beside a webpack() block otherwise.
+  turbopack: {},
 };
 
 export default nextConfig;

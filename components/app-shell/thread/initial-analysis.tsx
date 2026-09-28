@@ -1,4 +1,4 @@
-import type { ProcessAnalysis } from '@/lib/process/placeholder-process';
+import type { ProcessAnalysis } from '@/lib/process/model';
 import { styleDebug } from '@/lib/style-debug';
 import {
   byAttention,

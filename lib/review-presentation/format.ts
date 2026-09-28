@@ -1,7 +1,7 @@
 /* Formatting for the interface. London time throughout, because the
    scenario's deadlines are London's. */
 
-export const londonParts = new Intl.DateTimeFormat('en-GB', {
+const londonParts = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'Europe/London',
   weekday: 'short',
   day: 'numeric',
@@ -11,7 +11,7 @@ export const londonParts = new Intl.DateTimeFormat('en-GB', {
   hourCycle: 'h23',
 });
 
-export function partsOf(iso: string): Record<string, string> {
+function partsOf(iso: string): Record<string, string> {
   const parts: Record<string, string> = {};
   for (const part of londonParts.formatToParts(new Date(iso))) {
     parts[part.type] = part.value;

@@ -6,7 +6,7 @@ import { evaluationCounts } from '@/lib/review/plan-derivations';
 import { presentPromotionPlan } from '@/lib/review/promotion-adapter';
 import { supportPlan } from '@/lib/review/support-fixture';
 import type { ReleasePlan } from '@/lib/review/plan-contract';
-import type { ProcessSummary } from './placeholder-process';
+import type { ProcessSummary } from './model';
 
 /*
   The runs rail and the process menu's release preview describe the same run,

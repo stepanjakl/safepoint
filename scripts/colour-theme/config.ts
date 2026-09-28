@@ -94,7 +94,7 @@ export const NEUTRAL_FAMILIES: readonly NeutralFamily[] = [
 
 export const DEFAULT_NEUTRAL_FAMILY = 'graphite';
 
-export function neutralFamily(id: string): NeutralFamily {
+function neutralFamily(id: string): NeutralFamily {
   const found = NEUTRAL_FAMILIES.find((family) => family.id === id);
   if (!found) throw new Error(`Unknown neutral family ${id}.`);
   return found;

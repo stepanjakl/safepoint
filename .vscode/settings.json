@@ -1,10 +1,4 @@
 {
-  "cssVarHover.watchedFiles": [
-    "components/ui/button.tsx",
-    "components/app-shell/sidebar/process-menu.tsx",
-    "components/app-shell/sidebar/process-list.tsx",
-    "components/ui/switch.tsx"
-  ],
   "files.exclude": {
     "**/.next": true
   },
@@ -42,8 +36,17 @@
     "source.css.styled",
     "tailwindcss"
   ],
+  // Every Tailwind utility would read as an unused class.
   "unusedCssClasses.enable": false,
   "tailwindCSS.classFunctions": ["cx"],
+  // Class lists kept in upper-case constants (`const ITEM = '…'`, `FACE = {…}`)
+  // get the same hover and completion as a className.
+  "tailwindCSS.experimental.classRegex": [
+    [
+      "(?:const|let)\\s+[A-Z][A-Z0-9_]*\\s*=\\s*([\\s\\S]*?);",
+      "['\"`]([^'\"`]*)['\"`]"
+    ]
+  ],
   "files.associations": {
     "*.css": "tailwindcss"
   },

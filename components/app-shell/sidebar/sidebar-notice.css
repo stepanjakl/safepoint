@@ -30,7 +30,7 @@
   /* The notice icon belongs to the sidebar rail, which starts at the card's
      border edge. Its grid starts after control-face's edge, so recover that
      width from the primitive rather than duplicating it in markup. */
-  .process-menu-notice-rail {
+  .sidebar-notice-rail {
     margin-inline-start: calc(var(--control-face-border-width) * -1);
   }
 }

@@ -4,25 +4,22 @@
   font loading into the client bundle; app/typography.ts does the loading.
 */
 
-export const TYPEFACE_SETS = [
-  'geist',
-  'geist-orbitron',
-  'geist-tabular',
-  'geist-inter-tabular',
-  'geist-ibm-plex-sans',
-  'geist-source-sans',
-  'geist-roboto',
-  'geist-glide',
-  'geist-jetbrains',
-  'geist-ibm-plex',
-  'geist-source-code',
-  'geist-space',
-  'geist-commit',
-  'glide',
-  'inter',
-] as const;
-
-export type TypefaceSet = (typeof TYPEFACE_SETS)[number];
+export type TypefaceSet =
+  | 'geist'
+  | 'geist-orbitron'
+  | 'geist-tabular'
+  | 'geist-inter-tabular'
+  | 'geist-ibm-plex-sans'
+  | 'geist-source-sans'
+  | 'geist-roboto'
+  | 'geist-glide'
+  | 'geist-jetbrains'
+  | 'geist-ibm-plex'
+  | 'geist-source-code'
+  | 'geist-space'
+  | 'geist-commit'
+  | 'glide'
+  | 'inter';
 
 export const TYPEFACE_PICKER_SETS = [
   'geist-tabular',
@@ -32,10 +29,6 @@ export const TYPEFACE_PICKER_SETS = [
 ] as const satisfies readonly TypefaceSet[];
 
 export const DEFAULT_TYPEFACE_SET: TypefaceSet = 'geist';
-
-export function isTypefaceSet(value: unknown): value is TypefaceSet {
-  return TYPEFACE_SETS.includes(value as TypefaceSet);
-}
 
 export function isTypefacePickerSet(value: unknown): value is TypefaceSet {
   return TYPEFACE_PICKER_SETS.includes(

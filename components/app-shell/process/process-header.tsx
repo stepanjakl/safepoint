@@ -12,7 +12,7 @@ import Lab from 'blode-icons-react/icons/lab';
 import SettingsGear from 'blode-icons-react/icons/settings-gear-1';
 import { Notch } from '@/components/ui/notch';
 import { cx } from '@/lib/cx';
-import type { ProcessSummary } from '@/lib/process/placeholder-process';
+import type { ProcessSummary } from '@/lib/process/model';
 import {
   needsAttention,
   worstFreshness,
@@ -51,11 +51,11 @@ const ITEM =
   reading has nothing to answer.
 */
 const FACE = {
-  none: 'control-header-button text-header-ink data-[hovered]:control-header-button-hover data-[hovered]:text-header-ink-hover data-[focus-visible]:control-header-button-hover data-[focus-visible]:text-header-ink-hover data-[pressed]:control-header-button-hover data-[pressed]:text-header-ink-hover',
+  none: 'control-header-button text-header-ink interact:control-header-button-hover interact:text-header-ink-hover',
   stale:
-    'control-header-button-caution text-header-ink data-[hovered]:control-header-button-caution-hover data-[hovered]:text-header-ink-hover data-[focus-visible]:control-header-button-caution-hover data-[focus-visible]:text-header-ink-hover data-[pressed]:control-header-button-caution-hover data-[pressed]:text-header-ink-hover',
+    'control-header-button-caution text-header-ink interact:control-header-button-caution-hover interact:text-header-ink-hover',
   unavailable:
-    'control-header-button-blocked text-header-ink data-[hovered]:control-header-button-blocked-hover data-[hovered]:text-header-ink-hover data-[focus-visible]:control-header-button-blocked-hover data-[focus-visible]:text-header-ink-hover data-[pressed]:control-header-button-blocked-hover data-[pressed]:text-header-ink-hover',
+    'control-header-button-blocked text-header-ink interact:control-header-button-blocked-hover interact:text-header-ink-hover',
   selected: 'control-header-button-selected text-header-ink-selected',
 } as const;
 
@@ -66,7 +66,7 @@ const FACE = {
   from its top and bottom.
 */
 const COUNT =
-  'value header-button-count bg-header-button-count control-wash group-data-[hovered]/data:bg-header-button-count-hover group-data-[focus-visible]/data:bg-header-button-count-hover group-data-[pressed]/data:bg-header-button-count-hover text-meta inline-grid place-items-center rounded-full px-1.5';
+  'value header-button-count bg-header-button-count control-wash group-interact/data:bg-header-button-count-hover text-meta inline-grid place-items-center rounded-full px-1.5';
 
 /*
   The same item with nothing to say. Settings is reached a few times in a
@@ -79,7 +79,7 @@ const ICON_ITEM =
   'group/data header-button control-face inline-grid aspect-square flex-none cursor-pointer place-items-center rounded-full ps-0 pe-0';
 
 const ICON = {
-  none: 'text-header-icon transition-colors duration-(--duration-state) ease-out group-data-[hovered]/data:text-header-icon-hover group-data-[focus-visible]/data:text-header-icon-hover group-data-[pressed]/data:text-header-icon-hover',
+  none: 'text-header-icon transition-colors duration-(--duration-state) ease-out group-interact/data:text-header-icon-hover',
   selected:
     'text-header-icon-selected transition-colors duration-(--duration-state) ease-out',
 } as const;

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema-jsonc.json",
+  "entry": [
+    // Reached by package name from postcss.config.mjs, not by an import.
+    "tools/postcss-light-dark/index.cjs",
+    // The domain contracts: their exports are an API for the stages to come,
+    // not only for what imports them today.
+    "lib/promotion-release/index.ts",
+    "lib/promotion-release/schemas.ts",
+    "lib/review/plan-contract.ts",
+    "lib/review-presentation/index.ts",
+  ],
+  "ignoreDependencies": [
+    // Named as a loader string in next.config.ts.
+    "@locator/webpack-loader",
+    // Loaded by name by @locator/webpack-loader's Babel pass.
+    "@babel/preset-typescript",
+    // Imported by tweakpane's type declarations, which do not depend on it.
+    "@tweakpane/core",
+  ],
+  // A type a module uses may stay exported as part of its API.
+  "ignoreExportsUsedInFile": { "type": true, "interface": true },
+}

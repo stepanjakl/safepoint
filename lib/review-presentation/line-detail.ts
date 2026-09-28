@@ -155,7 +155,7 @@ export function presentLineDetail(
   };
 }
 
-export function presentMargin({
+function presentMargin({
   sellingPence,
   costPence,
   fundingStatus,
@@ -192,7 +192,7 @@ export function presentMargin({
   };
 }
 
-export function presentValues(
+function presentValues(
   line: ReviewLine,
   proposed: NonNullable<ReviewLine['agentAssessment']['proposed']>,
   priceChangeThreshold: number,
@@ -277,7 +277,7 @@ export function presentValues(
   return rows;
 }
 
-export function presentGates(
+function presentGates(
   line: ReviewLine,
   evidenceIndex: Map<string, EvidenceRef>,
 ): PresentedGate[] {

@@ -77,9 +77,9 @@ A comment in a stylesheet earns its place only by preventing a specific wrong
 edit: a measured constraint, a browser behaviour, or a cross-file dependency.
 Two lines. Longer reasoning goes in `docs/STYLING-SYSTEM.md`, not in the CSS.
 
-When the work is colour, run `pnpm dev:styles` rather than `pnpm dev`. Only the
-webpack path gets CSS source maps and `tools/postcss-light-dark`, which folds
-Lightning CSS's `light-dark()` polyfill back so DevTools reads like the source.
+`pnpm dev` runs webpack, not Turbopack, on purpose: only webpack gives each rule
+a source map to its own stylesheet and lets `tools/postcss-light-dark` fold
+Lightning CSS's `light-dark()` polyfill back, so DevTools reads like the source.
 
 ## Colours
 
@@ -95,24 +95,35 @@ Every role is declared once and is at most two reads from a colour: read a ramp
 or state step (`--sp-neutral-N`, `--sp-state-<scale>-N`) or alias one role that
 does. Every edge is an opaque step. After touching a token, run
 `pnpm check:tokens` -- it fails on any `var(--…)` nothing defines (which would
-otherwise unset a subtree in silence) and on any longer chain -- and
+otherwise unset a subtree in silence), on any longer chain, on a role nothing
+reads (delete the leftover, don't comment it out), and on pure white or black
+faded or mixed into a hue (use a ramp or Radix step) -- and
 `pnpm check:colours`, which checks role steps and contrast contracts. Tailwind
 scans source as plain text, so do not write a real utility or theme variable
 name in a comment; use a placeholder such as `--color-<role>`.
+The style inspector (hold ⌥ in development, or Ctrl+Shift+\`) shows, for any element,
+where each of its utilities and rules is written and what each role it reads
+paints; see `docs/STYLING-SYSTEM.md` → Finding where a style is written.
 `pnpm trace:token <role>` prints where a role is declared and what it resolves
 to in each theme; use it instead of reading stylesheets hop by hop.
 `/workbench` (development only) is the live colour reference: surfaces, text
 and edges on their grounds with measured contrast, state scales and the ramp,
 re-read whenever the theme or neutral family changes. Compare colour options
 there, where the user can see them, rather than in screenshots.
+`/workbench/controls` renders every control in every React Aria interaction
+state at once, pinned by `app/workbench/pin.tsx`, and `pnpm check:visual`
+records it; add a control there when it gains a face.
 
 ## Verification matched to the change
 
-`pnpm check:visual` compares every element's painted colours and box, in twelve
+`pnpm check:visual` compares every element's painted colours and box, in thirteen
 states and both themes, with `e2e/visual-baseline/`. A difference you intended
 is recorded with `pnpm check:visual:update`, and the baseline diff goes in the
 same commit; one you did not intend is a regression. Record the baseline on
-the machine that checks it -- text metrics depend on installed fonts.
+the machine that checks it -- text metrics depend on installed fonts -- and on
+the server Playwright starts (`pnpm dev`, webpack): Turbopack polyfills
+`light-dark()` and rounds some mixes one unit apart. It is the one check CI
+(`.github/workflows/checks.yml`) does not run, tagged `@local-baseline`.
 
 Choose checks by the possible consequences, not the number of edited lines.
 During iteration, run the smallest check that can detect the relevant regression.
@@ -126,7 +137,7 @@ shared dependency or invariant makes the impact uncertain.
 | Local spacing or styling                                                  | Format changed files and inspect the affected component and relevant responsive states. Run `pnpm check:visual`, and `pnpm check:rail` when sidebar geometry changes.                      |
 | Colours or tokens                                                         | Run `pnpm check:tokens`, `pnpm check:colours` and `pnpm check:visual`; inspect affected light/dark states and contrast. Rail checker if spacing tokens move.         |
 | Component behaviour or local logic                                        | Lint changed source files, run `pnpm typecheck` and relevant tests. Exercise changed interactions, including keyboard/focus and announcements where applicable.   |
-| Shared logic, routing, dependencies, build configuration, broad refactors | Run `pnpm lint`, `pnpm typecheck`, `pnpm format:check`, and `pnpm test` once at completion. Run `pnpm build` when production compilation or bundling is affected. |
+| Shared logic, routing, dependencies, build configuration, broad refactors | Run `pnpm lint`, `pnpm typecheck`, `pnpm format:check`, `pnpm test` and `pnpm check:unused` once at completion. Run `pnpm build` when production compilation or bundling is affected. |
 
 Use `pnpm exec prettier --check <files>`, `pnpm exec eslint <source-files>`,
 and `pnpm exec vitest run <test-files>` for targeted checks. Typechecking remains

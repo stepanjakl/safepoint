@@ -7,7 +7,7 @@
 
 :root {
   --sp-menu-wash-faint: light-dark(var(--sp-neutral-75), var(--sp-neutral-775));
-  --sp-menu-wash: light-dark(var(--sp-neutral-200), var(--sp-neutral-825));
+  --sp-menu-wash: light-dark(var(--sp-neutral-150), var(--sp-neutral-825));
   --sp-menu-wash-strong: light-dark(var(--sp-neutral-200), var(--sp-neutral-725));
   --sp-menu-link: light-dark(var(--sp-neutral-725), var(--sp-neutral-150));
   /* The Save-order button: the one teal control, with stops of its own so the
@@ -31,7 +31,7 @@
   );
   --sp-commit-edge: light-dark(
     color-mix(in oklab, var(--radix-teal-dark-10) 10%, var(--radix-teal-dark-11)),
-    color-mix(in oklab, black 20%, var(--sp-commit-face-top))
+    color-mix(in oklab, var(--radix-teal-dark-6) 75%, var(--radix-teal-dark-7))
   );
   --sp-commit-hover: light-dark(
     color-mix(in oklab, var(--radix-teal-dark-7) 40%, var(--radix-teal-dark-8)),
@@ -241,12 +241,6 @@
   }
 
   @media (forced-colors: active) {
-    .process-menu-row[data-current] {
-      outline: 1px solid Highlight;
-    }
-    .process-menu-row[data-dragging] {
-      outline: 2px solid Highlight;
-    }
     /* A gradient cannot survive forced colours, and it must never be the only
        thing carrying a boundary. */
     .process-menu-fade::before,

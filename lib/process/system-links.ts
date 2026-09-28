@@ -4,28 +4,23 @@ import type {
 } from '../promotion-release';
 import type { AdapterMode } from '../review-presentation';
 
-// The list is the declaration and the type is derived from it, so an icon set
-// can be checked for completeness against the same vocabulary the links use.
-export const ICON_KEYS = [
-  'brief',
-  'catalogue',
-  'shortlist',
-  'forecast',
-  'supply',
-  'supplier',
-  'channel',
-  'note',
-  'policy',
-  'pricebook',
-  'storefront',
-  'labels',
-  'portal',
-  'queue',
-  'identity',
-  'billing',
-] as const;
-
-export type IconKey = (typeof ICON_KEYS)[number];
+export type IconKey =
+  | 'brief'
+  | 'catalogue'
+  | 'shortlist'
+  | 'forecast'
+  | 'supply'
+  | 'supplier'
+  | 'channel'
+  | 'note'
+  | 'policy'
+  | 'pricebook'
+  | 'storefront'
+  | 'labels'
+  | 'portal'
+  | 'queue'
+  | 'identity'
+  | 'billing';
 
 export type Freshness = {
   state: 'fresh' | 'stale' | 'unavailable';
@@ -145,7 +140,7 @@ export type EvidenceRecord = {
 
 // A file's records. A file without a record list -- the brief, the policy --
 // is one record: the file as a whole.
-export function evidenceRecords(
+function evidenceRecords(
   scenario: ScenarioEvidencePack,
   key: PromotionPack['key'],
 ): EvidenceRecord[] {

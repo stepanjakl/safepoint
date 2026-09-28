@@ -150,7 +150,7 @@ export function presentEvidence(
   };
 }
 
-export function sourceFactFor(
+function sourceFactFor(
   line: ReviewLine,
   code: FindingCode | null,
   context: LineContext,

@@ -72,7 +72,7 @@ export const PANEL =
 
 // The drawer's close button.
 export const CLOSE_BUTTON =
-  'control-face control-hairline control-quiet text-muted-strong data-[hovered]:control-quiet-hover data-[hovered]:text-primary data-[focus-visible]:control-quiet-hover data-[focus-visible]:text-primary data-[pressed]:control-quiet-hover data-[pressed]:text-primary grid size-8 flex-none cursor-pointer place-items-center rounded-full';
+  'control-face control-hairline control-quiet text-muted-strong interact:control-quiet-hover interact:text-primary grid size-8 flex-none cursor-pointer place-items-center rounded-full';
 
 // Longest either leaving animation may take before its layer is removed
 // anyway: the animation's own end normally does it, and this covers an end

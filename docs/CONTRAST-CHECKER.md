@@ -12,7 +12,7 @@ pnpm check:colour-system
 pnpm check:contrast:report
 ```
 
-Playwright starts `pnpm dev:styles` on port 3000, or reuses a running server
+Playwright starts `pnpm dev` on port 3000, or reuses a running server
 locally. In CI it requires its own server. To test another running development
 or production server without starting one:
 

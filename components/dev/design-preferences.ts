@@ -1,5 +1,4 @@
 import {
-  DEFAULT_THEME,
   DEFAULT_TYPEFACE_SET,
   DEFAULT_TYPESCALE,
   isTypescale,
@@ -64,22 +63,6 @@ export function readTheme(): ThemeChoice {
   return isThemeChoice(value) ? value : 'system';
 }
 
-export function serverTypeface() {
-  return DEFAULT_TYPEFACE_SET;
-}
-
-export function serverMono(): MonoChoice {
-  return 'match';
-}
-
-export function serverTypescale(): Typescale {
-  return DEFAULT_TYPESCALE;
-}
-
-export function serverTheme(): ThemeChoice {
-  return DEFAULT_THEME;
-}
-
 export function setTypeface(next: TypefaceSet) {
   document.documentElement.dataset.typeface = next;
   persist(TYPEFACE_STORAGE_KEY, next);
@@ -128,7 +111,7 @@ export const NEUTRAL_LABELS: Record<Neutral, string> = {
   ash: 'Ash',
 };
 
-export function isNeutral(value: unknown): value is Neutral {
+function isNeutral(value: unknown): value is Neutral {
   return NEUTRALS.includes(value as Neutral);
 }
 
@@ -172,10 +155,6 @@ export const DEFAULT_MOTION_SPEED: MotionSpeed = '1';
 export function readMotionSpeed(): MotionSpeed {
   const value = document.documentElement.dataset.motionSpeed;
   return MOTION_SPEEDS.find((speed) => speed === value) ?? DEFAULT_MOTION_SPEED;
-}
-
-export function serverMotionSpeed(): MotionSpeed {
-  return DEFAULT_MOTION_SPEED;
 }
 
 export function setMotionSpeed(next: MotionSpeed) {
@@ -288,10 +267,6 @@ export const RAIL_GUIDES_STORAGE_KEY = 'safepoint.dev.rail-guides';
 
 export function readRailGuides(): boolean {
   return document.documentElement.dataset.railGuides === 'on';
-}
-
-export function serverRailGuides(): boolean {
-  return false;
 }
 
 export function setRailGuides(next: boolean) {

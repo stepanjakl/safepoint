@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useInstructions } from '@/components/app-shell/instructions/instructions-store';
 import { RunRow } from './run-row';
-import type { ProcessSummary } from '@/lib/process/placeholder-process';
+import type { ProcessSummary } from '@/lib/process/model';
 
 /*
   The process's runs: one divided list, newest first. A row is `RunRow`; this

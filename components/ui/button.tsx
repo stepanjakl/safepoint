@@ -36,14 +36,12 @@ const faces = {
   // The one accented control on a page: a lit face with a brighter ring.
   primary: {
     appearance: 'accent',
-    className:
-      'control-accent text-white data-[hovered]:control-accent-hover data-[focus-visible]:control-accent-hover data-[pressed]:control-accent-hover',
+    className: 'control-accent text-white interact:control-accent-hover',
   },
   // Everything else: the same construction, one step quieter.
   secondary: {
     appearance: 'quiet',
-    className:
-      'control-quiet text-primary data-[hovered]:control-quiet-hover data-[focus-visible]:control-quiet-hover data-[pressed]:control-quiet-hover',
+    className: 'control-quiet text-primary interact:control-quiet-hover',
   },
 } satisfies Record<Variant, { appearance: string; className: string }>;
 
@@ -173,5 +171,3 @@ export const ICON_SHAPE =
 */
 export const ICON_QUIET =
   'control-wash text-header-ink hover:bg-surface-selected hover:text-header-ink-hover focus-visible:bg-surface-selected focus-visible:text-header-ink-hover';
-
-export const ICON_BUTTON = `${ICON_SHAPE} ${ICON_QUIET}`;

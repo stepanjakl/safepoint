@@ -1,7 +1,7 @@
 'use client';
 
 import { useId, type SVGProps } from 'react';
-import type { RunStatus } from '@/lib/process/placeholder-process';
+import type { RunStatus } from '@/lib/process/model';
 
 /*
   The nine states a run can be in, as one family.
@@ -112,18 +112,6 @@ type Shape = {
   ring?: React.ReactNode;
   mark?: React.ReactNode;
 };
-
-/*
-  Which chassis each state is drawn on. Derived from the table below rather
-  than written out beside it, so the two cannot disagree.
-
-  A caller needs this to weight the colour: a ring is mostly the ground behind
-  it and wants the plain state colour, where a disc of the same colour at the
-  same size outweighs the word next to it and wants a step back up the ramp.
-*/
-export function runStatusChassis(status: RunStatus): 'ring' | 'disc' {
-  return SHAPES[status].fill ? 'disc' : 'ring';
-}
 
 const SHAPES: Record<RunStatus, Shape> = {
   // Nothing has happened yet, and the ring says so by not being whole.

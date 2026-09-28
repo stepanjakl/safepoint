@@ -15,7 +15,7 @@ import {
   type ProcessRun,
   type RunStatus,
   type RunTrigger,
-} from '@/lib/process/placeholder-process';
+} from '@/lib/process/model';
 import { runDay, runStamp, runTime } from '@/lib/process/run-time';
 
 /*

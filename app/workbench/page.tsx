@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import report from '@/docs/generated/colour-theme-report.json';
@@ -89,7 +90,20 @@ export default function WorkbenchPage() {
         <p className={NOTE}>
           The colour system as this page paints it. Switch theme and neutral
           family from the design pane: every swatch and ratio re-reads. Steps
-          are light / dark on the one neutral ramp.
+          are light / dark on the one neutral ramp.{' '}
+          <Link
+            className="underline underline-offset-4"
+            href="/workbench/review"
+          >
+            Stage 1B review workspace
+          </Link>
+          {' · '}
+          <Link
+            className="underline underline-offset-4"
+            href="/workbench/controls"
+          >
+            Control states
+          </Link>
         </p>
       </header>
 

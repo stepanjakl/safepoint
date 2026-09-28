@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { DesignControls } from '@/components/dev/design-controls';
 import { DesignPreferencesScript } from '@/components/dev/design-preferences-script';
 import { LocatorRuntime } from '@/components/dev/locator-runtime';
+import { StyleInspector } from '@/components/dev/style-inspector';
 import { DEFAULT_THEME } from '@/lib/typography';
 
 import './styles/index.css';
@@ -43,6 +44,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         {children}
         <DesignControls />
         <LocatorRuntime />
+        <StyleInspector />
       </body>
     </html>
   );

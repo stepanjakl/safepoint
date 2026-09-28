@@ -3,7 +3,7 @@
 import { styleDebug } from '@/lib/style-debug';
 import { useState, type ReactNode } from 'react';
 import type { InputDetail } from '@/lib/process/input-details';
-import type { ProcessSummary } from '@/lib/process/placeholder-process';
+import type { ProcessSummary } from '@/lib/process/model';
 import type { SystemLink } from '@/lib/process/system-links';
 import { useInstructions } from '@/components/app-shell/instructions/instructions-store';
 import { useRemovedInputs } from '@/components/app-shell/inputs/inputs-store';

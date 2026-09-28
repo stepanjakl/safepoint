@@ -43,6 +43,8 @@ flowchart LR
 6. [`PROJECT-REVIEW.md`](PROJECT-REVIEW.md) records corrections, alternatives, source coverage, assumptions, and rejected ideas.
 7. [`STYLING-SYSTEM.md`](STYLING-SYSTEM.md) records the implemented styling system: where styles live (shared foundations in `app/styles/`, a component's own stylesheet beside it), the one colour system, the type and radius scales and how they are constructed, and the conventions that keep markup free of arbitrary values. Finished styling plans are in [`archive/`](archive/README.md).
 
+[`PRIOR-ART.md`](PRIOR-ART.md) is supporting research: comparable change-review and human-in-the-loop tools, and the ideas worth borrowing from them. It records no decisions.
+
 The immediate implementation hand-off is [`STAGE-1B-BRIEF.md`](STAGE-1B-BRIEF.md). [`STAGE-1A-BRIEF.md`](STAGE-1A-BRIEF.md) records the accepted data and contract foundation; [`STAGE-0-BRIEF.md`](STAGE-0-BRIEF.md) remains the completed scaffold record.
 
 ## Two project tracks

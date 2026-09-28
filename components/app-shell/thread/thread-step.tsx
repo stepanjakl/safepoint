@@ -9,10 +9,7 @@ import type { ReactNode } from 'react';
 import { Glyph } from '@/components/ui/glyph';
 import { Tooltip } from '@/components/ui/tooltip';
 import { stepMarker, toneText } from '@/components/review/markers';
-import {
-  STEP_STATUS_LABELS,
-  type ProcessStep,
-} from '@/lib/process/placeholder-process';
+import { STEP_STATUS_LABELS, type ProcessStep } from '@/lib/process/model';
 import { cx } from '@/lib/cx';
 
 /*

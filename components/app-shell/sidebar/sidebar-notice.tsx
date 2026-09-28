@@ -41,7 +41,7 @@ export function SidebarNotice() {
       })}
       className={NOTICE_BOX}
     >
-      <span className="process-menu-notice-rail grid flex-none place-items-center">
+      <span className="sidebar-notice-rail grid flex-none place-items-center">
         <MenuIcon name="info" />
       </span>
       <p className="text-notice-title text-micro font-semibold">

@@ -5,6 +5,10 @@
    A component with a face of its own keeps it beside its .tsx.
    ────────────────────────────────────────────────────────────────────────── */
 
+/* A React Aria control under the pointer, focused by keyboard, or pressed: one
+   state, since every face answers all three alike. :is keeps data-*'s weight. */
+@custom-variant interact (&:is([data-hovered], [data-focus-visible], [data-pressed]));
+
 :root {
   /* Radix fitted to Tailwind's cyan: each stop blends the two adjacent steps
      nearest the original. Radix keeps its vivid mid-tones in the dark scale,
@@ -30,7 +34,7 @@
      a light line on a lit dark face reads as glare. */
   --sp-accent-edge: light-dark(
     color-mix(in oklab, var(--radix-cyan-dark-11) 50%, var(--radix-cyan-dark-12)),
-    color-mix(in oklab, black 20%, var(--sp-accent-face-top))
+    color-mix(in oklab, var(--radix-cyan-dark-6) 65%, var(--radix-cyan-dark-7))
   );
   /* Flat under the pointer: face, ring and highlight all take this one
      colour. */
@@ -54,7 +58,7 @@
   /* Unavailable. Flat: no ramp, so it cannot read as a live control. */
   --sp-off-face: light-dark(var(--sp-neutral-50), var(--sp-neutral-950));
   --sp-off-ring: light-dark(var(--sp-neutral-225), var(--sp-neutral-750));
-  --sp-menu-chip: light-dark(var(--sp-neutral-225), var(--sp-neutral-850));
+  --sp-menu-chip: light-dark(var(--sp-neutral-150), var(--sp-neutral-850));
   /* The border is the focus indicator, so the focused step must clear 3:1
      against both the face and the resting edge -- contracts field-focus-* in
      scripts/colour-theme/config.ts. Neutral: a field is not an action. */
@@ -112,9 +116,9 @@
 @property --control-highlight {
   syntax: '<color>';
   inherits: false;
-  /* A face with no colour utility still gets a visible sheen. Registration
-     requires a literal; var() is not valid as an initial value. */
-  initial-value: rgb(255 255 255 / 25%);
+  /* No sheen unless a face asks for one, so removing a highlight removes it.
+     Registration requires a literal; var() is not valid here. */
+  initial-value: transparent;
 }
 
 /* Two opaque layers: the face clipped to the padding box, the ring to the

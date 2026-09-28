@@ -25,6 +25,9 @@
   outside --sp-*. A role may alias one other role, never a chain of them, so
   what paints is never more than two lookups from the role an element names.
 
+  And every component class is styled in one stylesheet (pass five), every
+  role has a reader (six), and no white or black is faded or mixed (seven).
+
   And every stylesheet must be imported by app/styles/index.css. A component's
   .css is only ever reached through that list, so one left out of it is
   silently ignored -- the same silent failure as an unresolved token.
@@ -34,6 +37,8 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { spawnSync } from 'node:child_process';
+
+import { readStylesheets, subjectClasses } from '../lib/dev/stylesheets.ts';
 
 const root = new URL('..', import.meta.url).pathname;
 const stylesheets = ['app', 'components'];
@@ -218,9 +223,128 @@ if (deep.length > 0) {
   process.exit(1);
 }
 
+/*
+  Pass five: a component's class has one home. Every class a component
+  stylesheet styles is styled by no other component stylesheet, so a class
+  seen in DevTools is one search -- or one line in the style inspector -- from
+  every rule that paints it. A class from app/styles is shared by design, and a
+  component may refine it in its own context (`.sheet-seg > .value`).
+*/
+const homes = new Map();
+const { rules, utilities, declarations } = readStylesheets(root);
+for (const { file, line, name } of utilities) {
+  homes.set(name, [...(homes.get(name) ?? []), { file, line }]);
+}
+for (const { file, line, selector } of rules) {
+  for (const name of subjectClasses(selector)) {
+    homes.set(name, [...(homes.get(name) ?? []), { file, line }]);
+  }
+}
+const scattered = [...homes].filter(([, sites]) => {
+  const files = new Set(sites.map(({ file }) => file));
+  return (
+    files.size > 1 && [...files].every((file) => file.startsWith('components/'))
+  );
+});
+if (scattered.length > 0) {
+  for (const [name, sites] of scattered) {
+    process.stderr.write(
+      `.${name} is styled in ${sites.map(({ file, line }) => `${file}:${line}`).join(', ')}\n`,
+    );
+  }
+  process.stderr.write(
+    `\n${scattered.length} class${scattered.length === 1 ? '' : 'es'} styled ` +
+      `by more than one component stylesheet. Move the rules beside the ` +
+      `component the class belongs to.\n`,
+  );
+  process.exit(1);
+}
+
+/*
+  Pass six: every role has a reader. A role nothing reads is a knob that
+  turns nothing -- the leftover when a declaration that used it is deleted or
+  commented out. Read means a var() in a stylesheet or the name in TypeScript
+  (an inline style, the workbench), comments excluded. The ramp steps and the
+  state scales' numbered steps are the colour system's own API, read by names
+  built at runtime, so they are exempt.
+*/
+const stripComments = (text) =>
+  text.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/.*$/gm, '$1');
+const readInCss = new Set();
+for (const path of cssFiles) {
+  for (const [, name] of stripComments(read(path)).matchAll(
+    /var\(\s*(--sp-[\w-]+)/g,
+  )) {
+    readInCss.add(name);
+  }
+}
+const namedInSource = new Set();
+for (const path of sourceFiles) {
+  for (const [name] of stripComments(read(path)).matchAll(/--sp-[\w-]+/g)) {
+    namedInSource.add(name);
+  }
+}
+const isApi = (name) =>
+  /^--sp-neutral-\d+$/.test(name) || /^--sp-state-[a-z]+-\d+$/.test(name);
+const unread = new Map();
+for (const { name, file, line } of declarations) {
+  if (!name.startsWith('--sp-') || isApi(name)) continue;
+  if (readInCss.has(name) || namedInSource.has(name)) continue;
+  if (!unread.has(name)) unread.set(name, `${file}:${line}`);
+}
+if (unread.size > 0) {
+  for (const [name, where] of unread) {
+    process.stderr.write(
+      `${where}  ${name} is declared but nothing reads it\n`,
+    );
+  }
+  process.stderr.write(
+    `\n${unread.size} role${unread.size === 1 ? '' : 's'} with no reader. ` +
+      `Delete the declaration, or read it where it was meant to paint.\n`,
+  );
+  process.exit(1);
+}
+
+/*
+  Pass seven: no pure white or black at partial strength. A sheen or edge is
+  a step of the ramp or of a Radix scale, opaque, so it belongs to the palette
+  of whichever family is showing; white or black faded, or mixed into a hue,
+  belongs to none. Covers the app's stylesheets and its TypeScript -- the
+  development tools in components/dev keep their own fixed look.
+*/
+const FADED = [
+  /rgba?\(\s*(?:255|0)\s*[, ]\s*(?:255|0)\s*[, ]\s*(?:255|0)\s*[,/]\s*[\d.]+%?\s*\)/,
+  /#(?:fff|000)[0-9a-f]\b|#(?:ffffff|000000)[0-9a-f]{2}\b/i,
+  /color-mix\([^;]*?(?<![\w-])(?:white|black|#fff(?:fff)?|#000(?:000)?)(?![\w-])/i,
+];
+const faded = [];
+for (const path of [
+  ...cssFiles,
+  ...sourceFiles.filter((path) => !path.startsWith('components/dev/')),
+]) {
+  if (path.startsWith('app/styles/generated/')) continue;
+  stripComments(read(path))
+    .split('\n')
+    .forEach((text, index) => {
+      if (FADED.some((pattern) => pattern.test(text))) {
+        faded.push(`${path}:${index + 1}  ${text.trim()}`);
+      }
+    });
+}
+if (faded.length > 0) {
+  for (const entry of faded) process.stderr.write(`${entry}\n`);
+  process.stderr.write(
+    `\n${faded.length} pure white or black at partial strength. Use a step ` +
+      `of the neutral ramp or of the hue's Radix scale instead.\n`,
+  );
+  process.exit(1);
+}
+
 const provided = fromPackages.size;
 process.stdout.write(
   `${cssFiles.length} stylesheets, ${defined.size} properties in scope` +
     (provided > 0 ? `, ${provided} provided by dependencies` : '') +
-    `, all imported, no unresolved references, every role within ${MAX_DEPTH} reads of a step\n`,
+    `, all imported, no unresolved references, every role within ${MAX_DEPTH} reads of a step, ` +
+    `every component class styled in one file, every role read, ` +
+    `no faded white or black\n`,
 );

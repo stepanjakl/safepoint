@@ -1,0 +1,10 @@
+{
+  // The extensions .vscode/settings.json configures, and the test runner.
+  "recommendations": [
+    "bradlc.vscode-tailwindcss",
+    "vunguyentuan.vscode-css-variables",
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "ms-playwright.playwright"
+  ]
+}

@@ -32,8 +32,10 @@ export function DesignControls() {
 
     // Ctrl+` toggles the whole panel, including while it's hidden -- the
     // listener lives on window, not the host, so it works either way.
+    // Ctrl+Shift+` is the style inspector's.
     function onKeyDown(event: KeyboardEvent) {
-      if (!event.ctrlKey || event.code !== 'Backquote') return;
+      if (!event.ctrlKey || event.shiftKey || event.code !== 'Backquote')
+        return;
       event.preventDefault();
       const next = !host!.classList.contains('is-hidden');
       host!.classList.toggle('is-hidden', next);

@@ -2,11 +2,13 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
+import { hex, paint, type Channels } from '@/components/dev/paint';
+
 /*
-  Live readings of what the page paints. Every figure is taken from the
-  rendered colour through a 1px canvas, so oklab(), color(display-p3 …) and
-  color-mix() all measure alike, and every figure re-reads when the theme or
-  the neutral family changes on <html>.
+  Live readings of what the page paints, through the same canvas read-back the
+  style inspector uses, so oklab(), color(display-p3 …) and color-mix() all
+  measure alike. Every figure re-reads when the theme or the neutral family
+  changes on <html>.
 */
 
 function subscribeToTheme(onChange: () => void) {
@@ -35,33 +37,13 @@ function useThemeKey() {
   );
 }
 
-let canvas: CanvasRenderingContext2D | null = null;
-function rgb(element: Element, colour: string): [number, number, number] {
-  canvas ??= document
-    .createElement('canvas')
-    .getContext('2d', { willReadFrequently: true })!;
-  const probe = element as HTMLElement;
-  const before = probe.style.color;
-  probe.style.color = colour;
-  const resolved = getComputedStyle(probe).color;
-  probe.style.color = before;
-  canvas.clearRect(0, 0, 1, 1);
-  canvas.fillStyle = resolved;
-  canvas.fillRect(0, 0, 1, 1);
-  const [r, g, b] = canvas.getImageData(0, 0, 1, 1).data;
-  return [r!, g!, b!];
-}
-
-function luminance([r, g, b]: [number, number, number]) {
+function luminance([r, g, b]: Channels) {
   const [lr, lg, lb] = [r, g, b].map((channel) => {
     const c = channel / 255;
     return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
   });
   return 0.2126 * lr! + 0.7152 * lg! + 0.0722 * lb!;
 }
-
-const hex = (channels: [number, number, number]) =>
-  `#${channels.map((n) => n.toString(16).padStart(2, '0')).join('')}`;
 
 const css = (token: string) =>
   token.startsWith('--') ? `var(${token})` : token;
@@ -72,7 +54,10 @@ export function Swatch({ token, label }: { token: string; label?: string }) {
   const key = useThemeKey();
   const [value, setValue] = useState('');
   useEffect(() => {
-    if (probe.current) setValue(hex(rgb(probe.current, css(token))));
+    if (probe.current) {
+      const channels = paint(probe.current, css(token));
+      setValue(channels ? hex(channels) : 'not a colour');
+    }
   }, [token, key]);
   return (
     <figure className="grid gap-1">
@@ -111,8 +96,11 @@ export function Pair({
   const [ratio, setRatio] = useState<number | null>(null);
   useEffect(() => {
     if (!probe.current) return;
-    const a = luminance(rgb(probe.current, css(fg)));
-    const b = luminance(rgb(probe.current, css(bg)));
+    const fgPaint = paint(probe.current, css(fg));
+    const bgPaint = paint(probe.current, css(bg));
+    if (!fgPaint || !bgPaint) return;
+    const a = luminance(fgPaint);
+    const b = luminance(bgPaint);
     setRatio((Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05));
   }, [fg, bg, key]);
   const passes = ratio !== null && ratio >= floor;

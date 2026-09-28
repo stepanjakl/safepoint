@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { InputDetail } from '@/lib/process/input-details';
-import type { ProcessSummary } from '@/lib/process/placeholder-process';
+import type { ProcessSummary } from '@/lib/process/model';
 import type { SystemLink } from '@/lib/process/system-links';
 import { ProcessSheet } from './process-sheet';
 

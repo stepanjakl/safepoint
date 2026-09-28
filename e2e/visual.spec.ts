@@ -5,7 +5,7 @@
     pnpm check:visual:update   re-record it, after an intended change
 
   Each element's colours, shadows, opacity and box are read from the live page
-  in twelve states and both themes. A difference fails with the element, the
+  in thirteen states and both themes. A difference fails with the element, the
   property, and the old and new values -- the check that caught a stray tile
   outline, a dead brand colour and a contrast shift in the colour refactor.
 
@@ -18,7 +18,7 @@
   checks it.
 */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 const UPDATE = process.env.UPDATE_VISUAL === '1';
 const BASELINE_DIR = new URL('./visual-baseline/', import.meta.url);
@@ -101,12 +101,27 @@ const SCENARIOS = {
   },
   support: async () => {},
   states: async () => {},
+  // Every control in every interaction state, pinned once hydrated.
+  controls: async (page: Page) => {
+    await expect(
+      page.locator('section[aria-label="Button"] [data-hovered]').first(),
+    ).toBeAttached();
+  },
 } satisfies Record<string, (page: Page) => Promise<void>>;
 
 const ROUTES: Partial<Record<keyof typeof SCENARIOS, string>> = {
   support: '/examples/support',
   states: '/examples/states',
+  controls: '/workbench/controls',
 };
+
+/* What shows a route has rendered: the shell's search button, or for a
+   workbench page outside the shell, its heading. */
+const READY: Partial<Record<keyof typeof SCENARIOS, (page: Page) => Locator>> =
+  {
+    controls: (page) =>
+      page.getByRole('heading', { level: 1, name: 'Control states' }),
+  };
 
 /* The properties recorded, in a fixed order: records are stored as arrays. */
 const PROPS = [
@@ -250,71 +265,158 @@ function decode(stored: ReturnType<typeof encode>) {
   return decoded;
 }
 
-test('every element paints what the baseline recorded', async ({
-  page,
-  colorScheme,
-}) => {
-  test.setTimeout(240_000);
-  const theme = colorScheme === 'dark' ? 'dark' : 'light';
-  const captured: Capture = {};
-  for (const [name, arrive] of Object.entries(SCENARIOS)) {
-    await page.goto(ROUTES[name as keyof typeof SCENARIOS] ?? '/');
-    await expect(
-      page.getByRole('button', { name: 'Search processes', exact: true }),
-    ).toBeVisible();
-    await page.evaluate((value) => {
-      document.documentElement.dataset.theme = value;
-    }, theme);
-    await page.evaluate(() => document.fonts.ready);
-    await page.addStyleTag({
-      content:
-        '*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }',
-    });
-    await page.mouse.move(1439, 899);
-    await arrive(page);
-    await page.waitForTimeout(150);
-    captured[name] = await capture(page);
-  }
+// Local only: text metrics follow the installed fonts, so a baseline recorded
+// on one machine is not a baseline for another (CI skips @local-baseline).
+test(
+  'every element paints what the baseline recorded',
+  { tag: '@local-baseline' },
+  async ({ page, colorScheme }) => {
+    test.setTimeout(240_000);
+    const theme = colorScheme === 'dark' ? 'dark' : 'light';
+    const captured: Capture = {};
+    for (const [name, arrive] of Object.entries(SCENARIOS)) {
+      await page.goto(ROUTES[name as keyof typeof SCENARIOS] ?? '/');
+      await expect(
+        READY[name as keyof typeof SCENARIOS]?.(page) ??
+          page.getByRole('button', { name: 'Search processes', exact: true }),
+      ).toBeVisible();
+      await page.evaluate((value) => {
+        document.documentElement.dataset.theme = value;
+      }, theme);
+      await page.evaluate(() => document.fonts.ready);
+      await page.addStyleTag({
+        content:
+          '*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }',
+      });
+      await page.mouse.move(1439, 899);
+      await arrive(page);
+      await page.waitForTimeout(150);
+      captured[name] = await capture(page);
+    }
 
-  const file = new URL(`${theme}.json`, BASELINE_DIR);
-  if (UPDATE || !existsSync(file)) {
-    mkdirSync(BASELINE_DIR, { recursive: true });
-    writeFileSync(file, JSON.stringify(encode(captured)));
-    test
-      .info()
-      .annotations.push({ type: 'visual', description: `recorded ${theme}` });
-    return;
-  }
+    const file = new URL(`${theme}.json`, BASELINE_DIR);
+    if (UPDATE || !existsSync(file)) {
+      mkdirSync(BASELINE_DIR, { recursive: true });
+      writeFileSync(file, JSON.stringify(encode(captured)));
+      test
+        .info()
+        .annotations.push({ type: 'visual', description: `recorded ${theme}` });
+      return;
+    }
 
-  const baseline = decode(JSON.parse(readFileSync(file, 'utf8')));
-  const differences: string[] = [];
-  for (const [scenario, elements] of Object.entries(captured)) {
-    const before = baseline[scenario] ?? {};
-    for (const [path, { values, label }] of Object.entries(elements)) {
-      const old = before[path];
-      if (!old) {
-        differences.push(`${scenario}  ${path}  new element  (${label})`);
-        continue;
-      }
-      const changed = PROPS.flatMap((prop, index) =>
-        old[index] === values[index]
-          ? []
-          : [`${prop}: ${old[index]} → ${values[index]}`],
-      );
-      if (changed.length > 0) {
+    const baseline = decode(JSON.parse(readFileSync(file, 'utf8')));
+    const differences: string[] = [];
+    // One entry per element and paint change, with the scenarios it appears
+    // in: a token that moves shows once, not once per element or page. A
+    // change that repaints nothing -- only a custom property moved -- is
+    // tallied apart, so it cannot bury the changes that did repaint.
+    const changes = new Map<
+      string,
+      { scenarios: Set<string>; count: number }
+    >();
+    const variables = new Map<
+      string,
+      { scenarios: Set<string>; count: number }
+    >();
+    const added = new Map<string, string[]>();
+    const gone = new Map<string, string[]>();
+    const tally = (
+      map: Map<string, { scenarios: Set<string>; count: number }>,
+      key: string,
+      scenario: string,
+    ) => {
+      const entry = map.get(key) ?? { scenarios: new Set(), count: 0 };
+      entry.scenarios.add(scenario);
+      entry.count += 1;
+      map.set(key, entry);
+    };
+    const note = (map: Map<string, string[]>, key: string, value: string) =>
+      map.set(key, [...(map.get(key) ?? []), value]);
+    for (const [scenario, elements] of Object.entries(captured)) {
+      const before = baseline[scenario] ?? {};
+      for (const [path, { values, label }] of Object.entries(elements)) {
+        const old = before[path];
+        if (!old) {
+          differences.push(`${scenario}  ${path}  new element  (${label})`);
+          note(added, scenario, label || path);
+          continue;
+        }
+        const changed = PROPS.flatMap((prop, index) =>
+          old[index] === values[index]
+            ? []
+            : [`${prop}: ${old[index]} → ${values[index]}`],
+        );
+        if (changed.length === 0) continue;
         differences.push(
           `${scenario}  ${label || path}\n    ${changed.join('\n    ')}`,
         );
+        const painted = changed.filter((line) => !line.startsWith('--'));
+        if (painted.length > 0) {
+          tally(
+            changes,
+            `${label || path}\n    ${painted.join('\n    ')}`,
+            scenario,
+          );
+        } else {
+          for (const line of changed) tally(variables, line, scenario);
+        }
+      }
+      for (const path of Object.keys(before)) {
+        if (!elements[path]) {
+          differences.push(`${scenario}  ${path}  element gone`);
+          note(gone, scenario, path);
+        }
       }
     }
-    for (const path of Object.keys(before)) {
-      if (!elements[path])
-        differences.push(`${scenario}  ${path}  element gone`);
+
+    const listed = (items: string[], limit = 3) =>
+      items.slice(0, limit).join(', ') +
+      (items.length > limit ? `, … ${items.length - limit} more` : '');
+    const where = ({
+      scenarios,
+      count,
+    }: {
+      scenarios: Set<string>;
+      count: number;
+    }) =>
+      `in ${listed([...scenarios], 6)}${count > scenarios.size ? ` (${count} elements)` : ''}`;
+    const summary = [
+      `${differences.length} visual differences. If intended, run pnpm check:visual:update.`,
+      ...[...changes]
+        .sort(([, a], [, b]) => b.count - a.count)
+        .slice(0, 20)
+        .map(
+          ([change, entry]) =>
+            `\n  ${change.replace(/\n/g, '\n  ')}\n      ${where(entry)}`,
+        ),
+      ...(changes.size > 20 ? [`\n  … ${changes.size - 20} more changes`] : []),
+      ...(variables.size > 0
+        ? [
+            '\n\n  Custom properties only, nothing repainted:',
+            ...[...variables].map(
+              ([change, entry]) =>
+                `\n    ${change}  on ${entry.count} elements ${where(entry)}`,
+            ),
+          ]
+        : []),
+      ...[...added].map(
+        ([scenario, labels]) =>
+          `\n  ${labels.length} new in ${scenario}: ${listed(labels)}`,
+      ),
+      ...[...gone].map(
+        ([scenario, paths]) =>
+          `\n  ${paths.length} gone from ${scenario}: ${listed(paths)}`,
+      ),
+    ].join('');
+    if (differences.length > 0) {
+      // On disk as well as in the report, for reading with other tools.
+      const list = test.info().outputPath('visual-differences.txt');
+      writeFileSync(list, differences.join('\n'));
+      await test.info().attach('visual-differences.txt', {
+        path: list,
+        contentType: 'text/plain',
+      });
     }
-  }
-  expect(
-    differences,
-    `${differences.length} visual differences. If intended, run pnpm check:visual:update.\n` +
-      differences.slice(0, 60).join('\n'),
-  ).toEqual([]);
-});
+    expect(differences.length, summary).toBe(0);
+  },
+);

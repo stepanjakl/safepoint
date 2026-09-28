@@ -15,9 +15,6 @@
   --sp-menu-current-face-bottom: light-dark(var(--sp-neutral-25), var(--sp-neutral-775));
   --sp-menu-current-ring-top: transparent;
   --sp-menu-current-ring-bottom: light-dark(var(--sp-neutral-200), var(--sp-neutral-925));
-  /* Light lifts the current row's top edge a step, as a pane's is; dark's
-     row is lit by its face alone. */
-  --sp-menu-current-highlight: light-dark(var(--sp-neutral-0), transparent);
 }
 
 /* A row's status badge. Its stops are read from the row: `.process-menu-row`
@@ -98,7 +95,7 @@
     --control-face-bottom: var(--sp-menu-current-face-bottom);
     --control-ring-top: var(--sp-menu-current-ring-top);
     --control-ring-bottom: var(--sp-menu-current-ring-bottom);
-    --control-highlight: var(--sp-menu-current-highlight);
+    --control-highlight: transparent;
   }
 
   /* control-face's transition list outranks [data-editing]'s, so without this
@@ -215,6 +212,12 @@
   }
 
   @media (forced-colors: active) {
+    .process-menu-row[data-current] {
+      outline: 1px solid Highlight;
+    }
+    .process-menu-row[data-dragging] {
+      outline: 2px solid Highlight;
+    }
     .process-list-fade::before,
     .process-list-fade::after {
       display: none;

@@ -43,10 +43,10 @@
     oklch(from var(--tile-ring-bottom-light) l min(c, var(--tile-cap-ring-light)) h),
     oklch(from var(--tile-ring-bottom-dark) l min(c, var(--tile-cap-ring-dark)) h)
   );
-  /* The sheen, mixed into the tile's own face so it is opaque. */
+  /* The sheen: a step of the tile's own scale, held by the face's ceiling. */
   --control-highlight: light-dark(
-    color-mix(in oklab, white 50%, var(--tile-face-light)),
-    color-mix(in oklab, black 25%, var(--tile-face-dark))
+    oklch(from var(--tile-highlight-light) l min(c, var(--tile-cap-face-light)) h),
+    oklch(from var(--tile-highlight-dark) l min(c, var(--tile-cap-face-dark)) h)
   );
   color: light-dark(
     oklch(from var(--tile-glyph-light) l min(c, var(--tile-cap-glyph-light)) h),
@@ -69,10 +69,12 @@
 }
 
 /* The hues, in menu order round the wheel, each kept clear of the state hues
-   so a tile never reads as a verdict. Every hue fills the same five roles. */
+   so a tile never reads as a verdict. Every hue fills the same six roles. */
 @utility menu-tile-yellow {
   --tile-face-light: var(--radix-yellow-3);
   --tile-face-dark: var(--radix-yellow-dark-3);
+  --tile-highlight-light: var(--radix-yellow-2);
+  --tile-highlight-dark: var(--radix-yellow-dark-2);
   --tile-ring-top-light: var(--radix-yellow-6);
   --tile-ring-top-dark: var(--radix-yellow-dark-5);
   --tile-ring-bottom-light: var(--radix-yellow-7);
@@ -86,6 +88,8 @@
 @utility menu-tile-green {
   --tile-face-light: var(--radix-green-3);
   --tile-face-dark: var(--radix-green-dark-3);
+  --tile-highlight-light: var(--radix-green-2);
+  --tile-highlight-dark: var(--radix-green-dark-2);
   --tile-ring-top-light: var(--radix-green-6);
   --tile-ring-top-dark: var(--radix-green-dark-5);
   --tile-ring-bottom-light: var(--radix-green-7);
@@ -99,6 +103,8 @@
 @utility menu-tile-sky {
   --tile-face-light: var(--radix-sky-3);
   --tile-face-dark: var(--radix-sky-dark-3);
+  --tile-highlight-light: var(--radix-sky-2);
+  --tile-highlight-dark: var(--radix-sky-dark-2);
   --tile-ring-top-light: var(--radix-sky-6);
   --tile-ring-top-dark: var(--radix-sky-dark-5);
   --tile-ring-bottom-light: var(--radix-sky-7);
@@ -112,6 +118,8 @@
 @utility menu-tile-violet {
   --tile-face-light: var(--radix-violet-3);
   --tile-face-dark: var(--radix-violet-dark-3);
+  --tile-highlight-light: var(--radix-violet-2);
+  --tile-highlight-dark: var(--radix-violet-dark-2);
   --tile-ring-top-light: var(--radix-violet-6);
   --tile-ring-top-dark: var(--radix-violet-dark-5);
   --tile-ring-bottom-light: var(--radix-violet-7);
@@ -125,6 +133,8 @@
 @utility menu-tile-pink {
   --tile-face-light: var(--radix-pink-3);
   --tile-face-dark: var(--radix-pink-dark-3);
+  --tile-highlight-light: var(--radix-pink-2);
+  --tile-highlight-dark: var(--radix-pink-dark-2);
   --tile-ring-top-light: var(--radix-pink-6);
   --tile-ring-top-dark: var(--radix-pink-dark-5);
   --tile-ring-bottom-light: var(--radix-pink-7);

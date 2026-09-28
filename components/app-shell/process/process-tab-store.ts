@@ -11,7 +11,7 @@ import { z } from 'zod';
 
   Kept per process: what you were reading about one says nothing about another.
 */
-export const PROCESS_TABS = [
+const PROCESS_TABS = [
   'runs',
   'instructions',
   'inputs',

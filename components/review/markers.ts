@@ -1,4 +1,4 @@
-import type { RunStatus, StepStatus } from '@/lib/process/placeholder-process';
+import type { RunStatus, StepStatus } from '@/lib/process/model';
 import type { ReviewOutcome } from '@/lib/promotion-release';
 import type { AdapterMode, PresentedGate } from '@/lib/review-presentation';
 import type { GlyphName } from '@/components/ui/glyph';
@@ -97,40 +97,6 @@ export const toneVar: Record<Tone, string> = {
   simulated: 'var(--sp-mode-simulated)',
   preview: 'var(--sp-mode-preview)',
 };
-
-/*
-  A rung of a tone's scale, for the places a colour is the payload of a custom
-  property rather than the colour of text -- a row publishing its state to a
-  mark. The number is the rung; see --sp-state-* in app/styles/state.css for what each
-  one is for.
-
-  Written out per tone rather than built from the tone name, so a tone that
-  gains a scale or loses one fails at the type level instead of resolving to
-  nothing at paint time. The three adapter modes and `neutral` have no scale of
-  their own -- nothing draws a badge in them -- so they fall back to the greys.
-*/
-type StateStep = 1 | 3 | 4 | 5 | 6 | 7 | 9 | 10 | 11 | 12;
-
-const rung = (n: StateStep) =>
-  ({
-    neutral: `var(--sp-state-unavailable-${n})`,
-    advisory: `var(--sp-state-advisory-${n})`,
-    verified: `var(--sp-state-verified-${n})`,
-    caution: `var(--sp-state-caution-${n})`,
-    decision: `var(--sp-state-decision-${n})`,
-    blocked: `var(--sp-state-blocked-${n})`,
-    unavailable: `var(--sp-state-unavailable-${n})`,
-    live: `var(--sp-state-unavailable-${n})`,
-    simulated: `var(--sp-state-unavailable-${n})`,
-    preview: `var(--sp-state-unavailable-${n})`,
-  }) satisfies Record<Tone, string>;
-
-/** A subtle ground to put a figure on. */
-export const toneFace: Record<Tone, string> = rung(3);
-/** A shape drawn solid at small size: a status disc, a bar behind a pill. */
-export const toneMark: Record<Tone, string> = rung(9);
-/** Text that has to carry: a step past the tone's own reading weight. */
-export const toneStrong: Record<Tone, string> = rung(12);
 
 export const toneText: Record<Tone, string> = {
   neutral: 'text-primary',

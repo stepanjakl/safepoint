@@ -4,7 +4,7 @@ import { styleDebug } from '@/lib/style-debug';
 import { useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import type { ProcessSummary } from '@/lib/process/placeholder-process';
+import type { ProcessSummary } from '@/lib/process/model';
 import { PROCESS_NAME_MAX, useProcessName } from './process-names-store';
 import { ScheduleFields } from './schedule-control';
 import { useProcessSchedule } from './schedule-store';
