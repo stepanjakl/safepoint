@@ -91,7 +91,7 @@ export function AssistantPanel({
             part: 'composer',
             appearance: 'surface-recessed',
           })}
-          className="border-rule-default surface-recessed rounded-control border p-3"
+          className="control-face surface-recessed rounded-control p-3"
         >
           <textarea
             ref={composer}

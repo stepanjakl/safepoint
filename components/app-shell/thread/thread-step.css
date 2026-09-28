@@ -3,12 +3,44 @@
    line, and every box hangs off a named step, so the order of work is
    readable without opening anything.
    ────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --sp-thread-line: var(--sp-rule-default);
+  --sp-thread-done: var(--sp-rule-strong);
+  --sp-thread-attention-face: var(--sp-state-decision-4);
+  --sp-thread-attention-face-hover: var(--sp-state-decision-5);
+  --sp-thread-blocked-face: var(--sp-state-blocked-4);
+  --sp-thread-blocked-face-hover: var(--sp-state-blocked-5);
+  --sp-thread-attention-face-active: var(--sp-state-decision-6);
+  --sp-thread-blocked-face-active: var(--sp-state-blocked-6);
+  --sp-thread-attention-solid: var(--sp-state-decision-9);
+  --sp-thread-blocked-solid: var(--sp-state-blocked-9);
+  /* A step past the row's hover wash, so a pill stays a pill under it. */
+  --sp-thread-fact-face: light-dark(var(--sp-neutral-125), var(--sp-neutral-775));
+  --sp-thread-fact-face-hover: light-dark(var(--sp-neutral-150), var(--sp-neutral-750));
+}
+
 @layer components {
   .thread {
     /* Shared by the row gap and by the connector, so the line always reaches
        the next marker no matter what the spacing becomes. */
     --thread-gap: 1.75rem;
     --thread-rail: 1.5rem;
+    /* Every marker, whatever its state, is one circle of this size: states
+       change colour, never size. */
+    --thread-mark: 1.125rem;
+    /* A bar rather than a border, for its rounded ends. */
+    --thread-line: 1.5px;
+    /* The clearance between the line and the markers it joins, a little more
+       below it than above, so the line reads as leaving one step for the next. */
+    --thread-line-space: 0.4375rem;
+    --thread-line-space-end: 0.5625rem;
+    /* How far the hover wash reaches past the rail and the row: the same above
+       and below, and short of where the line begins. */
+    --thread-wash-x: 0.1875rem;
+    --thread-wash-y: 0.1875rem;
+    /* Quick fades: pills, the fold's content and the time trading places. */
+    --thread-fade: 110ms;
     display: flex;
     flex-direction: column;
     gap: var(--thread-gap);
@@ -19,79 +51,449 @@
     display: grid;
     grid-template-columns: var(--thread-rail) minmax(0, 1fr);
     column-gap: 0.75rem;
-    row-gap: 0.5rem;
   }
-  /* The connector runs from under this step's marker to the next one, so the
-     line is drawn by the steps themselves and needs no separate element. The
-     last step has nothing to reach, so it draws none. */
-  .thread-step:not(:last-child)::before {
+  /* Eases in when it arrives while the reader watches; never on page load. */
+  .thread-step[data-entering] {
+    animation: thread-enter var(--duration-pane) ease-out;
+  }
+  @keyframes thread-enter {
+    from {
+      opacity: 0;
+      translate: 0 -0.25rem;
+    }
+  }
+
+  /* ── The line ────────────────────────────────────────────────────────── */
+
+  /* From just below this marker to just above the next: the line joins the
+     markers without touching them. */
+  .thread-step:not(:last-child)::before,
+  .thread-step[data-status='running']:last-child::before {
     content: '';
     position: absolute;
-    left: calc(var(--thread-rail) / 2);
-    top: var(--thread-rail);
-    bottom: calc(var(--thread-gap) * -1);
-    width: 1px;
-    background: var(--sp-rule-faint);
+    left: calc(var(--thread-rail) / 2 - var(--thread-line) / 2);
+    width: var(--thread-line);
+    top: calc(var(--thread-rail) / 2 + var(--thread-mark) / 2 + var(--thread-line-space));
+    bottom: calc(
+      (
+          var(--thread-gap) + var(--thread-rail) / 2 - var(--thread-mark) / 2 -
+            var(--thread-line-space-end)
+        ) *
+        -1
+    );
+    border-radius: 999px;
+    background-color: var(--sp-thread-line);
   }
+  /* The stretch into a running step is not travelled yet: round dots, one
+     line-width across, so the dotted line keeps the solid one's round ends. */
+  .thread-step:has(+ .thread-step[data-status='running'])::before,
+  .thread-step[data-status='running']:last-child::before {
+    background-color: transparent;
+    background-image: radial-gradient(
+      circle,
+      var(--sp-thread-line) calc(var(--thread-line) / 2),
+      transparent calc(var(--thread-line) / 2 + 0.5px)
+    );
+    background-size: var(--thread-line) calc(var(--thread-line) * 2.5);
+    /* Spaced, not repeated: the dots stretch to meet both ends exactly, so
+       the clearance at each end reads the same as on a solid line. */
+    background-repeat: no-repeat space;
+  }
+  /* A running step at the end trails a line that fades out: more is coming.
+     A waiting or settled run ends at its last marker. */
+  .thread-step[data-status='running']:last-child::before {
+    bottom: 0;
+    mask-image: linear-gradient(to bottom, black 30%, transparent);
+  }
+
+  /* ── The hover wash ──────────────────────────────────────────────────── */
+
+  /* Behind the marker and the row together, so the step answers as one
+     thing. The app draws no focus outline, so the wash is the focus too. */
+  .thread-step::after {
+    content: '';
+    position: absolute;
+    z-index: 0;
+    top: calc(var(--thread-wash-y) * -1);
+    left: calc(var(--thread-wash-x) * -1);
+    right: calc(var(--thread-wash-x) * -2);
+    height: calc(var(--thread-rail) + var(--thread-wash-y) * 2);
+    border-radius: var(--radius-control);
+    pointer-events: none;
+    transition: background-color var(--duration-state) ease-out;
+  }
+  .thread-step:has(> .thread-step-row:hover, > .thread-marker:hover)::after,
+  .thread-step:has(> .thread-step-row > .thread-step-toggle:focus-visible)::after {
+    background-color: var(--sp-surface-hover);
+  }
+
+  /* ── The marker ──────────────────────────────────────────────────────── */
+
   .thread-marker {
     grid-column: 1;
     grid-row: 1;
+    position: relative;
+    z-index: 2;
     display: grid;
     place-items: center;
     height: var(--thread-rail);
   }
-  /* The same enclosure as a system disc, one size down: face, ring and sheen
-     from `control-face`, with the outer ring punching a gap in the connector
-     so the line reads as passing behind the marker rather than through it. */
+  /* Filled, one size, the mark cut out of the fill: finished is the quiet
+     grey, and colour is kept for what needs a person. The icons draw their
+     circle at 20 of 24 units, so they are set at 24 to fill the mark. */
   .thread-dot {
-    @apply control-face control-hairline surface-floating;
-    box-shadow:
-      --theme(--shadow-control-highlight),
-      0 0 0 3px var(--sp-surface-primary);
+    position: relative;
     display: grid;
     place-items: center;
-    width: var(--thread-rail);
-    height: var(--thread-rail);
+    width: var(--thread-mark);
+    height: var(--thread-mark);
     border-radius: 999px;
+    color: var(--sp-thread-done);
     cursor: default;
   }
-  .thread-step-name {
+  /* Laid over the mark rather than in its grid: a grid track would grow to
+     the icon's box and push its centre off the line's axis. */
+  .thread-icon {
+    position: absolute;
+    inset: -10%;
+    width: 120%;
+    height: 120%;
+    max-width: none;
+  }
+  .thread-dot[data-status='running'] {
+    color: var(--sp-state-advisory);
+  }
+  .thread-dot[data-status='pending'] {
+    background-color: var(--sp-thread-fact-face);
+    color: var(--sp-state-unavailable);
+  }
+  /* Colour only on the step the run is waiting on now: the vivid step of its
+     hue. An earlier flag keeps its shape in the finished grey
+     -- it is history -- and its pill carries the colour instead. */
+  .thread-step[data-latest] .thread-dot[data-status='attention'] {
+    color: var(--sp-thread-attention-solid);
+  }
+  .thread-step[data-latest] .thread-dot[data-status='blocked'] {
+    color: var(--sp-thread-blocked-solid);
+  }
+  /* A marker whose step finished on screen settles into place once. */
+  .thread-dot[data-settling] {
+    animation: thread-settle var(--duration-pane) ease-out;
+  }
+  @keyframes thread-settle {
+    from {
+      scale: 0.6;
+      opacity: 0.4;
+    }
+  }
+  /* The one ring: an arc on a pale track of its own hue, round a dot of the
+     arc's colour. It turns at an even pace and its arc lengthens and shortens
+     once a turn, on the same beat. The only continuous motion in the thread. */
+  .thread-ring {
+    width: var(--thread-mark);
+    height: var(--thread-mark);
+    fill: none;
+    stroke-width: 2;
+    animation: thread-turn 1.2s linear infinite;
+  }
+  .thread-ring-track {
+    stroke: var(--sp-running-track);
+  }
+  .thread-ring-arc {
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-dasharray: 22 100;
+    animation: thread-breathe 1.2s ease-in-out infinite;
+  }
+  .thread-ring-dot {
+    fill: currentColor;
+    stroke: none;
+  }
+  @keyframes thread-turn {
+    from {
+      rotate: -90deg;
+    }
+    to {
+      rotate: 270deg;
+    }
+  }
+  @keyframes thread-breathe {
+    50% {
+      stroke-dasharray: 40 100;
+    }
+  }
+
+  /* ── The row ─────────────────────────────────────────────────────────── */
+
+  .thread-step-row {
     grid-column: 2;
     grid-row: 1;
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-wrap: wrap;
-    align-items: baseline;
+    align-items: center;
     gap: 0.25rem 0.625rem;
+    min-width: 0;
     min-height: var(--thread-rail);
-    align-content: center;
+  }
+  /* The name is the button; its stretch covers the row, so a press anywhere
+     on it folds or unfolds the step. */
+  .thread-step-toggle {
     font-size: var(--sp-text-dense);
     line-height: var(--sp-text-dense--lh);
     font-weight: 550;
+    color: var(--sp-text-muted-strong);
+    text-align: start;
+    transition: color var(--duration-state) ease-out;
   }
-  .thread-step-body {
+  .thread-step-toggle::after {
+    content: '';
+    position: absolute;
+    inset: calc(var(--thread-wash-y) * -1) calc(var(--thread-wash-x) * -1)
+      calc(var(--thread-wash-y) * -1) 0;
+  }
+  .thread-step[data-latest] .thread-step-toggle,
+  .thread-step-row:hover > .thread-step-toggle,
+  .thread-step-toggle:focus-visible {
+    color: var(--sp-text-primary);
+  }
+  /* Pills exactly the marker's height, so their round ends are the markers'
+     own curve and a row reads as one family of shapes. */
+  .thread-step-facts {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+  .thread-step-fact,
+  .thread-step-flag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    height: var(--thread-mark);
+    padding-inline: 0.5rem;
+    border-radius: 999px;
+    font-size: var(--sp-text-micro);
+    line-height: var(--sp-text-micro--lh);
+    letter-spacing: var(--sp-text-micro--ls);
+    font-weight: 550;
+    white-space: nowrap;
+    color: var(--sp-text-muted);
+    background-color: var(--sp-thread-fact-face);
+    transition: background-color var(--duration-state) ease-out;
+  }
+  .thread-step[data-status='attention'] .thread-step-flag {
+    color: var(--sp-state-decision);
+    background-color: var(--sp-thread-attention-face);
+  }
+  .thread-step[data-status='blocked'] .thread-step-flag {
+    color: var(--sp-state-blocked);
+    background-color: var(--sp-thread-blocked-face);
+  }
+  /* A step further under the row's hover or focus, so the pills rise with
+     the wash rather than sinking into it. */
+  .thread-step-row:is(:hover, :has(> .thread-step-toggle:focus-visible)) .thread-step-fact {
+    background-color: var(--sp-thread-fact-face-hover);
+  }
+  .thread-step[data-status='attention']
+    > .thread-step-row:is(:hover, :has(> .thread-step-toggle:focus-visible))
+    .thread-step-flag:not(:hover, :focus-visible) {
+    background-color: var(--sp-thread-attention-face-hover);
+  }
+  .thread-step[data-status='blocked']
+    > .thread-step-row:is(:hover, :has(> .thread-step-toggle:focus-visible))
+    .thread-step-flag:not(:hover, :focus-visible) {
+    background-color: var(--sp-thread-blocked-face-hover);
+  }
+  /* A flag that goes somewhere sits above the row's stretch as its own
+     control, and deepens a step past the row's hover when it is the target. */
+  button.thread-step-flag {
+    position: relative;
+    z-index: 2;
+    transition: background-color var(--duration-state) ease-out;
+  }
+  .thread-step[data-status='attention'] button.thread-step-flag:is(:hover, :focus-visible) {
+    background-color: var(--sp-thread-attention-face-active);
+  }
+  .thread-step[data-status='blocked'] button.thread-step-flag:is(:hover, :focus-visible) {
+    background-color: var(--sp-thread-blocked-face-active);
+  }
+  /* The fold's facts. An open step shows its box instead, unless it is
+     running: then the fact is its count, which the ring cannot spell out.
+     They fade rather than vanish, and keep their place while they do. */
+  .thread-step-facts {
+    transition:
+      opacity var(--thread-fade) ease-out,
+      visibility 0s linear;
+  }
+  .thread-step[data-open]:not([data-status='running']) .thread-step-facts {
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity var(--thread-fade) ease-out,
+      visibility 0s linear var(--thread-fade);
+  }
+  /* The second axis: what each step took, and the chevron, at the far end. */
+  .thread-step-time {
+    margin-inline-start: auto;
+    font-size: var(--sp-text-meta);
+    line-height: var(--sp-text-meta--lh);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--sp-text-muted);
+    display: inline-grid;
+    justify-items: end;
+    overflow: clip;
+  }
+  /* Both readings in one cell: the one on show rests, the other waits a
+     quarter-line below, faded, and they trade places vertically. */
+  .thread-step-time-face {
+    grid-area: 1 / 1;
+    opacity: 0;
+    translate: 0 0.375rem;
+    transition:
+      opacity var(--thread-fade) ease-out,
+      translate var(--thread-fade) ease-out;
+  }
+  .thread-step-time-face + .thread-step-time-face {
+    translate: 0 -0.375rem;
+  }
+  .thread-step-time-face[data-shown] {
+    opacity: 1;
+    translate: 0 0;
+  }
+  /* A filled caret, drawn in a 24-unit box: set at the mark's size, the
+     triangle itself is about a third of it. */
+  .thread-step-chevron {
+    flex: none;
+    width: 1.375rem;
+    height: 1.375rem;
+    /* Pulls the drawn triangle to the wash's inset, not the box's. */
+    margin-inline-end: -0.25rem;
+    margin-inline-start: auto;
+    color: var(--sp-text-muted);
+    /* The small caret only comes pointing down: turned to point right while
+       the step is closed. */
+    rotate: -90deg;
+    transition:
+      rotate var(--duration-state) ease-out,
+      color var(--duration-state) ease-out;
+  }
+  .thread-step-time + .thread-step-chevron {
+    margin-inline-start: 0;
+  }
+  .thread-step[data-open] .thread-step-row > .thread-step-chevron {
+    rotate: 0deg;
+  }
+  .thread-step-row:hover > .thread-step-chevron,
+  .thread-step-toggle:focus-visible ~ .thread-step-chevron {
+    color: var(--sp-text-primary);
+  }
+
+  /* ── The fold ────────────────────────────────────────────────────────── */
+
+  /* Rows from nothing to their content, so the box opens and closes rather
+     than appearing. The clip holds the padding, so a closed fold is nil. */
+  /* Opening makes room first and then fades the content in; closing fades
+     it out first and then gives the room back. */
+  .thread-step-fold {
     grid-column: 2;
     grid-row: 2;
+    display: grid;
+    grid-template-rows: 0fr;
     min-width: 0;
+    transition: grid-template-rows var(--duration-row) ease-out var(--thread-fade);
   }
+  .thread-step[data-open] > .thread-step-fold {
+    grid-template-rows: 1fr;
+    transition-delay: 0s;
+  }
+  .thread-step-body {
+    padding-top: 0.5rem;
+    opacity: 0;
+    transition: opacity var(--thread-fade) ease-out;
+  }
+  .thread-step[data-open] > .thread-step-fold > .thread-step-clip > .thread-step-body {
+    opacity: 1;
+    transition-delay: var(--duration-row);
+  }
+  /* The margin lets a card's ring and a disc's gap show past the edge. */
+  .thread-step-clip {
+    min-height: 0;
+    overflow: clip;
+    overflow-clip-margin: 0.25rem;
+  }
+
+  /* ── The look as it shipped, kept while the two are compared ─────────── */
+
+  .thread[data-look='current'] {
+    .thread-step:not(:last-child)::before {
+      left: calc(var(--thread-rail) / 2);
+      width: 1px;
+      top: var(--thread-rail);
+      bottom: calc(var(--thread-gap) * -1);
+      border-radius: 0;
+      background: var(--sp-rule-faint);
+    }
+    .thread-step[data-status='running']:last-child::before {
+      content: none;
+    }
+    .thread-step .thread-dot[data-status] {
+      @apply control-face control-hairline surface-floating;
+      background-color: transparent;
+      box-shadow:
+        --theme(--shadow-control-highlight),
+        0 0 0 3px var(--sp-surface-primary);
+      width: var(--thread-rail);
+      height: var(--thread-rail);
+    }
+    .thread-dot[data-status='running'] > svg {
+      animation: thread-turn 6s linear infinite;
+    }
+    .thread-step .thread-step-toggle {
+      color: var(--sp-text-primary);
+    }
+    .thread-step[data-open] .thread-step-facts {
+      opacity: 1;
+      visibility: visible;
+    }
+    .thread-step .thread-step-fact,
+    .thread-step .thread-step-flag {
+      height: auto;
+      padding-inline: 0;
+      background-color: transparent;
+    }
+    .thread-step-time {
+      display: none;
+    }
+    .thread-step-row > .thread-step-chevron {
+      margin-inline-start: 0;
+    }
+  }
+
   /* Below the rail width the timeline costs more than it explains. rem, not
      px: a px copy of `sm` drifts from the utilities at a non-default root. */
   @media (width < 40rem) {
     .thread-step {
       grid-template-columns: minmax(0, 1fr);
+      row-gap: 0.5rem;
     }
-    .thread-step:not(:last-child)::before {
+    .thread-step:not(:last-child)::before,
+    .thread-step[data-status='running']:last-child::before {
       display: none;
     }
+    .thread-step::after {
+      height: calc(var(--thread-rail) * 2 + 0.5rem + var(--thread-wash-y) * 2);
+    }
     .thread-marker {
-      grid-column: 1;
-      grid-row: 1;
       justify-self: start;
     }
-    .thread-step-name {
+    .thread-step-row {
       grid-column: 1;
       grid-row: 2;
     }
-    .thread-step-body {
+    .thread-step-fold {
       grid-column: 1;
       grid-row: 3;
     }

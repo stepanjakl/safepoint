@@ -11,32 +11,14 @@
   --sp-menu-wash-strong: light-dark(var(--sp-neutral-200), var(--sp-neutral-725));
   --sp-menu-link: light-dark(var(--sp-neutral-725), var(--sp-neutral-150));
   /* The Save-order button: the one teal control, with stops of its own so the
-     arrange mode can be tuned without moving every accented button. Fitted to
-     Tailwind's teal as the accent is to its cyan. */
-  --sp-commit-face-top: light-dark(
-    color-mix(in oklab, var(--radix-teal-dark-10) 80%, var(--radix-teal-dark-11)),
-    color-mix(in oklab, var(--radix-teal-dark-7) 5%, var(--radix-teal-dark-8))
-  );
-  --sp-commit-face-bottom: light-dark(
-    color-mix(in oklab, var(--radix-teal-dark-7) 40%, var(--radix-teal-dark-8)),
-    color-mix(in oklab, var(--radix-teal-dark-7) 95%, var(--radix-teal-dark-8))
-  );
-  --sp-commit-ring-top: light-dark(
-    color-mix(in oklab, var(--radix-teal-dark-7) 40%, var(--radix-teal-dark-8)),
-    color-mix(in oklab, var(--radix-teal-dark-10) 45%, var(--radix-teal-dark-11))
-  );
-  --sp-commit-ring-bottom: light-dark(
-    color-mix(in oklab, var(--radix-teal-dark-6) 60%, var(--radix-teal-dark-7)),
-    color-mix(in oklab, var(--radix-teal-dark-7) 95%, var(--radix-teal-dark-8))
-  );
-  --sp-commit-edge: light-dark(
-    color-mix(in oklab, var(--radix-teal-dark-10) 10%, var(--radix-teal-dark-11)),
-    color-mix(in oklab, var(--radix-teal-dark-6) 75%, var(--radix-teal-dark-7))
-  );
-  --sp-commit-hover: light-dark(
-    color-mix(in oklab, var(--radix-teal-dark-7) 40%, var(--radix-teal-dark-8)),
-    color-mix(in oklab, var(--radix-teal-dark-7) 40%, var(--radix-teal-dark-8))
-  );
+     arrange mode can be tuned without moving every accented button. One Radix
+     step per stop, as the accent's, each the nearest to Tailwind's teal. */
+  --sp-commit-face-top: light-dark(var(--radix-teal-dark-10), var(--radix-teal-dark-8));
+  --sp-commit-face-bottom: light-dark(var(--radix-teal-dark-8), var(--radix-teal-dark-7));
+  --sp-commit-ring-top: light-dark(var(--radix-teal-dark-8), var(--radix-teal-dark-11));
+  --sp-commit-ring-bottom: light-dark(var(--radix-teal-dark-6), var(--radix-teal-dark-7));
+  --sp-commit-edge: light-dark(var(--radix-teal-dark-11), var(--radix-teal-dark-6));
+  --sp-commit-hover: light-dark(var(--radix-teal-dark-8), var(--radix-teal-dark-8));
 }
 
 @theme inline {

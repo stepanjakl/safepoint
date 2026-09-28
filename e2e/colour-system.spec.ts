@@ -7,6 +7,10 @@ import { expect, test, type Page } from '@playwright/test';
 const OPAQUE_EDGE_TOKENS = [
   '--sp-raised-edge',
   '--sp-floating-edge',
+  '--sp-raised-ring',
+  '--sp-floating-ring',
+  '--sp-recessed-ring',
+  '--sp-recessed-edge',
   '--sp-analysis-highlight',
   '--sp-notice-highlight',
   '--sp-keycap-highlight',

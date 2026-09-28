@@ -122,29 +122,8 @@ Never apply a change. Produce a release plan for a person to review.`,
       },
     ],
   },
-  steps: [
-    {
-      id: 'request',
-      name: 'Request',
-      label: 'Thu 4 Sep · 09:00',
-      status: 'complete',
-      note: 'Raised by the weekly schedule, not by a person.',
-    },
-    {
-      id: 'analysis',
-      name: 'Initial analysis',
-      label: '27 candidates · 9 sources',
-      status: 'attention',
-      note: 'Two sources were stale at read time and one was partly unavailable.',
-    },
-    {
-      id: 'review',
-      name: 'Release review',
-      label: 'Awaiting a reviewer',
-      status: 'attention',
-      note: 'Nothing is applied until a person approves it.',
-    },
-  ],
+  // No `steps`: this run's thread is drawn from its stage by run-lifecycle.ts,
+  // which is where each step's label and status are derived.
   analysis: {
     summary:
       'Read the shortlist against the current pricebook and the recorded brief, then priced every candidate that clears policy. Four candidates could not be priced at all, and six need a decision that is not mine to make.',

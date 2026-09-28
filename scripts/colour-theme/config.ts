@@ -143,26 +143,168 @@ export function curvesFor(
 export const CURVES = curvesFor(neutralFamily(DEFAULT_NEUTRAL_FAMILY));
 
 /*
+  Surface layers. Every surface is a whole number of layers from the canvas --
+  up is lighter in both themes -- and a recess is RECESS_DEPTH layers below
+  whichever surface it is cut into. Rings and highlights are offsets, so the
+  stack moves together when LAYER_STEP does; dark takes twice the distance,
+  since the same step reads as less there. The generator writes these roles
+  and the ground-* utilities to generated/surfaces.css, and nothing else
+  declares them.
+*/
+const LAYER_STEP = 25;
+const RECESS_DEPTH = 1;
+
+const SURFACE_THEMES = {
+  /* ring: ramp steps past whichever of the face and its ground lies further
+     that way, so the ring stands off both sides; held for contrast, not
+     layering. highlight: layers from the face -- lit in light, deeper in dark. */
+  light: { canvas: 75, layerScale: 1, ring: 200, highlight: -1 },
+  dark: { canvas: 900, layerScale: 2, ring: -125, highlight: 1 },
+} as const satisfies Record<
+  Theme,
+  { canvas: number; layerScale: number; ring: number; highlight: number }
+>;
+
+type SurfaceLayer = {
+  depth: number;
+  face: `--${string}`;
+  /* What it sits on. The canvas sits on nothing and paints no edge. */
+  on?: string;
+  ring?: `--${string}`;
+  highlight?: `--${string}`;
+  /* The recess cut into this surface: face, `-ring` and `-edge`. */
+  recess: `--${string}`;
+  /* The ground-* utility that hands the recess to what this surface holds. */
+  ground?: string;
+};
+
+export const SURFACE_LAYERS = {
+  canvas: { depth: 0, face: '--sp-canvas', recess: '--sp-canvas-recess' },
+  primary: {
+    depth: 1,
+    face: '--sp-surface-primary',
+    on: 'canvas',
+    ring: '--sp-raised-ring',
+    highlight: '--sp-raised-edge',
+    recess: '--sp-primary-recess',
+    ground: 'ground-raised',
+  },
+  floating: {
+    depth: 2,
+    face: '--sp-surface-floating',
+    on: 'primary',
+    ring: '--sp-floating-ring',
+    highlight: '--sp-floating-edge',
+    recess: '--sp-floating-recess',
+    ground: 'ground-floating',
+  },
+} as const satisfies Record<string, SurfaceLayer>;
+
+/* The recess roles surface-recessed reads. At the root they are the canvas's
+   recess; a ground-* utility re-points them for everything inside it. */
+export const RECESS_ROLES = {
+  face: '--sp-surface-inset',
+  ring: '--sp-recessed-ring',
+  highlight: '--sp-recessed-edge',
+} as const;
+
+export const recessRoles = (recess: `--${string}`) =>
+  ({
+    face: recess,
+    ring: `${recess}-ring`,
+    highlight: `${recess}-edge`,
+  }) as const;
+
+function rampStep(value: number, what: string) {
+  const last = COLOUR_STEPS.at(-1)!;
+  if (!Number.isInteger(value / 25) || value < 0 || value > last) {
+    throw new Error(
+      `${what} lands on step ${value}, which is not on the 0-${last} ramp; change LAYER_STEP, RECESS_DEPTH or SURFACE_THEMES.`,
+    );
+  }
+  return value;
+}
+
+/* Each surface role's step in each theme, keyed by CSS variable. */
+export const SURFACE_STEPS: ReadonlyMap<
+  `--${string}`,
+  Record<Theme, number>
+> = (() => {
+  const steps = new Map<`--${string}`, Record<Theme, number>>();
+  const put = (variable: `--${string}`, theme: Theme, value: number) => {
+    const entry = steps.get(variable) ?? { light: 0, dark: 0 };
+    entry[theme] = rampStep(value, `${theme} ${variable}`);
+    steps.set(variable, entry);
+  };
+  const layers = SURFACE_LAYERS as Record<string, SurfaceLayer>;
+  for (const theme of THEMES) {
+    const { canvas, layerScale, ring, highlight } = SURFACE_THEMES[theme];
+    const layer = LAYER_STEP * layerScale;
+    const faceAt = (depth: number) => canvas - depth * layer;
+    const ringFor = (face: number, ground: number) =>
+      (ring > 0 ? Math.max(face, ground) : Math.min(face, ground)) + ring;
+    const edgeFor = (face: number) => face + highlight * layer;
+    for (const surface of Object.values(layers)) {
+      const face = faceAt(surface.depth);
+      put(surface.face, theme, face);
+      if (surface.on) {
+        const ground = faceAt(layers[surface.on]!.depth);
+        if (surface.ring) put(surface.ring, theme, ringFor(face, ground));
+        if (surface.highlight) put(surface.highlight, theme, edgeFor(face));
+      }
+      const recess = recessRoles(surface.recess);
+      const recessFace = faceAt(surface.depth - RECESS_DEPTH);
+      put(recess.face, theme, recessFace);
+      put(recess.ring, theme, ringFor(recessFace, face));
+      put(recess.highlight, theme, edgeFor(recessFace));
+    }
+  }
+  return steps;
+})();
+
+/* Where nothing re-points them, the recess roles are the canvas's recess. */
+export const SURFACE_ALIASES: ReadonlyMap<`--${string}`, `--${string}`> =
+  new Map(
+    Object.entries(recessRoles(SURFACE_LAYERS.canvas.recess)).map(
+      ([part, variable]) => [
+        RECESS_ROLES[part as keyof typeof RECESS_ROLES],
+        variable,
+      ],
+    ),
+  );
+
+function surfaceRole(cssVariable: `--${string}`): RoleAssignment {
+  const steps = SURFACE_STEPS.get(
+    SURFACE_ALIASES.get(cssVariable) ?? cssVariable,
+  );
+  if (!steps) throw new Error(`${cssVariable} is not a surface role.`);
+  return { cssVariable, ...steps };
+}
+
+/*
   Stable role inventory for the first theme. The CSS validator compares these
   assignments with the declarations the application actually paints.
 */
 export const ROLE_ASSIGNMENTS = {
-  canvas: { cssVariable: '--sp-canvas', light: 75, dark: 900 },
-  surfacePrimary: {
-    cssVariable: '--sp-surface-primary',
-    light: 50,
-    dark: 850,
-  },
-  surfaceFloating: {
-    cssVariable: '--sp-surface-floating',
-    light: 25,
-    dark: 775,
-  },
-  surfaceInset: {
-    cssVariable: '--sp-surface-inset',
-    light: 125,
-    dark: 975,
-  },
+  canvas: surfaceRole('--sp-canvas'),
+  surfacePrimary: surfaceRole('--sp-surface-primary'),
+  surfaceFloating: surfaceRole('--sp-surface-floating'),
+  surfaceInset: surfaceRole('--sp-surface-inset'),
+  raisedRing: surfaceRole('--sp-raised-ring'),
+  floatingRing: surfaceRole('--sp-floating-ring'),
+  recessedRing: surfaceRole('--sp-recessed-ring'),
+  raisedEdge: surfaceRole('--sp-raised-edge'),
+  floatingEdge: surfaceRole('--sp-floating-edge'),
+  recessedEdge: surfaceRole('--sp-recessed-edge'),
+  canvasRecess: surfaceRole('--sp-canvas-recess'),
+  canvasRecessRing: surfaceRole('--sp-canvas-recess-ring'),
+  canvasRecessEdge: surfaceRole('--sp-canvas-recess-edge'),
+  primaryRecess: surfaceRole('--sp-primary-recess'),
+  primaryRecessRing: surfaceRole('--sp-primary-recess-ring'),
+  primaryRecessEdge: surfaceRole('--sp-primary-recess-edge'),
+  floatingRecess: surfaceRole('--sp-floating-recess'),
+  floatingRecessRing: surfaceRole('--sp-floating-recess-ring'),
+  floatingRecessEdge: surfaceRole('--sp-floating-recess-edge'),
   surfaceControl: {
     cssVariable: '--sp-surface-control',
     light: 25,
@@ -170,7 +312,7 @@ export const ROLE_ASSIGNMENTS = {
   },
   surfaceSelected: {
     cssVariable: '--sp-surface-selected',
-    light: 225,
+    light: 175,
     dark: 725,
   },
   surfaceDisabled: {
@@ -218,30 +360,24 @@ export const ROLE_ASSIGNMENTS = {
     dark: 875,
   },
   noticeFace: { cssVariable: '--sp-notice-face', light: 50, dark: 825 },
+  /* The tooltip wears the floating face, so it moves with the stack. */
   tooltipFace: {
     cssVariable: '--tooltip-face',
-    light: 25,
-    dark: 775,
+    ...SURFACE_STEPS.get('--sp-surface-floating')!,
   },
   /* Edges, so a boundary can be measured against the face it bounds and the
      ground it lies on rather than trusted because it is a border. */
   tooltipEdge: { cssVariable: '--tooltip-edge', light: 475, dark: 475 },
   ruleFaint: { cssVariable: '--sp-rule-faint', light: 225, dark: 700 },
   keycapRing: { cssVariable: '--sp-keycap-ring', light: 200, dark: 650 },
-  menuChip: { cssVariable: '--sp-menu-chip', light: 225, dark: 850 },
+  menuChip: { cssVariable: '--sp-menu-chip', light: 150, dark: 850 },
   /* Sheens and etches: every structural edge is a step, so each is pinned
      here rather than left to whatever it composites to. */
-  floatingEdge: {
-    cssVariable: '--sp-floating-edge',
-    light: 0,
-    dark: 850,
-  },
   analysisHighlight: {
     cssVariable: '--sp-analysis-highlight',
     light: 0,
     dark: 900,
   },
-  raisedEdge: { cssVariable: '--sp-raised-edge', light: 25, dark: 900 },
   keycapHighlight: {
     cssVariable: '--sp-keycap-highlight',
     light: 0,
@@ -282,7 +418,71 @@ export const ROLE_ASSIGNMENTS = {
   },
 } as const satisfies Record<string, RoleAssignment>;
 
+type RoleKey = keyof typeof ROLE_ASSIGNMENTS;
+
+/* Every surface ring against both sides it separates -- its own face and the
+   ground it sits on -- since a ring that matches either side reads as a fade. */
+const RING_SIDES: readonly (readonly [string, RoleKey, RoleKey, RoleKey])[] = [
+  ['raised', 'raisedRing', 'surfacePrimary', 'canvas'],
+  ['floating', 'floatingRing', 'surfaceFloating', 'surfacePrimary'],
+  ['canvas-recess', 'canvasRecessRing', 'canvasRecess', 'canvas'],
+  ['primary-recess', 'primaryRecessRing', 'primaryRecess', 'surfacePrimary'],
+  [
+    'floating-recess',
+    'floatingRecessRing',
+    'floatingRecess',
+    'surfaceFloating',
+  ],
+];
+
+const RING_CONTRACTS: readonly ContrastContract[] = RING_SIDES.flatMap(
+  ([name, ring, face, ground]) =>
+    (
+      [
+        ['face', face],
+        ['ground', ground],
+      ] as const
+    ).map(([side, background]) => ({
+      id: `${name}-ring-on-${side}`,
+      classification: 'advisory' as const,
+      foreground: ring,
+      background,
+      minimum: 1.2,
+      target: 1.5,
+      rationale: `The ${name.replace('-', ' ')} ring against its ${side}.`,
+    })),
+);
+
+/* Text in a recess, wherever it is cut. The canvas's recess is the root
+   --sp-surface-inset, held by the *-on-inset-surface contracts. */
+const RECESS_TEXT_CONTRACTS: readonly ContrastContract[] = (
+  [
+    ['primary-recess', 'primaryRecess'],
+    ['floating-recess', 'floatingRecess'],
+  ] as const
+).flatMap(([name, background]) => [
+  {
+    id: `primary-on-${name}`,
+    classification: 'required' as const,
+    foreground: 'textPrimary' as const,
+    background,
+    minimum: 4.5,
+    target: 7,
+    rationale: 'Ordinary text in a recess.',
+  },
+  {
+    id: `muted-on-${name}`,
+    classification: 'required' as const,
+    foreground: 'textMuted' as const,
+    background,
+    minimum: 4.5,
+    target: 4.75,
+    rationale: 'Secondary text in a recess.',
+  },
+]);
+
 export const CONTRAST_CONTRACTS: readonly ContrastContract[] = [
+  ...RECESS_TEXT_CONTRACTS,
   {
     id: 'primary-on-canvas',
     classification: 'required',
@@ -455,25 +655,7 @@ export const CONTRAST_CONTRACTS: readonly ContrastContract[] = [
   /* A panel edge is decorative where the fill already separates the panel, so
      these carry a visual target rather than a WCAG minimum -- but a boundary
      that vanishes is still a defect, and nothing measured these before. */
-  {
-    id: 'faint-rule-on-floating-surface',
-    classification: 'advisory',
-    foreground: 'ruleFaint',
-    background: 'surfaceFloating',
-    minimum: 1.2,
-    target: 1.5,
-    rationale:
-      'The floating panel ring; in dark it had fallen to 1.10:1 and the boundary was carried almost entirely by an alpha sheen.',
-  },
-  {
-    id: 'faint-rule-on-primary-surface',
-    classification: 'advisory',
-    foreground: 'ruleFaint',
-    background: 'surfacePrimary',
-    minimum: 1.2,
-    target: 1.5,
-    rationale: 'The raised panel ring.',
-  },
+  ...RING_CONTRACTS,
   {
     id: 'keycap-ring-on-face',
     classification: 'advisory',
@@ -518,6 +700,22 @@ export const VISUAL_CONTRACTS: readonly VisualContract[] = [
     second: 'surfaceInset',
     targetDeltaE: 0.015,
     rationale: 'Inset regions should not collapse into the canvas.',
+  },
+  {
+    id: 'primary-to-its-recess',
+    classification: 'visual',
+    first: 'surfacePrimary',
+    second: 'primaryRecess',
+    targetDeltaE: 0.015,
+    rationale: 'A recess in a pane should not collapse into the pane.',
+  },
+  {
+    id: 'floating-to-its-recess',
+    classification: 'visual',
+    first: 'surfaceFloating',
+    second: 'floatingRecess',
+    targetDeltaE: 0.015,
+    rationale: 'A recess in a floating surface should not collapse into it.',
   },
   {
     id: 'selected-from-canvas',

@@ -667,6 +667,11 @@ function Inspector() {
   }, [mode]);
   const [lookup, setLookup] = useState<Lookup | null>(null);
   const [target, setTarget] = useState<Element | null>(null);
+  // The children Parent stepped out of, nearest last, for Child to step back
+  // into; any other choice of element discards them.
+  const [trail, setTrail] = useState<Element[]>([]);
+  // Which half of the window the pointer is in, while nothing is pinned.
+  const [pointerRight, setPointerRight] = useState(false);
   const [pinned, setPinned] = useState(false);
   // Kept while moving between elements, so one filter follows the pointer.
   const [query, setQuery] = useState('');
@@ -675,6 +680,7 @@ function Inspector() {
   function close() {
     setMode('off');
     setTarget(null);
+    setTrail([]);
     setPinned(false);
   }
 
@@ -693,10 +699,12 @@ function Inspector() {
       modeRef.current = 'off';
       setMode('off');
       setTarget(null);
+      setTrail([]);
     }
     function toggle() {
       setMode((was) => (was === 'on' ? 'off' : 'on'));
       setTarget(null);
+      setTrail([]);
       setPinned(false);
     }
     function onKeyDown(event: KeyboardEvent) {
@@ -715,7 +723,9 @@ function Inspector() {
         if (modeRef.current !== 'off') return;
         modeRef.current = 'peek';
         setMode('peek');
+        setPointerRight(x > window.innerWidth / 2);
         const under = x < 0 ? null : document.elementFromPoint(x, y);
+        setTrail([]);
         if (under && !under.closest(`[${ROOT}]`)) setTarget(under);
         return;
       }
@@ -761,11 +771,23 @@ function Inspector() {
     const outside = (node: EventTarget | null): node is Element =>
       node instanceof Element && !node.closest(`[${ROOT}]`);
     let frame = 0;
+    // Unpinned, the panel keeps to the half the pointer is not in, so it
+    // is never over what the pointer is reaching for.
     function onMove(event: PointerEvent) {
-      if (pinned || !outside(event.target)) return;
-      const element = event.target;
+      if (pinned) return;
+      const right = event.clientX > window.innerWidth / 2;
+      // What is under the pointer beneath the panel, too: the panel moves
+      // aside, and what it covered is what the pointer came for.
+      const element = document
+        .elementsFromPoint(event.clientX, event.clientY)
+        .find((node) => outside(node));
       cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => setTarget(element));
+      frame = requestAnimationFrame(() => {
+        setPointerRight(right);
+        if (!element) return;
+        setTarget(element);
+        setTrail([]);
+      });
     }
     // The page never sees a press while inspecting: a click pins instead,
     // and a pin outlasts the ⌥ that made it.
@@ -776,6 +798,7 @@ function Inspector() {
       event.stopPropagation();
       if (event.type === 'click') {
         setTarget(event.target);
+        setTrail([]);
         setPinned(true);
         setMode('on');
       }
@@ -819,15 +842,21 @@ function Inspector() {
   const report = target && lookup ? inspect(target, lookup) : null;
   const needle = query.trim().toLowerCase();
   const rect = target?.getBoundingClientRect();
+  const child = trail.at(-1);
   const scheme = editor();
   const open = (file: string, line: number | string, column?: string) =>
     `${scheme}://file${file.startsWith('/') ? '' : `${lookup?.root.replace(/\/$/, '')}/`}${file}:${line}${column ? `:${column}` : ''}`;
-  const onLeft = rect
-    ? rect.left + rect.width / 2 > window.innerWidth / 2
-    : false;
+  // Pinned, it keeps clear of what it describes; unpinned, of the pointer.
+  const onLeft = pinned
+    ? rect
+      ? rect.left + rect.width / 2 > window.innerWidth / 2
+      : false
+    : pointerRight;
 
   return (
-    <div {...{ [ROOT]: '' }}>
+    // React Aria's top layer: an open modal neither makes this inert, nor
+    // closes when it is clicked, nor pulls focus back out of its filter.
+    <div {...{ [ROOT]: '' }} data-react-aria-top-layer="true">
       <style>{CSS}</style>
       {rect ? (
         <div
@@ -865,11 +894,24 @@ function Inspector() {
               <button
                 type="button"
                 onClick={() => {
+                  setTrail([...trail, target]);
                   setTarget(target.parentElement);
                   setPinned(true);
                 }}
               >
                 Parent
+              </button>
+            ) : null}
+            {child?.isConnected ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setTrail(trail.slice(0, -1));
+                  setTarget(child);
+                  setPinned(true);
+                }}
+              >
+                Child
               </button>
             ) : null}
             <button

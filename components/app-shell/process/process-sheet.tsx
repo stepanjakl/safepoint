@@ -1,7 +1,7 @@
 'use client';
 
 import { styleDebug } from '@/lib/style-debug';
-import { useState, type ReactNode } from 'react';
+import { createContext, useState, type ReactNode } from 'react';
 import type { InputDetail } from '@/lib/process/input-details';
 import type { ProcessSummary } from '@/lib/process/model';
 import type { SystemLink } from '@/lib/process/system-links';
@@ -9,10 +9,20 @@ import { useInstructions } from '@/components/app-shell/instructions/instruction
 import { useRemovedInputs } from '@/components/app-shell/inputs/inputs-store';
 import { ProcessHeader } from './process-header';
 import { ProcessPanels } from './process-panels';
+import { viewKey, type AsideView } from '@/components/app-shell/drawer-aside';
 import { useProcessTab, type ProcessTab } from './process-tab-store';
 import { RunsList } from '@/components/app-shell/runs/runs-list';
 import { ScheduleControl } from './schedule-control';
 import { SectionRow } from '@/components/app-shell/runs/section-row';
+
+/*
+  What the run's thread can ask of the sheet around it. Absent where the thread
+  is drawn without one -- the workbench -- so a caller offers the action only
+  when there is a sheet to take it.
+*/
+export const ProcessSheetActions = createContext<{
+  showInput: (id: string) => void;
+} | null>(null);
 
 /*
   The sheet, and what it is showing. The header's menu chooses between the run
@@ -41,19 +51,26 @@ export function ProcessSheet({
 }) {
   const [tab, setTab] = useProcessTab(process.id);
   /*
-    A version whose change log the sheet has been asked to open, from a
-    boundary in the runs rail. It is a request rather than a place: the panels
-    own which detail is open, so this only says which one to mount with, and it
-    is cleared the moment the reader chooses a tab themselves.
+    A detail the sheet has been asked to open: a version's change log from a
+    boundary in the runs rail, or an input from a flag in the run's thread. It
+    is a request rather than a place: the panels own which detail is open, so
+    this only says which one to mount with, and it is cleared the moment the
+    reader chooses a tab themselves.
   */
-  const [openChanges, setOpenChanges] = useState<string | null>(null);
+  const [openView, setOpenView] = useState<AsideView | null>(null);
   const chooseTab = (next: ProcessTab) => {
-    setOpenChanges(null);
+    setOpenView(null);
     setTab(next);
   };
   const showVersion = (version: string) => {
-    setOpenChanges(version);
+    setOpenView({ kind: 'changes', version });
     setTab('instructions');
+  };
+  const actions = {
+    showInput: (id: string) => {
+      setOpenView({ kind: 'input', id });
+      setTab('inputs');
+    },
   };
   // Inputs can be changed, as a preview, only where they have details to
   // show: the promotion scenario's files. Everything downstream reads the kept
@@ -105,7 +122,7 @@ export function ProcessSheet({
             <RunsList process={process} onShowVersion={showVersion} />
           </aside>
           <div className="shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative">
-            {run}
+            <ProcessSheetActions value={actions}>{run}</ProcessSheetActions>
           </div>
         </div>
       ) : (
@@ -114,10 +131,10 @@ export function ProcessSheet({
           // a new panel, so the detail it had open goes with the list it
           // belonged to and nothing has to reset it -- and a second request
           // for a different version remounts rather than being ignored.
-          key={`${tab}:${openChanges ?? ''}`}
+          key={`${tab}:${openView ? viewKey(openView) : ''}`}
           process={process}
           tab={tab}
-          openChanges={openChanges}
+          openView={openView}
           inputs={kept}
           availableInputs={available}
           inputDetails={inputDetails}

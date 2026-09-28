@@ -1,21 +1,40 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { LoadReviewDetail } from '@/lib/review/contracts';
 import type { Disposition, ReleasePlan } from '@/lib/review/plan-contract';
+import type { ReviewProgress } from '@/lib/review/plan-derivations';
 import { reviewEffects, initialReviewId } from '@/lib/review/review-navigation';
 import { Button } from '@/components/ui/button';
 import { ReleaseCard } from './release-card';
 import { ReviewPanel } from './review-panel';
 
+/*
+  A request to open the review from outside the card -- a flag in the run's
+  thread, say. `key` changes with every request, so asking twice for the same
+  line opens it twice.
+*/
+export type ReviewOpenRequest = {
+  key: number;
+  filter: Disposition | 'all';
+  itemId?: string;
+};
+
 export function ReviewExperience({
   plan,
+  progress,
   loadDetail,
   initialItemId,
+  onCommit,
+  openRequest,
 }: {
   plan: ReleasePlan;
+  progress?: ReviewProgress;
   loadDetail: LoadReviewDetail;
   initialItemId?: string;
+  onCommit?: () => void;
+  openRequest?: ReviewOpenRequest | null;
 }) {
   // A row opens the modal at its own item; a tab's overflow link opens the
   // bucket. Both are the same operation, so the opener carries the narrowest
@@ -24,25 +43,37 @@ export function ReviewExperience({
     filter: Disposition | 'all';
     itemId?: string;
   } | null>(null);
+  const [answered, setAnswered] = useState(openRequest?.key);
+  if (openRequest && openRequest.key !== answered) {
+    setAnswered(openRequest.key);
+    setOpen({ filter: openRequest.filter, itemId: openRequest.itemId });
+  }
   return (
     <>
       <ReleaseCard
         plan={plan}
+        progress={progress}
+        onCommit={onCommit}
         onOpen={(disposition, itemId) =>
           setOpen({ filter: disposition ?? 'all', itemId })
         }
       />
-      {open ? (
-        <ReviewDialog
-          plan={plan}
-          loadDetail={loadDetail}
-          // The row the reader actually clicked wins over the deep link that
-          // brought them to the page.
-          initialItemId={open.itemId ?? initialItemId}
-          filter={open.filter}
-          onClose={() => setOpen(null)}
-        />
-      ) : null}
+      {/* Portalled to the body: the card can sit inside a folded thread
+          step, and a dialog inherits the inertness of where it is mounted. */}
+      {open
+        ? createPortal(
+            <ReviewDialog
+              plan={plan}
+              loadDetail={loadDetail}
+              // The row the reader actually clicked wins over the deep link
+              // that brought them to the page.
+              initialItemId={open.itemId ?? initialItemId}
+              filter={open.filter}
+              onClose={() => setOpen(null)}
+            />,
+            document.body,
+          )
+        : null}
     </>
   );
 }

@@ -12,6 +12,7 @@ import { supportProcess } from '@/lib/process/placeholder-process';
 import { supportPlan } from '@/lib/review/support-fixture';
 
 export default function SupportExamplePage() {
+  const steps = supportProcess.steps ?? [];
   const boxes: Record<string, ReactNode> = {
     request: (
       <RequestBubble>
@@ -32,8 +33,12 @@ export default function SupportExamplePage() {
     <ProcessView process={supportProcess}>
       <ThreadPage eyebrow="Support operations" title="Morning handoff">
         <ol className="thread">
-          {supportProcess.steps.map((step) => (
-            <ThreadStep key={step.id} step={step}>
+          {steps.map((step, index) => (
+            <ThreadStep
+              key={step.id}
+              step={step}
+              latest={index === steps.length - 1}
+            >
               {boxes[step.id]}
             </ThreadStep>
           ))}

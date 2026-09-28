@@ -10,28 +10,29 @@ Colocated CSS Modules were proposed, trialled on one component, and rejected on 
 
 `app/styles/index.css` is the one stylesheet the app loads. It imports everything else, and its import order is the cascade order.
 
-| Where                             | Holds                                                                                                          | Test for belonging                                  |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| `app/styles/` tokens              | the ramps, the roles that read them, state, type, geometry, and the `@theme inline` block that publishes them  | is it a value the system decides once?              |
-| `app/styles/` foundations         | the base layer, the control face and the families that fill it, and treatments several components read        | does more than one component read it?               |
-| `components/<area>/<name>.css`    | one component's own roles, `@utility` faces and `@layer components` rules, beside its `.tsx`                    | does exactly one component read it?                 |
+| Where                          | Holds                                                                                                         | Test for belonging                     |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| `app/styles/` tokens           | the ramps, the roles that read them, state, type, geometry, and the `@theme inline` block that publishes them | is it a value the system decides once? |
+| `app/styles/` foundations      | the base layer, the control face and the families that fill it, and treatments several components read        | does more than one component read it?  |
+| `components/<area>/<name>.css` | one component's own roles, `@utility` faces and `@layer components` rules, beside its `.tsx`                  | does exactly one component read it?    |
 
 Everything else is a utility in the component.
 
-| File in `app/styles/` | Holds                                                                                          |
-| --------------------- | ---------------------------------------------------------------------------------------------- |
-| `generated/ramp.css`  | generated: the neutral ramp, one block per family                                              |
-| `generated/radix.css` | generated: the Radix scales some stylesheet reads, light and dark                              |
-| `roles.css`           | `color-scheme`, canvas, surfaces, text, rules, action                                          |
-| `state.css`           | the six state scales and the adapter modes                                                     |
-| `type.css`            | the families and the type scale                                                                |
-| `geometry.css`        | durations, tile chroma ceilings, notch and slant geometry                                      |
-| `theme.css`           | the `@theme inline` block: the shared roles and scales published to Tailwind                   |
-| `base.css`            | the base layer, and the `readout` and `value` type utilities                                   |
-| `controls.css`        | `@property` stops, `control-face`, the accent, quiet and off families, fields, shared edges     |
-| `severity.css`        | the `[data-severity]` buckets and the `severity-*` colours                                     |
-| `disclosure.css`      | the `+`/`−` marker on a `<details>` summary                                                    |
-| `drawer.css`          | the drawer's scrim, slide and widths                                                           |
+| File in `app/styles/`    | Holds                                                                                       |
+| ------------------------ | ------------------------------------------------------------------------------------------- |
+| `generated/ramp.css`     | generated: the neutral ramp, one block per family                                           |
+| `generated/surfaces.css` | generated: canvas, pane, floating and inset faces with their rings and highlights           |
+| `generated/radix.css`    | generated: the Radix scales some stylesheet reads, light and dark                           |
+| `roles.css`              | `color-scheme`, the other surfaces, text, rules, action                                     |
+| `state.css`              | the six state scales and the adapter modes                                                  |
+| `type.css`               | the families and the type scale                                                             |
+| `geometry.css`           | durations, tile chroma ceilings, notch and slant geometry                                   |
+| `theme.css`              | the `@theme inline` block: the shared roles and scales published to Tailwind                |
+| `base.css`               | the base layer, and the `readout` and `value` type utilities                                |
+| `controls.css`           | `@property` stops, `control-face`, the accent, quiet and off families, fields, shared edges |
+| `severity.css`           | the `[data-severity]` buckets and the `severity-*` colours                                  |
+| `disclosure.css`         | the `+`/`−` marker on a `<details>` summary                                                 |
+| `drawer.css`             | the drawer's scrim, slide and widths                                                        |
 
 A component stylesheet is laid out in one order: a banner, the `:root` roles only it reads, an `@theme inline` block for the ones its markup names as utilities, its `@utility` faces, then `@layer components`. So `sidebar/process-list.css` beside `process-list.tsx` holds the rows' states, the drop slot, the status badge and the list's fades: one file answers "what paints a process row". A stylesheet imported by nothing is never loaded, so `pnpm check:tokens` fails on any `.css` that `index.css` does not import.
 
@@ -90,17 +91,17 @@ Inspect the element or its nearest marked ancestor, then search the component
 name or appearance. LocatorJS provides the source location. Keep paths, line
 numbers and token lists out of metadata so they cannot become stale.
 
-| Inspected identity                                | Where the treatment lives                                                                                                     |
-| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| ProcessList / row / `process-menu-row`            | `components/app-shell/sidebar/process-list.css`: the row's states and the custom properties it publishes                      |
-| ProcessList / status-badge / `surface-menu-badge` | `process-list.css`: reads the badge stops inherited from the row                                                              |
-| WorkspaceMenu / tile / `surface-menu-tile`        | `sidebar/workspace-menu.css`: tile face; the hue variant supplies its colour roles                                            |
-| ProcessList / row-label / `text-menu-link`        | `sidebar/process-menu.css`: defines `--sp-menu-link`, which every part of the sidebar reads, and publishes it                 |
+| Inspected identity                                | Where the treatment lives                                                                                                                          |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ProcessList / row / `process-menu-row`            | `components/app-shell/sidebar/process-list.css`: the row's states and the custom properties it publishes                                           |
+| ProcessList / status-badge / `surface-menu-badge` | `process-list.css`: reads the badge stops inherited from the row                                                                                   |
+| WorkspaceMenu / tile / `surface-menu-tile`        | `sidebar/workspace-menu.css`: tile face; the hue variant supplies its colour roles                                                                 |
+| ProcessList / row-label / `text-menu-link`        | `sidebar/process-menu.css`: defines `--sp-menu-link`, which every part of the sidebar reads, and publishes it                                      |
 | ProcessMenu / back-heading / `process-menu-back`  | `sidebar/process-menu.css`: all appearance states together, directly referencing `--sp-menu-link`, `--sp-text-primary` and `--sp-menu-wash-strong` |
-| Button / secondary / `quiet`                      | `control-quiet` and `--sp-quiet-*`, both in `app/styles/controls.css`                                                         |
-| Button / ring / `slant-ring`                      | `components/ui/notch.css`: paints the ring using stops inherited from the Button                                              |
-| ProcessHeader / count / `header-button-count`     | `components/app-shell/process/process-header.css`: geometry, and the `bg-header-button-count` colour beside it                |
-| RunRow / tally-segment / `sheet-seg`              | `components/app-shell/runs/runs-list.css`: segment treatment, with existing state attributes selecting colours                |
+| Button / secondary / `quiet`                      | `control-quiet` and `--sp-quiet-*`, both in `app/styles/controls.css`                                                                              |
+| Button / ring / `slant-ring`                      | `components/ui/notch.css`: paints the ring using stops inherited from the Button                                                                   |
+| ProcessHeader / count / `header-button-count`     | `components/app-shell/process/process-header.css`: geometry, and the `bg-header-button-count` colour beside it                                     |
+| RunRow / tally-segment / `sheet-seg`              | `components/app-shell/runs/runs-list.css`: segment treatment, with existing state attributes selecting colours                                     |
 
 Appearance describes the configured treatment, not the complete computed style.
 Disabled and interaction states, inherited values and caller classes can override
@@ -193,11 +194,30 @@ Lightness falls by a flat 0.02237 per step, so one index means the same everywhe
 
 Graphite binds on `:root`; the others on `:root[data-neutral='<family>']`, so the attribute is only needed to leave the default. Every family is generated and contract-checked independently.
 
-Every fill and edge on a pane sits one step under where the ramp was first assigned (2026-09-24): the panes read a shade darker, and because the ramp's lightness falls by the same amount per step, every offset between a pane and what is painted on it is exactly what it was. The canvas kept its original step, and so did what lies directly on it -- the sidebar's washes, current row, badges and notice, and the canvas rule etch -- so the sidebar is unchanged and a pane now stands one step nearer the canvas. Ink did not move, except muted text, which went one step darker in light to hold its margin on the inset surface. Light floats at step 25, primary at 50, canvas at 75, inset at 125; dark at 775, 850, 900, 975.
+Every fill and edge on a pane sits one step under where the ramp was first assigned (2026-09-24): the panes read a shade darker, and because the ramp's lightness falls by the same amount per step, every offset between a pane and what is painted on it is exactly what it was. The canvas kept its original step, and so did what lies directly on it -- the sidebar's washes, current row, badges and notice, and the canvas rule etch -- so the sidebar is unchanged and a pane now stands one step nearer the canvas. Ink did not move, except muted text, which went one step darker in light to hold its margin on the inset surface.
+
+### Surface layers
+
+Canvas, pane and floating are **one stack computed from one number**. In `scripts/colour-theme/config.ts`, each surface sits a whole number of layers from the canvas (canvas 0, pane 1, floating 2; up is lighter in both themes) and names what it sits on. One layer is `LAYER_STEP` ramp steps, doubled in dark where the same distance reads as less. A **recess** is not a layer of its own: it sits `RECESS_DEPTH` layers below whichever surface it is cut into, so there is one per surface -- `--sp-canvas-recess`, `--sp-primary-recess`, `--sp-floating-recess`, each with a `-ring` and `-edge`.
+
+Every surface, recesses included, has the same three parts (`SURFACE_THEMES`):
+
+- **Ring**: a fixed number of steps past whichever of its face and its ground lies further in the ring's direction (darker in light, lighter in dark), so it stands off both sides. A ring measured from the face alone lands on the ground's colour in a recess, and reads as a fade.
+- **Highlight**: one layer from the face, lit in light and deeper in dark.
+- **Face**: the layer arithmetic above.
+
+| Theme | Canvas | Pane | Floating | Recess in canvas / pane / floating | Ring past both sides | Highlight |
+| ----- | ------ | ---- | -------- | ---------------------------------- | -------------------- | --------- |
+| Light | 75     | 50   | 25       | 100 / 75 / 50                      | +200                 | −1 layer  |
+| Dark  | 900    | 850  | 800      | 950 / 900 / 850                    | −125                 | +1 layer  |
+
+`pnpm colors:custom` writes the roles to `app/styles/generated/surfaces.css`, with two utilities, `ground-raised` and `ground-floating`, that re-point `--sp-surface-inset`, `--sp-recessed-ring` and `--sp-recessed-edge` for everything inside them. At the root those three are the canvas's recess. `surface-raised` and `surface-floating` apply their ground, so `surface-recessed` and every `bg-surface-inset` adjusts to the surface it sits in with no class of its own. **A face drawn as a separate layer** -- the shell's pane is an absolutely placed sibling of its content -- does not reach the content, so the content's wrapper takes the ground utility itself (`app-shell.tsx`).
+
+Change `LAYER_STEP` or `RECESS_DEPTH` and every face, ring and highlight moves with it; a value that lands off the ramp or past either end is refused with the role it broke. Light has no headroom: the floating highlight is already at step 0, so a larger layer needs the canvas moved first. Equal steps are not equal contrast at the dark end, so the contracts, not the formula, keep each edge visible: every ring is checked against its face and its ground (`*-ring-on-face`, `*-ring-on-ground`), and text against each recess (`*-on-primary-recess`, `*-on-floating-recess`). `/workbench` shows a recess in each surface.
 
 Dividers inside a pane (the header's rule, the runs column's edge, the sheet head's line) take `--sp-raised-edge`, the pane's own edge colour, because their ground is the pane; `--sp-divider-etch` is only for rules on the canvas.
 
-A handful of cross-theme warnings are expected and left standing. Light's canvas-to-floating span is three steps where dark's is six, and light text near the white end reaches ratios dark cannot. They are warnings precisely so visual margin does not become an undocumented compliance rule.
+A handful of cross-theme warnings are expected and left standing. Light's canvas-to-floating span is two steps where dark's is four, and light text near the white end reaches ratios dark cannot. They are warnings precisely so visual margin does not become an undocumented compliance rule.
 
 ### Radix for every hue
 
@@ -205,9 +225,9 @@ A handful of cross-theme warnings are expected and left standing. Light's canvas
 
 ### Accent and Save order
 
-The primary action (cyan) and the Save-order toggle (teal) are **Radix fitted to Tailwind**: each stop is the blend of two adjacent Radix steps nearest the Tailwind colour it replaced, within ΔE 0.015 for most -- about the threshold of noticing. Radix keeps its vivid mid-tones in the dark scale, which is where Tailwind's cyan and teal sit, so the light theme reads dark-scale steps too; that is deliberate, not a slip. Candidates were compared side by side on `/workbench`.
+The primary action (cyan) and the Save-order toggle (teal) are **one Radix step per stop**, each the step nearest the Tailwind colour it replaced. Radix keeps its vivid mid-tones in the dark scale, which is where Tailwind's cyan and teal sit, so the light theme reads dark-scale steps too; that is deliberate, not a slip. Candidates were compared side by side on `/workbench`.
 
-Both are **flat under the pointer**: `--sp-accent-hover` and `--sp-commit-hover` are one colour each, and the hover utilities put it on both face stops, both ring stops and the highlight, so the control reads as a single fill. Keyboard focus takes the same colour. White labels on the light accent's glowing top reach only about 1.9:1, as Tailwind's did; the bottom and the hover reach 3.6:1.
+Both are **flat under the pointer**: `--sp-accent-hover` and `--sp-commit-hover` are one colour each, and the hover utilities put it on both face stops, both ring stops and the highlight, so the control reads as a single fill. Keyboard focus takes the same colour. White labels on the light accent's glowing top reach only about 1.9:1, as Tailwind's did; the bottom and the hover reach 3.4:1.
 
 #### Ink that a surface cannot carry
 
@@ -526,7 +546,7 @@ cell draws however the heading wraps.
 | `--slant-gap`                                                          | 0.25rem                                                                   | between two slants sharing a seam, square to it                                                                                                                                                                                                                                     |
 | `--slant-corner-balance`                                               | 0.5                                                                       | how far a slanted corner's radius follows its angle: 0 is one radius on every corner, 1 gives each the tangent length of a square corner                                                                                                                                            |
 | `--notch-bend-balance`                                                 | 0.5                                                                       | the same for the notch's top bend, held lower so it stays no softer than the pane's corners                                                                                                                                                                                         |
-| `--notch-sheen-fade`                                                   | 0%                                                                        | where the notch's sheen starts fading toward transparent at the floor, measured down from the pane's top edge; the corner below the floor carries no sheen |
+| `--notch-sheen-fade`                                                   | 0%                                                                        | where the notch's sheen starts fading toward transparent at the floor, measured down from the pane's top edge; the corner below the floor carries no sheen                                                                                                                          |
 | `--slant-angle` / `--slant-radius`                                     | the notch angle / `--radius-shell`                                        | a slant that should differ from its notch                                                                                                                                                                                                                                           |
 | `--notch-face` / `--notch-edge` / `--notch-highlight` / `--notch-pane` | `--sp-notch-*`                                                            | colours, per instance: canvas, the pane's ring, its sheen, its face                                                                                                                                                                                                                 |
 

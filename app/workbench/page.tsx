@@ -60,18 +60,55 @@ const STATE_STEPS = [1, 3, 4, 5, 6, 7, 9, 10, 11, 12] as const;
 const SHEENS = [
   ['--sp-raised-edge', '--sp-surface-primary', 'Pane sheen and dividers'],
   ['--sp-floating-edge', '--sp-surface-floating', 'Floating sheen'],
+  ['--sp-recessed-edge', '--sp-surface-inset', 'Recess sheen (on the canvas)'],
   ['--sp-divider-etch', '--sp-canvas', 'Canvas rule etch'],
 ] as const;
 
 const EDGES = [
+  ['--sp-raised-ring', '--sp-surface-primary', 'Pane ring'],
+  ['--sp-floating-ring', '--sp-surface-floating', 'Floating ring'],
+  ['--sp-recessed-ring', '--sp-surface-inset', 'Recess ring (on the canvas)'],
   ['--sp-rule-faint', '--sp-surface-primary', 'Faint rule on a pane'],
   ['--sp-rule-default', '--sp-surface-primary', 'Default rule on a pane'],
-  ['--sp-rule-faint', '--sp-surface-floating', 'Faint rule on floating'],
   ['--sp-field-edge', '--sp-field-face', 'Field edge'],
   ['--sp-field-edge-active', '--sp-field-face', 'Field edge, focused'],
 ] as const;
 
 const RAMP = Array.from({ length: 41 }, (_, index) => index * 25);
+
+/* A recess cut into each surface, built as the app builds them: the recess
+   takes its steps from the ground-* its surface hands down. */
+function RecessStack({
+  label,
+  on,
+}: {
+  label: string;
+  on: 'canvas' | 'pane' | 'floating';
+}) {
+  const recess = (
+    <div className="control-face surface-recessed rounded-control h-24" />
+  );
+  return (
+    <figure className="grid content-start gap-2">
+      <figcaption className="text-meta text-muted">{label}</figcaption>
+      <div className="bg-canvas p-6">
+        {on === 'canvas' ? (
+          recess
+        ) : (
+          <div className="control-face surface-raised rounded-shell p-6">
+            {on === 'floating' ? (
+              <div className="control-face surface-floating rounded-shell p-6">
+                {recess}
+              </div>
+            ) : (
+              recess
+            )}
+          </div>
+        )}
+      </div>
+    </figure>
+  );
+}
 
 const SECTION = 'grid gap-3';
 const HEADING = 'text-title font-semibold';
@@ -104,6 +141,10 @@ export default function WorkbenchPage() {
           >
             Control states
           </Link>
+          {' · '}
+          <Link className="underline underline-offset-4" href="/workbench/run">
+            Run lifecycle
+          </Link>
         </p>
       </header>
 
@@ -119,6 +160,23 @@ export default function WorkbenchPage() {
               label={`${name}${stepsOf(token) ? ` · ${stepsOf(token)}` : ''}`}
             />
           ))}
+        </div>
+      </section>
+
+      <section className={SECTION} aria-labelledby="stack">
+        <h2 id="stack" className={HEADING}>
+          Surface stack
+        </h2>
+        <p className={NOTE}>
+          Canvas, pane and floating, each a layer apart, and a recess one layer
+          below whichever surface it is cut into -- all from LAYER_STEP and
+          RECESS_DEPTH in scripts/colour-theme/config.ts. Every ring clears both
+          its face and its ground; every surface has a highlight.
+        </p>
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(18rem,1fr))] gap-6">
+          <RecessStack label="Recess on the canvas" on="canvas" />
+          <RecessStack label="Recess in a pane" on="pane" />
+          <RecessStack label="Recess in floating" on="floating" />
         </div>
       </section>
 

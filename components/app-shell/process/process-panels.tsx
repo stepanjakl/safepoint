@@ -65,7 +65,7 @@ type AsidePanel = Omit<AsideLayer, 'key'>;
 export function ProcessPanels({
   process,
   tab,
-  openChanges = null,
+  openView = null,
   inputs,
   availableInputs = [],
   inputDetails = {},
@@ -75,9 +75,10 @@ export function ProcessPanels({
 }: {
   process: ProcessSummary;
   tab: Exclude<ProcessTab, 'runs'>;
-  // A version whose change log to open with, asked for by the runs rail. The
-  // panel is keyed on it upstream, so it is read once, at mount.
-  openChanges?: string | null;
+  // A detail to open with, asked for from outside the panel -- a version's
+  // change log from the runs rail, an input from the run's thread. The panel
+  // is keyed on it upstream, so it is read once, at mount.
+  openView?: AsideView | null;
   // The process's inputs only; removed ones arrive as availableInputs.
   inputs: SystemLink[];
   availableInputs?: SystemLink[];
@@ -124,7 +125,7 @@ export function ProcessPanels({
     forgetOpener,
     settleLeaving,
   } = useAsidePanel({
-    initial: openChanges ? { kind: 'changes', version: openChanges } : null,
+    initial: openView,
     place,
   });
   // Opening a review item leaves this panel behind: the item is in the run.

@@ -12,8 +12,8 @@ import type { RunStatus } from '@/lib/process/model';
   outcome but a lifecycle, the same thing moving through stages, and a family
   of unrelated shapes makes a sequence look like a set of unrelated verdicts.
   So every state here is the same circle, and what changes inside it is what
-  the state is: empty and dotted before it starts, part-filled while it runs,
-  solid once it is settled.
+  the state is: empty and dotted before it starts, an arc on its track while it
+  runs, solid once it is settled.
 
   Two rules hold the family together. A ring means the run is still open --
   nobody has to live with it yet. A solid disc means it is settled, and the
@@ -100,11 +100,13 @@ export function RunStatusIcon({
 const ring = <circle cx="8" cy="8" r={RING} />;
 
 /*
-  The wedge a running state fills, swept 120 degrees from twelve o'clock. Drawn
-  rather than animated: the rail lists runs, and a spinner in a list of four
-  rows is four things moving for no information.
+  A running run is drawn as the run thread's active step is: a pale track, an
+  arc of the state's own colour a third of the way round it, and a dot in the
+  middle. Still rather than turning: the rail lists runs, and a spinner in a
+  list of four rows is four things moving for no information. The thread's
+  marker is the one that turns.
 */
-const WEDGE = 'M8 8 L8 4.25 A3.75 3.75 0 0 1 11.25 9.875 Z';
+const ARC = 'M8 1.75 A6.25 6.25 0 0 1 13.41 11.125';
 
 type Shape = {
   // A solid disc with the mark knocked out of it, rather than a ring.
@@ -126,10 +128,22 @@ const SHAPES: Record<RunStatus, Shape> = {
       />
     ),
   },
-  // Under way: the ring is whole and the wedge inside it is filling.
+  // Under way: an arc on its track, and the dot at the centre.
   running: {
-    ring,
-    mark: <path d={WEDGE} fill="currentColor" stroke="none" />,
+    ring: (
+      <circle
+        cx="8"
+        cy="8"
+        r={RING}
+        style={{ stroke: 'var(--sp-running-track)' }}
+      />
+    ),
+    mark: (
+      <>
+        <path d={ARC} />
+        <circle cx="8" cy="8" r="2.5" fill="currentColor" stroke="none" />
+      </>
+    ),
   },
   // The one state that is asking for something. A solid disc, because it is
   // the loudest thing the rail can show, and the mark that means "you".

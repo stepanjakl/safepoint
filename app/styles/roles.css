@@ -20,11 +20,8 @@
 }
 
 :root {
-  /* Surfaces */
-  --sp-canvas: light-dark(var(--sp-neutral-75), var(--sp-neutral-900));
-  --sp-surface-primary: light-dark(var(--sp-neutral-50), var(--sp-neutral-850));
-  --sp-surface-floating: light-dark(var(--sp-neutral-25), var(--sp-neutral-775));
-  --sp-surface-inset: light-dark(var(--sp-neutral-125), var(--sp-neutral-975));
+  /* Surfaces. Canvas, pane, floating and inset are generated from one layer
+     step: generated/surfaces.css. */
   --sp-surface-control: light-dark(var(--sp-neutral-25), var(--sp-neutral-750));
   /* The darkest light-theme ground and muted ink's thinnest margin, so a
      control taking this fill moves its ink to primary too. */

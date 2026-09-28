@@ -3,14 +3,21 @@
 import { styleDebug } from '@/lib/style-debug';
 import { useId } from 'react';
 import { Button } from '@/components/ui/button';
+import { Glyph, type GlyphName } from '@/components/ui/glyph';
+import type { Tone } from '@/components/ui/status-label';
 import type { ReleasePlan } from '@/lib/review/plan-contract';
 import {
   appliedSummary,
   attentionLine,
   evaluationCounts,
+  needingAttention,
   planState,
   totalOf,
+  type DispositionCounts,
+  type ReviewProgress,
 } from '@/lib/review/plan-derivations';
+import { cx } from '@/lib/cx';
+import { toneText } from './markers';
 import { Buckets, nounFor, type OpenReview } from './release-buckets';
 
 /*
@@ -23,102 +30,218 @@ import { Buckets, nounFor, type OpenReview } from './release-buckets';
 // on the same plane. `@container` makes the card the query root for its zones.
 const CARD =
   'control-face surface-floating @container data-[danger]:border-state-blocked overflow-clip rounded-shell';
+const EDGE = 'px-6 @max-card:px-4';
 const BODY = 'p-6 @max-card:px-4 @max-card:py-5';
-const TITLE = 'text-display [font-weight:550] [overflow-wrap:anywhere]';
-const VERDICT = 'text-primary mt-2 text-body leading-normal text-pretty';
+// The verdict is the headline: the batch is already named by the page and by
+// the card's header, so the one large line says what the batch needs.
+const VERDICT = 'text-display [font-weight:550] text-pretty';
 const RECEIPT_NOTE = 'text-muted mt-1 text-meta';
-const PILL_STATE =
-  'bg-commit-state text-commit-state-ink data-[simulated=true]:bg-replay-state-face data-[simulated=true]:text-replay-state-ink rounded-full px-3 py-1.25 text-dense font-medium whitespace-nowrap';
+const HEADER_ROW =
+  'border-rule-faint shadow-separator-bottom-solid flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b py-3 text-meta';
 
-// Zone 1. The fact that makes the card safe to read, so it opens the card and
-// sets up the safety line that closes it.
-function CommitState({ plan }: { plan: ReleasePlan }) {
-  const simulated = plan.mode === 'replay';
+// Whether anything has been applied, said once, in the header, where it is
+// read before anything else. A reassurance is not a warning, so it carries the
+// run's mode mark rather than the caution tone.
+function modeOf(plan: ReleasePlan): {
+  glyph: GlyphName;
+  tone: Tone;
+  label: string;
+} {
+  const replay = plan.mode === 'replay';
   const applied =
     plan.status.kind === 'applied' || plan.status.kind === 'partially_applied';
+  if (applied)
+    return replay
+      ? {
+          glyph: 'diamond',
+          tone: 'simulated',
+          label: 'Replay · simulated receipt',
+        }
+      : { glyph: 'check', tone: 'verified', label: 'Applied' };
+  return replay
+    ? { glyph: 'diamond', tone: 'simulated', label: 'Replay · nothing applied' }
+    : { glyph: 'dotted', tone: 'preview', label: 'Preview · nothing applied' };
+}
+
+// Zone 1. The batch's name, and whether anything has changed because of it.
+function Header({ plan, titleId }: { plan: ReleasePlan; titleId: string }) {
+  const mode = modeOf(plan);
   return (
-    <div className="border-rule-faint shadow-separator-bottom-solid @max-card:px-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b px-6 py-3">
-      {/* Filled and in sentence case: the commit state is the first thing read,
-          so it is a label rather than a system readout. */}
+    <div className={cx(HEADER_ROW, EDGE)}>
       <span
-        {...styleDebug({
-          component: 'ReleaseCard',
-          part: 'commit-state',
-          appearance: 'bg-commit-state',
-        })}
-        className={PILL_STATE}
-        data-simulated={simulated}
+        id={titleId}
+        className="text-muted min-w-0 [overflow-wrap:anywhere]"
       >
-        {applied
-          ? simulated
-            ? 'Replay · simulated receipt'
-            : 'Applied'
-          : simulated
-            ? 'Preview · nothing applied'
-            : 'Preview'}
+        {plan.title}
       </span>
-      <span className="text-muted text-meta min-w-0 [overflow-wrap:anywhere]">
-        {plan.source}
+      <span
+        {...styleDebug({ component: 'ReleaseCard', part: 'mode' })}
+        className="text-muted inline-flex items-center gap-1.5 whitespace-nowrap"
+      >
+        <span className={toneText[mode.tone]}>
+          <Glyph name={mode.glyph} size={10} />
+        </span>
+        {mode.label}
       </span>
     </div>
   );
 }
 
-// Zone 5. Under replay no control names an operation this slice cannot perform,
-// so apply, retry, undo and re-run appear as receipt text rather than buttons.
-function Commitment({
-  label,
-  onOpen,
-  safety,
-}: {
-  label: string;
-  onOpen: OpenReview;
-  safety: string;
-}) {
-  return (
-    <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 [&>button]:min-h-11">
-      <Button variant="primary" onPress={() => onOpen()}>
-        {label}
-        <span aria-hidden="true">↗</span>
-      </Button>
-      <p className="text-muted text-meta min-w-0">{safety}</p>
-    </div>
-  );
-}
-
-function StaleBanner({ plan }: { plan: ReleasePlan }) {
+// Inside the card, under its header, because it invalidates everything below
+// it, counts included.
+function StaleRow({ plan }: { plan: ReleasePlan }) {
   if (plan.status.kind !== 'stale') return null;
   const n = plan.status.changedEffectIds.length;
   return (
-    // Above the header, because it invalidates everything below it, counts included.
     <p
-      className="border-state-caution bg-state-caution/8 rounded-t-shell text-dense -mb-px flex items-baseline gap-2.5 border px-4 py-2.5 leading-normal"
+      className={cx(
+        HEADER_ROW,
+        EDGE,
+        'text-state-caution text-dense justify-start',
+      )}
       role="status"
     >
-      <span
-        aria-hidden="true"
-        className="value text-state-caution font-semibold"
-      >
-        !
-      </span>{' '}
-      {n} {nounFor(plan, n)} changed since this ran.{' '}
-      {plan.mode === 'replay' ? 'Re-run is not available in replay.' : ''}
+      <Glyph name="triangle" size={10} />
+      <span>
+        {n} {nounFor(plan, n)} changed since this ran.
+        {plan.mode === 'replay' ? ' Re-run is not available in replay.' : ''}
+      </span>
     </p>
+  );
+}
+
+const ACTION_ROW =
+  'mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 [&>button]:min-h-11';
+const ACTION_NOTE = 'text-muted text-meta min-w-0';
+
+function ReviewButton({
+  label,
+  onOpen,
+  variant = 'primary',
+}: {
+  label: string;
+  onOpen: OpenReview;
+  variant?: 'primary' | 'secondary';
+}) {
+  return (
+    <Button variant={variant} onPress={() => onOpen()}>
+      {label}
+      <span aria-hidden="true">↗</span>
+    </Button>
+  );
+}
+
+/*
+  Zone 5. One primary action, and which one follows the review rather than the
+  proposal: review, then continue, then commit. Approving is not here -- every
+  decision is made in the review, beside its evidence, so the card can never
+  approve a line nobody opened. Committing is, because its confirmation lists
+  everything it will do. Under replay no control names an operation this slice
+  cannot perform, so commit appears as receipt text rather than a button.
+*/
+function CardAction({
+  plan,
+  counts,
+  progress,
+  onOpen,
+  onCommit,
+}: {
+  plan: ReleasePlan;
+  counts: DispositionCounts;
+  progress?: ReviewProgress;
+  onOpen: OpenReview;
+  onCommit?: () => void;
+}) {
+  const state = planState(plan);
+  const live = plan.mode === 'live';
+  const settled = state === 'applied' || state === 'partially_applied';
+
+  if (progress?.phase === 'committing') {
+    return (
+      <div className={ACTION_ROW}>
+        <p className={ACTION_NOTE}>
+          Committing approved changes. Decisions are closed until it finishes.
+        </p>
+      </div>
+    );
+  }
+
+  const ready =
+    progress?.phase === 'ready' || (!settled && state === 'all_clear');
+  if (ready) {
+    const total = totalOf(counts);
+    const summary =
+      progress?.phase === 'ready'
+        ? `${progress.approved} approved · ${progress.held} held`
+        : `${total} ${nounFor(plan, total)} · nothing needs a decision`;
+    return (
+      <div className={ACTION_ROW}>
+        {live ? (
+          <>
+            <Button variant="primary" onPress={onCommit}>
+              Commit approved changes
+            </Button>
+            <ReviewButton
+              label={plan.reviewLabel}
+              onOpen={onOpen}
+              variant="secondary"
+            />
+          </>
+        ) : (
+          <ReviewButton label={plan.reviewLabel} onOpen={onOpen} />
+        )}
+        <p className={ACTION_NOTE}>
+          {summary}
+          {live ? '' : '. Commit is not available in replay.'}
+        </p>
+      </div>
+    );
+  }
+
+  if (progress?.phase === 'reviewing') {
+    return (
+      <div className={ACTION_ROW}>
+        <ReviewButton label="Continue review" onOpen={onOpen} />
+        <p className={ACTION_NOTE}>
+          <span className="value text-primary">{progress.decided}</span> of{' '}
+          <span className="value text-primary">{needingAttention(counts)}</span>{' '}
+          decisions made
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className={ACTION_ROW}>
+      <ReviewButton
+        // When applying is impossible the action changes; it is never
+        // greyed out.
+        label={
+          state === 'fully_blocked' ? 'Resolve blockers' : plan.reviewLabel
+        }
+        onOpen={onOpen}
+      />
+    </div>
   );
 }
 
 export function ReleaseCard({
   plan,
+  progress,
   onOpen,
+  onCommit,
 }: {
   plan: ReleasePlan;
+  progress?: ReviewProgress;
   onOpen: OpenReview;
+  onCommit?: () => void;
 }) {
-  const headingId = useId();
+  const titleId = useId();
+  const verdictId = useId();
   const state = planState(plan);
   const counts = evaluationCounts(plan.effects);
-  const total = totalOf(counts);
   const receipt = appliedSummary(plan);
+  const labelledBy = `${titleId} ${verdictId}`;
 
   // Nothing to do is not a card. One muted line in the thread.
   if (state === 'empty') {
@@ -137,17 +260,14 @@ export function ReleaseCard({
           appearance: 'surface-floating',
         })}
         className={CARD}
-        aria-labelledby={headingId}
+        aria-labelledby={labelledBy}
       >
-        <CommitState plan={plan} />
+        <Header plan={plan} titleId={titleId} />
         <div className={BODY}>
-          <h2 id={headingId} className={TITLE}>
-            {plan.title}
-          </h2>
-          <p className={VERDICT}>
+          <h2 id={verdictId} className={VERDICT}>
             Evaluation stopped at step {plan.status.step} of {plan.status.of}.
-            No release plan was produced.
-          </p>
+          </h2>
+          <p className={RECEIPT_NOTE}>No release plan was produced.</p>
         </div>
       </article>
     );
@@ -161,30 +281,25 @@ export function ReleaseCard({
           appearance: 'surface-floating',
         })}
         className={CARD}
-        aria-labelledby={headingId}
+        aria-labelledby={labelledBy}
       >
-        <CommitState plan={plan} />
+        <Header plan={plan} titleId={titleId} />
         <div className={BODY}>
-          <p className="text-body flex items-baseline gap-2.5 leading-normal text-pretty">
-            <span
-              aria-hidden="true"
-              className="value text-state-verified shrink-0"
-            >
-              ✓
+          <h2
+            id={verdictId}
+            className={cx(VERDICT, 'flex items-baseline gap-2.5')}
+          >
+            <span className="text-state-verified shrink-0 self-center">
+              <Glyph name="check" size={16} />
             </span>
-            <span>
-              <strong id={headingId}>{plan.title}.</strong> {total}{' '}
-              {nounFor(plan, total)} will apply. Nothing needs attention.
-            </span>
-          </p>
-          <Commitment
-            label={plan.reviewLabel}
+            <span>{attentionLine(counts, plan.noun)}</span>
+          </h2>
+          <CardAction
+            plan={plan}
+            counts={counts}
+            progress={progress}
             onOpen={onOpen}
-            safety={
-              plan.mode === 'replay'
-                ? 'This is a recorded replay. Reviewing changes nothing.'
-                : 'Nothing is applied until you apply it.'
-            }
+            onCommit={onCommit}
           />
         </div>
       </article>
@@ -194,63 +309,54 @@ export function ReleaseCard({
   const blockedOnly = state === 'fully_blocked';
 
   return (
-    <>
-      <StaleBanner plan={plan} />
-      <article
-        {...styleDebug({
-          component: 'ReleaseCard',
-          appearance: 'surface-floating',
-        })}
-        className={CARD}
-        data-danger={blockedOnly || undefined}
-        aria-labelledby={headingId}
-      >
-        <CommitState plan={plan} />
-        <div className={BODY}>
-          <h2 id={headingId} className={TITLE}>
-            {plan.title}
-          </h2>
-          {receipt ? (
-            <div>
-              <p className={VERDICT}>
-                Applied {receipt.applied} of {receipt.total}{' '}
-                {nounFor(plan, receipt.total)}.
-              </p>
-              {plan.status.kind === 'partially_applied' ? (
-                <p className={RECEIPT_NOTE}>
-                  {plan.status.failures[0]!.reason}
-                  {plan.status.failures.length > 1
-                    ? ` · ${plan.status.failures.length} failures`
-                    : ''}
-                </p>
-              ) : null}
+    <article
+      {...styleDebug({
+        component: 'ReleaseCard',
+        appearance: 'surface-floating',
+      })}
+      className={CARD}
+      data-danger={blockedOnly || undefined}
+      aria-labelledby={labelledBy}
+    >
+      <Header plan={plan} titleId={titleId} />
+      <StaleRow plan={plan} />
+      <div className={BODY}>
+        {receipt ? (
+          <div>
+            <h2 id={verdictId} className={VERDICT}>
+              Applied {receipt.applied} of {receipt.total}{' '}
+              {nounFor(plan, receipt.total)}.
+            </h2>
+            {plan.status.kind === 'partially_applied' ? (
               <p className={RECEIPT_NOTE}>
-                {plan.status.kind === 'applied' ||
-                plan.status.kind === 'partially_applied'
-                  ? plan.status.at
-                  : ''}
-                {plan.mode === 'replay'
-                  ? ' · Simulated receipt. No external record changed.'
+                {plan.status.failures[0]!.reason}
+                {plan.status.failures.length > 1
+                  ? ` · ${plan.status.failures.length} failures`
                   : ''}
               </p>
-            </div>
-          ) : (
-            <p className={VERDICT}>{attentionLine(counts, plan.noun)}</p>
-          )}
-          <Buckets plan={plan} counts={counts} onOpen={onOpen} />
-          <Commitment
-            // When applying is impossible the action changes; it is never
-            // greyed out.
-            label={blockedOnly ? 'Resolve blockers' : plan.reviewLabel}
-            onOpen={onOpen}
-            safety={
-              plan.mode === 'replay'
-                ? 'This is a recorded replay. Reviewing changes nothing.'
-                : 'Nothing is applied until you apply it.'
-            }
-          />
-        </div>
-      </article>
-    </>
+            ) : null}
+            <p className={RECEIPT_NOTE}>
+              {plan.status.kind === 'applied' ||
+              plan.status.kind === 'partially_applied'
+                ? plan.status.at
+                : ''}
+              {plan.mode === 'replay' ? ' · No external record changed.' : ''}
+            </p>
+          </div>
+        ) : (
+          <h2 id={verdictId} className={VERDICT}>
+            {attentionLine(counts, plan.noun)}
+          </h2>
+        )}
+        <Buckets plan={plan} counts={counts} onOpen={onOpen} />
+        <CardAction
+          plan={plan}
+          counts={counts}
+          progress={progress}
+          onOpen={onOpen}
+          onCommit={onCommit}
+        />
+      </div>
+    </article>
   );
 }

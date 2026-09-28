@@ -62,6 +62,8 @@ export function DesignControls() {
       <div
         ref={hostRef}
         className="sp-devctl"
+        // Usable over an open modal: React Aria leaves its top layer alone.
+        data-react-aria-top-layer="true"
         role="region"
         aria-label="Design and motion controls"
       />

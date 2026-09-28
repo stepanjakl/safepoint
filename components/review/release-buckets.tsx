@@ -19,7 +19,10 @@ import {
   totalOf,
   type ReasonRollUp,
 } from '@/lib/review/plan-derivations';
+import { Glyph } from '@/components/ui/glyph';
+import { cx } from '@/lib/cx';
 import { DeltaValue } from './delta';
+import { dispositionGlyph } from './markers';
 
 /*
   The release card's buckets: the bar, one tab per disposition, and the rows of
@@ -28,29 +31,35 @@ import { DeltaValue } from './delta';
 */
 
 /*
-  Filled rather than outlined: the tab carries its bucket's colour at a weight
-  the bar segment can be read against, lightened enough to keep the label
-  legible on top of it. The selected tab is the only one wearing its own colour
-  as an edge, so the ring is what says "these rows", not the fill weight alone.
+  Only the selected tab is filled: it is the one filled thing in the card, so
+  "these rows" needs no second signal. The rest carry their bucket's colour as
+  ink alone and take the lighter fill under the pointer or the keyboard; the
+  bar above them already says what each colour is worth.
 */
 const PILL =
-  'bg-severity-fill text-severity-ink data-[hovered]:bg-severity-fill-strong data-[focus-visible]:bg-severity-fill-strong data-[selected]:bg-severity-fill-strong data-[selected]:text-severity-strong data-[selected]:shadow-severity-ring inline-flex items-baseline gap-1.5 rounded-full border-0 px-2.5 py-1 text-dense font-medium whitespace-nowrap control-wash data-[focus-visible]:outline-offset-2 [&_.value]:text-inherit [&_.value]:[font-weight:550]';
+  'text-severity-ink data-[hovered]:bg-severity-fill data-[focus-visible]:bg-severity-fill data-[selected]:bg-severity-fill-strong data-[selected]:text-severity-strong data-[selected]:shadow-severity-ring inline-flex items-baseline gap-1.5 rounded-full border-0 px-2.5 py-1 text-dense font-medium whitespace-nowrap control-wash data-[focus-visible]:outline-offset-2 [&_.value]:text-inherit [&_.value]:[font-weight:550]';
 
 // Rows run the full width of the card: the separators are the structure, so
 // they cannot stop short of the edge. The panel pays back the card's body
 // padding (BODY in release-card.tsx) with a negative margin, and each row puts
 // it back as its own inline padding.
 const ROW = 'border-rule-faint shadow-separator-bottom-solid border-b';
-const ROW_BUTTON =
-  'control-wash hover:bg-surface-hover focus-visible:bg-surface-hover flex w-full flex-wrap items-center gap-x-3 gap-y-1.5 px-6 py-3 text-left text-body leading-normal focus-visible:-outline-offset-2';
+/*
+  Three columns on one grid for every row: the shape, the subject with its
+  reason under it, and the change at the far end. The shape column is what the
+  eye runs down, so it keeps one width whether a row holds a glyph or not.
+*/
+const ROW_GRID =
+  'grid w-full grid-cols-[0.75rem_minmax(0,1fr)_auto] items-baseline gap-x-3 gap-y-0.5 px-6 text-left @max-card:grid-cols-[0.75rem_minmax(0,1fr)] @max-card:px-4';
+const ROW_BUTTON = cx(
+  ROW_GRID,
+  'control-wash hover:bg-surface-hover focus-visible:bg-surface-hover py-3 text-body leading-normal focus-visible:-outline-offset-2',
+);
+const ROW_MARK = 'text-severity-ink self-center';
+const ROW_SUBJECT = 'min-w-0 [overflow-wrap:anywhere]';
+const ROW_REASON = 'text-muted text-meta col-start-2 min-w-0';
 const ROW_DELTA =
-  'text-muted ml-auto inline-flex min-w-0 flex-wrap items-baseline gap-1.5 text-right @max-card:ml-0 @max-card:w-full @max-card:text-left';
-// The reason, as a chip in its row's own severity. Pulled back from the tab's
-// weight: the tabs are the navigation, a reason is an annotation.
-const ROW_REASON =
-  'bg-severity-fill text-severity-annotation rounded-full px-2.5 py-0.75 text-right text-meta ';
-const CHIP =
-  'border-rule-default text-muted rounded-full border px-1.75 py-0.5 text-micro whitespace-nowrap';
+  'col-start-3 row-start-1 inline-flex min-w-0 flex-wrap items-baseline justify-end gap-1.5 text-right @max-card:col-start-2 @max-card:row-start-auto @max-card:justify-start @max-card:text-left';
 
 // Opening the review can name a bucket, an item, or neither. One callback
 // rather than three: every route into the modal is the same operation with a
@@ -199,6 +208,7 @@ function BucketPanel({
               <ReasonRow
                 key={row.key}
                 plan={plan}
+                disposition={disposition}
                 row={row}
                 onOpen={() => onOpen(disposition)}
               />
@@ -210,10 +220,15 @@ function BucketPanel({
       {rows.hidden > 0 ? (
         <button
           type="button"
-          className="control-wash text-muted hover:bg-surface-hover hover:text-primary focus-visible:bg-surface-hover focus-visible:text-primary text-body block min-h-11 w-full px-6 py-2.5 text-left focus-visible:-outline-offset-2"
+          className={cx(
+            ROW_GRID,
+            'control-wash text-muted hover:bg-surface-hover hover:text-primary focus-visible:bg-surface-hover focus-visible:text-primary text-body min-h-11 py-2.5 focus-visible:-outline-offset-2',
+          )}
           onClick={() => onOpen(disposition)}
         >
-          and {rows.hidden} more <span aria-hidden="true">↗</span>
+          <span className="col-start-2">
+            and {rows.hidden} more <span aria-hidden="true">↗</span>
+          </span>
           <span className="sr-only">
             {' '}
             — open the review filtered to{' '}
@@ -238,6 +253,12 @@ function EffectRow({
   onOpen: () => void;
 }) {
   const [first, ...rest] = effect.deltas;
+  const annotation = [
+    reasonLabel,
+    effect.requiresApproval ? 'Needs approval' : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
   return (
     <li className={ROW} data-severity={severityRank(effect.disposition)}>
       <button
@@ -250,9 +271,10 @@ function EffectRow({
         className={ROW_BUTTON}
         onClick={onOpen}
       >
-        <span className="min-w-0 [overflow-wrap:anywhere]">
-          {effect.subject}
+        <span aria-hidden="true" className={ROW_MARK}>
+          <Glyph name={dispositionGlyph[effect.disposition]} size={10} />
         </span>
+        <span className={ROW_SUBJECT}>{effect.subject}</span>
         <span className={ROW_DELTA}>
           {first ? (
             <DeltaValue delta={first} />
@@ -272,22 +294,9 @@ function EffectRow({
           ) : null}
         </span>
         {/* The row contract is subject, delta, reason, disposition. The reason
-            was only feeding the roll-up before; it belongs on the row too. */}
-        {reasonLabel ? (
-          <span
-            {...styleDebug({
-              component: 'ReleaseCard',
-              part: 'reason',
-              appearance: 'bg-severity-fill',
-            })}
-            className={ROW_REASON}
-          >
-            {reasonLabel}
-          </span>
-        ) : null}
-        {effect.requiresApproval ? (
-          <span className={CHIP}>Needs approval</span>
-        ) : null}
+            is an annotation, so it sits under the subject in the quiet ink
+            rather than in a chip of its own. */}
+        {annotation ? <span className={ROW_REASON}>{annotation}</span> : null}
         <span className="sr-only">Open in review</span>
       </button>
     </li>
@@ -299,15 +308,17 @@ function EffectRow({
 // items it stands for.
 function ReasonRow({
   plan,
+  disposition,
   row,
   onOpen,
 }: {
   plan: ReleasePlan;
+  disposition: Disposition;
   row: ReasonRollUp;
   onOpen: () => void;
 }) {
   return (
-    <li className={ROW}>
+    <li className={ROW} data-severity={severityRank(disposition)}>
       <button
         type="button"
         {...styleDebug({
@@ -319,11 +330,11 @@ function ReasonRow({
         onClick={onOpen}
       >
         {/* A reason stands for items rather than being one, so it reads as a
-            summary line: the count leads and the label carries no severity
-            chip of its own. */}
-        <span className="text-muted min-w-0 [overflow-wrap:anywhere]">
-          {row.label}
+            summary line: the shape of its bucket, and the count at the end. */}
+        <span aria-hidden="true" className={ROW_MARK}>
+          <Glyph name={dispositionGlyph[disposition]} size={10} />
         </span>
+        <span className={cx(ROW_SUBJECT, 'text-muted')}>{row.label}</span>
         <span className={ROW_DELTA}>
           <span className="value">{row.count}</span> {nounFor(plan, row.count)}
         </span>

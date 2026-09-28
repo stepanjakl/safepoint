@@ -121,3 +121,11 @@
   --sp-mode-preview: var(--sp-state-unavailable);
   --sp-mode-unavailable: light-dark(var(--sp-neutral-300), var(--sp-neutral-525));
 }
+
+/* ── Running ──────────────────────────────────────────────────────────────── */
+:root {
+  /* The track a running ring's arc turns on: the arc's own hue, a pale step,
+     so the ring reads as one mark. The thread's marker and the runs rail's icon
+     both read it. */
+  --sp-running-track: light-dark(var(--sp-state-advisory-5), var(--sp-state-advisory-6));
+}

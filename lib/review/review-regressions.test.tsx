@@ -154,11 +154,14 @@ describe('review regressions', () => {
     expect(markup).not.toContain('are awaiting a decision.');
   });
 
-  it('uses replay safety copy in all-clear cards', () => {
+  // Said once, in the header, where it is read first. The card used to say it
+  // in a pill, again beside the button, and a third time in the thread.
+  it('states the replay safety line once, in replay words', () => {
     const markup = renderToStaticMarkup(
       <ReleaseCard plan={gallery('All clear')} onOpen={() => {}} />,
     );
-    expect(markup).toContain('Reviewing changes nothing.');
+    expect(markup.match(/nothing applied/gi)).toHaveLength(1);
+    expect(markup).toContain('Replay · nothing applied');
     expect(markup).not.toContain('until you apply it');
   });
 

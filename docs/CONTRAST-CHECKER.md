@@ -93,7 +93,7 @@ The axe sweep covers home, the workspace menu, search, arrange mode, a
 tooltip, the release review, and both example pages, which put every run
 outcome and freshness side by side.
 
-The current fictional home data has two confirmed findings that predate the
-2026-09-24 colour refactor: the decorative `aria-hidden` pale wordmark and the
-simulated commit-state label. The broader `check:contrast` suite continues to
-fail on confirmed violations until those existing state treatments are resolved.
+The simulated commit-state label, one of two findings that predated the
+2026-09-24 colour refactor, was removed on 2026-09-28 when the release card's
+header replaced it with the run's mode mark. `check:contrast` passed in full
+on that date.

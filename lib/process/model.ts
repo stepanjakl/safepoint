@@ -29,9 +29,21 @@ export const STEP_STATUS_LABELS: Record<StepStatus, string> = {
 export type ProcessStep = {
   id: string;
   name: string;
-  // A short fact that earns its place beside the name: how long, how many,
-  // against what. Never a restatement of the status, which the dot carries.
+  // A short fact that earns its place beside the name: how many, against
+  // what. Never a restatement of the status, which the dot carries.
   label?: string;
+  // The part of the fact that is the problem -- "1 not current" -- drawn in
+  // the step's own tone after the label. Absent when nothing is wrong.
+  flag?: string;
+  // What the step took, once it has finished. A running step has none: a
+  // duration is what it took, not how long it has been.
+  duration?: string;
+  // When it ran, as clock times, for the reader who needs the instants the
+  // duration was measured between. Present with `duration`.
+  window?: { from: string; to: string };
+  // Where a running step has got to. Absent when the step cannot say, and
+  // its marker then turns rather than fills.
+  progress?: { at: number; of: number };
   status: StepStatus;
   // Extra detail for the marker's tooltip, where the status word alone is not
   // enough to say why the step ended as it did.
@@ -164,8 +176,9 @@ export type ProcessSummary = {
     previous: InstructionsVersion[];
   };
   // Ordered. The thread renders in this order and the page supplies each
-  // step's box by id, so adding a step is a change here and nowhere else.
-  steps: ProcessStep[];
+  // step's box by id. Absent where the thread is derived from the run's stage
+  // instead (run-lifecycle.ts).
+  steps?: ProcessStep[];
   analysis: ProcessAnalysis;
   // What this process counts, for the places a tally has to be read aloud:
   // the rail draws glyphs and numbers, but a screen reader needs the noun.

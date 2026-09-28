@@ -24,8 +24,11 @@
       "note": "Cool violet-grey on Tailwind zinc's hue and chroma. The restrained default.",
       "failures": [],
       "warnings": [
-        "dark faint-rule-on-floating-surface: 1.291:1 is below target 1.5:1.",
-        "primary-to-floating-surface: light and dark differ 2.998x in separation (0.022398 vs 0.067155)."
+        "dark raised-ring-on-face: 1.453:1 is below target 1.5:1.",
+        "dark canvas-recess-ring-on-face: 1.457:1 is below target 1.5:1.",
+        "dark canvas-recess-ring-on-ground: 1.361:1 is below target 1.5:1.",
+        "dark primary-recess-ring-on-ground: 1.453:1 is below target 1.5:1.",
+        "surface-chroma: dark surfaces average 2.055x the chroma of light surfaces (0.003453 vs 0.007096)."
       ],
       "ramp": [
         {
@@ -565,6 +568,30 @@
       "crossTheme": {
         "contrast": [
           {
+            "id": "primary-on-primary-recess",
+            "light": 15.526,
+            "dark": 13.948,
+            "ratio": 1.113
+          },
+          {
+            "id": "muted-on-primary-recess",
+            "light": 5.83,
+            "dark": 7.011,
+            "ratio": 1.203
+          },
+          {
+            "id": "primary-on-floating-recess",
+            "light": 16.611,
+            "dark": 12.609,
+            "ratio": 1.317
+          },
+          {
+            "id": "muted-on-floating-recess",
+            "light": 6.237,
+            "dark": 6.338,
+            "ratio": 1.016
+          },
+          {
             "id": "primary-on-canvas",
             "light": 15.526,
             "dark": 13.948,
@@ -579,20 +606,20 @@
           {
             "id": "primary-on-floating-surface",
             "light": 17.749,
-            "dark": 10.249,
-            "ratio": 1.732
+            "dark": 11.053,
+            "ratio": 1.606
           },
           {
             "id": "primary-on-inset-surface",
-            "light": 13.508,
-            "dark": 15.282,
-            "ratio": 1.131
+            "light": 14.492,
+            "dark": 14.937,
+            "ratio": 1.031
           },
           {
             "id": "primary-on-selected-surface",
-            "light": 10.045,
+            "light": 11.684,
             "dark": 8.677,
-            "ratio": 1.158
+            "ratio": 1.347
           },
           {
             "id": "muted-on-canvas",
@@ -602,9 +629,9 @@
           },
           {
             "id": "muted-on-inset-surface",
-            "light": 5.072,
-            "dark": 7.681,
-            "ratio": 1.514
+            "light": 5.442,
+            "dark": 7.508,
+            "ratio": 1.38
           },
           {
             "id": "muted-on-analysis",
@@ -638,16 +665,16 @@
           },
           {
             "id": "menu-chip-ink",
-            "light": 5.018,
+            "light": 6.28,
             "dark": 8.74,
-            "ratio": 1.742
+            "ratio": 1.392
           },
           { "id": "keycap-ink", "light": 8.866, "dark": 7.104, "ratio": 1.248 },
           {
             "id": "tooltip-ink",
             "light": 17.749,
-            "dark": 10.249,
-            "ratio": 1.732
+            "dark": 11.053,
+            "ratio": 1.606
           },
           {
             "id": "tooltip-edge-over-canvas",
@@ -664,26 +691,74 @@
           {
             "id": "tooltip-edge-over-floating-surface",
             "light": 4.14,
-            "dark": 3.032,
-            "ratio": 1.365
+            "dark": 3.27,
+            "ratio": 1.266
           },
           {
             "id": "tooltip-edge-on-own-face",
             "light": 4.14,
-            "dark": 3.032,
-            "ratio": 1.365
+            "dark": 3.27,
+            "ratio": 1.266
           },
           {
-            "id": "faint-rule-on-floating-surface",
-            "light": 1.767,
-            "dark": 1.291,
-            "ratio": 1.369
+            "id": "raised-ring-on-face",
+            "light": 1.936,
+            "dark": 1.453,
+            "ratio": 1.332
           },
           {
-            "id": "faint-rule-on-primary-surface",
-            "light": 1.654,
-            "dark": 1.589,
-            "ratio": 1.041
+            "id": "raised-ring-on-ground",
+            "light": 1.809,
+            "dark": 1.607,
+            "ratio": 1.126
+          },
+          {
+            "id": "floating-ring-on-face",
+            "light": 1.91,
+            "dark": 1.527,
+            "ratio": 1.251
+          },
+          {
+            "id": "floating-ring-on-ground",
+            "light": 1.788,
+            "dark": 1.742,
+            "ratio": 1.026
+          },
+          {
+            "id": "canvas-recess-ring-on-face",
+            "light": 1.832,
+            "dark": 1.457,
+            "ratio": 1.257
+          },
+          {
+            "id": "canvas-recess-ring-on-ground",
+            "light": 1.962,
+            "dark": 1.361,
+            "ratio": 1.442
+          },
+          {
+            "id": "primary-recess-ring-on-face",
+            "light": 1.809,
+            "dark": 1.607,
+            "ratio": 1.126
+          },
+          {
+            "id": "primary-recess-ring-on-ground",
+            "light": 1.936,
+            "dark": 1.453,
+            "ratio": 1.332
+          },
+          {
+            "id": "floating-recess-ring-on-face",
+            "light": 1.788,
+            "dark": 1.742,
+            "ratio": 1.026
+          },
+          {
+            "id": "floating-recess-ring-on-ground",
+            "light": 1.91,
+            "dark": 1.527,
+            "ratio": 1.251
           },
           {
             "id": "keycap-ring-on-face",
@@ -708,20 +783,32 @@
           {
             "id": "primary-to-floating-surface",
             "light": 0.022398,
-            "dark": 0.067155,
-            "ratio": 2.998
+            "dark": 0.044753,
+            "ratio": 1.998
           },
           {
             "id": "canvas-to-inset-surface",
-            "light": 0.0448,
-            "dark": 0.067124,
-            "ratio": 1.498
+            "light": 0.022399,
+            "dark": 0.044751,
+            "ratio": 1.998
+          },
+          {
+            "id": "primary-to-its-recess",
+            "light": 0.022399,
+            "dark": 0.044752,
+            "ratio": 1.998
+          },
+          {
+            "id": "floating-to-its-recess",
+            "light": 0.022398,
+            "dark": 0.044753,
+            "ratio": 1.998
           },
           {
             "id": "selected-from-canvas",
-            "light": 0.134413,
+            "light": 0.089605,
             "dark": 0.156724,
-            "ratio": 1.166
+            "ratio": 1.749
           }
         ],
         "surfaceChroma": {
@@ -734,12 +821,72 @@
             "surfaceSelected",
             "surfaceDisabled"
           ],
-          "light": 0.00394,
-          "dark": 0.007304,
-          "ratio": 1.854
+          "light": 0.003453,
+          "dark": 0.007096,
+          "ratio": 2.055
         }
       },
       "contrastContracts": [
+        {
+          "theme": "light",
+          "id": "primary-on-primary-recess",
+          "classification": "required",
+          "foreground": "textPrimary",
+          "background": "primaryRecess",
+          "minimum": 4.5,
+          "target": 7,
+          "rationale": "Ordinary text in a recess.",
+          "foregroundStep": 925,
+          "backgroundStep": 75,
+          "ratio": 15.526,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "muted-on-primary-recess",
+          "classification": "required",
+          "foreground": "textMuted",
+          "background": "primaryRecess",
+          "minimum": 4.5,
+          "target": 4.75,
+          "rationale": "Secondary text in a recess.",
+          "foregroundStep": 600,
+          "backgroundStep": 75,
+          "ratio": 5.83,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "primary-on-floating-recess",
+          "classification": "required",
+          "foreground": "textPrimary",
+          "background": "floatingRecess",
+          "minimum": 4.5,
+          "target": 7,
+          "rationale": "Ordinary text in a recess.",
+          "foregroundStep": 925,
+          "backgroundStep": 50,
+          "ratio": 16.611,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "muted-on-floating-recess",
+          "classification": "required",
+          "foreground": "textMuted",
+          "background": "floatingRecess",
+          "minimum": 4.5,
+          "target": 4.75,
+          "rationale": "Secondary text in a recess.",
+          "foregroundStep": 600,
+          "backgroundStep": 50,
+          "ratio": 6.237,
+          "passed": true,
+          "metTarget": true
+        },
         {
           "theme": "light",
           "id": "primary-on-canvas",
@@ -795,8 +942,8 @@
           "target": 7,
           "rationale": "Ordinary text in recessed regions.",
           "foregroundStep": 925,
-          "backgroundStep": 125,
-          "ratio": 13.508,
+          "backgroundStep": 100,
+          "ratio": 14.492,
           "passed": true,
           "metTarget": true
         },
@@ -810,8 +957,8 @@
           "target": 7,
           "rationale": "Selected rows retain ordinary text readability.",
           "foregroundStep": 925,
-          "backgroundStep": 225,
-          "ratio": 10.045,
+          "backgroundStep": 175,
+          "ratio": 11.684,
           "passed": true,
           "metTarget": true
         },
@@ -840,8 +987,8 @@
           "target": 4.75,
           "rationale": "The weakest recurring secondary-text pairing.",
           "foregroundStep": 600,
-          "backgroundStep": 125,
-          "ratio": 5.072,
+          "backgroundStep": 100,
+          "ratio": 5.442,
           "passed": true,
           "metTarget": true
         },
@@ -925,8 +1072,8 @@
           "minimum": 4.5,
           "rationale": "The chip fills at the selected ground's depth, where plain muted ink falls under AA at the micro size its count is set in.",
           "foregroundStep": 675,
-          "backgroundStep": 225,
-          "ratio": 5.018,
+          "backgroundStep": 150,
+          "ratio": 6.28,
           "passed": true,
           "metTarget": true
         },
@@ -1018,31 +1165,151 @@
         },
         {
           "theme": "light",
-          "id": "faint-rule-on-floating-surface",
+          "id": "raised-ring-on-face",
           "classification": "advisory",
-          "foreground": "ruleFaint",
-          "background": "surfaceFloating",
+          "foreground": "raisedRing",
+          "background": "surfacePrimary",
           "minimum": 1.2,
           "target": 1.5,
-          "rationale": "The floating panel ring; in dark it had fallen to 1.10:1 and the boundary was carried almost entirely by an alpha sheen.",
-          "foregroundStep": 225,
-          "backgroundStep": 25,
-          "ratio": 1.767,
+          "rationale": "The raised ring against its face.",
+          "foregroundStep": 275,
+          "backgroundStep": 50,
+          "ratio": 1.936,
           "passed": true,
           "metTarget": true
         },
         {
           "theme": "light",
-          "id": "faint-rule-on-primary-surface",
+          "id": "raised-ring-on-ground",
           "classification": "advisory",
-          "foreground": "ruleFaint",
+          "foreground": "raisedRing",
+          "background": "canvas",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The raised ring against its ground.",
+          "foregroundStep": 275,
+          "backgroundStep": 75,
+          "ratio": 1.809,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "floating-ring-on-face",
+          "classification": "advisory",
+          "foreground": "floatingRing",
+          "background": "surfaceFloating",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating ring against its face.",
+          "foregroundStep": 250,
+          "backgroundStep": 25,
+          "ratio": 1.91,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "floating-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "floatingRing",
           "background": "surfacePrimary",
           "minimum": 1.2,
           "target": 1.5,
-          "rationale": "The raised panel ring.",
-          "foregroundStep": 225,
+          "rationale": "The floating ring against its ground.",
+          "foregroundStep": 250,
           "backgroundStep": 50,
-          "ratio": 1.654,
+          "ratio": 1.788,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "canvas-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "canvasRecessRing",
+          "background": "canvasRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The canvas recess ring against its face.",
+          "foregroundStep": 300,
+          "backgroundStep": 100,
+          "ratio": 1.832,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "canvas-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "canvasRecessRing",
+          "background": "canvas",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The canvas recess ring against its ground.",
+          "foregroundStep": 300,
+          "backgroundStep": 75,
+          "ratio": 1.962,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "primary-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "primaryRecessRing",
+          "background": "primaryRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The primary recess ring against its face.",
+          "foregroundStep": 275,
+          "backgroundStep": 75,
+          "ratio": 1.809,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "primary-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "primaryRecessRing",
+          "background": "surfacePrimary",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The primary recess ring against its ground.",
+          "foregroundStep": 275,
+          "backgroundStep": 50,
+          "ratio": 1.936,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "floating-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "floatingRecessRing",
+          "background": "floatingRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating recess ring against its face.",
+          "foregroundStep": 250,
+          "backgroundStep": 50,
+          "ratio": 1.788,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "floating-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "floatingRecessRing",
+          "background": "surfaceFloating",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating recess ring against its ground.",
+          "foregroundStep": 250,
+          "backgroundStep": 25,
+          "ratio": 1.91,
           "passed": true,
           "metTarget": true
         },
@@ -1073,6 +1340,66 @@
           "foregroundStep": 275,
           "backgroundStep": 75,
           "ratio": 1.809,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "primary-on-primary-recess",
+          "classification": "required",
+          "foreground": "textPrimary",
+          "background": "primaryRecess",
+          "minimum": 4.5,
+          "target": 7,
+          "rationale": "Ordinary text in a recess.",
+          "foregroundStep": 100,
+          "backgroundStep": 900,
+          "ratio": 13.948,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "muted-on-primary-recess",
+          "classification": "required",
+          "foreground": "textMuted",
+          "background": "primaryRecess",
+          "minimum": 4.5,
+          "target": 4.75,
+          "rationale": "Secondary text in a recess.",
+          "foregroundStep": 325,
+          "backgroundStep": 900,
+          "ratio": 7.011,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "primary-on-floating-recess",
+          "classification": "required",
+          "foreground": "textPrimary",
+          "background": "floatingRecess",
+          "minimum": 4.5,
+          "target": 7,
+          "rationale": "Ordinary text in a recess.",
+          "foregroundStep": 100,
+          "backgroundStep": 850,
+          "ratio": 12.609,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "muted-on-floating-recess",
+          "classification": "required",
+          "foreground": "textMuted",
+          "background": "floatingRecess",
+          "minimum": 4.5,
+          "target": 4.75,
+          "rationale": "Secondary text in a recess.",
+          "foregroundStep": 325,
+          "backgroundStep": 850,
+          "ratio": 6.338,
           "passed": true,
           "metTarget": true
         },
@@ -1116,8 +1443,8 @@
           "target": 7,
           "rationale": "Ordinary text in dialogs, tooltips, and floating panels.",
           "foregroundStep": 100,
-          "backgroundStep": 775,
-          "ratio": 10.249,
+          "backgroundStep": 800,
+          "ratio": 11.053,
           "passed": true,
           "metTarget": true
         },
@@ -1131,8 +1458,8 @@
           "target": 7,
           "rationale": "Ordinary text in recessed regions.",
           "foregroundStep": 100,
-          "backgroundStep": 975,
-          "ratio": 15.282,
+          "backgroundStep": 950,
+          "ratio": 14.937,
           "passed": true,
           "metTarget": true
         },
@@ -1176,8 +1503,8 @@
           "target": 4.75,
           "rationale": "The weakest recurring secondary-text pairing.",
           "foregroundStep": 325,
-          "backgroundStep": 975,
-          "ratio": 7.681,
+          "backgroundStep": 950,
+          "ratio": 7.508,
           "passed": true,
           "metTarget": true
         },
@@ -1290,8 +1617,8 @@
           "target": 7,
           "rationale": "Tooltip copy uses the primary text role.",
           "foregroundStep": 100,
-          "backgroundStep": 775,
-          "ratio": 10.249,
+          "backgroundStep": 800,
+          "ratio": 11.053,
           "passed": true,
           "metTarget": true
         },
@@ -1332,8 +1659,8 @@
           "minimum": 3,
           "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
           "foregroundStep": 475,
-          "backgroundStep": 775,
-          "ratio": 3.032,
+          "backgroundStep": 800,
+          "ratio": 3.27,
           "passed": true,
           "metTarget": true
         },
@@ -1347,38 +1674,158 @@
           "target": 3,
           "rationale": "The box must read as bounded, not as a floating block of ink.",
           "foregroundStep": 475,
-          "backgroundStep": 775,
-          "ratio": 3.032,
+          "backgroundStep": 800,
+          "ratio": 3.27,
           "passed": true,
           "metTarget": true
         },
         {
           "theme": "dark",
-          "id": "faint-rule-on-floating-surface",
+          "id": "raised-ring-on-face",
           "classification": "advisory",
-          "foreground": "ruleFaint",
-          "background": "surfaceFloating",
+          "foreground": "raisedRing",
+          "background": "surfacePrimary",
           "minimum": 1.2,
           "target": 1.5,
-          "rationale": "The floating panel ring; in dark it had fallen to 1.10:1 and the boundary was carried almost entirely by an alpha sheen.",
-          "foregroundStep": 700,
-          "backgroundStep": 775,
-          "ratio": 1.291,
+          "rationale": "The raised ring against its face.",
+          "foregroundStep": 725,
+          "backgroundStep": 850,
+          "ratio": 1.453,
           "passed": true,
           "metTarget": false
         },
         {
           "theme": "dark",
-          "id": "faint-rule-on-primary-surface",
+          "id": "raised-ring-on-ground",
           "classification": "advisory",
-          "foreground": "ruleFaint",
+          "foreground": "raisedRing",
+          "background": "canvas",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The raised ring against its ground.",
+          "foregroundStep": 725,
+          "backgroundStep": 900,
+          "ratio": 1.607,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "floating-ring-on-face",
+          "classification": "advisory",
+          "foreground": "floatingRing",
+          "background": "surfaceFloating",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating ring against its face.",
+          "foregroundStep": 675,
+          "backgroundStep": 800,
+          "ratio": 1.527,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "floating-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "floatingRing",
           "background": "surfacePrimary",
           "minimum": 1.2,
           "target": 1.5,
-          "rationale": "The raised panel ring.",
-          "foregroundStep": 700,
+          "rationale": "The floating ring against its ground.",
+          "foregroundStep": 675,
           "backgroundStep": 850,
-          "ratio": 1.589,
+          "ratio": 1.742,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "canvas-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "canvasRecessRing",
+          "background": "canvasRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The canvas recess ring against its face.",
+          "foregroundStep": 775,
+          "backgroundStep": 950,
+          "ratio": 1.457,
+          "passed": true,
+          "metTarget": false
+        },
+        {
+          "theme": "dark",
+          "id": "canvas-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "canvasRecessRing",
+          "background": "canvas",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The canvas recess ring against its ground.",
+          "foregroundStep": 775,
+          "backgroundStep": 900,
+          "ratio": 1.361,
+          "passed": true,
+          "metTarget": false
+        },
+        {
+          "theme": "dark",
+          "id": "primary-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "primaryRecessRing",
+          "background": "primaryRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The primary recess ring against its face.",
+          "foregroundStep": 725,
+          "backgroundStep": 900,
+          "ratio": 1.607,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "primary-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "primaryRecessRing",
+          "background": "surfacePrimary",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The primary recess ring against its ground.",
+          "foregroundStep": 725,
+          "backgroundStep": 850,
+          "ratio": 1.453,
+          "passed": true,
+          "metTarget": false
+        },
+        {
+          "theme": "dark",
+          "id": "floating-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "floatingRecessRing",
+          "background": "floatingRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating recess ring against its face.",
+          "foregroundStep": 675,
+          "backgroundStep": 850,
+          "ratio": 1.742,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "floating-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "floatingRecessRing",
+          "background": "surfaceFloating",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating recess ring against its ground.",
+          "foregroundStep": 675,
+          "backgroundStep": 800,
+          "ratio": 1.527,
           "passed": true,
           "metTarget": true
         },
@@ -1422,8 +1869,11 @@
       "note": "Blue and colder. Earns its distinctness with chroma, as Tailwind slate does against zinc.",
       "failures": [],
       "warnings": [
-        "dark faint-rule-on-floating-surface: 1.294:1 is below target 1.5:1.",
-        "primary-to-floating-surface: light and dark differ 2.99x in separation (0.022508 vs 0.067291)."
+        "dark raised-ring-on-face: 1.457:1 is below target 1.5:1.",
+        "dark canvas-recess-ring-on-face: 1.461:1 is below target 1.5:1.",
+        "dark canvas-recess-ring-on-ground: 1.364:1 is below target 1.5:1.",
+        "dark primary-recess-ring-on-ground: 1.457:1 is below target 1.5:1.",
+        "surface-chroma: dark surfaces average 2.055x the chroma of light surfaces (0.008288 vs 0.017031)."
       ],
       "ramp": [
         {
@@ -1963,6 +2413,30 @@
       "crossTheme": {
         "contrast": [
           {
+            "id": "primary-on-primary-recess",
+            "light": 15.533,
+            "dark": 13.956,
+            "ratio": 1.113
+          },
+          {
+            "id": "muted-on-primary-recess",
+            "light": 5.794,
+            "dark": 7.045,
+            "ratio": 1.216
+          },
+          {
+            "id": "primary-on-floating-recess",
+            "light": 16.612,
+            "dark": 12.609,
+            "ratio": 1.317
+          },
+          {
+            "id": "muted-on-floating-recess",
+            "light": 6.196,
+            "dark": 6.365,
+            "ratio": 1.027
+          },
+          {
             "id": "primary-on-canvas",
             "light": 15.533,
             "dark": 13.956,
@@ -1977,20 +2451,20 @@
           {
             "id": "primary-on-floating-surface",
             "light": 17.743,
-            "dark": 10.235,
-            "ratio": 1.734
+            "dark": 11.047,
+            "ratio": 1.606
           },
           {
             "id": "primary-on-inset-surface",
-            "light": 13.525,
-            "dark": 15.301,
-            "ratio": 1.131
+            "light": 14.504,
+            "dark": 14.953,
+            "ratio": 1.031
           },
           {
             "id": "primary-on-selected-surface",
-            "light": 10.077,
+            "light": 11.709,
             "dark": 8.652,
-            "ratio": 1.165
+            "ratio": 1.353
           },
           {
             "id": "muted-on-canvas",
@@ -2000,9 +2474,9 @@
           },
           {
             "id": "muted-on-inset-surface",
-            "light": 5.045,
-            "dark": 7.724,
-            "ratio": 1.531
+            "light": 5.41,
+            "dark": 7.548,
+            "ratio": 1.395
           },
           {
             "id": "muted-on-analysis",
@@ -2036,16 +2510,16 @@
           },
           {
             "id": "menu-chip-ink",
-            "light": 5.008,
+            "light": 6.258,
             "dark": 8.761,
-            "ratio": 1.749
+            "ratio": 1.4
           },
           { "id": "keycap-ink", "light": 8.817, "dark": 7.112, "ratio": 1.24 },
           {
             "id": "tooltip-ink",
             "light": 17.743,
-            "dark": 10.235,
-            "ratio": 1.734
+            "dark": 11.047,
+            "ratio": 1.606
           },
           {
             "id": "tooltip-edge-over-canvas",
@@ -2062,26 +2536,74 @@
           {
             "id": "tooltip-edge-over-floating-surface",
             "light": 4.113,
-            "dark": 3.045,
-            "ratio": 1.351
+            "dark": 3.286,
+            "ratio": 1.252
           },
           {
             "id": "tooltip-edge-on-own-face",
             "light": 4.113,
-            "dark": 3.045,
-            "ratio": 1.351
+            "dark": 3.286,
+            "ratio": 1.252
           },
           {
-            "id": "faint-rule-on-floating-surface",
-            "light": 1.761,
-            "dark": 1.294,
-            "ratio": 1.361
+            "id": "raised-ring-on-face",
+            "light": 1.928,
+            "dark": 1.457,
+            "ratio": 1.323
           },
           {
-            "id": "faint-rule-on-primary-surface",
-            "light": 1.648,
-            "dark": 1.595,
-            "ratio": 1.033
+            "id": "raised-ring-on-ground",
+            "light": 1.802,
+            "dark": 1.613,
+            "ratio": 1.117
+          },
+          {
+            "id": "floating-ring-on-face",
+            "light": 1.902,
+            "dark": 1.533,
+            "ratio": 1.241
+          },
+          {
+            "id": "floating-ring-on-ground",
+            "light": 1.781,
+            "dark": 1.749,
+            "ratio": 1.018
+          },
+          {
+            "id": "canvas-recess-ring-on-face",
+            "light": 1.824,
+            "dark": 1.461,
+            "ratio": 1.248
+          },
+          {
+            "id": "canvas-recess-ring-on-ground",
+            "light": 1.954,
+            "dark": 1.364,
+            "ratio": 1.433
+          },
+          {
+            "id": "primary-recess-ring-on-face",
+            "light": 1.802,
+            "dark": 1.613,
+            "ratio": 1.117
+          },
+          {
+            "id": "primary-recess-ring-on-ground",
+            "light": 1.928,
+            "dark": 1.457,
+            "ratio": 1.323
+          },
+          {
+            "id": "floating-recess-ring-on-face",
+            "light": 1.781,
+            "dark": 1.749,
+            "ratio": 1.018
+          },
+          {
+            "id": "floating-recess-ring-on-ground",
+            "light": 1.902,
+            "dark": 1.533,
+            "ratio": 1.241
           },
           {
             "id": "keycap-ring-on-face",
@@ -2106,20 +2628,32 @@
           {
             "id": "primary-to-floating-surface",
             "light": 0.022508,
-            "dark": 0.067291,
-            "ratio": 2.99
+            "dark": 0.044758,
+            "ratio": 1.989
           },
           {
             "id": "canvas-to-inset-surface",
-            "light": 0.045038,
-            "dark": 0.067136,
-            "ratio": 1.491
+            "light": 0.022509,
+            "dark": 0.044758,
+            "ratio": 1.988
+          },
+          {
+            "id": "primary-to-its-recess",
+            "light": 0.022509,
+            "dark": 0.044758,
+            "ratio": 1.988
+          },
+          {
+            "id": "floating-to-its-recess",
+            "light": 0.022508,
+            "dark": 0.044758,
+            "ratio": 1.989
           },
           {
             "id": "selected-from-canvas",
-            "light": 0.135189,
+            "light": 0.090098,
             "dark": 0.157192,
-            "ratio": 1.163
+            "ratio": 1.745
           }
         ],
         "surfaceChroma": {
@@ -2132,12 +2666,72 @@
             "surfaceSelected",
             "surfaceDisabled"
           ],
-          "light": 0.009457,
-          "dark": 0.01753,
-          "ratio": 1.854
+          "light": 0.008288,
+          "dark": 0.017031,
+          "ratio": 2.055
         }
       },
       "contrastContracts": [
+        {
+          "theme": "light",
+          "id": "primary-on-primary-recess",
+          "classification": "required",
+          "foreground": "textPrimary",
+          "background": "primaryRecess",
+          "minimum": 4.5,
+          "target": 7,
+          "rationale": "Ordinary text in a recess.",
+          "foregroundStep": 925,
+          "backgroundStep": 75,
+          "ratio": 15.533,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "muted-on-primary-recess",
+          "classification": "required",
+          "foreground": "textMuted",
+          "background": "primaryRecess",
+          "minimum": 4.5,
+          "target": 4.75,
+          "rationale": "Secondary text in a recess.",
+          "foregroundStep": 600,
+          "backgroundStep": 75,
+          "ratio": 5.794,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "primary-on-floating-recess",
+          "classification": "required",
+          "foreground": "textPrimary",
+          "background": "floatingRecess",
+          "minimum": 4.5,
+          "target": 7,
+          "rationale": "Ordinary text in a recess.",
+          "foregroundStep": 925,
+          "backgroundStep": 50,
+          "ratio": 16.612,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "muted-on-floating-recess",
+          "classification": "required",
+          "foreground": "textMuted",
+          "background": "floatingRecess",
+          "minimum": 4.5,
+          "target": 4.75,
+          "rationale": "Secondary text in a recess.",
+          "foregroundStep": 600,
+          "backgroundStep": 50,
+          "ratio": 6.196,
+          "passed": true,
+          "metTarget": true
+        },
         {
           "theme": "light",
           "id": "primary-on-canvas",
@@ -2193,8 +2787,8 @@
           "target": 7,
           "rationale": "Ordinary text in recessed regions.",
           "foregroundStep": 925,
-          "backgroundStep": 125,
-          "ratio": 13.525,
+          "backgroundStep": 100,
+          "ratio": 14.504,
           "passed": true,
           "metTarget": true
         },
@@ -2208,8 +2802,8 @@
           "target": 7,
           "rationale": "Selected rows retain ordinary text readability.",
           "foregroundStep": 925,
-          "backgroundStep": 225,
-          "ratio": 10.077,
+          "backgroundStep": 175,
+          "ratio": 11.709,
           "passed": true,
           "metTarget": true
         },
@@ -2238,8 +2832,8 @@
           "target": 4.75,
           "rationale": "The weakest recurring secondary-text pairing.",
           "foregroundStep": 600,
-          "backgroundStep": 125,
-          "ratio": 5.045,
+          "backgroundStep": 100,
+          "ratio": 5.41,
           "passed": true,
           "metTarget": true
         },
@@ -2323,8 +2917,8 @@
           "minimum": 4.5,
           "rationale": "The chip fills at the selected ground's depth, where plain muted ink falls under AA at the micro size its count is set in.",
           "foregroundStep": 675,
-          "backgroundStep": 225,
-          "ratio": 5.008,
+          "backgroundStep": 150,
+          "ratio": 6.258,
           "passed": true,
           "metTarget": true
         },
@@ -2416,31 +3010,151 @@
         },
         {
           "theme": "light",
-          "id": "faint-rule-on-floating-surface",
+          "id": "raised-ring-on-face",
           "classification": "advisory",
-          "foreground": "ruleFaint",
-          "background": "surfaceFloating",
+          "foreground": "raisedRing",
+          "background": "surfacePrimary",
           "minimum": 1.2,
           "target": 1.5,
-          "rationale": "The floating panel ring; in dark it had fallen to 1.10:1 and the boundary was carried almost entirely by an alpha sheen.",
-          "foregroundStep": 225,
-          "backgroundStep": 25,
-          "ratio": 1.761,
+          "rationale": "The raised ring against its face.",
+          "foregroundStep": 275,
+          "backgroundStep": 50,
+          "ratio": 1.928,
           "passed": true,
           "metTarget": true
         },
         {
           "theme": "light",
-          "id": "faint-rule-on-primary-surface",
+          "id": "raised-ring-on-ground",
           "classification": "advisory",
-          "foreground": "ruleFaint",
+          "foreground": "raisedRing",
+          "background": "canvas",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The raised ring against its ground.",
+          "foregroundStep": 275,
+          "backgroundStep": 75,
+          "ratio": 1.802,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "floating-ring-on-face",
+          "classification": "advisory",
+          "foreground": "floatingRing",
+          "background": "surfaceFloating",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating ring against its face.",
+          "foregroundStep": 250,
+          "backgroundStep": 25,
+          "ratio": 1.902,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "floating-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "floatingRing",
           "background": "surfacePrimary",
           "minimum": 1.2,
           "target": 1.5,
-          "rationale": "The raised panel ring.",
-          "foregroundStep": 225,
+          "rationale": "The floating ring against its ground.",
+          "foregroundStep": 250,
           "backgroundStep": 50,
-          "ratio": 1.648,
+          "ratio": 1.781,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "canvas-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "canvasRecessRing",
+          "background": "canvasRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The canvas recess ring against its face.",
+          "foregroundStep": 300,
+          "backgroundStep": 100,
+          "ratio": 1.824,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "canvas-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "canvasRecessRing",
+          "background": "canvas",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The canvas recess ring against its ground.",
+          "foregroundStep": 300,
+          "backgroundStep": 75,
+          "ratio": 1.954,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "primary-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "primaryRecessRing",
+          "background": "primaryRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The primary recess ring against its face.",
+          "foregroundStep": 275,
+          "backgroundStep": 75,
+          "ratio": 1.802,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "primary-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "primaryRecessRing",
+          "background": "surfacePrimary",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The primary recess ring against its ground.",
+          "foregroundStep": 275,
+          "backgroundStep": 50,
+          "ratio": 1.928,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "floating-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "floatingRecessRing",
+          "background": "floatingRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating recess ring against its face.",
+          "foregroundStep": 250,
+          "backgroundStep": 50,
+          "ratio": 1.781,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "floating-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "floatingRecessRing",
+          "background": "surfaceFloating",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating recess ring against its ground.",
+          "foregroundStep": 250,
+          "backgroundStep": 25,
+          "ratio": 1.902,
           "passed": true,
           "metTarget": true
         },
@@ -2471,6 +3185,66 @@
           "foregroundStep": 275,
           "backgroundStep": 75,
           "ratio": 1.802,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "primary-on-primary-recess",
+          "classification": "required",
+          "foreground": "textPrimary",
+          "background": "primaryRecess",
+          "minimum": 4.5,
+          "target": 7,
+          "rationale": "Ordinary text in a recess.",
+          "foregroundStep": 100,
+          "backgroundStep": 900,
+          "ratio": 13.956,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "muted-on-primary-recess",
+          "classification": "required",
+          "foreground": "textMuted",
+          "background": "primaryRecess",
+          "minimum": 4.5,
+          "target": 4.75,
+          "rationale": "Secondary text in a recess.",
+          "foregroundStep": 325,
+          "backgroundStep": 900,
+          "ratio": 7.045,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "primary-on-floating-recess",
+          "classification": "required",
+          "foreground": "textPrimary",
+          "background": "floatingRecess",
+          "minimum": 4.5,
+          "target": 7,
+          "rationale": "Ordinary text in a recess.",
+          "foregroundStep": 100,
+          "backgroundStep": 850,
+          "ratio": 12.609,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "muted-on-floating-recess",
+          "classification": "required",
+          "foreground": "textMuted",
+          "background": "floatingRecess",
+          "minimum": 4.5,
+          "target": 4.75,
+          "rationale": "Secondary text in a recess.",
+          "foregroundStep": 325,
+          "backgroundStep": 850,
+          "ratio": 6.365,
           "passed": true,
           "metTarget": true
         },
@@ -2514,8 +3288,8 @@
           "target": 7,
           "rationale": "Ordinary text in dialogs, tooltips, and floating panels.",
           "foregroundStep": 100,
-          "backgroundStep": 775,
-          "ratio": 10.235,
+          "backgroundStep": 800,
+          "ratio": 11.047,
           "passed": true,
           "metTarget": true
         },
@@ -2529,8 +3303,8 @@
           "target": 7,
           "rationale": "Ordinary text in recessed regions.",
           "foregroundStep": 100,
-          "backgroundStep": 975,
-          "ratio": 15.301,
+          "backgroundStep": 950,
+          "ratio": 14.953,
           "passed": true,
           "metTarget": true
         },
@@ -2574,8 +3348,8 @@
           "target": 4.75,
           "rationale": "The weakest recurring secondary-text pairing.",
           "foregroundStep": 325,
-          "backgroundStep": 975,
-          "ratio": 7.724,
+          "backgroundStep": 950,
+          "ratio": 7.548,
           "passed": true,
           "metTarget": true
         },
@@ -2688,8 +3462,8 @@
           "target": 7,
           "rationale": "Tooltip copy uses the primary text role.",
           "foregroundStep": 100,
-          "backgroundStep": 775,
-          "ratio": 10.235,
+          "backgroundStep": 800,
+          "ratio": 11.047,
           "passed": true,
           "metTarget": true
         },
@@ -2730,8 +3504,8 @@
           "minimum": 3,
           "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
           "foregroundStep": 475,
-          "backgroundStep": 775,
-          "ratio": 3.045,
+          "backgroundStep": 800,
+          "ratio": 3.286,
           "passed": true,
           "metTarget": true
         },
@@ -2745,38 +3519,158 @@
           "target": 3,
           "rationale": "The box must read as bounded, not as a floating block of ink.",
           "foregroundStep": 475,
-          "backgroundStep": 775,
-          "ratio": 3.045,
+          "backgroundStep": 800,
+          "ratio": 3.286,
           "passed": true,
           "metTarget": true
         },
         {
           "theme": "dark",
-          "id": "faint-rule-on-floating-surface",
+          "id": "raised-ring-on-face",
           "classification": "advisory",
-          "foreground": "ruleFaint",
-          "background": "surfaceFloating",
+          "foreground": "raisedRing",
+          "background": "surfacePrimary",
           "minimum": 1.2,
           "target": 1.5,
-          "rationale": "The floating panel ring; in dark it had fallen to 1.10:1 and the boundary was carried almost entirely by an alpha sheen.",
-          "foregroundStep": 700,
-          "backgroundStep": 775,
-          "ratio": 1.294,
+          "rationale": "The raised ring against its face.",
+          "foregroundStep": 725,
+          "backgroundStep": 850,
+          "ratio": 1.457,
           "passed": true,
           "metTarget": false
         },
         {
           "theme": "dark",
-          "id": "faint-rule-on-primary-surface",
+          "id": "raised-ring-on-ground",
           "classification": "advisory",
-          "foreground": "ruleFaint",
+          "foreground": "raisedRing",
+          "background": "canvas",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The raised ring against its ground.",
+          "foregroundStep": 725,
+          "backgroundStep": 900,
+          "ratio": 1.613,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "floating-ring-on-face",
+          "classification": "advisory",
+          "foreground": "floatingRing",
+          "background": "surfaceFloating",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating ring against its face.",
+          "foregroundStep": 675,
+          "backgroundStep": 800,
+          "ratio": 1.533,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "floating-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "floatingRing",
           "background": "surfacePrimary",
           "minimum": 1.2,
           "target": 1.5,
-          "rationale": "The raised panel ring.",
-          "foregroundStep": 700,
+          "rationale": "The floating ring against its ground.",
+          "foregroundStep": 675,
           "backgroundStep": 850,
-          "ratio": 1.595,
+          "ratio": 1.749,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "canvas-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "canvasRecessRing",
+          "background": "canvasRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The canvas recess ring against its face.",
+          "foregroundStep": 775,
+          "backgroundStep": 950,
+          "ratio": 1.461,
+          "passed": true,
+          "metTarget": false
+        },
+        {
+          "theme": "dark",
+          "id": "canvas-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "canvasRecessRing",
+          "background": "canvas",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The canvas recess ring against its ground.",
+          "foregroundStep": 775,
+          "backgroundStep": 900,
+          "ratio": 1.364,
+          "passed": true,
+          "metTarget": false
+        },
+        {
+          "theme": "dark",
+          "id": "primary-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "primaryRecessRing",
+          "background": "primaryRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The primary recess ring against its face.",
+          "foregroundStep": 725,
+          "backgroundStep": 900,
+          "ratio": 1.613,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "primary-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "primaryRecessRing",
+          "background": "surfacePrimary",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The primary recess ring against its ground.",
+          "foregroundStep": 725,
+          "backgroundStep": 850,
+          "ratio": 1.457,
+          "passed": true,
+          "metTarget": false
+        },
+        {
+          "theme": "dark",
+          "id": "floating-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "floatingRecessRing",
+          "background": "floatingRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating recess ring against its face.",
+          "foregroundStep": 675,
+          "backgroundStep": 850,
+          "ratio": 1.749,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "floating-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "floatingRecessRing",
+          "background": "surfaceFloating",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating recess ring against its ground.",
+          "foregroundStep": 675,
+          "backgroundStep": 800,
+          "ratio": 1.533,
           "passed": true,
           "metTarget": true
         },
@@ -2820,8 +3714,11 @@
       "note": "Warm amber-grey, near Tailwind stone.",
       "failures": [],
       "warnings": [
-        "dark faint-rule-on-floating-surface: 1.291:1 is below target 1.5:1.",
-        "primary-to-floating-surface: light and dark differ 2.996x in separation (0.022428 vs 0.067188)."
+        "dark raised-ring-on-face: 1.453:1 is below target 1.5:1.",
+        "dark canvas-recess-ring-on-face: 1.457:1 is below target 1.5:1.",
+        "dark canvas-recess-ring-on-ground: 1.361:1 is below target 1.5:1.",
+        "dark primary-recess-ring-on-ground: 1.453:1 is below target 1.5:1.",
+        "surface-chroma: dark surfaces average 2.054x the chroma of light surfaces (0.005181 vs 0.010644)."
       ],
       "ramp": [
         {
@@ -3361,6 +4258,30 @@
       "crossTheme": {
         "contrast": [
           {
+            "id": "primary-on-primary-recess",
+            "light": 15.527,
+            "dark": 13.949,
+            "ratio": 1.113
+          },
+          {
+            "id": "muted-on-primary-recess",
+            "light": 5.832,
+            "dark": 7.011,
+            "ratio": 1.202
+          },
+          {
+            "id": "primary-on-floating-recess",
+            "light": 16.612,
+            "dark": 12.61,
+            "ratio": 1.317
+          },
+          {
+            "id": "muted-on-floating-recess",
+            "light": 6.239,
+            "dark": 6.337,
+            "ratio": 1.016
+          },
+          {
             "id": "primary-on-canvas",
             "light": 15.527,
             "dark": 13.949,
@@ -3375,20 +4296,20 @@
           {
             "id": "primary-on-floating-surface",
             "light": 17.75,
-            "dark": 10.25,
-            "ratio": 1.732
+            "dark": 11.054,
+            "ratio": 1.606
           },
           {
             "id": "primary-on-inset-surface",
-            "light": 13.508,
-            "dark": 15.282,
-            "ratio": 1.131
+            "light": 14.492,
+            "dark": 14.938,
+            "ratio": 1.031
           },
           {
             "id": "primary-on-selected-surface",
-            "light": 10.045,
+            "light": 11.684,
             "dark": 8.679,
-            "ratio": 1.157
+            "ratio": 1.346
           },
           {
             "id": "muted-on-canvas",
@@ -3398,9 +4319,9 @@
           },
           {
             "id": "muted-on-inset-surface",
-            "light": 5.074,
-            "dark": 7.681,
-            "ratio": 1.514
+            "light": 5.443,
+            "dark": 7.507,
+            "ratio": 1.379
           },
           {
             "id": "muted-on-analysis",
@@ -3434,16 +4355,16 @@
           },
           {
             "id": "menu-chip-ink",
-            "light": 5.019,
+            "light": 6.281,
             "dark": 8.74,
-            "ratio": 1.741
+            "ratio": 1.391
           },
           { "id": "keycap-ink", "light": 8.868, "dark": 7.105, "ratio": 1.248 },
           {
             "id": "tooltip-ink",
             "light": 17.75,
-            "dark": 10.25,
-            "ratio": 1.732
+            "dark": 11.054,
+            "ratio": 1.606
           },
           {
             "id": "tooltip-edge-over-canvas",
@@ -3460,26 +4381,74 @@
           {
             "id": "tooltip-edge-over-floating-surface",
             "light": 4.141,
-            "dark": 3.032,
-            "ratio": 1.366
+            "dark": 3.27,
+            "ratio": 1.266
           },
           {
             "id": "tooltip-edge-on-own-face",
             "light": 4.141,
-            "dark": 3.032,
-            "ratio": 1.366
+            "dark": 3.27,
+            "ratio": 1.266
           },
           {
-            "id": "faint-rule-on-floating-surface",
-            "light": 1.767,
-            "dark": 1.291,
-            "ratio": 1.369
+            "id": "raised-ring-on-face",
+            "light": 1.936,
+            "dark": 1.453,
+            "ratio": 1.332
           },
           {
-            "id": "faint-rule-on-primary-surface",
-            "light": 1.654,
-            "dark": 1.588,
-            "ratio": 1.042
+            "id": "raised-ring-on-ground",
+            "light": 1.809,
+            "dark": 1.607,
+            "ratio": 1.126
+          },
+          {
+            "id": "floating-ring-on-face",
+            "light": 1.91,
+            "dark": 1.527,
+            "ratio": 1.251
+          },
+          {
+            "id": "floating-ring-on-ground",
+            "light": 1.788,
+            "dark": 1.741,
+            "ratio": 1.027
+          },
+          {
+            "id": "canvas-recess-ring-on-face",
+            "light": 1.832,
+            "dark": 1.457,
+            "ratio": 1.257
+          },
+          {
+            "id": "canvas-recess-ring-on-ground",
+            "light": 1.962,
+            "dark": 1.361,
+            "ratio": 1.442
+          },
+          {
+            "id": "primary-recess-ring-on-face",
+            "light": 1.809,
+            "dark": 1.607,
+            "ratio": 1.126
+          },
+          {
+            "id": "primary-recess-ring-on-ground",
+            "light": 1.936,
+            "dark": 1.453,
+            "ratio": 1.332
+          },
+          {
+            "id": "floating-recess-ring-on-face",
+            "light": 1.788,
+            "dark": 1.741,
+            "ratio": 1.027
+          },
+          {
+            "id": "floating-recess-ring-on-ground",
+            "light": 1.91,
+            "dark": 1.527,
+            "ratio": 1.251
           },
           {
             "id": "keycap-ring-on-face",
@@ -3504,20 +4473,32 @@
           {
             "id": "primary-to-floating-surface",
             "light": 0.022428,
-            "dark": 0.067188,
-            "ratio": 2.996
+            "dark": 0.04475,
+            "ratio": 1.995
           },
           {
             "id": "canvas-to-inset-surface",
-            "light": 0.044862,
-            "dark": 0.067131,
-            "ratio": 1.496
+            "light": 0.022428,
+            "dark": 0.044755,
+            "ratio": 1.995
+          },
+          {
+            "id": "primary-to-its-recess",
+            "light": 0.022428,
+            "dark": 0.044753,
+            "ratio": 1.995
+          },
+          {
+            "id": "floating-to-its-recess",
+            "light": 0.022428,
+            "dark": 0.04475,
+            "ratio": 1.995
           },
           {
             "id": "selected-from-canvas",
-            "light": 0.134617,
+            "light": 0.089733,
             "dark": 0.156846,
-            "ratio": 1.165
+            "ratio": 1.748
           }
         ],
         "surfaceChroma": {
@@ -3530,12 +4511,72 @@
             "surfaceSelected",
             "surfaceDisabled"
           ],
-          "light": 0.005911,
-          "dark": 0.010956,
-          "ratio": 1.853
+          "light": 0.005181,
+          "dark": 0.010644,
+          "ratio": 2.054
         }
       },
       "contrastContracts": [
+        {
+          "theme": "light",
+          "id": "primary-on-primary-recess",
+          "classification": "required",
+          "foreground": "textPrimary",
+          "background": "primaryRecess",
+          "minimum": 4.5,
+          "target": 7,
+          "rationale": "Ordinary text in a recess.",
+          "foregroundStep": 925,
+          "backgroundStep": 75,
+          "ratio": 15.527,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "muted-on-primary-recess",
+          "classification": "required",
+          "foreground": "textMuted",
+          "background": "primaryRecess",
+          "minimum": 4.5,
+          "target": 4.75,
+          "rationale": "Secondary text in a recess.",
+          "foregroundStep": 600,
+          "backgroundStep": 75,
+          "ratio": 5.832,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "primary-on-floating-recess",
+          "classification": "required",
+          "foreground": "textPrimary",
+          "background": "floatingRecess",
+          "minimum": 4.5,
+          "target": 7,
+          "rationale": "Ordinary text in a recess.",
+          "foregroundStep": 925,
+          "backgroundStep": 50,
+          "ratio": 16.612,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "muted-on-floating-recess",
+          "classification": "required",
+          "foreground": "textMuted",
+          "background": "floatingRecess",
+          "minimum": 4.5,
+          "target": 4.75,
+          "rationale": "Secondary text in a recess.",
+          "foregroundStep": 600,
+          "backgroundStep": 50,
+          "ratio": 6.239,
+          "passed": true,
+          "metTarget": true
+        },
         {
           "theme": "light",
           "id": "primary-on-canvas",
@@ -3591,8 +4632,8 @@
           "target": 7,
           "rationale": "Ordinary text in recessed regions.",
           "foregroundStep": 925,
-          "backgroundStep": 125,
-          "ratio": 13.508,
+          "backgroundStep": 100,
+          "ratio": 14.492,
           "passed": true,
           "metTarget": true
         },
@@ -3606,8 +4647,8 @@
           "target": 7,
           "rationale": "Selected rows retain ordinary text readability.",
           "foregroundStep": 925,
-          "backgroundStep": 225,
-          "ratio": 10.045,
+          "backgroundStep": 175,
+          "ratio": 11.684,
           "passed": true,
           "metTarget": true
         },
@@ -3636,8 +4677,8 @@
           "target": 4.75,
           "rationale": "The weakest recurring secondary-text pairing.",
           "foregroundStep": 600,
-          "backgroundStep": 125,
-          "ratio": 5.074,
+          "backgroundStep": 100,
+          "ratio": 5.443,
           "passed": true,
           "metTarget": true
         },
@@ -3721,8 +4762,8 @@
           "minimum": 4.5,
           "rationale": "The chip fills at the selected ground's depth, where plain muted ink falls under AA at the micro size its count is set in.",
           "foregroundStep": 675,
-          "backgroundStep": 225,
-          "ratio": 5.019,
+          "backgroundStep": 150,
+          "ratio": 6.281,
           "passed": true,
           "metTarget": true
         },
@@ -3814,31 +4855,151 @@
         },
         {
           "theme": "light",
-          "id": "faint-rule-on-floating-surface",
+          "id": "raised-ring-on-face",
           "classification": "advisory",
-          "foreground": "ruleFaint",
-          "background": "surfaceFloating",
+          "foreground": "raisedRing",
+          "background": "surfacePrimary",
           "minimum": 1.2,
           "target": 1.5,
-          "rationale": "The floating panel ring; in dark it had fallen to 1.10:1 and the boundary was carried almost entirely by an alpha sheen.",
-          "foregroundStep": 225,
-          "backgroundStep": 25,
-          "ratio": 1.767,
+          "rationale": "The raised ring against its face.",
+          "foregroundStep": 275,
+          "backgroundStep": 50,
+          "ratio": 1.936,
           "passed": true,
           "metTarget": true
         },
         {
           "theme": "light",
-          "id": "faint-rule-on-primary-surface",
+          "id": "raised-ring-on-ground",
           "classification": "advisory",
-          "foreground": "ruleFaint",
+          "foreground": "raisedRing",
+          "background": "canvas",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The raised ring against its ground.",
+          "foregroundStep": 275,
+          "backgroundStep": 75,
+          "ratio": 1.809,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "floating-ring-on-face",
+          "classification": "advisory",
+          "foreground": "floatingRing",
+          "background": "surfaceFloating",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating ring against its face.",
+          "foregroundStep": 250,
+          "backgroundStep": 25,
+          "ratio": 1.91,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "floating-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "floatingRing",
           "background": "surfacePrimary",
           "minimum": 1.2,
           "target": 1.5,
-          "rationale": "The raised panel ring.",
-          "foregroundStep": 225,
+          "rationale": "The floating ring against its ground.",
+          "foregroundStep": 250,
           "backgroundStep": 50,
-          "ratio": 1.654,
+          "ratio": 1.788,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "canvas-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "canvasRecessRing",
+          "background": "canvasRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The canvas recess ring against its face.",
+          "foregroundStep": 300,
+          "backgroundStep": 100,
+          "ratio": 1.832,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "canvas-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "canvasRecessRing",
+          "background": "canvas",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The canvas recess ring against its ground.",
+          "foregroundStep": 300,
+          "backgroundStep": 75,
+          "ratio": 1.962,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "primary-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "primaryRecessRing",
+          "background": "primaryRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The primary recess ring against its face.",
+          "foregroundStep": 275,
+          "backgroundStep": 75,
+          "ratio": 1.809,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "primary-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "primaryRecessRing",
+          "background": "surfacePrimary",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The primary recess ring against its ground.",
+          "foregroundStep": 275,
+          "backgroundStep": 50,
+          "ratio": 1.936,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "floating-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "floatingRecessRing",
+          "background": "floatingRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating recess ring against its face.",
+          "foregroundStep": 250,
+          "backgroundStep": 50,
+          "ratio": 1.788,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "floating-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "floatingRecessRing",
+          "background": "surfaceFloating",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating recess ring against its ground.",
+          "foregroundStep": 250,
+          "backgroundStep": 25,
+          "ratio": 1.91,
           "passed": true,
           "metTarget": true
         },
@@ -3869,6 +5030,66 @@
           "foregroundStep": 275,
           "backgroundStep": 75,
           "ratio": 1.809,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "primary-on-primary-recess",
+          "classification": "required",
+          "foreground": "textPrimary",
+          "background": "primaryRecess",
+          "minimum": 4.5,
+          "target": 7,
+          "rationale": "Ordinary text in a recess.",
+          "foregroundStep": 100,
+          "backgroundStep": 900,
+          "ratio": 13.949,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "muted-on-primary-recess",
+          "classification": "required",
+          "foreground": "textMuted",
+          "background": "primaryRecess",
+          "minimum": 4.5,
+          "target": 4.75,
+          "rationale": "Secondary text in a recess.",
+          "foregroundStep": 325,
+          "backgroundStep": 900,
+          "ratio": 7.011,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "primary-on-floating-recess",
+          "classification": "required",
+          "foreground": "textPrimary",
+          "background": "floatingRecess",
+          "minimum": 4.5,
+          "target": 7,
+          "rationale": "Ordinary text in a recess.",
+          "foregroundStep": 100,
+          "backgroundStep": 850,
+          "ratio": 12.61,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "muted-on-floating-recess",
+          "classification": "required",
+          "foreground": "textMuted",
+          "background": "floatingRecess",
+          "minimum": 4.5,
+          "target": 4.75,
+          "rationale": "Secondary text in a recess.",
+          "foregroundStep": 325,
+          "backgroundStep": 850,
+          "ratio": 6.337,
           "passed": true,
           "metTarget": true
         },
@@ -3912,8 +5133,8 @@
           "target": 7,
           "rationale": "Ordinary text in dialogs, tooltips, and floating panels.",
           "foregroundStep": 100,
-          "backgroundStep": 775,
-          "ratio": 10.25,
+          "backgroundStep": 800,
+          "ratio": 11.054,
           "passed": true,
           "metTarget": true
         },
@@ -3927,8 +5148,8 @@
           "target": 7,
           "rationale": "Ordinary text in recessed regions.",
           "foregroundStep": 100,
-          "backgroundStep": 975,
-          "ratio": 15.282,
+          "backgroundStep": 950,
+          "ratio": 14.938,
           "passed": true,
           "metTarget": true
         },
@@ -3972,8 +5193,8 @@
           "target": 4.75,
           "rationale": "The weakest recurring secondary-text pairing.",
           "foregroundStep": 325,
-          "backgroundStep": 975,
-          "ratio": 7.681,
+          "backgroundStep": 950,
+          "ratio": 7.507,
           "passed": true,
           "metTarget": true
         },
@@ -4086,8 +5307,8 @@
           "target": 7,
           "rationale": "Tooltip copy uses the primary text role.",
           "foregroundStep": 100,
-          "backgroundStep": 775,
-          "ratio": 10.25,
+          "backgroundStep": 800,
+          "ratio": 11.054,
           "passed": true,
           "metTarget": true
         },
@@ -4128,8 +5349,8 @@
           "minimum": 3,
           "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
           "foregroundStep": 475,
-          "backgroundStep": 775,
-          "ratio": 3.032,
+          "backgroundStep": 800,
+          "ratio": 3.27,
           "passed": true,
           "metTarget": true
         },
@@ -4143,38 +5364,158 @@
           "target": 3,
           "rationale": "The box must read as bounded, not as a floating block of ink.",
           "foregroundStep": 475,
-          "backgroundStep": 775,
-          "ratio": 3.032,
+          "backgroundStep": 800,
+          "ratio": 3.27,
           "passed": true,
           "metTarget": true
         },
         {
           "theme": "dark",
-          "id": "faint-rule-on-floating-surface",
+          "id": "raised-ring-on-face",
           "classification": "advisory",
-          "foreground": "ruleFaint",
-          "background": "surfaceFloating",
+          "foreground": "raisedRing",
+          "background": "surfacePrimary",
           "minimum": 1.2,
           "target": 1.5,
-          "rationale": "The floating panel ring; in dark it had fallen to 1.10:1 and the boundary was carried almost entirely by an alpha sheen.",
-          "foregroundStep": 700,
-          "backgroundStep": 775,
-          "ratio": 1.291,
+          "rationale": "The raised ring against its face.",
+          "foregroundStep": 725,
+          "backgroundStep": 850,
+          "ratio": 1.453,
           "passed": true,
           "metTarget": false
         },
         {
           "theme": "dark",
-          "id": "faint-rule-on-primary-surface",
+          "id": "raised-ring-on-ground",
           "classification": "advisory",
-          "foreground": "ruleFaint",
+          "foreground": "raisedRing",
+          "background": "canvas",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The raised ring against its ground.",
+          "foregroundStep": 725,
+          "backgroundStep": 900,
+          "ratio": 1.607,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "floating-ring-on-face",
+          "classification": "advisory",
+          "foreground": "floatingRing",
+          "background": "surfaceFloating",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating ring against its face.",
+          "foregroundStep": 675,
+          "backgroundStep": 800,
+          "ratio": 1.527,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "floating-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "floatingRing",
           "background": "surfacePrimary",
           "minimum": 1.2,
           "target": 1.5,
-          "rationale": "The raised panel ring.",
-          "foregroundStep": 700,
+          "rationale": "The floating ring against its ground.",
+          "foregroundStep": 675,
           "backgroundStep": 850,
-          "ratio": 1.588,
+          "ratio": 1.741,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "canvas-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "canvasRecessRing",
+          "background": "canvasRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The canvas recess ring against its face.",
+          "foregroundStep": 775,
+          "backgroundStep": 950,
+          "ratio": 1.457,
+          "passed": true,
+          "metTarget": false
+        },
+        {
+          "theme": "dark",
+          "id": "canvas-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "canvasRecessRing",
+          "background": "canvas",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The canvas recess ring against its ground.",
+          "foregroundStep": 775,
+          "backgroundStep": 900,
+          "ratio": 1.361,
+          "passed": true,
+          "metTarget": false
+        },
+        {
+          "theme": "dark",
+          "id": "primary-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "primaryRecessRing",
+          "background": "primaryRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The primary recess ring against its face.",
+          "foregroundStep": 725,
+          "backgroundStep": 900,
+          "ratio": 1.607,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "primary-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "primaryRecessRing",
+          "background": "surfacePrimary",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The primary recess ring against its ground.",
+          "foregroundStep": 725,
+          "backgroundStep": 850,
+          "ratio": 1.453,
+          "passed": true,
+          "metTarget": false
+        },
+        {
+          "theme": "dark",
+          "id": "floating-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "floatingRecessRing",
+          "background": "floatingRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating recess ring against its face.",
+          "foregroundStep": 675,
+          "backgroundStep": 850,
+          "ratio": 1.741,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "floating-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "floatingRecessRing",
+          "background": "surfaceFloating",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating recess ring against its ground.",
+          "foregroundStep": 675,
+          "backgroundStep": 800,
+          "ratio": 1.527,
           "passed": true,
           "metTarget": true
         },
@@ -4218,10 +5559,12 @@
       "note": "Green-grey, between Radix sage and olive.",
       "failures": [],
       "warnings": [
-        "dark faint-rule-on-floating-surface: 1.299:1 is below target 1.5:1.",
+        "dark raised-ring-on-face: 1.463:1 is below target 1.5:1.",
+        "dark canvas-recess-ring-on-face: 1.465:1 is below target 1.5:1.",
+        "dark canvas-recess-ring-on-ground: 1.366:1 is below target 1.5:1.",
+        "dark primary-recess-ring-on-ground: 1.463:1 is below target 1.5:1.",
         "field-focus-from-resting-edge: light and dark differ 1.752x in contrast (3.739:1 vs 6.55:1); the hierarchy is not the same in both themes.",
-        "menu-chip-ink: light and dark differ 1.759x in contrast (4.991:1 vs 8.778:1); the hierarchy is not the same in both themes.",
-        "primary-to-floating-surface: light and dark differ 2.996x in separation (0.022427 vs 0.067189)."
+        "surface-chroma: dark surfaces average 2.055x the chroma of light surfaces (0.005181 vs 0.010645)."
       ],
       "ramp": [
         {
@@ -4761,6 +6104,30 @@
       "crossTheme": {
         "contrast": [
           {
+            "id": "primary-on-primary-recess",
+            "light": 15.534,
+            "dark": 13.959,
+            "ratio": 1.113
+          },
+          {
+            "id": "muted-on-primary-recess",
+            "light": 5.748,
+            "dark": 7.079,
+            "ratio": 1.232
+          },
+          {
+            "id": "primary-on-floating-recess",
+            "light": 16.608,
+            "dark": 12.604,
+            "ratio": 1.318
+          },
+          {
+            "id": "muted-on-floating-recess",
+            "light": 6.145,
+            "dark": 6.392,
+            "ratio": 1.04
+          },
+          {
             "id": "primary-on-canvas",
             "light": 15.534,
             "dark": 13.959,
@@ -4775,20 +6142,20 @@
           {
             "id": "primary-on-floating-surface",
             "light": 17.733,
-            "dark": 10.216,
-            "ratio": 1.736
+            "dark": 11.037,
+            "ratio": 1.607
           },
           {
             "id": "primary-on-inset-surface",
-            "light": 13.537,
-            "dark": 15.316,
-            "ratio": 1.131
+            "light": 14.511,
+            "dark": 14.964,
+            "ratio": 1.031
           },
           {
             "id": "primary-on-selected-surface",
-            "light": 10.106,
+            "light": 11.731,
             "dark": 8.617,
-            "ratio": 1.173
+            "ratio": 1.361
           },
           {
             "id": "muted-on-canvas",
@@ -4798,9 +6165,9 @@
           },
           {
             "id": "muted-on-inset-surface",
-            "light": 5.009,
-            "dark": 7.767,
-            "ratio": 1.551
+            "light": 5.369,
+            "dark": 7.589,
+            "ratio": 1.413
           },
           {
             "id": "muted-on-analysis",
@@ -4834,16 +6201,16 @@
           },
           {
             "id": "menu-chip-ink",
-            "light": 4.991,
+            "light": 6.228,
             "dark": 8.778,
-            "ratio": 1.759
+            "ratio": 1.409
           },
           { "id": "keycap-ink", "light": 8.757, "dark": 7.115, "ratio": 1.231 },
           {
             "id": "tooltip-ink",
             "light": 17.733,
-            "dark": 10.216,
-            "ratio": 1.736
+            "dark": 11.037,
+            "ratio": 1.607
           },
           {
             "id": "tooltip-edge-over-canvas",
@@ -4860,26 +6227,74 @@
           {
             "id": "tooltip-edge-over-floating-surface",
             "light": 4.082,
-            "dark": 3.059,
-            "ratio": 1.334
+            "dark": 3.304,
+            "ratio": 1.235
           },
           {
             "id": "tooltip-edge-on-own-face",
             "light": 4.082,
-            "dark": 3.059,
-            "ratio": 1.334
+            "dark": 3.304,
+            "ratio": 1.235
           },
           {
-            "id": "faint-rule-on-floating-surface",
-            "light": 1.755,
-            "dark": 1.299,
-            "ratio": 1.351
+            "id": "raised-ring-on-face",
+            "light": 1.919,
+            "dark": 1.463,
+            "ratio": 1.312
           },
           {
-            "id": "faint-rule-on-primary-surface",
-            "light": 1.643,
-            "dark": 1.602,
-            "ratio": 1.026
+            "id": "raised-ring-on-ground",
+            "light": 1.795,
+            "dark": 1.62,
+            "ratio": 1.108
+          },
+          {
+            "id": "floating-ring-on-face",
+            "light": 1.895,
+            "dark": 1.54,
+            "ratio": 1.231
+          },
+          {
+            "id": "floating-ring-on-ground",
+            "light": 1.774,
+            "dark": 1.759,
+            "ratio": 1.009
+          },
+          {
+            "id": "canvas-recess-ring-on-face",
+            "light": 1.816,
+            "dark": 1.465,
+            "ratio": 1.24
+          },
+          {
+            "id": "canvas-recess-ring-on-ground",
+            "light": 1.945,
+            "dark": 1.366,
+            "ratio": 1.424
+          },
+          {
+            "id": "primary-recess-ring-on-face",
+            "light": 1.795,
+            "dark": 1.62,
+            "ratio": 1.108
+          },
+          {
+            "id": "primary-recess-ring-on-ground",
+            "light": 1.919,
+            "dark": 1.463,
+            "ratio": 1.312
+          },
+          {
+            "id": "floating-recess-ring-on-face",
+            "light": 1.774,
+            "dark": 1.759,
+            "ratio": 1.009
+          },
+          {
+            "id": "floating-recess-ring-on-ground",
+            "light": 1.895,
+            "dark": 1.54,
+            "ratio": 1.231
           },
           {
             "id": "keycap-ring-on-face",
@@ -4904,20 +6319,32 @@
           {
             "id": "primary-to-floating-surface",
             "light": 0.022427,
-            "dark": 0.067189,
-            "ratio": 2.996
+            "dark": 0.044752,
+            "ratio": 1.995
           },
           {
             "id": "canvas-to-inset-surface",
-            "light": 0.044864,
-            "dark": 0.067129,
-            "ratio": 1.496
+            "light": 0.022429,
+            "dark": 0.044754,
+            "ratio": 1.995
+          },
+          {
+            "id": "primary-to-its-recess",
+            "light": 0.022428,
+            "dark": 0.044751,
+            "ratio": 1.995
+          },
+          {
+            "id": "floating-to-its-recess",
+            "light": 0.022427,
+            "dark": 0.044752,
+            "ratio": 1.995
           },
           {
             "id": "selected-from-canvas",
-            "light": 0.134618,
+            "light": 0.089734,
             "dark": 0.156846,
-            "ratio": 1.165
+            "ratio": 1.748
           }
         ],
         "surfaceChroma": {
@@ -4930,12 +6357,72 @@
             "surfaceSelected",
             "surfaceDisabled"
           ],
-          "light": 0.005911,
-          "dark": 0.010957,
-          "ratio": 1.854
+          "light": 0.005181,
+          "dark": 0.010645,
+          "ratio": 2.055
         }
       },
       "contrastContracts": [
+        {
+          "theme": "light",
+          "id": "primary-on-primary-recess",
+          "classification": "required",
+          "foreground": "textPrimary",
+          "background": "primaryRecess",
+          "minimum": 4.5,
+          "target": 7,
+          "rationale": "Ordinary text in a recess.",
+          "foregroundStep": 925,
+          "backgroundStep": 75,
+          "ratio": 15.534,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "muted-on-primary-recess",
+          "classification": "required",
+          "foreground": "textMuted",
+          "background": "primaryRecess",
+          "minimum": 4.5,
+          "target": 4.75,
+          "rationale": "Secondary text in a recess.",
+          "foregroundStep": 600,
+          "backgroundStep": 75,
+          "ratio": 5.748,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "primary-on-floating-recess",
+          "classification": "required",
+          "foreground": "textPrimary",
+          "background": "floatingRecess",
+          "minimum": 4.5,
+          "target": 7,
+          "rationale": "Ordinary text in a recess.",
+          "foregroundStep": 925,
+          "backgroundStep": 50,
+          "ratio": 16.608,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "muted-on-floating-recess",
+          "classification": "required",
+          "foreground": "textMuted",
+          "background": "floatingRecess",
+          "minimum": 4.5,
+          "target": 4.75,
+          "rationale": "Secondary text in a recess.",
+          "foregroundStep": 600,
+          "backgroundStep": 50,
+          "ratio": 6.145,
+          "passed": true,
+          "metTarget": true
+        },
         {
           "theme": "light",
           "id": "primary-on-canvas",
@@ -4991,8 +6478,8 @@
           "target": 7,
           "rationale": "Ordinary text in recessed regions.",
           "foregroundStep": 925,
-          "backgroundStep": 125,
-          "ratio": 13.537,
+          "backgroundStep": 100,
+          "ratio": 14.511,
           "passed": true,
           "metTarget": true
         },
@@ -5006,8 +6493,8 @@
           "target": 7,
           "rationale": "Selected rows retain ordinary text readability.",
           "foregroundStep": 925,
-          "backgroundStep": 225,
-          "ratio": 10.106,
+          "backgroundStep": 175,
+          "ratio": 11.731,
           "passed": true,
           "metTarget": true
         },
@@ -5036,8 +6523,8 @@
           "target": 4.75,
           "rationale": "The weakest recurring secondary-text pairing.",
           "foregroundStep": 600,
-          "backgroundStep": 125,
-          "ratio": 5.009,
+          "backgroundStep": 100,
+          "ratio": 5.369,
           "passed": true,
           "metTarget": true
         },
@@ -5121,8 +6608,8 @@
           "minimum": 4.5,
           "rationale": "The chip fills at the selected ground's depth, where plain muted ink falls under AA at the micro size its count is set in.",
           "foregroundStep": 675,
-          "backgroundStep": 225,
-          "ratio": 4.991,
+          "backgroundStep": 150,
+          "ratio": 6.228,
           "passed": true,
           "metTarget": true
         },
@@ -5214,31 +6701,151 @@
         },
         {
           "theme": "light",
-          "id": "faint-rule-on-floating-surface",
+          "id": "raised-ring-on-face",
           "classification": "advisory",
-          "foreground": "ruleFaint",
-          "background": "surfaceFloating",
+          "foreground": "raisedRing",
+          "background": "surfacePrimary",
           "minimum": 1.2,
           "target": 1.5,
-          "rationale": "The floating panel ring; in dark it had fallen to 1.10:1 and the boundary was carried almost entirely by an alpha sheen.",
-          "foregroundStep": 225,
-          "backgroundStep": 25,
-          "ratio": 1.755,
+          "rationale": "The raised ring against its face.",
+          "foregroundStep": 275,
+          "backgroundStep": 50,
+          "ratio": 1.919,
           "passed": true,
           "metTarget": true
         },
         {
           "theme": "light",
-          "id": "faint-rule-on-primary-surface",
+          "id": "raised-ring-on-ground",
           "classification": "advisory",
-          "foreground": "ruleFaint",
+          "foreground": "raisedRing",
+          "background": "canvas",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The raised ring against its ground.",
+          "foregroundStep": 275,
+          "backgroundStep": 75,
+          "ratio": 1.795,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "floating-ring-on-face",
+          "classification": "advisory",
+          "foreground": "floatingRing",
+          "background": "surfaceFloating",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating ring against its face.",
+          "foregroundStep": 250,
+          "backgroundStep": 25,
+          "ratio": 1.895,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "floating-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "floatingRing",
           "background": "surfacePrimary",
           "minimum": 1.2,
           "target": 1.5,
-          "rationale": "The raised panel ring.",
-          "foregroundStep": 225,
+          "rationale": "The floating ring against its ground.",
+          "foregroundStep": 250,
           "backgroundStep": 50,
-          "ratio": 1.643,
+          "ratio": 1.774,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "canvas-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "canvasRecessRing",
+          "background": "canvasRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The canvas recess ring against its face.",
+          "foregroundStep": 300,
+          "backgroundStep": 100,
+          "ratio": 1.816,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "canvas-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "canvasRecessRing",
+          "background": "canvas",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The canvas recess ring against its ground.",
+          "foregroundStep": 300,
+          "backgroundStep": 75,
+          "ratio": 1.945,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "primary-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "primaryRecessRing",
+          "background": "primaryRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The primary recess ring against its face.",
+          "foregroundStep": 275,
+          "backgroundStep": 75,
+          "ratio": 1.795,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "primary-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "primaryRecessRing",
+          "background": "surfacePrimary",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The primary recess ring against its ground.",
+          "foregroundStep": 275,
+          "backgroundStep": 50,
+          "ratio": 1.919,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "floating-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "floatingRecessRing",
+          "background": "floatingRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating recess ring against its face.",
+          "foregroundStep": 250,
+          "backgroundStep": 50,
+          "ratio": 1.774,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "floating-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "floatingRecessRing",
+          "background": "surfaceFloating",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating recess ring against its ground.",
+          "foregroundStep": 250,
+          "backgroundStep": 25,
+          "ratio": 1.895,
           "passed": true,
           "metTarget": true
         },
@@ -5269,6 +6876,66 @@
           "foregroundStep": 275,
           "backgroundStep": 75,
           "ratio": 1.795,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "primary-on-primary-recess",
+          "classification": "required",
+          "foreground": "textPrimary",
+          "background": "primaryRecess",
+          "minimum": 4.5,
+          "target": 7,
+          "rationale": "Ordinary text in a recess.",
+          "foregroundStep": 100,
+          "backgroundStep": 900,
+          "ratio": 13.959,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "muted-on-primary-recess",
+          "classification": "required",
+          "foreground": "textMuted",
+          "background": "primaryRecess",
+          "minimum": 4.5,
+          "target": 4.75,
+          "rationale": "Secondary text in a recess.",
+          "foregroundStep": 325,
+          "backgroundStep": 900,
+          "ratio": 7.079,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "primary-on-floating-recess",
+          "classification": "required",
+          "foreground": "textPrimary",
+          "background": "floatingRecess",
+          "minimum": 4.5,
+          "target": 7,
+          "rationale": "Ordinary text in a recess.",
+          "foregroundStep": 100,
+          "backgroundStep": 850,
+          "ratio": 12.604,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "muted-on-floating-recess",
+          "classification": "required",
+          "foreground": "textMuted",
+          "background": "floatingRecess",
+          "minimum": 4.5,
+          "target": 4.75,
+          "rationale": "Secondary text in a recess.",
+          "foregroundStep": 325,
+          "backgroundStep": 850,
+          "ratio": 6.392,
           "passed": true,
           "metTarget": true
         },
@@ -5312,8 +6979,8 @@
           "target": 7,
           "rationale": "Ordinary text in dialogs, tooltips, and floating panels.",
           "foregroundStep": 100,
-          "backgroundStep": 775,
-          "ratio": 10.216,
+          "backgroundStep": 800,
+          "ratio": 11.037,
           "passed": true,
           "metTarget": true
         },
@@ -5327,8 +6994,8 @@
           "target": 7,
           "rationale": "Ordinary text in recessed regions.",
           "foregroundStep": 100,
-          "backgroundStep": 975,
-          "ratio": 15.316,
+          "backgroundStep": 950,
+          "ratio": 14.964,
           "passed": true,
           "metTarget": true
         },
@@ -5372,8 +7039,8 @@
           "target": 4.75,
           "rationale": "The weakest recurring secondary-text pairing.",
           "foregroundStep": 325,
-          "backgroundStep": 975,
-          "ratio": 7.767,
+          "backgroundStep": 950,
+          "ratio": 7.589,
           "passed": true,
           "metTarget": true
         },
@@ -5486,8 +7153,8 @@
           "target": 7,
           "rationale": "Tooltip copy uses the primary text role.",
           "foregroundStep": 100,
-          "backgroundStep": 775,
-          "ratio": 10.216,
+          "backgroundStep": 800,
+          "ratio": 11.037,
           "passed": true,
           "metTarget": true
         },
@@ -5528,8 +7195,8 @@
           "minimum": 3,
           "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
           "foregroundStep": 475,
-          "backgroundStep": 775,
-          "ratio": 3.059,
+          "backgroundStep": 800,
+          "ratio": 3.304,
           "passed": true,
           "metTarget": true
         },
@@ -5543,38 +7210,158 @@
           "target": 3,
           "rationale": "The box must read as bounded, not as a floating block of ink.",
           "foregroundStep": 475,
-          "backgroundStep": 775,
-          "ratio": 3.059,
+          "backgroundStep": 800,
+          "ratio": 3.304,
           "passed": true,
           "metTarget": true
         },
         {
           "theme": "dark",
-          "id": "faint-rule-on-floating-surface",
+          "id": "raised-ring-on-face",
           "classification": "advisory",
-          "foreground": "ruleFaint",
-          "background": "surfaceFloating",
+          "foreground": "raisedRing",
+          "background": "surfacePrimary",
           "minimum": 1.2,
           "target": 1.5,
-          "rationale": "The floating panel ring; in dark it had fallen to 1.10:1 and the boundary was carried almost entirely by an alpha sheen.",
-          "foregroundStep": 700,
-          "backgroundStep": 775,
-          "ratio": 1.299,
+          "rationale": "The raised ring against its face.",
+          "foregroundStep": 725,
+          "backgroundStep": 850,
+          "ratio": 1.463,
           "passed": true,
           "metTarget": false
         },
         {
           "theme": "dark",
-          "id": "faint-rule-on-primary-surface",
+          "id": "raised-ring-on-ground",
           "classification": "advisory",
-          "foreground": "ruleFaint",
+          "foreground": "raisedRing",
+          "background": "canvas",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The raised ring against its ground.",
+          "foregroundStep": 725,
+          "backgroundStep": 900,
+          "ratio": 1.62,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "floating-ring-on-face",
+          "classification": "advisory",
+          "foreground": "floatingRing",
+          "background": "surfaceFloating",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating ring against its face.",
+          "foregroundStep": 675,
+          "backgroundStep": 800,
+          "ratio": 1.54,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "floating-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "floatingRing",
           "background": "surfacePrimary",
           "minimum": 1.2,
           "target": 1.5,
-          "rationale": "The raised panel ring.",
-          "foregroundStep": 700,
+          "rationale": "The floating ring against its ground.",
+          "foregroundStep": 675,
           "backgroundStep": 850,
-          "ratio": 1.602,
+          "ratio": 1.759,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "canvas-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "canvasRecessRing",
+          "background": "canvasRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The canvas recess ring against its face.",
+          "foregroundStep": 775,
+          "backgroundStep": 950,
+          "ratio": 1.465,
+          "passed": true,
+          "metTarget": false
+        },
+        {
+          "theme": "dark",
+          "id": "canvas-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "canvasRecessRing",
+          "background": "canvas",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The canvas recess ring against its ground.",
+          "foregroundStep": 775,
+          "backgroundStep": 900,
+          "ratio": 1.366,
+          "passed": true,
+          "metTarget": false
+        },
+        {
+          "theme": "dark",
+          "id": "primary-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "primaryRecessRing",
+          "background": "primaryRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The primary recess ring against its face.",
+          "foregroundStep": 725,
+          "backgroundStep": 900,
+          "ratio": 1.62,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "primary-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "primaryRecessRing",
+          "background": "surfacePrimary",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The primary recess ring against its ground.",
+          "foregroundStep": 725,
+          "backgroundStep": 850,
+          "ratio": 1.463,
+          "passed": true,
+          "metTarget": false
+        },
+        {
+          "theme": "dark",
+          "id": "floating-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "floatingRecessRing",
+          "background": "floatingRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating recess ring against its face.",
+          "foregroundStep": 675,
+          "backgroundStep": 850,
+          "ratio": 1.759,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "floating-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "floatingRecessRing",
+          "background": "surfaceFloating",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating recess ring against its ground.",
+          "foregroundStep": 675,
+          "backgroundStep": 800,
+          "ratio": 1.54,
           "passed": true,
           "metTarget": true
         },
@@ -5618,8 +7405,10 @@
       "note": "No tint at all. Graphite with the chroma removed, for a true neutral.",
       "failures": [],
       "warnings": [
-        "dark faint-rule-on-floating-surface: 1.293:1 is below target 1.5:1.",
-        "primary-to-floating-surface: light and dark differ 3x in separation (0.022376 vs 0.067127)."
+        "dark raised-ring-on-face: 1.455:1 is below target 1.5:1.",
+        "dark canvas-recess-ring-on-face: 1.459:1 is below target 1.5:1.",
+        "dark canvas-recess-ring-on-ground: 1.362:1 is below target 1.5:1.",
+        "dark primary-recess-ring-on-ground: 1.455:1 is below target 1.5:1."
       ],
       "ramp": [
         {
@@ -6159,6 +7948,30 @@
       "crossTheme": {
         "contrast": [
           {
+            "id": "primary-on-primary-recess",
+            "light": 15.527,
+            "dark": 13.95,
+            "ratio": 1.113
+          },
+          {
+            "id": "muted-on-primary-recess",
+            "light": 5.811,
+            "dark": 7.026,
+            "ratio": 1.209
+          },
+          {
+            "id": "primary-on-floating-recess",
+            "light": 16.61,
+            "dark": 12.608,
+            "ratio": 1.317
+          },
+          {
+            "id": "muted-on-floating-recess",
+            "light": 6.216,
+            "dark": 6.35,
+            "ratio": 1.022
+          },
+          {
             "id": "primary-on-canvas",
             "light": 15.527,
             "dark": 13.95,
@@ -6173,20 +7986,20 @@
           {
             "id": "primary-on-floating-surface",
             "light": 17.745,
-            "dark": 10.242,
-            "ratio": 1.733
+            "dark": 11.05,
+            "ratio": 1.606
           },
           {
             "id": "primary-on-inset-surface",
-            "light": 13.514,
-            "dark": 15.289,
-            "ratio": 1.131
+            "light": 14.496,
+            "dark": 14.943,
+            "ratio": 1.031
           },
           {
             "id": "primary-on-selected-surface",
-            "light": 10.058,
+            "light": 11.694,
             "dark": 8.664,
-            "ratio": 1.161
+            "ratio": 1.35
           },
           {
             "id": "muted-on-canvas",
@@ -6196,9 +8009,9 @@
           },
           {
             "id": "muted-on-inset-surface",
-            "light": 5.057,
-            "dark": 7.7,
-            "ratio": 1.523
+            "light": 5.425,
+            "dark": 7.526,
+            "ratio": 1.387
           },
           {
             "id": "muted-on-analysis",
@@ -6232,16 +8045,16 @@
           },
           {
             "id": "menu-chip-ink",
-            "light": 5.011,
+            "light": 6.268,
             "dark": 8.748,
-            "ratio": 1.746
+            "ratio": 1.396
           },
           { "id": "keycap-ink", "light": 8.842, "dark": 7.107, "ratio": 1.244 },
           {
             "id": "tooltip-ink",
             "light": 17.745,
-            "dark": 10.242,
-            "ratio": 1.733
+            "dark": 11.05,
+            "ratio": 1.606
           },
           {
             "id": "tooltip-edge-over-canvas",
@@ -6258,26 +8071,74 @@
           {
             "id": "tooltip-edge-over-floating-surface",
             "light": 4.127,
-            "dark": 3.038,
-            "ratio": 1.358
+            "dark": 3.278,
+            "ratio": 1.259
           },
           {
             "id": "tooltip-edge-on-own-face",
             "light": 4.127,
-            "dark": 3.038,
-            "ratio": 1.358
+            "dark": 3.278,
+            "ratio": 1.259
           },
           {
-            "id": "faint-rule-on-floating-surface",
-            "light": 1.764,
-            "dark": 1.293,
-            "ratio": 1.364
+            "id": "raised-ring-on-face",
+            "light": 1.932,
+            "dark": 1.455,
+            "ratio": 1.328
           },
           {
-            "id": "faint-rule-on-primary-surface",
-            "light": 1.651,
-            "dark": 1.592,
-            "ratio": 1.037
+            "id": "raised-ring-on-ground",
+            "light": 1.806,
+            "dark": 1.61,
+            "ratio": 1.122
+          },
+          {
+            "id": "floating-ring-on-face",
+            "light": 1.907,
+            "dark": 1.53,
+            "ratio": 1.246
+          },
+          {
+            "id": "floating-ring-on-ground",
+            "light": 1.785,
+            "dark": 1.746,
+            "ratio": 1.022
+          },
+          {
+            "id": "canvas-recess-ring-on-face",
+            "light": 1.828,
+            "dark": 1.459,
+            "ratio": 1.253
+          },
+          {
+            "id": "canvas-recess-ring-on-ground",
+            "light": 1.958,
+            "dark": 1.362,
+            "ratio": 1.438
+          },
+          {
+            "id": "primary-recess-ring-on-face",
+            "light": 1.806,
+            "dark": 1.61,
+            "ratio": 1.122
+          },
+          {
+            "id": "primary-recess-ring-on-ground",
+            "light": 1.932,
+            "dark": 1.455,
+            "ratio": 1.328
+          },
+          {
+            "id": "floating-recess-ring-on-face",
+            "light": 1.785,
+            "dark": 1.746,
+            "ratio": 1.022
+          },
+          {
+            "id": "floating-recess-ring-on-ground",
+            "light": 1.907,
+            "dark": 1.53,
+            "ratio": 1.246
           },
           {
             "id": "keycap-ring-on-face",
@@ -6302,20 +8163,32 @@
           {
             "id": "primary-to-floating-surface",
             "light": 0.022376,
-            "dark": 0.067127,
-            "ratio": 3
+            "dark": 0.044749,
+            "ratio": 2
           },
           {
             "id": "canvas-to-inset-surface",
-            "light": 0.044749,
-            "dark": 0.067124,
-            "ratio": 1.5
+            "light": 0.022374,
+            "dark": 0.044751,
+            "ratio": 2
+          },
+          {
+            "id": "primary-to-its-recess",
+            "light": 0.022375,
+            "dark": 0.044749,
+            "ratio": 2
+          },
+          {
+            "id": "floating-to-its-recess",
+            "light": 0.022376,
+            "dark": 0.044749,
+            "ratio": 2
           },
           {
             "id": "selected-from-canvas",
-            "light": 0.134249,
+            "light": 0.0895,
             "dark": 0.156624,
-            "ratio": 1.167
+            "ratio": 1.75
           }
         ],
         "surfaceChroma": {
@@ -6334,6 +8207,66 @@
         }
       },
       "contrastContracts": [
+        {
+          "theme": "light",
+          "id": "primary-on-primary-recess",
+          "classification": "required",
+          "foreground": "textPrimary",
+          "background": "primaryRecess",
+          "minimum": 4.5,
+          "target": 7,
+          "rationale": "Ordinary text in a recess.",
+          "foregroundStep": 925,
+          "backgroundStep": 75,
+          "ratio": 15.527,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "muted-on-primary-recess",
+          "classification": "required",
+          "foreground": "textMuted",
+          "background": "primaryRecess",
+          "minimum": 4.5,
+          "target": 4.75,
+          "rationale": "Secondary text in a recess.",
+          "foregroundStep": 600,
+          "backgroundStep": 75,
+          "ratio": 5.811,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "primary-on-floating-recess",
+          "classification": "required",
+          "foreground": "textPrimary",
+          "background": "floatingRecess",
+          "minimum": 4.5,
+          "target": 7,
+          "rationale": "Ordinary text in a recess.",
+          "foregroundStep": 925,
+          "backgroundStep": 50,
+          "ratio": 16.61,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "muted-on-floating-recess",
+          "classification": "required",
+          "foreground": "textMuted",
+          "background": "floatingRecess",
+          "minimum": 4.5,
+          "target": 4.75,
+          "rationale": "Secondary text in a recess.",
+          "foregroundStep": 600,
+          "backgroundStep": 50,
+          "ratio": 6.216,
+          "passed": true,
+          "metTarget": true
+        },
         {
           "theme": "light",
           "id": "primary-on-canvas",
@@ -6389,8 +8322,8 @@
           "target": 7,
           "rationale": "Ordinary text in recessed regions.",
           "foregroundStep": 925,
-          "backgroundStep": 125,
-          "ratio": 13.514,
+          "backgroundStep": 100,
+          "ratio": 14.496,
           "passed": true,
           "metTarget": true
         },
@@ -6404,8 +8337,8 @@
           "target": 7,
           "rationale": "Selected rows retain ordinary text readability.",
           "foregroundStep": 925,
-          "backgroundStep": 225,
-          "ratio": 10.058,
+          "backgroundStep": 175,
+          "ratio": 11.694,
           "passed": true,
           "metTarget": true
         },
@@ -6434,8 +8367,8 @@
           "target": 4.75,
           "rationale": "The weakest recurring secondary-text pairing.",
           "foregroundStep": 600,
-          "backgroundStep": 125,
-          "ratio": 5.057,
+          "backgroundStep": 100,
+          "ratio": 5.425,
           "passed": true,
           "metTarget": true
         },
@@ -6519,8 +8452,8 @@
           "minimum": 4.5,
           "rationale": "The chip fills at the selected ground's depth, where plain muted ink falls under AA at the micro size its count is set in.",
           "foregroundStep": 675,
-          "backgroundStep": 225,
-          "ratio": 5.011,
+          "backgroundStep": 150,
+          "ratio": 6.268,
           "passed": true,
           "metTarget": true
         },
@@ -6612,31 +8545,151 @@
         },
         {
           "theme": "light",
-          "id": "faint-rule-on-floating-surface",
+          "id": "raised-ring-on-face",
           "classification": "advisory",
-          "foreground": "ruleFaint",
-          "background": "surfaceFloating",
+          "foreground": "raisedRing",
+          "background": "surfacePrimary",
           "minimum": 1.2,
           "target": 1.5,
-          "rationale": "The floating panel ring; in dark it had fallen to 1.10:1 and the boundary was carried almost entirely by an alpha sheen.",
-          "foregroundStep": 225,
-          "backgroundStep": 25,
-          "ratio": 1.764,
+          "rationale": "The raised ring against its face.",
+          "foregroundStep": 275,
+          "backgroundStep": 50,
+          "ratio": 1.932,
           "passed": true,
           "metTarget": true
         },
         {
           "theme": "light",
-          "id": "faint-rule-on-primary-surface",
+          "id": "raised-ring-on-ground",
           "classification": "advisory",
-          "foreground": "ruleFaint",
+          "foreground": "raisedRing",
+          "background": "canvas",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The raised ring against its ground.",
+          "foregroundStep": 275,
+          "backgroundStep": 75,
+          "ratio": 1.806,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "floating-ring-on-face",
+          "classification": "advisory",
+          "foreground": "floatingRing",
+          "background": "surfaceFloating",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating ring against its face.",
+          "foregroundStep": 250,
+          "backgroundStep": 25,
+          "ratio": 1.907,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "floating-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "floatingRing",
           "background": "surfacePrimary",
           "minimum": 1.2,
           "target": 1.5,
-          "rationale": "The raised panel ring.",
-          "foregroundStep": 225,
+          "rationale": "The floating ring against its ground.",
+          "foregroundStep": 250,
           "backgroundStep": 50,
-          "ratio": 1.651,
+          "ratio": 1.785,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "canvas-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "canvasRecessRing",
+          "background": "canvasRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The canvas recess ring against its face.",
+          "foregroundStep": 300,
+          "backgroundStep": 100,
+          "ratio": 1.828,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "canvas-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "canvasRecessRing",
+          "background": "canvas",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The canvas recess ring against its ground.",
+          "foregroundStep": 300,
+          "backgroundStep": 75,
+          "ratio": 1.958,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "primary-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "primaryRecessRing",
+          "background": "primaryRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The primary recess ring against its face.",
+          "foregroundStep": 275,
+          "backgroundStep": 75,
+          "ratio": 1.806,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "primary-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "primaryRecessRing",
+          "background": "surfacePrimary",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The primary recess ring against its ground.",
+          "foregroundStep": 275,
+          "backgroundStep": 50,
+          "ratio": 1.932,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "floating-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "floatingRecessRing",
+          "background": "floatingRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating recess ring against its face.",
+          "foregroundStep": 250,
+          "backgroundStep": 50,
+          "ratio": 1.785,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "light",
+          "id": "floating-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "floatingRecessRing",
+          "background": "surfaceFloating",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating recess ring against its ground.",
+          "foregroundStep": 250,
+          "backgroundStep": 25,
+          "ratio": 1.907,
           "passed": true,
           "metTarget": true
         },
@@ -6667,6 +8720,66 @@
           "foregroundStep": 275,
           "backgroundStep": 75,
           "ratio": 1.806,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "primary-on-primary-recess",
+          "classification": "required",
+          "foreground": "textPrimary",
+          "background": "primaryRecess",
+          "minimum": 4.5,
+          "target": 7,
+          "rationale": "Ordinary text in a recess.",
+          "foregroundStep": 100,
+          "backgroundStep": 900,
+          "ratio": 13.95,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "muted-on-primary-recess",
+          "classification": "required",
+          "foreground": "textMuted",
+          "background": "primaryRecess",
+          "minimum": 4.5,
+          "target": 4.75,
+          "rationale": "Secondary text in a recess.",
+          "foregroundStep": 325,
+          "backgroundStep": 900,
+          "ratio": 7.026,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "primary-on-floating-recess",
+          "classification": "required",
+          "foreground": "textPrimary",
+          "background": "floatingRecess",
+          "minimum": 4.5,
+          "target": 7,
+          "rationale": "Ordinary text in a recess.",
+          "foregroundStep": 100,
+          "backgroundStep": 850,
+          "ratio": 12.608,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "muted-on-floating-recess",
+          "classification": "required",
+          "foreground": "textMuted",
+          "background": "floatingRecess",
+          "minimum": 4.5,
+          "target": 4.75,
+          "rationale": "Secondary text in a recess.",
+          "foregroundStep": 325,
+          "backgroundStep": 850,
+          "ratio": 6.35,
           "passed": true,
           "metTarget": true
         },
@@ -6710,8 +8823,8 @@
           "target": 7,
           "rationale": "Ordinary text in dialogs, tooltips, and floating panels.",
           "foregroundStep": 100,
-          "backgroundStep": 775,
-          "ratio": 10.242,
+          "backgroundStep": 800,
+          "ratio": 11.05,
           "passed": true,
           "metTarget": true
         },
@@ -6725,8 +8838,8 @@
           "target": 7,
           "rationale": "Ordinary text in recessed regions.",
           "foregroundStep": 100,
-          "backgroundStep": 975,
-          "ratio": 15.289,
+          "backgroundStep": 950,
+          "ratio": 14.943,
           "passed": true,
           "metTarget": true
         },
@@ -6770,8 +8883,8 @@
           "target": 4.75,
           "rationale": "The weakest recurring secondary-text pairing.",
           "foregroundStep": 325,
-          "backgroundStep": 975,
-          "ratio": 7.7,
+          "backgroundStep": 950,
+          "ratio": 7.526,
           "passed": true,
           "metTarget": true
         },
@@ -6884,8 +8997,8 @@
           "target": 7,
           "rationale": "Tooltip copy uses the primary text role.",
           "foregroundStep": 100,
-          "backgroundStep": 775,
-          "ratio": 10.242,
+          "backgroundStep": 800,
+          "ratio": 11.05,
           "passed": true,
           "metTarget": true
         },
@@ -6926,8 +9039,8 @@
           "minimum": 3,
           "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
           "foregroundStep": 475,
-          "backgroundStep": 775,
-          "ratio": 3.038,
+          "backgroundStep": 800,
+          "ratio": 3.278,
           "passed": true,
           "metTarget": true
         },
@@ -6941,38 +9054,158 @@
           "target": 3,
           "rationale": "The box must read as bounded, not as a floating block of ink.",
           "foregroundStep": 475,
-          "backgroundStep": 775,
-          "ratio": 3.038,
+          "backgroundStep": 800,
+          "ratio": 3.278,
           "passed": true,
           "metTarget": true
         },
         {
           "theme": "dark",
-          "id": "faint-rule-on-floating-surface",
+          "id": "raised-ring-on-face",
           "classification": "advisory",
-          "foreground": "ruleFaint",
-          "background": "surfaceFloating",
+          "foreground": "raisedRing",
+          "background": "surfacePrimary",
           "minimum": 1.2,
           "target": 1.5,
-          "rationale": "The floating panel ring; in dark it had fallen to 1.10:1 and the boundary was carried almost entirely by an alpha sheen.",
-          "foregroundStep": 700,
-          "backgroundStep": 775,
-          "ratio": 1.293,
+          "rationale": "The raised ring against its face.",
+          "foregroundStep": 725,
+          "backgroundStep": 850,
+          "ratio": 1.455,
           "passed": true,
           "metTarget": false
         },
         {
           "theme": "dark",
-          "id": "faint-rule-on-primary-surface",
+          "id": "raised-ring-on-ground",
           "classification": "advisory",
-          "foreground": "ruleFaint",
+          "foreground": "raisedRing",
+          "background": "canvas",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The raised ring against its ground.",
+          "foregroundStep": 725,
+          "backgroundStep": 900,
+          "ratio": 1.61,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "floating-ring-on-face",
+          "classification": "advisory",
+          "foreground": "floatingRing",
+          "background": "surfaceFloating",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating ring against its face.",
+          "foregroundStep": 675,
+          "backgroundStep": 800,
+          "ratio": 1.53,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "floating-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "floatingRing",
           "background": "surfacePrimary",
           "minimum": 1.2,
           "target": 1.5,
-          "rationale": "The raised panel ring.",
-          "foregroundStep": 700,
+          "rationale": "The floating ring against its ground.",
+          "foregroundStep": 675,
           "backgroundStep": 850,
-          "ratio": 1.592,
+          "ratio": 1.746,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "canvas-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "canvasRecessRing",
+          "background": "canvasRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The canvas recess ring against its face.",
+          "foregroundStep": 775,
+          "backgroundStep": 950,
+          "ratio": 1.459,
+          "passed": true,
+          "metTarget": false
+        },
+        {
+          "theme": "dark",
+          "id": "canvas-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "canvasRecessRing",
+          "background": "canvas",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The canvas recess ring against its ground.",
+          "foregroundStep": 775,
+          "backgroundStep": 900,
+          "ratio": 1.362,
+          "passed": true,
+          "metTarget": false
+        },
+        {
+          "theme": "dark",
+          "id": "primary-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "primaryRecessRing",
+          "background": "primaryRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The primary recess ring against its face.",
+          "foregroundStep": 725,
+          "backgroundStep": 900,
+          "ratio": 1.61,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "primary-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "primaryRecessRing",
+          "background": "surfacePrimary",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The primary recess ring against its ground.",
+          "foregroundStep": 725,
+          "backgroundStep": 850,
+          "ratio": 1.455,
+          "passed": true,
+          "metTarget": false
+        },
+        {
+          "theme": "dark",
+          "id": "floating-recess-ring-on-face",
+          "classification": "advisory",
+          "foreground": "floatingRecessRing",
+          "background": "floatingRecess",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating recess ring against its face.",
+          "foregroundStep": 675,
+          "backgroundStep": 850,
+          "ratio": 1.746,
+          "passed": true,
+          "metTarget": true
+        },
+        {
+          "theme": "dark",
+          "id": "floating-recess-ring-on-ground",
+          "classification": "advisory",
+          "foreground": "floatingRecessRing",
+          "background": "surfaceFloating",
+          "minimum": 1.2,
+          "target": 1.5,
+          "rationale": "The floating recess ring against its ground.",
+          "foregroundStep": 675,
+          "backgroundStep": 800,
+          "ratio": 1.53,
           "passed": true,
           "metTarget": true
         },
@@ -7192,6 +9425,30 @@
   "crossTheme": {
     "contrast": [
       {
+        "id": "primary-on-primary-recess",
+        "light": 15.526,
+        "dark": 13.948,
+        "ratio": 1.113
+      },
+      {
+        "id": "muted-on-primary-recess",
+        "light": 5.83,
+        "dark": 7.011,
+        "ratio": 1.203
+      },
+      {
+        "id": "primary-on-floating-recess",
+        "light": 16.611,
+        "dark": 12.609,
+        "ratio": 1.317
+      },
+      {
+        "id": "muted-on-floating-recess",
+        "light": 6.237,
+        "dark": 6.338,
+        "ratio": 1.016
+      },
+      {
         "id": "primary-on-canvas",
         "light": 15.526,
         "dark": 13.948,
@@ -7206,27 +9463,27 @@
       {
         "id": "primary-on-floating-surface",
         "light": 17.749,
-        "dark": 10.249,
-        "ratio": 1.732
+        "dark": 11.053,
+        "ratio": 1.606
       },
       {
         "id": "primary-on-inset-surface",
-        "light": 13.508,
-        "dark": 15.282,
-        "ratio": 1.131
+        "light": 14.492,
+        "dark": 14.937,
+        "ratio": 1.031
       },
       {
         "id": "primary-on-selected-surface",
-        "light": 10.045,
+        "light": 11.684,
         "dark": 8.677,
-        "ratio": 1.158
+        "ratio": 1.347
       },
       { "id": "muted-on-canvas", "light": 5.83, "dark": 7.011, "ratio": 1.203 },
       {
         "id": "muted-on-inset-surface",
-        "light": 5.072,
-        "dark": 7.681,
-        "ratio": 1.514
+        "light": 5.442,
+        "dark": 7.508,
+        "ratio": 1.38
       },
       {
         "id": "muted-on-analysis",
@@ -7258,9 +9515,9 @@
         "dark": 6.552,
         "ratio": 1.737
       },
-      { "id": "menu-chip-ink", "light": 5.018, "dark": 8.74, "ratio": 1.742 },
+      { "id": "menu-chip-ink", "light": 6.28, "dark": 8.74, "ratio": 1.392 },
       { "id": "keycap-ink", "light": 8.866, "dark": 7.104, "ratio": 1.248 },
-      { "id": "tooltip-ink", "light": 17.749, "dark": 10.249, "ratio": 1.732 },
+      { "id": "tooltip-ink", "light": 17.749, "dark": 11.053, "ratio": 1.606 },
       {
         "id": "tooltip-edge-over-canvas",
         "light": 3.621,
@@ -7276,26 +9533,74 @@
       {
         "id": "tooltip-edge-over-floating-surface",
         "light": 4.14,
-        "dark": 3.032,
-        "ratio": 1.365
+        "dark": 3.27,
+        "ratio": 1.266
       },
       {
         "id": "tooltip-edge-on-own-face",
         "light": 4.14,
-        "dark": 3.032,
-        "ratio": 1.365
+        "dark": 3.27,
+        "ratio": 1.266
       },
       {
-        "id": "faint-rule-on-floating-surface",
-        "light": 1.767,
-        "dark": 1.291,
-        "ratio": 1.369
+        "id": "raised-ring-on-face",
+        "light": 1.936,
+        "dark": 1.453,
+        "ratio": 1.332
       },
       {
-        "id": "faint-rule-on-primary-surface",
-        "light": 1.654,
-        "dark": 1.589,
-        "ratio": 1.041
+        "id": "raised-ring-on-ground",
+        "light": 1.809,
+        "dark": 1.607,
+        "ratio": 1.126
+      },
+      {
+        "id": "floating-ring-on-face",
+        "light": 1.91,
+        "dark": 1.527,
+        "ratio": 1.251
+      },
+      {
+        "id": "floating-ring-on-ground",
+        "light": 1.788,
+        "dark": 1.742,
+        "ratio": 1.026
+      },
+      {
+        "id": "canvas-recess-ring-on-face",
+        "light": 1.832,
+        "dark": 1.457,
+        "ratio": 1.257
+      },
+      {
+        "id": "canvas-recess-ring-on-ground",
+        "light": 1.962,
+        "dark": 1.361,
+        "ratio": 1.442
+      },
+      {
+        "id": "primary-recess-ring-on-face",
+        "light": 1.809,
+        "dark": 1.607,
+        "ratio": 1.126
+      },
+      {
+        "id": "primary-recess-ring-on-ground",
+        "light": 1.936,
+        "dark": 1.453,
+        "ratio": 1.332
+      },
+      {
+        "id": "floating-recess-ring-on-face",
+        "light": 1.788,
+        "dark": 1.742,
+        "ratio": 1.026
+      },
+      {
+        "id": "floating-recess-ring-on-ground",
+        "light": 1.91,
+        "dark": 1.527,
+        "ratio": 1.251
       },
       {
         "id": "keycap-ring-on-face",
@@ -7320,20 +9625,32 @@
       {
         "id": "primary-to-floating-surface",
         "light": 0.022398,
-        "dark": 0.067155,
-        "ratio": 2.998
+        "dark": 0.044753,
+        "ratio": 1.998
       },
       {
         "id": "canvas-to-inset-surface",
-        "light": 0.0448,
-        "dark": 0.067124,
-        "ratio": 1.498
+        "light": 0.022399,
+        "dark": 0.044751,
+        "ratio": 1.998
+      },
+      {
+        "id": "primary-to-its-recess",
+        "light": 0.022399,
+        "dark": 0.044752,
+        "ratio": 1.998
+      },
+      {
+        "id": "floating-to-its-recess",
+        "light": 0.022398,
+        "dark": 0.044753,
+        "ratio": 1.998
       },
       {
         "id": "selected-from-canvas",
-        "light": 0.134413,
+        "light": 0.089605,
         "dark": 0.156724,
-        "ratio": 1.166
+        "ratio": 1.749
       }
     ],
     "surfaceChroma": {
@@ -7346,9 +9663,9 @@
         "surfaceSelected",
         "surfaceDisabled"
       ],
-      "light": 0.00394,
-      "dark": 0.007304,
-      "ratio": 1.854
+      "light": 0.003453,
+      "dark": 0.007096,
+      "ratio": 2.055
     }
   },
   "curves": {
@@ -7389,12 +9706,87 @@
     "surfaceFloating": {
       "cssVariable": "--sp-surface-floating",
       "light": 25,
-      "dark": 775
+      "dark": 800
     },
     "surfaceInset": {
       "cssVariable": "--sp-surface-inset",
-      "light": 125,
-      "dark": 975
+      "light": 100,
+      "dark": 950
+    },
+    "raisedRing": {
+      "cssVariable": "--sp-raised-ring",
+      "light": 275,
+      "dark": 725
+    },
+    "floatingRing": {
+      "cssVariable": "--sp-floating-ring",
+      "light": 250,
+      "dark": 675
+    },
+    "recessedRing": {
+      "cssVariable": "--sp-recessed-ring",
+      "light": 300,
+      "dark": 775
+    },
+    "raisedEdge": {
+      "cssVariable": "--sp-raised-edge",
+      "light": 25,
+      "dark": 900
+    },
+    "floatingEdge": {
+      "cssVariable": "--sp-floating-edge",
+      "light": 0,
+      "dark": 850
+    },
+    "recessedEdge": {
+      "cssVariable": "--sp-recessed-edge",
+      "light": 75,
+      "dark": 1000
+    },
+    "canvasRecess": {
+      "cssVariable": "--sp-canvas-recess",
+      "light": 100,
+      "dark": 950
+    },
+    "canvasRecessRing": {
+      "cssVariable": "--sp-canvas-recess-ring",
+      "light": 300,
+      "dark": 775
+    },
+    "canvasRecessEdge": {
+      "cssVariable": "--sp-canvas-recess-edge",
+      "light": 75,
+      "dark": 1000
+    },
+    "primaryRecess": {
+      "cssVariable": "--sp-primary-recess",
+      "light": 75,
+      "dark": 900
+    },
+    "primaryRecessRing": {
+      "cssVariable": "--sp-primary-recess-ring",
+      "light": 275,
+      "dark": 725
+    },
+    "primaryRecessEdge": {
+      "cssVariable": "--sp-primary-recess-edge",
+      "light": 50,
+      "dark": 950
+    },
+    "floatingRecess": {
+      "cssVariable": "--sp-floating-recess",
+      "light": 50,
+      "dark": 850
+    },
+    "floatingRecessRing": {
+      "cssVariable": "--sp-floating-recess-ring",
+      "light": 250,
+      "dark": 675
+    },
+    "floatingRecessEdge": {
+      "cssVariable": "--sp-floating-recess-edge",
+      "light": 25,
+      "dark": 900
     },
     "surfaceControl": {
       "cssVariable": "--sp-surface-control",
@@ -7403,7 +9795,7 @@
     },
     "surfaceSelected": {
       "cssVariable": "--sp-surface-selected",
-      "light": 225,
+      "light": 175,
       "dark": 725
     },
     "surfaceDisabled": {
@@ -7466,7 +9858,7 @@
     "tooltipFace": {
       "cssVariable": "--tooltip-face",
       "light": 25,
-      "dark": 775
+      "dark": 800
     },
     "tooltipEdge": {
       "cssVariable": "--tooltip-edge",
@@ -7483,20 +9875,10 @@
       "light": 200,
       "dark": 650
     },
-    "menuChip": { "cssVariable": "--sp-menu-chip", "light": 225, "dark": 850 },
-    "floatingEdge": {
-      "cssVariable": "--sp-floating-edge",
-      "light": 0,
-      "dark": 850
-    },
+    "menuChip": { "cssVariable": "--sp-menu-chip", "light": 150, "dark": 850 },
     "analysisHighlight": {
       "cssVariable": "--sp-analysis-highlight",
       "light": 0,
-      "dark": 900
-    },
-    "raisedEdge": {
-      "cssVariable": "--sp-raised-edge",
-      "light": 25,
       "dark": 900
     },
     "keycapHighlight": {
@@ -7591,24 +9973,264 @@
       "id": "surfaceFloating",
       "cssVariable": "--sp-surface-floating",
       "theme": "dark",
-      "expected": 775,
-      "actual": 775,
+      "expected": 800,
+      "actual": 800,
       "passed": true
     },
     {
       "id": "surfaceInset",
       "cssVariable": "--sp-surface-inset",
       "theme": "light",
-      "expected": 125,
-      "actual": 125,
+      "expected": 100,
+      "actual": 100,
       "passed": true
     },
     {
       "id": "surfaceInset",
       "cssVariable": "--sp-surface-inset",
       "theme": "dark",
-      "expected": 975,
-      "actual": 975,
+      "expected": 950,
+      "actual": 950,
+      "passed": true
+    },
+    {
+      "id": "raisedRing",
+      "cssVariable": "--sp-raised-ring",
+      "theme": "light",
+      "expected": 275,
+      "actual": 275,
+      "passed": true
+    },
+    {
+      "id": "raisedRing",
+      "cssVariable": "--sp-raised-ring",
+      "theme": "dark",
+      "expected": 725,
+      "actual": 725,
+      "passed": true
+    },
+    {
+      "id": "floatingRing",
+      "cssVariable": "--sp-floating-ring",
+      "theme": "light",
+      "expected": 250,
+      "actual": 250,
+      "passed": true
+    },
+    {
+      "id": "floatingRing",
+      "cssVariable": "--sp-floating-ring",
+      "theme": "dark",
+      "expected": 675,
+      "actual": 675,
+      "passed": true
+    },
+    {
+      "id": "recessedRing",
+      "cssVariable": "--sp-recessed-ring",
+      "theme": "light",
+      "expected": 300,
+      "actual": 300,
+      "passed": true
+    },
+    {
+      "id": "recessedRing",
+      "cssVariable": "--sp-recessed-ring",
+      "theme": "dark",
+      "expected": 775,
+      "actual": 775,
+      "passed": true
+    },
+    {
+      "id": "raisedEdge",
+      "cssVariable": "--sp-raised-edge",
+      "theme": "light",
+      "expected": 25,
+      "actual": 25,
+      "passed": true
+    },
+    {
+      "id": "raisedEdge",
+      "cssVariable": "--sp-raised-edge",
+      "theme": "dark",
+      "expected": 900,
+      "actual": 900,
+      "passed": true
+    },
+    {
+      "id": "floatingEdge",
+      "cssVariable": "--sp-floating-edge",
+      "theme": "light",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "id": "floatingEdge",
+      "cssVariable": "--sp-floating-edge",
+      "theme": "dark",
+      "expected": 850,
+      "actual": 850,
+      "passed": true
+    },
+    {
+      "id": "recessedEdge",
+      "cssVariable": "--sp-recessed-edge",
+      "theme": "light",
+      "expected": 75,
+      "actual": 75,
+      "passed": true
+    },
+    {
+      "id": "recessedEdge",
+      "cssVariable": "--sp-recessed-edge",
+      "theme": "dark",
+      "expected": 1000,
+      "actual": 1000,
+      "passed": true
+    },
+    {
+      "id": "canvasRecess",
+      "cssVariable": "--sp-canvas-recess",
+      "theme": "light",
+      "expected": 100,
+      "actual": 100,
+      "passed": true
+    },
+    {
+      "id": "canvasRecess",
+      "cssVariable": "--sp-canvas-recess",
+      "theme": "dark",
+      "expected": 950,
+      "actual": 950,
+      "passed": true
+    },
+    {
+      "id": "canvasRecessRing",
+      "cssVariable": "--sp-canvas-recess-ring",
+      "theme": "light",
+      "expected": 300,
+      "actual": 300,
+      "passed": true
+    },
+    {
+      "id": "canvasRecessRing",
+      "cssVariable": "--sp-canvas-recess-ring",
+      "theme": "dark",
+      "expected": 775,
+      "actual": 775,
+      "passed": true
+    },
+    {
+      "id": "canvasRecessEdge",
+      "cssVariable": "--sp-canvas-recess-edge",
+      "theme": "light",
+      "expected": 75,
+      "actual": 75,
+      "passed": true
+    },
+    {
+      "id": "canvasRecessEdge",
+      "cssVariable": "--sp-canvas-recess-edge",
+      "theme": "dark",
+      "expected": 1000,
+      "actual": 1000,
+      "passed": true
+    },
+    {
+      "id": "primaryRecess",
+      "cssVariable": "--sp-primary-recess",
+      "theme": "light",
+      "expected": 75,
+      "actual": 75,
+      "passed": true
+    },
+    {
+      "id": "primaryRecess",
+      "cssVariable": "--sp-primary-recess",
+      "theme": "dark",
+      "expected": 900,
+      "actual": 900,
+      "passed": true
+    },
+    {
+      "id": "primaryRecessRing",
+      "cssVariable": "--sp-primary-recess-ring",
+      "theme": "light",
+      "expected": 275,
+      "actual": 275,
+      "passed": true
+    },
+    {
+      "id": "primaryRecessRing",
+      "cssVariable": "--sp-primary-recess-ring",
+      "theme": "dark",
+      "expected": 725,
+      "actual": 725,
+      "passed": true
+    },
+    {
+      "id": "primaryRecessEdge",
+      "cssVariable": "--sp-primary-recess-edge",
+      "theme": "light",
+      "expected": 50,
+      "actual": 50,
+      "passed": true
+    },
+    {
+      "id": "primaryRecessEdge",
+      "cssVariable": "--sp-primary-recess-edge",
+      "theme": "dark",
+      "expected": 950,
+      "actual": 950,
+      "passed": true
+    },
+    {
+      "id": "floatingRecess",
+      "cssVariable": "--sp-floating-recess",
+      "theme": "light",
+      "expected": 50,
+      "actual": 50,
+      "passed": true
+    },
+    {
+      "id": "floatingRecess",
+      "cssVariable": "--sp-floating-recess",
+      "theme": "dark",
+      "expected": 850,
+      "actual": 850,
+      "passed": true
+    },
+    {
+      "id": "floatingRecessRing",
+      "cssVariable": "--sp-floating-recess-ring",
+      "theme": "light",
+      "expected": 250,
+      "actual": 250,
+      "passed": true
+    },
+    {
+      "id": "floatingRecessRing",
+      "cssVariable": "--sp-floating-recess-ring",
+      "theme": "dark",
+      "expected": 675,
+      "actual": 675,
+      "passed": true
+    },
+    {
+      "id": "floatingRecessEdge",
+      "cssVariable": "--sp-floating-recess-edge",
+      "theme": "light",
+      "expected": 25,
+      "actual": 25,
+      "passed": true
+    },
+    {
+      "id": "floatingRecessEdge",
+      "cssVariable": "--sp-floating-recess-edge",
+      "theme": "dark",
+      "expected": 900,
+      "actual": 900,
       "passed": true
     },
     {
@@ -7631,8 +10253,8 @@
       "id": "surfaceSelected",
       "cssVariable": "--sp-surface-selected",
       "theme": "light",
-      "expected": 225,
-      "actual": 225,
+      "expected": 175,
+      "actual": 175,
       "passed": true
     },
     {
@@ -7863,8 +10485,8 @@
       "id": "tooltipFace",
       "cssVariable": "--tooltip-face",
       "theme": "dark",
-      "expected": 775,
-      "actual": 775,
+      "expected": 800,
+      "actual": 800,
       "passed": true
     },
     {
@@ -7919,8 +10541,8 @@
       "id": "menuChip",
       "cssVariable": "--sp-menu-chip",
       "theme": "light",
-      "expected": 225,
-      "actual": 225,
+      "expected": 150,
+      "actual": 150,
       "passed": true
     },
     {
@@ -7932,22 +10554,6 @@
       "passed": true
     },
     {
-      "id": "floatingEdge",
-      "cssVariable": "--sp-floating-edge",
-      "theme": "light",
-      "expected": 0,
-      "actual": 0,
-      "passed": true
-    },
-    {
-      "id": "floatingEdge",
-      "cssVariable": "--sp-floating-edge",
-      "theme": "dark",
-      "expected": 850,
-      "actual": 850,
-      "passed": true
-    },
-    {
       "id": "analysisHighlight",
       "cssVariable": "--sp-analysis-highlight",
       "theme": "light",
@@ -7958,22 +10564,6 @@
     {
       "id": "analysisHighlight",
       "cssVariable": "--sp-analysis-highlight",
-      "theme": "dark",
-      "expected": 900,
-      "actual": 900,
-      "passed": true
-    },
-    {
-      "id": "raisedEdge",
-      "cssVariable": "--sp-raised-edge",
-      "theme": "light",
-      "expected": 25,
-      "actual": 25,
-      "passed": true
-    },
-    {
-      "id": "raisedEdge",
-      "cssVariable": "--sp-raised-edge",
       "theme": "dark",
       "expected": 900,
       "actual": 900,
@@ -9215,6 +11805,66 @@
   "contrastContracts": [
     {
       "theme": "light",
+      "id": "primary-on-primary-recess",
+      "classification": "required",
+      "foreground": "textPrimary",
+      "background": "primaryRecess",
+      "minimum": 4.5,
+      "target": 7,
+      "rationale": "Ordinary text in a recess.",
+      "foregroundStep": 925,
+      "backgroundStep": 75,
+      "ratio": 15.526,
+      "passed": true,
+      "metTarget": true
+    },
+    {
+      "theme": "light",
+      "id": "muted-on-primary-recess",
+      "classification": "required",
+      "foreground": "textMuted",
+      "background": "primaryRecess",
+      "minimum": 4.5,
+      "target": 4.75,
+      "rationale": "Secondary text in a recess.",
+      "foregroundStep": 600,
+      "backgroundStep": 75,
+      "ratio": 5.83,
+      "passed": true,
+      "metTarget": true
+    },
+    {
+      "theme": "light",
+      "id": "primary-on-floating-recess",
+      "classification": "required",
+      "foreground": "textPrimary",
+      "background": "floatingRecess",
+      "minimum": 4.5,
+      "target": 7,
+      "rationale": "Ordinary text in a recess.",
+      "foregroundStep": 925,
+      "backgroundStep": 50,
+      "ratio": 16.611,
+      "passed": true,
+      "metTarget": true
+    },
+    {
+      "theme": "light",
+      "id": "muted-on-floating-recess",
+      "classification": "required",
+      "foreground": "textMuted",
+      "background": "floatingRecess",
+      "minimum": 4.5,
+      "target": 4.75,
+      "rationale": "Secondary text in a recess.",
+      "foregroundStep": 600,
+      "backgroundStep": 50,
+      "ratio": 6.237,
+      "passed": true,
+      "metTarget": true
+    },
+    {
+      "theme": "light",
       "id": "primary-on-canvas",
       "classification": "required",
       "foreground": "textPrimary",
@@ -9268,8 +11918,8 @@
       "target": 7,
       "rationale": "Ordinary text in recessed regions.",
       "foregroundStep": 925,
-      "backgroundStep": 125,
-      "ratio": 13.508,
+      "backgroundStep": 100,
+      "ratio": 14.492,
       "passed": true,
       "metTarget": true
     },
@@ -9283,8 +11933,8 @@
       "target": 7,
       "rationale": "Selected rows retain ordinary text readability.",
       "foregroundStep": 925,
-      "backgroundStep": 225,
-      "ratio": 10.045,
+      "backgroundStep": 175,
+      "ratio": 11.684,
       "passed": true,
       "metTarget": true
     },
@@ -9313,8 +11963,8 @@
       "target": 4.75,
       "rationale": "The weakest recurring secondary-text pairing.",
       "foregroundStep": 600,
-      "backgroundStep": 125,
-      "ratio": 5.072,
+      "backgroundStep": 100,
+      "ratio": 5.442,
       "passed": true,
       "metTarget": true
     },
@@ -9398,8 +12048,8 @@
       "minimum": 4.5,
       "rationale": "The chip fills at the selected ground's depth, where plain muted ink falls under AA at the micro size its count is set in.",
       "foregroundStep": 675,
-      "backgroundStep": 225,
-      "ratio": 5.018,
+      "backgroundStep": 150,
+      "ratio": 6.28,
       "passed": true,
       "metTarget": true
     },
@@ -9491,31 +12141,151 @@
     },
     {
       "theme": "light",
-      "id": "faint-rule-on-floating-surface",
+      "id": "raised-ring-on-face",
       "classification": "advisory",
-      "foreground": "ruleFaint",
-      "background": "surfaceFloating",
+      "foreground": "raisedRing",
+      "background": "surfacePrimary",
       "minimum": 1.2,
       "target": 1.5,
-      "rationale": "The floating panel ring; in dark it had fallen to 1.10:1 and the boundary was carried almost entirely by an alpha sheen.",
-      "foregroundStep": 225,
-      "backgroundStep": 25,
-      "ratio": 1.767,
+      "rationale": "The raised ring against its face.",
+      "foregroundStep": 275,
+      "backgroundStep": 50,
+      "ratio": 1.936,
       "passed": true,
       "metTarget": true
     },
     {
       "theme": "light",
-      "id": "faint-rule-on-primary-surface",
+      "id": "raised-ring-on-ground",
       "classification": "advisory",
-      "foreground": "ruleFaint",
+      "foreground": "raisedRing",
+      "background": "canvas",
+      "minimum": 1.2,
+      "target": 1.5,
+      "rationale": "The raised ring against its ground.",
+      "foregroundStep": 275,
+      "backgroundStep": 75,
+      "ratio": 1.809,
+      "passed": true,
+      "metTarget": true
+    },
+    {
+      "theme": "light",
+      "id": "floating-ring-on-face",
+      "classification": "advisory",
+      "foreground": "floatingRing",
+      "background": "surfaceFloating",
+      "minimum": 1.2,
+      "target": 1.5,
+      "rationale": "The floating ring against its face.",
+      "foregroundStep": 250,
+      "backgroundStep": 25,
+      "ratio": 1.91,
+      "passed": true,
+      "metTarget": true
+    },
+    {
+      "theme": "light",
+      "id": "floating-ring-on-ground",
+      "classification": "advisory",
+      "foreground": "floatingRing",
       "background": "surfacePrimary",
       "minimum": 1.2,
       "target": 1.5,
-      "rationale": "The raised panel ring.",
-      "foregroundStep": 225,
+      "rationale": "The floating ring against its ground.",
+      "foregroundStep": 250,
       "backgroundStep": 50,
-      "ratio": 1.654,
+      "ratio": 1.788,
+      "passed": true,
+      "metTarget": true
+    },
+    {
+      "theme": "light",
+      "id": "canvas-recess-ring-on-face",
+      "classification": "advisory",
+      "foreground": "canvasRecessRing",
+      "background": "canvasRecess",
+      "minimum": 1.2,
+      "target": 1.5,
+      "rationale": "The canvas recess ring against its face.",
+      "foregroundStep": 300,
+      "backgroundStep": 100,
+      "ratio": 1.832,
+      "passed": true,
+      "metTarget": true
+    },
+    {
+      "theme": "light",
+      "id": "canvas-recess-ring-on-ground",
+      "classification": "advisory",
+      "foreground": "canvasRecessRing",
+      "background": "canvas",
+      "minimum": 1.2,
+      "target": 1.5,
+      "rationale": "The canvas recess ring against its ground.",
+      "foregroundStep": 300,
+      "backgroundStep": 75,
+      "ratio": 1.962,
+      "passed": true,
+      "metTarget": true
+    },
+    {
+      "theme": "light",
+      "id": "primary-recess-ring-on-face",
+      "classification": "advisory",
+      "foreground": "primaryRecessRing",
+      "background": "primaryRecess",
+      "minimum": 1.2,
+      "target": 1.5,
+      "rationale": "The primary recess ring against its face.",
+      "foregroundStep": 275,
+      "backgroundStep": 75,
+      "ratio": 1.809,
+      "passed": true,
+      "metTarget": true
+    },
+    {
+      "theme": "light",
+      "id": "primary-recess-ring-on-ground",
+      "classification": "advisory",
+      "foreground": "primaryRecessRing",
+      "background": "surfacePrimary",
+      "minimum": 1.2,
+      "target": 1.5,
+      "rationale": "The primary recess ring against its ground.",
+      "foregroundStep": 275,
+      "backgroundStep": 50,
+      "ratio": 1.936,
+      "passed": true,
+      "metTarget": true
+    },
+    {
+      "theme": "light",
+      "id": "floating-recess-ring-on-face",
+      "classification": "advisory",
+      "foreground": "floatingRecessRing",
+      "background": "floatingRecess",
+      "minimum": 1.2,
+      "target": 1.5,
+      "rationale": "The floating recess ring against its face.",
+      "foregroundStep": 250,
+      "backgroundStep": 50,
+      "ratio": 1.788,
+      "passed": true,
+      "metTarget": true
+    },
+    {
+      "theme": "light",
+      "id": "floating-recess-ring-on-ground",
+      "classification": "advisory",
+      "foreground": "floatingRecessRing",
+      "background": "surfaceFloating",
+      "minimum": 1.2,
+      "target": 1.5,
+      "rationale": "The floating recess ring against its ground.",
+      "foregroundStep": 250,
+      "backgroundStep": 25,
+      "ratio": 1.91,
       "passed": true,
       "metTarget": true
     },
@@ -9546,6 +12316,66 @@
       "foregroundStep": 275,
       "backgroundStep": 75,
       "ratio": 1.809,
+      "passed": true,
+      "metTarget": true
+    },
+    {
+      "theme": "dark",
+      "id": "primary-on-primary-recess",
+      "classification": "required",
+      "foreground": "textPrimary",
+      "background": "primaryRecess",
+      "minimum": 4.5,
+      "target": 7,
+      "rationale": "Ordinary text in a recess.",
+      "foregroundStep": 100,
+      "backgroundStep": 900,
+      "ratio": 13.948,
+      "passed": true,
+      "metTarget": true
+    },
+    {
+      "theme": "dark",
+      "id": "muted-on-primary-recess",
+      "classification": "required",
+      "foreground": "textMuted",
+      "background": "primaryRecess",
+      "minimum": 4.5,
+      "target": 4.75,
+      "rationale": "Secondary text in a recess.",
+      "foregroundStep": 325,
+      "backgroundStep": 900,
+      "ratio": 7.011,
+      "passed": true,
+      "metTarget": true
+    },
+    {
+      "theme": "dark",
+      "id": "primary-on-floating-recess",
+      "classification": "required",
+      "foreground": "textPrimary",
+      "background": "floatingRecess",
+      "minimum": 4.5,
+      "target": 7,
+      "rationale": "Ordinary text in a recess.",
+      "foregroundStep": 100,
+      "backgroundStep": 850,
+      "ratio": 12.609,
+      "passed": true,
+      "metTarget": true
+    },
+    {
+      "theme": "dark",
+      "id": "muted-on-floating-recess",
+      "classification": "required",
+      "foreground": "textMuted",
+      "background": "floatingRecess",
+      "minimum": 4.5,
+      "target": 4.75,
+      "rationale": "Secondary text in a recess.",
+      "foregroundStep": 325,
+      "backgroundStep": 850,
+      "ratio": 6.338,
       "passed": true,
       "metTarget": true
     },
@@ -9589,8 +12419,8 @@
       "target": 7,
       "rationale": "Ordinary text in dialogs, tooltips, and floating panels.",
       "foregroundStep": 100,
-      "backgroundStep": 775,
-      "ratio": 10.249,
+      "backgroundStep": 800,
+      "ratio": 11.053,
       "passed": true,
       "metTarget": true
     },
@@ -9604,8 +12434,8 @@
       "target": 7,
       "rationale": "Ordinary text in recessed regions.",
       "foregroundStep": 100,
-      "backgroundStep": 975,
-      "ratio": 15.282,
+      "backgroundStep": 950,
+      "ratio": 14.937,
       "passed": true,
       "metTarget": true
     },
@@ -9649,8 +12479,8 @@
       "target": 4.75,
       "rationale": "The weakest recurring secondary-text pairing.",
       "foregroundStep": 325,
-      "backgroundStep": 975,
-      "ratio": 7.681,
+      "backgroundStep": 950,
+      "ratio": 7.508,
       "passed": true,
       "metTarget": true
     },
@@ -9763,8 +12593,8 @@
       "target": 7,
       "rationale": "Tooltip copy uses the primary text role.",
       "foregroundStep": 100,
-      "backgroundStep": 775,
-      "ratio": 10.249,
+      "backgroundStep": 800,
+      "ratio": 11.053,
       "passed": true,
       "metTarget": true
     },
@@ -9805,8 +12635,8 @@
       "minimum": 3,
       "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
       "foregroundStep": 475,
-      "backgroundStep": 775,
-      "ratio": 3.032,
+      "backgroundStep": 800,
+      "ratio": 3.27,
       "passed": true,
       "metTarget": true
     },
@@ -9820,38 +12650,158 @@
       "target": 3,
       "rationale": "The box must read as bounded, not as a floating block of ink.",
       "foregroundStep": 475,
-      "backgroundStep": 775,
-      "ratio": 3.032,
+      "backgroundStep": 800,
+      "ratio": 3.27,
       "passed": true,
       "metTarget": true
     },
     {
       "theme": "dark",
-      "id": "faint-rule-on-floating-surface",
+      "id": "raised-ring-on-face",
       "classification": "advisory",
-      "foreground": "ruleFaint",
-      "background": "surfaceFloating",
+      "foreground": "raisedRing",
+      "background": "surfacePrimary",
       "minimum": 1.2,
       "target": 1.5,
-      "rationale": "The floating panel ring; in dark it had fallen to 1.10:1 and the boundary was carried almost entirely by an alpha sheen.",
-      "foregroundStep": 700,
-      "backgroundStep": 775,
-      "ratio": 1.291,
+      "rationale": "The raised ring against its face.",
+      "foregroundStep": 725,
+      "backgroundStep": 850,
+      "ratio": 1.453,
       "passed": true,
       "metTarget": false
     },
     {
       "theme": "dark",
-      "id": "faint-rule-on-primary-surface",
+      "id": "raised-ring-on-ground",
       "classification": "advisory",
-      "foreground": "ruleFaint",
+      "foreground": "raisedRing",
+      "background": "canvas",
+      "minimum": 1.2,
+      "target": 1.5,
+      "rationale": "The raised ring against its ground.",
+      "foregroundStep": 725,
+      "backgroundStep": 900,
+      "ratio": 1.607,
+      "passed": true,
+      "metTarget": true
+    },
+    {
+      "theme": "dark",
+      "id": "floating-ring-on-face",
+      "classification": "advisory",
+      "foreground": "floatingRing",
+      "background": "surfaceFloating",
+      "minimum": 1.2,
+      "target": 1.5,
+      "rationale": "The floating ring against its face.",
+      "foregroundStep": 675,
+      "backgroundStep": 800,
+      "ratio": 1.527,
+      "passed": true,
+      "metTarget": true
+    },
+    {
+      "theme": "dark",
+      "id": "floating-ring-on-ground",
+      "classification": "advisory",
+      "foreground": "floatingRing",
       "background": "surfacePrimary",
       "minimum": 1.2,
       "target": 1.5,
-      "rationale": "The raised panel ring.",
-      "foregroundStep": 700,
+      "rationale": "The floating ring against its ground.",
+      "foregroundStep": 675,
       "backgroundStep": 850,
-      "ratio": 1.589,
+      "ratio": 1.742,
+      "passed": true,
+      "metTarget": true
+    },
+    {
+      "theme": "dark",
+      "id": "canvas-recess-ring-on-face",
+      "classification": "advisory",
+      "foreground": "canvasRecessRing",
+      "background": "canvasRecess",
+      "minimum": 1.2,
+      "target": 1.5,
+      "rationale": "The canvas recess ring against its face.",
+      "foregroundStep": 775,
+      "backgroundStep": 950,
+      "ratio": 1.457,
+      "passed": true,
+      "metTarget": false
+    },
+    {
+      "theme": "dark",
+      "id": "canvas-recess-ring-on-ground",
+      "classification": "advisory",
+      "foreground": "canvasRecessRing",
+      "background": "canvas",
+      "minimum": 1.2,
+      "target": 1.5,
+      "rationale": "The canvas recess ring against its ground.",
+      "foregroundStep": 775,
+      "backgroundStep": 900,
+      "ratio": 1.361,
+      "passed": true,
+      "metTarget": false
+    },
+    {
+      "theme": "dark",
+      "id": "primary-recess-ring-on-face",
+      "classification": "advisory",
+      "foreground": "primaryRecessRing",
+      "background": "primaryRecess",
+      "minimum": 1.2,
+      "target": 1.5,
+      "rationale": "The primary recess ring against its face.",
+      "foregroundStep": 725,
+      "backgroundStep": 900,
+      "ratio": 1.607,
+      "passed": true,
+      "metTarget": true
+    },
+    {
+      "theme": "dark",
+      "id": "primary-recess-ring-on-ground",
+      "classification": "advisory",
+      "foreground": "primaryRecessRing",
+      "background": "surfacePrimary",
+      "minimum": 1.2,
+      "target": 1.5,
+      "rationale": "The primary recess ring against its ground.",
+      "foregroundStep": 725,
+      "backgroundStep": 850,
+      "ratio": 1.453,
+      "passed": true,
+      "metTarget": false
+    },
+    {
+      "theme": "dark",
+      "id": "floating-recess-ring-on-face",
+      "classification": "advisory",
+      "foreground": "floatingRecessRing",
+      "background": "floatingRecess",
+      "minimum": 1.2,
+      "target": 1.5,
+      "rationale": "The floating recess ring against its face.",
+      "foregroundStep": 675,
+      "backgroundStep": 850,
+      "ratio": 1.742,
+      "passed": true,
+      "metTarget": true
+    },
+    {
+      "theme": "dark",
+      "id": "floating-recess-ring-on-ground",
+      "classification": "advisory",
+      "foreground": "floatingRecessRing",
+      "background": "surfaceFloating",
+      "minimum": 1.2,
+      "target": 1.5,
+      "rationale": "The floating recess ring against its ground.",
+      "foregroundStep": 675,
+      "backgroundStep": 800,
+      "ratio": 1.527,
       "passed": true,
       "metTarget": true
     },
@@ -9922,8 +12872,34 @@
       "targetDeltaE": 0.015,
       "rationale": "Inset regions should not collapse into the canvas.",
       "firstStep": 75,
-      "secondStep": 125,
-      "deltaE": 0.0448,
+      "secondStep": 100,
+      "deltaE": 0.022399,
+      "metTarget": true
+    },
+    {
+      "theme": "light",
+      "id": "primary-to-its-recess",
+      "classification": "visual",
+      "first": "surfacePrimary",
+      "second": "primaryRecess",
+      "targetDeltaE": 0.015,
+      "rationale": "A recess in a pane should not collapse into the pane.",
+      "firstStep": 50,
+      "secondStep": 75,
+      "deltaE": 0.022399,
+      "metTarget": true
+    },
+    {
+      "theme": "light",
+      "id": "floating-to-its-recess",
+      "classification": "visual",
+      "first": "surfaceFloating",
+      "second": "floatingRecess",
+      "targetDeltaE": 0.015,
+      "rationale": "A recess in a floating surface should not collapse into it.",
+      "firstStep": 25,
+      "secondStep": 50,
+      "deltaE": 0.022398,
       "metTarget": true
     },
     {
@@ -9934,9 +12910,9 @@
       "second": "canvas",
       "targetDeltaE": 0.02,
       "rationale": "Selection must remain visible in addition to its non-colour cue.",
-      "firstStep": 225,
+      "firstStep": 175,
       "secondStep": 75,
-      "deltaE": 0.134413,
+      "deltaE": 0.089605,
       "metTarget": true
     },
     {
@@ -9961,8 +12937,8 @@
       "targetDeltaE": 0.015,
       "rationale": "Floating surfaces should remain distinct from raised panels.",
       "firstStep": 850,
-      "secondStep": 775,
-      "deltaE": 0.067155,
+      "secondStep": 800,
+      "deltaE": 0.044753,
       "metTarget": true
     },
     {
@@ -9974,8 +12950,34 @@
       "targetDeltaE": 0.015,
       "rationale": "Inset regions should not collapse into the canvas.",
       "firstStep": 900,
-      "secondStep": 975,
-      "deltaE": 0.067124,
+      "secondStep": 950,
+      "deltaE": 0.044751,
+      "metTarget": true
+    },
+    {
+      "theme": "dark",
+      "id": "primary-to-its-recess",
+      "classification": "visual",
+      "first": "surfacePrimary",
+      "second": "primaryRecess",
+      "targetDeltaE": 0.015,
+      "rationale": "A recess in a pane should not collapse into the pane.",
+      "firstStep": 850,
+      "secondStep": 900,
+      "deltaE": 0.044752,
+      "metTarget": true
+    },
+    {
+      "theme": "dark",
+      "id": "floating-to-its-recess",
+      "classification": "visual",
+      "first": "surfaceFloating",
+      "second": "floatingRecess",
+      "targetDeltaE": 0.015,
+      "rationale": "A recess in a floating surface should not collapse into it.",
+      "firstStep": 800,
+      "secondStep": 850,
+      "deltaE": 0.044753,
       "metTarget": true
     },
     {
@@ -9994,17 +12996,30 @@
   ],
   "failures": [],
   "warnings": [
-    "graphite: dark faint-rule-on-floating-surface: 1.291:1 is below target 1.5:1.",
-    "graphite: primary-to-floating-surface: light and dark differ 2.998x in separation (0.022398 vs 0.067155).",
-    "steel: dark faint-rule-on-floating-surface: 1.294:1 is below target 1.5:1.",
-    "steel: primary-to-floating-surface: light and dark differ 2.99x in separation (0.022508 vs 0.067291).",
-    "clay: dark faint-rule-on-floating-surface: 1.291:1 is below target 1.5:1.",
-    "clay: primary-to-floating-surface: light and dark differ 2.996x in separation (0.022428 vs 0.067188).",
-    "moss: dark faint-rule-on-floating-surface: 1.299:1 is below target 1.5:1.",
+    "graphite: dark raised-ring-on-face: 1.453:1 is below target 1.5:1.",
+    "graphite: dark canvas-recess-ring-on-face: 1.457:1 is below target 1.5:1.",
+    "graphite: dark canvas-recess-ring-on-ground: 1.361:1 is below target 1.5:1.",
+    "graphite: dark primary-recess-ring-on-ground: 1.453:1 is below target 1.5:1.",
+    "graphite: surface-chroma: dark surfaces average 2.055x the chroma of light surfaces (0.003453 vs 0.007096).",
+    "steel: dark raised-ring-on-face: 1.457:1 is below target 1.5:1.",
+    "steel: dark canvas-recess-ring-on-face: 1.461:1 is below target 1.5:1.",
+    "steel: dark canvas-recess-ring-on-ground: 1.364:1 is below target 1.5:1.",
+    "steel: dark primary-recess-ring-on-ground: 1.457:1 is below target 1.5:1.",
+    "steel: surface-chroma: dark surfaces average 2.055x the chroma of light surfaces (0.008288 vs 0.017031).",
+    "clay: dark raised-ring-on-face: 1.453:1 is below target 1.5:1.",
+    "clay: dark canvas-recess-ring-on-face: 1.457:1 is below target 1.5:1.",
+    "clay: dark canvas-recess-ring-on-ground: 1.361:1 is below target 1.5:1.",
+    "clay: dark primary-recess-ring-on-ground: 1.453:1 is below target 1.5:1.",
+    "clay: surface-chroma: dark surfaces average 2.054x the chroma of light surfaces (0.005181 vs 0.010644).",
+    "moss: dark raised-ring-on-face: 1.463:1 is below target 1.5:1.",
+    "moss: dark canvas-recess-ring-on-face: 1.465:1 is below target 1.5:1.",
+    "moss: dark canvas-recess-ring-on-ground: 1.366:1 is below target 1.5:1.",
+    "moss: dark primary-recess-ring-on-ground: 1.463:1 is below target 1.5:1.",
     "moss: field-focus-from-resting-edge: light and dark differ 1.752x in contrast (3.739:1 vs 6.55:1); the hierarchy is not the same in both themes.",
-    "moss: menu-chip-ink: light and dark differ 1.759x in contrast (4.991:1 vs 8.778:1); the hierarchy is not the same in both themes.",
-    "moss: primary-to-floating-surface: light and dark differ 2.996x in separation (0.022427 vs 0.067189).",
-    "ash: dark faint-rule-on-floating-surface: 1.293:1 is below target 1.5:1.",
-    "ash: primary-to-floating-surface: light and dark differ 3x in separation (0.022376 vs 0.067127)."
+    "moss: surface-chroma: dark surfaces average 2.055x the chroma of light surfaces (0.005181 vs 0.010645).",
+    "ash: dark raised-ring-on-face: 1.455:1 is below target 1.5:1.",
+    "ash: dark canvas-recess-ring-on-face: 1.459:1 is below target 1.5:1.",
+    "ash: dark canvas-recess-ring-on-ground: 1.362:1 is below target 1.5:1.",
+    "ash: dark primary-recess-ring-on-ground: 1.455:1 is below target 1.5:1."
   ]
 }

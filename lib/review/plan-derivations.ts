@@ -43,6 +43,18 @@ export function nonEmptyDispositions(counts: DispositionCounts): Disposition[] {
   return DISPOSITIONS.filter((key) => counts[key] > 0);
 }
 
+/*
+  Where the reviewer has got to, which is a different question from what the
+  engine found: the counts above describe the proposal, this describes the
+  person's decisions, and the card keeps the two in different places. Absent
+  until review starts. Supplied by the host; the local decision state that
+  will produce it lands with the review workflow (Milestone 2).
+*/
+export type ReviewProgress =
+  | { phase: 'reviewing'; decided: number }
+  | { phase: 'ready'; approved: number; held: number }
+  | { phase: 'committing' };
+
 export type PlanState =
   | 'incomplete'
   | 'stale'
@@ -75,8 +87,9 @@ function plural(count: number, noun: Noun): string {
 }
 
 // Everything that is not `will_apply` is something a person has to look at.
-// One question, so one derivation: the tabs below the line answer which bucket.
-function needingAttention(counts: DispositionCounts): number {
+// One question, so one derivation: the tabs below the line answer which bucket,
+// and the card's action counts decisions against the same number.
+export function needingAttention(counts: DispositionCounts): number {
   return counts.blocked + counts.needs_decision + counts.deferred;
 }
 

@@ -8,6 +8,7 @@
 
 /* Tokens: the ramps, the roles that read them, and what Tailwind publishes. */
 @import './generated/ramp.css';
+@import './generated/surfaces.css';
 @import './generated/radix.css';
 @import './roles.css';
 @import './state.css';

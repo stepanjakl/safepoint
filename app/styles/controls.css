@@ -10,38 +10,20 @@
 @custom-variant interact (&:is([data-hovered], [data-focus-visible], [data-pressed]));
 
 :root {
-  /* Radix fitted to Tailwind's cyan: each stop blends the two adjacent steps
-     nearest the original. Radix keeps its vivid mid-tones in the dark scale,
-     so the light theme reads from it too. */
-  --sp-accent-face-top: light-dark(
-    var(--radix-cyan-dark-11),
-    color-mix(in oklab, var(--radix-cyan-dark-7) 15%, var(--radix-cyan-dark-8))
-  );
-  --sp-accent-face-bottom: light-dark(
-    color-mix(in oklab, var(--radix-cyan-10) 80%, var(--radix-cyan-11)),
-    color-mix(in oklab, var(--radix-cyan-dark-7) 90%, var(--radix-cyan-dark-8))
-  );
-  --sp-accent-ring-top: light-dark(
-    color-mix(in oklab, var(--radix-cyan-dark-10) 80%, var(--radix-cyan-dark-11)),
-    color-mix(in oklab, var(--radix-cyan-dark-9) 95%, var(--radix-cyan-dark-10))
-  );
-  --sp-accent-ring-bottom: light-dark(
-    color-mix(in oklab, var(--radix-cyan-dark-7) 45%, var(--radix-cyan-dark-8)),
-    color-mix(in oklab, var(--radix-cyan-dark-7) 90%, var(--radix-cyan-dark-8))
-  );
+  /* One Radix step per stop, each the nearest to the Tailwind cyan it
+     replaced. Radix keeps its vivid mid-tones in the dark scale, so the light
+     theme reads from it too. */
+  --sp-accent-face-top: light-dark(var(--radix-cyan-dark-11), var(--radix-cyan-dark-8));
+  --sp-accent-face-bottom: light-dark(var(--radix-cyan-10), var(--radix-cyan-dark-7));
+  --sp-accent-ring-top: light-dark(var(--radix-cyan-dark-10), var(--radix-cyan-dark-9));
+  --sp-accent-ring-bottom: light-dark(var(--radix-cyan-dark-8), var(--radix-cyan-dark-7));
   /* Coloured controls keep their own family: a neutral step on a cyan face
      reads as a smear rather than an edge. Dark darkens instead of lighting, as
      a light line on a lit dark face reads as glare. */
-  --sp-accent-edge: light-dark(
-    color-mix(in oklab, var(--radix-cyan-dark-11) 50%, var(--radix-cyan-dark-12)),
-    color-mix(in oklab, var(--radix-cyan-dark-6) 65%, var(--radix-cyan-dark-7))
-  );
+  --sp-accent-edge: light-dark(var(--radix-cyan-6), var(--radix-cyan-dark-6));
   /* Flat under the pointer: face, ring and highlight all take this one
      colour. */
-  --sp-accent-hover: light-dark(
-    color-mix(in oklab, var(--radix-cyan-10) 80%, var(--radix-cyan-11)),
-    color-mix(in oklab, var(--radix-cyan-dark-7) 45%, var(--radix-cyan-dark-8))
-  );
+  --sp-accent-hover: light-dark(var(--radix-cyan-10), var(--radix-cyan-dark-8));
   /* A ramp step, not #fff: on a tinted family a pure-white control top is
      the one face that does not belong to the palette. Every fill sits one
      step under where it first did, so the surfaces read a shade darker with
@@ -66,12 +48,6 @@
   --sp-field-edge: light-dark(var(--sp-neutral-225), var(--sp-neutral-750));
   --sp-field-edge-hover: light-dark(var(--sp-neutral-275), var(--sp-neutral-475));
   --sp-field-edge-active: light-dark(var(--sp-neutral-600), var(--sp-neutral-225));
-  /* One edge role per surface that paints one: the same strength over
-     different faces cannot be right on all of them. In light every edge is
-     one step lighter than the face it lies on, so even the lightest face,
-     floating at 25, keeps a visible top edge at 0. */
-  --sp-raised-edge: light-dark(var(--sp-neutral-25), var(--sp-neutral-900));
-  --sp-floating-edge: light-dark(var(--sp-neutral-0), var(--sp-neutral-850));
   /* The lit line under a rule on the canvas, such as the sidebar's. Dividers
      inside a pane take --sp-raised-edge instead: their ground is the pane. */
   --sp-divider-etch: light-dark(var(--sp-neutral-25), var(--sp-neutral-925));
@@ -206,33 +182,34 @@
 /* ── Surfaces ───────────────────────────────────────────────────────────────
    The same two-layer construction at panel scale. The face is flat -- a
    vertical ramp across a whole pane reads as a lighting error rather than a
-   lift -- so the edge is carried by the ring and a top sheen.
+   lift -- so the edge is carried by the ring and a top sheen. Every step here
+   comes from LAYER_STEP in scripts/colour-theme/config.ts, and a recess takes
+   the steps of the surface it is cut into from the ground-* it inherits.
    ────────────────────────────────────────────────────────────────────────── */
 @utility surface-raised {
   --control-face-top: var(--sp-surface-primary);
   --control-face-bottom: var(--sp-surface-primary);
-  --control-ring-top: light-dark(var(--sp-rule-default), var(--sp-rule-faint));
-  --control-ring-bottom: var(--sp-rule-faint);
+  --control-ring-top: var(--sp-raised-ring);
+  --control-ring-bottom: var(--sp-raised-ring);
   --control-highlight: var(--sp-raised-edge);
+  @apply ground-raised;
 }
 
-/* Dark's floating face sits two steps nearer the rules than a pane does, so
-   the faint rule reads 1.3:1 there; its ring takes the default rung to hold
-   the same presence as a pane's edge. */
 @utility surface-floating {
   --control-face-top: var(--sp-surface-floating);
   --control-face-bottom: var(--sp-surface-floating);
-  --control-ring-top: light-dark(var(--sp-rule-faint), var(--sp-rule-default));
-  --control-ring-bottom: light-dark(var(--sp-rule-faint), var(--sp-rule-default));
+  --control-ring-top: var(--sp-floating-ring);
+  --control-ring-bottom: var(--sp-floating-ring);
   --control-highlight: var(--sp-floating-edge);
+  @apply ground-floating;
 }
 
 @utility surface-recessed {
   --control-face-top: var(--sp-surface-inset);
   --control-face-bottom: var(--sp-surface-inset);
-  --control-ring-top: var(--sp-rule-default);
-  --control-ring-bottom: var(--sp-rule-faint);
-  --control-highlight: transparent;
+  --control-ring-top: var(--sp-recessed-ring);
+  --control-ring-bottom: var(--sp-recessed-ring);
+  --control-highlight: var(--sp-recessed-edge);
 }
 
 /* A plain bordered surface with a shallow top sheen: it encloses content

@@ -164,7 +164,7 @@ test('a shadow brought in by @apply traces to the rule that sets its colour, and
   // set by the row's own rule, and read on the row, not on :root.
   await expect(current).toContainText('box-shadow');
   await expect(current).toContainText(
-    /--control-highlight = #[0-9a-f]{6} ← \.process-menu-row\[data-current\]/,
+    /--control-highlight = (#[0-9a-f]{6}|transparent) ← \.process-menu-row\[data-current\]/,
   );
   await expect(current).not.toContainText('border-width');
   await expect(panel).toContainText(/\d+ of \d+/);
@@ -173,4 +173,59 @@ test('a shadow brought in by @apply traces to the rule that sets its colour, and
   await panel.getByRole('searchbox').press('Escape');
   await expect(panel.getByRole('searchbox')).toHaveValue('');
   await expect(current).toContainText('border-width');
+});
+
+test('the panel stays usable over an open modal', async ({
+  page,
+  colorScheme,
+}) => {
+  test.skip(colorScheme === 'dark', 'The gesture is theme-independent.');
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Overlay demo' }).click();
+  const close = page.getByRole('button', { name: 'Close overlay demo' });
+  await expect(close).toBeVisible();
+
+  // Opened after the modal, so React Aria sees it arrive while hiding.
+  await page.keyboard.press('Control+Shift+Backquote');
+  const panel = page.getByRole('region', { name: 'Style inspector' });
+  await expect(panel).toBeVisible();
+  await expect(
+    page.locator('[data-style-inspector]').first(),
+  ).not.toHaveAttribute('inert');
+
+  // Pin the heading inside the modal, then step out from it: the panel's own
+  // button answers, rather than the page beneath taking the click.
+  // Point first: the panel moves to the side away from what it inspects,
+  // which here is the drawer's heading, under where the panel starts.
+  const heading = page.getByRole('heading', { name: 'Overlay demo' });
+  const box = (await heading.boundingBox())!;
+  await page.mouse.move(box.x + 10, box.y + box.height / 2);
+  const head = panel.locator('.spi-head strong');
+  await expect(head).toHaveText(/^<h2>/);
+  await page.mouse.click(box.x + 10, box.y + box.height / 2);
+  await panel.getByRole('button', { name: 'Parent' }).click();
+  await expect(head).not.toHaveText(/^<h2>/);
+  await expect(head).not.toContainText('drawer-overlay');
+
+  // Child retraces every Parent step, then goes; a new pin forgets the way.
+  const child = panel.getByRole('button', { name: 'Child' });
+  await panel.getByRole('button', { name: 'Parent' }).click();
+  await child.click();
+  await expect(head).not.toHaveText(/^<h2>/);
+  await child.click();
+  await expect(head).toHaveText(/^<h2>/);
+  await expect(child).toHaveCount(0);
+  await panel.getByRole('button', { name: 'Parent' }).click();
+  await expect(child).toBeVisible();
+  await page.mouse.click(box.x + 10, box.y + box.height / 2);
+  await expect(head).toHaveText(/^<h2>/);
+  await expect(child).toHaveCount(0);
+
+  // The filter takes typing, and keeps focus, while the modal holds its own.
+  const filter = panel.getByRole('searchbox');
+  await filter.click();
+  await filter.pressSequentially('color');
+  await expect(filter).toHaveValue('color');
+  await expect(filter).toBeFocused();
+  await expect(close).toBeVisible();
 });

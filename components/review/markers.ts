@@ -1,4 +1,5 @@
 import type { RunStatus, StepStatus } from '@/lib/process/model';
+import type { Disposition } from '@/lib/review/plan-contract';
 import type { ReviewOutcome } from '@/lib/promotion-release';
 import type { AdapterMode, PresentedGate } from '@/lib/review-presentation';
 import type { GlyphName } from '@/components/ui/glyph';
@@ -33,6 +34,16 @@ export const stepMarker: Record<StepStatus, { glyph: GlyphName; tone: Tone }> =
     running: { glyph: 'dotted', tone: 'advisory' },
     pending: { glyph: 'minus', tone: 'unavailable' },
   };
+
+// A line's place in the plan, as the release card's rows draw it: the review's
+// outcome shapes again, so a blocked row and a held line are the same mark.
+// Colour comes from the row's own severity, which the bar and tabs share.
+export const dispositionGlyph: Record<Disposition, GlyphName> = {
+  blocked: 'square',
+  needs_decision: 'triangle',
+  deferred: 'dash',
+  will_apply: 'circle',
+};
 
 /*
   A run's state, as a tone only. The shape is not here: a run is a lifecycle

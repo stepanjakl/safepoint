@@ -1,20 +1,14 @@
-import type { ReactNode } from 'react';
 import Link from 'next/link';
-import {
-  RequestBubble,
-  ResponseSection,
-  ThreadPage,
-} from '@/components/app-shell/thread/thread-page';
-import { InitialAnalysis } from '@/components/app-shell/thread/initial-analysis';
+import { ThreadPage } from '@/components/app-shell/thread/thread-page';
 import { ProcessView } from '@/components/app-shell/process/process-view';
-import { ThreadStep } from '@/components/app-shell/thread/thread-step';
-import { ReplayReview } from '@/components/review/replay-review';
+import { RunThread } from '@/components/app-shell/thread/run-thread';
 import { loadReviewedReplay } from '@/lib/promotion-release';
 import { parseSkuParam } from '@/lib/review-presentation';
 import { promotionProcess } from '@/lib/process/placeholder-process';
 import { presentPromotionInputDetails } from '@/lib/process/input-details';
 import { presentPromotionInputs } from '@/lib/process/system-links';
 import { presentPromotionPlan } from '@/lib/review/promotion-adapter';
+import { presentRunFacts } from '@/lib/process/run-lifecycle';
 
 export default async function ReviewPage({ searchParams }: PageProps<'/'>) {
   const replay = loadReviewedReplay();
@@ -22,25 +16,12 @@ export default async function ReviewPage({ searchParams }: PageProps<'/'>) {
   const inputs = presentPromotionInputs(replay);
   const initialItemId = parseSkuParam((await searchParams).sku) ?? undefined;
 
-  // Order comes from the process; the box for each step comes from here. A new
-  // step is a change to the placeholder data plus one entry in this map.
-  const boxes: Record<string, ReactNode> = {
-    request: (
-      <RequestBubble>
-        <p>Check the promotion release and show me what needs attention.</p>
-      </RequestBubble>
-    ),
-    analysis: (
-      <InitialAnalysis analysis={promotionProcess.analysis} inputs={inputs} />
-    ),
-    review: (
-      <ResponseSection
-        caption={`Recorded on ${plan.evaluatedAt} · Fictional data`}
-      >
-        <ReplayReview plan={plan} initialItemId={initialItemId} />
-      </ResponseSection>
-    ),
-  };
+  const facts = presentRunFacts(
+    replay,
+    plan,
+    inputs,
+    promotionProcess.outputs.length,
+  );
 
   return (
     <ProcessView
@@ -52,13 +33,19 @@ export default async function ReviewPage({ searchParams }: PageProps<'/'>) {
         eyebrow="Alderton’s · Promotion operations"
         title="Fresh Food Weekend"
       >
-        <ol className="thread">
-          {promotionProcess.steps.map((step) => (
-            <ThreadStep key={step.id} step={step}>
-              {boxes[step.id]}
-            </ThreadStep>
-          ))}
-        </ol>
+        <RunThread
+          stage="awaiting_review"
+          facts={facts}
+          plan={plan}
+          inputs={inputs}
+          outputs={promotionProcess.outputs}
+          analysis={promotionProcess.analysis}
+          request={
+            <p>Check the promotion release and show me what needs attention.</p>
+          }
+          requestLabel="Thu 4 Sep · 09:00"
+          initialItemId={initialItemId}
+        />
         <div className="border-rule-faint text-muted text-meta mt-10 border-t pt-5 leading-relaxed max-sm:mt-7">
           <p>
             This conversation demonstrates how Safepoint can appear inside

@@ -63,7 +63,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
         With the inset one level down, the face keeps the whole box and the
         content alone steps in, past the ring rather than onto it.
       */}
-      <div className="rounded-shell shell:h-full shell:overflow-hidden relative isolate min-w-0 overflow-clip has-[.notch]:rounded-tr-none">
+      <div className="ground-raised rounded-shell shell:h-full shell:overflow-hidden relative isolate min-w-0 overflow-clip has-[.notch]:rounded-tr-none">
         <div
           aria-hidden="true"
           className="control-face surface-raised rounded-shell pointer-events-none absolute inset-0 -z-10"
