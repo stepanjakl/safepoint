@@ -2,15 +2,11 @@
    The search field: four states whose priority is the rule order.
    ────────────────────────────────────────────────────────────────────────── */
 
-:root {
-  /* The search field's clear chip. Aliases, so a retuned edge carries it. */
-  --sp-search-clear-face: var(--sp-field-edge);
-  --sp-search-clear-face-hover: var(--sp-field-edge-hover);
-}
-
+/* The clear chip reads the field's edge: inlined, so it resolves on the chip
+   and follows the surface the field is on. */
 @theme inline {
-  --color-search-clear: var(--sp-search-clear-face);
-  --color-search-clear-hover: var(--sp-search-clear-face-hover);
+  --color-search-clear: var(--sp-field-edge);
+  --color-search-clear-hover: var(--sp-field-edge-hover);
 }
 
 @layer components {

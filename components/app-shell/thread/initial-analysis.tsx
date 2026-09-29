@@ -18,14 +18,14 @@ export function InitialAnalysis({ analysis }: { analysis: ProcessAnalysis }) {
     <div
       {...styleDebug({
         component: 'InitialAnalysis',
-        appearance: 'surface-analysis',
+        appearance: 'surface-recessed',
       })}
-      className="control-face surface-analysis rounded-shell text-body px-5 py-4 leading-relaxed"
+      className="control-face surface-recessed rounded-shell text-body px-5 py-4 leading-relaxed"
     >
       <p className="text-primary">{analysis.summary}</p>
       {/* Observations are findings, not instructions, so they are marked with a
           rule rather than numbered: nothing here happens in sequence. */}
-      <ul className="border-analysis-rule text-muted text-dense mt-3 grid gap-1.5 border-t pt-3">
+      <ul className="border-rule-faint text-muted text-dense mt-3 grid gap-1.5 border-t pt-3">
         {analysis.observations.map((observation) => (
           <li
             key={observation}

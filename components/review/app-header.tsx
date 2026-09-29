@@ -9,7 +9,7 @@ export function AppHeader({
   headingId: string;
 }) {
   return (
-    <header className="border-rule-strong bg-surface-primary border-b">
+    <header className="ground-raised border-rule-strong bg-surface-primary border-b">
       <div className="flex min-h-12 flex-wrap items-center gap-x-5 gap-y-1 px-4 py-2">
         <Brand />
         <span aria-hidden="true" className="bg-rule-default h-4 w-px" />

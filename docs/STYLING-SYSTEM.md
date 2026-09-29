@@ -21,9 +21,9 @@ Everything else is a utility in the component.
 | File in `app/styles/`    | Holds                                                                                       |
 | ------------------------ | ------------------------------------------------------------------------------------------- |
 | `generated/ramp.css`     | generated: the neutral ramp, one block per family                                           |
-| `generated/surfaces.css` | generated: canvas, pane, floating and inset faces with their rings and highlights           |
+| `generated/surfaces.css` | generated: surface faces, rings and highlights, and the `ground-*` utilities                |
 | `generated/radix.css`    | generated: the Radix scales some stylesheet reads, light and dark                           |
-| `roles.css`              | `color-scheme`, the other surfaces, text, rules, action                                     |
+| `roles.css`              | `color-scheme`, text, action, disabled; hover, selected and rules in its generated block    |
 | `state.css`              | the six state scales and the adapter modes                                                  |
 | `type.css`               | the families and the type scale                                                             |
 | `geometry.css`           | durations, tile chroma ceilings, notch and slant geometry                                   |
@@ -40,7 +40,7 @@ A component stylesheet is laid out in one order: a banner, the `:root` roles onl
 
 Every role is declared once, in one `:root` block, is read somewhere -- `pnpm check:tokens` fails on a role nothing reads, so deleting the line that used one flags the leftover (the ramp and state-scale steps are API and exempt) -- and is **at most two reads from a colour**: a role reads a ramp or state step directly, or aliases one role that does. `pnpm check:tokens` fails on a longer chain and prints it. So `bg-menu-wash` → `--sp-menu-wash` → `--sp-neutral-200` → `rgb(…)`, and nothing deeper.
 
-`pnpm trace:token <role>` prints that chain for any role -- each hop, the file and line that declares it, split by theme, down to the step's value -- and `--neutral <family>` traces it in another family.
+`pnpm trace:token <role>` prints that chain for any role -- each hop, the file and line that declares it, split by theme, down to the step's value, then its value inside each `ground-*` for a role that follows its surface -- and `--neutral <family>` traces it in another family.
 
 ### Finding an element's styles
 
@@ -198,22 +198,36 @@ Every fill and edge on a pane sits one step under where the ramp was first assig
 
 ### Surface layers
 
-Canvas, pane and floating are **one stack computed from one number**. In `scripts/colour-theme/config.ts`, each surface sits a whole number of layers from the canvas (canvas 0, pane 1, floating 2; up is lighter in both themes) and names what it sits on. One layer is `LAYER_STEP` ramp steps, doubled in dark where the same distance reads as less. A **recess** is not a layer of its own: it sits `RECESS_DEPTH` layers below whichever surface it is cut into, so there is one per surface -- `--sp-canvas-recess`, `--sp-primary-recess`, `--sp-floating-recess`, each with a `-ring` and `-edge`.
+Canvas, pane and floating are **one stack computed from one number**. In `scripts/colour-theme/config.ts`, each surface sits a whole number of layers from the canvas (canvas 0, pane 1, floating 2; up is lighter in both themes) and names what it sits on. One layer is `LAYER_STEP` ramp steps, doubled in dark where the same distance reads as less. A **recess** is not a layer of its own: it sits `SURFACE_THEMES.recess` layers below whichever surface it is cut into (per theme; negative puts it above), so there is one per surface -- `--sp-canvas-recess`, `--sp-primary-recess`, `--sp-floating-recess`, each with a `-ring` and `-edge`.
 
 Every surface, recesses included, has the same three parts (`SURFACE_THEMES`):
 
 - **Ring**: a fixed number of steps past whichever of its face and its ground lies further in the ring's direction (darker in light, lighter in dark), so it stands off both sides. A ring measured from the face alone lands on the ground's colour in a recess, and reads as a fade.
-- **Highlight**: one layer from the face, lit in light and deeper in dark.
+- **Highlight**: one layer from the face -- lighter in light, darker in dark -- on every surface and recess. The formula refuses a setting that turns either direction round, and the hand-tuned faces (keycap, notice, tooltip) derive theirs by the same rule (`highlightOf`).
 - **Face**: the layer arithmetic above.
 
-| Theme | Canvas | Pane | Floating | Recess in canvas / pane / floating | Ring past both sides | Highlight |
-| ----- | ------ | ---- | -------- | ---------------------------------- | -------------------- | --------- |
-| Light | 75     | 50   | 25       | 100 / 75 / 50                      | +200                 | −1 layer  |
-| Dark  | 900    | 850  | 800      | 950 / 900 / 850                    | −125                 | +1 layer  |
+| Theme | Canvas | Pane | Floating | Recess in canvas / pane / floating | Ring past both sides | Highlight          |
+| ----- | ------ | ---- | -------- | ---------------------------------- | -------------------- | ------------------ |
+| Light | 75     | 50   | 25       | 100 / 75 / 50                      | +200                 | −1 layer (lighter) |
+| Dark  | 900    | 850  | 800      | 950 / 900 / 850                    | −125                 | +1 layer (darker)  |
 
-`pnpm colors:custom` writes the roles to `app/styles/generated/surfaces.css`, with two utilities, `ground-raised` and `ground-floating`, that re-point `--sp-surface-inset`, `--sp-recessed-ring` and `--sp-recessed-edge` for everything inside them. At the root those three are the canvas's recess. `surface-raised` and `surface-floating` apply their ground, so `surface-recessed` and every `bg-surface-inset` adjusts to the surface it sits in with no class of its own. **A face drawn as a separate layer** -- the shell's pane is an absolutely placed sibling of its content -- does not reach the content, so the content's wrapper takes the ground utility itself (`app-shell.tsx`).
+`pnpm colors:custom` writes the roles to `app/styles/generated/surfaces.css`, with the `ground-*` utilities; `ground-raised` and `ground-floating` re-point `--sp-surface-inset`, `--sp-recessed-ring` and `--sp-recessed-edge` for everything inside them. At the root those three are the canvas's recess. `surface-raised` and `surface-floating` apply their ground, so `surface-recessed` and every `bg-surface-inset` adjusts to the surface it sits in with no class of its own. **A face drawn as a separate layer** -- the shell's pane is an absolutely placed sibling of its content -- does not reach the content, so the content's wrapper takes the ground utility itself (`app-shell.tsx`). Two limits: a recess inside a recess takes its parent recess's steps, and a component's own face -- the keycap, the notice, a header button -- is not a ground, so what it holds follows the surface around it.
 
-Change `LAYER_STEP` or `RECESS_DEPTH` and every face, ring and highlight moves with it; a value that lands off the ramp or past either end is refused with the role it broke. Light has no headroom: the floating highlight is already at step 0, so a larger layer needs the canvas moved first. Equal steps are not equal contrast at the dark end, so the contracts, not the formula, keep each edge visible: every ring is checked against its face and its ground (`*-ring-on-face`, `*-ring-on-ground`), and text against each recess (`*-on-primary-recess`, `*-on-floating-recess`). `/workbench` shows a recess in each surface.
+Change `LAYER_STEP` and every face, ring and highlight moves with it; a value that lands off the ramp or past either end is refused with the role it broke. Light has no headroom: the floating highlight is already at step 0, so a larger layer needs the canvas moved first. Equal steps are not equal contrast at the dark end, so the contracts, not the formula, keep each edge visible: every ring is checked against its face and its ground (`*-ring-on-face`, `*-ring-on-ground`), and every contract that involves a surface-following role is evaluated again inside each surface and recess (`… in primary`, `… in floating-recess`). `/workbench` shows a recess in each surface.
+
+#### Roles drawn on a surface
+
+Every other neutral fill, edge and etch is also an offset in steps from a surface's face, so it moves with the stack. Equal steps are equal differences in OK lightness, which is what the ramp is spaced by, so an offset reads the same on every surface even where the contrast ratio differs. There are two kinds, both in `config.ts`:
+
+- **`FOLLOWING_ROLES`** -- hover, selected, rules, the quiet control, fields, the menu chip -- appear on more than one surface. At the root they sit on the canvas; each `ground-*` utility re-declares them for its surface and, as `--sp-recess-*`, for the recess cut into it, and `ground-recessed` (applied by `surface-recessed`) hands those on inside the recess.
+- **`ANCHORED_ROLES`** -- the sidebar's washes, keycap and notice, the header buttons, the runs list, the thread and analysis faces, the tooltip and card etches -- are used on one surface only and are declared once at the root, as that surface plus their offset.
+
+`pnpm colors:custom` writes both into a block in the stylesheet that owns them, between `/* Generated by pnpm colors:custom … */` and `/* End of generated roles. */`, so a component's roles still sit beside its `.tsx`. Never edit inside the markers; change the offset in `config.ts`. Ink, state colours and disabled faces stay fixed steps: text holds its contrast targets, and a disabled face would fall off the ramp inside a dark recess.
+
+Two rules keep the following roles honest, and both are checked:
+
+- **A region painted with a pane or floating face carries that ground.** The shell's pane content takes `ground-raised`, and so do the review dialog, workspace columns, header, batch strip and effects rail, which paint `bg-surface-primary` directly. Without it their content takes the canvas's values. `e2e/colour-system.spec.ts` fails on a painted region with content and no matching ground.
+- **Nothing on `:root` reads a following role.** A custom property resolves where it is declared, so a `:root` alias freezes at the canvas value everywhere. Read the role where it is used (an `@theme inline` entry resolves on the element), or give it an offset of its own. `pnpm check:colours` fails on one.
 
 Dividers inside a pane (the header's rule, the runs column's edge, the sheet head's line) take `--sp-raised-edge`, the pane's own edge colour, because their ground is the pane; `--sp-divider-etch` is only for rules on the canvas.
 
@@ -283,7 +297,7 @@ For example, a completed run's state label uses verified 11 through its bare ali
 - **The sheen has two widths.** `--spacing-control-highlight`, a whole pixel, for panes and cards. `control-hairline` asks for `--spacing-control-highlight-hairline` on anything icon- or button-sized, where a full pixel of white inside the ring reads as a second border.
 - **A child can follow its parent's state through custom properties.** A row's status badge rests as a keycap and goes bare whenever its row is hovered, focused or current, so the row shows through it: `.process-menu-row` publishes the badge's stops per state and `surface-menu-badge` reads them. The priority between states is then the rule's reading order rather than Tailwind's emission order, and there is no variant per state on the child.
 - **A fill laid on a face is a ramp step, not a `color-mix()`.** Give a chip or pill inside a control its own role over `--sp-neutral-*`, picked one step off the face where the fill sits — `--sp-header-button-count` sits a step off the header button's face in each theme. A mix resolves against whatever is under it, so its colour is nowhere on the ramp and cannot be matched or reused by name; a step can.
-- **Every edge is a step too.** Sheens, etches and highlights are opaque ramp steps, one role per surface that paints one (`--sp-raised-edge`, `--sp-card-etch`, `--sp-sheet-row-etch` …), pinned in `config.ts` and checked by `pnpm check:colours`. In light, every edge is exactly one step lighter than the face it lies on -- the lightest faces sit at step 25 so that even they keep a visible edge at step 0. A Playwright test fails on any edge role with a partial alpha, and `pnpm check:tokens` fails on pure white or black anywhere at partial strength -- faded (`rgb(255 255 255 / 25%)`, `#ffffff40`) or mixed into a hue (`color-mix(… white …)`): a sheen on a coloured face is a step of that hue's Radix scale, like the menu tiles' step 2 or the accent's dark 6/7.
+- **Every edge is a step too.** Sheens, etches and highlights are opaque ramp steps, one role per surface that paints one (`--sp-raised-edge`, `--sp-card-etch`, `--sp-sheet-row-etch` …), stated as offsets in `config.ts` and checked by `pnpm check:colours`. A highlight is one layer lighter than its face in light and one layer darker in dark -- the lightest faces sit at step 25 so that even they keep a visible edge at step 0. A Playwright test fails on any edge role with a partial alpha, and `pnpm check:tokens` fails on pure white or black anywhere at partial strength -- faded (`rgb(255 255 255 / 25%)`, `#ffffff40`) or mixed into a hue (`color-mix(… white …)`): a sheen on a coloured face is a step of that hue's Radix scale, like the menu tiles' step 2 or the accent's dark 6/7.
 - **A lit line under a rule is a shadow, not a border.** `shadow-rule-etch` offsets `--sp-rule-etch` by the hairline width. A fractional border snaps to whole device pixels, so a 0.75px border draws as 0.5px on a 2× screen; a shadow's offset paints at the width it asks for.
 
 ### Header-control hierarchy

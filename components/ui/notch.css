@@ -21,11 +21,11 @@
   /* The notch: canvas through a pane's corner, outlined in the pane's own
      edge. Takes surface-raised's ring, sheen and face. */
   --sp-notch-face: var(--sp-canvas);
-  --sp-notch-edge: light-dark(var(--sp-rule-default), var(--sp-rule-faint));
   /* The pane's own sheen, continued round the bend: the band lies on the pane
      face just as the pane's edge does, so it is the same colour. */
   --sp-notch-highlight: var(--sp-raised-edge);
   --sp-notch-pane: var(--sp-surface-primary);
+  --sp-notch-edge: var(--sp-raised-ring);
 }
 
 @layer components {

@@ -17,7 +17,7 @@ export function BatchStrip({ batch }: { batch: BatchPresentation }) {
   return (
     <dl
       aria-label="Proposal outcomes"
-      className="border-rule-strong bg-surface-primary grid grid-cols-2 border-b @3xl:grid-cols-4"
+      className="ground-raised border-rule-strong bg-surface-primary grid grid-cols-2 border-b @3xl:grid-cols-4"
     >
       <Cell
         label="Evaluated"

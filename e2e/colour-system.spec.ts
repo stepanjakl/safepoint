@@ -11,7 +11,6 @@ const OPAQUE_EDGE_TOKENS = [
   '--sp-floating-ring',
   '--sp-recessed-ring',
   '--sp-recessed-edge',
-  '--sp-analysis-highlight',
   '--sp-notice-highlight',
   '--sp-keycap-highlight',
   '--sp-divider-etch',
@@ -136,6 +135,79 @@ test('every structural edge is opaque', async ({ page }) => {
   }
 });
 
+/* A surface-following role (hover, rules, fields...) resolves against the
+   nearest ground-* above it, so a region painted with a pane or floating face
+   but no ground hands its content the canvas's values. That is how the review
+   dialog lost its pane-tuned rules; this catches the next one. */
+test('every painted pane or floating region hands its content its ground', async ({
+  page,
+}) => {
+  const states: [string, (page: Page) => Promise<void>][] = [
+    ['home', async () => {}],
+    [
+      'review',
+      async (page) => {
+        await page.getByRole('button', { name: 'Review release' }).click();
+        await expect(page.getByRole('dialog')).toBeVisible();
+      },
+    ],
+    [
+      'input detail',
+      async (page) => {
+        await page
+          .getByRole('button', { name: /^Inputs/ })
+          .first()
+          .click();
+        await page
+          .locator('.process-panels')
+          .getByRole('button', { name: /^Supply position/ })
+          .click();
+        await expect(page.locator('.drawer-aside')).toBeVisible();
+      },
+    ],
+  ];
+  for (const [name, arrive] of states) {
+    await page.goto('/');
+    await waitForHome(page);
+    await arrive(page);
+    const orphans = await page.evaluate(() => {
+      const colour = (token: string) => {
+        const probe = document.createElement('span');
+        probe.style.backgroundColor = `var(${token})`;
+        document.body.append(probe);
+        const value = getComputedStyle(probe).backgroundColor;
+        probe.remove();
+        return value;
+      };
+      const faces: [string, string, string][] = [
+        [colour('--sp-surface-primary'), 'ground-raised', 'surface-raised'],
+        [
+          colour('--sp-surface-floating'),
+          'ground-floating',
+          'surface-floating',
+        ],
+      ];
+      const found: string[] = [];
+      for (const element of document.querySelectorAll('body *')) {
+        if (!element.children.length || !element.getClientRects().length)
+          continue;
+        const paint = getComputedStyle(element).backgroundColor;
+        const face = faces.find(([value]) => value === paint);
+        if (!face) continue;
+        const ground = element.closest(
+          '.ground-raised, .ground-floating, .surface-raised, .surface-floating',
+        );
+        if (ground?.matches(`.${face[1]}, .${face[2]}`)) continue;
+        found.push(
+          `${element.tagName.toLowerCase()}.${[...element.classList].slice(0, 4).join('.')}`,
+        );
+      }
+      return found;
+    });
+    expect(orphans, `${name}: painted without a ground`).toEqual([]);
+  }
+});
+
 test('the primary action is flat under the pointer', async ({ page }) => {
   await page.goto('/');
   await waitForHome(page);
@@ -174,18 +246,33 @@ test('muted ink never paints on a selected surface', async ({ page }) => {
     page.getByText('Loading item details…', { exact: true }),
   ).toBeHidden();
   const result = await page.evaluate(() => {
-    const probe = document.createElement('span');
-    document.body.append(probe);
-    const resolve = (token: string) => {
+    /* The selected fill follows the surface it is inside, so it is resolved
+       in each element's own ground rather than once at the root. */
+    const resolveIn = (context: Element, token: string) => {
+      const probe = document.createElement('span');
       probe.style.color = `var(${token})`;
-      return getComputedStyle(probe).color;
+      context.append(probe);
+      const value = getComputedStyle(probe).color;
+      probe.remove();
+      return value;
     };
-    const selected = resolve('--sp-surface-selected');
-    const muted = resolve('--sp-text-muted');
-    probe.remove();
+    const muted = resolveIn(document.body, '--sp-text-muted');
+    const selectedIn = new Map<Element, string>();
+    const selectedFor = (element: Element) => {
+      const ground =
+        element.parentElement?.closest(
+          '.ground-raised, .ground-floating, .surface-raised, .surface-floating, .surface-recessed',
+        ) ?? document.body;
+      if (!selectedIn.has(ground))
+        selectedIn.set(ground, resolveIn(ground, '--sp-surface-selected'));
+      return selectedIn.get(ground);
+    };
 
-    const grounds = [...document.querySelectorAll<HTMLElement>('*')].filter(
-      (element) => getComputedStyle(element).backgroundColor === selected,
+    const grounds = [
+      ...document.querySelectorAll<HTMLElement>('body *'),
+    ].filter(
+      (element) =>
+        getComputedStyle(element).backgroundColor === selectedFor(element),
     );
     const offenders: string[] = [];
     for (const ground of grounds) {

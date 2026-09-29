@@ -35,7 +35,7 @@ export function EffectsRail({
             part: 'enclosure',
             appearance: 'enclosure',
           })}
-          className="enclosure rounded-control bg-surface-primary px-4 py-4"
+          className="enclosure ground-raised rounded-control bg-surface-primary px-4 py-4"
         >
           <ol
             {...styleDebug({

@@ -11,7 +11,8 @@
   order app/styles/index.css imports them, and the last declaration on :root
   wins, as the cascade has it. Element-scoped properties such as
   --control-face-top are set by utilities, not :root, so trace the role the
-  utility reads instead.
+  utility reads instead. A role a ground-* utility re-declares follows the
+  surface it is inside; each of those is listed after the root's trace.
 */
 
 import { fileURLToPath } from 'node:url';
@@ -35,7 +36,17 @@ if (names.length === 0) {
 /* name -> { value, where }, last declaration wins. @theme is where Tailwind's
    names (--color-canvas) are published, so a utility can be traced too. */
 const declarations = new Map();
+/* name -> [{ utility, value, where }]: re-declared inside a surface. */
+const grounds = new Map();
 for (const found of readStylesheets(root).declarations) {
+  const utility = /^@utility (ground-[\w-]+)$/.exec(found.selector)?.[1];
+  if (utility) {
+    grounds.set(found.name, [
+      ...(grounds.get(found.name) ?? []),
+      { utility, value: found.value, where: `${found.file}:${found.line}` },
+    ]);
+    continue;
+  }
   const scoped = /\[data-neutral='([a-z]+)'\]/.exec(found.selector)?.[1];
   const global =
     found.selector === ':root' || found.selector === '@theme inline';
@@ -100,5 +111,11 @@ function trace(expression, indent, seen) {
 
 for (const name of names) {
   trace(`var(${name})`, 0, new Set());
+  for (const found of grounds.get(name) ?? []) {
+    process.stdout.write(
+      `inside ${found.utility}: ${found.value}  ${found.where}\n`,
+    );
+    trace(found.value, 1, new Set([name]));
+  }
   if (names.length > 1) process.stdout.write('\n');
 }

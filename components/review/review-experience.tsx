@@ -113,7 +113,7 @@ function ReviewDialog({
     // markup of its own. Everything else about the dialog is here.
     <dialog
       ref={ref}
-      className="review-dialog text-primary bg-surface-primary border-rule-strong rounded-shell m-auto h-[min(820px,calc(100dvh-64px))] max-h-none w-[min(1120px,calc(100%-64px))] max-w-none overflow-hidden border p-0 open:flex open:flex-col max-sm:h-dvh max-sm:w-full max-sm:rounded-none max-sm:border-0"
+      className="review-dialog ground-raised text-primary bg-surface-primary border-rule-strong rounded-shell m-auto h-[min(820px,calc(100dvh-64px))] max-h-none w-[min(1120px,calc(100%-64px))] max-w-none overflow-hidden border p-0 open:flex open:flex-col max-sm:h-dvh max-sm:w-full max-sm:rounded-none max-sm:border-0"
       aria-labelledby={id}
       onClose={onClose}
     >

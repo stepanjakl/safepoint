@@ -144,26 +144,44 @@ export const CURVES = curvesFor(neutralFamily(DEFAULT_NEUTRAL_FAMILY));
 
 /*
   Surface layers. Every surface is a whole number of layers from the canvas --
-  up is lighter in both themes -- and a recess is RECESS_DEPTH layers below
-  whichever surface it is cut into. Rings and highlights are offsets, so the
+  up is lighter in both themes -- and a recess is SURFACE_THEMES.recess layers
+  below whichever surface it is cut into. Rings and highlights are offsets, so the
   stack moves together when LAYER_STEP does; dark takes twice the distance,
   since the same step reads as less there. The generator writes these roles
   and the ground-* utilities to generated/surfaces.css, and nothing else
   declares them.
 */
 const LAYER_STEP = 25;
-const RECESS_DEPTH = 1;
+
+type SurfaceTheme = {
+  canvas: number;
+  layerScale: number;
+  ring: number;
+  highlight: number;
+  recess: number;
+};
 
 const SURFACE_THEMES = {
   /* ring: ramp steps past whichever of the face and its ground lies further
      that way, so the ring stands off both sides; held for contrast, not
-     layering. highlight: layers from the face -- lit in light, deeper in dark. */
-  light: { canvas: 75, layerScale: 1, ring: 200, highlight: -1 },
-  dark: { canvas: 900, layerScale: 2, ring: -125, highlight: 1 },
-} as const satisfies Record<
-  Theme,
-  { canvas: number; layerScale: number; ring: number; highlight: number }
->;
+     layering. highlight: layers from the face, on every surface and recess --
+     lighter in light, darker in dark, never the other way round.
+     recess: layers below the surface it is cut into (negative: above). */
+  light: {
+    canvas: 75,
+    layerScale: 1,
+    ring: 200,
+    highlight: -1,
+    recess: 1,
+  },
+  dark: {
+    canvas: 900,
+    layerScale: 2,
+    ring: -125,
+    highlight: 1,
+    recess: 1,
+  },
+} as const satisfies Record<Theme, SurfaceTheme>;
 
 type SurfaceLayer = {
   depth: number;
@@ -219,17 +237,16 @@ function rampStep(value: number, what: string) {
   const last = COLOUR_STEPS.at(-1)!;
   if (!Number.isInteger(value / 25) || value < 0 || value > last) {
     throw new Error(
-      `${what} lands on step ${value}, which is not on the 0-${last} ramp; change LAYER_STEP, RECESS_DEPTH or SURFACE_THEMES.`,
+      `${what} lands on step ${value}, which is not on the 0-${last} ramp; change LAYER_STEP or SURFACE_THEMES.`,
     );
   }
   return value;
 }
 
+type Steps = ReadonlyMap<`--${string}`, Record<Theme, number>>;
+
 /* Each surface role's step in each theme, keyed by CSS variable. */
-export const SURFACE_STEPS: ReadonlyMap<
-  `--${string}`,
-  Record<Theme, number>
-> = (() => {
+function surfaceSteps(themes: Record<Theme, SurfaceTheme>): Steps {
   const steps = new Map<`--${string}`, Record<Theme, number>>();
   const put = (variable: `--${string}`, theme: Theme, value: number) => {
     const entry = steps.get(variable) ?? { light: 0, dark: 0 };
@@ -238,7 +255,11 @@ export const SURFACE_STEPS: ReadonlyMap<
   };
   const layers = SURFACE_LAYERS as Record<string, SurfaceLayer>;
   for (const theme of THEMES) {
-    const { canvas, layerScale, ring, highlight } = SURFACE_THEMES[theme];
+    const { canvas, layerScale, ring, highlight, recess } = themes[theme];
+    if (theme === 'light' ? !(highlight < 0) : !(highlight > 0))
+      throw new Error(
+        `${theme}: a highlight is ${theme === 'light' ? 'lighter' : 'darker'} than its face, so highlight must be ${theme === 'light' ? 'below' : 'above'} 0.`,
+      );
     const layer = LAYER_STEP * layerScale;
     const faceAt = (depth: number) => canvas - depth * layer;
     const ringFor = (face: number, ground: number) =>
@@ -252,15 +273,17 @@ export const SURFACE_STEPS: ReadonlyMap<
         if (surface.ring) put(surface.ring, theme, ringFor(face, ground));
         if (surface.highlight) put(surface.highlight, theme, edgeFor(face));
       }
-      const recess = recessRoles(surface.recess);
-      const recessFace = faceAt(surface.depth - RECESS_DEPTH);
-      put(recess.face, theme, recessFace);
-      put(recess.ring, theme, ringFor(recessFace, face));
-      put(recess.highlight, theme, edgeFor(recessFace));
+      const cut = recessRoles(surface.recess);
+      const recessFace = faceAt(surface.depth - recess);
+      put(cut.face, theme, recessFace);
+      put(cut.ring, theme, ringFor(recessFace, face));
+      put(cut.highlight, theme, edgeFor(recessFace));
     }
   }
   return steps;
-})();
+}
+
+export const SURFACE_STEPS = surfaceSteps(SURFACE_THEMES);
 
 /* Where nothing re-points them, the recess roles are the canvas's recess. */
 export const SURFACE_ALIASES: ReadonlyMap<`--${string}`, `--${string}`> =
@@ -278,6 +301,269 @@ function surfaceRole(cssVariable: `--${string}`): RoleAssignment {
     SURFACE_ALIASES.get(cssVariable) ?? cssVariable,
   );
   if (!steps) throw new Error(`${cssVariable} is not a surface role.`);
+  return { cssVariable, ...steps };
+}
+
+/*
+  Roles drawn on a surface: steps from that surface's face, per theme, so they
+  move when the stack does. Written into a generated block in their own file.
+*/
+type SurfaceKey = keyof typeof SURFACE_LAYERS;
+type Offset = { light: number; dark: number };
+
+/* Roles that follow whichever surface they are inside. At the root they sit
+   on the canvas; every ground-* utility re-declares them for its surface, and
+   for the recess cut into it. Hover and selected take one step more in light
+   than first tuned, so they hold on the lighter faces. */
+const FOLLOWING_BY_FILE = {
+  'app/styles/roles.css': {
+    '--sp-surface-control': { light: -25, dark: -100 },
+    /* The darkest light ground and muted ink's thinnest margin, so a control
+       taking it moves its ink to primary. */
+    '--sp-surface-selected': { light: 125, dark: -175 },
+    /* Under the pointer. Light deepens, dark lifts: the inset is the deepest
+       step, and as a hover it put a hole under the pointer in dark. */
+    '--sp-surface-hover': { light: 50, dark: -100 },
+    /* Rules are present, not bright: a divider should be found, not seen first. */
+    '--sp-rule-faint': { light: 175, dark: -150 },
+    '--sp-rule-default': { light: 225, dark: -200 },
+    '--sp-rule-strong': { light: 450, dark: -375 },
+  },
+  'app/styles/controls.css': {
+    /* A ramp step, not #fff: a pure-white top is the one face that does not
+       belong to the palette. */
+    '--sp-quiet-face-top': { light: -25, dark: -100 },
+    '--sp-quiet-face-bottom': { light: 50, dark: 0 },
+    '--sp-quiet-ring-top': { light: 175, dark: -250 },
+    '--sp-quiet-ring-bottom': { light: 275, dark: -100 },
+    /* Light deepens, dark lifts: on either ground the control comes forward. */
+    '--sp-quiet-face-top-hover': { light: -25, dark: -175 },
+    '--sp-quiet-face-bottom-hover': { light: 175, dark: -50 },
+    '--sp-quiet-ring-top-hover': { light: 275, dark: -375 },
+    '--sp-quiet-ring-bottom-hover': { light: 600, dark: -250 },
+    '--sp-menu-chip': { light: 75, dark: -50 },
+    /* The field's edge is its focus indicator: focused, it clears 3:1 against
+       face and resting edge (contracts field-focus-*). Neutral: not an action. */
+    '--sp-field-face': { light: -25, dark: -50 },
+    '--sp-field-edge': { light: 150, dark: -150 },
+    '--sp-field-edge-hover': { light: 200, dark: -425 },
+    '--sp-field-edge-active': { light: 525, dark: -675 },
+    /* A one-pixel band rather than a fade, whose colour would depend on what
+       lies under it. */
+    '--sp-enclosure-edge': { light: -25, dark: -150 },
+  },
+} as const satisfies Record<string, Record<`--${string}`, Offset>>;
+
+/* Roles used on one surface only, declared once at the root. */
+const ANCHORED_BY_FILE = {
+  'app/styles/controls.css': {
+    /* The lit line under a rule on the canvas. Dividers in a pane take
+       --sp-raised-edge, since their ground is the pane. */
+    '--sp-divider-etch': { on: 'canvas', light: -50, dark: 25 },
+  },
+  'components/app-shell/sidebar/process-menu.css': {
+    '--sp-menu-wash-faint': { on: 'canvas', light: 0, dark: -125 },
+    '--sp-menu-wash': { on: 'canvas', light: 75, dark: -75 },
+    '--sp-menu-wash-strong': { on: 'canvas', light: 125, dark: -175 },
+  },
+  'components/app-shell/sidebar/process-list.css': {
+    /* Flat: a ramp across 20px reads as an artefact. The ring is darker than
+       the row, so the key sits on it. */
+    '--sp-keycap-face': { on: 'canvas', light: -50, dark: -125 },
+    '--sp-keycap-ring': { on: 'canvas', light: 125, dark: -250 },
+    '--sp-keycap-highlight': { highlightOf: '--sp-keycap-face' },
+    /* The current row: the pane's geometry, its own stops. */
+    '--sp-menu-current-face-top': { on: 'canvas', light: -50, dark: -125 },
+    '--sp-menu-current-face-bottom': { on: 'canvas', light: -50, dark: -125 },
+    '--sp-menu-current-ring-bottom': { on: 'canvas', light: 125, dark: 25 },
+  },
+  'components/app-shell/sidebar/sidebar-notice.css': {
+    '--sp-notice-face': { on: 'canvas', light: -25, dark: -75 },
+    '--sp-notice-edge-top': { on: 'canvas', light: 125, dark: -125 },
+    '--sp-notice-edge-bottom': { on: 'canvas', light: 125, dark: -125 },
+    '--sp-notice-highlight': { highlightOf: '--sp-notice-face' },
+  },
+  'components/app-shell/process/process-header.css': {
+    /* Drawn from the quiet stops but separate, so tuning the header moves no
+       other button. Light recesses and deepens on hover; dark lifts, since a
+       control set under a dark ground reads as a hole. */
+    '--sp-header-button-face-top': { on: 'primary', light: 25, dark: -100 },
+    '--sp-header-button-face-bottom': { on: 'primary', light: 125, dark: -50 },
+    '--sp-header-button-face-top-hover': {
+      on: 'primary',
+      light: 50,
+      dark: -250,
+    },
+    '--sp-header-button-face-bottom-hover': {
+      on: 'primary',
+      light: 225,
+      dark: -100,
+    },
+    '--sp-header-button-ring-top-selected': {
+      on: 'primary',
+      light: 175,
+      dark: -375,
+    },
+    '--sp-header-button-ring-bottom-selected': {
+      on: 'primary',
+      light: 275,
+      dark: -250,
+    },
+    '--sp-header-button-face-top-selected': {
+      on: 'primary',
+      light: 50,
+      dark: -250,
+    },
+    '--sp-header-button-face-bottom-selected': {
+      on: 'primary',
+      light: 225,
+      dark: -100,
+    },
+    /* The pill sits off the face and they part on hover: lighter in light,
+       darker in dark, as the face reverses. */
+    '--sp-header-button-count': { on: 'primary', light: 0, dark: 0 },
+    '--sp-header-button-count-hover': { on: 'primary', light: 25, dark: 75 },
+  },
+  'components/app-shell/process/process-title.css': {
+    '--sp-title-field-edge-hover': { on: 'primary', light: 175, dark: -250 },
+    '--sp-title-field-edge-active': { on: 'primary', light: 450, dark: -550 },
+  },
+  'components/app-shell/runs/runs-list.css': {
+    '--sp-sheet-current': { on: 'primary', light: 50, dark: -100 },
+    /* Its own step rather than the sidebar's wash: its ground is the pane. */
+    '--sp-sheet-hover': { on: 'primary', light: 50, dark: -50 },
+    /* The sticky head and version break. Not a recess: in dark that put the
+       head in a pit below its rows. */
+    '--sp-sheet-band': { on: 'primary', light: 25, dark: -25 },
+    /* The tally's total: ramp, not a severity tone. The "of" inside is ink at
+       75%, so current stays dark enough in dark to clear 4.5:1 at 11px. */
+    '--sp-sheet-total-face': { on: 'primary', light: 175, dark: -100 },
+    '--sp-sheet-total-face-hover': { on: 'primary', light: 225, dark: -175 },
+    '--sp-sheet-total-face-current': { on: 'primary', light: 225, dark: -200 },
+    '--sp-sheet-break-etch': { on: 'primary', light: -25, dark: 25 },
+    '--sp-sheet-row-etch': { on: 'primary', light: -25, dark: 100 },
+    /* Further from the row than the resting etch, so the line strengthens as
+       the row lights up. */
+    '--sp-sheet-row-etch-active': { on: 'primary', light: -50, dark: 0 },
+  },
+  'components/app-shell/thread/thread-step.css': {
+    '--sp-thread-line': { on: 'primary', light: 225, dark: -200 },
+    '--sp-thread-done': { on: 'primary', light: 450, dark: -375 },
+    '--sp-thread-fact-face': { on: 'primary', light: 75, dark: -75 },
+    /* A step past the row's hover wash, so a pill stays a pill under it. */
+    '--sp-thread-fact-face-hover': { on: 'primary', light: 100, dark: -100 },
+  },
+  'components/review/release-card.css': {
+    '--sp-card-etch': { on: 'floating', light: -25, dark: 50 },
+  },
+  'components/ui/tooltip.css': {
+    /* The face equals floating, so over a floating panel the edge alone
+       separates them -- contracts tooltip-edge-*. */
+    '--sp-tooltip-edge': { on: 'floating', light: 450, dark: -325 },
+    '--sp-tooltip-highlight': { highlightOf: '--sp-surface-floating' },
+  },
+} as const satisfies Record<
+  string,
+  Record<
+    `--${string}`,
+    (Offset & { on: SurfaceKey }) | { highlightOf: `--${string}` }
+  >
+>;
+
+/* Every relative role by variable, with the stylesheet that declares it. */
+function byVariable<Role>(files: Record<string, Record<string, Role>>) {
+  return new Map(
+    Object.entries(files).flatMap(([file, roles]) =>
+      Object.entries(roles).map(
+        ([variable, role]) =>
+          [variable as `--${string}`, { file, ...role }] as const,
+      ),
+    ),
+  );
+}
+export const FOLLOWING_ROLES = byVariable<Offset>(FOLLOWING_BY_FILE);
+export const ANCHORED_ROLES = byVariable<
+  (Offset & { on: SurfaceKey }) | { highlightOf: `--${string}` }
+>(ANCHORED_BY_FILE);
+/* The stylesheets that carry a generated block, in the order they list. */
+export const RELATIVE_FILES = [
+  ...new Set([
+    ...Object.keys(FOLLOWING_BY_FILE),
+    ...Object.keys(ANCHORED_BY_FILE),
+  ]),
+];
+
+const highlightStep = (theme: Theme) =>
+  SURFACE_THEMES[theme].highlight *
+  LAYER_STEP *
+  SURFACE_THEMES[theme].layerScale;
+
+/* Every place a following role can resolve: a surface, or the recess in one. */
+export const GROUND_CONTEXTS = {
+  canvas: '--sp-canvas',
+  primary: '--sp-surface-primary',
+  floating: '--sp-surface-floating',
+  'canvas-recess': '--sp-canvas-recess',
+  'primary-recess': '--sp-primary-recess',
+  'floating-recess': '--sp-floating-recess',
+} as const;
+export type GroundContext = keyof typeof GROUND_CONTEXTS;
+
+const offsetFrom = (
+  face: `--${string}`,
+  role: Offset,
+  what: string,
+): Record<Theme, number> => {
+  const steps = SURFACE_STEPS.get(face)!;
+  return {
+    light: rampStep(steps.light + role.light, `light ${what}`),
+    dark: rampStep(steps.dark + role.dark, `dark ${what}`),
+  };
+};
+
+/* A following role's steps inside one context. */
+export function followingAt(variable: `--${string}`, context: GroundContext) {
+  const role = FOLLOWING_ROLES.get(variable);
+  if (!role) throw new Error(`${variable} does not follow its surface.`);
+  return offsetFrom(
+    GROUND_CONTEXTS[context],
+    role,
+    `${variable} in ${context}`,
+  );
+}
+
+/* What each relative role resolves to at the root, keyed by variable. */
+export const RELATIVE_STEPS: ReadonlyMap<
+  `--${string}`,
+  Record<Theme, number>
+> = (() => {
+  const steps = new Map<`--${string}`, Record<Theme, number>>();
+  for (const variable of FOLLOWING_ROLES.keys())
+    steps.set(variable, followingAt(variable, 'canvas'));
+  for (const [variable, role] of ANCHORED_ROLES)
+    if ('on' in role)
+      steps.set(
+        variable,
+        offsetFrom(SURFACE_LAYERS[role.on].face, role, variable),
+      );
+  /* A highlight follows the surfaces' rule: one highlight step from the face
+     it lights, lighter in light and darker in dark. */
+  for (const [variable, role] of ANCHORED_ROLES) {
+    if (!('highlightOf' in role)) continue;
+    const face =
+      steps.get(role.highlightOf) ?? SURFACE_STEPS.get(role.highlightOf);
+    if (!face) throw new Error(`${variable}: no face ${role.highlightOf}.`);
+    steps.set(variable, {
+      light: rampStep(face.light + highlightStep('light'), `light ${variable}`),
+      dark: rampStep(face.dark + highlightStep('dark'), `dark ${variable}`),
+    });
+  }
+  return steps;
+})();
+
+function relativeRole(cssVariable: `--${string}`): RoleAssignment {
+  const steps = RELATIVE_STEPS.get(cssVariable);
+  if (!steps) throw new Error(`${cssVariable} is not a relative role.`);
   return { cssVariable, ...steps };
 }
 
@@ -305,16 +591,8 @@ export const ROLE_ASSIGNMENTS = {
   floatingRecess: surfaceRole('--sp-floating-recess'),
   floatingRecessRing: surfaceRole('--sp-floating-recess-ring'),
   floatingRecessEdge: surfaceRole('--sp-floating-recess-edge'),
-  surfaceControl: {
-    cssVariable: '--sp-surface-control',
-    light: 25,
-    dark: 750,
-  },
-  surfaceSelected: {
-    cssVariable: '--sp-surface-selected',
-    light: 175,
-    dark: 725,
-  },
+  surfaceControl: relativeRole('--sp-surface-control'),
+  surfaceSelected: relativeRole('--sp-surface-selected'),
   surfaceDisabled: {
     cssVariable: '--sp-surface-disabled',
     light: 50,
@@ -341,25 +619,12 @@ export const ROLE_ASSIGNMENTS = {
     dark: 900,
   },
   action: { cssVariable: '--sp-action', light: 925, dark: 100 },
-  ruleDefault: {
-    cssVariable: '--sp-rule-default',
-    light: 275,
-    dark: 650,
-  },
-  fieldFace: { cssVariable: '--sp-field-face', light: 50, dark: 850 },
-  fieldEdge: { cssVariable: '--sp-field-edge', light: 225, dark: 750 },
-  fieldEdgeActive: {
-    cssVariable: '--sp-field-edge-active',
-    light: 600,
-    dark: 225,
-  },
-  keycapFace: { cssVariable: '--sp-keycap-face', light: 25, dark: 775 },
-  analysisFace: {
-    cssVariable: '--sp-analysis-face',
-    light: 25,
-    dark: 875,
-  },
-  noticeFace: { cssVariable: '--sp-notice-face', light: 50, dark: 825 },
+  ruleDefault: relativeRole('--sp-rule-default'),
+  fieldFace: relativeRole('--sp-field-face'),
+  fieldEdge: relativeRole('--sp-field-edge'),
+  fieldEdgeActive: relativeRole('--sp-field-edge-active'),
+  keycapFace: relativeRole('--sp-keycap-face'),
+  noticeFace: relativeRole('--sp-notice-face'),
   /* The tooltip wears the floating face, so it moves with the stack. */
   tooltipFace: {
     cssVariable: '--tooltip-face',
@@ -368,54 +633,25 @@ export const ROLE_ASSIGNMENTS = {
   /* Edges, so a boundary can be measured against the face it bounds and the
      ground it lies on rather than trusted because it is a border. */
   tooltipEdge: { cssVariable: '--tooltip-edge', light: 475, dark: 475 },
-  ruleFaint: { cssVariable: '--sp-rule-faint', light: 225, dark: 700 },
-  keycapRing: { cssVariable: '--sp-keycap-ring', light: 200, dark: 650 },
-  menuChip: { cssVariable: '--sp-menu-chip', light: 150, dark: 850 },
+  ruleFaint: relativeRole('--sp-rule-faint'),
+  keycapRing: relativeRole('--sp-keycap-ring'),
+  menuChip: relativeRole('--sp-menu-chip'),
   /* Sheens and etches: every structural edge is a step, so each is pinned
      here rather than left to whatever it composites to. */
-  analysisHighlight: {
-    cssVariable: '--sp-analysis-highlight',
-    light: 0,
-    dark: 900,
-  },
-  keycapHighlight: {
-    cssVariable: '--sp-keycap-highlight',
-    light: 0,
-    dark: 825,
-  },
-  noticeHighlight: {
-    cssVariable: '--sp-notice-highlight',
-    light: 25,
-    dark: 850,
-  },
-  tooltipHighlight: {
-    cssVariable: '--sp-tooltip-highlight',
-    light: 0,
-    dark: 850,
-  },
+  keycapHighlight: relativeRole('--sp-keycap-highlight'),
+  noticeHighlight: relativeRole('--sp-notice-highlight'),
+  tooltipHighlight: relativeRole('--sp-tooltip-highlight'),
+  /* The notch continues the pane's edge, so it takes the pane's highlight. */
   notchHighlight: {
     cssVariable: '--sp-notch-highlight',
-    light: 25,
-    dark: 900,
+    ...SURFACE_STEPS.get('--sp-raised-edge')!,
   },
-  enclosureEdge: {
-    cssVariable: '--sp-enclosure-edge',
-    light: 25,
-    dark: 700,
-  },
-  dividerEtch: { cssVariable: '--sp-divider-etch', light: 25, dark: 925 },
-  cardEtch: { cssVariable: '--sp-card-etch', light: 0, dark: 850 },
-  sheetBreakEtch: {
-    cssVariable: '--sp-sheet-break-etch',
-    light: 25,
-    dark: 875,
-  },
-  sheetRowEtch: { cssVariable: '--sp-sheet-row-etch', light: 25, dark: 950 },
-  sheetRowEtchActive: {
-    cssVariable: '--sp-sheet-row-etch-active',
-    light: 0,
-    dark: 850,
-  },
+  enclosureEdge: relativeRole('--sp-enclosure-edge'),
+  dividerEtch: relativeRole('--sp-divider-etch'),
+  cardEtch: relativeRole('--sp-card-etch'),
+  sheetBreakEtch: relativeRole('--sp-sheet-break-etch'),
+  sheetRowEtch: relativeRole('--sp-sheet-row-etch'),
+  sheetRowEtchActive: relativeRole('--sp-sheet-row-etch-active'),
 } as const satisfies Record<string, RoleAssignment>;
 
 type RoleKey = keyof typeof ROLE_ASSIGNMENTS;
@@ -453,36 +689,7 @@ const RING_CONTRACTS: readonly ContrastContract[] = RING_SIDES.flatMap(
     })),
 );
 
-/* Text in a recess, wherever it is cut. The canvas's recess is the root
-   --sp-surface-inset, held by the *-on-inset-surface contracts. */
-const RECESS_TEXT_CONTRACTS: readonly ContrastContract[] = (
-  [
-    ['primary-recess', 'primaryRecess'],
-    ['floating-recess', 'floatingRecess'],
-  ] as const
-).flatMap(([name, background]) => [
-  {
-    id: `primary-on-${name}`,
-    classification: 'required' as const,
-    foreground: 'textPrimary' as const,
-    background,
-    minimum: 4.5,
-    target: 7,
-    rationale: 'Ordinary text in a recess.',
-  },
-  {
-    id: `muted-on-${name}`,
-    classification: 'required' as const,
-    foreground: 'textMuted' as const,
-    background,
-    minimum: 4.5,
-    target: 4.75,
-    rationale: 'Secondary text in a recess.',
-  },
-]);
-
 export const CONTRAST_CONTRACTS: readonly ContrastContract[] = [
-  ...RECESS_TEXT_CONTRACTS,
   {
     id: 'primary-on-canvas',
     classification: 'required',
@@ -545,14 +752,6 @@ export const CONTRAST_CONTRACTS: readonly ContrastContract[] = [
     minimum: 4.5,
     target: 4.75,
     rationale: 'The weakest recurring secondary-text pairing.',
-  },
-  {
-    id: 'muted-on-analysis',
-    classification: 'required',
-    foreground: 'textMuted',
-    background: 'analysisFace',
-    minimum: 4.5,
-    rationale: 'Secondary analysis copy is ordinary-size text.',
   },
   {
     id: 'muted-on-notice',

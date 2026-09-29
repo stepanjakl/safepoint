@@ -95,7 +95,7 @@ export function ReviewWorkspace({
         <div className="grid flex-1 @3xl:grid-cols-[22rem_minmax(0,1fr)]">
           <section
             aria-labelledby={ids.candidatesHeading}
-            className="border-rule-strong bg-surface-primary group-data-[view=detail]/workspace:@max-3xl/workspace:hidden @3xl:sticky @3xl:top-0 @3xl:max-h-dvh @3xl:overflow-y-auto @3xl:border-r"
+            className="ground-raised border-rule-strong bg-surface-primary group-data-[view=detail]/workspace:@max-3xl/workspace:hidden @3xl:sticky @3xl:top-0 @3xl:max-h-dvh @3xl:overflow-y-auto @3xl:border-r"
           >
             <div className="border-rule-default bg-surface-inset flex min-h-8 items-center justify-between border-b px-4 py-1.5">
               <h2 id={ids.candidatesHeading} className="readout text-muted">
@@ -122,7 +122,7 @@ export function ReviewWorkspace({
           <section
             id={ids.detail}
             aria-labelledby={ids.lineHeading}
-            className="bg-surface-primary min-w-0 group-data-[view=list]/workspace:@max-3xl/workspace:hidden"
+            className="ground-raised bg-surface-primary min-w-0 group-data-[view=list]/workspace:@max-3xl/workspace:hidden"
           >
             <LineDetail
               detail={presentation.details[selectedSku]}

@@ -110,6 +110,64 @@ function RecessStack({
   );
 }
 
+/* The surface-following roles as they paint inside each surface: every
+   value here comes from the ground-* utility the surface applies. */
+type Ground = 'canvas' | 'pane' | 'floating' | 'recess';
+
+function FollowingSamples() {
+  return (
+    <div className="grid gap-3">
+      <div className="bg-surface-hover rounded-control text-meta px-2 py-1">
+        hover
+      </div>
+      <div className="bg-surface-selected rounded-control text-meta px-2 py-1">
+        selected
+      </div>
+      <div className="border-rule-faint text-meta text-muted border-t pt-1">
+        faint rule
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="control-face control-quiet rounded-control text-meta px-3 py-1">
+          quiet
+        </div>
+        <div className="bg-menu-chip text-meta rounded-full px-2">chip</div>
+      </div>
+    </div>
+  );
+}
+
+function RelativeSample({ ground }: { ground: Ground }) {
+  const samples = <FollowingSamples />;
+  if (ground === 'canvas')
+    return <div className="bg-canvas p-4">{samples}</div>;
+  const inner =
+    ground === 'floating' ? (
+      <div className="control-face surface-floating rounded-shell p-4">
+        {samples}
+      </div>
+    ) : ground === 'recess' ? (
+      <div className="control-face surface-recessed rounded-control p-4">
+        {samples}
+      </div>
+    ) : (
+      samples
+    );
+  return (
+    <div className="bg-canvas p-4">
+      <div className="control-face surface-raised rounded-shell p-4">
+        {inner}
+      </div>
+    </div>
+  );
+}
+
+const GROUND_LABEL: Record<Ground, string> = {
+  canvas: 'On the canvas',
+  pane: 'In a pane',
+  floating: 'In floating',
+  recess: 'In a recess, in a pane',
+};
+
 const SECTION = 'grid gap-3';
 const HEADING = 'text-title font-semibold';
 const NOTE = 'text-meta text-muted max-w-3xl';
@@ -170,13 +228,35 @@ export default function WorkbenchPage() {
         <p className={NOTE}>
           Canvas, pane and floating, each a layer apart, and a recess one layer
           below whichever surface it is cut into -- all from LAYER_STEP and
-          RECESS_DEPTH in scripts/colour-theme/config.ts. Every ring clears both
-          its face and its ground; every surface has a highlight.
+          SURFACE_THEMES in scripts/colour-theme/config.ts. Every ring clears
+          both its face and its ground; every surface has a highlight.
         </p>
         <div className="grid grid-cols-[repeat(auto-fit,minmax(18rem,1fr))] gap-6">
           <RecessStack label="Recess on the canvas" on="canvas" />
           <RecessStack label="Recess in a pane" on="pane" />
           <RecessStack label="Recess in floating" on="floating" />
+        </div>
+      </section>
+
+      <section className={SECTION} aria-labelledby="relative">
+        <h2 id="relative" className={HEADING}>
+          Surface-following roles
+        </h2>
+        <p className={NOTE}>
+          Hover, selected, rules, the quiet control and the menu chip, inside
+          each surface. Each is a fixed step distance from the face it sits on
+          (FOLLOWING_ROLES in scripts/colour-theme/config.ts), so it holds the
+          same perceived difference wherever it is drawn.
+        </p>
+        <div className="grid gap-6 sm:grid-cols-4">
+          {(Object.keys(GROUND_LABEL) as Ground[]).map((ground) => (
+            <figure key={ground} className="grid content-start gap-2">
+              <figcaption className="text-meta text-muted">
+                {GROUND_LABEL[ground]}
+              </figcaption>
+              <RelativeSample ground={ground} />
+            </figure>
+          ))}
         </div>
       </section>
 
