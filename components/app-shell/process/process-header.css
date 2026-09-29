@@ -108,26 +108,21 @@
   --control-face-bottom: var(--sp-header-button-face-bottom-hover);
 }
 
-/* A button with something to report takes the condition into its whole face
-   rather than into an edge. These replace control-header-button, so exactly
-   one face utility lands on a button and class order cannot matter. */
 /* The item whose tab the drawer is showing. */
 @utility control-header-button-selected {
+  @apply control-header-button;
   --control-face-top: var(--sp-header-button-face-top-selected);
   --control-face-bottom: var(--sp-header-button-face-bottom-selected);
-  /* Transparent until --sp-header-button-ring-*-selected are given values;
-     the border is already there, waiting to be painted. */
   --control-ring-top: var(--sp-header-button-ring-top-selected);
   --control-ring-bottom: var(--sp-header-button-ring-bottom-selected);
-  --control-highlight: transparent;
 }
 
+/* A button with something to report takes the condition into its whole face
+   rather than an edge. Each face utility replaces the base, so one lands. */
 @utility control-header-button-caution {
+  @apply control-header-button;
   --control-face-top: var(--sp-header-button-face-top-caution);
   --control-face-bottom: var(--sp-header-button-face-bottom-caution);
-  --control-ring-top: transparent;
-  --control-ring-bottom: transparent;
-  --control-highlight: transparent;
 }
 
 @utility control-header-button-caution-hover {
@@ -136,11 +131,9 @@
 }
 
 @utility control-header-button-blocked {
+  @apply control-header-button;
   --control-face-top: var(--sp-header-button-face-top-blocked);
   --control-face-bottom: var(--sp-header-button-face-bottom-blocked);
-  --control-ring-top: transparent;
-  --control-ring-bottom: transparent;
-  --control-highlight: transparent;
 }
 
 @utility control-header-button-blocked-hover {

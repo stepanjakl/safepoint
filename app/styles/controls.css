@@ -120,6 +120,41 @@
   transition-timing-function: ease-out;
 }
 
+/* A text field, as the process search draws one; every field shares it. The
+   edge is its focus indicator, so focus comes last and a pointer never wins. */
+@utility field {
+  @apply control-wash;
+  border: var(--spacing-field-edge) solid var(--sp-field-edge);
+  border-radius: var(--radius-control);
+  background-color: var(--sp-field-face);
+  outline: none;
+  &::placeholder,
+  & ::placeholder {
+    color: var(--sp-text-muted);
+    transition: color var(--duration-state) ease-out;
+  }
+  /* The data attributes are the states /workbench/controls pins. */
+  &:is(:hover, [data-hovered]) {
+    border-color: var(--sp-field-edge-hover);
+  }
+  &:is(:focus-within, [data-focus-visible]) {
+    border-color: var(--sp-field-edge-active);
+  }
+  /* One step short of primary even when focused: at full weight a placeholder
+     reads as something typed. */
+  &:is(:hover, [data-hovered], :focus-within, [data-focus-visible])::placeholder,
+  &:is(:hover, [data-hovered], :focus-within, [data-focus-visible]) ::placeholder {
+    color: var(--sp-text-muted-strong);
+  }
+  @media (forced-colors: active) {
+    /* Inset, because a field's container can clip at its edges. */
+    &:focus-within {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
+    }
+  }
+}
+
 /* A width only, so it combines with any face utility rather than being a
    variant of each. */
 @utility control-hairline {

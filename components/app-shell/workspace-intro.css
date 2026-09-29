@@ -1,0 +1,59 @@
+/* ── Workspace introduction ────────────────────────────────────────────── */
+
+:root {
+  --sp-workspace-intro-emphasis: light-dark(var(--radix-cyan-11), var(--radix-cyan-dark-11));
+}
+
+@layer components {
+  .workspace-intro {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 100%;
+    padding: clamp(2rem, 6vw, 5rem);
+    place-items: center;
+  }
+
+  .workspace-intro-content {
+    display: grid;
+    width: max-content;
+    max-width: 100%;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .workspace-intro-mark {
+    width: 4rem;
+    height: 4rem;
+    margin-bottom: 2rem;
+  }
+
+  .workspace-intro-heading {
+    max-width: 100%;
+    font-size: clamp(1.4rem, 2.1vw, 1.75rem);
+    font-weight: 500;
+    line-height: 1.18;
+    letter-spacing: -0.04em;
+  }
+
+  .workspace-intro-beat {
+    display: block;
+    text-wrap: balance;
+  }
+
+  .workspace-intro-keyword {
+    color: var(--sp-workspace-intro-emphasis);
+    font-weight: 600;
+  }
+
+  .workspace-intro-beat + .workspace-intro-beat {
+    margin-top: 0.28em;
+  }
+
+  .workspace-intro-beat[data-beat='3'] {
+    margin-top: 0.75em;
+    font-size: 0.8em;
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    line-height: 1.3;
+  }
+}

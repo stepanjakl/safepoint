@@ -1,7 +1,9 @@
 'use client';
 
 import { styleDebug } from '@/lib/style-debug';
-import { createContext, useState, type ReactNode } from 'react';
+import { motion } from 'motion/react';
+import { createContext, useEffect, useState, type ReactNode } from 'react';
+import { LAST_PROCESS_KEY } from '@/lib/process/navigation';
 import type { InputDetail } from '@/lib/process/input-details';
 import type { ProcessSummary } from '@/lib/process/model';
 import type { SystemLink } from '@/lib/process/system-links';
@@ -9,11 +11,27 @@ import { useInstructions } from '@/components/app-shell/instructions/instruction
 import { useRemovedInputs } from '@/components/app-shell/inputs/inputs-store';
 import { ProcessHeader } from './process-header';
 import { ProcessPanels } from './process-panels';
-import { viewKey, type AsideView } from '@/components/app-shell/drawer-aside';
-import { useProcessTab, type ProcessTab } from './process-tab-store';
+import type { AsideView } from '@/components/app-shell/drawer-aside';
+import {
+  PROCESS_TABS,
+  useProcessTab,
+  type ProcessTab,
+} from './process-tab-store';
 import { RunsList } from '@/components/app-shell/runs/runs-list';
+import {
+  RunSelectionProvider,
+  useRunSelectionState,
+} from '@/components/app-shell/runs/run-selection';
+import {
+  RunView,
+  type PlayableRun,
+} from '@/components/app-shell/runs/run-view';
+import { StartRunButton } from '@/components/app-shell/runs/start-run-button';
 import { ScheduleControl } from './schedule-control';
 import { SectionRow } from '@/components/app-shell/runs/section-row';
+import { motionAlong, useSwap } from '@/components/ui/swap';
+
+const TAB_MOTION = motionAlong(PROCESS_TABS, 'horizontal');
 
 /*
   What the run's thread can ask of the sheet around it. Absent where the thread
@@ -22,6 +40,10 @@ import { SectionRow } from '@/components/app-shell/runs/section-row';
 */
 export const ProcessSheetActions = createContext<{
   showInput: (id: string) => void;
+  showVersion: (version: string) => void;
+  showInstructions: () => void;
+  // The instructions now, which a run may predate.
+  currentVersion: string;
 } | null>(null);
 
 /*
@@ -42,14 +64,24 @@ export function ProcessSheet({
   inputs = [],
   inputDetails,
   run,
+  initialRunId = null,
+  playable,
 }: {
   process: ProcessSummary;
   inputs?: SystemLink[];
   inputDetails?: Record<string, InputDetail>;
-  // The run's thread, built on the server.
+  // The current run's thread, built on the server.
   run: ReactNode;
+  // The run to open on, from the address; none opens on the empty page.
+  initialRunId?: string | null;
+  // What a started run is drawn from, where this process can play one.
+  playable?: PlayableRun;
 }) {
   const [tab, setTab] = useProcessTab(process.id);
+  // The root opens the process last open (app/(shell)/page.tsx).
+  useEffect(() => {
+    document.cookie = `${LAST_PROCESS_KEY}=${encodeURIComponent(process.id)}; path=/; max-age=31536000; samesite=lax`;
+  }, [process.id]);
   /*
     A detail the sheet has been asked to open: a version's change log from a
     boundary in the runs rail, or an input from a flag in the run's thread. It
@@ -58,20 +90,27 @@ export function ProcessSheet({
     reader chooses a tab themselves.
   */
   const [openView, setOpenView] = useState<AsideView | null>(null);
+  // Counts the requests, so a second one remounts the panels it is for.
+  const [request, setRequest] = useState(0);
+  // Set once the reader chooses a tab: the stored one, applied on hydration,
+  // is put in place without a swap.
+  const [chosen, setChosen] = useState(false);
+  const ask = (view: AsideView, next: ProcessTab) => {
+    setChosen(true);
+    setOpenView(view);
+    setRequest((count) => count + 1);
+    setTab(next);
+  };
   const chooseTab = (next: ProcessTab) => {
+    setChosen(true);
     setOpenView(null);
     setTab(next);
   };
-  const showVersion = (version: string) => {
-    setOpenView({ kind: 'changes', version });
-    setTab('instructions');
-  };
-  const actions = {
-    showInput: (id: string) => {
-      setOpenView({ kind: 'input', id });
-      setTab('inputs');
-    },
-  };
+  const showVersion = (version: string) =>
+    ask({ kind: 'changes', version }, 'instructions');
+  // The body follows the header's choice once the old one has faded out,
+  // travelling the way the tabs lie.
+  const { shown, layer } = useSwap(tab, TAB_MOTION, chosen);
   // Inputs can be changed, as a preview, only where they have details to
   // show: the promotion scenario's files. Everything downstream reads the kept
   // set, so a removed input leaves the count and the list together.
@@ -81,68 +120,104 @@ export function ProcessSheet({
   const kept = inputs.filter((input) => !removed.has(input.id));
   const available = inputs.filter((input) => removed.has(input.id));
   const editable = inputDetails !== undefined;
+  const actions = {
+    showInput: (id: string) => ask({ kind: 'input', id }, 'inputs'),
+    showVersion,
+    showInstructions: () => chooseTab('instructions'),
+    currentVersion: version,
+  };
+  const selection = useRunSelectionState({
+    process,
+    initialRunId,
+    canPlay: playable !== undefined,
+    version,
+  });
 
   return (
-    <div
-      {...styleDebug({ component: 'ProcessSheet' })}
-      className="shell:grid shell:h-full shell:grid-rows-[auto_minmax(0,1fr)]"
-    >
-      <ProcessHeader
-        process={process}
-        version={version}
-        inputs={kept}
-        outputs={process.outputs}
-        tab={tab}
-        onTabChange={chooseTab}
-      />
-      {tab === 'runs' ? (
-        /*
+    <RunSelectionProvider value={selection}>
+      <div
+        {...styleDebug({ component: 'ProcessSheet' })}
+        className="shell:grid shell:h-full shell:grid-rows-[auto_minmax(0,1fr)]"
+      >
+        <ProcessHeader
+          process={process}
+          version={version}
+          inputs={kept}
+          outputs={process.outputs}
+          tab={tab}
+          onTabChange={chooseTab}
+        />
+        {/* The frame the tab bodies trade places in, clipped to the pane's inner
+            radius so a body on its way in or out never crosses the pane's edge. */}
+        <div className="shell:grid shell:min-h-0 shell:grid-rows-[minmax(0,1fr)] rounded-b-shell-inner grid-cols-[minmax(0,1fr)] overflow-clip">
+          <motion.div
+            key={shown}
+            {...layer}
+            className="shell:grid shell:min-h-0 shell:grid-rows-[minmax(0,1fr)] grid-cols-[minmax(0,1fr)]"
+          >
+            {shown === 'runs' ? (
+              /*
           Three columns where there is room, otherwise the runs become a strip
           above the thread. Between the two thresholds the strip takes what it
           needs and the thread takes the rest, so the thread scrolls rather than
           the document.
         */
-        // Clipped to the pane's inner radius. The lists inside are full-bleed
-        // and carry fills of their own, and at the pane's own radius they
-        // paint over the edge its face draws in the bottom corners.
-        <div className="shell:@max-sheet-wide/sheet:grid-rows-[auto_minmax(0,1fr)] shell:min-h-0 @sheet-wide/sheet:grid-cols-[232px_minmax(0,1fr)] rounded-b-shell-inner grid grid-cols-[minmax(0,1fr)] overflow-clip">
-          {/* Full-bleed: the list draws its own rules edge to edge, and
+              // Clipped to the pane's inner radius. The lists inside are full-bleed
+              // and carry fills of their own, and at the pane's own radius they
+              // paint over the edge its face draws in the bottom corners.
+              <div className="shell:@max-sheet-wide/sheet:grid-rows-[auto_minmax(0,1fr)] shell:min-h-0 @sheet-wide/sheet:grid-cols-[232px_minmax(0,1fr)] rounded-b-shell-inner grid grid-cols-[minmax(0,1fr)] overflow-clip">
+                {/* Full-bleed: the list draws its own rules edge to edge, and
               padding on the column would leave them floating short of it. */}
-          <aside
-            aria-labelledby="runs-heading"
-            {...styleDebug({ component: 'ProcessSheet', part: 'runs-sidebar' })}
-            className="border-rule-faint shadow-separator-right-strong @sheet-wide/sheet:border-b-0 @sheet-wide/sheet:border-r shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative border-b"
-          >
-            <SectionRow id="runs-heading" title="Runs">
-              <ScheduleControl
-                processId={process.id}
-                schedule={process.schedule}
+                <aside
+                  aria-labelledby="runs-heading"
+                  {...styleDebug({
+                    component: 'ProcessSheet',
+                    part: 'runs-sidebar',
+                  })}
+                  className="border-rule-faint shadow-separator-right-strong @sheet-wide/sheet:border-b-0 @sheet-wide/sheet:border-r shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative border-b"
+                >
+                  <SectionRow id="runs-heading" title="Runs">
+                    <span className="flex items-center gap-0.5">
+                      <StartRunButton />
+                      <ScheduleControl
+                        processId={process.id}
+                        schedule={process.schedule}
+                      />
+                    </span>
+                  </SectionRow>
+                  <RunsList process={process} onShowVersion={showVersion} />
+                </aside>
+                <div className="shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative">
+                  <ProcessSheetActions value={actions}>
+                    <RunView
+                      process={process}
+                      recorded={run}
+                      playable={playable}
+                    />
+                  </ProcessSheetActions>
+                </div>
+              </div>
+            ) : (
+              <ProcessPanels
+                // Keyed by request: the layer around it is keyed by tab, so the
+                // detail it had open goes with its list, and a second request for
+                // a different version remounts rather than being ignored. Not by
+                // the view itself, which is cleared while the old tab fades out.
+                key={request}
+                process={process}
+                tab={shown}
+                openView={openView}
+                inputs={kept}
+                availableInputs={available}
+                inputDetails={inputDetails}
+                onRemoveInput={editable ? remove : undefined}
+                onAddInput={editable ? restore : undefined}
+                onLeave={() => chooseTab('runs')}
               />
-            </SectionRow>
-            <RunsList process={process} onShowVersion={showVersion} />
-          </aside>
-          <div className="shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative">
-            <ProcessSheetActions value={actions}>{run}</ProcessSheetActions>
-          </div>
+            )}
+          </motion.div>
         </div>
-      ) : (
-        <ProcessPanels
-          // Keyed by tab, and by the version the rail asked for: a new tab is
-          // a new panel, so the detail it had open goes with the list it
-          // belonged to and nothing has to reset it -- and a second request
-          // for a different version remounts rather than being ignored.
-          key={`${tab}:${openView ? viewKey(openView) : ''}`}
-          process={process}
-          tab={tab}
-          openView={openView}
-          inputs={kept}
-          availableInputs={available}
-          inputDetails={inputDetails}
-          onRemoveInput={editable ? remove : undefined}
-          onAddInput={editable ? restore : undefined}
-          onLeave={() => chooseTab('runs')}
-        />
-      )}
-    </div>
+      </div>
+    </RunSelectionProvider>
   );
 }

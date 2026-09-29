@@ -6,11 +6,14 @@
 
 :root {
   --sp-thread-attention-face: var(--sp-state-decision-4);
-  --sp-thread-attention-face-hover: var(--sp-state-decision-5);
+  --sp-thread-attention-face-hover: var(--sp-state-decision-6);
   --sp-thread-blocked-face: var(--sp-state-blocked-4);
-  --sp-thread-blocked-face-hover: var(--sp-state-blocked-5);
-  --sp-thread-attention-face-active: var(--sp-state-decision-6);
-  --sp-thread-blocked-face-active: var(--sp-state-blocked-6);
+  --sp-thread-blocked-face-hover: var(--sp-state-blocked-6);
+  --sp-thread-attention-face-active: var(--sp-state-decision-7);
+  --sp-thread-blocked-face-active: var(--sp-state-blocked-7);
+  /* A flag's ink under the pointer: the scale's strongest text step. */
+  --sp-thread-attention-ink-active: var(--sp-state-decision-12);
+  --sp-thread-blocked-ink-active: var(--sp-state-blocked-12);
   --sp-thread-attention-solid: var(--sp-state-decision-9);
   --sp-thread-blocked-solid: var(--sp-state-blocked-9);
 }
@@ -20,7 +23,10 @@
   --sp-thread-line: light-dark(var(--sp-neutral-275), var(--sp-neutral-650));
   --sp-thread-done: light-dark(var(--sp-neutral-500), var(--sp-neutral-475));
   --sp-thread-fact-face: light-dark(var(--sp-neutral-125), var(--sp-neutral-775));
-  --sp-thread-fact-face-hover: light-dark(var(--sp-neutral-150), var(--sp-neutral-750));
+  --sp-thread-fact-face-hover: light-dark(var(--sp-neutral-150), var(--sp-neutral-700));
+  --sp-thread-link-face: light-dark(var(--sp-neutral-175), var(--sp-neutral-725));
+  --sp-thread-link-face-hover: light-dark(var(--sp-neutral-200), var(--sp-neutral-675));
+  --sp-thread-link-face-active: light-dark(var(--sp-neutral-250), var(--sp-neutral-625));
 }
 /* End of generated roles. */
 
@@ -45,6 +51,12 @@
     --thread-wash-y: 0.1875rem;
     /* Quick fades: pills, the fold's content and the time trading places. */
     --thread-fade: 110ms;
+    /* Time per pixel of an opening body, so every fold moves at one speed: a
+       tall one takes longer rather than moving faster. 230px takes 180ms. */
+    --thread-fold-pace: 0.8ms;
+    /* Short bodies take at least this, so a small fold eases open rather than
+       snapping; only those under 150px are held to it. */
+    --thread-fold-min: 120ms;
     display: flex;
     flex-direction: column;
     gap: var(--thread-gap);
@@ -190,9 +202,7 @@
       opacity: 0.4;
     }
   }
-  /* The one ring: an arc on a pale track of its own hue, round a dot of the
-     arc's colour. It turns at an even pace and its arc lengthens and shortens
-     once a turn, on the same beat. The only continuous motion in the thread. */
+  /* The original running ring remains in the workbench for comparison. */
   .thread-ring {
     width: var(--thread-mark);
     height: var(--thread-mark);
@@ -224,6 +234,84 @@
   @keyframes thread-breathe {
     50% {
       stroke-dasharray: 40 100;
+    }
+  }
+
+  .thread-segmented-ring {
+    --thread-turn-angle: 90deg;
+    --thread-stagger: 150ms;
+    animation: none;
+  }
+  .thread-segmented-ring[data-count='3'] {
+    --thread-turn-angle: 120deg;
+    --thread-stagger: 225ms;
+  }
+  .thread-segmented-outer {
+    transform-box: view-box;
+    transform-origin: center;
+    animation: thread-segmented-turn 2.2s ease-in-out infinite;
+  }
+  .thread-segmented-arc {
+    stroke: currentColor;
+    stroke-linecap: round;
+    opacity: 0.25;
+    animation: thread-segmented-light 2.2s linear infinite backwards;
+  }
+  .thread-segmented-arc:nth-child(2) {
+    animation-delay: var(--thread-stagger);
+  }
+  .thread-segmented-arc:nth-child(3) {
+    animation-delay: calc(var(--thread-stagger) * 2);
+  }
+  .thread-segmented-arc:nth-child(4) {
+    animation-delay: calc(var(--thread-stagger) * 3);
+  }
+  @keyframes thread-segmented-light {
+    0%,
+    50%,
+    100% {
+      opacity: 0.25;
+    }
+    7%,
+    43% {
+      opacity: 1;
+    }
+  }
+  @keyframes thread-segmented-turn {
+    0%,
+    70.5% {
+      rotate: 0deg;
+    }
+    100% {
+      rotate: var(--thread-turn-angle);
+    }
+  }
+  .thread-segmented-dot {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: thread-segmented-beat 2.2s ease-in-out infinite;
+  }
+  @keyframes thread-segmented-beat {
+    0%,
+    28%,
+    43%,
+    100% {
+      scale: 1;
+    }
+    36% {
+      scale: 1.2;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .thread-ring,
+    .thread-ring-arc,
+    .thread-segmented-arc,
+    .thread-segmented-dot,
+    .thread-segmented-outer {
+      animation: none;
+    }
+    .thread-segmented-arc {
+      opacity: 0.75;
     }
   }
 
@@ -270,7 +358,8 @@
     gap: 0.25rem;
   }
   .thread-step-fact,
-  .thread-step-flag {
+  .thread-step-flag,
+  .thread-step-link {
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
@@ -282,6 +371,9 @@
     letter-spacing: var(--sp-text-micro--ls);
     font-weight: 550;
     white-space: nowrap;
+  }
+  .thread-step-fact,
+  .thread-step-flag {
     color: var(--sp-text-muted);
     background-color: var(--sp-thread-fact-face);
     transition: background-color var(--duration-state) ease-out;
@@ -309,17 +401,44 @@
     .thread-step-flag:not(:hover, :focus-visible) {
     background-color: var(--sp-thread-blocked-face-hover);
   }
+  /* A fact that goes somewhere sits above the row's stretch as its own
+     control; its ink comes forward when it is the target. */
+  /* A fact that opens something: flat like the rest, a step more ink and face,
+     above the row's stretch. */
+  .thread-step-link {
+    position: relative;
+    z-index: 2;
+    cursor: pointer;
+    color: var(--sp-text-muted-strong);
+    background-color: var(--sp-thread-link-face);
+    transition:
+      color var(--duration-state) ease-out,
+      background-color var(--duration-state) ease-out;
+    /* The data attributes are the states /workbench/controls pins. */
+    &:is(:hover, [data-hovered], :focus-visible, [data-focus-visible]) {
+      color: var(--sp-text-primary);
+      background-color: var(--sp-thread-link-face-active);
+    }
+  }
+  .thread-step-row:is(:hover, :has(> .thread-step-toggle:focus-visible))
+    .thread-step-link:not(:hover, :focus-visible) {
+    background-color: var(--sp-thread-link-face-hover);
+  }
   /* A flag that goes somewhere sits above the row's stretch as its own
      control, and deepens a step past the row's hover when it is the target. */
   button.thread-step-flag {
     position: relative;
     z-index: 2;
-    transition: background-color var(--duration-state) ease-out;
+    transition:
+      color var(--duration-state) ease-out,
+      background-color var(--duration-state) ease-out;
   }
   .thread-step[data-status='attention'] button.thread-step-flag:is(:hover, :focus-visible) {
+    color: var(--sp-thread-attention-ink-active);
     background-color: var(--sp-thread-attention-face-active);
   }
   .thread-step[data-status='blocked'] button.thread-step-flag:is(:hover, :focus-visible) {
+    color: var(--sp-thread-blocked-ink-active);
     background-color: var(--sp-thread-blocked-face-active);
   }
   /* The fold's facts. An open step shows its box instead, unless it is
@@ -407,20 +526,26 @@
     display: grid;
     grid-template-rows: 0fr;
     min-width: 0;
-    transition: grid-template-rows var(--duration-row) ease-out var(--thread-fade);
+    /* The body's open height in px, published by the step as it resizes; the
+       fallback is a typical body, for the frame before it is measured. */
+    --thread-fold-duration: max(
+      var(--thread-fold-min),
+      calc(var(--thread-fold-height, 230) * var(--thread-fold-pace))
+    );
+    transition: grid-template-rows var(--thread-fold-duration) ease-out var(--thread-fade);
   }
   .thread-step[data-open] > .thread-step-fold {
     grid-template-rows: 1fr;
     transition-delay: 0s;
   }
   .thread-step-body {
-    padding-top: 0.5rem;
+    padding-top: 1rem;
     opacity: 0;
     transition: opacity var(--thread-fade) ease-out;
   }
   .thread-step[data-open] > .thread-step-fold > .thread-step-clip > .thread-step-body {
     opacity: 1;
-    transition-delay: var(--duration-row);
+    transition-delay: var(--thread-fold-duration);
   }
   /* The margin lets a card's ring and a disc's gap show past the edge. */
   .thread-step-clip {

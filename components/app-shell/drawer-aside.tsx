@@ -25,10 +25,9 @@ import { cx } from '@/lib/cx';
 
   Motion, in app/styles/drawer.css: the panel comes in from the left and leaves the
   same way, and its first content fades in once it is in place. Choosing another
-  item keeps the panel still and swaps what is in it, travelling the way the
-  list does: an item further down makes the old content rise out as the new
-  rises in from below, one further up the reverse. The two are held in one
-  grid cell for the moment they overlap.
+  item keeps the panel still and swaps what is in it (components/ui/swap.css):
+  the old content fades out first, then the new one comes in, travelling the
+  way the list does -- rising for an item further down, falling for one above.
 */
 
 // Where the newly chosen item sits relative to the one it replaces.
@@ -74,10 +73,11 @@ export const PANEL =
 export const CLOSE_BUTTON =
   'control-face control-hairline control-quiet text-muted-strong interact:control-quiet-hover interact:text-primary grid size-8 flex-none cursor-pointer place-items-center rounded-full';
 
-// Longest either leaving animation may take before its layer is removed
-// anyway: the animation's own end normally does it, and this covers an end
-// that never comes, such as a frame the browser skipped.
-const LEAVE_FALLBACK_MS = 600;
+// Longest the panel's exit or a content's fade-out may take before it is
+// dropped anyway: the animation's own end normally does it, and this covers an
+// end that never comes, such as a frame the browser skipped.
+const EXIT_FALLBACK_MS = 600;
+const LEAVE_FALLBACK_MS = 300;
 
 export function DrawerAside({
   current,
@@ -121,7 +121,7 @@ export function DrawerAside({
     if (!exiting) return;
     const fallback = window.setTimeout(
       () => exited.current(),
-      LEAVE_FALLBACK_MS,
+      EXIT_FALLBACK_MS,
     );
     return () => window.clearTimeout(fallback);
   }, [exiting]);
@@ -136,7 +136,10 @@ export function DrawerAside({
   // the item that was chosen, so a keyboard can carry on down the list it is
   // in -- unless the control that was chosen went with the old content, as a
   // pager button does, which leaves focus nowhere.
+  // The new content mounts once the old has faded, so that is when it counts.
+  const shownKey = leaving ? null : current.key;
   useEffect(() => {
+    if (shownKey === null) return;
     if (!arrived.current) {
       arrived.current = true;
       if (current.focusOnOpen !== false) heading.current?.focus();
@@ -149,35 +152,45 @@ export function DrawerAside({
       heading.current?.focus();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current.key]);
+  }, [shownKey]);
 
-  const layers = [
-    leaving ? (
-      <AsideContent
-        key={leaving.key}
-        layer={leaving}
-        className="drawer-aside-leave"
-        inert
-        onAnimationEnd={(event) => {
-          if (event.target === event.currentTarget) onLeft();
-        }}
-      />
-    ) : null,
+  // The content moves the way the list does: an item further down rises.
+  const motion = direction === 'down' ? 'up' : 'down';
+  // One element, keyed, so content moving from current to leaving keeps its
+  // instance -- its scroll position and its state -- while it fades out.
+  const layer = leaving ? (
+    <AsideContent
+      key={leaving.key}
+      layer={leaving}
+      className="swap-leave"
+      motion={motion}
+      inert
+      onAnimationEnd={(event) => {
+        if (event.target === event.currentTarget) onLeft();
+      }}
+    />
+  ) : swapped || current.key !== openedWith ? (
+    <AsideContent
+      key={current.key}
+      layer={current}
+      headingRef={heading}
+      className="swap-enter"
+      motion={motion}
+    />
+  ) : (
     <AsideContent
       key={current.key}
       layer={current}
       headingRef={heading}
       className="drawer-aside-content"
-      enter={swapped || current.key !== openedWith ? 'swap' : 'open'}
-    />,
-  ];
+    />
+  );
 
   return (
     <section
       aria-labelledby="drawer-aside-title"
       {...styleDebug({ component: 'DrawerAside', appearance: 'drawer-aside' })}
       data-exiting={exiting || undefined}
-      data-direction={direction}
       onAnimationEnd={(event) => {
         if (event.target === event.currentTarget && exiting) onExited();
       }}
@@ -192,9 +205,7 @@ export function DrawerAside({
       <p className="sr-only" aria-live="polite">
         {current.announce}
       </p>
-      {/* One array, keyed, so a layer moving from current to leaving keeps
-          its instance -- its scroll position and its state -- on the way out. */}
-      {layers}
+      {layer}
     </section>
   );
 }
@@ -203,14 +214,14 @@ function AsideContent({
   layer,
   headingRef,
   className,
-  enter,
+  motion,
   inert = false,
   onAnimationEnd,
 }: {
   layer: AsideLayer;
   headingRef?: Ref<HTMLHeadingElement>;
   className: string;
-  enter?: 'open' | 'swap';
+  motion?: 'up' | 'down';
   inert?: boolean;
   onAnimationEnd?: (event: AnimationEvent<HTMLDivElement>) => void;
 }) {
@@ -224,7 +235,7 @@ function AsideContent({
       // Leaving content can be neither reached nor read.
       inert={inert}
       aria-hidden={inert || undefined}
-      data-enter={enter}
+      data-motion={motion}
       onAnimationEnd={onAnimationEnd}
       className={cx(
         'col-start-1 row-start-1 grid min-h-0 grid-rows-[auto_minmax(0,1fr)]',

@@ -100,6 +100,8 @@ const SCENARIOS = {
     ).toBeVisible();
   },
   support: async () => {},
+  // No run chosen: the empty page and its start.
+  empty: async () => {},
   states: async () => {},
   // Every control in every interaction state, pinned once hydrated.
   controls: async (page: Page) => {
@@ -110,7 +112,8 @@ const SCENARIOS = {
 } satisfies Record<string, (page: Page) => Promise<void>>;
 
 const ROUTES: Partial<Record<keyof typeof SCENARIOS, string>> = {
-  support: '/examples/support',
+  empty: '/examples/promotion',
+  support: '/examples/support?run=run-42',
   states: '/examples/states',
   controls: '/workbench/controls',
 };
@@ -275,7 +278,10 @@ test(
     const theme = colorScheme === 'dark' ? 'dark' : 'light';
     const captured: Capture = {};
     for (const [name, arrive] of Object.entries(SCENARIOS)) {
-      await page.goto(ROUTES[name as keyof typeof SCENARIOS] ?? '/');
+      await page.goto(
+        ROUTES[name as keyof typeof SCENARIOS] ??
+          '/examples/promotion?run=run-104',
+      );
       await expect(
         READY[name as keyof typeof SCENARIOS]?.(page) ??
           page.getByRole('button', { name: 'Search processes', exact: true }),

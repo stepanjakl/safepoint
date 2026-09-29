@@ -22,7 +22,7 @@ const OPAQUE_EDGE_TOKENS = [
   '--sp-tooltip-highlight',
   '--sp-enclosure-edge',
   '--sp-accent-edge',
-  '--sp-commit-edge',
+  '--sp-commit-drag-edge',
 ] as const;
 
 const FAMILIES = ['graphite', 'steel', 'clay', 'moss', 'ash'] as const;
@@ -50,7 +50,7 @@ function designControls(page: Page) {
 }
 
 test('the neutral family follows the preference contract', async ({ page }) => {
-  await page.goto('/?neutral=steel');
+  await page.goto('/examples/promotion?neutral=steel');
   await waitForHome(page);
   const html = page.locator('html');
   await expect(html).toHaveAttribute('data-neutral', 'steel');
@@ -80,10 +80,10 @@ test('the neutral family follows the preference contract', async ({ page }) => {
 
   /* A stored choice survives a reload; an invalid URL value falls through
      to it -- including a palette name from the retired Tailwind neutrals. */
-  await page.goto('/');
+  await page.goto('/examples/promotion?run=run-104');
   await waitForHome(page);
   await expect(html).toHaveAttribute('data-neutral', 'clay');
-  await page.goto('/?neutral=zinc');
+  await page.goto('/examples/promotion?neutral=zinc');
   await waitForHome(page);
   await expect(html).toHaveAttribute('data-neutral', 'clay');
 
@@ -105,7 +105,7 @@ test('a valid URL choice works when storage is unavailable', async ({
       },
     });
   });
-  await page.goto('/?neutral=moss');
+  await page.goto('/examples/promotion?neutral=moss');
   await waitForHome(page);
   await expect(page.locator('html')).toHaveAttribute('data-neutral', 'moss');
 });
@@ -113,7 +113,7 @@ test('a valid URL choice works when storage is unavailable', async ({
 test('every neutral family paints its own ramp', async ({ page }) => {
   const canvases: Record<string, string> = {};
   for (const family of FAMILIES) {
-    await page.goto(`/?neutral=${family}`);
+    await page.goto(`/examples/promotion?neutral=${family}`);
     await waitForHome(page);
     canvases[family] = await resolvedColour(page, '--sp-canvas');
   }
@@ -123,7 +123,7 @@ test('every neutral family paints its own ramp', async ({ page }) => {
 });
 
 test('every structural edge is opaque', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/examples/promotion?run=run-104');
   await waitForHome(page);
   for (const token of OPAQUE_EDGE_TOKENS) {
     const value = await resolvedColour(page, token);
@@ -167,40 +167,29 @@ test('every painted pane or floating region hands its content its ground', async
     ],
   ];
   for (const [name, arrive] of states) {
-    await page.goto('/');
+    await page.goto('/examples/promotion?run=run-104');
     await waitForHome(page);
     await arrive(page);
     const orphans = await page.evaluate(() => {
-      const colour = (token: string) => {
-        const probe = document.createElement('span');
-        probe.style.backgroundColor = `var(${token})`;
-        document.body.append(probe);
-        const value = getComputedStyle(probe).backgroundColor;
-        probe.remove();
-        return value;
-      };
-      const faces: [string, string, string][] = [
-        [colour('--sp-surface-primary'), 'ground-raised', 'surface-raised'],
-        [
-          colour('--sp-surface-floating'),
-          'ground-floating',
-          'surface-floating',
-        ],
+      /* By the utility that paints the face, not by colour: another role can
+         land on the same step (a field on the canvas is the pane's colour). */
+      const faces: [string, string][] = [
+        ['bg-surface-primary', '.ground-raised, .surface-raised'],
+        ['bg-surface-floating', '.ground-floating, .surface-floating'],
       ];
       const found: string[] = [];
-      for (const element of document.querySelectorAll('body *')) {
-        if (!element.children.length || !element.getClientRects().length)
-          continue;
-        const paint = getComputedStyle(element).backgroundColor;
-        const face = faces.find(([value]) => value === paint);
-        if (!face) continue;
-        const ground = element.closest(
-          '.ground-raised, .ground-floating, .surface-raised, .surface-floating',
-        );
-        if (ground?.matches(`.${face[1]}, .${face[2]}`)) continue;
-        found.push(
-          `${element.tagName.toLowerCase()}.${[...element.classList].slice(0, 4).join('.')}`,
-        );
+      for (const [paint, grounds] of faces) {
+        for (const element of document.querySelectorAll(`.${paint}`)) {
+          if (!element.children.length || !element.getClientRects().length)
+            continue;
+          const ground = element.closest(
+            '.ground-raised, .ground-floating, .surface-raised, .surface-floating',
+          );
+          if (ground?.matches(grounds)) continue;
+          found.push(
+            `${element.tagName.toLowerCase()}.${[...element.classList].slice(0, 4).join('.')}`,
+          );
+        }
       }
       return found;
     });
@@ -209,7 +198,7 @@ test('every painted pane or floating region hands its content its ground', async
 });
 
 test('the primary action is flat under the pointer', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/examples/promotion?run=run-104');
   await waitForHome(page);
   const button = page.getByRole('button', { name: 'Review release' });
   await button.scrollIntoViewIfNeeded();
@@ -238,7 +227,7 @@ test('muted ink never paints on a selected surface', async ({ page }) => {
   /* The palette leaves --sp-text-muted below AA on --sp-surface-selected in
      light, which is safe only because every consumer of that fill swaps its
      ink to primary in the same rule. */
-  await page.goto('/');
+  await page.goto('/examples/promotion?run=run-104');
   await waitForHome(page);
   await page.getByRole('button', { name: 'Review release' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
@@ -342,7 +331,7 @@ const ratio = (line: string) => {
 test('state text clears AA on every surface it can sit on', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/examples/promotion?run=run-104');
   await waitForHome(page);
   const states = [
     'advisory',
@@ -374,15 +363,15 @@ test('state text clears AA on every surface it can sit on', async ({
 test('white labels hold their measured floor on the coloured faces', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/examples/promotion?run=run-104');
   await waitForHome(page);
   /* The glowing top stop is a chosen trade -- Radix fitted to Tailwind's cyan
-     and teal, about 1.9:1 in light -- so it is not held here. The bottom stop
-     and the flat hover carry the label and hold the non-text floor. */
+     and teal, about 1.9:1 in light -- so it is not held here. The bottom stop,
+     the flat Save-order face and the flat hovers hold the non-text floor. */
   const measured = await contrastOf(page, [
     ['white', '--sp-accent-face-bottom'],
     ['white', '--sp-accent-hover'],
-    ['white', '--sp-commit-face-bottom'],
+    ['white', '--sp-commit-face'],
     ['white', '--sp-commit-hover'],
   ]);
   const failing = measured.filter((line) => ratio(line) < 3);
@@ -391,7 +380,7 @@ test('white labels hold their measured floor on the coloured faces', async ({
 
 test('usable in forced colours and at a narrow viewport', async ({ page }) => {
   await page.emulateMedia({ forcedColors: 'active' });
-  await page.goto('/');
+  await page.goto('/examples/promotion?run=run-104');
   await waitForHome(page);
   const search = page.getByRole('button', {
     name: 'Search processes',

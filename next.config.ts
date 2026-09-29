@@ -10,8 +10,9 @@ import { pathToFileURL } from 'node:url';
 // `@locator/babel-jsx` transform and stamps every JSX element with
 // `data-locatorjs="<abs path>:<line>:<column>"`.
 //
-// Dev only, and never on `node_modules` — the attributes are debug metadata and
-// the Babel pass is pure overhead in a production build.
+// Dev only, never on `node_modules`, and opt-in (`pnpm dev:locator`): the
+// second Babel pass over every component slows each compile.
+const locator = process.env.LOCATOR === '1';
 const locatorLoader = {
   loader: '@locator/webpack-loader',
   options: { env: 'development' },
@@ -26,6 +27,10 @@ const nextConfig: NextConfig = {
   // a piece of the design that has to be looked at. Off entirely rather than
   // repositioned: nothing it reports is worth a corner of the shell.
   devIndicators: false,
+
+  // Webpack holds every compiled module in memory for the life of `pnpm dev`;
+  // this trades slightly slower compiles for a lower peak heap.
+  experimental: { webpackMemoryOptimizations: true },
 
   // `pnpm dev` is webpack, not Turbopack: under Turbopack Tailwind has already
   // inlined every @import, so each rule's source map names app/styles/index.css
@@ -47,11 +52,13 @@ const nextConfig: NextConfig = {
           },
         }),
       );
-      config.module.rules.push({
-        test: /\.[jt]sx$/,
-        exclude: /node_modules/,
-        use: [locatorLoader],
-      });
+      if (locator) {
+        config.module.rules.push({
+          test: /\.[jt]sx$/,
+          exclude: /node_modules/,
+          use: [locatorLoader],
+        });
+      }
     }
     return config;
   },

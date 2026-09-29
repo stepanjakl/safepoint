@@ -45,17 +45,9 @@
   }
   /* The drawer's side panel (drawer-aside.tsx). Animates on mount and on
      data-exiting rather than react-aria's states: it is part of the drawer's
-     dialog, not a dialog of its own.
-
-     Swapping items keeps the panel still -- the two contents share one grid
-     cell while they cross, travelling the way the list does. The travel is one
-     signed distance, so a direction swapped mid-flight never restarts. */
+     dialog, not a dialog of its own. Swapping items is components/ui/swap.css. */
   .drawer-aside {
-    --aside-swap-travel: 1rem;
     animation: drawer-aside-in var(--duration-pane) --theme(--ease-out-emphasized) both;
-  }
-  .drawer-aside[data-direction='up'] {
-    --aside-swap-travel: -1rem;
   }
   .drawer-aside[data-exiting] {
     pointer-events: none;
@@ -75,7 +67,7 @@
   }
   /* The content it opens with fades in once the panel is in place: delayed by
      the panel's own travel, so the two read as arriving and then filling. */
-  .drawer-aside-content[data-enter='open'] {
+  .drawer-aside-content {
     animation: drawer-aside-content-in var(--duration-state) ease-out var(--duration-pane) both;
   }
   @keyframes drawer-aside-content-in {
@@ -83,29 +75,6 @@
       opacity: 0;
     }
   }
-  /* A short delay, so the old content is mostly gone before the new one is
-     legible: two texts both readable at once in one place read as a glitch. */
-  .drawer-aside-content[data-enter='swap'] {
-    animation: drawer-aside-content-rise var(--duration-pane) --theme(--ease-out-emphasized) 60ms
-      both;
-  }
-  @keyframes drawer-aside-content-rise {
-    from {
-      opacity: 0;
-      transform: translateY(var(--aside-swap-travel));
-    }
-  }
-  .drawer-aside-leave {
-    pointer-events: none;
-    animation: drawer-aside-content-leave 120ms ease-in both;
-  }
-  @keyframes drawer-aside-content-leave {
-    to {
-      opacity: 0;
-      transform: translateY(calc(-1 * var(--aside-swap-travel)));
-    }
-  }
-
   @media (prefers-reduced-motion: reduce) {
     .drawer-overlay[data-entering]::before,
     .drawer-overlay[data-exiting]::before,
@@ -113,12 +82,8 @@
     .drawer-modal[data-exiting],
     .drawer-aside,
     .drawer-aside[data-exiting],
-    .drawer-aside-content[data-enter] {
+    .drawer-aside-content {
       animation: none;
-    }
-    /* Never shown without motion; hidden too, in case it is ever rendered. */
-    .drawer-aside-leave {
-      display: none;
     }
   }
 }

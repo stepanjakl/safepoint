@@ -10,13 +10,11 @@
 }
 
 @layer components {
-  /* Four states whose priority *is* this block's reading order:
-       holding a query  <  pointer on it  <  focused
-     Focus outranks the rest because the border is this field's only focus
-     indicator. As markup variants the order was Tailwind's emission order, and
-     hover was winning. The border spends only colour, never width. */
+  /* The field's face and edges are `field`; this adds the sidebar's own: the
+     glyph's geometry, a label colour that steps with the edge, and a field
+     that draws nothing until it holds a query or is pointed at or focused. */
   .menu-search-field {
-    @apply control-wash;
+    @apply field;
     /* The glyph's box: even, so it can centre on an integer axis. Published
        here because the inset below measures from it and the markup sizes the
        box from it -- one width, read by both. */
@@ -24,8 +22,6 @@
     /* A field's edge, heavier than a row's. Both insets below take the
        difference back, so the typed text ends where a row's status badge
        does and the glyph lands on the rail's axis. */
-    border: var(--spacing-field-edge) solid transparent;
-    border-radius: var(--radius-control);
     padding-inline-end: calc(
       var(--spacing-menu-end) - var(--spacing-field-edge) + var(--spacing-menu-edge)
     );
@@ -34,48 +30,26 @@
     padding-inline-start: calc(
       var(--spacing-menu-rail) / 2 - var(--spacing-field-edge) - var(--menu-search-glyph) / 2
     );
-    /* Held here rather than as a utility on the label, because the hover step
-       below has to outrank it and a utility never loses to this layer. The
-       glyph and the keycap both inherit it, so one declaration moves all
-       three; only the typed text opts out, at full strength. */
+    /* Held here rather than as a utility on the label, because the steps
+       below have to outrank it and a utility never loses to this layer. The
+       glyph and the keycap inherit it; only the typed text opts out. */
     color: var(--sp-text-muted);
   }
 
-  .menu-search-field ::placeholder {
-    color: var(--sp-text-muted);
-    transition: color var(--duration-state) ease-out;
-  }
-
-  /* A filtered list whose filter has gone invisible is the one state worth an
-     edge on unprompted, so a field holding a query stays lit on its own. */
-  .menu-search-field:has(input:not(:placeholder-shown)) {
-    border-color: var(--sp-field-edge);
-    background-color: var(--sp-field-face);
+  /* Empty and idle, a standing box in the list would read as a row. A filter
+     that has gone invisible is the one state worth an edge unprompted. */
+  .menu-search-field:not(:hover, :focus-within):has(input:placeholder-shown) {
+    border-color: transparent;
+    background-color: transparent;
   }
 
   .menu-search-field:hover {
-    border-color: var(--sp-field-edge-hover);
-    background-color: var(--sp-field-face);
     color: var(--sp-text-muted-strong);
   }
 
-  .menu-search-field:hover ::placeholder {
-    color: var(--sp-text-muted-strong);
-  }
-
-  /* Last of the three, so it settles the colour as well as the edge: a field
-     being typed into must not be repainted by the pointer that happens to be
-     resting on it. */
+  /* Last, so a field being typed into is not repainted by the pointer. */
   .menu-search-field:focus-within {
-    border-color: var(--sp-field-edge-active);
-    background-color: var(--sp-field-face);
     color: var(--sp-text-primary);
-  }
-
-  /* The placeholder stops one step short of primary even here. At full weight
-     it stops reading as a prompt and starts reading as something typed. */
-  .menu-search-field:focus-within ::placeholder {
-    color: var(--sp-text-muted-strong);
   }
 
   /* The browser's own clear button draws in its own colour, and only in some
@@ -83,13 +57,5 @@
   .menu-search-field input::-webkit-search-cancel-button {
     -webkit-appearance: none;
     appearance: none;
-  }
-
-  @media (forced-colors: active) {
-    /* Inset, because the band the field opens in clips at its edges. */
-    .menu-search-field:focus-within {
-      outline: 2px solid Highlight;
-      outline-offset: -2px;
-    }
   }
 }

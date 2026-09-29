@@ -1,0 +1,46 @@
+/* ── Swap ───────────────────────────────────────────────────────────────────
+   The drawer aside trades content in one spot, out then in.
+   ────────────────────────────────────────────────────────────────────────── */
+
+@layer components {
+  /* The fade-out starts at full speed: an ease-in leaves the old content
+     standing still for its first frames, which reads as a stall. */
+  .swap-leave {
+    pointer-events: none;
+    animation: swap-leave var(--duration-state) ease-out both;
+  }
+  .swap-enter[data-motion] {
+    animation: swap-enter var(--duration-pane) --theme(--ease-out-emphasized) both;
+  }
+  /* The distance the content moves, signed by where it goes; it leaves one
+     way and the next arrives from the other side. Every motion sets both axes,
+     so a swap nested in another does not inherit its distance. */
+  :is(.swap-leave, .swap-enter)[data-motion] {
+    --swap-x: 0rem;
+    --swap-y: 0rem;
+  }
+  :is(.swap-leave, .swap-enter)[data-motion='up'] {
+    --swap-y: -0.5rem;
+  }
+  :is(.swap-leave, .swap-enter)[data-motion='down'] {
+    --swap-y: 0.5rem;
+  }
+  :is(.swap-leave, .swap-enter)[data-motion='left'] {
+    --swap-x: -0.75rem;
+  }
+  :is(.swap-leave, .swap-enter)[data-motion='right'] {
+    --swap-x: 0.75rem;
+  }
+  @keyframes swap-leave {
+    to {
+      opacity: 0;
+      translate: var(--swap-x) var(--swap-y);
+    }
+  }
+  @keyframes swap-enter {
+    from {
+      opacity: 0;
+      translate: calc(-1 * var(--swap-x)) calc(-1 * var(--swap-y));
+    }
+  }
+}

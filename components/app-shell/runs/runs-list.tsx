@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import { useInstructions } from '@/components/app-shell/instructions/instructions-store';
 import { RunRow } from './run-row';
+import { useRunSelection } from './run-selection';
 import type { ProcessSummary } from '@/lib/process/model';
 
 /*
@@ -28,15 +28,9 @@ export function RunsList({
   onShowVersion?: (version: string) => void;
 }) {
   const { versions } = useInstructions(process.id, process.instructions);
-  /*
-    Which run the rail is on. Placeholder, and deliberately local: only the
-    current run has a recorded thread, so choosing another marks the rail and
-    leaves the page beside it alone. When runs carry their own threads this
-    becomes the thing the page is rendered from, and the state moves up to the
-    sheet with it.
-  */
-  const [selected, setSelected] = useState<string | null>(null);
-  const current = selected ?? process.runs.find((run) => run.current)?.id;
+  // Which run the rail is on, shared with the page beside it (run-selection).
+  const selection = useRunSelection();
+  const runs = selection?.runs ?? process.runs;
   // When each version was published, for the boundary between the runs on
   // either side of it. The stored label leads with its own verb -- "Updated
   // 24 Aug 2026" -- and the boundary supplies that word itself.
@@ -49,11 +43,11 @@ export function RunsList({
 
   return (
     <ol className="sheet-list">
-      {process.runs.map((run, index) => {
+      {runs.map((run, index) => {
         // The list runs newest first, so the run after this one in the array
         // is the older one: a version change between them is the moment the
         // instructions moved.
-        const older = process.runs[index + 1];
+        const older = runs[index + 1];
         const boundary =
           older && older.instructionsVersion !== run.instructionsVersion
             ? run.instructionsVersion
@@ -63,8 +57,8 @@ export function RunsList({
             <RunRow
               run={run}
               noun={process.itemNoun}
-              selected={run.id === current}
-              onSelect={() => setSelected(run.id)}
+              selected={run.id === selection?.selected}
+              onSelect={selection ? () => selection.select(run.id) : undefined}
             />
             {boundary ? (
               <Boundary

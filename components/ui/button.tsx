@@ -20,7 +20,7 @@ export type Slant = 'left' | 'right' | 'both';
 // gradient stops it animates are its own contract. The hairline sheen because
 // at this size a full pixel of white inside the ring reads as a second edge.
 const base =
-  'control-hairline inline-flex min-w-11 items-center justify-center gap-2 px-3.5 text-dense font-medium whitespace-nowrap data-[disabled]:cursor-not-allowed data-[disabled]:control-off data-[disabled]:text-muted';
+  'control-hairline inline-flex min-w-11 items-center justify-center gap-2 text-dense font-medium whitespace-nowrap data-[disabled]:cursor-not-allowed data-[disabled]:control-off data-[disabled]:text-muted';
 
 /*
   Each variant in two halves: the stops, which say what colour the face is in
@@ -103,12 +103,15 @@ const SLANT_LAYERS = (
 export function Button({
   variant = 'secondary',
   slant,
+  pill = false,
   className,
   children,
   ...props
 }: ButtonProps & {
   variant?: Variant;
   slant?: Slant;
+  // Fully rounded: a call to action that stands alone, not in a toolbar.
+  pill?: boolean;
   className?: string;
   ref?: Ref<HTMLButtonElement>;
 }) {
@@ -124,10 +127,14 @@ export function Button({
       className={cx(
         base,
         faces[variant].className,
-        // Height with the shape, not in `base`: a slant's is a token sized to
-        // the header it sits in, and two height utilities on one element
-        // would be settled by stylesheet order.
-        slant ? 'slant h-(--slant-height)' : `${shapes[variant]} h-9`,
+        // Size with the shape, not in `base`: a slant's height is a token
+        // sized to its header, a pill is a size tighter, and two utilities for
+        // one property would be settled by stylesheet order.
+        slant
+          ? 'slant h-(--slant-height) px-3.5'
+          : pill
+            ? 'control-face h-8 rounded-full px-3'
+            : `${shapes[variant]} h-9 px-3.5`,
         className,
       )}
     >
@@ -164,10 +171,8 @@ export const ICON_SHAPE =
   The quiet face: a wash on hover or keyboard focus, nothing at rest. The two
   are one state -- the app draws no focus outline of its own, so focus is this
   wash (see :focus-visible in app/styles/base.css). It carries the transition,
-  so a square that swaps this out for control-face -- the sidebar's Save-order
-  button does exactly that -- is left with control-face's own timing rather
-  than a `transition-colors` that names none of the gradient stops and so
-  snaps every one of them.
+  so a pressed or open square recolours the same background -- the sidebar's
+  Save-order and search toggles -- rather than adding a face that would trail it.
 */
 export const ICON_QUIET =
   'control-wash text-header-ink hover:bg-surface-selected hover:text-header-ink-hover focus-visible:bg-surface-selected focus-visible:text-header-ink-hover';

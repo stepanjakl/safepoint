@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import type { RefObject } from 'react';
 
 import { Glyph } from '@/components/ui/glyph';
@@ -30,12 +31,14 @@ export function LineDetail({
 }) {
   const outcome = outcomeMarker[detail.outcome];
   const eligibility = eligibilityMarker[detail.policy.eligibility];
+  const pathname = usePathname();
 
   return (
     <article className="@container">
       <div className="border-rule-strong border-b px-4 py-3">
         <Link
-          href="/"
+          // The same process with no item open.
+          href={pathname}
           scroll={false}
           className="text-meta text-muted mb-2 inline-flex min-h-6 items-center gap-1 underline-offset-4 hover:underline focus-visible:underline @3xl:hidden"
         >

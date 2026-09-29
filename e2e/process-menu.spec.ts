@@ -13,7 +13,7 @@ function menuLink(page: Page, name: string) {
 }
 
 async function openHome(page: Page) {
-  await page.goto('/');
+  await page.goto('/examples/promotion?run=run-104');
   await expect(
     page.getByRole('button', { name: 'Search processes', exact: true }),
   ).toBeVisible();
@@ -97,6 +97,12 @@ test('travelling between levels moves focus to the arrival control', async ({
   await page
     .getByRole('button', { name: 'Back to workspace menu', exact: true })
     .click();
+  await expect(page).toHaveURL(/\/workspace$/);
+  await expect(
+    page.getByRole('heading', {
+      name: 'An agent proposes a change. You make the call. Safepoint applies only what you approve.',
+    }),
+  ).toBeVisible();
   await expect(
     page.getByRole('navigation', { name: 'Workspace' }),
   ).toBeVisible();
@@ -111,6 +117,9 @@ test('travelling between levels moves focus to the arrival control', async ({
   await expect(
     page.getByRole('button', { name: 'Back to workspace menu', exact: true }),
   ).toBeFocused();
+  await expect(
+    page.getByRole('heading', { name: /An agent proposes a change/ }),
+  ).toBeVisible();
 
   // ⌘K from the workspace level travels back and lands in the field.
   await page
@@ -120,6 +129,72 @@ test('travelling between levels moves focus to the arrival control', async ({
   await expect(
     page.getByRole('searchbox', { name: 'Search processes' }),
   ).toBeFocused();
+
+  await menuLink(page, 'Support handoff').click();
+  await expect(page).toHaveURL(/\/examples\/support$/);
+  await page.goBack();
+  await expect(page).toHaveURL(/\/workspace$/);
+  await expect(
+    page.getByRole('navigation', { name: 'Workspace' }),
+  ).toBeVisible();
+});
+
+test('the first workspace visit reveals navigation after the intro', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/workspace');
+
+  const shell = page.locator('.resizable-shell');
+  const handle = page.locator('.sidebar-handle[data-side="left"]');
+  const navigation = page.locator('.sidebar-navigation');
+  const processes = page.locator('.workspace-menu-shine');
+
+  await expect(shell).toHaveAttribute('data-workspace-reveal', 'waiting');
+  await expect(navigation).toHaveAttribute('inert', '');
+  await expect(handle).toBeHidden();
+  await expect(handle).toHaveAttribute('tabindex', '-1');
+  const inset = await shell.evaluate((root) => {
+    const pane = root.querySelector('.ground-raised.rounded-shell');
+    if (!pane) throw new Error('Workspace pane not found');
+    const shellBox = root.getBoundingClientRect();
+    const paneBox = pane.getBoundingClientRect();
+    return {
+      left: paneBox.left - shellBox.left,
+      right: shellBox.right - paneBox.right,
+      top: paneBox.top - shellBox.top,
+    };
+  });
+  expect(inset.left).toBeCloseTo(inset.right);
+  expect(inset.left).toBeCloseTo(inset.top);
+
+  await expect(shell).toHaveAttribute('data-workspace-reveal', 'opening', {
+    timeout: 12_000,
+  });
+  await expect(handle).toBeHidden();
+  await expect(shell).not.toHaveAttribute('data-workspace-reveal');
+  await expect(navigation).not.toHaveAttribute('inert');
+  await expect(handle).toBeVisible();
+  await expect(handle).toHaveAttribute('tabindex', '0');
+  await expect(processes).toHaveAttribute('data-shine', 'true');
+});
+
+test('the brand mark turns on hover and settles back into place', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await openHome(page);
+
+  const mark = page.locator('.sidebar-navigation [aria-label="Safepoint"] svg');
+  const animatedMark = mark.locator('..');
+  const rotation = () =>
+    animatedMark.evaluate(
+      (element) => new DOMMatrix(getComputedStyle(element).transform).b,
+    );
+
+  await mark.hover();
+  await expect.poll(rotation, { timeout: 2_500 }).toBeLessThan(-0.5);
+  await expect.poll(rotation, { timeout: 2_500 }).toBeCloseTo(0, 2);
 });
 
 test('arranging by keyboard reorders, keeps focus, and saves', async ({

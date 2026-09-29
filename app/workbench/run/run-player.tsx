@@ -3,7 +3,11 @@
 import { useEffect, useState, type ComponentProps } from 'react';
 
 import { RunThread } from '@/components/app-shell/thread/run-thread';
-import type { ThreadLook } from '@/components/app-shell/thread/thread-step';
+import {
+  RunningRing,
+  SegmentedRing,
+  type ThreadLook,
+} from '@/components/app-shell/thread/thread-step';
 import { Button } from '@/components/ui/button';
 import {
   RUN_STAGE_LABELS,
@@ -38,6 +42,7 @@ export function RunWorkbench({ thread }: { thread: Thread }) {
   const [look, setLook] = useState<ThreadLook>('proposed');
   return (
     <>
+      <LoadingMarks />
       <div className="flex flex-wrap items-center gap-3">
         <p className="readout text-muted" id="look">
           Thread look
@@ -72,6 +77,52 @@ export function RunWorkbench({ thread }: { thread: Thread }) {
         </div>
       </section>
     </>
+  );
+}
+
+const TURN_OPTIONS: { count: 3 | 4; label: string }[] = [
+  { count: 4, label: '4 arcs · quarter turn' },
+  { count: 3, label: '3 arcs · third turn' },
+];
+
+function LoadingMarks() {
+  return (
+    <section aria-labelledby="loading-marks" className="grid gap-6">
+      <div className="grid gap-1">
+        <h2 id="loading-marks" className="text-title font-semibold">
+          Running mark options
+        </h2>
+        <p className="text-meta text-muted">
+          The arcs light in order, beat once, then dim. The outer shape turns
+          while they are dark, and the next cycle starts as the turn ends.
+        </p>
+      </div>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(10rem,1fr))] gap-3">
+        <figure className="bg-surface-primary rounded-shell grid justify-items-center gap-3 p-6">
+          <div className="thread workbench-mark-preview" aria-hidden="true">
+            <span className="thread-dot" data-status="running">
+              <RunningRing />
+            </span>
+          </div>
+          <figcaption className="text-meta text-muted">
+            Original loader
+          </figcaption>
+        </figure>
+        {TURN_OPTIONS.map(({ count, label }) => (
+          <figure
+            key={label}
+            className="bg-surface-primary rounded-shell grid justify-items-center gap-3 p-6"
+          >
+            <div className="thread workbench-mark-preview" aria-hidden="true">
+              <span className="thread-dot" data-status="running">
+                <SegmentedRing count={count} />
+              </span>
+            </div>
+            <figcaption className="text-meta text-muted">{label}</figcaption>
+          </figure>
+        ))}
+      </div>
+    </section>
   );
 }
 

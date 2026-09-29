@@ -154,14 +154,14 @@ describe('review regressions', () => {
     expect(markup).not.toContain('are awaiting a decision.');
   });
 
-  // Said once, in the header, where it is read first. The card used to say it
-  // in a pill, again beside the button, and a third time in the thread.
-  it('states the replay safety line once, in replay words', () => {
+  // The card has no header: whether anything was applied is the page's to say
+  // (the demo notice), and the card used to repeat it in a pill, beside the
+  // button and in the thread.
+  it('leaves the replay safety line to the page', () => {
     const markup = renderToStaticMarkup(
       <ReleaseCard plan={gallery('All clear')} onOpen={() => {}} />,
     );
-    expect(markup.match(/nothing applied/gi)).toHaveLength(1);
-    expect(markup).toContain('Replay · nothing applied');
+    expect(markup).not.toMatch(/nothing applied/i);
     expect(markup).not.toContain('until you apply it');
   });
 

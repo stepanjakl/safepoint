@@ -9,6 +9,7 @@
   "packageManager": "pnpm@10.34.5",
   "scripts": {
     "dev": "next dev --webpack",
+    "dev:locator": "LOCATOR=1 next dev --webpack",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",

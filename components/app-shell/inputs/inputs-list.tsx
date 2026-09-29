@@ -69,7 +69,7 @@ export function InputsList({
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Filter inputs"
           aria-label="Filter inputs"
-          className="text-dense text-primary placeholder:text-muted border-rule-default bg-surface-inset rounded-control min-h-9 w-full border px-3"
+          className="field text-dense text-primary min-h-9 w-full px-3"
         />
       ) : null}
       <Group

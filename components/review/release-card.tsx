@@ -1,10 +1,12 @@
 'use client';
 
+// Deep import: Blode's barrel is the whole icon library.
+import SparklesTwoFilled from 'blode-icons-react/icons/sparkles-two-filled';
 import { styleDebug } from '@/lib/style-debug';
-import { useId } from 'react';
+import { useContext, useId } from 'react';
+import { AssistantContext } from '@/components/app-shell/assistant/assistant-state';
 import { Button } from '@/components/ui/button';
-import { Glyph, type GlyphName } from '@/components/ui/glyph';
-import type { Tone } from '@/components/ui/status-label';
+import { Glyph } from '@/components/ui/glyph';
 import type { ReleasePlan } from '@/lib/review/plan-contract';
 import {
   appliedSummary,
@@ -17,8 +19,12 @@ import {
   type ReviewProgress,
 } from '@/lib/review/plan-derivations';
 import { cx } from '@/lib/cx';
-import { toneText } from './markers';
-import { Buckets, nounFor, type OpenReview } from './release-buckets';
+import {
+  Buckets,
+  CARD_HEAD,
+  nounFor,
+  type OpenReview,
+} from './release-buckets';
 
 /*
   Class sets the card reuses. Named here rather than repeated because each is
@@ -28,77 +34,24 @@ import { Buckets, nounFor, type OpenReview } from './release-buckets';
 
 // One step above the pane it sits on: the first thing found, not another panel
 // on the same plane. `@container` makes the card the query root for its zones.
+// No header: the step names the review and the page names the run, so the
+// card opens on what the batch needs.
 const CARD =
-  'control-face surface-floating @container data-[danger]:border-state-blocked overflow-clip rounded-shell';
-const EDGE = 'px-6 @max-card:px-4';
-const BODY = 'p-6 @max-card:px-4 @max-card:py-5';
-// The verdict is the headline: the batch is already named by the page and by
-// the card's header, so the one large line says what the batch needs.
-const VERDICT = 'text-display [font-weight:550] text-pretty';
+  'control-face surface-floating @container overflow-clip rounded-shell';
+
+// The verdict leads the card, at the size of a panel's title rather than a
+// page's: it sits inside a step, inside a run.
+const VERDICT = 'text-title [font-weight:550] text-pretty';
 const RECEIPT_NOTE = 'text-muted mt-1 text-meta';
-const HEADER_ROW =
-  'border-rule-faint shadow-separator-bottom-solid flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b py-3 text-meta';
 
-// Whether anything has been applied, said once, in the header, where it is
-// read before anything else. A reassurance is not a warning, so it carries the
-// run's mode mark rather than the caution tone.
-function modeOf(plan: ReleasePlan): {
-  glyph: GlyphName;
-  tone: Tone;
-  label: string;
-} {
-  const replay = plan.mode === 'replay';
-  const applied =
-    plan.status.kind === 'applied' || plan.status.kind === 'partially_applied';
-  if (applied)
-    return replay
-      ? {
-          glyph: 'diamond',
-          tone: 'simulated',
-          label: 'Replay · simulated receipt',
-        }
-      : { glyph: 'check', tone: 'verified', label: 'Applied' };
-  return replay
-    ? { glyph: 'diamond', tone: 'simulated', label: 'Replay · nothing applied' }
-    : { glyph: 'dotted', tone: 'preview', label: 'Preview · nothing applied' };
-}
-
-// Zone 1. The batch's name, and whether anything has changed because of it.
-function Header({ plan, titleId }: { plan: ReleasePlan; titleId: string }) {
-  const mode = modeOf(plan);
-  return (
-    <div className={cx(HEADER_ROW, EDGE)}>
-      <span
-        id={titleId}
-        className="text-muted min-w-0 [overflow-wrap:anywhere]"
-      >
-        {plan.title}
-      </span>
-      <span
-        {...styleDebug({ component: 'ReleaseCard', part: 'mode' })}
-        className="text-muted inline-flex items-center gap-1.5 whitespace-nowrap"
-      >
-        <span className={toneText[mode.tone]}>
-          <Glyph name={mode.glyph} size={10} />
-        </span>
-        {mode.label}
-      </span>
-    </div>
-  );
-}
-
-// Inside the card, under its header, because it invalidates everything below
-// it, counts included.
+// First in the card, because it invalidates everything below it, counts
+// included.
 function StaleRow({ plan }: { plan: ReleasePlan }) {
   if (plan.status.kind !== 'stale') return null;
   const n = plan.status.changedEffectIds.length;
   return (
     <p
-      className={cx(
-        HEADER_ROW,
-        EDGE,
-        'text-state-caution text-dense justify-start',
-      )}
+      className="text-state-caution text-dense mb-3 flex items-center gap-1.5"
       role="status"
     >
       <Glyph name="triangle" size={10} />
@@ -110,9 +63,13 @@ function StaleRow({ plan }: { plan: ReleasePlan }) {
   );
 }
 
-const ACTION_ROW =
-  'mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 [&>button]:min-h-11';
-const ACTION_NOTE = 'text-muted text-meta min-w-0';
+// The footer: the card's actions, under the rows' last rule.
+const ACTION_ROW = 'flex flex-wrap items-center gap-2 px-6 py-4 @max-card:px-4';
+const ACTION_NOTE = 'text-muted text-meta ml-2 min-w-0';
+
+// A button's icon after its label and a shade under it, as the run tallies
+// quiet the words beside their counts.
+const BUTTON_ICON = 'opacity-75';
 
 function ReviewButton({
   label,
@@ -124,9 +81,33 @@ function ReviewButton({
   variant?: 'primary' | 'secondary';
 }) {
   return (
-    <Button variant={variant} onPress={() => onOpen()}>
+    <Button variant={variant} pill onPress={() => onOpen()}>
       {label}
-      <span aria-hidden="true">↗</span>
+      <span aria-hidden="true" className={BUTTON_ICON}>
+        ↗
+      </span>
+    </Button>
+  );
+}
+
+// A question about the batch, never a decision on it: the assistant opens with
+// it written. Absent where there is no shell to hold an assistant.
+function AskButton() {
+  const assistant = useContext(AssistantContext);
+  if (!assistant) return null;
+  return (
+    <Button
+      pill
+      onPress={() =>
+        assistant.ask('What needs my attention in this release, and why?')
+      }
+    >
+      Ask about this release
+      <SparklesTwoFilled
+        aria-hidden
+        size={14}
+        className={cx(BUTTON_ICON, 'flex-none')}
+      />
     </Button>
   );
 }
@@ -178,7 +159,7 @@ function CardAction({
       <div className={ACTION_ROW}>
         {live ? (
           <>
-            <Button variant="primary" onPress={onCommit}>
+            <Button variant="primary" pill onPress={onCommit}>
               Commit approved changes
             </Button>
             <ReviewButton
@@ -190,6 +171,7 @@ function CardAction({
         ) : (
           <ReviewButton label={plan.reviewLabel} onOpen={onOpen} />
         )}
+        <AskButton />
         <p className={ACTION_NOTE}>
           {summary}
           {live ? '' : '. Commit is not available in replay.'}
@@ -202,6 +184,7 @@ function CardAction({
     return (
       <div className={ACTION_ROW}>
         <ReviewButton label="Continue review" onOpen={onOpen} />
+        <AskButton />
         <p className={ACTION_NOTE}>
           <span className="value text-primary">{progress.decided}</span> of{' '}
           <span className="value text-primary">{needingAttention(counts)}</span>{' '}
@@ -221,6 +204,7 @@ function CardAction({
         }
         onOpen={onOpen}
       />
+      <AskButton />
     </div>
   );
 }
@@ -236,12 +220,10 @@ export function ReleaseCard({
   onOpen: OpenReview;
   onCommit?: () => void;
 }) {
-  const titleId = useId();
   const verdictId = useId();
   const state = planState(plan);
   const counts = evaluationCounts(plan.effects);
   const receipt = appliedSummary(plan);
-  const labelledBy = `${titleId} ${verdictId}`;
 
   // Nothing to do is not a card. One muted line in the thread.
   if (state === 'empty') {
@@ -260,10 +242,9 @@ export function ReleaseCard({
           appearance: 'surface-floating',
         })}
         className={CARD}
-        aria-labelledby={labelledBy}
+        aria-labelledby={verdictId}
       >
-        <Header plan={plan} titleId={titleId} />
-        <div className={BODY}>
+        <div className={CARD_HEAD}>
           <h2 id={verdictId} className={VERDICT}>
             Evaluation stopped at step {plan.status.step} of {plan.status.of}.
           </h2>
@@ -281,10 +262,9 @@ export function ReleaseCard({
           appearance: 'surface-floating',
         })}
         className={CARD}
-        aria-labelledby={labelledBy}
+        aria-labelledby={verdictId}
       >
-        <Header plan={plan} titleId={titleId} />
-        <div className={BODY}>
+        <div className={CARD_HEAD}>
           <h2
             id={verdictId}
             className={cx(VERDICT, 'flex items-baseline gap-2.5')}
@@ -294,14 +274,14 @@ export function ReleaseCard({
             </span>
             <span>{attentionLine(counts, plan.noun)}</span>
           </h2>
-          <CardAction
-            plan={plan}
-            counts={counts}
-            progress={progress}
-            onOpen={onOpen}
-            onCommit={onCommit}
-          />
         </div>
+        <CardAction
+          plan={plan}
+          counts={counts}
+          progress={progress}
+          onOpen={onOpen}
+          onCommit={onCommit}
+        />
       </article>
     );
   }
@@ -315,48 +295,58 @@ export function ReleaseCard({
         appearance: 'surface-floating',
       })}
       className={CARD}
-      data-danger={blockedOnly || undefined}
-      aria-labelledby={labelledBy}
+      aria-labelledby={verdictId}
     >
-      <Header plan={plan} titleId={titleId} />
-      <StaleRow plan={plan} />
-      <div className={BODY}>
-        {receipt ? (
-          <div>
-            <h2 id={verdictId} className={VERDICT}>
-              Applied {receipt.applied} of {receipt.total}{' '}
-              {nounFor(plan, receipt.total)}.
-            </h2>
-            {plan.status.kind === 'partially_applied' ? (
-              <p className={RECEIPT_NOTE}>
-                {plan.status.failures[0]!.reason}
-                {plan.status.failures.length > 1
-                  ? ` · ${plan.status.failures.length} failures`
-                  : ''}
-              </p>
-            ) : null}
-            <p className={RECEIPT_NOTE}>
-              {plan.status.kind === 'applied' ||
-              plan.status.kind === 'partially_applied'
-                ? plan.status.at
-                : ''}
-              {plan.mode === 'replay' ? ' · No external record changed.' : ''}
-            </p>
-          </div>
-        ) : (
-          <h2 id={verdictId} className={VERDICT}>
-            {attentionLine(counts, plan.noun)}
-          </h2>
-        )}
-        <Buckets plan={plan} counts={counts} onOpen={onOpen} />
-        <CardAction
-          plan={plan}
-          counts={counts}
-          progress={progress}
-          onOpen={onOpen}
-          onCommit={onCommit}
-        />
-      </div>
+      <Buckets
+        plan={plan}
+        counts={counts}
+        onOpen={onOpen}
+        lead={
+          <>
+            <StaleRow plan={plan} />
+            {receipt ? (
+              <div>
+                <h2 id={verdictId} className={VERDICT}>
+                  Applied {receipt.applied} of {receipt.total}{' '}
+                  {nounFor(plan, receipt.total)}.
+                </h2>
+                {plan.status.kind === 'partially_applied' ? (
+                  <p className={RECEIPT_NOTE}>
+                    {plan.status.failures[0]!.reason}
+                    {plan.status.failures.length > 1
+                      ? ` · ${plan.status.failures.length} failures`
+                      : ''}
+                  </p>
+                ) : null}
+                <p className={RECEIPT_NOTE}>
+                  {plan.status.kind === 'applied' ||
+                  plan.status.kind === 'partially_applied'
+                    ? plan.status.at
+                    : ''}
+                  {plan.mode === 'replay'
+                    ? ' · No external record changed.'
+                    : ''}
+                </p>
+              </div>
+            ) : (
+              // Nothing can go out: the verdict itself carries the blocked tone.
+              <h2
+                id={verdictId}
+                className={cx(VERDICT, blockedOnly && 'text-state-blocked')}
+              >
+                {attentionLine(counts, plan.noun)}
+              </h2>
+            )}
+          </>
+        }
+      />
+      <CardAction
+        plan={plan}
+        counts={counts}
+        progress={progress}
+        onOpen={onOpen}
+        onCommit={onCommit}
+      />
     </article>
   );
 }

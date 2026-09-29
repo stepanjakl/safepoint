@@ -1,3 +1,5 @@
+import type { ReactElement } from 'react';
+
 const ROTATIONAL_PATHS = {
   'balanced-radial':
     'M503 75C522 75 537 81 553 92L700 194C729 214 744 241 744 275V373C744 398 735 416 714 430L579 517C567 525 556 526 546 521C533 515 527 504 527 489V282C527 267 517 258 503 258C489 258 479 267 479 282V489C479 504 473 515 460 521C450 526 439 525 427 517L292 430C271 416 262 398 262 373V275C262 241 277 214 306 194L453 92C469 81 484 75 503 75Z',
@@ -10,9 +12,11 @@ export type BiomorphicVariant = keyof typeof ROTATIONAL_PATHS;
 export function BiomorphicSymbol({
   variant,
   className,
+  renderPiece,
 }: {
   variant: BiomorphicVariant;
   className?: string;
+  renderPiece?: (piece: ReactElement, index: number) => ReactElement;
 }) {
   return (
     <svg
@@ -23,13 +27,19 @@ export function BiomorphicSymbol({
       viewBox="-73 14 1152 1152"
     >
       {/* The square frame shares the rotation centre; 590 keeps the lobes apart. */}
-      {[0, 120, 240].map((rotation) => (
-        <path
-          key={rotation}
-          d={ROTATIONAL_PATHS[variant]}
-          transform={`rotate(${rotation} 503 590)`}
-        />
-      ))}
+      {[0, 120, 240].map((rotation, index) =>
+        renderPiece ? (
+          <g key={rotation} transform={`rotate(${rotation} 503 590)`}>
+            {renderPiece(<path d={ROTATIONAL_PATHS[variant]} />, index)}
+          </g>
+        ) : (
+          <path
+            key={rotation}
+            d={ROTATIONAL_PATHS[variant]}
+            transform={`rotate(${rotation} 503 590)`}
+          />
+        ),
+      )}
     </svg>
   );
 }

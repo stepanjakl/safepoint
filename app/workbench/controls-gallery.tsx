@@ -91,6 +91,7 @@ export function ControlsGallery({
     open: false,
     toggle: () => {},
     close: () => {},
+    ask: () => {},
     opener,
   };
   return (
@@ -128,6 +129,50 @@ export function ControlsGallery({
               )}
             />
           ))}
+        </div>
+      </Section>
+
+      <Section title="Field">
+        <div className={GRID}>
+          <StateHeadings />
+          {['', 'Promotion'].map((value) => (
+            <StateRow
+              key={value}
+              name={value ? 'holding a value' : 'empty'}
+              render={(disabled) => (
+                <input
+                  aria-label="Filter"
+                  placeholder="Filter inputs"
+                  defaultValue={value}
+                  disabled={disabled}
+                  className="field text-dense text-primary min-h-9 w-full px-3"
+                />
+              )}
+            />
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Thread reference">
+        <div className={GRID}>
+          <StateHeadings />
+          <StateRow
+            name="opens a tab"
+            render={(disabled) => (
+              // The pill's size is a thread measure, so it is drawn in one.
+              <div className="thread">
+                <span className="thread-step-facts">
+                  <button
+                    type="button"
+                    className="thread-step-link"
+                    disabled={disabled}
+                  >
+                    Instructions v4<span aria-hidden="true">↗</span>
+                  </button>
+                </span>
+              </div>
+            )}
+          />
         </div>
       </Section>
 

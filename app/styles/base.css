@@ -3,6 +3,12 @@
    ────────────────────────────────────────────────────────────────────────── */
 
 @layer base {
+  /* @supports (corner-shape: superellipse(1.16)) {
+    :where(*, *::before, *::after) {
+      corner-shape: superellipse(1.16);
+    }
+  } */
+
   html {
     background-color: var(--sp-canvas);
     color: var(--sp-text-primary);

@@ -8,6 +8,63 @@
   --sp-menu-tile-face-hover: transparent;
   --sp-menu-tile-ring-hover: transparent;
   --sp-menu-tile-highlight-hover: transparent;
+  /* Match the Processes glyph after its shared saturation cap is applied. */
+  --sp-menu-shine: light-dark(
+    oklch(
+      from var(--radix-yellow-11) l
+        min(c, calc(var(--tile-chroma-glyph-light) * var(--tile-chroma-scale))) h
+    ),
+    oklch(
+      from var(--radix-yellow-dark-11) l
+        min(c, calc(var(--tile-chroma-glyph-dark) * var(--tile-chroma-scale))) h
+    )
+  );
+}
+
+@layer components {
+  /* Run the sweep only in the expanded, visible workspace menu. */
+  :where(
+      .resizable-shell:not([data-collapsed]):not([data-resizing])
+        .process-menu-fade[data-level='workspace']
+    )
+    .workspace-menu-shine[data-shine] {
+    background-image: linear-gradient(
+      45deg,
+      var(--sp-menu-link) 33%,
+      var(--sp-menu-shine) 46%,
+      var(--sp-menu-shine) 54%,
+      var(--sp-menu-link) 67%
+    );
+    background-size: 200% auto;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: workspace-menu-shine 1.4s linear infinite alternate;
+  }
+
+  .workspace-menu-shine:not([data-shine]) {
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    animation: none;
+  }
+
+  @keyframes workspace-menu-shine {
+    0%,
+    10% {
+      background-position: 150% center;
+    }
+    90%,
+    100% {
+      background-position: -50% center;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce), (forced-colors: active) {
+    .workspace-menu-shine[data-shine] {
+      background: none;
+      -webkit-text-fill-color: currentColor;
+      animation: none;
+    }
+  }
 }
 
 /* ── Menu tiles ─────────────────────────────────────────────────────────────

@@ -95,6 +95,30 @@ export function processNavigationItem({
 */
 export const PROCESS_ORDER_KEY = 'safepoint.process-order.v1';
 
+/*
+  The process last open, by id, which the root opens. A cookie, so the server
+  can redirect before anything is drawn; written by the process sheet.
+*/
+export const LAST_PROCESS_KEY = 'safepoint.last-process.v1';
+
+/**
+ * The process the root opens: the one last open, else the first in the
+ * reader's order with a run awaiting review, else the first.
+ */
+export function landingProcess(
+  processes: { id: string; awaitingReview: boolean }[],
+  savedOrder: string | null,
+  last: string | null,
+): string | undefined {
+  const ids = processes.map((process) => process.id);
+  if (last && ids.includes(last)) return last;
+  const order = restoreProcessOrder(ids, savedOrder);
+  const waiting = new Set(
+    processes.filter((process) => process.awaitingReview).map((p) => p.id),
+  );
+  return order.find((id) => waiting.has(id)) ?? order[0];
+}
+
 /** Keep known saved IDs, drop duplicates, and append newly available processes. */
 export function restoreProcessOrder(
   ids: string[],

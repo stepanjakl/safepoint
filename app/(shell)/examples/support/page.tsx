@@ -11,7 +11,10 @@ import { ReplayReview } from '@/components/review/replay-review';
 import { supportProcess } from '@/lib/process/placeholder-process';
 import { supportPlan } from '@/lib/review/support-fixture';
 
-export default function SupportExamplePage() {
+export default async function SupportExamplePage({
+  searchParams,
+}: PageProps<'/examples/support'>) {
+  const run = (await searchParams).run;
   const steps = supportProcess.steps ?? [];
   const boxes: Record<string, ReactNode> = {
     request: (
@@ -23,15 +26,18 @@ export default function SupportExamplePage() {
     ),
     analysis: <InitialAnalysis analysis={supportProcess.analysis} />,
     review: (
-      <ResponseSection caption="Synthetic example · Recorded checks · No cases moved or messages sent">
+      <ResponseSection>
         <ReplayReview plan={supportPlan} />
       </ResponseSection>
     ),
   };
 
   return (
-    <ProcessView process={supportProcess}>
-      <ThreadPage eyebrow="Support operations" title="Morning handoff">
+    <ProcessView
+      process={supportProcess}
+      initialRunId={typeof run === 'string' ? run : null}
+    >
+      <ThreadPage label="Handoff, Mon 7 Sep · 09:00">
         <ol className="thread">
           {steps.map((step, index) => (
             <ThreadStep

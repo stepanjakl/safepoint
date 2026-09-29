@@ -9,9 +9,14 @@ import {
   PROCESS_ORDER_KEY,
   processNavigationItem,
 } from '@/lib/process/navigation';
+import { processHref } from '@/lib/process/routes';
 import { presentPromotionPlan } from '@/lib/review/promotion-adapter';
 import { supportPlan } from '@/lib/review/support-fixture';
 import { ProcessMenu } from '@/components/app-shell/sidebar/process-menu';
+import {
+  ShellPageTransition,
+  ShellPageTransitionProvider,
+} from './shell-page-transition';
 import { ResizableShell } from './resizable-shell';
 
 export async function AppShell({ children }: { children: ReactNode }) {
@@ -22,22 +27,23 @@ export async function AppShell({ children }: { children: ReactNode }) {
   const items = [
     processNavigationItem({
       id: promotionProcess.id,
-      href: '/',
+      href: processHref(promotionProcess.id),
       name: promotionProcess.name,
       plan: presentPromotionPlan(loadReviewedReplay()),
     }),
     processNavigationItem({
       id: supportProcess.id,
-      href: '/examples/support',
+      href: processHref(supportProcess.id),
       name: supportProcess.name,
       plan: supportPlan,
     }),
   ];
   return (
-    <ResizableShell
-      navigation={<ProcessMenu items={items} initialOrder={savedOrder} />}
-    >
-      {/*
+    <ShellPageTransitionProvider>
+      <ResizableShell
+        navigation={<ProcessMenu items={items} initialOrder={savedOrder} />}
+      >
+        {/*
         A containing block for its descendants. Absolutely positioned content --
         every sr-only span among it -- otherwise resolves against the initial
         containing block, escapes the clipping here, and drags the document's
@@ -63,13 +69,14 @@ export async function AppShell({ children }: { children: ReactNode }) {
         With the inset one level down, the face keeps the whole box and the
         content alone steps in, past the ring rather than onto it.
       */}
-      <div className="ground-raised rounded-shell shell:h-full shell:overflow-hidden relative isolate min-w-0 overflow-clip has-[.notch]:rounded-tr-none">
-        <div
-          aria-hidden="true"
-          className="control-face surface-raised rounded-shell pointer-events-none absolute inset-0 -z-10"
-        />
-        <div className="p-pane-inset shell:h-full min-w-0">{children}</div>
-      </div>
-    </ResizableShell>
+        <div className="ground-raised rounded-shell shell:h-full shell:overflow-hidden relative isolate min-w-0 overflow-clip has-[.notch]:rounded-tr-none">
+          <div
+            aria-hidden="true"
+            className="control-face surface-raised rounded-shell pointer-events-none absolute inset-0 -z-10"
+          />
+          <ShellPageTransition>{children}</ShellPageTransition>
+        </div>
+      </ResizableShell>
+    </ShellPageTransitionProvider>
   );
 }

@@ -1,33 +1,41 @@
 import type { ReactNode } from 'react';
 
 /*
-  The column a conversation is read in. Three pages open the same way -- an
-  eyebrow, a title, then whatever the page is -- so the measure, the gutters
-  and the heading treatment are settled once here rather than restated on each.
+  The column a conversation is read in, with its measure and gutters settled
+  once. A run's page has no visible heading -- the rail beside it already says
+  which run and when -- so its name is given to a screen reader alone; a
+  harness page can still show an eyebrow and a title.
 */
 export function ThreadPage({
+  label,
   eyebrow,
   title,
   children,
 }: {
-  eyebrow: string;
-  title: string;
+  // The page's name for a screen reader, where no title is shown.
+  label?: string;
+  eyebrow?: string;
+  title?: string;
   children: ReactNode;
 }) {
   return (
     <main
       id="main"
       tabIndex={-1}
-      className="mx-auto w-[min(100%,760px)] flex-1 px-6 pt-12 pb-8 max-sm:px-4 max-sm:py-7"
+      className="mx-auto w-[min(100%,760px)] flex-1 px-6 pt-10 pb-8 max-sm:px-4 max-sm:py-7"
     >
-      <div className="mb-8 max-sm:mb-6">
-        <p className="text-meta text-muted">{eyebrow}</p>
-        {/* The batch title is the one editorial line here, per the display
-            role in docs/EXPERIENCE-SPEC.md. Everything else stays sans. */}
-        <h1 className="font-display text-display mt-1.5 [font-weight:550]">
-          {title}
-        </h1>
-      </div>
+      {title ? (
+        <div className="mb-8 max-sm:mb-6">
+          {eyebrow ? <p className="text-meta text-muted">{eyebrow}</p> : null}
+          {/* The editorial line, per the display role in
+              docs/EXPERIENCE-SPEC.md. Everything else stays sans. */}
+          <h1 className="font-display text-display mt-1.5 [font-weight:550]">
+            {title}
+          </h1>
+        </div>
+      ) : label ? (
+        <h1 className="sr-only">{label}</h1>
+      ) : null}
       {children}
     </main>
   );
@@ -42,18 +50,7 @@ export function RequestBubble({ children }: { children: ReactNode }) {
   );
 }
 
-/** The response, and the line that says what kind of record it is. */
-export function ResponseSection({
-  caption,
-  children,
-}: {
-  caption: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <section aria-label="Safepoint response" className="mt-7">
-      {children}
-      <p className="text-muted text-meta mt-3">{caption}</p>
-    </section>
-  );
+/** The response: what the run proposes, for review. */
+export function ResponseSection({ children }: { children: ReactNode }) {
+  return <section aria-label="Safepoint response">{children}</section>;
 }

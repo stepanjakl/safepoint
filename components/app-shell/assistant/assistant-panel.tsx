@@ -89,9 +89,9 @@ export function AssistantPanel({
           {...styleDebug({
             component: 'AssistantPanel',
             part: 'composer',
-            appearance: 'surface-recessed',
+            appearance: 'field',
           })}
-          className="control-face surface-recessed rounded-control p-3"
+          className="field p-3"
         >
           <textarea
             ref={composer}
@@ -101,7 +101,7 @@ export function AssistantPanel({
             placeholder="Ask about this process…"
             aria-describedby={`${assistant.id}-preview`}
             rows={3}
-            className="text-body focus-visible:outline-primary w-full resize-none rounded-sm bg-transparent outline-offset-2 focus-visible:outline-2"
+            className="text-body w-full resize-none bg-transparent outline-none"
           />
           <div className="mt-2 flex justify-end">
             <Button variant="secondary" isDisabled>

@@ -10,6 +10,7 @@ import {
   useSyncExternalStore,
 } from 'react';
 import { Brand } from '@/components/ui/brand';
+import { useShellPageNavigation } from '@/components/app-shell/shell-page-transition';
 import { useReducedMotion } from 'motion/react';
 import { cx } from '@/lib/cx';
 import {
@@ -30,8 +31,6 @@ import {
 import { useProcessNames } from '@/components/app-shell/process/process-names-store';
 import {
   ICON_BUTTON,
-  ICON_BUTTON_QUIET,
-  ICON_BUTTON_SHAPE,
   MENU_CHEVRON,
   MENU_CHEVRON_BOX,
   MENU_RAIL,
@@ -96,6 +95,8 @@ export function ProcessMenu({
   // The shell is a layout that stays mounted across navigation, so the current
   // process is read here rather than handed down by each page.
   const current = usePathname();
+  const { leaveTo, workspaceReveal, workspaceAttentionReady } =
+    useShellPageNavigation();
   const saved = useSyncExternalStore(
     subscribeProcessOrder,
     readProcessOrder,
@@ -160,7 +161,27 @@ export function ProcessMenu({
     ? { default: collapse, opacity: { ...fade, delay: collapse.duration / 2 } }
     : { default: { ...collapse, delay: fade.duration }, opacity: fade };
 
-  const [level, setLevel] = useState<'workspace' | 'processes'>('processes');
+  const [levelChoice, setLevelChoice] = useState<{
+    path: string;
+    level: 'workspace' | 'processes';
+  }>(() => ({
+    path: current,
+    level: current === '/workspace' ? 'workspace' : 'processes',
+  }));
+  if (levelChoice.path !== current) {
+    setLevelChoice({
+      path: current,
+      level: current === '/workspace' ? 'workspace' : 'processes',
+    });
+  }
+  const level =
+    levelChoice.path === current
+      ? levelChoice.level
+      : current === '/workspace'
+        ? 'workspace'
+        : 'processes';
+  const setLevel = (next: typeof level) =>
+    setLevelChoice({ path: current, level: next });
   // Whether either level has been travelled to yet. The side fades animate on
   // a journey, and the first level is where the menu starts, not a journey.
   const [travelled, setTravelled] = useState(false);
@@ -199,6 +220,11 @@ export function ProcessMenu({
   }, [level, searchOpen]);
   useEffect(() => {
     function jumpToSearch(event: KeyboardEvent) {
+      if (
+        (workspaceReveal === 'waiting' || workspaceReveal === 'opening') &&
+        enterRef.current?.closest('.sidebar-navigation')?.hasAttribute('inert')
+      )
+        return;
       if (event.key !== 'k' && event.key !== 'K') return;
       if (event.altKey || !(event.metaKey || event.ctrlKey)) return;
       // Arranging keeps the field closed. Leave the key to the browser rather
@@ -212,13 +238,13 @@ export function ProcessMenu({
       focusSearch.current = true;
       if (level !== 'processes') {
         setTravelled(true);
-        setLevel('processes');
+        setLevelChoice({ path: current, level: 'processes' });
       }
       setSearchOpen(true);
     }
     document.addEventListener('keydown', jumpToSearch);
     return () => document.removeEventListener('keydown', jumpToSearch);
-  }, [level, customising, searchOpen]);
+  }, [current, level, customising, searchOpen, workspaceReveal]);
   const reorder = useProcessReorder({ order, customising, draft, setDraft });
 
   function openSearch() {
@@ -245,6 +271,9 @@ export function ProcessMenu({
     setLevel(next);
     closeSearch();
     setPreviewHandles(false);
+    if (next === 'workspace' && current !== '/workspace') {
+      leaveTo('/workspace');
+    }
   }
 
   function finishCustomising() {
@@ -316,7 +345,7 @@ export function ProcessMenu({
               type="button"
               className={cx(
                 ICON_BUTTON,
-                'aria-expanded:bg-surface-selected aria-expanded:text-primary',
+                'aria-expanded:bg-surface-selected aria-expanded:text-primary aria-expanded:hover:bg-menu-wash-pressed aria-expanded:focus-visible:bg-menu-wash-pressed',
               )}
               aria-label="Search processes"
               aria-expanded={searchOpen}
@@ -347,24 +376,17 @@ export function ProcessMenu({
                 {...styleDebug({
                   component: 'ProcessMenu',
                   part: 'arrange-toggle',
-                  appearance: customising
-                    ? 'control-commit'
-                    : 'control-wash text-header-ink',
+                  appearance: 'control-wash text-header-ink',
                 })}
                 ref={editRef}
                 type="button"
+                // The one accented control in the sidebar, and only while
+                // arranging: it is the way back out of the mode. A flat fill
+                // on the quiet wash, as the search toggle beside it, so one
+                // background carries every state and nothing trails it.
                 className={cx(
-                  ICON_BUTTON_SHAPE,
-                  // The one accented control in the sidebar, and only while
-                  // arranging: it is the way back out of the mode. It takes its
-                  // own face instead of the quiet hover, not as well as it --
-                  // the two would fight over the same background.
-                  // No transition utility on this branch: control-face owns
-                  // the timing, and a `transition-colors` alongside it would
-                  // win the property list and leave the face and ring to snap.
-                  customising
-                    ? 'control-face control-commit hover:control-commit-hover focus-visible:control-commit-hover text-white'
-                    : ICON_BUTTON_QUIET,
+                  ICON_BUTTON,
+                  'aria-pressed:bg-commit-face aria-pressed:hover:bg-commit-hover aria-pressed:focus-visible:bg-commit-hover aria-pressed:text-white aria-pressed:hover:text-white aria-pressed:focus-visible:text-white',
                 )}
                 aria-label={customising ? 'Save order' : 'Arrange processes'}
                 aria-pressed={customising}
@@ -430,6 +452,7 @@ export function ProcessMenu({
                 count={items.length}
                 enterRef={enterRef}
                 onEnter={() => navigate('processes')}
+                shine={current === '/workspace' && workspaceAttentionReady}
               />
             </div>
             <div

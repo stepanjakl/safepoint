@@ -126,7 +126,7 @@ export function InputDetailView({
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Filter by product, SKU or evidence ID"
             aria-label="Filter records"
-            className="text-dense text-primary placeholder:text-muted border-rule-default bg-surface-inset rounded-control mt-1 mb-2 min-h-9 w-full border px-3"
+            className="field text-dense text-primary mt-1 mb-2 min-h-9 w-full px-3"
           />
         ) : null}
         <div>

@@ -11,10 +11,7 @@ import { useProcessSchedule } from './schedule-store';
 
 const NOTE = 'border-rule-faint text-muted text-meta border-t pt-3';
 
-// A form field on the field tokens: the border is its focus indicator, and
-// focus is emitted after hover, so a resting pointer never repaints it.
-const FIELD =
-  'control-wash text-dense text-primary bg-field-face border-field-edge hover:border-field-edge-hover focus:border-field-edge-active rounded-control min-h-9 w-full border-(length:--spacing-field-edge) px-3 outline-none forced-colors:focus:outline-2 forced-colors:focus:outline-offset-2 forced-colors:focus:outline-solid';
+const FIELD = 'field text-dense text-primary min-h-9 w-full px-3';
 
 /*
   The setup drawer's Settings tab: what applies to the process as a whole

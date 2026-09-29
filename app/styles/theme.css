@@ -128,6 +128,7 @@
   --shadow-rule-etch: 0 var(--spacing-control-highlight-hairline) 0 var(--sp-divider-etch);
 
   --ease-out-emphasized: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
   /* Named rather than repeated: the drawer sits in the top layer, outside the
      shell, and still has to line up with the panes inside it. */
   --radius-shell: 0.625rem; /* 10px  panes, cards, dialogs */

@@ -223,7 +223,7 @@ function Tally({
         className="sheet-seg sheet-seg-total font-semibold"
       >
         {segments.length > 0 ? <span className="opacity-75">of</span> : null}
-        <span className="value">{counts.items}</span>
+        <span className="value sheet-total-lead">{counts.items}</span>
         {segments.length === 0 ? (
           <span className="opacity-75">
             {noun}

@@ -365,6 +365,8 @@ const ANCHORED_BY_FILE = {
     '--sp-menu-wash-faint': { on: 'canvas', light: 0, dark: -125 },
     '--sp-menu-wash': { on: 'canvas', light: 75, dark: -75 },
     '--sp-menu-wash-strong': { on: 'canvas', light: 125, dark: -175 },
+    /* An open toggle under the pointer: one step past the selected fill. */
+    '--sp-menu-wash-pressed': { on: 'canvas', light: 175, dark: -225 },
   },
   'components/app-shell/sidebar/process-list.css': {
     /* Flat: a ramp across 20px reads as an artefact. The ring is darker than
@@ -385,7 +387,8 @@ const ANCHORED_BY_FILE = {
   },
   'components/app-shell/process/process-header.css': {
     /* Drawn from the quiet stops but separate, so tuning the header moves no
-       other button. Light recesses and deepens on hover; dark lifts, since a
+       other button. The one control face that is not raised in both themes,
+       on purpose: light recesses it and deepens on hover; dark lifts, since a
        control set under a dark ground reads as a hole. */
     '--sp-header-button-face-top': { on: 'primary', light: 25, dark: -100 },
     '--sp-header-button-face-bottom': { on: 'primary', light: 125, dark: -50 },
@@ -440,6 +443,10 @@ const ANCHORED_BY_FILE = {
     '--sp-sheet-total-face': { on: 'primary', light: 175, dark: -100 },
     '--sp-sheet-total-face-hover': { on: 'primary', light: 225, dark: -175 },
     '--sp-sheet-total-face-current': { on: 'primary', light: 225, dark: -200 },
+    /* The total's figure, a rounded lead half a step past its face. */
+    '--sp-sheet-total-lead': { on: 'primary', light: 250, dark: -175 },
+    '--sp-sheet-total-lead-hover': { on: 'primary', light: 300, dark: -250 },
+    '--sp-sheet-total-lead-current': { on: 'primary', light: 300, dark: -275 },
     '--sp-sheet-break-etch': { on: 'primary', light: -25, dark: 25 },
     '--sp-sheet-row-etch': { on: 'primary', light: -25, dark: 100 },
     /* Further from the row than the resting etch, so the line strengthens as
@@ -451,10 +458,21 @@ const ANCHORED_BY_FILE = {
     '--sp-thread-done': { on: 'primary', light: 450, dark: -375 },
     '--sp-thread-fact-face': { on: 'primary', light: 75, dark: -75 },
     /* A step past the row's hover wash, so a pill stays a pill under it. */
-    '--sp-thread-fact-face-hover': { on: 'primary', light: 100, dark: -100 },
+    '--sp-thread-fact-face-hover': { on: 'primary', light: 100, dark: -150 },
+    /* A fact that opens something: past a plain one at rest, and past the
+       row's hover wash under it (-100 in dark), deepest under the pointer. */
+    '--sp-thread-link-face': { on: 'primary', light: 125, dark: -125 },
+    '--sp-thread-link-face-hover': { on: 'primary', light: 150, dark: -175 },
+    '--sp-thread-link-face-active': { on: 'primary', light: 200, dark: -225 },
   },
   'components/review/release-card.css': {
     '--sp-card-etch': { on: 'floating', light: -25, dark: 50 },
+    /* A row's change pill: past the row's hover wash (+50 light, -100 dark)
+       at rest and further under it; its lead half a step past the face. */
+    '--sp-card-pill-face': { on: 'floating', light: 100, dark: -75 },
+    '--sp-card-pill-face-hover': { on: 'floating', light: 150, dark: -150 },
+    '--sp-card-pill-lead': { on: 'floating', light: 175, dark: -150 },
+    '--sp-card-pill-lead-hover': { on: 'floating', light: 225, dark: -225 },
   },
   'components/ui/tooltip.css': {
     /* The face equals floating, so over a floating panel the edge alone

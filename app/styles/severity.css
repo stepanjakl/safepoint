@@ -15,12 +15,18 @@
   );
   --color-severity-fill: var(--severity-3);
   --color-severity-fill-strong: var(--severity-4);
+  /* A bucket tab, after the run tallies: a lit face at rest, a rung past it
+     under the pointer, and a solid when selected. Not the tally's rung 10 with
+     white: at 13px that reads 4.25:1 on red in light and 3.3:1 in dark. */
+  --color-severity-pill: light-dark(var(--severity-4), var(--severity-5));
+  --color-severity-pill-hover: light-dark(var(--severity-5), var(--severity-6));
+  --color-severity-solid: light-dark(var(--severity-11), var(--severity-7));
+  --color-severity-on-solid: light-dark(var(--severity-1), var(--severity-12));
   --color-severity-bar: var(--severity-9);
   --color-severity-annotation: var(--severity-12);
   /* Text on rung 4, a step darker than rung 3: rung 11 reads 4.07-4.24:1
      there, under AA at 13px, where rung 12 clears 7.8 across every tone. */
   --color-severity-strong: var(--severity-12);
-  --shadow-severity-ring: inset 0 0 0 1px var(--severity);
 }
 
 @layer components {

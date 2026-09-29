@@ -1,67 +1,33 @@
-import Link from 'next/link';
-import { ThreadPage } from '@/components/app-shell/thread/thread-page';
-import { ProcessView } from '@/components/app-shell/process/process-view';
-import { RunThread } from '@/components/app-shell/thread/run-thread';
-import { loadReviewedReplay } from '@/lib/promotion-release';
-import { parseSkuParam } from '@/lib/review-presentation';
-import { promotionProcess } from '@/lib/process/placeholder-process';
-import { presentPromotionInputDetails } from '@/lib/process/input-details';
-import { presentPromotionInputs } from '@/lib/process/system-links';
-import { presentPromotionPlan } from '@/lib/review/promotion-adapter';
-import { presentRunFacts } from '@/lib/process/run-lifecycle';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import {
+  LAST_PROCESS_KEY,
+  PROCESS_ORDER_KEY,
+  landingProcess,
+} from '@/lib/process/navigation';
+import { PROCESS_ROUTES, processHref } from '@/lib/process/routes';
 
-export default async function ReviewPage({ searchParams }: PageProps<'/'>) {
-  const replay = loadReviewedReplay();
-  const plan = presentPromotionPlan(replay);
-  const inputs = presentPromotionInputs(replay);
-  const initialItemId = parseSkuParam((await searchParams).sku) ?? undefined;
-
-  const facts = presentRunFacts(
-    replay,
-    plan,
-    inputs,
-    promotionProcess.outputs.length,
+/*
+  The root is not a page of its own: it opens the process the reader was last
+  in, or else the first one waiting on a review, so arriving never lands on an
+  empty screen that only repeats the sidebar. A query is carried across.
+*/
+export default async function LandingPage({ searchParams }: PageProps<'/'>) {
+  const store = await cookies();
+  const id = landingProcess(
+    PROCESS_ROUTES.map(({ process }) => ({
+      id: process.id,
+      awaitingReview: process.runs.some(
+        (run) => run.current && run.status === 'awaiting_review',
+      ),
+    })),
+    store.get(PROCESS_ORDER_KEY)?.value ?? null,
+    store.get(LAST_PROCESS_KEY)?.value ?? null,
   );
-
-  return (
-    <ProcessView
-      process={promotionProcess}
-      inputs={inputs}
-      inputDetails={presentPromotionInputDetails(replay)}
-    >
-      <ThreadPage
-        eyebrow="Alderton’s · Promotion operations"
-        title="Fresh Food Weekend"
-      >
-        <RunThread
-          stage="awaiting_review"
-          facts={facts}
-          plan={plan}
-          inputs={inputs}
-          outputs={promotionProcess.outputs}
-          analysis={promotionProcess.analysis}
-          request={
-            <p>Check the promotion release and show me what needs attention.</p>
-          }
-          requestLabel="Thu 4 Sep · 09:00"
-          initialItemId={initialItemId}
-        />
-        <div className="border-rule-faint text-muted text-meta mt-10 border-t pt-5 leading-relaxed max-sm:mt-7">
-          <p>
-            This conversation demonstrates how Safepoint can appear inside
-            another application.
-          </p>
-          <Link
-            href="/examples/support"
-            className="inline-flex min-h-11 items-center underline underline-offset-4"
-          >
-            Explore a support handoff <span aria-hidden="true">↗</span>
-          </Link>
-        </div>
-      </ThreadPage>
-      <footer className="text-muted text-meta p-6 text-center">
-        The agent proposes. You review. Safepoint applies only approved changes.
-      </footer>
-    </ProcessView>
-  );
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(await searchParams)) {
+    for (const each of [value ?? []].flat()) query.append(key, each);
+  }
+  const href = processHref(id ?? PROCESS_ROUTES[0]!.process.id);
+  redirect(query.size ? `${href}?${query}` : href);
 }

@@ -1,0 +1,18 @@
+/* ── Run view ───────────────────────────────────────────────────────────────
+   The page beside the rail. Its change of run is a swap (components/ui/swap.css).
+   ────────────────────────────────────────────────────────────────────────── */
+
+@layer components {
+  /* The column is the scroller, so the view fills it and the empty page can
+     centre in it. */
+  .run-view {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 100%;
+  }
+  .run-view > * {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+}

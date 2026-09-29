@@ -6,6 +6,7 @@ import { motion, type Transition } from 'motion/react';
 import DotGrid2x3Filled from 'blode-icons-react/icons/dot-grid-2x3-filled';
 
 import { cx } from '@/lib/cx';
+import { useShellPageNavigation } from '@/components/app-shell/shell-page-transition';
 import { styleDebug } from '@/lib/style-debug';
 import type { ProcessNavigationItem } from '@/lib/process/navigation';
 import { Glyph } from '@/components/ui/glyph';
@@ -62,7 +63,7 @@ const GRIP_BOX =
 /*
   Two weights. The preview -- what the Arrange button shows on hover -- is the
   lighter: it is an advertisement, not a target. In the mode itself the handle
-  is solid, and pointing at it only lifts the colour.
+  is solid, in arrange mode's teal, and pointing at it only deepens the colour.
 */
 const GRIP_PREVIEW = `${GRIP_BOX} text-muted pointer-events-none opacity-55`;
 /*
@@ -72,7 +73,7 @@ const GRIP_PREVIEW = `${GRIP_BOX} text-muted pointer-events-none opacity-55`;
   list. Keyboard focus is left to the global :focus-visible outline rather than
   restyled, so it stays the same indicator as everywhere else.
 */
-const GRIP_HANDLE = `${GRIP_BOX} text-muted hover:text-primary focus-visible:text-primary group-data-[dragging]/row:text-primary group-data-[dragging]/row:cursor-grabbing cursor-grab touch-none`;
+const GRIP_HANDLE = `${GRIP_BOX} text-commit-ink hover:text-commit-ink-strong focus-visible:text-commit-ink-strong group-data-[dragging]/row:text-commit-ink-strong group-data-[dragging]/row:cursor-grabbing cursor-grab touch-none`;
 
 /*
   In arrange mode the handle is the row's leading icon, so it takes one rail
@@ -110,6 +111,7 @@ export function ProcessList({
   gripTransition: Transition;
   reorder: ProcessReorder;
 }) {
+  const { leaveTo } = useShellPageNavigation();
   const {
     drag,
     scrollRef,
@@ -312,6 +314,20 @@ export function ProcessList({
                         })}
                         className={cx(MENU_LABEL, 'process-menu-link')}
                         href={item.href}
+                        onClick={(event) => {
+                          if (
+                            current !== '/workspace' ||
+                            event.defaultPrevented ||
+                            event.button !== 0 ||
+                            event.metaKey ||
+                            event.ctrlKey ||
+                            event.shiftKey ||
+                            event.altKey
+                          )
+                            return;
+                          event.preventDefault();
+                          leaveTo(item.href);
+                        }}
                         aria-current={
                           current === item.href ? 'page' : undefined
                         }

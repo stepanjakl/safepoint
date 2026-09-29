@@ -11,7 +11,7 @@ import {
   needingAttention,
   type ReviewProgress,
 } from '../review/plan-derivations';
-import type { ProcessStep } from './model';
+import { RUN_TRIGGER_LABELS, type ProcessStep, type RunTrigger } from './model';
 import { needsAttention, type SystemLink } from './system-links';
 
 export const RUN_STAGES = [
@@ -140,6 +140,7 @@ export function stepsAt(
   stage: RunStage,
   facts: RunFacts,
   requestLabel: string,
+  trigger: RunTrigger = 'schedule',
 ): ProcessStep[] {
   const progress = stageProgress(stage, facts);
   const { total, needing } = facts.sources;
@@ -149,7 +150,10 @@ export function stepsAt(
       name: 'Request',
       label: requestLabel,
       status: 'complete',
-      note: 'Raised by the weekly schedule, not by a person.',
+      note:
+        trigger === 'schedule'
+          ? 'Raised by the weekly schedule, not by a person.'
+          : `${RUN_TRIGGER_LABELS[trigger]}.`,
     },
   ];
 

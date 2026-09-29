@@ -4,6 +4,7 @@ import { presentPromotionPlan } from '../review/promotion-adapter';
 import { supportPlan } from '../review/support-fixture';
 import { evaluationCounts } from '../review/plan-derivations';
 import {
+  landingProcess,
   moveProcess,
   processNavigationItem,
   restoreProcessOrder,
@@ -86,5 +87,24 @@ describe('process navigation', () => {
     });
     expect(receipt.status.label).toBe('Simulated');
     expect(receipt.status.description).toContain('no real changes applied');
+  });
+  it('lands on the last process open, else the first awaiting review in the saved order', () => {
+    const processes = [
+      { id: 'promotion', awaitingReview: false },
+      { id: 'support', awaitingReview: true },
+      { id: 'new-process', awaitingReview: true },
+    ];
+    expect(landingProcess(processes, null, 'promotion')).toBe('promotion');
+    expect(landingProcess(processes, null, null)).toBe('support');
+    expect(
+      landingProcess(processes, '["new-process","support"]', 'removed'),
+    ).toBe('new-process');
+    expect(
+      landingProcess(
+        processes.map((p) => ({ ...p, awaitingReview: false })),
+        '["support"]',
+        null,
+      ),
+    ).toBe('support');
   });
 });

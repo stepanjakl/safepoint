@@ -11,8 +11,10 @@ import type { SidebarController } from './use-resizable-sidebar';
 
 export function SidebarResizeHandle({
   controller,
+  disabled = false,
 }: {
   controller: SidebarController;
+  disabled?: boolean;
 }) {
   const {
     side,
@@ -86,8 +88,9 @@ export function SidebarResizeHandle({
         placement={side === 'left' ? 'right' : 'left'}
         triggerRef={grip}
         offset={4}
-        isDisabled={preview !== null || optionsOpen}
+        isDisabled={disabled || preview !== null || optionsOpen}
         isOpen={
+          !disabled &&
           ((hovered && gripHovered) || keyboardFocused) &&
           preview === null &&
           !optionsOpen
@@ -102,7 +105,9 @@ export function SidebarResizeHandle({
         <div
           ref={handle}
           role="separator"
-          tabIndex={0}
+          tabIndex={disabled ? -1 : 0}
+          inert={disabled}
+          aria-hidden={disabled || undefined}
           aria-label={label}
           aria-orientation="vertical"
           aria-controls={navigationId}
@@ -135,7 +140,7 @@ export function SidebarResizeHandle({
           data-resizing={preview !== null || undefined}
           data-hovered={hovered || undefined}
           data-grip-pressed={gripPressed || undefined}
-          onPointerEnter={updateHover}
+          onPointerEnter={disabled ? undefined : updateHover}
           onPointerLeave={leaveHover}
           onFocus={(event) =>
             setKeyboardFocused(event.currentTarget.matches(':focus-visible'))
@@ -143,15 +148,16 @@ export function SidebarResizeHandle({
           onBlur={() => {
             setKeyboardFocused(false);
           }}
-          onPointerDown={startDrag}
-          onPointerMove={moveDrag}
-          onPointerUp={endDrag}
+          onPointerDown={disabled ? undefined : startDrag}
+          onPointerMove={disabled ? undefined : moveDrag}
+          onPointerUp={disabled ? undefined : endDrag}
           onPointerCancel={cancelDrag}
           onLostPointerCapture={() => {
             // Capture loss after release must not cancel a completed gesture.
             if (drag.current) cancelDrag();
           }}
           onClick={(event) => {
+            if (disabled) return;
             // Pointer gestures activate on release. Keep virtual activation
             // for assistive technology, which has no preceding pointer pair.
             if (
@@ -166,12 +172,14 @@ export function SidebarResizeHandle({
             }
           }}
           onContextMenu={(event) => {
+            if (disabled) return;
             event.preventDefault();
             cancelDrag();
             event.currentTarget.focus();
             setOptionsOpen(true);
           }}
           onKeyDown={(event) => {
+            if (disabled) return;
             if (event.key === 'Escape') {
               if (preview !== null) {
                 event.preventDefault();
@@ -250,7 +258,7 @@ export function SidebarResizeHandle({
         default width; choose Default in the width presets for the same action.
       </span>{' '}
       <Popover
-        isOpen={optionsOpen && bounds !== null}
+        isOpen={!disabled && optionsOpen && bounds !== null}
         onOpenChange={setOptionsOpen}
         triggerRef={handle}
         placement={side === 'left' ? 'right' : 'left'}

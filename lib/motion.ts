@@ -1,9 +1,6 @@
 /*
-  The motion tokens, for the animations Motion drives from JS. Motion takes a
-  duration in seconds and a curve as an array, so it cannot read the custom
-  properties app/styles/geometry.css defines; these mirror them, in the same direction
-  RAIL_CELL mirrors --spacing-menu-rail, and motion.test.ts fails the moment a
-  token moves and its mirror does not.
+  Motion takes durations in seconds and curves as arrays. The values below
+  mirror their CSS counterparts; motion.test.ts catches drift.
 */
 
 /** --duration-state: one control answering a pointer. */
@@ -14,3 +11,6 @@ export const DURATION_PANE = 0.22;
 
 /** --ease-out-emphasized. */
 export const EASE_OUT_EMPHASIZED = [0.22, 1, 0.36, 1] as const;
+
+/** Quadratic ease-out preset for screen-level motion. */
+export const EASE_OUT_QUAD = [0.25, 0.46, 0.45, 0.94] as const;

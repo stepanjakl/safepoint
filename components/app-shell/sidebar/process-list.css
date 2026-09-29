@@ -124,7 +124,7 @@
   .process-menu-row[data-dragging] {
     z-index: 2;
     background: var(--sp-surface-floating);
-    border-color: var(--sp-rule-strong);
+    border-color: var(--sp-commit-drag-edge);
     transition: none;
   }
 
@@ -168,14 +168,14 @@
     margin-inline-start: calc(var(--spacing-menu-edge) * -1);
   }
 
-  /* Where the dragged row will land. Dashed on every side and in the same rule
-     colour as the dragged row's edge, so the pair reads as one object leaving a
+  /* Where the dragged row will land. Dashed on every side and in the same teal
+     as the dragged row's edge, so the pair reads as one object leaving a
      space rather than as two differently-lit boxes. Its box and edge width
      come from the drag-edge rule it shares with the dragged row. */
   .process-drop-slot {
     position: absolute;
     border-style: dashed;
-    border-color: var(--sp-rule-strong);
+    border-color: var(--sp-commit-drag-edge);
     border-radius: var(--radius-control);
     background: var(--sp-surface-inset);
   }

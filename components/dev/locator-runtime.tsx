@@ -16,7 +16,11 @@ import { useEffect } from 'react';
  */
 export function LocatorRuntime() {
   useEffect(() => {
-    if (process.env.NODE_ENV !== 'development') {
+    // Only when the loader stamped the markup (`pnpm dev:locator`).
+    if (
+      process.env.NODE_ENV !== 'development' ||
+      !document.querySelector('[data-locatorjs]')
+    ) {
       return;
     }
 

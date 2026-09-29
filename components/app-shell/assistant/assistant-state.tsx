@@ -50,6 +50,9 @@ type AssistantState = {
   open: boolean;
   toggle: () => void;
   close: () => void;
+  // Opens the assistant with a question already written, for a control
+  // elsewhere that knows what the reader is about to ask.
+  ask: (prompt: string) => void;
   opener: RefObject<HTMLButtonElement | null>;
 };
 export const AssistantContext = createContext<AssistantState | null>(null);

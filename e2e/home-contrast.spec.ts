@@ -9,9 +9,21 @@ test.beforeEach(async ({ page, colorScheme }) => {
 
 test('home page', async ({ page }, testInfo) => {
   await expect(
-    page.getByRole('heading', { name: 'Fresh Food Weekend', exact: true }),
+    page.getByRole('button', { name: 'Request', exact: true }),
   ).toBeVisible();
   await expectContrast(page, testInfo, 'home');
+});
+
+test('no run selected', async ({ page, colorScheme }, testInfo) => {
+  await page.goto('/examples/promotion');
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'No run selected' }),
+  ).toBeAttached();
+  await page.evaluate((value) => {
+    document.documentElement.dataset.theme = value;
+  }, colorScheme as string);
+  await page.evaluate(() => document.fonts.ready);
+  await expectContrast(page, testInfo, 'empty');
 });
 
 test('workspace menu', async ({ page }, testInfo) => {
@@ -70,7 +82,7 @@ test('a tooltip', async ({ page }, testInfo) => {
    of them is still found. */
 for (const [name, path] of [
   ['states example', '/examples/states'],
-  ['support example', '/examples/support'],
+  ['support example', '/examples/support?run=run-42'],
 ] as const) {
   test(name, async ({ page, colorScheme }, testInfo) => {
     await page.goto(path);

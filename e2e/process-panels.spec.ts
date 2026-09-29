@@ -5,7 +5,7 @@ import { expect, test, type Page } from '@playwright/test';
    back to whatever opened it, and a swap keeps the original opener. */
 
 async function openTab(page: Page, tab: 'Inputs' | 'Instructions' | 'Outputs') {
-  await page.goto('/');
+  await page.goto('/examples/promotion?run=run-104');
   await expect(
     page.getByRole('button', { name: 'Search processes', exact: true }),
   ).toBeVisible();
@@ -110,4 +110,32 @@ test('outputs list every destination with how it is undone', async ({
   await expect(region).toContainText('Simulation only.');
   // Outputs open nothing, so there is no empty detail column.
   await expect(drawer(page)).toHaveCount(0);
+});
+
+test('returning to a tab during its fade restores the page immediately', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/examples/promotion?run=run-104');
+  const tab = (name: string) =>
+    page.getByRole('button', { name: new RegExp(`^${name}`) }).first();
+  const layer = page
+    .locator('.rounded-b-shell-inner.overflow-clip > div')
+    .first();
+
+  await tab('Inputs').evaluate((button: HTMLElement) => button.click());
+  await expect(layer).toHaveAttribute('inert', '');
+  await page.waitForTimeout(40);
+  await tab('Runs').evaluate((button: HTMLElement) => button.click());
+
+  await expect(layer).not.toHaveAttribute('inert', '');
+  await page.waitForTimeout(100);
+  expect(
+    await layer.evaluate((element) =>
+      Number(getComputedStyle(element).opacity),
+    ),
+  ).toBeGreaterThan(0.7);
+  await expect(
+    page.getByRole('heading', { name: 'Runs' }).first(),
+  ).toBeVisible();
 });

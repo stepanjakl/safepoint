@@ -20,6 +20,22 @@
       --sidebar-track: var(--spacing-sidebar-closed);
     }
 
+    /* The first visit starts without a closed rail, so the pane has even insets. */
+    .resizable-shell[data-workspace-reveal='waiting'] {
+      --sidebar-track: 0px;
+      transition: none;
+    }
+
+    .resizable-shell[data-workspace-reveal='opening'] {
+      --workspace-reveal-duration: 900ms;
+      transition-duration: var(--workspace-reveal-duration);
+      transition-timing-function: var(--ease-out-quad);
+    }
+
+    .resizable-shell[data-workspace-reveal] .sidebar-column {
+      overflow: clip;
+    }
+
     .sidebar-navigation {
       width: var(--sidebar-width);
       isolation: isolate;
@@ -35,6 +51,20 @@
       opacity: 0;
       translate: calc(-1 * var(--spacing-menu-fade));
       transition-delay: 0s;
+    }
+
+    .resizable-shell[data-workspace-reveal='waiting'] .sidebar-navigation {
+      visibility: hidden;
+      opacity: 0;
+      translate: calc(-1 * var(--spacing-menu-fade));
+      transition: none;
+    }
+
+    .resizable-shell[data-workspace-reveal='opening'] .sidebar-navigation {
+      transition:
+        width var(--workspace-reveal-duration) var(--ease-out-quad),
+        opacity 600ms var(--ease-out-quad) 300ms,
+        translate var(--workspace-reveal-duration) var(--ease-out-quad);
     }
 
     .resizable-shell[data-resizing] {
@@ -70,6 +100,11 @@
     color: var(--sp-text-muted);
     outline: none;
     transition: color var(--duration-state) ease-out;
+  }
+
+  .resizable-shell[data-workspace-reveal] .sidebar-handle[data-side='left'] {
+    visibility: hidden;
+    pointer-events: none;
   }
 
   .sidebar-handle-mark {
@@ -190,18 +225,22 @@
   .assistant-overlay[data-dragging] * {
     cursor: col-resize !important;
   }
+  /* The dock follows the shell grid's curve; the overlay travels on its own. */
+  .assistant-overlay .assistant-content {
+    transition-timing-function: var(--ease-out-quad), ease-out;
+  }
   .assistant-modal {
     width: var(--assistant-track, var(--spacing-assistant-default));
-    transition: width var(--duration-pane) var(--ease-out-emphasized);
+    transition: width var(--duration-pane) var(--ease-out-quad);
   }
   .assistant-overlay[data-resizing] .assistant-modal {
     transition: none;
   }
   .assistant-overlay[data-entering] .assistant-modal {
-    animation: assistant-enter var(--duration-pane) var(--ease-out-emphasized);
+    animation: assistant-enter var(--duration-pane) var(--ease-out-quad);
   }
   .assistant-overlay[data-exiting] .assistant-modal {
-    animation: assistant-enter var(--duration-pane) var(--ease-out-emphasized) reverse;
+    animation: assistant-enter var(--duration-pane) var(--ease-out-quad) reverse;
   }
   @keyframes assistant-enter {
     from {

@@ -9,8 +9,8 @@ import {
 } from '@/components/app-shell/drawer-aside';
 
 /**
- * The detail drawer beside a tab's list: which view it shows, the one leaving
- * while another arrives, which way the swap travels, and where focus goes when
+ * The detail drawer beside a tab's list: which view it shows, the one fading
+ * out before another arrives, which way the swap travels, and where focus goes when
  * it closes. The tab supplies `place`, where a view sits in the list it was
  * chosen from, so a swap toward an earlier item travels up.
  */
@@ -91,13 +91,13 @@ export function useAsidePanel({
       opener.current = active;
     }
     returnTo.current = null;
-    // Swapping one detail for another lets the old content leave while the
-    // new one arrives. With reduced motion it is simply replaced: two layers
-    // with nothing moving would only overlap.
+    // Swapping one detail for another fades the old content out before the
+    // new one arrives; a choice made mid-fade lets that fade finish. With
+    // reduced motion it is simply replaced.
     const reduce = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
     ).matches;
-    setLeaving(aside && !exiting && !reduce ? aside : null);
+    setLeaving((was) => (!aside || exiting || reduce ? null : (was ?? aside)));
     if (aside && !exiting) setDirection(swapDirection(aside, view));
     setExiting(false);
     setAside(view);

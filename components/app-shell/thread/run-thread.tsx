@@ -1,7 +1,7 @@
 'use client';
 
 import { useContext, useState, type ReactNode } from 'react';
-import type { ProcessAnalysis } from '@/lib/process/model';
+import type { ProcessAnalysis, RunTrigger } from '@/lib/process/model';
 import {
   byAttention,
   needsAttention,
@@ -32,6 +32,7 @@ import {
   ThreadLookContext,
   ThreadStep,
   type FlagAction,
+  type StepReference,
   type ThreadLook,
 } from './thread-step';
 
@@ -50,6 +51,8 @@ export function RunThread({
   request,
   requestLabel,
   initialItemId,
+  trigger = 'schedule',
+  instructionsVersion,
   look = 'proposed',
 }: {
   stage: RunStage;
@@ -61,9 +64,12 @@ export function RunThread({
   request: ReactNode;
   requestLabel: string;
   initialItemId?: string;
+  trigger?: RunTrigger;
+  // The instructions the run ran under, named on its request.
+  instructionsVersion?: string;
   look?: ThreadLook;
 }) {
-  const steps = stepsAt(stage, facts, requestLabel);
+  const steps = stepsAt(stage, facts, requestLabel, trigger);
   const progress = stageProgress(stage, facts);
   const review = reviewAt(stage, plan);
 
@@ -116,6 +122,27 @@ export function RunThread({
       : undefined,
   };
 
+  /*
+    The instructions the run ran under, on its request: the one fact the rail
+    beside it does not carry per run. It says so when they have since moved
+    on, and opens that version's change log where there is a sheet to.
+  */
+  const now = sheet?.currentVersion;
+  const reference: StepReference | undefined = instructionsVersion
+    ? {
+        label:
+          now && now !== instructionsVersion
+            ? `Instructions ${instructionsVersion} · now ${now}`
+            : `Instructions ${instructionsVersion}`,
+        action: sheet
+          ? {
+              label: `what changed in ${instructionsVersion}`,
+              onPress: () => sheet.showVersion(instructionsVersion),
+            }
+          : undefined,
+      }
+    : undefined;
+
   const boxes: Record<string, ReactNode> = {
     request: <RequestBubble>{request}</RequestBubble>,
     sources: (
@@ -138,9 +165,7 @@ export function RunThread({
       ),
     policy: <PolicyCheck facts={facts} running={stage === 'checking'} />,
     review: (
-      <ResponseSection
-        caption={`Recorded on ${plan.evaluatedAt} · Fictional data`}
-      >
+      <ResponseSection>
         <ReplayReview
           plan={review.plan}
           progress={review.progress}
@@ -162,6 +187,7 @@ export function RunThread({
             latest={index === steps.length - 1}
             enter={watched}
             flagAction={flagActions[step.id]}
+            reference={step.id === 'request' ? reference : undefined}
           >
             {boxes[step.id]}
           </ThreadStep>

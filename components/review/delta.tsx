@@ -1,6 +1,6 @@
 import type { DisplayHint, LabelledDelta } from '@/lib/review/plan-contract';
 
-function formatScalar(value: number, display?: DisplayHint): string {
+export function formatScalar(value: number, display?: DisplayHint): string {
   const scaled = value / (display?.scale ?? 1);
   return `${display?.prefix ?? ''}${scaled.toFixed(display?.precision ?? 0)}${display?.suffix ?? ''}`;
 }

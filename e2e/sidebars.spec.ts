@@ -94,7 +94,7 @@ test('the sidebars resize, remember, and recover', async ({
   page.on('pageerror', (error) => errors.push(error.message));
 
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/');
+  await page.goto('/examples/promotion?run=run-104');
   await expect(page.locator('.sidebar-handle').first()).toHaveAttribute(
     'aria-valuenow',
     '250',

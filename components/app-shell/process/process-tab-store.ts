@@ -11,7 +11,8 @@ import { z } from 'zod';
 
   Kept per process: what you were reading about one says nothing about another.
 */
-const PROCESS_TABS = [
+// In the order the header draws them, which the swap between them follows.
+export const PROCESS_TABS = [
   'runs',
   'instructions',
   'inputs',

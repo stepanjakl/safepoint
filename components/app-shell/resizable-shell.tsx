@@ -28,6 +28,7 @@ import {
 } from '@/components/app-shell/assistant/assistant-state';
 import { AssistantPanel } from '@/components/app-shell/assistant/assistant-panel';
 import { SidebarResizeHandle, SidebarSizeProbes } from './sidebar-resize';
+import { useShellPageNavigation } from './shell-page-transition';
 import { useResizableSidebar } from './use-resizable-sidebar';
 
 /** Layout owns the two independent panels; server-rendered children stay opaque. */
@@ -38,6 +39,7 @@ export function ResizableShell({
   navigation: ReactNode;
   children: ReactNode;
 }) {
+  const { workspaceReveal, finishWorkspaceReveal } = useShellPageNavigation();
   const snapshot = useSyncExternalStore(
     subscribeSidebarPreferences,
     readSidebarPreferences,
@@ -63,6 +65,9 @@ export function ResizableShell({
     onChange: saveAssistantPreferences,
   });
   const { navigationRef: leftContentRef, handle: leftHandleRef } = left;
+  const workspaceRevealActive =
+    workspaceReveal === 'waiting' || workspaceReveal === 'opening';
+  const workspaceRevealLocked = workspaceRevealActive && left.bounds !== null;
   const {
     navigationRef: rightContentRef,
     handle: rightHandleRef,
@@ -80,6 +85,22 @@ export function ResizableShell({
   const wasOpen = useRef(false);
   const restoreFocus = useRef(false);
   const open = !right.collapsed;
+  useEffect(() => {
+    if (workspaceReveal !== 'opening') return;
+    if (left.reduceMotion || left.collapsed || !left.bounds) {
+      finishWorkspaceReveal();
+      return;
+    }
+    // Transition completion is authoritative; this covers an interrupted transition.
+    const fallback = window.setTimeout(finishWorkspaceReveal, 1200);
+    return () => window.clearTimeout(fallback);
+  }, [
+    workspaceReveal,
+    left.reduceMotion,
+    left.collapsed,
+    left.bounds,
+    finishWorkspaceReveal,
+  ]);
   useEffect(() => {
     const viewport = window.visualViewport;
     if (!open || docked || !viewport) return;
@@ -116,7 +137,7 @@ export function ResizableShell({
   }, [left.collapsed, leftContentRef, leftHandleRef]);
 
   useEffect(() => {
-    if (!left.collapsed) return;
+    if (!left.collapsed || workspaceRevealLocked) return;
     const revealForSearch = (event: globalThis.KeyboardEvent) => {
       if (
         event.key.toLowerCase() !== 'k' ||
@@ -133,7 +154,7 @@ export function ResizableShell({
     };
     document.addEventListener('keydown', revealForSearch, true);
     return () => document.removeEventListener('keydown', revealForSearch, true);
-  }, [left.collapsed]);
+  }, [left.collapsed, workspaceRevealLocked]);
 
   useLayoutEffect(() => {
     if (open && !wasOpen.current)
@@ -167,6 +188,11 @@ export function ResizableShell({
       collapsed: true,
     });
   };
+  const reveal = () =>
+    saveAssistantPreferences({
+      ...parseAssistantPreferences(readAssistantPreferences()),
+      collapsed: false,
+    });
   const assistantContext = {
     id: right.navigationId,
     open,
@@ -174,11 +200,13 @@ export function ResizableShell({
     opener,
     toggle: () => {
       if (open) close();
-      else
-        saveAssistantPreferences({
-          ...parseAssistantPreferences(readAssistantPreferences()),
-          collapsed: false,
-        });
+      else reveal();
+    },
+    // Opening focuses the composer on its own; an open one is focused here.
+    ask: (prompt: string) => {
+      setDraft(prompt);
+      if (open) composer.current?.focus({ preventScroll: true });
+      else reveal();
     },
   };
   const style: CSSProperties &
@@ -232,6 +260,17 @@ export function ResizableShell({
         data-dragging={left.isDragging || right.isDragging || undefined}
         data-assistant-open={open || undefined}
         data-assistant-resizing={right.preview !== null || undefined}
+        data-workspace-reveal={
+          workspaceRevealActive ? workspaceReveal : undefined
+        }
+        onTransitionEnd={(event) => {
+          if (
+            workspaceReveal === 'opening' &&
+            event.target === event.currentTarget &&
+            event.propertyName === 'grid-template-columns'
+          )
+            finishWorkspaceReveal();
+        }}
       >
         <div className="shell-axis" aria-hidden="true" />
         <div
@@ -241,19 +280,29 @@ export function ResizableShell({
         />
         <SidebarSizeProbes controller={left} />
         <SidebarSizeProbes controller={right} />
-        <div className="shell:min-h-0 min-w-0">
+        <div className="sidebar-column shell:min-h-0 min-w-0">
           <div
             id={left.navigationId}
             ref={leftContentRef}
             className="sidebar-navigation shell:h-full"
-            inert={left.collapsed || left.preview !== null}
-            aria-hidden={left.collapsed || left.preview !== null || undefined}
+            inert={
+              left.collapsed || workspaceRevealLocked || left.preview !== null
+            }
+            aria-hidden={
+              left.collapsed ||
+              workspaceRevealLocked ||
+              left.preview !== null ||
+              undefined
+            }
           >
             {navigation}
           </div>
         </div>
         <div className="shell:min-h-0 relative min-w-0">
-          <SidebarResizeHandle controller={left} />
+          <SidebarResizeHandle
+            controller={left}
+            disabled={workspaceRevealLocked}
+          />
           <div className="shell:h-full @container/sheet min-w-0">
             {children}
           </div>

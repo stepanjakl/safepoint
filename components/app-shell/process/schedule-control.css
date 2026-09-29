@@ -1,0 +1,23 @@
+/* ── Schedule control ───────────────────────────────────────────────────────
+   The fields' arrival when the schedule is switched on or off.
+   ────────────────────────────────────────────────────────────────────────── */
+
+@layer components {
+  /* The fields arrive the way the switch's thumb went, at the drawer's swap
+     timing, so the two read as one motion. */
+  .schedule-mode[data-moved] {
+    animation: schedule-mode-in var(--duration-pane) --theme(--ease-out-emphasized) both;
+  }
+  .schedule-mode[data-moved='on'] {
+    --schedule-travel: -0.75rem;
+  }
+  .schedule-mode[data-moved='off'] {
+    --schedule-travel: 0.75rem;
+  }
+  @keyframes schedule-mode-in {
+    from {
+      opacity: 0;
+      transform: translateX(var(--schedule-travel));
+    }
+  }
+}

@@ -8,10 +8,12 @@ import {
   createContext,
   useContext,
   useId,
+  useLayoutEffect,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
-import { TextMorph } from 'torph/react';
+import { MorphingText } from '@/components/ui/morphing-text';
 // Deep imports, as in menu-parts.tsx: the barrel is the whole library.
 import ChevronTriangleDown from 'blode-icons-react/icons/chevron-triangle-down-small-filled';
 import CircleCheckFilled from 'blode-icons-react/icons/circle-check-filled';
@@ -34,8 +36,8 @@ export const ThreadLookContext = createContext<ThreadLook>('proposed');
 /*
   The proposed marks: every one a filled circle of one size, drawn from the
   icon set's own circle glyphs so the mark in each is centred as its designer
-  meant it, and cut out of the fill -- except a running step, the one ring: an
-  arc turning on a pale track of its own hue, round a dot of the arc's colour.
+  meant it, and cut out of the fill. A running step uses three arcs that light
+  in sequence around a dot, then turn together after they dim.
 */
 const FILLED = {
   complete: CircleCheckFilled,
@@ -44,7 +46,7 @@ const FILLED = {
 } as const;
 
 function ProposedMark({ step }: { step: ProcessStep }) {
-  if (step.status === 'running') return <RunningRing />;
+  if (step.status === 'running') return <SegmentedRing count={3} />;
   if (step.status === 'pending')
     return <Glyph name={stepMarker.pending.glyph} size={10} />;
   const Icon = FILLED[step.status];
@@ -53,7 +55,7 @@ function ProposedMark({ step }: { step: ProcessStep }) {
 
 // 20 units of viewBox for the 20px mark. pathLength writes the arc as a share
 // of the ring, which the stylesheet breathes while the ring turns.
-function RunningRing() {
+export function RunningRing() {
   return (
     <svg
       aria-hidden="true"
@@ -70,6 +72,40 @@ function RunningRing() {
         pathLength={100}
       />
       <circle className="thread-ring-dot" cx="10" cy="10" r="4.25" />
+    </svg>
+  );
+}
+
+export function SegmentedRing({ count }: { count: 3 | 4 }) {
+  const start = count === 3 ? -126 : -90;
+  return (
+    <svg
+      aria-hidden="true"
+      focusable="false"
+      viewBox="0 0 20 20"
+      className="thread-ring thread-segmented-ring"
+      data-count={count}
+    >
+      <g className="thread-segmented-outer">
+        {Array.from({ length: count }, (_, index) => (
+          <circle
+            key={index}
+            className="thread-segmented-arc"
+            cx="10"
+            cy="10"
+            r="9"
+            pathLength={100}
+            strokeDasharray={count === 4 ? '15 85' : '20 80'}
+            transform={`rotate(${start + (index * 360) / count} 10 10)`}
+          />
+        ))}
+      </g>
+      <circle
+        className="thread-ring-dot thread-segmented-dot"
+        cx="10"
+        cy="10"
+        r="4.25"
+      />
     </svg>
   );
 }
@@ -115,26 +151,15 @@ function Marker({ step, settling }: { step: ProcessStep; settling: boolean }) {
   );
 }
 
-/*
-  A value that morphs when it changes -- a count ticking over. The morph is
-  drawn for the eye only (torph hides its letters from assistive technology),
-  so the words are said once more, plainly, for a screen reader.
-*/
-function Morphing({ text }: { text: string }) {
-  return (
-    <>
-      <span aria-hidden="true">
-        <TextMorph as="span" duration={260}>
-          {text}
-        </TextMorph>
-      </span>
-      <span className="sr-only">{text}</span>
-    </>
-  );
-}
-
 // What a flag can do: open the thing it names.
 export type FlagAction = { label: string; onPress: () => void };
+
+// A neutral fact that opens what it names -- the instructions a run ran under.
+export type StepReference = {
+  label: string;
+  // Absent where there is nowhere to open it: the pill is then only a fact.
+  action?: FlagAction;
+};
 
 /*
   Open is earned: a step is unfolded while it is running, when it stopped the
@@ -152,6 +177,7 @@ export function ThreadStep({
   latest = false,
   enter = false,
   flagAction,
+  reference,
   children,
 }: {
   step: ProcessStep;
@@ -159,9 +185,28 @@ export function ThreadStep({
   // Arrived while the reader watched, rather than with the page: it eases in.
   enter?: boolean;
   flagAction?: FlagAction;
+  reference?: StepReference;
   children: ReactNode;
 }) {
   const bodyId = useId();
+  const foldRef = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  // The fold opens at one speed, so its duration follows the body's height.
+  // Only the measurement lives here; the stylesheet turns it into time.
+  useLayoutEffect(() => {
+    const fold = foldRef.current;
+    const body = bodyRef.current;
+    if (!fold || !body) return;
+    const observer = new ResizeObserver(([entry]) => {
+      const height = entry?.borderBoxSize[0]?.blockSize ?? body.offsetHeight;
+      fold.style.setProperty(
+        '--thread-fold-height',
+        String(Math.round(height)),
+      );
+    });
+    observer.observe(body);
+    return () => observer.disconnect();
+  }, []);
   const earned = earnsOpen(step, latest);
   const [open, setOpen] = useState(earned);
   const [settled, setSettled] = useState(earned);
@@ -225,11 +270,11 @@ export function ThreadStep({
         >
           {step.name}
         </button>
-        {step.label || step.flag ? (
+        {step.label || step.flag || reference ? (
           <span className="thread-step-facts">
             {step.label ? (
               <span className="thread-step-fact">
-                <Morphing text={step.label} />
+                <MorphingText text={step.label} />
               </span>
             ) : null}
             {/* Its own pill, in the step's tone: the part of the fact that is
@@ -248,6 +293,21 @@ export function ThreadStep({
                 </button>
               ) : (
                 <span className="thread-step-flag">{step.flag}</span>
+              )
+            ) : null}
+            {reference ? (
+              reference.action ? (
+                <button
+                  type="button"
+                  className="thread-step-link"
+                  onClick={reference.action.onPress}
+                >
+                  {reference.label}
+                  <span aria-hidden="true">↗</span>
+                  <span className="sr-only"> — {reference.action.label}</span>
+                </button>
+              ) : (
+                <span className="thread-step-fact">{reference.label}</span>
               )
             ) : null}
           </span>
@@ -290,11 +350,14 @@ export function ThreadStep({
           part: 'body',
           appearance: 'thread-step-fold',
         })}
+        ref={foldRef}
         className="thread-step-fold"
         inert={!open}
       >
         <div className="thread-step-clip">
-          <div className="thread-step-body">{children}</div>
+          <div ref={bodyRef} className="thread-step-body">
+            {children}
+          </div>
         </div>
       </div>
     </li>

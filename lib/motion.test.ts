@@ -1,6 +1,11 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { DURATION_PANE, DURATION_STATE, EASE_OUT_EMPHASIZED } from './motion';
+import {
+  DURATION_PANE,
+  DURATION_STATE,
+  EASE_OUT_EMPHASIZED,
+  EASE_OUT_QUAD,
+} from './motion';
 
 // The whole folder, so a token moving between its files does not break this.
 const dir = new URL('../app/styles/', import.meta.url);
@@ -38,5 +43,9 @@ describe('motion tokens', () => {
     expect([...EASE_OUT_EMPHASIZED]).toEqual(
       bezier(token('ease-out-emphasized')),
     );
+  });
+
+  it('mirrors the quadratic curve in app/styles/', () => {
+    expect([...EASE_OUT_QUAD]).toEqual(bezier(token('ease-out-quad')));
   });
 });

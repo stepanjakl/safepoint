@@ -138,10 +138,12 @@ export function WorkspaceMenu({
   count,
   enterRef,
   onEnter,
+  shine,
 }: {
   count: number;
   enterRef: Ref<HTMLButtonElement>;
   onEnter: () => void;
+  shine: boolean;
 }) {
   return (
     <ul className="mt-2 grid gap-0.5">
@@ -155,6 +157,7 @@ export function WorkspaceMenu({
           ref={enterRef}
           className={cx(
             MENU_ITEM,
+            'workspace-menu-entry',
             'hover:text-primary focus-visible:text-primary',
           )}
           type="button"
@@ -165,7 +168,12 @@ export function WorkspaceMenu({
             icon="processes"
             iconFilled="processesFilled"
           />
-          <span>Processes</span>
+          <span
+            className="workspace-menu-shine"
+            data-shine={shine || undefined}
+          >
+            Processes
+          </span>
           <span
             {...styleDebug({
               component: 'WorkspaceMenu',
