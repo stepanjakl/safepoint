@@ -57,6 +57,7 @@ test('release review', async ({ page }, testInfo) => {
     .getByRole('button', { name: 'Review release', exact: true })
     .click();
   await expect(page.getByRole('dialog')).toBeVisible();
+  await page.locator('.review-queue button[aria-expanded]').first().click();
   await expect(
     page.getByText('Loading item details…', { exact: true }),
   ).toBeHidden();

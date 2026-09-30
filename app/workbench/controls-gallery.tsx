@@ -1,5 +1,6 @@
 'use client';
 
+import ArrowUpRight from 'blode-icons-react/icons/arrow-up-right';
 import X from 'blode-icons-react/icons/x';
 import { useRef, type ReactNode } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
@@ -167,7 +168,13 @@ export function ControlsGallery({
                     className="thread-step-link"
                     disabled={disabled}
                   >
-                    Instructions v4<span aria-hidden="true">↗</span>
+                    Instructions v4
+                    <ArrowUpRight
+                      aria-hidden
+                      size={12}
+                      strokeWidth={2.5}
+                      className="flex-none"
+                    />
                   </button>
                 </span>
               </div>

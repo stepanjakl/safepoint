@@ -3,7 +3,6 @@ import type { ReactNode } from 'react';
 
 import { DesignControls } from '@/components/dev/design-controls';
 import { DesignPreferencesScript } from '@/components/dev/design-preferences-script';
-import { LocatorRuntime } from '@/components/dev/locator-runtime';
 import { StyleInspector } from '@/components/dev/style-inspector';
 import { DEFAULT_THEME } from '@/lib/typography';
 
@@ -11,7 +10,6 @@ import './styles/index.css';
 import { fontVariables } from './typography';
 
 export const metadata: Metadata = {
-  title: 'Safepoint',
   description:
     'Safepoint helps people review changes proposed by an AI agent before those changes reach real systems.',
 };
@@ -28,10 +26,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       data-theme={DEFAULT_THEME}
       suppressHydrationWarning
     >
-      {/* suppressHydrationWarning: the LocatorJS browser extension writes its
-          own data-locator-* status attributes onto <head> before React
-          hydrates, which React would otherwise report as a mismatch. */}
-      <head suppressHydrationWarning>
+      <head>
+        <title>Safepoint</title>
         <DesignPreferencesScript />
       </head>
       <body className="bg-canvas text-primary" suppressHydrationWarning>
@@ -43,7 +39,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         </a>
         {children}
         <DesignControls />
-        <LocatorRuntime />
         <StyleInspector />
       </body>
     </html>

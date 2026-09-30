@@ -1,7 +1,6 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { styleDebug } from '@/lib/style-debug';
 import { Button } from '@/components/ui/button';
 import { Glyph, type GlyphName } from '@/components/ui/glyph';
 import type { Tone } from '@/components/ui/status-label';
@@ -99,11 +98,6 @@ export function EvaluationProgress({
         {segments.map((segment) => (
           <span
             key={segment.disposition}
-            {...styleDebug({
-              component: 'EvaluationProgress',
-              part: 'segment',
-              appearance: 'release-bucket-bar',
-            })}
             className="release-bucket-bar rounded-full"
             data-severity={severityRank(segment.disposition)}
             style={{ flexGrow: segment.count }}

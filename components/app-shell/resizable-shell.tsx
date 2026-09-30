@@ -39,7 +39,8 @@ export function ResizableShell({
   navigation: ReactNode;
   children: ReactNode;
 }) {
-  const { workspaceReveal, finishWorkspaceReveal } = useShellPageNavigation();
+  const { workspaceReveal, finishWorkspaceReveal, finishWorkspaceFade } =
+    useShellPageNavigation();
   const snapshot = useSyncExternalStore(
     subscribeSidebarPreferences,
     readSidebarPreferences,
@@ -66,7 +67,9 @@ export function ResizableShell({
   });
   const { navigationRef: leftContentRef, handle: leftHandleRef } = left;
   const workspaceRevealActive =
-    workspaceReveal === 'waiting' || workspaceReveal === 'opening';
+    workspaceReveal === 'waiting' ||
+    workspaceReveal === 'opening' ||
+    workspaceReveal === 'fading';
   const workspaceRevealLocked = workspaceRevealActive && left.bounds !== null;
   const {
     navigationRef: rightContentRef,
@@ -101,6 +104,16 @@ export function ResizableShell({
     left.bounds,
     finishWorkspaceReveal,
   ]);
+  useEffect(() => {
+    if (workspaceReveal !== 'fading') return;
+    if (left.reduceMotion) {
+      finishWorkspaceFade();
+      return;
+    }
+    // The final menu item's animation ends the reveal; this covers interruption.
+    const completion = window.setTimeout(finishWorkspaceFade, 3000);
+    return () => window.clearTimeout(completion);
+  }, [workspaceReveal, left.reduceMotion, finishWorkspaceFade]);
   useEffect(() => {
     const viewport = window.visualViewport;
     if (!open || docked || !viewport) return;
@@ -258,7 +271,6 @@ export function ResizableShell({
         data-collapsed={left.collapsed || undefined}
         data-resizing={left.preview !== null || undefined}
         data-dragging={left.isDragging || right.isDragging || undefined}
-        data-assistant-open={open || undefined}
         data-assistant-resizing={right.preview !== null || undefined}
         data-workspace-reveal={
           workspaceRevealActive ? workspaceReveal : undefined

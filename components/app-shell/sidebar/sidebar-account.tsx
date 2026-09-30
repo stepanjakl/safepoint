@@ -1,7 +1,6 @@
 import { GradientAvatar } from '@outpacelabs/avatars';
 
 import { cx } from '@/lib/cx';
-import { styleDebug } from '@/lib/style-debug';
 import { Tooltip } from '@/components/ui/tooltip';
 import { ICON_BUTTON, MENU_RAIL, MenuIcon, RAIL_CELL } from './menu-parts';
 
@@ -27,16 +26,7 @@ export function SidebarAccount() {
           colors={AVATAR_COLORS}
         />
       </span>
-      <p
-        {...styleDebug({
-          component: 'SidebarAccount',
-          part: 'name',
-          appearance: 'text-primary',
-        })}
-        className="text-primary text-dense mr-auto font-semibold"
-      >
-        Maya
-      </p>
+      <p className="text-primary text-dense mr-auto font-semibold">Maya</p>
       <span className={MENU_RAIL}>
         <Tooltip label="Settings">
           <button
@@ -48,11 +38,6 @@ export function SidebarAccount() {
               // row a pointer can actually press.
               'group-hover/account:bg-surface-selected group-hover/account:text-primary',
             )}
-            {...styleDebug({
-              component: 'SidebarAccount',
-              part: 'settings',
-              appearance: 'control-wash text-header-ink',
-            })}
             aria-label="Settings"
             aria-disabled="true"
           >

@@ -84,6 +84,53 @@ async function release(page: Page, point: { x: number; y: number }) {
 const focusHandle = (page: Page, which: 'left' | 'right') =>
   page.locator(`.sidebar-handle[data-side="${which}"]`).focus();
 
+test('the resize hint belongs to the grip and its tooltip stays anchored', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/examples/promotion?run=run-104');
+
+  const handle = page.locator('.sidebar-handle[data-side="left"]');
+  const grip = handle.locator('.sidebar-handle-mark');
+  const path = handle.locator('path');
+  const tooltip = page.locator('.app-tooltip');
+  const straight = 'M12 4 L12 22 L12 40';
+  const pointsLeft = 'M14 4 L10 22 L14 40';
+
+  const handleBox = (await handle.boundingBox())!;
+  await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + 12);
+  await expect(path).toHaveAttribute('d', straight);
+
+  await grip.hover();
+  await expect(path).toHaveAttribute('d', pointsLeft);
+  await expect(tooltip).toBeVisible();
+  const tooltipBox = (await tooltip.boundingBox())!;
+  expect(tooltipBox.x).toBeGreaterThan(0);
+  expect(tooltipBox.y).toBeGreaterThan(0);
+
+  await page.setViewportSize({ width: 800, height: 900 });
+  const tooltipPositions = await page.evaluate(
+    () =>
+      new Promise<{ x: number; y: number }[]>((resolve) => {
+        const positions: { x: number; y: number }[] = [];
+        let frames = 0;
+        function sample() {
+          const element = document.querySelector('.app-tooltip');
+          if (element) {
+            const { x, y } = element.getBoundingClientRect();
+            positions.push({ x, y });
+          }
+          frames += 1;
+          if (frames < 12) requestAnimationFrame(sample);
+          else resolve(positions);
+        }
+        requestAnimationFrame(sample);
+      }),
+  );
+  expect(tooltipPositions.every(({ x, y }) => x > 0 && y > 0)).toBe(true);
+  await expect(tooltip).toBeHidden();
+});
+
 test('the sidebars resize, remember, and recover', async ({
   page,
   colorScheme,
@@ -226,7 +273,10 @@ test('the sidebars resize, remember, and recover', async ({
                 track: parseFloat(
                   getComputedStyle(shell).gridTemplateColumns.split(' ')[2]!,
                 ),
-                open: shell.hasAttribute('data-assistant-open'),
+                // The right handle is drawn only while the assistant is open.
+                open: Boolean(
+                  document.querySelector('.sidebar-handle[data-side="right"]'),
+                ),
               });
               if (performance.now() - start < 1100)
                 requestAnimationFrame(sample);

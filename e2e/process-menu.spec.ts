@@ -100,7 +100,7 @@ test('travelling between levels moves focus to the arrival control', async ({
   await expect(page).toHaveURL(/\/workspace$/);
   await expect(
     page.getByRole('heading', {
-      name: 'An agent proposes a change. You make the call. Safepoint applies only what you approve.',
+      name: /The agent proposes changes to your systems/,
     }),
   ).toBeVisible();
   await expect(
@@ -118,7 +118,7 @@ test('travelling between levels moves focus to the arrival control', async ({
     page.getByRole('button', { name: 'Back to workspace menu', exact: true }),
   ).toBeFocused();
   await expect(
-    page.getByRole('heading', { name: /An agent proposes a change/ }),
+    page.getByRole('heading', { name: /The agent proposes changes/ }),
   ).toBeVisible();
 
   // ⌘K from the workspace level travels back and lands in the field.
@@ -172,11 +172,121 @@ test('the first workspace visit reveals navigation after the intro', async ({
     timeout: 12_000,
   });
   await expect(handle).toBeHidden();
+  await expect(navigation).toHaveCSS('opacity', '0');
+  await expect(shell).toHaveAttribute('data-workspace-reveal', 'fading');
+  const menuItems = page.locator('.workspace-menu-items > li');
+  await expect(menuItems.first()).toHaveCSS('animation-delay', '0s');
+  await expect(menuItems.last()).toHaveCSS('animation-delay', '0.8s');
   await expect(shell).not.toHaveAttribute('data-workspace-reveal');
   await expect(navigation).not.toHaveAttribute('inert');
   await expect(handle).toBeVisible();
   await expect(handle).toHaveAttribute('tabindex', '0');
   await expect(processes).toHaveAttribute('data-shine', 'true');
+});
+
+test('process navigation fades content while the pane and assistant stay steady', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/examples/promotion');
+  const frames = await page.evaluate(
+    () =>
+      new Promise<
+        {
+          route: string;
+          title: string;
+          titleCount: number;
+          pane: number;
+          heading: number;
+          body: number;
+          assistant: number;
+        }[]
+      >((resolve) => {
+        const frames: {
+          route: string;
+          title: string;
+          titleCount: number;
+          pane: number;
+          heading: number;
+          body: number;
+          assistant: number;
+        }[] = [];
+        let count = 0;
+        function sample() {
+          const pane = document.querySelector(
+            '.ground-raised.rounded-shell > div:last-child',
+          );
+          const heading = document.querySelector(
+            '.process-header > div:first-child',
+          );
+          const body = document.querySelector('.process-header + div');
+          const assistant = document.querySelector(
+            '.process-header button[aria-label="Assistant"]',
+          );
+          if (pane && heading && body && assistant)
+            frames.push({
+              route: location.pathname,
+              title: document.title,
+              titleCount: document.querySelectorAll('title').length,
+              pane: Number(getComputedStyle(pane).opacity),
+              heading: Number(getComputedStyle(heading).opacity),
+              body: Number(getComputedStyle(body).opacity),
+              assistant: Number(getComputedStyle(assistant).opacity),
+            });
+          if (++count < 55) requestAnimationFrame(sample);
+          else resolve(frames);
+        }
+        requestAnimationFrame(sample);
+        document
+          .querySelector<HTMLAnchorElement>('a[href="/examples/support"]')
+          ?.click();
+      }),
+  );
+  await expect(page).toHaveURL(/\/examples\/support$/);
+  expect(
+    frames.some(
+      (frame) => frame.route === '/examples/promotion' && frame.body < 0.9,
+    ),
+  ).toBe(true);
+  expect(
+    frames.some(
+      (frame) => frame.route === '/examples/support' && frame.body < 0.9,
+    ),
+  ).toBe(true);
+  expect(
+    frames.every((frame) => frame.pane === 1 && frame.assistant === 1),
+  ).toBe(true);
+  expect(
+    frames.every(
+      (frame) => frame.title === 'Safepoint' && frame.titleCount === 1,
+    ),
+  ).toBe(true);
+});
+
+test('returning to the workspace skips the intro, but refreshing replays it', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await openHome(page);
+  await page
+    .getByRole('button', { name: 'Back to workspace menu', exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/workspace$/);
+
+  const shell = page.locator('.resizable-shell');
+  const phrases = page.locator('.workspace-intro-beat > span');
+  await expect(shell).not.toHaveAttribute('data-workspace-reveal');
+  await expect(phrases).toHaveCount(15);
+  await expect(phrases.first()).toHaveCSS('opacity', '1');
+  await expect(phrases.last()).toHaveCSS('opacity', '1');
+  await expect(page.locator('.workspace-menu-shine')).toHaveAttribute(
+    'data-shine',
+    'true',
+  );
+
+  await page.reload();
+  await expect(shell).toHaveAttribute('data-workspace-reveal', 'waiting');
+  await expect(phrases.last()).toHaveCSS('opacity', '0');
 });
 
 test('the brand mark turns on hover and settles back into place', async ({

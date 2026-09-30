@@ -1,6 +1,5 @@
 'use client';
 
-import { styleDebug } from '@/lib/style-debug';
 import {
   useLayoutEffect,
   useRef,
@@ -94,7 +93,6 @@ export function Tooltip({
     >
       <Focusable>{children}</Focusable>
       <AriaTooltip
-        {...styleDebug({ component: 'Tooltip', appearance: 'app-tooltip' })}
         className="app-tooltip group"
         offset={offset}
         containerPadding={containerPadding}
@@ -103,14 +101,7 @@ export function Tooltip({
         data-rich={content ? true : undefined}
         data-anchor={anchor}
       >
-        <OverlayArrow
-          {...styleDebug({
-            component: 'Tooltip',
-            part: 'arrow',
-            appearance: 'app-tooltip-arrow',
-          })}
-          className="app-tooltip-arrow flex"
-        >
+        <OverlayArrow className="app-tooltip-arrow flex">
           <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
             <path className="tooltip-arrow-fill" d={ARROW.fill} />
             <path className="tooltip-arrow-edge" d={ARROW.edge} />

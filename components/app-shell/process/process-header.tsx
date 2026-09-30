@@ -1,6 +1,5 @@
 'use client';
 
-import { styleDebug } from '@/lib/style-debug';
 import { Button as AriaButton } from 'react-aria-components';
 // Deep imports: Blode's barrel is the whole icon library. The two data icons
 // are one drawing: the same tray, with the arrow turned in or out, so the pair
@@ -18,7 +17,7 @@ import {
   worstFreshness,
   type SystemLink,
 } from '@/lib/process/system-links';
-import { OverlayDemo } from '@/components/app-shell/overlay-demo';
+import { ProcessContentTransition } from './process-content-transition';
 import type { ProcessTab } from './process-tab-store';
 import { ProcessTitle } from './process-title';
 import { Assistant } from '@/components/app-shell/assistant/assistant';
@@ -136,10 +135,7 @@ function ProcessMenu({
   return (
     // Below the phone breakpoint the row cannot hold the name, the group and
     // the notch, and the name has first claim.
-    <div
-      {...styleDebug({ component: 'ProcessHeader', part: 'menu' })}
-      className={MENU}
-    >
+    <div className={MENU}>
       {/* It ends in its word rather than a count, so it ends in the padding it
           starts with: the derived end inset belongs to the items whose last
           thing is a pill. */}
@@ -147,11 +143,6 @@ function ProcessMenu({
         onPress={() => onTabChange('runs')}
         aria-label="Runs"
         aria-current={tab === 'runs' ? 'true' : undefined}
-        {...styleDebug({
-          component: 'ProcessHeader',
-          part: 'runs',
-          appearance: 'header-button',
-        })}
         className={cx(ITEM, 'pe-3', face('runs'))}
       >
         <History
@@ -166,11 +157,6 @@ function ProcessMenu({
         onPress={() => onTabChange('instructions')}
         aria-label={`Instructions: version ${version}`}
         aria-current={tab === 'instructions' ? 'true' : undefined}
-        {...styleDebug({
-          component: 'ProcessHeader',
-          part: 'instructions',
-          appearance: 'header-button',
-        })}
         className={cx(ITEM, face('instructions'))}
       >
         <Lab
@@ -180,16 +166,7 @@ function ProcessMenu({
           className={cx('flex-none -translate-y-px', icon('instructions'))}
         />
         <span className={LABEL}>Instructions</span>
-        <span
-          {...styleDebug({
-            component: 'ProcessHeader',
-            part: 'count',
-            appearance: 'header-button-count',
-          })}
-          className={COUNT}
-        >
-          {version}
-        </span>
+        <span className={COUNT}>{version}</span>
       </AriaButton>
       {inputs.length > 0 ? (
         <AriaButton
@@ -199,11 +176,6 @@ function ProcessMenu({
           }`}
           aria-current={tab === 'inputs' ? 'true' : undefined}
           data-has-state-dot={worst || undefined}
-          {...styleDebug({
-            component: 'ProcessHeader',
-            part: 'inputs',
-            appearance: 'header-button',
-          })}
           className={cx(ITEM, face('inputs', worst ?? 'none'))}
         >
           <ArrowInbox
@@ -215,16 +187,7 @@ function ProcessMenu({
           <span className={LABEL}>Inputs</span>
           {worst ? (
             <span className="inline-flex items-center gap-1.5">
-              <span
-                {...styleDebug({
-                  component: 'ProcessHeader',
-                  part: 'count',
-                  appearance: 'header-button-count',
-                })}
-                className={COUNT}
-              >
-                {inputs.length}
-              </span>
+              <span className={COUNT}>{inputs.length}</span>
               <span
                 aria-hidden="true"
                 className={cx(
@@ -234,16 +197,7 @@ function ProcessMenu({
               />
             </span>
           ) : (
-            <span
-              {...styleDebug({
-                component: 'ProcessHeader',
-                part: 'count',
-                appearance: 'header-button-count',
-              })}
-              className={COUNT}
-            >
-              {inputs.length}
-            </span>
+            <span className={COUNT}>{inputs.length}</span>
           )}
         </AriaButton>
       ) : null}
@@ -251,11 +205,6 @@ function ProcessMenu({
         onPress={() => onTabChange('outputs')}
         aria-label={`Outputs: ${plural(outputs.length, 'API', 'APIs')}`}
         aria-current={tab === 'outputs' ? 'true' : undefined}
-        {...styleDebug({
-          component: 'ProcessHeader',
-          part: 'outputs',
-          appearance: 'header-button',
-        })}
         className={cx(ITEM, face('outputs'))}
       >
         <ArrowOutOfBox
@@ -265,26 +214,12 @@ function ProcessMenu({
           className={cx('flex-none -translate-y-px', icon('outputs'))}
         />
         <span className={LABEL}>Outputs</span>
-        <span
-          {...styleDebug({
-            component: 'ProcessHeader',
-            part: 'count',
-            appearance: 'header-button-count',
-          })}
-          className={COUNT}
-        >
-          {outputs.length}
-        </span>
+        <span className={COUNT}>{outputs.length}</span>
       </AriaButton>
       <AriaButton
         onPress={() => onTabChange('settings')}
         aria-label="Settings"
         aria-current={tab === 'settings' ? 'true' : undefined}
-        {...styleDebug({
-          component: 'ProcessHeader',
-          part: 'settings',
-          appearance: 'header-button',
-        })}
         className={cx(ICON_ITEM, face('settings'))}
       >
         {/* No optical lift: the lift aligns an icon with text on a baseline,
@@ -330,28 +265,21 @@ export function ProcessHeader({
   return (
     // The separator shadow extends into the first list row. Paint this header
     // above the sticky section headings so their opaque fills cannot cover it;
-    // the notch stays in the same layer as the edge it continues.
-    <header
-      {...styleDebug({ component: 'ProcessHeader' })}
-      className="process-header border-rule-faint shadow-separator-bottom-strong relative z-10 grid grid-cols-[minmax(0,1fr)_auto] border-b"
-    >
+    // the notch stays in the same layer as the edge it continues. Widened over
+    // the pane's lit edge and padded back, so only its rule reaches the ring.
+    <header className="process-header border-raised-ring shadow-separator-bottom-strong -mx-control-highlight px-control-highlight relative z-10 grid grid-cols-[minmax(0,1fr)_auto] border-b">
       {/* Both cells recover the same top inset and bottom edge, so their
           centres agree even when the pane's highlight thickness changes. */}
-      <div className="-mt-pane-inset -mb-control-edge flex min-w-0 items-center justify-between gap-x-4 px-4 sm:px-6">
+      <ProcessContentTransition className="-mt-pane-inset -mb-control-edge flex min-w-0 items-center justify-between gap-x-4 px-4 sm:px-6">
         <ProcessTitle processId={process.id} fallback={process.name} />
-        {/* The demo sits beside the menu rather than in it: it opens an
-            overlay, not a tab, and the group is a set of tabs. */}
-        <div className="flex flex-none items-center gap-2">
-          <ProcessMenu
-            version={version}
-            inputs={inputs}
-            outputs={outputs}
-            tab={tab}
-            onTabChange={onTabChange}
-          />
-          <OverlayDemo />
-        </div>
-      </div>
+        <ProcessMenu
+          version={version}
+          inputs={inputs}
+          outputs={outputs}
+          tab={tab}
+          onTabChange={onTabChange}
+        />
+      </ProcessContentTransition>
       {/* One slanted control now that the process's own buttons are in the
           row: it leans towards them on its left and keeps its far side
           square, parallel to the pane's side and the notch's gap in from it.

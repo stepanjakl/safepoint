@@ -21,10 +21,14 @@
   --color-primary: var(--sp-text-primary);
   --color-muted: var(--sp-text-muted);
   --color-muted-strong: var(--sp-text-muted-strong);
+  --color-muted-soft: var(--sp-text-muted-soft);
   --color-inverse: var(--sp-text-inverse);
   --color-rule-faint: var(--sp-rule-faint);
   --color-rule-default: var(--sp-rule-default);
   --color-rule-strong: var(--sp-rule-strong);
+  --color-raised-ring: var(--sp-raised-ring);
+  --color-floating-ring: var(--sp-floating-ring);
+  --color-recessed-ring: var(--sp-recessed-ring);
   --color-action: var(--sp-action);
   --color-action-hover: var(--sp-action-hover);
   --color-state-advisory: var(--sp-state-advisory);

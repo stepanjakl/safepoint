@@ -9,5 +9,5 @@ export function GET() {
   if (process.env.NODE_ENV !== 'development') {
     return new Response(null, { status: 404 });
   }
-  return Response.json(readStylesheets(process.cwd()));
+  return Response.json(readStylesheets(process.cwd(), { preflight: true }));
 }

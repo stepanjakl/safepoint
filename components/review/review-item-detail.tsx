@@ -1,5 +1,9 @@
+import ArrowUpRight from 'blode-icons-react/icons/arrow-up-right';
+import { Glyph } from '@/components/ui/glyph';
 import type { ReviewDetail } from '@/lib/review/contracts';
+import { severityRank } from '@/lib/review/plan-contract';
 import { DeltaValue } from './delta';
+import { dispositionGlyph } from './markers';
 
 /*
   The disclosure stack. Each `<details>` is a rule with a mono +/- in the
@@ -27,26 +31,22 @@ export function ReviewItemDetail({
   idPrefix: string;
 }) {
   return (
-    <div className="px-8 pb-7 [overflow-wrap:anywhere] @max-3xl/review:px-5 @max-3xl/review:pb-6">
+    <div className="p-5 [overflow-wrap:anywhere]">
+      {/* The verdict on the item, on its bucket's own fill: the one block in
+          the panel that says what to do, before the evidence for it. */}
       <div
-        className="border-state-advisory data-[disposition=blocked]:border-state-blocked data-[disposition=needs_decision]:border-state-caution group/conclusion [&>p:not(:first-child)]:text-dense border-l-2 pl-4 [&>p:not(:first-child)]:leading-relaxed"
-        data-disposition={detail.disposition}
+        className="bg-severity-fill rounded-control text-dense grid gap-2 p-4 leading-relaxed"
+        data-severity={severityRank(detail.disposition)}
       >
-        <p className="group-data-[disposition=blocked]/conclusion:text-state-blocked group-data-[disposition=needs_decision]/conclusion:text-state-caution text-title mb-2 flex items-baseline gap-2 [font-weight:550]">
-          <span aria-hidden="true">
-            {detail.disposition === 'blocked'
-              ? '⊘'
-              : detail.disposition === 'needs_decision'
-                ? '!'
-                : detail.disposition === 'deferred'
-                  ? '⏸'
-                  : '✓'}
+        <p className="text-severity-ink text-body flex items-baseline gap-2 [font-weight:550]">
+          <span className="flex self-center" aria-hidden="true">
+            <Glyph name={dispositionGlyph[detail.disposition]} size={10} />
           </span>
           {detail.conclusion}
         </p>
         <p>{detail.explanation}</p>
-        <p className="mt-3">
-          <strong className="block [font-weight:550]">Next step</strong>{' '}
+        <p className="mt-1">
+          <span className="readout text-severity-ink block">Next step</span>
           {detail.nextAction}
         </p>
       </div>
@@ -54,10 +54,9 @@ export function ReviewItemDetail({
       <section className="mt-7" aria-labelledby={`${idPrefix}-changes`}>
         <h3
           id={`${idPrefix}-changes`}
-          className="border-rule-default text-body [&>span]:text-meta border-b pb-3 [font-weight:550] [&>span]:ml-2 [&>span]:font-mono"
+          className="readout text-muted border-floating-ring shadow-separator-bottom-solid flex items-center justify-between border-b pb-2.5 [font-weight:var(--sp-mono-weight-strong)]"
         >
-          Proposed changes{' '}
-          <span className="text-muted font-normal">{detail.deltas.length}</span>
+          Proposed changes <span className="value">{detail.deltas.length}</span>
         </h3>
         {detail.deltas.length ? (
           // The card shows the leading change and says how many it omits; the
@@ -66,9 +65,9 @@ export function ReviewItemDetail({
             {detail.deltas.map((delta) => (
               <div
                 key={delta.label}
-                className="border-rule-faint grid grid-cols-[130px_minmax(0,1fr)] gap-x-4 gap-y-2 border-b py-3.5 @max-3xl/review:grid-cols-[minmax(0,1fr)]"
+                className="border-floating-ring shadow-separator-bottom-solid grid grid-cols-[130px_minmax(0,1fr)] gap-x-4 gap-y-2 border-b py-3.5 @max-sm/review:grid-cols-[minmax(0,1fr)]"
               >
-                <dt className="text-dense">{delta.label}</dt>
+                <dt className="text-dense text-muted-strong">{delta.label}</dt>
                 <dd>
                   <DeltaValue delta={delta} expanded />
                 </dd>
@@ -76,7 +75,9 @@ export function ReviewItemDetail({
             ))}
           </dl>
         ) : (
-          <p className="text-muted">No changes are proposed for this item.</p>
+          <p className="text-muted text-dense py-3.5">
+            No changes are proposed for this item.
+          </p>
         )}
       </section>
 
@@ -274,7 +275,12 @@ function EvidenceLinks({
               }}
             >
               {source.label}
-              <span aria-hidden="true"> ↗</span>
+              <ArrowUpRight
+                aria-hidden
+                size={12}
+                strokeWidth={2.5}
+                className="ml-1 flex-none"
+              />
             </a>
           </li>
         ) : null;

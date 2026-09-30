@@ -1,8 +1,8 @@
 /*
   What a role paints, and where each step of the way is declared.
 
-    pnpm trace:token --sp-sheet-row-etch
-    pnpm trace:token sheet-row-etch --neutral steel
+    pnpm trace:token --sp-sheet-band
+    pnpm trace:token sheet-band --neutral steel
     pnpm trace:token --color-canvas
 
   Follows the role through every var() it reads, splitting light-dark() into

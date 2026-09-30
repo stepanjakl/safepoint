@@ -432,26 +432,21 @@ const ANCHORED_BY_FILE = {
     '--sp-title-field-edge-active': { on: 'primary', light: 450, dark: -550 },
   },
   'components/app-shell/runs/runs-list.css': {
-    '--sp-sheet-current': { on: 'primary', light: 50, dark: -100 },
+    '--sp-sheet-current': { on: 'primary', light: 75, dark: -100 },
     /* Its own step rather than the sidebar's wash: its ground is the pane. */
     '--sp-sheet-hover': { on: 'primary', light: 50, dark: -50 },
     /* The sticky head and version break. Not a recess: in dark that put the
        head in a pit below its rows. */
     '--sp-sheet-band': { on: 'primary', light: 25, dark: -25 },
-    /* The tally's total: ramp, not a severity tone. The "of" inside is ink at
-       75%, so current stays dark enough in dark to clear 4.5:1 at 11px. */
-    '--sp-sheet-total-face': { on: 'primary', light: 175, dark: -100 },
+    /* The tally's total: ramp, not a severity tone. Dark's label is ink at
+       75%; light gives it its own step against each face. */
+    '--sp-sheet-total-face': { on: 'primary', light: 150, dark: -100 },
     '--sp-sheet-total-face-hover': { on: 'primary', light: 225, dark: -175 },
-    '--sp-sheet-total-face-current': { on: 'primary', light: 225, dark: -200 },
-    /* The total's figure, a rounded lead half a step past its face. */
-    '--sp-sheet-total-lead': { on: 'primary', light: 250, dark: -175 },
-    '--sp-sheet-total-lead-hover': { on: 'primary', light: 300, dark: -250 },
-    '--sp-sheet-total-lead-current': { on: 'primary', light: 300, dark: -275 },
-    '--sp-sheet-break-etch': { on: 'primary', light: -25, dark: 25 },
-    '--sp-sheet-row-etch': { on: 'primary', light: -25, dark: 100 },
-    /* Further from the row than the resting etch, so the line strengthens as
-       the row lights up. */
-    '--sp-sheet-row-etch-active': { on: 'primary', light: -50, dark: 0 },
+    '--sp-sheet-total-face-current': { on: 'primary', light: 250, dark: -200 },
+    /* The figure lightens through states in both themes. */
+    '--sp-sheet-total-lead': { on: 'primary', light: 75, dark: -150 },
+    '--sp-sheet-total-lead-hover': { on: 'primary', light: 75, dark: -250 },
+    '--sp-sheet-total-lead-current': { on: 'primary', light: 50, dark: -275 },
   },
   'components/app-shell/thread/thread-step.css': {
     '--sp-thread-line': { on: 'primary', light: 225, dark: -200 },
@@ -466,13 +461,12 @@ const ANCHORED_BY_FILE = {
     '--sp-thread-link-face-active': { on: 'primary', light: 200, dark: -225 },
   },
   'components/review/release-card.css': {
-    '--sp-card-etch': { on: 'floating', light: -25, dark: 50 },
     /* A row's change pill: past the row's hover wash (+50 light, -100 dark)
-       at rest and further under it; its lead half a step past the face. */
+       at rest and further under it; its lead is lighter in light. */
     '--sp-card-pill-face': { on: 'floating', light: 100, dark: -75 },
     '--sp-card-pill-face-hover': { on: 'floating', light: 150, dark: -150 },
-    '--sp-card-pill-lead': { on: 'floating', light: 175, dark: -150 },
-    '--sp-card-pill-lead-hover': { on: 'floating', light: 225, dark: -225 },
+    '--sp-card-pill-lead': { on: 'floating', light: 25, dark: -150 },
+    '--sp-card-pill-lead-hover': { on: 'floating', light: 75, dark: -225 },
   },
   'components/ui/tooltip.css': {
     /* The face equals floating, so over a floating panel the edge alone
@@ -666,10 +660,6 @@ export const ROLE_ASSIGNMENTS = {
   },
   enclosureEdge: relativeRole('--sp-enclosure-edge'),
   dividerEtch: relativeRole('--sp-divider-etch'),
-  cardEtch: relativeRole('--sp-card-etch'),
-  sheetBreakEtch: relativeRole('--sp-sheet-break-etch'),
-  sheetRowEtch: relativeRole('--sp-sheet-row-etch'),
-  sheetRowEtchActive: relativeRole('--sp-sheet-row-etch-active'),
 } as const satisfies Record<string, RoleAssignment>;
 
 type RoleKey = keyof typeof ROLE_ASSIGNMENTS;

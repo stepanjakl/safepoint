@@ -28,7 +28,6 @@
 /* Components. The order is the cascade order of their layered rules. */
 @import '../../components/ui/switch.css';
 @import '../../components/ui/swap.css';
-@import '../../components/review/review-experience.css';
 @import '../../components/app-shell/thread/thread-step.css';
 @import '../../components/app-shell/system/system-parts.css';
 @import '../../components/ui/notch.css';
@@ -39,6 +38,7 @@
 @import '../../components/app-shell/sidebar/workspace-menu.css';
 @import '../../components/app-shell/process/process-title.css';
 @import '../../components/app-shell/process/process-header.css';
+@import '../../components/app-shell/process/process-sheet.css';
 @import '../../components/app-shell/process/schedule-control.css';
 @import '../../components/ui/tooltip.css';
 @import '../../components/review/effects-rail.css';
@@ -47,5 +47,6 @@
 @import '../../components/app-shell/runs/runs-list.css';
 @import '../../components/app-shell/runs/run-view.css';
 @import '../../components/review/release-card.css';
+@import '../../components/review/review-queue.css';
 @import '../../components/ui/brand.css';
 @import '../workbench/run/run-player.css';

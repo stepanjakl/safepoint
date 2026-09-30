@@ -50,7 +50,7 @@ const BEATS = [
   },
 ] satisfies { phrases: Phrase[] }[];
 const FIRST_PHRASE_DELAY = 1.14;
-const PHRASE_DURATION = 0.5;
+const PHRASE_DURATION = .88;
 const PHRASE_STAGGER = 0.28;
 const BEAT_PAUSE = 0.18;
 const PHRASE_OPACITY = [0, 0.25, 1];
@@ -69,7 +69,8 @@ const TIMED_BEATS = BEATS.map(({ phrases }) => ({
 
 export function WorkspaceIntro() {
   const reduceMotion = useReducedMotion();
-  const { finishWorkspaceIntro } = useShellPageNavigation();
+  const { finishWorkspaceIntro, workspaceReveal } = useShellPageNavigation();
+  const [playIntro] = useState(() => workspaceReveal === 'waiting');
   const [textComplete, setTextComplete] = useState(false);
   const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const introFinished = useRef(false);
@@ -102,12 +103,12 @@ export function WorkspaceIntro() {
           className="workspace-intro-mark text-brand-mark"
           aria-hidden="true"
           animate={
-            reduceMotion || !textComplete
+            reduceMotion || !playIntro || !textComplete
               ? { rotate: 0 }
               : { rotate: [...BRAND_TURN_ROTATION] }
           }
           transition={
-            reduceMotion || !textComplete
+            reduceMotion || !playIntro || !textComplete
               ? { duration: 0 }
               : {
                   duration: BRAND_TURN_DURATION,
@@ -124,14 +125,14 @@ export function WorkspaceIntro() {
             renderPiece={(piece, index) => (
               <motion.g
                 initial={
-                  reduceMotion
-                    ? false
-                    : { opacity: 0, y: -120, rotate: -8, scale: 0.84 }
+                  playIntro && !reduceMotion
+                    ? { opacity: 0, y: -120, rotate: -8, scale: 0.84 }
+                    : false
                 }
                 animate={{ opacity: 1, y: 0, rotate: 0, scale: 1 }}
                 transition={{
-                  duration: reduceMotion ? 0 : 0.66,
-                  delay: reduceMotion ? 0 : 0.22 + index * 0.1,
+                  duration: reduceMotion || !playIntro ? 0 : 0.66,
+                  delay: reduceMotion || !playIntro ? 0 : 0.22 + index * 0.1,
                   ease: EASE_OUT_QUAD,
                 }}
                 style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
@@ -155,15 +156,22 @@ export function WorkspaceIntro() {
                 return (
                   <motion.span
                     key={phraseIndex}
-                    initial={reduceMotion ? false : { opacity: 0 }}
-                    animate={{ opacity: reduceMotion ? 1 : PHRASE_OPACITY }}
+                    initial={
+                      playIntro && !reduceMotion ? { opacity: 0 } : false
+                    }
+                    animate={{
+                      opacity: reduceMotion || !playIntro ? 1 : PHRASE_OPACITY,
+                    }}
                     transition={{
-                      duration: reduceMotion ? 0 : PHRASE_DURATION,
-                      delay: reduceMotion ? 0 : delay,
+                      duration:
+                        reduceMotion || !playIntro ? 0 : PHRASE_DURATION,
+                      delay: reduceMotion || !playIntro ? 0 : delay,
                       times: PHRASE_TIMES,
                       ease: EASE_OUT_QUAD,
                     }}
-                    onAnimationComplete={finalPhrase ? finishText : undefined}
+                    onAnimationComplete={
+                      playIntro && finalPhrase ? finishText : undefined
+                    }
                   >
                     {phrase.kind === 'plain' ? (
                       phrase.text

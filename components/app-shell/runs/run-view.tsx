@@ -14,7 +14,7 @@ import { ProcessSheetActions } from '@/components/app-shell/process/process-shee
 import { RunThread } from '@/components/app-shell/thread/run-thread';
 import { ThreadPage } from '@/components/app-shell/thread/thread-page';
 import { Button } from '@/components/ui/button';
-import { motionAlong, useSwap } from '@/components/ui/swap';
+import { useSwap } from '@/components/ui/swap';
 import { Tooltip } from '@/components/ui/tooltip';
 import type { ProcessSummary } from '@/lib/process/model';
 import { runDay, runTime } from '@/lib/process/run-time';
@@ -36,9 +36,8 @@ export type PlayableRun = Omit<
   Only the current run has a recorded thread, which the server builds and
   hands in; a started run is drawn here, stage by stage, from the same data.
 
-  A change of run is a swap (components/ui/swap.tsx): to or from the empty page
-  it fades; between runs it also travels, rising when the new run is further
-  down the rail, so the page moves as the list does.
+  A change of run swaps content within the fixed thread column. The page fades
+  in place so its internal rules never move with the selection.
 */
 // The empty page's key: no run.
 const NONE = '';
@@ -55,13 +54,7 @@ export function RunView({
   const selection = useRunSelection();
   const runs = selection?.runs ?? process.runs;
   const view = useRef<HTMLDivElement>(null);
-  const { shown, layer } = useSwap(
-    selection?.selected ?? NONE,
-    motionAlong(
-      runs.map((run) => run.id),
-      'vertical',
-    ),
-  );
+  const { shown, layer } = useSwap(selection?.selected ?? NONE, () => 'fade');
 
   // A new page starts at its top, once the old one has gone.
   useEffect(() => {

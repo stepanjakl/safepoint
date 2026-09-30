@@ -1,6 +1,5 @@
 'use client';
 
-import { styleDebug } from '@/lib/style-debug';
 import type { CSSProperties } from 'react';
 // Deep imports: Blode's barrel is the whole icon library.
 import ArrowRotateClockwise from 'blode-icons-react/icons/arrow-rotate-clockwise-filled';
@@ -72,7 +71,6 @@ export function RunRow({
     */
     <button
       type="button"
-      {...styleDebug({ component: 'RunRow', appearance: 'sheet-row' })}
       className="sheet-row"
       onClick={onSelect}
       aria-label={announce(run, noun, status, trigger, stamp)}
@@ -90,11 +88,6 @@ export function RunRow({
       </span>
       <span
         aria-hidden="true"
-        {...styleDebug({
-          component: 'RunRow',
-          part: 'status',
-          appearance: 'sheet-row-status',
-        })}
         className="sheet-row-status text-meta"
         style={
           {
@@ -187,25 +180,12 @@ function Tally({
 
   return (
     // Outcome segments followed by a separate, explicitly labelled total.
-    <span
-      aria-hidden="true"
-      {...styleDebug({
-        component: 'RunRow',
-        part: 'tally',
-        appearance: 'sheet-tally',
-      })}
-      className="sheet-tally text-micro"
-    >
+    <span aria-hidden="true" className="sheet-tally text-micro">
       {segments.map((entry) => {
         const marker = outcomeMarker[entry.outcome];
         return (
           <span
             key={entry.key}
-            {...styleDebug({
-              component: 'RunRow',
-              part: 'tally-segment',
-              appearance: 'sheet-seg',
-            })}
             className="sheet-seg"
             data-severity={entry.severity}
           >
@@ -214,18 +194,13 @@ function Tally({
           </span>
         );
       })}
-      <span
-        {...styleDebug({
-          component: 'RunRow',
-          part: 'tally-total',
-          appearance: 'sheet-seg-total',
-        })}
-        className="sheet-seg sheet-seg-total font-semibold"
-      >
-        {segments.length > 0 ? <span className="opacity-75">of</span> : null}
+      <span className="sheet-seg sheet-seg-total font-semibold">
+        {segments.length > 0 ? (
+          <span className="sheet-total-label">of</span>
+        ) : null}
         <span className="value sheet-total-lead">{counts.items}</span>
         {segments.length === 0 ? (
-          <span className="opacity-75">
+          <span className="sheet-total-label">
             {noun}
             {counts.items === 1 ? '' : 's'}
           </span>

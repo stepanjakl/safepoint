@@ -1,6 +1,5 @@
 'use client';
 
-import { styleDebug } from '@/lib/style-debug';
 import type { ReactNode } from 'react';
 import {
   Switch as AriaSwitch,
@@ -35,7 +34,6 @@ export function Switch({
   return (
     <AriaSwitch
       {...props}
-      {...styleDebug({ component: 'Switch', appearance: 'switch' })}
       data-size={size}
       className={cx(
         'switch text-meta text-muted inline-flex min-h-6 cursor-pointer items-center gap-2 data-[disabled]:cursor-not-allowed',
@@ -43,23 +41,8 @@ export function Switch({
       )}
     >
       {children}
-      <span
-        aria-hidden="true"
-        {...styleDebug({
-          component: 'Switch',
-          part: 'track',
-          appearance: 'switch-track',
-        })}
-        className={TRACK}
-      >
-        <span
-          {...styleDebug({
-            component: 'Switch',
-            part: 'thumb',
-            appearance: 'switch-thumb',
-          })}
-          className={THUMB}
-        />
+      <span aria-hidden="true" className={TRACK}>
+        <span className={THUMB} />
       </span>
     </AriaSwitch>
   );

@@ -1,4 +1,3 @@
-import { styleDebug } from '@/lib/style-debug';
 import type { ReactNode } from 'react';
 
 /*
@@ -31,10 +30,7 @@ export function SectionRow({
   children?: ReactNode;
 }) {
   return (
-    <div
-      {...styleDebug({ component: 'SectionRow', appearance: 'sheet-head' })}
-      className="sheet-head"
-    >
+    <div className="sheet-head">
       {/*
         The readout one step up, through the utility face's own strong weight
         rather than a number. Each typeface set decides what that step is for

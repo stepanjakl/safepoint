@@ -430,7 +430,7 @@ function ParagraphRow({
               ) : segment.kind === 'added' ? (
                 <ins
                   key={index}
-                  className="bg-state-verified/12 decoration-state-verified/60 rounded-[2px] underline decoration-1 underline-offset-[3px]"
+                  className="bg-state-verified/12 decoration-state-verified rounded-[2px] underline decoration-1 underline-offset-[3px]"
                 >
                   <span className="sr-only">[added: </span>
                   {segment.text}
@@ -439,7 +439,7 @@ function ParagraphRow({
               ) : (
                 <del
                   key={index}
-                  className="bg-state-blocked/8 text-state-blocked decoration-state-blocked/70 rounded-[2px]"
+                  className="bg-state-blocked/8 text-state-blocked decoration-state-blocked rounded-[2px]"
                 >
                   <span className="sr-only">[removed: </span>
                   {segment.text}
@@ -448,7 +448,7 @@ function ParagraphRow({
               ),
             )
           ) : change.kind === 'removed' ? (
-            <del className="decoration-state-blocked/70">{change.text}</del>
+            <del className="decoration-state-blocked">{change.text}</del>
           ) : change.kind === 'added' ? (
             <ins className="no-underline">{change.text}</ins>
           ) : (

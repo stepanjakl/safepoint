@@ -139,3 +139,32 @@ test('returning to a tab during its fade restores the page immediately', async (
     page.getByRole('heading', { name: 'Runs' }).first(),
   ).toBeVisible();
 });
+
+test('tab handoff keeps dividers still and brings the heading in first', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/examples/promotion?run=run-104');
+
+  const inputs = page.getByRole('button', { name: /^Inputs/ }).first();
+  const layer = page.locator('.process-sheet-swap');
+  await inputs.click();
+  await expect(inputs).toHaveAttribute('aria-current', 'true');
+  await expect(layer).toHaveAttribute('inert', '');
+  expect(
+    await layer.evaluate((element) => {
+      const transform = new DOMMatrix(getComputedStyle(element).transform);
+      return [transform.m41, transform.m42];
+    }),
+  ).toEqual([0, 0]);
+
+  await expect(layer).toHaveAttribute('data-swap-entering', 'true');
+  await expect(layer.locator('.process-panel-list > .sheet-head')).toHaveCSS(
+    'animation-delay',
+    '0s',
+  );
+  await expect(
+    layer.locator('.process-panel-list > :not(.sheet-head)').first(),
+  ).toHaveCSS('animation-delay', '0.065s');
+  await expect(layer).not.toHaveAttribute('inert');
+});

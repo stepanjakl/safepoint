@@ -21,7 +21,7 @@ export function Assistant({ slant }: { slant?: Slant }) {
         aria-hidden
         size={16}
         strokeWidth={1.8}
-        className="group-interact/assistant:opacity-90 max-sm:group-interact/assistant:opacity-100 flex-none -translate-y-px opacity-75 transition-opacity duration-(--duration-state) ease-out max-sm:opacity-100"
+        className="text-muted group-interact/assistant:text-primary max-sm:text-primary flex-none -translate-y-px transition-colors duration-(--duration-state) ease-out"
       />
       {/* The word goes at phone width, where the row has already given its
             controls up to the name and the notch should stay narrow. */}

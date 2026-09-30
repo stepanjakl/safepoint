@@ -1,6 +1,5 @@
 'use client';
 
-import { styleDebug } from '@/lib/style-debug';
 import {
   useEffect,
   useRef,
@@ -62,6 +61,9 @@ export type AsideLayer = {
   // Focus moves to the panel's heading when it opens, unless the content has
   // somewhere better for it -- the editor's text field takes its own.
   focusOnOpen?: boolean;
+  // The header on the panel's recess rather than its face, where it has to
+  // read as a division from a long body under it.
+  band?: boolean;
   body: ReactNode;
 };
 
@@ -189,7 +191,6 @@ export function DrawerAside({
   return (
     <section
       aria-labelledby="drawer-aside-title"
-      {...styleDebug({ component: 'DrawerAside', appearance: 'drawer-aside' })}
       data-exiting={exiting || undefined}
       onAnimationEnd={(event) => {
         if (event.target === event.currentTarget && exiting) onExited();
@@ -227,11 +228,6 @@ function AsideContent({
 }) {
   return (
     <div
-      {...styleDebug({
-        component: 'DrawerAside',
-        part: 'panel',
-        appearance: className,
-      })}
       // Leaving content can be neither reached nor read.
       inert={inert}
       aria-hidden={inert || undefined}
@@ -242,7 +238,12 @@ function AsideContent({
         className,
       )}
     >
-      <header className="border-rule-faint flex min-w-0 items-start gap-3 border-b p-5">
+      <header
+        className={cx(
+          'border-rule-faint flex min-w-0 items-start gap-3 border-b p-5',
+          layer.band && 'bg-surface-inset',
+        )}
+      >
         {layer.leading}
         <div className="grid min-w-0 gap-0.5">
           <p className="readout text-muted">{layer.eyebrow}</p>

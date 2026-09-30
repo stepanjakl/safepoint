@@ -4,7 +4,6 @@ import type { RefObject } from 'react';
 import { motion, type Transition } from 'motion/react';
 
 import { cx } from '@/lib/cx';
-import { styleDebug } from '@/lib/style-debug';
 import { MENU_RAIL, MENU_RULE, MenuIcon } from './menu-parts';
 
 /*
@@ -77,14 +76,7 @@ export function ProcessSearch({
         the edge and the glyph's box, so the glyph stays on the axis whatever
         the edge is.
       */}
-      <div
-        {...styleDebug({
-          component: 'ProcessSearch',
-          part: 'field',
-          appearance: 'menu-search-field',
-        })}
-        className="menu-search-field flex h-9 items-center gap-2"
-      >
+      <div className="menu-search-field flex h-9 items-center gap-2">
         <label className="flex h-full min-w-0 flex-1 cursor-text items-center gap-2">
           {/*
             An even-width box, though the glyph in it is 17px. A box of odd
@@ -105,11 +97,6 @@ export function ProcessSearch({
           <input
             ref={inputRef}
             type="search"
-            {...styleDebug({
-              component: 'ProcessSearch',
-              part: 'input',
-              appearance: 'text-primary',
-            })}
             className="text-primary text-meta min-h-menu-rail w-full min-w-0 border-none bg-transparent font-medium outline-none"
             placeholder="Search processes…"
             value={query}
@@ -144,10 +131,6 @@ export function ProcessSearch({
           <span className={MENU_RAIL}>
             <button
               type="button"
-              {...styleDebug({
-                component: 'ProcessSearch',
-                part: 'clear',
-              })}
               className={SEARCH_CLEAR}
               aria-label="Clear search"
               // Keeps the caret in the field through the press.
@@ -166,15 +149,7 @@ export function ProcessSearch({
           </span>
         ) : null}
       </div>
-      <div
-        {...styleDebug({
-          component: 'ProcessSearch',
-          part: 'separator',
-          appearance: 'border-rule-faint shadow-rule-etch',
-        })}
-        className={cx(MENU_RULE, 'mt-3.5')}
-        aria-hidden="true"
-      />
+      <div className={cx(MENU_RULE, 'mt-3.5')} aria-hidden="true" />
     </motion.div>
   );
 }

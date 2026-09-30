@@ -20,7 +20,7 @@ import { TextDiff } from './text-diff';
 // panel it opened is showing, so the drawer says which of its items is open;
 // pressing it again closes that panel.
 const QUIET =
-  'control-wash text-muted hover:bg-surface-selected hover:text-primary focus-visible:bg-surface-selected focus-visible:text-primary aria-expanded:bg-surface-selected aria-expanded:text-primary data-[disabled]:cursor-not-allowed data-[disabled]:opacity-40 rounded-control text-meta inline-flex min-h-8 cursor-pointer items-center gap-1.5 px-2';
+  'control-wash text-muted hover:bg-surface-selected hover:text-primary focus-visible:bg-surface-selected focus-visible:text-primary aria-expanded:bg-surface-selected aria-expanded:text-primary data-[disabled]:cursor-not-allowed rounded-control text-meta inline-flex min-h-8 cursor-pointer items-center gap-1.5 px-2';
 const FIELD =
   'field text-dense text-primary field-sizing-content w-full resize-none px-3 py-2.5 leading-relaxed';
 const NOTE = 'border-rule-faint text-muted text-meta border-t pt-3';

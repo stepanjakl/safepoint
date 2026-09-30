@@ -1,14 +1,27 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  DrawerAside,
+  type AsideLayer,
+} from '@/components/app-shell/drawer-aside';
+import {
+  DRAWER_ASIDE_WIDTH,
+  DrawerOverlay,
+  DrawerPanels,
+} from '@/components/app-shell/drawer-overlay';
+import { useAsidePanel } from '@/components/app-shell/use-aside-panel';
 import type { LoadReviewDetail } from '@/lib/review/contracts';
 import type { Disposition, ReleasePlan } from '@/lib/review/plan-contract';
 import type { ReviewProgress } from '@/lib/review/plan-derivations';
-import { reviewEffects, initialReviewId } from '@/lib/review/review-navigation';
-import { Button } from '@/components/ui/button';
+import {
+  reviewEffects,
+  type ReviewFilter,
+} from '@/lib/review/review-navigation';
 import { ReleaseCard } from './release-card';
-import { ReviewPanel } from './review-panel';
+import { reviewItemLayer } from './review-item-aside';
+import { ReviewQueue } from './review-queue';
+import { useReviewDetailCache } from './use-review-detail';
 
 /*
   A request to open the review from outside the card -- a flag in the run's
@@ -20,6 +33,33 @@ export type ReviewOpenRequest = {
   filter: Disposition | 'all';
   itemId?: string;
 };
+
+// One opening of the review: where it starts. Kept after the overlay closes so
+// the panels leave with what they held. No filter means none was asked for,
+// and the review goes back to the one last used on this plan.
+type Opening = { key: number; filter?: ReviewFilter; itemId?: string };
+
+// The filter last used on a plan, per browser. A convenience only: storage can
+// be missing or refuse, and the review then opens on "All".
+const filterKey = (plan: ReleasePlan) =>
+  `safepoint:review-filter:${plan.id}:${plan.revision}`;
+function rememberedFilter(plan: ReleasePlan): ReviewFilter | null {
+  try {
+    const value = localStorage.getItem(filterKey(plan));
+    return value && reviewEffects(plan, value as ReviewFilter).length
+      ? (value as ReviewFilter)
+      : null;
+  } catch {
+    return null;
+  }
+}
+function rememberFilter(plan: ReleasePlan, filter: ReviewFilter) {
+  try {
+    localStorage.setItem(filterKey(plan), filter);
+  } catch {
+    // Not remembered; nothing else depends on it.
+  }
+}
 
 export function ReviewExperience({
   plan,
@@ -36,112 +76,195 @@ export function ReviewExperience({
   onCommit?: () => void;
   openRequest?: ReviewOpenRequest | null;
 }) {
-  // A row opens the modal at its own item; a tab's overflow link opens the
-  // bucket. Both are the same operation, so the opener carries the narrowest
-  // starting point it was given and the dialog decides what to do with it.
-  const [open, setOpen] = useState<{
-    filter: Disposition | 'all';
-    itemId?: string;
-  } | null>(null);
+  // A row opens the review at its own item; a button or a bucket's overflow
+  // opens the list alone. Both are the same operation, so the opener carries
+  // the narrowest starting point it was given.
+  const [opening, setOpening] = useState<Opening | null>(null);
+  const [isOpen, setOpen] = useState(false);
+  const open = (filter?: ReviewFilter, itemId?: string) => {
+    setOpening({ key: (opening?.key ?? 0) + 1, filter, itemId });
+    setOpen(true);
+  };
   const [answered, setAnswered] = useState(openRequest?.key);
   if (openRequest && openRequest.key !== answered) {
     setAnswered(openRequest.key);
-    setOpen({ filter: openRequest.filter, itemId: openRequest.itemId });
+    open(openRequest.filter, openRequest.itemId);
   }
+  // Details already fetched outlive an opening: coming back to an item does
+  // not fetch it again.
+  const cache = useReviewDetailCache();
+  // Items opened in this visit, so both lists can set what is left to look at
+  // in the heavier weight. Not a decision: nothing is recorded by opening.
+  const [seen, setSeen] = useState<ReadonlySet<string>>(() => new Set());
+  const markSeen = useCallback(
+    (id: string) =>
+      setSeen((was) => (was.has(id) ? was : new Set(was).add(id))),
+    [],
+  );
+
   return (
     <>
       <ReleaseCard
         plan={plan}
         progress={progress}
         onCommit={onCommit}
-        onOpen={(disposition, itemId) =>
-          setOpen({ filter: disposition ?? 'all', itemId })
-        }
+        seen={seen}
+        onOpen={(disposition, itemId) => open(disposition, itemId)}
       />
-      {/* Portalled to the body: the card can sit inside a folded thread
-          step, and a dialog inherits the inertness of where it is mounted. */}
-      {open
-        ? createPortal(
-            <ReviewDialog
-              plan={plan}
-              loadDetail={loadDetail}
-              // The row the reader actually clicked wins over the deep link
-              // that brought them to the page.
-              initialItemId={open.itemId ?? initialItemId}
-              filter={open.filter}
-              onClose={() => setOpen(null)}
-            />,
-            document.body,
-          )
-        : null}
+      {opening ? (
+        <DrawerOverlay isOpen={isOpen} onOpenChange={setOpen}>
+          <ReviewSession
+            key={JSON.stringify([opening.key, plan.id, plan.revision])}
+            plan={plan}
+            loadDetail={loadDetail}
+            cache={cache}
+            seen={seen}
+            onSeen={markSeen}
+            initialFilter={opening.filter}
+            // The row the reader actually clicked wins over the deep link
+            // that brought them to the page; a plain opening takes the link.
+            initialItemId={opening.itemId ?? initialItemId}
+          />
+        </DrawerOverlay>
+      ) : null}
     </>
   );
 }
 
-function ReviewDialog({
+/*
+  The two panels for one opening: the queue on the right, and the item it
+  opened beside it. The queue's rows open and close the item; Escape closes
+  the item before the review, and the scrim closes both.
+*/
+function ReviewSession({
   plan,
   loadDetail,
+  cache,
+  seen,
+  onSeen,
+  initialFilter,
   initialItemId,
-  filter,
-  onClose,
 }: {
   plan: ReleasePlan;
   loadDetail: LoadReviewDetail;
+  cache: ReturnType<typeof useReviewDetailCache>;
+  seen: ReadonlySet<string>;
+  onSeen: (id: string) => void;
+  initialFilter?: ReviewFilter;
   initialItemId?: string;
-  filter: Disposition | 'all';
-  onClose: () => void;
 }) {
-  const ref = useRef<HTMLDialogElement>(null);
-  const heading = useRef<HTMLHeadingElement>(null);
-  const id = useId();
+  // Asked for, or else the one last used -- unless that one leaves out the
+  // item named on the way in.
+  const [filter, setFilter] = useState<ReviewFilter>(() => {
+    if (initialFilter) return initialFilter;
+    const last = rememberedFilter(plan);
+    return last &&
+      (!initialItemId ||
+        reviewEffects(plan, last).some((effect) => effect.id === initialItemId))
+      ? last
+      : 'all';
+  });
+  const visible = reviewEffects(plan, filter);
+  // An item named on the way in opens beside the list, if it is in it.
+  const [start] = useState(() =>
+    visible.some((effect) => effect.id === initialItemId)
+      ? initialItemId!
+      : null,
+  );
+  // The item the pager last moved to, so the list can show its page without
+  // opening it.
+  const [anchor, setAnchor] = useState<string | null>(start);
+  const {
+    aside,
+    exiting,
+    leaving,
+    direction,
+    openAside,
+    closeAside,
+    finishExit,
+    onKeyDownCapture,
+    settleLeaving,
+  } = useAsidePanel<string>({
+    initial: start,
+    viewKey: (id) => id,
+    // Where an item sits in the list it was chosen from, so moving to one
+    // further down rises and one further up falls.
+    place: (id) => visible.findIndex((effect) => effect.id === id),
+    scope: '.review-queue',
+  });
+  const failures = new Map(
+    plan.status.kind === 'partially_applied'
+      ? plan.status.failures.map((failure) => [
+          failure.effectId,
+          failure.reason,
+        ])
+      : [],
+  );
 
+  const layer = (id: string | null): AsideLayer | null => {
+    const effect = id ? plan.effects.find((entry) => entry.id === id) : null;
+    return effect
+      ? reviewItemLayer({
+          plan,
+          effect,
+          failure: failures.get(effect.id) ?? null,
+          loadDetail,
+          cache,
+          onBack: () => closeAside(),
+        })
+      : null;
+  };
+  // Whatever the item panel shows has been seen, however it was opened.
   useEffect(() => {
-    const dialog = ref.current;
-    const invoker = document.activeElement;
-    dialog?.showModal();
-    heading.current?.focus();
-    return () => {
-      if (invoker instanceof HTMLElement && invoker.isConnected)
-        invoker.focus();
-    };
-  }, []);
-
-  const selected = initialReviewId(reviewEffects(plan, filter), initialItemId);
+    if (aside) onSeen(aside);
+  }, [aside, onSeen]);
+  const current = layer(aside);
+  const leavingLayer = leaving && leaving !== aside ? layer(leaving) : null;
+  const openId = exiting ? null : aside;
 
   return (
-    // `review-dialog` stays as a hook for the ::backdrop rule, which has no
-    // markup of its own. Everything else about the dialog is here.
-    <dialog
-      ref={ref}
-      className="review-dialog ground-raised text-primary bg-surface-primary border-rule-strong rounded-shell m-auto h-[min(820px,calc(100dvh-64px))] max-h-none w-[min(1120px,calc(100%-64px))] max-w-none overflow-hidden border p-0 open:flex open:flex-col max-sm:h-dvh max-sm:w-full max-sm:rounded-none max-sm:border-0"
-      aria-labelledby={id}
-      onClose={onClose}
+    <DrawerPanels
+      title="Release review"
+      closeLabel="Close review"
+      className="review-queue"
+      onKeyDownCapture={onKeyDownCapture}
+      aside={
+        current ? (
+          <DrawerAside
+            current={current}
+            leaving={leavingLayer}
+            direction={direction}
+            exiting={exiting}
+            onExited={finishExit}
+            onLeft={settleLeaving}
+            className={DRAWER_ASIDE_WIDTH}
+          />
+        ) : null
+      }
     >
-      <header className="border-rule-default flex shrink-0 items-center justify-between gap-5 border-b px-6 py-5 max-sm:gap-3 max-sm:px-5 max-sm:py-4 [&>button]:min-h-11 [&>button]:shrink-0">
-        <div>
-          <p className="text-meta text-muted mb-1">
-            Safepoint <span aria-hidden="true">/</span> {plan.source}
-          </p>
-          <h2
-            id={id}
-            tabIndex={-1}
-            ref={heading}
-            className="text-display max-sm:text-title [font-weight:550]"
-          >
-            {plan.title}
-          </h2>
-        </div>
-        <Button onPress={() => ref.current?.close()} aria-label="Close review">
-          Close <span aria-hidden="true">×</span>
-        </Button>
-      </header>
-      <ReviewPanel
-        key={JSON.stringify([plan.id, plan.revision])}
+      <ReviewQueue
         plan={plan}
-        loadDetail={loadDetail}
-        initialItemId={selected}
-        initialFilter={filter}
+        filter={filter}
+        onFilterChange={(next) => {
+          setFilter(next);
+          rememberFilter(plan, next);
+          // The item belongs to the list it was opened from; a filter that
+          // leaves it out takes it with it.
+          if (
+            openId &&
+            !reviewEffects(plan, next).some((effect) => effect.id === openId)
+          )
+            closeAside();
+        }}
+        openId={openId}
+        seen={seen}
+        onOpen={(id) => {
+          setAnchor(id);
+          openAside(id);
+        }}
+        anchorId={anchor}
+        onPage={setAnchor}
       />
-    </dialog>
+    </DrawerPanels>
   );
 }

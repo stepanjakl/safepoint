@@ -14,10 +14,6 @@ const OPAQUE_EDGE_TOKENS = [
   '--sp-notice-highlight',
   '--sp-keycap-highlight',
   '--sp-divider-etch',
-  '--sp-card-etch',
-  '--sp-sheet-break-etch',
-  '--sp-sheet-row-etch',
-  '--sp-sheet-row-etch-active',
   '--sp-notch-highlight',
   '--sp-tooltip-highlight',
   '--sp-enclosure-edge',
@@ -149,6 +145,10 @@ test('every painted pane or floating region hands its content its ground', async
       async (page) => {
         await page.getByRole('button', { name: 'Review release' }).click();
         await expect(page.getByRole('dialog')).toBeVisible();
+        await page
+          .locator('.review-queue button[aria-expanded]')
+          .first()
+          .click();
       },
     ],
     [
@@ -231,6 +231,7 @@ test('muted ink never paints on a selected surface', async ({ page }) => {
   await waitForHome(page);
   await page.getByRole('button', { name: 'Review release' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
+  await page.locator('.review-queue button[aria-expanded]').first().click();
   await expect(
     page.getByText('Loading item details…', { exact: true }),
   ).toBeHidden();

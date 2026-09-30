@@ -95,14 +95,7 @@ The CSS debugging configuration emits `file:///` URLs for existing source files 
 
 ### Click-to-source in the browser
 
-Start the server with `pnpm dev:locator`, hold <kbd>Option</kbd>/<kbd>Alt</kbd> and <kbd>Shift</kbd>, hover any element in the running app, and click to open the JSX behind it in your editor. It is off under plain `pnpm dev`, because its second compile pass over every component slows each rebuild. This is [LocatorJS](https://www.locatorjs.com), wired up in two dev-only pieces:
-
-- [`@locator/webpack-loader`](https://www.npmjs.com/package/@locator/webpack-loader) runs as a webpack loader in `next.config.ts` when `LOCATOR=1` and stamps every JSX element with `data-locatorjs="<file>:<line>:<column>"`. React 19 removed the `_debugSource` fiber field LocatorJS used to read, so the location has to be baked into the markup instead. Because the attribute travels in the HTML, this covers server components, whose code never reaches the browser.
-- [`@locator/runtime`](https://www.npmjs.com/package/@locator/runtime) draws the overlay, loaded by [`LocatorRuntime`](components/dev/locator-runtime.tsx) in the root layout once it finds those attributes.
-
-**Do not install the browser extension** — disable it for `localhost` if you already have it. The published build (1.3.2, 2023) predates the path-based attribute format and only understands the older `data-locatorjs-id` scheme, so it reports _"No source info found for this element"_. It also injects its own copy of the overlay, and whichever runtime creates `#locatorjs-wrapper` first wins; the other silently gives up. `@locator/runtime` is that same overlay at a current version, so nothing is lost by leaving the extension off.
-
-Both pieces are conditioned on `development` and excluded from production builds; the loader also skips `node_modules`.
+Hold <kbd>Option</kbd>/<kbd>Alt</kbd> under `pnpm dev` and point at any element: the style inspector names the component whose JSX wrote it, with a link to that line in your editor, and each component it sits in. It reads React's own development data, so there is no build step and no browser extension. See [`docs/STYLING-SYSTEM.md`](docs/STYLING-SYSTEM.md) → Finding where a style is written.
 
 ### Switching typefaces in the browser
 

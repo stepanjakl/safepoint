@@ -56,6 +56,7 @@ const SCENARIOS = {
   review: async (page: Page) => {
     await page.getByRole('button', { name: 'Review release' }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
+    await page.locator('.review-queue button[aria-expanded]').first().click();
     await expect(
       page.getByText('Loading item details…', { exact: true }),
     ).toBeHidden();
@@ -171,8 +172,7 @@ async function capture(page: Page): Promise<Record<string, Recorded>> {
         );
       const half = (n: number) => (Math.round(n * 2) / 2).toString();
       const out: Record<string, { values: string[]; label: string }> = {};
-      const skip =
-        '[aria-label="Design and motion controls"], #locatorjs-wrapper, script, style';
+      const skip = '[aria-label="Design and motion controls"], script, style';
       const pathOf = (element: Element) => {
         const parts: string[] = [];
         for (

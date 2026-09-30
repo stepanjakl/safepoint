@@ -3,6 +3,10 @@
    ────────────────────────────────────────────────────────────────────────── */
 
 @layer base {
+  :where(*) {
+    overscroll-behavior: none !important;
+  }
+
   /* @supports (corner-shape: superellipse(1.16)) {
     :where(*, *::before, *::after) {
       corner-shape: superellipse(1.16);

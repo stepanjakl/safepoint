@@ -1,6 +1,5 @@
 'use client';
 
-import { styleDebug } from '@/lib/style-debug';
 import { usePathname } from 'next/navigation';
 import {
   useEffect,
@@ -95,8 +94,12 @@ export function ProcessMenu({
   // The shell is a layout that stays mounted across navigation, so the current
   // process is read here rather than handed down by each page.
   const current = usePathname();
-  const { leaveTo, workspaceReveal, workspaceAttentionReady } =
-    useShellPageNavigation();
+  const {
+    leaveTo,
+    workspaceReveal,
+    workspaceAttentionReady,
+    finishWorkspaceFade,
+  } = useShellPageNavigation();
   const saved = useSyncExternalStore(
     subscribeProcessOrder,
     readProcessOrder,
@@ -289,7 +292,6 @@ export function ProcessMenu({
     // shell's inset added on the left as well, the content sat further from the
     // window than from the sheet and read as off-centre in its column.
     <aside
-      {...styleDebug({ component: 'ProcessMenu' })}
       className="max-shell:px-2 max-shell:py-2.5 shell:px-menu-fade shell:-ml-shell-inset shell:h-full shell:min-h-0 shell:overflow-hidden relative flex min-w-0 flex-col"
       aria-label="Workspace navigation"
     >
@@ -336,11 +338,6 @@ export function ProcessMenu({
             }
           >
             <button
-              {...styleDebug({
-                component: 'ProcessMenu',
-                part: 'search-toggle',
-                appearance: 'control-wash text-header-ink',
-              })}
               ref={searchButtonRef}
               type="button"
               className={cx(
@@ -373,11 +370,6 @@ export function ProcessMenu({
           <span className={MENU_RAIL}>
             <Tooltip label={customising ? 'Save order' : 'Arrange processes'}>
               <button
-                {...styleDebug({
-                  component: 'ProcessMenu',
-                  part: 'arrange-toggle',
-                  appearance: 'control-wash text-header-ink',
-                })}
                 ref={editRef}
                 type="button"
                 // The one accented control in the sidebar, and only while
@@ -428,11 +420,6 @@ export function ProcessMenu({
       {/* The side fades live here rather than on the aside: only the panes
           travel, and the brand row above must not sit under a gradient. */}
       <nav
-        {...styleDebug({
-          component: 'ProcessMenu',
-          part: 'outer-fade',
-          appearance: 'process-menu-fade',
-        })}
         className="process-menu-fade shell:-mx-menu-fade shell:min-h-0 shell:flex-1 relative min-w-0"
         aria-label={level === 'processes' ? 'Processes' : 'Workspace'}
         data-level={level}
@@ -452,6 +439,7 @@ export function ProcessMenu({
                 count={items.length}
                 enterRef={enterRef}
                 onEnter={() => navigate('processes')}
+                onRevealComplete={finishWorkspaceFade}
                 shine={current === '/workspace' && workspaceAttentionReady}
               />
             </div>
@@ -486,11 +474,6 @@ export function ProcessMenu({
               */}
               <div className="mt-2 grid">
                 <button
-                  {...styleDebug({
-                    component: 'ProcessMenu',
-                    part: 'back-heading',
-                    appearance: 'process-menu-back',
-                  })}
                   ref={backRef}
                   type="button"
                   className={cx(
@@ -525,11 +508,6 @@ export function ProcessMenu({
                   <Tooltip label="Add process">
                     <button
                       type="button"
-                      {...styleDebug({
-                        component: 'ProcessMenu',
-                        part: 'add-process',
-                        appearance: 'control-wash text-header-ink',
-                      })}
                       className={cx(ICON_BUTTON, 'pointer-events-auto')}
                       aria-label="Add process"
                       aria-disabled="true"
@@ -558,15 +536,7 @@ export function ProcessMenu({
         {/* A grid item of its own, so the grid's gap spaces it from both
             neighbours -- the distance the account row's own top padding used
             to hold below it. */}
-        <div
-          {...styleDebug({
-            component: 'ProcessMenu',
-            part: 'account-separator',
-            appearance: 'border-rule-faint shadow-rule-etch',
-          })}
-          className={MENU_RULE}
-          aria-hidden="true"
-        />
+        <div className={MENU_RULE} aria-hidden="true" />
         <SidebarAccount />
       </div>
     </aside>

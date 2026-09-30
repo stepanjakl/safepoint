@@ -252,9 +252,8 @@
     animation: thread-segmented-turn 2.2s ease-in-out infinite;
   }
   .thread-segmented-arc {
-    stroke: currentColor;
+    stroke: var(--sp-running-track);
     stroke-linecap: round;
-    opacity: 0.25;
     animation: thread-segmented-light 2.2s linear infinite backwards;
   }
   .thread-segmented-arc:nth-child(2) {
@@ -270,11 +269,11 @@
     0%,
     50%,
     100% {
-      opacity: 0.25;
+      stroke: var(--sp-running-track);
     }
     7%,
     43% {
-      opacity: 1;
+      stroke: currentColor;
     }
   }
   @keyframes thread-segmented-turn {
@@ -311,7 +310,7 @@
       animation: none;
     }
     .thread-segmented-arc {
-      opacity: 0.75;
+      stroke: var(--sp-state-advisory-9);
     }
   }
 

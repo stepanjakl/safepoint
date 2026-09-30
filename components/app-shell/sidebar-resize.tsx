@@ -1,7 +1,6 @@
 'use client';
 
-import { styleDebug } from '@/lib/style-debug';
-import { useEffect } from 'react';
+import { useLayoutEffect } from 'react';
 import { Dialog, Popover } from 'react-aria-components';
 import { motion } from 'motion/react';
 import { Button } from '@/components/ui/button';
@@ -55,7 +54,7 @@ export function SidebarResizeHandle({
   // with its panel; neither fires a pointer leave, so hover state outlives the
   // box it points at and an open tooltip re-anchors to a zero rect at the
   // viewport's origin -- the corner. Hover ends with the box instead.
-  useEffect(() => {
+  useLayoutEffect(() => {
     const element = grip.current;
     if (!element) return;
     const end = () => {
@@ -130,10 +129,6 @@ export function SidebarResizeHandle({
                   ? 'Hidden'
                   : `${Math.round(preview ?? width)} pixels wide`
           }
-          {...styleDebug({
-            component: 'SidebarResizeHandle',
-            appearance: 'sidebar-handle',
-          })}
           className="sidebar-handle max-shell:hidden"
           data-side={side}
           data-collapsed={collapsed || undefined}
@@ -220,11 +215,6 @@ export function SidebarResizeHandle({
         >
           <span
             ref={grip}
-            {...styleDebug({
-              component: 'SidebarResizeHandle',
-              part: 'mark',
-              appearance: 'sidebar-handle-mark',
-            })}
             className="sidebar-handle-mark"
             aria-hidden="true"
             onPointerEnter={(event) =>
@@ -263,11 +253,6 @@ export function SidebarResizeHandle({
         triggerRef={handle}
         placement={side === 'left' ? 'right' : 'left'}
         offset={8}
-        {...styleDebug({
-          component: 'SidebarResizeHandle',
-          part: 'popover',
-          appearance: 'surface-floating',
-        })}
         className="control-face surface-floating rounded-shell p-2"
       >
         <Dialog aria-label="Sidebar width" className="grid gap-1 outline-none">

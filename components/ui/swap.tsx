@@ -80,6 +80,7 @@ export function useSwap<K extends string>(
 
   return {
     shown,
+    entering: entering !== null,
     // Spread onto a keyed motion.div. The old page stays inert until it leaves.
     layer: {
       initial:

@@ -1,6 +1,5 @@
 'use client';
 
-import { styleDebug } from '@/lib/style-debug';
 import { Dialog, Heading, Modal, ModalOverlay } from 'react-aria-components';
 import { Button } from '@/components/ui/button';
 import type { InputDetail } from '@/lib/process/input-details';
@@ -36,10 +35,7 @@ export function AddInputPanel({
   onAdd: (id: string) => void;
 }) {
   return (
-    <div
-      {...styleDebug({ component: 'AddInputPanel' })}
-      className="grid gap-6 p-5"
-    >
+    <div className="grid gap-6 p-5">
       <section aria-labelledby="add-input-files">
         <div className="flex items-baseline justify-between gap-3 pb-1.5">
           <h3 id="add-input-files" className="readout text-muted">
@@ -117,21 +113,9 @@ export function RemoveInputDialog({
       onOpenChange={onOpenChange}
       isDismissable
       // The drawer's scrim, over both panels, with the dialog centred on it.
-      {...styleDebug({
-        component: 'RemoveInputDialog',
-        part: 'overlay',
-        appearance: 'drawer-overlay',
-      })}
       className="drawer-overlay p-shell-inset fixed inset-0 z-50 grid place-items-center"
     >
-      <Modal
-        {...styleDebug({
-          component: 'RemoveInputDialog',
-          part: 'surface',
-          appearance: 'surface-floating',
-        })}
-        className="control-face surface-floating rounded-shell relative max-h-full w-[min(28rem,100%)] overflow-y-auto"
-      >
+      <Modal className="control-face surface-floating rounded-shell relative max-h-full w-[min(28rem,100%)] overflow-y-auto">
         <Dialog role="alertdialog" className="grid gap-4 p-5 outline-none">
           {({ close }) => (
             <>

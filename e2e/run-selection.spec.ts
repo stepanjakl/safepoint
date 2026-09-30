@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import Color from 'colorjs.io';
 
 /*
   Which run the process page shows: nothing on arrival, the run the rail
@@ -29,6 +30,97 @@ test('the rail chooses what the page shows', async ({ page }) => {
 
   await page.goto('/examples/promotion?run=run-104');
   await expect(heading(page)).toHaveText('Run, Thu 4 Sep · 09:00');
+});
+
+test('run tally and row colours advance through rest, hover, and selection', async ({
+  page,
+  colorScheme,
+}) => {
+  await page.goto('/examples/promotion');
+  const tallyRow = page
+    .locator('.sheet-row:has(.sheet-seg[data-severity])')
+    .first();
+  await expect(tallyRow).toBeVisible();
+
+  const colours = () =>
+    tallyRow.evaluate((button) => {
+      const paint = (
+        selector: string,
+        property: 'backgroundColor' | 'color',
+      ) => {
+        const element = button.querySelector(selector);
+        if (!element) throw new Error(`Missing tally part: ${selector}`);
+        return getComputedStyle(element)[property];
+      };
+      return {
+        row: getComputedStyle(button).backgroundColor,
+        day: paint('.sheet-row-day', 'color'),
+        time: paint('.sheet-row-when .value', 'color'),
+        status: paint('.sheet-row-status', 'color'),
+        outcome: paint('.sheet-seg[data-severity]', 'backgroundColor'),
+        outcomeInk: paint('.sheet-seg[data-severity]', 'color'),
+        total: paint('.sheet-seg-total', 'backgroundColor'),
+        number: paint('.sheet-total-lead', 'backgroundColor'),
+        label: paint('.sheet-total-label', 'color'),
+      };
+    });
+
+  const rest = await colours();
+  await tallyRow.hover();
+  const hover = await colours();
+  await page.mouse.move(1400, 900);
+  await tallyRow.focus();
+  expect(await colours()).toEqual(hover);
+  await tallyRow.click();
+  await expect(tallyRow).toHaveAttribute('data-current', '');
+  const selected = await colours();
+
+  for (const part of [
+    'row',
+    'day',
+    'time',
+    'outcome',
+    'total',
+    'number',
+  ] as const) {
+    expect(new Set([rest[part], hover[part], selected[part]]).size, part).toBe(
+      3,
+    );
+  }
+  expect(rest.outcomeInk).toBe(hover.outcomeInk);
+  const lightness = (value: string) => {
+    const coordinate = new Color(value).to('oklch').coords[0];
+    if (coordinate === null) throw new Error(`Missing lightness for ${value}`);
+    return coordinate;
+  };
+  expect(lightness(hover.number)).toBeGreaterThan(lightness(rest.number));
+  expect(lightness(selected.number)).toBeGreaterThan(lightness(hover.number));
+  const selectedOutcomes = await tallyRow
+    .locator('.sheet-seg[data-severity]')
+    .evaluateAll((segments) =>
+      segments.map((segment) => ({
+        background: getComputedStyle(segment).backgroundColor,
+        ink: getComputedStyle(segment).color,
+      })),
+    );
+  for (const outcome of selectedOutcomes) {
+    expect(lightness(outcome.ink)).toBeGreaterThan(0.85);
+    expect(
+      Color.contrastWCAG21(
+        new Color(outcome.ink),
+        new Color(outcome.background),
+      ),
+    ).toBeGreaterThanOrEqual(4.5);
+  }
+  if (colorScheme === 'light') {
+    for (const state of [rest, hover, selected]) {
+      expect(
+        Color.contrastWCAG21(new Color(state.label), new Color(state.total)),
+      ).toBeGreaterThanOrEqual(4.5);
+    }
+  }
+  expect(rest.status).toBe(hover.status);
+  expect(selected.status).toBe(rest.status);
 });
 
 test('a started run plays up to the review', async ({ page }) => {

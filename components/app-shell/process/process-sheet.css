@@ -1,0 +1,32 @@
+@layer components {
+  .process-sheet-swap[data-swap-entering]
+    :is(.process-panel-list, .process-runs-list)
+    > .sheet-head {
+    animation: process-section-enter var(--duration-pane) var(--ease-out-quad) both;
+  }
+
+  .process-sheet-swap[data-swap-entering]
+    :is(.process-panel-list, .process-runs-list)
+    > :not(.sheet-head),
+  .process-sheet-swap[data-swap-entering] .process-panels > :not(.process-panel-list),
+  .process-sheet-swap[data-swap-entering] .process-runs-detail {
+    animation: process-section-enter var(--duration-pane) var(--ease-out-quad) 65ms both;
+  }
+
+  @keyframes process-section-enter {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .process-sheet-swap[data-swap-entering] :is(.process-panel-list, .process-runs-list) > *,
+    .process-sheet-swap[data-swap-entering] .process-panels > :not(.process-panel-list),
+    .process-sheet-swap[data-swap-entering] .process-runs-detail {
+      animation: none;
+    }
+  }
+}

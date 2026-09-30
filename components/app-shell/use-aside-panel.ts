@@ -2,31 +2,36 @@
 
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 
-import {
-  viewKey,
-  type AsideView,
-  type SwapDirection,
-} from '@/components/app-shell/drawer-aside';
+import type { SwapDirection } from '@/components/app-shell/drawer-aside';
 
 /**
- * The detail drawer beside a tab's list: which view it shows, the one fading
- * out before another arrives, which way the swap travels, and where focus goes when
- * it closes. The tab supplies `place`, where a view sits in the list it was
- * chosen from, so a swap toward an earlier item travels up.
+ * The detail panel beside a list: which view it shows, the one fading out
+ * before another arrives, which way the swap travels, and where focus goes
+ * when it closes. The list supplies `place`, where a view sits in it, so a
+ * swap toward an earlier item travels up; `sameList` says whether two views
+ * can be compared that way at all.
  */
-export function useAsidePanel({
+export function useAsidePanel<View>({
   initial,
   place,
+  viewKey,
+  sameList = () => true,
+  scope,
 }: {
-  initial: AsideView | null;
-  place: (view: AsideView) => number;
+  initial: View | null;
+  place: (view: View) => number;
+  viewKey: (view: View) => string;
+  sameList?: (from: View, to: View) => boolean;
+  // A selector for the list whose rows open the panel. The row marked
+  // expanded inside it is where focus goes back to.
+  scope: string;
 }) {
   // The view on show. It stays set while the panel animates out, with
   // `exiting` marking that, so the panel leaves with its content in it.
-  const [aside, setAside] = useState<AsideView | null>(initial);
+  const [aside, setAside] = useState<View | null>(initial);
   const [exiting, setExiting] = useState(false);
   // The view being swapped out, kept while its content leaves.
-  const [leaving, setLeaving] = useState<AsideView | null>(null);
+  const [leaving, setLeaving] = useState<View | null>(null);
   // Which way the swap travels: towards an item further down its list or
   // back up it.
   const [direction, setDirection] = useState<SwapDirection>('down');
@@ -63,7 +68,7 @@ export function useAsidePanel({
     // reliable one, since some browsers (Safari) do not focus a button on
     // click. The element focused when the panel opened is the last resort.
     const expanded = document.querySelector<HTMLElement>(
-      '.process-panels [aria-expanded="true"]',
+      `${scope} [aria-expanded="true"]`,
     );
     const recorded = opener.current?.isConnected ? opener.current : null;
     const target = focusId
@@ -80,7 +85,7 @@ export function useAsidePanel({
     setLeaving(null);
     setExiting(true);
   };
-  const openAside = (view: AsideView) => {
+  const openAside = (view: View) => {
     // The control that opened the panel closes it.
     if (aside && !exiting && viewKey(aside) === viewKey(view)) {
       closeAside();
@@ -110,10 +115,10 @@ export function useAsidePanel({
     closeAside();
   };
 
-  function swapDirection(from: AsideView, to: AsideView): SwapDirection {
+  function swapDirection(from: View, to: View): SwapDirection {
     const was = place(from);
     const is = place(to);
-    return from.kind === to.kind && was >= 0 && is >= 0 && is < was
+    return sameList(from, to) && was >= 0 && is >= 0 && is < was
       ? 'up'
       : 'down';
   }

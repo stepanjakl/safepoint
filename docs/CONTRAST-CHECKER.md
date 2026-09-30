@@ -34,8 +34,8 @@ states need explicit tests.
 
 Each test has a fresh browser context. Viewport, locale, timezone, colour scheme
 and reduced motion are fixed. Tests wait for expected UI and fonts; animations
-and transitions are disabled for the scan. The LocatorJS and design-control
-editor overlays are hidden because they are development tools, not app UI.
+and transitions are disabled for the scan. The design-control overlay is
+hidden because it is a development tool, not app UI.
 No application selectors are excluded from axe.
 
 The tests use the application's recorded fictional home-page data. If that

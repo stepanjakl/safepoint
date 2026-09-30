@@ -1,6 +1,5 @@
 'use client';
 
-import { styleDebug } from '@/lib/style-debug';
 import { Button as AriaButton, type ButtonProps } from 'react-aria-components';
 
 import type { Ref } from 'react';
@@ -58,42 +57,14 @@ const shapes: Record<Variant, string> = {
 const SLANT_LAYERS = (
   <span aria-hidden="true" className="slant-shape">
     <span className="slant-at" data-d="focus">
-      <span
-        {...styleDebug({
-          component: 'Button',
-          part: 'focus',
-          appearance: 'slant-focus',
-        })}
-        className="slant-paint slant-focus"
-      />
+      <span className="slant-paint slant-focus" />
     </span>
     <span className="slant-at" data-d="edge">
-      <span
-        {...styleDebug({
-          component: 'Button',
-          part: 'ring',
-          appearance: 'slant-ring',
-        })}
-        className="slant-paint slant-ring"
-      />
+      <span className="slant-paint slant-ring" />
       <span className="slant-at" data-d="face">
-        <span
-          {...styleDebug({
-            component: 'Button',
-            part: 'face',
-            appearance: 'slant-face',
-          })}
-          className="slant-paint slant-face"
-        />
+        <span className="slant-paint slant-face" />
         <span className="slant-at" data-d="sheen">
-          <span
-            {...styleDebug({
-              component: 'Button',
-              part: 'sheen',
-              appearance: 'slant-sheen',
-            })}
-            className="slant-paint slant-sheen"
-          />
+          <span className="slant-paint slant-sheen" />
         </span>
       </span>
     </span>
@@ -118,11 +89,6 @@ export function Button({
   return (
     <AriaButton
       {...props}
-      {...styleDebug({
-        component: 'Button',
-        variant,
-        appearance: faces[variant].appearance,
-      })}
       data-slant={slant}
       className={cx(
         base,

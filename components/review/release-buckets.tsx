@@ -1,11 +1,12 @@
 'use client';
 
+import ArrowUpRight from 'blode-icons-react/icons/arrow-up-right';
 import { motion } from 'motion/react';
-import { styleDebug } from '@/lib/style-debug';
 import {
   useLayoutEffect,
   useRef,
   useState,
+  type CSSProperties,
   type ReactNode,
   type RefObject,
 } from 'react';
@@ -28,7 +29,7 @@ import {
 } from '@/lib/review/plan-derivations';
 import { Glyph } from '@/components/ui/glyph';
 import { cx } from '@/lib/cx';
-import { motionAlong, useSwap } from '@/components/ui/swap';
+import { useSwap } from '@/components/ui/swap';
 import { formatScalar } from './delta';
 import { dispositionGlyph } from './markers';
 
@@ -43,46 +44,57 @@ import { dispositionGlyph } from './markers';
   something; the selected one takes the run tally's solid and light ink. Flat:
   no ring in any state.
 */
-const PILL =
-  'control-wash bg-severity-pill text-severity-ink data-[hovered]:not-data-[selected]:bg-severity-pill-hover data-[hovered]:not-data-[selected]:text-severity-strong data-[focus-visible]:not-data-[selected]:bg-severity-pill-hover data-[focus-visible]:not-data-[selected]:text-severity-strong data-[selected]:bg-severity-solid data-[selected]:text-severity-on-solid inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-dense font-medium whitespace-nowrap [&_.value]:[font-weight:550]';
+const PILL_SHAPE =
+  'control-wash inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-dense font-medium whitespace-nowrap [&_.value]:[font-weight:550]';
+const PILL = cx(
+  PILL_SHAPE,
+  'bg-severity-pill text-severity-ink data-[hovered]:not-data-[selected]:bg-severity-pill-hover data-[hovered]:not-data-[selected]:text-severity-strong data-[focus-visible]:not-data-[selected]:bg-severity-pill-hover data-[focus-visible]:not-data-[selected]:text-severity-strong data-[selected]:bg-severity-solid data-[selected]:text-severity-on-solid',
+);
 
 // The card's header: what the batch needs, the bar and the tabs, ruled off
 // from the rows. The card's other states open with it too.
 export const CARD_HEAD =
-  'border-rule-faint shadow-separator-bottom-solid border-b p-6 @max-card:p-4';
+  'border-floating-ring shadow-separator-bottom-solid border-b p-6 @max-card:p-4';
 
 /*
-  One line per item, the rules running the card's full width between header
-  and footer: the subject, why it is here in its bucket's colour, how much it
+  One line per item, ruled from where the text starts, and closed by a rule
+  across the card's full width: the subject, why it is here in its bucket's colour, how much it
   would change, and the arrow that says the review opens over the page. Rows
   share the list's columns, so reasons and counts line up down it; below the
   card's narrow width the reason drops under the subject.
 */
 const LIST =
-  'grid grid-cols-[minmax(0,1fr)_auto_auto_auto] gap-x-3 @max-card:grid-cols-[minmax(0,1fr)_auto_auto]';
-const ROW =
-  'border-rule-faint shadow-separator-bottom-solid col-span-full grid grid-cols-subgrid border-b';
+  'release-list grid grid-cols-[minmax(0,1fr)_auto_auto_auto] gap-x-3 @max-card:grid-cols-[minmax(0,1fr)_auto_auto]';
+// Its rules are the list's (`.release-list` in release-card.css).
+const ROW = 'col-span-full grid grid-cols-subgrid';
 const ROW_BUTTON =
-  'release-row group/row control-wash hover:bg-surface-hover focus-visible:bg-surface-hover col-span-full grid min-h-11 w-full cursor-pointer grid-cols-subgrid items-center gap-y-1 px-6 py-2 text-left text-dense @max-card:px-4';
-const ROW_SUBJECT = 'text-primary col-start-1 row-start-1 truncate font-medium';
+  'release-row group/row control-wash hover:bg-surface-hover focus-visible:bg-surface-hover col-span-full grid w-full cursor-pointer grid-cols-subgrid items-center gap-y-1 px-6 py-3 text-left text-dense @max-card:px-4';
+// Opened items step back (`.release-row[data-seen]` in release-card.css).
+const ROW_SUBJECT = 'release-row-subject col-start-1 row-start-1 truncate';
 // Colour alone, no face: the pill beside it is the row's one chip.
 // Colour alone, no face, against the column's right edge; with no count
 // beside it, the count's column too, so every reason ends where the next thing
 // begins.
 const ROW_REASON =
-  'text-severity-ink group-hover/row:text-severity-strong group-focus-visible/row:text-severity-strong col-start-2 row-start-1 justify-self-end text-meta font-medium transition-colors data-[alone]:col-span-2 @max-card:col-start-1 @max-card:row-start-2 @max-card:justify-self-start @max-card:data-[alone]:col-span-1';
+  'text-severity-ink group-hover/row:text-severity-strong group-focus-visible/row:text-severity-strong control-wash col-start-2 row-start-1 justify-self-end text-meta data-[alone]:col-span-2 @max-card:col-start-1 @max-card:row-start-2 @max-card:justify-self-start @max-card:data-[alone]:col-span-1';
 // Stretched across its column, so every count is the same chip.
 const ROW_COUNT =
   'release-row-pill col-start-3 row-start-1 @max-card:col-start-2';
 const PILL_LEAD = 'release-row-pill-lead value';
 // The word beside a count, a shade under it, as the run tallies set theirs.
-const QUIET = 'opacity-75';
+const QUIET = 'text-muted-strong';
 // Outside the list, so outside its columns: its own two, arrow last.
 const MORE_ROW =
-  'release-row group/row control-wash hover:bg-surface-hover focus-visible:bg-surface-hover border-rule-faint shadow-separator-bottom-solid grid min-h-11 w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 border-b px-6 py-2 text-left text-dense @max-card:px-4';
+  'release-row group/row control-wash hover:bg-surface-hover focus-visible:bg-surface-hover border-floating-ring shadow-separator-bottom-solid grid w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 border-b px-6 py-3 text-left text-dense @max-card:px-4';
+// Its timing and lean are `.release-row-arrow` in release-card.css.
 const ARROW =
-  'text-muted group-hover/row:text-primary group-focus-visible/row:text-primary transition-colors';
+  'release-row-arrow text-muted group-hover/row:text-primary group-focus-visible/row:text-primary group-aria-expanded/row:text-primary inline-block';
 const ROW_ARROW = cx(ARROW, 'col-start-4 row-start-1 @max-card:col-start-3');
+const rowStyle = (
+  index: number,
+): CSSProperties & { '--release-bucket-row-index': number } => ({
+  '--release-bucket-row-index': index,
+});
 
 // Opening the review can name a bucket, an item, or neither. One callback
 // rather than three: every route into the modal is the same operation with a
@@ -103,10 +115,13 @@ export function Buckets({
   counts,
   onOpen,
   lead,
+  seen,
 }: {
   plan: ReleasePlan;
   counts: ReturnType<typeof evaluationCounts>;
   onOpen: OpenReview;
+  // Items already opened in the review.
+  seen?: ReadonlySet<string>;
   // What the header says above the bar: the verdict, or the receipt.
   lead: ReactNode;
 }) {
@@ -115,10 +130,9 @@ export function Buckets({
   // The most severe bucket opens, because it is the one that decides whether
   // the release can go out at all.
   const [selected, setSelected] = useState<Disposition>(order[0]!);
-  const segments = barSegments(counts);
-  // The rows trade places the way the tabs lie, and the list's height follows
-  // what is in it rather than jumping when a bucket is longer.
-  const { shown, layer } = useSwap(selected, motionAlong(order, 'horizontal'));
+  // The selected bucket answers at once; its rows fade before the next set
+  // arrives, while their dividers stay in place.
+  const { shown, layer, entering } = useSwap(selected, () => 'fade');
   const rows = useRef<HTMLDivElement>(null);
   const height = useMeasuredHeight(rows);
 
@@ -129,39 +143,7 @@ export function Buckets({
     >
       <div className={CARD_HEAD}>
         {lead}
-        {/* Decorative: it restates the proportions the tabs give in digits, and
-          answers to selection rather than to the pointer so it always agrees
-          with the rows on show. One line: square where two buckets meet,
-          rounded only at its ends. */}
-        {/* A track the selected segment's height, so it can grow without moving
-          anything below it. */}
-        <div
-          className="mt-5 flex h-2.5 items-center gap-0.5"
-          aria-hidden="true"
-        >
-          {segments.map((segment) => (
-            <span
-              key={segment.disposition}
-              {...styleDebug({
-                component: 'ReleaseCard',
-                part: 'bucket-bar',
-                appearance: 'release-bucket-bar',
-              })}
-              className="release-bucket-bar h-1.5 min-w-2 transition-[flex-grow,height,background-color] duration-(--duration-row) ease-out first:rounded-l-full last:rounded-r-full data-[active]:h-2.5"
-              data-severity={severityRank(segment.disposition)}
-              data-active={segment.disposition === selected || undefined}
-              // Grown from the same count that sizes it, so the selected segment
-              // takes its extra width from its neighbours rather than from the
-              // bar changing size.
-              style={{
-                flexGrow:
-                  segment.disposition === selected
-                    ? segment.count * 1.2
-                    : segment.count,
-              }}
-            />
-          ))}
-        </div>
+        <BucketBar counts={counts} selected={selected} className="mt-5" />
         <TabList
           className="mt-4 flex flex-wrap gap-1.5"
           aria-label="Filter by disposition"
@@ -170,11 +152,6 @@ export function Buckets({
             <Tab
               key={disposition}
               id={disposition}
-              {...styleDebug({
-                component: 'ReleaseCard',
-                part: 'bucket-tab',
-                appearance: 'bg-severity-pill',
-              })}
               className={PILL}
               data-severity={severityRank(disposition)}
             >
@@ -199,8 +176,18 @@ export function Buckets({
               id={disposition}
               className="outline-none"
             >
-              <motion.div key={shown} {...layer}>
-                <BucketPanel plan={plan} disposition={shown} onOpen={onOpen} />
+              <motion.div
+                key={shown}
+                {...layer}
+                className="release-bucket-swap"
+                data-swap-entering={entering || undefined}
+              >
+                <BucketPanel
+                  plan={plan}
+                  disposition={shown}
+                  onOpen={onOpen}
+                  seen={seen}
+                />
               </motion.div>
             </TabPanel>
           ))}
@@ -210,6 +197,48 @@ export function Buckets({
         {total} {nounFor(plan, total)} evaluated.
       </p>
     </Tabs>
+  );
+}
+
+/*
+  Decorative: it restates the proportions the tabs give in digits, and answers
+  to selection rather than to the pointer so it always agrees with the rows on
+  show. One line: square where two buckets meet, rounded only at its ends. A
+  track the selected segment's height, so it can grow without moving anything
+  below it.
+*/
+function BucketBar({
+  counts,
+  selected,
+  className,
+}: {
+  counts: ReturnType<typeof evaluationCounts>;
+  selected: Disposition;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cx('flex h-2.5 items-center gap-0.5', className)}
+      aria-hidden="true"
+    >
+      {barSegments(counts).map((segment) => (
+        <span
+          key={segment.disposition}
+          className="release-bucket-bar h-1.5 min-w-2 transition-[flex-grow,height,background-color] duration-(--duration-row) ease-out first:rounded-l-full last:rounded-r-full data-[active]:h-2.5"
+          data-severity={severityRank(segment.disposition)}
+          data-active={segment.disposition === selected || undefined}
+          // Grown from the same count that sizes it, so the selected segment
+          // takes its extra width from its neighbours rather than from the
+          // bar changing size.
+          style={{
+            flexGrow:
+              segment.disposition === selected
+                ? segment.count * 1.2
+                : segment.count,
+          }}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -236,10 +265,12 @@ function BucketPanel({
   plan,
   disposition,
   onOpen,
+  seen,
 }: {
   plan: ReleasePlan;
   disposition: Disposition;
   onOpen: OpenReview;
+  seen?: ReadonlySet<string>;
 }) {
   const effects = effectsByDisposition(plan.effects, disposition);
   const rows = bucketRows(effects, plan.reasons);
@@ -251,10 +282,12 @@ function BucketPanel({
     <>
       <ul className={LIST}>
         {rows.kind === 'items'
-          ? rows.items.map((effect) => (
+          ? rows.items.map((effect, index) => (
               <EffectRow
                 key={effect.id}
                 effect={effect}
+                index={index}
+                seen={seen?.has(effect.id) ?? false}
                 reasonLabel={
                   effect.reasonKey
                     ? (reasonLabels.get(effect.reasonKey) ?? null)
@@ -263,11 +296,12 @@ function BucketPanel({
                 onOpen={() => onOpen(disposition, effect.id)}
               />
             ))
-          : rows.reasons.map((row) => (
+          : rows.reasons.map((row, index) => (
               <ReasonRow
                 key={row.key}
                 plan={plan}
                 row={row}
+                index={index}
                 onOpen={() => onOpen(disposition)}
               />
             ))}
@@ -279,11 +313,14 @@ function BucketPanel({
         <button
           type="button"
           className={cx(MORE_ROW, 'text-muted hover:text-primary')}
+          style={rowStyle(
+            rows.kind === 'items' ? rows.items.length : rows.reasons.length,
+          )}
           onClick={() => onOpen(disposition)}
         >
           <span>and {rows.hidden} more</span>
           <span aria-hidden="true" className={ARROW}>
-            ↗
+            <ArrowUpRight size={14} strokeWidth={2} />
           </span>
           <span className="sr-only">
             {' '}
@@ -301,10 +338,14 @@ function BucketPanel({
 // parts would give the pointer two targets for one destination.
 function EffectRow({
   effect,
+  index,
+  seen,
   reasonLabel,
   onOpen,
 }: {
   effect: Effect;
+  index: number;
+  seen: boolean;
   reasonLabel: string | null;
   onOpen: () => void;
 }) {
@@ -313,15 +354,15 @@ function EffectRow({
     .filter(Boolean)
     .join(' · ');
   return (
-    <li className={ROW} data-severity={severityRank(effect.disposition)}>
+    <li
+      className={ROW}
+      data-severity={severityRank(effect.disposition)}
+      style={rowStyle(index)}
+    >
       <button
         type="button"
-        {...styleDebug({
-          component: 'ReleaseCard',
-          part: 'review-row',
-          appearance: 'control-wash',
-        })}
         className={ROW_BUTTON}
+        data-seen={seen || undefined}
         onClick={onOpen}
       >
         <span className={ROW_SUBJECT}>{effect.subject}</span>
@@ -337,7 +378,7 @@ function EffectRow({
             the column to the reason rather than printing "none" down it. */}
         {changes > 0 ? <ChangePill deltas={effect.deltas} /> : null}
         <span aria-hidden="true" className={ROW_ARROW}>
-          ↗
+          <ArrowUpRight size={14} strokeWidth={2} />
         </span>
         <span className="sr-only">Open in review</span>
       </button>
@@ -403,24 +444,17 @@ function ChangePill({ deltas }: { deltas: Effect['deltas'] }) {
 function ReasonRow({
   plan,
   row,
+  index,
   onOpen,
 }: {
   plan: ReleasePlan;
   row: ReasonRollUp;
+  index: number;
   onOpen: () => void;
 }) {
   return (
-    <li className={ROW}>
-      <button
-        type="button"
-        {...styleDebug({
-          component: 'ReleaseCard',
-          part: 'review-row',
-          appearance: 'control-wash',
-        })}
-        className={ROW_BUTTON}
-        onClick={onOpen}
-      >
+    <li className={ROW} style={rowStyle(index)}>
+      <button type="button" className={ROW_BUTTON} onClick={onOpen}>
         {/* A reason stands for items rather than being one: the reason, and
             how many items it covers in the pill. */}
         <span className={cx(ROW_SUBJECT, 'text-muted-strong')}>
@@ -431,7 +465,7 @@ function ReasonRow({
           <span className={QUIET}>{nounFor(plan, row.count)}</span>
         </span>
         <span aria-hidden="true" className={ROW_ARROW}>
-          ↗
+          <ArrowUpRight size={14} strokeWidth={2} />
         </span>
         <span className="sr-only">Open in review</span>
       </button>

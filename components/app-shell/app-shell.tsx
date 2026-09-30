@@ -39,7 +39,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
     }),
   ];
   return (
-    <ShellPageTransitionProvider>
+    <ShellPageTransitionProvider processPaths={items.map((item) => item.href)}>
       <ResizableShell
         navigation={<ProcessMenu items={items} initialOrder={savedOrder} />}
       >

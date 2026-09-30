@@ -1,5 +1,4 @@
 import { cx } from '@/lib/cx';
-import { styleDebug } from '@/lib/style-debug';
 import { MenuIcon } from './menu-parts';
 
 /*
@@ -34,27 +33,14 @@ const NOTICE_BOX = cx(
 // Icon shares row one with the title; the caption sits under it.
 export function SidebarNotice() {
   return (
-    <div
-      {...styleDebug({
-        component: 'SidebarNotice',
-        appearance: 'surface-notice',
-      })}
-      className={NOTICE_BOX}
-    >
+    <div className={NOTICE_BOX}>
       <span className="sidebar-notice-rail grid flex-none place-items-center">
         <MenuIcon name="info" />
       </span>
       <p className="text-notice-title text-micro font-semibold">
         Demo application
       </p>
-      <span
-        {...styleDebug({
-          component: 'SidebarNotice',
-          part: 'caption',
-          appearance: 'text-notice-caption',
-        })}
-        className="text-notice-caption text-micro col-start-2 mt-0.75 font-medium"
-      >
+      <span className="text-notice-caption text-micro col-start-2 mt-0.75 font-medium">
         Fictional data. No live changes.
       </span>
     </div>

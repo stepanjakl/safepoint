@@ -2,6 +2,7 @@ import type {
   Declaration,
   Registered,
   Rule,
+  Site,
   Stylesheets,
   Utility,
 } from '@/lib/dev/stylesheets';
@@ -139,12 +140,100 @@ export function rulesNaming(classes: string[], rules: Rule[]) {
     : rules.filter((rule) => pattern.test(rule.source));
 }
 
-/** A selector `element.matches` accepts: pseudo-elements name no element. */
-export const matchable = (selector: string) =>
-  selector.replace(
-    /::?(?:before|after|placeholder|marker|backdrop|selection|file-selector-button)\b/g,
-    '',
-  );
+const PSEUDO_ELEMENT =
+  /::?(before|after|placeholder|marker|backdrop|selection|file-selector-button|first-line|first-letter)\b/g;
+
+/* A selector list's branches, split at commas outside brackets. */
+function branchesOf(selector: string) {
+  const branches: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (let index = 0; index < selector.length; index += 1) {
+    const char = selector[index];
+    if (char === '(' || char === '[') depth += 1;
+    else if (char === ')' || char === ']') depth -= 1;
+    else if (char === ',' && depth === 0) {
+      branches.push(selector.slice(start, index));
+      start = index + 1;
+    }
+  }
+  return [...branches, selector.slice(start)].map((branch) => branch.trim());
+}
+
+/**
+ * A selector's specificity as one comparable number: ids × 1e6, classes,
+ * attributes and pseudo-classes × 1e3, types and pseudo-elements × 1.
+ * `:is`, `:not` and `:has` count their most specific argument; `:where`
+ * counts nothing.
+ */
+export function specificityOf(selector: string): number {
+  let total = 0;
+  let rest = '';
+  for (let index = 0; index < selector.length; index += 1) {
+    const functional = /^:(is|not|has|where|matches)\(/.exec(
+      selector.slice(index),
+    );
+    if (!functional) {
+      rest += selector[index];
+      continue;
+    }
+    let depth = 0;
+    let end = index + functional[0].length - 1;
+    for (; end < selector.length; end += 1) {
+      if (selector[end] === '(') depth += 1;
+      else if (selector[end] === ')' && --depth === 0) break;
+    }
+    const inner = selector.slice(index + functional[0].length, end);
+    if (functional[1] !== 'where') {
+      total += Math.max(0, ...branchesOf(inner).map(specificityOf));
+    }
+    rest += ' ';
+    index = end;
+  }
+  rest = rest.replace(/\[[^\]]*\]/g, () => {
+    total += 1e3;
+    return ' ';
+  });
+  total += (rest.match(/#(?:\\.|[\w-])+/g) ?? []).length * 1e6;
+  total += (rest.match(/\.(?:\\.|[\w-])+/g) ?? []).length * 1e3;
+  // Escaped `\:` inside a class name is not a pseudo-class: drop names first.
+  rest = rest.replace(/[.#](?:\\.|[\w-])+/g, ' ');
+  total += (rest.match(/::[\w-]+/g) ?? []).length;
+  rest = rest.replace(/::[\w-]+/g, ' ');
+  total += (rest.match(/:[\w-]+/g) ?? []).length * 1e3;
+  rest = rest.replace(/:[\w-]+/g, ' ');
+  total += (rest.match(/(?:^|[\s>+~])[a-zA-Z][\w-]*/g) ?? []).length;
+  return total;
+}
+
+/**
+ * What a selector reaches on `node`: the element itself, and the
+ * pseudo-elements it styles. Each branch is tested alone, since
+ * `element.matches` takes no pseudo-element and `*, ::before` would otherwise
+ * fail as a whole.
+ */
+export function matchOn(node: Element, selector: string) {
+  let element = false;
+  let specificity = 0;
+  const pseudos = new Set<string>();
+  for (const branch of branchesOf(selector)) {
+    const names = [...branch.matchAll(PSEUDO_ELEMENT)].map((hit) => hit[1]!);
+    let test = branch.replace(PSEUDO_ELEMENT, '').trim();
+    // `::after` alone, or after a combinator, is on any element.
+    if (!test || /[\s>+~]$/.test(test)) test += '*';
+    try {
+      if (!node.matches(test)) continue;
+    } catch {
+      continue; // A selector this browser cannot test.
+    }
+    if (names.length === 0) {
+      element = true;
+      specificity = Math.max(specificity, specificityOf(branch));
+    }
+    for (const name of names) pseudos.add(`::${name}`);
+  }
+  return { element, pseudos: [...pseudos], specificity };
+}
 
 /** `light-dark(var(--sp-neutral-75), var(--sp-neutral-900))` → `light-dark(neutral-75, neutral-900)`. */
 export const shorten = (value: string) =>
@@ -198,7 +287,7 @@ const NAMESPACE_PROPERTY: Record<string, string> = {
 };
 
 /** What a Tailwind utility traced to `theme` sets: `bg-canvas` → background-color. */
-export function themeProperty(base: string, theme: Declaration) {
+function themeProperty(base: string, theme: Declaration) {
   const namespace = /^--([a-z-]+?)-/.exec(theme.name)?.[1] ?? '';
   if (namespace === 'color') {
     for (const [prefix, property] of COLOUR_PROPERTY) {
@@ -208,6 +297,40 @@ export function themeProperty(base: string, theme: Declaration) {
   }
   if (namespace === 'spacing') return base.replace(/-.*$/, '');
   return NAMESPACE_PROPERTY[namespace] ?? namespace;
+}
+
+/* What a `text-*` size utility writes besides font-size, when the theme
+   gives the size a companion: `--text-meta--line-height`. */
+const COMPANIONS: [string, string][] = [
+  ['--line-height', 'line-height'],
+  ['--letter-spacing', 'letter-spacing'],
+  ['--font-weight', 'font-weight'],
+];
+
+/** Every declaration a theme utility writes: `text-meta` is font-size, line-height and letter-spacing. */
+export function themeDeclarations(
+  base: string,
+  theme: Declaration,
+  lookup: Lookup,
+) {
+  const property = themeProperty(base, theme);
+  const own = { property, value: `var(${theme.name})`, site: theme as Site };
+  if (property !== 'font-size') return [own];
+  return [
+    own,
+    ...COMPANIONS.flatMap(([suffix, companion]) => {
+      const found = lookup.theme.get(`${theme.name}${suffix}`);
+      return found
+        ? [
+            {
+              property: companion,
+              value: `var(${found.name})`,
+              site: found as Site,
+            },
+          ]
+        : [];
+    }),
+  ];
 }
 
 /** An arbitrary property class, `[--x:1px]`, as the declaration it writes. */

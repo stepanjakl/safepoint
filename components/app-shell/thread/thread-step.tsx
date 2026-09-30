@@ -3,7 +3,6 @@
 // arrives unresolved. It also holds whether the step is folded.
 'use client';
 
-import { styleDebug } from '@/lib/style-debug';
 import {
   createContext,
   useContext,
@@ -15,6 +14,7 @@ import {
 } from 'react';
 import { MorphingText } from '@/components/ui/morphing-text';
 // Deep imports, as in menu-parts.tsx: the barrel is the whole library.
+import ArrowUpRight from 'blode-icons-react/icons/arrow-up-right';
 import ChevronTriangleDown from 'blode-icons-react/icons/chevron-triangle-down-small-filled';
 import CircleCheckFilled from 'blode-icons-react/icons/circle-check-filled';
 import CircleXFilled from 'blode-icons-react/icons/circle-x-filled';
@@ -124,11 +124,6 @@ function Marker({ step, settling }: { step: ProcessStep; settling: boolean }) {
   return (
     <Tooltip label={status} description={step.note} placement="right">
       <span
-        {...styleDebug({
-          component: 'ThreadStep',
-          part: 'status-marker',
-          appearance: 'thread-dot',
-        })}
         className={cx(
           'thread-dot',
           // The proposed marks take their colours from the stylesheet, per
@@ -232,7 +227,6 @@ export function ThreadStep({
 
   return (
     <li
-      {...styleDebug({ component: 'ThreadStep', appearance: 'thread-step' })}
       className="thread-step"
       data-status={step.status}
       data-latest={latest || undefined}
@@ -241,14 +235,7 @@ export function ThreadStep({
       onPointerEnter={() => setReveal(true)}
       onPointerLeave={() => setReveal(false)}
     >
-      <span
-        {...styleDebug({
-          component: 'ThreadStep',
-          part: 'connector',
-          appearance: 'thread-marker',
-        })}
-        className="thread-marker"
-      >
+      <span className="thread-marker">
         <Marker step={step} settling={settling} />
       </span>
       {/* One row: the toggle stretches across it, so the whole row answers
@@ -256,11 +243,6 @@ export function ThreadStep({
       <div className="thread-step-row">
         <button
           type="button"
-          {...styleDebug({
-            component: 'ThreadStep',
-            part: 'toggle',
-            appearance: 'thread-step-toggle',
-          })}
           className="thread-step-toggle"
           aria-expanded={open}
           aria-controls={bodyId}
@@ -288,7 +270,12 @@ export function ThreadStep({
                   onClick={flagAction.onPress}
                 >
                   {step.flag}
-                  <span aria-hidden="true">↗</span>
+                  <ArrowUpRight
+                    aria-hidden
+                    size={12}
+                    strokeWidth={2.5}
+                    className="flex-none"
+                  />
                   <span className="sr-only"> — {flagAction.label}</span>
                 </button>
               ) : (
@@ -303,7 +290,12 @@ export function ThreadStep({
                   onClick={reference.action.onPress}
                 >
                   {reference.label}
-                  <span aria-hidden="true">↗</span>
+                  <ArrowUpRight
+                    aria-hidden
+                    size={12}
+                    strokeWidth={2.5}
+                    className="flex-none"
+                  />
                   <span className="sr-only"> — {reference.action.label}</span>
                 </button>
               ) : (
@@ -343,17 +335,7 @@ export function ThreadStep({
         ) : null}
         <ChevronTriangleDown aria-hidden className="thread-step-chevron" />
       </div>
-      <div
-        id={bodyId}
-        {...styleDebug({
-          component: 'ThreadStep',
-          part: 'body',
-          appearance: 'thread-step-fold',
-        })}
-        ref={foldRef}
-        className="thread-step-fold"
-        inert={!open}
-      >
+      <div id={bodyId} ref={foldRef} className="thread-step-fold" inert={!open}>
         <div className="thread-step-clip">
           <div ref={bodyRef} className="thread-step-body">
             {children}

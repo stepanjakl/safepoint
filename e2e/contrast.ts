@@ -21,8 +21,8 @@ export async function openHome(page: Page, theme: 'light' | 'dark') {
   await page.addStyleTag({
     content: `
     *, *::before, *::after { animation: none !important; transition: none !important; }
-    /* Editor overlays are not application UI and can obscure the page. */
-    #locatorjs-wrapper, .sp-devctl { display: none !important; }
+    /* The design controls are not application UI and can obscure the page. */
+    .sp-devctl { display: none !important; }
   `,
   });
 }

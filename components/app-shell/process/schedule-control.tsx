@@ -1,6 +1,5 @@
 'use client';
 
-import { styleDebug } from '@/lib/style-debug';
 import { useRef, useState, type ReactNode } from 'react';
 import {
   Button as AriaButton,
@@ -66,13 +65,7 @@ export function ScheduleControl({
       <Tooltip label="Schedule" description={scheduleLabel(schedule)}>
         <AriaButton
           aria-label={`Schedule: ${scheduleLabel(schedule)}`}
-          {...styleDebug({
-            component: 'ScheduleControl',
-            part: 'trigger',
-            appearance: 'control-wash',
-          })}
           className={`${HEAD_CONTROL} text-meta inline-flex items-center gap-1.5 px-1.5 whitespace-nowrap`}
-          data-off={schedule.enabled ? undefined : ''}
         >
           <CalendarClock
             aria-hidden
@@ -92,11 +85,6 @@ export function ScheduleControl({
         getTargetRect={(target) =>
           (anchor.current ??= target.getBoundingClientRect())
         }
-        {...styleDebug({
-          component: 'ScheduleControl',
-          part: 'popover',
-          appearance: 'surface-floating',
-        })}
         className="control-face surface-floating rounded-shell w-[min(18rem,calc(100vw-2rem))]"
       >
         <Dialog className="grid gap-4 p-4 outline-none">
@@ -169,10 +157,6 @@ export function ScheduleFields({
                 <button
                   key={cadence}
                   type="button"
-                  {...styleDebug({
-                    component: 'ScheduleFields',
-                    part: 'frequency-choice',
-                  })}
                   className={CHOICE}
                   aria-pressed={schedule.cadence === cadence}
                   onClick={() => update({ cadence })}
@@ -191,10 +175,6 @@ export function ScheduleFields({
                   <button
                     key={day}
                     type="button"
-                    {...styleDebug({
-                      component: 'ScheduleFields',
-                      part: 'weekday-choice',
-                    })}
                     className={`${CHOICE} px-0`}
                     aria-pressed={schedule.day === day}
                     aria-label={day}

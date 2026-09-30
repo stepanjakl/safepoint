@@ -414,7 +414,7 @@ async function main() {
           await evaluate(
             cdp,
             `(() => { const s = document.createElement('style');
-               s.textContent = '.sp-devctl, #locatorjs-wrapper, #locatorjs-layer, #locatorjs-labels-wrapper { display: none !important }';
+               s.textContent = '.sp-devctl { display: none !important }';
                document.head.appendChild(s); })()`,
           );
           const clip = await evaluate<{

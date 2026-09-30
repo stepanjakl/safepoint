@@ -5,7 +5,6 @@ import Play from 'blode-icons-react/icons/play';
 import { Button as AriaButton } from 'react-aria-components';
 import { HEAD_CONTROL } from '@/components/app-shell/process/schedule-control';
 import { Tooltip } from '@/components/ui/tooltip';
-import { styleDebug } from '@/lib/style-debug';
 import { useRunSelection } from './run-selection';
 
 /*
@@ -23,17 +22,13 @@ export function StartRunButton() {
     >
       <AriaButton
         aria-label="Start run"
-        {...styleDebug({
-          component: 'StartRunButton',
-          appearance: 'control-wash',
-        })}
         // Announced as unavailable but still focusable, so its tooltip says why.
         aria-disabled={start ? undefined : 'true'}
         onPress={start ?? undefined}
         className={
           start
             ? `${HEAD_CONTROL} inline-grid w-7 place-items-center`
-            : 'text-muted rounded-control -my-1 inline-grid min-h-7 w-7 cursor-default place-items-center opacity-50'
+            : 'text-muted rounded-control -my-1 inline-grid min-h-7 w-7 cursor-default place-items-center'
         }
       >
         <Play aria-hidden size={14} strokeWidth={1.8} />

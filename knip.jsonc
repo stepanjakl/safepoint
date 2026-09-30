@@ -11,10 +11,6 @@
     "lib/review-presentation/index.ts",
   ],
   "ignoreDependencies": [
-    // Named as a loader string in next.config.ts.
-    "@locator/webpack-loader",
-    // Loaded by name by @locator/webpack-loader's Babel pass.
-    "@babel/preset-typescript",
     // Imported by tweakpane's type declarations, which do not depend on it.
     "@tweakpane/core",
   ],

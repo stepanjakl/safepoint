@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { ReviewPanel } from '../../components/review/review-panel';
+import { ReviewQueue } from '../../components/review/review-queue';
+import { reviewItemLayer } from '../../components/review/review-item-aside';
 import { ReviewItemDetail } from '../../components/review/review-item-detail';
 import { ReleaseCard } from '../../components/review/release-card';
 import { DeltaValue } from '../../components/review/delta';
@@ -12,8 +13,31 @@ import {
   initialReviewId,
   reviewEffects,
   reviewPage,
+  type ReviewFilter,
 } from './review-navigation';
 import { releasePlanSchema } from './plan-contract';
+
+function Queue({
+  plan,
+  filter = 'all',
+  openId = null,
+}: {
+  plan: ReturnType<typeof gallery>;
+  filter?: ReviewFilter;
+  openId?: string | null;
+}) {
+  return (
+    <ReviewQueue
+      plan={plan}
+      filter={filter}
+      onFilterChange={() => {}}
+      openId={openId}
+      onOpen={() => {}}
+      anchorId={openId}
+      onPage={() => {}}
+    />
+  );
+}
 
 function gallery(label: string) {
   const entry = galleryPlans.find(([name]) => name === label);
@@ -83,18 +107,15 @@ describe('review regressions', () => {
       }
     }
     expect(visited.size).toBe(2000);
-    const markup = renderToStaticMarkup(
-      <ReviewPanel
-        plan={plan}
-        loadDetail={async (id) => galleryDetail(plan, id)}
-      />,
-    );
+    const markup = renderToStaticMarkup(<Queue plan={plan} />);
     // One mounted row per item on the page, counted through the row's own
-    // aria-current contract rather than a class name.
-    expect(markup.match(/<button [^>]*aria-current=/g) ?? []).toHaveLength(1);
-    expect(markup.match(/<li>/g) ?? []).toHaveLength(50);
+    // aria-expanded contract rather than a class name. Opening the review
+    // with no item named opens the list alone.
+    expect(
+      markup.match(/<button [^>]*aria-expanded="false"/g) ?? [],
+    ).toHaveLength(50);
+    expect(markup).not.toContain('aria-expanded="true"');
     expect(markup).toContain('Next page');
-    expect(markup).toContain('of 2000 matching items');
   });
 
   it('shows each execution failure independently of detail loading', () => {
@@ -114,16 +135,31 @@ describe('review regressions', () => {
       'e',
       'f',
     ]);
-    const markup = renderToStaticMarkup(
-      <ReviewPanel
-        plan={plan}
-        initialFilter="failures"
-        initialItemId="f"
-        loadDetail={async (id) => galleryDetail(plan, id)}
-      />,
+    // The list names every failure; the open item's panel names its own.
+    const queue = renderToStaticMarkup(
+      <Queue plan={plan} filter="failures" openId="f" />,
     );
-    expect(markup).toContain('First connector failed');
-    expect(markup.match(/Second connector failed/g)).toHaveLength(2);
+    expect(queue).toContain('First connector failed');
+    expect(queue).toContain('Second connector failed');
+    expect(queue.match(/aria-expanded="true"/g)).toHaveLength(1);
+    const effect = plan.effects.find((entry) => entry.id === 'f');
+    if (!effect) throw new Error('Missing failed item');
+    const aside = renderToStaticMarkup(
+      <>
+        {
+          reviewItemLayer({
+            plan,
+            effect,
+            failure: 'Second connector failed',
+            loadDetail: async (id) => galleryDetail(plan, id),
+            cache: new Map(),
+            onBack: () => {},
+          }).body
+        }
+      </>,
+    );
+    expect(aside).toContain('Second connector failed');
+    expect(aside).not.toContain('First connector failed');
   });
 
   // The item is the reviewable unit, so every row the card lists has to be a

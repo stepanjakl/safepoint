@@ -3,21 +3,6 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-// LocatorJS (https://www.locatorjs.com) lets the browser extension jump from a
-// rendered element straight to its JSX in the editor. React 19 dropped the
-// `_debugSource` fiber field the extension used to read, so the source location
-// has to be baked into the markup at build time instead: this loader runs the
-// `@locator/babel-jsx` transform and stamps every JSX element with
-// `data-locatorjs="<abs path>:<line>:<column>"`.
-//
-// Dev only, never on `node_modules`, and opt-in (`pnpm dev:locator`): the
-// second Babel pass over every component slows each compile.
-const locator = process.env.LOCATOR === '1';
-const locatorLoader = {
-  loader: '@locator/webpack-loader',
-  options: { env: 'development' },
-};
-
 const nextConfig: NextConfig = {
   // Next writes AGENTS.md and CLAUDE.md into the repository root by default.
   // Safepoint adds agent instructions deliberately, not as build output.
@@ -52,13 +37,6 @@ const nextConfig: NextConfig = {
           },
         }),
       );
-      if (locator) {
-        config.module.rules.push({
-          test: /\.[jt]sx$/,
-          exclude: /node_modules/,
-          use: [locatorLoader],
-        });
-      }
     }
     return config;
   },

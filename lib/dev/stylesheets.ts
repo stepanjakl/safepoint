@@ -102,8 +102,21 @@ function mask(css: string, keepStrings = false) {
     : css.replace(/\/\*[\s\S]*?\*\/|"[^"]*"|'[^']*'/g, blank);
 }
 
-export function readStylesheets(root: string): Stylesheets {
-  const files = importedStylesheets(root);
+/* Tailwind's reset, which `@import 'tailwindcss'` brings in ahead of them. */
+const PREFLIGHT = 'node_modules/tailwindcss/preflight.css';
+
+/**
+ * `preflight` reads Tailwind's reset too, for the inspector, which has to
+ * explain every declaration an element gets; the token checks leave it out.
+ */
+export function readStylesheets(
+  root: string,
+  { preflight = false } = {},
+): Stylesheets {
+  const files = [
+    ...(preflight ? [PREFLIGHT] : []),
+    ...importedStylesheets(root),
+  ];
   const declarations: Declaration[] = [];
   const rules: Rule[] = [];
   const utilities: Utility[] = [];
@@ -199,9 +212,13 @@ export function readStylesheets(root: string): Stylesheets {
           rules.push({
             source: open.prelude,
             selector: open.selector,
-            context: stack
-              .filter((outer) => outer.selector === null)
-              .map((outer) => outer.prelude),
+            // Preflight's layer is declared in tailwindcss's own index.css.
+            context: [
+              ...(file === PREFLIGHT ? ['@layer base'] : []),
+              ...stack
+                .filter((outer) => outer.selector === null)
+                .map((outer) => outer.prelude),
+            ],
             file,
             line: lineAt(open.at),
             reads: readsOf(own),

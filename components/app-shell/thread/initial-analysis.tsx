@@ -1,5 +1,4 @@
 import type { ProcessAnalysis } from '@/lib/process/model';
-import { styleDebug } from '@/lib/style-debug';
 
 /*
   What the run worked out before it proposed anything. It sits between the
@@ -15,17 +14,11 @@ import { styleDebug } from '@/lib/style-debug';
 */
 export function InitialAnalysis({ analysis }: { analysis: ProcessAnalysis }) {
   return (
-    <div
-      {...styleDebug({
-        component: 'InitialAnalysis',
-        appearance: 'surface-recessed',
-      })}
-      className="control-face surface-recessed rounded-shell text-body px-5 py-4 leading-relaxed"
-    >
+    <div className="control-face surface-recessed rounded-shell text-body px-5 py-4 leading-relaxed">
       <p className="text-primary">{analysis.summary}</p>
       {/* Observations are findings, not instructions, so they are marked with a
           rule rather than numbered: nothing here happens in sequence. */}
-      <ul className="border-rule-faint text-muted text-dense mt-3 grid gap-1.5 border-t pt-3">
+      <ul className="border-recessed-ring text-muted text-dense mt-3 grid gap-1.5 border-t pt-3">
         {analysis.observations.map((observation) => (
           <li
             key={observation}

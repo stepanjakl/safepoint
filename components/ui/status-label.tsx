@@ -1,4 +1,3 @@
-import { styleDebug } from '@/lib/style-debug';
 import type { ReactNode } from 'react';
 
 import { cx } from '@/lib/cx';
@@ -49,7 +48,6 @@ export function StatusLabel({
 }) {
   return (
     <span
-      {...styleDebug({ component: 'StatusLabel', variant: tone })}
       className={cx(
         'inline-flex items-center gap-1.5',
         readout ? 'readout' : 'text-dense font-medium',

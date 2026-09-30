@@ -21,6 +21,12 @@ test('the inspector names where an element’s styles are written', async ({
   const padding = { x: 5, y: box.height / 2 };
   await inputs.hover({ position: padding });
   await expect(panel).toContainText('<button>');
+  // The component whose JSX wrote it, linked to that line, then its owners.
+  const source = panel.locator('.spi-source');
+  await expect(source.getByRole('link').first()).toHaveText(
+    /^process-header\.tsx:\d+$/,
+  );
+  await expect(source).toContainText(/Rendered in\s*ProcessHeader\b/);
   const utility = panel
     .locator('.spi-row')
     .filter({ hasText: /^control-header-button\b/ })
@@ -80,7 +86,7 @@ test('holding Option peeks, and Option-click pins past the key', async ({
   await page.keyboard.up('Alt');
   await expect(panel).toHaveCount(0);
 
-  // ⌥⇧ is LocatorJS's gesture, so the peek steps aside for it.
+  // ⌥ joined by another key is another gesture, so the peek steps aside.
   await page.keyboard.down('Alt');
   await expect(panel).toBeVisible();
   await page.keyboard.down('Shift');

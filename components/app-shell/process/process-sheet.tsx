@@ -1,6 +1,5 @@
 'use client';
 
-import { styleDebug } from '@/lib/style-debug';
 import { motion } from 'motion/react';
 import { createContext, useEffect, useState, type ReactNode } from 'react';
 import { LAST_PROCESS_KEY } from '@/lib/process/navigation';
@@ -10,13 +9,10 @@ import type { SystemLink } from '@/lib/process/system-links';
 import { useInstructions } from '@/components/app-shell/instructions/instructions-store';
 import { useRemovedInputs } from '@/components/app-shell/inputs/inputs-store';
 import { ProcessHeader } from './process-header';
+import { ProcessContentTransition } from './process-content-transition';
 import { ProcessPanels } from './process-panels';
 import type { AsideView } from '@/components/app-shell/drawer-aside';
-import {
-  PROCESS_TABS,
-  useProcessTab,
-  type ProcessTab,
-} from './process-tab-store';
+import { useProcessTab, type ProcessTab } from './process-tab-store';
 import { RunsList } from '@/components/app-shell/runs/runs-list';
 import {
   RunSelectionProvider,
@@ -29,9 +25,9 @@ import {
 import { StartRunButton } from '@/components/app-shell/runs/start-run-button';
 import { ScheduleControl } from './schedule-control';
 import { SectionRow } from '@/components/app-shell/runs/section-row';
-import { motionAlong, useSwap } from '@/components/ui/swap';
+import { useSwap } from '@/components/ui/swap';
 
-const TAB_MOTION = motionAlong(PROCESS_TABS, 'horizontal');
+const TAB_MOTION = (): 'fade' => 'fade';
 
 /*
   What the run's thread can ask of the sheet around it. Absent where the thread
@@ -108,9 +104,9 @@ export function ProcessSheet({
   };
   const showVersion = (version: string) =>
     ask({ kind: 'changes', version }, 'instructions');
-  // The body follows the header's choice once the old one has faded out,
-  // travelling the way the tabs lie.
-  const { shown, layer } = useSwap(tab, TAB_MOTION, chosen);
+  // The selected tab answers at once; its previous body fades before the new
+  // section arrives, without moving the dividers inside either layout.
+  const { shown, layer, entering } = useSwap(tab, TAB_MOTION, chosen);
   // Inputs can be changed, as a preview, only where they have details to
   // show: the promotion scenario's files. Everything downstream reads the kept
   // set, so a removed input leaves the count and the list together.
@@ -135,10 +131,7 @@ export function ProcessSheet({
 
   return (
     <RunSelectionProvider value={selection}>
-      <div
-        {...styleDebug({ component: 'ProcessSheet' })}
-        className="shell:grid shell:h-full shell:grid-rows-[auto_minmax(0,1fr)]"
-      >
+      <div className="shell:grid shell:h-full shell:grid-rows-[auto_minmax(0,1fr)]">
         <ProcessHeader
           process={process}
           version={version}
@@ -149,11 +142,15 @@ export function ProcessSheet({
         />
         {/* The frame the tab bodies trade places in, clipped to the pane's inner
             radius so a body on its way in or out never crosses the pane's edge. */}
-        <div className="shell:grid shell:min-h-0 shell:grid-rows-[minmax(0,1fr)] rounded-b-shell-inner grid-cols-[minmax(0,1fr)] overflow-clip">
+        <ProcessContentTransition
+          className="shell:grid shell:min-h-0 shell:grid-rows-[minmax(0,1fr)] rounded-b-shell-inner clip-past-pane-highlight grid-cols-[minmax(0,1fr)] overflow-clip"
+          finishesLeaving
+        >
           <motion.div
             key={shown}
             {...layer}
-            className="shell:grid shell:min-h-0 shell:grid-rows-[minmax(0,1fr)] grid-cols-[minmax(0,1fr)]"
+            className="process-sheet-swap shell:grid shell:min-h-0 shell:grid-rows-[minmax(0,1fr)] grid-cols-[minmax(0,1fr)]"
+            data-swap-entering={entering || undefined}
           >
             {shown === 'runs' ? (
               /*
@@ -165,16 +162,12 @@ export function ProcessSheet({
               // Clipped to the pane's inner radius. The lists inside are full-bleed
               // and carry fills of their own, and at the pane's own radius they
               // paint over the edge its face draws in the bottom corners.
-              <div className="shell:@max-sheet-wide/sheet:grid-rows-[auto_minmax(0,1fr)] shell:min-h-0 @sheet-wide/sheet:grid-cols-[232px_minmax(0,1fr)] rounded-b-shell-inner grid grid-cols-[minmax(0,1fr)] overflow-clip">
+              <div className="shell:@max-sheet-wide/sheet:grid-rows-[auto_minmax(0,1fr)] shell:min-h-0 @sheet-wide/sheet:grid-cols-[232px_minmax(0,1fr)] rounded-b-shell-inner clip-past-pane-highlight grid grid-cols-[minmax(0,1fr)] overflow-clip">
                 {/* Full-bleed: the list draws its own rules edge to edge, and
               padding on the column would leave them floating short of it. */}
                 <aside
                   aria-labelledby="runs-heading"
-                  {...styleDebug({
-                    component: 'ProcessSheet',
-                    part: 'runs-sidebar',
-                  })}
-                  className="border-rule-faint shadow-separator-right-strong @sheet-wide/sheet:border-b-0 @sheet-wide/sheet:border-r shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative border-b"
+                  className="process-runs-list sheet-bleed border-raised-ring shadow-separator-right-strong @sheet-wide/sheet:border-b-0 @sheet-wide/sheet:border-r shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative border-b"
                 >
                   <SectionRow id="runs-heading" title="Runs">
                     <span className="flex items-center gap-0.5">
@@ -187,7 +180,7 @@ export function ProcessSheet({
                   </SectionRow>
                   <RunsList process={process} onShowVersion={showVersion} />
                 </aside>
-                <div className="shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative">
+                <div className="process-runs-detail shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative">
                   <ProcessSheetActions value={actions}>
                     <RunView
                       process={process}
@@ -216,7 +209,7 @@ export function ProcessSheet({
               />
             )}
           </motion.div>
-        </div>
+        </ProcessContentTransition>
       </div>
     </RunSelectionProvider>
   );

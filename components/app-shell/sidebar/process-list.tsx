@@ -7,7 +7,6 @@ import DotGrid2x3Filled from 'blode-icons-react/icons/dot-grid-2x3-filled';
 
 import { cx } from '@/lib/cx';
 import { useShellPageNavigation } from '@/components/app-shell/shell-page-transition';
-import { styleDebug } from '@/lib/style-debug';
 import type { ProcessNavigationItem } from '@/lib/process/navigation';
 import { Glyph } from '@/components/ui/glyph';
 import { OverflowTooltip, Tooltip } from '@/components/ui/tooltip';
@@ -65,7 +64,7 @@ const GRIP_BOX =
   lighter: it is an advertisement, not a target. In the mode itself the handle
   is solid, in arrange mode's teal, and pointing at it only deepens the colour.
 */
-const GRIP_PREVIEW = `${GRIP_BOX} text-muted pointer-events-none opacity-55`;
+const GRIP_PREVIEW = `${GRIP_BOX} text-muted pointer-events-none`;
 /*
   Pointing at a handle changes only its colour -- the cursor already says it can
   be picked up, and an edge around six dots is more furniture than the gesture
@@ -155,14 +154,7 @@ export function ProcessList({
         dimmed. Without it the top fade sits on the first row permanently, which
         reads as the row being greyed out rather than as the list continuing.
       */}
-      <div
-        {...styleDebug({
-          component: 'ProcessList',
-          part: 'fade',
-          appearance: 'process-list-fade',
-        })}
-        className="process-list-fade shell:min-h-0 shell:flex-1 relative flex flex-col"
-      >
+      <div className="process-list-fade shell:min-h-0 shell:flex-1 relative flex flex-col">
         <div
           ref={scrollRef}
           // An overflow on one axis clips the other as well, so the sides carry
@@ -188,11 +180,6 @@ export function ProcessList({
             {drag ? (
               <li
                 aria-hidden="true"
-                {...styleDebug({
-                  component: 'ProcessList',
-                  part: 'drop-slot',
-                  appearance: 'process-drop-slot',
-                })}
                 className="process-drop-slot"
                 style={{
                   transform: `translateY(${order.indexOf(drag.id) * ROW_HEIGHT}px)`,
@@ -213,11 +200,6 @@ export function ProcessList({
                   ref={(element) => {
                     rowAnchor(id).current = element;
                   }}
-                  {...styleDebug({
-                    component: 'ProcessList',
-                    part: 'row',
-                    appearance: 'process-menu-row',
-                  })}
                   className="process-menu-row group/row"
                   data-current={current === item.href || undefined}
                   data-editing={customising || undefined}
@@ -246,10 +228,6 @@ export function ProcessList({
                       <button
                         ref={(element) => registerHandle(id, element)}
                         type="button"
-                        {...styleDebug({
-                          component: 'ProcessList',
-                          part: 'reorder-handle',
-                        })}
                         className={GRIP_HANDLE}
                         aria-label={`Reorder ${item.name}`}
                         aria-describedby="process-reorder-instructions"
@@ -291,11 +269,6 @@ export function ProcessList({
                   {customising ? (
                     <OverflowTooltip label={item.name}>
                       <span
-                        {...styleDebug({
-                          component: 'ProcessList',
-                          part: 'row-label',
-                          appearance: 'text-menu-link',
-                        })}
                         className={cx(MENU_LABEL, 'flex-1')}
                         tabIndex={0}
                         role="img"
@@ -307,16 +280,11 @@ export function ProcessList({
                   ) : (
                     <OverflowTooltip label={item.name}>
                       <Link
-                        {...styleDebug({
-                          component: 'ProcessList',
-                          part: 'row-link',
-                          appearance: 'process-menu-link text-menu-link',
-                        })}
                         className={cx(MENU_LABEL, 'process-menu-link')}
                         href={item.href}
                         onClick={(event) => {
                           if (
-                            current !== '/workspace' ||
+                            current === item.href ||
                             event.defaultPrevented ||
                             event.button !== 0 ||
                             event.metaKey ||
@@ -349,11 +317,6 @@ export function ProcessList({
                       tabIndex={0}
                       role="img"
                       aria-label={`${item.name}: ${item.status.label}, ${item.status.totalLabel}`}
-                      {...styleDebug({
-                        component: 'ProcessList',
-                        part: 'status-badge',
-                        appearance: 'surface-menu-badge',
-                      })}
                       className={ROW_BADGE}
                       data-tone={item.status.tone}
                     >
@@ -428,20 +391,12 @@ function ProcessStatusContent({
   ] as const;
 
   return (
-    <div
-      {...styleDebug({ component: 'ProcessStatusContent' })}
-      className="grid gap-2.5"
-    >
+    <div className="grid gap-2.5">
       <div className="text-muted text-micro mt-0.5 flex justify-between gap-2.5">
         <span>Latest available run</span>
         <span>{status.totalLabel}</span>
       </div>
       <span
-        {...styleDebug({
-          component: 'ProcessStatusContent',
-          part: 'status-chip',
-          variant: status.tone,
-        })}
         className={cx(
           TONE_CHIP[status.tone],
           'text-micro justify-self-start rounded-full px-2 py-0.75 font-semibold',
@@ -453,11 +408,6 @@ function ProcessStatusContent({
         {counts.map(([tone, label, count]) => (
           <div
             key={tone}
-            {...styleDebug({
-              component: 'ProcessStatusContent',
-              part: 'count',
-              variant: tone,
-            })}
             className={cx(
               TONE_CHIP[tone],
               'rounded-section flex items-center justify-between gap-2 px-2 py-1.5',

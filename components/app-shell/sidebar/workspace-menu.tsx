@@ -1,7 +1,6 @@
-import type { Ref } from 'react';
+import type { CSSProperties, Ref } from 'react';
 
 import { cx } from '@/lib/cx';
-import { styleDebug } from '@/lib/style-debug';
 import {
   MENU_CHEVRON,
   MENU_CHEVRON_BOX,
@@ -98,6 +97,12 @@ const WORKSPACE_PLACEHOLDERS: {
   },
 ];
 
+const menuItemStyle = (
+  index: number,
+): CSSProperties & { '--workspace-menu-index': number } => ({
+  '--workspace-menu-index': index,
+});
+
 // A workspace item's leading cell: its tile, and the outline and filled glyphs
 // the tile cross-fades between when the item engages.
 function MenuTile({
@@ -111,15 +116,7 @@ function MenuTile({
 }) {
   return (
     <span className={MENU_RAIL}>
-      <span
-        {...styleDebug({
-          component: 'WorkspaceMenu',
-          part: 'tile',
-          appearance: 'surface-menu-tile',
-          variant: hue,
-        })}
-        className={cx(MENU_TILE, hue)}
-      >
+      <span className={cx(MENU_TILE, hue)}>
         <MenuIcon
           name={icon}
           className={cx(MENU_TILE_GLYPH, MENU_TILE_GLYPH_AT_REST)}
@@ -138,22 +135,28 @@ export function WorkspaceMenu({
   count,
   enterRef,
   onEnter,
+  onRevealComplete,
   shine,
 }: {
   count: number;
   enterRef: Ref<HTMLButtonElement>;
   onEnter: () => void;
+  onRevealComplete: () => void;
   shine: boolean;
 }) {
   return (
-    <ul className="mt-2 grid gap-0.5">
-      <li>
+    <ul
+      className="workspace-menu-items mt-2 grid gap-0.5"
+      onAnimationEnd={(event) => {
+        if (
+          event.target === event.currentTarget.lastElementChild &&
+          event.animationName === 'workspace-menu-item-reveal'
+        )
+          onRevealComplete();
+      }}
+    >
+      <li style={menuItemStyle(0)}>
         <button
-          {...styleDebug({
-            component: 'WorkspaceMenu',
-            part: 'entry',
-            appearance: 'text-menu-link control-wash',
-          })}
           ref={enterRef}
           className={cx(
             MENU_ITEM,
@@ -174,30 +177,16 @@ export function WorkspaceMenu({
           >
             Processes
           </span>
-          <span
-            {...styleDebug({
-              component: 'WorkspaceMenu',
-              part: 'count',
-              appearance: 'bg-menu-chip',
-            })}
-            className={MENU_COUNT}
-          >
-            {count}
-          </span>
+          <span className={MENU_COUNT}>{count}</span>
           <span className={MENU_CHEVRON_BOX}>
             <MenuIcon name="right" className={MENU_CHEVRON} strokeWidth={2} />
           </span>
         </button>
       </li>
-      {WORKSPACE_PLACEHOLDERS.map((placeholder) => (
-        <li key={placeholder.label}>
+      {WORKSPACE_PLACEHOLDERS.map((placeholder, index) => (
+        <li key={placeholder.label} style={menuItemStyle(index + 1)}>
           <button
             type="button"
-            {...styleDebug({
-              component: 'WorkspaceMenu',
-              part: 'placeholder',
-              appearance: 'text-menu-link control-wash',
-            })}
             className={cx(
               MENU_ITEM,
               'disabled:text-muted disabled:hover:text-muted-strong',

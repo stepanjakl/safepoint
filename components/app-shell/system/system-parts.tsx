@@ -1,6 +1,5 @@
 'use client';
 
-import { styleDebug } from '@/lib/style-debug';
 import { Glyph } from '@/components/ui/glyph';
 import { modeMarker, toneText } from '@/components/review/markers';
 import { cx } from '@/lib/cx';
@@ -27,7 +26,6 @@ export function SystemDisc({
   return (
     <span
       aria-hidden="true"
-      {...styleDebug({ component: 'SystemDisc', appearance: 'system-disc' })}
       className={cx('system-disc pointer-events-none', className)}
       data-freshness={link.freshness?.state}
     >

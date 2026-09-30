@@ -1,0 +1,114 @@
+/* ── Review queue ───────────────────────────────────────────────────────────
+   The filter tabs (track, focus ring, divider, sliding face, count chip), the
+   rows' change count, and the lit line under a group's head.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Under the group head's rule, drawn by the list rather than the sticky head:
+   the head paints above the rows, so a line of its own stayed lit over a
+   selected first row. Inset, so the row's fill covers it. */
+@theme inline {
+  --shadow-separator-top-inset: inset 0 1px 0 var(--sp-floating-edge);
+  /* For the tabs' "All" face and its chip's figure. */
+  --color-review-all-solid: var(--sp-review-all-solid);
+}
+
+:root {
+  /* "All" chosen: a solid with no tone to borrow. The action's near-black was
+     the heaviest thing in the panel in light; this sits with the buckets'
+     solids. White on it clears AA at the tab's size. */
+  --sp-review-all-solid: light-dark(var(--sp-neutral-700), var(--sp-neutral-100));
+}
+
+/* A text field's face and edge, answering hover and keyboard focus as a field
+   does. Not `field`: that sets the control radius, and the track is a pill
+   around pills. Pulled out by its own padding and edge, so the first and last
+   tab align with the content, not the track. */
+@utility field-track {
+  --field-track-pad: calc(var(--spacing) * 1);
+  padding: var(--field-track-pad);
+  margin-inline: calc((var(--field-track-pad) + var(--spacing-field-edge)) * -1);
+  border: var(--spacing-field-edge) solid var(--sp-field-edge);
+  background-color: var(--sp-field-face);
+  transition: border-color var(--duration-state) ease-out;
+  &:hover {
+    border-color: var(--sp-field-edge-hover);
+  }
+  &:has([data-focus-visible]) {
+    border-color: var(--sp-field-edge-active);
+  }
+}
+
+@utility review-filter-focus {
+  outline: none;
+  &:is(:focus-visible, [data-focus-visible]) {
+    outline: 2px solid var(--sp-field-edge-active);
+    outline-offset: 2px;
+  }
+  @media (forced-colors: active) {
+    &:is(:focus-visible, [data-focus-visible]) {
+      outline-color: Highlight;
+    }
+  }
+}
+
+@layer components {
+  .review-filter-divider {
+    position: absolute;
+    inset-block-start: 50%;
+    width: calc(var(--spacing) * 0.5);
+    height: calc(var(--spacing) * 3);
+    border-radius: 999px;
+    background-color: var(--sp-field-edge);
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+  }
+
+  /* "All" at rest: a quiet face on the stretched tab, so its width reads as
+     one button rather than a chip and a word apart. Under the chosen solid,
+     never animated, so nothing fades over the solid as it slides in. */
+  .review-tab-home {
+    position: absolute;
+    inset-block: var(--field-track-pad);
+    left: 0;
+    border-radius: 999px;
+    background-color: var(--sp-surface-hover);
+    pointer-events: none;
+  }
+
+  /* Placed by transform and width from the chosen tab's box, so a choice
+     moves one face rather than repainting two. Two speeds, as the reorder row
+     has: it travels on --duration-row and tints on the shared state step. It
+     glides only when a choice moved it; placing it at first, or after a
+     resize, is instant. */
+  .review-tab-indicator {
+    position: absolute;
+    inset-block: var(--field-track-pad);
+    left: 0;
+    border-radius: 999px;
+    transition: background-color var(--duration-state) ease-out;
+  }
+  .review-tab-indicator[data-glide] {
+    transition:
+      transform var(--duration-row) --theme(--ease-out-emphasized),
+      width var(--duration-row) --theme(--ease-out-emphasized),
+      background-color var(--duration-state) ease-out;
+  }
+  /* The row's change count: the edit mark (12px in review-queue.tsx), its
+     gap-1 and two digits, on every row whether it has a count or not, so the
+     reasons before it all end at one place and the figures line up. */
+  .review-row-count {
+    min-width: calc(0.75rem + var(--spacing) + 2ch);
+  }
+  /* A tab's count chip. Two digits wide at least, so 3 and 17 are one shape
+     across the strip, and never narrower than it is tall; px-1 in markup. */
+  .review-tab-count {
+    --review-tab-count-height: 1.125rem;
+    height: var(--review-tab-count-height);
+    min-width: max(var(--review-tab-count-height), calc(2ch + 0.5rem));
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .review-tab-indicator[data-glide] {
+      transition: none;
+    }
+  }
+}

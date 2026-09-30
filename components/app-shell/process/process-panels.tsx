@@ -20,7 +20,7 @@ import {
 } from '@/components/app-shell/instructions/instructions-panel';
 import { useInstructions } from '@/components/app-shell/instructions/instructions-store';
 import { ProcessSettings } from './process-settings';
-import { useAsidePanel } from './use-aside-panel';
+import { useAsidePanel } from '@/components/app-shell/use-aside-panel';
 import { OutputsList } from './outputs-list';
 import { SECTION } from './panel-parts';
 import { InputsList } from '@/components/app-shell/inputs/inputs-list';
@@ -127,6 +127,9 @@ export function ProcessPanels({
   } = useAsidePanel({
     initial: openView,
     place,
+    viewKey,
+    sameList: (from, to) => from.kind === to.kind,
+    scope: '.process-panels',
   });
   // Opening a review item leaves this panel behind: the item is in the run.
   const leaveForRun = () => {
@@ -275,7 +278,7 @@ export function ProcessPanels({
         // Where the detail is showing and the two do not fit, it takes this
         // column's place rather than squeezing beside it.
         className={cx(
-          'shell:min-h-0 shell:overflow-y-auto shell:overscroll-contain border-rule-faint min-w-0',
+          'process-panel-list shell:min-h-0 shell:overflow-y-auto shell:overscroll-contain border-rule-faint min-w-0',
           OPENS_DETAIL.has(tab) ? '@sheet-narrow/sheet:border-r' : null,
           panel ? '@max-sheet-narrow/sheet:hidden' : null,
         )}

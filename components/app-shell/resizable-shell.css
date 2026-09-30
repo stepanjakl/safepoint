@@ -61,10 +61,17 @@
     }
 
     .resizable-shell[data-workspace-reveal='opening'] .sidebar-navigation {
+      visibility: hidden;
+      opacity: 0;
       transition:
         width var(--workspace-reveal-duration) var(--ease-out-quad),
-        opacity 600ms var(--ease-out-quad) 300ms,
         translate var(--workspace-reveal-duration) var(--ease-out-quad);
+    }
+
+    .resizable-shell[data-workspace-reveal='fading'] .sidebar-navigation {
+      opacity: 1;
+      translate: 0;
+      transition: opacity 650ms var(--ease-out-quad);
     }
 
     .resizable-shell[data-resizing] {

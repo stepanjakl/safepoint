@@ -1,13 +1,13 @@
 'use client';
 
 // Deep import: Blode's barrel is the whole icon library.
+import ArrowUpRight from 'blode-icons-react/icons/arrow-up-right';
 import SparklesTwoFilled from 'blode-icons-react/icons/sparkles-two-filled';
-import { styleDebug } from '@/lib/style-debug';
 import { useContext, useId } from 'react';
 import { AssistantContext } from '@/components/app-shell/assistant/assistant-state';
 import { Button } from '@/components/ui/button';
 import { Glyph } from '@/components/ui/glyph';
-import type { ReleasePlan } from '@/lib/review/plan-contract';
+import { severityRank, type ReleasePlan } from '@/lib/review/plan-contract';
 import {
   appliedSummary,
   attentionLine,
@@ -44,9 +44,41 @@ const CARD =
 const VERDICT = 'text-title [font-weight:550] text-pretty';
 const RECEIPT_NOTE = 'text-muted mt-1 text-meta';
 
+/*
+  How many items need attention, out of how many. One accent: the count, in
+  the colour of the most severe bucket it includes, so the line says how bad
+  as well as how many. Nothing needing attention is the plain sentence -- a
+  large clean count is not news.
+*/
+export function AttentionLine({
+  counts,
+  noun,
+}: {
+  counts: DispositionCounts;
+  noun: ReleasePlan['noun'];
+}) {
+  const needing = needingAttention(counts);
+  if (!needing) return <>{attentionLine(counts, noun)}</>;
+  const total = totalOf(counts);
+  const worst = counts.blocked
+    ? 'blocked'
+    : counts.needs_decision
+      ? 'needs_decision'
+      : 'deferred';
+  return (
+    <>
+      <span className="text-severity-ink" data-severity={severityRank(worst)}>
+        {needing}
+      </span>{' '}
+      of {total} {total === 1 ? noun.one : noun.other}{' '}
+      {needing === 1 ? 'needs' : 'need'} attention.
+    </>
+  );
+}
+
 // First in the card, because it invalidates everything below it, counts
 // included.
-function StaleRow({ plan }: { plan: ReleasePlan }) {
+export function StaleRow({ plan }: { plan: ReleasePlan }) {
   if (plan.status.kind !== 'stale') return null;
   const n = plan.status.changedEffectIds.length;
   return (
@@ -67,9 +99,8 @@ function StaleRow({ plan }: { plan: ReleasePlan }) {
 const ACTION_ROW = 'flex flex-wrap items-center gap-2 px-6 py-4 @max-card:px-4';
 const ACTION_NOTE = 'text-muted text-meta ml-2 min-w-0';
 
-// A button's icon after its label and a shade under it, as the run tallies
-// quiet the words beside their counts.
-const BUTTON_ICON = 'opacity-75';
+// Secondary icons sit a shade under their labels; the primary arrow leads.
+const BUTTON_ICON = 'text-muted';
 
 function ReviewButton({
   label,
@@ -83,9 +114,12 @@ function ReviewButton({
   return (
     <Button variant={variant} pill onPress={() => onOpen()}>
       {label}
-      <span aria-hidden="true" className={BUTTON_ICON}>
-        ↗
-      </span>
+      <ArrowUpRight
+        aria-hidden
+        size={variant === 'primary' ? 16 : 14}
+        strokeWidth={2}
+        className={cx('flex-none', variant !== 'primary' && BUTTON_ICON)}
+      />
     </Button>
   );
 }
@@ -214,11 +248,14 @@ export function ReleaseCard({
   progress,
   onOpen,
   onCommit,
+  seen,
 }: {
   plan: ReleasePlan;
   progress?: ReviewProgress;
   onOpen: OpenReview;
   onCommit?: () => void;
+  // Items already opened in the review, set lighter in the rows.
+  seen?: ReadonlySet<string>;
 }) {
   const verdictId = useId();
   const state = planState(plan);
@@ -236,14 +273,7 @@ export function ReleaseCard({
 
   if (state === 'incomplete' && plan.status.kind === 'incomplete') {
     return (
-      <article
-        {...styleDebug({
-          component: 'ReleaseCard',
-          appearance: 'surface-floating',
-        })}
-        className={CARD}
-        aria-labelledby={verdictId}
-      >
+      <article className={CARD} aria-labelledby={verdictId}>
         <div className={CARD_HEAD}>
           <h2 id={verdictId} className={VERDICT}>
             Evaluation stopped at step {plan.status.step} of {plan.status.of}.
@@ -256,14 +286,7 @@ export function ReleaseCard({
 
   if (state === 'all_clear') {
     return (
-      <article
-        {...styleDebug({
-          component: 'ReleaseCard',
-          appearance: 'surface-floating',
-        })}
-        className={CARD}
-        aria-labelledby={verdictId}
-      >
+      <article className={CARD} aria-labelledby={verdictId}>
         <div className={CARD_HEAD}>
           <h2
             id={verdictId}
@@ -289,18 +312,12 @@ export function ReleaseCard({
   const blockedOnly = state === 'fully_blocked';
 
   return (
-    <article
-      {...styleDebug({
-        component: 'ReleaseCard',
-        appearance: 'surface-floating',
-      })}
-      className={CARD}
-      aria-labelledby={verdictId}
-    >
+    <article className={CARD} aria-labelledby={verdictId}>
       <Buckets
         plan={plan}
         counts={counts}
         onOpen={onOpen}
+        seen={seen}
         lead={
           <>
             <StaleRow plan={plan} />
@@ -334,7 +351,7 @@ export function ReleaseCard({
                 id={verdictId}
                 className={cx(VERDICT, blockedOnly && 'text-state-blocked')}
               >
-                {attentionLine(counts, plan.noun)}
+                <AttentionLine counts={counts} noun={plan.noun} />
               </h2>
             )}
           </>

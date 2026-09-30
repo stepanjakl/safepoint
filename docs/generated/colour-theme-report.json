@@ -12431,22 +12431,6 @@
       "cssVariable": "--sp-divider-etch",
       "light": 25,
       "dark": 925
-    },
-    "cardEtch": { "cssVariable": "--sp-card-etch", "light": 0, "dark": 850 },
-    "sheetBreakEtch": {
-      "cssVariable": "--sp-sheet-break-etch",
-      "light": 25,
-      "dark": 875
-    },
-    "sheetRowEtch": {
-      "cssVariable": "--sp-sheet-row-etch",
-      "light": 25,
-      "dark": 950
-    },
-    "sheetRowEtchActive": {
-      "cssVariable": "--sp-sheet-row-etch-active",
-      "light": 0,
-      "dark": 850
     }
   },
   "roleAssignmentValidation": [
@@ -13152,70 +13136,6 @@
       "theme": "dark",
       "expected": 925,
       "actual": 925,
-      "passed": true
-    },
-    {
-      "id": "cardEtch",
-      "cssVariable": "--sp-card-etch",
-      "theme": "light",
-      "expected": 0,
-      "actual": 0,
-      "passed": true
-    },
-    {
-      "id": "cardEtch",
-      "cssVariable": "--sp-card-etch",
-      "theme": "dark",
-      "expected": 850,
-      "actual": 850,
-      "passed": true
-    },
-    {
-      "id": "sheetBreakEtch",
-      "cssVariable": "--sp-sheet-break-etch",
-      "theme": "light",
-      "expected": 25,
-      "actual": 25,
-      "passed": true
-    },
-    {
-      "id": "sheetBreakEtch",
-      "cssVariable": "--sp-sheet-break-etch",
-      "theme": "dark",
-      "expected": 875,
-      "actual": 875,
-      "passed": true
-    },
-    {
-      "id": "sheetRowEtch",
-      "cssVariable": "--sp-sheet-row-etch",
-      "theme": "light",
-      "expected": 25,
-      "actual": 25,
-      "passed": true
-    },
-    {
-      "id": "sheetRowEtch",
-      "cssVariable": "--sp-sheet-row-etch",
-      "theme": "dark",
-      "expected": 950,
-      "actual": 950,
-      "passed": true
-    },
-    {
-      "id": "sheetRowEtchActive",
-      "cssVariable": "--sp-sheet-row-etch-active",
-      "theme": "light",
-      "expected": 0,
-      "actual": 0,
-      "passed": true
-    },
-    {
-      "id": "sheetRowEtchActive",
-      "cssVariable": "--sp-sheet-row-etch-active",
-      "theme": "dark",
-      "expected": 850,
-      "actual": 850,
       "passed": true
     }
   ],

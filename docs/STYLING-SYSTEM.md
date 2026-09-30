@@ -44,35 +44,11 @@ Every role is declared once, in one `:root` block, is read somewhere -- `pnpm ch
 
 ### Finding an element's styles
 
-Use `styleDebug` from `lib/style-debug.ts` on an existing DOM element or a
-component that forwards data attributes to its DOM root:
-
-```tsx
-<div
-  {...styleDebug({
-    component: 'ProcessMenu',
-    part: 'row',
-    appearance: 'process-menu-row',
-  })}
->
-```
-
-In development this emits `data-component`, `data-part` and `data-appearance`.
-The helper returns nothing outside development. It adds no elements or browser
-listeners; it does not promise build-time removal of every helper call.
-
-- **Component** names the owning component. A part may be rendered by a private
-  helper, but keeps the public owner's identity where that makes navigation clearer.
-- **Part** names a meaningful styled region: row, badge, track, ring. Omit it
-  on the component root. Do not annotate every layout wrapper or glyph.
-- **Appearance** names the exact CSS selector or utility defining the treatment,
-  without a leading dot. If independently meaningful treatments share an element,
-  list their names separated by spaces (for example, `process-menu-link text-menu-link`).
-  These are search terms, not a copy of the full class list. Omit it for ordinary utility compositions that have
-  no single named treatment. Button retains the short family names `quiet`
-  and `accent`, matching `control-quiet` / `control-accent` and their token families.
-- **Variant** comes from existing props or the configuration that chooses the
-  classes. StatusLabel uses its tone; menu tiles use their hue class.
+Point the style inspector at it (see Finding where a style is written, below):
+it names the component and JSX line that wrote the element, and every class and
+rule on it with the file and line each is written on. There is no diagnostic
+markup to keep in step; a named class in the component's stylesheet is what
+makes a treatment findable.
 
 When an interactive treatment is difficult to trace across utility constants,
 put its resting and interactive states together under one searchable class in
@@ -80,19 +56,15 @@ the component's stylesheet, inside `@layer components`. This qualifies under the
 "set of states on one selector" rule below. Keep layout and simple typography in
 markup and keep values in tokens. `.process-menu-back` is the reference example:
 its rule applies the shared transition and directly names its text and background
-tokens for rest, hover and keyboard focus. Its metadata names only
-`process-menu-back`; it does not duplicate the state classes or token list.
+tokens for rest, hover and keyboard focus.
 
 Preserve the original state semantics when moving rules. Tailwind's `hover:`
 variant is guarded by `(hover: hover)`; a bare CSS `:hover` is not equivalent on
 touch devices. React Aria's data states are also distinct from native pseudo-classes.
 
-Inspect the element or its nearest marked ancestor, then search the component
-name or appearance. LocatorJS provides the source location
-(`pnpm dev:locator`). Keep paths, line
-numbers and token lists out of metadata so they cannot become stale.
+Where the less obvious treatments live:
 
-| Inspected identity                                | Where the treatment lives                                                                                                                                                  |
+| Element / class                                   | Where the treatment lives                                                                                                                                                  |
 | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | ProcessList / row / `process-menu-row`            | `components/app-shell/sidebar/process-list.css`: the row's states and the custom properties it publishes                                                                   |
 | ProcessList / status-badge / `surface-menu-badge` | `process-list.css`: reads the badge stops inherited from the row                                                                                                           |
@@ -105,17 +77,9 @@ numbers and token lists out of metadata so they cannot become stale.
 | ProcessHeader / count / `header-button-count`     | `components/app-shell/process/process-header.css`: geometry, and the `bg-header-button-count` colour beside it                                                             |
 | RunRow / tally-segment / `sheet-seg`              | `components/app-shell/runs/runs-list.css`: segment treatment, with existing state attributes selecting colours                                                             |
 
-Appearance describes the configured treatment, not the complete computed style.
-Disabled and interaction states, inherited values and caller classes can override
-it. Use existing state attributes to see the active state; do not mirror hover,
-selection, freshness or disabled state in diagnostic metadata. Shared appearances
-are not tokens unique to the element's accessible name.
-
-Diagnostic attributes must never be CSS selectors or behavior hooks. Functional
-attributes such as `data-slant`, `data-size`, `data-tone` on the menu badge, and
-React Aria's state attributes remain in production. Keep class strings literal
-so Tailwind can discover them. When adding a treatment, annotate its meaningful
-root and independently painted parts using this convention.
+Functional attributes such as `data-slant`, `data-size`, `data-tone` on the
+menu badge, and React Aria's state attributes, remain in production. Keep class
+strings literal so Tailwind can discover them.
 
 ### What earns a place in a component's stylesheet
 
@@ -228,10 +192,10 @@ Every other neutral fill, edge and etch is also an offset in steps from a surfac
 
 Two rules keep the following roles honest, and both are checked:
 
-- **A region painted with a pane or floating face carries that ground.** The shell's pane content takes `ground-raised`, and so do the review dialog, workspace columns, header, batch strip and effects rail, which paint `bg-surface-primary` directly. Without it their content takes the canvas's values. `e2e/colour-system.spec.ts` fails on a painted region with content and no matching ground.
+- **A region painted with a pane or floating face carries that ground.** The shell's pane content takes `ground-raised`, and so do the workspace columns, header, batch strip and effects rail, which paint `bg-surface-primary` directly. The drawer's panels -- the review's queue and item among them -- are `surface-floating`, which brings `ground-floating` with it. Without it their content takes the canvas's values. `e2e/colour-system.spec.ts` fails on a painted region with content and no matching ground.
 - **Nothing on `:root` reads a following role.** A custom property resolves where it is declared, so a `:root` alias freezes at the canvas value everywhere. Read the role where it is used (an `@theme inline` entry resolves on the element), or give it an offset of its own. `pnpm check:colours` fails on one.
 
-Dividers inside a pane (the header's rule, the runs column's edge, the sheet head's line) take `--sp-raised-edge`, the pane's own edge colour, because their ground is the pane; `--sp-divider-etch` is only for rules on the canvas.
+A divider inside a surface is drawn in that surface's own edge colours: the line in its ring and the lit line beside it in its highlight, so it reads as the surface's edge carried across it. Inside the pane (the header's rule, the runs column's edge, the sheet's rows) that is `--sp-raised-ring` and `--sp-raised-edge`; inside a floating card, `--sp-floating-ring` and `--sp-floating-edge`; inside a recess, `--sp-recessed-ring`. `--sp-divider-etch` is only for rules on the canvas. A lit row's fill covers both lines, the divider's and the surface's own side edge, as a hovered release row does in its card.
 
 A handful of cross-theme warnings are expected and left standing. Light's canvas-to-floating span is two steps where dark's is four, and light text near the white end reaches ratios dark cannot. They are warnings precisely so visual margin does not become an undocumented compliance rule.
 
@@ -249,15 +213,14 @@ Both are **flat under the pointer**: `--sp-accent-hover` and `--sp-commit-hover`
 
 `--sp-text-muted` reads below AA on `--sp-surface-selected` in light. That is safe only because every consumer of that fill swaps its ink to primary in the same rule. A Playwright test asserts that no element painting the selected fill has muted-coloured text anywhere inside it.
 
-Quieten text with a role, never with `opacity`. The contrast contracts measure a role's colour, not what an opacity leaves of it, so faded ink escapes them; `text-muted` is already the quietest text that clears AA. The one exception, the "of" in a run's tally, is measured and noted beside its face.
+Quieten text and icons with a role, never with `opacity`. The contrast contracts measure a role's colour, not what an opacity leaves of it, so faded ink escapes them; `text-muted` is already the quietest text that clears AA. Opacity is reserved for visibility and motion, not resting ink.
 
 Prefer a step that works on every ground it actually paints on over ink that adapts to its surface. Contextual ink is possible -- custom properties inherit, and `surface-menu-badge` already reads stops its row publishes -- but it makes "muted" stop being a colour, it cannot be reasoned about locally, and it does not survive a portal. Keep it for declared, contract-checked exceptions.
 
 ### Finding where a style is written
 
-- **Style inspector** (development only): **hold ⌥ Option** (Alt) and point at an element; ⌥-click pins it, so the panel stays once the key is up. **Ctrl+Shift+\`**, or Debug → Inspect styles in the design pane, keeps it on without holding anything. The page never sees the pinning click. ⌥⇧ stays LocatorJS's gesture, ⌥ does nothing while a text field has focus, and ⌥-click on the sidebar handle still resets its width. It lists every one of the app's own utilities, `@theme` entries and matching rules on that element, each linked to its file and line, with its declarations -- including those it pulls in with `@apply` and those under a state or media query, dimmed when they are not applying. Every `var()` in a declaration unfolds into the chain that paints it: the class that sets that property on this element or on the nearest ancestor that does (named, since custom properties inherit; a `@property` with `inherits: false`, like the control stops, stops at the element), then the role on `:root` or the preference selector that reaches `<html>`, down to the ramp or Radix step, each with its colour here. Only the `light-dark()` branch the element paints is followed. An `@apply` of a Tailwind theme utility counts as the declaration it writes (`@apply shadow-control-highlight` is `box-shadow`), and an `@theme inline` value is read on the element that uses it, since Tailwind copies it there. The filter field at the top keeps only the declarations whose property, value or chain names what you type -- `shadow`, `--control-highlight` -- and stays set while you move between elements; Escape clears it. A custom property a class sets says which declaration reads it, and each paint swatch names the class it comes from. Rules for the element's classes that are not matching now (a state, an ancestor) are folded below; Tailwind's own utilities are listed last. **JSX** opens the markup (under `pnpm dev:locator`, which stamps it), **Parent** steps out. Links open VS Code; set `localStorage['safepoint.dev.editor'] = 'cursor'` for Cursor. The index is read from the stylesheets each time it opens (`app/api/dev/stylesheets`), so it is never stale.
+- **Style inspector** (development only): **hold ⌥ Option** (Alt) and point at an element; ⌥-click pins it, so the panel stays once the key is up. **Ctrl+Shift+\`**, or Debug → Inspect styles in the design pane, keeps it on without holding anything. The page never sees the pinning click. ⌥ joined by another key ends the peek, ⌥ does nothing while a text field has focus, and ⌥-click on the sidebar handle still resets its width. It lists every one of the app's own utilities, `@theme` entries and matching rules on that element, each linked to its file and line, with its declarations -- including those it pulls in with `@apply` and those under a state or media query, dimmed when they are not applying. Every `var()` in a declaration unfolds into the chain that paints it: the class that sets that property on this element or on the nearest ancestor that does (named, since custom properties inherit; a `@property` with `inherits: false`, like the control stops, stops at the element), then the role on `:root` or the preference selector that reaches `<html>`, down to the ramp or Radix step, each with its colour here. Only the `light-dark()` branch the element paints is followed. An `@apply` of a Tailwind theme utility counts as the declaration it writes (`@apply shadow-control-highlight` is `box-shadow`), and an `@theme inline` value is read on the element that uses it, since Tailwind copies it there. The filter field at the top keeps only the declarations whose property, value or chain names what you type -- `shadow`, `--control-highlight` -- and stays set while you move between elements; Escape clears it. Each match is marked in the lines it keeps. A declaration that applies but loses the cascade -- to `!important`, a later layer, a more specific selector or a later rule -- is struck through, and the one that wins shows what it computes to when that says more than what is written (`calc(spacing * 2) = 8px`, `0.25rem 0.375rem = 2px 6px`); only the same property is compared, so a shorthand a longhand overrides (`padding` under `padding-inline`) is not. Colour carries one meaning each: amber is where a value comes from, violet a condition it holds under (`@layer`, `@media`, a state or variant), cyan a custom property; a neutral chip names an origin (Tailwind, a package, an `@apply`). A **box** row gives the element's size, padding, border and margin in pixels. The panel draws with Tweakpane's theme variables, like the design pane. A custom property a class sets says which declaration reads it, and each paint swatch names the class it comes from. Rules are found by the element's classes and by structure -- `.pill > *`, `svg`, `[data-severity]` -- so a rule that styles the element without naming it is listed too, and one on its `::before` or `::after` says so. Tailwind's generated utilities (`px-2`) show the declarations they compile to, read from the page; rules a package injects (React Aria, torph) are listed under **From packages**; the style attribute under **Inline style**; Tailwind's reset (preflight) is folded. **Inherited** names, for each inherited property the element does not set -- font, line height, colour, white-space -- the ancestor and rule it comes from. Rules for the element's classes that are not matching now (a state, an ancestor) are folded below. Under the header it names the component whose JSX wrote the element, linked to that line, then each component out from it, linked to where it renders the next one in -- read from React's own debug fields and mapped to source by the dev server (`components/dev/component-source.ts`), so it needs no build step. A package component that wrote the tag (a React Aria part) is named after **via**. **Parent** steps out. Links open VS Code; set `localStorage['safepoint.dev.editor'] = 'cursor'` for Cursor. The index is read from the stylesheets each time it opens (`app/api/dev/stylesheets`), so it is never stale.
 - **`pnpm trace:token <role>`** prints the same chain in the terminal, per theme and neutral family, and reads the stylesheets through the same reader (`lib/dev/stylesheets.ts`).
-- **Alt+Shift+click** (LocatorJS, under `pnpm dev:locator`) jumps straight to an element's JSX.
 - **`/workbench/controls`** shows the real controls in every interaction state side by side: rest, hovered, keyboard focus, pressed and disabled. `Pin` sets the attribute React Aria would, so the face paints exactly as it does under the pointer, and the visual baseline records the page. A control styled with a CSS pseudo-class (`hover:`) rather than React Aria's attributes cannot be pinned and shows at rest.
 - **Edit in DevTools, save to disk.** Next.js serves Chrome's automatic workspace file (`/.well-known/appspecific/com.chrome.devtools.json`) in development, so Sources → Workspace offers to connect the repository in one click (Chrome 135+). A Styles-pane edit then saves to the component's own `.css`, the file its source map names.
 
@@ -299,7 +262,7 @@ For example, a completed run's state label uses verified 11 through its bare ali
 - **The sheen has two widths.** `--spacing-control-highlight`, a whole pixel, for panes and cards. `control-hairline` asks for `--spacing-control-highlight-hairline` on anything icon- or button-sized, where a full pixel of white inside the ring reads as a second border.
 - **A child can follow its parent's state through custom properties.** A row's status badge rests as a keycap and goes bare whenever its row is hovered, focused or current, so the row shows through it: `.process-menu-row` publishes the badge's stops per state and `surface-menu-badge` reads them. The priority between states is then the rule's reading order rather than Tailwind's emission order, and there is no variant per state on the child.
 - **A fill laid on a face is a ramp step, not a `color-mix()`.** Give a chip or pill inside a control its own role over `--sp-neutral-*`, picked one step off the face where the fill sits — `--sp-header-button-count` sits a step off the header button's face in each theme. A mix resolves against whatever is under it, so its colour is nowhere on the ramp and cannot be matched or reused by name; a step can.
-- **Every edge is a step too.** Sheens, etches and highlights are opaque ramp steps, one role per surface that paints one (`--sp-raised-edge`, `--sp-card-etch`, `--sp-sheet-row-etch` …), stated as offsets in `config.ts` and checked by `pnpm check:colours`. A highlight is one layer lighter than its face in light and one layer darker in dark -- the lightest faces sit at step 25 so that even they keep a visible edge at step 0. A Playwright test fails on any edge role with a partial alpha, and `pnpm check:tokens` fails on pure white or black anywhere at partial strength -- faded (`rgb(255 255 255 / 25%)`, `#ffffff40`) or mixed into a hue (`color-mix(… white …)`): a sheen on a coloured face is a step of that hue's Radix scale, like the menu tiles' step 2 or the accent's dark 6/7.
+- **Every edge is a step too.** Sheens, etches and highlights are opaque ramp steps, one role per surface that paints one (`--sp-raised-edge`, `--sp-floating-edge`, `--sp-divider-etch` …), stated as offsets in `config.ts` and checked by `pnpm check:colours`. A highlight is one layer lighter than its face in light and one layer darker in dark -- the lightest faces sit at step 25 so that even they keep a visible edge at step 0. A Playwright test fails on any edge role with a partial alpha, and `pnpm check:tokens` fails on pure white or black anywhere at partial strength -- faded (`rgb(255 255 255 / 25%)`, `#ffffff40`) or mixed into a hue (`color-mix(… white …)`): a sheen on a coloured face is a step of that hue's Radix scale, like the menu tiles' step 2 or the accent's dark 6/7.
 - **A lit line under a rule is a shadow, not a border.** `shadow-rule-etch` offsets `--sp-rule-etch` by the hairline width. A fractional border snaps to whole device pixels, so a 0.75px border draws as 0.5px on a 2× screen; a shadow's offset paints at the width it asks for.
 
 ### Header-control hierarchy

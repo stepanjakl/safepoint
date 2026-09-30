@@ -169,7 +169,7 @@ export function useResizableSidebar({
           ? 'close'
           : 'open'
         : null
-      : hovered
+      : gripHovered
         ? collapsed
           ? 'open'
           : 'close'
