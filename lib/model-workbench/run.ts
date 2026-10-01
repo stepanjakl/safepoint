@@ -3,16 +3,14 @@ import { generateText, NoObjectGeneratedError, Output } from 'ai';
 import { z } from 'zod';
 
 import { loadReviewedReplay } from '@/lib/promotion-release';
+import { shiftScenarioToReviewAt } from '@/lib/promotion-release/scenario-clock';
 import type { Sku } from '@/lib/promotion-release/schemas';
 
-import {
-  buildLinePreview,
-  evaluateLineChecks,
-  inspectLineSuggestion,
-} from './line';
+import { buildLinePreview, inspectLineSuggestion } from './line';
 import type { ModelId } from './models';
+import { reviewLineSuggestion } from './review';
 
-const INSTRUCTION_VERSION = 'promotion-line-instruction-v1';
+const INSTRUCTION_VERSION = 'promotion-line-instruction-v2';
 
 // The provider receives a shallow shape. The local contract applies the
 // stricter SKU, recommendation, money, and evidence checks after generation.
@@ -31,12 +29,18 @@ export async function runModelWorkbench({
   model,
   sku,
   runId,
+  reviewAt,
 }: {
   model: ModelId;
   sku: Sku;
   runId: string;
+  reviewAt: string;
 }) {
-  const preview = buildLinePreview(loadReviewedReplay().scenario, sku);
+  const scenario = shiftScenarioToReviewAt(
+    loadReviewedReplay().scenario,
+    reviewAt,
+  );
+  const preview = buildLinePreview(scenario, sku);
   const started = performance.now();
   try {
     const { DevToolsTelemetry } = await import('@ai-sdk/devtools');
@@ -78,7 +82,7 @@ export async function runModelWorkbench({
       output: result.output,
       suggestion,
       issues,
-      policy: suggestion ? evaluateLineChecks(preview, suggestion) : null,
+      review: suggestion ? reviewLineSuggestion(scenario, suggestion) : null,
       usage: {
         inputTokens: result.totalUsage.inputTokens,
         outputTokens: result.totalUsage.outputTokens,
@@ -103,7 +107,7 @@ export async function runModelWorkbench({
         'Model output did not match the required JSON shape.',
         ...issues,
       ],
-      policy: null,
+      review: null,
       usage: error.usage
         ? {
             inputTokens: error.usage.inputTokens,

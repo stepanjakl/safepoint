@@ -37,6 +37,12 @@ test('run tally and row colours advance through rest, hover, and selection', asy
   colorScheme,
 }) => {
   await page.goto('/examples/promotion');
+  await page.locator('html').evaluate(
+    (root, theme) => {
+      root.dataset.theme = theme;
+    },
+    colorScheme === 'dark' ? 'dark' : 'light',
+  );
   const tallyRow = page
     .locator('.sheet-row:has(.sheet-seg[data-severity])')
     .first();

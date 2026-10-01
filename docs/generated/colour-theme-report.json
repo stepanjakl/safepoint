@@ -648,27 +648,27 @@
           },
           {
             "id": "tooltip-edge-over-canvas",
-            "light": 3.621,
+            "light": 4.809,
             "dark": 4.127,
-            "ratio": 1.14
+            "ratio": 1.165
           },
           {
             "id": "tooltip-edge-over-primary-surface",
-            "light": 3.874,
+            "light": 5.145,
             "dark": 3.731,
-            "ratio": 1.038
+            "ratio": 1.379
           },
           {
             "id": "tooltip-edge-over-floating-surface",
-            "light": 4.14,
+            "light": 5.497,
             "dark": 3.27,
-            "ratio": 1.266
+            "ratio": 1.681
           },
           {
             "id": "tooltip-edge-on-own-face",
-            "light": 4.14,
+            "light": 5.497,
             "dark": 3.27,
-            "ratio": 1.266
+            "ratio": 1.681
           },
           {
             "id": "raised-ring-on-face",
@@ -1355,9 +1355,9 @@
           "background": "canvas",
           "minimum": 3,
           "rationale": "A project requirement, not a WCAG citation: the tooltip must read as a separate object over what it covers.",
-          "foregroundStep": 475,
+          "foregroundStep": 550,
           "backgroundStep": 75,
-          "ratio": 3.621,
+          "ratio": 4.809,
           "passed": true,
           "metTarget": true
         },
@@ -1369,9 +1369,9 @@
           "background": "surfacePrimary",
           "minimum": 3,
           "rationale": "Tooltips routinely open over raised panels.",
-          "foregroundStep": 475,
+          "foregroundStep": 550,
           "backgroundStep": 50,
-          "ratio": 3.874,
+          "ratio": 5.145,
           "passed": true,
           "metTarget": true
         },
@@ -1383,9 +1383,9 @@
           "background": "surfaceFloating",
           "minimum": 3,
           "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-          "foregroundStep": 475,
+          "foregroundStep": 550,
           "backgroundStep": 25,
-          "ratio": 4.14,
+          "ratio": 5.497,
           "passed": true,
           "metTarget": true
         },
@@ -1398,9 +1398,9 @@
           "minimum": 1.5,
           "target": 3,
           "rationale": "The box must read as bounded, not as a floating block of ink.",
-          "foregroundStep": 475,
+          "foregroundStep": 550,
           "backgroundStep": 25,
-          "ratio": 4.14,
+          "ratio": 5.497,
           "passed": true,
           "metTarget": true
         },
@@ -3005,27 +3005,27 @@
           },
           {
             "id": "tooltip-edge-over-canvas",
-            "light": 3.6,
+            "light": 4.779,
             "dark": 4.151,
-            "ratio": 1.153
+            "ratio": 1.151
           },
           {
             "id": "tooltip-edge-over-primary-surface",
-            "light": 3.85,
+            "light": 5.111,
             "dark": 3.751,
-            "ratio": 1.026
+            "ratio": 1.363
           },
           {
             "id": "tooltip-edge-over-floating-surface",
-            "light": 4.113,
+            "light": 5.459,
             "dark": 3.286,
-            "ratio": 1.252
+            "ratio": 1.661
           },
           {
             "id": "tooltip-edge-on-own-face",
-            "light": 4.113,
+            "light": 5.459,
             "dark": 3.286,
-            "ratio": 1.252
+            "ratio": 1.661
           },
           {
             "id": "raised-ring-on-face",
@@ -3712,9 +3712,9 @@
           "background": "canvas",
           "minimum": 3,
           "rationale": "A project requirement, not a WCAG citation: the tooltip must read as a separate object over what it covers.",
-          "foregroundStep": 475,
+          "foregroundStep": 550,
           "backgroundStep": 75,
-          "ratio": 3.6,
+          "ratio": 4.779,
           "passed": true,
           "metTarget": true
         },
@@ -3726,9 +3726,9 @@
           "background": "surfacePrimary",
           "minimum": 3,
           "rationale": "Tooltips routinely open over raised panels.",
-          "foregroundStep": 475,
+          "foregroundStep": 550,
           "backgroundStep": 50,
-          "ratio": 3.85,
+          "ratio": 5.111,
           "passed": true,
           "metTarget": true
         },
@@ -3740,9 +3740,9 @@
           "background": "surfaceFloating",
           "minimum": 3,
           "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-          "foregroundStep": 475,
+          "foregroundStep": 550,
           "backgroundStep": 25,
-          "ratio": 4.113,
+          "ratio": 5.459,
           "passed": true,
           "metTarget": true
         },
@@ -3755,9 +3755,9 @@
           "minimum": 1.5,
           "target": 3,
           "rationale": "The box must read as bounded, not as a floating block of ink.",
-          "foregroundStep": 475,
+          "foregroundStep": 550,
           "backgroundStep": 25,
-          "ratio": 4.113,
+          "ratio": 5.459,
           "passed": true,
           "metTarget": true
         },
@@ -5362,27 +5362,27 @@
           },
           {
             "id": "tooltip-edge-over-canvas",
-            "light": 3.622,
+            "light": 4.81,
             "dark": 4.126,
-            "ratio": 1.139
+            "ratio": 1.166
           },
           {
             "id": "tooltip-edge-over-primary-surface",
-            "light": 3.875,
+            "light": 5.146,
             "dark": 3.73,
-            "ratio": 1.039
+            "ratio": 1.38
           },
           {
             "id": "tooltip-edge-over-floating-surface",
-            "light": 4.141,
+            "light": 5.499,
             "dark": 3.27,
-            "ratio": 1.266
+            "ratio": 1.682
           },
           {
             "id": "tooltip-edge-on-own-face",
-            "light": 4.141,
+            "light": 5.499,
             "dark": 3.27,
-            "ratio": 1.266
+            "ratio": 1.682
           },
           {
             "id": "raised-ring-on-face",
@@ -6069,9 +6069,9 @@
           "background": "canvas",
           "minimum": 3,
           "rationale": "A project requirement, not a WCAG citation: the tooltip must read as a separate object over what it covers.",
-          "foregroundStep": 475,
+          "foregroundStep": 550,
           "backgroundStep": 75,
-          "ratio": 3.622,
+          "ratio": 4.81,
           "passed": true,
           "metTarget": true
         },
@@ -6083,9 +6083,9 @@
           "background": "surfacePrimary",
           "minimum": 3,
           "rationale": "Tooltips routinely open over raised panels.",
-          "foregroundStep": 475,
+          "foregroundStep": 550,
           "backgroundStep": 50,
-          "ratio": 3.875,
+          "ratio": 5.146,
           "passed": true,
           "metTarget": true
         },
@@ -6097,9 +6097,9 @@
           "background": "surfaceFloating",
           "minimum": 3,
           "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-          "foregroundStep": 475,
+          "foregroundStep": 550,
           "backgroundStep": 25,
-          "ratio": 4.141,
+          "ratio": 5.499,
           "passed": true,
           "metTarget": true
         },
@@ -6112,9 +6112,9 @@
           "minimum": 1.5,
           "target": 3,
           "rationale": "The box must read as bounded, not as a floating block of ink.",
-          "foregroundStep": 475,
+          "foregroundStep": 550,
           "backgroundStep": 25,
-          "ratio": 4.141,
+          "ratio": 5.499,
           "passed": true,
           "metTarget": true
         },
@@ -7720,27 +7720,27 @@
           },
           {
             "id": "tooltip-edge-over-canvas",
-            "light": 3.576,
+            "light": 4.743,
             "dark": 4.179,
-            "ratio": 1.169
+            "ratio": 1.135
           },
           {
             "id": "tooltip-edge-over-primary-surface",
-            "light": 3.823,
+            "light": 5.071,
             "dark": 3.774,
-            "ratio": 1.013
+            "ratio": 1.344
           },
           {
             "id": "tooltip-edge-over-floating-surface",
-            "light": 4.082,
+            "light": 5.414,
             "dark": 3.304,
-            "ratio": 1.235
+            "ratio": 1.639
           },
           {
             "id": "tooltip-edge-on-own-face",
-            "light": 4.082,
+            "light": 5.414,
             "dark": 3.304,
-            "ratio": 1.235
+            "ratio": 1.639
           },
           {
             "id": "raised-ring-on-face",
@@ -8427,9 +8427,9 @@
           "background": "canvas",
           "minimum": 3,
           "rationale": "A project requirement, not a WCAG citation: the tooltip must read as a separate object over what it covers.",
-          "foregroundStep": 475,
+          "foregroundStep": 550,
           "backgroundStep": 75,
-          "ratio": 3.576,
+          "ratio": 4.743,
           "passed": true,
           "metTarget": true
         },
@@ -8441,9 +8441,9 @@
           "background": "surfacePrimary",
           "minimum": 3,
           "rationale": "Tooltips routinely open over raised panels.",
-          "foregroundStep": 475,
+          "foregroundStep": 550,
           "backgroundStep": 50,
-          "ratio": 3.823,
+          "ratio": 5.071,
           "passed": true,
           "metTarget": true
         },
@@ -8455,9 +8455,9 @@
           "background": "surfaceFloating",
           "minimum": 3,
           "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-          "foregroundStep": 475,
+          "foregroundStep": 550,
           "backgroundStep": 25,
-          "ratio": 4.082,
+          "ratio": 5.414,
           "passed": true,
           "metTarget": true
         },
@@ -8470,9 +8470,9 @@
           "minimum": 1.5,
           "target": 3,
           "rationale": "The box must read as bounded, not as a floating block of ink.",
-          "foregroundStep": 475,
+          "foregroundStep": 550,
           "backgroundStep": 25,
-          "ratio": 4.082,
+          "ratio": 5.414,
           "passed": true,
           "metTarget": true
         },
@@ -10077,27 +10077,27 @@
           },
           {
             "id": "tooltip-edge-over-canvas",
-            "light": 3.611,
+            "light": 4.794,
             "dark": 4.138,
-            "ratio": 1.146
+            "ratio": 1.159
           },
           {
             "id": "tooltip-edge-over-primary-surface",
-            "light": 3.863,
+            "light": 5.128,
             "dark": 3.74,
-            "ratio": 1.033
+            "ratio": 1.371
           },
           {
             "id": "tooltip-edge-over-floating-surface",
-            "light": 4.127,
+            "light": 5.479,
             "dark": 3.278,
-            "ratio": 1.259
+            "ratio": 1.671
           },
           {
             "id": "tooltip-edge-on-own-face",
-            "light": 4.127,
+            "light": 5.479,
             "dark": 3.278,
-            "ratio": 1.259
+            "ratio": 1.671
           },
           {
             "id": "raised-ring-on-face",
@@ -10784,9 +10784,9 @@
           "background": "canvas",
           "minimum": 3,
           "rationale": "A project requirement, not a WCAG citation: the tooltip must read as a separate object over what it covers.",
-          "foregroundStep": 475,
+          "foregroundStep": 550,
           "backgroundStep": 75,
-          "ratio": 3.611,
+          "ratio": 4.794,
           "passed": true,
           "metTarget": true
         },
@@ -10798,9 +10798,9 @@
           "background": "surfacePrimary",
           "minimum": 3,
           "rationale": "Tooltips routinely open over raised panels.",
-          "foregroundStep": 475,
+          "foregroundStep": 550,
           "backgroundStep": 50,
-          "ratio": 3.863,
+          "ratio": 5.128,
           "passed": true,
           "metTarget": true
         },
@@ -10812,9 +10812,9 @@
           "background": "surfaceFloating",
           "minimum": 3,
           "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-          "foregroundStep": 475,
+          "foregroundStep": 550,
           "backgroundStep": 25,
-          "ratio": 4.127,
+          "ratio": 5.479,
           "passed": true,
           "metTarget": true
         },
@@ -10827,9 +10827,9 @@
           "minimum": 1.5,
           "target": 3,
           "rationale": "The box must read as bounded, not as a floating block of ink.",
-          "foregroundStep": 475,
+          "foregroundStep": 550,
           "backgroundStep": 25,
-          "ratio": 4.127,
+          "ratio": 5.479,
           "passed": true,
           "metTarget": true
         },
@@ -12051,27 +12051,27 @@
       { "id": "tooltip-ink", "light": 17.749, "dark": 11.053, "ratio": 1.606 },
       {
         "id": "tooltip-edge-over-canvas",
-        "light": 3.621,
+        "light": 4.809,
         "dark": 4.127,
-        "ratio": 1.14
+        "ratio": 1.165
       },
       {
         "id": "tooltip-edge-over-primary-surface",
-        "light": 3.874,
+        "light": 5.145,
         "dark": 3.731,
-        "ratio": 1.038
+        "ratio": 1.379
       },
       {
         "id": "tooltip-edge-over-floating-surface",
-        "light": 4.14,
+        "light": 5.497,
         "dark": 3.27,
-        "ratio": 1.266
+        "ratio": 1.681
       },
       {
         "id": "tooltip-edge-on-own-face",
-        "light": 4.14,
+        "light": 5.497,
         "dark": 3.27,
-        "ratio": 1.266
+        "ratio": 1.681
       },
       {
         "id": "raised-ring-on-face",
@@ -12388,7 +12388,7 @@
     },
     "tooltipEdge": {
       "cssVariable": "--tooltip-edge",
-      "light": 475,
+      "light": 550,
       "dark": 475
     },
     "ruleFaint": {
@@ -12982,8 +12982,8 @@
       "id": "tooltipEdge",
       "cssVariable": "--tooltip-edge",
       "theme": "light",
-      "expected": 475,
-      "actual": 475,
+      "expected": 550,
+      "actual": 550,
       "passed": true
     },
     {
@@ -14770,9 +14770,9 @@
       "background": "canvas",
       "minimum": 3,
       "rationale": "A project requirement, not a WCAG citation: the tooltip must read as a separate object over what it covers.",
-      "foregroundStep": 475,
+      "foregroundStep": 550,
       "backgroundStep": 75,
-      "ratio": 3.621,
+      "ratio": 4.809,
       "passed": true,
       "metTarget": true
     },
@@ -14784,9 +14784,9 @@
       "background": "surfacePrimary",
       "minimum": 3,
       "rationale": "Tooltips routinely open over raised panels.",
-      "foregroundStep": 475,
+      "foregroundStep": 550,
       "backgroundStep": 50,
-      "ratio": 3.874,
+      "ratio": 5.145,
       "passed": true,
       "metTarget": true
     },
@@ -14798,9 +14798,9 @@
       "background": "surfaceFloating",
       "minimum": 3,
       "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-      "foregroundStep": 475,
+      "foregroundStep": 550,
       "backgroundStep": 25,
-      "ratio": 4.14,
+      "ratio": 5.497,
       "passed": true,
       "metTarget": true
     },
@@ -14813,9 +14813,9 @@
       "minimum": 1.5,
       "target": 3,
       "rationale": "The box must read as bounded, not as a floating block of ink.",
-      "foregroundStep": 475,
+      "foregroundStep": 550,
       "backgroundStep": 25,
-      "ratio": 4.14,
+      "ratio": 5.497,
       "passed": true,
       "metTarget": true
     },

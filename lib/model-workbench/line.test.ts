@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import { loadReviewedReplay } from '@/lib/promotion-release';
+import { evaluateLinePolicy } from '@/lib/promotion-release/line-policy';
 import type { Sku } from '@/lib/promotion-release/schemas';
 
 import {
   buildLinePreview,
-  evaluateLineChecks,
   inspectLineSuggestion,
   type LineSuggestion,
 } from './line';
@@ -32,7 +32,7 @@ function reviewedSuggestion(sku: Sku): LineSuggestion {
 describe('single-line model review', () => {
   it('derives a compact input with the source shortfall and only related records', () => {
     const preview = buildLinePreview(replay.scenario, 'ALD-0001');
-    expect(preview.input.fixtureVersion).toBe('1.0.1');
+    expect(preview.input.fixtureVersion).toBe('1.0.2');
     expect(preview.input.supply).toMatchObject({
       availableBeforeLaunchUnits: 325,
       requiredUnits: 550,
@@ -77,14 +77,14 @@ describe('single-line model review', () => {
   });
 
   it('passes a fully supported reviewed line and blocks seeded release risks', () => {
-    const safe = evaluateLineChecks(
-      buildLinePreview(replay.scenario, 'ALD-0002'),
+    const safe = evaluateLinePolicy(
+      replay.scenario,
       reviewedSuggestion('ALD-0002'),
     );
     expect(safe.verdict).toBe('passes_checks');
 
-    const lateSupply = evaluateLineChecks(
-      buildLinePreview(replay.scenario, 'ALD-0001'),
+    const lateSupply = evaluateLinePolicy(
+      replay.scenario,
       reviewedSuggestion('ALD-0001'),
     );
     expect(lateSupply.verdict).toBe('blocked');
@@ -96,16 +96,16 @@ describe('single-line model review', () => {
       expect.arrayContaining(['supplier_allocation', 'supplier_timing']),
     );
 
-    const missingSupply = evaluateLineChecks(
-      buildLinePreview(replay.scenario, 'ALD-0009'),
+    const missingSupply = evaluateLinePolicy(
+      replay.scenario,
       reviewedSuggestion('ALD-0009'),
     );
     expect(missingSupply.checks).toContainEqual(
       expect.objectContaining({ code: 'source_availability', status: 'block' }),
     );
 
-    const lowMargin = evaluateLineChecks(
-      buildLinePreview(replay.scenario, 'ALD-0025'),
+    const lowMargin = evaluateLinePolicy(
+      replay.scenario,
       reviewedSuggestion('ALD-0025'),
     );
     expect(lowMargin.checks).toContainEqual(
@@ -113,8 +113,8 @@ describe('single-line model review', () => {
     );
     expect(lowMargin.marginPercent).toBe(9.2);
 
-    const withdrawn = evaluateLineChecks(
-      buildLinePreview(replay.scenario, 'ALD-0027'),
+    const withdrawn = evaluateLinePolicy(
+      replay.scenario,
       reviewedSuggestion('ALD-0027'),
     );
     expect(withdrawn.checks).toContainEqual(
@@ -128,8 +128,8 @@ describe('single-line model review', () => {
         ({ policyEvaluation }) => policyEvaluation.eligibility === 'eligible',
       )
       .flatMap(({ sku }) => {
-        const checks = evaluateLineChecks(
-          buildLinePreview(replay.scenario, sku),
+        const checks = evaluateLinePolicy(
+          replay.scenario,
           reviewedSuggestion(sku),
         ).checks;
         return checks
@@ -141,6 +141,18 @@ describe('single-line model review', () => {
 
   it('supports both reviewed mozzarella alternatives with the corrected supply', () => {
     const preview = buildLinePreview(replay.scenario, 'ALD-0023');
+    expect(preview.input.notes).toContainEqual(
+      expect.objectContaining({
+        trust: 'untrusted_evidence',
+        claim: {
+          kind: 'candidate_plan_options',
+          options: [
+            { promotionalSellingPricePence: 225, topUpUnits: 240 },
+            { promotionalSellingPricePence: 235, topUpUnits: 320 },
+          ],
+        },
+      }),
+    );
     expect(preview.input.supply).toMatchObject({
       earlierOrderUnits: 150,
       availableBeforeLaunchUnits: 420,
@@ -152,22 +164,30 @@ describe('single-line model review', () => {
       reviewed,
       { ...reviewed, proposedPricePence: 235, proposedTopUpUnits: 320 },
     ]) {
-      const checks = evaluateLineChecks(preview, proposal).checks;
+      const checks = evaluateLinePolicy(replay.scenario, proposal).checks;
       expect(checks.filter(({ status }) => status === 'block')).toEqual([]);
     }
   });
 
   it('checks supplier multiples and surfaces staged channel differences', () => {
-    const invalidQuantity = evaluateLineChecks(
-      buildLinePreview(replay.scenario, 'ALD-0008'),
-      { ...reviewedSuggestion('ALD-0008'), proposedTopUpUnits: 430 },
+    expect(
+      buildLinePreview(replay.scenario, 'ALD-0008').input.notes,
+    ).toContainEqual(
+      expect.objectContaining({
+        trust: 'untrusted_evidence',
+        claim: { kind: 'prior_top_up_request', requestedUnits: 430 },
+      }),
     );
+    const invalidQuantity = evaluateLinePolicy(replay.scenario, {
+      ...reviewedSuggestion('ALD-0008'),
+      proposedTopUpUnits: 430,
+    });
     expect(invalidQuantity.checks).toContainEqual(
       expect.objectContaining({ code: 'order_terms', status: 'block' }),
     );
 
-    const channelDifference = evaluateLineChecks(
-      buildLinePreview(replay.scenario, 'ALD-0013'),
+    const channelDifference = evaluateLinePolicy(
+      replay.scenario,
       reviewedSuggestion('ALD-0013'),
     );
     expect(channelDifference.checks).toContainEqual(

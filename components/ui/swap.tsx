@@ -111,17 +111,3 @@ export function useSwap<K extends string>(
     },
   };
 }
-
-// The motion between two places in one ordered list, on either axis.
-export function motionAlong(
-  order: readonly string[],
-  axis: 'vertical' | 'horizontal',
-) {
-  return (from: string, to: string): SwapMotion => {
-    const was = order.indexOf(from);
-    const is = order.indexOf(to);
-    if (was < 0 || is < 0 || was === is) return 'fade';
-    if (axis === 'vertical') return is > was ? 'up' : 'down';
-    return is > was ? 'left' : 'right';
-  };
-}

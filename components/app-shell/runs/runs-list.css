@@ -11,7 +11,7 @@
      text roles. Three rungs each, one per row state; the day sits darker than
      the time, so the pair reads as one stamp at two resolutions. */
   --sp-sheet-date: light-dark(var(--sp-neutral-800), var(--sp-neutral-200));
-  --sp-sheet-date-hover: light-dark(var(--sp-neutral-825), var(--sp-neutral-200));
+  --sp-sheet-date-hover: light-dark(var(--sp-neutral-825), var(--sp-neutral-150));
   --sp-sheet-date-current: light-dark(var(--sp-neutral-925), var(--sp-neutral-50));
   --sp-sheet-time: light-dark(var(--sp-neutral-625), var(--sp-neutral-275));
   --sp-sheet-time-hover: light-dark(var(--sp-neutral-725), var(--sp-neutral-225));
@@ -32,9 +32,9 @@
   --sp-sheet-total-face: light-dark(var(--sp-neutral-200), var(--sp-neutral-750));
   --sp-sheet-total-face-hover: light-dark(var(--sp-neutral-275), var(--sp-neutral-675));
   --sp-sheet-total-face-current: light-dark(var(--sp-neutral-300), var(--sp-neutral-650));
-  --sp-sheet-total-lead: light-dark(var(--sp-neutral-100), var(--sp-neutral-700));
+  --sp-sheet-total-lead: light-dark(var(--sp-neutral-150), var(--sp-neutral-700));
   --sp-sheet-total-lead-hover: light-dark(var(--sp-neutral-125), var(--sp-neutral-600));
-  --sp-sheet-total-lead-current: light-dark(var(--sp-neutral-150), var(--sp-neutral-575));
+  --sp-sheet-total-lead-current: light-dark(var(--sp-neutral-100), var(--sp-neutral-575));
 }
 /* End of generated roles. */
 
@@ -92,6 +92,11 @@
     border-bottom: 1px solid var(--sp-raised-ring);
     box-shadow: 0 var(--spacing-sheet-highlight) 0 var(--sp-raised-edge);
     transition: box-shadow var(--duration-state) ease-out;
+  }
+  .process-sheet-swap[data-swap-entering]
+    :is(.process-panel-list, .process-runs-list)
+    > .sheet-head {
+    animation: process-section-enter var(--duration-pane) var(--ease-out-quad) both;
   }
   /* Over a run list the head's line is the one under it, so the first row
      does not draw its own. The head paints above the rows, so its line steps

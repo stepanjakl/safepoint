@@ -41,11 +41,18 @@ export async function POST(request: Request) {
 
   const body: unknown = await request.json().catch(() => null);
   const input = z
-    .strictObject({ model: modelIdSchema, sku: skuSchema })
+    .strictObject({
+      model: modelIdSchema,
+      sku: skuSchema,
+      reviewAt: z.iso.datetime({ offset: false }),
+    })
     .safeParse(body);
   if (!input.success) {
     return Response.json(
-      { kind: 'error', message: 'Choose a valid model and candidate SKU.' },
+      {
+        kind: 'error',
+        message: 'Choose a valid model, candidate, and review time.',
+      },
       { status: 400 },
     );
   }
@@ -61,7 +68,8 @@ export async function POST(request: Request) {
         model: input.data.model,
         stage: result.issues.length ? 'contract' : 'policy',
         contractIssueCount: result.issues.length,
-        verdict: result.policy?.verdict ?? null,
+        verdict: result.review?.policy.verdict ?? null,
+        treatment: result.review?.treatment ?? null,
         durationMs: result.durationMs,
         usage: result.usage,
       }),

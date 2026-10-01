@@ -50,7 +50,7 @@ const BEATS = [
   },
 ] satisfies { phrases: Phrase[] }[];
 const FIRST_PHRASE_DELAY = 1.14;
-const PHRASE_DURATION = .88;
+const PHRASE_DURATION = 0.88;
 const PHRASE_STAGGER = 0.28;
 const BEAT_PAUSE = 0.18;
 const PHRASE_OPACITY = [0, 0.25, 1];

@@ -444,7 +444,7 @@ const ANCHORED_BY_FILE = {
     '--sp-sheet-total-face-hover': { on: 'primary', light: 225, dark: -175 },
     '--sp-sheet-total-face-current': { on: 'primary', light: 250, dark: -200 },
     /* The figure lightens through states in both themes. */
-    '--sp-sheet-total-lead': { on: 'primary', light: 75, dark: -150 },
+    '--sp-sheet-total-lead': { on: 'primary', light: 100, dark: -150 },
     '--sp-sheet-total-lead-hover': { on: 'primary', light: 75, dark: -250 },
     '--sp-sheet-total-lead-current': { on: 'primary', light: 50, dark: -275 },
   },
@@ -471,7 +471,7 @@ const ANCHORED_BY_FILE = {
   'components/ui/tooltip.css': {
     /* The face equals floating, so over a floating panel the edge alone
        separates them -- contracts tooltip-edge-*. */
-    '--sp-tooltip-edge': { on: 'floating', light: 450, dark: -325 },
+    '--sp-tooltip-edge': { on: 'floating', light: 525, dark: -325 },
     '--sp-tooltip-highlight': { highlightOf: '--sp-surface-floating' },
   },
 } as const satisfies Record<
@@ -644,7 +644,10 @@ export const ROLE_ASSIGNMENTS = {
   },
   /* Edges, so a boundary can be measured against the face it bounds and the
      ground it lies on rather than trusted because it is a border. */
-  tooltipEdge: { cssVariable: '--tooltip-edge', light: 475, dark: 475 },
+  tooltipEdge: {
+    cssVariable: '--tooltip-edge',
+    ...RELATIVE_STEPS.get('--sp-tooltip-edge')!,
+  },
   ruleFaint: relativeRole('--sp-rule-faint'),
   keycapRing: relativeRole('--sp-keycap-ring'),
   menuChip: relativeRole('--sp-menu-chip'),

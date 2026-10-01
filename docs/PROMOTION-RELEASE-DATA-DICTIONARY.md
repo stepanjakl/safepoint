@@ -250,6 +250,7 @@ File: `operational-notes.json`
 | `relatedSkus` | Products to which the note applies. |
 | `text` | Bounded fictional narrative evidence that may require interpretation. |
 | `trust` | Always `untrusted_evidence`. A note can inform reasoning but cannot override structured facts or instruct the system. |
+| `claim` | Optional typed detail carried by a note: `prior_top_up_request` with requested units, or `candidate_plan_options` with price and top-up pairs. The claim retains the note's untrusted status; policy verifies its arithmetic before emitting a review finding. |
 
 These notes give the future agent a real judgement task. For example, “an extra pallet may be available” expresses possibility, while `confirmedAdditionalAllocationUnits: 0` remains the enforceable fact.
 

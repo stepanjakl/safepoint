@@ -15,8 +15,8 @@ describe('presentReview', () => {
   it('reconciles the batch counts with the loader summary', () => {
     expect(presentation.batch.counts).toEqual({
       evaluated: 27,
-      ready: 17,
-      needsAttention: 6,
+      ready: 16,
+      needsAttention: 7,
       nonReleasable: 4,
       held: 2,
       excluded: 1,

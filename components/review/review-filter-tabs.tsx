@@ -36,8 +36,8 @@ export type FilterTab = {
 /*
   The indicator is the selected fill. A bucket gains a faint face only when its
   group reaches the top of a scrolled list; at the starting position it rests
-  bare. Ink and chip settle on the shared state step (`control-wash`); only the
-  indicator's travel is slower.
+  bare. Ink settles on the shared state step, while scroll-driven fills change
+  immediately so the cue stays with fast-moving headers.
 
   The buckets keep their content width and "All" takes what is left. In every
   tab the chip sits in the tab's own inset -- one padding on its three outer
@@ -47,7 +47,7 @@ export type FilterTab = {
   so a stretched "All" keeps its word in the middle of its section.
 */
 const TAB =
-  'review-filter-focus control-wash group/tab relative inline-flex cursor-pointer items-center gap-1.5 rounded-full py-1 ps-1 pe-3 text-dense font-medium whitespace-nowrap outline-none';
+  'review-filter-focus review-filter-wash group/tab relative inline-flex cursor-pointer items-center gap-1.5 rounded-full py-1 ps-1 pe-3 text-dense font-medium whitespace-nowrap outline-none';
 const BUCKET_TAB =
   'text-severity-ink data-[spied]:bg-surface-hover data-[hovered]:not-data-[selected]:text-severity-strong data-[focus-visible]:not-data-[selected]:text-severity-strong data-[selected]:text-severity-on-solid';
 // "All" takes the strip's spare width, so the buckets sit together at the
@@ -65,7 +65,7 @@ const BUCKET_COUNT =
 const ALL_COUNT =
   'bg-field-face group-data-[selected]/tab:bg-inverse group-data-[selected]/tab:text-review-all-solid';
 const COUNT =
-  'review-tab-count control-wash value text-micro inline-grid place-items-center rounded-full px-1 [font-weight:550]';
+  'review-tab-count review-filter-wash value text-micro inline-grid place-items-center rounded-full px-1 [font-weight:550]';
 const DIVIDER = 'review-filter-divider';
 
 // The chosen face, under the tabs: the bucket's solid, or a neutral one for
@@ -84,11 +84,13 @@ export function ReviewFilterTabs({
   tabs,
   selected,
   spied,
+  scrolling,
   onChange,
 }: {
   tabs: FilterTab[];
   selected: ReviewFilter;
   spied: ReviewFilter | null;
+  scrolling: boolean;
   onChange: (filter: ReviewFilter) => void;
 }) {
   const track = useRef<HTMLDivElement>(null);
@@ -255,6 +257,9 @@ export function ReviewFilterTabs({
             data-severity={tab.severity}
             data-spied={
               spied === tab.key && selected !== tab.key ? '' : undefined
+            }
+            data-scroll-active={
+              scrolling && tab.severity !== undefined ? '' : undefined
             }
           >
             <Content tab={tab} />

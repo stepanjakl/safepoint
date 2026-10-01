@@ -37,12 +37,12 @@ exports[`review presentation output > presents the fixture replay exactly as rec
       "evaluated": 27,
       "excluded": 1,
       "held": 2,
-      "needsAttention": 6,
+      "needsAttention": 7,
       "nonReleasable": 4,
-      "ready": 17,
+      "ready": 16,
       "unverifiable": 1,
     },
-    "fixtureVersion": "1.0.1",
+    "fixtureVersion": "1.0.2",
     "labelDeadlineLabel": "Fri 4 Sep 06:00",
     "mode": "replay",
     "remainingLabel": "21h 15m",
@@ -141,9 +141,9 @@ exports[`review presentation output > presents the fixture replay exactly as rec
     {
       "categoryLabel": "Vegetables and salad",
       "name": "Mixed-leaf salad",
-      "outcome": "ready",
-      "outcomeLabel": "Ready",
-      "reason": "Eligible · release at £1.30",
+      "outcome": "needs_attention",
+      "outcomeLabel": "Needs attention",
+      "reason": "Large price change",
       "sku": "ALD-0010",
       "unit": "150g bag",
     },
@@ -3076,7 +3076,7 @@ exports[`review presentation output > presents the fixture replay exactly as rec
         "note": {
           "observedAtLabel": "Thu 3 Sep 08:20",
           "sourceLabel": "Bounded operational note",
-          "text": "Final amendments must be at least 240 units and ordered in multiples of 120.",
+          "text": "The initial 430-unit request reflected the stock shortfall. Final amendments must be at least 240 units and ordered in multiples of 120.",
         },
         "policyConsequence": "Eligible with individual approval. The proposed 480 units satisfy the 240-unit minimum and 120-unit order multiple.",
         "sourceFact": "Order multiple 120 · MOQ 240 · case of 8",
@@ -3166,7 +3166,7 @@ exports[`review presentation output > presents the fixture replay exactly as rec
           },
           {
             "facts": [
-              "“Final amendments must be at least 240 units and ordered in multiples of 120.”",
+              "“The initial 430-unit request reflected the stock shortfall. Final amendments must be at least 240 units and ordered in multiples of 120.”",
             ],
             "id": "ev-note-avocado-multiple",
             "observedAtLabel": "Thu 3 Sep 08:20",
@@ -3791,8 +3791,8 @@ exports[`review presentation output > presents the fixture replay exactly as rec
       "evidence": {
         "agentInterpretation": "Release this line because the source evidence supports its price, supply, margin, dates, and channel setup.",
         "note": null,
-        "policyConsequence": "Eligible. No policy finding applies to this line.",
-        "sourceFact": "Funding status: confirmed · £0.15 per unit offered · confirmed allocation 2,000 units",
+        "policyConsequence": "Eligible with individual approval. The £1.30 price is 25.7% below the £1.75 regular price, above the 25% individual-review threshold.",
+        "sourceFact": "Regular £1.75 · brief intended £1.30 · threshold 25%",
         "sources": [
           {
             "facts": [
@@ -4043,15 +4043,35 @@ exports[`review presentation output > presents the fixture replay exactly as rec
       },
       "name": "Mixed-leaf salad",
       "noProposalReason": null,
-      "outcome": "ready",
-      "outcomeLabel": "Ready",
+      "outcome": "needs_attention",
+      "outcomeLabel": "Needs attention",
       "policy": {
         "eligibility": "eligible",
         "eligibilityLabel": "Eligible",
-        "findings": [],
-        "nextAction": "Approve with the safe remainder",
-        "reviewerConsequence": "Eligible for approval",
-        "summary": "No policy finding",
+        "findings": [
+          {
+            "consequence": "individual_approval",
+            "evidence": [
+              {
+                "id": "ev-catalogue-0010",
+                "observedAtLabel": "Thu 3 Sep 08:30",
+                "sourceLabel": "Alderton’s catalogue and pricebook",
+              },
+              {
+                "id": "ev-policy",
+                "observedAtLabel": "Tue 1 Sep 10:00",
+                "sourceLabel": "Fresh Food Weekend release policy",
+              },
+            ],
+            "explanation": "The £1.30 price is 25.7% below the £1.75 regular price, above the 25% individual-review threshold.",
+            "id": "finding-price-change-0010",
+            "severity": "warning",
+            "title": "Large price change",
+          },
+        ],
+        "nextAction": "Review the adjustment, then approve individually",
+        "reviewerConsequence": "Individual approval required",
+        "summary": "Large price change",
       },
       "sku": "ALD-0010",
       "supplierLabel": "SUP-02 · Orchard Lane Growers",

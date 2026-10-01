@@ -24,7 +24,7 @@ At 08:45 on Thursday 3 September 2026, Maya, the fictional release coordinator, 
 
 The 27 candidates arrive from a fictional approved promotion shortlist. This reflects the shape of Duvo's public [Promo Product Selection playbook](https://docs.duvo.ai/user-guide/playbooks/merchandising/promo-product-selection), which routes approved products to a pricing-agent queue. Safepoint is the downstream release checkpoint: it does not repeat product selection, and it keeps the originating cycle and approval visible as evidence.
 
-The case contains 27 promotion lines. The stable replay presents 17 ready to release, six requiring an adjustment or individual attention, two held, one excluded, and one unverifiable. No line is hidden from the evaluation summary. A live run can recommend a different safe treatment for genuinely ambiguous evidence, so the summary uses run-derived counts rather than hard-coded copy.
+The case contains 27 promotion lines. The stable replay presents 16 ready to release, seven requiring an adjustment or individual attention, two held, one excluded, and one unverifiable. No line is hidden from the evaluation summary. A live run can recommend a different safe treatment for genuinely ambiguous evidence, so the summary uses run-derived counts rather than hard-coded copy.
 
 The agent has used four read-only capabilities to inspect the promotion brief, prices and costs, demand evidence, stock and open orders, final top-up options, supplier constraints, funding, channel readiness, and bounded buyer, forecast, and supplier notes. It has not changed an external system. Safepoint then independently evaluates deterministic release policy. The interface keeps source facts, agent judgement, and the application policy result distinct.
 
@@ -52,7 +52,7 @@ Decided, September 2026: a process page is a sheet with tabs rather than a page 
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │ Safepoint       Fresh Food Weekend    REPLAY             21h 15m remaining │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ 27 evaluated   17 ready   6 need attention   4 held or unverified          │
+│ 27 evaluated   16 ready   7 need attention   4 held or unverified          │
 ├──────────────────────┬───────────────────────────────────────────────────────┤
 │ Filter: All  Risk... │ Salmon fillets 2 pack                    BLOCKED     │
 │                      │ ALD-0025 · Meat and fish                            │

@@ -166,7 +166,7 @@ The compact response is the signature object: a complete, accountable summary sm
 
 ## Acceptance and next work
 
-- All 27 grocery candidates remain discoverable: 17 ready, six needing attention, four unable to proceed.
+- All 27 grocery candidates remain discoverable: 16 ready, seven needing attention, four unable to proceed.
 - Salmon remains blocked despite the agent's release recommendation. Unavailable evidence is never labelled passed, zero, or merely not applicable.
 - Proposed changes are separate from costs, funding and forecasts. Missing current values are labelled as unavailable snapshots, not invented before values.
 - The support fixture uses the same components and transport contract.

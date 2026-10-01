@@ -46,6 +46,16 @@
   }
 }
 
+/* Scroll-driven faces track their headers without a trailing fade; text still
+   follows the shared state timing, and other interactions keep its wash. */
+@utility review-filter-wash {
+  @apply control-wash;
+  &[data-scroll-active],
+  [data-scroll-active] & {
+    transition-property: color;
+  }
+}
+
 @layer components {
   .review-filter-divider {
     position: absolute;

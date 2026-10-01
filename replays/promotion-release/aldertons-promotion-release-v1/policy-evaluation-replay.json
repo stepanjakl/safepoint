@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "scenarioId": "aldertons-promotion-release-v1",
-  "fixtureVersion": "1.0.1",
+  "fixtureVersion": "1.0.2",
   "evaluationMode": "replay",
   "policyVersion": "promotion-release-policy-v1",
   "evaluatedAt": "2026-09-03T07:43:00Z",
@@ -493,7 +493,17 @@
           "reason": "External signals inform judgement but do not override required source evidence."
         }
       ],
-      "findings": []
+      "findings": [
+        {
+          "id": "finding-price-change-0010",
+          "code": "large_price_change",
+          "severity": "warning",
+          "approvalConsequence": "individual_approval",
+          "explanation": "The £1.30 price is 25.7% below the £1.75 regular price, above the 25% individual-review threshold.",
+          "affectedFields": ["promotionalSellingPricePence"],
+          "evidenceRefs": ["ev-catalogue-0010", "ev-policy"]
+        }
+      ]
     },
     {
       "sku": "ALD-0011",

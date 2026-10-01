@@ -28,7 +28,7 @@ import {
 const oracleSchema = z.strictObject({
   schemaVersion: z.literal(1),
   scenarioId: z.literal('aldertons-promotion-release-v1'),
-  fixtureVersion: z.literal('1.0.1'),
+  fixtureVersion: z.literal('1.0.2'),
   cases: z.array(
     z.strictObject({
       sku: skuSchema,
@@ -48,13 +48,11 @@ describe('the reviewed promotion-release replay', () => {
   it('loads all sources through the production boundary', () => {
     const replay = loadReviewedReplay();
 
-    console.log(replay);
-
     expect(replay.lines.map(({ sku }) => sku)).toEqual(EXPECTED_SKUS);
     expect(replay.summary).toEqual({
       total: 27,
-      ready: 17,
-      needsAttention: 6,
+      ready: 16,
+      needsAttention: 7,
       held: 2,
       excluded: 1,
       unverifiable: 1,

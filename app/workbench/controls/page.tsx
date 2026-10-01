@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { ShellPageTransitionProvider } from '@/components/app-shell/shell-page-transition';
 import { loadReviewedReplay } from '@/lib/promotion-release';
 import { promotionProcess } from '@/lib/process/placeholder-process';
 import { presentPromotionInputs } from '@/lib/process/system-links';
@@ -32,7 +33,9 @@ export default function ControlsWorkbenchPage() {
           </Link>
         </p>
       </header>
-      <ControlsGallery process={promotionProcess} inputs={inputs} />
+      <ShellPageTransitionProvider processPaths={[]}>
+        <ControlsGallery process={promotionProcess} inputs={inputs} />
+      </ShellPageTransitionProvider>
     </main>
   );
 }

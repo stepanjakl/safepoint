@@ -126,7 +126,7 @@ Never apply a change. Produce a release plan for a person to review.`,
   // which is where each step's label and status are derived.
   analysis: {
     summary:
-      'Read the shortlist against the current pricebook and the recorded brief, then priced every candidate that clears policy. Four candidates could not be priced at all, and six need a decision that is not mine to make.',
+      'Read the shortlist against the current pricebook and the recorded brief, then priced every candidate that clears policy. Four candidates could not be priced at all, and seven need a decision that is not mine to make.',
     observations: [
       'Demand forecast and supply position agree on 21 of 27 candidates.',
       'Supplier funding covers the margin shortfall on 3 candidates; the rest fall back to the floor.',
@@ -148,7 +148,7 @@ Never apply a change. Produce a release plan for a person to review.`,
       startedAt: '2026-09-04T09:00:00+01:00',
       status: 'awaiting_review',
       trigger: 'schedule',
-      counts: { items: 27, blocked: 4, needsDecision: 6 },
+      counts: { items: 27, blocked: 4, needsDecision: 7 },
       duration: '2m 14s',
       instructionsVersion: 'v4',
       current: true,

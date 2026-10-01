@@ -161,11 +161,14 @@ test('a shadow brought in by @apply traces to the rule that sets its colour, and
 
   await panel.getByRole('searchbox').fill('shadow');
   // The rule that applies, not the forced-colours one of the same selector.
-  const current = panel.locator('.spi-row:not([data-idle])').filter({
-    has: page.locator('summary code', {
-      hasText: /^\.process-menu-row\[data-current\]/,
-    }),
-  });
+  const current = panel
+    .locator('.spi-row:not([data-idle])')
+    .filter({
+      has: page.locator('summary code', {
+        hasText: /^\.process-menu-row$/,
+      }),
+    })
+    .first();
   // control-face applies Tailwind's shadow utility; the colour it paints is
   // set by the row's own rule, and read on the row, not on :root.
   await expect(current).toContainText('box-shadow');
@@ -187,8 +190,8 @@ test('the panel stays usable over an open modal', async ({
 }) => {
   test.skip(colorScheme === 'dark', 'The gesture is theme-independent.');
   await page.goto('/examples/promotion?run=run-104');
-  await page.getByRole('button', { name: 'Overlay demo' }).click();
-  const close = page.getByRole('button', { name: 'Close overlay demo' });
+  await page.getByRole('button', { name: 'Review release' }).click();
+  const close = page.getByRole('button', { name: 'Close review' });
   await expect(close).toBeVisible();
 
   // Opened after the modal, so React Aria sees it arrive while hiding.
@@ -203,7 +206,7 @@ test('the panel stays usable over an open modal', async ({
   // button answers, rather than the page beneath taking the click.
   // Point first: the panel moves to the side away from what it inspects,
   // which here is the drawer's heading, under where the panel starts.
-  const heading = page.getByRole('heading', { name: 'Overlay demo' });
+  const heading = page.getByRole('heading', { name: 'Release review' });
   const box = (await heading.boundingBox())!;
   await page.mouse.move(box.x + 10, box.y + box.height / 2);
   const head = panel.locator('.spi-head strong');

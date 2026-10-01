@@ -10,7 +10,12 @@ import {
   modelIdSchema,
   type ModelId,
 } from '@/lib/model-workbench/models';
-import { skuSchema, type Sku } from '@/lib/promotion-release/schemas';
+import {
+  gateSchema,
+  policyFindingCodeSchema,
+  skuSchema,
+  type Sku,
+} from '@/lib/promotion-release/schemas';
 
 const responseSchema = z.discriminatedUnion('kind', [
   z.strictObject({
@@ -36,21 +41,38 @@ const responseSchema = z.discriminatedUnion('kind', [
         })
         .nullable(),
       issues: z.array(z.string()),
-      policy: z
+      review: z
         .strictObject({
-          basis: z.enum(['brief_baseline', 'model_proposal']),
-          pricePence: z.number(),
-          topUpUnits: z.number(),
-          marginPercent: z.number(),
-          verdict: z.enum(['blocked', 'review_required', 'passes_checks']),
-          checks: z.array(
+          policy: z.strictObject({
+            basis: z.enum(['brief_baseline', 'model_proposal']),
+            pricePence: z.number(),
+            topUpUnits: z.number(),
+            marginPercent: z.number(),
+            verdict: z.enum(['blocked', 'review_required', 'passes_checks']),
+            checks: z.array(
+              z.strictObject({
+                code: z.string(),
+                status: z.enum(['pass', 'attention', 'block']),
+                message: z.string(),
+                evidenceRefs: z.array(z.string()),
+              }),
+            ),
+          }),
+          findingCodes: z.array(policyFindingCodeSchema),
+          gateObligations: z.array(
             z.strictObject({
-              code: z.string(),
-              status: z.enum(['pass', 'attention', 'block']),
-              message: z.string(),
-              evidenceRefs: z.array(z.string()),
+              gate: gateSchema,
+              obligation: z.enum(['required', 'advisory', 'not_applicable']),
+              reason: z.string(),
             }),
           ),
+          treatment: z.enum([
+            'no_release_proposal',
+            'blocked',
+            'individual_approval',
+            'review_required',
+            'passes_checks',
+          ]),
         })
         .nullable(),
       usage: z.nullable(
@@ -96,18 +118,50 @@ function Detail({ label, value }: { label: string; value: string }) {
 const SECTION =
   'bg-surface-floating border-rule-default rounded-shell grid min-w-0 content-start gap-4 border p-5';
 
+const REVIEW_TREATMENT = {
+  no_release_proposal: {
+    title: 'No release proposal',
+    detail:
+      'The model chose to hold or exclude this product. The checks describe the brief baseline, not a proposed release.',
+  },
+  blocked: {
+    title: 'Cannot release this proposal',
+    detail:
+      'A blocking check overrides the model recommendation. Inspect the blocking reasons before changing the proposal.',
+  },
+  individual_approval: {
+    title: 'Individual approval required',
+    detail:
+      'The price change exceeds the policy threshold. Review any other attention checks as well.',
+  },
+  review_required: {
+    title: 'Human review required',
+    detail: 'Resolve the attention checks before deciding whether to approve.',
+  },
+  passes_checks: {
+    title: 'Passes current checks',
+    detail: 'A person still decides whether to approve this proposal.',
+  },
+} as const;
+
 type ReviewedBaseline = {
   sku: Sku;
   recommendation: 'release' | 'adjust' | 'hold' | 'exclude';
   eligibility: 'eligible' | 'blocked';
+  approvalConsequence: 'none' | 'individual_approval' | 'block';
+  proposedPricePence: number | null;
+  proposedTopUpUnits: number | null;
+  findingCodes: Array<z.infer<typeof policyFindingCodeSchema>>;
 };
 
 export function ModelWorkbench({
   keyConfigured,
+  reviewAt,
   previews,
   baselines,
 }: {
   keyConfigured: boolean;
+  reviewAt: string;
   previews: LinePreview[];
   baselines: ReviewedBaseline[];
 }) {
@@ -128,7 +182,11 @@ export function ModelWorkbench({
       const response = await fetch('/api/dev/model', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: selectedModel, sku: selectedSku }),
+        body: JSON.stringify({
+          model: selectedModel,
+          sku: selectedSku,
+          reviewAt,
+        }),
       });
       const parsed = responseSchema.parse(await response.json());
       setData(parsed);
@@ -137,7 +195,7 @@ export function ModelWorkbench({
           ? `Model request failed at ${parsed.stage ?? 'request'} stage.`
           : parsed.result.issues.length > 0
             ? `Review finished with ${parsed.result.issues.length} contract issue${parsed.result.issues.length === 1 ? '' : 's'}.`
-            : `Review finished for ${selectedSku}. Release checks: ${parsed.result.policy?.verdict.replaceAll('_', ' ') ?? 'unavailable'}.`,
+            : `Review finished for ${selectedSku}. Release checks: ${parsed.result.review?.policy.verdict.replaceAll('_', ' ') ?? 'unavailable'}.`,
       );
     } catch {
       setStatus('Model request failed or returned an unreadable response.');
@@ -148,7 +206,14 @@ export function ModelWorkbench({
 
   const result = data?.kind === 'result' ? data.result : null;
   const suggestion = result?.suggestion;
-  const policy = result?.policy;
+  const review = result?.review;
+  const policy = review?.policy;
+  const replayTermsMatch =
+    suggestion !== null &&
+    suggestion !== undefined &&
+    baseline !== undefined &&
+    suggestion.proposedPricePence === baseline.proposedPricePence &&
+    suggestion.proposedTopUpUnits === baseline.proposedTopUpUnits;
   const concerningChecks = policy?.checks.filter(
     ({ status }) => status !== 'pass',
   );
@@ -476,13 +541,90 @@ export function ModelWorkbench({
                     </ul>
                   </details>
                 ) : null}
+                <p className="text-meta text-muted">
+                  Calculated finding codes:{' '}
+                  {review?.findingCodes
+                    .map((code) => code.replaceAll('_', ' '))
+                    .join(' · ') || 'none'}
+                  .
+                </p>
+                <details className="text-meta">
+                  <summary className="cursor-pointer">
+                    Seven gate obligations
+                  </summary>
+                  <ul className="mt-2 grid gap-1">
+                    {review?.gateObligations.map(({ gate, obligation }) => (
+                      <li key={gate}>
+                        {gate.replaceAll('_', ' ')}:{' '}
+                        {obligation.replaceAll('_', ' ')}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </div>
+            ) : null}
+          </section>
+
+          <section className={SECTION} aria-labelledby="review-action-heading">
+            <div className="grid gap-1">
+              <p className="readout text-muted">4 · Reviewer action</p>
+              <h2
+                id="review-action-heading"
+                className="text-title font-semibold"
+              >
+                {review
+                  ? REVIEW_TREATMENT[review.treatment].title
+                  : 'Waiting for a valid suggestion'}
+              </h2>
+            </div>
+            {review ? (
+              <p className="text-body">
+                {REVIEW_TREATMENT[review.treatment].detail}
+              </p>
+            ) : null}
+            {baseline ? (
+              <div className="border-rule-default text-meta grid gap-2 border-t pt-4">
+                <h3 className="font-semibold">Recorded replay reference</h3>
+                <p>
+                  Recorded AI: {baseline.recommendation}
+                  {baseline.proposedPricePence === null ||
+                  baseline.proposedTopUpUnits === null
+                    ? ', with no release terms'
+                    : ` at ${money(baseline.proposedPricePence)} and ${baseline.proposedTopUpUnits} top-up units`}
+                  . Reviewed policy: {baseline.eligibility}; treatment:{' '}
+                  {baseline.approvalConsequence === 'block'
+                    ? 'release blocked'
+                    : baseline.approvalConsequence === 'individual_approval'
+                      ? 'individual approval required'
+                      : 'no individual approval finding'}
+                  ; findings:{' '}
+                  {baseline.findingCodes
+                    .map((code) => code.replaceAll('_', ' '))
+                    .join(' · ') || 'none'}
+                  .
+                </p>
+                {suggestion ? (
+                  <p>
+                    Model recommendation{' '}
+                    {suggestion.recommendation === baseline.recommendation
+                      ? 'matches'
+                      : 'differs from'}{' '}
+                    the recorded AI. Proposed price and top-up{' '}
+                    {replayTermsMatch ? 'match' : 'differ from'} the recorded
+                    example.
+                  </p>
+                ) : null}
+                <p className="text-muted">
+                  The replay is a reference from a separate recorded run. The
+                  current checks above apply to this model output.
+                </p>
               </div>
             ) : null}
           </section>
 
           <section className={SECTION} aria-labelledby="diagnostics-heading">
             <div className="grid gap-1">
-              <p className="readout text-muted">4 · Developer diagnostics</p>
+              <p className="readout text-muted">5 · Developer diagnostics</p>
               <h2 id="diagnostics-heading" className="text-title font-semibold">
                 Exact inputs and outputs
               </h2>
@@ -508,17 +650,6 @@ export function ModelWorkbench({
                   Model certainty is uncalibrated and has no effect on the rule
                   verdict.
                 </p>
-                {baseline ? (
-                  <p className="text-meta">
-                    Reviewed replay: {baseline.recommendation} · static policy{' '}
-                    {baseline.eligibility}.{' '}
-                    {suggestion
-                      ? suggestion.recommendation === baseline.recommendation
-                        ? 'Model recommendation matches.'
-                        : 'Model recommendation differs.'
-                      : 'No valid model recommendation to compare.'}
-                  </p>
-                ) : null}
               </div>
             ) : null}
             {data?.kind === 'error' ? (

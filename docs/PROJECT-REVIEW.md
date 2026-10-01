@@ -164,7 +164,7 @@ The revised scenario asks whether a promotion is operationally and commercially 
 - The portfolio output is a public working application plus a written case study.
 - The sandbox uses a server-owned instruction and fixed scenario data. Live model judgement can vary within the registered process contract.
 - The agent derives its plan from a versioned fictional evidence pack; it is not given a pre-authored proposal.
-- The first evidence pack is the fictional Alderton's Fresh Food Weekend: 17 ready lines, six requiring attention, two held, one excluded, and one unverifiable.
+- The first evidence pack is the fictional Alderton's Fresh Food Weekend: 16 ready lines, seven requiring attention, two held, one excluded, and one unverifiable.
 - Current prices, costs, stock, supply, and channel values remain application-owned evidence. The model proposal references them but does not echo a competing `current` snapshot.
 - The static interface temporarily consumes a separate reviewed policy replay. Stage 3 replaces it as the runtime source with deterministic calculations and retains it as a regression expectation.
 - The evidence pack includes bounded narrative material so the agent interprets ambiguity rather than repeating deterministic calculations.

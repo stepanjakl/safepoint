@@ -129,6 +129,7 @@ test('number keys pick a tab, and the review reopens on the last one', async ({
 test('a bucket gets the quiet All-style cue only after the list scrolls', async ({
   page,
 }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.setViewportSize({ width: 900, height: 600 });
   await openRun(page);
   await page.getByRole('button', { name: 'Review release' }).click();
@@ -141,11 +142,25 @@ test('a bucket gets the quiet All-style cue only after the list scrolls', async 
   const scroller = page.locator('.review-queue .overflow-y-auto');
   await expect(all).toBeChecked();
   await expect(bucket).not.toHaveAttribute('data-spied', '');
+  const restingFace = await bucket.evaluate(
+    (element) => getComputedStyle(element).backgroundColor,
+  );
 
   await scroller.evaluate((element) => {
     element.scrollTop = 2;
   });
   await expect(bucket).toHaveAttribute('data-spied', '');
+  await expect(bucket).toHaveAttribute('data-scroll-active', '');
+  expect(
+    await bucket.evaluate(
+      (element) => getComputedStyle(element).transitionProperty,
+    ),
+  ).toBe('color');
+  expect(
+    await bucket
+      .locator('.review-tab-count')
+      .evaluate((element) => getComputedStyle(element).transitionProperty),
+  ).toBe('color');
   const colors = await bucket.evaluate((element) => {
     const count = element.querySelector('.review-tab-count');
     const home = document.querySelector('.review-tab-home');
@@ -193,6 +208,16 @@ test('a bucket gets the quiet All-style cue only after the list scrolls', async 
   });
   await expect(bucket).not.toHaveAttribute('data-spied', '');
   await expect(nextBucket).toHaveAttribute('data-spied', '');
+  expect(
+    await bucket.evaluate(
+      (element) => getComputedStyle(element).backgroundColor,
+    ),
+  ).toBe(restingFace);
+  expect(
+    await nextBucket.evaluate(
+      (element) => getComputedStyle(element).backgroundColor,
+    ),
+  ).toBe(colors.home);
 
   await scroller.evaluate((element) => {
     element.scrollTop = 0;

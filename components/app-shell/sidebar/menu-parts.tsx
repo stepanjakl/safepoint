@@ -49,8 +49,8 @@ export const MENU_CHEVRON_BOX =
 // Inside a section heading it also answers to the heading's hover, which is
 // why that tint is a named group variant -- an icon button elsewhere in the
 // sidebar must not pick it up.
-export const ICON_BUTTON_SHAPE = `${ICON_SHAPE} rail-mark size-7.5`;
-export const ICON_BUTTON_QUIET = `${ICON_QUIET} group-hover/heading:bg-menu-wash-faint group-hover/heading:text-primary group-focus-within/heading:bg-menu-wash-faint group-focus-within/heading:text-primary`;
+const ICON_BUTTON_SHAPE = `${ICON_SHAPE} rail-mark size-7.5`;
+const ICON_BUTTON_QUIET = `${ICON_QUIET} group-hover/heading:bg-menu-wash-faint group-hover/heading:text-primary group-focus-within/heading:bg-menu-wash-faint group-focus-within/heading:text-primary`;
 export const ICON_BUTTON = `${ICON_BUTTON_SHAPE} ${ICON_BUTTON_QUIET}`;
 
 /*

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const SCENARIO_ID = 'aldertons-promotion-release-v1';
-export const FIXTURE_VERSION = '1.0.1';
+export const FIXTURE_VERSION = '1.0.2';
 
 export const skuSchema = z.enum([
   'ALD-0001',
@@ -205,18 +205,79 @@ export const supplierTermsSchema = z.strictObject({
     .length(27),
 });
 
-export const operationalNotesSchema = z.strictObject({
-  ...fixtureHeaderShape,
-  records: z.array(
-    z.strictObject({
-      ...evidenceMetadataShape,
-      noteType: z.enum(['buyer', 'forecast', 'supplier', 'campaign']),
-      relatedSkus: z.array(skuSchema).min(1).max(27),
-      text: explanationSchema,
-      trust: z.literal('untrusted_evidence'),
-    }),
-  ),
-});
+const operationalNoteClaimSchema = z.discriminatedUnion('kind', [
+  z.strictObject({
+    kind: z.literal('prior_top_up_request'),
+    requestedUnits: nonNegativeIntegerSchema,
+  }),
+  z.strictObject({
+    kind: z.literal('candidate_plan_options'),
+    options: z
+      .array(
+        z.strictObject({
+          promotionalSellingPricePence: positiveIntegerSchema,
+          topUpUnits: nonNegativeIntegerSchema,
+        }),
+      )
+      .min(2)
+      .max(5),
+  }),
+]);
+
+const operationalNoteRecordSchema = z
+  .strictObject({
+    ...evidenceMetadataShape,
+    noteType: z.enum(['buyer', 'forecast', 'supplier', 'campaign']),
+    relatedSkus: z.array(skuSchema).min(1).max(27),
+    text: explanationSchema,
+    trust: z.literal('untrusted_evidence'),
+    claim: operationalNoteClaimSchema.optional(),
+  })
+  .superRefine((note, context) => {
+    if (note.claim && note.relatedSkus.length !== 1) {
+      context.addIssue({
+        code: 'custom',
+        path: ['relatedSkus'],
+        message: 'A typed note claim must identify exactly one product.',
+      });
+    }
+    if (note.claim?.kind === 'candidate_plan_options') {
+      const unique = new Set(
+        note.claim.options.map(
+          ({ promotionalSellingPricePence, topUpUnits }) =>
+            `${promotionalSellingPricePence}:${topUpUnits}`,
+        ),
+      );
+      if (unique.size !== note.claim.options.length) {
+        context.addIssue({
+          code: 'custom',
+          path: ['claim', 'options'],
+          message: 'Candidate plan options must be distinct.',
+        });
+      }
+    }
+  });
+
+export const operationalNotesSchema = z
+  .strictObject({
+    ...fixtureHeaderShape,
+    records: z.array(operationalNoteRecordSchema),
+  })
+  .superRefine(({ records }, context) => {
+    const claims = new Set<string>();
+    records.forEach((note, index) => {
+      if (!note.claim) return;
+      const key = `${note.relatedSkus[0]}:${note.claim.kind}`;
+      if (claims.has(key)) {
+        context.addIssue({
+          code: 'custom',
+          path: ['records', index, 'claim'],
+          message: 'A product can have only one note claim of each kind.',
+        });
+      }
+      claims.add(key);
+    });
+  });
 
 const channelSchema = z.strictObject({
   channel: z.enum(['pricebook', 'storefront', 'labels']),

@@ -9,7 +9,9 @@ import { presentPromotionInputs } from '@/lib/process/system-links';
 import { presentPromotionPlan } from '@/lib/review/promotion-adapter';
 import { presentRunFacts } from '@/lib/process/run-lifecycle';
 
-export default async function ReviewPage({ searchParams }: PageProps<'/examples/promotion'>) {
+export default async function ReviewPage({
+  searchParams,
+}: PageProps<'/examples/promotion'>) {
   const replay = loadReviewedReplay();
   const plan = presentPromotionPlan(replay);
   const inputs = presentPromotionInputs(replay);

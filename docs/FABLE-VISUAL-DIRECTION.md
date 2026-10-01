@@ -96,7 +96,7 @@ Treat the desktop view as a continuous instrument face, not a page containing ca
 ┌──────────────── application header ────────────────────────────────────────┐
 │ Safepoint  /  Fresh Food Weekend  /  mode  /  deadline                    │
 ├──────────────── batch outcome strip ───────────────────────────────────────┤
-│ 27 evaluated  |  17 ready  |  6 need attention  |  4 held or unverified   │
+│ 27 evaluated  |  16 ready  |  7 need attention  |  4 held or unverified   │
 ├──────────── candidate collection ────────┬──────── selected-line detail ───┤
 │ collection tools and shown count         │ identity and policy state        │
 ├──────────────────────────────────────────┼───────────────────────────────────┤

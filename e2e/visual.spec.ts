@@ -29,9 +29,15 @@ const SCENARIOS = {
     await page
       .getByRole('button', { name: 'Back to workspace menu', exact: true })
       .click();
+    await expect(page).toHaveURL(/\/workspace$/);
     await expect(
       page.getByRole('navigation', { name: 'Workspace' }),
     ).toBeVisible();
+    await expect(page.locator('.workspace-intro').locator('..')).toHaveCSS(
+      'opacity',
+      '1',
+    );
+    await page.mouse.move(1439, 899);
   },
   'row-hover': async (page: Page) => {
     await page

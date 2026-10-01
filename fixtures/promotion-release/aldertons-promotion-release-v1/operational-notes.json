@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "scenarioId": "aldertons-promotion-release-v1",
-  "fixtureVersion": "1.0.1",
+  "fixtureVersion": "1.0.2",
   "records": [
     {
       "evidenceId": "ev-note-campaign-objective",
@@ -73,8 +73,12 @@
       "observedAt": "2026-09-03T07:20:00Z",
       "noteType": "supplier",
       "relatedSkus": ["ALD-0008"],
-      "text": "Final amendments must be at least 240 units and ordered in multiples of 120.",
-      "trust": "untrusted_evidence"
+      "text": "The initial 430-unit request reflected the stock shortfall. Final amendments must be at least 240 units and ordered in multiples of 120.",
+      "trust": "untrusted_evidence",
+      "claim": {
+        "kind": "prior_top_up_request",
+        "requestedUnits": 430
+      }
     },
     {
       "evidenceId": "ev-note-spinach-feed",
@@ -101,7 +105,20 @@
       "noteType": "buyer",
       "relatedSkus": ["ALD-0023"],
       "text": "Either 240 units at £2.25 or 320 units at £2.35 protects margin; favour availability if evidence supports it.",
-      "trust": "untrusted_evidence"
+      "trust": "untrusted_evidence",
+      "claim": {
+        "kind": "candidate_plan_options",
+        "options": [
+          {
+            "promotionalSellingPricePence": 225,
+            "topUpUnits": 240
+          },
+          {
+            "promotionalSellingPricePence": 235,
+            "topUpUnits": 320
+          }
+        ]
+      }
     },
     {
       "evidenceId": "ev-note-salmon-funding",

@@ -1,12 +1,6 @@
 @layer components {
   .process-sheet-swap[data-swap-entering]
     :is(.process-panel-list, .process-runs-list)
-    > .sheet-head {
-    animation: process-section-enter var(--duration-pane) var(--ease-out-quad) both;
-  }
-
-  .process-sheet-swap[data-swap-entering]
-    :is(.process-panel-list, .process-runs-list)
     > :not(.sheet-head),
   .process-sheet-swap[data-swap-entering] .process-panels > :not(.process-panel-list),
   .process-sheet-swap[data-swap-entering] .process-runs-detail {

@@ -1,6 +1,6 @@
 # Alderton's promotion-release replay
 
-This directory contains version `1.0.1` of the reviewed Fresh Food Weekend replay. A replay represents the output of a previous accepted run; it is not source evidence supplied to the agent.
+This directory contains version `1.0.2` of the reviewed Fresh Food Weekend replay. A replay represents the output of a previous accepted run; it is not source evidence supplied to the agent.
 
 The matching fictional source evidence lives under [`fixtures/`](../../../fixtures/promotion-release/aldertons-promotion-release-v1/README.md). The [promotion-release data dictionary](../../../docs/PROMOTION-RELEASE-DATA-DICTIONARY.md) explains the fields and controlled values.
 
@@ -14,7 +14,7 @@ tests/fixtures/ what automated tests expect
 
 Keeping these locations separate prevents a replayed answer from being mistaken for source evidence and prevents the test oracle from becoming a shortcut to a runtime result.
 
-Both replay files retain the same `scenarioId` and `fixtureVersion` as the evidence pack. `loadReviewedReplay()` validates that relationship before returning application data.
+Both replay files retain the same `scenarioId`; the policy replay also carries the matching `fixtureVersion`. `loadReviewedReplay()` validates that relationship before returning application data.
 
 ## Files
 
@@ -27,6 +27,8 @@ In Stage 4, a live agent will produce the same `PromotionReleasePlan` shape from
 ### `policy-evaluation-replay.json`
 
 This is the reviewed expected policy output used by the static interface. It is neither agent evidence nor the real policy implementation.
+
+Version `1.0.2` adds individual-approval treatment for `ALD-0010`: its 130p proposed price is 25.7% below the 175p regular price, exceeding the configured 25% threshold. The derived review summary is now 16 ready, seven needing attention, and four unable to proceed. The agent proposal remains unchanged so its recommendation can be compared with the corrected policy result.
 
 Stage 3 will calculate policy from source data and the proposal. At that point this file remains useful as a regression expectation but stops being the runtime source of policy results.
 

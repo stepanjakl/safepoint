@@ -84,7 +84,7 @@ Do not start stretch work while a core-proof item is incomplete. If implementati
 - Keep source facts outside the model proposal and join them only in the validated review projection.
 - Build the versioned 27-line Fresh Food Weekend evidence pack, including shortlist provenance, brief, catalogue, demand, supply, supplier, bounded operational notes, channel, and policy sources.
 - Record earlier bulk orders and frame every new quantity as a final top-up or amendment.
-- Encode 17 ready, six attention, two held, one excluded, and one unverifiable line.
+- Encode 16 ready, seven attention, two held, one excluded, and one unverifiable line.
 - Keep the agent proposal, replayed policy output, and test-only evaluation oracle as separate artefacts.
 - Validate complete accounting, evidence references, timestamps, seeded arithmetic, and malformed-input rejection in Vitest.
 

@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  useEffect,
   useId,
   useLayoutEffect,
   useMemo,
@@ -171,6 +172,14 @@ export function ReviewQueue({
   // A bucket gets a quiet cue only after the list has moved from the top.
   const list = useRef<HTMLDivElement>(null);
   const [spied, setSpied] = useState<ReviewFilter | null>(null);
+  const [scrolling, setScrolling] = useState(false);
+  const scrollIdle = useRef<number | null>(null);
+  useEffect(
+    () => () => {
+      if (scrollIdle.current !== null) window.clearTimeout(scrollIdle.current);
+    },
+    [],
+  );
   const spy = () => {
     const scroller = list.current;
     if (!scroller || filter !== 'all' || scroller.scrollTop <= 0) {
@@ -190,6 +199,15 @@ export function ReviewQueue({
     setSpied(current);
   };
   useLayoutEffect(spy);
+  const onScroll = () => {
+    setScrolling(true);
+    if (scrollIdle.current !== null) window.clearTimeout(scrollIdle.current);
+    scrollIdle.current = window.setTimeout(() => {
+      setScrolling(false);
+      scrollIdle.current = null;
+    }, 120);
+    spy();
+  };
 
   // 1 to 9 pick a tab from anywhere in the queue, in the strip's order, as
   // each tab's aria-keyshortcuts says. Not while typing, and not with a
@@ -227,6 +245,7 @@ export function ReviewQueue({
           tabs={filters}
           selected={filter}
           spied={spied}
+          scrolling={scrolling}
           onChange={chooseFilter}
         />
       </div>
@@ -234,7 +253,7 @@ export function ReviewQueue({
       {/* The rows fit the panel; only the tabs size it. */}
       <div
         ref={list}
-        onScroll={spy}
+        onScroll={onScroll}
         className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain contain-inline-size"
       >
         {visible.length === 0 ? (

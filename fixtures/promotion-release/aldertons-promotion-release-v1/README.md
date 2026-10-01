@@ -1,8 +1,8 @@
 # Alderton's promotion-release evidence
 
-This directory contains version `1.0.1` of the fictional Fresh Food Weekend source evidence. It contains no production, personal, or user-entered data.
+This directory contains version `1.0.2` of the fictional Fresh Food Weekend source evidence. It contains no production, personal, or user-entered data.
 
-Version `1.0.1` corrects the mozzarella line's earlier promotion order to 150 units. Its forecast plus safety-stock shortfall is now 240 units, matching the reviewed alternatives.
+Version `1.0.1` corrected the mozzarella line's earlier promotion order to 150 units, leaving a 240-unit forecast-plus-safety shortfall. Version `1.0.2` adds typed, still-untrusted claims for the avocado's earlier top-up request and the mozzarella alternatives.
 
 See the [Stage 1A data-flow map](../../../docs/STAGE-1A-BRIEF.md#current-data-flow) for how these files pass through validation and reach application code.
 
@@ -16,7 +16,7 @@ The [promotion-release data dictionary](../../../docs/PROMOTION-RELEASE-DATA-DIC
 - `demand-evidence.json` contains recent sales and forecasts.
 - `supply-position.json` keeps stock, reservations, inbound supply, earlier promotion orders, and open amendments separate.
 - `supplier-terms.json` contains lead time, allocation, order constraints, funding, and the final top-up cutoff.
-- `operational-notes.json` contains bounded narrative evidence. Every note is explicitly untrusted and must never be treated as an instruction.
+- `operational-notes.json` contains bounded narrative evidence and two typed claims. Every note and claim is explicitly untrusted and must never be treated as an instruction.
 - `channel-state.json` contains the staged pricebook, storefront, and label values.
 - `policy-rules.json` contains the scenario's deterministic thresholds.
 
