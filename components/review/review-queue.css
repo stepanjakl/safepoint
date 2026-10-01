@@ -1,22 +1,17 @@
 /* ── Review queue ───────────────────────────────────────────────────────────
-   The filter tabs (track, focus ring, divider, sliding face, count chip), the
-   rows' change count, and the lit line under a group's head.
+   The filter tabs (track, focus ring, divider, resting and sliding faces,
+   count chip), the rows' change count, and a group head's lit line.
    ────────────────────────────────────────────────────────────────────────── */
 
-/* Under the group head's rule, drawn by the list rather than the sticky head:
-   the head paints above the rows, so a line of its own stayed lit over a
-   selected first row. Inset, so the row's fill covers it. */
 @theme inline {
-  --shadow-separator-top-inset: inset 0 1px 0 var(--sp-floating-edge);
   /* For the tabs' "All" face and its chip's figure. */
   --color-review-all-solid: var(--sp-review-all-solid);
 }
 
 :root {
-  /* "All" chosen: a solid with no tone to borrow. The action's near-black was
-     the heaviest thing in the panel in light; this sits with the buckets'
-     solids. White on it clears AA at the tab's size. */
-  --sp-review-all-solid: light-dark(var(--sp-neutral-700), var(--sp-neutral-100));
+  /* "All" chosen: light enough to sit with the bucket solids while its
+     inverse text and count clear 7:1 in every neutral family. */
+  --sp-review-all-solid: light-dark(var(--sp-neutral-625), var(--sp-neutral-50));
 }
 
 /* A text field's face and edge, answering hover and keyboard focus as a field
@@ -61,6 +56,25 @@
     background-color: var(--sp-field-edge);
     pointer-events: none;
     transform: translate(-50%, -50%);
+  }
+
+  /* The lit line under a group head's rule, on the head itself, so it stays
+     with the head while it is stuck over the rows scrolling beneath. The head
+     paints above the rows, so it steps back while the row under it is lit --
+     otherwise it lies across that row's fill. */
+  .review-group-head {
+    box-shadow: 0 1px 0 var(--sp-floating-edge);
+    transition: box-shadow var(--duration-state) ease-out;
+  }
+  .review-group-head:has(
+    + ul > li:first-child > button:is(:focus-visible, [aria-expanded='true'])
+  ) {
+    box-shadow: 0 1px 0 transparent;
+  }
+  @media (hover: hover) {
+    .review-group-head:has(+ ul > li:first-child > button:hover) {
+      box-shadow: 0 1px 0 transparent;
+    }
   }
 
   /* "All" at rest: a quiet face on the stretched tab, so its width reads as

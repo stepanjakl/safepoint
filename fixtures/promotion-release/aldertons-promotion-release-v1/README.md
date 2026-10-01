@@ -1,6 +1,8 @@
 # Alderton's promotion-release evidence
 
-This directory contains version `1.0.0` of the fictional Fresh Food Weekend source evidence. It contains no production, personal, or user-entered data.
+This directory contains version `1.0.1` of the fictional Fresh Food Weekend source evidence. It contains no production, personal, or user-entered data.
+
+Version `1.0.1` corrects the mozzarella line's earlier promotion order to 150 units. Its forecast plus safety-stock shortfall is now 240 units, matching the reviewed alternatives.
 
 See the [Stage 1A data-flow map](../../../docs/STAGE-1A-BRIEF.md#current-data-flow) for how these files pass through validation and reach application code.
 

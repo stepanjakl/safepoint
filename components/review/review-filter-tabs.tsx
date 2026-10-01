@@ -34,11 +34,10 @@ export type FilterTab = {
 };
 
 /*
-  No face of its own, ever: the indicator is the only fill in the strip, so
-  nothing fades out over the solid as it arrives. The pointer lifts the ink
-  and the chip, and so does the spy -- the group at the top of the list while
-  "All" is chosen -- a step quieter than a choice. Ink and chip settle on the
-  shared state step (`control-wash`); only the indicator's travel is slower.
+  The indicator is the selected fill. A bucket gains a faint face only when its
+  group reaches the top of a scrolled list; at the starting position it rests
+  bare. Ink and chip settle on the shared state step (`control-wash`); only the
+  indicator's travel is slower.
 
   The buckets keep their content width and "All" takes what is left. In every
   tab the chip sits in the tab's own inset -- one padding on its three outer
@@ -50,7 +49,7 @@ export type FilterTab = {
 const TAB =
   'review-filter-focus control-wash group/tab relative inline-flex cursor-pointer items-center gap-1.5 rounded-full py-1 ps-1 pe-3 text-dense font-medium whitespace-nowrap outline-none';
 const BUCKET_TAB =
-  'text-severity-ink data-[hovered]:not-data-[selected]:text-severity-strong data-[focus-visible]:not-data-[selected]:text-severity-strong data-[spied]:not-data-[selected]:text-severity-strong data-[selected]:text-severity-on-solid';
+  'text-severity-ink data-[spied]:bg-surface-hover data-[hovered]:not-data-[selected]:text-severity-strong data-[focus-visible]:not-data-[selected]:text-severity-strong data-[selected]:text-severity-on-solid';
 // "All" takes the strip's spare width, so the buckets sit together at the
 // end; its end margin gives the divider after it room on both sides.
 const ALL_BOX = 'me-3 flex-1';
@@ -58,11 +57,10 @@ const ALL_TAB = cx(
   ALL_BOX,
   'text-muted-strong data-[hovered]:not-data-[selected]:text-primary data-[focus-visible]:not-data-[selected]:text-primary data-[selected]:text-inverse',
 );
-// The count's chip: a rung past the track at rest, one more under the pointer
-// or the spy, and inverted on the chosen tab's solid -- light, with the
-// figure in the tab's own colour.
+// The count's chip: a rung past the track at rest, the field face when its
+// group is spied, and inverted on the chosen solid.
 const BUCKET_COUNT =
-  'bg-severity-fill-strong group-data-[hovered]/tab:bg-severity-pill-hover group-data-[spied]/tab:bg-severity-pill-hover group-data-[selected]/tab:bg-severity-on-solid group-data-[selected]/tab:text-severity-solid';
+  'bg-severity-fill-strong group-data-[hovered]/tab:bg-severity-pill-hover group-data-[focus-visible]/tab:bg-severity-pill-hover group-data-[spied]/tab:bg-field-face group-data-[selected]/tab:bg-severity-on-solid group-data-[selected]/tab:text-severity-solid';
 // "All"'s chip is the track's own face, a window through its resting face.
 const ALL_COUNT =
   'bg-field-face group-data-[selected]/tab:bg-inverse group-data-[selected]/tab:text-review-all-solid';
@@ -90,8 +88,7 @@ export function ReviewFilterTabs({
 }: {
   tabs: FilterTab[];
   selected: ReviewFilter;
-  // The bucket whose group is at the top of the list, while "All" is chosen.
-  spied?: ReviewFilter | null;
+  spied: ReviewFilter | null;
   onChange: (filter: ReviewFilter) => void;
 }) {
   const track = useRef<HTMLDivElement>(null);

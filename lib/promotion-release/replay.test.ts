@@ -28,7 +28,7 @@ import {
 const oracleSchema = z.strictObject({
   schemaVersion: z.literal(1),
   scenarioId: z.literal('aldertons-promotion-release-v1'),
-  fixtureVersion: z.literal('1.0.0'),
+  fixtureVersion: z.literal('1.0.1'),
   cases: z.array(
     z.strictObject({
       sku: skuSchema,

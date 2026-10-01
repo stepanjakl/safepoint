@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const SCENARIO_ID = 'aldertons-promotion-release-v1';
-export const FIXTURE_VERSION = '1.0.0';
+export const FIXTURE_VERSION = '1.0.1';
 
 export const skuSchema = z.enum([
   'ALD-0001',

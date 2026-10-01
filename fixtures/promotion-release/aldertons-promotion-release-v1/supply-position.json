@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "scenarioId": "aldertons-promotion-release-v1",
-  "fixtureVersion": "1.0.0",
+  "fixtureVersion": "1.0.1",
   "records": [
     {
       "kind": "available",
@@ -314,7 +314,7 @@
       "stockOnHandUnits": 180,
       "reservedUnits": 30,
       "confirmedInboundBeforeLaunchUnits": 120,
-      "earlierPromotionOrderUnits": 90,
+      "earlierPromotionOrderUnits": 150,
       "openTopUpAmendmentUnits": 0,
       "safetyStockUnits": 60,
       "location": "Alderton’s DC North"

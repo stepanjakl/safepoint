@@ -42,7 +42,7 @@ exports[`review presentation output > presents the fixture replay exactly as rec
       "ready": 17,
       "unverifiable": 1,
     },
-    "fixtureVersion": "1.0.0",
+    "fixtureVersion": "1.0.1",
     "labelDeadlineLabel": "Fri 4 Sep 06:00",
     "mode": "replay",
     "remainingLabel": "21h 15m",
@@ -8791,7 +8791,7 @@ exports[`review presentation output > presents the fixture replay exactly as rec
           {
             "facts": [
               "On hand 180 units · reserved 30 units",
-              "Inbound before launch 120 units · earlier promotion order 90 units · open amendments 0 units",
+              "Inbound before launch 120 units · earlier promotion order 150 units · open amendments 0 units",
               "Safety stock 60 units",
               "Alderton’s DC North",
             ],

@@ -126,6 +126,81 @@ test('number keys pick a tab, and the review reopens on the last one', async ({
   await expect(tabs.getByRole('radio').nth(1)).toBeChecked();
 });
 
+test('a bucket gets the quiet All-style cue only after the list scrolls', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 900, height: 600 });
+  await openRun(page);
+  await page.getByRole('button', { name: 'Review release' }).click();
+
+  const tabs = page.getByRole('radiogroup', {
+    name: 'Filter by disposition',
+  });
+  const all = tabs.getByRole('radio').first();
+  const bucket = tabs.getByRole('radio').nth(1);
+  const scroller = page.locator('.review-queue .overflow-y-auto');
+  await expect(all).toBeChecked();
+  await expect(bucket).not.toHaveAttribute('data-spied', '');
+
+  await scroller.evaluate((element) => {
+    element.scrollTop = 2;
+  });
+  await expect(bucket).toHaveAttribute('data-spied', '');
+  const colors = await bucket.evaluate((element) => {
+    const count = element.querySelector('.review-tab-count');
+    const home = document.querySelector('.review-tab-home');
+    const field = document.querySelector('.field-track');
+    if (!count || !home || !field)
+      throw new Error('Review filter colors cannot be measured');
+    return {
+      tab: getComputedStyle(element).backgroundColor,
+      tabText: getComputedStyle(element).color,
+      count: getComputedStyle(count).backgroundColor,
+      countText: getComputedStyle(count).color,
+      home: getComputedStyle(home).backgroundColor,
+      field: getComputedStyle(field).backgroundColor,
+    };
+  });
+  expect(colors.tab).toBe(colors.home);
+  expect(colors.count).toBe(colors.field);
+  await bucket.hover();
+  await expect
+    .poll(() => bucket.evaluate((element) => getComputedStyle(element).color))
+    .not.toBe(colors.tabText);
+  const hovered = {
+    tab: await bucket.evaluate(
+      (element) => getComputedStyle(element).backgroundColor,
+    ),
+    count: await bucket
+      .locator('.review-tab-count')
+      .evaluate((element) => getComputedStyle(element).backgroundColor),
+    countText: await bucket
+      .locator('.review-tab-count')
+      .evaluate((element) => getComputedStyle(element).color),
+  };
+  expect(hovered.tab).toBe(colors.tab);
+  expect(hovered.count).toBe(colors.count);
+  expect(hovered.countText).not.toBe(colors.countText);
+
+  const nextGroup = scroller.locator('[data-group]').nth(1);
+  const nextBucket = tabs.locator(
+    `[data-review-filter="${await nextGroup.getAttribute('data-group')}"]`,
+  );
+  await scroller.evaluate((element) => {
+    const next = element.querySelectorAll<HTMLElement>('[data-group]').item(1);
+    if (!next) throw new Error('Second review group is missing');
+    element.scrollTop = next.offsetTop + 2;
+  });
+  await expect(bucket).not.toHaveAttribute('data-spied', '');
+  await expect(nextBucket).toHaveAttribute('data-spied', '');
+
+  await scroller.evaluate((element) => {
+    element.scrollTop = 0;
+  });
+  await expect(bucket).not.toHaveAttribute('data-spied', '');
+  await expect(all).toBeChecked();
+});
+
 test('where the tabs do not fit, the rest move into a menu', async ({
   page,
 }) => {

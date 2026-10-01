@@ -187,7 +187,7 @@ Narrow widths turn the rail vertical: the rule runs down the left, markers on it
 
 ### Outcome strip and header
 
-The header is one 48px row: product mark, batch title in display, then mode and deadline as readouts on the right ("REPLAY · fixture 1.0.0" and "21h 15m to label production"). The outcome strip beneath is four cells separated by default rules, each a counter over a readout label: 27 evaluated, 17 ready, 6 need attention, 4 not releasable, with "2 held · 1 excluded · 1 unverifiable" as the last cell's meta line so the full accounting is visible.
+The header is one 48px row: product mark, batch title in display, then mode and deadline as readouts on the right ("REPLAY · fixture 1.0.1" and "21h 15m to label production"). The outcome strip beneath is four cells separated by default rules, each a counter over a readout label: 27 evaluated, 17 ready, 6 need attention, 4 not releasable, with "2 held · 1 excluded · 1 unverifiable" as the last cell's meta line so the full accounting is visible.
 
 ### Mobile detail
 

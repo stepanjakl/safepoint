@@ -53,12 +53,13 @@ const SHORT_LABELS: Record<Disposition, string> = {
 };
 
 // The runs sheet's section row, on the panel's recess as the item's header
-// is: opaque, since rows pass beneath it, and above the rows' dividers. No
-// count: at the row's end it lined up with the change counts and read as a
+// is: opaque, since rows pass beneath it, and above the rows' dividers. Its
+// lit line is its own (`.review-group-head`), so it stays with it while stuck.
+// No count: at the row's end it lined up with the change counts and read as a
 // total of them.
 const GROUP_HEAD =
-  'readout text-muted border-floating-ring bg-surface-inset sticky top-0 z-2 flex h-sheet-head items-center gap-2 border-b px-5 [font-weight:var(--sp-mono-weight-strong)]';
-const LIST = 'release-list shadow-separator-top-inset';
+  'review-group-head readout text-muted border-floating-ring bg-surface-inset sticky top-0 z-2 flex h-sheet-head items-center gap-2 border-b px-5 [font-weight:var(--sp-mono-weight-strong)]';
+const LIST = 'release-list';
 // The whole row is the control. Open is the selected ground, and every part
 // of it keeps the ink it has at rest, so nothing muted lands on that ground.
 // One line: the subject, the reason, and the count ending the row; the reason
@@ -167,20 +168,24 @@ export function ReviewQueue({
       `Page ${pagination.page + direction + 1} of ${pagination.totalPages}.`,
     );
   };
-  // Under "All", which group is at the top of the list, so its tab can say
-  // where the reader is. Measured against the list's own scroll, from the
-  // group heads' positions in it.
+  // A bucket gets a quiet cue only after the list has moved from the top.
   const list = useRef<HTMLDivElement>(null);
   const [spied, setSpied] = useState<ReviewFilter | null>(null);
   const spy = () => {
     const scroller = list.current;
-    if (!scroller || filter !== 'all') return;
+    if (!scroller || filter !== 'all' || scroller.scrollTop <= 0) {
+      setSpied(null);
+      return;
+    }
     let current: ReviewFilter | null = null;
     for (const section of scroller.querySelectorAll<HTMLElement>(
       '[data-group]',
     )) {
       if (section.offsetTop <= scroller.scrollTop + 1)
-        current = section.dataset.group as ReviewFilter;
+        current =
+          DISPOSITIONS.find(
+            (disposition) => disposition === section.dataset.group,
+          ) ?? null;
     }
     setSpied(current);
   };
@@ -221,7 +226,7 @@ export function ReviewQueue({
         <ReviewFilterTabs
           tabs={filters}
           selected={filter}
-          spied={filter === 'all' ? spied : null}
+          spied={spied}
           onChange={chooseFilter}
         />
       </div>

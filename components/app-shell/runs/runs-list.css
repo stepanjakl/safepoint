@@ -91,11 +91,23 @@
        visible with any following content and while the header is sticky. */
     border-bottom: 1px solid var(--sp-raised-ring);
     box-shadow: 0 var(--spacing-sheet-highlight) 0 var(--sp-raised-edge);
+    transition: box-shadow var(--duration-state) ease-out;
   }
-  /* The list items draw their own lit line. An outward header shadow would
-     paint over the first row's fill instead of lying beneath it. */
-  .sheet-head:has(+ .sheet-list) {
+  /* Over a run list the head's line is the one under it, so the first row
+     does not draw its own. The head paints above the rows, so its line steps
+     back while the run under it is lit, or it would lie across that fill. */
+  .sheet-head + .sheet-list > li:first-child {
     box-shadow: none;
+  }
+  .sheet-head:has(
+    + .sheet-list > li:first-child > .sheet-row:is([data-current], :focus-visible, :focus-within)
+  ) {
+    box-shadow: 0 var(--spacing-sheet-highlight) 0 transparent;
+  }
+  @media (hover: hover) {
+    .sheet-head:has(+ .sheet-list > li:first-child > .sheet-row:hover) {
+      box-shadow: 0 var(--spacing-sheet-highlight) 0 transparent;
+    }
   }
   /* Against the pane's side, the sheet runs over the pane's lit edge to its
      ring, so its rules cross that edge as the release card's do. Fills cover
@@ -435,6 +447,7 @@
     text-align: center;
   }
   @media (prefers-reduced-motion: reduce) {
+    .sheet-head,
     .sheet-row,
     .sheet-row *,
     .sheet-break,
@@ -485,6 +498,14 @@
     .sheet-list > li + li {
       border-top: 0;
       border-inline-start: 1px solid var(--sp-raised-ring);
+    }
+    /* Side by side, every run marks its own top: one line under the head
+       could not step back for just the run that is lit. */
+    .sheet-head:has(+ .sheet-list) {
+      box-shadow: none;
+    }
+    .sheet-head + .sheet-list > li:first-child {
+      box-shadow: inset 0 var(--spacing-sheet-highlight) 0 var(--sp-raised-edge);
     }
     .sheet-break {
       display: none;

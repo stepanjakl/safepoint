@@ -82,7 +82,7 @@ The [promotion-release data dictionary](PROMOTION-RELEASE-DATA-DICTIONARY.md) de
 
 - Campaign: Alderton's Fresh Food Weekend.
 - Scenario identifier: `aldertons-promotion-release-v1`.
-- Fixture version: `1.0.0`.
+- Fixture version: `1.0.1`.
 - Exactly 27 sequential SKUs from `ALD-0001` to `ALD-0027`.
 - Outcomes derived as 17 ready, six needing attention, two held, one excluded, and one unverifiable.
 - Twenty-three lines are potentially releasable and four are not.

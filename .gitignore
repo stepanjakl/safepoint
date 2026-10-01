@@ -36,3 +36,6 @@ Claude/
 # Playwright reports and browser-test artifacts
 /playwright-report/
 /test-results/
+
+# Local AI SDK DevTools traces contain full model inputs and outputs.
+.devtools/

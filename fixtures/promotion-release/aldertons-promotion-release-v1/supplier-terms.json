@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "scenarioId": "aldertons-promotion-release-v1",
-  "fixtureVersion": "1.0.0",
+  "fixtureVersion": "1.0.1",
   "records": [
     {
       "evidenceId": "ev-supplier-0001",

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "scenarioId": "aldertons-promotion-release-v1",
-  "fixtureVersion": "1.0.0",
+  "fixtureVersion": "1.0.1",
   "evaluationMode": "replay",
   "policyVersion": "promotion-release-policy-v1",
   "evaluatedAt": "2026-09-03T07:43:00Z",

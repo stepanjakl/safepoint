@@ -31,7 +31,9 @@
     "colors:radix": "node scripts/generate-radix-colors.ts"
   },
   "dependencies": {
+    "@ai-sdk/google": "4.0.87",
     "@outpacelabs/avatars": "^0.6.0",
+    "ai": "7.0.124",
     "blode-icons-react": "^1.0.0",
     "geist": "1.7.2",
     "motion": "^13.2.0",
@@ -43,6 +45,7 @@
     "zod": "4.5.4"
   },
   "devDependencies": {
+    "@ai-sdk/devtools": "1.0.29",
     "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.63.0",
     "@radix-ui/colors": "3.0.0",
