@@ -1,7 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
-import { z } from 'zod';
+import type { z } from 'zod';
 
 import { Button } from '@/components/ui/button';
 import type { LinePreview } from '@/lib/model-workbench/line';
@@ -11,88 +12,14 @@ import {
   type ModelId,
 } from '@/lib/model-workbench/models';
 import {
-  gateSchema,
+  modelWorkbenchResponseSchema,
+  type ModelWorkbenchResponse,
+} from '@/lib/model-workbench/response';
+import {
   policyFindingCodeSchema,
   skuSchema,
   type Sku,
 } from '@/lib/promotion-release/schemas';
-
-const responseSchema = z.discriminatedUnion('kind', [
-  z.strictObject({
-    kind: z.literal('result'),
-    result: z.strictObject({
-      runId: z.string(),
-      model: z.string(),
-      sku: skuSchema,
-      instructionVersion: z.string(),
-      durationMs: z.number(),
-      input: z.unknown(),
-      output: z.unknown(),
-      suggestion: z
-        .strictObject({
-          sku: skuSchema,
-          recommendation: z.enum(['release', 'adjust', 'hold', 'exclude']),
-          proposedPricePence: z.number().nullable(),
-          proposedTopUpUnits: z.number().nullable(),
-          rationale: z.string(),
-          uncertainties: z.array(z.string()),
-          evidenceRefs: z.array(z.string()),
-          selfReportedCertainty: z.enum(['low', 'medium', 'high']),
-        })
-        .nullable(),
-      issues: z.array(z.string()),
-      review: z
-        .strictObject({
-          policy: z.strictObject({
-            basis: z.enum(['brief_baseline', 'model_proposal']),
-            pricePence: z.number(),
-            topUpUnits: z.number(),
-            marginPercent: z.number(),
-            verdict: z.enum(['blocked', 'review_required', 'passes_checks']),
-            checks: z.array(
-              z.strictObject({
-                code: z.string(),
-                status: z.enum(['pass', 'attention', 'block']),
-                message: z.string(),
-                evidenceRefs: z.array(z.string()),
-              }),
-            ),
-          }),
-          findingCodes: z.array(policyFindingCodeSchema),
-          gateObligations: z.array(
-            z.strictObject({
-              gate: gateSchema,
-              obligation: z.enum(['required', 'advisory', 'not_applicable']),
-              reason: z.string(),
-            }),
-          ),
-          treatment: z.enum([
-            'no_release_proposal',
-            'blocked',
-            'individual_approval',
-            'review_required',
-            'passes_checks',
-          ]),
-        })
-        .nullable(),
-      usage: z.nullable(
-        z.strictObject({
-          inputTokens: z.number().optional(),
-          outputTokens: z.number().optional(),
-        }),
-      ),
-      finishReason: z.string().nullable(),
-    }),
-  }),
-  z.strictObject({
-    kind: z.literal('error'),
-    message: z.string(),
-    runId: z.string().optional(),
-    stage: z.string().optional(),
-  }),
-]);
-
-type ResponseData = z.infer<typeof responseSchema>;
 
 function money(pence: number): string {
   return `£${(pence / 100).toFixed(2)}`;
@@ -159,17 +86,19 @@ export function ModelWorkbench({
   reviewAt,
   previews,
   baselines,
+  initialSku,
 }: {
   keyConfigured: boolean;
   reviewAt: string;
   previews: LinePreview[];
   baselines: ReviewedBaseline[];
+  initialSku: Sku;
 }) {
   const [selectedModel, setSelectedModel] = useState<ModelId>(MODEL_IDS[0]);
-  const [selectedSku, setSelectedSku] = useState<Sku>('ALD-0001');
+  const [selectedSku, setSelectedSku] = useState<Sku>(initialSku);
   const [running, setRunning] = useState(false);
   const [status, setStatus] = useState('');
-  const [data, setData] = useState<ResponseData | null>(null);
+  const [data, setData] = useState<ModelWorkbenchResponse | null>(null);
   const preview = previews.find(({ sku }) => sku === selectedSku);
   if (!preview) return null;
   const baseline = baselines.find(({ sku }) => sku === selectedSku);
@@ -188,7 +117,7 @@ export function ModelWorkbench({
           reviewAt,
         }),
       });
-      const parsed = responseSchema.parse(await response.json());
+      const parsed = modelWorkbenchResponseSchema.parse(await response.json());
       setData(parsed);
       setStatus(
         parsed.kind === 'error'
@@ -242,6 +171,12 @@ export function ModelWorkbench({
           <p className="text-meta text-muted">
             Scenario review time: {preview.input.campaign.reviewAt}
           </p>
+          <Link
+            className="text-meta text-state-advisory underline underline-offset-2"
+            href={`/workbench/explore?sku=${selectedSku}`}
+          >
+            Open this product in the review explorer
+          </Link>
         </header>
 
         <section className={SECTION} aria-label="Run controls">

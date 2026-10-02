@@ -2,4 +2,9 @@
   .workbench-mark-preview {
     margin-top: 0;
   }
+  /* zoom, not scale: the mark lays out at four times its size, so the rail
+     tokens scale with it and nothing is resampled. */
+  .workbench-mark-zoom {
+    zoom: 4;
+  }
 }

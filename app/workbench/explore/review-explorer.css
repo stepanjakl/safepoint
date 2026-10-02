@@ -1,0 +1,18 @@
+@layer components {
+  .review-explorer-index {
+    max-height: calc(100dvh - 2rem);
+    overflow-y: auto;
+  }
+
+  .review-explorer-step {
+    border-inline-start: 2px solid var(--sp-raised-edge);
+  }
+
+  .review-explorer-step[data-step='policy'] {
+    border-inline-start-color: var(--sp-state-advisory);
+  }
+
+  .review-explorer-source {
+    scroll-margin-block-start: 1rem;
+  }
+}

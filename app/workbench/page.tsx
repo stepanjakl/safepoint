@@ -188,6 +188,13 @@ export default function WorkbenchPage() {
           are light / dark on the one neutral ramp.{' '}
           <Link
             className="underline underline-offset-4"
+            href="/workbench/explore"
+          >
+            Release review explorer
+          </Link>
+          {' · '}
+          <Link
+            className="underline underline-offset-4"
             href="/workbench/review"
           >
             Stage 1B review workspace

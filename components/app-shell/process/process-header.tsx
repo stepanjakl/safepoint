@@ -267,7 +267,7 @@ export function ProcessHeader({
     // above the sticky section headings so their opaque fills cannot cover it;
     // the notch stays in the same layer as the edge it continues. Widened over
     // the pane's lit edge and padded back, so only its rule reaches the ring.
-    <header className="process-header border-raised-ring shadow-separator-bottom-strong -mx-control-highlight px-control-highlight relative z-10 grid grid-cols-[minmax(0,1fr)_auto] border-b">
+    <header className="process-header shadow-separator-bottom-strong -mx-control-highlight px-control-highlight relative z-10 grid grid-cols-[minmax(0,1fr)_auto] border-b">
       {/* Both cells recover the same top inset and bottom edge, so their
           centres agree even when the pane's highlight thickness changes. */}
       <ProcessContentTransition className="-mt-pane-inset -mb-control-edge flex min-w-0 items-center justify-between gap-x-4 px-4 sm:px-6">

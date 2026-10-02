@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useState, type ComponentProps } from 'react';
+import { useEffect, useRef, useState, type ComponentProps } from 'react';
+// Deep import, as in thread-step.tsx: the barrel is the whole library.
+import CircleCheckFilled from 'blode-icons-react/icons/circle-check-filled';
 
 import { RunThread } from '@/components/app-shell/thread/run-thread';
 import {
@@ -9,6 +11,8 @@ import {
   type ThreadLook,
 } from '@/components/app-shell/thread/thread-step';
 import { Button } from '@/components/ui/button';
+import { SPEEDS, useSlowMotion } from './slow-motion';
+import { ShimmerDirections } from './shimmer-directions';
 import {
   RUN_STAGE_LABELS,
   RUN_STAGES,
@@ -27,7 +31,10 @@ const REQUEST = (
 // The stopped run is a branch, not a stage after the commit, so the player
 // walks the main line and the gallery below shows the branch.
 const MAIN_LINE = RUN_STAGES.filter((stage) => stage !== 'stopped');
-const STEP_MS = 1800;
+// Long enough for a finishing mark to wait for its beat and leave, and for the
+// next step to arrive and unfold; the moment before the run starts is brief.
+const STEP_MS = 4400;
+const STARTING_MS = 1400;
 
 const COLUMN = 'bg-surface-primary rounded-shell min-w-0 p-6 max-sm:p-4';
 
@@ -43,6 +50,8 @@ export function RunWorkbench({ thread }: { thread: Thread }) {
   return (
     <>
       <LoadingMarks />
+      <MarkLifecycle />
+      <ShimmerDirections />
       <div className="flex flex-wrap items-center gap-3">
         <p className="readout text-muted" id="look">
           Thread look
@@ -126,6 +135,138 @@ function LoadingMarks() {
   );
 }
 
+type MarkPhase = 'idle' | 'running' | 'leaving' | 'done';
+
+const PHASE_LABELS: Record<MarkPhase, string> = {
+  idle: 'About to run',
+  running: 'Running',
+  leaving: 'Finishing',
+  done: 'Done',
+};
+
+// How long each resting phase holds when it plays itself; the moving phases
+// end on their own animations, so these never need to match the stylesheet.
+const HOLD_MS: Partial<Record<MarkPhase, number>> = {
+  idle: 900,
+  running: 5100,
+  done: 1400,
+};
+
+/*
+  The running mark's arrival and departure, one mark at the rail's size and
+  one magnified, so the motion can be judged before it goes into the thread.
+  Slow motion slows every animation in the figure and the holds with them.
+*/
+function MarkLifecycle() {
+  const [phase, setPhase] = useState<MarkPhase>('idle');
+  const [auto, setAuto] = useState(true);
+  const [rate, setRate] = useState(1);
+  const figure = useRef<HTMLDivElement>(null);
+
+  useSlowMotion(figure, rate);
+
+  useEffect(() => {
+    const hold = HOLD_MS[phase];
+    if (!auto || hold === undefined) return;
+    const next: MarkPhase =
+      phase === 'idle' ? 'running' : phase === 'running' ? 'leaving' : 'idle';
+    const timer = setTimeout(() => setPhase(next), hold / rate);
+    return () => clearTimeout(timer);
+  }, [auto, phase, rate]);
+
+  return (
+    <section aria-labelledby="mark-lifecycle" className="grid gap-4">
+      <div className="grid gap-1">
+        <h2 id="mark-lifecycle" className="text-title font-semibold">
+          Arrival and departure
+        </h2>
+        <p className="text-meta text-muted">
+          The dot beats in and, on its peak, the arcs leave its edge for the
+          ring. On finishing they fold back in and the dot swells into the
+          finished disc.
+        </p>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant="primary"
+          onPress={() => {
+            setAuto(false);
+            setPhase(phase === 'running' ? 'leaving' : 'running');
+          }}
+        >
+          {phase === 'running' ? 'Finish' : 'Start'}
+        </Button>
+        <Button
+          isDisabled={phase === 'idle'}
+          onPress={() => {
+            setAuto(false);
+            setPhase('idle');
+          }}
+        >
+          Reset
+        </Button>
+        <Button aria-pressed={auto} onPress={() => setAuto(!auto)}>
+          {auto ? 'Stop loop' : 'Loop'}
+        </Button>
+        <div role="group" aria-label="Speed" className="flex gap-2">
+          {SPEEDS.map((speed) => (
+            <Button
+              key={speed.rate}
+              variant={speed.rate === rate ? 'primary' : 'secondary'}
+              aria-pressed={speed.rate === rate}
+              onPress={() => setRate(speed.rate)}
+            >
+              {speed.label}
+            </Button>
+          ))}
+        </div>
+        <p className="readout text-muted" aria-live="polite">
+          {PHASE_LABELS[phase]}
+        </p>
+      </div>
+      <div
+        ref={figure}
+        className="bg-surface-primary rounded-shell flex flex-wrap items-center justify-center gap-16 p-10"
+      >
+        <LifecycleMark phase={phase} onLeft={() => setPhase('done')} />
+        <div className="workbench-mark-zoom">
+          <LifecycleMark phase={phase} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function LifecycleMark({
+  phase,
+  onLeft,
+}: {
+  phase: MarkPhase;
+  onLeft?: () => void;
+}) {
+  return (
+    <div className="thread workbench-mark-preview" aria-hidden="true">
+      <span
+        className="thread-dot"
+        data-status={
+          phase === 'leaving' || phase === 'done' ? 'complete' : 'running'
+        }
+      >
+        {phase === 'running' || phase === 'leaving' ? (
+          <SegmentedRing
+            count={3}
+            enter
+            leaving={phase === 'leaving'}
+            onLeft={onLeft}
+          />
+        ) : phase === 'done' ? (
+          <CircleCheckFilled aria-hidden className="thread-icon" />
+        ) : null}
+      </span>
+    </div>
+  );
+}
+
 function RunPlayer({ thread, look }: { thread: Thread; look: ThreadLook }) {
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -136,9 +277,12 @@ function RunPlayer({ thread, look }: { thread: Thread; look: ThreadLook }) {
   const running = playing && !last;
   useEffect(() => {
     if (!running) return;
-    const timer = setTimeout(() => setIndex((at) => at + 1), STEP_MS);
+    const timer = setTimeout(
+      () => setIndex((at) => at + 1),
+      stage === 'starting' ? STARTING_MS : STEP_MS,
+    );
     return () => clearTimeout(timer);
-  }, [running, index]);
+  }, [running, index, stage]);
 
   return (
     <section aria-labelledby="player" className="grid max-w-190 gap-4">

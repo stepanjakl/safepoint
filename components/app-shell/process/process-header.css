@@ -142,6 +142,12 @@
 }
 
 @layer components {
+  .process-header {
+    --notch-edge: var(--sp-raised-ring);
+    --notch-pane: var(--sp-surface-primary);
+    border-color: var(--notch-edge);
+  }
+
   /* Geometry only; the stops are utilities. The count pill sits the same
      distance from three edges: vertically that is what the pill leaves inside
      the face, halved, so the end padding must be that figure rather than a

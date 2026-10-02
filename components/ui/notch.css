@@ -192,11 +192,8 @@
     background: var(--notch-pane-color);
   }
 
-  /* Where the floor turns down the pane's side: a true quarter circle, so a
-     box rather than a path, edged like control-face. It extends by one
-     edge-width left and bottom and the clip removes that, so the inset
-     shadow's unwanted sides are never seen. The inset backs the edge with the
-     pane's face, so a section beneath darker than the pane shows no seam. */
+  /* One arc draws the pane's inset highlight, edge and outside canvas. Its
+     transparent centre leaves the pane face free to transition beneath it. */
   .notch::after {
     content: '';
     position: absolute;
@@ -204,14 +201,17 @@
     right: 0;
     width: calc(var(--notch-corner) + var(--notch-edge-width));
     height: calc(var(--notch-corner) + var(--notch-edge-width));
-    border-top: var(--notch-edge-width) solid var(--notch-edge-color);
-    border-right: var(--notch-edge-width) solid var(--notch-edge-color);
-    border-top-right-radius: var(--notch-corner);
-    /* No sheen: the corner is below the floor, where the notch's sheen has
-       already faded out, so a lit line here would restart it. */
-    box-shadow:
-      0 0 0 var(--notch-corner) var(--notch-face-color),
-      inset 0 0 0 var(--notch-edge-width) var(--notch-pane-color);
+    background: radial-gradient(
+      circle at var(--notch-edge-width) var(--notch-corner),
+      transparent
+        calc(var(--notch-corner) - var(--notch-edge-width) - var(--spacing-control-highlight)),
+      var(--notch-highlight-color)
+        calc(var(--notch-corner) - var(--notch-edge-width) - var(--spacing-control-highlight)),
+      var(--notch-highlight-color) calc(var(--notch-corner) - var(--notch-edge-width)),
+      var(--notch-edge-color) calc(var(--notch-corner) - var(--notch-edge-width)),
+      var(--notch-edge-color) var(--notch-corner),
+      var(--notch-face-color) var(--notch-corner)
+    );
     clip-path: inset(0 0 var(--notch-edge-width) var(--notch-edge-width));
     pointer-events: none;
   }

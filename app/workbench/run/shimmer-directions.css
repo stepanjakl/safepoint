@@ -1,0 +1,117 @@
+/* ── Shimmer directions (workbench) ─────────────────────────────────────────
+   Alternatives to the running step's name shimmer in thread-step.css, each
+   scoped to its card. Every keyframe keeps the ring's 2.2s cycle and reads
+   --thread-name-lead, so the cards stay in time with their rings.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Registered so E can soften the band's colour. */
+@property --shimmer-direction-band {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: transparent;
+}
+
+@layer components {
+  /* B: the pass ends on the count and lifts it; a tick bumps it. 66% is
+     about where the band leaves the name. */
+  .shimmer-direction[data-direction='count'] .thread .thread-step-fact {
+    animation: shimmer-direction-lift 2.2s linear var(--thread-name-lead) infinite;
+  }
+  @keyframes shimmer-direction-lift {
+    0%,
+    62%,
+    90%,
+    100% {
+      translate: 0 0;
+      color: var(--sp-text-muted);
+      background-color: var(--sp-thread-fact-face);
+    }
+    72% {
+      translate: 0 -1px;
+      background-color: var(--sp-thread-fact-face-hover);
+      color: var(--sp-text-primary);
+    }
+  }
+  .shimmer-direction-count {
+    display: inline-block;
+  }
+  .shimmer-direction[data-direction='count'] .shimmer-direction-count {
+    animation: shimmer-direction-bump 360ms cubic-bezier(0.33, 1, 0.68, 1);
+  }
+  @keyframes shimmer-direction-bump {
+    from {
+      scale: 1.2;
+    }
+  }
+
+  /* C: the band crosses while the arcs light round the ring, 0% to 43%. */
+  .shimmer-direction[data-direction='arcs']
+    .thread
+    .thread-step[data-status='running']
+    .thread-step-toggle {
+    animation: shimmer-direction-arcs 2.2s linear var(--thread-name-lead) infinite;
+  }
+  @keyframes shimmer-direction-arcs {
+    0% {
+      background-position: 105% 0;
+    }
+    43%,
+    100% {
+      background-position: -5% 0;
+    }
+  }
+
+  /* D: no band; a wave dims and lifts each letter in turn, from the beat. */
+  .shimmer-direction[data-direction='letters']
+    .thread
+    .thread-step[data-status='running']
+    .thread-step-toggle {
+    background-image: none;
+    -webkit-text-fill-color: currentColor;
+    animation: none;
+  }
+  .shimmer-direction-letter {
+    display: inline-block;
+    animation: shimmer-direction-letter 2.2s linear infinite;
+    animation-delay: calc(var(--thread-name-lead) + var(--letter) * 45ms);
+  }
+  @keyframes shimmer-direction-letter {
+    0%,
+    28%,
+    46%,
+    100% {
+      translate: 0 0;
+      color: currentColor;
+    }
+    35% {
+      translate: 0 -1px;
+      color: var(--sp-text-muted-soft);
+    }
+  }
+
+  /* E: three full beats, then every other beat with a softer band. */
+  .shimmer-direction[data-direction='quieten']
+    .thread
+    .thread-step[data-status='running']
+    .thread-step-toggle {
+    --shimmer-direction-band: var(--sp-text-muted-soft);
+    --thread-name-band: var(--shimmer-direction-band);
+    animation:
+      thread-name-beat 2.2s linear var(--thread-name-lead) 3,
+      shimmer-direction-quiet 4.4s linear calc(var(--thread-name-lead) + 6.6s) infinite;
+  }
+  /* One beat's pass in the first half of two beats, at 14% and 43%. */
+  @keyframes shimmer-direction-quiet {
+    0%,
+    14% {
+      background-position: 105% 0;
+      --shimmer-direction-band: var(--sp-text-muted);
+      animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    43%,
+    100% {
+      background-position: -5% 0;
+      --shimmer-direction-band: var(--sp-text-muted);
+    }
+  }
+}

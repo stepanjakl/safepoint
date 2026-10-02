@@ -18,12 +18,16 @@ import type { RunStage } from '@/lib/process/run-lifecycle';
   address, since a reload could not find it again.
 */
 const PLAYED: RunStage[] = [
+  'starting',
   'reading',
   'evaluating',
   'checking',
   'awaiting_review',
 ];
-const STAGE_MS = 1800;
+// Long enough for a finishing step's mark to leave and the next to arrive;
+// the moment before the run begins is brief.
+const STAGE_MS = 4000;
+const STARTING_MS = 1200;
 
 export type StartedRun = { run: ProcessRun; stage: RunStage };
 
@@ -96,7 +100,7 @@ export function useRunSelectionState({
             },
           };
         }),
-      STAGE_MS,
+      started?.stage === 'starting' ? STARTING_MS : STAGE_MS,
     );
     return () => clearTimeout(timer);
   }, [playing, started?.stage, recorded]);

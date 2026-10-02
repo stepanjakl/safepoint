@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, useRef, useState, type FormEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -76,15 +77,17 @@ export function PolicyWorkbench({
   sourceProposal,
   baselines,
   todayAt,
+  initialSku,
 }: {
   sourceScenario: ScenarioEvidencePack;
   sourceProposal: PromotionReleasePlan;
   baselines: Baseline[];
   todayAt: string;
+  initialSku: Sku;
 }) {
   const [clockMode, setClockMode] = useState<'today' | 'fixture'>('today');
   const [anchorAt, setAnchorAt] = useState(todayAt);
-  const [selectedSku, setSelectedSku] = useState<Sku>('ALD-0001');
+  const [selectedSku, setSelectedSku] = useState<Sku>(initialSku);
   const [drafts, setDrafts] = useState<
     Partial<Record<Sku, { price: string; topUp: string }>>
   >({});
@@ -242,6 +245,12 @@ export function PolicyWorkbench({
             Fixture {scenario.promotionBrief.fixtureVersion} · policy{' '}
             {scenario.policyRules.policyVersion}
           </p>
+          <Link
+            className="text-meta text-state-advisory underline underline-offset-2"
+            href={`/workbench/explore?sku=${selectedSku}`}
+          >
+            Open this product in the review explorer
+          </Link>
         </header>
 
         <section className={SECTION} aria-labelledby="clock-heading">

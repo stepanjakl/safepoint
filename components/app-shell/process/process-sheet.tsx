@@ -141,9 +141,9 @@ export function ProcessSheet({
           onTabChange={chooseTab}
         />
         {/* The frame the tab bodies trade places in, clipped to the pane's inner
-            radius so a body on its way in or out never crosses the pane's edge. */}
+            radius so a body or its scrollbar never crosses the corner's edge. */}
         <ProcessContentTransition
-          className="shell:grid shell:min-h-0 shell:grid-rows-[minmax(0,1fr)] rounded-b-shell-inner clip-past-pane-highlight grid-cols-[minmax(0,1fr)] overflow-clip"
+          className="shell:grid shell:min-h-0 shell:grid-rows-[minmax(0,1fr)] rounded-b-shell-inner rounded-tr-shell-inner clip-past-pane-highlight grid-cols-[minmax(0,1fr)] overflow-clip"
           finishesLeaving
         >
           <motion.div

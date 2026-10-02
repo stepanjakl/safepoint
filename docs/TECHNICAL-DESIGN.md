@@ -362,6 +362,8 @@ Finding-code comparison now agrees on all 27 reviewed lines. `invalid_order_mult
 
 Both workbenches can shift the synthetic scenario's structured timestamps to a current review time. The shift preserves their relative intervals and leaves the checked-in fixture unchanged. The policy page can switch back to the recorded fixture time or refresh its current-time anchor; the model page uses one anchor for its preview and the corresponding server run. Stable fixture IDs may still contain the original cycle date and should be read as identifiers, not current scheduling instructions. The replay application outside the workbenches continues to use its recorded dates until its own clock behavior is designed.
 
+`/workbench/explore` is the development-only entry point for reading one product across source facts, the recorded AI proposal, an optional live model proposal, independent checks, and the reviewer consequence. Its 27-product index and exact JSON disclosures preserve the complete evidence and replay for inspection; a cited source ID opens the matching validated record. It labels the recorded replay, live run, and unsaved local trial separately and compares their checks without treating one as an approval. The browser keeps the live result and trial only until product change or reload. The detailed model and policy workbenches remain available for their specialised diagnostics; the explorer adds no database, Sheet, or connector write path.
+
 ## Runtime modes
 
 ### Live sandbox

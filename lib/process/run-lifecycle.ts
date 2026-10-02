@@ -15,6 +15,7 @@ import { RUN_TRIGGER_LABELS, type ProcessStep, type RunTrigger } from './model';
 import { needsAttention, type SystemLink } from './system-links';
 
 export const RUN_STAGES = [
+  'starting',
   'reading',
   'evaluating',
   'checking',
@@ -30,6 +31,7 @@ export const RUN_STAGES = [
 export type RunStage = (typeof RUN_STAGES)[number];
 
 export const RUN_STAGE_LABELS: Record<RunStage, string> = {
+  starting: 'Starting',
   reading: 'Reading sources',
   evaluating: 'Evaluating',
   checking: 'Policy check',
@@ -94,18 +96,25 @@ export function presentRunFacts(
 /*
   Where a running stage has got to. Fixed rather than timed: the workbench
   pins each stage, so a count that moved on its own would make two views of
-  one stage disagree.
+  one stage disagree. A thread watched live ticks up to these; they are
+  where each stage rests.
 */
-export function stageProgress(stage: RunStage, facts: RunFacts) {
+export type StageProgress = { sourcesRead: number; evaluated: number };
+
+export function stageProgress(stage: RunStage, facts: RunFacts): StageProgress {
   return {
     sourcesRead:
-      stage === 'reading'
-        ? Math.ceil(facts.sources.total * 0.6)
-        : facts.sources.total,
+      stage === 'starting'
+        ? 0
+        : stage === 'reading'
+          ? Math.ceil(facts.sources.total * 0.6)
+          : facts.sources.total,
     evaluated:
-      stage === 'evaluating' || stage === 'stopped'
-        ? Math.round(facts.candidates * 0.52)
-        : facts.candidates,
+      stage === 'starting' || stage === 'reading'
+        ? 0
+        : stage === 'evaluating' || stage === 'stopped'
+          ? Math.round(facts.candidates * 0.52)
+          : facts.candidates,
   };
 }
 
@@ -141,8 +150,9 @@ export function stepsAt(
   facts: RunFacts,
   requestLabel: string,
   trigger: RunTrigger = 'schedule',
+  // A live view's counts, as they tick toward the stage's own.
+  progress: StageProgress = stageProgress(stage, facts),
 ): ProcessStep[] {
-  const progress = stageProgress(stage, facts);
   const { total, needing } = facts.sources;
   const steps: ProcessStep[] = [
     {
@@ -156,6 +166,8 @@ export function stepsAt(
           : `${RUN_TRIGGER_LABELS[trigger]}.`,
     },
   ];
+  // Requested and about to begin: nothing has started, so only the request.
+  if (stage === 'starting') return steps;
 
   steps.push(
     stage === 'reading'
@@ -353,6 +365,7 @@ export function reviewAt(
 // One polite line per stage, for the status region the thread keeps mounted:
 // a milestone, never a running count.
 export const STAGE_ANNOUNCEMENTS: Record<RunStage, string> = {
+  starting: 'Run requested. Starting.',
   reading: 'Reading sources.',
   evaluating: 'Sources read. Evaluating candidates.',
   checking: 'Candidates evaluated. Checking policy.',
