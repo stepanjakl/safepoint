@@ -22,6 +22,15 @@ function recordedSuggestion(sku: Sku): LineSuggestion {
     uncertainties: candidate.uncertainties,
     evidenceRefs: candidate.evidenceRefs,
     selfReportedCertainty: 'medium',
+    gateAssessments: candidate.gateAssessments,
+    semanticActions: candidate.proposed
+      ? [
+          'update_promotion_record',
+          'record_top_up_recommendation',
+          'schedule_storefront_promotion',
+          'queue_labels',
+        ]
+      : [],
   };
 }
 
@@ -55,7 +64,7 @@ describe('model proposal review', () => {
     expect(
       reviewLineSuggestion(replay.scenario, recordedSuggestion('ALD-0013'))
         .treatment,
-    ).toBe('review_required');
+    ).toBe('individual_approval');
     const withheld = reviewLineSuggestion(
       replay.scenario,
       recordedSuggestion('ALD-0027'),

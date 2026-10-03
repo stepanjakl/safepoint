@@ -2,6 +2,7 @@ import { APICallError } from 'ai';
 
 import { runReviewLab } from '@/lib/model-workbench/review-lab-run';
 import { labRequestSchema } from '@/lib/model-workbench/review-lab-contract';
+import { inspectConfirmedClaims } from '@/lib/promotion-release/review-lab';
 
 export const runtime = 'nodejs';
 
@@ -54,20 +55,7 @@ export async function POST(request: Request) {
       },
       { status: 400 },
     );
-  if (
-    Object.keys(parsed.data.confirmedFacts).length &&
-    (parsed.data.input.role !== 'case_evidence' ||
-      !parsed.data.input.text.trim() ||
-      Object.entries(parsed.data.confirmedFacts).some(
-        ([field, value]) =>
-          !parsed.data.confirmedClaims.some(
-            (claim) =>
-              claim.field === field &&
-              claim.value === value &&
-              parsed.data.input.text.includes(claim.quote),
-          ),
-      ))
-  )
+  if (inspectConfirmedClaims(parsed.data).length)
     return Response.json(
       {
         kind: 'error',

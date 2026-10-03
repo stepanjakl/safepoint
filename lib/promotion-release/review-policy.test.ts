@@ -21,6 +21,19 @@ function proposalFor(sku: (typeof replay.lines)[number]['sku']) {
 }
 
 describe('derived review diagnostics', () => {
+  it('does not describe channel dates as corrected when no release terms were proposed', () => {
+    const proposal = proposalFor('ALD-0013');
+    expect(deriveFindingCodes(replay.scenario, proposal)).toContain(
+      'channel_dates_corrected',
+    );
+    expect(
+      deriveFindingCodes(replay.scenario, {
+        ...proposal,
+        proposedPricePence: null,
+        proposedTopUpUnits: null,
+      }),
+    ).not.toContain('channel_dates_corrected');
+  });
   it('matches all 27 reviewed gate obligations and finding codes', () => {
     for (const line of replay.lines) {
       const proposal = proposalFor(line.sku);

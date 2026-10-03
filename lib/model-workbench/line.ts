@@ -2,6 +2,11 @@ import { z } from 'zod';
 
 import { getLineFacts } from '@/lib/promotion-release/line-policy';
 import {
+  deriveGateObligations,
+  gateAssessmentsSchema,
+  localSemanticActionsSchema,
+} from '@/lib/promotion-release/review-policy';
+import {
   SCENARIO_ID,
   skuSchema,
   type ScenarioEvidencePack,
@@ -23,6 +28,8 @@ export const lineSuggestionSchema = z
       .min(1)
       .max(20),
     selfReportedCertainty: certaintySchema,
+    gateAssessments: gateAssessmentsSchema,
+    semanticActions: localSemanticActionsSchema,
   })
   .superRefine((suggestion, context) => {
     const proposes =
@@ -38,6 +45,17 @@ export const lineSuggestionSchema = z
           'Release and adjust need a price and top-up; hold and exclude need neither.',
       });
     }
+    if (
+      proposes
+        ? suggestion.semanticActions.length === 0
+        : suggestion.semanticActions.length !== 0
+    )
+      context.addIssue({
+        code: 'custom',
+        path: ['semanticActions'],
+        message:
+          'Release and adjust need permitted actions; hold and exclude must not propose actions.',
+      });
   });
 
 export type LineSuggestion = z.infer<typeof lineSuggestionSchema>;
@@ -62,7 +80,7 @@ export function buildLinePreview(
   } = getLineFacts(scenario, sku);
 
   const input = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     scenarioId: SCENARIO_ID,
     fixtureVersion: scenario.promotionBrief.fixtureVersion,
     sku,
@@ -153,6 +171,17 @@ export function buildLinePreview(
       claim: claim ?? null,
     })),
     localText: localText ?? null,
+    gateObligations: deriveGateObligations(scenario, {
+      sku,
+      proposedPricePence: null,
+      proposedTopUpUnits: null,
+    }),
+    permittedActions: [
+      'update_promotion_record',
+      'record_top_up_recommendation',
+      'schedule_storefront_promotion',
+      'queue_labels',
+    ],
   };
 
   const sources = [
@@ -210,7 +239,14 @@ export function inspectLineSuggestion(
     ...preview.input.notes.map(({ evidenceId }) => evidenceId),
     ...(preview.input.localText ? [preview.input.localText.evidenceId] : []),
   ]);
-  const unknownRefs = parsed.data.evidenceRefs.filter((id) => !known.has(id));
+  const unknownRefs = [
+    ...new Set([
+      ...parsed.data.evidenceRefs,
+      ...parsed.data.gateAssessments.flatMap(
+        ({ evidenceRefs }) => evidenceRefs,
+      ),
+    ]),
+  ].filter((id) => !known.has(id));
   if (unknownRefs.length > 0) {
     issues.push(`Unknown evidence references: ${unknownRefs.join(', ')}.`);
   }

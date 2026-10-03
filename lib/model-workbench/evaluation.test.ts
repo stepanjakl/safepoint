@@ -12,8 +12,11 @@ import {
   evaluateModelCase,
   evaluationCases,
   evaluationReportSchema,
+  EVALUATION_SUITE_VERSION,
+  evaluationReportCaseCount,
 } from './evaluation';
 import { labResponseSchema } from './review-lab-contract';
+import type { LineSuggestion } from './line';
 
 const reviewAt = '2030-05-01T12:00:00.000Z';
 const model = 'gemini-3.5-flash-lite';
@@ -166,7 +169,7 @@ describe('synthetic model evaluations', () => {
   it('records a model miss even when independent checks block the proposed release', () => {
     const test = getCase('missing_stock');
     const request = buildEvaluationRequest(test, model, reviewAt);
-    const suggestion = {
+    const suggestion: LineSuggestion = {
       sku: test.sku,
       recommendation: 'release',
       proposedPricePence: 150,
@@ -175,6 +178,12 @@ describe('synthetic model evaluations', () => {
       uncertainties: ['Stock unavailable.'],
       evidenceRefs: ['ev-supply-0009'],
       selfReportedCertainty: 'high',
+      gateAssessments:
+        loadReviewedReplay().proposal.candidates.find(
+          ({ sku }) => sku === test.sku,
+        )?.gateAssessments ?? [],
+      semanticActions:
+        test.sku === 'ALD-0027' ? [] : ['update_promotion_record'],
     };
     const checked = evaluateLabLine({
       scenario,
@@ -234,10 +243,263 @@ describe('synthetic model evaluations', () => {
     ).toBe(false);
   });
 
+  it('withholds an unresolved amount while requiring the uncontested allocation and uncertainty', () => {
+    const claims = [
+      {
+        field: 'confirmedAdditionalAllocationUnits',
+        value: 60,
+        quote: 'additional allocation of 60 units',
+      },
+    ];
+    const output = {
+      claims,
+      uncertainties: [
+        'The two current records disagree on funding; neither takes precedence.',
+      ],
+    };
+    expect(score('conflicting_supplier', output).outcome).toBe('passed');
+    expect(
+      score('conflicting_supplier', { ...output, uncertainties: [] }).outcome,
+    ).toBe('failed');
+    for (const value of [8, 12, 10])
+      expect(
+        score('conflicting_supplier', {
+          ...output,
+          claims: [
+            ...claims,
+            {
+              field: 'fundingPencePerUnit',
+              value,
+              quote: `${value} pence per unit`,
+            },
+          ],
+        }).outcome,
+      ).toBe('failed');
+    expect(
+      score('negated_supplier', {
+        claims: [
+          {
+            field: 'fundingStatus',
+            value: 'not_offered',
+            quote: 'will not offer any funding',
+          },
+          {
+            field: 'confirmedAdditionalAllocationUnits',
+            value: 0,
+            quote: '0 units',
+          },
+        ],
+        uncertainties: [],
+      }).outcome,
+    ).toBe('passed');
+    expect(
+      score('negated_supplier', {
+        claims: [
+          { field: 'fundingStatus', value: 'confirmed', quote: 'funding' },
+        ],
+        uncertainties: [],
+      }).outcome,
+    ).toBe('failed');
+  });
+
+  it('checks amendment identity and conditional applicability instead of accepting another threshold rule', () => {
+    const amended = getCase('amended_margin_policy');
+    const scoped = getCase('scoped_margin_policy');
+    const rule = {
+      code: 'minimum_margin',
+      title: 'Amended margin',
+      source: 'Policy excerpt',
+      failure: 'block',
+      emitPass: true,
+      assert: {
+        mode: 'all',
+        clauses: [
+          { left: 'marginPercent', operator: 'gte', right: { value: 12 } },
+        ],
+      },
+    };
+    const output = {
+      ruleJson: JSON.stringify(rule),
+      reason: 'Replace the old rule.',
+      sourceQuote: amended.text,
+    };
+    expect(score(amended.id, output).outcome).toBe('passed');
+    expect(
+      score(amended.id, {
+        ...output,
+        ruleJson: JSON.stringify({ ...rule, code: 'custom_other_margin' }),
+      }).outcome,
+    ).toBe('failed');
+    const scopedRule = {
+      ...rule,
+      code: 'custom_order_margin',
+      when: {
+        mode: 'all',
+        clauses: [{ left: 'topUpUnits', operator: 'gt', right: { value: 0 } }],
+      },
+      assert: {
+        mode: 'all',
+        clauses: [
+          { left: 'marginPercent', operator: 'gte', right: { value: 22 } },
+        ],
+      },
+    };
+    const scopedOutput = {
+      ...output,
+      ruleJson: JSON.stringify(scopedRule),
+      sourceQuote: scoped.text,
+    };
+    expect(score(scoped.id, scopedOutput).outcome).toBe('passed');
+    expect(
+      score(scoped.id, {
+        ...scopedOutput,
+        ruleJson: JSON.stringify({ ...scopedRule, when: undefined }),
+      }).outcome,
+    ).toBe('failed');
+    expect(
+      score(amended.id, {
+        ...output,
+        ruleJson: JSON.stringify({ ...rule, failure: 'attention' }),
+      }).outcome,
+    ).toBe('failed');
+  });
+
+  it('preserves seven-case reports while requiring all sixteen cases for a completed suite 3 report', () => {
+    const records = evaluationCases.map((test) =>
+      evaluateModelCase(
+        test,
+        buildEvaluationRequest(test, model, reviewAt),
+        { kind: 'error', message: 'Test provider failure.' },
+        1,
+      ),
+    );
+    const base = {
+      kind: 'model_evaluation',
+      model,
+      reviewAt,
+      startedAt: reviewAt,
+      finishedAt: reviewAt,
+      state: 'completed',
+    };
+    const legacy = evaluationReportSchema.parse({
+      ...base,
+      suiteVersion: 1,
+      records: records.slice(0, 7),
+    });
+    expect(evaluationReportCaseCount(legacy)).toBe(7);
+    expect(
+      evaluationReportSchema.safeParse({ ...legacy, records }).success,
+    ).toBe(false);
+    expect(
+      evaluationReportSchema.safeParse({
+        ...legacy,
+        suiteVersion: EVALUATION_SUITE_VERSION,
+      }).success,
+    ).toBe(false);
+    const current = evaluationReportSchema.parse({
+      ...base,
+      suiteVersion: EVALUATION_SUITE_VERSION,
+      records,
+    });
+    expect(evaluationReportCaseCount(current)).toBe(16);
+    expect(
+      evaluationReportSchema.safeParse({ ...current, suiteVersion: 4 }).success,
+    ).toBe(false);
+  });
+
+  it('keeps historical proposal responses readable without accepting their missing gates in current reports', () => {
+    const test = getCase('ready_candidate');
+    const request = buildEvaluationRequest(test, model, reviewAt);
+    const candidate = loadReviewedReplay().proposal.candidates.find(
+      ({ sku }) => sku === test.sku,
+    );
+    if (!candidate) throw new Error('Missing candidate.');
+    const suggestion: LineSuggestion = {
+      sku: test.sku,
+      recommendation: 'release',
+      proposedPricePence: 200,
+      proposedTopUpUnits: 0,
+      rationale: 'Existing supply covers demand.',
+      uncertainties: [],
+      evidenceRefs: ['ev-supply-0004'],
+      selfReportedCertainty: 'medium',
+      gateAssessments: candidate.gateAssessments,
+      semanticActions: ['update_promotion_record'],
+    };
+    const checked = evaluateLabLine({
+      scenario,
+      proposal: suggestion,
+      rules: seedReviewRules,
+    });
+    const response = labResponseSchema.parse({
+      ...responseFor(test, suggestion),
+      suggestion,
+      review: { ...checked, treatment: 'individual_approval' },
+      snapshot: captureLocalReview({
+        scenario,
+        proposal: suggestion,
+        rules: seedReviewRules,
+        input: request.input,
+      }),
+    });
+    if (response.kind !== 'result' || !response.suggestion || !response.review)
+      throw new Error('Missing response.');
+    const legacySuggestion = Object.fromEntries(
+      Object.entries(response.suggestion).filter(
+        ([key]) => !['gateAssessments', 'semanticActions'].includes(key),
+      ),
+    );
+    const legacyReview = Object.fromEntries(
+      Object.entries(response.review).filter(
+        ([key]) => !['findings', 'gateReviews'].includes(key),
+      ),
+    );
+    const record = {
+      ...evaluateModelCase(test, request, response, 1),
+      response: {
+        ...response,
+        output: legacySuggestion,
+        suggestion: legacySuggestion,
+        review: legacyReview,
+      },
+    };
+    const records = evaluationCases.map((test) =>
+      evaluateModelCase(
+        test,
+        buildEvaluationRequest(test, model, reviewAt),
+        { kind: 'error', message: 'Synthetic call failure' },
+        1,
+      ),
+    );
+    const historical = evaluationReportSchema.parse({
+      kind: 'model_evaluation',
+      suiteVersion: 2,
+      model,
+      reviewAt,
+      startedAt: reviewAt,
+      finishedAt: reviewAt,
+      state: 'completed',
+      records: records
+        .slice(0, 12)
+        .map((item) => (item.caseId === test.id ? record : item)),
+    });
+    expect(evaluationReportCaseCount(historical)).toBe(12);
+    expect(historical.records[4]?.response).toEqual(record.response);
+    expect(
+      evaluationReportSchema.safeParse({
+        ...historical,
+        suiteVersion: EVALUATION_SUITE_VERSION,
+        records: records.map((item) =>
+          item.caseId === test.id ? record : item,
+        ),
+      }).success,
+    ).toBe(false);
+  });
+
   it('accepts either supporting withdrawal source while rejecting an unrelated citation', () => {
     const test = getCase('withdrawn_candidate');
     const request = buildEvaluationRequest(test, model, reviewAt);
-    const suggestion = {
+    const suggestion: LineSuggestion = {
       sku: test.sku,
       recommendation: 'exclude',
       proposedPricePence: null,
@@ -246,6 +508,12 @@ describe('synthetic model evaluations', () => {
       uncertainties: [],
       evidenceRefs: ['ev-shortlist-0027', 'ev-note-pizza-withdrawal'],
       selfReportedCertainty: 'high',
+      gateAssessments:
+        loadReviewedReplay().proposal.candidates.find(
+          ({ sku }) => sku === test.sku,
+        )?.gateAssessments ?? [],
+      semanticActions:
+        test.sku === 'ALD-0027' ? [] : ['update_promotion_record'],
     };
     const checked = evaluateLabLine({
       scenario,

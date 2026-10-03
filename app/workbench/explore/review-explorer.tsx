@@ -15,7 +15,10 @@ import {
   type LinePolicyCheck,
   type LinePolicyProposal,
 } from '@/lib/promotion-release/line-policy';
-import { deriveFindingCodes } from '@/lib/promotion-release/review-policy';
+import {
+  deriveFindingCodes,
+  reviewTreatment,
+} from '@/lib/promotion-release/review-policy';
 import type {
   PolicyEvaluationReplay,
   PromotionReleasePlan,
@@ -260,6 +263,8 @@ export function ReviewExplorer({
             (policy.verdict === 'blocked') ===
             (baseline.eligibility === 'blocked'),
           gateObligations: evaluated.gateObligations,
+          findings: evaluated.findings,
+          gateReviews: evaluated.gateReviews,
         };
       }),
     [
@@ -346,17 +351,15 @@ export function ReviewExplorer({
             policy: selected.policy,
             findingCodes: selected.findingCodes,
             gateObligations: selected.gateObligations,
+            findings: selected.findings,
+            gateReviews: selected.gateReviews,
           };
   const savedSimulation = localSimulationSchema.safeParse(latestTrial);
   const activeProposal: LinePolicyProposal =
     availableComparison === 'trial' && trial
       ? trial
       : availableComparison === 'model' && live?.suggestion
-        ? {
-            sku: selectedSku,
-            proposedPricePence: live.suggestion.proposedPricePence,
-            proposedTopUpUnits: live.suggestion.proposedTopUpUnits,
-          }
+        ? live.suggestion
         : proposalFor(selectedCandidate);
   const effectPreview = previewLocalEffects(scenario, activeProposal);
   const currentRecommendation =
@@ -380,7 +383,7 @@ export function ReviewExplorer({
     ? 'No release proposed'
     : active.policy.verdict === 'blocked'
       ? 'Cannot release these values'
-      : active.findingCodes.includes('large_price_change')
+      : reviewTreatment(active) === 'individual_approval'
         ? 'Individual approval required'
         : active.policy.verdict === 'review_required'
           ? 'Human review required'
@@ -752,36 +755,46 @@ export function ReviewExplorer({
           </aside>
 
           <div className="grid min-w-0 gap-5 lg:col-span-3">
-            <ReviewLabSetup
-              key={`${selectedSku}:${resetCount}`}
-              scenario={scenario}
-              comparisonScenario={effectiveScenario}
-              proposal={proposal}
-              sku={selectedSku}
-              reviewAt={reviewAt}
-              model={selectedModel}
-              onModel={(model) => {
-                cancelModel();
-                setSelectedModel(model);
-                setModelData(null);
-                setComparison('recorded');
-              }}
-              disabled={running || evaluationBusy}
-              onBusy={setSetupBusy}
-              keyConfigured={keyConfigured}
-              input={labInput}
-              onInput={changeLabInput}
-              activeRules={activeRules}
-              onActivate={activateRules}
-              confirmedFacts={
-                confirmedSku === selectedSku ? confirmedFacts : {}
-              }
-              confirmedClaims={
-                confirmedSku === selectedSku ? confirmedClaims : []
-              }
-              onConfirm={confirmFacts}
-              onStatus={setStatus}
-            />
+            <details className="text-meta min-w-0">
+              <summary className="border-rule-default rounded-control focus-visible:outline-action cursor-pointer border p-3 focus-visible:outline-2">
+                Prepare inputs and review rules · {activeRules.rules.length}{' '}
+                active rules ·{' '}
+                {confirmedSku === selectedSku ? confirmedClaims.length : 0}{' '}
+                accepted local facts
+              </summary>
+              <div className="mt-3">
+                <ReviewLabSetup
+                  key={`${selectedSku}:${resetCount}`}
+                  scenario={scenario}
+                  comparisonScenario={effectiveScenario}
+                  proposal={proposal}
+                  sku={selectedSku}
+                  reviewAt={reviewAt}
+                  model={selectedModel}
+                  onModel={(model) => {
+                    cancelModel();
+                    setSelectedModel(model);
+                    setModelData(null);
+                    setComparison('recorded');
+                  }}
+                  disabled={running || evaluationBusy}
+                  onBusy={setSetupBusy}
+                  keyConfigured={keyConfigured}
+                  input={labInput}
+                  onInput={changeLabInput}
+                  activeRules={activeRules}
+                  onActivate={activateRules}
+                  confirmedFacts={
+                    confirmedSku === selectedSku ? confirmedFacts : {}
+                  }
+                  confirmedClaims={
+                    confirmedSku === selectedSku ? confirmedClaims : []
+                  }
+                  onConfirm={confirmFacts}
+                  onStatus={setStatus}
+                />
+              </div>
+            </details>
             <ModelEvaluation
               model={selectedModel}
               reviewAt={reviewAt}
@@ -1199,6 +1212,33 @@ export function ReviewExplorer({
                   value={`${active.policy.marginPercent}%`}
                 />
               </dl>
+              <div className="grid gap-2" aria-label="Approval consequences">
+                {active.findings.map((finding) => (
+                  <div
+                    key={finding.id}
+                    className="border-rule-default rounded-control text-meta grid gap-1 border p-3"
+                  >
+                    <strong>
+                      {readable(finding.code)} ·{' '}
+                      {readable(finding.approvalConsequence)}
+                    </strong>
+                    <p>{finding.explanation}</p>
+                    <details>
+                      <summary className="cursor-pointer">
+                        Affected fields and supporting evidence
+                      </summary>
+                      <p>{finding.affectedFields.join(' · ')}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {finding.evidenceRefs.map((id) => (
+                          <Button key={id} onPress={() => showEvidence(id)}>
+                            Show source {sourceNames.get(id) ?? id}
+                          </Button>
+                        ))}
+                      </div>
+                    </details>
+                  </div>
+                ))}
+              </div>
               {blocking.length + attention.length > 0 ? (
                 <CheckList
                   checks={[...blocking, ...attention]}
@@ -1224,7 +1264,7 @@ export function ReviewExplorer({
               </details>
               <details className="text-meta min-w-0">
                 <summary className="cursor-pointer">
-                  Seven gate obligations and finding codes
+                  Seven gate results and finding codes
                 </summary>
                 <p className="mt-3">
                   Finding codes:{' '}
@@ -1246,8 +1286,16 @@ export function ReviewExplorer({
                       </tr>
                     </thead>
                     <tbody>
-                      {active.gateObligations.map(
-                        ({ gate, obligation, reason }) => (
+                      {active.gateReviews.map(
+                        ({
+                          gate,
+                          obligation,
+                          result,
+                          explanation,
+                          assessmentSource,
+                          modelResult,
+                          trustedResult,
+                        }) => (
                           <tr
                             key={gate}
                             className="border-rule-default border-b"
@@ -1256,9 +1304,15 @@ export function ReviewExplorer({
                               {readable(gate)}
                             </th>
                             <td className="py-2 pr-3">
-                              {readable(obligation)}
+                              {readable(obligation)} · {readable(result)}
                             </td>
-                            <td className="py-2">{reason}</td>
+                            <td className="py-2">
+                              Trusted checks: {readable(trustedResult)}. Model:{' '}
+                              {modelResult
+                                ? readable(modelResult)
+                                : 'not supplied'}
+                              . {readable(assessmentSource)} · {explanation}
+                            </td>
                           </tr>
                         ),
                       )}
@@ -1295,6 +1349,13 @@ export function ReviewExplorer({
                 Simulation changes an in-memory copy only. It never writes a
                 database, Sheet, or storefront.
               </p>
+              {reviewTreatment(active) === 'individual_approval' ? (
+                <p className="text-meta">
+                  Simulate approval is your individual approval of this
+                  candidate and these exact changes. Activating a rule does not
+                  approve this case.
+                </p>
+              ) : null}
               <details className="text-meta" open>
                 <summary className="cursor-pointer">
                   Permitted changes · simulation preview
@@ -1331,6 +1392,12 @@ export function ReviewExplorer({
                     <p className="text-meta font-semibold">
                       Latest local simulation · {savedSimulation.data.sku} ·{' '}
                       {savedSimulation.data.simulatedAt}
+                    </p>
+                    <p className="text-meta text-muted">
+                      Checker:{' '}
+                      {savedSimulation.data.checkerVersion ??
+                        'earlier checker · historical record'}
+                      .
                     </p>
                     <p className="text-meta text-muted">
                       Preflight compared the captured fixture state. Proposed

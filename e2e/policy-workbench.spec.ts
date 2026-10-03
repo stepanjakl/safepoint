@@ -36,8 +36,7 @@ test('policy workbench compares all lines and evaluates a keyboard trial', async
   await page.getByRole('button', { name: 'Evaluate trial' }).click();
   await expect(
     page.getByText(
-      'Confirmed-funding margin 5.3% = (190p price − 190p cost + 10p confirmed funding) ÷ 190p; floor 15%.',
-      { exact: true },
+      /^Confirmed-funding margin 5.3% = \(190p price − 190p cost \+ 10p confirmed funding\) ÷ 190p; Failed: marginPercent .* minimumMarginPercent 15/,
     ),
   ).toBeVisible();
 
@@ -71,10 +70,11 @@ test('policy workbench compares all lines and evaluates a keyboard trial', async
     page.getByRole('status').getByText('ALD-0023 trial evaluated: blocked.'),
   ).toBeVisible();
   await expect(
-    page.getByText(
-      'Forecast plus safety stock needs 660 units; 420 are covered before top-up. Shortfall 240, proposed top-up 160.',
-      { exact: true },
-    ),
+    page
+      .getByRole('list', { name: 'Current approval consequences' })
+      .getByText(
+        /^Forecast plus safety stock needs 660 units; 420 are covered before top-up. Shortfall 240, proposed top-up 160. Failed:/,
+      ),
   ).toBeVisible();
 
   await page.getByRole('button', { name: 'Restore reviewed values' }).click();

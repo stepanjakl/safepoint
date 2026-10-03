@@ -104,7 +104,7 @@ export function Tooltip({
     >
       <Focusable>{children}</Focusable>
       <AriaTooltip
-        className="app-tooltip group"
+        className="app-tooltip ground-tooltip group"
         offset={offset}
         containerPadding={containerPadding}
         triggerRef={triggerRef}

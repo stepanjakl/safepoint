@@ -3,7 +3,14 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
 import { labRequestSchema } from '../lib/model-workbench/review-lab-contract';
-import { localTrialSchema } from '../lib/promotion-release/review-lab';
+import {
+  localTrialSchema,
+  evaluateLabLine,
+} from '../lib/promotion-release/review-lab';
+import {
+  gateSchema,
+  scenarioEvidencePackSchema,
+} from '../lib/promotion-release/schemas';
 import { seedReviewRules } from '../lib/promotion-release/review-rules';
 
 test.beforeEach(async ({ page, colorScheme }) => {
@@ -24,6 +31,7 @@ test('reports unavailable browser storage while allowing an in-memory experiment
     }),
   );
   await page.goto('/workbench/explore?sku=ALD-0004');
+  await page.getByText(/^Prepare inputs and review rules/).click();
   await expect(page.locator('#main').getByRole('alert')).toContainText(
     'Browser storage is unavailable',
   );
@@ -72,6 +80,7 @@ test('conflicting extracted facts require confirmation and retain original evide
     });
   });
   await page.goto('/workbench/explore?sku=ALD-0001');
+  await page.getByText(/^Prepare inputs and review rules/).click();
   await page
     .getByRole('textbox', { name: 'Optional text', exact: true })
     .fill('Funding is not yet confirmed.');
@@ -102,6 +111,7 @@ test('conflicting extracted facts require confirmation and retain original evide
     '"fundingStatus": "confirmed"',
   );
   await page.reload();
+  await page.getByText(/^Prepare inputs and review rules/).click();
   await expect(page.getByText('Confirmed facts · ALD-0001 only')).toBeVisible();
   await expect(
     page.getByText(/original confirmed → accepted unverified/),
@@ -147,6 +157,7 @@ test('model rule suggestions stay drafts; validation, impact reasons and keyboar
     });
   });
   await page.goto('/workbench/explore?sku=ALD-0004');
+  await page.getByText(/^Prepare inputs and review rules/).click();
   await page
     .getByRole('combobox', { name: 'Optional text role' })
     .selectOption('policy_excerpt');
@@ -187,6 +198,7 @@ test('model rule suggestions stay drafts; validation, impact reasons and keyboar
     'activated locally for all 27',
   );
   await page.reload();
+  await page.getByText(/^Prepare inputs and review rules/).click();
   await expect(
     page.getByText('Require funded margin (%) is at least 30.'),
   ).toBeVisible();
@@ -200,6 +212,7 @@ test('previews and exports only simulated effects and persists the latest trial 
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/workbench/explore?sku=ALD-0004');
+  await page.getByText(/^Prepare inputs and review rules/).click();
   await expect(
     page.getByText('Permitted changes · simulation preview'),
   ).toBeVisible();
@@ -237,6 +250,7 @@ test('previews and exports only simulated effects and persists the latest trial 
     )?.channels,
   ).toEqual(snapshot.effects.slice(0, 3).map((effect) => effect.before));
   await page.reload();
+  await page.getByText(/^Prepare inputs and review rules/).click();
   await expect(
     page.getByText(/Latest local simulation · ALD-0004/),
   ).toBeVisible();
@@ -251,4 +265,205 @@ test('previews and exports only simulated effects and persists the latest trial 
   await expect(
     page.getByText(/Latest local simulation · ALD-0004/),
   ).toHaveCount(0);
+});
+
+test('status-only funding cannot count an old unverified amount', async ({
+  page,
+}) => {
+  await page.route('**/api/dev/review-lab', async (route) => {
+    const request = labRequestSchema.parse(route.request().postDataJSON());
+    await route.fulfill({
+      json: {
+        kind: 'result',
+        stage: 'extract',
+        model: request.model,
+        runId: 'funding-pair',
+        durationMs: 1,
+        systemInstructions: 'Synthetic constraints',
+        modelInput: request.input,
+        output: {
+          claims: [
+            {
+              field: 'fundingStatus',
+              value: 'confirmed',
+              quote: 'Funding is confirmed',
+            },
+            {
+              field: 'fundingPencePerUnit',
+              value: 100,
+              quote: '100 pence per unit',
+            },
+          ],
+          uncertainties: [],
+        },
+        suggestion: null,
+        review: null,
+        snapshot: null,
+        issues: [],
+        usage: null,
+      },
+    });
+  });
+  await page.goto('/workbench/explore?sku=ALD-0025');
+  const setup = page.getByText(/^Prepare inputs and review rules/);
+  await setup.focus();
+  await page.keyboard.press('Enter');
+  await expect(setup).toBeFocused();
+  await page
+    .getByRole('textbox', { name: 'Optional text', exact: true })
+    .fill('Funding is confirmed at 100 pence per unit.');
+  await page.getByRole('button', { name: 'Extract supplier facts' }).click();
+  const confirm = page
+    .getByLabel('Extracted supplier claims')
+    .getByRole('button', { name: 'Confirm for local trial' });
+  await confirm.nth(0).click();
+  await expect(
+    page.getByText(/Cannot evaluate confirmed funding/).first(),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/Confirmed-funding margin 9.2%/).first(),
+  ).toBeVisible();
+  await confirm.nth(1).focus();
+  await page.keyboard.press('Enter');
+  await expect(confirm.nth(1)).toBeFocused();
+  await expect(page.getByText(/Cannot evaluate confirmed funding/)).toHaveCount(
+    0,
+  );
+  await expect(
+    page.getByText(/Confirmed-funding margin 29.2%/).first(),
+  ).toBeAttached();
+  await page.reload();
+  await setup.click();
+  await expect(
+    page.getByText(/original unverified → accepted confirmed/),
+  ).toBeVisible();
+  await expect(page.getByText(/original 100 → accepted 100/)).toBeVisible();
+});
+
+test('relaxation requires an explicit review and cannot remove protected checks', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.goto('/workbench/explore?sku=ALD-0004');
+  await page.getByText(/^Prepare inputs and review rules/).click();
+  const editor = page.getByRole('textbox', { name: 'Draft rule JSON' });
+  const rules = structuredClone(seedReviewRules);
+  const clause = rules.rules[0]?.assert.clauses[0];
+  if (!clause) throw new Error('Missing margin clause.');
+  clause.right = { value: 12 };
+  await editor.fill(JSON.stringify(rules));
+  await expect(page.getByText(/minimum_margin: loosens/)).toBeVisible();
+  const activate = page.getByRole('button', {
+    name: 'Activate reviewed rules locally',
+  });
+  await expect(activate).toBeDisabled();
+  const acknowledge = page.getByRole('checkbox', {
+    name: /I reviewed the relaxation/,
+  });
+  await acknowledge.focus();
+  await page.keyboard.press('Space');
+  expect(
+    await acknowledge.evaluate(
+      (element) => getComputedStyle(element).outlineWidth,
+    ),
+  ).toBe('2px');
+  expect(
+    await acknowledge.evaluate(
+      (element) => getComputedStyle(element).outlineStyle,
+    ),
+  ).toBe('solid');
+  await expect(activate).toBeEnabled();
+  await editor.fill(
+    JSON.stringify({
+      ...rules,
+      rules: rules.rules.filter(({ code }) => code !== 'stock_coverage'),
+    }),
+  );
+  await expect(activate).toBeDisabled();
+  await expect(
+    page.getByText(/Protected rule stock_coverage is required/),
+  ).toBeVisible();
+  await editor.fill(JSON.stringify(rules));
+  await acknowledge.check();
+  await activate.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('status').first()).toContainText(
+    'activated locally',
+  );
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(320);
+});
+
+test('an unchecked model gate blocks simulated approval and explains both assessments', async ({
+  page,
+}) => {
+  await page.goto('/workbench/explore?sku=ALD-0002');
+  await page.getByRole('button', { name: 'Evaluate trial' }).click();
+  const source = scenarioEvidencePackSchema.parse(
+    await page.evaluate(
+      () =>
+        JSON.parse(localStorage.getItem('safepoint.review-lab.v1') ?? '{}')
+          .latestTrial.sourceSnapshot,
+    ),
+  );
+  await page.route('**/api/dev/review-lab', async (route) => {
+    const request = labRequestSchema.parse(route.request().postDataJSON());
+    const suggestion = {
+      sku: request.sku,
+      recommendation: 'release',
+      proposedPricePence: 200,
+      proposedTopUpUnits: 156,
+      rationale:
+        'Supported quantities, but the financial gate was not assessed.',
+      uncertainties: ['Financial review remains unchecked.'],
+      evidenceRefs: ['ev-catalogue-0002'],
+      selfReportedCertainty: 'high',
+      semanticActions: ['update_promotion_record' as const],
+      gateAssessments: gateSchema.options.map((gate) => ({
+        gate,
+        result:
+          gate === 'financial' ? ('not_checked' as const) : ('passed' as const),
+        explanation: 'Synthetic model gate assessment.',
+        evidenceRefs: ['ev-catalogue-0002'],
+      })),
+    };
+    const evaluated = evaluateLabLine({
+      scenario: source,
+      proposal: suggestion,
+      rules: request.rules,
+    });
+    await route.fulfill({
+      json: {
+        kind: 'result',
+        stage: 'propose',
+        model: request.model,
+        runId: 'unchecked-gate',
+        durationMs: 1,
+        systemInstructions: 'Fixed constraints',
+        modelInput: request.input,
+        output: suggestion,
+        suggestion,
+        review: { ...evaluated, treatment: 'blocked' },
+        snapshot: null,
+        issues: [],
+        usage: null,
+      },
+    });
+  });
+  await page
+    .getByRole('button', { name: 'Run live model', exact: true })
+    .click();
+  await expect(
+    page.getByRole('heading', { name: 'Cannot release these values' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Simulate approval' }),
+  ).toBeDisabled();
+  await page
+    .getByText('Seven gate results and finding codes', { exact: true })
+    .click();
+  await expect(
+    page.getByText(/Trusted checks: passed. Model: not checked/),
+  ).toBeVisible();
 });

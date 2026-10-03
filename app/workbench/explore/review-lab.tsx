@@ -19,6 +19,7 @@ import {
 } from '@/lib/promotion-release/review-lab';
 import {
   describeRule,
+  describeRuleChanges,
   reviewRuleSetSchema,
   type ReviewRuleSet,
 } from '@/lib/promotion-release/review-rules';
@@ -27,7 +28,7 @@ import type {
   ScenarioEvidencePack,
   Sku,
 } from '@/lib/promotion-release/schemas';
-import { evaluateLinePolicy } from '@/lib/promotion-release/line-policy';
+import { evaluateLabLine } from '@/lib/promotion-release/review-lab';
 
 import {
   labResponseSchema,
@@ -98,6 +99,9 @@ export function ReviewLabSetup({
   const [claims, setClaims] = useState<ClaimDraft[]>([]);
   const [uncertainties, setUncertainties] = useState<string[]>([]);
   const [editedJson, setRuleJson] = useState<string | null>(null);
+  const [acknowledgedDraft, setAcknowledgedDraft] = useState<string | null>(
+    null,
+  );
   const ruleJson = editedJson ?? JSON.stringify(activeRules, null, 2);
   const requestController = useRef<AbortController | null>(null);
   useEffect(
@@ -134,12 +138,30 @@ export function ReviewLabSetup({
     }
   }, [ruleJson]);
   const draftRules = draft?.success ? draft.data : null;
+  const ruleChanges = draftRules
+    ? describeRuleChanges(
+        activeRules,
+        draftRules,
+        comparisonScenario.policyRules,
+      )
+    : [];
+  const requiresAcknowledgement = ruleChanges.some(
+    ({ direction }) => direction === 'loosens' || direction === 'changed',
+  );
   const differences = useMemo(() => {
     if (!draftRules) return [];
     return proposal.candidates.flatMap((candidate) => {
       const line = proposalFor(candidate);
-      const before = evaluateLinePolicy(comparisonScenario, line, activeRules);
-      const after = evaluateLinePolicy(comparisonScenario, line, draftRules);
+      const before = evaluateLabLine({
+        scenario: comparisonScenario,
+        proposal: line,
+        rules: activeRules,
+      }).policy;
+      const after = evaluateLabLine({
+        scenario: comparisonScenario,
+        proposal: line,
+        rules: draftRules,
+      }).policy;
       const beforeSummary = before.checks
         .map(({ code, status }) => `${code}:${status}`)
         .sort()
@@ -314,6 +336,17 @@ export function ReviewLabSetup({
       value: next[claim.field],
     });
     onConfirm(parsed.data, accepted);
+    if (
+      parsed.data.fundingStatus === 'confirmed' &&
+      parsed.data.fundingPencePerUnit === undefined &&
+      scenario.supplierTerms.records.find((record) => record.sku === sku)
+        ?.fundingStatus !== 'confirmed'
+    ) {
+      onStatus(
+        'Funding status accepted; confirm the amount before confirmed funding can be used.',
+      );
+      return;
+    }
     onStatus(
       `${claim.field} confirmed for the local ${sku} trial. The original source remains visible.`,
     );
@@ -418,6 +451,11 @@ export function ReviewLabSetup({
           Case evidence may propose supplier facts for confirmation. A policy
           excerpt may suggest a rule. Background context informs the proposal
           only.
+        </p>
+        <p className="text-meta text-muted">
+          To confirm previously unverified funding, confirm both its status and
+          its amount from the pasted evidence. A status-only claim never
+          confirms the amount in the original record.
         </p>
         {input.role === 'case_evidence' && input.text.trim() ? (
           <Button
@@ -545,6 +583,11 @@ export function ReviewLabSetup({
             Edit JSON or request one model suggestion. The preview compares the
             draft with the current rules; only Activate changes the checker.
           </p>
+          <p className="text-meta text-muted">
+            Protected safeguards keep all four core checks and their
+            consequences. Margin and price-change thresholds are editable
+            business policy; supplier coverage and order terms stay enforced.
+          </p>
         </div>
         <ul className="grid gap-2 sm:grid-cols-2">
           {activeRules.rules.map((rule) => (
@@ -595,7 +638,10 @@ export function ReviewLabSetup({
             aria-describedby="lab-rules-validation"
             disabled={Boolean(busy) || disabled}
             value={ruleJson}
-            onChange={(event) => setRuleJson(event.target.value)}
+            onChange={(event) => {
+              setRuleJson(event.target.value);
+              setAcknowledgedDraft(null);
+            }}
           />
         </label>
         <div id="lab-rules-validation">
@@ -637,15 +683,52 @@ export function ReviewLabSetup({
             </div>
           )}
         </div>
+        {draftRules && ruleChanges.length ? (
+          <div
+            className="text-meta grid gap-2"
+            aria-label="Rule change direction"
+          >
+            <ul className="grid gap-1">
+              {ruleChanges.map((change) => (
+                <li key={change.code}>
+                  {change.code}: {change.direction} · {change.explanation}
+                </li>
+              ))}
+            </ul>
+            {requiresAcknowledgement ? (
+              <label className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  className="focus-visible:outline-action focus-visible:outline-2"
+                  checked={acknowledgedDraft === ruleJson}
+                  onChange={(event) =>
+                    setAcknowledgedDraft(event.target.checked ? ruleJson : null)
+                  }
+                />
+                I reviewed the relaxation or changed logic and its effect across
+                candidates.
+              </label>
+            ) : null}
+          </div>
+        ) : null}
         <Button
           variant="primary"
           onPress={() => {
-            if (!draftRules) return;
+            if (
+              !draftRules ||
+              (requiresAcknowledgement && acknowledgedDraft !== ruleJson)
+            )
+              return;
             onActivate(draftRules);
             setRuleJson(null);
             onStatus('Draft rules activated locally for all 27 candidates.');
           }}
-          isDisabled={!draftRules || Boolean(busy) || disabled}
+          isDisabled={
+            !draftRules ||
+            Boolean(busy) ||
+            disabled ||
+            (requiresAcknowledgement && acknowledgedDraft !== ruleJson)
+          }
         >
           Activate reviewed rules locally
         </Button>

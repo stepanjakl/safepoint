@@ -8,6 +8,7 @@ import {
   simulateLocalApproval,
   previewLocalEffects,
   captureLocalReview,
+  createSimulationTarget,
 } from './review-lab';
 import { deriveFindingCodes } from './review-policy';
 import {
@@ -15,6 +16,7 @@ import {
   reviewRuleSetSchema,
   seedReviewRules,
   type RuleFacts,
+  describeRuleChanges,
 } from './review-rules';
 
 const replay = loadReviewedReplay();
@@ -52,13 +54,261 @@ describe('local review rules experiment', () => {
       expect(result.findingCodes.slice().sort(), candidate.sku).toEqual(
         expected?.findings.map(({ code }) => code).sort(),
       );
-      expect(result.policy).toEqual(
-        evaluateLinePolicy(scenario, proposal, seedReviewRules),
+      expect(
+        result.policy.checks.filter(({ code }) => !code.startsWith('gate_')),
+      ).toEqual(evaluateLinePolicy(scenario, proposal, seedReviewRules).checks);
+      const semantics = (findings: typeof result.findings) =>
+        findings
+          .map(({ code, severity, approvalConsequence, affectedFields }) => ({
+            code,
+            severity,
+            approvalConsequence,
+            affectedFields,
+          }))
+          .sort((a, b) => a.code.localeCompare(b.code));
+      expect(semantics(result.findings), candidate.sku).toEqual(
+        semantics(expected?.findings ?? []),
+      );
+      expect(result.policy.verdict === 'review_required', candidate.sku).toBe(
+        expected?.eligibility !== 'blocked' &&
+          Boolean(
+            expected?.findings.some(
+              ({ approvalConsequence }) =>
+                approvalConsequence === 'individual_approval',
+            ),
+          ),
       );
       expect(result.findingCodes).toEqual(
         deriveFindingCodes(scenario, proposal, seedReviewRules),
       );
     }
+  });
+
+  it('does not confirm an unverified funding amount by changing status alone', () => {
+    const proposal = proposalFor('ALD-0025');
+    const incomplete = evaluateLabLine({
+      scenario,
+      proposal,
+      rules: seedReviewRules,
+      confirmedFacts: { fundingStatus: 'confirmed' },
+      localEvidenceId: 'ev-local-text-ald-0025',
+    });
+    expect(incomplete.policy.marginPercent).toBe(9.2);
+    expect(incomplete.policy.verdict).toBe('blocked');
+    expect(incomplete.policy.checks).toContainEqual(
+      expect.objectContaining({
+        code: 'funding_confirmation_incomplete',
+        status: 'block',
+      }),
+    );
+    const complete = evaluateLabLine({
+      scenario,
+      proposal,
+      rules: seedReviewRules,
+      confirmedFacts: { fundingStatus: 'confirmed', fundingPencePerUnit: 60 },
+      localEvidenceId: 'ev-local-text-ald-0025',
+    });
+    expect(complete.policy.marginPercent).toBe(21.2);
+    expect(complete.policy.verdict).toBe('passes_checks');
+    expect(
+      complete.policy.checks.find(({ code }) => code === 'minimum_margin')
+        ?.evidenceRefs,
+    ).toEqual(
+      expect.arrayContaining(['ev-supplier-0025', 'ev-local-text-ald-0025']),
+    );
+    expect(
+      scenario.supplierTerms.records.find(({ sku }) => sku === 'ALD-0025')
+        ?.fundingStatus,
+    ).toBe('unverified');
+  });
+
+  it('compares equivalent date strings by instant across all candidates', () => {
+    for (const candidate of replay.proposal.candidates) {
+      const proposal = proposalFor(candidate.sku);
+      const canonical = evaluateLabLine({
+        scenario,
+        proposal,
+        rules: seedReviewRules,
+      });
+      const normalized = evaluateLabLine({
+        scenario,
+        proposal: {
+          ...proposal,
+          proposedStartsAt: proposal.proposedStartsAt
+            ? new Date(proposal.proposedStartsAt).toISOString()
+            : null,
+          proposedEndsAt: proposal.proposedEndsAt
+            ? new Date(proposal.proposedEndsAt).toISOString()
+            : null,
+        },
+        rules: seedReviewRules,
+      });
+      expect(normalized.policy.verdict, candidate.sku).toBe(
+        canonical.policy.verdict,
+      );
+      expect(
+        normalized.policy.checks.map(({ code, status }) => ({ code, status })),
+        candidate.sku,
+      ).toEqual(
+        canonical.policy.checks.map(({ code, status }) => ({ code, status })),
+      );
+      expect(normalized.findings, candidate.sku).toEqual(canonical.findings);
+    }
+  });
+
+  it('blocks required gates that the model failed or did not evaluate', () => {
+    const candidate = replay.proposal.candidates.find(
+      ({ sku }) => sku === 'ALD-0002',
+    );
+    if (!candidate) throw new Error('Missing clean proposal.');
+    for (const result of [
+      'failed',
+      'not_checked',
+      'evidence_unavailable',
+      'not_applicable',
+    ] as const) {
+      const proposal = {
+        ...proposalFor(candidate.sku),
+        gateAssessments: candidate.gateAssessments.map((gate) =>
+          gate.gate === 'financial' ? { ...gate, result } : gate,
+        ),
+      };
+      const checked = evaluateLabLine({
+        scenario,
+        proposal,
+        rules: seedReviewRules,
+      });
+      expect(checked.policy.verdict, result).toBe('blocked');
+      expect(checked.policy.checks).toContainEqual(
+        expect.objectContaining({ code: 'gate_financial', status: 'block' }),
+      );
+    }
+    const unchecked = evaluateLabLine({
+      scenario,
+      rules: seedReviewRules,
+      proposal: {
+        ...proposalFor(candidate.sku),
+        gateAssessments: candidate.gateAssessments.map((gate) =>
+          ['forecast', 'financial'].includes(gate.gate)
+            ? { ...gate, result: 'not_checked' }
+            : gate,
+        ),
+      },
+    });
+    expect(unchecked.findings.map(({ code }) => code)).toEqual(
+      expect.arrayContaining(['gate_forecast', 'gate_financial']),
+    );
+    expect(
+      unchecked.gateReviews.find(({ gate }) => gate === 'financial'),
+    ).toMatchObject({
+      modelResult: 'not_checked',
+      trustedResult: 'passed',
+      result: 'not_checked',
+    });
+  });
+
+  it('rejects missing or weakened core rules, invalid enums and fractional pack sizes', () => {
+    const without = {
+      ...seedReviewRules,
+      rules: seedReviewRules.rules.slice(1),
+    };
+    expect(reviewRuleSetSchema.safeParse(without).success).toBe(false);
+    const weakened = structuredClone(seedReviewRules);
+    const margin = weakened.rules.find(({ code }) => code === 'minimum_margin');
+    if (!margin) throw new Error('Missing margin rule.');
+    margin.failure = 'attention';
+    expect(reviewRuleSetSchema.safeParse(weakened).success).toBe(false);
+    for (const clause of [
+      { left: 'fundingStatus', operator: 'eq', right: { value: 'confrimed' } },
+      { left: 'topUpUnits', operator: 'multiple_of', right: { value: 1.5 } },
+      { left: 'topUpUnits', operator: 'multiple_of', right: { value: 0 } },
+    ]) {
+      expect(
+        reviewRuleSetSchema.safeParse({
+          ...seedReviewRules,
+          rules: [
+            ...seedReviewRules.rules,
+            {
+              code: 'custom_invalid',
+              title: 'Test invalid',
+              source: 'Test source',
+              failure: 'block',
+              emitPass: true,
+              assert: { mode: 'all', clauses: [clause] },
+            },
+          ],
+        }).success,
+      ).toBe(false);
+    }
+    const relaxed = structuredClone(seedReviewRules);
+    const threshold = relaxed.rules[0]?.assert.clauses[0];
+    if (!threshold) throw new Error('Missing threshold.');
+    threshold.right = { value: 12 };
+    expect(reviewRuleSetSchema.safeParse(relaxed).success).toBe(true);
+    expect(
+      describeRuleChanges(seedReviewRules, relaxed, scenario.policyRules),
+    ).toContainEqual(
+      expect.objectContaining({ code: 'minimum_margin', direction: 'loosens' }),
+    );
+  });
+
+  it('detects target drift and unsuccessful application through independent simulation reads', () => {
+    const proposal = proposalFor('ALD-0002');
+    const checkedResult = evaluateLabLine({
+      scenario,
+      proposal,
+      rules: seedReviewRules,
+    });
+    const params = {
+      scenario,
+      proposal,
+      rules: seedReviewRules,
+      input: { instructions: '', text: '', role: 'case_evidence' as const },
+      confirmedFacts: {},
+      checkedResult,
+    };
+    const target = createSimulationTarget(scenario, proposal.sku);
+    const effects = previewLocalEffects(scenario, proposal);
+    const first = effects[0];
+    if (!first) throw new Error('Missing effect.');
+    if (!('promotionalSellingPricePence' in first.proposed))
+      throw new Error('Missing channel effect.');
+    first.proposed.promotionalSellingPricePence = 1;
+    target.apply(first);
+    expect(() => simulateLocalApproval({ ...params, target })).toThrow(
+      'target changed',
+    );
+    const unchanged = createSimulationTarget(scenario, proposal.sku);
+    expect(() =>
+      simulateLocalApproval({
+        ...params,
+        target: { ...unchanged, apply: () => {} },
+      }),
+    ).toThrow('read-back failed');
+    const reordered = structuredClone(checkedResult);
+    const { checks, verdict, marginPercent, topUpUnits, pricePence, basis } =
+      reordered.policy;
+    reordered.policy = {
+      checks,
+      verdict,
+      marginPercent,
+      topUpUnits,
+      pricePence,
+      basis,
+    };
+    expect(
+      simulateLocalApproval({ ...params, checkedResult: reordered }).kind,
+    ).toBe('simulation');
+    const restricted = {
+      ...proposal,
+      semanticActions: ['record_top_up_recommendation'] as const,
+    };
+    expect(
+      previewLocalEffects(scenario, {
+        ...restricted,
+        semanticActions: [...restricted.semanticActions],
+      }).map(({ target }) => target),
+    ).toEqual(['local top-up recommendation']);
   });
 
   it('validates authored JSON and blocks unknown facts instead of passing', () => {

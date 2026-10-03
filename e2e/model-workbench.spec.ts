@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { z } from 'zod';
 
+import { gateSchema } from '../lib/promotion-release/schemas';
 import type { LineSuggestion } from '../lib/model-workbench/line';
 
 test('shows model judgement, independent treatment, and replay reference together', async ({
@@ -24,6 +25,18 @@ test('shows model judgement, independent treatment, and replay reference togethe
       uncertainties: [],
       evidenceRefs: ['ev-catalogue-0010'],
       selfReportedCertainty: 'medium',
+      gateAssessments: gateSchema.options.map((gate) => ({
+        gate,
+        result: 'passed',
+        explanation: 'Synthetic assessed gate.',
+        evidenceRefs: ['ev-catalogue-0010'],
+      })),
+      semanticActions: [
+        'update_promotion_record',
+        'record_top_up_recommendation',
+        'schedule_storefront_promotion',
+        'queue_labels',
+      ],
     };
     const blocked = requestedPrice === 60;
     await route.fulfill({
@@ -57,6 +70,8 @@ test('shows model judgement, independent treatment, and replay reference togethe
                 },
               ],
             },
+            findings: [],
+            gateReviews: [],
             findingCodes: blocked
               ? ['margin_below_floor', 'large_price_change']
               : ['large_price_change'],

@@ -1,4 +1,9 @@
 import { z } from 'zod';
+import {
+  gateReviewSchema,
+  reviewFindingSchema,
+} from '@/lib/promotion-release/review-policy';
+import { lineSuggestionSchema } from './line';
 
 import {
   gateSchema,
@@ -17,18 +22,7 @@ export const modelWorkbenchResponseSchema = z.discriminatedUnion('kind', [
       durationMs: z.number(),
       input: z.unknown(),
       output: z.unknown(),
-      suggestion: z
-        .strictObject({
-          sku: skuSchema,
-          recommendation: z.enum(['release', 'adjust', 'hold', 'exclude']),
-          proposedPricePence: z.number().nullable(),
-          proposedTopUpUnits: z.number().nullable(),
-          rationale: z.string(),
-          uncertainties: z.array(z.string()),
-          evidenceRefs: z.array(z.string()),
-          selfReportedCertainty: z.enum(['low', 'medium', 'high']),
-        })
-        .nullable(),
+      suggestion: lineSuggestionSchema.nullable(),
       issues: z.array(z.string()),
       review: z
         .strictObject({
@@ -48,6 +42,8 @@ export const modelWorkbenchResponseSchema = z.discriminatedUnion('kind', [
             ),
           }),
           findingCodes: z.array(policyFindingCodeSchema),
+          findings: z.array(reviewFindingSchema),
+          gateReviews: z.array(gateReviewSchema),
           gateObligations: z.array(
             z.strictObject({
               gate: gateSchema,

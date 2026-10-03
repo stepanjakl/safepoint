@@ -5,7 +5,6 @@ import { useMemo, useRef, useState, type FormEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
-  evaluateLinePolicy,
   getLineFacts,
   type LinePolicyProposal,
 } from '@/lib/promotion-release/line-policy';
@@ -13,10 +12,9 @@ import {
   shiftProposalToReviewAt,
   shiftScenarioToReviewAt,
 } from '@/lib/promotion-release/scenario-clock';
-import {
-  deriveFindingCodes,
-  deriveGateObligations,
-} from '@/lib/promotion-release/review-policy';
+import { reviewTreatment } from '@/lib/promotion-release/review-policy';
+import { evaluateLabLine } from '@/lib/promotion-release/review-lab';
+import { seedReviewRules } from '@/lib/promotion-release/review-rules';
 import {
   type PolicyEvaluationReplay,
   type PromotionReleasePlan,
@@ -117,9 +115,12 @@ export function PolicyWorkbench({
     () =>
       proposal.candidates.map((candidate) => {
         const lineProposal = proposalFor(candidate);
-        const result = evaluateLinePolicy(scenario, lineProposal);
-        const findingCodes = deriveFindingCodes(scenario, lineProposal);
-        const gateObligations = deriveGateObligations(scenario, lineProposal);
+        const evaluated = evaluateLabLine({
+          scenario,
+          proposal: lineProposal,
+          rules: seedReviewRules,
+        });
+        const { policy: result, findingCodes, gateObligations } = evaluated;
         const baseline = baselines.find(({ sku }) => sku === candidate.sku);
         if (!baseline)
           throw new Error(`Missing reviewed policy ${candidate.sku}`);
@@ -131,6 +132,7 @@ export function PolicyWorkbench({
           findingCodes,
           gateObligations,
           baseline,
+          evaluated,
           agrees:
             (result.verdict !== 'blocked') ===
             (baseline.eligibility === 'eligible'),
@@ -162,15 +164,14 @@ export function PolicyWorkbench({
   const comparisonProposal = activeTrial
     ? { ...activeTrial, proposedStartsAt, proposedEndsAt }
     : proposalFor(selectedCandidate);
-  const result = activeTrial
-    ? evaluateLinePolicy(scenario, comparisonProposal)
-    : selectedRow.result;
-  const findingCodes = activeTrial
-    ? deriveFindingCodes(scenario, comparisonProposal)
-    : selectedRow.findingCodes;
-  const gateObligations = activeTrial
-    ? deriveGateObligations(scenario, comparisonProposal)
-    : selectedRow.gateObligations;
+  const evaluated = activeTrial
+    ? evaluateLabLine({
+        scenario,
+        proposal: comparisonProposal,
+        rules: seedReviewRules,
+      })
+    : selectedRow.evaluated;
+  const { policy: result, findingCodes, gateObligations } = evaluated;
   const blocking = result.checks.filter(({ status }) => status === 'block');
   const attention = result.checks.filter(
     ({ status }) => status === 'attention',
@@ -213,11 +214,15 @@ export function PolicyWorkbench({
       proposedPricePence: price,
       proposedTopUpUnits: topUp,
     };
-    const verdict = evaluateLinePolicy(scenario, {
-      ...next,
-      proposedStartsAt,
-      proposedEndsAt,
-    }).verdict;
+    const verdict = evaluateLabLine({
+      scenario,
+      rules: seedReviewRules,
+      proposal: {
+        ...next,
+        proposedStartsAt,
+        proposedEndsAt,
+      },
+    }).policy.verdict;
     setTrial(next);
     setStatus(
       `${selectedSku} trial evaluated: ${verdict.replaceAll('_', ' ')}.`,
@@ -566,6 +571,24 @@ export function PolicyWorkbench({
               Reviewed policy: {selectedRow.baseline.eligibility}. Treatment:{' '}
               {reviewedTreatment} for the recorded proposal.
             </p>
+            <p className="text-meta font-semibold">
+              Current proposal:{' '}
+              {reviewTreatment(evaluated).replaceAll('_', ' ')}.
+            </p>
+            <ul
+              className="text-meta grid gap-2"
+              aria-label="Current approval consequences"
+            >
+              {evaluated.findings.map((finding) => (
+                <li key={finding.id}>
+                  <strong>
+                    {finding.code.replaceAll('_', ' ')} ·{' '}
+                    {finding.approvalConsequence.replaceAll('_', ' ')}
+                  </strong>
+                  <p>{finding.explanation}</p>
+                </li>
+              ))}
+            </ul>
             <div className="border-rule-default text-meta grid gap-2 border-t pt-4">
               <h3 className="font-semibold">Finding-code comparison</h3>
               <p>

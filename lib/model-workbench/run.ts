@@ -9,8 +9,10 @@ import type { Sku } from '@/lib/promotion-release/schemas';
 import { buildLinePreview, inspectLineSuggestion } from './line';
 import type { ModelId } from './models';
 import { reviewLineSuggestion } from './review';
+import { gateAssessmentSchema } from '@/lib/promotion-release/schemas';
+import { localSemanticActionsSchema } from '@/lib/promotion-release/review-policy';
 
-const INSTRUCTION_VERSION = 'promotion-line-instruction-v2';
+const INSTRUCTION_VERSION = 'promotion-line-instruction-v3';
 
 // The provider receives a shallow shape. The local contract applies the
 // stricter SKU, recommendation, money, and evidence checks after generation.
@@ -23,6 +25,8 @@ export const generationSchema = z.object({
   uncertainties: z.array(z.string()),
   evidenceRefs: z.array(z.string()).min(1),
   selfReportedCertainty: z.enum(['low', 'medium', 'high']),
+  gateAssessments: z.array(gateAssessmentSchema),
+  semanticActions: localSemanticActionsSchema,
 });
 
 export async function runModelWorkbench({
@@ -56,6 +60,8 @@ export async function runModelWorkbench({
         'Explain the recommendation briefly and name any missing, conflicting, or uncertain evidence.',
         'Report low, medium, or high self-reported certainty for developer evaluation. This is not a probability of correctness.',
         'Do not claim the proposal is eligible or safe to execute. Application code evaluates release checks independently.',
+        'Assess all seven gates exactly once with an explanation and supplied evidence IDs. Required gates that cannot be checked must be not_checked or evidence_unavailable; do not call them passed. Select only permitted semantic actions for release or adjust; return an empty action list for hold or exclude.',
+        'Proposing any top-up makes supplier and logistics required, even if the initial input marked them not applicable.',
       ].join('\n'),
       prompt: `Review this single-candidate input and return a proposal.\n${JSON.stringify(preview.input)}`,
       output: Output.object({ schema: generationSchema }),
@@ -64,7 +70,7 @@ export async function runModelWorkbench({
         integrations: [DevToolsTelemetry({ runId })],
       },
       include: { requestBody: true, responseBody: true },
-      maxOutputTokens: 1_500,
+      maxOutputTokens: 3_000,
       maxRetries: 0,
       timeout: { totalMs: 90_000 },
     });

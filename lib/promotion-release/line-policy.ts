@@ -1,4 +1,9 @@
-import type { ScenarioEvidencePack, Sku } from './schemas';
+import type {
+  ScenarioEvidencePack,
+  Sku,
+  PromotionReleasePlan,
+} from './schemas';
+import { sameInstant } from './comparison';
 import {
   evaluateReviewRules,
   seedReviewRules,
@@ -13,6 +18,13 @@ export type LinePolicyProposal = {
   proposedTopUpUnits: number | null;
   proposedStartsAt?: string | null;
   proposedEndsAt?: string | null;
+  gateAssessments?: PromotionReleasePlan['candidates'][number]['gateAssessments'];
+  semanticActions?: (
+    | 'update_promotion_record'
+    | 'record_top_up_recommendation'
+    | 'schedule_storefront_promotion'
+    | 'queue_labels'
+  )[];
 };
 
 export type LinePolicyCheck = {
@@ -104,6 +116,18 @@ export function evaluateLinePolicy(
   const topUp = proposal.proposedTopUpUnits ?? baselineTopUp;
   const basis =
     proposal.proposedPricePence === null ? 'brief_baseline' : 'model_proposal';
+  if (
+    !Number.isSafeInteger(price) ||
+    price <= 0 ||
+    !Number.isSafeInteger(topUp) ||
+    topUp < 0
+  )
+    add(
+      'proposal_values',
+      'block',
+      'Price must be a positive whole number of pence and top-up a nonnegative whole number of units.',
+      [scenario.promotionBrief.evidenceId],
+    );
   const confirmedFunding =
     supplier.fundingStatus === 'confirmed' ? supplier.fundingPencePerUnit : 0;
   const marginPercent =
@@ -263,8 +287,8 @@ export function evaluateLinePolicy(
     (state) =>
       state.status !== 'ready' ||
       state.promotionalSellingPricePence !== price ||
-      state.startsAt !== startsAt ||
-      state.endsAt !== endsAt,
+      !sameInstant(state.startsAt, startsAt) ||
+      !sameInstant(state.endsAt, endsAt),
   );
   if (mismatched.length > 0) {
     add(

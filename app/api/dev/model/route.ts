@@ -11,7 +11,7 @@ export async function POST(request: Request) {
   const hostname = url.hostname;
   if (
     process.env.NODE_ENV !== 'development' ||
-    !['localhost', '127.0.0.1', '::1'].includes(hostname)
+    !['localhost', '127.0.0.1', '[::1]'].includes(hostname)
   ) {
     return Response.json(
       { kind: 'error', message: 'Not found' },

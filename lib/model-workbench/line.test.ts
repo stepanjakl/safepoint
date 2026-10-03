@@ -26,6 +26,15 @@ function reviewedSuggestion(sku: Sku): LineSuggestion {
     uncertainties: line.uncertainties,
     evidenceRefs: line.evidenceRefs,
     selfReportedCertainty: 'medium',
+    gateAssessments: line.gateAssessments,
+    semanticActions: line.proposed
+      ? [
+          'update_promotion_record',
+          'record_top_up_recommendation',
+          'schedule_storefront_promotion',
+          'queue_labels',
+        ]
+      : [],
   };
 }
 
@@ -74,6 +83,44 @@ describe('single-line model review', () => {
         preview,
       ).issues.join(' '),
     ).toMatch(/need neither/);
+  });
+
+  it('requires seven distinct gates, per-gate provenance, and permitted semantic actions', () => {
+    const preview = buildLinePreview(replay.scenario, 'ALD-0002');
+    const valid = reviewedSuggestion('ALD-0002');
+    expect(
+      inspectLineSuggestion({ ...valid, gateAssessments: undefined }, preview)
+        .suggestion,
+    ).toBeNull();
+    expect(
+      inspectLineSuggestion(
+        {
+          ...valid,
+          gateAssessments: valid.gateAssessments.map(
+            () => valid.gateAssessments[0],
+          ),
+        },
+        preview,
+      ).suggestion,
+    ).toBeNull();
+    expect(
+      inspectLineSuggestion(
+        {
+          ...valid,
+          gateAssessments: valid.gateAssessments.map((gate) => ({
+            ...gate,
+            evidenceRefs: ['ev-invented'],
+          })),
+        },
+        preview,
+      ).issues,
+    ).toContain('Unknown evidence references: ev-invented.');
+    expect(
+      inspectLineSuggestion(
+        { ...valid, semanticActions: ['send_notification'] },
+        preview,
+      ).suggestion,
+    ).toBeNull();
   });
 
   it('passes a fully supported reviewed line and blocks seeded release risks', () => {

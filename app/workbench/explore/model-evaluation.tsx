@@ -8,6 +8,8 @@ import {
   evaluateModelCase,
   evaluationCases,
   evaluationReportSchema,
+  evaluationReportCaseCount,
+  EVALUATION_SUITE_VERSION,
   type EvaluationReport,
 } from '@/lib/model-workbench/evaluation';
 import { labResponseSchema } from '@/lib/model-workbench/review-lab-contract';
@@ -110,7 +112,7 @@ export function ModelEvaluation({
         reportStore.update(
           evaluationReportSchema.parse({
             kind: 'model_evaluation',
-            suiteVersion: 1,
+            suiteVersion: EVALUATION_SUITE_VERSION,
             model,
             reviewAt,
             startedAt,
@@ -163,19 +165,21 @@ export function ModelEvaluation({
         Model evaluation · examples
       </h2>
       <p className="text-meta text-muted">
-        Seven fixed synthetic cases use seeded rules and one model. Results
-        measure these examples; a reviewer still checks the reasoning and
-        evidence.
+        {evaluationCases.length} fixed synthetic cases use seeded rules and one
+        model. Results measure these examples; a reviewer still checks the
+        reasoning and evidence.
       </p>
       <details className="min-w-0">
         <summary className="text-meta cursor-pointer">
-          Seven example cases and latest report
+          Example cases and latest report
         </summary>
         <div className="mt-4 grid min-w-0 gap-4">
           <p className="text-meta">
             Selected model: {model}. One request per case, run sequentially.
             Expected answers stay outside model inputs. All returned facts and
-            rules remain evaluation drafts.
+            rules remain evaluation drafts. Calls use your provider quota. If a
+            run hits a quota limit, wait for the provider quota to reset before
+            rerunning.
           </p>
           <div className="flex flex-wrap gap-3">
             <Button
@@ -183,7 +187,7 @@ export function ModelEvaluation({
               onPress={() => void runExamples()}
               isDisabled={running || disabled || !keyConfigured}
             >
-              Run seven test cases
+              Run {evaluationCases.length} test cases
             </Button>
             <Button
               ref={stopButton}
@@ -209,7 +213,8 @@ export function ModelEvaluation({
           {error ? <p className="text-meta">{error}</p> : null}
           {report ? (
             <p className="text-meta" data-evaluation-summary>
-              Latest report · {report.model} · {report.state} ·{' '}
+              Latest report · suite {report.suiteVersion} · {report.model} ·{' '}
+              {report.state} ·{' '}
               {
                 report.records.filter(({ outcome }) => outcome === 'passed')
                   .length
@@ -225,8 +230,9 @@ export function ModelEvaluation({
                   ({ outcome }) => outcome === 'call_failed',
                 ).length
               }{' '}
-              calls failed · {evaluationCases.length - report.records.length}{' '}
-              not run
+              calls failed ·{' '}
+              {evaluationReportCaseCount(report) - report.records.length} not
+              run
             </p>
           ) : null}
           <ol
@@ -260,7 +266,11 @@ export function ModelEvaluation({
                         : record.outcome === 'failed'
                           ? 'Needs inspection'
                           : 'Model call failed'
-                      : 'Not run'}
+                      : report?.suiteVersion === 1 &&
+                          evaluationCases.indexOf(test) >=
+                            evaluationReportCaseCount(report)
+                        ? 'Not part of the suite 1 report'
+                        : 'Not run'}
                   </p>
                   {record ? (
                     <>

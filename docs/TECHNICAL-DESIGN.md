@@ -203,12 +203,12 @@ There is no credible universal write connector. Service APIs differ, and operati
 
 Keep four concepts separate:
 
-| Concept | Responsibility |
-| --- | --- |
-| Integration definition | Describes a service and its available typed actions |
-| Connection instance | Holds an authorised account, scopes, and credential reference |
-| Connector action | Contains the executable implementation for one supported operation |
-| Safepoint adapter | Maps an allow-listed effect to that action and normalises preflight, apply, verify, and compensate results |
+| Concept                | Responsibility                                                                                             |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Integration definition | Describes a service and its available typed actions                                                        |
+| Connection instance    | Holds an authorised account, scopes, and credential reference                                              |
+| Connector action       | Contains the executable implementation for one supported operation                                         |
+| Safepoint adapter      | Maps an allow-listed effect to that action and normalises preflight, apply, verify, and compensate results |
 
 An agent may select among read-only tools during proposal generation. That does not mean the agent implements the integration. Managed connectors may host their own actions; customer integrations may expose actions through a remote Model Context Protocol (MCP) server.
 
@@ -234,16 +234,16 @@ flowchart LR
     Snapshot --> Policy[Deterministic policy]
 ```
 
-| Stage | Responsibility |
-| --- | --- |
-| Integration definition | Describes a service, how it authenticates, and which resources it can read |
-| Connection instance | An authorised account with scopes, an owner, and a credential reference. Held at workspace level and reused by every process that binds it |
-| Resource | The specific table, sheet tab, folder, or endpoint a binding reads |
-| Input | What the process needs to know, declared by the process definition: a schema, whether it is required, a maximum age, and a read mode |
-| Binding | The mapping from one resource's fields to one input's schema, reviewed when the source's structure changes |
-| Normalisation | Produces typed records in the input's schema, each carrying source, resource, fetched-at, source version where one exists, and uncertainty |
-| Validation | Deterministic data-quality checks before any record reaches the agent or policy |
-| Snapshot | The frozen, hashed set of records one run read, with record counts, schema version, and validation results |
+| Stage                  | Responsibility                                                                                                                             |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Integration definition | Describes a service, how it authenticates, and which resources it can read                                                                 |
+| Connection instance    | An authorised account with scopes, an owner, and a credential reference. Held at workspace level and reused by every process that binds it |
+| Resource               | The specific table, sheet tab, folder, or endpoint a binding reads                                                                         |
+| Input                  | What the process needs to know, declared by the process definition: a schema, whether it is required, a maximum age, and a read mode       |
+| Binding                | The mapping from one resource's fields to one input's schema, reviewed when the source's structure changes                                 |
+| Normalisation          | Produces typed records in the input's schema, each carrying source, resource, fetched-at, source version where one exists, and uncertainty |
+| Validation             | Deterministic data-quality checks before any record reaches the agent or policy                                                            |
+| Snapshot               | The frozen, hashed set of records one run read, with record counts, schema version, and validation results                                 |
 
 #### Inputs are requirements, not systems
 
@@ -255,7 +255,7 @@ A process declares **inputs** — "current shelf price per SKU, no older than 24
 
 Each input declares a read mode: read at run time, synced on a schedule, or uploaded by a person. Its declared maximum age and whether it is required decide what an unmet or stale input does to a run. Policy rules are an input too; their currency is their version rather than an observation time.
 
-The process's permitted writes are its **outputs**: a target, the allow-listed operations on it, the adapter mode, and reversibility, as the effect protocol and connector contract already define. Outputs do not use the word *action* in the interface because a connector action is the executable implementation of an operation.
+The process's permitted writes are its **outputs**: a target, the allow-listed operations on it, the adapter mode, and reversibility, as the effect protocol and connector contract already define. Outputs do not use the word _action_ in the interface because a connector action is the executable implementation of an operation.
 
 #### Unstructured sources
 
@@ -271,12 +271,12 @@ The portfolio persists this as `tool_evidence`. A live product adds a snapshot r
 
 A source can fail in ways that need different fixes. Report them as separate facts rather than one health state:
 
-| Condition | Examples | Fix | Effect on a run |
-| --- | --- | --- | --- |
+| Condition  | Examples                                                             | Fix                                       | Effect on a run                                                                            |
+| ---------- | -------------------------------------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------ |
 | Connection | Credential expired, scope revoked, rate limited, service unavailable | Reconnect, or notify the connection owner | A required input cannot be read; the run does not start or the input is marked unavailable |
-| Binding | A mapped column renamed or removed, a type changed | Review the mapping | Blocks the input until the mapping is confirmed |
-| Freshness | Records older than the input's maximum age | Sync now | Warns or blocks according to the input's declaration |
-| Coverage | Records missing or unavailable for some candidates | Inspect records | Affected lines become unverifiable; others proceed |
+| Binding    | A mapped column renamed or removed, a type changed                   | Review the mapping                        | Blocks the input until the mapping is confirmed                                            |
+| Freshness  | Records older than the input's maximum age                           | Sync now                                  | Warns or blocks according to the input's declaration                                       |
+| Coverage   | Records missing or unavailable for some candidates                   | Inspect records                           | Affected lines become unverifiable; others proceed                                         |
 
 Connection and binding are properties of the setup and can be known before a run. Freshness and coverage are properties of a snapshot: the same source is fresh for one run and stale for the next.
 
@@ -350,13 +350,13 @@ Do not pin Neon or the application to a region from an outdated Workflow assumpt
 
 The nine source JSON files, model tool calls, validation rules, and policy checks are implementation details that currently make the local test hard to understand. The review interface should explain each candidate in one place: source facts with provenance, the model's proposed action and cited evidence, independent validation and policy findings, and the resulting review status. Keep raw JSON available in a developer view, but do not make users reconstruct a decision from it. Use the same named stages and identifiers in server diagnostics and the browser so a failed run can be traced without guessing which layer rejected it.
 
-The first read-only slice lets a developer select one SKU and sends a versioned per-candidate input instead of the entire 27-line pack. The browser shows source facts, the model proposal, contract findings, independent arithmetic and release checks, and a reviewer action in sequence. After validating the model output, the server derives finding codes, seven gate obligations, and the reviewer treatment from the same source snapshot as the checks. Blocking checks take priority over an AI release recommendation; a hold or exclusion has no release proposal and its displayed checks use the brief baseline. The recorded replay recommendation, terms, findings, and eligibility appear beside the current treatment as a reference and are never sent to the model. Raw records, the exact model input and output, a run ID, timing, token use, and uncalibrated model-reported certainty remain in developer diagnostics. Certainty never changes the rule verdict. Evidence IDs are checked for existence; whether a citation supports a free-text claim still needs review. The checks are diagnostic, not the complete policy engine or permission to execute.
+The first read-only slice lets a developer select one SKU and sends a versioned per-candidate input instead of the entire 27-line pack. The browser shows source facts, the model proposal, contract findings, independent arithmetic and release checks, and a reviewer action in sequence. After validating the model output, the server derives full findings, seven gate obligations and results, and reviewer treatment from the same source snapshot as the checks. The local model contract includes seven distinct, cited assessments and permitted semantic actions; an unchecked required gate blocks review. Trusted gate results and model assessments remain separately visible. Blocking checks take priority over an AI release recommendation; a hold or exclusion has no release proposal and its displayed checks use the brief baseline. The recorded replay recommendation, terms, findings, and eligibility appear beside the current treatment as a reference and are never sent to the model. Raw records, the exact model input and output, a run ID, timing, token use, and uncalibrated model-reported certainty remain in developer diagnostics. Certainty never changes the rule verdict. Evidence IDs are checked for existence; whether a citation supports a free-text claim still needs review. The checks are diagnostic, not the complete policy engine or permission to execute.
 
 The browser holds only the latest workbench result in React state; changing the selected product or model, or reloading, clears it. For local development, the single-SKU model call also records its prompt, response, provider bodies, timing, and token use through AI SDK DevTools, correlated by the same run ID. These traces persist as plaintext in the Git-ignored `.devtools/generations.json` file in the project directory. Start the viewer with `pnpm exec devtools` and open `http://localhost:4983`. Use synthetic inputs only. Neither the workbench nor DevTools writes to the application database or Google Sheets. The current single-SKU call sends normalized JSON directly to the model, so it has no model tool calls to inspect; the viewer exposes the request and response, not the model's hidden reasoning.
 
 The reviewed mozzarella replay (`ALD-0023`) offers two quantity and price combinations. Fixture `1.0.1` corrected its earlier promotion order to 150 units, leaving a 240-unit forecast-plus-safety shortfall. The reviewed 240-unit top-up covers that shortfall, and the 320-unit alternative also passes the current read-only release checks. Fixture `1.0.2` records those options and the avocado's prior quantity as typed note claims. The claims remain untrusted evidence; the calculated diagnostics validate their quantities and alternative plans against structured policy facts.
 
-`/workbench/policy` is the development-only inspection page for these checks. It evaluates all 27 reviewed proposals from the validated nine-file source pack in the browser, compares each blocked or nonblocked result with the separate reviewed replay, and lets a developer change one product's price and top-up without calling a model or writing data. The page shows the calculated facts, individual checks, evidence IDs, and exact source and result JSON. The same pure `evaluateLinePolicy` function runs after a model proposal is validated in `/workbench/model`; model output does not supply policy facts or severity. Calculated eligibility and the seven gate obligations agree with the reviewed replay for all 27 lines. This is a line-check foundation, not the complete Stage 3 policy engine or release authorization.
+`/workbench/policy` is the development-only inspection page for these checks. It evaluates all 27 reviewed proposals from the validated nine-file source pack in the browser, compares each blocked or nonblocked result with the separate reviewed replay, and lets a developer change one product's price and top-up without calling a model or writing data. The page shows the calculated facts, individual checks, evidence IDs, and exact source and result JSON. The same pure `evaluateLabLine` review runs here, in the explorer, and after a model proposal is validated in `/workbench/model`. Its lower-level `evaluateLinePolicy` computes numerical and source checks. Model output does not supply trusted policy facts or finding severity. Findings, severities, approval consequences, affected fields, eligibility, and gate obligations agree with the reviewed replay for all 27 lines. This is a line-check foundation, not the complete Stage 3 policy engine or release authorization.
 
 Finding-code comparison now agrees on all 27 reviewed lines. `invalid_order_multiple_corrected` and `alternative_safe_plan` use the typed note claims plus independent order and release checks; note claims never change blocking eligibility. The replay now records `ALD-0010`'s `large_price_change`: 130p against a 175p regular price is a 25.7% reduction, above the configured 25% individual-review threshold. The corrected summary is 16 ready, seven needing attention, and four unable to proceed. The recorded AI recommendation still says release, so the workbench shows the policy's individual-approval requirement beside it. Gate obligations currently derive from candidate status, known stock shortfall, and proposed top-up quantity; semantic action and model gate-assessment validation remain part of the full policy milestone.
 
@@ -390,6 +390,14 @@ accepted overlays. Policy excerpts can inform rule drafting but cannot update
 facts or activate rules. Background context is included in proposal reasoning
 and excluded from rule drafting.
 
+Extraction sends the SKU, pasted text, its role, and editable task instructions to the model. Editable instructions remain in the JSON user prompt; the system prompt contains server-owned constraints and stage instructions only. The
+structured supplier record remains available in the UI for comparison, but is
+excluded from extraction input to prevent baseline values from contaminating
+new text claims. Stage instructions ask the model to assess fields separately,
+withhold unresolved disputed values, retain uncontested facts, and name the
+conflict. Exact-quote validation still runs independently; these instructions
+do not establish semantic correctness or confirm a fact automatically.
+
 `fixtures/promotion-release/aldertons-promotion-release-v1/review-rules.json`
 seeds minimum funded margin, stock coverage, supplier order terms, and the large
 price-change threshold. `lib/promotion-release/review-rules.ts` validates JSON and
@@ -398,11 +406,21 @@ executable expressions, duplicate codes, incompatible operands, and invalid JSON
 are rejected. Missing referenced facts yield a blocking **cannot evaluate**
 finding. Fact arithmetic, source validation, and remaining checks stay in trusted
 TypeScript. `evaluateLabLine` applies the same evaluator in browser trials and
-server reviews. The seeded rules preserve all 27 reviewed finding codes and
-blocking outcomes; the detailed policy/model pages use these defaults.
+server reviews. The shared review reproduces all 27 reviewed finding codes, severities, approval
+consequences, affected fields, and blocking outcomes. Corrections and alternative
+plans can require individual approval even when numerical checks pass. The
+detailed policy/model pages use these defaults. Previously unverified funding
+requires both an accepted status and amount; a status-only overlay leaves the
+amount excluded and adds a blocking incomplete-confirmation check.
 
 The reviewer can edit a rule draft, inspect changed checks and verdicts across
-all 27 candidates, and explicitly activate it locally. A model suggestion never
+all 27 candidates, and explicitly activate it locally. All four core checks,
+their comparisons, applicability, and failure consequences remain protected.
+Only margin and large price-change thresholds are editable within those checks;
+additional conditional policy uses custom rules. Enum literals and integer
+pack-size comparisons are validated. The preview labels tightening, relaxation,
+or changed logic. Relaxation or changed custom logic requires an explicit
+acknowledgement tied to the current draft before activation. A model suggestion never
 activates a rule. Rule approval and case approval are separate decisions. This
 unversioned browser editor is an experiment, not the production policy lifecycle:
 it does not publish policies, maintain history, or authorize an external action.
@@ -414,13 +432,21 @@ A checked case previews exact permitted channel and top-up changes. Explicit
 target plan with the reviewed preview, applies changes to an in-memory target
 copy, and reads back that copy. Every outcome is labeled simulation. It does not
 verify external state or make a database, Google Sheet, or storefront write.
-The top-up effect is a local recommendation, not a supplier order.
+The top-up effect is a local recommendation, not a supplier order. Model
+proposals must assess all seven gates and specify only permitted local actions.
+Required gates that fail, remain unchecked, have unavailable evidence, or are
+incorrectly marked not applicable block review. Trusted failures override model
+passes. Manual trials use labelled trusted checks. The simulation adapter starts
+from source state independently of the effect plan, applies only allowed fields,
+and performs independent reads; drift and failed application are regression
+tested. Object key order does not affect snapshot comparisons, and timestamps
+are compared by instant.
 
 Browser storage key `safepoint.review-lab.v1` holds one current instruction/text
 draft, active rule set, accepted supplier overlay with quotes for one SKU, and
 latest trial. Each evaluated local trial, valid model proposal, and simulation
 captures its complete source snapshot, exact rules, proposal, accepted claims,
-checks, and model output where available. Records from model runs also retain the
+checks, findings, gate results, checker version, and model output where available. Records from model runs also retain the
 model identity, run ID, exact server instructions, and normalized prompt input.
 Export downloads that latest record as JSON; reset restores seeded setup and clears it. Reload preserves the record's
 original timestamps even while the displayed scenario receives a fresh clock
@@ -430,22 +456,34 @@ version history or cross-device persistence in this experiment.
 
 ### Local model evaluation examples
 
-The explorer's **Model evaluation · examples** disclosure runs seven fixed
+The explorer's **Model evaluation · examples** disclosure runs sixteen fixed
 synthetic cases through the existing development route: confirmed and tentative
 supplier evidence, a directive embedded in evidence, a margin policy amendment,
-an eligible candidate, missing stock, and a withdrawn candidate. Each run uses
+an eligible candidate, missing stock, and a withdrawn candidate. Suite 2 adds
+alternate supplier wording, explicit negatives, unresolved conflicting funding
+amounts, and general and conditional margin policies. Suite 3 preserves the
+protected global floor while drafting additional conditional checks, and adds
+tentative allocation, two compliant plans, included uplift, and a directive in
+pasted catalogue text. The catalogue example uses the optional text input; it
+does not mutate the structured catalogue fixture.
+Each run uses
 seeded rules and one selected model, independent of the editable experiment.
 Expected answers stay outside model requests. Fixture dates receive the run's
 review-time anchor, so the examples do not become stale.
 
 The report distinguishes provider failures, model misses, and application
-blockers. Extraction checks explicit values and exact quotes; rule checks exercise
-both sides of the margin boundary with and without a top-up. Proposal checks
+blockers. Extraction checks explicit values and exact quotes; the conflicting
+amount case requires the uncontested allocation and an uncertainty explanation,
+and rejects either disputed amount as a resolved fact. Rule checks exercise
+both sides of the margin boundary with and without a top-up. Amendment cases
+also require the existing rule code, so a new rule cannot silently leave the old
+constraint active. The conditional case must not block zero-top-up examples.
+Proposal checks
 compare recommendations and citations with the examples' expectations while
 recording the independent verdict separately. A correct application blocker does
 not erase an unsafe model recommendation. A passing citation check establishes
 only that the expected source was cited; a person still reviews the rationale.
-These seven examples are a development smoke test, not calibrated confidence or
+These sixteen examples are a development smoke test, not calibrated confidence or
 evidence of general reliability.
 
 Calls run sequentially. Stop finishes the current call and skips the remaining
@@ -457,6 +495,19 @@ requests, normalized model inputs, responses, checks, run IDs, elapsed time, and
 token usage when available. Clear removes the report. Storage failures are
 visible and fall back to memory. Evaluation outputs cannot activate rules,
 confirm facts, approve cases, or execute effects.
+
+New reports record suite version 3. Existing suite 1 (seven cases) and suite 2
+(twelve cases) reports remain readable and exportable without being rescored,
+including their earlier response contracts. Cases outside their suite are
+labelled accordingly. Current evaluations require the current gate/action
+contract; historical compatibility does not loosen live validation. This report
+format compatibility is separate from production policy versioning.
+
+The [experiment scope decision](REVIEW-EXPERIMENT-DECISION.md) records this
+user-authorized development branch and the return to production milestones.
+The explorer is the primary review flow, with input/rule editing and specialist
+diagnostics disclosed on demand. Production adapters and the complete application
+review workspace remain outstanding.
 
 ## Runtime modes
 
@@ -491,17 +542,17 @@ The agent derives its plan from a versioned fictional dataset. The data must be 
 
 The source evidence under `fixtures/promotion-release/aldertons-promotion-release-v1/` is:
 
-| Fixture | Contents |
-| --- | --- |
-| `promotion-brief.json` | Candidate SKUs, intended prices and dates, campaign, expected uplift, and release deadlines |
-| `shortlist-provenance.json` | Promotion cycle, upstream selection scores and reasons, source reference, approval reference, and approved-at time |
-| `catalogue-pricebook.json` | Product identity, regular and current promotional price, cost, and case pack |
-| `demand-evidence.json` | Sales history, baseline forecast, promotion-adjusted forecast, confidence, and uplift provenance |
-| `supply-position.json` | On-hand, reserved, confirmed inbound before launch, earlier promotion orders, open top-up amendments, safety stock, and location |
-| `supplier-terms.json` | Lead time, minimum order quantity, order multiple, confirmed allocation, top-up cutoff, and funding status |
-| `operational-notes.json` | Bounded promotion objectives, buyer notes, forecast commentary, and supplier qualifications that require interpretation |
-| `channel-state.json` | Current staged price, dates, and readiness status for the pricebook, storefront, and label queue, with observed timestamps |
-| `policy-rules.json` | Margin floor, individual-review price threshold, evidence freshness, and required channels |
+| Fixture                     | Contents                                                                                                                         |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `promotion-brief.json`      | Candidate SKUs, intended prices and dates, campaign, expected uplift, and release deadlines                                      |
+| `shortlist-provenance.json` | Promotion cycle, upstream selection scores and reasons, source reference, approval reference, and approved-at time               |
+| `catalogue-pricebook.json`  | Product identity, regular and current promotional price, cost, and case pack                                                     |
+| `demand-evidence.json`      | Sales history, baseline forecast, promotion-adjusted forecast, confidence, and uplift provenance                                 |
+| `supply-position.json`      | On-hand, reserved, confirmed inbound before launch, earlier promotion orders, open top-up amendments, safety stock, and location |
+| `supplier-terms.json`       | Lead time, minimum order quantity, order multiple, confirmed allocation, top-up cutoff, and funding status                       |
+| `operational-notes.json`    | Bounded promotion objectives, buyer notes, forecast commentary, and supplier qualifications that require interpretation          |
+| `channel-state.json`        | Current staged price, dates, and readiness status for the pricebook, storefront, and label queue, with observed timestamps       |
+| `policy-rules.json`         | Margin floor, individual-review price threshold, evidence freshness, and required channels                                       |
 
 Reviewed outputs live separately under `replays/promotion-release/aldertons-promotion-release-v1/`: `promotion-release-plan.json` contains the agent proposal, and `policy-evaluation-replay.json` contains the temporary static policy output used until Stage 3. The test-only oracle lives under `tests/fixtures/promotion-release/`. See the [promotion-release data dictionary](PROMOTION-RELEASE-DATA-DICTIONARY.md) for field-level definitions.
 
@@ -509,17 +560,17 @@ Reviewed outputs live separately under `replays/promotion-release/aldertons-prom
 
 Initial seeded exception designs include:
 
-| Condition | Evidence encoded in fixtures | Expected treatment |
-| --- | --- | --- |
-| Promotion uplift counted twice | Forecast marks uplift as already included | Policy blocks a second uplift; evaluation records whether the agent noticed |
-| Duplicate supply | An earlier order arrives before the promotion | Top-up recommendation must account for it |
-| Invalid top-up quantity | Recommendation conflicts with the minimum or order multiple | Adjust to an allowed quantity or hold |
-| Unfunded low margin | Supplier funding is unverified and projected margin is below the floor | Block until funding or price changes |
-| Late supply | Supplier lead time exceeds the time available before launch | Hold, find an allowed alternative, or change dates |
-| Channel mismatch | Storefront and label dates differ from the approved brief | Correct before release |
-| Missing evidence | A required source returns unavailable for one line | Make the gap explicit and prevent unsupported release |
-| Ambiguous allocation note | Narrative says extra stock “may” be available while confirmed allocation remains zero | Agent explains the uncertainty; policy blocks a top-up that relies on unconfirmed stock |
-| Competing safe adjustments | Brief prioritises availability while more than one policy-compliant price and quantity combination exists | Agent proposes one evidence-backed option; reviewer may choose another allowed value |
+| Condition                      | Evidence encoded in fixtures                                                                              | Expected treatment                                                                      |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Promotion uplift counted twice | Forecast marks uplift as already included                                                                 | Policy blocks a second uplift; evaluation records whether the agent noticed             |
+| Duplicate supply               | An earlier order arrives before the promotion                                                             | Top-up recommendation must account for it                                               |
+| Invalid top-up quantity        | Recommendation conflicts with the minimum or order multiple                                               | Adjust to an allowed quantity or hold                                                   |
+| Unfunded low margin            | Supplier funding is unverified and projected margin is below the floor                                    | Block until funding or price changes                                                    |
+| Late supply                    | Supplier lead time exceeds the time available before launch                                               | Hold, find an allowed alternative, or change dates                                      |
+| Channel mismatch               | Storefront and label dates differ from the approved brief                                                 | Correct before release                                                                  |
+| Missing evidence               | A required source returns unavailable for one line                                                        | Make the gap explicit and prevent unsupported release                                   |
+| Ambiguous allocation note      | Narrative says extra stock “may” be available while confirmed allocation remains zero                     | Agent explains the uncertainty; policy blocks a top-up that relies on unconfirmed stock |
+| Competing safe adjustments     | Brief prioritises availability while more than one policy-compliant price and quantity combination exists | Agent proposes one evidence-backed option; reviewer may choose another allowed value    |
 
 Product names, quantities, prices, dates, and thresholds are finalised during data generation. Each seeded condition needs an arithmetic proof in test fixtures so that it does not depend on persuasive prose.
 
@@ -597,9 +648,9 @@ type GateAssessment = {
     | 'inventory'
     | 'supplier'
     | 'financial'
-      | 'logistics'
-      | 'business_rules'
-      | 'external_signals';
+    | 'logistics'
+    | 'business_rules'
+    | 'external_signals';
   result:
     | 'passed'
     | 'failed'
@@ -697,19 +748,19 @@ An edit records actor, time, field, previous value, new value, and resulting pol
 
 Neon Postgres stores application state; Google Sheets remains an external target. Neon branches may isolate preview environments, but browser sessions are rows within the application schema rather than database branches. The minimum schema is:
 
-| Table | Purpose | Important constraints |
-| --- | --- | --- |
-| `sandbox_sessions` | Opaque public session and expiry | Unique session digest; expiry index; no raw IP address |
-| `agent_runs` | Provider/model, instruction and fixture versions, timing, outcome, token and cost data | Belongs to one session; bounded diagnostic payloads |
-| `tool_evidence` | Read-tool inputs, outputs, freshness, and provenance | Immutable; evidence ID unique within run |
-| `proposal_batches` | Batch identity, schema version, policy version, and phase | One active batch per fixed session scenario |
-| `candidate_assessments` | All 27 line assessments, model recommendations, and gate results | Unique batch and SKU pair |
-| `review_events` | Append-only approve, hold, reject, and edit history | Monotonic sequence within batch |
-| `effects` | One intended effect per candidate and target, including adapter mode | Unique idempotency key; preview-only effects cannot be applied |
-| `effect_attempts` | Preflight, write, verification, retry, and compensation attempts | Append-only with redacted error detail |
-| `workflow_runs` | Proposal, commit, compensation, or cleanup operation claim, workflow correlation, and outcome | Unique operation key and provider run ID; at most one claimed commit or compensation run per batch operation |
-| `audit_events` | Human-readable lifecycle history | Append-only; ordered by sequence, not timestamp alone |
-| `rate_limit_buckets` | Hashed actor and window counters | Automatic expiry |
+| Table                   | Purpose                                                                                       | Important constraints                                                                                        |
+| ----------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `sandbox_sessions`      | Opaque public session and expiry                                                              | Unique session digest; expiry index; no raw IP address                                                       |
+| `agent_runs`            | Provider/model, instruction and fixture versions, timing, outcome, token and cost data        | Belongs to one session; bounded diagnostic payloads                                                          |
+| `tool_evidence`         | Read-tool inputs, outputs, freshness, and provenance                                          | Immutable; evidence ID unique within run                                                                     |
+| `proposal_batches`      | Batch identity, schema version, policy version, and phase                                     | One active batch per fixed session scenario                                                                  |
+| `candidate_assessments` | All 27 line assessments, model recommendations, and gate results                              | Unique batch and SKU pair                                                                                    |
+| `review_events`         | Append-only approve, hold, reject, and edit history                                           | Monotonic sequence within batch                                                                              |
+| `effects`               | One intended effect per candidate and target, including adapter mode                          | Unique idempotency key; preview-only effects cannot be applied                                               |
+| `effect_attempts`       | Preflight, write, verification, retry, and compensation attempts                              | Append-only with redacted error detail                                                                       |
+| `workflow_runs`         | Proposal, commit, compensation, or cleanup operation claim, workflow correlation, and outcome | Unique operation key and provider run ID; at most one claimed commit or compensation run per batch operation |
+| `audit_events`          | Human-readable lifecycle history                                                              | Append-only; ordered by sequence, not timestamp alone                                                        |
+| `rate_limit_buckets`    | Hashed actor and window counters                                                              | Automatic expiry                                                                                             |
 
 Use foreign keys, not-null constraints, check constraints, and unique indexes for invariants that belong in storage. Use Drizzle's Postgres schema definitions and generated migrations. Review generated SQL and use committed migrations outside local prototyping; do not use schema push as the deployment workflow.
 
@@ -719,18 +770,18 @@ A short database transaction may update a projection and append its audit event 
 
 The routes are internal application APIs, not a supported third-party API.
 
-| Method and route | Responsibility |
-| --- | --- |
-| `POST /api/sessions` | Create an isolated scenario session and set the opaque cookie |
-| `POST /api/proposals` | Start live generation or explicit replay for the current session |
-| `GET /api/batches/:batchId` | Return the authorised review projection and evidence summaries |
-| `PATCH /api/batches/:batchId/changes/:changeId` | Approve, hold, reject, or edit with an expected revision |
-| `POST /api/batches/:batchId/commit` | Create or reuse the approved operation record, start its execution workflow when needed, and return `202 Accepted` |
-| `POST /api/batches/:batchId/reverse` | Create or reuse a compensation operation record, start its workflow when needed, and return `202 Accepted` |
-| `POST /api/sessions/:sessionId/inject-conflict` | Apply the fixed, controlled demonstration conflict once |
-| `GET /api/batches/:batchId/events` | Stream authorised execution events using SSE |
-| `GET /sandbox/:sessionId/sheet` | Render a read-only, session-scoped view of controlled Sheet data |
-| `GET /sandbox/:sessionId/storefront` | Render the session-scoped customer view from the storefront sandbox |
+| Method and route                                | Responsibility                                                                                                     |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `POST /api/sessions`                            | Create an isolated scenario session and set the opaque cookie                                                      |
+| `POST /api/proposals`                           | Start live generation or explicit replay for the current session                                                   |
+| `GET /api/batches/:batchId`                     | Return the authorised review projection and evidence summaries                                                     |
+| `PATCH /api/batches/:batchId/changes/:changeId` | Approve, hold, reject, or edit with an expected revision                                                           |
+| `POST /api/batches/:batchId/commit`             | Create or reuse the approved operation record, start its execution workflow when needed, and return `202 Accepted` |
+| `POST /api/batches/:batchId/reverse`            | Create or reuse a compensation operation record, start its workflow when needed, and return `202 Accepted`         |
+| `POST /api/sessions/:sessionId/inject-conflict` | Apply the fixed, controlled demonstration conflict once                                                            |
+| `GET /api/batches/:batchId/events`              | Stream authorised execution events using SSE                                                                       |
+| `GET /sandbox/:sessionId/sheet`                 | Render a read-only, session-scoped view of controlled Sheet data                                                   |
+| `GET /sandbox/:sessionId/storefront`            | Render the session-scoped customer view from the storefront sandbox                                                |
 
 Every mutation checks the session, batch ownership, batch phase, expected revision, request schema, and idempotency key where applicable. A stale revision returns a conflict response with the current projection.
 
@@ -769,7 +820,10 @@ interface EffectAdapter {
   preflight(effect: PlannedEffect): Promise<PreflightResult>;
   apply(effect: PlannedEffect, idempotencyKey: string): Promise<ApplyResult>;
   verify(effect: PlannedEffect, result: ApplyResult): Promise<VerifyResult>;
-  compensate(effect: AppliedEffect, idempotencyKey: string): Promise<CompensationResult>;
+  compensate(
+    effect: AppliedEffect,
+    idempotencyKey: string,
+  ): Promise<CompensationResult>;
 }
 
 type ConnectorCapabilities = {
@@ -901,23 +955,23 @@ Logs use correlation IDs for session, run, batch, effect, and attempt. Never log
 
 ## Failure behaviour
 
-| Failure | Behaviour |
-| --- | --- |
-| Model timeout or budget stop | End the run, record the reason, and offer replay. |
-| Invalid proposal | Reject the complete proposal; allow one bounded regeneration before replay. |
-| Read tool unavailable | Do not fabricate evidence; return a failed run and offer replay. |
-| Model misses an enforceable risk | Preserve the recommendation, add the independent policy finding, and block or escalate the line. |
-| Policy failure | Keep the proposal in review with visible findings; do not execute. |
-| Release deadline passes before commit | Move the batch to intervention required, apply no pending effects, and require a fresh proposal or explicit recovery path. Never treat silence as approval. |
-| Stale review revision | Return the current projection and require the action to be reconsidered. |
-| Sheets preflight mismatch | Mark affected effects conflicted and leave external data unchanged. |
-| Transient connector error | Retry within the configured budget, then require intervention. |
-| Permanent connector error | Stop the dependent effect chain and explain the manual action. |
-| Workflow step is interrupted with an effect in `applying` | On retry, re-read the target before any write; classify it as applied, not applied, or conflicted, then persist the recovery decision. |
-| Progress connection fails | Continue server execution and refresh the persisted projection through baseline polling; reconnect optional SSE when available. |
-| Compensation conflict | Preserve the newer external value and require intervention. |
-| Expired session | Reject further operations and invite the visitor to start a new scenario. |
-| Executor circuit breaker active | Do not start another external attempt; persist the stop reason and leave the batch resumable only after an authorised recovery decision. |
+| Failure                                                   | Behaviour                                                                                                                                                   |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Model timeout or budget stop                              | End the run, record the reason, and offer replay.                                                                                                           |
+| Invalid proposal                                          | Reject the complete proposal; allow one bounded regeneration before replay.                                                                                 |
+| Read tool unavailable                                     | Do not fabricate evidence; return a failed run and offer replay.                                                                                            |
+| Model misses an enforceable risk                          | Preserve the recommendation, add the independent policy finding, and block or escalate the line.                                                            |
+| Policy failure                                            | Keep the proposal in review with visible findings; do not execute.                                                                                          |
+| Release deadline passes before commit                     | Move the batch to intervention required, apply no pending effects, and require a fresh proposal or explicit recovery path. Never treat silence as approval. |
+| Stale review revision                                     | Return the current projection and require the action to be reconsidered.                                                                                    |
+| Sheets preflight mismatch                                 | Mark affected effects conflicted and leave external data unchanged.                                                                                         |
+| Transient connector error                                 | Retry within the configured budget, then require intervention.                                                                                              |
+| Permanent connector error                                 | Stop the dependent effect chain and explain the manual action.                                                                                              |
+| Workflow step is interrupted with an effect in `applying` | On retry, re-read the target before any write; classify it as applied, not applied, or conflicted, then persist the recovery decision.                      |
+| Progress connection fails                                 | Continue server execution and refresh the persisted projection through baseline polling; reconnect optional SSE when available.                             |
+| Compensation conflict                                     | Preserve the newer external value and require intervention.                                                                                                 |
+| Expired session                                           | Reject further operations and invite the visitor to start a new scenario.                                                                                   |
+| Executor circuit breaker active                           | Do not start another external attempt; persist the stop reason and leave the batch resumable only after an authorised recovery decision.                    |
 
 ## Evaluation strategy
 

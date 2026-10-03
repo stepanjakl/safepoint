@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import seedJson from '@/fixtures/promotion-release/aldertons-promotion-release-v1/review-rules.json' with { type: 'json' };
+import { sameJsonValue } from './comparison';
 
 export const ruleFieldSchema = z.enum([
   'marginPercent',
@@ -69,6 +70,39 @@ export const reviewRuleSetSchema = z
           message: `Duplicate rule code ${rule.code}.`,
         });
       seen.add(rule.code);
+      const core = seedJson.rules.find(({ code }) => code === rule.code);
+      if (core) {
+        const threshold =
+          rule.code === 'minimum_margin' || rule.code === 'large_price_change';
+        const clause = rule.assert.clauses[0];
+        const expected = core.assert.clauses[0];
+        const validThreshold =
+          clause &&
+          expected &&
+          rule.assert.mode === 'all' &&
+          rule.assert.clauses.length === 1 &&
+          clause.left === expected.left &&
+          clause.operator === expected.operator &&
+          ('field' in clause.right
+            ? 'field' in expected.right &&
+              clause.right.field === expected.right.field
+            : typeof clause.right.value === 'number' &&
+              clause.right.value >= 0 &&
+              clause.right.value <= 100);
+        if (
+          rule.failure !== core.failure ||
+          rule.emitPass !== core.emitPass ||
+          !sameJsonValue(rule.when, core.when) ||
+          (threshold
+            ? !validThreshold
+            : !sameJsonValue(rule.assert, core.assert))
+        )
+          context.addIssue({
+            code: 'custom',
+            path: ['rules', index],
+            message: `Protected rule ${rule.code}: keep its comparison, applicability and failure consequence. Only margin and price-change thresholds are editable.`,
+          });
+      }
       for (const [groupName, group] of [
         ['when', rule.when],
         ['assert', rule.assert],
@@ -94,12 +128,132 @@ export const reviewRuleSetSchema = z
               message:
                 'Text facts support equality with another text value only.',
             });
+          const enumValues =
+            clause.left === 'fundingStatus'
+              ? ['confirmed', 'unverified', 'not_offered']
+              : clause.left === 'candidateStatus'
+                ? ['approved', 'withdrawn']
+                : null;
+          if (
+            enumValues &&
+            'value' in clause.right &&
+            !enumValues.includes(String(clause.right.value))
+          )
+            context.addIssue({
+              code: 'custom',
+              path: [
+                'rules',
+                index,
+                groupName,
+                'clauses',
+                clauseIndex,
+                'right',
+              ],
+              message: `Use a registered ${clause.left} value: ${enumValues.join(', ')}.`,
+            });
+          if (
+            leftText &&
+            'field' in clause.right &&
+            clause.right.field !== clause.left
+          )
+            context.addIssue({
+              code: 'custom',
+              path: ['rules', index, groupName, 'clauses', clauseIndex],
+              message: 'Enum facts must be compared within the same domain.',
+            });
+          if (
+            clause.operator === 'multiple_of' &&
+            (!clause.left.endsWith('Units') ||
+              ('field' in clause.right
+                ? !clause.right.field.endsWith('Units')
+                : typeof clause.right.value !== 'number' ||
+                  !Number.isSafeInteger(clause.right.value) ||
+                  clause.right.value <= 0))
+          )
+            context.addIssue({
+              code: 'custom',
+              path: ['rules', index, groupName, 'clauses', clauseIndex],
+              message:
+                'Order multiples require whole-unit facts and a positive integer divisor.',
+            });
         });
       }
     });
+    for (const code of migrated)
+      if (!seen.has(code))
+        context.addIssue({
+          code: 'custom',
+          path: ['rules'],
+          message: `Protected rule ${code} is required.`,
+        });
   });
 export type ReviewRuleSet = z.infer<typeof reviewRuleSetSchema>;
 export const seedReviewRules = reviewRuleSetSchema.parse(seedJson);
+
+export function describeRuleChanges(
+  before: ReviewRuleSet,
+  after: ReviewRuleSet,
+  facts: Pick<
+    RuleFacts,
+    'minimumMarginPercent' | 'individualApprovalPriceChangePercent'
+  >,
+) {
+  const changes: {
+    code: string;
+    direction: 'tightens' | 'loosens' | 'changed';
+    explanation: string;
+  }[] = [];
+  for (const code of new Set(
+    [...before.rules, ...after.rules].map(({ code }) => code),
+  )) {
+    const old = before.rules.find((rule) => rule.code === code);
+    const next = after.rules.find((rule) => rule.code === code);
+    if (sameJsonValue(old, next)) continue;
+    if (!old || !next) {
+      changes.push({
+        code,
+        direction: next ? 'tightens' : 'loosens',
+        explanation: next ? 'Adds a constraint.' : 'Removes a constraint.',
+      });
+      continue;
+    }
+    if (code === 'minimum_margin' || code === 'large_price_change') {
+      const resolve = (rule: typeof old) => {
+        const right = rule.assert.clauses[0]?.right;
+        return (
+          right &&
+          ('value' in right
+            ? right.value
+            : right.field === 'minimumMarginPercent'
+              ? facts.minimumMarginPercent
+              : facts.individualApprovalPriceChangePercent)
+        );
+      };
+      const a = resolve(old),
+        b = resolve(next);
+      if (typeof a === 'number' && typeof b === 'number' && a !== b) {
+        const tightens = code === 'minimum_margin' ? b > a : b < a;
+        changes.push({
+          code,
+          direction: tightens ? 'tightens' : 'loosens',
+          explanation: `Threshold ${a}% → ${b}%.`,
+        });
+        continue;
+      }
+    }
+    changes.push({
+      code,
+      direction: 'changed',
+      explanation:
+        sameJsonValue(old.assert, next.assert) &&
+        sameJsonValue(old.when, next.when) &&
+        old.failure === next.failure
+          ? 'Only rule description or provenance changed.'
+          : 'Logical effect may tighten or loosen policy; review candidate differences.',
+    });
+  }
+  return changes;
+}
 
 const fieldLabels: Record<RuleField, string> = {
   marginPercent: 'funded margin (%)',

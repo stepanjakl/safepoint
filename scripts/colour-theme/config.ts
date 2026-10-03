@@ -471,11 +471,13 @@ const ANCHORED_BY_FILE = {
     '--sp-card-pill-lead-hover': { on: 'floating', light: 75, dark: -225 },
   },
   'components/ui/tooltip.css': {
-    /* Dark in both themes: light takes dark's floating step (800), dark keeps
-       the floating face, where the edge alone separates it from a panel. */
-    '--sp-tooltip-face': { on: 'floating', light: 775, dark: 0 },
-    '--sp-tooltip-edge': { on: 'floating', light: 825, dark: -325 },
-    '--sp-tooltip-highlight': { highlightOf: '--sp-tooltip-face' },
+    /* Inverted in light (650, a slate), and the floating face in dark, where
+       the edge alone separates it from a panel. */
+    '--sp-tooltip-face': { on: 'floating', light: 625, dark: 0 },
+    '--sp-tooltip-edge': { on: 'floating', light: 675, dark: -325 },
+    /* Three steps lighter in light: one barely shows on a face this light.
+       Dark keeps the surfaces' one layer darker. */
+    '--sp-tooltip-highlight': { on: 'floating', light: 550, dark: 50 },
   },
 } as const satisfies Record<
   string,
@@ -644,8 +646,9 @@ export const ROLE_ASSIGNMENTS = {
     cssVariable: '--tooltip-face',
     ...RELATIVE_STEPS.get('--sp-tooltip-face')!,
   },
-  /* Its contents are drawn dark in both themes, so its ink is one step. */
-  tooltipInk: { cssVariable: '--sp-tooltip-ink', light: 100, dark: 100 },
+  /* Lighter in light, where the face is, so muted keeps its distance. */
+  tooltipInk: { cssVariable: '--sp-tooltip-ink', light: 0, dark: 100 },
+  tooltipMuted: { cssVariable: '--sp-tooltip-muted', light: 200, dark: 325 },
   /* Edges, so a boundary can be measured against the face it bounds and the
      ground it lies on rather than trusted because it is a border. */
   tooltipEdge: {
@@ -826,6 +829,14 @@ export const CONTRAST_CONTRACTS: readonly ContrastContract[] = [
     minimum: 4.5,
     target: 7,
     rationale: 'Tooltip labels are ordinary-size text.',
+  },
+  {
+    id: 'tooltip-muted-ink',
+    classification: 'required',
+    foreground: 'tooltipMuted',
+    background: 'tooltipFace',
+    minimum: 4.5,
+    rationale: 'Tooltip descriptions and rich-tooltip captions are small text.',
   },
   /* A tooltip is a distinct object over whatever it covers, so its boundary
      carries required visual information rather than decoration. In dark its

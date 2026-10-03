@@ -10,6 +10,10 @@ There is no calendar deadline. Progress is controlled by acceptance gates: a mil
 
 The application and written case study are the portfolio deliverables. A video is not required. Rehearsal, multi-agent simulation, arbitrary connectors, and enterprise controls belong to the future-product track.
 
+The user-authorized browser review experiment is a development exception to
+this sequence; see [the scope decision](REVIEW-EXPERIMENT-DECISION.md). It does
+not replace the production milestone acceptance gates below.
+
 ## Scope fence and stop rule
 
 The milestones preserve the full release path, but they are not permission to build every refinement before the central demonstration works.
@@ -337,17 +341,17 @@ Stage 1C is accepted when representative Playwright and axe checks have no serio
 
 Use the repository's installed skills at the point their rules apply:
 
-| Work | Skills |
-| --- | --- |
-| React and TypeScript components | `typescript-best-practices`, `vercel-react-best-practices` |
-| Visual system and layouts | `frontend-design` |
-| Buttons, collections, dialogs, navigation, and shortcuts | `keyboard` |
-| Progress, filters, errors, effects log, and dynamic status | `aria-live-regions` |
-| UI review before each public milestone | `web-design-guidelines` |
-| Agent tools, structured output, and provider integration | `ai-sdk` |
-| General schema, queries, transactions, and migrations | `drizzle-orm-patterns` |
-| Neon setup, connections, pooling, and platform behaviour | `neon`, `neon-postgres` |
-| Durable proposal, commit, and compensation orchestration | `workflow` |
+| Work                                                       | Skills                                                     |
+| ---------------------------------------------------------- | ---------------------------------------------------------- |
+| React and TypeScript components                            | `typescript-best-practices`, `vercel-react-best-practices` |
+| Visual system and layouts                                  | `frontend-design`                                          |
+| Buttons, collections, dialogs, navigation, and shortcuts   | `keyboard`                                                 |
+| Progress, filters, errors, effects log, and dynamic status | `aria-live-regions`                                        |
+| UI review before each public milestone                     | `web-design-guidelines`                                    |
+| Agent tools, structured output, and provider integration   | `ai-sdk`                                                   |
+| General schema, queries, transactions, and migrations      | `drizzle-orm-patterns`                                     |
+| Neon setup, connections, pooling, and platform behaviour   | `neon`, `neon-postgres`                                    |
+| Durable proposal, commit, and compensation orchestration   | `workflow`                                                 |
 
 The official Neon and Vercel Workflow skills are installed, and the obsolete Turso skills have been removed. The `workflow` skill requires guidance matched to the installed SDK version; the Neon skills require current official documentation to be checked because platform capabilities change. Skills guide implementation but do not override this specification or the installed packages' documentation.
 

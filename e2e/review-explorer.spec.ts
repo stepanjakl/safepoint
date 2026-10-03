@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { z } from 'zod';
 
+import { gateSchema } from '../lib/promotion-release/schemas';
 import type { LineSuggestion } from '../lib/model-workbench/line';
 
 test.beforeEach(async ({ page, colorScheme }) => {
@@ -111,6 +112,18 @@ test('keeps a live model result separate from the replay and trial', async ({
       uncertainties: ['Supplier allocation still needs confirmation.'],
       evidenceRefs: ['ev-catalogue-0010'],
       selfReportedCertainty: 'low',
+      gateAssessments: gateSchema.options.map((gate) => ({
+        gate,
+        result: 'passed',
+        explanation: 'Synthetic assessed gate.',
+        evidenceRefs: ['ev-catalogue-0010'],
+      })),
+      semanticActions: [
+        'update_promotion_record',
+        'record_top_up_recommendation',
+        'schedule_storefront_promotion',
+        'queue_labels',
+      ],
     };
     await route.fulfill({
       json: {
@@ -142,6 +155,8 @@ test('keeps a live model result separate from the replay and trial', async ({
               },
             ],
           },
+          findings: [],
+          gateReviews: [],
           findingCodes: ['margin_below_floor'],
           gateObligations: [
             'forecast',

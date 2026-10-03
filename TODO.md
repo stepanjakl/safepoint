@@ -30,7 +30,7 @@ The detailed requirements remain in [`docs/`](docs/README.md). If this checklist
   - Add Zod and define the first `PromotionReleasePlan` schema without model-echoed source facts.
   - Validate the complete versioned evidence pack, agent replay, and separate policy replay before exposing them to interface code.
   - Keep the test-only evaluation oracle outside both runtime evidence and replay folders.
-  - Derive the 17 ready, six attention, two held, one excluded, and one unverifiable counts from the validated replay.
+  - Derive the 16 ready, seven attention, two held, one excluded, and one unverifiable counts from the validated replay.
   - **Gate:** contract and fixture tests prove complete candidate accounting, evidence integrity, seeded arithmetic, and rejection of malformed input.
 
 - [ ] **1B. Build the static review interface**

@@ -78,9 +78,15 @@ const EDGES = [
 ] as const;
 
 /* Light-theme steps for the tooltip, compared side by side: face, edge,
-   highlight. Dark keeps the shipped roles, so only light differs. */
-const TOOLTIP_CANDIDATES = [
-  [800, 850, 775, 'Shipped: dark’s floating face, edge a step darker'],
+   highlight. Dark keeps the shipped roles except where a lighter face
+   overrides the ink, which then shows in both themes. */
+const TOOLTIP_CANDIDATES: readonly (readonly [
+  number,
+  number,
+  number,
+  string,
+])[] = [
+  [800, 850, 775, 'Dark’s floating face, edge a step darker'],
   [800, 800, 775, 'No visible edge'],
   [800, 950, 775, 'Dark edge'],
   [800, 1000, 775, 'Darkest edge'],
@@ -93,10 +99,41 @@ const TOOLTIP_CANDIDATES = [
   [800, 850, 400, 'Brightest sheen'],
   [800, 950, 500, 'Dark edge, brighter sheen'],
   [800, 1000, 400, 'Darkest edge, brightest sheen'],
-  [900, 950, 600, 'Deepest face, bright sheen'],
-  [850, 650, 825, 'Deeper face, light rim'],
-  [900, 700, 875, 'Deepest face, light rim'],
-] as const;
+  [850, 650, 825, 'Light rim'],
+  [900, 950, 600, 'Bright sheen'],
+  [900, 700, 875, 'Light rim'],
+  /* Lighter faces carry a three-step sheen: one step barely shows on them. */
+  [750, 800, 675, 'Edge a step darker'],
+  [750, 900, 675, 'Dark edge'],
+  [700, 750, 625, 'Edge a step darker'],
+  [700, 850, 625, 'Dark edge'],
+  [650, 700, 575, 'Shipped: edge a step darker'],
+  [650, 800, 575, 'Dark edge'],
+  [600, 650, 525, 'Edge a step darker'],
+  [600, 750, 525, 'Dark edge'],
+];
+
+/* Below 800 the dark side's ink (100 / 325) loses either contrast or its
+   hierarchy, so both lighten with the face: muted clears 4.5:1 and stays
+   five or more steps below the label. */
+const TOOLTIP_INK: Record<number, readonly [ink: number, muted: number]> = {
+  750: [50, 300],
+  700: [25, 250],
+  650: [0, 200],
+  600: [0, 150],
+};
+
+/* Grouped by face, lightest first; within a face, by edge then sheen. */
+const TOOLTIP_GROUPS = Object.entries(
+  Object.groupBy(
+    [...TOOLTIP_CANDIDATES].sort(
+      (x, y) => x[0] - y[0] || x[1] - y[1] || y[2] - x[2],
+    ),
+    ([face]) => face,
+  ),
+)
+  .map(([face, rows]) => ({ face: Number(face), rows: rows! }))
+  .sort((x, y) => x.face - y.face);
 
 const TOOLTIP_GROUNDS = ['canvas', 'pane', 'floating'] as const;
 
@@ -109,6 +146,7 @@ function TooltipSample({
   edge: number;
   highlight: number;
 }) {
+  const ink = TOOLTIP_INK[face];
   return (
     <div
       className="app-tooltip relative"
@@ -117,6 +155,10 @@ function TooltipSample({
           '--tooltip-face': `light-dark(var(--sp-neutral-${face}), var(--sp-tooltip-face))`,
           '--tooltip-edge': `light-dark(var(--sp-neutral-${edge}), var(--sp-tooltip-edge))`,
           '--tooltip-highlight': `light-dark(var(--sp-neutral-${highlight}), var(--sp-tooltip-highlight))`,
+          ...(ink && {
+            '--sp-tooltip-ink': `var(--sp-neutral-${ink[0]})`,
+            '--sp-text-muted': `var(--sp-neutral-${ink[1]})`,
+          }),
         } as CSSProperties
       }
     >
@@ -423,27 +465,38 @@ export default function WorkbenchPage() {
         </h2>
         <p className={NOTE}>
           Dark in both themes. Each row is a set of light-theme steps over the
-          canvas, a pane and a floating panel; dark is the same in every row.
-          Steps are face / edge / highlight.
+          canvas, a pane and a floating panel, grouped by face from lightest to
+          darkest. Dark is the same in every row except where a lighter face
+          overrides the ink. Steps are face / edge / highlight.
         </p>
         <div className="grid gap-4">
-          {TOOLTIP_CANDIDATES.map(([face, edge, highlight, name]) => (
-            <figure key={`${face}${edge}${highlight}`} className="grid gap-2">
-              <figcaption className="text-meta text-muted">
-                {face} / {edge} / {highlight} · {name}
-              </figcaption>
-              <div className="grid gap-3 sm:grid-cols-3">
-                {TOOLTIP_GROUNDS.map((ground) => (
-                  <OnGround key={ground} ground={ground}>
-                    <TooltipSample
-                      face={face}
-                      edge={edge}
-                      highlight={highlight}
-                    />
-                  </OnGround>
-                ))}
-              </div>
-            </figure>
+          {TOOLTIP_GROUPS.map(({ face, rows }) => (
+            <div key={face} className="grid gap-4">
+              <h3 className="text-dense font-semibold">
+                Face {face}
+                {TOOLTIP_INK[face]
+                  ? ` · ink ${TOOLTIP_INK[face][0]}, muted ${TOOLTIP_INK[face][1]}`
+                  : ''}
+              </h3>
+              {rows.map(([, edge, highlight, name]) => (
+                <figure key={`${edge}${highlight}`} className="grid gap-2">
+                  <figcaption className="text-meta text-muted">
+                    {face} / {edge} / {highlight} · {name}
+                  </figcaption>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    {TOOLTIP_GROUNDS.map((ground) => (
+                      <OnGround key={ground} ground={ground}>
+                        <TooltipSample
+                          face={face}
+                          edge={edge}
+                          highlight={highlight}
+                        />
+                      </OnGround>
+                    ))}
+                  </div>
+                </figure>
+              ))}
+            </div>
           ))}
         </div>
       </section>
