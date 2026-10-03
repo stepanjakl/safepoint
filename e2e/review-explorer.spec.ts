@@ -3,6 +3,13 @@ import { z } from 'zod';
 
 import type { LineSuggestion } from '../lib/model-workbench/line';
 
+test.beforeEach(async ({ page, colorScheme }) => {
+  await page.addInitScript(
+    (theme) => localStorage.setItem('safepoint:theme', theme),
+    colorScheme === 'dark' ? 'dark' : 'light',
+  );
+});
+
 test('links a product, its checks, a local trial, and exact source evidence', async ({
   page,
 }) => {
@@ -82,12 +89,17 @@ test('links a product, its checks, a local trial, and exact source evidence', as
 test('keeps a live model result separate from the replay and trial', async ({
   page,
 }) => {
-  await page.route('**/api/dev/model', async (route) => {
+  await page.route('**/api/dev/review-lab', async (route) => {
     const request = z
       .strictObject({
+        stage: z.literal('propose'),
         model: z.string(),
         sku: z.literal('ALD-0010'),
         reviewAt: z.iso.datetime({ offset: false }),
+        input: z.unknown(),
+        rules: z.unknown(),
+        confirmedFacts: z.unknown(),
+        confirmedClaims: z.unknown(),
       })
       .parse(route.request().postDataJSON());
     const suggestion: LineSuggestion = {
@@ -103,51 +115,49 @@ test('keeps a live model result separate from the replay and trial', async ({
     await route.fulfill({
       json: {
         kind: 'result',
-        result: {
-          runId: 'explorer-live-test',
-          model: request.model,
-          sku: suggestion.sku,
-          instructionVersion: 'promotion-line-instruction-v2',
-          durationMs: 12,
-          input: { sku: suggestion.sku },
-          output: suggestion,
-          suggestion,
-          issues: [],
-          review: {
-            policy: {
-              basis: 'model_proposal',
-              pricePence: 60,
-              topUpUnits: 200,
-              marginPercent: 8.3,
-              verdict: 'blocked',
-              checks: [
-                {
-                  code: 'minimum_margin',
-                  status: 'block',
-                  message: 'Confirmed-funding margin is below the floor.',
-                  evidenceRefs: ['ev-catalogue-0010', 'ev-policy'],
-                },
-              ],
-            },
-            findingCodes: ['margin_below_floor'],
-            gateObligations: [
-              'forecast',
-              'inventory',
-              'supplier',
-              'financial',
-              'logistics',
-              'business_rules',
-              'external_signals',
-            ].map((gate) => ({
-              gate,
-              obligation: gate === 'external_signals' ? 'advisory' : 'required',
-              reason: 'Local browser test.',
-            })),
-            treatment: 'blocked',
+        stage: 'propose',
+        runId: 'explorer-live-test',
+        model: request.model,
+        durationMs: 12,
+        systemInstructions: 'Fixed server instructions and local draft.',
+        modelInput: { sku: suggestion.sku },
+        output: suggestion,
+        suggestion,
+        snapshot: null,
+        issues: [],
+        review: {
+          treatment: 'blocked',
+          policy: {
+            basis: 'model_proposal',
+            pricePence: 60,
+            topUpUnits: 200,
+            marginPercent: 8.3,
+            verdict: 'blocked',
+            checks: [
+              {
+                code: 'minimum_margin',
+                status: 'block',
+                message: 'Confirmed-funding margin is below the floor.',
+                evidenceRefs: ['ev-catalogue-0010', 'ev-policy'],
+              },
+            ],
           },
-          usage: { inputTokens: 100, outputTokens: 50 },
-          finishReason: 'stop',
+          findingCodes: ['margin_below_floor'],
+          gateObligations: [
+            'forecast',
+            'inventory',
+            'supplier',
+            'financial',
+            'logistics',
+            'business_rules',
+            'external_signals',
+          ].map((gate) => ({
+            gate,
+            obligation: gate === 'external_signals' ? 'advisory' : 'required',
+            reason: 'Local browser test.',
+          })),
         },
+        usage: { inputTokens: 100, outputTokens: 50 },
       },
     });
   });

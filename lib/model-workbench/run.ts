@@ -14,7 +14,7 @@ const INSTRUCTION_VERSION = 'promotion-line-instruction-v2';
 
 // The provider receives a shallow shape. The local contract applies the
 // stricter SKU, recommendation, money, and evidence checks after generation.
-const generationSchema = z.object({
+export const generationSchema = z.object({
   sku: z.string(),
   recommendation: z.enum(['release', 'adjust', 'hold', 'exclude']),
   proposedPricePence: z.number().nullable(),

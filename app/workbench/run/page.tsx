@@ -33,6 +33,8 @@ export default function RunWorkbenchPage() {
     outputs: promotionProcess.outputs,
     analysis: promotionProcess.analysis,
     requestLabel: 'Thu 4 Sep · 09:00',
+    instructionsVersion: promotionProcess.runs.find((run) => run.current)
+      ?.instructionsVersion,
   };
 
   return (
@@ -46,6 +48,10 @@ export default function RunWorkbenchPage() {
           The promotion run at each stage, as a live run. Only the steps that
           have started are drawn, and only the latest, a running or a stopped
           step is open.{' '}
+          <a className="underline underline-offset-4" href="#player">
+            Player
+          </a>{' '}
+          ·{' '}
           <Link className="underline underline-offset-4" href="/workbench">
             Colour reference
           </Link>

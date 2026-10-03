@@ -41,14 +41,7 @@ export function ThreadPage({
   );
 }
 
-/** What the operator asked for, as the one right-aligned box in the thread. */
-export function RequestBubble({ children }: { children: ReactNode }) {
-  return (
-    <div className="border-rule-faint bg-surface-primary rounded-shell rounded-br-region ml-auto max-w-[84%] border px-4.5 py-3.5 max-sm:max-w-[94%]">
-      {children}
-    </div>
-  );
-}
+export { RequestBubble } from './request-bubble';
 
 /** The response: what the run proposes, for review. */
 export function ResponseSection({ children }: { children: ReactNode }) {

@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "rules": [
+    {
+      "code": "minimum_margin",
+      "title": "Minimum confirmed-funding margin",
+      "source": "Fresh Food Weekend release policy",
+      "failure": "block",
+      "emitPass": true,
+      "assert": {
+        "mode": "all",
+        "clauses": [
+          {
+            "left": "marginPercent",
+            "operator": "gte",
+            "right": { "field": "minimumMarginPercent" }
+          }
+        ]
+      }
+    },
+    {
+      "code": "stock_coverage",
+      "title": "Cover the forecast stock shortfall",
+      "source": "Fresh Food Weekend release policy",
+      "failure": "block",
+      "emitPass": true,
+      "assert": {
+        "mode": "all",
+        "clauses": [
+          {
+            "left": "topUpUnits",
+            "operator": "gte",
+            "right": { "field": "shortfallUnits" }
+          }
+        ]
+      }
+    },
+    {
+      "code": "order_terms",
+      "title": "Meet supplier order terms",
+      "source": "Supplier terms and release policy",
+      "failure": "block",
+      "emitPass": true,
+      "when": {
+        "mode": "all",
+        "clauses": [
+          {
+            "left": "topUpUnits",
+            "operator": "gt",
+            "right": { "value": 0 }
+          }
+        ]
+      },
+      "assert": {
+        "mode": "all",
+        "clauses": [
+          {
+            "left": "topUpUnits",
+            "operator": "gte",
+            "right": { "field": "minimumOrderQuantityUnits" }
+          },
+          {
+            "left": "topUpUnits",
+            "operator": "multiple_of",
+            "right": { "field": "orderMultipleUnits" }
+          }
+        ]
+      }
+    },
+    {
+      "code": "large_price_change",
+      "title": "Individual review for a large price change",
+      "source": "Fresh Food Weekend release policy",
+      "failure": "attention",
+      "emitPass": false,
+      "assert": {
+        "mode": "all",
+        "clauses": [
+          {
+            "left": "priceChangePercent",
+            "operator": "lte",
+            "right": { "field": "individualApprovalPriceChangePercent" }
+          }
+        ]
+      }
+    }
+  ]
+}

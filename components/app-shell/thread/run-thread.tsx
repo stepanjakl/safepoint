@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
   type ReactNode,
+  type RefObject,
 } from 'react';
 // Deep import, as in thread-step.tsx: the barrel is the whole library.
 import ArrowDown from 'blode-icons-react/icons/arrow-down';
@@ -18,6 +19,7 @@ import {
 } from '@/lib/process/system-links';
 import {
   reviewAt,
+  RUN_TOOK,
   STAGE_ANNOUNCEMENTS,
   stageProgress,
   stepsAt,
@@ -29,6 +31,7 @@ import { ReplayReview } from '@/components/review/replay-review';
 import type { ReviewOpenRequest } from '@/components/review/review-experience';
 import { ProcessSheetActions } from '@/components/app-shell/process/process-sheet';
 import { Button } from '@/components/ui/button';
+import { motionTime } from '@/lib/motion-time';
 import { useFollowRun } from './follow-run';
 import { InitialAnalysis } from './initial-analysis';
 import {
@@ -100,9 +103,11 @@ export function RunThread({
     progress.sourcesRead,
     counting(stage === 'reading', 'sources'),
   );
+  // Slower: the bar fills beside it, and it is the step a demo pauses on.
   const evaluated = useCountUp(
     progress.evaluated,
     counting(stage === 'evaluating', 'evaluation'),
+    EVALUATE_SPAN_MS,
   );
   const steps = stepsAt(stage, facts, requestLabel, trigger, {
     sourcesRead,
@@ -126,18 +131,41 @@ export function RunThread({
   const ids = steps.map((step) => step.id).join(' ');
   // The stage is announced as its steps are drawn, not before them.
   const [announced, setAnnounced] = useState(stage);
+  /*
+    Catching up: a stage that moves on while the last change is still held
+    means the run is outpacing the motion. The thread then stops waiting and
+    draws the newest state at once, without arrivals, rather than falling
+    further behind; the next ordinary change plays in full again.
+  */
+  const pending = useRef(false);
+  const lastStage = useRef(stage);
+  const [hurried, setHurried] = useState(false);
   useEffect(() => {
+    if (lastStage.current !== stage) {
+      lastStage.current = stage;
+      if (pending.current && look === 'proposed') {
+        busy.current.clear();
+        pending.current = false;
+        setHurried(true);
+        setDrawn(ids.split(' '));
+        setAnnounced(stage);
+        return;
+      }
+      setHurried(false);
+      pending.current = true;
+    }
     if (busy.current.size > 0) return;
+    pending.current = false;
     setDrawn((now) => (now.join(' ') === ids ? now : ids.split(' ')));
     setAnnounced(stage);
-  }, [ids, settledAt, stage]);
+  }, [ids, settledAt, stage, look]);
   // In case a step never reports: one that leaves the page mid-change.
   useEffect(() => {
     const timer = setTimeout(() => {
       busy.current.clear();
       setDrawn(ids.split(' '));
       setAnnounced(stage);
-    }, 5000);
+    }, motionTime(5000));
     return () => clearTimeout(timer);
   }, [ids, stage]);
   const shown =
@@ -147,6 +175,7 @@ export function RunThread({
   const thread = useRef<HTMLOListElement>(null);
   const newest = shown.at(-1);
   const { behind, catchUp } = useFollowRun(thread, newest?.id);
+  const paused = useRestWhenUnseen(thread);
 
   /*
     A flag goes to what it names: the line policy overruled, the change a
@@ -249,7 +278,12 @@ export function RunThread({
 
   return (
     <ThreadLookContext value={look}>
-      <ol ref={thread} className="thread" data-look={look}>
+      <ol
+        ref={thread}
+        className="thread"
+        data-look={look}
+        data-paused={paused || undefined}
+      >
         {shown.map((step) => (
           <ThreadStep
             key={step.id}
@@ -257,7 +291,8 @@ export function RunThread({
             // Of the stage, not of what is drawn: a finished step folds as it
             // finishes, though the next has yet to arrive.
             latest={step.id === steps.at(-1)?.id}
-            enter={watched}
+            current={step.id === newest?.id}
+            enter={watched && !hurried}
             onBusy={onBusy}
             flagAction={flagActions[step.id]}
             reference={step.id === 'request' ? reference : undefined}
@@ -268,6 +303,13 @@ export function RunThread({
       </ol>
       {/* For a reader scrolled away when a step arrived. No height of its
           own, so appearing moves nothing; the button rises out of it. */}
+      {/* The run's end, once its last step has settled: a quiet line under
+          the thread, easing in only where the reader watched it finish. */}
+      {announced === 'committed' ? (
+        <p className="thread-end" data-arrived={watched || undefined}>
+          Run complete · {RUN_TOOK} from the request
+        </p>
+      ) : null}
       {behind && newest ? (
         <div className="sticky bottom-4 flex h-0 items-end justify-center">
           <Button variant="primary" onPress={catchUp}>
@@ -291,14 +333,23 @@ export function RunThread({
 // while the fold is still opening would jump it.
 const COUNT_AFTER_MS = 1700;
 const COUNT_SPAN_MS = 1500;
+const EVALUATE_SPAN_MS = 4500;
+// The quickest a count may change: longer than its label's morph (360ms in
+// ThreadStep), so each change finishes before the next starts. A larger jump
+// moves in fewer, even steps rather than flickering through every number.
+const COUNT_STEP_MS = 420;
 
 /*
-  A count that ticks up to `target`, one at a time, once its step is drawn;
+  A count that ticks up to `target`, in even steps, once its step is drawn;
   holds where it stood while the step waits to arrive; and is simply
   `target` at rest. It ticks from wherever it stood, so a stage that moves on
   mid-count carries on from there.
 */
-function useCountUp(target: number, mode: 'rest' | 'wait' | 'tick') {
+function useCountUp(
+  target: number,
+  mode: 'rest' | 'wait' | 'tick',
+  span = COUNT_SPAN_MS,
+) {
   const [shown, setShown] = useState(target);
   const from = useRef(shown);
   useLayoutEffect(() => {
@@ -307,17 +358,47 @@ function useCountUp(target: number, mode: 'rest' | 'wait' | 'tick') {
   useEffect(() => {
     if (mode === 'wait') return;
     const start = from.current;
-    const steps = mode === 'tick' ? target - start : 0;
+    const distance = mode === 'tick' ? target - start : 0;
+    const steps = Math.min(
+      distance,
+      Math.max(1, Math.floor(span / COUNT_STEP_MS)),
+    );
     const timers =
-      steps > 0
+      distance > 0
         ? Array.from({ length: steps }, (_, index) =>
             setTimeout(
-              () => setShown(start + index + 1),
-              COUNT_AFTER_MS + (COUNT_SPAN_MS / steps) * index,
+              () =>
+                setShown(start + Math.round((distance * (index + 1)) / steps)),
+              motionTime(COUNT_AFTER_MS + (span / steps) * index),
             ),
           )
         : [setTimeout(() => setShown(target))];
     return () => timers.forEach(clearTimeout);
-  }, [target, mode]);
+  }, [target, mode, span]);
   return shown;
+}
+
+/*
+  Whether the thread is out of sight -- scrolled away or in a hidden tab --
+  when its looping marks and shimmer can rest rather than repaint unseen.
+*/
+function useRestWhenUnseen(list: RefObject<HTMLOListElement | null>) {
+  const [unseen, setUnseen] = useState(false);
+  useEffect(() => {
+    const thread = list.current;
+    if (!thread) return;
+    let inView = true;
+    const update = () => setUnseen(!inView || document.hidden);
+    const seen = new IntersectionObserver(([entry]) => {
+      inView = entry?.isIntersecting ?? true;
+      update();
+    });
+    seen.observe(thread);
+    document.addEventListener('visibilitychange', update);
+    return () => {
+      seen.disconnect();
+      document.removeEventListener('visibilitychange', update);
+    };
+  }, [list]);
+  return unseen;
 }

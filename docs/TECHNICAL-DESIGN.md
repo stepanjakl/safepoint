@@ -362,7 +362,101 @@ Finding-code comparison now agrees on all 27 reviewed lines. `invalid_order_mult
 
 Both workbenches can shift the synthetic scenario's structured timestamps to a current review time. The shift preserves their relative intervals and leaves the checked-in fixture unchanged. The policy page can switch back to the recorded fixture time or refresh its current-time anchor; the model page uses one anchor for its preview and the corresponding server run. Stable fixture IDs may still contain the original cycle date and should be read as identifiers, not current scheduling instructions. The replay application outside the workbenches continues to use its recorded dates until its own clock behavior is designed.
 
-`/workbench/explore` is the development-only entry point for reading one product across source facts, the recorded AI proposal, an optional live model proposal, independent checks, and the reviewer consequence. Its 27-product index and exact JSON disclosures preserve the complete evidence and replay for inspection; a cited source ID opens the matching validated record. It labels the recorded replay, live run, and unsaved local trial separately and compares their checks without treating one as an approval. The browser keeps the live result and trial only until product change or reload. The detailed model and policy workbenches remain available for their specialised diagnostics; the explorer adds no database, Sheet, or connector write path.
+`/workbench/explore` is the development-only entry point for reading one product across source facts, the recorded AI proposal, an optional live model proposal, independent checks, and the reviewer consequence. Its 27-product index and exact JSON disclosures preserve the complete evidence and replay for inspection; a cited source ID opens the matching validated record. It labels the recorded replay, live run, and local trial separately and compares their checks without treating one as an approval. Live output remains in React state; the local review experiment described below persists its inputs and latest snapshot in browser storage. The detailed model and policy workbenches remain available for their specialised diagnostics; the explorer adds no database, Sheet, or connector write path.
+
+### Browser review rules experiment
+
+The explorer now includes a development experiment with one selected model and
+three structured stages: supplier fact extraction, one JSON rule suggestion,
+and a candidate proposal. `/api/dev/review-lab` is available only in development
+on loopback hosts and rejects foreign origins. Provider keys stay on the server.
+Each stage uses AI SDK structured output, stage-specific server constraints, a
+bounded editable instruction draft, and normalized JSON. The last call's exact
+system instructions, input, output, and run ID are visible. Rule drafting returns
+a JSON envelope containing a serialized `ruleJson` string; trusted code parses
+and validates that rule before presenting a draft. This keeps the provider
+schema shallow while retaining the stricter independent rule contract.
+AI SDK DevTools also records all three stages under that run ID, using the same
+local trace file and viewer as the model workbench. These traces include pasted text; this experiment
+is intended for synthetic data.
+
+Optional text has one declared role. Case evidence can propose supplier funding
+status, funding per unit, or confirmed additional allocation with an exact quote.
+A reviewer may correct and confirm each claim for one selected SKU. Until then,
+checks use the original records. Accepted values and quotes persist locally;
+source disclosures retain the original record, and affected checks cite both
+that record and the accepted local text. Changing the text or its role clears
+accepted overlays. Policy excerpts can inform rule drafting but cannot update
+facts or activate rules. Background context is included in proposal reasoning
+and excluded from rule drafting.
+
+`fixtures/promotion-release/aldertons-promotion-release-v1/review-rules.json`
+seeds minimum funded margin, stock coverage, supplier order terms, and the large
+price-change threshold. `lib/promotion-release/review-rules.ts` validates JSON and
+evaluates only registered facts, comparisons, and all/any groups. Unknown fields,
+executable expressions, duplicate codes, incompatible operands, and invalid JSON
+are rejected. Missing referenced facts yield a blocking **cannot evaluate**
+finding. Fact arithmetic, source validation, and remaining checks stay in trusted
+TypeScript. `evaluateLabLine` applies the same evaluator in browser trials and
+server reviews. The seeded rules preserve all 27 reviewed finding codes and
+blocking outcomes; the detailed policy/model pages use these defaults.
+
+The reviewer can edit a rule draft, inspect changed checks and verdicts across
+all 27 candidates, and explicitly activate it locally. A model suggestion never
+activates a rule. Rule approval and case approval are separate decisions. This
+unversioned browser editor is an experiment, not the production policy lifecycle:
+it does not publish policies, maintain history, or authorize an external action.
+Production still needs reviewed policy versions, immutable run snapshots, approved
+process facts/actions, and registered target adapters.
+
+A checked case previews exact permitted channel and top-up changes. Explicit
+**Simulate approval** re-evaluates the current proposal, compares its result and
+target plan with the reviewed preview, applies changes to an in-memory target
+copy, and reads back that copy. Every outcome is labeled simulation. It does not
+verify external state or make a database, Google Sheet, or storefront write.
+The top-up effect is a local recommendation, not a supplier order.
+
+Browser storage key `safepoint.review-lab.v1` holds one current instruction/text
+draft, active rule set, accepted supplier overlay with quotes for one SKU, and
+latest trial. Each evaluated local trial, valid model proposal, and simulation
+captures its complete source snapshot, exact rules, proposal, accepted claims,
+checks, and model output where available. Records from model runs also retain the
+model identity, run ID, exact server instructions, and normalized prompt input.
+Export downloads that latest record as JSON; reset restores seeded setup and clears it. Reload preserves the record's
+original timestamps even while the displayed scenario receives a fresh clock
+anchor. Storage failures are visible and fall back to memory. Draft rule edits,
+unconfirmed claims, and live-call UI state are temporary. There is no policy
+version history or cross-device persistence in this experiment.
+
+### Local model evaluation examples
+
+The explorer's **Model evaluation · examples** disclosure runs seven fixed
+synthetic cases through the existing development route: confirmed and tentative
+supplier evidence, a directive embedded in evidence, a margin policy amendment,
+an eligible candidate, missing stock, and a withdrawn candidate. Each run uses
+seeded rules and one selected model, independent of the editable experiment.
+Expected answers stay outside model requests. Fixture dates receive the run's
+review-time anchor, so the examples do not become stale.
+
+The report distinguishes provider failures, model misses, and application
+blockers. Extraction checks explicit values and exact quotes; rule checks exercise
+both sides of the margin boundary with and without a top-up. Proposal checks
+compare recommendations and citations with the examples' expectations while
+recording the independent verdict separately. A correct application blocker does
+not erase an unsafe model recommendation. A passing citation check establishes
+only that the expected source was cited; a person still reviews the rationale.
+These seven examples are a development smoke test, not calibrated confidence or
+evidence of general reliability.
+
+Calls run sequentially. Stop finishes the current call and skips the remaining
+cases. Each completed case saves an ordered partial report, so reloading during
+a run retains an explicitly stopped report. Browser key
+`safepoint.model-evaluation.v1` stores only the latest report, separately from
+the experiment's active rules, accepted facts, and trial. Export includes exact
+requests, normalized model inputs, responses, checks, run IDs, elapsed time, and
+token usage when available. Clear removes the report. Storage failures are
+visible and fall back to memory. Evaluation outputs cannot activate rules,
+confirm facts, approve cases, or execute effects.
 
 ## Runtime modes
 

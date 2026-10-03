@@ -48,6 +48,10 @@ export type ProcessStep = {
   // Extra detail for the marker's tooltip, where the status word alone is not
   // enough to say why the step ended as it did.
   note?: string;
+  // Set on the step that hands the run its request: who raised it. It did no
+  // work, so it shows where the run came from rather than a status, and stays
+  // open as the context every later step answers.
+  origin?: RunTrigger;
 };
 
 // What the run worked out before it proposed anything. Placeholder: the engine

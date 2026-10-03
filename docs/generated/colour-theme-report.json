@@ -28,7 +28,10 @@
         "dark raised-ring-on-face: 1.453:1 is below target 1.5:1.",
         "dark canvas-recess-ring-on-face: 1.457:1 is below target 1.5:1.",
         "dark canvas-recess-ring-on-ground: 1.361:1 is below target 1.5:1.",
-        "dark primary-recess-ring-on-ground: 1.453:1 is below target 1.5:1."
+        "dark primary-recess-ring-on-ground: 1.453:1 is below target 1.5:1.",
+        "tooltip-edge-over-canvas: light and dark differ 3.273x in contrast (13.509:1 vs 4.127:1); the hierarchy is not the same in both themes.",
+        "tooltip-edge-over-primary-surface: light and dark differ 3.874x in contrast (14.453:1 vs 3.731:1); the hierarchy is not the same in both themes.",
+        "tooltip-edge-over-floating-surface: light and dark differ 4.723x in contrast (15.443:1 vs 3.27:1); the hierarchy is not the same in both themes."
       ],
       "ramp": [
         {
@@ -640,35 +643,24 @@
             "ratio": 1.392
           },
           { "id": "keycap-ink", "light": 8.866, "dark": 7.104, "ratio": 1.248 },
-          {
-            "id": "tooltip-ink",
-            "light": 17.749,
-            "dark": 11.053,
-            "ratio": 1.606
-          },
+          { "id": "tooltip-ink", "light": 11.053, "dark": 11.053, "ratio": 1 },
           {
             "id": "tooltip-edge-over-canvas",
-            "light": 4.809,
+            "light": 13.509,
             "dark": 4.127,
-            "ratio": 1.165
+            "ratio": 3.273
           },
           {
             "id": "tooltip-edge-over-primary-surface",
-            "light": 5.145,
+            "light": 14.453,
             "dark": 3.731,
-            "ratio": 1.379
+            "ratio": 3.874
           },
           {
             "id": "tooltip-edge-over-floating-surface",
-            "light": 5.497,
+            "light": 15.443,
             "dark": 3.27,
-            "ratio": 1.681
-          },
-          {
-            "id": "tooltip-edge-on-own-face",
-            "light": 5.497,
-            "dark": 3.27,
-            "ratio": 1.681
+            "ratio": 4.723
           },
           {
             "id": "raised-ring-on-face",
@@ -1336,14 +1328,14 @@
           "theme": "light",
           "id": "tooltip-ink",
           "classification": "required",
-          "foreground": "textPrimary",
+          "foreground": "tooltipInk",
           "background": "tooltipFace",
           "minimum": 4.5,
           "target": 7,
-          "rationale": "Tooltip copy uses the primary text role.",
-          "foregroundStep": 925,
-          "backgroundStep": 25,
-          "ratio": 17.749,
+          "rationale": "Tooltip labels are ordinary-size text.",
+          "foregroundStep": 100,
+          "backgroundStep": 800,
+          "ratio": 11.053,
           "passed": true,
           "metTarget": true
         },
@@ -1355,9 +1347,9 @@
           "background": "canvas",
           "minimum": 3,
           "rationale": "A project requirement, not a WCAG citation: the tooltip must read as a separate object over what it covers.",
-          "foregroundStep": 550,
+          "foregroundStep": 850,
           "backgroundStep": 75,
-          "ratio": 4.809,
+          "ratio": 13.509,
           "passed": true,
           "metTarget": true
         },
@@ -1369,9 +1361,9 @@
           "background": "surfacePrimary",
           "minimum": 3,
           "rationale": "Tooltips routinely open over raised panels.",
-          "foregroundStep": 550,
+          "foregroundStep": 850,
           "backgroundStep": 50,
-          "ratio": 5.145,
+          "ratio": 14.453,
           "passed": true,
           "metTarget": true
         },
@@ -1382,25 +1374,10 @@
           "foreground": "tooltipEdge",
           "background": "surfaceFloating",
           "minimum": 3,
-          "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-          "foregroundStep": 550,
+          "rationale": "In dark the tooltip face equals the floating surface, so only the edge separates them.",
+          "foregroundStep": 850,
           "backgroundStep": 25,
-          "ratio": 5.497,
-          "passed": true,
-          "metTarget": true
-        },
-        {
-          "theme": "light",
-          "id": "tooltip-edge-on-own-face",
-          "classification": "advisory",
-          "foreground": "tooltipEdge",
-          "background": "tooltipFace",
-          "minimum": 1.5,
-          "target": 3,
-          "rationale": "The box must read as bounded, not as a floating block of ink.",
-          "foregroundStep": 550,
-          "backgroundStep": 25,
-          "ratio": 5.497,
+          "ratio": 15.443,
           "passed": true,
           "metTarget": true
         },
@@ -2123,11 +2100,11 @@
           "theme": "dark",
           "id": "tooltip-ink",
           "classification": "required",
-          "foreground": "textPrimary",
+          "foreground": "tooltipInk",
           "background": "tooltipFace",
           "minimum": 4.5,
           "target": 7,
-          "rationale": "Tooltip copy uses the primary text role.",
+          "rationale": "Tooltip labels are ordinary-size text.",
           "foregroundStep": 100,
           "backgroundStep": 800,
           "ratio": 11.053,
@@ -2169,22 +2146,7 @@
           "foreground": "tooltipEdge",
           "background": "surfaceFloating",
           "minimum": 3,
-          "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-          "foregroundStep": 475,
-          "backgroundStep": 800,
-          "ratio": 3.27,
-          "passed": true,
-          "metTarget": true
-        },
-        {
-          "theme": "dark",
-          "id": "tooltip-edge-on-own-face",
-          "classification": "advisory",
-          "foreground": "tooltipEdge",
-          "background": "tooltipFace",
-          "minimum": 1.5,
-          "target": 3,
-          "rationale": "The box must read as bounded, not as a floating block of ink.",
+          "rationale": "In dark the tooltip face equals the floating surface, so only the edge separates them.",
           "foregroundStep": 475,
           "backgroundStep": 800,
           "ratio": 3.27,
@@ -2385,7 +2347,10 @@
         "dark raised-ring-on-face: 1.457:1 is below target 1.5:1.",
         "dark canvas-recess-ring-on-face: 1.461:1 is below target 1.5:1.",
         "dark canvas-recess-ring-on-ground: 1.364:1 is below target 1.5:1.",
-        "dark primary-recess-ring-on-ground: 1.457:1 is below target 1.5:1."
+        "dark primary-recess-ring-on-ground: 1.457:1 is below target 1.5:1.",
+        "tooltip-edge-over-canvas: light and dark differ 3.253x in contrast (13.503:1 vs 4.151:1); the hierarchy is not the same in both themes.",
+        "tooltip-edge-over-primary-surface: light and dark differ 3.85x in contrast (14.442:1 vs 3.751:1); the hierarchy is not the same in both themes.",
+        "tooltip-edge-over-floating-surface: light and dark differ 4.694x in contrast (15.425:1 vs 3.286:1); the hierarchy is not the same in both themes."
       ],
       "ramp": [
         {
@@ -2997,35 +2962,24 @@
             "ratio": 1.4
           },
           { "id": "keycap-ink", "light": 8.817, "dark": 7.112, "ratio": 1.24 },
-          {
-            "id": "tooltip-ink",
-            "light": 17.743,
-            "dark": 11.047,
-            "ratio": 1.606
-          },
+          { "id": "tooltip-ink", "light": 11.047, "dark": 11.047, "ratio": 1 },
           {
             "id": "tooltip-edge-over-canvas",
-            "light": 4.779,
+            "light": 13.503,
             "dark": 4.151,
-            "ratio": 1.151
+            "ratio": 3.253
           },
           {
             "id": "tooltip-edge-over-primary-surface",
-            "light": 5.111,
+            "light": 14.442,
             "dark": 3.751,
-            "ratio": 1.363
+            "ratio": 3.85
           },
           {
             "id": "tooltip-edge-over-floating-surface",
-            "light": 5.459,
+            "light": 15.425,
             "dark": 3.286,
-            "ratio": 1.661
-          },
-          {
-            "id": "tooltip-edge-on-own-face",
-            "light": 5.459,
-            "dark": 3.286,
-            "ratio": 1.661
+            "ratio": 4.694
           },
           {
             "id": "raised-ring-on-face",
@@ -3693,14 +3647,14 @@
           "theme": "light",
           "id": "tooltip-ink",
           "classification": "required",
-          "foreground": "textPrimary",
+          "foreground": "tooltipInk",
           "background": "tooltipFace",
           "minimum": 4.5,
           "target": 7,
-          "rationale": "Tooltip copy uses the primary text role.",
-          "foregroundStep": 925,
-          "backgroundStep": 25,
-          "ratio": 17.743,
+          "rationale": "Tooltip labels are ordinary-size text.",
+          "foregroundStep": 100,
+          "backgroundStep": 800,
+          "ratio": 11.047,
           "passed": true,
           "metTarget": true
         },
@@ -3712,9 +3666,9 @@
           "background": "canvas",
           "minimum": 3,
           "rationale": "A project requirement, not a WCAG citation: the tooltip must read as a separate object over what it covers.",
-          "foregroundStep": 550,
+          "foregroundStep": 850,
           "backgroundStep": 75,
-          "ratio": 4.779,
+          "ratio": 13.503,
           "passed": true,
           "metTarget": true
         },
@@ -3726,9 +3680,9 @@
           "background": "surfacePrimary",
           "minimum": 3,
           "rationale": "Tooltips routinely open over raised panels.",
-          "foregroundStep": 550,
+          "foregroundStep": 850,
           "backgroundStep": 50,
-          "ratio": 5.111,
+          "ratio": 14.442,
           "passed": true,
           "metTarget": true
         },
@@ -3739,25 +3693,10 @@
           "foreground": "tooltipEdge",
           "background": "surfaceFloating",
           "minimum": 3,
-          "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-          "foregroundStep": 550,
+          "rationale": "In dark the tooltip face equals the floating surface, so only the edge separates them.",
+          "foregroundStep": 850,
           "backgroundStep": 25,
-          "ratio": 5.459,
-          "passed": true,
-          "metTarget": true
-        },
-        {
-          "theme": "light",
-          "id": "tooltip-edge-on-own-face",
-          "classification": "advisory",
-          "foreground": "tooltipEdge",
-          "background": "tooltipFace",
-          "minimum": 1.5,
-          "target": 3,
-          "rationale": "The box must read as bounded, not as a floating block of ink.",
-          "foregroundStep": 550,
-          "backgroundStep": 25,
-          "ratio": 5.459,
+          "ratio": 15.425,
           "passed": true,
           "metTarget": true
         },
@@ -4480,11 +4419,11 @@
           "theme": "dark",
           "id": "tooltip-ink",
           "classification": "required",
-          "foreground": "textPrimary",
+          "foreground": "tooltipInk",
           "background": "tooltipFace",
           "minimum": 4.5,
           "target": 7,
-          "rationale": "Tooltip copy uses the primary text role.",
+          "rationale": "Tooltip labels are ordinary-size text.",
           "foregroundStep": 100,
           "backgroundStep": 800,
           "ratio": 11.047,
@@ -4526,22 +4465,7 @@
           "foreground": "tooltipEdge",
           "background": "surfaceFloating",
           "minimum": 3,
-          "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-          "foregroundStep": 475,
-          "backgroundStep": 800,
-          "ratio": 3.286,
-          "passed": true,
-          "metTarget": true
-        },
-        {
-          "theme": "dark",
-          "id": "tooltip-edge-on-own-face",
-          "classification": "advisory",
-          "foreground": "tooltipEdge",
-          "background": "tooltipFace",
-          "minimum": 1.5,
-          "target": 3,
-          "rationale": "The box must read as bounded, not as a floating block of ink.",
+          "rationale": "In dark the tooltip face equals the floating surface, so only the edge separates them.",
           "foregroundStep": 475,
           "backgroundStep": 800,
           "ratio": 3.286,
@@ -4742,7 +4666,10 @@
         "dark raised-ring-on-face: 1.453:1 is below target 1.5:1.",
         "dark canvas-recess-ring-on-face: 1.457:1 is below target 1.5:1.",
         "dark canvas-recess-ring-on-ground: 1.361:1 is below target 1.5:1.",
-        "dark primary-recess-ring-on-ground: 1.453:1 is below target 1.5:1."
+        "dark primary-recess-ring-on-ground: 1.453:1 is below target 1.5:1.",
+        "tooltip-edge-over-canvas: light and dark differ 3.274x in contrast (13.509:1 vs 4.126:1); the hierarchy is not the same in both themes.",
+        "tooltip-edge-over-primary-surface: light and dark differ 3.875x in contrast (14.454:1 vs 3.73:1); the hierarchy is not the same in both themes.",
+        "tooltip-edge-over-floating-surface: light and dark differ 4.723x in contrast (15.444:1 vs 3.27:1); the hierarchy is not the same in both themes."
       ],
       "ramp": [
         {
@@ -5354,35 +5281,24 @@
             "ratio": 1.391
           },
           { "id": "keycap-ink", "light": 8.868, "dark": 7.105, "ratio": 1.248 },
-          {
-            "id": "tooltip-ink",
-            "light": 17.75,
-            "dark": 11.054,
-            "ratio": 1.606
-          },
+          { "id": "tooltip-ink", "light": 11.054, "dark": 11.054, "ratio": 1 },
           {
             "id": "tooltip-edge-over-canvas",
-            "light": 4.81,
+            "light": 13.509,
             "dark": 4.126,
-            "ratio": 1.166
+            "ratio": 3.274
           },
           {
             "id": "tooltip-edge-over-primary-surface",
-            "light": 5.146,
+            "light": 14.454,
             "dark": 3.73,
-            "ratio": 1.38
+            "ratio": 3.875
           },
           {
             "id": "tooltip-edge-over-floating-surface",
-            "light": 5.499,
+            "light": 15.444,
             "dark": 3.27,
-            "ratio": 1.682
-          },
-          {
-            "id": "tooltip-edge-on-own-face",
-            "light": 5.499,
-            "dark": 3.27,
-            "ratio": 1.682
+            "ratio": 4.723
           },
           {
             "id": "raised-ring-on-face",
@@ -6050,14 +5966,14 @@
           "theme": "light",
           "id": "tooltip-ink",
           "classification": "required",
-          "foreground": "textPrimary",
+          "foreground": "tooltipInk",
           "background": "tooltipFace",
           "minimum": 4.5,
           "target": 7,
-          "rationale": "Tooltip copy uses the primary text role.",
-          "foregroundStep": 925,
-          "backgroundStep": 25,
-          "ratio": 17.75,
+          "rationale": "Tooltip labels are ordinary-size text.",
+          "foregroundStep": 100,
+          "backgroundStep": 800,
+          "ratio": 11.054,
           "passed": true,
           "metTarget": true
         },
@@ -6069,9 +5985,9 @@
           "background": "canvas",
           "minimum": 3,
           "rationale": "A project requirement, not a WCAG citation: the tooltip must read as a separate object over what it covers.",
-          "foregroundStep": 550,
+          "foregroundStep": 850,
           "backgroundStep": 75,
-          "ratio": 4.81,
+          "ratio": 13.509,
           "passed": true,
           "metTarget": true
         },
@@ -6083,9 +5999,9 @@
           "background": "surfacePrimary",
           "minimum": 3,
           "rationale": "Tooltips routinely open over raised panels.",
-          "foregroundStep": 550,
+          "foregroundStep": 850,
           "backgroundStep": 50,
-          "ratio": 5.146,
+          "ratio": 14.454,
           "passed": true,
           "metTarget": true
         },
@@ -6096,25 +6012,10 @@
           "foreground": "tooltipEdge",
           "background": "surfaceFloating",
           "minimum": 3,
-          "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-          "foregroundStep": 550,
+          "rationale": "In dark the tooltip face equals the floating surface, so only the edge separates them.",
+          "foregroundStep": 850,
           "backgroundStep": 25,
-          "ratio": 5.499,
-          "passed": true,
-          "metTarget": true
-        },
-        {
-          "theme": "light",
-          "id": "tooltip-edge-on-own-face",
-          "classification": "advisory",
-          "foreground": "tooltipEdge",
-          "background": "tooltipFace",
-          "minimum": 1.5,
-          "target": 3,
-          "rationale": "The box must read as bounded, not as a floating block of ink.",
-          "foregroundStep": 550,
-          "backgroundStep": 25,
-          "ratio": 5.499,
+          "ratio": 15.444,
           "passed": true,
           "metTarget": true
         },
@@ -6837,11 +6738,11 @@
           "theme": "dark",
           "id": "tooltip-ink",
           "classification": "required",
-          "foreground": "textPrimary",
+          "foreground": "tooltipInk",
           "background": "tooltipFace",
           "minimum": 4.5,
           "target": 7,
-          "rationale": "Tooltip copy uses the primary text role.",
+          "rationale": "Tooltip labels are ordinary-size text.",
           "foregroundStep": 100,
           "backgroundStep": 800,
           "ratio": 11.054,
@@ -6883,22 +6784,7 @@
           "foreground": "tooltipEdge",
           "background": "surfaceFloating",
           "minimum": 3,
-          "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-          "foregroundStep": 475,
-          "backgroundStep": 800,
-          "ratio": 3.27,
-          "passed": true,
-          "metTarget": true
-        },
-        {
-          "theme": "dark",
-          "id": "tooltip-edge-on-own-face",
-          "classification": "advisory",
-          "foreground": "tooltipEdge",
-          "background": "tooltipFace",
-          "minimum": 1.5,
-          "target": 3,
-          "rationale": "The box must read as bounded, not as a floating block of ink.",
+          "rationale": "In dark the tooltip face equals the floating surface, so only the edge separates them.",
           "foregroundStep": 475,
           "backgroundStep": 800,
           "ratio": 3.27,
@@ -7100,7 +6986,10 @@
         "dark canvas-recess-ring-on-face: 1.465:1 is below target 1.5:1.",
         "dark canvas-recess-ring-on-ground: 1.366:1 is below target 1.5:1.",
         "dark primary-recess-ring-on-ground: 1.463:1 is below target 1.5:1.",
-        "field-focus-from-resting-edge: light and dark differ 1.752x in contrast (3.739:1 vs 6.55:1); the hierarchy is not the same in both themes."
+        "field-focus-from-resting-edge: light and dark differ 1.752x in contrast (3.739:1 vs 6.55:1); the hierarchy is not the same in both themes.",
+        "tooltip-edge-over-canvas: light and dark differ 3.229x in contrast (13.493:1 vs 4.179:1); the hierarchy is not the same in both themes.",
+        "tooltip-edge-over-primary-surface: light and dark differ 3.822x in contrast (14.426:1 vs 3.774:1); the hierarchy is not the same in both themes.",
+        "tooltip-edge-over-floating-surface: light and dark differ 4.662x in contrast (15.403:1 vs 3.304:1); the hierarchy is not the same in both themes."
       ],
       "ramp": [
         {
@@ -7712,35 +7601,24 @@
             "ratio": 1.409
           },
           { "id": "keycap-ink", "light": 8.757, "dark": 7.115, "ratio": 1.231 },
-          {
-            "id": "tooltip-ink",
-            "light": 17.733,
-            "dark": 11.037,
-            "ratio": 1.607
-          },
+          { "id": "tooltip-ink", "light": 11.037, "dark": 11.037, "ratio": 1 },
           {
             "id": "tooltip-edge-over-canvas",
-            "light": 4.743,
+            "light": 13.493,
             "dark": 4.179,
-            "ratio": 1.135
+            "ratio": 3.229
           },
           {
             "id": "tooltip-edge-over-primary-surface",
-            "light": 5.071,
+            "light": 14.426,
             "dark": 3.774,
-            "ratio": 1.344
+            "ratio": 3.822
           },
           {
             "id": "tooltip-edge-over-floating-surface",
-            "light": 5.414,
+            "light": 15.403,
             "dark": 3.304,
-            "ratio": 1.639
-          },
-          {
-            "id": "tooltip-edge-on-own-face",
-            "light": 5.414,
-            "dark": 3.304,
-            "ratio": 1.639
+            "ratio": 4.662
           },
           {
             "id": "raised-ring-on-face",
@@ -8408,14 +8286,14 @@
           "theme": "light",
           "id": "tooltip-ink",
           "classification": "required",
-          "foreground": "textPrimary",
+          "foreground": "tooltipInk",
           "background": "tooltipFace",
           "minimum": 4.5,
           "target": 7,
-          "rationale": "Tooltip copy uses the primary text role.",
-          "foregroundStep": 925,
-          "backgroundStep": 25,
-          "ratio": 17.733,
+          "rationale": "Tooltip labels are ordinary-size text.",
+          "foregroundStep": 100,
+          "backgroundStep": 800,
+          "ratio": 11.037,
           "passed": true,
           "metTarget": true
         },
@@ -8427,9 +8305,9 @@
           "background": "canvas",
           "minimum": 3,
           "rationale": "A project requirement, not a WCAG citation: the tooltip must read as a separate object over what it covers.",
-          "foregroundStep": 550,
+          "foregroundStep": 850,
           "backgroundStep": 75,
-          "ratio": 4.743,
+          "ratio": 13.493,
           "passed": true,
           "metTarget": true
         },
@@ -8441,9 +8319,9 @@
           "background": "surfacePrimary",
           "minimum": 3,
           "rationale": "Tooltips routinely open over raised panels.",
-          "foregroundStep": 550,
+          "foregroundStep": 850,
           "backgroundStep": 50,
-          "ratio": 5.071,
+          "ratio": 14.426,
           "passed": true,
           "metTarget": true
         },
@@ -8454,25 +8332,10 @@
           "foreground": "tooltipEdge",
           "background": "surfaceFloating",
           "minimum": 3,
-          "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-          "foregroundStep": 550,
+          "rationale": "In dark the tooltip face equals the floating surface, so only the edge separates them.",
+          "foregroundStep": 850,
           "backgroundStep": 25,
-          "ratio": 5.414,
-          "passed": true,
-          "metTarget": true
-        },
-        {
-          "theme": "light",
-          "id": "tooltip-edge-on-own-face",
-          "classification": "advisory",
-          "foreground": "tooltipEdge",
-          "background": "tooltipFace",
-          "minimum": 1.5,
-          "target": 3,
-          "rationale": "The box must read as bounded, not as a floating block of ink.",
-          "foregroundStep": 550,
-          "backgroundStep": 25,
-          "ratio": 5.414,
+          "ratio": 15.403,
           "passed": true,
           "metTarget": true
         },
@@ -9195,11 +9058,11 @@
           "theme": "dark",
           "id": "tooltip-ink",
           "classification": "required",
-          "foreground": "textPrimary",
+          "foreground": "tooltipInk",
           "background": "tooltipFace",
           "minimum": 4.5,
           "target": 7,
-          "rationale": "Tooltip copy uses the primary text role.",
+          "rationale": "Tooltip labels are ordinary-size text.",
           "foregroundStep": 100,
           "backgroundStep": 800,
           "ratio": 11.037,
@@ -9241,22 +9104,7 @@
           "foreground": "tooltipEdge",
           "background": "surfaceFloating",
           "minimum": 3,
-          "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-          "foregroundStep": 475,
-          "backgroundStep": 800,
-          "ratio": 3.304,
-          "passed": true,
-          "metTarget": true
-        },
-        {
-          "theme": "dark",
-          "id": "tooltip-edge-on-own-face",
-          "classification": "advisory",
-          "foreground": "tooltipEdge",
-          "background": "tooltipFace",
-          "minimum": 1.5,
-          "target": 3,
-          "rationale": "The box must read as bounded, not as a floating block of ink.",
+          "rationale": "In dark the tooltip face equals the floating surface, so only the edge separates them.",
           "foregroundStep": 475,
           "backgroundStep": 800,
           "ratio": 3.304,
@@ -9457,7 +9305,10 @@
         "dark raised-ring-on-face: 1.455:1 is below target 1.5:1.",
         "dark canvas-recess-ring-on-face: 1.459:1 is below target 1.5:1.",
         "dark canvas-recess-ring-on-ground: 1.362:1 is below target 1.5:1.",
-        "dark primary-recess-ring-on-ground: 1.455:1 is below target 1.5:1."
+        "dark primary-recess-ring-on-ground: 1.455:1 is below target 1.5:1.",
+        "tooltip-edge-over-canvas: light and dark differ 3.264x in contrast (13.505:1 vs 4.138:1); the hierarchy is not the same in both themes.",
+        "tooltip-edge-over-primary-surface: light and dark differ 3.863x in contrast (14.447:1 vs 3.74:1); the hierarchy is not the same in both themes.",
+        "tooltip-edge-over-floating-surface: light and dark differ 4.708x in contrast (15.434:1 vs 3.278:1); the hierarchy is not the same in both themes."
       ],
       "ramp": [
         {
@@ -10069,35 +9920,24 @@
             "ratio": 1.396
           },
           { "id": "keycap-ink", "light": 8.842, "dark": 7.107, "ratio": 1.244 },
-          {
-            "id": "tooltip-ink",
-            "light": 17.745,
-            "dark": 11.05,
-            "ratio": 1.606
-          },
+          { "id": "tooltip-ink", "light": 11.05, "dark": 11.05, "ratio": 1 },
           {
             "id": "tooltip-edge-over-canvas",
-            "light": 4.794,
+            "light": 13.505,
             "dark": 4.138,
-            "ratio": 1.159
+            "ratio": 3.264
           },
           {
             "id": "tooltip-edge-over-primary-surface",
-            "light": 5.128,
+            "light": 14.447,
             "dark": 3.74,
-            "ratio": 1.371
+            "ratio": 3.863
           },
           {
             "id": "tooltip-edge-over-floating-surface",
-            "light": 5.479,
+            "light": 15.434,
             "dark": 3.278,
-            "ratio": 1.671
-          },
-          {
-            "id": "tooltip-edge-on-own-face",
-            "light": 5.479,
-            "dark": 3.278,
-            "ratio": 1.671
+            "ratio": 4.708
           },
           {
             "id": "raised-ring-on-face",
@@ -10765,14 +10605,14 @@
           "theme": "light",
           "id": "tooltip-ink",
           "classification": "required",
-          "foreground": "textPrimary",
+          "foreground": "tooltipInk",
           "background": "tooltipFace",
           "minimum": 4.5,
           "target": 7,
-          "rationale": "Tooltip copy uses the primary text role.",
-          "foregroundStep": 925,
-          "backgroundStep": 25,
-          "ratio": 17.745,
+          "rationale": "Tooltip labels are ordinary-size text.",
+          "foregroundStep": 100,
+          "backgroundStep": 800,
+          "ratio": 11.05,
           "passed": true,
           "metTarget": true
         },
@@ -10784,9 +10624,9 @@
           "background": "canvas",
           "minimum": 3,
           "rationale": "A project requirement, not a WCAG citation: the tooltip must read as a separate object over what it covers.",
-          "foregroundStep": 550,
+          "foregroundStep": 850,
           "backgroundStep": 75,
-          "ratio": 4.794,
+          "ratio": 13.505,
           "passed": true,
           "metTarget": true
         },
@@ -10798,9 +10638,9 @@
           "background": "surfacePrimary",
           "minimum": 3,
           "rationale": "Tooltips routinely open over raised panels.",
-          "foregroundStep": 550,
+          "foregroundStep": 850,
           "backgroundStep": 50,
-          "ratio": 5.128,
+          "ratio": 14.447,
           "passed": true,
           "metTarget": true
         },
@@ -10811,25 +10651,10 @@
           "foreground": "tooltipEdge",
           "background": "surfaceFloating",
           "minimum": 3,
-          "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-          "foregroundStep": 550,
+          "rationale": "In dark the tooltip face equals the floating surface, so only the edge separates them.",
+          "foregroundStep": 850,
           "backgroundStep": 25,
-          "ratio": 5.479,
-          "passed": true,
-          "metTarget": true
-        },
-        {
-          "theme": "light",
-          "id": "tooltip-edge-on-own-face",
-          "classification": "advisory",
-          "foreground": "tooltipEdge",
-          "background": "tooltipFace",
-          "minimum": 1.5,
-          "target": 3,
-          "rationale": "The box must read as bounded, not as a floating block of ink.",
-          "foregroundStep": 550,
-          "backgroundStep": 25,
-          "ratio": 5.479,
+          "ratio": 15.434,
           "passed": true,
           "metTarget": true
         },
@@ -11552,11 +11377,11 @@
           "theme": "dark",
           "id": "tooltip-ink",
           "classification": "required",
-          "foreground": "textPrimary",
+          "foreground": "tooltipInk",
           "background": "tooltipFace",
           "minimum": 4.5,
           "target": 7,
-          "rationale": "Tooltip copy uses the primary text role.",
+          "rationale": "Tooltip labels are ordinary-size text.",
           "foregroundStep": 100,
           "backgroundStep": 800,
           "ratio": 11.05,
@@ -11598,22 +11423,7 @@
           "foreground": "tooltipEdge",
           "background": "surfaceFloating",
           "minimum": 3,
-          "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-          "foregroundStep": 475,
-          "backgroundStep": 800,
-          "ratio": 3.278,
-          "passed": true,
-          "metTarget": true
-        },
-        {
-          "theme": "dark",
-          "id": "tooltip-edge-on-own-face",
-          "classification": "advisory",
-          "foreground": "tooltipEdge",
-          "background": "tooltipFace",
-          "minimum": 1.5,
-          "target": 3,
-          "rationale": "The box must read as bounded, not as a floating block of ink.",
+          "rationale": "In dark the tooltip face equals the floating surface, so only the edge separates them.",
           "foregroundStep": 475,
           "backgroundStep": 800,
           "ratio": 3.278,
@@ -12048,30 +11858,24 @@
       },
       { "id": "menu-chip-ink", "light": 6.28, "dark": 8.74, "ratio": 1.392 },
       { "id": "keycap-ink", "light": 8.866, "dark": 7.104, "ratio": 1.248 },
-      { "id": "tooltip-ink", "light": 17.749, "dark": 11.053, "ratio": 1.606 },
+      { "id": "tooltip-ink", "light": 11.053, "dark": 11.053, "ratio": 1 },
       {
         "id": "tooltip-edge-over-canvas",
-        "light": 4.809,
+        "light": 13.509,
         "dark": 4.127,
-        "ratio": 1.165
+        "ratio": 3.273
       },
       {
         "id": "tooltip-edge-over-primary-surface",
-        "light": 5.145,
+        "light": 14.453,
         "dark": 3.731,
-        "ratio": 1.379
+        "ratio": 3.874
       },
       {
         "id": "tooltip-edge-over-floating-surface",
-        "light": 5.497,
+        "light": 15.443,
         "dark": 3.27,
-        "ratio": 1.681
-      },
-      {
-        "id": "tooltip-edge-on-own-face",
-        "light": 5.497,
-        "dark": 3.27,
-        "ratio": 1.681
+        "ratio": 4.723
       },
       {
         "id": "raised-ring-on-face",
@@ -12383,12 +12187,17 @@
     },
     "tooltipFace": {
       "cssVariable": "--tooltip-face",
-      "light": 25,
+      "light": 800,
       "dark": 800
+    },
+    "tooltipInk": {
+      "cssVariable": "--sp-tooltip-ink",
+      "light": 100,
+      "dark": 100
     },
     "tooltipEdge": {
       "cssVariable": "--tooltip-edge",
-      "light": 550,
+      "light": 850,
       "dark": 475
     },
     "ruleFaint": {
@@ -12414,7 +12223,7 @@
     },
     "tooltipHighlight": {
       "cssVariable": "--sp-tooltip-highlight",
-      "light": 0,
+      "light": 775,
       "dark": 850
     },
     "notchHighlight": {
@@ -12966,8 +12775,8 @@
       "id": "tooltipFace",
       "cssVariable": "--tooltip-face",
       "theme": "light",
-      "expected": 25,
-      "actual": 25,
+      "expected": 800,
+      "actual": 800,
       "passed": true
     },
     {
@@ -12979,11 +12788,27 @@
       "passed": true
     },
     {
+      "id": "tooltipInk",
+      "cssVariable": "--sp-tooltip-ink",
+      "theme": "light",
+      "expected": 100,
+      "actual": 100,
+      "passed": true
+    },
+    {
+      "id": "tooltipInk",
+      "cssVariable": "--sp-tooltip-ink",
+      "theme": "dark",
+      "expected": 100,
+      "actual": 100,
+      "passed": true
+    },
+    {
       "id": "tooltipEdge",
       "cssVariable": "--tooltip-edge",
       "theme": "light",
-      "expected": 550,
-      "actual": 550,
+      "expected": 850,
+      "actual": 850,
       "passed": true
     },
     {
@@ -13078,8 +12903,8 @@
       "id": "tooltipHighlight",
       "cssVariable": "--sp-tooltip-highlight",
       "theme": "light",
-      "expected": 0,
-      "actual": 0,
+      "expected": 775,
+      "actual": 775,
       "passed": true
     },
     {
@@ -14751,14 +14576,14 @@
       "theme": "light",
       "id": "tooltip-ink",
       "classification": "required",
-      "foreground": "textPrimary",
+      "foreground": "tooltipInk",
       "background": "tooltipFace",
       "minimum": 4.5,
       "target": 7,
-      "rationale": "Tooltip copy uses the primary text role.",
-      "foregroundStep": 925,
-      "backgroundStep": 25,
-      "ratio": 17.749,
+      "rationale": "Tooltip labels are ordinary-size text.",
+      "foregroundStep": 100,
+      "backgroundStep": 800,
+      "ratio": 11.053,
       "passed": true,
       "metTarget": true
     },
@@ -14770,9 +14595,9 @@
       "background": "canvas",
       "minimum": 3,
       "rationale": "A project requirement, not a WCAG citation: the tooltip must read as a separate object over what it covers.",
-      "foregroundStep": 550,
+      "foregroundStep": 850,
       "backgroundStep": 75,
-      "ratio": 4.809,
+      "ratio": 13.509,
       "passed": true,
       "metTarget": true
     },
@@ -14784,9 +14609,9 @@
       "background": "surfacePrimary",
       "minimum": 3,
       "rationale": "Tooltips routinely open over raised panels.",
-      "foregroundStep": 550,
+      "foregroundStep": 850,
       "backgroundStep": 50,
-      "ratio": 5.145,
+      "ratio": 14.453,
       "passed": true,
       "metTarget": true
     },
@@ -14797,25 +14622,10 @@
       "foreground": "tooltipEdge",
       "background": "surfaceFloating",
       "minimum": 3,
-      "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-      "foregroundStep": 550,
+      "rationale": "In dark the tooltip face equals the floating surface, so only the edge separates them.",
+      "foregroundStep": 850,
       "backgroundStep": 25,
-      "ratio": 5.497,
-      "passed": true,
-      "metTarget": true
-    },
-    {
-      "theme": "light",
-      "id": "tooltip-edge-on-own-face",
-      "classification": "advisory",
-      "foreground": "tooltipEdge",
-      "background": "tooltipFace",
-      "minimum": 1.5,
-      "target": 3,
-      "rationale": "The box must read as bounded, not as a floating block of ink.",
-      "foregroundStep": 550,
-      "backgroundStep": 25,
-      "ratio": 5.497,
+      "ratio": 15.443,
       "passed": true,
       "metTarget": true
     },
@@ -15538,11 +15348,11 @@
       "theme": "dark",
       "id": "tooltip-ink",
       "classification": "required",
-      "foreground": "textPrimary",
+      "foreground": "tooltipInk",
       "background": "tooltipFace",
       "minimum": 4.5,
       "target": 7,
-      "rationale": "Tooltip copy uses the primary text role.",
+      "rationale": "Tooltip labels are ordinary-size text.",
       "foregroundStep": 100,
       "backgroundStep": 800,
       "ratio": 11.053,
@@ -15584,22 +15394,7 @@
       "foreground": "tooltipEdge",
       "background": "surfaceFloating",
       "minimum": 3,
-      "rationale": "The tooltip face equals the floating surface, so only the edge separates them.",
-      "foregroundStep": 475,
-      "backgroundStep": 800,
-      "ratio": 3.27,
-      "passed": true,
-      "metTarget": true
-    },
-    {
-      "theme": "dark",
-      "id": "tooltip-edge-on-own-face",
-      "classification": "advisory",
-      "foreground": "tooltipEdge",
-      "background": "tooltipFace",
-      "minimum": 1.5,
-      "target": 3,
-      "rationale": "The box must read as bounded, not as a floating block of ink.",
+      "rationale": "In dark the tooltip face equals the floating surface, so only the edge separates them.",
       "foregroundStep": 475,
       "backgroundStep": 800,
       "ratio": 3.27,
@@ -15952,26 +15747,41 @@
     "graphite: dark canvas-recess-ring-on-face: 1.457:1 is below target 1.5:1.",
     "graphite: dark canvas-recess-ring-on-ground: 1.361:1 is below target 1.5:1.",
     "graphite: dark primary-recess-ring-on-ground: 1.453:1 is below target 1.5:1.",
+    "graphite: tooltip-edge-over-canvas: light and dark differ 3.273x in contrast (13.509:1 vs 4.127:1); the hierarchy is not the same in both themes.",
+    "graphite: tooltip-edge-over-primary-surface: light and dark differ 3.874x in contrast (14.453:1 vs 3.731:1); the hierarchy is not the same in both themes.",
+    "graphite: tooltip-edge-over-floating-surface: light and dark differ 4.723x in contrast (15.443:1 vs 3.27:1); the hierarchy is not the same in both themes.",
     "steel: dark primary-on-selected-surface in floating: 5.958:1 is below target 7:1.",
     "steel: dark raised-ring-on-face: 1.457:1 is below target 1.5:1.",
     "steel: dark canvas-recess-ring-on-face: 1.461:1 is below target 1.5:1.",
     "steel: dark canvas-recess-ring-on-ground: 1.364:1 is below target 1.5:1.",
     "steel: dark primary-recess-ring-on-ground: 1.457:1 is below target 1.5:1.",
+    "steel: tooltip-edge-over-canvas: light and dark differ 3.253x in contrast (13.503:1 vs 4.151:1); the hierarchy is not the same in both themes.",
+    "steel: tooltip-edge-over-primary-surface: light and dark differ 3.85x in contrast (14.442:1 vs 3.751:1); the hierarchy is not the same in both themes.",
+    "steel: tooltip-edge-over-floating-surface: light and dark differ 4.694x in contrast (15.425:1 vs 3.286:1); the hierarchy is not the same in both themes.",
     "clay: dark primary-on-selected-surface in floating: 5.992:1 is below target 7:1.",
     "clay: dark raised-ring-on-face: 1.453:1 is below target 1.5:1.",
     "clay: dark canvas-recess-ring-on-face: 1.457:1 is below target 1.5:1.",
     "clay: dark canvas-recess-ring-on-ground: 1.361:1 is below target 1.5:1.",
     "clay: dark primary-recess-ring-on-ground: 1.453:1 is below target 1.5:1.",
+    "clay: tooltip-edge-over-canvas: light and dark differ 3.274x in contrast (13.509:1 vs 4.126:1); the hierarchy is not the same in both themes.",
+    "clay: tooltip-edge-over-primary-surface: light and dark differ 3.875x in contrast (14.454:1 vs 3.73:1); the hierarchy is not the same in both themes.",
+    "clay: tooltip-edge-over-floating-surface: light and dark differ 4.723x in contrast (15.444:1 vs 3.27:1); the hierarchy is not the same in both themes.",
     "moss: dark primary-on-selected-surface in floating: 5.916:1 is below target 7:1.",
     "moss: dark raised-ring-on-face: 1.463:1 is below target 1.5:1.",
     "moss: dark canvas-recess-ring-on-face: 1.465:1 is below target 1.5:1.",
     "moss: dark canvas-recess-ring-on-ground: 1.366:1 is below target 1.5:1.",
     "moss: dark primary-recess-ring-on-ground: 1.463:1 is below target 1.5:1.",
     "moss: field-focus-from-resting-edge: light and dark differ 1.752x in contrast (3.739:1 vs 6.55:1); the hierarchy is not the same in both themes.",
+    "moss: tooltip-edge-over-canvas: light and dark differ 3.229x in contrast (13.493:1 vs 4.179:1); the hierarchy is not the same in both themes.",
+    "moss: tooltip-edge-over-primary-surface: light and dark differ 3.822x in contrast (14.426:1 vs 3.774:1); the hierarchy is not the same in both themes.",
+    "moss: tooltip-edge-over-floating-surface: light and dark differ 4.662x in contrast (15.403:1 vs 3.304:1); the hierarchy is not the same in both themes.",
     "ash: dark primary-on-selected-surface in floating: 5.973:1 is below target 7:1.",
     "ash: dark raised-ring-on-face: 1.455:1 is below target 1.5:1.",
     "ash: dark canvas-recess-ring-on-face: 1.459:1 is below target 1.5:1.",
     "ash: dark canvas-recess-ring-on-ground: 1.362:1 is below target 1.5:1.",
-    "ash: dark primary-recess-ring-on-ground: 1.455:1 is below target 1.5:1."
+    "ash: dark primary-recess-ring-on-ground: 1.455:1 is below target 1.5:1.",
+    "ash: tooltip-edge-over-canvas: light and dark differ 3.264x in contrast (13.505:1 vs 4.138:1); the hierarchy is not the same in both themes.",
+    "ash: tooltip-edge-over-primary-surface: light and dark differ 3.863x in contrast (14.447:1 vs 3.74:1); the hierarchy is not the same in both themes.",
+    "ash: tooltip-edge-over-floating-surface: light and dark differ 4.708x in contrast (15.434:1 vs 3.278:1); the hierarchy is not the same in both themes."
   ]
 }

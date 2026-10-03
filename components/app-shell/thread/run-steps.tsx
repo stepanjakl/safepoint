@@ -1,7 +1,8 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import { MorphingText } from '@/components/ui/morphing-text';
 import { Glyph, type GlyphName } from '@/components/ui/glyph';
 import type { Tone } from '@/components/ui/status-label';
 import { toneText } from '@/components/review/markers';
@@ -50,10 +51,16 @@ export function SourcesRead({
 }) {
   const shown =
     read === undefined ? [...inputs].sort(byAttention) : inputs.slice(0, read);
+  // Rows drawn with the list are simply there; any read after it fade in.
+  const [first] = useState(shown.length);
   return (
     <ul className={LIST}>
-      {shown.map((link) => (
-        <li key={link.id} className={ROW}>
+      {shown.map((link, index) => (
+        <li
+          key={link.id}
+          className={cx(ROW, 'thread-list-row')}
+          data-arrived={read !== undefined && index >= first ? true : undefined}
+        >
           <SystemDisc link={link} />
           <span className={ROW_NAME}>{link.label}</span>
           <SystemMeta link={link} />
@@ -98,17 +105,21 @@ export function EvaluationProgress({
         {segments.map((segment) => (
           <span
             key={segment.disposition}
-            className="release-bucket-bar rounded-full"
+            className="thread-progress-part release-bucket-bar rounded-full"
             data-severity={severityRank(segment.disposition)}
             style={{ flexGrow: segment.count }}
           />
         ))}
         <span
-          className="bg-rule-faint rounded-full"
+          className="thread-progress-part bg-rule-faint rounded-full"
           style={{ flexGrow: total - evaluated }}
         />
       </div>
-      {sofar ? <p className={NOTE}>So far: {sofar}</p> : null}
+      {sofar ? (
+        <p className={NOTE}>
+          So far: <MorphingText text={sofar} duration={360} />
+        </p>
+      ) : null}
     </div>
   );
 }

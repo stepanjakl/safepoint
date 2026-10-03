@@ -1,4 +1,11 @@
 import type { ScenarioEvidencePack, Sku } from './schemas';
+import {
+  evaluateReviewRules,
+  seedReviewRules,
+  type ReviewRuleSet,
+  type RuleFacts,
+  type RuleField,
+} from './review-rules';
 
 export type LinePolicyProposal = {
   sku: Sku;
@@ -67,6 +74,7 @@ export function getLineFacts(scenario: ScenarioEvidencePack, sku: Sku) {
 export function evaluateLinePolicy(
   scenario: ScenarioEvidencePack,
   proposal: LinePolicyProposal,
+  ruleSet: ReviewRuleSet = seedReviewRules,
 ) {
   const { sku } = proposal;
   const facts = getLineFacts(scenario, sku);
@@ -96,6 +104,44 @@ export function evaluateLinePolicy(
   const topUp = proposal.proposedTopUpUnits ?? baselineTopUp;
   const basis =
     proposal.proposedPricePence === null ? 'brief_baseline' : 'model_proposal';
+  const confirmedFunding =
+    supplier.fundingStatus === 'confirmed' ? supplier.fundingPencePerUnit : 0;
+  const marginPercent =
+    ((price - catalogue.costPricePence + confirmedFunding) / price) * 100;
+  const priceChangePercent =
+    ((catalogue.regularSellingPricePence - price) /
+      catalogue.regularSellingPricePence) *
+    100;
+  const ruleFacts: RuleFacts = {
+    marginPercent,
+    minimumMarginPercent: rules.minimumMarginPercent,
+    shortfallUnits: shortfall,
+    topUpUnits: topUp,
+    minimumOrderQuantityUnits: minimum,
+    orderMultipleUnits: multiple,
+    priceChangePercent,
+    individualApprovalPriceChangePercent:
+      rules.individualApprovalPriceChangePercent,
+    confirmedAdditionalAllocationUnits:
+      supplier.confirmedAdditionalAllocationUnits,
+    fundingPencePerUnit: supplier.fundingPencePerUnit,
+    fundingStatus: supplier.fundingStatus,
+    candidateStatus: brief.status,
+  };
+  const ruleEvidence: Record<RuleField, string[]> = {
+    marginPercent: [catalogue.evidenceId, supplier.evidenceId],
+    minimumMarginPercent: [rules.evidenceId],
+    shortfallUnits: [demand.evidenceId, supply.evidenceId],
+    topUpUnits: [scenario.promotionBrief.evidenceId],
+    minimumOrderQuantityUnits: [supplier.evidenceId],
+    orderMultipleUnits: [supplier.evidenceId],
+    priceChangePercent: [catalogue.evidenceId],
+    individualApprovalPriceChangePercent: [rules.evidenceId],
+    confirmedAdditionalAllocationUnits: [supplier.evidenceId],
+    fundingPencePerUnit: [supplier.evidenceId],
+    fundingStatus: [supplier.evidenceId],
+    candidateStatus: [scenario.promotionBrief.evidenceId],
+  };
 
   add(
     'candidate_status',
@@ -162,16 +208,26 @@ export function evaluateLinePolicy(
     [catalogue.evidenceId, scenario.promotionBrief.evidenceId],
   );
 
-  const confirmedFunding =
-    supplier.fundingStatus === 'confirmed' ? supplier.fundingPencePerUnit : 0;
-  const marginPercent =
-    ((price - catalogue.costPricePence + confirmedFunding) / price) * 100;
-  add(
-    'minimum_margin',
-    marginPercent >= rules.minimumMarginPercent ? 'pass' : 'block',
-    `Confirmed-funding margin ${marginPercent.toFixed(1)}% = (${price}p price − ${catalogue.costPricePence}p cost + ${confirmedFunding}p confirmed funding) ÷ ${price}p; floor ${rules.minimumMarginPercent}%.`,
-    [catalogue.evidenceId, supplier.evidenceId, rules.evidenceId],
-  );
+  for (const check of evaluateReviewRules(ruleSet, ruleFacts)) {
+    const message =
+      check.code === 'minimum_margin'
+        ? `Confirmed-funding margin ${marginPercent.toFixed(1)}% = (${price}p price − ${catalogue.costPricePence}p cost + ${confirmedFunding}p confirmed funding) ÷ ${price}p; ${check.detail}`
+        : check.code === 'stock_coverage'
+          ? `Forecast plus safety stock needs ${facts.requiredUnits} units; ${facts.availableBeforeLaunchUnits} are covered before top-up. Shortfall ${shortfall}, proposed top-up ${topUp}. ${check.detail}`
+          : check.code === 'order_terms'
+            ? `Top-up ${topUp}; supplier minimum ${minimum}, multiple ${multiple}. ${check.detail}`
+            : check.code === 'large_price_change'
+              ? `Price change ${priceChangePercent.toFixed(1)}%. ${check.detail}`
+              : `${check.title}: ${check.detail}`;
+    add(
+      check.code,
+      check.status,
+      check.detail.startsWith('Cannot evaluate')
+        ? `${check.title}: ${check.detail}`
+        : message,
+      [...new Set(check.fields.flatMap((field) => ruleEvidence[field]))],
+    );
+  }
   if (supplier.fundingStatus === 'unverified') {
     add(
       'funding_unverified',
@@ -181,23 +237,6 @@ export function evaluateLinePolicy(
     );
   }
 
-  if (shortfall !== null) {
-    add(
-      'stock_coverage',
-      topUp >= shortfall ? 'pass' : 'block',
-      `Forecast plus safety stock needs ${facts.requiredUnits} units; ${facts.availableBeforeLaunchUnits} are covered before top-up. Shortfall ${shortfall}, proposed top-up ${topUp}.`,
-      [demand.evidenceId, supply.evidenceId],
-    );
-  }
-
-  const validOrder =
-    topUp === 0 || (topUp >= minimum && topUp % multiple === 0);
-  add(
-    'order_terms',
-    validOrder ? 'pass' : 'block',
-    `Top-up ${topUp}; supplier minimum ${minimum}, multiple ${multiple}.`,
-    [supplier.evidenceId],
-  );
   if (topUp > 0) {
     const arrival = reviewTime + supplier.leadTimeHours * 3_600_000;
     const cutoff = Math.min(
@@ -233,19 +272,6 @@ export function evaluateLinePolicy(
       'attention',
       `Staged channel values need review: ${mismatched.map(({ channel: name }) => name).join(', ')}.`,
       [channel.evidenceId],
-    );
-  }
-
-  const priceChangePercent =
-    ((catalogue.regularSellingPricePence - price) /
-      catalogue.regularSellingPricePence) *
-    100;
-  if (priceChangePercent > rules.individualApprovalPriceChangePercent) {
-    add(
-      'large_price_change',
-      'attention',
-      `Price change ${priceChangePercent.toFixed(1)}% exceeds the ${rules.individualApprovalPriceChangePercent}% individual-review threshold.`,
-      [catalogue.evidenceId, rules.evidenceId],
     );
   }
 

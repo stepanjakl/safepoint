@@ -15,6 +15,7 @@ import { RUN_TRIGGER_LABELS, type ProcessStep, type RunTrigger } from './model';
 import { needsAttention, type SystemLink } from './system-links';
 
 export const RUN_STAGES = [
+  'waiting',
   'starting',
   'reading',
   'evaluating',
@@ -31,6 +32,7 @@ export const RUN_STAGES = [
 export type RunStage = (typeof RUN_STAGES)[number];
 
 export const RUN_STAGE_LABELS: Record<RunStage, string> = {
+  waiting: 'Waiting for a request',
   starting: 'Starting',
   reading: 'Reading sources',
   evaluating: 'Evaluating',
@@ -104,13 +106,13 @@ export type StageProgress = { sourcesRead: number; evaluated: number };
 export function stageProgress(stage: RunStage, facts: RunFacts): StageProgress {
   return {
     sourcesRead:
-      stage === 'starting'
+      stage === 'waiting' || stage === 'starting'
         ? 0
         : stage === 'reading'
           ? Math.ceil(facts.sources.total * 0.6)
           : facts.sources.total,
     evaluated:
-      stage === 'starting' || stage === 'reading'
+      stage === 'waiting' || stage === 'starting' || stage === 'reading'
         ? 0
         : stage === 'evaluating' || stage === 'stopped'
           ? Math.round(facts.candidates * 0.52)
@@ -137,6 +139,10 @@ const TIMING = {
   commit: { duration: '38s', window: { from: '11:42:05', to: '11:42:43' } },
 };
 
+// How long a committed run took, from its request to its verified commit
+// (09:00 to the commit's 11:42:43). Placeholder, fixed like TIMING.
+export const RUN_TOOK = '2h 42m';
+
 const plural = (count: number, one: string, other: string) =>
   `${count} ${count === 1 ? one : other}`;
 
@@ -153,6 +159,8 @@ export function stepsAt(
   // A live view's counts, as they tick toward the stage's own.
   progress: StageProgress = stageProgress(stage, facts),
 ): ProcessStep[] {
+  // Before the request is in there is no run to draw.
+  if (stage === 'waiting') return [];
   const { total, needing } = facts.sources;
   const steps: ProcessStep[] = [
     {
@@ -160,6 +168,7 @@ export function stepsAt(
       name: 'Request',
       label: requestLabel,
       status: 'complete',
+      origin: trigger,
       note:
         trigger === 'schedule'
           ? 'Raised by the weekly schedule, not by a person.'
@@ -365,6 +374,7 @@ export function reviewAt(
 // One polite line per stage, for the status region the thread keeps mounted:
 // a milestone, never a running count.
 export const STAGE_ANNOUNCEMENTS: Record<RunStage, string> = {
+  waiting: 'Waiting for a request.',
   starting: 'Run requested. Starting.',
   reading: 'Reading sources.',
   evaluating: 'Sources read. Evaluating candidates.',

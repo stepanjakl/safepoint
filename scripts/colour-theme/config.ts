@@ -452,8 +452,10 @@ const ANCHORED_BY_FILE = {
     '--sp-thread-line': { on: 'primary', light: 225, dark: -200 },
     '--sp-thread-done': { on: 'primary', light: 450, dark: -375 },
     '--sp-thread-fact-face': { on: 'primary', light: 75, dark: -75 },
-    /* A step past the row's hover wash, so a pill stays a pill under it. */
-    '--sp-thread-fact-face-hover': { on: 'primary', light: 100, dark: -150 },
+    /* Under the row's hover wash a pill lifts: lighter than the wash in
+       light (+50 there), a step past it in dark (-100), as a raised face does.
+       Light stays on the pane's own step rather than going whiter. */
+    '--sp-thread-fact-face-hover': { on: 'primary', light: 0, dark: -150 },
     /* A fact that opens something: past a plain one at rest, and past the
        row's hover wash under it (-100 in dark), deepest under the pointer. */
     '--sp-thread-link-face': { on: 'primary', light: 125, dark: -125 },
@@ -469,10 +471,11 @@ const ANCHORED_BY_FILE = {
     '--sp-card-pill-lead-hover': { on: 'floating', light: 75, dark: -225 },
   },
   'components/ui/tooltip.css': {
-    /* The face equals floating, so over a floating panel the edge alone
-       separates them -- contracts tooltip-edge-*. */
-    '--sp-tooltip-edge': { on: 'floating', light: 525, dark: -325 },
-    '--sp-tooltip-highlight': { highlightOf: '--sp-surface-floating' },
+    /* Dark in both themes: light takes dark's floating step (800), dark keeps
+       the floating face, where the edge alone separates it from a panel. */
+    '--sp-tooltip-face': { on: 'floating', light: 775, dark: 0 },
+    '--sp-tooltip-edge': { on: 'floating', light: 825, dark: -325 },
+    '--sp-tooltip-highlight': { highlightOf: '--sp-tooltip-face' },
   },
 } as const satisfies Record<
   string,
@@ -637,11 +640,12 @@ export const ROLE_ASSIGNMENTS = {
   fieldEdgeActive: relativeRole('--sp-field-edge-active'),
   keycapFace: relativeRole('--sp-keycap-face'),
   noticeFace: relativeRole('--sp-notice-face'),
-  /* The tooltip wears the floating face, so it moves with the stack. */
   tooltipFace: {
     cssVariable: '--tooltip-face',
-    ...SURFACE_STEPS.get('--sp-surface-floating')!,
+    ...RELATIVE_STEPS.get('--sp-tooltip-face')!,
   },
+  /* Its contents are drawn dark in both themes, so its ink is one step. */
+  tooltipInk: { cssVariable: '--sp-tooltip-ink', light: 100, dark: 100 },
   /* Edges, so a boundary can be measured against the face it bounds and the
      ground it lies on rather than trusted because it is a border. */
   tooltipEdge: {
@@ -817,16 +821,16 @@ export const CONTRAST_CONTRACTS: readonly ContrastContract[] = [
   {
     id: 'tooltip-ink',
     classification: 'required',
-    foreground: 'textPrimary',
+    foreground: 'tooltipInk',
     background: 'tooltipFace',
     minimum: 4.5,
     target: 7,
-    rationale: 'Tooltip copy uses the primary text role.',
+    rationale: 'Tooltip labels are ordinary-size text.',
   },
   /* A tooltip is a distinct object over whatever it covers, so its boundary
-     carries required visual information rather than decoration. Its face
-     aliases the floating surface, which means over a floating panel the edge
-     is the only thing distinguishing the two. */
+     carries required visual information rather than decoration. In dark its
+     face is the floating surface, so over a floating panel the edge is the
+     only thing distinguishing the two. */
   {
     id: 'tooltip-edge-over-canvas',
     classification: 'required',
@@ -851,16 +855,7 @@ export const CONTRAST_CONTRACTS: readonly ContrastContract[] = [
     background: 'surfaceFloating',
     minimum: 3,
     rationale:
-      'The tooltip face equals the floating surface, so only the edge separates them.',
-  },
-  {
-    id: 'tooltip-edge-on-own-face',
-    classification: 'advisory',
-    foreground: 'tooltipEdge',
-    background: 'tooltipFace',
-    minimum: 1.5,
-    target: 3,
-    rationale: 'The box must read as bounded, not as a floating block of ink.',
+      'In dark the tooltip face equals the floating surface, so only the edge separates them.',
   },
   /* A panel edge is decorative where the fill already separates the panel, so
      these carry a visual target rather than a WCAG minimum -- but a boundary

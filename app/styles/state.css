@@ -55,6 +55,7 @@
   --sp-state-advisory-5: light-dark(var(--radix-blue-5), var(--radix-blue-dark-5));
   --sp-state-advisory-6: light-dark(var(--radix-blue-6), var(--radix-blue-dark-6));
   --sp-state-advisory-7: light-dark(var(--radix-blue-7), var(--radix-blue-dark-7));
+  --sp-state-advisory-8: light-dark(var(--radix-blue-8), var(--radix-blue-dark-8));
   --sp-state-advisory-9: light-dark(var(--radix-blue-9), var(--radix-blue-dark-9));
   --sp-state-advisory-10: light-dark(var(--radix-blue-10), var(--radix-blue-dark-10));
   --sp-state-advisory-11: light-dark(var(--radix-blue-11), var(--radix-blue-dark-11));
@@ -127,5 +128,5 @@
   /* The track a running ring's arc turns on: the arc's own hue, a pale step,
      so the ring reads as one mark. The thread's marker and the runs rail's icon
      both read it. */
-  --sp-running-track: light-dark(var(--sp-state-advisory-5), var(--sp-state-advisory-6));
+  --sp-running-track: light-dark(var(--sp-state-advisory-8), var(--sp-state-advisory-6));
 }

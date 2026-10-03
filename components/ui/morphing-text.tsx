@@ -6,11 +6,18 @@ import { TextMorph } from 'torph/react';
   assistive technology), so the words are said once more, plainly, for a
   screen reader.
 */
-export function MorphingText({ text }: { text: string }) {
+export function MorphingText({
+  text,
+  duration = 260,
+}: {
+  text: string;
+  // Longer for a phrase that changes whole words than for a ticking digit.
+  duration?: number;
+}) {
   return (
     <>
       <span aria-hidden="true">
-        <TextMorph as="span" duration={260}>
+        <TextMorph as="span" duration={duration}>
           {text}
         </TextMorph>
       </span>

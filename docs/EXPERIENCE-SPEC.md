@@ -201,7 +201,23 @@ Selected high-priority controls may use a solid base border, an approximately 1p
 
 ### Motion
 
-The one orchestrated motion is the effects rail progressing during execution. It must reflect real state rather than play on a timer. Under reduced-motion preference, replace travel or pulse animation with immediate state changes and a static progress indicator.
+Motion explains a change; it never decorates a screen at rest. Two motions are orchestrated: the effects rail progressing during execution, and a run's thread growing as the agent works. Both reflect real state rather than play on a timer.
+
+**One thing moves at a time.** When state advances, what is changing finishes before what comes next begins. A step that has finished settles into its finished mark and folds away completely before the next step arrives, and a new step's section unfolds only once the step itself has arrived. Sequenced change takes longer than simultaneous change, but the page never grows and shrinks at once, so nothing jumps.
+
+**Nothing appears at full size.** Space opens before content fills it, and content fades in after its container has opened. A container that is shutting keeps showing what the reader saw rather than swapping to its next content on the way out. Content that changes inside an open section eases to its new height.
+
+**Arrival and departure are one family.** They share curves and comparable durations, so the same object comes and goes. Where one mark replaces another, it becomes the other rather than swapping: a running mark folds in and grows into the finished one. A new item arrives from where it came from, travelling along the path that joins it to the item before, and the path draws in behind it.
+
+**An ending starts at once.** When work finishes partway through an animation, the exit begins immediately from wherever the animation is and folds its parts away in order. It never waits for a loop to reach a better-looking moment.
+
+**Things that express one activity keep one time.** A working indicator and the label beside it run on the same cycle and phase, so they read as a single thing. Work of unknown length is shown by rhythm, never by guessed progress; progress is shown only when it is real, such as a count of what has been done.
+
+**Working is calmer than calling.** A signal that the agent is working is quieter than one that asks for the reader: one direction, low contrast, carried in the colour of the work. A call for attention may be brighter and more insistent.
+
+**The reader's place is theirs.** The view follows new content only for a reader already watching the end; a reader who has scrolled away stays where they are and is told that something arrived. A section the reader opened stays open as the run moves on, and the interface folds only what it opened itself, reopening something only when it has news. A collapsible row's header reads the same open or closed; only its disclosure indicator changes.
+
+Under reduced-motion preference, replace travel, pulse and shimmer with immediate state changes and a static indicator. Anything that waits for a motion to finish must still complete when there is no motion.
 
 ## Review flow
 
@@ -328,7 +344,7 @@ Visible content is the primary feedback. Announcements supplement it without mov
 | Connection loss during execution | A visible alert is permitted because the condition is time-sensitive. Routine failures use an error summary or status.                                      |
 | Conflict requiring a decision    | Present a modal decision dialog and move focus into it rather than relying on an alert announcement.                                                        |
 
-Live regions must be mounted before the update they announce. Do not clear and reinsert messages with fixed delays. Suppress stale asynchronous results and reset `aria-busy` on success and failure.
+Announce a change when it becomes visible, not when the underlying state changes: where the interface deliberately holds a change back to sequence it, the announcement waits with it. Live regions must be mounted before the update they announce. Do not clear and reinsert messages with fixed delays. Suppress stale asynchronous results and reset `aria-busy` on success and failure.
 
 ## Complete view-state inventory
 

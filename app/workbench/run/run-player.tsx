@@ -11,6 +11,8 @@ import {
   type ThreadLook,
 } from '@/components/app-shell/thread/thread-step';
 import { Button } from '@/components/ui/button';
+import { useWorkingFavicon } from '@/components/app-shell/runs/working-favicon';
+import { motionTime } from '@/lib/motion-time';
 import { SPEEDS, useSlowMotion } from './slow-motion';
 import { ShimmerDirections } from './shimmer-directions';
 import {
@@ -31,10 +33,16 @@ const REQUEST = (
 // The stopped run is a branch, not a stage after the commit, so the player
 // walks the main line and the gallery below shows the branch.
 const MAIN_LINE = RUN_STAGES.filter((stage) => stage !== 'stopped');
-// Long enough for a finishing mark to wait for its beat and leave, and for the
-// next step to arrive and unfold; the moment before the run starts is brief.
-const STEP_MS = 4400;
-const STARTING_MS = 1400;
+// Long enough for a finishing mark to leave and for the next step to arrive
+// and unfold. The empty moment before the request is brief, and the request
+// then needs time to drop in and open before the run starts reading.
+const STEP_MS = 5200;
+const STAGE_HOLD_MS: Partial<Record<RunStage, number>> = {
+  waiting: 1600,
+  starting: 2800,
+  // Long enough to watch the bar fill as the candidates are evaluated.
+  evaluating: 9000,
+};
 
 const COLUMN = 'bg-surface-primary rounded-shell min-w-0 p-6 max-sm:p-4';
 
@@ -75,7 +83,8 @@ export function RunWorkbench({ thread }: { thread: Thread }) {
           Every stage
         </h2>
         <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,40rem),1fr))] gap-x-6 gap-y-10">
-          {RUN_STAGES.map((stage) => (
+          {/* Before the request there is nothing to draw. */}
+          {RUN_STAGES.filter((stage) => stage !== 'waiting').map((stage) => (
             <RunStageColumn
               key={stage}
               stage={stage}
@@ -275,11 +284,12 @@ function RunPlayer({ thread, look }: { thread: Thread; look: ThreadLook }) {
 
   // Playing past the last stage is simply finished: the timer stops arming.
   const running = playing && !last;
+  useWorkingFavicon(running);
   useEffect(() => {
     if (!running) return;
     const timer = setTimeout(
       () => setIndex((at) => at + 1),
-      stage === 'starting' ? STARTING_MS : STEP_MS,
+      motionTime(STAGE_HOLD_MS[stage] ?? STEP_MS),
     );
     return () => clearTimeout(timer);
   }, [running, index, stage]);

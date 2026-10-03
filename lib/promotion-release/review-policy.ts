@@ -8,6 +8,7 @@ import {
   type PolicyEvaluationReplay,
   type ScenarioEvidencePack,
 } from './schemas';
+import { seedReviewRules, type ReviewRuleSet } from './review-rules';
 
 type GateObligation =
   PolicyEvaluationReplay['candidates'][number]['gateObligations'][number];
@@ -59,9 +60,10 @@ export function deriveGateObligations(
 export function deriveFindingCodes(
   scenario: ScenarioEvidencePack,
   proposal: LinePolicyProposal,
+  rules: ReviewRuleSet = seedReviewRules,
 ): FindingCode[] {
   const facts = getLineFacts(scenario, proposal.sku);
-  const result = evaluateLinePolicy(scenario, proposal);
+  const result = evaluateLinePolicy(scenario, proposal, rules);
   const has = (code: string, status: 'block' | 'attention') =>
     result.checks.some(
       (check) => check.code === code && check.status === status,
@@ -135,11 +137,15 @@ export function deriveFindingCodes(
       ({ promotionalSellingPricePence, topUpUnits }) =>
         (promotionalSellingPricePence !== proposal.proposedPricePence ||
           topUpUnits !== proposal.proposedTopUpUnits) &&
-        evaluateLinePolicy(scenario, {
-          ...proposal,
-          proposedPricePence: promotionalSellingPricePence,
-          proposedTopUpUnits: topUpUnits,
-        }).verdict !== 'blocked',
+        evaluateLinePolicy(
+          scenario,
+          {
+            ...proposal,
+            proposedPricePence: promotionalSellingPricePence,
+            proposedTopUpUnits: topUpUnits,
+          },
+          rules,
+        ).verdict !== 'blocked',
     ) &&
     result.verdict !== 'blocked'
   )

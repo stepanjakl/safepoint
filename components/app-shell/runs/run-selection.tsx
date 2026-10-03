@@ -3,6 +3,8 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ProcessRun, ProcessSummary } from '@/lib/process/model';
 import type { RunStage } from '@/lib/process/run-lifecycle';
+import { motionTime } from '@/lib/motion-time';
+import { useWorkingFavicon } from './working-favicon';
 
 /*
   Which run the process page is showing, and the run a person started here.
@@ -26,8 +28,10 @@ const PLAYED: RunStage[] = [
 ];
 // Long enough for a finishing step's mark to leave and the next to arrive;
 // the moment before the run begins is brief.
-const STAGE_MS = 4000;
+const STAGE_MS = 4800;
 const STARTING_MS = 1200;
+// The bar fills while the candidates are evaluated; it gets time to be seen.
+const EVALUATING_MS = 8400;
 
 export type StartedRun = { run: ProcessRun; stage: RunStage };
 
@@ -81,6 +85,7 @@ export function useRunSelectionState({
 
   // One stage every STAGE_MS until the review, where a run waits for a person.
   const playing = started !== null && started.stage !== 'awaiting_review';
+  useWorkingFavicon(playing);
   useEffect(() => {
     if (!playing) return;
     const timer = setTimeout(
@@ -100,7 +105,13 @@ export function useRunSelectionState({
             },
           };
         }),
-      started?.stage === 'starting' ? STARTING_MS : STAGE_MS,
+      motionTime(
+        started?.stage === 'starting'
+          ? STARTING_MS
+          : started?.stage === 'evaluating'
+            ? EVALUATING_MS
+            : STAGE_MS,
+      ),
     );
     return () => clearTimeout(timer);
   }, [playing, started?.stage, recorded]);

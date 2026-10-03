@@ -5,25 +5,17 @@ import { useMemo, useRef, useState, type FormEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { buildLinePreview } from '@/lib/model-workbench/line';
-import {
-  MODEL_IDS,
-  modelIdSchema,
-  type ModelId,
-} from '@/lib/model-workbench/models';
+import { MODEL_IDS, type ModelId } from '@/lib/model-workbench/models';
 import {
   modelWorkbenchResponseSchema,
   type ModelWorkbenchResponse,
 } from '@/lib/model-workbench/response';
 import {
-  evaluateLinePolicy,
   getLineFacts,
   type LinePolicyCheck,
   type LinePolicyProposal,
 } from '@/lib/promotion-release/line-policy';
-import {
-  deriveFindingCodes,
-  deriveGateObligations,
-} from '@/lib/promotion-release/review-policy';
+import { deriveFindingCodes } from '@/lib/promotion-release/review-policy';
 import type {
   PolicyEvaluationReplay,
   PromotionReleasePlan,
@@ -31,6 +23,28 @@ import type {
   Sku,
 } from '@/lib/promotion-release/schemas';
 import { skuSchema } from '@/lib/promotion-release/schemas';
+import {
+  applyConfirmedFacts,
+  captureLocalReview,
+  localTrialSchema,
+  localModelCallSchema,
+  evaluateLabLine,
+  localSimulationSchema,
+  previewLocalEffects,
+  simulateLocalApproval,
+  type ConfirmedFacts,
+  type SupplierFact,
+  type LocalInput,
+} from '@/lib/promotion-release/review-lab';
+import {
+  seedReviewRules,
+  type ReviewRuleSet,
+} from '@/lib/promotion-release/review-rules';
+
+import { ReviewLabSetup } from './review-lab';
+import { ModelEvaluation } from './model-evaluation';
+import { DEFAULT_LAB_INPUT, useLocalReviewLab } from './local-lab-store';
+import { labResponseSchema } from '@/lib/model-workbench/review-lab-contract';
 
 type Baseline = {
   sku: Sku;
@@ -47,8 +61,7 @@ type Draft = {
 };
 
 const CARD =
-  'bg-surface-floating border-rule-default rounded-shell grid min-w-0 content-start gap-4 border p-5';
-
+  'bg-surface-floating ground-floating border-rule-default rounded-shell grid min-w-0 content-start gap-4 border p-5';
 function money(pence: number): string {
   return `£${(pence / 100).toFixed(2)}`;
 }
@@ -119,10 +132,12 @@ function CheckList({
   checks,
   names,
   onShow,
+  ruleSources,
 }: {
   checks: LinePolicyCheck[];
   names: Map<string, string>;
   onShow: (id: string) => void;
+  ruleSources?: Map<string, string>;
 }) {
   return (
     <ul className="grid gap-3">
@@ -135,6 +150,11 @@ function CheckList({
             {check.status} · {readable(check.code)}
           </strong>
           <p className="text-meta">{check.message}</p>
+          {ruleSources?.has(check.code) ? (
+            <p className="text-micro text-muted">
+              JSON review rule · {ruleSources.get(check.code)}
+            </p>
+          ) : null}
           <EvidenceRefs
             ids={check.evidenceRefs}
             names={names}
@@ -174,16 +194,56 @@ export function ReviewExplorer({
   const [comparison, setComparison] = useState<Comparison>('recorded');
   const [activeEvidence, setActiveEvidence] = useState<string | null>(null);
   const [status, setStatus] = useState('');
+  const { data: lab, error: storageError, updateLab } = useLocalReviewLab();
+  const {
+    input: labInput,
+    activeRules,
+    confirmedSku,
+    confirmedFacts,
+    confirmedClaims,
+    latestTrial,
+  } = lab;
+  const [resetCount, setResetCount] = useState(0);
+  const [setupBusy, setSetupBusy] = useState(false);
+  const [evaluationBusy, setEvaluationBusy] = useState(false);
   const productHeading = useRef<HTMLHeadingElement>(null);
   const evidenceHeading = useRef<HTMLHeadingElement>(null);
+  const pendingModel = useRef<AbortController | null>(null);
+  function cancelModel() {
+    pendingModel.current?.abort();
+    pendingModel.current = null;
+    setRunning(false);
+  }
+
+  const effectiveScenario = useMemo(
+    () =>
+      confirmedSku
+        ? applyConfirmedFacts(scenario, confirmedSku, confirmedFacts)
+        : scenario,
+    [scenario, confirmedSku, confirmedFacts],
+  );
 
   const rows = useMemo(
     () =>
       proposal.candidates.map((candidate) => {
-        const facts = getLineFacts(scenario, candidate.sku);
+        const lineScenario =
+          candidate.sku === selectedSku ? effectiveScenario : scenario;
+        const facts = getLineFacts(lineScenario, candidate.sku);
         const lineProposal = proposalFor(candidate);
-        const policy = evaluateLinePolicy(scenario, lineProposal);
-        const findingCodes = deriveFindingCodes(scenario, lineProposal);
+        const evaluated = evaluateLabLine({
+          scenario,
+          proposal: lineProposal,
+          rules: activeRules,
+          localEvidenceId:
+            candidate.sku === confirmedSku &&
+            labInput.role === 'case_evidence' &&
+            labInput.text.trim()
+              ? `ev-local-text-${candidate.sku.toLowerCase()}`
+              : undefined,
+          confirmedFacts: candidate.sku === confirmedSku ? confirmedFacts : {},
+        });
+        const policy = evaluated.policy;
+        const findingCodes = evaluated.findingCodes;
         const baseline = baselines.find(({ sku }) => sku === candidate.sku);
         if (!baseline) throw new Error(`Missing replay for ${candidate.sku}`);
         return {
@@ -199,19 +259,44 @@ export function ReviewExplorer({
           eligibilityAgrees:
             (policy.verdict === 'blocked') ===
             (baseline.eligibility === 'blocked'),
-          gateObligations: deriveGateObligations(scenario, lineProposal),
+          gateObligations: evaluated.gateObligations,
         };
       }),
-    [baselines, proposal, scenario],
+    [
+      activeRules,
+      baselines,
+      confirmedFacts,
+      confirmedSku,
+      effectiveScenario,
+      labInput.role,
+      labInput.text,
+      proposal,
+      scenario,
+      selectedSku,
+    ],
   );
   const selected = rows.find(({ sku }) => sku === selectedSku);
   if (!selected) return null;
   const selectedCandidate = selected.candidate;
 
-  const facts = getLineFacts(scenario, selectedSku);
-  const preview = buildLinePreview(scenario, selectedSku);
+  const facts = getLineFacts(effectiveScenario, selectedSku);
+  const localEvidenceId = `ev-local-text-${selectedSku.toLowerCase()}`;
+  const preview = buildLinePreview(
+    scenario,
+    selectedSku,
+    labInput.text.trim()
+      ? {
+          evidenceId: localEvidenceId,
+          text: labInput.text,
+          role: labInput.role,
+        }
+      : undefined,
+  );
   const sourceNames = new Map(
     preview.sources.map(({ name, value }) => [value.evidenceId, name]),
+  );
+  const ruleSources = new Map(
+    activeRules.rules.map(({ code, source }) => [code, source]),
   );
   const headlineCheck =
     selected.policy.checks.find(({ status: value }) => value === 'block') ??
@@ -237,11 +322,14 @@ export function ReviewExplorer({
   const liveReview = live?.review;
   const evaluatedTrial =
     trial?.sku === selectedSku
-      ? {
-          policy: evaluateLinePolicy(scenario, trial),
-          findingCodes: deriveFindingCodes(scenario, trial),
-          gateObligations: deriveGateObligations(scenario, trial),
-        }
+      ? evaluateLabLine({
+          scenario,
+          proposal: trial,
+          rules: activeRules,
+          confirmedFacts: confirmedSku === selectedSku ? confirmedFacts : {},
+          localEvidenceId:
+            confirmedSku === selectedSku ? localEvidenceId : undefined,
+        })
       : null;
   const availableComparison =
     comparison === 'model' && liveReview
@@ -259,6 +347,18 @@ export function ReviewExplorer({
             findingCodes: selected.findingCodes,
             gateObligations: selected.gateObligations,
           };
+  const savedSimulation = localSimulationSchema.safeParse(latestTrial);
+  const activeProposal: LinePolicyProposal =
+    availableComparison === 'trial' && trial
+      ? trial
+      : availableComparison === 'model' && live?.suggestion
+        ? {
+            sku: selectedSku,
+            proposedPricePence: live.suggestion.proposedPricePence,
+            proposedTopUpUnits: live.suggestion.proposedTopUpUnits,
+          }
+        : proposalFor(selectedCandidate);
+  const effectPreview = previewLocalEffects(scenario, activeProposal);
   const currentRecommendation =
     availableComparison === 'model'
       ? live?.suggestion?.recommendation
@@ -300,6 +400,7 @@ export function ReviewExplorer({
 
   function selectProduct(sku: Sku) {
     if (sku === selectedSku) return;
+    cancelModel();
     setSelectedSku(sku);
     setModelData(null);
     setDraftState(null);
@@ -318,22 +419,159 @@ export function ReviewExplorer({
     requestAnimationFrame(() => evidenceHeading.current?.focus());
   }
 
+  function changeLabInput(next: LocalInput) {
+    if (next.text !== labInput.text || next.role !== labInput.role) {
+      updateLab({
+        confirmedSku: null,
+        confirmedFacts: {},
+        confirmedClaims: [],
+      });
+    }
+    cancelModel();
+    updateLab({ input: next });
+    setModelData(null);
+    setComparison('recorded');
+  }
+
+  function activateRules(next: ReviewRuleSet) {
+    cancelModel();
+    updateLab({ activeRules: next });
+    setModelData(null);
+    setTrial(null);
+    setComparison('recorded');
+  }
+
+  function confirmFacts(next: ConfirmedFacts, claim: SupplierFact) {
+    cancelModel();
+    updateLab({
+      confirmedSku: selectedSku,
+      confirmedFacts: next,
+      confirmedClaims: [
+        ...(confirmedSku === selectedSku
+          ? confirmedClaims.filter(({ field }) => field !== claim.field)
+          : []),
+        claim,
+      ],
+    });
+    setModelData(null);
+    setTrial(null);
+    setComparison('recorded');
+  }
+
+  function resetLab() {
+    cancelModel();
+    updateLab({
+      input: DEFAULT_LAB_INPUT,
+      activeRules: seedReviewRules,
+      confirmedSku: null,
+      confirmedFacts: {},
+      confirmedClaims: [],
+      latestTrial: null,
+    });
+    setResetCount((value) => value + 1);
+    setModelData(null);
+    setTrial(null);
+    setComparison('recorded');
+    setStatus('Local experiment reset to seeded rules and inputs.');
+  }
+
+  function exportTrial() {
+    if (!latestTrial) return;
+    const blob = new Blob([JSON.stringify(latestTrial, null, 2)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `safepoint-local-review-${latestTrial.kind === 'review' ? latestTrial.proposal.sku : latestTrial.sku}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    setStatus('Latest local trial exported as JSON.');
+  }
+
+  function simulateApproval() {
+    try {
+      const modelCall =
+        availableComparison === 'model' && live
+          ? localModelCallSchema.safeParse({
+              runId: live.runId,
+              model: live.model,
+              input: live.input,
+            })
+          : null;
+      const result = simulateLocalApproval({
+        scenario,
+        proposal: activeProposal,
+        rules: activeRules,
+        input: labInput,
+        confirmedFacts: confirmedSku === selectedSku ? confirmedFacts : {},
+        confirmedClaims: confirmedSku === selectedSku ? confirmedClaims : [],
+        expectedEffects: effectPreview,
+        checkedResult: active,
+        modelOutput:
+          availableComparison === 'model' ? (live?.output ?? null) : null,
+        modelCall: modelCall?.success ? modelCall.data : null,
+      });
+      updateLab({ latestTrial: result });
+      setStatus(
+        `${selectedSku} approval simulated in memory. No external system was changed.`,
+      );
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Simulation failed.');
+    }
+  }
+
   async function runModel() {
+    if (running || setupBusy || evaluationBusy) return;
+    const controller = new AbortController();
+    pendingModel.current = controller;
     setRunning(true);
     setModelData(null);
     setComparison('recorded');
     setStatus(`Running ${selectedModel} for ${selectedSku}.`);
     try {
-      const response = await fetch('/api/dev/model', {
+      const response = await fetch('/api/dev/review-lab', {
+        signal: controller.signal,
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          stage: 'propose',
           model: selectedModel,
           sku: selectedSku,
           reviewAt,
+          input: labInput,
+          rules: activeRules,
+          confirmedFacts: confirmedSku === selectedSku ? confirmedFacts : {},
+          confirmedClaims: confirmedSku === selectedSku ? confirmedClaims : [],
         }),
       });
-      const parsed = modelWorkbenchResponseSchema.parse(await response.json());
+      const labResponse = labResponseSchema.parse(await response.json());
+      if (controller.signal.aborted) return;
+      if (labResponse.kind === 'result' && labResponse.snapshot)
+        updateLab({ latestTrial: labResponse.snapshot });
+      const parsed =
+        labResponse.kind === 'error'
+          ? modelWorkbenchResponseSchema.parse(labResponse)
+          : modelWorkbenchResponseSchema.parse({
+              kind: 'result',
+              result: {
+                runId: labResponse.runId,
+                model: labResponse.model,
+                sku: selectedSku,
+                instructionVersion: 'local-draft',
+                durationMs: labResponse.durationMs,
+                input: {
+                  systemInstructions: labResponse.systemInstructions,
+                  promptInput: labResponse.modelInput,
+                },
+                output: labResponse.output,
+                suggestion: labResponse.suggestion,
+                issues: labResponse.issues,
+                review: labResponse.review,
+                usage: labResponse.usage,
+                finishReason: 'stop',
+              },
+            });
       if (parsed.kind === 'result' && parsed.result.sku !== selectedSku)
         throw new Error('The model returned a different product.');
       setModelData(parsed);
@@ -346,9 +584,13 @@ export function ReviewExplorer({
         setStatus(`Model output needs inspection for ${selectedSku}.`);
       }
     } catch {
+      if (controller.signal.aborted) return;
       setStatus('Model request failed or returned an unreadable response.');
     } finally {
-      setRunning(false);
+      if (pendingModel.current === controller) {
+        pendingModel.current = null;
+        setRunning(false);
+      }
     }
   }
 
@@ -376,6 +618,16 @@ export function ReviewExplorer({
       proposedStartsAt: selectedCandidate.proposed?.startsAt ?? null,
       proposedEndsAt: selectedCandidate.proposed?.endsAt ?? null,
     };
+    updateLab({
+      latestTrial: captureLocalReview({
+        scenario,
+        proposal: next,
+        rules: activeRules,
+        input: labInput,
+        confirmedFacts: confirmedSku === selectedSku ? confirmedFacts : {},
+        confirmedClaims: confirmedSku === selectedSku ? confirmedClaims : [],
+      }),
+    });
     setTrial(next);
     setComparison('trial');
     setStatus(`${selectedSku} local trial evaluated.`);
@@ -405,6 +657,11 @@ export function ReviewExplorer({
           </p>
         </header>
 
+        {storageError ? (
+          <p className="text-meta" role="alert">
+            {storageError}
+          </p>
+        ) : null}
         <p role="status" className="text-meta text-muted min-h-6">
           {status}
         </p>
@@ -426,7 +683,7 @@ export function ReviewExplorer({
                 id="explorer-mobile-product"
                 className="field rounded-control px-3 py-2"
                 value={selectedSku}
-                disabled={running}
+                disabled={running || setupBusy || evaluationBusy}
                 onChange={(event) =>
                   selectProduct(skuSchema.parse(event.target.value))
                 }
@@ -480,7 +737,7 @@ export function ReviewExplorer({
                 <button
                   key={row.sku}
                   type="button"
-                  disabled={running}
+                  disabled={running || setupBusy || evaluationBusy}
                   aria-current={row.sku === selectedSku ? 'true' : undefined}
                   onClick={() => selectProduct(row.sku)}
                   className="border-rule-default rounded-control hover:bg-surface-selected focus-visible:outline-action grid gap-1 border p-2 text-left focus-visible:outline-2"
@@ -495,6 +752,44 @@ export function ReviewExplorer({
           </aside>
 
           <div className="grid min-w-0 gap-5 lg:col-span-3">
+            <ReviewLabSetup
+              key={`${selectedSku}:${resetCount}`}
+              scenario={scenario}
+              comparisonScenario={effectiveScenario}
+              proposal={proposal}
+              sku={selectedSku}
+              reviewAt={reviewAt}
+              model={selectedModel}
+              onModel={(model) => {
+                cancelModel();
+                setSelectedModel(model);
+                setModelData(null);
+                setComparison('recorded');
+              }}
+              disabled={running || evaluationBusy}
+              onBusy={setSetupBusy}
+              keyConfigured={keyConfigured}
+              input={labInput}
+              onInput={changeLabInput}
+              activeRules={activeRules}
+              onActivate={activateRules}
+              confirmedFacts={
+                confirmedSku === selectedSku ? confirmedFacts : {}
+              }
+              confirmedClaims={
+                confirmedSku === selectedSku ? confirmedClaims : []
+              }
+              onConfirm={confirmFacts}
+              onStatus={setStatus}
+            />
+            <ModelEvaluation
+              model={selectedModel}
+              reviewAt={reviewAt}
+              disabled={running || setupBusy}
+              keyConfigured={keyConfigured}
+              onBusy={setEvaluationBusy}
+              onStatus={setStatus}
+            />
             <section
               className={CARD}
               aria-labelledby="explorer-product-heading"
@@ -682,33 +977,12 @@ export function ReviewExplorer({
                   Live model · optional
                 </h3>
                 <div className="flex flex-wrap items-end gap-3">
-                  <label
-                    className="text-meta grid gap-1"
-                    htmlFor="explorer-model"
-                  >
-                    Model
-                    <select
-                      id="explorer-model"
-                      className="field rounded-control px-3 py-2"
-                      value={selectedModel}
-                      disabled={running}
-                      onChange={(event) =>
-                        setSelectedModel(
-                          modelIdSchema.parse(event.target.value),
-                        )
-                      }
-                    >
-                      {MODEL_IDS.map((model) => (
-                        <option key={model} value={model}>
-                          {model}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
                   <Button
                     variant="primary"
                     onPress={runModel}
-                    isDisabled={running || !keyConfigured}
+                    isDisabled={
+                      running || setupBusy || evaluationBusy || !keyConfigured
+                    }
                   >
                     {running ? 'Reviewing…' : 'Run live model'}
                   </Button>
@@ -930,6 +1204,7 @@ export function ReviewExplorer({
                   checks={[...blocking, ...attention]}
                   names={sourceNames}
                   onShow={showEvidence}
+                  ruleSources={ruleSources}
                 />
               ) : (
                 <p className="text-meta">No blocking or attention checks.</p>
@@ -943,6 +1218,7 @@ export function ReviewExplorer({
                     checks={passing}
                     names={sourceNames}
                     onShow={showEvidence}
+                    ruleSources={ruleSources}
                   />
                 </div>
               </details>
@@ -1016,8 +1292,93 @@ export function ReviewExplorer({
                       : 'The current rules pass. A person still decides whether to approve.'}
               </p>
               <p className="text-meta text-muted">
-                This workbench cannot approve, execute, or write a proposal.
+                Simulation changes an in-memory copy only. It never writes a
+                database, Sheet, or storefront.
               </p>
+              <details className="text-meta" open>
+                <summary className="cursor-pointer">
+                  Permitted changes · simulation preview
+                </summary>
+                <ul className="mt-2 grid gap-2">
+                  {effectPreview.map((effect) => (
+                    <li key={effect.target}>
+                      <strong>{effect.target}</strong>
+                      <details>
+                        <summary className="cursor-pointer">
+                          Exact before and proposed values
+                        </summary>
+                        <JsonBlock value={effect} />
+                      </details>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+              <div className="grid gap-3">
+                <Button
+                  variant="primary"
+                  onPress={simulateApproval}
+                  isDisabled={
+                    noReleaseProposal ||
+                    active.policy.verdict === 'blocked' ||
+                    activeProposal.proposedPricePence === null ||
+                    activeProposal.proposedTopUpUnits === null
+                  }
+                >
+                  Simulate approval
+                </Button>
+                {savedSimulation.success ? (
+                  <div className="border-rule-default rounded-control grid gap-3 border p-3">
+                    <p className="text-meta font-semibold">
+                      Latest local simulation · {savedSimulation.data.sku} ·{' '}
+                      {savedSimulation.data.simulatedAt}
+                    </p>
+                    <p className="text-meta text-muted">
+                      Preflight compared the captured fixture state. Proposed
+                      values were applied to an in-memory copy and read back
+                      there. No external state was verified.
+                    </p>
+                    <ul className="grid gap-2">
+                      {savedSimulation.data.effects.map((effect) => (
+                        <li key={effect.target} className="text-meta">
+                          <strong>{effect.target}</strong> ·{' '}
+                          {effect.verifiedInMemory
+                            ? 'verified in memory'
+                            : 'simulation mismatch'}
+                          <details>
+                            <summary className="cursor-pointer">
+                              Before and proposed values
+                            </summary>
+                            <JsonBlock
+                              value={{
+                                before: effect.before,
+                                proposed: effect.proposed,
+                                simulatedReadBack: effect.simulatedReadBack,
+                              }}
+                            />
+                          </details>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+                {latestTrial ? (
+                  <>
+                    <details className="text-meta">
+                      <summary className="cursor-pointer">
+                        Latest trial snapshot · {latestTrial.kind}
+                      </summary>
+                      <JsonBlock value={localTrialSchema.parse(latestTrial)} />
+                    </details>
+                    <Button onPress={exportTrial}>Export trial snapshot</Button>
+                  </>
+                ) : null}
+                <Button
+                  isDisabled={running || setupBusy || evaluationBusy}
+                  onPress={resetLab}
+                >
+                  Reset local experiment
+                </Button>
+              </div>
             </section>
 
             <section
@@ -1133,7 +1494,7 @@ export function ReviewExplorer({
                         <th scope="row" className="py-2 pr-4 font-normal">
                           <button
                             type="button"
-                            disabled={running}
+                            disabled={running || setupBusy || evaluationBusy}
                             className="text-primary underline underline-offset-2"
                             onClick={() => selectProduct(row.sku)}
                           >

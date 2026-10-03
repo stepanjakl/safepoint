@@ -28,6 +28,9 @@ export default defineConfig({
     ? undefined
     : {
         command: 'pnpm dev',
+        // Model requests are intercepted by browser tests; the placeholder
+        // enables their controls without a provider credential.
+        env: { GOOGLE_GENERATIVE_AI_API_KEY: 'playwright-synthetic-key' },
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,

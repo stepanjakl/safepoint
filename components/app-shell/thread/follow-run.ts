@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type RefObject } from 'react';
+import { motionTime } from '@/lib/motion-time';
 
 // Long enough for a step to arrive and unfold; following ends sooner if the
 // reader takes the scroll.
@@ -23,14 +24,18 @@ export function useFollowRun(
   // Whether the last step drawn was on screen, as last observed: read when a
   // new one arrives, before the observer moves on to it.
   const lastSeen = useRef(true);
-  const mounted = useRef(false);
+  // The newest step last followed or passed over. Compared by id, not by
+  // whether this has mounted: an effect run twice for the same step (React's
+  // development check does exactly that) must not read as an arrival.
+  const previousId = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     const thread = list.current;
     const item = thread?.lastElementChild;
     if (!thread || !item) return;
-    const arrived = mounted.current;
-    mounted.current = true;
+    const arrived =
+      previousId.current !== undefined && previousId.current !== lastId;
+    previousId.current = lastId;
     const wasWatching = lastSeen.current;
 
     const seen = new IntersectionObserver(([entry]) => {
@@ -55,7 +60,7 @@ export function useFollowRun(
       if (following) item.scrollIntoView({ block: 'nearest' });
     });
     growth.observe(thread);
-    const end = setTimeout(stop, FOLLOW_MS);
+    const end = setTimeout(stop, motionTime(FOLLOW_MS));
     const taken = ['wheel', 'touchmove', 'keydown'] as const;
     taken.forEach((type) =>
       window.addEventListener(type, stop, { passive: true }),

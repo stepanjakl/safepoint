@@ -139,8 +139,9 @@ test('a started run plays up to the review', async ({ page }) => {
   await expect(
     page.getByRole('button', { name: 'Start run' }).first(),
   ).toHaveAttribute('aria-disabled', 'true');
+  // The placeholder plays a brief start and three stages, about 16s in all.
   await expect(top).toHaveAttribute('aria-label', /^Awaiting review\./, {
-    timeout: 15_000,
+    timeout: 25_000,
   });
   // The review card loads its code on demand, which a busy server can slow.
   await expect(

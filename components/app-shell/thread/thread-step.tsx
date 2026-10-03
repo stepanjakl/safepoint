@@ -17,13 +17,20 @@ import { MorphingText } from '@/components/ui/morphing-text';
 // Deep imports, as in menu-parts.tsx: the barrel is the whole library.
 import ArrowUpRight from 'blode-icons-react/icons/arrow-up-right';
 import ChevronTriangleDown from 'blode-icons-react/icons/chevron-triangle-down-small-filled';
+import ArrowsRepeatCircleFilled from 'blode-icons-react/icons/arrows-repeat-circle-filled';
 import CircleCheckFilled from 'blode-icons-react/icons/circle-check-filled';
+import CirclePersonFilled from 'blode-icons-react/icons/circle-person-filled';
+import ClockFilled from 'blode-icons-react/icons/clock-filled';
 import CircleXFilled from 'blode-icons-react/icons/circle-x-filled';
 import ExclamationCircleFilled from 'blode-icons-react/icons/exclamation-circle-filled';
 import { Glyph } from '@/components/ui/glyph';
 import { Tooltip } from '@/components/ui/tooltip';
 import { stepMarker, toneText } from '@/components/review/markers';
-import { STEP_STATUS_LABELS, type ProcessStep } from '@/lib/process/model';
+import {
+  STEP_STATUS_LABELS,
+  type ProcessStep,
+  type RunTrigger,
+} from '@/lib/process/model';
 import { cx } from '@/lib/cx';
 
 /*
@@ -51,6 +58,17 @@ const FILLED = {
   into the finished mark: the same element throughout, so its loop carries on
   into the leaving rather than restarting.
 */
+/*
+  The request did no work, so its mark says where the run came from instead:
+  a person who asked, the schedule, or an earlier run. The same filled circle
+  as the other marks, in the finished grey, so it reads as history.
+*/
+const ORIGIN = {
+  manual: CirclePersonFilled,
+  schedule: ClockFilled,
+  rerun: ArrowsRepeatCircleFilled,
+} satisfies Record<RunTrigger, typeof CircleCheckFilled>;
+
 function ProposedMark({
   step,
   arrived,
@@ -65,6 +83,10 @@ function ProposedMark({
   onLeft: () => void;
 }) {
   const { status } = step;
+  if (step.origin) {
+    const Origin = ORIGIN[step.origin];
+    return <Origin aria-hidden className="thread-icon" />;
+  }
   if (status === 'pending')
     return <Glyph name={stepMarker.pending.glyph} size={10} />;
   if (status === 'running' || leaving)
@@ -212,7 +234,7 @@ function Marker({
 }) {
   const look = useContext(ThreadLookContext);
   const marker = stepMarker[step.status];
-  const status = STEP_STATUS_LABELS[step.status];
+  const status = step.origin ? 'Requested' : STEP_STATUS_LABELS[step.status];
   const progress = step.progress
     ? ` ${step.progress.at} of ${step.progress.of}.`
     : '';
@@ -266,12 +288,71 @@ export type StepReference = {
   fold the reader chose holds until then.
 */
 function earnsOpen(step: ProcessStep, latest: boolean) {
-  return step.status === 'running' || step.status === 'blocked' || latest;
+  return (
+    step.origin !== undefined ||
+    step.status === 'running' ||
+    step.status === 'blocked' ||
+    latest
+  );
+}
+
+/*
+  How long a step watched starting has been running, counting up beside it
+  where a finished step says what it took: a real signal for work of no known
+  length. Only where it started on screen, which is when its start is known.
+  Hidden from assistive technology, which hears milestones, not a ticking count.
+*/
+function Elapsed({ reveal }: { reveal: boolean }) {
+  const [seconds, setSeconds] = useState(0);
+  // The clock time it started, as a finished step shows its window.
+  const [since, setSince] = useState<string>();
+  useEffect(() => {
+    const start = performance.now();
+    const at = new Date().toLocaleTimeString('en-GB');
+    const first = setTimeout(() => setSince(at));
+    const timer = setInterval(
+      () => setSeconds(Math.floor((performance.now() - start) / 1000)),
+      1000,
+    );
+    return () => {
+      clearTimeout(first);
+      clearInterval(timer);
+    };
+  }, []);
+  const minutes = Math.floor(seconds / 60);
+  return (
+    <>
+      {/* Each number morphs on its own, with its unit after it: torph rolls
+          a digit only when it stands as a number, not fused to a letter. */}
+      <span
+        className="thread-step-time-face"
+        data-shown={!reveal || !since || undefined}
+        aria-hidden="true"
+      >
+        {minutes ? (
+          <>
+            <MorphingText text={String(minutes)} />m{' '}
+          </>
+        ) : null}
+        <MorphingText text={String(minutes ? seconds % 60 : seconds)} />s
+      </span>
+      {since ? (
+        <span
+          className="thread-step-time-face"
+          data-shown={reveal || undefined}
+          aria-hidden="true"
+        >
+          since {since}
+        </span>
+      ) : null}
+    </>
+  );
 }
 
 export function ThreadStep({
   step,
   latest = false,
+  current = latest,
   enter = false,
   flagAction,
   reference,
@@ -280,6 +361,10 @@ export function ThreadStep({
 }: {
   step: ProcessStep;
   latest?: boolean;
+  // The newest step drawn, whose name stays bright: unlike `latest`, it moves
+  // on only when the next step has actually arrived. A thread that does not
+  // hold steps back can leave it to `latest`.
+  current?: boolean;
   // Arrived while the reader watched, rather than with the page: it eases in.
   enter?: boolean;
   // Whether the step is still moving after a change on screen -- its mark
@@ -373,10 +458,34 @@ export function ThreadStep({
   // Fixed for the ring's life, since its loop is timed from it: the ring
   // arrived along the line rather than in place.
   const [travelled] = useState(enter && step.status === 'running');
+  let settlingNow = settling;
   if (status !== step.status) {
-    setSettling(status === 'running');
+    settlingNow = status === 'running';
+    setSettling(settlingNow);
     if (step.status === 'running') setArrived(true);
     setStatus(step.status);
+  }
+  // Only the proposed ring leaves on screen and reports when it has; the
+  // shipped mark settles in place with nothing to wait for.
+  const proposed = useContext(ThreadLookContext) === 'proposed';
+  // The row goes on saying what the step was doing until its mark has become
+  // the finished one, and changes with it: one thing at a time.
+  const [heldRow, setHeldRow] = useState(step);
+  const holdingRow = settlingNow && proposed;
+  if (!holdingRow && heldRow !== step) setHeldRow(step);
+  const row = holdingRow ? heldRow : step;
+  // A flag comes and goes rather than popping: one that appears after the
+  // step was drawn fades in, and one that is withdrawn stays, fading, until
+  // it has gone. Under reduced motion nothing fades, so it simply goes.
+  const [flag, setFlag] = useState<{
+    text: string;
+    motion?: 'in' | 'out';
+  } | null>(row.flag ? { text: row.flag } : null);
+  if (row.flag) {
+    if (flag?.text !== row.flag || flag.motion === 'out')
+      setFlag({ text: row.flag, motion: 'in' });
+  } else if (flag && flag.motion !== 'out') {
+    setFlag(prefersReducedMotion() ? null : { ...flag, motion: 'out' });
   }
   // Set at mount and cleared once the arrival has played, so a step that was
   // already here keeps still, and a later fold opens without the wait.
@@ -393,11 +502,31 @@ export function ThreadStep({
     );
   }, [entering]);
 
-  // Only the proposed ring leaves on screen and reports when it has; the
-  // shipped mark settles in place with nothing to wait for.
-  const proposed = useContext(ThreadLookContext) === 'proposed';
   const leaving = settling && proposed;
-  const busy = leaving || closing;
+  // Once its mark has landed, the line into it fills; the next step waits for
+  // that too, so it sets off down a line that has finished drawing. Read from
+  // the fill's own transition on the step above, not timed here.
+  const [filling, setFilling] = useState(false);
+  useEffect(() => {
+    const above = stepRef.current?.previousElementSibling;
+    if (!filling || !above) return;
+    const filled = (event: Event) => {
+      const { pseudoElement, propertyName } = event as TransitionEvent;
+      if (pseudoElement === '::before' && propertyName === '--thread-fill')
+        setFilling(false);
+    };
+    above.addEventListener('transitionend', filled);
+    return () => above.removeEventListener('transitionend', filled);
+  }, [filling]);
+  const busy = leaving || closing || filling;
+  // It trailed a line while it worked: the next step's line grows from it.
+  const trailed = travelled || arrived;
+  // Not to be folded while it is the request or still working: it stays open,
+  // with no control and no hover, until its finished mark has landed.
+  const fixed =
+    step.origin !== undefined || step.status === 'running' || leaving;
+  // One pass across the name once the finished mark has landed.
+  const [flourish, setFlourish] = useState(false);
   const latestOnBusy = useRef(onBusy);
   useLayoutEffect(() => {
     latestOnBusy.current = onBusy;
@@ -409,7 +538,7 @@ export function ThreadStep({
   // The duration gives way to its clock times under the pointer or the focus.
   const [reveal, setReveal] = useState(false);
 
-  const showWindow = reveal && step.window !== undefined;
+  const showWindow = reveal && row.window !== undefined;
 
   return (
     <li
@@ -417,14 +546,20 @@ export function ThreadStep({
       className="thread-step"
       data-status={step.status}
       data-latest={latest || undefined}
+      data-current={current || undefined}
       data-open={open || undefined}
       data-entering={entering || undefined}
       // The line into this step stays dotted until its mark has left.
       data-settling={leaving || undefined}
+      data-flourish={flourish || undefined}
+      data-filling={filling || undefined}
+      data-trailed={trailed || undefined}
+      data-fixed={fixed || undefined}
       // How its ring's loop is timed, which the name's shimmer follows.
       data-mark={travelled ? 'travelled' : arrived ? 'arrived' : undefined}
       onAnimationEnd={(event) => {
         if (event.animationName === 'thread-row-in') setEntering(false);
+        if (event.animationName === 'thread-name-done') setFlourish(false);
       }}
       onPointerEnter={() => setReveal(true)}
       onPointerLeave={() => setReveal(false)}
@@ -435,44 +570,56 @@ export function ThreadStep({
           arrived={arrived}
           settling={settling}
           travelled={travelled}
-          onSettled={() => setSettling(false)}
+          onSettled={() => {
+            setSettling(false);
+            if (prefersReducedMotion()) return;
+            setFlourish(true);
+            if (stepRef.current?.previousElementSibling) setFilling(true);
+          }}
         />
       </span>
       {/* One row: the toggle stretches across it, so the whole row answers
           the pointer, and a flag sits above the stretch as its own control. */}
       <div className="thread-step-row">
-        <button
-          type="button"
-          className="thread-step-toggle"
-          aria-expanded={open}
-          aria-controls={bodyId}
-          onClick={() => {
-            setKept(!open);
-            setOpen(!open);
-          }}
-          onFocus={() => setReveal(true)}
-          onBlur={() => setReveal(false)}
-        >
-          {step.name}
-        </button>
-        {step.label || step.flag || reference ? (
+        {/* A step that cannot fold names itself with a label, not a
+            control: the request, and a step still at work. */}
+        {fixed ? (
+          <span className="thread-step-toggle">{row.name}</span>
+        ) : (
+          <button
+            type="button"
+            className="thread-step-toggle"
+            aria-expanded={open}
+            aria-controls={bodyId}
+            onClick={() => {
+              setKept(!open);
+              setOpen(!open);
+            }}
+            onFocus={() => setReveal(true)}
+            onBlur={() => setReveal(false)}
+          >
+            {row.name}
+          </button>
+        )}
+        {row.label || flag || reference ? (
           <span className="thread-step-facts">
-            {step.label ? (
+            {row.label ? (
               <span className="thread-step-fact">
-                <MorphingText text={step.label} />
+                <MorphingText text={row.label} duration={360} />
               </span>
             ) : null}
             {/* Its own pill, in the step's tone: the part of the fact that is
                 the problem, divided from the part that is not -- and, where
                 there is somewhere to take the reader, the way there. */}
-            {step.flag ? (
-              flagAction ? (
+            {flag ? (
+              flagAction && flag.motion !== 'out' ? (
                 <button
                   type="button"
                   className="thread-step-flag"
+                  data-motion={flag.motion}
                   onClick={flagAction.onPress}
                 >
-                  {step.flag}
+                  {flag.text}
                   <ArrowUpRight
                     aria-hidden
                     size={12}
@@ -482,7 +629,16 @@ export function ThreadStep({
                   <span className="sr-only"> — {flagAction.label}</span>
                 </button>
               ) : (
-                <span className="thread-step-flag">{step.flag}</span>
+                <span
+                  className="thread-step-flag"
+                  data-motion={flag.motion}
+                  onAnimationEnd={(event) => {
+                    if (event.animationName === 'thread-fact-out')
+                      setFlag(null);
+                  }}
+                >
+                  {flag.text}
+                </span>
               )
             ) : null}
             {reference ? (
@@ -507,7 +663,11 @@ export function ThreadStep({
             ) : null}
           </span>
         ) : null}
-        {step.duration ? (
+        {row.status === 'running' && arrived ? (
+          <span className="thread-step-time" data-elapsed>
+            <Elapsed reveal={reveal} />
+          </span>
+        ) : row.duration ? (
           <span className="thread-step-time">
             {/* Both readings share one cell and cross-fade vertically, so the
                 column keeps its width and nothing slides sideways. */}
@@ -516,27 +676,29 @@ export function ThreadStep({
               data-shown={!showWindow || undefined}
               aria-hidden="true"
             >
-              {step.duration}
+              {row.duration}
             </span>
-            {step.window ? (
+            {row.window ? (
               <span
                 className="thread-step-time-face"
                 data-shown={showWindow || undefined}
                 aria-hidden="true"
               >
-                {step.window.from} – {step.window.to}
+                {row.window.from} – {row.window.to}
               </span>
             ) : null}
             <span className="sr-only">
-              Took {step.duration}
-              {step.window
-                ? `, from ${step.window.from} to ${step.window.to}`
+              Took {row.duration}
+              {row.window
+                ? `, from ${row.window.from} to ${row.window.to}`
                 : ''}
               .
             </span>
           </span>
         ) : null}
-        <ChevronTriangleDown aria-hidden className="thread-step-chevron" />
+        {fixed ? null : (
+          <ChevronTriangleDown aria-hidden className="thread-step-chevron" />
+        )}
       </div>
       <div
         id={bodyId}

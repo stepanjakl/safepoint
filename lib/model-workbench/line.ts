@@ -42,7 +42,11 @@ export const lineSuggestionSchema = z
 
 export type LineSuggestion = z.infer<typeof lineSuggestionSchema>;
 
-export function buildLinePreview(scenario: ScenarioEvidencePack, sku: Sku) {
+export function buildLinePreview(
+  scenario: ScenarioEvidencePack,
+  sku: Sku,
+  localText?: { evidenceId: string; text: string; role: string },
+) {
   const {
     brief,
     shortlist,
@@ -148,6 +152,7 @@ export function buildLinePreview(scenario: ScenarioEvidencePack, sku: Sku) {
       trust,
       claim: claim ?? null,
     })),
+    localText: localText ?? null,
   };
 
   const sources = [
@@ -169,6 +174,7 @@ export function buildLinePreview(scenario: ScenarioEvidencePack, sku: Sku) {
     { name: 'Channel state', value: channel },
     { name: 'Policy rules', value: scenario.policyRules },
     ...notes.map((note) => ({ name: `Note: ${note.noteType}`, value: note })),
+    ...(localText ? [{ name: 'Optional local text', value: localText }] : []),
   ];
   return { sku, productName: catalogue.productName, input, sources };
 }
@@ -202,6 +208,7 @@ export function inspectLineSuggestion(
     preview.input.channels.evidenceId,
     preview.input.rules.evidenceId,
     ...preview.input.notes.map(({ evidenceId }) => evidenceId),
+    ...(preview.input.localText ? [preview.input.localText.evidenceId] : []),
   ]);
   const unknownRefs = parsed.data.evidenceRefs.filter((id) => !known.has(id));
   if (unknownRefs.length > 0) {

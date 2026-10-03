@@ -6,15 +6,23 @@
 
 :root {
   --sp-thread-attention-face: var(--sp-state-decision-4);
-  --sp-thread-attention-face-hover: var(--sp-state-decision-6);
+  /* A flag lifts under the row's hover as a fact pill does: lighter in light. */
+  --sp-thread-attention-face-hover: light-dark(
+    var(--sp-state-decision-3),
+    var(--sp-state-decision-6)
+  );
   --sp-thread-blocked-face: var(--sp-state-blocked-4);
-  --sp-thread-blocked-face-hover: var(--sp-state-blocked-6);
+  --sp-thread-blocked-face-hover: light-dark(var(--sp-state-blocked-3), var(--sp-state-blocked-6));
   --sp-thread-attention-face-active: var(--sp-state-decision-7);
   --sp-thread-blocked-face-active: var(--sp-state-blocked-7);
   /* A flag's ink under the pointer: the scale's strongest text step. */
   --sp-thread-attention-ink-active: var(--sp-state-decision-12);
   --sp-thread-blocked-ink-active: var(--sp-state-blocked-12);
   --sp-thread-attention-solid: var(--sp-state-decision-9);
+  /* The beat's light: the dot brightens into it as it swells, and the name's
+     shimmer leaves in it. The vivid solids, not dark's lightest step, which
+     is too close to dark's light ink to show on the name. */
+  --sp-thread-beat-glow: light-dark(var(--sp-state-advisory-9), var(--sp-state-advisory-10));
   --sp-thread-blocked-solid: var(--sp-state-blocked-9);
 }
 
@@ -23,7 +31,7 @@
   --sp-thread-line: light-dark(var(--sp-neutral-275), var(--sp-neutral-650));
   --sp-thread-done: light-dark(var(--sp-neutral-500), var(--sp-neutral-475));
   --sp-thread-fact-face: light-dark(var(--sp-neutral-125), var(--sp-neutral-775));
-  --sp-thread-fact-face-hover: light-dark(var(--sp-neutral-150), var(--sp-neutral-700));
+  --sp-thread-fact-face-hover: light-dark(var(--sp-neutral-50), var(--sp-neutral-700));
   --sp-thread-link-face: light-dark(var(--sp-neutral-175), var(--sp-neutral-725));
   --sp-thread-link-face-hover: light-dark(var(--sp-neutral-200), var(--sp-neutral-675));
   --sp-thread-link-face-active: light-dark(var(--sp-neutral-250), var(--sp-neutral-625));
@@ -40,6 +48,12 @@
 @property --thread-name-band {
   syntax: '<color>';
   inherits: false;
+  initial-value: transparent;
+}
+/* Registered so a lit arc's colour can follow the beat. */
+@property --thread-arc-ink {
+  syntax: '<color>';
+  inherits: true;
   initial-value: transparent;
 }
 @property --thread-fill {
@@ -81,7 +95,12 @@
     --thread-space: 260ms;
     --thread-travel-time: 620ms;
     --thread-landed: calc(var(--thread-space) + var(--thread-travel-time));
-    --thread-arrive: 480ms;
+    --thread-arrive: 700ms;
+    /* The soft leading edge of a line drawing in, and the longer fade that
+       trails off a running step. A join growing out of a trail starts with
+       the trail's fade, so its end does not move when it takes over. */
+    --thread-draw-edge: 40%;
+    --thread-trail-fade: 70%;
     --thread-unfold-after: calc(var(--thread-landed) + 450ms);
     /* The running mark's arrival and leaving. Set here, not on the ring: the
        check it leaves into is the ring's sibling. */
@@ -119,7 +138,7 @@
   @keyframes thread-row-in {
     from {
       opacity: 0;
-      translate: -0.375rem 0;
+      translate: 0 -0.25rem;
     }
   }
   /* --thread-travel is the distance from the step before, measured on arrival. */
@@ -143,23 +162,100 @@
       translate: 0 0;
     }
   }
-  /* A finished mark that arrives travels small, then grows into place. */
+  /* The first step has no step before it: its mark drops in from a little
+     above, rather than travelling a line. */
+  .thread-step[data-entering]:first-child {
+    --thread-travel: calc(var(--thread-rail) + var(--thread-gap) / 2);
+  }
+  /* A finished mark that arrives travels as every running mark does -- the
+     small blue dot -- and on landing becomes its icon the way a leaving ring
+     does: the dot grows to the mark's size as it fades, and the icon grows
+     with it from the dot's size, blue turning to its own colour. 0.425 is the
+     dot's share of the mark (4.25 of 10 units) and 0.45 its travelling scale,
+     so the icon starts at their product and the dot ends at the mark. */
+  .thread[data-look='proposed'] .thread-step[data-entering] .thread-dot:has(> .thread-icon)::after {
+    content: '';
+    position: absolute;
+    width: calc(var(--thread-mark) * 0.425);
+    height: calc(var(--thread-mark) * 0.425);
+    border-radius: 999px;
+    background-color: var(--sp-state-advisory);
+    pointer-events: none;
+    animation: thread-mark-seed var(--thread-arrive) var(--thread-landed) both;
+  }
+  @keyframes thread-mark-seed {
+    0% {
+      scale: 0.45;
+      animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+    }
+    70% {
+      scale: 2.4;
+      opacity: 0;
+      animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+    }
+    100% {
+      scale: 2.35;
+      opacity: 0;
+    }
+  }
   .thread-step[data-entering] .thread-icon:not([data-arriving]) {
-    animation: thread-mark-grow var(--thread-arrive) cubic-bezier(0.33, 1, 0.68, 1)
-      var(--thread-landed) both;
+    animation: thread-mark-grow var(--thread-arrive) var(--thread-landed) both;
   }
   @keyframes thread-mark-grow {
-    from {
-      scale: 0.25;
+    0% {
+      scale: 0.19;
+      opacity: 0;
+      color: var(--sp-state-advisory);
+      animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
     }
+    45% {
+      opacity: 1;
+    }
+    70% {
+      scale: 1.02;
+      animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+    }
+    100% {
+      scale: 1;
+      opacity: 1;
+      color: currentColor;
+    }
+  }
+
+  /* A row added to an open list while the reader watches fades in as the
+     body's height eases out to hold it, rather than being uncovered by it. */
+  .thread-list-row[data-arrived] {
+    animation: thread-fact-in var(--thread-arrive) cubic-bezier(0.33, 1, 0.68, 1) both;
+  }
+  /* The evaluation bar: each part grows to its new share as the count ticks,
+     and a kind of result seen for the first time grows in from nothing. */
+  .thread-progress-part {
+    transition: flex-grow var(--thread-arrive) cubic-bezier(0.33, 1, 0.68, 1);
+  }
+  @starting-style {
+    .thread-progress-part {
+      flex-grow: 0;
+    }
+  }
+  /* The run's end: under the last step, on the names' axis. */
+  .thread-end {
+    margin-top: var(--thread-gap);
+    padding-inline-start: calc(var(--thread-rail) + 0.75rem);
+    font-size: var(--sp-text-meta);
+    line-height: var(--sp-text-meta--lh);
+    color: var(--sp-text-muted);
+  }
+  .thread-end[data-arrived] {
+    animation: thread-row-in var(--thread-arrive) cubic-bezier(0.33, 1, 0.68, 1) 300ms both;
   }
 
   /* ── The line ────────────────────────────────────────────────────────── */
 
   /* From just below this marker to just above the next: the line joins the
-     markers without touching them. */
-  .thread-step:not(:last-child)::before,
-  .thread-step[data-status='running']:last-child::before {
+     markers without touching them. The last step keeps one too, reaching as
+     far as the next marker will, so the line that trails a step is the line
+     that will join it to the next. */
+  .thread-step::before {
     content: '';
     position: absolute;
     left: calc(var(--thread-rail) / 2 - var(--thread-line) / 2);
@@ -185,41 +281,57 @@
     background-size:
       100% var(--thread-fill),
       var(--thread-line) calc(var(--thread-line) * 2.5);
-    /* Spaced, not repeated: the dots stretch to meet both ends exactly, so
-       the clearance at each end reads the same as on a solid line. */
+    /* Repeated at one spacing on every line, so a trailing line becoming a
+       join, or a dotted line filling, never moves its dots. */
     background-repeat:
       no-repeat,
-      no-repeat space;
+      no-repeat repeat;
     transition: --thread-fill 520ms cubic-bezier(0.45, 0, 0.55, 1);
   }
   /* The stretch into a running step is not travelled yet: round dots, one
      line-width across, so the dotted line keeps the solid one's round ends.
      It stays dotted while the step's mark leaves, and fills once it lands. */
   .thread-step:has(+ .thread-step:is([data-status='running'], [data-settling]))::before,
-  .thread-step[data-status='running']:last-child::before {
+  .thread-step:last-child::before {
     --thread-fill: 0%;
+  }
+  /* A dotted line drifts toward the step still at work, and comes to rest the
+     moment that step finishes. One animation on every dotted line, so a line
+     changing role carries on rather than restarting. */
+  .thread-step:has(+ .thread-step[data-status='running'])::before {
+    animation: thread-line-drift 2.4s linear infinite;
+  }
+  .thread-step:has(+ .thread-step[data-settling])::before {
+    animation: thread-line-drift 2.4s linear infinite paused;
   }
   /* Drawn in top to bottom behind the travelling mark, its leading edge soft:
      --thread-draw is where the edge has reached, past the end once drawn. */
   .thread-step:has(+ .thread-step[data-entering])::before {
     mask-image: linear-gradient(
       to bottom,
-      black calc(var(--thread-draw) - 40%),
+      black calc(var(--thread-draw) - var(--thread-draw-edge)),
       transparent var(--thread-draw)
     );
-    animation: thread-line-draw var(--thread-travel-time) cubic-bezier(0.45, 0, 0.55, 1)
-      var(--thread-space) both;
+    animation:
+      thread-line-draw var(--thread-travel-time) cubic-bezier(0.45, 0, 0.55, 1) var(--thread-space)
+        both,
+      thread-line-drift 2.4s linear infinite;
+    /* A step that arrives finished turns its line solid once its mark has
+       landed, not while the mark is still travelling down it. */
+    transition-delay: var(--thread-landed);
   }
   .thread-step[data-entering][data-status='running']:last-child::before {
     mask-image:
-      linear-gradient(to bottom, black 30%, transparent),
+      linear-gradient(to bottom, black calc(100% - var(--thread-trail-fade)), transparent),
       linear-gradient(
         to bottom,
-        black calc(var(--thread-draw) - 40%),
+        black calc(var(--thread-draw) - var(--thread-draw-edge)),
         transparent var(--thread-draw)
       );
     mask-composite: intersect;
-    animation: thread-line-draw var(--thread-arrive) ease-out var(--thread-landed) both;
+    animation:
+      thread-line-draw var(--thread-arrive) ease-out var(--thread-landed) both,
+      thread-line-drift 2.4s linear infinite;
   }
   @keyframes thread-line-draw {
     from {
@@ -229,11 +341,55 @@
       --thread-draw: 140%;
     }
   }
-  /* A running step at the end trails a line that fades out: more is coming.
-     A waiting or settled run ends at its last marker. */
+  /* A step that trailed a line already shows it, fading out over its length,
+     so the line to the arriving step starts as exactly that fade and carries
+     it on down: 100% is the trail as it stood, 170% the fade (70%) past the
+     end, fully drawn. */
+  .thread-step[data-trailed]:has(+ .thread-step[data-entering])::before {
+    --thread-draw-edge: var(--thread-trail-fade);
+    animation-name: thread-line-extend, thread-line-drift;
+  }
+  @keyframes thread-line-extend {
+    from {
+      --thread-draw: 100%;
+    }
+    to {
+      --thread-draw: 170%;
+    }
+  }
+  /* A running step at the end trails a dotted line that fades out: more is
+     coming. It drifts while the step works, comes to rest when it finishes,
+     and stays through the finish -- the mark leaving, the fold shutting, the
+     line above filling -- so the next step's line grows out of it. With
+     nothing to follow, it fades away and the run ends at its last marker. */
+  .thread-step:last-child::before {
+    mask-image: linear-gradient(
+      to bottom,
+      black calc(100% - var(--thread-trail-fade)),
+      transparent
+    );
+    background-repeat:
+      no-repeat,
+      no-repeat repeat;
+    opacity: 0;
+    animation: thread-line-drift 2.4s linear infinite paused;
+    transition:
+      --thread-fill 520ms cubic-bezier(0.45, 0, 0.55, 1),
+      opacity var(--thread-arrive) ease-out;
+  }
+  .thread-step:last-child:is([data-status='running'], [data-settling], [data-filling])::before {
+    opacity: 1;
+  }
   .thread-step[data-status='running']:last-child::before {
-    bottom: 0;
-    mask-image: linear-gradient(to bottom, black 30%, transparent);
+    animation-play-state: running;
+  }
+  /* One dot's spacing per cycle, so the drift loops without a jump. */
+  @keyframes thread-line-drift {
+    to {
+      background-position:
+        0 0,
+        0 calc(var(--thread-line) * 2.5);
+    }
   }
 
   /* ── The hover wash ──────────────────────────────────────────────────── */
@@ -252,7 +408,8 @@
     pointer-events: none;
     transition: background-color var(--duration-state) ease-out;
   }
-  .thread-step:has(> .thread-step-row:hover, > .thread-marker:hover)::after,
+  /* A step that cannot fold has nothing to offer the pointer: no wash. */
+  .thread-step:not([data-fixed]):has(> .thread-step-row:hover, > .thread-marker:hover)::after,
   .thread-step:has(> .thread-step-row > .thread-step-toggle:focus-visible)::after {
     background-color: var(--sp-surface-hover);
   }
@@ -359,7 +516,43 @@
     --thread-mark-lead: 0s;
     --thread-mark-delay: 0s;
     color: var(--sp-state-advisory);
-    animation: none;
+    --thread-arc-ink: var(--sp-state-advisory);
+    animation: thread-segmented-glow 2.2s linear var(--thread-mark-lead) infinite;
+  }
+  /* Out of view or in a hidden tab, the loop and the shimmer rest together, so
+     they resume in time. A leaving ring plays on: the thread waits for it. */
+  .thread[data-paused] .thread-step[data-status='running']:last-child::before,
+  .thread[data-paused] .thread-step:has(+ .thread-step[data-status='running'])::before,
+  .thread[data-paused] .thread-segmented-ring:not([data-leaving]),
+  .thread[data-paused] .thread-segmented-ring:not([data-leaving]) *,
+  .thread[data-paused]
+    .thread-step[data-status='running']
+    > .thread-step-row
+    > .thread-step-toggle {
+    animation-play-state: paused;
+  }
+  /* The whole mark catches the beat. The dot draws in the ring's colour,
+     which brightens as it swells and is back once it settles. The lit arcs
+     draw in --thread-arc-ink, timed to the beat rather than to each arc, so
+     all three flash together and are spent with it: they fade to the track as
+     one and stay there, turning, until they fill again. */
+  @keyframes thread-segmented-glow {
+    0%,
+    24% {
+      color: var(--sp-state-advisory);
+      --thread-arc-ink: var(--sp-state-advisory);
+      animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1);
+    }
+    38% {
+      color: var(--sp-thread-beat-glow);
+      --thread-arc-ink: var(--sp-thread-beat-glow);
+      animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1);
+    }
+    58%,
+    100% {
+      color: var(--sp-state-advisory);
+      --thread-arc-ink: var(--sp-running-track);
+    }
   }
   .thread-segmented-ring[data-enter] {
     --thread-mark-lead: calc(var(--thread-mark-delay) + var(--thread-mark-enter));
@@ -396,15 +589,17 @@
   .thread-segmented-outer > :nth-child(4) {
     --thread-arc: 3;
   }
+  /* Lit until well past the beat's release at 58%, so every arc lets go when
+     the ink does, not at its own staggered time. */
   @keyframes thread-segmented-light {
     0%,
-    50%,
+    70%,
     100% {
       stroke: var(--sp-running-track);
     }
     7%,
-    43% {
-      stroke: currentColor;
+    64% {
+      stroke: var(--thread-arc-ink);
     }
   }
   @keyframes thread-segmented-turn {
@@ -419,17 +614,24 @@
   .thread-segmented-dot {
     transform-box: fill-box;
     transform-origin: center;
-    animation: thread-segmented-beat 2.2s ease-in-out var(--thread-mark-lead) infinite;
+    animation: thread-segmented-beat 2.2s linear var(--thread-mark-lead) infinite;
   }
+  /* A breath rather than a tap: it swells from 24% to its peak at 38% and
+     takes longer to settle, by 58%. The glow, the arcs' release and the name's
+     shimmer all key off these three moments. */
   @keyframes thread-segmented-beat {
     0%,
-    28%,
-    43%,
+    24% {
+      scale: 1;
+      animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1);
+    }
+    38% {
+      scale: 1.18;
+      animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1);
+    }
+    58%,
     100% {
       scale: 1;
-    }
-    36% {
-      scale: 1.2;
     }
   }
 
@@ -598,8 +800,8 @@
     transition: color var(--duration-state) ease-out;
   }
   /* The running step's name catches the beat: as the dot starts to swell, one
-     pass leaves the marker in its blue and glides across the name, fading to
-     neutral as it goes, then rests until the next. The lead and cycle repeat
+     pass leaves the marker in the beat's light and glides across the name,
+     fading into the ink as it goes, then rests until the next. The lead and cycle repeat
      the ring's (.thread-segmented-ring), so the two keep time. */
   .thread-step {
     --thread-name-lead: 0s;
@@ -610,8 +812,10 @@
   .thread-step[data-mark='travelled'] {
     --thread-name-lead: calc(var(--thread-landed) + var(--thread-mark-enter));
   }
-  .thread[data-look='proposed'] .thread-step[data-status='running'] .thread-step-toggle {
-    --thread-name-band: var(--sp-text-muted-soft);
+  .thread[data-look='proposed']
+    .thread-step:is([data-status='running'], [data-settling], [data-flourish])
+    .thread-step-toggle {
+    --thread-name-band: currentColor;
     background-image: linear-gradient(
       90deg,
       currentColor 30%,
@@ -623,25 +827,85 @@
     background-position: 105% 0;
     background-clip: text;
     -webkit-text-fill-color: transparent;
+    transition:
+      color var(--duration-state) ease-out,
+      -webkit-text-fill-color var(--duration-state) ease-out;
+  }
+  .thread[data-look='proposed']
+    .thread-step:is([data-status='running'], [data-settling])
+    .thread-step-toggle {
     animation: thread-name-beat 2.2s linear var(--thread-name-lead) infinite;
   }
-  /* 28% is where the dot starts to swell in thread-segmented-beat. 105% to
+  /* When the step finishes, its pass stops where it is -- place and colour --
+     and fades into plain ink as the arcs fold, wherever it had got to. */
+  .thread[data-look='proposed'] .thread-step[data-settling] .thread-step-toggle {
+    animation-play-state: paused;
+    -webkit-text-fill-color: currentColor;
+    transition:
+      color var(--duration-state) ease-out,
+      -webkit-text-fill-color var(--thread-mark-fold) ease-out;
+  }
+  /* Under the pointer or the focus the name is plain ink, to be read; the
+     pass carries on beneath, so it is still on the beat when they leave. */
+  .thread[data-look='proposed']
+    .thread-step[data-status='running']
+    > .thread-step-row:is(:hover, :has(> .thread-step-toggle:focus-visible))
+    > .thread-step-toggle {
+    -webkit-text-fill-color: currentColor;
+  }
+  /* The finish: once the check has landed, one soft pass in the finished grey. */
+  .thread[data-look='proposed'] .thread-step[data-flourish] .thread-step-toggle {
+    --thread-name-band: var(--sp-thread-done);
+    animation: thread-name-done 900ms cubic-bezier(0.45, 0, 0.55, 1) both;
+  }
+  .thread[data-look='proposed'] .thread-step[data-flourish] .thread-step-time,
+  .thread-step-flag[data-motion='in'] {
+    animation: thread-fact-in var(--thread-arrive) cubic-bezier(0.33, 1, 0.68, 1) both;
+  }
+  @keyframes thread-fact-in {
+    from {
+      opacity: 0;
+      translate: 0 -0.125rem;
+    }
+  }
+  /* A withdrawn flag fades where it stands; the step removes it at the end. */
+  .thread-step-flag[data-motion='out'] {
+    pointer-events: none;
+    animation: thread-fact-out var(--thread-mark-fold) ease-in forwards;
+  }
+  @keyframes thread-fact-out {
+    to {
+      opacity: 0;
+    }
+  }
+  @keyframes thread-name-done {
+    to {
+      background-position: -5% 0;
+    }
+  }
+  /* 24% is where the dot starts to swell in thread-segmented-beat. 105% to
      -5% carries the band from just touching the name to just past its end. */
   @keyframes thread-name-beat {
     0%,
-    28% {
+    24% {
       background-position: 105% 0;
-      --thread-name-band: var(--sp-state-advisory);
+      --thread-name-band: var(--sp-thread-beat-glow);
       animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
-    86%,
+    /* Full strength off the beat, then it fades into the ink as it goes. */
+    40% {
+      --thread-name-band: var(--sp-thread-beat-glow);
+    }
+    96%,
     100% {
       background-position: -5% 0;
-      --thread-name-band: var(--sp-text-muted-soft);
+      --thread-name-band: currentColor;
     }
   }
   @media (forced-colors: active) {
-    .thread[data-look='proposed'] .thread-step[data-status='running'] .thread-step-toggle {
+    .thread[data-look='proposed']
+      .thread-step:is([data-status='running'], [data-settling], [data-flourish])
+      .thread-step-toggle {
       background-image: none;
       -webkit-text-fill-color: currentColor;
     }
@@ -652,8 +916,8 @@
     inset: calc(var(--thread-wash-y) * -1) calc(var(--thread-wash-x) * -1)
       calc(var(--thread-wash-y) * -1) 0;
   }
-  .thread-step[data-latest] .thread-step-toggle,
-  .thread-step-row:hover > .thread-step-toggle,
+  .thread-step[data-current] .thread-step-toggle,
+  .thread-step:not([data-fixed]) > .thread-step-row:hover > .thread-step-toggle,
   .thread-step-toggle:focus-visible {
     color: var(--sp-text-primary);
   }
@@ -695,15 +959,19 @@
   }
   /* A step further under the row's hover or focus, so the pills rise with
      the wash rather than sinking into it. */
-  .thread-step-row:is(:hover, :has(> .thread-step-toggle:focus-visible)) .thread-step-fact {
+  /* A row that cannot fold offers nothing to the pointer, so its pills keep
+     still; only a foldable row lifts them. */
+  .thread-step:not([data-fixed])
+    > .thread-step-row:is(:hover, :has(> .thread-step-toggle:focus-visible))
+    .thread-step-fact {
     background-color: var(--sp-thread-fact-face-hover);
   }
-  .thread-step[data-status='attention']
+  .thread-step[data-status='attention']:not([data-fixed])
     > .thread-step-row:is(:hover, :has(> .thread-step-toggle:focus-visible))
     .thread-step-flag:not(:hover, :focus-visible) {
     background-color: var(--sp-thread-attention-face-hover);
   }
-  .thread-step[data-status='blocked']
+  .thread-step[data-status='blocked']:not([data-fixed])
     > .thread-step-row:is(:hover, :has(> .thread-step-toggle:focus-visible))
     .thread-step-flag:not(:hover, :focus-visible) {
     background-color: var(--sp-thread-blocked-face-hover);
@@ -760,6 +1028,11 @@
     display: inline-grid;
     justify-items: end;
     overflow: clip;
+  }
+  /* A running step's count has one reading; unclipped, so its digits roll
+     past the line as the count pill's do. */
+  .thread-step-time[data-elapsed] {
+    overflow: visible;
   }
   /* Both readings in one cell: the one on show rests, the other waits a
      quarter-line below, faded, and they trade places vertically. */

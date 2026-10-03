@@ -1,7 +1,10 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import type { CSSProperties, ReactNode } from 'react';
 
 import report from '@/docs/generated/colour-theme-report.json';
+
+import { TooltipArrowShape } from '@/components/ui/tooltip';
 
 import { Pair, Swatch } from './measure';
 
@@ -73,6 +76,87 @@ const EDGES = [
   ['--sp-field-edge', '--sp-field-face', 'Field edge'],
   ['--sp-field-edge-active', '--sp-field-face', 'Field edge, focused'],
 ] as const;
+
+/* Light-theme steps for the tooltip, compared side by side: face, edge,
+   highlight. Dark keeps the shipped roles, so only light differs. */
+const TOOLTIP_CANDIDATES = [
+  [800, 850, 775, 'Shipped: dark’s floating face, edge a step darker'],
+  [800, 800, 775, 'No visible edge'],
+  [800, 950, 775, 'Dark edge'],
+  [800, 1000, 775, 'Darkest edge'],
+  [800, 700, 775, 'Light rim'],
+  [800, 600, 775, 'Lighter rim'],
+  [800, 850, 675, 'Strong inner sheen'],
+  [800, 950, 650, 'Dark edge, strong sheen'],
+  [800, 850, 600, 'Bright sheen'],
+  [800, 850, 500, 'Brighter sheen'],
+  [800, 850, 400, 'Brightest sheen'],
+  [800, 950, 500, 'Dark edge, brighter sheen'],
+  [800, 1000, 400, 'Darkest edge, brightest sheen'],
+  [900, 950, 600, 'Deepest face, bright sheen'],
+  [850, 650, 825, 'Deeper face, light rim'],
+  [900, 700, 875, 'Deepest face, light rim'],
+] as const;
+
+const TOOLTIP_GROUNDS = ['canvas', 'pane', 'floating'] as const;
+
+function TooltipSample({
+  face,
+  edge,
+  highlight,
+}: {
+  face: number;
+  edge: number;
+  highlight: number;
+}) {
+  return (
+    <div
+      className="app-tooltip relative"
+      style={
+        {
+          '--tooltip-face': `light-dark(var(--sp-neutral-${face}), var(--sp-tooltip-face))`,
+          '--tooltip-edge': `light-dark(var(--sp-neutral-${edge}), var(--sp-tooltip-edge))`,
+          '--tooltip-highlight': `light-dark(var(--sp-neutral-${highlight}), var(--sp-tooltip-highlight))`,
+        } as CSSProperties
+      }
+    >
+      <span className="font-medium">Start run</span>
+      <span className="text-micro text-muted">
+        Runs now, under the current instructions.
+      </span>
+      <div
+        className="app-tooltip-arrow absolute top-full left-1/2 flex -translate-x-1/2"
+        data-placement="top"
+      >
+        <TooltipArrowShape />
+      </div>
+    </div>
+  );
+}
+
+function OnGround({
+  ground,
+  children,
+}: {
+  ground: (typeof TOOLTIP_GROUNDS)[number];
+  children: ReactNode;
+}) {
+  if (ground === 'canvas')
+    return (
+      <div className="bg-canvas grid items-start justify-start p-4 pb-7">
+        {children}
+      </div>
+    );
+  return (
+    <div className="bg-canvas p-4">
+      <div
+        className={`control-face rounded-shell grid justify-start p-4 pb-7 ${ground === 'pane' ? 'surface-raised' : 'surface-floating'}`}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
 
 const RAMP = Array.from({ length: 41 }, (_, index) => index * 25);
 
@@ -329,6 +413,37 @@ export default function WorkbenchPage() {
               kind="line"
               label={name}
             />
+          ))}
+        </div>
+      </section>
+
+      <section className={SECTION} aria-labelledby="tooltip">
+        <h2 id="tooltip" className={HEADING}>
+          Tooltip
+        </h2>
+        <p className={NOTE}>
+          Dark in both themes. Each row is a set of light-theme steps over the
+          canvas, a pane and a floating panel; dark is the same in every row.
+          Steps are face / edge / highlight.
+        </p>
+        <div className="grid gap-4">
+          {TOOLTIP_CANDIDATES.map(([face, edge, highlight, name]) => (
+            <figure key={`${face}${edge}${highlight}`} className="grid gap-2">
+              <figcaption className="text-meta text-muted">
+                {face} / {edge} / {highlight} · {name}
+              </figcaption>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {TOOLTIP_GROUNDS.map((ground) => (
+                  <OnGround key={ground} ground={ground}>
+                    <TooltipSample
+                      face={face}
+                      edge={edge}
+                      highlight={highlight}
+                    />
+                  </OnGround>
+                ))}
+              </div>
+            </figure>
           ))}
         </div>
       </section>
