@@ -1,6 +1,6 @@
 # Safepoint visual direction for Fable
 
-Status: authoritative visual handoff for Stage 1B
+Status: visual handoff for Stage 1B; its standalone composition is superseded by [`EMBEDDED-REVIEW.md`](EMBEDDED-REVIEW.md), and styling as built is recorded in [`STYLING-SYSTEM.md`](STYLING-SYSTEM.md)
 
 Audience: Fable and the designers or frontend engineers reviewing its proposal
 

@@ -85,7 +85,7 @@ const KINDS: Record<
 // The legend's order: what a reader is looking for first.
 const LEGEND: Kind[] = ['changed', 'added', 'removed', 'same'];
 
-const pad = (n: number) => String(n).padStart(2, '0');
+export const pad = (n: number) => String(n).padStart(2, '0');
 const plural = (count: number, one: string, other: string) =>
   `${count} ${count === 1 ? one : other}`;
 

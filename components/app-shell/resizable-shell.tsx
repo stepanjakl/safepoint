@@ -24,6 +24,7 @@ import {
   parseAssistantPreferences,
   readAssistantPreferences,
   saveAssistantPreferences,
+  serverAssistantPreferences,
   subscribeAssistantPreferences,
 } from '@/components/app-shell/assistant/assistant-state';
 import { AssistantPanel } from '@/components/app-shell/assistant/assistant-panel';
@@ -49,7 +50,7 @@ export function ResizableShell({
   const assistantSnapshot = useSyncExternalStore(
     subscribeAssistantPreferences,
     readAssistantPreferences,
-    serverSidebarPreferences,
+    serverAssistantPreferences,
   );
   const preferences = parseSidebarPreferences(snapshot);
   const assistantPreferences = parseAssistantPreferences(assistantSnapshot);

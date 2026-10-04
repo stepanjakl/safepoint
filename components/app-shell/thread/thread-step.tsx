@@ -378,7 +378,7 @@ export function ThreadStep({
   const stepRef = useRef<HTMLLIElement>(null);
   const foldRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
-  // The fold opens at one speed, so its duration follows the body's height.
+  // The fold's duration follows the body's height, within the CSS limits.
   // Only the measurement lives here; the stylesheet turns it into time.
   useLayoutEffect(() => {
     const fold = foldRef.current;
@@ -415,10 +415,14 @@ export function ThreadStep({
       const style = getComputedStyle(fold);
       const pace = parseFloat(style.getPropertyValue('--thread-fold-pace'));
       const min = parseFloat(style.getPropertyValue('--thread-fold-min'));
+      const max = parseFloat(style.getPropertyValue('--thread-fold-max'));
       clip.animate(
         { height: [`${start}px`, `${height}px`] },
         {
-          duration: Math.max(min || 0, Math.abs(height - start) * (pace || 0)),
+          duration: Math.min(
+            max,
+            Math.max(min || 0, Math.abs(height - start) * (pace || 0)),
+          ),
           easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
         },
       );

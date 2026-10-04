@@ -108,7 +108,7 @@ test('travelling between levels moves focus to the arrival control', async ({
   ).toBeVisible();
   const enter = page.getByRole('button', { name: /^Processes/ });
   await expect(enter).toBeFocused();
-  await expect(enter).toContainText('2');
+  await expect(enter).toContainText('3');
 
   await enter.press('Enter');
   await expect(
@@ -194,6 +194,7 @@ test('process navigation fades content while the pane and assistant stay steady'
       new Promise<
         {
           route: string;
+          selectedProcess: string | null;
           title: string;
           titleCount: number;
           pane: number;
@@ -204,6 +205,7 @@ test('process navigation fades content while the pane and assistant stay steady'
       >((resolve) => {
         const frames: {
           route: string;
+          selectedProcess: string | null;
           title: string;
           titleCount: number;
           pane: number;
@@ -226,6 +228,10 @@ test('process navigation fades content while the pane and assistant stay steady'
           if (pane && heading && body && assistant)
             frames.push({
               route: location.pathname,
+              selectedProcess:
+                document
+                  .querySelector('.process-menu-row[data-current] a')
+                  ?.getAttribute('href') ?? null,
               title: document.title,
               titleCount: document.querySelectorAll('title').length,
               pane: Number(getComputedStyle(pane).opacity),
@@ -243,6 +249,11 @@ test('process navigation fades content while the pane and assistant stay steady'
       }),
   );
   await expect(page).toHaveURL(/\/examples\/support$/);
+  expect(frames[0]?.route).toBe('/examples/promotion');
+  expect(frames[0]?.selectedProcess).toBe('/examples/support');
+  expect(
+    frames.every((frame) => frame.selectedProcess === '/examples/support'),
+  ).toBe(true);
   expect(
     frames.some(
       (frame) => frame.route === '/examples/promotion' && frame.body < 0.9,
@@ -261,6 +272,33 @@ test('process navigation fades content while the pane and assistant stay steady'
       (frame) => frame.title === 'Safepoint' && frame.titleCount === 1,
     ),
   ).toBe(true);
+});
+
+test('keyboard activation selects a process before its screen loads', async ({
+  page,
+}) => {
+  let releaseNavigation = () => {};
+  const navigationReady = new Promise<void>((resolve) => {
+    releaseNavigation = resolve;
+  });
+  await page.route(/\/examples\/support(?:\?|$)/, async (route) => {
+    await navigationReady;
+    await route.continue();
+  });
+  await openHome(page);
+  const support = menuLink(page, 'Support handoff');
+  await support.focus();
+  try {
+    await support.press('Enter');
+    await expect(page.locator('.process-menu-row[data-current]')).toContainText(
+      'Support handoff',
+    );
+    await expect(page).toHaveURL(/\/examples\/promotion\?run=run-104$/);
+    await expect(support).toBeFocused();
+  } finally {
+    releaseNavigation();
+  }
+  await expect(page).toHaveURL(/\/examples\/support$/);
 });
 
 test('returning to the workspace skips the intro, but refreshing replays it', async ({
@@ -312,7 +350,11 @@ test('arranging by keyboard reorders, keeps focus, and saves', async ({
 }) => {
   await openHome(page);
   const before = await processNames(page);
-  expect(before).toEqual(['Promotion release', 'Support handoff']);
+  expect(before).toEqual([
+    'Promotion release',
+    'Support handoff',
+    'Brunch weekend',
+  ]);
 
   await page.getByRole('button', { name: 'Arrange processes' }).click();
   const save = page.getByRole('button', { name: 'Save order' });
@@ -330,18 +372,25 @@ test('arranging by keyboard reorders, keeps focus, and saves', async ({
   await expect(handle).toBeFocused();
   await expect
     .poll(() => processNames(page))
-    .toEqual(['Support handoff', 'Promotion release']);
+    .toEqual(['Support handoff', 'Promotion release', 'Brunch weekend']);
+  await page.keyboard.press('ArrowDown');
+  await expect
+    .poll(() => processNames(page))
+    .toEqual(['Support handoff', 'Brunch weekend', 'Promotion release']);
   // Already last: nothing moves, and focus stays put.
   await page.keyboard.press('ArrowDown');
   await expect(handle).toBeFocused();
+  await expect
+    .poll(() => processNames(page))
+    .toEqual(['Support handoff', 'Brunch weekend', 'Promotion release']);
   await page.keyboard.press('Home');
   await expect
     .poll(() => processNames(page))
-    .toEqual(['Promotion release', 'Support handoff']);
+    .toEqual(['Promotion release', 'Support handoff', 'Brunch weekend']);
   await page.keyboard.press('End');
   await expect
     .poll(() => processNames(page))
-    .toEqual(['Support handoff', 'Promotion release']);
+    .toEqual(['Support handoff', 'Brunch weekend', 'Promotion release']);
 
   await save.click();
   await expect(
@@ -350,7 +399,7 @@ test('arranging by keyboard reorders, keeps focus, and saves', async ({
   await page.reload();
   await expect
     .poll(() => processNames(page))
-    .toEqual(['Support handoff', 'Promotion release']);
+    .toEqual(['Support handoff', 'Brunch weekend', 'Promotion release']);
 });
 
 test('a pointer drag reorders, and Escape mid-drag puts the row back', async ({
@@ -375,7 +424,7 @@ test('a pointer drag reorders, and Escape mid-drag puts the row back', async ({
   await expect(page.locator('.process-drop-slot')).toHaveCount(0);
   await expect
     .poll(() => processNames(page))
-    .toEqual(['Promotion release', 'Support handoff']);
+    .toEqual(['Promotion release', 'Support handoff', 'Brunch weekend']);
 
   // Completed: the row lands one place down.
   await page.mouse.move(x, y);
@@ -385,7 +434,7 @@ test('a pointer drag reorders, and Escape mid-drag puts the row back', async ({
   await expect(page.locator('.process-drop-slot')).toHaveCount(0);
   await expect
     .poll(() => processNames(page))
-    .toEqual(['Support handoff', 'Promotion release']);
+    .toEqual(['Support handoff', 'Promotion release', 'Brunch weekend']);
 });
 
 test('hovering Arrange previews the handles without entering the mode', async ({

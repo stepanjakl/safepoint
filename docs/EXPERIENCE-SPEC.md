@@ -4,6 +4,8 @@ Status: canonical interaction and visual specification
 
 Audience: product designers and frontend engineers
 
+> **Scenario change, 3 October 2026.** The main demonstration is moving to the Brunch weekend sheet process in [`SHEET-PROCESS-PLAN.md`](SHEET-PROCESS-PLAN.md). The Alderton's promotion-release scenario described here stays implemented as the earlier scenario; this document is updated for the new demo in that plan's Phase 2.
+
 ## Experience goal
 
 The review workspace has one job: help an operations specialist decide whether a proposed batch is safe to execute.
@@ -325,7 +327,7 @@ All functionality must work without custom shortcuts.
 
 Do not use positive `tabindex`. DOM order and visual order must agree. If a focused item disappears after filtering, move focus to the nearest remaining candidate or the filter summary. Focus indicators must remain fully visible against every surface, including high-contrast and forced-colours modes.
 
-There is no shared focus outline. A focused control looks exactly as it does under the pointer — the same wash, face step or colour step — so the keyboard and the pointer light it the same way. A focusable control with no hover state takes the wash its surface uses for hover; text fields carry focus on their own border; headings that receive focus programmatically and cannot be operated show none. Forced-colours modes drop author backgrounds and override border colours, so a wash shows nothing there: every focusable element restores a real system outline in those modes (`:focus-visible` in `app/globals.css`), and a control whose shape is not its box draws that outline on its shape.
+There is no shared focus outline. A focused control looks exactly as it does under the pointer — the same wash, face step or colour step — so the keyboard and the pointer light it the same way. A focusable control with no hover state takes the wash its surface uses for hover; text fields carry focus on their own border; headings that receive focus programmatically and cannot be operated show none. Forced-colours modes drop author backgrounds and override border colours, so a wash shows nothing there: every focusable element restores a real system outline in those modes (`:focus-visible` in `app/styles/base.css`), and a control whose shape is not its box draws that outline on its shape.
 
 This is a deliberate trade. A hover wash does not differ from the resting state by 3:1, so the indicator is quieter than WCAG 2.4.13 Focus Appearance asks, and on the lightest washes it is the weakest part of keyboard use. Revisit it before claiming conformance beyond 2.4.7 Focus Visible.
 

@@ -32,6 +32,10 @@
   },
   "dependencies": {
     "@ai-sdk/google": "4.0.87",
+    "@bufbuild/cel": "0.6.1",
+    "@bufbuild/protobuf": "2.16.0",
+    "@composio/core": "0.22.0",
+    "@marcbachmann/cel-js": "8.0.0",
     "@outpacelabs/avatars": "^0.6.0",
     "ai": "7.0.124",
     "blode-icons-react": "^1.0.0",
@@ -47,6 +51,7 @@
   "devDependencies": {
     "@ai-sdk/devtools": "1.0.29",
     "@axe-core/playwright": "^4.13.0",
+    "@bufbuild/cel-spec": "0.6.1",
     "@playwright/test": "^1.63.0",
     "@radix-ui/colors": "3.0.0",
     "@tailwindcss/postcss": "4.3.3",

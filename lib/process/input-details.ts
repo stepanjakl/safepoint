@@ -8,6 +8,7 @@ import {
   formatLondonDateTime,
   formatMoney,
   formatPercent,
+  formatUnits,
 } from '../review-presentation';
 import {
   PROMOTION_PACKS,
@@ -81,7 +82,6 @@ const readable = (value: string) => {
   const spaced = value.replaceAll('_', ' ');
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 };
-const units = (count: number) => `${count.toLocaleString('en-GB')} units`;
 
 function presented(
   title: string,
@@ -137,7 +137,7 @@ const PRESENTERS: {
           : formatMoney(r.currentPromotionalSellingPricePence),
       ],
       ['Cost price', formatMoney(r.costPricePence)],
-      ['Case pack', units(r.casePackUnits)],
+      ['Case pack', formatUnits(r.casePackUnits)],
     ]),
   shortlistProvenance: (r, name) =>
     presented(name(r.sku), r.sku, [
@@ -154,8 +154,8 @@ const PRESENTERS: {
       ? presented(name(r.sku), r.sku, [], { unavailableReason: r.reason })
       : presented(name(r.sku), r.sku, [
           ['Recent weekly sales', r.recentWeeklySalesUnits.join(' · ')],
-          ['Baseline forecast', units(r.baselineForecastUnits)],
-          ['Promotion forecast', units(r.promotionAdjustedForecastUnits)],
+          ['Baseline forecast', formatUnits(r.baselineForecastUnits)],
+          ['Promotion forecast', formatUnits(r.promotionAdjustedForecastUnits)],
           ['Confidence', readable(r.forecastConfidence)],
           ['Uplift already included', r.upliftAlreadyIncluded ? 'Yes' : 'No'],
           ['Analyst commentary', r.analystCommentary],
@@ -164,23 +164,29 @@ const PRESENTERS: {
     r.kind === 'unavailable'
       ? presented(name(r.sku), r.sku, [], { unavailableReason: r.reason })
       : presented(name(r.sku), r.sku, [
-          ['On hand', units(r.stockOnHandUnits)],
-          ['Reserved', units(r.reservedUnits)],
-          ['Inbound before launch', units(r.confirmedInboundBeforeLaunchUnits)],
-          ['Earlier promotion order', units(r.earlierPromotionOrderUnits)],
-          ['Open top-up amendment', units(r.openTopUpAmendmentUnits)],
-          ['Safety stock', units(r.safetyStockUnits)],
+          ['On hand', formatUnits(r.stockOnHandUnits)],
+          ['Reserved', formatUnits(r.reservedUnits)],
+          [
+            'Inbound before launch',
+            formatUnits(r.confirmedInboundBeforeLaunchUnits),
+          ],
+          [
+            'Earlier promotion order',
+            formatUnits(r.earlierPromotionOrderUnits),
+          ],
+          ['Open top-up amendment', formatUnits(r.openTopUpAmendmentUnits)],
+          ['Safety stock', formatUnits(r.safetyStockUnits)],
           ['Location', r.location],
         ]),
   supplierTerms: (r, name) =>
     presented(name(r.sku), r.sku, [
       ['Supplier', `${r.supplierName} · ${r.supplierId}`],
       ['Lead time', `${r.leadTimeHours}h`],
-      ['Minimum order', units(r.minimumOrderQuantityUnits)],
-      ['Order multiple', units(r.orderMultipleUnits)],
+      ['Minimum order', formatUnits(r.minimumOrderQuantityUnits)],
+      ['Order multiple', formatUnits(r.orderMultipleUnits)],
       [
         'Confirmed extra allocation',
-        units(r.confirmedAdditionalAllocationUnits),
+        formatUnits(r.confirmedAdditionalAllocationUnits),
       ],
       ['Top-up cutoff', formatLondonDateTime(r.topUpCutoffAt)],
       [

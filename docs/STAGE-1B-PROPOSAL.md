@@ -195,9 +195,10 @@ The first screen is the outcome strip and list. The detail screen keeps this ord
 
 ## Structure
 
-> **Superseded for styling.** `globals.css` is now three files: `tokens.css`,
-> `components.css` and `globals.css`, each with one job. The component list below
-> also predates the release-card and process-shell work. See
+> **Superseded for styling.** Styles now live in `app/styles/` (one entry,
+> `index.css`) and in stylesheets beside their components; none of the files named
+> below exists. The component list below also predates the release-card and
+> process-shell work. See
 > [`STYLING-SYSTEM.md`](STYLING-SYSTEM.md).
 
 ```text

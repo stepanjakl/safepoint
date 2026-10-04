@@ -233,7 +233,7 @@ export function RunThread({
           now && now !== instructionsVersion
             ? `Instructions ${instructionsVersion} · now ${now}`
             : `Instructions ${instructionsVersion}`,
-        action: sheet
+        action: sheet?.hasChanges(instructionsVersion)
           ? {
               label: `what changed in ${instructionsVersion}`,
               onPress: () => sheet.showVersion(instructionsVersion),

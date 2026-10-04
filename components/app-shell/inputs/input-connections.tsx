@@ -4,6 +4,7 @@ import { Dialog, Heading, Modal, ModalOverlay } from 'react-aria-components';
 import { Button } from '@/components/ui/button';
 import type { InputDetail } from '@/lib/process/input-details';
 import type { SystemLink } from '@/lib/process/system-links';
+import { NOTE } from '@/components/app-shell/process/panel-parts';
 import { SystemDisc } from '@/components/app-shell/system/system-parts';
 
 /*
@@ -17,8 +18,6 @@ import { SystemDisc } from '@/components/app-shell/system/system-parts';
   browser and change what the process shows; the recorded run and the review
   cite what they cite.
 */
-
-const NOTE = 'border-rule-faint text-muted text-meta border-t pt-3';
 
 function joinChecks(checks: string[]): string {
   if (checks.length < 2) return checks.join('');

@@ -18,6 +18,7 @@ export {
   formatLondonTime,
   formatMoney,
   formatPercent,
+  formatUnits,
 } from './format';
 export type {
   AdapterMode,

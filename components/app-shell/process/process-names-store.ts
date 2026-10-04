@@ -2,6 +2,7 @@
 
 import { useMemo, useSyncExternalStore } from 'react';
 import { z } from 'zod';
+import { createStoredRecord, parseStored } from '../stored-record';
 
 /*
   The names people have given processes, keyed by process id. Only renames are
@@ -12,60 +13,20 @@ import { z } from 'zod';
   drawer, the sidebar -- so a rename lands everywhere at once, and in other
   tabs through the storage event.
 */
-const KEY = 'safepoint.process-names.v1';
-const CHANGE = 'safepoint:process-names';
 const schema = z.record(z.string(), z.string().min(1));
 type Names = z.infer<typeof schema>;
-let temporary: string | null = null;
+const store = createStoredRecord<Names>(
+  'safepoint.process-names.v1',
+  'safepoint:process-names',
+);
+const parse = (value: string | null) => parseStored(schema, value, {});
 
 // Long enough for any real process name; short enough to stay one line.
 export const PROCESS_NAME_MAX = 80;
 
-function parse(value: string | null): Names {
-  try {
-    const parsed = schema.safeParse(JSON.parse(value ?? 'null'));
-    if (parsed.success) return parsed.data;
-  } catch {
-    // An old or edited preference must never leave a process unnamed.
-  }
-  return {};
-}
-
-function read() {
-  if (temporary !== null) return temporary;
-  try {
-    return localStorage.getItem(KEY);
-  } catch {
-    return null;
-  }
-}
-
-function subscribe(notify: () => void) {
-  const onStorage = (event: StorageEvent) => {
-    if (event.key === KEY || event.key === null) notify();
-  };
-  window.addEventListener('storage', onStorage);
-  window.addEventListener(CHANGE, notify);
-  return () => {
-    window.removeEventListener('storage', onStorage);
-    window.removeEventListener(CHANGE, notify);
-  };
-}
-
-function save(names: Names) {
-  const value = JSON.stringify(names);
-  try {
-    localStorage.setItem(KEY, value);
-    temporary = null;
-  } catch {
-    temporary = value;
-  }
-  window.dispatchEvent(new Event(CHANGE));
-}
-
 // Every rename, for a list naming several processes. The server has none.
 export function useProcessNames(): Names {
-  const raw = useSyncExternalStore(subscribe, read, () => null);
+  const raw = useSyncExternalStore(store.subscribe, store.read, store.server);
   return useMemo(() => parse(raw), [raw]);
 }
 
@@ -80,9 +41,9 @@ export function useProcessName(processId: string, fallback: string) {
       if (!name) return;
       // From storage rather than this render, so two renames in one tick
       // cannot overwrite each other.
-      const names = parse(read());
+      const names = parse(store.read());
       delete names[processId];
-      save(name === fallback ? names : { ...names, [processId]: name });
+      store.save(name === fallback ? names : { ...names, [processId]: name });
     },
   };
 }

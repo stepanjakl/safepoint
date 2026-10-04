@@ -3,46 +3,24 @@
 import { createContext, useContext, type RefObject } from 'react';
 import type { SidebarPreferences } from '@/components/app-shell/sidebar-preferences';
 import { parseSidebarPreferences } from '@/components/app-shell/sidebar-preferences';
+import { createStoredRecord } from '@/components/app-shell/stored-record';
 
-const KEY = 'safepoint.assistant.v1';
-const CHANGE = 'safepoint:assistant';
-let temporary: string | null = null;
 const CLOSED: SidebarPreferences = { width: null, collapsed: true };
+const store = createStoredRecord<SidebarPreferences>(
+  'safepoint.assistant.v1',
+  'safepoint:assistant',
+);
 
-export function readAssistantPreferences() {
-  if (temporary !== null) return temporary;
-  try {
-    return localStorage.getItem(KEY);
-  } catch {
-    return null;
-  }
-}
+export const readAssistantPreferences = store.read;
+export const serverAssistantPreferences = store.server;
+export const subscribeAssistantPreferences = store.subscribe;
+export const saveAssistantPreferences = (value: SidebarPreferences) => {
+  store.save(value);
+};
 export function parseAssistantPreferences(
   value: string | null,
 ): SidebarPreferences {
   return parseSidebarPreferences(value, CLOSED);
-}
-
-export function subscribeAssistantPreferences(notify: () => void) {
-  const storage = (event: StorageEvent) => {
-    if (event.key === KEY || event.key === null) notify();
-  };
-  window.addEventListener('storage', storage);
-  window.addEventListener(CHANGE, notify);
-  return () => {
-    window.removeEventListener('storage', storage);
-    window.removeEventListener(CHANGE, notify);
-  };
-}
-export function saveAssistantPreferences(value: SidebarPreferences) {
-  const serialized = JSON.stringify(value);
-  try {
-    localStorage.setItem(KEY, serialized);
-    temporary = null;
-  } catch {
-    temporary = serialized;
-  }
-  window.dispatchEvent(new Event(CHANGE));
 }
 
 type AssistantState = {

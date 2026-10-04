@@ -94,7 +94,6 @@ export function InputsList({
                 {details[link.id] ? (
                   <button
                     type="button"
-                    id={`input-row-${link.id}`}
                     className={ROW_BUTTON}
                     aria-expanded={openId === link.id}
                     onClick={() => onOpen(link.id)}

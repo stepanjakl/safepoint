@@ -4,6 +4,8 @@ Status: human-readable guide to the Stage 1A data contract
 
 Audience: engineers, designers, and reviewers working with the Fresh Food Weekend scenario
 
+> **Scenario change, 3 October 2026.** The main demonstration is moving to the Brunch weekend sheet process in [`SHEET-PROCESS-PLAN.md`](SHEET-PROCESS-PLAN.md). The Alderton's promotion-release scenario described here stays implemented as the earlier scenario; this document is updated for the new demo in that plan's Phase 2.
+
 ## Purpose
 
 This document explains the business meaning of the promotion-release schema. It is organised around the questions the data answers rather than the order of declarations in TypeScript.

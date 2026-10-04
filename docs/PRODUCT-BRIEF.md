@@ -4,6 +4,8 @@ Status: canonical product direction
 
 Audience: product, design, engineering, and portfolio reviewers
 
+> **Scenario change, 3 October 2026.** The main demonstration is moving to the Brunch weekend sheet process in [`SHEET-PROCESS-PLAN.md`](SHEET-PROCESS-PLAN.md). The Alderton's promotion-release scenario described here stays implemented as the earlier scenario; this document is updated for the new demo in that plan's Phase 2.
+
 ## One-sentence description
 
 Safepoint is an interface for inspecting, approving, executing, and reversing changes proposed by an AI agent before those changes affect real systems.

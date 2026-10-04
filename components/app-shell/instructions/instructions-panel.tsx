@@ -13,8 +13,13 @@ import { cx } from '@/lib/cx';
 import { diffText, paragraphsOf } from '@/lib/process/instruction-diff';
 import type { ProcessSummary } from '@/lib/process/model';
 import type { AsideView } from '@/components/app-shell/drawer-aside';
-import { useInstructions, type InstructionVersion } from './instructions-store';
-import { TextDiff } from './text-diff';
+import { NOTE } from '@/components/app-shell/process/panel-parts';
+import {
+  labelDate,
+  useInstructions,
+  type InstructionVersion,
+} from './instructions-store';
+import { pad, TextDiff } from './text-diff';
 
 // A quiet text button. aria-expanded holds the selected face while the side
 // panel it opened is showing, so the drawer says which of its items is open;
@@ -23,10 +28,6 @@ const QUIET =
   'control-wash text-muted hover:bg-surface-selected hover:text-primary focus-visible:bg-surface-selected focus-visible:text-primary aria-expanded:bg-surface-selected aria-expanded:text-primary data-[disabled]:cursor-not-allowed rounded-control text-meta inline-flex min-h-8 cursor-pointer items-center gap-1.5 px-2';
 const FIELD =
   'field text-dense text-primary field-sizing-content w-full resize-none px-3 py-2.5 leading-relaxed';
-const NOTE = 'border-rule-faint text-muted text-meta border-t pt-3';
-
-const pad = (n: number) => String(n).padStart(2, '0');
-
 /*
   The process's instructions as they stand, in the drawer. Reading happens
   here; everything that takes room -- what changed in a version, the editor --
@@ -233,7 +234,7 @@ export function InstructionChanges({
         </LedgerRow>
         <LedgerRow label="Published" className="px-5">
           {/* The row names the event, so the label's own verb goes. */}
-          {to.updatedLabel.replace(/^(Updated|Published) /, '')}
+          {labelDate(to.updatedLabel)}
         </LedgerRow>
         <LedgerRow label="By" className="px-5">
           {to.author}

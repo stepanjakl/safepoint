@@ -1,6 +1,6 @@
 # Safepoint Stage 1B brief
 
-Status: ready for Fable proposal
+Status: implemented as a vertical slice ([proposal and notes](STAGE-1B-PROPOSAL.md)); its standalone composition is superseded by [`EMBEDDED-REVIEW.md`](EMBEDDED-REVIEW.md)
 
 Audience: the model designing and implementing the first static review interface
 

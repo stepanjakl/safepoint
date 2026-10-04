@@ -14,6 +14,7 @@ type WorkspaceIntroState = {
 };
 
 const ShellPageNavigation = createContext<{
+  destinationPath: string;
   leaving: boolean;
   leavingProcess: boolean;
   enteringProcess: boolean;
@@ -105,6 +106,7 @@ export function ShellPageTransitionProvider({
   return (
     <ShellPageNavigation
       value={{
+        destinationPath: leaving ? pending.to : path,
         leaving,
         leavingProcess,
         enteringProcess,

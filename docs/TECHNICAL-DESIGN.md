@@ -4,6 +4,11 @@ Status: canonical architecture proposal
 
 Audience: software engineers and technical reviewers
 
+> **Sheet track, 3 October 2026.** [`SHEET-PROCESS-PLAN.md`](SHEET-PROCESS-PLAN.md)
+> adds a data-defined rule engine, a Google Sheet read through Composio and
+> week-relative run timing. Where it differs from this document for that track,
+> the plan applies; this document gains a rulebook section in the plan's Phase 1.
+
 ## Architecture goals
 
 Safepoint must make one boundary unmistakable: the language model may propose changes, but it cannot create external effects.

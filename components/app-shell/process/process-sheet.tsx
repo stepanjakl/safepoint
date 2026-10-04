@@ -8,6 +8,7 @@ import type { ProcessSummary } from '@/lib/process/model';
 import type { SystemLink } from '@/lib/process/system-links';
 import { useInstructions } from '@/components/app-shell/instructions/instructions-store';
 import { useRemovedInputs } from '@/components/app-shell/inputs/inputs-store';
+import { writePreferenceCookie } from '@/components/app-shell/stored-record';
 import { ProcessHeader } from './process-header';
 import { ProcessContentTransition } from './process-content-transition';
 import { ProcessPanels } from './process-panels';
@@ -37,6 +38,8 @@ const TAB_MOTION = (): 'fade' => 'fade';
 export const ProcessSheetActions = createContext<{
   showInput: (id: string) => void;
   showVersion: (version: string) => void;
+  // A change log needs a version before it; the first one has none to show.
+  hasChanges: (version: string) => boolean;
   showInstructions: () => void;
   // The instructions now, which a run may predate.
   currentVersion: string;
@@ -76,7 +79,7 @@ export function ProcessSheet({
   const [tab, setTab] = useProcessTab(process.id);
   // The root opens the process last open (app/(shell)/page.tsx).
   useEffect(() => {
-    document.cookie = `${LAST_PROCESS_KEY}=${encodeURIComponent(process.id)}; path=/; max-age=31536000; samesite=lax`;
+    writePreferenceCookie(LAST_PROCESS_KEY, process.id);
   }, [process.id]);
   /*
     A detail the sheet has been asked to open: a version's change log from a
@@ -112,13 +115,19 @@ export function ProcessSheet({
   // set, so a removed input leaves the count and the list together.
   const { removed, remove, restore } = useRemovedInputs(process.id);
   // The current version, which a publish in this browser can move on.
-  const { version } = useInstructions(process.id, process.instructions).current;
+  const { current, versions } = useInstructions(
+    process.id,
+    process.instructions,
+  );
+  const { version } = current;
   const kept = inputs.filter((input) => !removed.has(input.id));
   const available = inputs.filter((input) => removed.has(input.id));
   const editable = inputDetails !== undefined;
   const actions = {
     showInput: (id: string) => ask({ kind: 'input', id }, 'inputs'),
     showVersion,
+    hasChanges: (version: string) =>
+      versions.findIndex((entry) => entry.version === version) > 0,
     showInstructions: () => chooseTab('instructions'),
     currentVersion: version,
   };

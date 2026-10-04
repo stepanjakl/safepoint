@@ -2,6 +2,7 @@
 
 import { useMemo, useSyncExternalStore } from 'react';
 import { z } from 'zod';
+import { createStoredRecord, parseStored } from '../stored-record';
 import type { ProcessSummary } from '@/lib/process/model';
 
 /*
@@ -15,8 +16,6 @@ import type { ProcessSummary } from '@/lib/process/model';
   publishing here does not run anything. v2 of the key: versions are one text
   now, where v1 stored a list of clauses.
 */
-const KEY = 'safepoint.instructions.v2';
-const CHANGE = 'safepoint:instructions';
 const entrySchema = z.object({
   published: z.array(
     z.object({
@@ -31,7 +30,11 @@ const schema = z.record(z.string(), entrySchema);
 type Entry = z.infer<typeof entrySchema>;
 type Stored = z.infer<typeof schema>;
 const EMPTY: Entry = { published: [], draft: null };
-let temporary: string | null = null;
+const store = createStoredRecord<Stored>(
+  'safepoint.instructions.v2',
+  'safepoint:instructions',
+);
+const parse = (value: string | null) => parseStored(schema, value, {});
 
 export type InstructionVersion = {
   version: string;
@@ -66,48 +69,6 @@ function publishedLabel(iso: string): string {
   return `${parts.weekday} ${parts.day} ${(parts.month ?? '').slice(0, 3)} · ${parts.hour}:${parts.minute}`;
 }
 
-function parse(value: string | null): Stored {
-  try {
-    const parsed = schema.safeParse(JSON.parse(value ?? 'null'));
-    if (parsed.success) return parsed.data;
-  } catch {
-    // An old or edited preference must never hide the instructions.
-  }
-  return {};
-}
-
-function read() {
-  if (temporary !== null) return temporary;
-  try {
-    return localStorage.getItem(KEY);
-  } catch {
-    return null;
-  }
-}
-
-function subscribe(notify: () => void) {
-  const onStorage = (event: StorageEvent) => {
-    if (event.key === KEY || event.key === null) notify();
-  };
-  window.addEventListener('storage', onStorage);
-  window.addEventListener(CHANGE, notify);
-  return () => {
-    window.removeEventListener('storage', onStorage);
-    window.removeEventListener(CHANGE, notify);
-  };
-}
-
-function save(stored: Stored) {
-  const value = JSON.stringify(stored);
-  try {
-    localStorage.setItem(KEY, value);
-    temporary = null;
-  } catch {
-    temporary = value;
-  }
-  window.dispatchEvent(new Event(CHANGE));
-}
-
 // Versions are numbered on from the process's own, so a process at v4
 // publishes v5 next. The number is derived, not stored: nothing can skip or
 // repeat one.
@@ -116,11 +77,15 @@ function versionNumber(version: string): number {
   return Number.isFinite(number) ? number : 1;
 }
 
+// The date alone, for a place that supplies its own verb.
+export const labelDate = (updatedLabel: string) =>
+  updatedLabel.replace(/^(Updated|Published)\s+/, '');
+
 export function useInstructions(
   processId: string,
   instructions: ProcessSummary['instructions'],
 ) {
-  const raw = useSyncExternalStore(subscribe, read, () => null);
+  const raw = useSyncExternalStore(store.subscribe, store.read, store.server);
   const entry = useMemo(() => parse(raw)[processId] ?? EMPTY, [raw, processId]);
   const start = versionNumber(instructions.version);
 
@@ -155,8 +120,8 @@ export function useInstructions(
   // Each write starts from storage rather than this render's entry, so a
   // keystroke and a publish in one tick cannot overwrite each other.
   const change = (apply: (entry: Entry) => Entry) => {
-    const all = parse(read());
-    save({ ...all, [processId]: apply(all[processId] ?? EMPTY) });
+    const all = parse(store.read());
+    store.save({ ...all, [processId]: apply(all[processId] ?? EMPTY) });
   };
 
   return {

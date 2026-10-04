@@ -7,6 +7,10 @@ import { presentPromotionPlan } from '@/lib/review/promotion-adapter';
 import { supportPlan } from '@/lib/review/support-fixture';
 import type { ReleasePlan } from '@/lib/review/plan-contract';
 import type { ProcessSummary } from './model';
+import {
+  brunchPlan,
+  brunchProcess,
+} from '@/lib/processes/avocado-toast/process';
 
 /*
   The runs rail and the process menu's release preview describe the same run,
@@ -27,6 +31,7 @@ function currentRun(process: ProcessSummary) {
 describe.each([
   ['promotion', promotionProcess, presentPromotionPlan(loadReviewedReplay())],
   ['support', supportProcess, supportPlan],
+  ['brunch weekend', brunchProcess, brunchPlan],
 ] satisfies [string, ProcessSummary, ReleasePlan][])(
   '%s current run',
   (_name, process, plan) => {

@@ -4,11 +4,10 @@ import { useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import type { ProcessSummary } from '@/lib/process/model';
+import { NOTE } from './panel-parts';
 import { PROCESS_NAME_MAX, useProcessName } from './process-names-store';
 import { ScheduleFields } from './schedule-control';
 import { useProcessSchedule } from './schedule-store';
-
-const NOTE = 'border-rule-faint text-muted text-meta border-t pt-3';
 
 const FIELD = 'field text-dense text-primary min-h-9 w-full px-3';
 

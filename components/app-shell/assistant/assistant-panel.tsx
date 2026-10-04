@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useRef, type RefObject } from 'react';
+// Deep import: Blode's barrel is the whole icon library.
+import X from 'blode-icons-react/icons/x';
 import { Button } from '@/components/ui/button';
 import { useAssistant } from './assistant-state';
 
@@ -33,17 +35,7 @@ export function AssistantPanel({
           onPress={assistant.close}
           className="w-11"
         >
-          <svg
-            aria-hidden="true"
-            className="size-4"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          >
-            <path d="m6 6 12 12M18 6 6 18" />
-          </svg>
+          <X aria-hidden size={16} strokeWidth={1.8} className="size-4" />
         </Button>
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">

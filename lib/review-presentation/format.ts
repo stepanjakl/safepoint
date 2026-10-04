@@ -58,5 +58,3 @@ export function formatUnits(units: number): string {
 export function capitalise(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
-
-// Route parameter parsing

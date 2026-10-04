@@ -48,6 +48,9 @@ export function SidebarResizeHandle({
     leaveHover,
     drag,
   } = controller;
+  // One handle serves both panels; every word it says names the one it moves.
+  const panel = side === 'left' ? 'sidebar' : 'assistant';
+  const Panel = side === 'left' ? 'Sidebar' : 'Assistant';
   // The tooltip is measured against the grip, not the edge, and react-aria
   // re-measures that anchor whenever it resizes. CSS takes the whole handle out
   // of layout below the shell breakpoint, and the assistant's handle leaves
@@ -75,7 +78,7 @@ export function SidebarResizeHandle({
   return (
     <>
       <Tooltip
-        label={collapsed ? 'Click to show sidebar' : 'Click to hide sidebar'}
+        label={`Click to ${collapsed ? 'show' : 'hide'} ${panel}`}
         description={
           <>
             <span className="block">
@@ -122,7 +125,7 @@ export function SidebarResizeHandle({
           }
           aria-valuetext={
             willClose
-              ? 'Release to hide sidebar'
+              ? `Release to hide ${panel}`
               : willSnapOpen
                 ? 'Release to open at minimum width'
                 : collapsed && preview === null
@@ -241,7 +244,7 @@ export function SidebarResizeHandle({
       </Tooltip>
       <span id={helpId} className="sr-only">
         Left and right arrows resize. Home selects the minimum width; End the
-        maximum. Enter or Space hides or restores the sidebar. Escape cancels a
+        maximum. Enter or Space hides or restores the {panel}. Escape cancels a
         drag. Right-click, touch and hold, or Shift F10 opens width presets.
         Drag toward the outside edge past halfway and release to hide. A partial
         opening snaps to the minimum width. Alt-click or Alt+Enter resets to the
@@ -255,8 +258,11 @@ export function SidebarResizeHandle({
         offset={8}
         className="control-face surface-floating rounded-shell p-2"
       >
-        <Dialog aria-label="Sidebar width" className="grid gap-1 outline-none">
-          <p className="text-muted text-meta px-2 py-1">Sidebar width</p>
+        <Dialog
+          aria-label={`${Panel} width`}
+          className="grid gap-1 outline-none"
+        >
+          <p className="text-muted text-meta px-2 py-1">{Panel} width</p>
           {(['Compact', 'Default', 'Wide'] as const).map((label) => (
             <Button
               key={label}

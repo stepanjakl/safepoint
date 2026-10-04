@@ -13,7 +13,29 @@ The detailed requirements remain in [`docs/`](docs/README.md). If this checklist
 - Keep the replay mode working as live integrations are added.
 - Finish, test, review, and commit one batch before starting the next.
 
-## Ordered build
+## Current track: sheet process
+
+The main demonstration is now Brunch weekend at Alderton's Local, specified in [`docs/SHEET-PROCESS-PLAN.md`](docs/SHEET-PROCESS-PLAN.md). Each phase ends at the gate written there.
+
+- [x] **Phase 0. Decide and prepare**
+  - [x] Documentation updated for the new track.
+  - [x] Google Sheet created and restructured to weekdays and times; Composio connection active for `safepoint-dev`.
+  - [x] Brunch weekend registered in development, with both trials behind buttons on its page.
+  - [x] CEL trial: cel-js chosen, Buf CEL cross-checks rule examples in tests ([record](docs/archive/2026-10-03-cel-spike.md)).
+  - [x] Composio reader trial: reading, money, times, weekdays, header binding, and run timing (the Calculate step), across both clock changes.
+- [ ] **Phase 1.** Engine and snapshot replay.
+- [ ] **Phase 2.** Review in the shell (replay), with decisions, safe ranges and what-ifs.
+- [ ] **Phase 3.** Rulebook setup assistant: proof, versions, impact.
+- [ ] **Phase 4.** Live runs and what changed.
+- [ ] **Phase 5.** Guarded write-back, conflict and undo.
+- [ ] **Phase 6.** History and the ratchet.
+- [ ] **Phase 7.** A second purpose.
+
+## Earlier scenario: promotion release
+
+The ordered build below sequenced the Alderton's scenario. Stages 0 and 1A are complete and the app shell and replay review exist; the remaining items carry over to the sheet track where the plan says so (persistence, durable execution, the Google Sheets sandbox and hardening) and are otherwise paused.
+
+### Ordered build
 
 - [x] **0. Establish the project foundation**
   - Follow the exact hand-off in [`docs/STAGE-0-BRIEF.md`](docs/STAGE-0-BRIEF.md).

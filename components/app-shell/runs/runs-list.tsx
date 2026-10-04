@@ -1,6 +1,9 @@
 'use client';
 
-import { useInstructions } from '@/components/app-shell/instructions/instructions-store';
+import {
+  labelDate,
+  useInstructions,
+} from '@/components/app-shell/instructions/instructions-store';
 import { RunRow } from './run-row';
 import { useRunSelection } from './run-selection';
 import type { ProcessSummary } from '@/lib/process/model';
@@ -35,10 +38,7 @@ export function RunsList({
   // either side of it. The stored label leads with its own verb -- "Updated
   // 24 Aug 2026" -- and the boundary supplies that word itself.
   const published = new Map(
-    versions.map((entry) => [
-      entry.version,
-      entry.updatedLabel.replace(/^(Updated|Published)\s+/, ''),
-    ]),
+    versions.map((entry) => [entry.version, labelDate(entry.updatedLabel)]),
   );
 
   return (

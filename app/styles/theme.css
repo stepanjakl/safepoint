@@ -198,9 +198,6 @@
   /* Heavier than the resting hairline, so a row in flight reads as picked up.
      Grown outward, so the label and handle stay where the drag began. */
   --spacing-menu-drag-edge: 1.5px;
-  /* The list clips on both axes, so it pads by this and takes the same back
-     as a negative margin: the reach stays visible, nothing at rest moves. */
-  --spacing-menu-drag-grow: calc(var(--spacing-menu-drag-edge) - var(--spacing-menu-edge));
   --spacing-field-edge: 1.5px;
   /* The same hairline under the namespace `border-*` reads its width from.
      Without this, `border-menu-edge` falls through to the colour branch and

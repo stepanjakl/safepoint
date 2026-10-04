@@ -103,28 +103,32 @@ export function Tooltip({
       onOpenChange={onOpenChange}
     >
       <Focusable>{children}</Focusable>
-      <AriaTooltip
-        className="app-tooltip ground-tooltip group"
-        offset={offset}
-        containerPadding={containerPadding}
-        triggerRef={triggerRef}
-        placement={placement}
-        data-rich={content ? true : undefined}
-        data-anchor={anchor}
-      >
-        <OverlayArrow className="app-tooltip-arrow flex">
-          <TooltipArrowShape />
-        </OverlayArrow>
-        <span className="group-data-[rich]:text-dense font-medium group-data-[rich]:[font-weight:650]">
-          {label}
-        </span>
-        {description ? (
-          <span className="text-micro group-data-[rich]:text-meta text-muted">
-            {description}
+      {/* Controlled closure must also end the overlay's animation lifetime:
+          later trigger hovers can otherwise remount an unpositioned exit. */}
+      {isOpen === false ? null : (
+        <AriaTooltip
+          className="app-tooltip ground-tooltip group"
+          offset={offset}
+          containerPadding={containerPadding}
+          triggerRef={triggerRef}
+          placement={placement}
+          data-rich={content ? true : undefined}
+          data-anchor={anchor}
+        >
+          <OverlayArrow className="app-tooltip-arrow flex">
+            <TooltipArrowShape />
+          </OverlayArrow>
+          <span className="group-data-[rich]:text-dense font-medium group-data-[rich]:[font-weight:650]">
+            {label}
           </span>
-        ) : null}
-        {content}
-      </AriaTooltip>
+          {description ? (
+            <span className="text-micro group-data-[rich]:text-meta text-muted">
+              {description}
+            </span>
+          ) : null}
+          {content}
+        </AriaTooltip>
+      )}
     </TooltipTrigger>
   );
 }

@@ -30,25 +30,31 @@
   --control-ring-bottom: var(--menu-badge-ring, var(--sp-keycap-ring));
   --control-highlight: var(--menu-badge-highlight, var(--sp-keycap-highlight));
   --control-highlight-width: var(--spacing-control-highlight-hairline);
+  transition-duration: var(--menu-badge-duration, var(--duration-state));
 }
 
 @layer components {
+  .process-list-fade {
+    --process-row-gap: 4px;
+    --duration-process-activation: 75ms;
+    --duration-process-selection: 250ms;
+    --duration-process-pill-return: 250ms;
+  }
+
   .process-menu-row {
     @apply control-face;
     position: absolute;
-    inset: 0 0 auto;
+    inset: calc(var(--spacing-menu-current-edge) * -1) calc(var(--spacing-menu-edge) * -1) auto;
     display: flex;
     align-items: center;
     gap: 0.25rem;
-    /* One definition of the row's height. --row-pitch is set on the list from
-       the same constant the translate maths uses, so the two cannot drift; the
-       2px it gives back is the gap between one row and the next. */
-    height: calc(var(--row-pitch) - 2px);
+    /* The list publishes the reorder pitch; subtract the gap for the face,
+       then add the outward border without changing that pitch. */
+    height: calc(var(--row-pitch) - var(--process-row-gap) + var(--spacing-menu-current-edge) * 2);
     /* No end padding: the badge at the row's end is one rail cell wide and has
        to reach the pane's content edge to centre on the mirrored axis. */
     padding: 0;
-    /* Reserve the selected edge on every row; matching block widths keep
-       the content centred while only the ring colour changes. */
+    /* Grow the border box outward so the face keeps the full row footprint. */
     border: var(--spacing-menu-edge) solid transparent;
     border-block-width: var(--spacing-menu-current-edge);
     border-radius: var(--radius-control);
@@ -77,18 +83,16 @@
       --control-highlight var(--duration-state) ease-out;
   }
 
-  /* A wash and nothing else; the reserved edge stays transparent, since an
-     outline on hover read as a second current row. Both exclusions are load
-     bearing: without them this rule outranks [data-dragging] and repaints it. */
+  /* Face stops keep the wash inside the same bounds as selection; a background
+     colour paints under the border. Exclude selection and dragging. */
   .process-menu-row:not([data-current], [data-dragging]):hover,
   .process-menu-row:not([data-current], [data-dragging]):focus-within {
-    background-color: var(--sp-menu-wash);
+    --control-face-top: var(--sp-menu-wash);
+    --control-face-bottom: var(--sp-menu-wash);
   }
 
-  /* While arranging, every row is a drag target and must answer the pointer,
-     the current one included. It cannot take the others' background --
-     control-face paints a gradient layer over it -- so it moves the face's own
-     two stops to the same wash, which control-face already transitions. */
+  /* Arranging makes the selected row a drag target too; tint its face stops
+     because a background colour would sit underneath its opaque face. */
   .process-menu-row[data-editing][data-current]:not([data-dragging]):hover,
   .process-menu-row[data-editing][data-current]:not([data-dragging]):focus-within {
     --control-face-top: var(--sp-menu-wash);
@@ -105,6 +109,21 @@
     --control-highlight: transparent;
   }
 
+  /* Durations follow the row's property order: only the two face stops slow
+     down on selection; the edge and label retain their faster response. */
+  .process-menu-row[data-current]:not([data-editing], [data-dragging]) {
+    transition-duration:
+      var(--duration-process-activation), var(--duration-process-activation),
+      var(--duration-process-activation), var(--duration-process-activation),
+      var(--duration-process-activation), var(--duration-process-selection),
+      var(--duration-process-selection), var(--duration-process-activation),
+      var(--duration-process-activation), var(--duration-process-activation);
+  }
+
+  .process-menu-row[data-current]:not([data-editing], [data-dragging]) .process-menu-link {
+    --duration-state: var(--duration-process-activation);
+  }
+
   /* Lifted over its neighbours, with eased transitions off so the row tracks
      the pointer exactly. Carried by the face and the reserved edge -- no
      shadow, which the experience spec does not allow. */
@@ -115,23 +134,22 @@
     transition: none;
   }
 
-  /* The heavier drag edge on every side. The box grows outward by the
-     difference rather than the border eating in, so nothing shifts when the
-     drag starts. Shared with the drop slot, so the two stay one object. */
+  /* The drag edge grows outward too, preserving the face while arranging.
+     Shared with the drop slot, so the two stay one object. */
   .process-menu-row[data-dragging],
   .process-drop-slot {
-    inset: calc(var(--spacing-menu-drag-grow) * -1) calc(var(--spacing-menu-drag-grow) * -1) auto;
-    height: calc(var(--row-pitch) - 2px + var(--spacing-menu-drag-grow) * 2);
+    inset: calc(var(--spacing-menu-drag-edge) * -1) calc(var(--spacing-menu-drag-edge) * -1) auto;
+    height: calc(var(--row-pitch) - var(--process-row-gap) + var(--spacing-menu-drag-edge) * 2);
     border-width: var(--spacing-menu-drag-edge);
   }
 
-  /* The badge's stops, published for `surface-menu-badge` to read. Here with
-     the row's other states because it is one of them: a keycap at rest, bare
-     whenever the row lights, so the row shows through it. */
+  /* The badge reads these row stops so hover, focus and selection can make it
+     bare together without separate state variants on the badge. */
   .process-menu-row {
     --menu-badge-face: var(--sp-keycap-face);
     --menu-badge-ring: var(--sp-keycap-ring);
     --menu-badge-highlight: var(--sp-keycap-highlight);
+    --menu-badge-duration: var(--duration-process-pill-return);
   }
 
   .process-menu-row:hover,
@@ -140,19 +158,12 @@
     --menu-badge-face: transparent;
     --menu-badge-ring: transparent;
     --menu-badge-highlight: transparent;
+    --menu-badge-duration: var(--duration-state);
   }
 
-  /* The row carries no end padding, so the badge sets its own inset: one
-     --spacing-menu-end in, the same the search field gives its keycap. */
+  /* Keep the badge on its existing axis as the row's border box grows outward. */
   .process-menu-row-end {
-    margin-inline-end: var(--spacing-menu-end);
-  }
-
-  /* The mirror of the rule above. The leading axis is measured from the
-     pane's content edge and knows nothing of the row, so a cell inside the
-     row's edge would centre a hairline late -- the cell gives it back. */
-  .process-menu-row-start {
-    margin-inline-start: calc(var(--spacing-menu-edge) * -1);
+    margin-inline-end: calc(var(--spacing-menu-end) + var(--spacing-menu-edge));
   }
 
   /* Where the dragged row will land. Dashed on every side and in the same teal

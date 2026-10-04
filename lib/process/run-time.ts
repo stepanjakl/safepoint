@@ -48,6 +48,15 @@ function dayKey(at: Date): string {
   return DAY_KEY.format(at);
 }
 
+// The day before a day key, counted on the calendar rather than by subtracting
+// 24 hours from an instant: either clock change makes one ZONE day 23 or 25.
+function previousDayKey(key: string): string {
+  const [year, month, day] = key.split('-').map(Number);
+  return new Date(Date.UTC(year!, month! - 1, day! - 1))
+    .toISOString()
+    .slice(0, 10);
+}
+
 /*
   The day, named where a name is more use than a date. `now` is a parameter so
   that a caller can render a fixed instant -- a gallery of states, a test --
@@ -57,9 +66,7 @@ export function runDay(iso: string, now: Date = new Date()): string {
   const at = new Date(iso);
   const key = dayKey(at);
   if (key === dayKey(now)) return 'Today';
-  const yesterday = new Date(now);
-  yesterday.setDate(yesterday.getDate() - 1);
-  if (key === dayKey(yesterday)) return 'Yesterday';
+  if (key === previousDayKey(dayKey(now))) return 'Yesterday';
   // "Jun 17" rather than "17 Jun": the day is scanned down a column, and the
   // month is what a reader is placing it by.
   const parts = Object.fromEntries(

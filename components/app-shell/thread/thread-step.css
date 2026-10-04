@@ -83,12 +83,13 @@
     --thread-wash-y: 0.1875rem;
     /* Quick fades: pills, the fold's content and the time trading places. */
     --thread-fade: 160ms;
-    /* Time per pixel of an opening body, so every fold moves at one speed: a
-       tall one takes longer rather than moving faster. 230px takes 250ms. */
+    /* Height sets the pace until the cap, so long bodies cannot hold up
+       the content fade or the next step. */
     --thread-fold-pace: 1.1ms;
     /* Short bodies take at least this, so a small fold eases open rather than
        snapping; only those under 180px are held to it. */
     --thread-fold-min: 200ms;
+    --thread-fold-max: 350ms;
     /* A step arriving while watched, in turn: its space opens, its mark
        travels down the line drawing in behind it, the row eases in as the
        mark lands, and the body unfolds once the mark has grown. */
@@ -1093,9 +1094,10 @@
     min-width: 0;
     /* The body's open height in px, published by the step as it resizes; the
        fallback is a typical body, for the frame before it is measured. */
-    --thread-fold-duration: max(
+    --thread-fold-duration: clamp(
       var(--thread-fold-min),
-      calc(var(--thread-fold-height, 230) * var(--thread-fold-pace))
+      calc(var(--thread-fold-height, 230) * var(--thread-fold-pace)),
+      var(--thread-fold-max)
     );
     transition: grid-template-rows var(--thread-fold-duration) cubic-bezier(0.4, 0, 0.2, 1)
       var(--thread-fade);

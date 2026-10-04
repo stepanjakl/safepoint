@@ -6,7 +6,9 @@ This directory is the canonical project specification. Earlier source material i
 
 ## Status
 
-Safepoint is in staged implementation. Stage 0 established the application foundation, and Stage 1A added the validated fictional evidence pack and replay contracts. The review interface begins in Stage 1B.
+Safepoint is in staged implementation. Stage 0 established the application foundation and Stage 1A the validated Alderton's evidence pack and replay contracts. The app shell, process navigation, replay review overlay and development-only model and policy workbenches followed, as recorded in [`EMBEDDED-REVIEW.md`](EMBEDDED-REVIEW.md) and [`REVIEW-EXPERIMENT-DECISION.md`](REVIEW-EXPERIMENT-DECISION.md).
+
+On 3 October 2026 the main demonstration moved to a simpler, sheet-driven process, Brunch weekend at Alderton's Local, with a data-defined rule engine: see [`SHEET-PROCESS-PLAN.md`](SHEET-PROCESS-PLAN.md). That plan is the active hand-off. The Alderton's promotion-release scenario stays implemented as the earlier scenario; documents that describe it are updated as the plan's phases land.
 
 The current specification is decision-complete for the first portfolio implementation. Assumptions that require real-user validation are labelled as such rather than presented as research findings.
 
@@ -36,22 +38,23 @@ flowchart LR
 ## Read in this order
 
 1. [`PRODUCT-BRIEF.md`](PRODUCT-BRIEF.md) explains the problem, users, product principles, portfolio boundary, and future direction.
-2. [`EXPERIENCE-SPEC.md`](EXPERIENCE-SPEC.md) defines the scenario, interface, interaction model, visual system, responsive behaviour, and accessibility requirements.
-3. [`PROMOTION-RELEASE-DATA-DICTIONARY.md`](PROMOTION-RELEASE-DATA-DICTIONARY.md) explains the implemented scenario fields and controlled values in business language.
-4. [`TECHNICAL-DESIGN.md`](TECHNICAL-DESIGN.md) defines system boundaries, contracts, persistence, execution, security, observability, and failure behaviour.
-5. [`DELIVERY-PLAN.md`](DELIVERY-PLAN.md) sequences implementation through acceptance-gated milestones.
-6. [`PROJECT-REVIEW.md`](PROJECT-REVIEW.md) records corrections, alternatives, source coverage, assumptions, and rejected ideas.
-7. [`STYLING-SYSTEM.md`](STYLING-SYSTEM.md) records the implemented styling system: where styles live (shared foundations in `app/styles/`, a component's own stylesheet beside it), the one colour system, the type and radius scales and how they are constructed, and the conventions that keep markup free of arbitrary values. Finished styling plans are in [`archive/`](archive/README.md).
+2. [`SHEET-PROCESS-PLAN.md`](SHEET-PROCESS-PLAN.md) is the current track: the Brunch weekend scenario and its Google Sheet, the rule engine, run timing, and the phases with their gates.
+3. [`EXPERIENCE-SPEC.md`](EXPERIENCE-SPEC.md) defines the scenario, interface, interaction model, visual system, responsive behaviour, and accessibility requirements.
+4. [`PROMOTION-RELEASE-DATA-DICTIONARY.md`](PROMOTION-RELEASE-DATA-DICTIONARY.md) explains the implemented scenario fields and controlled values in business language.
+5. [`TECHNICAL-DESIGN.md`](TECHNICAL-DESIGN.md) defines system boundaries, contracts, persistence, execution, security, observability, and failure behaviour.
+6. [`DELIVERY-PLAN.md`](DELIVERY-PLAN.md) sequences implementation through acceptance-gated milestones.
+7. [`PROJECT-REVIEW.md`](PROJECT-REVIEW.md) records corrections, alternatives, source coverage, assumptions, and rejected ideas.
+8. [`STYLING-SYSTEM.md`](STYLING-SYSTEM.md) records the implemented styling system: where styles live (shared foundations in `app/styles/`, a component's own stylesheet beside it), the one colour system, the type and radius scales and how they are constructed, and the conventions that keep markup free of arbitrary values. Finished styling plans are in [`archive/`](archive/README.md).
 
-[`PRIOR-ART.md`](PRIOR-ART.md) is supporting research: comparable change-review and human-in-the-loop tools, and the ideas worth borrowing from them. It records no decisions.
+[`PRIOR-ART.md`](PRIOR-ART.md) is supporting research: comparable change-review and human-in-the-loop tools, and the ideas worth borrowing from them. It records no decisions. [`LLM-RULES-GUIDE.md`](LLM-RULES-GUIDE.md) is a general learning guide to using a language model to draft deterministic rules (CEL, Rego, Cedar), checking them, and calculating evidence rather than trusting model confidence. [`CONFIDENCE-BOOST.md`](CONFIDENCE-BOOST.md) is the short, plain-language version of how that research backs the sheet process.
 
-The immediate implementation hand-off is [`STAGE-1B-BRIEF.md`](STAGE-1B-BRIEF.md). [`STAGE-1A-BRIEF.md`](STAGE-1A-BRIEF.md) records the accepted data and contract foundation; [`STAGE-0-BRIEF.md`](STAGE-0-BRIEF.md) remains the completed scaffold record.
+The immediate implementation hand-off is [`SHEET-PROCESS-PLAN.md`](SHEET-PROCESS-PLAN.md). [`STAGE-1B-BRIEF.md`](STAGE-1B-BRIEF.md) and [`STAGE-1A-BRIEF.md`](STAGE-1A-BRIEF.md) record the Alderton's interface and data foundation; [`STAGE-0-BRIEF.md`](STAGE-0-BRIEF.md) remains the completed scaffold record.
 
 ## Two project tracks
 
 ### Portfolio track
 
-The first deliverable is a public application and written case study built around one fixed synthetic grocery promotion-release scenario.
+The first deliverable is a public application and written case study. The list below describes the first scenario, Alderton's promotion release; the Brunch weekend sheet process that now leads demonstrates the same boundary with a smaller scenario (see [`SHEET-PROCESS-PLAN.md`](SHEET-PROCESS-PLAN.md#outcome)).
 
 It demonstrates:
 
@@ -94,6 +97,8 @@ Truly arbitrary processes cannot be executed safely through the common interface
 
 ## Scenario in brief
 
+The current scenario is **Brunch weekend at Alderton's Local**: one store, eleven products and an avocado toast kit, with its data, parameters and plain-English rules in a Google Sheet read through Composio. It is specified in [`SHEET-PROCESS-PLAN.md`](SHEET-PROCESS-PLAN.md#appendix-a-the-google-sheet). The rest of this section describes the earlier, implemented scenario.
+
 Maya, a fictional category-operations manager and release coordinator at the fictional UK grocer Alderton's, reviews whether the 27-line Fresh Food Weekend promotion is safe to release. The fixed scenario begins at 08:45 on Thursday 3 September 2026. A fictional final top-up cutoff is at 12:00, and the fictional label-production deadline is 06:00 the next day, exactly 21 hours and 15 minutes after review. Main promotion orders were placed earlier in the planning cycle.
 
 The agent derives a `PromotionReleasePlan` from a controlled evidence pack. Its four read-only capabilities expose:
@@ -127,6 +132,8 @@ Maya and Alderton's are design hypotheses, not validated research participants o
 | Persistence | Neon Postgres with Drizzle ORM |
 | Database connection | Chosen during persistence from the measured Vercel runtime; evaluate `node-postgres` with Fluid compute and Neon's HTTP path before using WebSockets |
 | External demonstration | Isolated Google Sheets and a working storefront sandbox; other targets are explicitly simulated or preview-only |
+| Sheet connector | Composio, for reads and (from the sheet plan's Phase 5) writes; the model never receives a Composio tool |
+| Process logic | For the sheet track, fields, facts and rules are data (CEL formulas), drafted with model help, approved by a person and versioned; see [`SHEET-PROCESS-PLAN.md`](SHEET-PROCESS-PLAN.md#decisions) |
 | Recovery | Verified compensating actions, never an unqualified rollback promise |
 | Execution runtime | Separate Vercel Workflows for proposal generation and approved-effect execution; never a browser- or request-owned batch |
 | Workflow duplication | Each start creates a run; an application operation record and atomic first-step claim prevent duplicate business execution |
@@ -158,24 +165,28 @@ Maya and Alderton's are design hypotheses, not validated research participants o
 
 **Effects ledger:** the append-only record of what the application attempted, verified, failed, or compensated.
 
-**Input:** data a run reads, supplied as a validated evidence file — a JSON file in the portfolio — and treated as the run's source of truth. Producing and updating it happens outside Safepoint.
+**Input:** data a run reads, treated as the run's source of truth: a validated JSON evidence file in the Alderton's scenario, a Google Sheet tab in the Brunch weekend process. Producing and updating it happens outside Safepoint.
 
 **Output:** an API a process may call once changes are approved, with its adapter mode and how a call is undone.
 
-**Snapshot:** the frozen, validated records one run read for one input; in the portfolio, the evidence files themselves. Agent tools and policy read snapshots, never live sources. See [`TECHNICAL-DESIGN.md`](TECHNICAL-DESIGN.md#read-path-from-connection-to-snapshot).
+**Snapshot:** the frozen, validated records one run read for one input: the evidence files themselves for Alderton's, the cell values read from the sheet (with cell references) for Brunch weekend. Agent tools and policy read snapshots, never live sources. See [`TECHNICAL-DESIGN.md`](TECHNICAL-DESIGN.md#read-path-from-connection-to-snapshot).
 
 ## Repository layout
 
 ```text
 safepoint/
-├── app/                Next.js application shell
+├── app/                Next.js routes: the shell, development workbenches, API routes, shared styles
+├── components/         Interface components, grouped by feature (app-shell, review, ui, dev)
+├── lib/                Domain contracts, policy, presentation and replay loaders
 ├── fixtures/           Validated fictional source evidence
 ├── replays/            Reviewed runtime replay outputs
-├── lib/                Runtime contracts and replay loader
 ├── tests/              Test-only fixtures, including the evaluation oracle
+├── e2e/                Playwright specs and the visual baseline
+├── scripts/, tools/    Colour generation, token and alignment checks, a PostCSS plugin
 ├── docs/               Canonical product and engineering specification
 ├── .gitignore          Repository exclusions
 ├── README.md           Public project introduction
+├── AGENTS.md           Instructions for coding agents
 ├── TODO.md             Ordered implementation checklist
 └── skills-lock.json    Reproducible project-skill manifest
 ```

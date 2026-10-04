@@ -12,6 +12,10 @@ import {
 import { processHref } from '@/lib/process/routes';
 import { presentPromotionPlan } from '@/lib/review/promotion-adapter';
 import { supportPlan } from '@/lib/review/support-fixture';
+import {
+  brunchPlan,
+  brunchProcess,
+} from '@/lib/processes/avocado-toast/process';
 import { ProcessMenu } from '@/components/app-shell/sidebar/process-menu';
 import {
   ShellPageTransition,
@@ -37,6 +41,16 @@ export async function AppShell({ children }: { children: ReactNode }) {
       name: supportProcess.name,
       plan: supportPlan,
     }),
+    ...(process.env.NODE_ENV === 'development'
+      ? [
+          processNavigationItem({
+            id: brunchProcess.id,
+            href: processHref(brunchProcess.id),
+            name: brunchProcess.name,
+            plan: brunchPlan,
+          }),
+        ]
+      : []),
   ];
   return (
     <ShellPageTransitionProvider processPaths={items.map((item) => item.href)}>

@@ -8,9 +8,10 @@ test.beforeEach(async ({ page, colorScheme }) => {
 });
 
 test('home page', async ({ page }, testInfo) => {
+  // The run's own heading, not its request step, whose drawing is still changing.
   await expect(
-    page.getByRole('button', { name: 'Request', exact: true }),
-  ).toBeVisible();
+    page.getByRole('heading', { level: 1, name: /^Run, / }),
+  ).toBeAttached();
   await expectContrast(page, testInfo, 'home');
 });
 

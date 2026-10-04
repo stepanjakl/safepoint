@@ -1,5 +1,6 @@
 import { APICallError } from 'ai';
 
+import { redactKey, rejectUnlessLocalDevelopment } from '@/lib/dev/dev-route';
 import { runReviewLab } from '@/lib/model-workbench/review-lab-run';
 import { labRequestSchema } from '@/lib/model-workbench/review-lab-contract';
 import { inspectConfirmedClaims } from '@/lib/promotion-release/review-lab';
@@ -7,21 +8,8 @@ import { inspectConfirmedClaims } from '@/lib/promotion-release/review-lab';
 export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
-  const url = new URL(request.url);
-  if (
-    process.env.NODE_ENV !== 'development' ||
-    !['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)
-  )
-    return Response.json(
-      { kind: 'error', message: 'Not found.' },
-      { status: 404 },
-    );
-  const origin = request.headers.get('origin');
-  if (origin !== null && origin !== url.origin)
-    return Response.json(
-      { kind: 'error', message: 'Cross-origin request rejected.' },
-      { status: 403 },
-    );
+  const rejected = rejectUnlessLocalDevelopment(request);
+  if (rejected) return rejected;
   if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY)
     return Response.json(
       {
@@ -85,7 +73,7 @@ export async function POST(request: Request) {
     const key = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     const detail =
       error instanceof Error ? error.message : 'Model request failed.';
-    const safeDetail = key ? detail.replaceAll(key, '[redacted]') : detail;
+    const safeDetail = redactKey(detail, key);
     console.error(
       '[review-lab]',
       JSON.stringify({
@@ -95,10 +83,8 @@ export async function POST(request: Request) {
         durationMs: Math.round(performance.now() - started),
         error: safeDetail,
         providerDetail: APICallError.isInstance(error)
-          ? (key
-              ? error.responseBody?.replaceAll(key, '[redacted]')
-              : error.responseBody
-            )?.slice(0, 4_000)
+          ? error.responseBody &&
+            redactKey(error.responseBody, key).slice(0, 4_000)
           : undefined,
       }),
     );

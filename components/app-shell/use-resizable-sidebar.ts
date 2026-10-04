@@ -107,10 +107,20 @@ export function useResizableSidebar({
       const [minimum, normal, maximum, unit, closed] = Array.from(
         element.children,
       ).map((child) => child.getBoundingClientRect().width);
-      setBounds(
+      const next =
         minimum && normal && maximum && unit && closed !== undefined
           ? { min: minimum, normal, max: maximum, unit, closed }
-          : null,
+          : null;
+      // The observer fires on every resize; an unchanged measurement keeps
+      // its object, so effects that read bounds do not restart.
+      setBounds((previous) =>
+        previous &&
+        next &&
+        (Object.keys(next) as (keyof Bounds)[]).every(
+          (key) => previous[key] === next[key],
+        )
+          ? previous
+          : next,
       );
       if (!minimum) {
         drag.current = null;
@@ -277,7 +287,7 @@ export function useResizableSidebar({
       updateHover(event);
       return;
     }
-    if (!session || session.pointer !== event.pointerId || !bounds) return;
+    if (session.pointer !== event.pointerId || !bounds) return;
     // A little pointer slop keeps a click a click; once a drag begins, coming
     // back to the starting point must not turn its release into a collapse.
     if (

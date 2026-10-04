@@ -11,7 +11,7 @@ import {
 import { moveProcess } from '@/lib/process/navigation';
 
 /*
-  The pitch of the list: a row plus the 2px gap to the next one. The single
+  The pitch of the list: a row plus the gap to the next one. The single
   definition -- it drives both the translate maths here and, published to CSS as
   --row-pitch on the list, the height of `.process-menu-row` and of the drop
   slot, so the two cannot drift apart.

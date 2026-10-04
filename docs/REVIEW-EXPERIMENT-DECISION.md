@@ -46,6 +46,11 @@ lifecycle, external preflight, connector execution, or recovery.
 
 ## Verification and next milestone
 
+> **Superseded in part, 3 October 2026.** The next-milestone paragraph below is
+> replaced by [`SHEET-PROCESS-PLAN.md`](SHEET-PROCESS-PLAN.md), which moves the
+> main demonstration to a sheet-driven process. The trust boundaries above still
+> apply to the promotion-release experiment.
+
 Regression expectations compare all 27 candidates' codes, severities, approval
 consequences, affected fields, and blocking outcomes. Explanations and evidence
 links come from current facts, rather than copying the replay's wording.

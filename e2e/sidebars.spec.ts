@@ -108,6 +108,40 @@ test('the resize hint belongs to the grip and its tooltip stays anchored', async
   expect(tooltipBox.x).toBeGreaterThan(0);
   expect(tooltipBox.y).toBeGreaterThan(0);
 
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  const edgeTooltipPositions = page.evaluate(
+    () =>
+      new Promise<{ x: number; y: number }[]>((resolve) => {
+        const positions: { x: number; y: number }[] = [];
+        let frames = 0;
+        function sample() {
+          const element = document.querySelector('.app-tooltip');
+          if (element) {
+            const { x, y } = element.getBoundingClientRect();
+            positions.push({ x, y });
+          }
+          frames += 1;
+          if (frames < 120) requestAnimationFrame(sample);
+          else resolve(positions);
+        }
+        requestAnimationFrame(sample);
+      }),
+  );
+  for (let pass = 0; pass < 3; pass++) {
+    await grip.hover();
+    await expect(tooltip).toBeVisible();
+    await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + 12);
+    await page.mouse.move(handleBox.x + 100, handleBox.y + 12);
+    await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + 12);
+    await page.waitForTimeout(150);
+    await expect(tooltip).toBeHidden();
+  }
+  expect(await edgeTooltipPositions).not.toEqual(
+    expect.arrayContaining([{ x: 0, y: 0 }]),
+  );
+  await grip.hover();
+  await expect(tooltip).toBeVisible();
+
   await page.setViewportSize({ width: 800, height: 900 });
   const tooltipPositions = await page.evaluate(
     () =>
@@ -382,7 +416,9 @@ test('the sidebars resize, remember, and recover', async ({
     });
     await focusHandle(page, 'right');
     await page.keyboard.press('Shift+F10');
-    await expect(page.locator('[aria-label="Sidebar width"]')).toHaveCount(1);
+    await expect(
+      page.getByRole('dialog', { name: 'Assistant width' }),
+    ).toHaveCount(1);
     await page.keyboard.press('Escape');
     await page.waitForTimeout(80);
     expect((await assistant(page)).open).toBe('true');

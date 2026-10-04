@@ -44,7 +44,7 @@ const ROW_BADGE = cx(
   finished sliding in.
 */
 const MENU_LABEL =
-  'text-menu-link group-hover/row:text-primary group-focus-within/row:text-primary control-wash group-data-[current]/row:text-primary block min-w-0 truncate rounded-control py-2.75 pr-0 pl-2.5 text-dense font-semibold no-underline select-none';
+  'text-menu-link group-hover/row:text-primary group-focus-within/row:text-primary control-wash group-data-[current]/row:text-primary block min-w-0 truncate rounded-control py-2.5 pr-0 pl-2.5 text-dense font-semibold no-underline select-none';
 
 /*
   The reorder handle and its non-interactive preview share one box, so the label
@@ -110,7 +110,7 @@ export function ProcessList({
   gripTransition: Transition;
   reorder: ProcessReorder;
 }) {
-  const { leaveTo } = useShellPageNavigation();
+  const { destinationPath, leaveTo } = useShellPageNavigation();
   const {
     drag,
     scrollRef,
@@ -160,7 +160,7 @@ export function ProcessList({
           // An overflow on one axis clips the other as well, so the sides carry
           // the dragged row's reach as padding and give it straight back as
           // margin.
-          className="shell:min-h-0 shell:flex-1 shell:overflow-y-auto shell:overscroll-contain shell:py-menu-fade shell:-mx-menu-drag-grow shell:px-menu-drag-grow"
+          className="shell:min-h-0 shell:flex-1 shell:overflow-y-auto shell:overscroll-contain shell:py-menu-fade shell:-mx-menu-drag-edge shell:px-menu-drag-edge"
         >
           <ol
             className="relative"
@@ -201,7 +201,7 @@ export function ProcessList({
                     rowAnchor(id).current = element;
                   }}
                   className="process-menu-row group/row"
-                  data-current={current === item.href || undefined}
+                  data-current={destinationPath === item.href || undefined}
                   data-editing={customising || undefined}
                   data-dragging={dragging || undefined}
                   style={{ transform: `translateY(${position}px)` }}
