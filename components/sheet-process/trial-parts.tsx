@@ -31,7 +31,7 @@ export type TrialState<T> =
 export function useTrial<T>(url: string) {
   const [state, setState] = useState<TrialState<T>>({ kind: 'idle' });
   const run = useCallback(
-    async (body?: unknown) => {
+    async (body?: unknown): Promise<T | null> => {
       const startedAt = performance.now();
       setState({ kind: 'running', startedAt });
       try {
@@ -53,6 +53,7 @@ export function useTrial<T>(url: string) {
           elapsedMs: Math.round(performance.now() - startedAt),
           finishedAt: new Date().toISOString(),
         });
+        return payload;
       } catch (error) {
         setState({
           kind: 'failed',
@@ -61,6 +62,7 @@ export function useTrial<T>(url: string) {
           status: null,
           elapsedMs: Math.round(performance.now() - startedAt),
         });
+        return null;
       }
     },
     [url],

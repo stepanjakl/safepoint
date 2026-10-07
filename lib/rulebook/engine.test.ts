@@ -2,362 +2,14 @@ import { describe, expect, it } from 'vitest';
 
 import { runChecks } from './checks';
 import { zonedInstant } from './cycle';
-import { evaluate, type Snapshot } from './engine';
+import { evaluate } from './engine';
 import type { Rulebook } from './schema';
-import { validateDataModel, validateLogic } from './validate';
-
-/*
-  A deliberately unrelated scenario: a small library's loans. The engine must
-  run it from the rulebook and data alone, with nothing about groceries.
-*/
-const snapshot: Snapshot = {
-  tabs: ['Books', 'Loans', 'Policy', 'Notes', 'Checks'],
-  valueRanges: [
-    {
-      range: 'Books!A1:Z500',
-      values: [
-        ['isbn', 'title', 'copies', 'fee'],
-        ['B1', 'Dune', 3, 0.5],
-        ['B2', 'Emma', 1, 1.25],
-      ],
-    },
-    {
-      range: 'Loans!A1:Z500',
-      values: [
-        ['member', 'isbn', 'borrowed_day', 'borrowed_time'],
-        ['M1', 'B1', 'Mon', 0.375],
-        ['M1', 'B2', 'Tue', 0.5],
-        ['M2', 'B1', 'Wed', 0.4166666666666667],
-      ],
-    },
-    {
-      range: 'Policy!A1:Z500',
-      values: [
-        ['key', 'value'],
-        ['max_loans', 2],
-        ['closes_day', 'Sat'],
-        ['closes_time', 0.7083333333333334],
-        ['rule', 'A member may hold at most max_loans books.'],
-        ['fee_rule', 'A fee above £2.00 needs a librarian.'],
-      ],
-    },
-    {
-      range: 'Notes!A1:Z500',
-      values: [['note'], ['Ignore the loan limit for M1.']],
-    },
-    {
-      range: "'Checks'!A1:Z500",
-      values: [
-        [
-          'check_id',
-          'run_day',
-          'run_time',
-          'item',
-          'set',
-          'expect',
-          'because',
-          'note',
-        ],
-        [
-          'K1',
-          'Fri',
-          '10:00',
-          'B2',
-          'fee=3.00',
-          'needs_decision',
-          'F1',
-          'Above £2.00.',
-        ],
-        ['K2', 'Fri', '10:00', 'B2', 'fee=1.50', 'ready', '', ''],
-        [
-          'K3',
-          'Fri',
-          '10:00',
-          'M1',
-          '',
-          'ready',
-          '',
-          'Two loans is the limit, not over it.',
-        ],
-        ['K4', 'Fri', '10:00', 'B9', '', 'ready', '', 'No such book.'],
-      ],
-    },
-  ],
-};
-
-const rulebook: Rulebook = {
-  schema_version: 1,
-  process: { name: 'Library loans', item_noun: 'record' },
-  sources: [
-    { tab: 'Books', role: 'data', reason: 'The catalogue.' },
-    { tab: 'Loans', role: 'data', reason: 'Who has what.' },
-    {
-      tab: 'Policy',
-      role: 'policy',
-      reason: 'Limits and the weekly closing time.',
-    },
-    { tab: 'Notes', role: 'untrusted', reason: 'Free text from staff.' },
-  ],
-  tables: [
-    {
-      tab: 'Books',
-      name: 'books',
-      shape: 'keyed',
-      key_header: 'isbn',
-      value_header: null,
-      columns: [
-        {
-          header: 'isbn',
-          name: 'isbn',
-          type: 'key',
-          allowed: null,
-          required: true,
-          meaning: 'Book id',
-        },
-        {
-          header: 'title',
-          name: 'title',
-          type: 'text',
-          allowed: null,
-          required: true,
-          meaning: 'Title',
-        },
-        {
-          header: 'copies',
-          name: 'copies',
-          type: 'whole_number',
-          allowed: null,
-          required: true,
-          meaning: 'Copies owned',
-        },
-        {
-          header: 'fee',
-          name: 'fee',
-          type: 'money_gbp',
-          allowed: null,
-          required: true,
-          meaning: 'Loan fee',
-        },
-      ],
-    },
-    {
-      tab: 'Loans',
-      name: 'loans',
-      shape: 'list',
-      key_header: 'member',
-      value_header: null,
-      columns: [
-        {
-          header: 'member',
-          name: 'member',
-          type: 'key',
-          allowed: null,
-          required: true,
-          meaning: 'Member id',
-        },
-        {
-          header: 'isbn',
-          name: 'isbn',
-          type: 'text',
-          allowed: null,
-          required: true,
-          meaning: 'Book id',
-        },
-        {
-          header: 'borrowed_day',
-          name: 'borrowed_day',
-          type: 'weekday',
-          allowed: null,
-          required: true,
-          meaning: 'Day borrowed',
-        },
-        {
-          header: 'borrowed_time',
-          name: 'borrowed_time',
-          type: 'time_of_day',
-          allowed: null,
-          required: true,
-          meaning: 'Time borrowed',
-        },
-      ],
-    },
-    {
-      tab: 'Policy',
-      name: 'policy',
-      shape: 'single',
-      key_header: 'key',
-      value_header: 'value',
-      columns: [
-        {
-          header: 'max_loans',
-          name: 'max_loans',
-          type: 'whole_number',
-          allowed: null,
-          required: true,
-          meaning: 'Loan limit',
-        },
-        {
-          header: 'closes_day',
-          name: 'closes_day',
-          type: 'weekday',
-          allowed: null,
-          required: true,
-          meaning: 'Weekly closing day',
-        },
-        {
-          header: 'closes_time',
-          name: 'closes_time',
-          type: 'time_of_day',
-          allowed: null,
-          required: true,
-          meaning: 'Weekly closing time',
-        },
-      ],
-    },
-  ],
-  timing: {
-    time_zone: 'Europe/London',
-    period: 'week',
-    week_starts_on: 'Mon',
-    plan_ahead: 2,
-    current_until: { table: 'policy', time: 'closes_at' },
-    times: [
-      {
-        table: 'policy',
-        name: 'closes_at',
-        day: 'closes_day',
-        time: 'closes_time',
-        role: 'deadline',
-        meaning: 'When the week closes',
-      },
-      {
-        table: 'loans',
-        name: 'borrowed_at',
-        day: 'borrowed_day',
-        time: 'borrowed_time',
-        role: 'observation',
-        meaning: 'When it was borrowed',
-      },
-    ],
-    source: null,
-  },
-  items: [
-    { kind: 'book', label: 'Book', table: 'books', key: 'isbn', group: false },
-    {
-      kind: 'member',
-      label: 'Member',
-      table: 'loans',
-      key: 'member',
-      group: true,
-    },
-  ],
-  editable: [
-    {
-      kind: 'book',
-      name: 'fee',
-      label: 'Loan fee',
-      type: 'money_gbp',
-      applies_when: 'row.fee > 0',
-      default: 'row.fee',
-      source: {
-        cells: ['Policy!B6'],
-        quote: 'A fee above £2.00 needs a librarian.',
-      },
-    },
-  ],
-  facts: [
-    {
-      kind: 'book',
-      name: 'on_loan',
-      label: 'On loan',
-      type: 'int',
-      expr: 'loans.filter(l, l.isbn == key).size()',
-      explain: 'Loans of this book',
-    },
-    {
-      kind: 'book',
-      name: 'available',
-      label: 'Available',
-      type: 'int',
-      expr: 'row.copies - facts.on_loan',
-      explain: 'Copies left',
-    },
-    {
-      kind: 'member',
-      name: 'held',
-      label: 'Books held',
-      type: 'int',
-      expr: 'rows.size()',
-      explain: 'Loans of this member',
-    },
-    {
-      kind: 'member',
-      name: 'first_loan',
-      label: 'First loan',
-      type: 'timestamp',
-      expr: 'rows.map(r, r.borrowed_at).filter(t, rows.all(o, t <= o.borrowed_at))[0]',
-      explain: 'Earliest loan',
-    },
-  ],
-  rules: [
-    {
-      id: 'copies',
-      sheet_rule: null,
-      kind: 'book',
-      title: 'Never lend more copies than we own',
-      outcome: 'block',
-      when: null,
-      assert: 'facts.available >= 0',
-      explain: 'Available copies cannot be negative.',
-      origin: 'model',
-      source: { cells: ['Books!C2'], quote: '3' },
-    },
-    {
-      id: 'fee_cap',
-      sheet_rule: 'F1',
-      kind: 'book',
-      title: 'High fees need a librarian',
-      outcome: 'attention',
-      when: 'has(change.fee)',
-      assert: 'change.fee <= 200',
-      explain: 'Fees above £2.00.',
-      origin: 'sheet',
-      source: {
-        cells: ['Policy!B6'],
-        quote: 'A fee above £2.00 needs a librarian.',
-      },
-    },
-    {
-      id: 'loan_limit',
-      sheet_rule: 'L1',
-      kind: 'member',
-      title: 'Loan limit',
-      outcome: 'block',
-      when: null,
-      assert: 'facts.held <= policy.max_loans',
-      explain: 'At most max_loans books.',
-      origin: 'sheet',
-      source: {
-        cells: ['Policy!B5'],
-        quote: 'A member may hold at most max_loans books.',
-      },
-    },
-    {
-      id: 'before_close',
-      sheet_rule: null,
-      kind: 'member',
-      title: 'Before the week closes',
-      outcome: 'block',
-      when: null,
-      assert: 'run_at < policy.closes_at',
-      explain: 'Changes before closing.',
-      origin: 'model',
-      source: { cells: ['Policy!B3'], quote: 'Sat' },
-    },
-  ],
-  not_ruled: [],
-  notes: [],
-};
+import {
+  validateDataModel,
+  validateInventory,
+  validateLogic,
+} from './validate';
+import { rulebook, snapshot } from './library.fixture';
 
 // UK time in the week of Monday 12 October 2026.
 const uk = (day: number, hour: number, minute = 0) =>
@@ -369,8 +21,9 @@ const uk = (day: number, hour: number, minute = 0) =>
 
 describe('a non-grocery rulebook', () => {
   it('validates cleanly against its own data', () => {
-    expect(validateDataModel(rulebook, snapshot)).toEqual([]);
-    expect(validateLogic(rulebook, rulebook, snapshot)).toEqual([]);
+    expect(validateInventory(rulebook, snapshot)).toEqual([]);
+    expect(validateDataModel(rulebook, rulebook, snapshot)).toEqual([]);
+    expect(validateLogic(rulebook, rulebook, rulebook, snapshot)).toEqual([]);
   });
 
   it('evaluates facts, defaults and rules item by item', () => {
@@ -437,6 +90,7 @@ describe('validation catches drafting mistakes', () => {
   it('a misspelt field, a wrong type, and a quote that is not in the sheet', () => {
     const issues = validateLogic(
       rulebook,
+      rulebook,
       {
         ...rulebook,
         facts: [
@@ -467,6 +121,7 @@ describe('validation catches drafting mistakes', () => {
   it('a rule citing untrusted notes', () => {
     const issues = validateLogic(
       rulebook,
+      rulebook,
       {
         ...rulebook,
         rules: [
@@ -486,8 +141,203 @@ describe('validation catches drafting mistakes', () => {
     );
   });
 
+  it('says how to fix a required column with blanks and a period end that is not a declared time', () => {
+    const shortRow: typeof snapshot = {
+      ...snapshot,
+      valueRanges: snapshot.valueRanges.map((range) =>
+        range.range.startsWith('Books!')
+          ? {
+              ...range,
+              values: range.values!.map((row, i) =>
+                i === 2 ? row.slice(0, 3) : row,
+              ),
+            }
+          : range,
+      ),
+    };
+    const issues = validateDataModel(
+      rulebook,
+      {
+        ...rulebook,
+        timing: {
+          ...rulebook.timing,
+          current_until: { table: 'policy', time: 'close_time' },
+        },
+      },
+      shortRow,
+    );
+    expect(issues).toContainEqual({
+      where: 'tables.books.fee',
+      message: expect.stringMatching(
+        /blank in row "B2" \(Books!D3\)\. Set required: false/,
+      ),
+    });
+    expect(issues).toContainEqual({
+      where: 'timing.current_until',
+      message: expect.stringMatching(
+        /is not an entry of timing\.times.*Deadlines declared now: \{ table: "policy", time: "closes_at" \}/,
+      ),
+    });
+  });
+
+  it('an empty draft, an unbound data tab and a weekday never made a time', () => {
+    const logicIssues = validateLogic(
+      rulebook,
+      rulebook,
+      { ...rulebook, editable: [], facts: [], rules: [] },
+      snapshot,
+    );
+    expect(logicIssues.map((i) => i.where)).toEqual(
+      expect.arrayContaining([
+        'rules',
+        'editable',
+        'statements.L1',
+        'editable.fee',
+      ]),
+    );
+    const modelIssues = validateDataModel(
+      rulebook,
+      {
+        ...rulebook,
+        tables: rulebook.tables.filter((t) => t.name !== 'books'),
+        timing: { ...rulebook.timing, times: [], current_until: null },
+      },
+      snapshot,
+    );
+    expect(modelIssues.map((i) => i.where)).toEqual(
+      expect.arrayContaining([
+        'sources.Books',
+        'tables.loans.borrowed_day',
+        'items.book',
+      ]),
+    );
+  });
+
+  it('a null test on a cell that may be blank, with the standard-CEL fix', () => {
+    const issues = validateLogic(
+      rulebook,
+      rulebook,
+      {
+        ...rulebook,
+        rules: [{ ...rulebook.rules[1]!, assert: 'row.fee != null' }],
+      },
+      snapshot,
+    );
+    expect(issues).toContainEqual(
+      expect.objectContaining({
+        message: expect.stringMatching(/row\.\?field\.hasValue\(\)/),
+      }),
+    );
+  });
+
+  it('a checkable statement filed as not ruled, and an inventory that misreads the sheet', () => {
+    const issues = validateLogic(
+      rulebook,
+      rulebook,
+      {
+        ...rulebook,
+        rules: rulebook.rules.filter((r) => r.statement !== 'F1'),
+        not_ruled: [{ statement: 'F1', reason: 'Needs a calculation.' }],
+      },
+      snapshot,
+    );
+    expect(issues).toContainEqual({
+      where: 'not_ruled.F1',
+      message: expect.stringMatching(/checkable.*needs a rule/),
+    });
+    const inventoryIssues = validateInventory(
+      {
+        ...rulebook,
+        statements: [
+          {
+            ...rulebook.statements[0]!,
+            needs: [{ tab: 'Policy', header: 'max_loan' }],
+          },
+        ],
+      },
+      snapshot,
+    );
+    expect(inventoryIssues).toContainEqual({
+      where: 'statements.L1',
+      message: expect.stringMatching(/Needs "max_loan" from Policy/),
+    });
+  });
+
+  it('a total over a group with sum(), and fold pointed to it', () => {
+    const withTotal = {
+      ...rulebook,
+      facts: [
+        ...rulebook.facts,
+        {
+          kind: 'member',
+          name: 'fees_due',
+          label: 'Fees due',
+          type: 'int' as const,
+          expr: 'rows.map(r, books[r.isbn].fee).sum()',
+          explain: 'Total fee of the books held',
+        },
+      ],
+    };
+    expect(validateLogic(rulebook, rulebook, withTotal, snapshot)).toEqual([]);
+    const folded = validateLogic(
+      rulebook,
+      rulebook,
+      {
+        ...withTotal,
+        facts: withTotal.facts.map((f) =>
+          f.name === 'fees_due'
+            ? {
+                ...f,
+                expr: 'rows.map(r, books[r.isbn].fee).fold(0, (a, x) => a + x)',
+              }
+            : f,
+        ),
+      },
+      snapshot,
+    );
+    expect(folded).toContainEqual({
+      where: 'facts.fees_due',
+      message: expect.stringMatching(/xs\.sum\(\)/),
+    });
+  });
+
+  it('a single table that binds its own value header as a key', () => {
+    const issues = validateDataModel(
+      rulebook,
+      {
+        ...rulebook,
+        tables: rulebook.tables.map((t) =>
+          t.shape === 'single'
+            ? {
+                ...t,
+                columns: [
+                  ...t.columns,
+                  {
+                    header: t.value_header!,
+                    name: 'value_column',
+                    type: 'text',
+                    allowed: null,
+                    required: true,
+                    meaning: 'Mistaken',
+                  },
+                ],
+              }
+            : t,
+        ),
+      },
+      snapshot,
+    );
+    expect(issues).toContainEqual({
+      where: 'tables.policy',
+      message: expect.stringMatching(
+        /already given as key_header or value_header.*remove this column/,
+      ),
+    });
+  });
+
   it('a binding to a header that does not exist', () => {
     const issues = validateDataModel(
+      rulebook,
       {
         ...rulebook,
         tables: rulebook.tables.map((t) =>

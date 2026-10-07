@@ -71,8 +71,8 @@ Decided with the project owner on 3 October 2026:
 
 Decided in this plan:
 
-- **The formula language is CEL** (Common Expression Language), run by `@marcbachmann/cel-js`; `@bufbuild/cel` cross-checks every rule example in tests. Decided 3 October 2026 from the Phase 0 trial; see [the trial record](archive/2026-10-03-cel-spike.md). The fallback is to extend the existing JSON rule format with derived facts. A home-grown parser is never the fallback.
-- **The process definition is data.** For this track, this deliberately overrides the delivery plan's "do not build a runtime process language". What stays code: the engine, a small toolbox of built-in functions, the field types, and the direct import that registers each process. There is no string-ID process registry until the second purpose proves one is needed.
+- **The formula language is CEL** (Common Expression Language), run by `@marcbachmann/cel-js`, **standard CEL, plus `sum()` from the Kubernetes CEL list library** (`kubernetes.lists`, adopted as Kubernetes defines it and tested against its documented examples, because standard CEL cannot total a list of any length; decided 6 October 2026). No other functions. Decided 3 October 2026 from the Phase 0 trial, which also tried `@bufbuild/cel`; the trial and its cross-check were removed on 6 October 2026 once rulebooks became model-drafted; see [the trial record](archive/2026-10-03-cel-spike.md). The fallback is to extend the existing JSON rule format with derived facts. A home-grown parser is never the fallback.
+- **The process definition is data.** For this track, this deliberately overrides the delivery plan's "do not build a runtime process language". What stays code: the engine, the field types, and the direct import that registers each process. There is no string-ID process registry until the second purpose proves one is needed.
 - **The model can escalate, never de-escalate.** A model concern can raise an item to "needs a decision". Nothing the model says can lower a rule's block or attention.
 - **Critics are deterministic.** The drafting loop's critics are the compiler, type checker, examples and quote check. This matches the deferral of model critics in `REVIEW-EXPERIMENT-DECISION.md`.
 - **Replay comes first.** A checked-in sheet snapshot and a hand-reviewed proposal make the demo, CI and tests work without credentials. Live reading and live proposals stay development-only until the delivery plan's hardening milestone.
@@ -228,8 +228,7 @@ lib/rulebook/                     domain-neutral engine (new)
   definition.ts                   Zod schema for a process definition and rulebook
   field-types.ts                  money (GBP → integer pence), int, percent, datetime, enum, text, bool;
                                   sheet value normalisation; weekday and time-of-day fields
-  cel-env.ts                      builds the CEL environment from a definition; registers the toolbox
-  toolbox.ts                      sum, min, max, ceil_div, round_up_to_multiple, hours_between, days_between
+  cel-env.ts                      builds the CEL environment from a definition (standard CEL only)
   compile.ts                      checks every fact and rule; fact dependency order; cycles; type errors with ranges
   evaluate.ts                     facts and rule results per item, with a trace (expression, inputs, cell refs)
   render.ts                       the labelled-formula form of an expression (identifiers → field labels)
@@ -324,7 +323,7 @@ Invariants:
 
 - **Complete accounting.** The item set comes from the snapshot, never from the model. A proposal answers every item exactly once with `change`, `no_change` or `hold`. Missing, duplicate, unknown or non-editable entries reject the whole proposal; nothing is silently repaired.
 - **Fail closed.** A rule whose inputs are missing, or whose evaluation errors, reports "cannot evaluate" and blocks, as the current evaluator does.
-- **Integers.** Money is integer pence (CEL `int`). Percentages are compared by cross-multiplication, `(price - cost) * 100 >= floor * price`, so boundaries are exact. Rounded-up quantities use the toolbox's integer `ceil_div(a, b)`, never `ceil()` on a double: in floating point `50 × 1.1` is `55.00000000000001`, so 50 units plus 10% safety stock would round up to 56 instead of 55. Doubles exist only for display.
+- **Integers.** Money is integer pence (CEL `int`). Percentages are compared by cross-multiplication, `(price - cost) * 100 >= floor * price`, so boundaries are exact. Rounded-up quantities use integer arithmetic, `(a + b - 1) / b`, never `ceil()` on a double: in floating point `50 × 1.1` is `55.00000000000001`, so 50 units plus 10% safety stock would round up to 56 instead of 55. Doubles exist only for display.
 - **Time.** The sheet holds weekdays and times of day, never calendar dates. The engine turns them into instants for one pinned run time, as described in [Run timing](#run-timing). It never reads the wall clock during evaluation, so a run is reproducible.
 - **Cross-item facts.** The kit reads its components as `items['SD-01']`. This is a general engine feature, not a kit special case.
 - **Evidence ids** are cell references in the existing evidence-id format (`/^ev-[a-z0-9-]+$/`), for example `ev-sheet-stock-c4`. The browser opens them at `https://docs.google.com/spreadsheets/d/<id>/edit#gid=<sheetId>&range=C4`.
@@ -365,7 +364,7 @@ Each stage is one `ThreadStep` on the process page, following the support exampl
   - three sample rows per tab;
   - the Parameters table;
   - the Rules tab text with each cell reference;
-  - the toolbox signatures.
+  - a reference of the standard CEL it may use.
 
   No expected answers.
 
@@ -495,15 +494,18 @@ Decided 3 October 2026: Brunch weekend is registered in the sidebar from Phase 0
 - The trial views call the same functions as the unit tests, so the screen and the test suite agree.
 - When a step becomes real, its trial detail moves into a disclosure and the step shows the product view.
 
-Built so far (Phase 0):
+Built so far (6 October 2026):
 
-| Step           | Button               | What it shows                                                                                                                                                                                                                                                                                                         |
-| -------------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Read the sheet | Read sheet now       | The Composio requests (tool, pinned toolkit version, arguments, timing), the raw values per tab, the header check, each cell's interpreted value with its raw value, cell link and conversion in words, and any issues                                                                                                |
-| Rules          | Test formula engines | Both CEL libraries on the official conformance subset, the eleven rules with boundary examples, calculated facts, traps, the floating-point example and the toolbox source                                                                                                                                            |
-| Calculate      | Resolve times        | Pick a run time (scheduled Thursday, Thursday 13:00, Friday 10:00 or 19:00, Saturday, Monday, now, or an exact moment) and a data source (captured or live). Shows this weekend and next, every deadline open or closed with its due-by time, every stock count's age against its limit, and each resolution in words |
+| Step           | Button                        | What it shows                                                                                                                                                                                                                                                                                                                                                                                                        |
+| -------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Read the sheet | Read sheet                    | Every tab, read through Composio from the captured read or live; the requests, raw values, and each cell as the approved rulebook reads it. A second button saves a live read as the captured read.                                                                                                                                                                                                                  |
+| Rules          | Draft rulebook, Approve as vN | The approved rulebook; a three-stage draft (inventory, data model, rules) with every step's model, attempt, tool call, problem found and token count, and a list of past drafts to reopen and compare; the draft scored against the store's Checks tab (never sent to the model); approval writes `fixtures/avocado-toast/rulebooks/vN.json`. Each draft's full record is kept, uncommitted, in `.rulebook-drafts/`. |
+| Calculate      | Calculate                     | Pick a run time and period; the times resolved and every fact per item, from the approved rulebook.                                                                                                                                                                                                                                                                                                                  |
+| Check          | (shows the Calculate run)     | Each item's rule results and outcome, and the store's checks, expected against actual.                                                                                                                                                                                                                                                                                                                               |
 
-Code: `app/(shell)/examples/avocado-toast/page.tsx`, `components/sheet-process/`, `app/api/dev/brunch/`, `lib/rulebook/`, `lib/sheets/composio.ts` and `lib/processes/avocado-toast/`. The sheet fixture `fixtures/avocado-toast/sheet-batch-get.json` is a real read captured through Composio.
+Drafting starts with an **inventory**: every policy statement wherever it is written, the kinds of item reviewed, the values a proposal may change, and what each statement needs. The data model and the rules are checked against it, so a statement or a kind of item cannot drop out unnoticed: each statement ends as a rule, as not ruled with a reason (only if no formula could check it), or as a request to revise the data model, which is honoured once. Each stage is a conversation: a failed check goes back to the model as the next turn, with what to change. The inventory and data model stages have `check_inventory` and `check_data_model` tools; the rules stage has `check_formula` and `try_formula`. Drafting starts with the newest Gemini Flash model and moves to the next older one in the same family when the service is busy or out of quota, recording which model answered each step. The checks also require coverage (every data tab bound, every weekday column made a time, at least one rule and one editable value). A busy or refusing model service is retried with backoff and then stops the draft with the reason, without spending the model's attempts. The instructions describe only the rulebook format and general sheet conventions, never this sheet.
+
+Code: `app/(shell)/examples/avocado-toast/page.tsx`, `components/sheet-process/`, `app/api/dev/brunch/`, `lib/rulebook/`, `lib/sheets/composio.ts` and `lib/processes/avocado-toast/`. The captured read is `fixtures/avocado-toast/sheet-snapshot.json`.
 
 ## Phases
 
@@ -705,7 +707,7 @@ Sheets has no compare-and-swap, so this is described as best-effort conflict det
 
 Choose the domain, for example a café weekly order, a household meal budget or a team rota. Build a new sheet and a definition only.
 
-**Gate.** The second process passes Phases 1–3 with changes only in `lib/processes/<new>/`, its fixtures and, at most, new toolbox functions. Every other change is recorded as a universality gap with its reason.
+**Gate.** The second process passes Phases 1–3 with changes only in `lib/processes/<new>/`, and its fixtures. Every other change is recorded as a universality gap with its reason.
 
 ## Existing code
 

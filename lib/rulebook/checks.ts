@@ -75,6 +75,10 @@ function readChecks(snapshot: Snapshot) {
   return { found: Boolean(range), missing, rows };
 }
 
+export type ChecksReport = ReturnType<typeof runChecks> & {
+  reference: LocalDate;
+};
+
 export function runChecks(
   rulebook: Rulebook,
   snapshot: Snapshot,

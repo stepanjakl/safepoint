@@ -1,14 +1,16 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useId, useState, type ReactNode } from 'react';
+import { useId, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Ledger, LedgerRow } from '@/components/ui/ledger';
-import { MODEL_IDS } from '@/lib/model-workbench/models';
 import type { Draft } from '@/lib/rulebook/draft';
+import { DRAFTING_MODELS, type DraftingModel } from '@/lib/rulebook/models';
 import type { ApprovedRulebook } from '@/lib/rulebook/schema';
+import type { DraftRecord, DraftSummary } from '@/lib/rulebook/store';
 
+import { StoreChecks } from './check-step';
 import { RulebookView } from './rulebook-view';
 import {
   Code,
@@ -25,30 +27,48 @@ import {
 } from './trial-parts';
 
 type DraftResponse =
-  | { kind: 'result'; source: string; draft: Draft }
+  | ({ kind: 'result'; saved: string | null } & DraftRecord)
   | { kind: 'not_configured'; missing: string[] }
   | { kind: 'error'; message: string; runId?: string };
+
+type DraftsResponse =
+  | { kind: 'list'; drafts: DraftSummary[] }
+  | ({ kind: 'record'; file: string } & DraftRecord)
+  | { kind: 'error'; message: string };
+
+// The draft on screen: the one just made, or one opened from the list.
+type Shown = DraftRecord & { saved: string | null; label: string };
+
+const STAGE_NAMES: Record<Draft['stages'][number]['stage'], string> = {
+  inventory: '1. Inventory',
+  data_model: '2. Data model',
+  logic: '3. Rules',
+};
+
+const storeScore = (checks: DraftRecord['checks']) =>
+  checks
+    ? `${checks.results.filter((c) => c.passed).length} of ${checks.results.length} store checks pass`
+    : null;
 
 type ApproveResponse =
   | { kind: 'result'; version: number; file: string }
   | { kind: 'error'; message: string; issues?: unknown };
 
-export function RulebookStep({
-  active,
-  trial,
-}: {
-  active: ApprovedRulebook | null;
-  trial: ReactNode;
-}) {
+export function RulebookStep({ active }: { active: ApprovedRulebook | null }) {
   const router = useRouter();
   const drafting = useTrial<DraftResponse>('/api/dev/brunch/draft');
   const approving = useTrial<ApproveResponse>('/api/dev/brunch/approve');
-  const [model, setModel] =
-    useState<(typeof MODEL_IDS)[number]>('gemini-3.7-flash');
+  const [model, setModel] = useState<DraftingModel>('gemini-3.8-flash');
   const [source, setSource] = useState<'captured' | 'live'>('captured');
+  const [opened, setOpened] = useState<Shown | null>(null);
   const name = useId();
   const body = drafting.state.kind === 'done' ? drafting.state.body : null;
-  const draft = body?.kind === 'result' ? body.draft : null;
+  const shown: Shown | null =
+    opened ??
+    (body?.kind === 'result'
+      ? { ...body, label: 'The draft just made' }
+      : null);
+  const draft = shown?.draft ?? null;
   const approved =
     approving.state.kind === 'done' && approving.state.body.kind === 'result'
       ? approving.state.body
@@ -91,8 +111,10 @@ export function RulebookStep({
       <TrialSection title="Draft a rulebook">
         <div className="flex flex-wrap gap-6">
           <fieldset className="grid gap-1">
-            <legend className="text-dense font-semibold">Model</legend>
-            {MODEL_IDS.map((id) => (
+            <legend className="text-dense font-semibold">
+              Model, newest first
+            </legend>
+            {DRAFTING_MODELS.map((id) => (
               <label key={id} className="text-dense flex items-center gap-1.5">
                 <input
                   type="radio"
@@ -103,6 +125,11 @@ export function RulebookStep({
                 {id}
               </label>
             ))}
+            <span className="text-meta text-muted max-w-80">
+              If the service is busy or out of quota for one, the draft moves to
+              the next older model of the same family and records which model
+              answered each step.
+            </span>
           </fieldset>
           <fieldset className="grid gap-1">
             <legend className="text-dense font-semibold">Sheet data</legend>
@@ -130,12 +157,17 @@ export function RulebookStep({
           label="Draft rulebook"
           runningLabel="Drafting… (a minute or two)"
           state={drafting.state}
-          onRun={() => void drafting.run({ model, source })}
+          onRun={() => {
+            setOpened(null);
+            void drafting.run({ model, source });
+          }}
           summary={
-            draft
-              ? draft.rulebook
-                ? `Drafted in ${draft.stages.length} stages and passes every check`
-                : `Not usable yet: ${draft.issues.length} problems remain`
+            body?.kind === 'result'
+              ? body.draft.interrupted
+                ? `Stopped: ${body.draft.interrupted}`
+                : body.draft.rulebook
+                  ? `Passes the drafting checks after ${body.draft.stages.length} steps; ${storeScore(body.checks) ?? 'no store checks'}`
+                  : `Not usable yet: ${body.draft.issues.length} problems remain`
               : body?.kind === 'not_configured'
                 ? `Missing ${body.missing.join(', ')}`
                 : body?.kind === 'error'
@@ -145,7 +177,32 @@ export function RulebookStep({
         />
       </TrialSection>
 
-      {draft ? <DraftDetail draft={draft} /> : null}
+      <PastDrafts
+        latest={
+          drafting.state.kind === 'done' ? drafting.state.finishedAt : null
+        }
+        onOpen={setOpened}
+      />
+
+      {shown ? (
+        <>
+          <p className="text-dense">
+            <strong>Showing: {shown.label}.</strong>{' '}
+            {shown.saved ? (
+              <>
+                Its full record is <Code>{shown.saved}</Code> (not committed).
+              </>
+            ) : null}
+          </p>
+          <DraftDetail draft={shown.draft} />
+          {shown.checks ? (
+            <StoreChecks
+              checks={shown.checks}
+              title="The store's checks on this draft"
+            />
+          ) : null}
+        </>
+      ) : null}
 
       {draft?.rulebook ? (
         <TrialSection title="Approve">
@@ -165,7 +222,7 @@ export function RulebookStep({
                   .run({
                     rulebook: draft.rulebook,
                     drafted: {
-                      model: draft.model,
+                      model: draft.models.join(', '),
                       run_id: draft.runId,
                       at: draft.startedAt,
                     },
@@ -188,10 +245,6 @@ export function RulebookStep({
           </div>
         </TrialSection>
       ) : null}
-
-      <Disclosure summary="Phase 0 record: the formula engine trial">
-        {trial}
-      </Disclosure>
     </div>
   );
 }
@@ -208,7 +261,9 @@ function DraftDetail({ draft }: { draft: Draft }) {
     <div className="grid gap-5">
       <TrialSection title="How it was drafted">
         <Ledger className="enclosure">
-          <LedgerRow label="Model">{draft.model}</LedgerRow>
+          <LedgerRow label="Models">
+            {draft.models.join(', then ') || draft.model}
+          </LedgerRow>
           <LedgerRow label="Run">
             <Code>{draft.runId}</Code>, {(draft.durationMs / 1000).toFixed(1)}{' '}
             s, {tokens.input.toLocaleString('en-GB')} tokens in,{' '}
@@ -218,19 +273,21 @@ function DraftDetail({ draft }: { draft: Draft }) {
         <DataTable caption="Drafting stages">
           <thead>
             <tr>
-              <th className={th}>Stage</th>
+              <th className={th}>Step</th>
+              <th className={th}>Model</th>
               <th className={th}>Took</th>
               <th className={th}>Tool calls</th>
               <th className={th}>Checks</th>
             </tr>
           </thead>
           <tbody>
-            {draft.stages.map((s) => (
-              <tr key={`${s.stage}-${s.attempt}`}>
+            {draft.stages.map((s, i) => (
+              <tr key={i}>
                 <td className={td}>
-                  {s.stage === 'data_model' ? '1. Data model' : '2. Rules'} ·
-                  attempt {s.attempt}
+                  {STAGE_NAMES[s.stage]}
+                  {s.round > 1 ? ', revised' : ''} · attempt {s.attempt}
                 </td>
+                <td className={td}>{s.model}</td>
                 <td className={td}>{(s.durationMs / 1000).toFixed(1)} s</td>
                 <td className={td}>{s.toolCalls.length}</td>
                 <td className={td}>
@@ -242,10 +299,10 @@ function DraftDetail({ draft }: { draft: Draft }) {
             ))}
           </tbody>
         </DataTable>
-        {draft.stages.map((s) => (
+        {draft.stages.map((s, i) => (
           <Disclosure
-            key={`${s.stage}-${s.attempt}-detail`}
-            summary={`${s.stage === 'data_model' ? 'Data model' : 'Rules'}, attempt ${s.attempt}: everything sent and received`}
+            key={i}
+            summary={`${STAGE_NAMES[s.stage]}${s.round > 1 ? ', revised' : ''}, attempt ${s.attempt} (${s.model}): everything sent and received`}
           >
             {s.issues.length ? (
               <ul className="text-meta grid gap-1">
@@ -263,7 +320,7 @@ function DraftDetail({ draft }: { draft: Draft }) {
                 <thead>
                   <tr>
                     <th className={th}>Tool</th>
-                    <th className={th}>Formula</th>
+                    <th className={th}>Checked</th>
                     <th className={th}>Result</th>
                   </tr>
                 </thead>
@@ -273,6 +330,7 @@ function DraftDetail({ draft }: { draft: Draft }) {
                       kind?: string;
                       key?: string;
                       expression?: string;
+                      summary?: string;
                     };
                     const output = call.output as {
                       ok?: boolean;
@@ -291,7 +349,11 @@ function DraftDetail({ draft }: { draft: Draft }) {
                           </span>
                         </td>
                         <td className={td}>
-                          <Code>{input.expression}</Code>
+                          {input.expression ? (
+                            <Code>{input.expression}</Code>
+                          ) : (
+                            input.summary
+                          )}
                         </td>
                         <td className={td}>
                           <Mark passed={output?.ok ?? false}>
@@ -337,5 +399,96 @@ function DraftDetail({ draft }: { draft: Draft }) {
         </TrialSection>
       )}
     </div>
+  );
+}
+
+// Every saved draft, newest first, so runs can be compared and reopened.
+function PastDrafts({
+  latest,
+  onOpen,
+}: {
+  latest: string | null;
+  onOpen: (shown: Shown) => void;
+}) {
+  const listing = useTrial<DraftsResponse>('/api/dev/brunch/drafts');
+  const opening = useTrial<DraftsResponse>('/api/dev/brunch/drafts');
+  const list =
+    listing.state.kind === 'done' && listing.state.body.kind === 'list'
+      ? listing.state.body.drafts
+      : null;
+  return (
+    <TrialSection title="Past drafts">
+      <TrialControl
+        label={latest ? 'List past drafts (refresh)' : 'List past drafts'}
+        runningLabel="Listing…"
+        state={listing.state}
+        onRun={() => void listing.run({})}
+        summary={list ? `${list.length} saved drafts` : null}
+      />
+      {list?.length ? (
+        <DataTable caption="Past drafts, newest first">
+          <thead>
+            <tr>
+              <th className={th}>Started</th>
+              <th className={th}>Models</th>
+              <th className={th}>Steps</th>
+              <th className={th}>Result</th>
+              <th className={th}>Store checks</th>
+              <th className={th}>
+                <span className="sr-only">Open</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {list.map((d) => (
+              <tr key={d.file}>
+                <td className={td}>
+                  {d.startedAt.slice(0, 10)} {clock(d.startedAt)}
+                </td>
+                <td className={td}>{d.models.join(', then ')}</td>
+                <td className={td}>
+                  {d.steps} in {(d.durationMs / 1000).toFixed(0)} s
+                  {d.rounds > 1 ? ', revised once' : ''}
+                </td>
+                <td className={td}>
+                  <Mark passed={d.passed}>
+                    {d.passed
+                      ? 'Passes'
+                      : d.interrupted
+                        ? 'Stopped by the service'
+                        : `${d.problems} problems`}
+                  </Mark>
+                </td>
+                <td className={td}>
+                  {d.checks ? `${d.checks.passed} of ${d.checks.total}` : '—'}
+                </td>
+                <td className={td}>
+                  <Button
+                    onPress={() =>
+                      void opening.run({ file: d.file }).then((record) => {
+                        if (record?.kind === 'record')
+                          onOpen({
+                            source: record.source,
+                            draft: record.draft,
+                            checks: record.checks,
+                            saved: `.rulebook-drafts/avocado-toast/${record.file}`,
+                            label: `the draft started ${record.draft.startedAt.slice(0, 10)} ${clock(record.draft.startedAt)}`,
+                          });
+                      })
+                    }
+                    isDisabled={opening.state.kind === 'running'}
+                  >
+                    Open
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </DataTable>
+      ) : null}
+      {opening.state.kind === 'done' && opening.state.body.kind === 'error' ? (
+        <p className="text-meta">{opening.state.body.message}</p>
+      ) : null}
+    </TrialSection>
   );
 }

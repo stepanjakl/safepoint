@@ -9,10 +9,21 @@ export async function POST(request: Request) {
   const rejected = rejectUnlessLocalDevelopment(request);
   if (rejected) return rejected;
   if (missingSheetEnv().length)
-    return Response.json({ kind: 'not_configured', missing: missingSheetEnv() }, { status: 503 });
+    return Response.json(
+      { kind: 'not_configured', missing: missingSheetEnv() },
+      { status: 503 },
+    );
   const read = await readWholeSheet();
   if (!read.requests.every((r) => r.successful))
-    return Response.json({ kind: 'error', message: 'The read failed; nothing was saved.', read }, { status: 502 });
+    return Response.json(
+      { kind: 'error', message: 'The read failed; nothing was saved.', read },
+      { status: 502 },
+    );
   const file = await saveSnapshot(read);
-  return Response.json({ kind: 'result', file, readAt: read.readAt, tabs: read.tabs });
+  return Response.json({
+    kind: 'result',
+    file,
+    readAt: read.readAt,
+    tabs: read.tabs,
+  });
 }

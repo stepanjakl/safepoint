@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import { interpretCell } from './field-types';
-import { TOOLBOX } from './toolbox';
 
 describe('interpretCell', () => {
   it('turns pounds into whole pence and says how', () => {
@@ -41,24 +40,5 @@ describe('interpretCell', () => {
     expect(
       interpretCell(undefined, { kind: 'whole_number' }, false),
     ).toMatchObject({ value: null });
-  });
-});
-
-describe('toolbox', () => {
-  const ceilDiv = TOOLBOX.find((fn) => fn.name === 'ceil_div')!.impl as (
-    a: bigint,
-    b: bigint,
-  ) => bigint;
-
-  it('rounds whole-number division up, including at exact multiples and below zero', () => {
-    expect(ceilDiv(81n, 8n)).toBe(11n);
-    expect(ceilDiv(80n, 8n)).toBe(10n);
-    expect(ceilDiv(50n * 110n, 100n)).toBe(55n);
-    expect(ceilDiv(-7n, 2n)).toBe(-3n);
-    expect(() => ceilDiv(1n, 0n)).toThrow(/division by zero/);
-  });
-
-  it('shows why: floating point rounds 50 units plus 10% up to 56', () => {
-    expect(Math.ceil(50 * 1.1)).toBe(56);
   });
 });

@@ -37,5 +37,8 @@ Claude/
 /playwright-report/
 /test-results/
 
+# Rulebook drafting records contain full model inputs and outputs.
+/.rulebook-drafts/
+
 # Local AI SDK DevTools traces contain full model inputs and outputs.
 .devtools/

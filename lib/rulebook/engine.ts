@@ -11,6 +11,7 @@ import {
 import type { FieldType, Weekday } from './field-types';
 import type { Rulebook } from './schema';
 import { bindTab, type BoundTab, type TabSpec } from './sheet-binding';
+import { registerKubernetesSum } from './kubernetes-lists';
 
 /*
   The rule engine. It knows nothing about any scenario: it reads a rulebook
@@ -322,11 +323,13 @@ export function buildEnvironment(
   spec: EnvironmentSpec,
   allFacts: Record<string, ScopeFacts>,
 ) {
-  const env = new Environment({
-    unlistedVariablesAreDyn: false,
-    enableOptionalTypes: true,
-    limits: { maxAstNodes: MAX_AST_NODES },
-  });
+  const env = registerKubernetesSum(
+    new Environment({
+      unlistedVariablesAreDyn: false,
+      enableOptionalTypes: true,
+      limits: { maxAstNodes: MAX_AST_NODES },
+    }),
+  );
   for (const table of rulebook.tables) {
     const typeName = `T_${table.name}`;
     env.registerType(typeName, {
@@ -373,6 +376,35 @@ export function buildEnvironment(
 
 export type Checked = { ok: true; type: string } | { ok: false; error: string };
 
+// The library's messages name the symptom; these name the standard-CEL fix.
+const HINTS: [RegExp, string][] = [
+  [
+    /has\(\) invalid argument/,
+    'has() works only on facts and change. For a cell that may be blank, test row.?field.hasValue() or read row.?field.orValue(default).',
+  ],
+  [
+    /no such overload: .* [!=]= null|no such overload: null [!=]= /,
+    'Nothing is null here: a blank cell is absent. Test row.?field.hasValue(), or read row.?field.orValue(default).',
+  ],
+  [
+    /no matching overload for '\w+\.hasValue\(\)'|orValue\(\) receiver must be optional/,
+    'hasValue() and orValue() work only after .? on a cell that may be blank: row.?field.hasValue(), row.?field.orValue(default). A required cell is read as row.field.',
+  ],
+  [
+    /fold|reduce|Expected RPAREN, got COMMA|no matching overload for 'list\.(min|max)\(\)'/,
+    'There is no fold, reduce, min() or max(). Total a list with xs.sum(); take the smallest with xs.filter(x, xs.all(y, x <= y))[0].',
+  ],
+  [
+    /no such overload: (int [-+*/<>=!]+ double|double [-+*/<>=!]+ int)/,
+    'int and double never mix. Keep money and counts as int, or convert one side with double(x) or int(x).',
+  ],
+];
+
+const withHint = (message: string) => {
+  const hint = HINTS.find(([pattern]) => pattern.test(message))?.[1];
+  return hint ? `${message}. ${hint}` : message;
+};
+
 export function checkFormula(
   env: Environment,
   expression: string,
@@ -383,7 +415,7 @@ export function checkFormula(
     if (!result.valid)
       return {
         ok: false,
-        error: (result.error?.message ?? 'Invalid').split('\n')[0]!,
+        error: withHint((result.error?.message ?? 'Invalid').split('\n')[0]!),
       };
     const want = expected ? celName(expected) : null;
     if (want && result.type !== want && !(result.type === 'dyn'))

@@ -21,7 +21,7 @@ The main demonstration is now Brunch weekend at Alderton's Local, specified in [
   - [x] Documentation updated for the new track.
   - [x] Google Sheet created and restructured to weekdays and times; Composio connection active for `safepoint-dev`.
   - [x] Brunch weekend registered in development, with both trials behind buttons on its page.
-  - [x] CEL trial: cel-js chosen, Buf CEL cross-checks rule examples in tests ([record](docs/archive/2026-10-03-cel-spike.md)).
+  - [x] CEL trial: cel-js chosen ([record](docs/archive/2026-10-03-cel-spike.md)); the trial was removed on 6 October 2026, when rulebooks became model-drafted in standard CEL.
   - [x] Composio reader trial: reading, money, times, weekdays, header binding, and run timing (the Calculate step), across both clock changes.
 - [ ] **Phase 1.** Engine and snapshot replay.
 - [ ] **Phase 2.** Review in the shell (replay), with decisions, safe ranges and what-ifs.

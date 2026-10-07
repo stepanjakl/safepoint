@@ -22,6 +22,13 @@ const Source = ({
 // Every part of a rulebook, laid out to be read and approved.
 export function RulebookView({ rulebook }: { rulebook: Rulebook }) {
   const { timing } = rulebook;
+  const covered = {
+    ruled: rulebook.statements.filter((st) =>
+      rulebook.rules.some((r) => r.statement === st.id),
+    ).length,
+    notRuled: rulebook.not_ruled.length,
+    requested: rulebook.data_model_requests.length,
+  };
   return (
     <div className="grid gap-3">
       <Ledger className="enclosure">
@@ -30,11 +37,121 @@ export function RulebookView({ rulebook }: { rulebook: Rulebook }) {
           a {rulebook.process.item_noun}
         </LedgerRow>
         <LedgerRow label="Size">
+          {rulebook.statements.length} policy statements,{' '}
           {rulebook.tables.length} tables, {rulebook.items.length} kinds of
           item, {rulebook.editable.length} editable values,{' '}
           {rulebook.facts.length} facts, {rulebook.rules.length} rules
         </LedgerRow>
+        <LedgerRow label="Statements">
+          {covered.ruled} made into rules, {covered.notRuled} not, and why
+          {covered.requested ? `, ${covered.requested} still requested` : ''}
+        </LedgerRow>
       </Ledger>
+
+      <Disclosure
+        summary={`Policy statements and what became of each (${rulebook.statements.length})`}
+        open
+      >
+        <DataTable caption="Policy statements">
+          <thead>
+            <tr>
+              <th className={th}>Statement</th>
+              <th className={th}>Source</th>
+              <th className={th}>Needs</th>
+              <th className={th}>Became</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rulebook.statements.map((st) => {
+              const rules = rulebook.rules.filter((r) => r.statement === st.id);
+              const notRuled = rulebook.not_ruled.find(
+                (n) => n.statement === st.id,
+              );
+              const requested = rulebook.data_model_requests.find(
+                (r) => r.statement === st.id,
+              );
+              return (
+                <tr key={st.id}>
+                  <td className={td}>
+                    {st.id}{' '}
+                    <span className="text-muted">
+                      {st.kind ?? 'no single kind'}
+                      {st.checkable ? '' : ', not checkable'}
+                    </span>
+                  </td>
+                  <td className={td}>
+                    <Source source={st.source} />
+                  </td>
+                  <td className={td}>
+                    {[
+                      ...st.needs.map((n) => `${n.tab}: ${n.header}`),
+                      ...st.changes.map((c) => `changes ${c}`),
+                    ].join('; ') || '—'}
+                  </td>
+                  <td className={td}>
+                    {rules.length ? (
+                      <Code>{rules.map((r) => r.id).join(', ')}</Code>
+                    ) : notRuled ? (
+                      `Not a rule: ${notRuled.reason}`
+                    ) : requested ? (
+                      `Requested: ${requested.request}`
+                    ) : (
+                      '—'
+                    )}
+                    {!st.checkable && st.why_not ? (
+                      <span className="text-muted block">{st.why_not}</span>
+                    ) : null}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </DataTable>
+        <DataTable caption="Kinds of item the policy covers">
+          <thead>
+            <tr>
+              <th className={th}>Kind</th>
+              <th className={th}>From</th>
+              <th className={th}>Why</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rulebook.kinds.map((k) => (
+              <tr key={k.kind}>
+                <td className={td}>
+                  {k.label} <Code>{k.kind}</Code>
+                </td>
+                <td className={td}>
+                  {k.tab}, by {k.key_header}
+                </td>
+                <td className={td}>{k.why}</td>
+              </tr>
+            ))}
+          </tbody>
+        </DataTable>
+        <DataTable caption="Values a proposal may change">
+          <thead>
+            <tr>
+              <th className={th}>Value</th>
+              <th className={th}>Meaning</th>
+              <th className={th}>Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rulebook.changeable.map((c) => (
+              <tr key={`${c.kind}.${c.name}`}>
+                <td className={td}>
+                  <Code>{`${c.kind}.${c.name}`}</Code>
+                </td>
+                <td className={td}>{c.meaning}</td>
+                <td className={td}>
+                  <Source source={c.source} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </DataTable>
+      </Disclosure>
 
       <Disclosure
         summary={`Sources: how each tab is trusted (${rulebook.sources.length})`}
@@ -282,16 +399,9 @@ export function RulebookView({ rulebook }: { rulebook: Rulebook }) {
         </DataTable>
       </Disclosure>
 
-      {rulebook.not_ruled.length || rulebook.notes.length ? (
-        <Disclosure
-          summary={`Not made into rules, and notes (${rulebook.not_ruled.length + rulebook.notes.length})`}
-        >
+      {rulebook.notes.length ? (
+        <Disclosure summary={`The model's notes (${rulebook.notes.length})`}>
           <ul className="text-meta grid gap-1">
-            {rulebook.not_ruled.map((n) => (
-              <li key={n.cell}>
-                <span className="readout">{n.cell}</span>: {n.reason}
-              </li>
-            ))}
             {rulebook.notes.map((n) => (
               <li key={n}>{n}</li>
             ))}

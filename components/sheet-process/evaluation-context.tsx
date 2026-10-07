@@ -2,8 +2,7 @@
 
 import { createContext, useContext, type ReactNode } from 'react';
 
-import type { CheckResult } from '@/lib/rulebook/checks';
-import type { LocalDate } from '@/lib/rulebook/cycle';
+import type { ChecksReport } from '@/lib/rulebook/checks';
 import type { Evaluation } from '@/lib/rulebook/engine';
 
 import { useTrial } from './trial-parts';
@@ -24,12 +23,7 @@ export type EvaluateResponse =
         drafted: { model: string; run_id: string; at: string };
       };
       evaluation: Evaluation;
-      checks: {
-        reference: LocalDate;
-        results: CheckResult[];
-        missingHeaders: string[];
-        found: boolean;
-      };
+      checks: ChecksReport;
     }
   | { kind: 'no_rulebook' }
   | { kind: 'not_configured'; missing: string[] }

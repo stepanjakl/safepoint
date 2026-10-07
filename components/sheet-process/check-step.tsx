@@ -1,5 +1,7 @@
 'use client';
 
+import type { ChecksReport } from '@/lib/rulebook/checks';
+
 import { useEvaluation } from './evaluation-context';
 import {
   Code,
@@ -31,7 +33,6 @@ export function CheckStep() {
     );
   const { items } = result.evaluation;
   const { checks } = result;
-  const passed = checks.results.filter((c) => c.passed).length;
   return (
     <div className="grid gap-5">
       <TrialSection title="1. Rules per item, before any proposal">
@@ -94,75 +95,90 @@ export function CheckStep() {
         ))}
       </TrialSection>
 
-      <TrialSection title="2. The store's checks">
-        {!checks.found ? (
-          <p className="text-dense text-muted">The sheet has no Checks tab.</p>
-        ) : (
-          <>
-            <p className="text-dense">
-              Written by the store and never shown to the model. Each one sets
-              values on an item at a run time in the week of{' '}
-              {checks.reference.day}/{checks.reference.month}/
-              {checks.reference.year}. A check passes when the outcome matches
-              and every rule it names is not met. {passed} of{' '}
-              {checks.results.length} pass.
-            </p>
-            {checks.missingHeaders.length ? (
-              <p className="text-dense">
-                <Mark passed={false}>Missing headers</Mark>{' '}
-                {checks.missingHeaders.join(', ')}
-              </p>
-            ) : null}
-            <DataTable caption="The store's checks, expected against actual">
-              <thead>
-                <tr>
-                  <th className={th}>Check</th>
-                  <th className={th}>Run and values</th>
-                  <th className={th}>Expected</th>
-                  <th className={th}>Actual</th>
-                </tr>
-              </thead>
-              <tbody>
-                {checks.results.map((c) => (
-                  <tr key={c.id}>
-                    <td className={td}>
-                      <Mark passed={c.passed}>{c.id}</Mark>{' '}
-                      <span className="readout text-muted">{c.ref}</span>
-                      {c.note ? (
-                        <span className="text-muted block">{c.note}</span>
-                      ) : null}
-                    </td>
-                    <td className={td}>
-                      {c.item} · {c.runAt || '—'}
-                      {c.set ? (
-                        <span className="block">
-                          <Code>{c.set}</Code>
-                        </span>
-                      ) : null}
-                    </td>
-                    <td className={td}>
-                      {c.expect}{' '}
-                      {c.because.length ? `by ${c.because.join(', ')}` : ''}
-                    </td>
-                    <td className={td}>
-                      {c.problem ? (
-                        <Mark passed={false}>{c.problem}</Mark>
-                      ) : (
-                        <>
-                          {c.actual}{' '}
-                          {c.decidedBy.length
-                            ? `by ${c.decidedBy.join(', ')}`
-                            : ''}
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </DataTable>
-          </>
-        )}
-      </TrialSection>
+      <StoreChecks checks={checks} title="2. The store's checks" />
     </div>
+  );
+}
+
+// The store's checks for one rulebook, expected against actual. Shared with
+// the Rules step, which scores each draft before anyone approves it.
+export function StoreChecks({
+  checks,
+  title,
+}: {
+  checks: ChecksReport;
+  title: string;
+}) {
+  const passed = checks.results.filter((c) => c.passed).length;
+  return (
+    <TrialSection title={title}>
+      {!checks.found ? (
+        <p className="text-dense text-muted">The sheet has no Checks tab.</p>
+      ) : (
+        <>
+          <p className="text-dense">
+            Written by the store and never shown to the model. Each one sets
+            values on an item at a run time in the week of{' '}
+            {checks.reference.day}/{checks.reference.month}/
+            {checks.reference.year}. A check passes when the outcome matches and
+            every rule it names is not met. {passed} of {checks.results.length}{' '}
+            pass.
+          </p>
+          {checks.missingHeaders.length ? (
+            <p className="text-dense">
+              <Mark passed={false}>Missing headers</Mark>{' '}
+              {checks.missingHeaders.join(', ')}
+            </p>
+          ) : null}
+          <DataTable caption="The store's checks, expected against actual">
+            <thead>
+              <tr>
+                <th className={th}>Check</th>
+                <th className={th}>Run and values</th>
+                <th className={th}>Expected</th>
+                <th className={th}>Actual</th>
+              </tr>
+            </thead>
+            <tbody>
+              {checks.results.map((c) => (
+                <tr key={c.id}>
+                  <td className={td}>
+                    <Mark passed={c.passed}>{c.id}</Mark>{' '}
+                    <span className="readout text-muted">{c.ref}</span>
+                    {c.note ? (
+                      <span className="text-muted block">{c.note}</span>
+                    ) : null}
+                  </td>
+                  <td className={td}>
+                    {c.item} · {c.runAt || '—'}
+                    {c.set ? (
+                      <span className="block">
+                        <Code>{c.set}</Code>
+                      </span>
+                    ) : null}
+                  </td>
+                  <td className={td}>
+                    {c.expect}{' '}
+                    {c.because.length ? `by ${c.because.join(', ')}` : ''}
+                  </td>
+                  <td className={td}>
+                    {c.problem ? (
+                      <Mark passed={false}>{c.problem}</Mark>
+                    ) : (
+                      <>
+                        {c.actual}{' '}
+                        {c.decidedBy.length
+                          ? `by ${c.decidedBy.join(', ')}`
+                          : ''}
+                      </>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </DataTable>
+        </>
+      )}
+    </TrialSection>
   );
 }

@@ -51,7 +51,19 @@ const source = z
   })
   .describe('Where in the sheet this comes from');
 
-export const dataModelSchema = z.strictObject({
+const statementId = z
+  .string()
+  .regex(/^[A-Za-z0-9_.-]{1,24}$/)
+  .describe(
+    "The sheet's own id for the statement when it has one (a rule number, say); otherwise S1, S2, …",
+  );
+
+/*
+  The inventory is drafted first: what the policy says, before any of it is
+  bound or written as a formula. The later stages are checked against it, so
+  a statement or a kind of item cannot drop out unnoticed.
+*/
+export const inventorySchema = z.strictObject({
   process: z.strictObject({
     name: z.string().min(1).max(80),
     item_noun: z
@@ -73,6 +85,80 @@ export const dataModelSchema = z.strictObject({
       }),
     )
     .describe('Every tab, classified once'),
+  kinds: z
+    .array(
+      z.strictObject({
+        kind: ident.describe('Name for this kind of item'),
+        label: z.string().min(1).max(60),
+        tab: z
+          .string()
+          .describe('The tab with one row, or one group of rows, per item'),
+        key_header: z
+          .string()
+          .describe('Header of the column that identifies an item'),
+        why: z.string().min(1).max(300),
+      }),
+    )
+    .min(1)
+    .describe(
+      'Every kind of thing a person will review: each kind the policy sets rules for or lets a proposal change',
+    ),
+  changeable: z
+    .array(
+      z.strictObject({
+        name: ident,
+        kind: ident.describe('The kind of item it belongs to, from kinds'),
+        meaning: z.string().min(1).max(300),
+        source,
+      }),
+    )
+    .describe('Every value the policy says a proposal may change'),
+  statements: z
+    .array(
+      z.strictObject({
+        id: statementId,
+        source,
+        kind: ident
+          .nullable()
+          .describe(
+            'The kind of item it applies to, from kinds; null when it applies to no single kind (a timetable, say)',
+          ),
+        needs: z
+          .array(
+            z.strictObject({
+              tab: z.string(),
+              header: z
+                .string()
+                .describe(
+                  'A header in the first row, or a key in the first column of a two-column key/value tab, exactly as written',
+                ),
+            }),
+          )
+          .describe(
+            'Every sheet value that checking it needs, apart from the changeable values',
+          ),
+        changes: z
+          .array(ident)
+          .describe('Names of the changeable values it constrains'),
+        checkable: z
+          .boolean()
+          .describe(
+            "true when a formula over the sheet's values could decide it",
+          ),
+        why_not: z
+          .string()
+          .max(300)
+          .nullable()
+          .describe('When not checkable: why no formula could decide it'),
+      }),
+    )
+    .min(1)
+    .describe(
+      'Every statement of policy, wherever it is written: rules, limits, timetables, what may change. One entry per statement',
+    ),
+});
+
+export const dataModelSchema = z.strictObject({
   tables: z
     .array(
       z.strictObject({
@@ -107,7 +193,11 @@ export const dataModelSchema = z.strictObject({
                 .array(z.string())
                 .nullable()
                 .describe('one_of only: the allowed values'),
-              required: z.boolean(),
+              required: z
+                .boolean()
+                .describe(
+                  'true only when every data row has a value in this column; one blank anywhere means false',
+                ),
               meaning: z.string().min(1).max(200),
             }),
           )
@@ -133,19 +223,23 @@ export const dataModelSchema = z.strictObject({
       .strictObject({ table: ident, time: ident })
       .nullable()
       .describe(
-        'The deadline time whose passing moves planning to the next period',
+        "Points at one entry of times by that entry's table and name (the name you gave the time, not a column). It must be a deadline from a single table, and its passing moves planning to the next period. Declare it in times first. Null when period is none",
       ),
     times: z
       .array(
         z.strictObject({
-          table: ident,
+          table: ident.describe(
+            'The name you gave the table in tables, never the tab',
+          ),
           name: ident.describe(
             'Name of the resolved timestamp added to each row',
           ),
           day: ident.describe(
-            'Column (or single-table key) name of the weekday',
+            "The name you gave (in that table's columns) to its weekday column; never the header",
           ),
-          time: ident.describe('Column (or single-table key) name of the time'),
+          time: ident.describe(
+            "The name you gave (in that table's columns) to its time_of_day column; never the header",
+          ),
           role: z
             .enum(['observation', 'deadline'])
             .describe(
@@ -162,8 +256,12 @@ export const dataModelSchema = z.strictObject({
       z.strictObject({
         kind: ident,
         label: z.string().min(1).max(60),
-        table: ident,
-        key: ident.describe('Column name holding the item key'),
+        table: ident.describe(
+          'The name you gave the table in tables, never the tab',
+        ),
+        key: ident.describe(
+          "The name you gave (in that table's columns) to the column holding the item key",
+        ),
         group: z
           .boolean()
           .describe('true when several rows share one key and form one item'),
@@ -215,6 +313,12 @@ export const logicSchema = z.strictObject({
   rules: z.array(
     z.strictObject({
       id: ident,
+      statement: z
+        .string()
+        .nullable()
+        .describe(
+          'Id of the inventory statement this rule checks; null for a rule of your own',
+        ),
       sheet_rule: z
         .string()
         .nullable()
@@ -237,22 +341,40 @@ export const logicSchema = z.strictObject({
   not_ruled: z
     .array(
       z.strictObject({
-        cell,
+        statement: z.string().describe('Id of the inventory statement'),
         reason: z.string().min(1).max(300),
       }),
     )
     .describe(
-      'Policy statements you did not turn into a rule, and why (for example: covered by timing, or not checkable)',
+      'Inventory statements no formula could check (too vague, or about something outside the data), or that the timing already enforces, and why',
+    ),
+  data_model_requests: z
+    .array(
+      z.strictObject({
+        statement: z.string().describe('Id of the inventory statement'),
+        request: z
+          .string()
+          .min(1)
+          .max(400)
+          .describe(
+            'Exactly what to add or change in the data model: a kind of item, a bound column, a time',
+          ),
+      }),
+    )
+    .describe(
+      'Statements you cannot write because the data model lacks something. The data model is then revised once and you write the rules again. Empty when nothing is missing',
     ),
   notes: z.array(z.string().max(400)).max(10),
 });
 
 export const rulebookSchema = z.strictObject({
   schema_version: z.literal(1),
+  ...inventorySchema.shape,
   ...dataModelSchema.shape,
   ...logicSchema.shape,
 });
 
+export type Inventory = z.infer<typeof inventorySchema>;
 export type DataModel = z.infer<typeof dataModelSchema>;
 export type Logic = z.infer<typeof logicSchema>;
 export type Rulebook = z.infer<typeof rulebookSchema>;

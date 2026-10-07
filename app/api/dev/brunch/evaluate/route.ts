@@ -1,7 +1,13 @@
 import { z } from 'zod';
 
-import { jsonWithBigInts, rejectUnlessLocalDevelopment } from '@/lib/dev/dev-route';
-import { loadSnapshot, PROCESS_ID } from '@/lib/processes/avocado-toast/snapshot';
+import {
+  jsonWithBigInts,
+  rejectUnlessLocalDevelopment,
+} from '@/lib/dev/dev-route';
+import {
+  loadSnapshot,
+  PROCESS_ID,
+} from '@/lib/processes/avocado-toast/snapshot';
 import { runChecks } from '@/lib/rulebook/checks';
 import { mondayOf } from '@/lib/rulebook/cycle';
 import { evaluate } from '@/lib/rulebook/engine';
@@ -16,13 +22,24 @@ export async function POST(request: Request) {
   const rejected = rejectUnlessLocalDevelopment(request);
   if (rejected) return rejected;
   const parsed = z
-    .strictObject({ source: z.enum(['captured', 'live']), run: runRequestSchema, period: z.number().int().min(0).max(3).default(0) })
+    .strictObject({
+      source: z.enum(['captured', 'live']),
+      run: runRequestSchema,
+      period: z.number().int().min(0).max(3).default(0),
+    })
     .safeParse(await request.json().catch(() => null));
-  if (!parsed.success) return Response.json({ kind: 'error', message: 'Invalid request.' }, { status: 400 });
+  if (!parsed.success)
+    return Response.json(
+      { kind: 'error', message: 'Invalid request.' },
+      { status: 400 },
+    );
   const active = await activeRulebook(PROCESS_ID);
   if (!active) return Response.json({ kind: 'no_rulebook' }, { status: 409 });
   if (parsed.data.source === 'live' && missingSheetEnv().length)
-    return Response.json({ kind: 'not_configured', missing: missingSheetEnv() }, { status: 503 });
+    return Response.json(
+      { kind: 'not_configured', missing: missingSheetEnv() },
+      { status: 503 },
+    );
   const { read, label } = await loadSnapshot(parsed.data.source);
   const tz = active.rulebook.timing.time_zone;
   const now = Date.now();
@@ -32,8 +49,14 @@ export async function POST(request: Request) {
     kind: 'result',
     source: label,
     chosen,
-    rulebook: { version: active.version, approved_at: active.approved_at, drafted: active.drafted },
-    evaluation: evaluate(active.rulebook, read, runAt, { periodIndex: parsed.data.period }),
+    rulebook: {
+      version: active.version,
+      approved_at: active.approved_at,
+      drafted: active.drafted,
+    },
+    evaluation: evaluate(active.rulebook, read, runAt, {
+      periodIndex: parsed.data.period,
+    }),
     checks: { reference, ...runChecks(active.rulebook, read, reference) },
   });
 }
