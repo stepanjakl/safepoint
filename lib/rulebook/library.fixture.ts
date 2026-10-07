@@ -158,6 +158,7 @@ export const rulebook: Rulebook = {
       why_not: null,
     },
   ],
+  currency: { code: 'GBP', minor_units: 2 },
   tables: [
     {
       tab: 'Books',
@@ -193,7 +194,7 @@ export const rulebook: Rulebook = {
         {
           header: 'fee',
           name: 'fee',
-          type: 'money_gbp',
+          type: 'money',
           allowed: null,
           required: true,
           meaning: 'Loan fee',
@@ -316,7 +317,7 @@ export const rulebook: Rulebook = {
       kind: 'book',
       name: 'fee',
       label: 'Loan fee',
-      type: 'money_gbp',
+      type: 'money',
       applies_when: 'row.fee > 0',
       default: 'row.fee',
       source: {

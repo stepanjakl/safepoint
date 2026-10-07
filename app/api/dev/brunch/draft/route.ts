@@ -7,9 +7,9 @@ import {
 } from '@/lib/processes/avocado-toast/snapshot';
 import { runChecks } from '@/lib/rulebook/checks';
 import { mondayOf } from '@/lib/rulebook/cycle';
-import { draftRulebook } from '@/lib/rulebook/draft';
+import { carryOver, draftRulebook } from '@/lib/rulebook/draft';
 import { draftingModelSchema } from '@/lib/rulebook/models';
-import { saveDraftRecord } from '@/lib/rulebook/store';
+import { readDraftRecord, saveDraftRecord } from '@/lib/rulebook/store';
 
 export const runtime = 'nodejs';
 export const maxDuration = 600;
@@ -27,6 +27,11 @@ export async function POST(request: Request) {
     .strictObject({
       model: draftingModelSchema,
       source: z.enum(['captured', 'live']),
+      // A saved draft to continue: the stages it passed are carried over.
+      resume: z
+        .string()
+        .regex(/^[\w.-]+\.json$/)
+        .optional(),
     })
     .safeParse(await request.json().catch(() => null));
   if (!parsed.success)
@@ -37,7 +42,19 @@ export async function POST(request: Request) {
   const runId = crypto.randomUUID();
   try {
     const { read, label } = await loadSnapshot(parsed.data.source);
-    const draft = await draftRulebook(parsed.data.model, read, runId);
+    let resume;
+    if (parsed.data.resume) {
+      const earlier = await readDraftRecord(PROCESS_ID, parsed.data.resume);
+      if (!earlier)
+        return Response.json(
+          { kind: 'error', message: 'No such draft to continue.' },
+          { status: 404 },
+        );
+      resume = { file: parsed.data.resume, ...carryOver(earlier.draft) };
+    }
+    const draft = await draftRulebook(parsed.data.model, read, runId, {
+      resume,
+    });
     // Scored against the store's checks for the reader only; the model
     // never sees them.
     let checks = null;

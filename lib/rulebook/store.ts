@@ -94,6 +94,8 @@ export type DraftSummary = {
   rounds: number;
   passed: boolean;
   interrupted: string | null;
+  stopped: Draft['stopped'];
+  resumed: boolean;
   problems: number;
   checks: { passed: number; total: number } | null;
 };
@@ -124,6 +126,8 @@ export async function listDraftRecords(
           rounds: Math.max(1, ...draft.stages.map((s) => s.round ?? 1)),
           passed: Boolean(draft.rulebook),
           interrupted: draft.interrupted ?? null,
+          stopped: draft.stopped ?? null,
+          resumed: Boolean(draft.resumedFrom),
           problems: draft.issues.length,
           checks: checks
             ? {

@@ -1,34 +1,37 @@
+import { WEEKDAYS, zonedInstant, type Weekday } from './cycle';
+
 /*
   How one raw spreadsheet value becomes a typed value. Every conversion says, in
   words, what it did, so the reader can see the manipulation and not only its
-  result. Domain-neutral: the process says which type a column has.
+  result. Domain-neutral: the rulebook says which type a column has, and the
+  currency and time zone that money and dates are read in.
 
   Raw values are what Google returns with UNFORMATTED_VALUE and SERIAL_NUMBER:
-  numbers stay numbers (money in pounds, times as a fraction of a day) and text
-  stays text. Nothing here reads the wall clock.
+  numbers stay numbers (money in the main currency unit, a percentage cell as a
+  fraction, times as a fraction of a day, dates as days since 30 Dec 1899) and
+  text stays text. Dates typed as ISO text are read too. Nothing here reads the
+  wall clock.
 */
 
-export const WEEKDAYS = [
-  'Mon',
-  'Tue',
-  'Wed',
-  'Thu',
-  'Fri',
-  'Sat',
-  'Sun',
-] as const;
-export type Weekday = (typeof WEEKDAYS)[number];
+export { WEEKDAYS, type Weekday };
+
+export type Currency = { code: string; minor_units: number };
 
 export type FieldType =
   | { kind: 'key' }
   | { kind: 'text' }
   | { kind: 'whole_number' }
-  | { kind: 'money_gbp' }
+  | { kind: 'decimal' }
+  | { kind: 'percent' }
+  | { kind: 'money'; currency: Currency }
+  | { kind: 'date'; timeZone: string }
+  | { kind: 'datetime'; timeZone: string }
   | { kind: 'weekday' }
   | { kind: 'time_of_day' }
   | { kind: 'yes_no' }
   | { kind: 'one_of'; values: readonly string[] };
 
+// Dates and date-times are held as the instant, in milliseconds.
 export type CellValue = string | number | boolean | null;
 
 export type Interpreted = {
@@ -43,6 +46,68 @@ export type Interpreted = {
 
 const isBlank = (raw: unknown) =>
   raw === undefined || raw === null || raw === '';
+
+const DAY = 86_400_000;
+// Day 0 of the spreadsheet serial calendar, 30 December 1899.
+const SERIAL_EPOCH = Date.UTC(1899, 11, 30);
+
+const pad = (n: number) => String(n).padStart(2, '0');
+const clock = (minutes: number) =>
+  `${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`;
+
+function formatMoney(minor: number, currency: Currency) {
+  const amount = minor / 10 ** currency.minor_units;
+  try {
+    return new Intl.NumberFormat('en', {
+      style: 'currency',
+      currency: currency.code,
+      minimumFractionDigits: currency.minor_units,
+      maximumFractionDigits: currency.minor_units,
+    }).format(amount);
+  } catch {
+    return `${currency.code} ${amount.toFixed(currency.minor_units)}`;
+  }
+}
+
+// A wall-clock date (and minutes after midnight) from a serial or ISO text.
+function wallTime(
+  raw: unknown,
+  withTime: boolean,
+): {
+  date: { year: number; month: number; day: number };
+  minutes: number;
+  from: string;
+} | null {
+  if (typeof raw === 'number') {
+    const exact = raw * 1440;
+    const total = Math.round(exact);
+    if (Math.abs(exact - total) > 0.01) return null;
+    const days = Math.floor(total / 1440);
+    const d = new Date(SERIAL_EPOCH + days * DAY);
+    return {
+      date: {
+        year: d.getUTCFullYear(),
+        month: d.getUTCMonth() + 1,
+        day: d.getUTCDate(),
+      },
+      minutes: total - days * 1440,
+      from: `serial ${raw} (days since 30 Dec 1899)`,
+    };
+  }
+  const match = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?$/.exec(
+    String(raw).trim(),
+  );
+  if (!match || (!withTime && match[4])) return null;
+  return {
+    date: {
+      year: Number(match[1]),
+      month: Number(match[2]),
+      day: Number(match[3]),
+    },
+    minutes: match[4] ? Number(match[4]) * 60 + Number(match[5]) : 0,
+    from: `text "${String(raw).trim()}"`,
+  };
+}
 
 export function interpretCell(
   raw: unknown,
@@ -72,18 +137,66 @@ export function interpretCell(
         how: 'Whole number, unchanged.',
       };
     }
-    case 'money_gbp': {
-      if (typeof raw !== 'number')
-        return invalid(raw, 'Expected an amount in pounds.');
-      const pence = Math.round(raw * 100);
-      // Sheets stores 2.8 as a binary fraction; anything further than this
-      // from whole pence was typed with too many decimals, not rounded by us.
-      if (Math.abs(raw * 100 - pence) > 0.001)
-        return invalid(raw, 'Not a whole number of pence.');
+    case 'decimal': {
+      if (typeof raw !== 'number') return invalid(raw, 'Expected a number.');
+      return { value: raw, display: String(raw), how: 'Number, unchanged.' };
+    }
+    case 'percent': {
+      const text = typeof raw === 'string' ? raw.trim() : null;
+      const fraction =
+        typeof raw === 'number'
+          ? raw
+          : text && /^-?\d+(\.\d+)?%$/.test(text)
+            ? Number(text.slice(0, -1)) / 100
+            : null;
+      if (fraction === null)
+        return invalid(
+          raw,
+          'Expected a percentage (a percentage cell, or text like 25%).',
+        );
+      const display = `${Number((fraction * 100).toPrecision(12))}%`;
       return {
-        value: pence,
-        display: `£${(pence / 100).toFixed(2)}`,
-        how: `${raw} pounds × 100 = ${pence} pence (stored as a whole number).`,
+        value: fraction,
+        display,
+        how: `${typeof raw === 'number' ? `Percentage cell ${raw}` : `Text "${text}"`} = ${display}, used as the fraction ${fraction}.`,
+      };
+    }
+    case 'money': {
+      if (typeof raw !== 'number')
+        return invalid(raw, `Expected an amount in ${type.currency.code}.`);
+      const scale = 10 ** type.currency.minor_units;
+      const minor = Math.round(raw * scale);
+      // The sheet stores 2.8 as a binary fraction; anything further than this
+      // from a whole minor unit was typed with too many decimals.
+      if (Math.abs(raw * scale - minor) > 0.001)
+        return invalid(
+          raw,
+          `Not a whole number of ${type.currency.code} minor units.`,
+        );
+      return {
+        value: minor,
+        display: formatMoney(minor, type.currency),
+        how: `${raw} ${type.currency.code} × ${scale} = ${minor} minor units (stored as a whole number).`,
+      };
+    }
+    case 'date':
+    case 'datetime': {
+      const withTime = type.kind === 'datetime';
+      const wall = wallTime(raw, withTime);
+      if (!wall || (!withTime && wall.minutes !== 0))
+        return invalid(
+          raw,
+          withTime
+            ? 'Expected a date and time (a date cell, or text like 2026-10-15 08:45).'
+            : 'Expected a date without a time (a date cell, or text like 2026-10-15).',
+        );
+      const instant = zonedInstant(wall.date, wall.minutes, type.timeZone);
+      const day = `${wall.date.year}-${pad(wall.date.month)}-${pad(wall.date.day)}`;
+      const display = withTime ? `${day} ${clock(wall.minutes)}` : day;
+      return {
+        value: instant,
+        display,
+        how: `${wall.from} = ${display}${withTime ? '' : ', midnight'} in ${type.timeZone} = ${new Date(instant).toISOString()}.`,
       };
     }
     case 'weekday': {
@@ -104,7 +217,7 @@ export function interpretCell(
       const minutes = Math.round(exact);
       if (Math.abs(exact - minutes) > 0.01)
         return invalid(raw, 'Not a whole minute.');
-      const display = `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+      const display = clock(minutes);
       return {
         value: minutes,
         display,

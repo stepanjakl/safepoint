@@ -5,6 +5,7 @@ import {
   loadSnapshot,
   PROCESS_ID,
 } from '@/lib/processes/avocado-toast/snapshot';
+import { checksTab } from '@/lib/rulebook/checks';
 import { bindTables } from '@/lib/rulebook/engine';
 import { activeRulebook } from '@/lib/rulebook/store';
 import { missingSheetEnv } from '@/lib/sheets/composio';
@@ -48,6 +49,7 @@ export async function POST(request: Request) {
     return Response.json({
       kind: 'result',
       source: label,
+      checksTab: checksTab(read),
       read,
       rulebook: active
         ? { version: active.version, sources: active.rulebook.sources }

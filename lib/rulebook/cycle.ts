@@ -1,5 +1,3 @@
-import { WEEKDAYS, type Weekday } from './field-types';
-
 /*
   Turns "a weekday and a time of day" into real moments for one pinned run
   time. Domain-neutral; the process supplies its weekly timetable.
@@ -14,6 +12,17 @@ import { WEEKDAYS, type Weekday } from './field-types';
   Wall-clock times are resolved in the process's time zone, so 06:00 stays
   06:00 across a clock change; durations are measured between real instants.
 */
+
+export const WEEKDAYS = [
+  'Mon',
+  'Tue',
+  'Wed',
+  'Thu',
+  'Fri',
+  'Sat',
+  'Sun',
+] as const;
+export type Weekday = (typeof WEEKDAYS)[number];
 
 export type LocalDate = { year: number; month: number; day: number };
 export type DayTime = { day: Weekday; minutes: number };

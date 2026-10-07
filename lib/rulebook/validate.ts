@@ -1,5 +1,6 @@
-import { CHECKS_TAB } from './checks';
+import { checksTab } from './checks';
 import {
+  CEL_OF,
   bindTables,
   buildEnvironment,
   type Bound,
@@ -44,7 +45,8 @@ export function validateInventory(
   snapshot: Snapshot,
 ): Issue[] {
   const issues: Issue[] = [];
-  const tabs = snapshot.tabs.filter((t) => t !== CHECKS_TAB);
+  const hidden = checksTab(snapshot);
+  const tabs = snapshot.tabs.filter((t) => t !== hidden);
   for (const tab of tabs)
     if (!inventory.sources.some((s) => s.tab === tab))
       issues.push({
@@ -181,6 +183,24 @@ export function validateDataModel(
         where: `sources.${source.tab}`,
         message: `"${source.tab}" is classified data, but no table reads it, so no rule can use it. Bind it as a table, or classify it context or ignored if nothing in it could matter to a rule.`,
       });
+
+  if (model.tables.some((t) => t.columns.some((c) => c.type === 'money'))) {
+    const known =
+      typeof Intl.supportedValuesOf === 'function'
+        ? Intl.supportedValuesOf('currency')
+        : null;
+    if (!model.currency)
+      issues.push({
+        where: 'currency',
+        message:
+          'There are money columns but no currency. Give its ISO 4217 code and decimal places, from what the sheet says or shows.',
+      });
+    else if (known && !known.includes(model.currency.code))
+      issues.push({
+        where: 'currency.code',
+        message: `"${model.currency.code}" is not an ISO 4217 currency code.`,
+      });
+  }
 
   const names = new Set<string>();
   for (const table of model.tables) {
@@ -353,6 +373,19 @@ function bindingIssues({ table, bound }: Bound): Issue[] {
           message: `${cell.ref}, row "${row.key}", holds ${JSON.stringify(cell.raw)}: ${cell.issue} Choose the type that fits every value in this column.`,
         });
     }
+  // A percentage cell holds 30% as 0.3; a column of 30s means percent points.
+  for (const column of table.columns.filter((c) => c.type === 'percent')) {
+    const numbers = bound.rows.flatMap((row) =>
+      row.cells
+        .filter((c) => c.header === column.header && typeof c.raw === 'number')
+        .map((c) => c.raw as number),
+    );
+    if (numbers.some((n) => n > 1) && numbers.every((n) => Number.isInteger(n)))
+      issues.push({
+        where: `${where}.${column.name}`,
+        message: `"${column.header}" holds whole numbers such as ${Math.max(...numbers)}, which a percentage cell would hold as ${Math.max(...numbers) / 100}. These are percentage points: use whole_number (or decimal), and compare them with 100 in formulas.`,
+      });
+  }
   for (const [header, rows] of blanks)
     issues.push({
       where: `${where}.${nameOf(header)}`,
@@ -406,10 +439,11 @@ function validateSource(
     texts.push(text);
     const tab = ref.slice(0, ref.lastIndexOf('!')).replace(/^'(.*)'$/, '$1');
     const role = sources.find((s) => s.tab === tab)?.role;
-    if (tab === CHECKS_TAB)
+    if (tab === checksTab(snapshot))
       issues.push({
         where,
-        message: 'Cites the Checks tab, which drafting must not use.',
+        message:
+          "Cites the tab of checks, the owner's expected outcomes, which drafting must not use.",
       });
     else if (role === 'untrusted')
       issues.push({ where, message: `Cites ${ref}, an untrusted source.` });
@@ -560,7 +594,11 @@ export function validateLogic(
       allFacts,
     );
     for (const field of editable) {
-      const d = checkFormula(full, field.default, 'int');
+      const d = checkFormula(
+        full,
+        field.default,
+        CEL_OF[field.type] === 'double' ? 'double' : 'int',
+      );
       if (!d.ok)
         issues.push({
           where: `editable.${field.name}.default`,

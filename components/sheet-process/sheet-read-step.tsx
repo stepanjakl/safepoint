@@ -40,6 +40,7 @@ type Response =
       read: SheetRead;
       rulebook: { version: number; sources: Rulebook['sources'] } | null;
       bound: Bound[] | null;
+      checksTab: string | null;
     }
   | { kind: 'not_configured'; missing: string[] }
   | { kind: 'error'; message: string };
@@ -240,8 +241,8 @@ function SheetResult({
                 <td className={td}>{tab}</td>
                 <td className={td}>{rowsOf(tab)?.length ?? 0}</td>
                 <td className={td}>
-                  {tab === 'Checks'
-                    ? 'The store’s checks: never sent to the model'
+                  {tab === result.checksTab
+                    ? 'The owner’s checks: never sent to the model'
                     : (roleOf(tab) ?? '—')}
                 </td>
               </tr>

@@ -1,29 +1,98 @@
-import { inWeek, type LocalDate } from './cycle';
-import { WEEKDAYS, interpretCell, type Weekday } from './field-types';
-import { evaluate, tabValues, type Disposition, type Snapshot } from './engine';
+import { inWeek, WEEKDAYS, type LocalDate, type Weekday } from './cycle';
+import {
+  CEL_OF,
+  evaluate,
+  fieldType,
+  tabValues,
+  type Disposition,
+  type Snapshot,
+} from './engine';
+import { interpretCell } from './field-types';
 import type { Rulebook } from './schema';
 
 /*
-  Checks are expected outcomes written by the store, in a tab the drafting
-  model never sees. Their format belongs to the engine, not to any scenario:
+  Checks are expected outcomes written by the sheet's owner, in a tab the
+  drafting model never sees. The tab is recognised by its header row, not its
+  name. Its format belongs to the engine, not to any scenario:
 
-    check_id | run_day | run_time | item | set | expect | because | note
+    check_id | run_at, or run_day and run_time | item | set | expect | because | note
 
-  `set` lists proposed values as `name=value; name=value`, in the sheet's own
-  units (pounds for money). `because` names the sheet rule ids expected to
-  decide the outcome. Run times are read in the week starting `reference`.
+  run_at is a date and time (a date cell, or text like 2026-10-15 08:45); a
+  weekday and time are read in the week starting `reference`. `set` lists
+  proposed values as `name=value; name=value` in the sheet's own units: money
+  in the main currency unit, a percentage as 25%, a date as 2026-10-15.
+  `because` names the sheet rule ids expected to decide the outcome.
 */
-export const CHECKS_TAB = 'Checks';
-const HEADERS = [
-  'check_id',
+const REQUIRED = ['check_id', 'item', 'expect'] as const;
+const OPTIONAL = [
+  'run_at',
   'run_day',
   'run_time',
-  'item',
   'set',
-  'expect',
   'because',
   'note',
 ] as const;
+type Header = (typeof REQUIRED)[number] | (typeof OPTIONAL)[number];
+
+const headerRow = (snapshot: Snapshot, tab: string) =>
+  (tabValues(snapshot, tab)?.values?.[0] ?? []).map((h) =>
+    String(h ?? '')
+      .trim()
+      .toLowerCase(),
+  );
+
+// The tab of checks: the first whose header row has the required headers.
+export function checksTab(snapshot: Snapshot): string | null {
+  return (
+    snapshot.tabs.find((tab) => {
+      const header = headerRow(snapshot, tab);
+      return REQUIRED.every((h) => header.includes(h));
+    }) ?? null
+  );
+}
+
+function parseTime(raw: unknown): number | null {
+  if (typeof raw === 'number') return Math.round(raw * 1440);
+  const match = /^(\d{1,2}):(\d{2})$/.exec(String(raw ?? '').trim());
+  return match ? Number(match[1]) * 60 + Number(match[2]) : null;
+}
+
+function readChecks(snapshot: Snapshot) {
+  const tab = checksTab(snapshot);
+  const values = tab ? (tabValues(snapshot, tab)?.values ?? []) : [];
+  const header = tab ? headerRow(snapshot, tab) : [];
+  const timed =
+    header.includes('run_at') ||
+    (header.includes('run_day') && header.includes('run_time'));
+  const missing = tab && !timed ? ['run_at, or run_day and run_time'] : [];
+  const at = (h: Header) => header.indexOf(h);
+  const raw = (row: unknown[], h: Header) => (at(h) >= 0 ? row[at(h)] : '');
+  const rows = values.slice(1).flatMap((row, i) => {
+    const get = (h: Header) => String(raw(row, h) ?? '').trim();
+    if (!get('check_id')) return [];
+    return [
+      {
+        id: get('check_id'),
+        ref: `${tab}!A${i + 2}`,
+        runAt: raw(row, 'run_at'),
+        day: get('run_day'),
+        time: raw(row, 'run_time'),
+        item: get('item'),
+        set: get('set'),
+        expect: get('expect'),
+        because: get('because')
+          .split(/[,\s]+/)
+          .filter(Boolean),
+        note: get('note'),
+      },
+    ];
+  });
+  return { tab, missing, rows };
+}
+
+// A set value as the sheet would hold it: a number where one is meant.
+const asSheetValue = (text: string) =>
+  /^-?\d+(\.\d+)?$/.test(text) ? Number(text) : text;
 
 export type CheckResult = {
   id: string;
@@ -40,41 +109,6 @@ export type CheckResult = {
   problem: string | null;
 };
 
-function parseTime(raw: unknown): number | null {
-  if (typeof raw === 'number') return Math.round(raw * 1440);
-  const match = /^(\d{1,2}):(\d{2})$/.exec(String(raw ?? '').trim());
-  return match ? Number(match[1]) * 60 + Number(match[2]) : null;
-}
-
-function readChecks(snapshot: Snapshot) {
-  const range = tabValues(snapshot, CHECKS_TAB);
-  const values = range?.values ?? [];
-  const header = (values[0] ?? []).map((h) => String(h ?? '').trim());
-  const missing = HEADERS.filter((h) => !header.includes(h));
-  const at = (h: (typeof HEADERS)[number]) => header.indexOf(h);
-  const rows = values.slice(1).flatMap((row, i) => {
-    const get = (h: (typeof HEADERS)[number]) =>
-      at(h) >= 0 ? String(row[at(h)] ?? '').trim() : '';
-    if (!get('check_id')) return [];
-    return [
-      {
-        id: get('check_id'),
-        ref: `${CHECKS_TAB}!A${i + 2}`,
-        day: get('run_day'),
-        time: at('run_time') >= 0 ? row[at('run_time')] : '',
-        item: get('item'),
-        set: get('set'),
-        expect: get('expect'),
-        because: get('because')
-          .split(/[,\s]+/)
-          .filter(Boolean),
-        note: get('note'),
-      },
-    ];
-  });
-  return { found: Boolean(range), missing, rows };
-}
-
 export type ChecksReport = ReturnType<typeof runChecks> & {
   reference: LocalDate;
 };
@@ -83,8 +117,14 @@ export function runChecks(
   rulebook: Rulebook,
   snapshot: Snapshot,
   reference: LocalDate,
-): { results: CheckResult[]; missingHeaders: string[]; found: boolean } {
-  const { found, missing, rows } = readChecks(snapshot);
+): {
+  results: CheckResult[];
+  missingHeaders: string[];
+  found: boolean;
+  tab: string | null;
+} {
+  const { tab, missing, rows } = readChecks(snapshot);
+  const tz = rulebook.timing.time_zone;
   const results = rows.map((check): CheckResult => {
     const base = {
       id: check.id,
@@ -98,21 +138,29 @@ export function runChecks(
       decidedBy: [],
       passed: false,
     };
-    const minutes = parseTime(check.time);
-    if (!WEEKDAYS.includes(check.day as Weekday) || minutes === null)
-      return {
-        ...base,
-        runAt: '',
-        problem: 'The run day or time cannot be read.',
-      };
-    const runAt = inWeek(
-      reference,
-      { day: check.day as Weekday, minutes },
-      rulebook.timing.time_zone,
-    );
+    let runAt: number;
+    if (check.runAt !== '' && check.runAt !== undefined) {
+      const at = interpretCell(
+        check.runAt,
+        { kind: 'datetime', timeZone: tz },
+        true,
+      );
+      if (at.issue || typeof at.value !== 'number')
+        return { ...base, runAt: '', problem: `run_at: ${at.issue}` };
+      runAt = at.value;
+    } else {
+      const minutes = parseTime(check.time);
+      if (!WEEKDAYS.includes(check.day as Weekday) || minutes === null)
+        return {
+          ...base,
+          runAt: '',
+          problem: 'Neither run_at nor run_day and run_time can be read.',
+        };
+      runAt = inWeek(reference, { day: check.day as Weekday, minutes }, tz);
+    }
 
     // Which kind of item is this? The approved rulebook decides, not the check.
-    const overrides: Record<string, bigint> = {};
+    const overrides: Record<string, bigint | number> = {};
     const kinds = rulebook.editable;
     for (const pair of check.set
       .split(';')
@@ -127,8 +175,8 @@ export function runChecks(
           problem: `"${name}" is not a value the rulebook lets a proposal change.`,
         };
       const parsed = interpretCell(
-        field.type === 'money_gbp' ? Number(value) : Number(value),
-        { kind: field.type },
+        asSheetValue(value),
+        fieldType(rulebook, field.type),
         true,
       );
       if (parsed.issue || parsed.value === null)
@@ -137,7 +185,10 @@ export function runChecks(
           runAt: new Date(runAt).toISOString(),
           problem: `${name}=${value}: ${parsed.issue}`,
         };
-      overrides[name!] = BigInt(parsed.value as number);
+      overrides[name!] =
+        CEL_OF[field.type] === 'int'
+          ? BigInt(parsed.value as number)
+          : (parsed.value as number);
     }
 
     const evaluation = evaluate(rulebook, snapshot, runAt, {
@@ -175,5 +226,5 @@ export function runChecks(
       problem: null,
     };
   });
-  return { results, missingHeaders: missing, found };
+  return { results, missingHeaders: missing, found: tab !== null, tab };
 }

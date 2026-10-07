@@ -18,12 +18,19 @@ const FIELD_KINDS = [
   'key',
   'text',
   'whole_number',
-  'money_gbp',
+  'decimal',
+  'percent',
+  'money',
+  'date',
+  'datetime',
   'weekday',
   'time_of_day',
   'yes_no',
   'one_of',
 ] as const;
+
+// What a proposal may change: a number of some kind.
+const EDITABLE_KINDS = ['whole_number', 'money', 'decimal', 'percent'] as const;
 
 export const CEL_TYPES = [
   'int',
@@ -159,6 +166,25 @@ export const inventorySchema = z.strictObject({
 });
 
 export const dataModelSchema = z.strictObject({
+  currency: z
+    .strictObject({
+      code: z
+        .string()
+        .regex(/^[A-Z]{3}$/)
+        .describe(
+          'ISO 4217 code of the money columns, such as GBP, EUR, USD, JPY',
+        ),
+      minor_units: z
+        .number()
+        .int()
+        .min(0)
+        .max(4)
+        .describe(
+          'Decimal places of the currency: 2 for GBP, EUR and USD, 0 for JPY',
+        ),
+    })
+    .nullable()
+    .describe('The currency of every money column; null when there is none'),
   tables: z
     .array(
       z.strictObject({
@@ -188,7 +214,11 @@ export const dataModelSchema = z.strictObject({
                   'Column header as written, or for a single table the key as written',
                 ),
               name: ident,
-              type: z.enum(FIELD_KINDS),
+              type: z
+                .enum(FIELD_KINDS)
+                .describe(
+                  'decimal: any number; percent: a percentage-formatted cell, whose value arrives as a fraction (0.25 is 25%); numbers like 30 meaning 30% are whole_number; money: an amount in the currency, read as whole minor units; date: a calendar date, read as midnight in the time zone; datetime: a date and time; weekday: Mon to Sun; time_of_day: read as minutes after midnight',
+                ),
               allowed: z
                 .array(z.string())
                 .nullable()
@@ -280,14 +310,16 @@ export const logicSchema = z.strictObject({
         kind: ident,
         name: ident,
         label: z.string().min(1).max(80),
-        type: z.enum(['whole_number', 'money_gbp']),
+        type: z.enum(EDITABLE_KINDS),
         applies_when: z
           .string()
           .nullable()
           .describe('CEL bool; null when it always applies'),
         default: z
           .string()
-          .describe('CEL int: the value before anyone proposes a change'),
+          .describe(
+            'CEL: the value before anyone proposes a change; int for whole_number and money, double for decimal and percent',
+          ),
         source,
       }),
     )

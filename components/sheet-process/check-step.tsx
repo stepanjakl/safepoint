@@ -19,7 +19,7 @@ const DISPOSITION = {
   ready: 'Ready',
 } as const;
 
-// Shows the evaluation Calculate started: each item's rules, then the store's own checks.
+// Shows the evaluation Calculate started: each item's rules, then the owner's checks.
 export function CheckStep() {
   const { state } = useEvaluation();
   const result =
@@ -27,8 +27,8 @@ export function CheckStep() {
   if (!result)
     return (
       <p className="text-dense text-muted">
-        Press Calculate above. The rules and the store&rsquo;s checks for that
-        run appear here.
+        Press Calculate above. The rules and the sheet owner&rsquo;s checks for
+        that run appear here.
       </p>
     );
   const { items } = result.evaluation;
@@ -95,14 +95,14 @@ export function CheckStep() {
         ))}
       </TrialSection>
 
-      <StoreChecks checks={checks} title="2. The store's checks" />
+      <OwnerChecks checks={checks} title="2. The owner's checks" />
     </div>
   );
 }
 
-// The store's checks for one rulebook, expected against actual. Shared with
+// The owner's checks for one rulebook, expected against actual. Shared with
 // the Rules step, which scores each draft before anyone approves it.
-export function StoreChecks({
+export function OwnerChecks({
   checks,
   title,
 }: {
@@ -113,12 +113,16 @@ export function StoreChecks({
   return (
     <TrialSection title={title}>
       {!checks.found ? (
-        <p className="text-dense text-muted">The sheet has no Checks tab.</p>
+        <p className="text-dense text-muted">
+          The sheet has no tab of checks: one whose header row has check_id,
+          item and expect.
+        </p>
       ) : (
         <>
           <p className="text-dense">
-            Written by the store and never shown to the model. Each one sets
-            values on an item at a run time in the week of{' '}
+            From the {checks.tab} tab, written by the sheet&rsquo;s owner and
+            never shown to the model. Each one sets values on an item at a run
+            time: an exact run_at, or a weekday and time in the week of{' '}
             {checks.reference.day}/{checks.reference.month}/
             {checks.reference.year}. A check passes when the outcome matches and
             every rule it names is not met. {passed} of {checks.results.length}{' '}
@@ -130,7 +134,7 @@ export function StoreChecks({
               {checks.missingHeaders.join(', ')}
             </p>
           ) : null}
-          <DataTable caption="The store's checks, expected against actual">
+          <DataTable caption="The owner's checks, expected against actual">
             <thead>
               <tr>
                 <th className={th}>Check</th>

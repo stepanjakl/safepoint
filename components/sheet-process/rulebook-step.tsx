@@ -5,12 +5,16 @@ import { useId, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Ledger, LedgerRow } from '@/components/ui/ledger';
-import type { Draft } from '@/lib/rulebook/draft';
-import { DRAFTING_MODELS, type DraftingModel } from '@/lib/rulebook/models';
+import type { Draft, StageStop } from '@/lib/rulebook/draft';
+import {
+  DRAFTING_MODELS,
+  strongerModel,
+  type DraftingModel,
+} from '@/lib/rulebook/models';
 import type { ApprovedRulebook } from '@/lib/rulebook/schema';
 import type { DraftRecord, DraftSummary } from '@/lib/rulebook/store';
 
-import { StoreChecks } from './check-step';
+import { OwnerChecks } from './check-step';
 import { RulebookView } from './rulebook-view';
 import {
   Code,
@@ -39,15 +43,24 @@ type DraftsResponse =
 // The draft on screen: the one just made, or one opened from the list.
 type Shown = DraftRecord & { saved: string | null; label: string };
 
+const STOP_REASONS: Record<StageStop['reason'], string> = {
+  limit: 'the attempt limit was reached without the problems falling',
+  no_progress: 'the same problems came back',
+  repeat: 'the model sent back the same answer',
+};
+
+const describeStop = (stop: StageStop) =>
+  `${STAGE_NAMES[stop.stage]} gave up after ${stop.attempts} attempts with ${stop.problems} problems left: ${STOP_REASONS[stop.reason]}`;
+
 const STAGE_NAMES: Record<Draft['stages'][number]['stage'], string> = {
   inventory: '1. Inventory',
   data_model: '2. Data model',
   logic: '3. Rules',
 };
 
-const storeScore = (checks: DraftRecord['checks']) =>
+const ownerScore = (checks: DraftRecord['checks']) =>
   checks
-    ? `${checks.results.filter((c) => c.passed).length} of ${checks.results.length} store checks pass`
+    ? `${checks.results.filter((c) => c.passed).length} of ${checks.results.length} owner checks pass`
     : null;
 
 type ApproveResponse =
@@ -78,10 +91,10 @@ export function RulebookStep({ active }: { active: ApprovedRulebook | null }) {
     <div className="grid gap-4">
       <p className="text-dense">
         The rules are not written into the app. A model reads the sheet and
-        drafts a rulebook: how to read each tab, how the week is timed, what can
-        change, what to calculate and which rules apply, all in standard CEL.
-        The app checks every part, and nothing is used until you approve it. The
-        Checks tab is never shown to the model.
+        drafts a rulebook: how to read each tab, how time is handled, what can
+        change, what to calculate and which rules apply, in standard CEL. The
+        app checks every part, and nothing is used until you approve it. The
+        owner&rsquo;s tab of checks is never shown to the model.
       </p>
 
       <TrialSection title="Approved rulebook">
@@ -165,9 +178,11 @@ export function RulebookStep({ active }: { active: ApprovedRulebook | null }) {
             body?.kind === 'result'
               ? body.draft.interrupted
                 ? `Stopped: ${body.draft.interrupted}`
-                : body.draft.rulebook
-                  ? `Passes the drafting checks after ${body.draft.stages.length} steps; ${storeScore(body.checks) ?? 'no store checks'}`
-                  : `Not usable yet: ${body.draft.issues.length} problems remain`
+                : body.draft.stopped
+                  ? `Stopped: ${describeStop(body.draft.stopped)}`
+                  : body.draft.rulebook
+                    ? `Passes the drafting checks after ${body.draft.stages.length} steps; ${ownerScore(body.checks) ?? 'no owner checks'}`
+                    : `Not usable yet: ${body.draft.issues.length} problems remain`
               : body?.kind === 'not_configured'
                 ? `Missing ${body.missing.join(', ')}`
                 : body?.kind === 'error'
@@ -195,10 +210,21 @@ export function RulebookStep({ active }: { active: ApprovedRulebook | null }) {
             ) : null}
           </p>
           <DraftDetail draft={shown.draft} />
+          {shown.saved && !shown.draft.rulebook && shown.draft.stopped ? (
+            <Escalate
+              draft={shown.draft}
+              file={shown.saved.split('/').pop()!}
+              running={drafting.state.kind === 'running'}
+              onRun={(stronger, file) => {
+                setOpened(null);
+                void drafting.run({ model: stronger, source, resume: file });
+              }}
+            />
+          ) : null}
           {shown.checks ? (
-            <StoreChecks
+            <OwnerChecks
               checks={shown.checks}
-              title="The store's checks on this draft"
+              title="The owner's checks on this draft"
             />
           ) : null}
         </>
@@ -264,6 +290,17 @@ function DraftDetail({ draft }: { draft: Draft }) {
           <LedgerRow label="Models">
             {draft.models.join(', then ') || draft.model}
           </LedgerRow>
+          {draft.resumedFrom ? (
+            <LedgerRow label="Continues">
+              <Code>{draft.resumedFrom.file}</Code>, carrying over its{' '}
+              {draft.resumedFrom.carried
+                .map((stage) => STAGE_NAMES[stage])
+                .join(' and ') || 'nothing'}
+            </LedgerRow>
+          ) : null}
+          {draft.stopped ? (
+            <LedgerRow label="Stopped">{describeStop(draft.stopped)}</LedgerRow>
+          ) : null}
           <LedgerRow label="Run">
             <Code>{draft.runId}</Code>, {(draft.durationMs / 1000).toFixed(1)}{' '}
             s, {tokens.input.toLocaleString('en-GB')} tokens in,{' '}
@@ -304,6 +341,7 @@ function DraftDetail({ draft }: { draft: Draft }) {
             key={i}
             summary={`${STAGE_NAMES[s.stage]}${s.round > 1 ? ', revised' : ''}, attempt ${s.attempt} (${s.model}): everything sent and received`}
           >
+            {s.note ? <p className="text-meta">{s.note}</p> : null}
             {s.issues.length ? (
               <ul className="text-meta grid gap-1">
                 {s.issues.map((issue, i) => (
@@ -433,7 +471,7 @@ function PastDrafts({
               <th className={th}>Models</th>
               <th className={th}>Steps</th>
               <th className={th}>Result</th>
-              <th className={th}>Store checks</th>
+              <th className={th}>Owner checks</th>
               <th className={th}>
                 <span className="sr-only">Open</span>
               </th>
@@ -449,6 +487,7 @@ function PastDrafts({
                 <td className={td}>
                   {d.steps} in {(d.durationMs / 1000).toFixed(0)} s
                   {d.rounds > 1 ? ', revised once' : ''}
+                  {d.resumed ? ', continued an earlier draft' : ''}
                 </td>
                 <td className={td}>
                   <Mark passed={d.passed}>
@@ -456,7 +495,9 @@ function PastDrafts({
                       ? 'Passes'
                       : d.interrupted
                         ? 'Stopped by the service'
-                        : `${d.problems} problems`}
+                        : d.stopped
+                          ? `Gave up at ${STAGE_NAMES[d.stopped.stage]}: ${STOP_REASONS[d.stopped.reason]}`
+                          : `${d.problems} problems`}
                   </Mark>
                 </td>
                 <td className={td}>
@@ -489,6 +530,37 @@ function PastDrafts({
       {opening.state.kind === 'done' && opening.state.body.kind === 'error' ? (
         <p className="text-meta">{opening.state.body.message}</p>
       ) : null}
+    </TrialSection>
+  );
+}
+
+// Offered, never automatic: a stuck draft continued by the strongest family,
+// keeping every stage that already passed.
+function Escalate({
+  draft,
+  file,
+  running,
+  onRun,
+}: {
+  draft: Draft;
+  file: string;
+  running: boolean;
+  onRun: (model: DraftingModel, file: string) => void;
+}) {
+  const stronger = strongerModel(draft.models.at(-1) ?? draft.model);
+  if (!stronger || !draft.stopped) return null;
+  return (
+    <TrialSection title="Try a stronger model">
+      <p className="text-dense">
+        {describeStop(draft.stopped)}. A stronger model can continue from{' '}
+        {STAGE_NAMES[draft.stopped.stage]}, keeping the stages that passed. It
+        uses that model&rsquo;s free quota, which is smaller.
+      </p>
+      <div>
+        <Button isDisabled={running} onPress={() => onRun(stronger, file)}>
+          Continue from {STAGE_NAMES[draft.stopped.stage]} with {stronger}
+        </Button>
+      </div>
     </TrialSection>
   );
 }

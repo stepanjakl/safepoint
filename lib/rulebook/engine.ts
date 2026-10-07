@@ -38,17 +38,34 @@ export function tabValues(snapshot: Snapshot, tab: string) {
   });
 }
 
-function fieldType(column: TableDef['columns'][number]): FieldType {
-  return column.type === 'one_of'
-    ? { kind: 'one_of', values: column.allowed ?? [] }
-    : ({ kind: column.type } as FieldType);
+// A column's type, with the currency and time zone it is read in.
+export function fieldType(
+  rulebook: Pick<Rulebook, 'currency' | 'timing'>,
+  type: TableDef['columns'][number]['type'],
+  allowed: string[] | null = null,
+): FieldType {
+  switch (type) {
+    case 'one_of':
+      return { kind: 'one_of', values: allowed ?? [] };
+    case 'money':
+      // Validation insists on a currency; this only keeps reading possible.
+      return {
+        kind: 'money',
+        currency: rulebook.currency ?? { code: 'XXX', minor_units: 2 },
+      };
+    case 'date':
+    case 'datetime':
+      return { kind: type, timeZone: rulebook.timing.time_zone };
+    default:
+      return { kind: type };
+  }
 }
 
-function tabSpec(table: TableDef): TabSpec {
+function tabSpec(rulebook: Rulebook, table: TableDef): TabSpec {
   const columns = table.columns.map((c) => ({
     header: c.header,
     label: c.meaning,
-    type: fieldType(c),
+    type: fieldType(rulebook, c.type, c.allowed),
     required: c.required,
   }));
   return table.shape === 'single'
@@ -85,9 +102,11 @@ export type Bound = {
 const toCel = (value: unknown, kind: string): unknown =>
   value === null
     ? undefined
-    : kind === 'whole_number' || kind === 'money_gbp' || kind === 'time_of_day'
+    : CEL_OF[kind] === 'int'
       ? BigInt(value as number)
-      : value;
+      : CEL_OF[kind] === 'google.protobuf.Timestamp'
+        ? new Date(value as number)
+        : value;
 
 export function bindTables(rulebook: Rulebook, snapshot: Snapshot): Bound[] {
   return rulebook.tables.map((table) => {
@@ -95,7 +114,7 @@ export function bindTables(rulebook: Rulebook, snapshot: Snapshot): Bound[] {
       range: `${table.tab}!A1`,
       values: [],
     };
-    const bound = bindTab(tabSpec(table), range);
+    const bound = bindTab(tabSpec(rulebook, table), range);
     const byHeader = new Map(table.columns.map((c) => [c.header, c]));
     if (table.shape === 'single') {
       const values: Record<string, unknown> = {};
@@ -221,14 +240,19 @@ function planPeriods(
 
 // ── CEL environment ────────────────────────────────────────────────────────
 
-const CEL_OF: Record<string, string> = {
+// The CEL type each column or editable type is read as.
+export const CEL_OF: Record<string, string> = {
   key: 'string',
   text: 'string',
   weekday: 'string',
   one_of: 'string',
   whole_number: 'int',
-  money_gbp: 'int',
+  money: 'int',
   time_of_day: 'int',
+  decimal: 'double',
+  percent: 'double',
+  date: 'google.protobuf.Timestamp',
+  datetime: 'google.protobuf.Timestamp',
   yes_no: 'bool',
 };
 const celName = (type: string) =>
@@ -369,7 +393,14 @@ export function buildEnvironment(
   });
   env.registerVariable({
     name: 'change',
-    schema: Object.fromEntries(spec.change.map((name) => [name, 'int'])),
+    schema: Object.fromEntries(
+      spec.change.map((name) => {
+        const type = rulebook.editable.find(
+          (e) => e.kind === spec.kind && e.name === name,
+        )?.type;
+        return [name, CEL_OF[type ?? 'whole_number'] ?? 'int'];
+      }),
+    ),
   });
   return env;
 }
@@ -503,7 +534,8 @@ export function evaluate(
   runAt: number,
   options: {
     periodIndex?: number;
-    overrides?: Record<string, Record<string, bigint>>;
+    // Proposed values per item key: bigint for int types, number for double.
+    overrides?: Record<string, Record<string, bigint | number>>;
     // Evaluate one extra expression for one item, after its facts and defaults.
     probe?: { kind: string; key: string; expression: string };
   } = {},
@@ -624,7 +656,7 @@ export function evaluate(
             };
           const value =
             overrides[field.name] ??
-            (run(env, cache, field.default, itemContext) as bigint);
+            run(env, cache, field.default, itemContext);
           changeValues[field.name] = value;
           return {
             name: field.name,

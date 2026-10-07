@@ -34,7 +34,14 @@ const infoSchema = z.object({
   sheets: z
     .array(
       z.object({
-        properties: z.object({ sheetId: z.number(), title: z.string() }),
+        properties: z.object({
+          sheetId: z.number(),
+          title: z.string(),
+          gridProperties: z
+            .object({ rowCount: z.number(), columnCount: z.number() })
+            .partial()
+            .optional(),
+        }),
       }),
     )
     .optional(),
@@ -66,8 +73,20 @@ export type SheetRead = {
   valueRanges: z.infer<typeof valueRangeSchema>[];
 };
 
-// Quoted so a tab named like a column reference ("Kit") is still a tab.
-const wholeTabRange = (tab: string) => `'${tab.replaceAll("'", "''")}'!A1:Z500`;
+function columnLetters(count: number) {
+  let letters = '';
+  for (let n = count; n > 0; n = Math.floor((n - 1) / 26))
+    letters = String.fromCharCode(65 + ((n - 1) % 26)) + letters;
+  return letters;
+}
+
+// The tab's whole grid, as large as the sheet says it is, so nothing past a
+// fixed edge is dropped. Quoted so a tab named like a cell ("Kit") is a tab.
+const wholeTabRange = (
+  tab: string,
+  grid: { rowCount?: number; columnCount?: number } | undefined,
+) =>
+  `'${tab.replaceAll("'", "''")}'!A1:${columnLetters(Math.max(1, grid?.columnCount ?? 26))}${Math.max(1, grid?.rowCount ?? 1000)}`;
 
 export function missingSheetEnv(): string[] {
   return SHEET_ENV.filter((name) => !process.env[name]);
@@ -134,16 +153,17 @@ export async function readWholeSheet(): Promise<SheetRead> {
   const info = await call('GOOGLESHEETS_GET_SPREADSHEET_INFO', {
     spreadsheet_id: env.GOOGLE_SHEETS_SPREADSHEET_ID,
     fields:
-      'properties.title,properties.timeZone,properties.locale,sheets.properties.sheetId,sheets.properties.title',
+      'properties.title,properties.timeZone,properties.locale,sheets.properties.sheetId,sheets.properties.title,sheets.properties.gridProperties',
   });
   const parsedInfo = infoSchema.safeParse(info.data);
-  const tabs = parsedInfo.success
-    ? (parsedInfo.data.sheets ?? []).map(({ properties }) => properties.title)
-    : [];
+  const sheets = parsedInfo.success ? (parsedInfo.data.sheets ?? []) : [];
+  const tabs = sheets.map(({ properties }) => properties.title);
   const values = tabs.length
     ? await call('GOOGLESHEETS_BATCH_GET', {
         spreadsheet_id: env.GOOGLE_SHEETS_SPREADSHEET_ID,
-        ranges: tabs.map(wholeTabRange),
+        ranges: sheets.map(({ properties }) =>
+          wholeTabRange(properties.title, properties.gridProperties),
+        ),
         valueRenderOption: 'UNFORMATTED_VALUE',
         dateTimeRenderOption: 'SERIAL_NUMBER',
       })

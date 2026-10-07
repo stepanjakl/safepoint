@@ -9,7 +9,7 @@ import { useTrial } from './trial-parts';
 
 /*
   One evaluation, shared by the Calculate and Check steps: Calculate starts it
-  and shows the times and facts; Check shows the rules and the store's checks.
+  and shows the times and facts; Check shows the rules and the owner's checks.
 */
 
 export type EvaluateResponse =
