@@ -1,5 +1,6 @@
 'use client';
 
+import { useLayoutEffect, useRef } from 'react';
 import { cx } from '@/lib/cx';
 import type { InputDetail } from '@/lib/process/input-details';
 import type { ProcessSummary } from '@/lib/process/model';
@@ -14,9 +15,9 @@ import {
 import { AddInputPanel } from '@/components/app-shell/inputs/input-connections';
 import { InputDetailView } from '@/components/app-shell/inputs/input-detail';
 import {
-  InstructionChanges,
   InstructionEditor,
   InstructionsPanel,
+  InstructionVersionView,
 } from '@/components/app-shell/instructions/instructions-panel';
 import { useInstructions } from '@/components/app-shell/instructions/instructions-store';
 import { ProcessSettings } from './process-settings';
@@ -53,7 +54,10 @@ const ADD_BUTTON =
   and one column at any width for the tabs whose rows do not open anything,
   which would otherwise hold a second column open for nothing.
 */
-const COLUMNS = 'grid h-full min-h-0 grid-cols-[minmax(0,1fr)]';
+// One row the height of the sheet, so each column scrolls on its own rather
+// than the row growing to the longer of the two.
+const COLUMNS =
+  'grid h-full min-h-0 grid-cols-[minmax(0,1fr)] shell:grid-rows-[minmax(0,1fr)]';
 const TWO_COLUMNS =
   '@sheet-narrow/sheet:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] @sheet-narrow/sheet:[&>*]:min-w-0 @sheet-wide/sheet:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]';
 
@@ -108,7 +112,7 @@ export function ProcessPanels({
         .sort(byAttention)
         .findIndex((input) => input.id === view.id);
     }
-    if (view.kind === 'changes') {
+    if (view.kind === 'version') {
       return versions.findIndex((entry) => entry.version === view.version);
     }
     return -1;
@@ -136,6 +140,24 @@ export function ProcessPanels({
     finishExit();
     onLeave();
   };
+
+  // The latest version opens beside the list with the tab, as the text the
+  // tab is about -- but only where the two sit side by side. Below that it
+  // would take the list's place, so the grid's own columns decide.
+  const root = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    if (tab !== 'instructions' || openView || !root.current) return;
+    const columns = getComputedStyle(root.current).gridTemplateColumns;
+    if (columns.split(' ').length < 2) return;
+    openAside({
+      kind: 'version',
+      version: version.version,
+      face: 'text',
+      passive: true,
+    });
+    // Once, as the tab arrives: the panels are keyed on it upstream.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const panel = aside ? asidePanel(aside) : null;
   const leavingPanel =
@@ -193,31 +215,24 @@ export function ProcessPanels({
               ),
             }
           : null;
-      case 'changes': {
+      case 'version': {
         const index = versions.findIndex(
           (version) => version.version === view.version,
         );
         const to = versions[index];
-        const from = index > 0 ? versions[index - 1] : undefined;
-        if (!to || !from) return null;
+        if (!to) return null;
         return {
           eyebrow: 'Instructions',
-          title: (
-            <>
-              What changed in <span className="value">{to.version}</span>
-            </>
-          ),
-          announce: `What changed in ${to.version}`,
-          meta: `${to.updatedLabel} · ${to.author}`,
+          title: `Version ${to.version}`,
+          announce: `Version ${to.version}`,
+          headless: true,
+          focusOnOpen: !view.passive,
           body: (
-            <InstructionChanges
-              from={from}
-              to={to}
-              position={index}
-              total={versions.length - 1}
-              earlier={index > 1 ? from.version : undefined}
-              later={versions[index + 1]?.version}
-              onShow={(version) => openAside({ kind: 'changes', version })}
+            <InstructionVersionView
+              process={process}
+              version={to.version}
+              face={view.face}
+              onEdit={() => openAside({ kind: 'edit' })}
             />
           ),
         };
@@ -247,7 +262,9 @@ export function ProcessPanels({
       <InstructionsPanel
         process={process}
         aside={exiting ? null : aside}
-        onShowChanges={(version) => openAside({ kind: 'changes', version })}
+        onShowVersion={(shown) =>
+          openAside({ kind: 'version', version: shown, face: 'text' })
+        }
         onEdit={() => openAside({ kind: 'edit' })}
       />
     ) : tab === 'inputs' ? (
@@ -273,13 +290,16 @@ export function ProcessPanels({
         OPENS_DETAIL.has(tab) && TWO_COLUMNS,
       )}
       onKeyDownCapture={onKeyDownCapture}
+      ref={root}
     >
       <div
         // Where the detail is showing and the two do not fit, it takes this
         // column's place rather than squeezing beside it.
         className={cx(
-          'process-panel-list shell:min-h-0 shell:overflow-y-auto shell:overscroll-contain border-rule-faint min-w-0',
-          OPENS_DETAIL.has(tab) ? '@sheet-narrow/sheet:border-r' : null,
+          'process-panel-list sheet-bleed sheet-bleed-head shell:min-h-0 shell:overflow-y-auto shell:overscroll-contain border-rule-faint min-w-0',
+          OPENS_DETAIL.has(tab)
+            ? '@sheet-narrow/sheet:border-r'
+            : 'sheet-bleed-end',
           panel ? '@max-sheet-narrow/sheet:hidden' : null,
         )}
       >
@@ -328,6 +348,7 @@ export function ProcessPanels({
           exiting={exiting}
           onExited={finishExit}
           onLeft={settleLeaving}
+          flat
         />
       ) : OPENS_DETAIL.has(tab) ? (
         // Only where a row opens something: a column that can never fill is
@@ -335,7 +356,7 @@ export function ProcessPanels({
         <p className="text-muted text-meta @sheet-wide/sheet:block hidden place-self-center p-8">
           {tab === 'inputs'
             ? 'Choose an input to read the records it gave this run.'
-            : 'Open a version to see what changed, or edit the current one.'}
+            : 'Open a version to read it and see what changed in it.'}
         </p>
       ) : null}
     </div>

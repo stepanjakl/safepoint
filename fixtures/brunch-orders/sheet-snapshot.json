@@ -1,0 +1,534 @@
+{
+  "readAt": "2026-10-08T16:03:15.658Z",
+  "connection": {
+    "userId": "safepoint-dev",
+    "connectedAccountId": "ca_9nadZLJx16I_"
+  },
+  "spreadsheet": {
+    "id": "1IUUE1k89kSwtt_djK5GT0HFUy-T8XUFrpwKf4rCwakI",
+    "url": "https://docs.google.com/spreadsheets/d/1IUUE1k89kSwtt_djK5GT0HFUy-T8XUFrpwKf4rCwakI/edit",
+    "title": "Safepoint · Alderton's Local · Brunch weekend",
+    "timeZone": "Europe/London",
+    "locale": "en_GB",
+    "tabIds": {
+      "Products": 1692181716,
+      "Stock": 1103313597,
+      "Sales": 295150531,
+      "Deliveries": 1571028681,
+      "Parameters": 1013650411
+    }
+  },
+  "tabs": [
+    "Products",
+    "Stock",
+    "Sales",
+    "Deliveries",
+    "Parameters"
+  ],
+  "requests": [
+    {
+      "tool": "GOOGLESHEETS_GET_SPREADSHEET_INFO",
+      "toolkitVersion": "20261001_00",
+      "arguments": {
+        "spreadsheet_id": "1IUUE1k89kSwtt_djK5GT0HFUy-T8XUFrpwKf4rCwakI",
+        "fields": "properties.title,properties.timeZone,properties.locale,sheets.properties.sheetId,sheets.properties.title,sheets.properties.gridProperties"
+      },
+      "durationMs": 1457,
+      "successful": true,
+      "error": null
+    },
+    {
+      "tool": "GOOGLESHEETS_BATCH_GET",
+      "toolkitVersion": "20261001_00",
+      "arguments": {
+        "spreadsheet_id": "1IUUE1k89kSwtt_djK5GT0HFUy-T8XUFrpwKf4rCwakI",
+        "ranges": [
+          "'Products'!A1:Z1000",
+          "'Stock'!A1:Z1000",
+          "'Sales'!A1:Z1000",
+          "'Deliveries'!A1:Z1000",
+          "'Parameters'!A1:Z1000"
+        ],
+        "valueRenderOption": "UNFORMATTED_VALUE",
+        "dateTimeRenderOption": "SERIAL_NUMBER"
+      },
+      "durationMs": 2939,
+      "successful": true,
+      "error": null
+    }
+  ],
+  "valueRanges": [
+    {
+      "range": "Products!A1:Z1000",
+      "values": [
+        [
+          "sku",
+          "product",
+          "category",
+          "unit",
+          "regular_price",
+          "cost_price",
+          "case_size",
+          "shelf_life_days",
+          "ripe"
+        ],
+        [
+          "SD-01",
+          "Sourdough loaf 800g",
+          "bakery",
+          "loaf",
+          2.8,
+          1.4,
+          8,
+          2,
+          "no"
+        ],
+        [
+          "AV-RR",
+          "Hass avocados, ripe & ready, 2-pack",
+          "produce",
+          "pack",
+          2.2,
+          1.2,
+          10,
+          3,
+          "yes"
+        ],
+        [
+          "AV-LS",
+          "Hass avocado, ripen at home",
+          "produce",
+          "each",
+          0.85,
+          0.42,
+          24,
+          7,
+          "no"
+        ],
+        [
+          "EG-06",
+          "Free-range eggs, medium, 6",
+          "dairy",
+          "box",
+          2.1,
+          1.45,
+          12,
+          21,
+          "no"
+        ],
+        [
+          "FT-200",
+          "Greek feta 200g",
+          "dairy",
+          "pack",
+          2,
+          1.15,
+          12,
+          30,
+          "no"
+        ],
+        [
+          "LM-04",
+          "Lemons, 4-pack",
+          "produce",
+          "pack",
+          1,
+          0.5,
+          12,
+          10,
+          "no"
+        ],
+        [
+          "CT-250",
+          "Cherry tomatoes 250g",
+          "produce",
+          "punnet",
+          1.1,
+          0.6,
+          10,
+          5,
+          "no"
+        ],
+        [
+          "RK-60",
+          "Wild rocket 60g",
+          "produce",
+          "bag",
+          1,
+          0.48,
+          8,
+          4,
+          "no"
+        ],
+        [
+          "CF-40",
+          "Chilli flakes 40g",
+          "ambient",
+          "jar",
+          1.2,
+          0.55,
+          6,
+          365,
+          "no"
+        ],
+        [
+          "SS-125",
+          "Sea salt flakes 125g",
+          "ambient",
+          "box",
+          2.3,
+          1.3,
+          6,
+          730,
+          "no"
+        ],
+        [
+          "OO-500",
+          "Extra virgin olive oil 500ml",
+          "ambient",
+          "bottle",
+          6.5,
+          4.4,
+          6,
+          540,
+          "no"
+        ]
+      ]
+    },
+    {
+      "range": "Stock!A1:Z1000",
+      "values": [
+        [
+          "sku",
+          "on_hand",
+          "reserved",
+          "inbound_before_start",
+          "counted_day",
+          "counted_time"
+        ],
+        [
+          "SD-01",
+          0,
+          0,
+          0,
+          "Thu",
+          0.3125
+        ],
+        [
+          "AV-RR",
+          14,
+          2,
+          0,
+          "Thu",
+          0.3125
+        ],
+        [
+          "AV-LS",
+          30,
+          0,
+          0,
+          "Tue",
+          0.75
+        ],
+        [
+          "EG-06",
+          26,
+          0,
+          12,
+          "Thu",
+          0.3125
+        ],
+        [
+          "FT-200",
+          17,
+          0,
+          0,
+          "Thu",
+          0.3125
+        ],
+        [
+          "LM-04",
+          20,
+          0,
+          0,
+          "Thu",
+          0.3125
+        ],
+        [
+          "CT-250",
+          8,
+          0,
+          10,
+          "Thu",
+          0.3125
+        ],
+        [
+          "RK-60",
+          6,
+          0,
+          0,
+          "Thu",
+          0.3125
+        ],
+        [
+          "CF-40",
+          9,
+          0,
+          0,
+          "Thu",
+          0.3125
+        ],
+        [
+          "SS-125",
+          7,
+          0,
+          0,
+          "Thu",
+          0.3125
+        ],
+        [
+          "OO-500",
+          10,
+          0,
+          0,
+          "Thu",
+          0.3125
+        ]
+      ]
+    },
+    {
+      "range": "Sales!A1:Z1000",
+      "values": [
+        [
+          "sku",
+          "weekend_1",
+          "weekend_2",
+          "weekend_3",
+          "weekend_4"
+        ],
+        [
+          "SD-01",
+          28,
+          31,
+          30,
+          31
+        ],
+        [
+          "AV-RR",
+          21,
+          23,
+          22,
+          22
+        ],
+        [
+          "AV-LS",
+          17,
+          19,
+          18,
+          18
+        ],
+        [
+          "EG-06",
+          19,
+          21,
+          20,
+          20
+        ],
+        [
+          "FT-200",
+          11,
+          13,
+          12,
+          12
+        ],
+        [
+          "LM-04",
+          9,
+          11,
+          10,
+          10
+        ],
+        [
+          "CT-250",
+          15,
+          17,
+          16,
+          16
+        ],
+        [
+          "RK-60",
+          8,
+          10,
+          9,
+          9
+        ],
+        [
+          "CF-40",
+          3,
+          3,
+          3,
+          3
+        ],
+        [
+          "SS-125",
+          2,
+          2,
+          2,
+          2
+        ],
+        [
+          "OO-500",
+          4,
+          4,
+          4,
+          4
+        ]
+      ]
+    },
+    {
+      "range": "Deliveries!A1:Z1000",
+      "values": [
+        [
+          "sku",
+          "supplier",
+          "delivery_day",
+          "delivery_time",
+          "cutoff_day",
+          "cutoff_time",
+          "max_order_units"
+        ],
+        [
+          "SD-01",
+          "Local bakery",
+          "Sat",
+          0.25,
+          "Thu",
+          0.5833333333333334,
+          72
+        ],
+        [
+          "AV-RR",
+          "Produce wholesaler",
+          "Fri",
+          0.25,
+          "Thu",
+          0.5
+        ],
+        [
+          "AV-LS",
+          "Produce wholesaler",
+          "Fri",
+          0.25,
+          "Thu",
+          0.5
+        ],
+        [
+          "EG-06",
+          "Dairy wholesaler",
+          "Fri",
+          0.25,
+          "Thu",
+          0.5
+        ],
+        [
+          "FT-200",
+          "Dairy wholesaler",
+          "Fri",
+          0.25,
+          "Thu",
+          0.5
+        ],
+        [
+          "LM-04",
+          "Produce wholesaler",
+          "Fri",
+          0.25,
+          "Thu",
+          0.5
+        ],
+        [
+          "CT-250",
+          "Produce wholesaler",
+          "Fri",
+          0.25,
+          "Thu",
+          0.5
+        ],
+        [
+          "RK-60",
+          "Produce wholesaler",
+          "Fri",
+          0.25,
+          "Thu",
+          0.5
+        ],
+        [
+          "CF-40",
+          "Ambient depot",
+          "Fri",
+          0.25,
+          "Thu",
+          0.5
+        ],
+        [
+          "SS-125",
+          "Ambient depot",
+          "Fri",
+          0.25,
+          "Thu",
+          0.5
+        ],
+        [
+          "OO-500",
+          "Ambient depot",
+          "Fri",
+          0.25,
+          "Thu",
+          0.5
+        ]
+      ]
+    },
+    {
+      "range": "Parameters!A1:Z1000",
+      "values": [
+        [
+          "category",
+          "margin_floor_pct",
+          "max_discount_pct",
+          "max_count_age_hours",
+          "safety_pct",
+          "ripe_cover_days"
+        ],
+        [
+          "bakery",
+          30,
+          30,
+          24,
+          10
+        ],
+        [
+          "produce",
+          20,
+          25,
+          24,
+          10,
+          2
+        ],
+        [
+          "dairy",
+          15,
+          25,
+          48,
+          10
+        ],
+        [
+          "ambient",
+          25,
+          20,
+          168,
+          5
+        ]
+      ]
+    }
+  ]
+}

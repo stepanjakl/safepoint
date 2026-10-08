@@ -64,7 +64,7 @@ export const CARD_HEAD =
   card's narrow width the reason drops under the subject.
 */
 const LIST =
-  'release-list grid grid-cols-[minmax(0,1fr)_auto_auto_auto] gap-x-3 @max-card:grid-cols-[minmax(0,1fr)_auto_auto]';
+  'release-list grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-3 @max-card:grid-cols-[minmax(0,1fr)_auto]';
 // Its rules are the list's (`.release-list` in release-card.css).
 const ROW = 'col-span-full grid grid-cols-subgrid';
 const ROW_BUTTON =
@@ -75,21 +75,22 @@ const ROW_SUBJECT = 'release-row-subject col-start-1 row-start-1 truncate';
 // Colour alone, no face, against the column's right edge; with no count
 // beside it, the count's column too, so every reason ends where the next thing
 // begins.
+// Its timing is `.release-row-trail-wide`'s, which slides it as well as
+// inking it; a transition utility here would drop the slide.
 const ROW_REASON =
-  'text-severity-ink group-hover/row:text-severity-strong group-focus-visible/row:text-severity-strong control-wash col-start-2 row-start-1 justify-self-end text-meta data-[alone]:col-span-2 @max-card:col-start-1 @max-card:row-start-2 @max-card:justify-self-start @max-card:data-[alone]:col-span-1';
+  'release-row-trail-wide text-severity-ink group-hover/row:text-severity-strong group-focus-visible/row:text-severity-strong col-start-2 row-start-1 justify-self-end text-meta data-[alone]:col-span-2 @max-card:col-start-1 @max-card:row-start-2 @max-card:justify-self-start @max-card:data-[alone]:col-span-1';
 // Stretched across its column, so every count is the same chip.
 const ROW_COUNT =
-  'release-row-pill col-start-3 row-start-1 @max-card:col-start-2';
+  'release-row-pill release-row-trail col-start-3 row-start-1 @max-card:col-start-2';
 const PILL_LEAD = 'release-row-pill-lead value';
 // The word beside a count, a shade under it, as the run tallies set theirs.
 const QUIET = 'text-muted-strong';
-// Outside the list, so outside its columns: its own two, arrow last.
+// Outside the list, so outside its columns: one line, its arrow in the padding.
 const MORE_ROW =
-  'release-row group/row control-wash hover:bg-surface-hover focus-visible:bg-surface-hover border-floating-ring shadow-separator-bottom-solid grid w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 border-b px-6 py-3 text-left text-dense @max-card:px-4';
-// Its timing and lean are `.release-row-arrow` in release-card.css.
-const ARROW =
-  'release-row-arrow text-muted group-hover/row:text-primary group-focus-visible/row:text-primary group-aria-expanded/row:text-primary inline-block';
-const ROW_ARROW = cx(ARROW, 'col-start-4 row-start-1 @max-card:col-start-3');
+  'release-row group/row control-wash hover:bg-surface-hover focus-visible:bg-surface-hover border-floating-ring shadow-separator-bottom-solid grid w-full cursor-pointer items-center border-b px-6 py-3 text-left text-dense @max-card:px-4';
+// Out of the columns, in the row's end padding: it arrives as the row is lit
+// (`.release-row-arrow` in release-card.css).
+const ARROW = 'release-row-arrow';
 const rowStyle = (
   index: number,
 ): CSSProperties & { '--release-bucket-row-index': number } => ({
@@ -377,7 +378,7 @@ function EffectRow({
         {/* Nothing to count is the usual case for a held item, so it leaves
             the column to the reason rather than printing "none" down it. */}
         {changes > 0 ? <ChangePill deltas={effect.deltas} /> : null}
-        <span aria-hidden="true" className={ROW_ARROW}>
+        <span aria-hidden="true" className={ARROW}>
           <ArrowUpRight size={14} strokeWidth={2} />
         </span>
         <span className="sr-only">Open in review</span>
@@ -464,7 +465,7 @@ function ReasonRow({
           <span className={PILL_LEAD}>{row.count}</span>
           <span className={QUIET}>{nounFor(plan, row.count)}</span>
         </span>
-        <span aria-hidden="true" className={ROW_ARROW}>
+        <span aria-hidden="true" className={ARROW}>
           <ArrowUpRight size={14} strokeWidth={2} />
         </span>
         <span className="sr-only">Open in review</span>

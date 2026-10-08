@@ -30,7 +30,7 @@ import {
 } from '@/lib/review/review-navigation';
 import { dispositionGlyph } from './markers';
 import { AttentionLine, StaleRow } from './release-card';
-import { ReviewFilterTabs, type FilterTab } from './review-filter-tabs';
+import { FilterTabs, type FilterTab } from '@/components/ui/filter-tabs';
 
 /*
   The review's first panel: what the release needs, and every item in it. The
@@ -125,7 +125,7 @@ export function ReviewQueue({
   const visible = reviewEffects(plan, filter);
   const pagination = reviewPage(visible, anchorId ?? '');
 
-  const filters: FilterTab[] = [
+  const filters: FilterTab<ReviewFilter>[] = [
     {
       key: 'all',
       short: 'All',
@@ -241,12 +241,14 @@ export function ReviewQueue({
             <AttentionLine counts={counts} noun={plan.noun} />
           </p>
         </div>
-        <ReviewFilterTabs
+        <FilterTabs
           tabs={filters}
           selected={filter}
           spied={spied}
           scrolling={scrolling}
           onChange={chooseFilter}
+          className="mt-3"
+          numberShortcuts
         />
       </div>
 

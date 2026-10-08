@@ -8,7 +8,7 @@ This directory is the canonical project specification. Earlier source material i
 
 Safepoint is in staged implementation. Stage 0 established the application foundation and Stage 1A the validated Alderton's evidence pack and replay contracts. The app shell, process navigation, replay review overlay and development-only model and policy workbenches followed, as recorded in [`EMBEDDED-REVIEW.md`](EMBEDDED-REVIEW.md) and [`REVIEW-EXPERIMENT-DECISION.md`](REVIEW-EXPERIMENT-DECISION.md).
 
-On 3 October 2026 the main demonstration moved to a simpler, sheet-driven process, Brunch weekend at Alderton's Local, with a data-defined rule engine: see [`SHEET-PROCESS-PLAN.md`](SHEET-PROCESS-PLAN.md). That plan is the active hand-off. The Alderton's promotion-release scenario stays implemented as the earlier scenario; documents that describe it are updated as the plan's phases land.
+On 3 October 2026 the main demonstration moved to a simpler, sheet-driven process, Brunch weekend at Alderton's Local, with a data-defined rule engine: see [`SHEET-PROCESS-PLAN.md`](SHEET-PROCESS-PLAN.md). On 8 October 2026 a second process, Brunch orders, started again from the product's purpose (proposing what to order) and grows one step at a time: see [`BRUNCH-ORDERS-PLAN.md`](BRUNCH-ORDERS-PLAN.md), now the active hand-off. Brunch weekend stays for reference. The Alderton's promotion-release scenario stays implemented as the earlier scenario; documents that describe it are updated as the plan's phases land.
 
 The current specification is decision-complete for the first portfolio implementation. Assumptions that require real-user validation are labelled as such rather than presented as research findings.
 
@@ -50,7 +50,7 @@ flowchart LR
 
 [`RULEBOOK-ENGINE-GUIDE.md`](RULEBOOK-ENGINE-GUIDE.md) explains how the rulebook engine and its drafting work, file by file, for an engineer new to `lib/rulebook/` (work in progress, updated with the code). [`RULEBOOK-ENGINE-WALKTHROUGHS.md`](RULEBOOK-ENGINE-WALKTHROUGHS.md) is its hands-on companion: reading a real draft record, the anatomy of a complete rulebook, and running a drafting study. [`RULEBOOK-DEVELOPMENT-LOG.md`](RULEBOOK-DEVELOPMENT-LOG.md) records the technical challenges met while building it, with measured before-and-after numbers.
 
-The immediate implementation hand-off is [`SHEET-PROCESS-PLAN.md`](SHEET-PROCESS-PLAN.md). [`STAGE-1B-BRIEF.md`](STAGE-1B-BRIEF.md) and [`STAGE-1A-BRIEF.md`](STAGE-1A-BRIEF.md) record the Alderton's interface and data foundation; [`STAGE-0-BRIEF.md`](STAGE-0-BRIEF.md) remains the completed scaffold record.
+The immediate implementation hand-off is [`BRUNCH-ORDERS-PLAN.md`](BRUNCH-ORDERS-PLAN.md); [`SHEET-PROCESS-PLAN.md`](SHEET-PROCESS-PLAN.md) records the Brunch weekend experiment it grew out of. [`STAGE-1B-BRIEF.md`](STAGE-1B-BRIEF.md) and [`STAGE-1A-BRIEF.md`](STAGE-1A-BRIEF.md) record the Alderton's interface and data foundation; [`STAGE-0-BRIEF.md`](STAGE-0-BRIEF.md) remains the completed scaffold record.
 
 ## Two project tracks
 
@@ -85,11 +85,11 @@ In that future integration, Safepoint would be the sole production-effect writer
 
 The core review experience can remain consistent when prompts, processes, and target systems vary. Generalisation requires three layers:
 
-| Layer | Responsibility | Reuse model |
-| --- | --- | --- |
-| Review shell | Summary, candidate list, before-and-after values, risk, evidence, decisions, execution, and compensation | Shared across supported processes |
-| Process definition | Proposal schema, allowed effects, editable fields, policies, labels, and field renderers | Defined once for each process type |
-| Connector | Authentication, reads into validated snapshots, preflight, write, verification, errors, and compensation for an external service | Reused across processes that use the same supported operations |
+| Layer              | Responsibility                                                                                                                   | Reuse model                                                    |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Review shell       | Summary, candidate list, before-and-after values, risk, evidence, decisions, execution, and compensation                         | Shared across supported processes                              |
+| Process definition | Proposal schema, allowed effects, editable fields, policies, labels, and field renderers                                         | Defined once for each process type                             |
+| Connector          | Authentication, reads into validated snapshots, preflight, write, verification, errors, and compensation for an external service | Reused across processes that use the same supported operations |
 
 A process does not need a new connector for every prompt. Google Sheets and SAP need different connectors because their authentication, data models, guarantees, and write operations differ. A process then maps its allowed effects to the capabilities already exposed by those connectors.
 
@@ -122,28 +122,28 @@ Maya and Alderton's are design hypotheses, not validated research participants o
 
 ## Settled decisions
 
-| Area | Decision |
-| --- | --- |
-| Positioning | Category-general product demonstrated through grocery promotion release |
-| Model authority | Four read-only tools and a validated `PromotionReleasePlan` proposal batch |
-| Write authority | Deterministic application services and connector adapters |
-| UI structure | Master-detail review workspace with an effects rail |
-| Styling | Tailwind CSS plus semantic design tokens |
-| Interaction primitives | React Aria Components |
-| Runtime and package manager | Node.js 24 LTS with pnpm 10 |
-| Persistence | Neon Postgres with Drizzle ORM |
-| Database connection | Chosen during persistence from the measured Vercel runtime; evaluate `node-postgres` with Fluid compute and Neon's HTTP path before using WebSockets |
-| External demonstration | Isolated Google Sheets and a working storefront sandbox; other targets are explicitly simulated or preview-only |
-| Sheet connector | Composio, for reads and (from the sheet plan's Phase 5) writes; the model never receives a Composio tool |
-| Process logic | For the sheet track, fields, facts and rules are data (CEL formulas), drafted with model help, approved by a person and versioned; see [`SHEET-PROCESS-PLAN.md`](SHEET-PROCESS-PLAN.md#decisions) |
-| Recovery | Verified compensating actions, never an unqualified rollback promise |
-| Execution runtime | Separate Vercel Workflows for proposal generation and approved-effect execution; never a browser- or request-owned batch |
-| Workflow duplication | Each start creates a run; an application operation record and atomic first-step claim prevent duplicate business execution |
-| Duvo relationship | Complementary specialised review and execution boundary; optional runtime adapter is future work |
-| Public access | Fixed scenario, opaque session, strict limits, and replay fallback |
-| Themes | Light and dark from the first milestone |
-| Output | Working public application and written case study |
-| Schedule | No calendar deadline; acceptance-gated milestones |
+| Area                        | Decision                                                                                                                                                                                          |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Positioning                 | Category-general product demonstrated through grocery promotion release                                                                                                                           |
+| Model authority             | Four read-only tools and a validated `PromotionReleasePlan` proposal batch                                                                                                                        |
+| Write authority             | Deterministic application services and connector adapters                                                                                                                                         |
+| UI structure                | Master-detail review workspace with an effects rail                                                                                                                                               |
+| Styling                     | Tailwind CSS plus semantic design tokens                                                                                                                                                          |
+| Interaction primitives      | React Aria Components                                                                                                                                                                             |
+| Runtime and package manager | Node.js 24 LTS with pnpm 10                                                                                                                                                                       |
+| Persistence                 | Neon Postgres with Drizzle ORM                                                                                                                                                                    |
+| Database connection         | Chosen during persistence from the measured Vercel runtime; evaluate `node-postgres` with Fluid compute and Neon's HTTP path before using WebSockets                                              |
+| External demonstration      | Isolated Google Sheets and a working storefront sandbox; other targets are explicitly simulated or preview-only                                                                                   |
+| Sheet connector             | Composio, for reads and (from the sheet plan's Phase 5) writes; the model never receives a Composio tool                                                                                          |
+| Process logic               | For the sheet track, fields, facts and rules are data (CEL formulas), drafted with model help, approved by a person and versioned; see [`SHEET-PROCESS-PLAN.md`](SHEET-PROCESS-PLAN.md#decisions) |
+| Recovery                    | Verified compensating actions, never an unqualified rollback promise                                                                                                                              |
+| Execution runtime           | Separate Vercel Workflows for proposal generation and approved-effect execution; never a browser- or request-owned batch                                                                          |
+| Workflow duplication        | Each start creates a run; an application operation record and atomic first-step claim prevent duplicate business execution                                                                        |
+| Duvo relationship           | Complementary specialised review and execution boundary; optional runtime adapter is future work                                                                                                  |
+| Public access               | Fixed scenario, opaque session, strict limits, and replay fallback                                                                                                                                |
+| Themes                      | Light and dark from the first milestone                                                                                                                                                           |
+| Output                      | Working public application and written case study                                                                                                                                                 |
+| Schedule                    | No calendar deadline; acceptance-gated milestones                                                                                                                                                 |
 
 ## Key terms
 

@@ -35,15 +35,23 @@ export type SwapDirection = 'up' | 'down';
 export type AsideView =
   | { kind: 'input'; id: string }
   | { kind: 'add-input' }
-  | { kind: 'changes'; version: string }
+  // One instructions version: its text, or what changed in it. The face is
+  // where it opens; the panel keeps one key per version whichever it shows.
+  // `passive` when it opened on its own, with the tab: focus stays put.
+  | {
+      kind: 'version';
+      version: string;
+      face: 'text' | 'changes';
+      passive?: boolean;
+    }
   | { kind: 'edit' };
 
 export function viewKey(view: AsideView): string {
   switch (view.kind) {
     case 'input':
       return `input:${view.id}`;
-    case 'changes':
-      return `changes:${view.version}`;
+    case 'version':
+      return `version:${view.version}`;
     default:
       return view.kind;
   }
@@ -64,6 +72,9 @@ export type AsideLayer = {
   // The header on the panel's recess rather than its face, where it has to
   // read as a division from a long body under it.
   band?: boolean;
+  // No visible header: the body starts at the top and names itself. The
+  // heading stays for a screen reader, labelling the panel and taking focus.
+  headless?: boolean;
   body: ReactNode;
 };
 
@@ -88,6 +99,7 @@ export function DrawerAside({
   exiting,
   onExited,
   onLeft,
+  flat = false,
   className,
 }: {
   current: AsideLayer;
@@ -99,6 +111,9 @@ export function DrawerAside({
   exiting: boolean;
   onExited: () => void;
   onLeft: () => void;
+  // In a sheet column the panel is the column, on the sheet's own ground, and
+  // draws no face of its own; over the sheet it is a floating card.
+  flat?: boolean;
   // A width, where the caller has one to give. In a sheet column the column
   // decides; over the sheet, the panel has to state its own.
   className?: string;
@@ -196,7 +211,7 @@ export function DrawerAside({
         if (event.target === event.currentTarget && exiting) onExited();
       }}
       className={cx(
-        PANEL,
+        flat ? 'relative h-full overflow-clip' : PANEL,
         // It fills the column it is given: in the sheet the column decides how
         // wide the detail is, from the width the list beside it leaves.
         'drawer-aside grid min-w-0 grid-cols-[minmax(0,1fr)] grid-rows-[minmax(0,1fr)]',
@@ -240,7 +255,9 @@ function AsideContent({
     >
       <header
         className={cx(
-          'border-rule-faint flex min-w-0 items-start gap-3 border-b p-5',
+          layer.headless
+            ? 'sr-only'
+            : 'border-rule-faint flex min-w-0 items-start gap-3 border-b p-5',
           layer.band && 'bg-surface-inset',
         )}
       >

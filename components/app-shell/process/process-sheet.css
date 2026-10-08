@@ -1,4 +1,12 @@
 @layer components {
+  /* Over the process header (z-10), so a head's band covers its lit line: the
+     swap layer's opacity traps .sheet-bleed's own z-index inside it. */
+  @container sheet (width >= 52rem) {
+    .process-sheet-frame {
+      position: relative;
+      z-index: 11;
+    }
+  }
   .process-sheet-swap[data-swap-entering]
     :is(.process-panel-list, .process-runs-list)
     > :not(.sheet-head),

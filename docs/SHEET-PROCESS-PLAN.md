@@ -494,6 +494,12 @@ Decided 3 October 2026: Brunch weekend is registered in the sidebar from Phase 0
 - The trial views call the same functions as the unit tests, so the screen and the test suite agree.
 - When a step becomes real, its trial detail moves into a disclosure and the step shows the product view.
 
+**8 October 2026: the sheet now holds data only.** For Brunch orders
+(`BRUNCH-ORDERS-PLAN.md`), the spreadsheet was cleaned to Products, Stock,
+Sales, Deliveries and Parameters. Brunch weekend still runs on its captured
+read (`fixtures/avocado-toast/sheet-snapshot.json`, which keeps every tab), but
+a live read of the sheet no longer has the tabs its rulebooks bind.
+
 Built so far (8 October 2026). The page has two places, as a process has: the **run** (its thread) and the **Rulebook tab** (in the process's Instructions slot, since a versioned rulebook a person approves is what a sheet process is told to do). A run only uses the approved rulebook; drafting, answering, testing and approving happen in the tab, outside any run. Every step leads with its outcome in one line, then the reasons one click away, then the evidence (requests, raw values, transcripts) under Technical details.
 
 | Run step       | What it shows                                                                                                                                                                                                                    |

@@ -84,7 +84,8 @@
     height: var(--spacing-sheet-head);
     /* The title starts where every row's text under it starts. The trailing
        side is shorter because a control's face reaches past its ink. */
-    padding-inline: calc(var(--spacing-sheet-inset) + var(--sheet-bleed, 0px)) 0.5rem;
+    padding-inline: calc(var(--spacing-sheet-inset) + var(--sheet-bleed, 0px))
+      calc(0.5rem + var(--sheet-bleed-end, 0px));
     /* Opaque, not a wash: rows pass underneath it. */
     background: var(--sp-sheet-band);
     /* Carry the lit line below the rule on the header itself so it stays
@@ -127,6 +128,27 @@
       /* Over the process header (z-10) and its lit line, so the column's edge
          meets the header's rule and the head's band covers the lit line. */
       z-index: 11;
+    }
+    /* A column of prose, not rows: padded back so only its head crosses the
+       lit edge, as .sheet-bleed-end does at the other side. */
+    .sheet-bleed-head {
+      padding-inline-start: var(--sheet-bleed);
+    }
+    .sheet-bleed-head > .sheet-head {
+      margin-inline-start: calc(var(--sheet-bleed) * -1);
+    }
+    /* A column that runs to the pane's end crosses that lit edge too. Padded
+       back so only its head's band reaches the ring. */
+    .sheet-bleed-end {
+      --sheet-bleed-end: var(--spacing-control-highlight);
+      margin-inline-end: calc(var(--sheet-bleed-end) * -1);
+      padding-inline-end: var(--sheet-bleed-end);
+    }
+    /* The frame's clip rounds one ring-width above the notch's arc, so the
+       band takes the arc's own inner radius or it paints over the ring. */
+    .sheet-bleed-end > .sheet-head {
+      margin-inline-end: calc(var(--sheet-bleed-end) * -1);
+      border-start-end-radius: calc(var(--notch-corner) - var(--spacing-control-edge));
     }
   }
   /* Nothing in the trailing slot may grow the row it sits in. */

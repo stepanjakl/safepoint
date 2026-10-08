@@ -28,6 +28,7 @@
 /* Components. The order is the cascade order of their layered rules. */
 @import '../../components/ui/switch.css';
 @import '../../components/ui/swap.css';
+@import '../../components/ui/filter-tabs.css';
 @import '../../components/app-shell/thread/thread-step.css';
 @import '../../components/app-shell/system/system-parts.css';
 @import '../../components/ui/notch.css';
@@ -45,9 +46,12 @@
 @import '../../components/app-shell/resizable-shell.css';
 @import '../../components/app-shell/workspace-intro.css';
 @import '../../components/app-shell/runs/runs-list.css';
+@import '../../components/app-shell/instructions/text-diff.css';
 @import '../../components/app-shell/runs/run-view.css';
 @import '../../components/review/release-card.css';
 @import '../../components/review/review-queue.css';
+@import '../../components/brunch-orders/orders-run.css';
+@import '../../components/brunch-orders/rules-step.css';
 @import '../../components/ui/brand.css';
 @import '../workbench/run/run-player.css';
 @import '../workbench/run/shimmer-directions.css';

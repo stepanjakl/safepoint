@@ -1,0 +1,62 @@
+/* The quiet face in the rungs of the button's own [data-severity], a rung
+   lighter than on the canvas as it sits on the floating face. Lighter at the
+   top in both themes: Radix's dark rungs climb, so their order flips. */
+@utility control-tone {
+  --control-face-top: light-dark(var(--severity-1), var(--severity-5));
+  --control-face-bottom: light-dark(var(--severity-3), var(--severity-4));
+  --control-ring-top: light-dark(var(--severity-5), var(--severity-7));
+  --control-ring-bottom: light-dark(var(--severity-6), var(--severity-6));
+  --control-highlight: transparent;
+}
+
+@utility control-tone-hover {
+  --control-face-top: light-dark(var(--severity-3), var(--severity-6));
+  --control-face-bottom: light-dark(var(--severity-4), var(--severity-5));
+  --control-ring-top: light-dark(var(--severity-6), var(--severity-7));
+  --control-ring-bottom: light-dark(var(--severity-7), var(--severity-7));
+}
+
+@layer components {
+  /* What the model wrote: its line in a column of its own, the mark centred
+     above it where a label sits beside the mark. */
+  .rules-model {
+    --rules-mark: 0.75rem;
+    display: grid;
+    grid-template-columns: var(--rules-mark) minmax(0, 1fr);
+    column-gap: 0.5rem;
+    row-gap: 0.25rem;
+  }
+  .rules-model::before {
+    content: '';
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: center;
+    width: 1.5px;
+    border-radius: 999px;
+    background-color: var(--sp-state-advisory);
+  }
+  /* Labelled: the mark and label make a row of their own above the line. */
+  .rules-model[data-labelled] {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .rules-model[data-labelled]::before,
+  .rules-model[data-labelled] > .rules-model-body {
+    grid-row: 2;
+  }
+  .rules-model-mark {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+    width: var(--rules-mark);
+    height: var(--rules-mark);
+    color: var(--sp-state-advisory);
+  }
+  .rules-model-label {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .rules-model-body {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}

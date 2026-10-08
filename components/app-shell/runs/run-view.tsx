@@ -46,10 +46,14 @@ export function RunView({
   process,
   recorded,
   playable,
+  liveThread,
 }: {
   process: ProcessSummary;
   recorded: ReactNode;
   playable?: PlayableRun;
+  // A live run's thread, drawn for whichever live run is chosen; it reads
+  // the run from the selection.
+  liveThread?: ReactNode;
 }) {
   const selection = useRunSelection();
   const runs = selection?.runs ?? process.runs;
@@ -65,6 +69,15 @@ export function RunView({
   const page = (id: string): ReactNode => {
     if (id && id === process.runs.find((run) => run.current)?.id)
       return recorded;
+    const live = selection?.live;
+    if (live && liveThread && id === live.run.id) {
+      const at = live.run.startedAt;
+      return (
+        <ThreadPage label={`Run, ${runDay(at)} · ${runTime(at)}`}>
+          {liveThread}
+        </ThreadPage>
+      );
+    }
     const started = selection?.started;
     if (started && playable && id === started.run.id) {
       const at = started.run.startedAt;

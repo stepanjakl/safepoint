@@ -2,190 +2,153 @@
 
 import { useState } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
-import {
-  DISCLOSURE,
-  DISCLOSURE_BODY,
-  SUMMARY,
-} from '@/components/review/review-item-detail';
 import { Button } from '@/components/ui/button';
-import { Ledger, LedgerRow } from '@/components/ui/ledger';
+import { FilterTabs } from '@/components/ui/filter-tabs';
 import { cx } from '@/lib/cx';
 import { diffText, paragraphsOf } from '@/lib/process/instruction-diff';
 import type { ProcessSummary } from '@/lib/process/model';
 import type { AsideView } from '@/components/app-shell/drawer-aside';
-import { NOTE } from '@/components/app-shell/process/panel-parts';
 import {
-  labelDate,
-  useInstructions,
-  type InstructionVersion,
-} from './instructions-store';
-import { pad, TextDiff } from './text-diff';
+  Group,
+  NOTE,
+  SECTION,
+} from '@/components/app-shell/process/panel-parts';
+import { useRunSelection } from '@/components/app-shell/runs/run-selection';
+import { liveRange, useInstructions } from './instructions-store';
+import { TextDiff } from './text-diff';
+
+const pad = (n: number) => String(n).padStart(2, '0');
 
 // A quiet text button. aria-expanded holds the selected face while the side
 // panel it opened is showing, so the drawer says which of its items is open;
 // pressing it again closes that panel.
 const QUIET =
   'control-wash text-muted hover:bg-surface-selected hover:text-primary focus-visible:bg-surface-selected focus-visible:text-primary aria-expanded:bg-surface-selected aria-expanded:text-primary data-[disabled]:cursor-not-allowed rounded-control text-meta inline-flex min-h-8 cursor-pointer items-center gap-1.5 px-2';
+// A version in the list, faced as an input row is (inputs-list.tsx): the
+// wash bleeds by the list inset, and the row stays selected while it is open.
+const ROW =
+  'control-wash hover:bg-surface-hover focus-visible:bg-surface-hover aria-expanded:bg-surface-selected aria-expanded:text-primary rounded-control -mx-sheet-inset px-sheet-inset grid min-h-11 w-[calc(100%+2*var(--spacing-sheet-inset))] cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3 py-2 text-left';
 const FIELD =
   'field text-dense text-primary field-sizing-content w-full resize-none px-3 py-2.5 leading-relaxed';
+
+function Paragraphs({ text }: { text: string }) {
+  return (
+    <div className="text-dense grid gap-3 leading-relaxed">
+      {paragraphsOf(text).map((paragraph, index) => (
+        <p key={index} className="whitespace-pre-line">
+          {paragraph}
+        </p>
+      ))}
+    </div>
+  );
+}
+
 /*
-  The process's instructions as they stand, in the drawer. Reading happens
-  here; everything that takes room -- what changed in a version, the editor --
-  opens in the side panel, so the current text stays in view beside it.
+  Every version the process's instructions have been, newest first, in the
+  drawer. A version opens in the side panel -- its text, and what changed in
+  it -- and the latest opens there with the tab, so the list is all this
+  column holds.
 
   Editing never changes a published version: a draft is its own thing until
   it is published, and publishing appends, so "Ran under v4" on a run keeps
-  meaning what it said.
+  meaning what it said. Each version says how many runs ran under it, which
+  is what makes one result comparable with another.
 */
 export function InstructionsPanel({
   process,
   aside,
-  onShowChanges,
+  onShowVersion,
   onEdit,
 }: {
   process: ProcessSummary;
   aside: AsideView | null;
-  onShowChanges: (version: string) => void;
+  onShowVersion: (version: string) => void;
   onEdit: () => void;
 }) {
-  const store = useInstructions(process.id, process.instructions);
-  const { current, versions, next, draft } = store;
-  const previous = versions.at(-2);
+  const { current, versions, next, draft } = useInstructions(
+    process.id,
+    process.instructions,
+  );
   const editing = aside?.kind === 'edit';
-  const showing = aside?.kind === 'changes' ? aside.version : null;
-
-  const startEditing = () => {
-    if (draft === null) store.saveDraft(current.text);
-    onEdit();
-  };
+  const showing = aside?.kind === 'version' ? aside.version : null;
+  // The runs the rail lists, a run started here included.
+  const runs = useRunSelection()?.runs ?? process.runs;
+  const ranUnder = (version: string) =>
+    runs.filter((run) => run.instructionsVersion === version).length;
 
   return (
-    <div className="grid gap-4 p-5">
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-meta text-muted">
-          <span className="value">{current.version}</span> ·{' '}
-          {current.updatedLabel} · {current.author}
-        </p>
-        <AriaButton
-          className={cx(QUIET, '-my-1')}
-          aria-expanded={editing}
-          onPress={startEditing}
-        >
-          {draft === null ? 'Edit' : 'Continue draft'}
-        </AriaButton>
-      </div>
-      {draft !== null && !editing ? (
-        <p className="text-meta bg-surface-inset rounded-control flex flex-wrap items-center justify-between gap-2 px-3 py-2">
-          <span>
-            Unpublished draft of <span className="value">{next}</span>
-          </span>
-          <AriaButton
-            className={cx(QUIET, '-my-1.5')}
-            onPress={store.discardDraft}
-          >
-            Discard
-          </AriaButton>
-        </p>
-      ) : null}
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5 p-5">
+      <Group labelledBy={SECTION.instructions.id}>
+        <ol className="grid gap-px">
+          {draft !== null ? (
+            <li>
+              <AriaButton
+                className={ROW}
+                aria-expanded={editing}
+                onPress={onEdit}
+              >
+                <span className="grid gap-0.5">
+                  <span>
+                    <span className="value">{next}</span>
+                    <span className="text-muted"> · Draft</span>
+                  </span>
+                  <span className="text-meta text-muted">
+                    Unpublished, saved in this browser
+                  </span>
+                </span>
+              </AriaButton>
+            </li>
+          ) : null}
+          {[...versions].reverse().map((version, reversed) => {
+            const index = versions.length - 1 - reversed;
+            const count = ranUnder(version.version);
+            return (
+              <li key={version.version}>
+                <AriaButton
+                  className={ROW}
+                  aria-expanded={showing === version.version}
+                  onPress={() => onShowVersion(version.version)}
+                >
+                  <span className="grid gap-0.5">
+                    <span>
+                      <span className="value">{version.version}</span>
+                      {version === current ? (
+                        <span className="text-muted"> · Current</span>
+                      ) : null}
+                    </span>
+                    <span className="text-meta text-muted">
+                      {liveRange(versions, index)} · {version.author}
+                    </span>
+                  </span>
+                  <span className="text-meta text-muted whitespace-nowrap">
+                    {count === 0 ? (
+                      'No runs'
+                    ) : (
+                      <>
+                        <span className="value text-primary">{count}</span>{' '}
+                        {count === 1 ? 'run' : 'runs'}
+                      </>
+                    )}
+                  </span>
+                </AriaButton>
+              </li>
+            );
+          })}
+        </ol>
+      </Group>
 
-      <div className="text-dense grid gap-3 leading-relaxed">
-        {paragraphsOf(current.text).map((paragraph, index) => (
-          <p key={index} className="whitespace-pre-line">
-            {paragraph}
-          </p>
-        ))}
-      </div>
-
-      {previous ? (
-        // The panel opens to the drawer's left, and the arrow says so.
-        <AriaButton
-          className={cx(QUIET, '-mx-2 w-fit')}
-          aria-expanded={showing === current.version}
-          onPress={() => onShowChanges(current.version)}
-        >
-          <span aria-hidden="true">←</span> What changed from{' '}
-          <span className="value">{previous.version}</span>
-        </AriaButton>
-      ) : null}
-
-      <div>
-        <details className={DISCLOSURE}>
-          <summary className={SUMMARY}>
-            History{' '}
-            <span>
-              {versions.length} {versions.length === 1 ? 'version' : 'versions'}
-            </span>
-          </summary>
-          <div className={DISCLOSURE_BODY}>
-            <ol className="grid gap-5">
-              {[...versions].reverse().map((version, reversed) => {
-                const index = versions.length - 1 - reversed;
-                const isCurrent = index === versions.length - 1;
-                return (
-                  <li key={version.version} className="grid gap-1.5">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="grid gap-0.5">
-                        <p>
-                          <span className="value">{version.version}</span>
-                          {isCurrent ? (
-                            <span className="text-muted"> · Current</span>
-                          ) : index === 0 ? (
-                            <span className="text-muted"> · First</span>
-                          ) : null}
-                        </p>
-                        <p className="text-meta text-muted">
-                          {version.updatedLabel} · {version.author}
-                        </p>
-                      </div>
-                      <div className="-my-1 flex flex-none gap-1">
-                        {index > 0 ? (
-                          <AriaButton
-                            className={QUIET}
-                            aria-label={`Show what changed in ${version.version}`}
-                            aria-expanded={showing === version.version}
-                            onPress={() => onShowChanges(version.version)}
-                          >
-                            Changes
-                          </AriaButton>
-                        ) : null}
-                        {isCurrent ? null : (
-                          <AriaButton
-                            className={QUIET}
-                            aria-label={`Restore ${version.version} as a draft`}
-                            onPress={() => {
-                              store.saveDraft(version.text);
-                              onEdit();
-                            }}
-                          >
-                            Restore
-                          </AriaButton>
-                        )}
-                      </div>
-                    </div>
-                    {version.note ? (
-                      <p className="text-meta text-muted leading-normal">
-                        {version.note}
-                      </p>
-                    ) : null}
-                    {version.changes.length > 0 ? (
-                      <p className="text-micro text-muted">
-                        <span className="value">{version.changes.length}</span>{' '}
-                        {version.changes.length === 1
-                          ? 'change logged'
-                          : 'changes logged'}
-                      </p>
-                    ) : null}
-                  </li>
-                );
-              })}
-            </ol>
-          </div>
-        </details>
-      </div>
-
+      {/* Only a process with a recorded run can say what it ran under; a new
+          run started here records its own version. */}
       <p className={NOTE}>
-        Saved in this browser. The recorded run ran under{' '}
-        <span className="value">{process.instructions.version}</span>;
+        Saved in this browser.{' '}
+        {process.runs.some((run) => run.current) ? (
+          <>
+            The recorded run ran under{' '}
+            <span className="value">{process.instructions.version}</span>;
+          </>
+        ) : (
+          'A run started from now on runs under the version current then;'
+        )}{' '}
         publishing a new version does not run anything.
       </p>
     </div>
@@ -193,117 +156,71 @@ export function InstructionsPanel({
 }
 
 /*
-  One version's change, in the side panel, in the order a reviewer asks about
-  it: why it was made, by whom and prompted by what, what its author says
-  changed, and then the text itself. A pager steps through the other changes
-  once there is more than one.
+  One version, in the side panel: its text, or -- one press away -- what
+  changed in it from the one before. The current version is edited from here;
+  an earlier one is restored as a draft, never republished as it stands.
 */
-export function InstructionChanges({
-  from,
-  to,
-  position,
-  total,
-  earlier,
-  later,
-  onShow,
+export function InstructionVersionView({
+  process,
+  version,
+  face,
+  onEdit,
 }: {
-  from: InstructionVersion;
-  to: InstructionVersion;
-  position: number;
-  total: number;
-  earlier?: string;
-  later?: string;
-  onShow: (version: string) => void;
+  process: ProcessSummary;
+  version: string;
+  face: 'text' | 'changes';
+  onEdit: () => void;
 }) {
+  const store = useInstructions(process.id, process.instructions);
+  const { versions, current, draft } = store;
+  const index = versions.findIndex((entry) => entry.version === version);
+  const to = versions[index];
+  const from = index > 0 ? versions[index - 1] : undefined;
+  const [shown, setShown] = useState(from ? face : 'text');
+  if (!to) return null;
+  const isCurrent = to === current;
+  const changesLabel = from ? `Changes from ${from.version}` : '';
+
   return (
-    <div className="grid gap-6 p-5">
-      {to.note ? (
-        <section aria-labelledby="change-why" className="grid gap-1.5">
-          <h3 id="change-why" className="readout text-muted">
-            Why
-          </h3>
-          <p className="text-body text-primary leading-relaxed">{to.note}</p>
-        </section>
-      ) : null}
-
-      <Ledger className="border-rule-faint -mx-5 border-y">
-        <LedgerRow label="Version" className="px-5">
-          <span className="value">{to.version}</span> replaces{' '}
-          <span className="value">{from.version}</span>
-          <span className="text-muted"> · {from.updatedLabel}</span>
-        </LedgerRow>
-        <LedgerRow label="Published" className="px-5">
-          {/* The row names the event, so the label's own verb goes. */}
-          {labelDate(to.updatedLabel)}
-        </LedgerRow>
-        <LedgerRow label="By" className="px-5">
-          {to.author}
-        </LedgerRow>
-        {to.promptedBy ? (
-          <LedgerRow label="Prompted by" className="px-5">
-            {to.promptedBy}
-          </LedgerRow>
-        ) : null}
-      </Ledger>
-
-      {to.changes.length > 0 ? (
-        <section aria-labelledby="change-log" className="grid gap-2">
-          <h3 id="change-log" className="readout text-muted">
-            Change log <span className="value">{to.changes.length}</span>
-          </h3>
-          <ol className="grid gap-2.5">
-            {to.changes.map((change, index) => (
-              <li
-                key={change}
-                className="text-dense grid grid-cols-[2rem_minmax(0,1fr)] gap-x-3 leading-relaxed"
-              >
-                <span className="value text-meta text-muted pt-0.5">
-                  {pad(index + 1)}
-                </span>
-                <span>{change}</span>
-              </li>
-            ))}
-          </ol>
-        </section>
-      ) : null}
-
-      <section aria-labelledby="change-text" className="grid gap-2">
-        <h3 id="change-text" className="readout text-muted">
-          Text
-        </h3>
-        <TextDiff
-          key={to.version}
-          before={from.text}
-          after={to.text}
-          from={from.version}
-          to={to.version}
-        />
-      </section>
-
-      {total > 1 ? (
-        <nav
-          aria-label="Other changes"
-          className="border-rule-faint flex items-center justify-between gap-3 border-t pt-4"
+    <div className="grid gap-4 p-5">
+      <div className="flex items-center justify-between gap-3">
+        {from ? (
+          <FilterTabs
+            tabs={[
+              { key: 'text', short: 'Text', label: 'Text' },
+              { key: 'changes', short: changesLabel, label: changesLabel },
+            ]}
+            selected={shown}
+            onChange={setShown}
+            leadKey={null}
+            ariaLabel={`Instructions ${to.version}`}
+            menuLabel="Other views"
+            className="w-fit"
+          />
+        ) : (
+          <span />
+        )}
+        <AriaButton
+          className={cx(QUIET, '-me-2')}
+          onPress={() => {
+            // Restoring replaces any draft; editing the current one keeps it.
+            if (!isCurrent) store.saveDraft(to.text);
+            else if (draft === null) store.saveDraft(current.text);
+            onEdit();
+          }}
         >
-          <AriaButton
-            className={QUIET}
-            isDisabled={!earlier}
-            onPress={() => earlier && onShow(earlier)}
-          >
-            <span aria-hidden="true">←</span> Earlier change
-          </AriaButton>
-          <span className="value text-meta text-muted">
-            {pad(position)} / {pad(total)}
-          </span>
-          <AriaButton
-            className={QUIET}
-            isDisabled={!later}
-            onPress={() => later && onShow(later)}
-          >
-            Later change <span aria-hidden="true">→</span>
-          </AriaButton>
-        </nav>
-      ) : null}
+          {isCurrent
+            ? draft === null
+              ? 'Edit'
+              : 'Continue draft'
+            : 'Restore as draft'}
+        </AriaButton>
+      </div>
+      {shown === 'changes' && from ? (
+        <TextDiff before={from.text} after={to.text} label={changesLabel} />
+      ) : (
+        <Paragraphs text={to.text} />
+      )}
     </div>
   );
 }
@@ -359,8 +276,7 @@ export function InstructionEditor({
         <TextDiff
           before={current.text}
           after={normalised}
-          from={current.version}
-          to={next}
+          label={`Changes from ${current.version}`}
         />
         <label className="text-meta text-muted grid gap-1.5">
           Why this change (optional)

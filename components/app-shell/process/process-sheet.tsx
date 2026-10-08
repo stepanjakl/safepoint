@@ -77,6 +77,7 @@ export function ProcessSheet({
   initialRunId = null,
   playable,
   policy,
+  liveThread,
 }: {
   process: ProcessSummary;
   inputs?: SystemLink[];
@@ -84,6 +85,8 @@ export function ProcessSheet({
   // The current run's thread, built on the server.
   run: ReactNode;
   policy?: ProcessPolicy;
+  // Where a process runs step by step on the page: the live run's thread.
+  liveThread?: ReactNode;
   // The run to open on, from the address; none opens on the empty page.
   initialRunId?: string | null;
   // What a started run is drawn from, where this process can play one.
@@ -119,7 +122,7 @@ export function ProcessSheet({
     setTab(next);
   };
   const showVersion = (version: string) =>
-    ask({ kind: 'changes', version }, 'instructions');
+    ask({ kind: 'version', version, face: 'changes' }, 'instructions');
   // The selected tab answers at once; its previous body fades before the new
   // section arrives, without moving the dividers inside either layout.
   const { shown, layer, entering } = useSwap(tab, TAB_MOTION, chosen);
@@ -148,6 +151,7 @@ export function ProcessSheet({
     process,
     initialRunId,
     canPlay: playable !== undefined,
+    liveThread: liveThread !== undefined,
     version,
   });
 
@@ -166,7 +170,7 @@ export function ProcessSheet({
         {/* The frame the tab bodies trade places in, clipped to the pane's inner
             radius so a body or its scrollbar never crosses the corner's edge. */}
         <ProcessContentTransition
-          className="shell:grid shell:min-h-0 shell:grid-rows-[minmax(0,1fr)] rounded-b-shell-inner rounded-tr-shell-inner clip-past-pane-highlight grid-cols-[minmax(0,1fr)] overflow-clip"
+          className="process-sheet-frame shell:grid shell:min-h-0 shell:grid-rows-[minmax(0,1fr)] rounded-b-shell-inner rounded-tr-shell-inner clip-past-pane-highlight grid-cols-[minmax(0,1fr)] overflow-clip"
           finishesLeaving
         >
           <motion.div
@@ -209,6 +213,7 @@ export function ProcessSheet({
                       process={process}
                       recorded={run}
                       playable={playable}
+                      liveThread={liveThread}
                     />
                   </ProcessSheetActions>
                 </div>
@@ -245,7 +250,7 @@ export function ProcessSheet({
 function PolicyPanel({ policy }: { policy: ProcessPolicy }) {
   return (
     <div className="process-panels grid h-full min-h-0 grid-cols-[minmax(0,1fr)]">
-      <div className="process-panel-list shell:min-h-0 shell:overflow-y-auto shell:overscroll-contain min-w-0">
+      <div className="process-panel-list sheet-bleed sheet-bleed-head sheet-bleed-end shell:min-h-0 shell:overflow-y-auto shell:overscroll-contain min-w-0">
         <SectionRow id="policy-heading" title={policy.label}>
           <span className="bg-menu-chip value text-micro text-muted-strong rounded-control px-1.5 py-0.5">
             {policy.version}

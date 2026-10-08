@@ -16,6 +16,10 @@ import {
   brunchPlan,
   brunchProcess,
 } from '@/lib/processes/avocado-toast/process';
+import {
+  brunchOrdersPlan,
+  brunchOrdersProcess,
+} from '@/lib/processes/brunch-orders/process';
 import { ProcessMenu } from '@/components/app-shell/sidebar/process-menu';
 import {
   ShellPageTransition,
@@ -48,6 +52,12 @@ export async function AppShell({ children }: { children: ReactNode }) {
             href: processHref(brunchProcess.id),
             name: brunchProcess.name,
             plan: brunchPlan,
+          }),
+          processNavigationItem({
+            id: brunchOrdersProcess.id,
+            href: processHref(brunchOrdersProcess.id),
+            name: brunchOrdersProcess.name,
+            plan: brunchOrdersPlan,
           }),
         ]
       : []),

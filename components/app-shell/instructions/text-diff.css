@@ -1,0 +1,19 @@
+/* ── Instructions diff ──────────────────────────────────────────────────────
+   The tints under a paragraph taken out or put in, and the signs beside
+   it (text-diff.tsx).
+   ────────────────────────────────────────────────────────────────────────── */
+
+@theme inline {
+  --color-diff-added: var(--sp-diff-added);
+  --color-diff-removed: var(--sp-diff-removed);
+  --color-diff-added-sign: var(--sp-diff-added-sign);
+  --color-diff-removed-sign: var(--sp-diff-removed-sign);
+}
+
+:root {
+  --sp-diff-added: var(--sp-state-verified-3);
+  --sp-diff-removed: var(--sp-state-blocked-3);
+  /* The sign a step quieter than the words: it marks the row, they are read. */
+  --sp-diff-added-sign: var(--sp-state-verified-9);
+  --sp-diff-removed-sign: var(--sp-state-blocked-9);
+}

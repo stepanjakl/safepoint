@@ -1,0 +1,145 @@
+@layer components {
+  /* Scaffolding for trying the step, not one of its states: neutral and dashed. */
+  .brunch-read-trial {
+    border: 1px dashed var(--sp-rule-default);
+    background-color: var(--sp-surface-inset);
+  }
+
+  /* The read's own header, outside its card: a run stage's row, washed across
+     its width, opening the card the way a stage opens its body. */
+  .brunch-read-head {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-control);
+    cursor: pointer;
+    color: var(--sp-text-muted-strong);
+    transition:
+      color var(--duration-state) ease-out,
+      background-color var(--duration-state) ease-out;
+  }
+  .brunch-read-icon {
+    flex: none;
+    width: var(--thread-mark);
+    height: var(--thread-mark);
+    color: var(--sp-state-verified-9);
+  }
+  .brunch-read-name {
+    font-size: var(--sp-text-dense);
+    line-height: var(--sp-text-dense--lh);
+    font-weight: 550;
+  }
+  /* The success pill ends the row; the chevron after it is only a reveal. */
+  .brunch-read-done {
+    margin-inline-start: auto;
+  }
+  .brunch-read-chevron {
+    flex: none;
+    width: 1.375rem;
+    height: 1.375rem;
+    /* Pulls the drawn triangle to the padding, as a stage's chevron does. */
+    margin-inline: -0.25rem;
+    color: var(--sp-text-muted);
+    opacity: 0;
+    rotate: -90deg;
+    transition:
+      rotate var(--duration-state) ease-out,
+      opacity var(--duration-state) ease-out;
+  }
+  .brunch-read[data-open] .brunch-read-chevron {
+    rotate: 0deg;
+  }
+  .brunch-read-head:focus-visible {
+    color: var(--sp-text-primary);
+    background-color: var(--sp-surface-hover);
+    .brunch-read-chevron {
+      opacity: 1;
+    }
+    .brunch-read-count {
+      background-color: var(--sp-thread-fact-face-hover);
+    }
+  }
+  @media (hover: hover) {
+    .brunch-read-head:hover {
+      color: var(--sp-text-primary);
+      background-color: var(--sp-surface-hover);
+      .brunch-read-chevron {
+        opacity: 1;
+      }
+      .brunch-read-count {
+        background-color: var(--sp-thread-fact-face-hover);
+      }
+    }
+  }
+
+  /* Paced by .thread-fold, as a stage is: room first, then the card fades in;
+     shutting fades it first, then gives the room back. */
+  .brunch-read {
+    display: grid;
+  }
+  .brunch-read-fold {
+    display: grid;
+    grid-template-rows: 0fr;
+  }
+  .brunch-read[data-open] .brunch-read-fold {
+    grid-template-rows: 1fr;
+    transition-delay: 0s;
+  }
+  .brunch-read-clip {
+    min-height: 0;
+    overflow: clip;
+    overflow-clip-margin: 0.25rem;
+  }
+  .brunch-read-card {
+    margin-top: 0.5rem;
+    opacity: 0;
+    transition: opacity var(--thread-fade) ease-out;
+  }
+  .brunch-read[data-open] .brunch-read-card {
+    opacity: 1;
+    transition-delay: var(--thread-fold-duration);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .brunch-read-fold,
+    .brunch-read-card,
+    .brunch-read-chevron {
+      transition: none;
+    }
+  }
+
+  /* The tabs as the release card's rows, at the card's 4 inset. */
+  .brunch-read-rows {
+    --release-list-inset: calc(var(--spacing) * 4);
+  }
+  /* Leaves the app: quiet until it is the target, then it inks and
+     underlines, so it does not read as one of the card's controls. */
+  .brunch-read-external {
+    color: var(--sp-text-muted);
+    text-underline-offset: 0.2em;
+    transition: color var(--duration-state) ease-out;
+  }
+  .brunch-read-external:is(:hover, :focus-visible) {
+    color: var(--sp-text-primary);
+    text-decoration-line: underline;
+  }
+
+  .brunch-read-card[data-revealing] .brunch-read-enter {
+    animation: brunch-read-item-in 360ms var(--ease-out-quad) both;
+    animation-delay: calc(var(--brunch-read-index, 0) * 90ms);
+  }
+  @keyframes brunch-read-item-in {
+    from {
+      opacity: 0;
+      translate: 0 -0.125rem;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .brunch-read-card[data-revealing] .brunch-read-enter {
+      animation: none;
+    }
+  }
+}

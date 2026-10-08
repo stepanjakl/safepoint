@@ -2,6 +2,10 @@ import {
   BRUNCH_HREF,
   brunchProcess,
 } from '@/lib/processes/avocado-toast/process';
+import {
+  BRUNCH_ORDERS_HREF,
+  brunchOrdersProcess,
+} from '@/lib/processes/brunch-orders/process';
 import type { ProcessSummary } from './model';
 import { promotionProcess, supportProcess } from './placeholder-process';
 
@@ -15,7 +19,11 @@ export const PROCESS_ROUTES: { process: ProcessSummary; href: string }[] = [
   { process: supportProcess, href: '/examples/support' },
   // Built in the open, development only (docs/SHEET-PROCESS-PLAN.md).
   ...(process.env.NODE_ENV === 'development'
-    ? [{ process: brunchProcess, href: BRUNCH_HREF }]
+    ? [
+        { process: brunchProcess, href: BRUNCH_HREF },
+        // Built step by step (docs/BRUNCH-ORDERS-PLAN.md).
+        { process: brunchOrdersProcess, href: BRUNCH_ORDERS_HREF },
+      ]
     : []),
 ];
 

@@ -66,6 +66,7 @@ export function DrawerPanels({
   closeLabel,
   aside,
   onKeyDownCapture,
+  width = 'content',
   className,
   children,
 }: {
@@ -75,6 +76,7 @@ export function DrawerPanels({
   // The second panel, while it is showing or leaving. Given the aside width.
   aside: ReactElement | null;
   onKeyDownCapture?: (event: KeyboardEvent) => void;
+  width?: 'content' | 'fixed';
   // A hook for the list inside the first panel.
   className?: string;
   // The first panel's body, under its header.
@@ -87,9 +89,10 @@ export function DrawerPanels({
     >
       {aside}
       <div
+        data-drawer-main
         className={cx(
           PANEL,
-          MAIN_WIDTH,
+          width === 'fixed' ? DRAWER_ASIDE_WIDTH : MAIN_WIDTH,
           'flex flex-col',
           // Where both do not fit, the second panel takes this one's place
           // rather than squeezing beside it.

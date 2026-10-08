@@ -174,24 +174,106 @@
     }
   }
 
-  /* The arrow says the row opens something, and leans toward its corner when
-     the row is the pointer's or the keyboard's. */
+  /* The arrow says the row opens something. It arrives as the brunch read's
+     rows' does: room first, then the arrow. Rows share columns, so the room is
+     made by sliding the lit row's own trailing cells, not by widening a column
+     every row shares; the arrow sits in the end padding, outside them. */
+  .release-row:has(> .release-row-arrow) {
+    --release-arrow-room: calc(0.875rem + 0.25rem);
+    --release-row-pad: calc(var(--spacing) * 6);
+    position: relative;
+  }
+  @container (width < 25rem) {
+    .release-row:has(> .release-row-arrow) {
+      --release-row-pad: calc(var(--spacing) * 4);
+    }
+  }
+  .release-list .release-row:has(> .release-row-arrow) {
+    --release-row-pad: var(--release-list-inset);
+  }
+  /* Arriving, it fades in where it rests and leans up into its corner, full
+     size from the start; leaving, it shrinks back as it fades, as the
+     Instructions arrow does. Each direction takes its own timing list. */
   .release-row-arrow {
+    position: absolute;
+    inset-inline-end: var(--release-row-pad);
+    top: 50%;
+    display: flex;
+    translate: 0 -50%;
+    color: var(--sp-text-primary);
+    opacity: 0;
+    scale: 0.5;
+    --release-arrow-lean: 2px;
     transition:
-      color var(--duration-state) ease-out,
+      opacity var(--duration-state) ease-out,
+      scale var(--duration-state) ease-out,
       transform var(--duration-state) ease-out;
   }
-  .release-row:focus-visible .release-row-arrow {
-    transform: translate(2px, -2px);
+  /* The slide, with the colour and face timings its cells already had: one
+     transition list per element, or the later rule drops the earlier's. */
+  .release-row-trail,
+  .release-row-trail-wide {
+    transition:
+      translate var(--duration-state) ease-out,
+      color var(--duration-state) ease-out,
+      background-color var(--duration-state) ease-out;
+  }
+  /* Lit: by the keyboard, by an open item, or by the pointer where it is real. */
+  .release-row:has(> .release-row-arrow):is(:focus-visible, [aria-expanded='true']) {
+    .release-row-arrow {
+      opacity: 1;
+      scale: 1;
+      transform: translate(var(--release-arrow-lean), calc(var(--release-arrow-lean) * -1));
+      transition:
+        opacity var(--duration-state) ease-out var(--duration-state),
+        scale 0s,
+        transform var(--duration-state) ease-out var(--duration-state);
+    }
+    .release-row-trail {
+      translate: calc(var(--release-arrow-room) * -1) 0;
+    }
+    .release-row-subject {
+      padding-inline-end: var(--release-arrow-room);
+    }
   }
   @media (hover: hover) {
-    .release-row:hover .release-row-arrow {
-      transform: translate(2px, -2px);
+    .release-row:has(> .release-row-arrow):hover {
+      .release-row-arrow {
+        opacity: 1;
+        scale: 1;
+        transform: translate(var(--release-arrow-lean), calc(var(--release-arrow-lean) * -1));
+        transition:
+          opacity var(--duration-state) ease-out var(--duration-state),
+          scale 0s,
+          transform var(--duration-state) ease-out var(--duration-state);
+      }
+      .release-row-trail {
+        translate: calc(var(--release-arrow-room) * -1) 0;
+      }
+      .release-row-subject {
+        padding-inline-end: var(--release-arrow-room);
+      }
+    }
+  }
+  /* Beside the count on its line only where the card is wide; narrower, it
+     drops under the subject and keeps still. */
+  @container (width >= 25rem) {
+    .release-row:has(> .release-row-arrow):is(:focus-visible, [aria-expanded='true'])
+      .release-row-trail-wide {
+      translate: calc(var(--release-arrow-room) * -1) 0;
+    }
+    @media (hover: hover) {
+      .release-row:has(> .release-row-arrow):hover .release-row-trail-wide {
+        translate: calc(var(--release-arrow-room) * -1) 0;
+      }
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .release-row-arrow {
-      transition: color var(--duration-state) ease-out;
+    .release-row-arrow,
+    .release-row-trail,
+    .release-row-trail-wide {
+      --release-arrow-lean: 0px;
+      transition: none;
     }
   }
 
@@ -201,7 +283,9 @@
   .release-row-subject {
     color: var(--sp-text-primary);
     font-weight: var(--font-weight-medium);
-    transition: color var(--duration-state) ease-out;
+    transition:
+      color var(--duration-state) ease-out,
+      padding-inline-end var(--duration-state) ease-out;
   }
   .release-row[data-seen] .release-row-subject {
     color: var(--sp-release-seen-ink);

@@ -800,6 +800,107 @@
     text-align: start;
     transition: color var(--duration-state) ease-out;
   }
+  /* A fixed request can still open its source. Keep the wash on the title
+     and version alone rather than across the thread row. */
+  .thread-step-heading-action {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    justify-self: start;
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    height: var(--thread-rail);
+    padding-inline-end: 0.375rem;
+    border-radius: var(--radius-control);
+    cursor: pointer;
+    color: var(--sp-text-muted-strong);
+    transition: color var(--duration-state) ease-out;
+  }
+  .thread-step-heading-action::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: calc(var(--thread-wash-y) * -1) 0 calc(var(--thread-wash-y) * -1)
+      calc(var(--thread-wash-x) * -1);
+    border-radius: var(--radius-control);
+    background-color: var(--sp-surface-hover);
+    opacity: 0;
+    transition: opacity var(--duration-state) ease-out;
+  }
+  .thread-step-heading-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+  .thread-step-heading-action .thread-marker {
+    flex: none;
+    width: var(--thread-rail);
+  }
+  .thread-step-heading-action .thread-dot {
+    cursor: pointer;
+  }
+  .thread-step-heading-name {
+    font-size: var(--sp-text-dense);
+    line-height: var(--sp-text-dense--lh);
+    font-weight: 550;
+  }
+  .thread-step-heading-arrow {
+    flex: none;
+    width: 0;
+    height: 0.75rem;
+    margin-inline-start: -0.125rem;
+    color: var(--sp-text-muted);
+    opacity: 0;
+    overflow: hidden;
+    transition:
+      width var(--duration-state) ease-out,
+      opacity var(--duration-state) ease-out;
+  }
+  .thread-step-heading-action:focus-visible {
+    color: var(--sp-text-primary);
+  }
+  .thread-step-heading-action:focus-visible .thread-dot {
+    color: var(--sp-text-muted-soft);
+  }
+  .thread-step-heading-action:focus-visible::before {
+    opacity: 1;
+  }
+  .thread-step-heading-action:focus-visible .thread-step-heading-pill {
+    color: var(--sp-text-muted-strong);
+    background-color: var(--sp-thread-link-face-hover);
+  }
+  .thread-step-heading-action:focus-visible .thread-step-heading-arrow {
+    width: 0.75rem;
+    opacity: 1;
+    transition-delay: 0ms, var(--duration-state);
+  }
+  @media (hover: hover) {
+    .thread-step-heading-action:hover {
+      color: var(--sp-text-primary);
+    }
+    .thread-step-heading-action:hover .thread-dot {
+      color: var(--sp-text-muted-soft);
+    }
+    .thread-step-heading-action:hover::before {
+      opacity: 1;
+    }
+    .thread-step-heading-action:hover .thread-step-heading-pill {
+      color: var(--sp-text-muted-strong);
+      background-color: var(--sp-thread-link-face-hover);
+    }
+    .thread-step-heading-action:hover .thread-step-heading-arrow {
+      width: 0.75rem;
+      opacity: 1;
+      transition-delay: 0ms, var(--duration-state);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .thread-step-heading-arrow {
+      transition: none;
+    }
+  }
   /* The running step's name catches the beat: as the dot starts to swell, one
      pass leaves the marker in the beat's light and glides across the name,
      fading into the ink as it goes, then rests until the next. The lead and cycle repeat
@@ -1092,8 +1193,11 @@
     display: grid;
     grid-template-rows: 0fr;
     min-width: 0;
-    /* The body's open height in px, published by the step as it resizes; the
-       fallback is a typical body, for the frame before it is measured. */
+  }
+  /* A step's fold, or one inside its body (.thread-fold), paced alike. The
+     body's open height in px is published as it resizes; the fallback is a
+     typical body, for the frame before it is measured. */
+  :is(.thread-step-fold, .thread-fold) {
     --thread-fold-duration: clamp(
       var(--thread-fold-min),
       calc(var(--thread-fold-height, 230) * var(--thread-fold-pace)),
@@ -1205,6 +1309,9 @@
     .thread-step-fold {
       grid-column: 1;
       grid-row: 3;
+    }
+    .thread-step[data-heading-action] .thread-step-fold {
+      grid-row: 2;
     }
   }
 }

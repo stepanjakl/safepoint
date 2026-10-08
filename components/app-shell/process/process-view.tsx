@@ -17,6 +17,7 @@ export function ProcessView({
   initialRunId = null,
   playable,
   policy,
+  liveThread,
   children,
 }: {
   process: ProcessSummary;
@@ -28,6 +29,8 @@ export function ProcessView({
   playable?: PlayableRun;
   // A process's own policy panel in place of the instructions tab.
   policy?: ProcessPolicy;
+  // A process run step by step on the page: its live run's thread.
+  liveThread?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -39,6 +42,7 @@ export function ProcessView({
       initialRunId={initialRunId}
       playable={playable}
       policy={policy}
+      liveThread={liveThread}
     />
   );
 }

@@ -79,26 +79,44 @@ test('Add opens the preview panel and closes back onto itself', async ({
   await expect(add).toBeFocused();
 });
 
-test('instructions open a version’s changes and the editor', async ({
+test('instructions open their latest version beside the list of versions', async ({
   page,
 }) => {
   await openTab(page, 'Instructions');
-  const changes = page.getByRole('button', { name: 'What changed from v3' });
-  await changes.click();
-  await expect(drawerTitle(page, /What changed in v4/)).toBeVisible();
-  await page.keyboard.press('Escape');
-  await expect(drawer(page)).toHaveCount(0);
-  await expect(changes).toBeFocused();
+  const versions = page.getByRole('region', { name: /^Instructions/ });
+  const current = versions.getByRole('button', { name: /^v4 · Current/ });
+  // The latest opens with the tab, and leaves focus where it was.
+  await expect(drawerTitle(page, 'Version v4')).toBeAttached();
+  await expect(current).toHaveAttribute('aria-expanded', 'true');
+  const diff = drawer(page).getByRole('list', { name: 'Changes from v3' });
+  await expect(diff).toHaveCount(0);
+  // Each version says how many runs ran under it.
+  await expect(current).toContainText('run');
 
-  const edit = page.getByRole('button', { name: 'Edit', exact: true });
-  await edit.click();
+  // The same panel turns to what changed, and back.
+  const changes = drawer(page).getByRole('radio', { name: 'Changes from v3' });
+  await changes.click();
+  await expect(changes).toBeChecked();
+  await expect(diff).toBeVisible();
+  await expect(diff.getByText('Added:')).not.toHaveCount(0);
+  await drawer(page).getByRole('radio', { name: 'Text' }).click();
+  await expect(diff).toHaveCount(0);
+
+  // The row that has it open closes it.
+  await current.click();
+  await expect(drawer(page)).toHaveCount(0);
+  await expect(current).toBeFocused();
+
+  // An earlier version is restored as a draft, which then leads the list.
+  await versions.getByRole('button', { name: /^v3/ }).click();
+  await expect(drawerTitle(page, 'Version v3')).toBeAttached();
+  await drawer(page).getByRole('button', { name: 'Restore as draft' }).click();
   await expect(drawerTitle(page, 'Edit instructions')).toBeVisible();
+  const draft = versions.getByRole('button', { name: /^v5 · Draft/ });
+  await expect(draft).toHaveAttribute('aria-expanded', 'true');
   await page.keyboard.press('Escape');
   await expect(drawer(page)).toHaveCount(0);
-  // Opening the editor started a draft, so the same button now resumes it.
-  await expect(
-    page.getByRole('button', { name: 'Continue draft' }),
-  ).toBeFocused();
+  await expect(draft).toBeFocused();
 });
 
 test('outputs list every destination with how it is undone', async ({

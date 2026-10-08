@@ -79,7 +79,15 @@ function versionNumber(version: string): number {
 
 // The date alone, for a place that supplies its own verb.
 export const labelDate = (updatedLabel: string) =>
-  updatedLabel.replace(/^(Updated|Published)\s+/, '');
+  updatedLabel.replace(/^(Updated|Published|Drafted|Written)\s+/, '');
+
+// When a version was the one a run would run under: from its own date to the
+// next version's, or open-ended for the current one.
+export function liveRange(versions: InstructionVersion[], index: number) {
+  const from = labelDate(versions[index]!.updatedLabel);
+  const next = versions[index + 1];
+  return next ? `${from} – ${labelDate(next.updatedLabel)}` : `Since ${from}`;
+}
 
 export function useInstructions(
   processId: string,

@@ -225,12 +225,14 @@ function Marker({
   travelled,
   settling,
   onSettled,
+  inButton = false,
 }: {
   step: ProcessStep;
   arrived: boolean;
   travelled: boolean;
   settling: boolean;
   onSettled: () => void;
+  inButton?: boolean;
 }) {
   const look = useContext(ThreadLookContext);
   const marker = stepMarker[step.status];
@@ -238,34 +240,44 @@ function Marker({
   const progress = step.progress
     ? ` ${step.progress.at} of ${step.progress.of}.`
     : '';
-  return (
+  const mark = (
+    <span
+      className={cx(
+        'thread-dot',
+        // The proposed marks take their colours from the stylesheet, per
+        // status and per whether the step is the latest.
+        look === 'current' ? toneText[marker.tone] : undefined,
+      )}
+      data-status={step.status}
+      // The proposed ring leaves on its own; the shipped mark settles here.
+      data-settling={(look === 'current' && settling) || undefined}
+      tabIndex={inButton ? undefined : 0}
+      role={inButton ? undefined : 'img'}
+      aria-hidden={inButton || undefined}
+      aria-label={
+        inButton
+          ? undefined
+          : `${step.name}. ${status}.${progress}${step.note ? ` ${step.note}` : ''}`
+      }
+    >
+      {look === 'proposed' ? (
+        <ProposedMark
+          step={step}
+          arrived={arrived}
+          travelled={travelled}
+          leaving={settling}
+          onLeft={onSettled}
+        />
+      ) : (
+        <Glyph name={marker.glyph} />
+      )}
+    </span>
+  );
+  return inButton ? (
+    mark
+  ) : (
     <Tooltip label={status} description={step.note} placement="right">
-      <span
-        className={cx(
-          'thread-dot',
-          // The proposed marks take their colours from the stylesheet, per
-          // status and per whether the step is the latest.
-          look === 'current' ? toneText[marker.tone] : undefined,
-        )}
-        data-status={step.status}
-        // The proposed ring leaves on its own; the shipped mark settles here.
-        data-settling={(look === 'current' && settling) || undefined}
-        tabIndex={0}
-        role="img"
-        aria-label={`${step.name}. ${status}.${progress}${step.note ? ` ${step.note}` : ''}`}
-      >
-        {look === 'proposed' ? (
-          <ProposedMark
-            step={step}
-            arrived={arrived}
-            travelled={travelled}
-            leaving={settling}
-            onLeft={onSettled}
-          />
-        ) : (
-          <Glyph name={marker.glyph} />
-        )}
-      </span>
+      {mark}
     </Tooltip>
   );
 }
@@ -279,6 +291,36 @@ export type StepReference = {
   // Absent where there is nowhere to open it: the pill is then only a fact.
   action?: FlagAction;
 };
+
+function StepLink({
+  label,
+  action,
+  inHeading = false,
+}: {
+  label: string;
+  action?: FlagAction;
+  inHeading?: boolean;
+}) {
+  const content = (
+    <>
+      {label}
+      <ArrowUpRight
+        aria-hidden
+        size={12}
+        strokeWidth={2.5}
+        className={inHeading ? 'thread-step-heading-arrow' : 'flex-none'}
+      />
+      {action ? <span className="sr-only"> — {action.label}</span> : null}
+    </>
+  );
+  return action ? (
+    <button type="button" className="thread-step-link" onClick={action.onPress}>
+      {content}
+    </button>
+  ) : (
+    <span className="thread-step-link thread-step-heading-pill">{content}</span>
+  );
+}
 
 /*
   Open is earned: a step is unfolded while it is running, when it stopped the
@@ -356,6 +398,7 @@ export function ThreadStep({
   enter = false,
   flagAction,
   reference,
+  headingAction,
   onBusy,
   children,
 }: {
@@ -372,6 +415,7 @@ export function ThreadStep({
   onBusy?: (id: string, busy: boolean) => void;
   flagAction?: FlagAction;
   reference?: StepReference;
+  headingAction?: { label: string; onPress: () => void };
   children: ReactNode;
 }) {
   const bodyId = useId();
@@ -405,6 +449,15 @@ export function ThreadStep({
         step?.dataset.open === undefined ||
         step.dataset.entering !== undefined ||
         fold.getAnimations().length > 0 ||
+        // A fold inside the body eases itself; following it frame by frame
+        // would restart this ease each frame and hold the inner one back.
+        body
+          .getAnimations({ subtree: true })
+          .some(
+            (animation) =>
+              animation instanceof CSSTransition &&
+              animation.transitionProperty === 'grid-template-rows',
+          ) ||
         prefersReducedMotion()
       )
         return;
@@ -543,6 +596,21 @@ export function ThreadStep({
   const [reveal, setReveal] = useState(false);
 
   const showWindow = reveal && row.window !== undefined;
+  const marker = (inButton: boolean) => (
+    <Marker
+      step={step}
+      arrived={arrived}
+      settling={settling}
+      travelled={travelled}
+      inButton={inButton}
+      onSettled={() => {
+        setSettling(false);
+        if (prefersReducedMotion()) return;
+        setFlourish(true);
+        if (stepRef.current?.previousElementSibling) setFilling(true);
+      }}
+    />
+  );
 
   return (
     <li
@@ -559,6 +627,7 @@ export function ThreadStep({
       data-filling={filling || undefined}
       data-trailed={trailed || undefined}
       data-fixed={fixed || undefined}
+      data-heading-action={(fixed && headingAction) || undefined}
       // How its ring's loop is timed, which the name's shimmer follows.
       data-mark={travelled ? 'travelled' : arrived ? 'arrived' : undefined}
       onAnimationEnd={(event) => {
@@ -568,142 +637,133 @@ export function ThreadStep({
       onPointerEnter={() => setReveal(true)}
       onPointerLeave={() => setReveal(false)}
     >
-      <span className="thread-marker">
-        <Marker
-          step={step}
-          arrived={arrived}
-          settling={settling}
-          travelled={travelled}
-          onSettled={() => {
-            setSettling(false);
-            if (prefersReducedMotion()) return;
-            setFlourish(true);
-            if (stepRef.current?.previousElementSibling) setFilling(true);
-          }}
-        />
-      </span>
+      {fixed && headingAction ? (
+        <button
+          type="button"
+          className="thread-step-heading-action"
+          aria-label={`${row.name} ${headingAction.label}. ${step.origin ? 'Requested' : STEP_STATUS_LABELS[step.status]}.`}
+          onClick={headingAction.onPress}
+        >
+          <span className="thread-marker">{marker(true)}</span>
+          <span className="thread-step-heading-content">
+            <span className="thread-step-heading-name">{row.name}</span>
+            <StepLink label={headingAction.label} inHeading />
+          </span>
+        </button>
+      ) : (
+        <span className="thread-marker">{marker(false)}</span>
+      )}
       {/* One row: the toggle stretches across it, so the whole row answers
           the pointer, and a flag sits above the stretch as its own control. */}
-      <div className="thread-step-row">
-        {/* A step that cannot fold names itself with a label, not a
+      {fixed && headingAction ? null : (
+        <div className="thread-step-row">
+          {/* A step that cannot fold names itself with a label, not a
             control: the request, and a step still at work. */}
-        {fixed ? (
-          <span className="thread-step-toggle">{row.name}</span>
-        ) : (
-          <button
-            type="button"
-            className="thread-step-toggle"
-            aria-expanded={open}
-            aria-controls={bodyId}
-            onClick={() => {
-              setKept(!open);
-              setOpen(!open);
-            }}
-            onFocus={() => setReveal(true)}
-            onBlur={() => setReveal(false)}
-          >
-            {row.name}
-          </button>
-        )}
-        {row.label || flag || reference ? (
-          <span className="thread-step-facts">
-            {row.label ? (
-              <span className="thread-step-fact">
-                <MorphingText text={row.label} duration={360} />
-              </span>
-            ) : null}
-            {/* Its own pill, in the step's tone: the part of the fact that is
+          {fixed ? (
+            <span className="thread-step-toggle">{row.name}</span>
+          ) : (
+            <button
+              type="button"
+              className="thread-step-toggle"
+              aria-expanded={open}
+              aria-controls={bodyId}
+              onClick={() => {
+                setKept(!open);
+                setOpen(!open);
+              }}
+              onFocus={() => setReveal(true)}
+              onBlur={() => setReveal(false)}
+            >
+              {row.name}
+            </button>
+          )}
+          {row.label || flag || reference ? (
+            <span className="thread-step-facts">
+              {row.label ? (
+                <span className="thread-step-fact">
+                  <MorphingText text={row.label} duration={360} />
+                </span>
+              ) : null}
+              {/* Its own pill, in the step's tone: the part of the fact that is
                 the problem, divided from the part that is not -- and, where
                 there is somewhere to take the reader, the way there. */}
-            {flag ? (
-              flagAction && flag.motion !== 'out' ? (
-                <button
-                  type="button"
-                  className="thread-step-flag"
-                  data-motion={flag.motion}
-                  onClick={flagAction.onPress}
-                >
-                  {flag.text}
-                  <ArrowUpRight
-                    aria-hidden
-                    size={12}
-                    strokeWidth={2.5}
-                    className="flex-none"
-                  />
-                  <span className="sr-only"> — {flagAction.label}</span>
-                </button>
-              ) : (
-                <span
-                  className="thread-step-flag"
-                  data-motion={flag.motion}
-                  onAnimationEnd={(event) => {
-                    if (event.animationName === 'thread-fact-out')
-                      setFlag(null);
-                  }}
-                >
-                  {flag.text}
-                </span>
-              )
-            ) : null}
-            {reference ? (
-              reference.action ? (
-                <button
-                  type="button"
-                  className="thread-step-link"
-                  onClick={reference.action.onPress}
-                >
-                  {reference.label}
-                  <ArrowUpRight
-                    aria-hidden
-                    size={12}
-                    strokeWidth={2.5}
-                    className="flex-none"
-                  />
-                  <span className="sr-only"> — {reference.action.label}</span>
-                </button>
-              ) : (
-                <span className="thread-step-fact">{reference.label}</span>
-              )
-            ) : null}
-          </span>
-        ) : null}
-        {row.status === 'running' && arrived ? (
-          <span className="thread-step-time" data-elapsed>
-            <Elapsed reveal={reveal} />
-          </span>
-        ) : row.duration ? (
-          <span className="thread-step-time">
-            {/* Both readings share one cell and cross-fade vertically, so the
-                column keeps its width and nothing slides sideways. */}
-            <span
-              className="thread-step-time-face"
-              data-shown={!showWindow || undefined}
-              aria-hidden="true"
-            >
-              {row.duration}
+              {flag ? (
+                flagAction && flag.motion !== 'out' ? (
+                  <button
+                    type="button"
+                    className="thread-step-flag"
+                    data-motion={flag.motion}
+                    onClick={flagAction.onPress}
+                  >
+                    {flag.text}
+                    <ArrowUpRight
+                      aria-hidden
+                      size={12}
+                      strokeWidth={2.5}
+                      className="flex-none"
+                    />
+                    <span className="sr-only"> — {flagAction.label}</span>
+                  </button>
+                ) : (
+                  <span
+                    className="thread-step-flag"
+                    data-motion={flag.motion}
+                    onAnimationEnd={(event) => {
+                      if (event.animationName === 'thread-fact-out')
+                        setFlag(null);
+                    }}
+                  >
+                    {flag.text}
+                  </span>
+                )
+              ) : null}
+              {reference ? (
+                reference.action ? (
+                  <StepLink label={reference.label} action={reference.action} />
+                ) : (
+                  <span className="thread-step-fact">{reference.label}</span>
+                )
+              ) : null}
             </span>
-            {row.window ? (
+          ) : null}
+          {row.status === 'running' && arrived ? (
+            <span className="thread-step-time" data-elapsed>
+              <Elapsed reveal={reveal} />
+            </span>
+          ) : row.duration ? (
+            <span className="thread-step-time">
+              {/* Both readings share one cell and cross-fade vertically, so the
+                column keeps its width and nothing slides sideways. */}
               <span
                 className="thread-step-time-face"
-                data-shown={showWindow || undefined}
+                data-shown={!showWindow || undefined}
                 aria-hidden="true"
               >
-                {row.window.from} – {row.window.to}
+                {row.duration}
               </span>
-            ) : null}
-            <span className="sr-only">
-              Took {row.duration}
-              {row.window
-                ? `, from ${row.window.from} to ${row.window.to}`
-                : ''}
-              .
+              {row.window ? (
+                <span
+                  className="thread-step-time-face"
+                  data-shown={showWindow || undefined}
+                  aria-hidden="true"
+                >
+                  {row.window.from} – {row.window.to}
+                </span>
+              ) : null}
+              <span className="sr-only">
+                Took {row.duration}
+                {row.window
+                  ? `, from ${row.window.from} to ${row.window.to}`
+                  : ''}
+                .
+              </span>
             </span>
-          </span>
-        ) : null}
-        {fixed ? null : (
-          <ChevronTriangleDown aria-hidden className="thread-step-chevron" />
-        )}
-      </div>
+          ) : null}
+          {fixed ? null : (
+            <ChevronTriangleDown aria-hidden className="thread-step-chevron" />
+          )}
+        </div>
+      )}
       <div
         id={bodyId}
         ref={foldRef}
