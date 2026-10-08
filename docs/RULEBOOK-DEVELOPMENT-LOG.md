@@ -371,6 +371,29 @@ it. A run should say so, rather than evaluate a rulebook its own checks
 no longer pass: the page now runs every draft check on the active rulebook on
 each load and each Calculate, and shows what it fails above its results.
 
+### 22. A check the draft could not satisfy
+
+The first drafts for v4 (8 October) failed in three new ways. On the fallback
+model, the rules stage asked the data model for fields the sheet does not
+hold ("a boolean 'demand_satisfied'"): results, which belong in facts. A
+request naming only things the sheet holds nowhere is now sent back as a fact
+or a rule to write, unless it quotes a header the sheet does hold. On Flash-Lite, one
+rule already carried five assumptions, the schema's limit, when the blank-cell
+check asked for a sixth: the model could not comply and repeated itself until
+drafting stopped. One assumption now covers every value treated the same way
+(blank stock, reserved and inbound counts taken as zero), naming each field in
+`technical`, and the limit is eight. And alternatives such as "as 0 stock"
+against "as zero units" slipped past the rewording check; number words now
+count as their digits.
+
+A later draft scored 13 of 16, but the score was wrong. It read offers as a
+second kind of item, so CT-250 was both a product and an offer, and the
+check runner judged an owner's check on the first item with that key: the
+product, which has no offer rules. A check names a key, so it now counts every
+item sharing it, the worst outcome standing. The honest score was 11, and the
+fix uncovered a rule that contradicted itself (R13 applied when a price was
+proposed and required that none was), blocking every offer.
+
 ## Models and the service
 
 - **Models listed are not models available.** Google's model list and pricing

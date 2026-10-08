@@ -41,8 +41,12 @@ export async function POST(request: Request) {
     );
   const body = parsed.data;
   if (body.action === 'add') {
-    const { action: _, ...input } = body;
-    await addDecision(PROCESS_ID, input);
+    await addDecision(PROCESS_ID, {
+      statement: body.statement,
+      quote: body.quote,
+      question: body.question,
+      answer: body.answer,
+    });
   }
   if (body.action === 'remove') await removeDecision(PROCESS_ID, body.id);
   const { read } = await loadSnapshot('captured');

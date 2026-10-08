@@ -16,7 +16,10 @@ import {
   Code,
   DataTable,
   Disclosure,
+  Lede,
   Mark,
+  Outcome,
+  StatusChip,
   TrialSection,
   td,
   th,
@@ -25,9 +28,9 @@ import {
 type Result = Extract<EvaluateResponse, { kind: 'result' }>;
 
 const DISPOSITION = {
-  blocked: 'Blocked',
-  needs_decision: 'Needs a decision',
-  ready: 'Ready',
+  blocked: { label: 'Blocked', tone: 'blocked' },
+  needs_decision: { label: 'Needs a decision', tone: 'decision' },
+  ready: { label: 'Ready', tone: 'ready' },
 } as const;
 
 // Shows the evaluation Calculate started: each item's rules, then the owner's checks.
@@ -42,74 +45,97 @@ export function CheckStep() {
   const result = current ?? (state.kind === 'running' ? last : null);
   if (!result)
     return (
-      <p className="text-dense text-muted">
-        Press Calculate above. The rules and the sheet owner&rsquo;s checks for
-        that run appear here.
-      </p>
+      <Lede>
+        Checks every rule on every item. It runs with Calculate, on the same
+        read and rulebook, so press Calculate first.
+      </Lede>
     );
+  return <CheckResults result={result} />;
+}
+
+/*
+  One evaluation's rules and the owner's checks: the counts first, then one
+  row per item that opens to its rules and their working, then whether the
+  rulebook agrees with what the owner expects. The run's Check step and the
+  Rulebook tab's test of a draft both show it.
+*/
+export function CheckResults({
+  result,
+  inContext = false,
+}: {
+  result: Result;
+  // Where the rulebook under test and its health are already shown above.
+  inContext?: boolean;
+}) {
   const { items } = result.evaluation;
-  const { checks } = result;
+  const count = (d: keyof typeof DISPOSITION) =>
+    items.filter((i) => i.disposition === d).length;
   return (
-    <div className="grid gap-5">
-      <UnderTest rulebook={result.rulebook} />
-      <RulebookDrift
-        name={rulebookName(result.rulebook)}
-        consequence="Its results below may be wrong until a new version is drafted and approved."
-        issues={result.drift}
-      />
-      <TrialSection title="1. Rules per item, before any proposal">
+    <div className="grid gap-6">
+      {inContext ? null : <UnderTest rulebook={result.rulebook} />}
+      {inContext ? null : (
+        <RulebookDrift
+          name={rulebookName(result.rulebook)}
+          consequence="Its results below may be wrong until a new version is drafted and approved."
+          issues={result.drift}
+          compact
+        />
+      )}
+      <TrialSection title="Rules per item, before any proposal">
+        <Outcome>
+          {(Object.keys(DISPOSITION) as (keyof typeof DISPOSITION)[]).map(
+            (d) =>
+              count(d) ? (
+                <StatusChip key={d} tone={DISPOSITION[d].tone}>
+                  {count(d)} {DISPOSITION[d].label.toLowerCase()}
+                </StatusChip>
+              ) : null,
+          )}
+          <span className="text-dense text-muted">of {items.length} items</span>
+        </Outcome>
         <WhatIfBanner items={items} />
-        <DataTable caption="Outcome per item">
-          <thead>
-            <tr>
-              <th className={th}>Item</th>
-              <th className={th}>Outcome</th>
-              <th className={th}>Rules not met</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item) => (
-              <tr key={`${item.kind}.${item.key}`}>
-                <td className={td}>
-                  {item.key} <span className="text-muted">{item.kind}</span>
-                </td>
-                <td className={td}>
-                  <Mark passed={item.disposition === 'ready'}>
-                    {DISPOSITION[item.disposition]}
-                  </Mark>
-                </td>
-                <td className={td}>
-                  {item.rules
-                    .filter((r) => r.status === 'fail' || r.status === 'error')
-                    .map((r) => (
-                      <span key={r.id} className="block">
-                        {r.sheet_rule ?? r.id} {r.title}
-                        {r.status === 'error'
-                          ? ` (could not run: ${r.detail})`
-                          : ''}
-                      </span>
+        <ul className="grid" aria-label="Items and their rules">
+          {items.map((item) => {
+            const unmet = item.rules.filter(
+              (r) => r.status === 'fail' || r.status === 'error',
+            );
+            return (
+              <li key={`${item.kind}.${item.key}`}>
+                <Disclosure
+                  summary={
+                    <>
+                      <span className="font-medium">{item.key}</span>
+                      <span className="text-meta text-muted">{item.kind}</span>
+                      <StatusChip tone={DISPOSITION[item.disposition].tone}>
+                        {DISPOSITION[item.disposition].label}
+                      </StatusChip>
+                      {unmet.length ? (
+                        <span className="text-meta text-muted">
+                          {unmet
+                            .map(
+                              (r) =>
+                                `${r.sheet_rule ?? r.id}${r.status === 'error' ? ' (could not run)' : ''}`,
+                            )
+                            .join(', ')}
+                        </span>
+                      ) : null}
+                    </>
+                  }
+                >
+                  <WhatIfForm item={item} issues={result.whatIfIssues} />
+                  <ul className="grid" aria-label={`Rules for ${item.key}`}>
+                    {item.rules.map((r) => (
+                      <RuleWorking key={r.id} rule={r} />
                     ))}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </DataTable>
-        {items.map((item) => (
-          <Disclosure
-            key={`${item.kind}.${item.key}-rules`}
-            summary={`Every rule for ${item.key}, with its working`}
-          >
-            <WhatIfForm item={item} issues={result.whatIfIssues} />
-            <ul className="grid" aria-label={`Rules for ${item.key}`}>
-              {item.rules.map((r) => (
-                <RuleWorking key={r.id} rule={r} />
-              ))}
-            </ul>
-          </Disclosure>
-        ))}
+                  </ul>
+                </Disclosure>
+              </li>
+            );
+          })}
+        </ul>
       </TrialSection>
 
-      <OwnerChecks checks={checks} title="2. The owner's checks" />
+      <OwnerChecks checks={result.checks} title="The owner's checks" />
     </div>
   );
 }
@@ -124,8 +150,21 @@ export function OwnerChecks({
   title: string;
 }) {
   const passed = checks.results.filter((c) => c.passed).length;
+  const total = checks.results.length;
   return (
     <TrialSection title={title}>
+      {checks.found ? (
+        <Outcome>
+          <StatusChip
+            tone={passed === total ? 'ready' : passed ? 'decision' : 'blocked'}
+          >
+            {passed} of {total} agree
+          </StatusChip>
+          <span className="text-dense text-muted">
+            with what the sheet&rsquo;s owner expects
+          </span>
+        </Outcome>
+      ) : null}
       {!checks.found ? (
         <p className="text-dense text-muted">
           The sheet has no tab of checks: one whose header row has check_id,
@@ -139,8 +178,7 @@ export function OwnerChecks({
             time: an exact run_at, or a weekday and time in the week of{' '}
             {checks.reference.day}/{checks.reference.month}/
             {checks.reference.year}. A check passes when the outcome matches and
-            every rule it names is not met. {passed} of {checks.results.length}{' '}
-            pass.
+            every rule it names is not met.
           </p>
           {checks.missingHeaders.length ? (
             <p className="text-dense">

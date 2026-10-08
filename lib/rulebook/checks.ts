@@ -24,15 +24,14 @@ import type { Rulebook } from './schema';
   `because` names the sheet rule ids expected to decide the outcome.
 */
 const REQUIRED = ['check_id', 'item', 'expect'] as const;
-const OPTIONAL = [
-  'run_at',
-  'run_day',
-  'run_time',
-  'set',
-  'because',
-  'note',
-] as const;
-type Header = (typeof REQUIRED)[number] | (typeof OPTIONAL)[number];
+type Header =
+  | (typeof REQUIRED)[number]
+  | 'run_at'
+  | 'run_day'
+  | 'run_time'
+  | 'set'
+  | 'because'
+  | 'note';
 
 const headerRow = (snapshot: Snapshot, tab: string) =>
   (tabValues(snapshot, tab)?.values?.[0] ?? []).map((h) =>
@@ -194,33 +193,40 @@ export function runChecks(
     const evaluation = evaluate(rulebook, snapshot, runAt, {
       overrides: { [check.item]: overrides },
     });
-    const item = evaluation.items.find((i) => i.key === check.item);
-    if (!item)
+    // A check names an item by its key. Where a rulebook has several kinds
+    // sharing that key (a product, and the same product as an offer), the
+    // check is about all of them: the worst outcome stands, and every rule
+    // of every one counts.
+    const matching = evaluation.items.filter((i) => i.key === check.item);
+    if (!matching.length)
       return {
         ...base,
         runAt: evaluation.runAt.label,
         problem: `No item "${check.item}" in the rulebook's items.`,
       };
-    const deciding = item.rules.filter(
+    const disposition = (['blocked', 'needs_decision', 'ready'] as const).find(
+      (d) => matching.some((i) => i.disposition === d),
+    )!;
+    const rules = matching.flatMap((i) => i.rules);
+    const deciding = rules.filter(
       (r) =>
         r.status === 'error' ||
         (r.status === 'fail' &&
-          r.outcome ===
-            (item.disposition === 'blocked' ? 'block' : 'attention')),
+          r.outcome === (disposition === 'blocked' ? 'block' : 'attention')),
     );
-    const decidedBy = deciding.map((r) => r.sheet_rule ?? r.id);
+    const decidedBy = [...new Set(deciding.map((r) => r.sheet_rule ?? r.id))];
     const failing = new Set(
-      item.rules
+      rules
         .filter((r) => r.status === 'fail' || r.status === 'error')
         .map((r) => r.sheet_rule ?? r.id),
     );
     const passed =
-      item.disposition === check.expect &&
+      disposition === check.expect &&
       check.because.every((id) => failing.has(id));
     return {
       ...base,
       runAt: evaluation.runAt.label,
-      actual: item.disposition,
+      actual: disposition,
       decidedBy,
       passed,
       problem: null,

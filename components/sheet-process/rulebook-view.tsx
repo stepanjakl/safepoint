@@ -23,7 +23,7 @@ const Source = ({
   );
 
 // Every part of a rulebook, laid out to be read and approved.
-type Answer = (
+export type Answer = (
   statement: { id: string; quote: string },
   question: string,
   answer: string,
@@ -32,7 +32,7 @@ type Answer = (
 // An assumption: the owner confirms it, picks one of the other readings the
 // model offered, or says none of them fits, optionally writing the right one.
 // Each answer is kept as a decision on the statement the rule implements.
-function Assumption({
+export function Assumption({
   statement,
   assumption,
   alternatives,

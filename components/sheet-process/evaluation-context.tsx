@@ -11,13 +11,16 @@ import {
 import type { ChecksReport } from '@/lib/rulebook/checks';
 import type { Evaluation } from '@/lib/rulebook/engine';
 
-import { clock, useTrial } from './trial-parts';
+import { dateTime, useTrial } from './trial-parts';
 
 /*
-  One evaluation, shared by the Calculate and Check steps: Calculate starts it
-  and shows the times and facts; Check shows the rules and the owner's checks.
-  A what-if reruns the last request with values typed in the Check step;
-  pressing Calculate again starts clean.
+  One run's shared state. The Read step records the read it made, and every
+  later step uses that read. Calculate starts the evaluation and shows the
+  times and facts; Check shows the rules and the owner's checks. A what-if
+  reruns the last request with values typed in Check; Calculate starts clean.
+
+  The Rulebook tab mounts its own provider to test a draft, so a test never
+  replaces the run's results.
 */
 
 export type EvaluateResponse =
@@ -47,22 +50,24 @@ export type RulebookUsed =
     }
   | { kind: 'draft'; file: string; startedAt: string; model: string };
 
-// How a result names the rulebook it ran, everywhere it is shown.
+// How a result names the rulebook it ran, everywhere it is shown, as it
+// reads mid-sentence.
 export const rulebookName = (r: RulebookUsed) =>
   r.kind === 'approved'
-    ? `Rulebook v${r.version}`
-    : `The draft of ${r.startedAt.slice(0, 10)} ${clock(r.startedAt)} (not approved)`;
+    ? `rulebook v${r.version}`
+    : `the draft of ${dateTime(r.startedAt)}, not approved`;
 
-// A saved draft the Rules step has on screen, which Calculate can test.
-export type Candidate = { file: string; startedAt: string };
+// The read a run's Read step made: an id the server keeps it under, and how
+// to name it.
+export type RunRead = { id: string; label: string; readAt: string };
 
 // Typed values per item key, then per editable value name.
 export type WhatIf = Record<string, Record<string, string>>;
 
 type Value = ReturnType<typeof useTrial<EvaluateResponse>> & {
   whatIf: WhatIf;
-  candidate: Candidate | null;
-  setCandidate: (candidate: Candidate | null) => void;
+  read: RunRead | null;
+  setRead: (read: RunRead | null) => void;
   // Reruns the last evaluation with these values; {} clears them.
   runWhatIf: (whatIf: WhatIf) => Promise<EvaluateResponse | null>;
 };
@@ -71,7 +76,7 @@ const EvaluationContext = createContext<Value | null>(null);
 export function EvaluationProvider({ children }: { children: ReactNode }) {
   const trial = useTrial<EvaluateResponse>('/api/dev/brunch/evaluate');
   const trialRun = trial.run;
-  const [candidate, setCandidate] = useState<Candidate | null>(null);
+  const [read, setRead] = useState<RunRead | null>(null);
   const [last, setLast] = useState<{ body: object; whatIf: WhatIf } | null>(
     null,
   );
@@ -97,8 +102,8 @@ export function EvaluationProvider({ children }: { children: ReactNode }) {
         run,
         whatIf: last?.whatIf ?? {},
         runWhatIf,
-        candidate,
-        setCandidate,
+        read,
+        setRead,
       }}
     >
       {children}

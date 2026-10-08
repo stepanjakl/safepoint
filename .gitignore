@@ -39,6 +39,8 @@ Claude/
 
 # Rulebook drafting records contain full model inputs and outputs.
 /.rulebook-drafts/
+# Live reads a run was calculated from (development only)
+/.rulebook-reads/
 
 # Local AI SDK DevTools traces contain full model inputs and outputs.
 .devtools/

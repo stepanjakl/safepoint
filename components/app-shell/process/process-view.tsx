@@ -3,7 +3,7 @@ import type { InputDetail } from '@/lib/process/input-details';
 import type { ProcessSummary } from '@/lib/process/model';
 import type { SystemLink } from '@/lib/process/system-links';
 import type { PlayableRun } from '@/components/app-shell/runs/run-view';
-import { ProcessSheet } from './process-sheet';
+import { ProcessSheet, type ProcessPolicy } from './process-sheet';
 
 /*
   The process page's server half: it loads nothing itself, but it is where the
@@ -16,6 +16,7 @@ export function ProcessView({
   inputDetails,
   initialRunId = null,
   playable,
+  policy,
   children,
 }: {
   process: ProcessSummary;
@@ -25,6 +26,8 @@ export function ProcessView({
   initialRunId?: string | null;
   // What a started run is drawn from, where the process can play one.
   playable?: PlayableRun;
+  // A process's own policy panel in place of the instructions tab.
+  policy?: ProcessPolicy;
   children: ReactNode;
 }) {
   return (
@@ -35,6 +38,7 @@ export function ProcessView({
       run={children}
       initialRunId={initialRunId}
       playable={playable}
+      policy={policy}
     />
   );
 }

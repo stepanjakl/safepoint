@@ -114,12 +114,15 @@ const plural = (count: number, one: string, many: string) =>
 */
 function ProcessMenu({
   version,
+  instructionsLabel = 'Instructions',
   inputs,
   outputs,
   tab,
   onTabChange,
 }: {
   version: string;
+  // What a process calls its instructions, where it brings its own panel.
+  instructionsLabel?: string;
   inputs: SystemLink[];
   outputs: SystemLink[];
   tab: ProcessTab;
@@ -155,7 +158,7 @@ function ProcessMenu({
       </AriaButton>
       <AriaButton
         onPress={() => onTabChange('instructions')}
-        aria-label={`Instructions: version ${version}`}
+        aria-label={`${instructionsLabel}: version ${version}`}
         aria-current={tab === 'instructions' ? 'true' : undefined}
         className={cx(ITEM, face('instructions'))}
       >
@@ -165,7 +168,7 @@ function ProcessMenu({
           strokeWidth={1.8}
           className={cx('flex-none -translate-y-px', icon('instructions'))}
         />
-        <span className={LABEL}>Instructions</span>
+        <span className={LABEL}>{instructionsLabel}</span>
         <span className={COUNT}>{version}</span>
       </AriaButton>
       {inputs.length > 0 ? (
@@ -250,6 +253,7 @@ function ProcessMenu({
 export function ProcessHeader({
   process,
   version,
+  instructionsLabel,
   inputs,
   outputs,
   tab,
@@ -257,6 +261,7 @@ export function ProcessHeader({
 }: {
   process: ProcessSummary;
   version: string;
+  instructionsLabel?: string;
   inputs: SystemLink[];
   outputs: SystemLink[];
   tab: ProcessTab;
@@ -274,6 +279,7 @@ export function ProcessHeader({
         <ProcessTitle processId={process.id} fallback={process.name} />
         <ProcessMenu
           version={version}
+          instructionsLabel={instructionsLabel}
           inputs={inputs}
           outputs={outputs}
           tab={tab}

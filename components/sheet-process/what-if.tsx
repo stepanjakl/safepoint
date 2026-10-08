@@ -55,7 +55,7 @@ export function WhatIfForm({
   };
   return (
     <form
-      className="grid gap-2"
+      className="enclosure grid gap-2 p-3"
       aria-label={`What if, for ${item.key} (${item.kind})`}
       onSubmit={(event) => {
         event.preventDefault();

@@ -12,7 +12,8 @@ import { SheetReadStep } from '@/components/sheet-process/sheet-read-step';
 import { CalculateStep } from '@/components/sheet-process/calculate-step';
 import { CheckStep } from '@/components/sheet-process/check-step';
 import { EvaluationProvider } from '@/components/sheet-process/evaluation-context';
-import { RulebookStep } from '@/components/sheet-process/rulebook-step';
+import { RulebookInForce } from '@/components/sheet-process/rulebook-in-force';
+import { RulebookPanel } from '@/components/sheet-process/rulebook-panel';
 import { isStale } from '@/lib/rulebook/decisions';
 import { validateRulebook, validateSaved } from '@/lib/rulebook/validate';
 import {
@@ -102,12 +103,7 @@ export default async function BrunchWeekendPage({
     ),
     rules: (
       <ResponseSection>
-        <RulebookStep
-          active={active}
-          drift={drift}
-          decisions={decisions}
-          latest={latest}
-        />
+        <RulebookInForce active={active} drift={drift} />
       </ResponseSection>
     ),
   };
@@ -116,6 +112,20 @@ export default async function BrunchWeekendPage({
     <ProcessView
       process={brunchProcess}
       initialRunId={typeof run === 'string' ? run : 'build'}
+      // The rulebook is this process's instructions: versioned policy a
+      // person approves. Drafting it is not part of a run.
+      policy={{
+        label: 'Rulebook',
+        version: active ? `v${active.version}` : 'none',
+        content: (
+          <RulebookPanel
+            active={active}
+            drift={drift}
+            decisions={decisions}
+            latest={latest}
+          />
+        ),
+      }}
     >
       <ThreadPage label="Brunch weekend, built in the open">
         <EvaluationProvider>

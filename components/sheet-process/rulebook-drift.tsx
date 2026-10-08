@@ -9,6 +9,9 @@ const finding = (message: string) => message.split(/(?<=\.)\s/)[0] ?? message;
 
 const SHOWN = 4;
 
+const capitalise = (text: string) =>
+  text.charAt(0).toUpperCase() + text.slice(1);
+
 function IssueList({ issues }: { issues: Issue[] }) {
   return (
     <ul className="text-meta grid gap-1">
@@ -30,7 +33,11 @@ export function RulebookDrift({
   name,
   consequence,
   issues,
+  compact = false,
 }: {
+  // One line and the list folded away, where the reader is not the one to
+  // fix it.
+  compact?: boolean;
   // "Rulebook v3", "This draft".
   name: string;
   // What follows for the reader, as a sentence.
@@ -40,19 +47,25 @@ export function RulebookDrift({
   if (!issues.length) return null;
   return (
     <section
-      aria-label={`${name} is out of date`}
+      aria-label={`${capitalise(name)} is out of date`}
       data-severity={1}
       className="bg-severity-fill text-severity-strong rounded-control grid gap-2 p-3"
     >
       <p className="text-dense">
         <strong>
-          {name} no longer passes the checks a new draft must pass
+          {capitalise(name)} no longer passes the checks a new draft must pass
         </strong>{' '}
         ({issues.length} {issues.length === 1 ? 'problem' : 'problems'} on this
         read of the sheet). {consequence}
       </p>
-      <IssueList issues={issues.slice(0, SHOWN)} />
-      {issues.length > SHOWN ? (
+      {compact ? (
+        <Disclosure summary={`What it fails (${issues.length})`}>
+          <IssueList issues={issues} />
+        </Disclosure>
+      ) : (
+        <IssueList issues={issues.slice(0, SHOWN)} />
+      )}
+      {!compact && issues.length > SHOWN ? (
         <Disclosure summary={`The other ${issues.length - SHOWN}`}>
           <IssueList issues={issues.slice(SHOWN)} />
         </Disclosure>
@@ -67,7 +80,7 @@ export function UnderTest({ rulebook }: { rulebook: RulebookUsed }) {
   return (
     <p data-severity={1} className="text-dense text-severity-ink">
       <strong>Testing {rulebookName(rulebook)}.</strong> Nothing here is in
-      force until it is approved in Rules.
+      force until it is approved.
     </p>
   );
 }

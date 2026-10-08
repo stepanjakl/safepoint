@@ -4,10 +4,7 @@ import {
   jsonWithBigInts,
   rejectUnlessLocalDevelopment,
 } from '@/lib/dev/dev-route';
-import {
-  loadSnapshot,
-  PROCESS_ID,
-} from '@/lib/processes/avocado-toast/snapshot';
+import { loadRead, PROCESS_ID } from '@/lib/processes/avocado-toast/snapshot';
 import { runChecks } from '@/lib/rulebook/checks';
 import { mondayOf } from '@/lib/rulebook/cycle';
 import { evaluate, readWhatIf } from '@/lib/rulebook/engine';
@@ -16,7 +13,6 @@ import { activeRulebook, readDraftRecord } from '@/lib/rulebook/store';
 import { rulebookSchema, type Rulebook } from '@/lib/rulebook/schema';
 import { validateRulebook } from '@/lib/rulebook/validate';
 import { BRUNCH_MAY_CHANGE } from '@/lib/processes/avocado-toast/process';
-import { missingSheetEnv } from '@/lib/sheets/composio';
 
 export const runtime = 'nodejs';
 
@@ -26,7 +22,8 @@ export async function POST(request: Request) {
   if (rejected) return rejected;
   const parsed = z
     .strictObject({
-      source: z.enum(['captured', 'live']),
+      // The read the run's Read step made: every step uses that one read.
+      read: z.string().max(80),
       run: runRequestSchema,
       period: z.number().int().min(0).max(3).default(0),
       // What-if values typed in the Check step, per item key and value name.
@@ -96,12 +93,16 @@ export async function POST(request: Request) {
       drafted: active.drafted,
     };
   }
-  if (parsed.data.source === 'live' && missingSheetEnv().length)
+  const loaded = await loadRead(parsed.data.read);
+  if (!loaded)
     return Response.json(
-      { kind: 'not_configured', missing: missingSheetEnv() },
-      { status: 503 },
+      {
+        kind: 'error',
+        message: 'That read is no longer kept: read the sheet again.',
+      },
+      { status: 404 },
     );
-  const { read, label } = await loadSnapshot(parsed.data.source);
+  const { read, label } = loaded;
   const tz = rulebook.timing.time_zone;
   const now = Date.now();
   const { runAt, chosen } = resolveRunRequest(parsed.data.run, tz, now);

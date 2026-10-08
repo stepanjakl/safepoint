@@ -121,6 +121,45 @@ describe('a non-grocery rulebook', () => {
     ]);
     expect(results[3]!.problem).toMatch(/No item "B9"/);
   });
+
+  it('judges a check on every kind of item that shares its key', () => {
+    // The same books, read a second time as shelves, with a rule of their own.
+    const shelves: Rulebook = {
+      ...rulebook,
+      items: [
+        ...rulebook.items,
+        {
+          kind: 'shelf',
+          label: 'Shelf',
+          table: 'books',
+          key: 'isbn',
+          group: false,
+        },
+      ],
+      rules: [
+        ...rulebook.rules,
+        {
+          ...rulebook.rules[0]!,
+          id: 'two_copies',
+          kind: 'shelf',
+          title: 'Keep two copies on the shelf',
+          when: null,
+          assert: 'row.copies > 1',
+        },
+      ],
+    };
+    const k2 = runChecks(shelves, snapshot, {
+      year: 2026,
+      month: 10,
+      day: 12,
+    }).results.find((r) => r.id === 'K2')!;
+    // B2 is ready as a book but blocked as a shelf: the check sees both.
+    expect([k2.actual, k2.decidedBy, k2.passed]).toEqual([
+      'blocked',
+      ['two_copies'],
+      false,
+    ]);
+  });
 });
 
 describe('showing the working', () => {

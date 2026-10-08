@@ -5,7 +5,7 @@ import type { Condition, Term } from '@/lib/rulebook/working';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cx } from '@/lib/cx';
 
-import { Code, DataTable, Disclosure, Mark, td, th } from './trial-parts';
+import { Code, DataTable, Disclosure, StatusChip, td, th } from './trial-parts';
 
 type RuleResult = ItemResult['rules'][number];
 
@@ -132,7 +132,7 @@ function ConditionRow({
           <span
             tabIndex={0}
             className={cx(
-              'value rounded-control px-1 wrap-anywhere',
+              'value text-meta rounded-control px-1 wrap-anywhere',
               tone === undefined
                 ? 'bg-surface-inset'
                 : 'bg-severity-fill text-severity-strong',
@@ -143,7 +143,9 @@ function ConditionRow({
         </Tooltip>
       </span>
       {reached && c.sides ? (
-        <span className="value text-muted tabular-nums">{relation(c)}</span>
+        <span className="value text-meta text-muted tabular-nums">
+          {relation(c)}
+        </span>
       ) : null}
     </li>
   );
@@ -177,6 +179,17 @@ function TermsTable({ rule, terms }: { rule: string; terms: Term[] }) {
   );
 }
 
+// A rule's result in words and tone, rather than its status code.
+const STATUS = {
+  pass: { label: 'Passes', tone: 'ready' },
+  block: { label: 'Blocks', tone: 'blocked' },
+  attention: { label: 'Needs a decision', tone: 'decision' },
+  not_applicable: { label: 'Not applicable', tone: 'neutral' },
+  error: { label: 'Could not run', tone: 'blocked' },
+} as const;
+const status = (rule: RuleResult): keyof typeof STATUS =>
+  rule.status === 'fail' ? rule.outcome : rule.status;
+
 /*
   One rule for one item: its conditions, each marked whether it held, with
   the one that settled the result in the result's tone. Hovering or focusing
@@ -195,14 +208,14 @@ export function RuleWorking({ rule }: { rule: RuleResult }) {
     ).values(),
   ];
   return (
-    <li className="border-rule-faint grid gap-1.5 border-b py-2">
-      <p className="text-dense">
-        <Mark
-          passed={rule.status === 'pass' || rule.status === 'not_applicable'}
-        >
-          {rule.status.replace('_', ' ')}
-        </Mark>{' '}
-        <strong>{name}</strong> {rule.title}
+    <li className="border-rule-faint grid gap-2 border-t pt-3 pb-1 first:border-t-0 first:pt-0">
+      <p className="text-dense flex flex-wrap items-center gap-x-2 gap-y-1">
+        <StatusChip tone={STATUS[status(rule)].tone}>
+          {STATUS[status(rule)].label}
+        </StatusChip>
+        <span>
+          <strong className="font-semibold">{name}</strong> {rule.title}
+        </span>
       </p>
       {rule.detail ? (
         <p className="text-meta text-muted">{rule.detail}</p>
@@ -227,7 +240,12 @@ export function RuleWorking({ rule }: { rule: RuleResult }) {
       ) : null}
       {reached.length ? (
         <Disclosure
-          summary={`Show working for ${name}`}
+          bare
+          summary={
+            <span className="text-meta text-muted">
+              Show working for {name}
+            </span>
+          }
           open={rule.status === 'fail' || rule.status === 'error'}
         >
           <ol className="grid gap-2">
@@ -239,12 +257,12 @@ export function RuleWorking({ rule }: { rule: RuleResult }) {
                   <Code>{c.text}</Code>
                 </span>
                 {c.filled ? (
-                  <span className="value text-muted ps-4 wrap-anywhere">
+                  <span className="value text-meta text-muted ps-4 wrap-anywhere">
                     = {c.filled}
                   </span>
                 ) : null}
                 {newSides(c) ? (
-                  <span className="value text-muted ps-4 tabular-nums">
+                  <span className="value text-meta text-muted ps-4 tabular-nums">
                     = {newSides(c)}
                   </span>
                 ) : null}

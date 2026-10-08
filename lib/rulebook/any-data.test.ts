@@ -443,7 +443,7 @@ describe('any kind of data', () => {
                 {
                   assumption: 'A blank fee counts as zero.',
                   alternatives: [
-                    'Treat blank fees as zero',
+                    'Treat blank fees as 0',
                     'A blank fee blocks the loan',
                   ],
                   technical: 'orValue(0) on fee',
@@ -549,6 +549,34 @@ describe('any kind of data', () => {
         where: 'changeable.loan_days',
         message: expect.stringMatching(
           /not something the process lets a proposal change/,
+        ),
+      },
+    ]);
+  });
+
+  it('sends back a request for something the sheet does not hold', () => {
+    const asks = {
+      ...euros,
+      data_model_requests: [
+        {
+          statement: 'L1',
+          request: "Add a boolean field 'over_limit' to the member item.",
+        },
+        // Quotes a header the sheet has: a real request.
+        {
+          statement: 'F1',
+          request: "Bind the 'copies' column as copies_owned.",
+        },
+      ],
+    };
+    const requests = validateLogic(asks, asks, asks, wider).filter((i) =>
+      i.where.startsWith('data_model_requests'),
+    );
+    expect(requests).toEqual([
+      {
+        where: 'data_model_requests.L1',
+        message: expect.stringMatching(
+          /"over_limit", which the sheet does not hold anywhere.*a value worked out from it is a fact/,
         ),
       },
     ]);

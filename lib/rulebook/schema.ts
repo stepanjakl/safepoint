@@ -381,7 +381,7 @@ export const logicSchema = z.strictObject({
           ),
         assumes: z
           .array(assumption)
-          .max(5)
+          .max(8)
           .default([])
           .describe(
             'Each choice the formula makes that the statement text does not (a number not in the text, a default for a blank, what a blank cell or a missing row does), with the other readings you considered. Empty when the formula follows the text',
@@ -415,7 +415,7 @@ export const logicSchema = z.strictObject({
       explain: z.string().min(1).max(300),
       assumes: z
         .array(assumption)
-        .max(5)
+        .max(8)
         .default([])
         .describe(
           'Each choice the formula makes that the statement text does not (a number not in the text, a default for a blank, what a blank cell or a missing row does), with the other readings you considered. Empty when the formula follows the text',

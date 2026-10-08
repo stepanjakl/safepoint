@@ -591,6 +591,23 @@ export function validateLogic(
       issues.push(...unknown(fact.statement, `facts.${fact.name}.statement`));
   for (const entry of logic.not_ruled)
     issues.push(...unknown(entry.statement, `not_ruled.${entry.statement}`));
+  const normalise = (text: string) =>
+    text
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_|_$/g, '');
+  // Every text in the sheet, as a name could be written for it: a header,
+  // a key or a parameter name.
+  const sheetWords = new Set(
+    snapshot.valueRanges.flatMap((vr) =>
+      (vr.values ?? []).flatMap((row) =>
+        row
+          .filter((cell): cell is string => typeof cell === 'string')
+          .map(normalise),
+      ),
+    ),
+  );
   for (const entry of logic.data_model_requests) {
     issues.push(
       ...unknown(entry.statement, `data_model_requests.${entry.statement}`),
@@ -616,6 +633,29 @@ export function validateLogic(
       issues.push({
         where: `data_model_requests.${entry.statement}`,
         message: `Asks for what the data model already has: ${bound.join(', ')} (${entry.request.slice(0, 120)}). Read it there and write the rule. If you need something different from it, say in the request what differs.`,
+      });
+    // The data model binds what the sheet holds. A request naming only
+    // things the sheet has nowhere asks for a result, which is a fact.
+    const named = [
+      ...new Set(entry.request.match(/\b[a-z][a-z0-9]*_[a-z0-9_]+\b/gi) ?? []),
+    ];
+    const known = (name: string) =>
+      sheetWords.has(normalise(name)) ||
+      model.tables.some((t) => t.columns.some((c) => c.name === name)) ||
+      model.timing.times.some((t) => t.name === name);
+    // A quoted header, key or name the sheet holds makes it a real request.
+    const quoted = [
+      ...entry.request.matchAll(/['"`‘“]([^'"`’”]+)['"`’”]/g),
+    ].map((m) => normalise(m[1]!));
+    if (
+      !bound.length &&
+      named.length &&
+      !named.some(known) &&
+      !quoted.some((q) => sheetWords.has(q))
+    )
+      issues.push({
+        where: `data_model_requests.${entry.statement}`,
+        message: `Asks for ${named.map((x) => `"${x}"`).join(', ')}, which the sheet does not hold anywhere (${entry.request.slice(0, 120)}). The data model only reads what the sheet has; a value worked out from it is a fact, and a condition is a rule. Write it as one instead; or, if the sheet holds it under another name, quote that header as written.`,
       });
   }
   for (const st of inventory.statements) {
@@ -643,11 +683,13 @@ export function validateLogic(
   const norm = (t: string) => t.toLowerCase().replace(/\W+/g, ' ').trim();
   // An alternative whose words all appear in the assumption only rewords it
   // ("Treat missing stock as zero" against "Missing stock counts as zero").
+  // Number words count as their digits: "zero" and "0" are the same answer.
   const words = (t: string) =>
     new Set(
       norm(t)
         .split(' ')
         .map((w) => w.replace(/s$/, ''))
+        .map((w) => DIGIT_OF.get(w) ?? w)
         .filter((w) => w && !FILLER_WORDS.has(w)),
     );
   for (const part of [
@@ -982,6 +1024,22 @@ function patternIssues(rulebook: Rulebook, snapshot: Snapshot): Issue[] {
   }
   return issues;
 }
+
+const DIGIT_OF = new Map(
+  [
+    'zero',
+    'one',
+    'two',
+    'three',
+    'four',
+    'five',
+    'six',
+    'seven',
+    'eight',
+    'nine',
+    'ten',
+  ].map((w, i) => [w, String(i)]),
+);
 
 // Words that carry no answer, left out when comparing an alternative with
 // its assumption.

@@ -31,6 +31,17 @@ import { useSwap } from '@/components/ui/swap';
 const TAB_MOTION = (): 'fade' => 'fade';
 
 /*
+  What a process brings in place of the shared instructions panel, where its
+  policy is something else: a versioned rulebook, approved by a person, is
+  what a sheet process is told to do. Built on the server like the run.
+*/
+export type ProcessPolicy = {
+  label: string;
+  version: string;
+  content: ReactNode;
+};
+
+/*
   What the run's thread can ask of the sheet around it. Absent where the thread
   is drawn without one -- the workbench -- so a caller offers the action only
   when there is a sheet to take it.
@@ -65,12 +76,14 @@ export function ProcessSheet({
   run,
   initialRunId = null,
   playable,
+  policy,
 }: {
   process: ProcessSummary;
   inputs?: SystemLink[];
   inputDetails?: Record<string, InputDetail>;
   // The current run's thread, built on the server.
   run: ReactNode;
+  policy?: ProcessPolicy;
   // The run to open on, from the address; none opens on the empty page.
   initialRunId?: string | null;
   // What a started run is drawn from, where this process can play one.
@@ -143,7 +156,8 @@ export function ProcessSheet({
       <div className="shell:grid shell:h-full shell:grid-rows-[auto_minmax(0,1fr)]">
         <ProcessHeader
           process={process}
-          version={version}
+          version={policy?.version ?? version}
+          instructionsLabel={policy?.label}
           inputs={kept}
           outputs={process.outputs}
           tab={tab}
@@ -199,6 +213,8 @@ export function ProcessSheet({
                   </ProcessSheetActions>
                 </div>
               </div>
+            ) : shown === 'instructions' && policy ? (
+              <PolicyPanel policy={policy} />
             ) : (
               <ProcessPanels
                 // Keyed by request: the layer around it is keyed by tab, so the
@@ -221,5 +237,27 @@ export function ProcessSheet({
         </ProcessContentTransition>
       </div>
     </RunSelectionProvider>
+  );
+}
+
+// One column, the width of a run's thread, under the same first row every
+// section of the sheet has.
+function PolicyPanel({ policy }: { policy: ProcessPolicy }) {
+  return (
+    <div className="process-panels grid h-full min-h-0 grid-cols-[minmax(0,1fr)]">
+      <div className="process-panel-list shell:min-h-0 shell:overflow-y-auto shell:overscroll-contain min-w-0">
+        <SectionRow id="policy-heading" title={policy.label}>
+          <span className="bg-menu-chip value text-micro text-muted-strong rounded-control px-1.5 py-0.5">
+            {policy.version}
+          </span>
+        </SectionRow>
+        <section
+          aria-labelledby="policy-heading"
+          className="mx-auto w-[min(100%,760px)] px-6 pt-6 pb-8 max-sm:px-4"
+        >
+          {policy.content}
+        </section>
+      </div>
+    </div>
   );
 }

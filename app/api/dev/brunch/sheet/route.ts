@@ -2,6 +2,8 @@ import { z } from 'zod';
 
 import { rejectUnlessLocalDevelopment } from '@/lib/dev/dev-route';
 import {
+  CAPTURED_READ,
+  keepRead,
   loadSnapshot,
   PROCESS_ID,
 } from '@/lib/processes/avocado-toast/snapshot';
@@ -46,8 +48,12 @@ export async function POST(request: Request) {
           rows: bound.rows,
         }))
       : null;
+    // The id later steps of the run evaluate.
+    const readId =
+      parsed.data.source === 'live' ? await keepRead(read) : CAPTURED_READ;
     return Response.json({
       kind: 'result',
+      readId,
       source: label,
       checksTab: checksTab(read),
       read,
