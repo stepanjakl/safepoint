@@ -334,6 +334,8 @@ export const rulebook: Rulebook = {
       type: 'int',
       expr: 'loans.filter(l, l.isbn == key).size()',
       explain: 'Loans of this book',
+      assumes: [],
+      statement: null,
     },
     {
       kind: 'book',
@@ -342,6 +344,8 @@ export const rulebook: Rulebook = {
       type: 'int',
       expr: 'row.copies - facts.on_loan',
       explain: 'Copies left',
+      assumes: [],
+      statement: null,
     },
     {
       kind: 'member',
@@ -350,6 +354,8 @@ export const rulebook: Rulebook = {
       type: 'int',
       expr: 'rows.size()',
       explain: 'Loans of this member',
+      assumes: [],
+      statement: null,
     },
     {
       kind: 'member',
@@ -358,6 +364,8 @@ export const rulebook: Rulebook = {
       type: 'timestamp',
       expr: 'rows.map(r, r.borrowed_at).filter(t, rows.all(o, t <= o.borrowed_at))[0]',
       explain: 'Earliest loan',
+      assumes: [],
+      statement: null,
     },
   ],
   rules: [
@@ -371,6 +379,7 @@ export const rulebook: Rulebook = {
       when: null,
       assert: 'facts.available >= 0',
       explain: 'Available copies cannot be negative.',
+      assumes: [],
       origin: 'model',
       source: { cells: ['Books!C2'], quote: '3' },
     },
@@ -384,6 +393,7 @@ export const rulebook: Rulebook = {
       when: 'has(change.fee)',
       assert: 'change.fee <= 200',
       explain: 'Fees above £2.00.',
+      assumes: [],
       origin: 'sheet',
       source: {
         cells: ['Policy!B6'],
@@ -400,6 +410,7 @@ export const rulebook: Rulebook = {
       when: null,
       assert: 'facts.held <= policy.max_loans',
       explain: 'At most max_loans books.',
+      assumes: [],
       origin: 'sheet',
       source: {
         cells: ['Policy!B5'],
@@ -416,6 +427,7 @@ export const rulebook: Rulebook = {
       when: null,
       assert: 'run_at < policy.closes_at',
       explain: 'Changes before closing.',
+      assumes: [],
       origin: 'model',
       source: { cells: ['Policy!B3'], quote: 'Sat' },
     },

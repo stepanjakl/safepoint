@@ -21,3 +21,6 @@ where they disagree with anything in this folder, they win.
   extraction prompt change, with no change to code, answers or rules.
 - `2026-10-03-cel-spike.md` -- the Phase 0 formula engine and sheet reader
   trials, and the decision to run rules with cel-js.
+- `2026-10-07-drafting-study.md` -- the first drafting study: eight Flash-Lite
+  drafts scored against the owner's checks, Flash unmeasurable on the free
+  tier, and the systematic failures traced to policy the sheet does not state.

@@ -4,6 +4,8 @@ import path from 'node:path';
 import type { ChecksReport } from './checks';
 import type { Draft } from './draft';
 import {
+  decisionSchema,
+  type Decision,
   approvedRulebookSchema,
   type ApprovedRulebook,
   type Rulebook,
@@ -45,6 +47,7 @@ export async function approveRulebook(
   processId: string,
   rulebook: Rulebook,
   drafted: ApprovedRulebook['drafted'],
+  decisions: Decision[] = [],
 ): Promise<{ record: ApprovedRulebook; file: string }> {
   const version = ((await listRulebooks(processId)).at(-1)?.version ?? 0) + 1;
   const record = approvedRulebookSchema.parse({
@@ -52,6 +55,7 @@ export async function approveRulebook(
     approved_at: new Date().toISOString(),
     drafted,
     rulebook,
+    decisions,
   });
   await mkdir(dirFor(processId), { recursive: true });
   const file = path.join(dirFor(processId), `v${version}.json`);
@@ -156,4 +160,49 @@ export async function readDraftRecord(
   } catch {
     return null;
   }
+}
+
+// The owner's decisions, in the repository beside the rulebooks: they are
+// policy, reviewed in the diff like a rulebook, and never written to the sheet.
+const decisionsFile = (processId: string) =>
+  path.join(process.cwd(), 'fixtures', processId, 'decisions.json');
+
+export async function listDecisions(processId: string): Promise<Decision[]> {
+  try {
+    return decisionSchema
+      .array()
+      .parse(JSON.parse(await readFile(decisionsFile(processId), 'utf8')));
+  } catch {
+    return [];
+  }
+}
+
+async function saveDecisions(processId: string, decisions: Decision[]) {
+  await mkdir(path.dirname(decisionsFile(processId)), { recursive: true });
+  await writeFile(
+    decisionsFile(processId),
+    `${JSON.stringify(decisions, null, 2)}\n`,
+  );
+}
+
+export async function addDecision(
+  processId: string,
+  input: Omit<Decision, 'id' | 'decided_at'>,
+): Promise<Decision> {
+  const decisions = await listDecisions(processId);
+  const decision = decisionSchema.parse({
+    ...input,
+    id: `d${decisions.reduce((n, d) => Math.max(n, Number(d.id.slice(1)) || 0), 0) + 1}`,
+    decided_at: new Date().toISOString(),
+  });
+  await saveDecisions(processId, [...decisions, decision]);
+  return decision;
+}
+
+export async function removeDecision(processId: string, id: string) {
+  const decisions = await listDecisions(processId);
+  await saveDecisions(
+    processId,
+    decisions.filter((d) => d.id !== id),
+  );
 }

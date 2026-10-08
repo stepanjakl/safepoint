@@ -5,7 +5,8 @@ import { useId, useState } from 'react';
 import { Ledger, LedgerRow } from '@/components/ui/ledger';
 import { WEEKDAYS, type Weekday } from '@/lib/rulebook/field-types';
 
-import { useEvaluation } from './evaluation-context';
+import { rulebookName, useEvaluation } from './evaluation-context';
+import { UnderTest } from './rulebook-drift';
 import {
   Code,
   DataTable,
@@ -13,6 +14,7 @@ import {
   Mark,
   TrialControl,
   TrialSection,
+  clock,
   td,
   th,
 } from './trial-parts';
@@ -20,7 +22,11 @@ import {
 type Mode = 'now' | 'weekday' | 'exact';
 
 export function CalculateStep() {
-  const { state, run } = useEvaluation();
+  const { state, run, candidate } = useEvaluation();
+  // Which rulebook to run. Unchosen, a draft open in Rules is tested, since
+  // that is what is being decided on; the approved one otherwise.
+  const [chosen, setChosen] = useState<'approved' | 'draft' | null>(null);
+  const which = candidate ? (chosen ?? 'draft') : 'approved';
   const [mode, setMode] = useState<Mode>('now');
   const [day, setDay] = useState<Weekday>('Thu');
   const [time, setTime] = useState('08:45');
@@ -40,11 +46,36 @@ export function CalculateStep() {
   return (
     <div className="grid gap-4">
       <p className="text-dense">
-        Runs the approved rulebook at a time you choose. The rulebook says how
-        the week is timed; the app only follows it. Every fact is calculated for
+        Runs a rulebook at a time you choose: the approved one, or the draft
+        open in Rules, to test it before approving it. The rulebook says how the
+        week is timed; the app only follows it. Every fact is calculated for
         every item, with nothing proposed yet.
       </p>
       <div className="flex flex-wrap gap-6">
+        <fieldset className="grid gap-1">
+          <legend className="text-dense font-semibold">Rulebook</legend>
+          <label className="text-dense flex items-center gap-1.5">
+            <input
+              type="radio"
+              name={`${name}-rulebook`}
+              checked={which === 'approved'}
+              onChange={() => setChosen('approved')}
+            />
+            The approved one
+          </label>
+          <label className="text-dense flex items-center gap-1.5">
+            <input
+              type="radio"
+              name={`${name}-rulebook`}
+              checked={which === 'draft'}
+              disabled={!candidate}
+              onChange={() => setChosen('draft')}
+            />
+            {candidate
+              ? `The draft of ${candidate.startedAt.slice(0, 10)} ${clock(candidate.startedAt)}, not approved`
+              : 'A draft (open one that passed in Rules)'}
+          </label>
+        </fieldset>
         <fieldset className="grid gap-1">
           <legend className="text-dense font-semibold">Run at</legend>
           <label className="text-dense flex items-center gap-1.5">
@@ -136,10 +167,20 @@ export function CalculateStep() {
         label="Calculate"
         runningLabel="Calculating…"
         state={state}
-        onRun={() => void run({ source, run: runRequest, period })}
+        onRun={() =>
+          void run({
+            source,
+            run: runRequest,
+            period,
+            rulebook:
+              which === 'draft' && candidate
+                ? { kind: 'draft', file: candidate.file }
+                : { kind: 'approved' },
+          })
+        }
         summary={
           result
-            ? `${result.evaluation.items.length} items with rulebook v${result.rulebook.version}`
+            ? `${result.evaluation.items.length} items with ${rulebookName(result.rulebook).replace(/^R/, 'r').replace(/^The/, 'the')}`
             : body?.kind === 'no_rulebook'
               ? 'No rulebook is approved yet: draft and approve one in Rules'
               : body?.kind === 'not_configured'
@@ -152,6 +193,7 @@ export function CalculateStep() {
 
       {result ? (
         <div className="grid gap-5">
+          <UnderTest rulebook={result.rulebook} />
           <TrialSection title="1. When">
             <Ledger className="enclosure">
               <LedgerRow label="Run at">

@@ -1,8 +1,17 @@
 'use client';
 
+import { useState } from 'react';
+
 import type { ChecksReport } from '@/lib/rulebook/checks';
 
-import { useEvaluation } from './evaluation-context';
+import {
+  rulebookName,
+  useEvaluation,
+  type EvaluateResponse,
+} from './evaluation-context';
+import { RuleWorking } from './rule-working';
+import { RulebookDrift, UnderTest } from './rulebook-drift';
+import { WhatIfBanner, WhatIfForm } from './what-if';
 import {
   Code,
   DataTable,
@@ -13,6 +22,8 @@ import {
   th,
 } from './trial-parts';
 
+type Result = Extract<EvaluateResponse, { kind: 'result' }>;
+
 const DISPOSITION = {
   blocked: 'Blocked',
   needs_decision: 'Needs a decision',
@@ -22,8 +33,13 @@ const DISPOSITION = {
 // Shows the evaluation Calculate started: each item's rules, then the owner's checks.
 export function CheckStep() {
   const { state } = useEvaluation();
-  const result =
+  // While a what-if reruns, the last result stays, so open sections and
+  // focus are kept.
+  const [last, setLast] = useState<Result | null>(null);
+  const current =
     state.kind === 'done' && state.body.kind === 'result' ? state.body : null;
+  if (current && current !== last) setLast(current);
+  const result = current ?? (state.kind === 'running' ? last : null);
   if (!result)
     return (
       <p className="text-dense text-muted">
@@ -35,7 +51,14 @@ export function CheckStep() {
   const { checks } = result;
   return (
     <div className="grid gap-5">
+      <UnderTest rulebook={result.rulebook} />
+      <RulebookDrift
+        name={rulebookName(result.rulebook)}
+        consequence="Its results below may be wrong until a new version is drafted and approved."
+        issues={result.drift}
+      />
       <TrialSection title="1. Rules per item, before any proposal">
+        <WhatIfBanner items={items} />
         <DataTable caption="Outcome per item">
           <thead>
             <tr>
@@ -74,21 +97,12 @@ export function CheckStep() {
         {items.map((item) => (
           <Disclosure
             key={`${item.kind}.${item.key}-rules`}
-            summary={`Every rule for ${item.key}`}
+            summary={`Every rule for ${item.key}, with its working`}
           >
-            <ul className="text-meta grid gap-1">
+            <WhatIfForm item={item} issues={result.whatIfIssues} />
+            <ul className="grid" aria-label={`Rules for ${item.key}`}>
               {item.rules.map((r) => (
-                <li key={r.id}>
-                  <Mark
-                    passed={
-                      r.status === 'pass' || r.status === 'not_applicable'
-                    }
-                  >
-                    {r.status.replace('_', ' ')}
-                  </Mark>{' '}
-                  {r.sheet_rule ?? r.id} {r.title}
-                  {r.detail ? ` · ${r.detail}` : ''}
-                </li>
+                <RuleWorking key={r.id} rule={r} />
               ))}
             </ul>
           </Disclosure>

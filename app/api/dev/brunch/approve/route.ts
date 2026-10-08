@@ -1,17 +1,14 @@
 import { z } from 'zod';
 
 import { rejectUnlessLocalDevelopment } from '@/lib/dev/dev-route';
+import { BRUNCH_MAY_CHANGE } from '@/lib/processes/avocado-toast/process';
 import {
   loadSnapshot,
   PROCESS_ID,
 } from '@/lib/processes/avocado-toast/snapshot';
-import { rulebookSchema } from '@/lib/rulebook/schema';
+import { decisionSchema, rulebookSchema } from '@/lib/rulebook/schema';
 import { approveRulebook } from '@/lib/rulebook/store';
-import {
-  validateDataModel,
-  validateInventory,
-  validateLogic,
-} from '@/lib/rulebook/validate';
+import { validateRulebook } from '@/lib/rulebook/validate';
 
 export const runtime = 'nodejs';
 
@@ -28,6 +25,7 @@ export async function POST(request: Request) {
         at: z.string(),
       }),
       source: z.enum(['captured', 'live']),
+      decisions: z.array(decisionSchema).default([]),
     })
     .safeParse(await request.json().catch(() => null));
   if (!parsed.success)
@@ -43,15 +41,7 @@ export async function POST(request: Request) {
     );
   const { read } = await loadSnapshot(parsed.data.source);
   const book = parsed.data.rulebook;
-  const issues = [
-    ...validateInventory(book, read),
-    ...validateDataModel(book, book, read),
-    ...validateLogic(book, book, book, read),
-    ...book.data_model_requests.map((r) => ({
-      where: `data_model_requests.${r.statement}`,
-      message: `Unresolved: ${r.request}`,
-    })),
-  ];
+  const issues = validateRulebook(book, read, BRUNCH_MAY_CHANGE);
   if (issues.length)
     return Response.json(
       {
@@ -65,6 +55,7 @@ export async function POST(request: Request) {
     PROCESS_ID,
     parsed.data.rulebook,
     parsed.data.drafted,
+    parsed.data.decisions,
   );
   return Response.json({ kind: 'result', version: record.version, file });
 }

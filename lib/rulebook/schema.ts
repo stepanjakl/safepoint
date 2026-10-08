@@ -116,10 +116,15 @@ export const inventorySchema = z.strictObject({
         name: ident,
         kind: ident.describe('The kind of item it belongs to, from kinds'),
         meaning: z.string().min(1).max(300),
-        source,
+        source: source
+          .nullable()
+          .default(null)
+          .describe('Null: the process defines what may change'),
       }),
     )
-    .describe('Every value the policy says a proposal may change'),
+    .describe(
+      'Exactly the values the process lets a proposal change (may_change), each with the kind of item it belongs to',
+    ),
   statements: z
     .array(
       z.strictObject({
@@ -303,6 +308,31 @@ export const dataModelSchema = z.strictObject({
     ),
 });
 
+// A choice the policy leaves open, with the other readings the owner may pick.
+const assumption = z.strictObject({
+  assumption: z
+    .string()
+    .min(1)
+    .max(300)
+    .describe(
+      'What was assumed, in plain words the business owner would use: no field names, formulas or code',
+    ),
+  alternatives: z
+    .array(z.string().min(1).max(300))
+    .min(1)
+    .max(3)
+    .describe(
+      'Other readings a reasonable person could take, in the same plain words, each different from the assumption and from each other',
+    ),
+  technical: z
+    .string()
+    .min(1)
+    .max(300)
+    .describe(
+      'For checking: the field, number or part of the formula this concerns, as written in the formula',
+    ),
+});
+
 export const logicSchema = z.strictObject({
   editable: z
     .array(
@@ -320,10 +350,15 @@ export const logicSchema = z.strictObject({
           .describe(
             'CEL: the value before anyone proposes a change; int for whole_number and money, double for decimal and percent',
           ),
-        source,
+        source: source
+          .nullable()
+          .default(null)
+          .describe(
+            'The cells its starting value comes from, quoted; null when it starts from nothing in the sheet (such as 0)',
+          ),
       }),
     )
-    .describe('Every value a proposal may change, as the sheet declares them'),
+    .describe('Every value the process lets a proposal change'),
   facts: z
     .array(
       z.strictObject({
@@ -337,6 +372,20 @@ export const logicSchema = z.strictObject({
           .max(800)
           .describe('Standard CEL. May use earlier facts of the same kind'),
         explain: z.string().min(1).max(300),
+        statement: z
+          .string()
+          .nullable()
+          .default(null)
+          .describe(
+            'Id of the inventory statement this fact implements, when the policy defines how the value is calculated; otherwise null',
+          ),
+        assumes: z
+          .array(assumption)
+          .max(5)
+          .default([])
+          .describe(
+            'Each choice the formula makes that the statement text does not (a number not in the text, a default for a blank, what a blank cell or a missing row does), with the other readings you considered. Empty when the formula follows the text',
+          ),
       }),
     )
     .describe(
@@ -364,6 +413,13 @@ export const logicSchema = z.strictObject({
         .describe('CEL bool; the rule only applies when true'),
       assert: z.string().min(1).max(800).describe('CEL bool that must hold'),
       explain: z.string().min(1).max(300),
+      assumes: z
+        .array(assumption)
+        .max(5)
+        .default([])
+        .describe(
+          'Each choice the formula makes that the statement text does not (a number not in the text, a default for a blank, what a blank cell or a missing row does), with the other readings you considered. Empty when the formula follows the text',
+        ),
       origin: z
         .enum(['sheet', 'model'])
         .describe('sheet: stated in a policy tab; model: your own suggestion'),
@@ -411,6 +467,35 @@ export type DataModel = z.infer<typeof dataModelSchema>;
 export type Logic = z.infer<typeof logicSchema>;
 export type Rulebook = z.infer<typeof rulebookSchema>;
 
+/*
+  What a process lets a proposal change: the agent's write authority. Set by
+  the process owner in the app, never read from the sheet, which is an input
+  anyone with access can edit. Drafting maps each onto the sheet's data.
+*/
+export const mayChangeSchema = z.strictObject({
+  name: ident,
+  applies_to: z.string().min(1).max(120),
+  type: z.enum(EDITABLE_KINDS),
+  starts_as: z.string().min(1).max(200),
+  meaning: z.string().min(1).max(300),
+});
+export type MayChange = z.infer<typeof mayChangeSchema>;
+
+/*
+  An owner's answer to an assumption. Kept in the app, never written to the
+  sheet, which stays the store's own record. It names the statement it
+  clarifies by its exact text, so a change to that text marks it stale.
+*/
+export const decisionSchema = z.strictObject({
+  id: z.string(),
+  statement: z.string(),
+  quote: z.string(),
+  question: z.string().min(1).max(300),
+  answer: z.string().min(1).max(600),
+  decided_at: z.string(),
+});
+export type Decision = z.infer<typeof decisionSchema>;
+
 export const approvedRulebookSchema = z.strictObject({
   version: z.number().int().min(1),
   approved_at: z.string(),
@@ -420,5 +505,7 @@ export const approvedRulebookSchema = z.strictObject({
     at: z.string(),
   }),
   rulebook: rulebookSchema,
+  // The owner decisions this version was drafted and approved with.
+  decisions: z.array(decisionSchema).default([]),
 });
 export type ApprovedRulebook = z.infer<typeof approvedRulebookSchema>;

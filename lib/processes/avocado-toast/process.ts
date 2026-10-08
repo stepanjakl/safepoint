@@ -1,5 +1,6 @@
 import type { ProcessSummary } from '@/lib/process/model';
 import type { ReleasePlan } from '@/lib/review/plan-contract';
+import type { MayChange } from '@/lib/rulebook/schema';
 
 /*
   Brunch weekend, built in the open (docs/SHEET-PROCESS-PLAN.md). Development
@@ -10,6 +11,40 @@ import type { ReleasePlan } from '@/lib/review/plan-contract';
 
 export const BRUNCH_PROCESS_ID = 'avocado-toast';
 export const BRUNCH_HREF = '/examples/avocado-toast';
+
+// What a proposal may change: the agent's write authority, set here by the
+// process owner and never read from the sheet. Drafting maps each onto the
+// sheet's data; a rulebook that adds or drops one is refused.
+export const BRUNCH_MAY_CHANGE: MayChange[] = [
+  {
+    name: 'order_units',
+    applies_to: 'each product',
+    type: 'whole_number',
+    starts_as: '0',
+    meaning: 'Units to order as a final top-up for the weekend.',
+  },
+  {
+    name: 'offer_price',
+    applies_to: 'each product with an offer',
+    type: 'money',
+    starts_as: 'the offer price in the brief',
+    meaning: 'The promotional shelf price.',
+  },
+  {
+    name: 'kit_price',
+    applies_to: 'the kit',
+    type: 'money',
+    starts_as: 'the kit price in the brief',
+    meaning: 'The price of the Avo toast kit.',
+  },
+  {
+    name: 'kit_limit',
+    applies_to: 'the kit',
+    type: 'whole_number',
+    starts_as: 'the number of kits expected to sell',
+    meaning: 'How many kits to put out over the weekend.',
+  },
+];
 
 export const brunchProcess: ProcessSummary = {
   id: BRUNCH_PROCESS_ID,

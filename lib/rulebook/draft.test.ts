@@ -428,3 +428,112 @@ describe('rate limits', () => {
     );
   });
 });
+
+describe('checks that keep finding the same problems', () => {
+  it('ends an attempt after three identical failing checks, then stops the stage', async () => {
+    const stuck = {
+      ...dataModel,
+      timing: {
+        ...timing,
+        current_until: { table: 'policy', time: 'close_time' },
+      },
+    };
+    let calls = 0;
+    const model = new MockLanguageModelV4({
+      doGenerate: async () => {
+        calls += 1;
+        return calls === 1
+          ? toolCall('check_inventory', inventory)
+          : toolCall('check_data_model', stuck);
+      },
+    });
+    const result = await draft([{ id: 'm', model }]);
+    const attempts = result.stages.filter((s) => s.stage === 'data_model');
+    expect(attempts.map((s) => s.toolCalls.length)).toEqual([3, 3]);
+    expect(result.stopped).toMatchObject({
+      stage: 'data_model',
+      reason: 'repeat',
+    });
+  });
+});
+
+describe('a data-model revision', () => {
+  it('must keep what the rules stage did not ask to change', async () => {
+    const request = { statement: 'C1', request: 'List member first.' };
+    const dropped = {
+      ...dataModel,
+      timing: {
+        ...timing,
+        times: timing.times.filter((t) => t.name !== 'borrowed_at'),
+      },
+    };
+    const model = replying(
+      inventory,
+      dataModel,
+      { ...logic, data_model_requests: [request] },
+      dropped,
+      dataModel,
+      logic,
+    );
+    const result = await draft([{ id: 'm', model }]);
+    expect(result.rulebook).not.toBeNull();
+    const revised = result.stages.filter(
+      (s) => s.stage === 'data_model' && s.round === 2,
+    );
+    expect(revised[0]!.issues).toContainEqual(
+      expect.objectContaining({
+        message: expect.stringMatching(
+          /loans\.borrowed_at was declared before the revision and is gone/,
+        ),
+      }),
+    );
+  });
+});
+
+describe('owner decisions in drafting', () => {
+  it('are given to the model as policy and recorded on the draft', async () => {
+    const decision = {
+      id: 'd1',
+      statement: 'L1',
+      quote: 'A member may hold at most max_loans books.',
+      question: 'Do overdue books count?',
+      answer: 'Yes, every book not yet returned counts.',
+      decided_at: '2026-10-07T12:00:00Z',
+    };
+    const model = replying(inventory, dataModel, logic);
+    const result = await draftRulebook('m', snapshot, 'run', {
+      models: [{ id: 'm', model }],
+      maxRetries: 0,
+      decisions: [decision],
+    });
+    expect(result.rulebook).not.toBeNull();
+    expect(result.decisions).toEqual([decision]);
+    expect(promptText(model, 0)).toContain(
+      'every book not yet returned counts',
+    );
+    expect(promptText(model, 2)).toContain('owner_decisions');
+  });
+});
+
+describe('what may change', () => {
+  it('is given to the model by the process, not read from the sheet', async () => {
+    const mayChange = [
+      {
+        name: 'fee',
+        applies_to: 'each book',
+        type: 'money' as const,
+        starts_as: 'the current fee',
+        meaning: 'The loan fee.',
+      },
+    ];
+    const model = replying(inventory, dataModel, logic);
+    const result = await draftRulebook('m', snapshot, 'run', {
+      models: [{ id: 'm', model }],
+      maxRetries: 0,
+      mayChange,
+    });
+    expect(result.rulebook).not.toBeNull();
+    expect(promptText(model, 0)).toContain('may_change');
+    expect(promptText(model, 0)).toContain('The loan fee.');
+  });
+});

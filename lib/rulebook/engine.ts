@@ -8,10 +8,22 @@ import {
   mondayOf,
   type LocalDate,
 } from './cycle';
-import type { FieldType, Weekday } from './field-types';
+import {
+  formatMoney,
+  interpretCell,
+  type FieldType,
+  type Weekday,
+} from './field-types';
 import type { Rulebook } from './schema';
 import { bindTab, type BoundTab, type TabSpec } from './sheet-binding';
 import { registerKubernetesSum } from './kubernetes-lists';
+import {
+  conditionsOf,
+  type Condition,
+  type Path,
+  type TermInfo,
+  type WorkingTools,
+} from './working';
 
 /*
   The rule engine. It knows nothing about any scenario: it reads a rulebook
@@ -324,14 +336,29 @@ export function describeEnvironment(rulebook: Rulebook, spec: EnvironmentSpec) {
     type: '{…}',
     meaning: `Proposed values: ${spec.change.join(', ') || 'none'}`,
   });
+  const earlier = earlierKinds(rulebook, spec.kind);
   for (const other of rulebook.items)
     if (other.kind !== spec.kind)
-      vars.push({
-        name: `${other.kind}_facts`,
-        type: `map<string, …>`,
-        meaning: `Facts of every ${other.label}, by key`,
-      });
+      vars.push(
+        earlier.includes(other)
+          ? {
+              name: `${other.kind}_facts`,
+              type: `map<string, …>`,
+              meaning: `Facts of every ${other.label}, by key: the facts you write for ${other.kind}`,
+            }
+          : {
+              name: `${other.kind}_facts`,
+              type: 'not available',
+              meaning: `${other.kind} is evaluated after ${spec.kind}, so its facts do not exist yet. If ${spec.kind} needs them, ask in data_model_requests for items to list ${other.kind} first.`,
+            },
+      );
   return vars;
+}
+
+// The kinds listed before this one in items: evaluated, with their facts, first.
+function earlierKinds(rulebook: Rulebook, kind: string) {
+  const at = rulebook.items.findIndex((k) => k.kind === kind);
+  return rulebook.items.slice(0, Math.max(0, at));
 }
 
 function rowSchema(rulebook: Rulebook, table: TableDef) {
@@ -369,8 +396,9 @@ export function buildEnvironment(
           : typeName,
     );
   }
-  for (const other of rulebook.items) {
-    if (other.kind === spec.kind) continue;
+  // A kind reads the facts of the kinds evaluated before it, and only those:
+  // a later kind's facts do not exist yet when this one runs.
+  for (const other of earlierKinds(rulebook, spec.kind)) {
     const typeName = `F_${other.kind}`;
     const schema = Object.fromEntries(
       (allFacts[other.kind] ?? []).map((f) => [f.name, celName(f.type)]),
@@ -408,10 +436,15 @@ export function buildEnvironment(
 export type Checked = { ok: true; type: string } | { ok: false; error: string };
 
 // The library's messages name the symptom; these name the standard-CEL fix.
-const HINTS: [RegExp, string][] = [
+const HINTS: [RegExp, string | ((match: RegExpExecArray) => string)][] = [
+  [
+    /Unknown variable: (\w+)_facts/,
+    (m) =>
+      `Facts of ${m[1]} are only available to kinds listed after ${m[1]} in items. If this kind needs them, ask in data_model_requests for items to list ${m[1]} first.`,
+  ],
   [
     /has\(\) invalid argument/,
-    'has() works only on facts and change. For a cell that may be blank, test row.?field.hasValue() or read row.?field.orValue(default).',
+    'has() works on a field of a variable (row.f, facts.f, change.f) but not after a lookup such as table[key].f. Test a cell that may be blank with table[key].?f.hasValue(), or read it with .?f.orValue(default).',
   ],
   [
     /no such overload: .* [!=]= null|no such overload: null [!=]= /,
@@ -432,8 +465,12 @@ const HINTS: [RegExp, string][] = [
 ];
 
 const withHint = (message: string) => {
-  const hint = HINTS.find(([pattern]) => pattern.test(message))?.[1];
-  return hint ? `${message}. ${hint}` : message;
+  for (const [pattern, hint] of HINTS) {
+    const match = pattern.exec(message);
+    if (match)
+      return `${message}. ${typeof hint === 'string' ? hint : hint(match)}`;
+  }
+  return message;
 };
 
 export function checkFormula(
@@ -483,6 +520,8 @@ export type ItemResult = {
     name: string;
     label: string;
     value: string | null;
+    // As a person writes it (£4.75 for 475), when that differs.
+    display: string | null;
     from: 'default' | 'set' | 'not_applicable';
     error: string | null;
   }[];
@@ -493,6 +532,9 @@ export type ItemResult = {
     outcome: 'block' | 'attention';
     status: RuleStatus;
     detail: string | null;
+    // With options.explain: each condition of the formula, evaluated for
+    // this item, with the values it read.
+    working?: { conditions: Condition[] };
   }[];
   disposition: Disposition;
 };
@@ -505,27 +547,270 @@ export type Evaluation = {
   items: ItemResult[];
 };
 
+// A CEL duration, as hours and minutes ("31h 0m"); JSON shows it as {}.
+const isDuration = (value: unknown): value is { seconds: bigint | number } =>
+  typeof value === 'object' &&
+  value !== null &&
+  'seconds' in value &&
+  'nanos' in value;
+const showDuration = ({ seconds }: { seconds: bigint | number }) => {
+  const total = Number(seconds);
+  const sign = total < 0 ? '−' : '';
+  const minutes = Math.round(Math.abs(total) / 60);
+  return `${sign}${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+};
+
 const showValue = (value: unknown): string =>
   value instanceof Date
     ? value.toISOString()
-    : typeof value === 'bigint'
-      ? String(value)
-      : (JSON.stringify(value, (_, v) =>
-          typeof v === 'bigint' ? String(v) : v,
-        ) ?? String(value));
+    : isDuration(value)
+      ? showDuration(value)
+      : typeof value === 'bigint'
+        ? String(value)
+        : (JSON.stringify(value, (_, v) =>
+            typeof v === 'bigint' ? String(v) : v,
+          ) ?? String(value));
 
-function run(
+function compiled(
   env: Environment,
   cache: Map<string, (ctx: object) => unknown>,
   expression: string,
-  context: object,
 ) {
   let fn = cache.get(expression);
   if (!fn) {
     fn = env.parse(expression) as (ctx: object) => unknown;
     cache.set(expression, fn);
   }
-  return fn(context);
+  return fn;
+}
+
+const run = (
+  env: Environment,
+  cache: Map<string, (ctx: object) => unknown>,
+  expression: string,
+  context: object,
+) => compiled(env, cache, expression)(context);
+
+const pad = (n: number) => String(n).padStart(2, '0');
+
+// How a person writes a value of this type, or null when it reads plainly.
+function shownAs(
+  rulebook: Rulebook,
+  type: string,
+): (value: unknown) => string | null {
+  const tz = rulebook.timing.time_zone;
+  switch (type) {
+    case 'money':
+      return (v) =>
+        typeof v === 'bigint'
+          ? formatMoney(
+              Number(v),
+              rulebook.currency ?? { code: 'XXX', minor_units: 2 },
+            )
+          : null;
+    case 'percent':
+      return (v) =>
+        typeof v === 'number' ? `${Number((v * 100).toPrecision(12))}%` : null;
+    case 'time_of_day':
+      return (v) =>
+        typeof v === 'bigint'
+          ? `${pad(Number(v / 60n))}:${pad(Number(v % 60n))}`
+          : null;
+    case 'date':
+    case 'datetime':
+    case 'timestamp':
+      return (v) => (v instanceof Date ? shortInstant(v, tz) : null);
+    default:
+      return () => null;
+  }
+}
+// "Fri 16 Oct, 10:00" in the rulebook's time zone: short enough to sit in a
+// formula. The Calculate step shows each time in full.
+const shortInstant = (value: Date, timeZone: string) =>
+  new Intl.DateTimeFormat('en-GB', {
+    timeZone,
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(value);
+const DATE_TYPES = new Set(['date', 'datetime', 'timestamp']);
+
+/*
+  A value a person typed for a what-if, read as the sheet reads a cell of the
+  editable value's type: "£4.75" and "4.75" are 475 minor units, "25" or
+  "25%" a quarter, "1,200" twelve hundred.
+*/
+export function readWhatIf(
+  rulebook: Rulebook,
+  name: string,
+  text: string,
+): { ok: true; value: bigint | number } | { ok: false; issue: string } {
+  const editable = rulebook.editable.find((e) => e.name === name);
+  if (!editable)
+    return { ok: false, issue: `Nothing called ${name} may change.` };
+  const plain = text.trim().replace(/[^\d.%-]/g, '');
+  if (!/\d/.test(plain))
+    return {
+      ok: false,
+      issue: `${editable.label}: ${text.trim() ? `"${text.trim()}" is not a number.` : 'Enter a value.'}`,
+    };
+  const raw =
+    editable.type === 'percent'
+      ? plain.endsWith('%')
+        ? plain
+        : `${plain}%`
+      : plain === ''
+        ? undefined
+        : Number(plain);
+  if (typeof raw === 'number' && Number.isNaN(raw))
+    return {
+      ok: false,
+      issue: `${editable.label}: "${text}" is not a number.`,
+    };
+  const read = interpretCell(raw, fieldType(rulebook, editable.type), true);
+  if (read.issue || read.value === null)
+    return {
+      ok: false,
+      issue: `${editable.label}: ${read.issue ?? 'Enter a value.'}`,
+    };
+  return {
+    ok: true,
+    value: toCel(read.value, editable.type) as bigint | number,
+  };
+}
+
+// Each condition of a rule, the when part first. Only the part that settled
+// the result keeps its settling condition.
+function ruleWorking(
+  rule: Rulebook['rules'][number],
+  tools: WorkingTools,
+): { conditions: Condition[] } {
+  try {
+    const when = rule.when
+      ? conditionsOf('when', rule.when, true, tools)
+      : null;
+    const applies = !when || when.value === true;
+    const require = conditionsOf('require', rule.assert, applies, tools);
+    if (when && applies) for (const c of when.conditions) c.settled = false;
+    return { conditions: [...(when?.conditions ?? []), ...require.conditions] };
+  } catch {
+    return { conditions: [] };
+  }
+}
+
+// What the engine knows about each value a formula of one item reads: its
+// meaning, its cell, and how a person writes it.
+function workingTools(
+  rulebook: Rulebook,
+  at: {
+    env: Environment;
+    cache: Map<string, (ctx: object) => unknown>;
+    context: object;
+    kind: string;
+    row: BoundRow | null;
+    withTimes: Map<string, BoundRow[]>;
+    change: ItemResult['change'];
+  },
+): WorkingTools {
+  const tz = rulebook.timing.time_zone;
+  const instant = shownAs(rulebook, 'timestamp');
+  const fromTable = (
+    table: TableDef,
+    field: string | null,
+    row: BoundRow | null | undefined,
+  ): TermInfo | null => {
+    const column = table.columns.find((c) => c.name === field);
+    if (column)
+      return {
+        label: column.meaning,
+        source: (field && row?.refs[field]) || null,
+        show: shownAs(rulebook, column.type),
+        fillShown: DATE_TYPES.has(column.type),
+      };
+    const time = rulebook.timing.times.find(
+      (t) => t.table === table.name && t.name === field,
+    );
+    if (time)
+      return {
+        label: time.meaning,
+        source:
+          [row?.refs[time.day], row?.refs[time.time]]
+            .filter(Boolean)
+            .join(', ') || null,
+        show: instant,
+        fillShown: true,
+      };
+    return null;
+  };
+  const fact = (kind: string, field: string | null): TermInfo | null => {
+    const f = rulebook.facts.find((x) => x.kind === kind && x.name === field);
+    return f
+      ? {
+          label: f.label,
+          source: 'calculated',
+          show: shownAs(rulebook, f.type),
+          fillShown: DATE_TYPES.has(f.type),
+        }
+      : null;
+  };
+  return {
+    parse: (text) =>
+      (compiled(at.env, at.cache, text) as unknown as { ast: never }).ast,
+    evaluate: (text) => run(at.env, at.cache, text, at.context),
+    showRaw: (value) =>
+      value instanceof Date ? shortInstant(value, tz) : showValue(value),
+    describe: ({ root, field, index }: Path) => {
+      if (root === 'run_at')
+        return {
+          label: 'Run time',
+          source: null,
+          show: instant,
+          fillShown: true,
+        };
+      if (root === 'key')
+        return {
+          label: 'Item key',
+          source: null,
+          show: () => null,
+          fillShown: false,
+        };
+      if (root === 'row') {
+        const kind = rulebook.items.find((k) => k.kind === at.kind);
+        const table = rulebook.tables.find((t) => t.name === kind?.table);
+        return table ? fromTable(table, field, at.row) : null;
+      }
+      if (root === 'change') {
+        const editable = rulebook.editable.find(
+          (e) => e.kind === at.kind && e.name === field,
+        );
+        const from = at.change.find((c) => c.name === field)?.from;
+        return editable
+          ? {
+              label: editable.label,
+              source: from === 'set' ? 'proposed' : 'starting value',
+              show: shownAs(rulebook, editable.type),
+              fillShown: false,
+            }
+          : null;
+      }
+      if (root === 'facts') return fact(at.kind, field);
+      if (root.endsWith('_facts')) return fact(root.slice(0, -6), field);
+      const table = rulebook.tables.find((t) => t.name === root);
+      if (!table) return null;
+      const rows = at.withTimes.get(table.name) ?? [];
+      return fromTable(
+        table,
+        field,
+        table.shape === 'single'
+          ? rows[0]
+          : table.shape === 'keyed' && index.length
+            ? rows.find((r) => r.key === String(index[0]))
+            : null,
+      );
+    },
+  };
 }
 
 export function evaluate(
@@ -538,6 +823,8 @@ export function evaluate(
     overrides?: Record<string, Record<string, bigint | number>>;
     // Evaluate one extra expression for one item, after its facts and defaults.
     probe?: { kind: string; key: string; expression: string };
+    // Also show each rule's working: the values its formula read, per item.
+    explain?: boolean;
   } = {},
 ): Evaluation & {
   probe?: { ok: true; value: string } | { ok: false; error: string };
@@ -651,6 +938,7 @@ export function evaluate(
               name: field.name,
               label: field.label,
               value: null,
+              display: null,
               from: 'not_applicable' as const,
               error: null,
             };
@@ -662,6 +950,7 @@ export function evaluate(
             name: field.name,
             label: field.label,
             value: showValue(value),
+            display: shownAs(rulebook, field.type)(value),
             from:
               overrides[field.name] !== undefined
                 ? ('set' as const)
@@ -673,6 +962,7 @@ export function evaluate(
             name: field.name,
             label: field.label,
             value: null,
+            display: null,
             from: 'default' as const,
             error: (error as Error).message.split('\n')[0]!,
           };
@@ -698,6 +988,21 @@ export function evaluate(
           };
         }
       }
+      const tools = options.explain
+        ? workingTools(rulebook, {
+            env,
+            cache,
+            context: itemContext,
+            kind: kind.kind,
+            row: kind.group
+              ? null
+              : (rows.find(
+                  (r) => String(r.values[kind.key] ?? r.key) === key,
+                ) ?? null),
+            withTimes,
+            change: changeResults,
+          })
+        : null;
       const ruleResults = rules.map((rule) => {
         let status: RuleStatus;
         let detail: string | null = null;
@@ -722,6 +1027,7 @@ export function evaluate(
           outcome: rule.outcome,
           status,
           detail,
+          ...(tools ? { working: ruleWorking(rule, tools) } : {}),
         };
       });
       const blocked = ruleResults.some(

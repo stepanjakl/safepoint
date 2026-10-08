@@ -1,0 +1,1735 @@
+{
+  "version": 1,
+  "approved_at": "2026-10-07T11:42:39.630Z",
+  "drafted": {
+    "model": "gemini-3.5-flash-lite",
+    "run_id": "33abbfe2-acef-4d88-a0f1-e3c812517e53",
+    "at": "2026-10-07T10:28:46.313Z"
+  },
+  "rulebook": {
+    "schema_version": 1,
+    "process": {
+      "name": "Alderton's Local Brunch weekend",
+      "item_noun": "product"
+    },
+    "sources": [
+      {
+        "tab": "About",
+        "role": "context",
+        "reason": "Explains the sheet background and tabs"
+      },
+      {
+        "tab": "Products",
+        "role": "data",
+        "reason": "Product catalogue, prices, costs, case sizes, and shelf life"
+      },
+      {
+        "tab": "Stock",
+        "role": "data",
+        "reason": "Current stock counts and counts timing"
+      },
+      {
+        "tab": "Sales",
+        "role": "data",
+        "reason": "Historical sales data over recent weekends"
+      },
+      {
+        "tab": "Deliveries",
+        "role": "data",
+        "reason": "Suppliers, delivery schedules, cut-offs, and order limits"
+      },
+      {
+        "tab": "Promotion",
+        "role": "data",
+        "reason": "Promotion brief, dates, and kit brief price"
+      },
+      {
+        "tab": "Kit",
+        "role": "data",
+        "reason": "Kit component recipes"
+      },
+      {
+        "tab": "Offers",
+        "role": "data",
+        "reason": "Offers, roles, brief prices, and expected lifts"
+      },
+      {
+        "tab": "Parameters",
+        "role": "policy",
+        "reason": "Category parameters such as margins and discounts limits"
+      },
+      {
+        "tab": "Rules",
+        "role": "policy",
+        "reason": "Store rules governing orders and pricing"
+      },
+      {
+        "tab": "Notes",
+        "role": "untrusted",
+        "reason": "Staff notes and messages"
+      },
+      {
+        "tab": "Changes",
+        "role": "policy",
+        "reason": "Defines what a proposal may change"
+      }
+    ],
+    "kinds": [
+      {
+        "kind": "product",
+        "label": "product",
+        "tab": "Products",
+        "key_header": "sku",
+        "why": "The store sells products with prices and costs."
+      },
+      {
+        "kind": "kit",
+        "label": "kit",
+        "tab": "Kit",
+        "key_header": "kit_id",
+        "why": "The avocado toast kit has a price and a sales limit."
+      }
+    ],
+    "changeable": [
+      {
+        "name": "order_units",
+        "kind": "product",
+        "meaning": "Units to order as a final top-up for the weekend.",
+        "source": {
+          "cells": [
+            "Changes!E2"
+          ],
+          "quote": "Units to order as a final top-up for the weekend."
+        }
+      },
+      {
+        "name": "offer_price",
+        "kind": "product",
+        "meaning": "The promotional shelf price.",
+        "source": {
+          "cells": [
+            "Changes!E3"
+          ],
+          "quote": "The promotional shelf price."
+        }
+      },
+      {
+        "name": "kit_price",
+        "kind": "kit",
+        "meaning": "The price of the Avo toast kit.",
+        "source": {
+          "cells": [
+            "Changes!E4"
+          ],
+          "quote": "The price of the Avo toast kit."
+        }
+      },
+      {
+        "name": "kit_limit",
+        "kind": "kit",
+        "meaning": "How many kits to put out over the weekend.",
+        "source": {
+          "cells": [
+            "Changes!E5"
+          ],
+          "quote": "How many kits to put out over the weekend."
+        }
+      }
+    ],
+    "statements": [
+      {
+        "id": "R1",
+        "source": {
+          "cells": [
+            "Rules!A2",
+            "Rules!B2",
+            "Rules!C2"
+          ],
+          "quote": "An offer price must keep at least the category's margin floor."
+        },
+        "kind": "product",
+        "needs": [
+          {
+            "tab": "Products",
+            "header": "category"
+          },
+          {
+            "tab": "Products",
+            "header": "cost_price"
+          },
+          {
+            "tab": "Parameters",
+            "header": "margin_floor_pct"
+          }
+        ],
+        "changes": [
+          "offer_price"
+        ],
+        "checkable": true,
+        "why_not": null
+      },
+      {
+        "id": "R2",
+        "source": {
+          "cells": [
+            "Rules!A3",
+            "Rules!B3",
+            "Rules!C3"
+          ],
+          "quote": "The kit price must keep at least the kit margin floor, counting the cost of every component."
+        },
+        "kind": "kit",
+        "needs": [
+          {
+            "tab": "Products",
+            "header": "cost_price"
+          },
+          {
+            "tab": "Parameters",
+            "header": "margin_floor_pct"
+          },
+          {
+            "tab": "Kit",
+            "header": "quantity"
+          }
+        ],
+        "changes": [
+          "kit_price"
+        ],
+        "checkable": true,
+        "why_not": null
+      },
+      {
+        "id": "R3",
+        "source": {
+          "cells": [
+            "Rules!A4",
+            "Rules!B4",
+            "Rules!C4"
+          ],
+          "quote": "Order quantities must be whole cases."
+        },
+        "kind": "product",
+        "needs": [
+          {
+            "tab": "Products",
+            "header": "case_size"
+          }
+        ],
+        "changes": [
+          "order_units"
+        ],
+        "checkable": true,
+        "why_not": null
+      },
+      {
+        "id": "R4",
+        "source": {
+          "cells": [
+            "Rules!A5",
+            "Rules!B5",
+            "Rules!C5"
+          ],
+          "quote": "Don't use a stock count older than the category's limit; recount first."
+        },
+        "kind": "product",
+        "needs": [
+          {
+            "tab": "Parameters",
+            "header": "max_count_age_hours"
+          },
+          {
+            "tab": "Stock",
+            "header": "counted_day"
+          },
+          {
+            "tab": "Stock",
+            "header": "counted_time"
+          },
+          {
+            "tab": "Promotion",
+            "header": "scheduled_run_day"
+          },
+          {
+            "tab": "Promotion",
+            "header": "scheduled_run_time"
+          }
+        ],
+        "changes": [
+          "order_units"
+        ],
+        "checkable": true,
+        "why_not": null
+      },
+      {
+        "id": "R5",
+        "source": {
+          "cells": [
+            "Rules!A6",
+            "Rules!B6",
+            "Rules!C6"
+          ],
+          "quote": "Anything we order must arrive before the promotion starts."
+        },
+        "kind": "product",
+        "needs": [
+          {
+            "tab": "Deliveries",
+            "header": "delivery_day"
+          },
+          {
+            "tab": "Deliveries",
+            "header": "delivery_time"
+          },
+          {
+            "tab": "Promotion",
+            "header": "starts_day"
+          },
+          {
+            "tab": "Promotion",
+            "header": "starts_time"
+          }
+        ],
+        "changes": [
+          "order_units"
+        ],
+        "checkable": true,
+        "why_not": null
+      },
+      {
+        "id": "R6",
+        "source": {
+          "cells": [
+            "Rules!A7",
+            "Rules!B7",
+            "Rules!C7"
+          ],
+          "quote": "A discount deeper than the category maximum needs individual approval."
+        },
+        "kind": "product",
+        "needs": [
+          {
+            "tab": "Products",
+            "header": "regular_price"
+          },
+          {
+            "tab": "Parameters",
+            "header": "max_discount_pct"
+          }
+        ],
+        "changes": [
+          "offer_price"
+        ],
+        "checkable": true,
+        "why_not": null
+      },
+      {
+        "id": "R7",
+        "source": {
+          "cells": [
+            "Rules!A8",
+            "Rules!B8",
+            "Rules!C8"
+          ],
+          "quote": "Ripe stock shouldn't cover more than the category's ripe cover days of expected sales."
+        },
+        "kind": "product",
+        "needs": [
+          {
+            "tab": "Products",
+            "header": "ripe"
+          },
+          {
+            "tab": "Parameters",
+            "header": "ripe_cover_days"
+          },
+          {
+            "tab": "Sales",
+            "header": "weekend_1"
+          },
+          {
+            "tab": "Sales",
+            "header": "weekend_2"
+          },
+          {
+            "tab": "Sales",
+            "header": "weekend_3"
+          },
+          {
+            "tab": "Sales",
+            "header": "weekend_4"
+          }
+        ],
+        "changes": [
+          "order_units"
+        ],
+        "checkable": true,
+        "why_not": null
+      },
+      {
+        "id": "R8",
+        "source": {
+          "cells": [
+            "Rules!A9",
+            "Rules!B9",
+            "Rules!C9"
+          ],
+          "quote": "Don't plan more kits than the scarcest component can supply."
+        },
+        "kind": "kit",
+        "needs": [
+          {
+            "tab": "Stock",
+            "header": "on_hand"
+          },
+          {
+            "tab": "Stock",
+            "header": "reserved"
+          },
+          {
+            "tab": "Stock",
+            "header": "inbound_before_start"
+          },
+          {
+            "tab": "Kit",
+            "header": "component_sku"
+          }
+        ],
+        "changes": [
+          "kit_limit"
+        ],
+        "checkable": true,
+        "why_not": null
+      },
+      {
+        "id": "R9",
+        "source": {
+          "cells": [
+            "Rules!A10",
+            "Rules!B10",
+            "Rules!C10"
+          ],
+          "quote": "An offer or kit price must be below the regular price."
+        },
+        "kind": "product",
+        "needs": [
+          {
+            "tab": "Products",
+            "header": "regular_price"
+          }
+        ],
+        "changes": [
+          "offer_price",
+          "kit_price"
+        ],
+        "checkable": true,
+        "why_not": null
+      },
+      {
+        "id": "R10",
+        "source": {
+          "cells": [
+            "Rules!A11",
+            "Rules!B11",
+            "Rules!C11"
+          ],
+          "quote": "Stock plus the order should cover expected demand plus safety stock."
+        },
+        "kind": "product",
+        "needs": [
+          {
+            "tab": "Stock",
+            "header": "on_hand"
+          },
+          {
+            "tab": "Stock",
+            "header": "reserved"
+          },
+          {
+            "tab": "Stock",
+            "header": "inbound_before_start"
+          },
+          {
+            "tab": "Parameters",
+            "header": "safety_pct"
+          },
+          {
+            "tab": "Sales",
+            "header": "weekend_1"
+          },
+          {
+            "tab": "Sales",
+            "header": "weekend_2"
+          },
+          {
+            "tab": "Sales",
+            "header": "weekend_3"
+          },
+          {
+            "tab": "Sales",
+            "header": "weekend_4"
+          },
+          {
+            "tab": "Offers",
+            "header": "uplift_pct"
+          }
+        ],
+        "changes": [
+          "order_units"
+        ],
+        "checkable": true,
+        "why_not": null
+      },
+      {
+        "id": "R11",
+        "source": {
+          "cells": [
+            "Rules!A12",
+            "Rules!B12",
+            "Rules!C12"
+          ],
+          "quote": "Don't order more than the supplier's maximum."
+        },
+        "kind": "product",
+        "needs": [
+          {
+            "tab": "Deliveries",
+            "header": "max_order_units"
+          }
+        ],
+        "changes": [
+          "order_units"
+        ],
+        "checkable": true,
+        "why_not": null
+      },
+      {
+        "id": "R12",
+        "source": {
+          "cells": [
+            "Rules!A13",
+            "Rules!B13",
+            "Rules!C13"
+          ],
+          "quote": "An order must be placed before its supplier's cut-off for the weekend it is for."
+        },
+        "kind": "product",
+        "needs": [
+          {
+            "tab": "Deliveries",
+            "header": "cutoff_day"
+          },
+          {
+            "tab": "Deliveries",
+            "header": "cutoff_time"
+          },
+          {
+            "tab": "Promotion",
+            "header": "scheduled_run_day"
+          },
+          {
+            "tab": "Promotion",
+            "header": "scheduled_run_time"
+          }
+        ],
+        "changes": [
+          "order_units"
+        ],
+        "checkable": true,
+        "why_not": null
+      },
+      {
+        "id": "R13",
+        "source": {
+          "cells": [
+            "Rules!A14",
+            "Rules!B14",
+            "Rules!C14"
+          ],
+          "quote": "Offer prices, the kit price and the kit limit must be set before the price cut-off."
+        },
+        "kind": "product",
+        "needs": [
+          {
+            "tab": "Promotion",
+            "header": "price_cutoff_day"
+          },
+          {
+            "tab": "Promotion",
+            "header": "price_cutoff_time"
+          },
+          {
+            "tab": "Promotion",
+            "header": "scheduled_run_day"
+          },
+          {
+            "tab": "Promotion",
+            "header": "scheduled_run_time"
+          }
+        ],
+        "changes": [
+          "offer_price",
+          "kit_price",
+          "kit_limit"
+        ],
+        "checkable": true,
+        "why_not": null
+      }
+    ],
+    "currency": {
+      "code": "GBP",
+      "minor_units": 2
+    },
+    "tables": [
+      {
+        "tab": "Products",
+        "name": "products",
+        "shape": "keyed",
+        "key_header": "sku",
+        "value_header": null,
+        "columns": [
+          {
+            "header": "sku",
+            "name": "sku",
+            "type": "key",
+            "allowed": null,
+            "required": true,
+            "meaning": "Product SKU"
+          },
+          {
+            "header": "product",
+            "name": "product",
+            "type": "text",
+            "allowed": null,
+            "required": true,
+            "meaning": "Product name"
+          },
+          {
+            "header": "category",
+            "name": "category",
+            "type": "text",
+            "allowed": null,
+            "required": true,
+            "meaning": "Product category"
+          },
+          {
+            "header": "unit",
+            "name": "unit",
+            "type": "text",
+            "allowed": null,
+            "required": true,
+            "meaning": "Sales unit"
+          },
+          {
+            "header": "regular_price",
+            "name": "regular_price",
+            "type": "money",
+            "allowed": null,
+            "required": true,
+            "meaning": "Regular retail price"
+          },
+          {
+            "header": "cost_price",
+            "name": "cost_price",
+            "type": "money",
+            "allowed": null,
+            "required": true,
+            "meaning": "Cost price"
+          },
+          {
+            "header": "case_size",
+            "name": "case_size",
+            "type": "whole_number",
+            "allowed": null,
+            "required": true,
+            "meaning": "Units per case"
+          },
+          {
+            "header": "shelf_life_days",
+            "name": "shelf_life_days",
+            "type": "whole_number",
+            "allowed": null,
+            "required": true,
+            "meaning": "Shelf life in days"
+          },
+          {
+            "header": "ripe",
+            "name": "ripe",
+            "type": "one_of",
+            "allowed": [
+              "yes",
+              "no"
+            ],
+            "required": true,
+            "meaning": "Whether product is ripe"
+          }
+        ]
+      },
+      {
+        "tab": "Stock",
+        "name": "stock",
+        "shape": "keyed",
+        "key_header": "sku",
+        "value_header": null,
+        "columns": [
+          {
+            "header": "sku",
+            "name": "sku",
+            "type": "key",
+            "allowed": null,
+            "required": true,
+            "meaning": "Product SKU"
+          },
+          {
+            "header": "on_hand",
+            "name": "on_hand",
+            "type": "whole_number",
+            "allowed": null,
+            "required": true,
+            "meaning": "Units on hand"
+          },
+          {
+            "header": "reserved",
+            "name": "reserved",
+            "type": "whole_number",
+            "allowed": null,
+            "required": true,
+            "meaning": "Units reserved"
+          },
+          {
+            "header": "inbound_before_start",
+            "name": "inbound_before_start",
+            "type": "whole_number",
+            "allowed": null,
+            "required": true,
+            "meaning": "Inbound units before promotion start"
+          },
+          {
+            "header": "counted_day",
+            "name": "counted_day",
+            "type": "weekday",
+            "allowed": [
+              "Mon",
+              "Tue",
+              "Wed",
+              "Thu",
+              "Fri",
+              "Sat",
+              "Sun"
+            ],
+            "required": true,
+            "meaning": "Day stock was counted"
+          },
+          {
+            "header": "counted_time",
+            "name": "counted_time",
+            "type": "time_of_day",
+            "allowed": null,
+            "required": true,
+            "meaning": "Time stock was counted"
+          }
+        ]
+      },
+      {
+        "tab": "Sales",
+        "name": "sales",
+        "shape": "keyed",
+        "key_header": "sku",
+        "value_header": null,
+        "columns": [
+          {
+            "header": "sku",
+            "name": "sku",
+            "type": "key",
+            "allowed": null,
+            "required": true,
+            "meaning": "Product SKU"
+          },
+          {
+            "header": "weekend_1",
+            "name": "weekend_1",
+            "type": "whole_number",
+            "allowed": null,
+            "required": true,
+            "meaning": "Sales weekend 1"
+          },
+          {
+            "header": "weekend_2",
+            "name": "weekend_2",
+            "type": "whole_number",
+            "allowed": null,
+            "required": true,
+            "meaning": "Sales weekend 2"
+          },
+          {
+            "header": "weekend_3",
+            "name": "weekend_3",
+            "type": "whole_number",
+            "allowed": null,
+            "required": true,
+            "meaning": "Sales weekend 3"
+          },
+          {
+            "header": "weekend_4",
+            "name": "weekend_4",
+            "type": "whole_number",
+            "allowed": null,
+            "required": true,
+            "meaning": "Sales weekend 4"
+          }
+        ]
+      },
+      {
+        "tab": "Deliveries",
+        "name": "deliveries",
+        "shape": "keyed",
+        "key_header": "sku",
+        "value_header": null,
+        "columns": [
+          {
+            "header": "sku",
+            "name": "sku",
+            "type": "key",
+            "allowed": null,
+            "required": true,
+            "meaning": "Product SKU"
+          },
+          {
+            "header": "supplier",
+            "name": "supplier",
+            "type": "text",
+            "allowed": null,
+            "required": true,
+            "meaning": "Supplier name"
+          },
+          {
+            "header": "delivery_day",
+            "name": "delivery_day",
+            "type": "weekday",
+            "allowed": [
+              "Mon",
+              "Tue",
+              "Wed",
+              "Thu",
+              "Fri",
+              "Sat",
+              "Sun"
+            ],
+            "required": true,
+            "meaning": "Delivery weekday"
+          },
+          {
+            "header": "delivery_time",
+            "name": "delivery_time",
+            "type": "time_of_day",
+            "allowed": null,
+            "required": true,
+            "meaning": "Delivery time"
+          },
+          {
+            "header": "cutoff_day",
+            "name": "cutoff_day",
+            "type": "weekday",
+            "allowed": [
+              "Mon",
+              "Tue",
+              "Wed",
+              "Thu",
+              "Fri",
+              "Sat",
+              "Sun"
+            ],
+            "required": true,
+            "meaning": "Cut-off weekday"
+          },
+          {
+            "header": "cutoff_time",
+            "name": "cutoff_time",
+            "type": "time_of_day",
+            "allowed": null,
+            "required": true,
+            "meaning": "Cut-off time"
+          },
+          {
+            "header": "max_order_units",
+            "name": "max_order_units",
+            "type": "whole_number",
+            "allowed": null,
+            "required": false,
+            "meaning": "Maximum order units"
+          }
+        ]
+      },
+      {
+        "tab": "Promotion",
+        "name": "promotion",
+        "shape": "single",
+        "key_header": null,
+        "value_header": "value",
+        "columns": [
+          {
+            "header": "name",
+            "name": "name",
+            "type": "text",
+            "allowed": null,
+            "required": true,
+            "meaning": "Promotion name"
+          },
+          {
+            "header": "brief",
+            "name": "brief",
+            "type": "text",
+            "allowed": null,
+            "required": true,
+            "meaning": "Promotion brief"
+          },
+          {
+            "header": "scheduled_run_day",
+            "name": "scheduled_run_day",
+            "type": "weekday",
+            "allowed": [
+              "Mon",
+              "Tue",
+              "Wed",
+              "Thu",
+              "Fri",
+              "Sat",
+              "Sun"
+            ],
+            "required": true,
+            "meaning": "Scheduled run weekday"
+          },
+          {
+            "header": "scheduled_run_time",
+            "name": "scheduled_run_time",
+            "type": "time_of_day",
+            "allowed": null,
+            "required": true,
+            "meaning": "Scheduled run time"
+          },
+          {
+            "header": "starts_day",
+            "name": "starts_day",
+            "type": "weekday",
+            "allowed": [
+              "Mon",
+              "Tue",
+              "Wed",
+              "Thu",
+              "Fri",
+              "Sat",
+              "Sun"
+            ],
+            "required": true,
+            "meaning": "Starts weekday"
+          },
+          {
+            "header": "starts_time",
+            "name": "starts_time",
+            "type": "time_of_day",
+            "allowed": null,
+            "required": true,
+            "meaning": "Starts time"
+          },
+          {
+            "header": "ends_day",
+            "name": "ends_day",
+            "type": "weekday",
+            "allowed": [
+              "Mon",
+              "Tue",
+              "Wed",
+              "Thu",
+              "Fri",
+              "Sat",
+              "Sun"
+            ],
+            "required": true,
+            "meaning": "Ends weekday"
+          },
+          {
+            "header": "ends_time",
+            "name": "ends_time",
+            "type": "time_of_day",
+            "allowed": null,
+            "required": true,
+            "meaning": "Ends time"
+          },
+          {
+            "header": "price_cutoff_day",
+            "name": "price_cutoff_day",
+            "type": "weekday",
+            "allowed": [
+              "Mon",
+              "Tue",
+              "Wed",
+              "Thu",
+              "Fri",
+              "Sat",
+              "Sun"
+            ],
+            "required": true,
+            "meaning": "Price cut-off weekday"
+          },
+          {
+            "header": "price_cutoff_time",
+            "name": "price_cutoff_time",
+            "type": "time_of_day",
+            "allowed": null,
+            "required": true,
+            "meaning": "Price cut-off time"
+          },
+          {
+            "header": "kit_id",
+            "name": "kit_id",
+            "type": "text",
+            "allowed": null,
+            "required": true,
+            "meaning": "Kit ID"
+          },
+          {
+            "header": "kit_name",
+            "name": "kit_name",
+            "type": "text",
+            "allowed": null,
+            "required": true,
+            "meaning": "Kit name"
+          },
+          {
+            "header": "kit_brief_price",
+            "name": "kit_brief_price",
+            "type": "money",
+            "allowed": null,
+            "required": true,
+            "meaning": "Kit brief price"
+          },
+          {
+            "header": "expected_kits",
+            "name": "expected_kits",
+            "type": "whole_number",
+            "allowed": null,
+            "required": true,
+            "meaning": "Expected kits"
+          },
+          {
+            "header": "timetable",
+            "name": "timetable",
+            "type": "text",
+            "allowed": null,
+            "required": true,
+            "meaning": "Timetable description"
+          }
+        ]
+      },
+      {
+        "tab": "Kit",
+        "name": "kit",
+        "shape": "list",
+        "key_header": "kit_id",
+        "value_header": null,
+        "columns": [
+          {
+            "header": "kit_id",
+            "name": "kit_id",
+            "type": "text",
+            "allowed": null,
+            "required": true,
+            "meaning": "Kit ID"
+          },
+          {
+            "header": "component_sku",
+            "name": "component_sku",
+            "type": "text",
+            "allowed": null,
+            "required": true,
+            "meaning": "Component SKU"
+          },
+          {
+            "header": "quantity",
+            "name": "quantity",
+            "type": "whole_number",
+            "allowed": null,
+            "required": true,
+            "meaning": "Component quantity"
+          }
+        ]
+      },
+      {
+        "tab": "Offers",
+        "name": "offers",
+        "shape": "keyed",
+        "key_header": "sku",
+        "value_header": null,
+        "columns": [
+          {
+            "header": "sku",
+            "name": "sku",
+            "type": "key",
+            "allowed": null,
+            "required": true,
+            "meaning": "Product SKU"
+          },
+          {
+            "header": "role",
+            "name": "role",
+            "type": "text",
+            "allowed": null,
+            "required": true,
+            "meaning": "Offer role"
+          },
+          {
+            "header": "brief_offer_price",
+            "name": "brief_offer_price",
+            "type": "money",
+            "allowed": null,
+            "required": false,
+            "meaning": "Brief offer price"
+          },
+          {
+            "header": "uplift_pct",
+            "name": "uplift_pct",
+            "type": "whole_number",
+            "allowed": null,
+            "required": true,
+            "meaning": "Sales uplift percentage"
+          }
+        ]
+      },
+      {
+        "tab": "Parameters",
+        "name": "parameters",
+        "shape": "keyed",
+        "key_header": "category",
+        "value_header": null,
+        "columns": [
+          {
+            "header": "category",
+            "name": "category",
+            "type": "key",
+            "allowed": null,
+            "required": true,
+            "meaning": "Product category"
+          },
+          {
+            "header": "margin_floor_pct",
+            "name": "margin_floor_pct",
+            "type": "whole_number",
+            "allowed": null,
+            "required": true,
+            "meaning": "Margin floor percentage"
+          },
+          {
+            "header": "max_discount_pct",
+            "name": "max_discount_pct",
+            "type": "whole_number",
+            "allowed": null,
+            "required": true,
+            "meaning": "Maximum discount percentage"
+          },
+          {
+            "header": "max_count_age_hours",
+            "name": "max_count_age_hours",
+            "type": "whole_number",
+            "allowed": null,
+            "required": false,
+            "meaning": "Maximum count age in hours"
+          },
+          {
+            "header": "safety_pct",
+            "name": "safety_pct",
+            "type": "whole_number",
+            "allowed": null,
+            "required": false,
+            "meaning": "Safety stock percentage"
+          },
+          {
+            "header": "ripe_cover_days",
+            "name": "ripe_cover_days",
+            "type": "whole_number",
+            "allowed": null,
+            "required": false,
+            "meaning": "Ripe cover days limit"
+          }
+        ]
+      },
+      {
+        "tab": "Rules",
+        "name": "rules",
+        "shape": "keyed",
+        "key_header": "id",
+        "value_header": null,
+        "columns": [
+          {
+            "header": "id",
+            "name": "id",
+            "type": "key",
+            "allowed": null,
+            "required": true,
+            "meaning": "Rule ID"
+          },
+          {
+            "header": "rule",
+            "name": "rule",
+            "type": "text",
+            "allowed": null,
+            "required": true,
+            "meaning": "Rule text"
+          },
+          {
+            "header": "outcome",
+            "name": "outcome",
+            "type": "one_of",
+            "allowed": [
+              "block",
+              "attention"
+            ],
+            "required": true,
+            "meaning": "Rule outcome"
+          }
+        ]
+      },
+      {
+        "tab": "Changes",
+        "name": "changes",
+        "shape": "keyed",
+        "key_header": "name",
+        "value_header": null,
+        "columns": [
+          {
+            "header": "name",
+            "name": "name",
+            "type": "key",
+            "allowed": null,
+            "required": true,
+            "meaning": "Change name"
+          },
+          {
+            "header": "applies_to",
+            "name": "applies_to",
+            "type": "text",
+            "allowed": null,
+            "required": true,
+            "meaning": "Applies to"
+          },
+          {
+            "header": "type",
+            "name": "type",
+            "type": "text",
+            "allowed": null,
+            "required": true,
+            "meaning": "Change type"
+          },
+          {
+            "header": "starts_as",
+            "name": "starts_as",
+            "type": "text",
+            "allowed": null,
+            "required": true,
+            "meaning": "Starting value description"
+          },
+          {
+            "header": "meaning",
+            "name": "meaning",
+            "type": "text",
+            "allowed": null,
+            "required": true,
+            "meaning": "Change meaning"
+          }
+        ]
+      }
+    ],
+    "timing": {
+      "time_zone": "Europe/London",
+      "period": "week",
+      "week_starts_on": "Mon",
+      "plan_ahead": 2,
+      "current_until": {
+        "table": "promotion",
+        "time": "ends_at"
+      },
+      "times": [
+        {
+          "table": "stock",
+          "name": "counted_at",
+          "day": "counted_day",
+          "time": "counted_time",
+          "role": "observation",
+          "meaning": "Stock count time"
+        },
+        {
+          "table": "deliveries",
+          "name": "delivery_at",
+          "day": "delivery_day",
+          "time": "delivery_time",
+          "role": "deadline",
+          "meaning": "Supplier delivery time"
+        },
+        {
+          "table": "deliveries",
+          "name": "cutoff_at",
+          "day": "cutoff_day",
+          "time": "cutoff_time",
+          "role": "deadline",
+          "meaning": "Supplier cut-off time"
+        },
+        {
+          "table": "promotion",
+          "name": "scheduled_run_at",
+          "day": "scheduled_run_day",
+          "time": "scheduled_run_time",
+          "role": "deadline",
+          "meaning": "Scheduled run time"
+        },
+        {
+          "table": "promotion",
+          "name": "starts_at",
+          "day": "starts_day",
+          "time": "starts_time",
+          "role": "deadline",
+          "meaning": "Promotion starts time"
+        },
+        {
+          "table": "promotion",
+          "name": "ends_at",
+          "day": "ends_day",
+          "time": "ends_time",
+          "role": "deadline",
+          "meaning": "Promotion ends time"
+        },
+        {
+          "table": "promotion",
+          "name": "price_cutoff_at",
+          "day": "price_cutoff_day",
+          "time": "price_cutoff_time",
+          "role": "deadline",
+          "meaning": "Price cut-off time"
+        }
+      ],
+      "source": {
+        "cells": [
+          "Promotion!O2"
+        ],
+        "quote": "The promotion runs every weekend, Saturday 07:00 to Sunday 22:00, UK time. Each run plans the coming weekend and the one after; a weekend counts as the coming one until its promotion ends. Stock counts and notes refer to their most recent occurrence before the run. Order cut-offs, deliveries and the price cut-off refer to the week of the weekend they are for."
+      }
+    },
+    "items": [
+      {
+        "kind": "product",
+        "label": "product",
+        "table": "products",
+        "key": "sku",
+        "group": false
+      },
+      {
+        "kind": "kit",
+        "label": "kit",
+        "table": "kit",
+        "key": "kit_id",
+        "group": true
+      }
+    ],
+    "editable": [
+      {
+        "kind": "product",
+        "name": "offer_price",
+        "label": "offer price",
+        "type": "money",
+        "applies_when": "key in offers",
+        "default": "offers[key].brief_offer_price",
+        "source": {
+          "cells": [
+            "Changes!E3"
+          ],
+          "quote": "The promotional shelf price."
+        }
+      },
+      {
+        "kind": "product",
+        "name": "order_units",
+        "label": "order units",
+        "type": "whole_number",
+        "applies_when": "key in deliveries",
+        "default": "0",
+        "source": {
+          "cells": [
+            "Changes!E2"
+          ],
+          "quote": "Units to order as a final top-up for the weekend."
+        }
+      },
+      {
+        "kind": "kit",
+        "name": "kit_price",
+        "label": "kit price",
+        "type": "money",
+        "applies_when": "false",
+        "default": "promotion.kit_brief_price",
+        "source": {
+          "cells": [
+            "Changes!E4"
+          ],
+          "quote": "The price of the Avo toast kit."
+        }
+      },
+      {
+        "kind": "kit",
+        "name": "kit_limit",
+        "label": "kit limit",
+        "type": "whole_number",
+        "applies_when": "false",
+        "default": "promotion.expected_kits",
+        "source": {
+          "cells": [
+            "Changes!E5"
+          ],
+          "quote": "How many kits to put out over the weekend."
+        }
+      }
+    ],
+    "facts": [
+      {
+        "kind": "product",
+        "name": "avg_sales",
+        "label": "Average sales",
+        "type": "double",
+        "expr": "double(sales[key].weekend_1 + sales[key].weekend_2 + sales[key].weekend_3 + sales[key].weekend_4) / 4.0",
+        "explain": "Average sales across four weekends"
+      },
+      {
+        "kind": "kit",
+        "name": "kit_cost",
+        "label": "Kit component cost",
+        "type": "int",
+        "expr": "rows.map(r, products[r.component_sku].cost_price * r.quantity).sum()",
+        "explain": "Total cost of components for the kit"
+      }
+    ],
+    "rules": [
+      {
+        "id": "r1_margin_floor",
+        "statement": "R1",
+        "sheet_rule": "R1",
+        "kind": "product",
+        "title": "Margin Floor for Offer Price",
+        "outcome": "block",
+        "when": "key in offers",
+        "assert": "!(key in offers) || (change.offer_price - row.cost_price) * 100 >= parameters[row.category].margin_floor_pct * change.offer_price",
+        "explain": "Offer price must maintain the category margin floor percentage",
+        "origin": "sheet",
+        "source": {
+          "cells": [
+            "Rules!A2",
+            "Rules!B2",
+            "Rules!C2"
+          ],
+          "quote": "An offer price must keep at least the category's margin floor."
+        }
+      },
+      {
+        "id": "r2_kit_margin",
+        "statement": "R2",
+        "sheet_rule": "R2",
+        "kind": "kit",
+        "title": "Margin Floor for Kit Price",
+        "outcome": "block",
+        "when": "false",
+        "assert": "(change.kit_price - facts.kit_cost) * 100 >= parameters['kit'].margin_floor_pct * change.kit_price",
+        "explain": "Kit price must maintain the kit margin floor percentage over component costs",
+        "origin": "sheet",
+        "source": {
+          "cells": [
+            "Rules!A3",
+            "Rules!B3",
+            "Rules!C3"
+          ],
+          "quote": "The kit price must keep at least the kit margin floor, counting the cost of every component."
+        }
+      },
+      {
+        "id": "r3_whole_cases",
+        "statement": "R3",
+        "sheet_rule": "R3",
+        "kind": "product",
+        "title": "Whole Cases for Orders",
+        "outcome": "block",
+        "when": "key in deliveries",
+        "assert": "!(key in deliveries) || (change.order_units % row.case_size == 0)",
+        "explain": "Order quantities must be in whole cases",
+        "origin": "sheet",
+        "source": {
+          "cells": [
+            "Rules!A4",
+            "Rules!B4",
+            "Rules!C4"
+          ],
+          "quote": "Order quantities must be whole cases."
+        }
+      },
+      {
+        "id": "r4_stock_age",
+        "statement": "R4",
+        "sheet_rule": "R4",
+        "kind": "product",
+        "title": "Stock Count Age Limit",
+        "outcome": "block",
+        "when": "key in deliveries",
+        "assert": "!(key in deliveries && change.order_units > 0 && parameters[row.category].?max_count_age_hours.hasValue()) || (run_at - stock[key].counted_at).getHours() <= parameters[row.category].?max_count_age_hours.orValue(0)",
+        "explain": "Stock count must not be older than the category maximum age limit if ordering",
+        "origin": "sheet",
+        "source": {
+          "cells": [
+            "Rules!A5",
+            "Rules!B5",
+            "Rules!C5"
+          ],
+          "quote": "Don't use a stock count older than the category's limit; recount first."
+        }
+      },
+      {
+        "id": "r5_delivery_before_start",
+        "statement": "R5",
+        "sheet_rule": "R5",
+        "kind": "product",
+        "title": "Delivery Before Promotion Start",
+        "outcome": "block",
+        "when": "key in deliveries",
+        "assert": "!(key in deliveries && change.order_units > 0) || deliveries[key].delivery_at < promotion.starts_at",
+        "explain": "Ordered items must arrive before the promotion starts",
+        "origin": "sheet",
+        "source": {
+          "cells": [
+            "Rules!A6",
+            "Rules!B6",
+            "Rules!C6"
+          ],
+          "quote": "Anything we order must arrive before the promotion starts."
+        }
+      },
+      {
+        "id": "r6_max_discount",
+        "statement": "R6",
+        "sheet_rule": "R6",
+        "kind": "product",
+        "title": "Maximum Discount Limit",
+        "outcome": "attention",
+        "when": "key in offers",
+        "assert": "!(key in offers) || (row.regular_price - change.offer_price) * 100 <= parameters[row.category].max_discount_pct * row.regular_price",
+        "explain": "Discount must not exceed the category maximum discount percentage",
+        "origin": "sheet",
+        "source": {
+          "cells": [
+            "Rules!A7",
+            "Rules!B7",
+            "Rules!C7"
+          ],
+          "quote": "A discount deeper than the category maximum needs individual approval."
+        }
+      },
+      {
+        "id": "r7_ripe_cover",
+        "statement": "R7",
+        "sheet_rule": "R7",
+        "kind": "product",
+        "title": "Ripe Stock Cover Limit",
+        "outcome": "attention",
+        "when": "key in deliveries",
+        "assert": "!(key in deliveries && row.ripe == 'yes' && parameters[row.category].?ripe_cover_days.hasValue()) || double(stock[key].on_hand + stock[key].inbound_before_start - stock[key].reserved + change.order_units) <= double(parameters[row.category].?ripe_cover_days.orValue(0)) * facts.avg_sales",
+        "explain": "Ripe stock plus order should not exceed ripe cover days of expected sales",
+        "origin": "sheet",
+        "source": {
+          "cells": [
+            "Rules!A8",
+            "Rules!B8",
+            "Rules!C8"
+          ],
+          "quote": "Ripe stock shouldn't cover more than the category's ripe cover days of expected sales."
+        }
+      },
+      {
+        "id": "r8_kit_scarcity",
+        "statement": "R8",
+        "sheet_rule": "R8",
+        "kind": "kit",
+        "title": "Kit Scarcity Limit",
+        "outcome": "attention",
+        "when": "false",
+        "assert": "change.kit_limit <= rows.map(r, double(stock[r.component_sku].on_hand + stock[r.component_sku].inbound_before_start - stock[r.component_sku].reserved) / double(r.quantity)).filter(x, rows.map(r, double(stock[r.component_sku].on_hand + stock[r.component_sku].inbound_before_start - stock[r.component_sku].reserved) / double(r.quantity)).all(y, x <= y))[0]",
+        "explain": "Kit limit cannot exceed what the scarcest component can supply",
+        "origin": "sheet",
+        "source": {
+          "cells": [
+            "Rules!A9",
+            "Rules!B9",
+            "Rules!C9"
+          ],
+          "quote": "Don't plan more kits than the scarcest component can supply."
+        }
+      },
+      {
+        "id": "r9_offer_below_regular",
+        "statement": "R9",
+        "sheet_rule": "R9",
+        "kind": "product",
+        "title": "Offer Price Below Regular Price",
+        "outcome": "block",
+        "when": "key in offers",
+        "assert": "!(key in offers) || change.offer_price < row.regular_price",
+        "explain": "Offer price must be strictly below regular price",
+        "origin": "sheet",
+        "source": {
+          "cells": [
+            "Rules!A10",
+            "Rules!B10",
+            "Rules!C10"
+          ],
+          "quote": "An offer or kit price must be below the regular price."
+        }
+      },
+      {
+        "id": "r9_kit_below_regular",
+        "statement": "R9",
+        "sheet_rule": "R9",
+        "kind": "kit",
+        "title": "Kit Price Below Regular Price",
+        "outcome": "block",
+        "when": "false",
+        "assert": "change.kit_price < products[promotion.kit_id].regular_price",
+        "explain": "Kit price must be below regular price",
+        "origin": "sheet",
+        "source": {
+          "cells": [
+            "Rules!A10",
+            "Rules!B10",
+            "Rules!C10"
+          ],
+          "quote": "An offer or kit price must be below the regular price."
+        }
+      },
+      {
+        "id": "r10_safety_stock",
+        "statement": "R10",
+        "sheet_rule": "R10",
+        "kind": "product",
+        "title": "Stock and Safety Coverage",
+        "outcome": "attention",
+        "when": "key in deliveries",
+        "assert": "!(key in deliveries && parameters[row.category].?safety_pct.hasValue()) || double(stock[key].on_hand + stock[key].inbound_before_start - stock[key].reserved + change.order_units) >= facts.avg_sales * (100.0 + double(parameters[row.category].?safety_pct.orValue(0))) / 100.0",
+        "explain": "Stock plus order must cover expected demand plus safety stock percentage",
+        "origin": "sheet",
+        "source": {
+          "cells": [
+            "Rules!A11",
+            "Rules!B11",
+            "Rules!C11"
+          ],
+          "quote": "Stock plus the order should cover expected demand plus safety stock."
+        }
+      },
+      {
+        "id": "r11_max_order",
+        "statement": "R11",
+        "sheet_rule": "R11",
+        "kind": "product",
+        "title": "Supplier Maximum Order Limit",
+        "outcome": "block",
+        "when": "key in deliveries",
+        "assert": "!(key in deliveries && deliveries[key].?max_order_units.hasValue()) || change.order_units <= deliveries[key].?max_order_units.orValue(0)",
+        "explain": "Order units must not exceed supplier maximum order units",
+        "origin": "sheet",
+        "source": {
+          "cells": [
+            "Rules!A12",
+            "Rules!B12",
+            "Rules!C12"
+          ],
+          "quote": "Don't order more than the supplier's maximum."
+        }
+      },
+      {
+        "id": "r12_cutoff",
+        "statement": "R12",
+        "sheet_rule": "R12",
+        "kind": "product",
+        "title": "Supplier Order Cut-off",
+        "outcome": "block",
+        "when": "key in deliveries",
+        "assert": "!(key in deliveries && change.order_units > 0) || run_at < deliveries[key].cutoff_at",
+        "explain": "Order must be placed before supplier cut-off time",
+        "origin": "sheet",
+        "source": {
+          "cells": [
+            "Rules!A13",
+            "Rules!B13",
+            "Rules!C13"
+          ],
+          "quote": "An order must be placed before its supplier's cut-off for the weekend it is for."
+        }
+      },
+      {
+        "id": "r13_price_cutoff_offer",
+        "statement": "R13",
+        "sheet_rule": "R13",
+        "kind": "product",
+        "title": "Price Cut-off for Offer Price",
+        "outcome": "block",
+        "when": "key in offers",
+        "assert": "!(key in offers) || run_at < promotion.price_cutoff_at",
+        "explain": "Offer price changes must be set before the price cut-off time",
+        "origin": "sheet",
+        "source": {
+          "cells": [
+            "Rules!A14",
+            "Rules!B14",
+            "Rules!C14"
+          ],
+          "quote": "Offer prices, the kit price and the kit limit must be set before the price cut-off."
+        }
+      },
+      {
+        "id": "r13_price_cutoff_kit_price",
+        "statement": "R13",
+        "sheet_rule": "R13",
+        "kind": "kit",
+        "title": "Price Cut-off for Kit Price",
+        "outcome": "block",
+        "when": "false",
+        "assert": "run_at < promotion.price_cutoff_at",
+        "explain": "Kit price changes must be set before the price cut-off time",
+        "origin": "sheet",
+        "source": {
+          "cells": [
+            "Rules!A14",
+            "Rules!B14",
+            "Rules!C14"
+          ],
+          "quote": "Offer prices, the kit price and the kit limit must be set before the price cut-off."
+        }
+      },
+      {
+        "id": "r13_price_cutoff_kit_limit",
+        "statement": "R13",
+        "sheet_rule": "R13",
+        "kind": "kit",
+        "title": "Price Cut-off for Kit Limit",
+        "outcome": "block",
+        "when": "false",
+        "assert": "run_at < promotion.price_cutoff_at",
+        "explain": "Kit limit changes must be set before the price cut-off time",
+        "origin": "sheet",
+        "source": {
+          "cells": [
+            "Rules!A14",
+            "Rules!B14",
+            "Rules!C14"
+          ],
+          "quote": "Offer prices, the kit price and the kit limit must be set before the price cut-off."
+        }
+      }
+    ],
+    "not_ruled": [],
+    "data_model_requests": [],
+    "notes": [
+      "Rules checked successfully"
+    ]
+  }
+}

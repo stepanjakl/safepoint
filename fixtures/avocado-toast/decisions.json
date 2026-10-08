@@ -1,0 +1,26 @@
+[
+  {
+    "id": "d1",
+    "statement": "R2",
+    "quote": "The kit price must keep at least the kit margin floor, counting the cost of every component.",
+    "question": "Is it right that: Uses the margin floor percent of the first component's category for the kit.",
+    "answer": "No. The kit's margin floor is the kit row of Parameters (category kit), not a component's category.",
+    "decided_at": "2026-10-07T18:23:14.815Z"
+  },
+  {
+    "id": "d2",
+    "statement": "R9",
+    "quote": "An offer or kit price must be below the regular price.",
+    "question": "Is it right that: Compares kit price against promotion kit brief price as regular price baseline.",
+    "answer": "No. The kit's regular price is the sum of its components' regular prices, each times its quantity in the kit. The brief's kit price is a proposal, not the regular price.",
+    "decided_at": "2026-10-07T18:23:15.032Z"
+  },
+  {
+    "id": "d3",
+    "statement": "R12",
+    "quote": "An order must be placed before its supplier's cut-off for the weekend it is for.",
+    "question": "Is it right that: Compares scheduled run time against supplier cutoff time.",
+    "answer": "No. Compare the actual run time (run_at) with the supplier's cut-off. The scheduled run time in the sheet is only the plan.",
+    "decided_at": "2026-10-07T18:23:15.166Z"
+  }
+]

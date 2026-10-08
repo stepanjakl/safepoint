@@ -1,5 +1,5 @@
 {
-  "readAt": "2026-10-05T23:01:37.159Z",
+  "readAt": "2026-10-07T18:57:30.302Z",
   "connection": {
     "userId": "safepoint-dev",
     "connectedAccountId": "ca_9nadZLJx16I_"
@@ -22,7 +22,6 @@
       "Parameters": 1013650411,
       "Rules": 575781179,
       "Notes": 1658371527,
-      "Changes": 902786784,
       "Checks": 749615516
     }
   },
@@ -38,7 +37,6 @@
     "Parameters",
     "Rules",
     "Notes",
-    "Changes",
     "Checks"
   ],
   "requests": [
@@ -47,9 +45,9 @@
       "toolkitVersion": "20261001_00",
       "arguments": {
         "spreadsheet_id": "1IUUE1k89kSwtt_djK5GT0HFUy-T8XUFrpwKf4rCwakI",
-        "fields": "properties.title,properties.timeZone,properties.locale,sheets.properties.sheetId,sheets.properties.title"
+        "fields": "properties.title,properties.timeZone,properties.locale,sheets.properties.sheetId,sheets.properties.title,sheets.properties.gridProperties"
       },
-      "durationMs": 942,
+      "durationMs": 1034,
       "successful": true,
       "error": null
     },
@@ -59,31 +57,30 @@
       "arguments": {
         "spreadsheet_id": "1IUUE1k89kSwtt_djK5GT0HFUy-T8XUFrpwKf4rCwakI",
         "ranges": [
-          "'About'!A1:Z500",
-          "'Products'!A1:Z500",
-          "'Stock'!A1:Z500",
-          "'Sales'!A1:Z500",
-          "'Deliveries'!A1:Z500",
-          "'Promotion'!A1:Z500",
-          "'Kit'!A1:Z500",
-          "'Offers'!A1:Z500",
-          "'Parameters'!A1:Z500",
-          "'Rules'!A1:Z500",
-          "'Notes'!A1:Z500",
-          "'Changes'!A1:Z500",
-          "'Checks'!A1:Z500"
+          "'About'!A1:Z1000",
+          "'Products'!A1:Z1000",
+          "'Stock'!A1:Z1000",
+          "'Sales'!A1:Z1000",
+          "'Deliveries'!A1:Z1000",
+          "'Promotion'!A1:Z1000",
+          "'Kit'!A1:Z1000",
+          "'Offers'!A1:Z1000",
+          "'Parameters'!A1:Z1000",
+          "'Rules'!A1:Z1000",
+          "'Notes'!A1:Z1000",
+          "'Checks'!A1:L200"
         ],
         "valueRenderOption": "UNFORMATTED_VALUE",
         "dateTimeRenderOption": "SERIAL_NUMBER"
       },
-      "durationMs": 944,
+      "durationMs": 1068,
       "successful": true,
       "error": null
     }
   ],
   "valueRanges": [
     {
-      "range": "About!A1:Z500",
+      "range": "About!A1:Z1000",
       "values": [
         [
           "Alderton's Local · Brunch weekend"
@@ -134,9 +131,7 @@
         [
           "Prices are in pounds and quantities in units. Times are UK time, written as a weekday and a time within the promotion week, so the sheet works for any week."
         ],
-        [
-          "Changes: what a proposal may change, and where each change starts."
-        ],
+        [],
         [
           "Checks: expected outcomes written by the store. Safepoint tests its rules against them; the model drafting the rules never sees this tab."
         ],
@@ -146,7 +141,7 @@
       ]
     },
     {
-      "range": "Products!A1:Z500",
+      "range": "Products!A1:Z1000",
       "values": [
         [
           "sku",
@@ -283,7 +278,7 @@
       ]
     },
     {
-      "range": "Stock!A1:Z500",
+      "range": "Stock!A1:Z1000",
       "values": [
         [
           "sku",
@@ -384,7 +379,7 @@
       ]
     },
     {
-      "range": "Sales!A1:Z500",
+      "range": "Sales!A1:Z1000",
       "values": [
         [
           "sku",
@@ -473,7 +468,7 @@
       ]
     },
     {
-      "range": "Deliveries!A1:Z500",
+      "range": "Deliveries!A1:Z1000",
       "values": [
         [
           "sku",
@@ -576,7 +571,7 @@
       ]
     },
     {
-      "range": "Promotion!A1:Z500",
+      "range": "Promotion!A1:Z1000",
       "values": [
         [
           "key",
@@ -645,7 +640,7 @@
       ]
     },
     {
-      "range": "Kit!A1:Z500",
+      "range": "Kit!A1:Z1000",
       "values": [
         [
           "kit_id",
@@ -670,7 +665,7 @@
       ]
     },
     {
-      "range": "Offers!A1:Z500",
+      "range": "Offers!A1:Z1000",
       "values": [
         [
           "sku",
@@ -747,7 +742,7 @@
       ]
     },
     {
-      "range": "Parameters!A1:Z500",
+      "range": "Parameters!A1:Z1000",
       "values": [
         [
           "category",
@@ -794,7 +789,7 @@
       ]
     },
     {
-      "range": "Rules!A1:Z500",
+      "range": "Rules!A1:Z1000",
       "values": [
         [
           "id",
@@ -869,7 +864,7 @@
       ]
     },
     {
-      "range": "Notes!A1:Z500",
+      "range": "Notes!A1:Z1000",
       "values": [
         [
           "note_id",
@@ -898,46 +893,6 @@
           "Thu",
           0.3229166666666667,
           "Forecast says Saturday sunny, 21°C; Sunday showers."
-        ]
-      ]
-    },
-    {
-      "range": "Changes!A1:J100",
-      "values": [
-        [
-          "name",
-          "applies_to",
-          "type",
-          "starts_as",
-          "meaning"
-        ],
-        [
-          "order_units",
-          "each product",
-          "whole number of units",
-          "0",
-          "Units to order as a final top-up for the weekend."
-        ],
-        [
-          "offer_price",
-          "each product with an offer",
-          "money",
-          "the offer price in the brief",
-          "The promotional shelf price."
-        ],
-        [
-          "kit_price",
-          "the kit",
-          "money",
-          "the kit price in the brief",
-          "The price of the Avo toast kit."
-        ],
-        [
-          "kit_limit",
-          "the kit",
-          "whole number of kits",
-          "the number of kits expected to sell",
-          "How many kits to put out over the weekend."
         ]
       ]
     },

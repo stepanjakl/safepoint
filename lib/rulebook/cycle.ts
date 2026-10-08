@@ -1,13 +1,13 @@
 /*
   Turns "a weekday and a time of day" into real moments for one pinned run
-  time. Domain-neutral; the process supplies its weekly timetable.
+  time. Domain-neutral; the rulebook's timing supplies the weekly timetable.
 
-  Two rules, from docs/SHEET-PROCESS-PLAN.md (Run timing):
-  - An observation (a count, a note) resolves to its most recent occurrence at
-    or before the run time.
-  - A deadline or event resolves inside a cycle: the Monday-to-Sunday week that
-    contains one promotion. "This weekend" is the first cycle whose promotion
-    has not ended at the run time; "next weekend" is the one after.
+  Two rules:
+  - An observation (something that already happened) resolves to its most
+    recent occurrence at or before the run time.
+  - A deadline resolves inside the week being planned. The current week is the
+    first whose deadline named by current_until has not passed at the run
+    time; the weeks after it follow.
 
   Wall-clock times are resolved in the process's time zone, so 06:00 stays
   06:00 across a clock change; durations are measured between real instants.

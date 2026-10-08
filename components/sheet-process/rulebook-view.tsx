@@ -1,5 +1,8 @@
 'use client';
 
+import { useId, useState } from 'react';
+
+import { Button } from '@/components/ui/button';
 import { Ledger, LedgerRow } from '@/components/ui/ledger';
 import type { Rulebook } from '@/lib/rulebook/schema';
 
@@ -20,8 +23,165 @@ const Source = ({
   );
 
 // Every part of a rulebook, laid out to be read and approved.
-export function RulebookView({ rulebook }: { rulebook: Rulebook }) {
+type Answer = (
+  statement: { id: string; quote: string },
+  question: string,
+  answer: string,
+) => Promise<void>;
+
+// An assumption: the owner confirms it, picks one of the other readings the
+// model offered, or says none of them fits, optionally writing the right one.
+// Each answer is kept as a decision on the statement the rule implements.
+function Assumption({
+  statement,
+  assumption,
+  alternatives,
+  technical,
+  answered,
+  onAnswer,
+}: {
+  statement: { id: string; quote: string };
+  assumption: string;
+  alternatives: string[];
+  technical?: string;
+  answered?: string;
+  onAnswer: Answer;
+}) {
+  const [correction, setCorrection] = useState('');
+  const [saving, setSaving] = useState(false);
+  const id = useId();
+  const question = `Is it right that: ${assumption}`;
+  const save = (answer: string) => {
+    setSaving(true);
+    void onAnswer(statement, question, answer).finally(() => setSaving(false));
+  };
+  return (
+    <span className="grid gap-1">
+      <span>
+        <strong>Assumes:</strong> {assumption}
+      </span>
+      <Technical technical={technical} />
+      {answered !== undefined ? (
+        <span className="text-muted">Answered: {answered}</span>
+      ) : (
+        <span className="grid gap-1.5">
+          <span className="flex flex-wrap items-center gap-2">
+            <Button
+              isDisabled={saving}
+              onPress={() => save(`Yes. ${assumption}`)}
+            >
+              Confirm
+            </Button>
+            {alternatives.map((alternative) => (
+              <Button
+                key={alternative}
+                isDisabled={saving}
+                onPress={() => save(`No. Instead: ${alternative}`)}
+              >
+                Use instead: {alternative}
+              </Button>
+            ))}
+          </span>
+          <span className="flex flex-wrap items-center gap-2">
+            <label htmlFor={id} className="sr-only">
+              The right reading, if none of these fits: {assumption}
+            </label>
+            <input
+              id={id}
+              type="text"
+              value={correction}
+              onChange={(e) => setCorrection(e.target.value)}
+              placeholder="The right reading, if none fits (optional)"
+              className="field text-dense text-primary min-h-9 min-w-64 flex-1 px-3"
+            />
+            <Button
+              isDisabled={saving}
+              onPress={() =>
+                save(
+                  correction.trim()
+                    ? `No. Instead: ${correction.trim()}`
+                    : `No. None of these: ${[assumption, ...alternatives].join(' / ')}`,
+                )
+              }
+            >
+              None of these
+            </Button>
+          </span>
+        </span>
+      )}
+    </span>
+  );
+}
+
+// Where in the formula an assumption sits, for whoever wants to check it; the
+// owner answers the plain sentence above it.
+const Technical = ({ technical }: { technical?: string }) =>
+  technical ? (
+    <span className="text-meta text-muted">In the formula: {technical}</span>
+  ) : null;
+
+// What a rule or fact assumed. Drafts saved before alternatives existed hold
+// plain sentences, and before the technical note existed lack it; they are
+// shown the same, with nothing to pick from or no note.
+type Assumed =
+  string | { assumption: string; alternatives: string[]; technical?: string };
+
+const Assumes = ({
+  assumes,
+  statement,
+  answers,
+  onAnswer,
+}: {
+  assumes?: Assumed[];
+  statement?: { id: string; quote: string };
+  answers?: Map<string, string>;
+  onAnswer?: Answer;
+}) =>
+  assumes?.length ? (
+    <span className="grid gap-1">
+      {assumes.map((item) => {
+        const { assumption, alternatives, technical } =
+          typeof item === 'string'
+            ? { assumption: item, alternatives: [], technical: undefined }
+            : item;
+        return statement && onAnswer ? (
+          <Assumption
+            key={assumption}
+            statement={statement}
+            assumption={assumption}
+            alternatives={alternatives}
+            technical={technical}
+            answered={answers?.get(`Is it right that: ${assumption}`)}
+            onAnswer={onAnswer}
+          />
+        ) : (
+          <span key={assumption} className="grid gap-1">
+            <span>
+              <strong>Assumes:</strong> {assumption}
+            </span>
+            <Technical technical={technical} />
+          </span>
+        );
+      })}
+    </span>
+  ) : null;
+
+export function RulebookView({
+  rulebook,
+  onAnswer,
+  answers,
+}: {
+  rulebook: Rulebook;
+  // Given where the owner may answer assumptions.
+  onAnswer?: Answer;
+  // The owner's current answers, by question, shown instead of the buttons.
+  answers?: Map<string, string>;
+}) {
   const { timing } = rulebook;
+  const statementOf = (id: string | null | undefined) => {
+    const st = id ? rulebook.statements.find((s) => s.id === id) : undefined;
+    return st ? { id: st.id, quote: st.source.quote } : undefined;
+  };
   const covered = {
     ruled: rulebook.statements.filter((st) =>
       rulebook.rules.some((r) => r.statement === st.id),
@@ -64,6 +224,9 @@ export function RulebookView({ rulebook }: { rulebook: Rulebook }) {
           <tbody>
             {rulebook.statements.map((st) => {
               const rules = rulebook.rules.filter((r) => r.statement === st.id);
+              const defined = rulebook.facts.filter(
+                (f) => f.statement === st.id,
+              );
               const notRuled = rulebook.not_ruled.find(
                 (n) => n.statement === st.id,
               );
@@ -89,8 +252,13 @@ export function RulebookView({ rulebook }: { rulebook: Rulebook }) {
                     ].join('; ') || '—'}
                   </td>
                   <td className={td}>
-                    {rules.length ? (
-                      <Code>{rules.map((r) => r.id).join(', ')}</Code>
+                    {rules.length || defined.length ? (
+                      <Code>
+                        {[
+                          ...rules.map((r) => r.id),
+                          ...defined.map((f) => `fact ${f.name}`),
+                        ].join(', ')}
+                      </Code>
                     ) : notRuled ? (
                       `Not a rule: ${notRuled.reason}`
                     ) : requested ? (
@@ -145,7 +313,11 @@ export function RulebookView({ rulebook }: { rulebook: Rulebook }) {
                 </td>
                 <td className={td}>{c.meaning}</td>
                 <td className={td}>
-                  <Source source={c.source} />
+                  {c.source ? (
+                    <Source source={c.source} />
+                  ) : (
+                    <span className="text-muted">Set by the process</span>
+                  )}
                 </td>
               </tr>
             ))}
@@ -340,7 +512,15 @@ export function RulebookView({ rulebook }: { rulebook: Rulebook }) {
                 <td className={td}>
                   <Code>{f.expr}</Code>
                 </td>
-                <td className={td}>{f.explain}</td>
+                <td className={td}>
+                  {f.explain}
+                  <Assumes
+                    assumes={f.assumes}
+                    statement={statementOf(f.statement)}
+                    answers={answers}
+                    onAnswer={onAnswer}
+                  />
+                </td>
               </tr>
             ))}
           </tbody>
@@ -373,6 +553,12 @@ export function RulebookView({ rulebook }: { rulebook: Rulebook }) {
                         : 'from the sheet'}
                     </span>
                     <span className="text-muted">{r.explain}</span>
+                    <Assumes
+                      assumes={r.assumes}
+                      statement={statementOf(r.statement)}
+                      answers={answers}
+                      onAnswer={onAnswer}
+                    />
                   </span>
                 </td>
                 <td className={td}>

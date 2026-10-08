@@ -55,7 +55,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
 const clock = (minutes: number) =>
   `${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`;
 
-function formatMoney(minor: number, currency: Currency) {
+export function formatMoney(minor: number, currency: Currency) {
   const amount = minor / 10 ** currency.minor_units;
   try {
     return new Intl.NumberFormat('en', {

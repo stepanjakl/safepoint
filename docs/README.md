@@ -48,6 +48,8 @@ flowchart LR
 
 [`PRIOR-ART.md`](PRIOR-ART.md) is supporting research: comparable change-review and human-in-the-loop tools, and the ideas worth borrowing from them. It records no decisions. [`LLM-RULES-GUIDE.md`](LLM-RULES-GUIDE.md) is a general learning guide to using a language model to draft deterministic rules (CEL, Rego, Cedar), checking them, and calculating evidence rather than trusting model confidence. [`CONFIDENCE-BOOST.md`](CONFIDENCE-BOOST.md) is the short, plain-language version of how that research backs the sheet process.
 
+[`RULEBOOK-ENGINE-GUIDE.md`](RULEBOOK-ENGINE-GUIDE.md) explains how the rulebook engine and its drafting work, file by file, for an engineer new to `lib/rulebook/` (work in progress, updated with the code). [`RULEBOOK-ENGINE-WALKTHROUGHS.md`](RULEBOOK-ENGINE-WALKTHROUGHS.md) is its hands-on companion: reading a real draft record, the anatomy of a complete rulebook, and running a drafting study. [`RULEBOOK-DEVELOPMENT-LOG.md`](RULEBOOK-DEVELOPMENT-LOG.md) records the technical challenges met while building it, with measured before-and-after numbers.
+
 The immediate implementation hand-off is [`SHEET-PROCESS-PLAN.md`](SHEET-PROCESS-PLAN.md). [`STAGE-1B-BRIEF.md`](STAGE-1B-BRIEF.md) and [`STAGE-1A-BRIEF.md`](STAGE-1A-BRIEF.md) record the Alderton's interface and data foundation; [`STAGE-0-BRIEF.md`](STAGE-0-BRIEF.md) remains the completed scaffold record.
 
 ## Two project tracks

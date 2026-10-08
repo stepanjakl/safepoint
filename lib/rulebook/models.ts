@@ -39,3 +39,8 @@ export function strongerModel(model: string): DraftingModel | null {
   const strongest = FAMILIES[0];
   return (strongest as readonly string[]).includes(model) ? null : strongest[0];
 }
+
+// The thinking level to ask for, or null for the model's own default.
+export function thinkingLevel(model: string): 'low' | null {
+  return (FAMILIES[0] as readonly string[]).includes(model) ? 'low' : null;
+}

@@ -3,3 +3,6 @@ pnpm-lock.yaml
 next-env.d.ts
 # Written by pnpm check:visual:update
 e2e/visual-baseline/
+# Written by the app: the captured sheet read and approved rulebooks
+fixtures/*/sheet-snapshot.json
+fixtures/*/rulebooks/

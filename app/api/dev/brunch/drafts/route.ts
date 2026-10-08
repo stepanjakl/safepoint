@@ -1,8 +1,13 @@
 import { z } from 'zod';
 
 import { rejectUnlessLocalDevelopment } from '@/lib/dev/dev-route';
-import { PROCESS_ID } from '@/lib/processes/avocado-toast/snapshot';
+import { BRUNCH_MAY_CHANGE } from '@/lib/processes/avocado-toast/process';
+import {
+  loadSnapshot,
+  PROCESS_ID,
+} from '@/lib/processes/avocado-toast/snapshot';
 import { listDraftRecords, readDraftRecord } from '@/lib/rulebook/store';
+import { validateSaved } from '@/lib/rulebook/validate';
 
 export const runtime = 'nodejs';
 
@@ -24,10 +29,20 @@ export async function POST(request: Request) {
       drafts: await listDraftRecords(PROCESS_ID),
     });
   const record = await readDraftRecord(PROCESS_ID, parsed.data.file);
-  return record
-    ? Response.json({ kind: 'record', file: parsed.data.file, ...record })
-    : Response.json(
-        { kind: 'error', message: 'No such draft.' },
-        { status: 404 },
-      );
+  if (!record)
+    return Response.json(
+      { kind: 'error', message: 'No such draft.' },
+      { status: 404 },
+    );
+  // A draft that passed when made can fail the sheet or checks of today.
+  const { read } = await loadSnapshot('captured');
+  const drift = record.draft.rulebook
+    ? validateSaved(record.draft.rulebook, read, BRUNCH_MAY_CHANGE)
+    : [];
+  return Response.json({
+    kind: 'record',
+    file: parsed.data.file,
+    ...record,
+    drift,
+  });
 }
