@@ -1,0 +1,54 @@
+/* The quiet face sits on the floating rule card; dark rungs climb, so the
+   face stops reverse direction between themes. */
+@utility control-tone {
+  --control-face-top: light-dark(var(--severity-1), var(--severity-5));
+  --control-face-bottom: light-dark(var(--severity-3), var(--severity-4));
+  --control-ring-top: light-dark(var(--severity-5), var(--severity-7));
+  --control-ring-bottom: light-dark(var(--severity-6), var(--severity-6));
+  --control-highlight: transparent;
+}
+
+@utility control-tone-hover {
+  --control-face-top: light-dark(var(--severity-3), var(--severity-6));
+  --control-face-bottom: light-dark(var(--severity-4), var(--severity-5));
+  --control-ring-top: light-dark(var(--severity-6), var(--severity-7));
+  --control-ring-bottom: light-dark(var(--severity-7), var(--severity-7));
+}
+
+/* The light hover remains AA on either face: at 20% toward rung 12, the
+   tightest contrast is 4.94:1; dark takes the lighter rung 12. */
+@utility control-tone-ink-hover {
+  color: light-dark(
+    color-mix(in oklab, var(--severity-12) 20%, var(--severity-11)),
+    var(--severity-12)
+  );
+}
+
+@layer utilities {
+  .decision-morph-control[data-phase='done'] {
+    --control-face-top: light-dark(var(--severity-4), var(--severity-5));
+    --control-face-bottom: light-dark(var(--severity-4), var(--severity-5));
+    --control-ring-top: light-dark(var(--severity-4), var(--severity-5));
+    --control-ring-bottom: light-dark(var(--severity-4), var(--severity-5));
+    cursor: default;
+  }
+
+  .decision-morph-control[data-phase='done']:is([data-action='accept'], [data-action='deny']) {
+    @apply text-severity-ink;
+  }
+
+  .decision-morph-control[data-phase='writing'] {
+    cursor: progress;
+  }
+
+  .decision-morph-control svg {
+    transition:
+      width var(--rules-decision-motion, 260ms) ease,
+      opacity var(--rules-decision-motion, 260ms) ease;
+  }
+
+  .decision-morph-control[data-phase='done'] svg {
+    width: 0;
+    opacity: 0;
+  }
+}

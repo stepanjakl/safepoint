@@ -1,6 +1,8 @@
 # Custom colour system and surface steps plan
 
-Status: Phase A and the Phase B1 comparison infrastructure are complete; opaque
+> **Status: historical record (archived 9 October 2026).** Original status labels, paths and future-tense plans below describe the work at the time. Use the [documentation index](../README.md) and current code for present behaviour.
+
+Original status at writing: Phase A and the Phase B1 comparison infrastructure are complete; opaque
 surface recipes have not started. Code inspected 2026-09-18 and rechecked
 against commit `9e65560` on 2026-09-19; sequence revised following the user's
 direction, plan review, and decision to retain a focused ramp workbench.
@@ -652,7 +654,7 @@ where relevant, using the global switch.
 
 Document the final mapping, intentional exceptions, and how to compare with
 `?colours=custom&edges=existing` / `?colours=custom&edges=opaque` in
-`docs/STYLING-SYSTEM.md`. Qualify the
+`docs/interface/STYLING-SYSTEM.md`. Qualify the
 existing statement that translucent mixes are used for highlights: it describes
 existing-edge mode and intentional adaptive effects, not opaque structural-edge
 mode. Keep unrelated stale prose out of scope.

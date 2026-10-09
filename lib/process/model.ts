@@ -8,6 +8,8 @@
 // that can move underneath a result -- a run evaluated under older instructions
 // is not comparable to one evaluated under the current set, and the list says so.
 
+import type { FieldType } from '@/lib/rulebook/field-types';
+
 import type { ProcessSchedule } from './schedule';
 import type { SystemLink } from './system-links';
 
@@ -188,4 +190,33 @@ export type ProcessSummary = {
   // the rail draws glyphs and numbers, but a screen reader needs the noun.
   itemNoun: string;
   runs: ProcessRun[];
+};
+
+// What a process's definitions are about, in the words its prompts and screens
+// use: the record a formula is worked out for, and the fields a proposal sets
+// for one record. The engine and the card say none of these words themselves.
+export type DefinitionSubject = {
+  record: { singular: string; plural: string };
+  data: DataShape;
+  // Whole numbers a proposal sets per record, read by a formula by `id`.
+  proposal: { id: string; label: string; unit: string }[];
+  // Who reads the plain-words reasons.
+  reader: string;
+};
+
+/*
+  How a process's read becomes the records its formulas read, declared rather
+  than assumed: which tabs hold a record's columns (joined by its key column),
+  which tables a record reaches through one of its columns, and the columns
+  read as a type other than as written. A formula reads `key`, `record` and
+  each lookup by its `as`.
+*/
+export type DataShape = {
+  // The first tab lists the records; `name` is the column that says what each is.
+  records: { tabs: string[]; key: string; name: string };
+  // A table a record reaches: the row of `tab` whose `key` column holds the
+  // record's `via` column, read as `as`.
+  lookups: { tab: string; key: string; via: string; as: string }[];
+  // By column header; any column not listed is read as written.
+  types: Record<string, FieldType>;
 };

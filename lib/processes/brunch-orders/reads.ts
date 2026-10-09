@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
+import type { DataTab, KeptRead } from '@/lib/definitions/records';
 import { readWholeSheet, type SheetRead } from '@/lib/sheets/composio';
 
 import { BRUNCH_ORDERS_ID, DATA_TABS } from './process';
@@ -43,19 +44,6 @@ export async function captureRead(): Promise<{ file: string; readAt: string }> {
   await writeFile(CAPTURED, `${JSON.stringify(read, null, 2)}\n`);
   return { file: path.relative(process.cwd(), CAPTURED), readAt: read.readAt };
 }
-
-export type DataTab = { name: string; values: unknown[][] };
-export type KeptRead = {
-  id: string;
-  readAt: string;
-  source: string;
-  spreadsheet: {
-    title: string | null;
-    url: string;
-    tabIds?: Record<string, number>;
-  };
-  tabs: DataTab[];
-};
 
 const tabName = (range: string) =>
   range

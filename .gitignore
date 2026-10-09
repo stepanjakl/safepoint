@@ -44,3 +44,5 @@ Claude/
 
 # Local AI SDK DevTools traces contain full model inputs and outputs.
 .devtools/
+# Left only if a save of a kept definition set was interrupted
+fixtures/*/rules/*.tmp

@@ -96,7 +96,7 @@
    Every colour passes through its part's saturation ceiling
    (--tile-chroma-* in app/styles/geometry.css): relative colour syntax keeps the
    lightness and hue and lowers only a chroma above the ceiling.
-   See docs/STYLING-SYSTEM.md → Decorative hue.
+   See docs/interface/STYLING-SYSTEM.md → Decorative hue.
    ────────────────────────────────────────────────────────────────────────── */
 @utility surface-menu-tile {
   --tile-cap-face-light: calc(var(--tile-chroma-face-light) * var(--tile-chroma-scale));

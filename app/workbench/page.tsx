@@ -333,6 +333,13 @@ export default function WorkbenchPage() {
             Control states
           </Link>
           {' · '}
+          <Link
+            className="underline underline-offset-4"
+            href="/workbench/decisions"
+          >
+            Decision transitions
+          </Link>
+          {' · '}
           <Link className="underline underline-offset-4" href="/workbench/run">
             Run lifecycle
           </Link>

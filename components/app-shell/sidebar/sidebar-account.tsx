@@ -1,3 +1,6 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import { GradientAvatar } from '@outpacelabs/avatars';
 
 import { cx } from '@/lib/cx';
@@ -13,6 +16,17 @@ const AVATAR_COLORS = ['#0d9488', '#22d3ee', '#0284c7', '#3f3f46', '#5eead4'];
   hand; the cell does that arithmetic itself.
 */
 export function SidebarAccount() {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    // GradientAvatar renders to a <canvas> inside an effect. Fading the avatar
+    // in after mount prevents the canvas from popping into view on load.
+    const frame = requestAnimationFrame(() => {
+      setReady(true);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
   return (
     <div className="shell-profile-row group/account shell:h-shell-header flex cursor-pointer items-center justify-between gap-2.5">
       <span
@@ -24,6 +38,10 @@ export function SidebarAccount() {
           seed="safepoint-maya"
           size={RAIL_CELL}
           colors={AVATAR_COLORS}
+          className={cx(
+            'transition-opacity duration-(--duration-pane) ease-out',
+            ready ? 'opacity-100' : 'opacity-0',
+          )}
         />
       </span>
       <p className="text-primary text-dense mr-auto font-semibold">Maya</p>

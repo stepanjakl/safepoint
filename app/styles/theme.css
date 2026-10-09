@@ -13,6 +13,7 @@
   --color-black: #000;
   --color-canvas: var(--sp-canvas);
   --color-surface-primary: var(--sp-surface-primary);
+  --color-surface-floating: var(--sp-surface-floating);
   --color-surface-inset: var(--sp-surface-inset);
   --color-surface-control: var(--sp-surface-control);
   --color-surface-hover: var(--sp-surface-hover);
@@ -167,7 +168,7 @@
   /* The leading column every sidebar band starts with. Each icon sits in a
      cell of this width with place-items-center, so they share one axis without
      knowing their own size. Put the icon in a cell; never compute an offset.
-     See docs/STYLING-SYSTEM.md → The sidebar's four spacing tokens. */
+     See docs/interface/STYLING-SYSTEM.md → The sidebar's four spacing tokens. */
   --spacing-menu-rail: 2.125rem; /* 34px */
   /* The rail's mirror. One token because the badge and the keycap live in
      different files, and drift between them is what the axis catches. */

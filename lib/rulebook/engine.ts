@@ -24,6 +24,7 @@ import {
   type TermInfo,
   type WorkingTools,
 } from './working';
+import { ctorFor } from './cel-objects';
 
 /*
   The rule engine. It knows nothing about any scenario: it reads a rulebook
@@ -269,21 +270,6 @@ export const CEL_OF: Record<string, string> = {
 };
 const celName = (type: string) =>
   type === 'timestamp' ? 'google.protobuf.Timestamp' : type;
-
-const ctorCache = new Map<string, new (fields: object) => object>();
-function ctorFor(typeName: string) {
-  let ctor = ctorCache.get(typeName);
-  if (!ctor) {
-    ctor = class {
-      constructor(fields: object) {
-        Object.assign(this, fields);
-      }
-    };
-    Object.defineProperty(ctor, 'name', { value: typeName });
-    ctorCache.set(typeName, ctor);
-  }
-  return ctor;
-}
 
 export type ScopeFacts = { name: string; type: string }[];
 

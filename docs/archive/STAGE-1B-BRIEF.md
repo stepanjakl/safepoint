@@ -1,0 +1,107 @@
+# Safepoint Stage 1B brief
+
+> **Status: historical record (archived 9 October 2026).** Original status labels, paths and future-tense plans below describe the work at the time. Use the [documentation index](../README.md) and current code for present behaviour.
+
+Original status at writing: implemented as a vertical slice ([proposal and notes](STAGE-1B-PROPOSAL.md)); its standalone composition is superseded by [`EMBEDDED-REVIEW.md`](../interface/EMBEDDED-REVIEW.md)
+
+Audience: the model designing and implementing the first static review interface
+
+## Outcome
+
+Build a polished, understandable static review workspace around the accepted Stage 1A replay. The interface should make the product thesis clear before local review actions, a real policy engine, persistence, or external execution exist.
+
+Spend design effort on hierarchy, comparison, evidence legibility, the effects rail, responsive behaviour, and both themes. Do not redesign the scenario or architecture.
+
+## Read first
+
+1. [`EXPERIENCE-SPEC.md`](EXPERIENCE-SPEC.md), especially Primary workspace, Visual direction, Readiness and evidence presentation, Keyboard interaction, and Complete view-state inventory.
+2. [`FABLE-VISUAL-DIRECTION.md`](FABLE-VISUAL-DIRECTION.md), the authoritative visual handoff, component anatomy, optical-edge rules, workbench states, and paste-ready proposal prompt.
+3. [`STAGE-1A-BRIEF.md`](STAGE-1A-BRIEF.md).
+4. [`PROMOTION-RELEASE-DATA-DICTIONARY.md`](../processes/promotion-release/DATA-DICTIONARY.md) for the meaning of fields and controlled values shown in the interface.
+5. `lib/promotion-release/index.ts` and the return value of `loadReviewedReplay()`.
+6. [`PRODUCT-BRIEF.md`](../product/PRODUCT-BRIEF.md), only Demonstration scenario and Product principles.
+7. [`TODO.md`](../../TODO.md), Stage 1B and Fable and Codex collaboration.
+
+## In scope
+
+- Replace the small landing page with the static review destination.
+- Add React Aria Components when an implemented collection, disclosure, tabs, or other primitive needs it.
+- Add semantic design tokens and complete light and dark themes.
+- Build the desktop master-detail workspace and mobile list-to-detail composition.
+- Render the batch summary, candidate collection, selected-line detail, agent recommendation, separate policy result, gate matrix, evidence excerpts, proposed values, and effects rail.
+- Represent live-sandbox, simulated, preview-only, and unavailable destinations honestly.
+- Add a protected workbench for representative static states needed during design.
+- Establish native and React Aria keyboard behaviour, visible focus, reduced-motion foundations, and semantic landmarks.
+
+## Required data boundary
+
+- Import only `loadReviewedReplay()` and exported types from `lib/promotion-release`.
+- Load data in a server component and pass the smallest serialisable values required by client components.
+- Derive labels and counts from the returned review lines and summary.
+- Do not import raw files from `fixtures/` or `replays/`.
+- Never import `tests/fixtures/promotion-release/evaluation-oracle.json`.
+- Do not move agent recommendation, policy eligibility, evidence, or outcome into one status field.
+- Treat `outcome` as a presentation classification, not a review decision or execution state.
+
+## Required first view
+
+The initial selection should be salmon fillets (`ALD-0025`) because it demonstrates the central disagreement:
+
+- source fact: £5.00 proposed price and £4.54 cost;
+- agent recommendation: release, assuming funding will be confirmed;
+- policy replay: blocked because unconfirmed funding leaves 9.2% margin against a 15% floor;
+- reviewer consequence: approval unavailable until the blocking condition changes.
+
+The collection must also make the strawberries hold, baby-spinach unverifiable state, withdrawn pizza, and six attention lines easy to find.
+
+## Out of scope
+
+- Local approve, hold, reject, edit, filter, commit, reverse, or shortcut behaviour beyond static disabled examples.
+- A calculated policy engine or changes to the policy replay.
+- Model prompts, AI SDK, tools, APIs, databases, workflows, sessions, adapters, or external writes.
+- A general component library, process registry, connector registry, state manager, animation package, or chart package.
+- Changes to evidence, replay values, contracts, or canonical product decisions without raising a blocking issue first.
+- Screenshot review in this batch unless the user later asks for it.
+
+## Acceptance gate
+
+- The full 27-line scenario is understandable at desktop and narrow widths.
+- The visible summary reconciles with the loader's `17 / 6 / 2 / 1 / 1` outcome distribution.
+- Agent and policy conclusions are visually and semantically separate.
+- The interface does not imply that static effects have executed.
+- Light and dark themes use semantic tokens rather than duplicated component colours.
+- Exact fonts and colour values remain provisional and replaceable at the token layer.
+- Permanent structure is understandable without shadows or gradient decoration.
+- Optical gradient borders remain concentrated on the high-priority controls and effects-rail treatments permitted by the visual handoff, with solid-border and forced-colours fallbacks.
+- Tab order follows reading order, focus is visible, and no static control falsely appears interactive.
+- Build, lint, type-check, formatting, unit tests, and representative component checks pass.
+- No API, model, database, credential, or later-stage abstraction appears in the diff.
+
+## Implementation sequence
+
+Stage 1B is delivered in passes so that the visual grammar emerges from the real interface rather than from a component system built ahead of it.
+
+1. **Visual vertical slice.** The real `/` workspace from `loadReviewedReplay()`: header, outcome strip, all 27 candidates, salmon selected, values, agent and policy shown separately, the funding and margin disagreement, one readiness treatment, one evidence treatment, the planned effects rail, the static reviewer summary, both themes, desktop and narrow layouts. One protected `/workbench` page compares the slice in light, dark, wide, and narrow contexts. No specimen files, dynamic workbench routes, dialog, invented states, or mutations.
+2. **Review.** Data correctness, component boundaries, React and Next.js structure, accessibility, keyboard behaviour, semantic-state separation, unnecessary abstractions.
+3. **Visual refinement.** One focused pass on the accepted slice.
+4. **Extension.** The accepted grammar is applied across the remaining evidence, gates, states, tests, and workbench specimens.
+
+Stage 1C then performs the formal interaction and accessibility verification.
+
+Decisions fixed for the slice: Geist Sans and Geist Mono; semantic tokens mapped to native Tailwind colours, with `stone` for surfaces and rules and `gray` for text and action; `held` is a presentation outcome and `blocked` is policy eligibility, never merged; unavailable-action reasons are visible text, not `aria-describedby` on a disabled control; on narrow layouts, opening a detail moves focus to the selected line's heading; effect destinations are scenario-specific, not a universal mapping. The current proposal is [`STAGE-1B-PROPOSAL.md`](STAGE-1B-PROPOSAL.md).
+
+## Fable proposal prompt
+
+Use the paste-ready prompt in [`FABLE-VISUAL-DIRECTION.md`](FABLE-VISUAL-DIRECTION.md). Before editing code, return:
+
+1. the exact component and route structure;
+2. the packages you would add and the first implemented component that needs each one;
+3. the server/client boundary and the exact data passed across it;
+4. the responsive master-detail behaviour;
+5. the semantic-token and theme approach, including provisional typography and colour roles;
+6. the keyboard and focus model;
+7. the representative workbench states, including the subtle and strongest-permitted optical-rim variants and their fallbacks;
+8. the commands you will run;
+9. any requested departure from this brief.
+
+The review question is: does this proposal create a distinctive, credible operations workspace from the accepted replay while keeping component structure, dependencies, and client state as small as possible?

@@ -1,5 +1,7 @@
 # Post-change model comparison · 3 October 2026
 
+> **Status: historical record (archived 9 October 2026).** Original status labels, paths and future-tense plans below describe the work at the time. Use the [documentation index](../README.md) and current code for present behaviour.
+
 Continuation of the [expanded evaluation](2026-10-03-model-evaluation.md), using
 the unchanged suite 2 and `gemini-3.5-flash-lite`. Extraction input excludes
 baseline supplier data and the stage prompt assesses conflicts per field.

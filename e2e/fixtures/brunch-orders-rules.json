@@ -1,0 +1,251 @@
+{
+  "hash": "91823c6c8281",
+  "version": "v2",
+  "intent": "Suggest how many of each product to order for the upcoming Brunch weekend based on expected sales, safety margins, and supplier limits.",
+  "intentConfirmedAt": null,
+  "readId": "2026-10-08T16-03-15-658Z-6e93bf09",
+  "foundAt": "2026-10-08T16:33:15.043Z",
+  "model": "gemini-3.5-flash-lite",
+  "definitions": [
+    {
+      "id": "expected_sales",
+      "name": "Expected sales",
+      "text": "Start from each product's average over the last four weekends, then increase products on offer by 40 percent, the kit's ingredients by 10 percent, and everything else by 15 percent, expecting to sell about 40 kits which each use a loaf, a pack of avocados, and a pack of feta, and round up to whole units.",
+      "result": "number",
+      "consequence": null,
+      "constants": [],
+      "groups": [],
+      "uses": [],
+      "formula": "key in [\"SD-01\", \"AV-RR\", \"FT-200\"] ? (11 * (record.weekend_1 + record.weekend_2 + record.weekend_3 + record.weekend_4) + 1639) / 40 : (key in [\"EG-06\", \"CT-250\", \"RK-60\"] ? (7 * (record.weekend_1 + record.weekend_2 + record.weekend_3 + record.weekend_4) + 19) / 20 : (23 * (record.weekend_1 + record.weekend_2 + record.weekend_3 + record.weekend_4) + 79) / 80)",
+      "examples": [
+        {
+          "key": "SD-01",
+          "inputs": {},
+          "expect": 73,
+          "why": "Sourdough loaf averaged 30 units across the last 4 weekends (28, 31, 30, 31). As a kit ingredient, base demand increases by 10% to 33 units, plus 40 units for 40 kits, giving 73 expected sales.",
+          "actual": 73,
+          "error": null,
+          "agrees": true
+        },
+        {
+          "key": "AV-RR",
+          "inputs": {},
+          "expect": 65,
+          "why": "Ripe avocados averaged 22 packs over the last 4 weekends (21, 23, 22, 22). Increasing base demand by 10% gives 24.2, and adding 40 packs for kits brings expected sales to 64.2, which rounds up to 65 units.",
+          "actual": 65,
+          "error": null,
+          "agrees": true
+        },
+        {
+          "key": "EG-06",
+          "inputs": {},
+          "expect": 28,
+          "why": "Free-range eggs averaged 20 boxes over the last 4 weekends (19, 21, 20, 20). As a product on offer, demand increases by 40% to 28 expected sales.",
+          "actual": 28,
+          "error": null,
+          "agrees": true
+        }
+      ],
+      "problem": null,
+      "model": "gemini-3.6-flash",
+      "approvedAt": null,
+      "deniedAt": null,
+      "denial": null
+    },
+    {
+      "id": "rule_1",
+      "name": "Rule 1",
+      "text": "Order in whole cases.",
+      "result": "check",
+      "consequence": "block",
+      "constants": [],
+      "groups": [],
+      "uses": [],
+      "formula": "order % record.case_size == 0",
+      "examples": [
+        {
+          "key": "SD-01",
+          "inputs": {
+            "order": 72
+          },
+          "expect": true,
+          "why": "Sourdough comes in cases of 8 loaves, so an order of 72 loaves is exactly 9 cases.",
+          "actual": true,
+          "error": null,
+          "agrees": true
+        },
+        {
+          "key": "SD-01",
+          "inputs": {
+            "order": 70
+          },
+          "expect": false,
+          "why": "Sourdough comes in cases of 8 loaves, so an order of 70 loaves is not a whole number of cases (it leaves 6 extra loaves).",
+          "actual": false,
+          "error": null,
+          "agrees": true
+        },
+        {
+          "key": "AV-RR",
+          "inputs": {
+            "order": 55
+          },
+          "expect": false,
+          "why": "Ripe avocados come in cases of 10 packs, so an order of 55 packs is not a whole number of cases.",
+          "actual": false,
+          "error": null,
+          "agrees": true
+        }
+      ],
+      "problem": null,
+      "model": "gemini-3.8-flash",
+      "approvedAt": null,
+      "deniedAt": null,
+      "denial": null
+    },
+    {
+      "id": "rule_2",
+      "name": "Rule 2",
+      "text": "Never order more than the supplier can deliver.",
+      "result": "check",
+      "consequence": "block",
+      "constants": [],
+      "groups": [],
+      "uses": [],
+      "formula": "!has(record.max_order_units) || order <= record.max_order_units",
+      "examples": [
+        {
+          "key": "SD-01",
+          "inputs": {
+            "order": 72
+          },
+          "expect": true,
+          "why": "The bakery supplier limits orders to 72 sourdough loaves, so ordering exactly 72 loaves is allowed.",
+          "actual": true,
+          "error": null,
+          "agrees": true
+        },
+        {
+          "key": "SD-01",
+          "inputs": {
+            "order": 80
+          },
+          "expect": false,
+          "why": "The bakery supplier limits orders to 72 sourdough loaves, so ordering 80 loaves exceeds what they can deliver.",
+          "actual": false,
+          "error": null,
+          "agrees": true
+        },
+        {
+          "key": "AV-RR",
+          "inputs": {
+            "order": 50
+          },
+          "expect": true,
+          "why": "The produce wholesaler has no delivery limit set for ripe avocados, so an order of 50 packs is accepted.",
+          "actual": true,
+          "error": null,
+          "agrees": true
+        }
+      ],
+      "problem": null,
+      "model": "gemini-3.7-flash",
+      "approvedAt": null,
+      "deniedAt": null,
+      "denial": null
+    },
+    {
+      "id": "rule_3",
+      "name": "Rule 3",
+      "text": "Only order what arrives before Saturday's opening.",
+      "result": "check",
+      "consequence": "block",
+      "constants": [],
+      "groups": [],
+      "uses": [],
+      "formula": "order == 0 || record.delivery_day < 6 || (record.delivery_day == 6 && record.delivery_time < 420)",
+      "examples": [
+        {
+          "key": "SD-01",
+          "inputs": {
+            "order": 72
+          },
+          "expect": true,
+          "why": "The sourdough arrives on Saturday at 06:00 (0.25 of the day), which is before the weekend brunch opening time of Saturday 07:00 (0.291666), so the order of 72 loaves arrives in time.",
+          "actual": true,
+          "error": null,
+          "agrees": true
+        },
+        {
+          "key": "AV-RR",
+          "inputs": {
+            "order": 50
+          },
+          "expect": true,
+          "why": "The ripe avocados are delivered on Friday, well before Saturday opening, so an order of 50 packs arrives in time.",
+          "actual": true,
+          "error": null,
+          "agrees": true
+        }
+      ],
+      "problem": null,
+      "model": "gemini-3.7-flash",
+      "approvedAt": null,
+      "deniedAt": null,
+      "denial": null
+    },
+    {
+      "id": "rule_4",
+      "name": "Rule 4",
+      "text": "Aim for enough stock to cover expected sales plus the category's safety margin. If that isn't possible, flag it for a person to decide.",
+      "result": "check",
+      "consequence": "decide",
+      "constants": [],
+      "groups": [],
+      "uses": [
+        "expected_sales"
+      ],
+      "formula": "record.on_hand - record.reserved + record.inbound_before_start + order >= (values.expected_sales * (100 + category.safety_pct) + 99) / 100",
+      "examples": [
+        {
+          "key": "SD-01",
+          "inputs": {
+            "order": 81
+          },
+          "expect": true,
+          "why": "Expected sales are 73 loaves (average 30 times 1.1 plus 40 for kits). With a 10% safety margin, we need 81 loaves total. Starting with 0 on hand, 0 reserved, and 0 inbound, an order of 81 meets the requirement of 81.",
+          "actual": true,
+          "error": null,
+          "agrees": true
+        },
+        {
+          "key": "SD-01",
+          "inputs": {
+            "order": 80
+          },
+          "expect": false,
+          "why": "Expected sales are 73 loaves, so adding a 10% safety margin requires 81 loaves. With 0 stock available, an order of 80 is 1 unit short.",
+          "actual": false,
+          "error": null,
+          "agrees": true
+        },
+        {
+          "key": "EG-06",
+          "inputs": {
+            "order": 0
+          },
+          "expect": true,
+          "why": "Expected sales are 28 boxes (average 20 plus 40%). With a 10% safety margin, we need 31 boxes. We already have 26 on hand plus 12 inbound before the start (38 boxes available), so an order of 0 easily covers the required 31.",
+          "actual": true,
+          "error": null,
+          "agrees": true
+        }
+      ],
+      "problem": null,
+      "model": "gemini-3.8-flash",
+      "approvedAt": null,
+      "deniedAt": null,
+      "denial": null
+    }
+  ]
+}

@@ -1,9 +1,15 @@
-import type { ProcessStep, ProcessSummary } from '@/lib/process/model';
+import type {
+  DataShape,
+  DefinitionSubject,
+  ProcessStep,
+  ProcessSummary,
+} from '@/lib/process/model';
+import type { DefinitionProcess } from '@/lib/definitions/types';
 import type { ReleasePlan } from '@/lib/review/plan-contract';
 
 /*
   Brunch orders: the order proposal, built one step at a time from its purpose
-  (docs/BRUNCH-ORDERS-PLAN.md). The sheet holds data only; everything else --
+  (docs/processes/brunch-orders/PLAN.md). The sheet holds data only; everything else --
   the intent, the promotion, how demand is worked out, the rules -- is in the
   instructions, versioned like every process's.
 */
@@ -11,15 +17,47 @@ import type { ReleasePlan } from '@/lib/review/plan-contract';
 export const BRUNCH_ORDERS_ID = 'brunch-orders';
 export const BRUNCH_ORDERS_HREF = '/examples/brunch-orders';
 
-// The tabs a run reads. The spreadsheet has others, from the Brunch weekend
-// experiment; they are not this process's data and are left out.
+// Where a product's columns are, and the category parameters it reaches. The
+// spreadsheet has other tabs, from the Brunch weekend experiment; they are not
+// this process's data and are left out.
+const DATA = {
+  records: {
+    tabs: ['Products', 'Stock', 'Sales', 'Deliveries'],
+    key: 'sku',
+    name: 'product',
+  },
+  lookups: [
+    { tab: 'Parameters', key: 'category', via: 'category', as: 'category' },
+  ],
+  types: {
+    counted_day: { kind: 'weekday' },
+    counted_time: { kind: 'time_of_day' },
+    delivery_day: { kind: 'weekday' },
+    delivery_time: { kind: 'time_of_day' },
+    cutoff_day: { kind: 'weekday' },
+    cutoff_time: { kind: 'time_of_day' },
+  },
+} satisfies DataShape;
+
+// The tabs a run reads.
 export const DATA_TABS = [
-  'Products',
-  'Stock',
-  'Sales',
-  'Deliveries',
-  'Parameters',
-] as const;
+  ...DATA.records.tabs,
+  ...DATA.lookups.map((lookup) => lookup.tab),
+];
+
+// What its definitions are worked out for, and what a proposal sets.
+export const SUBJECT: DefinitionSubject = {
+  record: { singular: 'product', plural: 'products' },
+  data: DATA,
+  proposal: [{ id: 'order', label: 'order', unit: 'units' }],
+  reader: 'store owner',
+};
+
+// What the definitions engine (lib/definitions) works for.
+export const BRUNCH_ORDERS_DEFINITIONS: DefinitionProcess = {
+  id: BRUNCH_ORDERS_ID,
+  subject: SUBJECT,
+};
 
 // The first version, kept so a run started under it can still show it.
 const INSTRUCTIONS_V1 = `Intent. Propose how many units of each product to order for the coming Brunch weekend, so the store has enough for expected demand without waste. Every proposal is checked against the rules below and approved by a person before anything is ordered.

@@ -5,7 +5,7 @@ import { OrdersRun } from '@/components/brunch-orders/orders-run';
 import { brunchOrdersProcess } from '@/lib/processes/brunch-orders/process';
 
 /*
-  Brunch orders, built one step at a time (docs/BRUNCH-ORDERS-PLAN.md).
+  Brunch orders, built one step at a time (docs/processes/brunch-orders/PLAN.md).
   Development only. A run is started by hand and moves only when a person
   acts; it is kept in this browser, its read of the sheet on the server.
 */

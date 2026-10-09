@@ -28,7 +28,7 @@ export function ThreadPage({
         <div className="mb-8 max-sm:mb-6">
           {eyebrow ? <p className="text-meta text-muted">{eyebrow}</p> : null}
           {/* The editorial line, per the display role in
-              docs/EXPERIENCE-SPEC.md. Everything else stays sans. */}
+              docs/interface/STYLING-SYSTEM.md. Everything else stays sans. */}
           <h1 className="font-display text-display mt-1.5 [font-weight:550]">
             {title}
           </h1>

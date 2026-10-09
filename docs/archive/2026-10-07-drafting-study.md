@@ -1,5 +1,7 @@
 # Drafting study, 7 October 2026
 
+> **Status: historical record (archived 9 October 2026).** Original status labels, paths and future-tense plans below describe the work at the time. Use the [documentation index](../README.md) and current code for present behaviour.
+
 The first drafting study of the Brunch weekend rulebook (plan, Phase 3): the
 same sheet drafted repeatedly, every draft scored against the owner's checks,
 to measure how often drafting succeeds and how right the drafts are, and to

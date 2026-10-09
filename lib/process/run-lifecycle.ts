@@ -1,7 +1,7 @@
 // A run as it moves: the stages it passes through, and the steps of its thread
 // at each one. Placeholder, like placeholder-process.ts -- the engine does not
 // report its progress yet -- but the stages are the batch phases of
-// docs/EXPERIENCE-SPEC.md, so the thread can be designed against every one of
+// docs/archive/EXPERIENCE-SPEC.md, so the thread can be designed against every one of
 // them before anything produces them.
 
 import type { ReviewedReplay } from '../promotion-release';

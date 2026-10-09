@@ -1,22 +1,100 @@
-/* The quiet face in the rungs of the button's own [data-severity], a rung
-   lighter than on the canvas as it sits on the floating face. Lighter at the
-   top in both themes: Radix's dark rungs climb, so their order flips. */
-@utility control-tone {
-  --control-face-top: light-dark(var(--severity-1), var(--severity-5));
-  --control-face-bottom: light-dark(var(--severity-3), var(--severity-4));
-  --control-ring-top: light-dark(var(--severity-5), var(--severity-7));
-  --control-ring-bottom: light-dark(var(--severity-6), var(--severity-6));
-  --control-highlight: transparent;
+/* What an example tries -- the proposal's variable and its value -- is the
+   model's proposal, so it is drawn in the model's blue. */
+:root {
+  /* A step lighter in dark, where step 3 sinks into the panel. */
+  --sp-rules-tried-face: light-dark(var(--sp-state-advisory-3), var(--sp-state-advisory-5));
 }
 
-@utility control-tone-hover {
-  --control-face-top: light-dark(var(--severity-3), var(--severity-6));
-  --control-face-bottom: light-dark(var(--severity-4), var(--severity-5));
-  --control-ring-top: light-dark(var(--severity-6), var(--severity-7));
-  --control-ring-bottom: light-dark(var(--severity-7), var(--severity-7));
+@theme inline {
+  --color-tried-face: var(--sp-rules-tried-face);
 }
 
 @layer components {
+  .rules-review {
+    --rules-decision-motion: 260ms;
+  }
+
+  .rules-status-out {
+    display: inline-flex;
+    flex: none;
+    transition: opacity var(--rules-decision-motion) ease-out;
+  }
+
+  .rules-status-out[data-accepted] {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* The list leaves a gutter for the waiting dots (pending-dots.tsx); the
+     step body clips at its edge, so the gutter cannot sit outside it. */
+  .rules-list {
+    position: relative;
+    padding-right: 1.375rem;
+  }
+  /* A dot stands off the card by the pill's own inset (the header's 1rem). */
+  .rules-dots {
+    position: absolute;
+    /* Half a dot above the line it starts on, so a dot at rest centres on it. */
+    top: calc(var(--rules-dots-from, 0px) - 0.1875rem);
+    bottom: 0;
+    right: 0;
+    width: 1.375rem;
+  }
+  /* A track spans the whole list, so its dot stays sticky past its card. */
+  .rules-dot-track {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    pointer-events: none;
+  }
+  .rules-dot-rest {
+    flex: none;
+    height: var(--rules-dot-at, 0px);
+  }
+  /* Where the dot rests beside its pill, watched for the beat. */
+  .rules-dot-mark {
+    position: absolute;
+    top: var(--rules-dot-at, 0px);
+    width: 1px;
+    height: 1px;
+  }
+  .rules-dot {
+    position: sticky;
+    top: calc(1.25rem + var(--rules-dot-before) * 0.75rem);
+    bottom: calc(1.25rem + var(--rules-dot-after) * 0.75rem);
+    flex: none;
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: 999px;
+    cursor: pointer;
+    pointer-events: auto;
+    transition: scale var(--duration-state) ease-out;
+  }
+  .rules-dot:is(:hover, :focus-visible) {
+    scale: 1.8;
+  }
+  .rules-dot[data-arrived] {
+    animation: rules-beat 700ms var(--ease-out-quad);
+  }
+  @keyframes rules-beat {
+    30% {
+      scale: 2;
+    }
+    55% {
+      scale: 0.85;
+    }
+    75% {
+      scale: 1.35;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rules-dot[data-arrived] {
+      animation: none;
+    }
+  }
+
   /* What the model wrote: its line in a column of its own, the mark centred
      above it where a label sits beside the mark. */
   .rules-model {

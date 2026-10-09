@@ -1,5 +1,7 @@
 # Local model evaluation · 2 October 2026
 
+> **Status: historical record (archived 9 October 2026).** Original status labels, paths and future-tense plans below describe the work at the time. Use the [documentation index](../README.md) and current code for present behaviour.
+
 Development experiment on `/workbench/explore`, using
 `gemini-3.5-flash-lite` through `/api/dev/review-lab`. Seven synthetic examples
 ran sequentially with seeded JSON rules and a shared review-time anchor.
@@ -59,5 +61,5 @@ general reliability, or safety for external writes.
 
 Next: repeat the examples across runs and add varied phrasing, contradictory
 evidence, and rule amendments before considering another model or a real target
-adapter. See the current [technical design](../TECHNICAL-DESIGN.md#local-model-evaluation-examples)
+adapter. See the current [technical design](TECHNICAL-DESIGN.md#local-model-evaluation-examples)
 for the implemented flow.

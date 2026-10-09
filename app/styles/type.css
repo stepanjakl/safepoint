@@ -6,7 +6,7 @@
    alternate in every family, so a global setting would corrupt the others.
    These inherit through plain var(), so unlike the colour tokens they need no
    re-declaration per subtree.
-   See docs/STYLING-SYSTEM.md → Type scale.
+   See docs/interface/STYLING-SYSTEM.md → Type scale.
    ────────────────────────────────────────────────────────────────────────── */
 :root,
 [data-typeface='geist'] {

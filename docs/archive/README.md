@@ -1,26 +1,27 @@
 # Archive
 
-Finished plans and trial records, kept for their reasoning. They describe the
-code as it was when they were written -- file paths, token names and switches
-here may no longer exist. For how things are now, read
-[`../STYLING-SYSTEM.md`](../STYLING-SYSTEM.md) and the repository's `AGENTS.md`;
-where they disagree with anything in this folder, they win.
+Status: dated history. These files preserve decisions, plans and trial results from the time they were written. Paths, sheet tabs, tokens and implementation claims may have changed. Start with the [documentation index](../README.md) for current guidance.
 
-- `COMPONENT-STYLING-PROPOSAL.md` -- the CSS Modules trial, and the 2026-09-24
-  addendum on adopting plain colocated stylesheets instead.
-- `STYLE-CONSOLIDATION-PLAN.md` -- the consolidation of styles into named,
-  searchable treatments, before stylesheets moved beside their components.
-- `SURFACE-STEPS-PLAN.md` -- the custom colour system's phases, from the
-  Original/Custom comparison through opaque edges; completed and retired on
-  2026-09-24.
-- `2026-10-02-model-evaluation.md` -- the first seven-case model evaluation
-  on `/workbench/explore`, with both runs and the expectation fix between them.
-- `2026-10-03-model-evaluation.md` -- suite 2, which adds five examples, and
-  every attempt retained.
-- `2026-10-03-post-change-evaluation.md` -- suite 2 rerun after the
-  extraction prompt change, with no change to code, answers or rules.
-- `2026-10-03-cel-spike.md` -- the Phase 0 formula engine and sheet reader
-  trials, and the decision to run rules with cel-js.
-- `2026-10-07-drafting-study.md` -- the first drafting study: eight Flash-Lite
-  drafts scored against the owner's checks, Flash unmeasurable on the free
-  tier, and the systematic failures traced to policy the sheet does not state.
+## Earlier product and delivery decisions
+
+| Record                                                                                                                                                 | What it covered                                               | Current starting point                                                                                                               |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| [Project review](PROJECT-REVIEW.md)                                                                                                                    | Consolidation of original product notes and decisions         | [Product brief](../product/PRODUCT-BRIEF.md)                                                                                         |
+| [Experience specification](EXPERIENCE-SPEC.md)                                                                                                         | Promotion-release screen and later interaction design         | [Experience principles](../product/EXPERIENCE-PRINCIPLES.md) and [embedded review](../interface/EMBEDDED-REVIEW.md)                  |
+| [Technical design](TECHNICAL-DESIGN.md)                                                                                                                | Proposed full production architecture                         | [Architecture](../engineering/ARCHITECTURE.md)                                                                                       |
+| [Delivery plan](DELIVERY-PLAN.md)                                                                                                                      | Earlier promotion-release milestones and later release gates  | [Brunch orders plan](../processes/brunch-orders/PLAN.md)                                                                             |
+| [Stage 0 brief](STAGE-0-BRIEF.md), [Stage 1A brief](STAGE-1A-BRIEF.md), [Stage 1B brief](STAGE-1B-BRIEF.md), [Stage 1B proposal](STAGE-1B-PROPOSAL.md) | Completed scaffold, replay contract and first interface slice | [Architecture](../engineering/ARCHITECTURE.md) and [promotion-release dictionary](../processes/promotion-release/DATA-DICTIONARY.md) |
+| [Fable visual direction](FABLE-VISUAL-DIRECTION.md)                                                                                                    | Original visual hand-off                                      | [Styling system](../interface/STYLING-SYSTEM.md)                                                                                     |
+| [Browser review experiment decision](REVIEW-EXPERIMENT-DECISION.md)                                                                                    | Scope of a completed experiment                               | [Embedded review](../interface/EMBEDDED-REVIEW.md)                                                                                   |
+
+## Sheet and interface records
+
+| Record                                                                                                                                                                                                              | What it covered                                                                                               | Current starting point                                                                                         |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| [Sheet process plan](SHEET-PROCESS-PLAN.md)                                                                                                                                                                         | Brunch weekend proposal and the original sheet, including tabs later removed from the Brunch orders data read | [Brunch weekend](../processes/brunch-weekend/README.md) or [Brunch orders](../processes/brunch-orders/PLAN.md) |
+| [Rulebook development log](RULEBOOK-DEVELOPMENT-LOG.md) and [drafting study](2026-10-07-drafting-study.md)                                                                                                          | Brunch weekend engine findings                                                                                | [Rulebook engine guide](../processes/brunch-weekend/RULEBOOK-ENGINE-GUIDE.md)                                  |
+| [Sidebar resize plan](SIDEBAR-RESIZE-PLAN.md)                                                                                                                                                                       | Completed resize design and its verification                                                                  | [Assistant sidebar](../interface/ASSISTANT-SIDEBAR.md) and [styling system](../interface/STYLING-SYSTEM.md)    |
+| [Component styling proposal](COMPONENT-STYLING-PROPOSAL.md), [style consolidation plan](STYLE-CONSOLIDATION-PLAN.md), [surface steps plan](SURFACE-STEPS-PLAN.md)                                                   | Completed styling experiments                                                                                 | [Styling system](../interface/STYLING-SYSTEM.md)                                                               |
+| [First model evaluation](2026-10-02-model-evaluation.md), [second evaluation](2026-10-03-model-evaluation.md), [post-change evaluation](2026-10-03-post-change-evaluation.md), [CEL spike](2026-10-03-cel-spike.md) | Dated model and formula-language trials                                                                       | [Brunch weekend](../processes/brunch-weekend/README.md)                                                        |
+
+The archive remains readable as evidence. It does not override a current guide or the code.

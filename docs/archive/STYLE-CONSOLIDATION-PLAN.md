@@ -1,5 +1,7 @@
 # Style consolidation and code-quality handoff
 
+> **Status: historical record (archived 9 October 2026).** Original status labels, paths and future-tense plans below describe the work at the time. Use the [documentation index](../README.md) and current code for present behaviour.
+
 ## Objective and current instruction
 
 Make a rendered element's appearance easy to identify, understand and edit.
@@ -17,9 +19,9 @@ ignore that instruction. Do not claim runtime parity from source inspection.
 ## Read before editing
 
 - `AGENTS.md`: repository constraints and required checks when enabled.
-- `docs/STYLING-SYSTEM.md`: authoritative ownership rules and metadata convention.
-- `docs/TECHNICAL-DESIGN.md`: architecture and behaviour boundaries.
-- `docs/COMPONENT-STYLING-PROPOSAL.md`: measured editor and CSS Modules findings.
+- `docs/interface/STYLING-SYSTEM.md`: authoritative ownership rules and metadata convention.
+- `docs/archive/TECHNICAL-DESIGN.md`: architecture and behaviour boundaries.
+- `docs/archive/COMPONENT-STYLING-PROPOSAL.md`: measured editor and CSS Modules findings.
 - Applicable TypeScript, React, keyboard, live-region, Tailwind and safe-refactor
   skills. Repository rules take precedence over generic examples. Consult current
   official documentation against installed versions when technical uncertainty
@@ -51,14 +53,14 @@ this CSS extraction.
 
 ## Architecture to retain
 
-| Concern | Owner |
-| --- | --- |
-| Shared design decisions and values | The seven files under `app/tokens/` |
-| Tailwind publication of tokens | `app/tokens/theme.css` |
-| Shared painting/transition utilities | `app/globals.css` |
+| Concern                                                                       | Owner                                                  |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Shared design decisions and values                                            | The seven files under `app/tokens/`                    |
+| Tailwind publication of tokens                                                | `app/tokens/theme.css`                                 |
+| Shared painting/transition utilities                                          | `app/globals.css`                                      |
 | Named interactive treatments, grouped states, pseudo-elements, derived values | `app/components.css`, in the appropriate cascade layer |
-| Layout and straightforward typography | JSX utilities |
-| Development-only identity | `lib/style-debug.ts`, applied to existing DOM nodes |
+| Layout and straightforward typography                                         | JSX utilities                                          |
+| Development-only identity                                                     | `lib/style-debug.ts`, applied to existing DOM nodes    |
 
 Extract a treatment when its visual states are scattered, its ownership is unclear,
 or its dependencies require repeated detective work. Do not move every utility to
@@ -84,14 +86,14 @@ Components rendering only providers or composition need no invented DOM root.
 
 Prioritise these batches; inspect actual current code before assuming a defect:
 
-| Batch | Starting files | Particular relationships to preserve |
-| --- | --- | --- |
-| Menu | `components/app-shell/process-menu.tsx` | Row editing/current/dragging priority; inherited badge stops; text states; workspace tiles and hues; search; arrange/save; notice and account controls |
-| Header and shared controls | `process-header.tsx`, `components/ui/button.tsx`, `switch.tsx`, `tooltip.tsx`, `notch.tsx` | React Aria states; selected/freshness combinations; count/icon hierarchy; separate face/ring layers; tooltip arrow sharing |
-| Runs and timeline | `run-row.tsx`, `section-row.tsx`, `thread-step.tsx`, `system-cluster.tsx`, `system-parts.tsx` | Tally severity; row hover propagation; inherited ink; connector and disc paint |
-| Panels and forms | `drawer-aside.tsx`, `process-panels.tsx`, `input-detail.tsx`, `process-settings.tsx`, `schedule-control.tsx`, `instructions-panel.tsx`, `text-diff.tsx`, `assistant-panel.tsx` | Focus restoration; inert leaving panels; controlled inputs; resizing and overflow; diff/status semantics |
-| Review surfaces | `components/review/` | Severity buckets; selected candidate; gate disclosures; release state; effects rail; modal and drawer behaviour |
-| Remaining UI | Other components and route markup | Record already-clear cases and explain intentional omissions |
+| Batch                      | Starting files                                                                                                                                                                 | Particular relationships to preserve                                                                                                                   |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Menu                       | `components/app-shell/process-menu.tsx`                                                                                                                                        | Row editing/current/dragging priority; inherited badge stops; text states; workspace tiles and hues; search; arrange/save; notice and account controls |
+| Header and shared controls | `process-header.tsx`, `components/ui/button.tsx`, `switch.tsx`, `tooltip.tsx`, `notch.tsx`                                                                                     | React Aria states; selected/freshness combinations; count/icon hierarchy; separate face/ring layers; tooltip arrow sharing                             |
+| Runs and timeline          | `run-row.tsx`, `section-row.tsx`, `thread-step.tsx`, `system-cluster.tsx`, `system-parts.tsx`                                                                                  | Tally severity; row hover propagation; inherited ink; connector and disc paint                                                                         |
+| Panels and forms           | `drawer-aside.tsx`, `process-panels.tsx`, `input-detail.tsx`, `process-settings.tsx`, `schedule-control.tsx`, `instructions-panel.tsx`, `text-diff.tsx`, `assistant-panel.tsx` | Focus restoration; inert leaving panels; controlled inputs; resizing and overflow; diff/status semantics                                               |
+| Review surfaces            | `components/review/`                                                                                                                                                           | Severity buckets; selected candidate; gate disclosures; release state; effects rail; modal and drawer behaviour                                        |
+| Remaining UI               | Other components and route markup                                                                                                                                              | Record already-clear cases and explain intentional omissions                                                                                           |
 
 ## Phase 2: consolidate one treatment at a time
 
@@ -191,7 +193,7 @@ pnpm check:tokens
 
 Use focused additional checks when affected: `pnpm check:rail` and
 `pnpm check:rail -- --level all --self-test` for sidebar geometry; the documented
-contrast checks for supported surfaces. Read `docs/CONTRAST-CHECKER.md` before
+contrast checks for supported surfaces. Read `docs/interface/CONTRAST-CHECKER.md` before
 claiming contrast coverage. Verify a production build when shared CSS architecture
 or metadata behaviour changes materially; inspect that diagnostic attributes are
 absent while functional state attributes remain.
@@ -211,7 +213,7 @@ from DOM identity to one coherent state rule and directly to its semantic tokens
 
 Deliver a concise account of migrated families, token-sharing decisions, substantive
 code-quality fixes, deferred findings and verification performed or skipped. Update
-`docs/STYLING-SYSTEM.md` to describe the final system, and leave this document's
+`docs/interface/STYLING-SYSTEM.md` to describe the final system, and leave this document's
 inventory/checklist current so another model can resume without repeating discovery.
 Do not describe the whole app as covered based solely on the number of annotations.
 

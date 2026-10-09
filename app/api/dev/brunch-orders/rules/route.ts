@@ -1,27 +1,31 @@
 import { z } from 'zod';
 
+import { accept, confirmIntent, deny } from '@/lib/definitions/decide';
+import { draftProgress, startDraft } from '@/lib/definitions/draft';
+import { namesOf } from '@/lib/definitions/records';
+import { loadSet } from '@/lib/definitions/store';
+import type { DefinitionSet } from '@/lib/definitions/types';
+import { workingOf } from '@/lib/definitions/working';
+import { writeDefinition } from '@/lib/definitions/write';
 import { rejectUnlessLocalDevelopment } from '@/lib/dev/dev-route';
-import { namesOf } from '@/lib/processes/brunch-orders/formulas';
+import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { keptRead } from '@/lib/processes/brunch-orders/reads';
-import {
-  acceptable,
-  findRules,
-  ruleSet,
-  update,
-  writeItem,
-  type RuleSet,
-} from '@/lib/processes/brunch-orders/rules';
+import { draftingModelSchema } from '@/lib/rulebook/models';
 
 export const runtime = 'nodejs';
 
 const text = z.string().min(1).max(20_000);
+const id = z.string().max(80);
+// The model to ask, falling back within its family; the default otherwise.
+const model = draftingModelSchema.optional();
 
 /*
-  Development only: the rules of one version of the instructions (its text).
-  get reads them; find asks the model to list them; intent confirms what it
-  understood; write gives one item a formula and examples, run on the read;
-  decide accepts an item whose examples all agree, or denies it, with what is
-  wrong. Each reply names the products the examples are about.
+  Development only: the definitions of one version of the instructions (its
+  text), through lib/definitions. get reads them, with any draft running;
+  draft finds them again and writes each on the server; write gives one a
+  formula and examples on the read; intent confirms what the model
+  understood; decide accepts one (rechecked in full) or denies it, with what
+  is wrong. Each reply names the records the examples are about.
 */
 export async function POST(request: Request) {
   const rejected = rejectUnlessLocalDevelopment(request);
@@ -30,21 +34,24 @@ export async function POST(request: Request) {
     .discriminatedUnion('action', [
       z.strictObject({ action: z.literal('get'), text }),
       z.strictObject({
-        action: z.literal('find'),
+        action: z.literal('draft'),
         text,
         version: z.string().max(20),
+        readId: id,
+        model,
       }),
       z.strictObject({ action: z.literal('intent'), text }),
       z.strictObject({
         action: z.literal('write'),
         text,
-        readId: z.string().max(80),
-        id: z.string().max(80),
+        readId: id,
+        id,
+        model,
       }),
       z.strictObject({
         action: z.literal('decide'),
         text,
-        id: z.string().max(80),
+        id,
         decision: z.enum(['accept', 'deny']),
         note: z.string().max(500).optional(),
       }),
@@ -56,61 +63,54 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   const body = parsed.data;
-  const reply = async (set: RuleSet | null) => {
-    if (!set) return Response.json({ kind: 'none' });
+  const reply = async (set: DefinitionSet | null) => {
+    const drafting = draftProgress(owner, body.text);
+    if (!set) return Response.json({ kind: 'none', drafting });
     const read = set.readId ? await keptRead(set.readId) : null;
     return Response.json({
       kind: 'rules',
       set,
-      names: read ? namesOf(read) : {},
+      names: read ? namesOf(read, owner.subject.data) : {},
+      // The app's own working of each example, by definition.
+      working: read
+        ? Object.fromEntries(
+            set.definitions.map((d) => [d.id, workingOf(owner, set, read, d)]),
+          )
+        : {},
+      drafting,
     });
+  };
+  const readOf = async (readId: string) => {
+    const read = await keptRead(readId);
+    if (!read) throw new Error('That read is no longer kept.');
+    return read;
   };
   try {
     switch (body.action) {
       case 'get':
-        return reply(await ruleSet(body.text));
-      case 'find':
-        return reply(await findRules(body.text, body.version));
+        return reply(await loadSet(owner, body.text));
+      case 'draft':
+        startDraft(owner, body.text, body.version, await readOf(body.readId), {
+          model: body.model,
+        });
+        return reply(await loadSet(owner, body.text));
       case 'intent':
+        return reply(await confirmIntent(owner, body.text));
+      case 'write':
         return reply(
-          await update(body.text, (s) => ({
-            ...s,
-            intentConfirmedAt: new Date().toISOString(),
-          })),
+          await writeDefinition(
+            owner,
+            body.text,
+            await readOf(body.readId),
+            body.id,
+            { model: body.model },
+          ),
         );
-      case 'write': {
-        const read = await keptRead(body.readId);
-        if (!read)
-          return Response.json(
-            { kind: 'error', message: 'That read is no longer kept.' },
-            { status: 404 },
-          );
-        return reply(await writeItem(body.text, read, body.id));
-      }
       case 'decide':
         return reply(
-          await update(body.text, (s) => ({
-            ...s,
-            items: s.items.map((i) =>
-              i.id !== body.id
-                ? i
-                : body.decision === 'accept'
-                  ? acceptable(i)
-                    ? {
-                        ...i,
-                        approvedAt: new Date().toISOString(),
-                        deniedAt: null,
-                        denial: null,
-                      }
-                    : i
-                  : {
-                      ...i,
-                      approvedAt: null,
-                      deniedAt: new Date().toISOString(),
-                      denial: body.note?.trim() || null,
-                    },
-            ),
-          })),
+          body.decision === 'accept'
+            ? await accept(owner, body.text, body.id, keptRead)
+            : await deny(owner, body.text, body.id, body.note),
         );
     }
   } catch (error) {
@@ -119,6 +119,7 @@ export async function POST(request: Request) {
         kind: 'error',
         message:
           error instanceof Error ? error.message.split('\n')[0] : 'Failed.',
+        drafting: draftProgress(owner, body.text),
       },
       { status: 502 },
     );

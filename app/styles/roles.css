@@ -6,7 +6,7 @@
    Every role reads a step of the one neutral ramp (generated/ramp.css) and
    is declared once. The surfaces and the roles drawn on them are offsets in
    scripts/colour-theme/config.ts, written to generated/surfaces.css and the
-   generated block below. See docs/STYLING-SYSTEM.md → Surface layers.
+   generated block below. See docs/interface/STYLING-SYSTEM.md → Surface layers.
    ────────────────────────────────────────────────────────────────────────── */
 
 :root {

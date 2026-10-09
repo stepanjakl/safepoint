@@ -3,7 +3,7 @@ import type { ReleasePlan } from '@/lib/review/plan-contract';
 import type { MayChange } from '@/lib/rulebook/schema';
 
 /*
-  Brunch weekend, built in the open (docs/SHEET-PROCESS-PLAN.md). Development
+  Brunch weekend, built in the open (docs/archive/SHEET-PROCESS-PLAN.md). Development
   only until the plan says otherwise. Its one run is the build itself: each
   step of the eventual process is shown, the ones under trial with their trial,
   the rest pending with a line on what they will do.

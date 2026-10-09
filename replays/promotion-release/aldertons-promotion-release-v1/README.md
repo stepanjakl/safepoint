@@ -2,7 +2,7 @@
 
 This directory contains version `1.0.2` of the reviewed Fresh Food Weekend replay. A replay represents the output of a previous accepted run; it is not source evidence supplied to the agent.
 
-The matching fictional source evidence lives under [`fixtures/`](../../../fixtures/promotion-release/aldertons-promotion-release-v1/README.md). The [promotion-release data dictionary](../../../docs/PROMOTION-RELEASE-DATA-DICTIONARY.md) explains the fields and controlled values.
+The matching fictional source evidence lives under [`fixtures/`](../../../fixtures/promotion-release/aldertons-promotion-release-v1/README.md). The [promotion-release data dictionary](../../../docs/processes/promotion-release/DATA-DICTIONARY.md) explains the fields and controlled values.
 
 ## Why this is separate
 

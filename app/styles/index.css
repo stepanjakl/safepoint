@@ -1,7 +1,7 @@
 /* ── Styles ─────────────────────────────────────────────────────────────────
    The one stylesheet the app loads. Shared foundations live beside this file;
    a component's own roles, utilities and rules live beside its .tsx.
-   See docs/STYLING-SYSTEM.md → The division.
+   See docs/interface/STYLING-SYSTEM.md → The division.
    ────────────────────────────────────────────────────────────────────────── */
 
 @import 'tailwindcss';
@@ -51,6 +51,7 @@
 @import '../../components/review/release-card.css';
 @import '../../components/review/review-queue.css';
 @import '../../components/brunch-orders/orders-run.css';
+@import '../../components/brunch-orders/decision-button.css';
 @import '../../components/brunch-orders/rules-step.css';
 @import '../../components/ui/brand.css';
 @import '../workbench/run/run-player.css';

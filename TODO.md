@@ -13,9 +13,25 @@ The detailed requirements remain in [`docs/`](docs/README.md). If this checklist
 - Keep the replay mode working as live integrations are added.
 - Finish, test, review, and commit one batch before starting the next.
 
-## Current track: sheet process
+## Current track: Brunch orders
 
-The main demonstration is now Brunch weekend at Alderton's Local, specified in [`docs/SHEET-PROCESS-PLAN.md`](docs/SHEET-PROCESS-PLAN.md). Each phase ends at the gate written there.
+The active hand-off is [Brunch orders](docs/processes/brunch-orders/PLAN.md). Its phases have their own acceptance gates; the [development log](docs/processes/brunch-orders/DEVELOPMENT-LOG.md) records findings and open issues.
+
+The [9 October direction review](docs/processes/brunch-orders/DIRECTION-REVIEW.md) recommends correcting and independently checking the existing definitions, freezing that set, then building Calculate and Propose before further drafting generalisation. This remains proposed work; the completed definitions-engine phase below does not establish the correctness of a particular draft or the reliability of automatic authoring.
+
+- [x] **Phase 1. Instructions and reading.** Start a run, show its instructions, read the five data tabs from a captured or live sheet, and keep the read under an ID.
+- [x] **Phase 2 and 2b. Definitions from instructions.** Find definitions, type-check formulas, run examples, confirm intent and accept or deny each definition. The implementation is in `lib/definitions/`.
+- [ ] **Phase 3. Calculate.** Work out expected demand and required quantities for every product.
+- [ ] **Phase 4. Propose.** Produce one explained order proposal per product.
+- [ ] **Phase 5. Check.** Run accepted definitions on every proposed order.
+- [ ] **Phase 6. Review.** Approve, change within allowed bounds or reject each order.
+- [ ] **Phase 7. Apply.** Write approved orders, read them back and support safe undo.
+- [ ] **Phase 8. History and learning.** Persist runs, reads and decisions; derive reviewable instruction suggestions.
+- [ ] **Phase 9. Wider scope.** Add further purposes one at a time with examples.
+
+## Retained experiment: Brunch weekend
+
+The following is the earlier Brunch weekend experiment checklist. Its [original plan](docs/archive/SHEET-PROCESS-PLAN.md) and sheet appendix are historical; they do not define Brunch orders or its five-tab read.
 
 - [x] **Phase 0. Decide and prepare**
   - [x] Documentation updated for the new track.
@@ -38,7 +54,7 @@ The ordered build below sequenced the Alderton's scenario. Stages 0 and 1A are c
 ### Ordered build
 
 - [x] **0. Establish the project foundation**
-  - Follow the exact hand-off in [`docs/STAGE-0-BRIEF.md`](docs/STAGE-0-BRIEF.md).
+  - Follow the exact hand-off in [`docs/archive/STAGE-0-BRIEF.md`](docs/archive/STAGE-0-BRIEF.md).
   - Use Node.js 24 LTS, an exact pnpm 10 patch, Next.js App Router, React, strict TypeScript, and Tailwind CSS.
   - Record Neon Postgres with Drizzle ORM as the persistence choice and Vercel as the deployment target.
   - Check current stable package compatibility before installing anything; do not copy release-candidate tags from examples accidentally.
@@ -56,7 +72,7 @@ The ordered build below sequenced the Alderton's scenario. Stages 0 and 1A are c
   - **Gate:** contract and fixture tests prove complete candidate accounting, evidence integrity, seeded arithmetic, and rejection of malformed input.
 
 - [ ] **1B. Build the static review interface**
-  - Follow [`docs/STAGE-1B-BRIEF.md`](docs/STAGE-1B-BRIEF.md).
+  - Follow [`docs/archive/STAGE-1B-BRIEF.md`](docs/archive/STAGE-1B-BRIEF.md).
   - Add React Aria Components, Playwright, and axe when the implemented interface first requires them. Tailwind's native `data-*` variants are sufficient unless a concrete component proves that a helper package adds value.
   - Consume `loadReviewedReplay()` rather than importing raw fixtures or the test oracle.
   - Build the summary, candidate list, detail view, evidence and policy sections, and effects rail.
@@ -130,7 +146,7 @@ The ordered build below sequenced the Alderton's scenario. Stages 0 and 1A are c
   - Inspect proposal, commit, compensation, and cleanup runs in Vercel's workflow dashboard while keeping the Neon ledger as the user-facing source of truth.
   - Deploy the public sandbox and write the case study. No video is required.
   - Confirm bounded live generation falls back automatically to the labelled replay when a model or dependency is unavailable.
-  - **Gate:** the release checklist in [`docs/DELIVERY-PLAN.md`](docs/DELIVERY-PLAN.md) passes in the deployed environment.
+  - **Gate:** the release checklist in [`docs/archive/DELIVERY-PLAN.md`](docs/archive/DELIVERY-PLAN.md) passes in the deployed environment.
 
 ## Later product work
 
@@ -138,7 +154,7 @@ The ordered build below sequenced the Alderton's scenario. Stages 0 and 1A are c
 - [ ] Compare alternative plans and explain trade-offs.
 - [ ] Draft the next instruction version from review decisions, each edit traced to the items behind it, and review it like any other proposal. The assistant placeholder in the process header's notch (`components/app-shell/assistant/assistant.tsx`) is where it starts.
 - [ ] Add richer connector capabilities and organisation-level policy.
-- [x] Replace the process header's system discs with Inputs and Outputs buttons, and the Systems tab with Inputs and Outputs tabs, as specified in [`docs/EMBEDDED-REVIEW.md`](docs/EMBEDDED-REVIEW.md#process-header-and-setup). Live source systems and ingestion stay future work.
+- [x] Replace the process header's system discs with Inputs and Outputs buttons, and the Systems tab with Inputs and Outputs tabs, as specified in [`docs/interface/EMBEDDED-REVIEW.md`](docs/interface/EMBEDDED-REVIEW.md#process-header-and-setup). Live source systems and ingestion stay future work.
 - [ ] Add collaborative review and enterprise identity.
 - [ ] Explore an optional Duvo runtime adapter after the provider-independent workflow is proven.
 

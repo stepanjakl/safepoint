@@ -1,5 +1,7 @@
 # Expanded model evaluation · 3 October 2026
 
+> **Status: historical record (archived 9 October 2026).** Original status labels, paths and future-tense plans below describe the work at the time. Use the [documentation index](../README.md) and current code for present behaviour.
+
 Suite 2 on `/workbench/explore` adds five examples to the original seven:
 alternate supplier wording and quantities, explicitly declined funding,
 unresolved conflicting amounts with an uncontested allocation, replacement of
@@ -99,7 +101,7 @@ checks, and all 148 unit tests. Production compilation passed with
 port-binding restriction (`Operation not permitted`), including an escalated
 attempt; the repository build configuration was not changed.
 
-See the current [technical design](../TECHNICAL-DESIGN.md#local-model-evaluation-examples)
+See the current [technical design](TECHNICAL-DESIGN.md#local-model-evaluation-examples)
 for the implemented experiment.
 
 The [post-change continuation](2026-10-03-post-change-evaluation.md) records a

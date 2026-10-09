@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
-// Brunch orders, phase 1 (docs/BRUNCH-ORDERS-PLAN.md): a run started by hand
+// Brunch orders, phase 1 (docs/processes/brunch-orders/PLAN.md): a run started by hand
 // shows its instructions, waits for a person to read the sheet, and keeps
 // that read. The captured read needs no network.
 

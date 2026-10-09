@@ -31,7 +31,7 @@
    both. --slant-angle and --slant-radius are read with fallbacks inside the
    rules rather than declared here, so overriding the notch's angle on a
    subtree still reaches the buttons in it.
-   See docs/STYLING-SYSTEM.md → The notch and slanted controls. */
+   See docs/interface/STYLING-SYSTEM.md → The notch and slanted controls. */
 :root {
   /* Lean of every slanted edge, measured from vertical. */
   --notch-angle: 25deg;

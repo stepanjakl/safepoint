@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
+import { recordsOf } from '@/lib/definitions/records';
 import { rejectUnlessLocalDevelopment } from '@/lib/dev/dev-route';
+import { SUBJECT } from '@/lib/processes/brunch-orders/process';
 import {
   captureRead,
   keptRead,
@@ -60,6 +62,8 @@ export async function POST(request: Request) {
       source: kept.source,
       spreadsheet: kept.spreadsheet,
       tabs: kept.tabs.map((t) => ({ name: t.name, rows: t.values.length })),
+      // Where the sheet does not fit what this process reads.
+      problems: recordsOf(kept, SUBJECT.data).problems,
     });
   } catch (error) {
     return Response.json(

@@ -1,0 +1,417 @@
+# Safepoint experience specification
+
+> **Status: historical record (archived 9 October 2026).** Original status labels, paths and future-tense plans below describe the work at the time. Use the [documentation index](../README.md) and current code for present behaviour.
+
+Original status at writing: canonical interaction and visual specification
+
+Audience: product designers and frontend engineers
+
+> **Scenario change, 3 October 2026.** The main demonstration is moving to the Brunch weekend sheet process in [`SHEET-PROCESS-PLAN.md`](SHEET-PROCESS-PLAN.md). The Alderton's promotion-release scenario described here stays implemented as the earlier scenario; this document is updated for the new demo in that plan's Phase 2.
+
+## Experience goal
+
+The review workspace has one job: help an operations specialist decide whether a proposed batch is safe to execute.
+
+The interface should answer, in order:
+
+1. What did the agent evaluate?
+2. What does it propose changing?
+3. What did it omit or fail to verify?
+4. Which items require attention?
+5. What happened after approval?
+
+The primary object is the change set. Conversation and tool traces are supporting evidence.
+
+## Scenario
+
+At 08:45 on Thursday 3 September 2026, Maya, the fictional release coordinator, opens the proposed release plan for Alderton's Fresh Food Weekend. The fictional final supplier top-up cutoff is at 12:00, and the fictional label-production deadline is 06:00 the following day, exactly 21 hours and 15 minutes away. The promotion runs on Saturday 5 and Sunday 6 September, and the main promotional orders were placed earlier in the planning cycle.
+
+The 27 candidates arrive from a fictional approved promotion shortlist. This reflects the shape of Duvo's public [Promo Product Selection playbook](https://docs.duvo.ai/user-guide/playbooks/merchandising/promo-product-selection), which routes approved products to a pricing-agent queue. Safepoint is the downstream release checkpoint: it does not repeat product selection, and it keeps the originating cycle and approval visible as evidence.
+
+The case contains 27 promotion lines. The stable replay presents 16 ready to release, seven requiring an adjustment or individual attention, two held, one excluded, and one unverifiable. No line is hidden from the evaluation summary. A live run can recommend a different safe treatment for genuinely ambiguous evidence, so the summary uses run-derived counts rather than hard-coded copy.
+
+The agent has used four read-only capabilities to inspect the promotion brief, prices and costs, demand evidence, stock and open orders, final top-up options, supplier constraints, funding, channel readiness, and bounded buyer, forecast, and supplier notes. It has not changed an external system. Safepoint then independently evaluates deterministic release policy. The interface keeps source facts, agent judgement, and the application policy result distinct.
+
+Maya reviews blockers and agent-policy disagreements first. She adjusts an allowed top-up quantity or promotional value, holds an unresolved line, checks all omitted or unverifiable lines, and approves the safe remainder. Before execution, Safepoint re-reads current values. A deliberately injected external edit causes one conflict. Safe effects continue according to policy, the conflict is withheld, and the ledger explains the partial result. The isolated Google Sheet and storefront sandbox change visibly; other destination effects are clearly identified as simulated or preview-only. Maya can then demonstrate compensation for eligible completed effects.
+
+## Information architecture
+
+The portfolio application has five user-facing destinations:
+
+- **Review**: the primary master-detail workspace for a proposal batch.
+- **Effects**: the execution and compensation ledger for the selected batch.
+- **Evidence**: a bounded record of model inputs, tool results, and proposal rationale.
+- **Storefront**: a read-only customer view of the promotion currently published in the session's sandbox.
+- **About this demo**: mode, scenario limitations, data handling, and replay controls.
+
+The development-only workbench is limited to generated 41-step colour ramps. Component and semantic review uses the real application routes and focused automated coverage rather than a parallel preview application.
+
+Decided, September 2026: a process page is a sheet with tabs rather than a page with a setup drawer over it. The header's menu chooses between the run and the four views of the process itself — instructions, inputs, outputs, settings — each a list beside a detail. The overlay that the drawer used belongs to the review, which is the one surface a reviewer toggles over a run rather than travels to. See [Process header and setup](../interface/EMBEDDED-REVIEW.md#process-header-and-setup), which supersedes the drawer described here.
+
+## Primary workspace
+
+### Desktop composition
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ Safepoint       Fresh Food Weekend    REPLAY             21h 15m remaining │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ 27 evaluated   16 ready   7 need attention   4 held or unverified          │
+├──────────────────────┬───────────────────────────────────────────────────────┤
+│ Filter: All  Risk... │ Salmon fillets 2 pack                    BLOCKED     │
+│                      │ ALD-0025 · Meat and fish                            │
+│ ● Salmon fillets     │                                                       │
+│   Funding unverified │ Regular price       Promotional price                │
+│ ○ Blueberries        │ £6.50               [ £5.00           ]              │
+│ ○ Sourdough bloomer  │                                                       │
+│ ◌ Strawberries       │ Agent: release       Policy: blocked below margin    │
+│   Held: late supply  │ Projected 9.2%       Policy minimum 15%              │
+│ ...                  │ Affected systems                                      │
+│                      │ Sheet ● → Storefront ● → SAP ◇ → Notification ◇       │
+│ 27 of 27 shown       │ ● Live sandbox  ◇ Simulated                           │
+│                      │ 7 readiness checks · 2 skipped            [Expand]     │
+│                      │                                                       │
+│                      │ [Hold] [Reject]              [Approve item (disabled)]│
+├──────────────────────┴───────────────────────────────────────────────────────┤
+│ 18 approved · 4 held · 5 pending              [Review omissions] [Commit]  │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+The left pane is a candidate collection, not a collection of independent cards. The right pane is the detail for the selected candidate. On a blocked line, Approve item is visibly disabled and its accessible description identifies the blocking policy finding. The footer summarises review progress and keeps the next action visible without covering keyboard focus.
+
+The header counts describe proposal outcomes: ready, needing attention, and held or unverified. The footer counts describe the reviewer's current decisions: approved, held, rejected, and pending. These are deliberately different summaries and must use their full labels rather than relying on numbers alone.
+
+### Mobile composition
+
+At narrow widths, the summary and candidate list form the first screen. Selecting a candidate navigates to a full-width detail view with a visible Back to candidates control. The browser Back action returns to the list and restores the selected item and scroll position.
+
+The commit summary becomes an in-flow section. It must not be a sticky overlay that hides content or focus at 200% or 400% zoom.
+
+## Visual direction
+
+The visual metaphor is a precision instrument ledger, not a chat application. Calm, flat working surfaces support dense comparison; solid rules establish permanent structure; and carefully bounded controls communicate interaction priority. Colour communicates state rather than decoration.
+
+[`FABLE-VISUAL-DIRECTION.md`](FABLE-VISUAL-DIRECTION.md) is the authoritative Stage 1B visual handoff. It defines the reference synthesis, workspace composition, optical-edge system, component anatomy, workbench specimens, and visual acceptance checks. This specification retains the product and interaction constraints that the visual treatment must serve.
+
+### Signature element: the effects rail
+
+Every selected change includes a compact vertical or horizontal rail connecting its intended targets. During execution, each node changes from planned to applying, applied, failed, or compensated. Each node also shows its adapter mode: Live sandbox, Simulated, Preview only, or Unavailable. This makes propagation and partial outcomes spatially legible without pretending that an indicative integration executed.
+
+The two genuine destinations are the isolated Google Sheet and the storefront sandbox. The Sheet may contain pricebook, promotion-release, top-up-order-draft, and label-queue tabs. The label-queue tab is a live staging record; it does not claim that physical labels were printed. A separate label-production service may appear as a simulated downstream effect so that the interface can explain when digital correction becomes physical store work. The storefront has its own API and persistence, plus a customer-facing view that changes only after verified execution. SAP and external messages may appear as simulated or preview-only destinations.
+
+### Readiness and evidence presentation
+
+Each line shows a compact readiness matrix covering forecast, inventory, supplier, financial, logistics, business-rule, and external-signal checks. This gate structure is consistent with Duvo's public [Auto-ordering skill](https://docs.duvo.ai/user-guide/skills/available-skills/auto-ordering). A check has one of five outcomes: Passed, Failed, Not checked, Evidence unavailable, or Not applicable. The detail view explains the source, observed time, relevant values, whether the gate is required or advisory for this line, and whether the result came from source data, agent judgement, or deterministic policy.
+
+A required gate that failed, was not checked, or has unavailable evidence blocks approval. An advisory gap attracts attention and lowers confidence but does not automatically block release. Not applicable is derived from the process and line context with a visible reason; it is not a synonym for missing evidence. For example, supplier logistics may be required for a top-up line and not applicable when confirmed stock already covers the promotion.
+
+When the model and policy disagree, the interface shows both without blending them:
+
+```text
+Agent recommendation   Release with a 480-unit top-up
+Policy result          Blocked
+Reason                 Projected margin 9.2%; policy minimum 15%
+Evidence               Supplier funding record unavailable
+Next action            Hold or obtain funding confirmation
+```
+
+Policy cannot silently rewrite the model's recorded recommendation. It controls whether the proposed effect is eligible for approval.
+
+When judgement depends on narrative evidence, show the excerpt and the agent's interpretation separately. For example:
+
+```text
+Supplier note          “An extra pallet may be available if confirmed today.”
+Agent interpretation   Allocation is possible but not confirmed.
+Deterministic fact      Confirmed additional allocation: 0 units
+Policy result           Hold top-up until allocation is confirmed
+```
+
+### Effect-specific detail
+
+The workspace keeps one layout and lifecycle across services, but the detail presentation follows the effect kind:
+
+| Effect kind      | Primary review presentation                                    |
+| ---------------- | -------------------------------------------------------------- |
+| Set field        | Expected and proposed values with field-level validation       |
+| Create resource  | Proposed record and consequences of creation                   |
+| Delete resource  | Current snapshot, dependencies, retention, and deletion impact |
+| Append entry     | New entry and its position or destination                      |
+| Transition state | Current state, target state, prerequisites, and consequences   |
+| Invoke command   | Inputs, expected outcome, duration, and downstream effects     |
+| Send message     | Recipients, subject, content preview, and recall limitation    |
+| Transfer file    | File identity, destination, version, and resulting access      |
+
+Unregistered kinds or renderers are review-only and cannot be committed. Do not fall back to an executable raw JSON editor. Connector capabilities control language and actions: the interface says automatic compensation, manual follow-up, partial completion possible, or waiting for target system only when those descriptions are true.
+
+Every effect also translates technical reversibility into plain operational consequences:
+
+```text
+Google Sheet       Can be restored automatically if the row has not changed again.
+Storefront         Can be restored automatically before a later promotion replaces it.
+Label queue        Can be removed until label production begins at 06:00.
+Notification       Cannot be unsent; a correction message would be a new action.
+```
+
+### Typography
+
+- **Display or editorial role**: use sparingly for the product thesis and batch title.
+- **Interface sans role**: use for navigation, labels, explanations, evidence, and controls; it must remain readable at compact sizes and medium density.
+- **Tabular or monospaced utility role**: use for prices, percentages, quantities, identifiers, timestamps, thresholds, adapter modes, and effect states.
+- Exact families remain provisional. Components must depend on semantic typography roles so that the final selection does not require component redesign.
+- The roles are now implemented as a constructed scale — rem sizes, line-heights locked to a 2px baseline, tracking carried by the role. The values and the construction rule are in [`STYLING-SYSTEM.md`](../interface/STYLING-SYSTEM.md).
+- Use system fallbacks and avoid delaying meaningful content for font downloads.
+- Use sentence case for ordinary interface language. Reserve tracked uppercase for short legends, source classifications, and machine-like readouts.
+
+### Colour tokens
+
+Colours are semantic tokens rather than utility colours embedded in components. Exact values remain provisional and must be replaceable without changing component anatomy.
+
+| Role group          | Required roles                                                 | Purpose                                                          |
+| ------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Surfaces            | Canvas, primary, inset, control, selected, dialog, disabled    | Establish containment and editability without elevation          |
+| Text                | Primary, muted, inverse                                        | Maintain a stable reading hierarchy across themes                |
+| Rules               | Faint, default, strong                                         | Separate aligned values, sections, and major application regions |
+| Optical edges       | Inner highlight, outer lowlight                                | Define selected high-priority controls without shadows           |
+| Neutral interaction | Action, selected, focus                                        | Keep action and selection distinct from safety outcomes          |
+| Semantic state      | Advisory, verified, caution, blocked, destructive, unavailable | Communicate policy and lifecycle meaning                         |
+| Adapter mode        | Live sandbox, simulated, preview only, unavailable             | Describe what a destination can genuinely do                     |
+
+Use neutral graphite treatments for action and selection. Reserve chromatic colour primarily for semantic meaning. Never communicate state by colour alone: pair colour with text, icon shape, and programmatic state.
+
+Navigation may carry decorative hue for wayfinding — the workspace menu's icon tiles do — on two conditions: it stays clear of the semantic state hues, and it stays below their saturation, so a decorative colour can never be read as a verdict. [`STYLING-SYSTEM.md`](../interface/STYLING-SYSTEM.md) records how the tiles meet both.
+
+Final light and dark values must pass contrast checks in context, including at the weakest point of a gradient. The dark theme preserves the light theme's boundary hierarchy without relying on glow.
+
+### Optical edge treatment
+
+Selected high-priority controls may use a solid base border, an approximately 1px outer gradient lowlight, an inner gradient highlight, and an optional shallow face gradient. This treatment provides optical edge definition rather than conventional elevation.
+
+- Apply the complete treatment only to primary batch or confirmation actions, an important selected compound control, the effects-rail enclosure, or a genuinely floating dialog or toolbar.
+- Keep permanent panes, candidate rows, evidence, policy findings, tables, status messages, non-interactive badges, and disabled controls flat and solid-bordered.
+- Gradient presentation layers cannot replace a solid focus indicator, capture pointer events, change the hit area, or carry semantic state by themselves.
+- Unsupported masking, print, and forced-colours modes fall back to complete solid borders and system colours.
+- Opaque surfaces remain the default. Backdrop blur is limited to a rare floating layer with an opaque fallback.
+
+### Shape, elevation, and spacing
+
+- Use square or 0–4px corners for major workspace regions, approximately 4–8px for section groups and inputs, and approximately 10–14px for deliberately encased primary or compound controls.
+- Reserve full capsules for compact statuses, filters, modes, and tightly bounded metadata rather than ordinary containers or buttons.
+- Use dividers, alignment, surface changes, and optical edges; do not use `box-shadow` for containment, selection, focus, or interaction priority.
+- Dialogs and genuinely floating content use backdrop contrast, a strong perimeter, and optional optical edging instead of shadow.
+- Use an 8px spacing rhythm with 4px adjustments for dense value rows.
+- Preserve at least a 44px target for standalone interactive controls even when their visible content is compact.
+- Dense navigation and list rows may compact to 40px, on two conditions: the whole row is the hit area, and any icon-sized control inside it inherits the row's height rather than carrying its own smaller target. A row that is only partly clickable does not qualify.
+- Align numeric before-and-after values vertically and use tabular numerals.
+
+### Motion
+
+Motion explains a change; it never decorates a screen at rest. Two motions are orchestrated: the effects rail progressing during execution, and a run's thread growing as the agent works. Both reflect real state rather than play on a timer.
+
+**One thing moves at a time.** When state advances, what is changing finishes before what comes next begins. A step that has finished settles into its finished mark and folds away completely before the next step arrives, and a new step's section unfolds only once the step itself has arrived. Sequenced change takes longer than simultaneous change, but the page never grows and shrinks at once, so nothing jumps.
+
+**Nothing appears at full size.** Space opens before content fills it, and content fades in after its container has opened. A container that is shutting keeps showing what the reader saw rather than swapping to its next content on the way out. Content that changes inside an open section eases to its new height.
+
+**Arrival and departure are one family.** They share curves and comparable durations, so the same object comes and goes. Where one mark replaces another, it becomes the other rather than swapping: a running mark folds in and grows into the finished one. A new item arrives from where it came from, travelling along the path that joins it to the item before, and the path draws in behind it.
+
+**An ending starts at once.** When work finishes partway through an animation, the exit begins immediately from wherever the animation is and folds its parts away in order. It never waits for a loop to reach a better-looking moment.
+
+**Things that express one activity keep one time.** A working indicator and the label beside it run on the same cycle and phase, so they read as a single thing. Work of unknown length is shown by rhythm, never by guessed progress; progress is shown only when it is real, such as a count of what has been done.
+
+**Working is calmer than calling.** A signal that the agent is working is quieter than one that asks for the reader: one direction, low contrast, carried in the colour of the work. A call for attention may be brighter and more insistent.
+
+**The reader's place is theirs.** The view follows new content only for a reader already watching the end; a reader who has scrolled away stays where they are and is told that something arrived. A section the reader opened stays open as the run moves on, and the interface folds only what it opened itself, reopening something only when it has news. A collapsible row's header reads the same open or closed; only its disclosure indicator changes.
+
+Under reduced-motion preference, replace travel, pulse and shimmer with immediate state changes and a static indicator. Anything that waits for a motion to finish must still complete when there is no motion.
+
+## Review flow
+
+```mermaid
+flowchart TD
+    A[Open fixed scenario] --> B{Live generation available?}
+    B -- Yes --> C[Generate typed proposal]
+    B -- No --> D[Load labelled deterministic replay]
+    C --> E[Validate complete release plan]
+    D --> E
+    E --> S[Recalculate deterministic policy]
+    S --> F[Review blockers and disagreements]
+    F --> G[Inspect ready, adjusted, held, and unverifiable lines]
+    G --> H[Approve, hold, reject, or edit]
+    H --> I{All required decisions made?}
+    I -- No --> G
+    I -- Yes --> J[Open commit confirmation]
+    J --> K[Preflight current values]
+    K --> L{Conflicts found?}
+    L -- Yes --> M[Withhold conflicts and explain options]
+    L -- No --> N[Execute approved effects]
+    M --> N
+    N --> O[Verify effects and show ledger]
+    O --> P{Reverse completed effects?}
+    P -- Yes --> Q[Run compensating actions]
+    P -- No --> R[Finish]
+    Q --> R
+```
+
+### Batch phase
+
+```mermaid
+stateDiagram-v2
+    [*] --> Generating
+    Generating --> Review: valid proposal
+    Generating --> Review: replay fallback
+    Review --> Committing: required decisions complete
+    Review --> InterventionRequired: release deadline expired
+    Committing --> Committed: all permitted effects verified
+    Committing --> InterventionRequired: conflict or failed effect
+    Committing --> InterventionRequired: deadline stops new effects
+    InterventionRequired --> Committing: retry approved effects
+    InterventionRequired --> Reversing: compensate completed effects
+    Committed --> Reversing: reversal confirmed
+    Reversing --> Reversed: compensation verified
+    Reversing --> InterventionRequired: compensation failed
+    Committed --> [*]
+    Reversed --> [*]
+```
+
+The diagram shows batch phase only. Individual review decisions and effect execution states remain separate.
+
+## Review actions
+
+### Approve
+
+Approval confirms that the proposed value may be executed if preflight checks still pass. It does not guarantee that the effect will succeed.
+
+Approval has a bounded validity period defined by the scenario. Passing the fictional release deadline prevents commit and moves the batch to intervention required. Safepoint never interprets silence as approval, automatically releases a pending line, or relies on a paused external agent to escalate itself.
+
+Bulk approval applies only to visible eligible items and must state the number affected before activation. High-risk items require individual review and are excluded from bulk approval.
+
+### Hold
+
+Holding removes an item from the current commit without rejecting the underlying proposal. The item remains visible and can be reconsidered before the batch is committed.
+
+### Reject
+
+Rejecting records that the proposal should not be executed. A reason is optional in the portfolio build but the action is added to the audit history.
+
+### Edit
+
+Only allow-listed proposed values are editable: promotional selling price, promotion dates, and recommended top-up quantity. Cost, stock, supplier constraints, evidence, identifiers, and current external values are read-only. Editing re-runs deterministic rules and clears any previous approval for that item.
+
+### Review omissions
+
+The omissions view lists every held, excluded, or unverifiable line, its reason, the evidence used, and whether the outcome came from the agent, deterministic policy, or unavailable evidence. It also reports any line the agent failed to account for before schema validation rejected the run. A blocked line cannot be approved until it becomes an eligible proposal and passes the required policy.
+
+### Commit
+
+Commit opens a modal confirmation that summarises approved, held, rejected, and unresolved items; target systems; irreversible effects; and the consequence of conflicts. Initial focus goes to the dialog heading for a long summary. Cancel and Commit approved changes are both visible. Escape cancels, and closing restores focus to the Commit trigger.
+
+The action label remains Commit approved changes throughout the flow. Success text uses the same verb.
+
+If the release deadline passes while committing, the current in-flight provider request is allowed to settle and be verified. The executor starts no new effect. Remaining planned effects are shown as Not attempted — deadline reached, the batch moves to intervention required, and no silence or partial approval is treated as permission.
+
+### Reverse
+
+Reverse opens a new confirmation showing which effects are eligible for automatic compensation. It does not promise to erase the original audit history or recall the simulated notification.
+
+## Keyboard interaction
+
+All functionality must work without custom shortcuts.
+
+| Context              | Required behaviour                                                                                                                                                                              |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Page                 | A skip link is the first focusable item and moves focus to the main heading.                                                                                                                    |
+| Candidate collection | Tab enters and leaves the collection; Up and Down move the active candidate according to the selected React Aria collection pattern.                                                            |
+| Candidate actions    | Native buttons use Enter and Space.                                                                                                                                                             |
+| Tabs, if used        | Left and Right change tabs; Tab enters the active panel.                                                                                                                                        |
+| Dialog               | Focus enters at a logical point, remains inside, Escape closes, and focus returns to the trigger.                                                                                               |
+| Commit               | The visible button is always available. Ctrl+Enter and Command+Enter may be supplemental when focus is outside an editable field.                                                               |
+| Candidate movement   | `J` and `K` are optional alternatives only while the candidate collection itself has focus. They never fire from an input, textarea, select, contenteditable region, or outside the collection. |
+| Shortcut help        | A visible Keyboard shortcuts button opens the reference. No shortcut is required to find it.                                                                                                    |
+
+Do not use positive `tabindex`. DOM order and visual order must agree. If a focused item disappears after filtering, move focus to the nearest remaining candidate or the filter summary. Focus indicators must remain fully visible against every surface, including high-contrast and forced-colours modes.
+
+There is no shared focus outline. A focused control looks exactly as it does under the pointer — the same wash, face step or colour step — so the keyboard and the pointer light it the same way. A focusable control with no hover state takes the wash its surface uses for hover; text fields carry focus on their own border; headings that receive focus programmatically and cannot be operated show none. Forced-colours modes drop author backgrounds and override border colours, so a wash shows nothing there: every focusable element restores a real system outline in those modes (`:focus-visible` in `app/styles/base.css`), and a control whose shape is not its box draws that outline on its shape.
+
+This is a deliberate trade. A hover wash does not differ from the resting state by 3:1, so the indicator is quieter than WCAG 2.4.13 Focus Appearance asks, and on the lightest washes it is the weakest part of keyboard use. Revisit it before claiming conformance beyond 2.4.7 Focus Visible.
+
+## Dynamic updates and announcements
+
+Visible content is the primary feedback. Announcements supplement it without moving focus unnecessarily.
+
+| Update                           | Accessible treatment                                                                                                                                        |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Proposal generation              | Visible native progress where determinate; one stable `role="status"` for meaningful milestones and completion.                                             |
+| Filter result                    | A concise visible count using `role="status"`, debounced for typed filtering.                                                                               |
+| Item approved or held            | Update the control state and batch summary; announce one concise polite result.                                                                             |
+| Commit progress                  | The visible effects ledger uses an accessibly named `role="log"` for appended, independently understandable events. Interactive controls remain outside it. |
+| Commit completed                 | One visible polite status summarising applied, conflicted, and failed counts.                                                                               |
+| Form validation                  | Visible error summary receives focus; errors are associated with fields. Do not alert on every keystroke.                                                   |
+| Connection loss during execution | A visible alert is permitted because the condition is time-sensitive. Routine failures use an error summary or status.                                      |
+| Conflict requiring a decision    | Present a modal decision dialog and move focus into it rather than relying on an alert announcement.                                                        |
+
+Announce a change when it becomes visible, not when the underlying state changes: where the interface deliberately holds a change back to sequence it, the announcement waits with it. Live regions must be mounted before the update they announce. Do not clear and reinsert messages with fixed delays. Suppress stale asynchronous results and reset `aria-busy` on success and failure.
+
+## Complete view-state inventory
+
+Automated visual tests and review of the real application routes cover:
+
+- initial scenario introduction;
+- generating with progress;
+- slow generation;
+- live generation unavailable and replay offered;
+- invalid model proposal;
+- empty filtered list;
+- full 27-candidate review;
+- live run whose explanation differs from replay while policy outcomes remain consistent;
+- agent recommendation and deterministic policy disagreement;
+- seven readiness gates with passed, failed, not-checked, unavailable, and not-applicable outcomes;
+- required, advisory, and not-applicable gate treatment;
+- high-risk selected item;
+- excluded selected item;
+- edited item with re-evaluated policy;
+- all required decisions complete;
+- commit confirmation;
+- preflight in progress;
+- conflict injected;
+- execution in progress;
+- complete success;
+- partial execution requiring intervention;
+- compensation in progress;
+- complete compensation;
+- compensation failure;
+- verified Google Sheet and storefront customer-view updates;
+- live-sandbox, simulated, preview-only, and unavailable effect labels;
+- expired sandbox session;
+- expired release approval requiring a fresh proposal;
+- deadline reached during commit with in-flight, verified, and not-attempted effects;
+- live-generation kill switch active;
+- executor circuit breaker active during a pending or partially applied batch;
+- light, dark, increased-contrast, forced-colours, and reduced-motion modes.
+
+## Error and empty-state copy
+
+Messages state what happened and what the user can do next.
+
+- **No candidates match these filters.** Clear a filter to return to the 27 evaluated candidates.
+- **Live generation is unavailable.** Review the labelled replay or try live generation again.
+- **This value changed after the proposal was created.** Compare the current value before approving a retry.
+- **Three effects need attention.** Two can be retried and one must be resolved outside Safepoint.
+- **This sandbox has expired.** Start a fresh isolated scenario.
+
+Avoid vague copy such as Something went wrong. Preserve technical details in an expandable diagnostics area with a copyable reference identifier.
+
+## Accessibility acceptance criteria
+
+- Target WCAG 2.2 AA.
+- Use semantic HTML and React Aria patterns before adding custom ARIA.
+- Complete every primary and recovery flow with keyboard alone.
+- Keep focus visible, logically ordered, and unobscured at all supported widths and zoom levels.
+- Provide accessible names that contain visible control labels.
+- Maintain at least 24 by 24 CSS pixel targets, with 44 by 44 as the preferred touch size.
+- Do not prevent browser zoom.
+- Test at 320 CSS pixels, 200% zoom, and 400% zoom without losing content or function.
+- Test light, dark, increased-contrast, forced-colours, and reduced-motion modes.
+- Run automated accessibility checks with zero serious or critical findings.
+- Manually test VoiceOver with Safari and NVDA with Chrome; add NVDA with Firefox when it enters the support matrix.
+- Test repeated and overlapping status updates, not just their final DOM text.
+
+The [WAI-ARIA Authoring Practices Guide](https://www.w3.org/WAI/ARIA/apg/) informs widget behaviour. Passing automated checks alone is not acceptance.

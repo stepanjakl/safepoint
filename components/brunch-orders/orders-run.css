@@ -1,6 +1,6 @@
 @layer components {
   /* Scaffolding for trying the step, not one of its states: neutral and dashed. */
-  .brunch-read-trial {
+  .brunch-trial {
     border: 1px dashed var(--sp-rule-default);
     background-color: var(--sp-surface-inset);
   }

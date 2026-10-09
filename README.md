@@ -2,9 +2,9 @@
 
 Safepoint helps people review changes proposed by an AI agent before those changes reach real systems.
 
-Instead of asking someone to approve a chat message, it presents a clear change set: what the agent inspected, what it wants to change, what it left out, what looks risky, and what happened after approval.
+Instead of asking someone to approve a chat message, Safepoint's intended flow presents a clear change set: what the agent inspected, what it wants to change, what it left out, what looks risky, and what happened after approval. The current examples implement parts of this flow.
 
-> **Status:** The app shell, process navigation and replay review of the first scenario (Alderton's 27-line promotion release) are implemented, with development-only model and policy workbenches. The main demonstration is moving to a simpler, sheet-driven process; see the [sheet process plan](docs/SHEET-PROCESS-PLAN.md), now in Phase 0.
+> **Status:** The app shell and promotion-release replay review are implemented. [Brunch orders](docs/processes/brunch-orders/PLAN.md) is the active development hand-off: its instructions, five-tab read and individually approved definitions are built. Calculation, order proposals, review, sheet write-back and durable history are planned. [Brunch weekend](docs/processes/brunch-weekend/README.md) remains as an earlier experiment.
 
 ## The idea
 
@@ -21,17 +21,15 @@ The agent can interpret incomplete or ambiguous information, but it cannot write
 
 ## The demonstration
 
-The main demonstration, in progress, is one store's **Brunch weekend**: an avocado toast kit and a few single-item offers.
+The main demonstration in progress is one store's **Brunch orders** process for a promotion weekend.
 
-- The store's stock, sales, deliveries, parameters and plain-English rules live in a Google Sheet.
-- Each rule becomes a checked formula that a person approves; code then evaluates every proposal the same way every time.
-- The agent proposes orders and prices and explains its uncertainty; rules block or flag what isn't allowed.
-- A reviewer approves, edits within a shown safe range, or rejects each change.
-- A run can start at any time of the week: it shows what is still possible for the coming weekend and plans the one after.
+- The sheet supplies five data tabs: Products, Stock, Sales, Deliveries and Parameters. Versioned instructions hold the purpose, promotion and plain-English rules.
+- The development flow reads the sheet once, finds definitions in the instructions, checks each formula against worked examples and asks a person to accept or deny each definition.
+- Planned phases calculate demand, propose order quantities, check them against accepted rules, let a person review them, and apply approved orders to the sheet with verification.
 
-The first scenario, Alderton's 27-line Fresh Food Weekend promotion release, remains in the app as the earlier scenario.
+The Brunch weekend whole-rulebook experiment and the 27-line promotion-release replay remain in the app as earlier examples.
 
-The public demo uses synthetic data and accepts no arbitrary prompts or production credentials.
+The planned public demo uses synthetic data and accepts no arbitrary prompts or production credentials.
 
 ## Project principles
 
@@ -98,11 +96,11 @@ The CSS debugging configuration emits `file:///` URLs for existing source files 
 
 ### Click-to-source in the browser
 
-Hold <kbd>Option</kbd>/<kbd>Alt</kbd> under `pnpm dev` and point at any element: the style inspector names the component whose JSX wrote it, with a link to that line in your editor, and each component it sits in. It reads React's own development data, so there is no build step and no browser extension. See [`docs/STYLING-SYSTEM.md`](docs/STYLING-SYSTEM.md) → Finding where a style is written.
+Hold <kbd>Option</kbd>/<kbd>Alt</kbd> under `pnpm dev` and point at any element: the style inspector names the component whose JSX wrote it, with a link to that line in your editor, and each component it sits in. It reads React's own development data, so there is no build step and no browser extension. See [`docs/interface/STYLING-SYSTEM.md`](docs/interface/STYLING-SYSTEM.md) → Finding where a style is written.
 
 ### Switching typefaces in the browser
 
-The families are still provisional, so components address the three semantic roles from [the experience specification](docs/EXPERIENCE-SPEC.md) — display, interface sans, and tabular utility — and never a family name. A `data-typeface` attribute decides which family fills each role, alongside the existing `data-theme`. Three of the available sets ([`lib/typography.ts`](lib/typography.ts) lists them all):
+The families are still provisional, so components address the three semantic roles from [the styling system](docs/interface/STYLING-SYSTEM.md#type-scale) — display, interface sans, and tabular utility — and never a family name. A `data-typeface` attribute decides which family fills each role, alongside the existing `data-theme`. Three of the available sets ([`lib/typography.ts`](lib/typography.ts) lists them all):
 
 | Set               | Display     | Interface | Utility                |
 | ----------------- | ----------- | --------- | ---------------------- |
@@ -122,20 +120,17 @@ Vendored under [SIL OFL 1.1](app/fonts/): [Glide](https://blode.co/glide) and [C
 
 ## Documentation
 
-The detailed specification lives in [`docs/`](docs/README.md):
+The [documentation index](docs/README.md) separates current guidance, process plans, research and historical records. Start with:
 
-- [Product brief](docs/PRODUCT-BRIEF.md)
-- [Sheet process plan](docs/SHEET-PROCESS-PLAN.md): the current track
-- [Experience specification](docs/EXPERIENCE-SPEC.md)
-- [Promotion-release data dictionary](docs/PROMOTION-RELEASE-DATA-DICTIONARY.md)
-- [Technical design](docs/TECHNICAL-DESIGN.md)
-- [Delivery plan](docs/DELIVERY-PLAN.md)
-- [Project review and decisions](docs/PROJECT-REVIEW.md)
-- [Prior art](docs/PRIOR-ART.md)
-- [Styling system](docs/STYLING-SYSTEM.md)
+- [Product brief](docs/product/PRODUCT-BRIEF.md)
+- [Brunch orders plan](docs/processes/brunch-orders/PLAN.md): the active hand-off
+- [Architecture](docs/engineering/ARCHITECTURE.md)
+- [Definitions engine](docs/engineering/DEFINITIONS-ENGINE.md)
+- [Experience principles](docs/product/EXPERIENCE-PRINCIPLES.md)
+- [Styling system](docs/interface/STYLING-SYSTEM.md)
 
 ## Next step
 
-Finish Phase 0 of the [sheet process plan](docs/SHEET-PROCESS-PLAN.md): two short trials, one of the formula language and one of reading the sheet through Composio. Phase 1 then builds the data-defined rule engine against a captured snapshot of the sheet, and Phase 2 brings the review into the app shell.
+Continue the [Brunch orders plan](docs/processes/brunch-orders/PLAN.md) from its next gated phase. The instructions, read and definitions steps are built; later steps remain planned.
 
-Persistence, durable execution, the guarded Google Sheets write-back and public-release hardening from the [delivery plan](docs/DELIVERY-PLAN.md) still apply to this track. The ordered checklist is in [`TODO.md`](TODO.md).
+The [archived delivery plan](docs/archive/DELIVERY-PLAN.md) records broader persistence, execution and release goals; it does not describe implemented behaviour. The working checklist is in [`TODO.md`](TODO.md).

@@ -120,8 +120,8 @@
 
   /* A release list: the card's rows, and the review queue's. Between rows the
      rule starts where the text does, so the column of subjects reads as one
-     edge and the rules as belonging to it; the rule that closes the list is a
-     boundary, not a divider, and runs the full width. The rules touching a lit
+     edge and the rules as belonging to it. In the drawer a full-width rule
+     closes the list; in the card the footer's divider does. The rules touching a lit
      row step back, so its fill reads as one band rather than a band crossed by
      hairlines. The inset is the rows' own padding: 6 in the card (4 where the
      card is narrow, as its rows are), 5 in the drawer. */
@@ -140,7 +140,7 @@
   .release-list > li {
     position: relative;
   }
-  .release-list > li:last-child {
+  .release-list[data-inset] > li:last-child {
     border-bottom: 1px solid var(--sp-floating-ring);
     box-shadow: 0 1px 0 var(--sp-floating-edge);
   }

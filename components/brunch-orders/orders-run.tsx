@@ -38,6 +38,7 @@ type RunRead = {
   url?: string;
   tabIds?: Record<string, number>;
   tabs: { name: string; rows: number }[];
+  problems?: string[];
 };
 
 type ReadResponse =
@@ -52,6 +53,8 @@ type ReadResponse =
         tabIds?: Record<string, number>;
       };
       tabs: { name: string; rows: number }[];
+      // Where the sheet does not fit what this process reads.
+      problems: string[];
     }
   | { kind: 'error'; message: string };
 
@@ -71,7 +74,7 @@ const READ_ROW = cx(
   A Brunch orders run, step by step. It moves only when a person acts: the
   instructions it runs under, reading the sheet, then the rules. The later
   steps are listed with the phase that brings each one
-  (docs/BRUNCH-ORDERS-PLAN.md).
+  (docs/processes/brunch-orders/PLAN.md).
 */
 export function OrdersRun({ process }: { process: ProcessSummary }) {
   const selection = useRunSelection();
@@ -284,7 +287,7 @@ function ReadStep({
     <div className="grid gap-4">
       <section
         aria-label="Read setup"
-        className="brunch-read-trial rounded-shell grid gap-4 p-4"
+        className="brunch-trial rounded-shell grid gap-4 p-4"
       >
         <Lede>
           Reads the sheet&rsquo;s data tabs once. Every later step of this run
@@ -329,6 +332,7 @@ function ReadStep({
                 url: response.spreadsheet.url,
                 tabIds: response.spreadsheet.tabIds,
                 tabs: response.tabs,
+                problems: response.problems,
               });
             })
           }
@@ -336,6 +340,19 @@ function ReadStep({
         />
         {read ? (
           <p className="text-meta text-muted break-words">{read.source}</p>
+        ) : null}
+        {read?.problems?.length ? (
+          <div role="alert" className="grid gap-1">
+            <p className="text-dense">
+              The sheet does not fit what this process reads, so no rules are
+              drafted on it. Fix the sheet and read it again:
+            </p>
+            <ul className="text-dense list-disc pl-5">
+              {read.problems.map((problem) => (
+                <li key={problem}>{problem}</li>
+              ))}
+            </ul>
+          </div>
         ) : null}
       </section>
       {read ? (

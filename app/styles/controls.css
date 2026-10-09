@@ -230,6 +230,17 @@
   @apply ground-floating;
 }
 
+/* A floating card's own dividers, in its edge colours: the ring, lit below a
+   header's rule and above a footer's. */
+@utility floating-rule-below {
+  border-bottom: 1px solid var(--sp-floating-ring);
+  box-shadow: 0 1px 0 var(--sp-floating-edge);
+}
+@utility floating-rule-above {
+  border-top: 1px solid var(--sp-floating-ring);
+  box-shadow: 0 -1px 0 var(--sp-floating-edge);
+}
+
 @utility surface-recessed {
   --control-face-top: var(--sp-surface-inset);
   --control-face-bottom: var(--sp-surface-inset);

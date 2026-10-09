@@ -1,6 +1,8 @@
 # Component styling: proposal, independent review, and trial
 
-Status: reviewed and trialled, 2026-09-11. The original proposal (2026-09-10) recommended selective colocated CSS Modules. An independent review ran both that approach and an alternative on the same component, measured them, and recommends the alternative. [STYLING-SYSTEM.md](../STYLING-SYSTEM.md) remains the app-wide convention; the trial did not depart from it.
+> **Status: historical record (archived 9 October 2026).** Original status labels, paths and future-tense plans below describe the work at the time. Use the [documentation index](../README.md) and current code for present behaviour.
+
+Original status at writing: reviewed and trialled, 2026-09-11. The original proposal (2026-09-10) recommended selective colocated CSS Modules. An independent review ran both that approach and an alternative on the same component, measured them, and recommends the alternative. [STYLING-SYSTEM.md](../interface/STYLING-SYSTEM.md) remains the app-wide convention; the trial did not depart from it.
 
 ## Addendum, 2026-09-24: plain colocated stylesheets adopted
 
@@ -18,7 +20,7 @@ So each component's own roles, `@utility` faces and layered rules now live in a
 order. The split was verified by capturing every element's computed colours
 across five families, two themes and five app states before and after: zero
 differences. The utility-first conventions and the grouped-constant form
-recorded below stand unchanged. [STYLING-SYSTEM.md](../STYLING-SYSTEM.md) is the
+recorded below stand unchanged. [STYLING-SYSTEM.md](../interface/STYLING-SYSTEM.md) is the
 current reference.
 
 ## Problem and desired outcome
@@ -52,14 +54,14 @@ Scanability is an architecture question. The IntelliSense failure is not: the wo
 
 The goal is "an editable style definition reachable from JSX." Asking the TypeScript language server directly, with the module in place:
 
-| Expression | Go to Definition lands on |
-| --- | --- |
-| `styles.notice` | `node_modules/next/types/global.d.ts:28` — the index signature |
-| `NOTICE_FACE` (a TS constant) | `components/app-shell/process-menu.tsx:836` — the definition |
+| Expression                    | Go to Definition lands on                                      |
+| ----------------------------- | -------------------------------------------------------------- |
+| `styles.notice`               | `node_modules/next/types/global.d.ts:28` — the index signature |
+| `NOTICE_FACE` (a TS constant) | `components/app-shell/process-menu.tsx:836` — the definition   |
 
 Next declares `*.module.css` as `{ readonly [key: string]: string }`, so there is no per-class declaration to navigate to. Cmd+click leaves the project and lands in `node_modules`. The utility-string constant does exactly what the proposal asked for, and already did before the trial.
 
-Typo safety is weaker than it first appears. Because `tsconfig.json` sets `noUncheckedIndexedAccess`, `styles.notcie` is `string | undefined`, which *is* caught when assigned to a `string`. It is **not** caught in the usage that matters: `className={styles.notcie}` type-checks clean, because `className` accepts `string | undefined`. Verified both ways.
+Typo safety is weaker than it first appears. Because `tsconfig.json` sets `noUncheckedIndexedAccess`, `styles.notcie` is `string | undefined`, which _is_ caught when assigned to a `string`. It is **not** caught in the usage that matters: `className={styles.notcie}` type-checks clean, because `className` accepts `string | undefined`. Verified both ways.
 
 ### A module's rules silently outrank every utility (measured)
 
@@ -87,7 +89,7 @@ STYLING-SYSTEM.md already sets a sharp test for which of three files a rule belo
 
 ### Revised recommendation
 
-Stay utility-first. Where a class list is hard to scan, group it into a **named constant built from commented, complete string literals**, and resolve property ownership rather than relocating the properties. Reach for a CSS Module only where a component needs rules that markup genuinely cannot express *and* that `components.css` should not own globally — and accept, when you do, that markup can no longer override it.
+Stay utility-first. Where a class list is hard to scan, group it into a **named constant built from commented, complete string literals**, and resolve property ownership rather than relocating the properties. Reach for a CSS Module only where a component needs rules that markup genuinely cannot express _and_ that `components.css` should not own globally — and accept, when you do, that markup can no longer override it.
 
 BEM is not recommended. Nothing measured here suggests it improves agent or human performance, and CSS Modules already provide scoping.
 
@@ -122,17 +124,17 @@ Result: appearance preserved **after** the `line-height` bug above was found and
 
 ### Verdict
 
-| | Trial A | Trial B |
-| --- | --- | --- |
-| Appearance preserved | yes, first try | yes, after one fix |
-| Cmd+click the name | to the definition | to `node_modules` |
-| Cmd+click the class | nowhere | nowhere |
-| Hover on the classes | yes, via `classFunctions` | yes, it is CSS |
-| Typo caught at usage site | n/a | no |
-| Markup can still override | yes | no, silently |
-| Styles in one place | yes | no, split across two files |
-| Named breakpoint kept | yes | yes |
-| New concepts introduced | none | a fourth style location |
+|                           | Trial A                   | Trial B                    |
+| ------------------------- | ------------------------- | -------------------------- |
+| Appearance preserved      | yes, first try            | yes, after one fix         |
+| Cmd+click the name        | to the definition         | to `node_modules`          |
+| Cmd+click the class       | nowhere                   | nowhere                    |
+| Hover on the classes      | yes, via `classFunctions` | yes, it is CSS             |
+| Typo caught at usage site | n/a                       | no                         |
+| Markup can still override | yes                       | no, silently               |
+| Styles in one place       | yes                       | no, split across two files |
+| Named breakpoint kept     | yes                       | yes                        |
+| New concepts introduced   | none                      | a fourth style location    |
 
 **Trial A: keep.** It is in the working tree.
 
@@ -142,7 +144,7 @@ Result: appearance preserved **after** the `line-height` bug above was found and
 
 - `components/app-shell/process-menu.tsx` — `SidebarNotice` extracted, `NOTICE_BOX` constant, two dead declarations removed.
 - `.vscode/settings.json` — the four deleted entries restored, alongside the newer `cssVarHover.watchedFiles`.
-- `docs/STYLING-SYSTEM.md` — the grouped-constant form recorded.
+- `docs/interface/STYLING-SYSTEM.md` — the grouped-constant form recorded.
 - This file.
 
 ### Editor findings, confirmed in VS Code

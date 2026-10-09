@@ -1,39 +1,56 @@
 'use client';
 
-import Check from 'blode-icons-react/icons/checkmark-1-small';
-import Cross from 'blode-icons-react/icons/cross-small';
-import SparkleFilled from 'blode-icons-react/icons/sparkle-filled';
-import { Button as AriaButton } from 'react-aria-components';
 import {
   useContext,
   useEffect,
   useId,
   useRef,
   useState,
-  type ComponentProps,
   type ReactNode,
 } from 'react';
 
 import { ProcessSheetActions } from '@/components/app-shell/process/process-sheet';
+import { DecisionButton } from '@/components/brunch-orders/decision-button';
+import { PendingDots } from '@/components/brunch-orders/pending-dots';
 import {
-  Code,
   Lede,
   Outcome,
   StatusChip,
-  TechnicalDetails,
-  TrialControl,
   plural,
   useTrial,
   type Tone,
 } from '@/components/sheet-process/trial-parts';
 import { Button } from '@/components/ui/button';
+import { Tooltip } from '@/components/ui/tooltip';
+import { MorphingText } from '@/components/ui/morphing-text';
 import { cx } from '@/lib/cx';
-import type { Item, RuleSet } from '@/lib/processes/brunch-orders/rules';
+import { SUBJECT } from '@/lib/processes/brunch-orders/process';
+import { DRAFTING_MODELS, type DraftingModel } from '@/lib/rulebook/models';
+import {
+  Examples,
+  FromModel,
+  TRIED_VARIABLE,
+  said,
+} from '@/components/brunch-orders/rules-parts';
+import {
+  acceptable,
+  type Definition,
+  type DefinitionSet,
+  type DraftProgress,
+} from '@/lib/definitions/types';
 
-type RulesResponse =
-  | { kind: 'rules'; set: RuleSet; names: Record<string, string> }
+// Every reply says whether a draft is running on the server, and how far.
+type RulesResponse = { drafting?: DraftProgress | null } & (
+  | {
+      kind: 'rules';
+      set: DefinitionSet;
+      names: Record<string, string>;
+      // The app's own working of each example, by definition.
+      working: Record<string, string[][]>;
+    }
   | { kind: 'none' }
-  | { kind: 'error'; message: string };
+  | { kind: 'error'; message: string }
+);
 
 // How far the rules have got, for the step's mark.
 export type RulesProgress = {
@@ -42,149 +59,92 @@ export type RulesProgress = {
   intent: boolean;
 };
 
-const progressOf = (set: RuleSet): RulesProgress => ({
-  approved: set.items.filter((i) => i.approvedAt).length,
-  total: set.items.length,
+const progressOf = (set: DefinitionSet): RulesProgress => ({
+  approved: set.definitions.filter((d) => d.approvedAt).length,
+  total: set.definitions.length,
   intent: set.intentConfirmedAt !== null,
 });
 
-// Acceptable once every example agrees with the formula (the server holds
-// to the same).
-const acceptable = (item: Item) =>
-  item.formula !== null &&
-  item.examples.length > 0 &&
-  item.examples.every((e) => e.agrees);
+// How often to ask how far a draft on the server has got.
+const DRAFT_POLL_MS = 2_000;
 
-function statusOf(item: Item): { tone: Tone; label: string } {
-  if (item.approvedAt) return { tone: 'ready', label: 'Accepted' };
+function statusOf(item: Definition): { tone: Tone; label: string } {
   if (item.deniedAt) return { tone: 'blocked', label: 'Denied' };
   if (!item.formula) return { tone: 'neutral', label: 'Not written' };
   if (!acceptable(item)) return { tone: 'blocked', label: 'Examples disagree' };
   return { tone: 'decision', label: 'Waiting for you' };
 }
 
-// What happens to an order that breaks a rule, as the model read it.
-const OUTCOME: Record<'block' | 'decide', { tone: Tone; label: string }> = {
-  block: { tone: 'blocked', label: 'the order is blocked' },
-  decide: { tone: 'decision', label: 'a person decides' },
+// A status's tone as its severity rank, for the dots that follow it.
+const SEVERITY: Record<Tone, number> = {
+  blocked: 0,
+  decision: 1,
+  neutral: 2,
+  ready: 3,
 };
 
-// "Rule 1", or a value's id in words: "Expected sales".
-const titleOf = (item: Item) =>
-  item.kind === 'rule'
-    ? `Rule ${item.id.replace(/^rule_/, '')}`
-    : item.id.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
+// What failing a check does to a proposal, as the model read it.
+const CONSEQUENCE: Record<'block' | 'decide', { tone: Tone; label: string }> = {
+  block: { tone: 'blocked', label: 'Blocks the proposal' },
+  decide: { tone: 'decision', label: 'A person decides' },
+};
+
+// The two kinds of definition, said the same for any process: a calculation
+// gives a number, a check holds or fails on a proposal.
+const KINDS = [
+  {
+    result: 'number',
+    label: 'Calculation',
+    about:
+      'A number the app works out for every record from the data, as the instructions describe. Checks and later calculations read it.',
+  },
+  {
+    result: 'check',
+    label: 'Check',
+    about:
+      'A condition the app tests every proposal against, record by record. It holds or fails; what failing means is in the pill beside it.',
+  },
+] as const;
+const kindOf = (item: Definition) =>
+  KINDS.find((k) => k.result === item.result)!;
 
 const words = (value: string) => value.replace(/\s+/g, ' ').trim();
-
-// The examples on each product together, in the order the model gave them.
-function byProduct(examples: Item['examples']) {
-  const groups = new Map<string, Item['examples']>();
-  for (const example of examples)
-    groups.set(example.sku, [...(groups.get(example.sku) ?? []), example]);
-  return [...groups];
-}
-
-const said = (item: Item, value: boolean | number | null) =>
-  value === null
-    ? '—'
-    : item.kind === 'rule'
-      ? value
-        ? 'meets the rule'
-        : 'breaks the rule'
-      : String(value);
-
-/*
-  What the model wrote, set apart from what the app worked out: a line in the
-  advisory tone, under the mark where there is a label beside it
-  (`.rules-model` in rules-step.css). Everything without it is data or the
-  app's own.
-*/
-function FromModel({
-  label,
-  children,
-}: {
-  label?: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="rules-model" data-labelled={label ? '' : undefined}>
-      {label ? (
-        <>
-          <SparkleFilled aria-hidden className="rules-model-mark" />
-          <span className="rules-model-label text-meta text-state-advisory">
-            {label}
-          </span>
-        </>
-      ) : null}
-      <div className="rules-model-body grid gap-1">{children}</div>
-    </div>
-  );
-}
 
 // What waits on a person is drawn as the release card is (`CARD` in
 // release-card.tsx): a floating face that stands off the step around it.
 const ASKS = 'control-face surface-floating rounded-shell';
 
-/*
-  Accept and Deny: the quiet button's bordered face in the ready and blocked
-  tones (control-tone, in rules-step.css). The icon is drawn heavier but
-  smaller and a little faded, so the word leads; the icon side's padding is a
-  step tighter, as the glyph carries its own space.
-*/
-const DECISION = {
-  accept: { severity: 3, Icon: Check },
-  deny: { severity: 0, Icon: Cross },
-} as const;
-
-function DecisionButton({
-  decision,
-  children,
-  className,
-  ...props
-}: Omit<ComponentProps<typeof AriaButton>, 'children' | 'className'> & {
-  decision: keyof typeof DECISION;
-  children: ReactNode;
-  className?: string;
+function AcceptDecision({
+  accepted,
+  busy,
+  canAccept = true,
+  onAccept,
+}: {
+  accepted: boolean;
+  busy: boolean;
+  canAccept?: boolean;
+  onAccept: () => void;
 }) {
-  const { severity, Icon } = DECISION[decision];
   return (
-    <AriaButton
-      {...props}
-      data-severity={severity}
-      className={cx(
-        'control-face control-hairline control-tone text-severity-ink interact:control-tone-hover interact:text-severity-strong data-[disabled]:control-off data-[disabled]:text-muted text-dense inline-flex h-8 cursor-pointer items-center gap-1 rounded-full pr-3.5 pl-2.5 font-medium whitespace-nowrap data-[disabled]:cursor-not-allowed',
-        className,
-      )}
+    <DecisionButton
+      decision="accept"
+      data-action="accept"
+      data-phase={accepted ? 'done' : 'idle'}
+      className="decision-morph-control"
+      aria-disabled={accepted || busy}
+      isDisabled={!accepted && !canAccept}
+      onPress={() => {
+        if (!accepted && !busy) onAccept();
+      }}
     >
-      <Icon
-        aria-hidden
-        size={14}
-        strokeWidth={2.75}
-        className="flex-none opacity-70"
-      />
-      {children}
-    </AriaButton>
+      <MorphingText text={accepted ? 'Accepted' : 'Accept'} duration={360} />
+    </DecisionButton>
   );
 }
 
-// A product by its key and, in brackets, what it is.
-const Product = ({
-  sku,
-  names,
-}: {
-  sku: string;
-  names: Record<string, string>;
-}) => (
-  <span>
-    <span className="font-medium">{sku}</span>
-    {names[sku] ? <span className="text-muted"> [{names[sku]}]</span> : null}
-  </span>
-);
-
 /*
   The rules of the instructions this run answers to, and the values they need:
-  found by the model, then each given a formula and examples on real products.
+  found by the model, then each given a formula and examples on real records.
   The person confirms the intent and accepts or denies each item as its
   examples show it; every run under the same instructions uses what is
   accepted.
@@ -211,162 +171,527 @@ export function RulesStep({
   // The last rules seen stay while an action runs, so the list, and focus in
   // it, are kept.
   const [last, setLast] = useState<{
-    set: RuleSet;
+    set: DefinitionSet;
     names: Record<string, string>;
+    working: Record<string, string[][]>;
   } | null>(null);
   const current = body?.kind === 'rules' ? body : null;
   if (current && current.set !== last?.set)
-    setLast({ set: current.set, names: current.names });
+    setLast({
+      set: current.set,
+      names: current.names,
+      working: current.working ?? {},
+    });
   const shown = current ?? last;
   const set = shown?.set ?? null;
   const names = shown?.names ?? {};
-  const busy = rules.state.kind === 'running';
-  const act = (request: Record<string, unknown>) =>
-    void run({ ...request, text }).then((response) => {
-      if (response?.kind === 'rules') onProgress(progressOf(response.set));
-    });
+  const working = shown?.working ?? {};
+  // A draft runs on the server; the last progress reported stays while the
+  // next question is out.
+  const [drafting, setDrafting] = useState<DraftProgress | null>(null);
+  const reported = body?.drafting ?? null;
+  if (body && JSON.stringify(reported) !== JSON.stringify(drafting))
+    setDrafting(reported);
+  const draftRunning = drafting?.running ?? false;
+  const busy = rules.state.kind === 'running' || draftRunning;
+  const [writing, setWriting] = useState(false);
+  const act = (request: Record<string, unknown>) => {
+    setWriting(request.action === 'write' || request.action === 'draft');
+    void run({ ...request, text })
+      .then((response) => {
+        if (response?.kind === 'rules') onProgress(progressOf(response.set));
+      })
+      .finally(() => setWriting(false));
+  };
+  // While it runs, ask again a moment after each answer.
+  const answered = rules.state.kind === 'done';
+  const report = useRef(onProgress);
+  useEffect(() => {
+    report.current = onProgress;
+  });
+  useEffect(() => {
+    if (!draftRunning || !answered) return;
+    const timer = setTimeout(
+      () =>
+        void run({ action: 'get', text }).then((response) => {
+          if (response?.kind === 'rules')
+            report.current(progressOf(response.set));
+        }),
+      DRAFT_POLL_MS,
+    );
+    return () => clearTimeout(timer);
+  }, [draftRunning, answered, body, run, text]);
   const progress = set ? progressOf(set) : null;
 
   return (
-    <div className="grid gap-4">
+    <div className="rules-review grid gap-4">
       <Lede>
-        The model turns your instructions into checks and tries each one on
-        products from the sheet. Accept the ones it got right; every run under
-        these instructions will use them.
+        The model turns your instructions into calculations and checks, and
+        tries each on records from the data. Accept the ones it got right; every
+        run under these instructions will use them.
       </Lede>
 
-      {!set ? (
-        <TrialControl
-          label="Find the rules in the instructions"
-          runningLabel="Reading the instructions…"
-          state={rules.state}
-          idle="Not found yet."
-          onRun={() => act({ action: 'find', version })}
-          summary={
-            body?.kind === 'error'
-              ? body.message
-              : body?.kind === 'none'
-                ? 'Nothing found yet for these instructions.'
-                : null
-          }
+      {/* Scaffolding for trying the step, as the read's setup is. */}
+      <section
+        aria-label="Draft setup"
+        className="brunch-trial rounded-shell grid gap-3 p-4"
+      >
+        <DraftControl
+          kept={set?.definitions.length ?? 0}
+          accepted={progress?.approved ?? 0}
+          canDraft={readId !== null}
+          busy={busy}
+          onDraft={(model) => act({ action: 'draft', version, readId, model })}
         />
+        {!readId ? (
+          <p className="text-dense text-muted">
+            Read the data first: the examples are worked out on it.
+          </p>
+        ) : null}
+        {/* Always in the page, so its changes are read out; taking no room
+            while it has nothing to say. */}
+        <p
+          role="status"
+          className={
+            writing ||
+            drafting?.running ||
+            body?.kind === 'error' ||
+            drafting?.error
+              ? 'text-meta text-muted'
+              : 'sr-only'
+          }
+        >
+          {drafting?.running
+            ? drafting.step
+            : writing
+              ? 'Working… writing one can take a minute.'
+              : body?.kind === 'error'
+                ? body.message
+                : (drafting?.error ?? '')}
+        </p>
+      </section>
+
+      {!set ? (
+        rules.state.kind === 'done' ? (
+          <p className="text-dense text-muted">
+            Nothing drafted for these instructions yet.
+          </p>
+        ) : null
       ) : (
         <>
           <div className={cx(ASKS, 'grid gap-3 p-4')}>
             <FromModel label="The intent, as the model reads it">
               <p className="text-body">{set.intent}</p>
             </FromModel>
-            {set.intentConfirmedAt ? (
-              <div>
-                <StatusChip tone="ready">Accepted</StatusChip>
-              </div>
-            ) : (
-              <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <AcceptDecision
+                accepted={set.intentConfirmedAt !== null}
+                busy={busy}
+                onAccept={() => act({ action: 'intent' })}
+              />
+              {!set.intentConfirmedAt && sheet ? (
                 <DecisionButton
-                  decision="accept"
-                  isDisabled={busy}
-                  onPress={() => act({ action: 'intent' })}
+                  decision="deny"
+                  onPress={sheet.showInstructions}
                 >
-                  Accept
+                  Deny: edit the instructions
                 </DecisionButton>
-                {sheet ? (
-                  <DecisionButton
-                    decision="deny"
-                    onPress={sheet.showInstructions}
-                  >
-                    Deny: edit the instructions
-                  </DecisionButton>
-                ) : null}
-              </div>
-            )}
+              ) : null}
+            </div>
           </div>
 
-          {progress ? (
-            <Outcome>
-              <StatusChip
-                tone={
-                  progress.approved === progress.total ? 'ready' : 'decision'
-                }
-              >
-                {progress.approved} of {progress.total} accepted
-              </StatusChip>
-              <span className="text-dense text-muted">
-                {plural(
-                  set.items.filter((i) => i.kind === 'value').length,
-                  'value',
-                )}
-                ,{' '}
-                {plural(
-                  set.items.filter((i) => i.kind === 'rule').length,
-                  'rule',
-                )}
-              </span>
-            </Outcome>
-          ) : null}
-          {!readId ? (
-            <p className="text-dense text-muted">
-              Read the sheet first: the examples are worked out on its data.
-            </p>
-          ) : null}
-          {/* Always in the page, so its changes are read out; taking no room
-              while it has nothing to say. */}
-          <p
-            role="status"
-            className={
-              busy || body?.kind === 'error'
-                ? 'text-meta text-muted'
-                : 'sr-only'
-            }
-          >
-            {busy
-              ? 'Working… writing a check can take a minute.'
-              : body?.kind === 'error'
-                ? body.message
-                : ''}
-          </p>
-
-          <ol className="grid gap-3" aria-label="Values and rules">
-            {set.items.map((item) => (
-              <ItemCard
-                key={item.id}
-                item={item}
-                quoted={words(text).includes(words(item.text))}
-                names={names}
-                busy={busy}
-                canWrite={readId !== null}
-                onWrite={() => act({ action: 'write', readId, id: item.id })}
-                onDecide={(decision, note) =>
-                  act({ action: 'decide', id: item.id, decision, note })
-                }
-              />
-            ))}
-          </ol>
+          <div className="rules-list grid gap-4">
+            <PendingDots
+              pending={set.definitions
+                .filter((d) => !d.approvedAt)
+                .map((d) => ({
+                  id: d.id,
+                  name: d.name,
+                  status: statusOf(d).label,
+                  severity: SEVERITY[statusOf(d).tone],
+                }))}
+              anchorOf={anchorOf}
+            />
+            {progress ? (
+              <div data-dots-start>
+                <Outcome>
+                  <StatusChip
+                    tone={
+                      progress.approved === progress.total
+                        ? 'ready'
+                        : 'decision'
+                    }
+                  >
+                    {progress.approved} of {progress.total} accepted
+                  </StatusChip>
+                  <span className="text-dense text-muted">
+                    {plural(
+                      set.definitions.filter((d) => d.result === 'number')
+                        .length,
+                      'calculation',
+                    )}
+                    ,{' '}
+                    {plural(
+                      set.definitions.filter((d) => d.result === 'check')
+                        .length,
+                      'check',
+                    )}
+                  </span>
+                </Outcome>
+              </div>
+            ) : null}
+            <ol className="grid gap-3" aria-label="Calculations and checks">
+              {set.definitions.map((item) => (
+                <DefinitionCard
+                  key={item.id}
+                  item={item}
+                  quoted={words(text).includes(words(item.text))}
+                  names={names}
+                  working={working[item.id] ?? []}
+                  reads={set.definitions.filter((d) =>
+                    item.uses.includes(d.id),
+                  )}
+                  busy={busy}
+                  canWrite={readId !== null}
+                  onWrite={() => act({ action: 'write', readId, id: item.id })}
+                  onDecide={(decision, note) =>
+                    act({ action: 'decide', id: item.id, decision, note })
+                  }
+                />
+              ))}
+            </ol>
+          </div>
         </>
       )}
     </div>
   );
 }
 
-function ItemCard({
+/*
+  A new rulebook for these instructions, from the data as this run read it:
+  the rules found again, then each written, by the chosen model. Replacing a
+  kept one asks first, as its acceptances go with it.
+*/
+function DraftControl({
+  kept,
+  accepted,
+  canDraft,
+  busy,
+  onDraft,
+}: {
+  kept: number;
+  accepted: number;
+  canDraft: boolean;
+  busy: boolean;
+  onDraft: (model: DraftingModel) => void;
+}) {
+  const [model, setModel] = useState<DraftingModel>(DRAFTING_MODELS[0]!);
+  const [confirming, setConfirming] = useState(false);
+  const draftButton = useRef<HTMLButtonElement>(null);
+  const cancel = () => {
+    setConfirming(false);
+    requestAnimationFrame(() => draftButton.current?.focus());
+  };
+  return (
+    <div className="grid gap-2">
+      <div className="flex flex-wrap items-end gap-3">
+        <label className="grid gap-1">
+          <span className="text-meta text-muted">Model</span>
+          <select
+            className="field text-dense min-h-9 px-2"
+            value={model}
+            disabled={busy}
+            onChange={(e) => setModel(e.target.value as DraftingModel)}
+          >
+            {DRAFTING_MODELS.map((id) => (
+              <option key={id} value={id}>
+                {id}
+              </option>
+            ))}
+          </select>
+        </label>
+        {confirming ? (
+          <>
+            <Button
+              variant="primary"
+              autoFocus
+              onPress={() => {
+                setConfirming(false);
+                onDraft(model);
+              }}
+            >
+              Replace the rulebook
+            </Button>
+            <Button onPress={cancel}>Cancel</Button>
+          </>
+        ) : (
+          <Button
+            ref={draftButton}
+            variant={kept ? 'secondary' : 'primary'}
+            isDisabled={busy || !canDraft}
+            onPress={() => (kept ? setConfirming(true) : onDraft(model))}
+          >
+            {kept ? 'Draft a new rulebook' : 'Draft the rulebook'}
+          </Button>
+        )}
+      </div>
+      <p className="text-meta text-muted max-w-prose">
+        {confirming
+          ? `This replaces the ${plural(kept, 'definition')} kept for these instructions${accepted ? `, and the ${accepted} you accepted,` : ''} with a new draft worked out on the data as this run read it.`
+          : 'Finds the calculations and checks in the instructions, then writes each one on the data as this run read it. If the model is busy or out of quota, the next older one of its family answers.'}
+      </p>
+    </div>
+  );
+}
+
+// Where a formula breaks: before each condition joined at its top level by
+// || or &&, and, where a condition is a bracketed group of such conditions,
+// inside the group one level deeper.
+type FormulaLineText = { text: string; level: number };
+
+function splitTop(formula: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let quote: string | null = null;
+  let start = 0;
+  for (let i = 0; i < formula.length; i++) {
+    const c = formula[i]!;
+    if (quote) {
+      if (c === '\\') i++;
+      else if (c === quote) quote = null;
+    } else if (c === '"' || c === "'") quote = c;
+    else if (c === '(' || c === '[') depth++;
+    else if (c === ')' || c === ']') depth--;
+    else if (
+      depth === 0 &&
+      i > start &&
+      (formula.startsWith('||', i) || formula.startsWith('&&', i))
+    ) {
+      parts.push(formula.slice(start, i).trim());
+      start = i;
+      i++;
+    }
+  }
+  parts.push(formula.slice(start).trim());
+  return parts;
+}
+
+// The bracket that closes the one opening at `at`, or -1.
+function closing(text: string, at: number): number {
+  let depth = 0;
+  for (let i = at; i < text.length; i++) {
+    if (text[i] === '(') depth++;
+    else if (text[i] === ')' && --depth === 0) return i;
+  }
+  return -1;
+}
+
+function linesOf(formula: string, level = 0): FormulaLineText[] {
+  return splitTop(formula).flatMap((part) => {
+    const lead = /^(\|\||&&)\s*/.exec(part)?.[0] ?? '';
+    const rest = part.slice(lead.length);
+    const inner =
+      rest.startsWith('(') && closing(rest, 0) === rest.length - 1
+        ? rest.slice(1, -1)
+        : null;
+    const nested = inner === null ? [] : splitTop(inner);
+    if (nested.length < 2) return [{ text: part, level }];
+    const lines = linesOf(inner!, level + 1);
+    lines[0] = { text: `${lead}(${lines[0]!.text}`, level };
+    lines[lines.length - 1]!.text += ')';
+    return lines;
+  });
+}
+
+// What the definition brings to its formula: blue, dotted, with what it is on
+// hover.
+const DOTTED =
+  'text-state-advisory decoration-state-advisory underline decoration-dotted underline-offset-2';
+
+const READ_ROOTS = [
+  'record',
+  ...SUBJECT.data.lookups.map((lookup) => lookup.as),
+];
+// The proposal's fields: what each example sets, by the name a formula reads.
+// Drawn the same in the formula and in each example's heading.
+const PROPOSAL = new Set(SUBJECT.proposal.map((field) => field.id));
+const TOKEN =
+  /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|\b([A-Za-z_]\w*)\.([A-Za-z_]\w*)|\b([A-Za-z_]\w*)\b/g;
+
+// One line of a formula, each name drawn by what it reads.
+// A line one level in sits under the condition it opens; a line too long
+// for the box wraps under its own start, past its operator.
+const LEVEL = ['', 'ml-6', 'ml-12', 'ml-18'];
+
+function FormulaLine({
+  line,
+  level,
+  item,
+  names,
+  reads,
+}: {
+  line: string;
+  level: number;
+  item: Definition;
+  names: Record<string, string>;
+  reads: Definition[];
+}) {
+  const parts: ReactNode[] = [];
+  let at = 0;
+  for (const match of line.matchAll(TOKEN)) {
+    const [whole, text, root, field, bare] = match;
+    const index = match.index;
+    if (index > at) parts.push(line.slice(at, index));
+    at = index + whole.length;
+    const key = `${index}`;
+    if (text)
+      parts.push(
+        <span key={key} className="text-muted">
+          {text}
+        </span>,
+      );
+    else if (root === 'values') {
+      const read = reads.find((d) => d.id === field);
+      const about = read
+        ? `A calculation this formula reads: ${read.name}. On its examples, ${read.examples
+            .map((e) => `${e.key} gives ${said(read, e.expect)}`)
+            .join(', ')}.`
+        : null;
+      const link = (
+        <a key={key} href={`#${anchorOf(field!)}`} className={DOTTED}>
+          {whole}
+        </a>
+      );
+      parts.push(
+        about ? (
+          <Tooltip key={key} label={whole} description={about}>
+            {link}
+          </Tooltip>
+        ) : (
+          link
+        ),
+      );
+    } else if (root === 'constants' || root === 'groups') {
+      const constant = item.constants.find((c) => c.id === field);
+      const group = item.groups.find((g) => g.id === field);
+      const about = constant
+        ? `A number from the instructions: ${constant.value}, from “${constant.quote}”.`
+        : group
+          ? `Records the instructions name: ${group.keys.map((k) => (names[k] ? `${k} [${names[k]}]` : k)).join(', ')}, from “${group.quote}”.`
+          : null;
+      parts.push(
+        about ? (
+          <Tooltip key={key} label={whole} description={about}>
+            <span tabIndex={0} className={cx(DOTTED, 'cursor-help')}>
+              {whole}
+            </span>
+          </Tooltip>
+        ) : (
+          whole
+        ),
+      );
+    } else if (root && READ_ROOTS.includes(root))
+      parts.push(
+        <span key={key}>
+          <span className="text-muted">{root}.</span>
+          <span className="text-primary font-medium">{field}</span>
+        </span>,
+      );
+    else if (bare && PROPOSAL.has(bare)) {
+      parts.push(
+        <Tooltip
+          key={key}
+          label={bare}
+          description="The value being proposed. Each example sets it, to show where the check holds and where it fails."
+        >
+          <span tabIndex={0} className={cx(TRIED_VARIABLE, 'cursor-help')}>
+            {bare}
+          </span>
+        </Tooltip>,
+      );
+    } else if (bare === 'key')
+      parts.push(
+        <span key={key} className="text-primary font-medium">
+          {bare}
+        </span>,
+      );
+    else parts.push(whole);
+  }
+  if (at < line.length) parts.push(line.slice(at));
+  return (
+    <div className={cx('pl-6 -indent-6 break-words', LEVEL[level] ?? LEVEL[3])}>
+      {parts}
+    </div>
+  );
+}
+
+/*
+  The formula as the app runs it: one condition to a line, the data it reads
+  in the primary ink, the proposal in its own tone, and what the definition
+  brings to it -- the calculations it reads, its constants and groups -- with
+  what each is on hover; a calculation also links to its card.
+*/
+function Formula({
+  item,
+  formula,
+  names,
+  reads,
+}: {
+  item: Definition;
+  formula: string;
+  names: Record<string, string>;
+  reads: Definition[];
+}) {
+  return (
+    <div
+      role="group"
+      aria-label={`Formula of ${item.name}`}
+      className="value text-meta bg-surface-floating rounded-control grid gap-0.5 px-3 py-2"
+    >
+      {linesOf(formula).map((line, index) => (
+        <FormulaLine
+          key={index}
+          line={line.text}
+          level={line.level}
+          item={item}
+          names={names}
+          reads={reads}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Where a card is, for a link from a card that reads it.
+const anchorOf = (id: string) => `definition-${id}`;
+
+function DefinitionCard({
   item,
   quoted,
   names,
+  working,
+  reads,
   busy,
   canWrite,
   onWrite,
   onDecide,
 }: {
-  item: Item;
+  item: Definition;
   // The item is the instructions' own words, not the model's restatement.
   quoted: boolean;
   names: Record<string, string>;
+  // The app's own working of each example, in the examples' order.
+  working: string[][];
+  // The definitions its formula reads.
+  reads: Definition[];
   busy: boolean;
   canWrite: boolean;
   onWrite: () => void;
   onDecide: (decision: 'accept' | 'deny', note?: string) => void;
 }) {
   const status = statusOf(item);
-  const title = titleOf(item);
+  const title = item.name;
+  const kind = kindOf(item);
   const headingId = useId();
   const [denying, setDenying] = useState(false);
   const [note, setNote] = useState('');
@@ -381,188 +706,199 @@ function ItemCard({
   };
   const open = !item.approvedAt;
   return (
-    <li className={cx(ASKS, 'grid gap-3 p-4')} aria-labelledby={headingId}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 id={headingId} className="text-dense font-semibold">
-          {title}
-          {item.kind === 'value' ? (
-            <span className="text-muted font-normal">
-              {' '}
-              · a value the rules use
-            </span>
-          ) : null}
-        </h3>
-        <StatusChip tone={status.tone}>{status.label}</StatusChip>
-      </div>
-      {quoted ? (
-        <div className="grid gap-1">
-          <span className="text-meta text-muted">
-            From the instructions, word for word
-          </span>
-          <p className="text-body">&ldquo;{item.text}&rdquo;</p>
-        </div>
-      ) : (
-        <FromModel label="The model's reading of the instructions">
-          <p className="text-body">{item.text}</p>
-        </FromModel>
-      )}
-      {item.kind === 'rule' && item.outcome ? (
-        <FromModel>
-          <p className="text-dense flex flex-wrap items-center gap-x-2 gap-y-1">
-            If an order breaks it,
-            <StatusChip tone={OUTCOME[item.outcome].tone}>
-              {OUTCOME[item.outcome].label}
-            </StatusChip>
-          </p>
-        </FromModel>
-      ) : null}
-
-      {item.examples.length ? (
-        <div className="border-rule-faint grid gap-3 border-t pt-3">
-          <div className="grid gap-0.5">
-            <p className="text-dense font-medium">
-              {item.kind === 'rule'
-                ? "Check the model's verdicts"
-                : "Check the model's sums"}
-            </p>
-            <p className="text-meta text-muted max-w-prose">
-              {item.kind === 'rule'
-                ? 'The model tried the rule on these orders, and the app’s check gets the same answer on each. If every verdict is right, accept the rule.'
-                : 'The model worked the value out for these products, and the app’s check gets the same number on each. If every sum is right, accept the value.'}
-            </p>
-          </div>
-          <ul className="grid gap-3" aria-label={`Examples for ${title}`}>
-            {byProduct(item.examples).map(([sku, examples]) => (
-              <li key={sku} className="grid gap-2">
-                <p className="text-dense flex flex-wrap items-baseline gap-x-2">
-                  <Product sku={sku} names={names} />
-                  {new Set(examples.map((e) => e.expect)).size > 1 ? (
-                    <span className="text-meta text-muted">
-                      tried on both sides of the rule
-                    </span>
-                  ) : null}
-                </p>
-                {examples.map((example, index) => (
-                  <div key={index} className="grid gap-1">
-                    {example.order !== null || !example.agrees ? (
-                      <p className="text-dense flex flex-wrap items-center gap-x-2 gap-y-1">
-                        {example.order !== null ? (
-                          <span className="text-muted">
-                            Ordering {example.order}
-                          </span>
-                        ) : null}
-                        {example.agrees ? null : (
-                          <StatusChip tone="blocked">
-                            The app&rsquo;s check says:{' '}
-                            {example.error ?? said(item, example.actual)}
-                          </StatusChip>
-                        )}
-                      </p>
-                    ) : null}
-                    <FromModel>
-                      <p className="text-dense">
-                        <span className="font-medium">
-                          {item.kind === 'rule'
-                            ? `The order is ${said(item, example.expect)}`
-                            : `Gives ${said(item, example.expect)}`}
-                          .
-                        </span>{' '}
-                        {example.why}
-                      </p>
-                    </FromModel>
-                  </div>
-                ))}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-
-      {item.deniedAt ? (
-        <p className="text-dense">
-          You denied this
-          {item.denial ? <>: &ldquo;{item.denial}&rdquo;</> : null}. Write it
-          again to send that to the model.
-        </p>
-      ) : null}
-      {item.problem ? <p className="text-dense">{item.problem}</p> : null}
-
-      {denying ? (
-        <form
-          className="flex flex-wrap items-center gap-2"
-          onSubmit={(event) => {
-            event.preventDefault();
-            onDecide('deny', note);
-            close();
-            setNote('');
-          }}
-        >
-          <label htmlFor={noteId} className="sr-only">
-            What is wrong with {title}
-          </label>
-          <input
-            id={noteId}
-            value={note}
-            onChange={(event) => setNote(event.target.value)}
-            ref={(element) => element?.focus()}
-            onKeyDown={(event) => {
-              if (event.key === 'Escape') close();
-            }}
-            placeholder="What's wrong? (optional)"
-            className="field text-dense min-h-8 min-w-64 flex-1 px-3"
-          />
-          <DecisionButton decision="deny" type="submit" isDisabled={busy}>
-            Deny
-          </DecisionButton>
-          <Button pill onPress={close}>
-            Cancel
-          </Button>
-        </form>
-      ) : (
+    <li
+      id={anchorOf(item.id)}
+      className={cx(ASKS, 'grid scroll-mt-4')}
+      aria-labelledby={headingId}
+    >
+      <div className="floating-rule-below grid gap-2.5 p-4">
         <div className="flex flex-wrap items-center gap-2">
-          {item.formula && open ? (
-            <>
-              <DecisionButton
-                decision="accept"
-                isDisabled={busy || !acceptable(item)}
-                onPress={() => onDecide('accept')}
-              >
-                Accept
-              </DecisionButton>
-              <DecisionButton
-                decision="deny"
-                ref={denyButton}
-                isDisabled={busy}
-                onPress={() => setDenying(true)}
-              >
-                Deny
-              </DecisionButton>
-            </>
-          ) : null}
-          {open ? (
-            <Button pill isDisabled={busy || !canWrite} onPress={onWrite}>
-              {item.formula ? 'Write again' : 'Write the check'}
-            </Button>
-          ) : null}
-          {item.formula && open && !acceptable(item) ? (
-            <span className="text-meta text-muted">
-              Accept waits until the app’s check agrees with every example.
+          <Tooltip label={kind.label} description={kind.about}>
+            <span
+              tabIndex={0}
+              data-severity={2}
+              className="bg-severity-pill text-severity-ink text-meta focus-visible:bg-severity-pill-hover hover:bg-severity-pill-hover inline-flex cursor-default items-center rounded-full px-2 py-0.5 font-medium whitespace-nowrap"
+            >
+              {kind.label}
+            </span>
+          </Tooltip>
+          {item.result === 'check' && item.consequence ? (
+            <span
+              data-severity={
+                CONSEQUENCE[item.consequence].tone === 'blocked' ? 0 : 1
+              }
+              className="ring-severity-pill-hover text-severity-ink text-meta inline-flex items-center rounded-full px-2 py-0.5 whitespace-nowrap ring-1 ring-inset"
+            >
+              {CONSEQUENCE[item.consequence].label}
+              <span className="sr-only">, as the model reads it</span>
             </span>
           ) : null}
+          <span
+            className="rules-status-out ml-auto"
+            data-accepted={item.approvedAt ? '' : undefined}
+            aria-hidden={item.approvedAt ? true : undefined}
+          >
+            <StatusChip tone={status.tone}>{status.label}</StatusChip>
+          </span>
         </div>
-      )}
+        <h4 id={headingId} className="text-dense font-semibold">
+          {title}
+        </h4>
+      </div>
 
-      {item.formula ? (
-        <div className="grid">
-          <TechnicalDetails label="The formula">
-            <FromModel
-              label={item.model ? `Written by ${item.model}` : undefined}
-            >
-              <Code>{item.formula}</Code>
+      <div className="grid gap-3 p-4">
+        {/* The rule itself, read two ways: in words as the model reads it,
+            and exactly, as the app runs it. Both are the model's, so both
+            carry its mark. */}
+        <section aria-labelledby={`${headingId}-rule`} className="grid gap-1.5">
+          <h5 id={`${headingId}-rule`} className="readout text-muted">
+            Definition
+          </h5>
+          <div className="bg-surface-primary rounded-shell grid gap-3 py-3 pr-3 pl-4">
+            <FromModel label="The model's reading">
+              <p className="text-body">
+                {quoted ? <>&ldquo;{item.text}&rdquo;</> : item.text}
+              </p>
             </FromModel>
-          </TechnicalDetails>
-        </div>
-      ) : null}
+            {item.formula ? (
+              <FromModel label="The model's formula">
+                <Formula
+                  item={item}
+                  formula={item.formula}
+                  names={names}
+                  reads={reads}
+                />
+              </FromModel>
+            ) : null}
+            {item.constants.length || item.groups.length ? (
+              <FromModel label="Its numbers and groups">
+                <ul
+                  className="text-dense grid gap-1"
+                  aria-label={`Numbers and groups ${title} reads`}
+                >
+                  {item.constants.map((c) => (
+                    <li key={c.id}>
+                      {c.id.replace(/_/g, ' ')}{' '}
+                      <span className="font-medium">{c.value}</span>
+                      <span className="text-muted">
+                        {' '}
+                        from &ldquo;{c.quote}&rdquo;
+                      </span>
+                    </li>
+                  ))}
+                  {item.groups.map((g) => (
+                    <li key={g.id}>
+                      {g.id.replace(/_/g, ' ')}{' '}
+                      <span className="font-medium">
+                        {g.keys
+                          .map((key) =>
+                            names[key] ? `${key} [${names[key]}]` : key,
+                          )
+                          .join(', ')}
+                      </span>
+                      <span className="text-muted">
+                        {' '}
+                        from &ldquo;{g.quote}&rdquo;
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </FromModel>
+            ) : null}
+          </div>
+        </section>
+
+        {item.examples.length ? (
+          <section
+            aria-labelledby={`${headingId}-examples`}
+            className="grid gap-3"
+          >
+            <h5 id={`${headingId}-examples`} className="readout text-muted">
+              Examples
+            </h5>
+            <Examples item={item} names={names} working={working} />
+          </section>
+        ) : null}
+
+        {item.deniedAt ? (
+          <p className="text-dense">
+            You denied this
+            {item.denial ? <>: &ldquo;{item.denial}&rdquo;</> : null}. Write it
+            again to send that to the model.
+          </p>
+        ) : null}
+        {item.problem ? <p className="text-dense">{item.problem}</p> : null}
+      </div>
+
+      <div className="floating-rule-above p-4">
+        {denying ? (
+          <form
+            className="flex flex-wrap items-center gap-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              onDecide('deny', note);
+              close();
+              setNote('');
+            }}
+          >
+            <label htmlFor={noteId} className="sr-only">
+              What is wrong with {title}
+            </label>
+            <input
+              id={noteId}
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+              ref={(element) => element?.focus()}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') close();
+              }}
+              placeholder="What's wrong? (optional)"
+              className="field text-dense min-h-8 min-w-64 flex-1 px-3"
+            />
+            <DecisionButton decision="deny" type="submit" isDisabled={busy}>
+              Deny
+            </DecisionButton>
+            <Button pill onPress={close}>
+              Cancel
+            </Button>
+          </form>
+        ) : (
+          <div className="flex flex-wrap items-center gap-2">
+            {item.formula ? (
+              <>
+                <AcceptDecision
+                  accepted={item.approvedAt !== null}
+                  busy={busy}
+                  canAccept={acceptable(item)}
+                  onAccept={() => onDecide('accept')}
+                />
+                {open ? (
+                  <DecisionButton
+                    decision="deny"
+                    ref={denyButton}
+                    isDisabled={busy}
+                    onPress={() => setDenying(true)}
+                  >
+                    Deny
+                  </DecisionButton>
+                ) : null}
+              </>
+            ) : null}
+            {open ? (
+              <Button pill isDisabled={busy || !canWrite} onPress={onWrite}>
+                {item.formula
+                  ? 'Write again'
+                  : `Write the ${kind.label.toLowerCase()}`}
+              </Button>
+            ) : null}
+            {item.formula && open && !acceptable(item) ? (
+              <span className="text-meta text-muted">
+                Accept waits until the app’s check agrees with every example.
+              </span>
+            ) : null}
+          </div>
+        )}
+      </div>
     </li>
   );
 }
