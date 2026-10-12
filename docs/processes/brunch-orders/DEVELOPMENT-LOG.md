@@ -300,6 +300,22 @@ set producing useful orders would not, by itself, validate automatic authoring.
 The next experiment should distinguish execution correctness, product usefulness
 and authoring effort.
 
+## The first cross-check (9 October)
+
+The first real cross-check of Calculate was refused, and nothing was kept.
+The model's 22 values were all correct, but it filed each one with the two
+identifiers swapped: the value's id (`expected_sales`) where the record's key
+belonged, and the key (`SD-01`) where the id belonged. The answer format was a
+flat list of `{key, id, value}`, and "id" reads as the record's own id. The
+completeness check caught it, as it should, but the cause was the format.
+
+**Lesson.** A structured answer should make a mix-up impossible, not just
+detectable. The format is now built from what is asked: one entry per record,
+its key restricted to the read's keys, and every value under its own id as a
+required field. The same call then agreed on 22 of 22. Field names that two
+parts of the answer could both claim, such as `id`, `key` or `name`, are worth
+avoiding in any schema a model fills.
+
 ## Smaller lessons
 
 - **Two sessions editing one tree** works if each re-reads before editing and

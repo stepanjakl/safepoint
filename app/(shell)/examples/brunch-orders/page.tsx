@@ -2,7 +2,12 @@ import { notFound } from 'next/navigation';
 
 import { ProcessView } from '@/components/app-shell/process/process-view';
 import { OrdersRun } from '@/components/brunch-orders/orders-run';
-import { brunchOrdersProcess } from '@/lib/processes/brunch-orders/process';
+import { RulebookPanel } from '@/components/brunch-orders/rulebook-panel';
+import { SheetInputs } from '@/components/brunch-orders/sheet-inputs';
+import {
+  brunchOrdersProcess,
+  SHEET_INPUTS,
+} from '@/lib/processes/brunch-orders/process';
 
 /*
   Brunch orders, built one step at a time (docs/processes/brunch-orders/PLAN.md).
@@ -21,6 +26,9 @@ export default async function BrunchOrdersPage({
       // Keyed: an element made here and drawn inside a client component is
       // checked as a list child there, and warns without one.
       liveThread={<OrdersRun key="live" process={brunchOrdersProcess} />}
+      inputs={SHEET_INPUTS}
+      inputsPanel={<SheetInputs />}
+      rulesPanel={<RulebookPanel process={brunchOrdersProcess} />}
     >
       {null}
     </ProcessView>

@@ -32,7 +32,7 @@ const literal = (value: unknown): Node =>
 const COMPARE = ['==', '!=', '<', '<=', '>', '>='];
 const ROUNDING = ['ceil', 'floor', 'round'];
 
-function stepsFor(
+export function stepsFor(
   formula: string,
   context: Parameters<typeof run>[1],
   // The proposal's fields: what an example tries, marked where it appears.

@@ -3,10 +3,6 @@
    ────────────────────────────────────────────────────────────────────────── */
 
 @layer base {
-  :where(*) {
-    overscroll-behavior: none !important;
-  }
-
   /* @supports (corner-shape: superellipse(1.16)) {
     :where(*, *::before, *::after) {
       corner-shape: superellipse(1.16);
@@ -14,6 +10,9 @@
   } */
 
   html {
+    /* Keep this at the viewport: on nested content it stops wheel input from
+       reaching the pane that scrolls the run. */
+    overscroll-behavior: none;
     background-color: var(--sp-canvas);
     color: var(--sp-text-primary);
   }

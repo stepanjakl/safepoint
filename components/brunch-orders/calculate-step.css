@@ -1,0 +1,91 @@
+@layer components {
+  /* A record's toggle: the triangle points at the record shut, down at its
+     working open, as a step's chevron turns. */
+  /* The chevron hangs in the row's inset, so the name starts where every
+     row's does (data-table.tsx). */
+  .calc-row-toggle {
+    display: inline-flex;
+    vertical-align: top;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  .calc-row-chevron {
+    flex: none;
+    width: 1rem;
+    height: 1rem;
+    margin-inline-start: -1.25rem;
+    color: var(--sp-text-muted);
+    rotate: 90deg;
+    transition: rotate var(--duration-state) var(--ease-out-quad);
+  }
+  .calc-row-toggle[aria-expanded='true'] .calc-row-chevron {
+    rotate: 180deg;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .calc-row-chevron {
+      transition: none;
+    }
+  }
+
+  /* A value in the Calculate table. Padded as a pill whether or not it is
+     one, so a cross-check lands without moving the column. */
+  .calc-value {
+    display: inline-flex;
+    /* Top, not the baseline: no descender gap under the pill in its cell. */
+    vertical-align: top;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.125rem 0.5rem;
+  }
+  /* The mark, and the model's own number where it differs: room first, then
+     the mark, as a decision's icon goes (decision-button.css). */
+  /* minmax(0, …): a closed slot takes no room, padding and all, so the
+     number does not move as its pill arrives. */
+  .calc-value-tail {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .calc-value-tail > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-width: 0;
+    overflow: hidden;
+    padding-inline-start: 0.25rem;
+  }
+
+  /* Once per cross-check, value by value (--calc-delay): the number takes
+     the tone, then gives it to the pill as the mark arrives. */
+  .calc-value[data-reveal] {
+    animation: calc-reveal 900ms var(--ease-out-quad) var(--calc-delay, 0ms) both;
+  }
+  .calc-value[data-reveal] .calc-value-tail {
+    animation: calc-tail 900ms var(--ease-out-emphasized) var(--calc-delay, 0ms) both;
+  }
+  @keyframes calc-reveal {
+    0% {
+      background-color: transparent;
+    }
+    35% {
+      background-color: transparent;
+      color: var(--severity-11);
+    }
+  }
+  @keyframes calc-tail {
+    0%,
+    60% {
+      grid-template-columns: minmax(0, 0fr);
+      opacity: 0;
+    }
+    82% {
+      grid-template-columns: minmax(0, 1fr);
+      opacity: 0;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .calc-value[data-reveal],
+    .calc-value[data-reveal] .calc-value-tail {
+      animation: none;
+    }
+  }
+}

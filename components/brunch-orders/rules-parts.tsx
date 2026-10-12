@@ -151,7 +151,7 @@ function Reasoning({
       : `Gives ${said(item, example.expect)}.`;
   return (
     <FromModel>
-      <p className="text-dense">
+      <p className="text-dense italic">
         <span className="font-medium">{verdict}</span> {example.why}
       </p>
     </FromModel>
@@ -164,19 +164,39 @@ const TRIED_TONE = 'text-state-advisory';
 export const TRIED_VARIABLE =
   'bg-tried-face text-state-advisory rounded-control px-1 font-semibold';
 
-// What an example proposes, as the formula reads it: order = 20.
-function ProposedValue({ id, value }: { id: string; value: number }) {
+// A name a formula reads, as the formula's own face shows it: a number or
+// group the definition brings.
+export const DEFINED_NAME =
+  'bg-surface-floating text-state-advisory rounded-control px-1 font-semibold';
+
+// A name and what it holds, as the formula reads it: order = 20.
+export function Assignment({
+  name,
+  face,
+  children,
+}: {
+  name: string;
+  face: string;
+  children: ReactNode;
+}) {
   return (
-    <code className="value text-meta inline-flex items-center gap-1.5">
-      <span className={TRIED_VARIABLE}>{id}</span>
+    <code className="value text-meta inline-flex flex-wrap items-center gap-1.5">
+      <span className={face}>{name}</span>
       <span className="text-muted">=</span>
-      <span className="font-semibold">{value}</span>
+      <span className="font-semibold">{children}</span>
     </code>
   );
 }
 
+// What an example proposes.
+const ProposedValue = ({ id, value }: { id: string; value: number }) => (
+  <Assignment name={id} face={TRIED_VARIABLE}>
+    {value}
+  </Assignment>
+);
+
 // A step of the working, the value the example tried in its tone.
-function Step({ text }: { text: string }) {
+export function Step({ text }: { text: string }) {
   const parts = text.split(new RegExp(`${TRIED[0]}(.*?)${TRIED[1]}`));
   return (
     <Code>

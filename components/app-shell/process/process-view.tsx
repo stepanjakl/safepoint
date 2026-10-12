@@ -18,6 +18,8 @@ export function ProcessView({
   playable,
   policy,
   liveThread,
+  rulesPanel,
+  inputsPanel,
   children,
 }: {
   process: ProcessSummary;
@@ -31,6 +33,10 @@ export function ProcessView({
   policy?: ProcessPolicy;
   // A process run step by step on the page: its live run's thread.
   liveThread?: ReactNode;
+  // A process's own rulebook, shown as a Rules tab.
+  rulesPanel?: ReactNode;
+  // A process's own Inputs tab, in place of the evidence files' list.
+  inputsPanel?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -43,6 +49,8 @@ export function ProcessView({
       playable={playable}
       policy={policy}
       liveThread={liveThread}
+      rulesPanel={rulesPanel}
+      inputsPanel={inputsPanel}
     />
   );
 }

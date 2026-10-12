@@ -4,7 +4,7 @@ import ArrowUpRight from 'blode-icons-react/icons/arrow-up-right';
 import ChevronTriangleDown from 'blode-icons-react/icons/chevron-triangle-down-small-filled';
 import ChainLink1Filled from 'blode-icons-react/icons/chain-link-1-filled';
 import TableFilled from 'blode-icons-react/icons/table-filled';
-import { useContext, useId, useLayoutEffect, useRef, useState } from 'react';
+import { useContext, useId, useState } from 'react';
 import type { CSSProperties } from 'react';
 
 import { ProcessSheetActions } from '@/components/app-shell/process/process-sheet';
@@ -22,15 +22,22 @@ import {
   useTrial,
 } from '@/components/sheet-process/trial-parts';
 import { Button } from '@/components/ui/button';
+import {
+  DATA_TABLE_HEAD,
+  DATA_TABLE_NAME,
+  DataTable,
+} from '@/components/ui/data-table';
+import { Fold } from '@/components/ui/fold';
 import { cx } from '@/lib/cx';
 import type { ProcessStep, ProcessSummary } from '@/lib/process/model';
 import { COMING, ORDER_STEPS } from '@/lib/processes/brunch-orders/process';
 
+import { CalculateStep, type CalculateProgress } from './calculate-step';
 import { DataDrawer } from './data-drawer';
 import { RulesStep, type RulesProgress } from './rules-step';
 
 // How far a run has got, as the browser keeps it: the read's id and summary.
-type RunRead = {
+export type RunRead = {
   id: string;
   readAt: string;
   source: string;
@@ -84,6 +91,7 @@ export function OrdersRun({ process }: { process: ProcessSummary }) {
   if (!live || !selection) return null;
   const read = live.data.read as RunRead | undefined;
   const rules = live.data.rules as RulesProgress | undefined;
+  const calculated = live.data.calculate as CalculateProgress | undefined;
   const rulesDone =
     rules !== undefined &&
     rules.intent &&
@@ -102,7 +110,13 @@ export function OrdersRun({ process }: { process: ProcessSummary }) {
             : read
               ? 'attention'
               : 'pending'
-          : 'pending';
+          : step.id === 'calculate'
+            ? !rulesDone
+              ? 'pending'
+              : calculated?.checked && calculated.agreed === calculated.total
+                ? 'complete'
+                : 'attention'
+            : 'pending';
   // The furthest step a person can act on.
   const latest =
     !read || revealingReadId === read.id
@@ -110,7 +124,24 @@ export function OrdersRun({ process }: { process: ProcessSummary }) {
       : !rulesDone
         ? 'rules'
         : 'calculate';
-  const steps = ORDER_STEPS.map((step) => ({ ...step, status: status(step) }));
+  // What each step has come to, in its heading, where it has a state yet.
+  const label = (step: ProcessStep) =>
+    step.id === 'rules' && rules?.total
+      ? rules.approved === rules.total
+        ? 'All rules accepted'
+        : `${rules.approved} of ${rules.total} accepted`
+      : step.id === 'calculate' && rulesDone
+        ? !calculated?.checked
+          ? 'Not cross-checked'
+          : calculated.agreed === calculated.total
+            ? `All ${calculated.total} match the model`
+            : `${calculated.total - calculated.agreed} don’t match the model`
+        : step.label;
+  const steps = ORDER_STEPS.map((step) => ({
+    ...step,
+    status: status(step),
+    label: label(step),
+  }));
   return (
     <>
       <ol className="thread">
@@ -160,6 +191,18 @@ export function OrdersRun({ process }: { process: ProcessSummary }) {
                   }
                 />
               </ResponseSection>
+            ) : step.id === 'calculate' && rulesDone && read ? (
+              <ResponseSection>
+                <RunCalculate
+                  process={process}
+                  version={live.run.instructionsVersion}
+                  readId={read.id}
+                  calculatedOn={calculated?.fingerprint ?? null}
+                  onProgress={(progress) =>
+                    selection.updateLive(live.run.id, { calculate: progress })
+                  }
+                />
+              </ResponseSection>
             ) : (
               <p className="text-dense text-muted">{COMING[step.id]}</p>
             )}
@@ -200,6 +243,29 @@ function RunRules({
       readId={readId}
       onProgress={onProgress}
     />
+  ) : (
+    <p className="text-dense text-muted">
+      Instructions {version} are not in this browser any more.
+    </p>
+  );
+}
+
+// Calculate on the rules of the instructions this run answers to.
+function RunCalculate({
+  process,
+  version,
+  ...step
+}: {
+  process: ProcessSummary;
+  version: string;
+  readId: string;
+  calculatedOn: string | null;
+  onProgress: (progress: CalculateProgress) => void;
+}) {
+  const { versions } = useInstructions(process.id, process.instructions);
+  const text = versions.find((v) => v.version === version)?.text;
+  return text ? (
+    <CalculateStep text={text} {...step} />
   ) : (
     <p className="text-dense text-muted">
       Instructions {version} are not in this browser any more.
@@ -269,20 +335,6 @@ function ReadStep({
   // Shut until asked for, except for the read just taken, which opens to show it.
   const [open, setOpen] = useState(false);
   const cardId = useId();
-  const hasRead = read !== undefined;
-  // The card's height paces its fold, as a step's body paces the step's.
-  const foldRef = useRef<HTMLDivElement>(null);
-  const cardRef = useRef<HTMLElement>(null);
-  useLayoutEffect(() => {
-    const fold = foldRef.current;
-    const card = cardRef.current;
-    if (!fold || !card) return;
-    const observer = new ResizeObserver(() =>
-      fold.style.setProperty('--thread-fold-height', String(card.offsetHeight)),
-    );
-    observer.observe(card);
-    return () => observer.disconnect();
-  }, [hasRead]);
   return (
     <div className="grid gap-4">
       <section
@@ -379,125 +431,119 @@ function ReadStep({
             </span>
             <ChevronTriangleDown aria-hidden className="brunch-read-chevron" />
           </button>
-          <div
-            id={cardId}
-            ref={foldRef}
-            className="brunch-read-fold thread-fold"
-            inert={!open}
-          >
-            <div className="brunch-read-clip">
-              <article
-                ref={cardRef}
-                aria-label="Sheet read"
-                data-revealing={revealing || undefined}
-                className="brunch-read-card border-rule-faint bg-surface-primary rounded-shell overflow-clip border"
-              >
-                <DataDrawer readId={read.id}>
-                  {(view) => (
-                    <>
-                      <div className={READ_TABLE}>
-                        <div
-                          aria-hidden
-                          className={cx(
-                            READ_GRID,
-                            'brunch-read-enter text-meta text-muted border-rule-faint border-b py-3 font-medium',
-                          )}
-                        >
-                          <span>Tab</span>
-                          <span className="justify-self-end">Rows</span>
-                        </div>
-                        <ul
-                          aria-label="Data tabs read"
-                          className="release-list brunch-read-rows col-span-full grid grid-cols-subgrid"
-                        >
-                          {read.tabs.map((tab, index) => (
-                            <li
-                              key={tab.name}
-                              className="brunch-read-enter col-span-full grid grid-cols-subgrid"
-                              style={
-                                {
-                                  '--brunch-read-index': index + 1,
-                                } as CSSProperties
-                              }
-                            >
-                              <button
-                                type="button"
-                                className={READ_ROW}
-                                aria-label={`${tab.name}, ${tab.rows ? `${dataRows(tab.rows)} rows` : 'not in the sheet'}. View its data.`}
-                                onClick={() => view(tab.name)}
-                              >
-                                <span className="release-row-subject truncate">
-                                  {tab.name}
-                                </span>
-                                {tab.rows ? (
-                                  <span className="release-row-pill release-row-trail justify-self-end">
-                                    <span>{dataRows(tab.rows)}</span>
-                                  </span>
-                                ) : (
-                                  <span className="release-row-trail text-meta text-muted justify-self-end">
-                                    Not in the sheet
-                                  </span>
-                                )}
-                                <span
-                                  aria-hidden="true"
-                                  className="release-row-arrow"
-                                >
-                                  <ArrowUpRight size={14} strokeWidth={2} />
-                                </span>
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      <footer
-                        className="brunch-read-enter flex flex-wrap items-center justify-between gap-3 px-4 py-3.5"
-                        style={
-                          {
-                            '--brunch-read-index': read.tabs.length + 1,
-                          } as CSSProperties
-                        }
-                        onAnimationEnd={(event) => {
-                          if (event.target === event.currentTarget)
-                            onRevealed();
-                        }}
+          <Fold open={open} id={cardId} className="pt-2">
+            <DataTable
+              as="article"
+              aria-label="Sheet read"
+              data-revealing={revealing || undefined}
+              className="brunch-read-card"
+            >
+              <DataDrawer readId={read.id}>
+                {(view) => (
+                  <>
+                    <div className={READ_TABLE}>
+                      <div
+                        aria-hidden
+                        className={cx(
+                          READ_GRID,
+                          DATA_TABLE_HEAD,
+                          'brunch-read-enter',
+                        )}
                       >
-                        <Button pill onPress={() => view()}>
-                          View data
-                          <ArrowUpRight
+                        <span>Tab</span>
+                        <span className="justify-self-end">Rows</span>
+                      </div>
+                      <ul
+                        aria-label="Data tabs read"
+                        className="release-list brunch-read-rows col-span-full grid grid-cols-subgrid"
+                      >
+                        {read.tabs.map((tab, index) => (
+                          <li
+                            key={tab.name}
+                            className="brunch-read-enter col-span-full grid grid-cols-subgrid"
+                            style={
+                              {
+                                '--brunch-read-index': index + 1,
+                              } as CSSProperties
+                            }
+                          >
+                            <button
+                              type="button"
+                              className={READ_ROW}
+                              aria-label={`${tab.name}, ${tab.rows ? `${dataRows(tab.rows)} rows` : 'not in the sheet'}. View its data.`}
+                              onClick={() => view(tab.name)}
+                            >
+                              <span
+                                className={cx(
+                                  'release-row-subject truncate',
+                                  DATA_TABLE_NAME,
+                                )}
+                              >
+                                {tab.name}
+                              </span>
+                              {tab.rows ? (
+                                <span className="release-row-pill release-row-trail justify-self-end">
+                                  <span>{dataRows(tab.rows)}</span>
+                                </span>
+                              ) : (
+                                <span className="release-row-trail text-meta text-muted justify-self-end">
+                                  Not in the sheet
+                                </span>
+                              )}
+                              <span
+                                aria-hidden="true"
+                                className="release-row-arrow"
+                              >
+                                <ArrowUpRight size={14} strokeWidth={2} />
+                              </span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <footer
+                      className="brunch-read-enter flex flex-wrap items-center justify-between gap-3 px-4 py-3.5"
+                      style={
+                        {
+                          '--brunch-read-index': read.tabs.length + 1,
+                        } as CSSProperties
+                      }
+                      onAnimationEnd={(event) => {
+                        if (event.target === event.currentTarget) onRevealed();
+                      }}
+                    >
+                      <Button pill onPress={() => view()}>
+                        View data
+                        <ArrowUpRight
+                          aria-hidden
+                          size={14}
+                          strokeWidth={2}
+                          className="text-muted flex-none"
+                        />
+                      </Button>
+                      {read.url ? (
+                        <a
+                          href={read.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title={sourceName ?? undefined}
+                          className="brunch-read-external text-meta inline-flex items-center gap-1.5 font-medium"
+                        >
+                          Open in {googleSheets ? 'Google Sheets' : 'the sheet'}
+                          <ChainLink1Filled
                             aria-hidden
                             size={14}
-                            strokeWidth={2}
-                            className="text-muted flex-none"
+                            className="flex-none"
                           />
-                        </Button>
-                        {read.url ? (
-                          <a
-                            href={read.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title={sourceName ?? undefined}
-                            className="brunch-read-external text-meta inline-flex items-center gap-1.5 font-medium"
-                          >
-                            Open in{' '}
-                            {googleSheets ? 'Google Sheets' : 'the sheet'}
-                            <ChainLink1Filled
-                              aria-hidden
-                              size={14}
-                              className="flex-none"
-                            />
-                            <span className="sr-only">
-                              {' '}
-                              (opens in a new tab)
-                            </span>
-                          </a>
-                        ) : null}
-                      </footer>
-                    </>
-                  )}
-                </DataDrawer>
-              </article>
-            </div>
-          </div>
+                          <span className="sr-only"> (opens in a new tab)</span>
+                        </a>
+                      ) : null}
+                    </footer>
+                  </>
+                )}
+              </DataDrawer>
+            </DataTable>
+          </Fold>
         </div>
       ) : null}
     </div>

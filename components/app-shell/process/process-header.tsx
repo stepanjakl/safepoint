@@ -6,6 +6,7 @@ import { Button as AriaButton } from 'react-aria-components';
 // reads as a direction rather than as two unrelated pictures.
 import ArrowInbox from 'blode-icons-react/icons/arrow-inbox';
 import ArrowOutOfBox from 'blode-icons-react/icons/arrow-out-of-box';
+import Checklist from 'blode-icons-react/icons/checklist';
 import History from 'blode-icons-react/icons/history';
 import Lab from 'blode-icons-react/icons/lab';
 import SettingsGear from 'blode-icons-react/icons/settings-gear-1';
@@ -115,6 +116,7 @@ const plural = (count: number, one: string, many: string) =>
 function ProcessMenu({
   version,
   instructionsLabel = 'Instructions',
+  hasRules = false,
   inputs,
   outputs,
   tab,
@@ -123,6 +125,8 @@ function ProcessMenu({
   version: string;
   // What a process calls its instructions, where it brings its own panel.
   instructionsLabel?: string;
+  // Whether the process keeps a rulebook of its own to show.
+  hasRules?: boolean;
   inputs: SystemLink[];
   outputs: SystemLink[];
   tab: ProcessTab;
@@ -171,6 +175,22 @@ function ProcessMenu({
         <span className={LABEL}>{instructionsLabel}</span>
         <span className={COUNT}>{version}</span>
       </AriaButton>
+      {hasRules ? (
+        <AriaButton
+          onPress={() => onTabChange('rules')}
+          aria-label="Rules"
+          aria-current={tab === 'rules' ? 'true' : undefined}
+          className={cx(ITEM, 'pe-3', face('rules'))}
+        >
+          <Checklist
+            aria-hidden
+            size={16}
+            strokeWidth={1.8}
+            className={cx('flex-none -translate-y-px', icon('rules'))}
+          />
+          <span className={LABEL}>Rules</span>
+        </AriaButton>
+      ) : null}
       {inputs.length > 0 ? (
         <AriaButton
           onPress={() => onTabChange('inputs')}
@@ -254,6 +274,7 @@ export function ProcessHeader({
   process,
   version,
   instructionsLabel,
+  hasRules,
   inputs,
   outputs,
   tab,
@@ -262,6 +283,7 @@ export function ProcessHeader({
   process: ProcessSummary;
   version: string;
   instructionsLabel?: string;
+  hasRules?: boolean;
   inputs: SystemLink[];
   outputs: SystemLink[];
   tab: ProcessTab;
@@ -280,6 +302,7 @@ export function ProcessHeader({
         <ProcessMenu
           version={version}
           instructionsLabel={instructionsLabel}
+          hasRules={hasRules}
           inputs={inputs}
           outputs={outputs}
           tab={tab}

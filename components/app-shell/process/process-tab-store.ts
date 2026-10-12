@@ -16,6 +16,7 @@ import { createStoredRecord, parseStored } from '../stored-record';
 export const PROCESS_TABS = [
   'runs',
   'instructions',
+  'rules',
   'inputs',
   'outputs',
   'settings',

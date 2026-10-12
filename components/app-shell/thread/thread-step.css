@@ -1235,10 +1235,12 @@
       opacity: 0;
     }
   }
-  /* The margin lets a card's ring and a disc's gap show past the edge. */
+  /* The margin lets a card's ring and a disc's gap show past the edge. Only
+     the fold's height is clipped: a step may draw beside its column. */
   .thread-step-clip {
     min-height: 0;
-    overflow: clip;
+    overflow-x: visible;
+    overflow-y: clip;
     overflow-clip-margin: 0.25rem;
   }
 

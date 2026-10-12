@@ -20,7 +20,8 @@ export type IconKey =
   | 'portal'
   | 'queue'
   | 'identity'
-  | 'billing';
+  | 'billing'
+  | 'sheet';
 
 export type Freshness = {
   state: 'fresh' | 'stale' | 'unavailable';

@@ -1,0 +1,249 @@
+{
+  "fingerprint": "d23a4c56d75b",
+  "accepted": 7,
+  "calculations": [
+    {
+      "id": "expected_sales",
+      "name": "Expected sales",
+      "text": "Start from each product's average over the last four weekends. Products on offer sell about 40% more, the kit's ingredients about 10% more, and everything else about 15% more. Add 40 units for ingredients used in the kit (a sourdough loaf, a pack of avocados, and a pack of feta). Round up to whole units."
+    },
+    {
+      "id": "target_stock_level",
+      "name": "Target stock level",
+      "text": "Enough stock to cover expected sales plus the category's safety margin."
+    }
+  ],
+  "rows": [
+    {
+      "key": "SD-01",
+      "name": "Sourdough loaf 800g",
+      "values": {
+        "expected_sales": {
+          "value": 73,
+          "error": null,
+          "steps": [
+            "ceil(((28 + 31 + 30 + 31) / 4) * (1.0 + (10 / 100.0)) + 40)",
+            "ceil(73.0)"
+          ]
+        },
+        "target_stock_level": {
+          "value": 80.3,
+          "error": null,
+          "steps": [
+            "73 * (1.0 + (10 / 100.0))"
+          ]
+        }
+      }
+    },
+    {
+      "key": "AV-RR",
+      "name": "Hass avocados, ripe & ready, 2-pack",
+      "values": {
+        "expected_sales": {
+          "value": 65,
+          "error": null,
+          "steps": [
+            "ceil(((21 + 23 + 22 + 22) / 4) * (1.0 + (10 / 100.0)) + 40)",
+            "ceil(64.2)"
+          ]
+        },
+        "target_stock_level": {
+          "value": 71.5,
+          "error": null,
+          "steps": [
+            "65 * (1.0 + (10 / 100.0))"
+          ]
+        }
+      }
+    },
+    {
+      "key": "AV-LS",
+      "name": "Hass avocado, ripen at home",
+      "values": {
+        "expected_sales": {
+          "value": 21,
+          "error": null,
+          "steps": [
+            "ceil(((17 + 19 + 18 + 18) / 4) * (1.0 + (15 / 100.0)) + 0)",
+            "ceil(20.7)"
+          ]
+        },
+        "target_stock_level": {
+          "value": 23.1,
+          "error": null,
+          "steps": [
+            "21 * (1.0 + (10 / 100.0))"
+          ]
+        }
+      }
+    },
+    {
+      "key": "EG-06",
+      "name": "Free-range eggs, medium, 6",
+      "values": {
+        "expected_sales": {
+          "value": 28,
+          "error": null,
+          "steps": [
+            "ceil(((19 + 21 + 20 + 20) / 4) * (1.0 + (40 / 100.0)) + 0)",
+            "ceil(28.0)"
+          ]
+        },
+        "target_stock_level": {
+          "value": 30.8,
+          "error": null,
+          "steps": [
+            "28 * (1.0 + (10 / 100.0))"
+          ]
+        }
+      }
+    },
+    {
+      "key": "FT-200",
+      "name": "Greek feta 200g",
+      "values": {
+        "expected_sales": {
+          "value": 54,
+          "error": null,
+          "steps": [
+            "ceil(((11 + 13 + 12 + 12) / 4) * (1.0 + (10 / 100.0)) + 40)",
+            "ceil(53.2)"
+          ]
+        },
+        "target_stock_level": {
+          "value": 59.4,
+          "error": null,
+          "steps": [
+            "54 * (1.0 + (10 / 100.0))"
+          ]
+        }
+      }
+    },
+    {
+      "key": "LM-04",
+      "name": "Lemons, 4-pack",
+      "values": {
+        "expected_sales": {
+          "value": 12,
+          "error": null,
+          "steps": [
+            "ceil(((9 + 11 + 10 + 10) / 4) * (1.0 + (15 / 100.0)) + 0)",
+            "ceil(11.5)"
+          ]
+        },
+        "target_stock_level": {
+          "value": 13.2,
+          "error": null,
+          "steps": [
+            "12 * (1.0 + (10 / 100.0))"
+          ]
+        }
+      }
+    },
+    {
+      "key": "CT-250",
+      "name": "Cherry tomatoes 250g",
+      "values": {
+        "expected_sales": {
+          "value": 23,
+          "error": null,
+          "steps": [
+            "ceil(((15 + 17 + 16 + 16) / 4) * (1.0 + (40 / 100.0)) + 0)",
+            "ceil(22.4)"
+          ]
+        },
+        "target_stock_level": {
+          "value": 25.3,
+          "error": null,
+          "steps": [
+            "23 * (1.0 + (10 / 100.0))"
+          ]
+        }
+      }
+    },
+    {
+      "key": "RK-60",
+      "name": "Wild rocket 60g",
+      "values": {
+        "expected_sales": {
+          "value": 13,
+          "error": null,
+          "steps": [
+            "ceil(((8 + 10 + 9 + 9) / 4) * (1.0 + (40 / 100.0)) + 0)",
+            "ceil(12.6)"
+          ]
+        },
+        "target_stock_level": {
+          "value": 14.3,
+          "error": null,
+          "steps": [
+            "13 * (1.0 + (10 / 100.0))"
+          ]
+        }
+      }
+    },
+    {
+      "key": "CF-40",
+      "name": "Chilli flakes 40g",
+      "values": {
+        "expected_sales": {
+          "value": 4,
+          "error": null,
+          "steps": [
+            "ceil(((3 + 3 + 3 + 3) / 4) * (1.0 + (15 / 100.0)) + 0)",
+            "ceil(3.45)"
+          ]
+        },
+        "target_stock_level": {
+          "value": 4.2,
+          "error": null,
+          "steps": [
+            "4 * (1.0 + (5 / 100.0))"
+          ]
+        }
+      }
+    },
+    {
+      "key": "SS-125",
+      "name": "Sea salt flakes 125g",
+      "values": {
+        "expected_sales": {
+          "value": 3,
+          "error": null,
+          "steps": [
+            "ceil(((2 + 2 + 2 + 2) / 4) * (1.0 + (15 / 100.0)) + 0)",
+            "ceil(2.3)"
+          ]
+        },
+        "target_stock_level": {
+          "value": 3.15,
+          "error": null,
+          "steps": [
+            "3 * (1.0 + (5 / 100.0))"
+          ]
+        }
+      }
+    },
+    {
+      "key": "OO-500",
+      "name": "Extra virgin olive oil 500ml",
+      "values": {
+        "expected_sales": {
+          "value": 5,
+          "error": null,
+          "steps": [
+            "ceil(((4 + 4 + 4 + 4) / 4) * (1.0 + (15 / 100.0)) + 0)",
+            "ceil(4.6)"
+          ]
+        },
+        "target_stock_level": {
+          "value": 5.25,
+          "error": null,
+          "steps": [
+            "5 * (1.0 + (5 / 100.0))"
+          ]
+        }
+      }
+    }
+  ]
+}

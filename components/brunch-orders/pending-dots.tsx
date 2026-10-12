@@ -47,9 +47,9 @@ export function PendingDots({
     const list = nav.current?.parentElement;
     if (!list) return;
     const place = () => {
-      // The tracks start level with the list's summary pill, where present.
+      // The tracks start level with the first card's status pill.
       const start = list
-        .querySelector('[data-dots-start] [data-severity]')
+        .querySelector('.rules-status-out')
         ?.getBoundingClientRect();
       const top = start
         ? start.top + start.height / 2

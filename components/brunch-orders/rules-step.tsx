@@ -14,7 +14,6 @@ import { DecisionButton } from '@/components/brunch-orders/decision-button';
 import { PendingDots } from '@/components/brunch-orders/pending-dots';
 import {
   Lede,
-  Outcome,
   StatusChip,
   plural,
   useTrial,
@@ -27,6 +26,8 @@ import { cx } from '@/lib/cx';
 import { SUBJECT } from '@/lib/processes/brunch-orders/process';
 import { DRAFTING_MODELS, type DraftingModel } from '@/lib/rulebook/models';
 import {
+  Assignment,
+  DEFINED_NAME,
   Examples,
   FromModel,
   TRIED_VARIABLE,
@@ -108,7 +109,7 @@ const KINDS = [
 const kindOf = (item: Definition) =>
   KINDS.find((k) => k.result === item.result)!;
 
-const words = (value: string) => value.replace(/\s+/g, ' ').trim();
+export const words = (value: string) => value.replace(/\s+/g, ' ').trim();
 
 // What waits on a person is drawn as the release card is (`CARD` in
 // release-card.tsx): a floating face that stands off the step around it.
@@ -163,9 +164,16 @@ export function RulesStep({
   const rules = useTrial<RulesResponse>('/api/dev/brunch-orders/rules');
   const sheet = useContext(ProcessSheetActions);
   const { run } = rules;
-  // What is already found and accepted for these instructions, on arrival.
+  const report = useRef(onProgress);
   useEffect(() => {
-    void run({ action: 'get', text });
+    report.current = onProgress;
+  });
+  // What is already found and accepted for these instructions, on arrival:
+  // a new run under them starts as far as they have got.
+  useEffect(() => {
+    void run({ action: 'get', text }).then((response) => {
+      if (response?.kind === 'rules') report.current(progressOf(response.set));
+    });
   }, [run, text]);
   const body = rules.state.kind === 'done' ? rules.state.body : null;
   // The last rules seen stay while an action runs, so the list, and focus in
@@ -205,10 +213,6 @@ export function RulesStep({
   };
   // While it runs, ask again a moment after each answer.
   const answered = rules.state.kind === 'done';
-  const report = useRef(onProgress);
-  useEffect(() => {
-    report.current = onProgress;
-  });
   useEffect(() => {
     if (!draftRunning || !answered) return;
     const timer = setTimeout(
@@ -303,7 +307,8 @@ export function RulesStep({
           <div className="rules-list grid gap-4">
             <PendingDots
               pending={set.definitions
-                .filter((d) => !d.approvedAt)
+                // TEMPORARY, for reviewing the dots: every definition gets one.
+                .filter((d) => PREVIEW_ALL_DOTS || !d.approvedAt)
                 .map((d) => ({
                   id: d.id,
                   name: d.name,
@@ -312,34 +317,6 @@ export function RulesStep({
                 }))}
               anchorOf={anchorOf}
             />
-            {progress ? (
-              <div data-dots-start>
-                <Outcome>
-                  <StatusChip
-                    tone={
-                      progress.approved === progress.total
-                        ? 'ready'
-                        : 'decision'
-                    }
-                  >
-                    {progress.approved} of {progress.total} accepted
-                  </StatusChip>
-                  <span className="text-dense text-muted">
-                    {plural(
-                      set.definitions.filter((d) => d.result === 'number')
-                        .length,
-                      'calculation',
-                    )}
-                    ,{' '}
-                    {plural(
-                      set.definitions.filter((d) => d.result === 'check')
-                        .length,
-                      'check',
-                    )}
-                  </span>
-                </Outcome>
-              </div>
-            ) : null}
             <ol className="grid gap-3" aria-label="Calculations and checks">
               {set.definitions.map((item) => (
                 <DefinitionCard
@@ -372,6 +349,36 @@ export function RulesStep({
   the rules found again, then each written, by the chosen model. Replacing a
   kept one asks first, as its acceptances go with it.
 */
+// Which model to ask; a busy or spent one hands over to the next older one
+// of its family on the server.
+export function ModelSelect({
+  model,
+  busy,
+  onChange,
+}: {
+  model: DraftingModel;
+  busy: boolean;
+  onChange: (model: DraftingModel) => void;
+}) {
+  return (
+    <label className="grid gap-1">
+      <span className="text-meta text-muted">Model</span>
+      <select
+        className="field text-dense min-h-9 px-2"
+        value={model}
+        disabled={busy}
+        onChange={(e) => onChange(e.target.value as DraftingModel)}
+      >
+        {DRAFTING_MODELS.map((id) => (
+          <option key={id} value={id}>
+            {id}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 function DraftControl({
   kept,
   accepted,
@@ -395,21 +402,7 @@ function DraftControl({
   return (
     <div className="grid gap-2">
       <div className="flex flex-wrap items-end gap-3">
-        <label className="grid gap-1">
-          <span className="text-meta text-muted">Model</span>
-          <select
-            className="field text-dense min-h-9 px-2"
-            value={model}
-            disabled={busy}
-            onChange={(e) => setModel(e.target.value as DraftingModel)}
-          >
-            {DRAFTING_MODELS.map((id) => (
-              <option key={id} value={id}>
-                {id}
-              </option>
-            ))}
-          </select>
-        </label>
+        <ModelSelect model={model} busy={busy} onChange={setModel} />
         {confirming ? (
           <>
             <Button
@@ -662,8 +655,167 @@ function Formula({
   );
 }
 
+// TEMPORARY: shows a dot for accepted definitions too, while the dots are
+// reviewed. Remove with its use in RulesStep.
+const PREVIEW_ALL_DOTS = true;
+
 // Where a card is, for a link from a card that reads it.
 const anchorOf = (id: string) => `definition-${id}`;
+
+// What a definition is and what failing it does, as pills.
+function DefinitionPills({ item }: { item: Definition }) {
+  const kind = kindOf(item);
+  return (
+    <>
+      <Tooltip label={kind.label} description={kind.about}>
+        <span
+          tabIndex={0}
+          data-severity={2}
+          className="bg-severity-pill text-severity-ink text-meta focus-visible:bg-severity-pill-hover hover:bg-severity-pill-hover inline-flex cursor-default items-center rounded-full px-2 py-0.5 font-medium whitespace-nowrap"
+        >
+          {kind.label}
+        </span>
+      </Tooltip>
+      {item.result === 'check' && item.consequence ? (
+        <span
+          data-severity={
+            CONSEQUENCE[item.consequence].tone === 'blocked' ? 0 : 1
+          }
+          className="ring-severity-pill-hover text-severity-ink text-meta inline-flex items-center rounded-full px-2 py-0.5 whitespace-nowrap ring-1 ring-inset"
+        >
+          {CONSEQUENCE[item.consequence].label}
+          <span className="sr-only">, as the model reads it</span>
+        </span>
+      ) : null}
+    </>
+  );
+}
+
+// The definition itself, read two ways: in words as the model reads it, and
+// exactly, as the app runs it.
+function DefinitionReading({
+  item,
+  quoted,
+  names,
+  reads,
+  headingId,
+}: {
+  item: Definition;
+  quoted: boolean;
+  names: Record<string, string>;
+  reads: Definition[];
+  headingId: string;
+}) {
+  const title = item.name;
+  return (
+    <section aria-labelledby={`${headingId}-rule`} className="grid gap-1.5">
+      <h5 id={`${headingId}-rule`} className="readout text-muted">
+        Definition
+      </h5>
+      <div className="bg-surface-primary rounded-shell grid gap-3 py-3 pr-3 pl-4">
+        <FromModel label="The model's reading">
+          <p className="text-body italic">
+            {quoted ? <>&ldquo;{item.text}&rdquo;</> : item.text}
+          </p>
+        </FromModel>
+        {item.formula ? (
+          <FromModel label="The model's formula">
+            <Formula
+              item={item}
+              formula={item.formula}
+              names={names}
+              reads={reads}
+            />
+          </FromModel>
+        ) : null}
+        {item.constants.length || item.groups.length ? (
+          <FromModel label="The model's numbers and groups">
+            <ul
+              className="text-dense grid gap-2"
+              aria-label={`Numbers and groups ${title} reads`}
+            >
+              {item.constants.map((c) => (
+                <li key={c.id}>
+                  <Assignment name={c.id} face={DEFINED_NAME}>
+                    {c.value}
+                  </Assignment>
+                </li>
+              ))}
+              {item.groups.map((g) => (
+                <li key={g.id} className="grid gap-1">
+                  <Assignment name={g.id} face={DEFINED_NAME}>
+                    {g.keys.join(', ')}
+                  </Assignment>
+                  {g.keys.some((key) => names[key]) ? (
+                    <span className="text-meta text-muted">
+                      {g.keys.map((key) => names[key] ?? key).join(' · ')}
+                    </span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </FromModel>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+/*
+  An accepted definition as the rulebook keeps it, read-only: what it is, what
+  failing it does, and its reading and formula, with when it was accepted.
+  Its examples and decisions stay in the run that accepted it.
+*/
+export function RulebookCard({
+  item,
+  quoted,
+  names,
+  reads,
+}: {
+  item: Definition;
+  quoted: boolean;
+  names: Record<string, string>;
+  reads: Definition[];
+}) {
+  const headingId = useId();
+  return (
+    <li
+      id={anchorOf(item.id)}
+      className={cx(ASKS, 'grid scroll-mt-4')}
+      aria-labelledby={headingId}
+    >
+      <div className="floating-rule-below grid gap-2.5 p-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <DefinitionPills item={item} />
+          {item.approvedAt ? (
+            <span className="text-meta text-muted ml-auto">
+              Accepted {ACCEPTED_AT.format(new Date(item.approvedAt))}
+            </span>
+          ) : null}
+        </div>
+        <h4 id={headingId} className="text-dense font-semibold">
+          {item.name}
+        </h4>
+      </div>
+      <div className="grid gap-3 p-4">
+        <DefinitionReading
+          item={item}
+          quoted={quoted}
+          names={names}
+          reads={reads}
+          headingId={headingId}
+        />
+      </div>
+    </li>
+  );
+}
+
+const ACCEPTED_AT = new Intl.DateTimeFormat('en-GB', {
+  day: 'numeric',
+  month: 'short',
+  hour: '2-digit',
+  minute: '2-digit',
+});
 
 function DefinitionCard({
   item,
@@ -713,26 +865,7 @@ function DefinitionCard({
     >
       <div className="floating-rule-below grid gap-2.5 p-4">
         <div className="flex flex-wrap items-center gap-2">
-          <Tooltip label={kind.label} description={kind.about}>
-            <span
-              tabIndex={0}
-              data-severity={2}
-              className="bg-severity-pill text-severity-ink text-meta focus-visible:bg-severity-pill-hover hover:bg-severity-pill-hover inline-flex cursor-default items-center rounded-full px-2 py-0.5 font-medium whitespace-nowrap"
-            >
-              {kind.label}
-            </span>
-          </Tooltip>
-          {item.result === 'check' && item.consequence ? (
-            <span
-              data-severity={
-                CONSEQUENCE[item.consequence].tone === 'blocked' ? 0 : 1
-              }
-              className="ring-severity-pill-hover text-severity-ink text-meta inline-flex items-center rounded-full px-2 py-0.5 whitespace-nowrap ring-1 ring-inset"
-            >
-              {CONSEQUENCE[item.consequence].label}
-              <span className="sr-only">, as the model reads it</span>
-            </span>
-          ) : null}
+          <DefinitionPills item={item} />
           <span
             className="rules-status-out ml-auto"
             data-accepted={item.approvedAt ? '' : undefined}
@@ -747,66 +880,13 @@ function DefinitionCard({
       </div>
 
       <div className="grid gap-3 p-4">
-        {/* The rule itself, read two ways: in words as the model reads it,
-            and exactly, as the app runs it. Both are the model's, so both
-            carry its mark. */}
-        <section aria-labelledby={`${headingId}-rule`} className="grid gap-1.5">
-          <h5 id={`${headingId}-rule`} className="readout text-muted">
-            Definition
-          </h5>
-          <div className="bg-surface-primary rounded-shell grid gap-3 py-3 pr-3 pl-4">
-            <FromModel label="The model's reading">
-              <p className="text-body">
-                {quoted ? <>&ldquo;{item.text}&rdquo;</> : item.text}
-              </p>
-            </FromModel>
-            {item.formula ? (
-              <FromModel label="The model's formula">
-                <Formula
-                  item={item}
-                  formula={item.formula}
-                  names={names}
-                  reads={reads}
-                />
-              </FromModel>
-            ) : null}
-            {item.constants.length || item.groups.length ? (
-              <FromModel label="Its numbers and groups">
-                <ul
-                  className="text-dense grid gap-1"
-                  aria-label={`Numbers and groups ${title} reads`}
-                >
-                  {item.constants.map((c) => (
-                    <li key={c.id}>
-                      {c.id.replace(/_/g, ' ')}{' '}
-                      <span className="font-medium">{c.value}</span>
-                      <span className="text-muted">
-                        {' '}
-                        from &ldquo;{c.quote}&rdquo;
-                      </span>
-                    </li>
-                  ))}
-                  {item.groups.map((g) => (
-                    <li key={g.id}>
-                      {g.id.replace(/_/g, ' ')}{' '}
-                      <span className="font-medium">
-                        {g.keys
-                          .map((key) =>
-                            names[key] ? `${key} [${names[key]}]` : key,
-                          )
-                          .join(', ')}
-                      </span>
-                      <span className="text-muted">
-                        {' '}
-                        from &ldquo;{g.quote}&rdquo;
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </FromModel>
-            ) : null}
-          </div>
-        </section>
+        <DefinitionReading
+          item={item}
+          quoted={quoted}
+          names={names}
+          reads={reads}
+          headingId={headingId}
+        />
 
         {item.examples.length ? (
           <section

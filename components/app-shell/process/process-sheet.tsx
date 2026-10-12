@@ -24,6 +24,7 @@ import {
   type PlayableRun,
 } from '@/components/app-shell/runs/run-view';
 import { StartRunButton } from '@/components/app-shell/runs/start-run-button';
+import { SECTION } from './panel-parts';
 import { ScheduleControl } from './schedule-control';
 import { SectionRow } from '@/components/app-shell/runs/section-row';
 import { useSwap } from '@/components/ui/swap';
@@ -78,10 +79,16 @@ export function ProcessSheet({
   playable,
   policy,
   liveThread,
+  rulesPanel,
+  inputsPanel,
 }: {
   process: ProcessSummary;
   inputs?: SystemLink[];
   inputDetails?: Record<string, InputDetail>;
+  // A process's own rulebook, as a Rules tab; and its own Inputs tab, in
+  // place of the evidence files' list.
+  rulesPanel?: ReactNode;
+  inputsPanel?: ReactNode;
   // The current run's thread, built on the server.
   run: ReactNode;
   policy?: ProcessPolicy;
@@ -92,7 +99,9 @@ export function ProcessSheet({
   // What a started run is drawn from, where this process can play one.
   playable?: PlayableRun;
 }) {
-  const [tab, setTab] = useProcessTab(process.id);
+  const [stored, setTab] = useProcessTab(process.id);
+  // A Rules tab kept from a process that has one means nothing on another.
+  const tab = stored === 'rules' && rulesPanel === undefined ? 'runs' : stored;
   // The root opens the process last open (app/(shell)/page.tsx).
   useEffect(() => {
     writePreferenceCookie(LAST_PROCESS_KEY, process.id);
@@ -162,6 +171,7 @@ export function ProcessSheet({
           process={process}
           version={policy?.version ?? version}
           instructionsLabel={policy?.label}
+          hasRules={rulesPanel !== undefined}
           inputs={kept}
           outputs={process.outputs}
           tab={tab}
@@ -218,8 +228,14 @@ export function ProcessSheet({
                   </ProcessSheetActions>
                 </div>
               </div>
+            ) : shown === 'rules' ? (
+              <SinglePanel {...SECTION.rules}>{rulesPanel}</SinglePanel>
             ) : shown === 'instructions' && policy ? (
               <PolicyPanel policy={policy} />
+            ) : shown === 'inputs' && inputsPanel ? (
+              <SinglePanel {...SECTION.inputs} count={kept.length}>
+                {inputsPanel}
+              </SinglePanel>
             ) : (
               <ProcessPanels
                 // Keyed by request: the layer around it is keyed by tab, so the
@@ -249,18 +265,45 @@ export function ProcessSheet({
 // section of the sheet has.
 function PolicyPanel({ policy }: { policy: ProcessPolicy }) {
   return (
+    <SinglePanel
+      id="policy-heading"
+      title={policy.label}
+      chip={
+        <span className="bg-menu-chip value text-micro text-muted-strong rounded-control px-1.5 py-0.5">
+          {policy.version}
+        </span>
+      }
+    >
+      {policy.content}
+    </SinglePanel>
+  );
+}
+
+// A panel a process brings of its own, in one column.
+function SinglePanel({
+  id,
+  title,
+  count,
+  chip,
+  children,
+}: {
+  id: string;
+  title: string;
+  count?: number;
+  chip?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
     <div className="process-panels grid h-full min-h-0 grid-cols-[minmax(0,1fr)]">
       <div className="process-panel-list sheet-bleed sheet-bleed-head sheet-bleed-end shell:min-h-0 shell:overflow-y-auto shell:overscroll-contain min-w-0">
-        <SectionRow id="policy-heading" title={policy.label}>
-          <span className="bg-menu-chip value text-micro text-muted-strong rounded-control px-1.5 py-0.5">
-            {policy.version}
-          </span>
+        <SectionRow id={id} title={title} count={count}>
+          {chip}
         </SectionRow>
         <section
-          aria-labelledby="policy-heading"
+          aria-labelledby={id}
           className="mx-auto w-[min(100%,760px)] px-6 pt-6 pb-8 max-sm:px-4"
         >
-          {policy.content}
+          {children}
         </section>
       </div>
     </div>

@@ -25,20 +25,24 @@
     pointer-events: none;
   }
 
-  /* The list leaves a gutter for the waiting dots (pending-dots.tsx); the
-     step body clips at its edge, so the gutter cannot sit outside it. */
+  /* What the waiting dots (pending-dots.tsx) are placed against. */
   .rules-list {
     position: relative;
-    padding-right: 1.375rem;
   }
-  /* A dot stands off the card by the pill's own inset (the header's 1rem). */
+  /* Beside the cards, in the thread column's own padding (thread-page.tsx):
+     a dot stands off a card by the pill's inset, 1rem, less where it is 1rem. */
   .rules-dots {
     position: absolute;
     /* Half a dot above the line it starts on, so a dot at rest centres on it. */
     top: calc(var(--rules-dots-from, 0px) - 0.1875rem);
     bottom: 0;
-    right: 0;
+    left: 100%;
     width: 1.375rem;
+  }
+  @media (width < 40rem) {
+    .rules-dots {
+      width: 0.875rem;
+    }
   }
   /* A track spans the whole list, so its dot stays sticky past its card. */
   .rules-dot-track {
@@ -102,7 +106,7 @@
     display: grid;
     grid-template-columns: var(--rules-mark) minmax(0, 1fr);
     column-gap: 0.5rem;
-    row-gap: 0.25rem;
+    row-gap: 0.5rem;
   }
   .rules-model::before {
     content: '';

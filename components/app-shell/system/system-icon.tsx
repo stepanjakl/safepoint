@@ -18,6 +18,7 @@ import MegaphoneFilled from 'blode-icons-react/icons/megaphone-filled';
 import ReceiptBillFilled from 'blode-icons-react/icons/receipt-bill-filled';
 import ShoppingBag1Filled from 'blode-icons-react/icons/shopping-bag-1-filled';
 import Store1Filled from 'blode-icons-react/icons/store-1-filled';
+import TableFilled from 'blode-icons-react/icons/table-filled';
 import TagFilled from 'blode-icons-react/icons/tag-filled';
 import TruckFilled from 'blode-icons-react/icons/truck-filled';
 import type { IconKey } from '@/lib/process/system-links';
@@ -48,6 +49,8 @@ const ICONS: IconSet = {
   // No ID card; a contact record is the nearest thing that identifies a person.
   identity: ContactsFilled,
   billing: CreditCard1Filled,
+  // A spreadsheet's tab, read as a table.
+  sheet: TableFilled,
 };
 
 export function SystemIcon({ icon }: { icon: IconKey }) {

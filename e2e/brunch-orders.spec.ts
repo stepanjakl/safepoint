@@ -177,6 +177,8 @@ test('a reduced-motion read still hands off to the rules', async ({ page }) => {
   await read.last().click();
   await expect(read.first()).toHaveAttribute('aria-expanded', 'false');
   await expect(
-    page.getByRole('button', { name: 'Rules', exact: true }),
+    page
+      .locator('ol.thread')
+      .getByRole('button', { name: 'Rules', exact: true }),
   ).toBeVisible();
 });

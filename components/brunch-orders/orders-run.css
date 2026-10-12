@@ -76,36 +76,11 @@
     }
   }
 
-  /* Paced by .thread-fold, as a stage is: room first, then the card fades in;
-     shutting fades it first, then gives the room back. */
+  /* The card opens in a Fold (components/ui/fold.tsx). */
   .brunch-read {
     display: grid;
   }
-  .brunch-read-fold {
-    display: grid;
-    grid-template-rows: 0fr;
-  }
-  .brunch-read[data-open] .brunch-read-fold {
-    grid-template-rows: 1fr;
-    transition-delay: 0s;
-  }
-  .brunch-read-clip {
-    min-height: 0;
-    overflow: clip;
-    overflow-clip-margin: 0.25rem;
-  }
-  .brunch-read-card {
-    margin-top: 0.5rem;
-    opacity: 0;
-    transition: opacity var(--thread-fade) ease-out;
-  }
-  .brunch-read[data-open] .brunch-read-card {
-    opacity: 1;
-    transition-delay: var(--thread-fold-duration);
-  }
   @media (prefers-reduced-motion: reduce) {
-    .brunch-read-fold,
-    .brunch-read-card,
     .brunch-read-chevron {
       transition: none;
     }

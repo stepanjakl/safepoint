@@ -5,6 +5,7 @@ import type {
   ProcessSummary,
 } from '@/lib/process/model';
 import type { DefinitionProcess } from '@/lib/definitions/types';
+import type { SystemLink } from '@/lib/process/system-links';
 import type { ReleasePlan } from '@/lib/review/plan-contract';
 
 /*
@@ -44,6 +45,16 @@ export const DATA_TABS = [
   ...DATA.records.tabs,
   ...DATA.lookups.map((lookup) => lookup.tab),
 ];
+
+// The same tabs as the process's inputs, for the header's count; what each
+// gave a run is read from that run (components/brunch-orders/sheet-inputs.tsx).
+export const SHEET_INPUTS: SystemLink[] = DATA_TABS.map((tab) => ({
+  id: tab,
+  label: tab,
+  icon: 'sheet',
+  direction: 'input',
+  file: `Google Sheet · ${tab}`,
+}));
 
 // What its definitions are worked out for, and what a proposal sets.
 export const SUBJECT: DefinitionSubject = {
@@ -104,7 +115,12 @@ export const ORDER_STEPS: ProcessStep[] = [
     label: 'From the instructions',
     status: 'pending',
   },
-  { id: 'calculate', name: 'Calculate', label: 'Phase 3', status: 'pending' },
+  {
+    id: 'calculate',
+    name: 'Calculate',
+    label: 'From the rules',
+    status: 'pending',
+  },
   { id: 'propose', name: 'Propose', label: 'Phase 4', status: 'pending' },
   { id: 'check', name: 'Check', label: 'Phase 5', status: 'pending' },
   { id: 'review', name: 'Review', label: 'Phase 6', status: 'pending' },

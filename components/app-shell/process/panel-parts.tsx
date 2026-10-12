@@ -16,6 +16,7 @@ export const SECTION: Record<
   { id: string; title: string }
 > = {
   instructions: { id: 'instructions-heading', title: 'Instructions' },
+  rules: { id: 'rules-heading', title: 'Rules' },
   inputs: { id: 'inputs-heading', title: 'Inputs' },
   outputs: { id: 'outputs-heading', title: 'Outputs' },
   settings: { id: 'settings-heading', title: 'Settings' },

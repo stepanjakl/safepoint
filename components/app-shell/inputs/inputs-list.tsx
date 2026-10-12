@@ -29,7 +29,7 @@ const FILTER_FROM = 12;
 // under AA -- see the note on --sp-surface-selected.
 // Named group, so the two quiet parts of the row can answer a state held on the
 // button around them.
-const ROW_BUTTON =
+export const ROW_BUTTON =
   'group/input-row control-wash hover:bg-surface-hover focus-visible:bg-surface-hover aria-expanded:bg-surface-selected aria-expanded:text-primary rounded-control -mx-sheet-inset px-sheet-inset flex min-h-11 w-[calc(100%+2*var(--spacing-sheet-inset))] cursor-pointer items-center gap-3 py-2 text-left';
 
 export function InputsList({

@@ -1,7 +1,8 @@
 # Brunch orders: plan
 
-Status: active implementation hand-off, agreed 8 October 2026. Phases 1, 2 and
-the Phase 2b definitions-engine work are built; later phases remain planned.
+Status: active implementation hand-off, agreed 8 October 2026. Phases 1, 2,
+the Phase 2b definitions-engine work and Phase 3 (Calculate) are built; later
+phases remain planned.
 
 Audience: the product owner, and the engineer or agent building each phase.
 What building it taught, and what is still open, is logged in
@@ -321,8 +322,40 @@ After the review of 8 October the engine moved out of Brunch orders into
 | `find.ts`, `write.ts` | Finding the definitions, and the self-checking conversation that writes one                                                      |
 | `decide.ts`           | Confirming the intent; accepting (rechecked in full against its read) or denying                                                 |
 | `draft.ts`            | A whole draft as a server-side job with its progress                                                                             |
+| `calculate.ts`        | Every accepted calculation for every record; the model's independent cross-check, kept by read and rulebook                      |
 
 Brunch orders keeps only what is its own: `process.ts` (the instructions,
 steps, `SUBJECT` with its `DataShape`) and `reads.ts` (reading its sheet).
 A read that does not fit the declaration is shown in the Read step and is
 not drafted on.
+
+## Phase 3, as built
+
+Agreed with the owner on 9 October, after every definition was accepted.
+
+- **The engine is the record.** Calculate runs every accepted calculation
+  for every record of the run's read (`calculate` in
+  `lib/definitions/calculate.ts`); later steps use these values. Each value
+  carries its working, built as the examples' working is. Calculate refuses
+  while a calculation is unaccepted.
+- **The model cross-checks it.** On request, the model works the same values
+  out from the instructions, the raw data and each value's plain words. It
+  never sees a formula, so a formula that reads the instructions one way and
+  the model another shows as a disagreement. That is the failure determinism
+  cannot catch (see the direction review). Its answer must cover every
+  record and value exactly once. Values agree when equal to two decimal
+  places. Nothing is settled automatically: the step stays in attention until
+  every value agrees. The answer is kept under `.rulebook-reads/` by read and
+  rulebook, because it costs a call.
+- **The rulebook a run used.** A fingerprint of the accepted definitions
+  names the rules a calculation ran on. The run keeps it, and the step says
+  when the rules have changed since. Rules that are replaced are not kept, so
+  this flags the change rather than restoring the old values.
+- **Only what is defined is shown.** Stock available before the start is
+  still written inline in two checks. It appears in Calculate once the
+  instructions define it.
+- **Two process tabs.** Rules shows the accepted rulebook for the current
+  instructions, read-only; drafting and decisions stay in a run's Rules step.
+  Inputs lists the sheet's tabs as the selected run read them and opens each
+  in the data drawer. Both are panels the page supplies (`rulesPanel`,
+  `inputsPanel` on `ProcessView`); other processes are unchanged.

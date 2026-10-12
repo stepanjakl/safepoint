@@ -56,8 +56,7 @@ test('the calculations and checks of the instructions, with examples to confirm'
   const calculations = definitions;
   const checks = definitions;
   await expect(definitions.locator('> li')).toHaveCount(5);
-  await expect(page.getByText(/^0 of 5 accepted$/)).toBeVisible();
-  await expect(page.getByText('1 calculation, 4 checks')).toBeVisible();
+  await expect(page.getByText(/^0 of 5 accepted$/).first()).toBeVisible();
 
   // A calculation says what it gives, with a number per example product.
   const expected = calculations.getByRole('listitem', {
@@ -239,5 +238,5 @@ test('accepted intent and rule keep the pressed button in place', async ({
   await expect(rule.getByRole('button', { name: 'Write again' })).toHaveCount(
     0,
   );
-  await expect(page.getByText(/^1 of 5 accepted$/)).toBeVisible();
+  await expect(page.getByText(/^1 of 5 accepted$/).first()).toBeVisible();
 });
