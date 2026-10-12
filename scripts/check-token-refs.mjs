@@ -26,7 +26,8 @@
   what paints is never more than two lookups from the role an element names.
 
   And every component class is styled in one stylesheet (pass five), every
-  role has a reader (six), and no white or black is faded or mixed (seven).
+  role has a reader (six), no white or black is faded or mixed (seven), and
+  every duration, curve and font weight is named rather than written (eight).
 
   And every stylesheet must be imported by app/styles/index.css. A component's
   .css is only ever reached through that list, so one left out of it is
@@ -340,11 +341,49 @@ if (faded.length > 0) {
   process.exit(1);
 }
 
+/*
+  Pass eight: motion and weight come from tokens. A duration, a curve or a
+  font weight written into a rule restates a number that then drifts from its
+  twin elsewhere (docs/interface/STYLING-SYSTEM.md -> Motion). The number
+  lives once, in a custom property's declaration, named for what moves.
+*/
+const RAW = [
+  [/(?<![\w.-])(\d*\.?\d+)m?s\b/g, 'duration'],
+  [/cubic-bezier\(/g, 'curve'],
+  [/font-weight:\s*\d/g, 'font weight'],
+];
+// Declarations keep their numbers; the mask keeps line numbers true.
+const maskDeclarations = (text) =>
+  text.replace(/--[\w-]+\s*:[^;{}]*;/g, (match) =>
+    match.replace(/[^\n]/g, ' '),
+  );
+const raw = [];
+for (const path of cssFiles) {
+  if (path.startsWith('app/styles/generated/')) continue;
+  maskDeclarations(stripComments(read(path)))
+    .split('\n')
+    .forEach((text, index) => {
+      for (const [pattern, kind] of RAW)
+        for (const match of text.matchAll(pattern)) {
+          if (kind === 'duration' && Number(match[1]) === 0) continue;
+          raw.push(`${path}:${index + 1}  ${kind}: ${text.trim()}`);
+        }
+    });
+}
+if (raw.length > 0) {
+  for (const entry of raw) process.stderr.write(`${entry}\n`);
+  process.stderr.write(
+    `\n${raw.length} raw duration, curve or weight. Name it as a custom ` +
+      `property on what owns it, or use --ease-* and --font-weight-*.\n`,
+  );
+  process.exit(1);
+}
+
 const provided = fromPackages.size;
 process.stdout.write(
   `${cssFiles.length} stylesheets, ${defined.size} properties in scope` +
     (provided > 0 ? `, ${provided} provided by dependencies` : '') +
     `, all imported, no unresolved references, every role within ${MAX_DEPTH} reads of a step, ` +
     `every component class styled in one file, every role read, ` +
-    `no faded white or black\n`,
+    `no faded white or black, every duration, curve and weight named\n`,
 );

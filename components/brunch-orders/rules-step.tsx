@@ -20,6 +20,7 @@ import {
   type Tone,
 } from '@/components/sheet-process/trial-parts';
 import { Button } from '@/components/ui/button';
+import { Pill, SEVERITY } from '@/components/ui/pill';
 import { Tooltip } from '@/components/ui/tooltip';
 import { MorphingText } from '@/components/ui/morphing-text';
 import { cx } from '@/lib/cx';
@@ -77,12 +78,6 @@ function statusOf(item: Definition): { tone: Tone; label: string } {
 }
 
 // A status's tone as its severity rank, for the dots that follow it.
-const SEVERITY: Record<Tone, number> = {
-  blocked: 0,
-  decision: 1,
-  neutral: 2,
-  ready: 3,
-};
 
 // What failing a check does to a proposal, as the model read it.
 const CONSEQUENCE: Record<'block' | 'decide', { tone: Tone; label: string }> = {
@@ -307,8 +302,7 @@ export function RulesStep({
           <div className="rules-list grid gap-4">
             <PendingDots
               pending={set.definitions
-                // TEMPORARY, for reviewing the dots: every definition gets one.
-                .filter((d) => PREVIEW_ALL_DOTS || !d.approvedAt)
+                .filter((d) => !d.approvedAt)
                 .map((d) => ({
                   id: d.id,
                   name: d.name,
@@ -655,10 +649,6 @@ function Formula({
   );
 }
 
-// TEMPORARY: shows a dot for accepted definitions too, while the dots are
-// reviewed. Remove with its use in RulesStep.
-const PREVIEW_ALL_DOTS = true;
-
 // Where a card is, for a link from a card that reads it.
 const anchorOf = (id: string) => `definition-${id}`;
 
@@ -668,24 +658,15 @@ function DefinitionPills({ item }: { item: Definition }) {
   return (
     <>
       <Tooltip label={kind.label} description={kind.about}>
-        <span
-          tabIndex={0}
-          data-severity={2}
-          className="bg-severity-pill text-severity-ink text-meta focus-visible:bg-severity-pill-hover hover:bg-severity-pill-hover inline-flex cursor-default items-center rounded-full px-2 py-0.5 font-medium whitespace-nowrap"
-        >
+        <Pill tone="neutral" interactive tabIndex={0}>
           {kind.label}
-        </span>
+        </Pill>
       </Tooltip>
       {item.result === 'check' && item.consequence ? (
-        <span
-          data-severity={
-            CONSEQUENCE[item.consequence].tone === 'blocked' ? 0 : 1
-          }
-          className="ring-severity-pill-hover text-severity-ink text-meta inline-flex items-center rounded-full px-2 py-0.5 whitespace-nowrap ring-1 ring-inset"
-        >
+        <Pill tone={CONSEQUENCE[item.consequence].tone} variant="ringed">
           {CONSEQUENCE[item.consequence].label}
           <span className="sr-only">, as the model reads it</span>
-        </span>
+        </Pill>
       ) : null}
     </>
   );

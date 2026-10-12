@@ -14,7 +14,8 @@ One definition has a name, the exact instructions text it interprets, a `check` 
 2. `find.ts` identifies definitions from one instructions version. `draft.ts` starts a server-side draft and records progress; `write.ts` writes each definition in order.
 3. `formulas.ts` type-checks and evaluates CEL. `checks.ts` tests the definition against its read, quoted constants and groups, dependencies and worked examples. The model's check tool uses these checks.
 4. The person confirms the intent and accepts or denies each definition. `decide.ts` reruns the full review against the read before acceptance. A denial can carry a note for the next write.
-5. `store.ts` reads saved sets through the schema and writes a temporary file before renaming it over the old set. The path is `fixtures/<process>/rules/<instructions-hash>.json`.
+5. `store.ts` reads saved sets through the schema and writes a temporary file before renaming it over the old set. Each instructions version has a folder, `fixtures/<process>/rulebooks/<version>-<instructions-hash>/`, found by the hash: `current.json` is the rulebook under review, and `<rulebook id>.json` is an accepted rulebook a run calculated on, written once and never again. The id is a fingerprint of what was accepted (`fingerprintOf`).
+6. `calculate.ts` works every accepted calculation out for every record, and has the model cross-check them; cross-checks are kept in `data/<process>/cross-checks/`.
 
 `app/api/dev/brunch-orders/rules/route.ts` exposes get, draft, intent, write and decide actions for this development flow. It is not a public process-definition API. The [development log](../processes/brunch-orders/DEVELOPMENT-LOG.md) records why its checks and approval boundary changed.
 

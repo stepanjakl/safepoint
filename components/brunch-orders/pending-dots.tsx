@@ -20,9 +20,6 @@ export type Pending = {
   severity: number;
 };
 
-// How long a dot beats when it comes to rest (rules-step.css).
-const BEAT_MS = 700;
-
 function scrollerOf(element: HTMLElement | null): HTMLElement | null {
   for (let node = element?.parentElement; node; node = node.parentElement) {
     const { overflowY } = getComputedStyle(node);
@@ -90,18 +87,22 @@ export function PendingDots({
       let seen = false;
       const observer = new IntersectionObserver(
         ([entry]) => {
-          if (seen && entry?.isIntersecting) {
-            dot.dataset.arrived = '';
-            setTimeout(() => delete dot.dataset.arrived, BEAT_MS);
-          }
+          if (seen && entry?.isIntersecting) dot.dataset.arrived = '';
           seen = true;
         },
         { root: scroller, rootMargin: `-${top} 0px -${bottom} 0px` },
       );
       observer.observe(dot.parentElement!.querySelector('.rules-dot-mark')!);
-      return observer;
+      // The beat ends itself (rules-step.css); it is cleared once it has, so
+      // the next arrival plays it again.
+      const ended = () => delete dot.dataset.arrived;
+      dot.addEventListener('animationend', ended);
+      return () => {
+        observer.disconnect();
+        dot.removeEventListener('animationend', ended);
+      };
     });
-    return () => observers.forEach((observer) => observer.disconnect());
+    return () => observers.forEach((stop) => stop());
   }, [key]);
 
   if (!pending.length) return null;

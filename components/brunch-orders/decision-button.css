@@ -24,6 +24,12 @@
   );
 }
 
+/* How long a decision takes to settle: its icon goes, and the pill it decided
+   fades with it (rules-step.css reads this). */
+:root {
+  --decision-morph: 260ms;
+}
+
 @layer utilities {
   .decision-morph-control[data-phase='done'] {
     --control-face-top: light-dark(var(--severity-4), var(--severity-5));
@@ -43,8 +49,8 @@
 
   .decision-morph-control svg {
     transition:
-      width var(--rules-decision-motion, 260ms) ease,
-      opacity var(--rules-decision-motion, 260ms) ease;
+      width var(--decision-morph) ease,
+      opacity var(--decision-morph) ease;
   }
 
   .decision-morph-control[data-phase='done'] svg {

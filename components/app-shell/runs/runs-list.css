@@ -304,7 +304,7 @@
     /* Read first, so heavier than anything else in the row -- and at one
        weight in every state: a weight that changed under the pointer would
        resize the word and re-truncate the day beside it. */
-    font-weight: 550;
+    font-weight: var(--font-weight-label);
     /* The one thing in the head that could wrap. It does not shrink either --
        the day beside it truncates first -- so a long state name cannot put a
        second line into a row and make it taller than its neighbours. */

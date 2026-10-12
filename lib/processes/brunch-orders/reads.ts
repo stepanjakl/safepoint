@@ -6,14 +6,16 @@ import type { DataTab, KeptRead } from '@/lib/definitions/records';
 import { readWholeSheet, type SheetRead } from '@/lib/sheets/composio';
 
 import { BRUNCH_ORDERS_ID, DATA_TABS } from './process';
+import { runDataDir } from '@/lib/storage/run-data';
 
 /*
   Server-only. A run reads the sheet once, and every later step uses that
-  read: it is kept here under an id (gitignored), and the run in the browser
+  read: it is kept here under an id in data/ (gitignored), and the run in the browser
   holds only the id. Only the data tabs are kept.
 */
 
-const READS = path.join(process.cwd(), '.rulebook-reads', BRUNCH_ORDERS_ID);
+// Read when used, so a test can work in a scratch directory.
+const READS = () => runDataDir(BRUNCH_ORDERS_ID, 'reads');
 // The last live read saved in the repository, so tests and the default view
 // need no network. Saving one is an explicit action.
 const CAPTURED = path.join(
@@ -83,17 +85,21 @@ export async function readAndKeep(
     },
     tabs,
   };
-  await mkdir(READS, { recursive: true });
-  await writeFile(path.join(READS, `${kept.id}.json`), JSON.stringify(kept));
+  await mkdir(READS(), { recursive: true });
+  await writeFile(path.join(READS(), `${kept.id}.json`), JSON.stringify(kept));
   return kept;
 }
+
+// What a run is told when the read it was taken with is gone from data/.
+export const READ_GONE =
+  'This run’s data is no longer kept on the server. Start a new run to read the sheet again.';
 
 export async function keptRead(id: string): Promise<KeptRead | null> {
   // A bare id only: nothing outside the reads folder can be named.
   if (!/^[\w-]+$/.test(id)) return null;
   try {
     return JSON.parse(
-      await readFile(path.join(READS, `${id}.json`), 'utf8'),
+      await readFile(path.join(READS(), `${id}.json`), 'utf8'),
     ) as KeptRead;
   } catch {
     return null;

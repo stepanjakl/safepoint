@@ -117,7 +117,7 @@ seeing them.
 | `models.ts`           | The Gemini models drafting may use, newest first, and the fallback chain.                                                          | A model is retired or added.                     |
 | `quota.ts`            | Interprets a model-service quota response, shared with `lib/definitions/`.                                                         | A request is refused for quota.                  |
 | `checks.ts`           | `checksTab`, `runChecks`: the owner's checks.                                                                                      | Scores look wrong.                               |
-| `store.ts`            | Approved rulebooks (`fixtures/<id>/rulebooks/vN.json`) and draft records (`.rulebook-drafts/`).                                    | Saving or listing.                               |
+| `store.ts`            | Approved rulebooks (`fixtures/<id>/rulebooks/vN.json`) and draft records (`data/<process>/drafts/`).                               | Saving or listing.                               |
 | `run-time.ts`         | Turns the page's "now / weekday / exact" choice into a run instant.                                                                | The Calculate step.                              |
 | `library.fixture.ts`  | A deliberately unrelated rulebook (library loans) used by tests.                                                                   | Writing a test.                                  |
 
@@ -536,7 +536,7 @@ The owner's current decisions are sent to the inventory and rules stages as `own
 | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | The page, "Rules" step                 | Every step: stage, round, attempt, model, time, tokens, tool calls with results, problems, the instructions and input sent, the answer. |
 | "Past drafts" on the page              | Every saved draft with its result and owner-check score; open any in full.                                                              |
-| `.rulebook-drafts/<process>/*.json`    | The same records, uncommitted.                                                                                                          |
+| `data/<process>/drafts/*.json`         | The same records, uncommitted.                                                                                                          |
 | AI SDK DevTools (`pnpm exec devtools`) | Every model call, request and response, one run per step: `55137699-02-rulebook-data_model-attempt-1-gemini-3.5-flash-lite`.            |
 
 ## 8. The checks that keep the model honest (`validate.ts`)
@@ -612,7 +612,7 @@ step by step without a network or a key.
 ## 12. Common tasks
 
 **A draft failed and you want to know why.** Open it under "Past drafts" on the
-page, or read `.rulebook-drafts/…json`. Look at `draft.stopped` or
+page, or read `data/avocado-toast/drafts/…json`. Look at `draft.stopped` or
 `draft.interrupted`, then the last stage's problems and tool calls. For the raw
 requests, open DevTools and find the runs starting with the draft's id.
 
@@ -778,7 +778,7 @@ flowchart LR
 | Formulas cannot do harm          | CEL has no loops, input or output; formulas are type-checked against declared variables and limited to 500 nodes. A formula that errors blocks its item.                                                                    |
 | Keys stay on the server          | API keys are read only in server code, never sent to the model or the browser, and redacted from error messages (`redactKey`, `redact`).                                                                                    |
 | Development tools stay local     | Every dev route checks development mode, a loopback host and the same origin (`rejectUnlessLocalDevelopment`).                                                                                                              |
-| Model records stay local         | Draft records and DevTools traces hold full model inputs and outputs; both are git-ignored (`.rulebook-drafts/`, `.devtools/`).                                                                                             |
+| Model records stay local         | Draft records and DevTools traces hold full model inputs and outputs; both are git-ignored (`data/<process>/drafts/`, `.devtools/`).                                                                                        |
 
 What these do **not** cover, and why a person approves:
 

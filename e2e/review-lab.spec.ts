@@ -15,7 +15,7 @@ import { seedReviewRules } from '../lib/promotion-release/review-rules';
 
 test.beforeEach(async ({ page, colorScheme }) => {
   await page.addInitScript(
-    (theme) => localStorage.setItem('safepoint:theme', theme),
+    (theme) => localStorage.setItem('safepoint.dev.theme', theme),
     colorScheme === 'dark' ? 'dark' : 'light',
   );
 });

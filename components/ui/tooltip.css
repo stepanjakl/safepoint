@@ -107,11 +107,15 @@
   }
   /* A plain ease-out, not the panes' emphasized curve: over this distance
      that curve spends itself in the first frames and the rest reads as tail. */
+  .app-tooltip {
+    --tooltip-in: 110ms;
+    --tooltip-out: 80ms;
+  }
   .app-tooltip[data-entering] {
-    animation: app-tooltip-in 110ms ease-out both;
+    animation: app-tooltip-in var(--tooltip-in) ease-out both;
   }
   .app-tooltip[data-exiting] {
-    animation: app-tooltip-in 80ms ease-in reverse both;
+    animation: app-tooltip-in var(--tooltip-out) ease-in reverse both;
   }
   /* Scale alone, from --trigger-anchor-point: that origin is the anchored
      edge, so the box opens away from its trigger on any placement, which a

@@ -1,11 +1,10 @@
 'use client';
 
-import { ROW_BUTTON } from '@/components/app-shell/inputs/inputs-list';
-import { useRunSelection } from '@/components/app-shell/runs/run-selection';
 import {
-  SystemDisc,
-  SystemMeta,
-} from '@/components/app-shell/system/system-parts';
+  InputRow,
+  ROW_BUTTON,
+} from '@/components/app-shell/inputs/inputs-list';
+import { useRunSelection } from '@/components/app-shell/runs/run-selection';
 import { plural } from '@/components/sheet-process/trial-parts';
 import { SHEET_INPUTS } from '@/lib/processes/brunch-orders/process';
 import type { SystemLink } from '@/lib/process/system-links';
@@ -19,6 +18,9 @@ const READ_AT = new Intl.DateTimeFormat('en-GB', {
   hour: '2-digit',
   minute: '2-digit',
 });
+
+const countOf = (link: SystemLink) =>
+  link.records === undefined ? undefined : plural(link.records, 'row');
 
 /*
   The sheet's tabs this process reads, as the selected run read them: each
@@ -62,7 +64,7 @@ export function SheetInputs() {
                     className={ROW_BUTTON}
                     onClick={() => view(link.id)}
                   >
-                    <InputRow link={link} />
+                    <InputRow link={link} count={countOf(link)} />
                     <span aria-hidden="true" className="text-muted text-dense">
                       ›
                     </span>
@@ -80,7 +82,7 @@ export function SheetInputs() {
                 key={link.id}
                 className="border-rule-faint flex min-h-11 items-center gap-3 border-b py-2 last:border-b-0"
               >
-                <InputRow link={link} />
+                <InputRow link={link} count={countOf(link)} />
               </li>
             ))}
           </ul>
@@ -92,27 +94,5 @@ export function SheetInputs() {
         </>
       )}
     </div>
-  );
-}
-
-function InputRow({ link }: { link: SystemLink }) {
-  return (
-    <>
-      <SystemDisc link={link} />
-      <span className="grid min-w-0 flex-1 gap-0.5">
-        <span className="text-dense text-primary truncate">
-          {link.label}
-          {link.records !== undefined ? (
-            <span className="text-muted"> · {plural(link.records, 'row')}</span>
-          ) : null}
-        </span>
-        <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
-          {link.freshness ? <SystemMeta link={link} /> : null}
-          <span className="value text-micro text-muted truncate">
-            {link.file}
-          </span>
-        </span>
-      </span>
-    </>
   );
 }

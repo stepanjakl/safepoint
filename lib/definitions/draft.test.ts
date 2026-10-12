@@ -1,3 +1,6 @@
+import { mkdirSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
+
 import { describe, expect, it, vi } from 'vitest';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
@@ -7,7 +10,7 @@ import { draftProgress, startDraft } from './draft';
 import { answer, check, standIn } from './models.fixture';
 import { inScratchDirectory } from './scratch.fixture';
 import { TEXT } from './set.fixture';
-import { loadSet } from './store';
+import { hashOf, loadSet } from './store';
 
 // A whole draft runs on the server: found, then each definition written, with
 // its progress there to be asked for, and never on a read that does not fit.
@@ -44,11 +47,11 @@ describe('a draft on the server', () => {
       resolve: () => model,
     });
     expect(started.running).toBe(true);
-    await vi.waitFor(() =>
-      expect(draftProgress(owner, TEXT)?.running).toBe(false),
+    await vi.waitFor(async () =>
+      expect((await draftProgress(owner, TEXT))?.running).toBe(false),
     );
-    expect(draftProgress(owner, TEXT)).toMatchObject({
-      step: 'Drafted 1 definitions.',
+    expect(await draftProgress(owner, TEXT)).toMatchObject({
+      step: 'Drafted 1 definition.',
       error: null,
     });
     const set = await loadSet(owner, TEXT);
@@ -56,6 +59,21 @@ describe('a draft on the server', () => {
       formula: 'record.weekend_1 + record.weekend_2',
       problem: null,
     });
+  });
+
+  it('says so when the server stopped part way through a draft', async () => {
+    const text = `${TEXT} Interrupted.`;
+    const dir = path.join(process.cwd(), 'data', owner.id, 'drafts');
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      path.join(dir, `${hashOf(text)}.json`),
+      JSON.stringify({ step: 'Writing 2 of 5…', error: null, running: true }),
+    );
+    expect(await draftProgress(owner, text)).toMatchObject({
+      running: false,
+      error: expect.stringMatching(/server stopped during this draft/),
+    });
+    expect(await draftProgress(owner, `${TEXT} Never.`)).toBeNull();
   });
 
   it('refuses a read that does not fit what the process reads', () => {

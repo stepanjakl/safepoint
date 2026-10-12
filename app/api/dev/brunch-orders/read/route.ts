@@ -6,6 +6,7 @@ import { SUBJECT } from '@/lib/processes/brunch-orders/process';
 import {
   captureRead,
   keptRead,
+  READ_GONE,
   readAndKeep,
 } from '@/lib/processes/brunch-orders/reads';
 import { missingSheetEnv } from '@/lib/sheets/composio';
@@ -37,10 +38,7 @@ export async function POST(request: Request) {
     const kept = await keptRead(parsed.data.id);
     return kept
       ? Response.json({ kind: 'read', ...kept })
-      : Response.json(
-          { kind: 'error', message: 'That read is no longer kept.' },
-          { status: 404 },
-        );
+      : Response.json({ kind: 'error', message: READ_GONE }, { status: 404 });
   }
 
   if (

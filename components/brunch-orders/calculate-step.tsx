@@ -26,8 +26,8 @@ import { Fold } from '@/components/ui/fold';
 import {
   DATA_TABLE_HEAD,
   DATA_TABLE_NAME,
+  DATA_TABLE_RULE,
   DataTable,
-  DataTableRule,
 } from '@/components/ui/data-table';
 import { Tooltip } from '@/components/ui/tooltip';
 import type {
@@ -39,7 +39,14 @@ import { cx } from '@/lib/cx';
 import { DRAFTING_MODELS, type DraftingModel } from '@/lib/rulebook/models';
 
 type CalculateResponse =
-  | { kind: 'calculation'; calculation: Calculation; check: CrossCheck | null }
+  | {
+      kind: 'calculation';
+      calculation: Calculation;
+      check: CrossCheck | null;
+      // The accepted rulebook now, which a run pinned to an earlier one can
+      // move to.
+      current: string;
+    }
   | { kind: 'error'; message: string };
 
 // How far Calculate has got, for the step's mark: the rulebook it ran on and
@@ -63,7 +70,7 @@ const progressOf = (
 
 // Which cross-checks this browser has seen arrive, so a reload does not
 // replay them.
-const REVEALED_KEY = 'safepoint:calculate-revealed';
+const REVEALED_KEY = 'safepoint.calculate-revealed.v1';
 function seenReveal(key: string): boolean {
   try {
     return (localStorage.getItem(REVEALED_KEY) ?? '').split('\n').includes(key);
@@ -81,74 +88,6 @@ function markRevealed(key: string) {
   } catch {
     // Without storage the marks arrive on every visit; nothing breaks.
   }
-}
-
-// TEMPORARY: extra rows in every state of a cross-check, for reviewing the
-// marks. Remove with withPreview and its uses.
-const PREVIEW_STATES = true;
-const PREVIEW_KEY = 'PREVIEW-';
-const PREVIEW_LOOP_MS = 4500;
-const PREVIEW_PLAIN_MS = 1500;
-const PREVIEW: {
-  name: string;
-  values: (c: number) => [number | null, number];
-}[] = [
-  { name: 'Matches, whole', values: () => [42, 42] },
-  { name: 'Matches, decimal', values: (c) => [12.35 + c, 12.35 + c] },
-  { name: 'Differs, whole', values: (c) => [60 + c, 50 + c] },
-  { name: 'Differs, decimal', values: (c) => [80.3 + c, 79.95 + c] },
-  { name: 'Mixed', values: (c) => (c ? [7, 8] : [7, 7]) },
-  { name: 'Large number', values: () => [12345.67, 12345.67] },
-  { name: 'App gave none', values: () => [null, 3] },
-];
-function withPreview({
-  calculation,
-  check,
-}: {
-  calculation: Calculation;
-  check: CrossCheck | null;
-}) {
-  const rows = PREVIEW.map((preview, index) => ({
-    key: `${PREVIEW_KEY}${index + 1}`,
-    name: preview.name,
-    values: Object.fromEntries(
-      calculation.calculations.map((c, at) => [
-        c.id,
-        {
-          value: preview.values(at)[0],
-          error: preview.values(at)[0] === null ? 'It gave no number.' : null,
-          steps: [],
-        },
-      ]),
-    ),
-  }));
-  return {
-    calculation: { ...calculation, rows: [...calculation.rows, ...rows] },
-    check: check && {
-      ...check,
-      cells: {
-        ...check.cells,
-        ...Object.fromEntries(
-          PREVIEW.map((preview, index) => [
-            `${PREVIEW_KEY}${index + 1}`,
-            Object.fromEntries(
-              calculation.calculations.map((c, at) => {
-                const [engine, model] = preview.values(at);
-                return [
-                  c.id,
-                  {
-                    model,
-                    working: 'Preview only.',
-                    agrees: engine !== null && engine === model,
-                  },
-                ];
-              }),
-            ),
-          ]),
-        ),
-      },
-    },
-  };
 }
 
 /*
@@ -179,27 +118,26 @@ export function CalculateStep({
   useEffect(() => {
     report.current = onProgress;
   });
-  // The rulebook it ran on when the step was opened, before this visit
-  // reports the current one.
-  const [ranOn] = useState(calculatedOn);
+  // The rulebook this run calculates on: the one it first used, kept as it
+  // was, until the person moves it to the current one.
+  const [pin, setPin] = useState(calculatedOn);
   useEffect(() => {
-    void run({ action: 'get', text, readId }).then((response) => {
-      if (response?.kind === 'calculation')
-        report.current(progressOf(response.calculation, response.check));
-    });
-  }, [run, text, readId]);
+    void run({ action: 'get', text, readId, rulebook: pin ?? undefined }).then(
+      (response) => {
+        if (response?.kind === 'calculation')
+          report.current(progressOf(response.calculation, response.check));
+      },
+    );
+  }, [run, text, readId, pin]);
   const [model, setModel] = useState<DraftingModel>(DRAFTING_MODELS[0]!);
   const body = calculate.state.kind === 'done' ? calculate.state.body : null;
-  const [last, setLast] = useState<{
-    calculation: Calculation;
-    check: CrossCheck | null;
-  } | null>(null);
+  const [last, setLast] = useState<Extract<
+    CalculateResponse,
+    { kind: 'calculation' }
+  > | null>(null);
   const current = body?.kind === 'calculation' ? body : null;
-  if (current && current.calculation !== last?.calculation)
-    setLast({ calculation: current.calculation, check: current.check });
-  const kept = current ?? last;
-  // TEMPORARY: preview rows in every state, while the marks are reviewed.
-  const shown = kept && PREVIEW_STATES ? withPreview(kept) : kept;
+  if (current && current.calculation !== last?.calculation) setLast(current);
+  const shown = current ?? last;
   const busy = calculate.state.kind === 'running';
   // The marks arrive once per cross-check: when it finishes, or when the
   // step is first opened on one this browser has not seen arrive.
@@ -214,7 +152,13 @@ export function CalculateStep({
     if (revealKey) markRevealed(revealKey);
   }, [revealKey]);
   const crossCheck = () =>
-    void run({ action: 'crossCheck', text, readId, model }).then((response) => {
+    void run({
+      action: 'crossCheck',
+      text,
+      readId,
+      model,
+      rulebook: shown?.calculation.fingerprint,
+    }).then((response) => {
       if (response?.kind === 'calculation')
         report.current(progressOf(response.calculation, response.check));
     });
@@ -238,19 +182,47 @@ export function CalculateStep({
       ) : null}
       {shown ? (
         <>
-          {ranOn && ranOn !== shown.calculation.fingerprint ? (
-            <p role="note" className="text-dense text-muted">
-              The accepted rules have changed since this run last calculated;
-              the values below are worked out on the rules as they are now.
-            </p>
+          {shown.current !== shown.calculation.fingerprint ? (
+            <div role="note" className="flex flex-wrap items-center gap-3">
+              <p className="text-dense text-muted max-w-prose">
+                The rules accepted for these instructions have changed since
+                this run calculated. These values are from the rules it used.
+              </p>
+              <Button isDisabled={busy} onPress={() => setPin(null)}>
+                Calculate on the current rules
+              </Button>
+            </div>
           ) : null}
-          <CrossCheckControl
-            check={kept?.check ?? null}
-            busy={busy}
-            model={model}
-            onModel={setModel}
-            onCrossCheck={crossCheck}
-          />
+          {/* Scaffolding for trying the step, as the read's and the rules'
+              setups are. */}
+          <section
+            aria-label="Cross-check setup"
+            className="brunch-trial rounded-shell grid gap-3 p-4"
+          >
+            <div className="flex flex-wrap items-end gap-3">
+              <ModelSelect model={model} busy={busy} onChange={setModel} />
+              <Button
+                variant={shown.check ? 'secondary' : 'primary'}
+                isDisabled={busy}
+                onPress={crossCheck}
+              >
+                {shown.check
+                  ? 'Cross-check again'
+                  : 'Cross-check with the model'}
+              </Button>
+              {shown.check ? (
+                <Button onPress={() => setReplays((count) => count + 1)}>
+                  Replay the marks
+                </Button>
+              ) : null}
+            </div>
+            <p className="text-meta text-muted max-w-prose">
+              The model works every value out again from the instructions and
+              the data, without the formulas. If the model is busy or out of
+              quota, the next older one of its family answers.
+            </p>
+          </section>
+          <CrossCheckResult check={shown.check} busy={busy} />
           <ValuesTable
             key={replays}
             calculation={shown.calculation}
@@ -259,13 +231,6 @@ export function CalculateStep({
               revealKey !== null && (replays > 0 || reveal.has(revealKey))
             }
           />
-          {PREVIEW_STATES && shown.check ? (
-            <div>
-              <Button onPress={() => setReplays((count) => count + 1)}>
-                Replay the marks (preview)
-              </Button>
-            </div>
-          ) : null}
           <p className="text-meta text-muted">
             On the accepted rules{' '}
             <code className="value">{shown.calculation.fingerprint}</code> (
@@ -279,18 +244,13 @@ export function CalculateStep({
   );
 }
 
-function CrossCheckControl({
+// What the model's cross-check came to, announced as it arrives.
+function CrossCheckResult({
   check,
   busy,
-  model,
-  onModel,
-  onCrossCheck,
 }: {
   check: CrossCheck | null;
   busy: boolean;
-  model: DraftingModel;
-  onModel: (model: DraftingModel) => void;
-  onCrossCheck: () => void;
 }) {
   const differ = check ? check.total - check.agreed : 0;
   return (
@@ -327,16 +287,6 @@ function CrossCheckControl({
           <span className="text-dense text-muted">Working…</span>
         ) : null}
       </div>
-      <div className="flex flex-wrap items-end gap-3">
-        <ModelSelect model={model} busy={busy} onChange={onModel} />
-        <Button
-          variant={check ? 'secondary' : 'primary'}
-          isDisabled={busy}
-          onPress={onCrossCheck}
-        >
-          {check ? 'Cross-check again' : 'Cross-check with the model'}
-        </Button>
-      </div>
       {differ ? (
         <p className="text-meta text-muted max-w-prose">
           Where they differ, the rule&rsquo;s formula or the model has read the
@@ -368,37 +318,12 @@ function ValuesTable({
       return next;
     });
   const { calculations, rows } = calculation;
-  // TEMPORARY: the preview rows rest as plain numbers for a moment, then
-  // their marks arrive again, every few seconds.
-  const firstPreview = rows.findIndex((r) => r.key.startsWith(PREVIEW_KEY));
-  const [previewLoop, setPreviewLoop] = useState(0);
-  const [previewPlain, setPreviewPlain] = useState(false);
-  useEffect(() => {
-    if (firstPreview < 0 || !check) return;
-    let rest: ReturnType<typeof setTimeout> | undefined;
-    const timer = setInterval(() => {
-      setPreviewPlain(true);
-      rest = setTimeout(() => {
-        setPreviewPlain(false);
-        setPreviewLoop((count) => count + 1);
-      }, PREVIEW_PLAIN_MS);
-    }, PREVIEW_LOOP_MS);
-    return () => {
-      clearInterval(timer);
-      clearTimeout(rest);
-    };
-  }, [firstPreview, check]);
-  // The whole table in about a second, however long it is.
-  const step = Math.min(
-    REVEAL_STEP_MS,
-    REVEAL_TOTAL_MS / Math.max(1, rows.length * calculations.length),
-  );
   return (
     <DataTable>
       {/* Scrolls across only: a fold's clip margin under the last row would
           otherwise make it scroll a few pixels down. */}
       <div className="min-w-0 overflow-x-auto overflow-y-hidden">
-        <table className="text-dense w-full border-separate border-spacing-0">
+        <table className="calc-table text-dense w-full border-separate border-spacing-0">
           <caption className="sr-only">
             Values worked out for every record
           </caption>
@@ -430,7 +355,6 @@ function ValuesTable({
           </thead>
           <tbody>
             {rows.map((row, rowIndex) => {
-              const preview = row.key.startsWith(PREVIEW_KEY);
               const expanded = open.has(row.key);
               const differs = calculations.some(
                 (c) => check?.cells[row.key]?.[c.id]?.agrees === false,
@@ -473,27 +397,29 @@ function ValuesTable({
                           className="py-2.25 pl-3 text-right last:pr-4"
                         >
                           <CheckedValue
-                            // TEMPORARY: a preview row remounts on each
-                            // loop, so its marks arrive again.
-                            key={preview ? previewLoop : undefined}
                             value={cell.value}
-                            cross={preview && previewPlain ? undefined : cross}
-                            reveal={reveal || preview}
-                            delay={
-                              ((preview ? rowIndex - firstPreview : rowIndex) *
-                                calculations.length +
-                                calculations.indexOf(c)) *
-                              step
-                            }
+                            cross={cross}
+                            reveal={reveal}
+                            // Its turn in reading order, of how many.
+                            order={[
+                              rowIndex * calculations.length +
+                                calculations.indexOf(c),
+                              rows.length * calculations.length,
+                            ]}
                           />
                         </td>
                       );
                     })}
                   </tr>
-                  {/* Always there, folded shut, carrying the rule below the
-                      record. */}
+                  {/* Always there, folded shut, and ruled off from the next record. */}
                   <tr>
-                    <td colSpan={calculations.length + 2} className="p-0">
+                    <td
+                      colSpan={calculations.length + 2}
+                      className={cx(
+                        'p-0',
+                        rowIndex < rows.length - 1 && DATA_TABLE_RULE,
+                      )}
+                    >
                       <Fold
                         open={expanded}
                         id={`${tableId}-${row.key}`}
@@ -539,9 +465,6 @@ function ValuesTable({
                           })}
                         </ul>
                       </Fold>
-                      {rowIndex < rows.length - 1 ? (
-                        <DataTableRule led />
-                      ) : null}
                     </td>
                   </tr>
                 </Fragment>
@@ -554,9 +477,6 @@ function ValuesTable({
   );
 }
 
-const REVEAL_STEP_MS = 50;
-const REVEAL_TOTAL_MS = 1000;
-
 /*
   One value: the engine's, plain until the model has cross-checked it, then
   on a pill in the tone of their match with its mark -- and, where they
@@ -567,12 +487,12 @@ function CheckedValue({
   value,
   cross,
   reveal,
-  delay,
+  order: [index, count],
 }: {
   value: number | null;
   cross: CrossCell | undefined;
   reveal: boolean;
-  delay: number;
+  order: [number, number];
 }) {
   if (!cross)
     return (
@@ -588,7 +508,9 @@ function CheckedValue({
         tabIndex={0}
         data-severity={cross.agrees ? 3 : 0}
         data-reveal={reveal || undefined}
-        style={{ '--calc-delay': `${delay}ms` } as CSSProperties}
+        style={
+          { '--calc-index': index, '--calc-count': count } as CSSProperties
+        }
         className="calc-value bg-severity-pill value cursor-help tabular-nums"
       >
         {value ?? '—'}

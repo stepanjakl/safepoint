@@ -16,7 +16,7 @@ Brunch weekend is retained separately. `lib/processes/avocado-toast/` reads its 
 
 - The model can propose definitions or changes. Code validates its output; a person accepts a definition. Model tools do not own external write authority.
 - Captured snapshots and replay fixtures allow local work without credentials. Live sheet reads require the development Composio configuration.
-- Brunch orders keeps read copies server-side under `.rulebook-reads/`; its current run state is browser-local. Approved definition sets are JSON under `fixtures/brunch-orders/rules/`. This is development storage, not a durable multi-user review database.
+- What runs produce (reads, cross-checks, drafts) is kept server-side under `data/<process>/` (gitignored); a run's own state is browser-local. Rulebooks are JSON under `fixtures/<process>/rulebooks/<version>-<instructions hash>/`: the one under review, and each accepted rulebook a run calculated on, kept unchanged so the run can return to it. This is development storage, not a durable multi-user review database.
 - The existing review illustrates proposal accounting and inspection. Approval and execution of external effects are not implemented as a production flow.
 
 ## Proposed production architecture

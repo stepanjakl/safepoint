@@ -6,6 +6,5 @@ e2e/visual-baseline/
 # Written by the app: the captured sheet read and approved rulebooks
 fixtures/*/sheet-snapshot.json
 fixtures/*/rulebooks/
-fixtures/*/rules/
-# A frozen copy of one, for the browser test
+# Frozen copies of them, for the browser tests
 e2e/fixtures/

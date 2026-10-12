@@ -30,7 +30,7 @@
   .workspace-intro-heading {
     max-width: 100%;
     font-size: clamp(1.4rem, 2.1vw, 1.75rem);
-    font-weight: 500;
+    font-weight: var(--font-weight-medium);
     line-height: 1.18;
     letter-spacing: -0.04em;
   }
@@ -42,7 +42,7 @@
 
   .workspace-intro-keyword {
     color: var(--sp-workspace-intro-emphasis);
-    font-weight: 600;
+    font-weight: var(--font-weight-semibold);
   }
 
   .workspace-intro-beat + .workspace-intro-beat {
@@ -52,7 +52,7 @@
   .workspace-intro-beat[data-beat='3'] {
     margin-top: 0.75em;
     font-size: 0.8em;
-    font-weight: 500;
+    font-weight: var(--font-weight-medium);
     letter-spacing: -0.025em;
     line-height: 1.3;
   }

@@ -9,7 +9,7 @@ import { workingOf } from '@/lib/definitions/working';
 import { writeDefinition } from '@/lib/definitions/write';
 import { rejectUnlessLocalDevelopment } from '@/lib/dev/dev-route';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
-import { keptRead } from '@/lib/processes/brunch-orders/reads';
+import { keptRead, READ_GONE } from '@/lib/processes/brunch-orders/reads';
 import { draftingModelSchema } from '@/lib/rulebook/models';
 
 export const runtime = 'nodejs';
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     );
   const body = parsed.data;
   const reply = async (set: DefinitionSet | null) => {
-    const drafting = draftProgress(owner, body.text);
+    const drafting = await draftProgress(owner, body.text);
     if (!set) return Response.json({ kind: 'none', drafting });
     const read = set.readId ? await keptRead(set.readId) : null;
     return Response.json({
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
   };
   const readOf = async (readId: string) => {
     const read = await keptRead(readId);
-    if (!read) throw new Error('That read is no longer kept.');
+    if (!read) throw new Error(READ_GONE);
     return read;
   };
   try {
@@ -119,7 +119,7 @@ export async function POST(request: Request) {
         kind: 'error',
         message:
           error instanceof Error ? error.message.split('\n')[0] : 'Failed.',
-        drafting: draftProgress(owner, body.text),
+        drafting: await draftProgress(owner, body.text),
       },
       { status: 502 },
     );

@@ -41,15 +41,9 @@ export const DATA_TABLE_HEAD =
   'readout text-muted border-rule-faint border-b py-3 font-semibold';
 
 // A row's name, in its first cell.
-export const DATA_TABLE_NAME = 'font-bold';
+export const DATA_TABLE_NAME = 'font-semibold';
 
-// The rule between two rows: from where the rows' text starts to the card's
-// far side, a step fainter than the heading's, as the release list's rows are
-// divided. Rows led by a control (a chevron in the inset) start further in.
-// It takes no height, so rows keep the same pitch either way.
-export const DataTableRule = ({ led = false }: { led?: boolean }) => (
-  <div
-    aria-hidden
-    className={cx('border-rule-faint -mt-px border-t', led ? 'ms-6' : 'ms-4')}
-  />
-);
+// The rule between rows the release list draws too (controls.css), from where
+// the rows' text starts. On a cell, not a <tr>, which cannot hold it; a table
+// sets --row-rule-inset and --row-rule-top to place it.
+export const DATA_TABLE_RULE = 'row-rule';

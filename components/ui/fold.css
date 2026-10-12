@@ -1,14 +1,15 @@
 @layer components {
-  /* Rows from nothing to their content, paced by its height as a thread
-     step is (thread-step.css): room first, then the content fades in;
-     shutting fades it first, then gives the room back. */
+  /* Paced by its content's height as a thread step is (geometry.css): room
+     first, then the content fades in; shutting runs the other way. */
   .fold {
-    --fold-fade: 160ms;
-    --fold-duration: clamp(200ms, calc(var(--fold-height, 230) * 1.1ms), 350ms);
+    --fold-duration: clamp(
+      var(--fold-min),
+      calc(var(--fold-height, 230) * var(--fold-pace)),
+      var(--fold-max)
+    );
     display: grid;
     grid-template-rows: 0fr;
-    transition: grid-template-rows var(--fold-duration) cubic-bezier(0.4, 0, 0.2, 1)
-      var(--fold-fade);
+    transition: grid-template-rows var(--fold-duration) var(--ease-fold) var(--fold-fade);
   }
   .fold[data-open] {
     grid-template-rows: 1fr;

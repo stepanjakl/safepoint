@@ -10,14 +10,10 @@
 }
 
 @layer components {
-  .rules-review {
-    --rules-decision-motion: 260ms;
-  }
-
   .rules-status-out {
     display: inline-flex;
     flex: none;
-    transition: opacity var(--rules-decision-motion) ease-out;
+    transition: opacity var(--decision-morph) ease-out;
   }
 
   .rules-status-out[data-accepted] {
@@ -65,6 +61,7 @@
     height: 1px;
   }
   .rules-dot {
+    --rules-beat: 700ms;
     position: sticky;
     top: calc(1.25rem + var(--rules-dot-before) * 0.75rem);
     bottom: calc(1.25rem + var(--rules-dot-after) * 0.75rem);
@@ -80,7 +77,7 @@
     scale: 1.8;
   }
   .rules-dot[data-arrived] {
-    animation: rules-beat 700ms var(--ease-out-quad);
+    animation: rules-beat var(--rules-beat) var(--ease-out-quad);
   }
   @keyframes rules-beat {
     30% {

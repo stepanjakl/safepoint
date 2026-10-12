@@ -3,6 +3,7 @@
 import { useCallback, useState, type ReactNode } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { Pill, type Tone } from '@/components/ui/pill';
 import { cx } from '@/lib/cx';
 
 /*
@@ -182,13 +183,7 @@ export function TechnicalDetails({
   );
 }
 
-export type Tone = 'blocked' | 'decision' | 'ready' | 'neutral';
-const RANK: Record<Tone, number> = {
-  blocked: 0,
-  decision: 1,
-  neutral: 2,
-  ready: 3,
-};
+export type { Tone } from '@/components/ui/pill';
 
 // A status in the review's pill, in its bucket's tone.
 export function StatusChip({
@@ -198,14 +193,7 @@ export function StatusChip({
   tone: Tone;
   children: ReactNode;
 }) {
-  return (
-    <span
-      data-severity={RANK[tone]}
-      className="bg-severity-pill text-severity-ink text-meta inline-flex items-center rounded-full px-2 py-0.5 font-medium whitespace-nowrap"
-    >
-      {children}
-    </span>
-  );
+  return <Pill tone={tone}>{children}</Pill>;
 }
 
 // What a step came to, first and in one line, before any of the why.

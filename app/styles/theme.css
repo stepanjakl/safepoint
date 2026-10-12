@@ -132,8 +132,18 @@
      whole device pixels, so 0.75px draws as 0.5px at 2x. */
   --shadow-rule-etch: 0 var(--spacing-control-highlight-hairline) 0 var(--sp-divider-etch);
 
+  /* Every curve a stylesheet eases by; component CSS names one, never writes
+     cubic-bezier() itself (pnpm check:tokens). */
   --ease-out-emphasized: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-out-cubic: cubic-bezier(0.33, 1, 0.68, 1);
+  --ease-in-out-quad: cubic-bezier(0.45, 0, 0.55, 1);
+  --ease-in-out-sine: cubic-bezier(0.37, 0, 0.63, 1);
+  --ease-fold: cubic-bezier(0.4, 0, 0.2, 1);
+  /* The two weights between Tailwind's: a quieter row, and a label a step
+     firmer than medium. */
+  --font-weight-book: 450;
+  --font-weight-label: 550;
   /* Named rather than repeated: the drawer sits in the top layer, outside the
      shell, and still has to line up with the panes inside it. */
   --radius-shell: 0.625rem; /* 10px  panes, cards, dialogs */

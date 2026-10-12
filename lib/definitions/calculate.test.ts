@@ -5,7 +5,6 @@ import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-order
 import {
   calculate,
   crossCheck,
-  fingerprintOf,
   keepCrossCheck,
   keptCrossCheck,
 } from './calculate';
@@ -13,6 +12,7 @@ import { capturedRead } from './captured.fixture';
 import { always, answer, told } from './models.fixture';
 import { inScratchDirectory } from './scratch.fixture';
 import { definition, TEXT } from './set.fixture';
+import { fingerprintOf } from './store';
 import type { DefinitionSet } from './types';
 
 // The two calculations as accepted for the Brunch orders instructions, so the

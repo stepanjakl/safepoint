@@ -4,6 +4,7 @@ import path from 'node:path';
 import { z } from 'zod';
 
 import type { DefinitionSubject } from '@/lib/process/model';
+import { runDataDir } from '@/lib/storage/run-data';
 import { fallbackChain, type DraftingModel } from '@/lib/rulebook/models';
 
 import { ask, DRAFT_MODELS, type Resolve } from './calls';
@@ -11,7 +12,7 @@ import { givenOf } from './checks';
 import { contextFor, run } from './formulas';
 import { dataOf, plain } from './prompts';
 import { fitting, namesOf, type KeptRead, type Row } from './records';
-import { hashOf } from './store';
+import { fingerprintOf } from './store';
 import type { Definition, DefinitionProcess, DefinitionSet } from './types';
 import { stepsFor } from './working';
 
@@ -39,16 +40,6 @@ export type Calculation = {
   calculations: Pick<Definition, 'id' | 'name' | 'text'>[];
   rows: { key: string; name: string; values: Record<string, Cell> }[];
 };
-
-// The exact accepted rulebook: any change to what was accepted changes it.
-export const fingerprintOf = (set: DefinitionSet) =>
-  hashOf(
-    JSON.stringify(
-      set.definitions
-        .filter((d) => d.approvedAt)
-        .map((d) => [d.id, d.formula, d.constants, d.groups, d.approvedAt]),
-    ),
-  );
 
 // A number as a person writes it: decimal noise settled.
 const settled = (value: unknown): number | null =>
@@ -285,11 +276,8 @@ const crossFile = (owner: DefinitionProcess, readId: string, fp: string) => {
   if (![readId, fp].every((part) => /^[\w-]+$/.test(part)))
     throw new Error('Not a read or rulebook id.');
   return path.join(
-    process.cwd(),
-    '.rulebook-reads',
-    owner.id,
-    'crosschecks',
-    `${readId}-${fp}.json`,
+    runDataDir(owner.id, 'cross-checks'),
+    `${readId}.${fp}.json`,
   );
 };
 

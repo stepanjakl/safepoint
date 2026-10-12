@@ -188,9 +188,10 @@ example's claim and reasoning, the formula) carries a blue bar and a ✦ mark;
 products (shown as `SD-01 [Sourdough loaf 800g]`) and the app's own checks do
 not.
 
-Kept per instructions text in `fixtures/brunch-orders/rules/<hash>.json`
-(commit it to keep it), so every run under the same instructions uses the same
-approved rules, and a new version starts afresh. Code: the engine in
+Kept per instructions version in
+`fixtures/brunch-orders/rulebooks/<version>-<hash>/current.json` (commit it to
+keep it), so every run under the same instructions uses the same approved
+rules, and a new version starts afresh. Code: the engine in
 `lib/definitions/` (see [The engine, as built](#the-engine-as-built)),
 `app/api/dev/brunch-orders/rules/`, `components/brunch-orders/rules-step.tsx`.
 Tests: `lib/definitions/*.test.ts`, and `e2e/brunch-orders-rules.spec.ts`
@@ -345,12 +346,14 @@ Agreed with the owner on 9 October, after every definition was accepted.
   cannot catch (see the direction review). Its answer must cover every
   record and value exactly once. Values agree when equal to two decimal
   places. Nothing is settled automatically: the step stays in attention until
-  every value agrees. The answer is kept under `.rulebook-reads/` by read and
-  rulebook, because it costs a call.
+  every value agrees. The answer is kept in `data/brunch-orders/cross-checks/`
+  by read and rulebook, because it costs a call.
 - **The rulebook a run used.** A fingerprint of the accepted definitions
-  names the rules a calculation ran on. The run keeps it, and the step says
-  when the rules have changed since. Rules that are replaced are not kept, so
-  this flags the change rather than restoring the old values.
+  is the rulebook's id. The first time a run calculates on a rulebook it is
+  kept beside the current one (`<id>.json`) and never written again; the run
+  keeps the id and goes on calculating, and cross-checking, on exactly those
+  formulas. When the current rulebook has moved on, the step says so and
+  offers to calculate on it instead.
 - **Only what is defined is shown.** Stock available before the start is
   still written inline in two checks. It appears in Calculate once the
   instructions define it.

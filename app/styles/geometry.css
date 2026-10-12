@@ -10,6 +10,12 @@
   --duration-state: 150ms;
   --duration-row: 180ms;
   --duration-pane: 220ms;
+  /* A fold opens at a pace set by its content's height, within these limits;
+     its content fades in after (thread steps and the shared Fold). */
+  --fold-pace: 1.1ms;
+  --fold-min: 200ms;
+  --fold-max: 350ms;
+  --fold-fade: 160ms;
 }
 
 /* Tile saturation ceilings, as OKLCH chroma. A tile keeps its lightness and

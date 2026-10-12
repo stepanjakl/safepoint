@@ -33,8 +33,10 @@
 @layer components {
   .release-bucket-swap[data-swap-entering] > ul > li,
   .release-bucket-swap[data-swap-entering] > button {
-    animation: release-bucket-row-enter 180ms var(--ease-out-quad) both;
-    animation-delay: calc(var(--release-bucket-row-index) * 40ms);
+    --release-row-enter: var(--duration-row);
+    --release-row-stagger: 40ms;
+    animation: release-bucket-row-enter var(--release-row-enter) var(--ease-out-quad) both;
+    animation-delay: calc(var(--release-bucket-row-index) * var(--release-row-stagger));
   }
   @keyframes release-bucket-row-enter {
     from {
@@ -54,20 +56,19 @@
   /* A row's change pill, at the thread pills' size and split in two: the
      figure on a rounded lead, its word on the face. */
   .release-row-pill {
+    @apply pill-shape;
     --release-pill-height: 1.25rem;
-    display: inline-flex;
+    /* Its two halves fill its height, the split running top to bottom. */
     align-items: stretch;
     height: var(--release-pill-height);
     overflow: clip;
-    border-radius: 999px;
     color: var(--sp-text-primary);
     background-color: var(--sp-card-pill-face);
     font-size: var(--sp-text-micro);
     line-height: var(--release-pill-height);
     letter-spacing: var(--sp-text-micro--ls);
-    font-weight: 550;
+    font-weight: var(--font-weight-label);
     font-variant-numeric: tabular-nums;
-    white-space: nowrap;
     transition: background-color var(--duration-state) ease-out;
   }
   /* The half without the figure takes the column's spare width, so the
@@ -146,15 +147,9 @@
   }
   /* A step fainter than the closing rule and with no lit line: it divides
      rows within one list, where the closing rule ends a section. */
-  .release-list > li + li::before {
-    content: '';
-    position: absolute;
-    inset-inline: var(--release-list-inset) 0;
-    top: 0;
-    z-index: 1;
-    border-top: 1px solid var(--sp-rule-faint);
-    pointer-events: none;
-    transition: opacity var(--duration-state) ease-out;
+  .release-list > li + li {
+    @apply row-rule;
+    --row-rule-inset: var(--release-list-inset);
   }
   /* The row's own top rule and the one under it, for a row that is lit. The
      hover arm only where hover is real, as the rows' hover: utility is. */
@@ -166,11 +161,6 @@
     .release-list > li:has(> button:hover)::before,
     .release-list > li:has(> button:hover) + li::before {
       opacity: 0;
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .release-list > li + li::before {
-      transition: none;
     }
   }
 
@@ -289,6 +279,6 @@
   }
   .release-row[data-seen] .release-row-subject {
     color: var(--sp-release-seen-ink);
-    font-weight: 450;
+    font-weight: var(--font-weight-book);
   }
 }

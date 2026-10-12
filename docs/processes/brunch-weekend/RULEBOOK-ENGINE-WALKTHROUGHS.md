@@ -15,8 +15,8 @@
 ## 1. Reading a draft record
 
 Every draft, passing or failing, is saved as one JSON file in
-`.rulebook-drafts/<process>/`, named by start time and run id, for example
-`.rulebook-drafts/avocado-toast/2026-10-07T10-53-05-401Z-a5f984b9.json`. The
+`data/<process>/drafts/`, named by start time and run id, for example
+`data/avocado-toast/drafts/2026-10-07T10-53-05-401Z-a5f984b9.json`. The
 same record is what "Past drafts" opens on the page. This walkthrough uses that
 file: a Flash-Lite draft that passed every drafting check in 1 minute 59
 seconds, and still got most of the owner's checks wrong. Both halves teach
@@ -379,7 +379,7 @@ checks or models can be compared on evidence instead of one lucky run.
    done
    ```
 
-   Each draft saves its record in `.rulebook-drafts/avocado-toast/`.
+   Each draft saves its record in `data/avocado-toast/drafts/`.
 
 3. **Summarise.** This script reads the records started at or after a given
    time and prints the measures per model (run it from the repository root):
@@ -389,7 +389,7 @@ checks or models can be compared on evidence instead of one lucky run.
    import json, glob, statistics, collections, sys
    since = sys.argv[1] if len(sys.argv) > 1 else ''
    runs = []
-   for f in sorted(glob.glob('.rulebook-drafts/avocado-toast/*.json')):
+   for f in sorted(glob.glob('data/avocado-toast/drafts/*.json')):
        if f.split('/')[-1] < since: continue
        d = json.load(open(f)); dr = d['draft']
        if not isinstance(dr.get('stages'), list): continue

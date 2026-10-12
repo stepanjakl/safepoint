@@ -135,15 +135,27 @@ placeholders such as `values.<id>`, because a real example steers the model.
 - **Saved model output is a contract.** Variable names and value
   representations end up inside accepted formulas, so settle them before a
   draft is accepted. A change to the stored shape (`types.ts`) means
-  migrating `fixtures/*/rules/*.json` and `e2e/fixtures/` by script.
+  migrating `fixtures/*/rulebooks/**/*.json` by script, then
+  `pnpm fixtures:e2e` for the browser tests' copies.
 - **Fix behaviour with checks, not prompt wording.** Prompt tweaks corrected
   one draft and broke the next. A new rule belongs in `checks.ts`, where both
   the model's check tool and Accept enforce it.
 - **No test spends quota or writes to `fixtures/`.** Use the stand-in models
   in `models.fixture.ts` and `inScratchDirectory()`. The browser test serves
   a frozen rulebook, because drafting replaces the kept one.
+- **Where things are kept.** What a person approves is reviewed in git:
+  `fixtures/<process>/rulebooks/<version>-<instructions hash>/`, holding
+  `current.json` (the rulebook under review) and `<rulebook id>.json` (each
+  accepted rulebook a run calculated on, never rewritten). What runs produce
+  is not: `data/<process>/{reads,cross-checks,drafts}/` (gitignored,
+  `lib/storage/run-data.ts`). `e2e/fixtures/` are frozen copies, held to the
+  engine by `lib/definitions/e2e-fixtures.test.ts`.
 - `docs/processes/brunch-orders/DEVELOPMENT-LOG.md` records what went wrong and why. Add to it when
   something non-obvious does.
+
+Browser storage keys are `safepoint.<thing>.v<N>`, versioned so a change of
+shape starts afresh; development preferences are `safepoint.dev.<thing>`.
+Window events are `safepoint:<thing>`.
 
 ## Verification matched to the change
 
@@ -157,7 +169,7 @@ the server Playwright starts (`pnpm dev`, webpack): Turbopack polyfills
 (`.github/workflows/checks.yml`) does not run, tagged `@local-baseline`.
 
 The Playwright `dark` project renders the light theme. The app's theme comes
-from a stored preference (`safepoint:theme` in localStorage), not the
+from a stored preference (`safepoint.dev.theme` in localStorage), not the
 browser's colour scheme. To check dark, set that preference.
 
 Choose checks by the possible consequences, not the number of edited lines.

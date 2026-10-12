@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 
+import type { Origin, Origins } from '@/lib/dev/class-origins';
 import type { Site, Stylesheets, Utility } from '@/lib/dev/stylesheets';
 
 import { componentsOf, type Written } from './component-source';
@@ -1159,6 +1160,12 @@ function Inspector() {
     by: Written[];
   } | null>(null);
 
+  // Where the target's classes are written in the source, once read.
+  const [classes, setClasses] = useState<{
+    of: Element;
+    origins: Origins;
+  } | null>(null);
+
   function close() {
     setMode('off');
     setTarget(null);
@@ -1241,6 +1248,29 @@ function Inspector() {
       current = false;
     };
   }, [target]);
+
+  // The class origins follow the component chain, so wait for it.
+  useEffect(() => {
+    if (!target || written?.of !== target) return;
+    let current = true;
+    const tokens = [...target.classList];
+    const steps = written.by
+      .filter((step) => !step.library && step.file && step.line)
+      .map(({ file, line, column }) => ({ file: file!, line: line!, column }));
+    if (tokens.length === 0 || steps.length === 0) return;
+    void fetch('/api/dev/class-origins', {
+      method: 'POST',
+      body: JSON.stringify({ steps, tokens }),
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((origins: Origins | null) => {
+        if (current && origins) setClasses({ of: target, origins });
+      })
+      .catch(() => {});
+    return () => {
+      current = false;
+    };
+  }, [target, written]);
 
   // Read the stylesheets afresh every time the inspector opens.
   useEffect(() => {
@@ -1341,6 +1371,21 @@ function Inspector() {
   const by = written?.of === target ? written.by : [];
   const writer = by.find((step) => !step.library && step.file);
   const scheme = editor();
+  const originOf = (row: Row | string): Origin | undefined => {
+    if (classes?.of !== target || !target) return undefined;
+    const { found } = classes.origins;
+    const full =
+      typeof row === 'string' ? row : `${row.note ?? ''}${row.label}`;
+    const base = typeof row === 'string' ? splitVariants(row).base : row.label;
+    return (
+      found[full] ??
+      found[
+        [...target.classList].find(
+          (name) => splitVariants(name).base === base && found[name],
+        ) ?? ''
+      ]
+    );
+  };
   const open = (file: string, line: number | string, column?: string) =>
     `${scheme}://file${file.startsWith('/') ? '' : `${lookup?.root.replace(/\/$/, '')}/`}${file}:${line}${column ? `:${column}` : ''}`;
   // Pinned, it keeps clear of what it describes; unpinned, of the pointer.
@@ -1383,173 +1428,213 @@ function Inspector() {
             ×
           </button>
         </header>
-        <Needle value={needle}>
-          <div className="spi-body">
-            {writer ? <Writers by={by} writer={writer} open={open} /> : null}
-            {target && (canParent || child?.isConnected) ? (
-              <div className="spi-buttons">
-                {canParent ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTrail([...trail, target]);
-                      setTarget(target.parentElement);
-                      setPinned(true);
-                    }}
-                  >
-                    Parent
-                  </button>
+        <OpenContext value={open}>
+          <OriginContext value={originOf}>
+            <Needle value={needle}>
+              <div className="spi-body">
+                {writer ? (
+                  <Writers by={by} writer={writer} open={open} />
                 ) : null}
-                {child?.isConnected ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTrail(trail.slice(0, -1));
-                      setTarget(child);
-                      setPinned(true);
-                    }}
-                  >
-                    Child
-                  </button>
-                ) : null}
-              </div>
-            ) : null}
-            {!report ? (
-              <p className="spi-hint">
-                {lookup
-                  ? mode === 'peek'
-                    ? 'Point at an element; ⌥-click to pin it.'
-                    : 'Point at an element; click to pin it.'
-                  : 'Reading stylesheets…'}
-              </p>
-            ) : (
-              <>
-                <label className="spi-search">
-                  <input
-                    type="search"
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Filter: property or token, e.g. shadow"
-                    aria-label="Filter declarations by property or token"
-                  />
-                  {needle ? (
-                    <span className="spi-count">
-                      {countLines(filterRows(allRows(report), needle)) +
-                        filterInherited(report.inherited, needle).length}
-                      {' of '}
-                      {countLines(allRows(report)) + report.inherited.length}
-                    </span>
-                  ) : null}
-                </label>
-                <dl className="spi-fields">
-                  <div className="spi-field">
-                    <dt>box</dt>
-                    <dd>
-                      <span>{report.box}</span>
-                    </dd>
+                {target && (canParent || child?.isConnected) ? (
+                  <div className="spi-buttons">
+                    {canParent ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTrail([...trail, target]);
+                          setTarget(target.parentElement);
+                          setPinned(true);
+                        }}
+                      >
+                        Parent
+                      </button>
+                    ) : null}
+                    {child?.isConnected ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTrail(trail.slice(0, -1));
+                          setTarget(child);
+                          setPinned(true);
+                        }}
+                      >
+                        Child
+                      </button>
+                    ) : null}
                   </div>
-                  {report.paints.map((entry) => (
-                    <div
-                      key={entry.label}
-                      className="spi-field"
-                      title={entry.value}
-                    >
-                      <dt>{entry.label}</dt>
-                      <dd>
-                        {entry.painted ? (
-                          <i style={{ background: entry.painted }} />
-                        ) : null}
-                        <span>{entry.painted ?? entry.value.slice(0, 40)}</span>
-                        {entry.from ? (
-                          <span className="spi-from"> ← {entry.from}</span>
-                        ) : null}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-                <Folder
-                  title="Utilities and theme"
-                  count={filterRows(report.own, needle).length}
-                  open
-                >
-                  <Rows
-                    rows={filterRows(report.own, needle)}
-                    open={open}
-                    expand={Boolean(needle)}
-                  />
-                </Folder>
-                <Folder
-                  title="Rules"
-                  count={filterRows(report.rules, needle).length}
-                  open
-                >
-                  <Rows
-                    rows={filterRows(report.rules, needle)}
-                    open={open}
-                    expand={Boolean(needle)}
-                  />
-                </Folder>
-                <Folder
-                  title="Inline style"
-                  count={countLines(filterRows(report.inline, needle))}
-                  open
-                >
-                  <Rows
-                    rows={filterRows(report.inline, needle)}
-                    open={open}
-                    expand
-                  />
-                </Folder>
-                <Folder
-                  title="Inherited"
-                  count={filterInherited(report.inherited, needle).length}
-                  open
-                >
-                  <InheritedView
-                    entries={filterInherited(report.inherited, needle)}
-                    open={open}
-                  />
-                </Folder>
-                <Folder
-                  title="From packages"
-                  count={filterRows(report.packages, needle).length}
-                  open
-                >
-                  <Rows
-                    rows={filterRows(report.packages, needle)}
-                    open={open}
-                    expand={Boolean(needle)}
-                  />
-                </Folder>
-                <Folder
-                  title="Tailwind reset"
-                  count={filterRows(report.reset, needle).length}
-                  open={Boolean(needle)}
-                >
-                  <Rows rows={filterRows(report.reset, needle)} open={open} />
-                </Folder>
-                <Folder
-                  title="Not matching now"
-                  count={filterRows(report.idle, needle).length}
-                  open={Boolean(needle)}
-                >
-                  <Rows rows={filterRows(report.idle, needle)} open={open} />
-                </Folder>
-                {report.tailwind.length > 0 ? (
-                  <p className="spi-hint">
-                    Unresolved classes: {report.tailwind.join(' ')}
-                  </p>
                 ) : null}
-              </>
-            )}
-          </div>
-        </Needle>
+                {!report ? (
+                  <p className="spi-hint">
+                    {lookup
+                      ? mode === 'peek'
+                        ? 'Point at an element; ⌥-click to pin it.'
+                        : 'Point at an element; click to pin it.'
+                      : 'Reading stylesheets…'}
+                  </p>
+                ) : (
+                  <>
+                    <label className="spi-search">
+                      <input
+                        type="search"
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
+                        placeholder="Filter: property or token, e.g. shadow"
+                        aria-label="Filter declarations by property or token"
+                      />
+                      {needle ? (
+                        <span className="spi-count">
+                          {countLines(filterRows(allRows(report), needle)) +
+                            filterInherited(report.inherited, needle).length}
+                          {' of '}
+                          {countLines(allRows(report)) +
+                            report.inherited.length}
+                        </span>
+                      ) : null}
+                    </label>
+                    <dl className="spi-fields">
+                      <div className="spi-field">
+                        <dt>box</dt>
+                        <dd>
+                          <span>{report.box}</span>
+                        </dd>
+                      </div>
+                      {report.paints.map((entry) => (
+                        <div
+                          key={entry.label}
+                          className="spi-field"
+                          title={entry.value}
+                        >
+                          <dt>{entry.label}</dt>
+                          <dd>
+                            {entry.painted ? (
+                              <i style={{ background: entry.painted }} />
+                            ) : null}
+                            <span>
+                              {entry.painted ?? entry.value.slice(0, 40)}
+                            </span>
+                            {entry.from ? (
+                              <span className="spi-from"> ← {entry.from}</span>
+                            ) : null}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                    <Folder
+                      title="Utilities and theme"
+                      count={filterRows(report.own, needle).length}
+                      open
+                    >
+                      <Rows
+                        rows={filterRows(report.own, needle)}
+                        open={open}
+                        expand={Boolean(needle)}
+                      />
+                    </Folder>
+                    <Folder
+                      title="Rules"
+                      count={filterRows(report.rules, needle).length}
+                      open
+                    >
+                      <Rows
+                        rows={filterRows(report.rules, needle)}
+                        open={open}
+                        expand={Boolean(needle)}
+                      />
+                    </Folder>
+                    <Folder
+                      title="Inline style"
+                      count={countLines(filterRows(report.inline, needle))}
+                      open
+                    >
+                      <Rows
+                        rows={filterRows(report.inline, needle)}
+                        open={open}
+                        expand
+                      />
+                    </Folder>
+                    <Folder
+                      title="Inherited"
+                      count={filterInherited(report.inherited, needle).length}
+                      open
+                    >
+                      <InheritedView
+                        entries={filterInherited(report.inherited, needle)}
+                        open={open}
+                      />
+                    </Folder>
+                    <Folder
+                      title="From packages"
+                      count={filterRows(report.packages, needle).length}
+                      open
+                    >
+                      <Rows
+                        rows={filterRows(report.packages, needle)}
+                        open={open}
+                        expand={Boolean(needle)}
+                      />
+                    </Folder>
+                    <Folder
+                      title="Tailwind reset"
+                      count={filterRows(report.reset, needle).length}
+                      open={Boolean(needle)}
+                    >
+                      <Rows
+                        rows={filterRows(report.reset, needle)}
+                        open={open}
+                      />
+                    </Folder>
+                    <Folder
+                      title="Not matching now"
+                      count={filterRows(report.idle, needle).length}
+                      open={Boolean(needle)}
+                    >
+                      <Rows
+                        rows={filterRows(report.idle, needle)}
+                        open={open}
+                      />
+                    </Folder>
+                    {report.tailwind.length > 0 ? (
+                      <div className="spi-hint">
+                        Unresolved classes: {report.tailwind.join(' ')}
+                        {report.tailwind.map((token) => (
+                          <WrittenIn key={token} row={token} />
+                        ))}
+                      </div>
+                    ) : null}
+                  </>
+                )}
+              </div>
+            </Needle>
+          </OriginContext>
+        </OpenContext>
       </section>
     </div>
   );
 }
 
 type Open = (file: string, line: number, column?: string) => string;
+
+const OpenContext = createContext<Open>(() => '');
+const OriginContext = createContext<(row: Row | string) => Origin | undefined>(
+  () => undefined,
+);
+
+/* The line that spells a class for this element: for a constant or `cx()`
+   that is not the JSX line the component chain names, so both are given. */
+function WrittenIn({ row }: { row: Row | string }) {
+  const origin = use(OriginContext)(row);
+  const open = use(OpenContext);
+  if (!origin) return null;
+  const here =
+    origin.file === origin.used.file && origin.line === origin.used.line;
+  return (
+    <div className="spi-from">
+      written in {siteLink(origin, open)}
+      {origin.via ? <span className="spi-dim"> ({origin.via})</span> : null}
+      {here ? null : <> · used at {siteLink(origin.used, open)}</>}
+    </div>
+  );
+}
 
 /* The component whose JSX wrote the element, linked to that line; then each
    one out from it, linked to where it renders the next one in. */
@@ -1735,6 +1820,9 @@ function Rows({
             </span>
             {siteLink(row.site, open)}
           </summary>
+          {row.kind === 'utility' || row.kind === 'theme' ? (
+            <WrittenIn row={row} />
+          ) : null}
           {row.lines.map((line, at) => (
             <LineView key={`${line.property}${at}`} line={line} open={open} />
           ))}

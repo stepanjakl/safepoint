@@ -138,7 +138,7 @@ export function RulebookPanel({
       ? {
           ...latest.record,
           drift: latest.drift,
-          saved: `.rulebook-drafts/avocado-toast/${latest.file}`,
+          saved: `data/avocado-toast/drafts/${latest.file}`,
         }
       : null,
   );
@@ -972,7 +972,7 @@ function PastDrafts({
                             draft: record.draft,
                             checks: record.checks,
                             drift: record.drift,
-                            saved: `.rulebook-drafts/avocado-toast/${record.file}`,
+                            saved: `data/avocado-toast/drafts/${record.file}`,
                           });
                       })
                     }

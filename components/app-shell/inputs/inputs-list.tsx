@@ -125,12 +125,22 @@ export function InputsList({
 // Name above its file and condition rather than beside them: names and
 // condition labels are both long, and side by side one of them is always the
 // one cut short.
-function InputRow({ link }: { link: SystemLink }) {
+export function InputRow({
+  link,
+  count,
+}: {
+  link: SystemLink;
+  // How much it holds, beside its name, where the process says ("11 rows").
+  count?: string;
+}) {
   return (
     <>
       <SystemDisc link={link} />
       <span className="grid min-w-0 flex-1 gap-0.5">
-        <span className="text-dense text-primary truncate">{link.label}</span>
+        <span className="text-dense text-primary truncate">
+          {link.label}
+          {count ? <span className="text-muted"> · {count}</span> : null}
+        </span>
         <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
           <SystemMeta link={link} />
           {link.file ? (

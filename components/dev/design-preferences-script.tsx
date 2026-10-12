@@ -19,6 +19,7 @@ import {
 } from './design-preferences';
 import {
   MONO_CHOICES,
+  RENAMED_STORAGE_KEYS,
   TYPESCALES,
   TYPESCALE_STORAGE_KEY,
   MONO_STORAGE_KEY,
@@ -42,6 +43,14 @@ export function DesignPreferencesScript() {
 
   const source = `
 var root = document.documentElement;
+try {
+  ${JSON.stringify(RENAMED_STORAGE_KEYS)}.forEach(function (names) {
+    var kept = localStorage.getItem(names[0]);
+    if (kept === null) return;
+    if (localStorage.getItem(names[1]) === null) localStorage.setItem(names[1], kept);
+    localStorage.removeItem(names[0]);
+  });
+} catch (error) {}
 var params = new URLSearchParams(location.search);
 var neutrals = ${JSON.stringify(NEUTRALS)};
 var neutral = params.get('neutral');

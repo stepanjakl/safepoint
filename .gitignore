@@ -37,12 +37,12 @@ Claude/
 /playwright-report/
 /test-results/
 
-# Rulebook drafting records contain full model inputs and outputs.
-/.rulebook-drafts/
-# Live reads a run was calculated from (development only)
-/.rulebook-reads/
+# What runs produce, per process (lib/storage/run-data.ts): reads of live
+# data, model answers and drafting records, which hold full model inputs and
+# outputs. Development only; what is approved is kept under fixtures/.
+/data/
 
 # Local AI SDK DevTools traces contain full model inputs and outputs.
 .devtools/
-# Left only if a save of a kept definition set was interrupted
-fixtures/*/rules/*.tmp
+# Left only if a save of a kept rulebook was interrupted
+fixtures/*/rulebooks/**/*.tmp

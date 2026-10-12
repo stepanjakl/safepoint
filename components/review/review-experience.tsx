@@ -42,7 +42,7 @@ type Opening = { key: number; filter?: ReviewFilter; itemId?: string };
 // The filter last used on a plan, per browser. A convenience only: storage can
 // be missing or refuse, and the review then opens on "All".
 const filterKey = (plan: ReleasePlan) =>
-  `safepoint:review-filter:${plan.id}:${plan.revision}`;
+  `safepoint.review-filter.v1.${plan.id}.${plan.revision}`;
 function rememberedFilter(plan: ReleasePlan): ReviewFilter | null {
   try {
     const value = localStorage.getItem(filterKey(plan));

@@ -34,6 +34,10 @@ test('the inspector names where an element’s styles are written', async ({
   await expect(utility.getByRole('link').first()).toHaveText(
     /^process-header\.css:\d+$/,
   );
+  // The line that spells the class for this element, through the FACE map.
+  await expect(utility).toContainText(
+    /written in\s*process-header\.tsx:\d+\s*\(FACE\)/,
+  );
   // Every role it reads resolves to a declaration and a painted colour.
   await expect(utility).toContainText('--sp-header-button-face-top');
   await expect(utility).toContainText(/= #[0-9a-f]{6}/);

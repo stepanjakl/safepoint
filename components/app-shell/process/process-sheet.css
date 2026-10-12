@@ -12,7 +12,9 @@
     > :not(.sheet-head),
   .process-sheet-swap[data-swap-entering] .process-panels > :not(.process-panel-list),
   .process-sheet-swap[data-swap-entering] .process-runs-detail {
-    animation: process-section-enter var(--duration-pane) var(--ease-out-quad) 65ms both;
+    --process-section-after: 65ms;
+    animation: process-section-enter var(--duration-pane) var(--ease-out-quad)
+      var(--process-section-after) both;
   }
 
   @keyframes process-section-enter {

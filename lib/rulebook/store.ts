@@ -10,6 +10,7 @@ import {
   type ApprovedRulebook,
   type Rulebook,
 } from './schema';
+import { runDataDir } from '@/lib/storage/run-data';
 
 /*
   Server-only, development only. Approved rulebooks are versioned files in the
@@ -71,8 +72,7 @@ export type DraftRecord = {
   checks: ChecksReport | null;
 };
 
-const draftsDir = (processId: string) =>
-  path.join(process.cwd(), '.rulebook-drafts', processId);
+const draftsDir = (processId: string) => runDataDir(processId, 'drafts');
 
 export async function saveDraftRecord(
   processId: string,

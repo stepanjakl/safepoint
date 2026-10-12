@@ -1,4 +1,10 @@
 @layer components {
+  /* Rules end each record's folded cell, from where the keys start. */
+  .calc-table {
+    --row-rule-inset: 1.5rem;
+    --row-rule-top: calc(100% - 1px);
+  }
+
   /* A record's toggle: the triangle points at the record shut, down at its
      working open, as a step's chevron turns. */
   /* The chevron hangs in the row's inset, so the name starts where every
@@ -30,12 +36,13 @@
   /* A value in the Calculate table. Padded as a pill whether or not it is
      one, so a cross-check lands without moving the column. */
   .calc-value {
-    display: inline-flex;
+    @apply pill-shape;
     /* Top, not the baseline: no descender gap under the pill in its cell. */
     vertical-align: top;
-    align-items: center;
-    border-radius: 999px;
     padding: 0.125rem 0.5rem;
+    --calc-reveal: 900ms;
+    --calc-reveal-step: 50ms;
+    --calc-reveal-total: 1s;
   }
   /* The mark, and the model's own number where it differs: room first, then
      the mark, as a decision's icon goes (decision-button.css). */
@@ -54,13 +61,17 @@
     padding-inline-start: 0.25rem;
   }
 
-  /* Once per cross-check, value by value (--calc-delay): the number takes
-     the tone, then gives it to the pill as the mark arrives. */
+  /* Once per cross-check, value by value in reading order (--calc-index of
+     --calc-count): the whole table in about a second, however long. */
   .calc-value[data-reveal] {
-    animation: calc-reveal 900ms var(--ease-out-quad) var(--calc-delay, 0ms) both;
+    --calc-delay: calc(
+      var(--calc-index, 0) *
+        min(var(--calc-reveal-step), var(--calc-reveal-total) / var(--calc-count, 1))
+    );
+    animation: calc-reveal var(--calc-reveal) var(--ease-out-quad) var(--calc-delay) both;
   }
   .calc-value[data-reveal] .calc-value-tail {
-    animation: calc-tail 900ms var(--ease-out-emphasized) var(--calc-delay, 0ms) both;
+    animation: calc-tail var(--calc-reveal) var(--ease-out-emphasized) var(--calc-delay) both;
   }
   @keyframes calc-reveal {
     0% {

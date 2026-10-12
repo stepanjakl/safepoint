@@ -31,7 +31,7 @@
   .brunch-read-name {
     font-size: var(--sp-text-dense);
     line-height: var(--sp-text-dense--lh);
-    font-weight: 550;
+    font-weight: var(--font-weight-label);
   }
   /* The success pill ends the row; the chevron after it is only a reveal. */
   .brunch-read-done {
@@ -103,8 +103,10 @@
   }
 
   .brunch-read-card[data-revealing] .brunch-read-enter {
-    animation: brunch-read-item-in 360ms var(--ease-out-quad) both;
-    animation-delay: calc(var(--brunch-read-index, 0) * 90ms);
+    --brunch-read-enter: 360ms;
+    --brunch-read-stagger: 90ms;
+    animation: brunch-read-item-in var(--brunch-read-enter) var(--ease-out-quad) both;
+    animation-delay: calc(var(--brunch-read-index, 0) * var(--brunch-read-stagger));
   }
   @keyframes brunch-read-item-in {
     from {

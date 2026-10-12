@@ -4,6 +4,7 @@ import path from 'node:path';
 
 import { BRUNCH_PROCESS_ID } from '@/lib/processes/avocado-toast/process';
 import { readWholeSheet, type SheetRead } from '@/lib/sheets/composio';
+import { runDataDir } from '@/lib/storage/run-data';
 
 /*
   Server-only. Where the Brunch weekend sheet comes from: a live read through
@@ -37,10 +38,11 @@ export async function loadSnapshot(
 
 /*
   A run reads the sheet once and every later step uses that read. The captured
-  read is already a file; a live read is kept under an id (gitignored), so
+  read is already a file; a live read is kept under an id in data/ (gitignored), so
   Calculate evaluates exactly what the Read step showed, not a second read.
 */
-const READS = path.join(process.cwd(), '.rulebook-reads', PROCESS_ID);
+// Read when used, so a test can work in a scratch directory.
+const READS = () => runDataDir(PROCESS_ID, 'reads');
 export const CAPTURED_READ = 'captured';
 
 export async function keepRead(read: SheetRead): Promise<string> {
@@ -49,8 +51,8 @@ export async function keepRead(read: SheetRead): Promise<string> {
     .digest('hex')
     .slice(0, 8);
   const id = `${read.readAt.replace(/[:.]/g, '-')}-${hash}`;
-  await mkdir(READS, { recursive: true });
-  await writeFile(path.join(READS, `${id}.json`), JSON.stringify(read));
+  await mkdir(READS(), { recursive: true });
+  await writeFile(path.join(READS(), `${id}.json`), JSON.stringify(read));
   return id;
 }
 
@@ -62,7 +64,7 @@ export async function loadRead(
   if (!/^[\w-]+$/.test(id)) return null;
   try {
     const read = JSON.parse(
-      await readFile(path.join(READS, `${id}.json`), 'utf8'),
+      await readFile(path.join(READS(), `${id}.json`), 'utf8'),
     ) as SheetRead;
     return { read, label: `Live read through Composio at ${read.readAt}` };
   } catch {

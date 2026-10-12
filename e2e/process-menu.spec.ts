@@ -108,7 +108,7 @@ test('travelling between levels moves focus to the arrival control', async ({
   ).toBeVisible();
   const enter = page.getByRole('button', { name: /^Processes/ });
   await expect(enter).toBeFocused();
-  await expect(enter).toContainText('3');
+  await expect(enter).toContainText('4');
 
   await enter.press('Enter');
   await expect(
@@ -345,6 +345,14 @@ test('the brand mark turns on hover and settles back into place', async ({
   await expect.poll(rotation, { timeout: 2_500 }).toBeCloseTo(0, 2);
 });
 
+// Promotion release moved to the end of the four.
+const LAST = [
+  'Support handoff',
+  'Brunch weekend',
+  'Brunch orders',
+  'Promotion release',
+];
+
 test('arranging by keyboard reorders, keeps focus, and saves', async ({
   page,
 }) => {
@@ -354,6 +362,7 @@ test('arranging by keyboard reorders, keeps focus, and saves', async ({
     'Promotion release',
     'Support handoff',
     'Brunch weekend',
+    'Brunch orders',
   ]);
 
   await page.getByRole('button', { name: 'Arrange processes' }).click();
@@ -372,34 +381,37 @@ test('arranging by keyboard reorders, keeps focus, and saves', async ({
   await expect(handle).toBeFocused();
   await expect
     .poll(() => processNames(page))
-    .toEqual(['Support handoff', 'Promotion release', 'Brunch weekend']);
+    .toEqual([
+      'Support handoff',
+      'Promotion release',
+      'Brunch weekend',
+      'Brunch orders',
+    ]);
   await page.keyboard.press('ArrowDown');
-  await expect
-    .poll(() => processNames(page))
-    .toEqual(['Support handoff', 'Brunch weekend', 'Promotion release']);
+  await page.keyboard.press('ArrowDown');
+  await expect.poll(() => processNames(page)).toEqual(LAST);
   // Already last: nothing moves, and focus stays put.
   await page.keyboard.press('ArrowDown');
   await expect(handle).toBeFocused();
-  await expect
-    .poll(() => processNames(page))
-    .toEqual(['Support handoff', 'Brunch weekend', 'Promotion release']);
+  await expect.poll(() => processNames(page)).toEqual(LAST);
   await page.keyboard.press('Home');
   await expect
     .poll(() => processNames(page))
-    .toEqual(['Promotion release', 'Support handoff', 'Brunch weekend']);
+    .toEqual([
+      'Promotion release',
+      'Support handoff',
+      'Brunch weekend',
+      'Brunch orders',
+    ]);
   await page.keyboard.press('End');
-  await expect
-    .poll(() => processNames(page))
-    .toEqual(['Support handoff', 'Brunch weekend', 'Promotion release']);
+  await expect.poll(() => processNames(page)).toEqual(LAST);
 
   await save.click();
   await expect(
     page.getByRole('button', { name: 'Arrange processes' }),
   ).toBeFocused();
   await page.reload();
-  await expect
-    .poll(() => processNames(page))
-    .toEqual(['Support handoff', 'Brunch weekend', 'Promotion release']);
+  await expect.poll(() => processNames(page)).toEqual(LAST);
 });
 
 test('a pointer drag reorders, and Escape mid-drag puts the row back', async ({
@@ -424,7 +436,12 @@ test('a pointer drag reorders, and Escape mid-drag puts the row back', async ({
   await expect(page.locator('.process-drop-slot')).toHaveCount(0);
   await expect
     .poll(() => processNames(page))
-    .toEqual(['Promotion release', 'Support handoff', 'Brunch weekend']);
+    .toEqual([
+      'Promotion release',
+      'Support handoff',
+      'Brunch weekend',
+      'Brunch orders',
+    ]);
 
   // Completed: the row lands one place down.
   await page.mouse.move(x, y);
@@ -434,7 +451,12 @@ test('a pointer drag reorders, and Escape mid-drag puts the row back', async ({
   await expect(page.locator('.process-drop-slot')).toHaveCount(0);
   await expect
     .poll(() => processNames(page))
-    .toEqual(['Support handoff', 'Promotion release', 'Brunch weekend']);
+    .toEqual([
+      'Support handoff',
+      'Promotion release',
+      'Brunch weekend',
+      'Brunch orders',
+    ]);
 });
 
 test('hovering Arrange previews the handles without entering the mode', async ({

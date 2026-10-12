@@ -24,7 +24,9 @@
 @layer components {
   .resizable-shell[data-workspace-reveal='fading'] .workspace-menu-items > li {
     --workspace-menu-item-delay: 200ms;
-    animation: workspace-menu-item-reveal 400ms var(--ease-out-quad) both;
+    --workspace-menu-item-reveal: 400ms;
+    animation: workspace-menu-item-reveal var(--workspace-menu-item-reveal) var(--ease-out-quad)
+      both;
     animation-delay: calc(var(--workspace-menu-index) * var(--workspace-menu-item-delay));
   }
 
@@ -59,7 +61,8 @@
     background-size: 200% auto;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    animation: workspace-menu-shine 1.4s linear infinite alternate;
+    --workspace-menu-shine: 1.4s;
+    animation: workspace-menu-shine var(--workspace-menu-shine) linear infinite alternate;
   }
 
   .workspace-menu-shine:not([data-shine]) {

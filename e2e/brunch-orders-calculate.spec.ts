@@ -84,7 +84,10 @@ test('every value worked out for every record, cross-checked by the model', asyn
   const table = page.getByRole('table', {
     name: 'Values worked out for every record',
   });
-  // One row per record (and, while PREVIEW_STATES is on, its preview rows).
+  // A header row, then a row per record, each with its folded working.
+  await expect(table.locator('tbody > tr')).toHaveCount(
+    calculation.rows.length * 2,
+  );
   for (const row of calculation.rows)
     await expect(
       table.getByRole('rowheader', { name: new RegExp(`^${row.key}`) }),

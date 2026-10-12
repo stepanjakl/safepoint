@@ -123,7 +123,16 @@ export function isThemeChoice(value: unknown): value is ThemeChoice {
 // so it is a choice a person makes, never the default.
 export const DEFAULT_THEME: ThemeChoice = 'light';
 
-export const TYPEFACE_STORAGE_KEY = 'safepoint:typeface';
-export const MONO_STORAGE_KEY = 'safepoint:mono';
-export const THEME_STORAGE_KEY = 'safepoint:theme';
-export const TYPESCALE_STORAGE_KEY = 'safepoint:typescale';
+// Development preferences, kept as the others are: safepoint.dev.<thing>.
+export const TYPEFACE_STORAGE_KEY = 'safepoint.dev.typeface';
+export const MONO_STORAGE_KEY = 'safepoint.dev.mono';
+export const THEME_STORAGE_KEY = 'safepoint.dev.theme';
+export const TYPESCALE_STORAGE_KEY = 'safepoint.dev.typescale';
+// Their names before 12 October 2026, moved over once by the preferences
+// script. Drop once no browser in use still holds them.
+export const RENAMED_STORAGE_KEYS: [string, string][] = [
+  ['safepoint:typeface', TYPEFACE_STORAGE_KEY],
+  ['safepoint:mono', MONO_STORAGE_KEY],
+  ['safepoint:theme', THEME_STORAGE_KEY],
+  ['safepoint:typescale', TYPESCALE_STORAGE_KEY],
+];

@@ -71,7 +71,8 @@
     .resizable-shell[data-workspace-reveal='fading'] .sidebar-navigation {
       opacity: 1;
       translate: 0;
-      transition: opacity 650ms var(--ease-out-quad);
+      --workspace-nav-fade: 650ms;
+      transition: opacity var(--workspace-nav-fade) var(--ease-out-quad);
     }
 
     .resizable-shell[data-resizing] {

@@ -13,11 +13,16 @@
     background: color-mix(in oklab, var(--sp-canvas) 55%, transparent);
     backdrop-filter: blur(3px);
   }
+  .drawer-overlay {
+    --drawer-scrim-in: 160ms;
+    --drawer-scrim-out: 140ms;
+    --drawer-out: 180ms;
+  }
   .drawer-overlay[data-entering]::before {
-    animation: drawer-fade 160ms ease-out both;
+    animation: drawer-fade var(--drawer-scrim-in) ease-out both;
   }
   .drawer-overlay[data-exiting]::before {
-    animation: drawer-fade 140ms ease-in reverse both;
+    animation: drawer-fade var(--drawer-scrim-out) ease-in reverse both;
   }
   @keyframes drawer-fade {
     from {
@@ -36,7 +41,7 @@
     animation: drawer-in var(--duration-pane) --theme(--ease-out-emphasized) both;
   }
   .drawer-modal[data-exiting] {
-    animation: drawer-in 180ms ease-in reverse both;
+    animation: drawer-in var(--drawer-out) ease-in reverse both;
   }
   @keyframes drawer-in {
     from {
@@ -51,7 +56,7 @@
   }
   .drawer-aside[data-exiting] {
     pointer-events: none;
-    animation: drawer-aside-out 180ms ease-in both;
+    animation: drawer-aside-out var(--drawer-out) ease-in both;
   }
   @keyframes drawer-aside-in {
     from {

@@ -4,7 +4,7 @@ import { expect, type Page, type TestInfo } from '@playwright/test';
 export async function openHome(page: Page, theme: 'light' | 'dark') {
   await page.addInitScript(
     ({ theme }) => {
-      localStorage.setItem('safepoint:theme', theme);
+      localStorage.setItem('safepoint.dev.theme', theme);
     },
     { theme },
   );

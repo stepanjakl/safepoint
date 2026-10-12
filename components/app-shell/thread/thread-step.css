@@ -82,14 +82,12 @@
     --thread-wash-x: 0.1875rem;
     --thread-wash-y: 0.1875rem;
     /* Quick fades: pills, the fold's content and the time trading places. */
-    --thread-fade: 160ms;
-    /* Height sets the pace until the cap, so long bodies cannot hold up
-       the content fade or the next step. */
-    --thread-fold-pace: 1.1ms;
-    /* Short bodies take at least this, so a small fold eases open rather than
-       snapping; only those under 180px are held to it. */
-    --thread-fold-min: 200ms;
-    --thread-fold-max: 350ms;
+    --thread-fade: var(--fold-fade);
+    /* Folds pace by height within limits shared with Fold (geometry.css);
+       thread-step.tsx reads these three. */
+    --thread-fold-pace: var(--fold-pace);
+    --thread-fold-min: var(--fold-min);
+    --thread-fold-max: var(--fold-max);
     /* A step arriving while watched, in turn: its space opens, its mark
        travels down the line drawing in behind it, the row eases in as the
        mark lands, and the body unfolds once the mark has grown. */
@@ -97,6 +95,17 @@
     --thread-travel-time: 620ms;
     --thread-landed: calc(var(--thread-space) + var(--thread-travel-time));
     --thread-arrive: 700ms;
+    /* The end row arrives a beat after the last step; a line fills over this. */
+    --thread-end-after: 300ms;
+    --thread-fill-time: 520ms;
+    /* The running mark's loop, and its arcs lighting in turn as it enters. */
+    --thread-beat: 2.2s;
+    --thread-arc-stagger: 90ms;
+    --thread-drift: 2.4s;
+    /* A working mark's turn and breath, and the settled one's slow turn. */
+    --thread-spin: 1.2s;
+    --thread-spin-slow: 6s;
+    --thread-name-done: 900ms;
     /* The soft leading edge of a line drawing in, and the longer fade that
        trails off a running step. A join growing out of a trail starts with
        the trail's fade, so its end does not move when it takes over. */
@@ -124,7 +133,7 @@
   /* The margin takes back the row and the gap before it, so the space opens
      rather than the thread lengthening by a row in one frame. */
   .thread-step[data-entering] {
-    animation: thread-space var(--thread-space) cubic-bezier(0.45, 0, 0.55, 1);
+    animation: thread-space var(--thread-space) var(--ease-in-out-quad);
   }
   @keyframes thread-space {
     from {
@@ -133,8 +142,7 @@
   }
   /* Its end clears data-entering, so it must be the arrival's last motion. */
   .thread-step[data-entering] > .thread-step-row {
-    animation: thread-row-in var(--thread-arrive) cubic-bezier(0.33, 1, 0.68, 1)
-      var(--thread-landed) both;
+    animation: thread-row-in var(--thread-arrive) var(--ease-out-cubic) var(--thread-landed) both;
   }
   @keyframes thread-row-in {
     from {
@@ -144,7 +152,7 @@
   }
   /* --thread-travel is the distance from the step before, measured on arrival. */
   .thread-step[data-entering] > .thread-marker .thread-dot {
-    animation: thread-mark-travel var(--thread-travel-time) cubic-bezier(0.45, 0, 0.55, 1)
+    animation: thread-mark-travel var(--thread-travel-time) var(--ease-in-out-quad)
       var(--thread-space) both;
   }
   /* Emerges over the first stretch of the path rather than all of it: the
@@ -187,12 +195,12 @@
   @keyframes thread-mark-seed {
     0% {
       scale: 0.45;
-      animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+      animation-timing-function: var(--ease-out-cubic);
     }
     70% {
       scale: 2.4;
       opacity: 0;
-      animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+      animation-timing-function: var(--ease-in-out-quad);
     }
     100% {
       scale: 2.35;
@@ -207,14 +215,14 @@
       scale: 0.19;
       opacity: 0;
       color: var(--sp-state-advisory);
-      animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+      animation-timing-function: var(--ease-out-cubic);
     }
     45% {
       opacity: 1;
     }
     70% {
       scale: 1.02;
-      animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+      animation-timing-function: var(--ease-in-out-quad);
     }
     100% {
       scale: 1;
@@ -226,12 +234,12 @@
   /* A row added to an open list while the reader watches fades in as the
      body's height eases out to hold it, rather than being uncovered by it. */
   .thread-list-row[data-arrived] {
-    animation: thread-fact-in var(--thread-arrive) cubic-bezier(0.33, 1, 0.68, 1) both;
+    animation: thread-fact-in var(--thread-arrive) var(--ease-out-cubic) both;
   }
   /* The evaluation bar: each part grows to its new share as the count ticks,
      and a kind of result seen for the first time grows in from nothing. */
   .thread-progress-part {
-    transition: flex-grow var(--thread-arrive) cubic-bezier(0.33, 1, 0.68, 1);
+    transition: flex-grow var(--thread-arrive) var(--ease-out-cubic);
   }
   @starting-style {
     .thread-progress-part {
@@ -247,7 +255,7 @@
     color: var(--sp-text-muted);
   }
   .thread-end[data-arrived] {
-    animation: thread-row-in var(--thread-arrive) cubic-bezier(0.33, 1, 0.68, 1) 300ms both;
+    animation: thread-row-in var(--thread-arrive) var(--ease-out-cubic) var(--thread-end-after) both;
   }
 
   /* ── The line ────────────────────────────────────────────────────────── */
@@ -287,7 +295,7 @@
     background-repeat:
       no-repeat,
       no-repeat repeat;
-    transition: --thread-fill 520ms cubic-bezier(0.45, 0, 0.55, 1);
+    transition: --thread-fill var(--thread-fill-time) var(--ease-in-out-quad);
   }
   /* The stretch into a running step is not travelled yet: round dots, one
      line-width across, so the dotted line keeps the solid one's round ends.
@@ -300,10 +308,10 @@
      moment that step finishes. One animation on every dotted line, so a line
      changing role carries on rather than restarting. */
   .thread-step:has(+ .thread-step[data-status='running'])::before {
-    animation: thread-line-drift 2.4s linear infinite;
+    animation: thread-line-drift var(--thread-drift) linear infinite;
   }
   .thread-step:has(+ .thread-step[data-settling])::before {
-    animation: thread-line-drift 2.4s linear infinite paused;
+    animation: thread-line-drift var(--thread-drift) linear infinite paused;
   }
   /* Drawn in top to bottom behind the travelling mark, its leading edge soft:
      --thread-draw is where the edge has reached, past the end once drawn. */
@@ -314,9 +322,8 @@
       transparent var(--thread-draw)
     );
     animation:
-      thread-line-draw var(--thread-travel-time) cubic-bezier(0.45, 0, 0.55, 1) var(--thread-space)
-        both,
-      thread-line-drift 2.4s linear infinite;
+      thread-line-draw var(--thread-travel-time) var(--ease-in-out-quad) var(--thread-space) both,
+      thread-line-drift var(--thread-drift) linear infinite;
     /* A step that arrives finished turns its line solid once its mark has
        landed, not while the mark is still travelling down it. */
     transition-delay: var(--thread-landed);
@@ -332,7 +339,7 @@
     mask-composite: intersect;
     animation:
       thread-line-draw var(--thread-arrive) ease-out var(--thread-landed) both,
-      thread-line-drift 2.4s linear infinite;
+      thread-line-drift var(--thread-drift) linear infinite;
   }
   @keyframes thread-line-draw {
     from {
@@ -373,9 +380,9 @@
       no-repeat,
       no-repeat repeat;
     opacity: 0;
-    animation: thread-line-drift 2.4s linear infinite paused;
+    animation: thread-line-drift var(--thread-drift) linear infinite paused;
     transition:
-      --thread-fill 520ms cubic-bezier(0.45, 0, 0.55, 1),
+      --thread-fill var(--thread-fill-time) var(--ease-in-out-quad),
       opacity var(--thread-arrive) ease-out;
   }
   .thread-step:last-child:is([data-status='running'], [data-settling], [data-filling])::before {
@@ -480,7 +487,7 @@
     height: var(--thread-mark);
     fill: none;
     stroke-width: 2;
-    animation: thread-turn 1.2s linear infinite;
+    animation: thread-turn var(--thread-spin) linear infinite;
   }
   .thread-ring-track {
     stroke: var(--sp-running-track);
@@ -489,7 +496,7 @@
     stroke: currentColor;
     stroke-linecap: round;
     stroke-dasharray: 22 100;
-    animation: thread-breathe 1.2s ease-in-out infinite;
+    animation: thread-breathe var(--thread-spin) ease-in-out infinite;
   }
   .thread-ring-dot {
     fill: currentColor;
@@ -518,7 +525,7 @@
     --thread-mark-delay: 0s;
     color: var(--sp-state-advisory);
     --thread-arc-ink: var(--sp-state-advisory);
-    animation: thread-segmented-glow 2.2s linear var(--thread-mark-lead) infinite;
+    animation: thread-segmented-glow var(--thread-beat) linear var(--thread-mark-lead) infinite;
   }
   /* Out of view or in a hidden tab, the loop and the shimmer rest together, so
      they resume in time. A leaving ring plays on: the thread waits for it. */
@@ -542,12 +549,12 @@
     24% {
       color: var(--sp-state-advisory);
       --thread-arc-ink: var(--sp-state-advisory);
-      animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1);
+      animation-timing-function: var(--ease-in-out-sine);
     }
     38% {
       color: var(--sp-thread-beat-glow);
       --thread-arc-ink: var(--sp-thread-beat-glow);
-      animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1);
+      animation-timing-function: var(--ease-in-out-sine);
     }
     58%,
     100% {
@@ -569,14 +576,14 @@
     --thread-arc: 0;
     transform-box: view-box;
     transform-origin: center;
-    animation: thread-segmented-turn 2.2s ease-in-out var(--thread-mark-lead) infinite;
+    animation: thread-segmented-turn var(--thread-beat) ease-in-out var(--thread-mark-lead) infinite;
   }
   .thread-segmented-arc {
     transform-box: view-box;
     transform-origin: center;
     stroke: var(--sp-running-track);
     stroke-linecap: round;
-    animation: thread-segmented-light 2.2s linear
+    animation: thread-segmented-light var(--thread-beat) linear
       calc(var(--thread-mark-lead) + var(--thread-stagger) * var(--thread-arc)) infinite backwards;
   }
   /* On the arc's wrapper, which holds its rotation: a transform-origin on a
@@ -615,7 +622,7 @@
   .thread-segmented-dot {
     transform-box: fill-box;
     transform-origin: center;
-    animation: thread-segmented-beat 2.2s linear var(--thread-mark-lead) infinite;
+    animation: thread-segmented-beat var(--thread-beat) linear var(--thread-mark-lead) infinite;
   }
   /* A breath rather than a tap: it swells from 24% to its peak at 38% and
      takes longer to settle, by 58%. The glow, the arcs' release and the name's
@@ -624,11 +631,11 @@
     0%,
     24% {
       scale: 1;
-      animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1);
+      animation-timing-function: var(--ease-in-out-sine);
     }
     38% {
       scale: 1.18;
-      animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1);
+      animation-timing-function: var(--ease-in-out-sine);
     }
     58%,
     100% {
@@ -643,25 +650,25 @@
     .thread-segmented-ring[data-enter] .thread-segmented-dot {
       animation:
         thread-mark-dot-in var(--thread-mark-enter) var(--thread-mark-delay) both,
-        thread-segmented-beat 2.2s ease-in-out var(--thread-mark-lead) infinite;
+        thread-segmented-beat var(--thread-beat) ease-in-out var(--thread-mark-lead) infinite;
     }
     .thread-segmented-ring[data-enter] .thread-segmented-arc {
       animation:
         thread-mark-arc-in var(--thread-mark-enter)
-          calc(var(--thread-mark-delay) + var(--thread-arc) * 90ms) both,
-        thread-segmented-light 2.2s linear
+          calc(var(--thread-mark-delay) + var(--thread-arc) * var(--thread-arc-stagger)) both,
+        thread-segmented-light var(--thread-beat) linear
           calc(var(--thread-mark-lead) + var(--thread-stagger) * var(--thread-arc)) infinite
           backwards;
     }
     .thread-segmented-ring[data-leaving] .thread-segmented-dot {
       animation:
-        thread-segmented-beat 2.2s ease-in-out var(--thread-mark-lead) infinite,
+        thread-segmented-beat var(--thread-beat) ease-in-out var(--thread-mark-lead) infinite,
         thread-mark-dot-out var(--thread-mark-leave) var(--thread-mark-fold) both;
     }
     .thread-segmented-ring[data-leaving] .thread-segmented-outer {
       animation:
-        thread-segmented-turn 2.2s ease-in-out var(--thread-mark-lead) infinite,
-        thread-mark-arcs-out var(--thread-mark-fold) cubic-bezier(0.45, 0, 0.55, 1) both;
+        thread-segmented-turn var(--thread-beat) ease-in-out var(--thread-mark-lead) infinite,
+        thread-mark-arcs-out var(--thread-mark-fold) var(--ease-in-out-quad) both;
     }
   }
   .thread-segmented-ring[data-travelled]:not([data-leaving]) .thread-segmented-dot {
@@ -670,11 +677,11 @@
   @keyframes thread-mark-dot-grow {
     0% {
       scale: 0.45;
-      animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+      animation-timing-function: var(--ease-out-cubic);
     }
     45% {
       scale: 1.15;
-      animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+      animation-timing-function: var(--ease-in-out-quad);
     }
     100% {
       scale: 1;
@@ -684,14 +691,14 @@
     0% {
       scale: 0.5;
       opacity: 0;
-      animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+      animation-timing-function: var(--ease-out-cubic);
     }
     30% {
       opacity: 1;
     }
     45% {
       scale: 1.15;
-      animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+      animation-timing-function: var(--ease-in-out-quad);
     }
     100% {
       scale: 1;
@@ -704,12 +711,12 @@
     38% {
       opacity: 0;
       scale: 0.55;
-      animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+      animation-timing-function: var(--ease-out-cubic);
     }
     80% {
       opacity: 1;
       scale: 1.03;
-      animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+      animation-timing-function: var(--ease-in-out-quad);
     }
     100% {
       opacity: 1;
@@ -728,12 +735,12 @@
      keeps beating while the arcs fold, then grows from wherever it is. */
   @keyframes thread-mark-dot-out {
     0% {
-      animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+      animation-timing-function: var(--ease-out-cubic);
     }
     70% {
       scale: 2.4;
       opacity: 0;
-      animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+      animation-timing-function: var(--ease-in-out-quad);
     }
     100% {
       scale: 2.35;
@@ -748,14 +755,14 @@
       scale: 0.47;
       opacity: 0;
       color: var(--sp-state-advisory);
-      animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+      animation-timing-function: var(--ease-out-cubic);
     }
     45% {
       opacity: 1;
     }
     70% {
       scale: 1.02;
-      animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+      animation-timing-function: var(--ease-in-out-quad);
     }
     100% {
       scale: 1;
@@ -795,7 +802,7 @@
   .thread-step-toggle {
     font-size: var(--sp-text-dense);
     line-height: var(--sp-text-dense--lh);
-    font-weight: 550;
+    font-weight: var(--font-weight-label);
     color: var(--sp-text-muted-strong);
     text-align: start;
     transition: color var(--duration-state) ease-out;
@@ -844,7 +851,7 @@
   .thread-step-heading-name {
     font-size: var(--sp-text-dense);
     line-height: var(--sp-text-dense--lh);
-    font-weight: 550;
+    font-weight: var(--font-weight-label);
   }
   .thread-step-heading-arrow {
     flex: none;
@@ -936,7 +943,7 @@
   .thread[data-look='proposed']
     .thread-step:is([data-status='running'], [data-settling])
     .thread-step-toggle {
-    animation: thread-name-beat 2.2s linear var(--thread-name-lead) infinite;
+    animation: thread-name-beat var(--thread-beat) linear var(--thread-name-lead) infinite;
   }
   /* When the step finishes, its pass stops where it is -- place and colour --
      and fades into plain ink as the arcs fold, wherever it had got to. */
@@ -958,11 +965,11 @@
   /* The finish: once the check has landed, one soft pass in the finished grey. */
   .thread[data-look='proposed'] .thread-step[data-flourish] .thread-step-toggle {
     --thread-name-band: var(--sp-thread-done);
-    animation: thread-name-done 900ms cubic-bezier(0.45, 0, 0.55, 1) both;
+    animation: thread-name-done var(--thread-name-done) var(--ease-in-out-quad) both;
   }
   .thread[data-look='proposed'] .thread-step[data-flourish] .thread-step-time,
   .thread-step-flag[data-motion='in'] {
-    animation: thread-fact-in var(--thread-arrive) cubic-bezier(0.33, 1, 0.68, 1) both;
+    animation: thread-fact-in var(--thread-arrive) var(--ease-out-cubic) both;
   }
   @keyframes thread-fact-in {
     from {
@@ -992,7 +999,7 @@
     24% {
       background-position: 105% 0;
       --thread-name-band: var(--sp-thread-beat-glow);
-      animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      animation-timing-function: var(--ease-out-quad);
     }
     /* Full strength off the beat, then it fades into the ink as it goes. */
     40% {
@@ -1033,17 +1040,14 @@
   .thread-step-fact,
   .thread-step-flag,
   .thread-step-link {
-    display: inline-flex;
-    align-items: center;
+    @apply pill-shape;
     gap: 0.25rem;
     height: var(--thread-mark);
     padding-inline: 0.5rem;
-    border-radius: 999px;
     font-size: var(--sp-text-micro);
     line-height: var(--sp-text-micro--lh);
     letter-spacing: var(--sp-text-micro--ls);
-    font-weight: 550;
-    white-space: nowrap;
+    font-weight: var(--font-weight-label);
   }
   .thread-step-fact,
   .thread-step-flag {
@@ -1123,7 +1127,7 @@
     margin-inline-start: auto;
     font-size: var(--sp-text-meta);
     line-height: var(--sp-text-meta--lh);
-    font-weight: 500;
+    font-weight: var(--font-weight-medium);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
     color: var(--sp-text-muted);
@@ -1194,17 +1198,15 @@
     grid-template-rows: 0fr;
     min-width: 0;
   }
-  /* A step's fold, or one inside its body (.thread-fold), paced alike. The
-     body's open height in px is published as it resizes; the fallback is a
-     typical body, for the frame before it is measured. */
-  :is(.thread-step-fold, .thread-fold) {
+  /* The body's open height in px is published as it resizes; the fallback is
+     a typical body, for the frame before it is measured. */
+  .thread-step-fold {
     --thread-fold-duration: clamp(
       var(--thread-fold-min),
       calc(var(--thread-fold-height, 230) * var(--thread-fold-pace)),
       var(--thread-fold-max)
     );
-    transition: grid-template-rows var(--thread-fold-duration) cubic-bezier(0.4, 0, 0.2, 1)
-      var(--thread-fade);
+    transition: grid-template-rows var(--thread-fold-duration) var(--ease-fold) var(--thread-fade);
   }
   .thread-step[data-open] > .thread-step-fold {
     grid-template-rows: 1fr;
@@ -1268,7 +1270,7 @@
       height: var(--thread-rail);
     }
     .thread-dot[data-status='running'] > svg {
-      animation: thread-turn 6s linear infinite;
+      animation: thread-turn var(--thread-spin-slow) linear infinite;
     }
     .thread-step .thread-step-toggle {
       color: var(--sp-text-primary);

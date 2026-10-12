@@ -230,6 +230,36 @@
   @apply ground-floating;
 }
 
+/* Every pill's shape -- Pill (components/ui/pill.tsx) and the pills that move
+   with stylesheets of their own; each keeps its own size and face. */
+@utility pill-shape {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* The rule between two rows, drawn over a row's top (or, with --row-rule-top,
+   a table cell's bottom: a <tr> cannot hold it) from --row-rule-inset on. */
+@utility row-rule {
+  position: relative;
+  &::before {
+    content: '';
+    position: absolute;
+    inset-inline: var(--row-rule-inset, 1rem) 0;
+    top: var(--row-rule-top, 0);
+    z-index: 1;
+    border-top: 1px solid var(--sp-rule-faint);
+    pointer-events: none;
+    transition: opacity var(--duration-state) ease-out;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    &::before {
+      transition: none;
+    }
+  }
+}
+
 /* A floating card's own dividers, in its edge colours: the ring, lit below a
    header's rule and above a footer's. */
 @utility floating-rule-below {
