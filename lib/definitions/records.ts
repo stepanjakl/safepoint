@@ -41,7 +41,7 @@ export const cel = (value: unknown) =>
 const blank = (raw: unknown) => raw === undefined || raw === null || raw === '';
 
 // A1 notation for a cell: column index and row index from zero.
-const cellOf = (tab: string, column: number, row: number) => {
+export const cellOf = (tab: string, column: number, row: number) => {
   let letters = '';
   for (let n = column + 1; n > 0; n = Math.floor((n - 1) / 26))
     letters = String.fromCharCode(65 + ((n - 1) % 26)) + letters;

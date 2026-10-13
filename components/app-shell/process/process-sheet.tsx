@@ -53,6 +53,8 @@ export const ProcessSheetActions = createContext<{
   // A change log needs a version before it; the first one has none to show.
   hasChanges: (version: string) => boolean;
   showInstructions: () => void;
+  // Only where the process keeps a rulebook to show.
+  showRules?: () => void;
   // The instructions now, which a run may predate.
   currentVersion: string;
 } | null>(null);
@@ -154,6 +156,7 @@ export function ProcessSheet({
     hasChanges: (version: string) =>
       versions.findIndex((entry) => entry.version === version) > 0,
     showInstructions: () => chooseTab('instructions'),
+    showRules: rulesPanel === undefined ? undefined : () => chooseTab('rules'),
     currentVersion: version,
   };
   const selection = useRunSelectionState({

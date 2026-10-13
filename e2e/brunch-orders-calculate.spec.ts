@@ -81,6 +81,11 @@ test('every value worked out for every record, cross-checked by the model', asyn
 }) => {
   await readTheSheet(page);
   await expect(page.getByText('All rules accepted').first()).toBeVisible();
+  // Once the values are worked out the run moves on to Propose; reopen them.
+  await expect(page.getByText('Not proposed').first()).toBeVisible();
+  await page
+    .locator('button.thread-step-toggle', { hasText: /^Calculate/ })
+    .click();
   const table = page.getByRole('table', {
     name: 'Values worked out for every record',
   });
@@ -121,6 +126,14 @@ test('every value worked out for every record, cross-checked by the model', asyn
     table.getByRole('button', { name: /^AV-RR.*differs from the model$/ }),
   ).toBeVisible();
   await expect(table.getByText('Not rounded up.')).toBeVisible();
+
+  // Only the records that differ, on asking.
+  await page
+    .getByRole('radiogroup', { name: 'Records to show' })
+    .getByRole('radio', { name: /^Records that don’t match the model/ })
+    .click();
+  await expect(table.getByRole('rowheader')).toHaveCount(1);
+  await expect(table.getByRole('rowheader', { name: /^AV-RR/ })).toBeVisible();
 
   const violations = (
     await new AxeBuilder({ page }).include('ol.thread').analyze()

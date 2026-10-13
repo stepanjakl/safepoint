@@ -260,6 +260,11 @@
   }
 }
 
+/* On a row's other cells: the rule runs on from the first cell's, unbroken. */
+@utility row-rule-flush {
+  --row-rule-inset: 0px;
+}
+
 /* A floating card's own dividers, in its edge colours: the ring, lit below a
    header's rule and above a footer's. */
 @utility floating-rule-below {

@@ -451,13 +451,15 @@ Where a value is genuinely dynamic, use a `style` prop rather than an interpolat
 Several shapes recur, and each has one home. A second, hand-drawn copy is how
 four pills ended up with four class strings.
 
-| Shape                    | Use                                                                  | Lives in                                      |
-| ------------------------ | -------------------------------------------------------------------- | --------------------------------------------- |
-| A pill                   | `Pill` with a `tone`; `variant="ringed"` for context, not a state    | `components/ui/pill.tsx`                      |
-| A table of data          | `DataTable`, `DATA_TABLE_HEAD`, `DATA_TABLE_NAME`, `DATA_TABLE_RULE` | `components/ui/data-table.tsx`                |
-| Content opening in place | `Fold`                                                               | `components/ui/fold.tsx`                      |
-| An input in a list       | `InputRow` (with `count` where a process says how much it holds)     | `components/app-shell/inputs/inputs-list.tsx` |
-| A step's test controls   | a `section` with `brunch-trial`, labelled "<step> setup"             | `components/brunch-orders/orders-run.css`     |
+| Shape                    | Use                                                                                   | Lives in                                                                   |
+| ------------------------ | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| A pill                   | `Pill` with a `tone`; `variant="ringed"` for context, not a state                     | `components/ui/pill.tsx`                                                   |
+| A table of data          | `DataTable`, `DATA_TABLE_HEAD`, `DATA_TABLE_NAME`, `DATA_TABLE_RULE`                  | `components/ui/data-table.tsx`                                             |
+| Content opening in place | `Fold`                                                                                | `components/ui/fold.tsx`                                                   |
+| A filter strip           | `FilterTabs`; `size="small"` beside a result rather than over a list                  | `components/ui/filter-tabs.tsx`                                            |
+| Buttons in a table row   | `Button` or `DecisionButton` with `size="small"`, so a row's actions stay on one line | `components/ui/button.tsx`, `components/brunch-orders/decision-button.tsx` |
+| An input in a list       | `InputRow` (with `count` where a process says how much it holds)                      | `components/app-shell/inputs/inputs-list.tsx`                              |
+| A step's test controls   | a `section` with `brunch-trial`, labelled "<step> setup"                              | `components/brunch-orders/orders-run.css`                                  |
 
 Two shapes are utilities, because stylesheets compose them as well as markup:
 
@@ -470,6 +472,12 @@ Two shapes are utilities, because stylesheets compose them as well as markup:
   release list applies it to its items; `DataTable` (as `DATA_TABLE_RULE`)
   to a cell, since Chrome lays a pseudo-element on a `<tr>` out as a cell of
   its own. A table places it with `--row-rule-inset` and `--row-rule-top`.
+  The first cell of a row takes `DATA_TABLE_RULE` and every later cell
+  `DATA_TABLE_RULE_ON` (`row-rule-flush`), so the rule runs on unbroken.
+
+A table's name column hides on phones (`DATA_TABLE_NAME_COLUMN`), and the
+name moves under the key (`DATA_TABLE_NAME_UNDER`), so the card never scrolls
+the page sideways.
 
 ### Do not put two utilities for the same property on one element
 

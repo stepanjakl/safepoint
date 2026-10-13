@@ -5,7 +5,7 @@ import ChevronTriangleDown from 'blode-icons-react/icons/chevron-triangle-down-s
 import ChainLink1Filled from 'blode-icons-react/icons/chain-link-1-filled';
 import TableFilled from 'blode-icons-react/icons/table-filled';
 import { useContext, useId, useState } from 'react';
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 
 import { ProcessSheetActions } from '@/components/app-shell/process/process-sheet';
 import { useRunSelection } from '@/components/app-shell/runs/run-selection';
@@ -32,8 +32,10 @@ import { cx } from '@/lib/cx';
 import type { ProcessStep, ProcessSummary } from '@/lib/process/model';
 import { COMING, ORDER_STEPS } from '@/lib/processes/brunch-orders/process';
 
+import { ApplyStep } from './apply-step';
 import { CalculateStep, type CalculateProgress } from './calculate-step';
 import { DataDrawer } from './data-drawer';
+import { ProposeStep, type ProposeProgress } from './propose-step';
 import { RulesStep, type RulesProgress } from './rules-step';
 
 // How far a run has got, as the browser keeps it: the read's id and summary.
@@ -92,11 +94,20 @@ export function OrdersRun({ process }: { process: ProcessSummary }) {
   const read = live.data.read as RunRead | undefined;
   const rules = live.data.rules as RulesProgress | undefined;
   const calculated = live.data.calculate as CalculateProgress | undefined;
+  const proposed = live.data.propose as ProposeProgress | undefined;
   const rulesDone =
     rules !== undefined &&
     rules.intent &&
     rules.total > 0 &&
     rules.approved === rules.total;
+  // Propose opens once Calculate has worked the values out.
+  const canPropose =
+    rulesDone && calculated !== undefined && read !== undefined;
+  const decidedCount = proposed ? Object.keys(proposed.decisions).length : 0;
+  const allDecided =
+    proposed?.proposedAt != null &&
+    proposed.total > 0 &&
+    decidedCount === proposed.total;
   const status = (step: ProcessStep): ProcessStep['status'] =>
     step.id === 'instructions'
       ? 'complete'
@@ -116,14 +127,28 @@ export function OrdersRun({ process }: { process: ProcessSummary }) {
               : calculated?.checked && calculated.agreed === calculated.total
                 ? 'complete'
                 : 'attention'
-            : 'pending';
+            : step.id === 'propose'
+              ? !canPropose
+                ? 'pending'
+                : allDecided
+                  ? 'complete'
+                  : 'attention'
+              : step.id === 'apply'
+                ? allDecided
+                  ? 'complete'
+                  : 'pending'
+                : 'pending';
   // The furthest step a person can act on.
   const latest =
     !read || revealingReadId === read.id
       ? 'read'
       : !rulesDone
         ? 'rules'
-        : 'calculate';
+        : !canPropose
+          ? 'calculate'
+          : !allDecided
+            ? 'propose'
+            : 'apply';
   // What each step has come to, in its heading, where it has a state yet.
   const label = (step: ProcessStep) =>
     step.id === 'rules' && rules?.total
@@ -136,7 +161,23 @@ export function OrdersRun({ process }: { process: ProcessSummary }) {
           : calculated.agreed === calculated.total
             ? `All ${calculated.total} match the model`
             : `${calculated.total - calculated.agreed} don’t match the model`
-        : step.label;
+        : step.id === 'propose' && canPropose
+          ? proposed?.running
+            ? 'Proposing…'
+            : !proposed?.proposedAt
+              ? 'Not proposed'
+              : allDecided
+                ? 'All decided'
+                : decidedCount
+                  ? `${decidedCount} of ${proposed.total} decided`
+                  : proposed.needYou
+                    ? `${proposed.total} proposed · ${proposed.needYou} need you`
+                    : `${proposed.total} proposed · all ready`
+          : step.id === 'apply' && allDecided
+            ? proposed.writes
+              ? `${proposed.writes} to write`
+              : 'Nothing to write'
+            : step.label;
   const steps = ORDER_STEPS.map((step) => ({
     ...step,
     status: status(step),
@@ -203,6 +244,41 @@ export function OrdersRun({ process }: { process: ProcessSummary }) {
                   }
                 />
               </ResponseSection>
+            ) : step.id === 'propose' && canPropose ? (
+              <ResponseSection>
+                <WithText
+                  process={process}
+                  version={live.run.instructionsVersion}
+                >
+                  {(text) => (
+                    <ProposeStep
+                      text={text}
+                      readId={read.id}
+                      rulebook={calculated.fingerprint}
+                      progress={proposed}
+                      onProgress={(progress) =>
+                        selection.updateLive(live.run.id, { propose: progress })
+                      }
+                    />
+                  )}
+                </WithText>
+              </ResponseSection>
+            ) : step.id === 'apply' && allDecided && read && calculated ? (
+              <ResponseSection>
+                <WithText
+                  process={process}
+                  version={live.run.instructionsVersion}
+                >
+                  {(text) => (
+                    <ApplyStep
+                      text={text}
+                      readId={read.id}
+                      rulebook={calculated.fingerprint}
+                      decisions={proposed.decisions}
+                    />
+                  )}
+                </WithText>
+              </ResponseSection>
             ) : (
               <p className="text-dense text-muted">{COMING[step.id]}</p>
             )}
@@ -266,6 +342,27 @@ function RunCalculate({
   const text = versions.find((v) => v.version === version)?.text;
   return text ? (
     <CalculateStep text={text} {...step} />
+  ) : (
+    <p className="text-dense text-muted">
+      Instructions {version} are not in this browser any more.
+    </p>
+  );
+}
+
+// The text of the instructions the run answers to, for a step that needs it.
+function WithText({
+  process,
+  version,
+  children,
+}: {
+  process: ProcessSummary;
+  version: string;
+  children: (text: string) => ReactNode;
+}) {
+  const { versions } = useInstructions(process.id, process.instructions);
+  const text = versions.find((v) => v.version === version)?.text;
+  return text ? (
+    children(text)
   ) : (
     <p className="text-dense text-muted">
       Instructions {version} are not in this browser any more.

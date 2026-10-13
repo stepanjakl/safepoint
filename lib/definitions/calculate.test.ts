@@ -9,7 +9,7 @@ import {
   keptCrossCheck,
 } from './calculate';
 import { capturedRead } from './captured.fixture';
-import { always, answer, told } from './models.fixture';
+import { always, answer, standIn, told } from './models.fixture';
 import { inScratchDirectory } from './scratch.fixture';
 import { definition, TEXT } from './set.fixture';
 import { fingerprintOf } from './store';
@@ -206,6 +206,48 @@ describe('the model cross-checking', () => {
     await expect(
       crossCheck(owner, setOf(), read, 'test', TEXT, { resolve: () => twice }),
     ).rejects.toThrow(/SD-01 is answered twice/);
+  });
+
+  it('asks in batches, each with only its own records’ rows', async () => {
+    const records = everyRecord(() => null);
+    const model = standIn(
+      answer({ records: records.slice(0, 6) }),
+      answer({ records: records.slice(6) }),
+    );
+    const check = await crossCheck(owner, setOf(), read, 'test', TEXT, {
+      resolve: () => model,
+      batch: 6,
+    });
+    expect(check).toMatchObject({ agreed: 22, total: 22 });
+    expect(model.doGenerateCalls).toHaveLength(2);
+    // SD-01 is in the first batch, OO-500 in the second; Parameters is whole.
+    expect(told(model, 0)).toContain('SD-01');
+    expect(told(model, 0)).not.toContain('OO-500');
+    expect(told(model, 1)).toContain('OO-500');
+    expect(told(model, 1)).not.toContain('Sourdough');
+    for (const call of [0, 1]) expect(told(model, call)).toContain('ambient');
+  });
+
+  it('asks again only for what a stopped cross-check had not answered', async () => {
+    const records = everyRecord(() => null);
+    const stopped = standIn(
+      answer({ records: records.slice(0, 6) }),
+      answer({ records: records.slice(6, 8) }),
+    );
+    await expect(
+      crossCheck(owner, setOf(), read, 'test', TEXT, {
+        resolve: () => stopped,
+        batch: 6,
+      }),
+    ).rejects.toThrow(/3 not answered/);
+    const rest = standIn(answer({ records: records.slice(6) }));
+    const check = await crossCheck(owner, setOf(), read, 'test', TEXT, {
+      resolve: () => rest,
+      batch: 6,
+    });
+    expect(rest.doGenerateCalls).toHaveLength(1);
+    expect(told(rest)).not.toContain('Sourdough');
+    expect(check).toMatchObject({ agreed: 22, total: 22 });
   });
 
   it('refuses a value filed under something other than a record', async () => {

@@ -276,6 +276,11 @@ export function describe(read: KeptRead, subject: DefinitionSubject): string {
           `Days of the week (${typedColumns('weekday')}) are ints, Monday 1 to Sunday 7.`,
         ]
       : []),
+    ...(kinds.has('yes_no')
+      ? [
+          `Yes/no columns (${typedColumns('yes_no')}) are true or false: read them as conditions, record.<column> or !record.<column>.`,
+        ]
+      : []),
     ...(kinds.has('time_of_day')
       ? [
           `Times of day (${typedColumns('time_of_day')}) are ints, minutes after midnight: 06:30 is 390.`,

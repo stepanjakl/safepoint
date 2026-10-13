@@ -1,0 +1,656 @@
+{
+  "names": {
+    "SD-01": "Sourdough loaf 800g",
+    "AV-RR": "Hass avocados, ripe & ready, 2-pack",
+    "AV-LS": "Hass avocado, ripen at home",
+    "EG-06": "Free-range eggs, medium, 6",
+    "FT-200": "Greek feta 200g",
+    "LM-04": "Lemons, 4-pack",
+    "CT-250": "Cherry tomatoes 250g",
+    "RK-60": "Wild rocket 60g",
+    "CF-40": "Chilli flakes 40g",
+    "SS-125": "Sea salt flakes 125g",
+    "OO-500": "Extra virgin olive oil 500ml"
+  },
+  "calculated": {
+    "calculations": [
+      {
+        "id": "expected_sales",
+        "name": "Expected sales"
+      },
+      {
+        "id": "target_stock_level",
+        "name": "Target stock level"
+      }
+    ],
+    "rows": {
+      "SD-01": {
+        "expected_sales": 73,
+        "target_stock_level": 80.3
+      },
+      "AV-RR": {
+        "expected_sales": 65,
+        "target_stock_level": 71.5
+      },
+      "AV-LS": {
+        "expected_sales": 21,
+        "target_stock_level": 23.1
+      },
+      "EG-06": {
+        "expected_sales": 28,
+        "target_stock_level": 30.8
+      },
+      "FT-200": {
+        "expected_sales": 54,
+        "target_stock_level": 59.4
+      },
+      "LM-04": {
+        "expected_sales": 12,
+        "target_stock_level": 13.2
+      },
+      "CT-250": {
+        "expected_sales": 23,
+        "target_stock_level": 25.3
+      },
+      "RK-60": {
+        "expected_sales": 13,
+        "target_stock_level": 14.3
+      },
+      "CF-40": {
+        "expected_sales": 4,
+        "target_stock_level": 4.2
+      },
+      "SS-125": {
+        "expected_sales": 3,
+        "target_stock_level": 3.15
+      },
+      "OO-500": {
+        "expected_sales": 5,
+        "target_stock_level": 5.25
+      }
+    }
+  },
+  "proposal": {
+    "fingerprint": "5b895575e4e7",
+    "readId": "frozen",
+    "model": "frozen",
+    "at": "2026-10-12T12:00:00.000Z",
+    "records": {
+      "SD-01": {
+        "action": "set",
+        "values": {
+          "order": 72
+        },
+        "reason": "72 in whole cases of 8, toward the target stock level.",
+        "cited": [
+          "Stock!B2",
+          "Products!G2"
+        ],
+        "unsure": "Covering the target needs more than the checks that block allow.",
+        "verdict": "decide",
+        "checks": [
+          {
+            "id": "order_ripe_avocados_limit",
+            "name": "Ripe avocados limit",
+            "consequence": "block",
+            "holds": true,
+            "steps": [
+              "!false || 0 - 0 + 0 + 72 <= 73",
+              "!false || 72 <= 73",
+              "!false || true",
+              "true"
+            ],
+            "error": null
+          },
+          {
+            "id": "order_in_whole_cases",
+            "name": "Order in whole cases",
+            "consequence": "block",
+            "holds": true,
+            "steps": [
+              "72 % 8 == 0",
+              "0 == 0",
+              "true"
+            ],
+            "error": null
+          },
+          {
+            "id": "supplier_delivery_limit",
+            "name": "Supplier delivery limit",
+            "consequence": "block",
+            "holds": true,
+            "steps": [
+              "!true || 72 <= 72",
+              "!true || true",
+              "true"
+            ],
+            "error": null
+          },
+          {
+            "id": "arrival_before_saturday_opening",
+            "name": "Arrival before opening",
+            "consequence": "block",
+            "holds": true,
+            "steps": [
+              "72 == 0 || 6 < 6 || 6 == 6 && 360 < 420",
+              "false || false || true && true",
+              "true"
+            ],
+            "error": null
+          },
+          {
+            "id": "cover_sales_and_safety_margin",
+            "name": "Cover target stock level",
+            "consequence": "decide",
+            "holds": false,
+            "steps": [
+              "0 - 0 + 0 + 72 >= 80.3",
+              "72.0 >= 80.3",
+              "false"
+            ],
+            "error": null
+          }
+        ]
+      },
+      "AV-RR": {
+        "action": "set",
+        "values": {
+          "order": 50
+        },
+        "reason": "50 in whole cases of 10, toward the target stock level.",
+        "cited": [
+          "Stock!B3",
+          "Products!G3"
+        ],
+        "unsure": "Covering the target needs more than the checks that block allow.",
+        "verdict": "decide",
+        "checks": [
+          {
+            "id": "order_ripe_avocados_limit",
+            "name": "Ripe avocados limit",
+            "consequence": "block",
+            "holds": true,
+            "steps": [
+              "!true || 14 - 2 + 0 + 50 <= 65",
+              "!true || 62 <= 65",
+              "!true || true",
+              "true"
+            ],
+            "error": null
+          },
+          {
+            "id": "order_in_whole_cases",
+            "name": "Order in whole cases",
+            "consequence": "block",
+            "holds": true,
+            "steps": [
+              "50 % 10 == 0",
+              "0 == 0",
+              "true"
+            ],
+            "error": null
+          },
+          {
+            "id": "supplier_delivery_limit",
+            "name": "Supplier delivery limit",
+            "consequence": "block",
+            "holds": true,
+            "steps": [
+              "!false || 50 <= absent",
+              "true"
+            ],
+            "error": null
+          },
+          {
+            "id": "arrival_before_saturday_opening",
+            "name": "Arrival before opening",
+            "consequence": "block",
+            "holds": true,
+            "steps": [
+              "50 == 0 || 5 < 6 || 5 == 6 && 360 < 420",
+              "false || true || false && true",
+              "true"
+            ],
+            "error": null
+          },
+          {
+            "id": "cover_sales_and_safety_margin",
+            "name": "Cover target stock level",
+            "consequence": "decide",
+            "holds": false,
+            "steps": [
+              "14 - 2 + 0 + 50 >= 71.5",
+              "62.0 >= 71.5",
+              "false"
+            ],
+            "error": null
+          }
+        ]
+      },
+      "AV-LS": {
+        "action": "leave",
+        "values": null,
+        "reason": "Stock already covers what is expected to sell.",
+        "cited": [
+          "Stock!B4"
+        ],
+        "unsure": null,
+        "verdict": "ready",
+        "checks": []
+      },
+      "EG-06": {
+        "action": "leave",
+        "values": null,
+        "reason": "Stock already covers what is expected to sell.",
+        "cited": [
+          "Stock!B5"
+        ],
+        "unsure": null,
+        "verdict": "ready",
+        "checks": []
+      },
+      "FT-200": {
+        "action": "set",
+        "values": {
+          "order": 48
+        },
+        "reason": "48 in whole cases of 12, toward the target stock level.",
+        "cited": [
+          "Stock!B6",
+          "Products!G6"
+        ],
+        "unsure": null,
+        "verdict": "ready",
+        "checks": [
+          {
+            "id": "order_ripe_avocados_limit",
+            "name": "Ripe avocados limit",
+            "consequence": "block",
+            "holds": true,
+            "steps": [
+              "!false || 17 - 0 + 0 + 48 <= 54",
+              "!false || 65 <= 54",
+              "!false || false",
+              "true"
+            ],
+            "error": null
+          },
+          {
+            "id": "order_in_whole_cases",
+            "name": "Order in whole cases",
+            "consequence": "block",
+            "holds": true,
+            "steps": [
+              "48 % 12 == 0",
+              "0 == 0",
+              "true"
+            ],
+            "error": null
+          },
+          {
+            "id": "supplier_delivery_limit",
+            "name": "Supplier delivery limit",
+            "consequence": "block",
+            "holds": true,
+            "steps": [
+              "!false || 48 <= absent",
+              "true"
+            ],
+            "error": null
+          },
+          {
+            "id": "arrival_before_saturday_opening",
+            "name": "Arrival before opening",
+            "consequence": "block",
+            "holds": true,
+            "steps": [
+              "48 == 0 || 5 < 6 || 5 == 6 && 360 < 420",
+              "false || true || false && true",
+              "true"
+            ],
+            "error": null
+          },
+          {
+            "id": "cover_sales_and_safety_margin",
+            "name": "Cover target stock level",
+            "consequence": "decide",
+            "holds": true,
+            "steps": [
+              "17 - 0 + 0 + 48 >= 59.4",
+              "65.0 >= 59.4",
+              "true"
+            ],
+            "error": null
+          }
+        ]
+      },
+      "LM-04": {
+        "action": "leave",
+        "values": null,
+        "reason": "Stock already covers what is expected to sell.",
+        "cited": [
+          "Stock!B7"
+        ],
+        "unsure": null,
+        "verdict": "ready",
+        "checks": []
+      },
+      "CT-250": {
+        "action": "set",
+        "values": {
+          "order": 10
+        },
+        "reason": "10 in whole cases of 10, toward the target stock level.",
+        "cited": [
+          "Stock!B8",
+          "Products!G8"
+        ],
+        "unsure": null,
+        "verdict": "ready",
+        "checks": [
+          {
+            "id": "order_ripe_avocados_limit",
+            "name": "Ripe avocados limit",
+            "consequence": "block",
+            "holds": true,
+            "steps": [
+              "!false || 8 - 0 + 10 + 10 <= 23",
+              "!false || 28 <= 23",
+              "!false || false",
+              "true"
+            ],
+            "error": null
+          },
+          {
+            "id": "order_in_whole_cases",
+            "name": "Order in whole cases",
+            "consequence": "block",
+            "holds": true,
+            "steps": [
+              "10 % 10 == 0",
+              "0 == 0",
+              "true"
+            ],
+            "error": null
+          },
+          {
+            "id": "supplier_delivery_limit",
+            "name": "Supplier delivery limit",
+            "consequence": "block",
+            "holds": true,
+            "steps": [
+              "!false || 10 <= absent",
+              "true"
+            ],
+            "error": null
+          },
+          {
+            "id": "arrival_before_saturday_opening",
+            "name": "Arrival before opening",
+            "consequence": "block",
+            "holds": true,
+            "steps": [
+              "10 == 0 || 5 < 6 || 5 == 6 && 360 < 420",
+              "false || true || false && true",
+              "true"
+            ],
+            "error": null
+          },
+          {
+            "id": "cover_sales_and_safety_margin",
+            "name": "Cover target stock level",
+            "consequence": "decide",
+            "holds": true,
+            "steps": [
+              "8 - 0 + 10 + 10 >= 25.3",
+              "28.0 >= 25.3",
+              "true"
+            ],
+            "error": null
+          }
+        ]
+      },
+      "RK-60": {
+        "action": "set",
+        "values": {
+          "order": 16
+        },
+        "reason": "16 in whole cases of 8, toward the target stock level.",
+        "cited": [
+          "Stock!B9",
+          "Products!G9"
+        ],
+        "unsure": null,
+        "verdict": "ready",
+        "checks": [
+          {
+            "id": "order_ripe_avocados_limit",
+            "name": "Ripe avocados limit",
+            "consequence": "block",
+            "holds": true,
+            "steps": [
+              "!false || 6 - 0 + 0 + 16 <= 13",
+              "!false || 22 <= 13",
+              "!false || false",
+              "true"
+            ],
+            "error": null
+          },
+          {
+            "id": "order_in_whole_cases",
+            "name": "Order in whole cases",
+            "consequence": "block",
+            "holds": true,
+            "steps": [
+              "16 % 8 == 0",
+              "0 == 0",
+              "true"
+            ],
+            "error": null
+          },
+          {
+            "id": "supplier_delivery_limit",
+            "name": "Supplier delivery limit",
+            "consequence": "block",
+            "holds": true,
+            "steps": [
+              "!false || 16 <= absent",
+              "true"
+            ],
+            "error": null
+          },
+          {
+            "id": "arrival_before_saturday_opening",
+            "name": "Arrival before opening",
+            "consequence": "block",
+            "holds": true,
+            "steps": [
+              "16 == 0 || 5 < 6 || 5 == 6 && 360 < 420",
+              "false || true || false && true",
+              "true"
+            ],
+            "error": null
+          },
+          {
+            "id": "cover_sales_and_safety_margin",
+            "name": "Cover target stock level",
+            "consequence": "decide",
+            "holds": true,
+            "steps": [
+              "6 - 0 + 0 + 16 >= 14.3",
+              "22.0 >= 14.3",
+              "true"
+            ],
+            "error": null
+          }
+        ]
+      },
+      "CF-40": {
+        "action": "set",
+        "values": {
+          "order": 7
+        },
+        "reason": "Seven jars, to be safe.",
+        "cited": [
+          "Stock!B10",
+          "Products!G10"
+        ],
+        "unsure": null,
+        "verdict": "blocked",
+        "checks": [
+          {
+            "id": "order_ripe_avocados_limit",
+            "name": "Ripe avocados limit",
+            "consequence": "block",
+            "holds": true,
+            "steps": [
+              "!false || 9 - 0 + 0 + 7 <= 4",
+              "!false || 16 <= 4",
+              "!false || false",
+              "true"
+            ],
+            "error": null
+          },
+          {
+            "id": "order_in_whole_cases",
+            "name": "Order in whole cases",
+            "consequence": "block",
+            "holds": false,
+            "steps": [
+              "7 % 6 == 0",
+              "1 == 0",
+              "false"
+            ],
+            "error": null
+          },
+          {
+            "id": "supplier_delivery_limit",
+            "name": "Supplier delivery limit",
+            "consequence": "block",
+            "holds": true,
+            "steps": [
+              "!false || 7 <= absent",
+              "true"
+            ],
+            "error": null
+          },
+          {
+            "id": "arrival_before_saturday_opening",
+            "name": "Arrival before opening",
+            "consequence": "block",
+            "holds": true,
+            "steps": [
+              "7 == 0 || 5 < 6 || 5 == 6 && 360 < 420",
+              "false || true || false && true",
+              "true"
+            ],
+            "error": null
+          },
+          {
+            "id": "cover_sales_and_safety_margin",
+            "name": "Cover target stock level",
+            "consequence": "decide",
+            "holds": true,
+            "steps": [
+              "9 - 0 + 0 + 7 >= 4.2",
+              "16.0 >= 4.2",
+              "true"
+            ],
+            "error": null
+          }
+        ]
+      },
+      "SS-125": {
+        "action": "leave",
+        "values": null,
+        "reason": "Stock already covers what is expected to sell.",
+        "cited": [
+          "Stock!B11"
+        ],
+        "unsure": null,
+        "verdict": "ready",
+        "checks": []
+      },
+      "OO-500": {
+        "action": "leave",
+        "values": null,
+        "reason": "Stock already covers what is expected to sell.",
+        "cited": [
+          "Stock!B12"
+        ],
+        "unsure": null,
+        "verdict": "ready",
+        "checks": []
+      }
+    }
+  },
+  "trials": {
+    "CF-40": {
+      "6": {
+        "verdict": "ready",
+        "checks": [
+          {
+            "id": "order_ripe_avocados_limit",
+            "name": "Ripe avocados limit",
+            "consequence": "block",
+            "holds": true,
+            "steps": [
+              "!false || 9 - 0 + 0 + 6 <= 4",
+              "!false || 15 <= 4",
+              "!false || false",
+              "true"
+            ],
+            "error": null
+          },
+          {
+            "id": "order_in_whole_cases",
+            "name": "Order in whole cases",
+            "consequence": "block",
+            "holds": true,
+            "steps": [
+              "6 % 6 == 0",
+              "0 == 0",
+              "true"
+            ],
+            "error": null
+          },
+          {
+            "id": "supplier_delivery_limit",
+            "name": "Supplier delivery limit",
+            "consequence": "block",
+            "holds": true,
+            "steps": [
+              "!false || 6 <= absent",
+              "true"
+            ],
+            "error": null
+          },
+          {
+            "id": "arrival_before_saturday_opening",
+            "name": "Arrival before opening",
+            "consequence": "block",
+            "holds": true,
+            "steps": [
+              "6 == 0 || 5 < 6 || 5 == 6 && 360 < 420",
+              "false || true || false && true",
+              "true"
+            ],
+            "error": null
+          },
+          {
+            "id": "cover_sales_and_safety_margin",
+            "name": "Cover target stock level",
+            "consequence": "decide",
+            "holds": true,
+            "steps": [
+              "9 - 0 + 0 + 6 >= 4.2",
+              "15.0 >= 4.2",
+              "true"
+            ],
+            "error": null
+          }
+        ]
+      }
+    }
+  }
+}

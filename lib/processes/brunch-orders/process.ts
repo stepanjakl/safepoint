@@ -31,6 +31,7 @@ const DATA = {
     { tab: 'Parameters', key: 'category', via: 'category', as: 'category' },
   ],
   types: {
+    ripe: { kind: 'yes_no' },
     counted_day: { kind: 'weekday' },
     counted_time: { kind: 'time_of_day' },
     delivery_day: { kind: 'weekday' },
@@ -38,6 +39,7 @@ const DATA = {
     cutoff_day: { kind: 'weekday' },
     cutoff_time: { kind: 'time_of_day' },
   },
+  output: { tab: 'Orders', key: 'sku' },
 } satisfies DataShape;
 
 // The tabs a run reads.
@@ -121,10 +123,13 @@ export const ORDER_STEPS: ProcessStep[] = [
     label: 'From the rules',
     status: 'pending',
   },
-  { id: 'propose', name: 'Propose', label: 'Phase 4', status: 'pending' },
-  { id: 'check', name: 'Check', label: 'Phase 5', status: 'pending' },
-  { id: 'review', name: 'Review', label: 'Phase 6', status: 'pending' },
-  { id: 'apply', name: 'Apply', label: 'Phase 7', status: 'pending' },
+  {
+    id: 'propose',
+    name: 'Propose',
+    label: 'From the values',
+    status: 'pending',
+  },
+  { id: 'apply', name: 'Apply', label: 'A preview', status: 'pending' },
 ];
 
 // What each step not built yet will do, in place of its body.
@@ -134,11 +139,9 @@ export const COMING: Record<string, string> = {
   calculate:
     'Expected demand, stock available before the start and what is required, worked out for every product.',
   propose:
-    'An order for every product, with the reason, the cells relied on and anything uncertain.',
-  check: 'The approved rules run on the proposal, item by item.',
-  review: 'Approve, change within what the rules allow, or reject each order.',
+    'What to set for every record, why, and how the accepted checks find it, for a person to approve, change or reject.',
   apply:
-    'Approved orders written to the Orders tab, read back to confirm, and undoable.',
+    'What the decided proposal would write, cell by cell, before and after.',
 };
 
 export const brunchOrdersProcess: ProcessSummary = {
@@ -155,7 +158,7 @@ export const brunchOrdersProcess: ProcessSummary = {
     {
       id: 'orders',
       label: 'Orders',
-      api: 'Google Sheets, Orders tab (phase 7)',
+      api: 'Google Sheets, Orders tab (phase 6)',
       undo: 'Preview only. Nothing is written yet.',
       icon: 'supply',
       direction: 'output',
@@ -192,14 +195,14 @@ export const brunchOrdersProcess: ProcessSummary = {
   runs: [],
 };
 
-// Nothing is proposed until phase 4, so the menu says the plan is incomplete
+// The release menu is not fed by proposals yet, so it says the plan is incomplete
 // rather than empty.
 export const brunchOrdersPlan: ReleasePlan = {
   id: BRUNCH_ORDERS_ID,
   revision: 'phase-1',
   title: 'Brunch orders',
   source: 'Brunch orders · in development',
-  context: 'Built step by step; nothing is proposed yet.',
+  context: 'Built step by step; nothing is written to the sheet yet.',
   evaluatedAt: '2026-10-08T12:00:00Z',
   mode: 'live',
   noun: { one: 'product', other: 'products' },

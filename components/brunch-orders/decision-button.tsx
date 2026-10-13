@@ -12,11 +12,14 @@ const DECISION = {
 
 export function DecisionButton({
   decision,
+  size,
   children,
   className,
   ...props
 }: Omit<ComponentProps<typeof AriaButton>, 'children' | 'className'> & {
   decision: keyof typeof DECISION;
+  // A step smaller, for decisions repeated down a table's rows.
+  size?: 'small';
   children: ReactNode;
   className?: string;
 }) {
@@ -26,13 +29,16 @@ export function DecisionButton({
       {...props}
       data-severity={severity}
       className={cx(
-        'control-face control-hairline control-tone text-severity-ink interact:control-tone-hover interact:control-tone-ink-hover data-[disabled]:control-off data-[disabled]:text-muted text-dense inline-flex h-8 cursor-pointer items-center gap-1 rounded-full pr-3.5 pl-2.5 font-medium whitespace-nowrap data-[disabled]:cursor-not-allowed',
+        'control-face control-hairline control-tone text-severity-ink interact:control-tone-hover interact:control-tone-ink-hover data-[disabled]:control-off data-[disabled]:text-muted inline-flex cursor-pointer items-center gap-1 rounded-full font-medium whitespace-nowrap data-[disabled]:cursor-not-allowed',
+        size === 'small'
+          ? 'text-meta h-7 pr-2.5 pl-2'
+          : 'text-dense h-8 pr-3.5 pl-2.5',
         className,
       )}
     >
       <Icon
         aria-hidden
-        size={14}
+        size={size === 'small' ? 12 : 14}
         strokeWidth={2.75}
         className="flex-none opacity-70"
       />

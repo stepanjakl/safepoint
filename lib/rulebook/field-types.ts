@@ -225,13 +225,21 @@ export function interpretCell(
       };
     }
     case 'yes_no': {
+      // A ticked or cleared checkbox arrives as a boolean; typed, as words.
+      if (typeof raw === 'boolean')
+        return {
+          value: raw,
+          display: raw ? 'yes' : 'no',
+          how: `A checkbox, ${raw ? 'ticked' : 'cleared'} → ${raw}.`,
+        };
       const text = String(raw).trim().toLowerCase();
-      if (text !== 'yes' && text !== 'no')
+      const yes = text === 'yes' || text === 'true';
+      if (!yes && text !== 'no' && text !== 'false')
         return invalid(raw, 'Expected yes or no.');
       return {
-        value: text === 'yes',
-        display: text,
-        how: `"${text}" → ${text === 'yes'}.`,
+        value: yes,
+        display: yes ? 'yes' : 'no',
+        how: `"${text}" → ${yes}.`,
       };
     }
     case 'one_of': {

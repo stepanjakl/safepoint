@@ -4,6 +4,7 @@ import { SUBJECT } from '@/lib/processes/brunch-orders/process';
 
 import { capturedRead } from './captured.fixture';
 import {
+  checkFormula,
   contextFor,
   describe as describeVariables,
   parseError,
@@ -46,6 +47,27 @@ describe('what a formula reads', () => {
       delivery_day: 6n,
       delivery_time: 360n,
     });
+  });
+
+  it('reads a yes/no column as true or false, and refuses comparing it to text', () => {
+    expect(at('AV-RR', 0).record.ripe).toBe(true);
+    expect(at('SD-01', 0).record.ripe).toBe(false);
+    const scope = { values: {}, constants: {}, groups: [] };
+    expect(
+      checkFormula(read, SUBJECT, scope, 'check', 'record.ripe == "yes"'),
+    ).toMatch(/no such overload/);
+    expect(
+      checkFormula(
+        read,
+        SUBJECT,
+        scope,
+        'check',
+        '!record.ripe || order <= 10',
+      ),
+    ).toBeNull();
+    expect(describeVariables(read, SUBJECT)).toContain(
+      'Yes/no columns (ripe) are true or false',
+    );
   });
 
   it('leaves a blank cell out, so has() says whether it was filled in', () => {

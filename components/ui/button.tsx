@@ -19,7 +19,7 @@ export type Slant = 'left' | 'right' | 'both';
 // gradient stops it animates are its own contract. The hairline sheen because
 // at this size a full pixel of white inside the ring reads as a second edge.
 const base =
-  'control-hairline inline-flex min-w-11 items-center justify-center gap-2 text-dense font-medium whitespace-nowrap data-[disabled]:cursor-not-allowed data-[disabled]:control-off data-[disabled]:text-muted';
+  'control-hairline inline-flex min-w-11 items-center justify-center gap-2 font-medium whitespace-nowrap data-[disabled]:cursor-not-allowed data-[disabled]:control-off data-[disabled]:text-muted';
 
 /*
   Each variant in two halves: the stops, which say what colour the face is in
@@ -75,6 +75,7 @@ export function Button({
   variant = 'secondary',
   slant,
   pill = false,
+  size,
   className,
   children,
   ...props
@@ -83,6 +84,8 @@ export function Button({
   slant?: Slant;
   // Fully rounded: a call to action that stands alone, not in a toolbar.
   pill?: boolean;
+  // A pill a step smaller, for actions repeated down a table's rows.
+  size?: 'small';
   className?: string;
   ref?: Ref<HTMLButtonElement>;
 }) {
@@ -97,10 +100,12 @@ export function Button({
         // sized to its header, a pill is a size tighter, and two utilities for
         // one property would be settled by stylesheet order.
         slant
-          ? 'slant h-(--slant-height) px-3.5'
-          : pill
-            ? 'control-face h-8 rounded-full px-3'
-            : `${shapes[variant]} h-9 px-3.5`,
+          ? 'slant text-dense h-(--slant-height) px-3.5'
+          : pill && size === 'small'
+            ? 'control-face text-meta h-7 rounded-full px-2.5'
+            : pill
+              ? 'control-face text-dense h-8 rounded-full px-3'
+              : `${shapes[variant]} text-dense h-9 px-3.5`,
         className,
       )}
     >

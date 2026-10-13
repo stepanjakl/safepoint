@@ -27,7 +27,8 @@ export function DataTable({
     <Element
       {...props}
       className={cx(
-        'border-rule-faint bg-surface-primary rounded-shell overflow-clip border',
+        // min-w-0: in a grid it would otherwise grow to its table's width.
+        'border-rule-faint bg-surface-primary rounded-shell min-w-0 overflow-clip border',
         className,
       )}
     >
@@ -47,3 +48,10 @@ export const DATA_TABLE_NAME = 'font-semibold';
 // the rows' text starts. On a cell, not a <tr>, which cannot hold it; a table
 // sets --row-rule-inset and --row-rule-top to place it.
 export const DATA_TABLE_RULE = 'row-rule';
+// The same on a row's other cells, where every cell carries it: unbroken.
+export const DATA_TABLE_RULE_ON = 'row-rule row-rule-flush';
+
+// A record's name: its own column where there is room, under its key where
+// there is not (on a phone, beside it would wrap a word to a line).
+export const DATA_TABLE_NAME_COLUMN = 'max-sm:hidden';
+export const DATA_TABLE_NAME_UNDER = 'text-muted block font-normal sm:hidden';

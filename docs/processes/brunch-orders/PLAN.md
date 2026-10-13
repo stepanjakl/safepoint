@@ -1,8 +1,8 @@
 # Brunch orders: plan
 
 Status: active implementation hand-off, agreed 8 October 2026. Phases 1, 2,
-the Phase 2b definitions-engine work and Phase 3 (Calculate) are built; later
-phases remain planned.
+the Phase 2b definitions-engine work, Phase 3 (Calculate) and Phase 4 (Propose,
+with review, and an Apply preview) are built; later phases remain planned.
 
 Audience: the product owner, and the engineer or agent building each phase.
 What building it taught, and what is still open, is logged in
@@ -69,23 +69,22 @@ Not the whole read in `localStorage`: the read is the run's evidence, and
 later steps that run on the server (calculating, proposing, checking) need the
 same copy. Keeping it there also means one copy, not one per browser, and
 nothing lost when a browser's storage is cleared. Runs move to the database
-with the history work (phase 8).
+with the history work (phase 7).
 
 ## Phases
 
 Each phase ends when it works on the captured read and its page test passes.
 
-| Phase                          | What it adds                                                                                                                                                                                                                                                        | Done when                                                                                     |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| 1. Instructions and reading    | The process in the sidebar; the Instructions tab with v1 (below); a run started by hand that shows the instructions it runs under, then waits for a person to read the sheet; a simple JSON viewer for the read, in the drawer.                                     | A run can be started, read the sheet (captured or live), show the data, and survive a reload. |
-| 2. Rules from the instructions | The model lists the rules it finds in the instructions, in plain words, and confirms the intent. Each rule is turned into a formula on its own and approved on its own, against two or three worked examples written in the instructions. Four rules to begin with. | Each of the four rules is approved and passes its examples.                                   |
-| 3. Calculate                   | The values the instructions define, worked out by code for every product: expected demand, stock available before the start, what is required.                                                                                                                      | Every product's values match a hand calculation.                                              |
-| 4. Propose                     | The model proposes an order for every product, given those values: a quantity, the reason in plain words, the cells it relied on and anything it is unsure of. Every product is answered exactly once.                                                              | A proposal covers every product and cites only real cells.                                    |
-| 5. Check                       | The approved rules run on the proposal, item by item, with the working shown and what-if values to try others.                                                                                                                                                      | Each rule's outcome on each product can be read and explained.                                |
-| 6. Review                      | Approve, change within what the rules allow, or reject each product; a summary of what will be ordered.                                                                                                                                                             | A person can decide every product from the keyboard.                                          |
-| 7. Apply                       | Approved orders written to the Orders tab, read back to confirm, and undoable while untouched.                                                                                                                                                                      | An approved run's orders are in the sheet and verified.                                       |
-| 8. History and learning        | Runs, reads and decisions kept in the database; repeated edits in the same direction become suggested changes to the instructions, approved like any version.                                                                                                       | A suggestion cites the decisions that prompted it.                                            |
-| 9. Wider scope                 | One at a time, each with its own rules and examples: offer prices, the avocado toast kit, ripe-stock cover.                                                                                                                                                         | Each addition passes its examples without breaking the others.                                |
+| Phase                          | What it adds                                                                                                                                                                                                                                                                                                                                                                    | Done when                                                                                                 |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| 1. Instructions and reading    | The process in the sidebar; the Instructions tab with v1 (below); a run started by hand that shows the instructions it runs under, then waits for a person to read the sheet; a simple JSON viewer for the read, in the drawer.                                                                                                                                                 | A run can be started, read the sheet (captured or live), show the data, and survive a reload.             |
+| 2. Rules from the instructions | The model lists the rules it finds in the instructions, in plain words, and confirms the intent. Each rule is turned into a formula on its own and approved on its own, against two or three worked examples written in the instructions. Four rules to begin with.                                                                                                             | Each of the four rules is approved and passes its examples.                                               |
+| 3. Calculate                   | The values the instructions define, worked out by code for every product: expected demand, stock available before the start, what is required.                                                                                                                                                                                                                                  | Every product's values match a hand calculation.                                                          |
+| 4. Propose, with review        | The model proposes for every record, given those values: what to set, the reason in plain words, the cells it relied on and anything it is unsure of. Code checks every proposed value against the accepted checks; the verdicts colour the rows. A person approves, changes within what the checks allow, or rejects each record, in the same table. Built 12 October (below). | A proposal covers every record, cites only real cells, and every record can be decided from the keyboard. |
+| 5. Apply, as a preview         | What the decided proposal would write to the Orders tab, cell by cell, before and after. Nothing is written. Built with phase 4.                                                                                                                                                                                                                                                | The preview lists exactly the approved and changed records.                                               |
+| 6. Write-back                  | Approved values written to the Orders tab, read back to confirm, and undoable while untouched.                                                                                                                                                                                                                                                                                  | An approved run's values are in the sheet and verified.                                                   |
+| 7. History and learning        | Runs, reads and decisions kept in the database; repeated edits in the same direction become suggested changes to the instructions, approved like any version.                                                                                                                                                                                                                   | A suggestion cites the decisions that prompted it.                                                        |
+| 8. Wider scope                 | One at a time, each with its own rules and examples: offer prices, the avocado toast kit, ripe-stock cover.                                                                                                                                                                                                                                                                     | Each addition passes its examples without breaking the others.                                            |
 
 ## Phase 1 in detail
 
@@ -272,7 +271,7 @@ where the Brunch weekend drafter already had it:
 
 Not ported: the stronger-model hand-over (offering to continue a stuck draft
 on the strongest family), and the condition-by-condition working, which
-belongs to the Check step (phase 5).
+now shows on each proposed record (phase 4).
 
 **Drafting again.** For testing, the Rules step drafts a new rulebook from
 the sheet as the run read it, with a chosen model (falling back within its
@@ -347,7 +346,10 @@ Agreed with the owner on 9 October, after every definition was accepted.
   record and value exactly once. Values agree when equal to two decimal
   places. Nothing is settled automatically: the step stays in attention until
   every value agrees. The answer is kept in `data/brunch-orders/cross-checks/`
-  by read and rulebook, because it costs a call.
+  by read and rulebook, because it costs a call. It is asked 25 records to a
+  call, each with only its records' rows, and kept batch by batch, so one that
+  stops part way asks only for the rest. Once it has run, a small filter beside
+  its result shows only the records that differ.
 - **The rulebook a run used.** A fingerprint of the accepted definitions
   is the rulebook's id. The first time a run calculates on a rulebook it is
   kept beside the current one (`<id>.json`) and never written again; the run
@@ -362,3 +364,47 @@ Agreed with the owner on 9 October, after every definition was accepted.
   Inputs lists the sheet's tabs as the selected run read them and opens each
   in the data drawer. Both are panels the page supplies (`rulesPanel`,
   `inputsPanel` on `ProcessView`); other processes are unchanged.
+
+## Phase 4, as built
+
+Agreed with the owner on 12 October. A run is now Instructions · Read the
+sheet · Rules · Calculate · Propose · Apply. Each step owns one thing, and a
+later step links back rather than repeating it: once the rulebook is fully
+accepted, the Rules step collapses to one line that opens the Rules tab.
+
+- **Check is not a step.** The model proposes; code runs every accepted check
+  on every proposed value (`checkProposal` in `lib/definitions/propose.ts`).
+  A record's verdict is _blocked_ if a blocking check fails, _decide_ if a
+  check that asks a person fails, and _ready_ otherwise. A check that cannot
+  be worked out, on a blank cell for instance, counts as failing.
+- **Propose and review are one step.** The proposal table carries the
+  decisions, and the step's title shows how far they have got: proposing, how
+  many need a person, how many are decided, all decided. A ready or decide
+  record can be approved; approving a decide record accepts its failing check
+  knowingly. A blocked record cannot be approved as it stands: it is changed
+  to values that pass, checked live as they are typed, or rejected.
+- **The model tries before it answers.** Each batch of 25 records is a tool
+  loop: `try_proposal` returns the checks' verdicts and working for values
+  the model is considering; `submit_proposals` answers every record once,
+  with `set` and values for every proposal field, or `leave` for no change,
+  plus its reason, the cells it relied on and anything it is unsure of. Where
+  no value passes every blocking check it proposes the closest that does and
+  says what conflicts. Code verifies the answer again whatever the tools
+  said: every key once, every cited cell a real, non-blank data cell, and
+  every verdict re-worked; the verdicts kept are code's.
+- **Where it is kept.** The proposal is costly, so it is kept in
+  `data/<process>/proposals/` by read and rulebook, batch by batch so a stop
+  part way asks only for the rest. It runs as a background job, as drafting
+  does. The decisions belong to the run, in the browser.
+- **Apply is a preview.** It shows what the decided proposal would write to
+  the output the process declares (`DataShape.output`: the Orders tab, by
+  product), cell by cell, before and after. Approved and changed records
+  are written; left and rejected ones are not. Nothing is written yet.
+- **The ripe rule keeps its accepted reading,** stock plus the order no more
+  than expected sales. Ripe avocados are therefore the trade-off: the ripe
+  rule allows at most 50, and cover with the safety margin needs 60, so a
+  person decides.
+
+Present limits, universal rather than Brunch-specific: a check sees one
+record at a time, and proposal fields are whole numbers; decimals wait until a
+process needs them.

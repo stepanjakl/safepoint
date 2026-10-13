@@ -22,10 +22,13 @@ import {
   useTrial,
 } from '@/components/sheet-process/trial-parts';
 import { Button } from '@/components/ui/button';
+import { FilterTabs } from '@/components/ui/filter-tabs';
 import { Fold } from '@/components/ui/fold';
 import {
   DATA_TABLE_HEAD,
   DATA_TABLE_NAME,
+  DATA_TABLE_NAME_COLUMN,
+  DATA_TABLE_NAME_UNDER,
   DATA_TABLE_RULE,
   DataTable,
 } from '@/components/ui/data-table';
@@ -151,6 +154,15 @@ export function CalculateStep({
   useEffect(() => {
     if (revealKey) markRevealed(revealKey);
   }, [revealKey]);
+  // The records whose values the model worked out otherwise.
+  const differing = new Set(
+    shown?.check
+      ? Object.entries(shown.check.cells)
+          .filter(([, values]) => Object.values(values).some((v) => !v.agrees))
+          .map(([key]) => key)
+      : [],
+  );
+  const [showing, setShowing] = useState<Showing>('all');
   const crossCheck = () =>
     void run({
       action: 'crossCheck',
@@ -222,11 +234,19 @@ export function CalculateStep({
               quota, the next older one of its family answers.
             </p>
           </section>
-          <CrossCheckResult check={shown.check} busy={busy} />
+          <CrossCheckResult
+            check={shown.check}
+            busy={busy}
+            records={shown.calculation.rows.length}
+            differing={differing.size}
+            showing={showing}
+            onShow={setShowing}
+          />
           <ValuesTable
             key={replays}
             calculation={shown.calculation}
             check={shown.check}
+            only={showing === 'differ' ? differing : null}
             reveal={
               revealKey !== null && (replays > 0 || reveal.has(revealKey))
             }
@@ -244,47 +264,80 @@ export function CalculateStep({
   );
 }
 
-// What the model's cross-check came to, announced as it arrives.
+type Showing = 'all' | 'differ';
+
+// What the model's cross-check came to, announced as it arrives, and which
+// records the table shows.
 function CrossCheckResult({
   check,
   busy,
+  records,
+  differing,
+  showing,
+  onShow,
 }: {
   check: CrossCheck | null;
   busy: boolean;
+  records: number;
+  differing: number;
+  showing: Showing;
+  onShow: (showing: Showing) => void;
 }) {
   const differ = check ? check.total - check.agreed : 0;
   return (
     <div className="grid gap-3">
-      <div role="status">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div role="status">
+          {check ? (
+            <Outcome>
+              {differ ? (
+                <StatusChip tone="blocked">
+                  <Cross
+                    aria-hidden
+                    size={12}
+                    strokeWidth={2.75}
+                    className="me-1"
+                  />
+                  {differ} of {check.total} don&rsquo;t match the model
+                </StatusChip>
+              ) : (
+                <StatusChip tone="ready">
+                  <Check
+                    aria-hidden
+                    size={12}
+                    strokeWidth={2.75}
+                    className="me-1"
+                  />
+                  All {check.total} match the model
+                </StatusChip>
+              )}
+            </Outcome>
+          ) : busy ? (
+            <span className="text-dense text-muted">Working…</span>
+          ) : null}
+        </div>
         {check ? (
-          <Outcome>
-            {differ ? (
-              <StatusChip tone="blocked">
-                <Cross
-                  aria-hidden
-                  size={12}
-                  strokeWidth={2.75}
-                  className="me-1"
-                />
-                {differ} of {check.total} don&rsquo;t match the model
-              </StatusChip>
-            ) : (
-              <StatusChip tone="ready">
-                <Check
-                  aria-hidden
-                  size={12}
-                  strokeWidth={2.75}
-                  className="me-1"
-                />
-                All {check.total} match the model
-              </StatusChip>
-            )}
-            <span className="text-dense text-muted">
-              Cross-checked by {check.model}
-            </span>
-          </Outcome>
-        ) : busy ? (
-          <span className="text-dense text-muted">Working…</span>
+          <FilterTabs
+            size="small"
+            ariaLabel="Records to show"
+            tabs={[
+              {
+                key: 'all',
+                short: 'All',
+                label: 'All records',
+                count: records,
+              },
+              {
+                key: 'differ',
+                short: 'Don’t match',
+                label: 'Records that don’t match the model',
+                count: differing,
+                severity: 0,
+              },
+            ]}
+            selected={showing}
+            onChange={onShow}
+          />
         ) : null}
       </div>
       {differ ? (
@@ -303,11 +356,14 @@ function ValuesTable({
   calculation,
   check,
   reveal,
+  only,
 }: {
   calculation: Calculation;
   check: CrossCheck | null;
   // Whether the cross-check's marks arrive value by value, or are just there.
   reveal: boolean;
+  // Only these records, where the person asked for those that differ.
+  only: Set<string> | null;
 }) {
   const [open, setOpen] = useState<Set<string>>(new Set());
   const tableId = useId();
@@ -317,7 +373,10 @@ function ValuesTable({
       if (!next.delete(key)) next.add(key);
       return next;
     });
-  const { calculations, rows } = calculation;
+  const { calculations } = calculation;
+  const rows = only
+    ? calculation.rows.filter((row) => only.has(row.key))
+    : calculation.rows;
   return (
     <DataTable>
       {/* Scrolls across only: a fold's clip margin under the last row would
@@ -335,7 +394,14 @@ function ValuesTable({
               >
                 Record
               </th>
-              <th scope="col" className={cx(DATA_TABLE_HEAD, 'pr-3 text-left')}>
+              <th
+                scope="col"
+                className={cx(
+                  DATA_TABLE_HEAD,
+                  DATA_TABLE_NAME_COLUMN,
+                  'pr-3 text-left',
+                )}
+              >
                 <span className="sr-only">Name</span>
               </th>
               {calculations.map((c) => (
@@ -354,6 +420,16 @@ function ValuesTable({
             </tr>
           </thead>
           <tbody>
+            {rows.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={calculations.length + 2}
+                  className="text-muted px-6 py-2.75"
+                >
+                  Every value matches the model.
+                </td>
+              </tr>
+            ) : null}
             {rows.map((row, rowIndex) => {
               const expanded = open.has(row.key);
               const differs = calculations.some(
@@ -364,7 +440,7 @@ function ValuesTable({
                   <tr className="align-top">
                     <th
                       scope="row"
-                      className="py-2.75 pr-3 pl-6 text-left font-medium"
+                      className="py-2.75 pr-3 pl-6 text-left font-medium whitespace-nowrap"
                     >
                       <button
                         type="button"
@@ -384,8 +460,18 @@ function ValuesTable({
                           </span>
                         ) : null}
                       </button>
+                      {row.name ? (
+                        <span className={DATA_TABLE_NAME_UNDER}>
+                          {row.name}
+                        </span>
+                      ) : null}
                     </th>
-                    <td className="text-muted py-2.75 pr-3">
+                    <td
+                      className={cx(
+                        DATA_TABLE_NAME_COLUMN,
+                        'text-muted py-2.75 pr-3',
+                      )}
+                    >
                       {row.name || null}
                     </td>
                     {calculations.map((c) => {

@@ -20,6 +20,7 @@ import {
   type Tone,
 } from '@/components/sheet-process/trial-parts';
 import { Button } from '@/components/ui/button';
+import { Fold } from '@/components/ui/fold';
 import { Pill, SEVERITY } from '@/components/ui/pill';
 import { Tooltip } from '@/components/ui/tooltip';
 import { MorphingText } from '@/components/ui/morphing-text';
@@ -221,6 +222,68 @@ export function RulesStep({
     return () => clearTimeout(timer);
   }, [draftRunning, answered, body, run, text]);
   const progress = set ? progressOf(set) : null;
+  // Every definition accepted and the intent confirmed: nothing waits here.
+  const complete =
+    set !== null &&
+    progress !== null &&
+    progress.total > 0 &&
+    progress.approved === progress.total &&
+    set.intentConfirmedAt !== null;
+  const [showAll, setShowAll] = useState(false);
+  const cardsId = useId();
+  const cards = set ? (
+    <>
+      <div className={cx(ASKS, 'grid gap-3 p-4')}>
+        <FromModel label="The intent, as the model reads it">
+          <p className="text-body">{set.intent}</p>
+        </FromModel>
+        <div className="flex flex-wrap items-center gap-2">
+          <AcceptDecision
+            accepted={set.intentConfirmedAt !== null}
+            busy={busy}
+            onAccept={() => act({ action: 'intent' })}
+          />
+          {!set.intentConfirmedAt && sheet ? (
+            <DecisionButton decision="deny" onPress={sheet.showInstructions}>
+              Deny: edit the instructions
+            </DecisionButton>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="rules-list grid gap-4">
+        <PendingDots
+          pending={set.definitions
+            .filter((d) => !d.approvedAt)
+            .map((d) => ({
+              id: d.id,
+              name: d.name,
+              status: statusOf(d).label,
+              severity: SEVERITY[statusOf(d).tone],
+            }))}
+          anchorOf={anchorOf}
+        />
+        <ol className="grid gap-3" aria-label="Calculations and checks">
+          {set.definitions.map((item) => (
+            <DefinitionCard
+              key={item.id}
+              item={item}
+              quoted={words(text).includes(words(item.text))}
+              names={names}
+              working={working[item.id] ?? []}
+              reads={set.definitions.filter((d) => item.uses.includes(d.id))}
+              busy={busy}
+              canWrite={readId !== null}
+              onWrite={() => act({ action: 'write', readId, id: item.id })}
+              onDecide={(decision, note) =>
+                act({ action: 'decide', id: item.id, decision, note })
+              }
+            />
+          ))}
+        </ol>
+      </div>
+    </>
+  ) : null;
 
   return (
     <div className="rules-review grid gap-4">
@@ -276,63 +339,43 @@ export function RulesStep({
             Nothing drafted for these instructions yet.
           </p>
         ) : null
-      ) : (
+      ) : complete ? (
+        // Accepted whole: one line, as the Rules tab shows the rulebook.
         <>
-          <div className={cx(ASKS, 'grid gap-3 p-4')}>
-            <FromModel label="The intent, as the model reads it">
-              <p className="text-body">{set.intent}</p>
-            </FromModel>
-            <div className="flex flex-wrap items-center gap-2">
-              <AcceptDecision
-                accepted={set.intentConfirmedAt !== null}
-                busy={busy}
-                onAccept={() => act({ action: 'intent' })}
-              />
-              {!set.intentConfirmedAt && sheet ? (
-                <DecisionButton
-                  decision="deny"
-                  onPress={sheet.showInstructions}
-                >
-                  Deny: edit the instructions
-                </DecisionButton>
-              ) : null}
-            </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="text-dense">
+              Using the accepted rules:{' '}
+              {plural(
+                set.definitions.filter((d) => d.result === 'number').length,
+                'calculation',
+              )}
+              ,{' '}
+              {plural(
+                set.definitions.filter((d) => d.result === 'check').length,
+                'check',
+              )}
+              .
+            </p>
+            {sheet?.showRules ? (
+              <Button pill onPress={sheet.showRules}>
+                Open the Rules tab
+              </Button>
+            ) : null}
+            <Button
+              pill
+              aria-expanded={showAll}
+              aria-controls={cardsId}
+              onPress={() => setShowAll(!showAll)}
+            >
+              {showAll ? 'Hide the rules' : 'Show the rules'}
+            </Button>
           </div>
-
-          <div className="rules-list grid gap-4">
-            <PendingDots
-              pending={set.definitions
-                .filter((d) => !d.approvedAt)
-                .map((d) => ({
-                  id: d.id,
-                  name: d.name,
-                  status: statusOf(d).label,
-                  severity: SEVERITY[statusOf(d).tone],
-                }))}
-              anchorOf={anchorOf}
-            />
-            <ol className="grid gap-3" aria-label="Calculations and checks">
-              {set.definitions.map((item) => (
-                <DefinitionCard
-                  key={item.id}
-                  item={item}
-                  quoted={words(text).includes(words(item.text))}
-                  names={names}
-                  working={working[item.id] ?? []}
-                  reads={set.definitions.filter((d) =>
-                    item.uses.includes(d.id),
-                  )}
-                  busy={busy}
-                  canWrite={readId !== null}
-                  onWrite={() => act({ action: 'write', readId, id: item.id })}
-                  onDecide={(decision, note) =>
-                    act({ action: 'decide', id: item.id, decision, note })
-                  }
-                />
-              ))}
-            </ol>
-          </div>
+          <Fold open={showAll} id={cardsId} className="grid gap-4">
+            {cards}
+          </Fold>
         </>
+      ) : (
+        cards
       )}
     </div>
   );

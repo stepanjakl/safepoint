@@ -43,6 +43,21 @@ export const check = (draft: unknown): Step => ({
   warnings: [],
 });
 
+// A call to any tool, with its input.
+export const call = (toolName: string, input: unknown): Step => ({
+  content: [
+    {
+      type: 'tool-call',
+      toolCallId: `call-${Math.random().toString(36).slice(2)}`,
+      toolName,
+      input: JSON.stringify(input),
+    },
+  ],
+  finishReason: { unified: 'tool-calls', raw: 'STOP' },
+  usage,
+  warnings: [],
+});
+
 export const standIn = (...steps: Step[]) => {
   const queue = [...steps];
   return new MockLanguageModelV4({ doGenerate: async () => queue.shift()! });

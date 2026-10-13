@@ -46,7 +46,12 @@ export type FilterTab<Key extends string = string> = {
   so a stretched "All" keeps its word in the middle of its section.
 */
 const TAB =
-  'review-filter-focus review-filter-wash group/tab relative inline-flex cursor-pointer items-center gap-1.5 rounded-full py-1 pe-3 text-dense font-medium whitespace-nowrap outline-none';
+  'review-filter-focus review-filter-wash group/tab relative inline-flex cursor-pointer items-center rounded-full font-medium whitespace-nowrap outline-none';
+// Each size's type, height and ends; the small one sits beside a result.
+const SIZE = {
+  default: 'gap-1.5 py-1 pe-3 text-dense',
+  small: 'gap-1 py-0.5 pe-2.5 text-meta',
+} as const;
 const BUCKET_TAB =
   'text-severity-ink data-[spied]:bg-surface-hover data-[hovered]:not-data-[selected]:text-severity-strong data-[focus-visible]:not-data-[selected]:text-severity-strong data-[selected]:text-severity-on-solid';
 // "All" takes the strip's spare width, so the buckets sit together at the
@@ -54,19 +59,19 @@ const BUCKET_TAB =
 const ALL_BOX = 'me-3 flex-1';
 const ALL_TAB = cx(
   ALL_BOX,
-  'text-muted-strong data-[hovered]:not-data-[selected]:text-primary data-[focus-visible]:not-data-[selected]:text-primary data-[selected]:text-inverse',
+  'text-muted-strong data-[hovered]:not-data-[selected]:text-primary data-[focus-visible]:not-data-[selected]:text-primary data-[selected]:text-filter-neutral-on-solid',
 );
 const NEUTRAL_TAB =
-  'text-muted-strong data-[hovered]:not-data-[selected]:text-primary data-[focus-visible]:not-data-[selected]:text-primary data-[selected]:text-inverse';
+  'text-muted-strong data-[hovered]:not-data-[selected]:text-primary data-[focus-visible]:not-data-[selected]:text-primary data-[selected]:text-filter-neutral-on-solid';
 // The count's chip: a rung past the track at rest, the field face when its
 // group is spied, and inverted on the chosen solid.
 const BUCKET_COUNT =
   'bg-severity-fill-strong group-data-[hovered]/tab:bg-severity-pill-hover group-data-[focus-visible]/tab:bg-severity-pill-hover group-data-[spied]/tab:bg-field-face group-data-[selected]/tab:bg-severity-on-solid group-data-[selected]/tab:text-severity-solid';
 // "All"'s chip is the track's own face, a window through its resting face.
 const ALL_COUNT =
-  'bg-field-face group-data-[selected]/tab:bg-inverse group-data-[selected]/tab:text-filter-neutral-solid';
+  'bg-field-face group-data-[selected]/tab:bg-filter-neutral-on-solid group-data-[selected]/tab:text-filter-neutral-solid';
 const COUNT =
-  'review-tab-count review-filter-wash value text-micro inline-grid place-items-center rounded-full px-1 [font-weight:550]';
+  'review-tab-count review-filter-wash value text-micro font-label inline-grid place-items-center rounded-full px-1';
 const DIVIDER = 'review-filter-divider';
 
 // The chosen face, under the tabs: the bucket's solid, or a neutral one for
@@ -91,6 +96,7 @@ export function FilterTabs<Key extends string>({
   ariaLabel = 'Filter by disposition',
   menuLabel = 'Other filters',
   numberShortcuts = false,
+  size = 'default',
   className,
 }: {
   tabs: FilterTab<Key>[];
@@ -102,6 +108,7 @@ export function FilterTabs<Key extends string>({
   ariaLabel?: string;
   menuLabel?: string;
   numberShortcuts?: boolean;
+  size?: keyof typeof SIZE;
   className?: string;
 }) {
   const track = useRef<HTMLDivElement>(null);
@@ -219,6 +226,7 @@ export function FilterTabs<Key extends string>({
   return (
     <div
       ref={track}
+      data-size={size}
       className={cx(
         'field-track relative flex justify-between gap-0.5 rounded-full',
         className,
@@ -271,6 +279,7 @@ export function FilterTabs<Key extends string>({
             }
             className={cx(
               TAB,
+              SIZE[size],
               // The inset is the count chip's; a tab without one pads evenly.
               tab.count === undefined ? 'ps-3' : 'ps-1',
               tab.severity !== undefined
@@ -355,7 +364,12 @@ export function FilterTabs<Key extends string>({
           // the strip at its narrowest.
           <span
             key={tab.key}
-            className={cx(TAB, tab.key === leadKey && ALL_BOX)}
+            className={cx(
+              TAB,
+              SIZE[size],
+              tab.count === undefined ? 'ps-3' : 'ps-1',
+              tab.key === leadKey && ALL_BOX,
+            )}
           >
             <Content tab={tab} />
           </span>

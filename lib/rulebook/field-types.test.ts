@@ -84,6 +84,20 @@ describe('interpretCell', () => {
     ).toBeDefined();
   });
 
+  it('reads yes or no, and a checkbox, as true or false', () => {
+    const yesNo = { kind: 'yes_no' } as const;
+    expect(interpretCell('Yes', yesNo, true).value).toBe(true);
+    expect(interpretCell('no', yesNo, true).value).toBe(false);
+    expect(interpretCell('TRUE', yesNo, true).value).toBe(true);
+    // A ticked checkbox in Sheets reads as a boolean, not as text.
+    expect(interpretCell(true, yesNo, true)).toMatchObject({
+      value: true,
+      display: 'yes',
+    });
+    expect(interpretCell(false, yesNo, true).value).toBe(false);
+    expect(interpretCell('maybe', yesNo, true).issue).toBeDefined();
+  });
+
   it('keeps weekdays as text and rejects anything else', () => {
     expect(interpretCell('Thu', { kind: 'weekday' }, true).value).toBe('Thu');
     expect(

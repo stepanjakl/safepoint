@@ -102,6 +102,43 @@ export const acceptable = (definition: Definition) =>
   definition.examples.length > 0 &&
   definition.examples.every((e) => e.agrees);
 
+/*
+  A proposal: for every record, what the model would set and why, and how the
+  accepted checks find it. The verdicts are code's, run again on what the
+  model answered, never the model's own account.
+*/
+export type Verdict = 'ready' | 'decide' | 'blocked';
+
+export type CheckVerdict = {
+  id: string;
+  name: string;
+  consequence: 'block' | 'decide';
+  holds: boolean;
+  // The app's working of the check on these values, or why it could not run.
+  steps: string[];
+  error: string | null;
+};
+
+export type ProposalRecord = {
+  // set: these values; leave: nothing changes for this record.
+  action: 'set' | 'leave';
+  values: Record<string, number> | null;
+  reason: string;
+  // Cells the model relied on, in A1 notation (Stock!B3).
+  cited: string[];
+  unsure: string | null;
+  verdict: Verdict;
+  checks: CheckVerdict[];
+};
+
+export type Proposal = {
+  fingerprint: string;
+  readId: string;
+  model: string;
+  at: string;
+  records: Record<string, ProposalRecord>;
+};
+
 // Around a value an example tried, in a step, so it can be shown as that
 // example's own: private-use characters, never in a formula or the data.
 export const TRIED = ['\uE000', '\uE001'] as const;

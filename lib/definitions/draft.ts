@@ -17,7 +17,10 @@ import { writeDefinition } from './write';
   through says so, rather than vanishing.
 */
 
-const drafts = new Map<string, DraftProgress>();
+// Held on globalThis: a development recompile re-runs this module, and a new
+// map would report a draft still running as stopped.
+const server = globalThis as { definitionDrafts?: Map<string, DraftProgress> };
+const drafts = (server.definitionDrafts ??= new Map<string, DraftProgress>());
 const keyOf = (owner: DefinitionProcess, text: string) =>
   `${owner.id}:${hashOf(text)}`;
 const fileOf = (owner: DefinitionProcess, text: string) =>

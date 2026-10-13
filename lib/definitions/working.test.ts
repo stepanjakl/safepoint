@@ -48,11 +48,11 @@ describe("the app's working", () => {
   });
 
   it('works every condition through to true or false', () => {
-    // AV-RR is the ripe product, so the first side is false and the second
-    // decides. 14 on hand, 2 reserved, none inbound.
+    // AV-RR is the ripe product (a yes/no column, so true), so the first side
+    // is false and the second decides. 14 on hand, 2 reserved, none inbound.
     expect(
       stepsOf(
-        '!(record.ripe == "yes") || record.on_hand - record.reserved + record.inbound_before_start + order <= 65',
+        '!record.ripe || record.on_hand - record.reserved + record.inbound_before_start + order <= 65',
         {
           result: 'check',
           examples: [
@@ -61,8 +61,8 @@ describe("the app's working", () => {
         },
       ),
     ).toEqual([
-      '!("yes" == "yes") || 14 - 2 + 0 + 60 <= 65',
-      '!("yes" == "yes") || 72 <= 65',
+      '!true || 14 - 2 + 0 + 60 <= 65',
+      '!true || 72 <= 65',
       '!true || false',
       'false',
     ]);

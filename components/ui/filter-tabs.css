@@ -3,14 +3,16 @@
    ────────────────────────────────────────────────────────────────────────── */
 
 @theme inline {
-  /* The neutral selected face and its chip's figure. */
+  /* The neutral selected face, and the ink and chip on it. */
   --color-filter-neutral-solid: var(--sp-filter-neutral-solid);
+  --color-filter-neutral-on-solid: var(--sp-filter-neutral-on-solid);
 }
 
 :root {
-  /* Neutral choice: light enough to sit with the bucket solids while its
-     inverse text and count clear 7:1 in every neutral family. */
-  --sp-filter-neutral-solid: light-dark(var(--sp-neutral-625), var(--sp-neutral-50));
+  /* Neutral choice, as the bucket solids are: a dark face in light, a lifted
+     mid grey in dark (not the light one inverted), light ink on both. */
+  --sp-filter-neutral-solid: light-dark(var(--sp-neutral-625), var(--sp-neutral-550));
+  --sp-filter-neutral-on-solid: var(--sp-neutral-0);
 }
 
 /* A text field's face and edge, answering hover and keyboard focus as a field
@@ -21,6 +23,11 @@
   --field-track-pad: calc(var(--spacing) * 1);
   padding: var(--field-track-pad);
   margin-inline: calc((var(--field-track-pad) + var(--spacing-field-edge)) * -1);
+  /* The small strip, beside a result rather than over a list. */
+  &[data-size='small'] {
+    --field-track-pad: calc(var(--spacing) * 0.5);
+    --filter-count-height: 1rem;
+  }
   border: var(--spacing-field-edge) solid var(--sp-field-edge);
   background-color: var(--sp-field-face);
   transition: border-color var(--duration-state) ease-out;
@@ -99,7 +106,7 @@
   /* A tab's count chip. Two digits wide at least, so 3 and 17 are one shape
      across the strip, and never narrower than it is tall; px-1 in markup. */
   .review-tab-count {
-    --review-tab-count-height: 1.125rem;
+    --review-tab-count-height: var(--filter-count-height, 1.125rem);
     height: var(--review-tab-count-height);
     min-width: max(var(--review-tab-count-height), calc(2ch + 0.5rem));
   }

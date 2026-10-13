@@ -16,9 +16,10 @@ One definition has a name, the exact instructions text it interprets, a `check` 
 4. The person confirms the intent and accepts or denies each definition. `decide.ts` reruns the full review against the read before acceptance. A denial can carry a note for the next write.
 5. `store.ts` reads saved sets through the schema and writes a temporary file before renaming it over the old set. Each instructions version has a folder, `fixtures/<process>/rulebooks/<version>-<instructions-hash>/`, found by the hash: `current.json` is the rulebook under review, and `<rulebook id>.json` is an accepted rulebook a run calculated on, written once and never again. The id is a fingerprint of what was accepted (`fingerprintOf`).
 6. `calculate.ts` works every accepted calculation out for every record, and has the model cross-check them; cross-checks are kept in `data/<process>/cross-checks/`.
+7. `propose.ts` has the model propose values for every record, trying them against the accepted checks (`try_proposal`) before it submits. Code checks every proposed value again (`checkProposal`), verifies every cited cell, and keeps its own verdicts: ready, decide or blocked. Proposals are kept in `data/<process>/proposals/`; a person's decisions on them belong to the run.
 
-`app/api/dev/brunch-orders/rules/route.ts` exposes get, draft, intent, write and decide actions for this development flow. It is not a public process-definition API. The [development log](../processes/brunch-orders/DEVELOPMENT-LOG.md) records why its checks and approval boundary changed.
+`app/api/dev/brunch-orders/rules/route.ts` exposes get, draft, intent, write and decide actions for this development flow; `calculate/route.ts` and `propose/route.ts` beside it do the same for those steps. None is a public process-definition API. The [development log](../processes/brunch-orders/DEVELOPMENT-LOG.md) records why its checks and approval boundary changed.
 
 ## Present limit
 
-Accepted definitions prepare later steps; they do not currently execute orders. The Brunch orders plan marks calculation, proposal, checking of proposals, review, sheet write-back and history as later phases. A stored accepted set and a captured read are not a durable production review record.
+Nothing is written to a sheet: Apply previews what a decided proposal would write. The Brunch orders plan marks sheet write-back and history as later phases. A check sees one record at a time, and proposal fields are whole numbers. A stored accepted set and a captured read are not a durable production review record.

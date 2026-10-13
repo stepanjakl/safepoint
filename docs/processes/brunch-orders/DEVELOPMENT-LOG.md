@@ -316,7 +316,40 @@ required field. The same call then agreed on 22 of 22. Field names that two
 parts of the answer could both claim, such as `id`, `key` or `name`, are worth
 avoiding in any schema a model fills.
 
+## Keeping what a run used (12 October)
+
+The rulebook a run calculated on was named by a fingerprint, but the file
+behind it was overwritten whenever a definition was drafted again or
+accepted, so "the rules this run used" existed only as that name. Rulebooks
+now live one folder per instructions version, with the one under review as
+`current.json` and each accepted rulebook a run used kept beside it under its
+fingerprint, never rewritten. A run goes on calculating on its own; the step
+says when the current rulebook has moved on. Run-time records (reads,
+cross-checks, drafts) moved to `data/<process>/`, outside git, so the split
+between what a person approves and what runs produce is visible in the path.
+
+## A type change is not a redraft (12 October)
+
+`ripe` was compared as text (`record.ripe == "yes"`). Declaring it a yes/no
+column, and asking the model to write that rule again so it would use
+`!record.ripe`, gave a formula that passed every check, and also read the
+rule differently: the accepted version limits stock on hand plus the order to
+expected sales, the new one only the order. Both are defensible readings of
+"don't order more than we'll sell". The model's version was not adopted; the
+accepted formula was edited by hand to read the column as true or false and
+nothing else, and reviewed again on the captured sheet.
+
+**Lesson.** Asking the model to redo a definition re-opens its reading, not
+just the part that changed. A mechanical change to an accepted rule (a type,
+a name) is made by hand and reviewed; a redraft is a new reading, accepted
+again by a person.
+
 ## Smaller lessons
+
+- **A pseudo-element on a table row is a cell.** Chrome lays a `::before` on a
+  `<tr>` out as an extra cell, even absolutely positioned, which pushed every
+  following row one column across. The rule between table rows is drawn on a
+  cell instead (`row-rule`, `--row-rule-top`).
 
 - **Two sessions editing one tree** works if each re-reads before editing and
   keeps its tests in its own spec file; a shared spec or a deleted import

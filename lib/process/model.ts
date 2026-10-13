@@ -219,4 +219,7 @@ export type DataShape = {
   lookups: { tab: string; key: string; via: string; as: string }[];
   // By column header; any column not listed is read as written.
   types: Record<string, FieldType>;
+  // Where approved proposals would be written: a tab, one row per record by
+  // its key column, one column per proposal field. Absent: nowhere yet.
+  output?: { tab: string; key: string };
 };

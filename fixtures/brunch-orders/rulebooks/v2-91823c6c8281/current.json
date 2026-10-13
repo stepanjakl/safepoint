@@ -146,7 +146,7 @@
       "uses": [
         "expected_sales"
       ],
-      "formula": "!(record.ripe == \"yes\") || (record.on_hand - record.reserved + record.inbound_before_start + order <= values.expected_sales)",
+      "formula": "!record.ripe || (record.on_hand - record.reserved + record.inbound_before_start + order <= values.expected_sales)",
       "examples": [
         {
           "key": "AV-RR",
