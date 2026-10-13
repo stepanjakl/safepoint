@@ -145,9 +145,12 @@ placeholders such as `values.<id>`, because a real example steers the model.
   a frozen rulebook, because drafting replaces the kept one.
 - **Where things are kept.** What a person approves is reviewed in git:
   `fixtures/<process>/rulebooks/<version>-<instructions hash>/`, holding
-  `current.json` (the rulebook under review) and `<rulebook id>.json` (each
-  accepted rulebook a run calculated on, never rewritten). What runs produce
-  is not: `data/<process>/{reads,cross-checks,drafts}/` (gitignored,
+  `current.json` (the rulebook under review), `<rulebook id>.json` (each
+  accepted revision, never rewritten) and `revisions.json` (each revision's
+  parent and reason, and the head). A migration of an accepted rulebook
+  makes a new revision through `putRevision` with reason `migrated`; it never
+  rewrites one. What runs produce is not:
+  `data/<process>/{reads,cross-checks,drafts,proposals}/` (gitignored,
   `lib/storage/run-data.ts`). `e2e/fixtures/` are frozen copies, held to the
   engine by `lib/definitions/e2e-fixtures.test.ts`.
 - `docs/processes/brunch-orders/DEVELOPMENT-LOG.md` records what went wrong and why. Add to it when
@@ -177,14 +180,14 @@ During iteration, run the smallest check that can detect the relevant regression
 Combine the applicable rows below; broader verification is warranted when a
 shared dependency or invariant makes the impact uncertain.
 
-| Change                                                                    | Verification                                                                                                                                                                          |
-| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Documentation, comments, agent instructions                               | Check accuracy, links, and formatting of changed files. Validate skill metadata when changing skills. No application suite.                                                           |
-| Static UI wording                                                         | Format and lint changed source files. Inspect the affected UI when wrapping or accessible naming could change.                                                                        |
-| Local spacing or styling                                                  | Format changed files and inspect the affected component and relevant responsive states. Run `pnpm check:visual`, and `pnpm check:rail` when sidebar geometry changes.                 |
-| Colours or tokens                                                         | Run `pnpm check:tokens`, `pnpm check:colours` and `pnpm check:visual`; inspect affected light/dark states and contrast. Rail checker if spacing tokens move.                          |
-| Component behaviour or local logic                                        | Lint changed source files, run `pnpm typecheck` and relevant tests. Exercise changed interactions, including keyboard/focus and announcements where applicable.                       |
-| Shared logic, routing, dependencies, build configuration, broad refactors | Run `pnpm lint`, `pnpm typecheck`, `pnpm format:check`, `pnpm test` and `pnpm check:unused` once at completion. Run `pnpm build` when production compilation or bundling is affected. |
+| Change                                                                    | Verification                                                                                                                                                                                                                                                                 |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Documentation, comments, agent instructions                               | Check accuracy, links, and formatting of changed files. Validate skill metadata when changing skills. No application suite.                                                                                                                                                  |
+| Static UI wording                                                         | Format and lint changed source files. Inspect the affected UI when wrapping or accessible naming could change.                                                                                                                                                               |
+| Local spacing or styling                                                  | Format changed files and inspect the affected component and relevant responsive states. Run `pnpm check:visual`, and `pnpm check:rail` when sidebar geometry changes.                                                                                                        |
+| Colours or tokens                                                         | Run `pnpm check:tokens`, `pnpm check:colours` and `pnpm check:visual`; inspect affected light/dark states and contrast. A part drawn in a tone or on a surface also takes `pnpm check:perception` (`docs/interface/COLOUR-TESTING.md`). Rail checker if spacing tokens move. |
+| Component behaviour or local logic                                        | Lint changed source files, run `pnpm typecheck` and relevant tests. Exercise changed interactions, including keyboard/focus and announcements where applicable.                                                                                                              |
+| Shared logic, routing, dependencies, build configuration, broad refactors | Run `pnpm lint`, `pnpm typecheck`, `pnpm format:check`, `pnpm test` and `pnpm check:unused` once at completion. Run `pnpm build` when production compilation or bundling is affected.                                                                                        |
 
 Use `pnpm exec prettier --check <files>`, `pnpm exec eslint <source-files>`,
 and `pnpm exec vitest run <test-files>` for targeted checks. Typechecking remains

@@ -16,7 +16,9 @@ import {
   settled keeps only the side it takes; every condition joined by || or &&
   stays), then each side of a comparison and what is rounded reduced to its
   value, then, for a check, each comparison to true or false, and the whole
-  to true or false: what holds or fails means.
+  to true or false: what holds or fails means. A check that a guard settles
+  for the record, whatever is proposed, is worked out only as far as the
+  guard.
 */
 
 type Node = ASTNode & { op: string; args: unknown };
@@ -32,13 +34,52 @@ const literal = (value: unknown): Node =>
 const COMPARE = ['==', '!=', '<', '<=', '>', '>='];
 const ROUNDING = ['ceil', 'floor', 'round'];
 
+// Whether a node reads any of these names.
+const reads = (node: unknown, names: string[]): boolean =>
+  isNode(node)
+    ? (node.op === 'id' && names.includes(node.args as string)) ||
+      reads(node.args, names)
+    : Array.isArray(node) && node.some((item) => reads(item, names));
+
+/*
+  The guard that settles a check for this record whatever is proposed: a check
+  written "not in scope, or the rule" -- its outermost || led by a negation
+  that reads none of the proposal's fields -- whose record is out of scope.
+  Such a check does not apply to the record. Only the leading negation counts:
+  a later part that holds is the rule being met, not its scope. Null when the
+  check applies.
+*/
+function guardOf(
+  root: Node,
+  context: Parameters<typeof run>[1],
+  fields: string[],
+): Node | null {
+  if (root.op !== '||') return null;
+  let lead: Node = root;
+  while (lead.op === '||') lead = (lead.args as Node[])[0]!;
+  if (lead.op !== '!_' || reads(lead, fields)) return null;
+  try {
+    return run(serialize(lead), context) === true ? lead : null;
+  } catch {
+    return null;
+  }
+}
+
+export const applies = (
+  formula: string,
+  context: Parameters<typeof run>[1],
+  fields: string[],
+) => guardOf(syntaxOf(formula) as Node, context, fields) === null;
+
 export function stepsFor(
   formula: string,
   context: Parameters<typeof run>[1],
   // The proposal's fields: what an example tries, marked where it appears.
   tried: string[],
 ) {
-  const root = syntaxOf(formula) as Node;
+  const whole = syntaxOf(formula) as Node;
+  // A check that does not apply is worked out only as far as its guard.
+  const root = guardOf(whole, context, tried) ?? whole;
   const value = (node: Node) => run(serialize(node), context);
   // A part that cannot run on its own -- it reads a blank cell, which the
   // whole formula never reaches past an || that already holds -- is left as

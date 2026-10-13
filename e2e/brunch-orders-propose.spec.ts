@@ -27,7 +27,14 @@ test.beforeEach(async ({ page }) => {
   await page.route('**/api/dev/brunch-orders/rules', async (route) => {
     const body = route.request().postDataJSON() as { action: string };
     if (body.action !== 'get') return route.continue();
-    await route.fulfill({ json: { kind: 'rules', set: accepted, names: {} } });
+    await route.fulfill({
+      json: {
+        kind: 'rules',
+        set: accepted,
+        names: {},
+        history: { head: null, revisions: [] },
+      },
+    });
   });
   await page.route('**/api/dev/brunch-orders/calculate', (route) =>
     route.fulfill({
@@ -172,6 +179,10 @@ test('a record opens to the model’s reason and the checks’ working', async (
   const checks = table.getByRole('list', { name: 'Checks on AV-RR' });
   await expect(checks.getByRole('listitem')).toHaveCount(5);
   await expect(checks.getByText('62.0 >= 71.5')).toBeVisible();
+  // AV-RR has no supplier maximum: that check does not apply, and comes last.
+  await expect(checks.getByRole('listitem').last()).toContainText(
+    /Supplier delivery limit\s*Doesn’t apply/,
+  );
 });
 
 test('the filter shows only what needs a person', async ({ page }) => {

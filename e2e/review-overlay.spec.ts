@@ -126,7 +126,7 @@ test('number keys pick a tab, and the review reopens on the last one', async ({
   await expect(tabs.getByRole('radio').nth(1)).toBeChecked();
 });
 
-test('a bucket gets the quiet All-style cue only after the list scrolls', async ({
+test('a bucket is marked by an edge and a lifted chip only after the list scrolls', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
@@ -145,6 +145,12 @@ test('a bucket gets the quiet All-style cue only after the list scrolls', async 
   const restingFace = await bucket.evaluate(
     (element) => getComputedStyle(element).backgroundColor,
   );
+  const restingChip = await bucket
+    .locator('.review-tab-count')
+    .evaluate((element) => getComputedStyle(element).backgroundColor);
+  expect(
+    await bucket.evaluate((element) => getComputedStyle(element).boxShadow),
+  ).toBe('none');
 
   await scroller.evaluate((element) => {
     element.scrollTop = 2;
@@ -163,21 +169,19 @@ test('a bucket gets the quiet All-style cue only after the list scrolls', async 
   ).toBe('color');
   const colors = await bucket.evaluate((element) => {
     const count = element.querySelector('.review-tab-count');
-    const home = document.querySelector('.review-tab-home');
-    const field = document.querySelector('.field-track');
-    if (!count || !home || !field)
-      throw new Error('Review filter colors cannot be measured');
+    if (!count) throw new Error('Review filter colors cannot be measured');
     return {
       tab: getComputedStyle(element).backgroundColor,
       tabText: getComputedStyle(element).color,
+      edge: getComputedStyle(element).boxShadow,
       count: getComputedStyle(count).backgroundColor,
       countText: getComputedStyle(count).color,
-      home: getComputedStyle(home).backgroundColor,
-      field: getComputedStyle(field).backgroundColor,
     };
   });
-  expect(colors.tab).toBe(colors.home);
-  expect(colors.count).toBe(colors.field);
+  // No face of its own: an edge marks it, and its chip lifts a rung.
+  expect(colors.tab).toBe(restingFace);
+  expect(colors.edge).not.toBe('none');
+  expect(colors.count).not.toBe(restingChip);
   await bucket.hover();
   await expect
     .poll(() => bucket.evaluate((element) => getComputedStyle(element).color))
@@ -193,7 +197,8 @@ test('a bucket gets the quiet All-style cue only after the list scrolls', async 
       .locator('.review-tab-count')
       .evaluate((element) => getComputedStyle(element).color),
   };
-  expect(hovered.tab).toBe(colors.tab);
+  // The pointer adds the hover face; the chip is already at its lifted rung.
+  expect(hovered.tab).not.toBe(colors.tab);
   expect(hovered.count).toBe(colors.count);
   expect(hovered.countText).not.toBe(colors.countText);
 
@@ -208,6 +213,7 @@ test('a bucket gets the quiet All-style cue only after the list scrolls', async 
   });
   await expect(bucket).not.toHaveAttribute('data-spied', '');
   await expect(nextBucket).toHaveAttribute('data-spied', '');
+  await page.mouse.move(0, 0);
   expect(
     await bucket.evaluate(
       (element) => getComputedStyle(element).backgroundColor,
@@ -217,7 +223,10 @@ test('a bucket gets the quiet All-style cue only after the list scrolls', async 
     await nextBucket.evaluate(
       (element) => getComputedStyle(element).backgroundColor,
     ),
-  ).toBe(colors.home);
+  ).toBe(restingFace);
+  expect(
+    await nextBucket.evaluate((element) => getComputedStyle(element).boxShadow),
+  ).not.toBe('none');
 
   await scroller.evaluate((element) => {
     element.scrollTop = 0;

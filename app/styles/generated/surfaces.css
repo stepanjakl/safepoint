@@ -22,6 +22,13 @@
   --sp-floating-recess-ring: light-dark(var(--sp-neutral-250), var(--sp-neutral-675));
   --sp-floating-recess-edge: light-dark(var(--sp-neutral-25), var(--sp-neutral-900));
 
+  /* How far each surface's face sits from the canvas's, in OKLab lightness. */
+  --sp-ground-lift-light: 0;
+  --sp-ground-lift-dark: 0;
+  /* One layer of that distance: the canvas to the pane. */
+  --sp-layer-lift-light: 0.0224;
+  --sp-layer-lift-dark: 0.0448;
+
   /* A recess cut into the canvas, until a ground-* utility re-points it. */
   --sp-surface-inset: var(--sp-canvas-recess);
   --sp-recessed-ring: var(--sp-canvas-recess-ring);
@@ -48,6 +55,8 @@
   --sp-recess-field-edge-hover: light-dark(var(--sp-neutral-300), var(--sp-neutral-525));
   --sp-recess-field-edge-active: light-dark(var(--sp-neutral-625), var(--sp-neutral-275));
   --sp-recess-enclosure-edge: light-dark(var(--sp-neutral-75), var(--sp-neutral-800));
+  --sp-recess-filter-face: light-dark(var(--sp-neutral-100), var(--sp-neutral-950));
+  --sp-recess-filter-track-edge-hover: light-dark(var(--sp-neutral-275), var(--sp-neutral-750));
 }
 
 /* Hands a surface's recess, and every surface-following role, to everything
@@ -57,6 +66,8 @@
   --sp-surface-inset: var(--sp-primary-recess);
   --sp-recessed-ring: var(--sp-primary-recess-ring);
   --sp-recessed-edge: var(--sp-primary-recess-edge);
+  --sp-ground-lift-light: 0.0224;
+  --sp-ground-lift-dark: 0.0448;
   --sp-surface-control: light-dark(var(--sp-neutral-25), var(--sp-neutral-750));
   --sp-surface-selected: light-dark(var(--sp-neutral-175), var(--sp-neutral-675));
   --sp-surface-hover: light-dark(var(--sp-neutral-100), var(--sp-neutral-750));
@@ -77,6 +88,8 @@
   --sp-field-edge-hover: light-dark(var(--sp-neutral-250), var(--sp-neutral-425));
   --sp-field-edge-active: light-dark(var(--sp-neutral-575), var(--sp-neutral-175));
   --sp-enclosure-edge: light-dark(var(--sp-neutral-25), var(--sp-neutral-700));
+  --sp-filter-face: light-dark(var(--sp-neutral-50), var(--sp-neutral-850));
+  --sp-filter-track-edge-hover: light-dark(var(--sp-neutral-225), var(--sp-neutral-650));
   --sp-recess-surface-control: light-dark(var(--sp-neutral-50), var(--sp-neutral-800));
   --sp-recess-surface-selected: light-dark(var(--sp-neutral-200), var(--sp-neutral-725));
   --sp-recess-surface-hover: light-dark(var(--sp-neutral-125), var(--sp-neutral-800));
@@ -97,12 +110,16 @@
   --sp-recess-field-edge-hover: light-dark(var(--sp-neutral-275), var(--sp-neutral-475));
   --sp-recess-field-edge-active: light-dark(var(--sp-neutral-600), var(--sp-neutral-225));
   --sp-recess-enclosure-edge: light-dark(var(--sp-neutral-50), var(--sp-neutral-750));
+  --sp-recess-filter-face: light-dark(var(--sp-neutral-75), var(--sp-neutral-900));
+  --sp-recess-filter-track-edge-hover: light-dark(var(--sp-neutral-250), var(--sp-neutral-700));
 }
 
 @utility ground-floating {
   --sp-surface-inset: var(--sp-floating-recess);
   --sp-recessed-ring: var(--sp-floating-recess-ring);
   --sp-recessed-edge: var(--sp-floating-recess-edge);
+  --sp-ground-lift-light: 0.0447;
+  --sp-ground-lift-dark: 0.0895;
   --sp-surface-control: light-dark(var(--sp-neutral-0), var(--sp-neutral-700));
   --sp-surface-selected: light-dark(var(--sp-neutral-150), var(--sp-neutral-625));
   --sp-surface-hover: light-dark(var(--sp-neutral-75), var(--sp-neutral-700));
@@ -123,6 +140,8 @@
   --sp-field-edge-hover: light-dark(var(--sp-neutral-225), var(--sp-neutral-375));
   --sp-field-edge-active: light-dark(var(--sp-neutral-550), var(--sp-neutral-125));
   --sp-enclosure-edge: light-dark(var(--sp-neutral-0), var(--sp-neutral-650));
+  --sp-filter-face: light-dark(var(--sp-neutral-25), var(--sp-neutral-800));
+  --sp-filter-track-edge-hover: light-dark(var(--sp-neutral-200), var(--sp-neutral-600));
   --sp-recess-surface-control: light-dark(var(--sp-neutral-25), var(--sp-neutral-750));
   --sp-recess-surface-selected: light-dark(var(--sp-neutral-175), var(--sp-neutral-675));
   --sp-recess-surface-hover: light-dark(var(--sp-neutral-100), var(--sp-neutral-750));
@@ -143,6 +162,8 @@
   --sp-recess-field-edge-hover: light-dark(var(--sp-neutral-250), var(--sp-neutral-425));
   --sp-recess-field-edge-active: light-dark(var(--sp-neutral-575), var(--sp-neutral-175));
   --sp-recess-enclosure-edge: light-dark(var(--sp-neutral-25), var(--sp-neutral-700));
+  --sp-recess-filter-face: light-dark(var(--sp-neutral-50), var(--sp-neutral-850));
+  --sp-recess-filter-track-edge-hover: light-dark(var(--sp-neutral-225), var(--sp-neutral-650));
 }
 
 /* Inside a recess, the surface-following roles take the values its surface
@@ -168,4 +189,6 @@
   --sp-field-edge-hover: var(--sp-recess-field-edge-hover);
   --sp-field-edge-active: var(--sp-recess-field-edge-active);
   --sp-enclosure-edge: var(--sp-recess-enclosure-edge);
+  --sp-filter-face: var(--sp-recess-filter-face);
+  --sp-filter-track-edge-hover: var(--sp-recess-filter-track-edge-hover);
 }

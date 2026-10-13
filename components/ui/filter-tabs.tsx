@@ -50,41 +50,54 @@ const TAB =
 // Each size's type, height and ends; the small one sits beside a result.
 const SIZE = {
   default: 'gap-1.5 py-1 pe-3 text-dense',
-  small: 'gap-1 py-0.5 pe-2.5 text-meta',
+  small: 'min-h-5 gap-1 pe-2.5 text-meta',
 } as const;
+// The chip's inset on its three outer sides is the tab's own half-leftover:
+// (line height + tab padding - chip) / 2, 4px at the default size. The small
+// size has 2px: its chip is the tab's height less that on every side.
+const CHIP_START = { default: 'ps-1', small: 'ps-0.5' } as const;
+const HOVER_FACE =
+  'data-[hovered]:not-data-[selected]:bg-filter-wash data-[pressed]:not-data-[selected]:bg-filter-wash';
+// A bucket with nothing in it drops to muted ink, waking on the pointer.
+const EMPTY_TAB =
+  'text-muted data-[hovered]:not-data-[selected]:text-severity-strong data-[focus-visible]:not-data-[selected]:text-severity-strong data-[selected]:text-filter-ink';
 const BUCKET_TAB =
-  'text-severity-ink data-[spied]:bg-surface-hover data-[hovered]:not-data-[selected]:text-severity-strong data-[focus-visible]:not-data-[selected]:text-severity-strong data-[selected]:text-severity-on-solid';
+  'text-severity-ink data-[hovered]:not-data-[selected]:text-severity-strong data-[focus-visible]:not-data-[selected]:text-severity-strong data-[selected]:text-filter-ink';
 // "All" takes the strip's spare width, so the buckets sit together at the
 // end; its end margin gives the divider after it room on both sides.
 const ALL_BOX = 'me-3 flex-1';
 const ALL_TAB = cx(
   ALL_BOX,
+  'data-[hovered]:not-data-[selected]:bg-filter-chip data-[pressed]:not-data-[selected]:bg-filter-chip',
   'text-muted-strong data-[hovered]:not-data-[selected]:text-primary data-[focus-visible]:not-data-[selected]:text-primary data-[selected]:text-filter-neutral-on-solid',
 );
-const NEUTRAL_TAB =
-  'text-muted-strong data-[hovered]:not-data-[selected]:text-primary data-[focus-visible]:not-data-[selected]:text-primary data-[selected]:text-filter-neutral-on-solid';
-// The count's chip: a rung past the track at rest, the field face when its
-// group is spied, and inverted on the chosen solid.
+const NEUTRAL_TAB = cx(
+  HOVER_FACE,
+  'text-muted-strong data-[hovered]:not-data-[selected]:text-primary data-[focus-visible]:not-data-[selected]:text-primary data-[selected]:text-filter-neutral-on-solid',
+);
+// The count's chip: a rung past the track at rest, a rung more under the
+// pointer or when its group is spied, and a step of the solid when chosen.
 const BUCKET_COUNT =
-  'bg-severity-fill-strong group-data-[hovered]/tab:bg-severity-pill-hover group-data-[focus-visible]/tab:bg-severity-pill-hover group-data-[spied]/tab:bg-field-face group-data-[selected]/tab:bg-severity-on-solid group-data-[selected]/tab:text-severity-solid';
-// "All"'s chip is the track's own face, a window through its resting face.
+  'bg-filter-chip group-data-[hovered]/tab:bg-filter-chip-hover group-data-[focus-visible]/tab:bg-filter-chip-hover group-data-[spied]/tab:bg-filter-chip-hover group-data-[selected]/tab:bg-filter-chip-chosen group-data-[selected]/tab:text-filter-ink';
+// "All"'s chip rests on the track's own face, a window through its tab.
 const ALL_COUNT =
-  'bg-field-face group-data-[selected]/tab:bg-filter-neutral-on-solid group-data-[selected]/tab:text-filter-neutral-solid';
+  'bg-filter-face group-data-[selected]/tab:bg-filter-chip-chosen group-data-[selected]/tab:text-filter-neutral-on-solid';
 const COUNT =
-  'review-tab-count review-filter-wash value text-micro font-label inline-grid place-items-center rounded-full px-1';
+  'review-tab-count review-filter-wash value relative z-2 text-micro font-label inline-grid place-items-center rounded-full px-1';
+const MORE_DOT =
+  'review-filter-dot bg-filter-dot size-1.5 flex-none rounded-full';
 const DIVIDER = 'review-filter-divider';
 
 // The chosen face, under the tabs: the bucket's solid, or a neutral one for
 // "All". No edge: the solid is the whole mark.
-const INDICATOR =
-  'review-tab-indicator bg-filter-neutral-solid data-[severity]:bg-severity-solid';
+const INDICATOR = 'review-tab-indicator';
 
 // The other tabs, where the strip is too narrow to show them: the tab's own
 // shape and ink, so "More" reads as part of the strip.
 const MORE =
   'review-filter-focus control-wash text-muted-strong interact:text-primary data-[pressed]:text-primary inline-flex cursor-pointer items-center gap-1 rounded-full px-2.5 py-1 text-dense font-medium whitespace-nowrap outline-none';
 const MENU_ITEM =
-  'control-wash text-primary data-[focused]:bg-surface-hover flex cursor-pointer items-center gap-2 rounded-control p-1 pe-2.5 text-dense font-medium outline-none';
+  'review-filter-item control-wash text-primary data-[focused]:bg-surface-hover flex cursor-pointer items-center gap-2 rounded-control p-1 pe-2.5 text-dense font-medium outline-none';
 
 export function FilterTabs<Key extends string>({
   tabs,
@@ -222,6 +235,10 @@ export function FilterTabs<Key extends string>({
   const chosen = tabs.find((tab) => tab.key === selected);
   const shown = collapsed ? tabs.filter((tab) => tab.key === selected) : tabs;
   const rest = collapsed ? tabs.filter((tab) => tab.key !== selected) : [];
+  // The most urgent hidden bucket with something in it: the first two ranks.
+  const urgent = rest
+    .filter((tab) => (tab.count ?? 0) > 0 && (tab.severity ?? 9) <= 1)
+    .sort((a, b) => a.severity! - b.severity!)[0];
 
   return (
     <div
@@ -281,9 +298,9 @@ export function FilterTabs<Key extends string>({
               TAB,
               SIZE[size],
               // The inset is the count chip's; a tab without one pads evenly.
-              tab.count === undefined ? 'ps-3' : 'ps-1',
+              tab.count === undefined ? 'ps-3' : CHIP_START[size],
               tab.severity !== undefined
-                ? BUCKET_TAB
+                ? cx(HOVER_FACE, tab.count === 0 ? EMPTY_TAB : BUCKET_TAB)
                 : tab.key === leadKey
                   ? ALL_TAB
                   : NEUTRAL_TAB,
@@ -312,6 +329,16 @@ export function FilterTabs<Key extends string>({
         <MenuTrigger>
           <AriaButton className={MORE}>
             More
+            {urgent ? (
+              <>
+                <span
+                  aria-hidden="true"
+                  className={MORE_DOT}
+                  data-severity={urgent.severity}
+                />
+                <span className="sr-only">, {urgent.label} has items</span>
+              </>
+            ) : null}
             <span aria-hidden="true">▾</span>
           </AriaButton>
           <Popover
@@ -336,9 +363,8 @@ export function FilterTabs<Key extends string>({
                     <span
                       className={cx(
                         COUNT,
-                        tab.severity !== undefined
-                          ? 'bg-severity-fill-strong text-severity-strong'
-                          : 'bg-surface-selected',
+                        'bg-filter-chip',
+                        tab.severity !== undefined && 'text-severity-strong',
                       )}
                     >
                       {tab.count}
@@ -367,7 +393,7 @@ export function FilterTabs<Key extends string>({
             className={cx(
               TAB,
               SIZE[size],
-              tab.count === undefined ? 'ps-3' : 'ps-1',
+              tab.count === undefined ? 'ps-3' : CHIP_START[size],
               tab.key === leadKey && ALL_BOX,
             )}
           >
@@ -392,7 +418,7 @@ function Content<Key extends string>({ tab }: { tab: FilterTab<Key> }) {
           {tab.count}
         </span>
       )}
-      <span className="flex-1 text-center">{tab.short}</span>
+      <span className="relative z-2 flex-1 text-center">{tab.short}</span>
     </>
   );
 }

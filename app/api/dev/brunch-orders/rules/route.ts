@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { accept, confirmIntent, deny } from '@/lib/definitions/decide';
 import { draftProgress, startDraft } from '@/lib/definitions/draft';
 import { namesOf } from '@/lib/definitions/records';
-import { loadSet } from '@/lib/definitions/store';
+import { listRevisions, loadSet } from '@/lib/definitions/store';
 import type { DefinitionSet } from '@/lib/definitions/types';
 import { workingOf } from '@/lib/definitions/working';
 import { writeDefinition } from '@/lib/definitions/write';
@@ -25,7 +25,8 @@ const model = draftingModelSchema.optional();
   draft finds them again and writes each on the server; write gives one a
   formula and examples on the read; intent confirms what the model
   understood; decide accepts one (rechecked in full) or denies it, with what
-  is wrong. Each reply names the records the examples are about.
+  is wrong. Each reply names the records the examples are about, and the
+  rulebook's revisions.
 */
 export async function POST(request: Request) {
   const rejected = rejectUnlessLocalDevelopment(request);
@@ -78,6 +79,8 @@ export async function POST(request: Request) {
           )
         : {},
       drafting,
+      // Every accepted revision, newest first, and the one in use.
+      history: await listRevisions(owner, body.text),
     });
   };
   const readOf = async (readId: string) => {

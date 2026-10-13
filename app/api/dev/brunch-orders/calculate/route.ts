@@ -8,10 +8,11 @@ import {
 } from '@/lib/definitions/calculate';
 import {
   fingerprintOf,
-  keepAccepted,
-  loadAccepted,
+  loadRevision,
   loadSet,
+  putRevision,
 } from '@/lib/definitions/store';
+import { staleness } from '@/lib/definitions/fits';
 import { rejectUnlessLocalDevelopment } from '@/lib/dev/dev-route';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { keptRead, READ_GONE } from '@/lib/processes/brunch-orders/reads';
@@ -62,12 +63,17 @@ export async function POST(request: Request) {
     const read = await keptRead(body.readId);
     if (!read) throw new Error(READ_GONE);
     const pinned = body.rulebook
-      ? await loadAccepted(owner, body.text, body.rulebook)
+      ? await loadRevision(owner, body.text, body.rulebook)
       : null;
     const set = pinned ?? current;
+    // A rulebook kept as it was accepted may no longer fit the data.
+    const stale = staleness(owner, body.text, set, current, read);
+    if (stale)
+      return Response.json({ kind: 'stale', ...stale }, { status: 409 });
     const calculation = calculate(owner, set, read);
-    // What a run calculates on is kept as it is, so the run can come back to it.
-    await keepAccepted(owner, set);
+    // What a run calculates on is kept as it is, so the run can come back to
+    // it; one accepted in full was kept then, and this adds nothing.
+    if (!pinned) await putRevision(owner, set, { reason: 'used' });
     let check = await keptCrossCheck(
       owner,
       body.readId,

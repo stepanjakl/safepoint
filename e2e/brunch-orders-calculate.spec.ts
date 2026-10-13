@@ -48,14 +48,63 @@ const check: CrossCheck = {
   total: calculation.rows.length * calculation.calculations.length,
 };
 
+// Two revisions: the first accepted, then migrated when a column's type
+// changed.
+const history = {
+  head: calculation.fingerprint,
+  revisions: [
+    {
+      id: calculation.fingerprint,
+      parent: 'd23a4c56d75b',
+      reason: 'migrated',
+      at: '2026-10-12T16:19:54.000Z',
+      schemaVersion: 1,
+      note: 'ripe read as a yes/no column',
+    },
+    {
+      id: 'd23a4c56d75b',
+      parent: null,
+      reason: 'accepted',
+      at: '2026-10-12T00:30:27.000Z',
+      schemaVersion: 1,
+      note: null,
+    },
+  ],
+};
+
+// Set by a test: the rulebook a run pinned no longer fits its read.
+let stale = false;
+
 test.beforeEach(async ({ page }) => {
+  stale = false;
   await page.route('**/api/dev/brunch-orders/rules', async (route) => {
     const body = route.request().postDataJSON() as { action: string };
     if (body.action !== 'get') return route.continue();
-    await route.fulfill({ json: { kind: 'rules', set: accepted, names: {} } });
+    await route.fulfill({
+      json: { kind: 'rules', set: accepted, names: {}, history },
+    });
   });
   await page.route('**/api/dev/brunch-orders/calculate', async (route) => {
-    const body = route.request().postDataJSON() as { action: string };
+    const body = route.request().postDataJSON() as {
+      action: string;
+      rulebook?: string;
+    };
+    if (stale && body.rulebook)
+      return route.fulfill({
+        status: 409,
+        json: {
+          kind: 'stale',
+          rulebook: body.rulebook,
+          problems: [
+            {
+              id: 'order_ripe_avocados_limit',
+              name: 'Ripe avocados limit',
+              problem: 'no such overload: bool == string',
+            },
+          ],
+          current: calculation.fingerprint,
+        },
+      });
     await route.fulfill({
       json: {
         kind: 'calculation',
@@ -155,6 +204,32 @@ test('the Rules tab shows the accepted rulebook, read-only', async ({
     rules.getByRole('group', { name: 'Formula of Expected sales' }),
   ).toBeVisible();
   await expect(rules.getByRole('button', { name: /^Accept/ })).toHaveCount(0);
+  const revisions = page.getByRole('list', { name: 'Rulebook revisions' });
+  await expect(revisions.getByRole('listitem')).toHaveCount(2);
+  await expect(revisions.getByRole('listitem').first()).toContainText(
+    /Migrated from d23a4c56d75b.*Current/,
+  );
+});
+
+test('a run whose rules no longer fit its read can move to the current ones', async ({
+  page,
+}) => {
+  await readTheSheet(page);
+  await expect(page.getByText('Not proposed').first()).toBeVisible();
+  // The run has pinned the rulebook it calculated on; that one now fails.
+  stale = true;
+  await page.reload();
+  await page
+    .locator('button.thread-step-toggle', { hasText: /^Calculate/ })
+    .click();
+  const alert = page
+    .getByRole('alert')
+    .filter({ hasText: 'no longer fit the data it read' });
+  await expect(alert).toContainText('Ripe avocados limit');
+  await alert.getByRole('button', { name: 'Use the current rules' }).click();
+  await expect(
+    page.getByRole('table', { name: 'Values worked out for every record' }),
+  ).toBeVisible();
 });
 
 test('the Inputs tab lists the sheet’s tabs as the run read them', async ({

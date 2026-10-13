@@ -5,11 +5,22 @@ import { useEffect } from 'react';
 import { useInstructions } from '@/components/app-shell/instructions/instructions-store';
 import { RulebookCard, words } from '@/components/brunch-orders/rules-step';
 import { plural, useTrial } from '@/components/sheet-process/trial-parts';
-import type { DefinitionSet } from '@/lib/definitions/types';
+import { Pill } from '@/components/ui/pill';
+import type {
+  DefinitionSet,
+  Revision,
+  RevisionIndex,
+} from '@/lib/definitions/types';
 import type { ProcessSummary } from '@/lib/process/model';
+import { runStamp } from '@/lib/process/run-time';
 
 type RulesResponse =
-  | { kind: 'rules'; set: DefinitionSet; names: Record<string, string> }
+  | {
+      kind: 'rules';
+      set: DefinitionSet;
+      names: Record<string, string>;
+      history: RevisionIndex;
+    }
   | { kind: 'none' }
   | { kind: 'error'; message: string };
 
@@ -73,6 +84,54 @@ export function RulebookPanel({ process }: { process: ProcessSummary }) {
           </ol>
         </>
       )}
+      {body?.kind === 'rules' && body.history.revisions.length ? (
+        <History history={body.history} />
+      ) : null}
     </div>
+  );
+}
+
+const REASONS: Record<Revision['reason'], string> = {
+  accepted: 'Accepted',
+  migrated: 'Migrated',
+  used: 'Kept by a run',
+};
+
+/*
+  Every accepted rulebook for these instructions, newest first: each is kept
+  as it was, and a run that used one keeps using it. Read-only.
+*/
+function History({ history }: { history: RevisionIndex }) {
+  return (
+    <section aria-labelledby="rulebook-history" className="grid gap-2">
+      <h3 id="rulebook-history" className="readout text-muted">
+        History
+      </h3>
+      <ol className="text-dense grid gap-2" aria-label="Rulebook revisions">
+        {history.revisions.map((revision) => (
+          <li key={revision.id} className="grid gap-0.5">
+            <span className="flex flex-wrap items-center gap-2">
+              <span className="value font-medium">{revision.id}</span>
+              <span>
+                {REASONS[revision.reason]}
+                {revision.parent ? (
+                  <span className="text-muted">
+                    {' '}
+                    from <span className="value">{revision.parent}</span>
+                  </span>
+                ) : null}
+              </span>
+              {revision.id === history.head ? (
+                <Pill tone="ready">Current</Pill>
+              ) : null}
+            </span>
+            <span className="text-meta text-muted">
+              {runStamp(revision.at)}
+              {revision.note ? ` · ${revision.note}` : null}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }

@@ -10,9 +10,11 @@ import { definition, keep, TEXT } from './set.fixture';
 import {
   fingerprintOf,
   hashOf,
-  keepAccepted,
-  loadAccepted,
+  headOf,
+  listRevisions,
+  loadRevision,
   loadSet,
+  putRevision,
   saveSet,
   StoredSetError,
 } from './store';
@@ -53,16 +55,58 @@ describe('the store', () => {
 
   it('keeps an accepted rulebook as it was, whatever the current one becomes', async () => {
     const set = await keep([accepted]);
-    const id = await keepAccepted(owner, set);
+    const id = await putRevision(owner, set, { reason: 'accepted' });
     expect(id).toBe(fingerprintOf(set));
     await saveSet(owner, { ...set, definitions: [] });
-    await keepAccepted(owner, { ...set, intent: 'Changed.' });
-    const pinned = await loadAccepted(owner, TEXT, id);
+    await putRevision(
+      owner,
+      { ...set, intent: 'Changed.' },
+      { reason: 'used' },
+    );
+    const pinned = await loadRevision(owner, TEXT, id);
     expect(pinned?.definitions.map((d) => d.id)).toEqual(['two_weekends']);
     expect(pinned?.intent).toBe(set.intent);
     expect((await loadSet(owner, TEXT))?.definitions).toEqual([]);
-    expect(await loadAccepted(owner, TEXT, '000000000000')).toBeNull();
-    expect(await loadAccepted(owner, TEXT, '../current')).toBeNull();
+    expect(await loadRevision(owner, TEXT, '000000000000')).toBeNull();
+    expect(await loadRevision(owner, TEXT, '../current')).toBeNull();
+  });
+
+  it('records each revision once, with the one it came from and why', async () => {
+    const set = await keep([accepted]);
+    const first = await putRevision(owner, set, { reason: 'accepted' });
+    const migrated = {
+      ...set,
+      definitions: [
+        { ...accepted, formula: 'record.weekend_2 + record.weekend_1' },
+      ],
+    };
+    const second = await putRevision(owner, migrated, {
+      reason: 'migrated',
+      note: 'Read the other way round.',
+    });
+    expect(await putRevision(owner, migrated, { reason: 'used' })).toBe(second);
+    const { head, revisions } = await listRevisions(owner, TEXT);
+    expect(head).toBe(second);
+    expect(
+      revisions.map(({ id, parent, reason, note }) => ({
+        id,
+        parent,
+        reason,
+        note,
+      })),
+    ).toEqual([
+      {
+        id: second,
+        parent: first,
+        reason: 'migrated',
+        note: 'Read the other way round.',
+      },
+      { id: first, parent: null, reason: 'accepted', note: null },
+    ]);
+    // A run going back to the revision it pinned changes nothing.
+    await putRevision(owner, set, { reason: 'used' });
+    expect(await headOf(owner, TEXT)).toBe(second);
+    expect((await listRevisions(owner, TEXT)).revisions).toHaveLength(2);
   });
 
   it('reports a file that is not JSON, rather than nothing kept', async () => {

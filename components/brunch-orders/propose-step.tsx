@@ -38,6 +38,7 @@ import { SUBJECT } from '@/lib/processes/brunch-orders/process';
 import { DRAFTING_MODELS, type DraftingModel } from '@/lib/rulebook/models';
 
 import { DataDrawer } from './data-drawer';
+import { StaleRules, type StaleReply } from './stale-rules';
 
 type Calculated = {
   calculations: { id: string; name: string }[];
@@ -58,6 +59,7 @@ type ProposeResponse =
       verdict: Verdict;
       checks: CheckVerdict[];
     }
+  | StaleReply
   | { kind: 'error'; message: string };
 
 // A person's decision on one record, kept with the run in this browser.
@@ -108,6 +110,7 @@ export function ProposeStep({
   rulebook,
   progress: kept,
   onProgress,
+  onMoveRules,
 }: {
   text: string;
   readId: string;
@@ -115,6 +118,8 @@ export function ProposeStep({
   rulebook: string;
   progress: ProposeProgress | undefined;
   onProgress: (progress: ProposeProgress) => void;
+  // Back to Calculate, on the current rules, when these no longer fit.
+  onMoveRules: () => void;
 }) {
   const propose = useTrial<ProposeResponse>('/api/dev/brunch-orders/propose');
   const { run } = propose;
@@ -211,7 +216,9 @@ export function ProposeStep({
         values against the accepted checks first. The app checks each again; you
         approve, change or reject each one.
       </Lede>
-      {body?.kind === 'error' ? (
+      {body?.kind === 'stale' ? (
+        <StaleRules stale={body} onMove={onMoveRules} />
+      ) : body?.kind === 'error' ? (
         <p role="alert" className="text-dense text-state-blocked">
           {body.message}
         </p>
@@ -553,7 +560,7 @@ function ProposalRow({
 
   return (
     <Fragment>
-      <tr className="align-top">
+      <tr className="calc-row align-top">
         <th
           scope="row"
           className="py-2.75 pr-3 pl-6 text-left font-medium whitespace-nowrap"
@@ -727,33 +734,47 @@ function ProposalRow({
             </Facts>
             {checks?.length ? (
               <ul className="grid gap-2" aria-label={`Checks on ${key}`}>
-                {checks.map((check) => (
-                  <li key={check.id} className="grid gap-1">
-                    <span className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium">{check.name}</span>
-                      <Pill
-                        tone={
-                          check.holds
-                            ? 'ready'
-                            : check.consequence === 'block'
-                              ? 'blocked'
-                              : 'decision'
-                        }
-                      >
-                        {check.holds ? 'Holds' : 'Fails'}
-                      </Pill>
-                    </span>
-                    <span className="text-meta text-muted flex flex-wrap items-center gap-x-1.5 gap-y-1">
-                      {check.error ??
-                        check.steps.map((step, index) => (
-                          <span key={index} className="contents">
-                            {index ? <span aria-hidden>→</span> : null}
-                            <Step text={step} />
-                          </span>
-                        ))}
-                    </span>
-                  </li>
-                ))}
+                {/* Those a guard settles for this record come last: they
+                    say nothing about the values. Decisions kept before the
+                    verdicts said so read as applying. */}
+                {[...checks]
+                  .sort(
+                    (a, b) =>
+                      Number(a.applies === false) - Number(b.applies === false),
+                  )
+                  .map((check) => (
+                    <li key={check.id} className="grid gap-1">
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium">{check.name}</span>
+                        <Pill
+                          tone={
+                            check.applies === false
+                              ? 'neutral'
+                              : check.holds
+                                ? 'ready'
+                                : check.consequence === 'block'
+                                  ? 'blocked'
+                                  : 'decision'
+                          }
+                        >
+                          {check.applies === false
+                            ? 'Doesn’t apply'
+                            : check.holds
+                              ? 'Holds'
+                              : 'Fails'}
+                        </Pill>
+                      </span>
+                      <span className="text-meta text-muted flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                        {check.error ??
+                          check.steps.map((step, index) => (
+                            <span key={index} className="contents">
+                              {index ? <span aria-hidden>→</span> : null}
+                              <Step text={step} />
+                            </span>
+                          ))}
+                      </span>
+                    </li>
+                  ))}
               </ul>
             ) : null}
           </Fold>

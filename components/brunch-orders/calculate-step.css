@@ -15,6 +15,46 @@
     align-items: center;
     gap: 0.25rem;
   }
+  /* The toggle's ::after covers its row, so the whole row opens it; any other
+     control in the row sits above that cover and keeps its own click. */
+  .calc-row {
+    position: relative;
+    transition: background-color var(--duration-state) ease-out;
+  }
+  .calc-row-toggle::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    cursor: pointer;
+  }
+  /* Lit as the release list's rows are (release-card.css): by the keyboard, or
+     by the pointer where it is real. The rules touching it step back, so the
+     fill is one band; its own only while shut, else the working is beneath.
+     Not :has() inside :has(), which is invalid and drops the whole rule. */
+  .calc-row:has(.calc-row-toggle:focus-visible) {
+    background-color: var(--sp-surface-hover);
+  }
+  tr:has(+ .calc-row > th > .calc-row-toggle:focus-visible) > td::before {
+    opacity: 0;
+  }
+  .calc-row:has(.calc-row-toggle[aria-expanded='false']:focus-visible) + tr > td::before {
+    opacity: 0;
+  }
+  @media (hover: hover) {
+    .calc-row:has(.calc-row-toggle:hover) {
+      background-color: var(--sp-surface-hover);
+    }
+    tr:has(+ .calc-row > th > .calc-row-toggle:hover) > td::before {
+      opacity: 0;
+    }
+    .calc-row:has(.calc-row-toggle[aria-expanded='false']:hover) + tr > td::before {
+      opacity: 0;
+    }
+  }
+  .calc-row :is(button, input, a):not(.calc-row-toggle) {
+    position: relative;
+    z-index: 1;
+  }
   .calc-row-chevron {
     flex: none;
     width: 1rem;

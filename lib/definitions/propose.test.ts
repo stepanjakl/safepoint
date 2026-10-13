@@ -69,6 +69,26 @@ describe('checking a proposal', () => {
     expect(ripe.steps.at(-1)).toBe('false');
     expect(ripe.steps[0]).toContain('14 - 2 + 0');
   });
+
+  it('says which checks do not apply to a record, whatever is proposed', () => {
+    const applying = (key: string, order: number) =>
+      Object.fromEntries(
+        checkProposal(owner, set, read, key, { order }).checks.map((c) => [
+          c.id,
+          c.applies,
+        ]),
+      );
+    // Ripe stock is capped only for what is ripe; an order of nothing is
+    // still checked for arriving in time, because its guard reads the order.
+    expect(applying('AV-RR', 50).order_ripe_avocados_limit).toBe(true);
+    const sourdough = applying('SD-01', 72);
+    expect(sourdough.order_ripe_avocados_limit).toBe(false);
+    expect(Object.values(applying('EG-06', 0)).every(Boolean)).toBe(false);
+    const ripe = checkProposal(owner, set, read, 'SD-01', {
+      order: 72,
+    }).checks.find((c) => c.id === 'order_ripe_avocados_limit')!;
+    expect(ripe).toMatchObject({ holds: true, steps: ['!false', 'true'] });
+  });
 });
 
 describe('proposing', () => {

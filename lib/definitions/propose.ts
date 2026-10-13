@@ -27,7 +27,7 @@ import type {
   Proposal,
   Verdict,
 } from './types';
-import { stepsFor } from './working';
+import { applies, stepsFor } from './working';
 
 /*
   Server-only. Propose: for every record, the values the model would set, why,
@@ -93,6 +93,7 @@ export function checkProposal(
         return {
           ...base,
           holds: run(d.formula!, context) === true,
+          applies: applies(d.formula!, context, fields),
           steps: stepsFor(d.formula!, context, fields),
           error: null,
         };
@@ -101,6 +102,7 @@ export function checkProposal(
         return {
           ...base,
           holds: false,
+          applies: true,
           steps: [],
           error: (error as Error).message.split('\n')[0]!,
         };

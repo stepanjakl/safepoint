@@ -41,6 +41,8 @@ import type {
 import { cx } from '@/lib/cx';
 import { DRAFTING_MODELS, type DraftingModel } from '@/lib/rulebook/models';
 
+import { StaleRules, type StaleReply } from './stale-rules';
+
 type CalculateResponse =
   | {
       kind: 'calculation';
@@ -50,6 +52,7 @@ type CalculateResponse =
       // move to.
       current: string;
     }
+  | StaleReply
   | { kind: 'error'; message: string };
 
 // How far Calculate has got, for the step's mark: the rulebook it ran on and
@@ -183,7 +186,9 @@ export function CalculateStep({
         model can cross-check them, working each one out on its own from the
         instructions, without the formulas.
       </Lede>
-      {body?.kind === 'error' ? (
+      {body?.kind === 'stale' ? (
+        <StaleRules stale={body} onMove={() => setPin(null)} />
+      ) : body?.kind === 'error' ? (
         <p role="alert" className="text-dense text-state-blocked">
           {body.message}
         </p>
@@ -437,7 +442,7 @@ function ValuesTable({
               );
               return (
                 <Fragment key={row.key}>
-                  <tr className="align-top">
+                  <tr className="calc-row align-top">
                     <th
                       scope="row"
                       className="py-2.75 pr-3 pl-6 text-left font-medium whitespace-nowrap"

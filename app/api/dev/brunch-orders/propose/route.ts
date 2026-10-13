@@ -8,7 +8,8 @@ import {
   startProposal,
 } from '@/lib/definitions/propose';
 import { namesOf } from '@/lib/definitions/records';
-import { fingerprintOf, loadAccepted, loadSet } from '@/lib/definitions/store';
+import { fingerprintOf, loadRevision, loadSet } from '@/lib/definitions/store';
+import { staleness } from '@/lib/definitions/fits';
 import { rejectUnlessLocalDevelopment } from '@/lib/dev/dev-route';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { keptRead, READ_GONE } from '@/lib/processes/brunch-orders/reads';
@@ -67,8 +68,12 @@ export async function POST(request: Request) {
     if (!read) throw new Error(READ_GONE);
     const set =
       (body.rulebook
-        ? await loadAccepted(owner, body.text, body.rulebook)
+        ? await loadRevision(owner, body.text, body.rulebook)
         : null) ?? current;
+    // A rulebook kept as it was accepted may no longer fit the data.
+    const stale = staleness(owner, body.text, set, current, read);
+    if (stale)
+      return Response.json({ kind: 'stale', ...stale }, { status: 409 });
     const fingerprint = fingerprintOf(set);
     if (body.action === 'check')
       return Response.json({

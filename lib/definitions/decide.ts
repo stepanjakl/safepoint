@@ -1,7 +1,7 @@
 import { review, settingOf } from './checks';
 import { recordsOf, type KeptRead } from './records';
-import { loadSet, updateSet } from './store';
-import type { DefinitionProcess, DefinitionSet } from './types';
+import { loadSet, putRevision, updateSet } from './store';
+import { complete, type DefinitionProcess, type DefinitionSet } from './types';
 
 /*
   A person's decisions. Confirming the intent is a timestamp. Denying a
@@ -9,14 +9,28 @@ import type { DefinitionProcess, DefinitionSet } from './types';
   again. Accepting reruns the whole review on the version kept, against the
   read its examples were run on: the same checks writing applies, so a
   version that predates a check, or a file edited by hand, is refused with
-  the reason rather than accepted.
+  the reason rather than accepted. The decision that completes the rulebook
+  keeps it as a revision (store.ts).
 */
 
+async function freezing(
+  owner: DefinitionProcess,
+  saved: Promise<DefinitionSet | null>,
+): Promise<DefinitionSet | null> {
+  const set = await saved;
+  if (set && complete(set))
+    await putRevision(owner, set, { reason: 'accepted' });
+  return set;
+}
+
 export const confirmIntent = (owner: DefinitionProcess, text: string) =>
-  updateSet(owner, text, (s) => ({
-    ...s,
-    intentConfirmedAt: new Date().toISOString(),
-  }));
+  freezing(
+    owner,
+    updateSet(owner, text, (s) => ({
+      ...s,
+      intentConfirmedAt: new Date().toISOString(),
+    })),
+  );
 
 export async function deny(
   owner: DefinitionProcess,
@@ -89,7 +103,7 @@ export async function accept(
           : d,
       ),
     }));
-  return updateSet(owner, text, (s) => ({
+  const accepted = updateSet(owner, text, (s) => ({
     ...s,
     definitions: s.definitions.map((d) =>
       d.id === id
@@ -105,4 +119,5 @@ export async function accept(
         : d,
     ),
   }));
+  return freezing(owner, accepted);
 }

@@ -94,10 +94,9 @@
             "name": "Ripe avocados limit",
             "consequence": "block",
             "holds": true,
+            "applies": false,
             "steps": [
-              "!false || 0 - 0 + 0 + 72 <= 73",
-              "!false || 72 <= 73",
-              "!false || true",
+              "!false",
               "true"
             ],
             "error": null
@@ -107,6 +106,7 @@
             "name": "Order in whole cases",
             "consequence": "block",
             "holds": true,
+            "applies": true,
             "steps": [
               "72 % 8 == 0",
               "0 == 0",
@@ -119,6 +119,7 @@
             "name": "Supplier delivery limit",
             "consequence": "block",
             "holds": true,
+            "applies": true,
             "steps": [
               "!true || 72 <= 72",
               "!true || true",
@@ -131,6 +132,7 @@
             "name": "Arrival before opening",
             "consequence": "block",
             "holds": true,
+            "applies": true,
             "steps": [
               "72 == 0 || 6 < 6 || 6 == 6 && 360 < 420",
               "false || false || true && true",
@@ -143,6 +145,7 @@
             "name": "Cover target stock level",
             "consequence": "decide",
             "holds": false,
+            "applies": true,
             "steps": [
               "0 - 0 + 0 + 72 >= 80.3",
               "72.0 >= 80.3",
@@ -170,6 +173,7 @@
             "name": "Ripe avocados limit",
             "consequence": "block",
             "holds": true,
+            "applies": true,
             "steps": [
               "!true || 14 - 2 + 0 + 50 <= 65",
               "!true || 62 <= 65",
@@ -183,6 +187,7 @@
             "name": "Order in whole cases",
             "consequence": "block",
             "holds": true,
+            "applies": true,
             "steps": [
               "50 % 10 == 0",
               "0 == 0",
@@ -195,8 +200,9 @@
             "name": "Supplier delivery limit",
             "consequence": "block",
             "holds": true,
+            "applies": false,
             "steps": [
-              "!false || 50 <= absent",
+              "!false",
               "true"
             ],
             "error": null
@@ -206,6 +212,7 @@
             "name": "Arrival before opening",
             "consequence": "block",
             "holds": true,
+            "applies": true,
             "steps": [
               "50 == 0 || 5 < 6 || 5 == 6 && 360 < 420",
               "false || true || false && true",
@@ -218,6 +225,7 @@
             "name": "Cover target stock level",
             "consequence": "decide",
             "holds": false,
+            "applies": true,
             "steps": [
               "14 - 2 + 0 + 50 >= 71.5",
               "62.0 >= 71.5",
@@ -267,10 +275,9 @@
             "name": "Ripe avocados limit",
             "consequence": "block",
             "holds": true,
+            "applies": false,
             "steps": [
-              "!false || 17 - 0 + 0 + 48 <= 54",
-              "!false || 65 <= 54",
-              "!false || false",
+              "!false",
               "true"
             ],
             "error": null
@@ -280,6 +287,7 @@
             "name": "Order in whole cases",
             "consequence": "block",
             "holds": true,
+            "applies": true,
             "steps": [
               "48 % 12 == 0",
               "0 == 0",
@@ -292,8 +300,9 @@
             "name": "Supplier delivery limit",
             "consequence": "block",
             "holds": true,
+            "applies": false,
             "steps": [
-              "!false || 48 <= absent",
+              "!false",
               "true"
             ],
             "error": null
@@ -303,6 +312,7 @@
             "name": "Arrival before opening",
             "consequence": "block",
             "holds": true,
+            "applies": true,
             "steps": [
               "48 == 0 || 5 < 6 || 5 == 6 && 360 < 420",
               "false || true || false && true",
@@ -315,6 +325,7 @@
             "name": "Cover target stock level",
             "consequence": "decide",
             "holds": true,
+            "applies": true,
             "steps": [
               "17 - 0 + 0 + 48 >= 59.4",
               "65.0 >= 59.4",
@@ -353,10 +364,9 @@
             "name": "Ripe avocados limit",
             "consequence": "block",
             "holds": true,
+            "applies": false,
             "steps": [
-              "!false || 8 - 0 + 10 + 10 <= 23",
-              "!false || 28 <= 23",
-              "!false || false",
+              "!false",
               "true"
             ],
             "error": null
@@ -366,6 +376,7 @@
             "name": "Order in whole cases",
             "consequence": "block",
             "holds": true,
+            "applies": true,
             "steps": [
               "10 % 10 == 0",
               "0 == 0",
@@ -378,8 +389,9 @@
             "name": "Supplier delivery limit",
             "consequence": "block",
             "holds": true,
+            "applies": false,
             "steps": [
-              "!false || 10 <= absent",
+              "!false",
               "true"
             ],
             "error": null
@@ -389,6 +401,7 @@
             "name": "Arrival before opening",
             "consequence": "block",
             "holds": true,
+            "applies": true,
             "steps": [
               "10 == 0 || 5 < 6 || 5 == 6 && 360 < 420",
               "false || true || false && true",
@@ -401,6 +414,7 @@
             "name": "Cover target stock level",
             "consequence": "decide",
             "holds": true,
+            "applies": true,
             "steps": [
               "8 - 0 + 10 + 10 >= 25.3",
               "28.0 >= 25.3",
@@ -428,10 +442,9 @@
             "name": "Ripe avocados limit",
             "consequence": "block",
             "holds": true,
+            "applies": false,
             "steps": [
-              "!false || 6 - 0 + 0 + 16 <= 13",
-              "!false || 22 <= 13",
-              "!false || false",
+              "!false",
               "true"
             ],
             "error": null
@@ -441,6 +454,7 @@
             "name": "Order in whole cases",
             "consequence": "block",
             "holds": true,
+            "applies": true,
             "steps": [
               "16 % 8 == 0",
               "0 == 0",
@@ -453,8 +467,9 @@
             "name": "Supplier delivery limit",
             "consequence": "block",
             "holds": true,
+            "applies": false,
             "steps": [
-              "!false || 16 <= absent",
+              "!false",
               "true"
             ],
             "error": null
@@ -464,6 +479,7 @@
             "name": "Arrival before opening",
             "consequence": "block",
             "holds": true,
+            "applies": true,
             "steps": [
               "16 == 0 || 5 < 6 || 5 == 6 && 360 < 420",
               "false || true || false && true",
@@ -476,6 +492,7 @@
             "name": "Cover target stock level",
             "consequence": "decide",
             "holds": true,
+            "applies": true,
             "steps": [
               "6 - 0 + 0 + 16 >= 14.3",
               "22.0 >= 14.3",
@@ -503,10 +520,9 @@
             "name": "Ripe avocados limit",
             "consequence": "block",
             "holds": true,
+            "applies": false,
             "steps": [
-              "!false || 9 - 0 + 0 + 7 <= 4",
-              "!false || 16 <= 4",
-              "!false || false",
+              "!false",
               "true"
             ],
             "error": null
@@ -516,6 +532,7 @@
             "name": "Order in whole cases",
             "consequence": "block",
             "holds": false,
+            "applies": true,
             "steps": [
               "7 % 6 == 0",
               "1 == 0",
@@ -528,8 +545,9 @@
             "name": "Supplier delivery limit",
             "consequence": "block",
             "holds": true,
+            "applies": false,
             "steps": [
-              "!false || 7 <= absent",
+              "!false",
               "true"
             ],
             "error": null
@@ -539,6 +557,7 @@
             "name": "Arrival before opening",
             "consequence": "block",
             "holds": true,
+            "applies": true,
             "steps": [
               "7 == 0 || 5 < 6 || 5 == 6 && 360 < 420",
               "false || true || false && true",
@@ -551,6 +570,7 @@
             "name": "Cover target stock level",
             "consequence": "decide",
             "holds": true,
+            "applies": true,
             "steps": [
               "9 - 0 + 0 + 7 >= 4.2",
               "16.0 >= 4.2",
@@ -594,10 +614,9 @@
             "name": "Ripe avocados limit",
             "consequence": "block",
             "holds": true,
+            "applies": false,
             "steps": [
-              "!false || 9 - 0 + 0 + 6 <= 4",
-              "!false || 15 <= 4",
-              "!false || false",
+              "!false",
               "true"
             ],
             "error": null
@@ -607,6 +626,7 @@
             "name": "Order in whole cases",
             "consequence": "block",
             "holds": true,
+            "applies": true,
             "steps": [
               "6 % 6 == 0",
               "0 == 0",
@@ -619,8 +639,9 @@
             "name": "Supplier delivery limit",
             "consequence": "block",
             "holds": true,
+            "applies": false,
             "steps": [
-              "!false || 6 <= absent",
+              "!false",
               "true"
             ],
             "error": null
@@ -630,6 +651,7 @@
             "name": "Arrival before opening",
             "consequence": "block",
             "holds": true,
+            "applies": true,
             "steps": [
               "6 == 0 || 5 < 6 || 5 == 6 && 360 < 420",
               "false || true || false && true",
@@ -642,6 +664,7 @@
             "name": "Cover target stock level",
             "consequence": "decide",
             "holds": true,
+            "applies": true,
             "steps": [
               "9 - 0 + 0 + 6 >= 4.2",
               "15.0 >= 4.2",

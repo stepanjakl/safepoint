@@ -22,7 +22,7 @@ The [Brunch orders direction review](processes/brunch-orders/DIRECTION-REVIEW.md
 ## By topic
 
 - [Product](product/PRODUCT-BRIEF.md): purpose, terms, principles and future goals. [Experience principles](product/EXPERIENCE-PRINCIPLES.md) contains reusable interaction guidance.
-- [Interface](interface/EMBEDDED-REVIEW.md): shell and review direction; [assistant sidebar](interface/ASSISTANT-SIDEBAR.md), [contrast checks](interface/CONTRAST-CHECKER.md), and the [unbuilt review overlay URL plan](interface/REVIEW-OVERLAY-PLAN.md).
+- [Interface](interface/EMBEDDED-REVIEW.md): shell and review direction; [assistant sidebar](interface/ASSISTANT-SIDEBAR.md), [contrast checks](interface/CONTRAST-CHECKER.md), [colour testing](interface/COLOUR-TESTING.md), and the [unbuilt review overlay URL plan](interface/REVIEW-OVERLAY-PLAN.md).
 - [Engineering](engineering/ARCHITECTURE.md): implemented boundaries and explicitly proposed production architecture. The [definitions engine](engineering/DEFINITIONS-ENGINE.md) is the current Brunch orders engine.
 - [Processes](processes/brunch-orders/PLAN.md): each example's own contract and history. The [Brunch weekend walkthroughs](processes/brunch-weekend/RULEBOOK-ENGINE-WALKTHROUGHS.md) describe that experiment's distinct engine.
 - [Research](research/PRIOR-ART.md): supporting comparison and the [LLM rules learning guide](research/LLM-RULES-GUIDE.md), with a [short summary](research/RULES-RESEARCH-SUMMARY.md). Research is evidence, not implementation authority.

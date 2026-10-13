@@ -352,6 +352,14 @@ const FOLLOWING_BY_FILE = {
        lies under it. */
     '--sp-enclosure-edge': { light: -25, dark: -150 },
   },
+  'components/ui/filter-tabs.css': {
+    /* The strip's own ground is its surface: the thick edge divides it, so no
+       fill of its own. Exactly the face, so the roles below are read from it. */
+    '--sp-filter-face': { light: 0, dark: 0 },
+    /* The edge under the pointer: between the field's rest and hover edges,
+       which lit a strip this large too far. */
+    '--sp-filter-track-edge-hover': { light: 175, dark: -200 },
+  },
 } as const satisfies Record<string, Record<`--${string}`, Offset>>;
 
 /* Roles used on one surface only, declared once at the root. */
@@ -425,7 +433,6 @@ const ANCHORED_BY_FILE = {
     /* The pill sits off the face and they part on hover: lighter in light,
        darker in dark, as the face reverses. */
     '--sp-header-button-count': { on: 'primary', light: 0, dark: 0 },
-    '--sp-header-button-count-hover': { on: 'primary', light: 25, dark: 75 },
   },
   'components/app-shell/process/process-title.css': {
     '--sp-title-field-edge-hover': { on: 'primary', light: 175, dark: -250 },
@@ -471,13 +478,13 @@ const ANCHORED_BY_FILE = {
     '--sp-card-pill-lead-hover': { on: 'floating', light: 75, dark: -225 },
   },
   'components/ui/tooltip.css': {
-    /* Inverted in light (650, a slate), and the floating face in dark, where
-       the edge alone separates it from a panel. */
-    '--sp-tooltip-face': { on: 'floating', light: 625, dark: 0 },
-    '--sp-tooltip-edge': { on: 'floating', light: 675, dark: -325 },
+    /* A slate in both themes: darker than its ground in light (650), lighter
+       in dark (700), with the edge a step lighter than the face in dark. */
+    '--sp-tooltip-face': { on: 'floating', light: 625, dark: -100 },
+    '--sp-tooltip-edge': { on: 'floating', light: 675, dark: -200 },
     /* Three steps lighter in light: one barely shows on a face this light.
-       Dark keeps the surfaces' one layer darker. */
-    '--sp-tooltip-highlight': { on: 'floating', light: 550, dark: 50 },
+       Dark is darker than the face: two steps, as in the surfaces' sheen. */
+    '--sp-tooltip-highlight': { on: 'floating', light: 550, dark: -50 },
   },
 } as const satisfies Record<
   string,
@@ -647,8 +654,8 @@ export const ROLE_ASSIGNMENTS = {
     ...RELATIVE_STEPS.get('--sp-tooltip-face')!,
   },
   /* Lighter in light, where the face is, so muted keeps its distance. */
-  tooltipInk: { cssVariable: '--sp-tooltip-ink', light: 0, dark: 100 },
-  tooltipMuted: { cssVariable: '--sp-tooltip-muted', light: 200, dark: 325 },
+  tooltipInk: { cssVariable: '--sp-tooltip-ink', light: 0, dark: 25 },
+  tooltipMuted: { cssVariable: '--sp-tooltip-muted', light: 200, dark: 250 },
   /* Edges, so a boundary can be measured against the face it bounds and the
      ground it lies on rather than trusted because it is a border. */
   tooltipEdge: {
@@ -839,15 +846,16 @@ export const CONTRAST_CONTRACTS: readonly ContrastContract[] = [
     rationale: 'Tooltip descriptions and rich-tooltip captions are small text.',
   },
   /* A tooltip is a distinct object over whatever it covers, so its boundary
-     carries required visual information rather than decoration. In dark its
-     face is the floating surface, so over a floating panel the edge is the
-     only thing distinguishing the two. */
+     carries required visual information rather than decoration. In dark the
+     face is a slate lighter than every panel, so the face separates it and
+     the edge is a finer line: 2:1 is the floor, 3:1 the aim. */
   {
     id: 'tooltip-edge-over-canvas',
     classification: 'required',
     foreground: 'tooltipEdge',
     background: 'canvas',
-    minimum: 3,
+    minimum: 2,
+    target: 3,
     rationale:
       'A project requirement, not a WCAG citation: the tooltip must read as a separate object over what it covers.',
   },
@@ -856,7 +864,8 @@ export const CONTRAST_CONTRACTS: readonly ContrastContract[] = [
     classification: 'required',
     foreground: 'tooltipEdge',
     background: 'surfacePrimary',
-    minimum: 3,
+    minimum: 2,
+    target: 3,
     rationale: 'Tooltips routinely open over raised panels.',
   },
   {
@@ -864,9 +873,10 @@ export const CONTRAST_CONTRACTS: readonly ContrastContract[] = [
     classification: 'required',
     foreground: 'tooltipEdge',
     background: 'surfaceFloating',
-    minimum: 3,
+    minimum: 2,
+    target: 3,
     rationale:
-      'In dark the tooltip face equals the floating surface, so only the edge separates them.',
+      'Floating panels are the lightest ground the tooltip opens over.',
   },
   /* A panel edge is decorative where the fill already separates the panel, so
      these carry a visual target rather than a WCAG minimum -- but a boundary
@@ -955,3 +965,15 @@ export const THEME_CONFIG = {
   contracts: CONTRAST_CONTRACTS,
   visualContracts: VISUAL_CONTRACTS,
 } as const;
+
+/*
+  What a person accepted on the calibration page (/workbench/calibration), as
+  the gap between a neutral part and its coloured neighbours in H-K lightness
+  (Hellwig-Fairchild J), positive when the neutral is the lighter. The
+  perceptual checks hold the strip to this number plus a tolerance, so a
+  judgement made by eye is a contract afterwards (docs/interface/
+  COLOUR-TESTING.md → Calibration). Zero until someone has looked.
+*/
+export const PERCEPTUAL_OFFSETS = {
+  'filter-tabs': { neutral: { light: 0, dark: 0 } },
+} as const satisfies Record<string, Record<string, Record<Theme, number>>>;

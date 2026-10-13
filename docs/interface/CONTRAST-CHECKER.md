@@ -5,6 +5,10 @@ Status: current verification guide for the browser contrast and colour-system ch
 The custom source analyser has been removed. `@axe-core/playwright` now checks
 rendered colour contrast in Chromium against the real home page.
 
+Perceptual checks (distance from a surface, visibility, colour-vision and
+forced-colours behaviour) are a separate system:
+[COLOUR-TESTING.md](COLOUR-TESTING.md).
+
 ## Run
 
 ```sh

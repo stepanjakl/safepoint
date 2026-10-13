@@ -438,9 +438,48 @@ function followingSet(context: GroundContext, recess: GroundContext) {
   ].join('\n');
 }
 
+type SurfaceKey2 = keyof typeof SURFACE_LAYERS;
+
+/* How far each surface's face sits from the canvas's, in OKLab lightness, per
+   theme: the one number a colour that is not a ramp step needs to follow its
+   surface (see `oklch(from ...)` in a component stylesheet). Measured from the
+   default family's ramp, whose steps are the faces. Zero on the canvas. */
+function groundLift() {
+  const sink = { failures: [] as string[], warnings: [] as string[] };
+  const ramp = measureRevision(
+    ACTIVE_ROLE_MAP,
+    sink,
+    curvesFor(
+      NEUTRAL_FAMILIES.find(({ id }) => id === DEFAULT_NEUTRAL_FAMILY)!,
+    ),
+  ).generated.light.steps;
+  const lightness = (step: number) =>
+    ramp.find((entry) => entry.step === step)!.lightness;
+  const canvas = SURFACE_STEPS.get(SURFACE_LAYERS.canvas.face)!;
+  return (key: SurfaceKey2) => {
+    const face = SURFACE_STEPS.get(SURFACE_LAYERS[key].face)!;
+    return Object.fromEntries(
+      THEMES.map((theme) => [
+        theme,
+        Number((lightness(face[theme]) - lightness(canvas[theme])).toFixed(4)),
+      ]),
+    ) as Record<Theme, number>;
+  };
+}
+
+function liftSet(
+  key: SurfaceKey2,
+  lift: (key: SurfaceKey2) => Record<Theme, number>,
+) {
+  const { light, dark } = lift(key);
+  return `  --sp-ground-lift-light: ${light};\n  --sp-ground-lift-dark: ${dark};`;
+}
+
 /* The surface stack, computed in config.ts from one layer step. Roles, not
    ramp values, so they sit beside the others as light-dark() of two steps. */
 function renderSurfacesCss() {
+  const lift = groundLift();
+  const layer = lift('primary');
   const steps = [...SURFACE_STEPS]
     .map(([variable, value]) => `  ${variable}: ${stepsValue(value)};`)
     .join('\n');
@@ -460,7 +499,7 @@ function renderSurfacesCss() {
         .join('\n');
       const context = key as GroundContext;
       return [
-        `@utility ${surface.ground} {\n${body}\n${followingSet(context, `${key}-recess` as GroundContext)}\n}`,
+        `@utility ${surface.ground} {\n${body}\n${liftSet(key as SurfaceKey2, lift)}\n${followingSet(context, `${key}-recess` as GroundContext)}\n}`,
       ];
     })
     .join('\n\n');
@@ -475,6 +514,13 @@ function renderSurfacesCss() {
 */
 :root {
 ${steps}
+
+  /* How far each surface's face sits from the canvas's, in OKLab lightness. */
+  --sp-ground-lift-light: 0;
+  --sp-ground-lift-dark: 0;
+  /* One layer of that distance: the canvas to the pane. */
+  --sp-layer-lift-light: ${layer.light};
+  --sp-layer-lift-dark: ${layer.dark};
 
   /* A recess cut into the canvas, until a ground-* utility re-points it. */
 ${aliases}

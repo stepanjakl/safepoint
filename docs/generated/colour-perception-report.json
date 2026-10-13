@@ -1,0 +1,199 @@
+{
+  "schemaVersion": 1,
+  "component": "filter-tabs",
+  "checks": 3768,
+  "blockingFailures": 0,
+  "advisoryByContract": {
+    "apca:ink-on-pill-bottom": 20,
+    "apca:rest-ink": 35,
+    "distinguishable:achromatopsia": 12,
+    "distinguishable:deuteranopia": 2,
+    "tone-match:hover-chip": 9,
+    "tone-match:pill-bottom": 12,
+    "tone-match:pill-top": 4,
+    "tone-match:rest-chip": 6,
+    "tone-spread:chosen-chip": 15,
+    "tone-spread:hover-chip": 15,
+    "tone-spread:pill-bottom": 15,
+    "tone-spread:pill-top": 15,
+    "tone-spread:rest-chip": 15,
+    "visible:chosen-chip": 30,
+    "visible:hover-chip": 5,
+    "visible:hover-wash": 21,
+    "visible:pill-top": 8,
+    "visible:rest-chip": 4
+  },
+  "ensemble": {
+    "light/rest-chip": {
+      "oklab": 2.33,
+      "cieLstar": 2.85,
+      "cam16J": 3.48,
+      "hellwigJ": 3.48,
+      "hellwigJHK": 0.67,
+      "helmlab": 5.86
+    },
+    "light/hover-chip": {
+      "oklab": 3.38,
+      "cieLstar": 4.08,
+      "cam16J": 4.87,
+      "hellwigJ": 4.86,
+      "hellwigJHK": 1.66,
+      "helmlab": 10.24
+    },
+    "light/pill-top": {
+      "oklab": 2.33,
+      "cieLstar": 2.85,
+      "cam16J": 3.48,
+      "hellwigJ": 3.48,
+      "hellwigJHK": 0.67,
+      "helmlab": 5.86
+    },
+    "light/pill-bottom": {
+      "oklab": 3.38,
+      "cieLstar": 4.08,
+      "cam16J": 4.87,
+      "hellwigJ": 4.86,
+      "hellwigJHK": 1.66,
+      "helmlab": 10.24
+    },
+    "light/chosen-chip": {
+      "oklab": 1.78,
+      "cieLstar": 2.17,
+      "cam16J": 2.78,
+      "hellwigJ": 2.77,
+      "hellwigJHK": 0.93,
+      "helmlab": -1.27
+    },
+    "dark/rest-chip": {
+      "oklab": 1.49,
+      "cieLstar": 2.22,
+      "cam16J": 1.12,
+      "hellwigJ": 1.12,
+      "hellwigJHK": -1.65,
+      "helmlab": -0.12
+    },
+    "dark/hover-chip": {
+      "oklab": 3.64,
+      "cieLstar": 4.69,
+      "cam16J": 3.24,
+      "hellwigJ": 3.25,
+      "hellwigJHK": 0.6,
+      "helmlab": 5.65
+    },
+    "dark/pill-top": {
+      "oklab": 2.48,
+      "cieLstar": 3.35,
+      "cam16J": 2.44,
+      "hellwigJ": 2.44,
+      "hellwigJHK": -0.43,
+      "helmlab": 5.55
+    },
+    "dark/pill-bottom": {
+      "oklab": 1.49,
+      "cieLstar": 2.22,
+      "cam16J": 1.12,
+      "hellwigJ": 1.12,
+      "hellwigJHK": -1.65,
+      "helmlab": -0.12
+    },
+    "dark/chosen-chip": {
+      "oklab": 1.55,
+      "cieLstar": 2.12,
+      "cam16J": 1.01,
+      "hellwigJ": 1.01,
+      "hellwigJHK": -1.04,
+      "helmlab": -0.12
+    }
+  },
+  "examples": {
+    "apca:ink-on-pill-bottom": [
+      "light/graphite/canvas/default/blocked/ink-on-pill-bottom: APCA |Lc| 56 (guide 60)",
+      "light/graphite/canvas/default/decision/ink-on-pill-bottom: APCA |Lc| 59 (guide 60)",
+      "light/graphite/canvas/default/ready/ink-on-pill-bottom: APCA |Lc| 58 (guide 60)"
+    ],
+    "apca:rest-ink": [
+      "dark/graphite/canvas/default/deferred/rest-ink: APCA |Lc| 50 (guide 60)",
+      "dark/graphite/primary/default/blocked/rest-ink: APCA |Lc| 59 (guide 60)",
+      "dark/graphite/primary/default/decision/rest-ink: APCA |Lc| 59 (guide 60)"
+    ],
+    "distinguishable:achromatopsia": [
+      "light/graphite/canvas/blocked vs decision: ΔE2000 1.0 (floor 8), ΔL 0.012 (floor 0.05)",
+      "light/graphite/canvas/blocked vs ready: ΔE2000 1.3 (floor 8), ΔL 0.016 (floor 0.05)",
+      "light/graphite/canvas/blocked vs deferred: ΔE2000 2.7 (floor 8), ΔL 0.034 (floor 0.05)"
+    ],
+    "distinguishable:deuteranopia": [
+      "light/graphite/canvas/blocked vs ready: ΔE2000 1.8 (floor 8), ΔL 0.007 (floor 0.05)",
+      "dark/graphite/canvas/blocked vs ready: ΔE2000 2.5 (floor 8), ΔL 0.010 (floor 0.05)"
+    ],
+    "tone-match:hover-chip": [
+      "light/steel/canvas/default/deferred/hover-chip: deferred against the tones' H-K lightness: +2.9 / +2.9 / +2.8 J across adapting luminances 4/16/64 cd/m² (target ±2, limit ±3.5)",
+      "light/steel/primary/default/deferred/hover-chip: deferred against the tones' H-K lightness: +3.0 / +3.0 / +2.9 J across adapting luminances 4/16/64 cd/m² (target ±2, limit ±3.5)",
+      "light/steel/floating/default/deferred/hover-chip: deferred against the tones' H-K lightness: +3.1 / +3.1 / +3.0 J across adapting luminances 4/16/64 cd/m² (target ±2, limit ±3.5)"
+    ],
+    "tone-match:pill-bottom": [
+      "light/steel/canvas/default/deferred/pill-bottom: deferred against the tones' H-K lightness: +2.9 / +2.9 / +2.8 J across adapting luminances 4/16/64 cd/m² (target ±2, limit ±3.5)",
+      "light/steel/primary/default/deferred/pill-bottom: deferred against the tones' H-K lightness: +3.0 / +3.0 / +2.9 J across adapting luminances 4/16/64 cd/m² (target ±2, limit ±3.5)",
+      "light/steel/floating/default/deferred/pill-bottom: deferred against the tones' H-K lightness: +3.1 / +3.1 / +3.0 J across adapting luminances 4/16/64 cd/m² (target ±2, limit ±3.5)"
+    ],
+    "tone-match:pill-top": [
+      "dark/clay/canvas/default/deferred/pill-top: deferred against the tones' H-K lightness: -2.1 / -2.1 / -2.1 J across adapting luminances 4/16/64 cd/m² (target ±2, limit ±3.5)",
+      "dark/clay/primary/default/deferred/pill-top: deferred against the tones' H-K lightness: -2.0 / -2.0 / -2.0 J across adapting luminances 4/16/64 cd/m² (target ±2, limit ±3.5)",
+      "dark/ash/canvas/default/deferred/pill-top: deferred against the tones' H-K lightness: -2.0 / -2.1 / -2.2 J across adapting luminances 4/16/64 cd/m² (target ±2, limit ±3.5)"
+    ],
+    "tone-match:rest-chip": [
+      "dark/clay/canvas/default/deferred/rest-chip: deferred against the tones' H-K lightness: -2.8 / -2.8 / -2.8 J across adapting luminances 4/16/64 cd/m² (target ±2, limit ±3.5)",
+      "dark/clay/primary/default/deferred/rest-chip: deferred against the tones' H-K lightness: -2.8 / -2.8 / -2.7 J across adapting luminances 4/16/64 cd/m² (target ±2, limit ±3.5)",
+      "dark/clay/floating/default/deferred/rest-chip: deferred against the tones' H-K lightness: -2.8 / -2.8 / -2.7 J across adapting luminances 4/16/64 cd/m² (target ±2, limit ±3.5)"
+    ],
+    "tone-spread:chosen-chip": [
+      "dark/graphite/canvas/default/tones/chosen-chip: OKLab lightness spread across blocked, decision, ready: 0.022 (target 0.02, limit 0.04)",
+      "dark/graphite/primary/default/tones/chosen-chip: OKLab lightness spread across blocked, decision, ready: 0.022 (target 0.02, limit 0.04)",
+      "dark/graphite/floating/default/tones/chosen-chip: OKLab lightness spread across blocked, decision, ready: 0.022 (target 0.02, limit 0.04)"
+    ],
+    "tone-spread:hover-chip": [
+      "dark/graphite/canvas/default/tones/hover-chip: OKLab lightness spread across blocked, decision, ready: 0.034 (target 0.02, limit 0.04)",
+      "dark/graphite/primary/default/tones/hover-chip: OKLab lightness spread across blocked, decision, ready: 0.034 (target 0.02, limit 0.04)",
+      "dark/graphite/floating/default/tones/hover-chip: OKLab lightness spread across blocked, decision, ready: 0.034 (target 0.02, limit 0.04)"
+    ],
+    "tone-spread:pill-bottom": [
+      "dark/graphite/canvas/default/tones/pill-bottom: OKLab lightness spread across blocked, decision, ready: 0.030 (target 0.02, limit 0.04)",
+      "dark/graphite/primary/default/tones/pill-bottom: OKLab lightness spread across blocked, decision, ready: 0.030 (target 0.02, limit 0.04)",
+      "dark/graphite/floating/default/tones/pill-bottom: OKLab lightness spread across blocked, decision, ready: 0.030 (target 0.02, limit 0.04)"
+    ],
+    "tone-spread:pill-top": [
+      "dark/graphite/canvas/default/tones/pill-top: OKLab lightness spread across blocked, decision, ready: 0.020 (target 0.02, limit 0.04)",
+      "dark/graphite/primary/default/tones/pill-top: OKLab lightness spread across blocked, decision, ready: 0.020 (target 0.02, limit 0.04)",
+      "dark/graphite/floating/default/tones/pill-top: OKLab lightness spread across blocked, decision, ready: 0.020 (target 0.02, limit 0.04)"
+    ],
+    "tone-spread:rest-chip": [
+      "dark/graphite/canvas/default/tones/rest-chip: OKLab lightness spread across blocked, decision, ready: 0.030 (target 0.02, limit 0.04)",
+      "dark/graphite/primary/default/tones/rest-chip: OKLab lightness spread across blocked, decision, ready: 0.030 (target 0.02, limit 0.04)",
+      "dark/graphite/floating/default/tones/rest-chip: OKLab lightness spread across blocked, decision, ready: 0.030 (target 0.02, limit 0.04)"
+    ],
+    "visible:chosen-chip": [
+      "dark/graphite/canvas/default/all/chosen-chip: ΔE2000 3.5 (target 5, floor 3)",
+      "dark/graphite/canvas/default/deferred/chosen-chip: ΔE2000 3.5 (target 5, floor 3)",
+      "dark/graphite/primary/default/all/chosen-chip: ΔE2000 3.7 (target 5, floor 3)"
+    ],
+    "visible:hover-chip": [
+      "light/graphite/primary/default/all/hover-chip: ΔE2000 5.0 (target 5, floor 4)",
+      "light/ash/canvas/default/all/hover-chip: ΔE2000 5.0 (target 5, floor 4)",
+      "light/ash/primary/default/all/hover-chip: ΔE2000 4.8 (target 5, floor 4)"
+    ],
+    "visible:hover-wash": [
+      "light/graphite/canvas/default/deferred/hover-wash: ΔE2000 3.4 (target 3.5, floor 2.5)",
+      "light/graphite/primary/default/deferred/hover-wash: ΔE2000 3.3 (target 3.5, floor 2.5)",
+      "light/graphite/floating/default/deferred/hover-wash: ΔE2000 3.4 (target 3.5, floor 2.5)"
+    ],
+    "visible:pill-top": [
+      "light/graphite/primary/default/all/pill-top: ΔE2000 5.0 (target 5, floor 4)",
+      "light/graphite/primary/default/deferred/pill-top: ΔE2000 5.0 (target 5, floor 4)",
+      "light/ash/canvas/default/all/pill-top: ΔE2000 5.0 (target 5, floor 4)"
+    ],
+    "visible:rest-chip": [
+      "light/graphite/primary/default/deferred/rest-chip: ΔE2000 5.0 (target 5, floor 4)",
+      "light/ash/canvas/default/deferred/rest-chip: ΔE2000 5.0 (target 5, floor 4)",
+      "light/ash/primary/default/deferred/rest-chip: ΔE2000 4.8 (target 5, floor 4)"
+    ]
+  }
+}

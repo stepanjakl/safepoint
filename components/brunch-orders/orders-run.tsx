@@ -259,6 +259,12 @@ export function OrdersRun({ process }: { process: ProcessSummary }) {
                       onProgress={(progress) =>
                         selection.updateLive(live.run.id, { propose: progress })
                       }
+                      onMoveRules={() =>
+                        selection.updateLive(live.run.id, {
+                          calculate: undefined,
+                          propose: undefined,
+                        })
+                      }
                     />
                   )}
                 </WithText>

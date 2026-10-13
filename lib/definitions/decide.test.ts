@@ -3,9 +3,10 @@ import { describe, expect, it } from 'vitest';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 
 import { capturedRead } from './captured.fixture';
-import { accept, deny } from './decide';
+import { accept, confirmIntent, deny } from './decide';
 import { inScratchDirectory } from './scratch.fixture';
 import { definition, example, keep, TEXT } from './set.fixture';
+import { listRevisions } from './store';
 
 // Accepting reruns the whole review on the version kept, against its read:
 // whatever writing would refuse, accepting refuses too, with the reason.
@@ -70,5 +71,21 @@ describe('accepting a definition', () => {
       approvedAt: null,
       denial: 'Use all four.',
     });
+  });
+
+  it('keeps the rulebook as a revision once its last decision completes it', async () => {
+    const twoMore = definition('two_more', {
+      formula: 'record.weekend_2 + record.weekend_1',
+      examples: [example(59, true)],
+    });
+    await keep([twoWeekends, twoMore]);
+    await accepted('two_weekends');
+    await confirmIntent(owner, TEXT);
+    expect((await listRevisions(owner, TEXT)).revisions).toEqual([]);
+    await accepted('two_more');
+    const { head, revisions } = await listRevisions(owner, TEXT);
+    expect(revisions).toEqual([
+      expect.objectContaining({ id: head, parent: null, reason: 'accepted' }),
+    ]);
   });
 });

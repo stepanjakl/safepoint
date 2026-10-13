@@ -79,6 +79,33 @@ export const definitionSetSchema = z.object({
   definitions: z.array(definitionSchema),
 });
 
+// The stored shape's version, kept with each revision, so a revision written
+// before a change of shape can be told apart rather than misread.
+export const RULEBOOK_SCHEMA = 1;
+
+/*
+  What became of a rulebook: each accepted rulebook is a revision, never
+  written again, with the one it came from and why. The head is the one in
+  use for these instructions. One entry is one row of a database table later.
+*/
+export const revisionSchema = z.object({
+  id: z.string(),
+  parent: z.string().nullable(),
+  // accepted: every definition accepted; migrated: rewritten by a script when
+  // the stored shape or the data changed; used: kept when a run first used
+  // an accepted rulebook that was never frozen.
+  reason: z.enum(['accepted', 'migrated', 'used']),
+  at: z.string(),
+  schemaVersion: z.number().int(),
+  note: z.string().nullable(),
+});
+export const revisionIndexSchema = z.object({
+  head: z.string().nullable(),
+  revisions: z.array(revisionSchema),
+});
+export type Revision = z.infer<typeof revisionSchema>;
+export type RevisionIndex = z.infer<typeof revisionIndexSchema>;
+
 export type Result = z.infer<typeof resultSchema>;
 export type Example = z.infer<typeof exampleSchema>;
 export type Definition = z.infer<typeof definitionSchema>;
@@ -102,6 +129,13 @@ export const acceptable = (definition: Definition) =>
   definition.examples.length > 0 &&
   definition.examples.every((e) => e.agrees);
 
+// A rulebook a run can use: its intent confirmed and every definition
+// accepted.
+export const complete = (set: DefinitionSet) =>
+  set.intentConfirmedAt !== null &&
+  set.definitions.length > 0 &&
+  set.definitions.every((d) => d.approvedAt);
+
 /*
   A proposal: for every record, what the model would set and why, and how the
   accepted checks find it. The verdicts are code's, run again on what the
@@ -114,6 +148,9 @@ export type CheckVerdict = {
   name: string;
   consequence: 'block' | 'decide';
   holds: boolean;
+  // False when a guard settles it for this record whatever is proposed: it
+  // holds, but says nothing about the values.
+  applies: boolean;
   // The app's working of the check on these values, or why it could not run.
   steps: string[];
   error: string | null;

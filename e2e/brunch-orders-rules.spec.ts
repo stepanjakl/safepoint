@@ -25,7 +25,14 @@ test.beforeEach(async ({ page }) => {
   await page.route('**/api/dev/brunch-orders/rules', async (route) => {
     const body = route.request().postDataJSON() as { action: string };
     if (body.action !== 'get') return route.continue();
-    await route.fulfill({ json: { kind: 'rules', set: frozen, names } });
+    await route.fulfill({
+      json: {
+        kind: 'rules',
+        set: frozen,
+        names,
+        history: { head: null, revisions: [] },
+      },
+    });
   });
 });
 
@@ -162,7 +169,14 @@ test('accepted intent and rule keep the pressed button in place', async ({
             : definition,
         ),
       };
-    await route.fulfill({ json: { kind: 'rules', set: current, names } });
+    await route.fulfill({
+      json: {
+        kind: 'rules',
+        set: current,
+        names,
+        history: { head: null, revisions: [] },
+      },
+    });
   });
 
   await page.goto('/examples/brunch-orders');

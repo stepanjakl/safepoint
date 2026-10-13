@@ -66,7 +66,7 @@ const FACE = {
   from its top and bottom.
 */
 const COUNT =
-  'value header-button-count bg-header-button-count control-wash group-interact/data:bg-header-button-count-hover text-meta inline-grid place-items-center rounded-full px-1.5';
+  'value header-button-count bg-header-button-count control-wash text-meta inline-grid place-items-center rounded-full px-1.5';
 
 /*
   The same item with nothing to say. Settings is reached a few times in a

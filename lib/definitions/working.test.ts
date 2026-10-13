@@ -119,9 +119,9 @@ describe("the app's working", () => {
     ).toEqual([`${TRIED[0]}16${TRIED[1]} % 8 == 0`, '0 == 0', 'true']);
   });
 
-  it('shows a blank cell as absent, past an || that already holds', () => {
-    // AV-RR has no supplier maximum: the first side holds, and the second,
-    // which reads the blank cell, is never reached.
+  it('works a check a guard settles only as far as the guard', () => {
+    // AV-RR has no supplier maximum: the check does not apply, whatever is
+    // ordered, so the cell the rest would read is never shown.
     expect(
       stepsOf(
         '!has(record.max_order_units) || order <= record.max_order_units',
@@ -132,6 +132,19 @@ describe("the app's working", () => {
           ],
         },
       ),
-    ).toEqual(['!false || 50 <= absent', 'true']);
+    ).toEqual(['!false', 'true']);
+  });
+
+  it('works the whole check where its guard does not settle it', () => {
+    // SD-01 has a maximum of 72; the guard does not hold, so the rest runs.
+    expect(
+      stepsOf(
+        '!has(record.max_order_units) || order <= record.max_order_units',
+        {
+          result: 'check',
+          examples: [example(true, true, { inputs: { order: 72 } })],
+        },
+      ),
+    ).toEqual(['!true || 72 <= 72', '!true || true', 'true']);
   });
 });

@@ -344,6 +344,37 @@ just the part that changed. A mechanical change to an accepted rule (a type,
 a name) is made by hand and reviewed; a redraft is a new reading, accepted
 again by a person.
 
+## The first real proposal, on an outdated rulebook (12 October)
+
+**What happened.** The first real proposal set ripe avocados (AV-RR) to 60
+and marked it ready, though stock plus 60 is 72 against expected sales of
+65: the ripe rule should have blocked it. The run had pinned rulebook
+`d23a4c56d75b`, accepted before `ripe` became a yes/no column. Its formula
+still compared the column to the text `"yes"`. CEL finds `true == "yes"`
+false rather than an error, so `!(record.ripe == "yes") || …` held for every
+record. The migrated rulebook, `5b895575e4e7`, was right; the run never used
+it, because a pinned rulebook is kept exactly as it was.
+
+**Why nothing caught it.** A revision was type-checked once, on acceptance,
+against the read of that day. Nothing checked it again when the read's
+column types changed, and nothing recorded that `5b895575e4e7` replaced it.
+
+**What changed.** Each revision is type-checked against the read it is used
+on (`fits.ts`); one that no longer fits is refused, naming the definition,
+and the run is offered the current rules. Revisions record their parent and
+reason in `revisions.json`, and the Rules tab lists them.
+
+**A second confusion, in the same run.** Every record listed "Ripe avocados
+limit: holds", with the cap worked out on its own numbers, so the rule read
+as applied to everything. It was settled by its guard (`!record.ripe`) for
+every record not ripe. A check led by such a guard now says it does not
+apply, and its working stops at the guard. Only the leading negation counts:
+in the arrival check, a delivery in time also holds whatever is ordered, but
+that is the rule being met, not its scope.
+
+**Lesson.** An accepted rule is accepted against a shape of data. Keep the
+rule fixed, but check it against the data each time it is used.
+
 ## Smaller lessons
 
 - **A pseudo-element on a table row is a cell.** Chrome lays a `::before` on a

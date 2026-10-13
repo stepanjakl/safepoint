@@ -76,7 +76,6 @@
   --sp-header-button-face-top-selected: light-dark(var(--sp-neutral-100), var(--sp-neutral-600));
   --sp-header-button-face-bottom-selected: light-dark(var(--sp-neutral-275), var(--sp-neutral-750));
   --sp-header-button-count: light-dark(var(--sp-neutral-50), var(--sp-neutral-850));
-  --sp-header-button-count-hover: light-dark(var(--sp-neutral-75), var(--sp-neutral-925));
 }
 /* End of generated roles. */
 
@@ -90,7 +89,6 @@
   --color-header-button-dot-caution: var(--sp-header-button-dot-caution);
   --color-header-button-dot-blocked: var(--sp-header-button-dot-blocked);
   --color-header-button-count: var(--sp-header-button-count);
-  --color-header-button-count-hover: var(--sp-header-button-count-hover);
 }
 
 /* The header's data buttons: their own stops, and no edge. The ring draws a

@@ -1,0 +1,21 @@
+{
+  "head": "5b895575e4e7",
+  "revisions": [
+    {
+      "id": "d23a4c56d75b",
+      "parent": null,
+      "reason": "accepted",
+      "at": "2026-10-12T00:30:27.000Z",
+      "schemaVersion": 1,
+      "note": null
+    },
+    {
+      "id": "5b895575e4e7",
+      "parent": "d23a4c56d75b",
+      "reason": "migrated",
+      "at": "2026-10-12T16:19:54.000Z",
+      "schemaVersion": 1,
+      "note": "ripe read as a yes/no column"
+    }
+  ]
+}

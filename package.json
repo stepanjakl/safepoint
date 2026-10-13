@@ -24,6 +24,8 @@
     "check:contrast:report": "playwright show-report",
     "check:colour-system": "playwright test e2e/colour-system.spec.ts",
     "check:colours": "node scripts/colour-theme/generate.ts --check",
+    "check:perception": "playwright test e2e/colour-perception.spec.ts e2e/colour-vision.spec.ts --project=light",
+    "check:perception:report": "COLOUR_PERCEPTION_REPORT=test-results/colour-perception.json COLOUR_VISION_REPORT=test-results/colour-vision.json playwright test e2e/colour-perception.spec.ts e2e/colour-vision.spec.ts --project=light && node scripts/colour-theme/perceptual/report.ts test-results/colour-perception.json test-results/colour-vision.json docs/generated/colour-perception-report.json",
     "check:tokens": "node scripts/check-token-refs.mjs",
     "check:unused": "knip",
     "fixtures:e2e": "UPDATE_E2E_FIXTURES=1 vitest run lib/definitions/e2e-fixtures.test.ts",

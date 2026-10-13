@@ -77,50 +77,54 @@ const EDGES = [
   ['--sp-field-edge-active', '--sp-field-face', 'Field edge, focused'],
 ] as const;
 
-/* Light-theme steps for the tooltip, compared side by side: face, edge,
-   highlight. Dark keeps the shipped roles except where a lighter face
-   overrides the ink, which then shows in both themes. */
+/* Dark-theme steps for the tooltip, compared side by side: face, edge,
+   highlight. Light keeps the shipped roles. Slate faces lighter than any
+   panel, the edge lighter than the face and the highlight darker. */
 const TOOLTIP_CANDIDATES: readonly (readonly [
   number,
   number,
   number,
   string,
 ])[] = [
-  [800, 850, 775, 'Dark’s floating face, edge a step darker'],
-  [800, 800, 775, 'No visible edge'],
-  [800, 950, 775, 'Dark edge'],
-  [800, 1000, 775, 'Darkest edge'],
-  [800, 700, 775, 'Light rim'],
-  [800, 600, 775, 'Lighter rim'],
-  [800, 850, 675, 'Strong inner sheen'],
-  [800, 950, 650, 'Dark edge, strong sheen'],
-  [800, 850, 600, 'Bright sheen'],
-  [800, 850, 500, 'Brighter sheen'],
-  [800, 850, 400, 'Brightest sheen'],
-  [800, 950, 500, 'Dark edge, brighter sheen'],
-  [800, 1000, 400, 'Darkest edge, brightest sheen'],
-  [850, 650, 825, 'Light rim'],
-  [900, 950, 600, 'Bright sheen'],
-  [900, 700, 875, 'Light rim'],
-  /* Lighter faces carry a three-step sheen: one step barely shows on them. */
-  [750, 800, 675, 'Edge a step darker'],
-  [750, 900, 675, 'Dark edge'],
-  [700, 750, 625, 'Edge a step darker'],
-  [700, 850, 625, 'Dark edge'],
-  [650, 700, 575, 'Shipped: edge a step darker'],
-  [650, 800, 575, 'Dark edge'],
-  [600, 650, 525, 'Edge a step darker'],
-  [600, 750, 525, 'Dark edge'],
+  [650, 550, 700, 'Mid edge'],
+  [650, 575, 700, 'Closer edge'],
+  [650, 525, 700, 'Brighter edge'],
+  [650, 550, 675, 'Mid edge, faint sheen'],
+  [650, 550, 750, 'Mid edge, deeper sheen'],
+  [675, 575, 725, 'Mid edge'],
+  [675, 600, 725, 'Closer edge'],
+  [675, 550, 725, 'Brighter edge'],
+  [675, 575, 700, 'Mid edge, faint sheen'],
+  [675, 575, 775, 'Mid edge, deeper sheen'],
+  [700, 600, 750, 'Mid edge'],
+  [700, 625, 750, 'Closer edge'],
+  [700, 575, 750, 'Brighter edge'],
+  [700, 600, 725, 'Mid edge, faint sheen'],
+  [700, 600, 800, 'Mid edge, deeper sheen'],
+  [725, 625, 775, 'Mid edge'],
+  [725, 650, 775, 'Closer edge'],
+  [725, 600, 775, 'Brighter edge'],
+  [725, 625, 750, 'Mid edge, faint sheen'],
+  [725, 625, 825, 'Mid edge, deeper sheen'],
+  [750, 650, 800, 'Mid edge'],
+  [750, 675, 800, 'Closer edge'],
+  [750, 625, 800, 'Brighter edge'],
+  [750, 650, 775, 'Mid edge, faint sheen'],
+  [750, 650, 850, 'Mid edge, deeper sheen'],
 ];
 
-/* Below 800 the dark side's ink (100 / 325) loses either contrast or its
-   hierarchy, so both lighten with the face: muted clears 4.5:1 and stays
-   five or more steps below the label. */
+/* Above 800 the shipped dark ink (100 / 325) holds. Lighter faces lighten the
+   ink, since it loses contrast and hierarchy otherwise; so do the deep ones,
+   where a brighter label sharpens the contrast. */
 const TOOLTIP_INK: Record<number, readonly [ink: number, muted: number]> = {
   750: [50, 300],
+  725: [25, 275],
   700: [25, 250],
+  675: [0, 225],
   650: [0, 200],
   600: [0, 150],
+  900: [50, 300],
+  950: [25, 275],
 };
 
 /* Grouped by face, lightest first; within a face, by edge then sheen. */
@@ -152,12 +156,13 @@ function TooltipSample({
       className="app-tooltip relative"
       style={
         {
-          '--tooltip-face': `light-dark(var(--sp-neutral-${face}), var(--sp-tooltip-face))`,
-          '--tooltip-edge': `light-dark(var(--sp-neutral-${edge}), var(--sp-tooltip-edge))`,
-          '--tooltip-highlight': `light-dark(var(--sp-neutral-${highlight}), var(--sp-tooltip-highlight))`,
+          '--tooltip-face': `light-dark(var(--sp-neutral-650), var(--sp-neutral-${face}))`,
+          '--tooltip-edge': `light-dark(var(--sp-neutral-700), var(--sp-neutral-${edge}))`,
+          '--tooltip-highlight': `light-dark(var(--sp-neutral-575), var(--sp-neutral-${highlight}))`,
           ...(ink && {
-            '--sp-tooltip-ink': `var(--sp-neutral-${ink[0]})`,
-            '--sp-text-muted': `var(--sp-neutral-${ink[1]})`,
+            '--sp-tooltip-ink': `light-dark(var(--sp-neutral-0), var(--sp-neutral-${ink[0]}))`,
+            '--tooltip-muted': `light-dark(var(--sp-neutral-200), var(--sp-neutral-${ink[1]}))`,
+            '--sp-text-muted': 'var(--tooltip-muted)',
           }),
         } as CSSProperties
       }
@@ -471,10 +476,10 @@ export default function WorkbenchPage() {
           Tooltip
         </h2>
         <p className={NOTE}>
-          Dark in both themes. Each row is a set of light-theme steps over the
+          Dark in both themes. Each row is a set of dark-theme steps over the
           canvas, a pane and a floating panel, grouped by face from lightest to
-          darkest. Dark is the same in every row except where a lighter face
-          overrides the ink. Steps are face / edge / highlight.
+          darkest. Light is the shipped tooltip in every row. Steps are face /
+          edge / highlight; switch the theme to see dark.
         </p>
         <div className="grid gap-4">
           {TOOLTIP_GROUPS.map(({ face, rows }) => (
