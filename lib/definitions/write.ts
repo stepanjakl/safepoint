@@ -3,7 +3,7 @@ import { generateText, isStepCount, tool, ToolChoiceViolationError } from 'ai';
 import { z } from 'zod';
 
 import type { DefinitionSubject } from '@/lib/process/model';
-import { fallbackChain } from '@/lib/rulebook/models';
+import { fallbackChain } from '@/lib/models';
 
 import { DRAFT_MODELS, withModels } from './calls';
 import {

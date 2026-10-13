@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 
-import { Lede, plural, useTrial } from '@/components/sheet-process/trial-parts';
+import { Lede, plural, useTrial } from '@/components/brunch-orders/trial-parts';
 import {
   DATA_TABLE_HEAD,
   DATA_TABLE_NAME,

@@ -547,6 +547,7 @@ ${recessed}
 const INSET_IN: Partial<Record<GroundContext, GroundContext>> = {
   primary: 'primary-recess',
   floating: 'floating-recess',
+  popover: 'popover-recess',
 };
 const FIXED_FACES = new Set(Object.values(GROUND_CONTEXTS).map(String));
 const recessKey = Object.fromEntries(
@@ -578,7 +579,9 @@ function contractCases(roleMap: RoleMap) {
     if (sides.some((key) => FIXED_FACES.has(variableOf(key)))) return base;
     if (!sides.some((key) => CONTEXTUAL.has(variableOf(key)))) return base;
     const contexts = (Object.keys(GROUND_CONTEXTS) as GroundContext[]).filter(
-      (context) => context !== 'canvas',
+      (context) =>
+        context !== 'canvas' &&
+        (!contract.contexts || contract.contexts.includes(context)),
     );
     return [
       ...base,

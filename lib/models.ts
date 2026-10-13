@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 /*
-  The models a rulebook may be drafted with, newest first within each family,
+  The models the app may call, newest first within each family,
   as listed by the Gemini API for this project's key on 6 October 2026, all
   free of charge on the standard tier. Previews and the moving -latest aliases
   are left out, so a draft record always names the model that wrote it; so are

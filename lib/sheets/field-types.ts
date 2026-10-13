@@ -3,8 +3,8 @@ import { WEEKDAYS, zonedInstant, type Weekday } from './cycle';
 /*
   How one raw spreadsheet value becomes a typed value. Every conversion says, in
   words, what it did, so the reader can see the manipulation and not only its
-  result. Domain-neutral: the rulebook says which type a column has, and the
-  currency and time zone that money and dates are read in.
+  result. Domain-neutral: a process's data shape says which type a column has
+  (DataShape.types), and the currency and time zone money and dates are read in.
 
   Raw values are what Google returns with UNFORMATTED_VALUE and SERIAL_NUMBER:
   numbers stay numbers (money in the main currency unit, a percentage cell as a

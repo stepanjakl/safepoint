@@ -6,7 +6,7 @@ import { Button as AriaButton } from 'react-aria-components';
 // reads as a direction rather than as two unrelated pictures.
 import ArrowInbox from 'blode-icons-react/icons/arrow-inbox';
 import ArrowOutOfBox from 'blode-icons-react/icons/arrow-out-of-box';
-import Checklist from 'blode-icons-react/icons/checklist';
+import ShieldCheck from 'blode-icons-react/icons/shield-check-3';
 import History from 'blode-icons-react/icons/history';
 import Lab from 'blode-icons-react/icons/lab';
 import SettingsGear from 'blode-icons-react/icons/settings-gear-1';
@@ -182,7 +182,7 @@ function ProcessMenu({
           aria-current={tab === 'rules' ? 'true' : undefined}
           className={cx(ITEM, 'pe-3', face('rules'))}
         >
-          <Checklist
+          <ShieldCheck
             aria-hidden
             size={16}
             strokeWidth={1.8}

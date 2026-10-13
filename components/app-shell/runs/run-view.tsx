@@ -19,6 +19,7 @@ import { Tooltip } from '@/components/ui/tooltip';
 import type { ProcessSummary } from '@/lib/process/model';
 import { runDay, runTime } from '@/lib/process/run-time';
 import { useRunSelection } from './run-selection';
+import { RunInstructionsPreview } from './run-instructions-preview';
 
 // What a started run is drawn from: the recorded run's evidence and plan.
 export type PlayableRun = Omit<
@@ -74,6 +75,11 @@ export function RunView({
       const at = live.run.startedAt;
       return (
         <ThreadPage label={`Run, ${runDay(at)} · ${runTime(at)}`}>
+          {typeof live.data.additionalInstructions === 'string' ? (
+            <RunInstructionsPreview
+              instructions={live.data.additionalInstructions}
+            />
+          ) : null}
           {liveThread}
         </ThreadPage>
       );
@@ -83,6 +89,9 @@ export function RunView({
       const at = started.run.startedAt;
       return (
         <ThreadPage label={`Run, ${runDay(at)} · ${runTime(at)}`}>
+          <RunInstructionsPreview
+            instructions={started.additionalInstructions}
+          />
           <RunThread
             key={started.run.id}
             stage={started.stage}
@@ -152,7 +161,7 @@ function RunEmptyState({ note }: { note: string | null }) {
         </div>
         <div className="flex flex-wrap justify-center gap-2">
           {start ? (
-            <Button variant="primary" pill onPress={start}>
+            <Button variant="primary" pill onPress={() => start()}>
               Start run
             </Button>
           ) : (

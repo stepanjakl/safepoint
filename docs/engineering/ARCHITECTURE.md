@@ -10,7 +10,7 @@ The promotion-release example loads validated fictional evidence and a reviewed 
 
 Brunch orders is the active development process. `lib/processes/brunch-orders/` declares its subject, five data tabs and versioned instructions; a read is captured or fetched through Composio and kept under an ID. `lib/definitions/` finds definitions, checks formulas and examples, and stores the person's accepted definitions by instructions hash. The current flow is described in the [definitions engine guide](DEFINITIONS-ENGINE.md).
 
-`lib/rulebook/` holds what Brunch orders shares from the earlier Brunch weekend experiment, which was removed on 13 October 2026: the drafting models, typed sheet columns, the CEL object types and the quota parser.
+The models the app may call are listed in `lib/models.ts`; typed sheet cells and the week arithmetic they use are in `lib/sheets/`. The earlier Brunch weekend experiment, which these grew out of, was removed on 13 October 2026.
 
 ## Trust and state
 

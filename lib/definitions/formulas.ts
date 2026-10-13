@@ -1,8 +1,8 @@
 import { Environment } from '@marcbachmann/cel-js';
 
 import type { DefinitionSubject } from '@/lib/process/model';
-import { ctorFor } from '@/lib/rulebook/cel-objects';
-import type { FieldType } from '@/lib/rulebook/field-types';
+import { ctorFor } from '@/lib/definitions/cel-objects';
+import type { FieldType } from '@/lib/sheets/field-types';
 
 import { cel, recordsOf, type KeptRead, type Row } from './records';
 import type { Result } from './types';

@@ -4,7 +4,7 @@ import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { z } from 'zod';
 
-import { fallbackChain, type DraftingModel } from '@/lib/rulebook/models';
+import { fallbackChain, type DraftingModel } from '@/lib/models';
 import { runDataDir } from '@/lib/storage/run-data';
 
 import {
@@ -201,27 +201,40 @@ async function proposeBatch(
   let same = 0;
 
   const tools = {
-    try_proposal: tool({
-      description: `Run every accepted check on proposed values for one ${singular}: each check's verdict and working. Try values here before you submit.`,
-      inputSchema: z.object({ key: keySchema, values: valuesSchema }),
-      execute: async ({ key, values }) => {
-        const { verdict, checks } = checkProposal(
-          owner,
-          set,
-          read,
-          key,
-          values,
-        );
-        return {
-          verdict,
-          checks: checks.map((c) => ({
-            check: c.name,
-            failing: c.consequence === 'block' ? 'blocks' : 'a person decides',
-            holds: c.holds,
-            working: c.error ?? c.steps.join(' → '),
-          })),
-        };
-      },
+    // Several records a call: each round trip to the model costs far more
+    // than the checks, so the model tries a whole batch at once.
+    try_proposals: tool({
+      description: `Run every accepted check on proposed values for as many ${plural} as you like at once: for each, every check's verdict and working. Try values here before you submit.`,
+      inputSchema: z.object({
+        proposals: z
+          .array(z.object({ key: keySchema, values: valuesSchema }))
+          .min(1)
+          .describe(`Values to try, one entry per ${singular}`),
+      }),
+      execute: async ({ proposals }) => ({
+        results: proposals.map(({ key, values }) => {
+          const { verdict, checks } = checkProposal(
+            owner,
+            set,
+            read,
+            key,
+            values,
+          );
+          return {
+            key,
+            verdict,
+            checks: checks.map((c) => ({
+              check: c.name,
+              failing:
+                c.consequence === 'block' ? 'blocks' : 'a person decides',
+              holds: c.holds,
+              // A check its guard settles says nothing about the values.
+              applies: c.applies,
+              working: c.error ?? c.steps.join(' → '),
+            })),
+          };
+        }),
+      }),
     }),
     submit_proposals: tool({
       description: `Submit every ${singular} at once. Returns ok, or each problem to fix and submit again.`,
@@ -298,7 +311,7 @@ async function proposeBatch(
           model: languageModel,
           system: [
             `You propose, for every ${singular}, what to set: ${fields}, as the instructions intend.`,
-            'Every proposal is checked against the accepted checks below. Use try_proposal to try values and read each verdict, then choose values that pass.',
+            'Every proposal is checked against the accepted checks below. Use try_proposals to try values and read each verdict, then choose values that pass. Try as many records in one call as you can: every call is slow.',
             'Where no values pass every check that blocks, propose the closest values that do pass those, and say in unsure what conflicts. Never leave a record out.',
             `Use leave for a ${singular} where nothing should change.`,
             'Read every number from the data and the values worked out, not from memory. Cite the cells you rely on by tab, the row number shown, and the column name.',

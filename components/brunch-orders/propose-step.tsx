@@ -13,7 +13,7 @@ import {
 import { DecisionButton } from '@/components/brunch-orders/decision-button';
 import { FromModel, Step } from '@/components/brunch-orders/rules-parts';
 import { ModelSelect } from '@/components/brunch-orders/rules-step';
-import { Lede, useTrial } from '@/components/sheet-process/trial-parts';
+import { Lede, useTrial } from '@/components/brunch-orders/trial-parts';
 import { Button } from '@/components/ui/button';
 import {
   DATA_TABLE_HEAD,
@@ -35,7 +35,7 @@ import type {
   Verdict,
 } from '@/lib/definitions/types';
 import { SUBJECT } from '@/lib/processes/brunch-orders/process';
-import { DRAFTING_MODELS, type DraftingModel } from '@/lib/rulebook/models';
+import { DRAFTING_MODELS, type DraftingModel } from '@/lib/models';
 
 import { DataDrawer } from './data-drawer';
 import { StaleRules, type StaleReply } from './stale-rules';

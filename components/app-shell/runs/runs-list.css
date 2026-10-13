@@ -6,7 +6,7 @@
    ────────────────────────────────────────────────────────────────────────── */
 
 :root {
-  --sp-sheet-completed-label: light-dark(var(--sp-state-verified), var(--sp-text-muted));
+  --sp-sheet-completed-label: var(--sp-text-muted);
   /* A run row is a control, so its stamp reads the ramp rather than the prose
      text roles. Three rungs each, one per row state; the day sits darker than
      the time, so the pair reads as one stamp at two resolutions. */
@@ -156,43 +156,102 @@
     flex: 0 0 auto;
     min-width: 0;
   }
-  /* A boundary that is not a row: the instructions moved between the run
-     above and the one below, so the two are not comparable. Banded between its
-     own rule and the next row's, because it marks the gap, not either run. */
+  /* A boundary that is not a row: the instructions or the rules moved between
+     the run above and the one below, so the two are not comparable. Banded
+     between its own rule and the next row's, because it marks the gap, not
+     either run. */
   .sheet-break {
+    /* The chip is a circle's end on the pill's: one inset on its three free
+       sides, which is the pill's height less the chip's, halved. */
+    --chip-height: 1rem;
+    --chip-inset: 0.1875rem;
     display: flex;
     align-items: center;
-    gap: 0.375rem;
+    gap: 0.625rem;
     width: 100%;
     /* On the rows' axis, not its own: it is read in the run of the list, and
        the rows above and below it are what it is read against. */
-    padding: 0.4375rem var(--spacing-sheet-inset);
+    padding: 0.3125rem var(--spacing-sheet-inset);
     padding-inline-start: calc(var(--spacing-sheet-inset) + var(--sheet-bleed, 0px));
     border-top: 1px solid var(--sp-raised-ring);
     background: var(--sp-sheet-band);
     color: var(--sp-text-muted);
-    text-align: start;
-    transition: color var(--duration-state) ease-out;
   }
-  button.sheet-break {
-    cursor: pointer;
+  .sheet-break-pills {
+    display: flex;
+    gap: 0.25rem;
+    min-width: 0;
   }
-  button.sheet-break:hover,
-  button.sheet-break:focus-visible {
-    color: var(--sp-text-primary);
+  /* First, on the same edge as the runs' days, so the list's left column reads
+     as one timeline; wide enough for the longest ("Aug 25") so the pills start
+     on one edge too. */
+  .sheet-break-date {
+    flex: none;
+    min-width: 6ch;
+    font-size: var(--sp-text-micro);
+    line-height: var(--sp-text-micro--lh);
+    white-space: nowrap;
   }
-  /* The arrow that says the boundary opens something, held back until the
-     pointer or the keyboard is on it: a list of runs should not be dotted with
-     chevrons for a row that is not the reader's errand. */
-  button.sheet-break::after {
-    content: '\203A';
-    margin-inline-start: auto;
+  /* The version or revision it moved to, as the formulas draw a name they
+     read: its own face, on the pill's. */
+  .sheet-break-pill {
+    @apply pill-shape;
+    --chip-face: var(--sp-surface-selected-mid);
+    gap: 0.3125rem;
+    height: calc(var(--chip-height) + 2 * var(--chip-inset));
+    padding-inline: 0.5rem var(--chip-inset);
+    /* No face at rest: the chip is the one filled shape, and the pill's face
+       is the press target's, which arrives with the pointer. */
+    color: var(--sp-text-muted-soft);
+    background-color: transparent;
+    transition:
+      color var(--duration-state) ease-out,
+      background-color var(--duration-state) ease-out;
+  }
+  .sheet-break-chip {
+    display: inline-flex;
+    align-items: center;
+    height: var(--chip-height);
+    padding-inline: 0.5rem;
+    border-radius: 999px;
+    background-color: var(--chip-face);
+    color: var(--sp-text-muted-strong);
+    font-size: var(--sp-text-micro);
+    line-height: var(--sp-text-micro--lh);
+    font-weight: var(--font-weight-semibold);
+    transition: background-color var(--duration-state) ease-out;
+  }
+  /* The thread heading's arrow, inside the chip: it opens out beside the name
+     on the pointer or the keyboard, so a list of boundaries is not dotted with
+     arrows for a row that is not the reader's errand. */
+  .sheet-break-arrow {
+    flex: none;
+    width: 0;
+    height: 0.625rem;
+    margin-inline-start: 0;
     opacity: 0;
-    transition: opacity var(--duration-state) ease-out;
+    overflow: hidden;
+    transition:
+      width var(--duration-state) ease-out,
+      margin-inline-start var(--duration-state) ease-out,
+      opacity var(--duration-state) ease-out;
   }
-  button.sheet-break:hover::after,
-  button.sheet-break:focus-visible::after {
-    opacity: 1;
+  button.sheet-break-pill {
+    cursor: pointer;
+    &:is(:hover, :focus-visible) {
+      --chip-face: var(--sp-surface-selected-strong);
+      color: var(--sp-text-muted-strong);
+      background-color: var(--sp-surface-hover);
+    }
+    &:is(:hover, :focus-visible) .sheet-break-chip {
+      color: var(--sp-text-primary);
+    }
+    &:is(:hover, :focus-visible) .sheet-break-arrow {
+      width: 0.625rem;
+      margin-inline-start: 0.1875rem;
+      opacity: 1;
+      transition-delay: 0ms, 0ms, var(--duration-state);
+    }
   }
   /* Base, hover, focus and current are one machine; an arm of it filed in
      markup belongs to neither place. Nothing in the row is tinted by its state
@@ -214,6 +273,9 @@
     row-gap: var(--spacing-sheet-band-gap);
     width: 100%;
     padding: var(--spacing-sheet-inset);
+    /* Two pixels less above and below than at the sides: the marks keep their
+       corner on the horizontal inset, and the row loses four pixels. */
+    padding-block: calc(var(--spacing-sheet-inset) - 0.125rem);
     padding-inline-start: calc(var(--spacing-sheet-inset) + var(--sheet-bleed, 0px));
     text-align: start;
     cursor: pointer;
@@ -285,6 +347,13 @@
     min-width: 0;
     color: var(--sheet-ink-quiet);
   }
+  /* The glyphs sit about a pixel in from their box (measured at 11px: clock
+     0.9, cursor 1.2), and a mono letter has a side bearing of its own, so the
+     box's start edge is pulled back half a pixel to put the clock under the
+     day's first letter; the cursor's point reads by its mass. */
+  .sheet-row-when > svg:first-child {
+    margin-inline-start: -0.03125rem;
+  }
   /* Both right-hand cells end on the row's inset, so the state's mark and the
      bar under it share one edge. */
   .sheet-row-status,
@@ -319,11 +388,10 @@
   .sheet-row-status svg {
     color: inherit;
   }
-  .sheet-row[data-run-status='completed']:not([data-current]) .sheet-row-status {
+  /* Settled well is not news: colour is for what needs a person, so a run that
+     is done reads in the quiet ink, mark and word together. */
+  .sheet-row:is([data-run-status='completed'], [data-run-status='approved']) .sheet-row-status {
     color: var(--sp-sheet-completed-label);
-  }
-  .sheet-row[data-run-status='completed'] .sheet-row-status svg {
-    color: var(--sp-state-verified);
   }
 
   /* Grey on every row: a fact about the run, not a state of it, and a second
@@ -445,6 +513,20 @@
   /* After outcomes the figure ends the tally, so its lead takes the end. */
   .sheet-seg-total:not(:only-child) {
     padding-inline-end: 0;
+  }
+  /* A settled run's total is a fact, not a verdict: figure and noun in plain
+     ink, with no face, ending on the row's inset. */
+  .sheet-row:is([data-run-status='completed'], [data-run-status='approved'])
+    .sheet-seg-total:only-child {
+    padding-inline-end: 0;
+    background: none;
+  }
+  .sheet-row:is([data-run-status='completed'], [data-run-status='approved'])
+    .sheet-seg-total:only-child
+    .sheet-total-lead {
+    min-width: 0;
+    padding-inline: 0;
+    background: none;
   }
   /* The figure on its own rounded lead, the whole tally's height. */
   .sheet-total-lead {

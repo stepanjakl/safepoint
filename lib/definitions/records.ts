@@ -4,7 +4,7 @@ import {
   interpretCell,
   type FieldType,
   type Weekday,
-} from '@/lib/rulebook/field-types';
+} from '@/lib/sheets/field-types';
 
 /*
   How a read becomes the records a formula reads, as the process declares it

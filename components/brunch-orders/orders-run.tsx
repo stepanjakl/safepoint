@@ -20,7 +20,7 @@ import {
   TrialControl,
   dateTime,
   useTrial,
-} from '@/components/sheet-process/trial-parts';
+} from '@/components/brunch-orders/trial-parts';
 import { Button } from '@/components/ui/button';
 import {
   DATA_TABLE_HEAD,

@@ -27,6 +27,9 @@ export type ContrastContract = {
   background: keyof typeof ROLE_ASSIGNMENTS;
   minimum: number;
   target?: number;
+  /* Where a role that follows its surface is drawn, when that is not every
+     surface: the contract is read again inside these and no others. */
+  contexts?: readonly GroundContext[];
   rationale: string;
 };
 
@@ -194,6 +197,9 @@ type SurfaceLayer = {
   recess: `--${string}`;
   /* The ground-* utility that hands the recess to what this surface holds. */
   ground?: string;
+  /* The lightest light face is the end of the ramp, so its highlight has no
+     lighter step: it stops at the face rather than turning round. */
+  flush?: true;
 };
 
 export const SURFACE_LAYERS = {
@@ -215,6 +221,16 @@ export const SURFACE_LAYERS = {
     highlight: '--sp-floating-edge',
     recess: '--sp-floating-recess',
     ground: 'ground-floating',
+  },
+  popover: {
+    depth: 3,
+    face: '--sp-surface-popover',
+    on: 'floating',
+    ring: '--sp-popover-ring',
+    highlight: '--sp-popover-edge',
+    recess: '--sp-popover-recess',
+    ground: 'ground-popover',
+    flush: true,
   },
 } as const satisfies Record<string, SurfaceLayer>;
 
@@ -271,7 +287,14 @@ function surfaceSteps(themes: Record<Theme, SurfaceTheme>): Steps {
       if (surface.on) {
         const ground = faceAt(layers[surface.on]!.depth);
         if (surface.ring) put(surface.ring, theme, ringFor(face, ground));
-        if (surface.highlight) put(surface.highlight, theme, edgeFor(face));
+        if (surface.highlight)
+          put(
+            surface.highlight,
+            theme,
+            'flush' in surface
+              ? Math.min(Math.max(edgeFor(face), 0), COLOUR_STEPS.at(-1)!)
+              : edgeFor(face),
+          );
       }
       const cut = recessRoles(surface.recess);
       const recessFace = faceAt(surface.depth - recess);
@@ -315,15 +338,59 @@ type Offset = { light: number; dark: number };
    on the canvas; every ground-* utility re-declares them for its surface, and
    for the recess cut into it. Hover and selected take one step more in light
    than first tuned, so they hold on the lighter faces. */
+/*
+  The tooltip, derived from the popover face rather than tuned beside it. It is
+  the one surface drawn dark in both themes, so each theme states how it is set
+  off the popover, in ramp steps from its face:
+  - dark: one layer above the popover (lighter), its edge the surfaces' ring
+    distance past it and its highlight one layer darker, as every surface's is;
+  - light: the popover is white, so the tooltip is a slate a fixed 650 down the
+    ramp, its edge 50 past it and its highlight three layers lighter (one barely
+    shows on a face this dark-on-light).
+*/
+const TOOLTIP = {
+  light: { shift: 650, ring: 50, highlight: -75 },
+  dark: {
+    shift: -SURFACE_THEMES.dark.layerScale * LAYER_STEP,
+    ring: SURFACE_THEMES.dark.ring,
+    highlight:
+      SURFACE_THEMES.dark.highlight *
+      SURFACE_THEMES.dark.layerScale *
+      LAYER_STEP,
+  },
+};
+
+const HOVER = { light: 50, dark: -100 };
+const SELECTED = { light: 125, dark: -175 };
 const FOLLOWING_BY_FILE = {
   'app/styles/roles.css': {
     '--sp-surface-control': { light: -25, dark: -100 },
     /* The darkest light ground and muted ink's thinnest margin, so a control
        taking it moves its ink to primary. */
-    '--sp-surface-selected': { light: 125, dark: -175 },
+    '--sp-surface-selected': SELECTED,
     /* Under the pointer. Light deepens, dark lifts: the inset is the deepest
        step, and as a hover it put a hole under the pointer in dark. */
-    '--sp-surface-hover': { light: 50, dark: -100 },
+    '--sp-surface-hover': HOVER,
+    /* A mark on a selected wash, such as a circle inside a hovered pill: the
+       hover-to-selected distance again, past selected. */
+    /* Under the pointer on a control that already rests on the hover wash: two
+       layers further, a step short of selected, so the answer is felt without
+       taking the wash a press or focus does. */
+    '--sp-surface-hover-strong': {
+      light: HOVER.light + 2 * LAYER_STEP,
+      dark: HOVER.dark - 2 * LAYER_STEP,
+    },
+    /* A name's own face on a pill that is itself a wash, such as a boundary's
+       version: a layer past selected, short of strong, so the pill still
+       reads behind it. */
+    '--sp-surface-selected-mid': {
+      light: SELECTED.light + LAYER_STEP,
+      dark: SELECTED.dark - LAYER_STEP,
+    },
+    '--sp-surface-selected-strong': {
+      light: SELECTED.light + (SELECTED.light - HOVER.light),
+      dark: SELECTED.dark + (SELECTED.dark - HOVER.dark),
+    },
     /* Rules are present, not bright: a divider should be found, not seen first. */
     '--sp-rule-faint': { light: 175, dark: -150 },
     '--sp-rule-default': { light: 225, dark: -200 },
@@ -478,13 +545,22 @@ const ANCHORED_BY_FILE = {
     '--sp-card-pill-lead-hover': { on: 'floating', light: 75, dark: -225 },
   },
   'components/ui/tooltip.css': {
-    /* A slate in both themes: darker than its ground in light (650), lighter
-       in dark (700), with the edge a step lighter than the face in dark. */
-    '--sp-tooltip-face': { on: 'floating', light: 625, dark: -100 },
-    '--sp-tooltip-edge': { on: 'floating', light: 675, dark: -200 },
-    /* Three steps lighter in light: one barely shows on a face this light.
-       Dark is darker than the face: two steps, as in the surfaces' sheen. */
-    '--sp-tooltip-highlight': { on: 'floating', light: 550, dark: -50 },
+    /* A slate in both themes, set off the popover face (see TOOLTIP). */
+    '--sp-tooltip-face': {
+      on: 'popover',
+      light: TOOLTIP.light.shift,
+      dark: TOOLTIP.dark.shift,
+    },
+    '--sp-tooltip-edge': {
+      on: 'popover',
+      light: TOOLTIP.light.shift + TOOLTIP.light.ring,
+      dark: TOOLTIP.dark.shift + TOOLTIP.dark.ring,
+    },
+    '--sp-tooltip-highlight': {
+      on: 'popover',
+      light: TOOLTIP.light.shift + TOOLTIP.light.highlight,
+      dark: TOOLTIP.dark.shift + TOOLTIP.dark.highlight,
+    },
   },
 } as const satisfies Record<
   string,
@@ -530,18 +606,26 @@ export const GROUND_CONTEXTS = {
   'canvas-recess': '--sp-canvas-recess',
   'primary-recess': '--sp-primary-recess',
   'floating-recess': '--sp-floating-recess',
+  popover: '--sp-surface-popover',
+  'popover-recess': '--sp-popover-recess',
 } as const;
 export type GroundContext = keyof typeof GROUND_CONTEXTS;
+
+/* A role asked for lighter than the lightest step stops at that step. Only the
+   popover reaches it: its face is already the end of the ramp in light. */
+const toRamp = (value: number, flush: boolean) =>
+  flush ? Math.max(value, 0) : value;
 
 const offsetFrom = (
   face: `--${string}`,
   role: Offset,
   what: string,
+  flush = false,
 ): Record<Theme, number> => {
   const steps = SURFACE_STEPS.get(face)!;
   return {
-    light: rampStep(steps.light + role.light, `light ${what}`),
-    dark: rampStep(steps.dark + role.dark, `dark ${what}`),
+    light: rampStep(toRamp(steps.light + role.light, flush), `light ${what}`),
+    dark: rampStep(toRamp(steps.dark + role.dark, flush), `dark ${what}`),
   };
 };
 
@@ -553,6 +637,7 @@ export function followingAt(variable: `--${string}`, context: GroundContext) {
     GROUND_CONTEXTS[context],
     role,
     `${variable} in ${context}`,
+    context.startsWith('popover'),
   );
 }
 
@@ -615,8 +700,16 @@ export const ROLE_ASSIGNMENTS = {
   floatingRecess: surfaceRole('--sp-floating-recess'),
   floatingRecessRing: surfaceRole('--sp-floating-recess-ring'),
   floatingRecessEdge: surfaceRole('--sp-floating-recess-edge'),
+  surfacePopover: surfaceRole('--sp-surface-popover'),
+  popoverRing: surfaceRole('--sp-popover-ring'),
+  popoverEdge: surfaceRole('--sp-popover-edge'),
+  popoverRecess: surfaceRole('--sp-popover-recess'),
+  popoverRecessRing: surfaceRole('--sp-popover-recess-ring'),
+  popoverRecessEdge: surfaceRole('--sp-popover-recess-edge'),
   surfaceControl: relativeRole('--sp-surface-control'),
   surfaceSelected: relativeRole('--sp-surface-selected'),
+  surfaceSelectedStrong: relativeRole('--sp-surface-selected-strong'),
+  surfaceSelectedMid: relativeRole('--sp-surface-selected-mid'),
   surfaceDisabled: {
     cssVariable: '--sp-surface-disabled',
     light: 50,
@@ -694,6 +787,8 @@ const RING_SIDES: readonly (readonly [string, RoleKey, RoleKey, RoleKey])[] = [
     'floatingRecess',
     'surfaceFloating',
   ],
+  ['popover', 'popoverRing', 'surfacePopover', 'surfaceFloating'],
+  ['popover-recess', 'popoverRecessRing', 'popoverRecess', 'surfacePopover'],
 ];
 
 const RING_CONTRACTS: readonly ContrastContract[] = RING_SIDES.flatMap(
@@ -759,6 +854,26 @@ export const CONTRAST_CONTRACTS: readonly ContrastContract[] = [
     minimum: 4.5,
     target: 7,
     rationale: 'Selected rows retain ordinary text readability.',
+  },
+  {
+    id: 'primary-on-selected-strong-surface',
+    classification: 'required',
+    foreground: 'textPrimary',
+    background: 'surfaceSelectedStrong',
+    minimum: 3,
+    target: 4.5,
+    rationale:
+      'Icon glyphs on a pressed circle, never text, so the graphics floor applies.',
+  },
+  {
+    id: 'muted-strong-on-selected-mid-surface',
+    classification: 'required',
+    foreground: 'textMutedStrong',
+    background: 'surfaceSelectedMid',
+    minimum: 4.5,
+    target: 7,
+    contexts: ['primary', 'primary-recess'],
+    rationale: 'A version or revision name on its chip stays readable.',
   },
   {
     id: 'muted-on-canvas',

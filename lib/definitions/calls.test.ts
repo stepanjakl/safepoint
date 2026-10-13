@@ -3,7 +3,7 @@ import { MockLanguageModelV4 } from 'ai/test';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-import type { DraftingModel } from '@/lib/rulebook/models';
+import type { DraftingModel } from '@/lib/models';
 
 import { ask } from './calls';
 import { always, answer } from './models.fixture';
@@ -98,6 +98,29 @@ describe('asking a model', () => {
     await vi.advanceTimersByTimeAsync(2_000);
     expect((await asked).model).toBe('next-after-busy');
     expect(busy.doGenerateCalls).toHaveLength(2);
+  });
+
+  it('moves on from a model too slow to answer in time, without asking it again', async () => {
+    const slow = new MockLanguageModelV4({
+      doGenerate: async () => {
+        throw new DOMException(
+          'Step timeout of 180000ms exceeded',
+          'TimeoutError',
+        );
+      },
+    });
+    const next = answering();
+    const models = { slow, next } as Record<string, MockLanguageModelV4>;
+    const asked = await ask(
+      ['slow', 'next-after-slow'] as unknown as DraftingModel[],
+      z.object({ ok: z.boolean() }),
+      'system',
+      'prompt',
+      'test',
+      (id) => models[(id as string) === 'slow' ? 'slow' : 'next']!,
+    );
+    expect(asked.model).toBe('next-after-slow');
+    expect(slow.doGenerateCalls).toHaveLength(1);
   });
 });
 

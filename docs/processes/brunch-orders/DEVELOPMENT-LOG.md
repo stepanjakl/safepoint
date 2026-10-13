@@ -119,7 +119,7 @@ quota until then, and later calls skip it. When a whole family is spent, the
 draft stops and says until when.
 
 **Lesson.** The Brunch weekend drafter had already solved this. The parser for
-Google's refusals is now shared (`lib/rulebook/quota.ts`). Before writing
+Google's refusals was shared (now `lib/definitions/quota.ts`). Before writing
 infrastructure for a second engine, read what the first one learned.
 
 ## Two drafts, and why prompts alone oscillate

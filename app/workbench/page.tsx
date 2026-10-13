@@ -4,6 +4,7 @@ import type { CSSProperties, ReactNode } from 'react';
 
 import report from '@/docs/generated/colour-theme-report.json';
 
+import { Button } from '@/components/ui/button';
 import { TooltipArrowShape } from '@/components/ui/tooltip';
 
 import { Pair, Swatch } from './measure';
@@ -204,6 +205,61 @@ function OnGround({
     </div>
   );
 }
+
+/* A popover as the app builds one, on the surface the variant names. */
+function PopoverSample({ surface }: { surface: 'floating' | 'popover' }) {
+  return (
+    <div
+      className={`control-face rounded-shell grid w-64 gap-3 p-4 ${surface === 'popover' ? 'surface-popover' : 'surface-floating'}`}
+    >
+      <span className="text-dense font-medium">Start with instructions</span>
+      <div className="field text-body text-muted px-3 py-2">
+        What should this run focus on?…
+      </div>
+      <span className="text-meta text-muted">
+        Applies to this run only; the process instructions stay as they are.
+      </span>
+      <div className="flex justify-end gap-2">
+        <Button>Cancel</Button>
+        <Button variant="primary">Start run</Button>
+      </div>
+    </div>
+  );
+}
+
+/* The tooltip faces to review beside a popover: dark-theme steps as
+   face / edge / highlight. Light is the shipped slate in every row. */
+const PAIRINGS: readonly {
+  name: string;
+  note: string;
+  surface: 'floating' | 'popover';
+  tooltip: readonly [face: number, edge: number, highlight: number];
+}[] = [
+  {
+    name: 'Before the popover layer',
+    note: 'Popover on the floating face; tooltip as it was tuned by hand.',
+    surface: 'floating',
+    tooltip: [700, 600, 750],
+  },
+  {
+    name: 'Shipped now: derived, one layer up',
+    note: 'Popover one layer above floating; tooltip is the popover face plus one layer, its edge and highlight by the stack rules.',
+    surface: 'popover',
+    tooltip: [700, 575, 750],
+  },
+  {
+    name: 'Shared face',
+    note: 'Tooltip face is the popover face in dark (750); edge by the stack rule, highlight a layer past it.',
+    surface: 'popover',
+    tooltip: [750, 625, 800],
+  },
+  {
+    name: 'Derived, two layers up',
+    note: 'The tooltip two layers above the popover, for more separation in dark (650).',
+    surface: 'popover',
+    tooltip: [650, 525, 700],
+  },
+];
 
 const RAMP = Array.from({ length: 41 }, (_, index) => index * 25);
 
@@ -467,6 +523,42 @@ export default function WorkbenchPage() {
               kind="line"
               label={name}
             />
+          ))}
+        </div>
+      </section>
+
+      <section className={SECTION} aria-labelledby="popover-tooltip">
+        <h2 id="popover-tooltip" className={HEADING}>
+          Popover and tooltip
+        </h2>
+        <p className={NOTE}>
+          The popover surface beside candidate tooltip faces, on the canvas and
+          in a pane. Light is the same in every row (a white popover, the
+          tooltip slate at 650), so switch to dark to compare. Steps are face /
+          edge / highlight.
+        </p>
+        <div className="grid gap-4">
+          {PAIRINGS.map(({ name, note, surface, tooltip }) => (
+            <figure key={name} className="grid gap-2">
+              <figcaption className="text-meta text-muted">
+                <span className="text-primary font-medium">{name}</span> ·{' '}
+                {tooltip.join(' / ')} · {note}
+              </figcaption>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {(['canvas', 'pane'] as const).map((ground) => (
+                  <OnGround key={ground} ground={ground}>
+                    <div className="grid gap-8">
+                      <PopoverSample surface={surface} />
+                      <TooltipSample
+                        face={tooltip[0]}
+                        edge={tooltip[1]}
+                        highlight={tooltip[2]}
+                      />
+                    </div>
+                  </OnGround>
+                ))}
+              </div>
+            </figure>
           ))}
         </div>
       </section>

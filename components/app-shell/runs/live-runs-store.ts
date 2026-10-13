@@ -43,7 +43,8 @@ export function useLiveRuns(processId: string) {
   const current = () => (parse(store.read())[processId] ?? []) as LiveRun[];
   return {
     runs,
-    add: (run: ProcessRun) => save([{ run, data: {} }, ...current()]),
+    add: (run: ProcessRun, data: Record<string, unknown> = {}) =>
+      save([{ run, data }, ...current()]),
     // Merges into the run's record, read fresh so two updates never race.
     update: (id: string, data: Record<string, unknown>) =>
       save(

@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 
 import { useInstructions } from '@/components/app-shell/instructions/instructions-store';
 import { RulebookCard, words } from '@/components/brunch-orders/rules-step';
-import { plural, useTrial } from '@/components/sheet-process/trial-parts';
+import { plural, useTrial } from '@/components/brunch-orders/trial-parts';
 import { Pill } from '@/components/ui/pill';
 import type {
   DefinitionSet,

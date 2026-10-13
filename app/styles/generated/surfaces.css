@@ -21,6 +21,12 @@
   --sp-floating-recess: light-dark(var(--sp-neutral-50), var(--sp-neutral-850));
   --sp-floating-recess-ring: light-dark(var(--sp-neutral-250), var(--sp-neutral-675));
   --sp-floating-recess-edge: light-dark(var(--sp-neutral-25), var(--sp-neutral-900));
+  --sp-surface-popover: light-dark(var(--sp-neutral-0), var(--sp-neutral-750));
+  --sp-popover-ring: light-dark(var(--sp-neutral-225), var(--sp-neutral-625));
+  --sp-popover-edge: light-dark(var(--sp-neutral-0), var(--sp-neutral-800));
+  --sp-popover-recess: light-dark(var(--sp-neutral-25), var(--sp-neutral-800));
+  --sp-popover-recess-ring: light-dark(var(--sp-neutral-225), var(--sp-neutral-625));
+  --sp-popover-recess-edge: light-dark(var(--sp-neutral-0), var(--sp-neutral-850));
 
   /* How far each surface's face sits from the canvas's, in OKLab lightness. */
   --sp-ground-lift-light: 0;
@@ -38,6 +44,9 @@
   --sp-recess-surface-control: light-dark(var(--sp-neutral-75), var(--sp-neutral-850));
   --sp-recess-surface-selected: light-dark(var(--sp-neutral-225), var(--sp-neutral-775));
   --sp-recess-surface-hover: light-dark(var(--sp-neutral-150), var(--sp-neutral-850));
+  --sp-recess-surface-hover-strong: light-dark(var(--sp-neutral-200), var(--sp-neutral-800));
+  --sp-recess-surface-selected-mid: light-dark(var(--sp-neutral-250), var(--sp-neutral-750));
+  --sp-recess-surface-selected-strong: light-dark(var(--sp-neutral-300), var(--sp-neutral-700));
   --sp-recess-rule-faint: light-dark(var(--sp-neutral-275), var(--sp-neutral-800));
   --sp-recess-rule-default: light-dark(var(--sp-neutral-325), var(--sp-neutral-750));
   --sp-recess-rule-strong: light-dark(var(--sp-neutral-550), var(--sp-neutral-575));
@@ -71,6 +80,9 @@
   --sp-surface-control: light-dark(var(--sp-neutral-25), var(--sp-neutral-750));
   --sp-surface-selected: light-dark(var(--sp-neutral-175), var(--sp-neutral-675));
   --sp-surface-hover: light-dark(var(--sp-neutral-100), var(--sp-neutral-750));
+  --sp-surface-hover-strong: light-dark(var(--sp-neutral-150), var(--sp-neutral-700));
+  --sp-surface-selected-mid: light-dark(var(--sp-neutral-200), var(--sp-neutral-650));
+  --sp-surface-selected-strong: light-dark(var(--sp-neutral-250), var(--sp-neutral-600));
   --sp-rule-faint: light-dark(var(--sp-neutral-225), var(--sp-neutral-700));
   --sp-rule-default: light-dark(var(--sp-neutral-275), var(--sp-neutral-650));
   --sp-rule-strong: light-dark(var(--sp-neutral-500), var(--sp-neutral-475));
@@ -93,6 +105,9 @@
   --sp-recess-surface-control: light-dark(var(--sp-neutral-50), var(--sp-neutral-800));
   --sp-recess-surface-selected: light-dark(var(--sp-neutral-200), var(--sp-neutral-725));
   --sp-recess-surface-hover: light-dark(var(--sp-neutral-125), var(--sp-neutral-800));
+  --sp-recess-surface-hover-strong: light-dark(var(--sp-neutral-175), var(--sp-neutral-750));
+  --sp-recess-surface-selected-mid: light-dark(var(--sp-neutral-225), var(--sp-neutral-700));
+  --sp-recess-surface-selected-strong: light-dark(var(--sp-neutral-275), var(--sp-neutral-650));
   --sp-recess-rule-faint: light-dark(var(--sp-neutral-250), var(--sp-neutral-750));
   --sp-recess-rule-default: light-dark(var(--sp-neutral-300), var(--sp-neutral-700));
   --sp-recess-rule-strong: light-dark(var(--sp-neutral-525), var(--sp-neutral-525));
@@ -123,6 +138,9 @@
   --sp-surface-control: light-dark(var(--sp-neutral-0), var(--sp-neutral-700));
   --sp-surface-selected: light-dark(var(--sp-neutral-150), var(--sp-neutral-625));
   --sp-surface-hover: light-dark(var(--sp-neutral-75), var(--sp-neutral-700));
+  --sp-surface-hover-strong: light-dark(var(--sp-neutral-125), var(--sp-neutral-650));
+  --sp-surface-selected-mid: light-dark(var(--sp-neutral-175), var(--sp-neutral-600));
+  --sp-surface-selected-strong: light-dark(var(--sp-neutral-225), var(--sp-neutral-550));
   --sp-rule-faint: light-dark(var(--sp-neutral-200), var(--sp-neutral-650));
   --sp-rule-default: light-dark(var(--sp-neutral-250), var(--sp-neutral-600));
   --sp-rule-strong: light-dark(var(--sp-neutral-475), var(--sp-neutral-425));
@@ -145,6 +163,9 @@
   --sp-recess-surface-control: light-dark(var(--sp-neutral-25), var(--sp-neutral-750));
   --sp-recess-surface-selected: light-dark(var(--sp-neutral-175), var(--sp-neutral-675));
   --sp-recess-surface-hover: light-dark(var(--sp-neutral-100), var(--sp-neutral-750));
+  --sp-recess-surface-hover-strong: light-dark(var(--sp-neutral-150), var(--sp-neutral-700));
+  --sp-recess-surface-selected-mid: light-dark(var(--sp-neutral-200), var(--sp-neutral-650));
+  --sp-recess-surface-selected-strong: light-dark(var(--sp-neutral-250), var(--sp-neutral-600));
   --sp-recess-rule-faint: light-dark(var(--sp-neutral-225), var(--sp-neutral-700));
   --sp-recess-rule-default: light-dark(var(--sp-neutral-275), var(--sp-neutral-650));
   --sp-recess-rule-strong: light-dark(var(--sp-neutral-500), var(--sp-neutral-475));
@@ -166,12 +187,73 @@
   --sp-recess-filter-track-edge-hover: light-dark(var(--sp-neutral-225), var(--sp-neutral-650));
 }
 
+@utility ground-popover {
+  --sp-surface-inset: var(--sp-popover-recess);
+  --sp-recessed-ring: var(--sp-popover-recess-ring);
+  --sp-recessed-edge: var(--sp-popover-recess-edge);
+  --sp-ground-lift-light: 0.0671;
+  --sp-ground-lift-dark: 0.1343;
+  --sp-surface-control: light-dark(var(--sp-neutral-0), var(--sp-neutral-650));
+  --sp-surface-selected: light-dark(var(--sp-neutral-125), var(--sp-neutral-575));
+  --sp-surface-hover: light-dark(var(--sp-neutral-50), var(--sp-neutral-650));
+  --sp-surface-hover-strong: light-dark(var(--sp-neutral-100), var(--sp-neutral-600));
+  --sp-surface-selected-mid: light-dark(var(--sp-neutral-150), var(--sp-neutral-550));
+  --sp-surface-selected-strong: light-dark(var(--sp-neutral-200), var(--sp-neutral-500));
+  --sp-rule-faint: light-dark(var(--sp-neutral-175), var(--sp-neutral-600));
+  --sp-rule-default: light-dark(var(--sp-neutral-225), var(--sp-neutral-550));
+  --sp-rule-strong: light-dark(var(--sp-neutral-450), var(--sp-neutral-375));
+  --sp-quiet-face-top: light-dark(var(--sp-neutral-0), var(--sp-neutral-650));
+  --sp-quiet-face-bottom: light-dark(var(--sp-neutral-50), var(--sp-neutral-750));
+  --sp-quiet-ring-top: light-dark(var(--sp-neutral-175), var(--sp-neutral-500));
+  --sp-quiet-ring-bottom: light-dark(var(--sp-neutral-275), var(--sp-neutral-650));
+  --sp-quiet-face-top-hover: light-dark(var(--sp-neutral-0), var(--sp-neutral-575));
+  --sp-quiet-face-bottom-hover: light-dark(var(--sp-neutral-175), var(--sp-neutral-700));
+  --sp-quiet-ring-top-hover: light-dark(var(--sp-neutral-275), var(--sp-neutral-375));
+  --sp-quiet-ring-bottom-hover: light-dark(var(--sp-neutral-600), var(--sp-neutral-500));
+  --sp-menu-chip: light-dark(var(--sp-neutral-75), var(--sp-neutral-700));
+  --sp-field-face: light-dark(var(--sp-neutral-0), var(--sp-neutral-700));
+  --sp-field-edge: light-dark(var(--sp-neutral-150), var(--sp-neutral-600));
+  --sp-field-edge-hover: light-dark(var(--sp-neutral-200), var(--sp-neutral-325));
+  --sp-field-edge-active: light-dark(var(--sp-neutral-525), var(--sp-neutral-75));
+  --sp-enclosure-edge: light-dark(var(--sp-neutral-0), var(--sp-neutral-600));
+  --sp-filter-face: light-dark(var(--sp-neutral-0), var(--sp-neutral-750));
+  --sp-filter-track-edge-hover: light-dark(var(--sp-neutral-175), var(--sp-neutral-550));
+  --sp-recess-surface-control: light-dark(var(--sp-neutral-0), var(--sp-neutral-700));
+  --sp-recess-surface-selected: light-dark(var(--sp-neutral-150), var(--sp-neutral-625));
+  --sp-recess-surface-hover: light-dark(var(--sp-neutral-75), var(--sp-neutral-700));
+  --sp-recess-surface-hover-strong: light-dark(var(--sp-neutral-125), var(--sp-neutral-650));
+  --sp-recess-surface-selected-mid: light-dark(var(--sp-neutral-175), var(--sp-neutral-600));
+  --sp-recess-surface-selected-strong: light-dark(var(--sp-neutral-225), var(--sp-neutral-550));
+  --sp-recess-rule-faint: light-dark(var(--sp-neutral-200), var(--sp-neutral-650));
+  --sp-recess-rule-default: light-dark(var(--sp-neutral-250), var(--sp-neutral-600));
+  --sp-recess-rule-strong: light-dark(var(--sp-neutral-475), var(--sp-neutral-425));
+  --sp-recess-quiet-face-top: light-dark(var(--sp-neutral-0), var(--sp-neutral-700));
+  --sp-recess-quiet-face-bottom: light-dark(var(--sp-neutral-75), var(--sp-neutral-800));
+  --sp-recess-quiet-ring-top: light-dark(var(--sp-neutral-200), var(--sp-neutral-550));
+  --sp-recess-quiet-ring-bottom: light-dark(var(--sp-neutral-300), var(--sp-neutral-700));
+  --sp-recess-quiet-face-top-hover: light-dark(var(--sp-neutral-0), var(--sp-neutral-625));
+  --sp-recess-quiet-face-bottom-hover: light-dark(var(--sp-neutral-200), var(--sp-neutral-750));
+  --sp-recess-quiet-ring-top-hover: light-dark(var(--sp-neutral-300), var(--sp-neutral-425));
+  --sp-recess-quiet-ring-bottom-hover: light-dark(var(--sp-neutral-625), var(--sp-neutral-550));
+  --sp-recess-menu-chip: light-dark(var(--sp-neutral-100), var(--sp-neutral-750));
+  --sp-recess-field-face: light-dark(var(--sp-neutral-0), var(--sp-neutral-750));
+  --sp-recess-field-edge: light-dark(var(--sp-neutral-175), var(--sp-neutral-650));
+  --sp-recess-field-edge-hover: light-dark(var(--sp-neutral-225), var(--sp-neutral-375));
+  --sp-recess-field-edge-active: light-dark(var(--sp-neutral-550), var(--sp-neutral-125));
+  --sp-recess-enclosure-edge: light-dark(var(--sp-neutral-0), var(--sp-neutral-650));
+  --sp-recess-filter-face: light-dark(var(--sp-neutral-25), var(--sp-neutral-800));
+  --sp-recess-filter-track-edge-hover: light-dark(var(--sp-neutral-200), var(--sp-neutral-600));
+}
+
 /* Inside a recess, the surface-following roles take the values its surface
    handed down for it. */
 @utility ground-recessed {
   --sp-surface-control: var(--sp-recess-surface-control);
   --sp-surface-selected: var(--sp-recess-surface-selected);
   --sp-surface-hover: var(--sp-recess-surface-hover);
+  --sp-surface-hover-strong: var(--sp-recess-surface-hover-strong);
+  --sp-surface-selected-mid: var(--sp-recess-surface-selected-mid);
+  --sp-surface-selected-strong: var(--sp-recess-surface-selected-strong);
   --sp-rule-faint: var(--sp-recess-rule-faint);
   --sp-rule-default: var(--sp-recess-rule-default);
   --sp-rule-strong: var(--sp-recess-rule-strong);

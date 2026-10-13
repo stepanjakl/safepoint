@@ -18,7 +18,8 @@ product's actual purpose (proposing what to order) was never built.
 
 Brunch orders starts again from that purpose and grows one step at a time,
 each step working before the next begins. What it reused from Brunch
-weekend's engine stays in `lib/rulebook/`; the rest of that experiment was
+weekend's engine moved into `lib/definitions/`, `lib/sheets/` and
+`lib/models.ts`; the rest of that experiment was
 removed on 13 October 2026 ([record](../../archive/BRUNCH-WEEKEND.md)).
 
 ## Direction review, 9 October
@@ -384,7 +385,7 @@ accepted, the Rules step collapses to one line that opens the Rules tab.
   knowingly. A blocked record cannot be approved as it stands: it is changed
   to values that pass, checked live as they are typed, or rejected.
 - **The model tries before it answers.** Each batch of 25 records is a tool
-  loop: `try_proposal` returns the checks' verdicts and working for values
+  loop: `try_proposals` returns the checks' verdicts and working for values
   the model is considering; `submit_proposals` answers every record once,
   with `set` and values for every proposal field, or `leave` for no change,
   plus its reason, the cells it relied on and anything it is unsure of. Where

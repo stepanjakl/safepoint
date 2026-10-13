@@ -18,7 +18,7 @@ import {
   plural,
   useTrial,
   type Tone,
-} from '@/components/sheet-process/trial-parts';
+} from '@/components/brunch-orders/trial-parts';
 import { Button } from '@/components/ui/button';
 import { Fold } from '@/components/ui/fold';
 import { Pill, SEVERITY } from '@/components/ui/pill';
@@ -26,7 +26,7 @@ import { Tooltip } from '@/components/ui/tooltip';
 import { MorphingText } from '@/components/ui/morphing-text';
 import { cx } from '@/lib/cx';
 import { SUBJECT } from '@/lib/processes/brunch-orders/process';
-import { DRAFTING_MODELS, type DraftingModel } from '@/lib/rulebook/models';
+import { DRAFTING_MODELS, type DraftingModel } from '@/lib/models';
 import {
   Assignment,
   DEFINED_NAME,

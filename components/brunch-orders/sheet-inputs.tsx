@@ -5,7 +5,7 @@ import {
   ROW_BUTTON,
 } from '@/components/app-shell/inputs/inputs-list';
 import { useRunSelection } from '@/components/app-shell/runs/run-selection';
-import { plural } from '@/components/sheet-process/trial-parts';
+import { plural } from '@/components/brunch-orders/trial-parts';
 import { SHEET_INPUTS } from '@/lib/processes/brunch-orders/process';
 import type { SystemLink } from '@/lib/process/system-links';
 

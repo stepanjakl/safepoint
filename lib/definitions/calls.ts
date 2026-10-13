@@ -8,18 +8,14 @@ import {
 } from 'ai';
 import type { z } from 'zod';
 
-import {
-  fallbackChain,
-  thinkingLevel,
-  type DraftingModel,
-} from '@/lib/rulebook/models';
-import { quotaOf } from '@/lib/rulebook/quota';
+import { fallbackChain, thinkingLevel, type DraftingModel } from '@/lib/models';
+import { quotaOf } from '@/lib/definitions/quota';
 
 /*
   Server-only. Every call to a model goes through `withModels`: the first
   model of the chain with quota answers, and a busy or spent one hands over to
   the next older model of the same family (never a lighter family, as
-  lib/rulebook/models.ts holds). No automatic retries: a refusal for quota
+  lib/models.ts holds). No automatic retries: a refusal for quota
   says itself whether waiting helps.
 */
 
@@ -37,6 +33,12 @@ const outOfQuota = new Map<string, number>();
 // such as the daily limit, moves to the next model.
 const MAX_WAIT_MS = 90_000;
 const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
+// A call's own timeout aborts it with a TimeoutError, wrapped or not.
+const timedOut = (error: unknown): boolean =>
+  typeof error === 'object' &&
+  error !== null &&
+  ((error as { name?: unknown }).name === 'TimeoutError' ||
+    timedOut((error as { cause?: unknown }).cause));
 const clock = (ms: number) =>
   new Date(ms).toLocaleTimeString('en-GB', {
     hour: '2-digit',
@@ -91,6 +93,8 @@ export async function withModels<R>(
         };
       } catch (error) {
         last = error;
+        // Too slow to answer in time is busy too: the next model, at once.
+        if (timedOut(error)) break;
         const cause = RetryError.isInstance(error) ? error.lastError : error;
         if (!APICallError.isInstance(cause)) throw error;
         const status = cause.statusCode ?? 0;

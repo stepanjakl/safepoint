@@ -26,15 +26,6 @@ export type ProcessSchedule = {
   timezone: string;
 };
 
-// The short form, where the schedule sits beside the runs: when the next one
-// is, not how the schedule is built.
-export function scheduleShortLabel(schedule: ProcessSchedule): string {
-  if (!schedule.enabled) return 'Manual only';
-  return schedule.cadence === 'daily'
-    ? `Daily ${schedule.time}`
-    : `${schedule.day.slice(0, 3)} ${schedule.time}`;
-}
-
 // The long form, for a tooltip or a screen reader.
 export function scheduleLabel(schedule: ProcessSchedule): string {
   if (!schedule.enabled) return 'Manual only. Runs when a person starts it.';

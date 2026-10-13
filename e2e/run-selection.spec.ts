@@ -131,13 +131,16 @@ test('run tally and row colours advance through rest, hover, and selection', asy
 
 test('a started run plays up to the review', async ({ page }) => {
   await page.goto('/examples/promotion');
-  await page.getByRole('button', { name: 'Start run' }).last().click();
+  await page
+    .getByRole('button', { name: 'Start run', exact: true })
+    .first()
+    .click();
   const top = page.locator('.sheet-row').first();
   await expect(top).toHaveAttribute('aria-label', /^Running\..*by a person/);
   await expect(heading(page)).toHaveText(/^Run, Today/);
   // While it plays, a second cannot start.
   await expect(
-    page.getByRole('button', { name: 'Start run' }).first(),
+    page.getByRole('button', { name: 'Start run', exact: true }).first(),
   ).toHaveAttribute('aria-disabled', 'true');
   // The placeholder plays a brief start and three stages, about 16s in all.
   await expect(top).toHaveAttribute('aria-label', /^Awaiting review\./, {
@@ -153,6 +156,57 @@ test('a process with nothing to play cannot start one', async ({ page }) => {
   await page.goto('/examples/support');
   await expect(heading(page)).toHaveText('No run selected');
   await expect(
-    page.getByRole('button', { name: 'Start run' }).first(),
+    page.getByRole('button', { name: 'Start run', exact: true }).first(),
   ).toHaveAttribute('aria-disabled', 'true');
+});
+
+test('a run can start with additional instructions that stay with it', async ({
+  page,
+}) => {
+  await page.goto('/examples/brunch-orders');
+  await page
+    .getByRole('button', { name: 'Start run with instructions' })
+    .click();
+  const note = page.getByRole('textbox', {
+    name: /Additional instructions for this run/,
+  });
+  await expect(note).toBeFocused();
+  await note.fill('  Focus on missing prices.\nKeep the report concise.  ');
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Start run', exact: true })
+    .click();
+  const request = page.getByText(
+    'Focus on missing prices.\nKeep the report concise.',
+    { exact: true },
+  );
+  await expect(request).toBeVisible();
+  await expect(page).toHaveURL(/run=run-/);
+  await page.reload();
+  await expect(request).toBeVisible();
+});
+
+test('a boundary shows what moved between two runs, together when no run sits between them', async ({
+  page,
+}) => {
+  await page.goto('/examples/promotion');
+  const boundaries = page.locator('.sheet-break');
+  await expect(boundaries).toHaveCount(4);
+
+  // Rules alone, then both at once, then rules alone, then instructions alone.
+  await expect(boundaries.nth(0).locator('.sheet-break-pill')).toHaveCount(1);
+  await expect(boundaries.nth(0)).toContainText('R4');
+  await expect(boundaries.nth(1).locator('.sheet-break-pill')).toHaveCount(2);
+  await expect(boundaries.nth(1)).toContainText('V4');
+  await expect(boundaries.nth(1)).toContainText('R3');
+  await expect(boundaries.nth(2)).toContainText('R2');
+  await expect(boundaries.nth(3)).toContainText('V3');
+
+  // The instructions pill opens the change log; the rules have no tab here.
+  await page
+    .getByRole('button', { name: /Instructions changed from V3 to V4/ })
+    .click();
+  await expect(
+    page.getByRole('button', { name: /^Instructions: version/ }),
+  ).toHaveAttribute('aria-current', 'true');
 });

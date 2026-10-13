@@ -210,15 +210,19 @@ export function ProcessSheet({
                   className="process-runs-list sheet-bleed border-raised-ring shadow-separator-right-strong @sheet-wide/sheet:border-b-0 @sheet-wide/sheet:border-r shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative border-b"
                 >
                   <SectionRow id="runs-heading" title="Runs">
-                    <span className="flex items-center gap-0.5">
-                      <StartRunButton />
+                    <span className="flex items-center gap-1">
                       <ScheduleControl
                         processId={process.id}
                         schedule={process.schedule}
                       />
+                      <StartRunButton />
                     </span>
                   </SectionRow>
-                  <RunsList process={process} onShowVersion={showVersion} />
+                  <RunsList
+                    process={process}
+                    onShowVersion={showVersion}
+                    onShowRules={actions.showRules}
+                  />
                 </aside>
                 <div className="process-runs-detail shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative">
                   <ProcessSheetActions value={actions}>

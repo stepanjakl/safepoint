@@ -8,7 +8,7 @@
 // that can move underneath a result -- a run evaluated under older instructions
 // is not comparable to one evaluated under the current set, and the list says so.
 
-import type { FieldType } from '@/lib/rulebook/field-types';
+import type { FieldType } from '@/lib/sheets/field-types';
 
 import type { ProcessSchedule } from './schedule';
 import type { SystemLink } from './system-links';
@@ -148,6 +148,8 @@ export type ProcessRun = {
   // Who decided, once someone has.
   decidedBy?: string;
   instructionsVersion: string;
+  // The rulebook revision it ran under, where the process keeps a rulebook.
+  rulebookRevision?: string;
   current?: boolean;
 };
 
@@ -164,6 +166,14 @@ export type InstructionsVersion = {
   // The change log: one line per change, in the words of whoever made it.
   changes: string[];
   text: string;
+};
+
+// One accepted revision of a process's rulebook: the policy a run's numbers
+// come from, which can change while the instructions stay as they are.
+export type RulebookRevisionInfo = {
+  revision: string;
+  updatedAt: string;
+  note: string | null;
 };
 
 export type ProcessSummary = {
@@ -189,6 +199,8 @@ export type ProcessSummary = {
   // What this process counts, for the places a tally has to be read aloud:
   // the rail draws glyphs and numbers, but a screen reader needs the noun.
   itemNoun: string;
+  // Oldest first. Absent where the process keeps no rulebook.
+  rulebookRevisions?: RulebookRevisionInfo[];
   runs: ProcessRun[];
 };
 

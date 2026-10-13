@@ -1,7 +1,7 @@
 /*
   A CEL object type needs a constructor the library can name. One class per
-  type name, made once: both the rulebook engine and the definitions engine
-  register their row types with these.
+  type name, made once: the definitions engine registers its record and lookup
+  types with these (formulas.ts).
 */
 const ctors = new Map<string, new (fields: object) => object>();
 

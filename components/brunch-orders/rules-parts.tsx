@@ -5,7 +5,7 @@ import Cross from 'blode-icons-react/icons/cross-small';
 import SparkleFilled from 'blode-icons-react/icons/sparkle-filled';
 import type { ReactNode } from 'react';
 
-import { Code, StatusChip } from '@/components/sheet-process/trial-parts';
+import { Code, StatusChip } from '@/components/brunch-orders/trial-parts';
 import type { Definition } from '@/lib/definitions/types';
 import { TRIED } from '@/lib/definitions/types';
 import { SUBJECT } from '@/lib/processes/brunch-orders/process';

@@ -110,6 +110,12 @@
   transition-timing-function: ease-out;
 }
 
+/* A flat mark in the accent's brightest stop: the colour a lit switch track
+   shows at its edge, for a dot that says "on" beside a control. */
+@utility accent-mark {
+  background-color: var(--sp-accent-ring-top);
+}
+
 /* The flat half of the same contract, for controls that answer with a wash
    rather than a lit face. Same step and curve, so a row and the button beside
    it settle together. */
@@ -118,6 +124,31 @@
     color, background-color, border-color, box-shadow, text-decoration-color, opacity;
   transition-duration: var(--duration-state);
   transition-timing-function: ease-out;
+}
+
+/* A popover opening from its trigger: the tooltip's scale and fade, a step
+   slower because it holds controls. The origin is the anchored edge, so it
+   opens away from the trigger on any placement. Reduced motion ends it in
+   base.css. */
+@utility popover-motion {
+  --popover-out: 100ms;
+  transform-origin: var(--trigger-anchor-point);
+  &[data-entering] {
+    animation: popover-in var(--duration-state) var(--ease-out-quad) both;
+  }
+  &[data-exiting] {
+    animation: popover-in var(--popover-out) ease-in reverse both;
+  }
+}
+@keyframes popover-in {
+  from {
+    opacity: 0;
+    scale: 0.96;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
 }
 
 /* A text field, as the process search draws one; every field shares it. The
@@ -228,6 +259,17 @@
   --control-ring-bottom: var(--sp-floating-ring);
   --control-highlight: var(--sp-floating-edge);
   @apply ground-floating;
+}
+
+/* One layer above floating, for what opens from a control: the popovers. In
+   light that is white, the end of the ramp, so its highlight stops at the face. */
+@utility surface-popover {
+  --control-face-top: var(--sp-surface-popover);
+  --control-face-bottom: var(--sp-surface-popover);
+  --control-ring-top: var(--sp-popover-ring);
+  --control-ring-bottom: var(--sp-popover-ring);
+  --control-highlight: var(--sp-popover-edge);
+  @apply ground-popover;
 }
 
 /* Every pill's shape -- Pill (components/ui/pill.tsx) and the pills that move

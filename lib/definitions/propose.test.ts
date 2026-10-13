@@ -115,17 +115,23 @@ describe('proposing', () => {
 
   it('tries values, then keeps code’s verdicts on what it submits', async () => {
     const model = standIn(
-      call('try_proposal', { key: 'AV-RR', values: { order: 60 } }),
+      call('try_proposals', {
+        proposals: [
+          { key: 'AV-RR', values: { order: 60 } },
+          { key: 'SD-01', values: { order: 72 } },
+        ],
+      }),
       call('submit_proposals', every({ 'AV-RR': avocados })),
     );
     const proposal = await propose(owner, set, read, 'test', TEXT, {
       resolve: () => model,
     });
     expect(model.doGenerateCalls).toHaveLength(2);
-    // What the try told it: the ripe check failing, with its working.
-    expect(JSON.stringify(model.doGenerateCalls[1]!.prompt)).toContain(
-      'blocks',
-    );
+    // What the try told it, for both records in the one call: the ripe check
+    // failing for AV-RR, with its working, and not applying to SD-01.
+    const shown = JSON.stringify(model.doGenerateCalls[1]!.prompt);
+    expect(shown).toContain('blocks');
+    expect(shown).toMatch(/SD-01[^]*"applies":false/);
     expect(proposal.records['AV-RR']).toMatchObject({
       action: 'set',
       values: { order: 50 },

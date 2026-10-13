@@ -37,7 +37,11 @@ const STARTING_MS = 1200;
 // The bar fills while the candidates are evaluated; it gets time to be seen.
 const EVALUATING_MS = 8400;
 
-export type StartedRun = { run: ProcessRun; stage: RunStage };
+export type StartedRun = {
+  run: ProcessRun;
+  stage: RunStage;
+  additionalInstructions: string;
+};
 
 type RunSelection = {
   // The process's runs, newest first, a started one at the top.
@@ -46,8 +50,9 @@ type RunSelection = {
   // Shows a run, or shows nothing when it is the one already shown.
   select: (id: string) => void;
   started: StartedRun | null;
-  // Null where this process cannot play a run, or while one is playing.
-  start: (() => void) | null;
+  // Null where this process cannot play a run, or while one is playing. The
+  // text, when given, is kept with the run.
+  start: ((additionalInstructions?: string) => void) | null;
   // Why start is null, for the control that would have offered it.
   cannotStart: string | null;
   // The live run being shown, and how its thread records its progress.
@@ -86,14 +91,16 @@ export function useRunSelectionState({
   const liveRuns = useLiveRuns(process.id);
   const live = liveRuns.runs.find((entry) => entry.run.id === selected) ?? null;
 
-  // Kept in the address as it changes, never for a started run.
+  // Kept in the address as it changes, never for a started run. Replaced with
+  // null state, so Next takes the address as its own: passing its old state
+  // back makes a later router refresh restore the address without the run.
   useEffect(() => {
     const url = new URL(window.location.href);
     if (selected && selected !== started?.run.id)
       url.searchParams.set('run', selected);
     else url.searchParams.delete('run');
     if (url.href !== window.location.href)
-      window.history.replaceState(window.history.state, '', url);
+      window.history.replaceState(null, '', url);
   }, [selected, started?.run.id]);
 
   // One stage every STAGE_MS until the review, where a run waits for a person.
@@ -110,6 +117,7 @@ export function useRunSelectionState({
           const done = stage === 'awaiting_review';
           return {
             stage,
+            additionalInstructions: current.additionalInstructions,
             run: {
               ...current.run,
               status: done ? 'awaiting_review' : 'running',
@@ -137,7 +145,8 @@ export function useRunSelectionState({
         ? 'A run is already running.'
         : null;
 
-  const start = () => {
+  const start = (additionalInstructions = '') => {
+    if (cannotStart) return;
     if (liveThread) {
       const run: ProcessRun = {
         id: `run-${Date.now()}`,
@@ -147,7 +156,10 @@ export function useRunSelectionState({
         counts: { items: 0 },
         instructionsVersion: version,
       };
-      liveRuns.add(run);
+      liveRuns.add(
+        run,
+        additionalInstructions ? { additionalInstructions } : {},
+      );
       setSelected(run.id);
       return;
     }
@@ -160,7 +172,7 @@ export function useRunSelectionState({
       progress: { at: 1, of: PLAYED.length },
       instructionsVersion: version,
     };
-    setStarted({ run, stage: PLAYED[0]! });
+    setStarted({ run, stage: PLAYED[0]!, additionalInstructions });
     setSelected(run.id);
   };
 

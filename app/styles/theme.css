@@ -17,7 +17,9 @@
   --color-surface-inset: var(--sp-surface-inset);
   --color-surface-control: var(--sp-surface-control);
   --color-surface-hover: var(--sp-surface-hover);
+  --color-surface-hover-strong: var(--sp-surface-hover-strong);
   --color-surface-selected: var(--sp-surface-selected);
+  --color-surface-selected-strong: var(--sp-surface-selected-strong);
   --color-surface-disabled: var(--sp-surface-disabled);
   --color-primary: var(--sp-text-primary);
   --color-muted: var(--sp-text-muted);
@@ -198,7 +200,7 @@
      the two; shorter and centred, it nests inside the tag's line. */
   --spacing-sheet-tally: 1rem;
   /* One of the four terms a row's height is the sum of -- see `.sheet-row`. */
-  --spacing-sheet-band-gap: 0.4375rem;
+  --spacing-sheet-band-gap: 0.3125rem;
   --spacing-menu-end: 0.625rem; /* 10px */
   /* A whole pixel, because that is the one width that lays out the same at 1x
      and 2x. Everything measured from this edge reads the token. */

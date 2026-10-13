@@ -5,7 +5,7 @@ import { z } from 'zod';
 
 import type { DefinitionSubject } from '@/lib/process/model';
 import { runDataDir } from '@/lib/storage/run-data';
-import { fallbackChain, type DraftingModel } from '@/lib/rulebook/models';
+import { fallbackChain, type DraftingModel } from '@/lib/models';
 
 import { ask, DRAFT_MODELS, type Resolve } from './calls';
 import { givenOf } from './checks';

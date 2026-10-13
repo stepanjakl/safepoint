@@ -88,7 +88,10 @@ test('a run shows its instructions, reads the sheet and keeps the read', async (
   });
   await expect(page.getByText('Waiting for you to read.')).toBeVisible();
   await read.last().click();
-  await expect(read.first()).toHaveAttribute('aria-expanded', 'false');
+  // The first read can wait on the dev server compiling its route.
+  await expect(read.first()).toHaveAttribute('aria-expanded', 'false', {
+    timeout: 30_000,
+  });
   await read.first().click();
   // The read just taken opens its card under its own header.
   const head = page.getByRole('button', {

@@ -1,42 +1,29 @@
 'use client';
 
-import { useRef, useState, type ReactNode } from 'react';
-import {
-  Button as AriaButton,
-  Dialog,
-  DialogTrigger,
-  Heading,
-  Popover,
-} from 'react-aria-components';
+import { useState, type ReactNode } from 'react';
+import { Dialog, DialogTrigger, Heading, Popover } from 'react-aria-components';
 // Deep import: Blode's barrel is the whole icon library.
-import CalendarClock from 'blode-icons-react/icons/calendar-clock';
-import { Button } from '@/components/ui/button';
+import Clock from 'blode-icons-react/icons/clock';
 import { MorphingText } from '@/components/ui/morphing-text';
 import { Switch } from '@/components/ui/switch';
-import { Tooltip } from '@/components/ui/tooltip';
+import { HeadIconButton } from '@/components/app-shell/head-icon-button';
 import {
   WEEKDAYS,
   scheduleLabel,
-  scheduleShortLabel,
   type ProcessSchedule,
 } from '@/lib/process/schedule';
-import { useRunSelection } from '@/components/app-shell/runs/run-selection';
 import { useProcessSchedule } from './schedule-store';
-
-// A control in the runs header: the schedule and the start beside it wear the
-// same wash, so they read as one row of controls.
-export const HEAD_CONTROL =
-  'control-wash text-muted rounded-control -my-1 min-h-7 hover:bg-surface-selected hover:text-primary focus-visible:bg-surface-selected focus-visible:text-primary data-[pressed]:bg-surface-selected';
 
 // The review panel's filter pill, at the size of a choice in a popover.
 const CHOICE =
   'control-wash border-rule-default hover:bg-surface-hover focus-visible:bg-surface-hover aria-pressed:bg-surface-selected aria-pressed:border-rule-strong inline-flex min-h-8 items-center justify-center rounded-full border px-2.5 py-1 text-meta whitespace-nowrap';
 
 /*
-  The schedule, beside the runs it produces. It moved here from under the
-  process name because it answers "when does the next one of these appear",
-  which is a question about this list, and because a schedule a person can
-  change or switch off needs a control, not a line of text.
+  The schedule, beside the runs it produces: an icon in the runs header, next
+  to start. It answers "when does the next one of these appear", a question
+  about this list, and a schedule a person can change or switch off needs a
+  control, not a line of text. It carries a dot while a schedule is on and none while runs
+  start only by hand; the tooltip says which, and when.
 
   Placeholder: the change is saved in this browser and nothing starts a run
   from it.
@@ -49,43 +36,27 @@ export function ScheduleControl({
   schedule: ProcessSchedule;
 }) {
   const [schedule, update] = useProcessSchedule(processId, initial);
-  /*
-    Where the trigger stood when the popover opened. Its label changes width
-    with the schedule and it sits at the end of its row, so its start edge
-    moves; held here, the open popover stays where it opened.
-  */
-  const anchor = useRef<DOMRect | null>(null);
-
   return (
-    <DialogTrigger
-      onOpenChange={(open) => {
-        if (!open) anchor.current = null;
-      }}
-    >
-      <Tooltip label="Schedule" description={scheduleLabel(schedule)}>
-        <AriaButton
-          aria-label={`Schedule: ${scheduleLabel(schedule)}`}
-          className={`${HEAD_CONTROL} text-meta inline-flex items-center gap-1.5 px-1.5 whitespace-nowrap`}
-        >
-          <CalendarClock
-            aria-hidden
-            size={14}
-            strokeWidth={1.8}
-            className="flex-none"
-          />
-          <span className="value">
-            <MorphingText text={scheduleShortLabel(schedule)} />
-          </span>
-        </AriaButton>
-      </Tooltip>
+    <DialogTrigger>
+      <HeadIconButton
+        label={`Schedule: ${scheduleLabel(schedule)}`}
+        tooltip={{
+          label: 'Schedule',
+          description: scheduleLabel(schedule),
+          placement: 'bottom',
+        }}
+        size="alone"
+        wash="rest"
+        active={schedule.enabled}
+        mark={schedule.enabled}
+      >
+        <Clock aria-hidden size={14} strokeWidth={1.8} />
+      </HeadIconButton>
       <Popover
         // Opens over the thread, not back over the sidebar the rail sits beside.
         placement="bottom start"
         offset={6}
-        getTargetRect={(target) =>
-          (anchor.current ??= target.getBoundingClientRect())
-        }
-        className="control-face surface-floating rounded-shell w-[min(18rem,calc(100vw-2rem))]"
+        className="popover-motion control-face surface-popover rounded-shell w-[min(18rem,calc(100vw-2rem))]"
       >
         <Dialog className="grid gap-4 p-4 outline-none">
           <ScheduleFields
@@ -97,9 +68,6 @@ export function ScheduleControl({
               </Heading>
             }
           />
-          <p className="border-rule-faint text-muted text-micro border-t pt-3 leading-normal">
-            Placeholder. Saved in this browser; nothing starts a run from it.
-          </p>
         </Dialog>
       </Popover>
     </DialogTrigger>
@@ -125,7 +93,6 @@ export function ScheduleFields({
   // Which way the switch last moved, so the fields arrive the same way; none
   // until it moves, so opening shows them still.
   const [moved, setMoved] = useState<'on' | 'off' | null>(null);
-  const selection = useRunSelection();
   return (
     <>
       <div className="flex items-center justify-between gap-3">
@@ -206,20 +173,6 @@ export function ScheduleFields({
             <p className="text-meta text-muted leading-normal">
               Runs only when someone starts one. Earlier runs are kept.
             </p>
-            {selection?.start ? (
-              <Button className="justify-self-start" onPress={selection.start}>
-                Run now
-              </Button>
-            ) : (
-              <Tooltip
-                label="Run now"
-                description={selection?.cannotStart ?? ''}
-              >
-                <Button aria-disabled="true" className="justify-self-start">
-                  Run now
-                </Button>
-              </Tooltip>
-            )}
           </div>
         )}
       </div>

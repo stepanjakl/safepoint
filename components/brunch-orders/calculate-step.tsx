@@ -20,7 +20,7 @@ import {
   StatusChip,
   plural,
   useTrial,
-} from '@/components/sheet-process/trial-parts';
+} from '@/components/brunch-orders/trial-parts';
 import { Button } from '@/components/ui/button';
 import { FilterTabs } from '@/components/ui/filter-tabs';
 import { Fold } from '@/components/ui/fold';
@@ -39,7 +39,7 @@ import type {
   CrossCheck,
 } from '@/lib/definitions/calculate';
 import { cx } from '@/lib/cx';
-import { DRAFTING_MODELS, type DraftingModel } from '@/lib/rulebook/models';
+import { DRAFTING_MODELS, type DraftingModel } from '@/lib/models';
 
 import { StaleRules, type StaleReply } from './stale-rules';
 

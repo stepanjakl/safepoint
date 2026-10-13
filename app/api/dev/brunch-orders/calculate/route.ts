@@ -16,7 +16,7 @@ import { staleness } from '@/lib/definitions/fits';
 import { rejectUnlessLocalDevelopment } from '@/lib/dev/dev-route';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { keptRead, READ_GONE } from '@/lib/processes/brunch-orders/reads';
-import { draftingModelSchema } from '@/lib/rulebook/models';
+import { draftingModelSchema } from '@/lib/models';
 
 export const runtime = 'nodejs';
 

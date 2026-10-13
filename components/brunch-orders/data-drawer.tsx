@@ -7,7 +7,7 @@ import {
   DrawerOverlay,
   DrawerPanels,
 } from '@/components/app-shell/drawer-overlay';
-import { useTrial } from '@/components/sheet-process/trial-parts';
+import { useTrial } from '@/components/brunch-orders/trial-parts';
 import { FilterTabs } from '@/components/ui/filter-tabs';
 
 type DataResponse =

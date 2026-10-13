@@ -5,7 +5,7 @@ import { columnsOf, plain, proposalWords } from './prompts';
 import { fitting, type KeptRead } from './records';
 import { hashOf, saveSet } from './store';
 import type { DefinitionProcess, DefinitionSet } from './types';
-import { fallbackChain, type DraftingModel } from '@/lib/rulebook/models';
+import { fallbackChain, type DraftingModel } from '@/lib/models';
 
 /*
   Finding: the model lists, in plain words, the intent of the instructions

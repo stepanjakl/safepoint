@@ -15,6 +15,11 @@ const stepsOf = (variable: string) =>
   RELATIVE_STEPS.get(variable as `--${string}`)!;
 
 const layers = Object.values(SURFACE_LAYERS);
+const flush = new Set<string>(
+  layers.flatMap((surface) =>
+    'flush' in surface && 'highlight' in surface ? [surface.highlight] : [],
+  ),
+);
 
 /* Every edge a surface paints: [ring, highlight, face, ground]. A recess's
    ground is the surface it is cut into. */
@@ -47,9 +52,12 @@ describe('surface stack', () => {
     ];
     expect(pairs.length).toBeGreaterThan(edges.length);
     for (const [highlight, face] of pairs) {
-      expect(stepsOf(highlight).light, highlight).toBeLessThan(
-        stepsOf(face).light,
-      );
+      /* A flush surface is already the lightest step, so its highlight stops
+         at the face in light. */
+      const light = stepsOf(highlight).light;
+      if (flush.has(highlight))
+        expect(light, highlight).toBe(stepsOf(face).light);
+      else expect(light, highlight).toBeLessThan(stepsOf(face).light);
       expect(stepsOf(highlight).dark, highlight).toBeGreaterThan(
         stepsOf(face).dark,
       );

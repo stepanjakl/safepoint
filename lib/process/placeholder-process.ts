@@ -133,6 +133,34 @@ Never apply a change. Produce a release plan for a person to review.`,
       'Two evidence packs were older than the policy window, so their candidates are held rather than priced.',
     ],
   },
+  /*
+    Revisions of the rulebook, which move on their own schedule: R2 after the
+    run of 14 Aug found two unit conversions wrong, R3 with v4, R4 after the
+    run of 28 Aug. The runs below put the four ways a boundary can read side
+    by side -- rules alone, both together, instructions alone.
+  */
+  rulebookRevisions: [
+    {
+      revision: 'R1',
+      updatedAt: 'Updated 4 Aug 2026',
+      note: 'First rulebook: margin floor, withdrawn lines and order multiples.',
+    },
+    {
+      revision: 'R2',
+      updatedAt: 'Updated 18 Aug 2026',
+      note: 'Top-up quantities convert case sizes before rounding.',
+    },
+    {
+      revision: 'R3',
+      updatedAt: 'Updated 25 Aug 2026',
+      note: 'Supplier funding is applied before the margin floor.',
+    },
+    {
+      revision: 'R4',
+      updatedAt: 'Updated 2 Sep 2026',
+      note: 'Evidence older than the policy window is held, not priced.',
+    },
+  ],
   itemNoun: 'item',
   /*
     Newest first, which is also the order the rail reads: the run a person came
@@ -151,6 +179,7 @@ Never apply a change. Produce a release plan for a person to review.`,
       counts: { items: 27, blocked: 4, needsDecision: 7 },
       duration: '2m 14s',
       instructionsVersion: 'v4',
+      rulebookRevision: 'R4',
       current: true,
     },
     {
@@ -162,6 +191,7 @@ Never apply a change. Produce a release plan for a person to review.`,
       duration: '1m 58s',
       decidedBy: 'Maya',
       instructionsVersion: 'v4',
+      rulebookRevision: 'R3',
     },
     {
       id: 'run-102',
@@ -171,6 +201,7 @@ Never apply a change. Produce a release plan for a person to review.`,
       counts: { items: 26, needsDecision: 2 },
       duration: '2m 02s',
       instructionsVersion: 'v3',
+      rulebookRevision: 'R2',
     },
     {
       id: 'run-101',
@@ -181,6 +212,18 @@ Never apply a change. Produce a release plan for a person to review.`,
       duration: '1m 47s',
       decidedBy: 'Maya',
       instructionsVersion: 'v3',
+      rulebookRevision: 'R1',
+    },
+    {
+      id: 'run-100',
+      startedAt: '2026-08-07T09:00:00+01:00',
+      status: 'completed',
+      trigger: 'schedule',
+      counts: { items: 25 },
+      duration: '1m 41s',
+      decidedBy: 'Maya',
+      instructionsVersion: 'v2',
+      rulebookRevision: 'R1',
     },
   ],
 };

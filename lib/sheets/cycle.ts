@@ -1,6 +1,6 @@
 /*
   Turns "a weekday and a time of day" into real moments for one pinned run
-  time. Domain-neutral; the rulebook's timing supplies the weekly timetable.
+  time. Domain-neutral; the caller supplies the weekly timetable.
 
   Two rules:
   - An observation (something that already happened) resolves to its most
