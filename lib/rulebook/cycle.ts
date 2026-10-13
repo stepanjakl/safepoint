@@ -75,7 +75,7 @@ export function zonedInstant(
   return wall - offsetAt(first, timeZone);
 }
 
-export function addDays(date: LocalDate, days: number): LocalDate {
+function addDays(date: LocalDate, days: number): LocalDate {
   const d = new Date(Date.UTC(date.year, date.month - 1, date.day + days));
   return {
     year: d.getUTCFullYear(),
@@ -119,19 +119,4 @@ export function latestAtOrBefore(
 
 export function hoursBetween(from: number, to: number) {
   return (to - from) / 3_600_000;
-}
-
-export function describeInstant(instant: number, timeZone: string) {
-  const local = new Intl.DateTimeFormat('en-GB', {
-    timeZone,
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-    timeZoneName: 'short',
-  }).format(new Date(instant));
-  return `${local} (${new Date(instant).toISOString().slice(0, 16).replace('T', ' ')} UTC)`;
 }

@@ -4,7 +4,6 @@ import { useCallback, useState, type ReactNode } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Pill, type Tone } from '@/components/ui/pill';
-import { cx } from '@/lib/cx';
 
 /*
   The pieces every build-in-the-open step shares: a button the reader presses,
@@ -122,67 +121,6 @@ export function TrialControl({
   );
 }
 
-export function TrialSection({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}) {
-  return (
-    <section className="grid gap-2">
-      <h3 className="text-dense font-semibold">{title}</h3>
-      {children}
-    </section>
-  );
-}
-
-// The review's disclosure: a +/− in the gutter (`.disclosure`), a summary
-// that washes under the pointer and focus, and a body indented past the mark.
-export function Disclosure({
-  summary,
-  children,
-  open = false,
-  bare = false,
-}: {
-  summary: ReactNode;
-  children: ReactNode;
-  open?: boolean;
-  // Without its rule, inside a block that draws its own.
-  bare?: boolean;
-}) {
-  return (
-    <details
-      className={cx(
-        'disclosure min-w-0',
-        !bare && 'border-rule-faint border-b',
-      )}
-      open={open}
-    >
-      <summary className="control-wash rounded-control hover:bg-surface-hover focus-visible:bg-surface-hover text-dense -mx-2 flex min-h-10 cursor-pointer flex-wrap items-center gap-x-2 gap-y-1 px-2 py-2">
-        {summary}
-      </summary>
-      <div className="grid min-w-0 gap-3 pb-4 pl-4.5">{children}</div>
-    </details>
-  );
-}
-
-// Evidence a reader rarely needs -- requests, raw values, transcripts -- kept
-// one step further away than the reasons.
-export function TechnicalDetails({
-  children,
-  label = 'Technical details',
-}: {
-  children: ReactNode;
-  label?: string;
-}) {
-  return (
-    <Disclosure summary={<span className="text-muted">{label}</span>}>
-      {children}
-    </Disclosure>
-  );
-}
-
 export type { Tone } from '@/components/ui/pill';
 
 // A status in the review's pill, in its bucket's tone.
@@ -210,18 +148,6 @@ export function Lede({ children }: { children: ReactNode }) {
   return <p className="text-dense text-muted max-w-prose">{children}</p>;
 }
 
-export function JsonBlock({ value, label }: { value: unknown; label: string }) {
-  return (
-    <pre
-      aria-label={label}
-      tabIndex={0}
-      className="bg-surface-inset rounded-control readout max-h-96 max-w-full overflow-auto p-3"
-    >
-      {JSON.stringify(value, null, 2)}
-    </pre>
-  );
-}
-
 export function Code({ children }: { children: ReactNode }) {
   return (
     <code className="value text-meta bg-surface-inset rounded-control px-1">
@@ -230,55 +156,7 @@ export function Code({ children }: { children: ReactNode }) {
   );
 }
 
-// Pass and fail in the review's own tones: rank 3 is ready, rank 0 blocked.
-export function Mark({
-  passed,
-  children,
-}: {
-  passed: boolean | null;
-  children?: ReactNode;
-}) {
-  return (
-    <span
-      data-severity={passed === null ? undefined : passed ? 3 : 0}
-      className={cx(
-        'text-meta font-semibold',
-        passed === null ? 'text-muted' : 'text-severity-ink',
-      )}
-    >
-      {children ?? (passed === null ? 'n/a' : passed ? 'Pass' : 'Fail')}
-    </span>
-  );
-}
-
-// A table that scrolls sideways on its own rather than widening the thread.
-export function DataTable({
-  caption,
-  children,
-}: {
-  caption: string;
-  children: ReactNode;
-}) {
-  return (
-    <div
-      className="max-w-full overflow-x-auto"
-      tabIndex={0}
-      role="region"
-      aria-label={caption}
-    >
-      <table className="text-meta w-full border-collapse text-left">
-        <caption className="sr-only">{caption}</caption>
-        {children}
-      </table>
-    </div>
-  );
-}
-
-export const th =
-  'border-rule-default text-muted border-b px-2 py-1.5 align-bottom font-medium';
-export const td = 'border-rule-faint border-b px-2 py-1.5 align-top';
-
-export function clock(iso: string) {
+function clock(iso: string) {
   return new Intl.DateTimeFormat('en-GB', {
     hour: '2-digit',
     minute: '2-digit',

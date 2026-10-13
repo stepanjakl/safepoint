@@ -29,23 +29,9 @@ The [9 October direction review](docs/processes/brunch-orders/DIRECTION-REVIEW.m
 - [ ] **Phase 8. History and learning.** Persist runs, reads and decisions; derive reviewable instruction suggestions.
 - [ ] **Phase 9. Wider scope.** Add further purposes one at a time with examples.
 
-## Retained experiment: Brunch weekend
+## Removed experiment: Brunch weekend
 
-The following is the earlier Brunch weekend experiment checklist. Its [original plan](docs/archive/SHEET-PROCESS-PLAN.md) and sheet appendix are historical; they do not define Brunch orders or its five-tab read.
-
-- [x] **Phase 0. Decide and prepare**
-  - [x] Documentation updated for the new track.
-  - [x] Google Sheet created and restructured to weekdays and times; Composio connection active for `safepoint-dev`.
-  - [x] Brunch weekend registered in development, with both trials behind buttons on its page.
-  - [x] CEL trial: cel-js chosen ([record](docs/archive/2026-10-03-cel-spike.md)); the trial was removed on 6 October 2026, when rulebooks became model-drafted in standard CEL.
-  - [x] Composio reader trial: reading, money, times, weekdays, header binding, and run timing (the Calculate step), across both clock changes.
-- [ ] **Phase 1.** Engine and snapshot replay.
-- [ ] **Phase 2.** Review in the shell (replay), with decisions, safe ranges and what-ifs.
-- [ ] **Phase 3.** Rulebook setup assistant: proof, versions, impact.
-- [ ] **Phase 4.** Live runs and what changed.
-- [ ] **Phase 5.** Guarded write-back, conflict and undo.
-- [ ] **Phase 6.** History and the ratchet.
-- [ ] **Phase 7.** A second purpose.
+The earlier Brunch weekend experiment was removed on 13 October 2026; its checklist, plan and engine guide are in the [archive](docs/archive/BRUNCH-WEEKEND.md).
 
 ## Earlier scenario: promotion release
 

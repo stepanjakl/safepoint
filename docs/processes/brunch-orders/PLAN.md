@@ -17,9 +17,9 @@ owner checks on the same sheet, every fix added a check or a question, and the
 product's actual purpose (proposing what to order) was never built.
 
 Brunch orders starts again from that purpose and grows one step at a time,
-each step working before the next begins. Brunch weekend stays as it is, for
-reference; its engine (sheet reading, the CEL evaluator, per-rule working,
-what-if values, drift checks) is reused where it fits.
+each step working before the next begins. What it reused from Brunch
+weekend's engine stays in `lib/rulebook/`; the rest of that experiment was
+removed on 13 October 2026 ([record](../../archive/BRUNCH-WEEKEND.md)).
 
 ## Direction review, 9 October
 

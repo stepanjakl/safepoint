@@ -1,6 +1,6 @@
 # Definitions engine
 
-Status: current code guide for `lib/definitions/`, checked in October 2026. It is used by [Brunch orders](../processes/brunch-orders/PLAN.md). The older [Brunch weekend rulebook engine](../processes/brunch-weekend/RULEBOOK-ENGINE-GUIDE.md) has a different staged draft and stored shape.
+Status: current code guide for `lib/definitions/`, checked in October 2026. It is used by [Brunch orders](../processes/brunch-orders/PLAN.md). The earlier Brunch weekend engine it grew out of is [archived](../archive/BRUNCH-WEEKEND-ENGINE-GUIDE.md).
 
 ## Contract
 

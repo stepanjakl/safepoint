@@ -194,10 +194,9 @@ cache is bounded; a whole draft runs on the server, so closing the page no
 longer stops it halfway; the write chain no longer drops from Flash to
 Flash-Lite, as the models policy forbids.
 
-Still separate: Brunch weekend's drafter keeps its own staged retry logic. The
-two engines now share the quota parser and the CEL object types, but not the
-model-call wrapper, since that drafter's stages and records differ; merging
-them is worth doing only if Brunch weekend comes back into use.
+Brunch weekend's drafter kept its own staged retry logic; the two engines
+shared only the quota parser and the CEL object types. That drafter was
+removed with the experiment on 13 October 2026.
 
 ## Consistent is not correct (third draft, 9 October)
 

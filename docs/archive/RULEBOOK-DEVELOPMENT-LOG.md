@@ -9,7 +9,7 @@ happened, why, what changed and what it bought. Numbers come from live drafts
 against the real sheet, saved in `.rulebook-drafts/` and AI SDK DevTools.
 
 How the code works now is in
-[`RULEBOOK-ENGINE-GUIDE.md`](../processes/brunch-weekend/RULEBOOK-ENGINE-GUIDE.md). Add an entry here when
+[the engine guide](BRUNCH-WEEKEND-ENGINE-GUIDE.md). Add an entry here when
 something non-obvious goes wrong; keep it short and measured.
 
 ## Results at a glance

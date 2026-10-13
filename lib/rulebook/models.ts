@@ -33,13 +33,6 @@ export function fallbackChain(model: DraftingModel): DraftingModel[] {
   return family.slice((family as readonly string[]).indexOf(model));
 }
 
-// The newest model of the strongest family, when the given one is in a
-// lighter family: offered, never automatic, to continue a draft that got stuck.
-export function strongerModel(model: string): DraftingModel | null {
-  const strongest = FAMILIES[0];
-  return (strongest as readonly string[]).includes(model) ? null : strongest[0];
-}
-
 // The thinking level to ask for, or null for the model's own default.
 export function thinkingLevel(model: string): 'low' | null {
   return (FAMILIES[0] as readonly string[]).includes(model) ? 'low' : null;

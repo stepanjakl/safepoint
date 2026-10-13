@@ -1,8 +1,10 @@
 # Rulebook engine: a guide to the code
 
-> **Status: retained Brunch weekend engine guide.** This describes
-> `lib/rulebook/`, checked against its main modules in October 2026. It does
-> not describe the active Brunch orders engine in `lib/definitions/`.
+> **Status: archived Brunch weekend engine guide.** This described
+> `lib/rulebook/` as it was in October 2026; the engine was removed on 13
+> October 2026, and only the modules Brunch orders shares (models, field
+> types, the CEL object types, the quota parser) remain. It does not describe
+> the active Brunch orders engine in `lib/definitions/`.
 > Update it when this engine changes. Function and constant names are given
 > so you can search for them; line numbers are not, because they move.
 
@@ -12,8 +14,8 @@ becomes a value a rule can test, and in most detail how `draft.ts` gets a
 language model to write a rulebook that the deterministic engine accepts.
 
 What went wrong along the way, and what each fix bought, is in
-[`RULEBOOK-DEVELOPMENT-LOG.md`](../../archive/RULEBOOK-DEVELOPMENT-LOG.md). The general ideas
-behind it are in [`LLM-RULES-GUIDE.md`](../../research/LLM-RULES-GUIDE.md).
+[`RULEBOOK-DEVELOPMENT-LOG.md`](RULEBOOK-DEVELOPMENT-LOG.md). The general ideas
+behind it are in [`LLM-RULES-GUIDE.md`](../research/LLM-RULES-GUIDE.md).
 
 ## Contents
 
@@ -35,7 +37,7 @@ behind it are in [`LLM-RULES-GUIDE.md`](../../research/LLM-RULES-GUIDE.md).
 16. [AI SDK concepts used here](#16-ai-sdk-concepts-used-here)
 
 Hands-on companions are in
-[`RULEBOOK-ENGINE-WALKTHROUGHS.md`](RULEBOOK-ENGINE-WALKTHROUGHS.md): reading a
+[`RULEBOOK-ENGINE-WALKTHROUGHS.md`](BRUNCH-WEEKEND-ENGINE-WALKTHROUGHS.md): reading a
 real draft record, the anatomy of a complete rulebook, and running a drafting
 study.
 
@@ -645,7 +647,7 @@ that are "no longer available to new users".
 - **Draft quality varies.** Drafts that pass every check have scored between 4
   and 10 of 16 owner checks. Passing checks means well formed and consistent,
   not correct; the owner's checks and a person's review decide that.
-- **Meaning is not checked.** The checks now run every draft on the real data (no formula may fail, every written key must exist), but a rule can still run cleanly and mean the wrong thing: in the first drafting study, Flash-Lite drafts that passed every check scored 8 to 15 of 16 owner checks (median 11; [`archive/2026-10-07-drafting-study.md`](../../archive/2026-10-07-drafting-study.md)).
+- **Meaning is not checked.** The checks now run every draft on the real data (no formula may fail, every written key must exist), but a rule can still run cleanly and mean the wrong thing: in the first drafting study, Flash-Lite drafts that passed every check scored 8 to 15 of 16 owner checks (median 11; [`archive/2026-10-07-drafting-study.md`](2026-10-07-drafting-study.md)).
 
 ## 14. Writing CEL for this engine
 

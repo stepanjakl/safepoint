@@ -1,9 +1,8 @@
 # Rulebook engine: walkthroughs
 
-> **Status: retained Brunch weekend walkthroughs**, using records from 7 October 2026. Hands-on companions to
-> [`RULEBOOK-ENGINE-GUIDE.md`](RULEBOOK-ENGINE-GUIDE.md): read that first for
-> the words and the structure. Update this file when the record format, the
-> rulebook schema or the drafting routes change.
+> **Status: archived Brunch weekend walkthroughs**, using records from 7 October 2026; the engine they walk through was removed on 13 October 2026. Hands-on companions to
+> [the engine guide](BRUNCH-WEEKEND-ENGINE-GUIDE.md): read that first for
+> the words and the structure.
 
 1. [Reading a draft record](#1-reading-a-draft-record): open one real draft and
    follow it from top to bottom.

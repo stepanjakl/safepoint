@@ -23,19 +23,6 @@ export function rejectUnlessLocalDevelopment(
   return null;
 }
 
-// Whole numbers travel as bigint inside the engine; JSON has no bigint.
-export function jsonWithBigInts(body: unknown, init?: ResponseInit): Response {
-  return new Response(
-    JSON.stringify(body, (_, value) =>
-      typeof value === 'bigint' ? value.toString() : value,
-    ),
-    {
-      ...init,
-      headers: { 'content-type': 'application/json', ...init?.headers },
-    },
-  );
-}
-
 // A provider error can echo the request back; never let the key out with it.
 export function redactKey(text: string, key: string | undefined): string {
   return key ? text.replaceAll(key, '[redacted]') : text;

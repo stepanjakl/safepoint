@@ -9,7 +9,7 @@ import { z } from 'zod';
   The toolkit version is pinned: a Composio release cannot change the shape of
   a response underneath us. Bump it deliberately after checking the new shape.
 */
-export const GOOGLESHEETS_TOOLKIT_VERSION = '20261001_00';
+const GOOGLESHEETS_TOOLKIT_VERSION = '20261001_00';
 
 const SHEET_ENV = [
   'COMPOSIO_API_KEY',

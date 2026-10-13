@@ -13,10 +13,6 @@ import { processHref } from '@/lib/process/routes';
 import { presentPromotionPlan } from '@/lib/review/promotion-adapter';
 import { supportPlan } from '@/lib/review/support-fixture';
 import {
-  brunchPlan,
-  brunchProcess,
-} from '@/lib/processes/avocado-toast/process';
-import {
   brunchOrdersPlan,
   brunchOrdersProcess,
 } from '@/lib/processes/brunch-orders/process';
@@ -47,12 +43,6 @@ export async function AppShell({ children }: { children: ReactNode }) {
     }),
     ...(process.env.NODE_ENV === 'development'
       ? [
-          processNavigationItem({
-            id: brunchProcess.id,
-            href: processHref(brunchProcess.id),
-            name: brunchProcess.name,
-            plan: brunchPlan,
-          }),
           processNavigationItem({
             id: brunchOrdersProcess.id,
             href: processHref(brunchOrdersProcess.id),

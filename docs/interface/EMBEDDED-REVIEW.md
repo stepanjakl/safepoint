@@ -12,7 +12,7 @@ Status: implemented, 9 September 2026. Use the canonical [product terminology](.
 
 The demonstration has two functioning menu levels. The root contains one **Processes** entry with a process icon, a rounded count badge, and a right chevron; there is no Workspace label. Opening it reveals the process list. A left chevron, labelled **Back to menu**, sits beside the centred **Processes** heading and returns to the root. Start on the process level when opening an existing process route so the current selection is visible.
 
-Promotion release and Support handoff appear in the process list. Brunch weekend and Brunch orders are also listed in development. The development state gallery is not listed among processes. The root level remains intentionally minimal.
+Promotion release and Support handoff appear in the process list. Brunch orders is also listed in development. The development state gallery is not listed among processes. The root level remains intentionally minimal.
 
 Changing menu levels preserves the open review, selected process, and saved order. Entering Processes slides the menu content to the left; returning to Workspace reverses the direction. Keep the brand stationary and clip motion to the menu viewport. The transition takes 220 ms and respects reduced-motion preferences. Only the active level is interactive and exposed to assistive technology. Keyboard focus follows the level change and returns to the Processes entry when going back; rapid direction changes must not leave duplicate controls or stranded focus.
 
