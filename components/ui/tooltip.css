@@ -25,6 +25,10 @@
   initial-value: transparent;
 }
 
+@theme inline {
+  --color-tooltip-edge: var(--sp-tooltip-edge);
+}
+
 /* Muted text inside the tooltip, as ground-* hands roles to a surface. */
 @utility ground-tooltip {
   --tooltip-muted: var(--sp-tooltip-muted);

@@ -8,9 +8,12 @@
      the light canvas read 1:1, invisible. */
   --sp-brand-mark: var(--radix-cyan-8);
   --sp-brand-wordmark: light-dark(var(--radix-sage-12), var(--radix-sage-4));
+  /* The words a sentence turns on: the workspace intro's and the empty run page's. */
+  --sp-text-emphasis: light-dark(var(--radix-cyan-11), var(--radix-cyan-dark-11));
 }
 
 @theme inline {
   --color-brand-wordmark: var(--sp-brand-wordmark);
   --color-brand-mark: var(--sp-brand-mark);
+  --color-emphasis: var(--sp-text-emphasis);
 }

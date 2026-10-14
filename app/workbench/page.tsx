@@ -404,6 +404,13 @@ export default function WorkbenchPage() {
           <Link className="underline underline-offset-4" href="/workbench/run">
             Run lifecycle
           </Link>
+          {' · '}
+          <Link
+            className="underline underline-offset-4"
+            href="/workbench/states"
+          >
+            State illustrations
+          </Link>
         </p>
       </header>
 

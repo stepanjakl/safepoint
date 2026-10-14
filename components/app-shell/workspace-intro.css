@@ -1,9 +1,5 @@
 /* ── Workspace introduction ────────────────────────────────────────────── */
 
-:root {
-  --sp-workspace-intro-emphasis: light-dark(var(--radix-cyan-11), var(--radix-cyan-dark-11));
-}
-
 @layer components {
   .workspace-intro {
     display: grid;
@@ -41,7 +37,7 @@
   }
 
   .workspace-intro-keyword {
-    color: var(--sp-workspace-intro-emphasis);
+    color: var(--sp-text-emphasis);
     font-weight: var(--font-weight-semibold);
   }
 

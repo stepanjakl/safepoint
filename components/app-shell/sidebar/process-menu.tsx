@@ -17,6 +17,7 @@ import {
   DURATION_STATE,
   EASE_OUT_EMPHASIZED,
 } from '@/lib/motion';
+import { KeyHint } from '@/components/ui/key-hint';
 import { Tooltip } from '@/components/ui/tooltip';
 import {
   restoreProcessOrder,
@@ -42,23 +43,6 @@ import { SidebarAccount } from './sidebar-account';
 import { SidebarNotice } from './sidebar-notice';
 import { useProcessReorder } from './use-process-reorder';
 import { WorkspaceMenu } from './workspace-menu';
-
-/*
-  The platform is fixed for the life of the document, so this store has nothing
-  to publish and its subscribe is a no-op that never fires. It exists only to
-  give useSyncExternalStore a server snapshot and a client one.
-*/
-const subscribeNothing = () => () => {};
-const serverModifierKey = () => '⌘';
-const readModifierKey = () =>
-  /mac|iphone|ipad|ipod/i.test(
-    (navigator as Navigator & { userAgentData?: { platform?: string } })
-      .userAgentData?.platform ??
-      navigator.platform ??
-      '',
-  )
-    ? '⌘'
-    : 'Ctrl';
 
 /*
   The title row that leads with a chevron. Symmetric padding and no edge of its
@@ -195,18 +179,6 @@ export function ProcessMenu({
   const searchRef = useRef<HTMLInputElement>(null);
   const searchButtonRef = useRef<HTMLButtonElement>(null);
   const focusSearch = useRef(false);
-  /*
-    ⌘ on Apple platforms, Ctrl everywhere else. Read through the store rather
-    than set from an effect: the platform cannot change while the document is
-    open, so there is nothing to subscribe to, and this is the one shape that
-    lets the server and the client render different values without either a
-    hydration mismatch or a second render.
-  */
-  const modifier = useSyncExternalStore(
-    subscribeNothing,
-    readModifierKey,
-    serverModifierKey,
-  );
   useLayoutEffect(() => {
     if (!focusLevel.current) return;
     (level === 'workspace' ? enterRef : backRef).current?.focus({
@@ -330,11 +302,9 @@ export function ProcessMenu({
               customising ? 'Finish arranging to search' : 'Search processes'
             }
             description={
-              customising
-                ? undefined
-                : modifier === '⌘'
-                  ? '⌘K'
-                  : `${modifier}+K`
+              customising ? undefined : (
+                <KeyHint keys={['mod', 'K']} on="tooltip" />
+              )
             }
           >
             <button
