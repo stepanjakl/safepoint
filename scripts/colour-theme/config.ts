@@ -515,7 +515,9 @@ const ANCHORED_BY_FILE = {
     /* The tally's total: ramp, not a severity tone. Dark's label is ink at
        75%; light gives it its own step against each face. */
     '--sp-sheet-total-face': { on: 'primary', light: 150, dark: -100 },
-    '--sp-sheet-total-face-hover': { on: 'primary', light: 225, dark: -175 },
+    /* Under the row's pointer it moves as far as the row's own wash
+       (--sp-sheet-hover, 50 steps), so it keeps its distance from the row. */
+    '--sp-sheet-total-face-hover': { on: 'primary', light: 200, dark: -150 },
     '--sp-sheet-total-face-current': { on: 'primary', light: 250, dark: -200 },
     /* The figure lightens through states in both themes. */
     '--sp-sheet-total-lead': { on: 'primary', light: 100, dark: -150 },
@@ -528,20 +530,23 @@ const ANCHORED_BY_FILE = {
     '--sp-thread-fact-face': { on: 'primary', light: 75, dark: -75 },
     /* Under the row's hover wash a pill lifts: lighter than the wash in
        light (+50 there), a step past it in dark (-100), as a raised face does.
-       Light stays on the pane's own step rather than going whiter. */
-    '--sp-thread-fact-face-hover': { on: 'primary', light: 0, dark: -150 },
+       It moves as far as the wash (50 light, 100 dark), keeping its distance. */
+    '--sp-thread-fact-face-hover': { on: 'primary', light: 25, dark: -175 },
     /* A fact that opens something: past a plain one at rest, and past the
        row's hover wash under it (-100 in dark), deepest under the pointer. */
     '--sp-thread-link-face': { on: 'primary', light: 125, dark: -125 },
-    '--sp-thread-link-face-hover': { on: 'primary', light: 150, dark: -175 },
-    '--sp-thread-link-face-active': { on: 'primary', light: 200, dark: -225 },
+    '--sp-thread-link-face-hover': { on: 'primary', light: 175, dark: -225 },
+    '--sp-thread-link-face-active': { on: 'primary', light: 200, dark: -275 },
   },
   'components/review/release-card.css': {
     /* A row's change pill: past the row's hover wash (+50 light, -100 dark)
-       at rest and further under it; its lead is lighter in light. */
+       at rest and as far again as the wash under it, so it keeps its distance;
+       its lead is lighter in light. */
     '--sp-card-pill-face': { on: 'floating', light: 100, dark: -75 },
-    '--sp-card-pill-face-hover': { on: 'floating', light: 150, dark: -150 },
+    '--sp-card-pill-face-hover': { on: 'floating', light: 150, dark: -175 },
     '--sp-card-pill-lead': { on: 'floating', light: 25, dark: -150 },
+    /* Held at -225 in dark, short of the wash's 100: its primary ink cannot
+       strengthen, and at -250 it reads 4.47:1. */
     '--sp-card-pill-lead-hover': { on: 'floating', light: 75, dark: -225 },
   },
   'components/ui/tooltip.css': {
@@ -560,6 +565,15 @@ const ANCHORED_BY_FILE = {
       on: 'popover',
       light: TOOLTIP.light.shift + TOOLTIP.light.highlight,
       dark: TOOLTIP.dark.shift + TOOLTIP.dark.highlight,
+    },
+  },
+  'components/brunch-orders/rulebook-history.css': {
+    /* Half the shared hover: a timeline's rows are passed over far more
+       often than opened, and the line runs over the wash. */
+    '--sp-timeline-hover': {
+      on: 'floating',
+      light: HOVER.light / 2,
+      dark: HOVER.dark / 2,
     },
   },
 } as const satisfies Record<

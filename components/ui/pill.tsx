@@ -23,7 +23,7 @@ export const SEVERITY: Record<Tone, number> = {
 
 const FACE = {
   filled: 'bg-severity-pill font-medium',
-  ringed: 'ring-severity-pill-hover ring-1 ring-inset',
+  ringed: 'ring-severity-pill-ring ring-1 ring-inset',
 } as const;
 
 export function Pill({
@@ -47,7 +47,7 @@ export function Pill({
         'pill-shape text-severity-ink text-meta px-2 py-0.5',
         FACE[variant],
         interactive &&
-          'hover:bg-severity-pill-hover focus-visible:bg-severity-pill-hover cursor-default',
+          'control-wash hover:bg-severity-pill-hover hover:text-severity-strong focus-visible:bg-severity-pill-hover focus-visible:text-severity-strong cursor-default',
         className,
       )}
     >

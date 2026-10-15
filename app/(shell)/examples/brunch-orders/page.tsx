@@ -2,7 +2,11 @@ import { notFound } from 'next/navigation';
 
 import { ProcessView } from '@/components/app-shell/process/process-view';
 import { OrdersRun } from '@/components/brunch-orders/orders-run';
-import { RulebookPanel } from '@/components/brunch-orders/rulebook-panel';
+import {
+  RulebookPanel,
+  RulebookProvider,
+} from '@/components/brunch-orders/rulebook-panel';
+import { RulebookPanelB } from '@/components/brunch-orders/rulebook-panel-b';
 import { SheetInputs } from '@/components/brunch-orders/sheet-inputs';
 import {
   brunchOrdersProcess,
@@ -20,17 +24,20 @@ export default async function BrunchOrdersPage({
   if (process.env.NODE_ENV !== 'development') notFound();
   const run = (await searchParams).run;
   return (
-    <ProcessView
-      process={brunchOrdersProcess}
-      initialRunId={typeof run === 'string' ? run : null}
-      // Keyed: an element made here and drawn inside a client component is
-      // checked as a list child there, and warns without one.
-      liveThread={<OrdersRun key="live" process={brunchOrdersProcess} />}
-      inputs={SHEET_INPUTS}
-      inputsPanel={<SheetInputs />}
-      rulesPanel={<RulebookPanel process={brunchOrdersProcess} />}
-    >
-      {null}
-    </ProcessView>
+    <RulebookProvider process={brunchOrdersProcess}>
+      <ProcessView
+        process={brunchOrdersProcess}
+        initialRunId={typeof run === 'string' ? run : null}
+        // Keyed: an element made here and drawn inside a client component is
+        // checked as a list child there, and warns without one.
+        liveThread={<OrdersRun key="live" process={brunchOrdersProcess} />}
+        inputs={SHEET_INPUTS}
+        inputsPanel={<SheetInputs />}
+        rulesPanel={<RulebookPanel />}
+        rulesPanelB={<RulebookPanelB />}
+      >
+        {null}
+      </ProcessView>
+    </RulebookProvider>
   );
 }

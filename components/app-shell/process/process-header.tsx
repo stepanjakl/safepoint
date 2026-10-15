@@ -116,7 +116,9 @@ const plural = (count: number, one: string, many: string) =>
 function ProcessMenu({
   version,
   instructionsLabel = 'Instructions',
+  compareInstructions = false,
   hasRules = false,
+  compareRules = false,
   inputs,
   outputs,
   tab,
@@ -125,8 +127,12 @@ function ProcessMenu({
   version: string;
   // What a process calls its instructions, where it brings its own panel.
   instructionsLabel?: string;
+  // Development only: the proposed Instructions tab beside the current one.
+  compareInstructions?: boolean;
   // Whether the process keeps a rulebook of its own to show.
   hasRules?: boolean;
+  // Development only: the proposed Rules tab beside the current one.
+  compareRules?: boolean;
   inputs: SystemLink[];
   outputs: SystemLink[];
   tab: ProcessTab;
@@ -175,6 +181,23 @@ function ProcessMenu({
         <span className={LABEL}>{instructionsLabel}</span>
         <span className={COUNT}>{version}</span>
       </AriaButton>
+      {compareInstructions ? (
+        <AriaButton
+          onPress={() => onTabChange('instructions-b')}
+          aria-label={`Instructions B: version ${version}`}
+          aria-current={tab === 'instructions-b' ? 'true' : undefined}
+          className={cx(ITEM, face('instructions-b'))}
+        >
+          <Lab
+            aria-hidden
+            size={16}
+            strokeWidth={1.8}
+            className={cx('flex-none -translate-y-px', icon('instructions-b'))}
+          />
+          <span className={LABEL}>Instructions B</span>
+          <span className={COUNT}>{version}</span>
+        </AriaButton>
+      ) : null}
       {hasRules ? (
         <AriaButton
           onPress={() => onTabChange('rules')}
@@ -189,6 +212,22 @@ function ProcessMenu({
             className={cx('flex-none -translate-y-px', icon('rules'))}
           />
           <span className={LABEL}>Rules</span>
+        </AriaButton>
+      ) : null}
+      {compareRules ? (
+        <AriaButton
+          onPress={() => onTabChange('rules-b')}
+          aria-label="Rules B"
+          aria-current={tab === 'rules-b' ? 'true' : undefined}
+          className={cx(ITEM, 'pe-3', face('rules-b'))}
+        >
+          <ShieldCheck
+            aria-hidden
+            size={16}
+            strokeWidth={1.8}
+            className={cx('flex-none -translate-y-px', icon('rules-b'))}
+          />
+          <span className={LABEL}>Rules B</span>
         </AriaButton>
       ) : null}
       {inputs.length > 0 ? (
@@ -274,7 +313,9 @@ export function ProcessHeader({
   process,
   version,
   instructionsLabel,
+  compareInstructions,
   hasRules,
+  compareRules,
   inputs,
   outputs,
   tab,
@@ -283,7 +324,9 @@ export function ProcessHeader({
   process: ProcessSummary;
   version: string;
   instructionsLabel?: string;
+  compareInstructions?: boolean;
   hasRules?: boolean;
+  compareRules?: boolean;
   inputs: SystemLink[];
   outputs: SystemLink[];
   tab: ProcessTab;
@@ -302,7 +345,9 @@ export function ProcessHeader({
         <ProcessMenu
           version={version}
           instructionsLabel={instructionsLabel}
+          compareInstructions={compareInstructions}
           hasRules={hasRules}
+          compareRules={compareRules}
           inputs={inputs}
           outputs={outputs}
           tab={tab}

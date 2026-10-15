@@ -31,10 +31,10 @@
   --sp-thread-line: light-dark(var(--sp-neutral-275), var(--sp-neutral-650));
   --sp-thread-done: light-dark(var(--sp-neutral-500), var(--sp-neutral-475));
   --sp-thread-fact-face: light-dark(var(--sp-neutral-125), var(--sp-neutral-775));
-  --sp-thread-fact-face-hover: light-dark(var(--sp-neutral-50), var(--sp-neutral-700));
+  --sp-thread-fact-face-hover: light-dark(var(--sp-neutral-75), var(--sp-neutral-675));
   --sp-thread-link-face: light-dark(var(--sp-neutral-175), var(--sp-neutral-725));
-  --sp-thread-link-face-hover: light-dark(var(--sp-neutral-200), var(--sp-neutral-675));
-  --sp-thread-link-face-active: light-dark(var(--sp-neutral-250), var(--sp-neutral-625));
+  --sp-thread-link-face-hover: light-dark(var(--sp-neutral-225), var(--sp-neutral-625));
+  --sp-thread-link-face-active: light-dark(var(--sp-neutral-250), var(--sp-neutral-575));
 }
 /* End of generated roles. */
 
@@ -874,8 +874,9 @@
   .thread-step-heading-action:focus-visible::before {
     opacity: 1;
   }
+  /* Primary on its hover face: muted-strong reads 4.2:1 there in dark. */
   .thread-step-heading-action:focus-visible .thread-step-heading-pill {
-    color: var(--sp-text-muted-strong);
+    color: var(--sp-text-primary);
     background-color: var(--sp-thread-link-face-hover);
   }
   .thread-step-heading-action:focus-visible .thread-step-heading-arrow {
@@ -894,7 +895,7 @@
       opacity: 1;
     }
     .thread-step-heading-action:hover .thread-step-heading-pill {
-      color: var(--sp-text-muted-strong);
+      color: var(--sp-text-primary);
       background-color: var(--sp-thread-link-face-hover);
     }
     .thread-step-heading-action:hover .thread-step-heading-arrow {
@@ -1053,7 +1054,9 @@
   .thread-step-flag {
     color: var(--sp-text-muted);
     background-color: var(--sp-thread-fact-face);
-    transition: background-color var(--duration-state) ease-out;
+    transition:
+      color var(--duration-state) ease-out,
+      background-color var(--duration-state) ease-out;
   }
   .thread-step[data-status='attention'] .thread-step-flag {
     color: var(--sp-state-decision);
@@ -1070,6 +1073,8 @@
   .thread-step:not([data-fixed])
     > .thread-step-row:is(:hover, :has(> .thread-step-toggle:focus-visible))
     .thread-step-fact {
+    /* A step more ink on the lifted face: muted reads 3.7:1 there in dark. */
+    color: var(--sp-text-muted-strong);
     background-color: var(--sp-thread-fact-face-hover);
   }
   .thread-step[data-status='attention']:not([data-fixed])
@@ -1103,6 +1108,8 @@
   }
   .thread-step-row:is(:hover, :has(> .thread-step-toggle:focus-visible))
     .thread-step-link:not(:hover, :focus-visible) {
+    /* Primary on the lifted face: muted-strong reads 4.2:1 there in dark. */
+    color: var(--sp-text-primary);
     background-color: var(--sp-thread-link-face-hover);
   }
   /* A flag that goes somewhere sits above the row's stretch as its own

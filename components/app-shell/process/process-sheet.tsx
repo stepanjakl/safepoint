@@ -2,6 +2,7 @@
 
 import { motion } from 'motion/react';
 import { createContext, useEffect, useState, type ReactNode } from 'react';
+import { cx } from '@/lib/cx';
 import { LAST_PROCESS_KEY } from '@/lib/process/navigation';
 import type { InputDetail } from '@/lib/process/input-details';
 import type { ProcessSummary } from '@/lib/process/model';
@@ -30,6 +31,10 @@ import { SectionRow } from '@/components/app-shell/runs/section-row';
 import { useSwap } from '@/components/ui/swap';
 
 const TAB_MOTION = (): 'fade' => 'fade';
+
+// The proposed Instructions tab, offered beside the current one while the two
+// are compared (instructions-b.tsx). Never in a production build.
+const COMPARE_INSTRUCTIONS = process.env.NODE_ENV === 'development';
 
 /*
   What a process brings in place of the shared instructions panel, where its
@@ -82,6 +87,7 @@ export function ProcessSheet({
   policy,
   liveThread,
   rulesPanel,
+  rulesPanelB,
   inputsPanel,
 }: {
   process: ProcessSummary;
@@ -90,6 +96,8 @@ export function ProcessSheet({
   // A process's own rulebook, as a Rules tab; and its own Inputs tab, in
   // place of the evidence files' list.
   rulesPanel?: ReactNode;
+  // Development only: the proposed Rules tab, beside the current one.
+  rulesPanelB?: ReactNode;
   inputsPanel?: ReactNode;
   // The current run's thread, built on the server.
   run: ReactNode;
@@ -102,8 +110,16 @@ export function ProcessSheet({
   playable?: PlayableRun;
 }) {
   const [stored, setTab] = useProcessTab(process.id);
-  // A Rules tab kept from a process that has one means nothing on another.
-  const tab = stored === 'rules' && rulesPanel === undefined ? 'runs' : stored;
+  // A Rules tab kept from a process that has one means nothing on another;
+  // nor does the comparison tab where it is not offered.
+  const compareInstructions = COMPARE_INSTRUCTIONS && policy === undefined;
+  const compareRules = COMPARE_INSTRUCTIONS && rulesPanelB !== undefined;
+  const tab =
+    (stored === 'rules' && rulesPanel === undefined) ||
+    (stored === 'rules-b' && !compareRules) ||
+    (stored === 'instructions-b' && !compareInstructions)
+      ? 'runs'
+      : stored;
   // The root opens the process last open (app/(shell)/page.tsx).
   useEffect(() => {
     writePreferenceCookie(LAST_PROCESS_KEY, process.id);
@@ -174,7 +190,9 @@ export function ProcessSheet({
           process={process}
           version={policy?.version ?? version}
           instructionsLabel={policy?.label}
+          compareInstructions={compareInstructions}
           hasRules={rulesPanel !== undefined}
+          compareRules={compareRules}
           inputs={kept}
           outputs={process.outputs}
           tab={tab}
@@ -237,6 +255,10 @@ export function ProcessSheet({
               </div>
             ) : shown === 'rules' ? (
               <SinglePanel {...SECTION.rules}>{rulesPanel}</SinglePanel>
+            ) : shown === 'rules-b' ? (
+              <SinglePanel {...SECTION['rules-b']} width="wide">
+                {rulesPanelB}
+              </SinglePanel>
             ) : shown === 'instructions' && policy ? (
               <PolicyPanel policy={policy} />
             ) : shown === 'inputs' && inputsPanel ? (
@@ -292,23 +314,31 @@ function SinglePanel({
   title,
   count,
   chip,
+  width = 'reading',
   children,
 }: {
   id: string;
   title: string;
   count?: number;
   chip?: ReactNode;
+  // A measure for reading, or room for a grid of cards.
+  width?: 'reading' | 'wide';
   children: ReactNode;
 }) {
   return (
     <div className="process-panels grid h-full min-h-0 grid-cols-[minmax(0,1fr)]">
-      <div className="process-panel-list sheet-bleed sheet-bleed-head sheet-bleed-end shell:min-h-0 shell:overflow-y-auto shell:overscroll-contain min-w-0">
+      {/* A column, so the section takes the height below its row and an
+          empty state can centre in it. */}
+      <div className="process-panel-list sheet-bleed sheet-bleed-head sheet-bleed-end shell:min-h-0 shell:overflow-y-auto shell:overscroll-contain flex min-w-0 flex-col">
         <SectionRow id={id} title={title} count={count}>
           {chip}
         </SectionRow>
         <section
           aria-labelledby={id}
-          className="mx-auto w-[min(100%,760px)] px-6 pt-6 pb-8 max-sm:px-4"
+          className={cx(
+            'mx-auto flex flex-1 flex-col px-6 pt-6 pb-8 max-sm:px-4',
+            width === 'wide' ? 'w-[min(100%,1120px)]' : 'w-[min(100%,760px)]',
+          )}
         >
           {children}
         </section>

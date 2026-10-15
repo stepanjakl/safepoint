@@ -15,11 +15,27 @@
   );
   --color-severity-fill: var(--severity-3);
   --color-severity-fill-strong: var(--severity-4);
-  /* A bucket tab, after the run tallies: a lit face at rest, a rung past it
-     under the pointer, and a solid when selected. Not the tally's rung 10 with
-     white: at 13px that reads 4.25:1 on red in light and 3.3:1 in dark. */
+  /* A bucket tab, after the run tallies: a lit face at rest, moved under the
+     pointer, and a solid when selected. Not the tally's rung 10 with white: at
+     13px that reads 4.25:1 on red in light and 3.3:1 in dark. */
   --color-severity-pill: light-dark(var(--severity-4), var(--severity-5));
-  --color-severity-pill-hover: light-dark(var(--severity-5), var(--severity-6));
+  /* Under the pointer a pill moves as far as its row's wash -- deeper in
+     light, lifted in dark -- so it keeps its distance from what it sits on.
+     The shared wash moves two layer lifts; a row with a quieter wash sets
+     --pill-hover-lift-* to its own. A fixed OK lightness, not the next rung,
+     which moves grey half as far again as the hues. */
+  --color-severity-pill-hover: light-dark(
+    oklch(
+      from var(--severity-4) calc(l - var(--pill-hover-lift-light, 2 * var(--sp-layer-lift-light)))
+        c h
+    ),
+    oklch(
+      from var(--severity-5) calc(l + var(--pill-hover-lift-dark, 2 * var(--sp-layer-lift-dark))) c
+        h
+    )
+  );
+  /* A ringed pill's edge: the next rung, apart from the hover face. */
+  --color-severity-pill-ring: light-dark(var(--severity-5), var(--severity-6));
   --color-severity-solid: light-dark(var(--severity-11), var(--severity-7));
   --color-severity-on-solid: light-dark(var(--severity-1), var(--severity-12));
   --color-severity-bar: var(--severity-9);

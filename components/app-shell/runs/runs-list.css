@@ -30,7 +30,7 @@
   --sp-sheet-hover: light-dark(var(--sp-neutral-100), var(--sp-neutral-800));
   --sp-sheet-band: light-dark(var(--sp-neutral-75), var(--sp-neutral-825));
   --sp-sheet-total-face: light-dark(var(--sp-neutral-200), var(--sp-neutral-750));
-  --sp-sheet-total-face-hover: light-dark(var(--sp-neutral-275), var(--sp-neutral-675));
+  --sp-sheet-total-face-hover: light-dark(var(--sp-neutral-250), var(--sp-neutral-700));
   --sp-sheet-total-face-current: light-dark(var(--sp-neutral-300), var(--sp-neutral-650));
   --sp-sheet-total-lead: light-dark(var(--sp-neutral-150), var(--sp-neutral-700));
   --sp-sheet-total-lead-hover: light-dark(var(--sp-neutral-125), var(--sp-neutral-600));
@@ -120,6 +120,9 @@
     gap: 0.5rem;
     box-sizing: border-box;
     height: var(--spacing-sheet-head);
+    /* A single panel's column is a flex column (SinglePanel); without this a
+       long section squeezes the head down to its text. */
+    flex-shrink: 0;
     /* The title starts where every row's text under it starts. The trailing
        side is shorter because a control's face reaches past its ink. */
     padding-inline: calc(var(--spacing-sheet-inset) + var(--sheet-bleed, 0px))

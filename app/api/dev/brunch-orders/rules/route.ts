@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { accept, confirmIntent, deny } from '@/lib/definitions/decide';
 import { draftProgress, startDraft } from '@/lib/definitions/draft';
 import { namesOf } from '@/lib/definitions/records';
-import { listRevisions, loadSet } from '@/lib/definitions/store';
+import { revisionChanges } from '@/lib/definitions/revision-changes';
+import { listRevisions, loadRevision, loadSet } from '@/lib/definitions/store';
 import type { DefinitionSet } from '@/lib/definitions/types';
 import { workingOf } from '@/lib/definitions/working';
 import { writeDefinition } from '@/lib/definitions/write';
@@ -18,6 +19,24 @@ const text = z.string().min(1).max(20_000);
 const id = z.string().max(80);
 // The model to ask, falling back within its family; the default otherwise.
 const model = draftingModelSchema.optional();
+
+// The revisions, each with what it changed from its parent.
+async function historyOf(text: string) {
+  const history = await listRevisions(owner, text);
+  const revisions = await Promise.all(
+    history.revisions.map(async (revision) => {
+      const set = await loadRevision(owner, text, revision.id);
+      const parent = revision.parent
+        ? await loadRevision(owner, text, revision.parent)
+        : null;
+      return {
+        ...revision,
+        changes: set ? revisionChanges(parent, set) : null,
+      };
+    }),
+  );
+  return { ...history, revisions };
+}
 
 /*
   Development only: the definitions of one version of the instructions (its
@@ -80,7 +99,7 @@ export async function POST(request: Request) {
         : {},
       drafting,
       // Every accepted revision, newest first, and the one in use.
-      history: await listRevisions(owner, body.text),
+      history: await historyOf(body.text),
     });
   };
   const readOf = async (readId: string) => {

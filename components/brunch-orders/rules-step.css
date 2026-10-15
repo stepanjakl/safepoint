@@ -3,6 +3,28 @@
 :root {
   /* A step lighter in dark, where step 3 sinks into the panel. */
   --sp-rules-tried-face: light-dark(var(--sp-state-advisory-3), var(--sp-state-advisory-5));
+  /* A calculation's own name, its kind's pill, and where another formula
+     reads it: orange, far from the constants' blue, its chroma capped so it
+     does not lead the eye. The cap is measured: 0.13 keeps it furthest from
+     the blocked red under both deuteranopia (lower merges them) and
+     tritanopia (higher does), ΔE2000 4.6 light / 5.7 dark at worst. Light
+     starts from 11 deepened toward 12, as the state inks are, to clear AA. */
+  --sp-rules-calculation-chroma: 0.13;
+  --sp-rules-calculation: light-dark(
+    oklch(
+      from color-mix(in oklab, var(--radix-orange-12) 40%, var(--radix-orange-11)) l
+        min(c, var(--sp-rules-calculation-chroma)) h
+    ),
+    oklch(from var(--radix-orange-dark-11) l min(c, var(--sp-rules-calculation-chroma)) h)
+  );
+  /* Its name under its card's title, quieter than its places elsewhere: the
+     muted-strong ink's step in light, orange 10 under the same cap in dark. */
+  --sp-rules-calculation-quiet: light-dark(
+    var(--sp-neutral-675),
+    oklch(from var(--radix-orange-dark-10) l min(c, var(--sp-rules-calculation-chroma)) h)
+  );
+  /* Its pill's ring: the rungs a severity pill's ring takes (severity.css). */
+  --sp-rules-calculation-ring: light-dark(var(--radix-orange-5), var(--radix-orange-dark-6));
 }
 
 @theme inline {
@@ -10,6 +32,71 @@
 }
 
 @layer components {
+  /* A name in a read-only formula or its list of fixed values, lit wherever
+     it is shown while one of its places is under the pointer (linkKey,
+     rules-step.tsx): its hue's pill face and rung 12 ink, the same in every
+     place. The face is a layer under the text, one line tall and reaching
+     into the gutter, so it neither covers a neighbouring bracket nor runs
+     past the formula's edge; its container must isolate (Formula, the tile). */
+  /* The arrow, not the text beam: it answers the pointer, though it opens
+     nothing, so not the hand either. */
+  .rules-linked {
+    position: relative;
+    display: inline-block;
+    cursor: default;
+    /* An inline-block indents its own first line: the formula's hanging
+       indent (FormulaLine) would pull every name back over its neighbour. */
+    text-indent: 0;
+    transition:
+      color var(--duration-state) ease-out,
+      font-weight var(--duration-state) ease-out;
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0 calc(-1 * --spacing(0.5));
+      z-index: -1;
+      border-radius: 0.25rem;
+      @apply control-wash;
+    }
+  }
+  /* Its other places take the mono's strong weight, a step up and no wider
+     (mono glyphs keep their advance; type.css holds both per typeface): the
+     eye goes to where it is used, not to where the pointer already is. */
+  .rules-linked[data-hot] {
+    color: var(--rules-linked-ink);
+    font-weight: var(--sp-mono-weight-strong);
+    &::before {
+      background-color: var(--rules-linked-face);
+    }
+    /* The one under the pointer keeps its face and its own ink: the pointer
+       already marks it, so only its other places step forward. */
+    &:hover {
+      color: var(--rules-linked-rest);
+      font-weight: var(--sp-mono-weight);
+    }
+  }
+  /* Pointed at inside a formula, a name lights its places elsewhere only: its
+     repeats in the same formula stay at rest, as the reader is already there. */
+  .rules-formula:has(.rules-linked:hover) .rules-linked[data-hot]:not(:hover) {
+    color: var(--rules-linked-rest);
+    font-weight: var(--sp-mono-weight);
+    &::before {
+      background-color: transparent;
+    }
+  }
+  .rules-linked-name {
+    --rules-linked-rest: var(--sp-state-advisory);
+    color: var(--rules-linked-rest);
+    --rules-linked-ink: var(--sp-state-advisory-12);
+    --rules-linked-face: light-dark(var(--sp-state-advisory-4), var(--sp-state-advisory-5));
+  }
+  .rules-linked-calculation {
+    --rules-linked-rest: var(--sp-rules-calculation);
+    color: var(--rules-linked-rest);
+    --rules-linked-ink: light-dark(var(--radix-orange-12), var(--radix-orange-dark-12));
+    --rules-linked-face: light-dark(var(--radix-orange-4), var(--radix-orange-dark-5));
+  }
+
   .rules-status-out {
     display: inline-flex;
     flex: none;

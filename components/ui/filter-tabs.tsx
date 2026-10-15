@@ -245,7 +245,9 @@ export function FilterTabs<Key extends string>({
       ref={track}
       data-size={size}
       className={cx(
-        'field-track relative flex justify-between gap-0.5 rounded-full',
+        // Isolated: its layers (z-1 solid, z-2 words) stay inside the strip
+        // rather than rising over a sticky header it scrolls under.
+        'field-track relative isolate flex justify-between gap-0.5 rounded-full',
         className,
       )}
     >
@@ -314,7 +316,7 @@ export function FilterTabs<Key extends string>({
               scrolling && tab.severity !== undefined ? '' : undefined
             }
           >
-            <Content tab={tab} />
+            <Content tab={tab} lead={tab.key === leadKey} />
           </ToggleButton>
         ))}
       </ToggleButtonGroup>
@@ -397,7 +399,7 @@ export function FilterTabs<Key extends string>({
               tab.key === leadKey && ALL_BOX,
             )}
           >
-            <Content tab={tab} />
+            <Content tab={tab} lead={tab.key === leadKey} />
           </span>
         ))}
       </div>
@@ -405,14 +407,22 @@ export function FilterTabs<Key extends string>({
   );
 }
 
-function Content<Key extends string>({ tab }: { tab: FilterTab<Key> }) {
+function Content<Key extends string>({
+  tab,
+  lead,
+}: {
+  tab: FilterTab<Key>;
+  lead: boolean;
+}) {
   return (
     <>
       {tab.count === undefined ? null : (
         <span
           className={cx(
             COUNT,
-            tab.severity !== undefined ? BUCKET_COUNT : ALL_COUNT,
+            // Only the lead tab's chip is a window onto the track; any other
+            // tab without a tone takes the bucket chip in neutral steps.
+            lead && tab.severity === undefined ? ALL_COUNT : BUCKET_COUNT,
           )}
         >
           {tab.count}

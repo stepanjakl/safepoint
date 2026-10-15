@@ -203,7 +203,7 @@ function RunEmptyState({
       >
         <h1 className="sr-only">{note ?? 'No run selected'}</h1>
         <motion.div variants={ARRIVE} className="mb-1">
-          <StateIllustration name="outline" className="text-muted size-24" />
+          <StateIllustration name="isometric" className="text-muted" />
         </motion.div>
         <div className="grid gap-3">
           <motion.p

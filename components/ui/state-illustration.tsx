@@ -1,5 +1,14 @@
 import type { ReactElement, SVGProps } from 'react';
 
+import {
+  drawExtrusion,
+  Extrusion,
+  ISOMETRIC,
+  loopsFromPath,
+  mapLoop,
+  type Solid,
+} from '@/components/ui/extrusion';
+
 /*
   Line illustrations for a page with nothing on it. Every number is derived
   here, from the lockup's own geometry, so a figure can be checked by reading
@@ -8,11 +17,9 @@ import type { ReactElement, SVGProps } from 'react';
   - the box is 96 x 96 with its centre at (48, 48);
   - the lockup's three lobes turn about (503, 590) in its own 1152-unit frame,
     and its tip lies 515 from that point, so SCALE puts the tip 40 from the
-    centre, 8 inside the box;
-  - everything else sits on a circle of that radius, at multiples of 120°.
+    centre, 8 inside the box, and the lobes stand at multiples of 120°.
 
-  Drawn at 96px, one unit to the pixel, so the stroke is a true 1px and the
-  dashes divide the ring exactly. The lobes are transformed in their path data
+  Drawn at 96px, one unit to the pixel, so the stroke is a true 1px. The lobes are transformed in their path data
   rather than by a transform attribute, which would scale the stroke with them.
   Ink is currentColor; the one accented part takes the mark's colour.
 */
@@ -26,12 +33,6 @@ const LOBE_TURN = { x: 503, y: 590, tip: 515 } as const;
 
 const round = (n: number) => Math.round(n * 1000) / 1000;
 const rad = (deg: number) => (deg * Math.PI) / 180;
-/** A point on the circle of radius r about the centre; 0° is 12 o'clock, clockwise. */
-const polar = (r: number, deg: number) => ({
-  x: round(C + r * Math.sin(rad(deg))),
-  y: round(C - r * Math.cos(rad(deg))),
-});
-
 const line = {
   fill: 'none',
   stroke: 'currentColor',
@@ -46,6 +47,8 @@ function Frame(props: SVGProps<SVGSVGElement>) {
       aria-hidden="true"
       focusable="false"
       viewBox={`0 0 ${BOX} ${BOX}`}
+      width={BOX}
+      height={BOX}
       {...props}
     />
   );
@@ -121,75 +124,57 @@ function Outline(props: SVGProps<SVGSVGElement>) {
 }
 
 /*
-  B. Three steps on a ring, joined by arcs. Nodes sit at 0°, 120°, 240° on the
-  circle of radius R. Each arc stops GAP short of a node's edge: the chord
-  that distance spans on a circle of radius R subtends 2·asin(d / 2R). The
-  node at 12 o'clock is the one the agent has checked.
+  B. The outline laid on the ground of the isometric figures and given depth,
+  as thick as its slot is wide. Drawn by the extrusion generator, which keeps
+  the curves exact and removes hidden lines; /workbench/states turns it.
 */
-const NODE = 7;
-const GAP = 3;
-const TRIM = round((2 * Math.asin((NODE + GAP) / (2 * R)) * 180) / Math.PI);
-function Checkpoint(props: SVGProps<SVGSVGElement>) {
-  const arcs = [0, 120, 240].map((from) => {
-    const a = polar(R, from + TRIM);
-    const b = polar(R, from + 120 - TRIM);
-    return `M${a.x} ${a.y}A${R} ${R} 0 0 1 ${b.x} ${b.y}`;
-  });
-  const top = polar(R, 0);
-  return (
-    <Frame {...props}>
-      {arcs.map((d) => (
-        <path key={d} d={d} {...line} />
-      ))}
-      {[120, 240].map((deg) => {
-        const { x, y } = polar(R, deg);
-        return <circle key={deg} cx={x} cy={y} r={NODE} {...line} />;
-      })}
-      <circle
-        cx={top.x}
-        cy={top.y}
-        r={NODE}
-        {...line}
-        className="text-brand-mark"
-      />
-      {/* A tick whose bounding box is centred on its node: x ±3.3, y ±2.4. */}
-      <path
-        d={`M${round(top.x - 3.3)} ${top.y}l2.4 2.4 4.2 -4.8`}
-        {...line}
-        className="text-brand-mark"
-      />
-    </Frame>
-  );
+const SLOT = 535 - 471;
+export const LOCKUP: Solid = {
+  loops: [0, 120, 240].flatMap((deg) => {
+    const cos = Math.cos(rad(deg));
+    const sin = Math.sin(rad(deg));
+    return loopsFromPath(LOBE_PATH).map((loop) =>
+      mapLoop(loop, ([x, y]) => {
+        const dx = x - LOBE_TURN.x;
+        const dy = y - LOBE_TURN.y;
+        return [dx * cos - dy * sin, dx * sin + dy * cos];
+      }),
+    );
+  }),
+  height: SLOT,
+  // The lobes' turning point, so the solid spins about its symmetry.
+  axis: [0, 0],
+};
+// It lies flat, so it fills the slot's width, its line just inside, and its
+// box is cut to its height: a square box would leave the same gap above and
+// below it again.
+const ISOMETRIC_LAYERS = drawExtrusion(LOCKUP, ISOMETRIC, 'view', BOX - STROKE);
+
+function Isometric(props: SVGProps<SVGSVGElement>) {
+  return <Extrusion layers={ISOMETRIC_LAYERS} crop {...props} />;
 }
 
 /*
-  C. The dashed ring this app already uses for "not yet", with the lobes inside.
-  48 dashes divide the circumference exactly: 2πR / 96 is both the dash and the
-  gap. The ring is turned so a dash, not a gap, is centred at 12 o'clock.
+  C. The isometric solid with the drawing turned 30° anticlockwise. Its box
+  centre sits 3.9px left of where its area balances, so it is centred on the
+  balance, to stand centred over the text below it.
 */
-const DASHES = 48;
-const DASH = round((2 * Math.PI * R) / (DASHES * 2));
-function Seal(props: SVGProps<SVGSVGElement>) {
+const ROLLED_LAYERS = drawExtrusion(
+  LOCKUP,
+  { ...ISOMETRIC, roll: -30 },
+  'balance',
+);
+
+function Rolled(props: SVGProps<SVGSVGElement>) {
   return (
-    <Frame {...props}>
-      <circle
-        cx={C}
-        cy={C}
-        r={R}
-        {...line}
-        strokeLinecap="butt"
-        strokeDasharray={`${DASH} ${DASH}`}
-        transform={`rotate(${-90 - 180 / DASHES} ${C} ${C})`}
-      />
-      <Lobes scale={round((R * 0.5) / LOBE_TURN.tip)} />
-    </Frame>
+    <Extrusion layers={ROLLED_LAYERS} width={BOX} height={BOX} {...props} />
   );
 }
 
 export const STATE_ILLUSTRATIONS = {
   outline: Outline,
-  checkpoint: Checkpoint,
-  seal: Seal,
+  isometric: Isometric,
+  rolled: Rolled,
 } satisfies Record<string, (props: SVGProps<SVGSVGElement>) => ReactElement>;
 
 export type StateIllustrationName = keyof typeof STATE_ILLUSTRATIONS;

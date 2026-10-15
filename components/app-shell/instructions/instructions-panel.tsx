@@ -234,9 +234,12 @@ export function InstructionVersionView({
 export function InstructionEditor({
   process,
   onDone,
+  Diff = TextDiff,
 }: {
   process: ProcessSummary;
   onDone: () => void;
+  // How the review shows the change; the comparison tab brings its own.
+  Diff?: typeof TextDiff;
 }) {
   const store = useInstructions(process.id, process.instructions);
   const { current, next, draft } = store;
@@ -273,7 +276,7 @@ export function InstructionEditor({
     return (
       <div className="grid gap-5 p-5">
         {steps}
-        <TextDiff
+        <Diff
           before={current.text}
           after={normalised}
           label={`Changes from ${current.version}`}

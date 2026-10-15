@@ -81,7 +81,10 @@ function statusOf(item: Definition): { tone: Tone; label: string } {
 // A status's tone as its severity rank, for the dots that follow it.
 
 // What failing a check does to a proposal, as the model read it.
-const CONSEQUENCE: Record<'block' | 'decide', { tone: Tone; label: string }> = {
+export const CONSEQUENCE: Record<
+  'block' | 'decide',
+  { tone: Tone; label: string }
+> = {
   block: { tone: 'blocked', label: 'Blocks the proposal' },
   decide: { tone: 'decision', label: 'A person decides' },
 };
@@ -109,7 +112,7 @@ export const words = (value: string) => value.replace(/\s+/g, ' ').trim();
 
 // What waits on a person is drawn as the release card is (`CARD` in
 // release-card.tsx): a floating face that stands off the step around it.
-const ASKS = 'control-face surface-floating rounded-shell';
+export const ASKS = 'control-face surface-floating rounded-shell';
 
 function AcceptDecision({
   accepted,
@@ -535,6 +538,20 @@ function linesOf(formula: string, level = 0): FormulaLineText[] {
 
 // What the definition brings to its formula: blue, dotted, with what it is on
 // hover.
+// Names in a read-only formula take their colour from their lit-name class
+// (rules-step.css), so a lit place can deepen it.
+
+/*
+  What a read-only name is linked by, so hovering one lights every place it
+  is shown: a calculation across the rulebook, a number or group within its
+  own definition, which is the only one that holds it.
+*/
+export const linkKey = (item: Definition, root: string, field: string) =>
+  root === 'values' ? `values.${field}` : `${item.id}:${root}.${field}`;
+export const linked = (key: string, hot: string | null) => ({
+  'data-link': key,
+  'data-hot': hot === key ? '' : undefined,
+});
 const DOTTED =
   'text-state-advisory decoration-state-advisory underline decoration-dotted underline-offset-2';
 
@@ -559,12 +576,16 @@ function FormulaLine({
   item,
   names,
   reads,
+  still,
+  hot,
 }: {
   line: string;
   level: number;
   item: Definition;
   names: Record<string, string>;
   reads: Definition[];
+  still: boolean;
+  hot: string | null;
 }) {
   const parts: ReactNode[] = [];
   let at = 0;
@@ -593,7 +614,15 @@ function FormulaLine({
         </a>
       );
       parts.push(
-        about ? (
+        still ? (
+          <span
+            key={key}
+            {...linked(linkKey(item, 'values', field!), hot)}
+            className="rules-linked rules-linked-calculation"
+          >
+            {whole}
+          </span>
+        ) : about ? (
           <Tooltip key={key} label={whole} description={about}>
             {link}
           </Tooltip>
@@ -610,7 +639,15 @@ function FormulaLine({
           ? `Records the instructions name: ${group.keys.map((k) => (names[k] ? `${k} [${names[k]}]` : k)).join(', ')}, from “${group.quote}”.`
           : null;
       parts.push(
-        about ? (
+        about && still ? (
+          <span
+            key={key}
+            {...linked(linkKey(item, root, field!), hot)}
+            className="rules-linked rules-linked-name"
+          >
+            {whole}
+          </span>
+        ) : about ? (
           <Tooltip key={key} label={whole} description={about}>
             <span tabIndex={0} className={cx(DOTTED, 'cursor-help')}>
               {whole}
@@ -625,6 +662,12 @@ function FormulaLine({
         <span key={key}>
           <span className="text-muted">{root}.</span>
           <span className="text-primary font-medium">{field}</span>
+        </span>,
+      );
+    else if (bare && PROPOSAL.has(bare) && still)
+      parts.push(
+        <span key={key} className={TRIED_VARIABLE}>
+          {bare}
         </span>,
       );
     else if (bare && PROPOSAL.has(bare)) {
@@ -661,22 +704,37 @@ function FormulaLine({
   brings to it -- the calculations it reads, its constants and groups -- with
   what each is on hover; a calculation also links to its card.
 */
-function Formula({
+export function Formula({
   item,
   formula,
   names,
   reads,
+  face = 'bg-surface-floating',
+  still = false,
+  hot = null,
 }: {
   item: Definition;
   formula: string;
   names: Record<string, string>;
   reads: Definition[];
+  // Its fill: floating on the primary box it sits in, or a recess where the
+  // card around it is floating already.
+  face?: 'bg-surface-floating' | 'bg-surface-inset';
+  // Read only: names keep their colour but open nothing, and a calculation
+  // it reads is named in its own colour, without a past run's examples.
+  still?: boolean;
+  // The linked name under the pointer, lit wherever it is shown.
+  hot?: string | null;
 }) {
   return (
     <div
       role="group"
       aria-label={`Formula of ${item.name}`}
-      className="value text-meta bg-surface-floating rounded-control grid gap-0.5 px-3 py-2"
+      className={cx(
+        // Isolated: a lit name's face sits under its text (rules-step.css).
+        'rules-formula value text-meta rounded-control isolate grid gap-0.5 px-3 py-2',
+        face,
+      )}
     >
       {linesOf(formula).map((line, index) => (
         <FormulaLine
@@ -686,6 +744,8 @@ function Formula({
           item={item}
           names={names}
           reads={reads}
+          still={still}
+          hot={hot}
         />
       ))}
     </div>
@@ -693,7 +753,7 @@ function Formula({
 }
 
 // Where a card is, for a link from a card that reads it.
-const anchorOf = (id: string) => `definition-${id}`;
+export const anchorOf = (id: string) => `definition-${id}`;
 
 // What a definition is and what failing it does, as pills.
 function DefinitionPills({ item }: { item: Definition }) {

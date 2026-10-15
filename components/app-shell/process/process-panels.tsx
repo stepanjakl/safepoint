@@ -19,7 +19,15 @@ import {
   InstructionsPanel,
   InstructionVersionView,
 } from '@/components/app-shell/instructions/instructions-panel';
-import { useInstructions } from '@/components/app-shell/instructions/instructions-store';
+import {
+  InstructionsListB,
+  InstructionVersionViewB,
+  TextDiffB,
+} from '@/components/app-shell/instructions/instructions-b';
+import {
+  liveRange,
+  useInstructions,
+} from '@/components/app-shell/instructions/instructions-store';
 import { ProcessSettings } from './process-settings';
 import { useAsidePanel } from '@/components/app-shell/use-aside-panel';
 import { OutputsList } from './outputs-list';
@@ -62,7 +70,11 @@ const TWO_COLUMNS =
   '@sheet-narrow/sheet:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] @sheet-narrow/sheet:[&>*]:min-w-0 @sheet-wide/sheet:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]';
 
 // Which tabs have a detail to put beside their list.
-const OPENS_DETAIL = new Set<ProcessTab>(['instructions', 'inputs']);
+const OPENS_DETAIL = new Set<ProcessTab>([
+  'instructions',
+  'instructions-b',
+  'inputs',
+]);
 
 type AsidePanel = Omit<AsideLayer, 'key'>;
 
@@ -100,7 +112,10 @@ export function ProcessPanels({
     versions,
     current: version,
     next,
+    draft,
+    saveDraft,
   } = useInstructions(process.id, process.instructions);
+  const compare = tab === 'instructions-b';
   const run = process.runs.find((entry) => entry.current);
 
   // Where one view sits in the list it was chosen from: inputs in the order
@@ -146,7 +161,9 @@ export function ProcessPanels({
   // would take the list's place, so the grid's own columns decide.
   const root = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
-    if (tab !== 'instructions' || openView || !root.current) return;
+    if ((tab !== 'instructions' && !compare) || openView || !root.current) {
+      return;
+    }
     const columns = getComputedStyle(root.current).gridTemplateColumns;
     if (columns.split(' ').length < 2) return;
     openAside({
@@ -221,6 +238,26 @@ export function ProcessPanels({
         );
         const to = versions[index];
         if (!to) return null;
+        if (compare) {
+          return {
+            eyebrow: 'Instructions',
+            title: to.version,
+            announce: `Version ${to.version}`,
+            meta:
+              to === version
+                ? `Current · ${liveRange(versions, index)}`
+                : liveRange(versions, index),
+            focusOnOpen: !view.passive,
+            body: (
+              <InstructionVersionViewB
+                process={process}
+                version={to.version}
+                face={view.face}
+                onEdit={() => openAside({ kind: 'edit' })}
+              />
+            ),
+          };
+        }
         return {
           eyebrow: 'Instructions',
           title: `Version ${to.version}`,
@@ -251,36 +288,48 @@ export function ProcessPanels({
           ),
           focusOnOpen: false,
           body: (
-            <InstructionEditor process={process} onDone={() => closeAside()} />
+            <InstructionEditor
+              process={process}
+              onDone={() => closeAside()}
+              Diff={compare ? TextDiffB : undefined}
+            />
           ),
         };
     }
   }
 
-  const list =
-    tab === 'instructions' ? (
-      <InstructionsPanel
-        process={process}
-        aside={exiting ? null : aside}
-        onShowVersion={(shown) =>
-          openAside({ kind: 'version', version: shown, face: 'text' })
-        }
-        onEdit={() => openAside({ kind: 'edit' })}
-      />
-    ) : tab === 'inputs' ? (
-      <InputsList
-        inputs={inputs}
-        details={inputDetails}
-        runLabel={run ? runStamp(run.startedAt) : undefined}
-        openId={!exiting && aside?.kind === 'input' ? aside.id : null}
-        editable={onAddInput !== undefined}
-        onOpen={(id) => openAside({ kind: 'input', id })}
-      />
-    ) : tab === 'outputs' ? (
-      <OutputsList outputs={outputs} />
-    ) : (
-      <ProcessSettings process={process} />
-    );
+  const list = compare ? (
+    <InstructionsListB
+      process={process}
+      aside={exiting ? null : aside}
+      onShowVersion={(shown) =>
+        openAside({ kind: 'version', version: shown, face: 'text' })
+      }
+      onEdit={() => openAside({ kind: 'edit' })}
+    />
+  ) : tab === 'instructions' ? (
+    <InstructionsPanel
+      process={process}
+      aside={exiting ? null : aside}
+      onShowVersion={(shown) =>
+        openAside({ kind: 'version', version: shown, face: 'text' })
+      }
+      onEdit={() => openAside({ kind: 'edit' })}
+    />
+  ) : tab === 'inputs' ? (
+    <InputsList
+      inputs={inputs}
+      details={inputDetails}
+      runLabel={run ? runStamp(run.startedAt) : undefined}
+      openId={!exiting && aside?.kind === 'input' ? aside.id : null}
+      editable={onAddInput !== undefined}
+      onOpen={(id) => openAside({ kind: 'input', id })}
+    />
+  ) : tab === 'outputs' ? (
+    <OutputsList outputs={outputs} />
+  ) : (
+    <ProcessSettings process={process} />
+  );
 
   return (
     <div
@@ -321,6 +370,20 @@ export function ProcessPanels({
             <span className="bg-menu-chip value text-micro text-muted-strong rounded-control px-1.5 py-0.5">
               {version.version}
             </span>
+          ) : compare ? (
+            // The section's one control, as Add is for inputs: editing starts
+            // a draft of the current version, or carries on the one there is.
+            <button
+              type="button"
+              onClick={() => {
+                if (draft === null) saveDraft(version.text);
+                openAside({ kind: 'edit' });
+              }}
+              aria-expanded={!exiting && aside?.kind === 'edit'}
+              className={ADD_BUTTON}
+            >
+              {draft === null ? 'Edit' : 'Continue draft'}
+            </button>
           ) : tab === 'inputs' && onAddInput ? (
             <button
               type="button"

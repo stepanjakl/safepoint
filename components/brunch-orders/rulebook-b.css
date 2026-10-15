@@ -1,0 +1,86 @@
+@layer components {
+  .rulebook-grid {
+    container-type: inline-size;
+  }
+
+  /* 20rem columns give three across the wide panel: a calculation's two plus
+     a check, so a dense flow fills each row. */
+  .rulebook-tiles {
+    display: grid;
+    gap: --spacing(3);
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+    grid-auto-flow: dense;
+  }
+
+  /* A definition's fixed values in the formula's order, flowing down one
+     column then the next: two across a calculation's tile, one on a check's. */
+  /* Inset as the formula's own lines are (Formula's px-3), so its names start
+     under the formula's. */
+  .rulebook-fixed {
+    padding-inline: --spacing(3);
+    column-width: 15rem;
+    column-gap: --spacing(4);
+    /* A pair is a lit name too (rules-linked): a row as wide as its words. */
+    > div {
+      display: flex;
+      width: fit-content;
+      gap: --spacing(1.5);
+      break-inside: avoid;
+    }
+    /* The name and its = stay on one line; only a long value wraps. Name and
+       value each hold their own ink and fade it themselves: an inherited
+       colour that switches mid-fade made the value jump while the name eased. */
+    dt,
+    dd {
+      @apply control-wash;
+    }
+    dt {
+      flex: none;
+      white-space: nowrap;
+      color: var(--rules-linked-rest);
+    }
+    > [data-hot]:not(:hover) > :is(dt, dd) {
+      color: var(--rules-linked-ink);
+    }
+    /* As far from the value (the pair's gap) as from the name. */
+    dt::after {
+      content: '=';
+      margin-inline-start: --spacing(1.5);
+      color: var(--sp-text-muted);
+    }
+    dd {
+      min-width: 0;
+      color: var(--sp-text-primary);
+    }
+  }
+
+  /* A calculation's own name under its title: its colour, quietened toward
+     the muted ink, as a subtitle is. Its places elsewhere keep the full hue. */
+  .rulebook-variable {
+    --rules-linked-rest: var(--sp-rules-calculation-quiet);
+    color: var(--rules-linked-rest);
+  }
+
+  /* A calculation's kind, in its own colour rather than a state's. */
+  .rulebook-calculation-pill {
+    color: var(--sp-rules-calculation);
+    box-shadow: inset 0 0 0 1px var(--sp-rules-calculation-ring);
+  }
+
+  /* A calculation spans two, from its kind alone, so filtering never resizes it. */
+  @container (width >= 41rem) {
+    .rulebook-tiles > [data-result='number'] {
+      grid-column: span 2;
+    }
+  }
+}
+
+/* A calculation another formula is reading, while its name there is under the
+   pointer: its border takes the calculation's colour and its lit inner edge
+   fades into the face, so one line marks it. A utility, as the face's own ring
+   is (surface-floating), and the face animates the change itself. */
+@utility rulebook-source-ring {
+  --control-ring-top: var(--sp-rules-calculation);
+  --control-ring-bottom: var(--sp-rules-calculation);
+  --control-highlight: var(--sp-surface-floating);
+}
