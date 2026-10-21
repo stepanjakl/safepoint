@@ -333,11 +333,12 @@ export function ProcessHeader({
   onTabChange: (tab: ProcessTab) => void;
 }) {
   return (
-    // The separator shadow extends into the first list row. Paint this header
-    // above the sticky section headings so their opaque fills cannot cover it;
-    // the notch stays in the same layer as the edge it continues. Widened over
-    // the pane's lit edge and padded back, so only its rule reaches the ring.
-    <header className="process-header shadow-separator-bottom-strong -mx-control-highlight px-control-highlight relative z-10 grid grid-cols-[minmax(0,1fr)_auto] border-b">
+    // Above the sticky section heads, so the notch stays in the layer of the
+    // edge it continues. Widened over the pane's highlight and padded back, so
+    // only its rule crosses it to the ring. The lit line under the rule is the
+    // sheet frame's (process-sheet.css), beneath the sheet, so a head's band
+    // covers it.
+    <header className="process-header -mx-control-highlight px-control-highlight relative z-10 grid grid-cols-[minmax(0,1fr)_auto] border-b">
       {/* Both cells recover the same top inset and bottom edge, so their
           centres agree even when the pane's highlight thickness changes. */}
       <ProcessContentTransition className="-mt-pane-inset -mb-control-edge flex min-w-0 items-center justify-between gap-x-4 px-4 sm:px-6">

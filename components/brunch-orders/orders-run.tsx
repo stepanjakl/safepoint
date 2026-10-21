@@ -76,7 +76,7 @@ const READ_TABLE = 'grid grid-cols-[minmax(0,1fr)_auto] gap-x-3';
 const READ_GRID = 'col-span-full grid grid-cols-subgrid items-center px-4';
 const READ_ROW = cx(
   READ_GRID,
-  'release-row group/row control-wash hover:bg-surface-hover focus-visible:bg-surface-hover text-dense w-full cursor-pointer py-2.5 text-left',
+  'release-row group/row control-wash hover:bg-row-hover focus-visible:bg-row-hover text-dense w-full cursor-pointer py-2.5 text-left',
 );
 
 /*

@@ -18,6 +18,7 @@
   --color-surface-control: var(--sp-surface-control);
   --color-surface-hover: var(--sp-surface-hover);
   --color-surface-hover-strong: var(--sp-surface-hover-strong);
+  --color-row-hover: var(--sp-row-hover);
   --color-surface-selected: var(--sp-surface-selected);
   --color-surface-selected-strong: var(--sp-surface-selected-strong);
   --color-surface-disabled: var(--sp-surface-disabled);
@@ -126,9 +127,8 @@
   --spacing-switch-thumb-gap: 0.25rem;
   --shadow-control-highlight: inset 0 0 0
     var(--control-highlight-width, var(--spacing-control-highlight)) var(--control-highlight);
-  /* Dividers inside a pane: they lie on the pane's face, as its own edge does,
-     so they take the pane's edge colour and match its sides. */
-  --shadow-separator-bottom-strong: 0 1px 0 var(--sp-raised-edge);
+  /* A divider inside a pane: it lies on the pane's face, as its own edge does,
+     so it takes the pane's edge colour and matches its sides. */
   --shadow-separator-right-strong: 1px 0 0 var(--sp-raised-edge);
   /* A rule on the canvas. A shadow, not a border: Chrome snaps a border to
      whole device pixels, so 0.75px draws as 0.5px at 2x. */

@@ -145,6 +145,12 @@
     border-bottom: 1px solid var(--sp-floating-ring);
     box-shadow: 0 1px 0 var(--sp-floating-edge);
   }
+  /* Lit, a row covers a neighbouring rule's lit line (z-1): a header's or the
+     card's footer's. Clear at rest; under the sticky heads (z-3). */
+  .release-row {
+    position: relative;
+    z-index: 2;
+  }
   /* A step fainter than the closing rule and with no lit line: it divides
      rows within one list, where the closing rule ends a section. */
   .release-list > li + li {

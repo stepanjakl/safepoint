@@ -143,6 +143,9 @@
   .process-header {
     --notch-edge: var(--sp-raised-ring);
     --notch-pane: var(--sp-surface-primary);
+    /* The sheet frame draws this arc's highlight, under the sheet, so a head's
+       band beneath the corner covers it as it covers the side's. */
+    --notch-corner-highlight: transparent;
     border-color: var(--notch-edge);
   }
 

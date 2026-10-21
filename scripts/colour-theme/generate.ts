@@ -20,6 +20,7 @@ import {
   ANCHORED_ROLES,
   FOLLOWING_ROLES,
   GROUND_CONTEXTS,
+  GROUND_EDGE_ROLES,
   RECESS_ROLES,
   RELATIVE_FILES,
   RELATIVE_STEPS,
@@ -494,9 +495,13 @@ function renderSurfacesCss() {
     .flatMap(([key, surface]) => {
       if (!('ground' in surface)) return [];
       const recess = recessRoles(surface.recess);
-      const body = (Object.keys(RECESS_ROLES) as (keyof typeof RECESS_ROLES)[])
-        .map((part) => `  ${RECESS_ROLES[part]}: var(${recess[part]});`)
-        .join('\n');
+      const body = [
+        ...(Object.keys(RECESS_ROLES) as (keyof typeof RECESS_ROLES)[]).map(
+          (part) => `  ${RECESS_ROLES[part]}: var(${recess[part]});`,
+        ),
+        `  ${GROUND_EDGE_ROLES.ring}: var(${surface.ring});`,
+        `  ${GROUND_EDGE_ROLES.highlight}: var(${surface.highlight});`,
+      ].join('\n');
       const context = key as GroundContext;
       return [
         `@utility ${surface.ground} {\n${body}\n${liftSet(key as SurfaceKey2, lift)}\n${followingSet(context, `${key}-recess` as GroundContext)}\n}`,
@@ -524,6 +529,10 @@ ${steps}
 
   /* A recess cut into the canvas, until a ground-* utility re-points it. */
 ${aliases}
+
+  /* The edge a divider is drawn in, until a ground-* utility re-points it. */
+  ${GROUND_EDGE_ROLES.ring}: var(${SURFACE_LAYERS.primary.ring});
+  ${GROUND_EDGE_ROLES.highlight}: var(${SURFACE_LAYERS.primary.highlight});
 
   /* The surface-following roles inside that recess. */
 ${recessAtRoot}

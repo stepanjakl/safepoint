@@ -19,6 +19,8 @@
      control in the row sits above that cover and keeps its own click. */
   .calc-row {
     position: relative;
+    /* Lit, it covers the card head's lit line (z-1) above the first record. */
+    z-index: 2;
     transition: background-color var(--duration-state) ease-out;
   }
   .calc-row-toggle::after {
@@ -32,7 +34,7 @@
      fill is one band; its own only while shut, else the working is beneath.
      Not :has() inside :has(), which is invalid and drops the whole rule. */
   .calc-row:has(.calc-row-toggle:focus-visible) {
-    background-color: var(--sp-surface-hover);
+    background-color: var(--sp-row-hover);
   }
   tr:has(+ .calc-row > th > .calc-row-toggle:focus-visible) > td::before {
     opacity: 0;
@@ -42,7 +44,7 @@
   }
   @media (hover: hover) {
     .calc-row:has(.calc-row-toggle:hover) {
-      background-color: var(--sp-surface-hover);
+      background-color: var(--sp-row-hover);
     }
     tr:has(+ .calc-row > th > .calc-row-toggle:hover) > td::before {
       opacity: 0;

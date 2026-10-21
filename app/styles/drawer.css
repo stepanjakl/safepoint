@@ -54,6 +54,17 @@
   .drawer-aside {
     animation: drawer-aside-in var(--duration-pane) --theme(--ease-out-emphasized) both;
   }
+  /* In the sheet it runs over the pane's highlight to the ring, as the
+     sheet's columns do, so its dividers and bands can reach it. */
+  .drawer-aside[data-flat] {
+    margin-inline-end: calc(var(--spacing-control-highlight) * -1);
+  }
+  /* Alone in the sheet, it meets the pane's other side too. */
+  @container sheet (width < 44rem) {
+    .drawer-aside[data-flat] {
+      margin-inline-start: calc(var(--spacing-control-highlight) * -1);
+    }
+  }
   .drawer-aside[data-exiting] {
     pointer-events: none;
     animation: drawer-aside-out var(--drawer-out) ease-in both;

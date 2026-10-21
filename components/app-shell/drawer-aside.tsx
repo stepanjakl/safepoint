@@ -207,6 +207,7 @@ export function DrawerAside({
     <section
       aria-labelledby="drawer-aside-title"
       data-exiting={exiting || undefined}
+      data-flat={flat || undefined}
       onAnimationEnd={(event) => {
         if (event.target === event.currentTarget && exiting) onExited();
       }}
@@ -257,7 +258,7 @@ function AsideContent({
         className={cx(
           layer.headless
             ? 'sr-only'
-            : 'border-rule-faint flex min-w-0 items-start gap-3 border-b p-5',
+            : 'rule-below flex min-w-0 items-start gap-3 p-5',
           layer.band && 'bg-surface-inset',
         )}
       >

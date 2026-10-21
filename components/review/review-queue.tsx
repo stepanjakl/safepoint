@@ -59,7 +59,7 @@ const SHORT_LABELS: Record<Disposition, string> = {
 // No count: at the row's end it lined up with the change counts and read as a
 // total of them.
 const GROUP_HEAD =
-  'review-group-head readout text-muted border-floating-ring bg-surface-inset sticky top-0 z-2 flex h-sheet-head items-center gap-2 border-b px-5 [font-weight:var(--sp-mono-weight-strong)]';
+  'review-group-head readout text-muted border-floating-ring bg-surface-inset sticky top-0 z-3 flex h-sheet-head items-center gap-2 border-b px-5 [font-weight:var(--sp-mono-weight-strong)]';
 const LIST = 'release-list';
 // The whole row is the control. Open is the selected ground, and every part
 // of it keeps the ink it has at rest, so nothing muted lands on that ground.
@@ -67,14 +67,14 @@ const LIST = 'release-list';
 // truncates before the subject does. No set height: the line and the padding
 // make it, so the rows follow the type scale.
 const ROW =
-  'release-row group/row control-wash hover:bg-surface-hover focus-visible:bg-surface-hover aria-expanded:bg-surface-selected grid w-full cursor-pointer grid-cols-[minmax(0,max-content)_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-5 py-2.5 text-left';
+  'release-row group/row control-wash hover:bg-row-hover focus-visible:bg-row-hover aria-expanded:bg-surface-selected grid w-full cursor-pointer grid-cols-[minmax(0,max-content)_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-5 py-2.5 text-left';
 // Opened items step back (`.release-row[data-seen]` in release-card.css).
 const ROW_SUBJECT =
   'release-row-subject text-dense col-start-1 row-start-1 truncate';
 // A step quieter than the subject: its bucket's ink a touch under the
 // subject's weight, the strong ink when the row is lit.
 const ROW_REASON =
-  'text-severity-ink group-hover/row:text-severity-strong group-focus-visible/row:text-severity-strong group-aria-expanded/row:text-severity-strong col-start-2 row-start-1 control-wash truncate text-right text-meta [font-weight:450]';
+  'text-severity-ink group-aria-expanded/row:text-severity-strong col-start-2 row-start-1 control-wash truncate text-right text-meta [font-weight:450]';
 // How many changes the item would make: an edit mark and the figure, no face,
 // so it reads as a quantity rather than a second status. The pencil stays a
 // step quieter than the figure in every state. Right-aligned in one cell, empty
@@ -227,7 +227,7 @@ export function ReviewQueue({
     // Contents only: the panel lays out the parts; this is where the keys are
     // heard from.
     <div className="contents" onKeyDown={onKeyDown}>
-      <div className="border-floating-ring shadow-separator-bottom-solid shrink-0 border-b px-5 pt-4 pb-5">
+      <div className="rule-below shrink-0 px-5 pt-4 pb-5">
         {/* Contained, so the lines wrap to the tab strip rather than widening
             the panel past it. */}
         <div className="contain-inline-size">
@@ -313,7 +313,7 @@ export function ReviewQueue({
           control. */}
       {pagination.totalPages > 1 ? (
         <nav
-          className="border-floating-ring text-muted text-meta flex shrink-0 items-center justify-between gap-2 border-t px-5 py-3 contain-inline-size"
+          className="rule-above text-muted text-meta flex shrink-0 items-center justify-between gap-2 px-5 py-3 contain-inline-size"
           aria-label="Review pages"
         >
           <Button

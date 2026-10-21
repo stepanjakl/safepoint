@@ -868,7 +868,7 @@ export function RulebookCard({
       className={cx(ASKS, 'grid scroll-mt-4')}
       aria-labelledby={headingId}
     >
-      <div className="floating-rule-below grid gap-2.5 p-4">
+      <div className="rule-below grid gap-2.5 p-4">
         <div className="flex flex-wrap items-center gap-2">
           <DefinitionPills item={item} />
           {item.approvedAt ? (
@@ -947,7 +947,7 @@ function DefinitionCard({
       className={cx(ASKS, 'grid scroll-mt-4')}
       aria-labelledby={headingId}
     >
-      <div className="floating-rule-below grid gap-2.5 p-4">
+      <div className="rule-below grid gap-2.5 p-4">
         <div className="flex flex-wrap items-center gap-2">
           <DefinitionPills item={item} />
           <span
@@ -994,7 +994,7 @@ function DefinitionCard({
         {item.problem ? <p className="text-dense">{item.problem}</p> : null}
       </div>
 
-      <div className="floating-rule-above p-4">
+      <div className="rule-above p-4">
         {denying ? (
           <form
             className="flex flex-wrap items-center gap-2"

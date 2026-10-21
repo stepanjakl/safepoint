@@ -321,15 +321,21 @@
   --row-rule-inset: 0px;
 }
 
-/* A floating card's own dividers, in its edge colours: the ring, lit below a
-   header's rule and above a footer's. */
-@utility floating-rule-below {
-  border-bottom: 1px solid var(--sp-floating-ring);
-  box-shadow: 0 1px 0 var(--sp-floating-edge);
+/* A header's and a footer's divider, in the edge of whatever surface holds
+   them: its ring, lit on the body's side -- below a header, above a footer. */
+/* Over what scrolls beneath the lit line (z-1); a lit row (z-2) and a sticky
+   band (z-3) still cover it. */
+@utility rule-below {
+  position: relative;
+  z-index: 1;
+  border-bottom: 1px solid var(--sp-ground-ring);
+  box-shadow: 0 1px 0 var(--sp-ground-edge);
 }
-@utility floating-rule-above {
-  border-top: 1px solid var(--sp-floating-ring);
-  box-shadow: 0 -1px 0 var(--sp-floating-edge);
+@utility rule-above {
+  position: relative;
+  z-index: 1;
+  border-top: 1px solid var(--sp-ground-ring);
+  box-shadow: 0 -1px 0 var(--sp-ground-edge);
 }
 
 @utility surface-recessed {

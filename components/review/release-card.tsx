@@ -97,7 +97,7 @@ export function StaleRow({ plan }: { plan: ReleasePlan }) {
 
 // The footer: the card's actions, under its divider.
 const ACTION_ROW =
-  'floating-rule-above flex flex-wrap items-center gap-2 px-6 py-4 @max-card:px-4';
+  'rule-above flex flex-wrap items-center gap-2 px-6 py-4 @max-card:px-4';
 const ACTION_NOTE = 'text-muted text-meta ml-2 min-w-0';
 
 // Secondary icons sit a shade under their labels; the primary arrow leads.

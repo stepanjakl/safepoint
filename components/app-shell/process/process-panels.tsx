@@ -337,6 +337,7 @@ export function ProcessPanels({
         'process-panels',
         COLUMNS,
         OPENS_DETAIL.has(tab) && TWO_COLUMNS,
+        OPENS_DETAIL.has(tab) && 'sheet-column-edge',
       )}
       onKeyDownCapture={onKeyDownCapture}
       ref={root}
@@ -347,8 +348,8 @@ export function ProcessPanels({
         className={cx(
           'process-panel-list sheet-bleed sheet-bleed-head shell:min-h-0 shell:overflow-y-auto shell:overscroll-contain border-rule-faint min-w-0',
           OPENS_DETAIL.has(tab)
-            ? '@sheet-narrow/sheet:border-r'
-            : 'sheet-bleed-end',
+            ? '@sheet-narrow/sheet:border-r @max-sheet-narrow/sheet:sheet-bleed-end @max-sheet-narrow/sheet:sheet-bleed-end-head'
+            : 'sheet-bleed-end sheet-bleed-end-head',
           panel ? '@max-sheet-narrow/sheet:hidden' : null,
         )}
       >

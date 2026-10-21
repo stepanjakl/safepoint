@@ -242,6 +242,15 @@ export const RECESS_ROLES = {
   highlight: '--sp-recessed-edge',
 } as const;
 
+/* The edge of the surface something sits on -- its ring and its highlight --
+   for a header's or footer's divider drawn in it. Each ground-* utility points
+   them at its surface; at the root they are the pane's, since nothing draws one
+   on the bare canvas. */
+export const GROUND_EDGE_ROLES = {
+  ring: '--sp-ground-ring',
+  highlight: '--sp-ground-edge',
+} as const;
+
 export const recessRoles = (recess: `--${string}`) =>
   ({
     face: recess,
@@ -371,6 +380,10 @@ const FOLLOWING_BY_FILE = {
     /* Under the pointer. Light deepens, dark lifts: the inset is the deepest
        step, and as a hover it put a hole under the pointer in dark. */
     '--sp-surface-hover': HOVER,
+    /* A full-width row under the pointer -- a run, a release item, a table's
+       record. It runs to its surface's ring, so it takes half the hover's dark
+       step: the general hover sat a step off the floating ring in dark. */
+    '--sp-row-hover': { light: HOVER.light, dark: HOVER.dark / 2 },
     /* A mark on a selected wash, such as a circle inside a hovered pill: the
        hover-to-selected distance again, past selected. */
     /* Under the pointer on a control that already rests on the hover wash: two
@@ -507,8 +520,6 @@ const ANCHORED_BY_FILE = {
   },
   'components/app-shell/runs/runs-list.css': {
     '--sp-sheet-current': { on: 'primary', light: 75, dark: -100 },
-    /* Its own step rather than the sidebar's wash: its ground is the pane. */
-    '--sp-sheet-hover': { on: 'primary', light: 50, dark: -50 },
     /* The sticky head and version break. Not a recess: in dark that put the
        head in a pit below its rows. */
     '--sp-sheet-band': { on: 'primary', light: 25, dark: -25 },
@@ -516,7 +527,7 @@ const ANCHORED_BY_FILE = {
        75%; light gives it its own step against each face. */
     '--sp-sheet-total-face': { on: 'primary', light: 150, dark: -100 },
     /* Under the row's pointer it moves as far as the row's own wash
-       (--sp-sheet-hover, 50 steps), so it keeps its distance from the row. */
+       (--sp-row-hover, 50 steps), so it keeps its distance from the row. */
     '--sp-sheet-total-face-hover': { on: 'primary', light: 200, dark: -150 },
     '--sp-sheet-total-face-current': { on: 'primary', light: 250, dark: -200 },
     /* The figure lightens through states in both themes. */
@@ -539,9 +550,9 @@ const ANCHORED_BY_FILE = {
     '--sp-thread-link-face-active': { on: 'primary', light: 200, dark: -275 },
   },
   'components/review/release-card.css': {
-    /* A row's change pill: past the row's hover wash (+50 light, -100 dark)
-       at rest and as far again as the wash under it, so it keeps its distance;
-       its lead is lighter in light. */
+    /* A row's change pill: past the row's wash (--sp-row-hover) at
+       rest and further again under it, so it keeps its distance; its lead is
+       lighter in light. */
     '--sp-card-pill-face': { on: 'floating', light: 100, dark: -75 },
     '--sp-card-pill-face-hover': { on: 'floating', light: 150, dark: -175 },
     '--sp-card-pill-lead': { on: 'floating', light: 25, dark: -150 },

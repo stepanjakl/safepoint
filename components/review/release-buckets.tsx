@@ -53,8 +53,7 @@ const PILL = cx(
 
 // The card's header: what the batch needs, the bar and the tabs, ruled off
 // from the rows. The card's other states open with it too.
-export const CARD_HEAD =
-  'border-floating-ring shadow-separator-bottom-solid border-b p-6 @max-card:p-4';
+export const CARD_HEAD = 'rule-below p-6 @max-card:p-4';
 
 /*
   One line per item, ruled from where the text starts, and closed by a rule
@@ -68,7 +67,7 @@ const LIST =
 // Its rules are the list's (`.release-list` in release-card.css).
 const ROW = 'col-span-full grid grid-cols-subgrid';
 const ROW_BUTTON =
-  'release-row group/row control-wash hover:bg-surface-hover focus-visible:bg-surface-hover col-span-full grid w-full cursor-pointer grid-cols-subgrid items-center gap-y-1 px-6 py-3 text-left text-dense @max-card:px-4';
+  'release-row group/row control-wash hover:bg-row-hover focus-visible:bg-row-hover col-span-full grid w-full cursor-pointer grid-cols-subgrid items-center gap-y-1 px-6 py-3 text-left text-dense @max-card:px-4';
 // Opened items step back (`.release-row[data-seen]` in release-card.css).
 const ROW_SUBJECT = 'release-row-subject col-start-1 row-start-1 truncate';
 // Colour alone, no face: the pill beside it is the row's one chip.
@@ -78,7 +77,7 @@ const ROW_SUBJECT = 'release-row-subject col-start-1 row-start-1 truncate';
 // Its timing is `.release-row-trail-wide`'s, which slides it as well as
 // inking it; a transition utility here would drop the slide.
 const ROW_REASON =
-  'release-row-trail-wide text-severity-ink group-hover/row:text-severity-strong group-focus-visible/row:text-severity-strong col-start-2 row-start-1 justify-self-end text-meta data-[alone]:col-span-2 @max-card:col-start-1 @max-card:row-start-2 @max-card:justify-self-start @max-card:data-[alone]:col-span-1';
+  'release-row-trail-wide text-severity-ink col-start-2 row-start-1 justify-self-end text-meta data-[alone]:col-span-2 @max-card:col-start-1 @max-card:row-start-2 @max-card:justify-self-start @max-card:data-[alone]:col-span-1';
 // Stretched across its column, so every count is the same chip.
 const ROW_COUNT =
   'release-row-pill release-row-trail col-start-3 row-start-1 @max-card:col-start-2';
@@ -87,7 +86,7 @@ const PILL_LEAD = 'release-row-pill-lead value';
 const QUIET = 'text-muted-strong';
 // Outside the list, so outside its columns: one line, its arrow in the padding.
 const MORE_ROW =
-  'release-row group/row control-wash hover:bg-surface-hover focus-visible:bg-surface-hover border-floating-ring shadow-separator-bottom-solid grid w-full cursor-pointer items-center border-b px-6 py-3 text-left text-dense @max-card:px-4';
+  'release-row group/row control-wash hover:bg-row-hover focus-visible:bg-row-hover border-floating-ring shadow-separator-bottom-solid grid w-full cursor-pointer items-center border-b px-6 py-3 text-left text-dense @max-card:px-4';
 // Out of the columns, in the row's end padding: it arrives as the row is lit
 // (`.release-row-arrow` in release-card.css).
 const ARROW = 'release-row-arrow';

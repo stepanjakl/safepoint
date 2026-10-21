@@ -100,7 +100,7 @@ export function DrawerPanels({
           className,
         )}
       >
-        <header className="border-rule-faint flex shrink-0 items-center justify-between gap-4 border-b px-5 py-3">
+        <header className="rule-below flex shrink-0 items-center justify-between gap-4 px-5 py-3">
           <Heading
             slot="title"
             className="text-title min-w-0 [font-weight:550]"

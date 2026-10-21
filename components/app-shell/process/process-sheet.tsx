@@ -220,12 +220,12 @@ export function ProcessSheet({
               // Clipped to the pane's inner radius. The lists inside are full-bleed
               // and carry fills of their own, and at the pane's own radius they
               // paint over the edge its face draws in the bottom corners.
-              <div className="shell:@max-sheet-wide/sheet:grid-rows-[auto_minmax(0,1fr)] shell:min-h-0 @sheet-wide/sheet:grid-cols-[232px_minmax(0,1fr)] rounded-b-shell-inner clip-past-pane-highlight grid grid-cols-[minmax(0,1fr)] overflow-clip">
+              <div className="shell:@max-sheet-wide/sheet:grid-rows-[auto_minmax(0,1fr)] shell:min-h-0 @sheet-wide/sheet:grid-cols-[232px_minmax(0,1fr)] rounded-b-shell-inner clip-past-pane-highlight process-runs grid grid-cols-[minmax(0,1fr)] overflow-clip">
                 {/* Full-bleed: the list draws its own rules edge to edge, and
               padding on the column would leave them floating short of it. */}
                 <aside
                   aria-labelledby="runs-heading"
-                  className="process-runs-list sheet-bleed border-raised-ring shadow-separator-right-strong @sheet-wide/sheet:border-b-0 @sheet-wide/sheet:border-r shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative border-b"
+                  className="process-runs-list sheet-bleed @sheet-wide/sheet:sheet-bleed-bottom @max-sheet-wide/sheet:sheet-bleed-end border-raised-ring shadow-separator-right-strong @sheet-wide/sheet:border-b-0 @sheet-wide/sheet:border-r shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative border-b"
                 >
                   <SectionRow id="runs-heading" title="Runs">
                     <span className="flex items-center gap-1">
@@ -329,7 +329,7 @@ function SinglePanel({
     <div className="process-panels grid h-full min-h-0 grid-cols-[minmax(0,1fr)]">
       {/* A column, so the section takes the height below its row and an
           empty state can centre in it. */}
-      <div className="process-panel-list sheet-bleed sheet-bleed-head sheet-bleed-end shell:min-h-0 shell:overflow-y-auto shell:overscroll-contain flex min-w-0 flex-col">
+      <div className="process-panel-list sheet-bleed sheet-bleed-head sheet-bleed-end sheet-bleed-end-head shell:min-h-0 shell:overflow-y-auto shell:overscroll-contain flex min-w-0 flex-col">
         <SectionRow id={id} title={title} count={count}>
           {chip}
         </SectionRow>

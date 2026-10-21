@@ -114,8 +114,13 @@ export function RemoveInputDialog({
       // The drawer's scrim, over both panels, with the dialog centred on it.
       className="drawer-overlay p-shell-inset fixed inset-0 z-50 grid place-items-center"
     >
-      <Modal className="control-face surface-floating rounded-shell relative max-h-full w-[min(28rem,100%)] overflow-y-auto">
-        <Dialog role="alertdialog" className="grid gap-4 p-5 outline-none">
+      {/* The dialog scrolls, inset past the face's highlight, so text scrolled
+          to the edge is clipped short of it rather than painting over it. */}
+      <Modal className="control-face surface-floating rounded-shell p-control-highlight relative flex max-h-full w-[min(28rem,100%)] flex-col">
+        <Dialog
+          role="alertdialog"
+          className="grid min-h-0 gap-4 overflow-y-auto p-5 outline-none"
+        >
           {({ close }) => (
             <>
               <Heading slot="title" className="text-title [font-weight:550]">

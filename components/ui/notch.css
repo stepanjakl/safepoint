@@ -193,7 +193,8 @@
   }
 
   /* One arc draws the pane's inset highlight, edge and outside canvas. Its
-     transparent centre leaves the pane face free to transition beneath it. */
+     transparent centre leaves the pane face free to transition beneath it.
+     --notch-corner-highlight hands the highlight to a layer beneath instead. */
   .notch::after {
     content: '';
     position: absolute;
@@ -205,9 +206,10 @@
       circle at var(--notch-edge-width) var(--notch-corner),
       transparent
         calc(var(--notch-corner) - var(--notch-edge-width) - var(--spacing-control-highlight)),
-      var(--notch-highlight-color)
+      var(--notch-corner-highlight, var(--notch-highlight-color))
         calc(var(--notch-corner) - var(--notch-edge-width) - var(--spacing-control-highlight)),
-      var(--notch-highlight-color) calc(var(--notch-corner) - var(--notch-edge-width)),
+      var(--notch-corner-highlight, var(--notch-highlight-color))
+        calc(var(--notch-corner) - var(--notch-edge-width)),
       var(--notch-edge-color) calc(var(--notch-corner) - var(--notch-edge-width)),
       var(--notch-edge-color) var(--notch-corner),
       var(--notch-face-color) var(--notch-corner)
