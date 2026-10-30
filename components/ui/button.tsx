@@ -16,10 +16,9 @@ type Variant = 'primary' | 'secondary';
 export type Slant = 'left' | 'right' | 'both';
 
 // No transition utility here: control-face owns the timing, because the
-// gradient stops it animates are its own contract. The hairline sheen because
-// at this size a full pixel of white inside the ring reads as a second edge.
+// gradient stops it animates are its own contract.
 const base =
-  'control-hairline inline-flex min-w-11 items-center justify-center gap-2 font-medium whitespace-nowrap data-[disabled]:cursor-not-allowed data-[disabled]:control-off data-[disabled]:text-muted';
+  'inline-flex min-w-11 items-center justify-center gap-2 font-medium whitespace-nowrap data-[disabled]:cursor-not-allowed data-[disabled]:control-off data-[disabled]:text-muted';
 
 /*
   Each variant in two halves: the stops, which say what colour the face is in
@@ -32,22 +31,23 @@ const base =
   shape with nothing extra to draw.
 */
 const faces = {
-  // The one accented control on a page: a lit face with a brighter ring.
-  primary: {
-    appearance: 'accent',
-    className: 'control-accent text-white interact:control-accent-hover',
-  },
+  // The one accented control on a page: a coloured face with its ring outside it.
+  primary:
+    'control-button-primary text-white interact:control-button-primary-hover',
   // Everything else: the same construction, one step quieter.
-  secondary: {
-    appearance: 'quiet',
-    className: 'control-quiet text-primary interact:control-quiet-hover',
-  },
-} satisfies Record<Variant, { appearance: string; className: string }>;
+  secondary:
+    'control-button-secondary text-primary interact:control-button-secondary-hover',
+} satisfies Record<Variant, string>;
 
-const shapes: Record<Variant, string> = {
-  primary: 'control-face rounded-control',
-  secondary: 'control-face rounded-section',
-};
+/*
+  Corners follow the height, so all three sizes read as one shape. Corners
+  rather than a pill, which is left to tabs and statuses.
+*/
+const sizes = {
+  small: 'control-face text-meta rounded-control h-7 px-2.5',
+  medium: 'control-face text-dense rounded-icon h-8 px-3',
+  large: 'control-face text-dense rounded-shell h-9 px-3.5',
+} as const;
 
 /*
   A slant's painted layers, each nested in the wrapper that computes its
@@ -74,18 +74,16 @@ const SLANT_LAYERS = (
 export function Button({
   variant = 'secondary',
   slant,
-  pill = false,
-  size,
+  size = 'large',
   className,
   children,
   ...props
 }: ButtonProps & {
   variant?: Variant;
   slant?: Slant;
-  // Fully rounded: a call to action that stands alone, not in a toolbar.
-  pill?: boolean;
-  // A pill a step smaller, for actions repeated down a table's rows.
-  size?: 'small';
+  // `medium` is a call to action that stands alone, not in a toolbar; `small`
+  // is for actions repeated down a table's rows. A slant ignores it.
+  size?: keyof typeof sizes;
   className?: string;
   ref?: Ref<HTMLButtonElement>;
 }) {
@@ -95,17 +93,11 @@ export function Button({
       data-slant={slant}
       className={cx(
         base,
-        faces[variant].className,
+        faces[variant],
         // Size with the shape, not in `base`: a slant's height is a token
-        // sized to its header, a pill is a size tighter, and two utilities for
-        // one property would be settled by stylesheet order.
-        slant
-          ? 'slant text-dense h-(--slant-height) px-3.5'
-          : pill && size === 'small'
-            ? 'control-face text-meta h-7 rounded-full px-2.5'
-            : pill
-              ? 'control-face text-dense h-8 rounded-full px-3'
-              : `${shapes[variant]} text-dense h-9 px-3.5`,
+        // sized to its header, and two utilities for one property would be
+        // settled by stylesheet order.
+        slant ? 'slant text-dense h-(--slant-height) px-3.5' : sizes[size],
         className,
       )}
     >
@@ -146,4 +138,4 @@ export const ICON_SHAPE =
   Save-order and search toggles -- rather than adding a face that would trail it.
 */
 export const ICON_QUIET =
-  'control-wash text-header-ink hover:bg-surface-selected hover:text-header-ink-hover focus-visible:bg-surface-selected focus-visible:text-header-ink-hover';
+  'control-wash text-icon-quiet-ink hover:bg-surface-selected hover:text-icon-quiet-ink-hover focus-visible:bg-surface-selected focus-visible:text-icon-quiet-ink-hover';

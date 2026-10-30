@@ -17,7 +17,7 @@ const OPAQUE_EDGE_TOKENS = [
   '--sp-notch-highlight',
   '--sp-tooltip-highlight',
   '--sp-enclosure-edge',
-  '--sp-accent-edge',
+  '--sp-switch-on-edge',
   '--sp-commit-drag-edge',
 ] as const;
 
@@ -197,30 +197,32 @@ test('every painted pane or floating region hands its content its ground', async
   }
 });
 
-test('the primary action is flat under the pointer', async ({ page }) => {
+test('the primary action keeps its ring under the pointer', async ({
+  page,
+}) => {
   await page.goto('/examples/promotion?run=run-104');
   await waitForHome(page);
   const button = page.getByRole('button', { name: 'Review release' });
   await button.scrollIntoViewIfNeeded();
   await button.hover();
-  /* Face, ring and highlight take one colour, so the button reads as a single
-     fill. Polled, because control-face animates its stops there. */
+  /* The ring stays apart from the face at both ends, with no highlight. Polled,
+     because control-face animates its stops there. */
   await expect
     .poll(() =>
       button.evaluate((element) => {
         const style = getComputedStyle(element);
-        return new Set(
-          [
-            '--control-face-top',
-            '--control-face-bottom',
-            '--control-ring-top',
-            '--control-ring-bottom',
-            '--control-highlight',
-          ].map((name) => style.getPropertyValue(name).trim()),
-        ).size;
+        const read = (name: string) => style.getPropertyValue(name).trim();
+        return {
+          top: read('--control-ring-top') !== read('--control-face-top'),
+          bottom:
+            read('--control-ring-bottom') !== read('--control-face-bottom'),
+          highlight: /^(transparent|rgba\(0, 0, 0, 0\))$/.test(
+            read('--control-highlight'),
+          ),
+        };
       }),
     )
-    .toBe(1);
+    .toEqual({ top: true, bottom: true, highlight: true });
 });
 
 test('muted ink never paints on a selected surface', async ({ page }) => {
@@ -366,12 +368,12 @@ test('white labels hold their measured floor on the coloured faces', async ({
 }) => {
   await page.goto('/examples/promotion?run=run-104');
   await waitForHome(page);
-  /* The glowing top stop is a chosen trade -- Radix fitted to Tailwind's cyan
-     and teal, about 1.9:1 in light -- so it is not held here. The bottom stop,
-     the flat Save-order face and the flat hovers hold the non-text floor. */
+  /* The primary button's top stops sit right at about 3:1, so they are not held
+     here. Its bottom stops, the flat Save-order face and its hover hold the
+     non-text floor. */
   const measured = await contrastOf(page, [
-    ['white', '--sp-accent-face-bottom'],
-    ['white', '--sp-accent-hover'],
+    ['white', '--sp-button-primary-face-bottom'],
+    ['white', '--sp-button-primary-face-bottom-hover'],
     ['white', '--sp-commit-face'],
     ['white', '--sp-commit-hover'],
   ]);

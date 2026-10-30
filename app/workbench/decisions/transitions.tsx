@@ -57,7 +57,7 @@ function DecisionTrial({ action, title, detail }: (typeof CASES)[number]) {
       <div className="flex flex-wrap items-center gap-3">
         {action === 'write' ? (
           <Button
-            pill
+            size="medium"
             data-severity={1}
             data-phase={phase}
             data-action={action}
@@ -80,12 +80,12 @@ function DecisionTrial({ action, title, detail }: (typeof CASES)[number]) {
           </DecisionButton>
         )}
         {phase === 'writing' ? (
-          <Button pill onPress={() => setPhase('done')}>
+          <Button size="medium" onPress={() => setPhase('done')}>
             Finish simulated reply
           </Button>
         ) : null}
         {active ? (
-          <Button pill onPress={() => setPhase('idle')}>
+          <Button size="medium" onPress={() => setPhase('idle')}>
             Reset
           </Button>
         ) : null}

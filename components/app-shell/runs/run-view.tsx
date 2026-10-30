@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, useReducedMotion } from 'motion/react';
+import { motion } from 'motion/react';
 import {
   useContext,
   useEffect,
@@ -15,6 +15,7 @@ import { ThreadPage } from '@/components/app-shell/thread/thread-page';
 import { Button } from '@/components/ui/button';
 import { useSwap } from '@/components/ui/swap';
 import { KeyHint } from '@/components/ui/key-hint';
+import { useScreenSettled } from '@/components/ui/screen-settled';
 import { StateIllustration } from '@/components/ui/state-illustration';
 import { Tooltip } from '@/components/ui/tooltip';
 import { EASE_OUT_EMPHASIZED } from '@/lib/motion';
@@ -70,7 +71,7 @@ export function RunView({
       ? id
       : NONE;
   const target = keyOf(selection?.selected ?? NONE);
-  const { shown, entering, layer } = useSwap(target, () => 'fade');
+  const { shown, layer } = useSwap(target, () => 'fade');
   // The outgoing thread and its consumers keep the selection they were drawn
   // from until the fade ends; the rail already reflects the new selection.
   const [shownSelection, setShownSelection] = useState(selection);
@@ -125,7 +126,6 @@ export function RunView({
     const run = chosen ? runs.find((entry) => entry.id === chosen) : undefined;
     return (
       <RunEmptyState
-        arrive={!entering}
         note={
           run
             ? `${runDay(run.startedAt)} · ${runTime(run.startedAt)} has no recorded thread.`
@@ -146,7 +146,9 @@ export function RunView({
   );
 }
 
-// Each part of the empty page rises into place, one after the other.
+// Each part of the empty page rises into place, one after the other, once the
+// screen around it has finished coming in. Mounted into a screen already there,
+// as on a load or a change of run, it is simply there too.
 const ARRIVE = {
   hidden: { opacity: 0, y: 8 },
   shown: {
@@ -157,20 +159,13 @@ const ARRIVE = {
 };
 
 /* Nothing chosen, or nothing to show: what the product does, and a way in. */
-function RunEmptyState({
-  note,
-  arrive,
-}: {
-  note: string | null;
-  // False when a swap is already bringing the page in: the page fades as one,
-  // and parts rising on top of that would arrive late and from below.
-  arrive: boolean;
-}) {
+function RunEmptyState({ note }: { note: string | null }) {
   const selection = useRunSelection();
   const start = selection?.start;
   // What a run follows, one tab away; absent where there is no sheet.
   const actions = useContext(ProcessSheetActions);
-  const reduceMotion = useReducedMotion();
+  const settled = useScreenSettled();
+  const [rises] = useState(!settled);
   // The key the button advertises. Left to a field that is being typed in.
   useEffect(() => {
     if (!start) return;
@@ -197,8 +192,8 @@ function RunEmptyState({
     >
       <motion.div
         className="grid max-w-88 justify-items-center gap-7 text-center"
-        initial={reduceMotion || !arrive ? false : 'hidden'}
-        animate="shown"
+        initial={rises ? 'hidden' : false}
+        animate={!rises || settled ? 'shown' : 'hidden'}
         transition={{ staggerChildren: 0.12 }}
       >
         <h1 className="sr-only">{note ?? 'No run selected'}</h1>
@@ -233,14 +228,14 @@ function RunEmptyState({
           {start ? (
             <Button
               variant="primary"
-              pill
+              size="medium"
               aria-keyshortcuts="Meta+Enter Control+Enter"
               onPress={() => start()}
             >
               Start run
               <KeyHint
                 keys={['mod', 'enter']}
-                on="accent"
+                on="button-primary"
                 className="-me-1 pointer-coarse:hidden"
               />
             </Button>
@@ -249,13 +244,13 @@ function RunEmptyState({
               label="Start run"
               description={selection?.cannotStart ?? ''}
             >
-              <Button variant="primary" pill aria-disabled="true">
+              <Button variant="primary" size="medium" aria-disabled="true">
                 Start run
               </Button>
             </Tooltip>
           )}
           {actions ? (
-            <Button pill onPress={actions.showInstructions}>
+            <Button size="medium" onPress={actions.showInstructions}>
               Review instructions
             </Button>
           ) : null}

@@ -111,7 +111,7 @@ test('a run shows its instructions, reads the sheet and keeps the read', async (
     }),
   ).toHaveAttribute('href', /docs\.google\.com\/spreadsheets/);
   await expect(card.getByRole('button', { name: 'View data' })).toHaveClass(
-    /rounded-full/,
+    /rounded-icon/,
   );
 
   // The data, one tab at a time, from the keyboard.

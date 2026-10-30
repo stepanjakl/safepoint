@@ -3,6 +3,7 @@
 import { motion, useReducedMotion } from 'motion/react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { BiomorphicSymbol } from '@/components/ui/biomorphic-symbol';
+import { useScreenSettled } from '@/components/ui/screen-settled';
 import {
   StateIllustration,
   type StateIllustrationName,
@@ -132,11 +133,12 @@ export function Arrival({
   children: ReactNode;
 }) {
   const reduceMotion = useReducedMotion();
+  const settled = useScreenSettled();
   return (
     <motion.div
       className={className}
       initial={fadeIn && !reduceMotion ? { opacity: 0 } : false}
-      animate={{ opacity: 1 }}
+      animate={{ opacity: !fadeIn || settled ? 1 : 0 }}
       transition={{ duration: DURATION_PANE }}
     >
       {children}
@@ -167,12 +169,13 @@ export function EmptyState({
   children?: ReactNode;
 }) {
   const reduceMotion = useReducedMotion();
+  const settled = useScreenSettled();
   return (
     <motion.div
       role={role}
       className="my-auto grid justify-items-center gap-7 py-16 text-center"
       initial={fadeIn && !reduceMotion ? { opacity: 0 } : false}
-      animate={{ opacity: 1 }}
+      animate={{ opacity: !fadeIn || settled ? 1 : 0 }}
       transition={{ duration: DURATION_PANE }}
     >
       {loading ? (

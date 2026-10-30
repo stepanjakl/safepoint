@@ -159,6 +159,12 @@ const SURFACES = [
 
 const SLANTS: (Slant | undefined)[] = [undefined, 'left', 'right'];
 
+const SIZES = [
+  { name: 'large · 36px', size: 'large' },
+  { name: 'medium · 32px', size: 'medium' },
+  { name: 'small · 28px', size: 'small' },
+] as const;
+
 export function ControlsGallery({
   process,
   inputs,
@@ -189,6 +195,25 @@ export function ControlsGallery({
                 name={`${variant}${slant ? ` · slant ${slant}` : ''}`}
                 render={(disabled) => (
                   <Button variant={variant} slant={slant} isDisabled={disabled}>
+                    Review release
+                  </Button>
+                )}
+              />
+            )),
+          )}
+        </div>
+      </Section>
+
+      <Section title="Button sizes">
+        <div className={GRID}>
+          <StateHeadings />
+          {(['primary', 'secondary'] as const).flatMap((variant) =>
+            SIZES.map(({ name, size }) => (
+              <StateRow
+                key={`${variant}${name}`}
+                name={`${variant} · ${name}`}
+                render={(disabled) => (
+                  <Button variant={variant} size={size} isDisabled={disabled}>
                     Review release
                   </Button>
                 )}

@@ -360,12 +360,12 @@ export function RulesStep({
               .
             </p>
             {sheet?.showRules ? (
-              <Button pill onPress={sheet.showRules}>
+              <Button size="medium" onPress={sheet.showRules}>
                 Open the Rules tab
               </Button>
             ) : null}
             <Button
-              pill
+              size="medium"
               aria-expanded={showAll}
               aria-controls={cardsId}
               onPress={() => setShowAll(!showAll)}
@@ -1022,7 +1022,7 @@ function DefinitionCard({
             <DecisionButton decision="deny" type="submit" isDisabled={busy}>
               Deny
             </DecisionButton>
-            <Button pill onPress={close}>
+            <Button size="medium" onPress={close}>
               Cancel
             </Button>
           </form>
@@ -1049,7 +1049,11 @@ function DefinitionCard({
               </>
             ) : null}
             {open ? (
-              <Button pill isDisabled={busy || !canWrite} onPress={onWrite}>
+              <Button
+                size="medium"
+                isDisabled={busy || !canWrite}
+                onPress={onWrite}
+              >
                 {item.formula
                   ? 'Write again'
                   : `Write the ${kind.label.toLowerCase()}`}

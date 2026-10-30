@@ -47,6 +47,24 @@ keeping server-rendered children opaque. Opening focuses the composer; closing
 returns focus to the opener when appropriate. The dock is non-modal, and the
 narrow overlay uses React Aria's modal focus management and backdrop dismissal.
 
+## Future consideration: Pretext
+
+Deferred on 23 October 2026: [Pretext](https://github.com/chenglou/pretext)
+(`@chenglou/pretext`) can calculate text wrapping and height before rendering.
+Revisit it when the assistant has substantial message history and profiling
+shows a need for virtualization or better scroll stability during resizing.
+The current preview has no message history, and text measurement would not
+replace the run thread's measurements of cards, controls and animated folds.
+
+Before adoption, benchmark a focused prototype with representative messages and
+sidebar resizing. Keep measurements synchronized with our font loading, type
+tokens and content widths; check the documented limitations around font features
+and `text-wrap: pretty`. Preserve keyboard access, text selection and screen
+reader behavior if messages are virtualized. The upstream
+[chat patterns](https://github.com/chenglou/pretext/blob/main/pages/demos/markdown-chat.md)
+and [caveats](https://github.com/chenglou/pretext#caveats) are starting points.
+No integration benchmark has been run in Safepoint.
+
 ## Verification
 
 With `pnpm dev` running:

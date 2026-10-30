@@ -29,10 +29,10 @@ export function DecisionButton({
       {...props}
       data-severity={severity}
       className={cx(
-        'control-face control-hairline control-tone text-severity-ink interact:control-tone-hover interact:control-tone-ink-hover data-[disabled]:control-off data-[disabled]:text-muted inline-flex cursor-pointer items-center gap-1 rounded-full font-medium whitespace-nowrap data-[disabled]:cursor-not-allowed',
+        'control-face control-hairline control-tone text-severity-ink interact:control-tone-hover interact:control-tone-ink-hover data-[disabled]:control-off data-[disabled]:text-muted inline-flex cursor-pointer items-center gap-1 font-medium whitespace-nowrap data-[disabled]:cursor-not-allowed',
         size === 'small'
-          ? 'text-meta h-7 pr-2.5 pl-2'
-          : 'text-dense h-8 pr-3.5 pl-2.5',
+          ? 'text-meta rounded-control h-7 pr-2.5 pl-2'
+          : 'text-dense rounded-icon h-8 pr-3.5 pl-2.5',
         className,
       )}
     >

@@ -1,8 +1,9 @@
 'use client';
 
 import { motion, useReducedMotion } from 'motion/react';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useShellPageNavigation } from '@/components/app-shell/shell-page-transition';
+import { SettledLayer } from '@/components/ui/screen-settled';
 import { DURATION_PANE, DURATION_STATE, EASE_OUT_QUAD } from '@/lib/motion';
 
 export function ProcessContentTransition({
@@ -17,6 +18,7 @@ export function ProcessContentTransition({
   const { enteringProcess, leavingProcess, finishLeaving } =
     useShellPageNavigation();
   const reduceMotion = useReducedMotion();
+  const [settled, setSettled] = useState(!enteringProcess || !!reduceMotion);
 
   return (
     <motion.div
@@ -32,17 +34,13 @@ export function ProcessContentTransition({
         ease: EASE_OUT_QUAD,
       }}
       onAnimationComplete={(definition) => {
-        if (
-          finishesLeaving &&
-          leavingProcess &&
-          typeof definition === 'object' &&
-          !Array.isArray(definition) &&
-          definition.opacity === 0
-        )
+        if (typeof definition !== 'object' || Array.isArray(definition)) return;
+        if (definition.opacity === 1) setSettled(true);
+        else if (finishesLeaving && leavingProcess && definition.opacity === 0)
           finishLeaving();
       }}
     >
-      {children}
+      <SettledLayer settled={settled}>{children}</SettledLayer>
     </motion.div>
   );
 }

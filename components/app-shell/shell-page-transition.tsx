@@ -3,6 +3,7 @@
 import { motion, useReducedMotion } from 'motion/react';
 import { usePathname, useRouter } from 'next/navigation';
 import { createContext, useContext, useState, type ReactNode } from 'react';
+import { SettledLayer } from '@/components/ui/screen-settled';
 import { DURATION_PANE, DURATION_STATE, EASE_OUT_QUAD } from '@/lib/motion';
 
 type PendingRoute = { from: string; to: string };
@@ -137,6 +138,7 @@ export function ShellPageTransition({ children }: { children: ReactNode }) {
     useShellPageNavigation();
   const reduceMotion = useReducedMotion();
   const fades = !leavingProcess;
+  const [settledAt, setSettledAt] = useState<string | null>(null);
 
   return (
     <motion.div
@@ -153,18 +155,17 @@ export function ShellPageTransition({ children }: { children: ReactNode }) {
         ease: EASE_OUT_QUAD,
       }}
       onAnimationComplete={(definition) => {
-        if (
-          leaving &&
-          fades &&
-          typeof definition === 'object' &&
-          !Array.isArray(definition) &&
-          definition.opacity === 0
-        )
-          finishLeaving();
+        if (typeof definition !== 'object' || Array.isArray(definition)) return;
+        if (definition.opacity === 1) setSettledAt(path);
+        else if (leaving && fades && definition.opacity === 0) finishLeaving();
       }}
       inert={leaving}
     >
-      {children}
+      <SettledLayer
+        settled={!enteringShell || Boolean(reduceMotion) || settledAt === path}
+      >
+        {children}
+      </SettledLayer>
     </motion.div>
   );
 }

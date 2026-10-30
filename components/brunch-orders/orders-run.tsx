@@ -615,7 +615,7 @@ function ReadStep({
                         if (event.target === event.currentTarget) onRevealed();
                       }}
                     >
-                      <Button pill onPress={() => view()}>
+                      <Button size="medium" onPress={() => view()}>
                         View data
                         <ArrowUpRight
                           aria-hidden

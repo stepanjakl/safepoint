@@ -355,7 +355,7 @@ function ProposalTable({
           ))}
           {ready.length ? (
             <Button
-              pill
+              size="medium"
               onPress={() => {
                 const at = new Date().toISOString();
                 onDecide(
@@ -641,7 +641,7 @@ function ProposalRow({
                 >
                   Save
                 </DecisionButton>
-                <Button pill size="small" onPress={() => setChanging(null)}>
+                <Button size="small" onPress={() => setChanging(null)}>
                   Cancel
                 </Button>
               </>
@@ -651,7 +651,6 @@ function ProposalRow({
                   {decided(decision)}
                 </Pill>
                 <Button
-                  pill
                   size="small"
                   onPress={() => onDecide({ [key]: null }, `${key} undecided`)}
                 >
@@ -673,7 +672,7 @@ function ProposalRow({
                 >
                   Approve
                 </DecisionButton>
-                <Button pill size="small" onPress={startChange}>
+                <Button size="small" onPress={startChange}>
                   Change
                 </Button>
                 <DecisionButton

@@ -1,0 +1,18 @@
+/* ── Button rounding (workbench) ────────────────────────────────────────────
+   Hands each option's radii, set inline by button-rounding.tsx, to the real
+   text buttons by the height Button gives each size. A slanted button is not a
+   control-face class, so it is left out.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Unlayered, or the button's own radius utilities win. */
+[data-button-rounding] .control-face.h-7 {
+  border-radius: var(--option-radius-small);
+}
+
+[data-button-rounding] .control-face.h-8 {
+  border-radius: var(--option-radius-medium);
+}
+
+[data-button-rounding] .control-face.h-9 {
+  border-radius: var(--option-radius-large);
+}

@@ -1,7 +1,13 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { createContext, useEffect, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useEffect,
+  useState,
+  type AnimationEvent,
+  type ReactNode,
+} from 'react';
 import { cx } from '@/lib/cx';
 import { LAST_PROCESS_KEY } from '@/lib/process/navigation';
 import type { InputDetail } from '@/lib/process/input-details';
@@ -28,6 +34,7 @@ import { StartRunButton } from '@/components/app-shell/runs/start-run-button';
 import { SECTION } from './panel-parts';
 import { ScheduleControl } from './schedule-control';
 import { SectionRow } from '@/components/app-shell/runs/section-row';
+import { SettledLayer } from '@/components/ui/screen-settled';
 import { useSwap } from '@/components/ui/swap';
 
 const TAB_MOTION = (): 'fade' => 'fade';
@@ -242,7 +249,7 @@ export function ProcessSheet({
                     onShowRules={actions.showRules}
                   />
                 </aside>
-                <div className="process-runs-detail shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative">
+                <RunsDetail entering={entering}>
                   <ProcessSheetActions value={actions}>
                     <RunView
                       process={process}
@@ -251,18 +258,28 @@ export function ProcessSheet({
                       liveThread={liveThread}
                     />
                   </ProcessSheetActions>
-                </div>
+                </RunsDetail>
               </div>
             ) : shown === 'rules' ? (
-              <SinglePanel {...SECTION.rules}>{rulesPanel}</SinglePanel>
+              <SinglePanel {...SECTION.rules} entering={entering}>
+                {rulesPanel}
+              </SinglePanel>
             ) : shown === 'rules-b' ? (
-              <SinglePanel {...SECTION['rules-b']} width="wide">
+              <SinglePanel
+                {...SECTION['rules-b']}
+                width="wide"
+                entering={entering}
+              >
                 {rulesPanelB}
               </SinglePanel>
             ) : shown === 'instructions' && policy ? (
-              <PolicyPanel policy={policy} />
+              <PolicyPanel policy={policy} entering={entering} />
             ) : shown === 'inputs' && inputsPanel ? (
-              <SinglePanel {...SECTION.inputs} count={kept.length}>
+              <SinglePanel
+                {...SECTION.inputs}
+                count={kept.length}
+                entering={entering}
+              >
                 {inputsPanel}
               </SinglePanel>
             ) : (
@@ -292,11 +309,18 @@ export function ProcessSheet({
 
 // One column, the width of a run's thread, under the same first row every
 // section of the sheet has.
-function PolicyPanel({ policy }: { policy: ProcessPolicy }) {
+function PolicyPanel({
+  policy,
+  entering,
+}: {
+  policy: ProcessPolicy;
+  entering: boolean;
+}) {
   return (
     <SinglePanel
       id="policy-heading"
       title={policy.label}
+      entering={entering}
       chip={
         <span className="bg-menu-chip value text-micro text-muted-strong rounded-control px-1.5 py-0.5">
           {policy.version}
@@ -309,12 +333,46 @@ function PolicyPanel({ policy }: { policy: ProcessPolicy }) {
 }
 
 // A panel a process brings of its own, in one column.
+/*
+  A tab's section is the last thing the swap fades in (process-section-enter),
+  so what it holds is released by that fade's end. There is none to wait for
+  when the tab did not swap in, or under reduced motion.
+*/
+function useSectionSettled(entering: boolean) {
+  const [settled, setSettled] = useState(!entering);
+  return {
+    settled,
+    onAnimationEnd: (event: AnimationEvent<HTMLElement>) => {
+      if (event.target === event.currentTarget) setSettled(true);
+    },
+  };
+}
+
+function RunsDetail({
+  entering,
+  children,
+}: {
+  entering: boolean;
+  children: ReactNode;
+}) {
+  const { settled, onAnimationEnd } = useSectionSettled(entering);
+  return (
+    <div
+      className="process-runs-detail shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative"
+      onAnimationEnd={onAnimationEnd}
+    >
+      <SettledLayer settled={settled}>{children}</SettledLayer>
+    </div>
+  );
+}
+
 function SinglePanel({
   id,
   title,
   count,
   chip,
   width = 'reading',
+  entering,
   children,
 }: {
   id: string;
@@ -323,8 +381,10 @@ function SinglePanel({
   chip?: ReactNode;
   // A measure for reading, or room for a grid of cards.
   width?: 'reading' | 'wide';
+  entering: boolean;
   children: ReactNode;
 }) {
+  const { settled, onAnimationEnd } = useSectionSettled(entering);
   return (
     <div className="process-panels grid h-full min-h-0 grid-cols-[minmax(0,1fr)]">
       {/* A column, so the section takes the height below its row and an
@@ -339,8 +399,9 @@ function SinglePanel({
             'mx-auto flex flex-1 flex-col px-6 pt-6 pb-8 max-sm:px-4',
             width === 'wide' ? 'w-[min(100%,1120px)]' : 'w-[min(100%,760px)]',
           )}
+          onAnimationEnd={onAnimationEnd}
         >
-          {children}
+          <SettledLayer settled={settled}>{children}</SettledLayer>
         </section>
       </div>
     </div>

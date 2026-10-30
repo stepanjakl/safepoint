@@ -314,8 +314,8 @@ function FollowingSamples() {
         faint rule
       </div>
       <div className="flex items-center gap-3">
-        <div className="control-face control-quiet rounded-control text-meta px-3 py-1">
-          quiet
+        <div className="control-face control-button-secondary rounded-control text-meta px-3 py-1">
+          secondary
         </div>
         <div className="bg-menu-chip text-meta rounded-full px-2">chip</div>
       </div>
@@ -396,6 +396,13 @@ export default function WorkbenchPage() {
           {' · '}
           <Link
             className="underline underline-offset-4"
+            href="/workbench/button-rounding"
+          >
+            Button rounding
+          </Link>
+          {' · '}
+          <Link
+            className="underline underline-offset-4"
             href="/workbench/decisions"
           >
             Decision transitions
@@ -451,7 +458,7 @@ export default function WorkbenchPage() {
           Surface-following roles
         </h2>
         <p className={NOTE}>
-          Hover, selected, rules, the quiet control and the menu chip, inside
+          Hover, selected, rules, the secondary button and the menu chip, inside
           each surface. Each is a fixed step distance from the face it sits on
           (FOLLOWING_ROLES in scripts/colour-theme/config.ts), so it holds the
           same perceived difference wherever it is drawn.

@@ -20,21 +20,21 @@ Colocated CSS Modules were proposed, trialled on one component, and rejected on 
 
 Everything else is a utility in the component.
 
-| File in `app/styles/`    | Holds                                                                                       |
-| ------------------------ | ------------------------------------------------------------------------------------------- |
-| `generated/ramp.css`     | generated: the neutral ramp, one block per family                                           |
-| `generated/surfaces.css` | generated: surface faces, rings and highlights, and the `ground-*` utilities                |
-| `generated/radix.css`    | generated: the Radix scales some stylesheet reads, light and dark                           |
-| `roles.css`              | `color-scheme`, text, action, disabled; hover, selected and rules in its generated block    |
-| `state.css`              | the six state scales and the adapter modes                                                  |
-| `type.css`               | the families and the type scale                                                             |
-| `geometry.css`           | durations, tile chroma ceilings, notch and slant geometry                                   |
-| `theme.css`              | the `@theme inline` block: the shared roles and scales published to Tailwind                |
-| `base.css`               | the base layer, and the `readout` and `value` type utilities                                |
-| `controls.css`           | `@property` stops, `control-face`, the accent, quiet and off families, fields, shared edges |
-| `severity.css`           | the `[data-severity]` buckets and the `severity-*` colours                                  |
-| `disclosure.css`         | the `+`/`−` marker on a `<details>` summary                                                 |
-| `drawer.css`             | the drawer's scrim, slide and widths                                                        |
+| File in `app/styles/`    | Holds                                                                                                                  |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `generated/ramp.css`     | generated: the neutral ramp, one block per family                                                                      |
+| `generated/surfaces.css` | generated: surface faces, rings and highlights, and the `ground-*` utilities                                           |
+| `generated/radix.css`    | generated: the Radix scales some stylesheet reads, light and dark                                                      |
+| `roles.css`              | `color-scheme`, text, action, disabled; hover, selected and rules in its generated block                               |
+| `state.css`              | the six state scales and the adapter modes                                                                             |
+| `type.css`               | the families and the type scale                                                                                        |
+| `geometry.css`           | durations, tile chroma ceilings, notch and slant geometry                                                              |
+| `theme.css`              | the `@theme inline` block: the shared roles and scales published to Tailwind                                           |
+| `base.css`               | the base layer, and the `readout` and `value` type utilities                                                           |
+| `controls.css`           | `@property` stops, `control-face`, the primary button, secondary button and unavailable families, fields, shared edges |
+| `severity.css`           | the `[data-severity]` buckets and the `severity-*` colours                                                             |
+| `disclosure.css`         | the `+`/`−` marker on a `<details>` summary                                                                            |
+| `drawer.css`             | the drawer's scrim, slide and widths                                                                                   |
 
 A component stylesheet is laid out in one order: a banner, the `:root` roles only it reads, an `@theme inline` block for the ones its markup names as utilities, its `@utility` faces, then `@layer components`. So `sidebar/process-list.css` beside `process-list.tsx` holds the rows' states, the drop slot, the status badge and the list's fades: one file answers "what paints a process row". A stylesheet imported by nothing is never loaded, so `pnpm check:tokens` fails on any `.css` that `index.css` does not import.
 
@@ -73,7 +73,7 @@ Where the less obvious treatments live:
 | WorkspaceMenu / tile / `surface-menu-tile`        | `sidebar/workspace-menu.css`: tile face; the hue variant supplies its colour roles                                                                                         |
 | ProcessList / row-label / `text-menu-link`        | `sidebar/process-menu.css`: defines `--sp-menu-link`, which every part of the sidebar reads, and publishes it                                                              |
 | ProcessMenu / back-heading / `process-menu-back`  | `sidebar/process-menu.css`: all appearance states together, directly referencing `--sp-menu-link`, `--sp-text-primary` and `--sp-menu-wash-strong`                         |
-| Button / secondary / `quiet`                      | `control-quiet` and `--sp-quiet-*`, both in `app/styles/controls.css`                                                                                                      |
+| Button / secondary                                | `control-button-secondary` and `--sp-button-secondary-*`, both in `app/styles/controls.css`                                                                                |
 | Every text field / `field`                        | `field` in `app/styles/controls.css`: the process search's face and states, shared by every field; `.menu-search-field` adds the sidebar's glyph and its empty, idle ghost |
 | Button / ring / `slant-ring`                      | `components/ui/notch.css`: paints the ring using stops inherited from the Button                                                                                           |
 | ProcessHeader / count / `header-button-count`     | `components/app-shell/process/process-header.css`: geometry, and the `bg-header-button-count` colour beside it                                                             |
@@ -128,13 +128,13 @@ An alternate `sharp` scale exists for comparison — same lower half, larger and
 
 Named for what they enclose. Pulled in from Tailwind's 4/8/12/16 so corners read crisper.
 
-| Token     | Value | Encloses                                |
-| --------- | ----- | --------------------------------------- |
-| `region`  | 2px   | hairline: bar segments, chips           |
-| `section` | 4px   | small chrome: badges, grips             |
-| `control` | 6px   | anything pressable                      |
-| `icon`    | 8px   | icon squares, and the tiles beside them |
-| `shell`   | 10px  | panes, cards, dialogs, the drawer       |
+| Token     | Value | Encloses                                        |
+| --------- | ----- | ----------------------------------------------- |
+| `region`  | 2px   | hairline: bar segments, chips                   |
+| `section` | 4px   | small chrome: badges, grips                     |
+| `control` | 6px   | anything pressable, 28px buttons                |
+| `icon`    | 8px   | icon squares, their tiles, 32px buttons         |
+| `shell`   | 10px  | panes, cards, dialogs, the drawer, 36px buttons |
 
 ## Colour
 
@@ -219,7 +219,7 @@ A handful of cross-theme warnings are expected and left standing. Light's canvas
 
 The primary action (cyan) and the Save-order toggle (teal) are **one Radix step per stop**, each the step nearest the Tailwind colour it replaced. Radix keeps its vivid mid-tones in the dark scale, which is where Tailwind's cyan and teal sit, so the light theme reads dark-scale steps too; that is deliberate, not a slip. Candidates were compared side by side on `/workbench`.
 
-The accent button's hover face has its own stops (`--sp-accent-face-top-hover`, `--sp-accent-face-bottom-hover`): flat in light, a step brighter at each end in dark. The ring takes those same stops and the highlight is off, so the edge disappears into the face. The accent switch's keyboard focus and `--sp-commit-hover` stay **flat**: one colour (`--sp-accent-hover`, `--sp-commit-hover`) on both face stops, both ring stops and the highlight. Save order is not a lit face at all: it is the quiet wash button with a flat `--sp-commit-face` background while pressed, one step off (`--sp-commit-hover`) under the pointer in the direction the search toggle's wash moves -- darker in light, lighter in dark -- so a single background carries every state as it does on the search toggle beside it. Arrange mode carries the same teal into the reorder handles (`--sp-commit-ink`, deepening to `--sp-commit-ink-strong` under the pointer and while dragging) and the dragged row's edge and drop slot (`--sp-commit-drag-edge`). Keyboard focus takes the same colour. White labels on the light accent's glowing top reach only about 1.9:1, as Tailwind's did; the bottom and the hover reach 3.4:1.
+**A control's colours are its own.** One control does not read another's stops, even where their values match today, so tuning one moves no other: the switch has `--sp-switch-*`, the drawer's close button `--sp-drawer-close-*`, and the tab strip `--sp-filter-track-edge*` beside the field's edges. Names say whose they are: `--sp-button-primary-*` and `control-button-primary`, `--sp-button-secondary-*` and `control-button-secondary`. `control-off` belongs to no one control: it is what any unavailable control shows, applied whole. The primary button is built as the secondary is: no highlight, and a ring that stays outside the face at rest and on hover, darker in light and lit in dark (`--sp-button-primary-*`, with `-hover` for its hover stops). The switch's own on state keeps the glowing top and a highlight. Its keyboard focus and `--sp-commit-hover` stay **flat**: one colour (`--sp-switch-on-focus`, `--sp-commit-hover`) on both face stops, both ring stops and the highlight. Save order is not a lit face at all: it is the quiet wash button with a flat `--sp-commit-face` background while pressed, one step off (`--sp-commit-hover`) under the pointer in the direction the search toggle's wash moves -- darker in light, lighter in dark -- so a single background carries every state as it does on the search toggle beside it. Arrange mode carries the same teal into the reorder handles (`--sp-commit-ink`, deepening to `--sp-commit-ink-strong` under the pointer and while dragging) and the dragged row's edge and drop slot (`--sp-commit-drag-edge`). Keyboard focus takes the same colour. White labels on the primary button reach about 3:1 at its top stop and 3.4:1 at the bottom in light.
 
 #### Ink that a surface cannot carry
 
@@ -269,7 +269,7 @@ For example, a completed run's state label uses verified 11 through its bare ali
 
 ### Faces and edges
 
-- **`interact:` is one state for hovered, keyboard-focused and pressed.** Every React Aria control face answers all three alike, so write `interact:control-quiet-hover`, or `group-interact/<name>:` for a child, rather than three `data-[…]` variants. It is defined in `app/styles/controls.css` with `:is()`, so it carries the same weight as a `data-[…]` variant and is emitted after them. A control that must not answer a press -- a selectable row, say -- keeps its separate variants.
+- **`interact:` is one state for hovered, keyboard-focused and pressed.** Every React Aria control face answers all three alike, so write `interact:control-button-secondary-hover`, or `group-interact/<name>:` for a child, rather than three `data-[…]` variants. It is defined in `app/styles/controls.css` with `:is()`, so it carries the same weight as a `data-[…]` variant and is emitted after them. A control that must not answer a press -- a selectable row, say -- keeps its separate variants.
 - **`control-face` is a face and a ring built from registered stops** (`--control-face-top`, `--control-face-bottom`, `--control-ring-top`, `--control-ring-bottom`, `--control-highlight`), so a colour utility restyles it and it animates its own stops. Every stop registers as `transparent`, the highlight included: a face paints only what it sets, so deleting a face's `--control-highlight` removes its sheen rather than leaving a default behind. Never put a `transition-*` utility beside it: the utility replaces its property list and the face snaps. Flat controls that answer with a wash take `control-wash` instead.
 - **Structure reaches the ring; content stays inside the rim.** `control-face` draws the highlight as an inset shadow, beneath everything the face holds, and nothing is drawn over it on purpose -- a layer on top of the content was tried and dropped: every entrance animation made its box a stacking context, so what had to cross that layer slipped under it until the animation ended. Instead the layout decides. What is built to span the face is structure and paints over the highlight to meet the ring on every side it touches: dividers (`rule-below`/`rule-above` for headers and footers), full-width bands (section heads, group heads, the sheet's boundary band, a drawer header on the recess), and full-width rows while lit -- hovered, focused, current or open. Everything else stays off the highlight: the pane steps its content in past it (`--spacing-pane-inset`), cards pad theirs, and a face that scrolls insets its scroller by the highlight's width (`p-control-highlight` on the input-removal dialog). In the pane, a column that meets a side runs back over the inset so its structure can reach the ring: `sheet-bleed`, `sheet-bleed-end` and `sheet-bleed-bottom` by margin, with `sheet-bleed-head`/`sheet-bleed-end-head` padding a column of prose back so only its head crosses, `clip-past-pane-highlight` on the frames that would clip them, and rows padding their own text back by `--sheet-bleed`/`--sheet-bleed-end`. A column whose scrolling content must stay off the highlight cannot bleed down to it, so its edge is drawn on its grid instead (`.sheet-column-edge`). Under the process header the notch draws its corner arc's ring and canvas but leaves the arc's highlight to the sheet (`--notch-corner-highlight: transparent`): `.process-sheet-frame::before` draws it beneath the sheet with the notch's own box and circle -- the frame's own corner is centred a ring-width higher and drew it half covered -- so a head's band covers it there as it does down the side, and with nothing beneath it reads as the rest of the edge. A lit line sits over what scrolls beneath it and under structure, in one order: content, then `rule-below`/`rule-above` (`z-1`), then lit rows (`z-2`), then sticky heads and bands (`z-3`). The header's lit line lies beneath the sheet so a head can cover it, so the thread column, which has no head, has it redrawn over its top from the runs grid (`.process-runs::after`, placed in the thread's cell). Not sticky inside the scroller: there it re-snaps with the scroll offset at fractional zoom and the line jumps a device pixel as you scroll.
 - **A lit row takes the row wash and keeps its colours.** Every full-width row lit under the pointer or the keyboard takes `--sp-row-hover` (`bg-row-hover`), a surface-following role half the general hover's step in dark, because a lit row meets the ring and the general hover sat a step off the floating ring there. The wash says the row is lit; the row's coloured text -- a status, an effect, a severity -- keeps its colour, since a stronger ink is a greyer one. Neutral ink may step up a rung, as the run rows' dates do. Inset rounded washes (the Inputs and Instructions lists) are controls, not rows, and keep `--sp-surface-hover`.
@@ -358,6 +358,8 @@ CSS's own keywords (`ease`, `ease-out`, `linear` …) are names already and stay
 **Ease what the layout would otherwise jump.** Open space before content enters it (rows or margin, not a pop of height), fade content in only after its container has opened, and animate an open container's height when its content changes, starting from wherever a running ease has reached. Do not add content while its container is still opening.
 
 **JavaScript observes motion; it never times it.** Sequencing waits on the motion's own `animationend` or `transitionend`, or on elements reporting that they are still changing, not on timers that mirror CSS durations. Each wait has an answer when there is no motion -- the reduced-motion rule in `base.css` removes every animation, so no end event fires -- and a failsafe. Content held back for a sequence is released from state updated after commit, once children have reported, not from state set during render.
+
+**A part's entrance waits for its screen.** A fade that brings a whole screen, process or tab in reports its end through `SettledLayer` (`components/ui/screen-settled.tsx`), and anything with an entrance of its own holds it on `useScreenSettled` until every layer above has landed. The empty run page's rise and a panel's arrival after a load both do; neither starts under a fade that is still running. A reload has no transition: the browser holds the old page until the new one paints, so a fade there would read as a blink. The empty run page rises only if its screen was still coming in when it mounted, and on a load it is simply there.
 
 **Pitfalls, each found the hard way.**
 

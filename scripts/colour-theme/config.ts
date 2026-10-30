@@ -412,15 +412,15 @@ const FOLLOWING_BY_FILE = {
   'app/styles/controls.css': {
     /* A ramp step, not #fff: a pure-white top is the one face that does not
        belong to the palette. */
-    '--sp-quiet-face-top': { light: -25, dark: -100 },
-    '--sp-quiet-face-bottom': { light: 50, dark: 0 },
-    '--sp-quiet-ring-top': { light: 175, dark: -250 },
-    '--sp-quiet-ring-bottom': { light: 275, dark: -100 },
+    '--sp-button-secondary-face-top': { light: -25, dark: -125 },
+    '--sp-button-secondary-face-bottom': { light: 50, dark: -50 },
+    '--sp-button-secondary-ring-top': { light: 175, dark: -275 },
+    '--sp-button-secondary-ring-bottom': { light: 275, dark: -150 },
     /* Light deepens, dark lifts: on either ground the control comes forward. */
-    '--sp-quiet-face-top-hover': { light: -25, dark: -175 },
-    '--sp-quiet-face-bottom-hover': { light: 175, dark: -50 },
-    '--sp-quiet-ring-top-hover': { light: 275, dark: -375 },
-    '--sp-quiet-ring-bottom-hover': { light: 600, dark: -250 },
+    '--sp-button-secondary-face-top-hover': { light: -25, dark: -200 },
+    '--sp-button-secondary-face-bottom-hover': { light: 175, dark: -100 },
+    '--sp-button-secondary-ring-top-hover': { light: 275, dark: -375 },
+    '--sp-button-secondary-ring-bottom-hover': { light: 600, dark: -200 },
     '--sp-menu-chip': { light: 75, dark: -50 },
     /* The field's edge is its focus indicator: focused, it clears 3:1 against
        face and resting edge (contracts field-focus-*). Neutral: not an action. */
@@ -436,9 +436,37 @@ const FOLLOWING_BY_FILE = {
     /* The strip's own ground is its surface: the thick edge divides it, so no
        fill of its own. Exactly the face, so the roles below are read from it. */
     '--sp-filter-face': { light: 0, dark: 0 },
+    /* Set at the text field's steps but separate, so tuning a field moves no
+       tab strip. */
+    '--sp-filter-track-edge': { light: 150, dark: -150 },
+    '--sp-filter-track-edge-active': { light: 525, dark: -675 },
     /* The edge under the pointer: between the field's rest and hover edges,
        which lit a strip this large too far. */
     '--sp-filter-track-edge-hover': { light: 175, dark: -200 },
+  },
+  'app/styles/drawer.css': {
+    /* Set at the secondary button's steps but separate, so tuning a button moves
+       no close button. */
+    '--sp-drawer-close-face-top': { light: -25, dark: -100 },
+    '--sp-drawer-close-face-bottom': { light: 50, dark: 0 },
+    '--sp-drawer-close-ring-top': { light: 175, dark: -250 },
+    '--sp-drawer-close-ring-bottom': { light: 275, dark: -100 },
+    '--sp-drawer-close-face-top-hover': { light: -25, dark: -175 },
+    '--sp-drawer-close-face-bottom-hover': { light: 175, dark: -50 },
+    '--sp-drawer-close-ring-top-hover': { light: 275, dark: -375 },
+    '--sp-drawer-close-ring-bottom-hover': { light: 600, dark: -250 },
+  },
+  'components/ui/switch.css': {
+    /* Set at the secondary button's steps but separate, so tuning a button
+       moves no switch. */
+    '--sp-switch-face-top': { light: -25, dark: -100 },
+    '--sp-switch-face-bottom': { light: 50, dark: 0 },
+    '--sp-switch-ring-top': { light: 175, dark: -250 },
+    '--sp-switch-ring-bottom': { light: 275, dark: -100 },
+    '--sp-switch-face-top-focus': { light: -25, dark: -175 },
+    '--sp-switch-face-bottom-focus': { light: 175, dark: -50 },
+    '--sp-switch-ring-top-focus': { light: 275, dark: -375 },
+    '--sp-switch-ring-bottom-focus': { light: 600, dark: -250 },
   },
 } as const satisfies Record<string, Record<`--${string}`, Offset>>;
 
@@ -474,7 +502,7 @@ const ANCHORED_BY_FILE = {
     '--sp-notice-highlight': { highlightOf: '--sp-notice-face' },
   },
   'components/app-shell/process/process-header.css': {
-    /* Drawn from the quiet stops but separate, so tuning the header moves no
+    /* Drawn from the secondary button's stops but separate, so tuning the header moves no
        other button. The one control face that is not raised in both themes,
        on purpose: light recesses it and deepens on hover; dark lifts, since a
        control set under a dark ground reads as a hole. */

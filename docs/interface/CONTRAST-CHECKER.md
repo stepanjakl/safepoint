@@ -88,9 +88,9 @@ from `pnpm test`.
 `pnpm check:colour-system` is the focused colour-system regression layer. It
 checks the neutral-family preference contract (URL, storage, blocked storage,
 the design pane and reset), that every family paints its own ramp, that every
-structural edge is opaque, that the primary action is flat under the pointer,
+structural edge is opaque, that the primary action keeps its ring under the pointer,
 that muted ink never sits on the selected surface, that state text clears
-4.5:1 on every surface it can sit on and white labels hold 3:1 on the accent
+4.5:1 on every surface it can sit on and white labels hold 3:1 on the primary button
 and commit faces -- measured as the page resolves them, since those are mixes
 of Radix steps the ramp contracts do not cover -- and forced colours and
 narrow layout.

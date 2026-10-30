@@ -1,4 +1,4 @@
-import { expect, test, type Locator } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 type Frame = {
   empty: boolean;
@@ -146,6 +146,121 @@ test('deselecting a live run brings the empty state in once', async ({
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(
     'No run selected',
   );
+});
+
+// Every frame of the empty page arriving: its own parts' opacity, and the
+// screen's around them. Pages left behind hold the same words, so they are
+// marked first and passed over.
+type ArrivalFrame = { own: number; screen: number };
+
+// Runs in the page, so it closes over nothing.
+function sampleArrival(watchMs?: number) {
+  const words = 'Choose a run, or start a new one.';
+  const wording = () =>
+    Array.from(document.querySelectorAll('p')).filter(
+      (paragraph) => paragraph.textContent === words,
+    );
+  wording().forEach((paragraph) => (paragraph.dataset.left = ''));
+  const frames: ArrivalFrame[] = [];
+  const product = (from: Element | null, stop: Element | null) => {
+    let opacity = 1;
+    for (let element = from; element && element !== stop;) {
+      opacity *= Number(getComputedStyle(element).opacity);
+      element = element.parentElement;
+    }
+    return opacity;
+  };
+  const started = performance.now();
+  let seen = 0;
+  return new Promise<ArrivalFrame[]>((resolve) => {
+    function sample() {
+      const arriving = wording().find(
+        (paragraph) => paragraph.dataset.left === undefined,
+      );
+      const main = arriving?.closest('main');
+      if (arriving && main)
+        frames.push({
+          own: product(arriving, main),
+          screen: product(main, null),
+        });
+      if (frames.length) seen ||= performance.now();
+      // Until it lands, or for as long as asked once it is on screen: the
+      // route may still be compiling on the dev server.
+      const last = frames.at(-1);
+      const done = watchMs
+        ? seen > 0 && performance.now() - seen > watchMs
+        : last?.own === 1 && last.screen === 1;
+      if (done || performance.now() - started > 20_000) resolve(frames);
+      else requestAnimationFrame(sample);
+    }
+    requestAnimationFrame(sample);
+  });
+}
+
+const observeArrival = (page: Page) => page.evaluate(sampleArrival, undefined);
+
+const expectArrivalAfterScreen = (frames: ArrivalFrame[]) => {
+  expect(frames.length).toBeGreaterThan(2);
+  expect(frames[0]!.screen, 'the screen was not coming in').toBeLessThan(1);
+  expect(
+    frames.filter((frame) => frame.own > 0 && frame.screen < 1),
+    'the empty page moved before the screen had settled',
+  ).toEqual([]);
+  expect(frames.at(-1)).toEqual({ own: 1, screen: 1 });
+};
+
+test('the empty page arrives after a tab has finished coming in', async ({
+  page,
+}) => {
+  await page.locator('.sheet-row').first().click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+    'No run selected',
+  );
+  await page
+    .getByRole('button', { name: /^Instructions/ })
+    .first()
+    .click();
+  await expect(page.locator('.process-runs-detail')).toHaveCount(0);
+  const arrival = observeArrival(page);
+  await page.getByRole('button', { name: 'Runs', exact: true }).click();
+  expectArrivalAfterScreen(await arrival);
+});
+
+test('the empty page arrives after another process has finished coming in', async ({
+  page,
+}) => {
+  const arrival = observeArrival(page);
+  await page.locator('a[href="/examples/promotion"]').first().click();
+  expectArrivalAfterScreen(await arrival);
+});
+
+// The browser holds the old page until the new one paints, so a reload that
+// moves nothing cannot be told from no reload at all.
+test('a reload leaves the page where it was', async ({ page }) => {
+  await page.goto('/examples/promotion');
+  await page.addInitScript(
+    `window.arrival = (${sampleArrival.toString()})(1500);`,
+  );
+  await page.reload();
+  const frames = await page.evaluate(
+    () => (window as unknown as { arrival: Promise<ArrivalFrame[]> }).arrival,
+  );
+  expect(frames.length).toBeGreaterThan(10);
+  expect(
+    frames.filter((frame) => frame.own < 1 || frame.screen < 1),
+    'something faded on a reload',
+  ).toEqual([]);
+});
+
+test('a process loaded directly under reduced motion is not left hidden', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/examples/promotion');
+  await expect(page.locator('.process-sheet-frame')).toHaveCSS('opacity', '1');
+  await expect(
+    page.getByText('Choose a run, or start a new one.', { exact: true }),
+  ).toHaveCSS('opacity', '1');
 });
 
 test('returning to the outgoing run reverses its fade without an empty page', async ({

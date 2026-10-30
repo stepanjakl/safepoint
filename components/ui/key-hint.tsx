@@ -16,9 +16,9 @@ export type Key = 'mod' | 'enter' | (string & {});
 // Where the keys sit decides their ink, and whether each has a square: on a
 // button they are bare, in a tooltip each is boxed.
 const ON = {
-  accent: {
+  'button-primary': {
     row: 'gap-0.5',
-    key: 'text-accent-key',
+    key: 'text-button-primary-key',
     icon: 13,
     stroke: 2,
     weight: 'font-medium',

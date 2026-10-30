@@ -84,7 +84,7 @@ export const PANEL =
 
 // The drawer's close button.
 export const CLOSE_BUTTON =
-  'control-face control-hairline control-quiet text-muted-strong interact:control-quiet-hover interact:text-primary grid size-8 flex-none cursor-pointer place-items-center rounded-full';
+  'control-face control-hairline control-drawer-close text-muted-strong interact:control-drawer-close-hover interact:text-primary grid size-8 flex-none cursor-pointer place-items-center rounded-full';
 
 // Longest the panel's exit or a content's fade-out may take before it is
 // dropped anyway: the animation's own end normally does it, and this covers an

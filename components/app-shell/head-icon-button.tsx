@@ -88,7 +88,7 @@ export function HeadIconButton({
           // The box is turned 45deg so the dot, centred on its top edge,
           // lands centred on the circle's edge at the top right.
           <span aria-hidden className="absolute inset-0 rotate-45">
-            <span className="accent-mark absolute top-0 left-1/2 size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full" />
+            <span className="mark-on absolute top-0 left-1/2 size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full" />
           </span>
         ) : null}
       </AriaButton>

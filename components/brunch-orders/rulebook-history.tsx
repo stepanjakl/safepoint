@@ -111,7 +111,7 @@ export function RulebookHistory({ history }: { history: History }) {
   ];
   return (
     <>
-      <Button size="small" pill onPress={() => setOpen(true)}>
+      <Button size="small" onPress={() => setOpen(true)}>
         History
       </Button>
       <DrawerOverlay isOpen={open} onOpenChange={setOpen}>

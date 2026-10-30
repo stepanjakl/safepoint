@@ -105,8 +105,8 @@
   /* Pulled in from Tailwind's 4/8/12/16, each named for what it encloses. */
   --radius-region: 0.125rem; /*  2px  hairline: bar segments, chips */
   --radius-section: 0.25rem; /*  4px  small chrome: badges, grips */
-  --radius-control: 0.375rem; /*  6px  anything pressable */
-  --radius-icon: 0.5rem; /*  8px  icon squares, and the tiles beside them */
+  --radius-control: 0.375rem; /*  6px  anything pressable, 28px buttons */
+  --radius-icon: 0.5rem; /*  8px  icon squares, their tiles, 32px buttons */
 
   /* Inline so element-local control colours resolve on the painted element. */
   /* A whole pixel for panes and cards; a hairline for anything icon- or
@@ -148,7 +148,7 @@
   --font-weight-label: 550;
   /* Named rather than repeated: the drawer sits in the top layer, outside the
      shell, and still has to line up with the panes inside it. */
-  --radius-shell: 0.625rem; /* 10px  panes, cards, dialogs */
+  --radius-shell: 0.625rem; /* 10px  panes, cards, dialogs, 36px buttons */
   --spacing-shell-inset: 10px;
   /* Sidebar end rows share the notch's full frame, including both insets. */
   --spacing-shell-header: calc(

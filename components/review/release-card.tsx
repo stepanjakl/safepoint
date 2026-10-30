@@ -113,7 +113,7 @@ function ReviewButton({
   variant?: 'primary' | 'secondary';
 }) {
   return (
-    <Button variant={variant} pill onPress={() => onOpen()}>
+    <Button variant={variant} size="medium" onPress={() => onOpen()}>
       {label}
       <ArrowUpRight
         aria-hidden
@@ -132,7 +132,7 @@ function AskButton() {
   if (!assistant) return null;
   return (
     <Button
-      pill
+      size="medium"
       onPress={() =>
         assistant.ask('What needs my attention in this release, and why?')
       }
@@ -194,7 +194,7 @@ function CardAction({
       <div className={ACTION_ROW}>
         {live ? (
           <>
-            <Button variant="primary" pill onPress={onCommit}>
+            <Button variant="primary" size="medium" onPress={onCommit}>
               Commit approved changes
             </Button>
             <ReviewButton
