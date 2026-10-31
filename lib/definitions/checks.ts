@@ -5,6 +5,7 @@ import {
   contextFor,
   parseError,
   run,
+  variablesOf,
   type Given,
   type Scope,
 } from './formulas';
@@ -12,10 +13,12 @@ import { describeExample } from './prompts';
 import { recordsOf, type KeptRead, type Records, type Row } from './records';
 import {
   acceptable,
+  readsName,
   type Definition,
   type DefinitionProcess,
   type DefinitionSet,
   type Example,
+  type VersionDifference,
 } from './types';
 
 /*
@@ -157,7 +160,7 @@ const literals = (formula: string) =>
   );
 
 // The ids a formula reads under one name, such as values.<id>.
-const readsUnder = (formula: string, name: string) => [
+export const readsUnder = (formula: string, name: string) => [
   ...new Set(
     [...formula.matchAll(new RegExp(`\\b${name}\\.([a-z0-9_]+)`, 'gi'))].map(
       (m) => m[1]!,
@@ -345,29 +348,32 @@ export function problemsOf(
 const numberOf = (v: unknown) =>
   typeof v === 'bigint' ? Number(v) : typeof v === 'number' ? v : null;
 
+// The formula on one record, with these values for the proposal's fields.
+function runOn(
+  { set, read, definition, owner }: Setting,
+  draft: Draft,
+  key: string,
+  inputs: Record<string, number>,
+) {
+  return run(
+    draft.formula,
+    contextFor(
+      read,
+      key,
+      owner.subject,
+      givenOf(draft, inputs),
+      valuesFor(set, read, key, inputs, definition.id, owner.subject),
+    ),
+  );
+}
+
 // Each example run on the read, with what the formula gives and whether it
 // agrees.
 function runExamples(setting: Setting, draft: Draft): Example[] {
-  const { set, read, definition, owner } = setting;
+  const { definition } = setting;
   return draft.examples.map((example) => {
     try {
-      const raw = run(
-        draft.formula,
-        contextFor(
-          read,
-          example.key,
-          owner.subject,
-          givenOf(draft, example.inputs),
-          valuesFor(
-            set,
-            read,
-            example.key,
-            example.inputs,
-            definition.id,
-            owner.subject,
-          ),
-        ),
-      );
+      const raw = runOn(setting, draft, example.key, example.inputs);
       const actual =
         definition.result === 'check'
           ? typeof raw === 'boolean'
@@ -420,14 +426,210 @@ export type Review = {
   blocked: string | null;
 };
 
-export function review(setting: Setting, draft: Draft): Review {
-  const { owner, text, records, earlier, broken, definition, read } = setting;
-  const reads = readsUnder(draft.formula, 'values');
-  const blocked = broken.filter((d) => reads.includes(d.id));
-  if (blocked.length) {
-    const message = `It reads ${blocked.map((d) => d.name).join(', ')}, which does not work yet: write that again first.`;
-    return { problems: [message], ran: null, blocked: message };
+export { readsName };
+
+/*
+  What a formula has to read to be about anything. `false` passes every other
+  check, and every example, when the examples expect false too: a draft wrote
+  just that for a rule, with five constants it never used.
+*/
+export function readingProblems(
+  draft: Pick<Definition, 'constants' | 'groups'> & { formula: string },
+  subject: DefinitionSubject,
+  result: Definition['result'],
+): string[] {
+  const { formula } = draft;
+  const reads = (name: string) => readsName(formula, name);
+  const data = variablesOf(subject).filter(
+    (name) => name !== 'constants' && name !== 'groups',
+  );
+  const problems: string[] = [];
+  if (!data.some(reads) && (result === 'check' || !reads('constants')))
+    problems.push(
+      `The formula reads nothing from the data, so it gives the same answer for every ${subject.record.singular}. Read what the rule is about.`,
+    );
+  const unread = [
+    ...draft.constants
+      .map((c) => c.id)
+      .filter((id) => !readsUnder(formula, 'constants').includes(id)),
+    ...draft.groups
+      .map((g) => g.id)
+      .filter((id) => !readsUnder(formula, 'groups').includes(id)),
+  ];
+  if (unread.length)
+    problems.push(
+      `The formula never reads ${unread.join(', ')}. Use each one it needs and remove the rest.`,
+    );
+  return problems;
+}
+
+// The values a field is tried at, to see what a check can do on this read.
+const PROBES = [0, 1, 1_000_000];
+
+/*
+  Whether a check's examples show it working both ways, as far as this read
+  lets them. A check cannot always fail: where every delivery arrives in time,
+  nothing an order sets can break the arrival rule. So the formula is tried on
+  every record first, and only an outcome it can reach is required.
+*/
+function reachOf(setting: Setting, draft: Draft) {
+  const { records, owner } = setting;
+  const fields = owner.subject.proposal.map((field) => field.id);
+  const tried = fields.length
+    ? [
+        ...PROBES,
+        ...draft.examples.flatMap((e) => fields.map((f) => e.inputs[f] ?? 0)),
+      ]
+    : [0];
+  const found: {
+    holds?: Pick<Example, 'key' | 'inputs'>;
+    fails?: Pick<Example, 'key' | 'inputs'>;
+  } = {};
+  for (const key of records.keys)
+    for (const value of new Set(tried)) {
+      const inputs = Object.fromEntries(fields.map((f) => [f, value]));
+      try {
+        const outcome = runOn(setting, draft, key, inputs);
+        if (outcome === true) found.holds ??= { key, inputs };
+        if (outcome === false) found.fails ??= { key, inputs };
+      } catch {
+        // A record it cannot be worked out on says nothing either way.
+      }
+    }
+  return found;
+}
+
+/*
+  A formula has to give an answer for every record. One that cannot counts as
+  failing wherever it is used, so a formula that forgets a blank cell would block
+  every record with no maximum, whatever is proposed.
+*/
+function everyRecordProblems(setting: Setting, draft: Draft): string[] {
+  const { records, owner } = setting;
+  const inputs = Object.fromEntries(
+    owner.subject.proposal.map((field) => [field.id, 0]),
+  );
+  const failing = records.keys.flatMap((key) => {
+    try {
+      runOn(setting, draft, key, inputs);
+      return [];
+    } catch (error) {
+      return [{ key, message: (error as Error).message.split('\n')[0]! }];
+    }
+  });
+  return failing.length
+    ? [
+        `It cannot be worked out for ${failing.map((f) => f.key).join(', ')}: ${failing[0]!.message}. A blank cell is absent from the record: test it with has(record.<column>).`,
+      ]
+    : [];
+}
+
+// The values a field is tried at when comparing two versions: closely where
+// orders usually fall, then further apart.
+const COMPARED_AT = [
+  ...Array.from({ length: 21 }, (_, i) => i),
+  ...Array.from({ length: 36 }, (_, i) => 25 + i * 5),
+  500,
+  1000,
+  1_000_000,
+];
+const MOST_DIFFERENCES = 12;
+
+const outcomeOf = (
+  setting: Setting,
+  draft: Draft,
+  key: string,
+  inputs: Record<string, number>,
+) => {
+  try {
+    const raw = runOn(setting, draft, key, inputs);
+    return typeof raw === 'bigint' || typeof raw === 'number'
+      ? String(Number(Number(raw).toFixed(9)))
+      : String(raw);
+  } catch {
+    return 'cannot be worked out';
   }
+};
+
+/*
+  Where two versions of a definition give different answers, on every record at
+  a range of values. How they are worded does not come into it, so two that read
+  differently and behave the same agree. Empty when no difference was found,
+  which is not proof: a value not tried could still tell them apart.
+*/
+export function differencesBetween(
+  setting: Setting,
+  a: Draft,
+  b: Draft,
+): VersionDifference[] {
+  const { owner, records } = setting;
+  const fields = owner.subject.proposal
+    .map((field) => field.id)
+    .filter((id) => readsName(a.formula, id) || readsName(b.formula, id));
+  const values = fields.length
+    ? new Set([
+        ...COMPARED_AT,
+        ...[...a.examples, ...b.examples].flatMap((e) =>
+          fields.map((field) => e.inputs[field] ?? 0),
+        ),
+      ])
+    : new Set([0]);
+  const found: VersionDifference[] = [];
+  for (const key of records.keys)
+    for (const value of values) {
+      const inputs = Object.fromEntries(
+        owner.subject.proposal.map((field) => [field.id, value]),
+      );
+      const results = [
+        outcomeOf(setting, a, key, inputs),
+        outcomeOf(setting, b, key, inputs),
+      ];
+      if (results[0] !== results[1]) {
+        found.push({ key, inputs, results });
+        // The first on each record says most: stop early once there are enough.
+        if (found.length >= MOST_DIFFERENCES) return found;
+        break;
+      }
+    }
+  return found;
+}
+
+function bothWaysProblems(setting: Setting, draft: Draft): string[] {
+  const { subject } = setting.owner;
+  const found = reachOf(setting, draft);
+  if (!found.holds)
+    return [
+      `It fails for every ${subject.record.singular} at every value tried, so it could never be met. Work out what it should say from the instructions.`,
+    ];
+  const shown = (expected: boolean) =>
+    draft.examples.some((e) => e.expect === expected);
+  const problems: string[] = [];
+  if (!shown(true))
+    problems.push(
+      `No example where it holds. Add one, such as ${describeExample(found.holds, subject)}.`,
+    );
+  if (found.fails && !shown(false))
+    problems.push(
+      `No example where it fails. Add one, such as ${describeExample(found.fails, subject)}.`,
+    );
+  return problems;
+}
+
+function reviewParts(setting: Setting, draft: Draft) {
+  const { owner, text, records, earlier, definition, read } = setting;
+  const words = problemsOf(draft, {
+    text,
+    subject: owner.subject,
+    keys: records.keys,
+    names: Object.fromEntries(
+      records.keys.map((key) => [
+        key,
+        String(records.record(key)[owner.subject.data.records.name] ?? ''),
+      ]),
+    ),
+    earlier: earlier.map((d) => d.id),
+    lookupKeys: records.lookupKeys,
+  });
   const typed = checkFormula(
     read,
     owner.subject,
@@ -435,39 +637,141 @@ export function review(setting: Setting, draft: Draft): Review {
     definition.result,
     draft.formula,
   );
-  const problems = [
-    ...problemsOf(draft, {
-      text,
-      subject: owner.subject,
-      keys: records.keys,
-      names: Object.fromEntries(
-        records.keys.map((key) => [
-          key,
-          String(records.record(key)[owner.subject.data.records.name] ?? ''),
-        ]),
-      ),
-      earlier: earlier.map((d) => d.id),
-      lookupKeys: records.lookupKeys,
-    }),
-    ...(typed ? [`The formula: ${typed}`] : []),
-  ];
+  return {
+    words,
+    typed: typed ? [`The formula: ${typed}`] : [],
+    reading: readingProblems(draft, owner.subject, definition.result),
+  };
+}
+
+export function review(setting: Setting, draft: Draft): Review {
+  const { broken, definition } = setting;
+  const reads = readsUnder(draft.formula, 'values');
+  const blocked = broken.filter((d) => reads.includes(d.id));
+  if (blocked.length) {
+    const message = `It reads ${blocked.map((d) => d.name).join(', ')}, which does not work yet: write that again first.`;
+    return { problems: [message], ran: null, blocked: message };
+  }
+  const { words, typed, reading } = reviewParts(setting, draft);
+  const problems = [...words, ...typed, ...reading];
   if (problems.length) return { problems, ran: null, blocked: null };
   const examples = runExamples(setting, draft);
   const disagree = examples.filter((e) => !e.agrees);
+  const unworkable = everyRecordProblems(setting, draft);
+  // Whether the examples show both ways only means something once they agree.
+  const oneWay =
+    !disagree.length && definition.result === 'check'
+      ? bothWaysProblems(setting, draft)
+      : [];
   return {
-    problems: disagree.map(
-      (e) =>
-        `${describeExample(e, owner.subject)}: you worked out ${String(e.expect)}, the formula gives ${e.error ?? String(e.actual)}. Work it out again by hand from the data: correct the example if it was wrong, or the formula if it misreads the instructions.`,
-    ),
+    problems: [
+      ...disagree.map((e) => disagreement(e, setting, draft)),
+      ...unworkable,
+      ...oneWay,
+    ],
     ran: {
       examples,
       uses: reads,
       problem: disagree.length
         ? `${disagree.length} of ${examples.length} examples disagree with the formula.`
-        : null,
+        : (unworkable[0] ?? oneWay[0] ?? null),
     },
     blocked: null,
   };
+}
+
+// With the values the formula read for that example, since those are what a
+// model working it out by hand gets wrong.
+function disagreement(e: Example, setting: Setting, draft: Draft) {
+  const { owner, set, read, definition } = setting;
+  const { subject } = owner;
+  const values = valuesFor(set, read, e.key, e.inputs, definition.id, subject);
+  const reads = readsUnder(draft.formula, 'values').map(
+    (id) => `${id} is ${String(values[id])}`,
+  );
+  return `${describeExample(e, subject)}: you worked out ${String(e.expect)}, the formula gives ${e.error ?? String(e.actual)}.${reads.length ? ` For ${e.key}, ${reads.join(' and ')}.` : ''} Work it out again by hand from the data and these values: correct the example if it was wrong, or the formula if it misreads the instructions.`;
+}
+
+export type ReviewPart = {
+  id: string;
+  label: string;
+  // Each problem found; empty when it passes.
+  problems: string[];
+  // What was found besides, or why it was not looked at.
+  note: string | null;
+};
+
+/*
+  Everything `review` holds a definition to, one part at a time, and without
+  stopping at the first part to fail, so a person can see all of it. Built from
+  the same parts as review, so the two cannot come to say different things.
+*/
+export function reviewBreakdown(setting: Setting, draft: Draft): ReviewPart[] {
+  const { definition, broken } = setting;
+  const { words, typed, reading } = reviewParts(setting, draft);
+  const reads = readsUnder(draft.formula, 'values');
+  const missing = broken.filter((d) => reads.includes(d.id));
+  const examples = runExamples(setting, draft);
+  const disagree = examples.filter((e) => !e.agrees);
+  const parts: ReviewPart[] = [
+    {
+      id: 'reads-working',
+      label: 'Reads only definitions that work',
+      problems: missing.length
+        ? [
+            `It reads ${missing.map((d) => d.name).join(', ')}, which does not work yet.`,
+          ]
+        : [],
+      note: null,
+    },
+    {
+      id: 'instructions',
+      label: 'Quotes the instructions, and writes no number or record itself',
+      problems: words,
+      note: null,
+    },
+    {
+      id: 'fits',
+      label: 'Fits the data’s columns and types',
+      problems: typed,
+      note: null,
+    },
+    {
+      id: 'reading',
+      label: 'Reads the data, and everything it declares',
+      problems: reading,
+      note: null,
+    },
+    {
+      id: 'every-record',
+      label: 'Can be worked out for every record',
+      problems: everyRecordProblems(setting, draft),
+      note: null,
+    },
+    {
+      id: 'examples',
+      label: 'Every example agrees with the formula',
+      problems: disagree.map((e) => disagreement(e, setting, draft)),
+      note: `${examples.length - disagree.length} of ${examples.length} agree.`,
+    },
+  ];
+  if (definition.result === 'check') {
+    const found = reachOf(setting, draft);
+    parts.push({
+      id: 'both-ways',
+      label:
+        'Examples show it holding and failing, as far as the data lets them',
+      problems: disagree.length ? [] : bothWaysProblems(setting, draft),
+      note: disagree.length
+        ? 'Not looked at until the examples agree.'
+        : found.holds && found.fails
+          ? 'On this read it can hold and can fail.'
+          : found.holds
+            ? 'On this read it cannot fail, so no failing example is needed.'
+            : 'On this read it cannot hold.',
+    });
+  }
+  return parts;
 }
 
 // The definitions that read this one, directly or through another.

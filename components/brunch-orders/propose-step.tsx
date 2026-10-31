@@ -38,6 +38,7 @@ import { SUBJECT } from '@/lib/processes/brunch-orders/process';
 import { DRAFTING_MODELS, type DraftingModel } from '@/lib/models';
 
 import { DataDrawer } from './data-drawer';
+import { ModelLimits } from './model-limits';
 import { StaleRules, type StaleReply } from './stale-rules';
 
 type Calculated = {
@@ -188,7 +189,9 @@ export function ProposeStep({
     // Once per read and rulebook; the poll below asks again while it runs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [run, text, readId, rulebook]);
-  const answered = propose.state.kind === 'done';
+  // A failed request says nothing about the job, so it is asked again too.
+  const answered =
+    propose.state.kind === 'done' || propose.state.kind === 'failed';
   useEffect(() => {
     if (!running || !answered) return;
     const timer = setTimeout(() => void ask({ action: 'get' }), POLL_MS);
@@ -258,6 +261,7 @@ export function ProposeStep({
             </Button>
           )}
         </div>
+        <ModelLimits model={model} />
         <p
           role="status"
           className={

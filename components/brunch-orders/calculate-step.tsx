@@ -41,6 +41,7 @@ import type {
 import { cx } from '@/lib/cx';
 import { DRAFTING_MODELS, type DraftingModel } from '@/lib/models';
 
+import { ModelLimits } from './model-limits';
 import { StaleRules, type StaleReply } from './stale-rules';
 
 type CalculateResponse =
@@ -233,6 +234,7 @@ export function CalculateStep({
                 </Button>
               ) : null}
             </div>
+            <ModelLimits model={model} />
             <p className="text-meta text-muted max-w-prose">
               The model works every value out again from the instructions and
               the data, without the formulas. If the model is busy or out of

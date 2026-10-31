@@ -1,0 +1,220 @@
+/* ── Draft progress (workbench) ─────────────────────────────────────────────
+   What the options draw that no component has yet. Whatever is chosen moves
+   beside rules-step.tsx; the rest goes with this page.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Focus and a followed link stop clear of the sticky controls. A margin on what
+   they can cover, not padding on the page: that counts the controls as covered,
+   so focusing one scrolls the whole page. */
+main:has(.draft-controls) :is(a, button, select, input, [tabindex], li[id]):not(.draft-controls *) {
+  scroll-margin-top: 9rem;
+}
+
+/* useEasedCards keeps the page still itself, and the browser's own anchoring
+   would pick a different element to hold. */
+html:has([data-draft-holds-scroll]) {
+  overflow-anchor: none;
+}
+
+/* Unlayered, or the card's control-face and display utilities win. Its children
+   are head, body and actions; only the body's row moves (eased-cards.ts). */
+[data-draft-easing] {
+  --draft-ease-pace: 1.6ms;
+  --draft-ease-min: 360ms;
+  --draft-ease-max: 800ms;
+  --draft-ease-time: clamp(
+    var(--draft-ease-min),
+    calc(var(--draft-ease-height, 230) * var(--draft-ease-pace)),
+    var(--draft-ease-max)
+  );
+  transition: grid-template-rows var(--draft-ease-time) var(--ease-fold);
+  & > :nth-child(2) {
+    overflow: clip;
+    min-height: 0;
+  }
+}
+
+/* What is new in a card, in reading order: its formula and numbers, its examples
+   one record after another, and its actions. */
+[data-draft-fresh] {
+  --draft-fresh-time: 640ms;
+  --draft-fresh-step: 110ms;
+  & > :nth-child(2) > section:first-child > div > :nth-child(n + 2),
+  & > :nth-child(2) > :not(section):nth-child(n + 2),
+  & > :nth-child(2) > section:nth-child(2) > h5,
+  & > :nth-child(2) > section:nth-child(2) > ul > li,
+  & > :nth-child(3) > * {
+    animation: draft-fresh var(--draft-fresh-time) ease-out both;
+  }
+  & > :nth-child(2) > section:nth-child(2) > ul > li:nth-child(1) {
+    animation-delay: var(--draft-fresh-step);
+  }
+  & > :nth-child(2) > section:nth-child(2) > ul > li:nth-child(2) {
+    animation-delay: calc(var(--draft-fresh-step) * 2);
+  }
+  & > :nth-child(2) > section:nth-child(2) > ul > li:nth-child(n + 3) {
+    animation-delay: calc(var(--draft-fresh-step) * 3);
+  }
+}
+
+/* Placeholders and a card's line going, before what replaces them arrives. */
+[data-leaving] {
+  --draft-leave: 360ms;
+  animation: draft-leave var(--draft-leave) ease-in forwards;
+}
+@keyframes draft-leave {
+  to {
+    opacity: 0;
+  }
+}
+
+/* Unlayered, or the card's own display utilities win. Its first child is its
+   head; the body and actions follow it. */
+[data-heads-only] ol[aria-label='Calculations and checks'] > li > :nth-child(n + 2) {
+  display: none;
+}
+
+@layer components {
+  .draft-panels {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 28rem), 1fr));
+  }
+
+  .draft-pill-styles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
+  }
+
+  /* The name's pass in thread-step.css, for a card's word and placeholders alike,
+     so they keep one pace. In a thread they share its beat; here, their own. */
+  .draft-beat,
+  [data-shimmer] .draft-line {
+    --draft-beat: 2.2s;
+    --thread-name-band: currentColor;
+    background-image: linear-gradient(
+      90deg,
+      currentColor 30%,
+      var(--thread-name-band) 44%,
+      var(--thread-name-band) 56%,
+      currentColor 70%
+    );
+    background-size: 300% 100%;
+    background-position: 105% 0;
+    animation: thread-name-beat var(--thread-beat, var(--draft-beat)) linear infinite;
+  }
+  .draft-beat {
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  /* The keyframes read this role on the element, so each can have its own band:
+     light's step is the thread's own, as white would wash out on the pale pill. */
+  .draft-beat-white .draft-beat {
+    --sp-thread-beat-glow: light-dark(var(--sp-state-advisory-9), var(--sp-neutral-0));
+  }
+  [data-shimmer] .draft-line {
+    --sp-thread-beat-glow: light-dark(var(--sp-neutral-250), var(--sp-neutral-525));
+    color: var(--sp-surface-hover-strong);
+  }
+  @media (forced-colors: active) {
+    .draft-beat {
+      background-image: none;
+      -webkit-text-fill-color: currentColor;
+    }
+  }
+
+  .draft-pill-dashed {
+    --draft-dash-width: 1px;
+    outline: var(--draft-dash-width) dashed var(--sp-text-muted-soft);
+    outline-offset: calc(-1 * var(--draft-dash-width));
+  }
+
+  .draft-crossfade {
+    --draft-crossfade-time: 420ms;
+    position: relative;
+    display: block;
+  }
+  .draft-crossfade-now {
+    display: block;
+    animation: draft-fresh var(--draft-crossfade-time) ease-out;
+  }
+  /* Faded out at rest, so it never lingers where nothing plays it out. */
+  .draft-crossfade-was {
+    position: absolute;
+    inset: 0 0 auto;
+    opacity: 0;
+    pointer-events: none;
+    animation: draft-crossfade-out var(--draft-crossfade-time) ease-in;
+  }
+  @keyframes draft-crossfade-out {
+    from {
+      opacity: 1;
+    }
+  }
+  /* A pill, set at the end of its row, keeps its own width. */
+  .draft-chip {
+    display: inline-flex;
+    & > .draft-crossfade-now {
+      display: inline-flex;
+    }
+    & > .draft-crossfade-was {
+      display: inline-flex;
+      inset: 0 0 auto auto;
+    }
+  }
+  @keyframes draft-fresh {
+    from {
+      opacity: 0;
+    }
+  }
+
+  .draft-dots {
+    --draft-dot-beat: 1200ms;
+    --draft-dot-lag: 200ms;
+    display: inline-flex;
+    gap: 0.125rem;
+    margin-inline-start: 0.25rem;
+    vertical-align: middle;
+    & > span {
+      width: 0.1875rem;
+      height: 0.1875rem;
+      border-radius: 999px;
+      background-color: currentColor;
+      animation: draft-dot var(--draft-dot-beat) var(--ease-in-out-quad) infinite;
+    }
+    & > span:nth-child(2) {
+      animation-delay: var(--draft-dot-lag);
+    }
+    & > span:nth-child(3) {
+      animation-delay: calc(var(--draft-dot-lag) * 2);
+    }
+  }
+  @keyframes draft-dot {
+    0%,
+    60%,
+    100% {
+      opacity: 0.3;
+    }
+    30% {
+      opacity: 1;
+    }
+  }
+
+  .draft-bar-fill {
+    display: block;
+    width: var(--draft-share);
+    height: 100%;
+    border-radius: inherit;
+    transition: width var(--duration-state) ease-out;
+  }
+
+  .draft-arriving > li {
+    --draft-arrival: 320ms;
+    animation: draft-arrive var(--draft-arrival) var(--ease-out-cubic);
+  }
+  @keyframes draft-arrive {
+    from {
+      opacity: 0;
+      translate: 0 0.5rem;
+    }
+  }
+}

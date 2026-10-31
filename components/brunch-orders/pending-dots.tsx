@@ -87,14 +87,21 @@ export function PendingDots({
       let seen = false;
       const observer = new IntersectionObserver(
         ([entry]) => {
-          if (seen && entry?.isIntersecting) dot.dataset.arrived = '';
+          if (
+            seen &&
+            entry?.isIntersecting &&
+            dot.dataset.arrivedOnce === undefined
+          ) {
+            dot.dataset.arrivedOnce = '';
+            dot.dataset.arrived = '';
+          }
           seen = true;
         },
         { root: scroller, rootMargin: `-${top} 0px -${bottom} 0px` },
       );
       observer.observe(dot.parentElement!.querySelector('.rules-dot-mark')!);
-      // The beat ends itself (rules-step.css); it is cleared once it has, so
-      // the next arrival plays it again.
+      // Clear the animation trigger after its first beat; the played marker
+      // stays on the dot through observer resets when the pending list changes.
       const ended = () => delete dot.dataset.arrived;
       dot.addEventListener('animationend', ended);
       return () => {

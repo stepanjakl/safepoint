@@ -1,4 +1,3 @@
-import { google } from '@ai-sdk/google';
 import { generateText, isStepCount, tool, ToolChoiceViolationError } from 'ai';
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -15,6 +14,7 @@ import {
 } from './calculate';
 import { DRAFT_MODELS, withModels, type Resolve } from './calls';
 import { givenOf } from './checks';
+import { limitedGoogle } from './limits';
 import { contextFor, run } from './formulas';
 import { plain, timingOf } from './prompts';
 import { cellOf, fitting, type KeptRead, type Row } from './records';
@@ -304,7 +304,7 @@ async function proposeBatch(
   const { model } = await withModels(
     models,
     'propose',
-    resolve ?? google,
+    resolve ?? limitedGoogle,
     async (languageModel, options) => {
       try {
         await generateText({
@@ -486,8 +486,9 @@ export async function proposalProgress(
   readId: string,
   fingerprint: string,
 ): Promise<DraftProgress | null> {
+  // A copy, as in draft.ts: the job changes the one held.
   const held = jobs.get(`${owner.id}:${readId}:${fingerprint}`);
-  if (held) return held;
+  if (held) return { ...held };
   const kept = await readJson<DraftProgress>(
     jobFile(owner, readId, fingerprint),
   );

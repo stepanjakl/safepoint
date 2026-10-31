@@ -1,22 +1,24 @@
-import { google } from '@ai-sdk/google';
 import { generateText, isStepCount, tool, ToolChoiceViolationError } from 'ai';
 import { z } from 'zod';
 
 import type { DefinitionSubject } from '@/lib/process/model';
-import { fallbackChain } from '@/lib/models';
+import { fallbackChain, type DraftingModel } from '@/lib/models';
 
-import { DRAFT_MODELS, withModels } from './calls';
+import { WRITE_MODELS, withModels } from './calls';
+import { limitedGoogle } from './limits';
 import {
   dependentsOf,
   givenOf,
   KIND_WORDS,
   celOf,
+  differencesBetween,
   review,
   scopeOf,
   settingOf,
   valuesFor,
   type Draft,
   type Setting,
+  readsName,
 } from './checks';
 import type { Asking } from './find';
 import { checkFormula, contextFor, describe, run } from './formulas';
@@ -30,10 +32,12 @@ import {
 import { fitting, type KeptRead } from './records';
 import { loadSet, updateSet } from './store';
 import type {
+  Agreement,
   Definition,
   DefinitionProcess,
   DefinitionSet,
   Example,
+  WrittenVersion,
 } from './types';
 
 /*
@@ -46,10 +50,17 @@ import type {
   does not work yet, when the same problems come back three times, or at the
   step limit. What the person said when they denied the last version is part
   of what the model is told.
+
+  A draft writes each definition more than once (writeAgreed), with no write
+  seeing another, and code compares how the versions behave. A model's examples
+  come from the same reading as its formula, so they agree with a misreading;
+  another write misreads differently, or not at all.
 */
 
 // A write's tool calls: room to check, try and fix several times over.
 const STEPS = 12;
+// The writes a definition gets to find two that pass every check.
+const WRITES_AT_MOST = 3;
 
 // What one answer holds: built per definition, so a check's examples say
 // whether it holds and a number's say the number, from one schema.
@@ -156,6 +167,30 @@ function instructionsFor(setting: Setting) {
   ].join('\n');
 }
 
+/*
+  What the definitions already written come to, record by record. Told only what
+  they mean, a model works them out again by hand for its examples, gets them
+  wrong, and argues with a right formula. Those that depend on what is proposed
+  are left out: they have no one value.
+*/
+function workedOutFor(setting: Setting) {
+  const { set, read, records, definition, working, owner } = setting;
+  const { subject } = owner;
+  const fields = subject.proposal.map((field) => field.id);
+  const numbers = working.filter(
+    (d) =>
+      d.result === 'number' &&
+      !fields.some((field) => readsName(d.formula!, field)),
+  );
+  if (!numbers.length) return '';
+  return `What those come to for each ${subject.record.singular}, worked out by the app. Use these in your examples; do not work them out again:\n${records.keys
+    .map((key) => {
+      const values = valuesFor(set, read, key, {}, definition.id, subject);
+      return `- ${key}: ${numbers.map((d) => `${d.id} = ${String(values[d.id])}`).join(', ')}`;
+    })
+    .join('\n')}`;
+}
+
 function promptFor(setting: Setting) {
   const { text, definition, working, broken, sample, records, read, owner } =
     setting;
@@ -181,6 +216,7 @@ function promptFor(setting: Setting) {
       ? `Not working yet, so never read: ${broken.map((d) => d.id).join(', ')}.`
       : '',
     `Write: ${definition.id}, ${definition.text}${definition.consequence ? ` (failing it ${definition.consequence === 'block' ? 'blocks the proposal' : 'needs a person to decide'})` : ''}`,
+    workedOutFor(setting),
     `${plural[0]!.toUpperCase()}${plural.slice(1)}: ${records.keys.join(', ')}`,
     `The data:\n${dataOf(read)}`,
     denied,
@@ -197,18 +233,24 @@ type Kept = {
   problem: string | null;
 };
 
-export async function writeDefinition(
-  owner: DefinitionProcess,
-  text: string,
-  read: KeptRead,
-  id: string,
-  { model: chosen = null, resolve }: Asking = {},
-): Promise<DefinitionSet | null> {
-  fitting(read, owner.subject.data);
-  const set = await loadSet(owner, text);
-  const definition = set?.definitions.find((d) => d.id === id);
-  if (!set || !definition) return null;
-  const setting = settingOf(owner, text, set, read, definition);
+type Written = {
+  kept: Kept | null;
+  // Whether the last answer passed every check.
+  clean: boolean;
+  // Why the last answer was not kept, when it was not.
+  unkept: string;
+  // What stopped a later answer, if anything.
+  blocked: string | null;
+  model: DraftingModel;
+};
+
+// One write: asks the model, and saves nothing.
+async function writeOnce(
+  setting: Setting,
+  { model: chosen = null, resolve }: Asking,
+): Promise<Written> {
+  const { owner, read, definition, set } = setting;
+  const { id } = definition;
   const schema = writeSchema(definition, owner.subject);
 
   // Set by the tools while the conversation runs.
@@ -290,9 +332,9 @@ export async function writeDefinition(
   };
 
   const { model } = await withModels(
-    chosen ? fallbackChain(chosen) : DRAFT_MODELS,
+    chosen ? fallbackChain(chosen) : WRITE_MODELS,
     `write-${id}`,
-    resolve ?? google,
+    resolve ?? limitedGoogle,
     async (languageModel, options) => {
       try {
         await generateText({
@@ -323,10 +365,39 @@ export async function writeDefinition(
     },
   );
 
-  const result = kept;
-  // Why the last answer was not kept, when it was not.
-  const unkept = blocked ?? (last ?? ['No answer was checked.']).join(' ');
-  if (!result)
+  return {
+    kept,
+    clean: last !== null && last.length === 0,
+    unkept: blocked ?? (last ?? ['No answer was checked.']).join(' '),
+    blocked,
+    model,
+  };
+}
+
+const settingFor = async (
+  owner: DefinitionProcess,
+  text: string,
+  read: KeptRead,
+  id: string,
+) => {
+  fitting(read, owner.subject.data);
+  const set = await loadSet(owner, text);
+  const definition = set?.definitions.find((d) => d.id === id);
+  return set && definition
+    ? settingOf(owner, text, set, read, definition)
+    : null;
+};
+
+// Keeps a write, or says why there is nothing to keep.
+function keep(
+  { owner, text, read, definition }: Setting,
+  written: Written,
+  agreement: Agreement | null,
+  note: string | null = null,
+) {
+  const { id } = definition;
+  const { kept, unkept, model } = written;
+  if (!kept)
     return updateSet(owner, text, (s) => ({
       ...s,
       definitions: s.definitions.map((d) =>
@@ -350,15 +421,18 @@ export async function writeDefinition(
         d.id === id
           ? {
               ...d,
-              ...result.written,
-              examples: result.examples,
+              ...kept.written,
+              examples: kept.examples,
               // Its own problem, and what stopped a later answer, if any.
               problem:
-                [result.problem, blocked].filter(Boolean).join(' ') || null,
+                [kept.problem, written.blocked, note]
+                  .filter(Boolean)
+                  .join(' ') || null,
               model,
               approvedAt: null,
               deniedAt: null,
               denial: null,
+              agreement,
             }
           : dependents.has(d.id)
             ? { ...d, approvedAt: null }
@@ -366,4 +440,92 @@ export async function writeDefinition(
       ),
     };
   });
+}
+
+// One write, kept as it stands.
+export async function writeDefinition(
+  owner: DefinitionProcess,
+  text: string,
+  read: KeptRead,
+  id: string,
+  asking: Asking = {},
+): Promise<DefinitionSet | null> {
+  const setting = await settingFor(owner, text, read, id);
+  if (!setting) return null;
+  return keep(setting, await writeOnce(setting, asking), null);
+}
+
+const draftOfKept = (kept: Kept): Draft => ({
+  formula: kept.written.formula!,
+  constants: kept.written.constants,
+  groups: kept.written.groups,
+  examples: kept.examples,
+});
+
+const versionOf = ({ kept, model }: Written): WrittenVersion => ({
+  formula: kept!.written.formula!,
+  constants: kept!.written.constants,
+  groups: kept!.written.groups,
+  uses: kept!.written.uses,
+  examples: kept!.examples,
+  model,
+});
+
+export type WriteRuns = { onRun?: (run: number) => void | Promise<void> };
+
+/*
+  Writes a definition until two writes have passed every check, each from the same
+  input, and compares how those two behave. If they agree, the first is kept. If
+  not, a person chooses, because a vote does not settle it: over three drafts, the
+  two-of-three answer was wrong on 2 of 6 such rules, the same misreading coming up
+  twice, and there was no wrong rule where the first two agreed.
+*/
+export async function writeAgreed(
+  owner: DefinitionProcess,
+  text: string,
+  read: KeptRead,
+  id: string,
+  { onRun, ...asking }: Asking & WriteRuns = {},
+): Promise<DefinitionSet | null> {
+  const setting = await settingFor(owner, text, read, id);
+  if (!setting) return null;
+  const writes: Written[] = [];
+  const passed = () => writes.filter((w) => w.clean && w.kept);
+  let stopped: string | null = null;
+  for (let run = 1; run <= WRITES_AT_MOST && passed().length < 2; run += 1) {
+    await onRun?.(run);
+    try {
+      writes.push(await writeOnce(setting, asking));
+    } catch (error) {
+      // Nothing to show for it, so there is nothing to keep: say so as before.
+      if (!passed().length) throw error;
+      stopped = (error as Error).message.split('\n')[0]!;
+      break;
+    }
+  }
+  const clean = passed();
+  const runs = writes.length;
+  const versions = clean.map(versionOf);
+  if (clean.length === 2) {
+    const differences = differencesBetween(
+      setting,
+      draftOfKept(clean[0]!.kept!),
+      draftOfKept(clean[1]!.kept!),
+    );
+    return keep(setting, clean[0]!, {
+      status: differences.length ? 'split' : 'agreed',
+      runs,
+      versions,
+      differences,
+    });
+  }
+  if (clean.length === 1)
+    return keep(
+      setting,
+      clean[0]!,
+      { status: 'unconfirmed', runs, versions, differences: [] },
+      stopped ? `Could not be compared: ${stopped}` : null,
+    );
+  // None passed: the last answer kept, with what was wrong with it.
+  return keep(setting, writes.at(-1)!, null);
 }

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 
 import { capturedRead } from './captured.fixture';
-import { accept, confirmIntent, deny } from './decide';
+import { accept, choose, confirmIntent, deny } from './decide';
 import { inScratchDirectory } from './scratch.fixture';
 import { definition, example, keep, TEXT } from './set.fixture';
 import { listRevisions } from './store';
@@ -87,5 +87,41 @@ describe('accepting a definition', () => {
     expect(revisions).toEqual([
       expect.objectContaining({ id: head, parent: null, reason: 'accepted' }),
     ]);
+  });
+});
+
+describe('choosing between versions', () => {
+  it('takes the version, clears the split, and only then can be accepted', async () => {
+    const version = (formula: string) => ({
+      formula,
+      constants: [],
+      groups: [],
+      uses: [],
+      examples: [],
+      model: 'test',
+    });
+    const set = await keep([
+      definition('split', {
+        result: 'check',
+        formula: 'order == 0',
+        agreement: {
+          status: 'split',
+          runs: 2,
+          versions: [version('order == 0'), version('order == 1')],
+          differences: [],
+        },
+      }),
+    ]);
+    expect(set.definitions[0]?.agreement?.status).toBe('split');
+    const refused = await accept(owner, TEXT, 'split', async () =>
+      capturedRead(),
+    );
+    expect(refused?.definitions[0]?.problem).toContain('choose one');
+    const chosen = await choose(owner, TEXT, 'split', 1);
+    expect(chosen?.definitions[0]).toMatchObject({
+      formula: 'order == 1',
+      agreement: { status: 'chosen' },
+      approvedAt: null,
+    });
   });
 });

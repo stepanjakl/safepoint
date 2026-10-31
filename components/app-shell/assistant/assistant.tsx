@@ -2,7 +2,7 @@
 
 // Deep import: Blode's barrel is the whole icon library.
 import MagicEdit from 'blode-icons-react/icons/magic-edit';
-import Robot from 'blode-icons-react/icons/ai-bot-head-looking';
+import Robot from 'blode-icons-react/icons/cute-robot';
 import { Button, type Slant } from '@/components/ui/button';
 import { useAssistant } from './assistant-state';
 

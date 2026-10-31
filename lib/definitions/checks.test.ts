@@ -1,8 +1,23 @@
 import { describe, expect, it } from 'vitest';
 
-import { SUBJECT } from '@/lib/processes/brunch-orders/process';
+import {
+  BRUNCH_ORDERS_DEFINITIONS as owner,
+  SUBJECT,
+} from '@/lib/processes/brunch-orders/process';
 
-import { problemsOf, states, strayNumbers, type Against } from './checks';
+import { capturedRead } from './captured.fixture';
+import {
+  problemsOf,
+  readingProblems,
+  review,
+  settingOf,
+  states,
+  strayNumbers,
+  type Against,
+  type Draft,
+} from './checks';
+import { definition, example } from './set.fixture';
+import { worksOutItself, type Definition, type DefinitionSet } from './types';
 
 // What the app holds a written definition to before running it
 // (docs/processes/brunch-orders/PLAN.md, phase 2b): numbers and records the
@@ -168,5 +183,177 @@ describe('words that state a number', () => {
     expect(states('safety margin', 100)).toBe(false);
     // 07:00 is a time, not a 7.
     expect(states('from 07:00', 7)).toBe(false);
+  });
+});
+
+describe('what a formula has to read', () => {
+  const reading = (
+    formula: string,
+    more: Partial<Pick<Definition, 'constants' | 'groups'>> = {},
+    result: Definition['result'] = 'check',
+  ) =>
+    readingProblems(
+      { formula, constants: [], groups: [], ...more },
+      SUBJECT,
+      result,
+    );
+  const constant = (id: string) => ({ id, value: 4, quote: 'four' });
+
+  it('refuses a formula that reads nothing from the data', () => {
+    expect(reading('false')[0]).toContain('reads nothing from the data');
+    expect(reading('true')[0]).toContain('reads nothing from the data');
+    expect(
+      reading('constants.four > 3', { constants: [constant('four')] })[0],
+    ).toContain('reads nothing from the data');
+  });
+
+  it('allows a number that is only a constant from the instructions', () => {
+    expect(
+      reading('constants.four', { constants: [constant('four')] }, 'number'),
+    ).toEqual([]);
+    expect(reading('4', {}, 'number')[0]).toContain('reads nothing');
+  });
+
+  it('does not take a word in quotes, or a field of that name, for reading', () => {
+    expect(reading('"order" == "record"')[0]).toContain('reads nothing');
+    expect(reading('order == 0')).toEqual([]);
+    expect(reading('key == "x"')).toEqual([]);
+    expect(reading('category.safety_pct > 0')).toEqual([]);
+    expect(reading('values.expected > 0')).toEqual([]);
+  });
+
+  it('refuses constants and groups the formula never reads', () => {
+    expect(
+      reading('order == 0', {
+        constants: [constant('four')],
+        groups: [{ id: 'kit', keys: [], quote: '' }],
+      }),
+    ).toEqual([expect.stringContaining('never reads four, kit')]);
+  });
+});
+
+describe('a check’s examples', () => {
+  const read = capturedRead();
+  const TEXT = 'The rule.';
+  const checked = (
+    formula: string,
+    examples: Pick<Draft['examples'][number], 'key' | 'inputs' | 'expect'>[],
+  ) => {
+    const item = definition('the_rule', {
+      result: 'check',
+      consequence: 'block',
+    });
+    const set: DefinitionSet = {
+      hash: 'h',
+      version: 'v1',
+      intent: '',
+      intentConfirmedAt: null,
+      readId: read.id,
+      foundAt: '',
+      model: 'test',
+      definitions: [item],
+    };
+    return review(settingOf(owner, TEXT, set, read, item), {
+      formula,
+      constants: [],
+      groups: [],
+      examples: examples.map((e) => ({ ...e, why: 'By hand.' })),
+    });
+  };
+  const holds = { key: 'SD-01', inputs: { order: 8 }, expect: true };
+  const fails = { key: 'SD-01', inputs: { order: 5 }, expect: false };
+  const WHOLE_CASES = 'order % record.case_size == 0';
+
+  it('passes when they show it holding and failing', () => {
+    expect(checked(WHOLE_CASES, [holds, fails]).problems).toEqual([]);
+  });
+
+  it('asks for the outcome they leave out, with one that would show it', () => {
+    const noFail = checked(WHOLE_CASES, [holds]);
+    expect(noFail.problems).toEqual([
+      expect.stringMatching(/^No example where it fails\. Add one, such as /),
+    ]);
+    expect(noFail.ran?.problem).toContain('No example where it fails');
+    expect(checked(WHOLE_CASES, [fails]).problems).toEqual([
+      expect.stringMatching(/^No example where it holds/),
+    ]);
+  });
+
+  it('does not ask for a failure this read cannot give', () => {
+    // Whatever is ordered: no delivery day in the data reaches 100.
+    expect(
+      checked('order == 0 || record.delivery_day < 100', [holds]).problems,
+    ).toEqual([]);
+  });
+
+  it('refuses a check nothing can meet', () => {
+    expect(checked('order < 0', [fails]).problems[0]).toContain(
+      'could never be met',
+    );
+  });
+
+  it('refuses what a draft wrote for a rule: false, expected false twice', () => {
+    expect(
+      checked('false', [
+        { key: 'CF-40', inputs: { order: 0 }, expect: false },
+        { key: 'SS-125', inputs: { order: 0 }, expect: false },
+      ]).problems[0],
+    ).toContain('reads nothing from the data');
+  });
+
+  it('only asks once the examples agree', () => {
+    const wrong = { key: 'SD-01', inputs: { order: 8 }, expect: false };
+    const { problems } = checked(WHOLE_CASES, [wrong]);
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain('you worked out false');
+  });
+});
+
+describe('a check that works a quantity out itself', () => {
+  const quoted = (id: string, quote: string) => ({ id, value: 4, quote });
+  const check = (
+    text: string,
+    formula: string,
+    constants: Definition['constants'],
+  ) =>
+    worksOutItself(
+      definition('the_rule', {
+        result: 'check',
+        text,
+        formula,
+        constants,
+        examples: [example(true, true)],
+      }),
+    );
+
+  it('is told by reading numbers its own words do not state', () => {
+    expect(
+      check(
+        'No more than we expect to sell.',
+        'constants.a + constants.b > order',
+        [quoted('a', 'the last four weekends'), quoted('b', 'about 40 kits')],
+      ),
+    ).toBe(true);
+  });
+
+  it('is not one reading a number or two its words state, or one from elsewhere', () => {
+    expect(
+      check('Order 4 or 5.', 'constants.a + constants.b > order', [
+        quoted('a', '4'),
+        quoted('b', '5'),
+      ]),
+    ).toBe(false);
+    expect(
+      check('Before Saturday’s opening.', 'constants.a > constants.b', [
+        quoted('a', 'Saturday'),
+        quoted('b', '07:00'),
+      ]),
+    ).toBe(false);
+  });
+
+  it('is not one holding constants it does not read', () => {
+    expect(
+      check('The rule.', 'order > 0', [quoted('a', 'x'), quoted('b', 'y')]),
+    ).toBe(false);
   });
 });

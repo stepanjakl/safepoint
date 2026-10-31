@@ -113,18 +113,22 @@ const INSTRUCTIONS = `What this is for
 Each week, suggest how many of each product to order for the coming Brunch weekend, so we have enough for what we expect to sell without overstocking. A person checks and approves every order before it is placed.
 
 The promotion
-Brunch weekend runs every Saturday from 07:00 to Sunday 22:00. The idea is to make avocado toast at home easy. We sell an avocado toast kit (a sourdough loaf, a pack of ripe avocados and a pack of feta), and eggs, cherry tomatoes and rocket are on offer. Ripe avocados don't keep, so don't order more than we'll sell.
+Brunch weekend runs every Saturday from 07:00 to Sunday 22:00. The idea is to make avocado toast at home easy. We sell an avocado toast kit (a sourdough loaf, a pack of ripe avocados and a pack of feta), and eggs, cherry tomatoes and rocket are on offer. Ripe avocados don't keep.
 
 How much we expect to sell
 Start from each product's average over the last four weekends. Products on offer sell about 40% more, the kit's ingredients about 10% more, and everything else about 15% more. We expect to sell about 40 kits, and each one uses a loaf, a pack of avocados and a pack of feta on top of their own sales. Round up to whole units.
+
+What we have
+Stock available is what we have on hand, less what is reserved, plus what arrives before the start.
 
 Rules
 1. Order in whole cases.
 2. Never order more than the supplier can deliver.
 3. Only order what arrives before Saturday's opening.
 4. Only order what can still be placed before the supplier's cutoff for this weekend.
-5. Aim for enough stock to cover expected sales plus the category's safety margin. If that isn't possible, flag it for a person to decide.
-6. If a product's stock count is older than its category allows, flag it for a person to decide, even when nothing is ordered.`;
+5. Aim for enough stock available to cover expected sales plus the category's safety margin. If that isn't possible, flag it for a person to decide.
+6. If a product's stock count is older than its category allows, flag it for a person to decide, even when nothing is ordered.
+7. Stock available plus the order must not exceed the ripe avocados we expect to sell.`;
 
 // Each step of a run, in order. The thread sets each one's status from the
 // run's progress; the phase in each label says which part of the plan brings
@@ -200,11 +204,13 @@ export const brunchOrdersProcess: ProcessSummary = {
     version: 'v3',
     updatedAt: 'Written 30 Oct 2026',
     author: 'Project owner',
-    note: 'Two rules for what a read of the sheet cannot show by itself: the supplier cutoff and the age of a stock count.',
+    note: 'Two rules for what a read of the sheet cannot show by itself: the supplier cutoff and the age of a stock count. The ripe avocado limit moves into the numbered rules.',
     promptedBy: null,
     changes: [
       'Orders must be placed before the supplier’s cutoff for this weekend.',
       'A stock count older than its category allows is flagged for a person.',
+      'The ripe avocado limit is now a numbered rule: a draft missed it in the prose.',
+      'Stock available is defined once, so every rule counts it the same way.',
     ],
     text: INSTRUCTIONS,
     previous: [

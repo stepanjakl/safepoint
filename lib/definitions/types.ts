@@ -44,6 +44,37 @@ const exampleSchema = z.object({
   agrees: z.boolean(),
 });
 
+// One independent write of a definition.
+const writtenVersionSchema = z.object({
+  formula: z.string(),
+  constants: z.array(constantSchema),
+  groups: z.array(groupSchema),
+  uses: z.array(z.string()),
+  examples: z.array(exampleSchema),
+  model: z.string(),
+});
+
+// Where two versions give different answers: the record, the values tried, and
+// what each version gives, in the versions' order.
+const differenceSchema = z.object({
+  key: z.string(),
+  inputs: z.record(z.string(), z.number()),
+  results: z.array(z.string()),
+});
+
+/*
+  What came of writing a definition more than once, without any write seeing
+  another. agreed: two behave the same. split: they do not, so a person chooses.
+  chosen: a person chose. unconfirmed: only one passed the checks, or the rest
+  could not run, so it could be compared with nothing.
+*/
+const agreementSchema = z.object({
+  status: z.enum(['agreed', 'split', 'chosen', 'unconfirmed']),
+  runs: z.number().int(),
+  versions: z.array(writtenVersionSchema),
+  differences: z.array(differenceSchema),
+});
+
 const definitionSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -64,6 +95,16 @@ const definitionSchema = z.object({
   // The person's denial, and what they said was wrong, until written again.
   deniedAt: z.string().nullable(),
   denial: z.string().nullable(),
+  // Absent on a definition written once.
+  agreement: agreementSchema.nullable().optional(),
+});
+
+// What the model said one sentence of the instructions is for, and the
+// definitions it belongs to: none when it is only context.
+const accountedSentenceSchema = z.object({
+  sentence: z.string(),
+  kind: z.enum(['quantity', 'check', 'context']),
+  definitions: z.array(z.string()),
 });
 
 export const definitionSetSchema = z.object({
@@ -77,6 +118,11 @@ export const definitionSetSchema = z.object({
   model: z.string(),
   // In order: a definition may read only those before it.
   definitions: z.array(definitionSchema),
+  // Every sentence of the instructions, once. Absent on a set found before
+  // sentences were accounted for.
+  accounting: z.array(accountedSentenceSchema).optional(),
+  // What was wrong with the first answer, when finding took a second.
+  refused: z.array(z.string()).optional(),
 });
 
 // The stored shape's version, kept with each revision, so a revision written
@@ -110,6 +156,10 @@ export type Result = z.infer<typeof resultSchema>;
 export type Example = z.infer<typeof exampleSchema>;
 export type Definition = z.infer<typeof definitionSchema>;
 export type DefinitionSet = z.infer<typeof definitionSetSchema>;
+export type WrittenVersion = z.infer<typeof writtenVersionSchema>;
+export type VersionDifference = z.infer<typeof differenceSchema>;
+export type Agreement = z.infer<typeof agreementSchema>;
+export type AccountedSentence = z.infer<typeof accountedSentenceSchema>;
 
 // A process the engine works for: its id names where its sets are kept, and
 // its subject says what a definition is about and how its data is shaped.
@@ -120,6 +170,8 @@ export type DraftProgress = {
   step: string;
   error: string | null;
   running: boolean;
+  // The definition being written right now, so its card can say so.
+  writing?: string | null;
 };
 
 // Shown as working once it has a formula and every example agrees; the
@@ -128,6 +180,67 @@ export const acceptable = (definition: Definition) =>
   definition.formula !== null &&
   definition.examples.length > 0 &&
   definition.examples.every((e) => e.agrees);
+
+// A check reading two or more numbers its own words do not state is working a
+// quantity out inline: as a calculation of its own, Calculate would show it and
+// the cross-check test it. A warning, since nothing about it is wrong as such.
+const plainWords = (text: string) =>
+  text.toLowerCase().replace(/[\s"'‘’“”]+/g, ' ');
+export const worksOutItself = (definition: Definition) =>
+  definition.result === 'check' &&
+  definition.constants.filter(
+    (constant) =>
+      definition.formula?.includes(`constants.${constant.id}`) &&
+      !plainWords(definition.text).includes(plainWords(constant.quote)),
+  ).length >= 2;
+
+// The definitions that take a number or a group from a sentence, whatever the
+// sentence was read as: context can still be where a rule's 07:00 comes from.
+export const quotedFrom = (
+  definitions: Definition[],
+  sentence: string,
+): Definition[] =>
+  definitions.filter((definition) =>
+    [...definition.constants, ...definition.groups].some((part) =>
+      plainWords(sentence).includes(plainWords(part.quote)),
+    ),
+  );
+
+// Versions a person must choose between stop it being accepted, not used: it
+// still works, so what reads it can be written and tried.
+export const canAccept = (definition: Definition) =>
+  acceptable(definition) && definition.agreement?.status !== 'split';
+
+// Whether a formula reads a variable of this name, words in quotes and fields
+// of other things aside.
+export const readsName = (formula: string, name: string) =>
+  new RegExp(`(?<![.\\w])${name}\\b`).test(
+    formula.replace(/"[^"]*"|'[^']*'/g, ''),
+  );
+
+// A check no proposed value can change, read through what it reads as well.
+// Right for a rule about the data; wrong for one about what is proposed.
+export function ignoresProposal(
+  definition: Definition,
+  definitions: Definition[],
+  fields: string[],
+): boolean {
+  if (definition.result !== 'check' || !definition.formula) return false;
+  const seen = new Set<string>();
+  const reads = (d: Definition): boolean => {
+    if (seen.has(d.id)) return false;
+    seen.add(d.id);
+    return (
+      (d.formula !== null &&
+        fields.some((field) => readsName(d.formula!, field))) ||
+      d.uses.some((id) => {
+        const used = definitions.find((one) => one.id === id);
+        return used ? reads(used) : false;
+      })
+    );
+  };
+  return !reads(definition);
+}
 
 // A rulebook a run can use: its intent confirmed and every definition
 // accepted.

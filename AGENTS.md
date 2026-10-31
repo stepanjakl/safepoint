@@ -139,7 +139,19 @@ placeholders such as `values.<id>`, because a real example steers the model.
   `pnpm fixtures:e2e` for the browser tests' copies.
 - **Fix behaviour with checks, not prompt wording.** Prompt tweaks corrected
   one draft and broke the next. A new rule belongs in `checks.ts`, where both
-  the model's check tool and Accept enforce it.
+  the model's check tool and Accept enforce it. Where nothing can check an idea,
+  try it before believing it: a throwaway script over the real model, on
+  instructions unrelated to any process, costs a few requests
+  (`DEVELOPMENT-LOG.md` → Accounting for every sentence).
+- **To see why a draft came out as it did,** use the debug buttons on the Rules
+  step (`rules-debug.tsx`): what code finds of each rule, and its formula on
+  every record, without asking a model. Add a new check to `reviewBreakdown` as
+  well as `review`, through their shared parts, so the drawer shows it.
+- **Passing every check does not mean a rule is right.** A model's examples come
+  from the same reading as its formula. Two independent writes disagreeing is the
+  best signal so far, so it goes to a person; don't settle it with a vote.
+- **Before asking a person to redraft,** check the idea without them:
+  `DEVELOPMENT-LOG.md` → How to find out whether a draft is right.
 - **No test spends quota or writes to `fixtures/`.** Use the stand-in models
   in `models.fixture.ts` and `inScratchDirectory()`. The browser test serves
   a frozen rulebook, because drafting replaces the kept one.

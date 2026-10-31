@@ -7,6 +7,7 @@ import { presentRunFacts } from '@/lib/process/run-lifecycle';
 import { presentPromotionInputs } from '@/lib/process/system-links';
 import { presentPromotionPlan } from '@/lib/review/promotion-adapter';
 
+import { sampleDraft } from '../draft-progress/sample';
 import { RunWorkbench } from './run-player';
 
 /*
@@ -48,6 +49,10 @@ export default function RunWorkbenchPage() {
           The promotion run at each stage, as a live run. Only the steps that
           have started are drawn, and only the latest, a running or a stopped
           step is open.{' '}
+          <a className="underline underline-offset-4" href="#thread-progress">
+            A draft on the step
+          </a>{' '}
+          ·{' '}
           <a className="underline underline-offset-4" href="#player">
             Player
           </a>{' '}
@@ -57,7 +62,7 @@ export default function RunWorkbenchPage() {
           </Link>
         </p>
       </header>
-      <RunWorkbench thread={thread} />
+      <RunWorkbench thread={thread} draft={sampleDraft()} />
     </main>
   );
 }

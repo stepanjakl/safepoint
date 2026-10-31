@@ -87,6 +87,9 @@ export async function POST(request: Request) {
     // What the table shows beside each record: its name, and the values
     // Calculate worked out, which the proposal relied on.
     const calculation = calculate(owner, set, read);
+    // Progress first, as the rules route has it: a proposal read after it is
+    // at least as new as it says.
+    const progress = await proposalProgress(owner, body.readId, fingerprint);
     return Response.json({
       kind: 'proposal',
       fingerprint,
@@ -106,7 +109,7 @@ export async function POST(request: Request) {
         ),
       },
       proposal: await keptProposal(owner, body.readId, fingerprint),
-      progress: await proposalProgress(owner, body.readId, fingerprint),
+      progress,
     });
   } catch (error) {
     return Response.json(

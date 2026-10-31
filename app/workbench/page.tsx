@@ -418,6 +418,13 @@ export default function WorkbenchPage() {
           >
             State illustrations
           </Link>
+          {' · '}
+          <Link
+            className="underline underline-offset-4"
+            href="/workbench/draft-progress"
+          >
+            Draft progress
+          </Link>
         </p>
       </header>
 

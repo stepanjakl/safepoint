@@ -1,6 +1,6 @@
 import { APICallError } from 'ai';
 import { MockLanguageModelV4 } from 'ai/test';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
 import type { DraftingModel } from '@/lib/models';
@@ -72,8 +72,7 @@ describe('asking a model', () => {
     ).rejects.toThrow(/Out of quota: spent-alone until \d\d:\d\d/);
   });
 
-  it('tries a busy model once more, then the next', async () => {
-    vi.useFakeTimers();
+  it('moves on from a busy model at once', async () => {
     const busy = new MockLanguageModelV4({
       doGenerate: async () => {
         throw new APICallError({
@@ -95,9 +94,8 @@ describe('asking a model', () => {
       'test',
       (id) => models[(id as string) === 'busy' ? 'busy' : 'next']!,
     );
-    await vi.advanceTimersByTimeAsync(2_000);
     expect((await asked).model).toBe('next-after-busy');
-    expect(busy.doGenerateCalls).toHaveLength(2);
+    expect(busy.doGenerateCalls).toHaveLength(1);
   });
 
   it('moves on from a model too slow to answer in time, without asking it again', async () => {
@@ -122,8 +120,4 @@ describe('asking a model', () => {
     expect(asked.model).toBe('next-after-slow');
     expect(slow.doGenerateCalls).toHaveLength(1);
   });
-});
-
-afterEach(() => {
-  vi.useRealTimers();
 });

@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  createContext,
   useContext,
   useEffect,
   useId,
@@ -10,7 +11,16 @@ import {
 } from 'react';
 
 import { ProcessSheetActions } from '@/components/app-shell/process/process-sheet';
+// Deep import: Blode's barrel is the whole icon library.
+import Bug from 'blode-icons-react/icons/bug';
+
 import { DecisionButton } from '@/components/brunch-orders/decision-button';
+import { ModelLimits } from '@/components/brunch-orders/model-limits';
+import {
+  RulesDebug,
+  type Debugging,
+} from '@/components/brunch-orders/rules-debug';
+import { HeadIconButton } from '@/components/app-shell/head-icon-button';
 import { PendingDots } from '@/components/brunch-orders/pending-dots';
 import {
   Lede,
@@ -37,6 +47,10 @@ import {
 } from '@/components/brunch-orders/rules-parts';
 import {
   acceptable,
+  canAccept as canAcceptItem,
+  ignoresProposal,
+  quotedFrom,
+  worksOutItself,
   type Definition,
   type DefinitionSet,
   type DraftProgress,
@@ -71,10 +85,12 @@ const progressOf = (set: DefinitionSet): RulesProgress => ({
 // How often to ask how far a draft on the server has got.
 const DRAFT_POLL_MS = 2_000;
 
-function statusOf(item: Definition): { tone: Tone; label: string } {
+export function statusOf(item: Definition): { tone: Tone; label: string } {
   if (item.deniedAt) return { tone: 'blocked', label: 'Denied' };
   if (!item.formula) return { tone: 'neutral', label: 'Not written' };
   if (!acceptable(item)) return { tone: 'blocked', label: 'Examples disagree' };
+  if (!canAcceptItem(item))
+    return { tone: 'decision', label: 'Versions differ' };
   return { tone: 'decision', label: 'Waiting for you' };
 }
 
@@ -202,6 +218,7 @@ export function RulesStep({
   const draftRunning = drafting?.running ?? false;
   const busy = rules.state.kind === 'running' || draftRunning;
   const [writing, setWriting] = useState(false);
+  const [debugging, setDebugging] = useState<Debugging | null>(null);
   const act = (request: Record<string, unknown>) => {
     setWriting(request.action === 'write' || request.action === 'draft');
     void run({ ...request, text })
@@ -211,7 +228,8 @@ export function RulesStep({
       .finally(() => setWriting(false));
   };
   // While it runs, ask again a moment after each answer.
-  const answered = rules.state.kind === 'done';
+  // A failed request says nothing about the job, so it is asked again too.
+  const answered = rules.state.kind === 'done' || rules.state.kind === 'failed';
   useEffect(() => {
     if (!draftRunning || !answered) return;
     const timer = setTimeout(
@@ -278,8 +296,33 @@ export function RulesStep({
               busy={busy}
               canWrite={readId !== null}
               onWrite={() => act({ action: 'write', readId, id: item.id })}
+              {...(drafting?.running && drafting.writing === item.id
+                ? {
+                    chip: <StatusChip tone="neutral">Writing…</StatusChip>,
+                    activity: item.formula ? (
+                      <p className="text-meta text-muted">
+                        Being written again. This is the version before it,
+                        until the new one is ready.
+                      </p>
+                    ) : null,
+                  }
+                : {})}
               onDecide={(decision, note) =>
                 act({ action: 'decide', id: item.id, decision, note })
+              }
+              onChoose={(index) =>
+                act({ action: 'choose', id: item.id, index })
+              }
+              debug={
+                <HeadIconButton
+                  label={`Debug ${item.name}`}
+                  tooltip={{ label: 'Debug this rule' }}
+                  size="alone"
+                  wash="none"
+                  onPress={() => setDebugging({ kind: 'rule', id: item.id })}
+                >
+                  <Bug className="size-4" aria-hidden />
+                </HeadIconButton>
               }
             />
           ))}
@@ -290,6 +333,13 @@ export function RulesStep({
 
   return (
     <div className="rules-review grid gap-4">
+      <RulesDebug
+        debugging={debugging}
+        route="/api/dev/brunch-orders/rules"
+        text={text}
+        readId={readId}
+        onClose={() => setDebugging(null)}
+      />
       <Lede>
         The model turns your instructions into calculations and checks, and
         tries each on records from the data. Accept the ones it got right; every
@@ -301,12 +351,30 @@ export function RulesStep({
         aria-label="Draft setup"
         className="brunch-trial rounded-shell grid gap-3 p-4"
       >
+        {set ? (
+          <div>
+            <Button
+              size="medium"
+              onPress={() => setDebugging({ kind: 'draft' })}
+            >
+              <Bug className="size-4" aria-hidden />
+              Debug the draft
+            </Button>
+          </div>
+        ) : null}
         <DraftControl
           kept={set?.definitions.length ?? 0}
           accepted={progress?.approved ?? 0}
           canDraft={readId !== null}
           busy={busy}
-          onDraft={(model) => act({ action: 'draft', version, readId, model })}
+          onDraft={(model) =>
+            act({
+              action: 'draft',
+              version,
+              readId,
+              ...(model ? { model } : {}),
+            })
+          }
         />
         {!readId ? (
           <p className="text-dense text-muted">
@@ -378,9 +446,108 @@ export function RulesStep({
           </Fold>
         </>
       ) : (
-        cards
+        <>
+          <SetAside set={set} />
+          {set.definitions.every((d) => d.result === 'check') ? (
+            <p className="text-dense text-state-advisory">
+              No calculations were found, so Calculate will have nothing to
+              show. If the instructions explain how to work a number out, draft
+              again.
+            </p>
+          ) : null}
+          {cards}
+        </>
       )}
     </div>
+  );
+}
+
+// Writes that came out different, for a person to choose between, with the cases
+// where they differ: far easier to answer than comparing the formulas.
+function VersionsToChoose({
+  item,
+  busy,
+  onChoose,
+}: {
+  item: Definition;
+  busy: boolean;
+  onChoose?: (index: number) => void;
+}) {
+  const { versions, differences } = item.agreement!;
+  const words = (inputs: Record<string, number>) =>
+    SUBJECT.proposal
+      .map((field) => `${field.label} ${inputs[field.id] ?? 0}`)
+      .join(', ');
+  return (
+    <section aria-label="Versions to choose between" className="grid gap-3">
+      <p className="text-dense text-state-advisory">
+        Written twice without either seeing the other, and they behave
+        differently. Which is right?
+      </p>
+      <ul className="text-dense grid gap-1">
+        {differences.map((difference) => (
+          <li key={`${difference.key}-${words(difference.inputs)}`}>
+            {difference.key}, {words(difference.inputs)}:{' '}
+            {difference.results
+              .map((result, i) => `version ${i + 1} gives ${result}`)
+              .join(', ')}
+          </li>
+        ))}
+      </ul>
+      <ul className="grid gap-3">
+        {versions.map((version, index) => (
+          <li key={index} className="grid justify-items-start gap-1">
+            <span className="readout text-muted">Version {index + 1}</span>
+            <code className="value text-meta break-words">
+              {version.formula}
+            </code>
+            {onChoose ? (
+              <Button
+                size="medium"
+                isDisabled={busy}
+                onPress={() => onChoose(index)}
+              >
+                Use version {index + 1}
+              </Button>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+// What the model read as only context, which is where a rule it missed would
+// be: code can tell a sentence was accounted for, not that it was read rightly.
+function SetAside({ set }: { set: DefinitionSet }) {
+  const context = set.accounting?.filter((a) => a.kind === 'context') ?? [];
+  if (!context.length) return null;
+  return (
+    <section aria-label="Set aside as context" className="grid gap-1">
+      <p className="text-dense">
+        Read as context, not as a rule or a calculation. Should any of these be
+        one?
+      </p>
+      <ul className="text-meta text-muted grid list-disc gap-0.5 pl-4">
+        {context.map((a) => (
+          <li key={a.sentence}>
+            {a.sentence}
+            {quotedFrom(set.definitions, a.sentence).length ? (
+              <>
+                {' '}
+                <span className="text-muted-strong">
+                  Gives a number or group to{' '}
+                  {quotedFrom(set.definitions, a.sentence)
+                    .map((d) => d.name)
+                    .join(', ')}
+                  .
+                </span>
+              </>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -391,24 +558,28 @@ export function RulesStep({
 */
 // Which model to ask; a busy or spent one hands over to the next older one
 // of its family on the server.
-export function ModelSelect({
+export function ModelSelect<M extends DraftingModel | null = DraftingModel>({
   model,
   busy,
+  recommended,
   onChange,
 }: {
-  model: DraftingModel;
+  model: M;
   busy: boolean;
-  onChange: (model: DraftingModel) => void;
+  // Offers no model in particular, in these words.
+  recommended?: string;
+  onChange: (model: M) => void;
 }) {
   return (
     <label className="grid gap-1">
       <span className="text-meta text-muted">Model</span>
       <select
         className="field text-dense min-h-9 px-2"
-        value={model}
+        value={model ?? ''}
         disabled={busy}
-        onChange={(e) => onChange(e.target.value as DraftingModel)}
+        onChange={(e) => onChange((e.target.value || null) as M)}
       >
+        {recommended ? <option value="">{recommended}</option> : null}
         {DRAFTING_MODELS.map((id) => (
           <option key={id} value={id}>
             {id}
@@ -430,9 +601,10 @@ function DraftControl({
   accepted: number;
   canDraft: boolean;
   busy: boolean;
-  onDraft: (model: DraftingModel) => void;
+  // No model: the recommended pair, one to find and one to write.
+  onDraft: (model: DraftingModel | null) => void;
 }) {
-  const [model, setModel] = useState<DraftingModel>(DRAFTING_MODELS[0]!);
+  const [model, setModel] = useState<DraftingModel | null>(null);
   const [confirming, setConfirming] = useState(false);
   const draftButton = useRef<HTMLButtonElement>(null);
   const cancel = () => {
@@ -442,7 +614,12 @@ function DraftControl({
   return (
     <div className="grid gap-2">
       <div className="flex flex-wrap items-end gap-3">
-        <ModelSelect model={model} busy={busy} onChange={setModel} />
+        <ModelSelect
+          model={model}
+          busy={busy}
+          recommended="3.6 Flash to find, 3.5 Flash-Lite to write"
+          onChange={setModel}
+        />
         {confirming ? (
           <>
             <Button
@@ -468,10 +645,18 @@ function DraftControl({
           </Button>
         )}
       </div>
+      {model ? (
+        <ModelLimits model={model} />
+      ) : (
+        <>
+          <ModelLimits model="gemini-3.6-flash" />
+          <ModelLimits model="gemini-3.5-flash-lite" />
+        </>
+      )}
       <p className="text-meta text-muted max-w-prose">
         {confirming
           ? `This replaces the ${plural(kept, 'definition')} kept for these instructions${accepted ? `, and the ${accepted} you accepted,` : ''} with a new draft worked out on the data as this run read it.`
-          : 'Finds the calculations and checks in the instructions, then writes each one on the data as this run read it. If the model is busy or out of quota, the next older one of its family answers.'}
+          : 'Finds the calculations and checks in the instructions, then writes each one on the data as this run read it. If the model is busy or out of quota, the next one of its family answers.'}
       </p>
     </div>
   );
@@ -587,6 +772,7 @@ function FormulaLine({
   still: boolean;
   hot: string | null;
 }) {
+  const anchor = useContext(CardAnchor);
   const parts: ReactNode[] = [];
   let at = 0;
   for (const match of line.matchAll(TOKEN)) {
@@ -609,7 +795,7 @@ function FormulaLine({
             .join(', ')}.`
         : null;
       const link = (
-        <a key={key} href={`#${anchorOf(field!)}`} className={DOTTED}>
+        <a key={key} href={`#${anchor(field!)}`} className={DOTTED}>
           {whole}
         </a>
       );
@@ -754,6 +940,8 @@ export function Formula({
 
 // Where a card is, for a link from a card that reads it.
 export const anchorOf = (id: string) => `definition-${id}`;
+// A page drawing the same rulebook more than once gives each its own anchors.
+export const CardAnchor = createContext(anchorOf);
 
 // What a definition is and what failing it does, as pills.
 function DefinitionPills({ item }: { item: Definition }) {
@@ -783,12 +971,15 @@ function DefinitionReading({
   names,
   reads,
   headingId,
+  awaitedFormula,
 }: {
   item: Definition;
   quoted: boolean;
   names: Record<string, string>;
   reads: Definition[];
   headingId: string;
+  // Drawn where the formula goes until there is one.
+  awaitedFormula?: ReactNode;
 }) {
   const title = item.name;
   return (
@@ -811,7 +1002,9 @@ function DefinitionReading({
               reads={reads}
             />
           </FromModel>
-        ) : null}
+        ) : (
+          awaitedFormula
+        )}
         {item.constants.length || item.groups.length ? (
           <FromModel label="The model's numbers and groups">
             <ul
@@ -901,7 +1094,7 @@ const ACCEPTED_AT = new Intl.DateTimeFormat('en-GB', {
   minute: '2-digit',
 });
 
-function DefinitionCard({
+export function DefinitionCard({
   item,
   quoted,
   names,
@@ -911,6 +1104,12 @@ function DefinitionCard({
   canWrite,
   onWrite,
   onDecide,
+  debug,
+  onChoose,
+  chip,
+  activity,
+  awaitedFormula,
+  awaitedExamples,
 }: {
   item: Definition;
   // The item is the instructions' own words, not the model's restatement.
@@ -924,10 +1123,22 @@ function DefinitionCard({
   canWrite: boolean;
   onWrite: () => void;
   onDecide: (decision: 'accept' | 'deny', note?: string) => void;
+  // A button for what code finds of this rule.
+  debug?: ReactNode;
+  // Takes one of the versions, where writes disagreed.
+  onChoose?: (index: number) => void;
+  // The rest are only passed by /workbench/draft-progress, which compares what
+  // a card could show while a draft runs: its pill, in place of its status...
+  chip?: ReactNode;
+  // ...a line under its title, and what stands in for what is still to come.
+  activity?: ReactNode;
+  awaitedFormula?: ReactNode;
+  awaitedExamples?: ReactNode;
 }) {
   const status = statusOf(item);
   const title = item.name;
   const kind = kindOf(item);
+  const anchor = useContext(CardAnchor);
   const headingId = useId();
   const [denying, setDenying] = useState(false);
   const [note, setNote] = useState('');
@@ -943,7 +1154,7 @@ function DefinitionCard({
   const open = !item.approvedAt;
   return (
     <li
-      id={anchorOf(item.id)}
+      id={anchor(item.id)}
       className={cx(ASKS, 'grid scroll-mt-4')}
       aria-labelledby={headingId}
     >
@@ -955,12 +1166,13 @@ function DefinitionCard({
             data-accepted={item.approvedAt ? '' : undefined}
             aria-hidden={item.approvedAt ? true : undefined}
           >
-            <StatusChip tone={status.tone}>{status.label}</StatusChip>
+            {chip ?? <StatusChip tone={status.tone}>{status.label}</StatusChip>}
           </span>
         </div>
         <h4 id={headingId} className="text-dense font-semibold">
           {title}
         </h4>
+        {activity}
       </div>
 
       <div className="grid gap-3 p-4">
@@ -970,6 +1182,7 @@ function DefinitionCard({
           names={names}
           reads={reads}
           headingId={headingId}
+          awaitedFormula={awaitedFormula}
         />
 
         {item.examples.length ? (
@@ -982,7 +1195,9 @@ function DefinitionCard({
             </h5>
             <Examples item={item} names={names} working={working} />
           </section>
-        ) : null}
+        ) : (
+          awaitedExamples
+        )}
 
         {item.deniedAt ? (
           <p className="text-dense">
@@ -992,80 +1207,104 @@ function DefinitionCard({
           </p>
         ) : null}
         {item.problem ? <p className="text-dense">{item.problem}</p> : null}
+        {item.agreement?.status === 'split' ? (
+          <VersionsToChoose item={item} busy={busy} onChoose={onChoose} />
+        ) : null}
+        {ignoresProposal(
+          item,
+          reads,
+          SUBJECT.proposal.map((field) => field.id),
+        ) ? (
+          <p className="text-dense text-state-advisory">
+            No proposed{' '}
+            {SUBJECT.proposal.map((field) => field.label).join(' or ')} can
+            change this check&rsquo;s answer. Right for a rule about the data;
+            wrong for a rule about what is proposed.
+          </p>
+        ) : null}
+        {worksOutItself(item) ? (
+          <p className="text-dense text-state-advisory">
+            This check works a quantity out itself. As a calculation of its own,
+            Calculate would show it and the cross-check would test it.
+          </p>
+        ) : null}
       </div>
 
-      <div className="rule-above p-4">
-        {denying ? (
-          <form
-            className="flex flex-wrap items-center gap-2"
-            onSubmit={(event) => {
-              event.preventDefault();
-              onDecide('deny', note);
-              close();
-              setNote('');
-            }}
-          >
-            <label htmlFor={noteId} className="sr-only">
-              What is wrong with {title}
-            </label>
-            <input
-              id={noteId}
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
-              ref={(element) => element?.focus()}
-              onKeyDown={(event) => {
-                if (event.key === 'Escape') close();
+      <div className="rule-above flex items-center gap-3 p-4">
+        <div className="min-w-0 flex-1">
+          {denying ? (
+            <form
+              className="flex flex-wrap items-center gap-2"
+              onSubmit={(event) => {
+                event.preventDefault();
+                onDecide('deny', note);
+                close();
+                setNote('');
               }}
-              placeholder="What's wrong? (optional)"
-              className="field text-dense min-h-8 min-w-64 flex-1 px-3"
-            />
-            <DecisionButton decision="deny" type="submit" isDisabled={busy}>
-              Deny
-            </DecisionButton>
-            <Button size="medium" onPress={close}>
-              Cancel
-            </Button>
-          </form>
-        ) : (
-          <div className="flex flex-wrap items-center gap-2">
-            {item.formula ? (
-              <>
-                <AcceptDecision
-                  accepted={item.approvedAt !== null}
-                  busy={busy}
-                  canAccept={acceptable(item)}
-                  onAccept={() => onDecide('accept')}
-                />
-                {open ? (
-                  <DecisionButton
-                    decision="deny"
-                    ref={denyButton}
-                    isDisabled={busy}
-                    onPress={() => setDenying(true)}
-                  >
-                    Deny
-                  </DecisionButton>
-                ) : null}
-              </>
-            ) : null}
-            {open ? (
-              <Button
-                size="medium"
-                isDisabled={busy || !canWrite}
-                onPress={onWrite}
-              >
-                {item.formula
-                  ? 'Write again'
-                  : `Write the ${kind.label.toLowerCase()}`}
+            >
+              <label htmlFor={noteId} className="sr-only">
+                What is wrong with {title}
+              </label>
+              <input
+                id={noteId}
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                ref={(element) => element?.focus()}
+                onKeyDown={(event) => {
+                  if (event.key === 'Escape') close();
+                }}
+                placeholder="What's wrong? (optional)"
+                className="field text-dense min-h-8 min-w-64 flex-1 px-3"
+              />
+              <DecisionButton decision="deny" type="submit" isDisabled={busy}>
+                Deny
+              </DecisionButton>
+              <Button size="medium" onPress={close}>
+                Cancel
               </Button>
-            ) : null}
-            {item.formula && open && !acceptable(item) ? (
-              <span className="text-meta text-muted">
-                Accept waits until the app’s check agrees with every example.
-              </span>
-            ) : null}
-          </div>
-        )}
+            </form>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2">
+              {item.formula ? (
+                <>
+                  <AcceptDecision
+                    accepted={item.approvedAt !== null}
+                    busy={busy}
+                    canAccept={canAcceptItem(item)}
+                    onAccept={() => onDecide('accept')}
+                  />
+                  {open ? (
+                    <DecisionButton
+                      decision="deny"
+                      ref={denyButton}
+                      isDisabled={busy}
+                      onPress={() => setDenying(true)}
+                    >
+                      Deny
+                    </DecisionButton>
+                  ) : null}
+                </>
+              ) : null}
+              {open ? (
+                <Button
+                  size="medium"
+                  isDisabled={busy || !canWrite}
+                  onPress={onWrite}
+                >
+                  {item.formula
+                    ? 'Write again'
+                    : `Write the ${kind.label.toLowerCase()}`}
+                </Button>
+              ) : null}
+              {item.formula && open && !acceptable(item) ? (
+                <span className="text-meta text-muted">
+                  Accept waits until the app’s check agrees with every example.
+                </span>
+              ) : null}
+            </div>
+          )}
+        </div>
+        {debug}
       </div>
     </li>
   );

@@ -1,5 +1,7 @@
 import { MockLanguageModelV4 } from 'ai/test';
 
+import { sentencesOf } from './find';
+
 // Stand-in models for the engine's tests: each answers its steps in turn,
 // so no quota is spent and every answer is known.
 
@@ -70,3 +72,31 @@ export const always = (step: Step) =>
 // What the model was sent on one of its calls, as text to search.
 export const told = (model: MockLanguageModelV4, call = 0) =>
   JSON.stringify(model.doGenerateCalls[call]?.prompt);
+
+// A find's answer, with every sentence of the text accounted for: one definition
+// each while they last, and the last sentence takes any left over.
+export function accountedFor<
+  D extends { id: string; result: string },
+  F extends { definitions: D[] },
+>(found: F, text: string) {
+  const sentences = sentencesOf(text);
+  return {
+    ...found,
+    sentences: sentences.map((_, i) => {
+      const last = i === sentences.length - 1;
+      const definitions = found.definitions.slice(
+        i,
+        last ? found.definitions.length : i + 1,
+      );
+      return {
+        n: i + 1,
+        kind: definitions.length
+          ? definitions[0]!.result === 'number'
+            ? 'quantity'
+            : 'check'
+          : 'context',
+        definitions: definitions.map((d) => d.id),
+      };
+    }),
+  };
+}

@@ -1,4 +1,3 @@
-import { google } from '@ai-sdk/google';
 import {
   APICallError,
   generateText,
@@ -9,30 +8,30 @@ import {
 import type { z } from 'zod';
 
 import { fallbackChain, thinkingLevel, type DraftingModel } from '@/lib/models';
+import { limitedGoogle, rest, restingUntil } from '@/lib/definitions/limits';
 import { quotaOf } from '@/lib/definitions/quota';
 
 /*
   Server-only. Every call to a model goes through `withModels`: the first
   model of the chain with quota answers, and a busy or spent one hands over to
-  the next older model of the same family (never a lighter family, as
-  lib/models.ts holds). No automatic retries: a refusal for quota
-  says itself whether waiting helps.
+  the next of the same family (never a lighter family, as lib/models.ts holds).
+  Waiting is limits.ts's, request by request: what reaches here could not be
+  waited out, so it moves on.
 */
 
-// Flash for both: in two drafts Flash-Lite folded a number the instructions
-// define into a check when finding. A person may choose another model.
-export const DRAFT_MODELS: DraftingModel[] = fallbackChain('gemini-3.8-flash');
+// Flash for finding, and for what is not a draft: in three drafts Flash-Lite
+// folded a number the instructions define into a check when finding. A person
+// may choose another model.
+export const DRAFT_MODELS: DraftingModel[] = fallbackChain('gemini-3.6-flash');
+// Flash-Lite for writing, which is many requests and which the checks hold to
+// account: it allows 500 requests a day to Flash's 20.
+export const WRITE_MODELS: DraftingModel[] = fallbackChain(
+  'gemini-3.5-flash-lite',
+);
 
 // The model by id; replaced in tests.
 export type Resolve = (id: DraftingModel) => LanguageModel;
 
-// Models Google has refused for quota, and until when, kept while the server
-// runs so later calls skip them instead of being refused again.
-const outOfQuota = new Map<string, number>();
-// A per-minute limit is waited out when Google says how long; a longer one,
-// such as the daily limit, moves to the next model.
-const MAX_WAIT_MS = 90_000;
-const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
 // A call's own timeout aborts it with a TimeoutError, wrapped or not.
 const timedOut = (error: unknown): boolean =>
   typeof error === 'object' &&
@@ -81,50 +80,31 @@ export async function withModels<R>(
   const telemetry = await devtools(name);
   let last: unknown = null;
   for (const model of models) {
-    if ((outOfQuota.get(model) ?? 0) > Date.now()) continue;
-    for (let tries = 0; ; tries++) {
-      try {
-        return {
-          value: await call(
-            resolve(model),
-            callOptions(model, telemetry, name),
-          ),
-          model,
-        };
-      } catch (error) {
-        last = error;
-        // Too slow to answer in time is busy too: the next model, at once.
-        if (timedOut(error)) break;
-        const cause = RetryError.isInstance(error) ? error.lastError : error;
-        if (!APICallError.isInstance(cause)) throw error;
-        const status = cause.statusCode ?? 0;
-        if (status === 429) {
-          const { retryAfterMs } = quotaOf(cause);
-          if (
-            retryAfterMs !== null &&
-            retryAfterMs <= MAX_WAIT_MS &&
-            tries < 2
-          ) {
-            await sleep(retryAfterMs);
-            continue;
-          }
-          outOfQuota.set(model, Date.now() + (retryAfterMs ?? 3_600_000));
-          break;
-        }
-        // Busy: once more after a moment, then the next model.
-        if (status >= 500 && tries < 1) {
-          await sleep(2_000);
-          continue;
-        }
-        if (status >= 500) break;
-        throw error;
+    if (restingUntil(model)) continue;
+    try {
+      return {
+        value: await call(resolve(model), callOptions(model, telemetry, name)),
+        model,
+      };
+    } catch (error) {
+      last = error;
+      // Too slow to answer in time is busy too: the next model, at once.
+      if (timedOut(error)) continue;
+      const cause = RetryError.isInstance(error) ? error.lastError : error;
+      if (!APICallError.isInstance(cause)) throw error;
+      const status = cause.statusCode ?? 0;
+      if (status === 429) {
+        rest(model, quotaOf(cause).retryAfterMs ?? 3_600_000);
+        continue;
       }
+      if (status >= 500) continue;
+      throw error;
     }
   }
-  const resting = models.filter((m) => (outOfQuota.get(m) ?? 0) > Date.now());
+  const resting = models.filter((m) => restingUntil(m));
   if (resting.length === models.length)
     throw new Error(
-      `Out of quota: ${resting.map((m) => `${m} until ${clock(outOfQuota.get(m)!)}`).join(', ')}. Choose a model of another family, or try again later.`,
+      `Out of quota: ${resting.map((m) => `${m} until ${clock(restingUntil(m)!)}`).join(', ')}. Choose a model of another family, or try again later.`,
     );
   throw last instanceof Error ? last : new Error('The model service failed.');
 }
@@ -136,7 +116,7 @@ export async function ask<T>(
   system: string,
   prompt: string,
   name: string,
-  resolve: Resolve = google,
+  resolve: Resolve = limitedGoogle,
 ): Promise<{ output: T; model: string }> {
   const { value, model } = await withModels(
     models,

@@ -418,9 +418,11 @@ Agreed with the owner on 30 October, after a run on a Friday evening came out
 "ready" for orders whose cutoffs had passed on Thursday, and for a product
 whose stock count was two days old.
 
-- **Two new rules.** Instructions v3 adds: only order what can still be placed
-  before the supplier's cutoff for this weekend, and flag a stock count older
-  than its category allows, even when nothing is ordered. v2's rulebook and the
+- **Two new rules, and one moved.** Instructions v3 adds: only order what can
+  still be placed before the supplier's cutoff for this weekend, and flag a stock
+  count older than its category allows, even when nothing is ordered. The ripe
+  avocado limit becomes a numbered rule, after a draft missed it in the prose,
+  and stock available is defined once, after two rules counted it differently. v2's rulebook and the
   runs on it are unchanged; v3 is a new set of rules to draft and accept.
 - **Time comes from the read.** A formula compares numbers, and a read gives it
   two more: `count_age_hours` and `hours_until_cutoff` (`DataShape.timing`,
@@ -445,8 +447,9 @@ whose stock count was two days old.
   written still keep their decisions in the browser, until phase 7.
 - **Undo only while untouched.** Undo restores the block, and is refused if any
   cell no longer holds what was written. It leaves the added tab in place, empty.
-- **A captured read cannot write.** It may not be what the sheet holds now, so
-  its Apply step shows the preview and says why.
+- **A captured read cannot write, nor can a run on earlier instructions.** The
+  read may not be what the sheet holds now, and earlier rules may lack ones added
+  since. Apply shows the preview and says why. Undo stays open either way.
 
 Present limits. Stock counts carry a weekday and no date, so a count left
 unchanged for weeks reads as this week's: the 30 October live read was identical

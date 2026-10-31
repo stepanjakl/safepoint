@@ -1,0 +1,67 @@
+@layer components {
+  .draft-thread-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 34rem), 1fr));
+  }
+
+  /* Clear of this page's sticky controls; in a real step it would sit at the
+     top of the pane. */
+  .draft-strip {
+    --draft-strip-top: 6.5rem;
+    top: var(--draft-strip-top);
+  }
+  @media (width < 40rem) {
+    .draft-strip {
+      --draft-strip-top: 12rem;
+    }
+  }
+
+  /* 24px to hover and focus around a 6px bar; the margin keeps the row 6px. */
+  .draft-segment {
+    display: flex;
+    flex: 1 1 0;
+    align-items: center;
+    min-width: 0;
+    height: 1.5rem;
+    margin-block: -0.5625rem;
+    border-radius: 999px;
+  }
+  /* Glides to a card rather than jumping; only where a segment can lead to one. */
+  @media (prefers-reduced-motion: no-preference) {
+    html:has(.draft-segment) {
+      scroll-behavior: smooth;
+    }
+  }
+  .draft-segment-bar {
+    flex: 1;
+    height: 0.375rem;
+    border-radius: 999px;
+    transition:
+      height var(--duration-state) ease-out,
+      background-color var(--duration-state) ease-out;
+  }
+  /* Its hover and focus face (base.css draws no focus outline): by size, as the
+     bar's colour already says its state. */
+  .draft-segment:is(:hover, :focus-visible) .draft-segment-bar {
+    height: 0.625rem;
+  }
+  /* A softer blue than a finished segment's: step 7 is a light blue in light, a
+     deep one in dark. */
+  .draft-segment-bar[data-writing] {
+    --draft-segment-beat: 2.2s;
+    --draft-segment-lit: var(--sp-state-advisory-7);
+    background-color: var(--draft-segment-lit);
+    animation: draft-segment-beat var(--thread-beat, var(--draft-segment-beat))
+      var(--ease-in-out-sine) infinite;
+  }
+  /* At rest it stays blue, so under reduced motion it still reads as active. */
+  @keyframes draft-segment-beat {
+    0%,
+    100% {
+      background-color: var(--sp-rule-faint);
+    }
+    40% {
+      background-color: var(--draft-segment-lit);
+    }
+  }
+}

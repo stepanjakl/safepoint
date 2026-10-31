@@ -128,7 +128,11 @@ test('the calculations and checks of the instructions, with examples to confirm'
   );
 
   // A new draft, by a chosen model, asks before replacing what is kept.
-  await expect(page.getByLabel('Model')).toHaveValue('gemini-3.8-flash');
+  await expect(page.getByLabel('Model')).toHaveValue('');
+  // How its quota stands, before anything spends it.
+  await expect(
+    page.getByText(/requests today, \d+ a minute/).first(),
+  ).toBeVisible();
   const redraft = page.getByRole('button', { name: 'Draft a new rulebook' });
   await redraft.click();
   await expect(
@@ -253,4 +257,430 @@ test('accepted intent and rule keep the pressed button in place', async ({
     0,
   );
   await expect(page.getByText(/^1 of 5 accepted$/).first()).toBeVisible();
+});
+
+test('a draft under way shows its last rule when it ends, through a failed request', async ({
+  page,
+}) => {
+  const set = frozen as { definitions: Record<string, unknown>[] };
+  const partial = {
+    ...set,
+    definitions: set.definitions.map((definition, index, all) =>
+      index === all.length - 1
+        ? { ...definition, formula: null, examples: [] }
+        : definition,
+    ),
+  };
+  const rules = (replied: unknown, running: boolean) => ({
+    json: {
+      kind: 'rules',
+      set: replied,
+      names,
+      history: { head: null, revisions: [] },
+      drafting: { step: 'Writing 5 of 5: Rule 4…', error: null, running },
+    },
+  });
+  let asked = 0;
+  await page.route('**/api/dev/brunch-orders/rules', async (route) => {
+    asked += 1;
+    // The page asks twice on arrival in development. Then a request fails, as
+    // one does while the server recompiles, and the draft ends behind it.
+    if (asked <= 2) return route.fulfill(rules(partial, true));
+    if (asked === 3)
+      return route.fulfill({ status: 500, body: '<!DOCTYPE html>' });
+    return route.fulfill(rules(frozen, false));
+  });
+
+  await page.goto('/examples/brunch-orders');
+  await page.getByRole('button', { name: 'Start run' }).first().click();
+  await page
+    .getByRole('button', { name: 'Read the sheet', exact: true })
+    .last()
+    .click();
+  await expect(page.getByText('Not written').first()).toBeVisible();
+  await expect(page.getByText('Not written')).toHaveCount(0, {
+    timeout: 15_000,
+  });
+  expect(asked).toBeGreaterThan(3);
+});
+
+test('what the model read as context is there to question', async ({
+  page,
+}) => {
+  const set = frozen as Record<string, unknown>;
+  await page.route('**/api/dev/brunch-orders/rules', (route) =>
+    route.fulfill({
+      json: {
+        kind: 'rules',
+        set: {
+          ...set,
+          accounting: [
+            { sentence: 'We sell brunch.', kind: 'context', definitions: [] },
+            {
+              sentence: 'Order in whole cases.',
+              kind: 'check',
+              definitions: ['rule_1'],
+            },
+          ],
+        },
+        names,
+        history: { head: null, revisions: [] },
+      },
+    }),
+  );
+  await page.goto('/examples/brunch-orders');
+  await page.getByRole('button', { name: 'Start run' }).first().click();
+  await page
+    .getByRole('button', { name: 'Read the sheet', exact: true })
+    .last()
+    .click();
+  const aside = page.getByRole('region', { name: 'Set aside as context' });
+  await expect(aside.getByRole('listitem')).toHaveText(['We sell brunch.']);
+});
+
+test('a rule’s debug drawer opens from its card and gives focus back', async ({
+  page,
+}) => {
+  const set = frozen as { definitions: { id: string; name: string }[] };
+  const rule = set.definitions[1]!;
+  await page.route('**/api/dev/brunch-orders/rules', (route) => {
+    const body = route.request().postDataJSON() as {
+      action: string;
+      inputs?: { order?: number };
+    };
+    if (body.action === 'debug')
+      return route.fulfill({
+        json: {
+          kind: 'debug',
+          debug: {
+            summary: {
+              id: rule.id,
+              name: rule.name,
+              result: 'check',
+              consequence: 'block',
+              model: 'test-model',
+              written: true,
+              examplesAgree: true,
+              approvedAt: null,
+              deniedAt: null,
+              denial: null,
+              problem: null,
+              worksOutItself: true,
+              reads: [],
+              readBy: [],
+            },
+            source: {
+              text: 'Order in whole cases.',
+              sentences: [
+                {
+                  sentence: 'Order in whole cases.',
+                  kind: 'check',
+                  how: 'states',
+                },
+                {
+                  sentence: 'We open from 07:00.',
+                  kind: 'context',
+                  how: 'quotes',
+                },
+              ],
+              constants: [],
+              groups: [],
+              formula: 'order % record.case_size == 0',
+              columns: { own: ['case_size'], through: [] },
+            },
+            checks: [
+              {
+                id: 'both-ways',
+                label: 'Examples show it holding and failing',
+                problems: ['No example where it fails.'],
+                note: null,
+              },
+            ],
+            read: { id: 'r', readAt: '', source: 'Captured read' },
+            about: { record: 'product', key: 'sku' },
+            fields: [{ id: 'order', label: 'order' }],
+            inputs: { order: body.inputs?.order ?? 0 },
+            records: [
+              {
+                key: 'SD-01',
+                name: 'Sourdough',
+                result: (body.inputs?.order ?? 0) === 8,
+                applies: true,
+                steps: [`${body.inputs?.order ?? 0} % 8 == 0`],
+                error: null,
+              },
+            ],
+          },
+        },
+      });
+    if (body.action === 'debugDraft')
+      return route.fulfill({
+        json: {
+          kind: 'debugDraft',
+          debug: {
+            version: 'v1',
+            intent: 'Order enough.',
+            intentConfirmedAt: null,
+            model: 'test-model',
+            foundAt: '',
+            readId: 'r',
+            accounting: [
+              {
+                sentence: 'We open from 07:00.',
+                kind: 'context',
+                definitions: [],
+                quotedBy: ['rule_2'],
+              },
+              {
+                sentence: 'Order in whole cases.',
+                kind: 'check',
+                definitions: ['rule_1'],
+                quotedBy: [],
+              },
+            ],
+            accountProblems: [],
+            refused: ['Not accounted for: sentence 2.'],
+            definitions: [],
+            models: [],
+            columns: {
+              rules: [
+                {
+                  id: 'rule_1',
+                  name: 'Rule 1',
+                  written: true,
+                  own: ['case_size'],
+                  through: ['weekend_1'],
+                },
+              ],
+              unread: ['cost_price'],
+            },
+          },
+        },
+      });
+    return route.fulfill({
+      json: {
+        kind: 'rules',
+        set: frozen,
+        names,
+        history: { head: null, revisions: [] },
+      },
+    });
+  });
+  await page.goto('/examples/brunch-orders');
+  await page.getByRole('button', { name: 'Start run' }).first().click();
+  await page
+    .getByRole('button', { name: 'Read the sheet', exact: true })
+    .last()
+    .click();
+
+  const open = page.getByRole('button', { name: `Debug ${rule.name}` });
+  // React Aria moves focus to another button as the read's goes, and focusing
+  // here can land first: wait until it stays.
+  await expect(async () => {
+    await open.focus();
+    await page.waitForTimeout(300);
+    await expect(open).toBeFocused({ timeout: 100 });
+  }).toPass();
+  await page.keyboard.press('Enter');
+  const drawer = page.getByRole('dialog', { name: `Debug: ${rule.name}` });
+  await expect(drawer.getByText('Written by')).toBeVisible();
+  await expect(drawer.getByText('works a quantity out itself')).toBeVisible();
+
+  // Each sentence it came from, with what it was read as.
+  await drawer.getByRole('radio', { name: 'Source' }).click();
+  await expect(drawer.getByText('Check', { exact: true })).toBeVisible();
+  await expect(drawer.getByText('Context', { exact: true })).toBeVisible();
+  await expect(drawer.getByText('Gives this rule a number')).toBeVisible();
+  await expect(drawer.getByText('case_size', { exact: true })).toBeVisible();
+
+  await drawer.getByRole('radio', { name: /^Checks/ }).click();
+  await expect(drawer.getByText('No example where it fails.')).toBeVisible();
+
+  await drawer.getByRole('radio', { name: 'Values' }).click();
+  await expect(drawer.getByText('0 % 8 == 0')).toBeVisible();
+  await drawer.getByLabel('Try order').fill('8');
+  await expect(drawer.getByText('8 % 8 == 0')).toBeVisible();
+  await expect(drawer.getByText('Holds', { exact: true })).toBeVisible();
+
+  const violations = (
+    await new AxeBuilder({ page }).include('[role="dialog"]').analyze()
+  ).violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
+  expect(violations.map((v) => v.id)).toEqual([]);
+
+  await page.keyboard.press('Escape');
+  await expect(drawer).toHaveCount(0);
+  await expect(open).toBeFocused();
+
+  // The draft's own: every sentence, what it was read as, and what was refused.
+  await page.getByRole('button', { name: 'Debug the draft' }).click();
+  const draft = page.getByRole('dialog', { name: 'Debug: the draft' });
+  const sentences = draft.getByRole('table', {
+    name: 'What each sentence of the instructions was read as',
+  });
+  await expect(
+    sentences.getByRole('row', { name: /Order in whole cases.*Check.*rule_1/ }),
+  ).toBeVisible();
+  await expect(sentences.getByRole('rowheader')).toHaveCount(2);
+  await expect(
+    sentences.getByRole('row', {
+      name: /We open from 07:00.*Context.*quoted by rule_2/,
+    }),
+  ).toBeVisible();
+  await expect(draft.getByText('Not accounted for: sentence 2.')).toBeVisible();
+
+  await draft.getByRole('radio', { name: 'Columns' }).click();
+  await expect(
+    draft.getByRole('row', { name: /Rule 1.*case_size.*weekend_1/ }),
+  ).toBeVisible();
+  await expect(draft.getByText('cost_price')).toBeVisible();
+});
+
+test('a rule being written again says so, through a reload, then shows the new one', async ({
+  page,
+}) => {
+  const set = frozen as {
+    definitions: { id: string; name: string; formula: string }[];
+  };
+  const rule = set.definitions[1]!;
+  const rewritten = {
+    ...set,
+    definitions: set.definitions.map((definition) =>
+      definition.id === rule.id
+        ? { ...definition, text: 'The new version of it.' }
+        : definition,
+    ),
+  };
+  let writing = false;
+  let done = false;
+  await page.route('**/api/dev/brunch-orders/rules', (route) => {
+    const body = route.request().postDataJSON() as { action: string };
+    if (body.action === 'write') writing = true;
+    return route.fulfill({
+      json: {
+        kind: 'rules',
+        set: done ? rewritten : frozen,
+        names,
+        history: { head: null, revisions: [] },
+        drafting: writing
+          ? {
+              step: 'Writing it again…',
+              error: null,
+              running: !done,
+              writing: done ? null : rule.id,
+            }
+          : null,
+      },
+    });
+  });
+  await page.goto('/examples/brunch-orders');
+  await page.getByRole('button', { name: 'Start run' }).first().click();
+  await page
+    .getByRole('button', { name: 'Read the sheet', exact: true })
+    .last()
+    .click();
+  // The rule's own card, inside the thread's step, which also contains it.
+  const card = page
+    .getByRole('listitem')
+    .filter({
+      has: page.getByRole('heading', { name: rule.name, exact: true }),
+    })
+    .last();
+  await card.getByRole('button', { name: 'Write again' }).click();
+  await expect(card.getByText('Writing…')).toBeVisible();
+  await expect(card.getByText('Being written again')).toBeVisible();
+
+  // The point of it: nothing is lost on a reload.
+  await page.reload();
+  await expect(card.getByText('Writing…')).toBeVisible();
+  await expect(card.getByText('Being written again')).toBeVisible();
+  await expect(
+    card.getByRole('button', { name: 'Write again' }),
+  ).toBeDisabled();
+
+  done = true;
+  await expect(card.getByText('The new version of it.')).toBeVisible({
+    timeout: 10_000,
+  });
+  await expect(card.getByText('Writing…')).toHaveCount(0);
+  await expect(card.getByText('Being written again')).toHaveCount(0);
+  await expect(card.getByRole('button', { name: 'Write again' })).toBeEnabled();
+});
+
+test('versions that disagree are shown with where they differ, for a person to choose', async ({
+  page,
+}) => {
+  const set = frozen as { definitions: { id: string; name: string }[] };
+  const rule = set.definitions[1]!;
+  const version = (formula: string) => ({
+    formula,
+    constants: [],
+    groups: [],
+    uses: [],
+    examples: [],
+    model: 'test-model',
+  });
+  const split = {
+    ...set,
+    definitions: set.definitions.map((definition) =>
+      definition.id === rule.id
+        ? {
+            ...definition,
+            agreement: {
+              status: 'split',
+              runs: 2,
+              versions: [
+                version('record.hours_until_cutoff >= 0.0'),
+                version('record.hours_until_cutoff <= 0.0'),
+              ],
+              differences: [
+                {
+                  key: 'SD-01',
+                  inputs: { order: 8 },
+                  results: ['true', 'false'],
+                },
+              ],
+            },
+          }
+        : definition,
+    ),
+  };
+  let chosen: unknown = null;
+  await page.route('**/api/dev/brunch-orders/rules', (route) => {
+    const body = route.request().postDataJSON() as {
+      action: string;
+      index?: number;
+    };
+    if (body.action === 'choose') chosen = body.index;
+    return route.fulfill({
+      json: {
+        kind: 'rules',
+        set: chosen === null ? split : frozen,
+        names,
+        history: { head: null, revisions: [] },
+      },
+    });
+  });
+  await page.goto('/examples/brunch-orders');
+  await page.getByRole('button', { name: 'Start run' }).first().click();
+  await page
+    .getByRole('button', { name: 'Read the sheet', exact: true })
+    .last()
+    .click();
+  const versions = page.getByRole('region', {
+    name: 'Versions to choose between',
+  });
+  await expect(versions.getByText(/SD-01, order 8/)).toBeVisible();
+  await expect(versions.getByText(/version 2 gives false/)).toBeVisible();
+  const card = page
+    .getByRole('listitem')
+    .filter({
+      has: page.getByRole('heading', { name: rule.name, exact: true }),
+    })
+    .last();
+  await expect(card.getByText('Versions differ')).toBeVisible();
+  await expect(card.getByRole('button', { name: /^Accept/ })).toBeDisabled();
+
+  await versions.getByRole('button', { name: 'Use version 2' }).click();
+  await expect(versions).toHaveCount(0);
+  expect(chosen).toBe(1);
 });

@@ -397,7 +397,226 @@ say which week, so the sheet needs a date to tell.
 check means the rules were met, not that nothing else matters: compare the
 columns a process reads with the ones its rules use.
 
+## Half the draft was spent asking models that would not answer (31 October)
+
+**What happened.** The first v3 draft took 50 attempts and stopped on the ninth
+definition. 3.8 and 3.7 Flash took 26 of them and wrote one definition, nearly
+all refused as busy, and one definition lost four minutes to them. A per-minute
+refusal also restarted a tool loop, throwing away six finished requests, because
+retries wrapped the whole loop.
+
+**What the refusals say.** Flash allows 5 requests a minute and 20 a day; 3.5
+Flash-Lite 15 and 500. A request to 3.7 was refused citing 3.8's limit, and one
+to 3.5 citing 3.6's, and the attempts fit two pools of about 20, so models share
+quota whatever the limit is called. It is not exact: a request to 3.6 succeeded
+nine minutes after a daily refusal.
+
+**What changed.** 3.6 is the default, with the newer models a last resort.
+`limits.ts` paces each request, waits out a per-minute refusal in place, and
+learns the limits and the sharing from refusals, since Google publishes neither
+through the API. Setting them by hand would have been wrong for the shared pools.
+
+**Lesson.** A draft's limit is the day's budget, not its speed: a fresh draft
+and a proposal can use it all. Pacing makes that visible; it does not raise it.
+
+## A formula of `false` (31 October)
+
+**What happened.** A draft entirely on Flash-Lite answered every request and
+wrote a rule whose formula was `false`, with five constants it never read and two
+examples expecting false, so every check agreed. It would have sent every record
+to a person. It also found no calculations at all, working expected sales out
+inside one check. That one read only the order, because the instructions said
+"don't order more than we expect to sell", which is what it was told.
+
+**What changed.** A formula must read the data, and every constant and group it
+declares. A check's examples must show it holding and failing, as far as the read
+lets them: the formula is tried on every record first, because nothing an order
+sets can break the arrival rule when every delivery is on time. A check reading
+two or more numbers its words do not state, and a rulebook with no calculations,
+are warnings to the person: reasonable instructions can do both. With no model
+chosen a draft finds on Flash and writes on Flash-Lite. Rule 7 now says stock plus
+the order.
+
+**Lesson.** Examples written by the model that wrote the formula can agree with
+it by being wrong the same way. They show a person the reading; they do not prove
+it. Ask what they fail to exercise.
+
+## Accounting for every sentence (31 October)
+
+**What happened.** Flash-Lite kept folding calculations into checks when finding:
+3 of its 4 drafts listed none, against none of 4 on Flash. With Flash spent for
+the day, four ways of finding were tried on Flash-Lite, find step only, on Brunch
+and on two unrelated instructions written for the test, one with no calculations:
+
+| Way of finding                      | Brunch: calculation found | Invoices: found | Rota: none, correctly |
+| ----------------------------------- | ------------------------- | --------------- | --------------------- |
+| One list (what it did)              | 0 of 3                    | 3 of 3          | 3 of 3                |
+| Two lists, quantities before checks | 0 of 5                    | 3 of 3          | 3 of 3                |
+| Two calls, quantities then checks   | 4 of 5                    | 3 of 3          | 3 of 3                |
+| Accounting for every sentence       | 5 of 5                    | 3 of 3          | 3 of 3                |
+
+Two lists was the expected winner and changed nothing: an empty list is an easy
+answer. Two calls added a junk check once. Accounting costs one call.
+
+**What changed.** Code splits the instructions into sentences, and the model says
+of each whether it works a quantity out, states a check or is only context, and
+which definitions it belongs to (`accountingProblems` in `find.ts`). Every
+sentence must be accounted for once, and each kind must point at a listed
+definition of that kind, so a quantity with no calculation is refused rather than
+warned about, and so is a definition no sentence states. A refused answer is asked
+for once more with what was wrong; a second refusal stops the draft and replaces
+nothing. The sentences read as context are shown to the person.
+
+**What it does not do.** It proves a sentence was accounted for, not that it was
+read rightly: a rule marked as context passes, which is why those are shown. The
+test was 11 runs a way, on simple instructions, and the refusals never had to
+fire. Whether Flash-Lite can now write a whole rulebook well is a separate
+question, answered by comparing a draft with the accepted rules.
+
+**Lesson.** Asking a model to do less at once helped less than asking it to show
+its working somewhere code can check. Test the idea before believing it: the one
+that sounded right was the one that did nothing.
+
+## Passing every check is not being right (31 October)
+
+The first thing the debug drawer showed, on a Flash-Lite draft: "All 6 pass" on the
+enough-stock rule, and rocket holding at an order of 8, where the accepted rules
+fail it because expected sales round up. It reads 12.6 where the instructions say 13. Code's checks ask whether a formula is well made and agrees with its own
+examples, and the examples made the same mistake. Trying it on every record, at
+a value a person picks, is what shows it, so the drawer does that rather than
+repeating the examples. A comparison with a trusted rulebook still finds what no
+one thought to try.
+
+## One word, two readings (31 October)
+
+**What happened.** The instructions said "stock plus the order" and "enough stock"
+without saying what stock is. Each rule worked it out for itself, so from the same
+words the ripe rule counted inbound stock on one attempt and not on the next. No
+check could see it, and neither could a comparison with the accepted rules: the
+one product it affects has nothing inbound, so both give the same answers.
+
+**What changed.** Instructions v3 defines stock available in a sentence of its
+own, for a calculation both rules can read by name.
+
+**Lesson.** Where a model gives different answers to the same words, look at the
+words first. A term two rules share should be defined once. This holds for any
+process, but only for terms someone thought to define; nothing yet notices the
+rest.
+
+## Examples that agree with a misreading (31 October)
+
+**What happened.** With stock available defined, three rules still failed: all
+three read a calculation, and every rule that did not read one passed. The model
+was told what a calculation means and not what it comes to, so it worked expected
+sales out again by hand, got 28 for 65, and spent up to 12 requests arguing with a
+right formula, encouraged by a message telling it to work it out by hand again.
+Rule 5, split into sentences, became two rules, one of them wrongly blocking.
+
+Given the numbers, that went away, and requests halved. What was left was worse:
+drafts that passed everything and were wrong. One reversed the cutoff. One applied
+the ripe limit to every product. One's supplier rule could not run on a blank cell.
+The examples came from the same reading as the formula, so they agreed with it.
+
+**What changed.** The model is given what earlier definitions come to, on every
+record, and a failing example says what it read. A list item stays one sentence.
+A formula must run on every record. A check no proposed value can change is flagged.
+Each definition is written twice from the same input, neither seeing the other,
+and code compares how they behave, not how they are worded.
+
+A third write to break ties was tried first and dropped. Over three real drafts of
+27 rules:
+
+| Settled by                 | Rules | Wrong |
+| -------------------------- | ----- | ----- |
+| The first two agreed       | 20    | 0     |
+| Two of three agreed        | 6     | 2     |
+| Only one passed the checks | 1     | 0     |
+
+The same misreading can come up twice, so a vote picked the reversed cutoff. But
+every wrong rule was one the writes had disagreed on. So a disagreement goes to a
+person, with the record and value where the versions differ.
+
+**What it does not do.** Two writes making the same mistake agree. Three drafts is
+few, and comparing at a range of values can miss a value that tells them apart.
+
+**Lesson.** Give a model the numbers code already has. Then ask what disagreeing
+tells you before asking what to do about it: here it was the most useful signal
+we had, and the vote threw it away.
+
+## How to find out whether a draft is right (31 October)
+
+Reading a rulebook missed things that these found, and none of them needs a person
+to redraft first. All but the last two cost no quota. A throwaway test file beside
+the engine is enough; delete it afterwards.
+
+- **Compare with a rulebook you trust, through the engine.** Run both on every
+  record at every whole-unit value, rule by rule (`checkProposal`). This found the
+  rounding error and every wrong guard. It only covers rules both have, and only
+  what the data can show.
+- **Replay a real proposal at different read times.** Copy a read, change `readAt`,
+  and run the same values. A Thursday morning and a Friday evening showed at once
+  whether the cutoff rule was reversed, and a mostly blocked table is hard to miss.
+- **Change the data so zeros cannot hide a column.** Ripe avocados have nothing
+  inbound, so a rule that forgets inbound stock agrees with the right one everywhere.
+  Give them some on a copy of the read, and the two part.
+- **Tally the recorded calls before forming a view.** `.devtools/generations.json`
+  holds every model call, with its outcome. It settled which models were unreliable,
+  how much a refusal threw away, and what each refusal says about its limit.
+- **Compare outcomes with what you suspect is a signal.** Setting where writes
+  disagreed against which rules were wrong is what showed the vote was the mistake.
+- **Try an idea on the real model before building it.** A script running only the
+  step in question, on instructions unrelated to any process and including one with
+  nothing to find, costs a few requests. The idea that sounded right did nothing.
+- **Run whole drafts in a scratch directory before asking for a redraft.** Use
+  `inScratchDirectory()`, read the key from `.env.local` in the test, and leave
+  `fixtures/` alone. Each redraft asked of a person also spends their day's quota.
+  Scratch runs are not in the app's own count of requests today, or in `.devtools/`.
+
+## Still open (31 October)
+
+- **Names.** A rule's name is often the first words of its sentence, cut off, which
+  makes a rulebook harder to review. A check could refuse them, at the cost of a
+  redraft.
+- **The intent** tends to describe the document ("These instructions explain how…")
+  rather than the goal.
+- **No calculations found.** A find can read every quantity as context, in about 1
+  run in 10, and then writes every rule before anyone can tell. It could stop there
+  and ask again.
+- **Terms nobody defined.** Stock available is fixed by defining it, but nothing
+  notices the next such term. Rules that read most of the same columns but not all
+  could raise a warning.
+- **A mistake made twice** passes the comparison of two writes. A cross-check of
+  checks, or a second model for the second write, would make that less likely.
+- **What the model did on each attempt** is not recorded for the debug drawer.
+- **Stock counts have no date,** so an old count reads as this week's.
+- **The first real write to the sheet** has not happened: it has only run on a sheet
+  held in memory.
+
 ## Smaller lessons
+
+- **A live object in a reply can say something that was not true when the rest was
+  read.** The rules route read the set and then attached the draft's progress, which
+  the draft kept changing, so a reply could say finished beside rules from before the
+  end, and polling stopped there. Copy progress when reading it, and read it first.
+- **A poll that stops on a failed request never resumes.** One 500 while the server
+  recompiles left a page waiting for ever. A failed request says nothing about the job.
+- **Work done inside a request is gone from the page on a reload.** Write again ran in
+  the browser's request, so a reload showed the old rule with no sign of the new one.
+  Anything a person may wait for belongs in a job with its progress kept on the server.
+- **A background save that nothing waits for** collides with the next one and with a
+  test's clean-up. Wait for it, and give each temporary file its own name. Under a
+  fake clock, real file work then means a timer may start after the clock has moved,
+  so advance the clock until the promise settles, not by a fixed amount.
+- **A limit that is never hit is never learned.** Learning limits from refusals left
+  Flash-Lite at the first guess of 5 a minute, when it allows 15, because pacing kept
+  it from being refused. Start from what refusals have already said.
+- **Count requests, do not estimate them.** Estimates here were out by more than
+  double, because a tool loop is many requests and a check sending a model back adds
+  more.
+- **Focus can land first.** Focusing a button just as a read finishes can lose to
+  React Aria moving focus on from the button that went. Wait until it stays.
+- **`ERR_CONNECTION_REFUSED` in many tests at once** is a server that has stopped.
+  Check that before reading the failures.
 
 - **A pseudo-element on a table row is a cell.** Chrome lays a `::before` on a
   `<tr>` out as an extra cell, even absolutely positioned, which pushed every

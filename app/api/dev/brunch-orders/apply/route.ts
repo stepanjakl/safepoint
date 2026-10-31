@@ -13,7 +13,10 @@ import { namesOf } from '@/lib/definitions/records';
 import { fingerprintOf, loadRevision, loadSet } from '@/lib/definitions/store';
 import { staleness } from '@/lib/definitions/fits';
 import { rejectUnlessLocalDevelopment } from '@/lib/dev/dev-route';
-import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
+import {
+  BRUNCH_ORDERS_DEFINITIONS as owner,
+  brunchOrdersProcess,
+} from '@/lib/processes/brunch-orders/process';
 import {
   keptRead,
   liveSheet,
@@ -80,10 +83,11 @@ export async function POST(request: Request) {
     const stale = staleness(owner, body.text, set, current, read);
     if (stale)
       return Response.json({ kind: 'stale', ...stale }, { status: 409 });
-    const notWritable = whyNotWritable(read);
+    const cannotReach = whyNotWritable(read);
 
+    // Undo stays open: what was written can be taken back whatever came since.
     if (body.action === 'undo') {
-      if (notWritable) throw new Error(notWritable);
+      if (cannotReach) throw new Error(cannotReach);
       const outcome = await undoApplication(
         owner,
         read.id,
@@ -98,6 +102,11 @@ export async function POST(request: Request) {
           );
     }
 
+    // An earlier version's rules may lack ones added since, so it cannot write.
+    const notWritable =
+      body.text === brunchOrdersProcess.instructions.text
+        ? cannotReach
+        : 'This run answers to an earlier version of the instructions. Start a new run to write to the sheet.';
     const proposal = await keptProposal(owner, read.id, fingerprint);
     if (!proposal) throw new Error('This run has no proposal kept.');
     if (proposal.at !== body.proposedAt)

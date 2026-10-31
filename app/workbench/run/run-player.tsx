@@ -15,6 +15,8 @@ import { useWorkingFavicon } from '@/components/app-shell/runs/working-favicon';
 import { motionTime } from '@/lib/motion-time';
 import { SPEEDS, useSlowMotion } from './slow-motion';
 import { ShimmerDirections } from './shimmer-directions';
+import { ThreadProgress } from './thread-progress';
+import type { DefinitionSet } from '@/lib/definitions/types';
 import {
   RUN_STAGE_LABELS,
   RUN_STAGES,
@@ -53,10 +55,17 @@ const LOOKS: { look: ThreadLook; label: string }[] = [
 
 // The two thread looks side by side in time rather than in space: one switch
 // for the player and every stage below it, so a stage is compared with itself.
-export function RunWorkbench({ thread }: { thread: Thread }) {
+export function RunWorkbench({
+  thread,
+  draft,
+}: {
+  thread: Thread;
+  draft: { set: DefinitionSet; names: Record<string, string> };
+}) {
   const [look, setLook] = useState<ThreadLook>('proposed');
   return (
     <>
+      <ThreadProgress look={look} {...draft} />
       <LoadingMarks />
       <MarkLifecycle />
       <ShimmerDirections />

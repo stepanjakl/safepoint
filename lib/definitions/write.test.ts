@@ -1,15 +1,17 @@
+import { MockLanguageModelV4 } from 'ai/test';
 import { describe, expect, it } from 'vitest';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 
 import { capturedRead } from './captured.fixture';
-import { answer, check, standIn, told } from './models.fixture';
+import { answer, check, standIn, told, accountedFor } from './models.fixture';
 import { findDefinitions } from './find';
 import { inScratchDirectory } from './scratch.fixture';
 import { definition, example as kept, keep, TEXT } from './set.fixture';
 import { updateSet } from './store';
 import type { Definition } from './types';
-import { writeDefinition } from './write';
+import { acceptable, canAccept } from './types';
+import { writeAgreed, writeDefinition } from './write';
 
 // Drafting against stand-in models, kept in a scratch directory: what the
 // model is told, and what is kept when an attempt fails
@@ -63,7 +65,7 @@ inScratchDirectory();
 
 // The found set, with the first definition written as given.
 async function withFirst(first: Partial<Definition>) {
-  const finder = standIn(answer(found));
+  const finder = standIn(answer(accountedFor(found, text)));
   await findDefinitions(owner, text, 'v1', read, { resolve: () => finder });
   return {
     finder,
@@ -256,5 +258,252 @@ describe('drafting', () => {
       enough: null,
       cases: 'earlier',
     });
+  });
+});
+
+describe('what a model is given of the definitions already written', () => {
+  it('gets what they come to on every record, except what depends on a proposal', async () => {
+    await withFirst({
+      formula: 'record.weekend_1 + record.weekend_2',
+      examples: [
+        {
+          key: 'SD-01',
+          inputs: {},
+          expect: 59,
+          why: 'By hand.',
+          actual: 59,
+          error: null,
+          agrees: true,
+        },
+      ],
+    });
+    const model = standIn(
+      check({
+        constants: [],
+        groups: [],
+        formula: 'order >= values.two_weekends',
+        examples: [
+          { key: 'SD-01', inputs: { order: 59 }, result: true, why: 'Enough.' },
+          { key: 'SD-01', inputs: { order: 1 }, result: false, why: 'Short.' },
+        ],
+      }),
+    );
+    await writeDefinition(owner, text, read, 'enough', {
+      resolve: () => model,
+    });
+    const sent = told(model);
+    expect(sent).toContain('worked out by the app');
+    expect(sent).toContain('SD-01: two_weekends = 59');
+    expect(sent).toContain('AV-RR: two_weekends = 44');
+  });
+
+  it('says what a disagreeing example read', async () => {
+    await withFirst({
+      formula: 'record.weekend_1 + record.weekend_2',
+      examples: [
+        {
+          key: 'SD-01',
+          inputs: {},
+          expect: 59,
+          why: 'By hand.',
+          actual: 59,
+          error: null,
+          agrees: true,
+        },
+      ],
+    });
+    const wrong = {
+      constants: [],
+      groups: [],
+      formula: 'order >= values.two_weekends',
+      examples: [
+        { key: 'SD-01', inputs: { order: 40 }, result: true, why: 'By hand.' },
+        { key: 'SD-01', inputs: { order: 1 }, result: false, why: 'Short.' },
+      ],
+    };
+    const model = standIn(check(wrong), check(wrong), check(wrong));
+    await writeDefinition(owner, text, read, 'enough', {
+      resolve: () => model,
+    });
+    expect(told(model, 1)).toContain('For SD-01, two_weekends is 59');
+  });
+});
+
+describe('writing a definition more than once', () => {
+  const answerOf = (formula: string) => ({
+    constants: [],
+    groups: [],
+    formula,
+    examples: [
+      { key: 'SD-01', inputs: { order: 8 }, result: true, why: 'Holds.' },
+      { key: 'SD-01', inputs: { order: 5 }, result: false, why: 'Fails.' },
+    ],
+  });
+  const WHOLE = 'order % record.case_size == 0';
+  // Behaves the same as WHOLE, worded differently.
+  const WHOLE_REWORDED = '0 == order % record.case_size';
+  // Each differs from WHOLE only at one order.
+  const OTHER = 'order % record.case_size == 0 || order == 1';
+  const ID = 'enough';
+  const written = async (...steps: ReturnType<typeof check>[]) => {
+    await withFirst({
+      formula: 'record.weekend_1 + record.weekend_2',
+      examples: [
+        {
+          key: 'SD-01',
+          inputs: {},
+          expect: 59,
+          why: 'By hand.',
+          actual: 59,
+          error: null,
+          agrees: true,
+        },
+      ],
+    });
+    const model = standIn(...steps);
+    const set = await writeAgreed(owner, text, read, ID, {
+      resolve: () => model,
+    });
+    return { model, kept: set!.definitions.find((d) => d.id === ID)! };
+  };
+
+  it('keeps two that behave the same, worded differently or not, after two', async () => {
+    const { model, kept } = await written(
+      check(answerOf(WHOLE)),
+      check(answerOf(WHOLE_REWORDED)),
+    );
+    expect(model.doGenerateCalls).toHaveLength(2);
+    expect(kept.formula).toBe(WHOLE);
+    expect(kept.agreement).toMatchObject({ status: 'agreed', runs: 2 });
+  });
+
+  it('gives no write another’s answer', async () => {
+    const { model } = await written(
+      check(answerOf(WHOLE)),
+      check(answerOf(WHOLE)),
+    );
+    expect(model.doGenerateCalls[1]?.prompt).toEqual(
+      model.doGenerateCalls[0]?.prompt,
+    );
+  });
+
+  it('leaves it to a person when they differ, with where, and no third write', async () => {
+    const { model, kept } = await written(
+      check(answerOf(WHOLE)),
+      check(answerOf(OTHER)),
+    );
+    expect(model.doGenerateCalls).toHaveLength(2);
+    expect(kept.agreement).toMatchObject({ status: 'split', runs: 2 });
+    expect(kept.agreement?.versions.map((v) => v.formula)).toEqual([
+      WHOLE,
+      OTHER,
+    ]);
+    expect(kept.agreement?.differences[0]).toMatchObject({
+      inputs: { order: 1 },
+      results: ['false', 'true'],
+    });
+    expect(canAccept(kept)).toBe(false);
+    // It still works, so what reads it can be written.
+    expect(acceptable(kept)).toBe(true);
+  });
+
+  // An answer in text ends a write with nothing checked.
+  const noAnswer = () => answer('I cannot do that.');
+
+  it('writes again when one does not pass, to have two to compare', async () => {
+    const { model, kept } = await written(
+      noAnswer(),
+      check(answerOf(WHOLE)),
+      check(answerOf(WHOLE_REWORDED)),
+    );
+    expect(model.doGenerateCalls).toHaveLength(3);
+    expect(kept.formula).toBe(WHOLE);
+    expect(kept.agreement).toMatchObject({ status: 'agreed', runs: 3 });
+  });
+
+  it('stands alone, and says so, when only one of three passes', async () => {
+    const { kept } = await written(
+      check(answerOf(OTHER)),
+      noAnswer(),
+      noAnswer(),
+    );
+    expect(kept.formula).toBe(OTHER);
+    expect(kept.agreement).toMatchObject({ status: 'unconfirmed', runs: 3 });
+    expect(canAccept(kept)).toBe(true);
+  });
+
+  it('keeps what it has when a later write cannot run', async () => {
+    await withFirst({
+      formula: 'record.weekend_1 + record.weekend_2',
+      examples: [
+        {
+          key: 'SD-01',
+          inputs: {},
+          expect: 59,
+          why: 'By hand.',
+          actual: 59,
+          error: null,
+          agrees: true,
+        },
+      ],
+    });
+    const good = check(answerOf(WHOLE));
+    let calls = 0;
+    const model = new MockLanguageModelV4({
+      doGenerate: async () => {
+        calls += 1;
+        if (calls === 1) return good;
+        throw new Error('The service went away.');
+      },
+    });
+    const set = await writeAgreed(owner, text, read, ID, {
+      resolve: () => model,
+    });
+    const kept = set!.definitions.find((d) => d.id === ID)!;
+    expect(kept.agreement?.status).toBe('unconfirmed');
+    expect(kept.problem).toContain('Could not be compared');
+  });
+});
+
+describe('a formula that cannot run on every record', () => {
+  it('is refused, naming them, however good its examples', async () => {
+    await withFirst({
+      formula: 'record.weekend_1 + record.weekend_2',
+      examples: [
+        {
+          key: 'SD-01',
+          inputs: {},
+          expect: 59,
+          why: 'By hand.',
+          actual: 59,
+          error: null,
+          agrees: true,
+        },
+      ],
+    });
+    const blank = {
+      constants: [],
+      groups: [],
+      // Only SD-01 has a maximum in the data.
+      formula: 'order <= record.max_order_units',
+      examples: [
+        { key: 'SD-01', inputs: { order: 8 }, result: true, why: 'Under.' },
+        { key: 'SD-01', inputs: { order: 80 }, result: false, why: 'Over.' },
+      ],
+    };
+    const fixed = {
+      ...blank,
+      formula:
+        '!has(record.max_order_units) || order <= record.max_order_units',
+    };
+    const model = standIn(check(blank), check(fixed));
+    const set = await writeDefinition(owner, text, read, 'enough', {
+      resolve: () => model,
+    });
+    expect(told(model, 1)).toContain('It cannot be worked out for');
+    expect(told(model, 1)).toContain('AV-RR');
+    expect(set!.definitions.find((d) => d.id === 'enough')?.formula).toBe(
+      fixed.formula,
+    );
   });
 });

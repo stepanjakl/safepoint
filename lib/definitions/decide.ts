@@ -1,4 +1,4 @@
-import { review, settingOf } from './checks';
+import { dependentsOf, review, settingOf } from './checks';
 import { recordsOf, type KeptRead } from './records';
 import { loadSet, putRevision, updateSet } from './store';
 import { complete, type DefinitionProcess, type DefinitionSet } from './types';
@@ -10,7 +10,8 @@ import { complete, type DefinitionProcess, type DefinitionSet } from './types';
   read its examples were run on: the same checks writing applies, so a
   version that predates a check, or a file edited by hand, is refused with
   the reason rather than accepted. The decision that completes the rulebook
-  keeps it as a revision (store.ts).
+  keeps it as a revision (store.ts). Where writes disagreed, a person chooses a
+  version before it can be accepted.
 */
 
 async function freezing(
@@ -53,6 +54,38 @@ export async function deny(
   }));
 }
 
+// Takes one of the versions a split left, on the person's word. Anything reading
+// this definition has to be looked at again, as after any other new version.
+export const choose = (
+  owner: DefinitionProcess,
+  text: string,
+  id: string,
+  index: number,
+) =>
+  updateSet(owner, text, (s) => {
+    const dependents = dependentsOf(s, id);
+    return {
+      ...s,
+      definitions: s.definitions.map((d) => {
+        const version = d.id === id ? d.agreement?.versions[index] : null;
+        if (d.id === id && version)
+          return {
+            ...d,
+            formula: version.formula,
+            constants: version.constants,
+            groups: version.groups,
+            uses: version.uses,
+            examples: version.examples,
+            model: version.model,
+            problem: null,
+            approvedAt: null,
+            agreement: { ...d.agreement!, status: 'chosen' as const },
+          };
+        return dependents.has(d.id) ? { ...d, approvedAt: null } : d;
+      }),
+    };
+  });
+
 export async function accept(
   owner: DefinitionProcess,
   text: string,
@@ -72,6 +105,10 @@ export async function accept(
     }));
   if (!definition.formula)
     return refuse('Nothing is written to accept yet: write it first.');
+  if (definition.agreement?.status === 'split')
+    return refuse(
+      'The versions written disagree: choose one before accepting it.',
+    );
   if (!read)
     return refuse(
       'The read its examples were run on is no longer kept: write it again on a new read.',
