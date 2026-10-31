@@ -32,7 +32,7 @@ import { cx } from '@/lib/cx';
 import type { ProcessStep, ProcessSummary } from '@/lib/process/model';
 import { COMING, ORDER_STEPS } from '@/lib/processes/brunch-orders/process';
 
-import { ApplyStep } from './apply-step';
+import { ApplyStep, type ApplyProgress } from './apply-step';
 import { CalculateStep, type CalculateProgress } from './calculate-step';
 import { DataDrawer } from './data-drawer';
 import { ProposeStep, type ProposeProgress } from './propose-step';
@@ -95,6 +95,10 @@ export function OrdersRun({ process }: { process: ProcessSummary }) {
   const rules = live.data.rules as RulesProgress | undefined;
   const calculated = live.data.calculate as CalculateProgress | undefined;
   const proposed = live.data.propose as ProposeProgress | undefined;
+  const applied = live.data.apply as ApplyProgress | undefined;
+  // What this run has written and not undone.
+  const wrote =
+    applied?.status === 'verified' || applied?.status === 'mismatch';
   const rulesDone =
     rules !== undefined &&
     rules.intent &&
@@ -134,9 +138,11 @@ export function OrdersRun({ process }: { process: ProcessSummary }) {
                   ? 'complete'
                   : 'attention'
               : step.id === 'apply'
-                ? allDecided
-                  ? 'complete'
-                  : 'pending'
+                ? !allDecided
+                  ? 'pending'
+                  : proposed.writes === 0 || applied?.status === 'verified'
+                    ? 'complete'
+                    : 'attention'
                 : 'pending';
   // The furthest step a person can act on.
   const latest =
@@ -174,9 +180,13 @@ export function OrdersRun({ process }: { process: ProcessSummary }) {
                     ? `${proposed.total} proposed · ${proposed.needYou} need you`
                     : `${proposed.total} proposed · all ready`
           : step.id === 'apply' && allDecided
-            ? proposed.writes
-              ? `${proposed.writes} to write`
-              : 'Nothing to write'
+            ? applied?.status === 'verified'
+              ? 'Written and read back'
+              : applied?.status === 'mismatch'
+                ? 'Check the sheet'
+                : proposed.writes
+                  ? `${proposed.writes} to write`
+                  : 'Nothing to write'
             : step.label;
   const steps = ORDER_STEPS.map((step) => ({
     ...step,
@@ -280,7 +290,11 @@ export function OrdersRun({ process }: { process: ProcessSummary }) {
                       text={text}
                       readId={read.id}
                       rulebook={calculated.fingerprint}
+                      proposedAt={proposed.proposedAt!}
                       decisions={proposed.decisions}
+                      onProgress={(progress) =>
+                        selection.updateLive(live.run.id, { apply: progress })
+                      }
                     />
                   )}
                 </WithText>
@@ -296,7 +310,9 @@ export function OrdersRun({ process }: { process: ProcessSummary }) {
           Discard this run
         </Button>
         <span className="text-meta text-muted">
-          Removes it from this browser. Nothing was written anywhere.
+          {wrote
+            ? 'Removes it from this browser. What it wrote stays in the sheet.'
+            : 'Removes it from this browser. Nothing was written anywhere.'}
         </span>
       </div>
     </>

@@ -16,7 +16,7 @@ import {
 import { DRAFT_MODELS, withModels, type Resolve } from './calls';
 import { givenOf } from './checks';
 import { contextFor, run } from './formulas';
-import { plain } from './prompts';
+import { plain, timingOf } from './prompts';
 import { cellOf, fitting, type KeptRead, type Row } from './records';
 import { fingerprintOf } from './store';
 import type {
@@ -325,6 +325,7 @@ async function proposeBatch(
               .join('\n')}`,
             `How the data fits together:\n${layoutOf(subject)}`,
             `The data, by tab, each row numbered (row 1 is the header):\n${numberedDataOf(onlyRecords(read, subject, keys))}`,
+            timingOf(onlyRecords(read, subject, keys), subject.data),
           ].join('\n\n'),
           tools,
           stopWhen: [
@@ -371,14 +372,14 @@ const proposalFile = (
   );
 };
 
-async function writeWhole(file: string, value: unknown) {
+export async function writeWhole(file: string, value: unknown) {
   await mkdir(path.dirname(file), { recursive: true });
   const temporary = `${file}.${process.pid}.${Date.now()}.tmp`;
   await writeFile(temporary, `${JSON.stringify(value, null, 2)}\n`);
   await rename(temporary, file);
 }
 
-async function readJson<T>(file: string): Promise<T | null> {
+export async function readJson<T>(file: string): Promise<T | null> {
   try {
     return JSON.parse(await readFile(file, 'utf8')) as T;
   } catch {

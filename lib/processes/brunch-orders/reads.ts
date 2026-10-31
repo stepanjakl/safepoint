@@ -3,7 +3,15 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import type { DataTab, KeptRead } from '@/lib/definitions/records';
-import { readWholeSheet, type SheetRead } from '@/lib/sheets/composio';
+import type { OutputSheet } from '@/lib/definitions/apply';
+import {
+  addTab,
+  missingSheetEnv,
+  readTab,
+  readWholeSheet,
+  writeRange,
+  type SheetRead,
+} from '@/lib/sheets/composio';
 
 import { BRUNCH_ORDERS_ID, DATA_TABS } from './process';
 import { runDataDir } from '@/lib/storage/run-data';
@@ -65,16 +73,13 @@ function dataTabs(read: SheetRead): DataTab[] {
   }));
 }
 
-export async function readAndKeep(
-  source: 'captured' | 'live',
-): Promise<KeptRead> {
-  const { read, label } = await load(source);
+const asKept = (read: SheetRead, label: string): KeptRead => {
   const tabs = dataTabs(read);
   const hash = createHash('sha256')
     .update(JSON.stringify(tabs))
     .digest('hex')
     .slice(0, 8);
-  const kept: KeptRead = {
+  return {
     id: `${read.readAt.replace(/[:.]/g, '-')}-${hash}`,
     readAt: read.readAt,
     source: label,
@@ -85,6 +90,13 @@ export async function readAndKeep(
     },
     tabs,
   };
+};
+
+export async function readAndKeep(
+  source: 'captured' | 'live',
+): Promise<KeptRead> {
+  const { read, label } = await load(source);
+  const kept = asKept(read, label);
   await mkdir(READS(), { recursive: true });
   await writeFile(path.join(READS(), `${kept.id}.json`), JSON.stringify(kept));
   return kept;
@@ -105,3 +117,26 @@ export async function keptRead(id: string): Promise<KeptRead | null> {
     return null;
   }
 }
+
+// Why a run on this read cannot write to the sheet, or null when it can. A
+// captured read may not be what the sheet holds now, so it is only for trying.
+export function whyNotWritable(read: KeptRead): string | null {
+  if (read.source.startsWith('Captured'))
+    return 'This run used a captured read. Start a run from a live read to write to the sheet.';
+  const missing = missingSheetEnv();
+  return missing.length ? `Missing ${missing.join(', ')}.` : null;
+}
+
+// The sheet as a write sees it. Not kept: it only proves the run's read still
+// holds, and times the checks at the moment of writing.
+export const liveSheet: OutputSheet = {
+  async readNow() {
+    const read = await readWholeSheet();
+    const failed = read.requests.find((r) => !r.successful);
+    if (failed) throw new Error(failed.error ?? 'The read failed.');
+    return asKept(read, `Live read through Composio at ${read.readAt}`);
+  },
+  readTab,
+  addTab,
+  writeRange,
+};

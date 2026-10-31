@@ -4,6 +4,7 @@ import type { DefinitionSubject } from '@/lib/process/model';
 import { ctorFor } from '@/lib/definitions/cel-objects';
 import type { FieldType } from '@/lib/sheets/field-types';
 
+import { timingOf } from './prompts';
 import { cel, recordsOf, type KeptRead, type Row } from './records';
 import type { Result } from './types';
 
@@ -286,6 +287,7 @@ export function describe(read: KeptRead, subject: DefinitionSubject): string {
           `Times of day (${typedColumns('time_of_day')}) are ints, minutes after midnight: 06:30 is 390.`,
         ]
       : []),
+    ...(data.timing ? [timingOf(read, data)] : []),
     'ceil(x), floor(x) and round(x) round a double to a whole number; they take no int, so divide as doubles: ceil(double(a) / double(b)).',
     'Membership: x in list. Remainder: a % b. Choice: condition ? a : b. Logic: &&, ||, !.',
     'Whole numbers are ints and other numbers doubles; CEL never mixes them, so convert with double(x) or int(x) (3 == 3.0 is an error). A blank cell is absent: test it with has(record.field).',

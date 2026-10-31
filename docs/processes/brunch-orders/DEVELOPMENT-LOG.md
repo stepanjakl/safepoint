@@ -374,6 +374,29 @@ that is the rule being met, not its scope.
 **Lesson.** An accepted rule is accepted against a shape of data. Keep the
 rule fixed, but check it against the data each time it is used.
 
+## Ready on a Friday night (30 October)
+
+**What happened.** A live run on Friday evening proposed sensible orders and
+every number was right, yet all of them were marked ready. Every supplier's
+cutoff had passed on Thursday, so none could have arrived. Ripen-at-home
+avocados were ready to order nothing on a Tuesday count, against a 24-hour limit
+for produce. The read was also identical, cell for cell, to the one from 8
+October.
+
+**Why nothing caught it.** The instructions never mentioned cutoffs or count
+age, so no rule did, though the sheet has had both columns all along. The
+checks can only say a proposal fits the rules, and a formula had no way to know
+when it was being run.
+
+**What changed.** Instructions v3 states both rules, and a read gives formulas
+the hours since a count and until a cutoff, from `readAt`. Writing runs the
+checks again at that moment. The identical read is not solved: a weekday cannot
+say which week, so the sheet needs a date to tell.
+
+**Lesson.** A correct calculation on the wrong day is still wrong. Passing every
+check means the rules were met, not that nothing else matters: compare the
+columns a process reads with the ones its rules use.
+
 ## Smaller lessons
 
 - **A pseudo-element on a table row is a cell.** Chrome lays a `::before` on a

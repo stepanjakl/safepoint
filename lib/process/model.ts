@@ -8,6 +8,7 @@
 // that can move underneath a result -- a run evaluated under older instructions
 // is not comparable to one evaluated under the current set, and the list says so.
 
+import type { DayTime } from '@/lib/sheets/cycle';
 import type { FieldType } from '@/lib/sheets/field-types';
 
 import type { ProcessSchedule } from './schedule';
@@ -234,4 +235,15 @@ export type DataShape = {
   // Where approved proposals would be written: a tab, one row per record by
   // its key column, one column per proposal field. Absent: nowhere yet.
   output?: { tab: string; key: string };
+  // Columns worked out from when the data was read, in hours, each from a
+  // weekday column and a time-of-day column: `since` how long ago that last
+  // happened, `until` how long is left before that deadline in the week being
+  // planned, negative once it has passed. Never the wall clock, so a read
+  // always gives the same answers.
+  timing?: {
+    timeZone: string;
+    opens: DayTime;
+    since: Record<string, { day: string; time: string }>;
+    until: Record<string, { day: string; time: string }>;
+  };
 };

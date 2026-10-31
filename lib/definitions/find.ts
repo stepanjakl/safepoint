@@ -72,7 +72,9 @@ export async function findDefinitions(
     ].join('\n'),
     [
       `Instructions:\n${text}`,
-      read ? `The data's columns, by tab:\n${columnsOf(read)}` : '',
+      read
+        ? `The data's columns, by tab:\n${columnsOf(read, subject.data)}`
+        : '',
     ]
       .filter(Boolean)
       .join('\n\n'),

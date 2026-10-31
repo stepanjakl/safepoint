@@ -1,8 +1,10 @@
 # Brunch orders: plan
 
 Status: active implementation hand-off, agreed 8 October 2026. Phases 1, 2,
-the Phase 2b definitions-engine work, Phase 3 (Calculate) and Phase 4 (Propose,
-with review, and an Apply preview) are built; later phases remain planned.
+the Phase 2b definitions-engine work, Phase 3 (Calculate), Phase 4 (Propose,
+with review), Phase 5 (the Apply preview) and Phase 6 (Write-back) are built;
+later phases remain planned. Instructions v3 still needs its rules drafted and
+accepted, and write-back has not yet written to the real sheet.
 
 Audience: the product owner, and the engineer or agent building each phase.
 What building it taught, and what is still open, is logged in
@@ -82,7 +84,7 @@ Each phase ends when it works on the captured read and its page test passes.
 | 2. Rules from the instructions | The model lists the rules it finds in the instructions, in plain words, and confirms the intent. Each rule is turned into a formula on its own and approved on its own, against two or three worked examples written in the instructions. Four rules to begin with.                                                                                                             | Each of the four rules is approved and passes its examples.                                               |
 | 3. Calculate                   | The values the instructions define, worked out by code for every product: expected demand, stock available before the start, what is required.                                                                                                                                                                                                                                  | Every product's values match a hand calculation.                                                          |
 | 4. Propose, with review        | The model proposes for every record, given those values: what to set, the reason in plain words, the cells it relied on and anything it is unsure of. Code checks every proposed value against the accepted checks; the verdicts colour the rows. A person approves, changes within what the checks allow, or rejects each record, in the same table. Built 12 October (below). | A proposal covers every record, cites only real cells, and every record can be decided from the keyboard. |
-| 5. Apply, as a preview         | What the decided proposal would write to the Orders tab, cell by cell, before and after. Nothing is written. Built with phase 4.                                                                                                                                                                                                                                                | The preview lists exactly the approved and changed records.                                               |
+| 5. Apply, as a preview         | What the decided proposal would write to the Orders tab, cell by cell, before and after. Nothing is written until confirmed. Built with phase 4; the before read from the sheet with phase 6.                                                                                                                                                                                   | The preview lists exactly the approved and changed records.                                               |
 | 6. Write-back                  | Approved values written to the Orders tab, read back to confirm, and undoable while untouched.                                                                                                                                                                                                                                                                                  | An approved run's values are in the sheet and verified.                                                   |
 | 7. History and learning        | Runs, reads and decisions kept in the database; repeated edits in the same direction become suggested changes to the instructions, approved like any version.                                                                                                                                                                                                                   | A suggestion cites the decisions that prompted it.                                                        |
 | 8. Wider scope                 | One at a time, each with its own rules and examples: offer prices, the avocado toast kit, ripe-stock cover.                                                                                                                                                                                                                                                                     | Each addition passes its examples without breaking the others.                                            |
@@ -409,3 +411,44 @@ accepted, the Rules step collapses to one line that opens the Rules tab.
 Present limits, universal rather than Brunch-specific: a check sees one
 record at a time, and proposal fields are whole numbers; decimals wait until a
 process needs them.
+
+## Instructions v3 and Phase 6, as built
+
+Agreed with the owner on 30 October, after a run on a Friday evening came out
+"ready" for orders whose cutoffs had passed on Thursday, and for a product
+whose stock count was two days old.
+
+- **Two new rules.** Instructions v3 adds: only order what can still be placed
+  before the supplier's cutoff for this weekend, and flag a stock count older
+  than its category allows, even when nothing is ordered. v2's rulebook and the
+  runs on it are unchanged; v3 is a new set of rules to draft and accept.
+- **Time comes from the read.** A formula compares numbers, and a read gives it
+  two more: `count_age_hours` and `hours_until_cutoff` (`DataShape.timing`,
+  `addTiming` in `lib/definitions/records.ts`). They are worked out from
+  `readAt`, never the wall clock, so a read always gives the same answers. A
+  cutoff means the last one at or before the weekend's next opening, so it
+  stays missed until that weekend has opened.
+- **Written only on the server's say-so.** The browser sends what a person
+  decided (`lib/definitions/apply.ts`); values for an approval come from the
+  kept proposal. A write reads the sheet again and is refused if a data tab has
+  changed, if any record is undecided, or if a blocking check now fails. All the
+  checks run again at the moment of writing, because a deadline can pass between
+  deciding and writing. A `decide` check that newly fails holds the write until
+  a person acknowledges it by name.
+- **One block, read back.** The write is one range in one request, touching only
+  the cells it must, so other columns of the tab are kept. The first write adds
+  the Orders tab. The block is then read back: verified, mismatch, or failed if
+  the cells are untouched, and a failed write can be tried again.
+- **The record is on the server.** `data/<process>/applied/` keeps each write by
+  read and rulebook: every decision, the checks it let fail, and the cells before
+  and after. A run writes once until it is undone. Runs and proposals not yet
+  written still keep their decisions in the browser, until phase 7.
+- **Undo only while untouched.** Undo restores the block, and is refused if any
+  cell no longer holds what was written. It leaves the added tab in place, empty.
+- **A captured read cannot write.** It may not be what the sheet holds now, so
+  its Apply step shows the preview and says why.
+
+Present limits. Stock counts carry a weekday and no date, so a count left
+unchanged for weeks reads as this week's: the 30 October live read was identical
+to the 8 October one. Telling them apart needs a date in the sheet. There is no
+sign-in, so the record says what was decided and when, not by whom.

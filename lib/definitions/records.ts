@@ -1,5 +1,11 @@
 import type { DataShape } from '@/lib/process/model';
 import {
+  deadlineBefore,
+  hoursBetween,
+  latestAtOrBefore,
+  type DayTime,
+} from '@/lib/sheets/cycle';
+import {
   WEEKDAYS,
   interpretCell,
   type FieldType,
@@ -11,7 +17,8 @@ import {
   (`DataShape`): the record tabs joined by their key column, each lookup a
   record reaches through one of its columns, and the columns read as a type.
   A weekday becomes 1 (Monday) to 7 and a time of day minutes after midnight,
-  so a formula compares plain numbers.
+  so a formula compares plain numbers. Columns the process declares as timing
+  are added from when the read was taken, so they stay the same for that read.
 
   Whatever does not fit the declaration is reported, never smoothed over: a
   missing tab or column, a key listed twice, a cell that cannot be read as its
@@ -111,6 +118,48 @@ function keyed(
   return rows;
 }
 
+// A weekday column and a time column of a record as one moment in the week;
+// null when either cell is blank.
+function dayTimeOf(
+  record: Row,
+  { day, time }: { day: string; time: string },
+): DayTime | null {
+  const index = record[day];
+  const minutes = record[time];
+  return index === undefined || minutes === undefined
+    ? null
+    : {
+        day: WEEKDAYS[Number(index) - 1] as Weekday,
+        minutes: Number(minutes),
+      };
+}
+
+// Hours to two places; always a double, as a formula is checked against one.
+const hours = (from: number, to: number) =>
+  Math.round(hoursBetween(from, to) * 100) / 100;
+
+function addTiming(record: Row, read: KeptRead, data: DataShape) {
+  const { timing } = data;
+  if (!timing) return;
+  const readAt = Date.parse(read.readAt);
+  for (const [name, columns] of Object.entries(timing.since)) {
+    const at = dayTimeOf(record, columns);
+    if (at)
+      record[name] = hours(
+        latestAtOrBefore(at, readAt, timing.timeZone),
+        readAt,
+      );
+  }
+  for (const [name, columns] of Object.entries(timing.until)) {
+    const at = dayTimeOf(record, columns);
+    if (at)
+      record[name] = hours(
+        readAt,
+        deadlineBefore(at, timing.opens, readAt, timing.timeZone),
+      );
+  }
+}
+
 const celType = (value: unknown) =>
   typeof value === 'bigint'
     ? 'int'
@@ -186,6 +235,7 @@ function build(read: KeptRead, data: DataShape): Records {
         );
     }
   }
+  for (const record of records.values()) addTiming(record, read, data);
   const header = (tabOf(first ?? '')?.values[0] ?? []).map(String);
   if (tabOf(first ?? '')?.values.length && !header.includes(data.records.name))
     problems.push(`The ${first} tab has no ${data.records.name} column.`);

@@ -8,7 +8,8 @@ import type { Proposal } from '@/lib/definitions/types';
 
 // Brunch orders, Propose and Apply (docs/processes/brunch-orders/PLAN.md):
 // with every rule accepted and the values worked out, the model proposes for
-// every record and a person decides each; Apply shows what would be written.
+// every record and a person decides each; Apply shows what it writes, writes
+// on confirmation and can undo. The sheet is a stand-in served here.
 // Replies are frozen copies (e2e/fixtures/), held to the engine by
 // lib/definitions/e2e-fixtures.test.ts; no model is called.
 
@@ -23,7 +24,26 @@ const frozen = fixture('brunch-orders-proposal.json') as {
   trials: Record<string, Record<string, unknown>>;
 };
 
+type Change = { key: string; before: number | null; after: number };
+let lastChanges: Change[] = [];
+let written: (Record<string, unknown> & { status: string }) | null = null;
+const applicationOf = (changes: Change[]) => ({
+  proposedAt: frozen.proposal.at,
+  tab: 'Orders',
+  at: '2026-10-29T09:00:00.000Z',
+  status: 'verified',
+  error: null,
+  undoneAt: null,
+  range: 'A1:B6',
+  before: [],
+  after: [],
+  changes,
+  decisions: {},
+});
+
 test.beforeEach(async ({ page }) => {
+  written = null;
+  lastChanges = [];
   await page.route('**/api/dev/brunch-orders/rules', async (route) => {
     const body = route.request().postDataJSON() as { action: string };
     if (body.action !== 'get') return route.continue();
@@ -46,6 +66,50 @@ test.beforeEach(async ({ page }) => {
       },
     }),
   );
+  await page.route('**/api/dev/brunch-orders/apply', (route) => {
+    const body = route.request().postDataJSON() as {
+      action: string;
+      decisions?: Record<string, { kind: string; values?: { order: number } }>;
+    };
+    if (body.action === 'write') {
+      written = applicationOf(lastChanges);
+      return route.fulfill({ json: { kind: 'applied', application: written } });
+    }
+    if (body.action === 'undo') {
+      written = { ...written!, status: 'undone' };
+      return route.fulfill({ json: { kind: 'applied', application: written } });
+    }
+    lastChanges = Object.entries(frozen.proposal.records).flatMap(
+      ([key, record], index) => {
+        const decision = body.decisions?.[key];
+        const values = decision?.values ?? record.values;
+        return decision && decision.kind !== 'reject' && values
+          ? [
+              {
+                key,
+                field: 'order',
+                cell: `Orders!B${index + 2}`,
+                before: key === 'FT-200' ? 24 : null,
+                after: values.order,
+              },
+            ]
+          : [];
+      },
+    );
+    return route.fulfill({
+      json: {
+        kind: 'preview',
+        tab: 'Orders',
+        names: frozen.names,
+        notWritable: null,
+        tabExists: false,
+        changes: lastChanges,
+        problems: [],
+        newlyFailing: [],
+        application: written,
+      },
+    });
+  });
   await page.route('**/api/dev/brunch-orders/propose', (route) => {
     const body = route.request().postDataJSON() as {
       action: string;
@@ -88,7 +152,7 @@ async function propose(page: Page) {
 }
 const thread = (page: Page) => page.locator('ol.thread');
 
-test('a person decides every record, and Apply shows what would be written', async ({
+test('a person decides every record, then writes what Apply shows and can undo it', async ({
   page,
 }) => {
   const table = await propose(page);
@@ -154,9 +218,47 @@ test('a person decides every record, and Apply shows what would be written', asy
     /RK-60/,
     /CF-40/,
   ]);
+  // A cell that holds something says so; a new one shows a dash.
   await expect(
-    page.getByText('Nothing is written to the sheet yet.'),
+    preview
+      .getByRole('row', { name: /^FT-200/ })
+      .getByRole('cell')
+      .last(),
+  ).toContainText('24');
+  await expect(
+    preview
+      .getByRole('row', { name: /^CF-40/ })
+      .getByRole('cell')
+      .last(),
+  ).toContainText('—');
+
+  // Writing is asked for, then confirmed, with focus on the confirmation.
+  await page.getByRole('button', { name: 'Write 5 rows' }).click();
+  await expect(
+    page.getByText('Adds the Orders tab, with 5 rows.'),
   ).toBeVisible();
+  const confirm = page.getByRole('button', { name: 'Write to the sheet' });
+  await expect(confirm).toBeFocused();
+  await confirm.click();
+  await expect(
+    page.getByRole('status').filter({ hasText: 'read back from the sheet' }),
+  ).toBeAttached();
+  await expect(
+    page.getByRole('table', { name: 'What was written, before and after' }),
+  ).toBeVisible();
+  await expect(
+    thread(page).getByText('Written and read back').first(),
+  ).toBeAttached();
+
+  const undo = page.getByRole('button', { name: 'Undo the write' });
+  await expect(undo).toBeFocused();
+  await undo.click();
+  await expect(
+    page.getByRole('status').filter({ hasText: 'back as they were' }),
+  ).toBeAttached();
+  await expect(
+    page.getByRole('button', { name: 'Write 5 rows' }),
+  ).toBeFocused();
 
   const violations = (
     await new AxeBuilder({ page }).include('ol.thread').analyze()

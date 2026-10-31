@@ -22,7 +22,7 @@ test('a run shows its instructions, reads the sheet and keeps the read', async (
     page.getByText(/^Each week, suggest how many of each product to order/),
   ).toBeVisible();
   const instructions = page.getByRole('button', {
-    name: /^Instructions v2\./,
+    name: /^Instructions v3\./,
   });
   await expect(instructions).toBeVisible();
   await expect(instructions.locator('.thread-marker')).toBeVisible();
@@ -66,7 +66,7 @@ test('a run shows its instructions, reads the sheet and keeps the read', async (
     0.5,
   );
   await expect(
-    page.getByText('Instructions v2; this run answers to them as written.'),
+    page.getByText('Instructions v3; this run answers to them as written.'),
   ).toHaveCount(0);
   const arrow = instructions.locator('.thread-step-heading-arrow');
   await expect(arrow).toHaveCSS('opacity', '0');
@@ -77,7 +77,7 @@ test('a run shows its instructions, reads the sheet and keeps the read', async (
   await instructions.focus();
   await page.keyboard.press('Enter');
   await expect(
-    page.getByRole('button', { name: 'Instructions: version v2' }),
+    page.getByRole('button', { name: 'Instructions: version v3' }),
   ).toHaveAttribute('aria-current', 'true');
   await page.getByRole('button', { name: 'Runs', exact: true }).click();
 

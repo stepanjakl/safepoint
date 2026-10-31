@@ -12,7 +12,7 @@ Safepoint lets a person inspect and approve proposed changes before application-
 | Current interface              | [Embedded review](interface/EMBEDDED-REVIEW.md) and [styling system](interface/STYLING-SYSTEM.md)                       | Implemented guidance, with future work labelled             |
 | Earlier replay scenario        | [Promotion-release data dictionary](processes/promotion-release/DATA-DICTIONARY.md)                                     | Implemented replay contract                                 |
 
-**Brunch orders** is the active hand-off. Its development-only route is `/examples/brunch-orders`. It reads Products, Stock, Sales, Deliveries and Parameters, then uses `lib/definitions/` to find, check and approve definitions from versioned instructions. Its later calculation, proposal, review, application and history phases remain planned.
+**Brunch orders** is the active hand-off. Its development-only route is `/examples/brunch-orders`. It reads Products, Stock, Sales, Deliveries and Parameters, then uses `lib/definitions/` to find, check and approve definitions from versioned instructions. It then calculates, proposes and reviews, and writes what a person approves to the Orders tab. Its history and learning phase, and wider scope, remain planned.
 
 The [Brunch orders direction review](processes/brunch-orders/DIRECTION-REVIEW.md) records the 9 October assessment of drafting reliability and product direction, including the proposed next experiment with a corrected, frozen definition set. It is a proposal, not evidence that later phases or reliable automatic authoring are complete.
 

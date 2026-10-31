@@ -7,7 +7,8 @@ import path from 'node:path';
   change is reviewed like code.
 */
 
-export type RunDataKind = 'reads' | 'cross-checks' | 'proposals' | 'drafts';
+export type RunDataKind =
+  'reads' | 'cross-checks' | 'proposals' | 'drafts' | 'applied';
 
 // Read when used, so a test can work in a scratch directory.
 export const runDataDir = (processId: string, kind: RunDataKind) =>

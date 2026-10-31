@@ -91,3 +91,33 @@ describe('records from a read', () => {
     expect(records.types.record.case_size).toBe('int');
   });
 });
+
+describe('columns worked out from when the data was read', () => {
+  const at = (readAt: string) => ({ ...capturedRead(), readAt });
+  const record = (readAt: string, key: string) =>
+    recordsOf(at(readAt), data).record(key);
+
+  it("give a count's age and the time left before the cutoff", () => {
+    // Thursday 29 October 2026, 08:45 in London: the scheduled run.
+    const thursday = '2026-10-29T08:45:00Z';
+    expect(record(thursday, 'AV-LS').count_age_hours).toBe(38.75);
+    expect(record(thursday, 'EG-06').count_age_hours).toBe(1.25);
+    expect(record(thursday, 'EG-06').hours_until_cutoff).toBe(3.25);
+    expect(record(thursday, 'SD-01').hours_until_cutoff).toBe(5.25);
+  });
+
+  it('are negative once the cutoff has passed for the coming weekend', () => {
+    const friday = '2026-10-30T19:52:57.107Z';
+    expect(record(friday, 'EG-06').hours_until_cutoff).toBe(-31.88);
+    expect(record(friday, 'EG-06').count_age_hours).toBe(36.38);
+  });
+
+  it('stay out of the record when a cell they need is blank', () => {
+    const tabs = capturedTabs();
+    const stock = tab(tabs, 'Stock');
+    rowOf(stock, 'EG-06')[stock[0]!.indexOf('counted_day')] = '';
+    const records = recordsOf(capturedRead(tabs), data);
+    expect(records.record('EG-06').count_age_hours).toBeUndefined();
+    expect(records.types.record.count_age_hours).toBe('double');
+  });
+});

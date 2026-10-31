@@ -5,9 +5,8 @@
   Two rules:
   - An observation (something that already happened) resolves to its most
     recent occurrence at or before the run time.
-  - A deadline resolves inside the week being planned. The current week is the
-    first whose deadline named by current_until has not passed at the run
-    time; the weeks after it follow.
+  - A deadline resolves inside the week being planned: the last time it falls
+    at or before that week's next opening.
 
   Wall-clock times are resolved in the process's time zone, so 06:00 stays
   06:00 across a clock change; durations are measured between real instants.
@@ -115,6 +114,35 @@ export function latestAtOrBefore(
   return thisWeek <= runAt
     ? thisWeek
     : inWeek(addDays(monday, -7), at, timeZone);
+}
+
+// The first time this weekday and time comes round after the run time.
+export function firstAfter(
+  at: DayTime,
+  runAt: number,
+  timeZone: string,
+): number {
+  const monday = mondayOf(runAt, timeZone);
+  const thisWeek = inWeek(monday, at, timeZone);
+  return thisWeek > runAt ? thisWeek : inWeek(addDays(monday, 7), at, timeZone);
+}
+
+/*
+  A deadline for the week being planned: its last occurrence at or before the
+  week's next opening. Once that opening has passed, the next week is the one
+  being planned, so a deadline missed for this opening stays missed until then.
+*/
+export function deadlineBefore(
+  deadline: DayTime,
+  opens: DayTime,
+  runAt: number,
+  timeZone: string,
+): number {
+  return latestAtOrBefore(
+    deadline,
+    firstAfter(opens, runAt, timeZone),
+    timeZone,
+  );
 }
 
 export function hoursBetween(from: number, to: number) {

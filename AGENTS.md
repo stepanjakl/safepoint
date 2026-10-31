@@ -150,7 +150,7 @@ placeholders such as `values.<id>`, because a real example steers the model.
   parent and reason, and the head). A migration of an accepted rulebook
   makes a new revision through `putRevision` with reason `migrated`; it never
   rewrites one. What runs produce is not:
-  `data/<process>/{reads,cross-checks,drafts,proposals}/` (gitignored,
+  `data/<process>/{reads,cross-checks,drafts,proposals,applied}/` (gitignored,
   `lib/storage/run-data.ts`). `e2e/fixtures/` are frozen copies, held to the
   engine by `lib/definitions/e2e-fixtures.test.ts`.
 - `docs/processes/brunch-orders/DEVELOPMENT-LOG.md` records what went wrong and why. Add to it when

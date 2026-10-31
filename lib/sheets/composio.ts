@@ -3,7 +3,8 @@ import { z } from 'zod';
 
 /*
   Server-only. Reads a Google Sheet through Composio and records exactly what
-  was asked and what came back, so the page can show it. The API key never
+  was asked and what came back, so the page can show it; writes to one tab of
+  it only when an approved proposal asks to (writeRange). The API key never
   leaves this module; the request record carries everything else.
 
   The toolkit version is pinned: a Composio release cannot change the shape of
@@ -92,11 +93,8 @@ export function missingSheetEnv(): string[] {
   return SHEET_ENV.filter((name) => !process.env[name]);
 }
 
-/*
-  Reads every tab: first asks the sheet which tabs it has, then fetches them
-  all in one request. Nothing about the process is assumed here.
-*/
-export async function readWholeSheet(): Promise<SheetRead> {
+// A connection to the configured sheet: calls a tool, recording what happened.
+function connect() {
   const missing = missingSheetEnv();
   if (missing.length)
     throw new Error(`Missing environment variables: ${missing.join(', ')}.`);
@@ -148,12 +146,22 @@ export async function readWholeSheet(): Promise<SheetRead> {
       };
     }
   };
+  return { env, call };
+}
 
+const INFO_FIELDS =
+  'properties.title,properties.timeZone,properties.locale,sheets.properties.sheetId,sheets.properties.title,sheets.properties.gridProperties';
+
+/*
+  Reads every tab: first asks the sheet which tabs it has, then fetches them
+  all in one request. Nothing about the process is assumed here.
+*/
+export async function readWholeSheet(): Promise<SheetRead> {
+  const { env, call } = connect();
   const readAt = new Date().toISOString();
   const info = await call('GOOGLESHEETS_GET_SPREADSHEET_INFO', {
     spreadsheet_id: env.GOOGLE_SHEETS_SPREADSHEET_ID,
-    fields:
-      'properties.title,properties.timeZone,properties.locale,sheets.properties.sheetId,sheets.properties.title,sheets.properties.gridProperties',
+    fields: INFO_FIELDS,
   });
   const parsedInfo = infoSchema.safeParse(info.data);
   const sheets = parsedInfo.success ? (parsedInfo.data.sheets ?? []) : [];
@@ -215,6 +223,69 @@ export async function readWholeSheet(): Promise<SheetRead> {
     requests: [info.record, values.record],
     valueRanges: parsedValues.success ? parsedValues.data.valueRanges : [],
   };
+}
+
+// What a call that had to succeed came back with, or why it did not.
+function succeeded(result: { record: SheetRequestRecord; data: unknown }) {
+  if (!result.record.successful)
+    throw new Error(result.record.error ?? `${result.record.tool} failed.`);
+  return result.data;
+}
+
+// A tab's cells, unformatted as a read's are; null when the sheet has no such
+// tab. Whole grid, so nothing past a fixed edge is missed.
+export async function readTab(tab: string): Promise<unknown[][] | null> {
+  const { env, call } = connect();
+  const info = infoSchema.parse(
+    succeeded(
+      await call('GOOGLESHEETS_GET_SPREADSHEET_INFO', {
+        spreadsheet_id: env.GOOGLE_SHEETS_SPREADSHEET_ID,
+        fields: INFO_FIELDS,
+      }),
+    ),
+  );
+  const sheet = info.sheets?.find(({ properties }) => properties.title === tab);
+  if (!sheet) return null;
+  const values = batchGetSchema.parse(
+    succeeded(
+      await call('GOOGLESHEETS_BATCH_GET', {
+        spreadsheet_id: env.GOOGLE_SHEETS_SPREADSHEET_ID,
+        ranges: [wholeTabRange(tab, sheet.properties.gridProperties)],
+        valueRenderOption: 'UNFORMATTED_VALUE',
+        dateTimeRenderOption: 'SERIAL_NUMBER',
+      }),
+    ),
+  );
+  return values.valueRanges[0]?.values ?? [];
+}
+
+// Adds a tab of exactly this name; it fails rather than take another name.
+export async function addTab(tab: string): Promise<void> {
+  const { env, call } = connect();
+  succeeded(
+    await call('GOOGLESHEETS_ADD_SHEET', {
+      spreadsheet_id: env.GOOGLE_SHEETS_SPREADSHEET_ID,
+      title: tab,
+      force_unique: false,
+    }),
+  );
+}
+
+// One range in one request, values as they are: an empty string clears a cell.
+export async function writeRange(
+  tab: string,
+  range: string,
+  values: unknown[][],
+): Promise<void> {
+  const { env, call } = connect();
+  succeeded(
+    await call('GOOGLESHEETS_VALUES_UPDATE', {
+      spreadsheet_id: env.GOOGLE_SHEETS_SPREADSHEET_ID,
+      range: `'${tab.replaceAll("'", "''")}'!${range}`,
+      value_input_option: 'RAW',
+      values,
+    }),
+  );
 }
 
 function redact(text: string, key: string) {

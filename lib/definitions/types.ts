@@ -176,6 +176,48 @@ export type Proposal = {
   records: Record<string, ProposalRecord>;
 };
 
+/*
+  What a decided proposal does to its output tab, and the record of doing it:
+  kept on the server, so what was written, on which decisions and how the
+  checks found them does not depend on a browser's storage.
+*/
+export type AppliedDecision = {
+  kind: 'approve' | 'change' | 'reject';
+  // Null when the decision writes nothing.
+  values: Record<string, number> | null;
+  at: string;
+  // Only for what is written, as the checks found it when it was written.
+  verdict: Verdict | null;
+  // The checks a person let fail, by name.
+  failing: string[];
+};
+
+export type CellChange = {
+  key: string;
+  field: string;
+  cell: string;
+  before: string | number | boolean | null;
+  after: number;
+};
+
+export type Application = {
+  proposedAt: string;
+  tab: string;
+  at: string;
+  // verified: read back as written; mismatch: read back as something else;
+  // failed: the write did not land, so the cells are as they were; undone:
+  // put back as they were by undo.
+  status: 'verified' | 'mismatch' | 'failed' | 'undone';
+  error: string | null;
+  undoneAt: string | null;
+  // The block written, in A1 notation, and its cells either side of it.
+  range: string;
+  before: unknown[][];
+  after: unknown[][];
+  changes: CellChange[];
+  decisions: Record<string, AppliedDecision>;
+};
+
 // Around a value an example tried, in a step, so it can be shown as that
 // example's own: private-use characters, never in a formula or the data.
 export const TRIED = ['\uE000', '\uE001'] as const;

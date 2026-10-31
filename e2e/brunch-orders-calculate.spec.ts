@@ -84,6 +84,19 @@ test.beforeEach(async ({ page }) => {
       json: { kind: 'rules', set: accepted, names: {}, history },
     });
   });
+  // Propose is its own spec's: here it has simply not been asked for.
+  await page.route('**/api/dev/brunch-orders/propose', (route) =>
+    route.fulfill({
+      json: {
+        kind: 'proposal',
+        fingerprint: calculation.fingerprint,
+        names: {},
+        calculated: { calculations: [], rows: {} },
+        proposal: null,
+        progress: null,
+      },
+    }),
+  );
   await page.route('**/api/dev/brunch-orders/calculate', async (route) => {
     const body = route.request().postDataJSON() as {
       action: string;

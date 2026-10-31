@@ -40,6 +40,15 @@ const DATA = {
     cutoff_time: { kind: 'time_of_day' },
   },
   output: { tab: 'Orders', key: 'sku' },
+  // The promotion's opening, as the instructions state it.
+  timing: {
+    timeZone: 'Europe/London',
+    opens: { day: 'Sat', minutes: 7 * 60 },
+    since: { count_age_hours: { day: 'counted_day', time: 'counted_time' } },
+    until: {
+      hours_until_cutoff: { day: 'cutoff_day', time: 'cutoff_time' },
+    },
+  },
 } satisfies DataShape;
 
 // The tabs a run reads.
@@ -85,7 +94,7 @@ Rules.
 3. Anything we order must arrive before the promotion starts.
 4. Stock plus the order should cover expected demand plus the category's safety stock; when it can't, a person decides.`;
 
-const INSTRUCTIONS = `What this is for
+const INSTRUCTIONS_V2 = `What this is for
 Each week, suggest how many of each product to order for the coming Brunch weekend, so we have enough for what we expect to sell without overstocking. A person checks and approves every order before it is placed.
 
 The promotion
@@ -99,6 +108,23 @@ Rules
 2. Never order more than the supplier can deliver.
 3. Only order what arrives before Saturday's opening.
 4. Aim for enough stock to cover expected sales plus the category's safety margin. If that isn't possible, flag it for a person to decide.`;
+
+const INSTRUCTIONS = `What this is for
+Each week, suggest how many of each product to order for the coming Brunch weekend, so we have enough for what we expect to sell without overstocking. A person checks and approves every order before it is placed.
+
+The promotion
+Brunch weekend runs every Saturday from 07:00 to Sunday 22:00. The idea is to make avocado toast at home easy. We sell an avocado toast kit (a sourdough loaf, a pack of ripe avocados and a pack of feta), and eggs, cherry tomatoes and rocket are on offer. Ripe avocados don't keep, so don't order more than we'll sell.
+
+How much we expect to sell
+Start from each product's average over the last four weekends. Products on offer sell about 40% more, the kit's ingredients about 10% more, and everything else about 15% more. We expect to sell about 40 kits, and each one uses a loaf, a pack of avocados and a pack of feta on top of their own sales. Round up to whole units.
+
+Rules
+1. Order in whole cases.
+2. Never order more than the supplier can deliver.
+3. Only order what arrives before Saturday's opening.
+4. Only order what can still be placed before the supplier's cutoff for this weekend.
+5. Aim for enough stock to cover expected sales plus the category's safety margin. If that isn't possible, flag it for a person to decide.
+6. If a product's stock count is older than its category allows, flag it for a person to decide, even when nothing is ordered.`;
 
 // Each step of a run, in order. The thread sets each one's status from the
 // run's progress; the phase in each label says which part of the plan brings
@@ -129,7 +155,12 @@ export const ORDER_STEPS: ProcessStep[] = [
     label: 'From the values',
     status: 'pending',
   },
-  { id: 'apply', name: 'Apply', label: 'A preview', status: 'pending' },
+  {
+    id: 'apply',
+    name: 'Apply',
+    label: 'To the Orders tab',
+    status: 'pending',
+  },
 ];
 
 // What each step not built yet will do, in place of its body.
@@ -141,7 +172,7 @@ export const COMING: Record<string, string> = {
   propose:
     'What to set for every record, why, and how the accepted checks find it, for a person to approve, change or reject.',
   apply:
-    'What the decided proposal would write, cell by cell, before and after.',
+    'What the decided proposal writes to the sheet, cell by cell, before and after.',
 };
 
 export const brunchOrdersProcess: ProcessSummary = {
@@ -158,26 +189,38 @@ export const brunchOrdersProcess: ProcessSummary = {
     {
       id: 'orders',
       label: 'Orders',
-      api: 'Google Sheets, Orders tab (phase 6)',
-      undo: 'Preview only. Nothing is written yet.',
+      api: 'Google Sheets, Orders tab',
+      undo: 'Undo from the run while the written cells are untouched.',
       icon: 'supply',
       direction: 'output',
-      mode: 'preview_only',
+      mode: 'live_sandbox',
     },
   ],
   instructions: {
-    version: 'v2',
-    updatedAt: 'Written 8 Oct 2026',
+    version: 'v3',
+    updatedAt: 'Written 30 Oct 2026',
     author: 'Project owner',
-    note: 'Plain words, and the kit described here now that the sheet holds data only.',
+    note: 'Two rules for what a read of the sheet cannot show by itself: the supplier cutoff and the age of a stock count.',
     promptedBy: null,
     changes: [
-      'Rewritten in plain words, with only what matters.',
-      'The kit is described here: the Kit tab is gone from the sheet.',
-      'The rules say when to flag an order for a person.',
+      'Orders must be placed before the supplier’s cutoff for this weekend.',
+      'A stock count older than its category allows is flagged for a person.',
     ],
     text: INSTRUCTIONS,
     previous: [
+      {
+        version: 'v2',
+        updatedAt: 'Written 8 Oct 2026',
+        author: 'Project owner',
+        note: 'Plain words, and the kit described here now that the sheet holds data only.',
+        promptedBy: null,
+        changes: [
+          'Rewritten in plain words, with only what matters.',
+          'The kit is described here: the Kit tab is gone from the sheet.',
+          'The rules say when to flag an order for a person.',
+        ],
+        text: INSTRUCTIONS_V2,
+      },
       {
         version: 'v1',
         updatedAt: 'Written 8 Oct 2026',
@@ -202,7 +245,7 @@ export const brunchOrdersPlan: ReleasePlan = {
   revision: 'phase-1',
   title: 'Brunch orders',
   source: 'Brunch orders · in development',
-  context: 'Built step by step; nothing is written to the sheet yet.',
+  context: 'Built step by step; writes to the sheet only once approved.',
   evaluatedAt: '2026-10-08T12:00:00Z',
   mode: 'live',
   noun: { one: 'product', other: 'products' },

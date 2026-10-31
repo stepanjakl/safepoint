@@ -4,7 +4,7 @@ Status: current code guide for `lib/definitions/`, checked in October 2026. It i
 
 ## Contract
 
-A process supplies a `DefinitionProcess`: its ID and a `DefinitionSubject` with the records, lookups, typed columns, proposal fields and reader words. Brunch orders declares this in `lib/processes/brunch-orders/process.ts`; the engine does not hard-code products or orders. The current read joins Products, Stock, Sales and Deliveries by product key and looks up Parameters by category.
+A process supplies a `DefinitionProcess`: its ID and a `DefinitionSubject` with the records, lookups, typed columns, proposal fields and reader words. Brunch orders declares this in `lib/processes/brunch-orders/process.ts`; the engine does not hard-code products or orders. The current read joins Products, Stock, Sales and Deliveries by product key and looks up Parameters by category. A process may also declare timing columns (`DataShape.timing`): hours since a weekday and time last came round, and hours until a deadline in the week being planned, both worked out from when the data was read, never the wall clock.
 
 One definition has a name, the exact instructions text it interprets, a `check` or `number` result, optional check consequence, quoted constants and groups, a formula, and examples. A formula may read the current record, proposal fields and earlier definitions. `lib/definitions/types.ts` validates the saved set.
 
@@ -19,8 +19,10 @@ One definition has a name, the exact instructions text it interprets, a `check` 
 7. `propose.ts` has the model propose values for every record, trying them against the accepted checks (`try_proposals`) before it submits. Code checks every proposed value again (`checkProposal`), verifies every cited cell, and keeps its own verdicts: ready, decide or blocked. Proposals are kept in `data/<process>/proposals/`; a person's decisions on them belong to the run. A check written "not in scope, or the rule" (its outermost `||` led by a negation that reads no proposal field) does not apply to a record out of scope: it holds, its working stops at the guard, and Propose says "Doesn't apply".
 8. `fits.ts` type-checks a revision against the read it is used on, as Accept does, without the examples. A revision is kept as it was accepted, so one written before a column's type changed is refused on use, naming each definition that no longer fits, and the run is offered the current rules when they fit.
 
-`app/api/dev/brunch-orders/rules/route.ts` exposes get, draft, intent, write and decide actions for this development flow; `calculate/route.ts` and `propose/route.ts` beside it do the same for those steps. None is a public process-definition API. The [development log](../processes/brunch-orders/DEVELOPMENT-LOG.md) records why its checks and approval boundary changed.
+9. `apply.ts` writes a decided proposal to the output the process declares, through an `OutputSheet` it is given. It reads the sheet again, refuses a write if a data tab has changed, runs every check again at that moment, reads the block back, and keeps the record in `data/<process>/applied/`. Undo restores the block only while it holds what was written.
+
+`app/api/dev/brunch-orders/rules/route.ts` exposes get, draft, intent, write and decide actions for this development flow; `calculate/route.ts`, `propose/route.ts` and `apply/route.ts` beside it do the same for those steps. None is a public process-definition API. The [development log](../processes/brunch-orders/DEVELOPMENT-LOG.md) records why its checks and approval boundary changed.
 
 ## Present limit
 
-Nothing is written to a sheet: Apply previews what a decided proposal would write. The Brunch orders plan marks sheet write-back and history as later phases. A check sees one record at a time, and proposal fields are whole numbers. A stored accepted set and a captured read are not a durable production review record.
+Writing has been tested only against a sheet held in memory, and the Brunch orders plan marks history as a later phase. A check sees one record at a time, and proposal fields are whole numbers. A stored accepted set and a captured read are not a durable production review record.

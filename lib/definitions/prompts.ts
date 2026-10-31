@@ -1,6 +1,8 @@
 import type { DefinitionSubject } from '@/lib/process/model';
 
-import type { KeptRead } from './records';
+import type { DataShape } from '@/lib/process/model';
+
+import { recordsOf, type KeptRead } from './records';
 import type { Definition, Example } from './types';
 
 // Words the prompts share, all from the process's own declaration.
@@ -12,10 +14,37 @@ export const plain = (subject: DefinitionSubject) =>
 export const proposalWords = (subject: DefinitionSubject) =>
   subject.proposal.map((field) => field.label).join(' and ');
 
+// The columns worked out from when the data was read, in words, with each
+// record's values; none is in a tab, so the model cannot work them out itself.
+export function timingOf(read: KeptRead, data: DataShape): string {
+  if (!data.timing) return '';
+  const { since, until } = data.timing;
+  const records = recordsOf(read, data);
+  const names = [...Object.keys(since), ...Object.keys(until)];
+  return [
+    `Worked out by the app from when this data was read (${read.readAt}), in hours, each a double on the record:`,
+    ...Object.entries(since).map(
+      ([name, { day, time }]) =>
+        `- ${name}: how long ago ${day} at ${time} last came round.`,
+    ),
+    ...Object.entries(until).map(
+      ([name, { day, time }]) =>
+        `- ${name}: how long is left before ${day} at ${time} in the week being planned; negative once it has passed.`,
+    ),
+    ...records.keys.map(
+      (key) =>
+        `${key}: ${names.map((name) => `${name} ${String(records.record(key)[name] ?? 'blank')}`).join(', ')}`,
+    ),
+  ].join('\n');
+}
+
 // Each tab's columns, so the model knows what the data already holds.
-export const columnsOf = (read: KeptRead) =>
-  read.tabs
-    .map((t) => `- ${t.name}: ${(t.values[0] ?? []).join(', ')}`)
+export const columnsOf = (read: KeptRead, data: DataShape) =>
+  [
+    ...read.tabs.map((t) => `- ${t.name}: ${(t.values[0] ?? []).join(', ')}`),
+    timingOf(read, data),
+  ]
+    .filter(Boolean)
     .join('\n');
 
 // The whole data, one row per line.

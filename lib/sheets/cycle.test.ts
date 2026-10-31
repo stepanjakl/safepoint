@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  deadlineBefore,
+  firstAfter,
   hoursBetween,
   inWeek,
   latestAtOrBefore,
@@ -74,5 +76,31 @@ describe('calendar primitives', () => {
     expect(
       new Date(inWeek(monday, { day: 'Fri', minutes: 1080 }, TZ)).toISOString(),
     ).toBe('2026-10-16T17:00:00.000Z');
+  });
+});
+
+describe('a deadline for the week being planned', () => {
+  const OPENS = { day: 'Sat', minutes: 7 * 60 } as const;
+  const NOON_THU = { day: 'Thu', minutes: 12 * 60 } as const;
+  const at = (iso: string) => Date.parse(iso);
+  const deadline = (iso: string) =>
+    new Date(deadlineBefore(NOON_THU, OPENS, at(iso), TZ)).toISOString();
+
+  it('is still ahead on the morning it falls', () => {
+    expect(deadline('2026-10-29T08:45:00Z')).toBe('2026-10-29T12:00:00.000Z');
+  });
+
+  it('stays missed from then until the weekend opens', () => {
+    expect(deadline('2026-10-30T19:52:00Z')).toBe('2026-10-29T12:00:00.000Z');
+  });
+
+  it('moves to the next week once the weekend has opened', () => {
+    expect(deadline('2026-10-31T10:00:00Z')).toBe('2026-11-05T12:00:00.000Z');
+  });
+
+  it('takes the next opening when the run falls exactly on one', () => {
+    expect(
+      new Date(firstAfter(OPENS, at('2026-10-31T07:00:00Z'), TZ)).toISOString(),
+    ).toBe('2026-11-07T07:00:00.000Z');
   });
 });
