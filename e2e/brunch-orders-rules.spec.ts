@@ -606,7 +606,7 @@ test('a rule being written again says so, through a reload, then shows the new o
   await expect(card.getByRole('button', { name: 'Write again' })).toBeEnabled();
 });
 
-test('versions that disagree are asked about as cases, for a person to choose', async ({
+test('versions that disagree are shown as the sentences the app wrote, for a person to choose', async ({
   page,
 }) => {
   const set = frozen as { definitions: { id: string; name: string }[] };
@@ -656,10 +656,19 @@ test('versions that disagree are asked about as cases, for a person to choose', 
         kind: 'rules',
         set: chosen === null ? split : frozen,
         names,
-        cases: {
-          [rule.id]: [
-            [{ label: 'hours until cutoff', value: 'passed 3.05 hours ago' }],
-          ],
+        sentences: {
+          // Another check, written as a shape: its sentence leads.
+          [set.definitions[2]!.id]: {
+            own: 'The proposed order must be at most the max order units.',
+            versions: [],
+          },
+          [rule.id]: {
+            own: null,
+            versions: [
+              'The proposed order is allowed only when the cutoff is after when the data was read.',
+              'The proposed order is allowed only when the cutoff is before when the data was read.',
+            ],
+          },
         },
         history: { head: null, revisions: [] },
       },
@@ -674,29 +683,35 @@ test('versions that disagree are asked about as cases, for a person to choose', 
   const versions = page.getByRole('region', {
     name: 'Versions to choose between',
   });
-  // A question about one record, with what the versions read of it; each
-  // answer is a version, and the formulas stay folded away.
-  await expect(versions.getByText('passed 3.05 hours ago')).toBeVisible();
-  const answers = versions.getByRole('group', {
-    name: /^What should happen for SD-01/,
-  });
-  await expect(answers.getByRole('button')).toHaveText([
-    'Allow it',
-    'Block it',
-  ]);
-  await expect(versions.getByText(/Neither version reads/)).toBeVisible();
-  // Shut, the fold is inert: clipped, and out of reach of focus and readers.
-  const formulas = versions.locator('.fold');
-  await expect(formulas).toHaveAttribute('inert', '');
-  const show = versions.getByRole('button', { name: 'Show the formulas' });
-  await expect(show).toHaveAttribute('aria-expanded', 'false');
-  await show.click();
-  await expect(formulas).not.toHaveAttribute('inert', '');
+  // Each version as the sentence the app wrote from it, never its formula.
   await expect(
-    versions.getByText('record.hours_until_cutoff >= 0.0'),
+    versions.getByText(/the cutoff is after when the data was read/),
   ).toBeVisible();
+  await expect(
+    versions.getByText(/the cutoff is before when the data was read/),
+  ).toBeVisible();
+  await expect(versions.getByText('record.hours_until_cutoff')).toHaveCount(0);
   if (process.env.CHOOSER_SHOT)
     await versions.screenshot({ path: process.env.CHOOSER_SHOT });
+  // A check written as a shape leads with its sentence; the formula is
+  // folded away, inert until asked for.
+  const shaped = page
+    .getByRole('listitem')
+    .filter({
+      has: page.getByRole('heading', {
+        name: set.definitions[2]!.name,
+        exact: true,
+      }),
+    })
+    .last();
+  await expect(
+    shaped.getByText('The proposed order must be at most the max order units.'),
+  ).toBeVisible();
+  const formula = shaped.getByRole('button', { name: 'Show the formula' });
+  await expect(formula).toHaveAttribute('aria-expanded', 'false');
+  await expect(shaped.locator('.fold')).toHaveAttribute('inert', '');
+  await formula.click();
+  await expect(shaped.locator('.fold')).not.toHaveAttribute('inert', '');
   const card = page
     .getByRole('listitem')
     .filter({
@@ -706,7 +721,7 @@ test('versions that disagree are asked about as cases, for a person to choose', 
   await expect(card.getByText('Versions differ')).toBeVisible();
   await expect(card.getByRole('button', { name: /^Accept/ })).toBeDisabled();
 
-  await answers.getByRole('button', { name: 'Block it' }).click();
+  await versions.getByRole('button', { name: 'Use this one' }).last().click();
   await expect(versions).toHaveCount(0);
   expect(chosen).toBe(1);
 });

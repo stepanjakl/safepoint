@@ -352,7 +352,8 @@ type Offset = { light: number; dark: number };
   the one surface drawn dark in both themes, so each theme states how it is set
   off the popover, in ramp steps from its face:
   - dark: one layer above the popover (lighter), its edge the surfaces' ring
-    distance past it and its highlight one layer darker, as every surface's is;
+    distance past it, and no highlight: it is the face, as the popover has none
+    and a line outside the border sets both off (tooltip.css);
   - light: the popover is white, so the tooltip is a slate a fixed 650 down the
     ramp, its edge 50 past it and its highlight three layers lighter (one barely
     shows on a face this dark-on-light).
@@ -362,10 +363,7 @@ const TOOLTIP = {
   dark: {
     shift: -SURFACE_THEMES.dark.layerScale * LAYER_STEP,
     ring: SURFACE_THEMES.dark.ring,
-    highlight:
-      SURFACE_THEMES.dark.highlight *
-      SURFACE_THEMES.dark.layerScale *
-      LAYER_STEP,
+    highlight: 0,
   },
 };
 

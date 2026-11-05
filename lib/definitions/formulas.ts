@@ -5,7 +5,13 @@ import { ctorFor } from '@/lib/definitions/cel-objects';
 import type { FieldType } from '@/lib/sheets/field-types';
 
 import { timingOf } from './prompts';
-import { cel, recordsOf, type KeptRead, type Row } from './records';
+import {
+  cel,
+  MOMENT_PREFIX,
+  recordsOf,
+  type KeptRead,
+  type Row,
+} from './records';
 import type { Result } from './types';
 
 /*
@@ -248,8 +254,14 @@ export function describe(read: KeptRead, subject: DefinitionSubject): string {
   const records = recordsOf(read, data);
   const key = records.keys[0] ?? '';
   const { singular, plural } = subject.record;
+  // Moments are for checks code writes, so a model is never shown them.
   const show = (row: Row) =>
-    JSON.stringify(row, (_, v) => (typeof v === 'bigint' ? Number(v) : v));
+    JSON.stringify(
+      Object.fromEntries(
+        Object.entries(row).filter(([name]) => !name.startsWith(MOMENT_PREFIX)),
+      ),
+      (_, v) => (typeof v === 'bigint' ? Number(v) : v),
+    );
   const kinds = new Set(Object.values(data.types).map((type) => type.kind));
   const typedColumns = (kind: FieldType['kind']) =>
     Object.entries(data.types)

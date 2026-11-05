@@ -16505,7 +16505,7 @@
     "tooltipHighlight": {
       "cssVariable": "--sp-tooltip-highlight",
       "light": 575,
-      "dark": 750
+      "dark": 700
     },
     "notchHighlight": {
       "cssVariable": "--sp-notch-highlight",
@@ -17336,8 +17336,8 @@
       "id": "tooltipHighlight",
       "cssVariable": "--sp-tooltip-highlight",
       "theme": "dark",
-      "expected": 750,
-      "actual": 750,
+      "expected": 700,
+      "actual": 700,
       "passed": true
     },
     {

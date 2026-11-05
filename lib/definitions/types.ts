@@ -2,6 +2,8 @@ import { z } from 'zod';
 
 import type { DefinitionSubject } from '@/lib/process/model';
 
+import { shapeSchema } from './shape-schema';
+
 /*
   What the definitions engine keeps for one version of a process's
   instructions, as a schema: a stored set is read through it, so a file of an
@@ -46,6 +48,11 @@ const exampleSchema = z.object({
 
 // One independent write of a definition.
 const writtenVersionSchema = z.object({
+  // A check's shape, which its formula is written from; absent on a check
+  // written as a formula before shapes, and on a number.
+  shape: shapeSchema.nullable().optional(),
+  // Why no shape fits the rule, when none does; it then has no formula.
+  unfit: z.string().nullable().optional(),
   formula: z.string(),
   constants: z.array(constantSchema),
   groups: z.array(groupSchema),
@@ -86,6 +93,9 @@ const definitionSchema = z.object({
   groups: z.array(groupSchema),
   // The definitions its formula reads, worked out from the formula.
   uses: z.array(z.string()),
+  // As on a version: the shape code wrote the formula from, or why none fits.
+  shape: shapeSchema.nullable().optional(),
+  unfit: z.string().nullable().optional(),
   formula: z.string().nullable(),
   examples: z.array(exampleSchema),
   // Why the version shown is not acceptable, or what stopped the last write.

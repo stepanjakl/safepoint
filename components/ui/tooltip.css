@@ -8,13 +8,16 @@
 :root {
   --sp-tooltip-face: light-dark(var(--sp-neutral-650), var(--sp-neutral-700));
   --sp-tooltip-edge: light-dark(var(--sp-neutral-700), var(--sp-neutral-575));
-  --sp-tooltip-highlight: light-dark(var(--sp-neutral-575), var(--sp-neutral-750));
+  --sp-tooltip-highlight: light-dark(var(--sp-neutral-575), var(--sp-neutral-700));
 }
 /* End of generated roles. */
 
 :root {
   --sp-tooltip-ink: light-dark(var(--sp-neutral-0), var(--sp-neutral-25));
   --sp-tooltip-muted: light-dark(var(--sp-neutral-200), var(--sp-neutral-250));
+  /* The line outside the border, round the arrow too: none in light, a step
+     past the canvas in dark, as the popover's (controls.css). */
+  --sp-tooltip-outline: light-dark(transparent, var(--sp-neutral-925));
 }
 
 /* Registered so light-dark() resolves on the box, in the page's scheme: the
@@ -40,6 +43,7 @@
     --tooltip-face: var(--sp-tooltip-face);
     --tooltip-edge: var(--sp-tooltip-edge);
     --tooltip-highlight: var(--sp-tooltip-highlight);
+    --tooltip-outline: var(--sp-tooltip-outline);
     /* A one-line box as tall as the controls it labels (min-h-7): what the
        line and both borders leave of that height, split above and below. */
     --tooltip-padding-block: calc((var(--spacing) * 7 - 1lh - 2px) / 2);
@@ -60,10 +64,12 @@
     border: 1px solid var(--tooltip-edge);
     border-radius: var(--tooltip-radius);
     background: var(--tooltip-face);
-    /* Edge only, no cast shadow: the tooltip is anchored to its trigger rather
+    /* Edges only, no cast shadow: the tooltip is anchored to its trigger rather
        than floating above the page, and the arrow can draw an edge but not a
        shadow -- a drop shadow on the box alone would detach the two. */
-    box-shadow: inset 0 0 0 1px var(--tooltip-highlight);
+    box-shadow:
+      inset 0 0 0 1px var(--tooltip-highlight),
+      0 0 0 1px var(--tooltip-outline);
     color: var(--sp-tooltip-ink);
     font-size: var(--sp-text-meta);
     line-height: var(--sp-text-meta--lh);
@@ -139,6 +145,12 @@
     overflow: visible;
     transform: translateY(-0.5px);
   }
+  /* Under the fill, stroked an edge wider each side: only its outer pixel shows. */
+  .tooltip-arrow-outline {
+    fill: none;
+    stroke: var(--tooltip-outline);
+    stroke-width: 3;
+  }
   .tooltip-arrow-fill {
     fill: var(--tooltip-face);
   }
@@ -167,6 +179,7 @@
       --tooltip-face: Canvas;
       --tooltip-edge: CanvasText;
       --tooltip-highlight: Canvas;
+      --tooltip-outline: Canvas;
     }
   }
 }

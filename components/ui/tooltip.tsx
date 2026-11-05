@@ -48,6 +48,7 @@ const ARROW = arrowPaths(ARROW_TIP_RADIUS);
 export function TooltipArrowShape() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      <path className="tooltip-arrow-outline" d={ARROW.edge} />
       <path className="tooltip-arrow-fill" d={ARROW.fill} />
       <path className="tooltip-arrow-edge" d={ARROW.edge} />
       <path className="tooltip-arrow-highlight" d={ARROW.highlight} />

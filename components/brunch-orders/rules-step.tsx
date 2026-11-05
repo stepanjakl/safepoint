@@ -55,7 +55,6 @@ import {
   type DefinitionSet,
   type DraftProgress,
 } from '@/lib/definitions/types';
-import type { Fact } from '@/lib/definitions/versions';
 
 // Every reply says whether a draft is running on the server, and how far.
 type RulesResponse = { drafting?: DraftProgress | null } & (
@@ -65,8 +64,8 @@ type RulesResponse = { drafting?: DraftProgress | null } & (
       names: Record<string, string>;
       // The app's own working of each example, by definition.
       working: Record<string, string[][]>;
-      // What each case split versions differ on reads, by definition.
-      cases?: Record<string, Fact[][]>;
+      // Each check's sentence, and each version's, by definition.
+      sentences?: Record<string, Sentences>;
     }
   | { kind: 'none' }
   | { kind: 'error'; message: string }
@@ -200,7 +199,7 @@ export function RulesStep({
     set: DefinitionSet;
     names: Record<string, string>;
     working: Record<string, string[][]>;
-    cases: Record<string, Fact[][]>;
+    sentences: Record<string, Sentences>;
   } | null>(null);
   const current = body?.kind === 'rules' ? body : null;
   if (current && current.set !== last?.set)
@@ -208,13 +207,13 @@ export function RulesStep({
       set: current.set,
       names: current.names,
       working: current.working ?? {},
-      cases: current.cases ?? {},
+      sentences: current.sentences ?? {},
     });
   const shown = current ?? last;
   const set = shown?.set ?? null;
   const names = shown?.names ?? {};
   const working = shown?.working ?? {};
-  const cases = shown?.cases ?? {};
+  const sentences = shown?.sentences ?? {};
   // A draft runs on the server; the last progress reported stays while the
   // next question is out.
   const [drafting, setDrafting] = useState<DraftProgress | null>(null);
@@ -298,9 +297,8 @@ export function RulesStep({
               quoted={words(text).includes(words(item.text))}
               names={names}
               working={working[item.id] ?? []}
-              cases={cases[item.id] ?? []}
+              sentences={sentences[item.id]}
               reads={set.definitions.filter((d) => item.uses.includes(d.id))}
-              definitions={set.definitions}
               busy={busy}
               canWrite={readId !== null}
               onWrite={() => act({ action: 'write', readId, id: item.id })}
@@ -470,149 +468,58 @@ export function RulesStep({
   );
 }
 
-// What a check's answer does, in the words a person answers with.
-const outcomeWords = (item: Definition, result: string) =>
-  item.result !== 'check'
-    ? `It is ${result}`
-    : result === 'true'
-      ? item.consequence === 'block'
-        ? 'Allow it'
-        : 'Fine as it is'
-      : result === 'false'
-        ? item.consequence === 'block'
-          ? 'Block it'
-          : 'Flag it for a person'
-        : 'It cannot be worked out';
-
-// The cases shown as questions; more only repeat the choice.
-const CASES_ASKED = 3;
+// What the app shows of a check written as a shape: the sentence code wrote
+// from it, and from each version where writes disagreed.
+type Sentences = { own: string | null; versions: (string | null)[] };
 
 /*
-  Writes that came out different, for a person to choose between. Each case
-  they differ on is a question about one record, with what either version
-  reads of it, and each answer is a version: far easier to answer than
-  comparing formulas, which stay folded away for whoever wants them.
+  Writes that came out different, for a person to choose between: each as
+  the sentence the app wrote from it, which says exactly what would run, or
+  why no shape fits. A version written before shapes shows its formula.
 */
 function VersionsToChoose({
   item,
-  names,
-  cases,
-  definitions,
+  sentences,
   busy,
   onChoose,
 }: {
   item: Definition;
-  names: Record<string, string>;
-  // What each difference reads, in the differences' order.
-  cases: Fact[][];
-  // Every definition of the set, for what a version reads through others.
-  definitions: Definition[];
+  sentences: (string | null)[];
   busy: boolean;
   onChoose?: (index: number) => void;
 }) {
-  const { versions, differences } = item.agreement!;
-  const [showFormulas, setShowFormulas] = useState(false);
-  const formulasId = useId();
-  const fields = SUBJECT.proposal;
-  const ignoring = versions.flatMap((version, index) =>
-    item.result === 'check' &&
-    ignoresProposal(
-      { ...item, formula: version.formula, uses: version.uses },
-      definitions,
-      fields.map((field) => field.id),
-    )
-      ? [index]
-      : [],
-  );
-  const asked = differences.slice(0, CASES_ASKED);
+  const { versions } = item.agreement!;
   return (
     <section aria-label="Versions to choose between" className="grid gap-3">
       <p className="text-dense text-state-advisory">
-        Written twice without either seeing the other, and they behave
-        differently. Answer {asked.length > 1 ? 'any one of these' : 'this'} to
-        choose.
+        Written twice without either seeing the other, and they say different
+        things. Which says what the rule means?
       </p>
       <ul className="grid gap-3">
-        {asked.map((difference, at) => {
-          const label = `${difference.key}${names[difference.key] ? ` · ${names[difference.key]}` : ''}`;
-          return (
-            <li
-              key={`${difference.key}-${JSON.stringify(difference.inputs)}`}
-              className="grid gap-2"
-            >
-              <span className="text-dense">{label}</span>
-              {cases[at]?.length ? (
-                <dl className="text-meta grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">
-                  {cases[at]!.map((fact) => (
-                    <div key={fact.label} className="contents">
-                      <dt className="text-muted">{fact.label}</dt>
-                      <dd className="value">{fact.value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              ) : null}
-              <div
-                role="group"
-                aria-label={`What should happen for ${label}?`}
-                className="flex flex-wrap items-center gap-2"
+        {versions.map((version, index) => (
+          <li key={index} className="grid justify-items-start gap-1.5">
+            <span className="readout text-muted">Version {index + 1}</span>
+            {sentences[index] ? (
+              <p className="text-body">{sentences[index]}</p>
+            ) : version.unfit ? (
+              <p className="text-body">No shape fits: {version.unfit}</p>
+            ) : (
+              <code className="value text-meta break-words">
+                {version.formula}
+              </code>
+            )}
+            {onChoose && !version.unfit ? (
+              <Button
+                size="medium"
+                isDisabled={busy}
+                onPress={() => onChoose(index)}
               >
-                {difference.results.map((result, index) => (
-                  <Button
-                    key={index}
-                    size="medium"
-                    isDisabled={busy || !onChoose}
-                    onPress={() => onChoose?.(index)}
-                  >
-                    {outcomeWords(item, result)}
-                  </Button>
-                ))}
-              </div>
-            </li>
-          );
-        })}
+                Use this one
+              </Button>
+            ) : null}
+          </li>
+        ))}
       </ul>
-      {differences.length > asked.length ? (
-        <p className="text-meta text-muted">
-          They differ on {differences.length - asked.length} more{' '}
-          {differences.length - asked.length === 1 ? 'case' : 'cases'}.
-        </p>
-      ) : null}
-      {ignoring.length ? (
-        <p className="text-dense text-state-advisory">
-          {ignoring.length === versions.length
-            ? 'Neither version reads'
-            : `The answer “${outcomeWords(item, differences[0]?.results[ignoring[0]!] ?? '')}” comes from a version that never reads`}{' '}
-          the proposed {fields.map((field) => field.label).join(' or ')}, so
-          nothing proposed can change its answer.
-        </p>
-      ) : null}
-      <div className="grid justify-items-start gap-2">
-        <Button
-          size="medium"
-          aria-expanded={showFormulas}
-          aria-controls={formulasId}
-          onPress={() => setShowFormulas(!showFormulas)}
-        >
-          {showFormulas ? 'Hide the formulas' : 'Show the formulas'}
-        </Button>
-        <Fold open={showFormulas} id={formulasId}>
-          <ul className="grid gap-3">
-            {versions.map((version, index) => (
-              <li key={index} className="grid justify-items-start gap-1">
-                <span className="readout text-muted">
-                  Version {index + 1}
-                  {differences[0]
-                    ? ` · ${outcomeWords(item, differences[0].results[index] ?? '')} for ${differences[0].key}`
-                    : ''}
-                </span>
-                <code className="value text-meta break-words">
-                  {version.formula}
-                </code>
-              </li>
-            ))}
-          </ul>
-        </Fold>
-      </div>
     </section>
   );
 }
@@ -1071,6 +978,7 @@ function DefinitionReading({
   names,
   reads,
   headingId,
+  sentence = null,
   awaitedFormula,
 }: {
   item: Definition;
@@ -1078,10 +986,19 @@ function DefinitionReading({
   names: Record<string, string>;
   reads: Definition[];
   headingId: string;
+  // A check written as a shape: what it checks, written by the app.
+  sentence?: string | null;
   // Drawn where the formula goes until there is one.
   awaitedFormula?: ReactNode;
 }) {
   const title = item.name;
+  const [showFormula, setShowFormula] = useState(false);
+  const formulaId = useId();
+  const formula = item.formula ? (
+    <FromModel label="The model's formula">
+      <Formula item={item} formula={item.formula} names={names} reads={reads} />
+    </FromModel>
+  ) : null;
   return (
     <section aria-labelledby={`${headingId}-rule`} className="grid gap-1.5">
       <h5 id={`${headingId}-rule`} className="readout text-muted">
@@ -1093,17 +1010,24 @@ function DefinitionReading({
             {quoted ? <>&ldquo;{item.text}&rdquo;</> : item.text}
           </p>
         </FromModel>
-        {item.formula ? (
-          <FromModel label="The model's formula">
-            <Formula
-              item={item}
-              formula={item.formula}
-              names={names}
-              reads={reads}
-            />
-          </FromModel>
+        {sentence ? (
+          <div className="grid justify-items-start gap-2">
+            <span className="readout text-muted">What the app checks</span>
+            <p className="text-body">{sentence}</p>
+            <Button
+              size="medium"
+              aria-expanded={showFormula}
+              aria-controls={formulaId}
+              onPress={() => setShowFormula(!showFormula)}
+            >
+              {showFormula ? 'Hide the formula' : 'Show the formula'}
+            </Button>
+            <Fold open={showFormula} id={formulaId}>
+              {formula}
+            </Fold>
+          </div>
         ) : (
-          awaitedFormula
+          (formula ?? awaitedFormula)
         )}
         {item.constants.length || item.groups.length ? (
           <FromModel label="The model's numbers and groups">
@@ -1199,9 +1123,8 @@ export function DefinitionCard({
   quoted,
   names,
   working,
-  cases = [],
+  sentences,
   reads,
-  definitions,
   busy,
   canWrite,
   onWrite,
@@ -1219,12 +1142,10 @@ export function DefinitionCard({
   names: Record<string, string>;
   // The app's own working of each example, in the examples' order.
   working: string[][];
-  // What each case its versions differ on reads, where writes disagreed.
-  cases?: Fact[][];
+  // The check's sentence, and each version's, where it is written as a shape.
+  sentences?: Sentences;
   // The definitions its formula reads.
   reads: Definition[];
-  // Every definition of the set, for what another version reads.
-  definitions?: Definition[];
   busy: boolean;
   canWrite: boolean;
   onWrite: () => void;
@@ -1288,6 +1209,7 @@ export function DefinitionCard({
           names={names}
           reads={reads}
           headingId={headingId}
+          sentence={sentences?.own ?? null}
           awaitedFormula={awaitedFormula}
         />
 
@@ -1316,9 +1238,7 @@ export function DefinitionCard({
         {item.agreement?.status === 'split' ? (
           <VersionsToChoose
             item={item}
-            names={names}
-            cases={cases}
-            definitions={definitions ?? reads}
+            sentences={sentences?.versions ?? []}
             busy={busy}
             onChoose={onChoose}
           />

@@ -322,6 +322,7 @@ After the review of 8 October the engine moved out of Brunch orders into
 | `formulas.ts`         | Running a formula, the typed check before it runs, and the guide the model gets                                                  |
 | `calls.ts`            | Every model call: the chain within one family, quota remembered, no blind retries                                                |
 | `checks.ts`           | One review of a definition, used both by the model's check tool and by Accept                                                    |
+| `shapes.ts`           | A check's fixed shape: reading it, and the formula and sentence code writes from it                                              |
 | `find.ts`, `write.ts` | Finding the definitions, and the self-checking conversation that writes one                                                      |
 | `decide.ts`           | Confirming the intent; accepting (rechecked in full against its read) or denying                                                 |
 | `draft.ts`            | A whole draft as a server-side job with its progress                                                                             |

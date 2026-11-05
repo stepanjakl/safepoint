@@ -12,7 +12,7 @@ import { accountingProblems, sentencesOf } from './find';
 import { contextFor, run } from './formulas';
 import type { DefinitionSubject } from '@/lib/process/model';
 
-import { recordsOf, type KeptRead } from './records';
+import { MOMENT_PREFIX, recordsOf, type KeptRead } from './records';
 import {
   acceptable,
   ignoresProposal,
@@ -152,6 +152,7 @@ function columnsUnread(
   ].filter(
     (column) =>
       !used.has(column) &&
+      !column.startsWith(MOMENT_PREFIX) &&
       column !== data.records.key &&
       column !== data.records.name &&
       !data.lookups.some(({ as, key }) => column === `${as}.${key}`),

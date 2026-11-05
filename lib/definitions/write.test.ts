@@ -9,6 +9,7 @@ import { findDefinitions } from './find';
 import { inScratchDirectory } from './scratch.fixture';
 import { definition, example as kept, keep, TEXT } from './set.fixture';
 import { updateSet } from './store';
+import type { Shape } from './shapes';
 import type { Definition } from './types';
 import { acceptable, canAccept } from './types';
 import { writeAgreed, writeDefinition } from './write';
@@ -40,6 +41,42 @@ const written = (
     why: 'Worked out by hand.',
   })),
 });
+
+// A check answered as a shape, with examples as above.
+const shaped = (
+  more: Partial<Shape> & Pick<Shape, 'kind'>,
+  examples: [string, number | null, unknown][],
+) => ({
+  constants: [],
+  groups: [],
+  shape: {
+    field: more.kind === 'flag' ? null : 'order',
+    at: null,
+    amount: null,
+    base: null,
+    compare: null,
+    target: null,
+    margin_pct: null,
+    when: [],
+    only_for_group: null,
+    only_for_when: [],
+    if_blank: 'skip',
+    ...more,
+  },
+  none_fits: null,
+  examples: examples.map(([key, order, result]) => ({
+    key,
+    inputs: { order },
+    result,
+    why: 'Worked out by hand.',
+  })),
+});
+// Enough: an order of at least the two weekends' sales.
+const AT_LEAST_TWO_WEEKENDS = {
+  kind: 'limit',
+  at: 'least',
+  amount: 'value:two_weekends',
+} as const;
 
 const found = {
   intent: 'Order enough.',
@@ -100,7 +137,7 @@ describe('drafting', () => {
       examples: [example(true)],
     });
     const writer = checking(
-      written('order >= values.two_weekends', [
+      shaped(AT_LEAST_TWO_WEEKENDS, [
         ['SD-01', 59, true],
         ['SD-01', 58, false],
       ]),
@@ -122,7 +159,7 @@ describe('drafting', () => {
       examples: [example(false)],
     });
     const writer = checking(
-      written('order >= values.two_weekends', [
+      shaped(AT_LEAST_TWO_WEEKENDS, [
         ['SD-01', 59, true],
         ['SD-01', 58, false],
       ]),
@@ -278,15 +315,12 @@ describe('what a model is given of the definitions already written', () => {
       ],
     });
     const model = standIn(
-      check({
-        constants: [],
-        groups: [],
-        formula: 'order >= values.two_weekends',
-        examples: [
-          { key: 'SD-01', inputs: { order: 59 }, result: true, why: 'Enough.' },
-          { key: 'SD-01', inputs: { order: 1 }, result: false, why: 'Short.' },
-        ],
-      }),
+      check(
+        shaped(AT_LEAST_TWO_WEEKENDS, [
+          ['SD-01', 59, true],
+          ['SD-01', 1, false],
+        ]),
+      ),
     );
     await writeDefinition(owner, text, read, 'enough', {
       resolve: () => model,
@@ -312,15 +346,10 @@ describe('what a model is given of the definitions already written', () => {
         },
       ],
     });
-    const wrong = {
-      constants: [],
-      groups: [],
-      formula: 'order >= values.two_weekends',
-      examples: [
-        { key: 'SD-01', inputs: { order: 40 }, result: true, why: 'By hand.' },
-        { key: 'SD-01', inputs: { order: 1 }, result: false, why: 'Short.' },
-      ],
-    };
+    const wrong = shaped(AT_LEAST_TWO_WEEKENDS, [
+      ['SD-01', 40, true],
+      ['SD-01', 1, false],
+    ]);
     const model = standIn(check(wrong), check(wrong), check(wrong));
     await writeDefinition(owner, text, read, 'enough', {
       resolve: () => model,
@@ -330,20 +359,35 @@ describe('what a model is given of the definitions already written', () => {
 });
 
 describe('writing a definition more than once', () => {
-  const answerOf = (formula: string) => ({
+  const answerOf = (more: Partial<Shape> & Pick<Shape, 'kind'>) =>
+    shaped(
+      more,
+      more.kind === 'limit'
+        ? [
+            ['SD-01', 8, true],
+            ['SD-01', 9, false],
+          ]
+        : [
+            ['SD-01', 8, true],
+            ['SD-01', 5, false],
+          ],
+    );
+  const WHOLE = { kind: 'step', amount: 'column:case_size' } as const;
+  // The same shape, its column named without its kind.
+  const WHOLE_REWORDED = { kind: 'step', amount: 'case_size' } as const;
+  // Differs from WHOLE first at an order of 1.
+  const OTHER = {
+    kind: 'limit',
+    at: 'most',
+    amount: 'column:case_size',
+  } as const;
+  const refusal = (reason: string) => ({
     constants: [],
     groups: [],
-    formula,
-    examples: [
-      { key: 'SD-01', inputs: { order: 8 }, result: true, why: 'Holds.' },
-      { key: 'SD-01', inputs: { order: 5 }, result: false, why: 'Fails.' },
-    ],
+    shape: null,
+    none_fits: { reason, explain: 'The rule says or.' },
+    examples: [],
   });
-  const WHOLE = 'order % record.case_size == 0';
-  // Behaves the same as WHOLE, worded differently.
-  const WHOLE_REWORDED = '0 == order % record.case_size';
-  // Each differs from WHOLE only at one order.
-  const OTHER = 'order % record.case_size == 0 || order == 1';
   const ID = 'enough';
   const written = async (...steps: ReturnType<typeof check>[]) => {
     await withFirst({
@@ -373,7 +417,8 @@ describe('writing a definition more than once', () => {
       check(answerOf(WHOLE_REWORDED)),
     );
     expect(model.doGenerateCalls).toHaveLength(2);
-    expect(kept.formula).toBe(WHOLE);
+    expect(kept.shape).toMatchObject(WHOLE);
+    expect(kept.formula).toContain('order % int(double(record.case_size))');
     expect(kept.agreement).toMatchObject({ status: 'agreed', runs: 2 });
   });
 
@@ -394,9 +439,9 @@ describe('writing a definition more than once', () => {
     );
     expect(model.doGenerateCalls).toHaveLength(2);
     expect(kept.agreement).toMatchObject({ status: 'split', runs: 2 });
-    expect(kept.agreement?.versions.map((v) => v.formula)).toEqual([
-      WHOLE,
-      OTHER,
+    expect(kept.agreement?.versions.map((v) => v.shape?.kind)).toEqual([
+      'step',
+      'limit',
     ]);
     expect(kept.agreement?.differences[0]).toMatchObject({
       inputs: { order: 1 },
@@ -417,8 +462,41 @@ describe('writing a definition more than once', () => {
       check(answerOf(WHOLE_REWORDED)),
     );
     expect(model.doGenerateCalls).toHaveLength(3);
-    expect(kept.formula).toBe(WHOLE);
+    expect(kept.shape).toMatchObject(WHOLE);
     expect(kept.agreement).toMatchObject({ status: 'agreed', runs: 3 });
+  });
+
+  it('never compares a refusal: another write is asked for, and a shape wins', async () => {
+    const { model, kept } = await written(
+      check(refusal('needs_or')),
+      check(answerOf(WHOLE)),
+      check(refusal('needs_or')),
+    );
+    expect(model.doGenerateCalls).toHaveLength(3);
+    expect(kept.shape).toMatchObject(WHOLE);
+    expect(kept.unfit ?? null).toBeNull();
+    expect(kept.agreement).toMatchObject({ status: 'unconfirmed', runs: 3 });
+  });
+
+  it('refuses the rule only when every write refuses, saying why', async () => {
+    const { kept } = await written(
+      check(refusal('needs_or')),
+      check(refusal('needs_or')),
+      check(refusal('needs_or')),
+    );
+    expect(kept.formula).toBeNull();
+    expect(kept.unfit).toMatch(/^It needs “or”/);
+    expect(kept.problem).toMatch(/^This rule can't be checked as written/);
+    expect(canAccept(kept)).toBe(false);
+  });
+
+  it('takes no refusal without one of its reasons', async () => {
+    const { model } = await written(
+      check(refusal('too_hard')),
+      check(answerOf(WHOLE)),
+      check(answerOf(WHOLE)),
+    );
+    expect(told(model, 1)).toContain('too_hard');
   });
 
   it('stands alone, and says so, when only one of three passes', async () => {
@@ -427,7 +505,7 @@ describe('writing a definition more than once', () => {
       noAnswer(),
       noAnswer(),
     );
-    expect(kept.formula).toBe(OTHER);
+    expect(kept.shape).toMatchObject(OTHER);
     expect(kept.agreement).toMatchObject({ status: 'unconfirmed', runs: 3 });
     expect(canAccept(kept)).toBe(true);
   });
@@ -467,43 +545,49 @@ describe('writing a definition more than once', () => {
 
 describe('a formula that cannot run on every record', () => {
   it('is refused, naming them, however good its examples', async () => {
-    await withFirst({
-      formula: 'record.weekend_1 + record.weekend_2',
-      examples: [
-        {
-          key: 'SD-01',
-          inputs: {},
-          expect: 59,
-          why: 'By hand.',
-          actual: 59,
-          error: null,
-          agrees: true,
-        },
+    await withFirst({});
+    // Only SD-01 has a maximum in the data.
+    const blank = written('record.max_order_units', [
+      ['SD-01', null, 72],
+      ['SD-01', null, 72],
+    ]);
+    const fixed = written(
+      'has(record.max_order_units) ? record.max_order_units : 0',
+      [
+        ['SD-01', null, 72],
+        ['AV-RR', null, 0],
       ],
-    });
-    const blank = {
-      constants: [],
-      groups: [],
-      // Only SD-01 has a maximum in the data.
-      formula: 'order <= record.max_order_units',
-      examples: [
-        { key: 'SD-01', inputs: { order: 8 }, result: true, why: 'Under.' },
-        { key: 'SD-01', inputs: { order: 80 }, result: false, why: 'Over.' },
-      ],
-    };
-    const fixed = {
-      ...blank,
-      formula:
-        '!has(record.max_order_units) || order <= record.max_order_units',
-    };
+    );
     const model = standIn(check(blank), check(fixed));
-    const set = await writeDefinition(owner, text, read, 'enough', {
+    const set = await writeDefinition(owner, text, read, 'two_weekends', {
       resolve: () => model,
     });
     expect(told(model, 1)).toContain('It cannot be worked out for');
     expect(told(model, 1)).toContain('AV-RR');
-    expect(set!.definitions.find((d) => d.id === 'enough')?.formula).toBe(
+    expect(set!.definitions.find((d) => d.id === 'two_weekends')?.formula).toBe(
       fixed.formula,
     );
+  });
+
+  it('cannot come from a shape, whose blanks are skipped or fail as it says', async () => {
+    await withFirst({});
+    const model = standIn(
+      check(
+        shaped(
+          { kind: 'limit', at: 'most', amount: 'column:max_order_units' },
+          [
+            ['SD-01', 8, true],
+            ['SD-01', 80, false],
+            ['AV-RR', 1000, true],
+          ],
+        ),
+      ),
+    );
+    const set = await writeDefinition(owner, text, read, 'enough', {
+      resolve: () => model,
+    });
+    const enough = set!.definitions.find((d) => d.id === 'enough')!;
+    expect(enough.problem).toBeNull();
+    expect(model.doGenerateCalls).toHaveLength(1);
   });
 });

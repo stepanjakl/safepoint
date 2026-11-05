@@ -1,0 +1,133 @@
+/* ── Popover halo (workbench) ───────────────────────────────────────────────
+   A progressive blur around a popover in place of a cast shadow: stacked
+   backdrop blurs, each stronger and nearer the box, under a wash toward the
+   surface behind. popover-halo.tsx sets the size, each layer's band and blur,
+   and the wash inline.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* The popover must be a stacking context (React Aria's z-index, or isolate),
+   or the halo falls behind the page; and it must not paint, with its face on a
+   child after the halo, or the blur smears the face outward. Placed like a
+   box-shadow: the popover's box moved by x and y, grown by spread, feathered. */
+.popover-halo {
+  --halo-reach: calc(var(--halo-size) + var(--halo-spread));
+  position: absolute;
+  inset: calc(var(--halo-y) - var(--halo-reach)) calc(-1 * var(--halo-x) - var(--halo-reach))
+    calc(-1 * var(--halo-y) - var(--halo-reach)) calc(var(--halo-x) - var(--halo-reach));
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Each band ramps in from --halo-from to --halo-to and ends at --halo-cut,
+   measured in from the outer edge, where the next band is fully in; so the
+   blurs do not stack. Four side strips and four corner arcs, the arcs at the
+   box's radius grown by spread as a shadow's are. The core band also fills the
+   middle, which the face covers wherever the offset leaves it under the box.
+   Headless Chrome's software renderer mirrors backdrop blurs: judge on a GPU. */
+.popover-halo > * {
+  --halo-radius: max(0px, var(--radius-shell) + var(--halo-spread));
+  --halo-corner: calc(var(--halo-size) + var(--halo-radius));
+  --halo-side: max(0px, 100% - 2 * var(--halo-corner));
+  --halo-fill: transparent;
+  --halo-arc:
+    transparent calc(var(--halo-corner) - var(--halo-cut)),
+    #000 calc(var(--halo-corner) - var(--halo-cut)), #000 calc(var(--halo-corner) - var(--halo-to)),
+    transparent calc(var(--halo-corner) - var(--halo-from));
+  --halo-ramp:
+    transparent var(--halo-from), #000 var(--halo-to), #000 var(--halo-cut),
+    transparent var(--halo-cut);
+  position: absolute;
+  inset: 0;
+  mask:
+    radial-gradient(circle at 100% 100%, var(--halo-arc)) 0 0 / var(--halo-corner)
+      var(--halo-corner) no-repeat,
+    radial-gradient(circle at 0 100%, var(--halo-arc)) 100% 0 / var(--halo-corner)
+      var(--halo-corner) no-repeat,
+    radial-gradient(circle at 100% 0, var(--halo-arc)) 0 100% / var(--halo-corner)
+      var(--halo-corner) no-repeat,
+    radial-gradient(circle at 0 0, var(--halo-arc)) 100% 100% / var(--halo-corner)
+      var(--halo-corner) no-repeat,
+    linear-gradient(to bottom, var(--halo-ramp)) var(--halo-corner) 0 / var(--halo-side)
+      var(--halo-corner) no-repeat,
+    linear-gradient(to top, var(--halo-ramp)) var(--halo-corner) 100% / var(--halo-side)
+      var(--halo-corner) no-repeat,
+    linear-gradient(to right, var(--halo-ramp)) 0 var(--halo-corner) / var(--halo-corner)
+      var(--halo-side) no-repeat,
+    linear-gradient(to left, var(--halo-ramp)) 100% var(--halo-corner) / var(--halo-corner)
+      var(--halo-side) no-repeat,
+    linear-gradient(var(--halo-fill) 0 0) var(--halo-corner) var(--halo-corner) / var(--halo-side)
+      var(--halo-side) no-repeat;
+}
+.popover-halo > [data-halo-core] {
+  --halo-fill: #000;
+}
+
+.popover-halo-blur {
+  backdrop-filter: blur(var(--halo-blur));
+}
+
+/* Last, so it washes over the blurred bands rather than being blurred by them. */
+.popover-halo-wash {
+  background-color: var(--sp-surface-primary);
+  opacity: var(--halo-wash);
+}
+
+/* An outer line in place of the halo: a ring outside the face's border, set
+   by data-outer-line. A pseudo, not outline, which the dialog uses for focus. */
+[data-outer-line]::after {
+  --outer-width: var(--spacing-control-edge);
+  --outer-reach: calc(var(--outer-gap) + var(--outer-width) + var(--spacing-control-edge));
+  content: '';
+  position: absolute;
+  inset: calc(-1 * var(--outer-reach));
+  border: var(--outer-width) solid var(--outer-line);
+  border-radius: calc(var(--radius-shell) + var(--outer-reach) - var(--spacing-control-edge));
+  pointer-events: none;
+}
+[data-outer-line='tight'] {
+  --outer-gap: 0px;
+  --outer-line: light-dark(var(--sp-neutral-375), var(--sp-neutral-1000));
+}
+[data-outer-line='soft'] {
+  --outer-gap: 0px;
+  --outer-line: light-dark(var(--sp-neutral-300), var(--sp-neutral-925));
+}
+[data-outer-line='gap'] {
+  --outer-gap: calc(2 * var(--spacing-control-edge));
+  --outer-line: light-dark(var(--sp-neutral-375), var(--sp-neutral-1000));
+}
+
+/* Chrome drops parts of a backdrop blur under an animating transform, and an
+   ancestor's opacity blanks it: the halo waits for the popover to land. */
+.popover-halo > * {
+  animation: popover-halo-settle var(--duration-state) ease-out var(--duration-state) both;
+}
+[data-exiting] > .popover-halo {
+  visibility: hidden;
+}
+@keyframes popover-halo-settle {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Scale only: an opacity below 1 makes the popover a backdrop root, and the
+   halo shows nothing until the fade ends. */
+[data-popover-halo-motion='scale'] {
+  --popover-halo-out: 100ms;
+  transform-origin: var(--trigger-anchor-point);
+  &[data-entering] {
+    animation: popover-halo-in var(--duration-state) var(--ease-out-quad) both;
+  }
+  &[data-exiting] {
+    animation: popover-halo-in var(--popover-halo-out) ease-in reverse both;
+  }
+}
+@keyframes popover-halo-in {
+  from {
+    scale: 0.96;
+  }
+  to {
+    scale: 1;
+  }
+}

@@ -1,0 +1,61 @@
+/* ── Popover edge (workbench) ───────────────────────────────────────────────
+   The popover and tooltip as they ship, beside each with an outer line: a 1px
+   ring just outside the border, set by data-outer-line in popover-edge.tsx.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Past the page in each theme: lighter than it in light, darker in dark. */
+/* A pseudo, not outline, which a popover's dialog uses for focus. Placed from
+   the padding box, so it reaches past the border by one edge. */
+[data-outer-line]::after {
+  content: '';
+  position: absolute;
+  inset: calc(-2 * var(--spacing-control-edge));
+  border: var(--spacing-control-edge) solid var(--outer-line);
+  border-radius: calc(var(--outer-radius) + var(--spacing-control-edge));
+  pointer-events: none;
+}
+
+[data-outer-line='popover'] {
+  --outer-radius: var(--radius-shell);
+  --outer-line: light-dark(var(--sp-neutral-0), var(--sp-neutral-925));
+}
+
+/* Below the arrow, which paints over the ring where it meets the box; the
+   tooltip's z-index makes it the stacking context this stays inside. */
+[data-outer-line='tooltip'] {
+  --outer-radius: var(--tooltip-radius);
+  --outer-line: light-dark(var(--sp-neutral-0), var(--sp-neutral-925));
+  &::after {
+    z-index: -1;
+  }
+}
+
+/* A second arrow under the real one, its edge path stroked one edge wider on
+   each side: the real arrow covers all of it but the outer pixel. */
+.outer-line-arrow path:not(:nth-child(3)) {
+  display: none;
+}
+.outer-line-arrow path:nth-child(3) {
+  stroke: var(--outer-line);
+  stroke-width: calc(3 * var(--spacing-control-edge));
+}
+
+/* Without the inner highlight: the popover's is control-face's inset shadow,
+   the tooltip's its own inset shadow and its arrow's third path. */
+[data-highlight='none'] {
+  box-shadow: none;
+}
+[data-highlight='none'] > .app-tooltip-arrow:not(.outer-line-arrow) path:nth-child(4) {
+  display: none;
+}
+
+/* The chosen edge, by theme: in light as it ships, no line and the highlight
+   kept; in dark the line, and the highlight given its face's colour. */
+[data-edge='chosen'][data-outer-line='popover'] {
+  --outer-line: light-dark(transparent, var(--sp-neutral-925));
+  --control-highlight: light-dark(var(--sp-popover-edge), var(--sp-surface-popover));
+}
+[data-edge='chosen'][data-outer-line='tooltip'] {
+  --outer-line: light-dark(transparent, var(--sp-neutral-925));
+  --tooltip-highlight: light-dark(var(--sp-tooltip-highlight), var(--sp-tooltip-face));
+}

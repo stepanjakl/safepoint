@@ -13,7 +13,6 @@ import { describeExample } from './prompts';
 import { recordsOf, type KeptRead, type Records, type Row } from './records';
 import {
   acceptable,
-  ignoresProposal,
   readsName,
   type Definition,
   type DefinitionProcess,
@@ -309,7 +308,10 @@ export function problemsOf(
         `No example tries a ${singular} ${inside ? 'outside' : 'in'} group ${g.id}; add one, so the formula is tried both ways.`,
       );
   }
-  const stray = strayNumbers(formula);
+  // A proposal's nothing is the process's, not policy the formula invents.
+  const stray = strayNumbers(formula).filter(
+    (n) => !subject.proposal.some((field) => field.none === n),
+  );
   if (stray.length)
     problems.push(
       `The formula writes ${stray.join(', ')} itself; make each a constant with the instructions' words it comes from.`,
@@ -525,60 +527,6 @@ function everyRecordProblems(setting: Setting, draft: Draft): string[] {
     : [];
 }
 
-/*
-  Proposing nothing, where the process says what that is, can never be stopped:
-  a check that stops a proposal is about what is proposed, and one that fails
-  whatever is proposed is a person's decision, not a stop. So a stopping check
-  has to read the proposal, and has to hold at nothing on every record. The
-  first is found from the formula alone, since a read where every record
-  happens to pass says nothing; the second on the read.
-*/
-function nothingProblems(setting: Setting, draft: Draft): string[] {
-  const { owner, records, definition, set } = setting;
-  const { subject } = owner;
-  const fields = subject.proposal;
-  if (
-    definition.result !== 'check' ||
-    definition.consequence !== 'block' ||
-    !fields.length ||
-    fields.some((field) => field.none === undefined)
-  )
-    return [];
-  const nothing = fields.map((field) => `${field.label} ${field.none}`);
-  const letThrough = `A check that stops a proposal must let nothing through: test what is proposed first, as in ${fields[0]!.id} == ${fields[0]!.none} || <the rule>.`;
-  const ids = fields.map((field) => field.id);
-  if (
-    ignoresProposal(
-      {
-        ...definition,
-        formula: draft.formula,
-        uses: readsUnder(draft.formula, 'values'),
-      },
-      set.definitions,
-      ids,
-    )
-  )
-    return [
-      `It never reads what is proposed (${ids.join(', ')}), so it would stop a ${subject.record.singular} whatever is proposed, even ${nothing.join(', ')}, which proposes nothing. ${letThrough}`,
-    ];
-  const inputs = Object.fromEntries(
-    fields.map((field) => [field.id, field.none!]),
-  );
-  const stopped = records.keys.filter((key) => {
-    try {
-      return runOn(setting, draft, key, inputs) === false;
-    } catch {
-      // Said by everyRecordProblems.
-      return false;
-    }
-  });
-  return stopped.length
-    ? [
-        `${nothing.join(', ')} proposes nothing, yet it fails for ${stopped.join(', ')}. ${letThrough}`,
-      ]
-    : [];
-}
-
 // The values a field is tried at when comparing two versions: closely where
 // orders usually fall, then further apart.
 const COMPARED_AT = [
@@ -713,7 +661,6 @@ export function review(setting: Setting, draft: Draft): Review {
   const examples = runExamples(setting, draft);
   const disagree = examples.filter((e) => !e.agrees);
   const unworkable = everyRecordProblems(setting, draft);
-  const nothing = nothingProblems(setting, draft);
   // Whether the examples show both ways only means something once they agree.
   const oneWay =
     !disagree.length && definition.result === 'check'
@@ -724,14 +671,13 @@ export function review(setting: Setting, draft: Draft): Review {
       ...disagree.map((e) => disagreement(e, setting, draft)),
       ...unworkable,
       ...oneWay,
-      ...nothing,
     ],
     ran: {
       examples,
       uses: reads,
       problem: disagree.length
         ? `${disagree.length} of ${examples.length} examples disagree with the formula.`
-        : (unworkable[0] ?? oneWay[0] ?? nothing[0] ?? null),
+        : (unworkable[0] ?? oneWay[0] ?? null),
     },
     blocked: null,
   };
@@ -828,16 +774,6 @@ export function reviewBreakdown(setting: Setting, draft: Draft): ReviewPart[] {
             : 'On this read it cannot hold.',
     });
   }
-  parts.push({
-    id: 'nothing-proposed',
-    label: 'Lets a proposal of nothing through, if it stops a proposal',
-    problems: nothingProblems(setting, draft),
-    note:
-      definition.consequence === 'block' &&
-      setting.owner.subject.proposal.every((f) => f.none !== undefined)
-        ? null
-        : 'Not looked at: it does not stop a proposal, or nothing says what proposes nothing.',
-  });
   return parts;
 }
 

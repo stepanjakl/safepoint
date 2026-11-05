@@ -1,7 +1,7 @@
 import { generateText, isStepCount, tool, ToolChoiceViolationError } from 'ai';
 import { z } from 'zod';
 
-import type { DefinitionSubject } from '@/lib/process/model';
+import type { DefinitionSubject, Moment } from '@/lib/process/model';
 import { fallbackChain, type DraftingModel } from '@/lib/models';
 
 import { WRITE_MODELS, withModels } from './calls';
@@ -29,7 +29,17 @@ import {
   plain,
   proposalWords,
 } from './prompts';
-import { fitting, type KeptRead } from './records';
+import { fitting, READ, START, type KeptRead } from './records';
+import {
+  formulaOf,
+  sameShape,
+  sentenceOf,
+  shapeColumn,
+  shapeProblems,
+  shapeSchema,
+  type Shape,
+  type ShapeContext,
+} from './shapes';
 import { loadSet, updateSet } from './store';
 import type {
   Agreement,
@@ -62,6 +72,23 @@ const STEPS = 12;
 // The writes a definition gets to find two that pass every check.
 const WRITES_AT_MOST = 3;
 
+/*
+  The only reasons a rule may fit no shape. A refusal is cheap for a model,
+  one request where a shape takes several, so it must name what the shapes
+  lack, and it stands only when no write finds a shape (writeAgreed).
+*/
+const REFUSALS = [
+  'needs_or',
+  'needs_other_arithmetic',
+  'needs_missing_data',
+] as const;
+type Refusal = (typeof REFUSALS)[number];
+const REFUSAL_WORDS: Record<Refusal, string> = {
+  needs_or: 'It needs “or”, which no shape joins conditions with',
+  needs_other_arithmetic: 'It needs arithmetic no shape has',
+  needs_missing_data: 'It needs something the data does not have',
+};
+
 // What one answer holds: built per definition, so a check's examples say
 // whether it holds and a number's say the number, from one schema.
 const writeSchema = (definition: Definition, subject: DefinitionSubject) =>
@@ -92,13 +119,24 @@ const writeSchema = (definition: Definition, subject: DefinitionSubject) =>
       .describe(
         `${subject.record.plural} the instructions name in words, as their keys`,
       ),
-    formula: z
-      .string()
-      .describe(
-        definition.result === 'check'
-          ? 'CEL, true when it holds'
-          : 'CEL, giving the number',
-      ),
+    ...(definition.result === 'check'
+      ? {
+          shape: shapeSchema
+            .nullable()
+            .describe('The rule as one shape; null only when none fits'),
+          none_fits: z
+            .object({
+              reason: z.enum(REFUSALS),
+              explain: z
+                .string()
+                .describe('Which words of the rule no shape can say, and why'),
+            })
+            .nullable()
+            .describe(
+              'Only when no shape can say the rule; null when one does',
+            ),
+        }
+      : { formula: z.string().describe('CEL, giving the number') }),
     examples: z
       .array(
         z.object({
@@ -112,7 +150,7 @@ const writeSchema = (definition: Definition, subject: DefinitionSubject) =>
                   .int()
                   .nullable()
                   .describe(
-                    `The proposed ${field.label}, in ${field.unit}, where the formula reads it; otherwise null`,
+                    `The proposed ${field.label}, in ${field.unit}, where the rule reads it; otherwise null`,
                   ),
               ]),
             ),
@@ -124,15 +162,26 @@ const writeSchema = (definition: Definition, subject: DefinitionSubject) =>
           why: z.string().describe('Why, in plain words, with the numbers'),
         }),
       )
-      .min(2)
+      // A refusal has nothing to show; a shape's review asks for examples
+      // where it holds and where it fails.
+      .min(definition.result === 'check' ? 0 : 2)
       .max(5),
   });
 
-type Answer = z.infer<ReturnType<typeof writeSchema>>;
+// A number's answer has a formula; a check's a shape, or why none fits.
+type Answer = Omit<
+  z.infer<ReturnType<typeof writeSchema>>,
+  'formula' | 'shape' | 'none_fits'
+> & {
+  formula?: string;
+  shape?: Shape | null;
+  none_fits?: { reason: Refusal; explain: string } | null;
+};
 
 // An answer as the review reads it: inputs the model left null are unset.
-const draftOf = (answer: Answer): Draft => ({
-  formula: answer.formula,
+// A check's formula is the one code wrote from its shape.
+const draftOf = (answer: Answer, formula = answer.formula ?? ''): Draft => ({
+  formula,
   constants: answer.constants,
   groups: answer.groups,
   examples: answer.examples.map((e) => ({
@@ -147,7 +196,92 @@ const draftOf = (answer: Answer): Draft => ({
   })),
 });
 
+// The kinds a shape tells apart, in words.
+const TYPE_WORDS: Record<string, string> = {
+  int: 'number',
+  double: 'number',
+  bool: 'yes/no',
+  string: 'text',
+};
+
+const MOMENT_KINDS: Record<Moment['kind'], string> = {
+  observed: 'the last time it came round by when the data was read',
+  deadline: 'the last time it comes round before the planned period starts',
+  next: 'the first time it comes round after the data was read',
+};
+
+/*
+  What a shape may name, from the process's declaration and the read: the
+  columns with their kinds, the moments, the proposal's fields. A model
+  choosing from these cannot invent a column, and never sees how a moment is
+  kept, so it cannot get a sign the wrong way round.
+*/
+function shapeMaterials({ owner, records }: Setting) {
+  const { subject } = owner;
+  const { data } = subject;
+  const listed = (columns: Record<string, string>, prefix = '') =>
+    Object.entries(columns)
+      .filter(([name]) => shapeColumn(name, subject))
+      .map(([name, type]) => `${prefix}${name} (${TYPE_WORDS[type] ?? type})`)
+      .join(', ');
+  const moments = data.timing
+    ? [
+        `- ${START}: when the planned period starts`,
+        `- ${READ}: when the data was read`,
+        ...Object.entries(data.timing.moments ?? {}).map(
+          ([name, m]) =>
+            `- ${name}: ${m.day} at ${m.time}, ${MOMENT_KINDS[m.kind]}${m.kind === 'observed' ? '; hours_since may read it' : ''}`,
+        ),
+      ]
+    : [];
+  return [
+    `Columns of a ${subject.record.singular}: ${listed(records.types.record)}.`,
+    ...data.lookups.map(
+      (lookup) =>
+        `Columns of its ${lookup.tab} row, named ${lookup.as}.<column>: ${listed(records.types.lookups[lookup.as] ?? {}, `${lookup.as}.`)}.`,
+    ),
+    `Proposal fields: ${subject.proposal.map((f) => `${f.id} (the proposed ${f.label}, in ${f.unit})`).join(', ')}.`,
+    moments.length
+      ? `Moments, put before or after one another as moment:<moment>:\n${moments.join('\n')}`
+      : 'There are no moments.',
+  ].join('\n');
+}
+
+function shapeInstructionsFor(setting: Setting) {
+  const { owner, definition } = setting;
+  const { subject } = owner;
+  const { plural } = subject.record;
+  const nothing = subject.proposal
+    .filter((f) => f.none !== undefined)
+    .map((f) => `${f.id} ${f.none}`);
+  return [
+    'You turn one rule of a process into one fixed shape. Code writes its formula and a plain sentence from the shape, so choose what the rule says, not how to compute it. Give two to five examples that show it working.',
+    'Shapes, each about the proposal for one record:',
+    '- limit: the proposed field is at most, or at least, a number.',
+    '- step: the proposed field is a whole multiple of a number.',
+    '- only_when: something may be proposed only when every condition holds.',
+    '- target: a number there already is (base) plus the proposed field reaches, or does not exceed, a target, optionally plus a margin in percent.',
+    `- flag: ${definition.consequence === 'decide' ? 'flag the record for a person when every condition holds, whatever is proposed.' : 'not for this rule: failing it stops the proposal.'}`,
+    'A number is a column, an earlier definition (value), a constant, the proposed field, or the hours since a moment. A condition compares two numbers, tests a yes/no column, or puts one moment before or after another. Conditions are all joined by "and".',
+    `scope limits the rule to some ${plural}: a group, or conditions; null when it is about all of them. if_blank says what a ${subject.record.singular} with a blank cell the rule reads comes to: skip (the rule does not apply to it) or fail.`,
+    nothing.length
+      ? `Proposing nothing (${nothing.join(', ')}) always passes a rule that stops a proposal: code adds that, so never write it.`
+      : '',
+    'Almost every rule fits a shape. Only if the rule joins conditions with "or", needs arithmetic no shape has, or needs something the data does not have, give no shape and fill none_fits. Never bend a shape to fit.',
+    'Follow the instructions literally. Never add a condition, a record or a number they do not state.',
+    `Every number the rule needs is a constant: give it an id, its value and the instructions' exact words that state it, and name it as a constant.`,
+    `Where the instructions name ${plural} in words, list them as a group: the keys and the instructions' exact words that name them.`,
+    `check_definition answers with the sentence code wrote from your shape: read it, and fix the shape if it does not say what the rule says. Give examples on real ${plural} where it holds (result: true) and where it does not (result: false), worked out by hand from the data, with a proposal that makes the point. try_shape runs a shape on one real ${subject.record.singular}. Answer by calling check_definition with your whole answer until it returns ok.`,
+    shapeMaterials(setting),
+    plain(subject),
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
+
 function instructionsFor(setting: Setting) {
+  if (setting.definition.result === 'check')
+    return shapeInstructionsFor(setting);
   const { owner, read, definition } = setting;
   const { subject } = owner;
   const { plural } = subject.record;
@@ -228,7 +362,10 @@ function promptFor(setting: Setting) {
 // The latest answer whose formula ran on its examples: what is kept when no
 // answer comes out clean, so what is shown and what is said about it match.
 type Kept = {
-  written: Pick<Definition, 'formula' | 'constants' | 'groups' | 'uses'>;
+  written: Pick<
+    Definition,
+    'formula' | 'constants' | 'groups' | 'uses' | 'shape' | 'unfit'
+  >;
   examples: Example[];
   problem: string | null;
 };
@@ -243,6 +380,22 @@ type Written = {
   blocked: string | null;
   model: DraftingModel;
 };
+
+// What a shape is read against: the setting, with one write's own names.
+const shapeContextFor = (
+  setting: Setting,
+  written: Pick<Definition, 'constants' | 'groups'>,
+): ShapeContext => ({
+  subject: setting.owner.subject,
+  records: setting.records,
+  read: setting.read,
+  consequence: setting.definition.consequence,
+  constants: written.constants,
+  groups: written.groups,
+  // Every definition before it, working or not, so a shape that reads one
+  // still broken is told to wait for it rather than that it does not exist.
+  earlier: setting.earlier,
+});
 
 // One write: asks the model, and saves nothing.
 async function writeOnce(
@@ -259,55 +412,121 @@ async function writeOnce(
   let same = 0;
   let blocked = null as string | null;
 
-  const tools = {
-    try_formula: tool({
-      description: `Run a formula on one real ${owner.subject.record.singular} and see what it gives, or the exact error. Use it to work out an example, or to find why one disagrees.`,
-      inputSchema: z.object({
-        formula: z.string(),
-        key: z.string(),
-        inputs: z
-          .record(z.string(), z.number().int())
-          .describe(`The proposed ${proposalWords(owner.subject)}, by id`)
-          .default({}),
-        constants: schema.shape.constants.default([]),
-        groups: schema.shape.groups.default([]),
-      }),
-      execute: async ({ formula, key, inputs, constants, groups }) => {
-        const written = { constants, groups };
-        const typed = checkFormula(
+  // Notes an answer's problems: the same ones three times over ends it.
+  const noted = (problems: string[]) => {
+    same =
+      last && JSON.stringify(last) === JSON.stringify(problems) ? same + 1 : 1;
+    last = problems;
+  };
+  const shapeContextOf = (written: Pick<Answer, 'constants' | 'groups'>) =>
+    shapeContextFor(setting, written);
+  // A value worked out on one real record, or the exact error.
+  const tryOn = (
+    formula: string,
+    written: Pick<Answer, 'constants' | 'groups'>,
+    key: string,
+    inputs: Record<string, number>,
+  ) => {
+    const typed = checkFormula(
+      read,
+      owner.subject,
+      scopeOf(setting, written),
+      definition.result,
+      formula,
+    );
+    if (typed) return { ok: false, error: typed };
+    try {
+      const value = run(
+        formula,
+        contextFor(
           read,
+          key,
           owner.subject,
-          scopeOf(setting, written),
-          definition.result,
-          formula,
-        );
-        if (typed) return { ok: false, error: typed };
-        try {
-          const value = run(
-            formula,
-            contextFor(
-              read,
-              key,
-              owner.subject,
-              givenOf(written, inputs),
-              valuesFor(set, read, key, inputs, definition.id, owner.subject),
-            ),
-          );
-          return {
-            ok: true,
-            value: typeof value === 'bigint' ? Number(value) : value,
-          };
-        } catch (error) {
-          return { ok: false, error: (error as Error).message.split('\n')[0] };
+          givenOf(written, inputs),
+          valuesFor(set, read, key, inputs, definition.id, owner.subject),
+        ),
+      );
+      return {
+        ok: true,
+        value: typeof value === 'bigint' ? Number(value) : value,
+      };
+    } catch (error) {
+      return { ok: false, error: (error as Error).message.split('\n')[0] };
+    }
+  };
+  const tryInputs = {
+    key: z.string(),
+    inputs: z
+      .record(z.string(), z.number().int())
+      .describe(`The proposed ${proposalWords(owner.subject)}, by id`)
+      .default({}),
+    constants: schema.shape.constants.default([]),
+    groups: schema.shape.groups.default([]),
+  };
+
+  const tools = {
+    ...(definition.result === 'check'
+      ? {
+          try_shape: tool({
+            description: `Run a shape on one real ${owner.subject.record.singular}: whether it holds, with the sentence code writes from it, or what is wrong with it.`,
+            inputSchema: z.object({ shape: shapeSchema, ...tryInputs }),
+            execute: async ({ shape, key, inputs, constants, groups }) => {
+              const written = { constants, groups };
+              const context = shapeContextOf(written);
+              const wrong = shapeProblems(shape, context);
+              if (wrong.length) return { ok: false, problems: wrong };
+              return {
+                ...tryOn(formulaOf(shape, context), written, key, inputs),
+                sentence: sentenceOf(shape, context),
+              };
+            },
+          }),
         }
-      },
-    }),
+      : {
+          try_formula: tool({
+            description: `Run a formula on one real ${owner.subject.record.singular} and see what it gives, or the exact error. Use it to work out an example, or to find why one disagrees.`,
+            inputSchema: z.object({ formula: z.string(), ...tryInputs }),
+            execute: async ({ formula, key, inputs, constants, groups }) =>
+              tryOn(formula, { constants, groups }, key, inputs),
+          }),
+        }),
     check_definition: tool({
       description:
-        'Check your complete answer: the formula against what it may read, every number and name against the instructions, and every example run on the data. Returns ok, or each problem to fix. Answer only through this tool, until it returns ok.',
+        'Check your complete answer: every name and number against the instructions and the data, and every example run on the data. Returns ok, or each problem to fix. Answer only through this tool, until it returns ok.',
       inputSchema: schema,
       execute: async (answer: Answer) => {
-        const draft = draftOf(answer);
+        let formula = answer.formula ?? '';
+        let sentence: string | null = null;
+        if (definition.result === 'check') {
+          // No shape fits: the answer, kept with its reason and no formula.
+          if (!answer.shape && answer.none_fits) {
+            kept = {
+              written: {
+                formula: null,
+                constants: [],
+                groups: [],
+                uses: [],
+                shape: null,
+                unfit: `${REFUSAL_WORDS[answer.none_fits.reason]}: ${answer.none_fits.explain}`,
+              },
+              examples: [],
+              problem: null,
+            };
+            noted([]);
+            return { ok: true };
+          }
+          const context = shapeContextOf(answer);
+          const wrong = answer.shape
+            ? shapeProblems(answer.shape, context)
+            : ['Give a shape, or say in none_fits why none fits.'];
+          if (wrong.length) {
+            noted(wrong);
+            return { ok: false, problems: wrong };
+          }
+          formula = formulaOf(answer.shape!, context);
+          sentence = sentenceOf(answer.shape!, context);
+        }
+        const draft = draftOf(answer, formula);
         const { problems, ran, blocked: reads } = review(setting, draft);
         if (reads) blocked = reads;
         if (ran)
@@ -317,16 +536,17 @@ async function writeOnce(
               constants: draft.constants,
               groups: draft.groups,
               uses: ran.uses,
+              shape: answer.shape ?? null,
+              unfit: null,
             },
             examples: ran.examples,
             problem: ran.problem,
           };
-        same =
-          last && JSON.stringify(last) === JSON.stringify(problems)
-            ? same + 1
-            : 1;
-        last = problems;
-        return problems.length ? { ok: false, problems } : { ok: true };
+        noted(problems);
+        const said = sentence ? { sentence } : {};
+        return problems.length
+          ? { ok: false, problems, ...said }
+          : { ok: true, ...said };
       },
     }),
   };
@@ -425,7 +645,13 @@ function keep(
               examples: kept.examples,
               // Its own problem, and what stopped a later answer, if any.
               problem:
-                [kept.problem, written.blocked, note]
+                [
+                  kept.written.unfit
+                    ? `This rule can't be checked as written: ${kept.written.unfit} Rephrase it in the instructions.`
+                    : kept.problem,
+                  written.blocked,
+                  note,
+                ]
                   .filter(Boolean)
                   .join(' ') || null,
               model,
@@ -463,7 +689,10 @@ const draftOfKept = (kept: Kept): Draft => ({
 });
 
 const versionOf = ({ kept, model }: Written): WrittenVersion => ({
-  formula: kept!.written.formula!,
+  shape: kept!.written.shape ?? null,
+  unfit: kept!.written.unfit ?? null,
+  // A rule no shape fits has no formula; its version says why instead.
+  formula: kept!.written.formula ?? '',
   constants: kept!.written.constants,
   groups: kept!.written.groups,
   uses: kept!.written.uses,
@@ -490,7 +719,10 @@ export async function writeAgreed(
   const setting = await settingFor(owner, text, read, id);
   if (!setting) return null;
   const writes: Written[] = [];
-  const passed = () => writes.filter((w) => w.clean && w.kept);
+  // A refusal is not a reading of the rule, only a failure to find a shape, so
+  // it is never compared: another write is asked for, and any shape wins.
+  const refused = (w: Written) => Boolean(w.kept?.written.unfit);
+  const passed = () => writes.filter((w) => w.clean && w.kept && !refused(w));
   let stopped: string | null = null;
   for (let run = 1; run <= WRITES_AT_MOST && passed().length < 2; run += 1) {
     await onRun?.(run);
@@ -505,15 +737,32 @@ export async function writeAgreed(
   }
   const clean = passed();
   const runs = writes.length;
+  // Every write refused: the rule fits no shape, and a person rephrases it.
+  const refusals = writes.filter((w) => w.clean && refused(w));
+  if (!clean.length && refusals.length)
+    return keep(setting, refusals.at(-1)!, {
+      status: 'agreed',
+      runs,
+      versions: refusals.map(versionOf),
+      differences: [],
+    });
   const versions = clean.map(versionOf);
   if (clean.length === 2) {
-    const differences = differencesBetween(
-      setting,
-      draftOfKept(clean[0]!.kept!),
-      draftOfKept(clean[1]!.kept!),
-    );
+    const [a, b] = [clean[0]!.kept!, clean[1]!.kept!];
+    const status = (differences: unknown[]) =>
+      differences.length ? ('split' as const) : ('agreed' as const);
+    // The same shape behaves the same; otherwise behaviour decides.
+    const differences =
+      a.written.shape &&
+      b.written.shape &&
+      sameShape(
+        { ...shapeContextFor(setting, a.written), shape: a.written.shape },
+        { ...shapeContextFor(setting, b.written), shape: b.written.shape },
+      )
+        ? []
+        : differencesBetween(setting, draftOfKept(a), draftOfKept(b));
     return keep(setting, clean[0]!, {
-      status: differences.length ? 'split' : 'agreed',
+      status: status(differences),
       runs,
       versions,
       differences,

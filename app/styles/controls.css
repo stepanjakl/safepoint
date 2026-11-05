@@ -33,6 +33,9 @@
      offsets, since an offset would fall off the ramp inside a dark recess. */
   --sp-off-face: light-dark(var(--sp-neutral-50), var(--sp-neutral-950));
   --sp-off-ring: light-dark(var(--sp-neutral-225), var(--sp-neutral-750));
+  /* The line outside a popover's border: none in light, a step past the canvas
+     in dark. A fixed step, since it lies on whatever the popover opens over. */
+  --sp-popover-outline: light-dark(transparent, var(--sp-neutral-925));
 }
 
 @theme inline {
@@ -269,15 +272,27 @@
   @apply ground-floating;
 }
 
-/* One layer above floating, for what opens from a control: the popovers. In
-   light that is white, the end of the ramp, so its highlight stops at the face. */
+/* One layer above floating, for what opens from a control: the popovers. No
+   highlight: in light the face is the end of the ramp, and in dark the line
+   outside the border sets it off instead. Relative for a static sample; a
+   popover's own position is React Aria's, inline. */
 @utility surface-popover {
   --control-face-top: var(--sp-surface-popover);
   --control-face-bottom: var(--sp-surface-popover);
   --control-ring-top: var(--sp-popover-ring);
   --control-ring-bottom: var(--sp-popover-ring);
-  --control-highlight: var(--sp-popover-edge);
+  position: relative;
   @apply ground-popover;
+  /* From the padding box, one edge past the border; its corner is the outer
+     radius of rounded-shell, which every popover takes. */
+  &::after {
+    content: '';
+    position: absolute;
+    inset: calc(-2 * var(--spacing-control-edge));
+    border: var(--spacing-control-edge) solid var(--sp-popover-outline);
+    border-radius: calc(var(--radius-shell) + var(--spacing-control-edge));
+    pointer-events: none;
+  }
 }
 
 /* Every pill's shape -- Pill (components/ui/pill.tsx) and the pills that move

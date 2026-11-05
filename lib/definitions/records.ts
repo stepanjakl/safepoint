@@ -1,6 +1,7 @@
 import type { DataShape } from '@/lib/process/model';
 import {
   deadlineBefore,
+  firstAfter,
   hoursBetween,
   latestAtOrBefore,
   type DayTime,
@@ -158,7 +159,33 @@ function addTiming(record: Row, read: KeptRead, data: DataShape) {
         deadlineBefore(at, timing.opens, readAt, timing.timeZone),
       );
   }
+  // Every moment as hours from the read, so code compares them; the period's
+  // opening is on every record, the read itself is 0.
+  record[momentColumn(START)] = hours(
+    readAt,
+    firstAfter(timing.opens, readAt, timing.timeZone),
+  );
+  for (const [name, moment] of Object.entries(timing.moments ?? {})) {
+    const at = dayTimeOf(record, moment);
+    if (!at) continue;
+    const instant =
+      moment.kind === 'observed'
+        ? latestAtOrBefore(at, readAt, timing.timeZone)
+        : moment.kind === 'deadline'
+          ? deadlineBefore(at, timing.opens, readAt, timing.timeZone)
+          : firstAfter(at, readAt, timing.timeZone);
+    record[momentColumn(name)] = hours(readAt, instant);
+  }
 }
+
+// The moments every timed process has: when its planned period opens, and
+// when the data was read.
+export const START = 'start';
+export const READ = 'read';
+// Where a moment is kept on a record: a column no sheet writes, which only
+// code-written formulas read.
+export const MOMENT_PREFIX = 'moment__';
+export const momentColumn = (name: string) => `${MOMENT_PREFIX}${name}`;
 
 const celType = (value: unknown) =>
   typeof value === 'bigint'

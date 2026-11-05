@@ -572,6 +572,52 @@ the engine is enough; delete it afterwards.
   `fixtures/` alone. Each redraft asked of a person also spends their day's quota.
   Scratch runs are not in the app's own count of requests today, or in `.devtools/`.
 
+## Checks as shapes (5 November)
+
+The v3 draft got every calculation right and two checks wrong, both agreed by
+neither write or by both: the cutoff check compared signed hours the wrong way
+round, and the cover check never read the order. A version chooser, even showing
+the cases where versions differ, was hard to judge. So a check is no longer a
+formula the model writes: it fills one of five shapes, and code writes the
+formula and the sentence a person approves (`shapes.ts`).
+
+Tried on the real model, on an invented staff rota rather than Brunch orders,
+Flash-Lite, formula writing against shape filling:
+
+| Run                                          | Shapes                                       | Formulas                                    |
+| -------------------------------------------- | -------------------------------------------- | ------------------------------------------- |
+| 1: nested schema, refusal free, single write | 5 right, 0 wrong, 5 wrongly refused of 10    | 12 of 12 right                              |
+| 2: flat schema, reasoned refusal, two writes | 5 of 6 right, 0 wrong, the "or" rule refused | 6 of 7 right; 1 wrong, both writes agreeing |
+| 3: the deadline rule again                   | inverted through `hours_since`, unconfirmed  | not run                                     |
+
+What each run changed:
+
+- **A nested schema is too much for Flash-Lite.** Refusing cost one request and
+  needed no reason, so it refused rules it could have written, some with no
+  reason at all. A flat form with short text references (`column:<column>`), and
+  a refusal that must name one of three reasons and is never compared, brought
+  wrong refusals from five to one.
+- **The one left was the signed column.** Every write of the deadline rule reached
+  for `hours_until_deadline`, one inventing a constant "zero" to compare it with.
+  Shapes no longer see the signed hours worked out for formulas.
+- **Then the sign came back through `hours_since`.** Hours since a deadline still
+  to come are negative, and the write compared them the wrong way. `hours_since`
+  now reads only an observed moment; anything else is put before or after.
+- **The formula writer's silent mistake** was the decided target: both writes read
+  "reach contract hours" as `==`, agreed, and would have been shown as agreed.
+
+Accepted v2 rulebooks were not migrated. Three of five checks have no shape that
+says the same, and the other two match only on the data as read: a blank cell
+would come out differently. An approved rule rewritten into one that only looks
+the same is not what was approved, so accepted checks keep their formulas.
+
+**Lessons.** A wrong refusal is visible and a wrong formula is not, so trade
+towards refusals, then drive them down with code. Every way a model got time
+wrong was a sign it could see; take the sign away rather than explain it. The
+second run made 86 model calls against an estimate of 45 to 60, because a
+refusal asks for further writes; the three runs together counted 96 requests
+against the day's quota.
+
 ## Still open (31 October)
 
 - **Names.** A rule's name is often the first words of its sentence, cut off, which

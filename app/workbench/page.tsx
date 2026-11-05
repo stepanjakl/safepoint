@@ -410,6 +410,13 @@ export default function WorkbenchPage() {
           {' · '}
           <Link
             className="underline underline-offset-4"
+            href="/workbench/popover-edge"
+          >
+            Popover edge
+          </Link>
+          {' · '}
+          <Link
+            className="underline underline-offset-4"
             href="/workbench/decisions"
           >
             Decision transitions

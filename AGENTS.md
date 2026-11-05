@@ -137,6 +137,11 @@ placeholders such as `values.<id>`, because a real example steers the model.
   draft is accepted. A change to the stored shape (`types.ts`) means
   migrating `fixtures/*/rulebooks/**/*.json` by script, then
   `pnpm fixtures:e2e` for the browser tests' copies.
+- **A check is a shape, never a model-written formula.** The model fills one
+  of the shapes in `shape-schema.ts`; `shapes.ts` writes the formula and the
+  sentence a person approves. A rule no shape says is refused for a person to
+  rephrase. Widen what shapes can say there, generically, rather than letting
+  a formula back in; time goes through declared moments, never signed hours.
 - **Fix behaviour with checks, not prompt wording.** Prompt tweaks corrected
   one draft and broke the next. A new rule belongs in `checks.ts`, where both
   the model's check tool and Accept enforce it. Where nothing can check an idea,

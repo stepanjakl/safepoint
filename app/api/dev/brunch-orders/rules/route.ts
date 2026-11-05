@@ -11,7 +11,7 @@ import { namesOf } from '@/lib/definitions/records';
 import { revisionChanges } from '@/lib/definitions/revision-changes';
 import { listRevisions, loadRevision, loadSet } from '@/lib/definitions/store';
 import type { DefinitionSet } from '@/lib/definitions/types';
-import { casesOf } from '@/lib/definitions/versions';
+import { sentencesOf } from '@/lib/definitions/shapes';
 import { workingOf } from '@/lib/definitions/working';
 import { rejectUnlessLocalDevelopment } from '@/lib/dev/dev-route';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
@@ -123,15 +123,8 @@ export async function POST(request: Request) {
             set.definitions.map((d) => [d.id, workingOf(owner, set, read, d)]),
           )
         : {},
-      // What each case two versions differ on reads, for choosing between them.
-      cases: read
-        ? Object.fromEntries(
-            set.definitions.map((d) => [
-              d.id,
-              casesOf(owner.subject, set, read, d),
-            ]),
-          )
-        : {},
+      // Each check's sentence, and each version's where writes disagreed.
+      sentences: read ? sentencesOf(owner.subject, set, read) : {},
       drafting,
       // Every accepted revision, newest first, and the one in use.
       history: await historyOf(body.text),

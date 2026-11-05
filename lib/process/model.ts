@@ -248,5 +248,16 @@ export type DataShape = {
     opens: DayTime;
     since: Record<string, { day: string; time: string }>;
     until: Record<string, { day: string; time: string }>;
+    // Moments a check can compare, each a weekday and a time-of-day column,
+    // placed by `kind`: observed, the last time it came round by the read;
+    // deadline, the last before the planned period opens; next, the first
+    // after the read. A check compares them, never the hours between.
+    moments?: Record<string, Moment>;
   };
+};
+
+export type Moment = {
+  day: string;
+  time: string;
+  kind: 'observed' | 'deadline' | 'next';
 };
