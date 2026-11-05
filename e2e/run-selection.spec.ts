@@ -59,7 +59,8 @@ test('run tally and row colours advance through rest, hover, and selection', asy
         return getComputedStyle(element)[property];
       };
       return {
-        row: getComputedStyle(button).backgroundColor,
+        // The fill is a gradient; its leading stop is the row's colour.
+        row: getComputedStyle(button).getPropertyValue('--sheet-fill'),
         day: paint('.sheet-row-day', 'color'),
         time: paint('.sheet-row-when .value', 'color'),
         status: paint('.sheet-row-status', 'color'),

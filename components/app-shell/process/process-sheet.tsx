@@ -96,6 +96,7 @@ export function ProcessSheet({
   rulesPanel,
   rulesPanelB,
   inputsPanel,
+  savedTabs = null,
 }: {
   process: ProcessSummary;
   inputs?: SystemLink[];
@@ -115,8 +116,10 @@ export function ProcessSheet({
   initialRunId?: string | null;
   // What a started run is drawn from, where this process can play one.
   playable?: PlayableRun;
+  // The cookie's copy of the tab last open in each process, for the first paint.
+  savedTabs?: string | null;
 }) {
-  const [stored, setTab] = useProcessTab(process.id);
+  const [stored, setTab] = useProcessTab(process.id, savedTabs);
   // A Rules tab kept from a process that has one means nothing on another;
   // nor does the comparison tab where it is not offered.
   const compareInstructions = COMPARE_INSTRUCTIONS && policy === undefined;
@@ -141,8 +144,8 @@ export function ProcessSheet({
   const [openView, setOpenView] = useState<AsideView | null>(null);
   // Counts the requests, so a second one remounts the panels it is for.
   const [request, setRequest] = useState(0);
-  // Set once the reader chooses a tab: the stored one, applied on hydration,
-  // is put in place without a swap.
+  // Set once the reader chooses a tab: a stored one that only storage knew of,
+  // applied on hydration, is put in place without a swap.
   const [chosen, setChosen] = useState(false);
   const ask = (view: AsideView, next: ProcessTab) => {
     setChosen(true);

@@ -96,6 +96,12 @@ export function processNavigationItem({
 export const PROCESS_ORDER_KEY = 'safepoint.process-order.v1';
 
 /*
+  The tab last open in each process, mirrored to a cookie the same way, so the
+  server draws the sheet on that tab rather than on Runs until hydration.
+*/
+export const PROCESS_TAB_KEY = 'safepoint.process-tab.v1';
+
+/*
   The process last open, by id, which the root opens. A cookie, so the server
   can redirect before anything is drawn; written by the process sheet.
 */

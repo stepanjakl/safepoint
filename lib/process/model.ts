@@ -212,7 +212,10 @@ export type DefinitionSubject = {
   record: { singular: string; plural: string };
   data: DataShape;
   // Whole numbers a proposal sets per record, read by a formula by `id`.
-  proposal: { id: string; label: string; unit: string }[];
+  // `none` is the value that proposes nothing for a record, where one does: a
+  // check that stops a proposal must then let it through. Absent, no value
+  // means that, and nothing is assumed.
+  proposal: { id: string; label: string; unit: string; none?: number }[];
   // Who reads the plain-words reasons.
   reader: string;
 };

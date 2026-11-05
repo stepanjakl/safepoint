@@ -104,15 +104,20 @@ export function useEasedCards(
     if (moves.length) {
       for (const { card, from } of moves)
         card.style.gridTemplateRows = `auto ${from}px auto`;
-      // What is on screen now is what was on screen before this change.
-      const anchor =
-        cards.find((card) => card.getBoundingClientRect().top >= 0) ??
-        cards.findLast((card) => card.getBoundingClientRect().bottom > 0);
-      const place = () =>
-        anchor
-          ? anchor.getBoundingClientRect().top
-          : ol.getBoundingClientRect().bottom;
-      const top = place();
+      // What is on screen now is what was on screen before this change. Where it
+      // sits in the page, not on screen, so the reader's own scrolling is not
+      // mistaken for growth and undone.
+      const pick = () => {
+        const anchor =
+          cards.find((card) => card.getBoundingClientRect().top >= 0) ??
+          cards.findLast((card) => card.getBoundingClientRect().bottom > 0);
+        return () =>
+          (anchor
+            ? anchor.getBoundingClientRect().top
+            : ol.getBoundingClientRect().bottom) + window.scrollY;
+      };
+      let place = pick();
+      let was = place();
       for (const { card, from, to } of moves) {
         card.style.setProperty(
           '--draft-ease-height',
@@ -138,11 +143,21 @@ export function useEasedCards(
       }
       cancelAnimationFrame(frame.current);
       if (hold && holdsThePage(ol)) {
+        // What rounded scrolling has not yet made up, so it does not add up.
+        let owed = 0;
         const follow = () => {
-          // Against where it started, so rounded scrolling does not add up.
-          const off = place() - top;
-          if (Math.abs(off) >= 0.5)
+          const off = place() - was + owed;
+          if (Math.abs(off) >= 0.5) {
+            const from = window.scrollY;
             window.scrollBy({ top: off, behavior: 'instant' });
+            const short = off - (window.scrollY - from);
+            // More than rounding is the page's end, which nothing can make up.
+            owed = Math.abs(short) < 1 ? short : 0;
+          } else owed = off;
+          // Chosen again each frame: scrolled past a card still growing, the
+          // reader is now reading another.
+          place = pick();
+          was = place();
           if (moves.some(({ card }) => easing.has(card)))
             frame.current = requestAnimationFrame(follow);
         };

@@ -547,10 +547,13 @@ const ANCHORED_BY_FILE = {
     '--sp-title-field-edge-active': { on: 'primary', light: 450, dark: -550 },
   },
   'components/app-shell/runs/runs-list.css': {
-    '--sp-sheet-current': { on: 'primary', light: 75, dark: -100 },
     /* The sticky head and version break. Not a recess: in dark that put the
        head in a pit below its rows. */
     '--sp-sheet-band': { on: 'primary', light: 25, dark: -25 },
+    /* The row's own wash, a step past the shared one in dark, where 50 steps
+       barely showed; its fade ends 25 short of it, still clear of the pane. */
+    '--sp-sheet-hover': { on: 'primary', light: 50, dark: -75 },
+    '--sp-sheet-hover-end': { on: 'primary', light: 25, dark: -50 },
     /* The tally's total: ramp, not a severity tone. Dark's label is ink at
        75%; light gives it its own step against each face. */
     '--sp-sheet-total-face': { on: 'primary', light: 150, dark: -100 },

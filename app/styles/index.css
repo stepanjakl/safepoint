@@ -62,5 +62,6 @@
 @import '../workbench/run/shimmer-directions.css';
 @import '../workbench/explore/review-explorer.css';
 @import '../workbench/button-rounding/button-rounding.css';
+@import '../workbench/popover-halo/popover-halo.css';
 @import '../workbench/draft-progress/draft-progress.css';
 @import '../workbench/run/thread-progress.css';

@@ -55,6 +55,7 @@ import {
   type DefinitionSet,
   type DraftProgress,
 } from '@/lib/definitions/types';
+import type { Fact } from '@/lib/definitions/versions';
 
 // Every reply says whether a draft is running on the server, and how far.
 type RulesResponse = { drafting?: DraftProgress | null } & (
@@ -64,6 +65,8 @@ type RulesResponse = { drafting?: DraftProgress | null } & (
       names: Record<string, string>;
       // The app's own working of each example, by definition.
       working: Record<string, string[][]>;
+      // What each case split versions differ on reads, by definition.
+      cases?: Record<string, Fact[][]>;
     }
   | { kind: 'none' }
   | { kind: 'error'; message: string }
@@ -197,6 +200,7 @@ export function RulesStep({
     set: DefinitionSet;
     names: Record<string, string>;
     working: Record<string, string[][]>;
+    cases: Record<string, Fact[][]>;
   } | null>(null);
   const current = body?.kind === 'rules' ? body : null;
   if (current && current.set !== last?.set)
@@ -204,11 +208,13 @@ export function RulesStep({
       set: current.set,
       names: current.names,
       working: current.working ?? {},
+      cases: current.cases ?? {},
     });
   const shown = current ?? last;
   const set = shown?.set ?? null;
   const names = shown?.names ?? {};
   const working = shown?.working ?? {};
+  const cases = shown?.cases ?? {};
   // A draft runs on the server; the last progress reported stays while the
   // next question is out.
   const [drafting, setDrafting] = useState<DraftProgress | null>(null);
@@ -292,7 +298,9 @@ export function RulesStep({
               quoted={words(text).includes(words(item.text))}
               names={names}
               working={working[item.id] ?? []}
+              cases={cases[item.id] ?? []}
               reads={set.definitions.filter((d) => item.uses.includes(d.id))}
+              definitions={set.definitions}
               busy={busy}
               canWrite={readId !== null}
               onWrite={() => act({ action: 'write', readId, id: item.id })}
@@ -462,57 +470,149 @@ export function RulesStep({
   );
 }
 
-// Writes that came out different, for a person to choose between, with the cases
-// where they differ: far easier to answer than comparing the formulas.
+// What a check's answer does, in the words a person answers with.
+const outcomeWords = (item: Definition, result: string) =>
+  item.result !== 'check'
+    ? `It is ${result}`
+    : result === 'true'
+      ? item.consequence === 'block'
+        ? 'Allow it'
+        : 'Fine as it is'
+      : result === 'false'
+        ? item.consequence === 'block'
+          ? 'Block it'
+          : 'Flag it for a person'
+        : 'It cannot be worked out';
+
+// The cases shown as questions; more only repeat the choice.
+const CASES_ASKED = 3;
+
+/*
+  Writes that came out different, for a person to choose between. Each case
+  they differ on is a question about one record, with what either version
+  reads of it, and each answer is a version: far easier to answer than
+  comparing formulas, which stay folded away for whoever wants them.
+*/
 function VersionsToChoose({
   item,
+  names,
+  cases,
+  definitions,
   busy,
   onChoose,
 }: {
   item: Definition;
+  names: Record<string, string>;
+  // What each difference reads, in the differences' order.
+  cases: Fact[][];
+  // Every definition of the set, for what a version reads through others.
+  definitions: Definition[];
   busy: boolean;
   onChoose?: (index: number) => void;
 }) {
   const { versions, differences } = item.agreement!;
-  const words = (inputs: Record<string, number>) =>
-    SUBJECT.proposal
-      .map((field) => `${field.label} ${inputs[field.id] ?? 0}`)
-      .join(', ');
+  const [showFormulas, setShowFormulas] = useState(false);
+  const formulasId = useId();
+  const fields = SUBJECT.proposal;
+  const ignoring = versions.flatMap((version, index) =>
+    item.result === 'check' &&
+    ignoresProposal(
+      { ...item, formula: version.formula, uses: version.uses },
+      definitions,
+      fields.map((field) => field.id),
+    )
+      ? [index]
+      : [],
+  );
+  const asked = differences.slice(0, CASES_ASKED);
   return (
     <section aria-label="Versions to choose between" className="grid gap-3">
       <p className="text-dense text-state-advisory">
         Written twice without either seeing the other, and they behave
-        differently. Which is right?
+        differently. Answer {asked.length > 1 ? 'any one of these' : 'this'} to
+        choose.
       </p>
-      <ul className="text-dense grid gap-1">
-        {differences.map((difference) => (
-          <li key={`${difference.key}-${words(difference.inputs)}`}>
-            {difference.key}, {words(difference.inputs)}:{' '}
-            {difference.results
-              .map((result, i) => `version ${i + 1} gives ${result}`)
-              .join(', ')}
-          </li>
-        ))}
-      </ul>
       <ul className="grid gap-3">
-        {versions.map((version, index) => (
-          <li key={index} className="grid justify-items-start gap-1">
-            <span className="readout text-muted">Version {index + 1}</span>
-            <code className="value text-meta break-words">
-              {version.formula}
-            </code>
-            {onChoose ? (
-              <Button
-                size="medium"
-                isDisabled={busy}
-                onPress={() => onChoose(index)}
+        {asked.map((difference, at) => {
+          const label = `${difference.key}${names[difference.key] ? ` · ${names[difference.key]}` : ''}`;
+          return (
+            <li
+              key={`${difference.key}-${JSON.stringify(difference.inputs)}`}
+              className="grid gap-2"
+            >
+              <span className="text-dense">{label}</span>
+              {cases[at]?.length ? (
+                <dl className="text-meta grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">
+                  {cases[at]!.map((fact) => (
+                    <div key={fact.label} className="contents">
+                      <dt className="text-muted">{fact.label}</dt>
+                      <dd className="value">{fact.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : null}
+              <div
+                role="group"
+                aria-label={`What should happen for ${label}?`}
+                className="flex flex-wrap items-center gap-2"
               >
-                Use version {index + 1}
-              </Button>
-            ) : null}
-          </li>
-        ))}
+                {difference.results.map((result, index) => (
+                  <Button
+                    key={index}
+                    size="medium"
+                    isDisabled={busy || !onChoose}
+                    onPress={() => onChoose?.(index)}
+                  >
+                    {outcomeWords(item, result)}
+                  </Button>
+                ))}
+              </div>
+            </li>
+          );
+        })}
       </ul>
+      {differences.length > asked.length ? (
+        <p className="text-meta text-muted">
+          They differ on {differences.length - asked.length} more{' '}
+          {differences.length - asked.length === 1 ? 'case' : 'cases'}.
+        </p>
+      ) : null}
+      {ignoring.length ? (
+        <p className="text-dense text-state-advisory">
+          {ignoring.length === versions.length
+            ? 'Neither version reads'
+            : `The answer “${outcomeWords(item, differences[0]?.results[ignoring[0]!] ?? '')}” comes from a version that never reads`}{' '}
+          the proposed {fields.map((field) => field.label).join(' or ')}, so
+          nothing proposed can change its answer.
+        </p>
+      ) : null}
+      <div className="grid justify-items-start gap-2">
+        <Button
+          size="medium"
+          aria-expanded={showFormulas}
+          aria-controls={formulasId}
+          onPress={() => setShowFormulas(!showFormulas)}
+        >
+          {showFormulas ? 'Hide the formulas' : 'Show the formulas'}
+        </Button>
+        <Fold open={showFormulas} id={formulasId}>
+          <ul className="grid gap-3">
+            {versions.map((version, index) => (
+              <li key={index} className="grid justify-items-start gap-1">
+                <span className="readout text-muted">
+                  Version {index + 1}
+                  {differences[0]
+                    ? ` · ${outcomeWords(item, differences[0].results[index] ?? '')} for ${differences[0].key}`
+                    : ''}
+                </span>
+                <code className="value text-meta break-words">
+                  {version.formula}
+                </code>
+              </li>
+            ))}
+          </ul>
+        </Fold>
+      </div>
     </section>
   );
 }
@@ -1099,7 +1199,9 @@ export function DefinitionCard({
   quoted,
   names,
   working,
+  cases = [],
   reads,
+  definitions,
   busy,
   canWrite,
   onWrite,
@@ -1117,8 +1219,12 @@ export function DefinitionCard({
   names: Record<string, string>;
   // The app's own working of each example, in the examples' order.
   working: string[][];
+  // What each case its versions differ on reads, where writes disagreed.
+  cases?: Fact[][];
   // The definitions its formula reads.
   reads: Definition[];
+  // Every definition of the set, for what another version reads.
+  definitions?: Definition[];
   busy: boolean;
   canWrite: boolean;
   onWrite: () => void;
@@ -1208,7 +1314,14 @@ export function DefinitionCard({
         ) : null}
         {item.problem ? <p className="text-dense">{item.problem}</p> : null}
         {item.agreement?.status === 'split' ? (
-          <VersionsToChoose item={item} busy={busy} onChoose={onChoose} />
+          <VersionsToChoose
+            item={item}
+            names={names}
+            cases={cases}
+            definitions={definitions ?? reads}
+            busy={busy}
+            onChoose={onChoose}
+          />
         ) : null}
         {ignoresProposal(
           item,

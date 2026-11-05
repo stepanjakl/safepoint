@@ -71,7 +71,8 @@ export const SHEET_INPUTS: SystemLink[] = DATA_TABS.map((tab) => ({
 export const SUBJECT: DefinitionSubject = {
   record: { singular: 'product', plural: 'products' },
   data: DATA,
-  proposal: [{ id: 'order', label: 'order', unit: 'units' }],
+  // Ordering nothing is always open to a person: no rule can forbid it.
+  proposal: [{ id: 'order', label: 'order', unit: 'units', none: 0 }],
   reader: 'store owner',
 };
 

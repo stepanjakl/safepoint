@@ -265,6 +265,7 @@ describe('the breakdown of what code checks', () => {
       'every-record',
       'examples',
       'both-ways',
+      'nothing-proposed',
     ]);
     expect(parts.find((p) => p.id === 'reading')?.problems).toHaveLength(1);
     expect(parts.find((p) => p.id === 'examples')?.note).toBe('1 of 1 agree.');

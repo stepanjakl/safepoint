@@ -1,43 +1,43 @@
 {
   "hash": "86c4ba5959e9",
   "version": "v3",
-  "intent": "These instructions explain how to calculate weekly brunch order suggestions and check them against various inventory, delivery, and supplier rules.",
+  "intent": "Determine suggested purchase order quantities for products based on expected weekend sales, stock levels, and supplier restrictions, flagging exceptions for human review.",
   "intentConfirmedAt": null,
   "readId": "2026-10-08T16-03-15-658Z-6e93bf09",
-  "foundAt": "2026-10-31T13:02:50.892Z",
-  "model": "gemini-3.5-flash-lite",
+  "foundAt": "2026-11-05T13:44:02.696Z",
+  "model": "gemini-3.6-flash",
   "definitions": [
     {
       "id": "expected_sales",
-      "name": "Expected Sales",
-      "text": "Start from each product's average over the last four weekends. Products on offer sell about 40% more, the kit's ingredients about 10% more, and everything else about 15% more. We expect to sell about 40 kits, and each one uses a loaf, a pack of avocados and a pack of feta on top of their own sales. Round up to whole units.",
+      "name": "Expected sales",
+      "text": "Start from each product's average over the last four weekends, adjust for promotional increases (40% for products on offer, 10% for kit ingredients, 15% for others), add kit requirement sales if applicable (40 kits adding a loaf, pack of avocados, and pack of feta), and round up to whole units.",
       "result": "number",
       "consequence": null,
       "constants": [
         {
-          "id": "four_weekends",
-          "value": 4,
-          "quote": "Start from each product's average over the last four weekends."
-        },
-        {
-          "id": "offer_increase_pct",
+          "id": "offer_uplift_pct",
           "value": 40,
           "quote": "Products on offer sell about 40% more"
         },
         {
-          "id": "kit_ingredient_increase_pct",
+          "id": "kit_uplift_pct",
           "value": 10,
           "quote": "the kit's ingredients about 10% more"
         },
         {
-          "id": "other_increase_pct",
+          "id": "other_uplift_pct",
           "value": 15,
-          "quote": "and everything else about 15% more."
+          "quote": "everything else about 15% more"
         },
         {
-          "id": "kits_count",
+          "id": "kits_to_sell",
           "value": 40,
-          "quote": "We expect to sell about 40 kits,"
+          "quote": "We expect to sell about 40 kits"
+        },
+        {
+          "id": "four_weekends",
+          "value": 4,
+          "quote": "average over the last four weekends"
         }
       ],
       "groups": [
@@ -61,13 +61,13 @@
         }
       ],
       "uses": [],
-      "formula": "ceil((double(record.weekend_1 + record.weekend_2 + record.weekend_3 + record.weekend_4) / double(constants.four_weekends)) * (key in groups.offer_products ? double(100 + constants.offer_increase_pct) / double(100) : (key in groups.kit_ingredients ? double(100 + constants.kit_ingredient_increase_pct) / double(100) : double(100 + constants.other_increase_pct) / double(100))) + (key in groups.kit_ingredients ? double(constants.kits_count) : double(0)))",
+      "formula": "ceil((double(record.weekend_1 + record.weekend_2 + record.weekend_3 + record.weekend_4) / double(constants.four_weekends)) * (key in groups.offer_products ? (1.0 + double(constants.offer_uplift_pct) / 100.0) : (key in groups.kit_ingredients ? (1.0 + double(constants.kit_uplift_pct) / 100.0) : (1.0 + double(constants.other_uplift_pct) / 100.0))) + (key in groups.kit_ingredients ? double(constants.kits_to_sell) : 0.0))",
       "examples": [
         {
           "key": "SD-01",
           "inputs": {},
           "expect": 73,
-          "why": "Average sales over 4 weekends are (28 + 31 + 30 + 31) / 4 = 30. As a kit ingredient, it sells 10% more: 30 * 1.1 = 33. Plus 40 for the kits: 33 + 40 = 73.",
+          "why": "Average is (28+31+30+31)/4 = 30. Kit ingredient (SD-01): 30 * (1 + 10%) + 40 = 33 + 40 = 73.",
           "actual": 73,
           "error": null,
           "agrees": true
@@ -76,7 +76,7 @@
           "key": "EG-06",
           "inputs": {},
           "expect": 28,
-          "why": "Average sales over 4 weekends are (19 + 21 + 20 + 20) / 4 = 20. As a product on offer, it sells 40% more: 20 * 1.4 = 28.",
+          "why": "Average is (19+21+20+20)/4 = 20. Offer product (EG-06): 20 * (1 + 40%) = 28.",
           "actual": 28,
           "error": null,
           "agrees": true
@@ -85,22 +85,182 @@
           "key": "CF-40",
           "inputs": {},
           "expect": 4,
-          "why": "Average sales over 4 weekends are (3 + 3 + 3 + 3) / 4 = 3. As everything else, it sells 15% more: 3 * 1.15 = 3.45, rounded up to whole units is 4.",
+          "why": "Average is (3+3+3+3)/4 = 3. Other: 3 * (1 + 15%) = 3.45. Round up = 4.",
           "actual": 4,
           "error": null,
           "agrees": true
         }
       ],
       "problem": null,
-      "model": "gemini-3.5-flash-lite",
+      "model": "gemini-3.1-flash-lite",
       "approvedAt": null,
       "deniedAt": null,
-      "denial": null
+      "denial": null,
+      "agreement": {
+        "status": "agreed",
+        "runs": 2,
+        "versions": [
+          {
+            "formula": "ceil((double(record.weekend_1 + record.weekend_2 + record.weekend_3 + record.weekend_4) / double(constants.four_weekends)) * (key in groups.offer_products ? (1.0 + double(constants.offer_uplift_pct) / 100.0) : (key in groups.kit_ingredients ? (1.0 + double(constants.kit_uplift_pct) / 100.0) : (1.0 + double(constants.other_uplift_pct) / 100.0))) + (key in groups.kit_ingredients ? double(constants.kits_to_sell) : 0.0))",
+            "constants": [
+              {
+                "id": "offer_uplift_pct",
+                "value": 40,
+                "quote": "Products on offer sell about 40% more"
+              },
+              {
+                "id": "kit_uplift_pct",
+                "value": 10,
+                "quote": "the kit's ingredients about 10% more"
+              },
+              {
+                "id": "other_uplift_pct",
+                "value": 15,
+                "quote": "everything else about 15% more"
+              },
+              {
+                "id": "kits_to_sell",
+                "value": 40,
+                "quote": "We expect to sell about 40 kits"
+              },
+              {
+                "id": "four_weekends",
+                "value": 4,
+                "quote": "average over the last four weekends"
+              }
+            ],
+            "groups": [
+              {
+                "id": "offer_products",
+                "keys": [
+                  "EG-06",
+                  "CT-250",
+                  "RK-60"
+                ],
+                "quote": "eggs, cherry tomatoes and rocket are on offer"
+              },
+              {
+                "id": "kit_ingredients",
+                "keys": [
+                  "SD-01",
+                  "AV-RR",
+                  "FT-200"
+                ],
+                "quote": "a sourdough loaf, a pack of ripe avocados and a pack of feta"
+              }
+            ],
+            "uses": [],
+            "examples": [
+              {
+                "key": "SD-01",
+                "inputs": {},
+                "expect": 73,
+                "why": "Average is (28+31+30+31)/4 = 30. Kit ingredient (SD-01): 30 * (1 + 10%) + 40 = 33 + 40 = 73.",
+                "actual": 73,
+                "error": null,
+                "agrees": true
+              },
+              {
+                "key": "EG-06",
+                "inputs": {},
+                "expect": 28,
+                "why": "Average is (19+21+20+20)/4 = 20. Offer product (EG-06): 20 * (1 + 40%) = 28.",
+                "actual": 28,
+                "error": null,
+                "agrees": true
+              },
+              {
+                "key": "CF-40",
+                "inputs": {},
+                "expect": 4,
+                "why": "Average is (3+3+3+3)/4 = 3. Other: 3 * (1 + 15%) = 3.45. Round up = 4.",
+                "actual": 4,
+                "error": null,
+                "agrees": true
+              }
+            ],
+            "model": "gemini-3.1-flash-lite"
+          },
+          {
+            "formula": "ceil((double(record.weekend_1 + record.weekend_2 + record.weekend_3 + record.weekend_4) / double(constants.avg_period)) * (key in groups.kit_ingredients ? (1.0 + double(constants.kit_ingredient_pct) / 100.0) : (key in groups.offer ? (1.0 + double(constants.promo_offer_pct) / 100.0) : (1.0 + double(constants.other_product_pct) / 100.0))) + (key in groups.kit_ingredients ? double(constants.kit_volume) : 0.0))",
+            "constants": [
+              {
+                "id": "promo_offer_pct",
+                "value": 40,
+                "quote": "40% more"
+              },
+              {
+                "id": "kit_ingredient_pct",
+                "value": 10,
+                "quote": "10% more"
+              },
+              {
+                "id": "other_product_pct",
+                "value": 15,
+                "quote": "15% more"
+              },
+              {
+                "id": "kit_volume",
+                "value": 40,
+                "quote": "40 kits"
+              },
+              {
+                "id": "avg_period",
+                "value": 4,
+                "quote": "last four weekends"
+              }
+            ],
+            "groups": [
+              {
+                "id": "offer",
+                "keys": [
+                  "EG-06",
+                  "CT-250",
+                  "RK-60"
+                ],
+                "quote": "eggs, cherry tomatoes and rocket are on offer"
+              },
+              {
+                "id": "kit_ingredients",
+                "keys": [
+                  "SD-01",
+                  "AV-RR",
+                  "FT-200"
+                ],
+                "quote": "a sourdough loaf, a pack of ripe avocados and a pack of feta"
+              }
+            ],
+            "uses": [],
+            "examples": [
+              {
+                "key": "SD-01",
+                "inputs": {},
+                "expect": 73,
+                "why": "Average (28+31+30+31)/4 = 30.0. Ingredient adjustment 10% (30*1.1 = 33.0). Add 40 kits = 73.0. Final 73.",
+                "actual": 73,
+                "error": null,
+                "agrees": true
+              },
+              {
+                "key": "EG-06",
+                "inputs": {},
+                "expect": 28,
+                "why": "Average (19+21+20+20)/4 = 20.0. Offer adjustment 40% (20*1.4 = 28.0). Final 28.",
+                "actual": 28,
+                "error": null,
+                "agrees": true
+              }
+            ],
+            "model": "gemini-3.1-flash-lite"
+          }
+        ],
+        "differences": []
+      }
     },
     {
       "id": "stock_available",
-      "name": "Stock Available",
-      "text": "Stock available is what we have on hand, less what is reserved, plus what arrives before the start.",
+      "name": "Stock available",
+      "text": "Stock on hand, less reserved stock, plus stock arriving before the start.",
       "result": "number",
       "consequence": null,
       "constants": [],
@@ -110,37 +270,23 @@
       "examples": [
         {
           "key": "SD-01",
-          "inputs": {},
+          "inputs": {
+            "order": 0
+          },
           "expect": 0,
-          "why": "Zero on hand, zero reserved, plus zero inbound before start gives zero stock available.",
+          "why": "SD-01 has 0 on hand, 0 reserved, and 0 inbound before start, so stock available is 0.",
           "actual": 0,
           "error": null,
           "agrees": true
         },
         {
           "key": "AV-RR",
-          "inputs": {},
+          "inputs": {
+            "order": 0
+          },
           "expect": 12,
-          "why": "Fourteen on hand, less two reserved, plus zero inbound before start gives twelve stock available.",
+          "why": "AV-RR has 14 on hand, 2 reserved, and 0 inbound before start, giving 12 available.",
           "actual": 12,
-          "error": null,
-          "agrees": true
-        },
-        {
-          "key": "EG-06",
-          "inputs": {},
-          "expect": 38,
-          "why": "Twenty-six on hand, less zero reserved, plus twelve inbound before start gives thirty-eight stock available.",
-          "actual": 38,
-          "error": null,
-          "agrees": true
-        },
-        {
-          "key": "CT-250",
-          "inputs": {},
-          "expect": 18,
-          "why": "Eight on hand, less zero reserved, plus ten inbound before start gives eighteen stock available.",
-          "actual": 18,
           "error": null,
           "agrees": true
         }
@@ -149,7 +295,76 @@
       "model": "gemini-3.5-flash-lite",
       "approvedAt": null,
       "deniedAt": null,
-      "denial": null
+      "denial": null,
+      "agreement": {
+        "status": "agreed",
+        "runs": 2,
+        "versions": [
+          {
+            "formula": "record.on_hand - record.reserved + record.inbound_before_start",
+            "constants": [],
+            "groups": [],
+            "uses": [],
+            "examples": [
+              {
+                "key": "SD-01",
+                "inputs": {
+                  "order": 0
+                },
+                "expect": 0,
+                "why": "SD-01 has 0 on hand, 0 reserved, and 0 inbound before start, so stock available is 0.",
+                "actual": 0,
+                "error": null,
+                "agrees": true
+              },
+              {
+                "key": "AV-RR",
+                "inputs": {
+                  "order": 0
+                },
+                "expect": 12,
+                "why": "AV-RR has 14 on hand, 2 reserved, and 0 inbound before start, giving 12 available.",
+                "actual": 12,
+                "error": null,
+                "agrees": true
+              }
+            ],
+            "model": "gemini-3.5-flash-lite"
+          },
+          {
+            "formula": "double(record.on_hand) - double(record.reserved) + double(record.inbound_before_start)",
+            "constants": [],
+            "groups": [],
+            "uses": [],
+            "examples": [
+              {
+                "key": "SD-01",
+                "inputs": {
+                  "order": 0
+                },
+                "expect": 0,
+                "why": "The stock on hand is 0, reserved is 0, and inbound is 0, so stock available is 0 - 0 + 0 = 0.",
+                "actual": 0,
+                "error": null,
+                "agrees": true
+              },
+              {
+                "key": "AV-RR",
+                "inputs": {
+                  "order": 0
+                },
+                "expect": 12,
+                "why": "The stock on hand is 14, reserved is 2, and inbound is 0, so stock available is 14 - 2 + 0 = 12.",
+                "actual": 12,
+                "error": null,
+                "agrees": true
+              }
+            ],
+            "model": "gemini-3.1-flash-lite"
+          }
+        ],
+        "differences": []
+      }
     },
     {
       "id": "order_in_whole_cases",
@@ -168,7 +383,7 @@
             "order": 8
           },
           "expect": true,
-          "why": "SD-01 case_size is 8, and proposed order is 8, which is a multiple of 8",
+          "why": "SD-01 case size is 8, and 8 is a multiple of 8",
           "actual": true,
           "error": null,
           "agrees": true
@@ -179,7 +394,7 @@
             "order": 5
           },
           "expect": false,
-          "why": "SD-01 case_size is 8, and proposed order is 5, which is not a multiple of 8",
+          "why": "SD-01 case size is 8, and 5 is not a multiple of 8",
           "actual": false,
           "error": null,
           "agrees": true
@@ -189,26 +404,95 @@
       "model": "gemini-3.5-flash-lite",
       "approvedAt": null,
       "deniedAt": null,
-      "denial": null
+      "denial": null,
+      "agreement": {
+        "status": "agreed",
+        "runs": 2,
+        "versions": [
+          {
+            "formula": "order % record.case_size == 0",
+            "constants": [],
+            "groups": [],
+            "uses": [],
+            "examples": [
+              {
+                "key": "SD-01",
+                "inputs": {
+                  "order": 8
+                },
+                "expect": true,
+                "why": "SD-01 case size is 8, and 8 is a multiple of 8",
+                "actual": true,
+                "error": null,
+                "agrees": true
+              },
+              {
+                "key": "SD-01",
+                "inputs": {
+                  "order": 5
+                },
+                "expect": false,
+                "why": "SD-01 case size is 8, and 5 is not a multiple of 8",
+                "actual": false,
+                "error": null,
+                "agrees": true
+              }
+            ],
+            "model": "gemini-3.5-flash-lite"
+          },
+          {
+            "formula": "order % record.case_size == 0",
+            "constants": [],
+            "groups": [],
+            "uses": [],
+            "examples": [
+              {
+                "key": "SD-01",
+                "inputs": {
+                  "order": 8
+                },
+                "expect": true,
+                "why": "For SD-01, a case size of 8 allows an order of 8, which is a multiple of the case size.",
+                "actual": true,
+                "error": null,
+                "agrees": true
+              },
+              {
+                "key": "SD-01",
+                "inputs": {
+                  "order": 5
+                },
+                "expect": false,
+                "why": "For SD-01, an order of 5 is not a multiple of the case size of 8.",
+                "actual": false,
+                "error": null,
+                "agrees": true
+              }
+            ],
+            "model": "gemini-3.1-flash-lite"
+          }
+        ],
+        "differences": []
+      }
     },
     {
-      "id": "never_order_more_than_supplier_can_deliver",
-      "name": "Never order more than supplier can deliver",
+      "id": "supplier_max_delivery",
+      "name": "Supplier max delivery",
       "text": "Never order more than the supplier can deliver.",
       "result": "check",
       "consequence": "block",
       "constants": [],
       "groups": [],
       "uses": [],
-      "formula": "has(record.max_order_units) ? order <= record.max_order_units : true",
+      "formula": "!has(record.max_order_units) || double(order) <= double(record.max_order_units)",
       "examples": [
         {
           "key": "SD-01",
           "inputs": {
-            "order": 8
+            "order": 72
           },
           "expect": true,
-          "why": "SD-01 proposed order is 8, max_order_units is 72, 8 <= 72 holds",
+          "why": "SD-01 proposed order 72 does not exceed max order units 72",
           "actual": true,
           "error": null,
           "agrees": true
@@ -219,7 +503,7 @@
             "order": 80
           },
           "expect": false,
-          "why": "SD-01 proposed order is 80, max_order_units is 72, 80 <= 72 does not hold",
+          "why": "SD-01 proposed order 80 exceeds max order units 72",
           "actual": false,
           "error": null,
           "agrees": true
@@ -229,48 +513,117 @@
       "model": "gemini-3.5-flash-lite",
       "approvedAt": null,
       "deniedAt": null,
-      "denial": null
+      "denial": null,
+      "agreement": {
+        "status": "agreed",
+        "runs": 2,
+        "versions": [
+          {
+            "formula": "!has(record.max_order_units) || double(order) <= double(record.max_order_units)",
+            "constants": [],
+            "groups": [],
+            "uses": [],
+            "examples": [
+              {
+                "key": "SD-01",
+                "inputs": {
+                  "order": 72
+                },
+                "expect": true,
+                "why": "SD-01 proposed order 72 does not exceed max order units 72",
+                "actual": true,
+                "error": null,
+                "agrees": true
+              },
+              {
+                "key": "SD-01",
+                "inputs": {
+                  "order": 80
+                },
+                "expect": false,
+                "why": "SD-01 proposed order 80 exceeds max order units 72",
+                "actual": false,
+                "error": null,
+                "agrees": true
+              }
+            ],
+            "model": "gemini-3.5-flash-lite"
+          },
+          {
+            "formula": "!has(record.max_order_units) || double(order) <= double(record.max_order_units)",
+            "constants": [],
+            "groups": [],
+            "uses": [],
+            "examples": [
+              {
+                "key": "SD-01",
+                "inputs": {
+                  "order": 72
+                },
+                "expect": true,
+                "why": "SD-01 proposed order is 72, which is less than or equal to max order units 72",
+                "actual": true,
+                "error": null,
+                "agrees": true
+              },
+              {
+                "key": "SD-01",
+                "inputs": {
+                  "order": 80
+                },
+                "expect": false,
+                "why": "SD-01 proposed order is 80, which exceeds max order units 72",
+                "actual": false,
+                "error": null,
+                "agrees": true
+              }
+            ],
+            "model": "gemini-3.5-flash-lite"
+          }
+        ],
+        "differences": []
+      }
     },
     {
-      "id": "only_order_what_arrives_before_saturdays_opening",
-      "name": "Only order what arrives before Saturday's opening",
+      "id": "delivery_before_opening",
+      "name": "Delivery before opening",
       "text": "Only order what arrives before Saturday's opening.",
       "result": "check",
       "consequence": "block",
       "constants": [
         {
-          "id": "saturdays_opening",
-          "value": 420,
-          "quote": "07:00"
-        },
-        {
-          "id": "saturday_day",
+          "id": "saturday",
           "value": 6,
           "quote": "Saturday"
+        },
+        {
+          "id": "opening_time",
+          "value": 420,
+          "quote": "07:00"
         }
       ],
       "groups": [],
       "uses": [],
-      "formula": "record.delivery_day < constants.saturday_day || (record.delivery_day == constants.saturday_day && record.delivery_time < constants.saturdays_opening)",
+      "formula": "record.delivery_day < constants.saturday || (record.delivery_day == constants.saturday && record.delivery_time < constants.opening_time)",
       "examples": [
         {
-          "key": "AV-RR",
+          "key": "SD-01",
           "inputs": {
-            "order": 8
+            "order": 10
           },
           "expect": true,
-          "why": "AV-RR delivery day is Friday (5), which is before Saturday (6), so it arrives before Saturday's opening",
+          "why": "SD-01 delivery day is Saturday (6) and delivery time is 06:00 (360), which is before Saturday opening 07:00 (420)",
           "actual": true,
           "error": null,
           "agrees": true
         },
         {
-          "key": "SD-01",
+          "key": "AV-RR",
           "inputs": {
-            "order": 0
+            "order": 10
           },
           "expect": true,
-          "why": "SD-01 delivery day is Saturday (6) and delivery time is 06:00 (360), which is before Saturday's opening at 07:00 (420), so it holds",
+          "why": "AV-RR delivery day is Friday (5), which is before Saturday (6)",
           "actual": true,
           "error": null,
           "agrees": true
@@ -280,38 +633,129 @@
       "model": "gemini-3.5-flash-lite",
       "approvedAt": null,
       "deniedAt": null,
-      "denial": null
+      "denial": null,
+      "agreement": {
+        "status": "agreed",
+        "runs": 2,
+        "versions": [
+          {
+            "formula": "record.delivery_day < constants.saturday || (record.delivery_day == constants.saturday && record.delivery_time < constants.opening_time)",
+            "constants": [
+              {
+                "id": "saturday",
+                "value": 6,
+                "quote": "Saturday"
+              },
+              {
+                "id": "opening_time",
+                "value": 420,
+                "quote": "07:00"
+              }
+            ],
+            "groups": [],
+            "uses": [],
+            "examples": [
+              {
+                "key": "SD-01",
+                "inputs": {
+                  "order": 10
+                },
+                "expect": true,
+                "why": "SD-01 delivery day is Saturday (6) and delivery time is 06:00 (360), which is before Saturday opening 07:00 (420)",
+                "actual": true,
+                "error": null,
+                "agrees": true
+              },
+              {
+                "key": "AV-RR",
+                "inputs": {
+                  "order": 10
+                },
+                "expect": true,
+                "why": "AV-RR delivery day is Friday (5), which is before Saturday (6)",
+                "actual": true,
+                "error": null,
+                "agrees": true
+              }
+            ],
+            "model": "gemini-3.5-flash-lite"
+          },
+          {
+            "formula": "record.delivery_day < constants.saturday || (record.delivery_day == constants.saturday && record.delivery_time < constants.opening_hour)",
+            "constants": [
+              {
+                "id": "saturday",
+                "value": 6,
+                "quote": "Saturday"
+              },
+              {
+                "id": "opening_hour",
+                "value": 420,
+                "quote": "07:00"
+              }
+            ],
+            "groups": [],
+            "uses": [],
+            "examples": [
+              {
+                "key": "AV-RR",
+                "inputs": {
+                  "order": 10
+                },
+                "expect": true,
+                "why": "AV-RR delivery day is Friday (5), which is before Saturday (6), so it arrives before Saturday opening.",
+                "actual": true,
+                "error": null,
+                "agrees": true
+              },
+              {
+                "key": "SD-01",
+                "inputs": {
+                  "order": 8
+                },
+                "expect": true,
+                "why": "SD-01 delivery day is Saturday (6) and delivery time is 06:00 (360 minutes), which is before Saturday opening at 07:00 (420 minutes).",
+                "actual": true,
+                "error": null,
+                "agrees": true
+              }
+            ],
+            "model": "gemini-3.5-flash-lite"
+          }
+        ],
+        "differences": []
+      }
     },
     {
-      "id": "only_order_what_can_still_be_placed_before_the_suppliers_cutoff_for_this_weekend",
-      "name": "Only order what can still be placed before the supplier's cutoff for this weekend",
+      "id": "order_before_cutoff",
+      "name": "Order before cutoff",
       "text": "Only order what can still be placed before the supplier's cutoff for this weekend.",
       "result": "check",
       "consequence": "block",
       "constants": [],
       "groups": [],
       "uses": [],
-      "formula": "record.hours_until_cutoff >= 0.0 || order == 0",
+      "formula": "record.hours_until_cutoff <= 0.0",
       "examples": [
-        {
-          "key": "SD-01",
-          "inputs": {
-            "order": 0
-          },
-          "expect": true,
-          "why": "SD-01 hours_until_cutoff is -3.05 (negative, past cutoff), and order is 0, so no order is placed after cutoff.",
-          "actual": true,
-          "error": null,
-          "agrees": true
-        },
         {
           "key": "SD-01",
           "inputs": {
             "order": 8
           },
-          "expect": false,
-          "why": "SD-01 hours_until_cutoff is -3.05 (negative, past cutoff), and order is 8 (greater than 0), so placing an order after cutoff is not allowed.",
-          "actual": false,
+          "expect": true,
+          "why": "SD-01 hours until cutoff is -3.05, which is not greater than 0",
+          "actual": true,
+          "error": null,
+          "agrees": true
+        },
+        {
+          "key": "AV-LS",
+          "inputs": {
+            "order": 8
+          },
+          "expect": true,
+          "why": "AV-LS hours until cutoff is -5.05, which is not greater than 0",
+          "actual": true,
           "error": null,
           "agrees": true
         }
@@ -320,55 +764,203 @@
       "model": "gemini-3.5-flash-lite",
       "approvedAt": null,
       "deniedAt": null,
-      "denial": null
+      "denial": null,
+      "agreement": {
+        "status": "split",
+        "runs": 2,
+        "versions": [
+          {
+            "formula": "record.hours_until_cutoff <= 0.0",
+            "constants": [],
+            "groups": [],
+            "uses": [],
+            "examples": [
+              {
+                "key": "SD-01",
+                "inputs": {
+                  "order": 8
+                },
+                "expect": true,
+                "why": "SD-01 hours until cutoff is -3.05, which is not greater than 0",
+                "actual": true,
+                "error": null,
+                "agrees": true
+              },
+              {
+                "key": "AV-LS",
+                "inputs": {
+                  "order": 8
+                },
+                "expect": true,
+                "why": "AV-LS hours until cutoff is -5.05, which is not greater than 0",
+                "actual": true,
+                "error": null,
+                "agrees": true
+              }
+            ],
+            "model": "gemini-3.5-flash-lite"
+          },
+          {
+            "formula": "order == 0 || record.hours_until_cutoff >= 0.0",
+            "constants": [],
+            "groups": [],
+            "uses": [],
+            "examples": [
+              {
+                "key": "SD-01",
+                "inputs": {
+                  "order": 8
+                },
+                "expect": false,
+                "why": "SD-01 hours_until_cutoff is -3.05, which is less than 0, so the supplier cutoff has passed, meaning ordering 8 units is not allowed.",
+                "actual": false,
+                "error": null,
+                "agrees": true
+              },
+              {
+                "key": "SD-01",
+                "inputs": {
+                  "order": 0
+                },
+                "expect": true,
+                "why": "SD-01 order is 0, so ordering nothing is always allowed even if the cutoff has passed.",
+                "actual": true,
+                "error": null,
+                "agrees": true
+              },
+              {
+                "key": "AV-RR",
+                "inputs": {
+                  "order": 10
+                },
+                "expect": false,
+                "why": "AV-RR hours_until_cutoff is -5.05, which is less than 0, so ordering 10 units after the cutoff has passed is not allowed.",
+                "actual": false,
+                "error": null,
+                "agrees": true
+              }
+            ],
+            "model": "gemini-3.5-flash-lite"
+          }
+        ],
+        "differences": [
+          {
+            "key": "SD-01",
+            "inputs": {
+              "order": 1
+            },
+            "results": [
+              "true",
+              "false"
+            ]
+          },
+          {
+            "key": "AV-RR",
+            "inputs": {
+              "order": 1
+            },
+            "results": [
+              "true",
+              "false"
+            ]
+          },
+          {
+            "key": "AV-LS",
+            "inputs": {
+              "order": 1
+            },
+            "results": [
+              "true",
+              "false"
+            ]
+          },
+          {
+            "key": "EG-06",
+            "inputs": {
+              "order": 1
+            },
+            "results": [
+              "true",
+              "false"
+            ]
+          },
+          {
+            "key": "FT-200",
+            "inputs": {
+              "order": 1
+            },
+            "results": [
+              "true",
+              "false"
+            ]
+          },
+          {
+            "key": "LM-04",
+            "inputs": {
+              "order": 1
+            },
+            "results": [
+              "true",
+              "false"
+            ]
+          },
+          {
+            "key": "CT-250",
+            "inputs": {
+              "order": 1
+            },
+            "results": [
+              "true",
+              "false"
+            ]
+          },
+          {
+            "key": "RK-60",
+            "inputs": {
+              "order": 1
+            },
+            "results": [
+              "true",
+              "false"
+            ]
+          },
+          {
+            "key": "CF-40",
+            "inputs": {
+              "order": 1
+            },
+            "results": [
+              "true",
+              "false"
+            ]
+          },
+          {
+            "key": "SS-125",
+            "inputs": {
+              "order": 1
+            },
+            "results": [
+              "true",
+              "false"
+            ]
+          },
+          {
+            "key": "OO-500",
+            "inputs": {
+              "order": 1
+            },
+            "results": [
+              "true",
+              "false"
+            ]
+          }
+        ]
+      }
     },
     {
-      "id": "aim_for_enough_stock_available_to_cover_expected_sales_plus_the_categorys_safety_margin",
-      "name": "Aim for enough stock available",
-      "text": "Aim for enough stock available to cover expected sales plus the category's safety margin.",
-      "result": "check",
-      "consequence": "block",
-      "constants": [],
-      "groups": [],
-      "uses": [
-        "stock_available",
-        "expected_sales"
-      ],
-      "formula": "double(values.stock_available + order) >= double(values.expected_sales) * (1.0 + double(category.safety_pct) / 100.0)",
-      "examples": [
-        {
-          "key": "SD-01",
-          "inputs": {
-            "order": 77
-          },
-          "expect": true,
-          "why": "For SD-01, stock available is 0, expected sales is 70, safety margin is 10%, target stock is 77.0, 0 + 77 >= 77.0 is true",
-          "actual": false,
-          "error": null,
-          "agrees": false
-        },
-        {
-          "key": "SD-01",
-          "inputs": {
-            "order": 76
-          },
-          "expect": false,
-          "why": "For SD-01, stock available is 0, expected sales is 70, safety margin is 10%, target stock is 77.0, 0 + 76 >= 77.0 is false",
-          "actual": false,
-          "error": null,
-          "agrees": true
-        }
-      ],
-      "problem": "1 of 2 examples disagree with the formula.",
-      "model": "gemini-3.5-flash-lite",
-      "approvedAt": null,
-      "deniedAt": null,
-      "denial": null
-    },
-    {
-      "id": "if_that_isnt_possible_flag_it_for_a_person_to_decide",
-      "name": "If that isn't possible",
-      "text": "If that isn't possible, flag it for a person to decide.",
+      "id": "cover_expected_sales_and_margin",
+      "name": "Cover expected sales and margin",
+      "text": "Aim for enough stock available to cover expected sales plus the category's safety margin. If that isn't possible, flag it for a person to decide.",
       "result": "check",
       "consequence": "decide",
       "constants": [],
@@ -377,18 +969,29 @@
         "stock_available",
         "expected_sales"
       ],
-      "formula": "values.stock_available + order >= ceil(double(values.expected_sales) * (double(100) + double(category.safety_pct)) / double(100))",
+      "formula": "double(values.stock_available) >= double(values.expected_sales) * (1.0 + double(category.safety_pct) / 100.0)",
       "examples": [
         {
-          "key": "SD-01",
+          "key": "OO-500",
           "inputs": {
-            "order": 40
+            "order": 0
           },
           "expect": true,
-          "why": "Stock available 0 plus order 40 covers expected sales 33 plus safety margin 3.3",
-          "actual": false,
+          "why": "OO-500 stock available 10 is greater than or equal to expected sales 5 plus safety margin 5 * 5 / 100 = 0.25 (total 5.25), so 10 >= 5.25 holds",
+          "actual": true,
           "error": null,
-          "agrees": false
+          "agrees": true
+        },
+        {
+          "key": "CF-40",
+          "inputs": {
+            "order": 0
+          },
+          "expect": true,
+          "why": "CF-40 stock available 9 is greater than expected sales 4 plus safety margin 4 * 5 / 100 = 0.20 (total 4.20), so 9 >= 4.20 holds",
+          "actual": true,
+          "error": null,
+          "agrees": true
         },
         {
           "key": "SD-01",
@@ -396,21 +999,158 @@
             "order": 0
           },
           "expect": false,
-          "why": "Stock available 0 plus order 0 does not cover expected sales plus safety margin",
+          "why": "SD-01 stock available 0 is less than expected sales 73 plus safety margin 73 * 10 / 100 = 7.30 (total 80.30), so 0 >= 80.30 does not hold",
           "actual": false,
           "error": null,
           "agrees": true
         }
       ],
-      "problem": "1 of 2 examples disagree with the formula.",
+      "problem": null,
       "model": "gemini-3.5-flash-lite",
       "approvedAt": null,
       "deniedAt": null,
-      "denial": null
+      "denial": null,
+      "agreement": {
+        "status": "split",
+        "runs": 2,
+        "versions": [
+          {
+            "formula": "double(values.stock_available) >= double(values.expected_sales) * (1.0 + double(category.safety_pct) / 100.0)",
+            "constants": [],
+            "groups": [],
+            "uses": [
+              "stock_available",
+              "expected_sales"
+            ],
+            "examples": [
+              {
+                "key": "OO-500",
+                "inputs": {
+                  "order": 0
+                },
+                "expect": true,
+                "why": "OO-500 stock available 10 is greater than or equal to expected sales 5 plus safety margin 5 * 5 / 100 = 0.25 (total 5.25), so 10 >= 5.25 holds",
+                "actual": true,
+                "error": null,
+                "agrees": true
+              },
+              {
+                "key": "CF-40",
+                "inputs": {
+                  "order": 0
+                },
+                "expect": true,
+                "why": "CF-40 stock available 9 is greater than expected sales 4 plus safety margin 4 * 5 / 100 = 0.20 (total 4.20), so 9 >= 4.20 holds",
+                "actual": true,
+                "error": null,
+                "agrees": true
+              },
+              {
+                "key": "SD-01",
+                "inputs": {
+                  "order": 0
+                },
+                "expect": false,
+                "why": "SD-01 stock available 0 is less than expected sales 73 plus safety margin 73 * 10 / 100 = 7.30 (total 80.30), so 0 >= 80.30 does not hold",
+                "actual": false,
+                "error": null,
+                "agrees": true
+              }
+            ],
+            "model": "gemini-3.5-flash-lite"
+          },
+          {
+            "formula": "double(values.stock_available) + double(order) >= ceil(double(values.expected_sales) * (1.0 + double(category.safety_pct) / 100.0))",
+            "constants": [],
+            "groups": [],
+            "uses": [
+              "stock_available",
+              "expected_sales"
+            ],
+            "examples": [
+              {
+                "key": "SD-01",
+                "inputs": {
+                  "order": 0
+                },
+                "expect": false,
+                "why": "SD-01 stock available is 0, expected sales 73, safety 10%, target is 81, 0 + 0 < 81",
+                "actual": false,
+                "error": null,
+                "agrees": true
+              },
+              {
+                "key": "SD-01",
+                "inputs": {
+                  "order": 81
+                },
+                "expect": true,
+                "why": "SD-01 stock available is 0, order 81, 0 + 81 = 81 >= 81",
+                "actual": true,
+                "error": null,
+                "agrees": true
+              }
+            ],
+            "model": "gemini-3.5-flash-lite"
+          }
+        ],
+        "differences": [
+          {
+            "key": "SD-01",
+            "inputs": {
+              "order": 85
+            },
+            "results": [
+              "false",
+              "true"
+            ]
+          },
+          {
+            "key": "AV-RR",
+            "inputs": {
+              "order": 60
+            },
+            "results": [
+              "false",
+              "true"
+            ]
+          },
+          {
+            "key": "FT-200",
+            "inputs": {
+              "order": 45
+            },
+            "results": [
+              "false",
+              "true"
+            ]
+          },
+          {
+            "key": "CT-250",
+            "inputs": {
+              "order": 8
+            },
+            "results": [
+              "false",
+              "true"
+            ]
+          },
+          {
+            "key": "RK-60",
+            "inputs": {
+              "order": 9
+            },
+            "results": [
+              "false",
+              "true"
+            ]
+          }
+        ]
+      }
     },
     {
-      "id": "if_a_products_stock_count_is_older_than_its_category_allows_flag_it_for_a_person_to_decide_even_when_nothing_is_ordered",
-      "name": "Stock count age check",
+      "id": "stock_count_age",
+      "name": "Stock count age",
       "text": "If a product's stock count is older than its category allows, flag it for a person to decide, even when nothing is ordered.",
       "result": "check",
       "consequence": "decide",
@@ -422,10 +1162,10 @@
         {
           "key": "SD-01",
           "inputs": {
-            "order": 0
+            "order": 8
           },
           "expect": true,
-          "why": "SD-01 count age is 9.55 hours, which is less than its category max of 24 hours, so no flag is needed",
+          "why": "SD-01 count age is 9.55 hours, which is within the maximum allowed count age hours for its category",
           "actual": true,
           "error": null,
           "agrees": true
@@ -436,7 +1176,7 @@
             "order": 0
           },
           "expect": false,
-          "why": "AV-LS count age is 47.05 hours, which exceeds its category max of 24 hours, so a person must decide",
+          "why": "AV-LS count age is 47.05 hours, which exceeds the maximum allowed count age hours for its category",
           "actual": false,
           "error": null,
           "agrees": true
@@ -446,18 +1186,87 @@
       "model": "gemini-3.5-flash-lite",
       "approvedAt": null,
       "deniedAt": null,
-      "denial": null
+      "denial": null,
+      "agreement": {
+        "status": "agreed",
+        "runs": 2,
+        "versions": [
+          {
+            "formula": "record.count_age_hours <= double(category.max_count_age_hours)",
+            "constants": [],
+            "groups": [],
+            "uses": [],
+            "examples": [
+              {
+                "key": "SD-01",
+                "inputs": {
+                  "order": 8
+                },
+                "expect": true,
+                "why": "SD-01 count age is 9.55 hours, which is within the maximum allowed count age hours for its category",
+                "actual": true,
+                "error": null,
+                "agrees": true
+              },
+              {
+                "key": "AV-LS",
+                "inputs": {
+                  "order": 0
+                },
+                "expect": false,
+                "why": "AV-LS count age is 47.05 hours, which exceeds the maximum allowed count age hours for its category",
+                "actual": false,
+                "error": null,
+                "agrees": true
+              }
+            ],
+            "model": "gemini-3.5-flash-lite"
+          },
+          {
+            "formula": "record.count_age_hours <= double(category.max_count_age_hours)",
+            "constants": [],
+            "groups": [],
+            "uses": [],
+            "examples": [
+              {
+                "key": "SD-01",
+                "inputs": {
+                  "order": 0
+                },
+                "expect": true,
+                "why": "The count age of 9.55 hours is within the 24-hour limit for bakery products.",
+                "actual": true,
+                "error": null,
+                "agrees": true
+              },
+              {
+                "key": "AV-LS",
+                "inputs": {
+                  "order": 0
+                },
+                "expect": false,
+                "why": "The count age of 47.05 hours exceeds the 24-hour limit for produce products.",
+                "actual": false,
+                "error": null,
+                "agrees": true
+              }
+            ],
+            "model": "gemini-3.1-flash-lite"
+          }
+        ],
+        "differences": []
+      }
     },
     {
-      "id": "stock_available_plus_the_order_must_not_exceed_the_ripe_avocados_we_expect_to_sell",
-      "name": "Ripe avocados limit check",
+      "id": "ripe_avocado_stock_limit",
+      "name": "Ripe avocado stock limit",
       "text": "Stock available plus the order must not exceed the ripe avocados we expect to sell.",
       "result": "check",
       "consequence": "block",
       "constants": [],
       "groups": [
         {
-          "id": "ripe_avocados",
+          "id": "ripe_avocado_products",
           "keys": [
             "AV-RR"
           ],
@@ -468,15 +1277,15 @@
         "stock_available",
         "expected_sales"
       ],
-      "formula": "!(key in groups.ripe_avocados) || values.stock_available + order <= values.expected_sales",
+      "formula": "!(key in groups.ripe_avocado_products) || (double(values.stock_available) + double(order) <= double(values.expected_sales))",
       "examples": [
         {
           "key": "AV-RR",
           "inputs": {
-            "order": 0
+            "order": 10
           },
           "expect": true,
-          "why": "For AV-RR, stock available is 12 and order is 0. 12 + 0 = 12, which does not exceed expected sales of 28.",
+          "why": "AV-RR stock available 12 plus order 10 is 22, which does not exceed expected sales 65",
           "actual": true,
           "error": null,
           "agrees": true
@@ -484,13 +1293,13 @@
         {
           "key": "AV-RR",
           "inputs": {
-            "order": 20
+            "order": 60
           },
           "expect": false,
-          "why": "For AV-RR, stock available is 12 and order is 20. 12 + 20 = 32, which exceeds expected sales of 28.",
-          "actual": true,
+          "why": "AV-RR stock immune 60 is 72, which exceeds expected sales 65",
+          "actual": false,
           "error": null,
-          "agrees": false
+          "agrees": true
         },
         {
           "key": "SD-01",
@@ -498,17 +1307,130 @@
             "order": 0
           },
           "expect": true,
-          "why": "For SD-01, it is not in ripe avocados so the rule passes.",
+          "why": "SD-01 stock available 0 plus order 0 is 0, which does not exceed expected sales 73",
           "actual": true,
           "error": null,
           "agrees": true
         }
       ],
-      "problem": "1 of 3 examples disagree with the formula.",
+      "problem": null,
       "model": "gemini-3.5-flash-lite",
       "approvedAt": null,
       "deniedAt": null,
-      "denial": null
+      "denial": null,
+      "agreement": {
+        "status": "agreed",
+        "runs": 2,
+        "versions": [
+          {
+            "formula": "!(key in groups.ripe_avocado_products) || (double(values.stock_available) + double(order) <= double(values.expected_sales))",
+            "constants": [],
+            "groups": [
+              {
+                "id": "ripe_avocado_products",
+                "keys": [
+                  "AV-RR"
+                ],
+                "quote": "ripe avocados"
+              }
+            ],
+            "uses": [
+              "stock_available",
+              "expected_sales"
+            ],
+            "examples": [
+              {
+                "key": "AV-RR",
+                "inputs": {
+                  "order": 10
+                },
+                "expect": true,
+                "why": "AV-RR stock available 12 plus order 10 is 22, which does not exceed expected sales 65",
+                "actual": true,
+                "error": null,
+                "agrees": true
+              },
+              {
+                "key": "AV-RR",
+                "inputs": {
+                  "order": 60
+                },
+                "expect": false,
+                "why": "AV-RR stock immune 60 is 72, which exceeds expected sales 65",
+                "actual": false,
+                "error": null,
+                "agrees": true
+              },
+              {
+                "key": "SD-01",
+                "inputs": {
+                  "order": 0
+                },
+                "expect": true,
+                "why": "SD-01 stock available 0 plus order 0 is 0, which does not exceed expected sales 73",
+                "actual": true,
+                "error": null,
+                "agrees": true
+              }
+            ],
+            "model": "gemini-3.5-flash-lite"
+          },
+          {
+            "formula": "!(key in groups.ripe_avocados) || double(values.stock_available + order) <= double(values.expected_sales)",
+            "constants": [],
+            "groups": [
+              {
+                "id": "ripe_avocados",
+                "keys": [
+                  "AV-RR"
+                ],
+                "quote": "ripe avocados"
+              }
+            ],
+            "uses": [
+              "stock_available",
+              "expected_sales"
+            ],
+            "examples": [
+              {
+                "key": "AV-RR",
+                "inputs": {
+                  "order": 10
+                },
+                "expect": true,
+                "why": "For AV-RR (ripe avocados), stock available (12) plus order (10) equals 22, which does not exceed expected sales (65).",
+                "actual": true,
+                "error": null,
+                "agrees": true
+              },
+              {
+                "key": "AV-RR",
+                "inputs": {
+                  "order": 60
+                },
+                "expect": false,
+                "why": "For AV-RR, stock available (12) plus order (60) equals 72, which exceeds expected sales (65).",
+                "actual": false,
+                "error": null,
+                "agrees": true
+              },
+              {
+                "key": "SD-01",
+                "inputs": {
+                  "order": 10
+                },
+                "expect": true,
+                "why": "For SD-01 (not in the ripe avocados group), the limit does not apply, so any order holds.",
+                "actual": true,
+                "error": null,
+                "agrees": true
+              }
+            ],
+            "model": "gemini-3.5-flash-lite"
+          }
+        ],
+        "differences": []
+      }
     }
   ],
   "accounting": [
@@ -613,49 +1535,42 @@
       "sentence": "Never order more than the supplier can deliver.",
       "kind": "check",
       "definitions": [
-        "never_order_more_than_supplier_can_deliver"
+        "supplier_max_delivery"
       ]
     },
     {
       "sentence": "Only order what arrives before Saturday's opening.",
       "kind": "check",
       "definitions": [
-        "only_order_what_arrives_before_saturdays_opening"
+        "delivery_before_opening"
       ]
     },
     {
       "sentence": "Only order what can still be placed before the supplier's cutoff for this weekend.",
       "kind": "check",
       "definitions": [
-        "only_order_what_can_still_be_placed_before_the_suppliers_cutoff_for_this_weekend"
+        "order_before_cutoff"
       ]
     },
     {
-      "sentence": "Aim for enough stock available to cover expected sales plus the category's safety margin.",
+      "sentence": "Aim for enough stock available to cover expected sales plus the category's safety margin. If that isn't possible, flag it for a person to decide.",
       "kind": "check",
       "definitions": [
-        "aim_for_enough_stock_available_to_cover_expected_sales_plus_the_categorys_safety_margin"
-      ]
-    },
-    {
-      "sentence": "If that isn't possible, flag it for a person to decide.",
-      "kind": "check",
-      "definitions": [
-        "if_that_isnt_possible_flag_it_for_a_person_to_decide"
+        "cover_expected_sales_and_margin"
       ]
     },
     {
       "sentence": "If a product's stock count is older than its category allows, flag it for a person to decide, even when nothing is ordered.",
       "kind": "check",
       "definitions": [
-        "if_a_products_stock_count_is_older_than_its_category_allows_flag_it_for_a_person_to_decide_even_when_nothing_is_ordered"
+        "stock_count_age"
       ]
     },
     {
       "sentence": "Stock available plus the order must not exceed the ripe avocados we expect to sell.",
       "kind": "check",
       "definitions": [
-        "stock_available_plus_the_order_must_not_exceed_the_ripe_avocados_we_expect_to_sell"
+        "ripe_avocado_stock_limit"
       ]
     }
   ]

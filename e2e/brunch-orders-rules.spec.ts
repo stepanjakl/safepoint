@@ -606,7 +606,7 @@ test('a rule being written again says so, through a reload, then shows the new o
   await expect(card.getByRole('button', { name: 'Write again' })).toBeEnabled();
 });
 
-test('versions that disagree are shown with where they differ, for a person to choose', async ({
+test('versions that disagree are asked about as cases, for a person to choose', async ({
   page,
 }) => {
   const set = frozen as { definitions: { id: string; name: string }[] };
@@ -656,6 +656,11 @@ test('versions that disagree are shown with where they differ, for a person to c
         kind: 'rules',
         set: chosen === null ? split : frozen,
         names,
+        cases: {
+          [rule.id]: [
+            [{ label: 'hours until cutoff', value: 'passed 3.05 hours ago' }],
+          ],
+        },
         history: { head: null, revisions: [] },
       },
     });
@@ -669,8 +674,29 @@ test('versions that disagree are shown with where they differ, for a person to c
   const versions = page.getByRole('region', {
     name: 'Versions to choose between',
   });
-  await expect(versions.getByText(/SD-01, order 8/)).toBeVisible();
-  await expect(versions.getByText(/version 2 gives false/)).toBeVisible();
+  // A question about one record, with what the versions read of it; each
+  // answer is a version, and the formulas stay folded away.
+  await expect(versions.getByText('passed 3.05 hours ago')).toBeVisible();
+  const answers = versions.getByRole('group', {
+    name: /^What should happen for SD-01/,
+  });
+  await expect(answers.getByRole('button')).toHaveText([
+    'Allow it',
+    'Block it',
+  ]);
+  await expect(versions.getByText(/Neither version reads/)).toBeVisible();
+  // Shut, the fold is inert: clipped, and out of reach of focus and readers.
+  const formulas = versions.locator('.fold');
+  await expect(formulas).toHaveAttribute('inert', '');
+  const show = versions.getByRole('button', { name: 'Show the formulas' });
+  await expect(show).toHaveAttribute('aria-expanded', 'false');
+  await show.click();
+  await expect(formulas).not.toHaveAttribute('inert', '');
+  await expect(
+    versions.getByText('record.hours_until_cutoff >= 0.0'),
+  ).toBeVisible();
+  if (process.env.CHOOSER_SHOT)
+    await versions.screenshot({ path: process.env.CHOOSER_SHOT });
   const card = page
     .getByRole('listitem')
     .filter({
@@ -680,7 +706,7 @@ test('versions that disagree are shown with where they differ, for a person to c
   await expect(card.getByText('Versions differ')).toBeVisible();
   await expect(card.getByRole('button', { name: /^Accept/ })).toBeDisabled();
 
-  await versions.getByRole('button', { name: 'Use version 2' }).click();
+  await answers.getByRole('button', { name: 'Block it' }).click();
   await expect(versions).toHaveCount(0);
   expect(chosen).toBe(1);
 });
