@@ -158,31 +158,37 @@ test('returning to a tab during its fade restores the page immediately', async (
   ).toBeVisible();
 });
 
-test('tab handoff keeps dividers still and brings the heading in first', async ({
+test('tab handoff keeps dividers still, fades the list once and holds the detail behind it', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.goto('/examples/promotion?run=run-104');
 
   const inputs = page.getByRole('button', { name: /^Inputs/ }).first();
-  const layer = page.locator('.process-sheet-swap');
+  // The outgoing section first; the incoming one is rendered after it, hidden.
+  const leaving = page.locator('.process-sheet-swap').first();
   await inputs.click();
   await expect(inputs).toHaveAttribute('aria-current', 'true');
-  await expect(layer).toHaveAttribute('inert', '');
+  await expect(leaving).toHaveAttribute('inert', '');
   expect(
-    await layer.evaluate((element) => {
+    await leaving.evaluate((element) => {
       const transform = new DOMMatrix(getComputedStyle(element).transform);
       return [transform.m41, transform.m42];
     }),
   ).toEqual([0, 0]);
 
-  await expect(layer).toHaveAttribute('data-swap-entering', 'true');
-  await expect(layer.locator('.process-panel-list > .sheet-head')).toHaveCSS(
+  const entering = page.locator('.process-sheet-swap[data-swap-entering]');
+  await expect(entering).toBeAttached();
+  // The layer's fade is the list's only one: none of its parts fade inside it.
+  for (const part of [
+    entering.locator('.process-panel-list > .sheet-head'),
+    entering.locator('.process-panel-list > :not(.sheet-head)').first(),
+  ])
+    await expect(part).toHaveCSS('animation-name', 'none');
+  // Shown with its section, the detail column waits the whole beat.
+  await expect(entering.locator('[data-detail-held]')).toHaveCSS(
     'animation-delay',
-    '0s',
+    '0.15s',
   );
-  await expect(
-    layer.locator('.process-panel-list > :not(.sheet-head)').first(),
-  ).toHaveCSS('animation-delay', '0.065s');
-  await expect(layer).not.toHaveAttribute('inert');
+  await expect(entering).not.toHaveAttribute('inert');
 });

@@ -194,9 +194,10 @@ test('the sidebars resize, remember, and recover', async ({
     await expect
       .poll(async () => (await assistant(page)).draft)
       .toBe('Explain this run');
+    // Something is written, so it can be sent.
     await expect(
-      page.locator('.assistant-content button[disabled]'),
-    ).toHaveText('Send');
+      page.locator('.assistant-content').getByRole('button', { name: 'Send' }),
+    ).toBeEnabled();
   });
 
   await test.step('dragging resizes, bends the grip, snaps and cancels', async () => {
@@ -456,4 +457,57 @@ test('the sidebars resize, remember, and recover', async ({
   });
 
   expect(errors).toEqual([]);
+});
+
+test('the assistant answers its shortcut from anywhere, and Enter in its field', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/examples/promotion');
+  const opener = page.locator('button[aria-label="Assistant"]');
+  const field = page.getByRole('textbox', { name: 'Message' });
+  await expect(opener).toHaveAttribute('aria-expanded', 'false');
+
+  // Closed: it opens, on its message.
+  await page.keyboard.press(`${modifier}+i`);
+  await expect(opener).toHaveAttribute('aria-expanded', 'true');
+  await expect(field).toBeFocused();
+  // Docked, the notch button is its heading and its close.
+  await expect(
+    page.locator('button[aria-label="Close assistant"]'),
+  ).toHaveCount(0);
+
+  // Open, from elsewhere on the page: back to its message, still open.
+  await page.locator('.sheet-row').first().focus();
+  await page.keyboard.press(`${modifier}+i`);
+  await expect(field).toBeFocused();
+  await expect(opener).toHaveAttribute('aria-expanded', 'true');
+
+  // Enter keeps what is written and says why nothing was sent; a suggestion
+  // writes its question and leaves the caret at its end.
+  await field.fill('Why are four items blocked?');
+  await page.keyboard.press('Enter');
+  await expect(field).toHaveValue('Why are four items blocked?');
+  await expect(
+    page.locator('.assistant-content .sr-only[aria-live]'),
+  ).toHaveText('Sending isn’t available yet.');
+  await field.fill('');
+  await page.getByRole('button', { name: 'Explain this run' }).click();
+  await expect(field).toHaveValue('Explain this run');
+  await expect(field).toBeFocused();
+
+  // The context follows the page until another is chosen, and can be none.
+  const context = page.getByRole('button', { name: /^Context:/ });
+  await expect(context).toHaveAccessibleName('Context: Promotion release');
+  // From the keyboard: the development controls bar overlaps it in dev.
+  await context.press('Enter');
+  await page.getByRole('menuitemradio', { name: 'No context' }).press('Enter');
+  await expect(context).toHaveAccessibleName('Context: none');
+  await expect(field).toHaveAttribute('placeholder', 'Ask anything');
+  await field.focus();
+
+  // From inside: it closes, and focus goes back to its button.
+  await page.keyboard.press(`${modifier}+i`);
+  await expect(opener).toHaveAttribute('aria-expanded', 'false');
+  await expect(opener).toBeFocused();
 });

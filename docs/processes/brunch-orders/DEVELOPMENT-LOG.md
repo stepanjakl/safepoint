@@ -618,6 +618,24 @@ second run made 86 model calls against an estimate of 45 to 60, because a
 refusal asks for further writes; the three runs together counted 96 requests
 against the day's quota.
 
+**The real brunch draft, three times (5–6 November).** Shaped checks out of 7,
+each correct: 3, then 5 after the materials named every moment and earlier value,
+then 6 after a first refusal was answered with what shapes can do for its reason
+(`REMINDERS`). Every check came out shaped in at least one draft, and none was
+wrong. What remains is Flash-Lite refusing at random: delivery before opening
+was shaped in the second draft and refused in the third. So after two refusals
+the rest of a rule's writes go to Flash (`writeAgreed`), which costs a few of
+its 20 daily requests only where Flash-Lite fails. The one split, supplier
+maximum, differed only on blank cells, and read as two sentences it was an easy
+choice. The third draft took about 89 requests.
+
+The fourth draft, with that handover, shaped all 7 checks, and each split was
+one write misreading the instructions. Flash wrote the three rules Flash-Lite
+refused, both writes agreeing each time, but two Flash writes per rule left 3 of
+its 20 for the day. So the handover is now one Flash write, compared with an
+earlier Flash-Lite shape where there is one and otherwise unconfirmed: a person
+reads a lone write's sentence rather than a comparison vouching for it.
+
 ## Still open (31 October)
 
 - **Names.** A rule's name is often the first words of its sentence, cut off, which

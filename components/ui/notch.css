@@ -385,18 +385,39 @@
       var(--s-path)
     );
   }
+  /* A face two stops cannot draw sets these on the control: an image for the
+     ring or face, and one over it fading out downwards (--slant-*-top). */
   .slant-ring {
-    background: linear-gradient(to bottom, var(--control-ring-top), var(--control-ring-bottom)) 0
-      var(--s-f) / 100% var(--s-h) no-repeat;
+    background: var(
+        --slant-ring-image,
+        linear-gradient(to bottom, var(--control-ring-top), var(--control-ring-bottom))
+      )
+      0 var(--s-f) / 100% var(--s-h) no-repeat;
     clip-path: shape(from var(--s-start), var(--s-path));
   }
   .slant-face {
-    background: linear-gradient(to bottom, var(--control-face-top), var(--control-face-bottom)) 0
-      calc(var(--s-f) + var(--s-e)) / 100% calc(var(--s-h) - var(--s-e) * 2) no-repeat;
+    background: var(
+        --slant-face-image,
+        linear-gradient(to bottom, var(--control-face-top), var(--control-face-bottom))
+      )
+      0 calc(var(--s-f) + var(--s-e)) / 100% calc(var(--s-h) - var(--s-e) * 2) no-repeat;
     clip-path: shape(from var(--s-start), var(--s-path));
   }
+  .slant-ring::before,
+  .slant-face::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    mask-image: linear-gradient(to bottom, #000, transparent);
+  }
+  .slant-ring::before {
+    background: var(--slant-ring-top, none);
+  }
+  .slant-face::before {
+    background: var(--slant-face-top, none);
+  }
   .slant-sheen {
-    background: var(--control-highlight);
+    background: var(--slant-sheen, var(--control-highlight));
     clip-path: shape(
       evenodd from var(--s-face-start),
       var(--s-face-path),
@@ -443,6 +464,8 @@
     }
     .notch-sheen,
     .slant-sheen,
+    .slant-ring::before,
+    .slant-face::before,
     .notch::after {
       display: none;
     }

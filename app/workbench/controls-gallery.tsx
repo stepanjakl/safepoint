@@ -181,6 +181,7 @@ export function ControlsGallery({
     toggle: () => {},
     close: () => {},
     ask: () => {},
+    consult: () => {},
     opener,
   };
   return (

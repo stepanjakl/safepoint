@@ -425,7 +425,7 @@ const FOLLOWING_BY_FILE = {
     '--sp-field-face': { light: -25, dark: -50 },
     '--sp-field-edge': { light: 150, dark: -150 },
     '--sp-field-edge-hover': { light: 200, dark: -425 },
-    '--sp-field-edge-active': { light: 525, dark: -675 },
+    '--sp-field-edge-active': { light: 500, dark: -600 },
     /* A one-pixel band rather than a fade, whose colour would depend on what
        lies under it. */
     '--sp-enclosure-edge': { light: -25, dark: -150 },

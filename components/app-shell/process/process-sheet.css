@@ -53,6 +53,27 @@
     }
   }
 
+  /* Narrow, the runs strip sits under the header as one more row: a lit
+     line under the strip too, over the thread, as the header has under it. */
+  @container sheet (width < 52rem) {
+    .process-runs {
+      position: relative;
+    }
+    .process-runs::after {
+      content: '';
+      position: absolute;
+      z-index: 3;
+      /* Both lines: an absolute item's auto end is the grid's padding edge. */
+      grid-row: 2 / 3;
+      grid-column: 1 / -1;
+      inset-inline: 0;
+      top: 0;
+      height: 1px;
+      background: var(--sp-raised-edge);
+      pointer-events: none;
+    }
+  }
+
   /* A list column's edge beside the detail it opens, down over the pane's
      highlight to the ring. On the grid: the column scrolls content that must
      stay off that highlight, so the column itself cannot bleed down to it. */
@@ -75,16 +96,17 @@
       pointer-events: none;
     }
   }
-  .process-sheet-swap[data-swap-entering]
-    :is(.process-panel-list, .process-runs-list)
-    > :not(.sheet-head),
-  .process-sheet-swap[data-swap-entering] .process-panels > :not(.process-panel-list),
-  .process-sheet-swap[data-swap-entering] .process-runs-detail {
-    /* This fade's end releases what the section holds (useSectionSettled), so
-       it must outlast the swap's own fade. */
-    --process-section-after: 65ms;
-    animation: process-section-enter var(--duration-pane) var(--ease-out-quad)
-      var(--process-section-after) both;
+  /* The list comes in with the swap's own fade, never one of its own inside it.
+     A detail column trails it by --detail-hold (useDetailHold); its end
+     releases the run (RunsDetail). */
+  .process-sheet-frame [data-detail-held] {
+    animation: process-section-enter var(--duration-pane) var(--ease-out-quad) var(--detail-hold)
+      both;
+  }
+  /* The held column's fade is the arrival: an aside's own content fade,
+     delayed for a travel a sheet column does not make, would add a second beat. */
+  .process-sheet-frame [data-detail-held] .drawer-aside-content {
+    animation: none;
   }
 
   @keyframes process-section-enter {
@@ -97,9 +119,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .process-sheet-swap[data-swap-entering] :is(.process-panel-list, .process-runs-list) > *,
-    .process-sheet-swap[data-swap-entering] .process-panels > :not(.process-panel-list),
-    .process-sheet-swap[data-swap-entering] .process-runs-detail {
+    .process-sheet-frame [data-detail-held] {
       animation: none;
     }
   }

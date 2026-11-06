@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { FilterTabs } from '@/components/ui/filter-tabs';
 import { KeyHint } from '@/components/ui/key-hint';
 import { MorphingText } from '@/components/ui/morphing-text';
-import { useSwap } from '@/components/ui/swap';
+import { TabSwap, useSwap } from '@/components/ui/swap';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cx } from '@/lib/cx';
 import { diffText, paragraphsOf } from '@/lib/process/instruction-diff';
@@ -260,13 +260,15 @@ export function InstructionVersionView({
         </>
       }
     >
-      <div className="p-5">
-        {shown === 'changes' && from ? (
-          <TextDiff before={from.text} after={to.text} label={changesLabel} />
-        ) : (
-          <Clauses text={to.text} />
-        )}
-      </div>
+      <TabSwap selected={shown} className="p-5">
+        {(face) =>
+          face === 'changes' && from ? (
+            <TextDiff before={from.text} after={to.text} label={changesLabel} />
+          ) : (
+            <Clauses text={to.text} />
+          )
+        }
+      </TabSwap>
     </Banded>
   );
 }

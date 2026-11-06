@@ -1,8 +1,19 @@
 'use client';
 
-import { useReducedMotion } from 'motion/react';
-import { useEffect, useState } from 'react';
-import { DURATION_PANE, DURATION_STATE, EASE_OUT_QUAD } from '@/lib/motion';
+import { motion, useReducedMotion } from 'motion/react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
+import {
+  DURATION_PANE,
+  DURATION_STATE,
+  DURATION_TAB_LEAVE,
+  EASE_OUT_QUAD,
+} from '@/lib/motion';
 
 /*
   One place trading what it shows: the run beside the rail, a tab's body, the
@@ -32,6 +43,12 @@ const OPPOSITE: Record<SwapMotion, SwapMotion> = {
   right: 'left',
 };
 
+// How long the old content takes to go and the new one to come, in seconds.
+export type SwapPace = { leave: number; enter: number };
+const PANE_PACE: SwapPace = { leave: DURATION_STATE, enter: DURATION_PANE };
+// A tab's body is a smaller thing to trade than a page, so it goes quicker.
+const TAB_PACE: SwapPace = { leave: DURATION_TAB_LEAVE, enter: DURATION_STATE };
+
 // The fade-out normally ends in Motion's completion callback; this covers
 // a missed event.
 const LEAVE_FALLBACK_MS = 300;
@@ -42,6 +59,7 @@ export function useSwap<K extends string>(
   // False puts the target straight on screen: a change nobody asked for,
   // such as a stored preference arriving after hydration, is not a journey.
   animate = true,
+  pace: SwapPace = PANE_PACE,
 ) {
   const reduceMotion = useReducedMotion();
   // The key on screen, whether it is fading out, and how it came in.
@@ -80,6 +98,9 @@ export function useSwap<K extends string>(
 
   return {
     shown,
+    // What replaces `shown` once it has faded, for a caller that renders it
+    // ahead, hidden, so the swap only has to show it.
+    incoming: fading && target !== shown ? target : null,
     entering: entering !== null,
     // Spread onto a keyed motion.div. The old page stays inert until it leaves.
     layer: {
@@ -93,7 +114,7 @@ export function useSwap<K extends string>(
         y: exitOffset.y,
       },
       transition: {
-        duration: fading ? DURATION_STATE : DURATION_PANE,
+        duration: fading ? pace.leave : pace.enter,
         ease: EASE_OUT_QUAD,
       },
       inert: fading,
@@ -110,4 +131,46 @@ export function useSwap<K extends string>(
       },
     },
   };
+}
+
+/*
+  A tab's content, traded as useSwap trades it: the old body fades out, then
+  the chosen one fades in. The tabs answer at once; only what they show waits.
+*/
+export function TabSwap<K extends string>({
+  selected,
+  className,
+  children,
+}: {
+  selected: K;
+  className?: string;
+  // Drawn for the key on screen, which trails `selected` through the fade.
+  children: (shown: K) => ReactNode;
+}) {
+  const { shown, layer } = useSwap(selected, () => 'fade', true, TAB_PACE);
+  const body = useRef<HTMLDivElement>(null);
+  const [first] = useState(shown);
+  // A body scrolled past its start opens the next one at its start, rather
+  // than part-way down a text of another length.
+  useLayoutEffect(() => {
+    if (shown === first || !body.current) return;
+    const scroller = scrollerOf(body.current);
+    if (!scroller) return;
+    const above =
+      scroller.getBoundingClientRect().top -
+      body.current.getBoundingClientRect().top;
+    if (above > 0) scroller.scrollTop -= above;
+  }, [shown, first]);
+  return (
+    <motion.div key={shown} ref={body} {...layer} className={className}>
+      {children(shown)}
+    </motion.div>
+  );
+}
+
+function scrollerOf(element: HTMLElement): HTMLElement | null {
+  for (let at = element.parentElement; at; at = at.parentElement) {
+    if (/auto|scroll/.test(getComputedStyle(at).overflowY)) return at;
+  }
+  return null;
 }

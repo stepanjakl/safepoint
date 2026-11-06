@@ -262,7 +262,7 @@ describe('an example worked out in words', () => {
       valuesInWords(SUPPLIER_MAX, contextOn(read), 'SD-01', formulas),
     ).toBe('the proposed order is 70; the max order units is 72');
     expect(valuesInWords(CUTOFF, contextOn(read), 'SD-01', formulas)).toBe(
-      'the proposed order is 70; the cutoff is Thu 14:00',
+      'the proposed order is 70; the cutoff is Thu 14:00; the data was read at Thu 17:03',
     );
   });
 });

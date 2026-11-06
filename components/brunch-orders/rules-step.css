@@ -97,6 +97,17 @@
     --rules-linked-face: light-dark(var(--radix-orange-4), var(--radix-orange-dark-5));
   }
 
+  /* Where two versions of a rule differ (VersionsToChoose): caution's pill
+     face and rung 12 ink, padded into the gutter as a linked name is. */
+  .rules-differs {
+    padding-inline: --spacing(0.5);
+    margin-inline: calc(-1 * --spacing(0.5));
+    border-radius: 0.25rem;
+    background-color: light-dark(var(--sp-state-caution-4), var(--sp-state-caution-5));
+    color: var(--sp-state-caution-12);
+    box-decoration-break: clone;
+  }
+
   .rules-status-out {
     display: inline-flex;
     flex: none;

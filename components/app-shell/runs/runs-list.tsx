@@ -10,6 +10,7 @@ import ShieldCheck from 'blode-icons-react/icons/shield-check-3-filled';
 import Lab from 'blode-icons-react/icons/lab-filled';
 import { RunRow } from './run-row';
 import { Tooltip } from '@/components/ui/tooltip';
+import { useEdgeScroll } from '@/components/ui/edge-scroll';
 import { useRunSelection } from './run-selection';
 import type { ProcessSummary } from '@/lib/process/model';
 
@@ -44,6 +45,9 @@ export function RunsList({
   const { versions } = useInstructions(process.id, process.instructions);
   // Which run the rail is on, shared with the page beside it (run-selection).
   const selection = useRunSelection();
+  // Only a strip scrolls sideways; as a column it never overflows, so it
+  // never fades (runs-list.css, the narrow sheet).
+  const strip = useEdgeScroll<HTMLOListElement>();
   const runs = selection?.runs ?? process.runs;
   // When each version was published, for the boundary between the runs on
   // either side of it. The stored label leads with its own verb -- "Updated
@@ -59,7 +63,7 @@ export function RunsList({
   );
 
   return (
-    <ol className="sheet-list">
+    <ol ref={strip} className="sheet-list edge-scroll">
       {runs.map((run, index) => {
         // The list runs newest first, so the run after this one in the array
         // is the older one: a change between them is the moment the

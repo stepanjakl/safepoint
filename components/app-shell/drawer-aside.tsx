@@ -9,6 +9,7 @@ import {
   type Ref,
 } from 'react';
 import { cx } from '@/lib/cx';
+import { useDetailHold } from '@/components/ui/screen-settled';
 
 /*
   The setup drawer's second panel. The drawer on the right holds what a
@@ -119,6 +120,9 @@ export function DrawerAside({
   className?: string;
 }) {
   const heading = useRef<HTMLHeadingElement>(null);
+  // As a sheet column it trails the list it opened beside; over the sheet it
+  // is a panel of its own and arrives when it opens.
+  const hold = useDetailHold();
   // The content the panel opened with arrives from the side; anything chosen
   // after it rises in from below.
   // Once anything has been swapped in, every later arrival is a swap -- even
@@ -205,6 +209,7 @@ export function DrawerAside({
 
   return (
     <section
+      {...(flat ? hold.props : {})}
       aria-labelledby="drawer-aside-title"
       data-exiting={exiting || undefined}
       data-flat={flat || undefined}

@@ -18,7 +18,7 @@ import { KeyHint } from '@/components/ui/key-hint';
 import { useScreenSettled } from '@/components/ui/screen-settled';
 import { StateIllustration } from '@/components/ui/state-illustration';
 import { Tooltip } from '@/components/ui/tooltip';
-import { EASE_OUT_EMPHASIZED } from '@/lib/motion';
+import { EMPTY_STATE_ARRIVE, EMPTY_STATE_STAGGER } from '@/lib/motion';
 import type { ProcessSummary } from '@/lib/process/model';
 import { runDay, runTime } from '@/lib/process/run-time';
 import { RunSelectionProvider, useRunSelection } from './run-selection';
@@ -149,14 +149,7 @@ export function RunView({
 // Each part of the empty page rises into place, one after the other, once the
 // screen around it has finished coming in. Mounted into a screen already there,
 // as on a load or a change of run, it is simply there too.
-const ARRIVE = {
-  hidden: { opacity: 0, y: 8 },
-  shown: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.55, ease: EASE_OUT_EMPHASIZED },
-  },
-};
+const ARRIVE = EMPTY_STATE_ARRIVE;
 
 /* Nothing chosen, or nothing to show: what the product does, and a way in. */
 function RunEmptyState({ note }: { note: string | null }) {
@@ -194,7 +187,7 @@ function RunEmptyState({ note }: { note: string | null }) {
         className="grid max-w-88 justify-items-center gap-7 text-center"
         initial={rises ? 'hidden' : false}
         animate={!rises || settled ? 'shown' : 'hidden'}
-        transition={{ staggerChildren: 0.12 }}
+        transition={{ staggerChildren: EMPTY_STATE_STAGGER }}
       >
         <h1 className="sr-only">{note ?? 'No run selected'}</h1>
         <motion.div variants={ARRIVE} className="mb-1">

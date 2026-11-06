@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 
+import { DRAFT_MODELS, WRITE_MODELS } from './calls';
 import { capturedRead } from './captured.fixture';
 import { answer, check, standIn, told, accountedFor } from './models.fixture';
 import { findDefinitions } from './find';
@@ -479,11 +480,17 @@ describe('writing a definition more than once', () => {
       check(answerOf(WHOLE)),
       check(refusal('needs_or')),
       check(refusal('needs_or')),
+      check(answerOf(WHOLE_REWORDED)),
     );
-    expect(model.doGenerateCalls).toHaveLength(5);
+    expect(model.doGenerateCalls).toHaveLength(6);
     expect(kept.shape).toMatchObject(WHOLE);
     expect(kept.unfit ?? null).toBeNull();
-    expect(kept.agreement).toMatchObject({ status: 'unconfirmed', runs: 3 });
+    // The second refusal hands the last write to the drafting model.
+    expect(kept.agreement).toMatchObject({ status: 'agreed', runs: 4 });
+    expect(kept.agreement?.versions.map((v) => v.model)).toEqual([
+      WRITE_MODELS[0],
+      DRAFT_MODELS[0],
+    ]);
   });
 
   it('refuses the rule only when every write refuses, saying why', async () => {
@@ -496,6 +503,41 @@ describe('writing a definition more than once', () => {
       'No shape can check this rule as written: it joins conditions with “or”. Rephrase it in the instructions, or write it again.',
     );
     expect(canAccept(kept)).toBe(false);
+  });
+
+  it('writes once on the drafting model after two refusals, standing alone with nothing to compare', async () => {
+    const { model, kept } = await written(
+      ...Array.from({ length: 4 }, () => check(refusal('needs_or'))),
+      check(answerOf(WHOLE)),
+      check(answerOf(WHOLE_REWORDED)),
+    );
+    expect(model.doGenerateCalls).toHaveLength(5);
+    expect(kept.shape).toMatchObject(WHOLE);
+    expect(kept.agreement).toMatchObject({ status: 'unconfirmed', runs: 3 });
+    expect(kept.agreement?.versions.map((v) => v.model)).toEqual([
+      DRAFT_MODELS[0],
+    ]);
+  });
+
+  it('stores only what a shape’s kind reads', async () => {
+    const { kept } = await written(
+      check(answerOf({ ...WHOLE, at: 'most', target: 'column:on_hand' })),
+      check(answerOf(WHOLE)),
+    );
+    expect(kept.shape).toMatchObject({ ...WHOLE, at: null, target: null });
+    expect(kept.agreement).toMatchObject({ status: 'agreed', runs: 2 });
+  });
+
+  it('lets the drafting model’s refusal stand', async () => {
+    const { model, kept } = await written(
+      ...Array.from({ length: 8 }, () => check(refusal('needs_or'))),
+    );
+    // Two refusals on each of three writes: two light, one stronger.
+    expect(model.doGenerateCalls).toHaveLength(6);
+    expect(kept.unfit).toBe('The rule says or.');
+    expect(kept.agreement?.versions.map((v) => v.model).at(-1)).toBe(
+      DRAFT_MODELS[0],
+    );
   });
 
   it('answers a first refusal with what shapes can do for its reason', async () => {

@@ -651,6 +651,19 @@ test('versions that disagree are shown as the sentences the app wrote, for a per
       index?: number;
     };
     if (body.action === 'choose') chosen = body.index;
+    if (body.action === 'advise')
+      return route.fulfill({
+        json: {
+          kind: 'advice',
+          advice: {
+            verdict: 'version_2',
+            quote: 'Only order what can still be placed before the cutoff.',
+            reason: 'The cutoff must still be ahead when the data is read.',
+            rephrase: null,
+            model: 'test-model',
+          },
+        },
+      });
     return route.fulfill({
       json: {
         kind: 'rules',
@@ -681,7 +694,7 @@ test('versions that disagree are shown as the sentences the app wrote, for a per
     .last()
     .click();
   const versions = page.getByRole('region', {
-    name: 'Versions to choose between',
+    name: 'Two readings of this rule',
   });
   // Each version as the sentence the app wrote from it, never its formula.
   await expect(
@@ -693,8 +706,8 @@ test('versions that disagree are shown as the sentences the app wrote, for a per
   await expect(versions.getByText('record.hours_until_cutoff')).toHaveCount(0);
   if (process.env.CHOOSER_SHOT)
     await versions.screenshot({ path: process.env.CHOOSER_SHOT });
-  // A check written as a shape leads with its sentence; the formula is
-  // folded away, inert until asked for.
+  // A check written as a shape leads with its sentence, its formula shown
+  // under it with nothing to press.
   const shaped = page
     .getByRole('listitem')
     .filter({
@@ -707,11 +720,10 @@ test('versions that disagree are shown as the sentences the app wrote, for a per
   await expect(
     shaped.getByText('The proposed order must be at most the max order units.'),
   ).toBeVisible();
-  const formula = shaped.getByRole('button', { name: 'Show the formula' });
-  await expect(formula).toHaveAttribute('aria-expanded', 'false');
-  await expect(shaped.locator('.fold')).toHaveAttribute('inert', '');
-  await formula.click();
-  await expect(shaped.locator('.fold')).not.toHaveAttribute('inert', '');
+  await expect(
+    shaped.getByRole('group', { name: /^Formula of / }),
+  ).toBeVisible();
+  await expect(shaped.getByRole('button', { name: /formula/ })).toHaveCount(0);
   const card = page
     .getByRole('listitem')
     .filter({
@@ -719,9 +731,38 @@ test('versions that disagree are shown as the sentences the app wrote, for a per
     })
     .last();
   await expect(card.getByText('Versions differ')).toBeVisible();
-  await expect(card.getByRole('button', { name: /^Accept/ })).toBeDisabled();
+  // The words where they differ are marked, and what each gives where they
+  // part.
+  await expect(versions.locator('mark')).toHaveText([
+    'after',
+    'holds',
+    'before',
+    'fails',
+  ]);
+  await expect(
+    versions.getByText(/^On SD-01 .*, with the proposed order 8:/),
+  ).toHaveCount(2);
+  // The choice comes first: Accept is drawn once a version is chosen.
+  await expect(card.getByRole('button', { name: /^Accept/ })).toHaveCount(0);
 
-  await versions.getByRole('button', { name: 'Use this one' }).last().click();
+  // Advice opens in the assistant, and chooses nothing.
+  await versions.getByRole('button', { name: 'Which is right?' }).click();
+  const advice = page.getByRole('region', { name: 'Answer' });
+  await expect(
+    advice.getByText('Version 2 says what the instructions mean.'),
+  ).toBeVisible();
+  await expect(
+    advice.getByText(/Only order what can still be placed/),
+  ).toBeVisible();
+  await expect(
+    versions.getByRole('button', { name: /^Use version/ }),
+  ).toHaveCount(2);
+  expect(chosen).toBeNull();
+  if (process.env.ADVICE_SHOT)
+    await page.screenshot({ path: process.env.ADVICE_SHOT });
+
+  await versions.getByRole('button', { name: 'Use version 2' }).click();
   await expect(versions).toHaveCount(0);
+  await expect(card.getByRole('button', { name: /^Accept/ })).toBeVisible();
   expect(chosen).toBe(1);
 });

@@ -35,6 +35,10 @@ import { Pill, SEVERITY } from '@/components/ui/pill';
 import { Tooltip } from '@/components/ui/tooltip';
 import { MorphingText } from '@/components/ui/morphing-text';
 import { cx } from '@/lib/cx';
+import { wordDiff } from '@/lib/text/word-diff';
+import type { Advice } from '@/lib/definitions/advise';
+import { AssistantContext } from '@/components/app-shell/assistant/assistant-state';
+import { groupDifferences } from '@/lib/definitions/group-differences';
 import { SUBJECT } from '@/lib/processes/brunch-orders/process';
 import { DRAFTING_MODELS, type DraftingModel } from '@/lib/models';
 import {
@@ -319,6 +323,7 @@ export function RulesStep({
               onChoose={(index) =>
                 act({ action: 'choose', id: item.id, index })
               }
+              onAdvise={() => adviceFor(text, item.id)}
               debug={
                 <HeadIconButton
                   label={`Debug ${item.name}`}
@@ -473,54 +478,218 @@ export function RulesStep({
 type Sentences = { own: string | null; versions: (string | null)[] };
 
 /*
-  Writes that came out different, for a person to choose between: each as
-  the sentence the app wrote from it, which says exactly what would run, or
-  why no shape fits. A version written before shapes shows its formula.
+  Writes that came out different, for a person to choose between, in the
+  card's footer until one is chosen. A check's version is the sentence the app
+  wrote from it, the words where the two differ marked. A calculation has no
+  sentence, and two formulas name the same thing differently, so what is
+  marked is where they fill a group differently, above its formula.
+  Under each, what it gives on the first record where they part.
 */
 function VersionsToChoose({
   item,
+  names,
   sentences,
   busy,
+  canWrite,
   onChoose,
+  onWrite,
+  onAdvise,
 }: {
   item: Definition;
+  names: Record<string, string>;
   sentences: (string | null)[];
   busy: boolean;
+  canWrite: boolean;
   onChoose?: (index: number) => void;
+  onWrite: () => void;
+  onAdvise?: () => Promise<Advice>;
 }) {
-  const { versions } = item.agreement!;
+  const headingId = useId();
+  // Absent where the page has no assistant, as on /workbench.
+  const assistant = useContext(AssistantContext);
+  const { versions, differences } = item.agreement!;
+  const worded = versions.map((version, index) =>
+    version.unfit ? `No shape fits: ${version.unfit}` : sentences[index],
+  );
+  const runs =
+    versions.length === 2 && worded[0] && worded[1]
+      ? wordDiff(worded[0], worded[1])
+      : worded.map((text) => (text ? [{ text, changed: false }] : []));
+  const grouped =
+    versions.length === 2
+      ? groupDifferences(versions[0]!.groups, versions[1]!.groups)
+      : [];
+  const named = (key: string) => (names[key] ? `${key} (${names[key]})` : key);
+  // The first record where they part, and what each gives there.
+  const where = differences[0];
+  const given = where
+    ? Object.entries(where.inputs)
+        .map(([id, value]) => {
+          const field = SUBJECT.proposal.find((f) => f.id === id);
+          return `${field ? `the proposed ${field.label.toLowerCase()}` : id} ${value}`;
+        })
+        .join(', ')
+    : '';
+  const result = (text: string | undefined) =>
+    item.result === 'check' && (text === 'true' || text === 'false')
+      ? text === 'true'
+        ? 'holds'
+        : 'fails'
+      : (text ?? '');
   return (
-    <section aria-label="Versions to choose between" className="grid gap-3">
-      <p className="text-dense text-state-advisory">
-        Written twice without either seeing the other, and they say different
-        things. Which says what the rule means?
-      </p>
-      <ul className="grid gap-3">
+    <section aria-labelledby={headingId} className="grid gap-3">
+      <div className="grid gap-0.5">
+        <h5 id={headingId} className="text-dense font-semibold">
+          Two readings of this rule
+        </h5>
+        <p className="text-meta text-muted">
+          Use the one that is right; marked is where they differ.
+        </p>
+      </div>
+      <ul className="grid gap-2">
         {versions.map((version, index) => (
-          <li key={index} className="grid justify-items-start gap-1.5">
-            <span className="readout text-muted">Version {index + 1}</span>
-            {sentences[index] ? (
-              <p className="text-body">{sentences[index]}</p>
-            ) : version.unfit ? (
-              <p className="text-body">No shape fits: {version.unfit}</p>
-            ) : (
-              <code className="value text-meta break-words">
-                {version.formula}
-              </code>
-            )}
-            {onChoose && !version.unfit ? (
-              <Button
-                size="medium"
-                isDisabled={busy}
-                onPress={() => onChoose(index)}
-              >
-                Use this one
-              </Button>
+          <li
+            key={index}
+            className="rounded-control border-rule-default grid border"
+          >
+            <div className="flex min-h-12 items-center justify-between gap-3 py-2 pr-2 pl-3">
+              <span className="readout text-muted">Version {index + 1}</span>
+              {onChoose && !version.unfit ? (
+                <DecisionButton
+                  decision="accept"
+                  isDisabled={busy}
+                  onPress={() => onChoose(index)}
+                >
+                  Use version {index + 1}
+                </DecisionButton>
+              ) : null}
+            </div>
+            <div className="border-rule-faint grid justify-items-start gap-2 border-t px-3 py-2.5">
+              {runs[index]!.length ? (
+                <p className="text-body">
+                  {runs[index]!.map((run, at) =>
+                    run.changed ? (
+                      <mark key={at} className="rules-differs">
+                        {run.text}
+                      </mark>
+                    ) : (
+                      run.text
+                    ),
+                  )}
+                </p>
+              ) : (
+                <>
+                  {grouped.length ? (
+                    <ul className="text-body grid gap-1">
+                      {grouped.map(({ quote, key, inFirst }) => (
+                        <li key={`${quote}${key}`}>
+                          <mark className="rules-differs">
+                            {inFirst === (index === 0)
+                              ? 'Counts'
+                              : 'Does not count'}
+                          </mark>{' '}
+                          {named(key)} as one of &ldquo;{quote}&rdquo;
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  <Formula
+                    item={{
+                      ...item,
+                      constants: version.constants,
+                      groups: version.groups,
+                    }}
+                    formula={version.formula}
+                    names={names}
+                    reads={[]}
+                    face="bg-surface-inset"
+                    still
+                  />
+                </>
+              )}
+            </div>
+            {where ? (
+              <p className="border-rule-faint text-meta text-muted border-t px-3 py-2">
+                On {named(where.key)}
+                {given && item.result === 'check'
+                  ? `, with ${given}`
+                  : ''}:{' '}
+                <mark className="rules-differs">
+                  {result(where.results[index])}
+                </mark>
+              </p>
             ) : null}
           </li>
         ))}
       </ul>
+      <div className="flex flex-wrap gap-2">
+        <Button size="medium" isDisabled={busy || !canWrite} onPress={onWrite}>
+          Neither: write again
+        </Button>
+        {assistant && onAdvise ? (
+          <Button
+            size="medium"
+            onPress={() =>
+              assistant.consult(
+                `Which reading of “${item.name}” is right?`,
+                async () => <AdviceAnswer advice={await onAdvise()} />,
+              )
+            }
+          >
+            Which is right?
+          </Button>
+        ) : null}
+      </div>
     </section>
+  );
+}
+
+// Asks which of two versions the instructions support; throws what went wrong.
+async function adviceFor(text: string, id: string): Promise<Advice> {
+  const response = await fetch('/api/dev/brunch-orders/rules', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ action: 'advise', text, id }),
+  });
+  const body = (await response.json().catch(() => null)) as
+    | { kind: 'advice'; advice: Advice }
+    | { kind: 'error'; message: string }
+    | null;
+  if (body?.kind === 'advice') return body.advice;
+  throw new Error(
+    body?.kind === 'error' ? body.message : 'No answer came back.',
+  );
+}
+
+const VERDICT: Record<Advice['verdict'], string> = {
+  version_1: 'Version 1 says what the instructions mean.',
+  version_2: 'Version 2 says what the instructions mean.',
+  unclear: 'The instructions can be read either way.',
+};
+
+// The advice as the assistant shows it: advice, with the choice left on the card.
+function AdviceAnswer({ advice }: { advice: Advice }) {
+  return (
+    <>
+      <p className="text-body">{VERDICT[advice.verdict]}</p>
+      {advice.quote ? (
+        <FromModel label="From the instructions">
+          <p className="text-body italic">&ldquo;{advice.quote}&rdquo;</p>
+        </FromModel>
+      ) : null}
+      <p className="text-dense">{advice.reason}</p>
+      {advice.rephrase ? (
+        <div className="grid gap-1">
+          <span className="readout text-muted">
+            A wording that reads one way
+          </span>
+          <p className="text-dense">{advice.rephrase}</p>
+        </div>
+      ) : null}
+      <p className="text-meta text-muted">
+        Advice from {advice.model}. The choice is yours, on the card.
+      </p>
+    </>
   );
 }
 
@@ -992,8 +1161,6 @@ function DefinitionReading({
   awaitedFormula?: ReactNode;
 }) {
   const title = item.name;
-  const [showFormula, setShowFormula] = useState(false);
-  const formulaId = useId();
   const formula = item.formula ? (
     <FromModel label="The model's formula">
       <Formula item={item} formula={item.formula} names={names} reads={reads} />
@@ -1011,24 +1178,12 @@ function DefinitionReading({
           </p>
         </FromModel>
         {sentence ? (
-          <div className="grid justify-items-start gap-2">
+          <div className="grid gap-1">
             <span className="readout text-muted">What the app checks</span>
             <p className="text-body">{sentence}</p>
-            <Button
-              size="medium"
-              aria-expanded={showFormula}
-              aria-controls={formulaId}
-              onPress={() => setShowFormula(!showFormula)}
-            >
-              {showFormula ? 'Hide the formula' : 'Show the formula'}
-            </Button>
-            <Fold open={showFormula} id={formulaId}>
-              {formula}
-            </Fold>
           </div>
-        ) : (
-          (formula ?? awaitedFormula)
-        )}
+        ) : null}
+        {formula ?? awaitedFormula}
         {item.constants.length || item.groups.length ? (
           <FromModel label="The model's numbers and groups">
             <ul
@@ -1075,6 +1230,7 @@ export function DefinitionCard({
   onDecide,
   debug,
   onChoose,
+  onAdvise,
   chip,
   activity,
   awaitedFormula,
@@ -1098,6 +1254,8 @@ export function DefinitionCard({
   debug?: ReactNode;
   // Takes one of the versions, where writes disagreed.
   onChoose?: (index: number) => void;
+  // Asks which version the instructions support, for the assistant to show.
+  onAdvise?: () => Promise<Advice>;
   // The rest are only passed by /workbench/draft-progress, which compares what
   // a card could show while a draft runs: its pill, in place of its status...
   chip?: ReactNode;
@@ -1184,14 +1342,6 @@ export function DefinitionCard({
             <p className="text-dense italic">{item.unfit}</p>
           </FromModel>
         ) : null}
-        {item.agreement?.status === 'split' ? (
-          <VersionsToChoose
-            item={item}
-            sentences={sentences?.versions ?? []}
-            busy={busy}
-            onChoose={onChoose}
-          />
-        ) : null}
         {ignoresProposal(
           item,
           reads,
@@ -1212,9 +1362,20 @@ export function DefinitionCard({
         ) : null}
       </div>
 
-      <div className="rule-above flex items-center gap-3 p-4">
+      <div className="rule-above flex items-end gap-3 p-4">
         <div className="min-w-0 flex-1">
-          {denying ? (
+          {open && item.agreement?.status === 'split' ? (
+            <VersionsToChoose
+              item={item}
+              names={names}
+              sentences={sentences?.versions ?? []}
+              busy={busy}
+              canWrite={canWrite}
+              onChoose={onChoose}
+              onWrite={onWrite}
+              onAdvise={onAdvise}
+            />
+          ) : denying ? (
             <form
               className="flex flex-wrap items-center gap-2"
               onSubmit={(event) => {

@@ -68,7 +68,7 @@
   --sp-field-face: light-dark(var(--sp-neutral-50), var(--sp-neutral-850));
   --sp-field-edge: light-dark(var(--sp-neutral-225), var(--sp-neutral-750));
   --sp-field-edge-hover: light-dark(var(--sp-neutral-275), var(--sp-neutral-475));
-  --sp-field-edge-active: light-dark(var(--sp-neutral-600), var(--sp-neutral-225));
+  --sp-field-edge-active: light-dark(var(--sp-neutral-575), var(--sp-neutral-300));
   --sp-enclosure-edge: light-dark(var(--sp-neutral-50), var(--sp-neutral-750));
   --sp-divider-etch: light-dark(var(--sp-neutral-25), var(--sp-neutral-925));
 }

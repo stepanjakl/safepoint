@@ -9,6 +9,7 @@ import {
 } from '@/components/app-shell/drawer-overlay';
 import { useTrial } from '@/components/brunch-orders/trial-parts';
 import { FilterTabs } from '@/components/ui/filter-tabs';
+import { TabSwap } from '@/components/ui/swap';
 
 type DataResponse =
   | {
@@ -82,13 +83,26 @@ export function DataDrawer({
                   ariaLabel="Data tabs"
                   menuLabel="Other data tabs"
                 />
-                <pre
-                  tabIndex={0}
-                  aria-label={`${selectedTab.name}, as read`}
-                  className="bg-surface-inset rounded-control value text-meta min-h-0 min-w-0 flex-1 overflow-auto p-3"
+                <TabSwap
+                  selected={selected}
+                  className="flex min-h-0 min-w-0 flex-1 flex-col"
                 >
-                  {asJson(selectedTab.values)}
-                </pre>
+                  {(key) => {
+                    // The tab on screen, which trails the chosen one
+                    // through the fade.
+                    const tab =
+                      data.tabs.find((one) => one.name === key) ?? selectedTab;
+                    return (
+                      <pre
+                        tabIndex={0}
+                        aria-label={`${tab.name}, as read`}
+                        className="bg-surface-inset rounded-control value text-meta min-h-0 min-w-0 flex-1 overflow-auto p-3"
+                      >
+                        {asJson(tab.values)}
+                      </pre>
+                    );
+                  }}
+                </TabSwap>
               </>
             ) : data ? (
               <p className="text-dense text-muted">

@@ -43,14 +43,29 @@ const faces = {
 } satisfies Record<Variant, string>;
 
 /*
-  Corners follow the height, so all three sizes read as one shape. Corners
-  rather than a pill, which is left to tabs and statuses.
+  Corners follow the height, so all three sizes read as one shape. `round`
+  is the other shape at every size, for a set of suggestions offered rather
+  than an action taken; a round end wants a little more room before the
+  label, so it takes the next padding step.
 */
 const sizes = {
-  small: 'control-face text-meta rounded-control h-7 px-2.5',
-  medium: 'control-face text-dense rounded-icon h-8 px-3',
-  large: 'control-face text-dense rounded-shell h-9 px-3.5',
+  small: 'control-face text-meta h-7',
+  medium: 'control-face text-dense h-8',
+  large: 'control-face text-dense h-9',
 } as const;
+const shapes = {
+  corners: {
+    small: 'rounded-control px-2.5',
+    medium: 'rounded-icon px-3',
+    large: 'rounded-shell px-3.5',
+  },
+  round: {
+    small: 'rounded-full px-3',
+    medium: 'rounded-full px-3.5',
+    large: 'rounded-full px-4',
+  },
+} as const;
+export type Shape = keyof typeof shapes;
 
 /*
   A slant's painted layers, each nested in the wrapper that computes its
@@ -78,6 +93,7 @@ export function Button({
   variant = 'secondary',
   slant,
   size = 'large',
+  shape = 'corners',
   className,
   children,
   ...props
@@ -87,6 +103,8 @@ export function Button({
   // `medium` is a call to action that stands alone, not in a toolbar; `small`
   // is for actions repeated down a table's rows. A slant ignores it.
   size?: keyof typeof sizes;
+  // Corners that follow the height, or fully round ends. A slant ignores it.
+  shape?: Shape;
   className?: string;
   ref?: Ref<HTMLButtonElement>;
 }) {
@@ -100,7 +118,9 @@ export function Button({
         // Size with the shape, not in `base`: a slant's height is a token
         // sized to its header, and two utilities for one property would be
         // settled by stylesheet order.
-        slant ? 'slant text-dense h-(--slant-height) px-3.5' : sizes[size],
+        slant
+          ? 'slant text-dense h-(--slant-height) px-3.5'
+          : `${sizes[size]} ${shapes[shape][size]}`,
         className,
       )}
     >
@@ -130,8 +150,10 @@ export function Button({
   reads as a dead spot rather than as unavailability. Assistive technology
   still hears that they are unavailable.
 */
-export const ICON_SHAPE =
-  'inline-grid flex-none cursor-pointer place-items-center rounded-icon p-0';
+// The icon button's box, with no corners of its own; ICON_SHAPE adds them.
+export const ICON_BOX =
+  'inline-grid flex-none cursor-pointer place-items-center p-0';
+export const ICON_SHAPE = `${ICON_BOX} rounded-icon`;
 
 /*
   The quiet face: a wash on hover or keyboard focus, nothing at rest. The two

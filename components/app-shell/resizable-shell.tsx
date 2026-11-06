@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useEffectEvent,
   useLayoutEffect,
   useRef,
   useState,
@@ -21,6 +22,7 @@ import {
 } from './sidebar-preferences';
 import {
   AssistantContext,
+  type Consultation,
   parseAssistantPreferences,
   readAssistantPreferences,
   saveAssistantPreferences,
@@ -29,17 +31,32 @@ import {
 } from '@/components/app-shell/assistant/assistant-state';
 import { AssistantPanel } from '@/components/app-shell/assistant/assistant-panel';
 import { SidebarResizeHandle, SidebarSizeProbes } from './sidebar-resize';
+import { usePathname } from 'next/navigation';
 import { useShellPageNavigation } from './shell-page-transition';
+import { useProcessNames } from './process/process-names-store';
 import { useResizableSidebar } from './use-resizable-sidebar';
 
 /** Layout owns the two independent panels; server-rendered children stay opaque. */
 export function ResizableShell({
   navigation,
+  processes = [],
   children,
 }: {
   navigation: ReactNode;
+  // The processes the sidebar lists, so the assistant can say which one it
+  // is looking at.
+  processes?: { id: string; href: string; name: string }[];
   children: ReactNode;
 }) {
+  const path = usePathname();
+  const names = useProcessNames();
+  const shown = processes.find(
+    (item) => path === item.href || path.startsWith(`${item.href}/`),
+  );
+  const contextProcesses = processes.map((item) => ({
+    id: item.id,
+    name: names[item.id] ?? item.name,
+  }));
   const { workspaceReveal, finishWorkspaceReveal, finishWorkspaceFade } =
     useShellPageNavigation();
   const snapshot = useSyncExternalStore(
@@ -78,6 +95,9 @@ export function ResizableShell({
     cancelDrag: cancelAssistantDrag,
   } = right;
   const [draft, setDraft] = useState('');
+  const [consultation, setConsultation] = useState<Consultation | null>(null);
+  // The latest question asked: an older answer arriving late is dropped.
+  const asked = useRef(0);
   const [docked, setDocked] = useState(false);
   const [viewport, setViewport] = useState<{
     height: number;
@@ -207,6 +227,31 @@ export function ResizableShell({
       ...parseAssistantPreferences(readAssistantPreferences()),
       collapsed: false,
     });
+  /*
+    Mod+I, from anywhere: opens the assistant, or brings focus to its message
+    from elsewhere on the page, or closes it from inside.
+  */
+  const onShortcut = useEffectEvent(() => {
+    if (!open) reveal();
+    else if (rightContentRef.current?.contains(document.activeElement)) close();
+    else composer.current?.focus({ preventScroll: true });
+  });
+  useEffect(() => {
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (
+        event.key.toLowerCase() !== 'i' ||
+        event.altKey ||
+        event.shiftKey ||
+        !(event.metaKey || event.ctrlKey) ||
+        event.defaultPrevented
+      )
+        return;
+      event.preventDefault();
+      onShortcut();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
   const assistantContext = {
     id: right.navigationId,
     open,
@@ -221,6 +266,26 @@ export function ResizableShell({
       setDraft(prompt);
       if (open) composer.current?.focus({ preventScroll: true });
       else reveal();
+    },
+    consult: (question: string, load: () => Promise<ReactNode>) => {
+      const turn = (asked.current += 1);
+      setConsultation({ question, state: 'asking' });
+      if (!open) reveal();
+      load().then(
+        (answer) => {
+          if (turn === asked.current)
+            setConsultation({ question, state: 'answered', answer });
+        },
+        (error: unknown) => {
+          if (turn === asked.current)
+            setConsultation({
+              question,
+              state: 'failed',
+              message:
+                error instanceof Error ? error.message : 'No answer came back.',
+            });
+        },
+      );
     },
   };
   const style: CSSProperties &
@@ -250,6 +315,10 @@ export function ResizableShell({
       aria-hidden={!open || right.preview !== null || undefined}
     >
       <AssistantPanel
+        docked={docked}
+        processes={contextProcesses}
+        onScreen={shown?.id ?? null}
+        consultation={consultation}
         draft={draft}
         onDraftChange={setDraft}
         composer={composer}

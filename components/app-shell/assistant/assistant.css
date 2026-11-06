@@ -1,0 +1,323 @@
+/* ── Assistant button ───────────────────────────────────────────────────────
+   The notch button's open face: a fill across pink, violet and cyan, white
+   ink, shaded top to bottom as the neutral face is. Closed, every colour is
+   the button's own stop, so opening fades one face into the other. Chosen
+   on /workbench/assistant-button (option 6c).
+   ────────────────────────────────────────────────────────────────────────── */
+
+@property --assistant-top-pink {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --assistant-bottom-pink {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --assistant-edge-top-pink {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --assistant-edge-bottom-pink {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --assistant-top-violet {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --assistant-bottom-violet {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --assistant-edge-top-violet {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --assistant-edge-bottom-violet {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --assistant-top-cyan {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --assistant-bottom-cyan {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --assistant-edge-top-cyan {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --assistant-edge-bottom-cyan {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --assistant-ink {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --assistant-icon {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --assistant-sheen {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+
+@layer components {
+  /* control-face's own list (app/styles/controls.css) plus the colours above:
+     a transition list replaces, so the face's entries are repeated here. */
+  .assistant-button {
+    transition-property:
+      color, background-color, box-shadow, opacity, --control-face-top, --control-face-bottom,
+      --control-ring-top, --control-ring-bottom, --control-highlight, --assistant-top-pink,
+      --assistant-bottom-pink, --assistant-edge-top-pink, --assistant-edge-bottom-pink,
+      --assistant-top-violet, --assistant-bottom-violet, --assistant-edge-top-violet,
+      --assistant-edge-bottom-violet, --assistant-top-cyan, --assistant-bottom-cyan,
+      --assistant-edge-top-cyan, --assistant-edge-bottom-cyan, --assistant-ink, --assistant-icon,
+      --assistant-sheen;
+    transition-duration: var(--duration-state);
+    transition-timing-function: ease-out;
+    /* Ink on the label and icon, not the button, whose own text utility
+       would outrank this layer. */
+    --assistant-ink: var(--sp-text-primary);
+    --assistant-icon: var(--sp-text-muted);
+    --assistant-sheen: var(--control-highlight);
+    /* Face and edge in two rows each, through the slant's hooks
+       (components/ui/notch.css): the bottom row is the layer, the top row
+       laid over it, fading out downwards. */
+    --slant-face-image: linear-gradient(
+      to right,
+      var(--assistant-bottom-pink),
+      var(--assistant-bottom-violet),
+      var(--assistant-bottom-cyan)
+    );
+    --slant-face-top: linear-gradient(
+      to right,
+      var(--assistant-top-pink),
+      var(--assistant-top-violet),
+      var(--assistant-top-cyan)
+    );
+    --slant-ring-image: linear-gradient(
+      to right,
+      var(--assistant-edge-bottom-pink),
+      var(--assistant-edge-bottom-violet),
+      var(--assistant-edge-bottom-cyan)
+    );
+    --slant-ring-top: linear-gradient(
+      to right,
+      var(--assistant-edge-top-pink),
+      var(--assistant-edge-top-violet),
+      var(--assistant-edge-top-cyan)
+    );
+    --slant-sheen: var(--assistant-sheen);
+    --assistant-top-pink: var(--control-face-top);
+    --assistant-bottom-pink: var(--control-face-bottom);
+    --assistant-edge-top-pink: var(--control-ring-top);
+    --assistant-edge-bottom-pink: var(--control-ring-bottom);
+    --assistant-top-violet: var(--control-face-top);
+    --assistant-bottom-violet: var(--control-face-bottom);
+    --assistant-edge-top-violet: var(--control-ring-top);
+    --assistant-edge-bottom-violet: var(--control-ring-bottom);
+    --assistant-top-cyan: var(--control-face-top);
+    --assistant-bottom-cyan: var(--control-face-bottom);
+    --assistant-edge-top-cyan: var(--control-ring-top);
+    --assistant-edge-bottom-cyan: var(--control-ring-bottom);
+  }
+  .assistant-button:is([data-hovered], [data-focus-visible], [data-pressed]) {
+    --assistant-icon: var(--sp-text-primary);
+  }
+  /* At phone width the icon is the button's only content, so it is ink. */
+  @media (width < 40rem) {
+    .assistant-button {
+      --assistant-icon: var(--sp-text-primary);
+    }
+  }
+  .assistant-button-label {
+    color: var(--assistant-ink);
+  }
+  .assistant-button-icon {
+    color: var(--assistant-icon);
+  }
+
+  /* Open. Each row is its hue moved in lightness: the top lifted, the bottom
+     dropped, from a base deep enough that white ink keeps 4.5:1 on all three
+     at rest and under the pointer. The edge sits off the fill, most at the
+     top, as the neutral face's does. */
+  .assistant-button[aria-expanded='true'] {
+    --assistant-top-l: calc(l - 0.03);
+    --assistant-bottom-l: calc(l - 0.12);
+    --assistant-edge-top: 0.15;
+    --assistant-edge-bottom: 0.07;
+    /* The pointer's step, as the neutral face's: deeper in light, lighter in
+       dark. 0.05, not its 0.055, keeps pink's white ink above 4.5:1. */
+    --assistant-hover: 0;
+    --assistant-edge-hover: 0;
+    --assistant-ink: white;
+    --assistant-icon: white;
+    --assistant-sheen: transparent;
+    --assistant-top-pink: light-dark(
+      oklch(from var(--radix-pink-9) calc(var(--assistant-top-l) - var(--assistant-hover)) c h),
+      oklch(from var(--radix-pink-dark-9) calc(var(--assistant-top-l) + var(--assistant-hover)) c h)
+    );
+    --assistant-edge-top-pink: light-dark(
+      oklch(
+        from var(--radix-pink-9)
+          calc(
+            var(--assistant-top-l) - var(--assistant-hover) - var(--assistant-edge-top) -
+              var(--assistant-edge-hover)
+          )
+          c h
+      ),
+      oklch(
+        from var(--radix-pink-dark-9)
+          calc(
+            var(--assistant-top-l) + var(--assistant-hover) + var(--assistant-edge-top) +
+              var(--assistant-edge-hover)
+          )
+          c h
+      )
+    );
+    --assistant-bottom-pink: light-dark(
+      oklch(from var(--radix-pink-9) calc(var(--assistant-bottom-l) - var(--assistant-hover)) c h),
+      oklch(
+        from var(--radix-pink-dark-9) calc(var(--assistant-bottom-l) + var(--assistant-hover)) c h
+      )
+    );
+    --assistant-edge-bottom-pink: light-dark(
+      oklch(
+        from var(--radix-pink-9)
+          calc(
+            var(--assistant-bottom-l) - var(--assistant-hover) - var(--assistant-edge-bottom) -
+              var(--assistant-edge-hover)
+          )
+          c h
+      ),
+      oklch(
+        from var(--radix-pink-dark-9)
+          calc(
+            var(--assistant-bottom-l) + var(--assistant-hover) + var(--assistant-edge-bottom) +
+              var(--assistant-edge-hover)
+          )
+          c h
+      )
+    );
+    --assistant-top-violet: light-dark(
+      oklch(from var(--radix-violet-9) calc(var(--assistant-top-l) - var(--assistant-hover)) c h),
+      oklch(
+        from var(--radix-violet-dark-9) calc(var(--assistant-top-l) + var(--assistant-hover)) c h
+      )
+    );
+    --assistant-edge-top-violet: light-dark(
+      oklch(
+        from var(--radix-violet-9)
+          calc(
+            var(--assistant-top-l) - var(--assistant-hover) - var(--assistant-edge-top) -
+              var(--assistant-edge-hover)
+          )
+          c h
+      ),
+      oklch(
+        from var(--radix-violet-dark-9)
+          calc(
+            var(--assistant-top-l) + var(--assistant-hover) + var(--assistant-edge-top) +
+              var(--assistant-edge-hover)
+          )
+          c h
+      )
+    );
+    --assistant-bottom-violet: light-dark(
+      oklch(
+        from var(--radix-violet-9) calc(var(--assistant-bottom-l) - var(--assistant-hover)) c h
+      ),
+      oklch(
+        from var(--radix-violet-dark-9) calc(var(--assistant-bottom-l) + var(--assistant-hover)) c h
+      )
+    );
+    --assistant-edge-bottom-violet: light-dark(
+      oklch(
+        from var(--radix-violet-9)
+          calc(
+            var(--assistant-bottom-l) - var(--assistant-hover) - var(--assistant-edge-bottom) -
+              var(--assistant-edge-hover)
+          )
+          c h
+      ),
+      oklch(
+        from var(--radix-violet-dark-9)
+          calc(
+            var(--assistant-bottom-l) + var(--assistant-hover) + var(--assistant-edge-bottom) +
+              var(--assistant-edge-hover)
+          )
+          c h
+      )
+    );
+    --assistant-top-cyan: light-dark(
+      oklch(from var(--radix-cyan-10) calc(var(--assistant-top-l) - var(--assistant-hover)) c h),
+      oklch(from var(--radix-cyan-dark-8) calc(var(--assistant-top-l) + var(--assistant-hover)) c h)
+    );
+    --assistant-edge-top-cyan: light-dark(
+      oklch(
+        from var(--radix-cyan-10)
+          calc(
+            var(--assistant-top-l) - var(--assistant-hover) - var(--assistant-edge-top) -
+              var(--assistant-edge-hover)
+          )
+          c h
+      ),
+      oklch(
+        from var(--radix-cyan-dark-8)
+          calc(
+            var(--assistant-top-l) + var(--assistant-hover) + var(--assistant-edge-top) +
+              var(--assistant-edge-hover)
+          )
+          c h
+      )
+    );
+    --assistant-bottom-cyan: light-dark(
+      oklch(from var(--radix-cyan-10) calc(var(--assistant-bottom-l) - var(--assistant-hover)) c h),
+      oklch(
+        from var(--radix-cyan-dark-8) calc(var(--assistant-bottom-l) + var(--assistant-hover)) c h
+      )
+    );
+    --assistant-edge-bottom-cyan: light-dark(
+      oklch(
+        from var(--radix-cyan-10)
+          calc(
+            var(--assistant-bottom-l) - var(--assistant-hover) - var(--assistant-edge-bottom) -
+              var(--assistant-edge-hover)
+          )
+          c h
+      ),
+      oklch(
+        from var(--radix-cyan-dark-8)
+          calc(
+            var(--assistant-bottom-l) + var(--assistant-hover) + var(--assistant-edge-bottom) +
+              var(--assistant-edge-hover)
+          )
+          c h
+      )
+    );
+  }
+  .assistant-button[aria-expanded='true']:is([data-hovered], [data-focus-visible], [data-pressed]) {
+    --assistant-hover: 0.05;
+    --assistant-edge-hover: 0.03;
+  }
+}

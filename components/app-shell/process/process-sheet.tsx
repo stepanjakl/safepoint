@@ -2,6 +2,7 @@
 
 import { motion } from 'motion/react';
 import {
+  Activity,
   createContext,
   useEffect,
   useState,
@@ -34,7 +35,12 @@ import { StartRunButton } from '@/components/app-shell/runs/start-run-button';
 import { SECTION } from './panel-parts';
 import { ScheduleControl } from './schedule-control';
 import { SectionRow } from '@/components/app-shell/runs/section-row';
-import { SettledLayer } from '@/components/ui/screen-settled';
+import { useShellPageNavigation } from '@/components/app-shell/shell-page-transition';
+import {
+  SectionClock,
+  SettledLayer,
+  useDetailHold,
+} from '@/components/ui/screen-settled';
 import { useSwap } from '@/components/ui/swap';
 
 const TAB_MOTION = (): 'fade' => 'fade';
@@ -147,7 +153,9 @@ export function ProcessSheet({
     ask({ kind: 'version', version, face: 'changes' }, 'instructions');
   // The selected tab answers at once; its previous body fades before the new
   // section arrives, without moving the dividers inside either layout.
-  const { shown, layer, entering } = useSwap(tab, TAB_MOTION, chosen);
+  const { shown, incoming, layer, entering } = useSwap(tab, TAB_MOTION, chosen);
+  // Arriving from another process is an entrance too, for the detail's beat.
+  const { enteringProcess } = useShellPageNavigation();
   // Inputs can be changed, as a preview, only where they have details to
   // show: the promotion scenario's files. Everything downstream reads the kept
   // set, so a removed input leaves the count and the list together.
@@ -178,6 +186,83 @@ export function ProcessSheet({
     version,
   });
 
+  // The section a swap has landed, so what it holds can begin its own entrance.
+  const [landed, setLanded] = useState<ProcessTab | null>(null);
+  if (incoming && landed !== null) setLanded(null);
+
+  const section = (key: ProcessTab) =>
+    key === 'runs' ? (
+      /*
+          Three columns where there is room, otherwise the runs become a strip
+          above the thread. Between the two thresholds the strip takes what it
+          needs and the thread takes the rest, so the thread scrolls rather than
+          the document.
+        */
+      // Clipped to the pane's inner radius. The lists inside are full-bleed
+      // and carry fills of their own, and at the pane's own radius they
+      // paint over the edge its face draws in the bottom corners.
+      <div className="shell:@max-sheet-wide/sheet:grid-rows-[auto_minmax(0,1fr)] shell:min-h-0 @sheet-wide/sheet:grid-cols-[232px_minmax(0,1fr)] rounded-b-shell-inner clip-past-pane-highlight process-runs grid grid-cols-[minmax(0,1fr)] overflow-clip">
+        {/* Full-bleed: the list draws its own rules edge to edge, and
+              padding on the column would leave them floating short of it. */}
+        <aside
+          aria-labelledby="runs-heading"
+          className="process-runs-list sheet-bleed @sheet-wide/sheet:sheet-bleed-bottom @max-sheet-wide/sheet:sheet-bleed-end border-raised-ring shadow-separator-right-strong @sheet-wide/sheet:border-b-0 @sheet-wide/sheet:border-r shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative border-b"
+        >
+          <SectionRow id="runs-heading" title="Runs">
+            <span className="flex items-center gap-1">
+              <ScheduleControl
+                processId={process.id}
+                schedule={process.schedule}
+              />
+              <StartRunButton />
+            </span>
+          </SectionRow>
+          <RunsList
+            process={process}
+            onShowVersion={showVersion}
+            onShowRules={actions.showRules}
+          />
+        </aside>
+        <RunsDetail>
+          <ProcessSheetActions value={actions}>
+            <RunView
+              process={process}
+              recorded={run}
+              playable={playable}
+              liveThread={liveThread}
+            />
+          </ProcessSheetActions>
+        </RunsDetail>
+      </div>
+    ) : key === 'rules' ? (
+      <SinglePanel {...SECTION.rules} width="wide">
+        {rulesPanel}
+      </SinglePanel>
+    ) : key === 'instructions' && policy ? (
+      <PolicyPanel policy={policy} />
+    ) : key === 'inputs' && inputsPanel ? (
+      <SinglePanel {...SECTION.inputs} count={kept.length}>
+        {inputsPanel}
+      </SinglePanel>
+    ) : (
+      <ProcessPanels
+        // Keyed by request: the layer around it is keyed by tab, so the
+        // detail it had open goes with its list, and a second request for
+        // a different version remounts rather than being ignored. Not by
+        // the view itself, which is cleared while the old tab fades out.
+        key={request}
+        process={process}
+        tab={key}
+        openView={openView}
+        inputs={kept}
+        availableInputs={available}
+        inputDetails={inputDetails}
+        onRemoveInput={editable ? remove : undefined}
+        onAddInput={editable ? restore : undefined}
+        onLeave={() => chooseTab('runs')}
+      />
+    );
+
   return (
     <RunSelectionProvider value={selection}>
       <div className="shell:grid shell:h-full shell:grid-rows-[auto_minmax(0,1fr)]">
@@ -197,88 +282,42 @@ export function ProcessSheet({
           className="process-sheet-frame shell:grid shell:min-h-0 shell:grid-rows-[minmax(0,1fr)] rounded-b-shell-inner rounded-tr-shell-inner clip-past-pane-highlight grid-cols-[minmax(0,1fr)] overflow-clip"
           finishesLeaving
         >
-          <motion.div
-            key={shown}
-            {...layer}
-            className="process-sheet-swap shell:grid shell:min-h-0 shell:grid-rows-[minmax(0,1fr)] grid-cols-[minmax(0,1fr)]"
-            data-swap-entering={entering || undefined}
-          >
-            {shown === 'runs' ? (
-              /*
-          Three columns where there is room, otherwise the runs become a strip
-          above the thread. Between the two thresholds the strip takes what it
-          needs and the thread takes the rest, so the thread scrolls rather than
-          the document.
-        */
-              // Clipped to the pane's inner radius. The lists inside are full-bleed
-              // and carry fills of their own, and at the pane's own radius they
-              // paint over the edge its face draws in the bottom corners.
-              <div className="shell:@max-sheet-wide/sheet:grid-rows-[auto_minmax(0,1fr)] shell:min-h-0 @sheet-wide/sheet:grid-cols-[232px_minmax(0,1fr)] rounded-b-shell-inner clip-past-pane-highlight process-runs grid grid-cols-[minmax(0,1fr)] overflow-clip">
-                {/* Full-bleed: the list draws its own rules edge to edge, and
-              padding on the column would leave them floating short of it. */}
-                <aside
-                  aria-labelledby="runs-heading"
-                  className="process-runs-list sheet-bleed @sheet-wide/sheet:sheet-bleed-bottom @max-sheet-wide/sheet:sheet-bleed-end border-raised-ring shadow-separator-right-strong @sheet-wide/sheet:border-b-0 @sheet-wide/sheet:border-r shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative border-b"
+          {/* The section on screen, and the one coming while it fades out:
+              rendered hidden beforehand, so the swap only has to show it and a
+              heavy section cannot stall its own fade-in. */}
+          {(incoming ? [shown, incoming] : [shown]).map((key) => {
+            const visible = key === shown;
+            return (
+              <Activity key={key} mode={visible ? 'visible' : 'hidden'}>
+                <motion.div
+                  {...(visible ? layer : { initial: { opacity: 0 } })}
+                  onAnimationComplete={(definition) => {
+                    if (!visible) return;
+                    layer.onAnimationComplete(definition);
+                    if (
+                      typeof definition === 'object' &&
+                      definition !== null &&
+                      'opacity' in definition &&
+                      definition.opacity === 1
+                    )
+                      setLanded(key);
+                  }}
+                  className="process-sheet-swap shell:grid shell:min-h-0 shell:grid-rows-[minmax(0,1fr)] grid-cols-[minmax(0,1fr)]"
+                  data-swap-entering={(visible && entering) || undefined}
                 >
-                  <SectionRow id="runs-heading" title="Runs">
-                    <span className="flex items-center gap-1">
-                      <ScheduleControl
-                        processId={process.id}
-                        schedule={process.schedule}
-                      />
-                      <StartRunButton />
-                    </span>
-                  </SectionRow>
-                  <RunsList
-                    process={process}
-                    onShowVersion={showVersion}
-                    onShowRules={actions.showRules}
-                  />
-                </aside>
-                <RunsDetail entering={entering}>
-                  <ProcessSheetActions value={actions}>
-                    <RunView
-                      process={process}
-                      recorded={run}
-                      playable={playable}
-                      liveThread={liveThread}
-                    />
-                  </ProcessSheetActions>
-                </RunsDetail>
-              </div>
-            ) : shown === 'rules' ? (
-              <SinglePanel {...SECTION.rules} width="wide" entering={entering}>
-                {rulesPanel}
-              </SinglePanel>
-            ) : shown === 'instructions' && policy ? (
-              <PolicyPanel policy={policy} entering={entering} />
-            ) : shown === 'inputs' && inputsPanel ? (
-              <SinglePanel
-                {...SECTION.inputs}
-                count={kept.length}
-                entering={entering}
-              >
-                {inputsPanel}
-              </SinglePanel>
-            ) : (
-              <ProcessPanels
-                // Keyed by request: the layer around it is keyed by tab, so the
-                // detail it had open goes with its list, and a second request for
-                // a different version remounts rather than being ignored. Not by
-                // the view itself, which is cleared while the old tab fades out.
-                key={request}
-                process={process}
-                tab={shown}
-                openView={openView}
-                inputs={kept}
-                availableInputs={available}
-                inputDetails={inputDetails}
-                onRemoveInput={editable ? remove : undefined}
-                onAddInput={editable ? restore : undefined}
-                onLeave={() => chooseTab('runs')}
-              />
-            )}
-          </motion.div>
+                  <SectionClock
+                    entering={!visible || entering || enteringProcess}
+                  >
+                    <SettledLayer
+                      settled={visible && (!entering || landed === key)}
+                    >
+                      {section(key)}
+                    </SettledLayer>
+                  </SectionClock>
+                </motion.div>
+              </Activity>
+            );
+          })}
         </ProcessContentTransition>
       </div>
     </RunSelectionProvider>
@@ -287,18 +326,11 @@ export function ProcessSheet({
 
 // One column, the width of a run's thread, under the same first row every
 // section of the sheet has.
-function PolicyPanel({
-  policy,
-  entering,
-}: {
-  policy: ProcessPolicy;
-  entering: boolean;
-}) {
+function PolicyPanel({ policy }: { policy: ProcessPolicy }) {
   return (
     <SinglePanel
       id="policy-heading"
       title={policy.label}
-      entering={entering}
       chip={
         <span className="bg-menu-chip value text-micro text-muted-strong rounded-control px-1.5 py-0.5">
           {policy.version}
@@ -312,34 +344,21 @@ function PolicyPanel({
 
 // A panel a process brings of its own, in one column.
 /*
-  A tab's section is the last thing the swap fades in (process-section-enter),
-  so what it holds is released by that fade's end. There is none to wait for
-  when the tab did not swap in, or under reduced motion.
+  The run beside the rail. The section around it has landed (SettledLayer);
+  where it trails the list, its own fade's end is what releases the run.
 */
-function useSectionSettled(entering: boolean) {
-  const [settled, setSettled] = useState(!entering);
-  return {
-    settled,
-    onAnimationEnd: (event: AnimationEvent<HTMLElement>) => {
-      if (event.target === event.currentTarget) setSettled(true);
-    },
-  };
-}
-
-function RunsDetail({
-  entering,
-  children,
-}: {
-  entering: boolean;
-  children: ReactNode;
-}) {
-  const { settled, onAnimationEnd } = useSectionSettled(entering);
+function RunsDetail({ children }: { children: ReactNode }) {
+  const { held, props } = useDetailHold();
+  const [ended, setEnded] = useState(!held);
   return (
     <div
+      {...props}
       className="process-runs-detail shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative"
-      onAnimationEnd={onAnimationEnd}
+      onAnimationEnd={(event: AnimationEvent<HTMLElement>) => {
+        if (event.target === event.currentTarget) setEnded(true);
+      }}
     >
-      <SettledLayer settled={settled}>{children}</SettledLayer>
+      <SettledLayer settled={ended}>{children}</SettledLayer>
     </div>
   );
 }
@@ -350,7 +369,6 @@ function SinglePanel({
   count,
   chip,
   width = 'reading',
-  entering,
   children,
 }: {
   id: string;
@@ -359,10 +377,8 @@ function SinglePanel({
   chip?: ReactNode;
   // A measure for reading, or room for a grid of cards.
   width?: 'reading' | 'wide';
-  entering: boolean;
   children: ReactNode;
 }) {
-  const { settled, onAnimationEnd } = useSectionSettled(entering);
   return (
     <div className="process-panels grid h-full min-h-0 grid-cols-[minmax(0,1fr)]">
       {/* A column, so the section takes the height below its row and an
@@ -377,9 +393,8 @@ function SinglePanel({
             'mx-auto flex flex-1 flex-col px-6 pt-6 pb-8 max-sm:px-4',
             width === 'wide' ? 'w-[min(100%,1120px)]' : 'w-[min(100%,760px)]',
           )}
-          onAnimationEnd={onAnimationEnd}
         >
-          <SettledLayer settled={settled}>{children}</SettledLayer>
+          {children}
         </section>
       </div>
     </div>

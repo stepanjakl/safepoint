@@ -4,7 +4,7 @@ import { z } from 'zod';
 import type { DefinitionSubject, Moment } from '@/lib/process/model';
 import { fallbackChain, type DraftingModel } from '@/lib/models';
 
-import { WRITE_MODELS, withModels } from './calls';
+import { DRAFT_MODELS, WRITE_MODELS, withModels } from './calls';
 import { limitedGoogle } from './limits';
 import {
   dependentsOf,
@@ -38,6 +38,7 @@ import {
   shapeColumn,
   shapeProblems,
   shapeSchema,
+  withoutUnused,
   type Shape,
   type ShapeContext,
 } from './shapes';
@@ -72,6 +73,13 @@ import type {
 const STEPS = 12;
 // The writes a definition gets to find two that pass every check.
 const WRITES_AT_MOST = 3;
+// Refusals after which a draft with no model chosen writes once on the
+// drafting model, compared with a shape written before if there is one; its
+// refusal stands. In three drafts Flash-Lite refused a rule it had shaped in
+// another, and two Flash writes for each of three rules spent most of its 20
+// a day.
+const REFUSALS_BEFORE_STRONGER = 2;
+const STRONGER_WRITES = 1;
 
 /*
   The only reasons a rule may fit no shape. A refusal is cheap for a model,
@@ -518,7 +526,10 @@ async function writeOnce(
       description:
         'Check your complete answer: every name and number against the instructions and the data, and every example run on the data. Returns ok, or each problem to fix. Answer only through this tool, until it returns ok.',
       inputSchema: schema,
-      execute: async (answer: Answer) => {
+      execute: async (given: Answer) => {
+        const answer = given.shape
+          ? { ...given, shape: withoutUnused(given.shape) }
+          : given;
         let formula = answer.formula ?? '';
         let sentence: string | null = null;
         if (definition.result === 'check') {
@@ -765,16 +776,31 @@ export async function writeAgreed(
   // it is never compared: another write is asked for, and any shape wins.
   const refused = (w: Written) => Boolean(w.kept?.written.unfit);
   const passed = () => writes.filter((w) => w.clean && w.kept && !refused(w));
+  const refusedSoFar = () => writes.filter((w) => w.clean && refused(w)).length;
   let stopped: string | null = null;
-  for (let run = 1; run <= WRITES_AT_MOST && passed().length < 2; run += 1) {
+  let stronger = 0;
+  for (let run = 1; passed().length < 2; run += 1) {
+    // A model a person chose is kept; otherwise repeated refusals move on.
+    const escalated =
+      !asking.model && refusedSoFar() >= REFUSALS_BEFORE_STRONGER;
+    if (escalated ? stronger >= STRONGER_WRITES : run > WRITES_AT_MOST) break;
     await onRun?.(run);
     try {
-      writes.push(await writeOnce(setting, asking));
+      writes.push(
+        await writeOnce(
+          setting,
+          escalated ? { ...asking, model: DRAFT_MODELS[0] } : asking,
+        ),
+      );
     } catch (error) {
       // Nothing to show for it, so there is nothing to keep: say so as before.
-      if (!passed().length) throw error;
+      if (!passed().length && !refusedSoFar()) throw error;
       stopped = (error as Error).message.split('\n')[0]!;
       break;
+    }
+    if (escalated) {
+      stronger += 1;
+      if (refused(writes.at(-1)!)) break;
     }
   }
   const clean = passed();

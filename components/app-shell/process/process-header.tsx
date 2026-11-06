@@ -11,6 +11,7 @@ import History from 'blode-icons-react/icons/history';
 import Lab from 'blode-icons-react/icons/lab';
 import SettingsGear from 'blode-icons-react/icons/settings-gear-1';
 import { Notch } from '@/components/ui/notch';
+import { useEdgeScroll } from '@/components/ui/edge-scroll';
 import { cx } from '@/lib/cx';
 import type { ProcessSummary } from '@/lib/process/model';
 import {
@@ -29,7 +30,7 @@ import { Assistant } from '@/components/app-shell/assistant/assistant';
   the sheet is showing is the darker one, so the row says where you already
   are.
 */
-const MENU = 'flex flex-none items-center gap-1 rounded-full p-1 max-sm:hidden';
+const MENU = 'flex flex-none items-center gap-1 rounded-full p-1';
 
 /*
   No ink here: which of the three steps an item is written in belongs with the
@@ -94,9 +95,6 @@ const STATE_DOT = {
   unavailable: 'bg-header-button-dot-blocked',
 } as const;
 
-// The word goes before the row runs out of it.
-const LABEL = 'max-lg:hidden';
-
 const plural = (count: number, one: string, many: string) =>
   `${count} ${count === 1 ? one : many}`;
 
@@ -140,8 +138,6 @@ function ProcessMenu({
   const icon = (item: ProcessTab) => (tab === item ? ICON.selected : ICON.none);
 
   return (
-    // Below the phone breakpoint the row cannot hold the name, the group and
-    // the notch, and the name has first claim.
     <div className={MENU}>
       {/* It ends in its word rather than a count, so it ends in the padding it
           starts with: the derived end inset belongs to the items whose last
@@ -158,7 +154,7 @@ function ProcessMenu({
           strokeWidth={1.8}
           className={cx('flex-none', icon('runs'))}
         />
-        <span className={LABEL}>Runs</span>
+        <span>Runs</span>
       </AriaButton>
       <AriaButton
         onPress={() => onTabChange('instructions')}
@@ -172,7 +168,7 @@ function ProcessMenu({
           strokeWidth={1.8}
           className={cx('flex-none -translate-y-px', icon('instructions'))}
         />
-        <span className={LABEL}>{instructionsLabel}</span>
+        <span>{instructionsLabel}</span>
         <span className={COUNT}>{version}</span>
       </AriaButton>
       {hasRules ? (
@@ -188,7 +184,7 @@ function ProcessMenu({
             strokeWidth={1.8}
             className={cx('flex-none -translate-y-px', icon('rules'))}
           />
-          <span className={LABEL}>Rules</span>
+          <span>Rules</span>
         </AriaButton>
       ) : null}
       {inputs.length > 0 ? (
@@ -207,7 +203,7 @@ function ProcessMenu({
             strokeWidth={1.8}
             className={cx('flex-none -translate-y-px', icon('inputs'))}
           />
-          <span className={LABEL}>Inputs</span>
+          <span>Inputs</span>
           {worst ? (
             <span className="inline-flex items-center gap-1.5">
               <span className={COUNT}>{inputs.length}</span>
@@ -236,7 +232,7 @@ function ProcessMenu({
           strokeWidth={1.8}
           className={cx('flex-none -translate-y-px', icon('outputs'))}
         />
-        <span className={LABEL}>Outputs</span>
+        <span>Outputs</span>
         <span className={COUNT}>{outputs.length}</span>
       </AriaButton>
       <AriaButton
@@ -289,6 +285,7 @@ export function ProcessHeader({
   tab: ProcessTab;
   onTabChange: (tab: ProcessTab) => void;
 }) {
+  const row = useEdgeScroll<HTMLDivElement>();
   return (
     // Above the sticky section heads, so the notch stays in the layer of the
     // edge it continues. Widened over the pane's highlight and padded back, so
@@ -298,17 +295,24 @@ export function ProcessHeader({
     <header className="process-header -mx-control-highlight px-control-highlight relative z-10 grid grid-cols-[minmax(0,1fr)_auto] border-b">
       {/* Both cells recover the same top inset and bottom edge, so their
           centres agree even when the pane's highlight thickness changes. */}
-      <ProcessContentTransition className="-mt-pane-inset -mb-control-edge flex min-w-0 items-center justify-between gap-x-4 px-4 sm:px-6">
-        <ProcessTitle processId={process.id} fallback={process.name} />
-        <ProcessMenu
-          version={version}
-          instructionsLabel={instructionsLabel}
-          hasRules={hasRules}
-          inputs={inputs}
-          outputs={outputs}
-          tab={tab}
-          onTabChange={onTabChange}
-        />
+      <ProcessContentTransition className="-mt-pane-inset -mb-control-edge grid min-w-0">
+        {/* Nothing in the row shrinks or hides when it runs out of width: the
+            row scrolls instead, and fades at the side with more to show. */}
+        <div
+          ref={row}
+          className="edge-scroll flex min-w-0 items-center justify-between gap-x-4 overflow-x-auto px-4 sm:px-6"
+        >
+          <ProcessTitle processId={process.id} fallback={process.name} />
+          <ProcessMenu
+            version={version}
+            instructionsLabel={instructionsLabel}
+            hasRules={hasRules}
+            inputs={inputs}
+            outputs={outputs}
+            tab={tab}
+            onTabChange={onTabChange}
+          />
+        </div>
       </ProcessContentTransition>
       {/* One slanted control now that the process's own buttons are in the
           row: it leans towards them on its left and keeps its far side

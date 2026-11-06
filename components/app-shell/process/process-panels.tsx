@@ -1,6 +1,7 @@
 'use client';
 
 import { useLayoutEffect, useRef, useSyncExternalStore } from 'react';
+import { useDetailHold } from '@/components/ui/screen-settled';
 import { EmptyState, useLoader } from '@/components/ui/working-mark';
 import { cx } from '@/lib/cx';
 import type { InputDetail } from '@/lib/process/input-details';
@@ -177,6 +178,8 @@ export function ProcessPanels({
     () => false,
   );
   const loader = useLoader(!hydrated);
+  // The empty column trails the list as an open detail does (DrawerAside).
+  const emptyHold = useDetailHold();
 
   const panel = aside ? asidePanel(aside) : null;
   const leavingPanel =
@@ -373,7 +376,10 @@ export function ProcessPanels({
       ) : OPENS_DETAIL.has(tab) ? (
         // Only where a row opens something: a column that can never fill is
         // not an empty state, it is a mistake.
-        <div className="@sheet-wide/sheet:flex hidden min-h-0 flex-col overflow-y-auto px-8">
+        <div
+          {...emptyHold.props}
+          className="@sheet-wide/sheet:flex hidden min-h-0 flex-col overflow-y-auto px-8"
+        >
           {loader.phase ? (
             loader.phase === 'waiting' ? null : (
               <EmptyState

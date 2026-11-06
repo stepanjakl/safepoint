@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { advise } from '@/lib/definitions/advise';
 import { accept, choose, confirmIntent, deny } from '@/lib/definitions/decide';
 import { debugDefinition, debugDraft } from '@/lib/definitions/debug';
 import {
@@ -49,7 +50,8 @@ async function historyOf(text: string) {
   draft finds them again and writes each on the server; write gives one a
   formula and examples on the read, on the server too; intent confirms what the model
   understood; decide accepts one (rechecked in full) or denies it, with what
-  is wrong; choose takes a version where writes disagreed. Each reply names the records the examples are about, and the
+  is wrong; choose takes a version where writes disagreed, and advise
+  says which the instructions support, for a person to weigh. Each reply names the records the examples are about, and the
   rulebook's revisions. debug and debugDraft say what code finds of one
   definition, or of the draft, on the read: they ask no model.
 */
@@ -80,6 +82,7 @@ export async function POST(request: Request) {
         id,
         index: z.number().int().min(0).max(5),
       }),
+      z.strictObject({ action: z.literal('advise'), text, id }),
       z.strictObject({
         action: z.literal('debug'),
         text,
@@ -159,6 +162,16 @@ export async function POST(request: Request) {
         return replyWith(() => loadSet(owner, body.text));
       case 'choose':
         return replyWith(() => choose(owner, body.text, body.id, body.index));
+      case 'advise': {
+        const set = await loadSet(owner, body.text);
+        if (!set) throw new Error('No rules are kept for these instructions.');
+        const read = set.readId ? await keptRead(set.readId) : null;
+        if (!read) throw new Error(READ_GONE);
+        return Response.json({
+          kind: 'advice',
+          advice: await advise(owner, body.text, set, read, body.id),
+        });
+      }
       case 'debug': {
         const set = await loadSet(owner, body.text);
         if (!set) throw new Error('No rules are kept for these instructions.');

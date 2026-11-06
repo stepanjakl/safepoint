@@ -68,6 +68,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
     <ShellPageTransitionProvider processPaths={items.map((item) => item.href)}>
       <ResizableShell
         navigation={<ProcessMenu items={items} initialOrder={savedOrder} />}
+        processes={items}
       >
         {/*
         A containing block for its descendants. Absolutely positioned content --

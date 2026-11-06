@@ -1,0 +1,78 @@
+/* ── Assistant panel ────────────────────────────────────────────────────────
+   One inset on every side, from margins and the column's gap rather than
+   padding on the panel, and two rows that line up with the shell's own: the
+   bar with the notch button, the composer's last row with the account row.
+   ────────────────────────────────────────────────────────────────────────── */
+
+@layer components {
+  .assistant-panel {
+    /* The composer's padding and the height of its controls, from which the
+       inset follows: the composer's last row then centres on the shell's
+       end row, as the account row's content does. Rounded to whole pixels. */
+    --assistant-pad: calc(var(--spacing) * 1.5);
+    --assistant-control: calc(var(--spacing) * 7);
+    --assistant-inset: round(
+      nearest,
+      (
+          var(--spacing-shell-header) - var(--assistant-control) - 2 * var(--assistant-pad) - 2 *
+            var(--spacing-field-edge)
+        ) /
+        2,
+      1px
+    );
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--spacing) * 3);
+    height: 100%;
+    min-height: 0;
+    padding-block-end: var(--assistant-inset);
+  }
+  /* Docked, the pane is a shell inset away on one side and the window on the
+     other, so the start takes that inset too and every side reads alike. */
+  .assistant-panel[data-docked] > * {
+    margin-inline: calc(var(--spacing-shell-inset) + var(--assistant-inset)) var(--assistant-inset);
+  }
+  .assistant-panel:not([data-docked]) {
+    padding: calc(var(--spacing) * 5);
+  }
+  /* The notch's row, so its controls centre where the notch button does. */
+  .assistant-bar {
+    flex: none;
+    height: var(--spacing-shell-header);
+  }
+  .assistant-panel:not([data-docked]) .assistant-bar {
+    height: auto;
+  }
+  .assistant-composer {
+    display: grid;
+    flex: none;
+    gap: var(--assistant-pad);
+    padding: var(--assistant-pad);
+  }
+  .assistant-send {
+    width: var(--assistant-control);
+    height: var(--assistant-control);
+  }
+  /* The mark's parts (assistant-mark.tsx): the antenna a faded pink, then
+     one fade from the head's violet down into the body's cyan, and the eyes
+     cyan at full strength. The glyph paints currentColor,
+     so the fill is set on its path. */
+  .assistant-mark-glyph path {
+    fill: inherit;
+  }
+  .assistant-mark-antenna {
+    stop-color: light-dark(var(--radix-pink-8), var(--radix-pink-dark-9));
+  }
+  .assistant-mark-head-top {
+    stop-color: light-dark(var(--radix-violet-10), var(--radix-violet-dark-11));
+  }
+  .assistant-mark-head-bottom {
+    stop-color: light-dark(var(--radix-violet-9), var(--radix-violet-dark-10));
+  }
+  .assistant-mark-body-bottom {
+    stop-color: light-dark(var(--radix-cyan-8), var(--radix-cyan-dark-10));
+  }
+  .assistant-mark-eyes {
+    fill: light-dark(var(--radix-cyan-9), var(--radix-cyan-dark-11));
+  }
+}

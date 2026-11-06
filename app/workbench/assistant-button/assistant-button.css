@@ -1,0 +1,500 @@
+/* ── Assistant button (workbench) ───────────────────────────────────────────
+   Candidate faces for the assistant's notch button while the panel is open,
+   set by data-option and data-open in assistant-button.tsx. Unlayered, so
+   each beats the secondary face's utilities.
+
+   Every option keeps its paint in place open or closed and changes only
+   colours, all registered and transitioned on control-face's own step and
+   curve, so opening, closing and the pointer settle alike in all of them.
+   ────────────────────────────────────────────────────────────────────────── */
+
+@property --assistant-turn {
+  syntax: '<angle>';
+  inherits: true;
+  initial-value: 0deg;
+}
+
+@property --ab-wash-pink {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --ab-ring-pink {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --ab-top-pink {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --ab-bottom-pink {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --ab-edge-top-pink {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --ab-edge-bottom-pink {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --ab-wash-violet {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --ab-ring-violet {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --ab-top-violet {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --ab-bottom-violet {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --ab-edge-top-violet {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --ab-edge-bottom-violet {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --ab-wash-cyan {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --ab-ring-cyan {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --ab-top-cyan {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --ab-bottom-cyan {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --ab-edge-top-cyan {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --ab-edge-bottom-cyan {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+
+/* control-face's list (app/styles/controls.css) and the colours above: a
+   transition list replaces, so the face's own entries are repeated here. */
+.assistant-option {
+  transition-property:
+    color, background-color, box-shadow, opacity, --control-face-top, --control-face-bottom,
+    --control-ring-top, --control-ring-bottom, --control-highlight, --ab-wash-pink, --ab-ring-pink,
+    --ab-top-pink, --ab-bottom-pink, --ab-edge-top-pink, --ab-edge-bottom-pink, --ab-wash-violet,
+    --ab-ring-violet, --ab-top-violet, --ab-bottom-violet, --ab-edge-top-violet,
+    --ab-edge-bottom-violet, --ab-wash-cyan, --ab-ring-cyan, --ab-top-cyan, --ab-bottom-cyan,
+    --ab-edge-top-cyan, --ab-edge-bottom-cyan;
+  transition-duration: var(--duration-state);
+  transition-timing-function: ease-out;
+}
+
+/* 1 and its variations: an edge turning through three hues over the
+   button's own one, and in the variations a wash of the same hues over its
+   own face, so the face keeps its shading and pointer state under the
+   colour. Closed, every hue is transparent; the wheel keeps turning, so
+   opening never jumps it. */
+.assistant-option[data-option^='spectrum'] {
+  --assistant-turn-duration: 6s;
+  animation: assistant-turn var(--assistant-turn-duration) linear infinite;
+  & .slant-ring {
+    background-image:
+      conic-gradient(
+        from var(--assistant-turn),
+        var(--ab-ring-pink),
+        var(--ab-ring-violet),
+        var(--ab-ring-cyan),
+        var(--ab-ring-pink)
+      ),
+      linear-gradient(to bottom, var(--control-ring-top), var(--control-ring-bottom));
+  }
+}
+.assistant-option[data-option^='spectrum'][data-open] {
+  --ab-ring-pink: light-dark(var(--radix-pink-9), var(--radix-pink-dark-9));
+  --ab-ring-violet: light-dark(var(--radix-violet-9), var(--radix-violet-dark-10));
+  --ab-ring-cyan: light-dark(var(--radix-cyan-9), var(--radix-cyan-dark-9));
+  /* More hue in dark, where the wash lifts the face. */
+  --ab-wash-pink: light-dark(
+    color-mix(in oklab, var(--radix-pink-9) 14%, transparent),
+    color-mix(in oklab, var(--radix-pink-dark-10) 24%, transparent)
+  );
+  --ab-wash-violet: light-dark(
+    color-mix(in oklab, var(--radix-violet-9) 14%, transparent),
+    color-mix(in oklab, var(--radix-violet-dark-10) 24%, transparent)
+  );
+  --ab-wash-cyan: light-dark(
+    color-mix(in oklab, var(--radix-cyan-9) 14%, transparent),
+    color-mix(in oklab, var(--radix-cyan-dark-10) 24%, transparent)
+  );
+  & .assistant-option-icon {
+    color: light-dark(var(--radix-violet-11), var(--radix-violet-dark-11));
+  }
+}
+.assistant-option[data-option^='spectrum'] .slant-face {
+  --ab-face: linear-gradient(to bottom, var(--control-face-top), var(--control-face-bottom));
+}
+
+/* 1a · A still wash, violet to pink. */
+.assistant-option[data-option='spectrum-tint'] .slant-face {
+  background-image:
+    linear-gradient(to right, var(--ab-wash-violet), var(--ab-wash-pink)), var(--ab-face);
+}
+
+/* 1b · The wash drifts: a sweep of the three hues turning with the edge. */
+.assistant-option[data-option='spectrum-drift'] .slant-face {
+  background-image:
+    linear-gradient(
+      var(--assistant-turn),
+      var(--ab-wash-pink),
+      var(--ab-wash-violet),
+      var(--ab-wash-cyan)
+    ),
+    var(--ab-face);
+}
+
+/* 1c · The wash is the edge's own wheel: both turn as one. */
+.assistant-option[data-option='spectrum-swirl'] .slant-face {
+  background-image:
+    conic-gradient(
+      from var(--assistant-turn),
+      var(--ab-wash-pink),
+      var(--ab-wash-violet),
+      var(--ab-wash-cyan),
+      var(--ab-wash-pink)
+    ),
+    var(--ab-face);
+}
+
+@keyframes assistant-turn {
+  to {
+    --assistant-turn: 360deg;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .assistant-option[data-option^='spectrum'] {
+    animation: none;
+  }
+}
+
+/* 6 and its versions: a filled face in the three hues, white ink. Cyan sits
+   one step deeper, as its step 9 is too light to carry white. Face and edge
+   are each two rows: the bottom row is the layer, the top a second one
+   fading out downwards, so both shade top to bottom as a neutral face does.
+   Closed, the rows are the button's own stops, so opening fades between the
+   two faces rather than swapping them. */
+.assistant-option[data-option^='fill'] {
+  --ab-top-pink: var(--control-face-top);
+  --ab-bottom-pink: var(--control-face-bottom);
+  --ab-edge-top-pink: var(--control-ring-top);
+  --ab-edge-bottom-pink: var(--control-ring-bottom);
+  --ab-top-violet: var(--control-face-top);
+  --ab-bottom-violet: var(--control-face-bottom);
+  --ab-edge-top-violet: var(--control-ring-top);
+  --ab-edge-bottom-violet: var(--control-ring-bottom);
+  --ab-top-cyan: var(--control-face-top);
+  --ab-bottom-cyan: var(--control-face-bottom);
+  --ab-edge-top-cyan: var(--control-ring-top);
+  --ab-edge-bottom-cyan: var(--control-ring-bottom);
+  & .slant-face {
+    background-image: linear-gradient(
+      to right,
+      var(--ab-bottom-pink),
+      var(--ab-bottom-violet),
+      var(--ab-bottom-cyan)
+    );
+  }
+  & .slant-ring {
+    background-image: linear-gradient(
+      to right,
+      var(--ab-edge-bottom-pink),
+      var(--ab-edge-bottom-violet),
+      var(--ab-edge-bottom-cyan)
+    );
+  }
+  & :is(.slant-face, .slant-ring)::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    mask-image: linear-gradient(to bottom, #000, transparent);
+  }
+  & .slant-face::before {
+    background: linear-gradient(
+      to right,
+      var(--ab-top-pink),
+      var(--ab-top-violet),
+      var(--ab-top-cyan)
+    );
+  }
+  & .slant-ring::before {
+    background: linear-gradient(
+      to right,
+      var(--ab-edge-top-pink),
+      var(--ab-edge-top-violet),
+      var(--ab-edge-top-cyan)
+    );
+  }
+}
+.assistant-option[data-option^='fill'][data-open] {
+  /* Lightness of each row, as an expression of the source's own (l). */
+  --fill-top-l: l;
+  --fill-bottom-l: l;
+  /* The pointer's step, as the neutral face's: deeper in light, lighter in
+     dark, by as much lightness as it moves (0.055 at mid-height). The edge
+     goes with the face, a step further off it. */
+  --fill-hover: 0;
+  --fill-edge-hover: 0;
+  /* How far the edge sits off the fill, at the top and the bottom. */
+  --fill-edge-top: 0.08;
+  --fill-edge-bottom: 0.08;
+  --fill-pink-top-light: var(--radix-pink-9);
+  --fill-pink-top-dark: var(--radix-pink-dark-9);
+  --fill-pink-bottom-light: var(--radix-pink-9);
+  --fill-pink-bottom-dark: var(--radix-pink-dark-9);
+  --fill-violet-top-light: var(--radix-violet-9);
+  --fill-violet-top-dark: var(--radix-violet-dark-9);
+  --fill-violet-bottom-light: var(--radix-violet-9);
+  --fill-violet-bottom-dark: var(--radix-violet-dark-9);
+  --fill-cyan-top-light: var(--radix-cyan-10);
+  --fill-cyan-top-dark: var(--radix-cyan-dark-8);
+  --fill-cyan-bottom-light: var(--radix-cyan-10);
+  --fill-cyan-bottom-dark: var(--radix-cyan-dark-8);
+  --ab-top-pink: light-dark(
+    oklch(from var(--fill-pink-top-light) calc(var(--fill-top-l) - var(--fill-hover)) c h),
+    oklch(from var(--fill-pink-top-dark) calc(var(--fill-top-l) + var(--fill-hover)) c h)
+  );
+  --ab-edge-top-pink: light-dark(
+    oklch(
+      from var(--fill-pink-top-light)
+        calc(var(--fill-top-l) - var(--fill-hover) - var(--fill-edge-top) - var(--fill-edge-hover))
+        c h
+    ),
+    oklch(
+      from var(--fill-pink-top-dark)
+        calc(var(--fill-top-l) + var(--fill-hover) + var(--fill-edge-top) + var(--fill-edge-hover))
+        c h
+    )
+  );
+  --ab-bottom-pink: light-dark(
+    oklch(from var(--fill-pink-bottom-light) calc(var(--fill-bottom-l) - var(--fill-hover)) c h),
+    oklch(from var(--fill-pink-bottom-dark) calc(var(--fill-bottom-l) + var(--fill-hover)) c h)
+  );
+  --ab-edge-bottom-pink: light-dark(
+    oklch(
+      from var(--fill-pink-bottom-light)
+        calc(
+          var(--fill-bottom-l) - var(--fill-hover) - var(--fill-edge-bottom) -
+            var(--fill-edge-hover)
+        )
+        c h
+    ),
+    oklch(
+      from var(--fill-pink-bottom-dark)
+        calc(
+          var(--fill-bottom-l) + var(--fill-hover) + var(--fill-edge-bottom) +
+            var(--fill-edge-hover)
+        )
+        c h
+    )
+  );
+  --ab-top-violet: light-dark(
+    oklch(from var(--fill-violet-top-light) calc(var(--fill-top-l) - var(--fill-hover)) c h),
+    oklch(from var(--fill-violet-top-dark) calc(var(--fill-top-l) + var(--fill-hover)) c h)
+  );
+  --ab-edge-top-violet: light-dark(
+    oklch(
+      from var(--fill-violet-top-light)
+        calc(var(--fill-top-l) - var(--fill-hover) - var(--fill-edge-top) - var(--fill-edge-hover))
+        c h
+    ),
+    oklch(
+      from var(--fill-violet-top-dark)
+        calc(var(--fill-top-l) + var(--fill-hover) + var(--fill-edge-top) + var(--fill-edge-hover))
+        c h
+    )
+  );
+  --ab-bottom-violet: light-dark(
+    oklch(from var(--fill-violet-bottom-light) calc(var(--fill-bottom-l) - var(--fill-hover)) c h),
+    oklch(from var(--fill-violet-bottom-dark) calc(var(--fill-bottom-l) + var(--fill-hover)) c h)
+  );
+  --ab-edge-bottom-violet: light-dark(
+    oklch(
+      from var(--fill-violet-bottom-light)
+        calc(
+          var(--fill-bottom-l) - var(--fill-hover) - var(--fill-edge-bottom) -
+            var(--fill-edge-hover)
+        )
+        c h
+    ),
+    oklch(
+      from var(--fill-violet-bottom-dark)
+        calc(
+          var(--fill-bottom-l) + var(--fill-hover) + var(--fill-edge-bottom) +
+            var(--fill-edge-hover)
+        )
+        c h
+    )
+  );
+  --ab-top-cyan: light-dark(
+    oklch(from var(--fill-cyan-top-light) calc(var(--fill-top-l) - var(--fill-hover)) c h),
+    oklch(from var(--fill-cyan-top-dark) calc(var(--fill-top-l) + var(--fill-hover)) c h)
+  );
+  --ab-edge-top-cyan: light-dark(
+    oklch(
+      from var(--fill-cyan-top-light)
+        calc(var(--fill-top-l) - var(--fill-hover) - var(--fill-edge-top) - var(--fill-edge-hover))
+        c h
+    ),
+    oklch(
+      from var(--fill-cyan-top-dark)
+        calc(var(--fill-top-l) + var(--fill-hover) + var(--fill-edge-top) + var(--fill-edge-hover))
+        c h
+    )
+  );
+  --ab-bottom-cyan: light-dark(
+    oklch(from var(--fill-cyan-bottom-light) calc(var(--fill-bottom-l) - var(--fill-hover)) c h),
+    oklch(from var(--fill-cyan-bottom-dark) calc(var(--fill-bottom-l) + var(--fill-hover)) c h)
+  );
+  --ab-edge-bottom-cyan: light-dark(
+    oklch(
+      from var(--fill-cyan-bottom-light)
+        calc(
+          var(--fill-bottom-l) - var(--fill-hover) - var(--fill-edge-bottom) -
+            var(--fill-edge-hover)
+        )
+        c h
+    ),
+    oklch(
+      from var(--fill-cyan-bottom-dark)
+        calc(
+          var(--fill-bottom-l) + var(--fill-hover) + var(--fill-edge-bottom) +
+            var(--fill-edge-hover)
+        )
+        c h
+    )
+  );
+  --control-highlight: transparent;
+  color: white;
+  &:is([data-hovered], [data-pressed]) {
+    --fill-hover: 0.05;
+    --fill-edge-hover: 0.03;
+  }
+  & .assistant-option-icon {
+    color: white;
+  }
+}
+/* 6b · Shaded by step: each hue's step 9 above its 10 in light. Dark steps
+   lighten upwards, so there the 10 goes on top. */
+.assistant-option[data-option='fill-step'][data-open] {
+  --fill-pink-bottom-light: var(--radix-pink-10);
+  --fill-violet-bottom-light: var(--radix-violet-10);
+  --fill-cyan-bottom-light: var(--radix-cyan-11);
+  --fill-pink-top-dark: var(--radix-pink-dark-10);
+  --fill-violet-top-dark: var(--radix-violet-dark-10);
+  --fill-cyan-top-dark: var(--radix-cyan-dark-9);
+}
+/* 6c · Shaded by lightness: the same lift and drop for every hue. */
+.assistant-option[data-option='fill-lightness'][data-open] {
+  /* Lifted and dropped from a base 0.08 below each hue, so white text keeps
+     4.5:1 on all three. */
+  --fill-top-l: calc(l - 0.03);
+  --fill-bottom-l: calc(l - 0.12);
+  /* Held off the fill most at the top, as the resting face's edge is. */
+  --fill-edge-top: 0.15;
+  --fill-edge-bottom: 0.07;
+}
+/* 6d · Even perception: every hue at one lightness, so none reads brighter
+   than the others across the face. */
+.assistant-option[data-option='fill-even'][data-open] {
+  --fill-top-l: 0.66;
+  --fill-bottom-l: 0.56;
+}
+
+/* 2 · Pink at the top to violet at the bottom, white ink. */
+.assistant-option[data-option='gradient'][data-open] {
+  --control-face-top: light-dark(var(--radix-pink-9), var(--radix-pink-dark-9));
+  --control-face-bottom: light-dark(var(--radix-violet-9), var(--radix-violet-dark-9));
+  --control-ring-top: light-dark(var(--radix-pink-10), var(--radix-pink-dark-10));
+  --control-ring-bottom: light-dark(var(--radix-violet-11), var(--radix-violet-dark-8));
+  --control-highlight: transparent;
+  color: white;
+  & .assistant-option-icon {
+    color: white;
+  }
+  &:is([data-hovered], [data-pressed]) {
+    --control-face-top: light-dark(var(--radix-pink-10), var(--radix-pink-dark-10));
+    --control-face-bottom: light-dark(var(--radix-violet-10), var(--radix-violet-dark-10));
+  }
+}
+
+/* 3 · One hue, filled as the primary button is. */
+.assistant-option[data-option='violet'][data-open] {
+  --control-face-top: light-dark(var(--radix-violet-9), var(--radix-violet-dark-9));
+  --control-face-bottom: light-dark(var(--radix-violet-10), var(--radix-violet-dark-8));
+  --control-ring-top: light-dark(var(--radix-violet-10), var(--radix-violet-dark-10));
+  --control-ring-bottom: light-dark(var(--radix-violet-11), var(--radix-violet-dark-7));
+  --control-highlight: transparent;
+  color: white;
+  & .assistant-option-icon {
+    color: white;
+  }
+  &:is([data-hovered], [data-pressed]) {
+    --control-face-top: light-dark(var(--radix-violet-10), var(--radix-violet-dark-10));
+    --control-face-bottom: light-dark(var(--radix-violet-11), var(--radix-violet-dark-9));
+  }
+}
+
+/* 4 · A pale face from violet to pink, violet edge and ink. */
+.assistant-option[data-option='tint'][data-open] {
+  --control-face-top: light-dark(var(--radix-violet-3), var(--radix-violet-dark-4));
+  --control-face-bottom: light-dark(var(--radix-pink-4), var(--radix-pink-dark-4));
+  --control-ring-top: light-dark(var(--radix-violet-7), var(--radix-violet-dark-7));
+  --control-ring-bottom: light-dark(var(--radix-pink-8), var(--radix-pink-dark-7));
+  --control-highlight: light-dark(var(--radix-violet-2), var(--radix-violet-dark-5));
+  color: light-dark(var(--radix-violet-12), var(--radix-violet-dark-12));
+  & .assistant-option-icon {
+    color: light-dark(var(--radix-violet-11), var(--radix-violet-dark-11));
+  }
+  &:is([data-hovered], [data-pressed]) {
+    --control-face-top: light-dark(var(--radix-violet-4), var(--radix-violet-dark-5));
+    --control-face-bottom: light-dark(var(--radix-pink-5), var(--radix-pink-dark-5));
+  }
+}
+
+/* 5 · The secondary face; only the edge and the icon turn violet. */
+.assistant-option[data-option='glow'][data-open] {
+  --control-ring-top: light-dark(var(--radix-violet-8), var(--radix-violet-dark-8));
+  --control-ring-bottom: light-dark(var(--radix-violet-9), var(--radix-violet-dark-7));
+  & .assistant-option-icon {
+    color: light-dark(var(--radix-violet-11), var(--radix-violet-dark-11));
+  }
+}

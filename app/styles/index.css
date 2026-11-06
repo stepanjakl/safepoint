@@ -30,6 +30,7 @@
 @import '../../components/ui/swap.css';
 @import '../../components/ui/fold.css';
 @import '../../components/ui/filter-tabs.css';
+@import '../../components/ui/edge-scroll.css';
 @import '../../components/app-shell/thread/thread-step.css';
 @import '../../components/app-shell/system/system-parts.css';
 @import '../../components/ui/notch.css';
@@ -40,6 +41,8 @@
 @import '../../components/app-shell/sidebar/workspace-menu.css';
 @import '../../components/app-shell/process/process-title.css';
 @import '../../components/app-shell/process/process-header.css';
+@import '../../components/app-shell/assistant/assistant.css';
+@import '../../components/app-shell/assistant/assistant-panel.css';
 @import '../../components/app-shell/process/process-sheet.css';
 @import '../../components/app-shell/process/schedule-control.css';
 @import '../../components/ui/tooltip.css';
@@ -65,5 +68,6 @@
 @import '../workbench/button-rounding/button-rounding.css';
 @import '../workbench/popover-halo/popover-halo.css';
 @import '../workbench/popover-edge/popover-edge.css';
+@import '../workbench/assistant-button/assistant-button.css';
 @import '../workbench/draft-progress/draft-progress.css';
 @import '../workbench/run/thread-progress.css';

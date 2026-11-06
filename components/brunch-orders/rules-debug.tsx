@@ -24,6 +24,7 @@ import type {
   RecordWorking,
 } from '@/lib/definitions/debug';
 import { DRAFTING_MODELS, type DraftingModel } from '@/lib/models';
+import { TabSwap } from '@/components/ui/swap';
 
 /*
   What code finds of a draft and of each rule in it, for a person working out
@@ -102,6 +103,9 @@ export function RulesDebug({
 function KindPill({ kind }: { kind: AccountedSentence['kind'] }) {
   return <Pill tone="neutral">{KIND[kind]}</Pill>;
 }
+
+// A tab's body takes the drawer's height below the tabs, as each view expects.
+const TAB_BODY = 'flex min-h-0 min-w-0 flex-1 flex-col';
 
 function Scroller({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -196,20 +200,24 @@ function RuleDrawer({
               menuLabel="Other debug views"
               className="self-start"
             />
-            {tab === 'Summary' ? (
-              <SummaryView debug={debug} fails={fails} />
-            ) : tab === 'Source' ? (
-              <SourceView debug={debug} />
-            ) : tab === 'Checks' ? (
-              <ChecksView debug={debug} />
-            ) : (
-              <ValuesView
-                debug={debug}
-                onInput={(field, value) =>
-                  setInputs({ ...inputs, [field]: value })
-                }
-              />
-            )}
+            <TabSwap selected={tab} className={TAB_BODY}>
+              {(shown) =>
+                shown === 'Summary' ? (
+                  <SummaryView debug={debug} fails={fails} />
+                ) : shown === 'Source' ? (
+                  <SourceView debug={debug} />
+                ) : shown === 'Checks' ? (
+                  <ChecksView debug={debug} />
+                ) : (
+                  <ValuesView
+                    debug={debug}
+                    onInput={(field, value) =>
+                      setInputs({ ...inputs, [field]: value })
+                    }
+                  />
+                )
+              }
+            </TabSwap>
           </>
         ) : (
           <Waiting state={asking.state} message={message} />
@@ -573,15 +581,19 @@ function DraftDrawer({
               menuLabel="Other debug views"
               className="self-start"
             />
-            {tab === 'Sentences' ? (
-              <SentencesView debug={debug} />
-            ) : tab === 'Rules' ? (
-              <RulesView debug={debug} />
-            ) : tab === 'Columns' ? (
-              <ColumnsView debug={debug} />
-            ) : (
-              <ModelsView debug={debug} />
-            )}
+            <TabSwap selected={tab} className={TAB_BODY}>
+              {(shown) =>
+                shown === 'Sentences' ? (
+                  <SentencesView debug={debug} />
+                ) : shown === 'Rules' ? (
+                  <RulesView debug={debug} />
+                ) : shown === 'Columns' ? (
+                  <ColumnsView debug={debug} />
+                ) : (
+                  <ModelsView debug={debug} />
+                )
+              }
+            </TabSwap>
           </>
         ) : (
           <Waiting

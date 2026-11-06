@@ -704,6 +704,35 @@ export const usesOf = (shape: Shape, context: ShapeContext) =>
 
 // Two shapes that say the same, whatever their constants and groups are
 // called, each read with its own constants and groups.
+// The fields each kind reads; the rest of the flat form is cleared.
+const READS: Record<Shape['kind'], (keyof Shape)[]> = {
+  limit: ['field', 'at', 'amount'],
+  step: ['field', 'amount'],
+  only_when: ['field', 'when'],
+  target: ['field', 'base', 'compare', 'target', 'margin_pct'],
+  flag: ['when'],
+};
+
+/*
+  A shape with only what its kind reads: a model fills fields of the flat form
+  its kind ignores, which change nothing it checks but would be stored.
+*/
+export function withoutUnused(shape: Shape): Shape {
+  const reads = READS[shape.kind];
+  const kept = (name: keyof Shape) => reads.includes(name);
+  return {
+    ...shape,
+    field: kept('field') ? shape.field : null,
+    at: kept('at') ? shape.at : null,
+    amount: kept('amount') ? shape.amount : null,
+    base: kept('base') ? shape.base : null,
+    compare: kept('compare') ? shape.compare : null,
+    target: kept('target') ? shape.target : null,
+    margin_pct: kept('margin_pct') ? shape.margin_pct : null,
+    when: kept('when') ? shape.when : [],
+  };
+}
+
 export function sameShape(
   a: ShapeContext & { shape: Shape },
   b: ShapeContext & { shape: Shape },
@@ -865,7 +894,11 @@ export function valuesInWords(
         plainValue(run(columnAt(c.column, context)?.path ?? 'null', formulas)),
       );
   for (const m of new Set(momentsOf(rule)))
-    if (m !== READ)
+    if (m === READ) {
+      // The other half of a comparison with the read, said as a fact.
+      const at = momentWhen(READ, record, context);
+      if (at) parts.push(`the data was read at ${at}`);
+    } else
       say(
         momentWords(m, context).replace(/ \(.*\)$/, ''),
         momentWhen(m, record, context) ?? 'blank',

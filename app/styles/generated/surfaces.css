@@ -85,7 +85,7 @@
   --sp-recess-field-face: light-dark(var(--sp-neutral-75), var(--sp-neutral-900));
   --sp-recess-field-edge: light-dark(var(--sp-neutral-250), var(--sp-neutral-800));
   --sp-recess-field-edge-hover: light-dark(var(--sp-neutral-300), var(--sp-neutral-525));
-  --sp-recess-field-edge-active: light-dark(var(--sp-neutral-625), var(--sp-neutral-275));
+  --sp-recess-field-edge-active: light-dark(var(--sp-neutral-600), var(--sp-neutral-350));
   --sp-recess-enclosure-edge: light-dark(var(--sp-neutral-75), var(--sp-neutral-800));
   --sp-recess-filter-face: light-dark(var(--sp-neutral-100), var(--sp-neutral-950));
   --sp-recess-filter-track-edge: light-dark(var(--sp-neutral-250), var(--sp-neutral-800));
@@ -148,7 +148,7 @@
   --sp-field-face: light-dark(var(--sp-neutral-25), var(--sp-neutral-800));
   --sp-field-edge: light-dark(var(--sp-neutral-200), var(--sp-neutral-700));
   --sp-field-edge-hover: light-dark(var(--sp-neutral-250), var(--sp-neutral-425));
-  --sp-field-edge-active: light-dark(var(--sp-neutral-575), var(--sp-neutral-175));
+  --sp-field-edge-active: light-dark(var(--sp-neutral-550), var(--sp-neutral-250));
   --sp-enclosure-edge: light-dark(var(--sp-neutral-25), var(--sp-neutral-700));
   --sp-filter-face: light-dark(var(--sp-neutral-50), var(--sp-neutral-850));
   --sp-filter-track-edge: light-dark(var(--sp-neutral-200), var(--sp-neutral-700));
@@ -210,7 +210,7 @@
   --sp-recess-field-face: light-dark(var(--sp-neutral-50), var(--sp-neutral-850));
   --sp-recess-field-edge: light-dark(var(--sp-neutral-225), var(--sp-neutral-750));
   --sp-recess-field-edge-hover: light-dark(var(--sp-neutral-275), var(--sp-neutral-475));
-  --sp-recess-field-edge-active: light-dark(var(--sp-neutral-600), var(--sp-neutral-225));
+  --sp-recess-field-edge-active: light-dark(var(--sp-neutral-575), var(--sp-neutral-300));
   --sp-recess-enclosure-edge: light-dark(var(--sp-neutral-50), var(--sp-neutral-750));
   --sp-recess-filter-face: light-dark(var(--sp-neutral-75), var(--sp-neutral-900));
   --sp-recess-filter-track-edge: light-dark(var(--sp-neutral-225), var(--sp-neutral-750));
@@ -270,7 +270,7 @@
   --sp-field-face: light-dark(var(--sp-neutral-0), var(--sp-neutral-750));
   --sp-field-edge: light-dark(var(--sp-neutral-175), var(--sp-neutral-650));
   --sp-field-edge-hover: light-dark(var(--sp-neutral-225), var(--sp-neutral-375));
-  --sp-field-edge-active: light-dark(var(--sp-neutral-550), var(--sp-neutral-125));
+  --sp-field-edge-active: light-dark(var(--sp-neutral-525), var(--sp-neutral-200));
   --sp-enclosure-edge: light-dark(var(--sp-neutral-0), var(--sp-neutral-650));
   --sp-filter-face: light-dark(var(--sp-neutral-25), var(--sp-neutral-800));
   --sp-filter-track-edge: light-dark(var(--sp-neutral-175), var(--sp-neutral-650));
@@ -332,7 +332,7 @@
   --sp-recess-field-face: light-dark(var(--sp-neutral-25), var(--sp-neutral-800));
   --sp-recess-field-edge: light-dark(var(--sp-neutral-200), var(--sp-neutral-700));
   --sp-recess-field-edge-hover: light-dark(var(--sp-neutral-250), var(--sp-neutral-425));
-  --sp-recess-field-edge-active: light-dark(var(--sp-neutral-575), var(--sp-neutral-175));
+  --sp-recess-field-edge-active: light-dark(var(--sp-neutral-550), var(--sp-neutral-250));
   --sp-recess-enclosure-edge: light-dark(var(--sp-neutral-25), var(--sp-neutral-700));
   --sp-recess-filter-face: light-dark(var(--sp-neutral-50), var(--sp-neutral-850));
   --sp-recess-filter-track-edge: light-dark(var(--sp-neutral-200), var(--sp-neutral-700));
@@ -392,7 +392,7 @@
   --sp-field-face: light-dark(var(--sp-neutral-0), var(--sp-neutral-700));
   --sp-field-edge: light-dark(var(--sp-neutral-150), var(--sp-neutral-600));
   --sp-field-edge-hover: light-dark(var(--sp-neutral-200), var(--sp-neutral-325));
-  --sp-field-edge-active: light-dark(var(--sp-neutral-525), var(--sp-neutral-75));
+  --sp-field-edge-active: light-dark(var(--sp-neutral-500), var(--sp-neutral-150));
   --sp-enclosure-edge: light-dark(var(--sp-neutral-0), var(--sp-neutral-600));
   --sp-filter-face: light-dark(var(--sp-neutral-0), var(--sp-neutral-750));
   --sp-filter-track-edge: light-dark(var(--sp-neutral-150), var(--sp-neutral-600));
@@ -451,7 +451,7 @@
   --sp-recess-field-face: light-dark(var(--sp-neutral-0), var(--sp-neutral-750));
   --sp-recess-field-edge: light-dark(var(--sp-neutral-175), var(--sp-neutral-650));
   --sp-recess-field-edge-hover: light-dark(var(--sp-neutral-225), var(--sp-neutral-375));
-  --sp-recess-field-edge-active: light-dark(var(--sp-neutral-550), var(--sp-neutral-125));
+  --sp-recess-field-edge-active: light-dark(var(--sp-neutral-525), var(--sp-neutral-200));
   --sp-recess-enclosure-edge: light-dark(var(--sp-neutral-0), var(--sp-neutral-650));
   --sp-recess-filter-face: light-dark(var(--sp-neutral-25), var(--sp-neutral-800));
   --sp-recess-filter-track-edge: light-dark(var(--sp-neutral-175), var(--sp-neutral-650));

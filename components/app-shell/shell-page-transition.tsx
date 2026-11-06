@@ -71,7 +71,10 @@ export function ShellPageTransitionProvider({
     path === '/workspace' || journey.previous === '/workspace';
 
   function leaveTo(href: string) {
-    if (href !== path && !leaving) setPending({ from: path, to: href });
+    if (href === path || leaving) return;
+    // Fetched during the fade-out, so the page can follow it rather than wait.
+    router.prefetch(href);
+    setPending({ from: path, to: href });
   }
 
   function finishLeaving() {

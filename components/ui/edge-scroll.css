@@ -1,0 +1,54 @@
+/* ── Edge scroll ────────────────────────────────────────────────────────────
+   The fades of a horizontal scroller (edge-scroll.tsx): each side fades out
+   while there is more to show beyond it. The hook reads --edge-fade as the
+   width of the zone that scrolls on hover, so the two are one number.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Registered so the hook reads a length, not the token's text, and so each
+   side's fade can ease in and out. */
+@property --edge-fade {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+@property --edge-fade-start {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+@property --edge-fade-end {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@layer components {
+  .edge-scroll {
+    --edge-fade: calc(var(--spacing) * 12);
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+    transition:
+      --edge-fade-start var(--duration-state) ease-out,
+      --edge-fade-end var(--duration-state) ease-out;
+  }
+  .edge-scroll::-webkit-scrollbar {
+    display: none;
+  }
+  /* Masked only while it can scroll: a mask clips to the border box, and
+     would cut a focus ring or a bleed short when there is nothing to fade. */
+  .edge-scroll[data-edge-scrollable] {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 var(--edge-fade-start),
+      #000 calc(100% - var(--edge-fade-end)),
+      transparent
+    );
+  }
+  .edge-scroll[data-fade-start] {
+    --edge-fade-start: var(--edge-fade);
+  }
+  .edge-scroll[data-fade-end] {
+    --edge-fade-end: var(--edge-fade);
+  }
+}
