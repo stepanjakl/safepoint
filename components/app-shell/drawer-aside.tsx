@@ -278,7 +278,9 @@ function AsideContent({
           ) : null}
         </div>
       </header>
-      <div className="overflow-y-auto overscroll-contain">{layer.body}</div>
+      <div className="swap-body overflow-y-auto overscroll-contain">
+        {layer.body}
+      </div>
     </div>
   );
 }

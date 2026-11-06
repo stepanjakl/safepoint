@@ -39,10 +39,6 @@ import { useSwap } from '@/components/ui/swap';
 
 const TAB_MOTION = (): 'fade' => 'fade';
 
-// The proposed Instructions tab, offered beside the current one while the two
-// are compared (instructions-b.tsx). Never in a production build.
-const COMPARE_INSTRUCTIONS = process.env.NODE_ENV === 'development';
-
 /*
   What a process brings in place of the shared instructions panel, where its
   policy is something else: a versioned rulebook, approved by a person, is
@@ -94,7 +90,6 @@ export function ProcessSheet({
   policy,
   liveThread,
   rulesPanel,
-  rulesPanelB,
   inputsPanel,
   savedTabs = null,
 }: {
@@ -104,8 +99,6 @@ export function ProcessSheet({
   // A process's own rulebook, as a Rules tab; and its own Inputs tab, in
   // place of the evidence files' list.
   rulesPanel?: ReactNode;
-  // Development only: the proposed Rules tab, beside the current one.
-  rulesPanelB?: ReactNode;
   inputsPanel?: ReactNode;
   // The current run's thread, built on the server.
   run: ReactNode;
@@ -120,16 +113,8 @@ export function ProcessSheet({
   savedTabs?: string | null;
 }) {
   const [stored, setTab] = useProcessTab(process.id, savedTabs);
-  // A Rules tab kept from a process that has one means nothing on another;
-  // nor does the comparison tab where it is not offered.
-  const compareInstructions = COMPARE_INSTRUCTIONS && policy === undefined;
-  const compareRules = COMPARE_INSTRUCTIONS && rulesPanelB !== undefined;
-  const tab =
-    (stored === 'rules' && rulesPanel === undefined) ||
-    (stored === 'rules-b' && !compareRules) ||
-    (stored === 'instructions-b' && !compareInstructions)
-      ? 'runs'
-      : stored;
+  // A Rules tab kept from a process that has one means nothing on another.
+  const tab = stored === 'rules' && rulesPanel === undefined ? 'runs' : stored;
   // The root opens the process last open (app/(shell)/page.tsx).
   useEffect(() => {
     writePreferenceCookie(LAST_PROCESS_KEY, process.id);
@@ -200,9 +185,7 @@ export function ProcessSheet({
           process={process}
           version={policy?.version ?? version}
           instructionsLabel={policy?.label}
-          compareInstructions={compareInstructions}
           hasRules={rulesPanel !== undefined}
-          compareRules={compareRules}
           inputs={kept}
           outputs={process.outputs}
           tab={tab}
@@ -264,16 +247,8 @@ export function ProcessSheet({
                 </RunsDetail>
               </div>
             ) : shown === 'rules' ? (
-              <SinglePanel {...SECTION.rules} entering={entering}>
+              <SinglePanel {...SECTION.rules} width="wide" entering={entering}>
                 {rulesPanel}
-              </SinglePanel>
-            ) : shown === 'rules-b' ? (
-              <SinglePanel
-                {...SECTION['rules-b']}
-                width="wide"
-                entering={entering}
-              >
-                {rulesPanelB}
               </SinglePanel>
             ) : shown === 'instructions' && policy ? (
               <PolicyPanel policy={policy} entering={entering} />

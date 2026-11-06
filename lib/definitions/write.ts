@@ -32,6 +32,7 @@ import {
 import { fitting, READ, START, type KeptRead } from './records';
 import {
   formulaOf,
+  momentTimes,
   sameShape,
   sentenceOf,
   shapeColumn,
@@ -84,9 +85,19 @@ const REFUSALS = [
 ] as const;
 type Refusal = (typeof REFUSALS)[number];
 const REFUSAL_WORDS: Record<Refusal, string> = {
-  needs_or: 'It needs “or”, which no shape joins conditions with',
-  needs_other_arithmetic: 'It needs arithmetic no shape has',
-  needs_missing_data: 'It needs something the data does not have',
+  needs_or: 'it joins conditions with “or”',
+  needs_other_arithmetic: 'it needs arithmetic no shape has',
+  needs_missing_data: 'it needs something the data does not have',
+};
+
+// What shapes can do, said back to a refusal according to its reason.
+const REMINDERS: Record<Refusal, string> = {
+  needs_or:
+    'Before refusing: is the "or" only the exception for proposing nothing? Code adds that, so the rest is one shape. Is it an "or" between records? Then scope may limit the rule to a group or to conditions. If the rule still needs "or", refuse again.',
+  needs_other_arithmetic:
+    'Before refusing, what shapes can do: compare the proposed field with a number, at most or at least (limit); require whole multiples (step); add the proposed field to a base and compare with a target, plus a margin in percent (target, margin_pct); compare two numbers, test a yes/no column, or put one moment before or after another, the start or the read (only_when, flag). Whether a moment has passed by the read is moment:<moment> before moment:read. If one of these says the rule, give that shape; otherwise refuse again.',
+  needs_missing_data:
+    "Before refusing, what shapes can read: every column listed, each lookup column as <lookup>.<column>, every earlier value as value:<id>, constants with the instructions' words, and the moments listed, with start and read. If what the rule reads is among these, give the shape; otherwise refuse again.",
 };
 
 // What one answer holds: built per definition, so a check's examples say
@@ -216,9 +227,14 @@ const MOMENT_KINDS: Record<Moment['kind'], string> = {
   choosing from these cannot invent a column, and never sees how a moment is
   kept, so it cannot get a sign the wrong way round.
 */
-function shapeMaterials({ owner, records }: Setting) {
+function shapeMaterials(setting: Setting) {
+  const { owner, records, earlier } = setting;
   const { subject } = owner;
   const { data } = subject;
+  const times = momentTimes(
+    shapeContextFor(setting, { constants: [], groups: [] }),
+  );
+  const values = earlier.filter((d) => d.result === 'number');
   const listed = (columns: Record<string, string>, prefix = '') =>
     Object.entries(columns)
       .filter(([name]) => shapeColumn(name, subject))
@@ -226,8 +242,8 @@ function shapeMaterials({ owner, records }: Setting) {
       .join(', ');
   const moments = data.timing
     ? [
-        `- ${START}: when the planned period starts`,
-        `- ${READ}: when the data was read`,
+        `- ${START}: when the planned period starts${times.start ? `, ${times.start}` : ''}`,
+        `- ${READ}: when the data was read${times.read ? `, ${times.read}` : ''}`,
         ...Object.entries(data.timing.moments ?? {}).map(
           ([name, m]) =>
             `- ${name}: ${m.day} at ${m.time}, ${MOMENT_KINDS[m.kind]}${m.kind === 'observed' ? '; hours_since may read it' : ''}`,
@@ -240,7 +256,10 @@ function shapeMaterials({ owner, records }: Setting) {
       (lookup) =>
         `Columns of its ${lookup.tab} row, named ${lookup.as}.<column>: ${listed(records.types.lookups[lookup.as] ?? {}, `${lookup.as}.`)}.`,
     ),
-    `Proposal fields: ${subject.proposal.map((f) => `${f.id} (the proposed ${f.label}, in ${f.unit})`).join(', ')}.`,
+    values.length
+      ? `Earlier values, named value:<id>: ${values.map((d) => `value:${d.id} (${d.name})`).join(', ')}. Read them as they are; never work them out again.`
+      : 'There are no earlier values.',
+    `Proposal fields, named proposed:<field>: ${subject.proposal.map((f) => `proposed:${f.id} (the ${f.label}, in ${f.unit})`).join(', ')}.`,
     moments.length
       ? `Moments, put before or after one another as moment:<moment>:\n${moments.join('\n')}`
       : 'There are no moments.',
@@ -263,6 +282,7 @@ function shapeInstructionsFor(setting: Setting) {
     '- target: a number there already is (base) plus the proposed field reaches, or does not exceed, a target, optionally plus a margin in percent.',
     `- flag: ${definition.consequence === 'decide' ? 'flag the record for a person when every condition holds, whatever is proposed.' : 'not for this rule: failing it stops the proposal.'}`,
     'A number is a column, an earlier definition (value), a constant, the proposed field, or the hours since a moment. A condition compares two numbers, tests a yes/no column, or puts one moment before or after another. Conditions are all joined by "and".',
+    'The forms, with placeholders for names: amount "column:<column>"; a condition {left: "moment:<moment>", op: "before", right: "moment:start"}; {left: "column:<yes/no column>", op: "is_yes", right: null}; {left: "hours_since:<moment>", op: ">", right: "constant:<id>"}; a target with base "value:<id>", compare "reach", target "value:<id>", margin_pct "column:<lookup>.<column>".',
     `scope limits the rule to some ${plural}: a group, or conditions; null when it is about all of them. if_blank says what a ${subject.record.singular} with a blank cell the rule reads comes to: skip (the rule does not apply to it) or fail.`,
     nothing.length
       ? `Proposing nothing (${nothing.join(', ')}) always passes a rule that stops a proposal: code adds that, so never write it.`
@@ -271,7 +291,7 @@ function shapeInstructionsFor(setting: Setting) {
     'Follow the instructions literally. Never add a condition, a record or a number they do not state.',
     `Every number the rule needs is a constant: give it an id, its value and the instructions' exact words that state it, and name it as a constant.`,
     `Where the instructions name ${plural} in words, list them as a group: the keys and the instructions' exact words that name them.`,
-    `check_definition answers with the sentence code wrote from your shape: read it, and fix the shape if it does not say what the rule says. Give examples on real ${plural} where it holds (result: true) and where it does not (result: false), worked out by hand from the data, with a proposal that makes the point. try_shape runs a shape on one real ${subject.record.singular}. Answer by calling check_definition with your whole answer until it returns ok.`,
+    `check_definition answers with the sentence code wrote from your shape: read it, and fix the shape if it does not say what the rule says. Give examples on real ${plural} where it holds (result: true) and where it does not (result: false), worked out by hand from the data, with a proposal that makes the point. For a flag, result is false where the ${subject.record.singular} is flagged. try_shape runs a shape on one real ${subject.record.singular}. Answer by calling check_definition with your whole answer until it returns ok.`,
     shapeMaterials(setting),
     plain(subject),
   ]
@@ -366,6 +386,8 @@ type Kept = {
     Definition,
     'formula' | 'constants' | 'groups' | 'uses' | 'shape' | 'unfit'
   >;
+  // Why no shape fits, where the model said none does.
+  refusal?: Refusal;
   examples: Example[];
   problem: string | null;
 };
@@ -411,6 +433,8 @@ async function writeOnce(
   let last = null as string[] | null;
   let same = 0;
   let blocked = null as string | null;
+  // Whether this write's first refusal has been answered with a reminder.
+  let reminded = false;
 
   // Notes an answer's problems: the same ones three times over ends it.
   const noted = (problems: string[]) => {
@@ -498,6 +522,15 @@ async function writeOnce(
         let formula = answer.formula ?? '';
         let sentence: string | null = null;
         if (definition.result === 'check') {
+          // A first refusal is answered with what shapes can do for its
+          // reason: in two drafts, every wrong refusal claimed a shape lacked
+          // something it has. A second refusal stands.
+          if (!answer.shape && answer.none_fits && !reminded) {
+            reminded = true;
+            const reminder = [REMINDERS[answer.none_fits.reason]];
+            noted(reminder);
+            return { ok: false, problems: reminder };
+          }
           // No shape fits: the answer, kept with its reason and no formula.
           if (!answer.shape && answer.none_fits) {
             kept = {
@@ -507,10 +540,11 @@ async function writeOnce(
                 groups: [],
                 uses: [],
                 shape: null,
-                unfit: `${REFUSAL_WORDS[answer.none_fits.reason]}: ${answer.none_fits.explain}`,
+                unfit: answer.none_fits.explain,
               },
               examples: [],
               problem: null,
+              refusal: answer.none_fits.reason,
             };
             noted([]);
             return { ok: true };
@@ -542,6 +576,14 @@ async function writeOnce(
             examples: ran.examples,
             problem: ran.problem,
           };
+        // The one way round a flag's examples are read, said where they disagree.
+        if (
+          answer.shape?.kind === 'flag' &&
+          ran?.examples.some((e) => !e.agrees)
+        )
+          problems.push(
+            `For a flag, an example's result is false where the ${owner.subject.record.singular} is flagged and true where it is not.`,
+          );
         noted(problems);
         const said = sentence ? { sentence } : {};
         return problems.length
@@ -646,8 +688,8 @@ function keep(
               // Its own problem, and what stopped a later answer, if any.
               problem:
                 [
-                  kept.written.unfit
-                    ? `This rule can't be checked as written: ${kept.written.unfit} Rephrase it in the instructions.`
+                  kept.refusal
+                    ? `No shape can check this rule as written: ${REFUSAL_WORDS[kept.refusal]}. Rephrase it in the instructions, or write it again.`
                     : kept.problem,
                   written.blocked,
                   note,

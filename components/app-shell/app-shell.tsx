@@ -13,6 +13,8 @@ import { processHref } from '@/lib/process/routes';
 import { presentPromotionPlan } from '@/lib/review/promotion-adapter';
 import { supportPlan } from '@/lib/review/support-fixture';
 import {
+  brunchOrdersDirectPlan,
+  brunchOrdersDirectProcess,
   brunchOrdersPlan,
   brunchOrdersProcess,
 } from '@/lib/processes/brunch-orders/process';
@@ -33,12 +35,14 @@ export async function AppShell({ children }: { children: ReactNode }) {
       id: promotionProcess.id,
       href: processHref(promotionProcess.id),
       name: promotionProcess.name,
+      evaluation: promotionProcess.evaluation,
       plan: presentPromotionPlan(loadReviewedReplay()),
     }),
     processNavigationItem({
       id: supportProcess.id,
       href: processHref(supportProcess.id),
       name: supportProcess.name,
+      evaluation: supportProcess.evaluation,
       plan: supportPlan,
     }),
     ...(process.env.NODE_ENV === 'development'
@@ -47,7 +51,15 @@ export async function AppShell({ children }: { children: ReactNode }) {
             id: brunchOrdersProcess.id,
             href: processHref(brunchOrdersProcess.id),
             name: brunchOrdersProcess.name,
+            evaluation: brunchOrdersProcess.evaluation,
             plan: brunchOrdersPlan,
+          }),
+          processNavigationItem({
+            id: brunchOrdersDirectProcess.id,
+            href: processHref(brunchOrdersDirectProcess.id),
+            name: brunchOrdersDirectProcess.name,
+            evaluation: brunchOrdersDirectProcess.evaluation,
+            plan: brunchOrdersDirectPlan,
           }),
         ]
       : []),

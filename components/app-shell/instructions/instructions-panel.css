@@ -1,0 +1,305 @@
+/* ── Instruction versions ───────────────────────────────────────────────────
+   A version is a run row (runs-list.css) with its own two right-hand cells:
+   a state and a count.
+   ────────────────────────────────────────────────────────────────────────── */
+
+@layer components {
+  /* The run state's box: the mark's height, so the version opposite centres. */
+  .instruction-row-state {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3125rem;
+    justify-self: end;
+    height: var(--spacing-sheet-mark);
+    font-weight: var(--font-weight-semibold);
+    white-space: nowrap;
+    color: var(--sheet-ink-quiet);
+  }
+  /* The version runs take now is the one tone in the list, as a run's is. */
+  .instruction-row[data-state='current'] :is(.instruction-row-state, .instruction-row-version) {
+    color: var(--sp-state-verified);
+  }
+  .instruction-row-runs {
+    justify-self: end;
+    white-space: nowrap;
+    color: var(--sheet-ink-quiet);
+  }
+}
+
+/* The gutter the text's clause numbers and the changes' signs share
+   (text-diff.tsx), and the draft's field sets its text past (.draft-field). A
+   row's padding is half a line less the list's gap, so two rows sit a blank
+   line apart, as two paragraphs do in the field. */
+:root {
+  --clause-gutter: 2rem;
+  --clause-gap: --spacing(1);
+}
+@utility clause-row {
+  display: grid;
+  grid-template-columns: var(--clause-gutter) minmax(0, 1fr);
+  align-items: baseline;
+  padding-block: calc((1lh - var(--clause-gap)) / 2);
+  padding-inline-end: --spacing(3);
+}
+
+@layer components {
+  /* The field's text where a clause row's is: its edge counted out of the
+     padding, so the lines also wrap where the comparison's do. */
+  .draft-field {
+    padding-block: calc((1lh - var(--clause-gap)) / 2 - var(--spacing-field-edge));
+    padding-inline: calc(var(--clause-gutter) - var(--spacing-field-edge))
+      calc(--spacing(3) - var(--spacing-field-edge));
+  }
+  /* Over the field, inset as its text is (.draft-field) and edged as it is,
+     so every line falls where the field's does; only its numbers are seen. */
+  .draft-numbers {
+    position: absolute;
+    inset: --spacing(5);
+    border: var(--spacing-field-edge) solid transparent;
+    padding-block: calc((1lh - var(--clause-gap)) / 2 - var(--spacing-field-edge));
+    padding-inline: calc(var(--clause-gutter) - var(--spacing-field-edge))
+      calc(--spacing(3) - var(--spacing-field-edge));
+    color: transparent;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    pointer-events: none;
+  }
+  /* A point at the paragraph's line start; its number sits in the gutter
+     before it, a line tall, as a clause row's does. */
+  .draft-number {
+    position: relative;
+    display: inline-block;
+    width: 0;
+    height: 1lh;
+    vertical-align: top;
+  }
+  .draft-number > * {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: 0;
+    display: grid;
+    place-items: center;
+    width: var(--clause-gutter);
+  }
+  .clause-number {
+    text-align: center;
+    color: var(--sp-text-muted);
+  }
+}
+
+/* ── The detail's band ──────────────────────────────────────────────────────
+   The section row's band (.sheet-head) leading a version or a draft: what is
+   showing and its actions, with the content scrolling under it.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* A step above the diff's own tint: on the band it is a label, not a row. */
+  --sp-draft-added: light-dark(var(--sp-state-verified-4), var(--sp-state-verified-5));
+  --sp-draft-removed: light-dark(var(--sp-state-blocked-4), var(--sp-state-blocked-5));
+  /* A focused strip or count's wash. */
+  --sp-draft-glance-focus: light-dark(var(--sp-neutral-150), var(--sp-neutral-725));
+  /* A step up from the band in both themes: a label on it, not a control. */
+  --sp-draft-pill-face: light-dark(var(--sp-neutral-25), var(--sp-neutral-725));
+  /* "Saved", a step further into the pill, as a word count sits on the band. */
+  --sp-draft-saved-face: light-dark(var(--sp-neutral-100), var(--sp-neutral-650));
+  --sp-draft-saved-ink: light-dark(var(--sp-neutral-700), var(--sp-neutral-200));
+  /* The strip is a glance: unchanged paragraphs recede to a faint step so
+     the changed ones, in the diff's own sign hues, are what it shows. */
+  --sp-draft-mark: light-dark(var(--sp-neutral-250), var(--sp-neutral-700));
+  --sp-draft-mark-added: var(--sp-state-verified-9);
+  --sp-draft-mark-removed: var(--sp-state-blocked-9);
+}
+
+@layer components {
+  /* A control at either end sits as far from it as from the band's top and
+     its rule: half of what the head, less that 1px rule, leaves of it. */
+  .instruction-band {
+    --instruction-band-offset: calc((var(--spacing-sheet-head) - 1px - --spacing(7)) / 2);
+    gap: --spacing(4);
+    padding-inline-end: var(--instruction-band-offset);
+  }
+  /* A strip or a count is a tooltip's trigger: focused, it takes a wash, as
+     a control shows focus in its hover face (base.css draws no outline). */
+  /* One height for the strip and the counts, so their tooltips open on one
+     line; the counts' line sets it. */
+  .draft-glance {
+    display: inline-flex;
+    align-items: center;
+    height: 1lh;
+    border-radius: var(--radius-control);
+    transition:
+      background-color var(--duration-state) ease-out,
+      box-shadow var(--duration-state) ease-out;
+  }
+  .draft-glance:focus-visible {
+    background-color: var(--sp-draft-glance-focus);
+    box-shadow: 0 0 0 --spacing(1) var(--sp-draft-glance-focus);
+  }
+  /* The draft's name as a label: no edge, since it is not pressed. Once the
+     draft is kept, "Saved" nests at its end, inset as far from the pill's end
+     as from its top and bottom. */
+  .draft-pill {
+    --draft-pill-height: --spacing(6);
+    --draft-saved-height: --spacing(4.5);
+    display: inline-flex;
+    align-items: center;
+    height: var(--draft-pill-height);
+    padding-inline: --spacing(2.5);
+    border-radius: 999px;
+    background: var(--sp-draft-pill-face);
+    font-weight: var(--font-weight-medium);
+    transition: padding var(--duration-pane) ease-out;
+  }
+  .draft-pill[data-saved] {
+    padding-inline-end: calc((var(--draft-pill-height) - var(--draft-saved-height)) / 2);
+  }
+  .draft-saved-face {
+    display: inline-flex;
+    align-items: center;
+    gap: --spacing(1);
+    height: var(--draft-saved-height);
+    margin-inline-start: --spacing(1.5);
+    /* A circle round the check alone; the word brings its own room. */
+    --draft-saved-check: 0.625rem;
+    min-width: var(--draft-saved-height);
+    padding-inline: calc((var(--draft-saved-height) - var(--draft-saved-check)) / 2);
+    border-radius: 999px;
+    background: var(--sp-draft-saved-face);
+    color: var(--sp-draft-saved-ink);
+    font-weight: var(--font-weight-semibold);
+    white-space: nowrap;
+  }
+  /* The small tabs' track pulls itself out by its padding and edge so its
+     first tab meets the content (field-track, filter-tabs.css); here its
+     outline meets the band's inset instead, as the draft's pill does. */
+  .instruction-tabs {
+    display: flex;
+    padding-inline-start: calc(--spacing(0.75) + var(--spacing-field-edge));
+  }
+  /*
+    A part of the band that opens and closes in place, as the runs list's
+    arrow opens in its pill: room first, then the part fades in; going, the
+    part fades, then its room closes. Pulled back by the gap its row puts
+    before it, so closed it takes no room at all.
+  */
+  .band-collapse {
+    --collapse-gap: 0px;
+    display: inline-grid;
+    grid-template-columns: 0fr;
+    margin-inline-start: calc(var(--collapse-gap) * -1);
+    opacity: 0;
+    transition:
+      grid-template-columns var(--duration-state) ease-out var(--duration-state),
+      margin-inline-start var(--duration-state) ease-out var(--duration-state),
+      opacity var(--duration-state) ease-out;
+  }
+  .band-collapse > * {
+    min-width: 0;
+    overflow: hidden;
+  }
+  .band-collapse[data-open] {
+    grid-template-columns: 1fr;
+    margin-inline-start: 0;
+    opacity: 1;
+    transition-delay: 0ms, 0ms, var(--duration-state);
+  }
+  /* Each reads the gap of the row it sits in. */
+  .draft-question {
+    --collapse-gap: --spacing(1.5);
+  }
+  .draft-saved-check {
+    flex: none;
+    width: var(--draft-saved-check);
+    height: var(--draft-saved-check);
+  }
+  .draft-saved-word {
+    --collapse-gap: --spacing(1);
+  }
+  /* Its room at the end only while open: a closed column still counts it. */
+  .draft-saved-word > * {
+    transition: padding var(--duration-state) ease-out var(--duration-state);
+  }
+  .draft-saved-word[data-open] > * {
+    padding-inline-end: --spacing(0.5);
+    transition-delay: 0ms;
+  }
+  /* The button's own gap-2 before its key hint (button.tsx). */
+  .draft-key {
+    --collapse-gap: --spacing(2);
+  }
+  /* One mark per paragraph -- or per run of them, past the cap -- in order. */
+  .draft-map {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+  }
+  /* Two halves, each its own colour: what went in over what came out. Solid
+     colours, never a gradient, so a mark changing kind as the writer types
+     eases from one to the next rather than jumping. */
+  .draft-map > span {
+    --draft-mark-top: var(--sp-draft-mark);
+    --draft-mark-bottom: var(--sp-draft-mark);
+    position: relative;
+    flex: 0 0 auto;
+    height: 0.75rem;
+    border-radius: 1px;
+    overflow: hidden;
+    background-color: var(--draft-mark-top);
+    transition: background-color var(--duration-state) ease-out;
+  }
+  .draft-map > span::after {
+    content: '';
+    position: absolute;
+    inset: 50% 0 0;
+    background-color: var(--draft-mark-bottom);
+    transition: background-color var(--duration-state) ease-out;
+  }
+  .draft-map > [data-kind='added'] {
+    --draft-mark-top: var(--sp-draft-mark-added);
+    --draft-mark-bottom: var(--sp-draft-mark-added);
+  }
+  .draft-map > [data-kind='removed'] {
+    --draft-mark-top: var(--sp-draft-mark-removed);
+    --draft-mark-bottom: var(--sp-draft-mark-removed);
+  }
+  .draft-map > [data-kind='both'] {
+    --draft-mark-top: var(--sp-draft-mark-added);
+    --draft-mark-bottom: var(--sp-draft-mark-removed);
+  }
+  .draft-count {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 --spacing(1.5);
+    border-radius: var(--radius-control);
+    font-weight: var(--font-weight-semibold);
+  }
+  .draft-count[data-kind='added'] {
+    background: var(--sp-draft-added);
+    color: var(--sp-state-verified);
+  }
+  .draft-count[data-kind='removed'] {
+    background: var(--sp-draft-removed);
+    color: var(--sp-state-blocked);
+  }
+  /* Each place's old digit and new share one cell while they roll past. */
+  .draft-figure {
+    display: inline-flex;
+  }
+  .draft-figure-place {
+    display: inline-grid;
+    overflow: hidden;
+  }
+  .draft-figure-place > * {
+    grid-area: 1 / 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .draft-map > span,
+    .draft-map > span::after,
+    .band-collapse {
+      transition: none;
+    }
+  }
+}

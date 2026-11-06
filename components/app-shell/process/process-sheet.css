@@ -69,7 +69,9 @@
       inset-block: 0 calc(var(--spacing-control-highlight) * -1);
       inset-inline-end: 0;
       width: 1px;
-      background: var(--sp-rule-faint);
+      /* The runs rail's edge: the ring, and the detail's lit line inside it. */
+      background: var(--sp-raised-ring);
+      box-shadow: var(--shadow-separator-right-strong);
       pointer-events: none;
     }
   }

@@ -217,11 +217,14 @@ test('the Rules tab shows the accepted rulebook, read-only', async ({
     rules.getByRole('group', { name: 'Formula of Expected sales' }),
   ).toBeVisible();
   await expect(rules.getByRole('button', { name: /^Accept/ })).toHaveCount(0);
-  const revisions = page.getByRole('list', { name: 'Rulebook revisions' });
-  await expect(revisions.getByRole('listitem')).toHaveCount(2);
-  await expect(revisions.getByRole('listitem').first()).toContainText(
-    /Migrated from d23a4c56d75b.*Current/,
-  );
+  // The revisions are in a drawer, newest first, the current one marked.
+  await page.getByRole('button', { name: 'History', exact: true }).click();
+  const revisions = page.getByRole('list', {
+    name: 'Rulebook revisions, newest first',
+  });
+  const migrated = revisions.getByRole('button', { name: /^Migrated/ });
+  await expect(migrated).toHaveCount(2);
+  await expect(migrated.first()).toContainText('Current');
 });
 
 test('a run whose rules no longer fit its read can move to the current ones', async ({

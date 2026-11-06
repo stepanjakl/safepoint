@@ -125,7 +125,8 @@ function Working({
       {steps.map((step, index) => (
         <span key={index} className="contents">
           {index ? <span aria-hidden>→</span> : null}
-          <Step text={step} />
+          {/* A check written as a shape is worked out in words. */}
+          {item.shape ? <span>{step}</span> : <Step text={step} />}
         </span>
       ))}
       {steps.length ? <span aria-hidden>→</span> : null}

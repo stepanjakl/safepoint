@@ -2,11 +2,8 @@ import { notFound } from 'next/navigation';
 
 import { ProcessView } from '@/components/app-shell/process/process-view';
 import { OrdersRun } from '@/components/brunch-orders/orders-run';
-import {
-  RulebookPanel,
-  RulebookProvider,
-} from '@/components/brunch-orders/rulebook-panel';
-import { RulebookPanelB } from '@/components/brunch-orders/rulebook-panel-b';
+import { RulebookProvider } from '@/components/brunch-orders/rulebook-panel';
+import { RulebookPanel } from '@/components/brunch-orders/rulebook-view';
 import { SheetInputs } from '@/components/brunch-orders/sheet-inputs';
 import {
   brunchOrdersProcess,
@@ -34,7 +31,6 @@ export default async function BrunchOrdersPage({
         inputs={SHEET_INPUTS}
         inputsPanel={<SheetInputs />}
         rulesPanel={<RulebookPanel />}
-        rulesPanelB={<RulebookPanelB />}
       >
         {null}
       </ProcessView>

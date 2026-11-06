@@ -1,15 +1,35 @@
 /* ── Swap ───────────────────────────────────────────────────────────────────
-   The drawer aside trades content in one spot, out then in.
+   The drawer aside trades content in one spot, out then in. What heads it --
+   its header, or a band its body opens with (.swap-band) -- holds still and
+   only its words fade; what is under it travels.
    ────────────────────────────────────────────────────────────────────────── */
 
 @layer components {
-  /* The fade-out starts at full speed: an ease-in leaves the old content
-     standing still for its first frames, which reads as a stall. */
+  /* The layer keeps the swap's timing, unseen, so its own animationend still
+     ends the swap (drawer-aside.tsx); its parts below do the moving. */
   .swap-leave {
     pointer-events: none;
-    animation: swap-leave var(--duration-state) ease-out both;
+    animation: swap-hold var(--duration-state) ease-out both;
   }
   .swap-enter[data-motion] {
+    animation: swap-hold var(--duration-pane) --theme(--ease-out-emphasized) both;
+  }
+  .swap-leave > header > *,
+  .swap-leave .swap-band > * {
+    animation: swap-fade-out var(--duration-state) ease-out both;
+  }
+  .swap-enter[data-motion] > header > *,
+  .swap-enter[data-motion] .swap-band > * {
+    animation: swap-fade-in var(--duration-pane) ease-out both;
+  }
+  /* The fade-out starts at full speed: an ease-in leaves the old content
+     standing still for its first frames, which reads as a stall. */
+  .swap-leave > .swap-body:not(:has(> * > .swap-band)),
+  .swap-leave .swap-band + * {
+    animation: swap-leave var(--duration-state) ease-out both;
+  }
+  .swap-enter[data-motion] > .swap-body:not(:has(> * > .swap-band)),
+  .swap-enter[data-motion] .swap-band + * {
     animation: swap-enter var(--duration-pane) --theme(--ease-out-emphasized) both;
   }
   /* The distance the content moves, signed by where it goes; it leaves one
@@ -30,6 +50,21 @@
   }
   :is(.swap-leave, .swap-enter)[data-motion='right'] {
     --swap-x: 0.75rem;
+  }
+  @keyframes swap-hold {
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes swap-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes swap-fade-out {
+    to {
+      opacity: 0;
+    }
   }
   @keyframes swap-leave {
     to {

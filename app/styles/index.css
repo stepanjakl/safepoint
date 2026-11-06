@@ -48,13 +48,14 @@
 @import '../../components/app-shell/workspace-intro.css';
 @import '../../components/app-shell/runs/runs-list.css';
 @import '../../components/app-shell/instructions/text-diff.css';
+@import '../../components/app-shell/instructions/instructions-panel.css';
 @import '../../components/app-shell/runs/run-view.css';
 @import '../../components/review/release-card.css';
 @import '../../components/review/review-queue.css';
 @import '../../components/brunch-orders/orders-run.css';
 @import '../../components/brunch-orders/decision-button.css';
 @import '../../components/brunch-orders/rules-step.css';
-@import '../../components/brunch-orders/rulebook-b.css';
+@import '../../components/brunch-orders/rulebook-view.css';
 @import '../../components/brunch-orders/rulebook-history.css';
 @import '../../components/brunch-orders/calculate-step.css';
 @import '../../components/ui/brand.css';

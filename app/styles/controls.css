@@ -22,6 +22,16 @@
   --sp-button-primary-face-bottom-hover: light-dark(var(--radix-cyan-11), var(--radix-cyan-dark-8));
   --sp-button-primary-ring-top-hover: light-dark(var(--radix-cyan-11), var(--radix-cyan-dark-11));
   --sp-button-primary-ring-bottom-hover: light-dark(var(--radix-cyan-12), var(--radix-cyan-dark-9));
+  /* The danger button: built as the primary is, on red, for an action that
+     throws work away. Its own stops; no other control reads them. */
+  --sp-button-danger-face-top: light-dark(var(--radix-red-9), var(--radix-red-dark-9));
+  --sp-button-danger-face-bottom: light-dark(var(--radix-red-10), var(--radix-red-dark-8));
+  --sp-button-danger-ring-top: light-dark(var(--radix-red-11), var(--radix-red-dark-10));
+  --sp-button-danger-ring-bottom: light-dark(var(--radix-red-11), var(--radix-red-dark-7));
+  --sp-button-danger-face-top-hover: light-dark(var(--radix-red-10), var(--radix-red-dark-10));
+  --sp-button-danger-face-bottom-hover: light-dark(var(--radix-red-11), var(--radix-red-dark-9));
+  --sp-button-danger-ring-top-hover: light-dark(var(--radix-red-11), var(--radix-red-dark-11));
+  --sp-button-danger-ring-bottom-hover: light-dark(var(--radix-red-12), var(--radix-red-dark-9));
   /* A key hint on a lit face: quieter than the label's white, still its own tint. */
   --sp-button-primary-key: light-dark(var(--radix-cyan-2), var(--radix-cyan-dark-12));
   /* A flat dot that says "on" beside a control. */
@@ -219,6 +229,22 @@
   --control-face-bottom: var(--sp-button-primary-face-bottom-hover);
   --control-ring-top: var(--sp-button-primary-ring-top-hover);
   --control-ring-bottom: var(--sp-button-primary-ring-bottom-hover);
+}
+
+/* The danger button, built as the primary is. */
+@utility control-button-danger {
+  --control-face-top: var(--sp-button-danger-face-top);
+  --control-face-bottom: var(--sp-button-danger-face-bottom);
+  --control-ring-top: var(--sp-button-danger-ring-top);
+  --control-ring-bottom: var(--sp-button-danger-ring-bottom);
+  --control-highlight: transparent;
+}
+
+@utility control-button-danger-hover {
+  --control-face-top: var(--sp-button-danger-face-top-hover);
+  --control-face-bottom: var(--sp-button-danger-face-bottom-hover);
+  --control-ring-top: var(--sp-button-danger-ring-top-hover);
+  --control-ring-bottom: var(--sp-button-danger-ring-bottom-hover);
 }
 
 /* The secondary button. */

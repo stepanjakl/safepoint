@@ -177,10 +177,30 @@ export type RulebookRevisionInfo = {
   note: string | null;
 };
 
+/*
+  How a run reaches its result. `rules`: a rulebook approved once, then code
+  works out every record the same way each time. `model`: a model works each
+  run out from the instructions, and only the person reviewing it checks it.
+*/
+export type ProcessEvaluation = 'rules' | 'model';
+
+export const EVALUATION_LABELS: Record<ProcessEvaluation, string> = {
+  rules: 'Checked by rules (Deterministic)',
+  model: 'Model’s judgement (Non-deterministic)',
+};
+
+export const EVALUATION_DESCRIPTIONS: Record<ProcessEvaluation, string> = {
+  rules:
+    'A model drafts rules from the instructions once, and a person approves each one. Code then works out every run from them, so the same data always gives the same result.',
+  model:
+    'A model works out every run from the instructions and the data. Only the person reviewing it checks the result, and the same data can give a different one.',
+};
+
 export type ProcessSummary = {
   // Stable across renames: the key a person's schedule change is saved under.
   id: string;
   name: string;
+  evaluation: ProcessEvaluation;
   schedule: ProcessSchedule;
   // The APIs this process may call once changes are approved. Mirrors the
   // destinations the effect planner already names, rather than inventing a

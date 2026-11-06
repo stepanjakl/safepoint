@@ -111,6 +111,13 @@ export function useAsidePanel<View>({
     if (event.key !== 'Escape' || aside === null || exiting) return;
     // A dialog centred over the sheet answers its own Escape.
     if (document.querySelector('[role=alertdialog]')) return;
+    // So does a popover the panel opened: portalled out of the panel, its keys
+    // still reach this handler through React's tree, not the page's.
+    if (
+      event.currentTarget instanceof Node &&
+      !event.currentTarget.contains(event.target as Node)
+    )
+      return;
     event.stopPropagation();
     closeAside();
   };

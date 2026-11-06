@@ -22,7 +22,6 @@ export async function ProcessView({
   policy,
   liveThread,
   rulesPanel,
-  rulesPanelB,
   inputsPanel,
   children,
 }: {
@@ -39,8 +38,6 @@ export async function ProcessView({
   liveThread?: ReactNode;
   // A process's own rulebook, shown as a Rules tab.
   rulesPanel?: ReactNode;
-  // Development only: the proposed Rules tab, beside the current one.
-  rulesPanelB?: ReactNode;
   // A process's own Inputs tab, in place of the evidence files' list.
   inputsPanel?: ReactNode;
   children: ReactNode;
@@ -57,7 +54,6 @@ export async function ProcessView({
       policy={policy}
       liveThread={liveThread}
       rulesPanel={rulesPanel}
-      rulesPanelB={rulesPanelB}
       inputsPanel={inputsPanel}
       savedTabs={savedTabs}
     />

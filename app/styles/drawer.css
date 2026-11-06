@@ -99,6 +99,24 @@
     pointer-events: none;
     animation: drawer-aside-out var(--drawer-out) ease-in both;
   }
+  /* In a sheet column the panel is the column: it fades in place rather than
+     travelling in from the side, whichever item opens it. */
+  .drawer-aside[data-flat] {
+    animation-name: drawer-aside-fade-in;
+  }
+  .drawer-aside[data-flat][data-exiting] {
+    animation-name: drawer-aside-fade-out;
+  }
+  @keyframes drawer-aside-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes drawer-aside-fade-out {
+    to {
+      opacity: 0;
+    }
+  }
   @keyframes drawer-aside-in {
     from {
       opacity: 0;

@@ -2,7 +2,8 @@ import { serialize, type ASTNode } from '@marcbachmann/cel-js';
 
 import { givenOf, valuesFor } from './checks';
 import { contextFor, run, syntaxOf } from './formulas';
-import type { KeptRead } from './records';
+import { recordsOf, type KeptRead } from './records';
+import { valuesInWords } from './shapes';
 import {
   TRIED,
   type Definition,
@@ -241,24 +242,48 @@ export function workingOf(
   const { formula } = definition;
   if (!formula) return [];
   const { subject } = owner;
+  const { shape } = definition;
   return definition.examples.map((example) => {
     try {
-      return stepsFor(
-        formula,
-        contextFor(
+      const context = contextFor(
+        read,
+        example.key,
+        subject,
+        givenOf(definition, example.inputs),
+        valuesFor(
+          set,
           read,
           example.key,
+          example.inputs,
+          definition.id,
           subject,
-          givenOf(definition, example.inputs),
-          valuesFor(
-            set,
-            read,
-            example.key,
-            example.inputs,
-            definition.id,
-            subject,
-          ),
         ),
+      );
+      // A check written as a shape is shown in its own words, never its
+      // formula: what it reads of the record, with the values here.
+      if (shape)
+        return [
+          valuesInWords(
+            shape,
+            {
+              subject,
+              records: recordsOf(read, subject.data),
+              read,
+              consequence: definition.consequence,
+              constants: definition.constants,
+              groups: definition.groups,
+              earlier: set.definitions.slice(
+                0,
+                set.definitions.indexOf(definition),
+              ),
+            },
+            example.key,
+            context,
+          ),
+        ];
+      return stepsFor(
+        formula,
+        context,
         subject.proposal.map((field) => field.id),
       );
     } catch {

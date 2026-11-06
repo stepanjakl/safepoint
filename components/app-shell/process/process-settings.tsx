@@ -3,7 +3,12 @@
 import { useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import type { ProcessSummary } from '@/lib/process/model';
+import { MenuIcon } from '@/components/app-shell/sidebar/menu-parts';
+import {
+  EVALUATION_DESCRIPTIONS,
+  EVALUATION_LABELS,
+  type ProcessSummary,
+} from '@/lib/process/model';
 import { NOTE } from './panel-parts';
 import { PROCESS_NAME_MAX, useProcessName } from './process-names-store';
 import { ScheduleFields } from './schedule-control';
@@ -36,6 +41,24 @@ export function ProcessSettings({ process }: { process: ProcessSummary }) {
     <div className="grid grid-cols-[minmax(0,1fr)] gap-5 p-5">
       <Section id="settings-name" title="Name">
         <NameField processId={process.id} fallback={process.name} />
+      </Section>
+
+      <Section id="settings-evaluation" title="Evaluation">
+        <div className="flex items-start gap-2.5">
+          <MenuIcon
+            name={`${process.evaluation}Filled`}
+            className="text-primary mt-0.5 flex-none"
+          />
+          <div className="grid min-w-0 gap-0.5">
+            <p className="text-dense text-primary [font-weight:550]">
+              {EVALUATION_LABELS[process.evaluation]}
+            </p>
+            <p className="text-meta text-muted">
+              {EVALUATION_DESCRIPTIONS[process.evaluation]} Set when the process
+              is made, and marked by its icon in the sidebar.
+            </p>
+          </div>
+        </div>
       </Section>
 
       <Section id="settings-schedule">

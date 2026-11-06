@@ -417,6 +417,13 @@ export default function WorkbenchPage() {
           {' · '}
           <Link
             className="underline underline-offset-4"
+            href="/workbench/process-icons"
+          >
+            Process icons
+          </Link>
+          {' · '}
+          <Link
+            className="underline underline-offset-4"
             href="/workbench/decisions"
           >
             Decision transitions

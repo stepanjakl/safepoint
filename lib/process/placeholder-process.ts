@@ -7,6 +7,7 @@ import type { ProcessSummary } from './model';
 export const promotionProcess: ProcessSummary = {
   id: 'promotion-release',
   name: 'Promotion release',
+  evaluation: 'rules',
   schedule: {
     enabled: true,
     cadence: 'weekly',
@@ -231,6 +232,7 @@ Never apply a change. Produce a release plan for a person to review.`,
 export const supportProcess: ProcessSummary = {
   id: 'support-handoff',
   name: 'Support handoff',
+  evaluation: 'rules',
   schedule: {
     enabled: true,
     cadence: 'daily',

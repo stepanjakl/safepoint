@@ -1,5 +1,7 @@
 import {
+  BRUNCH_ORDERS_DIRECT_HREF,
   BRUNCH_ORDERS_HREF,
+  brunchOrdersDirectProcess,
   brunchOrdersProcess,
 } from '@/lib/processes/brunch-orders/process';
 import type { ProcessSummary } from './model';
@@ -15,7 +17,10 @@ export const PROCESS_ROUTES: { process: ProcessSummary; href: string }[] = [
   { process: supportProcess, href: '/examples/support' },
   // Built step by step, development only (docs/processes/brunch-orders/PLAN.md).
   ...(process.env.NODE_ENV === 'development'
-    ? [{ process: brunchOrdersProcess, href: BRUNCH_ORDERS_HREF }]
+    ? [
+        { process: brunchOrdersProcess, href: BRUNCH_ORDERS_HREF },
+        { process: brunchOrdersDirectProcess, href: BRUNCH_ORDERS_DIRECT_HREF },
+      ]
     : []),
 ];
 

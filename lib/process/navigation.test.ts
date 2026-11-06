@@ -53,6 +53,7 @@ describe('process navigation', () => {
         id: 'process',
         href: '/',
         name: 'Process',
+        evaluation: 'rules',
         plan,
       });
       expect(item.status.label).toBe(`${counts.blocked} blocked`);
@@ -68,6 +69,7 @@ describe('process navigation', () => {
       id: 'process',
       href: '/',
       name: 'Process',
+      evaluation: 'rules',
       plan: { ...empty, status: { kind: 'incomplete', step: 1, of: 3 } },
     });
     expect(incomplete.status.label).toBe('Incomplete');
@@ -75,6 +77,7 @@ describe('process navigation', () => {
       id: 'process',
       href: '/',
       name: 'Process',
+      evaluation: 'rules',
       plan: {
         ...supportPlan,
         status: {

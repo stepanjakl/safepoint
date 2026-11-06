@@ -81,12 +81,41 @@ function versionNumber(version: string): number {
 export const labelDate = (updatedLabel: string) =>
   updatedLabel.replace(/^(Updated|Published|Drafted|Written)\s+/, '');
 
-// When a version was the one a run would run under: from its own date to the
-// next version's, or open-ended for the current one.
+// The day in a stored label -- "Updated 24 Aug 2026", "Published Thu 4 Sep ·
+// 09:00" -- which is all a version keeps of when it was made.
+function dayOf(label: string) {
+  const match = /(\d{1,2}) ([A-Z][a-z]{2})[a-z]*\.?(?: (\d{4}))?/.exec(label);
+  if (!match) return null;
+  return { day: match[1]!, month: match[2]!, year: match[3] ?? null };
+}
+
+/*
+  When a version was the one a run would run under: from its own date to the
+  next version's, or to now for the current one. Month first, as the runs rail
+  dates a run; the month is said once where both ends share it, and the year
+  only where it is not the newest one a version states.
+*/
 export function liveRange(versions: InstructionVersion[], index: number) {
-  const from = labelDate(versions[index]!.updatedLabel);
-  const next = versions[index + 1];
-  return next ? `${from} – ${labelDate(next.updatedLabel)}` : `Since ${from}`;
+  const from = dayOf(versions[index]!.updatedLabel);
+  const nextLabel = versions[index + 1]?.updatedLabel;
+  const to = nextLabel ? dayOf(nextLabel) : null;
+  // The newest year any version states: one published here gives none.
+  const latest =
+    versions
+      .map((version) => dayOf(version.updatedLabel)?.year ?? null)
+      .findLast((year) => year !== null) ?? null;
+  if (!from || (nextLabel && !to)) {
+    const raw = labelDate(versions[index]!.updatedLabel);
+    return nextLabel ? `${raw} – ${labelDate(nextLabel)}` : `Since ${raw}`;
+  }
+  const year = (at: { year: string | null }) =>
+    at.year && at.year !== latest ? `, ${at.year}` : '';
+  const start = `${from.month} ${from.day}${year(from)}`;
+  if (!to) return `${start} – now`;
+  const sameMonth = to.month === from.month && to.year === from.year;
+  return sameMonth
+    ? `${start.replace(year(from), '')} – ${to.day}${year(to)}`
+    : `${start} – ${to.month} ${to.day}${year(to)}`;
 }
 
 export function useInstructions(

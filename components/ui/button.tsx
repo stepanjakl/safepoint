@@ -6,7 +6,7 @@ import type { Ref } from 'react';
 
 import { cx } from '@/lib/cx';
 
-type Variant = 'primary' | 'secondary';
+type Variant = 'primary' | 'secondary' | 'danger';
 
 /*
   Which edges lean. A slanted button sits in a Notch, parallel to its slope;
@@ -34,6 +34,9 @@ const faces = {
   // The one accented control on a page: a coloured face with its ring outside it.
   primary:
     'control-button-primary text-white interact:control-button-primary-hover',
+  // An action that throws work away, once it has been confirmed.
+  danger:
+    'control-button-danger text-white interact:control-button-danger-hover',
   // Everything else: the same construction, one step quieter.
   secondary:
     'control-button-secondary text-primary interact:control-button-secondary-hover',

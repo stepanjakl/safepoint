@@ -30,7 +30,6 @@
   --control-ring-bottom: var(--menu-badge-ring, var(--sp-keycap-ring));
   --control-highlight: var(--menu-badge-highlight, var(--sp-keycap-highlight));
   --control-highlight-width: var(--spacing-control-highlight-hairline);
-  transition-duration: var(--menu-badge-duration, var(--duration-state));
 }
 
 @layer components {
@@ -38,7 +37,6 @@
     --process-row-gap: 4px;
     --duration-process-activation: 75ms;
     --duration-process-selection: 250ms;
-    --duration-process-pill-return: 250ms;
   }
 
   .process-menu-row {
@@ -149,7 +147,6 @@
     --menu-badge-face: var(--sp-keycap-face);
     --menu-badge-ring: var(--sp-keycap-ring);
     --menu-badge-highlight: var(--sp-keycap-highlight);
-    --menu-badge-duration: var(--duration-process-pill-return);
   }
 
   .process-menu-row:hover,
@@ -158,7 +155,6 @@
     --menu-badge-face: transparent;
     --menu-badge-ring: transparent;
     --menu-badge-highlight: transparent;
-    --menu-badge-duration: var(--duration-state);
   }
 
   /* Keep the badge on its existing axis as the row's border box grows outward. */

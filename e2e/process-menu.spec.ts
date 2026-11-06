@@ -108,7 +108,7 @@ test('travelling between levels moves focus to the arrival control', async ({
   ).toBeVisible();
   const enter = page.getByRole('button', { name: /^Processes/ });
   await expect(enter).toBeFocused();
-  await expect(enter).toContainText('3');
+  await expect(enter).toContainText('4');
 
   await enter.press('Enter');
   await expect(
@@ -345,8 +345,13 @@ test('the brand mark turns on hover and settles back into place', async ({
   await expect.poll(rotation, { timeout: 2_500 }).toBeCloseTo(0, 2);
 });
 
-// Promotion release moved to the end of the three.
-const LAST = ['Support handoff', 'Brunch orders', 'Promotion release'];
+// Promotion release moved to the end of the four.
+const LAST = [
+  'Support handoff',
+  'Brunch orders',
+  'Brunch orders',
+  'Promotion release',
+];
 
 test('arranging by keyboard reorders, keeps focus, and saves', async ({
   page,
@@ -356,6 +361,7 @@ test('arranging by keyboard reorders, keeps focus, and saves', async ({
   expect(before).toEqual([
     'Promotion release',
     'Support handoff',
+    'Brunch orders',
     'Brunch orders',
   ]);
 
@@ -375,8 +381,13 @@ test('arranging by keyboard reorders, keeps focus, and saves', async ({
   await expect(handle).toBeFocused();
   await expect
     .poll(() => processNames(page))
-    .toEqual(['Support handoff', 'Promotion release', 'Brunch orders']);
-  await page.keyboard.press('ArrowDown');
+    .toEqual([
+      'Support handoff',
+      'Promotion release',
+      'Brunch orders',
+      'Brunch orders',
+    ]);
+  await page.keyboard.press('End');
   await expect.poll(() => processNames(page)).toEqual(LAST);
   // Already last: nothing moves, and focus stays put.
   await page.keyboard.press('ArrowDown');
@@ -385,7 +396,12 @@ test('arranging by keyboard reorders, keeps focus, and saves', async ({
   await page.keyboard.press('Home');
   await expect
     .poll(() => processNames(page))
-    .toEqual(['Promotion release', 'Support handoff', 'Brunch orders']);
+    .toEqual([
+      'Promotion release',
+      'Support handoff',
+      'Brunch orders',
+      'Brunch orders',
+    ]);
   await page.keyboard.press('End');
   await expect.poll(() => processNames(page)).toEqual(LAST);
 
@@ -419,7 +435,12 @@ test('a pointer drag reorders, and Escape mid-drag puts the row back', async ({
   await expect(page.locator('.process-drop-slot')).toHaveCount(0);
   await expect
     .poll(() => processNames(page))
-    .toEqual(['Promotion release', 'Support handoff', 'Brunch orders']);
+    .toEqual([
+      'Promotion release',
+      'Support handoff',
+      'Brunch orders',
+      'Brunch orders',
+    ]);
 
   // Completed: the row lands one place down.
   await page.mouse.move(x, y);
@@ -429,7 +450,12 @@ test('a pointer drag reorders, and Escape mid-drag puts the row back', async ({
   await expect(page.locator('.process-drop-slot')).toHaveCount(0);
   await expect
     .poll(() => processNames(page))
-    .toEqual(['Support handoff', 'Promotion release', 'Brunch orders']);
+    .toEqual([
+      'Support handoff',
+      'Promotion release',
+      'Brunch orders',
+      'Brunch orders',
+    ]);
 });
 
 test('hovering Arrange previews the handles without entering the mode', async ({
@@ -437,13 +463,12 @@ test('hovering Arrange previews the handles without entering the mode', async ({
 }) => {
   await openHome(page);
   await page.getByRole('button', { name: 'Arrange processes' }).hover();
-  const start = page.locator('.process-menu-row-start').first();
-  await expect
-    .poll(() => start.evaluate((el) => el.getBoundingClientRect().width))
-    .toBeGreaterThan(30);
+  // The handles fade in over each row's evaluation mark, in the same cell.
+  const grip = page.locator('.process-menu-row-start [data-grip]').first();
+  const opacity = () =>
+    grip.evaluate((el) => Number(getComputedStyle(el).opacity));
+  await expect.poll(opacity).toBeGreaterThan(0.9);
   await expect(page.getByRole('button', { name: /^Reorder / })).toHaveCount(0);
   await page.mouse.move(1400, 880);
-  await expect
-    .poll(() => start.evaluate((el) => el.getBoundingClientRect().width))
-    .toBe(0);
+  await expect.poll(opacity).toBe(0);
 });

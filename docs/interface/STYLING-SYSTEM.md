@@ -343,6 +343,8 @@ CSS's own keywords (`ease`, `ease-out`, `linear` …) are names already and stay
 
 `pnpm check:tokens` holds all three: it fails on a duration other than zero, a `cubic-bezier()` or a numeric `font-weight` anywhere in a rule. The number lives once, in a custom property's declaration.
 
+**A swap in the side panel holds its head still.** When the drawer aside trades one detail for another (`components/ui/swap.css`), what heads it -- its header, or a band its body opens with (`.swap-band`) -- stays where it is and only its words fade; the content under it travels. The layer keeps the swap's timing without moving, so its own `animationend` still ends the swap. A new detail that heads itself with a band marks it `swap-band` rather than animating it.
+
 **One set of fold timings.** A thread step's body and the shared `Fold` (`components/ui/fold.tsx`) open at `--fold-pace` per pixel of content, between `--fold-min` and `--fold-max`, then fade in over `--fold-fade` (all in `geometry.css`). Anything that opens in place uses `Fold` rather than a fold of its own.
 
 **Linked animations read one clock.** Elements that express one activity share their cycle and their start delay through custom properties, never through matching numbers. One element's keyframes own the moments that matter -- where a beat swells, where it peaks -- and the others key off those offsets, with a comment naming the keyframes they follow.

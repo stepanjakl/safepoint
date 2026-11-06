@@ -9,6 +9,7 @@ import { recordsOf, type KeptRead } from './records';
 import { definition } from './set.fixture';
 import {
   formulaOf,
+  valuesInWords,
   sameShape,
   sentenceOf,
   shapeProblems,
@@ -248,6 +249,20 @@ describe('a check written as a shape', () => {
     );
     expect(sentenceOf(ARRIVES, contextOn(capturedRead()))).toContain(
       'the delivery is before the start (Sat 07:00)',
+    );
+  });
+});
+
+describe('an example worked out in words', () => {
+  it('says what the rule reads of the record, never its formula', () => {
+    const read = capturedRead();
+    const given = givenOf({ constants: [], groups: [] }, { order: 70 });
+    const formulas = contextFor(read, 'SD-01', owner.subject, given, {});
+    expect(
+      valuesInWords(SUPPLIER_MAX, contextOn(read), 'SD-01', formulas),
+    ).toBe('the proposed order is 70; the max order units is 72');
+    expect(valuesInWords(CUTOFF, contextOn(read), 'SD-01', formulas)).toBe(
+      'the proposed order is 70; the cutoff is Thu 14:00',
     );
   });
 });

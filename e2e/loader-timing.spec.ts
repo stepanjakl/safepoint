@@ -37,7 +37,7 @@ async function openRules(page: Page, replyAfter: number | null) {
     await route.fulfill({ json: { kind: 'none' } });
   });
   await page.goto('/examples/brunch-orders');
-  await page.getByRole('button', { name: 'Rules B', exact: true }).click();
+  await page.getByRole('button', { name: 'Rules', exact: true }).click();
 }
 
 test('a quick reply never shows the loader', async ({ page }) => {
@@ -95,7 +95,7 @@ test('content that ends a wait fades in; content already known does not', async 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(
     'No run selected',
   );
-  await page.getByRole('button', { name: 'Rules B', exact: true }).click();
+  await page.getByRole('button', { name: 'Rules', exact: true }).click();
   await expect(page.getByText('Nothing is accepted yet.')).toBeVisible();
   await expect.poll(arrivals).toHaveLength(2);
   const [first, revisit] = await arrivals();

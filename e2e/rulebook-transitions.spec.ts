@@ -21,7 +21,7 @@ test.beforeEach(async ({ page, colorScheme }) => {
   );
 });
 
-test('returning to Rules B retains its known empty state while refreshing', async ({
+test('returning to Rules retains its known empty state while refreshing', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
@@ -31,7 +31,7 @@ test('returning to Rules B retains its known empty state while refreshing', asyn
     await route.fulfill({ json: { kind: 'none' } });
   });
   await page.goto('/examples/brunch-orders');
-  const rules = page.getByRole('button', { name: 'Rules B', exact: true });
+  const rules = page.getByRole('button', { name: 'Rules', exact: true });
   await rules.click();
   await expect(
     page.getByText('Nothing is accepted yet.', { exact: true }),
@@ -47,7 +47,7 @@ test('returning to Rules B retains its known empty state while refreshing', asyn
       new Promise<{ loading: boolean; empty: boolean; opacity: number }[]>(
         (resolve) => {
           if (!(button instanceof HTMLButtonElement))
-            throw new Error('Missing Rules B tab');
+            throw new Error('Missing Rules tab');
           const frames: {
             loading: boolean;
             empty: boolean;
@@ -57,7 +57,7 @@ test('returning to Rules B retains its known empty state while refreshing', asyn
           function sample() {
             const layer = document.querySelector('.process-sheet-swap');
             const content = layer?.querySelector(
-              'section[aria-labelledby="rules-b-heading"]',
+              'section[aria-labelledby="rules-heading"]',
             );
             if (content) {
               let opacity = 1;
@@ -98,7 +98,7 @@ test('returning to Rules B retains its known empty state while refreshing', asyn
   expect(frames.at(-1)?.opacity).toBe(1);
 });
 
-test('Rules and Rules B share the retained result and refresh newly accepted rules', async ({
+test('Rules keeps the retained result while it refreshes newly accepted rules', async ({
   page,
 }) => {
   let hasRules = false;
@@ -111,7 +111,7 @@ test('Rules and Rules B share the retained result and refresh newly accepted rul
     await route.fulfill({ json: hasRules ? rulebook : { kind: 'none' } });
   });
   await page.goto('/examples/brunch-orders');
-  await page.getByRole('button', { name: 'Rules B', exact: true }).click();
+  await page.getByRole('button', { name: 'Rules', exact: true }).click();
   await expect(
     page.getByText('Nothing is accepted yet.', { exact: true }),
   ).toBeVisible();
@@ -122,9 +122,7 @@ test('Rules and Rules B share the retained result and refresh newly accepted rul
   hasRules = true;
   await page.getByRole('button', { name: 'Rules', exact: true }).click();
   await expect(
-    page.getByText('Nothing is accepted for these instructions yet.', {
-      exact: true,
-    }),
+    page.getByText('Nothing is accepted yet.', { exact: true }),
   ).toBeVisible();
   await expect(
     page.getByText('Loading the rulebook…', { exact: true }),
@@ -133,7 +131,8 @@ test('Rules and Rules B share the retained result and refresh newly accepted rul
   await expect(
     page.getByRole('list', { name: 'Accepted rules' }).locator('> li'),
   ).toHaveCount(accepted.definitions.length);
-  await page.getByRole('button', { name: 'Rules B', exact: true }).click();
+  await page.getByRole('button', { name: 'Runs', exact: true }).click();
+  await page.getByRole('button', { name: 'Rules', exact: true }).click();
   await expect(
     page.getByRole('list', { name: 'Accepted rules' }).locator('> li'),
   ).toHaveCount(accepted.definitions.length);
@@ -155,7 +154,7 @@ test('changed instructions never show the previous version’s retained rules', 
     await route.fulfill({ json: changed ? { kind: 'none' } : rulebook });
   });
   await page.goto('/examples/brunch-orders');
-  await page.getByRole('button', { name: 'Rules B', exact: true }).click();
+  await page.getByRole('button', { name: 'Rules', exact: true }).click();
   const list = page.getByRole('list', { name: 'Accepted rules' });
   await expect(list.locator('> li')).toHaveCount(accepted.definitions.length);
   changed = true;
@@ -183,5 +182,5 @@ test('changed instructions never show the previous version’s retained rules', 
   await expect(page.getByRole('status')).toContainText(
     'Nothing is accepted yet.',
   );
-  await expect(page.getByRole('status')).toContainText('v3');
+  await expect(page.getByRole('status')).toContainText('v4');
 });

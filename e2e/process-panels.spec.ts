@@ -83,8 +83,8 @@ test('instructions open their latest version beside the list of versions', async
   page,
 }) => {
   await openTab(page, 'Instructions');
-  const versions = page.getByRole('region', { name: /^Instructions/ });
-  const current = versions.getByRole('button', { name: /^v4 · Current/ });
+  const versions = page.getByRole('list', { name: /^Instructions/ });
+  const current = versions.getByRole('button', { name: /^v4 · Live/ });
   // The latest opens with the tab, and leaves focus where it was.
   await expect(drawerTitle(page, 'Version v4')).toBeAttached();
   await expect(current).toHaveAttribute('aria-expanded', 'true');
@@ -99,7 +99,7 @@ test('instructions open their latest version beside the list of versions', async
   await expect(changes).toBeChecked();
   await expect(diff).toBeVisible();
   await expect(diff.getByText('Added:')).not.toHaveCount(0);
-  await drawer(page).getByRole('radio', { name: 'Text' }).click();
+  await drawer(page).getByRole('radio', { name: 'Text of v4' }).click();
   await expect(diff).toHaveCount(0);
 
   // The row that has it open closes it.
@@ -110,8 +110,8 @@ test('instructions open their latest version beside the list of versions', async
   // An earlier version is restored as a draft, which then leads the list.
   await versions.getByRole('button', { name: /^v3/ }).click();
   await expect(drawerTitle(page, 'Version v3')).toBeAttached();
-  await drawer(page).getByRole('button', { name: 'Restore as draft' }).click();
-  await expect(drawerTitle(page, 'Edit instructions')).toBeVisible();
+  await drawer(page).getByRole('button', { name: 'Draft from v3' }).click();
+  await expect(drawerTitle(page, 'New version v5')).toBeVisible();
   const draft = versions.getByRole('button', { name: /^v5 · Draft/ });
   await expect(draft).toHaveAttribute('aria-expanded', 'true');
   await page.keyboard.press('Escape');

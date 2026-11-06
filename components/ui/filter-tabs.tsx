@@ -56,6 +56,8 @@ const SIZE = {
 // (line height + tab padding - chip) / 2, 4px at the default size. The small
 // size has 2px: its chip is the tab's height less that on every side.
 const CHIP_START = { default: 'ps-1', small: 'ps-0.5' } as const;
+// A tab of words alone starts as far in as it ends (SIZE's pe-*).
+const WORD_START = { default: 'ps-3', small: 'ps-2.5' } as const;
 const HOVER_FACE =
   'data-[hovered]:not-data-[selected]:bg-filter-wash data-[pressed]:not-data-[selected]:bg-filter-wash';
 // A bucket with nothing in it drops to muted ink, waking on the pointer.
@@ -300,7 +302,7 @@ export function FilterTabs<Key extends string>({
               TAB,
               SIZE[size],
               // The inset is the count chip's; a tab without one pads evenly.
-              tab.count === undefined ? 'ps-3' : CHIP_START[size],
+              tab.count === undefined ? WORD_START[size] : CHIP_START[size],
               tab.severity !== undefined
                 ? cx(HOVER_FACE, tab.count === 0 ? EMPTY_TAB : BUCKET_TAB)
                 : tab.key === leadKey
@@ -395,7 +397,7 @@ export function FilterTabs<Key extends string>({
             className={cx(
               TAB,
               SIZE[size],
-              tab.count === undefined ? 'ps-3' : CHIP_START[size],
+              tab.count === undefined ? WORD_START[size] : CHIP_START[size],
               tab.key === leadKey && ALL_BOX,
             )}
           >

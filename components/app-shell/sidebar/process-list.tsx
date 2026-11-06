@@ -7,10 +7,11 @@ import DotGrid2x3Filled from 'blode-icons-react/icons/dot-grid-2x3-filled';
 
 import { cx } from '@/lib/cx';
 import { useShellPageNavigation } from '@/components/app-shell/shell-page-transition';
+import { EVALUATION_LABELS } from '@/lib/process/model';
 import type { ProcessNavigationItem } from '@/lib/process/navigation';
 import { Glyph } from '@/components/ui/glyph';
 import { OverflowTooltip, Tooltip } from '@/components/ui/tooltip';
-import { RAIL_CELL } from './menu-parts';
+import { MENU_RAIL, MenuIcon } from './menu-parts';
 import { ROW_HEIGHT, type ProcessReorder } from './use-process-reorder';
 
 /*
@@ -75,13 +76,18 @@ const GRIP_PREVIEW = `${GRIP_BOX} text-muted pointer-events-none`;
 const GRIP_HANDLE = `${GRIP_BOX} text-commit-ink hover:text-commit-ink-strong focus-visible:text-commit-ink-strong group-data-[dragging]/row:text-commit-ink-strong group-data-[dragging]/row:cursor-grabbing cursor-grab touch-none`;
 
 /*
-  In arrange mode the handle is the row's leading icon, so it takes one rail
-  cell and belongs on that axis rather than in a box of its own size.
-  GRIP_GAP is the row's own gap, cancelled while the cell has no width at all
-  so a row with no handle is no wider than it used to be.
+  The evaluation mark, outline at rest and filled while its row is lit --
+  hovered, focused or current -- in the label's colour steps. Both glyphs share
+  one grid cell, so the swap moves nothing; control-wash times the fade. Above
+  the link's stretched hit area, as the badge is, so its tooltip can open.
 */
-const GRIP_WIDTH = RAIL_CELL;
-const GRIP_GAP = 4;
+const EVALUATION_MARK =
+  'text-menu-link group-hover/row:text-primary group-focus-within/row:text-primary group-data-[current]/row:text-primary control-wash rounded-control relative z-1 grid size-7 cursor-help place-items-center';
+const EVALUATION_GLYPH = 'control-wash col-start-1 row-start-1';
+const EVALUATION_AT_REST =
+  'group-hover/row:opacity-0 group-focus-within/row:opacity-0 group-data-[current]/row:opacity-0';
+const EVALUATION_ENGAGED =
+  'opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100 group-data-[current]/row:opacity-100';
 
 function Grip() {
   return <DotGrid2x3Filled aria-hidden size={20} />;
@@ -207,65 +213,99 @@ export function ProcessList({
                   style={{ transform: `translateY(${position}px)` }}
                 >
                   {/*
-                    One wrapper for both, and it never unmounts: the handle and
-                    its preview are different elements, so letting each mount
-                    and unmount on its own gives React nothing to animate
-                    between and the label snaps sideways. The wrapper animates
-                    the width instead, and swaps what is inside it while it is
-                    open.
+                    The leading rail cell: the process's evaluation, and in its
+                    place while arranging -- or previewing that -- the handle.
+                    Both layers share the cell and cross-fade, so the label
+                    never moves. The handle's layer never unmounts: the handle
+                    and its preview are different elements, and swapping them
+                    inside it gives the fade something to run on.
                   */}
-                  <motion.div
-                    className="process-menu-row-start rail-mark grid flex-none place-items-center overflow-hidden"
-                    initial={false}
-                    animate={{
-                      width: showGrip ? GRIP_WIDTH : 0,
-                      marginRight: showGrip ? 0 : -GRIP_GAP,
-                      opacity: showGrip ? 1 : 0,
-                    }}
-                    transition={gripTransition}
-                  >
-                    {customising ? (
-                      <button
-                        ref={(element) => registerHandle(id, element)}
-                        type="button"
-                        className={GRIP_HANDLE}
-                        aria-label={`Reorder ${item.name}`}
-                        aria-describedby="process-reorder-instructions"
-                        onPointerDown={(event) => startDrag(event, id)}
-                        onPointerMove={dragMove}
-                        onPointerUp={() => finishDrag(false)}
-                        onPointerCancel={() => finishDrag(true)}
-                        onLostPointerCapture={() => finishDrag(true)}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Escape' && escapeDrag()) {
-                            event.preventDefault();
-                          }
-                          if (
-                            event.key === 'ArrowUp' ||
-                            event.key === 'ArrowDown' ||
-                            event.key === 'Home' ||
-                            event.key === 'End'
-                          ) {
-                            event.preventDefault();
-                            moveFromKeyboard(
-                              id,
-                              event.key === 'Home'
-                                ? 0
-                                : event.key === 'End'
-                                  ? order.length - 1
-                                  : index + (event.key === 'ArrowUp' ? -1 : 1),
-                            );
-                          }
-                        }}
+                  <span className={cx(MENU_RAIL, 'process-menu-row-start')}>
+                    <motion.span
+                      className={cx(
+                        'col-start-1 row-start-1 grid place-items-center',
+                        showGrip && 'pointer-events-none',
+                      )}
+                      initial={false}
+                      animate={{ opacity: showGrip ? 0 : 1 }}
+                      transition={gripTransition}
+                    >
+                      <Tooltip
+                        label={EVALUATION_LABELS[item.evaluation]}
+                        isDisabled={showGrip}
                       >
-                        <Grip />
-                      </button>
-                    ) : (
-                      <span className={GRIP_PREVIEW} aria-hidden="true">
-                        <Grip />
-                      </span>
-                    )}
-                  </motion.div>
+                        <span
+                          tabIndex={customising ? -1 : 0}
+                          role="img"
+                          aria-label={`${item.name}: ${EVALUATION_LABELS[item.evaluation]}`}
+                          aria-hidden={customising || undefined}
+                          className={EVALUATION_MARK}
+                        >
+                          <MenuIcon
+                            name={item.evaluation}
+                            className={cx(EVALUATION_GLYPH, EVALUATION_AT_REST)}
+                          />
+                          <MenuIcon
+                            name={`${item.evaluation}Filled`}
+                            className={cx(EVALUATION_GLYPH, EVALUATION_ENGAGED)}
+                          />
+                        </span>
+                      </Tooltip>
+                    </motion.span>
+                    <motion.div
+                      data-grip
+                      className={cx(
+                        'col-start-1 row-start-1 grid place-items-center',
+                        !showGrip && 'pointer-events-none',
+                      )}
+                      initial={false}
+                      animate={{ opacity: showGrip ? 1 : 0 }}
+                      transition={gripTransition}
+                    >
+                      {customising ? (
+                        <button
+                          ref={(element) => registerHandle(id, element)}
+                          type="button"
+                          className={GRIP_HANDLE}
+                          aria-label={`Reorder ${item.name}`}
+                          aria-describedby="process-reorder-instructions"
+                          onPointerDown={(event) => startDrag(event, id)}
+                          onPointerMove={dragMove}
+                          onPointerUp={() => finishDrag(false)}
+                          onPointerCancel={() => finishDrag(true)}
+                          onLostPointerCapture={() => finishDrag(true)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Escape' && escapeDrag()) {
+                              event.preventDefault();
+                            }
+                            if (
+                              event.key === 'ArrowUp' ||
+                              event.key === 'ArrowDown' ||
+                              event.key === 'Home' ||
+                              event.key === 'End'
+                            ) {
+                              event.preventDefault();
+                              moveFromKeyboard(
+                                id,
+                                event.key === 'Home'
+                                  ? 0
+                                  : event.key === 'End'
+                                    ? order.length - 1
+                                    : index +
+                                      (event.key === 'ArrowUp' ? -1 : 1),
+                              );
+                            }
+                          }}
+                        >
+                          <Grip />
+                        </button>
+                      ) : (
+                        <span className={GRIP_PREVIEW} aria-hidden="true">
+                          <Grip />
+                        </span>
+                      )}
+                    </motion.div>
+                  </span>
                   {customising ? (
                     <OverflowTooltip label={item.name}>
                       <span

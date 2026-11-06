@@ -1,3 +1,4 @@
+import type { ProcessEvaluation } from '@/lib/process/model';
 import type { ReleasePlan } from '@/lib/review/plan-contract';
 import {
   evaluationCounts,
@@ -9,6 +10,7 @@ export type ProcessNavigationItem = {
   id: string;
   href: string;
   name: string;
+  evaluation: ProcessEvaluation;
   status: {
     label: string;
     description: string;
@@ -24,11 +26,13 @@ export function processNavigationItem({
   id,
   href,
   name,
+  evaluation,
   plan,
 }: {
   id: string;
   href: string;
   name: string;
+  evaluation: ProcessEvaluation;
   plan: ReleasePlan;
 }): ProcessNavigationItem {
   const counts = evaluationCounts(plan.effects);
@@ -69,6 +73,7 @@ export function processNavigationItem({
     id,
     href,
     name,
+    evaluation,
     status: {
       ...status,
       counts,

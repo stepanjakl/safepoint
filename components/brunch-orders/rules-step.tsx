@@ -1062,62 +1062,6 @@ function DefinitionReading({
   );
 }
 
-/*
-  An accepted definition as the rulebook keeps it, read-only: what it is, what
-  failing it does, and its reading and formula, with when it was accepted.
-  Its examples and decisions stay in the run that accepted it.
-*/
-export function RulebookCard({
-  item,
-  quoted,
-  names,
-  reads,
-}: {
-  item: Definition;
-  quoted: boolean;
-  names: Record<string, string>;
-  reads: Definition[];
-}) {
-  const headingId = useId();
-  return (
-    <li
-      id={anchorOf(item.id)}
-      className={cx(ASKS, 'grid scroll-mt-4')}
-      aria-labelledby={headingId}
-    >
-      <div className="rule-below grid gap-2.5 p-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <DefinitionPills item={item} />
-          {item.approvedAt ? (
-            <span className="text-meta text-muted ml-auto">
-              Accepted {ACCEPTED_AT.format(new Date(item.approvedAt))}
-            </span>
-          ) : null}
-        </div>
-        <h4 id={headingId} className="text-dense font-semibold">
-          {item.name}
-        </h4>
-      </div>
-      <div className="grid gap-3 p-4">
-        <DefinitionReading
-          item={item}
-          quoted={quoted}
-          names={names}
-          reads={reads}
-          headingId={headingId}
-        />
-      </div>
-    </li>
-  );
-}
-
-const ACCEPTED_AT = new Intl.DateTimeFormat('en-GB', {
-  day: 'numeric',
-  month: 'short',
-  hour: '2-digit',
-  minute: '2-digit',
-});
-
 export function DefinitionCard({
   item,
   quoted,
@@ -1235,6 +1179,11 @@ export function DefinitionCard({
           </p>
         ) : null}
         {item.problem ? <p className="text-dense">{item.problem}</p> : null}
+        {item.unfit ? (
+          <FromModel label="Why the model found no shape">
+            <p className="text-dense italic">{item.unfit}</p>
+          </FromModel>
+        ) : null}
         {item.agreement?.status === 'split' ? (
           <VersionsToChoose
             item={item}

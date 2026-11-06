@@ -21,13 +21,7 @@ import {
 export const PROCESS_TABS = [
   'runs',
   'instructions',
-  // Development only: the proposed Instructions tab, beside the current one
-  // for comparison (instructions-b.tsx). Delete with that file.
-  'instructions-b',
   'rules',
-  // Development only: the proposed Rules tab, beside the current one for
-  // comparison (rulebook-panel-b.tsx). Delete with that file.
-  'rules-b',
   'inputs',
   'outputs',
   'settings',

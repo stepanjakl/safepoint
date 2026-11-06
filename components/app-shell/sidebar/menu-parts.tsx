@@ -15,6 +15,10 @@ import CodeTreeFilled from 'blode-icons-react/icons/code-tree-filled';
 import Connectors1 from 'blode-icons-react/icons/connectors-1';
 import Connectors1Filled from 'blode-icons-react/icons/connectors-1-filled';
 import DotGrid1x3HorizontalFilled from 'blode-icons-react/icons/dot-grid-1x3-horizontal-filled';
+import FileLock from 'blode-icons-react/icons/file-lock';
+import FileLockFilled from 'blode-icons-react/icons/file-lock-filled';
+import FileSparkle from 'blode-icons-react/icons/file-sparkle';
+import FileSparkleFilled from 'blode-icons-react/icons/file-sparkle-filled';
 import FileText from 'blode-icons-react/icons/file-text';
 import FileTextFilled from 'blode-icons-react/icons/file-text-filled';
 import History from 'blode-icons-react/icons/history';
@@ -104,6 +108,11 @@ const MENU_ICONS = {
   audit: FileText,
   auditFilled: FileTextFilled,
   info: CircleInfo,
+  // A process's evaluation: checked by rules, or the model's judgement.
+  rules: FileLock,
+  rulesFilled: FileLockFilled,
+  model: FileSparkle,
+  modelFilled: FileSparkleFilled,
 } as const;
 
 export type MenuIconName = keyof typeof MENU_ICONS;

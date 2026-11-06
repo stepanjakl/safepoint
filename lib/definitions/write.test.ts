@@ -146,6 +146,12 @@ describe('drafting', () => {
       resolve: () => writer,
     });
     expect(told(writer)).toContain('two_weekends (a whole number, an int)');
+    // A shape is told what it may name, and when start and read are.
+    expect(told(writer)).toContain('value:two_weekends (Two weekends)');
+    expect(told(writer)).toMatch(
+      /start: when the planned period starts, Sat 07:00/,
+    );
+    expect(told(writer)).toMatch(/read: when the data was read, Thu 17:03/);
     // Clean on the first check: nothing more is asked.
     expect(writer.doGenerateCalls).toHaveLength(1);
     const enough = set!.definitions.find((i) => i.id === 'enough')!;
@@ -469,10 +475,12 @@ describe('writing a definition more than once', () => {
   it('never compares a refusal: another write is asked for, and a shape wins', async () => {
     const { model, kept } = await written(
       check(refusal('needs_or')),
+      check(refusal('needs_or')),
       check(answerOf(WHOLE)),
       check(refusal('needs_or')),
+      check(refusal('needs_or')),
     );
-    expect(model.doGenerateCalls).toHaveLength(3);
+    expect(model.doGenerateCalls).toHaveLength(5);
     expect(kept.shape).toMatchObject(WHOLE);
     expect(kept.unfit ?? null).toBeNull();
     expect(kept.agreement).toMatchObject({ status: 'unconfirmed', runs: 3 });
@@ -480,14 +488,26 @@ describe('writing a definition more than once', () => {
 
   it('refuses the rule only when every write refuses, saying why', async () => {
     const { kept } = await written(
-      check(refusal('needs_or')),
-      check(refusal('needs_or')),
-      check(refusal('needs_or')),
+      ...Array.from({ length: 6 }, () => check(refusal('needs_or'))),
     );
     expect(kept.formula).toBeNull();
-    expect(kept.unfit).toMatch(/^It needs “or”/);
-    expect(kept.problem).toMatch(/^This rule can't be checked as written/);
+    expect(kept.unfit).toBe('The rule says or.');
+    expect(kept.problem).toBe(
+      'No shape can check this rule as written: it joins conditions with “or”. Rephrase it in the instructions, or write it again.',
+    );
     expect(canAccept(kept)).toBe(false);
+  });
+
+  it('answers a first refusal with what shapes can do for its reason', async () => {
+    const { model, kept } = await written(
+      check(refusal('needs_other_arithmetic')),
+      check(answerOf(WHOLE)),
+      check(answerOf(WHOLE)),
+    );
+    expect(told(model, 1)).toContain('plus a margin in percent');
+    expect(told(model, 1)).toContain('moment:<moment> before moment:read');
+    expect(kept.shape).toMatchObject(WHOLE);
+    expect(kept.agreement).toMatchObject({ status: 'agreed', runs: 2 });
   });
 
   it('takes no refusal without one of its reasons', async () => {

@@ -18,7 +18,7 @@ import { Fold } from '@/components/ui/fold';
 import { Pill } from '@/components/ui/pill';
 
 /*
-  Development only, with Rules B: the rulebook's revisions in a drawer, by day.
+  The rulebook's revisions in a drawer, by day.
   A day sits on the outer lane and its revisions on the inner one; the line
   runs down whichever lane the next dot is on and steps across in a soft S.
   Any number of revisions can be open; the line lights from the current

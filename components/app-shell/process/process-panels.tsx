@@ -1,6 +1,7 @@
 'use client';
 
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useRef, useSyncExternalStore } from 'react';
+import { EmptyState, useLoader } from '@/components/ui/working-mark';
 import { cx } from '@/lib/cx';
 import type { InputDetail } from '@/lib/process/input-details';
 import type { ProcessSummary } from '@/lib/process/model';
@@ -19,15 +20,7 @@ import {
   InstructionsPanel,
   InstructionVersionView,
 } from '@/components/app-shell/instructions/instructions-panel';
-import {
-  InstructionsListB,
-  InstructionVersionViewB,
-  TextDiffB,
-} from '@/components/app-shell/instructions/instructions-b';
-import {
-  liveRange,
-  useInstructions,
-} from '@/components/app-shell/instructions/instructions-store';
+import { useInstructions } from '@/components/app-shell/instructions/instructions-store';
 import { ProcessSettings } from './process-settings';
 import { useAsidePanel } from '@/components/app-shell/use-aside-panel';
 import { OutputsList } from './outputs-list';
@@ -69,14 +62,16 @@ const COLUMNS =
 const TWO_COLUMNS =
   '@sheet-narrow/sheet:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] @sheet-narrow/sheet:[&>*]:min-w-0 @sheet-wide/sheet:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]';
 
+// Versions are a short word and a date, so their list gives the text more.
+const NARROW_LIST =
+  '@sheet-narrow/sheet:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] @sheet-narrow/sheet:[&>*]:min-w-0 @sheet-wide/sheet:grid-cols-[minmax(0,18rem)_minmax(0,1fr)]';
+
 // Which tabs have a detail to put beside their list.
-const OPENS_DETAIL = new Set<ProcessTab>([
-  'instructions',
-  'instructions-b',
-  'inputs',
-]);
+const OPENS_DETAIL = new Set<ProcessTab>(['instructions', 'inputs']);
 
 type AsidePanel = Omit<AsideLayer, 'key'>;
+
+const noSubscription = () => () => {};
 
 export function ProcessPanels({
   process,
@@ -112,10 +107,7 @@ export function ProcessPanels({
     versions,
     current: version,
     next,
-    draft,
-    saveDraft,
   } = useInstructions(process.id, process.instructions);
-  const compare = tab === 'instructions-b';
   const run = process.runs.find((entry) => entry.current);
 
   // Where one view sits in the list it was chosen from: inputs in the order
@@ -161,7 +153,7 @@ export function ProcessPanels({
   // would take the list's place, so the grid's own columns decide.
   const root = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
-    if ((tab !== 'instructions' && !compare) || openView || !root.current) {
+    if (tab !== 'instructions' || openView || !root.current) {
       return;
     }
     const columns = getComputedStyle(root.current).gridTemplateColumns;
@@ -175,6 +167,16 @@ export function ProcessPanels({
     // Once, as the tab arrives: the panels are keyed on it upstream.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // The detail is chosen in the browser -- the latest version opens once the
+  // columns are measured -- so until then the column waits rather than saying
+  // nothing is open.
+  const hydrated = useSyncExternalStore(
+    noSubscription,
+    () => true,
+    () => false,
+  );
+  const loader = useLoader(!hydrated);
 
   const panel = aside ? asidePanel(aside) : null;
   const leavingPanel =
@@ -238,26 +240,6 @@ export function ProcessPanels({
         );
         const to = versions[index];
         if (!to) return null;
-        if (compare) {
-          return {
-            eyebrow: 'Instructions',
-            title: to.version,
-            announce: `Version ${to.version}`,
-            meta:
-              to === version
-                ? `Current · ${liveRange(versions, index)}`
-                : liveRange(versions, index),
-            focusOnOpen: !view.passive,
-            body: (
-              <InstructionVersionViewB
-                process={process}
-                version={to.version}
-                face={view.face}
-                onEdit={() => openAside({ kind: 'edit' })}
-              />
-            ),
-          };
-        }
         return {
           eyebrow: 'Instructions',
           title: `Version ${to.version}`,
@@ -277,66 +259,49 @@ export function ProcessPanels({
       case 'edit':
         return {
           eyebrow: 'Instructions',
-          title: 'Edit instructions',
-          announce: 'Edit instructions',
-          meta: (
-            <>
-              Draft of <span className="value">{next}</span> from{' '}
-              <span className="value">{version.version}</span> · saved as you
-              type
-            </>
-          ),
+          title: `New version ${next}`,
+          announce: `New version ${next}`,
+          headless: true,
           focusOnOpen: false,
           body: (
-            <InstructionEditor
-              process={process}
-              onDone={() => closeAside()}
-              Diff={compare ? TextDiffB : undefined}
-            />
+            <InstructionEditor process={process} onDone={() => closeAside()} />
           ),
         };
     }
   }
 
-  const list = compare ? (
-    <InstructionsListB
-      process={process}
-      aside={exiting ? null : aside}
-      onShowVersion={(shown) =>
-        openAside({ kind: 'version', version: shown, face: 'text' })
-      }
-      onEdit={() => openAside({ kind: 'edit' })}
-    />
-  ) : tab === 'instructions' ? (
-    <InstructionsPanel
-      process={process}
-      aside={exiting ? null : aside}
-      onShowVersion={(shown) =>
-        openAside({ kind: 'version', version: shown, face: 'text' })
-      }
-      onEdit={() => openAside({ kind: 'edit' })}
-    />
-  ) : tab === 'inputs' ? (
-    <InputsList
-      inputs={inputs}
-      details={inputDetails}
-      runLabel={run ? runStamp(run.startedAt) : undefined}
-      openId={!exiting && aside?.kind === 'input' ? aside.id : null}
-      editable={onAddInput !== undefined}
-      onOpen={(id) => openAside({ kind: 'input', id })}
-    />
-  ) : tab === 'outputs' ? (
-    <OutputsList outputs={outputs} />
-  ) : (
-    <ProcessSettings process={process} />
-  );
+  const list =
+    tab === 'instructions' ? (
+      <InstructionsPanel
+        process={process}
+        aside={exiting ? null : aside}
+        onShowVersion={(shown) =>
+          openAside({ kind: 'version', version: shown, face: 'text' })
+        }
+        onEdit={() => openAside({ kind: 'edit' })}
+      />
+    ) : tab === 'inputs' ? (
+      <InputsList
+        inputs={inputs}
+        details={inputDetails}
+        runLabel={run ? runStamp(run.startedAt) : undefined}
+        openId={!exiting && aside?.kind === 'input' ? aside.id : null}
+        editable={onAddInput !== undefined}
+        onOpen={(id) => openAside({ kind: 'input', id })}
+      />
+    ) : tab === 'outputs' ? (
+      <OutputsList outputs={outputs} />
+    ) : (
+      <ProcessSettings process={process} />
+    );
 
   return (
     <div
       className={cx(
         'process-panels',
         COLUMNS,
-        OPENS_DETAIL.has(tab) && TWO_COLUMNS,
+        OPENS_DETAIL.has(tab) &&
+          (tab === 'instructions' ? NARROW_LIST : TWO_COLUMNS),
         OPENS_DETAIL.has(tab) && 'sheet-column-edge',
       )}
       onKeyDownCapture={onKeyDownCapture}
@@ -346,9 +311,15 @@ export function ProcessPanels({
         // Where the detail is showing and the two do not fit, it takes this
         // column's place rather than squeezing beside it.
         className={cx(
-          'process-panel-list sheet-bleed sheet-bleed-head shell:min-h-0 shell:overflow-y-auto shell:overscroll-contain border-rule-faint min-w-0',
+          'process-panel-list sheet-bleed shell:min-h-0 shell:overflow-y-auto shell:overscroll-contain border-raised-ring min-w-0',
+          // Rows run to the column's edges; prose pads itself back.
+          tab !== 'instructions' && 'sheet-bleed-head',
           OPENS_DETAIL.has(tab)
-            ? '@sheet-narrow/sheet:border-r @max-sheet-narrow/sheet:sheet-bleed-end @max-sheet-narrow/sheet:sheet-bleed-end-head'
+            ? cx(
+                '@sheet-narrow/sheet:border-r @max-sheet-narrow/sheet:sheet-bleed-end',
+                tab !== 'instructions' &&
+                  '@max-sheet-narrow/sheet:sheet-bleed-end-head',
+              )
             : 'sheet-bleed-end sheet-bleed-end-head',
           panel ? '@max-sheet-narrow/sheet:hidden' : null,
         )}
@@ -367,25 +338,7 @@ export function ProcessPanels({
                 : undefined
           }
         >
-          {tab === 'instructions' ? (
-            <span className="bg-menu-chip value text-micro text-muted-strong rounded-control px-1.5 py-0.5">
-              {version.version}
-            </span>
-          ) : compare ? (
-            // The section's one control, as Add is for inputs: editing starts
-            // a draft of the current version, or carries on the one there is.
-            <button
-              type="button"
-              onClick={() => {
-                if (draft === null) saveDraft(version.text);
-                openAside({ kind: 'edit' });
-              }}
-              aria-expanded={!exiting && aside?.kind === 'edit'}
-              className={ADD_BUTTON}
-            >
-              {draft === null ? 'Edit' : 'Continue draft'}
-            </button>
-          ) : tab === 'inputs' && onAddInput ? (
+          {tab === 'inputs' && onAddInput ? (
             <button
               type="button"
               id={ADD_INPUT_ID}
@@ -413,15 +366,34 @@ export function ProcessPanels({
           onExited={finishExit}
           onLeft={settleLeaving}
           flat
+          // Over the column edge's lit line (.sheet-column-edge), so a band
+          // leading the detail covers it as the list's head covers its own.
+          className="z-1"
         />
       ) : OPENS_DETAIL.has(tab) ? (
         // Only where a row opens something: a column that can never fill is
         // not an empty state, it is a mistake.
-        <p className="text-muted text-meta @sheet-wide/sheet:block hidden place-self-center p-8">
-          {tab === 'inputs'
-            ? 'Choose an input to read the records it gave this run.'
-            : 'Open a version to read it and see what changed in it.'}
-        </p>
+        <div className="@sheet-wide/sheet:flex hidden min-h-0 flex-col overflow-y-auto px-8">
+          {loader.phase ? (
+            loader.phase === 'waiting' ? null : (
+              <EmptyState
+                role="status"
+                loading
+                title={loader.phase === 'slow' ? 'Still loading…' : 'Loading…'}
+              />
+            )
+          ) : (
+            <EmptyState
+              role="status"
+              fadeIn={loader.fadeIn}
+              title={tab === 'inputs' ? 'No input open.' : 'No version open.'}
+            >
+              {tab === 'inputs'
+                ? 'Choose an input to read the records it gave this run.'
+                : 'Choose a version to read it and see what changed in it.'}
+            </EmptyState>
+          )}
+        </div>
       ) : null}
     </div>
   );

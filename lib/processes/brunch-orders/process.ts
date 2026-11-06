@@ -17,6 +17,10 @@ import type { ReleasePlan } from '@/lib/review/plan-contract';
 
 export const BRUNCH_ORDERS_ID = 'brunch-orders';
 export const BRUNCH_ORDERS_HREF = '/examples/brunch-orders';
+// The same orders worked out by the model on every run, with no rulebook: the
+// quicker demo, as nothing has to be drafted and approved first.
+const BRUNCH_ORDERS_DIRECT_ID = 'brunch-orders-direct';
+export const BRUNCH_ORDERS_DIRECT_HREF = '/examples/brunch-orders-direct';
 
 // Where a product's columns are, and the category parameters it reaches. The
 // spreadsheet has other tabs, from the Brunch weekend experiment; they are not
@@ -136,6 +140,29 @@ Rules
 6. If a product's stock count is older than its category allows, flag it for a person to decide, even when nothing is ordered.
 7. Stock available plus the order must not exceed the ripe avocados we expect to sell.`;
 
+// The direct process's own instructions, from its first version: the same
+// words as the rulebook one's v3 when it began, kept apart so each can change.
+const DIRECT_INSTRUCTIONS = `What this is for
+Each week, suggest how many of each product to order for the coming Brunch weekend, so we have enough for what we expect to sell without overstocking. A person checks and approves every order before it is placed.
+
+The promotion
+Brunch weekend runs every Saturday from 07:00 to Sunday 22:00. The idea is to make avocado toast at home easy. We sell an avocado toast kit (a sourdough loaf, a pack of ripe avocados and a pack of feta), and eggs, cherry tomatoes and rocket are on offer. Ripe avocados don't keep.
+
+How much we expect to sell
+Start from each product's average over the last four weekends. Products on offer sell about 40% more, the kit's ingredients about 10% more, and everything else about 15% more. We expect to sell about 40 kits, and each one uses a loaf, a pack of avocados and a pack of feta on top of their own sales. Round up to whole units.
+
+What we have
+Stock available is what we have on hand, less what is reserved, plus what arrives before the start.
+
+Rules
+1. Order in whole cases.
+2. Never order more than the supplier can deliver.
+3. Only order what arrives before Saturday's opening.
+4. Only order what can still be placed before the supplier's cutoff for this weekend.
+5. Aim for enough stock available to cover expected sales plus the category's safety margin. If that isn't possible, flag it for a person to decide.
+6. If a product's stock count is older than its category allows, flag it for a person to decide, even when nothing is ordered.
+7. Stock available plus the order must not exceed the ripe avocados we expect to sell.`;
+
 // Each step of a run, in order. The thread sets each one's status from the
 // run's progress; the phase in each label says which part of the plan brings
 // a step that is not built yet.
@@ -188,6 +215,7 @@ export const COMING: Record<string, string> = {
 export const brunchOrdersProcess: ProcessSummary = {
   id: BRUNCH_ORDERS_ID,
   name: 'Brunch orders',
+  evaluation: 'rules',
   schedule: {
     enabled: false,
     cadence: 'weekly',
@@ -250,6 +278,31 @@ export const brunchOrdersProcess: ProcessSummary = {
   runs: [],
 };
 
+// Its steps: no rulebook to draft, so nothing to calculate from; the model
+// proposes straight from the instructions and the sheet.
+const DIRECT_ORDER_STEPS: ProcessStep[] = ORDER_STEPS.filter(
+  (step) => step.id !== 'rules' && step.id !== 'calculate',
+).map((step) =>
+  step.id === 'propose' ? { ...step, label: 'From the instructions' } : step,
+);
+
+export const brunchOrdersDirectProcess: ProcessSummary = {
+  ...brunchOrdersProcess,
+  id: BRUNCH_ORDERS_DIRECT_ID,
+  evaluation: 'model',
+  instructions: {
+    version: 'v1',
+    updatedAt: 'Written 5 Nov 2026',
+    author: 'Project owner',
+    note: 'The first version, for a process with no rulebook: a model works every run out from these instructions.',
+    promptedBy: null,
+    changes: [],
+    text: DIRECT_INSTRUCTIONS,
+    previous: [],
+  },
+  steps: DIRECT_ORDER_STEPS,
+};
+
 // The release menu is not fed by proposals yet, so it says the plan is incomplete
 // rather than empty.
 export const brunchOrdersPlan: ReleasePlan = {
@@ -265,4 +318,9 @@ export const brunchOrdersPlan: ReleasePlan = {
   reasons: [],
   effects: [],
   status: { kind: 'incomplete', step: 1, of: 7 },
+};
+
+export const brunchOrdersDirectPlan: ReleasePlan = {
+  ...brunchOrdersPlan,
+  id: BRUNCH_ORDERS_DIRECT_ID,
 };

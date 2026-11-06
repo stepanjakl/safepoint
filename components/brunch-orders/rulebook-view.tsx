@@ -23,10 +23,10 @@ import { cx } from '@/lib/cx';
 import type { Definition } from '@/lib/definitions/types';
 
 /*
-  Development only: the proposed Rules tab, beside the current one for
-  comparison. The accepted rules as tiles, a calculation twice a check's width
-  because checks read it, filtered by what each does; the history in a drawer.
-  Delete with the 'rules-b' tab once one of the two is chosen.
+  The rulebook of the current instructions: the accepted rules as tiles, a
+  calculation twice a check's width because checks read it, filtered by what
+  each does; the history in a drawer. Read-only: drafting, examples and
+  decisions stay in a run's Rules step.
 */
 
 type Filter = 'all' | 'number' | 'block' | 'decide';
@@ -37,7 +37,7 @@ const matches = (item: Definition, filter: Filter) =>
     ? item.result === 'number'
     : item.result === 'check' && item.consequence === filter);
 
-export function RulebookPanelB() {
+export function RulebookPanel() {
   const { current, body, set, accepted } = useRulebook();
   const { phase, fadeIn } = useLoader(!body);
   const [filter, setFilter] = useState<Filter>('all');

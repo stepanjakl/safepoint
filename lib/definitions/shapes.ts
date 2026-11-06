@@ -9,6 +9,7 @@ import {
   type KeptRead,
   type Records,
 } from './records';
+import { run, type Context } from './formulas';
 import type { Shape, ShapeCondition } from './shape-schema';
 import type { Definition, DefinitionSet } from './types';
 
@@ -773,4 +774,101 @@ export function sentencesOf(
       },
     ]),
   );
+}
+
+// When a moment falls for one record, as a weekday and a time; null when its
+// cells are blank or the process has no timing.
+function momentWhen(
+  name: string,
+  record: Record<string, unknown>,
+  context: ShapeContext,
+): string | null {
+  const timing = context.subject.data.timing;
+  if (!timing) return null;
+  const readAt = Date.parse(context.read.readAt);
+  const hours = name === READ ? 0 : record[momentColumn(name)];
+  return typeof hours === 'number'
+    ? when(readAt + hours * 3_600_000, timing.timeZone)
+    : null;
+}
+
+// When the planned period starts and when the data was read, for telling a
+// model what start and read are.
+export function momentTimes(context: ShapeContext) {
+  const first = context.records.record(context.records.keys[0] ?? '');
+  return {
+    start: momentWhen(START, first, context),
+    read: momentWhen(READ, first, context),
+  };
+}
+
+const plainValue = (value: unknown) =>
+  value === undefined || value === null
+    ? 'blank'
+    : typeof value === 'bigint'
+      ? String(value)
+      : typeof value === 'number'
+        ? String(Math.round(value * 100) / 100)
+        : typeof value === 'boolean'
+          ? value
+            ? 'yes'
+            : 'no'
+          : String(value);
+
+/*
+  What the rule reads for one record, in its own words, for showing an
+  example's working without its formula: each number, yes/no and moment it
+  names, with its value here, and whether the record is in its group.
+*/
+export function valuesInWords(
+  shape: Shape,
+  context: ShapeContext,
+  key: string,
+  formulas: Context,
+): string {
+  const { rule } = ruleOf(shape, context);
+  if (!rule) return '';
+  const record = formulas.record as Record<string, unknown>;
+  const parts: string[] = [];
+  const { scope } = rule;
+  if (scope?.only === 'group') {
+    const group = context.groups.find((g) => g.id === scope.group);
+    parts.push(
+      `${key} is ${group?.keys.includes(key) ? '' : 'not '}in “${group?.quote ?? words(scope.group)}”`,
+    );
+  }
+  const seen = new Set<string>();
+  const say = (label: string, value: string) => {
+    if (seen.has(label)) return;
+    seen.add(label);
+    parts.push(`${label} is ${value}`);
+  };
+  const field = fieldOf(rule);
+  if (field)
+    say(
+      operandWords({ kind: 'proposed', field }, context),
+      plainValue(formulas[field]),
+    );
+  for (const o of operandsOf(rule)) {
+    let value: unknown;
+    try {
+      value = run(operandFormula(o, context), formulas);
+    } catch {
+      value = null;
+    }
+    say(operandWords(o, context), plainValue(value));
+  }
+  for (const c of conditionsOf(rule))
+    if (c.test === 'yes_no')
+      say(
+        operandWords({ kind: 'column', column: c.column }, context),
+        plainValue(run(columnAt(c.column, context)?.path ?? 'null', formulas)),
+      );
+  for (const m of new Set(momentsOf(rule)))
+    if (m !== READ)
+      say(
+        momentWords(m, context).replace(/ \(.*\)$/, ''),
+        momentWhen(m, record, context) ?? 'blank',
+      );
+  return parts.join('; ');
 }
