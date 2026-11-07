@@ -363,11 +363,22 @@ CSS's own keywords (`ease`, `ease-out`, `linear` …) are names already and stay
 
 **A part's entrance waits for its screen.** A fade that brings a whole screen, process or tab in reports its end through `SettledLayer` (`components/ui/screen-settled.tsx`), and anything with an entrance of its own holds it on `useScreenSettled` until every layer above has landed. The empty run page's rise and a panel's arrival after a load both do; neither starts under a fade that is still running. A reload has no transition: the browser holds the old page until the new one paints, so a fade there would read as a blink. The empty run page rises only if its screen was still coming in when it mounted, and on a load it is simply there.
 
+**A control's busy mark finishes what it starts.** The source view's Read button is the worked example (`ReadRing` and `useReadRing` in `components/app-shell/sources/source-card.tsx`):
+
+- Show it on the app's loader timing (`useLoader`): nothing for work under 300ms, held 500ms once shown, and "Still …" in its label after 10 seconds. Gate on the `shown` and `slow` phases; `waiting` comes first and means "not yet".
+- Let it end as it began. The ring finishes at least one whole turn before it leaves, so a quick result does not flash, and its segments shrink back the way they grew. A mark that grows and shrinks while it turns does so from each part's middle (move the dash offset with the dash), or the turn and the shrink read as one part chasing its own end.
+- Hold the result until the mark has gone. The new value morphs in and its success tone starts in the same moment the ring leaves; at once when no ring was shown.
+- Replay a one-off highlight with the Web Animations API on the element that is already there (`element.animate`), not by remounting it with a key: a remount loses any morph running on the same element.
+- The button stays in its normal face while busy, marked `aria-busy`/`aria-disabled` so a second press does nothing, and the state is said once in a polite status line rather than by the animation.
+
 **Pitfalls, each found the hard way.**
 
 - An `animation` shorthand that reads an undefined custom property is invalid and silently computes to `none`. Define timing tokens on an ancestor every participant inherits from -- a sibling cannot see a property set on its neighbour.
 - `transform-origin` on an SVG element that has its own `transform` attribute moves that transform's centre. Put the attribute on a wrapping `<g>` and animate the inner element.
 - Text clipped to a gradient must restore plain ink under `forced-colors`.
+- `background-clip: text` does not reach letters drawn as boxes of their own -- `MorphingText` (torph) draws each letter that way -- and the text vanishes. Shimmer such text with a moving `mask-image`, or not at all.
+- A sweep sized to each element (a gradient in percent of its own box) races across a one-digit value and reads as flicker; values that share a state share one timing or none.
+- A panel's rows rise in as its tab arrives (`[data-section-forming]` in `process-sheet.css`), and the rule reaches every `li` and `p` in the panel. A figure that should stand still across a tab change is drawn in spans, as the source view's Last read and Last write are.
 
 **Verify motion by measurement and by eye.** Sample layout every frame across a change, reading after the page's own resize handling: a read made earlier sees a frame that is never painted. Freeze animations at chosen times to inspect frames. Judge the feel of alternatives side by side on a workbench page, on one clock, with a slow-motion switch -- `/workbench/run` has one for the thread.
 
@@ -465,15 +476,17 @@ Where a value is genuinely dynamic, use a `style` prop rather than an interpolat
 Several shapes recur, and each has one home. A second, hand-drawn copy is how
 four pills ended up with four class strings.
 
-| Shape                    | Use                                                                                   | Lives in                                                                   |
-| ------------------------ | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| A pill                   | `Pill` with a `tone`; `variant="ringed"` for context, not a state                     | `components/ui/pill.tsx`                                                   |
-| A table of data          | `DataTable`, `DATA_TABLE_HEAD`, `DATA_TABLE_NAME`, `DATA_TABLE_RULE`                  | `components/ui/data-table.tsx`                                             |
-| Content opening in place | `Fold`                                                                                | `components/ui/fold.tsx`                                                   |
-| A filter strip           | `FilterTabs`; `size="small"` beside a result rather than over a list                  | `components/ui/filter-tabs.tsx`                                            |
-| Buttons in a table row   | `Button` or `DecisionButton` with `size="small"`, so a row's actions stay on one line | `components/ui/button.tsx`, `components/brunch-orders/decision-button.tsx` |
-| An input in a list       | `InputRow` (with `count` where a process says how much it holds)                      | `components/app-shell/inputs/inputs-list.tsx`                              |
-| A step's test controls   | a `section` with `brunch-trial`, labelled "<step> setup"                              | `components/brunch-orders/orders-run.css`                                  |
+| Shape                      | Use                                                                                                                         | Lives in                                                                   |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| A pill                     | `Pill` with a `tone`; `variant="ringed"` for context, not a state                                                           | `components/ui/pill.tsx`                                                   |
+| A table of data            | `DataTable`, `DATA_TABLE_HEAD`, `DATA_TABLE_NAME`, `DATA_TABLE_RULE`                                                        | `components/ui/data-table.tsx`                                             |
+| Content opening in place   | `Fold`                                                                                                                      | `components/ui/fold.tsx`                                                   |
+| A filter strip             | `FilterTabs`; `size="small"` beside a result rather than over a list                                                        | `components/ui/filter-tabs.tsx`                                            |
+| Buttons in a table row     | `Button` or `DecisionButton` with `size="small"`, so a row's actions stay on one line                                       | `components/ui/button.tsx`, `components/brunch-orders/decision-button.tsx` |
+| An input in a list         | `InputRow`, inside the evidence-file inputs list; a source's tabs are `SourceView`                                          | `components/app-shell/inputs/inputs-list.tsx`                              |
+| A step's test controls     | a `section` with `brunch-trial`, labelled "<step> setup"                                                                    | `components/brunch-orders/orders-run.css`                                  |
+| An action in a heading row | `Button` with `size="xsmall"` and `shape="round"`, beside the column names                                                  | `components/ui/button.tsx`                                                 |
+| An error in a panel        | a bordered box on the blocked tone: `data-severity={0}` with `bg-severity-fill border-severity-pill-ring text-severity-ink` | `app/styles/severity.css`                                                  |
 
 Two shapes are utilities, because stylesheets compose them as well as markup:
 
@@ -492,6 +505,22 @@ Two shapes are utilities, because stylesheets compose them as well as markup:
 A table's name column hides on phones (`DATA_TABLE_NAME_COLUMN`), and the
 name moves under the key (`DATA_TABLE_NAME_UNDER`), so the card never scrolls
 the page sideways.
+
+### Lay a panel out from one inset, and measure it
+
+The source view (`components/app-shell/sources/`) was settled by measurement, and its rules carry to any panel built of bands and rows:
+
+- **One text inset** (5) from every column edge, which a table's names and row rules share. A column of figures keeps it on both sides.
+- **A control at a band's end sits as far from the edge as from the band's top and bottom** -- Add sheet is 3.5 from the header's top, bottom and side -- and the controls at the end of the rows below it take the same inset, so they stand in one column.
+- **Rows keep one rhythm** (10). Bands that start two columns are one height, so the columns begin on one line; give such a band an even inner height (`box-content min-h-10` with its rule outside) so a 6-high pill centres on a whole pixel. A 1px rule cannot sit at the exact middle of an even row: aim for the half pixel and say so.
+- **An eyebrow sits 1.5 above its value**, everywhere. Figure cells pad 3 above and below; a divider between two cells runs from the row's top rule to its bottom one; a lone cell takes the row.
+- **Fixed things keep a minimum distance** from the content they follow even when pushed to the foot (`mt-auto` with padding), and the space under a column's last item matches how near its first item sits to the top.
+
+Check each of these in the browser rather than by eye: read the boxes (`getBoundingClientRect`) of the edges and items in question and compare the numbers, at a 2× pixel ratio, in both themes. A half-pixel offset or a 1px drift does not show in a screenshot and does show in the numbers.
+
+### A placeholder is drawn live
+
+A control the product will have but does not yet is drawn as it will be: focusable and lit on hover, announced as unavailable (`aria-disabled`, never `isDisabled`, which greys it), its tooltip its name alone. A choice it will offer shows only the choices that would be valid -- Add tab lists only tabs the sheet already has -- with the items disabled until the choice is wired.
 
 ### Do not put two utilities for the same property on one element
 

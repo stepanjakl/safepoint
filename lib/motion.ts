@@ -34,3 +34,24 @@ export const EMPTY_STATE_ARRIVE = {
   },
 };
 export const EMPTY_STATE_STAGGER = 0.12;
+
+/*
+  A duration paced by how far something travels: so many ms per px, within
+  limits. Pace and limits are tokens on the element's style, named
+  --<name>-pace, --<name>-min and --<name>-max (geometry.css), the same ones
+  a stylesheet pacing that motion by clamp() reads, so the two agree. In ms.
+*/
+export function pacedDuration(
+  element: Element,
+  name: string,
+  distance: number,
+) {
+  const style = getComputedStyle(element);
+  const read = (part: string) =>
+    parseFloat(style.getPropertyValue(`--${name}-${part}`));
+  const [pace, min, max] = [read('pace'), read('min'), read('max')];
+  return Math.min(
+    max || Infinity,
+    Math.max(min || 0, Math.abs(distance) * (pace || 0)),
+  );
+}

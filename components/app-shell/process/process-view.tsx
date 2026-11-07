@@ -23,6 +23,7 @@ export async function ProcessView({
   liveThread,
   rulesPanel,
   inputsPanel,
+  outputsPanel,
   children,
 }: {
   process: ProcessSummary;
@@ -40,6 +41,8 @@ export async function ProcessView({
   rulesPanel?: ReactNode;
   // A process's own Inputs tab, in place of the evidence files' list.
   inputsPanel?: ReactNode;
+  // And its own Outputs tab, in place of the list of outputs.
+  outputsPanel?: ReactNode;
   children: ReactNode;
 }) {
   const savedTabs = (await cookies()).get(PROCESS_TAB_KEY)?.value ?? null;
@@ -55,6 +58,7 @@ export async function ProcessView({
       liveThread={liveThread}
       rulesPanel={rulesPanel}
       inputsPanel={inputsPanel}
+      outputsPanel={outputsPanel}
       savedTabs={savedTabs}
     />
   );

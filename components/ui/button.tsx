@@ -49,17 +49,20 @@ const faces = {
   label, so it takes the next padding step.
 */
 const sizes = {
+  xsmall: 'control-face text-micro h-6',
   small: 'control-face text-meta h-7',
   medium: 'control-face text-dense h-8',
   large: 'control-face text-dense h-9',
 } as const;
 const shapes = {
   corners: {
+    xsmall: 'rounded-control px-2',
     small: 'rounded-control px-2.5',
     medium: 'rounded-icon px-3',
     large: 'rounded-shell px-3.5',
   },
   round: {
+    xsmall: 'rounded-full px-2.5',
     small: 'rounded-full px-3',
     medium: 'rounded-full px-3.5',
     large: 'rounded-full px-4',
@@ -101,7 +104,8 @@ export function Button({
   variant?: Variant;
   slant?: Slant;
   // `medium` is a call to action that stands alone, not in a toolbar; `small`
-  // is for actions repeated down a table's rows. A slant ignores it.
+  // is for actions repeated down a table's rows; `xsmall` sits in a table's
+  // heading row, beside its column names. A slant ignores it.
   size?: keyof typeof sizes;
   // Corners that follow the height, or fully round ends. A slant ignores it.
   shape?: Shape;

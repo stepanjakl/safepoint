@@ -396,6 +396,13 @@ export default function WorkbenchPage() {
           {' · '}
           <Link
             className="underline underline-offset-4"
+            href="/workbench/drawers"
+          >
+            Drawers
+          </Link>
+          {' · '}
+          <Link
+            className="underline underline-offset-4"
             href="/workbench/button-rounding"
           >
             Button rounding

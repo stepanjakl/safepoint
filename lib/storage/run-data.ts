@@ -13,3 +13,7 @@ export type RunDataKind =
 // Read when used, so a test can work in a scratch directory.
 export const runDataDir = (processId: string, kind: RunDataKind) =>
   path.join(process.cwd(), 'data', processId, kind);
+
+// A source's own reads, taken from its page rather than by a run.
+export const sourceReadsDir = (sourceId: string) =>
+  path.join(process.cwd(), 'data', 'sources', sourceId, 'reads');

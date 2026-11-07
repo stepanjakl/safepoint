@@ -1,3 +1,4 @@
+import { readdir } from 'node:fs/promises';
 import path from 'node:path';
 
 import { runDataDir } from '@/lib/storage/run-data';
@@ -86,6 +87,40 @@ export async function keptApplication(
   fingerprint: string,
 ): Promise<Application | null> {
   return (await keptApplications(owner, readId, fingerprint)).at(-1) ?? null;
+}
+
+// The latest write to a process's output, of any run, as a page summarises
+// it; null when nothing has been written.
+export type LastWrite = Pick<
+  Application,
+  'at' | 'tab' | 'status' | 'undoneAt'
+> & { cells: number };
+
+export async function lastWrite(
+  owner: DefinitionProcess,
+): Promise<LastWrite | null> {
+  const dir = runDataDir(owner.id, 'applied');
+  const files = (await readdir(dir).catch(() => [])).filter((name) =>
+    name.endsWith('.json'),
+  );
+  const all = (
+    await Promise.all(
+      files.map((name) => readJson<Application[]>(path.join(dir, name))),
+    )
+  ).flatMap((kept) => kept ?? []);
+  const latest = all.reduce<Application | null>(
+    (last, one) => (!last || one.at > last.at ? one : last),
+    null,
+  );
+  return latest
+    ? {
+        at: latest.at,
+        tab: latest.tab,
+        status: latest.status,
+        undoneAt: latest.undoneAt,
+        cells: latest.changes.length,
+      }
+    : null;
 }
 
 const cellAt = (grid: unknown[][], row: number, column: number) =>

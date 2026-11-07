@@ -14,6 +14,7 @@ import {
   DURATION_TAB_LEAVE,
   EASE_OUT_QUAD,
 } from '@/lib/motion';
+import { motionTime } from '@/lib/motion-time';
 
 /*
   One place trading what it shows: the run beside the rail, a tab's body, the
@@ -50,7 +51,8 @@ const PANE_PACE: SwapPace = { leave: DURATION_STATE, enter: DURATION_PANE };
 const TAB_PACE: SwapPace = { leave: DURATION_TAB_LEAVE, enter: DURATION_STATE };
 
 // The fade-out normally ends in Motion's completion callback; this covers
-// a missed event.
+// a missed event. At the fade's own pace (motionTime): a slowed fade would
+// otherwise be declared gone while it is still on screen.
 const LEAVE_FALLBACK_MS = 300;
 
 export function useSwap<K extends string>(
@@ -60,6 +62,9 @@ export function useSwap<K extends string>(
   // such as a stored preference arriving after hydration, is not a journey.
   animate = true,
   pace: SwapPace = PANE_PACE,
+  // False holds the new content unseen once it is mounted, for a caller that
+  // has to read its layout before it may show (sheet-chrome.ts).
+  canShow = true,
 ) {
   const reduceMotion = useReducedMotion();
   // The key on screen, whether it is fading out, and how it came in.
@@ -84,11 +89,12 @@ export function useSwap<K extends string>(
   }
 
   const fading = leaving !== null && leaving !== 'done';
+  const out = leaving !== null;
   useEffect(() => {
     if (!fading) return;
     const timer = window.setTimeout(
       () => setLeaving('done'),
-      LEAVE_FALLBACK_MS,
+      motionTime(LEAVE_FALLBACK_MS),
     );
     return () => window.clearTimeout(timer);
   }, [fading]);
@@ -100,7 +106,7 @@ export function useSwap<K extends string>(
     shown,
     // What replaces `shown` once it has faded, for a caller that renders it
     // ahead, hidden, so the swap only has to show it.
-    incoming: fading && target !== shown ? target : null,
+    incoming: out && target !== shown ? target : null,
     entering: entering !== null,
     // Spread onto a keyed motion.div. The old page stays inert until it leaves.
     layer: {
@@ -109,7 +115,7 @@ export function useSwap<K extends string>(
           ? { opacity: 0, x: enterOffset.x, y: enterOffset.y }
           : false,
       animate: {
-        opacity: fading ? 0 : 1,
+        opacity: out || (entering && !canShow) ? 0 : 1,
         x: exitOffset.x,
         y: exitOffset.y,
       },
@@ -117,8 +123,8 @@ export function useSwap<K extends string>(
         duration: fading ? pace.leave : pace.enter,
         ease: EASE_OUT_QUAD,
       },
-      inert: fading,
-      style: { pointerEvents: fading ? ('none' as const) : undefined },
+      inert: out,
+      style: { pointerEvents: out ? ('none' as const) : undefined },
       onAnimationComplete: (definition: unknown) => {
         if (
           fading &&

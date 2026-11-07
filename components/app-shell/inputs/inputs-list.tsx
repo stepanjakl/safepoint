@@ -29,7 +29,7 @@ const FILTER_FROM = 12;
 // under AA -- see the note on --sp-surface-selected.
 // Named group, so the two quiet parts of the row can answer a state held on the
 // button around them.
-export const ROW_BUTTON =
+const ROW_BUTTON =
   'group/input-row control-wash hover:bg-surface-hover focus-visible:bg-surface-hover aria-expanded:bg-surface-selected aria-expanded:text-primary rounded-control -mx-sheet-inset px-sheet-inset flex min-h-11 w-[calc(100%+2*var(--spacing-sheet-inset))] cursor-pointer items-center gap-3 py-2 text-left';
 
 export function InputsList({
@@ -125,22 +125,12 @@ export function InputsList({
 // Name above its file and condition rather than beside them: names and
 // condition labels are both long, and side by side one of them is always the
 // one cut short.
-export function InputRow({
-  link,
-  count,
-}: {
-  link: SystemLink;
-  // How much it holds, beside its name, where the process says ("11 rows").
-  count?: string;
-}) {
+function InputRow({ link }: { link: SystemLink }) {
   return (
     <>
       <SystemDisc link={link} />
       <span className="grid min-w-0 flex-1 gap-0.5">
-        <span className="text-dense text-primary truncate">
-          {link.label}
-          {count ? <span className="text-muted"> · {count}</span> : null}
-        </span>
+        <span className="text-dense text-primary truncate">{link.label}</span>
         <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
           <SystemMeta link={link} />
           {link.file ? (

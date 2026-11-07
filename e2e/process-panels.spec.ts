@@ -137,9 +137,7 @@ test('returning to a tab during its fade restores the page immediately', async (
   await page.goto('/examples/promotion?run=run-104');
   const tab = (name: string) =>
     page.getByRole('button', { name: new RegExp(`^${name}`) }).first();
-  const layer = page
-    .locator('.rounded-b-shell-inner.overflow-clip > div')
-    .first();
+  const layer = page.locator('.process-sheet-swap').first();
 
   await tab('Inputs').evaluate((button: HTMLElement) => button.click());
   await expect(layer).toHaveAttribute('inert', '');
@@ -191,4 +189,32 @@ test('tab handoff keeps dividers still, fades the list once and holds the detail
     '0.15s',
   );
   await expect(entering).not.toHaveAttribute('inert');
+});
+
+test('the frame holds through a tab swap and is handed back once the next section has landed', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/examples/promotion?run=run-104');
+  await page
+    .getByRole('button', { name: /^Instructions/ })
+    .first()
+    .click();
+  const frame = page.locator('.process-sheet-frame');
+  await expect(frame).not.toHaveAttribute('data-chrome-borrowed');
+
+  await page
+    .getByRole('button', { name: /^Outputs/ })
+    .first()
+    .click();
+  // The sections' own bands and divider are lent to the overlay meanwhile.
+  await expect(frame).toHaveAttribute('data-chrome-borrowed', '');
+  await expect(frame.locator('.sheet-chrome > *').first()).toBeAttached();
+
+  // Afterwards nothing is lent out, and the section's own band paints again.
+  await expect(frame).not.toHaveAttribute('data-chrome-borrowed');
+  await expect(frame.locator('.sheet-chrome > *')).toHaveCount(0);
+  await expect(
+    frame.locator('.process-sheet-swap .sheet-head').first(),
+  ).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
 });

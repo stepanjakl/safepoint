@@ -6,6 +6,7 @@ import type {
 } from '@/lib/process/model';
 import type { DefinitionProcess } from '@/lib/definitions/types';
 import type { SystemLink } from '@/lib/process/system-links';
+import type { SourceUse } from '@/lib/sources/model';
 import type { ReleasePlan } from '@/lib/review/plan-contract';
 
 /*
@@ -66,8 +67,15 @@ export const DATA_TABS = [
   ...DATA.lookups.map((lookup) => lookup.tab),
 ];
 
-// The same tabs as the process's inputs, for the header's count; what each
-// gave a run is read from that run (components/brunch-orders/sheet-inputs.tsx).
+// The sheet's tabs this process reads and the one it writes. What they hold is
+// the source's to say (lib/sources); what the process makes of them is DATA.
+export const SHEET_USE: SourceUse = {
+  source: 'brunch-store-sheet',
+  inputs: DATA_TABS,
+  outputs: [DATA.output.tab],
+};
+
+// The same tabs as the process's inputs, for the header's count.
 export const SHEET_INPUTS: SystemLink[] = DATA_TABS.map((tab) => ({
   id: tab,
   label: tab,

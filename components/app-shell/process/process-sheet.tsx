@@ -5,6 +5,7 @@ import {
   Activity,
   createContext,
   useEffect,
+  useRef,
   useState,
   type AnimationEvent,
   type ReactNode,
@@ -20,6 +21,7 @@ import { writePreferenceCookie } from '@/components/app-shell/stored-record';
 import { ProcessHeader } from './process-header';
 import { ProcessContentTransition } from './process-content-transition';
 import { ProcessPanels } from './process-panels';
+import { useSheetChrome } from './sheet-chrome';
 import type { AsideView } from '@/components/app-shell/drawer-aside';
 import { useProcessTab, type ProcessTab } from './process-tab-store';
 import { RunsList } from '@/components/app-shell/runs/runs-list';
@@ -97,15 +99,17 @@ export function ProcessSheet({
   liveThread,
   rulesPanel,
   inputsPanel,
+  outputsPanel,
   savedTabs = null,
 }: {
   process: ProcessSummary;
   inputs?: SystemLink[];
   inputDetails?: Record<string, InputDetail>;
-  // A process's own rulebook, as a Rules tab; and its own Inputs tab, in
-  // place of the evidence files' list.
+  // A process's own rulebook, as a Rules tab; and its own Inputs and Outputs
+  // tabs, in place of the evidence files' and outputs' lists.
   rulesPanel?: ReactNode;
   inputsPanel?: ReactNode;
+  outputsPanel?: ReactNode;
   // The current run's thread, built on the server.
   run: ReactNode;
   policy?: ProcessPolicy;
@@ -153,7 +157,17 @@ export function ProcessSheet({
     ask({ kind: 'version', version, face: 'changes' }, 'instructions');
   // The selected tab answers at once; its previous body fades before the new
   // section arrives, without moving the dividers inside either layout.
-  const { shown, incoming, layer, entering } = useSwap(tab, TAB_MOTION, chosen);
+  // The tab shown is held unseen until the sheet's frame has moved onto it
+  // (sheet-chrome.ts), so the line is in place before what it divides.
+  const [frameReady, setFrameReady] = useState<ProcessTab | null>(null);
+  const { shown, incoming, layer, entering } = useSwap(
+    tab,
+    TAB_MOTION,
+    chosen,
+    undefined,
+    frameReady === tab,
+  );
+  if (incoming !== null && frameReady !== null) setFrameReady(null);
   // Arriving from another process is an entrance too, for the detail's beat.
   const { enteringProcess } = useShellPageNavigation();
   // Inputs can be changed, as a preview, only where they have details to
@@ -188,6 +202,14 @@ export function ProcessSheet({
 
   // The section a swap has landed, so what it holds can begin its own entrance.
   const [landed, setLanded] = useState<ProcessTab | null>(null);
+  // The frame's bands and divider, held and moved through a swap.
+  const chrome = useRef<HTMLDivElement>(null);
+  useSheetChrome(chrome, {
+    shown,
+    incoming,
+    settled: incoming === null && (!entering || landed === shown),
+    onShow: setFrameReady,
+  });
   if (incoming && landed !== null) setLanded(null);
 
   const section = (key: ProcessTab) =>
@@ -241,8 +263,12 @@ export function ProcessSheet({
     ) : key === 'instructions' && policy ? (
       <PolicyPanel policy={policy} />
     ) : key === 'inputs' && inputsPanel ? (
-      <SinglePanel {...SECTION.inputs} count={kept.length}>
+      <SinglePanel {...SECTION.inputs} width="full">
         {inputsPanel}
+      </SinglePanel>
+    ) : key === 'outputs' && outputsPanel ? (
+      <SinglePanel {...SECTION.outputs} width="full">
+        {outputsPanel}
       </SinglePanel>
     ) : (
       <ProcessPanels
@@ -282,6 +308,7 @@ export function ProcessSheet({
           className="process-sheet-frame shell:grid shell:min-h-0 shell:grid-rows-[minmax(0,1fr)] rounded-b-shell-inner rounded-tr-shell-inner clip-past-pane-highlight grid-cols-[minmax(0,1fr)] overflow-clip"
           finishesLeaving
         >
+          <div ref={chrome} className="sheet-chrome" aria-hidden="true" />
           {/* The section on screen, and the one coming while it fades out:
               rendered hidden beforehand, so the swap only has to show it and a
               heavy section cannot stall its own fade-in. */}
@@ -302,7 +329,7 @@ export function ProcessSheet({
                     )
                       setLanded(key);
                   }}
-                  className="process-sheet-swap shell:grid shell:min-h-0 shell:grid-rows-[minmax(0,1fr)] grid-cols-[minmax(0,1fr)]"
+                  className="process-sheet-swap shell:grid shell:min-h-0 shell:grid-rows-[minmax(0,1fr)] relative z-1 grid-cols-[minmax(0,1fr)]"
                   data-swap-entering={(visible && entering) || undefined}
                 >
                   <SectionClock
@@ -311,7 +338,9 @@ export function ProcessSheet({
                     <SettledLayer
                       settled={visible && (!entering || landed === key)}
                     >
-                      {section(key)}
+                      <Forming active={!visible || entering || enteringProcess}>
+                        {section(key)}
+                      </Forming>
                     </SettledLayer>
                   </SectionClock>
                 </motion.div>
@@ -343,6 +372,41 @@ function PolicyPanel({ policy }: { policy: ProcessPolicy }) {
 }
 
 // A panel a process brings of its own, in one column.
+/*
+  Marks a section as forming while its rows rise into place (process-sheet.css),
+  and lets go once the last of them has, so a
+  row that arrives later -- a run just started -- does not rise in on its own.
+*/
+function Forming({
+  active,
+  children,
+}: {
+  active: boolean;
+  children: ReactNode;
+}) {
+  const [formed, setFormed] = useState(!active);
+  return (
+    <div
+      className="contents"
+      data-section-forming={formed ? undefined : true}
+      onAnimationEnd={(event) => {
+        if (event.animationName !== 'section-form-in') return;
+        const rising = event.currentTarget
+          .getAnimations({ subtree: true })
+          .some(
+            (animation) =>
+              animation instanceof CSSAnimation &&
+              animation.animationName === 'section-form-in' &&
+              animation.playState === 'running',
+          );
+        if (!rising) setFormed(true);
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 /*
   The run beside the rail. The section around it has landed (SettledLayer);
   where it trails the list, its own fade's end is what releases the run.
@@ -376,7 +440,7 @@ function SinglePanel({
   count?: number;
   chip?: ReactNode;
   // A measure for reading, or room for a grid of cards.
-  width?: 'reading' | 'wide';
+  width?: 'reading' | 'wide' | 'full';
   children: ReactNode;
 }) {
   return (
@@ -390,8 +454,15 @@ function SinglePanel({
         <section
           aria-labelledby={id}
           className={cx(
-            'mx-auto flex flex-1 flex-col px-6 pt-6 pb-8 max-sm:px-4',
-            width === 'wide' ? 'w-[min(100%,1120px)]' : 'w-[min(100%,760px)]',
+            'mx-auto flex flex-1 flex-col',
+            width === 'full'
+              ? 'w-full p-6 max-sm:p-4'
+              : cx(
+                  'px-6 pt-6 pb-8 max-sm:px-4',
+                  width === 'wide'
+                    ? 'w-[min(100%,1120px)]'
+                    : 'w-[min(100%,760px)]',
+                ),
           )}
         >
           {children}

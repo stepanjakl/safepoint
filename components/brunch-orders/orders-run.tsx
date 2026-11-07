@@ -646,7 +646,7 @@ function ReadStep({
                           target="_blank"
                           rel="noopener noreferrer"
                           title={sourceName ?? undefined}
-                          className="brunch-read-external text-meta inline-flex items-center gap-1.5 font-medium"
+                          className="external-link text-meta inline-flex items-center gap-1.5 font-medium"
                         >
                           Open in {googleSheets ? 'Google Sheets' : 'the sheet'}
                           <ChainLink1Filled

@@ -89,6 +89,21 @@ const wholeTabRange = (
 ) =>
   `'${tab.replaceAll("'", "''")}'!A1:${columnLetters(Math.max(1, grid?.columnCount ?? 26))}${Math.max(1, grid?.rowCount ?? 1000)}`;
 
+// The tab a returned range belongs to, unquoted: `'Kit''s'!A1:Z9` is Kit's.
+const rangeTab = (range: string) =>
+  range
+    .slice(0, range.lastIndexOf('!'))
+    .replace(/^'(.*)'$/, '$1')
+    .replaceAll("''", "'");
+
+// One tab's cells as a read returned them; empty for a tab it did not return.
+export function tabValues(read: SheetRead, tab: string): unknown[][] {
+  return (
+    read.valueRanges.find((range) => rangeTab(range.range) === tab)?.values ??
+    []
+  );
+}
+
 export function missingSheetEnv(): string[] {
   return SHEET_ENV.filter((name) => !process.env[name]);
 }

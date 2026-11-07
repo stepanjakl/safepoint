@@ -203,8 +203,25 @@
     /* Carry the lit line below the rule on the header itself so it stays
        visible with any following content and while the header is sticky. */
     border-bottom: 1px solid var(--sp-raised-ring);
-    box-shadow: 0 var(--spacing-sheet-highlight) 0 var(--sp-raised-edge);
     transition: box-shadow var(--duration-state) ease-out;
+  }
+  /* The lit line. A band on the swap's overlay (sheet-chrome.ts) always draws
+     it: the lit row that hides it here has faded out with the content. */
+  .sheet-head,
+  .sheet-chrome-band {
+    box-shadow: 0 var(--spacing-sheet-highlight) 0 var(--sp-raised-edge);
+  }
+  /* Lent to the swap's overlay (sheet-chrome.ts), and coming back, without
+     transitions: a lit line easing in would flash where it already shows. */
+  .process-sheet-frame[data-chrome-borrowed] > .process-sheet-swap .sheet-head {
+    background: transparent;
+    border-bottom-color: transparent;
+    box-shadow: none;
+  }
+  .process-sheet-frame:is([data-chrome-borrowed], [data-chrome-returning])
+    > .process-sheet-swap
+    .sheet-head {
+    transition: none;
   }
   /* Over a run list the head's line is the one under it. The head paints above
      the rows, so its line steps back while the run under it is lit, or it

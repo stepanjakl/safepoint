@@ -1,0 +1,153 @@
+/* ── Source view ────────────────────────────────────────────────────────────
+   A service's mark, in its own hue; removing a source; the rows' inset.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --sp-source-sheets-mark: light-dark(var(--radix-green-11), var(--radix-green-dark-11));
+  --sp-source-remove-face: light-dark(var(--radix-red-3), var(--radix-red-dark-4));
+  --sp-source-remove-face-hover: light-dark(var(--radix-red-4), var(--radix-red-dark-5));
+  --sp-source-remove-ink: light-dark(var(--radix-red-11), var(--radix-red-dark-11));
+}
+
+@utility source-mark-sheets {
+  color: var(--sp-source-sheets-mark);
+}
+
+@layer components {
+  /* Removing a source, or one of its resources: a red-tinted round face, a
+     step deeper when engaged. */
+  :is(.source-remove, .source-cross) {
+    background-color: var(--sp-source-remove-face);
+    color: var(--sp-source-remove-ink);
+    transition: background-color var(--duration-state) ease-out;
+  }
+  :is(.source-remove, .source-cross):is(:hover, :focus-visible) {
+    background-color: var(--sp-source-remove-face-hover);
+  }
+
+  /* A row's remove control comes and goes: it fades and grows in, and on the
+     way out stays reachable only until it has faded (visibility waits). */
+  .source-row-remove {
+    display: grid;
+    opacity: 0;
+    scale: 0.6;
+    visibility: hidden;
+    transition:
+      opacity var(--duration-state) ease-out,
+      scale var(--duration-state) ease-out,
+      visibility 0s linear var(--duration-state);
+  }
+  .source-row-remove[data-shown] {
+    opacity: 1;
+    scale: 1;
+    visibility: visible;
+    transition-delay: 0s;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .source-row-remove {
+      scale: 1;
+    }
+  }
+
+  /* A row lit by its own remove control lights as one band, as a row lit by
+     its button does (release-card.css): the rules touching it step back. */
+  .source-rows > li:has(:focus-visible)::before,
+  .source-rows > li:has(:focus-visible) + li::before {
+    opacity: 0;
+  }
+  @media (hover: hover) {
+    .source-rows > li:hover::before,
+    .source-rows > li:hover + li::before {
+      opacity: 0;
+    }
+  }
+
+  /* Reading: three segments round the Read button (ReadRing). They grow in
+     together as they start to turn and keep turning; once the read is done
+     and a turn has been made, they shrink back out as they turn. Nothing at
+     rest, and no fade of its own: the segments make the entrance and exit. */
+  .source-read {
+    --source-read-turn: 1.4s;
+    --source-read-grow: 420ms;
+    position: relative;
+    display: grid;
+  }
+  .source-read-ring {
+    position: absolute;
+    inset: -0.125rem;
+    pointer-events: none;
+    overflow: visible;
+    visibility: hidden;
+  }
+  .source-read-ring g {
+    transform-origin: center;
+  }
+  .source-read-ring circle {
+    fill: none;
+    stroke: var(--sp-text-muted);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    /* A third of the ring, less the gap between segments. */
+    stroke-dasharray: 22 78;
+  }
+  .source-read-ring[data-phase] {
+    visibility: visible;
+  }
+  .source-read-ring[data-phase] g {
+    animation: source-read-turn var(--source-read-turn) linear infinite;
+  }
+  .source-read-ring[data-phase='turning'] circle {
+    animation: source-read-grow var(--source-read-grow) var(--ease-out-quad) both;
+  }
+  .source-read-ring[data-phase='leaving'] circle {
+    animation: source-read-shrink var(--source-read-grow) ease-in both;
+  }
+  @keyframes source-read-turn {
+    to {
+      rotate: 1turn;
+    }
+  }
+  /* From and to each segment's middle (half its 22 along), so it grows and
+     shrinks in place as the ring turns rather than chasing its own end. */
+  @keyframes source-read-grow {
+    from {
+      stroke-dasharray: 0 100;
+      stroke-dashoffset: -11;
+      opacity: 0;
+    }
+  }
+  @keyframes source-read-shrink {
+    to {
+      stroke-dasharray: 0 100;
+      stroke-dashoffset: -11;
+      opacity: 0;
+    }
+  }
+
+  /* A row the read changed lights once, then settles. */
+  .source-rows > li[data-changed] {
+    --source-changed-fade: 1.6s;
+    animation: source-changed var(--source-changed-fade) ease-out;
+  }
+  @keyframes source-changed {
+    from {
+      background-color: var(--sp-row-hover);
+    }
+  }
+
+  /* Without motion: the segments stand still, and
+     a changed row needs no light -- its figures have already changed. */
+  @media (prefers-reduced-motion: reduce) {
+    .source-read-ring[data-phase] :is(g, circle) {
+      animation: none;
+    }
+    .source-rows > li[data-changed] {
+      animation: none;
+    }
+  }
+
+  /* Rules between a source's resources start where their names do (pl-5). */
+  .source-rows {
+    --release-list-inset: calc(var(--spacing) * 5);
+  }
+}

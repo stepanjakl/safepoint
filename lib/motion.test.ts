@@ -1,11 +1,12 @@
 import { readFileSync, readdirSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   DETAIL_AFTER,
   DURATION_PANE,
   DURATION_STATE,
   EASE_OUT_EMPHASIZED,
   EASE_OUT_QUAD,
+  pacedDuration,
 } from './motion';
 
 // The whole folder, so a token moving between its files does not break this.
@@ -49,5 +50,42 @@ describe('motion tokens', () => {
 
   it('mirrors the quadratic curve in app/styles/', () => {
     expect([...EASE_OUT_QUAD]).toEqual(bezier(token('ease-out-quad')));
+  });
+});
+
+describe('pacedDuration', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  // The tokens as an element's computed style would give them.
+  function withTokens(tokens: Record<string, string>) {
+    vi.stubGlobal('getComputedStyle', () => ({
+      getPropertyValue: (name: string) => tokens[name] ?? '',
+    }));
+    return {} as Element;
+  }
+  const element = () =>
+    withTokens({
+      '--travel-pace': '0.5ms',
+      '--travel-min': '100ms',
+      '--travel-max': '300ms',
+    });
+
+  it('takes the pace for every px travelled, either way', () => {
+    expect(pacedDuration(element(), 'travel', 400)).toBe(200);
+    expect(pacedDuration(element(), 'travel', -400)).toBe(200);
+  });
+
+  it('holds a short travel to the minimum and a long one to the maximum', () => {
+    expect(pacedDuration(element(), 'travel', 20)).toBe(100);
+    expect(pacedDuration(element(), 'travel', 2000)).toBe(300);
+  });
+
+  it('reads the tokens it is named for', () => {
+    const fold = withTokens({
+      '--fold-pace': '1ms',
+      '--fold-min': '0ms',
+      '--fold-max': '50ms',
+    });
+    expect(pacedDuration(fold, 'fold', 30)).toBe(30);
   });
 });

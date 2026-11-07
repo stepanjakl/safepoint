@@ -3,6 +3,7 @@
 // arrives unresolved. It also holds whether the step is folded.
 'use client';
 
+import { pacedDuration } from '@/lib/motion';
 import {
   createContext,
   useContext,
@@ -465,17 +466,10 @@ export function ThreadStep({
       const easing = clip.getAnimations();
       const start = easing.length ? clip.getBoundingClientRect().height : from;
       easing.forEach((animation) => animation.cancel());
-      const style = getComputedStyle(fold);
-      const pace = parseFloat(style.getPropertyValue('--thread-fold-pace'));
-      const min = parseFloat(style.getPropertyValue('--thread-fold-min'));
-      const max = parseFloat(style.getPropertyValue('--thread-fold-max'));
       clip.animate(
         { height: [`${start}px`, `${height}px`] },
         {
-          duration: Math.min(
-            max,
-            Math.max(min || 0, Math.abs(height - start) * (pace || 0)),
-          ),
+          duration: pacedDuration(fold, 'thread-fold', height - start),
           easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
         },
       );

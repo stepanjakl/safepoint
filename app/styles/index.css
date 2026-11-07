@@ -56,6 +56,7 @@
 @import '../../components/review/release-card.css';
 @import '../../components/review/review-queue.css';
 @import '../../components/brunch-orders/orders-run.css';
+@import '../../components/app-shell/sources/source-card.css';
 @import '../../components/brunch-orders/decision-button.css';
 @import '../../components/brunch-orders/rules-step.css';
 @import '../../components/brunch-orders/rulebook-view.css';

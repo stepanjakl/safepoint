@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useId,
   useRef,
   useState,
   type AnimationEvent,
@@ -119,6 +120,7 @@ export function DrawerAside({
   // decides; over the sheet, the panel has to state its own.
   className?: string;
 }) {
+  const titleId = useId();
   const heading = useRef<HTMLHeadingElement>(null);
   // As a sheet column it trails the list it opened beside; over the sheet it
   // is a panel of its own and arrives when it opens.
@@ -183,6 +185,7 @@ export function DrawerAside({
     <AsideContent
       key={leaving.key}
       layer={leaving}
+      titleId={titleId}
       className="swap-leave"
       motion={motion}
       inert
@@ -194,6 +197,7 @@ export function DrawerAside({
     <AsideContent
       key={current.key}
       layer={current}
+      titleId={titleId}
       headingRef={heading}
       className="swap-enter"
       motion={motion}
@@ -202,6 +206,7 @@ export function DrawerAside({
     <AsideContent
       key={current.key}
       layer={current}
+      titleId={titleId}
       headingRef={heading}
       className="drawer-aside-content"
     />
@@ -210,7 +215,7 @@ export function DrawerAside({
   return (
     <section
       {...(flat ? hold.props : {})}
-      aria-labelledby="drawer-aside-title"
+      aria-labelledby={titleId}
       data-exiting={exiting || undefined}
       data-flat={flat || undefined}
       onAnimationEnd={(event) => {
@@ -234,6 +239,7 @@ export function DrawerAside({
 
 function AsideContent({
   layer,
+  titleId,
   headingRef,
   className,
   motion,
@@ -241,6 +247,7 @@ function AsideContent({
   onAnimationEnd,
 }: {
   layer: AsideLayer;
+  titleId: string;
   headingRef?: Ref<HTMLHeadingElement>;
   className: string;
   motion?: 'up' | 'down';
@@ -272,7 +279,7 @@ function AsideContent({
           <p className="readout text-muted">{layer.eyebrow}</p>
           <h2
             ref={headingRef}
-            id={inert ? undefined : 'drawer-aside-title'}
+            id={inert ? undefined : titleId}
             tabIndex={-1}
             className="text-title [font-weight:550] outline-none"
           >

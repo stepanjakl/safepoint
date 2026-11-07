@@ -31,6 +31,13 @@ export default function ControlsWorkbenchPage() {
           <Link className="underline underline-offset-4" href="/workbench">
             Colour reference
           </Link>
+          {' · '}
+          <Link
+            className="underline underline-offset-4"
+            href="/workbench/drawers"
+          >
+            Drawers
+          </Link>
         </p>
       </header>
       <ShellPageTransitionProvider processPaths={[]}>

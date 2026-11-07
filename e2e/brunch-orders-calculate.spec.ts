@@ -248,16 +248,20 @@ test('a run whose rules no longer fit its read can move to the current ones', as
   ).toBeVisible();
 });
 
-test('the Inputs tab lists the sheet’s tabs as the run read them', async ({
+test('the Inputs tab lists the sheet’s tabs and opens what was read', async ({
   page,
 }) => {
-  await readTheSheet(page);
+  await page.goto('/examples/brunch-orders');
   await page
     .locator('header.process-header')
     .getByRole('button', { name: /^Inputs/ })
     .click();
-  const tabs = page.getByRole('list', { name: 'Sheet tabs' });
+  const tabs = page.getByRole('list', { name: /: tabs$/ }).first();
   await expect(tabs.locator('> li')).toHaveCount(5);
-  await tabs.getByRole('button', { name: /^Stock/ }).click();
-  await expect(page.getByRole('dialog')).toContainText('Sheet data');
+  await tabs.getByRole('button', { name: /^Stock,/ }).click();
+  const drawer = page.getByRole('dialog');
+  await expect(
+    drawer.getByRole('region', { name: 'Stock, as read' }),
+  ).toBeVisible();
+  await expect(drawer.getByRole('columnheader', { name: 'sku' })).toBeVisible();
 });

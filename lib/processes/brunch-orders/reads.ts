@@ -9,6 +9,7 @@ import {
   missingSheetEnv,
   readTab,
   readWholeSheet,
+  tabValues,
   writeRange,
   type SheetRead,
 } from '@/lib/sheets/composio';
@@ -55,22 +56,11 @@ export async function captureRead(): Promise<{ file: string; readAt: string }> {
   return { file: path.relative(process.cwd(), CAPTURED), readAt: read.readAt };
 }
 
-const tabName = (range: string) =>
-  range
-    .slice(0, range.lastIndexOf('!'))
-    .replace(/^'(.*)'$/, '$1')
-    .replaceAll("''", "'");
-
 // The data tabs of a read, in the order the process lists them; a tab the
 // sheet does not have comes back empty, so a missing tab shows rather than
 // vanishing.
 function dataTabs(read: SheetRead): DataTab[] {
-  return DATA_TABS.map((name) => ({
-    name,
-    values:
-      (read.valueRanges.find((vr) => tabName(vr.range) === name)?.values as
-        unknown[][] | undefined) ?? [],
-  }));
+  return DATA_TABS.map((name) => ({ name, values: tabValues(read, name) }));
 }
 
 const asKept = (read: SheetRead, label: string): KeptRead => {

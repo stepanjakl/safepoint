@@ -13,12 +13,19 @@
   /* How long a detail column trails the list it belongs to on arrival
      (useDetailHold), however soon its own content is ready. */
   --detail-after: 150ms;
+  /* Between one row and the next as a section forms ([data-section-forming]). */
+  --form-step: 20ms;
   /* A fold opens at a pace set by its content's height, within these limits;
      its content fades in after (thread steps and the shared Fold). */
   --fold-pace: 1.1ms;
   --fold-min: 200ms;
   --fold-max: 350ms;
   --fold-fade: 160ms;
+  /* The sheet's frame between tabs (sheet-chrome.ts): its line crosses at a
+     pace set by how far it goes, within these limits. */
+  --travel-pace: 0.35ms;
+  --travel-min: 160ms;
+  --travel-max: 380ms;
 }
 
 /* Tile saturation ceilings, as OKLCH chroma. A tile keeps its lightness and

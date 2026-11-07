@@ -10,6 +10,8 @@ The promotion-release example loads validated fictional evidence and a reviewed 
 
 Brunch orders is the active development process. `lib/processes/brunch-orders/` declares its subject, five data tabs and versioned instructions; a read is captured or fetched through Composio and kept under an ID. `lib/definitions/` finds definitions, checks formulas and examples, and stores the person's accepted definitions by instructions hash. The current flow is described in the [definitions engine guide](DEFINITIONS-ENGINE.md).
 
+A process's data lives in **sources**, kept apart from what the process does with them. `lib/sources/model.ts` declares each source (a Google spreadsheet today, in code until sources can be added in the app) and its kind's vocabulary; a source knows its resources (a sheet's tabs), their rows and their columns, and nothing of any process. A process names only the resources it reads and writes (`SourceUse`, for Brunch orders `SHEET_USE`); a resource may be in both lists, and what it means to the process stays in its `DataShape`. Reading a source from its own page (`lib/sources/reads.ts`, `/api/dev/sources`) keeps every tab whole under `data/sources/<id>/reads/`; until the first such read the captured snapshot stands in. This is separate from a run's read, which the run takes and keeps for itself. The Outputs tab's last write comes from the process's kept writes (`lastWrite` in `lib/definitions/apply.ts`). The screens are `components/app-shell/sources/`.
+
 The models the app may call are listed in `lib/models.ts`; typed sheet cells and the week arithmetic they use are in `lib/sheets/`. The earlier Brunch weekend experiment, which these grew out of, was removed on 13 October 2026.
 
 ## Trust and state

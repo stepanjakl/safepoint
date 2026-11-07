@@ -90,10 +90,66 @@
       inset-block: 0 calc(var(--spacing-control-highlight) * -1);
       inset-inline-end: 0;
       width: 1px;
-      /* The runs rail's edge: the ring, and the detail's lit line inside it. */
-      background: var(--sp-raised-ring);
-      box-shadow: var(--shadow-separator-right-strong);
       pointer-events: none;
+    }
+  }
+  /* The runs rail's edge: the ring, and the detail's lit line inside it. The
+     swap's divider (sheet-chrome.ts) is painted here too, so the two match. */
+  .sheet-column-edge::after,
+  .sheet-chrome-divider {
+    background: var(--sp-raised-ring);
+    box-shadow: var(--shadow-separator-right-strong);
+  }
+
+  /* The frame through a tab swap (sheet-chrome.ts): under the sections, which
+     sit above it, and drawn only while the sections' own is lent out. */
+  .sheet-chrome {
+    /* How long the line takes to cross: set per move, by distance. */
+    --chrome-travel: var(--duration-pane);
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .sheet-chrome > * {
+    position: absolute;
+    box-sizing: border-box;
+  }
+  .sheet-chrome-divider {
+    top: 0;
+    bottom: calc(var(--spacing-control-highlight) * -1);
+    width: 1px;
+  }
+  .sheet-chrome[data-moving] > * {
+    transition-property: left, top, width, height, opacity, background-color, box-shadow;
+    transition-duration: var(--chrome-travel);
+    transition-timing-function: --theme(--ease-out-emphasized);
+  }
+  /* A band dropping in or rising away: its edge and width keep the line's
+     pace (left, width); its drop or rise is shorter, on a symmetric curve
+     so the one is the other played backwards (top, height, opacity). */
+  .sheet-chrome[data-moving] > [data-chrome-pace='band'] {
+    transition-property: left, width, top, height, opacity;
+    transition-duration:
+      var(--chrome-travel), var(--chrome-travel), var(--duration-state), var(--duration-state),
+      var(--duration-state);
+    transition-timing-function:
+      --theme(--ease-out-emphasized), --theme(--ease-out-emphasized), var(--ease-in-out-quad),
+      var(--ease-in-out-quad), var(--ease-in-out-quad);
+  }
+  /* Shown but unseen while the frame moves onto it (sheet-chrome.ts): every
+     entrance inside waits paused, its delay too, then all start together. */
+  .process-sheet-frame[data-chrome-staging] > .process-sheet-swap * {
+    animation-play-state: paused !important;
+  }
+  /* The bands lent out go in runs-list.css, beside .sheet-head. */
+  .process-sheet-frame[data-chrome-borrowed] > .process-sheet-swap {
+    & :is(.process-runs-list, .process-panel-list) {
+      border-right-color: transparent;
+      box-shadow: none;
+    }
+    & .sheet-column-edge::after {
+      visibility: hidden;
     }
   }
   /* The list comes in with the swap's own fade, never one of its own inside it.
@@ -109,6 +165,46 @@
     animation: none;
   }
 
+  /* A section forms: each row rises into place after the one above it. The
+     detail fades in after them (--detail-after) without rising: it is a page. */
+  [data-section-forming] {
+    & :is(.process-panel-list, .process-runs-list) :is(li, p:not(.sr-only)) {
+      /* Past the seventh row the rest arrive together, as the eighth. */
+      animation: section-form-in var(--duration-pane) var(--ease-out-quad)
+        calc(var(--form-index, 8) * var(--form-step)) both;
+    }
+    & :is(.process-panel-list, .process-runs-list) p {
+      --form-index: 0;
+    }
+    & li:nth-child(1) {
+      --form-index: 1;
+    }
+    & li:nth-child(2) {
+      --form-index: 2;
+    }
+    & li:nth-child(3) {
+      --form-index: 3;
+    }
+    & li:nth-child(4) {
+      --form-index: 4;
+    }
+    & li:nth-child(5) {
+      --form-index: 5;
+    }
+    & li:nth-child(6) {
+      --form-index: 6;
+    }
+    & li:nth-child(7) {
+      --form-index: 7;
+    }
+  }
+  @keyframes section-form-in {
+    from {
+      opacity: 0;
+      translate: 0 0.25rem;
+    }
+  }
+
   @keyframes process-section-enter {
     from {
       opacity: 0;
@@ -119,7 +215,8 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .process-sheet-frame [data-detail-held] {
+    .process-sheet-frame [data-detail-held],
+    [data-section-forming] :is(.process-panel-list, .process-runs-list) :is(li, p:not(.sr-only)) {
       animation: none;
     }
   }

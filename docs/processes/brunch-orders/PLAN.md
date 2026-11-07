@@ -365,9 +365,22 @@ Agreed with the owner on 9 October, after every definition was accepted.
   instructions define it.
 - **Two process tabs.** Rules shows the accepted rulebook for the current
   instructions, read-only; drafting and decisions stay in a run's Rules step.
-  Inputs lists the sheet's tabs as the selected run read them and opens each
-  in the data drawer. Both are panels the page supplies (`rulesPanel`,
-  `inputsPanel` on `ProcessView`); other processes are unchanged.
+  Inputs and Outputs show the sheet as a source (`lib/sources/`, see
+  Architecture): the service, then each file on a band of its own -- its
+  title, tab and row totals, last read (and on Outputs last write) and its
+  actions on the left, the tabs this side uses on the right, each opening its
+  last read as a table. "Read now" reads every tab into
+  `data/sources/<id>/reads/`; until then the captured snapshot is shown. The
+  process names only the tabs it reads and writes (`SHEET_USE`). Adding a tab
+  offers only tabs the sheet already has; adding and removing sheets and tabs
+  are placeholders until that choice is kept outside the code. Both are panels
+  the page supplies (`rulesPanel`, `inputsPanel`, `outputsPanel` on
+  `ProcessView`); other processes are unchanged.
+- **The Orders tab exists.** It was created in the live sheet by hand on
+  7 November 2026, in the layout the first write would have made: a header of
+  `sku` and `order`, one row per product in the Products tab's order, `order`
+  empty. A write fills those rows by `sku`; were the tab missing, the first
+  write would still add it.
 
 ## Phase 4, as built
 

@@ -14,10 +14,12 @@ import { Tooltip } from './tooltip';
   with no row or heading around it to say it can be pressed. Either way an
   open popover holds the pressed wash, as the pointer left it.
 */
+// Also for a link drawn as one of these buttons.
+export const ICON_FILLED =
+  'control-wash bg-surface-hover text-icon-quiet-ink hover:bg-surface-selected hover:text-icon-quiet-ink-hover focus-visible:bg-surface-selected focus-visible:text-icon-quiet-ink-hover';
 const FACES = {
   quiet: ICON_QUIET,
-  filled:
-    'control-wash bg-surface-hover text-icon-quiet-ink hover:bg-surface-selected hover:text-icon-quiet-ink-hover focus-visible:bg-surface-selected focus-visible:text-icon-quiet-ink-hover',
+  filled: ICON_FILLED,
 } as const;
 const SHAPES = {
   corners: 'rounded-icon',

@@ -163,6 +163,7 @@ const SIZES = [
   { name: 'large · 36px', size: 'large' },
   { name: 'medium · 32px', size: 'medium' },
   { name: 'small · 28px', size: 'small' },
+  { name: 'xsmall · 24px', size: 'xsmall' },
 ] as const;
 
 export function ControlsGallery({
