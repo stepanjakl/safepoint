@@ -14,13 +14,11 @@ import { cx } from '@/lib/cx';
 // can say so.
 export function DataTable({
   as = 'div',
-  radius = 'shell',
   className,
   children,
   ...props
 }: ComponentPropsWithRef<'article'> & {
   as?: 'div' | 'article';
-  radius?: 'shell' | 'icon';
   children: ReactNode;
 }) {
   // A div takes every prop an article does.
@@ -30,8 +28,8 @@ export function DataTable({
       {...props}
       className={cx(
         // min-w-0: in a grid it would otherwise grow to its table's width.
-        'border-rule-faint bg-surface-primary min-w-0 overflow-clip border',
-        radius === 'icon' ? 'rounded-icon' : 'rounded-shell',
+        // One face, edge and radius for every table in the app.
+        'border-rule-faint bg-surface-primary rounded-shell min-w-0 overflow-clip border',
         className,
       )}
     >

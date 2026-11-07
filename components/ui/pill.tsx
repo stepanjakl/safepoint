@@ -2,6 +2,8 @@ import type { ComponentPropsWithRef } from 'react';
 
 import { cx } from '@/lib/cx';
 
+import { MorphingLabel, plainLabel } from './morphing-text';
+
 /*
   A short state or label on its tone's rungs (severity.css). Filled for a
   state; ringed for context, such as what failing a check would do, so it
@@ -11,6 +13,9 @@ import { cx } from '@/lib/cx';
   Pills drawn with motion of their own -- a thread step's facts, a release
   row's count, a cross-checked value -- keep their stylesheets and take their
   colours from the same rungs.
+
+  Like those, a pill eases into a new tone (control-wash: the state duration,
+  ease-out) and morphs words that change, so a verdict or a count never jumps.
 */
 
 export type Tone = 'blocked' | 'decision' | 'neutral' | 'ready';
@@ -44,14 +49,18 @@ export function Pill({
       {...props}
       data-severity={SEVERITY[tone]}
       className={cx(
-        'pill-shape text-severity-ink text-meta px-2 py-0.5',
+        'pill-shape control-wash text-severity-ink text-meta px-2 py-0.5',
         FACE[variant],
         interactive &&
-          'control-wash hover:bg-severity-pill-hover hover:text-severity-strong focus-visible:bg-severity-pill-hover focus-visible:text-severity-strong cursor-default',
+          'hover:bg-severity-pill-hover hover:text-severity-strong focus-visible:bg-severity-pill-hover focus-visible:text-severity-strong cursor-default',
         className,
       )}
     >
-      {children}
+      {plainLabel(children) === null ? (
+        children
+      ) : (
+        <MorphingLabel text={plainLabel(children)!} />
+      )}
     </span>
   );
 }

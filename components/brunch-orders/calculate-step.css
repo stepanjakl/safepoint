@@ -42,14 +42,15 @@
   .calc-row:has(.calc-row-toggle[aria-expanded='false']:focus-visible) + tr > td::before {
     opacity: 0;
   }
+  /* The whole row, its decision buttons too: they sit above the toggle's cover. */
   @media (hover: hover) {
-    .calc-row:has(.calc-row-toggle:hover) {
+    .calc-row:hover {
       background-color: var(--sp-row-hover);
     }
-    tr:has(+ .calc-row > th > .calc-row-toggle:hover) > td::before {
+    tr:has(+ .calc-row:hover) > td::before {
       opacity: 0;
     }
-    .calc-row:has(.calc-row-toggle[aria-expanded='false']:hover) + tr > td::before {
+    .calc-row:has(.calc-row-toggle[aria-expanded='false']):hover + tr > td::before {
       opacity: 0;
     }
   }

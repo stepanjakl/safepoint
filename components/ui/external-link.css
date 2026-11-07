@@ -1,0 +1,16 @@
+@layer components {
+  .external-link {
+    color: var(--sp-text-muted);
+    text-decoration-line: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 0.2em;
+    transition:
+      color var(--duration-state) ease-out,
+      text-decoration-color var(--duration-state) ease-out;
+  }
+
+  .external-link:is(:hover, :focus-visible) {
+    color: var(--sp-text-primary);
+    text-decoration-color: currentColor;
+  }
+}

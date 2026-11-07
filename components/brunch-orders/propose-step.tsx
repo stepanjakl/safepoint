@@ -1,6 +1,10 @@
 'use client';
 
+import ArrowRotateCounterClockwise from 'blode-icons-react/icons/arrow-rotate-counter-clockwise';
 import ChevronTriangleUp from 'blode-icons-react/icons/chevron-triangle-up-small-filled';
+import Cross from 'blode-icons-react/icons/cross-small';
+import Pencil from 'blode-icons-react/icons/pencil';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
   Fragment,
   useEffect,
@@ -15,6 +19,7 @@ import { FromModel, Step } from '@/components/brunch-orders/rules-parts';
 import { ModelSelect } from '@/components/brunch-orders/rules-step';
 import { Lede, useTrial } from '@/components/brunch-orders/trial-parts';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import {
   DATA_TABLE_HEAD,
   DATA_TABLE_NAME,
@@ -25,8 +30,10 @@ import {
 } from '@/components/ui/data-table';
 import { FilterTabs } from '@/components/ui/filter-tabs';
 import { Fold } from '@/components/ui/fold';
+import { MorphingText } from '@/components/ui/morphing-text';
 import { Pill, type Tone } from '@/components/ui/pill';
 import { cx } from '@/lib/cx';
+import { DURATION_STATE } from '@/lib/motion';
 import type {
   CheckVerdict,
   DraftProgress,
@@ -34,19 +41,19 @@ import type {
   ProposalRecord,
   Verdict,
 } from '@/lib/definitions/types';
-import { SUBJECT } from '@/lib/processes/brunch-orders/process';
+import type { DefinitionSubject } from '@/lib/process/model';
 import { DRAFTING_MODELS, type DraftingModel } from '@/lib/models';
 
 import { DataDrawer } from './data-drawer';
 import { ModelLimits } from './model-limits';
 import { StaleRules, type StaleReply } from './stale-rules';
 
-type Calculated = {
+export type Calculated = {
   calculations: { id: string; name: string }[];
   rows: Record<string, Record<string, number | null>>;
 };
 
-type ProposeResponse =
+export type ProposeResponse =
   | {
       kind: 'proposal';
       fingerprint: string;
@@ -86,7 +93,8 @@ export type ProposeProgress = {
 };
 
 const POLL_MS = 2000;
-const FIELDS = SUBJECT.proposal;
+// What a proposal sets for each record, as the process declares it.
+export type ProposalField = DefinitionSubject['proposal'][number];
 
 const VERDICT: Record<Verdict, { tone: Tone; label: string }> = {
   ready: { tone: 'ready', label: 'Ready' },
@@ -94,9 +102,12 @@ const VERDICT: Record<Verdict, { tone: Tone; label: string }> = {
   blocked: { tone: 'blocked', label: 'Blocked' },
 };
 
-const valuesWords = (values: Record<string, number> | null | undefined) =>
+const valuesWords = (
+  values: Record<string, number> | null | undefined,
+  fields: ProposalField[],
+) =>
   values
-    ? FIELDS.map((field) => `${field.label} ${values[field.id]}`).join(', ')
+    ? fields.map((field) => `${field.label} ${values[field.id]}`).join(', ')
     : 'no change';
 
 /*
@@ -104,24 +115,34 @@ const valuesWords = (values: Record<string, number> | null | undefined) =>
   accepted checks find them -- and the person's decision on each, in the same
   table. The verdicts are code's. A record passes on approval; one a blocking
   check stops can only be changed to values that pass, or rejected.
+
+  With evaluation `model` there is no rulebook and nothing to set up: the
+  model proposes as soon as the step opens, and a record it is unsure of asks
+  for a person, since no check can.
 */
 export function ProposeStep({
+  subject,
   text,
   readId,
   rulebook,
+  evaluation = 'rules',
   progress: kept,
   onProgress,
   onMoveRules,
 }: {
+  // The process's subject: what each record's proposal sets.
+  subject: DefinitionSubject;
   text: string;
   readId: string;
-  // The rulebook this run calculated on.
-  rulebook: string;
+  // The rulebook this run calculated on; with no rulebook, none.
+  rulebook?: string;
+  evaluation?: Evaluation;
   progress: ProposeProgress | undefined;
   onProgress: (progress: ProposeProgress) => void;
   // Back to Calculate, on the current rules, when these no longer fit.
-  onMoveRules: () => void;
+  onMoveRules?: () => void;
 }) {
+  const automatic = evaluation === 'model';
   const propose = useTrial<ProposeResponse>('/api/dev/brunch-orders/propose');
   const { run } = propose;
   const report = useRef(onProgress);
@@ -137,7 +158,7 @@ export function ProposeStep({
   const current = body?.kind === 'proposal' ? body : null;
   if (current && current !== last) setLast(current);
   const shown = current ?? last;
-  const proposal = shown?.proposal ?? null;
+  const proposal = asReviewed(shown?.proposal ?? null, evaluation);
   const running = shown?.progress?.running ?? false;
   // Decisions belong to the proposal they were made on.
   const decisions =
@@ -150,7 +171,7 @@ export function ProposeStep({
   ): ProposeProgress => {
     const records = from ? Object.entries(from.records) : [];
     return {
-      fingerprint: rulebook,
+      fingerprint: from?.fingerprint ?? rulebook ?? '',
       proposedAt: from?.at ?? null,
       running: isRunning,
       total: records.length,
@@ -169,14 +190,14 @@ export function ProposeStep({
     };
   };
   const ask = (request: Record<string, unknown>) =>
-    run({ ...request, text, readId, rulebook }).then((response) => {
+    run({ ...request, text, readId, rulebook, evaluation }).then((response) => {
       if (response?.kind === 'proposal') {
         const same =
           kept?.proposedAt && response.proposal?.at === kept.proposedAt;
         report.current(
           progressOf(
             same ? kept.decisions : {},
-            response.proposal,
+            asReviewed(response.proposal, evaluation),
             response.progress?.running ?? false,
           ),
         );
@@ -184,8 +205,21 @@ export function ProposeStep({
       return response;
     });
 
+  // Automatic: proposes once, when nothing is kept, running or failed.
+  const proposed = useRef(false);
   useEffect(() => {
-    void ask({ action: 'get' });
+    void ask({ action: 'get' }).then((response) => {
+      if (
+        !automatic ||
+        proposed.current ||
+        response?.kind !== 'proposal' ||
+        response.proposal ||
+        response.progress
+      )
+        return;
+      proposed.current = true;
+      void ask({ action: 'propose' });
+    });
     // Once per read and rulebook; the poll below asks again while it runs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [run, text, readId, rulebook]);
@@ -211,6 +245,70 @@ export function ProposeStep({
   };
   const [confirming, setConfirming] = useState(false);
   const hasDecisions = Object.keys(decisions).length > 0;
+  const table =
+    proposal && shown ? (
+      <ProposalTable
+        fields={subject.proposal}
+        proposal={proposal}
+        names={shown.names}
+        calculated={shown.calculated}
+        decisions={decisions}
+        readId={readId}
+        announced={announced}
+        onDecide={decide}
+        onCheck={(key, values) =>
+          run({
+            action: 'check',
+            text,
+            readId,
+            rulebook,
+            evaluation,
+            key,
+            values,
+          })
+        }
+      />
+    ) : null;
+
+  if (automatic) {
+    const failure =
+      body?.kind === 'error'
+        ? body.message
+        : propose.state.kind === 'failed'
+          ? propose.state.message
+          : !running
+            ? (shown?.progress?.error ?? null)
+            : null;
+    return (
+      <div className="grid gap-4">
+        {failure ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <p role="alert" className="text-dense text-state-blocked">
+              {failure}
+            </p>
+            <Button
+              size="medium"
+              isDisabled={running || propose.state.kind === 'running'}
+              onPress={() => void ask({ action: 'propose' })}
+            >
+              Try again
+            </Button>
+          </div>
+        ) : null}
+        <p
+          role="status"
+          className={proposal && !running ? 'sr-only' : 'text-dense text-muted'}
+        >
+          {running
+            ? 'Working out the orders from the instructions…'
+            : !proposal && !failure
+              ? 'Getting the proposal…'
+              : ''}
+        </p>
+        {table}
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-4">
@@ -219,7 +317,7 @@ export function ProposeStep({
         values against the accepted checks first. The app checks each again; you
         approve, change or reject each one.
       </Lede>
-      {body?.kind === 'stale' ? (
+      {body?.kind === 'stale' && onMoveRules ? (
         <StaleRules stale={body} onMove={onMoveRules} />
       ) : body?.kind === 'error' ? (
         <p role="alert" className="text-dense text-state-blocked">
@@ -280,27 +378,37 @@ export function ProposeStep({
           </p>
         ) : null}
       </section>
-      {proposal && shown ? (
-        <ProposalTable
-          proposal={proposal}
-          names={shown.names}
-          calculated={shown.calculated}
-          decisions={decisions}
-          readId={readId}
-          announced={announced}
-          onDecide={decide}
-          onCheck={(key, values) =>
-            run({ action: 'check', text, readId, rulebook, key, values })
-          }
-        />
-      ) : null}
+      {table}
     </div>
   );
 }
 
+export type Evaluation = 'rules' | 'model';
+
+// With no rulebook, a record the model is unsure of is one a person decides:
+// no check can say so instead.
+function asReviewed(
+  proposal: Proposal | null,
+  evaluation: Evaluation,
+): Proposal | null {
+  if (!proposal || evaluation === 'rules') return proposal;
+  return {
+    ...proposal,
+    records: Object.fromEntries(
+      Object.entries(proposal.records).map(([key, record]) => [
+        key,
+        record.unsure && record.verdict === 'ready'
+          ? { ...record, verdict: 'decide' as const }
+          : record,
+      ]),
+    ),
+  };
+}
+
 type Showing = 'all' | 'need' | 'decided';
 
-function ProposalTable({
+export function ProposalTable({
+  fields,
   proposal,
   names,
   calculated,
@@ -309,7 +417,12 @@ function ProposalTable({
   announced,
   onDecide,
   onCheck,
+  icons = false,
 }: {
+  // Decisions as their marks alone, each named in its tooltip.
+  icons?: boolean;
+  // What each record's proposal sets: a column each.
+  fields: ProposalField[];
   proposal: Proposal;
   names: Record<string, string>;
   calculated: Calculated;
@@ -330,6 +443,7 @@ function ProposalTable({
     ([key, record]) => !decisions[key] && record.verdict === 'ready',
   );
   const decided = records.filter(([key]) => decisions[key]);
+  const reduceMotion = useReducedMotion();
   const [showing, setShowing] = useState<Showing>('all');
   const shown =
     showing === 'need' ? needYou : showing === 'decided' ? decided : records;
@@ -357,22 +471,35 @@ function ProposalTable({
               {count} {VERDICT[verdict].label.toLowerCase()}
             </Pill>
           ))}
-          {ready.length ? (
-            <Button
-              size="medium"
-              onPress={() => {
-                const at = new Date().toISOString();
-                onDecide(
-                  Object.fromEntries(
-                    ready.map(([key]) => [key, { kind: 'approve', at }]),
-                  ),
-                  `${ready.length} ready approved`,
-                );
-              }}
-            >
-              Approve all {ready.length} ready
-            </Button>
-          ) : null}
+          <AnimatePresence initial={false}>
+            {ready.length ? (
+              <motion.span
+                key="approve-ready"
+                initial={reduceMotion ? false : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={reduceMotion ? undefined : { opacity: 0 }}
+                transition={{ duration: DURATION_STATE, ease: 'easeOut' }}
+              >
+                <Button
+                  size="medium"
+                  onPress={() => {
+                    const at = new Date().toISOString();
+                    onDecide(
+                      Object.fromEntries(
+                        ready.map(([key]) => [key, { kind: 'approve', at }]),
+                      ),
+                      `${ready.length} ready approved`,
+                    );
+                  }}
+                >
+                  <span>
+                    Approve all <MorphingText text={String(ready.length)} />{' '}
+                    ready
+                  </span>
+                </Button>
+              </motion.span>
+            ) : null}
+          </AnimatePresence>
         </div>
         <FilterTabs
           size="small"
@@ -431,7 +558,7 @@ function ProposalTable({
                     >
                       <span className="sr-only">Name</span>
                     </th>
-                    {FIELDS.map((field) => (
+                    {fields.map((field) => (
                       <th
                         key={field.id}
                         scope="col"
@@ -455,35 +582,39 @@ function ProposalTable({
                   </tr>
                 </thead>
                 <tbody>
-                  {shown.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={FIELDS.length + 4}
-                        className="text-muted px-6 py-2.75"
-                      >
-                        {showing === 'need'
-                          ? 'Nothing needs you.'
-                          : 'Nothing decided yet.'}
-                      </td>
-                    </tr>
-                  ) : null}
-                  {shown.map(([key, record], rowIndex) => (
-                    <ProposalRow
-                      key={key}
-                      id={`${tableId}-${key}`}
-                      recordKey={key}
-                      name={names[key] ?? ''}
-                      record={record}
-                      decision={decisions[key]}
-                      expanded={open.has(key)}
-                      ruled={rowIndex < shown.length - 1}
-                      calculated={calculated}
-                      onToggle={() => toggle(key)}
-                      onDecide={onDecide}
-                      onCheck={onCheck}
-                      onCite={(tab) => view(tab)}
-                    />
-                  ))}
+                  <AnimatePresence initial={false}>
+                    {shown.length === 0 ? (
+                      <PresentRow key="empty">
+                        <td
+                          colSpan={fields.length + 4}
+                          className="text-muted px-6 py-2.75"
+                        >
+                          {showing === 'need'
+                            ? 'Nothing needs you.'
+                            : 'Nothing decided yet.'}
+                        </td>
+                      </PresentRow>
+                    ) : null}
+                    {shown.map(([key, record], rowIndex) => (
+                      <ProposalRow
+                        key={key}
+                        fields={fields}
+                        id={`${tableId}-${key}`}
+                        recordKey={key}
+                        name={names[key] ?? ''}
+                        record={record}
+                        decision={decisions[key]}
+                        expanded={open.has(key)}
+                        ruled={rowIndex < shown.length - 1}
+                        calculated={calculated}
+                        onToggle={() => toggle(key)}
+                        onDecide={onDecide}
+                        onCheck={onCheck}
+                        onCite={(tab) => view(tab)}
+                        icons={icons}
+                      />
+                    ))}
+                  </AnimatePresence>
                 </tbody>
               </table>
             </div>
@@ -495,6 +626,7 @@ function ProposalTable({
 }
 
 function ProposalRow({
+  fields,
   id,
   recordKey: key,
   name,
@@ -507,7 +639,10 @@ function ProposalRow({
   onDecide,
   onCheck,
   onCite,
+  icons,
 }: {
+  fields: ProposalField[];
+  icons: boolean;
   id: string;
   recordKey: string;
   name: string;
@@ -556,15 +691,17 @@ function ProposalRow({
   const startChange = () => {
     setChanging(
       Object.fromEntries(
-        FIELDS.map((field) => [field.id, values?.[field.id] ?? 0]),
+        fields.map((field) => [field.id, values?.[field.id] ?? 0]),
       ),
     );
     setChecked(null);
   };
 
+  const reduceMotion = useReducedMotion();
+  const decisionState = changing ? 'changing' : decision ? 'decided' : 'open';
   return (
     <Fragment>
-      <tr className="calc-row align-top">
+      <PresentRow className="calc-row align-top">
         <th
           scope="row"
           className="py-2.75 pr-3 pl-6 text-left font-medium whitespace-nowrap"
@@ -580,15 +717,20 @@ function ProposalRow({
             <span className={DATA_TABLE_NAME}>{key}</span>
             <span className="sr-only">
               , {VERDICT[verdict].label}
-              {decision ? `, ${decided(decision)}` : ''}
+              {decision ? `, ${decided(decision, fields)}` : ''}
             </span>
           </button>
           {name ? <span className={DATA_TABLE_NAME_UNDER}>{name}</span> : null}
         </th>
-        <td className={cx(DATA_TABLE_NAME_COLUMN, 'text-muted py-2.75 pr-3')}>
+        <td
+          className={cx(
+            DATA_TABLE_NAME_COLUMN,
+            'text-muted-strong py-2.75 pr-3 font-medium',
+          )}
+        >
           {name || null}
         </td>
-        {FIELDS.map((field) => (
+        {fields.map((field) => (
           <td
             key={field.id}
             className="py-2.75 pl-3 text-right whitespace-nowrap"
@@ -610,7 +752,11 @@ function ProposalRow({
                 className="field text-dense min-h-7 w-20 px-2 text-right"
               />
             ) : record.action === 'leave' && !decision?.values ? (
-              <span className="text-muted">No change</span>
+              // A quiet mark in a column of figures: nothing to order.
+              <span className="text-muted">
+                <span aria-hidden>—</span>
+                <span className="sr-only">No change</span>
+              </span>
             ) : (
               <span className="value tabular-nums">{values?.[field.id]}</span>
             )}
@@ -620,85 +766,139 @@ function ProposalRow({
           <Pill tone={VERDICT[verdict].tone}>{VERDICT[verdict].label}</Pill>
         </td>
         <td className="py-1.5 pr-4 pl-3 text-right">
-          <div className="flex items-center justify-end gap-1.5">
-            {changing ? (
-              <>
-                <DecisionButton
-                  size="small"
-                  decision="accept"
-                  isDisabled={!checked || checked.verdict === 'blocked'}
-                  onPress={() => {
-                    onDecide(
-                      {
-                        [key]: {
-                          kind: 'change',
-                          values: changing,
-                          verdict: checked!.verdict,
-                          checks: checked!.checks,
-                          at: now(),
+          {/* One set of controls gives way to the next, never jumps. */}
+          <AnimatePresence initial={false} mode="popLayout">
+            <motion.div
+              key={decisionState}
+              className="flex items-center justify-end gap-1.5"
+              initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={reduceMotion ? undefined : { opacity: 0, scale: 0.96 }}
+              transition={{ duration: DURATION_STATE, ease: 'easeOut' }}
+            >
+              {changing ? (
+                <>
+                  <DecisionButton
+                    size="small"
+                    decision="accept"
+                    {...(icons
+                      ? { label: `Save ${key}` }
+                      : { children: 'Save' })}
+                    isDisabled={!checked || checked.verdict === 'blocked'}
+                    onPress={() => {
+                      onDecide(
+                        {
+                          [key]: {
+                            kind: 'change',
+                            values: changing,
+                            verdict: checked!.verdict,
+                            checks: checked!.checks,
+                            at: now(),
+                          },
                         },
-                      },
-                      `${key} changed to ${valuesWords(changing)}`,
-                    );
-                    setChanging(null);
-                  }}
-                >
-                  Save
-                </DecisionButton>
-                <Button size="small" onPress={() => setChanging(null)}>
-                  Cancel
-                </Button>
-              </>
-            ) : decision ? (
-              <>
-                <Pill tone={decision.kind === 'reject' ? 'neutral' : 'ready'}>
-                  {decided(decision)}
-                </Pill>
-                <Button
-                  size="small"
-                  onPress={() => onDecide({ [key]: null }, `${key} undecided`)}
-                >
-                  Undo
-                </Button>
-              </>
-            ) : (
-              <>
-                <DecisionButton
-                  size="small"
-                  decision="accept"
-                  isDisabled={record.verdict === 'blocked'}
-                  onPress={() =>
-                    onDecide(
-                      { [key]: { kind: 'approve', at: now() } },
-                      `${key} approved`,
-                    )
-                  }
-                >
-                  Approve
-                </DecisionButton>
-                <Button size="small" onPress={startChange}>
-                  Change
-                </Button>
-                <DecisionButton
-                  size="small"
-                  decision="deny"
-                  onPress={() =>
-                    onDecide(
-                      { [key]: { kind: 'reject', at: now() } },
-                      `${key} rejected`,
-                    )
-                  }
-                >
-                  Reject
-                </DecisionButton>
-              </>
-            )}
-          </div>
+                        `${key} changed to ${valuesWords(changing, fields)}`,
+                      );
+                      setChanging(null);
+                    }}
+                  />
+                  {icons ? (
+                    <IconButton
+                      label="Cancel"
+                      face="quiet"
+                      placement="top"
+                      onPress={() => setChanging(null)}
+                    >
+                      <Cross aria-hidden size={14} strokeWidth={2.5} />
+                    </IconButton>
+                  ) : (
+                    <Button size="small" onPress={() => setChanging(null)}>
+                      Cancel
+                    </Button>
+                  )}
+                </>
+              ) : decision ? (
+                <>
+                  <Pill tone={decision.kind === 'reject' ? 'neutral' : 'ready'}>
+                    {decided(decision, fields)}
+                  </Pill>
+                  {icons ? (
+                    <IconButton
+                      label={`Undo the decision on ${key}`}
+                      face="quiet"
+                      placement="top"
+                      onPress={() =>
+                        onDecide({ [key]: null }, `${key} undecided`)
+                      }
+                    >
+                      <ArrowRotateCounterClockwise
+                        aria-hidden
+                        size={14}
+                        strokeWidth={2}
+                      />
+                    </IconButton>
+                  ) : (
+                    <Button
+                      size="small"
+                      onPress={() =>
+                        onDecide({ [key]: null }, `${key} undecided`)
+                      }
+                    >
+                      Undo
+                    </Button>
+                  )}
+                </>
+              ) : (
+                <>
+                  <DecisionButton
+                    size="small"
+                    decision="accept"
+                    {...(icons
+                      ? { label: `Approve ${key}` }
+                      : { children: 'Approve' })}
+                    isDisabled={record.verdict === 'blocked'}
+                    onPress={() =>
+                      onDecide(
+                        { [key]: { kind: 'approve', at: now() } },
+                        `${key} approved`,
+                      )
+                    }
+                  />
+                  {icons ? (
+                    <IconButton
+                      label={`Change ${key}`}
+                      face="quiet"
+                      placement="top"
+                      onPress={startChange}
+                    >
+                      <Pencil aria-hidden size={14} strokeWidth={2} />
+                    </IconButton>
+                  ) : (
+                    <Button size="small" onPress={startChange}>
+                      Change
+                    </Button>
+                  )}
+                  <DecisionButton
+                    size="small"
+                    decision="deny"
+                    {...(icons
+                      ? { label: `Reject ${key}` }
+                      : { children: 'Reject' })}
+                    onPress={() =>
+                      onDecide(
+                        { [key]: { kind: 'reject', at: now() } },
+                        `${key} rejected`,
+                      )
+                    }
+                  />
+                </>
+              )}
+            </motion.div>
+          </AnimatePresence>
         </td>
-      </tr>
-      <tr>
+      </PresentRow>
+      <PresentRow>
         <td
-          colSpan={FIELDS.length + 4}
+          colSpan={fields.length + 4}
           className={cx('p-0', ruled && DATA_TABLE_RULE)}
         >
           <Fold open={expanded} id={id} className="grid gap-3 px-6 pt-1 pb-4">
@@ -725,16 +925,18 @@ function ProposalRow({
                 ))}
               </Facts>
             ) : null}
-            <Facts label="Worked out in Calculate">
-              {calculated.calculations.map((c) => (
-                <span key={c.id} className="text-meta">
-                  {c.name}{' '}
-                  <span className="value font-medium">
-                    {calculated.rows[key]?.[c.id] ?? '—'}
+            {calculated.calculations.length ? (
+              <Facts label="Worked out in Calculate">
+                {calculated.calculations.map((c) => (
+                  <span key={c.id} className="text-meta">
+                    {c.name}{' '}
+                    <span className="value font-medium">
+                      {calculated.rows[key]?.[c.id] ?? '—'}
+                    </span>
                   </span>
-                </span>
-              ))}
-            </Facts>
+                ))}
+              </Facts>
+            ) : null}
             {checks?.length ? (
               <ul className="grid gap-2" aria-label={`Checks on ${key}`}>
                 {/* Those a guard settles for this record come last: they
@@ -782,7 +984,7 @@ function ProposalRow({
             ) : null}
           </Fold>
         </td>
-      </tr>
+      </PresentRow>
     </Fragment>
   );
 }
@@ -797,9 +999,35 @@ function Facts({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-const decided = (decision: Decision) =>
+const decided = (decision: Decision, fields: ProposalField[]) =>
   decision.kind === 'approve'
     ? 'Approved'
     : decision.kind === 'reject'
       ? 'Rejected'
-      : `Changed to ${valuesWords(decision.values)}`;
+      : `Changed to ${valuesWords(decision.values, fields)}`;
+
+/*
+  A table row that comes and goes by fading, as a filter shows and hides
+  records; the rows after it close up at once, so nothing slides under the
+  pointer. Inside AnimatePresence, its exit plays before it leaves.
+*/
+function PresentRow({
+  className,
+  children,
+}: {
+  className?: string;
+  children: ReactNode;
+}) {
+  const reduceMotion = useReducedMotion();
+  return (
+    <motion.tr
+      className={className}
+      initial={reduceMotion ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={reduceMotion ? undefined : { opacity: 0 }}
+      transition={{ duration: DURATION_STATE, ease: 'easeOut' }}
+    >
+      {children}
+    </motion.tr>
+  );
+}

@@ -128,7 +128,7 @@ test('the calculations and checks of the instructions, with examples to confirm'
   );
 
   // A new draft, by a chosen model, asks before replacing what is kept.
-  await expect(page.getByLabel('Model')).toHaveValue('');
+  await expect(page.getByRole('combobox', { name: /^Model/ })).toHaveValue('');
   // How its quota stands, before anything spends it.
   await expect(
     page.getByText(/requests today, \d+ a minute/).first(),
@@ -586,12 +586,14 @@ test('a rule being written again says so, through a reload, then shows the new o
     })
     .last();
   await card.getByRole('button', { name: 'Write again' }).click();
-  await expect(card.getByText('Writing…')).toBeVisible();
+  // A morphing label is drawn twice: once to see, once to be read.
+  await expect(card.getByText('Writing…').first()).toBeVisible();
   await expect(card.getByText('Being written again')).toBeVisible();
 
   // The point of it: nothing is lost on a reload.
   await page.reload();
-  await expect(card.getByText('Writing…')).toBeVisible();
+  // A morphing label is drawn twice: once to see, once to be read.
+  await expect(card.getByText('Writing…').first()).toBeVisible();
   await expect(card.getByText('Being written again')).toBeVisible();
   await expect(
     card.getByRole('button', { name: 'Write again' }),

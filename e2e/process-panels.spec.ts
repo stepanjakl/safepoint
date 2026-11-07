@@ -119,6 +119,45 @@ test('instructions open their latest version beside the list of versions', async
   await expect(draft).toBeFocused();
 });
 
+test('review numbers follow the draft while removed paragraphs keep their original numbers', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      'safepoint.instructions.v2',
+      JSON.stringify({
+        'promotion-release': {
+          published: [
+            {
+              text: 'Keep the first paragraph.\n\nDelete this obsolete paragraph.\n\nKeep this middle anchor.\n\nKeep the final paragraph.',
+              publishedAt: '2026-11-07T10:00:00Z',
+              note: null,
+            },
+          ],
+          draft:
+            'Add a fresh introduction.\n\nKeep the first paragraph.\n\nKeep this middle anchor.\n\nKeep the final paragraph updated.',
+        },
+      }),
+    );
+  });
+  await openTab(page, 'Instructions');
+  await drawer(page).getByRole('button', { name: 'Continue v6' }).click();
+  await drawer(page).getByRole('button', { name: 'Review changes' }).click();
+  const diff = drawer(page).getByRole('list', { name: 'Changes from v5' });
+  await expect(diff.locator('.clause-number')).toHaveText([
+    '01',
+    '02',
+    '02',
+    '03',
+    '04',
+  ]);
+  const rows = diff.getByRole('listitem');
+  await expect(rows.nth(0)).toContainText('Added: Paragraph 1:');
+  await expect(rows.nth(2)).toContainText('Removed: Paragraph 2:');
+  await expect(rows.nth(4)).toContainText('Changed: Paragraph 4:');
+  await expect(rows.nth(4).locator('ins')).toContainText('updated');
+});
+
 test('outputs list every destination with how it is undone', async ({
   page,
 }) => {
@@ -217,4 +256,102 @@ test('the frame holds through a tab swap and is handed back once the next sectio
   await expect(
     frame.locator('.process-sheet-swap .sheet-head').first(),
   ).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+});
+
+// Sample painted frames rather than waiting for a final screenshot: an entrance
+// can end correctly while still having played underneath the screen fade.
+async function observeSectionEntrance(
+  trigger: import('@playwright/test').Locator,
+) {
+  return trigger.evaluate((button) => {
+    const frames: { screen: number; row: number; detail: number | null }[] = [];
+    const started = performance.now();
+    if (!(button instanceof HTMLElement)) throw new Error('Missing trigger');
+    button.click();
+    return new Promise<typeof frames>((resolve) => {
+      function sample() {
+        const row = Array.from(
+          document.querySelectorAll<HTMLElement>(
+            '[data-section-forming] :is(.process-panel-list, .process-runs-list) li',
+          ),
+        ).find((element) => {
+          const layer = element.closest('.process-sheet-swap');
+          return (
+            layer &&
+            !layer.hasAttribute('inert') &&
+            element.getClientRects().length > 0
+          );
+        });
+        if (row) {
+          let screen = 1;
+          for (
+            let parent = row.parentElement;
+            parent;
+            parent = parent.parentElement
+          )
+            screen *= Number(getComputedStyle(parent).opacity);
+          const detail = row
+            .closest('.process-sheet-swap')
+            ?.querySelector('[data-detail-held]');
+          frames.push({
+            screen,
+            row: Number(getComputedStyle(row).opacity),
+            detail: detail ? Number(getComputedStyle(detail).opacity) : null,
+          });
+        }
+        if ((frames.length > 0 && !row) || performance.now() - started > 8000)
+          resolve(frames);
+        else requestAnimationFrame(sample);
+      }
+      requestAnimationFrame(sample);
+    });
+  });
+}
+
+function expectSectionAfterScreen(
+  frames: Awaited<ReturnType<typeof observeSectionEntrance>>,
+) {
+  expect(frames.length).toBeGreaterThan(2);
+  expect(frames.some((frame) => frame.screen < 1)).toBe(true);
+  expect(
+    frames.filter(
+      (frame) => frame.screen < 1 && (frame.row > 0 || (frame.detail ?? 0) > 0),
+    ),
+    'content started arriving before its screen settled',
+  ).toEqual([]);
+  expect(frames.some((frame) => frame.screen === 1 && frame.row > 0)).toBe(
+    true,
+  );
+}
+
+test('every section waits for its tab fade before rows and details arrive', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/examples/promotion?run=run-104');
+  for (const tab of ['Inputs', 'Instructions', 'Outputs', 'Runs']) {
+    expectSectionAfterScreen(
+      await observeSectionEntrance(
+        page.getByRole('button', { name: new RegExp(`^${tab}`) }).first(),
+      ),
+    );
+  }
+});
+
+test('rows wait for a process navigation fade', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/examples/brunch-orders');
+  expectSectionAfterScreen(
+    await observeSectionEntrance(
+      page.locator('a[href="/examples/promotion"]').first(),
+    ),
+  );
+});
+
+test('reduced motion shows section rows immediately', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await openTab(page, 'Inputs');
+  const row = page.locator('.process-panel-list li').first();
+  await expect(row).toHaveCSS('animation-name', 'none');
+  await expect(row).toHaveCSS('opacity', '1');
 });

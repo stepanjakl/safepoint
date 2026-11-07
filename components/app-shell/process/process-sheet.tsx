@@ -42,6 +42,7 @@ import {
   SectionClock,
   SettledLayer,
   useDetailHold,
+  useScreenSettled,
 } from '@/components/ui/screen-settled';
 import { useSwap } from '@/components/ui/swap';
 
@@ -332,17 +333,17 @@ export function ProcessSheet({
                   className="process-sheet-swap shell:grid shell:min-h-0 shell:grid-rows-[minmax(0,1fr)] relative z-1 grid-cols-[minmax(0,1fr)]"
                   data-swap-entering={(visible && entering) || undefined}
                 >
-                  <SectionClock
-                    entering={!visible || entering || enteringProcess}
+                  <SettledLayer
+                    settled={visible && (!entering || landed === key)}
                   >
-                    <SettledLayer
-                      settled={visible && (!entering || landed === key)}
+                    <SectionClock
+                      entering={!visible || entering || enteringProcess}
                     >
                       <Forming active={!visible || entering || enteringProcess}>
                         {section(key)}
                       </Forming>
-                    </SettledLayer>
-                  </SectionClock>
+                    </SectionClock>
+                  </SettledLayer>
                 </motion.div>
               </Activity>
             );
@@ -385,10 +386,12 @@ function Forming({
   children: ReactNode;
 }) {
   const [formed, setFormed] = useState(!active);
+  const settled = useScreenSettled();
   return (
     <div
       className="contents"
       data-section-forming={formed ? undefined : true}
+      data-entrance-held={!settled || undefined}
       onAnimationEnd={(event) => {
         if (event.animationName !== 'section-form-in') return;
         const rising = event.currentTarget

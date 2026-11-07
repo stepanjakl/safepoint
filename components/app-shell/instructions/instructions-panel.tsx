@@ -11,7 +11,7 @@ import { RunStatusIcon } from '@/components/ui/run-status-icon';
 import { Button } from '@/components/ui/button';
 import { FilterTabs } from '@/components/ui/filter-tabs';
 import { KeyHint } from '@/components/ui/key-hint';
-import { MorphingText } from '@/components/ui/morphing-text';
+import { MORPH_WORDS_MS, MorphingText } from '@/components/ui/morphing-text';
 import { TabSwap, useSwap } from '@/components/ui/swap';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cx } from '@/lib/cx';
@@ -400,7 +400,7 @@ export function InstructionEditor({
         {mode === 'confirm-discard' ? `Discard the draft of ${next}?` : ''}
       </span>
       <Button size="small" onPress={pressSecondary}>
-        <MorphingText text={LABELS.secondary} duration={360} />
+        <MorphingText text={LABELS.secondary} duration={MORPH_WORDS_MS} />
       </Button>
       <PublishNote
         version={next}
@@ -426,7 +426,7 @@ export function InstructionEditor({
             }
             onPress={pressPrimary}
           >
-            <MorphingText text={LABELS.primary} duration={360} />
+            <MorphingText text={LABELS.primary} duration={MORPH_WORDS_MS} />
             <span
               className="band-collapse draft-key"
               data-open={(mode !== 'confirm-discard' && !blocked) || undefined}

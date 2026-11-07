@@ -73,6 +73,17 @@ into one component per part it draws, with shared shapes and icons in
 `sidebar/menu-parts.tsx`; `e2e/process-menu.spec.ts` covers its search, level
 travel and reordering, focus included -- run it after touching any of them.
 
+Content entrance animations wait for every surrounding screen, section or panel
+transition to settle. Use `SettledLayer` / `useScreenSettled`, pause CSS entrances
+and their stagger delays while held, and start shared entrance clocks afterward.
+See `docs/interface/STYLING-SYSTEM.md` → Motion.
+
+Text that changes in place morphs; it never jumps. A `Button` or
+`DecisionButton` whose label is plain words does this by itself
+(`MorphingLabel`, `components/ui/morphing-text.tsx`), so write the label as text,
+not as an element. Anything else that changes its words or figures -- a pill, a
+count, a label beside an icon -- wraps them in `MorphingText`.
+
 A comment in a stylesheet earns its place only by preventing a specific wrong
 edit: a measured constraint, a browser behaviour, or a cross-file dependency.
 Two lines. Longer reasoning goes in `docs/interface/STYLING-SYSTEM.md`, not in the CSS.

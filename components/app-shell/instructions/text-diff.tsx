@@ -41,10 +41,20 @@ export function TextDiff({
   // Names the list, as "Changes from v3".
   label: string;
 }) {
-  const paragraphs = useMemo(
-    () => diffText(before, after).paragraphs,
-    [before, after],
-  );
+  const paragraphs = useMemo(() => {
+    let oldNumber = 0;
+    let newNumber = 0;
+    const numbered = [];
+    for (const paragraph of diffText(before, after).paragraphs) {
+      if (paragraph.kind !== 'added') oldNumber += 1;
+      if (paragraph.kind !== 'removed') newNumber += 1;
+      numbered.push({
+        ...paragraph,
+        number: paragraph.kind === 'removed' ? oldNumber : newNumber,
+      });
+    }
+    return numbered;
+  }, [before, after]);
   return (
     <ol aria-label={label} className="text-body grid gap-1 leading-relaxed">
       {paragraphs.map((paragraph, index) => {
@@ -53,10 +63,13 @@ export function TextDiff({
           <li
             key={index}
             className={cx(
-              'rounded-control clause-row whitespace-pre-line',
+              'rounded-control diff-clause-row whitespace-pre-line',
               kind.row,
             )}
           >
+            <span aria-hidden="true" className="clause-number value text-micro">
+              {String(paragraph.number).padStart(2, '0')}
+            </span>
             <span
               aria-hidden="true"
               className={cx('text-center font-semibold', kind.ink)}
@@ -65,6 +78,7 @@ export function TextDiff({
             </span>
             <span>
               {kind.said ? <span className="sr-only">{kind.said}</span> : null}
+              <span className="sr-only">Paragraph {paragraph.number}: </span>
               {paragraph.kind === 'changed'
                 ? paragraph.segments.map((segment, at) =>
                     segment.kind === 'same' ? (

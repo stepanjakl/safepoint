@@ -17,7 +17,6 @@ import { useSwap } from '@/components/ui/swap';
 import { KeyHint } from '@/components/ui/key-hint';
 import { useScreenSettled } from '@/components/ui/screen-settled';
 import { StateIllustration } from '@/components/ui/state-illustration';
-import { Tooltip } from '@/components/ui/tooltip';
 import { EMPTY_STATE_ARRIVE, EMPTY_STATE_STAGGER } from '@/lib/motion';
 import type { ProcessSummary } from '@/lib/process/model';
 import { runDay, runTime } from '@/lib/process/run-time';
@@ -233,14 +232,9 @@ function RunEmptyState({ note }: { note: string | null }) {
               />
             </Button>
           ) : (
-            <Tooltip
-              label="Start run"
-              description={selection?.cannotStart ?? ''}
-            >
-              <Button variant="primary" size="medium" aria-disabled="true">
-                Start run
-              </Button>
-            </Tooltip>
+            <Button variant="primary" size="medium" aria-disabled="true">
+              Start run
+            </Button>
           )}
           {actions ? (
             <Button size="medium" onPress={actions.showInstructions}>

@@ -391,20 +391,6 @@
   background-image: linear-gradient(to bottom, var(--sp-enclosure-edge) 0 1px, transparent 1px);
 }
 
-/* A link that leaves the app: quiet until it is the target, then it inks and
-   underlines, so it does not read as one of the card's controls. */
-@layer components {
-  .external-link {
-    color: var(--sp-text-muted);
-    text-underline-offset: 0.2em;
-    transition: color var(--duration-state) ease-out;
-  }
-  .external-link:is(:hover, :focus-visible) {
-    color: var(--sp-text-primary);
-    text-decoration-line: underline;
-  }
-}
-
 @media (forced-colors: active), print {
   .control-face,
   .enclosure {

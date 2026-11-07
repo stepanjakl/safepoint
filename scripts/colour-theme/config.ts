@@ -564,6 +564,20 @@ const ANCHORED_BY_FILE = {
     '--sp-sheet-total-lead-hover': { on: 'primary', light: 75, dark: -250 },
     '--sp-sheet-total-lead-current': { on: 'primary', light: 50, dark: -275 },
   },
+  'components/app-shell/thread/model-run-thread.css': {
+    /* A cell address that opens its cell: set at the thread link's steps but
+       separate, so tuning a step's link moves no cell. */
+    '--sp-cell-link-face': { on: 'primary', light: 125, dark: -125 },
+    '--sp-cell-link-face-hover': { on: 'primary', light: 200, dark: -275 },
+    /* A group of a table's rows -- one tab's cells -- banded at the runs
+       list's boundary step (--sp-sheet-band), separate so neither moves the
+       other. */
+    '--sp-cell-group-face': { on: 'primary', light: 25, dark: -25 },
+    /* A fact on that band -- how many values -- a fact's step (75) off the
+       band rather than off the pane, so it stands as far from its ground as
+       every fact does. */
+    '--sp-cell-group-count-face': { on: 'primary', light: 100, dark: -100 },
+  },
   'components/app-shell/thread/thread-step.css': {
     '--sp-thread-line': { on: 'primary', light: 225, dark: -200 },
     '--sp-thread-done': { on: 'primary', light: 450, dark: -375 },

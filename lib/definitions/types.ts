@@ -182,6 +182,75 @@ export type DraftProgress = {
   running: boolean;
   // The definition being written right now, so its card can say so.
   writing?: string | null;
+  // A proposal's model at work, for a person watching it.
+  activity?: ProposalActivity;
+};
+
+/*
+  What a proposal's model has done so far, as it works. Shown to a person
+  watching; never read by code to decide anything.
+*/
+export type ProposalActivity = {
+  // The model answering now.
+  model: string | null;
+  // Its latest thought summary, as it writes it.
+  thought: string | null;
+  // Records written into the answer being given, as it arrives.
+  writing: number;
+  events: ProposalEvent[];
+  tokens: { input: number; output: number; thinking: number };
+  // How long the model's steps took, as the SDK measured them.
+  stepMs?: number;
+  // What the model streamed back, part by part, as the SDK gives it: a
+  // text's or a tool input's pieces joined into one part. The tool's answer
+  // is the app's, not the model's, and says so. Absent on older records.
+  stream?: StreamedPart[];
+};
+
+/*
+  What happened, as facts with no words: a page words them in the process's
+  own nouns, so the engine says nothing of any one process.
+*/
+export type ProposalEvent = { at: string } & (
+  | { kind: 'asked'; model: string }
+  | {
+      kind: 'busy';
+      model: string;
+      why: 'quota' | 'slow' | 'unavailable';
+      // Resting until, for quota; the service's status, when it answered.
+      until?: string;
+      status?: number;
+    }
+  | { kind: 'tried'; records: number }
+  | {
+      kind: 'answered';
+      records: number;
+      set: number;
+      leave: number;
+      unsure: number;
+      cited: number;
+      // What the app's checks sent back; none when it took the answer.
+      problems: AnswerProblem[];
+    }
+  | { kind: 'warned'; warnings: string[] }
+  // A step that ended other than by answering: cut short, filtered, failed.
+  | { kind: 'ended'; reason: string }
+);
+
+// One thing the app's check of an answer sent back, as a fact about a record.
+export type AnswerProblem =
+  | { kind: 'twice'; key: string }
+  | { kind: 'no-values'; key: string }
+  | { kind: 'unanswered'; key: string }
+  | { kind: 'no-tab'; key: string; tab: string }
+  | { kind: 'no-column'; key: string; tab: string; column: string }
+  | { kind: 'no-row'; key: string; tab: string; row: number }
+  | { kind: 'blank'; key: string; cell: string };
+
+export type StreamedPart = {
+  at: string;
+  from: 'model' | 'app';
+  part: { type: string } & Record<string, unknown>;
 };
 
 // Shown as working once it has a formula and every example agrees; the

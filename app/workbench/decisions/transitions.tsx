@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 import { DecisionButton } from '@/components/brunch-orders/decision-button';
 import { Button } from '@/components/ui/button';
-import { MorphingText } from '@/components/ui/morphing-text';
+import { MORPH_WORDS_MS, MorphingText } from '@/components/ui/morphing-text';
 
 type Action = 'accept' | 'deny' | 'write';
 type Phase = 'idle' | 'writing' | 'done';
@@ -65,7 +65,7 @@ function DecisionTrial({ action, title, detail }: (typeof CASES)[number]) {
             className="decision-morph-control"
             onPress={press}
           >
-            <MorphingText text={label} duration={360} />
+            <MorphingText text={label} duration={MORPH_WORDS_MS} />
           </Button>
         ) : (
           <DecisionButton
@@ -76,7 +76,7 @@ function DecisionTrial({ action, title, detail }: (typeof CASES)[number]) {
             className="decision-morph-control"
             onPress={press}
           >
-            <MorphingText text={label} duration={360} />
+            <MorphingText text={label} duration={MORPH_WORDS_MS} />
           </DecisionButton>
         )}
         {phase === 'writing' ? (

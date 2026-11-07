@@ -874,6 +874,12 @@
   .thread-step-heading-action:focus-visible::before {
     opacity: 1;
   }
+  /* A fact beside the heading's link lifts with the heading's wash, as facts
+     do under a row's. */
+  .thread-step-heading-action:focus-visible .thread-step-fact {
+    color: var(--sp-text-muted-strong);
+    background-color: var(--sp-thread-fact-face-hover);
+  }
   /* Primary on its hover face: muted-strong reads 4.2:1 there in dark. */
   .thread-step-heading-action:focus-visible .thread-step-heading-pill {
     color: var(--sp-text-primary);
@@ -893,6 +899,10 @@
     }
     .thread-step-heading-action:hover::before {
       opacity: 1;
+    }
+    .thread-step-heading-action:hover .thread-step-fact {
+      color: var(--sp-text-muted-strong);
+      background-color: var(--sp-thread-fact-face-hover);
     }
     .thread-step-heading-action:hover .thread-step-heading-pill {
       color: var(--sp-text-primary);
@@ -1074,6 +1084,14 @@
     > .thread-step-row:is(:hover, :has(> .thread-step-toggle:focus-visible))
     .thread-step-fact {
     /* A step more ink on the lifted face: muted reads 3.7:1 there in dark. */
+    color: var(--sp-text-muted-strong);
+    background-color: var(--sp-thread-fact-face-hover);
+  }
+  /* A flag on a step with no state of its own wears a fact's face, so it lifts
+     with the facts beside it. */
+  .thread-step:not([data-fixed], [data-status='attention'], [data-status='blocked'])
+    > .thread-step-row:is(:hover, :has(> .thread-step-toggle:focus-visible))
+    .thread-step-flag {
     color: var(--sp-text-muted-strong);
     background-color: var(--sp-thread-fact-face-hover);
   }

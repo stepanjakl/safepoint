@@ -99,6 +99,12 @@ export const BRUNCH_ORDERS_DEFINITIONS: DefinitionProcess = {
   subject: SUBJECT,
 };
 
+// The same subject with no rulebook: its proposals and writes are kept apart.
+export const BRUNCH_ORDERS_DIRECT_DEFINITIONS: DefinitionProcess = {
+  id: BRUNCH_ORDERS_DIRECT_ID,
+  subject: SUBJECT,
+};
+
 // The first version, kept so a run started under it can still show it.
 const INSTRUCTIONS_V1 = `Intent. Propose how many units of each product to order for the coming Brunch weekend, so the store has enough for expected demand without waste. Every proposal is checked against the rules below and approved by a person before anything is ordered.
 

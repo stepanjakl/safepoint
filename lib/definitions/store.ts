@@ -48,6 +48,22 @@ export const fingerprintOf = (set: DefinitionSet) =>
     ),
   );
 
+/*
+  The set a process with no rulebook works under: no calculations, no checks.
+  A proposal on it is the model's alone, and a person's review its only check.
+  Never saved: nothing in it is drafted or approved.
+*/
+export const noRules = (text: string): DefinitionSet => ({
+  hash: hashOf(text),
+  version: '',
+  intent: '',
+  intentConfirmedAt: null,
+  readId: null,
+  foundAt: '',
+  model: '',
+  definitions: [],
+});
+
 const CURRENT = 'current.json';
 
 // Read when used, so a test can work in a scratch directory.

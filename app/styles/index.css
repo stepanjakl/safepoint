@@ -26,12 +26,14 @@
 @import './drawer.css';
 
 /* Components. The order is the cascade order of their layered rules. */
+@import '../../components/ui/external-link.css';
 @import '../../components/ui/switch.css';
 @import '../../components/ui/swap.css';
 @import '../../components/ui/fold.css';
 @import '../../components/ui/filter-tabs.css';
 @import '../../components/ui/edge-scroll.css';
 @import '../../components/app-shell/thread/thread-step.css';
+@import '../../components/app-shell/thread/model-run-thread.css';
 @import '../../components/app-shell/system/system-parts.css';
 @import '../../components/ui/notch.css';
 @import '../../components/app-shell/sidebar/sidebar-notice.css';

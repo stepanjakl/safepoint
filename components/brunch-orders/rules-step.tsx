@@ -33,7 +33,7 @@ import { Button } from '@/components/ui/button';
 import { Fold } from '@/components/ui/fold';
 import { Pill, SEVERITY } from '@/components/ui/pill';
 import { Tooltip } from '@/components/ui/tooltip';
-import { MorphingText } from '@/components/ui/morphing-text';
+import { MORPH_WORDS_MS, MorphingText } from '@/components/ui/morphing-text';
 import { cx } from '@/lib/cx';
 import { wordDiff } from '@/lib/text/word-diff';
 import type { Advice } from '@/lib/definitions/advise';
@@ -159,7 +159,10 @@ function AcceptDecision({
         if (!accepted && !busy) onAccept();
       }}
     >
-      <MorphingText text={accepted ? 'Accepted' : 'Accept'} duration={360} />
+      <MorphingText
+        text={accepted ? 'Accepted' : 'Accept'}
+        duration={MORPH_WORDS_MS}
+      />
     </DecisionButton>
   );
 }

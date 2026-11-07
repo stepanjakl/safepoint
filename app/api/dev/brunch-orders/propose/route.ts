@@ -8,11 +8,13 @@ import {
   startProposal,
 } from '@/lib/definitions/propose';
 import { namesOf } from '@/lib/definitions/records';
-import { fingerprintOf, loadRevision, loadSet } from '@/lib/definitions/store';
-import { staleness } from '@/lib/definitions/fits';
+import { fingerprintOf } from '@/lib/definitions/store';
 import { rejectUnlessLocalDevelopment } from '@/lib/dev/dev-route';
-import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { keptRead, READ_GONE } from '@/lib/processes/brunch-orders/reads';
+import {
+  evaluationSchema as evaluation,
+  rulebookFor,
+} from '@/lib/processes/brunch-orders/rulebook';
 import { draftingModelSchema } from '@/lib/models';
 
 export const runtime = 'nodejs';
@@ -30,19 +32,27 @@ const values = z.record(z.string().max(80), z.number().int());
   Development only: Propose, through lib/definitions/propose. get returns the
   kept proposal for the run's read and rulebook, with any job's progress;
   propose starts the job; check runs the accepted checks on values a person
-  is changing, for one record.
+  is changing, for one record. With evaluation `model` there is no rulebook:
+  the model proposes from the instructions alone, and nothing checks it.
 */
 export async function POST(request: Request) {
   const rejected = rejectUnlessLocalDevelopment(request);
   if (rejected) return rejected;
   const parsed = z
     .discriminatedUnion('action', [
-      z.strictObject({ action: z.literal('get'), text, readId, rulebook }),
+      z.strictObject({
+        action: z.literal('get'),
+        text,
+        readId,
+        rulebook,
+        evaluation,
+      }),
       z.strictObject({
         action: z.literal('propose'),
         text,
         readId,
         rulebook,
+        evaluation,
         model: draftingModelSchema.optional(),
       }),
       z.strictObject({
@@ -50,6 +60,7 @@ export async function POST(request: Request) {
         text,
         readId,
         rulebook,
+        evaluation,
         key: z.string().max(80),
         values,
       }),
@@ -62,16 +73,14 @@ export async function POST(request: Request) {
     );
   const body = parsed.data;
   try {
-    const current = await loadSet(owner, body.text);
-    if (!current) throw new Error('No rules are kept for these instructions.');
     const read = await keptRead(body.readId);
     if (!read) throw new Error(READ_GONE);
-    const set =
-      (body.rulebook
-        ? await loadRevision(owner, body.text, body.rulebook)
-        : null) ?? current;
-    // A rulebook kept as it was accepted may no longer fit the data.
-    const stale = staleness(owner, body.text, set, current, read);
+    const { owner, set, stale } = await rulebookFor(
+      body.evaluation,
+      body.text,
+      body.rulebook,
+      read,
+    );
     if (stale)
       return Response.json({ kind: 'stale', ...stale }, { status: 409 });
     const fingerprint = fingerprintOf(set);

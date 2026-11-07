@@ -8,13 +8,15 @@ import { presentPromotionInputs } from '@/lib/process/system-links';
 import { presentPromotionPlan } from '@/lib/review/promotion-adapter';
 
 import { sampleDraft } from '../draft-progress/sample';
+import { brunchDirectScript } from './brunch-direct';
 import { RunWorkbench } from './run-player';
 
 /*
   Development only: the promotion run at every stage of its lifecycle, one
   column each, and above them a player that steps one thread through the
   stages so the folding and the marker can be watched rather than inferred.
-  Drawn as a live run, so the actions replay cannot offer are visible.
+  Drawn as a live run, so the actions replay cannot offer are visible. The
+  same for a Brunch orders run with no rulebook, from frozen fixtures.
 */
 export default function RunWorkbenchPage() {
   if (process.env.NODE_ENV !== 'development') notFound();
@@ -62,7 +64,11 @@ export default function RunWorkbenchPage() {
           </Link>
         </p>
       </header>
-      <RunWorkbench thread={thread} draft={sampleDraft()} />
+      <RunWorkbench
+        thread={thread}
+        draft={sampleDraft()}
+        brunch={brunchDirectScript()}
+      />
     </main>
   );
 }

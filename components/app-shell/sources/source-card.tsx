@@ -4,11 +4,10 @@ import ArrowRotateClockwise from 'blode-icons-react/icons/arrow-rotate-clockwise
 import ChainLink1Filled from 'blode-icons-react/icons/chain-link-1-filled';
 import CrossSmall from 'blode-icons-react/icons/cross-small';
 import PlusMedium from 'blode-icons-react/icons/plus-medium';
-import TableFilled from 'blode-icons-react/icons/table-filled';
 import TrashCanSimple from 'blode-icons-react/icons/trash-can-simple';
 import { useReducedMotion } from 'motion/react';
 import { useEffect, useId, useRef, useState } from 'react';
-import type { ComponentType, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import {
   Button as AriaButton,
   Header,
@@ -23,7 +22,7 @@ import { Button, ICON_BOX } from '@/components/ui/button';
 import { DATA_TABLE_NAME, DataTable } from '@/components/ui/data-table';
 import { Fold } from '@/components/ui/fold';
 import { ICON_FILLED, IconButton } from '@/components/ui/icon-button';
-import { MorphingText } from '@/components/ui/morphing-text';
+import { MORPH_WORDS_MS, MorphingText } from '@/components/ui/morphing-text';
 import { useLoader } from '@/components/ui/working-mark';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cx } from '@/lib/cx';
@@ -39,15 +38,8 @@ import {
 } from '@/lib/sources/model';
 
 import { SourceDrawer } from './source-drawer';
+import { SourceHead } from './source-head';
 import { useSources, type SourceEntry } from './source-store';
-
-// Each kind's mark, drawn in its hue without a face of its own.
-const MARKS: Record<
-  SourceKind,
-  ComponentType<{ size?: number; className?: string; 'aria-hidden'?: boolean }>
-> = {
-  'google-sheets': TableFilled,
-};
 
 const count = (n: number, one: string, many = `${one}s`) =>
   `${n} ${n === 1 ? one : many}`;
@@ -162,7 +154,6 @@ export function SourceView({
   details?: ReactNode;
 }) {
   const kind = SOURCE_KINDS[kindKey];
-  const Mark = MARKS[kindKey];
   const titleId = useId();
   const { entries, read } = useSources(
     uses.map((use) => use.source),
@@ -170,19 +161,13 @@ export function SourceView({
   );
 
   return (
-    <DataTable as="article" radius="icon" aria-labelledby={titleId}>
-      <header className="border-rule-faint flex items-center justify-between gap-3 border-b py-3.5 pr-3.5 pl-5">
-        <div className="flex items-center gap-2.5">
-          <Mark aria-hidden size={22} className={cx('flex-none', kind.mark)} />
-          <h3 id={titleId} className="text-title text-primary font-semibold">
-            {kind.name}
-          </h3>
-        </div>
+    <DataTable as="article" aria-labelledby={titleId}>
+      <SourceHead kind={kindKey} titleId={titleId}>
         <Button size="small" aria-disabled="true">
           <PlusMedium aria-hidden size={12} className="flex-none" />
           Add {kind.noun}
         </Button>
-      </header>
+      </SourceHead>
       <div className="divide-rule-faint divide-y">
         {uses.map((use, index) => {
           const entry = entries.find((one) => one.id === use.source);
@@ -367,7 +352,7 @@ function SourceFile({
                   <span ref={readTime} className={cx(VALUE, 'block')}>
                     <MorphingText
                       text={readAt ? runStamp(readAt) : 'Never'}
-                      duration={360}
+                      duration={MORPH_WORDS_MS}
                     />
                   </span>
                   <span className="text-meta text-muted block empty:hidden">

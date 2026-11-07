@@ -5,6 +5,7 @@ import { Button as AriaButton, type ButtonProps } from 'react-aria-components';
 import type { Ref } from 'react';
 
 import { cx } from '@/lib/cx';
+import { MorphingLabel, plainLabel } from './morphing-text';
 
 type Variant = 'primary' | 'secondary' | 'danger';
 
@@ -128,12 +129,18 @@ export function Button({
         className,
       )}
     >
-      {(values) => (
-        <>
-          {slant ? SLANT_LAYERS : null}
-          {typeof children === 'function' ? children(values) : children}
-        </>
-      )}
+      {(values) => {
+        const content =
+          typeof children === 'function' ? children(values) : children;
+        // A label of words morphs when it changes, whoever renders it.
+        const label = plainLabel(content);
+        return (
+          <>
+            {slant ? SLANT_LAYERS : null}
+            {label === null ? content : <MorphingLabel text={label} />}
+          </>
+        );
+      }}
     </AriaButton>
   );
 }

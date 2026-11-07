@@ -22,6 +22,10 @@
       color var(--duration-state) ease-out,
       background-color var(--duration-state) ease-out;
   }
+  /* Still being read: a head with nothing to open yet. */
+  .brunch-read-head[data-reading] {
+    cursor: default;
+  }
   .brunch-read-icon {
     flex: none;
     width: var(--thread-mark);

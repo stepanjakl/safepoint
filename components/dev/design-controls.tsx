@@ -90,10 +90,24 @@ const PANEL_CSS = `
   z-index: 2147483000;
   width: min(320px, calc(100vw - 32px));
   max-height: calc(100dvh - 32px);
-  overflow-y: auto;
+  overflow: hidden;
   color-scheme: dark;
   font-family: ui-sans-serif, system-ui, sans-serif;
   font-feature-settings: normal;
+}
+.sp-devctl:has(> .tp-rotv > button[aria-expanded="false"]) {
+  width: min(200px, calc(100vw - 32px));
+}
+.sp-devctl > .tp-rotv {
+  display: flex;
+  flex-direction: column;
+  max-height: inherit;
+}
+.sp-devctl > .tp-rotv > .tp-rotv_b { flex-shrink: 0; }
+/* Tweakpane clips this body while folding; the expanded body must scroll. */
+.sp-devctl > .tp-rotv.tp-rotv-expanded > .tp-rotv_c {
+  min-height: 0;
+  overflow-y: auto;
 }
 .sp-devctl-move-handle { cursor: grab; touch-action: none; user-select: none; }
 .sp-devctl.is-dragging .sp-devctl-move-handle { cursor: grabbing; }
@@ -142,7 +156,9 @@ function enablePanelMovement(host: HTMLElement) {
 
   function clampPosition(position: PanelPosition): PanelPosition {
     const maxLeft = Math.max(8, window.innerWidth - host.offsetWidth - 8);
-    const maxTop = Math.max(8, window.innerHeight - host.offsetHeight - 8);
+    // Keep the handle reachable; the open body scrolls in the space below it.
+    const handleHeight = handle?.offsetHeight ?? host.offsetHeight;
+    const maxTop = Math.max(8, window.innerHeight - handleHeight - 8);
     return {
       left: Math.min(maxLeft, Math.max(8, position.left)),
       top: Math.min(maxTop, Math.max(8, position.top)),
@@ -153,6 +169,7 @@ function enablePanelMovement(host: HTMLElement) {
     const bounded = clampPosition(position);
     host.style.left = `${bounded.left}px`;
     host.style.top = `${bounded.top}px`;
+    host.style.maxHeight = `calc(100dvh - ${bounded.top}px - 8px)`;
     host.style.right = 'auto';
     host.style.bottom = 'auto';
     return bounded;
@@ -182,6 +199,7 @@ function enablePanelMovement(host: HTMLElement) {
     host.style.removeProperty('top');
     host.style.removeProperty('right');
     host.style.removeProperty('bottom');
+    host.style.removeProperty('max-height');
     try {
       window.localStorage.removeItem(POSITION_STORAGE_KEY);
     } catch {

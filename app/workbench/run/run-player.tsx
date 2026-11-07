@@ -16,6 +16,8 @@ import { motionTime } from '@/lib/motion-time';
 import { SPEEDS, useSlowMotion } from './slow-motion';
 import { ShimmerDirections } from './shimmer-directions';
 import { ThreadProgress } from './thread-progress';
+import { BrunchPlayer, BrunchStages } from './brunch-player';
+import type { ScriptedStage } from './brunch-direct';
 import type { DefinitionSet } from '@/lib/definitions/types';
 import {
   RUN_STAGE_LABELS,
@@ -46,7 +48,16 @@ const STAGE_HOLD_MS: Partial<Record<RunStage, number>> = {
   evaluating: 9000,
 };
 
-const COLUMN = 'bg-surface-primary rounded-shell min-w-0 p-6 max-sm:p-4';
+// A pane, declared as one, so what follows the surface reads the pane's face.
+const COLUMN =
+  'ground-raised bg-surface-primary rounded-shell min-w-0 p-6 max-sm:p-4';
+
+type Process = 'promotion' | 'brunch';
+
+const PROCESSES: { process: Process; label: string }[] = [
+  { process: 'brunch', label: 'Brunch orders · model' },
+  { process: 'promotion', label: 'Promotion release' },
+];
 
 const LOOKS: { look: ThreadLook; label: string }[] = [
   { look: 'current', label: 'Current' },
@@ -58,11 +69,15 @@ const LOOKS: { look: ThreadLook; label: string }[] = [
 export function RunWorkbench({
   thread,
   draft,
+  brunch,
 }: {
   thread: Thread;
   draft: { set: DefinitionSet; names: Record<string, string> };
+  // A Brunch orders run with no rulebook, at every stage (brunch-direct.ts).
+  brunch: { mainLine: ScriptedStage[]; branches: ScriptedStage[] };
 }) {
   const [look, setLook] = useState<ThreadLook>('proposed');
+  const [process, setProcess] = useState<Process>('brunch');
   return (
     <>
       <ThreadProgress look={look} {...draft} />
@@ -70,6 +85,21 @@ export function RunWorkbench({
       <MarkLifecycle />
       <ShimmerDirections />
       <div className="flex flex-wrap items-center gap-3">
+        <p className="readout text-muted" id="process">
+          Process
+        </p>
+        <div role="group" aria-labelledby="process" className="flex gap-2">
+          {PROCESSES.map((option) => (
+            <Button
+              key={option.process}
+              variant={option.process === process ? 'primary' : 'secondary'}
+              aria-pressed={option.process === process}
+              onPress={() => setProcess(option.process)}
+            >
+              {option.label}
+            </Button>
+          ))}
+        </div>
         <p className="readout text-muted" id="look">
           Thread look
         </p>
@@ -86,6 +116,24 @@ export function RunWorkbench({
           ))}
         </div>
       </div>
+      {process === 'brunch' ? (
+        <>
+          <BrunchPlayer stages={brunch.mainLine} look={look} />
+          <BrunchStages
+            stages={[...brunch.mainLine.slice(1), ...brunch.branches]}
+            look={look}
+          />
+        </>
+      ) : (
+        <PromotionRuns thread={thread} look={look} />
+      )}
+    </>
+  );
+}
+
+function PromotionRuns({ thread, look }: { thread: Thread; look: ThreadLook }) {
+  return (
+    <>
       <RunPlayer thread={thread} look={look} />
       <section aria-labelledby="every-stage" className="grid gap-4">
         <h2 id="every-stage" className="text-title font-semibold">

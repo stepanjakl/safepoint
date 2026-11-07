@@ -152,8 +152,7 @@
       visibility: hidden;
     }
   }
-  /* The list comes in with the swap's own fade, never one of its own inside it.
-     A detail column trails it by --detail-hold (useDetailHold); its end
+  /* The detail follows the list's start after the screen settles; its end
      releases the run (RunsDetail). */
   .process-sheet-frame [data-detail-held] {
     animation: process-section-enter var(--duration-pane) var(--ease-out-quad) var(--detail-hold)
@@ -163,6 +162,14 @@
      delayed for a travel a sheet column does not make, would add a second beat. */
   .process-sheet-frame [data-detail-held] .drawer-aside-content {
     animation: none;
+  }
+
+  /* Pause the entrance and its stagger until every surrounding fade ends. */
+  .process-sheet-frame [data-detail-held][data-entrance-held],
+  [data-section-forming][data-entrance-held]
+    :is(.process-panel-list, .process-runs-list)
+    :is(li, p:not(.sr-only)) {
+    animation-play-state: paused;
   }
 
   /* A section forms: each row rises into place after the one above it. The

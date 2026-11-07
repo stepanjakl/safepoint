@@ -15,11 +15,9 @@ import {
 } from '@/components/ui/data-table';
 import { cx } from '@/lib/cx';
 import type { Application, CellChange } from '@/lib/definitions/types';
-import { SUBJECT } from '@/lib/processes/brunch-orders/process';
+import type { DefinitionSubject } from '@/lib/process/model';
 
-import type { Decision } from './propose-step';
-
-const FIELDS = SUBJECT.proposal;
+import type { Decision, Evaluation } from './propose-step';
 
 type NewlyFailing = { id: string; key: string; check: string };
 
@@ -66,16 +64,21 @@ const NO_LONGER_FIT =
   what was written.
 */
 export function ApplyStep({
+  subject,
   text,
   readId,
   rulebook,
+  evaluation = 'rules',
   proposedAt,
   decisions,
   onProgress,
 }: {
+  // The process's subject: what it writes, and to which output.
+  subject: DefinitionSubject;
   text: string;
   readId: string;
   rulebook: string;
+  evaluation?: Evaluation;
   proposedAt: string;
   decisions: Record<string, Decision>;
   onProgress: (progress: ApplyProgress) => void;
@@ -107,7 +110,7 @@ export function ApplyStep({
   };
 
   const request = (action: string, more: Record<string, unknown> = {}) =>
-    run({ action, text, readId, rulebook, ...more });
+    run({ action, text, readId, rulebook, evaluation, ...more });
   const decided = { proposedAt, decisions: toSend(decisions) };
   const askPreview = () => request('preview', decided).then(answer);
 
@@ -116,7 +119,7 @@ export function ApplyStep({
     void askPreview();
     // Whenever the run or what was decided changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text, readId, rulebook, decidedKey]);
+  }, [text, readId, rulebook, evaluation, decidedKey]);
 
   const write = (acknowledged: string[]) => {
     setConfirming(false);
@@ -139,7 +142,7 @@ export function ApplyStep({
   };
 
   const standing = application && STANDS.includes(application.status);
-  const output = SUBJECT.data.output;
+  const output = subject.data.output;
   const count = (kind: Decision['kind']) =>
     Object.values(decisions).filter((d) => d.kind === kind).length;
   const changes = standing ? application.changes : (preview?.changes ?? []);
@@ -175,6 +178,7 @@ export function ApplyStep({
       ) : null}
       {changes.length ? (
         <ChangesTable
+          fields={subject.proposal}
           changes={changes}
           names={preview?.names ?? {}}
           outputKey={output?.key}
@@ -279,11 +283,13 @@ function toSend(decisions: Record<string, Decision>) {
 }
 
 function ChangesTable({
+  fields,
   changes,
   names,
   outputKey,
   written,
 }: {
+  fields: DefinitionSubject['proposal'];
   changes: CellChange[];
   names: Record<string, string>;
   outputKey: string | undefined;
@@ -313,7 +319,7 @@ function ChangesTable({
               >
                 <span className="sr-only">Name</span>
               </th>
-              {FIELDS.map((field) => (
+              {fields.map((field) => (
                 <th
                   key={field.id}
                   scope="col"
@@ -348,7 +354,7 @@ function ChangesTable({
                 >
                   {names[key] ?? null}
                 </td>
-                {FIELDS.map((field) => {
+                {fields.map((field) => {
                   const change = changes.find(
                     (c) => c.key === key && c.field === field.id,
                   );

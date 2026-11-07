@@ -49,6 +49,25 @@ export const SOURCES = [
 
 export type SourceId = (typeof SOURCES)[number]['id'];
 
+/*
+  Where one cell of a source opens, by its kind: a sheet's cell by its tab's
+  id and its A1 address. The source's own link where it cannot be reached.
+*/
+export function cellUrl(
+  kind: SourceKind,
+  url: string,
+  resourceId: number | undefined,
+  cell: string,
+): string {
+  switch (kind) {
+    case 'google-sheets': {
+      if (resourceId === undefined) return url;
+      const base = url.replace(/[?#].*$/, '').replace(/\/(edit)?$/, '');
+      return `${base}/edit#gid=${resourceId}&range=${cell}`;
+    }
+  }
+}
+
 export function sourceById(id: string): SourceDeclaration | undefined {
   return SOURCES.find((source) => source.id === id);
 }

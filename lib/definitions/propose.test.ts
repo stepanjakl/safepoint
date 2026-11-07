@@ -6,10 +6,10 @@ import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-order
 
 import { capturedRead } from './captured.fixture';
 import { always, call, standIn, told } from './models.fixture';
-import { checkProposal, keptProposal, propose } from './propose';
+import { checkProposal, keptProposal, newActivity, propose } from './propose';
 import { inScratchDirectory } from './scratch.fixture';
 import { TEXT } from './set.fixture';
-import { fingerprintOf } from './store';
+import { fingerprintOf, noRules } from './store';
 import { definitionSetSchema } from './types';
 
 // The accepted rulebook the browser tests serve, held to the engine by
@@ -126,10 +126,10 @@ describe('proposing', () => {
     const proposal = await propose(owner, set, read, 'test', TEXT, {
       resolve: () => model,
     });
-    expect(model.doGenerateCalls).toHaveLength(2);
+    expect(model.doStreamCalls).toHaveLength(2);
     // What the try told it, for both records in the one call: the ripe check
     // failing for AV-RR, with its working, and not applying to SD-01.
-    const shown = JSON.stringify(model.doGenerateCalls[1]!.prompt);
+    const shown = JSON.stringify(model.doStreamCalls[1]!.prompt);
     expect(shown).toContain('blocks');
     expect(shown).toMatch(/SD-01[^]*"applies":false/);
     expect(proposal.records['AV-RR']).toMatchObject({
@@ -177,6 +177,93 @@ describe('proposing', () => {
     ).rejects.toThrow(/AV-RR cites Deliveries!G3 is blank/);
   });
 
+  it('proposes with no rulebook from the instructions alone', async () => {
+    const model = standIn(
+      call('submit_proposals', every({ 'AV-RR': avocados })),
+    );
+    const none = noRules(TEXT);
+    const proposal = await propose(owner, none, read, 'test', TEXT, {
+      resolve: () => model,
+    });
+    // Nothing to try values against, and no checks or worked-out values told.
+    const offered = model.doStreamCalls[0]!.tools?.map((t) => t.name);
+    expect(offered).toEqual(['submit_proposals']);
+    expect(told(model)).not.toContain('accepted checks');
+    expect(told(model)).not.toContain('values worked out');
+    expect(told(model)).toContain('A person reviews every proposal');
+    // Code has no checks to run: every verdict is ready, unsure or not.
+    expect(proposal.records['AV-RR']).toMatchObject({
+      values: { order: 50 },
+      verdict: 'ready',
+      checks: [],
+      unsure: avocados.unsure,
+    });
+    expect(await keptProposal(owner, 'test', fingerprintOf(none))).toEqual(
+      proposal,
+    );
+  });
+
+  it('tells a watcher what the model is doing as it works', async () => {
+    const answer = call('submit_proposals', every({ 'AV-RR': avocados }));
+    const thinking = {
+      ...answer,
+      content: [
+        {
+          type: 'reasoning' as const,
+          text: '**Reading the stock**\nAvocados hold 12.\n**Weighing the kit**\nForty kits need forty packs.',
+        },
+        ...answer.content,
+      ],
+    };
+    const activity = newActivity();
+    let changes = 0;
+    await propose(owner, noRules(TEXT), read, 'test', TEXT, {
+      resolve: () => standIn(thinking),
+      watch: { activity, changed: () => changes++ },
+    });
+    expect(activity.model).toBe('gemini-3.6-flash');
+    // The latest section of its thinking, not the whole of it.
+    expect(activity.thought).toBe(
+      '**Weighing the kit**\nForty kits need forty packs.',
+    );
+    // Facts, not words: a page words them in the process's nouns.
+    expect(activity.events).toEqual([
+      expect.objectContaining({ kind: 'asked', model: 'gemini-3.6-flash' }),
+      expect.objectContaining({
+        kind: 'answered',
+        records: KEYS.length,
+        set: 1,
+        leave: KEYS.length - 1,
+        unsure: 1,
+        cited: 1,
+        problems: [],
+      }),
+    ]);
+    expect(activity.tokens.output).toBeGreaterThan(0);
+    expect(changes).toBeGreaterThan(2);
+    // The stream as it came back: the thought whole, the model's call, the
+    // app's answer to it, and the step's finish; nothing that was sent.
+    const parts = activity.stream!.map(
+      ({ from, part }) => `${from}:${part.type}`,
+    );
+    expect(parts).toEqual(
+      expect.arrayContaining([
+        'model:reasoning-start',
+        'model:tool-call',
+        'app:tool-result',
+        'model:finish-step',
+      ]),
+    );
+    const thought = activity.stream!.find(
+      (p) => p.part.type === 'reasoning-start',
+    );
+    expect(thought?.part.text).toContain('Forty kits need forty packs.');
+    expect(
+      activity.stream!.find((p) => p.part.type === 'tool-call')?.part,
+    ).toMatchObject({ toolName: 'submit_proposals' });
+    expect(JSON.stringify(activity.stream)).not.toContain('"request"');
+  });
+
   it('asks in batches, and again only for what a stopped one missed', async () => {
     const first = KEYS.slice(0, 6).map(leave);
     const second = KEYS.slice(6).map(leave);
@@ -195,7 +282,7 @@ describe('proposing', () => {
       resolve: () => rest,
       batch: 6,
     });
-    expect(rest.doGenerateCalls).toHaveLength(1);
+    expect(rest.doStreamCalls).toHaveLength(1);
     expect(told(rest)).not.toContain('Sourdough');
     expect(Object.keys(proposal.records)).toEqual(KEYS);
   });

@@ -1,5 +1,69 @@
 import { expect, test } from '@playwright/test';
 
+test('moved design controls scroll within the remaining viewport height', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 800, height: 600 });
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      'safepoint.dev.controls-position',
+      JSON.stringify({ left: 100, top: 300 }),
+    );
+  });
+  await page.goto('/examples/promotion?run=run-104');
+  const panel = page.locator('.sp-devctl');
+  const toggle = panel.getByRole('button', { name: 'Design controls' });
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect
+    .poll(() =>
+      panel.evaluate((element) => element.getBoundingClientRect().bottom),
+    )
+    .toBeLessThanOrEqual(592);
+  const body = panel.locator('.tp-rotv > .tp-rotv_c');
+  const headerTop = await toggle.evaluate(
+    (element) => element.getBoundingClientRect().top,
+  );
+  await body.hover();
+  await page.mouse.wheel(0, 1000);
+  await expect
+    .poll(() => body.evaluate((element) => element.scrollTop))
+    .toBeGreaterThan(0);
+  await expect(
+    panel.getByRole('button', { name: 'Reset defaults' }),
+  ).toBeInViewport();
+  await expect(toggle).toBeInViewport();
+  expect(
+    await toggle.evaluate((element) => element.getBoundingClientRect().top),
+  ).toBe(headerTop);
+
+  const header = await toggle.boundingBox();
+  if (!header) throw new Error('Design controls header has no bounds');
+  const grip = {
+    x: header.x + header.width / 2,
+    y: header.y + header.height / 2,
+  };
+  await page.mouse.move(grip.x, grip.y);
+  await page.mouse.down();
+  await page.mouse.move(grip.x, grip.y + 150, { steps: 8 });
+  await page.mouse.up();
+  await expect
+    .poll(() =>
+      toggle.evaluate((element) => element.getBoundingClientRect().top),
+    )
+    .toBe(headerTop + 150);
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await toggle.focus();
+  await page.keyboard.press('ArrowDown');
+  await expect
+    .poll(() =>
+      toggle.evaluate((element) => element.getBoundingClientRect().top),
+    )
+    .toBe(headerTop + 166);
+  await expect(toggle).toBeInViewport();
+});
+
 test('design controls can be moved, persisted, and reset', async ({ page }) => {
   await page.goto('/examples/promotion?run=run-104');
   await page.evaluate(() =>

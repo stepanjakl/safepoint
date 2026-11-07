@@ -71,16 +71,40 @@ const callOptions = (
 
 export type CallOptions = ReturnType<typeof callOptions>;
 
+// Told as each model is asked, and as one is passed over as busy.
+export type ModelTell = (
+  event:
+    | { kind: 'asking'; model: DraftingModel }
+    | {
+        kind: 'busy';
+        model: DraftingModel;
+        why: 'quota' | 'slow' | 'unavailable';
+        until?: string;
+        status?: number;
+      },
+) => void;
+
 export async function withModels<R>(
   models: DraftingModel[],
   name: string,
   resolve: Resolve,
   call: (model: LanguageModel, options: CallOptions) => Promise<R>,
+  tell?: ModelTell,
 ): Promise<{ value: R; model: DraftingModel }> {
   const telemetry = await devtools(name);
   let last: unknown = null;
   for (const model of models) {
-    if (restingUntil(model)) continue;
+    const resting = restingUntil(model);
+    if (resting) {
+      tell?.({
+        kind: 'busy',
+        model,
+        why: 'quota',
+        until: new Date(resting).toISOString(),
+      });
+      continue;
+    }
+    tell?.({ kind: 'asking', model });
     try {
       return {
         value: await call(resolve(model), callOptions(model, telemetry, name)),
@@ -89,15 +113,27 @@ export async function withModels<R>(
     } catch (error) {
       last = error;
       // Too slow to answer in time is busy too: the next model, at once.
-      if (timedOut(error)) continue;
+      if (timedOut(error)) {
+        tell?.({ kind: 'busy', model, why: 'slow' });
+        continue;
+      }
       const cause = RetryError.isInstance(error) ? error.lastError : error;
       if (!APICallError.isInstance(cause)) throw error;
       const status = cause.statusCode ?? 0;
       if (status === 429) {
         rest(model, quotaOf(cause).retryAfterMs ?? 3_600_000);
+        tell?.({
+          kind: 'busy',
+          model,
+          why: 'quota',
+          until: new Date(restingUntil(model) ?? Date.now()).toISOString(),
+        });
         continue;
       }
-      if (status >= 500) continue;
+      if (status >= 500) {
+        tell?.({ kind: 'busy', model, why: 'unavailable', status });
+        continue;
+      }
       throw error;
     }
   }

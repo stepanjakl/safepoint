@@ -2,9 +2,8 @@
 
 import ArrowUpRight from 'blode-icons-react/icons/arrow-up-right';
 import ChevronTriangleDown from 'blode-icons-react/icons/chevron-triangle-down-small-filled';
-import ChainLink1Filled from 'blode-icons-react/icons/chain-link-1-filled';
 import TableFilled from 'blode-icons-react/icons/table-filled';
-import { useContext, useId, useState } from 'react';
+import { useContext, useEffect, useId, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 
 import { ProcessSheetActions } from '@/components/app-shell/process/process-sheet';
@@ -27,14 +26,21 @@ import {
   DATA_TABLE_NAME,
   DataTable,
 } from '@/components/ui/data-table';
+import { ExternalLink } from '@/components/ui/external-link';
 import { Fold } from '@/components/ui/fold';
 import { cx } from '@/lib/cx';
 import type { ProcessStep, ProcessSummary } from '@/lib/process/model';
-import { COMING, ORDER_STEPS } from '@/lib/processes/brunch-orders/process';
+import {
+  COMING,
+  ORDER_STEPS,
+  SHEET_USE,
+  SUBJECT,
+} from '@/lib/processes/brunch-orders/process';
+import { SOURCE_KINDS, sourceById, type SourceKind } from '@/lib/sources/model';
 
 import { ApplyStep, type ApplyProgress } from './apply-step';
 import { CalculateStep, type CalculateProgress } from './calculate-step';
-import { DataDrawer } from './data-drawer';
+import { DataDrawer, type DataTabs } from './data-drawer';
 import { ProposeStep, type ProposeProgress } from './propose-step';
 import { RulesStep, type RulesProgress } from './rules-step';
 
@@ -72,6 +78,8 @@ type ReadResponse =
 // (`.release-list`, `.release-row-arrow` in release-card.css). Header and rows share its columns.
 // A tab's rows as the drawer counts them: the header row is not one.
 const dataRows = (rows: number) => Math.max(0, rows - 1);
+const capitalised = (word: string) =>
+  word.charAt(0).toUpperCase() + word.slice(1);
 const READ_TABLE = 'grid grid-cols-[minmax(0,1fr)_auto] gap-x-3';
 const READ_GRID = 'col-span-full grid grid-cols-subgrid items-center px-4';
 const READ_ROW = cx(
@@ -262,6 +270,7 @@ export function OrdersRun({ process }: { process: ProcessSummary }) {
                 >
                   {(text) => (
                     <ProposeStep
+                      subject={SUBJECT}
                       text={text}
                       readId={read.id}
                       rulebook={calculated.fingerprint}
@@ -287,6 +296,7 @@ export function OrdersRun({ process }: { process: ProcessSummary }) {
                 >
                   {(text) => (
                     <ApplyStep
+                      subject={SUBJECT}
                       text={text}
                       readId={read.id}
                       rulebook={calculated.fingerprint}
@@ -372,7 +382,7 @@ function RunCalculate({
 }
 
 // The text of the instructions the run answers to, for a step that needs it.
-function WithText({
+export function WithText({
   process,
   version,
   children,
@@ -394,7 +404,7 @@ function WithText({
 
 // The instructions the run started under, as its request: the run answers to
 // exactly this version, whatever is published after it.
-function Instructions({
+export function Instructions({
   process,
   version,
 }: {
@@ -403,42 +413,52 @@ function Instructions({
 }) {
   const { versions } = useInstructions(process.id, process.instructions);
   const text = versions.find((v) => v.version === version)?.text;
+  return text ? (
+    <InstructionsText text={text} />
+  ) : (
+    <RequestBubble>
+      <p>Instructions {version} are not in this browser any more.</p>
+    </RequestBubble>
+  );
+}
+
+// Instructions as a request: each section's first line is its title.
+export function InstructionsText({ text }: { text: string }) {
   return (
     <RequestBubble>
-      {text ? (
-        <div className="grid gap-3">
-          {text.split(/\n\s*\n/).map((section, i) => {
-            // A section's first line is its title, when it has more.
-            const [first, ...rest] = section.split('\n');
-            return rest.length ? (
-              <div key={i} className="grid gap-1">
-                <p className="font-semibold">{first}</p>
-                <p className="whitespace-pre-line">{rest.join('\n')}</p>
-              </div>
-            ) : (
-              <p key={i}>{section}</p>
-            );
-          })}
-        </div>
-      ) : (
-        <p>Instructions {version} are not in this browser any more.</p>
-      )}
+      <div className="grid gap-3">
+        {text.split(/\n\s*\n/).map((section, i) => {
+          // A section's first line is its title, when it has more.
+          const [first, ...rest] = section.split('\n');
+          return rest.length ? (
+            <div key={i} className="grid gap-1">
+              <p className="font-semibold">{first}</p>
+              <p className="whitespace-pre-line">{rest.join('\n')}</p>
+            </div>
+          ) : (
+            <p key={i}>{section}</p>
+          );
+        })}
+      </div>
     </RequestBubble>
   );
 }
 
 // Reads the sheet's data tabs once for this run, then waits: the data can be
 // looked at in the drawer, and every later step will use this read.
-function ReadStep({
+// Automatic, it reads the live sheet as soon as it is drawn, with no setup.
+export function ReadStep({
   read,
   onRead,
   revealing,
   onRevealed,
+  automatic = false,
 }: {
   read: RunRead | undefined;
   onRead: (read: RunRead) => void;
   revealing: boolean;
   onRevealed: () => void;
+  automatic?: boolean;
 }) {
   const reading = useTrial<ReadResponse>('/api/dev/brunch-orders/read');
   const [source, setSource] = useState<'captured' | 'live'>('captured');
@@ -447,224 +467,303 @@ function ReadStep({
     reading.state.kind === 'done' && reading.state.body.kind === 'error'
       ? reading.state.body.message
       : null;
-  const googleSheets = read?.url?.startsWith(
-    'https://docs.google.com/spreadsheets/',
-  );
-  const sourceName = read?.title || read?.url;
   // Shut until asked for, except for the read just taken, which opens to show it.
   const [open, setOpen] = useState(false);
-  const cardId = useId();
+  const readFrom = (from: 'captured' | 'live') =>
+    void reading.run({ action: 'read', source: from }).then((response) => {
+      if (response?.kind !== 'kept') return;
+      setOpen(true);
+      onRead({
+        id: response.id,
+        readAt: response.readAt,
+        source: response.source,
+        title: response.spreadsheet.title,
+        url: response.spreadsheet.url,
+        tabIds: response.spreadsheet.tabIds,
+        tabs: response.tabs,
+        problems: response.problems,
+      });
+    });
+  // Once per run: a remount (Strict Mode's included) keeps the ref.
+  const asked = useRef(false);
+  useEffect(() => {
+    if (!automatic || read || asked.current) return;
+    asked.current = true;
+    readFrom('live');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [automatic, read]);
+  const unreadable =
+    reading.state.kind === 'failed' ? reading.state.message : failed;
   return (
     <div className="grid gap-4">
-      <section
-        aria-label="Read setup"
-        className="brunch-trial rounded-shell grid gap-4 p-4"
-      >
-        <Lede>
-          Reads the sheet&rsquo;s data tabs once. Every later step of this run
-          uses this read. Nothing is written to the sheet.
-        </Lede>
-        <fieldset className="flex flex-wrap items-center gap-x-5 gap-y-1">
-          <legend className="text-meta text-muted mb-1">Read from</legend>
-          <label className="text-dense flex items-center gap-1.5">
-            <input
-              type="radio"
-              name={`${name}-source`}
-              checked={source === 'captured'}
-              onChange={() => setSource('captured')}
-            />
-            The captured read (no network)
-          </label>
-          <label className="text-dense flex items-center gap-1.5">
-            <input
-              type="radio"
-              name={`${name}-source`}
-              checked={source === 'live'}
-              onChange={() => setSource('live')}
-            />
-            The live sheet, through Composio
-          </label>
-        </fieldset>
-        <TrialControl
-          label="Read the sheet"
-          runningLabel="Reading…"
-          variant={read ? 'secondary' : 'primary'}
-          idle={read ? 'This run’s read is below.' : 'Waiting for you to read.'}
-          state={reading.state}
-          onRun={() =>
-            void reading.run({ action: 'read', source }).then((response) => {
-              if (response?.kind !== 'kept') return;
-              setOpen(true);
-              onRead({
-                id: response.id,
-                readAt: response.readAt,
-                source: response.source,
-                title: response.spreadsheet.title,
-                url: response.spreadsheet.url,
-                tabIds: response.spreadsheet.tabIds,
-                tabs: response.tabs,
-                problems: response.problems,
-              });
-            })
-          }
-          summary={failed ?? (read ? `${read.tabs.length} tabs` : null)}
-        />
-        {read ? (
-          <p className="text-meta text-muted break-words">{read.source}</p>
-        ) : null}
-        {read?.problems?.length ? (
-          <div role="alert" className="grid gap-1">
-            <p className="text-dense">
-              The sheet does not fit what this process reads, so no rules are
-              drafted on it. Fix the sheet and read it again:
+      {automatic ? (
+        <>
+          {read ? null : unreadable ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <p role="alert" className="text-dense text-state-blocked">
+                {unreadable}
+              </p>
+              <Button size="medium" onPress={() => readFrom('live')}>
+                Read again
+              </Button>
+            </div>
+          ) : (
+            <p role="status" className="text-dense text-muted">
+              Reading the sheet…
             </p>
-            <ul className="text-dense list-disc pl-5">
-              {read.problems.map((problem) => (
-                <li key={problem}>{problem}</li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-      </section>
+          )}
+          {read?.problems?.length ? (
+            <div role="alert" className="grid gap-1">
+              <p className="text-dense">
+                The sheet does not fit what this process reads, so nothing is
+                proposed on it. Fix the sheet and start a new run:
+              </p>
+              <ul className="text-dense list-disc pl-5">
+                {read.problems.map((problem) => (
+                  <li key={problem}>{problem}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </>
+      ) : (
+        <section
+          aria-label="Read setup"
+          className="brunch-trial rounded-shell grid gap-4 p-4"
+        >
+          <Lede>
+            Reads the sheet&rsquo;s data tabs once. Every later step of this run
+            uses this read. Nothing is written to the sheet.
+          </Lede>
+          <fieldset className="flex flex-wrap items-center gap-x-5 gap-y-1">
+            <legend className="text-meta text-muted mb-1">Read from</legend>
+            <label className="text-dense flex items-center gap-1.5">
+              <input
+                type="radio"
+                name={`${name}-source`}
+                checked={source === 'captured'}
+                onChange={() => setSource('captured')}
+              />
+              The captured read (no network)
+            </label>
+            <label className="text-dense flex items-center gap-1.5">
+              <input
+                type="radio"
+                name={`${name}-source`}
+                checked={source === 'live'}
+                onChange={() => setSource('live')}
+              />
+              The live sheet, through Composio
+            </label>
+          </fieldset>
+          <TrialControl
+            label="Read the sheet"
+            runningLabel="Reading…"
+            variant={read ? 'secondary' : 'primary'}
+            idle={
+              read ? 'This run’s read is below.' : 'Waiting for you to read.'
+            }
+            state={reading.state}
+            onRun={() => readFrom(source)}
+            summary={failed ?? (read ? `${read.tabs.length} tabs` : null)}
+          />
+          {read ? (
+            <p className="text-meta text-muted break-words">{read.source}</p>
+          ) : null}
+          {read?.problems?.length ? (
+            <div role="alert" className="grid gap-1">
+              <p className="text-dense">
+                The sheet does not fit what this process reads, so no rules are
+                drafted on it. Fix the sheet and read it again:
+              </p>
+              <ul className="text-dense list-disc pl-5">
+                {read.problems.map((problem) => (
+                  <li key={problem}>{problem}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </section>
+      )}
       {read ? (
-        <div className="brunch-read" data-open={open || undefined}>
-          <button
-            type="button"
-            className="brunch-read-head group/head"
-            aria-expanded={open}
-            aria-controls={cardId}
-            onClick={() => setOpen(!open)}
-          >
-            <TableFilled aria-hidden className="brunch-read-icon" />
-            <span className="brunch-read-name">
-              {googleSheets ? 'Google Sheets' : 'Sheet'}
-            </span>
-            <span className="thread-step-fact brunch-read-count">
-              {read.tabs.length} tabs
-            </span>
-            <span
-              data-severity={3}
-              className="thread-step-fact brunch-read-done bg-severity-pill text-severity-ink group-hover/head:bg-severity-pill-hover group-hover/head:text-severity-strong group-focus-visible/head:bg-severity-pill-hover group-focus-visible/head:text-severity-strong"
-            >
-              Read · {dateTime(read.readAt)}
-            </span>
-            <ChevronTriangleDown aria-hidden className="brunch-read-chevron" />
-          </button>
-          <Fold open={open} id={cardId} className="pt-2">
-            <DataTable
-              as="article"
-              aria-label="Sheet read"
-              data-revealing={revealing || undefined}
-              className="brunch-read-card"
-            >
-              <DataDrawer readId={read.id}>
-                {(view) => (
-                  <>
-                    <div className={READ_TABLE}>
-                      <div
-                        aria-hidden
-                        className={cx(
-                          READ_GRID,
-                          DATA_TABLE_HEAD,
-                          'brunch-read-enter',
-                        )}
-                      >
-                        <span>Tab</span>
-                        <span className="justify-self-end">Rows</span>
-                      </div>
-                      <ul
-                        aria-label="Data tabs read"
-                        className="release-list brunch-read-rows col-span-full grid grid-cols-subgrid"
-                      >
-                        {read.tabs.map((tab, index) => (
-                          <li
-                            key={tab.name}
-                            className="brunch-read-enter col-span-full grid grid-cols-subgrid"
-                            style={
-                              {
-                                '--brunch-read-index': index + 1,
-                              } as CSSProperties
-                            }
-                          >
-                            <button
-                              type="button"
-                              className={READ_ROW}
-                              aria-label={`${tab.name}, ${tab.rows ? `${dataRows(tab.rows)} rows` : 'not in the sheet'}. View its data.`}
-                              onClick={() => view(tab.name)}
-                            >
-                              <span
-                                className={cx(
-                                  'release-row-subject truncate',
-                                  DATA_TABLE_NAME,
-                                )}
-                              >
-                                {tab.name}
-                              </span>
-                              {tab.rows ? (
-                                <span className="release-row-pill release-row-trail justify-self-end">
-                                  <span>{dataRows(tab.rows)}</span>
-                                </span>
-                              ) : (
-                                <span className="release-row-trail text-meta text-muted justify-self-end">
-                                  Not in the sheet
-                                </span>
-                              )}
-                              <span
-                                aria-hidden="true"
-                                className="release-row-arrow"
-                              >
-                                <ArrowUpRight size={14} strokeWidth={2} />
-                              </span>
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <footer
-                      className="brunch-read-enter flex flex-wrap items-center justify-between gap-3 px-4 py-3.5"
-                      style={
-                        {
-                          '--brunch-read-index': read.tabs.length + 1,
-                        } as CSSProperties
-                      }
-                      onAnimationEnd={(event) => {
-                        if (event.target === event.currentTarget) onRevealed();
-                      }}
-                    >
-                      <Button size="medium" onPress={() => view()}>
-                        View data
-                        <ArrowUpRight
-                          aria-hidden
-                          size={14}
-                          strokeWidth={2}
-                          className="text-muted flex-none"
-                        />
-                      </Button>
-                      {read.url ? (
-                        <a
-                          href={read.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          title={sourceName ?? undefined}
-                          className="external-link text-meta inline-flex items-center gap-1.5 font-medium"
-                        >
-                          Open in {googleSheets ? 'Google Sheets' : 'the sheet'}
-                          <ChainLink1Filled
-                            aria-hidden
-                            size={14}
-                            className="flex-none"
-                          />
-                          <span className="sr-only"> (opens in a new tab)</span>
-                        </a>
-                      ) : null}
-                    </footer>
-                  </>
-                )}
-              </DataDrawer>
-            </DataTable>
-          </Fold>
-        </div>
+        <SheetReadCard
+          kind={sourceById(SHEET_USE.source)?.kind ?? 'google-sheets'}
+          read={read}
+          open={open}
+          onOpenChange={setOpen}
+          revealing={revealing}
+          onRevealed={onRevealed}
+        />
       ) : null}
+    </div>
+  );
+}
+
+/*
+  The run's read of a source as a card: its resources (a sheet's tabs) and
+  their rows, folded open for the read just taken, with the data one press
+  away. Without a read yet, only its head, saying it is being read. What the
+  source and its parts are called comes from its kind (lib/sources).
+*/
+export function SheetReadCard({
+  kind,
+  read,
+  open,
+  onOpenChange,
+  revealing = false,
+  onRevealed = () => undefined,
+  data,
+}: {
+  kind: SourceKind;
+  read: RunRead | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  revealing?: boolean;
+  onRevealed?: () => void;
+  // The tabs' values, where they are at hand rather than fetched by id.
+  data?: DataTabs;
+}) {
+  const cardId = useId();
+  const source = SOURCE_KINDS[kind];
+  const { singular, plural } = source.resource;
+  if (!read)
+    return (
+      <div className="brunch-read">
+        <div className="brunch-read-head" data-reading>
+          <TableFilled aria-hidden className="brunch-read-icon" />
+          <span className="brunch-read-name">{source.name}</span>
+          <span className="thread-step-fact brunch-read-count">Reading…</span>
+        </div>
+      </div>
+    );
+  const sourceName = read.title || read.url;
+  const setOpen = onOpenChange;
+  return (
+    <div className="brunch-read" data-open={open || undefined}>
+      <button
+        type="button"
+        className="brunch-read-head group/head"
+        aria-expanded={open}
+        aria-controls={cardId}
+        onClick={() => setOpen(!open)}
+      >
+        <TableFilled aria-hidden className="brunch-read-icon" />
+        <span className="brunch-read-name">{source.name}</span>
+        <span className="thread-step-fact brunch-read-count">
+          {read.tabs.length} {read.tabs.length === 1 ? singular : plural}
+        </span>
+        <span
+          data-severity={3}
+          className="thread-step-fact brunch-read-done bg-severity-pill text-severity-ink group-hover/head:bg-severity-pill-hover group-hover/head:text-severity-strong group-focus-visible/head:bg-severity-pill-hover group-focus-visible/head:text-severity-strong"
+        >
+          Read · {dateTime(read.readAt)}
+        </span>
+        <ChevronTriangleDown aria-hidden className="brunch-read-chevron" />
+      </button>
+      <Fold open={open} id={cardId} className="pt-2">
+        <DataTable
+          as="article"
+          aria-label="Sheet read"
+          data-revealing={revealing || undefined}
+          className="brunch-read-card"
+        >
+          <DataDrawer readId={read.id} preloaded={data}>
+            {(view) => (
+              <>
+                <div className={READ_TABLE}>
+                  <div
+                    aria-hidden
+                    className={cx(
+                      READ_GRID,
+                      DATA_TABLE_HEAD,
+                      'brunch-read-enter',
+                    )}
+                  >
+                    <span>{capitalised(singular)}</span>
+                    <span className="justify-self-end">Rows</span>
+                  </div>
+                  <ul
+                    aria-label="Data tabs read"
+                    className="release-list brunch-read-rows col-span-full grid grid-cols-subgrid"
+                  >
+                    {read.tabs.map((tab, index) => (
+                      <li
+                        key={tab.name}
+                        className="brunch-read-enter col-span-full grid grid-cols-subgrid"
+                        style={
+                          {
+                            '--brunch-read-index': index + 1,
+                          } as CSSProperties
+                        }
+                      >
+                        <button
+                          type="button"
+                          className={READ_ROW}
+                          aria-label={`${tab.name}, ${tab.rows ? `${dataRows(tab.rows)} rows` : `not in the ${source.noun}`}. View its data.`}
+                          onClick={() => view(tab.name)}
+                        >
+                          <span
+                            className={cx(
+                              'release-row-subject truncate',
+                              DATA_TABLE_NAME,
+                            )}
+                          >
+                            {tab.name}
+                          </span>
+                          {tab.rows ? (
+                            <span className="release-row-pill release-row-trail justify-self-end">
+                              <span>{dataRows(tab.rows)}</span>
+                            </span>
+                          ) : (
+                            <span className="release-row-trail text-meta text-muted justify-self-end">
+                              Not in the {source.noun}
+                            </span>
+                          )}
+                          <span
+                            aria-hidden="true"
+                            className="release-row-arrow"
+                          >
+                            <ArrowUpRight size={14} strokeWidth={2} />
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <footer
+                  className="brunch-read-enter flex flex-wrap items-center justify-between gap-3 px-4 py-3.5"
+                  style={
+                    {
+                      '--brunch-read-index': read.tabs.length + 1,
+                    } as CSSProperties
+                  }
+                  onAnimationEnd={(event) => {
+                    if (event.target === event.currentTarget) onRevealed();
+                  }}
+                >
+                  <Button size="medium" onPress={() => view()}>
+                    View data
+                    <ArrowUpRight
+                      aria-hidden
+                      size={14}
+                      strokeWidth={2}
+                      className="text-muted flex-none"
+                    />
+                  </Button>
+                  {read.url ? (
+                    <ExternalLink
+                      href={read.url}
+                      title={sourceName ?? undefined}
+                    >
+                      {source.open}
+                    </ExternalLink>
+                  ) : null}
+                </footer>
+              </>
+            )}
+          </DataDrawer>
+        </DataTable>
+      </Fold>
     </div>
   );
 }

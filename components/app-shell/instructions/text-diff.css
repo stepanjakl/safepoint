@@ -10,6 +10,11 @@
   --color-diff-removed-sign: var(--sp-diff-removed-sign);
 }
 
+@utility diff-clause-row {
+  @apply clause-row;
+  grid-template-columns: var(--clause-gutter) --spacing(6) minmax(0, 1fr);
+}
+
 :root {
   --sp-diff-added: var(--sp-state-verified-3);
   --sp-diff-removed: var(--sp-state-blocked-3);

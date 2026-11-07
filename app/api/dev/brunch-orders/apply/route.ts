@@ -10,19 +10,18 @@ import {
 } from '@/lib/definitions/apply';
 import { keptProposal } from '@/lib/definitions/propose';
 import { namesOf } from '@/lib/definitions/records';
-import { fingerprintOf, loadRevision, loadSet } from '@/lib/definitions/store';
-import { staleness } from '@/lib/definitions/fits';
+import { fingerprintOf } from '@/lib/definitions/store';
 import { rejectUnlessLocalDevelopment } from '@/lib/dev/dev-route';
-import {
-  BRUNCH_ORDERS_DEFINITIONS as owner,
-  brunchOrdersProcess,
-} from '@/lib/processes/brunch-orders/process';
 import {
   keptRead,
   liveSheet,
   READ_GONE,
   whyNotWritable,
 } from '@/lib/processes/brunch-orders/reads';
+import {
+  evaluationSchema,
+  rulebookFor,
+} from '@/lib/processes/brunch-orders/rulebook';
 
 export const runtime = 'nodejs';
 
@@ -30,6 +29,7 @@ const run = {
   text: z.string().min(1).max(20_000),
   readId: z.string().regex(/^[\w-]{1,80}$/),
   rulebook: z.string().regex(/^[0-9a-f]{12}$/),
+  evaluation: evaluationSchema,
 };
 const decided = {
   // The proposal the decisions were made on, which may have been replaced.
@@ -73,14 +73,15 @@ export async function POST(request: Request) {
     );
   const body = parsed.data;
   try {
-    const current = await loadSet(owner, body.text);
-    if (!current) throw new Error('No rules are kept for these instructions.');
     const read = await keptRead(body.readId);
     if (!read) throw new Error(READ_GONE);
-    const set =
-      (await loadRevision(owner, body.text, body.rulebook)) ?? current;
+    const { owner, set, stale, published } = await rulebookFor(
+      body.evaluation,
+      body.text,
+      body.rulebook,
+      read,
+    );
     const fingerprint = fingerprintOf(set);
-    const stale = staleness(owner, body.text, set, current, read);
     if (stale)
       return Response.json({ kind: 'stale', ...stale }, { status: 409 });
     const cannotReach = whyNotWritable(read);
@@ -104,7 +105,7 @@ export async function POST(request: Request) {
 
     // An earlier version's rules may lack ones added since, so it cannot write.
     const notWritable =
-      body.text === brunchOrdersProcess.instructions.text
+      body.text === published
         ? cannotReach
         : 'This run answers to an earlier version of the instructions. Start a new run to write to the sheet.';
     const proposal = await keptProposal(owner, read.id, fingerprint);

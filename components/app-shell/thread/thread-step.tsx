@@ -14,7 +14,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { MorphingText } from '@/components/ui/morphing-text';
+import { MORPH_WORDS_MS, MorphingText } from '@/components/ui/morphing-text';
 // Deep imports, as in menu-parts.tsx: the barrel is the whole library.
 import ArrowUpRight from 'blode-icons-react/icons/arrow-up-right';
 import ChevronTriangleDown from 'blode-icons-react/icons/chevron-triangle-down-small-filled';
@@ -304,7 +304,7 @@ function StepLink({
 }) {
   const content = (
     <>
-      {label}
+      <MorphingText text={label} duration={MORPH_WORDS_MS} />
       <ArrowUpRight
         aria-hidden
         size={12}
@@ -401,10 +401,14 @@ export function ThreadStep({
   reference,
   headingAction,
   onBusy,
+  keepOpen = false,
   children,
 }: {
   step: ProcessStep;
   latest?: boolean;
+  // A demo's thread, where a finished step stays open rather than folding to
+  // its name; the reader can still fold it.
+  keepOpen?: boolean;
   // The newest step drawn, whose name stays bright: unlike `latest`, it moves
   // on only when the next step has actually arrived. A thread that does not
   // hold steps back can leave it to `latest`.
@@ -477,7 +481,7 @@ export function ThreadStep({
     observer.observe(body);
     return () => observer.disconnect();
   }, []);
-  const earned = earnsOpen(step, latest);
+  const earned = keepOpen || earnsOpen(step, latest);
   const [open, setOpen] = useState(earned);
   const [settled, setSettled] = useState(earned);
   // Opened by the reader rather than by the run: it stays open as the run
@@ -635,13 +639,19 @@ export function ThreadStep({
         <button
           type="button"
           className="thread-step-heading-action"
-          aria-label={`${row.name} ${headingAction.label}. ${step.origin ? 'Requested' : STEP_STATUS_LABELS[step.status]}.`}
+          aria-label={`${row.name} ${headingAction.label}${row.label ? `, ${row.label}` : ''}. ${step.origin ? 'Requested' : STEP_STATUS_LABELS[step.status]}.`}
           onClick={headingAction.onPress}
         >
           <span className="thread-marker">{marker(true)}</span>
           <span className="thread-step-heading-content">
             <span className="thread-step-heading-name">{row.name}</span>
             <StepLink label={headingAction.label} inHeading />
+            {/* Its fact still stands beside the link: when it was asked. */}
+            {row.label ? (
+              <span className="thread-step-fact">
+                <MorphingText text={row.label} duration={MORPH_WORDS_MS} />
+              </span>
+            ) : null}
           </span>
         </button>
       ) : (
@@ -675,7 +685,7 @@ export function ThreadStep({
             <span className="thread-step-facts">
               {row.label ? (
                 <span className="thread-step-fact">
-                  <MorphingText text={row.label} duration={360} />
+                  <MorphingText text={row.label} duration={MORPH_WORDS_MS} />
                 </span>
               ) : null}
               {/* Its own pill, in the step's tone: the part of the fact that is
@@ -689,7 +699,7 @@ export function ThreadStep({
                     data-motion={flag.motion}
                     onClick={flagAction.onPress}
                   >
-                    {flag.text}
+                    <MorphingText text={flag.text} duration={MORPH_WORDS_MS} />
                     <ArrowUpRight
                       aria-hidden
                       size={12}
@@ -707,7 +717,7 @@ export function ThreadStep({
                         setFlag(null);
                     }}
                   >
-                    {flag.text}
+                    <MorphingText text={flag.text} duration={MORPH_WORDS_MS} />
                   </span>
                 )
               ) : null}
@@ -715,7 +725,12 @@ export function ThreadStep({
                 reference.action ? (
                   <StepLink label={reference.label} action={reference.action} />
                 ) : (
-                  <span className="thread-step-fact">{reference.label}</span>
+                  <span className="thread-step-fact">
+                    <MorphingText
+                      text={reference.label}
+                      duration={MORPH_WORDS_MS}
+                    />
+                  </span>
                 )
               ) : null}
             </span>

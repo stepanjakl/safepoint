@@ -1,4 +1,4 @@
-import { generateText, isStepCount, tool, ToolChoiceViolationError } from 'ai';
+import { isStepCount, streamText, tool, ToolChoiceViolationError } from 'ai';
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { z } from 'zod';
@@ -25,6 +25,10 @@ import type {
   DefinitionSet,
   DraftProgress,
   Proposal,
+  AnswerProblem,
+  ProposalActivity,
+  ProposalEvent,
+  StreamedPart,
   Verdict,
 } from './types';
 import { applies, stepsFor } from './working';
@@ -113,23 +117,56 @@ export function checkProposal(
 
 // A cell the model cites, as a person finds it: Stock!B3. Or why it is none.
 type Cite = { tab: string; row: number; column: string };
-function cellCited(read: KeptRead, cite: Cite): string | { problem: string } {
+type CiteProblem = DistributiveOmit<
+  Extract<AnswerProblem, { kind: 'no-tab' | 'no-column' | 'no-row' | 'blank' }>,
+  'key'
+>;
+function cellCited(read: KeptRead, cite: Cite): string | CiteProblem {
   const tab = read.tabs.find((t) => t.name === cite.tab);
-  if (!tab) return { problem: `${cite.tab} is not a tab of the data` };
+  if (!tab) return { kind: 'no-tab', tab: cite.tab };
   const header = (tab.values[0] ?? []).map(String);
   const column = header.indexOf(cite.column);
   if (column < 0)
-    return { problem: `${cite.tab} has no ${cite.column} column` };
+    return { kind: 'no-column', tab: cite.tab, column: cite.column };
   // Rows as the data shows them: the header is row 1.
   const values = tab.values[cite.row - 1];
   if (cite.row < 2 || !values)
-    return { problem: `${cite.tab} has no data row ${cite.row}` };
+    return { kind: 'no-row', tab: cite.tab, row: cite.row };
   const raw = values[column];
   if (raw === undefined || raw === null || raw === '')
-    return {
-      problem: `${cellOf(cite.tab, column, cite.row - 1)} is blank`,
-    };
+    return { kind: 'blank', cell: cellOf(cite.tab, column, cite.row - 1) };
   return cellOf(cite.tab, column, cite.row - 1);
+}
+
+/*
+  The problems as the model is told them, one sentence each, the records
+  left out last and together. A page words the same facts its own way.
+*/
+function problemSentences(problems: AnswerProblem[]): string[] {
+  const unanswered = problems
+    .filter((p) => p.kind === 'unanswered')
+    .map((p) => p.key);
+  return [
+    ...problems.flatMap((p) => {
+      switch (p.kind) {
+        case 'unanswered':
+          return [];
+        case 'twice':
+          return [`${p.key} is answered twice`];
+        case 'no-values':
+          return [`${p.key} sets no values`];
+        case 'no-tab':
+          return [`${p.key} cites ${p.tab} is not a tab of the data`];
+        case 'no-column':
+          return [`${p.key} cites ${p.tab} has no ${p.column} column`];
+        case 'no-row':
+          return [`${p.key} cites ${p.tab} has no data row ${p.row}`];
+        case 'blank':
+          return [`${p.key} cites ${p.cell} is blank`];
+      }
+    }),
+    ...(unanswered.length ? [`not answered: ${unanswered.join(', ')}`] : []),
+  ];
 }
 
 // The data with its rows numbered, so a cell can be cited by row and column.
@@ -144,6 +181,77 @@ const numberedDataOf = (read: KeptRead) =>
 // A batch's conversation: try values, then submit every record at once.
 const STEPS = 24;
 
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown
+  ? Omit<T, K>
+  : never;
+
+// What a proposal's model is doing, kept as it happens, and told each change.
+export type Watch = { activity: ProposalActivity; changed: () => void };
+
+export const newActivity = (): ProposalActivity => ({
+  model: null,
+  thought: null,
+  writing: 0,
+  events: [],
+  tokens: { input: 0, output: 0, thinking: 0 },
+  stream: [],
+});
+
+// Enough for a long conversation's parts; a runaway one stops being kept.
+const STREAM_PARTS = 400;
+const PIECES = {
+  'text-delta': ['text-start', 'text'],
+  'reasoning-delta': ['reasoning-start', 'text'],
+  'tool-input-delta': ['tool-input-start', 'input'],
+} as const;
+
+/*
+  One streamed part, kept as it came. A piece of a text, a thought or a tool's
+  input joins the part it belongs to, so the record shows each whole. What was
+  sent (a step's request) is not what came back, and is left out.
+*/
+function keepPart(stream: StreamedPart[], raw: { type: string }) {
+  if (stream.length >= STREAM_PARTS) return;
+  const at = new Date().toISOString();
+  const piece = PIECES[raw.type as keyof typeof PIECES];
+  if (piece) {
+    const { id, delta, text } = raw as {
+      id?: string;
+      delta?: string;
+      text?: string;
+    };
+    const into = stream.findLast(
+      (kept) => kept.part.type === piece[0] && kept.part.id === id,
+    );
+    if (into) {
+      into.part[piece[1]] =
+        `${(into.part[piece[1]] as string | undefined) ?? ''}${delta ?? text ?? ''}`;
+      return;
+    }
+  }
+  const part: { type: string } & Record<string, unknown> = { ...raw };
+  delete part.request;
+  stream.push({
+    at,
+    from:
+      part.type === 'tool-result' || part.type === 'tool-error'
+        ? 'app'
+        : 'model',
+    // Plain data: dates as their strings, nothing that cannot be sent.
+    part: JSON.parse(JSON.stringify(part)) as StreamedPart['part'],
+  });
+}
+
+// The thought being written: its last section, as a person can follow it.
+const THOUGHT_CHARS = 600;
+const latestThought = (text: string) => {
+  const sections = text.split(/\n(?=\*\*)/);
+  const last = (sections.at(-1) ?? '').trim();
+  return last.length > THOUGHT_CHARS
+    ? `…${last.slice(-THOUGHT_CHARS)}`
+    : last || null;
+};
+
 async function proposeBatch(
   owner: DefinitionProcess,
   set: DefinitionSet,
@@ -153,8 +261,17 @@ async function proposeBatch(
   keys: [string, ...string[]],
   models: DraftingModel[],
   resolve: Resolve | undefined,
+  watch?: Watch,
 ): Promise<{ records: Proposal['records']; model: string }> {
   const { subject } = owner;
+  // A fact for whoever watches, worded by them in the process's nouns.
+  const event = (happened: DistributiveOmit<ProposalEvent, 'at'>) => {
+    watch?.activity.events.push({
+      at: new Date().toISOString(),
+      ...happened,
+    } as ProposalEvent);
+    watch?.changed();
+  };
   const { singular, plural } = subject.record;
   const fieldsShape = Object.fromEntries(
     subject.proposal.map((field) => [
@@ -200,6 +317,9 @@ async function proposeBatch(
   let last: string[] | null = null;
   let same = 0;
 
+  const checks = set.definitions.filter(
+    (d) => d.result === 'check' && d.approvedAt,
+  );
   const tools = {
     // Several records a call: each round trip to the model costs far more
     // than the checks, so the model tries a whole batch at once.
@@ -211,49 +331,55 @@ async function proposeBatch(
           .min(1)
           .describe(`Values to try, one entry per ${singular}`),
       }),
-      execute: async ({ proposals }) => ({
-        results: proposals.map(({ key, values }) => {
-          const { verdict, checks } = checkProposal(
-            owner,
-            set,
-            read,
-            key,
-            values,
-          );
-          return {
-            key,
-            verdict,
-            checks: checks.map((c) => ({
-              check: c.name,
-              failing:
-                c.consequence === 'block' ? 'blocks' : 'a person decides',
-              holds: c.holds,
-              // A check its guard settles says nothing about the values.
-              applies: c.applies,
-              working: c.error ?? c.steps.join(' → '),
-            })),
-          };
-        }),
-      }),
+      execute: async ({ proposals }) => {
+        event({ kind: 'tried', records: proposals.length });
+        return {
+          results: proposals.map(({ key, values }) => {
+            const { verdict, checks } = checkProposal(
+              owner,
+              set,
+              read,
+              key,
+              values,
+            );
+            return {
+              key,
+              verdict,
+              checks: checks.map((c) => ({
+                check: c.name,
+                failing:
+                  c.consequence === 'block' ? 'blocks' : 'a person decides',
+                holds: c.holds,
+                // A check its guard settles says nothing about the values.
+                applies: c.applies,
+                working: c.error ?? c.steps.join(' → '),
+              })),
+            };
+          }),
+        };
+      },
     }),
+  };
+  const submit = {
     submit_proposals: tool({
       description: `Submit every ${singular} at once. Returns ok, or each problem to fix and submit again.`,
       inputSchema: submitSchema,
       execute: async ({ records }) => {
-        const problems: string[] = [];
+        const found: AnswerProblem[] = [];
         const answered: Proposal['records'] = {};
         for (const answer of records) {
-          if (answered[answer.key]) {
-            problems.push(`${answer.key} is answered twice`);
+          const { key } = answer;
+          if (answered[key]) {
+            found.push({ kind: 'twice', key });
             continue;
           }
           if (answer.action === 'set' && !answer.values)
-            problems.push(`${answer.key} sets no values`);
+            found.push({ kind: 'no-values', key });
           const cited: string[] = [];
           for (const cite of answer.cited) {
             const cell = cellCited(read, cite);
             if (typeof cell === 'string') cited.push(cell);
-            else problems.push(`${answer.key} cites ${cell.problem}`);
+            else found.push({ ...cell, key });
           }
           const values = answer.action === 'set' ? answer.values : null;
           const checked = values
@@ -268,14 +394,23 @@ async function proposeBatch(
             ...checked,
           };
         }
-        const missing = keys.filter((key) => !answered[key]);
-        if (missing.length)
-          problems.push(`not answered: ${missing.join(', ')}`);
+        for (const key of keys)
+          if (!answered[key]) found.push({ kind: 'unanswered', key });
+        const problems = problemSentences(found);
         same =
           last && JSON.stringify(last) === JSON.stringify(problems)
             ? same + 1
             : 1;
         last = problems;
+        event({
+          kind: 'answered',
+          records: records.length,
+          set: records.filter((r) => r.action === 'set').length,
+          leave: records.filter((r) => r.action === 'leave').length,
+          unsure: records.filter((r) => r.unsure).length,
+          cited: records.reduce((total, r) => total + r.cited.length, 0),
+          problems: found,
+        });
         if (problems.length) return { ok: false, problems };
         submitted = answered;
         return { ok: true };
@@ -290,13 +425,16 @@ async function proposeBatch(
         return `${c.id} = ${cell?.value ?? cell?.error ?? '—'}`;
       })
       .join(', ');
-  const checks = set.definitions
-    .filter((d) => d.result === 'check' && d.approvedAt)
+  const checksText = checks
     .map(
       (d) =>
         `- ${d.name}: ${d.text} (failing it ${d.consequence === 'block' ? 'blocks the proposal' : 'needs a person to decide'})`,
     )
     .join('\n');
+  // With no rulebook, the model works every value out itself, and a person
+  // reviewing it is the only check.
+  const checked = checks.length > 0;
+  const worked = calculation.calculations.length > 0;
   const fields = subject.proposal
     .map((field) => `${field.id} (the ${field.label}, in ${field.unit})`)
     .join(', ');
@@ -307,27 +445,38 @@ async function proposeBatch(
     resolve ?? limitedGoogle,
     async (languageModel, options) => {
       try {
-        await generateText({
+        const answer = streamText({
           model: languageModel,
           system: [
             `You propose, for every ${singular}, what to set: ${fields}, as the instructions intend.`,
-            'Every proposal is checked against the accepted checks below. Use try_proposals to try values and read each verdict, then choose values that pass. Try as many records in one call as you can: every call is slow.',
-            'Where no values pass every check that blocks, propose the closest values that do pass those, and say in unsure what conflicts. Never leave a record out.',
+            ...(checked
+              ? [
+                  'Every proposal is checked against the accepted checks below. Use try_proposals to try values and read each verdict, then choose values that pass. Try as many records in one call as you can: every call is slow.',
+                  'Where no values pass every check that blocks, propose the closest values that do pass those, and say in unsure what conflicts.',
+                ]
+              : [
+                  'Work every value out yourself from the instructions and the data, following each rule the instructions state. A person reviews every proposal, and nothing else checks it.',
+                  'Where the instructions conflict for a record, or the data does not settle it, propose the closest values and say in unsure what conflicts.',
+                ]),
+            'Never leave a record out.',
             `Use leave for a ${singular} where nothing should change.`,
-            'Read every number from the data and the values worked out, not from memory. Cite the cells you rely on by tab, the row number shown, and the column name.',
+            `Read every number from the data${worked ? ' and the values worked out' : ''}, not from memory. Cite the cells you rely on by tab, the row number shown, and the column name.`,
             `Answer only by calling submit_proposals with every ${singular}; when it reports problems, fix them and submit again. ${plain(subject)}`,
           ].join('\n'),
           prompt: [
             `Instructions:\n${text}`,
-            `The accepted checks:\n${checks}`,
-            `The ${plural} to propose for, with the values worked out for each:\n${keys
-              .map((key) => `- ${key}: ${values(key)}`)
-              .join('\n')}`,
+            ...(checked ? [`The accepted checks:\n${checksText}`] : []),
+            worked
+              ? `The ${plural} to propose for, with the values worked out for each:\n${keys
+                  .map((key) => `- ${key}: ${values(key)}`)
+                  .join('\n')}`
+              : `The ${plural} to propose for:\n${keys.map((key) => `- ${key}`).join('\n')}`,
             `How the data fits together:\n${layoutOf(subject)}`,
             `The data, by tab, each row numbered (row 1 is the header):\n${numberedDataOf(onlyRecords(read, subject, keys))}`,
             timingOf(onlyRecords(read, subject, keys), subject.data),
           ].join('\n\n'),
-          tools,
+          // Nothing to try values against without checks.
+          tools: checked ? { ...tools, ...submit } : submit,
           stopWhen: [
             isStepCount(STEPS),
             () => submitted !== null,
@@ -336,12 +485,74 @@ async function proposeBatch(
           prepareStep: () => ({ toolChoice: 'required' as const }),
           timeout: { stepMs: 180_000, totalMs: 900_000 },
           ...options,
+          // Its thought summaries, for a person watching it work.
+          providerOptions: {
+            ...options.providerOptions,
+            google: {
+              ...options.providerOptions?.google,
+              thinkingConfig: {
+                ...options.providerOptions?.google.thinkingConfig,
+                includeThoughts: true,
+              },
+            },
+          },
+          // An error is a part of the stream, rethrown below so the next
+          // model is tried as with any failed call.
+          onError: () => undefined,
         });
+        let thinking = '';
+        let input = '';
+        for await (const part of answer.fullStream) {
+          const activity = watch?.activity;
+          if (part.type === 'error') throw part.error;
+          if (!activity) continue;
+          keepPart((activity.stream ??= []), part);
+          watch.changed();
+          if (part.type === 'start-step') {
+            thinking = '';
+            // Said only when there is something to say.
+            if (part.warnings.length)
+              event({
+                kind: 'warned',
+                warnings: part.warnings.map((w) => JSON.stringify(w)),
+              });
+          } else if (part.type === 'reasoning-delta') {
+            thinking += part.text;
+            activity.thought = latestThought(thinking);
+            watch.changed();
+          } else if (part.type === 'tool-input-start') input = '';
+          else if (part.type === 'tool-input-delta') {
+            input += part.delta;
+            activity.writing = input.match(/"key"\s*:/g)?.length ?? 0;
+            watch.changed();
+          } else if (part.type === 'finish-step') {
+            activity.writing = 0;
+            activity.stepMs =
+              (activity.stepMs ?? 0) + part.performance.stepTimeMs;
+            // Answering through a tool, or simply stopping, is the ordinary
+            // end; anything else -- cut short, filtered -- is said.
+            if (!['tool-calls', 'stop'].includes(part.finishReason))
+              event({ kind: 'ended', reason: part.finishReason });
+            activity.tokens.input += part.usage.inputTokens ?? 0;
+            activity.tokens.output += part.usage.outputTokens ?? 0;
+            activity.tokens.thinking +=
+              part.usage.outputTokenDetails.reasoningTokens ?? 0;
+            watch.changed();
+          }
+        }
       } catch (error) {
         // An answer in text rather than through the tools ends the
         // conversation; what was submitted so far stands.
         if (!ToolChoiceViolationError.isInstance(error)) throw error;
       }
+    },
+    (told) => {
+      if (!watch) return;
+      if (told.kind === 'asking') {
+        watch.activity.model = told.model;
+        watch.activity.thought = null;
+        event({ kind: 'asked', model: told.model });
+      } else event(told);
     },
   );
   const answered = submitted as Proposal['records'] | null;
@@ -407,12 +618,14 @@ export async function propose(
     resolve,
     batch = BATCH,
     onBatch,
+    watch,
   }: {
     model?: DraftingModel | null;
     resolve?: Resolve;
     batch?: number;
     // Told as each batch starts: which, of how many.
     onBatch?: (at: number, of: number) => void;
+    watch?: Watch;
   } = {},
 ): Promise<Proposal> {
   fitting(read, owner.subject.data);
@@ -447,6 +660,7 @@ export async function propose(
       [first!, ...rest],
       models,
       resolve,
+      watch,
     );
     Object.assign(records, answer.records);
     answeredBy.add(answer.model);
@@ -512,17 +726,27 @@ export function startProposal(
     step: 'Proposing…',
     error: null,
     running: true,
+    activity: newActivity(),
   };
   jobs.set(key, progress);
   const note = () =>
     writeWhole(jobFile(owner, readId, fingerprint), progress).catch(
       () => undefined,
     );
+  // A poll reads the job held in memory; the file only outlives a restart,
+  // so a thought arriving word by word is written now and then.
+  let noted = 0;
+  const changed = () => {
+    if (Date.now() - noted < NOTE_EVERY_MS) return;
+    noted = Date.now();
+    void note();
+  };
   void (async () => {
     await note();
     try {
       const done = await propose(owner, set, read, readId, text, {
         ...options,
+        watch: { activity: progress.activity!, changed },
         onBatch: (at, of) => {
           progress.step =
             of > 1 ? `Proposing ${at} of ${of} batches…` : 'Proposing…';
@@ -535,8 +759,12 @@ export function startProposal(
         error instanceof Error ? error.message.split('\n')[0]! : 'Failed.';
     } finally {
       progress.running = false;
+      progress.activity!.thought = null;
+      progress.activity!.writing = 0;
       await note();
     }
   })();
   return progress;
 }
+
+const NOTE_EVERY_MS = 2000;

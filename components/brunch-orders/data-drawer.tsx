@@ -32,18 +32,32 @@ const asJson = (values: unknown[][]) =>
   it is always the run's own read. Whatever opens it -- the card's button, a
   tab's row -- gets `view`, which opens it at a tab or where it was left.
 */
+// A read's tabs as the drawer shows them.
+export type DataTabs = { name: string; values: unknown[][] }[];
+
 export function DataDrawer({
   readId,
+  preloaded,
   children,
 }: {
   readId: string;
+  // The tabs, where they are at hand: nothing is fetched.
+  preloaded?: DataTabs;
   children: (view: (tab?: string) => void) => ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const [chosen, setChosen] = useState<string | null>(null);
   const loading = useTrial<DataResponse>('/api/dev/brunch-orders/read');
   const body = loading.state.kind === 'done' ? loading.state.body : null;
-  const data = body?.kind === 'read' && body.id === readId ? body : null;
+  const data = useMemo(
+    () =>
+      preloaded
+        ? { id: readId, tabs: preloaded }
+        : body?.kind === 'read' && body.id === readId
+          ? body
+          : null,
+    [preloaded, body, readId],
+  );
   const tabs = useMemo(
     () =>
       data?.tabs.map((tab) => ({

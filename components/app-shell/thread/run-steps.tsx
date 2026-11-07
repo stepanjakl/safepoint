@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { MorphingText } from '@/components/ui/morphing-text';
+import { MORPH_WORDS_MS, MorphingText } from '@/components/ui/morphing-text';
 import { Glyph, type GlyphName } from '@/components/ui/glyph';
 import type { Tone } from '@/components/ui/status-label';
 import { toneText } from '@/components/review/markers';
@@ -117,7 +117,7 @@ export function EvaluationProgress({
       </div>
       {sofar ? (
         <p className={NOTE}>
-          So far: <MorphingText text={sofar} duration={360} />
+          So far: <MorphingText text={sofar} duration={MORPH_WORDS_MS} />
         </p>
       ) : null}
     </div>

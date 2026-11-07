@@ -326,6 +326,17 @@ To add a hue, add a `menu-tile-<hue>` block in `sidebar/workspace-menu.css` that
 
 How to build motion so it stays coherent as it grows. What motion should do is in [`EXPERIENCE-SPEC.md`](../archive/EXPERIENCE-SPEC.md) → Motion; the run thread (`components/app-shell/thread/`) is the worked example of both.
 
+**Content entrances wait for the screen to settle.** A screen, section or panel
+finishes its own fade or travel before anything inside starts its entrance.
+Use `SettledLayer` to report the surrounding transition's completion and
+`useScreenSettled` to release child motion; nested layers must all settle.
+CSS entrances pause their animations, including stagger delays, while held
+(`data-entrance-held` in the process sheet). Motion entrances hold their hidden
+state. Start any shared entrance clock only after settlement, so list rows,
+detail columns, empty states and loading marks obey the same sequence. Keep
+reduced motion immediate. Interaction feedback and ongoing activity retain
+their own timing.
+
 **Timings are tokens, named for what moves, on the component that owns the motion.** A sequence is written as tokens derived from one another -- a phase starts where the one before it ends -- so retiming one phase carries the rest. A number restated in a second place drifts; JavaScript that needs a timing reads it from the computed style or, better, does not need it (below). A stagger is computed in CSS too: the component hands over an element's place and the count (`--calc-index`, `--calc-count` in `calculate-step.css`), never a delay in milliseconds.
 
 **Curves and weights are tokens as well.** Component CSS names a curve and never writes `cubic-bezier()`:
