@@ -11,6 +11,7 @@ import {
   StateIllustration,
   type StateIllustrationName,
 } from '@/components/ui/state-illustration';
+import { Loader } from '@/components/ui/loader';
 import { EmptyState } from '@/components/ui/working-mark';
 import { LoaderTiming } from './loader-timing';
 import { ObjectViews } from './object-views';
@@ -80,7 +81,7 @@ export default function StatesWorkbenchPage() {
       </div>
       <ul className="grid grid-cols-[repeat(auto-fit,minmax(20rem,1fr))] gap-4">
         <li className="bg-surface-primary flex h-96 flex-col rounded-lg px-6">
-          <EmptyState role="status" loading title="Loading the rulebook…" />
+          <Loader phase="shown" size="page" label="Loading the rulebook…" />
         </li>
         <li className="bg-surface-primary flex h-96 flex-col rounded-lg px-6">
           <EmptyState role="status" title="Nothing is accepted yet.">

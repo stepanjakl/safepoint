@@ -138,12 +138,17 @@ export function Tooltip({
 export function OverflowTooltip({
   label,
   children,
+  isOpen,
 }: {
   label: string;
   children: ComponentProps<typeof Focusable>['children'];
+  /** A composite row can reveal its label on the row's hover or focus. */
+  isOpen?: boolean;
 }) {
   const ref = useRef<HTMLSpanElement>(null);
   const [overflowing, setOverflowing] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  if (dismissed && !isOpen) setDismissed(false);
   useLayoutEffect(() => {
     const element = ref.current?.firstElementChild;
     if (!(element instanceof HTMLElement)) return;
@@ -160,7 +165,14 @@ export function OverflowTooltip({
   }, [label]);
   return (
     <span ref={ref} className="block min-w-0 flex-1">
-      <Tooltip label={label} isDisabled={!overflowing}>
+      <Tooltip
+        label={label}
+        isDisabled={!overflowing}
+        isOpen={overflowing && !dismissed ? isOpen : false}
+        onOpenChange={(open) => {
+          if (!open && isOpen) setDismissed(true);
+        }}
+      >
         {children}
       </Tooltip>
     </span>

@@ -9,6 +9,7 @@ import { AssistantContext } from '@/components/app-shell/assistant/assistant-sta
 import { CLOSE_BUTTON } from '@/components/app-shell/drawer-aside';
 import { ProcessHeader } from '@/components/app-shell/process/process-header';
 import { Button, type Slant } from '@/components/ui/button';
+import { WalkthroughDismiss } from '@/components/ui/walkthrough-hint';
 import { ChoiceGroup } from '@/components/ui/choice-group';
 import { FilterTabs, type FilterTab } from '@/components/ui/filter-tabs';
 import { RunStatusIcon } from '@/components/ui/run-status-icon';
@@ -474,6 +475,19 @@ export function ControlsGallery({
               </div>
             )}
           />
+        </div>
+      </Section>
+
+      <Section title="Walkthrough dismiss">
+        <div className="flex items-center gap-6">
+          {STATES.map(({ label, state }) => (
+            <div key={label} className="grid justify-items-center gap-3">
+              <span className={LABEL}>{label}</span>
+              <Pin state={state}>
+                <WalkthroughDismiss />
+              </Pin>
+            </div>
+          ))}
         </div>
       </Section>
 

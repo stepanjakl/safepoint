@@ -9,6 +9,8 @@ import {
 } from '@/components/app-shell/drawer-aside';
 import { Button } from '@/components/ui/button';
 import { Glyph } from '@/components/ui/glyph';
+import { Loader } from '@/components/ui/loader';
+import { useLoader } from '@/components/ui/working-mark';
 import { cx } from '@/lib/cx';
 import type { LoadReviewDetail } from '@/lib/review/contracts';
 import {
@@ -110,6 +112,7 @@ function ReviewItemBody({
     loadDetail,
     cache,
   );
+  const loader = useLoader(!detail && !failed);
   return (
     // The detail's narrow rules answer to this panel's width.
     <div className="@container/review">
@@ -119,7 +122,15 @@ function ReviewItemBody({
         </p>
       ) : null}
       <div aria-busy={!detail && !failed}>
-        {detail ? (
+        {/* The status below says it for a screen reader. */}
+        {loader.phase ? (
+          <Loader
+            phase={loader.phase}
+            size="panel"
+            label="Loading item details…"
+            announce={false}
+          />
+        ) : detail ? (
           <ReviewItemDetail detail={detail} idPrefix={`${id}-${detail.id}`} />
         ) : failed ? (
           <div className="text-dense p-5">
@@ -128,9 +139,7 @@ function ReviewItemBody({
               Try again
             </Button>
           </div>
-        ) : (
-          <p className="text-muted text-dense p-5">Loading item details…</p>
-        )}
+        ) : null}
       </div>
       <p className="sr-only" role="status">
         {failed

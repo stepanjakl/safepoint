@@ -115,6 +115,14 @@
     position: absolute;
     box-sizing: border-box;
   }
+  .sheet-chrome-title {
+    position: absolute;
+    white-space: pre;
+  }
+  /* Keep the native heading accessible while its measured overlay copy morphs. */
+  .process-sheet-frame[data-chrome-borrowed] [data-section-title] {
+    opacity: 0;
+  }
   .sheet-chrome-divider {
     top: 0;
     bottom: calc(var(--spacing-control-highlight) * -1);

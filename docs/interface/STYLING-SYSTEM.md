@@ -198,6 +198,20 @@ Every other neutral fill, edge and etch is also an offset in steps from a surfac
 
 The tooltip is the one face drawn dark in both themes: a slate in both, derived from the popover face (`TOOLTIP` in `config.ts`): 650 in light, a fixed shift down the ramp from the white popover, and 700 in dark, one layer above the popover, with its edge a ring-distance past it (575) and its highlight darker. Everything inside it but the arrow takes `color-scheme: dark`, so a rich tooltip's status chips read their dark side with no roles of their own. The box keeps the page's scheme, which lets its edge, highlight and ink differ per theme. Muted text is the exception: `ground-tooltip` hands it `--sp-tooltip-muted` through the registered `--tooltip-muted`, which resolves on the box, because a light-dark() read inside the dark contents would always take dark's step. `/workbench` compares face steps.
 
+#### Bands
+
+A **band** runs across a surface to head a group or mark a boundary -- the runs list's sticky head and version break, the Approval table's tab heads. It is not a layer: it sits one step off whatever surface it crosses (`SURFACE_THEMES.band`: darker in light, lighter in dark), so every surface has one (`--sp-canvas-band`, `--sp-primary-band`, ...), and each `ground-*` utility points `--sp-surface-band` at its own. A band paints `bg-surface-band` (or `background: var(--sp-surface-band)`) and **takes `ground-band`**, which hands everything on it the following roles its surface computed for its band, and the band's lift (`--sp-band-lift-*`) for tones. Contracts are read on the bands that are drawn (`DRAWN_BANDS` in `config.ts`: the pane's and a floating card's); add one there before drawing a band elsewhere. `e2e/colour-system.spec.ts` fails on a band without `ground-band`.
+
+#### Pills follow their ground
+
+A pill -- a step's fact or link, a cell address, a count, a verdict, a tally -- **keeps the same distance from whatever it sits on, face and ink**, so it is set once, on the component, relative to its ground, never anchored to the surface it was first drawn on and never given a role for one placement:
+
+- **A neutral pill** takes surface-following roles for its face _and_ its ink (`FOLLOWING_ROLES`, in the stylesheet that owns it), each the offset it first had from its home surface, so it is unchanged there and moves with any other ground. An ink near the end of the ramp sets `flush: true` and stops at that end on a ground too light to go further.
+- **A tone pill** reads its Radix rungs moved by the ground: `oklch(from <rung> calc(l + var(--sp-ground-lift-<theme>) - var(--sp-layer-lift-<theme>)) c h)`, the rung as tuned on the pane shifted by how far its ground sits from the pane, ink as well as face (`--color-severity-pill*` in `severity.css`; a pill with its own rungs sets the lift on itself, as `.thread-step-flag` and `.rulebook-timeline-count` do). Never on `:root`: an alias there freezes at the canvas's lift.
+- **A region that paints its own face declares its ground** (`ground-raised`, `ground-floating`, `ground-band`), so a pill inside it needs nothing of its own.
+
+`pnpm check:colours` refuses a pill (a class that applies `pill-shape`, or one written beside it in markup) painted with a fixed text role or an anchored role.
+
 #### Parts that are not neutral steps
 
 A hue cannot be an offset in neutral steps, so a part drawn in a tone (the filter strip's pill and count chips) is a Radix rung, calibrated once on the canvas and then lifted by the surface it sits on. `pnpm colors:custom` writes two numbers with every `ground-*` utility, `--sp-ground-lift-light` and `--sp-ground-lift-dark`: the OKLab lightness of that surface's face less the canvas's (0.0224 and 0.0448 a layer up in light and dark; zero at the root), and `--sp-layer-lift-*`, one layer of it. A stylesheet reads the rung inside each theme's branch as `oklch(from <rung> calc(l + var(--sp-ground-lift-…)) c h)`, so the part keeps its distance from the face and its hue and chroma. Where a tone cannot be named (the neutral "All" pill, Deferred), a neutral step of the same lightness stands in, so the strip's parts match across buckets. See `components/ui/filter-tabs.css`.
@@ -512,6 +526,14 @@ Two shapes are utilities, because stylesheets compose them as well as markup:
   its own. A table places it with `--row-rule-inset` and `--row-rule-top`.
   The first cell of a row takes `DATA_TABLE_RULE` and every later cell
   `DATA_TABLE_RULE_ON` (`row-rule-flush`), so the rule runs on unbroken.
+
+Standard data cards use `DataTable`, `DATA_TABLE_BODY` and `DATA_TABLE_HEAD`.
+Secondary record names use `DATA_TABLE_SECONDARY_NAME` at every step. Simple
+workbench tables add `data-table-simple` for shared cell insets and row rules;
+interactive tables keep their own cell layout. Raw source grids use
+`DataTable variant="compact"` and the `COMPACT_TABLE_BODY`, `COMPACT_TABLE_HEAD`
+and `COMPACT_TABLE_CELL` constants: an inset face, control radius and smaller
+value text, with sticky positioning supplied by the source drawer.
 
 A table's name column hides on phones (`DATA_TABLE_NAME_COLUMN`), and the
 name moves under the key (`DATA_TABLE_NAME_UNDER`), so the card never scrolls

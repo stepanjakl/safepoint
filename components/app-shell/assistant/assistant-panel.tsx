@@ -7,6 +7,8 @@ import ArrowUp from 'blode-icons-react/icons/arrow-up';
 import X from 'blode-icons-react/icons/x';
 import { Button as AriaButton } from 'react-aria-components';
 import { Button } from '@/components/ui/button';
+import { Loader } from '@/components/ui/loader';
+import { useLoader } from '@/components/ui/working-mark';
 import {
   DURATION_PANE,
   DURATION_STATE,
@@ -65,6 +67,7 @@ export function AssistantPanel({
   const [context, setContext] = useState<AssistantContextChoice>('page');
   const reduceMotion = useReducedMotion();
   const suggesting = draft === '' && !consultation;
+  const asking = useLoader(consultation?.state === 'asking');
   // Said once each time Enter is pressed with nothing able to send it.
   const [notice, setNotice] = useState('');
   useEffect(() => {
@@ -114,13 +117,14 @@ export function AssistantPanel({
             {/* Polite: the answer is read once it is all there, not as the
                 question is asked. */}
             <div aria-live="polite" className="text-body grid gap-3">
-              {consultation.state === 'asking' ? (
-                <p className="text-muted">Asking…</p>
+              {/* This region reads the loader's words; it stays quiet itself. */}
+              {asking.phase ? (
+                <Loader phase={asking.phase} label="Asking…" announce={false} />
               ) : consultation.state === 'failed' ? (
                 <p>{consultation.message}</p>
-              ) : (
+              ) : consultation.state === 'answered' ? (
                 consultation.answer
-              )}
+              ) : null}
             </div>
           </section>
         ) : (

@@ -73,6 +73,21 @@
     stop-color: light-dark(var(--radix-cyan-8), var(--radix-cyan-dark-10));
   }
   .assistant-mark-eyes {
+    --assistant-blink-cycle: 5.4s;
     fill: light-dark(var(--radix-cyan-9), var(--radix-cyan-dark-11));
+    /* The eyes centre at y 8.5 in the source icon's 24-unit viewBox. */
+    transform-origin: 50% 35.416667%;
+    animation: assistant-blink var(--assistant-blink-cycle) ease-in-out infinite;
+  }
+  @keyframes assistant-blink {
+    0%,
+    44%,
+    48%,
+    100% {
+      transform: scaleY(1);
+    }
+    46% {
+      transform: scaleY(0.12);
+    }
   }
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useReducedMotion } from 'motion/react';
-import { useLayoutEffect, useRef, type RefObject } from 'react';
+import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { pacedDuration } from '@/lib/motion';
 import { motionTime } from '@/lib/motion-time';
 
@@ -36,7 +36,27 @@ const PAINT = [
   'border-top-left-radius',
   'border-top-right-radius',
 ] as const;
-type Band = Box & { paint: Record<(typeof PAINT)[number], string> };
+const TITLE_PAINT = [
+  'font-family',
+  'font-size',
+  'font-weight',
+  'font-feature-settings',
+  'letter-spacing',
+  'line-height',
+  'text-transform',
+  'color',
+] as const;
+type Title = {
+  text: string;
+  left: number;
+  top: number;
+  paint: Record<string, string>;
+};
+type TitleView = { host: HTMLElement; text: string };
+type Band = Box & {
+  paint: Record<(typeof PAINT)[number], string>;
+  title: Title | null;
+};
 type Frame = { bands: Band[]; dividers: number[] };
 
 // The overlay's own transitions normally end it; this covers a missed end.
@@ -78,6 +98,9 @@ function measure(frame: HTMLElement, layer: HTMLElement): Frame {
     )
     .map(({ box, band }) => {
       const style = getComputedStyle(band);
+      const label = band.querySelector<HTMLElement>('[data-section-title]');
+      const labelBox = label?.getBoundingClientRect();
+      const labelStyle = label ? getComputedStyle(label) : null;
       return {
         left: box.left - origin.left,
         top: top.top - origin.top,
@@ -86,6 +109,20 @@ function measure(frame: HTMLElement, layer: HTMLElement): Frame {
         paint: Object.fromEntries(
           PAINT.map((name) => [name, style.getPropertyValue(name)]),
         ) as Band['paint'],
+        title:
+          label && labelBox && labelStyle
+            ? {
+                text: label.dataset.sectionTitle ?? label.textContent ?? '',
+                left: labelBox.left - box.left,
+                top: labelBox.top - box.top,
+                paint: Object.fromEntries(
+                  TITLE_PAINT.map((name) => [
+                    name,
+                    labelStyle.getPropertyValue(name),
+                  ]),
+                ),
+              }
+            : null,
       };
     })
     .sort((a, b) => a.left - b.left);
@@ -122,10 +159,11 @@ function setOff({ paint }: Band): Band['paint'] {
 }
 
 function place(element: HTMLElement, box: Partial<Band>, opacity: number) {
-  const { paint, ...sides } = box;
-  for (const [side, value] of Object.entries(sides))
-    element.style.setProperty(side, `${value}px`);
-  for (const [name, value] of Object.entries(paint ?? {}))
+  for (const side of ['left', 'top', 'width', 'height'] as const) {
+    const value = box[side];
+    if (value !== undefined) element.style.setProperty(side, `${value}px`);
+  }
+  for (const [name, value] of Object.entries(box.paint ?? {}))
     element.style.setProperty(name, value);
   element.style.opacity = String(opacity);
 }
@@ -162,11 +200,34 @@ class SheetChrome {
   private sectionLanded = false;
   private timers: number[] = [];
   private frames: number[] = [];
+  private titles = new Map<HTMLElement, TitleView>();
 
   constructor(
     private host: HTMLElement,
     private frame: HTMLElement,
+    private onTitles: (titles: TitleView[]) => void,
   ) {}
+
+  private title(element: HTMLElement, title: Title | null) {
+    if (!title) {
+      this.titles.get(element)?.host.remove();
+      this.titles.delete(element);
+      return;
+    }
+    let view = this.titles.get(element);
+    if (!view) {
+      const host = document.createElement('span');
+      host.className = 'sheet-chrome-title';
+      element.append(host);
+      view = { host, text: title.text };
+      this.titles.set(element, view);
+    }
+    view.text = title.text;
+    view.host.style.left = `${title.left}px`;
+    view.host.style.top = `${title.top}px`;
+    for (const [name, value] of Object.entries(title.paint))
+      view.host.style.setProperty(name, value);
+  }
 
   // The old section starts to go: its frame is taken onto the overlay.
   hold(of: string) {
@@ -182,6 +243,10 @@ class SheetChrome {
       ...drawn.dividers.map((left) => divider(left)),
       ...drawn.bands.map((box) => band(box)),
     );
+    staying(this.host, 'sheet-chrome-band').forEach((element, index) =>
+      this.title(element, drawn.bands[index]!.title),
+    );
+    this.onTitles([...this.titles.values()].map((view) => ({ ...view })));
     this.frame.dataset.chromeBorrowed = '';
   }
 
@@ -244,9 +309,10 @@ class SheetChrome {
       '[data-detail-held]',
     );
     await Promise.allSettled(
-      [...(details ?? [])].flatMap((detail) =>
-        detail.getAnimations().map((motion) => motion.finished),
-      ),
+      [
+        ...this.host.getAnimations({ subtree: true }),
+        ...[...(details ?? [])].flatMap((detail) => detail.getAnimations()),
+      ].map((motion) => motion.finished),
     );
     if (this.swap === swap) this.release();
   }
@@ -333,6 +399,7 @@ class SheetChrome {
     host.dataset.moving = '';
     kept.forEach((element, index) => {
       const box = to.bands[index]!;
+      this.title(element, box.title);
       place(element, { ...box, paint: setOff(box) }, 1);
     });
     for (const element of going) {
@@ -352,7 +419,11 @@ class SheetChrome {
       );
       element.dataset.chromeLeaving = '';
     }
-    for (const [element, box] of added) place(element, box, 1);
+    for (const [element, box] of added) {
+      this.title(element, box.title);
+      place(element, box, 1);
+    }
+    this.onTitles([...this.titles.values()].map((view) => ({ ...view })));
     dividers.forEach((element, index) => {
       const left = to.dividers[index];
       place(element, { left: left ?? width }, left === undefined ? 0 : 1);
@@ -368,8 +439,13 @@ class SheetChrome {
         .filter((motion) => motion instanceof CSSTransition)
         .map((motion) => motion.finished),
     );
-    for (const element of host.querySelectorAll('[data-chrome-leaving]'))
+    for (const element of host.querySelectorAll<HTMLElement>(
+      '[data-chrome-leaving]',
+    )) {
+      this.titles.delete(element);
       element.remove();
+    }
+    this.onTitles([...this.titles.values()].map((view) => ({ ...view })));
     // A corner the band gains comes now it has landed (setOff).
     kept.forEach((element, index) =>
       place(element, { paint: to.bands[index]!.paint }, 1),
@@ -385,6 +461,8 @@ class SheetChrome {
     this.frames.forEach((id) => cancelAnimationFrame(id));
     this.timers = [];
     this.frames = [];
+    this.titles.clear();
+    this.onTitles([]);
     host.replaceChildren();
     delete host.dataset.moving;
     delete frame.dataset.chromeStaging;
@@ -417,12 +495,13 @@ export function useSheetChrome<K extends string>(
 ) {
   const reduceMotion = useReducedMotion();
   const chrome = useRef<SheetChrome | null>(null);
+  const [titles, setTitles] = useState<TitleView[]>([]);
 
   useLayoutEffect(() => {
     const host = overlay.current;
     const frame = host?.parentElement;
     if (!host || !frame || reduceMotion) return;
-    chrome.current ??= new SheetChrome(host, frame);
+    chrome.current ??= new SheetChrome(host, frame, setTitles);
     if (incoming !== null) chrome.current.hold(shown);
     else chrome.current.cancel(shown);
     // Once per swap, as it starts: `shown` is the section going.
@@ -441,4 +520,5 @@ export function useSheetChrome<K extends string>(
 
   // Leaving the process mid-swap leaves nothing lent out.
   useLayoutEffect(() => () => chrome.current?.release(), []);
+  return titles;
 }

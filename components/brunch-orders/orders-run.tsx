@@ -28,6 +28,8 @@ import {
 } from '@/components/ui/data-table';
 import { ExternalLink } from '@/components/ui/external-link';
 import { Fold } from '@/components/ui/fold';
+import { Loader } from '@/components/ui/loader';
+import { useLoader } from '@/components/ui/working-mark';
 import { cx } from '@/lib/cx';
 import type { ProcessStep, ProcessSummary } from '@/lib/process/model';
 import {
@@ -626,13 +628,20 @@ export function SheetReadCard({
   const cardId = useId();
   const source = SOURCE_KINDS[kind];
   const { singular, plural } = source.resource;
+  const reading = useLoader(!read);
   if (!read)
     return (
       <div className="brunch-read">
         <div className="brunch-read-head" data-reading>
           <TableFilled aria-hidden className="brunch-read-icon" />
           <span className="brunch-read-name">{source.name}</span>
-          <span className="thread-step-fact brunch-read-count">Reading…</span>
+          {reading.phase ? (
+            <Loader
+              phase={reading.phase}
+              label="Reading…"
+              className="text-meta"
+            />
+          ) : null}
         </div>
       </div>
     );

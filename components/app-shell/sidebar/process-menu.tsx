@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import {
   useEffect,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -43,6 +44,8 @@ import { SidebarAccount } from './sidebar-account';
 import { SidebarNotice } from './sidebar-notice';
 import { useProcessReorder } from './use-process-reorder';
 import { WorkspaceMenu } from './workspace-menu';
+import { WalkthroughHint } from '@/components/ui/walkthrough-hint';
+import { useScreenSettled } from '@/components/ui/screen-settled';
 
 /*
   The title row that leads with a chevron. Symmetric padding and no edge of its
@@ -78,6 +81,10 @@ export function ProcessMenu({
   // The shell is a layout that stays mounted across navigation, so the current
   // process is read here rather than handed down by each page.
   const current = usePathname();
+  const screenSettled = useScreenSettled();
+  const hintId = useId();
+  const [hintFinished, setHintFinished] = useState(current !== '/workspace');
+  if (current !== '/workspace' && !hintFinished) setHintFinished(true);
   const {
     leaveTo,
     workspaceReveal,
@@ -167,8 +174,16 @@ export function ProcessMenu({
       : current === '/workspace'
         ? 'workspace'
         : 'processes';
-  const setLevel = (next: typeof level) =>
+  const showHint =
+    current === '/workspace' &&
+    level === 'workspace' &&
+    workspaceAttentionReady &&
+    screenSettled &&
+    !hintFinished;
+  const setLevel = (next: typeof level) => {
+    if (next === 'processes') setHintFinished(true);
     setLevelChoice({ path: current, level: next });
+  };
   // Whether either level has been travelled to yet. The side fades animate on
   // a journey, and the first level is where the menu starts, not a journey.
   const [travelled, setTravelled] = useState(false);
@@ -241,6 +256,7 @@ export function ProcessMenu({
   }
 
   function navigate(next: typeof level) {
+    setHintFinished(true);
     focusLevel.current = true;
     setTravelled(true);
     setLevel(next);
@@ -267,6 +283,17 @@ export function ProcessMenu({
       className="max-shell:px-2 max-shell:py-2.5 shell:px-menu-fade shell:-ml-shell-inset shell:h-full shell:min-h-0 shell:overflow-hidden relative flex min-w-0 flex-col"
       aria-label="Workspace navigation"
     >
+      <WalkthroughHint
+        isOpen={showHint}
+        title="Let’s see it in action"
+        descriptionId={hintId}
+        targetRef={enterRef}
+        onDismiss={() => setHintFinished(true)}
+      >
+        Open Processes to explore a few example tasks the agent can help with.
+        Choose one to see what the agent proposes and how you can review the
+        changes before approving them.
+      </WalkthroughHint>
       {/* Alignment guides; the design pane's Debug folder switches them on. */}
       <div className="rail-axis" aria-hidden="true" />
       {/*
@@ -409,8 +436,13 @@ export function ProcessMenu({
                 count={items.length}
                 enterRef={enterRef}
                 onEnter={() => navigate('processes')}
+                descriptionId={showHint ? hintId : undefined}
                 onRevealComplete={finishWorkspaceFade}
-                shine={current === '/workspace' && workspaceAttentionReady}
+                shine={
+                  current === '/workspace' &&
+                  workspaceAttentionReady &&
+                  !showHint
+                }
               />
             </div>
             <div

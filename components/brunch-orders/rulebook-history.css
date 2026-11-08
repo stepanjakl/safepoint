@@ -265,21 +265,21 @@
     padding: --spacing(1) --spacing(2);
     border-radius: var(--radius-control);
   }
-  :is(.rulebook-timeline-change, .rulebook-timeline-count)[data-kind='added'] {
+  .rulebook-timeline-change[data-kind='added'] {
     color: var(--sp-state-verified);
   }
   .rulebook-timeline-change[data-kind='added'] {
     background-color: var(--sp-diff-added);
     --rulebook-timeline-sign: var(--sp-diff-added-sign);
   }
-  :is(.rulebook-timeline-change, .rulebook-timeline-count)[data-kind='changed'] {
+  .rulebook-timeline-change[data-kind='changed'] {
     color: var(--sp-state-advisory);
   }
   .rulebook-timeline-change[data-kind='changed'] {
     background-color: var(--sp-timeline-changed);
     --rulebook-timeline-sign: var(--sp-timeline-changed-sign);
   }
-  :is(.rulebook-timeline-change, .rulebook-timeline-count)[data-kind='removed'] {
+  .rulebook-timeline-change[data-kind='removed'] {
     color: var(--sp-state-blocked);
   }
   .rulebook-timeline-change[data-kind='removed'] {

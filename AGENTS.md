@@ -110,6 +110,13 @@ markers in the stylesheet that owns them. Change the offset, never the block. A
 region painted with a pane or floating face needs `ground-raised` or
 `ground-floating`; see `docs/interface/STYLING-SYSTEM.md` → Surface layers.
 
+A pill keeps its distance from whatever it sits on, face and ink: set it once,
+on the component, with surface-following roles or a tone lifted by
+`--sp-ground-lift-*`, never anchored to one surface or given a role for one
+placement. A band across a surface takes `ground-band`. `pnpm check:colours`
+refuses a pill painted against one ground; see
+`docs/interface/STYLING-SYSTEM.md` → Pills follow their ground.
+
 Every role is declared once and is at most two reads from a colour: read a ramp
 or state step (`--sp-neutral-N`, `--sp-state-<scale>-N`) or alias one role that
 does. Every edge is an opaque step. After touching a token, run

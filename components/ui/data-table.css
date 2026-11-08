@@ -1,0 +1,20 @@
+@layer components {
+  .data-table-simple :is(th, td) {
+    padding-inline: calc(var(--spacing) * 5);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .data-table-simple tbody :is(th, td) {
+    padding-block: calc(var(--spacing) * 2.75);
+    font-weight: var(--font-weight-normal);
+  }
+
+  .data-table-simple tbody tr + tr > :is(th, td) {
+    @apply row-rule row-rule-flush;
+  }
+
+  .data-table-simple tbody tr + tr > :first-child {
+    --row-rule-inset: calc(var(--spacing) * 5);
+  }
+}

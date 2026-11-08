@@ -1,6 +1,8 @@
 'use client';
 
 import { motion } from 'motion/react';
+import { createPortal } from 'react-dom';
+import { MorphingText, MORPH_WORDS_MS } from '@/components/ui/morphing-text';
 import {
   Activity,
   createContext,
@@ -205,7 +207,7 @@ export function ProcessSheet({
   const [landed, setLanded] = useState<ProcessTab | null>(null);
   // The frame's bands and divider, held and moved through a swap.
   const chrome = useRef<HTMLDivElement>(null);
-  useSheetChrome(chrome, {
+  const chromeTitles = useSheetChrome(chrome, {
     shown,
     incoming,
     settled: incoming === null && (!entering || landed === shown),
@@ -310,6 +312,13 @@ export function ProcessSheet({
           finishesLeaving
         >
           <div ref={chrome} className="sheet-chrome" aria-hidden="true" />
+          {chromeTitles.map(({ host, text }, index) =>
+            createPortal(
+              <MorphingText text={text} duration={MORPH_WORDS_MS} />,
+              host,
+              String(index),
+            ),
+          )}
           {/* The section on screen, and the one coming while it fades out:
               rendered hidden beforehand, so the swap only has to show it and a
               heavy section cannot stall its own fade-in. */}

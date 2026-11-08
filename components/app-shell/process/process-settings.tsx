@@ -4,7 +4,7 @@ import { useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip } from '@/components/ui/tooltip';
-import CircleQuestionmark from 'blode-icons-react/icons/circle-questionmark';
+import CircleInfo from 'blode-icons-react/icons/circle-info';
 import Archive from 'blode-icons-react/icons/archive';
 import TrashCanSimple from 'blode-icons-react/icons/trash-can-simple';
 import { MenuIcon } from '@/components/app-shell/sidebar/menu-parts';
@@ -53,7 +53,7 @@ export function ProcessSettings({ process }: { process: ProcessSummary }) {
             <p className="text-dense text-primary flex min-h-6 items-center font-medium">
               Evaluation
             </p>
-            <div className="text-dense text-primary flex items-center gap-1">
+            <div className="text-dense text-muted-strong flex items-center gap-1">
               <div className="flex items-center gap-2">
                 <MenuIcon
                   name={`${process.evaluation}Filled`}
@@ -72,9 +72,9 @@ export function ProcessSettings({ process }: { process: ProcessSummary }) {
                 <button
                   type="button"
                   aria-label="How evaluation works"
-                  className="text-muted-strong hover:text-muted focus-visible:text-primary focus-visible:outline-field-edge-active inline-grid size-6 flex-none cursor-help place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
+                  className="text-muted-strong hover:text-primary focus-visible:text-primary focus-visible:outline-field-edge-active inline-grid size-6 flex-none cursor-help place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
-                  <CircleQuestionmark aria-hidden size={18} strokeWidth={1.8} />
+                  <CircleInfo aria-hidden size={16} strokeWidth={1.5} />
                 </button>
               </Tooltip>
             </div>
@@ -147,7 +147,7 @@ function Section({
   return (
     <section
       aria-labelledby={id}
-      className="border-rule-faint grid gap-3 border-t pt-5 first:border-t-0 first:pt-0"
+      className="border-rule-faint grid gap-3 border-t py-5 first:border-t-0 first:pt-0"
     >
       {title ? (
         <h3 id={id} className="readout text-muted flex min-h-6 items-center">

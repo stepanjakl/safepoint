@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { Loader } from '@/components/ui/loader';
 import {
   Arrival,
-  EmptyState,
   LOADER_DELAY_MS,
   LOADER_MIN_MS,
   LOADER_SLOW_MS,
@@ -56,16 +56,8 @@ export function LoaderTiming() {
         long.
       </p>
       <div className="bg-surface-primary flex h-96 flex-col rounded-lg px-6">
-        {phase === 'waiting' ? null : phase ? (
-          <EmptyState
-            role="status"
-            loading
-            title={
-              phase === 'slow'
-                ? 'Still loading the rulebook…'
-                : 'Loading the rulebook…'
-            }
-          />
+        {phase ? (
+          <Loader phase={phase} size="page" label="Loading the rulebook…" />
         ) : load ? (
           // Keyed by the load, so each replay arrives afresh.
           <Arrival key={load.at} fadeIn={fadeIn} className="m-auto">

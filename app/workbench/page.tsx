@@ -396,6 +396,13 @@ export default function WorkbenchPage() {
           {' · '}
           <Link
             className="underline underline-offset-4"
+            href="/workbench/section-transitions"
+          >
+            Section transitions
+          </Link>
+          {' · '}
+          <Link
+            className="underline underline-offset-4"
             href="/workbench/drawers"
           >
             Drawers
@@ -449,9 +456,23 @@ export default function WorkbenchPage() {
           {' · '}
           <Link
             className="underline underline-offset-4"
+            href="/workbench/table-headers"
+          >
+            Table headers
+          </Link>
+          {' · '}
+          <Link
+            className="underline underline-offset-4"
             href="/workbench/states"
           >
             State illustrations
+          </Link>
+          {' · '}
+          <Link
+            className="underline underline-offset-4"
+            href="/workbench/loading"
+          >
+            Loading states
           </Link>
           {' · '}
           <Link

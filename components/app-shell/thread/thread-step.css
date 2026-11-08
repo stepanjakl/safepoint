@@ -1072,13 +1072,31 @@
       color var(--duration-state) ease-out,
       background-color var(--duration-state) ease-out;
   }
+  /* A flag in its step's tone moves, face and ink, by how far its ground
+     sits from the pane, as every pill does (severity.css). */
+  .thread-step-flag {
+    --flag-lift-light: calc(var(--sp-ground-lift-light) - var(--sp-layer-lift-light));
+    --flag-lift-dark: calc(var(--sp-ground-lift-dark) - var(--sp-layer-lift-dark));
+  }
   .thread-step[data-status='attention'] .thread-step-flag {
-    color: var(--sp-state-decision);
-    background-color: var(--sp-thread-attention-face);
+    color: light-dark(
+      oklch(from var(--sp-state-decision) calc(l + var(--flag-lift-light)) c h),
+      oklch(from var(--sp-state-decision) calc(l + var(--flag-lift-dark)) c h)
+    );
+    background-color: light-dark(
+      oklch(from var(--sp-thread-attention-face) calc(l + var(--flag-lift-light)) c h),
+      oklch(from var(--sp-thread-attention-face) calc(l + var(--flag-lift-dark)) c h)
+    );
   }
   .thread-step[data-status='blocked'] .thread-step-flag {
-    color: var(--sp-state-blocked);
-    background-color: var(--sp-thread-blocked-face);
+    color: light-dark(
+      oklch(from var(--sp-state-blocked) calc(l + var(--flag-lift-light)) c h),
+      oklch(from var(--sp-state-blocked) calc(l + var(--flag-lift-dark)) c h)
+    );
+    background-color: light-dark(
+      oklch(from var(--sp-thread-blocked-face) calc(l + var(--flag-lift-light)) c h),
+      oklch(from var(--sp-thread-blocked-face) calc(l + var(--flag-lift-dark)) c h)
+    );
   }
   /* A step further under the row's hover or focus, so the pills rise with
      the wash rather than sinking into it. */
@@ -1102,12 +1120,18 @@
   .thread-step[data-status='attention']:not([data-fixed])
     > .thread-step-row:is(:hover, :has(> .thread-step-toggle:focus-visible))
     .thread-step-flag:not(:hover, :focus-visible) {
-    background-color: var(--sp-thread-attention-face-hover);
+    background-color: light-dark(
+      oklch(from var(--sp-thread-attention-face-hover) calc(l + var(--flag-lift-light)) c h),
+      oklch(from var(--sp-thread-attention-face-hover) calc(l + var(--flag-lift-dark)) c h)
+    );
   }
   .thread-step[data-status='blocked']:not([data-fixed])
     > .thread-step-row:is(:hover, :has(> .thread-step-toggle:focus-visible))
     .thread-step-flag:not(:hover, :focus-visible) {
-    background-color: var(--sp-thread-blocked-face-hover);
+    background-color: light-dark(
+      oklch(from var(--sp-thread-blocked-face-hover) calc(l + var(--flag-lift-light)) c h),
+      oklch(from var(--sp-thread-blocked-face-hover) calc(l + var(--flag-lift-dark)) c h)
+    );
   }
   /* A fact that goes somewhere sits above the row's stretch as its own
      control; its ink comes forward when it is the target. */
@@ -1144,12 +1168,24 @@
       background-color var(--duration-state) ease-out;
   }
   .thread-step[data-status='attention'] button.thread-step-flag:is(:hover, :focus-visible) {
-    color: var(--sp-thread-attention-ink-active);
-    background-color: var(--sp-thread-attention-face-active);
+    color: light-dark(
+      oklch(from var(--sp-thread-attention-ink-active) calc(l + var(--flag-lift-light)) c h),
+      oklch(from var(--sp-thread-attention-ink-active) calc(l + var(--flag-lift-dark)) c h)
+    );
+    background-color: light-dark(
+      oklch(from var(--sp-thread-attention-face-active) calc(l + var(--flag-lift-light)) c h),
+      oklch(from var(--sp-thread-attention-face-active) calc(l + var(--flag-lift-dark)) c h)
+    );
   }
   .thread-step[data-status='blocked'] button.thread-step-flag:is(:hover, :focus-visible) {
-    color: var(--sp-thread-blocked-ink-active);
-    background-color: var(--sp-thread-blocked-face-active);
+    color: light-dark(
+      oklch(from var(--sp-thread-blocked-ink-active) calc(l + var(--flag-lift-light)) c h),
+      oklch(from var(--sp-thread-blocked-ink-active) calc(l + var(--flag-lift-dark)) c h)
+    );
+    background-color: light-dark(
+      oklch(from var(--sp-thread-blocked-face-active) calc(l + var(--flag-lift-light)) c h),
+      oklch(from var(--sp-thread-blocked-face-active) calc(l + var(--flag-lift-dark)) c h)
+    );
   }
   /* The second axis: what each step took, and the chevron, at the far end. */
   .thread-step-time {

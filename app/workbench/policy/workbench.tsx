@@ -3,6 +3,12 @@
 import Link from 'next/link';
 import { useMemo, useRef, useState, type FormEvent } from 'react';
 
+import {
+  DATA_TABLE_BODY,
+  DATA_TABLE_HEAD,
+  DataTable,
+} from '@/components/ui/data-table';
+import { cx } from '@/lib/cx';
 import { Button } from '@/components/ui/button';
 import {
   getLineFacts,
@@ -617,47 +623,47 @@ export function PolicyWorkbench({
               <summary className="cursor-pointer">
                 Seven gate obligations
               </summary>
-              <div className="mt-2 max-w-full overflow-auto">
-                <table className="w-full border-collapse text-left">
-                  <thead>
-                    <tr className="border-rule-default border-b">
-                      <th scope="col" className="py-2 pr-3">
-                        Gate
-                      </th>
-                      <th scope="col" className="py-2 pr-3">
-                        Calculated
-                      </th>
-                      <th scope="col" className="py-2 pr-3">
-                        Reviewed
-                      </th>
-                      <th scope="col" className="py-2">
-                        Agent assessment
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {gateObligations.map(({ gate, obligation }) => (
-                      <tr key={gate} className="border-rule-default border-b">
-                        <th scope="row" className="py-2 pr-3 font-normal">
-                          {gate.replaceAll('_', ' ')}
-                        </th>
-                        <td className="py-2 pr-3">
-                          {obligation.replaceAll('_', ' ')}
-                        </td>
-                        <td className="py-2 pr-3">
-                          {selectedRow.baseline.gateObligations
-                            .find((entry) => entry.gate === gate)
-                            ?.obligation.replaceAll('_', ' ') ?? 'missing'}
-                        </td>
-                        <td className="py-2">
-                          {selectedCandidate.gateAssessments
-                            .find((entry) => entry.gate === gate)
-                            ?.result.replaceAll('_', ' ') ?? 'missing'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="mt-2 min-w-0">
+                <DataTable>
+                  <div className="max-w-full overflow-x-auto">
+                    <table className={cx(DATA_TABLE_BODY, 'data-table-simple')}>
+                      <thead>
+                        <tr>
+                          <th scope="col" className={DATA_TABLE_HEAD}>
+                            Gate
+                          </th>
+                          <th scope="col" className={DATA_TABLE_HEAD}>
+                            Calculated
+                          </th>
+                          <th scope="col" className={DATA_TABLE_HEAD}>
+                            Reviewed
+                          </th>
+                          <th scope="col" className={DATA_TABLE_HEAD}>
+                            Agent assessment
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {gateObligations.map(({ gate, obligation }) => (
+                          <tr key={gate}>
+                            <th scope="row">{gate.replaceAll('_', ' ')}</th>
+                            <td>{obligation.replaceAll('_', ' ')}</td>
+                            <td>
+                              {selectedRow.baseline.gateObligations
+                                .find((entry) => entry.gate === gate)
+                                ?.obligation.replaceAll('_', ' ') ?? 'missing'}
+                            </td>
+                            <td>
+                              {selectedCandidate.gateAssessments
+                                .find((entry) => entry.gate === gate)
+                                ?.result.replaceAll('_', ' ') ?? 'missing'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </DataTable>
               </div>
               <p className="text-muted mt-2">
                 Agent assessments belong to the recorded proposal and cannot
@@ -690,64 +696,62 @@ export function PolicyWorkbench({
               .
             </p>
           </div>
-          <div className="max-w-full overflow-auto">
-            <table className="text-meta w-full border-collapse text-left">
-              <thead>
-                <tr className="border-rule-default border-b">
-                  <th scope="col" className="py-2 pr-4">
-                    Product
-                  </th>
-                  <th scope="col" className="py-2 pr-4">
-                    Current checks
-                  </th>
-                  <th scope="col" className="py-2 pr-4">
-                    Reviewed replay
-                  </th>
-                  <th scope="col" className="py-2 pr-4">
-                    Eligibility
-                  </th>
-                  <th scope="col" className="py-2 pr-4">
-                    Gates
-                  </th>
-                  <th scope="col" className="py-2">
-                    Finding codes
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => (
-                  <tr key={row.sku} className="border-rule-default border-b">
-                    <th scope="row" className="py-2 pr-4 font-normal">
-                      <button
-                        type="button"
-                        className="text-primary underline underline-offset-2"
-                        onClick={() => {
-                          setSelectedSku(row.sku);
-                          setTrial(null);
-                          setStatus(`Viewing ${row.productName}, ${row.sku}.`);
-                          detailHeading.current?.focus();
-                        }}
-                      >
-                        {row.productName} · {row.sku}
-                      </button>
-                    </th>
-                    <td className="py-2 pr-4">
-                      {row.result.verdict.replaceAll('_', ' ')}
-                    </td>
-                    <td className="py-2 pr-4">{row.baseline.eligibility}</td>
-                    <td className="py-2 pr-4">
-                      {row.agrees ? 'Agrees' : 'Differs'}
-                    </td>
-                    <td className="py-2 pr-4">
-                      {row.gatesAgree ? 'Agrees' : 'Differs'}
-                    </td>
-                    <td className="py-2">
-                      {row.findingsAgree ? 'Agrees' : 'Differs'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="min-w-0">
+            <DataTable>
+              <div className="max-w-full overflow-x-auto">
+                <table className={cx(DATA_TABLE_BODY, 'data-table-simple')}>
+                  <thead>
+                    <tr>
+                      <th scope="col" className={DATA_TABLE_HEAD}>
+                        Product
+                      </th>
+                      <th scope="col" className={DATA_TABLE_HEAD}>
+                        Current checks
+                      </th>
+                      <th scope="col" className={DATA_TABLE_HEAD}>
+                        Reviewed replay
+                      </th>
+                      <th scope="col" className={DATA_TABLE_HEAD}>
+                        Eligibility
+                      </th>
+                      <th scope="col" className={DATA_TABLE_HEAD}>
+                        Gates
+                      </th>
+                      <th scope="col" className={DATA_TABLE_HEAD}>
+                        Finding codes
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((row) => (
+                      <tr key={row.sku}>
+                        <th scope="row">
+                          <button
+                            type="button"
+                            className="text-primary underline underline-offset-2"
+                            onClick={() => {
+                              setSelectedSku(row.sku);
+                              setTrial(null);
+                              setStatus(
+                                `Viewing ${row.productName}, ${row.sku}.`,
+                              );
+                              detailHeading.current?.focus();
+                            }}
+                          >
+                            {row.productName} · {row.sku}
+                          </button>
+                        </th>
+                        <td>{row.result.verdict.replaceAll('_', ' ')}</td>
+                        <td>{row.baseline.eligibility}</td>
+                        <td>{row.agrees ? 'Agrees' : 'Differs'}</td>
+                        <td>{row.gatesAgree ? 'Agrees' : 'Differs'}</td>
+                        <td>{row.findingsAgree ? 'Agrees' : 'Differs'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </DataTable>
           </div>
         </section>
 

@@ -134,12 +134,14 @@ function MenuTile({
 export function WorkspaceMenu({
   count,
   enterRef,
+  descriptionId,
   onEnter,
   onRevealComplete,
   shine,
 }: {
   count: number;
   enterRef: Ref<HTMLButtonElement>;
+  descriptionId?: string;
   onEnter: () => void;
   onRevealComplete: () => void;
   shine: boolean;
@@ -158,6 +160,7 @@ export function WorkspaceMenu({
       <li style={menuItemStyle(0)}>
         <button
           ref={enterRef}
+          aria-describedby={descriptionId}
           className={cx(
             MENU_ITEM,
             'workspace-menu-entry',

@@ -30,36 +30,50 @@ export const WORKING_FRAME_MS = 280;
 // An unlit petal is still there, faintly, so the mark keeps its shape.
 export const WORKING_RESTING = 0.3;
 
+// One turn of the petals; the loader's words keep this time (loader.tsx).
+export const WORKING_TURN_MS = WORKING_FRAMES.length * WORKING_FRAME_MS;
+
 // Each petal's opacity through one turn, closed on the first frame to loop.
 const PETAL_OPACITY = [0, 1, 2].map((petal) =>
-  [...WORKING_FRAMES, WORKING_FRAMES[0]!].map((lit) =>
-    lit[petal] ? 1 : WORKING_RESTING,
-  ),
+  [...WORKING_FRAMES, WORKING_FRAMES[0]!].map((lit) => ({
+    opacity: lit[petal] ? 1 : WORKING_RESTING,
+  })),
 );
 
-/* The workspace intro's mark, at its size, lighting its petals in turn. */
-export function WorkingMark({ className }: { className?: string }) {
+/*
+  The workspace intro's mark, lighting its petals in turn. A class given
+  replaces the intro's size rather than adding a second one. Every turn is
+  pinned to the document's clock (startTime 0), so marks on one page, and the
+  words a loader lights beside one, are always at the same point of it.
+*/
+export function WorkingMark({ className = 'size-16' }: { className?: string }) {
   const reduceMotion = useReducedMotion();
+  const petals = useRef<(SVGGElement | null)[]>([]);
+  useEffect(() => {
+    if (reduceMotion) return;
+    const turns = petals.current.map((petal, index) => {
+      const turn = petal?.animate(PETAL_OPACITY[index]!, {
+        duration: WORKING_TURN_MS,
+        iterations: Infinity,
+      });
+      if (turn) turn.startTime = 0;
+      return turn;
+    });
+    return () => turns.forEach((turn) => turn?.cancel());
+  }, [reduceMotion]);
   return (
     <BiomorphicSymbol
       variant="soft-radial"
-      className={cx('text-brand-mark size-16', className)}
-      renderPiece={(piece, index) =>
-        reduceMotion ? (
-          piece
-        ) : (
-          <motion.g
-            animate={{ opacity: PETAL_OPACITY[index] }}
-            transition={{
-              duration: (WORKING_FRAMES.length * WORKING_FRAME_MS) / 1000,
-              ease: 'linear',
-              repeat: Infinity,
-            }}
-          >
-            {piece}
-          </motion.g>
-        )
-      }
+      className={cx('text-brand-mark', className)}
+      renderPiece={(piece, index) => (
+        <g
+          ref={(petal) => {
+            petals.current[index] = petal;
+          }}
+        >
+          {piece}
+        </g>
+      )}
     />
   );
 }
@@ -147,24 +161,22 @@ export function Arrival({
 }
 
 /*
-  A panel with nothing to show yet, centred in the room its panel leaves: the
-  working mark while it loads (behind useLoader), the outline otherwise. Its words read as the
-  run view's empty state does.
+  A panel with nothing to show, centred in the room its panel leaves, under
+  its illustration. Its words read as the run view's empty state does. A panel
+  still loading draws Loader (loader.tsx) instead.
 */
 export function EmptyState({
   role,
-  loading = false,
-  fadeIn = loading,
+  fadeIn = false,
   title,
   illustration = 'isometric',
   children,
 }: {
   role: 'status' | 'alert';
-  loading?: boolean;
-  // A loader always fades in; a state that ends a wait does too (useLoader).
+  // A state that ends a wait fades in (useLoader).
   fadeIn?: boolean;
   title: string;
-  /** What stands above the title once the wait is over. */
+  /** What stands above the title. */
   illustration?: StateIllustrationName;
   children?: ReactNode;
 }) {
@@ -178,11 +190,7 @@ export function EmptyState({
       animate={{ opacity: !fadeIn || settled ? 1 : 0 }}
       transition={{ duration: DURATION_PANE }}
     >
-      {loading ? (
-        <WorkingMark />
-      ) : (
-        <StateIllustration name={illustration} className="text-muted" />
-      )}
+      <StateIllustration name={illustration} className="text-muted" />
       <div className="grid max-w-88 gap-3">
         <p className="text-title text-primary font-medium text-balance">
           {title}

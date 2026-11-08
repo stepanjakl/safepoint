@@ -11,7 +11,8 @@ import {
 
 import { useInstructions } from '@/components/app-shell/instructions/instructions-store';
 import { useTrial } from '@/components/brunch-orders/trial-parts';
-import { EmptyState, type LoaderPhase } from '@/components/ui/working-mark';
+import { Loader } from '@/components/ui/loader';
+import type { LoaderPhase } from '@/components/ui/working-mark';
 import type { RevisionChanges } from '@/lib/definitions/revision-changes';
 import type {
   DefinitionSet,
@@ -88,18 +89,7 @@ export function useRulebook() {
 
 /* The rulebook's first load, on the loader's timing (useLoader). */
 export function RulebookLoading({ phase }: { phase: LoaderPhase }) {
-  if (phase === 'waiting') return null;
-  return (
-    <EmptyState
-      role="status"
-      loading
-      title={
-        phase === 'slow'
-          ? 'Still loading the rulebook…'
-          : 'Loading the rulebook…'
-      }
-    />
-  );
+  return <Loader phase={phase} size="page" label="Loading the rulebook…" />;
 }
 
 export const REASONS: Record<Revision['reason'], string> = {

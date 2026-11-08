@@ -18,6 +18,7 @@ import EyeOpen from 'blode-icons-react/icons/eye-open';
 import EyeSlash from 'blode-icons-react/icons/eye-slash';
 import History from 'blode-icons-react/icons/history';
 import { IconButton } from '@/components/ui/icon-button';
+import { OverflowTooltip } from '@/components/ui/tooltip';
 
 /*
   What the assistant is asked about: the process on screen unless the reader
@@ -30,7 +31,7 @@ export type ContextProcess = { id: string; name: string };
 const POPOVER =
   'popover-motion control-face surface-popover rounded-shell outline-none';
 const ITEM =
-  'control-wash text-dense data-[hovered]:bg-surface-hover data-[focus-visible]:bg-surface-hover rounded-control flex h-8 cursor-default items-center gap-2 px-2.5 outline-none';
+  'control-wash text-dense data-[hovered]:bg-surface-hover data-[focus-visible]:bg-surface-hover rounded-control flex h-8 cursor-pointer items-center gap-2 ps-1.5 pe-2.5 outline-none';
 
 export function ContextPicker({
   choice,
@@ -80,7 +81,7 @@ export function ContextPicker({
       <Popover
         placement="top start"
         offset={6}
-        className={`${POPOVER} min-w-52`}
+        className={`${POPOVER} max-w-xs min-w-52`}
       >
         <Menu
           aria-label="Context"
@@ -93,9 +94,9 @@ export function ContextPicker({
                 : (String(key) as AssistantContextChoice),
             )
           }
-          className="grid p-1 outline-none"
+          className="grid min-w-0 p-1 outline-none"
         >
-          <MenuSection aria-label="Processes">
+          <MenuSection aria-label="Processes" className="min-w-0">
             {processes.map((process) => (
               <MenuItem
                 key={process.id}
@@ -103,19 +104,23 @@ export function ContextPicker({
                 textValue={process.name}
                 className={ITEM}
               >
-                {({ isSelected }) => (
+                {({ isSelected, isHovered, isFocused }) => (
                   <>
-                    <span className="min-w-0 flex-1 truncate">
-                      {process.name}
-                    </span>
-                    {process.id === onScreen ? (
-                      <EyeOpen
-                        aria-label="On screen"
-                        size={13}
-                        strokeWidth={1.8}
-                        className="text-muted flex-none"
-                      />
-                    ) : null}
+                    <EyeOpen
+                      aria-label={
+                        process.id === onScreen ? 'On screen' : undefined
+                      }
+                      aria-hidden={process.id !== onScreen}
+                      size={14}
+                      strokeWidth={1.8}
+                      className={`text-muted flex-none ${process.id === onScreen ? '' : 'invisible'}`}
+                    />
+                    <OverflowTooltip
+                      label={process.name}
+                      isOpen={isHovered || isFocused}
+                    >
+                      <span className="block truncate">{process.name}</span>
+                    </OverflowTooltip>
                     <Check
                       aria-hidden
                       size={14}
@@ -127,10 +132,11 @@ export function ContextPicker({
               </MenuItem>
             ))}
           </MenuSection>
-          <Separator className="border-rule-default my-1 border-t" />
+          <Separator className="my-1 ms-7 -me-1 border-t border-(--sp-popover-ring)" />
           <MenuItem id="none" textValue="No context" className={ITEM}>
             {({ isSelected }) => (
               <>
+                <span aria-hidden className="size-3.5 flex-none" />
                 <span className="flex-1">No context</span>
                 <Check
                   aria-hidden

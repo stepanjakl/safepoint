@@ -394,6 +394,7 @@ const TOOLTIP = {
   },
 };
 
+const WALKTHROUGH_DISMISS = { face: 75, ink: -450, hover: -25 };
 const HOVER = { light: 50, dark: -100 };
 const SELECTED = { light: 125, dark: -175 };
 const FOLLOWING_BY_FILE = {
@@ -648,6 +649,81 @@ const ANCHORED_BY_FILE = {
   'components/app-shell/thread/thread-step.css': {
     '--sp-thread-line': { on: 'primary', light: 225, dark: -200 },
     '--sp-thread-done': { on: 'primary', light: 450, dark: -375 },
+  },
+  'components/ui/walkthrough-hint.css': {
+    '--sp-walkthrough-dismiss-face': {
+      on: 'popover',
+      light: TOOLTIP.light.shift + WALKTHROUGH_DISMISS.face,
+      dark: TOOLTIP.dark.shift + WALKTHROUGH_DISMISS.face,
+    },
+    '--sp-walkthrough-dismiss-face-hover': {
+      on: 'popover',
+      light:
+        TOOLTIP.light.shift +
+        WALKTHROUGH_DISMISS.face +
+        WALKTHROUGH_DISMISS.hover,
+      dark:
+        TOOLTIP.dark.shift +
+        WALKTHROUGH_DISMISS.face +
+        WALKTHROUGH_DISMISS.hover,
+    },
+    '--sp-walkthrough-dismiss-edge': {
+      on: 'popover',
+      light:
+        TOOLTIP.light.shift + TOOLTIP.light.ring + WALKTHROUGH_DISMISS.face,
+      dark: TOOLTIP.dark.shift + TOOLTIP.dark.ring + WALKTHROUGH_DISMISS.face,
+    },
+    '--sp-walkthrough-dismiss-edge-hover': {
+      on: 'popover',
+      light:
+        TOOLTIP.light.shift +
+        TOOLTIP.light.ring +
+        WALKTHROUGH_DISMISS.face +
+        WALKTHROUGH_DISMISS.hover,
+      dark:
+        TOOLTIP.dark.shift +
+        TOOLTIP.dark.ring +
+        WALKTHROUGH_DISMISS.face +
+        WALKTHROUGH_DISMISS.hover,
+    },
+    '--sp-walkthrough-dismiss-highlight': {
+      on: 'popover',
+      light:
+        TOOLTIP.light.shift +
+        TOOLTIP.light.highlight +
+        WALKTHROUGH_DISMISS.face,
+      dark:
+        TOOLTIP.dark.shift + TOOLTIP.dark.highlight + WALKTHROUGH_DISMISS.face,
+    },
+    '--sp-walkthrough-dismiss-highlight-hover': {
+      on: 'popover',
+      light:
+        TOOLTIP.light.shift +
+        TOOLTIP.light.highlight +
+        WALKTHROUGH_DISMISS.face +
+        WALKTHROUGH_DISMISS.hover,
+      dark:
+        TOOLTIP.dark.shift +
+        TOOLTIP.dark.highlight +
+        WALKTHROUGH_DISMISS.face +
+        WALKTHROUGH_DISMISS.hover,
+    },
+    '--sp-walkthrough-dismiss-ink': {
+      on: 'popover',
+      light: TOOLTIP.light.shift + WALKTHROUGH_DISMISS.ink,
+      dark: TOOLTIP.dark.shift + WALKTHROUGH_DISMISS.ink,
+    },
+    '--sp-walkthrough-dismiss-ink-hover': {
+      on: 'popover',
+      light:
+        TOOLTIP.light.shift +
+        WALKTHROUGH_DISMISS.ink +
+        WALKTHROUGH_DISMISS.hover,
+      dark:
+        TOOLTIP.dark.shift +
+        WALKTHROUGH_DISMISS.ink +
+        WALKTHROUGH_DISMISS.hover,
+    },
   },
   'components/ui/tooltip.css': {
     /* A slate in both themes, set off the popover face (see TOOLTIP). */

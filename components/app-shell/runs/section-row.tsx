@@ -42,7 +42,19 @@ export function SectionRow({
         id={id}
         className="readout text-muted [font-weight:var(--sp-mono-weight-strong)]"
       >
-        {title}
+        {/* Match Torph's glyph boxes so handing back never changes text layout. */}
+        <span
+          data-section-title={title}
+          aria-hidden="true"
+          className="inline-block"
+        >
+          {Array.from(title).map((letter, index) => (
+            <span key={index} className="inline-block">
+              {letter === ' ' ? '\u00a0' : letter}
+            </span>
+          ))}
+        </span>
+        <span className="sr-only">{title}</span>
         {count !== undefined ? (
           <>
             {' '}

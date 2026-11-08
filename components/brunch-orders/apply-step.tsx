@@ -5,10 +5,12 @@ import { useEffect, useRef, useState } from 'react';
 import { Lede, plural, useTrial } from '@/components/brunch-orders/trial-parts';
 import { Button } from '@/components/ui/button';
 import {
+  DATA_TABLE_BODY,
   DATA_TABLE_HEAD,
   DATA_TABLE_NAME,
   DATA_TABLE_NAME_COLUMN,
   DATA_TABLE_NAME_UNDER,
+  DATA_TABLE_SECONDARY_NAME,
   DATA_TABLE_RULE,
   DATA_TABLE_RULE_ON,
   DataTable,
@@ -299,7 +301,7 @@ function ChangesTable({
   return (
     <DataTable>
       <div className="min-w-0 overflow-x-auto">
-        <table className="text-dense w-full border-separate border-spacing-0">
+        <table className={DATA_TABLE_BODY}>
           <caption className="sr-only">
             {written
               ? 'What was written, before and after'
@@ -348,7 +350,8 @@ function ChangesTable({
                 <td
                   className={cx(
                     DATA_TABLE_NAME_COLUMN,
-                    'text-muted py-2.75 pr-3',
+                    DATA_TABLE_SECONDARY_NAME,
+                    'py-2.75 pr-3',
                     index > 0 && DATA_TABLE_RULE_ON,
                   )}
                 >

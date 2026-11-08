@@ -26,6 +26,7 @@
 @import './drawer.css';
 
 /* Components. The order is the cascade order of their layered rules. */
+@import '../../components/ui/data-table.css';
 @import '../../components/ui/external-link.css';
 @import '../../components/ui/switch.css';
 @import '../../components/ui/swap.css';
@@ -47,6 +48,7 @@
 @import '../../components/app-shell/assistant/assistant-panel.css';
 @import '../../components/app-shell/process/process-sheet.css';
 @import '../../components/ui/tooltip.css';
+@import '../../components/ui/walkthrough-hint.css';
 @import '../../components/review/effects-rail.css';
 @import '../../components/app-shell/resizable-shell.css';
 @import '../../components/app-shell/workspace-intro.css';
@@ -64,6 +66,7 @@
 @import '../../components/brunch-orders/rulebook-history.css';
 @import '../../components/brunch-orders/calculate-step.css';
 @import '../../components/ui/brand.css';
+@import '../../components/ui/loader.css';
 @import '../workbench/run/run-player.css';
 @import '../workbench/run/shimmer-directions.css';
 @import '../workbench/explore/review-explorer.css';
@@ -73,3 +76,4 @@
 @import '../workbench/assistant-button/assistant-button.css';
 @import '../workbench/draft-progress/draft-progress.css';
 @import '../workbench/run/thread-progress.css';
+@import '../workbench/section-transitions/section-transitions.css';

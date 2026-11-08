@@ -62,9 +62,20 @@
   }
 
   /* A calculation's kind, in its own colour rather than a state's. */
+  /* Its ink and ring move by how far its ground sits from the pane, as every
+     pill's do (severity.css). */
   .rulebook-calculation-pill {
-    color: var(--sp-rules-calculation);
-    box-shadow: inset 0 0 0 1px var(--sp-rules-calculation-ring);
+    --calculation-lift-light: calc(var(--sp-ground-lift-light) - var(--sp-layer-lift-light));
+    --calculation-lift-dark: calc(var(--sp-ground-lift-dark) - var(--sp-layer-lift-dark));
+    color: light-dark(
+      oklch(from var(--sp-rules-calculation) calc(l + var(--calculation-lift-light)) c h),
+      oklch(from var(--sp-rules-calculation) calc(l + var(--calculation-lift-dark)) c h)
+    );
+    box-shadow: inset 0 0 0 1px
+      light-dark(
+        oklch(from var(--sp-rules-calculation-ring) calc(l + var(--calculation-lift-light)) c h),
+        oklch(from var(--sp-rules-calculation-ring) calc(l + var(--calculation-lift-dark)) c h)
+      );
   }
 
   /* A calculation spans two, from its kind alone, so filtering never resizes it. */

@@ -9,7 +9,9 @@ import {
 } from '@/components/app-shell/drawer-overlay';
 import { useTrial } from '@/components/brunch-orders/trial-parts';
 import { FilterTabs } from '@/components/ui/filter-tabs';
+import { Loader } from '@/components/ui/loader';
 import { TabSwap } from '@/components/ui/swap';
+import { useLoader } from '@/components/ui/working-mark';
 
 type DataResponse =
   | {
@@ -49,6 +51,7 @@ export function DataDrawer({
   const [chosen, setChosen] = useState<string | null>(null);
   const loading = useTrial<DataResponse>('/api/dev/brunch-orders/read');
   const body = loading.state.kind === 'done' ? loading.state.body : null;
+  const loader = useLoader(loading.state.kind === 'running');
   const data = useMemo(
     () =>
       preloaded
@@ -87,7 +90,13 @@ export function DataDrawer({
           width="fixed"
         >
           <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 p-5">
-            {data && selected && selectedTab ? (
+            {loader.phase ? (
+              <Loader
+                phase={loader.phase}
+                size="panel"
+                label="Loading the read…"
+              />
+            ) : data && selected && selectedTab ? (
               <>
                 <FilterTabs
                   tabs={tabs}
@@ -124,13 +133,11 @@ export function DataDrawer({
               </p>
             ) : (
               <p role="status" className="text-dense text-muted">
-                {loading.state.kind === 'running'
-                  ? 'Loading the read…'
-                  : body?.kind === 'error'
-                    ? body.message
-                    : loading.state.kind === 'failed'
-                      ? loading.state.message
-                      : ''}
+                {body?.kind === 'error'
+                  ? body.message
+                  : loading.state.kind === 'failed'
+                    ? loading.state.message
+                    : ''}
               </p>
             )}
           </div>

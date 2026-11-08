@@ -151,6 +151,7 @@ test('the first workspace visit reveals navigation after the intro', async ({
   const processes = page.locator('.workspace-menu-shine');
 
   await expect(shell).toHaveAttribute('data-workspace-reveal', 'waiting');
+  await expect(page.locator('.walkthrough-hint')).toHaveCount(0);
   await expect(navigation).toHaveAttribute('inert', '');
   await expect(handle).toBeHidden();
   await expect(handle).toHaveAttribute('tabindex', '-1');
@@ -181,7 +182,8 @@ test('the first workspace visit reveals navigation after the intro', async ({
   await expect(navigation).not.toHaveAttribute('inert');
   await expect(handle).toBeVisible();
   await expect(handle).toHaveAttribute('tabindex', '0');
-  await expect(processes).toHaveAttribute('data-shine', 'true');
+  await expect(processes).not.toHaveAttribute('data-shine');
+  await expect(page.locator('.walkthrough-hint')).toBeVisible();
 });
 
 test('process navigation fades content while the pane and assistant stay steady', async ({

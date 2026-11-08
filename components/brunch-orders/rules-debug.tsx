@@ -9,6 +9,7 @@ import {
 import { ModelLimits } from '@/components/brunch-orders/model-limits';
 import { useTrial } from '@/components/brunch-orders/trial-parts';
 import {
+  DATA_TABLE_BODY,
   DATA_TABLE_HEAD,
   DATA_TABLE_RULE,
   DATA_TABLE_RULE_ON,
@@ -476,7 +477,7 @@ function ValuesView({
       ) : null}
       <Scroller label="Values on every record">
         <DataTable>
-          <table className="text-dense w-full border-separate border-spacing-0">
+          <table className={DATA_TABLE_BODY}>
             <caption className="sr-only">
               What the formula gives on every {debug.about.record}
             </caption>
@@ -631,7 +632,7 @@ function SentencesView({ debug }: { debug: DraftDebug }) {
       ) : null}
       {debug.accounting ? (
         <DataTable>
-          <table className="text-dense w-full border-separate border-spacing-0">
+          <table className={DATA_TABLE_BODY}>
             <caption className="sr-only">
               What each sentence of the instructions was read as
             </caption>
@@ -722,7 +723,7 @@ function ColumnsView({ debug }: { debug: DraftDebug }) {
   return (
     <Scroller label="Columns">
       <DataTable>
-        <table className="text-dense w-full border-separate border-spacing-0">
+        <table className={DATA_TABLE_BODY}>
           <caption className="sr-only">The columns each rule reads</caption>
           <thead>
             <tr>

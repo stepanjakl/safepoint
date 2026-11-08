@@ -24,15 +24,19 @@ import {
 import { Button } from '@/components/ui/button';
 import { FilterTabs } from '@/components/ui/filter-tabs';
 import { Fold } from '@/components/ui/fold';
+import { Loader } from '@/components/ui/loader';
 import {
+  DATA_TABLE_BODY,
   DATA_TABLE_HEAD,
   DATA_TABLE_NAME,
   DATA_TABLE_NAME_COLUMN,
   DATA_TABLE_NAME_UNDER,
+  DATA_TABLE_SECONDARY_NAME,
   DATA_TABLE_RULE,
   DataTable,
 } from '@/components/ui/data-table';
 import { Tooltip } from '@/components/ui/tooltip';
+import { useLoader } from '@/components/ui/working-mark';
 import type {
   Calculation,
   CrossCell,
@@ -146,6 +150,7 @@ export function CalculateStep({
   if (current && current.calculation !== last?.calculation) setLast(current);
   const shown = current ?? last;
   const busy = calculate.state.kind === 'running';
+  const working = useLoader(busy);
   // The marks arrive once per cross-check: when it finishes, or when the
   // step is first opened on one this browser has not seen arrive.
   const revealKey = shown?.check
@@ -264,8 +269,12 @@ export function CalculateStep({
             {plural(shown.calculation.accepted, 'definition')}).
           </p>
         </>
-      ) : busy ? (
-        <p className="text-dense text-muted">Working the values out…</p>
+      ) : working.phase ? (
+        <Loader
+          phase={working.phase}
+          label="Working the values out…"
+          className="text-dense"
+        />
       ) : null}
     </div>
   );
@@ -291,6 +300,7 @@ function CrossCheckResult({
   onShow: (showing: Showing) => void;
 }) {
   const differ = check ? check.total - check.agreed : 0;
+  const working = useLoader(busy);
   return (
     <div className="grid gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -319,8 +329,13 @@ function CrossCheckResult({
                 </StatusChip>
               )}
             </Outcome>
-          ) : busy ? (
-            <span className="text-dense text-muted">Working…</span>
+          ) : working.phase ? (
+            <Loader
+              phase={working.phase}
+              label="Working…"
+              announce={false}
+              className="text-dense"
+            />
           ) : null}
         </div>
         {check ? (
@@ -389,7 +404,7 @@ function ValuesTable({
       {/* Scrolls across only: a fold's clip margin under the last row would
           otherwise make it scroll a few pixels down. */}
       <div className="min-w-0 overflow-x-auto overflow-y-hidden">
-        <table className="calc-table text-dense w-full border-separate border-spacing-0">
+        <table className={cx('calc-table', DATA_TABLE_BODY)}>
           <caption className="sr-only">
             Values worked out for every record
           </caption>
@@ -476,7 +491,8 @@ function ValuesTable({
                     <td
                       className={cx(
                         DATA_TABLE_NAME_COLUMN,
-                        'text-muted py-2.75 pr-3',
+                        DATA_TABLE_SECONDARY_NAME,
+                        'py-2.75 pr-3',
                       )}
                     >
                       {row.name || null}

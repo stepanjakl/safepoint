@@ -206,7 +206,6 @@ function viewAt(
           writtenAt: stage === 'committed' ? at(372) : null,
         }
       : null,
-    end: 'Run complete · 6m 12s from the request',
   };
 }
 

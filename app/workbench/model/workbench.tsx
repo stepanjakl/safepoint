@@ -5,6 +5,8 @@ import { useState } from 'react';
 import type { z } from 'zod';
 
 import { Button } from '@/components/ui/button';
+import { Loader } from '@/components/ui/loader';
+import { useLoader } from '@/components/ui/working-mark';
 import type { LinePreview } from '@/lib/model-workbench/line';
 import {
   MODEL_IDS,
@@ -97,6 +99,7 @@ export function ModelWorkbench({
   const [selectedModel, setSelectedModel] = useState<ModelId>(MODEL_IDS[0]);
   const [selectedSku, setSelectedSku] = useState<Sku>(initialSku);
   const [running, setRunning] = useState(false);
+  const reviewing = useLoader(running);
   const [status, setStatus] = useState('');
   const [data, setData] = useState<ModelWorkbenchResponse | null>(null);
   const preview = previews.find(({ sku }) => sku === selectedSku);
@@ -230,8 +233,15 @@ export function ModelWorkbench({
               onPress={run}
               isDisabled={running || !keyConfigured}
             >
-              {running ? 'Reviewing…' : 'Run model review'}
+              Run model review
             </Button>
+            {reviewing.phase ? (
+              <Loader
+                phase={reviewing.phase}
+                label="Reviewing…"
+                className="text-meta"
+              />
+            ) : null}
           </div>
           <p className="text-meta text-muted">
             {keyConfigured

@@ -21,10 +21,12 @@ import { Lede, useTrial } from '@/components/brunch-orders/trial-parts';
 import { Button } from '@/components/ui/button';
 import { IconButton } from '@/components/ui/icon-button';
 import {
+  DATA_TABLE_BODY,
   DATA_TABLE_HEAD,
   DATA_TABLE_NAME,
   DATA_TABLE_NAME_COLUMN,
   DATA_TABLE_NAME_UNDER,
+  DATA_TABLE_SECONDARY_NAME,
   DATA_TABLE_RULE,
   DataTable,
 } from '@/components/ui/data-table';
@@ -464,43 +466,7 @@ export function ProposalTable({
 
   return (
     <div className="grid gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          {counts.map(({ verdict, count }) => (
-            <Pill key={verdict} tone={VERDICT[verdict].tone}>
-              {count} {VERDICT[verdict].label.toLowerCase()}
-            </Pill>
-          ))}
-          <AnimatePresence initial={false}>
-            {ready.length ? (
-              <motion.span
-                key="approve-ready"
-                initial={reduceMotion ? false : { opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={reduceMotion ? undefined : { opacity: 0 }}
-                transition={{ duration: DURATION_STATE, ease: 'easeOut' }}
-              >
-                <Button
-                  size="medium"
-                  onPress={() => {
-                    const at = new Date().toISOString();
-                    onDecide(
-                      Object.fromEntries(
-                        ready.map(([key]) => [key, { kind: 'approve', at }]),
-                      ),
-                      `${ready.length} ready approved`,
-                    );
-                  }}
-                >
-                  <span>
-                    Approve all <MorphingText text={String(ready.length)} />{' '}
-                    ready
-                  </span>
-                </Button>
-              </motion.span>
-            ) : null}
-          </AnimatePresence>
-        </div>
+      <div className="flex">
         <FilterTabs
           size="small"
           ariaLabel="Records to show"
@@ -536,7 +502,7 @@ export function ProposalTable({
         {(view) => (
           <DataTable>
             <div className="min-w-0 overflow-x-auto overflow-y-hidden">
-              <table className="calc-table text-dense w-full border-separate border-spacing-0">
+              <table className={cx('calc-table', DATA_TABLE_BODY)}>
                 <caption className="sr-only">
                   What is proposed for every record
                 </caption>
@@ -617,6 +583,52 @@ export function ProposalTable({
                   </AnimatePresence>
                 </tbody>
               </table>
+            </div>
+            <div
+              role="group"
+              aria-label="Proposal summary"
+              className="ground-raised border-rule-faint bg-surface-primary sticky bottom-0 z-3 flex flex-wrap items-center justify-between gap-3 border-t px-4 py-3"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                {counts.map(({ verdict, count }) => (
+                  <Pill key={verdict} tone={VERDICT[verdict].tone}>
+                    {count} {VERDICT[verdict].label.toLowerCase()}
+                  </Pill>
+                ))}
+              </div>
+              <AnimatePresence initial={false}>
+                {ready.length ? (
+                  <motion.div
+                    key="approve-ready"
+                    className="ml-auto"
+                    initial={reduceMotion ? false : { opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={reduceMotion ? undefined : { opacity: 0 }}
+                    transition={{ duration: DURATION_STATE, ease: 'easeOut' }}
+                  >
+                    <Button
+                      size="medium"
+                      onPress={() => {
+                        const at = new Date().toISOString();
+                        onDecide(
+                          Object.fromEntries(
+                            ready.map(([key]) => [
+                              key,
+                              { kind: 'approve', at },
+                            ]),
+                          ),
+                          `${ready.length} ready approved`,
+                        );
+                      }}
+                    >
+                      <span>
+                        Approve all <MorphingText text={String(ready.length)} />{' '}
+                        ready
+                      </span>
+                    </Button>
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
             </div>
           </DataTable>
         )}
@@ -725,7 +737,8 @@ function ProposalRow({
         <td
           className={cx(
             DATA_TABLE_NAME_COLUMN,
-            'text-muted-strong py-2.75 pr-3 font-medium',
+            DATA_TABLE_SECONDARY_NAME,
+            'py-2.75 pr-3',
           )}
         >
           {name || null}

@@ -15,10 +15,12 @@ import { cx } from '@/lib/cx';
 export function DataTable({
   as = 'div',
   className,
+  variant = 'standard',
   children,
   ...props
 }: ComponentPropsWithRef<'article'> & {
   as?: 'div' | 'article';
+  variant?: 'standard' | 'compact';
   children: ReactNode;
 }) {
   // A div takes every prop an article does.
@@ -28,8 +30,11 @@ export function DataTable({
       {...props}
       className={cx(
         // min-w-0: in a grid it would otherwise grow to its table's width.
-        // One face, edge and radius for every table in the app.
-        'border-rule-faint bg-surface-primary rounded-shell min-w-0 overflow-clip border',
+        // Each variant owns its face and radius.
+        'min-w-0',
+        variant === 'compact'
+          ? 'bg-surface-inset rounded-control overflow-auto'
+          : 'ground-raised border-rule-faint bg-surface-primary rounded-shell overflow-clip border',
         className,
       )}
     >
@@ -38,9 +43,29 @@ export function DataTable({
   );
 }
 
+export const DATA_TABLE_BODY =
+  'text-dense w-full border-separate border-spacing-0';
+
+export const DATA_TABLE_HEADING =
+  'ground-band bg-surface-band readout text-muted-strong font-semibold';
+
 // The heading row's face; its cells are inset as the rows' are.
-export const DATA_TABLE_HEAD =
-  'readout text-muted border-rule-faint border-b py-3 font-semibold';
+export const DATA_TABLE_HEAD = cx(
+  DATA_TABLE_HEADING,
+  'border-rule-faint border-b py-3',
+);
+
+export const DATA_TABLE_SECONDARY_NAME = 'text-muted font-normal';
+
+export const COMPACT_TABLE_BODY =
+  'value text-meta border-separate border-spacing-0';
+export const COMPACT_TABLE_CELL =
+  'border-rule-faint border-b px-3 py-1.5 whitespace-nowrap';
+export const COMPACT_TABLE_HEAD = cx(
+  COMPACT_TABLE_CELL,
+  DATA_TABLE_HEADING,
+  'text-left',
+);
 
 // A row's name, in its first cell.
 export const DATA_TABLE_NAME = 'font-semibold';
@@ -55,4 +80,7 @@ export const DATA_TABLE_RULE_ON = 'row-rule row-rule-flush';
 // A record's name: its own column where there is room, under its key where
 // there is not (on a phone, beside it would wrap a word to a line).
 export const DATA_TABLE_NAME_COLUMN = 'max-sm:hidden';
-export const DATA_TABLE_NAME_UNDER = 'text-muted block font-normal sm:hidden';
+export const DATA_TABLE_NAME_UNDER = cx(
+  DATA_TABLE_SECONDARY_NAME,
+  'block sm:hidden',
+);

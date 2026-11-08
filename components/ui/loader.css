@@ -1,0 +1,53 @@
+@layer components {
+  /* The words and their glint stacked in one cell, so the glint lies on them. */
+  .loader-words {
+    display: inline-grid;
+  }
+  .loader-words > * {
+    grid-area: 1 / 1;
+  }
+  /* A second copy of the words in the mark's colour, shown through a band that
+     crosses them once per turn (--loader-turn, set by loader.tsx). A mask, not
+     background-clip: text, which misses the morph's separately drawn letters. */
+  .loader-glint {
+    color: var(--sp-brand-mark);
+    pointer-events: none;
+    mask-image: linear-gradient(
+      90deg,
+      transparent 30%,
+      currentColor 44%,
+      currentColor 56%,
+      transparent 70%
+    );
+    mask-size: 300% 100%;
+    mask-repeat: no-repeat;
+    mask-position: 105% 0;
+    opacity: 0;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .loader-glint {
+      animation: loader-pass var(--loader-turn) linear infinite;
+    }
+  }
+  /* 105% to -5% carries the band from just touching the words to just past. */
+  @keyframes loader-pass {
+    0% {
+      mask-position: 105% 0;
+      opacity: 1;
+      animation-timing-function: var(--ease-out-quad);
+    }
+    30% {
+      opacity: 1;
+    }
+    75%,
+    100% {
+      mask-position: -5% 0;
+      opacity: 0;
+    }
+  }
+  @media (forced-colors: active) {
+    .loader-glint {
+      display: none;
+    }
+  }
+}

@@ -50,12 +50,12 @@ const TAB =
 // Each size's type, height and ends; the small one sits beside a result.
 const SIZE = {
   default: 'gap-1.5 py-1 pe-3 text-dense',
-  small: 'min-h-5 gap-1 pe-2.5 text-meta',
+  small: 'min-h-5.5 gap-1.5 pe-2.5 text-meta',
 } as const;
 // The chip's inset on its three outer sides is the tab's own half-leftover:
 // (line height + tab padding - chip) / 2, 4px at the default size. The small
-// size has 2px: its chip is the tab's height less that on every side.
-const CHIP_START = { default: 'ps-1', small: 'ps-0.5' } as const;
+// size has 3px: its chip is the tab's height less that on every side.
+const CHIP_START = { default: 'ps-1', small: 'ps-0.75' } as const;
 // A tab of words alone starts as far in as it ends (SIZE's pe-*).
 const WORD_START = { default: 'ps-3', small: 'ps-2.5' } as const;
 const HOVER_FACE =

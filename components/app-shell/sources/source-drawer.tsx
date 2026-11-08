@@ -7,8 +7,16 @@ import {
   DrawerOverlay,
   DrawerPanels,
 } from '@/components/app-shell/drawer-overlay';
+import {
+  COMPACT_TABLE_BODY,
+  COMPACT_TABLE_CELL,
+  COMPACT_TABLE_HEAD,
+  DataTable,
+} from '@/components/ui/data-table';
 import { FilterTabs } from '@/components/ui/filter-tabs';
+import { Loader } from '@/components/ui/loader';
 import { TabSwap } from '@/components/ui/swap';
+import { useLoader } from '@/components/ui/working-mark';
 import type { SourceValues } from '@/lib/sources/model';
 
 import { sourceValues } from './source-store';
@@ -18,11 +26,11 @@ type Loaded =
   | { kind: 'ready'; values: SourceValues }
   | { kind: 'failed'; message: string };
 
-// The header sticks to the top and the row numbers to the side, each on the
-// inset ground so cells scroll under them; the corner sits above both.
-const EDGE = 'border-rule-faint border-b px-3 py-1.5 whitespace-nowrap';
+// Opaque sticky faces keep scrolling cells under the header and row numbers;
+// the corner sits above both.
+const EDGE = COMPACT_TABLE_CELL;
 const CELL = `${EDGE} text-left`;
-const HEAD = `${CELL} readout text-muted bg-surface-inset sticky top-0 z-1`;
+const HEAD = `${COMPACT_TABLE_HEAD} sticky top-0 z-1`;
 const ROW_NUMBER = `${EDGE} text-muted bg-surface-inset sticky left-0 text-right font-normal`;
 
 // A cell as the sheet returned it: unformatted, so a time is its serial number.
@@ -68,6 +76,8 @@ export function SourceDrawer({
     ? chosen
     : tabs[0]?.key;
 
+  const loader = useLoader(loaded.kind === 'loading');
+
   const view = (resource?: string) => {
     if (resource) setChosen(resource);
     setOpen(true);
@@ -94,7 +104,13 @@ export function SourceDrawer({
           width="fixed"
         >
           <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 p-5">
-            {values && selected ? (
+            {loader.phase ? (
+              <Loader
+                phase={loader.phase}
+                size="panel"
+                label="Loading the read…"
+              />
+            ) : values && selected ? (
               <>
                 <FilterTabs
                   tabs={tabs}
@@ -125,11 +141,7 @@ export function SourceDrawer({
               <p className="text-dense text-muted">Nothing in this read.</p>
             ) : (
               <p role="status" className="text-dense text-muted">
-                {loaded.kind === 'failed'
-                  ? loaded.message
-                  : loaded.kind === 'loading'
-                    ? 'Loading the read…'
-                    : ''}
+                {loaded.kind === 'failed' ? loaded.message : ''}
               </p>
             )}
           </div>
@@ -153,13 +165,14 @@ function ResourceTable({
   const cells = (row: unknown[]) =>
     Array.from({ length: width }, (_, index) => cellText(row[index]));
   return (
-    <div
+    <DataTable
+      variant="compact"
       tabIndex={0}
       role="region"
       aria-label={`${name}, as read`}
-      className="bg-surface-inset rounded-control min-h-0 min-w-0 flex-1 overflow-auto"
+      className="min-h-0 flex-1"
     >
-      <table className="value text-meta border-separate border-spacing-0">
+      <table className={COMPACT_TABLE_BODY}>
         <thead>
           <tr>
             <th scope="col" className={`${ROW_NUMBER} top-0 z-2`}>
@@ -188,6 +201,6 @@ function ResourceTable({
           ))}
         </tbody>
       </table>
-    </div>
+    </DataTable>
   );
 }

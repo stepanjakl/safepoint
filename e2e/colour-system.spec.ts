@@ -130,9 +130,9 @@ test('every structural edge is opaque', async ({ page }) => {
   }
 });
 
-/* A surface-following role (hover, rules, fields...) resolves against the
-   nearest ground-* above it, so a region painted with a pane or floating face
-   but no ground hands its content the canvas's values. That is how the review
+/* A surface-following role (hover, rules, fields, pills...) resolves against
+   the nearest ground-* above it, so a region painted with a pane, floating or
+   band face but no ground hands its content another surface's values. That is how the review
    dialog lost its pane-tuned rules; this catches the next one. */
 test('every painted pane or floating region hands its content its ground', async ({
   page,
@@ -189,6 +189,16 @@ test('every painted pane or floating region hands its content its ground', async
             `${element.tagName.toLowerCase()}.${[...element.classList].slice(0, 4).join('.')}`,
           );
         }
+      }
+      /* A band across a surface is a ground of its own: what sits on it,
+         a pill most of all, keeps its distance from the band. */
+      for (const element of document.querySelectorAll('.bg-surface-band')) {
+        if (!element.children.length || !element.getClientRects().length)
+          continue;
+        if (element.matches('.ground-band')) continue;
+        found.push(
+          `${element.tagName.toLowerCase()}.${[...element.classList].slice(0, 4).join('.')} (band)`,
+        );
       }
       return found;
     });
@@ -403,7 +413,9 @@ test('state text clears AA on every surface it can sit on', async ({
     '--sp-surface-floating',
     '--sp-surface-primary',
     '--sp-canvas',
-    '--sp-sheet-band',
+    /* A band across the pane: the runs list's head and version break, and a
+       table's group heads. */
+    '--sp-primary-band',
     '--sp-surface-inset',
   ];
   const measured = await contrastOf(

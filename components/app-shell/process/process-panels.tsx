@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useRef, useSyncExternalStore } from 'react';
 import { useDetailHold } from '@/components/ui/screen-settled';
+import { Loader } from '@/components/ui/loader';
 import { EmptyState, useLoader } from '@/components/ui/working-mark';
 import { cx } from '@/lib/cx';
 import type { InputDetail } from '@/lib/process/input-details';
@@ -381,13 +382,7 @@ export function ProcessPanels({
           className="@sheet-wide/sheet:flex hidden min-h-0 flex-col overflow-y-auto px-8"
         >
           {loader.phase ? (
-            loader.phase === 'waiting' ? null : (
-              <EmptyState
-                role="status"
-                loading
-                title={loader.phase === 'slow' ? 'Still loading…' : 'Loading…'}
-              />
-            )
+            <Loader phase={loader.phase} size="page" label="Loading…" />
           ) : (
             <EmptyState
               role="status"

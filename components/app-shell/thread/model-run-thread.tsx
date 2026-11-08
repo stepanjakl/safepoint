@@ -10,12 +10,14 @@ import {
 } from '@/components/app-shell/thread/thread-arrivals';
 import { ResponseSection } from '@/components/app-shell/thread/thread-page';
 import type { ThreadLook } from '@/components/app-shell/thread/thread-step';
+import { AlertBox } from '@/components/ui/alert-box';
 import { Button } from '@/components/ui/button';
 import {
+  DATA_TABLE_BODY,
   DATA_TABLE_HEAD,
-  DATA_TABLE_NAME,
   DATA_TABLE_NAME_COLUMN,
   DATA_TABLE_NAME_UNDER,
+  DATA_TABLE_SECONDARY_NAME,
   DATA_TABLE_RULE,
   DATA_TABLE_RULE_ON,
   DataTable,
@@ -99,8 +101,6 @@ export type ModelRunView = {
     // When the write was read back, once it was.
     writtenAt: string | null;
   } | null;
-  // The line under a finished run.
-  end: string | null;
 };
 
 export type ModelRunActions = {
@@ -117,9 +117,6 @@ export type ModelRunActions = {
   busy?: boolean;
   announced?: string;
 };
-
-const NOTE = 'text-dense text-muted text-pretty';
-const ALERT = 'text-dense text-state-blocked';
 
 /*
   The thread of a run the model works out alone: its instructions, the sheet
@@ -165,6 +162,15 @@ export function ModelRunThread({
       ) : (
         <ResponseSection>
           <div className="grid gap-3">
+            {facts.unfit.length ? (
+              <AlertBox title="The sheet does not fit what this process reads. Fix it and start a new run:">
+                <ul className="list-disc pl-5">
+                  {facts.unfit.map((problem) => (
+                    <li key={problem}>{problem}</li>
+                  ))}
+                </ul>
+              </AlertBox>
+            ) : null}
             <SheetReadCard
               kind={run.sourceKind}
               read={stage === 'reading' ? null : run.read}
@@ -172,32 +178,19 @@ export function ModelRunThread({
               onOpenChange={setReadOpen}
               data={run.data}
             />
-            {facts.unfit.length ? (
-              <div role="alert" className="grid gap-1">
-                <p className="text-dense">
-                  The sheet does not fit what this process reads. Fix it and
-                  start a new run:
-                </p>
-                <ul className="text-dense list-disc pl-5">
-                  {facts.unfit.map((problem) => (
-                    <li key={problem}>{problem}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
           </div>
         </ResponseSection>
       ),
     evaluation:
       stopped?.at === 'evaluation' ? (
         <div className="grid gap-4">
+          <Stopped reason={stopped.reason} again="Propose again" {...actions} />
           <ModelAt
             activity={run.activity}
             facts={facts}
             version={version}
             working={false}
           />
-          <Stopped reason={stopped.reason} again="Propose again" {...actions} />
         </div>
       ) : (
         <ModelAt
@@ -245,7 +238,6 @@ export function ModelRunThread({
       boxes={boxes}
       look={look}
       announcement={modelRunAnnouncement(arrivals.announced)}
-      end={arrivals.announced === 'committed' ? run.end : null}
       keepOpen={keepOpen}
       headingActions={{
         request: { label: version, onPress: openInstructions },
@@ -524,16 +516,17 @@ function Stopped({
   busy?: boolean;
 }) {
   return (
-    <div className="grid justify-items-start gap-3">
-      <p role="alert" className={ALERT}>
-        {reason}
-      </p>
-      {onRetry ? (
-        <Button size="medium" isDisabled={busy} onPress={onRetry}>
-          {again}
-        </Button>
-      ) : null}
-    </div>
+    <AlertBox
+      action={
+        onRetry ? (
+          <Button size="small" isDisabled={busy} onPress={onRetry}>
+            {again}
+          </Button>
+        ) : null
+      }
+    >
+      {reason}
+    </AlertBox>
   );
 }
 
@@ -573,14 +566,22 @@ function Approval({
     0,
   );
   const n = plural(cells, 'value');
-  const outputs = write.outputs.length;
-  const where =
-    outputs === 1
-      ? (write.outputs[0]?.title ?? 'the output')
-      : plural(outputs, 'output');
 
   return (
     <div className="grid gap-4">
+      {/* What went wrong first, before what it concerns. */}
+      {stage === 'intervention' && mismatch ? (
+        <AlertBox>{mismatch}</AlertBox>
+      ) : null}
+      {write.problems.length ? (
+        <AlertBox>
+          <ul className="grid gap-1">
+            {write.problems.map((problem) => (
+              <li key={problem}>{problem}</li>
+            ))}
+          </ul>
+        </AlertBox>
+      ) : null}
       <div className="flex flex-wrap items-center gap-2">
         <Pill tone="ready">{count('approve')} approved</Pill>
         {count('change') ? (
@@ -590,13 +591,6 @@ function Approval({
           <Pill tone="neutral">{count('reject')} rejected</Pill>
         ) : null}
       </div>
-      {write.problems.length ? (
-        <ul role="alert" className={cx(ALERT, 'grid gap-1')}>
-          {write.problems.map((problem) => (
-            <li key={problem}>{problem}</li>
-          ))}
-        </ul>
-      ) : null}
       {write.outputs.map((output) => (
         <OutputCells
           key={output.id}
@@ -626,14 +620,6 @@ function Approval({
                 Approve and write {n}
               </Button>
             </div>
-          ) : stage === 'committing' ? (
-            <p role="status" className={NOTE}>
-              Writing {n} to {where}…
-            </p>
-          ) : stage === 'intervention' && mismatch ? (
-            <p role="alert" className={ALERT}>
-              {mismatch}
-            </p>
           ) : stage === 'committed' ? (
             <div className="flex flex-wrap items-center gap-3">
               <Pill tone="ready">
@@ -687,7 +673,7 @@ function OutputCells({
     <DataTable as="article" aria-labelledby={titleId}>
       <SourceHead kind={output.kind} title={output.title} titleId={titleId} />
       <div className="min-w-0 overflow-x-auto">
-        <table className="text-dense w-full border-separate border-spacing-0">
+        <table className={cx('output-cells', DATA_TABLE_BODY)}>
           <caption className="sr-only">
             {written
               ? `What was written to ${output.title}, by tab and cell`
@@ -725,47 +711,42 @@ function OutputCells({
               </th>
             </tr>
           </thead>
-          {[...tabs].map(([tab, cells], group) => (
+          {[...tabs].map(([tab, cells]) => (
             <tbody key={tab}>
               <tr>
-                {/* A band across the card, ruled below: everything under it,
-                    to the next band, is this tab's. A ground, so its pill
-                    keeps its distance from the band as facts do from the
-                    pane. */}
                 <th
                   scope="colgroup"
                   colSpan={5}
-                  className={cx(
-                    'ground-band bg-surface-band border-rule-faint border-b py-2.5 pr-5 pl-5 text-left',
-                    group > 0 && 'border-t',
-                  )}
+                  className="pt-5 pb-2 pl-5 text-left"
                 >
-                  <span className="inline-flex min-w-0 items-center gap-2">
+                  <span className="flex min-w-0 items-center gap-2">
                     <span className="truncate font-semibold">{tab}</span>
                     <Fact text={plural(cells.length, 'value')} />
+                    <span
+                      aria-hidden
+                      className="border-rule-faint min-w-0 flex-1 border-b"
+                    />
                   </span>
                 </th>
               </tr>
               {cells.map((cell, index) => {
                 const changed = decisions[cell.key]?.kind === 'change';
-                // Ruled between rows, as every table is; the tab's heading
-                // takes the first row's.
                 const rule = index > 0;
                 // Each tab's last row has room below it, before the next
-                // tab's band or the card's edge.
+                // tab's heading or the card's edge.
                 const last = index === cells.length - 1;
-                const rowY = last ? 'pt-2 pb-4' : 'py-2';
+                const rowY = last ? 'pt-2.5 pb-3' : 'py-2.5';
                 return (
                   <tr key={`${cell.key}-${cell.field}-${cell.address}`}>
                     <th
                       scope="row"
                       className={cx(
-                        'pr-3 pl-5 text-left font-normal whitespace-nowrap',
+                        'pr-3 pl-(--row-rule-inset) text-left font-normal whitespace-nowrap',
                         rowY,
                         rule && DATA_TABLE_RULE,
                       )}
                     >
-                      <span className={DATA_TABLE_NAME}>{cell.key}</span>
+                      <span className="font-label">{cell.key}</span>
                       {names[cell.key] ? (
                         <span className={DATA_TABLE_NAME_UNDER}>
                           {names[cell.key]}
@@ -775,7 +756,8 @@ function OutputCells({
                     <td
                       className={cx(
                         DATA_TABLE_NAME_COLUMN,
-                        'text-muted-strong pr-3 font-medium',
+                        DATA_TABLE_SECONDARY_NAME,
+                        'pr-3',
                         rowY,
                         rule && DATA_TABLE_RULE_ON,
                       )}

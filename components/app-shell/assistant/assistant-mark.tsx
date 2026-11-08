@@ -15,9 +15,10 @@ export function AssistantMark({ size = 28 }: { size?: number }) {
   const id = useId();
   const fill = `${id}-fill`;
   const eyes = `${id}-eyes`;
+  const body = `${id}-body`;
   return (
     <span className="assistant-mark relative grid">
-      <svg aria-hidden width="0" height="0" className="absolute">
+      <svg aria-hidden width={size} height={size} viewBox="0 0 25 24">
         <defs>
           <linearGradient
             id={fill}
@@ -37,24 +38,43 @@ export function AssistantMark({ size = 28 }: { size?: number }) {
             <stop offset="1" className="assistant-mark-body-bottom" />
           </linearGradient>
           {/* The eyes' boxes, a little past each, in the glyph's frame. */}
-          <clipPath id={eyes} clipPathUnits="objectBoundingBox">
-            <rect x="0.33" y="0.27" width="0.12" height="0.17" />
-            <rect x="0.57" y="0.27" width="0.12" height="0.17" />
+          <clipPath id={eyes} clipPathUnits="userSpaceOnUse">
+            <rect x="8" y="6" width="4" height="5" />
+            <rect x="14" y="6" width="4" height="5" />
           </clipPath>
+          {/* Hide the original eyes so only the blinking copy paints them. */}
+          <mask
+            id={body}
+            maskUnits="userSpaceOnUse"
+            x="0"
+            y="0"
+            width="25"
+            height="24"
+          >
+            <rect width="25" height="24" fill="white" />
+            <rect x="8" y="6" width="4" height="5" fill="black" />
+            <rect x="14" y="6" width="4" height="5" fill="black" />
+          </mask>
         </defs>
+        <g mask={`url(#${body})`}>
+          <Robot
+            width={25}
+            height={24}
+            style={{ fill: `url(#${fill})` }}
+            className="assistant-mark-glyph"
+          />
+        </g>
+        <g className="assistant-mark-eyes">
+          <g clipPath={`url(#${eyes})`}>
+            <Robot
+              width={25}
+              height={24}
+              style={{ fill: 'inherit' }}
+              className="assistant-mark-glyph"
+            />
+          </g>
+        </g>
       </svg>
-      <Robot
-        aria-hidden
-        size={size}
-        style={{ fill: `url(#${fill})` }}
-        className="assistant-mark-glyph col-start-1 row-start-1"
-      />
-      <Robot
-        aria-hidden
-        size={size}
-        style={{ clipPath: `url(#${eyes})` }}
-        className="assistant-mark-glyph assistant-mark-eyes col-start-1 row-start-1"
-      />
     </span>
   );
 }

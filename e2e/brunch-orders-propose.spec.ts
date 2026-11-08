@@ -152,6 +152,50 @@ async function propose(page: Page) {
 }
 const thread = (page: Page) => page.locator('ol.thread');
 
+for (const width of [1440, 390]) {
+  test(`bulk approval stays at the bottom while reviewing at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 700 });
+    const table = await propose(page);
+    const approve = page.getByRole('button', { name: /^Approve all 8 ready/ });
+    const bar = page.getByRole('group', { name: 'Proposal summary' });
+    await expect(bar).toHaveCSS('position', 'sticky');
+    await table.getByRole('rowheader').first().getByRole('button').click();
+    await table.evaluate((element) => {
+      let scroller: Element | null = element.parentElement;
+      while (
+        scroller &&
+        !/(auto|scroll)/.test(getComputedStyle(scroller).overflowY)
+      ) {
+        scroller = scroller.parentElement;
+      }
+      scroller ??= document.scrollingElement;
+      if (!scroller) throw new Error('No review scroller');
+      const top =
+        element.getBoundingClientRect().top -
+        scroller.getBoundingClientRect().top;
+      scroller.scrollTop += top + 80;
+    });
+    await expect(approve).toBeInViewport();
+    await approve.focus();
+    await expect(approve).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    const focus = await page.locator(':focus').boundingBox();
+    const bounds = await bar.boundingBox();
+    expect(focus).not.toBeNull();
+    expect(bounds).not.toBeNull();
+    expect(focus!.y + focus!.height).toBeLessThanOrEqual(bounds!.y);
+    await approve.focus();
+    await page.keyboard.press('Enter');
+    await expect(approve).toHaveCount(0);
+    await expect(bar).toBeVisible();
+    await expect(
+      thread(page).getByText('8 of 11 decided').first(),
+    ).toBeAttached();
+  });
+}
+
 test('a person decides every record, then writes what Apply shows and can undo it', async ({
   page,
 }) => {

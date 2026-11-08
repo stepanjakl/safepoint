@@ -31,8 +31,10 @@ import {
 } from '@/components/brunch-orders/trial-parts';
 import { Button } from '@/components/ui/button';
 import { Fold } from '@/components/ui/fold';
+import { Loader } from '@/components/ui/loader';
 import { Pill, SEVERITY } from '@/components/ui/pill';
 import { Tooltip } from '@/components/ui/tooltip';
+import { useLoader } from '@/components/ui/working-mark';
 import { MORPH_WORDS_MS, MorphingText } from '@/components/ui/morphing-text';
 import { cx } from '@/lib/cx';
 import { wordDiff } from '@/lib/text/word-diff';
@@ -228,6 +230,9 @@ export function RulesStep({
   if (body && JSON.stringify(reported) !== JSON.stringify(drafting))
     setDrafting(reported);
   const draftRunning = drafting?.running ?? false;
+  // Writing is a wait, not a status the rule has: the card's status gives
+  // way to the loader while its rule is written (behind useLoader's delay).
+  const ruleLoader = useLoader(Boolean(drafting?.running && drafting.writing));
   const busy = rules.state.kind === 'running' || draftRunning;
   const [writing, setWriting] = useState(false);
   const [debugging, setDebugging] = useState<Debugging | null>(null);
@@ -311,7 +316,15 @@ export function RulesStep({
               onWrite={() => act({ action: 'write', readId, id: item.id })}
               {...(drafting?.running && drafting.writing === item.id
                 ? {
-                    chip: <StatusChip tone="neutral">Writing…</StatusChip>,
+                    chip:
+                      ruleLoader.phase && ruleLoader.phase !== 'waiting' ? (
+                        <Loader
+                          phase={ruleLoader.phase}
+                          label="Writing…"
+                          announce={false}
+                          className="text-meta"
+                        />
+                      ) : undefined,
                     activity: item.formula ? (
                       <p className="text-meta text-muted">
                         Being written again. This is the version before it,

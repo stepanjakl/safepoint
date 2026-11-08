@@ -3,7 +3,15 @@
 import Link from 'next/link';
 import { useMemo, useRef, useState, type FormEvent } from 'react';
 
+import {
+  DATA_TABLE_BODY,
+  DATA_TABLE_HEAD,
+  DataTable,
+} from '@/components/ui/data-table';
+import { cx } from '@/lib/cx';
 import { Button } from '@/components/ui/button';
+import { Loader } from '@/components/ui/loader';
+import { useLoader } from '@/components/ui/working-mark';
 import { buildLinePreview } from '@/lib/model-workbench/line';
 import { MODEL_IDS, type ModelId } from '@/lib/model-workbench/models';
 import {
@@ -189,6 +197,7 @@ export function ReviewExplorer({
   const [indexFilter, setIndexFilter] = useState<'all' | 'needs_review'>('all');
   const [selectedModel, setSelectedModel] = useState<ModelId>(MODEL_IDS[0]);
   const [running, setRunning] = useState(false);
+  const reviewing = useLoader(running);
   const [modelData, setModelData] = useState<ModelWorkbenchResponse | null>(
     null,
   );
@@ -997,8 +1006,15 @@ export function ReviewExplorer({
                       running || setupBusy || evaluationBusy || !keyConfigured
                     }
                   >
-                    {running ? 'Reviewing…' : 'Run live model'}
+                    Run live model
                   </Button>
+                  {reviewing.phase ? (
+                    <Loader
+                      phase={reviewing.phase}
+                      label="Reviewing…"
+                      className="text-meta"
+                    />
+                  ) : null}
                 </div>
                 {!keyConfigured ? (
                   <p className="text-meta text-muted">
@@ -1270,54 +1286,56 @@ export function ReviewExplorer({
                   Finding codes:{' '}
                   {active.findingCodes.map(readable).join(' · ') || 'none'}.
                 </p>
-                <div className="mt-3 max-w-full overflow-auto">
-                  <table className="w-full border-collapse text-left">
-                    <thead>
-                      <tr className="border-rule-default border-b">
-                        <th scope="col" className="py-2 pr-3">
-                          Gate
-                        </th>
-                        <th scope="col" className="py-2 pr-3">
-                          Obligation
-                        </th>
-                        <th scope="col" className="py-2">
-                          Reason
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {active.gateReviews.map(
-                        ({
-                          gate,
-                          obligation,
-                          result,
-                          explanation,
-                          assessmentSource,
-                          modelResult,
-                          trustedResult,
-                        }) => (
-                          <tr
-                            key={gate}
-                            className="border-rule-default border-b"
-                          >
-                            <th scope="row" className="py-2 pr-3 font-normal">
-                              {readable(gate)}
+                <div className="mt-3 min-w-0">
+                  <DataTable>
+                    <div className="max-w-full overflow-x-auto">
+                      <table
+                        className={cx(DATA_TABLE_BODY, 'data-table-simple')}
+                      >
+                        <thead>
+                          <tr>
+                            <th scope="col" className={DATA_TABLE_HEAD}>
+                              Gate
                             </th>
-                            <td className="py-2 pr-3">
-                              {readable(obligation)} · {readable(result)}
-                            </td>
-                            <td className="py-2">
-                              Trusted checks: {readable(trustedResult)}. Model:{' '}
-                              {modelResult
-                                ? readable(modelResult)
-                                : 'not supplied'}
-                              . {readable(assessmentSource)} · {explanation}
-                            </td>
+                            <th scope="col" className={DATA_TABLE_HEAD}>
+                              Obligation
+                            </th>
+                            <th scope="col" className={DATA_TABLE_HEAD}>
+                              Reason
+                            </th>
                           </tr>
-                        ),
-                      )}
-                    </tbody>
-                  </table>
+                        </thead>
+                        <tbody>
+                          {active.gateReviews.map(
+                            ({
+                              gate,
+                              obligation,
+                              result,
+                              explanation,
+                              assessmentSource,
+                              modelResult,
+                              trustedResult,
+                            }) => (
+                              <tr key={gate}>
+                                <th scope="row">{readable(gate)}</th>
+                                <td>
+                                  {readable(obligation)} · {readable(result)}
+                                </td>
+                                <td>
+                                  Trusted checks: {readable(trustedResult)}.
+                                  Model:{' '}
+                                  {modelResult
+                                    ? readable(modelResult)
+                                    : 'not supplied'}
+                                  . {readable(assessmentSource)} · {explanation}
+                                </td>
+                              </tr>
+                            ),
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </DataTable>
                 </div>
               </details>
             </section>
@@ -1523,7 +1541,7 @@ export function ReviewExplorer({
               </details>
             </section>
 
-            <details className={`${CARD} text-meta min-w-0`}>
+            <details className={`${CARD} text-meta min-w-0 grid-cols-1`}>
               <summary className="text-title cursor-pointer font-semibold">
                 All {rows.length} candidate comparisons
               </summary>
@@ -1531,63 +1549,64 @@ export function ReviewExplorer({
                 Current checks recalculate the recorded terms. The reviewed
                 replay is the saved reference; differences remain visible.
               </p>
-              <div className="max-w-full overflow-auto">
-                <table className="w-full border-collapse text-left">
-                  <thead>
-                    <tr className="border-rule-default border-b">
-                      <th scope="col" className="py-2 pr-4">
-                        Product
-                      </th>
-                      <th scope="col" className="py-2 pr-4">
-                        Recorded AI
-                      </th>
-                      <th scope="col" className="py-2 pr-4">
-                        Current checks
-                      </th>
-                      <th scope="col" className="py-2 pr-4">
-                        Reviewed replay
-                      </th>
-                      <th scope="col" className="py-2">
-                        Finding codes
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((row) => (
-                      <tr
-                        key={row.sku}
-                        className="border-rule-default border-b"
-                      >
-                        <th scope="row" className="py-2 pr-4 font-normal">
-                          <button
-                            type="button"
-                            disabled={running || setupBusy || evaluationBusy}
-                            className="text-primary underline underline-offset-2"
-                            onClick={() => selectProduct(row.sku)}
-                          >
-                            {row.name} · {row.sku}
-                          </button>
-                        </th>
-                        <td className="py-2 pr-4">
-                          {row.candidate.agentRecommendation}
-                        </td>
-                        <td className="py-2 pr-4">
-                          {readable(row.policy.verdict)}
-                          {row.eligibilityAgrees
-                            ? ''
-                            : ' · differs from replay'}
-                        </td>
-                        <td className="py-2 pr-4">
-                          {row.baseline.eligibility}
-                        </td>
-                        <td className="py-2">
-                          {row.findingCodes.join(', ') || 'none'}
-                          {row.findingsAgree ? '' : ' · differs from replay'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="min-w-0">
+                <DataTable>
+                  <div className="max-w-full overflow-x-auto">
+                    <table className={cx(DATA_TABLE_BODY, 'data-table-simple')}>
+                      <thead>
+                        <tr>
+                          <th scope="col" className={DATA_TABLE_HEAD}>
+                            Product
+                          </th>
+                          <th scope="col" className={DATA_TABLE_HEAD}>
+                            Recorded AI
+                          </th>
+                          <th scope="col" className={DATA_TABLE_HEAD}>
+                            Current checks
+                          </th>
+                          <th scope="col" className={DATA_TABLE_HEAD}>
+                            Reviewed replay
+                          </th>
+                          <th scope="col" className={DATA_TABLE_HEAD}>
+                            Finding codes
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rows.map((row) => (
+                          <tr key={row.sku}>
+                            <th scope="row">
+                              <button
+                                type="button"
+                                disabled={
+                                  running || setupBusy || evaluationBusy
+                                }
+                                className="text-primary underline underline-offset-2"
+                                onClick={() => selectProduct(row.sku)}
+                              >
+                                {row.name} · {row.sku}
+                              </button>
+                            </th>
+                            <td>{row.candidate.agentRecommendation}</td>
+                            <td>
+                              {readable(row.policy.verdict)}
+                              {row.eligibilityAgrees
+                                ? ''
+                                : ' · differs from replay'}
+                            </td>
+                            <td>{row.baseline.eligibility}</td>
+                            <td>
+                              {row.findingCodes.join(', ') || 'none'}
+                              {row.findingsAgree
+                                ? ''
+                                : ' · differs from replay'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </DataTable>
               </div>
             </details>
 

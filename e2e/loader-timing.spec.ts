@@ -61,9 +61,13 @@ test('a loader once shown stays its minimum', async ({ page }) => {
 test('a long wait says so', async ({ page }) => {
   await page.clock.install();
   await openRules(page, null);
-  await expect(page.getByText(LOADING)).toBeVisible();
+  // The loader draws its words more than once (the morph, its glint, and a
+  // copy for screen readers), so it is found by its status, not its text.
+  const loader = (words: string) =>
+    page.getByRole('status').filter({ hasText: words });
+  await expect(loader(LOADING)).toBeVisible();
   await page.clock.runFor(LOADER_SLOW_MS);
-  await expect(page.getByText('Still loading the rulebook…')).toBeVisible();
+  await expect(loader('Still loading the rulebook…')).toBeVisible();
 });
 
 test('content that ends a wait fades in; content already known does not', async ({

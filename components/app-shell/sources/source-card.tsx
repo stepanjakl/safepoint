@@ -18,8 +18,13 @@ import {
   Popover,
 } from 'react-aria-components';
 
+import { AlertBox } from '@/components/ui/alert-box';
 import { Button, ICON_BOX } from '@/components/ui/button';
-import { DATA_TABLE_NAME, DataTable } from '@/components/ui/data-table';
+import {
+  DATA_TABLE_HEADING,
+  DATA_TABLE_NAME,
+  DataTable,
+} from '@/components/ui/data-table';
 import { Fold } from '@/components/ui/fold';
 import { ICON_FILLED, IconButton } from '@/components/ui/icon-button';
 import { MORPH_WORDS_MS, MorphingText } from '@/components/ui/morphing-text';
@@ -56,7 +61,7 @@ const count = (n: number, one: string, many = `${one}s`) =>
 */
 const BAND = 'border-rule-faint box-content min-h-10 border-b';
 // The table heading's face, padded here rather than by DATA_TABLE_HEAD.
-const HEAD = 'readout text-muted font-semibold';
+const HEAD = DATA_TABLE_HEADING;
 // Name, rows, columns, and the row's own control.
 const TABLE = 'grid grid-cols-[minmax(0,1fr)_auto_auto_auto] gap-x-3 pb-3';
 const ROW = 'col-span-full grid grid-cols-subgrid items-center';
@@ -378,12 +383,7 @@ function SourceFile({
             </dl>
           </div>
           {entry.readError ? (
-            <p
-              data-severity={0}
-              className="bg-severity-fill border-severity-pill-ring text-severity-ink rounded-control text-meta border px-3 py-2"
-            >
-              The read failed: {entry.readError}
-            </p>
+            <AlertBox>The read failed: {entry.readError}</AlertBox>
           ) : null}
           {/* At the foot, and never nearer the figures than 30 (gap and pad). */}
           <div className="mt-auto flex items-center gap-1.5 pt-5">

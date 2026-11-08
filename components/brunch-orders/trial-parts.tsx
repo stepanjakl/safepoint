@@ -3,6 +3,8 @@
 import { useCallback, useState, type ReactNode } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { Loader } from '@/components/ui/loader';
+import { useLoader } from '@/components/ui/working-mark';
 import { Pill, type Tone } from '@/components/ui/pill';
 
 /*
@@ -93,6 +95,7 @@ export function TrialControl({
   blocked?: string | null;
 }) {
   const running = state.kind === 'running';
+  const loader = useLoader(running);
   return (
     <div className="flex flex-wrap items-center gap-3">
       <Button
@@ -100,22 +103,21 @@ export function TrialControl({
         onPress={onRun}
         isDisabled={running || blocked !== null}
       >
-        {running
-          ? runningLabel
-          : state.kind === 'idle'
-            ? label
-            : `${label} again`}
+        {state.kind === 'idle' || running ? label : `${label} again`}
       </Button>
+      {/* The loader says what is under way; the button keeps its own words. */}
       <p role="status" className="text-meta text-muted min-w-0">
-        {running
-          ? 'Running…'
-          : blocked !== null
-            ? blocked
-            : state.kind === 'failed'
-              ? `Failed after ${state.elapsedMs} ms: ${state.message}`
-              : state.kind === 'done'
-                ? `${summary ?? 'Finished'} · ${state.elapsedMs} ms round trip · ${clock(state.finishedAt)}`
-                : idle}
+        {loader.phase ? (
+          <Loader phase={loader.phase} label={runningLabel} announce={false} />
+        ) : blocked !== null ? (
+          blocked
+        ) : state.kind === 'failed' ? (
+          `Failed after ${state.elapsedMs} ms: ${state.message}`
+        ) : state.kind === 'done' ? (
+          `${summary ?? 'Finished'} · ${state.elapsedMs} ms round trip · ${clock(state.finishedAt)}`
+        ) : (
+          idle
+        )}
       </p>
     </div>
   );

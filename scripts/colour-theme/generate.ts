@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import Color from 'colorjs.io';
@@ -317,6 +317,95 @@ const CONTEXTUAL = new Set<string>([
   ...FOLLOWING_ROLES.keys(),
   ...Object.values(RECESS_ROLES),
 ]);
+
+/*
+  A pill keeps its distance from whatever it sits on, face and ink: every
+  colour it is painted in follows the surface (a FOLLOWING_ROLES role, or a
+  surface role a ground re-points), or is a tone lifted by the ground's lift
+  (severity.css). A fixed text role, or a role anchored to one surface, is
+  right on that surface and wrong on every other, so it is refused. A pill is
+  a class whose rule applies pill-shape, or one written beside pill-shape in
+  markup; a rule colours it when its last compound names that class.
+*/
+const PILL_MARKUP = [
+  ...new Set(
+    [...readdirRecursive(new URL('../../components/', import.meta.url))]
+      .filter((path) => path.endsWith('.tsx'))
+      .flatMap((path) =>
+        [
+          ...readFileSync(path, 'utf8').matchAll(
+            /['"`]([^'"`]*\bpill-shape\b[^'"`]*)['"`]/g,
+          ),
+        ].flatMap(([, classes]) => classes!.split(/\s+/)),
+      ),
+  ),
+];
+function readdirRecursive(directory: URL): string[] {
+  return readdirSync(directory, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => `${entry.parentPath}/${entry.name}`);
+}
+const PILL_PAINT = /^(color|background|background-color)$/;
+/* A tone lifted by the ground, directly or through a lift the pill sets
+   from --sp-ground-lift-* on itself. */
+const LIFTED = /-lift-(light|dark)\b/;
+
+function validatePillGrounds(sources: Map<string, string>) {
+  const sheets = ROLE_SOURCES.map((source) => {
+    const path = fileURLToPath(source);
+    return {
+      path,
+      root: parse(sources.get(path) ?? readFileSync(source, 'utf8'), {
+        from: path,
+      }),
+    };
+  });
+  const pills = new Set<string>();
+  for (const { root } of sheets) {
+    root.walkAtRules('apply', (rule) => {
+      if (!/\bpill-shape\b/.test(rule.params)) return;
+      const selector = (rule.parent as { selector?: string }).selector ?? '';
+      for (const [, name] of selector.matchAll(/\.([\w-]+)/g)) pills.add(name!);
+    });
+    root.walkRules((rule) => {
+      for (const [, name] of rule.selector.matchAll(/\.([\w-]+)/g))
+        if (PILL_MARKUP.includes(name!)) pills.add(name!);
+    });
+  }
+  const following = new Set<string>([
+    ...FOLLOWING_ROLES.keys(),
+    ...Object.values(RECESS_ROLES),
+    ...Object.values(BAND_ROLES),
+  ]);
+  const refused: string[] = [];
+  for (const { path, root } of sheets) {
+    root.walkDecls(PILL_PAINT, (declaration) => {
+      const rule = declaration.parent as { selector?: string } | undefined;
+      if (!rule?.selector) return;
+      const paints = rule.selector.split(',').some((part) => {
+        const last =
+          part
+            .trim()
+            .split(/\s+|>|\+|~/)
+            .filter(Boolean)
+            .at(-1) ?? '';
+        return [...last.matchAll(/\.([\w-]+)/g)].some(([, name]) =>
+          pills.has(name!),
+        );
+      });
+      if (!paints || LIFTED.test(declaration.value)) return;
+      for (const [, name] of declaration.value.matchAll(/var\((--sp-[\w-]+)/g))
+        if (!following.has(name!))
+          refused.push(
+            `${path.split('/').slice(-2).join('/')}: ${rule.selector.replace(/\s+/g, ' ')} { ${declaration.prop}: ${name} } -- a pill's colours follow its ground: give it a role in FOLLOWING_ROLES, or lift a tone by --sp-ground-lift-*.`,
+          );
+    });
+  }
+  if (refused.length)
+    throw new Error(
+      `Pills painted against one ground only:\n${refused.map((line) => `- ${line}`).join('\n')}`,
+    );
+}
 
 function validateRoleAssignments(sources: Map<string, string>) {
   const declarations = new Map<string, string>();
@@ -875,6 +964,7 @@ export async function buildArtifacts(): Promise<GeneratedArtifacts> {
   ]);
   const { results: roleAssignmentResults, frozen } =
     validateRoleAssignments(sources);
+  validatePillGrounds(sources);
   failures.push(...frozen);
   for (const result of roleAssignmentResults) {
     if (!result.passed) {
