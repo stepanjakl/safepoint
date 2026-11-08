@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { Dialog, DialogTrigger, Heading, Popover } from 'react-aria-components';
 // Deep import: Blode's barrel is the whole icon library.
 import Clock from 'blode-icons-react/icons/clock';
-import { MorphingText } from '@/components/ui/morphing-text';
 import { Switch } from '@/components/ui/switch';
+import { ChoiceGroup } from '@/components/ui/choice-group';
+import { Fold } from '@/components/ui/fold';
 import { HeadIconButton } from '@/components/app-shell/head-icon-button';
 import {
   WEEKDAYS,
@@ -14,9 +15,16 @@ import {
 } from '@/lib/process/schedule';
 import { useProcessSchedule } from './schedule-store';
 
-// The review panel's filter pill, at the size of a choice in a popover.
-const CHOICE =
-  'control-wash border-rule-default hover:bg-surface-hover focus-visible:bg-surface-hover aria-pressed:bg-surface-selected aria-pressed:border-rule-strong inline-flex min-h-8 items-center justify-center rounded-full border px-2.5 py-1 text-meta whitespace-nowrap';
+const CADENCES = [
+  { value: 'daily', label: 'Daily' },
+  { value: 'weekly', label: 'Weekly' },
+] satisfies { value: ProcessSchedule['cadence']; label: string }[];
+
+const DAYS = WEEKDAYS.map((day) => ({
+  value: day,
+  label: day.slice(0, 1),
+  ariaLabel: day,
+}));
 
 /*
   The schedule, beside the runs it produces: an icon in the runs header, next
@@ -58,12 +66,15 @@ export function ScheduleControl({
         offset={6}
         className="popover-motion control-face surface-popover rounded-shell w-[min(18rem,calc(100vw-2rem))]"
       >
-        <Dialog className="grid gap-4 p-4 outline-none">
+        <Dialog className="grid gap-3 p-4 outline-none">
           <ScheduleFields
             schedule={schedule}
             update={update}
             title={
-              <Heading slot="title" className="text-dense font-medium">
+              <Heading
+                slot="title"
+                className="text-dense flex min-h-6 items-center font-medium"
+              >
                 Schedule
               </Heading>
             }
@@ -90,91 +101,66 @@ export function ScheduleFields({
   // section heading in the other.
   title: ReactNode;
 }) {
-  // Which way the switch last moved, so the fields arrive the same way; none
-  // until it moves, so opening shows them still.
-  const [moved, setMoved] = useState<'on' | 'off' | null>(null);
   return (
     <>
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center gap-3">
         {title}
         <Switch
+          aria-label="Scheduled runs"
           isSelected={schedule.enabled}
-          onChange={(enabled) => {
-            setMoved(enabled ? 'on' : 'off');
-            update({ enabled });
-          }}
-        >
-          <MorphingText text={schedule.enabled ? 'On' : 'Off'} />
-        </Switch>
+          onChange={(enabled) => update({ enabled })}
+        />
       </div>
 
-      <div
-        key={schedule.enabled ? 'on' : 'off'}
-        className="schedule-mode grid gap-4"
-        data-moved={moved ?? undefined}
-      >
-        {schedule.enabled ? (
-          <>
-            <div
-              role="group"
-              aria-label="Repeats"
-              className="grid grid-cols-2 gap-1.5"
-            >
-              {(['daily', 'weekly'] as const).map((cadence) => (
-                <button
-                  key={cadence}
-                  type="button"
-                  className={CHOICE}
-                  aria-pressed={schedule.cadence === cadence}
-                  onClick={() => update({ cadence })}
-                >
-                  {cadence === 'daily' ? 'Daily' : 'Weekly'}
-                </button>
-              ))}
-            </div>
-            {schedule.cadence === 'weekly' ? (
-              <div
-                role="group"
-                aria-label="Day"
-                className="grid grid-cols-7 gap-1"
-              >
-                {WEEKDAYS.map((day) => (
-                  <button
-                    key={day}
-                    type="button"
-                    className={`${CHOICE} px-0`}
-                    aria-pressed={schedule.day === day}
-                    aria-label={day}
-                    onClick={() => update({ day })}
-                  >
-                    {day.slice(0, 1)}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-            <label className="text-meta text-muted flex items-center justify-between gap-3">
-              Time
-              <input
-                type="time"
-                value={schedule.time}
-                required
-                onChange={(event) => {
-                  if (event.target.value) update({ time: event.target.value });
-                }}
-                className="value field text-primary min-h-8 px-2 [color-scheme:inherit]"
+      <div className="grid">
+        {/* One cell keeps the two transitioning heights from adding together. */}
+        <div
+          className="col-start-1 row-start-1 min-w-0"
+          inert={!schedule.enabled}
+        >
+          <Fold open={schedule.enabled}>
+            <ChoiceGroup
+              label="Repeats"
+              options={CADENCES}
+              value={schedule.cadence}
+              onChange={(cadence) => update({ cadence })}
+            />
+            <Fold open={schedule.cadence === 'weekly'} className="pt-4">
+              <ChoiceGroup
+                label="Day"
+                options={DAYS}
+                value={schedule.day}
+                onChange={(day) => update({ day })}
               />
-            </label>
-            <p className="text-meta text-muted -mt-2 text-right">
-              {schedule.timezone}
-            </p>
-          </>
-        ) : (
-          <div className="grid gap-3">
+            </Fold>
+            <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <label className="text-meta text-muted flex items-center gap-3">
+                Time
+                <input
+                  type="time"
+                  value={schedule.time}
+                  required
+                  onChange={(event) => {
+                    if (event.target.value)
+                      update({ time: event.target.value });
+                  }}
+                  className="value field text-primary min-h-8 px-2 [color-scheme:inherit]"
+                />
+              </label>
+              <p className="text-meta text-muted">{schedule.timezone}</p>
+            </div>
+          </Fold>
+        </div>
+        <div
+          className="col-start-1 row-start-1 min-w-0"
+          inert={schedule.enabled}
+        >
+          <Fold open={!schedule.enabled}>
             <p className="text-meta text-muted leading-normal">
-              Runs only when someone starts one. Earlier runs are kept.
+              Start runs manually.
             </p>
-          </div>
-        )}
+          </Fold>
+        </div>
       </div>
     </>
   );

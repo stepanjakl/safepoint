@@ -729,23 +729,20 @@ function OutputCells({
             <tbody key={tab}>
               <tr>
                 {/* A band across the card, ruled below: everything under it,
-                    to the next band, is this tab's. */}
+                    to the next band, is this tab's. A ground, so its pill
+                    keeps its distance from the band as facts do from the
+                    pane. */}
                 <th
                   scope="colgroup"
                   colSpan={5}
                   className={cx(
-                    'cell-group border-rule-faint border-b py-2.5 pr-5 pl-5 text-left',
+                    'ground-band bg-surface-band border-rule-faint border-b py-2.5 pr-5 pl-5 text-left',
                     group > 0 && 'border-t',
                   )}
                 >
                   <span className="inline-flex min-w-0 items-center gap-2">
                     <span className="truncate font-semibold">{tab}</span>
-                    <span className="cell-group-count">
-                      <MorphingText
-                        text={plural(cells.length, 'value')}
-                        duration={MORPH_WORDS_MS}
-                      />
-                    </span>
+                    <Fact text={plural(cells.length, 'value')} />
                   </span>
                 </th>
               </tr>

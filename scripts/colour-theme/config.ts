@@ -162,6 +162,11 @@ type SurfaceTheme = {
   ring: number;
   highlight: number;
   recess: number;
+  /* Ramp steps from the face to a band across it -- a group's head, a list's
+     boundary -- in that theme. Not a layer: a band sits a single step off
+     whatever surface it crosses, darker in light and lighter in dark, the
+     way the runs list's boundary always sat. */
+  band: number;
 };
 
 const SURFACE_THEMES = {
@@ -176,6 +181,7 @@ const SURFACE_THEMES = {
     ring: 200,
     highlight: -1,
     recess: 1,
+    band: 25,
   },
   dark: {
     canvas: 900,
@@ -183,6 +189,7 @@ const SURFACE_THEMES = {
     ring: -125,
     highlight: 1,
     recess: 1,
+    band: -25,
   },
 } as const satisfies Record<Theme, SurfaceTheme>;
 
@@ -195,6 +202,8 @@ type SurfaceLayer = {
   highlight?: `--${string}`;
   /* The recess cut into this surface: face, `-ring` and `-edge`. */
   recess: `--${string}`;
+  /* A band across this surface: its face alone. */
+  band: `--${string}`;
   /* The ground-* utility that hands the recess to what this surface holds. */
   ground?: string;
   /* The lightest light face is the end of the ramp, so its highlight has no
@@ -203,7 +212,12 @@ type SurfaceLayer = {
 };
 
 export const SURFACE_LAYERS = {
-  canvas: { depth: 0, face: '--sp-canvas', recess: '--sp-canvas-recess' },
+  canvas: {
+    depth: 0,
+    face: '--sp-canvas',
+    recess: '--sp-canvas-recess',
+    band: '--sp-canvas-band',
+  },
   primary: {
     depth: 1,
     face: '--sp-surface-primary',
@@ -211,6 +225,7 @@ export const SURFACE_LAYERS = {
     ring: '--sp-raised-ring',
     highlight: '--sp-raised-edge',
     recess: '--sp-primary-recess',
+    band: '--sp-primary-band',
     ground: 'ground-raised',
   },
   floating: {
@@ -220,6 +235,7 @@ export const SURFACE_LAYERS = {
     ring: '--sp-floating-ring',
     highlight: '--sp-floating-edge',
     recess: '--sp-floating-recess',
+    band: '--sp-floating-band',
     ground: 'ground-floating',
   },
   popover: {
@@ -229,6 +245,7 @@ export const SURFACE_LAYERS = {
     ring: '--sp-popover-ring',
     highlight: '--sp-popover-edge',
     recess: '--sp-popover-recess',
+    band: '--sp-popover-band',
     ground: 'ground-popover',
     flush: true,
   },
@@ -241,6 +258,10 @@ export const RECESS_ROLES = {
   ring: '--sp-recessed-ring',
   highlight: '--sp-recessed-edge',
 } as const;
+
+/* The band face bg-surface-band reads. At the root it is the canvas's band;
+   a ground-* utility re-points it for everything inside it. */
+export const BAND_ROLES = { face: '--sp-surface-band' } as const;
 
 /* The edge of the surface something sits on -- its ring and its highlight --
    for a header's or footer's divider drawn in it. Each ground-* utility points
@@ -280,7 +301,7 @@ function surfaceSteps(themes: Record<Theme, SurfaceTheme>): Steps {
   };
   const layers = SURFACE_LAYERS as Record<string, SurfaceLayer>;
   for (const theme of THEMES) {
-    const { canvas, layerScale, ring, highlight, recess } = themes[theme];
+    const { canvas, layerScale, ring, highlight, recess, band } = themes[theme];
     if (theme === 'light' ? !(highlight < 0) : !(highlight > 0))
       throw new Error(
         `${theme}: a highlight is ${theme === 'light' ? 'lighter' : 'darker'} than its face, so highlight must be ${theme === 'light' ? 'below' : 'above'} 0.`,
@@ -310,6 +331,7 @@ function surfaceSteps(themes: Record<Theme, SurfaceTheme>): Steps {
       put(cut.face, theme, recessFace);
       put(cut.ring, theme, ringFor(recessFace, face));
       put(cut.highlight, theme, edgeFor(recessFace));
+      put(surface.band, theme, face + band);
     }
   }
   return steps;
@@ -317,16 +339,15 @@ function surfaceSteps(themes: Record<Theme, SurfaceTheme>): Steps {
 
 export const SURFACE_STEPS = surfaceSteps(SURFACE_THEMES);
 
-/* Where nothing re-points them, the recess roles are the canvas's recess. */
+/* Where nothing re-points them, the recess and band roles are the canvas's. */
 export const SURFACE_ALIASES: ReadonlyMap<`--${string}`, `--${string}`> =
-  new Map(
-    Object.entries(recessRoles(SURFACE_LAYERS.canvas.recess)).map(
-      ([part, variable]) => [
-        RECESS_ROLES[part as keyof typeof RECESS_ROLES],
-        variable,
-      ],
+  new Map([
+    ...Object.entries(recessRoles(SURFACE_LAYERS.canvas.recess)).map(
+      ([part, variable]) =>
+        [RECESS_ROLES[part as keyof typeof RECESS_ROLES], variable] as const,
     ),
-  );
+    [BAND_ROLES.face, SURFACE_LAYERS.canvas.band] as const,
+  ]);
 
 function surfaceRole(cssVariable: `--${string}`): RoleAssignment {
   const steps = SURFACE_STEPS.get(
@@ -341,7 +362,13 @@ function surfaceRole(cssVariable: `--${string}`): RoleAssignment {
   move when the stack does. Written into a generated block in their own file.
 */
 type SurfaceKey = keyof typeof SURFACE_LAYERS;
-type Offset = { light: number; dark: number };
+type Offset = {
+  light: number;
+  dark: number;
+  /* An ink near the end of the ramp, which stops at that end on a ground too
+     light (or too dark) to go further, as every role does on the popover. */
+  flush?: true;
+};
 
 /* Roles that follow whichever surface they are inside. At the root they sit
    on the canvas; every ground-* utility re-declares them for its surface, and
@@ -455,16 +482,84 @@ const FOLLOWING_BY_FILE = {
     '--sp-drawer-close-ring-bottom-hover': { light: 600, dark: -250 },
   },
   'components/ui/switch.css': {
-    /* Set at the secondary button's steps but separate, so tuning a button
-       moves no switch. */
-    '--sp-switch-face-top': { light: -25, dark: -100 },
-    '--sp-switch-face-bottom': { light: 50, dark: 0 },
-    '--sp-switch-ring-top': { light: 175, dark: -250 },
-    '--sp-switch-ring-bottom': { light: 275, dark: -100 },
+    /* Keep both resting stops off their ground: the switch follows every
+       surface, including recesses, without its lower face blending into it. */
+    '--sp-switch-face-top': { light: 50, dark: -125 },
+    '--sp-switch-face-bottom': { light: 100, dark: -50 },
+    '--sp-switch-ring-top': { light: 275, dark: -350 },
+    '--sp-switch-ring-bottom': { light: 375, dark: -250 },
     '--sp-switch-face-top-focus': { light: -25, dark: -175 },
     '--sp-switch-face-bottom-focus': { light: 175, dark: -50 },
     '--sp-switch-ring-top-focus': { light: 275, dark: -375 },
     '--sp-switch-ring-bottom-focus': { light: 600, dark: -250 },
+  },
+  /*
+    Pills follow the ground they sit on, face and ink: each is set once here,
+    at its old offsets from the surface it was first drawn on, so it is
+    unchanged there and keeps the same distance on any other -- a floating
+    card, a recess, a band. Inks are the text step they were, as an offset.
+  */
+  'components/app-shell/thread/thread-step.css': {
+    '--sp-thread-fact-face': { light: 75, dark: -75 },
+    /* Under the row's hover wash a pill lifts: lighter than the wash in
+       light (+50 there), a step past it in dark (-100), as a raised face does.
+       It moves as far as the wash (50 light, 100 dark), keeping its distance. */
+    '--sp-thread-fact-face-hover': { light: 25, dark: -175 },
+    /* Muted ink, then muted-strong on the lifted face. */
+    '--sp-thread-fact-ink': { light: 550, dark: -525 },
+    '--sp-thread-fact-ink-hover': { light: 625, dark: -625 },
+    /* A fact that opens something: past a plain one at rest, and past the
+       row's hover wash under it (-100 in dark), deepest under the pointer. */
+    '--sp-thread-link-face': { light: 125, dark: -125 },
+    '--sp-thread-link-face-hover': { light: 175, dark: -225 },
+    '--sp-thread-link-face-active': { light: 200, dark: -275 },
+    '--sp-thread-link-ink': { light: 625, dark: -625 },
+    '--sp-thread-link-ink-hover': { light: 875, dark: -750, flush: true },
+  },
+  'components/app-shell/thread/model-run-thread.css': {
+    /* A cell address that opens its cell: set at the thread link's steps but
+       separate, so tuning a step's link moves no cell. */
+    '--sp-cell-link-face': { light: 125, dark: -125 },
+    '--sp-cell-link-face-hover': { light: 200, dark: -275 },
+    '--sp-cell-link-ink': { light: 625, dark: -625 },
+    '--sp-cell-link-ink-hover': { light: 875, dark: -750, flush: true },
+  },
+  'components/review/release-card.css': {
+    /* A row's change pill: past the row's wash (--sp-row-hover) at
+       rest and further again under it, so it keeps its distance; its lead is
+       lighter in light. First set on the floating card. */
+    '--sp-card-pill-face': { light: 100, dark: -75 },
+    '--sp-card-pill-face-hover': { light: 150, dark: -175 },
+    '--sp-card-pill-lead': { light: 25, dark: -150 },
+    /* Held at -225 in dark, short of the wash's 100: its primary ink cannot
+       strengthen, and at -250 it reads 4.47:1. */
+    '--sp-card-pill-lead-hover': { light: 75, dark: -225 },
+    '--sp-card-pill-ink': { light: 900, dark: -700, flush: true },
+  },
+  'components/app-shell/runs/runs-list.css': {
+    /* The tally's total: ramp, not a severity tone. Dark's label is ink at
+       75%; light gives it its own step against each face. */
+    '--sp-sheet-total-face': { light: 150, dark: -100 },
+    /* Under the row's pointer it moves as far as the row's own wash
+       (--sp-row-hover, 50 steps), so it keeps its distance from the row. */
+    '--sp-sheet-total-face-hover': { light: 200, dark: -150 },
+    '--sp-sheet-total-face-current': { light: 250, dark: -200 },
+    /* The figure lightens through states in both themes. */
+    '--sp-sheet-total-lead': { light: 100, dark: -150 },
+    '--sp-sheet-total-lead-hover': { light: 75, dark: -250 },
+    '--sp-sheet-total-lead-current': { light: 50, dark: -275 },
+    '--sp-sheet-total-ink': { light: 775, dark: -750, flush: true },
+    '--sp-sheet-total-ink-hover': { light: 825, dark: -800, flush: true },
+    '--sp-sheet-total-ink-current': { light: 875, dark: -800, flush: true },
+    '--sp-sheet-total-label': { light: 600, dark: -575 },
+    '--sp-sheet-total-label-hover': { light: 650, dark: -625 },
+    '--sp-sheet-total-label-current': { light: 675, dark: -675 },
+    /* A boundary's version: muted-soft at rest, muted-strong to the pointer,
+       its chip muted-strong and then primary. */
+    '--sp-sheet-break-ink': { light: 425, dark: -425 },
+    '--sp-sheet-break-ink-hover': { light: 625, dark: -625 },
+    '--sp-sheet-chip-ink': { light: 625, dark: -625 },
+    '--sp-sheet-chip-ink-hover': { light: 875, dark: -750, flush: true },
   },
 } as const satisfies Record<string, Record<`--${string}`, Offset>>;
 
@@ -545,63 +640,14 @@ const ANCHORED_BY_FILE = {
     '--sp-title-field-edge-active': { on: 'primary', light: 450, dark: -550 },
   },
   'components/app-shell/runs/runs-list.css': {
-    /* The sticky head and version break. Not a recess: in dark that put the
-       head in a pit below its rows. */
-    '--sp-sheet-band': { on: 'primary', light: 25, dark: -25 },
     /* The row's own wash, a step past the shared one in dark, where 50 steps
        barely showed; its fade ends 25 short of it, still clear of the pane. */
     '--sp-sheet-hover': { on: 'primary', light: 50, dark: -75 },
     '--sp-sheet-hover-end': { on: 'primary', light: 25, dark: -50 },
-    /* The tally's total: ramp, not a severity tone. Dark's label is ink at
-       75%; light gives it its own step against each face. */
-    '--sp-sheet-total-face': { on: 'primary', light: 150, dark: -100 },
-    /* Under the row's pointer it moves as far as the row's own wash
-       (--sp-row-hover, 50 steps), so it keeps its distance from the row. */
-    '--sp-sheet-total-face-hover': { on: 'primary', light: 200, dark: -150 },
-    '--sp-sheet-total-face-current': { on: 'primary', light: 250, dark: -200 },
-    /* The figure lightens through states in both themes. */
-    '--sp-sheet-total-lead': { on: 'primary', light: 100, dark: -150 },
-    '--sp-sheet-total-lead-hover': { on: 'primary', light: 75, dark: -250 },
-    '--sp-sheet-total-lead-current': { on: 'primary', light: 50, dark: -275 },
-  },
-  'components/app-shell/thread/model-run-thread.css': {
-    /* A cell address that opens its cell: set at the thread link's steps but
-       separate, so tuning a step's link moves no cell. */
-    '--sp-cell-link-face': { on: 'primary', light: 125, dark: -125 },
-    '--sp-cell-link-face-hover': { on: 'primary', light: 200, dark: -275 },
-    /* A group of a table's rows -- one tab's cells -- banded at the runs
-       list's boundary step (--sp-sheet-band), separate so neither moves the
-       other. */
-    '--sp-cell-group-face': { on: 'primary', light: 25, dark: -25 },
-    /* A fact on that band -- how many values -- a fact's step (75) off the
-       band rather than off the pane, so it stands as far from its ground as
-       every fact does. */
-    '--sp-cell-group-count-face': { on: 'primary', light: 100, dark: -100 },
   },
   'components/app-shell/thread/thread-step.css': {
     '--sp-thread-line': { on: 'primary', light: 225, dark: -200 },
     '--sp-thread-done': { on: 'primary', light: 450, dark: -375 },
-    '--sp-thread-fact-face': { on: 'primary', light: 75, dark: -75 },
-    /* Under the row's hover wash a pill lifts: lighter than the wash in
-       light (+50 there), a step past it in dark (-100), as a raised face does.
-       It moves as far as the wash (50 light, 100 dark), keeping its distance. */
-    '--sp-thread-fact-face-hover': { on: 'primary', light: 25, dark: -175 },
-    /* A fact that opens something: past a plain one at rest, and past the
-       row's hover wash under it (-100 in dark), deepest under the pointer. */
-    '--sp-thread-link-face': { on: 'primary', light: 125, dark: -125 },
-    '--sp-thread-link-face-hover': { on: 'primary', light: 175, dark: -225 },
-    '--sp-thread-link-face-active': { on: 'primary', light: 200, dark: -275 },
-  },
-  'components/review/release-card.css': {
-    /* A row's change pill: past the row's wash (--sp-row-hover) at
-       rest and further again under it, so it keeps its distance; its lead is
-       lighter in light. */
-    '--sp-card-pill-face': { on: 'floating', light: 100, dark: -75 },
-    '--sp-card-pill-face-hover': { on: 'floating', light: 150, dark: -175 },
-    '--sp-card-pill-lead': { on: 'floating', light: 25, dark: -150 },
-    /* Held at -225 in dark, short of the wash's 100: its primary ink cannot
-       strengthen, and at -250 it reads 4.47:1. */
-    '--sp-card-pill-lead-hover': { on: 'floating', light: 75, dark: -225 },
   },
   'components/ui/tooltip.css': {
     /* A slate in both themes, set off the popover face (see TOOLTIP). */
@@ -666,7 +712,8 @@ const highlightStep = (theme: Theme) =>
   LAYER_STEP *
   SURFACE_THEMES[theme].layerScale;
 
-/* Every place a following role can resolve: a surface, or the recess in one. */
+/* Every place a following role can resolve: a surface, or the recess or band
+   in one. */
 export const GROUND_CONTEXTS = {
   canvas: '--sp-canvas',
   primary: '--sp-surface-primary',
@@ -676,13 +723,27 @@ export const GROUND_CONTEXTS = {
   'floating-recess': '--sp-floating-recess',
   popover: '--sp-surface-popover',
   'popover-recess': '--sp-popover-recess',
+  'canvas-band': '--sp-canvas-band',
+  'primary-band': '--sp-primary-band',
+  'floating-band': '--sp-floating-band',
+  'popover-band': '--sp-popover-band',
 } as const;
 export type GroundContext = keyof typeof GROUND_CONTEXTS;
+
+/* The bands drawn today: across the pane (the runs list's boundary, a table's
+   group head) and across a floating card. A band on the canvas or a popover
+   is generated but not drawn, so its contracts are not read; add it here
+   before drawing one, and the contracts hold it. (Dark text on a selected
+   control in a popover's band reads 4.49:1.) */
+export const DRAWN_BANDS: ReadonlySet<GroundContext> = new Set([
+  'primary-band',
+  'floating-band',
+]);
 
 /* A role asked for lighter than the lightest step stops at that step. Only the
    popover reaches it: its face is already the end of the ramp in light. */
 const toRamp = (value: number, flush: boolean) =>
-  flush ? Math.max(value, 0) : value;
+  flush ? Math.min(Math.max(value, 0), COLOUR_STEPS.at(-1)!) : value;
 
 const offsetFrom = (
   face: `--${string}`,
@@ -705,7 +766,7 @@ export function followingAt(variable: `--${string}`, context: GroundContext) {
     GROUND_CONTEXTS[context],
     role,
     `${variable} in ${context}`,
-    context.startsWith('popover'),
+    context.startsWith('popover') || role.flush === true,
   );
 }
 
@@ -753,6 +814,7 @@ export const ROLE_ASSIGNMENTS = {
   surfacePrimary: surfaceRole('--sp-surface-primary'),
   surfaceFloating: surfaceRole('--sp-surface-floating'),
   surfaceInset: surfaceRole('--sp-surface-inset'),
+  surfaceBand: surfaceRole('--sp-surface-band'),
   raisedRing: surfaceRole('--sp-raised-ring'),
   floatingRing: surfaceRole('--sp-floating-ring'),
   recessedRing: surfaceRole('--sp-recessed-ring'),

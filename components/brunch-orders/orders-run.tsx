@@ -654,7 +654,7 @@ export function SheetReadCard({
         </span>
         <span
           data-severity={3}
-          className="thread-step-fact brunch-read-done bg-severity-pill text-severity-ink group-hover/head:bg-severity-pill-hover group-hover/head:text-severity-strong group-focus-visible/head:bg-severity-pill-hover group-focus-visible/head:text-severity-strong"
+          className="thread-step-fact brunch-read-done bg-severity-pill text-severity-pill-ink group-hover/head:bg-severity-pill-hover group-hover/head:text-severity-pill-strong group-focus-visible/head:bg-severity-pill-hover group-focus-visible/head:text-severity-pill-strong"
         >
           Read · {dateTime(read.readAt)}
         </span>

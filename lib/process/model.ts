@@ -191,9 +191,9 @@ export const EVALUATION_LABELS: Record<ProcessEvaluation, string> = {
 
 export const EVALUATION_DESCRIPTIONS: Record<ProcessEvaluation, string> = {
   rules:
-    'A model drafts rules from the instructions once, and a person approves each one. Code then works out every run from them, so the same data always gives the same result.',
+    'AI turns your instructions into formulas. A person approves each formula before use. Every run uses the approved formulas, so the same data gives the same result.',
   model:
-    'A model works out every run from the instructions and the data. Only the person reviewing it checks the result, and the same data can give a different one.',
+    'AI reads your instructions and data each time it runs. A person reviews the result. The same data can give different results.',
 };
 
 export type ProcessSummary = {

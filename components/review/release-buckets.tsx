@@ -48,7 +48,7 @@ const PILL_SHAPE =
   'control-wash inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-dense font-medium whitespace-nowrap [&_.value]:[font-weight:550]';
 const PILL = cx(
   PILL_SHAPE,
-  'bg-severity-pill text-severity-ink data-[hovered]:not-data-[selected]:bg-severity-pill-hover data-[hovered]:not-data-[selected]:text-severity-strong data-[focus-visible]:not-data-[selected]:bg-severity-pill-hover data-[focus-visible]:not-data-[selected]:text-severity-strong data-[selected]:bg-severity-solid data-[selected]:text-severity-on-solid',
+  'bg-severity-pill text-severity-pill-ink data-[hovered]:not-data-[selected]:bg-severity-pill-hover data-[hovered]:not-data-[selected]:text-severity-pill-strong data-[focus-visible]:not-data-[selected]:bg-severity-pill-hover data-[focus-visible]:not-data-[selected]:text-severity-pill-strong data-[selected]:bg-severity-solid data-[selected]:text-severity-on-solid',
 );
 
 // The card's header: what the batch needs, the bar and the tabs, ruled off

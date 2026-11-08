@@ -25,7 +25,8 @@
     opacity: 0;
     transition: opacity var(--fold-fade) ease-out;
   }
-  .fold[data-open] .fold-body {
+  /* An open parent must not hold a nested, closing fold's content opaque. */
+  .fold[data-open] > .fold-clip > .fold-body {
     opacity: 1;
     transition-delay: var(--fold-duration);
   }

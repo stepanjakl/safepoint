@@ -9,9 +9,10 @@ import { AssistantContext } from '@/components/app-shell/assistant/assistant-sta
 import { CLOSE_BUTTON } from '@/components/app-shell/drawer-aside';
 import { ProcessHeader } from '@/components/app-shell/process/process-header';
 import { Button, type Slant } from '@/components/ui/button';
+import { ChoiceGroup } from '@/components/ui/choice-group';
 import { FilterTabs, type FilterTab } from '@/components/ui/filter-tabs';
 import { RunStatusIcon } from '@/components/ui/run-status-icon';
-import { Switch } from '@/components/ui/switch';
+import { Switch, type SwitchSize } from '@/components/ui/switch';
 import {
   RUN_STATUS_LABELS,
   type ProcessSummary,
@@ -20,6 +21,24 @@ import {
 import type { SystemLink } from '@/lib/process/system-links';
 
 import { Pin, type PinnedState } from './pin';
+
+const SWITCH_SIZES: SwitchSize[] = ['sm', 'md', 'lg'];
+
+function LiveChoices({ isDisabled = false }: { isDisabled?: boolean }) {
+  const [value, setValue] = useState('daily');
+  return (
+    <ChoiceGroup
+      label="Repeats"
+      options={[
+        { value: 'daily', label: 'Daily' },
+        { value: 'weekly', label: 'Weekly' },
+      ]}
+      value={value}
+      onChange={setValue}
+      isDisabled={isDisabled}
+    />
+  );
+}
 
 const STATES: { label: string; state?: PinnedState }[] = [
   { label: 'Rest' },
@@ -225,6 +244,21 @@ export function ControlsGallery({
         </div>
       </Section>
 
+      <Section title="Choice group">
+        <div className={GRID}>
+          <StateHeadings />
+          <span className={LABEL}>Single choice</span>
+          {STATES.map(({ label, state }) => (
+            <Pin key={label} state={state} selector="button">
+              <LiveChoices />
+            </Pin>
+          ))}
+          <Pin>
+            <LiveChoices isDisabled />
+          </Pin>
+        </div>
+      </Section>
+
       <Section title="Filter tabs, live">
         <p className={LABEL}>
           Working strips, one set on each surface: choose, hover, tab and use
@@ -348,16 +382,47 @@ export function ControlsGallery({
       <Section title="Switch">
         <div className={GRID}>
           <StateHeadings />
-          {[false, true].map((selected) => (
-            <StateRow
-              key={String(selected)}
-              name={selected ? 'on' : 'off'}
-              render={(disabled) => (
-                <Switch isSelected={selected} isDisabled={disabled}>
-                  Notify
-                </Switch>
-              )}
-            />
+          {SWITCH_SIZES.flatMap((size) =>
+            [false, true].map((selected) => (
+              <StateRow
+                key={`${size}-${selected}`}
+                name={`${size} · ${selected ? 'on' : 'off'}`}
+                render={(disabled) => (
+                  <Switch
+                    size={size}
+                    isSelected={selected}
+                    isDisabled={disabled}
+                  >
+                    Notify
+                  </Switch>
+                )}
+              />
+            )),
+          )}
+        </div>
+      </Section>
+
+      <Section title="Switch surfaces">
+        <div className="grid gap-4 md:grid-cols-3">
+          {SURFACES.map(([name, face]) => (
+            <div
+              key={name}
+              data-switch-surface={name.toLowerCase()}
+              className={`${face} grid content-start gap-3 p-6`}
+            >
+              <span className={LABEL}>{name}</span>
+              {SWITCH_SIZES.map((size) => (
+                <div key={size} className="flex items-center gap-4">
+                  <span className={LABEL}>{size}</span>
+                  <Switch size={size} aria-label={`${name} ${size} off`} />
+                  <Switch
+                    size={size}
+                    aria-label={`${name} ${size} on`}
+                    isSelected
+                  />
+                </div>
+              ))}
+            </div>
           ))}
         </div>
       </Section>

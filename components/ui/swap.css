@@ -9,24 +9,24 @@
      ends the swap (drawer-aside.tsx); its parts below do the moving. */
   .swap-leave {
     pointer-events: none;
-    animation: swap-hold var(--duration-state) ease-out both;
+    animation: swap-hold var(--duration-state) var(--ease-out-quad) both;
   }
   .swap-enter[data-motion] {
     animation: swap-hold var(--duration-pane) --theme(--ease-out-emphasized) both;
   }
   .swap-leave > header > *,
   .swap-leave .swap-band > * {
-    animation: swap-fade-out var(--duration-state) ease-out both;
+    animation: swap-fade-out var(--duration-state) var(--ease-out-quad) both;
   }
   .swap-enter[data-motion] > header > *,
   .swap-enter[data-motion] .swap-band > * {
-    animation: swap-fade-in var(--duration-pane) ease-out both;
+    animation: swap-fade-in var(--duration-pane) var(--ease-out-quad) both;
   }
   /* The fade-out starts at full speed: an ease-in leaves the old content
      standing still for its first frames, which reads as a stall. */
   .swap-leave > .swap-body:not(:has(> * > .swap-band)),
   .swap-leave .swap-band + * {
-    animation: swap-leave var(--duration-state) ease-out both;
+    animation: swap-leave var(--duration-state) var(--ease-out-quad) both;
   }
   .swap-enter[data-motion] > .swap-body:not(:has(> * > .swap-band)),
   .swap-enter[data-motion] .swap-band + * {

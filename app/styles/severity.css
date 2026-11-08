@@ -18,7 +18,19 @@
   /* A bucket tab, after the run tallies: a lit face at rest, moved under the
      pointer, and a solid when selected. Not the tally's rung 10 with white: at
      13px that reads 4.25:1 on red in light and 3.3:1 in dark. */
-  --color-severity-pill: light-dark(var(--severity-4), var(--severity-5));
+  /* A pill follows the ground it sits on, face and ink: each rung is read as
+     tuned on the pane and moved by how far the ground's face sits from the
+     pane's (--sp-ground-lift less one layer), as the filter strip's tones
+     are, so it keeps its distance on a card, a recess or a band. Written
+     inline: a :root alias would freeze at the canvas's lift. */
+  --color-severity-pill: light-dark(
+    oklch(
+      from var(--severity-4) calc(l + var(--sp-ground-lift-light) - var(--sp-layer-lift-light)) c h
+    ),
+    oklch(
+      from var(--severity-5) calc(l + var(--sp-ground-lift-dark) - var(--sp-layer-lift-dark)) c h
+    )
+  );
   /* Under the pointer a pill moves as far as its row's wash -- deeper in
      light, lifted in dark -- so it keeps its distance from what it sits on.
      The shared wash moves two layer lifts; a row with a quieter wash sets
@@ -26,16 +38,50 @@
      which moves grey half as far again as the hues. */
   --color-severity-pill-hover: light-dark(
     oklch(
-      from var(--severity-4) calc(l - var(--pill-hover-lift-light, 2 * var(--sp-layer-lift-light)))
+      from var(--severity-4)
+        calc(
+          l + var(--sp-ground-lift-light) - var(--sp-layer-lift-light) -
+            var(--pill-hover-lift-light, 2 * var(--sp-layer-lift-light))
+        )
         c h
     ),
     oklch(
-      from var(--severity-5) calc(l + var(--pill-hover-lift-dark, 2 * var(--sp-layer-lift-dark))) c
-        h
+      from var(--severity-5)
+        calc(
+          l + var(--sp-ground-lift-dark) - var(--sp-layer-lift-dark) +
+            var(--pill-hover-lift-dark, 2 * var(--sp-layer-lift-dark))
+        )
+        c h
     )
   );
   /* A ringed pill's edge: the next rung, apart from the hover face. */
-  --color-severity-pill-ring: light-dark(var(--severity-5), var(--severity-6));
+  --color-severity-pill-ring: light-dark(
+    oklch(
+      from var(--severity-5) calc(l + var(--sp-ground-lift-light) - var(--sp-layer-lift-light)) c h
+    ),
+    oklch(
+      from var(--severity-6) calc(l + var(--sp-ground-lift-dark) - var(--sp-layer-lift-dark)) c h
+    )
+  );
+  /* A pill's ink, and its strong ink under the pointer, moved with its face
+     so the two keep their contrast on any ground. */
+  --color-severity-pill-ink: light-dark(
+    oklch(
+      from color-mix(in oklab, var(--severity-12) 40%, var(--severity-11))
+        calc(l + var(--sp-ground-lift-light) - var(--sp-layer-lift-light)) c h
+    ),
+    oklch(
+      from var(--severity-11) calc(l + var(--sp-ground-lift-dark) - var(--sp-layer-lift-dark)) c h
+    )
+  );
+  --color-severity-pill-strong: light-dark(
+    oklch(
+      from var(--severity-12) calc(l + var(--sp-ground-lift-light) - var(--sp-layer-lift-light)) c h
+    ),
+    oklch(
+      from var(--severity-12) calc(l + var(--sp-ground-lift-dark) - var(--sp-layer-lift-dark)) c h
+    )
+  );
   --color-severity-solid: light-dark(var(--severity-11), var(--severity-7));
   --color-severity-on-solid: light-dark(var(--severity-1), var(--severity-12));
   --color-severity-bar: var(--severity-9);

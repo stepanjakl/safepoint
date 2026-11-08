@@ -125,17 +125,22 @@
     transition-duration: var(--chrome-travel);
     transition-timing-function: --theme(--ease-out-emphasized);
   }
-  /* A band dropping in or rising away: its edge and width keep the line's
-     pace (left, width); its drop or rise is shorter, on a symmetric curve
-     so the one is the other played backwards (top, height, opacity). */
+  /* Vertical arrivals land softly; departures stay short. Horizontal edges
+     keep the divider's pace so the frame stays joined throughout the move. */
   .sheet-chrome[data-moving] > [data-chrome-pace='band'] {
+    --chrome-band-duration: var(--duration-pane);
+    --chrome-band-ease: var(--ease-out-emphasized);
     transition-property: left, width, top, height, opacity;
     transition-duration:
-      var(--chrome-travel), var(--chrome-travel), var(--duration-state), var(--duration-state),
-      var(--duration-state);
+      var(--chrome-travel), var(--chrome-travel), var(--chrome-band-duration),
+      var(--chrome-band-duration), var(--chrome-band-duration);
     transition-timing-function:
-      --theme(--ease-out-emphasized), --theme(--ease-out-emphasized), var(--ease-in-out-quad),
-      var(--ease-in-out-quad), var(--ease-in-out-quad);
+      --theme(--ease-out-emphasized), --theme(--ease-out-emphasized), var(--chrome-band-ease),
+      var(--chrome-band-ease), var(--chrome-band-ease);
+  }
+  .sheet-chrome[data-moving] > [data-chrome-pace='band'][data-chrome-leaving] {
+    --chrome-band-duration: var(--duration-state);
+    --chrome-band-ease: var(--ease-in-out-quad);
   }
   /* Shown but unseen while the frame moves onto it (sheet-chrome.ts): every
      entrance inside waits paused, its delay too, then all start together. */

@@ -210,25 +210,49 @@
     font-weight: var(--font-weight-label);
     font-variant-numeric: tabular-nums;
     /* A pill's own faces (--color-severity-pill and its hover, severity.css),
-       read from the kind's rungs rather than a [data-severity]. */
-    background-color: light-dark(var(--rulebook-timeline-tone-4), var(--rulebook-timeline-tone-5));
+       read from the kind's rungs rather than a [data-severity], and moved, ink
+       too, by how far its ground sits from the pane, as every pill is. */
+    --count-lift-light: calc(var(--sp-ground-lift-light) - var(--sp-layer-lift-light));
+    --count-lift-dark: calc(var(--sp-ground-lift-dark) - var(--sp-layer-lift-dark));
+    background-color: light-dark(
+      oklch(from var(--rulebook-timeline-tone-4) calc(l + var(--count-lift-light)) c h),
+      oklch(from var(--rulebook-timeline-tone-5) calc(l + var(--count-lift-dark)) c h)
+    );
     @apply control-wash;
   }
   /* Under the pointer the ink takes the hue's rung 12, as a pill's does
      (--color-severity-strong): rung 11 reads 4.3:1 on the lifted dark face. */
   .rulebook-timeline-entry:focus-visible .rulebook-timeline-count {
-    color: var(--rulebook-timeline-tone-12);
+    color: light-dark(
+      oklch(from var(--rulebook-timeline-tone-12) calc(l + var(--count-lift-light)) c h),
+      oklch(from var(--rulebook-timeline-tone-12) calc(l + var(--count-lift-dark)) c h)
+    );
     background-color: light-dark(
-      oklch(from var(--rulebook-timeline-tone-4) calc(l - var(--pill-hover-lift-light)) c h),
-      oklch(from var(--rulebook-timeline-tone-5) calc(l + var(--pill-hover-lift-dark)) c h)
+      oklch(
+        from var(--rulebook-timeline-tone-4)
+          calc(l + var(--count-lift-light) - var(--pill-hover-lift-light)) c h
+      ),
+      oklch(
+        from var(--rulebook-timeline-tone-5)
+          calc(l + var(--count-lift-dark) + var(--pill-hover-lift-dark)) c h
+      )
     );
   }
   @media (hover: hover) {
     .rulebook-timeline-entry:hover .rulebook-timeline-count {
-      color: var(--rulebook-timeline-tone-12);
+      color: light-dark(
+        oklch(from var(--rulebook-timeline-tone-12) calc(l + var(--count-lift-light)) c h),
+        oklch(from var(--rulebook-timeline-tone-12) calc(l + var(--count-lift-dark)) c h)
+      );
       background-color: light-dark(
-        oklch(from var(--rulebook-timeline-tone-4) calc(l - var(--pill-hover-lift-light)) c h),
-        oklch(from var(--rulebook-timeline-tone-5) calc(l + var(--pill-hover-lift-dark)) c h)
+        oklch(
+          from var(--rulebook-timeline-tone-4)
+            calc(l + var(--count-lift-light) - var(--pill-hover-lift-light)) c h
+        ),
+        oklch(
+          from var(--rulebook-timeline-tone-5)
+            calc(l + var(--count-lift-dark) + var(--pill-hover-lift-dark)) c h
+        )
       );
     }
   }
@@ -264,19 +288,29 @@
   }
   /* The two rungs a count chip reads, by kind. */
   .rulebook-timeline-count[data-kind='added'] {
+    --rulebook-timeline-ink: var(--sp-state-verified);
     --rulebook-timeline-tone-4: var(--sp-state-verified-4);
     --rulebook-timeline-tone-5: var(--sp-state-verified-5);
     --rulebook-timeline-tone-12: var(--sp-state-verified-12);
   }
   .rulebook-timeline-count[data-kind='changed'] {
+    --rulebook-timeline-ink: var(--sp-state-advisory);
     --rulebook-timeline-tone-4: var(--sp-state-advisory-4);
     --rulebook-timeline-tone-5: var(--sp-state-advisory-5);
     --rulebook-timeline-tone-12: var(--sp-state-advisory-12);
   }
   .rulebook-timeline-count[data-kind='removed'] {
+    --rulebook-timeline-ink: var(--sp-state-blocked);
     --rulebook-timeline-tone-4: var(--sp-state-blocked-4);
     --rulebook-timeline-tone-5: var(--sp-state-blocked-5);
     --rulebook-timeline-tone-12: var(--sp-state-blocked-12);
+  }
+  /* A count's own ink, moved with its face. */
+  .rulebook-timeline-count[data-kind] {
+    color: light-dark(
+      oklch(from var(--rulebook-timeline-ink) calc(l + var(--count-lift-light)) c h),
+      oklch(from var(--rulebook-timeline-ink) calc(l + var(--count-lift-dark)) c h)
+    );
   }
   .rulebook-timeline-sign {
     color: var(--rulebook-timeline-sign);

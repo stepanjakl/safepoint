@@ -339,7 +339,12 @@ export function ProcessSheet({
                     <SectionClock
                       entering={!visible || entering || enteringProcess}
                     >
-                      <Forming active={!visible || entering || enteringProcess}>
+                      <Forming
+                        active={
+                          key !== 'settings' &&
+                          (!visible || entering || enteringProcess)
+                        }
+                      >
                         {section(key)}
                       </Forming>
                     </SectionClock>

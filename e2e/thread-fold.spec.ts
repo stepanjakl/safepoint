@@ -44,19 +44,32 @@ test('long thread folds and open-body resizes have bounded motion', async ({
     .toBe(0);
   await expect(body).toHaveCSS('opacity', '1');
 
-  // Changing an already-open body takes the same capped time.
-  const resizeDuration = await body.evaluate(async (element) => {
+  // An open-body resize keeps the cap and reads the fold's current curve.
+  await fold.evaluate((element) =>
+    element.style.setProperty(
+      '--ease-fold',
+      'cubic-bezier(0.25, 0.1, 0.25, 1)',
+    ),
+  );
+  const resizeTiming = await body.evaluate(async (element) => {
     const content = document.createElement('div');
     content.style.height = '2000px';
     element.append(content);
     for (let frame = 0; frame < 20; frame++) {
       await new Promise(requestAnimationFrame);
       const animation = element.parentElement?.getAnimations()[0];
-      if (animation) return animation.effect?.getTiming().duration;
+      if (animation) {
+        const timing = animation.effect?.getTiming();
+        return { duration: timing?.duration, easing: timing?.easing };
+      }
     }
     return null;
   });
-  expect(resizeDuration).toBe(350);
+  expect(resizeTiming).toEqual({
+    duration: 350,
+    easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)',
+  });
+  await fold.evaluate((element) => element.style.removeProperty('--ease-fold'));
   await expect
     .poll(() => clip.evaluate((element) => element.getAnimations().length))
     .toBe(0);

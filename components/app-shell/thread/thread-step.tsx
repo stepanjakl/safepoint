@@ -474,7 +474,7 @@ export function ThreadStep({
         { height: [`${start}px`, `${height}px`] },
         {
           duration: pacedDuration(fold, 'thread-fold', height - start),
-          easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+          easing: getComputedStyle(fold).getPropertyValue('--ease-fold').trim(),
         },
       );
     });

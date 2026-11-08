@@ -17,7 +17,6 @@ const OPAQUE_EDGE_TOKENS = [
   '--sp-notch-highlight',
   '--sp-tooltip-highlight',
   '--sp-enclosure-edge',
-  '--sp-switch-on-edge',
   '--sp-commit-drag-edge',
 ] as const;
 
@@ -223,6 +222,62 @@ test('the primary action keeps its ring under the pointer', async ({
       }),
     )
     .toEqual({ top: true, bottom: true, highlight: true });
+});
+
+test('neutral switches follow their surface while selected switches keep their cyan', async ({
+  page,
+}) => {
+  await page.goto('/workbench/controls');
+  const samples = page.locator('[data-switch-surface]');
+  await expect(samples).toHaveCount(3);
+  await page.addStyleTag({
+    content: '*, *::before, *::after { transition: none !important; }',
+  });
+  for (const theme of ['light', 'dark']) {
+    await page.evaluate((value) => {
+      document.documentElement.dataset.theme = value;
+    }, theme);
+    const paints = await samples.evaluateAll((surfaces) =>
+      surfaces.map((surface) => {
+        const off = surface.querySelector(
+          '.switch:not([data-selected]) .switch-track',
+        );
+        const on = surface.querySelector(
+          '.switch[data-selected] .switch-track',
+        );
+        if (!off || !on) throw new Error('Missing switch surface sample');
+        const resolve = (element: Element, token: string) => {
+          const probe = document.createElement('span');
+          probe.style.color = getComputedStyle(element).getPropertyValue(token);
+          element.append(probe);
+          const colour = getComputedStyle(probe).color;
+          probe.remove();
+          return colour;
+        };
+        const name = surface.getAttribute('data-switch-surface');
+        const ground = resolve(
+          surface,
+          name === 'canvas'
+            ? '--sp-canvas'
+            : name === 'primary'
+              ? '--sp-surface-primary'
+              : '--sp-surface-floating',
+        );
+        return {
+          neutral: getComputedStyle(off).backgroundImage,
+          selected: getComputedStyle(on).backgroundImage,
+          topApart: resolve(off, '--control-face-top') !== ground,
+          bottomApart: resolve(off, '--control-face-bottom') !== ground,
+        };
+      }),
+    );
+    expect(new Set(paints.map((paint) => paint.neutral)).size, theme).toBe(3);
+    expect(new Set(paints.map((paint) => paint.selected)).size, theme).toBe(1);
+    expect(
+      paints.every((paint) => paint.topApart && paint.bottomApart),
+      theme,
+    ).toBe(true);
+  }
 });
 
 test('muted ink never paints on a selected surface', async ({ page }) => {

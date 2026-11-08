@@ -12,6 +12,7 @@ import {
   DURATION_PANE,
   DURATION_STATE,
   DURATION_TAB_LEAVE,
+  EASE_OUT_EMPHASIZED,
   EASE_OUT_QUAD,
 } from '@/lib/motion';
 import { motionTime } from '@/lib/motion-time';
@@ -121,7 +122,10 @@ export function useSwap<K extends string>(
       },
       transition: {
         duration: fading ? pace.leave : pace.enter,
-        ease: EASE_OUT_QUAD,
+        ease:
+          !fading && entering && entering !== 'fade'
+            ? EASE_OUT_EMPHASIZED
+            : EASE_OUT_QUAD,
       },
       inert: out,
       style: { pointerEvents: out ? ('none' as const) : undefined },

@@ -16,6 +16,8 @@ import { MorphingLabel, plainLabel } from './morphing-text';
 
   Like those, a pill eases into a new tone (control-wash: the state duration,
   ease-out) and morphs words that change, so a verdict or a count never jumps.
+  Its face, ring and ink follow the ground it sits on (severity.css), so it
+  keeps its distance on a pane, a card, a recess or a band.
 */
 
 export type Tone = 'blocked' | 'decision' | 'neutral' | 'ready';
@@ -49,10 +51,10 @@ export function Pill({
       {...props}
       data-severity={SEVERITY[tone]}
       className={cx(
-        'pill-shape control-wash text-severity-ink text-meta px-2 py-0.5',
+        'pill-shape control-wash text-severity-pill-ink text-meta px-2 py-0.5',
         FACE[variant],
         interactive &&
-          'hover:bg-severity-pill-hover hover:text-severity-strong focus-visible:bg-severity-pill-hover focus-visible:text-severity-strong cursor-default',
+          'hover:bg-severity-pill-hover hover:text-severity-pill-strong focus-visible:bg-severity-pill-hover focus-visible:text-severity-pill-strong cursor-default',
         className,
       )}
     >

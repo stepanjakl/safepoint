@@ -331,7 +331,7 @@ function Revision({
     count: changes?.[kind.key].length ?? 0,
   })).filter((kind) => kind.count > 0);
   const pill =
-    'group-hover/row:bg-severity-pill-hover group-hover/row:text-severity-strong group-focus-visible/row:bg-severity-pill-hover group-focus-visible/row:text-severity-strong control-wash';
+    'group-hover/row:bg-severity-pill-hover group-hover/row:text-severity-pill-strong group-focus-visible/row:bg-severity-pill-hover group-focus-visible/row:text-severity-pill-strong control-wash';
   return (
     <li className="grid">
       <AriaButton

@@ -608,7 +608,7 @@ function CheckedValue({
       >
         {value ?? '—'}
         <span className="calc-value-tail">
-          <span className="text-severity-ink">
+          <span className="text-severity-pill-ink">
             <Mark
               aria-hidden
               size={14}

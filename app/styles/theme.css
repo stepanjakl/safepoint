@@ -15,6 +15,7 @@
   --color-surface-primary: var(--sp-surface-primary);
   --color-surface-floating: var(--sp-surface-floating);
   --color-surface-inset: var(--sp-surface-inset);
+  --color-surface-band: var(--sp-surface-band);
   --color-surface-control: var(--sp-surface-control);
   --color-surface-hover: var(--sp-surface-hover);
   --color-surface-hover-strong: var(--sp-surface-hover-strong);
@@ -114,16 +115,17 @@
      `control-hairline` asks for the second. */
   --spacing-control-highlight: 1px;
   --spacing-control-highlight-hairline: 0.75px;
-  /* Track dimensions and thumb diameter; components/ui/switch.css derives the rest. */
-  --spacing-switch-sm-track-inline: 1.75rem;
+  /* Track dimensions and thumb width; components/ui/switch.css derives the rest. */
+  --spacing-switch-sm-track-inline: 2.125rem;
   --spacing-switch-sm-track-block: 1rem;
-  --spacing-switch-sm-thumb: 0.5rem;
-  --spacing-switch-md-track-inline: 2.25rem;
-  --spacing-switch-md-track-block: 1.375rem;
-  --spacing-switch-md-thumb: 0.875rem;
-  --spacing-switch-lg-track-inline: 2.5rem;
-  --spacing-switch-lg-track-block: 1.5rem;
-  --spacing-switch-lg-thumb: 1rem;
+  --spacing-switch-sm-thumb: 0.875rem;
+  --spacing-switch-sm-thumb-gap: 0.1875rem;
+  --spacing-switch-md-track-inline: 2.5rem;
+  --spacing-switch-md-track-block: 1.25rem;
+  --spacing-switch-md-thumb: 1rem;
+  --spacing-switch-lg-track-inline: 2.75rem;
+  --spacing-switch-lg-track-block: 1.375rem;
+  --spacing-switch-lg-thumb: 1.125rem;
   --spacing-switch-thumb-gap: 0.25rem;
   --shadow-control-highlight: inset 0 0 0
     var(--control-highlight-width, var(--spacing-control-highlight)) var(--control-highlight);
