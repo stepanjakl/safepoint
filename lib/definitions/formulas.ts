@@ -43,7 +43,7 @@ export type Given = {
 
 // The names every formula has; a process's lookups and proposal fields take
 // others, each once.
-const RESERVED = ['key', 'record', 'values', 'constants', 'groups'];
+const BUILT_IN = ['key', 'record', 'values', 'constants', 'groups'];
 
 export function variablesOf(subject: DefinitionSubject): string[] {
   const own = [
@@ -51,7 +51,7 @@ export function variablesOf(subject: DefinitionSubject): string[] {
     ...subject.proposal.map((field) => field.id),
   ];
   const clash = own.filter(
-    (name, i) => RESERVED.includes(name) || own.indexOf(name) !== i,
+    (name, i) => BUILT_IN.includes(name) || own.indexOf(name) !== i,
   );
   if (clash.length)
     throw new Error(`A formula name is used twice: ${clash.join(', ')}.`);
@@ -305,6 +305,17 @@ export function describe(read: KeptRead, subject: DefinitionSubject): string {
     ...(kinds.has('time_of_day')
       ? [
           `Times of day (${typedColumns('time_of_day')}) are ints, minutes after midnight: 06:30 is 390.`,
+        ]
+      : []),
+    // What the data shows as 25% or 2.50 a formula reads otherwise.
+    ...(kinds.has('percent')
+      ? [
+          `Percentages (${typedColumns('percent')}) are doubles, the fraction: 25% is 0.25.`,
+        ]
+      : []),
+    ...(kinds.has('money')
+      ? [
+          `Amounts of money (${typedColumns('money')}) are ints, in the currency's smallest unit: 2.50 is 250.`,
         ]
       : []),
     ...(data.timing ? [timingOf(read, data)] : []),

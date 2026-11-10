@@ -12,7 +12,12 @@ import { accountingProblems, sentencesOf } from './find';
 import { contextFor, run } from './formulas';
 import type { DefinitionSubject } from '@/lib/process/model';
 
-import { MOMENT_PREFIX, recordsOf, type KeptRead } from './records';
+import {
+  MOMENT_PREFIX,
+  momentColumn,
+  recordsOf,
+  type KeptRead,
+} from './records';
 import {
   acceptable,
   ignoresProposal,
@@ -139,6 +144,10 @@ function columnsUnread(
   const timed = [
     ...Object.entries(data.timing?.since ?? {}),
     ...Object.entries(data.timing?.until ?? {}),
+    // A moment is kept under its own column, which a shape's formula reads.
+    ...Object.entries(data.timing?.moments ?? {}).map(
+      ([name, moment]) => [momentColumn(name), moment] as const,
+    ),
   ];
   for (const [name, { day, time }] of timed)
     if (used.has(name)) [day, time].forEach((column) => used.add(column));

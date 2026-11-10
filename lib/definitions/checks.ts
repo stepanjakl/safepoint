@@ -542,8 +542,8 @@ function ownValues(setting: Setting, drafts: Draft[], key: string): number[] {
 
 /*
   Whether a check's examples show it working both ways, as far as this read
-  lets them. A check cannot always fail: where every delivery arrives in time,
-  nothing an order sets can break the arrival rule. So the formula is tried on
+  lets them. A check cannot always fail: where the data already settles a rule
+  for every record, nothing proposed can break it. So the formula is tried on
   every record first, at the fixed values and at each record's own, and only
   an outcome it can reach is required.
 */
@@ -658,27 +658,37 @@ export function differencesBetween(
         ),
       ]
     : [0];
-  const found: VersionDifference[] = [];
-  for (const key of records.keys) {
+  const every = (value: number) =>
+    Object.fromEntries(owner.subject.proposal.map((f) => [f.id, value]));
+  // Where the versions read two fields, each is also tried on its own, the
+  // others at 0: with all at one value, a rule on one field and the same
+  // rule on another cannot be told apart.
+  const tries = (value: number) =>
+    fields.length > 1
+      ? [every(value), ...fields.map((f) => ({ ...every(0), [f]: value }))]
+      : [every(value)];
+  const firstOn = (key: string): VersionDifference | null => {
     const values = new Set([
       ...fixed,
       ...(fields.length ? ownValues(setting, [a, b], key) : []),
     ]);
-    for (const value of values) {
-      const inputs = Object.fromEntries(
-        owner.subject.proposal.map((field) => [field.id, value]),
-      );
-      const results = [
-        outcomeOf(setting, a, key, inputs),
-        outcomeOf(setting, b, key, inputs),
-      ];
-      if (results[0] !== results[1]) {
-        found.push({ key, inputs, results });
-        // The first on each record says most: stop early once there are enough.
-        if (found.length >= MOST_DIFFERENCES) return found;
-        break;
+    for (const value of values)
+      for (const inputs of tries(value)) {
+        const results = [
+          outcomeOf(setting, a, key, inputs),
+          outcomeOf(setting, b, key, inputs),
+        ];
+        if (results[0] !== results[1]) return { key, inputs, results };
       }
-    }
+    return null;
+  };
+  const found: VersionDifference[] = [];
+  for (const key of records.keys) {
+    const difference = firstOn(key);
+    if (!difference) continue;
+    found.push(difference);
+    // The first on each record says most: stop early once there are enough.
+    if (found.length >= MOST_DIFFERENCES) return found;
   }
   return found;
 }

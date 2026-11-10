@@ -10,7 +10,7 @@ import type { Definition, Example } from './types';
 export const plain = (subject: DefinitionSubject) =>
   `Write for the ${subject.reader}, in plain everyday words: no code, no field names.`;
 
-// "an order" or "an order and a price": what a proposal sets, in words.
+// "a <label>" or "a <label> and a <label>": what a proposal sets, in words.
 export const proposalWords = (subject: DefinitionSubject) =>
   subject.proposal.map((field) => field.label).join(' and ');
 

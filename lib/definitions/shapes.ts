@@ -287,6 +287,16 @@ function conditionFormula(c: Condition, context: ShapeContext): string {
 const all = (parts: string[]) =>
   parts.length === 1 ? parts[0]! : parts.map((p) => `(${p})`).join(' && ');
 
+// A column typed as a percentage holds its fraction (25% is 0.25), so as a
+// margin it is not divided by 100 again. Typed by the profile, else declared.
+function isPercent(o: Operand, context: ShapeContext) {
+  if (o.kind !== 'column') return false;
+  const type =
+    profiled(o.column, context)?.type ??
+    context.subject.data.types[o.column.split('.').at(-1)!];
+  return type?.kind === 'percent';
+}
+
 // ---- Blank cells ------------------------------------------------------------
 
 type Blank = 'skip' | 'fail';
@@ -411,7 +421,7 @@ function ruleFormula(shape: Rule, context: ShapeContext): string {
           : body.shape === 'target'
             ? `${n(body.base)} + ${p} ${body.compare === 'reach' ? '>=' : '<='} ${
                 body.margin_pct
-                  ? `${n(body.target)} * (1.0 + ${n(body.margin_pct)} / 100.0)`
+                  ? `${n(body.target)} * (1.0 + ${n(body.margin_pct)}${isPercent(body.margin_pct, context) ? '' : ' / 100.0'})`
                   : n(body.target)
               }`
             : `!(${all(body.flag_when.map((c) => conditionFormula(c, context)))})`;
@@ -541,7 +551,7 @@ function ruleSentence(shape: Rule, context: ShapeContext): string {
         : body.shape === 'only_when'
           ? `${proposed} is ${decides ? 'fine' : 'allowed'} only when ${allWords(body.when, context)}.`
           : body.shape === 'target'
-            ? `${n(body.base)} plus ${proposed} ${must} ${body.compare === 'reach' ? 'reach' : 'not exceed'} ${n(body.target)}${body.margin_pct ? ` plus ${n(body.margin_pct)} percent` : ''}.`
+            ? `${n(body.base)} plus ${proposed} ${must} ${body.compare === 'reach' ? 'reach' : 'not exceed'} ${n(body.target)}${body.margin_pct ? ` plus ${n(body.margin_pct)}${isPercent(body.margin_pct, context) ? '' : ' percent'}` : ''}.`
             : `flag it for a person when ${allWords(body.flag_when, context)}.`;
   const { plural } = subject.record;
   const prefix =

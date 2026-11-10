@@ -12,7 +12,7 @@ import { shapeSchema } from './shape-schema';
 
   One kind of definition: what it gives is its `result`, never its type, so a
   new result is a value of that field rather than a second code path
-  (docs/processes/brunch-orders/PLAN.md, phase 2b).
+  (docs/engineering/DEFINITIONS-ENGINE.md).
 */
 
 // check: true when it holds; number: a quantity other definitions may read.
@@ -429,7 +429,7 @@ export type ProposalRecord = {
   action: 'set' | 'leave';
   values: Record<string, number> | null;
   reason: string;
-  // Cells the model relied on, in A1 notation (Stock!B3).
+  // Cells the model relied on, in A1 notation (<tab>!B3).
   cited: string[];
   unsure: string | null;
   verdict: Verdict;

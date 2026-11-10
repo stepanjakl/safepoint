@@ -636,6 +636,33 @@ its 20 for the day. So the handover is now one Flash write, compared with an
 earlier Flash-Lite shape where there is one and otherwise unconfirmed: a person
 reads a lone write's sentence rather than a comparison vouching for it.
 
+## A second process finds what one process hid (10 November)
+
+The engine claimed to hold for any process, but only Brunch orders had run
+through it. A test-only process of bike-share docks
+(`lib/definitions/conformance.fixture.ts`), with two proposal fields, two
+lookups, percentages, money and dates, was run end to end against answers
+worked out by hand. Four things came out wrong, each invisible on Brunch:
+
+- **A margin read from a percentage column was divided by 100 twice.** The
+  target shape wrote `margin / 100`, right for Brunch's `safety_pct`, which
+  holds 10 for 10%. A column typed as a percentage holds 0.1, so the cover
+  rule asked for 0.1% more and let short proposals through. The shape now asks
+  the column's type, never its name.
+- **A record left was checked with a field nobody proposed at 0.** Brunch's one
+  field declares `none: 0`; a fare declares none, so leaving a dock read its
+  fare as 0 and the fare floor blocked it. A check reading a field nothing set
+  now does not apply.
+- **Two versions putting one limit on different fields agreed.** Every field
+  was tried at the same value, so "at most 8 bikes" and "at most 8 cents" gave
+  the same answer everywhere. Each field read is now also tried alone.
+- **The debug drawer called moment columns unread**, though a shape reads them
+  through its moments.
+
+**Lesson.** One process is one point: an assumption true of it reads as a
+property of the engine. A second process built to differ on every axis found
+on its first run what a month of the first never showed.
+
 ## Still open (31 October)
 
 - **Names.** A rule's name is often the first words of its sentence, cut off, which

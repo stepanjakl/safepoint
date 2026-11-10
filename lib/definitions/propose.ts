@@ -20,17 +20,18 @@ import { profiledFor } from './profile';
 import { plain, timingOf } from './prompts';
 import { cellOf, fitting, type KeptRead, type Row } from './records';
 import { fingerprintOf } from './store';
-import type {
-  CheckVerdict,
-  DefinitionProcess,
-  DefinitionSet,
-  DraftProgress,
-  Proposal,
-  AnswerProblem,
-  ProposalActivity,
-  ProposalEvent,
-  StreamedPart,
-  Verdict,
+import {
+  ignoresProposal,
+  type CheckVerdict,
+  type DefinitionProcess,
+  type DefinitionSet,
+  type DraftProgress,
+  type Proposal,
+  type AnswerProblem,
+  type ProposalActivity,
+  type ProposalEvent,
+  type StreamedPart,
+  type Verdict,
 } from './types';
 import { applies, stepsFor } from './working';
 
@@ -113,12 +114,26 @@ export function checkProposal(
   const accepted = set.definitions.filter(
     (d) => d.result === 'check' && d.approvedAt && d.formula,
   );
+  // A field nothing sets -- a record left, where the field declares no none
+  // -- is not read as 0: a check reading it has nothing to judge.
+  const unset = subject.proposal.filter((f) => values[f.id] === undefined);
   const checks = accepted.map((d): CheckVerdict => {
     const base = {
       id: d.id,
       name: d.name,
       consequence: d.consequence ?? 'decide',
     };
+    const unread = unset.filter(
+      (f) => !ignoresProposal(d, set.definitions, [f.id]),
+    );
+    if (unread.length)
+      return {
+        ...base,
+        holds: true,
+        applies: false,
+        steps: [`No ${unread.map((f) => f.label).join(' or ')} is proposed`],
+        error: null,
+      };
     const context = contextFor(read, key, subject, givenOf(d, values), numbers);
     try {
       return {
@@ -196,7 +211,7 @@ function newRecordCheck(
   };
 }
 
-// A cell the model cites, as a person finds it: Stock!B3. Or why it is none.
+// A cell the model cites, as a person finds it: <tab>!B3. Or why it is none.
 type Cite = { tab: string; row: number; column: string };
 type CiteProblem = DistributiveOmit<
   Extract<AnswerProblem, { kind: 'no-tab' | 'no-column' | 'no-row' | 'blank' }>,
@@ -758,7 +773,7 @@ export async function propose(
     readId,
     model: [...answeredBy].join(', '),
     at: new Date().toISOString(),
-    // In the records' own order, whatever order the batches came back in.
+    // In the records' own order, however the batches came back.
     records: Object.fromEntries(keys.map((key) => [key, records[key]!])),
   };
   await writeWhole(proposalFile(owner, readId, fingerprint), proposal);
