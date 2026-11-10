@@ -31,8 +31,10 @@ import {
 } from './prompts';
 import { fitting, READ, START, type KeptRead } from './records';
 import {
+  canonicalShape,
   formulaOf,
   momentTimes,
+  referencesOf,
   sameShape,
   sentenceOf,
   shapeColumn,
@@ -321,7 +323,7 @@ function instructionsFor(setting: Setting) {
       : `The formula gives the number. Give examples on real ${plural}.`,
     'Follow the instructions literally. Never add a condition, a record or a number they do not state, and never special-case an example to make it come out.',
     `Every number the formula needs, other than 0, 1 and 100, is a constant: give it an id, its value and the instructions' exact words it comes from, and read it as constants.<id>. Write no other number into the formula.`,
-    `Quote, for each constant, the words that state its number (07:00, Saturday, 40%, four), not merely words near it.`,
+    `Quote, for each constant, the words that state its number, whether as a time of day, a weekday, a percentage or a number in words, not merely words near it.`,
     `Where the instructions name ${plural} in words, list them as a group: the keys they are and the instructions' exact words that name them, read as groups.<id>. Never write a key into the formula. Give examples both in and outside every group the formula reads.`,
     'Write the formula as the instructions put it, step by step, so a person can follow it, and do not fold the arithmetic together.',
     'Work each example out by hand from the data below, not from your formula: the examples are how a person checks the formula. try_formula runs a formula on one real record. Answer by calling check_definition with your whole answer; when it reports problems, fix them and call it again, until it returns ok.',
@@ -527,11 +529,11 @@ async function writeOnce(
         'Check your complete answer: every name and number against the instructions and the data, and every example run on the data. Returns ok, or each problem to fix. Answer only through this tool, until it returns ok.',
       inputSchema: schema,
       execute: async (given: Answer) => {
-        const answer = given.shape
-          ? { ...given, shape: withoutUnused(given.shape) }
-          : given;
+        let answer = given;
         let formula = answer.formula ?? '';
         let sentence: string | null = null;
+        // What a shape never reads is not kept, and the model is told.
+        const dropped: string[] = [];
         if (definition.result === 'check') {
           // A first refusal is answered with what shapes can do for its
           // reason: in two drafts, every wrong refusal claimed a shape lacked
@@ -560,16 +562,37 @@ async function writeOnce(
             noted([]);
             return { ok: true };
           }
-          const context = shapeContextOf(answer);
-          const wrong = answer.shape
-            ? shapeProblems(answer.shape, context)
+          const asked = shapeContextOf(given);
+          const wrong = given.shape
+            ? shapeProblems(withoutUnused(given.shape), asked)
             : ['Give a shape, or say in none_fits why none fits.'];
           if (wrong.length) {
             noted(wrong);
             return { ok: false, problems: wrong };
           }
-          formula = formulaOf(answer.shape!, context);
-          sentence = sentenceOf(answer.shape!, context);
+          // Read, then kept in its canonical spelling with only the constants
+          // and group it names: the rest could only fail checks about them.
+          const shape = canonicalShape(given.shape!, asked);
+          const reads = referencesOf(shape, asked)!;
+          answer = {
+            ...given,
+            shape,
+            constants: given.constants.filter((c) =>
+              reads.constants.includes(c.id),
+            ),
+            groups: given.groups.filter((g) => g.id === reads.group),
+          };
+          dropped.push(
+            ...given.constants
+              .filter((c) => !reads.constants.includes(c.id))
+              .map((c) => `constant ${c.id}`),
+            ...given.groups
+              .filter((g) => g.id !== reads.group)
+              .map((g) => `group ${g.id}`),
+          );
+          const context = shapeContextOf(answer);
+          formula = formulaOf(shape, context);
+          sentence = sentenceOf(shape, context);
         }
         const draft = draftOf(answer, formula);
         const { problems, ran, blocked: reads } = review(setting, draft);
@@ -596,7 +619,10 @@ async function writeOnce(
             `For a flag, an example's result is false where the ${owner.subject.record.singular} is flagged and true where it is not.`,
           );
         noted(problems);
-        const said = sentence ? { sentence } : {};
+        const said = {
+          ...(sentence ? { sentence } : {}),
+          ...(dropped.length ? { dropped } : {}),
+        };
         return problems.length
           ? { ok: false, problems, ...said }
           : { ok: true, ...said };

@@ -8,7 +8,9 @@ import { checkFormula, contextFor, run } from './formulas';
 import { recordsOf, type KeptRead } from './records';
 import { definition } from './set.fixture';
 import {
+  canonicalShape,
   formulaOf,
+  referencesOf,
   valuesInWords,
   sameShape,
   sentenceOf,
@@ -389,5 +391,167 @@ describe('two shapes', () => {
     });
     expect(sameShape(limit('cap', 40), limit('most_units', 40))).toBe(true);
     expect(sameShape(limit('cap', 40), limit('most_units', 41))).toBe(false);
+  });
+});
+
+describe('a shape written loosely, where only one thing is meant', () => {
+  // The same rule, spelt as the canonical shape: formula and sentence agree.
+  const says = (
+    loose: Shape,
+    canonical: Shape,
+    more: Partial<ShapeContext> = {},
+  ) => {
+    const context = contextOn(capturedRead(), more);
+    expect(shapeProblems(loose, context)).toEqual([]);
+    expect(formulaOf(loose, context)).toBe(formulaOf(canonical, context));
+    expect(sentenceOf(loose, context)).toBe(sentenceOf(canonical, context));
+    expect(canonicalShape(loose, context)).toEqual(
+      canonicalShape(canonical, context),
+    );
+    expect(
+      sameShape({ ...context, shape: loose }, { ...context, shape: canonical }),
+    ).toBe(true);
+  };
+  const problems = (one: Shape, more: Partial<ShapeContext> = {}) =>
+    shapeProblems(one, contextOn(capturedRead(), more));
+  const two = {
+    ...owner.subject,
+    proposal: [
+      ...owner.subject.proposal,
+      { ...owner.subject.proposal[0]!, id: 'extra' },
+    ],
+  };
+
+  it('reads a field written proposed:<id> as the bare id', () => {
+    says({ ...SUPPLIER_MAX, field: 'proposed:order' }, SUPPLIER_MAX);
+    expect(problems({ ...SUPPLIER_MAX, field: 'proposed:price' })).toEqual([
+      'No proposal field price; the fields are order.',
+    ]);
+  });
+
+  it('gives a missing field the only proposal field there is, and lists them where there are several', () => {
+    says({ ...SUPPLIER_MAX, field: null }, SUPPLIER_MAX);
+    says({ ...WHOLE_CASES, field: '' }, WHOLE_CASES);
+    expect(
+      problems({ ...SUPPLIER_MAX, field: null }, { subject: two }),
+    ).toEqual(['limit needs field: the fields are order, extra.']);
+    // A flag is about no field, and needs none.
+    expect(
+      problems(FRESH_COUNT, { consequence: 'decide', subject: two }),
+    ).toEqual([]);
+  });
+
+  it('reads a group of "" or the word null as no group', () => {
+    for (const group of ['', 'null', ' Null ', 'NULL'])
+      says({ ...WHOLE_CASES, only_for_group: group }, WHOLE_CASES);
+    // Still a group where one is named, and still not with conditions.
+    expect(problems({ ...WHOLE_CASES, only_for_group: 'kit' })).toEqual([
+      'No group kit: declare it with the words that name its records.',
+    ]);
+    expect(
+      problems({
+        ...RIPE_CAP,
+        only_for_group: 'kit',
+      }),
+    ).toContain('Limit the rule to a group or to conditions, not both.');
+  });
+
+  it('reads the kind a name is where a prefix names the wrong one and it is only one', () => {
+    // An earlier number written as a column, and a column written as a value.
+    says(
+      {
+        ...COVER,
+        base: 'column:stock_available',
+        target: 'column:expected_sales',
+      },
+      COVER,
+      { consequence: 'decide' },
+    );
+    says({ ...SUPPLIER_MAX, amount: 'value:max_order_units' }, SUPPLIER_MAX);
+    says(
+      {
+        ...RIPE_CAP,
+        only_for_when: [{ left: 'value:ripe', op: 'is_yes', right: null }],
+      },
+      RIPE_CAP,
+    );
+    says(
+      {
+        ...SUPPLIER_MAX,
+        amount: 'column:cap',
+      },
+      { ...SUPPLIER_MAX, amount: 'constant:cap' },
+      { constants: [{ id: 'cap', value: 40, quote: '40' }] },
+    );
+  });
+
+  it('keeps the problem where the name is nothing, two things, or a moment', () => {
+    expect(
+      problems({ ...SUPPLIER_MAX, amount: 'column:nothing_here' }),
+    ).toEqual(['No column nothing_here.']);
+    // A moment is not a number whichever prefix it is given.
+    expect(problems({ ...SUPPLIER_MAX, amount: 'column:cutoff' })).toEqual([
+      'No column cutoff.',
+    ]);
+    expect(problems({ ...SUPPLIER_MAX, amount: 'moment:cutoff' })[0]).toMatch(
+      /is a moment, not a number/,
+    );
+    // Moments are never reread as another kind.
+    expect(
+      problems(
+        shape({
+          kind: 'only_when',
+          when: [{ left: 'value:cutoff', op: 'before', right: 'moment:start' }],
+        }),
+      )[0],
+    ).toMatch(/^before puts one moment against another/);
+    // case_size is a column and a constant: written as a value, it is neither.
+    expect(
+      problems(
+        { ...WHOLE_CASES, amount: 'value:case_size' },
+        { constants: [{ id: 'case_size', value: 6, quote: '6' }] },
+      ),
+    ).toEqual(['No earlier definition case_size to read.']);
+    // Written with the right kind, a name that exists is never reread.
+    expect(problems({ ...WHOLE_CASES, amount: 'column:product' })).toEqual([
+      'product is not a number.',
+    ]);
+  });
+
+  it('stores the canonical spelling, and names what the shape reads', () => {
+    const context = contextOn(capturedRead(), {
+      constants: [
+        { id: 'cap', value: 40, quote: '40' },
+        { id: 'unused', value: 7, quote: '7' },
+      ],
+      groups: [{ id: 'all', keys: ['SD-01'], quote: 'sourdough' }],
+    });
+    const loose = shape({
+      kind: 'limit',
+      field: 'proposed:order',
+      at: 'most',
+      amount: 'cap',
+      // Cleared: a limit reads none of these.
+      base: 'value:stock_available',
+      only_for_group: 'null',
+    });
+    expect(canonicalShape(loose, context)).toEqual({
+      ...shape({ kind: 'limit', at: 'most', amount: 'constant:cap' }),
+      only_for_group: null,
+    });
+    expect(referencesOf(loose, context)).toEqual({
+      constants: ['cap'],
+      group: null,
+    });
+    expect(
+      referencesOf(
+        { ...loose, only_for_group: 'all', amount: 'column:case_size' },
+        context,
+      ),
+    ).toEqual({ constants: [], group: 'all' });
+    // What cannot be read is returned as it is, and names nothing.
+    const broken = { ...loose, amount: 'nothing_here' };
+    expect(canonicalShape(broken, context).amount).toBe('nothing_here');
+    expect(referencesOf(broken, context)).toBeNull();
   });
 });

@@ -160,6 +160,85 @@ describe('drafting', () => {
     expect(enough.uses).toEqual(['two_weekends']);
   });
 
+  describe('an answer that declares what its shape never reads', () => {
+    const declared = {
+      constants: [
+        { id: 'spare', value: 3, quote: 'words nowhere in the text' },
+      ],
+      groups: [{ id: 'every', keys: ['SD-01', 'AV-RR'], quote: 'every one' }],
+    };
+    const examples: [string, number | null, unknown][] = [
+      ['SD-01', 59, true],
+      ['SD-01', 58, false],
+    ];
+    const withFirstNumber = () =>
+      withFirst({
+        formula: 'record.weekend_1 + record.weekend_2',
+        examples: [example(true)],
+      });
+
+    it('passes on its first check, and is kept without them', async () => {
+      await withFirstNumber();
+      const writer = checking({
+        ...shaped(AT_LEAST_TWO_WEEKENDS, examples),
+        ...declared,
+      });
+      const set = await writeDefinition(owner, text, read, 'enough', {
+        resolve: () => writer,
+      });
+      expect(writer.doGenerateCalls).toHaveLength(1);
+      const enough = set!.definitions.find((d) => d.id === 'enough')!;
+      expect(enough.problem).toBeNull();
+      expect(enough.constants).toEqual([]);
+      expect(enough.groups).toEqual([]);
+      expect(enough.shape).toMatchObject(AT_LEAST_TWO_WEEKENDS);
+    });
+
+    it('is told what was dropped, in words that name no process', async () => {
+      await withFirstNumber();
+      const wrong = shaped(AT_LEAST_TWO_WEEKENDS, [
+        ['SD-01', 40, true],
+        ['SD-01', 58, false],
+      ]);
+      const writer = checking(
+        { ...wrong, ...declared },
+        { ...shaped(AT_LEAST_TWO_WEEKENDS, examples), ...declared },
+      );
+      const set = await writeDefinition(owner, text, read, 'enough', {
+        resolve: () => writer,
+      });
+      expect(told(writer, 1)).toContain('constant spare');
+      expect(told(writer, 1)).toContain('group every');
+      // The wrong example is the only problem it was told of.
+      expect(told(writer, 1)).not.toContain('never reads');
+      expect(told(writer, 1)).not.toContain('are not in the instructions');
+      const enough = set!.definitions.find((d) => d.id === 'enough')!;
+      expect(enough.problem).toBeNull();
+      expect(enough.constants).toEqual([]);
+    });
+
+    it('keeps the constant a shape does read', async () => {
+      await withFirstNumber();
+      const writer = checking({
+        ...shaped({ kind: 'limit', at: 'most', amount: 'constant:spare' }, [
+          ['SD-01', 2, true],
+          ['SD-01', 3, false],
+        ]),
+        constants: [
+          { id: 'spare', value: 2, quote: 'the first two weekends' },
+          { id: 'other', value: 3, quote: 'the first two weekends' },
+        ],
+        groups: [],
+      });
+      const set = await writeDefinition(owner, text, read, 'enough', {
+        resolve: () => writer,
+      });
+      const enough = set!.definitions.find((d) => d.id === 'enough')!;
+      expect(enough.problem).toBeNull();
+      expect(enough.constants.map((c) => c.id)).toEqual(['spare']);
+    });
+  });
+
   it('stops, without trying again, when it reads a number that does not work', async () => {
     await withFirst({
       formula: 'record.weekend_1',

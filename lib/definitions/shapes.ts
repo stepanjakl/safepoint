@@ -498,6 +498,43 @@ const KINDS = [
 type Kind = (typeof KINDS)[number];
 type Wanted = 'number' | 'yes_no' | 'moment';
 
+// Whether a name is something of this kind on this read.
+function existsAs(kind: Kind, name: string, context: ShapeContext) {
+  const { subject, earlier, constants } = context;
+  return kind === 'column'
+    ? Boolean(columnAt(name, context))
+    : kind === 'proposed'
+      ? subject.proposal.some((f) => f.id === name)
+      : kind === 'value'
+        ? earlier.some((d) => d.id === name)
+        : kind === 'constant'
+          ? constants.some((c) => c.id === name)
+          : false;
+}
+
+// The kinds of number, as opposed to a moment.
+const NUMBER_KINDS: Kind[] = ['column', 'proposed', 'value', 'constant'];
+
+/*
+  A prefix naming the wrong kind of number is read as the kind the name is,
+  where the name is only that one: a model that writes column:<earlier value>
+  means the value. Moments are never reread, and a name that is nothing, or
+  could be two things, keeps the prefix it was given and its problem.
+*/
+function rereadKind(
+  kind: Kind,
+  name: string,
+  wanted: Wanted,
+  context: ShapeContext,
+): Kind {
+  if (wanted === 'moment' || !NUMBER_KINDS.includes(kind)) return kind;
+  if (existsAs(kind, name, context)) return kind;
+  const others = (wanted === 'number' ? NUMBER_KINDS : (['column'] as Kind[]))
+    .filter((other) => other !== kind)
+    .filter((other) => existsAs(other, name, context));
+  return others.length === 1 ? others[0]! : kind;
+}
+
 /*
   A reference as written, `kind:name`, or a bare name where only one thing
   could be meant: a model that leaves the kind off is understood rather than
@@ -510,20 +547,23 @@ function referenceOf(
 ): { kind: Kind; name: string } | string {
   const at = text.indexOf(':');
   const prefix = at > 0 ? text.slice(0, at).trim() : '';
-  if ((KINDS as readonly string[]).includes(prefix))
-    return { kind: prefix as Kind, name: text.slice(at + 1).trim() };
+  if ((KINDS as readonly string[]).includes(prefix)) {
+    const name = text.slice(at + 1).trim();
+    return {
+      kind: rereadKind(prefix as Kind, name, wanted, context),
+      name,
+    };
+  }
   const name = text.trim();
-  const { subject, earlier, constants } = context;
+  const { subject } = context;
   const found: Kind[] = [];
   if (wanted === 'moment') {
     if (declaredMoments(subject).includes(name)) found.push('moment');
   } else {
-    if (columnAt(name, context)) found.push('column');
-    if (wanted === 'number') {
-      if (subject.proposal.some((f) => f.id === name)) found.push('proposed');
-      if (earlier.some((d) => d.id === name)) found.push('value');
-      if (constants.some((c) => c.id === name)) found.push('constant');
-    }
+    if (existsAs('column', name, context)) found.push('column');
+    if (wanted === 'number')
+      for (const kind of NUMBER_KINDS.slice(1))
+        if (existsAs(kind, name, context)) found.push(kind);
   }
   if (found.length === 1) return { kind: found[0]!, name };
   return found.length
@@ -622,8 +662,16 @@ function ruleOf(
     if (value === null || value === undefined || value === '')
       problems.push(`${shape.kind} needs ${what}.`);
   };
-  const field = shape.field ?? '';
-  if (shape.kind !== 'flag') need(shape.field, 'field');
+  // The field as proposed:<id> or the bare id; left out, the only one there is.
+  const fields = context.subject.proposal.map((f) => f.id);
+  const written = (shape.field ?? '').trim().replace(/^proposed:\s*/, '');
+  const field = written || (fields.length === 1 ? fields[0]! : '');
+  if (shape.kind !== 'flag' && !field)
+    problems.push(
+      fields.length > 1
+        ? `${shape.kind} needs field: the fields are ${fields.join(', ')}.`
+        : `${shape.kind} needs field.`,
+    );
   const conditions = (list: ShapeCondition[]) =>
     list.map((c) => conditionOf(c, context, problems));
   let body: Body | null = null;
@@ -663,11 +711,15 @@ function ruleOf(
           ? { shape: 'flag', flag_when: when as Condition[] }
           : { shape: 'only_when', field, when: when as Condition[] };
   }
-  if (shape.only_for_group && shape.only_for_when.length)
+  // An empty group, or the word null, is no group.
+  const group = /^(null)?$/i.test((shape.only_for_group ?? '').trim())
+    ? null
+    : shape.only_for_group!.trim();
+  if (group && shape.only_for_when.length)
     problems.push('Limit the rule to a group or to conditions, not both.');
   const scopeWhen = conditions(shape.only_for_when);
-  const scope: Rule['scope'] = shape.only_for_group
-    ? { only: 'group', group: shape.only_for_group }
+  const scope: Rule['scope'] = group
+    ? { only: 'group', group }
     : scopeWhen.length && scopeWhen.every(Boolean)
       ? { only: 'when', when: scopeWhen as Condition[] }
       : null;
@@ -730,6 +782,63 @@ export function withoutUnused(shape: Shape): Shape {
     target: kept('target') ? shape.target : null,
     margin_pct: kept('margin_pct') ? shape.margin_pct : null,
     when: kept('when') ? shape.when : [],
+  };
+}
+
+/*
+  What a shape reads that a write declares: the constants its operands name
+  and the group its scope names. Null where the shape cannot be read.
+*/
+export function referencesOf(
+  shape: Shape,
+  context: ShapeContext,
+): { constants: string[]; group: string | null } | null {
+  const { rule } = ruleOf(shape, context);
+  if (!rule) return null;
+  return {
+    constants: [
+      ...new Set(
+        operandsOf(rule).flatMap((o) => (o.kind === 'constant' ? [o.id] : [])),
+      ),
+    ],
+    group: rule.scope?.only === 'group' ? rule.scope.group : null,
+  };
+}
+
+/*
+  A shape as it is kept: only what its kind reads, the bare field, no group
+  where none was meant, and every reference written kind:name as it was read.
+  A shape that cannot be read is left as it is.
+*/
+export function canonicalShape(shape: Shape, context: ShapeContext): Shape {
+  const cleared = withoutUnused(shape);
+  const { rule } = ruleOf(cleared, context);
+  if (!rule) return cleared;
+  const spelt = (text: string, wanted: Wanted) => {
+    const ref = referenceOf(text, wanted, context);
+    return typeof ref === 'string' ? text : `${ref.kind}:${ref.name}`;
+  };
+  const number = (text: string | null) => (text ? spelt(text, 'number') : text);
+  const condition = (c: ShapeCondition): ShapeCondition =>
+    c.op === 'is_yes' || c.op === 'is_no'
+      ? { ...c, left: spelt(c.left, 'yes_no') }
+      : c.op === 'before' || c.op === 'after'
+        ? {
+            ...c,
+            left: spelt(c.left, 'moment'),
+            right: c.right && spelt(c.right, 'moment'),
+          }
+        : { ...c, left: spelt(c.left, 'number'), right: number(c.right) };
+  return {
+    ...cleared,
+    field: fieldOf(rule),
+    amount: number(cleared.amount),
+    base: number(cleared.base),
+    target: number(cleared.target),
+    margin_pct: number(cleared.margin_pct),
+    when: cleared.when.map(condition),
+    only_for_group: rule.scope?.only === 'group' ? rule.scope.group : null,
+    only_for_when: cleared.only_for_when.map(condition),
   };
 }
 
