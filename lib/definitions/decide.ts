@@ -1,6 +1,7 @@
 import { dependentsOf, review, settingOf } from './checks';
 import { recordsOf, type KeptRead } from './records';
 import { formulaOf, shapeProblems, type ShapeContext } from './shapes';
+import { ownerFor } from './profile';
 import { loadSet, putRevision, updateSet } from './store';
 import { complete, type DefinitionProcess, type DefinitionSet } from './types';
 
@@ -99,6 +100,8 @@ export async function accept(
   const set = await loadSet(owner, text);
   const definition = set?.definitions.find((d) => d.id === id);
   if (!set || !definition) return null;
+  // Accepted against the data profile it was drafted on, if it names one.
+  owner = await ownerFor(owner, set);
   const read = set.readId ? await readOf(set.readId) : null;
   const refuse = (problem: string) =>
     updateSet(owner, text, (s) => ({

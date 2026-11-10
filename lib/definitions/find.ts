@@ -198,6 +198,10 @@ export async function findDefinitions(
     readId: null,
     foundAt: new Date().toISOString(),
     model,
+    // The confirmed profile the data is read against, when it is.
+    ...(subject.data.profile?.confirmedAt
+      ? { profileId: subject.data.profile.id }
+      : {}),
     definitions: output.definitions.map((d) => ({
       id: idOf(d.id),
       name: d.name,

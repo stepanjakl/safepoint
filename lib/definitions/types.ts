@@ -133,7 +133,62 @@ export const definitionSetSchema = z.object({
   accounting: z.array(accountedSentenceSchema).optional(),
   // What was wrong with the first answer, when finding took a second.
   refused: z.array(z.string()).optional(),
+  // The confirmed data profile it was drafted on; absent on a set drafted
+  // before profiles, whose columns are typed from each read.
+  profileId: z.string().optional(),
 });
+
+/*
+  What the engine knows of a source's columns: worked out once from a read,
+  confirmed by a person, then fixed, so a later read is checked against it
+  rather than typed again from its own values (profile.ts).
+*/
+const fieldTypeSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('key') }),
+  z.object({ kind: z.literal('text') }),
+  z.object({ kind: z.literal('whole_number') }),
+  z.object({ kind: z.literal('decimal') }),
+  z.object({ kind: z.literal('percent') }),
+  z.object({
+    kind: z.literal('money'),
+    currency: z.object({ code: z.string(), minor_units: z.number().int() }),
+  }),
+  z.object({ kind: z.literal('date'), timeZone: z.string() }),
+  z.object({ kind: z.literal('datetime'), timeZone: z.string() }),
+  z.object({ kind: z.literal('weekday') }),
+  z.object({ kind: z.literal('time_of_day') }),
+  z.object({ kind: z.literal('yes_no') }),
+  z.object({
+    kind: z.literal('one_of'),
+    values: z.array(z.string()).readonly(),
+  }),
+]);
+
+const profileColumnSchema = z.object({
+  // As a shape names it: `<column>` on a record, `<lookup as>.<column>`.
+  column: z.string(),
+  // Null when the read could not tell, as for a column blank throughout.
+  type: fieldTypeSchema.nullable(),
+  // declared: by the process, and not a person's to change; inferred: from
+  // the read's cells; person: chosen by a person.
+  origin: z.enum(['declared', 'inferred', 'person']),
+  label: z.string(),
+  // Whether any cell of it was blank in the read it was worked out from.
+  blanksSeen: z.boolean(),
+  // What a blank cell means for a rule that reads it; null until answered.
+  blank: z.enum(['skip', 'fail']).nullable(),
+});
+
+export const dataProfileSchema = z.object({
+  // A fingerprint of everything below, confirmation included.
+  id: z.string(),
+  readId: z.string(),
+  confirmedAt: z.string().nullable(),
+  columns: z.array(profileColumnSchema),
+});
+
+export type DataProfile = z.infer<typeof dataProfileSchema>;
+export type ProfileColumn = z.infer<typeof profileColumnSchema>;
 
 // The stored shape's version, kept with each revision, so a revision written
 // before a change of shape can be told apart rather than misread.

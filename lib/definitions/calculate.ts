@@ -11,6 +11,7 @@ import { ask, DRAFT_MODELS, type Resolve } from './calls';
 import { givenOf } from './checks';
 import { contextFor, run } from './formulas';
 import { dataOf, plain } from './prompts';
+import { profiledFor } from './profile';
 import { fitting, namesOf, type KeptRead, type Row } from './records';
 import { fingerprintOf } from './store';
 import type { Definition, DefinitionProcess, DefinitionSet } from './types';
@@ -54,7 +55,7 @@ export function calculate(
   set: DefinitionSet,
   read: KeptRead,
 ): Calculation {
-  const { subject } = owner;
+  const { subject } = profiledFor(owner, set);
   const records = fitting(read, subject.data);
   const numbers = set.definitions.filter((d) => d.result === 'number');
   const open = numbers.filter((d) => !d.approvedAt || !d.formula);

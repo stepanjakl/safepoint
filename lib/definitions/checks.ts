@@ -9,6 +9,7 @@ import {
   type Given,
   type Scope,
 } from './formulas';
+import { profiledFor } from './profile';
 import { describeExample } from './prompts';
 import { recordsOf, type KeptRead, type Records, type Row } from './records';
 import {
@@ -57,6 +58,7 @@ export function settingOf(
   read: KeptRead,
   definition: Definition,
 ): Setting {
+  owner = profiledFor(owner, set);
   const records = recordsOf(read, owner.subject.data);
   const earlier = set.definitions.slice(0, set.definitions.indexOf(definition));
   return {

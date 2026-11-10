@@ -16,6 +16,7 @@ import { DRAFT_MODELS, withModels, type Resolve } from './calls';
 import { dependentsOf, givenOf } from './checks';
 import { limitedGoogle } from './limits';
 import { contextFor, run } from './formulas';
+import { profiledFor } from './profile';
 import { plain, timingOf } from './prompts';
 import { cellOf, fitting, type KeptRead, type Row } from './records';
 import { fingerprintOf } from './store';
@@ -99,6 +100,7 @@ export function checkProposal(
   key: string,
   values: Record<string, number>,
 ): { verdict: Verdict; checks: CheckVerdict[] } {
+  owner = profiledFor(owner, set);
   const { subject } = owner;
   const { values: numbers, failed } = numbersOf(owner, set, read, key);
   const fields = subject.proposal.map((field) => field.id);
@@ -674,6 +676,7 @@ export async function propose(
     watch?: Watch;
   } = {},
 ): Promise<Proposal> {
+  owner = profiledFor(owner, set);
   fitting(read, owner.subject.data);
   const open = set.definitions.filter((d) => !d.approvedAt);
   if (open.length)

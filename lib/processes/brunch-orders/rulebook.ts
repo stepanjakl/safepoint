@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { staleness, type Stale } from '@/lib/definitions/fits';
+import { ownerFor } from '@/lib/definitions/profile';
 import type { KeptRead } from '@/lib/definitions/records';
 import { loadRevision, loadSet, noRules } from '@/lib/definitions/store';
 import type { DefinitionProcess, DefinitionSet } from '@/lib/definitions/types';
@@ -39,11 +40,14 @@ export async function rulebookFor(
       stale: null,
       published: brunchOrdersDirectProcess.instructions.text,
     };
-  const owner = BRUNCH_ORDERS_DEFINITIONS;
-  const current = await loadSet(owner, text);
+  const current = await loadSet(BRUNCH_ORDERS_DEFINITIONS, text);
   if (!current) throw new Error('No rules are kept for these instructions.');
   const set =
-    (rulebook ? await loadRevision(owner, text, rulebook) : null) ?? current;
+    (rulebook
+      ? await loadRevision(BRUNCH_ORDERS_DEFINITIONS, text, rulebook)
+      : null) ?? current;
+  // The read is held to the data profile the rules were drafted on, if any.
+  const owner = await ownerFor(BRUNCH_ORDERS_DEFINITIONS, set);
   return {
     owner,
     set,

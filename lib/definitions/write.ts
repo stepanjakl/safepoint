@@ -44,6 +44,7 @@ import {
   type Shape,
   type ShapeContext,
 } from './shapes';
+import { ownerFor } from './profile';
 import { loadSet, updateSet } from './store';
 import type {
   Agreement,
@@ -679,11 +680,13 @@ const settingFor = async (
   read: KeptRead,
   id: string,
 ) => {
-  fitting(read, owner.subject.data);
   const set = await loadSet(owner, text);
+  // The read is held to the profile the set was drafted on, if it names one.
+  const reading = set ? await ownerFor(owner, set) : owner;
+  fitting(read, reading.subject.data);
   const definition = set?.definitions.find((d) => d.id === id);
   return set && definition
-    ? settingOf(owner, text, set, read, definition)
+    ? settingOf(reading, text, set, read, definition)
     : null;
 };
 

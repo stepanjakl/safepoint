@@ -5,6 +5,8 @@ import { describe, expect, it } from 'vitest';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 
+import { capturedRead } from './captured.fixture';
+import { confirmProfile, profileOf, setColumnBlank } from './profile';
 import { inScratchDirectory } from './scratch.fixture';
 import { definition, keep, TEXT } from './set.fixture';
 import {
@@ -12,12 +14,17 @@ import {
   hashOf,
   headOf,
   listRevisions,
+  loadConfirmedProfile,
+  loadProfile,
   loadRevision,
   loadSet,
+  putProfile,
   putRevision,
+  saveProfile,
   saveSet,
   StoredSetError,
 } from './store';
+import { definitionSetSchema } from './types';
 
 // A kept set is read through its schema and written whole, so a broken file
 // is reported rather than taken for "nothing kept" and overwritten. Each
@@ -125,5 +132,83 @@ describe('the store', () => {
     await expect(loadSet(owner, TEXT)).rejects.toThrow(
       /does not fit the stored shape: definitions/,
     );
+  });
+});
+
+describe('the data profile in the store', () => {
+  const profileFolder = () =>
+    path.join(scratch(), 'fixtures', owner.id, 'profile');
+  const proposed = profileOf(capturedRead(), owner.subject.data);
+  const confirmed = confirmProfile(proposed, '2026-11-10T00:00:00.000Z');
+
+  it('has nothing for a process never profiled', async () => {
+    expect(await loadProfile(owner)).toBeNull();
+    expect(await loadConfirmedProfile(owner, confirmed.id)).toBeNull();
+  });
+
+  it('keeps one under review as current, and nothing as confirmed', async () => {
+    await saveProfile(owner, proposed);
+    expect(await loadProfile(owner)).toEqual(proposed);
+    expect(readdirSync(profileFolder())).toEqual(['current.json']);
+    expect(await loadConfirmedProfile(owner, proposed.id)).toBeNull();
+    await expect(putProfile(owner, proposed)).rejects.toThrow(
+      /Only a confirmed/,
+    );
+  });
+
+  it('keeps a confirmed one by its id, whatever the current one becomes', async () => {
+    await saveProfile(owner, confirmed);
+    expect(readdirSync(profileFolder()).sort()).toEqual(
+      [`${confirmed.id}.json`, 'current.json'].sort(),
+    );
+    const edited = setColumnBlank(confirmed, 'max_order_units', 'skip');
+    await saveProfile(owner, edited);
+    expect((await loadProfile(owner))?.confirmedAt).toBeNull();
+    expect(await loadConfirmedProfile(owner, confirmed.id)).toEqual(confirmed);
+    expect(await loadConfirmedProfile(owner, '../current')).toBeNull();
+  });
+
+  it('never writes a confirmed one again', async () => {
+    const id = await putProfile(owner, confirmed);
+    const file = path.join(profileFolder(), `${id}.json`);
+    // The same content, written differently: a second put leaves it be.
+    writeFileSync(file, JSON.stringify(confirmed));
+    expect(await putProfile(owner, confirmed)).toBe(id);
+    await saveProfile(owner, confirmed);
+    expect(readFileSync(file, 'utf8')).toBe(JSON.stringify(confirmed));
+  });
+
+  it('refuses a profile changed after it was made', async () => {
+    await putProfile(owner, confirmed);
+    const file = path.join(profileFolder(), `${confirmed.id}.json`);
+    writeFileSync(
+      file,
+      JSON.stringify({ ...confirmed, columns: confirmed.columns.slice(1) }),
+    );
+    await expect(loadConfirmedProfile(owner, confirmed.id)).rejects.toThrow(
+      /does not match its id/,
+    );
+    await expect(
+      saveProfile(owner, { ...confirmed, confirmedAt: null }),
+    ).rejects.toThrow(StoredSetError);
+  });
+
+  it('keeps a set with the profile it was drafted on, and one without', async () => {
+    const set = await keep([accepted], { profileId: confirmed.id });
+    expect((await loadSet(owner, TEXT))?.profileId).toBe(confirmed.id);
+    await saveSet(owner, { ...set, profileId: undefined });
+    expect((await loadSet(owner, TEXT))?.profileId).toBeUndefined();
+    // An accepted rulebook from before profiles parses as it is.
+    expect(
+      definitionSetSchema.parse(
+        JSON.parse(
+          // Relative to the repository: only process.cwd() is moved.
+          readFileSync(
+            'fixtures/brunch-orders/rulebooks/v2-91823c6c8281/5b895575e4e7.json',
+            'utf8',
+          ),
+        ),
+      ).profileId,
+    ).toBeUndefined();
   });
 });

@@ -5,9 +5,11 @@ import path from 'node:path';
 import type { z } from 'zod';
 
 import {
+  dataProfileSchema,
   definitionSetSchema,
   revisionIndexSchema,
   RULEBOOK_SCHEMA,
+  type DataProfile,
   type DefinitionProcess,
   type DefinitionSet,
   type Revision,
@@ -46,6 +48,12 @@ export const fingerprintOf = (set: DefinitionSet) =>
         .filter((d) => d.approvedAt)
         .map((d) => [d.id, d.formula, d.constants, d.groups, d.approvedAt]),
     ),
+  );
+
+// A data profile's id: any change to it, confirmation included, changes it.
+export const profileFingerprint = (profile: Omit<DataProfile, 'id'>) =>
+  hashOf(
+    JSON.stringify([profile.readId, profile.confirmedAt, profile.columns]),
   );
 
 /*
@@ -232,3 +240,76 @@ export async function listRevisions(
 
 export const headOf = async (owner: DefinitionProcess, text: string) =>
   (await listRevisions(owner, text)).head;
+
+/*
+  A process's data profile is reviewed in git like its rulebooks, one folder
+  for the source it reads:
+
+    fixtures/<process>/profile/
+      current.json   the profile under review, or the one last confirmed
+      <profile id>.json each confirmed profile, as it was confirmed
+
+  A confirmed profile is written once and never again: a rulebook names the
+  one it was drafted on, and reads exactly that.
+*/
+const profileFolderOf = (owner: DefinitionProcess) =>
+  path.join(process.cwd(), 'fixtures', owner.id, 'profile');
+
+// A profile whose id is not its content was edited by hand or half-written.
+function sound(profile: DataProfile | null, where: string) {
+  if (profile && profile.id !== profileFingerprint(profile))
+    throw new StoredSetError(
+      `${where} does not match its id: it was changed after it was made.`,
+    );
+  return profile;
+}
+
+export async function loadProfile(
+  owner: DefinitionProcess,
+): Promise<DataProfile | null> {
+  const file = path.join(profileFolderOf(owner), CURRENT);
+  return sound(
+    await readThrough(file, dataProfileSchema),
+    path.relative(process.cwd(), file),
+  );
+}
+
+// Keeps a profile as the one under review; a confirmed one is kept as
+// confirmed too (`putProfile`).
+export async function saveProfile(
+  owner: DefinitionProcess,
+  profile: DataProfile,
+): Promise<DataProfile> {
+  sound(profile, 'The profile');
+  if (profile.confirmedAt) await putProfile(owner, profile);
+  await writeWhole(path.join(profileFolderOf(owner), CURRENT), profile);
+  return profile;
+}
+
+// Keeps a confirmed profile under its id, once; returns the id.
+export async function putProfile(
+  owner: DefinitionProcess,
+  profile: DataProfile,
+): Promise<string> {
+  sound(profile, 'The profile');
+  if (!profile.confirmedAt)
+    throw new Error('Only a confirmed data profile is kept as confirmed.');
+  const file = path.join(profileFolderOf(owner), `${profile.id}.json`);
+  if (!(await readThrough(file, dataProfileSchema)))
+    await writeWhole(file, profile);
+  return profile.id;
+}
+
+// A confirmed profile a rulebook names, or null when it is not kept.
+export async function loadConfirmedProfile(
+  owner: DefinitionProcess,
+  id: string,
+): Promise<DataProfile | null> {
+  if (!/^[0-9a-f]{12}$/.test(id)) return null;
+  const file = path.join(profileFolderOf(owner), `${id}.json`);
+  const where = path.relative(process.cwd(), file);
+  const profile = sound(await readThrough(file, dataProfileSchema), where);
+  if (profile && (profile.id !== id || !profile.confirmedAt))
+    throw new StoredSetError(`${where} is not the confirmed profile ${id}.`);
+  return profile;
+}

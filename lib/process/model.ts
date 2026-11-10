@@ -262,6 +262,10 @@ export type DataShape = {
   lookups: { tab: string; key: string; via: string; as: string }[];
   // By column header; any column not listed is read as written.
   types: Record<string, FieldType>;
+  // The confirmed types of every column, which a read is then held to rather
+  // than typed from its own values. Absent: typed from each read, as before.
+  // Set by the engine (lib/definitions/profile.ts), never by a process.
+  profile?: DataProfileTypes;
   // Where approved proposals would be written: a tab, one row per record by
   // its key column, one column per proposal field. Absent: nowhere yet.
   output?: { tab: string; key: string };
@@ -281,6 +285,14 @@ export type DataShape = {
     // after the read. A check compares them, never the hours between.
     moments?: Record<string, Moment>;
   };
+};
+
+// What reading a source needs of its data profile: each column, by the path
+// a shape names it with, and its type, null where none could be told.
+export type DataProfileTypes = {
+  id: string;
+  confirmedAt: string | null;
+  columns: { column: string; type: FieldType | null }[];
 };
 
 export type Moment = {

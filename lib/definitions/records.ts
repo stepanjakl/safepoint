@@ -13,6 +13,8 @@ import {
   type Weekday,
 } from '@/lib/sheets/field-types';
 
+import { celTypeOf } from './profile';
+
 /*
   How a read becomes the records a formula reads, as the process declares it
   (`DataShape`): the record tabs joined by their key column, each lookup a
@@ -25,6 +27,11 @@ import {
   missing tab or column, a key listed twice, a cell that cannot be read as its
   type, a record whose lookup finds no row. A read with problems is not
   drafted on; the Read step shows them.
+
+  With a data profile (`DataShape.profile`), each column it types keeps that
+  type whatever this read holds: a cell that does not fit is a problem, a
+  column blank throughout is still typed, and one the read no longer has is
+  missing. A column it does not type is read as without a profile.
 */
 
 export type DataTab = { name: string; values: unknown[][] };
@@ -71,12 +78,27 @@ function typed(
   };
 }
 
+// A column's type: from the profile, where it types the column, as CEL reads
+// it; otherwise as declared, or as written.
+type TypeOf = (column: string) => { type: FieldType; cel?: string } | undefined;
+
+// A typed value as the CEL type the profile gives its column: a whole number
+// in a decimal column is a decimal, never an int.
+const asCel = (value: unknown, type: string | undefined) =>
+  type === 'double'
+    ? Number(value)
+    : type === 'int'
+      ? BigInt(value as number)
+      : type
+        ? value
+        : cel(value);
+
 // A tab's rows by its `key` column, with blank cells left out.
 function keyed(
   tab: DataTab | undefined,
   name: string,
   key: string,
-  types: DataShape['types'],
+  typeOf: TypeOf,
   problems: string[],
 ): Map<string, Row> {
   const rows = new Map<string, Row>();
@@ -102,17 +124,17 @@ function keyed(
     names.forEach((column, i) => {
       const raw = row[i];
       if (blank(raw)) return;
-      const type = types[column];
-      if (!type) {
+      const typing = typeOf(column);
+      if (!typing) {
         record[column] = cel(raw);
         return;
       }
-      const read = typed(raw, type);
+      const read = typed(raw, typing.type);
       if (read.issue)
         problems.push(
           `${cellOf(name, i, index + 1)} (${column}) reads "${String(raw)}": ${read.issue}`,
         );
-      else record[column] = cel(read.value);
+      else record[column] = asCel(read.value, typing.cel);
     });
     rows.set(id, record);
   });
@@ -232,15 +254,96 @@ export type Records = {
   problems: string[];
 };
 
+// How each column is typed: the profile's type for those it types, as their
+// CEL type, and the declaration for the rest. `prefix` names a lookup's.
+function typerOf(data: DataShape, prefix = ''): TypeOf {
+  const profiled = new Map(
+    (data.profile?.columns ?? []).flatMap(({ column, type }) =>
+      type ? [[column, type] as const] : [],
+    ),
+  );
+  return (column) => {
+    const type = profiled.get(`${prefix}${column}`);
+    if (type) return { type, cel: celTypeOf(type) };
+    const declared = data.types[column];
+    return declared ? { type: declared } : undefined;
+  };
+}
+
+// The profile's types over what this read gives: a column blank throughout
+// stays typed, and a column the profile does not type keeps its own.
+function profiledTypes(
+  inferred: Record<string, string>,
+  data: DataShape,
+  prefix: string,
+): Record<string, string> {
+  const types = { ...inferred };
+  for (const { column, type } of data.profile?.columns ?? []) {
+    if (!type || !column.startsWith(prefix)) continue;
+    const name = column.slice(prefix.length);
+    // A record column is any path no lookup claims.
+    if (!prefix && lookupOf(data, column)) continue;
+    types[name] = celTypeOf(type);
+  }
+  return types;
+}
+
+// The lookup a profile path names, if it names one.
+const lookupOf = (data: DataShape, column: string) =>
+  data.lookups.find((lookup) => column.startsWith(`${lookup.as}.`));
+
+// Columns worked out from when the data was read: always hours, a double.
+function timedColumns(data: DataShape): string[] {
+  const { timing } = data;
+  if (!timing) return [];
+  return [
+    ...Object.keys(timing.since),
+    ...Object.keys(timing.until),
+    momentColumn(START),
+    ...Object.keys(timing.moments ?? {}).map(momentColumn),
+  ];
+}
+
+const noColumnIn = (tabs: string[], column: string) =>
+  tabs.length === 1
+    ? `The ${tabs[0]} tab has no ${column} column`
+    : `None of the ${tabs.slice(0, -1).join(', ')} and ${tabs.at(-1)} tabs has a ${column} column`;
+
+// Each column the profile lists that the read no longer has.
+function missingColumns(read: KeptRead, data: DataShape): string[] {
+  const headerOf = (name: string) =>
+    (read.tabs.find((t) => t.name === name)?.values[0] ?? []).map(String);
+  const present = (tabs: string[]) => tabs.some((t) => headerOf(t).length);
+  const problems: string[] = [];
+  for (const { column } of data.profile?.columns ?? []) {
+    const lookup = lookupOf(data, column);
+    if (lookup) {
+      const name = column.slice(lookup.as.length + 1);
+      if (present([lookup.tab]) && !headerOf(lookup.tab).includes(name))
+        problems.push(
+          `${noColumnIn([lookup.tab], name)}, which the data profile lists.`,
+        );
+    } else if (
+      present(data.records.tabs) &&
+      !data.records.tabs.some((tab) => headerOf(tab).includes(column))
+    )
+      problems.push(
+        `${noColumnIn(data.records.tabs, column)}, which the data profile lists.`,
+      );
+  }
+  return problems;
+}
+
 function build(read: KeptRead, data: DataShape): Records {
   const problems: string[] = [];
   const tabOf = (name: string) => read.tabs.find((t) => t.name === name);
   const [first, ...rest] = data.records.tabs;
+  const recordTypes = typerOf(data);
   const listed = keyed(
     tabOf(first ?? ''),
     first ?? '',
     data.records.key,
-    data.types,
+    recordTypes,
     problems,
   );
   const keys = [...listed.keys()];
@@ -250,7 +353,7 @@ function build(read: KeptRead, data: DataShape): Records {
       tabOf(name),
       name,
       data.records.key,
-      data.types,
+      recordTypes,
       problems,
     );
     for (const [key, row] of rows) {
@@ -271,7 +374,7 @@ function build(read: KeptRead, data: DataShape): Records {
       tabOf(lookup.tab),
       lookup.tab,
       lookup.key,
-      data.types,
+      typerOf(data, `${lookup.as}.`),
       problems,
     );
     for (const key of keys) {
@@ -287,17 +390,32 @@ function build(read: KeptRead, data: DataShape): Records {
     }
     return { ...lookup, rows };
   });
+  const recordTypesSeen = unifyColumns([...records.values()]);
+  const lookupTypesSeen = lookups.map(
+    (lookup) => [lookup.as, unifyColumns([...lookup.rows.values()])] as const,
+  );
+  if (data.profile) problems.push(...missingColumns(read, data));
   return {
     keys,
-    types: {
-      record: unifyColumns([...records.values()]),
-      lookups: Object.fromEntries(
-        lookups.map((lookup) => [
-          lookup.as,
-          unifyColumns([...lookup.rows.values()]),
-        ]),
-      ),
-    },
+    types: data.profile
+      ? {
+          record: {
+            ...profiledTypes(recordTypesSeen, data, ''),
+            ...Object.fromEntries(
+              timedColumns(data).map((name) => [name, 'double']),
+            ),
+          },
+          lookups: Object.fromEntries(
+            lookupTypesSeen.map(([as, seen]) => [
+              as,
+              profiledTypes(seen, data, `${as}.`),
+            ]),
+          ),
+        }
+      : {
+          record: recordTypesSeen,
+          lookups: Object.fromEntries(lookupTypesSeen),
+        },
     lookupKeys: lookups.flatMap((lookup) => [...lookup.rows.keys()]),
     record: (key) => records.get(key) ?? {},
     lookups: (key) =>

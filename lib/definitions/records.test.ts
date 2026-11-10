@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { SUBJECT } from '@/lib/processes/brunch-orders/process';
+import {
+  BRUNCH_ORDERS_DEFINITIONS,
+  SUBJECT,
+} from '@/lib/processes/brunch-orders/process';
 
 import { capturedRead, capturedTabs } from './captured.fixture';
+import { checkFormula } from './formulas';
+import { confirmProfile, profileOf, withProfile } from './profile';
 import { fitting, namesOf, recordsOf, type DataTab } from './records';
 
 // How a read becomes records, and every way it can fail to fit what the
@@ -119,5 +124,115 @@ describe('columns worked out from when the data was read', () => {
     const records = recordsOf(capturedRead(tabs), data);
     expect(records.record('EG-06').count_age_hours).toBeUndefined();
     expect(records.types.record.count_age_hours).toBe('double');
+  });
+});
+
+describe('records held to a data profile', () => {
+  const profile = confirmProfile(profileOf(capturedRead(), data));
+  const profiled = withProfile(BRUNCH_ORDERS_DEFINITIONS, profile).subject.data;
+  const changedRead = (change: (tabs: DataTab[]) => void) => {
+    const tabs = capturedTabs();
+    change(tabs);
+    return capturedRead(tabs);
+  };
+  const setColumn = (
+    tabs: DataTab[],
+    name: string,
+    column: string,
+    value: (old: unknown) => unknown,
+  ) => {
+    const [header, ...rows] = tab(tabs, name);
+    const at = header!.indexOf(column);
+    for (const row of rows) row[at] = value(row[at]);
+  };
+
+  it('reads the unchanged sheet as without a profile', () => {
+    const plain = recordsOf(capturedRead(), data);
+    const held = recordsOf(capturedRead(), profiled);
+    expect(held.problems).toEqual([]);
+    expect(held.keys).toEqual(plain.keys);
+    for (const key of plain.keys) {
+      expect(held.record(key)).toEqual(plain.record(key));
+      expect(held.lookups(key)).toEqual(plain.lookups(key));
+    }
+    expect(held.types).toEqual(plain.types);
+  });
+
+  it('reports a decimal in a whole-number column by its cell, and keeps the type', () => {
+    const read = changedRead((tabs) => {
+      rowOf(tab(tabs, 'Stock'), 'AV-RR')[1] = 14.5;
+    });
+    // Without a profile the whole column turns decimal.
+    expect(recordsOf(read, data).types.record.on_hand).toBe('double');
+    const held = recordsOf(read, profiled);
+    expect(held.problems).toEqual([
+      'Stock!B3 (on_hand) reads "14.5": Expected a whole number.',
+    ]);
+    expect(held.types.record.on_hand).toBe('int');
+    expect(held.record('AV-RR').on_hand).toBeUndefined();
+    expect(held.record('SD-01').on_hand).toBe(0n);
+  });
+
+  it('keeps the type of a column blank throughout, so a guard still checks', () => {
+    const read = changedRead((tabs) =>
+      setColumn(tabs, 'Deliveries', 'max_order_units', () => ''),
+    );
+    const guarded =
+      '!has(record.max_order_units) || order <= record.max_order_units';
+    const scope = { values: {}, constants: {}, groups: [] };
+    expect(recordsOf(read, data).types.record.max_order_units).toBeUndefined();
+    expect(checkFormula(read, SUBJECT, scope, 'check', guarded)).toMatch(
+      /No such key: max_order_units/,
+    );
+    const held = recordsOf(read, profiled);
+    expect(held.problems).toEqual([]);
+    expect(held.types.record.max_order_units).toBe('int');
+    expect(
+      checkFormula(
+        read,
+        { ...SUBJECT, data: profiled },
+        scope,
+        'check',
+        guarded,
+      ),
+    ).toBeNull();
+  });
+
+  it('reports a column the profile lists that the read no longer has', () => {
+    const read = changedRead((tabs) => {
+      for (const row of tab(tabs, 'Stock')) row.splice(2, 1);
+      for (const row of tab(tabs, 'Parameters')) row.splice(4, 1);
+    });
+    expect(recordsOf(read, data).problems).toEqual([]);
+    expect(recordsOf(read, profiled).problems).toEqual([
+      'None of the Products, Stock, Sales and Deliveries tabs has a reserved column, which the data profile lists.',
+      'The Parameters tab has no safety_pct column, which the data profile lists.',
+    ]);
+  });
+
+  it('reads a column the profile does not list as written, without a problem', () => {
+    const read = changedRead((tabs) => {
+      const sales = tab(tabs, 'Sales');
+      sales[0]!.push('weekend_5');
+      for (const row of sales.slice(1)) row.push(2.5);
+    });
+    const held = recordsOf(read, profiled);
+    expect(held.problems).toEqual([]);
+    expect(held.types.record.weekend_5).toBe('double');
+  });
+
+  it('reads a whole number in a decimal column as a decimal', () => {
+    const read = changedRead((tabs) =>
+      setColumn(tabs, 'Products', 'regular_price', (old) =>
+        Math.round(Number(old)),
+      ),
+    );
+    // Without a profile, every price whole makes the column whole numbers.
+    expect(recordsOf(read, data).types.record.regular_price).toBe('int');
+    const held = recordsOf(read, profiled);
+    expect(held.problems).toEqual([]);
+    expect(held.types.record.regular_price).toBe('double');
+    expect(held.record('SD-01').regular_price).toBe(3);
+    expect(typeof held.record('SD-01').regular_price).toBe('number');
   });
 });

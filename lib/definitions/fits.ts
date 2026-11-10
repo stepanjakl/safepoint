@@ -1,5 +1,6 @@
 import { scopeOf, settingOf } from './checks';
 import { checkFormula } from './formulas';
+import { profiledFor } from './profile';
 import type { KeptRead } from './records';
 import { fingerprintOf } from './store';
 import { complete, type DefinitionProcess, type DefinitionSet } from './types';
@@ -19,6 +20,7 @@ export function fitsRead(
   set: DefinitionSet,
   read: KeptRead,
 ): Misfit[] {
+  owner = profiledFor(owner, set);
   return set.definitions.flatMap((definition) => {
     if (!definition.approvedAt || !definition.formula) return [];
     const problem = checkFormula(
@@ -53,10 +55,14 @@ export function staleness(
 ): Stale | null {
   const problems = fitsRead(owner, text, set, read);
   if (!problems.length) return null;
+  // The current rules are tried only on a profile the process was given:
+  // their own, or none.
   const movable =
     current !== set &&
     fingerprintOf(current) !== fingerprintOf(set) &&
     complete(current) &&
+    (!current.profileId ||
+      current.profileId === owner.subject.data.profile?.id) &&
     !fitsRead(owner, text, current, read).length;
   return {
     rulebook: fingerprintOf(set),

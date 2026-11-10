@@ -4,6 +4,7 @@ import path from 'node:path';
 import { runDataDir } from '@/lib/storage/run-data';
 
 import { findDefinitions, type Asking } from './find';
+import { ownerToDraft } from './profile';
 import { fitting, type KeptRead } from './records';
 import { hashOf } from './store';
 import type { DefinitionProcess, DraftProgress } from './types';
@@ -113,10 +114,18 @@ export function startDraft(
     text,
     'Finding the definitions in the instructions…',
     async (progress, note) => {
-      const found = await findDefinitions(owner, text, version, read, asking);
+      // On the confirmed data profile, when one is kept; the set records it.
+      const drafting = await ownerToDraft(owner);
+      const found = await findDefinitions(
+        drafting,
+        text,
+        version,
+        read,
+        asking,
+      );
       for (const [index, definition] of found.definitions.entries()) {
         progress.writing = definition.id;
-        await writeAgreed(owner, text, read, definition.id, {
+        await writeAgreed(drafting, text, read, definition.id, {
           ...asking,
           onRun: async (run) => {
             progress.step = `Writing ${index + 1} of ${found.definitions.length}: ${definition.name}${run > 1 ? `, write ${run}` : ''}…`;

@@ -3,6 +3,7 @@ import path from 'node:path';
 
 import { runDataDir } from '@/lib/storage/run-data';
 
+import { profiledFor } from './profile';
 import { checkProposal, noneOf, readJson, writeWhole } from './propose';
 import { cellOf, type KeptRead } from './records';
 import type {
@@ -281,6 +282,7 @@ export async function prepareWrite(
   decisions: Record<string, DecisionMade>,
   sheet: OutputSheet,
 ): Promise<Prepared> {
+  owner = profiledFor(owner, set);
   const { output } = owner.subject.data;
   if (!output) throw new Error('This process declares no output.');
   const problems: string[] = [];
@@ -391,6 +393,7 @@ export async function applyDecisions(
   acknowledged: string[],
   sheet: OutputSheet,
 ): Promise<WriteOutcome> {
+  owner = profiledFor(owner, set);
   const { output } = owner.subject.data;
   if (!output) throw new Error('This process declares no output.');
   const file = applicationFile(owner, read.id, fingerprint);

@@ -5,6 +5,7 @@ import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-order
 import { capturedRead } from './captured.fixture';
 import { accountingProblems, findDefinitions, sentencesOf } from './find';
 import { answer, standIn, told } from './models.fixture';
+import { confirmProfile, profileOf, withProfile } from './profile';
 import { inScratchDirectory } from './scratch.fixture';
 import { loadSet } from './store';
 
@@ -209,6 +210,21 @@ describe('finding', () => {
     );
     const kept = await loadSet(owner, TEXT);
     expect(kept?.definitions.map((d) => d.id)).toContain('expected_sales');
+  });
+
+  it('records the confirmed data profile the set is drafted on', async () => {
+    const proposed = profileOf(capturedRead(), owner.subject.data);
+    const confirmed = confirmProfile(proposed);
+    const on = (profiled: typeof owner) =>
+      findDefinitions(profiled, TEXT, 'v1', capturedRead(), {
+        resolve: () => standIn(answer(right)),
+      });
+    expect((await on(owner)).profileId).toBeUndefined();
+    expect((await on(withProfile(owner, proposed))).profileId).toBeUndefined();
+    expect((await on(withProfile(owner, confirmed))).profileId).toBe(
+      confirmed.id,
+    );
+    expect((await loadSet(owner, TEXT))?.profileId).toBe(confirmed.id);
   });
 
   it('accepts instructions with no calculation at all', () => {
