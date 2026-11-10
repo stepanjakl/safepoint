@@ -102,7 +102,13 @@ const VERDICT: Record<Verdict, { tone: Tone; label: string }> = {
   ready: { tone: 'ready', label: 'Ready' },
   decide: { tone: 'decision', label: 'Decide' },
   blocked: { tone: 'blocked', label: 'Blocked' },
+  // No rule ran: a person reviews it all the same, so it only reads neutral.
+  unchecked: { tone: 'neutral', label: 'Not checked' },
 };
+
+// A record asks for a person only where a check said so.
+const needsPerson = (verdict: Verdict) =>
+  verdict === 'decide' || verdict === 'blocked';
 
 const valuesWords = (
   values: Record<string, number> | null | undefined,
@@ -178,7 +184,7 @@ export function ProposeStep({
       running: isRunning,
       total: records.length,
       needYou: records.filter(
-        ([key, record]) => !next[key] && record.verdict !== 'ready',
+        ([key, record]) => !next[key] && needsPerson(record.verdict),
       ).length,
       writes: records.filter(([key, record]) => {
         const decision = next[key];
@@ -399,7 +405,7 @@ function asReviewed(
     records: Object.fromEntries(
       Object.entries(proposal.records).map(([key, record]) => [
         key,
-        record.unsure && record.verdict === 'ready'
+        record.unsure && !needsPerson(record.verdict)
           ? { ...record, verdict: 'decide' as const }
           : record,
       ]),
@@ -439,17 +445,19 @@ export function ProposalTable({
 }) {
   const records = Object.entries(proposal.records);
   const needYou = records.filter(
-    ([key, record]) => !decisions[key] && record.verdict !== 'ready',
+    ([key, record]) => !decisions[key] && needsPerson(record.verdict),
   );
+  // Those nothing asks a person about, whether checked or not.
   const ready = records.filter(
-    ([key, record]) => !decisions[key] && record.verdict === 'ready',
+    ([key, record]) => !decisions[key] && !needsPerson(record.verdict),
   );
+  const unchecked = ready.every(([, record]) => record.verdict === 'unchecked');
   const decided = records.filter(([key]) => decisions[key]);
   const reduceMotion = useReducedMotion();
   const [showing, setShowing] = useState<Showing>('all');
   const shown =
     showing === 'need' ? needYou : showing === 'decided' ? decided : records;
-  const counts = (['blocked', 'decide', 'ready'] as const)
+  const counts = (['blocked', 'decide', 'ready', 'unchecked'] as const)
     .map((verdict) => ({
       verdict,
       count: records.filter(([, r]) => r.verdict === verdict).length,
@@ -617,13 +625,13 @@ export function ProposalTable({
                               { kind: 'approve', at },
                             ]),
                           ),
-                          `${ready.length} ready approved`,
+                          `${ready.length} ${unchecked ? 'not checked' : 'ready'} approved`,
                         );
                       }}
                     >
                       <span>
                         Approve all <MorphingText text={String(ready.length)} />{' '}
-                        ready
+                        {unchecked ? 'not checked' : 'ready'}
                       </span>
                     </Button>
                   </motion.div>

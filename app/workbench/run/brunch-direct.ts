@@ -36,7 +36,7 @@ const proposal: Proposal = {
       {
         ...record,
         checks: [],
-        verdict: record.unsure ? ('decide' as const) : ('ready' as const),
+        verdict: record.unsure ? ('decide' as const) : ('unchecked' as const),
       },
     ]),
   ),
@@ -78,7 +78,7 @@ const read = {
   tabs: tabs.map((tab) => ({ name: tab.name, rows: tab.values.length })),
 };
 const needYou = Object.values(proposal.records).filter(
-  (record) => record.verdict !== 'ready',
+  (record) => record.verdict === 'decide' || record.verdict === 'blocked',
 ).length;
 const writes = writesOf(proposal, allDecided);
 // Last weekend's orders, as the Orders tab holds them before this run writes.

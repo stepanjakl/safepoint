@@ -1,5 +1,6 @@
 import { dependentsOf, review, settingOf } from './checks';
 import { recordsOf, type KeptRead } from './records';
+import { formulaOf, shapeProblems, type ShapeContext } from './shapes';
 import { loadSet, putRevision, updateSet } from './store';
 import { complete, type DefinitionProcess, type DefinitionSet } from './types';
 
@@ -71,6 +72,9 @@ export const choose = (
         if (d.id === id && version)
           return {
             ...d,
+            // The shape goes with the formula: the sentence is written from it.
+            shape: version.shape ?? null,
+            unfit: version.unfit ?? null,
             formula: version.formula,
             constants: version.constants,
             groups: version.groups,
@@ -117,6 +121,34 @@ export async function accept(
     return refuse(
       'The read its examples were run on does not fit what this process reads: fix the sheet, read it again, and write it again.',
     );
+  // The sentence a person approved is written from the shape: the formula
+  // kept must be the one that shape gives.
+  if (definition.shape) {
+    const context: ShapeContext = {
+      subject: owner.subject,
+      records: recordsOf(read, owner.subject.data),
+      read,
+      consequence: definition.consequence,
+      constants: definition.constants,
+      groups: definition.groups,
+      earlier: set.definitions.slice(0, set.definitions.indexOf(definition)),
+    };
+    const unsaid = shapeProblems(definition.shape, context);
+    if (unsaid.length)
+      return refuse(
+        `The rule as written no longer reads on this data (${unsaid.join(' ')}): write it again.`,
+      );
+    let written: string | null;
+    try {
+      written = formulaOf(definition.shape, context);
+    } catch {
+      written = null;
+    }
+    if (written !== definition.formula)
+      return refuse(
+        'The formula kept is not the one the rule as written gives: write it again.',
+      );
+  }
   const { problems, ran } = review(
     settingOf(owner, text, set, read, definition),
     {

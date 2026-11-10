@@ -331,9 +331,10 @@ export const complete = (set: DefinitionSet) =>
 /*
   A proposal: for every record, what the model would set and why, and how the
   accepted checks find it. The verdicts are code's, run again on what the
-  model answered, never the model's own account.
+  model answered, never the model's own account. unchecked: the rulebook has
+  no check to run, so nothing says it is ready.
 */
-export type Verdict = 'ready' | 'decide' | 'blocked';
+export type Verdict = 'ready' | 'decide' | 'blocked' | 'unchecked';
 
 export type CheckVerdict = {
   id: string;
@@ -378,7 +379,7 @@ export type AppliedDecision = {
   // Null when the decision writes nothing.
   values: Record<string, number> | null;
   at: string;
-  // Only for what is written, as the checks found it when it was written.
+  // For what is written, or left as it is, as the checks found it then.
   verdict: Verdict | null;
   // The checks a person let fail, by name.
   failing: string[];

@@ -4,13 +4,13 @@ import { describe, expect, it } from 'vitest';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 
-import { capturedRead } from './captured.fixture';
+import { capturedRead, capturedTabs } from './captured.fixture';
 import { always, call, standIn, told } from './models.fixture';
 import { checkProposal, keptProposal, newActivity, propose } from './propose';
 import { inScratchDirectory } from './scratch.fixture';
 import { TEXT } from './set.fixture';
 import { fingerprintOf, noRules } from './store';
-import { definitionSetSchema } from './types';
+import { definitionSetSchema, type DefinitionProcess } from './types';
 
 // The accepted rulebook the browser tests serve, held to the engine by
 // e2e-fixtures.test.ts: two calculations and five checks.
@@ -91,6 +91,134 @@ describe('checking a proposal', () => {
   });
 });
 
+describe('a calculation that cannot be worked out', () => {
+  // One record's first weekend of sales is blank.
+  const blank = (sku = 'AV-RR') => {
+    const tabs = capturedTabs();
+    const sales = tabs.find((t) => t.name === 'Sales')!;
+    const column = sales.values[0]!.indexOf('weekend_1');
+    const row = sales.values.find((r) => r[0] === sku)!;
+    row[column] = '';
+    return capturedRead(tabs);
+  };
+
+  it('fails the checks that need it, naming it, and runs the others', () => {
+    const { verdict, checks } = checkProposal(owner, set, blank(), 'AV-RR', {
+      order: 50,
+    });
+    const by = Object.fromEntries(checks.map((c) => [c.id, c]));
+    // Directly, and through the calculation that reads it.
+    for (const id of [
+      'order_ripe_avocados_limit',
+      'cover_sales_and_safety_margin',
+    ])
+      expect(by[id]).toMatchObject({ holds: false, steps: [] });
+    expect(by.order_ripe_avocados_limit!.error).toMatch(
+      /^Expected sales cannot be worked out: /,
+    );
+    expect(by.cover_sales_and_safety_margin!.error).toMatch(
+      /^Expected sales cannot be worked out: /,
+    );
+    // What does not read it runs as it would.
+    for (const id of [
+      'order_in_whole_cases',
+      'supplier_delivery_limit',
+      'arrival_before_saturday_opening',
+    ])
+      expect(by[id]).toMatchObject({ holds: true, error: null });
+    expect(verdict).toBe('blocked');
+    // A check its guard settles for this record never reads it, so it holds:
+    // LM-04 is not ripe, while cover still needs the missing number.
+    const unripe = Object.fromEntries(
+      checkProposal(owner, set, blank('LM-04'), 'LM-04', {
+        order: 0,
+      }).checks.map((c) => [c.id, c]),
+    );
+    expect(unripe.order_ripe_avocados_limit).toMatchObject({
+      holds: true,
+      applies: false,
+      error: null,
+    });
+    expect(unripe.cover_sales_and_safety_margin).toMatchObject({
+      holds: false,
+      error: expect.stringMatching(/^Expected sales cannot be worked out: /),
+    });
+    // Another record's read of it is not affected.
+    expect(
+      checkProposal(owner, set, blank(), 'EG-06', { order: 0 }).verdict,
+    ).toBe('ready');
+  });
+});
+
+describe('a set with no accepted check', () => {
+  it('says so rather than ready', () => {
+    const none = noRules(TEXT);
+    expect(checkProposal(owner, none, read, 'AV-RR', { order: 50 })).toEqual({
+      verdict: 'unchecked',
+      checks: [],
+    });
+  });
+});
+
+describe('a proposal below its minimum', () => {
+  const least: DefinitionProcess = {
+    ...owner,
+    subject: {
+      ...owner.subject,
+      proposal: owner.subject.proposal.map((f) => ({ ...f, min: 5 })),
+    },
+  };
+
+  it('is blocked by one check made from the field’s own words', () => {
+    const { verdict, checks } = checkProposal(least, set, read, 'EG-06', {
+      order: 4,
+    });
+    expect(verdict).toBe('blocked');
+    expect(checks.filter((c) => c.id.startsWith('min:'))).toEqual([
+      expect.objectContaining({
+        id: 'min:order',
+        name: 'Proposed order at least 5 units',
+        consequence: 'block',
+        holds: false,
+        steps: ['4 units is below 5'],
+      }),
+    ]);
+  });
+
+  it('adds nothing where the value holds, or where none is declared', () => {
+    const bare: DefinitionProcess = {
+      ...owner,
+      subject: {
+        ...owner.subject,
+        proposal: owner.subject.proposal.map((f) => ({ ...f, min: undefined })),
+      },
+    };
+    const count = (process: DefinitionProcess, order: number) =>
+      checkProposal(process, set, read, 'EG-06', { order }).checks.length;
+    expect(count(least, 5)).toBe(count(bare, 5));
+    expect(count(bare, -3)).toBe(count(bare, 0));
+    // Brunch orders declare a least of 0.
+    expect(
+      checkProposal(owner, set, read, 'EG-06', { order: -10 }).checks.map(
+        (c) => c.id,
+      ),
+    ).toContain('min:order');
+  });
+
+  it('is blocked with no rulebook, and told to the model as its lower bound', async () => {
+    expect(
+      checkProposal(owner, noRules(TEXT), read, 'EG-06', { order: -1 }),
+    ).toMatchObject({ verdict: 'blocked' });
+    const model = standIn(call('submit_proposals', { records: [] }));
+    await propose(owner, noRules(TEXT), read, 'test', TEXT, {
+      resolve: () => model,
+    }).catch(() => undefined);
+    expect(JSON.stringify(model.doStreamCalls[0]!.tools)).toContain(
+      '"minimum":0',
+    );
+  });
+});
+
 describe('proposing', () => {
   inScratchDirectory();
   const leave = (key: string) => ({
@@ -138,11 +266,23 @@ describe('proposing', () => {
       cited: ['Stock!B3'],
       verdict: 'decide',
     });
+    // A record left is checked with the order at nothing: the bakery has
+    // none in stock, so cover fails; eggs hold enough.
     expect(proposal.records['SD-01']).toMatchObject({
       action: 'leave',
       values: null,
+      verdict: 'decide',
+    });
+    expect(proposal.records['SD-01']!.checks).toHaveLength(5);
+    expect(
+      proposal.records['SD-01']!.checks.filter((c) => !c.holds).map(
+        (c) => c.id,
+      ),
+    ).toEqual(['cover_sales_and_safety_margin']);
+    expect(proposal.records['EG-06']).toMatchObject({
+      action: 'leave',
+      values: null,
       verdict: 'ready',
-      checks: [],
     });
     expect(Object.keys(proposal.records)).toEqual(KEYS);
     // Never told a formula; told the checks in their own words.
@@ -191,10 +331,10 @@ describe('proposing', () => {
     expect(told(model)).not.toContain('accepted checks');
     expect(told(model)).not.toContain('values worked out');
     expect(told(model)).toContain('A person reviews every proposal');
-    // Code has no checks to run: every verdict is ready, unsure or not.
+    // Code has no checks to run: nothing says any is ready, unsure or not.
     expect(proposal.records['AV-RR']).toMatchObject({
       values: { order: 50 },
-      verdict: 'ready',
+      verdict: 'unchecked',
       checks: [],
       unsure: avocados.unsure,
     });

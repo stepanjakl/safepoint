@@ -234,8 +234,15 @@ export type DefinitionSubject = {
   // Whole numbers a proposal sets per record, read by a formula by `id`.
   // `none` is the value that proposes nothing for a record, where one does: a
   // check that stops a proposal must then let it through. Absent, no value
-  // means that, and nothing is assumed.
-  proposal: { id: string; label: string; unit: string; none?: number }[];
+  // means that, and nothing is assumed. `min` is the least a proposal may
+  // set: a value below it blocks the record, and the model is told it.
+  proposal: {
+    id: string;
+    label: string;
+    unit: string;
+    none?: number;
+    min?: number;
+  }[];
   // Who reads the plain-words reasons.
   reader: string;
 };

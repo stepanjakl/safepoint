@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import { runDataDir } from '@/lib/storage/run-data';
 
-import { checkProposal, readJson, writeWhole } from './propose';
+import { checkProposal, noneOf, readJson, writeWhole } from './propose';
 import { cellOf, type KeptRead } from './records';
 import type {
   Application,
@@ -283,7 +283,6 @@ export async function prepareWrite(
 ): Promise<Prepared> {
   const { output } = owner.subject.data;
   if (!output) throw new Error('This process declares no output.');
-  const fields = owner.subject.proposal.map((field) => field.id);
   const problems: string[] = [];
 
   const undecided = Object.keys(proposal.records).filter(
@@ -314,29 +313,38 @@ export async function prepareWrite(
       verdict: null,
       failing: [],
     };
-    if (!write) continue;
-    if (
-      fields.some(
-        (field) =>
-          !Number.isInteger(write.values[field]) || write.values[field]! < 0,
-      )
-    ) {
-      problems.push(
-        `${key} needs a whole number, zero or more, for each value.`,
-      );
+    // A record the proposal left is checked as the sheet is now, though
+    // nothing is written for it; a rejection is not checked at all.
+    const left = !write && decision.kind !== 'reject';
+    if (!write && !left) continue;
+    const values = write?.values ?? noneOf(owner.subject);
+    // Whole numbers, at least the least the process allows.
+    const bad = write
+      ? owner.subject.proposal.filter(
+          (field) =>
+            !Number.isInteger(values[field.id]) ||
+            (field.min !== undefined && values[field.id]! < field.min),
+        )
+      : [];
+    if (bad.length) {
+      for (const field of bad)
+        problems.push(
+          `${key} needs a whole number${field.min === undefined ? '' : `, ${field.min} or more,`} for ${field.label}.`,
+        );
       continue;
     }
-    const was = checkProposal(owner, set, read, key, write.values);
+    const was = checkProposal(owner, set, read, key, values);
     const is = changed.length
       ? was
-      : checkProposal(owner, set, now, key, write.values);
+      : checkProposal(owner, set, now, key, values);
     const failing = is.checks.filter((check) => !check.holds);
     applied[key].verdict = is.verdict;
     applied[key].failing = failing.map((check) => check.name);
     for (const check of failing) {
-      if (check.consequence === 'block')
-        problems.push(`${key} cannot be written: ${check.name} fails.`);
-      else if (!was.checks.some((c) => c.id === check.id && !c.holds))
+      if (check.consequence === 'block') {
+        if (write)
+          problems.push(`${key} cannot be written: ${check.name} fails.`);
+      } else if (!was.checks.some((c) => c.id === check.id && !c.holds))
         newlyFailing.push({
           id: `${key}:${check.id}`,
           key,

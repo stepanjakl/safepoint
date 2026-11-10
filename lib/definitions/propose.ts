@@ -13,7 +13,7 @@ import {
   type Calculation,
 } from './calculate';
 import { DRAFT_MODELS, withModels, type Resolve } from './calls';
-import { givenOf } from './checks';
+import { dependentsOf, givenOf } from './checks';
 import { limitedGoogle } from './limits';
 import { contextFor, run } from './formulas';
 import { plain, timingOf } from './prompts';
@@ -41,31 +41,55 @@ import { applies, stepsFor } from './working';
   through is still answered, with the conflict said, never left out.
 */
 
-// Accepted calculations' values for one record, as a check reads them.
+/*
+  Accepted calculations' values for one record, as a check reads them. One that
+  cannot be worked out (a blank cell it reads) is left out and said, never
+  thrown: only what reads it is lost.
+*/
 function numbersOf(
   owner: DefinitionProcess,
   set: DefinitionSet,
   read: KeptRead,
   key: string,
-): Row {
+): { values: Row; failed: Map<string, string> } {
   const values: Row = {};
+  const failed = new Map<string, string>();
   for (const d of set.definitions) {
     if (d.result !== 'number' || !d.approvedAt || !d.formula) continue;
-    values[d.id] = run(
-      d.formula,
-      contextFor(read, key, owner.subject, givenOf(d, {}), values),
-    );
+    try {
+      values[d.id] = run(
+        d.formula,
+        contextFor(read, key, owner.subject, givenOf(d, {}), values),
+      );
+    } catch (error) {
+      failed.set(
+        d.id,
+        `${d.name} cannot be worked out: ${(error as Error).message.split('\n')[0]}`,
+      );
+    }
   }
-  return values;
+  return { values, failed };
 }
 
+// What a proposal sets for a record it leaves: each field at the value the
+// process says proposes nothing; a field with none declared is left unset.
+export const noneOf = (subject: DefinitionProcess['subject']) =>
+  Object.fromEntries(
+    subject.proposal.flatMap((field) =>
+      field.none === undefined ? [] : [[field.id, field.none]],
+    ),
+  );
+
 // Any check a person must decide on makes it decide; any that blocks, blocked.
-const verdictOf = (checks: CheckVerdict[]): Verdict =>
+// With no accepted check there is nothing to say it is ready.
+const verdictOf = (checks: CheckVerdict[], checked: boolean): Verdict =>
   checks.some((c) => !c.holds && c.consequence === 'block')
     ? 'blocked'
     : checks.some((c) => !c.holds)
       ? 'decide'
-      : 'ready';
+      : checked
+        ? 'ready'
+        : 'unchecked';
 
 // Every accepted check on one record's proposed values, with its working.
 export function checkProposal(
@@ -76,43 +100,60 @@ export function checkProposal(
   values: Record<string, number>,
 ): { verdict: Verdict; checks: CheckVerdict[] } {
   const { subject } = owner;
-  const numbers = numbersOf(owner, set, read, key);
+  const { values: numbers, failed } = numbersOf(owner, set, read, key);
   const fields = subject.proposal.map((field) => field.id);
-  const checks = set.definitions
-    .filter((d) => d.result === 'check' && d.approvedAt && d.formula)
-    .map((d): CheckVerdict => {
-      const context = contextFor(
-        read,
-        key,
-        subject,
-        givenOf(d, values),
-        numbers,
-      );
-      const base = {
-        id: d.id,
-        name: d.name,
-        consequence: d.consequence ?? 'decide',
+  // The number a check reads, directly or through another, that was left out.
+  const unreadable = (d: DefinitionSet['definitions'][number]) => {
+    for (const [id, why] of failed)
+      if (dependentsOf(set, id).has(d.id)) return why;
+    return null;
+  };
+  const accepted = set.definitions.filter(
+    (d) => d.result === 'check' && d.approvedAt && d.formula,
+  );
+  const checks = accepted.map((d): CheckVerdict => {
+    const base = {
+      id: d.id,
+      name: d.name,
+      consequence: d.consequence ?? 'decide',
+    };
+    const context = contextFor(read, key, subject, givenOf(d, values), numbers);
+    try {
+      return {
+        ...base,
+        holds: run(d.formula!, context) === true,
+        applies: applies(d.formula!, context, fields),
+        steps: stepsFor(d.formula!, context, fields),
+        error: null,
       };
-      try {
-        return {
-          ...base,
-          holds: run(d.formula!, context) === true,
-          applies: applies(d.formula!, context, fields),
-          steps: stepsFor(d.formula!, context, fields),
-          error: null,
-        };
-      } catch (error) {
-        // A check that cannot run cannot pass.
-        return {
-          ...base,
-          holds: false,
-          applies: true,
-          steps: [],
-          error: (error as Error).message.split('\n')[0]!,
-        };
-      }
+    } catch (error) {
+      // A check that cannot run cannot pass; a guard may settle it before
+      // it reads the missing number, so only a failed run says so.
+      return {
+        ...base,
+        holds: false,
+        applies: true,
+        steps: [],
+        error: unreadable(d) ?? (error as Error).message.split('\n')[0]!,
+      };
+    }
+  });
+  // A value below what the process allows blocks, whatever the rules say.
+  for (const field of subject.proposal) {
+    const value = values[field.id];
+    if (field.min === undefined || value === undefined || value >= field.min)
+      continue;
+    checks.push({
+      id: `min:${field.id}`,
+      name: `Proposed ${field.label} at least ${field.min} ${field.unit}`,
+      consequence: 'block',
+      holds: false,
+      applies: true,
+      steps: [`${value} ${field.unit} is below ${field.min}`],
+      error: null,
     });
-  return { verdict: verdictOf(checks), checks };
+  }
+  return { verdict: verdictOf(checks, accepted.length > 0), checks };
 }
 
 // A cell the model cites, as a person finds it: Stock!B3. Or why it is none.
@@ -276,10 +317,10 @@ async function proposeBatch(
   const fieldsShape = Object.fromEntries(
     subject.proposal.map((field) => [
       field.id,
-      z
-        .number()
-        .int()
-        .describe(`The proposed ${field.label}, in ${field.unit}`),
+      (field.min === undefined
+        ? z.number().int()
+        : z.number().int().min(field.min)
+      ).describe(`The proposed ${field.label}, in ${field.unit}`),
     ]),
   );
   const valuesSchema = z.object(fieldsShape);
@@ -382,9 +423,14 @@ async function proposeBatch(
             else found.push({ ...cell, key });
           }
           const values = answer.action === 'set' ? answer.values : null;
-          const checked = values
-            ? checkProposal(owner, set, read, answer.key, values)
-            : { verdict: 'ready' as const, checks: [] };
+          // Leaving changes nothing, but the data may still fail a check.
+          const checked = checkProposal(
+            owner,
+            set,
+            read,
+            answer.key,
+            values ?? noneOf(subject),
+          );
           answered[answer.key] = {
             action: answer.action,
             values,

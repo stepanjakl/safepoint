@@ -89,7 +89,7 @@ export const SUBJECT: DefinitionSubject = {
   record: { singular: 'product', plural: 'products' },
   data: DATA,
   // Ordering nothing is always open to a person: no rule can forbid it.
-  proposal: [{ id: 'order', label: 'order', unit: 'units', none: 0 }],
+  proposal: [{ id: 'order', label: 'order', unit: 'units', none: 0, min: 0 }],
   reader: 'store owner',
 };
 

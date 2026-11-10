@@ -4,8 +4,10 @@ import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-order
 
 import { capturedRead } from './captured.fixture';
 import { accept, choose, confirmIntent, deny } from './decide';
+import { recordsOf } from './records';
 import { inScratchDirectory } from './scratch.fixture';
 import { definition, example, keep, TEXT } from './set.fixture';
+import { formulaOf, type Shape, type ShapeContext } from './shapes';
 import { listRevisions } from './store';
 
 // Accepting reruns the whole review on the version kept, against its read:
@@ -122,6 +124,116 @@ describe('choosing between versions', () => {
       formula: 'order == 1',
       agreement: { status: 'chosen' },
       approvedAt: null,
+    });
+  });
+});
+
+// A check written as a shape: its sentence comes from the shape, so the
+// formula kept must be the one the shape gives.
+const wholeSteps: Shape = {
+  kind: 'step',
+  field: 'order',
+  at: null,
+  amount: 'column:case_size',
+  base: null,
+  compare: null,
+  target: null,
+  margin_pct: null,
+  when: [],
+  only_for_group: null,
+  only_for_when: [],
+  if_blank: 'skip',
+};
+const shapeContext: ShapeContext = {
+  subject: owner.subject,
+  records: recordsOf(read, owner.subject.data),
+  read,
+  consequence: 'block',
+  constants: [],
+  groups: [],
+  earlier: [],
+};
+const steps = (formula: string) =>
+  definition('whole_cases', {
+    result: 'check',
+    consequence: 'block',
+    shape: wholeSteps,
+    formula,
+    examples: [
+      example(true, true, { inputs: { order: 16 } }),
+      example(false, true, { inputs: { order: 15 } }),
+      example(true, true, { key: 'AV-RR', inputs: { order: 20 } }),
+      example(false, true, { key: 'AV-RR', inputs: { order: 25 } }),
+    ],
+  });
+
+describe('accepting a definition written as a shape', () => {
+  it('accepts the formula its shape gives', async () => {
+    await keep([steps(formulaOf(wholeSteps, shapeContext))]);
+    const done = await accepted('whole_cases');
+    expect(done.problem).toBeNull();
+    expect(done.approvedAt).not.toBeNull();
+  });
+
+  it('refuses a formula that is not the one its shape gives', async () => {
+    // Behaves the same on every example, so only the shape can tell.
+    await keep([steps(`${formulaOf(wholeSteps, shapeContext)} && true`)]);
+    const done = await accepted('whole_cases');
+    expect(done.approvedAt).toBeNull();
+    expect(done.problem).toMatch(/not the one the rule as written gives/);
+  });
+
+  it('refuses a shape that no longer reads on this data', async () => {
+    await keep([
+      {
+        ...steps('order % record.case_size == 0'),
+        shape: { ...wholeSteps, amount: 'column:no_such_column' },
+      },
+    ]);
+    const done = await accepted('whole_cases');
+    expect(done.approvedAt).toBeNull();
+    expect(done.problem).toMatch(/no longer reads on this data/);
+  });
+});
+
+describe('choosing a version written as a shape', () => {
+  it('takes its shape with its formula, so the sentence cannot say another', async () => {
+    const version = (shape: Shape | null, formula: string, unfit?: string) => ({
+      shape,
+      unfit: unfit ?? null,
+      formula,
+      constants: [],
+      groups: [],
+      uses: [],
+      examples: [],
+      model: 'test',
+    });
+    const other: Shape = { ...wholeSteps, amount: 'column:max_order_units' };
+    await keep([
+      {
+        ...steps('order == 0'),
+        agreement: {
+          status: 'split',
+          runs: 2,
+          versions: [
+            version(other, 'order % record.max_order_units == 0'),
+            version(null, 'order == 1', 'No shape says it.'),
+          ],
+          differences: [],
+        },
+      },
+    ]);
+    const first = await choose(owner, TEXT, 'whole_cases', 0);
+    expect(first?.definitions[0]).toMatchObject({
+      shape: other,
+      unfit: null,
+      formula: 'order % record.max_order_units == 0',
+    });
+    const second = await choose(owner, TEXT, 'whole_cases', 1);
+    expect(second?.definitions[0]).toMatchObject({
+      shape: null,
+      unfit: 'No shape says it.',
+      formula: 'order == 1',
     });
   });
 });

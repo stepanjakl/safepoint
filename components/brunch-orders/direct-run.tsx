@@ -72,7 +72,7 @@ export function DirectOrdersRun({ process }: { process: ProcessSummary }) {
           ? `${decidedCount} of ${proposed.total} decided`
           : proposed.needYou
             ? `${proposed.total} proposed · ${proposed.needYou} need you`
-            : `${proposed.total} proposed · all ready`
+            : `${proposed.total} proposed · not checked`
       : step.id === 'apply' && allDecided
         ? applied?.status === 'verified'
           ? 'Written and read back'

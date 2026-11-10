@@ -257,7 +257,9 @@ describe('writing a decided proposal', () => {
       'EG-06': { kind: 'change', values: { order: -12 }, at: THURSDAY },
       'CT-250': approve,
     });
-    expect(outcome.kind).toBe('refused');
+    expect(outcome.kind === 'refused' && outcome.prepared.problems).toEqual([
+      'EG-06 needs a whole number, 0 or more, for order.',
+    ]);
     expect(sheet.writes).toEqual([]);
   });
 
@@ -303,6 +305,90 @@ describe('writing a decided proposal', () => {
       runRead: read(FRIDAY),
     });
     expect(outcome.kind).toBe('written');
+  });
+
+  describe('a record the proposal left', () => {
+    // EG-06 is left; CT-250 is written, and holds every check below.
+    const withLeft: Proposal = {
+      ...proposal,
+      records: {
+        ...proposal.records,
+        'EG-06': {
+          ...record(12),
+          action: 'leave',
+          values: null,
+        },
+      },
+    };
+    const writeLeft = (
+      rulebook: typeof set,
+      decisions: Record<string, DecisionMade> = bothApproved,
+      runRead = read(),
+    ) =>
+      applyDecisions(
+        owner,
+        rulebook,
+        runRead,
+        'abc',
+        withLeft,
+        decisions,
+        ['EG-06:timed'],
+        sheet,
+      );
+
+    it('is checked on the sheet as read now, and never refuses the write', async () => {
+      sheet = memorySheet(read(FRIDAY));
+      // Nothing is ordered for it, and its deadline has passed.
+      const outcome = await writeLeft(
+        timed('block', 'order != 0 || record.hours_until_cutoff >= 0.0'),
+      );
+      expect(outcome.kind).toBe('written');
+      expect(sheet.grid).toEqual([
+        ['sku', 'order'],
+        ['CT-250', 10],
+      ]);
+      const kept = await keptApplication(owner, 'run', 'abc');
+      expect(kept?.decisions['EG-06']).toMatchObject({
+        kind: 'approve',
+        values: null,
+        verdict: 'blocked',
+        failing: ['Timed'],
+      });
+    });
+
+    it('holds a decide check that newly fails for it, but not a rejection', async () => {
+      sheet = memorySheet(read(FRIDAY));
+      const rulebook = timed('decide', 'record.count_age_hours <= 24.0');
+      const prepared = await prepareWrite(
+        owner,
+        rulebook,
+        read(),
+        withLeft,
+        bothApproved,
+        sheet,
+      );
+      expect(prepared.newlyFailing.map((f) => f.id)).toContain('EG-06:timed');
+      expect(prepared.decisions['EG-06']).toMatchObject({
+        values: null,
+        verdict: 'decide',
+        failing: ['Timed'],
+      });
+      const rejected = await prepareWrite(
+        owner,
+        rulebook,
+        read(),
+        withLeft,
+        { ...bothApproved, 'EG-06': { kind: 'reject', at: THURSDAY } },
+        sheet,
+      );
+      expect(rejected.newlyFailing.map((f) => f.id)).not.toContain(
+        'EG-06:timed',
+      );
+      expect(rejected.decisions['EG-06']).toMatchObject({
+        verdict: null,
+        failing: [],
+      });
+    });
   });
 
   it('will not write twice without an undo', async () => {
