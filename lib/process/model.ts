@@ -288,15 +288,24 @@ export type DataShape = {
 };
 
 // What reading a source needs of its data profile: each column, by the path
-// a shape names it with, and its type, null where none could be told.
+// a shape names it with, and its type, null where none could be told; its
+// words, and what a blank cell in it means for a rule (null: not answered).
 export type DataProfileTypes = {
   id: string;
   confirmedAt: string | null;
-  columns: { column: string; type: FieldType | null }[];
+  columns: {
+    column: string;
+    type: FieldType | null;
+    label: string;
+    blanksSeen: boolean;
+    blank: 'skip' | 'fail' | null;
+  }[];
 };
 
 export type Moment = {
   day: string;
   time: string;
   kind: 'observed' | 'deadline' | 'next';
+  // How a sentence names it; absent, its name with spaces.
+  label?: string;
 };

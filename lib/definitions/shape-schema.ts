@@ -72,12 +72,14 @@ export const shapeSchema = z.object({
   only_for_when: z
     .array(conditionSchema)
     .describe('Conditions the rule is limited to; empty when not'),
-  if_blank: z
-    .enum(['skip', 'fail'])
-    .describe(
-      'A record with a blank cell the rule reads: skip, the rule does not apply; fail',
-    ),
+  // Kept only on shapes stored before blanks were the data profile's to say;
+  // a shape without it takes each column's meaning from the profile.
+  if_blank: z.enum(['skip', 'fail']).optional(),
 });
+
+// What a model fills: what a blank cell means is a fact about the data, the
+// same for every rule, so a person answers it once on the profile.
+export const modelShapeSchema = shapeSchema.omit({ if_blank: true });
 
 export type Shape = z.infer<typeof shapeSchema>;
 export type ShapeCondition = z.infer<typeof conditionSchema>;

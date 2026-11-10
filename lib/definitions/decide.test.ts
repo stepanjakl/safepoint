@@ -3,12 +3,19 @@ import { describe, expect, it } from 'vitest';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 
 import { capturedRead } from './captured.fixture';
-import { accept, choose, confirmIntent, deny } from './decide';
+import { accept, choose, confirmIntent, deny, rebaseSet } from './decide';
+import {
+  confirmProfile,
+  profileOf,
+  setColumnBlank,
+  withProfile,
+} from './profile';
 import { recordsOf } from './records';
 import { inScratchDirectory } from './scratch.fixture';
 import { definition, example, keep, TEXT } from './set.fixture';
 import { formulaOf, type Shape, type ShapeContext } from './shapes';
-import { listRevisions } from './store';
+import { listRevisions, loadRevision, putRevision, saveProfile } from './store';
+import type { DataProfile, Definition } from './types';
 
 // Accepting reruns the whole review on the version kept, against its read:
 // whatever writing would refuse, accepting refuses too, with the reason.
@@ -235,5 +242,126 @@ describe('choosing a version written as a shape', () => {
       unfit: 'No shape says it.',
       formula: 'order == 1',
     });
+  });
+});
+
+// What a blank cell means is the data profile's, answered once by a person.
+describe('a rule reading a column with blanks', () => {
+  const freshSteps: Shape = { ...wholeSteps };
+  delete freshSteps.if_blank;
+  const atMost: Shape = {
+    ...freshSteps,
+    kind: 'limit',
+    at: 'most',
+    amount: 'column:max_order_units',
+  };
+  const proposed = profileOf(read, owner.subject.data);
+  const unanswered = confirmProfile(proposed, '2026-11-10T00:00:00.000Z');
+  const answered = confirmProfile(
+    setColumnBlank(proposed, 'max_order_units', 'skip'),
+    '2026-11-10T00:00:00.000Z',
+  );
+  const contextOn = (profile: DataProfile): ShapeContext => {
+    const subject = withProfile(owner, profile).subject;
+    return {
+      ...shapeContext,
+      subject,
+      records: recordsOf(read, subject.data),
+    };
+  };
+  const supplier = (profile: DataProfile, more: Partial<Definition> = {}) =>
+    definition('supplier_most', {
+      result: 'check',
+      consequence: 'block',
+      shape: atMost,
+      formula: formulaOf(atMost, contextOn(profile)),
+      examples: [
+        example(true, true, { inputs: { order: 72 } }),
+        example(false, true, { inputs: { order: 80 } }),
+      ],
+      ...more,
+    });
+  const whole = (profile: DataProfile) => ({
+    ...steps(formulaOf(freshSteps, contextOn(profile))),
+    shape: freshSteps,
+  });
+  const approvedAt = '2026-11-10T01:00:00.000Z';
+  const kept = async (...definitions: Definition[]) => {
+    await saveProfile(owner, unanswered);
+    await saveProfile(owner, answered);
+    return keep(definitions, { profileId: unanswered.id });
+  };
+
+  it('is refused until the meaning of a blank is answered, naming the column', async () => {
+    await kept(supplier(unanswered));
+    const refused = await accepted('supplier_most');
+    expect(refused.approvedAt).toBeNull();
+    expect(refused.problem).toBe(
+      'Say what a blank cell means before accepting: the max order units. Does a rule reading one not apply, or fail?',
+    );
+    await rebaseSet(owner, TEXT, read, answered);
+    const done = await accepted('supplier_most');
+    expect(done.problem).toBeNull();
+    expect(done.approvedAt).not.toBeNull();
+  });
+
+  it('is written again on a newer profile, and accepted again only where it changed', async () => {
+    const first = await kept(supplier(unanswered, { approvedAt }), {
+      ...whole(unanswered),
+      approvedAt,
+    });
+    const revision = await putRevision(owner, first, { reason: 'accepted' });
+    const rebased = (await rebaseSet(owner, TEXT, read, answered))!;
+    expect(rebased.profileId).toBe(answered.id);
+    const [most, cases] = rebased.definitions;
+    expect(most!.formula).toBe(formulaOf(atMost, contextOn(answered)));
+    expect(most!.formula).toMatch(/^!\(has\(record\.max_order_units\)\)/);
+    expect(most!.approvedAt).toBeNull();
+    expect(most!.problem).toBeNull();
+    expect(cases!.formula).toBe(whole(unanswered).formula);
+    expect(cases!.approvedAt).toBe(approvedAt);
+    // The revision keeps the profile it was accepted on.
+    expect((await loadRevision(owner, TEXT, revision))?.profileId).toBe(
+      unanswered.id,
+    );
+  });
+
+  it('agrees where two versions now behave alike', async () => {
+    const version = (formula: string) => ({
+      shape: atMost,
+      unfit: null,
+      formula,
+      constants: [],
+      groups: [],
+      uses: [],
+      examples: [],
+      model: 'test',
+    });
+    await kept(
+      supplier(unanswered, {
+        agreement: {
+          status: 'split',
+          runs: 2,
+          versions: [version('order == 0'), version('order == 1')],
+          differences: [{ key: 'SD-01', inputs: {}, results: ['a', 'b'] }],
+        },
+      }),
+    );
+    const [most] = (await rebaseSet(owner, TEXT, read, answered))!.definitions;
+    expect(most!.agreement).toMatchObject({
+      status: 'agreed',
+      differences: [],
+    });
+    expect(most!.agreement?.versions.map((v) => v.formula)).toEqual([
+      most!.formula,
+      most!.formula,
+    ]);
+  });
+
+  it('refuses a profile nobody has confirmed', async () => {
+    await kept(supplier(unanswered));
+    await expect(rebaseSet(owner, TEXT, read, proposed)).rejects.toThrow(
+      /confirmed/,
+    );
   });
 });

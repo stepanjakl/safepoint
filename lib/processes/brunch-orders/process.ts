@@ -54,9 +54,24 @@ const DATA = {
       hours_until_cutoff: { day: 'cutoff_day', time: 'cutoff_time' },
     },
     moments: {
-      counted: { day: 'counted_day', time: 'counted_time', kind: 'observed' },
-      cutoff: { day: 'cutoff_day', time: 'cutoff_time', kind: 'deadline' },
-      delivery: { day: 'delivery_day', time: 'delivery_time', kind: 'next' },
+      counted: {
+        day: 'counted_day',
+        time: 'counted_time',
+        kind: 'observed',
+        label: 'stock count',
+      },
+      cutoff: {
+        day: 'cutoff_day',
+        time: 'cutoff_time',
+        kind: 'deadline',
+        label: 'supplier’s cutoff',
+      },
+      delivery: {
+        day: 'delivery_day',
+        time: 'delivery_time',
+        kind: 'next',
+        label: 'delivery',
+      },
     },
   },
 } satisfies DataShape;

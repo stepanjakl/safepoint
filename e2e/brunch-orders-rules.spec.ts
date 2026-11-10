@@ -680,8 +680,8 @@ test('versions that disagree are shown as the sentences the app wrote, for a per
           [rule.id]: {
             own: null,
             versions: [
-              'The proposed order is allowed only when the cutoff is after when the data was read.',
-              'The proposed order is allowed only when the cutoff is before when the data was read.',
+              'The proposed order is allowed only when the supplier’s cutoff is after the data is read.',
+              'The proposed order is allowed only when the supplier’s cutoff is before the data is read.',
             ],
           },
         },
@@ -700,10 +700,10 @@ test('versions that disagree are shown as the sentences the app wrote, for a per
   });
   // Each version as the sentence the app wrote from it, never its formula.
   await expect(
-    versions.getByText(/the cutoff is after when the data was read/),
+    versions.getByText(/the supplier’s cutoff is after the data is read/),
   ).toBeVisible();
   await expect(
-    versions.getByText(/the cutoff is before when the data was read/),
+    versions.getByText(/the supplier’s cutoff is before the data is read/),
   ).toBeVisible();
   await expect(versions.getByText('record.hours_until_cutoff')).toHaveCount(0);
   if (process.env.CHOOSER_SHOT)

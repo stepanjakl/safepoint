@@ -221,6 +221,16 @@ describe('records held to a data profile', () => {
     expect(held.types.record.weekend_5).toBe('double');
   });
 
+  it('reports a column the process now declares as another type than the profile', () => {
+    const redeclared = {
+      ...profiled,
+      types: { ...profiled.types, ripe: { kind: 'text' as const } },
+    };
+    expect(recordsOf(capturedRead(), redeclared).problems).toEqual([
+      'The process declares the ripe column as text, but the data profile has it as yes no: confirm the profile again.',
+    ]);
+  });
+
   it('reads a whole number in a decimal column as a decimal', () => {
     const read = changedRead((tabs) =>
       setColumn(tabs, 'Products', 'regular_price', (old) =>

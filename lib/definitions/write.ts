@@ -39,7 +39,7 @@ import {
   sentenceOf,
   shapeColumn,
   shapeProblems,
-  shapeSchema,
+  modelShapeSchema,
   withoutUnused,
   type Shape,
   type ShapeContext,
@@ -143,7 +143,7 @@ const writeSchema = (definition: Definition, subject: DefinitionSubject) =>
       ),
     ...(definition.result === 'check'
       ? {
-          shape: shapeSchema
+          shape: modelShapeSchema
             .nullable()
             .describe('The rule as one shape; null only when none fits'),
           none_fits: z
@@ -294,7 +294,7 @@ function shapeInstructionsFor(setting: Setting) {
     `- flag: ${definition.consequence === 'decide' ? 'flag the record for a person when every condition holds, whatever is proposed.' : 'not for this rule: failing it stops the proposal.'}`,
     'A number is a column, an earlier definition (value), a constant, the proposed field, or the hours since a moment. A condition compares two numbers, tests a yes/no column, or puts one moment before or after another. Conditions are all joined by "and".',
     'The forms, with placeholders for names: amount "column:<column>"; a condition {left: "moment:<moment>", op: "before", right: "moment:start"}; {left: "column:<yes/no column>", op: "is_yes", right: null}; {left: "hours_since:<moment>", op: ">", right: "constant:<id>"}; a target with base "value:<id>", compare "reach", target "value:<id>", margin_pct "column:<lookup>.<column>".',
-    `scope limits the rule to some ${plural}: a group, or conditions; null when it is about all of them. if_blank says what a ${subject.record.singular} with a blank cell the rule reads comes to: skip (the rule does not apply to it) or fail.`,
+    `scope limits the rule to some ${plural}: a group, or conditions; null when it is about all of them.`,
     nothing.length
       ? `Proposing nothing (${nothing.join(', ')}) always passes a rule that stops a proposal: code adds that, so never write it.`
       : '',
@@ -504,7 +504,7 @@ async function writeOnce(
       ? {
           try_shape: tool({
             description: `Run a shape on one real ${owner.subject.record.singular}: whether it holds, with the sentence code writes from it, or what is wrong with it.`,
-            inputSchema: z.object({ shape: shapeSchema, ...tryInputs }),
+            inputSchema: z.object({ shape: modelShapeSchema, ...tryInputs }),
             execute: async ({ shape, key, inputs, constants, groups }) => {
               const written = { constants, groups };
               const context = shapeContextOf(written);

@@ -262,12 +262,20 @@ export function describe(read: KeptRead, subject: DefinitionSubject): string {
       ),
       (_, v) => (typeof v === 'bigint' ? Number(v) : v),
     );
-  const kinds = new Set(Object.values(data.types).map((type) => type.kind));
+  // Typed by the declaration, and by the data profile where there is one.
+  const typed: [string, FieldType][] = [
+    ...Object.entries(data.types),
+    ...(data.profile?.columns ?? []).flatMap(({ column, type }) =>
+      type ? [[column, type] as [string, FieldType]] : [],
+    ),
+  ];
+  const kinds = new Set(typed.map(([, type]) => type.kind));
   const typedColumns = (kind: FieldType['kind']) =>
-    Object.entries(data.types)
-      .filter(([, type]) => type.kind === kind)
-      .map(([name]) => name)
-      .join(', ');
+    [
+      ...new Set(
+        typed.filter(([, type]) => type.kind === kind).map(([name]) => name),
+      ),
+    ].join(', ');
   const lookups = records.lookups(key);
   return [
     `A formula is standard CEL, evaluated for one ${singular} at a time, with these variables:`,

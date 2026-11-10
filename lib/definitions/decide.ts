@@ -1,9 +1,29 @@
-import { dependentsOf, review, settingOf } from './checks';
+import {
+  dependentsOf,
+  differencesBetween,
+  review,
+  settingOf,
+  type Draft,
+} from './checks';
 import { recordsOf, type KeptRead } from './records';
-import { formulaOf, shapeProblems, type ShapeContext } from './shapes';
-import { ownerFor } from './profile';
-import { loadSet, putRevision, updateSet } from './store';
-import { complete, type DefinitionProcess, type DefinitionSet } from './types';
+import {
+  formulaOf,
+  sameShape,
+  shapeProblems,
+  unansweredBlanks,
+  type Shape,
+  type ShapeContext,
+} from './shapes';
+import { ownerFor, withProfile } from './profile';
+import { loadSet, putRevision, saveSet, updateSet } from './store';
+import {
+  complete,
+  type DataProfile,
+  type Definition,
+  type DefinitionProcess,
+  type DefinitionSet,
+  type WrittenVersion,
+} from './types';
 
 /*
   A person's decisions. Confirming the intent is a timestamp. Denying a
@@ -151,6 +171,12 @@ export async function accept(
       return refuse(
         'The formula kept is not the one the rule as written gives: write it again.',
       );
+    // What a blank means is the data's to say, once, not this rule's.
+    const open = unansweredBlanks(definition.shape, context);
+    if (open.length)
+      return refuse(
+        `Say what a blank cell means before accepting: ${open.map((c) => `the ${c.label}`).join(', ')}. Does a rule reading one not apply, or fail?`,
+      );
   }
   const { problems, ran } = review(
     settingOf(owner, text, set, read, definition),
@@ -192,4 +218,136 @@ export async function accept(
     ),
   }));
   return freezing(owner, accepted);
+}
+
+/*
+  Moves the rulebook under review onto a newer confirmed data profile, as
+  answering a blank or correcting a type makes one. Each check written as a
+  shape that leaves blanks to the profile is written again from its shape,
+  in every version too; every definition is reviewed again on this read.
+  What changed, or no longer passes, is accepted again, with what reads it.
+  Versions that now behave alike agree, and ones that now differ split. A
+  revision is never touched: it keeps the profile it was accepted on.
+*/
+export async function rebaseSet(
+  owner: DefinitionProcess,
+  text: string,
+  read: KeptRead,
+  profile: DataProfile,
+): Promise<DefinitionSet | null> {
+  if (!profile.confirmedAt)
+    throw new Error('Only a confirmed data profile can be drafted on.');
+  const set = await loadSet(owner, text);
+  if (!set) return null;
+  const profiled = withProfile(owner, profile);
+  const records = recordsOf(read, profiled.subject.data);
+  if (records.problems.length)
+    throw new Error(
+      `The read does not fit the data profile: ${records.problems.slice(0, 3).join(' ')}`,
+    );
+  const definitions: Definition[] = [];
+  const unapproved = new Set<string>();
+  for (const definition of set.definitions) {
+    const earlier = [...definitions];
+    const contextOf = (
+      written: Pick<Definition, 'constants' | 'groups'>,
+    ): ShapeContext => ({
+      subject: profiled.subject,
+      records,
+      read,
+      consequence: definition.consequence,
+      constants: written.constants,
+      groups: written.groups,
+      earlier,
+    });
+    // Only a shape that leaves blanks to the profile reads differently on it.
+    const rewritten = (
+      written: Pick<Definition, 'constants' | 'groups' | 'formula'> & {
+        shape?: Shape | null;
+      },
+    ) => {
+      const { shape } = written;
+      if (!shape || shape.if_blank || !written.formula) return written.formula;
+      const context = contextOf(written);
+      return shapeProblems(shape, context).length
+        ? written.formula
+        : formulaOf(shape, context);
+    };
+    const formula = rewritten(definition);
+    const versions = definition.agreement?.versions.map(
+      (v): WrittenVersion => ({ ...v, formula: rewritten(v) ?? v.formula }),
+    );
+    let next: Definition = {
+      ...definition,
+      formula,
+      ...(definition.agreement && versions
+        ? { agreement: { ...definition.agreement, versions } }
+        : {}),
+    };
+    const working = {
+      ...set,
+      profileId: profile.id,
+      definitions: [...earlier, next],
+    };
+    const setting = settingOf(profiled, text, working, read, next);
+    if (next.formula) {
+      const { problems, ran } = review(setting, {
+        formula: next.formula,
+        constants: next.constants,
+        groups: next.groups,
+        examples: next.examples,
+      });
+      next = {
+        ...next,
+        ...(ran ? { examples: ran.examples, uses: ran.uses } : {}),
+        problem: ran?.problem ?? (problems.length ? problems.join(' ') : null),
+      };
+      if (formula !== definition.formula || !ran || problems.length)
+        unapproved.add(next.id);
+    }
+    // Two writes compared again: the same shape behaves the same.
+    const agreement = next.agreement;
+    if (
+      agreement &&
+      (agreement.status === 'agreed' || agreement.status === 'split') &&
+      agreement.versions.length === 2 &&
+      agreement.versions.every((v) => v.formula)
+    ) {
+      const [a, b] = agreement.versions as [WrittenVersion, WrittenVersion];
+      const draftOf = (v: WrittenVersion): Draft => ({
+        formula: v.formula,
+        constants: v.constants,
+        groups: v.groups,
+        examples: v.examples,
+      });
+      const differences =
+        a.shape &&
+        b.shape &&
+        sameShape(
+          { ...contextOf(a), shape: a.shape },
+          { ...contextOf(b), shape: b.shape },
+        )
+          ? []
+          : differencesBetween(setting, draftOf(a), draftOf(b));
+      const status = differences.length ? 'split' : 'agreed';
+      if (status !== agreement.status) unapproved.add(next.id);
+      next = { ...next, agreement: { ...agreement, status, differences } };
+    }
+    definitions.push(next);
+  }
+  const rebased: DefinitionSet = {
+    ...set,
+    profileId: profile.id,
+    readId: read.id,
+    definitions,
+  };
+  const cleared = new Set(unapproved);
+  for (const id of unapproved)
+    for (const dependent of dependentsOf(rebased, id)) cleared.add(dependent);
+  return saveSet(owner, {
+    ...rebased,
+    definitions: definitions.map((d) =>
+      cleared.has(d.id) ? { ...d, approvedAt: null } : d,
+    ),
+  });
 }

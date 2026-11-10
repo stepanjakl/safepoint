@@ -309,6 +309,24 @@ const noColumnIn = (tabs: string[], column: string) =>
     ? `The ${tabs[0]} tab has no ${column} column`
     : `None of the ${tabs.slice(0, -1).join(', ')} and ${tabs.at(-1)} tabs has a ${column} column`;
 
+// Each column the process declares as another type than the confirmed
+// profile has it: a later change to the declaration is never overruled in
+// silence, nor applied without the profile being confirmed again.
+function declarationsChanged(data: DataShape): string[] {
+  const kind = (type: FieldType | null) =>
+    type ? type.kind.replaceAll('_', ' ') : 'not known';
+  return (data.profile?.columns ?? []).flatMap(({ column, type }) => {
+    const lookup = lookupOf(data, column);
+    const declared =
+      data.types[lookup ? column.slice(lookup.as.length + 1) : column];
+    return declared && JSON.stringify(declared) !== JSON.stringify(type)
+      ? [
+          `The process declares the ${column} column as ${kind(declared)}, but the data profile has it as ${kind(type)}: confirm the profile again.`,
+        ]
+      : [];
+  });
+}
+
 // Each column the profile lists that the read no longer has.
 function missingColumns(read: KeptRead, data: DataShape): string[] {
   const headerOf = (name: string) =>
@@ -394,7 +412,8 @@ function build(read: KeptRead, data: DataShape): Records {
   const lookupTypesSeen = lookups.map(
     (lookup) => [lookup.as, unifyColumns([...lookup.rows.values()])] as const,
   );
-  if (data.profile) problems.push(...missingColumns(read, data));
+  if (data.profile)
+    problems.push(...declarationsChanged(data), ...missingColumns(read, data));
   return {
     keys,
     types: data.profile

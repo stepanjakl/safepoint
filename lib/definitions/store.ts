@@ -40,15 +40,18 @@ import {
 export const hashOf = (text: string) =>
   createHash('sha256').update(text).digest('hex').slice(0, 12);
 
-// The exact accepted rulebook: any change to what was accepted changes it.
-export const fingerprintOf = (set: DefinitionSet) =>
-  hashOf(
+// The exact accepted rulebook: any change to what was accepted changes it,
+// and so does the data profile it reads on; one with none keeps its old id.
+export const fingerprintOf = (set: DefinitionSet) => {
+  const accepted = set.definitions
+    .filter((d) => d.approvedAt)
+    .map((d) => [d.id, d.formula, d.constants, d.groups, d.approvedAt]);
+  return hashOf(
     JSON.stringify(
-      set.definitions
-        .filter((d) => d.approvedAt)
-        .map((d) => [d.id, d.formula, d.constants, d.groups, d.approvedAt]),
+      set.profileId ? { profile: set.profileId, accepted } : accepted,
     ),
   );
+};
 
 // A data profile's id: any change to it, confirmation included, changes it.
 export const profileFingerprint = (profile: Omit<DataProfile, 'id'>) =>

@@ -61,7 +61,6 @@ const shaped = (
     when: [],
     only_for_group: null,
     only_for_when: [],
-    if_blank: 'skip',
     ...more,
   },
   none_fits: null,
@@ -508,6 +507,29 @@ describe('writing a definition more than once', () => {
     expect(kept.agreement).toMatchObject({ status: 'agreed', runs: 2 });
   });
 
+  it('cannot split two writes that differ only in what a blank means', async () => {
+    const limit = {
+      kind: 'limit',
+      at: 'most',
+      amount: 'column:max_order_units',
+    } as const;
+    const examples: [string, number, boolean][] = [
+      ['SD-01', 8, true],
+      ['SD-01', 80, false],
+    ];
+    // What a model sent before the profile said it; never read now.
+    const { kept } = await written(
+      check(shaped({ ...limit, if_blank: 'skip' }, examples)),
+      check(shaped({ ...limit, if_blank: 'fail' }, examples)),
+    );
+    expect(kept.agreement).toMatchObject({
+      status: 'agreed',
+      differences: [],
+    });
+    expect(kept.shape).not.toHaveProperty('if_blank');
+    expect(kept.agreement?.versions[1]?.shape).not.toHaveProperty('if_blank');
+  });
+
   it('gives no write another’s answer', async () => {
     const { model } = await written(
       check(answerOf(WHOLE)),
@@ -684,6 +706,28 @@ describe('writing a definition more than once', () => {
   });
 });
 
+describe('what a model fills in for a check', () => {
+  it('has no word on blank cells: the data profile says that', async () => {
+    await withFirst({
+      formula: 'record.weekend_1 + record.weekend_2',
+      examples: [example(true)],
+    });
+    const model = checking(
+      shaped({ ...AT_LEAST_TWO_WEEKENDS }, [
+        ['SD-01', 59, true],
+        ['SD-01', 58, false],
+      ]),
+    );
+    await writeDefinition(owner, text, read, 'enough', {
+      resolve: () => model,
+    });
+    const tools = JSON.stringify(model.doGenerateCalls[0]?.tools);
+    expect(tools).toContain('only_for_when');
+    expect(tools).not.toContain('if_blank');
+    expect(told(model)).not.toContain('if_blank');
+  });
+});
+
 describe('a formula that cannot run on every record', () => {
   it('is refused, naming them, however good its examples', async () => {
     await withFirst({});
@@ -710,7 +754,7 @@ describe('a formula that cannot run on every record', () => {
     );
   });
 
-  it('cannot come from a shape, whose blanks are skipped or fail as it says', async () => {
+  it('cannot come from a shape, whose blanks fail where nothing says otherwise', async () => {
     await withFirst({});
     const model = standIn(
       check(
@@ -719,7 +763,7 @@ describe('a formula that cannot run on every record', () => {
           [
             ['SD-01', 8, true],
             ['SD-01', 80, false],
-            ['AV-RR', 1000, true],
+            ['AV-RR', 1000, false],
           ],
         ),
       ),

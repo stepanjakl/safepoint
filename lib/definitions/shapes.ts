@@ -25,7 +25,7 @@ import type { Definition, DefinitionSet } from './types';
   and its columns; the words come from the process's declaration.
 */
 
-export { shapeSchema, type Shape } from './shape-schema';
+export { modelShapeSchema, type Shape } from './shape-schema';
 
 // A shape as code reads it, once its references are resolved.
 export type Operand =
@@ -62,7 +62,8 @@ export type Rule = {
     | { only: 'group'; group: string }
     | { only: 'when'; when: Condition[] }
     | null;
-  if_blank: 'skip' | 'fail';
+  // Only on a shape stored before blanks were the data profile's to say.
+  if_blank?: 'skip' | 'fail';
 };
 
 export type ShapeContext = {
@@ -286,17 +287,101 @@ function conditionFormula(c: Condition, context: ShapeContext): string {
 const all = (parts: string[]) =>
   parts.length === 1 ? parts[0]! : parts.map((p) => `(${p})`).join(' && ');
 
-// What must be present on a record for the rule to be worked out at all.
-function presentFormula(shape: Rule, context: ShapeContext): string[] {
+// ---- Blank cells ------------------------------------------------------------
+
+type Blank = 'skip' | 'fail';
+
+// The profile's entry for a column a shape names, where the data has one.
+const profiled = (column: string, { subject }: ShapeContext) =>
+  subject.data.profile?.columns.find((c) => c.column === column);
+
+// What a blank cell in a column means for a rule: the profile's answer, and
+// fail where there is none, so a rule never holds on what is not there.
+const blankIn = (column: string, context: ShapeContext): Blank =>
+  profiled(column, context)?.blank === 'skip' ? 'skip' : 'fail';
+
+// The columns a moment is read from; start and read are never blank.
+const momentColumns = (name: string, { subject }: ShapeContext) => {
+  const moment = subject.data.timing?.moments?.[name];
+  return moment ? [moment.day, moment.time] : [];
+};
+
+// A moment is skipped only where every column it is read from says so.
+const blankAt = (name: string, context: ShapeContext): Blank =>
+  momentColumns(name, context).every((c) => blankIn(c, context) === 'skip')
+    ? 'skip'
+    : 'fail';
+
+// What must be present on a record for the rule to be worked out at all,
+// and what its absence means.
+type Present = { formula: string; blank: Blank };
+
+function presentParts(shape: Rule, context: ShapeContext): Present[] {
+  const has = (column: string) =>
+    `has(${columnAt(column, context)?.path ?? `record.${column}`})`;
+  const moments = [...new Set(momentsOf(shape))];
+  const { if_blank } = shape;
+  // As written before the profile said it, character for character: an
+  // accepted formula must be the one its shape gives.
+  if (if_blank)
+    return [
+      ...columnsOf(shape).map(has),
+      ...moments
+        .filter((m) => m !== READ)
+        .map((m) => `has(record.${momentColumn(m)})`),
+    ].map((formula) => ({ formula, blank: if_blank }));
   return [
-    ...columnsOf(shape).map(
-      (column) =>
-        `has(${columnAt(column, context)?.path ?? `record.${column}`})`,
-    ),
-    ...[...new Set(momentsOf(shape))]
-      .filter((m) => m !== READ)
-      .map((m) => `has(record.${momentColumn(m)})`),
+    ...columnsOf(shape).map((column) => ({
+      formula: has(column),
+      blank: blankIn(column, context),
+    })),
+    ...moments
+      .filter((m) => m !== READ && m !== START)
+      .map((m) => ({
+        formula: `has(record.${momentColumn(m)})`,
+        blank: blankAt(m, context),
+      })),
   ];
+}
+
+const presentWhere = (parts: Present[], blank: Blank) =>
+  parts.filter((part) => part.blank === blank).map((part) => part.formula);
+
+/*
+  The columns a shape reads whose blanks matter and nobody has said what they
+  mean: the profile saw a blank in one, or this read has one, and its answer
+  is null. Until answered they fail; Accept refuses the rule meanwhile. Never
+  a problem for a model, whose shape cannot answer it. None without a
+  profile, which has nowhere to keep an answer, nor on a shape that says its
+  own.
+*/
+export function unansweredBlanks(
+  shape: Shape,
+  context: ShapeContext,
+): { column: string; label: string }[] {
+  const { rule } = ruleOf(shape, context);
+  if (!rule || rule.if_blank || !context.subject.data.profile) return [];
+  const columns = [
+    ...columnsOf(rule),
+    ...new Set(momentsOf(rule).flatMap((m) => momentColumns(m, context))),
+  ];
+  return [...new Set(columns)].flatMap((column) => {
+    const entry = profiled(column, context);
+    const seen = entry?.blanksSeen || blankHere(column, context);
+    return seen && !entry?.blank
+      ? [{ column, label: entry?.label ?? columnWords(column) }]
+      : [];
+  });
+}
+
+// Whether any record of this read has the column blank.
+function blankHere(column: string, { records }: ShapeContext) {
+  const [first, second] = column.split('.');
+  return records.keys.some((key) => {
+    const row =
+      second !== undefined ? records.lookups(key)[first!] : records.record(key);
+    return row?.[second ?? first!] === undefined;
+  });
 }
 
 // The value that proposes nothing, where the process declares one.
@@ -330,31 +415,36 @@ function ruleFormula(shape: Rule, context: ShapeContext): string {
                   : n(body.target)
               }`
             : `!(${all(body.flag_when.map((c) => conditionFormula(c, context)))})`;
-  const present = presentFormula(shape, context);
+  const parts = presentParts(shape, context);
+  const skipped = presentWhere(parts, 'skip');
+  const required = presentWhere(parts, 'fail');
   const guards = [
     ...(scope?.only === 'group' ? [`!(key in groups.${scope.group})`] : []),
     ...(scope?.only === 'when'
       ? [`!(${all(scope.when.map((c) => conditionFormula(c, context)))})`]
       : []),
-    ...(present.length && shape.if_blank === 'skip'
-      ? [`!(${all(present)})`]
-      : []),
+    ...(skipped.length ? [`!(${all(skipped)})`] : []),
   ];
   const none = noneOf(shape, context.subject);
   const nothing =
     context.consequence === 'block' && field && none !== undefined
       ? [`${field} == ${none}`]
       : [];
-  const checked =
-    present.length && shape.if_blank === 'fail'
-      ? `${all(present)} && (${rule})`
-      : rule;
+  const checked = required.length ? `${all(required)} && (${rule})` : rule;
   return [...guards, ...nothing, `(${checked})`].join(' || ');
 }
 
 // ---- Its sentence -----------------------------------------------------------
 
 const words = (name: string) => name.replaceAll('_', ' ');
+const clock = (minutes: number) =>
+  `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+
+// A column as the header words it, the lookup's name first.
+const columnWords = (column: string) => {
+  const [first, second] = column.split('.');
+  return second ? `${words(first!)} ${words(second)}` : words(first!);
+};
 const lowerFirst = (text: string) =>
   /^[A-Z][a-z]/.test(text) ? text[0]!.toLowerCase() + text.slice(1) : text;
 const upperFirst = (text: string) => text[0]!.toUpperCase() + text.slice(1);
@@ -370,27 +460,25 @@ function when(instant: number, timeZone: string) {
   }).format(new Date(instant));
 }
 
-function momentWords(name: string, context: ShapeContext) {
-  const { subject, read, records } = context;
+/*
+  A moment as a rule says it, the same on every read: a rule a person
+  approves never carries one read's clock. The start is the opening the
+  process declares; what a read made of each is an example's working.
+*/
+function momentWords(name: string, { subject }: ShapeContext) {
   const timing = subject.data.timing;
-  const readAt = Date.parse(read.readAt);
-  if (name === READ)
-    return `when the data was read (${timing ? when(readAt, timing.timeZone) : read.readAt})`;
-  if (name === START) {
-    const hours = records.record(records.keys[0] ?? '')[momentColumn(START)];
-    return typeof hours === 'number' && timing
-      ? `the start (${when(readAt + hours * 3_600_000, timing.timeZone)})`
+  if (name === READ) return 'when the data is read';
+  if (name === START)
+    return timing
+      ? `the start (${timing.opens.day} ${clock(timing.opens.minutes)})`
       : 'the start';
-  }
-  return `the ${words(name)}`;
+  return `the ${timing?.moments?.[name]?.label ?? words(name)}`;
 }
 
 function operandWords(o: Operand, context: ShapeContext): string {
   switch (o.kind) {
-    case 'column': {
-      const [first, second] = o.column.split('.');
-      return `the ${second ? `${words(first!)} ${words(second)}` : words(first!)}`;
-    }
+    case 'column':
+      return `the ${profiled(o.column, context)?.label ?? columnWords(o.column)}`;
     case 'value': {
       const d = context.earlier.find((one) => one.id === o.id);
       return `the ${d ? lowerFirst(d.name) : words(o.id)}`;
@@ -404,8 +492,7 @@ function operandWords(o: Operand, context: ShapeContext): string {
       return `the proposed ${f?.label ?? words(o.field)}`;
     }
     case 'hours_since':
-      // Counted up to the read, so the sentence says when that was.
-      return `the hours since ${momentWords(o.moment, context)}, as of ${momentWords(READ, context)}`;
+      return `the hours from ${momentWords(o.moment, context)} to ${momentWords(READ, context)}`;
   }
 }
 
@@ -423,6 +510,11 @@ function conditionWords(c: Condition, context: ShapeContext): string {
     return `${operandWords(c.left, context)} ${OP_WORDS[c.op]} ${operandWords(c.right, context)}`;
   if (c.test === 'yes_no')
     return `${operandWords({ kind: 'column', column: c.column }, context)} is ${c.is ? 'yes' : 'no'}`;
+  // The read is said as an event, never as a time it happened to be.
+  if (c.moment === READ)
+    return `the data is read ${c.is} ${momentWords(c.than, context)}`;
+  if (c.than === READ)
+    return `${momentWords(c.moment, context)} is ${c.is} the data is read`;
   return `${momentWords(c.moment, context)} is ${c.is} ${momentWords(c.than, context)}`;
 }
 
@@ -464,23 +556,38 @@ function ruleSentence(shape: Rule, context: ShapeContext): string {
   const none = noneOf(shape, subject);
   if (consequence === 'block' && field && none !== undefined)
     tail.push(`Proposing ${none} ${field.unit} is always allowed.`);
-  // Said only where this read has such a record, so it is never noise.
-  const blankable = [
-    ...columnsOf(shape).filter((column) =>
-      records.keys.some((key) => {
-        const [first, second] = column.split('.');
-        const row =
-          second !== undefined
-            ? records.lookups(key)[first!]
-            : records.record(key);
-        return row?.[second ?? first!] === undefined;
-      }),
-    ),
+  // Said only where this read has such a record, so it is never noise; each
+  // meaning once, with the columns that share it.
+  const blankable: { words: string; blank: Blank }[] = [
+    ...columnsOf(shape)
+      .filter((column) => blankHere(column, context))
+      .map((column) => ({
+        words: n({ kind: 'column', column }),
+        blank: shape.if_blank ?? blankIn(column, context),
+      })),
+    ...(shape.if_blank
+      ? []
+      : [...new Set(momentsOf(shape))]
+          .filter(
+            (m) =>
+              m !== READ &&
+              m !== START &&
+              records.keys.some(
+                (key) => records.record(key)[momentColumn(m)] === undefined,
+              ),
+          )
+          .map((m) => ({
+            words: momentWords(m, context),
+            blank: blankAt(m, context),
+          }))),
   ];
-  if (blankable.length)
-    tail.push(
-      `Where ${blankable.map((c) => n({ kind: 'column', column: c })).join(' or ')} is blank, ${shape.if_blank === 'skip' ? 'it does not apply' : 'it fails'}.`,
-    );
+  for (const blank of ['skip', 'fail'] as const) {
+    const named = blankable.filter((b) => b.blank === blank);
+    if (named.length)
+      tail.push(
+        `Where ${named.map((b) => b.words).join(' or ')} is blank, ${blank === 'skip' ? 'it does not apply' : 'it fails'}.`,
+      );
+  }
   const sentence = prefix ? `${prefix}${rule}` : upperFirst(rule);
   return [sentence, ...tail].join(' ');
 }
@@ -726,7 +833,11 @@ function ruleOf(
   return {
     rule:
       body && !problems.length
-        ? { body, scope, if_blank: shape.if_blank }
+        ? {
+            body,
+            scope,
+            ...(shape.if_blank ? { if_blank: shape.if_blank } : {}),
+          }
         : null,
     problems: [...new Set(problems)],
   };
