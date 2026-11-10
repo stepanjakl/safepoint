@@ -10,6 +10,7 @@
 
 import type { DayTime } from '@/lib/sheets/cycle';
 import type { FieldType } from '@/lib/sheets/field-types';
+import type { SourceKind } from '@/lib/sources/model';
 
 import type { ProcessSchedule } from './schedule';
 import type { SystemLink } from './system-links';
@@ -253,8 +254,15 @@ export type DefinitionSubject = {
   which tables a record reaches through one of its columns, and the columns
   read as a type other than as written. A formula reads `key`, `record` and
   each lookup by its `as`.
+
+  `tabs` and `tab` below are historical names, kept because stored files and
+  every process declaration use them: each means one resource of the source,
+  whatever its kind calls it (SOURCE_KINDS in lib/sources/model.ts).
 */
 export type DataShape = {
+  // The kind of source the data is read from, which says what its resources
+  // are called and how a value is addressed. Absent: a sheet, as before.
+  source?: SourceKind;
   // The first tab lists the records; `name` is the column that says what each is.
   records: { tabs: string[]; key: string; name: string };
   // A table a record reaches: the row of `tab` whose `key` column holds the

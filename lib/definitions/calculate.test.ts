@@ -188,6 +188,9 @@ describe('the model cross-checking', () => {
     // together, never the formulas.
     expect(told(model)).toContain('Order enough');
     expect(told(model)).toContain('matched by the sku column');
+    expect(told(model)).toContain(
+      'The data, by tab, a header row then one row per line:',
+    );
     expect(told(model)).not.toContain('ceil(');
     await keepCrossCheck(owner, check);
     expect(await keptCrossCheck(owner, 'test', check.fingerprint)).toEqual(

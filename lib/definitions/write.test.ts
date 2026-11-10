@@ -128,6 +128,7 @@ describe('drafting', () => {
   it('shows the model what the data already holds when finding', async () => {
     const { finder } = await withFirst({});
     expect(told(finder)).toContain('Sales: sku, weekend_1, weekend_2');
+    expect(told(finder)).toContain("The data's columns, by tab:");
     expect(told(finder)).toContain("one step of another number's working");
   });
 

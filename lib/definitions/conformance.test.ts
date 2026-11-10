@@ -37,6 +37,8 @@ import {
   SHAPES,
   STALE_SWEEP_SKIPPED,
   START_HOURS,
+  TABLE_DOCKS,
+  asTables,
   TEXT,
   UNTIMED_DOCKS,
   VERDICTS,
@@ -59,12 +61,15 @@ import {
   setColumnType,
   withProfile,
 } from './profile';
-import { checkProposal, propose } from './propose';
+import { blockFor } from './apply';
+import { checkProposal, newActivity, propose } from './propose';
 import {
   fitting,
   momentColumn,
   namesOf,
   recordsOf,
+  sourceOf,
+  type DataTab,
   type KeptRead,
 } from './records';
 import { revisionChanges } from './revision-changes';
@@ -1068,6 +1073,396 @@ describe('proposing and writing', () => {
 });
 
 /*
+  The same process on a database (TABLE_DOCKS): tables, not tabs; a value by
+  its row's key and its column's name, never A1. Every word and address
+  below is written by hand, and so are the sheet's, which must not change.
+*/
+describe('a source that is not a sheet', () => {
+  const tables = TABLE_DOCKS.subject.data;
+  const tableRead = (tabs: DataTab[] = docksTabs()) =>
+    docksRead(asTables(tabs));
+  const problemsOf = (tabs: DataTab[], data = tables) =>
+    recordsOf(tableRead(tabs), data).problems;
+  const confirmedTables = () =>
+    withProfile(
+      TABLE_DOCKS,
+      confirmProfile(profileOf(tableRead(), tables), FIRST_AT),
+    ).subject.data;
+
+  it('addresses a sheet as it always has, and a table by key and column name', () => {
+    const sheet = sourceOf(DOCKS.subject.data);
+    expect([sheet.noun, sheet.resource]).toEqual([
+      'sheet',
+      { singular: 'tab', plural: 'tabs' },
+    ]);
+    const at = (index: number, row: number, key?: string) => ({
+      resource: 'Plan',
+      column: { index, header: 'fare' },
+      row: { index: row, key },
+    });
+    expect(sheet.address.value(at(1, 2, 'D-01'))).toBe('Plan!B3');
+    expect(sheet.address.value(at(27, 9))).toBe('Plan!AB10');
+    expect(sheet.address.block({ top: 1, left: 1, bottom: 11, right: 2 })).toBe(
+      'B2:C12',
+    );
+    expect(sheet.address.blockStart('AB10:AC12')).toEqual({
+      top: 9,
+      left: 27,
+    });
+    expect(sheet.address.blockStart('rows 1-2, columns 1-2')).toBeNull();
+
+    const table = sourceOf(tables);
+    expect([table.noun, table.resource]).toEqual([
+      'database',
+      { singular: 'table', plural: 'tables' },
+    ]);
+    expect(table.address.value({ ...at(2, 4, 'D-04'), resource: 'plan' })).toBe(
+      'plan[D-04].fare',
+    );
+    // A row no key names alone, by the number the data shows it at.
+    expect(table.address.value({ ...at(2, 4), resource: 'plan' })).toBe(
+      'plan[row 5].fare',
+    );
+    expect(table.address.block({ top: 1, left: 1, bottom: 11, right: 2 })).toBe(
+      'rows 2-12, columns 2-3',
+    );
+    expect(table.address.blockStart('rows 2-12, columns 2-3')).toEqual({
+      top: 1,
+      left: 1,
+    });
+    expect(table.address.blockStart('B2:C12')).toBeNull();
+  });
+
+  it('reads the same records from tables, and says what is wrong in a database’s words', () => {
+    const records = fitting(tableRead(), tables);
+    expect(records.keys).toEqual(KEYS);
+    expect(records.record('D-01')).toEqual(
+      recordsOf(read, DOCKS.subject.data).record('D-01'),
+    );
+    expect(records.lookups('D-01')).toEqual(
+      recordsOf(read, DOCKS.subject.data).lookups('D-01'),
+    );
+
+    const withoutZones = docksTabs().filter((tab) => tab.name !== 'Zones');
+    expect(problemsOf(withoutZones)).toEqual([
+      'The zones table is missing or empty.',
+    ]);
+    expect(() => fitting(tableRead(withoutZones), tables)).toThrow(
+      'The read does not fit what this process reads: The zones table is missing or empty. Fix the database and read it again.',
+    );
+    expect(problemsOf(duplicateKeyTabs())).toEqual([
+      'The usage table lists dock_ref D-03 twice (usage[row 5].dock_ref); each record needs one row.',
+    ]);
+    expect(problemsOf(brokenLookupTabs())).toEqual([
+      'D-07\'s zone_code is "Z9", which the zones table does not list.',
+    ]);
+    const stray = docksTabs();
+    stray[1]!.values.push(['D-99', 1.5, 0.5, 2]);
+    expect(problemsOf(stray)).toEqual([
+      'The usage table has dock_ref D-99, which the docks table does not list.',
+    ]);
+  });
+
+  it('holds tables to a profile, naming a cell by its key and column', () => {
+    const held = confirmedTables();
+    expect(problemsOf(decimalTabs(), held)).toEqual([
+      'usage[D-05].bikes_present (bikes_present) reads "15.5": Expected a whole number.',
+    ]);
+    const lost = docksTabs();
+    for (const row of lost[0]!.values) row.splice(4, 1);
+    for (const row of lost[3]!.values) row.splice(2, 1);
+    expect(problemsOf(lost, held)).toEqual([
+      'None of the docks, usage and visits tables has a elevation_m column, which the data profile lists.',
+      'The zones table has no surge_pct column, which the data profile lists.',
+    ]);
+  });
+
+  // Accepted on the sheet, then proposed for on the database: the same rules
+  // and profile, read from tables.
+  async function proposedOnTables() {
+    const done = await accepted();
+    const owner = withProfile(TABLE_DOCKS, done.second);
+    const answered = (...cited: object[]) => ({
+      records: KEYS.map((key) =>
+        key === 'D-01'
+          ? {
+              key,
+              action: 'set',
+              values: { bikes: 4, fare: 260 },
+              reason: 'Worked out.',
+              cited,
+              unsure: null,
+            }
+          : {
+              key,
+              action: 'leave',
+              values: null,
+              reason: 'Nothing to change.',
+              cited: [],
+              unsure: null,
+            },
+      ),
+    });
+    const model = standIn(
+      call(
+        'submit_proposals',
+        answered(
+          { table: 'stations', row: 2, column: 'capacity' },
+          { table: 'docks', row: 2, column: 'slots' },
+          { table: 'docks', row: 40, column: 'capacity' },
+          // D-01 has no notes.
+          { table: 'docks', row: 2, column: 'notes' },
+        ),
+      ),
+      call(
+        'submit_proposals',
+        answered(
+          { table: 'usage', row: 2, column: 'bikes_present' },
+          { table: 'zones', row: 2, column: 'base_fare' },
+          { table: 'crews', row: 2, column: 'van_capacity' },
+        ),
+      ),
+    );
+    const activity = newActivity();
+    const onTables = tableRead();
+    const proposal = await propose(
+      owner,
+      done.set,
+      onTables,
+      onTables.id,
+      TEXT,
+      { resolve: () => model, watch: { activity, changed: () => undefined } },
+    );
+    return { ...done, owner, model, activity, proposal, onTables };
+  }
+
+  it('asks for citations by table, and keeps them by key and column name', async () => {
+    const { model, activity, proposal } = await proposedOnTables();
+    expect(told(model)).toContain(
+      'Cite the cells you rely on by table, the row number shown, and the column name.',
+    );
+    expect(told(model)).toContain(
+      'The data, by table, each row numbered (row 1 is the header):',
+    );
+    expect(told(model)).not.toMatch(/\b(tabs?|sheets?|spreadsheets?)\b/i);
+    const submit = model.doStreamCalls[0]!.tools?.find(
+      (t) => t.name === 'submit_proposals',
+    ) as unknown as {
+      inputSchema: {
+        properties: {
+          records: {
+            items: {
+              properties: {
+                cited: { items: { properties: Record<string, unknown> } };
+              };
+            };
+          };
+        };
+      };
+    };
+    expect(
+      Object.keys(
+        submit.inputSchema.properties.records.items.properties.cited.items
+          .properties,
+      ),
+    ).toEqual(['table', 'row', 'column']);
+    // Each kind of bad citation, as kept and as the model is told it.
+    expect(
+      activity.events.find((event) => event.kind === 'answered'),
+    ).toMatchObject({
+      problems: [
+        { kind: 'no-tab', key: 'D-01', tab: 'stations' },
+        { kind: 'no-column', key: 'D-01', tab: 'docks', column: 'slots' },
+        { kind: 'no-row', key: 'D-01', tab: 'docks', row: 40 },
+        { kind: 'blank', key: 'D-01', cell: 'docks[D-01].notes' },
+      ],
+    });
+    const toldAgain = told(model, 1);
+    for (const sentence of [
+      'D-01 cites stations is not a table of the data',
+      'D-01 cites docks has no slots column',
+      'D-01 cites docks has no data row 40',
+      'D-01 cites docks[D-01].notes is blank',
+    ])
+      expect(toldAgain).toContain(sentence);
+    expect(proposal.records['D-01']).toMatchObject({
+      cited: [
+        'usage[D-01].bikes_present',
+        'zones[Z1].base_fare',
+        'crews[Alpha].van_capacity',
+      ],
+      verdict: 'ready',
+    });
+  });
+
+  // A table in memory, written by the database's own block addresses.
+  function memoryTable(now: KeptRead) {
+    const table: OutputSheet & { grid: unknown[][] | null; ranges: string[] } =
+      {
+        grid: null,
+        ranges: [],
+        readNow: async () => now,
+        readTab: async () => table.grid,
+        addTab: async () => {
+          table.grid = [];
+        },
+        writeRange: async (_, range, values) => {
+          table.ranges.push(range);
+          const [, top, left] = /^rows (\d+)-\d+, columns (\d+)-\d+$/.exec(
+            range,
+          )!;
+          const grid = (table.grid ??= []);
+          values.forEach((row, r) => {
+            const line = (grid[Number(top) - 1 + r] ??= []);
+            row.forEach((cell, c) => {
+              line[Number(left) - 1 + c] = cell;
+            });
+          });
+        },
+      };
+    return table;
+  }
+
+  it('writes to a table by its own addresses, reads the block back, and undoes it', async () => {
+    const {
+      owner,
+      set: rulebook,
+      proposal,
+      onTables,
+    } = await proposedOnTables();
+    const at = '2026-11-05T02:00:00.000Z';
+    const decisions: Record<string, DecisionMade> = Object.fromEntries(
+      KEYS.map((key) => [key, { kind: 'approve', at }]),
+    );
+    const table = memoryTable(onTables);
+    const prepared = await prepareWrite(
+      owner,
+      rulebook,
+      onTables,
+      proposal,
+      decisions,
+      table,
+    );
+    expect(prepared.problems).toEqual([]);
+    expect(prepared.block).toMatchObject({
+      range: 'rows 1-2, columns 1-3',
+      after: [
+        ['dock_ref', 'bikes', 'fare'],
+        ['D-01', 4, 260],
+      ],
+    });
+    expect(prepared.changes).toEqual([
+      {
+        key: 'D-01',
+        field: 'bikes',
+        cell: 'plan[D-01].bikes',
+        before: null,
+        after: 4,
+      },
+      {
+        key: 'D-01',
+        field: 'fare',
+        cell: 'plan[D-01].fare',
+        before: null,
+        after: 260,
+      },
+    ]);
+    const fingerprint = fingerprintOf(rulebook);
+    const write = () =>
+      applyDecisions(
+        owner,
+        rulebook,
+        onTables,
+        fingerprint,
+        proposal,
+        decisions,
+        [],
+        table,
+      );
+    // Read back at the block's own address: verified.
+    expect(await write()).toMatchObject({
+      kind: 'written',
+      application: {
+        status: 'verified',
+        tab: 'plan',
+        range: 'rows 1-2, columns 1-3',
+      },
+    });
+    expect(table.grid).toEqual([
+      ['dock_ref', 'bikes', 'fare'],
+      ['D-01', 4, 260],
+    ]);
+    expect(await write()).toMatchObject({
+      kind: 'refused',
+      prepared: {
+        problems: [
+          'This run has already written to the plan table. Undo that first to write again.',
+        ],
+      },
+    });
+    table.grid![1]![1] = 5;
+    expect(
+      await undoApplication(owner, onTables.id, fingerprint, table),
+    ).toEqual({
+      kind: 'refused',
+      problem:
+        "The plan table has changed since this was written, so undoing it could overwrite someone's work. Change it by hand.",
+    });
+    table.grid![1]![1] = 4;
+    expect(
+      await undoApplication(owner, onTables.id, fingerprint, table),
+    ).toMatchObject({ kind: 'undone' });
+    expect(table.grid).toEqual([
+      ['', '', ''],
+      ['', '', ''],
+    ]);
+    expect(table.ranges).toEqual([
+      'rows 1-2, columns 1-3',
+      'rows 1-2, columns 1-3',
+    ]);
+
+    // Data changed since the run read it, in the database's words.
+    const changed = asTables(docksTabs());
+    changed[1]!.values[1]![3] = 10;
+    const later = await prepareWrite(
+      owner,
+      rulebook,
+      onTables,
+      proposal,
+      decisions,
+      memoryTable(docksRead(changed)),
+    );
+    expect(later.problems).toEqual([
+      'The database has changed since this run read it (usage). Start a new run to propose from what it holds now.',
+    ]);
+  });
+
+  it('refuses a table with no key column, and names a key listed twice by its row', () => {
+    const writes = [{ key: 'D-01', values: { bikes: 4, fare: 260 } }];
+    expect(blockFor([['ref']], TABLE_DOCKS, writes).problems).toEqual([
+      'The plan table has no dock_ref column.',
+    ]);
+    const twice = blockFor(
+      [
+        ['dock_ref', 'bikes', 'fare'],
+        ['D-01', 1, 100],
+        ['D-01', 2, 200],
+      ],
+      TABLE_DOCKS,
+      writes,
+    );
+    expect(twice.problems).toEqual([
+      'The plan table lists D-01 2 times; each needs one row.',
+    ]);
+    expect(twice.changes.map((change) => change.cell)).toEqual([
+      'plan[row 2].bikes',
+      'plan[row 2].fare',
+    ]);
+    expect(twice.block?.range).toBe('rows 2-2, columns 2-3');
+  });
+});
+
+/*
   Limits found: what the engine cannot express, recorded rather than
   designed here. Each says exactly what is unsupported.
 */
@@ -1100,9 +1495,6 @@ describe('limits', () => {
   // A constant is quoted in the instructions' own unit: "30 days" states
   // 30, never the 720 hours hours_since compares with.
   it.todo('a duration stated in days or weeks, compared with hours since');
-  it.todo(
-    'a source that is not sheet-shaped: tabs of rows with a header, and cells cited as <tab>!A1 (planned)',
-  );
   it.todo(
     'one record over several rows of a tab: a key listed twice is a read problem',
   );

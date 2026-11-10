@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { ask, DRAFT_MODELS, type Resolve } from './calls';
 import { columnsOf, plain, proposalWords } from './prompts';
-import { fitting, type KeptRead } from './records';
+import { fitting, sourceOf, type KeptRead } from './records';
 import { hashOf, saveSet } from './store';
 import type { DefinitionProcess, DefinitionSet } from './types';
 import { fallbackChain, type DraftingModel } from '@/lib/models';
@@ -169,7 +169,7 @@ export async function findDefinitions(
       [
         `Instructions, sentence by sentence:\n${sentences.map((sentence, i) => `${i + 1}. ${sentence}`).join('\n')}`,
         read
-          ? `The data's columns, by tab:\n${columnsOf(read, subject.data)}`
+          ? `The data's columns, by ${sourceOf(subject.data).resource.singular}:\n${columnsOf(read, subject.data)}`
           : '',
         problems.length
           ? `Your last answer did not account for the instructions. Answer again in full, fixing:\n${problems.map((p) => `- ${p}`).join('\n')}`

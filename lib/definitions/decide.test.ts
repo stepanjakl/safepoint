@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 
-import { capturedRead } from './captured.fixture';
+import { capturedRead, capturedTabs } from './captured.fixture';
 import { accept, choose, confirmIntent, deny, rebaseSet } from './decide';
 import {
   confirmProfile,
@@ -78,6 +78,16 @@ describe('accepting a definition', () => {
     const done = await accepted('two_weekends', async () => null);
     expect(done.approvedAt).toBeNull();
     expect(done.problem).toMatch(/no longer kept/);
+  });
+
+  it('refuses when the read its examples ran on no longer fits, in the sheet’s words', async () => {
+    await keep([twoWeekends]);
+    const tabs = capturedTabs().filter((tab) => tab.name !== 'Sales');
+    const done = await accepted('two_weekends', async () => capturedRead(tabs));
+    expect(done.approvedAt).toBeNull();
+    expect(done.problem).toBe(
+      'The read its examples were run on does not fit what this process reads: fix the sheet, read it again, and write it again.',
+    );
   });
 
   it('keeps what a person says when they deny one', async () => {

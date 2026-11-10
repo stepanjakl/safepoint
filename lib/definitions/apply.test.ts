@@ -168,9 +168,9 @@ describe('the block a write touches', () => {
   });
 
   it('refuses a tab with no key column, and a key listed twice', () => {
-    expect(blockFor([['product']], owner, writes).problems[0]).toContain(
-      'no sku column',
-    );
+    expect(blockFor([['product']], owner, writes).problems).toEqual([
+      'The Orders tab has no sku column.',
+    ]);
     expect(
       blockFor(
         [
@@ -180,8 +180,8 @@ describe('the block a write touches', () => {
         ],
         owner,
         writes,
-      ).problems[0],
-    ).toContain('2 times');
+      ).problems,
+    ).toEqual(['The Orders tab lists EG-06 2 times; each needs one row.']);
   });
 });
 
@@ -246,9 +246,9 @@ describe('writing a decided proposal', () => {
     tabs.find((t) => t.name === 'Stock')!.values[1]![1] = 5;
     sheet = memorySheet({ ...read(), tabs });
     const outcome = await write(sheet);
-    expect(
-      outcome.kind === 'refused' && outcome.prepared.problems[0],
-    ).toContain('changed since this run read it (Stock)');
+    expect(outcome.kind === 'refused' && outcome.prepared.problems[0]).toBe(
+      'The sheet has changed since this run read it (Stock). Start a new run to propose from what it holds now.',
+    );
     expect(sheet.writes).toEqual([]);
   });
 
@@ -394,8 +394,8 @@ describe('writing a decided proposal', () => {
   it('will not write twice without an undo', async () => {
     await write(sheet);
     const again = await write(sheet);
-    expect(again.kind === 'refused' && again.prepared.problems[0]).toContain(
-      'already written',
+    expect(again.kind === 'refused' && again.prepared.problems[0]).toBe(
+      'This run has already written to the Orders tab. Undo that first to write again.',
     );
     expect(sheet.writes).toHaveLength(1);
   });
@@ -468,10 +468,20 @@ describe('undoing a write', () => {
     await write(sheet);
     sheet.grid![1]![1] = 36;
     const outcome = await undo(sheet);
-    expect(outcome.kind === 'refused' && outcome.problem).toContain(
-      'has changed since this was written',
+    expect(outcome.kind === 'refused' && outcome.problem).toBe(
+      "The Orders tab has changed since this was written, so undoing it could overwrite someone's work. Change it by hand.",
     );
     expect(sheet.grid![1]![1]).toBe(36);
+  });
+
+  it('says when the undo did not read back as before', async () => {
+    const sheet = memorySheet(read());
+    await write(sheet);
+    // The undo's write does not land.
+    const outcome = await undo({ ...sheet, writeRange: async () => {} });
+    expect(outcome.kind === 'refused' && outcome.problem).toBe(
+      'The Orders tab did not read back as it was before the write. Check it by hand.',
+    );
   });
 
   it('has nothing to undo before a write, or twice', async () => {

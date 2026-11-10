@@ -70,6 +70,12 @@ describe('what a formula reads', () => {
     );
   });
 
+  it('names where a record comes from in the sheet’s words', () => {
+    expect(describeVariables(read, SUBJECT)).toContain(
+      "- record: the product's row from the Products, Stock, Sales, Deliveries tabs, joined by its key. For ",
+    );
+  });
+
   it('leaves a blank cell out, so has() says whether it was filled in', () => {
     // Only the bakery has a supplier maximum.
     const check =

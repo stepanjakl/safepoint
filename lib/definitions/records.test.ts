@@ -51,9 +51,8 @@ describe('records from a read', () => {
       tab(tabs, 'Stock').push(['ZZ-1', 1, 0, 0]);
     });
     expect(found).toEqual([
-      expect.stringMatching(
-        /^The Products tab lists sku SD-01 twice \(Products!A\d+\)/,
-      ),
+      // Word for word: the source's words and address, a sheet's.
+      'The Products tab lists sku SD-01 twice (Products!A13); each record needs one row.',
       'The Stock tab has sku ZZ-1, which the Products tab does not list.',
     ]);
   });
@@ -85,7 +84,9 @@ describe('records from a read', () => {
         ),
         data,
       ),
-    ).toThrow(/does not fit what this process reads: SD-01's category/);
+    ).toThrow(
+      'The read does not fit what this process reads: SD-01\'s category is "bread", which the Parameters tab does not list. Fix the sheet and read it again.',
+    );
   });
 
   it('read a column of whole numbers and decimals as decimals throughout', () => {

@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
+import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -146,6 +147,89 @@ describe('the engine’s sources', () => {
     '%s names nothing of the Brunch process',
     (_, text) => {
       expect(leaksIn(text, words)).toEqual([]);
+    },
+  );
+});
+
+/*
+  Nor does the engine assume its source is a sheet: no string or template a
+  person or a model could read says tab, sheet or spreadsheet, or holds a
+  cell address in A1 notation. What a source calls its parts and how it
+  addresses a value come from its kind (`sourceOf`). Comments are not read,
+  so the historical field names can be explained where they are declared.
+*/
+const SHEET_WORDS = /\b(tabs?|sheets?|spreadsheets?)\b/i;
+const A1 =
+  /(?<![\w-])[A-Z]{1,3}[1-9]\d*(?::[A-Z]{1,3}[1-9]\d*)?(?![\w-])|![A-Z]{1,3}[1-9]/;
+
+// Strings that say one of these words and are never read by a person or a
+// model. Kept short: each one is a place the test is blind.
+const SHEET_ALLOWED: { text: RegExp; why: string }[] = [
+  {
+    text: /^@\/lib\/sheets\//,
+    why: 'a module path: where field types and the week are worked out',
+  },
+  {
+    text: /^no-tab$/,
+    why: 'a kind of answer problem, kept in progress files and read by lib/process/model-run.ts; it means the resource cited',
+  },
+  {
+    text: /^tab$/,
+    why: 'Application.tab, a stored field (types.ts) picked by name; it means the output resource',
+  },
+];
+
+// Every string and piece of template text in a source, with its line.
+function stringsIn(name: string, text: string) {
+  const file = ts.createSourceFile(name, text, ts.ScriptTarget.Latest, true);
+  const found: { line: number; text: string }[] = [];
+  const visit = (node: ts.Node) => {
+    if (ts.isStringLiteralLike(node) || ts.isTemplateLiteralToken(node))
+      found.push({
+        line: file.getLineAndCharacterOfPosition(node.getStart()).line + 1,
+        text: node.text,
+      });
+    ts.forEachChild(node, visit);
+  };
+  visit(file);
+  return found;
+}
+
+const sheetShaped = (name: string, text: string) =>
+  stringsIn(name, text)
+    .filter(({ text: said }) => SHEET_WORDS.test(said) || A1.test(said))
+    .filter(({ text: said }) => !SHEET_ALLOWED.some((a) => a.text.test(said)))
+    .map(({ line, text: said }) => `${line}: ${said}`);
+
+describe('the engine’s words for its source', () => {
+  it('finds a sheet word or an address in a string, never in a name or comment', () => {
+    expect(
+      sheetShaped(
+        'x.ts',
+        [
+          '// a tab of the sheet',
+          'const tab = read.tabs[0];',
+          'const a = `The ${name} tab is missing.`;',
+          "const b = 'Stock!B3';",
+          "const c = 'B2:C12';",
+          "const d = 'Fix the spreadsheet';",
+          "const e = 'the table, by row 3';",
+          "import { x } from '@/lib/sheets/cycle';",
+          "const f = 'no-tab';",
+        ].join('\n'),
+      ),
+    ).toEqual([
+      '3:  tab is missing.',
+      '4: Stock!B3',
+      '5: B2:C12',
+      '6: Fix the spreadsheet',
+    ]);
+  });
+
+  it.each(sources.map((s) => [s.name, s.text]))(
+    '%s says nothing of a sheet in what it tells a person or a model',
+    (name, text) => {
+      expect(sheetShaped(name, text)).toEqual([]);
     },
   );
 });

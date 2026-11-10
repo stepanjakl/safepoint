@@ -90,6 +90,38 @@ export const DOCKS: DefinitionProcess = {
   subject: SUBJECT,
 };
 
+/*
+  The same process read from a database, not a sheet: its resources are
+  tables named as a database names them, a value is addressed by its row's
+  key and its column's name, and a written block by its rows and columns.
+*/
+const TABLES: Record<string, string> = {
+  Docks: 'docks',
+  Usage: 'usage',
+  Visits: 'visits',
+  Zones: 'zones',
+  Crews: 'crews',
+};
+export const TABLE_DOCKS: DefinitionProcess = {
+  id: 'conformance-docks-tables',
+  subject: {
+    ...SUBJECT,
+    data: {
+      ...DATA,
+      source: 'database',
+      records: { ...DATA.records, tabs: ['docks', 'usage', 'visits'] },
+      lookups: DATA.lookups.map((lookup) => ({
+        ...lookup,
+        tab: TABLES[lookup.tab]!,
+      })),
+      output: { tab: 'plan', key: 'dock_ref' },
+    },
+  },
+};
+// Any variant of the read below, as the database holds it.
+export const asTables = (tabs: DataTab[]): DataTab[] =>
+  tabs.map((tab) => ({ ...tab, name: TABLES[tab.name] ?? tab.name }));
+
 // The same process with no timing at all: no moments, no worked-out hours.
 export const UNTIMED_DOCKS: DefinitionProcess = {
   id: 'conformance-docks-untimed',

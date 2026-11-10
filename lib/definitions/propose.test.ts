@@ -404,6 +404,68 @@ describe('proposing', () => {
     ).rejects.toThrow(/AV-RR cites Deliveries!G3 is blank/);
   });
 
+  it('words a sheet’s citations, and asks for them, as it always has', async () => {
+    const model = always(
+      call(
+        'submit_proposals',
+        every({
+          'AV-RR': {
+            ...avocados,
+            cited: [
+              { tab: 'Nowhere', row: 3, column: 'on_hand' },
+              { tab: 'Stock', row: 3, column: 'shelf' },
+              { tab: 'Stock', row: 99, column: 'on_hand' },
+            ],
+          },
+        }),
+      ),
+    );
+    await expect(
+      propose(owner, set, read, 'test', TEXT, { resolve: () => model }),
+    ).rejects.toThrow(
+      "The model's proposal did not come through: AV-RR cites Nowhere is not a tab of the data; AV-RR cites Stock has no shelf column; AV-RR cites Stock has no data row 99.",
+    );
+    expect(told(model)).toContain(
+      'Cite the cells you rely on by tab, the row number shown, and the column name.',
+    );
+    expect(told(model)).toContain(
+      'The data, by tab, each row numbered (row 1 is the header):',
+    );
+    // A citation's fields, in their order, as the model is given them.
+    const submit = model.doStreamCalls[0]!.tools?.find(
+      (t) => t.name === 'submit_proposals',
+    ) as unknown as {
+      inputSchema: {
+        properties: {
+          records: {
+            items: {
+              properties: {
+                cited: { items: { properties: Record<string, unknown> } };
+              };
+            };
+          };
+        };
+      };
+    };
+    const cite =
+      submit.inputSchema.properties.records.items.properties.cited.items
+        .properties;
+    expect(Object.keys(cite)).toEqual(['tab', 'row', 'column']);
+    expect(cite).toEqual({
+      tab: { type: 'string' },
+      row: {
+        type: 'integer',
+        minimum: expect.any(Number),
+        maximum: expect.any(Number),
+        description: 'The row number the data shows',
+      },
+      column: {
+        type: 'string',
+        description: "The header's name for the column",
+      },
+    });
+  });
+
   it('proposes with no rulebook from the instructions alone', async () => {
     const model = standIn(
       call('submit_proposals', every({ 'AV-RR': avocados })),

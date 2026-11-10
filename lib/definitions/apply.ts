@@ -5,7 +5,7 @@ import { runDataDir } from '@/lib/storage/run-data';
 
 import { profiledFor } from './profile';
 import { checkProposal, noneOf, readJson, writeWhole } from './propose';
-import { cellOf, type KeptRead } from './records';
+import { sourceOf, type KeptRead } from './records';
 import type {
   Application,
   AppliedDecision,
@@ -28,6 +28,10 @@ import type {
 
   One block of cells in one request, so a failed write leaves nothing part way,
   and only the block is touched: other columns of the tab stay as they are.
+
+  "Tab" and "sheet" in the names here are historical: a tab is one resource
+  of the process's source, and the sheet the source itself, whatever its kind
+  (`DataShape.source`). Every address is the source's own (`sourceOf`).
 */
 
 export type OutputSheet = {
@@ -145,6 +149,7 @@ export function blockFor(
 ): { block: Block | null; changes: CellChange[]; problems: string[] } {
   const { output } = owner.subject.data;
   if (!output) throw new Error('This process declares no output.');
+  const { resource, address } = sourceOf(owner.subject.data);
   const fields = owner.subject.proposal.map((field) => field.id);
   const header = (grid[0] ?? []).map(String);
   const touched = new Map<
@@ -160,7 +165,9 @@ export function blockFor(
     return {
       block: null,
       changes: [],
-      problems: [`The ${output.tab} tab has no ${output.key} column.`],
+      problems: [
+        `The ${output.tab} ${resource.singular} has no ${output.key} column.`,
+      ],
     };
   let nextColumn = empty ? 1 : header.length;
   const columnOf = Object.fromEntries(
@@ -182,7 +189,7 @@ export function blockFor(
     const found = rowsOf(key);
     if (found.length > 1)
       problems.push(
-        `The ${output.tab} tab lists ${key} ${found.length} times; each needs one row.`,
+        `The ${output.tab} ${resource.singular} lists ${key} ${found.length} times; each needs one row.`,
       );
     const row = found[0] ?? nextRow++;
     if (!found.length) put(row, keyColumn, key);
@@ -192,7 +199,12 @@ export function blockFor(
       changes.push({
         key,
         field,
-        cell: cellOf(output.tab, column, row),
+        cell: address.value({
+          resource: output.tab,
+          column: { index: column, header: field },
+          // Listed more than once, the key does not name the row alone.
+          row: { index: row, key: found.length > 1 ? undefined : key },
+        }),
         before: cellValue(cellAt(grid, row, column)),
         after: values[field]!,
       });
@@ -212,10 +224,9 @@ export function blockFor(
     { length: right - left + 1 },
     (_, i) => left + i,
   );
-  const inTab = (tabCell: string) => tabCell.slice(tabCell.indexOf('!') + 1);
   return {
     block: {
-      range: `${inTab(cellOf(output.tab, left, top))}:${inTab(cellOf(output.tab, right, bottom))}`,
+      range: address.block({ top, left, bottom, right }),
       before: rowIndexes.map((row) =>
         columnIndexes.map((column) => cellAt(grid, row, column)),
       ),
@@ -231,20 +242,23 @@ export function blockFor(
   };
 }
 
-// A block's cells as a tab holds them now, read at the block's own place.
-function cellsOfBlock(grid: unknown[][], block: Block) {
-  const [from = 'A1'] = block.range.split(':');
-  const letters = /^[A-Z]+/.exec(from)![0];
-  const left =
-    [...letters].reduce((n, letter) => n * 26 + letter.charCodeAt(0) - 64, 0) -
-    1;
-  const top = Number(from.slice(letters.length)) - 1;
+// A block's cells as a tab holds them now, read at the block's own place;
+// null where its address is not one this source gives.
+function cellsOfBlock(
+  grid: unknown[][],
+  block: Block,
+  data: DefinitionProcess['subject']['data'],
+) {
+  const start = sourceOf(data).address.blockStart(block.range);
+  if (!start) return null;
+  const { top, left } = start;
   return block.before.map((row, r) =>
     row.map((_, c) => cellAt(grid, top + r, left + c)),
   );
 }
 
-const sameBlock = (a: unknown[][], b: unknown[][]) =>
+const sameBlock = (a: unknown[][], b: unknown[][] | null) =>
+  b !== null &&
   a.every((row, r) => row.every((cell, c) => sameCell(cell, b[r]?.[c])));
 
 // What the decisions write: nothing for a rejection or a record left as it is.
@@ -300,7 +314,7 @@ export async function prepareWrite(
   const changed = changedTabs(read, now);
   if (changed.length)
     problems.push(
-      `The sheet has changed since this run read it (${changed.join(', ')}). Start a new run to propose from what it holds now.`,
+      `The ${sourceOf(owner.subject.data).noun} has changed since this run read it (${changed.join(', ')}). Start a new run to propose from what it holds now.`,
     );
 
   const writes = writesOf(proposal, decisions);
@@ -408,7 +422,7 @@ export async function applyDecisions(
   );
   if (isStanding(kept.at(-1)))
     prepared.problems.push(
-      `This run has already written to the ${output.tab} tab. Undo that first to write again.`,
+      `This run has already written to the ${output.tab} ${sourceOf(owner.subject.data).resource.singular}. Undo that first to write again.`,
     );
   if (!prepared.block) prepared.problems.push('There is nothing to write.');
   const held = prepared.newlyFailing.filter(
@@ -426,7 +440,7 @@ export async function applyDecisions(
     error = caught instanceof Error ? caught.message : 'The write failed.';
   }
   const back = await sheet.readTab(output.tab).catch(() => null);
-  const cells = back ? cellsOfBlock(back, block) : null;
+  const cells = back ? cellsOfBlock(back, block, owner.subject.data) : null;
   const status: Application['status'] =
     cells && sameBlock(block.after, cells)
       ? 'verified'
@@ -470,18 +484,20 @@ export async function undoApplication(
   const last = kept.at(-1);
   if (!last || !isStanding(last))
     return { kind: 'refused', problem: 'There is no write to undo.' };
+  const { data } = owner.subject;
+  const { singular } = sourceOf(data).resource;
   const grid = await sheet.readTab(last.tab);
-  if (!grid || !sameBlock(last.after, cellsOfBlock(grid, last)))
+  if (!grid || !sameBlock(last.after, cellsOfBlock(grid, last, data)))
     return {
       kind: 'refused',
-      problem: `The ${last.tab} tab has changed since this was written, so undoing it could overwrite someone's work. Change it by hand.`,
+      problem: `The ${last.tab} ${singular} has changed since this was written, so undoing it could overwrite someone's work. Change it by hand.`,
     };
   await sheet.writeRange(last.tab, last.range, last.before);
   const back = await sheet.readTab(last.tab);
-  if (!back || !sameBlock(last.before, cellsOfBlock(back, last)))
+  if (!back || !sameBlock(last.before, cellsOfBlock(back, last, data)))
     return {
       kind: 'refused',
-      problem: `The ${last.tab} tab did not read back as it was before the write. Check it by hand.`,
+      problem: `The ${last.tab} ${singular} did not read back as it was before the write. Check it by hand.`,
     };
   const application: Application = {
     ...last,

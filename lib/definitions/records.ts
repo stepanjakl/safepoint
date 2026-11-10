@@ -17,6 +17,7 @@ import {
   type FieldType,
   type Weekday,
 } from '@/lib/sheets/field-types';
+import { sourceTermsOf, type SourceTerms } from '@/lib/sources/model';
 
 import { celTypeOf } from './profile';
 
@@ -39,6 +40,8 @@ import { celTypeOf } from './profile';
   missing. A column it does not type is read as without a profile.
 */
 
+// One resource of the source as read: its header row, then its rows. `tabs`
+// and `tabIds` are historical names, kept because kept reads use them.
 export type DataTab = { name: string; values: unknown[][] };
 export type KeptRead = {
   id: string;
@@ -60,13 +63,8 @@ export const cel = (value: unknown) =>
 
 const blank = (raw: unknown) => raw === undefined || raw === null || raw === '';
 
-// A1 notation for a cell: column index and row index from zero.
-export const cellOf = (tab: string, column: number, row: number) => {
-  let letters = '';
-  for (let n = column + 1; n > 0; n = Math.floor((n - 1) / 26))
-    letters = String.fromCharCode(65 + ((n - 1) % 26)) + letters;
-  return `${tab}!${letters}${row + 1}`;
-};
+// What the process's source calls its parts, and how it addresses a value.
+export const sourceOf = (data: DataShape) => sourceTermsOf(data.source);
 
 // A typed cell as a formula reads it, or why it cannot be.
 function typed(
@@ -98,32 +96,42 @@ const asCel = (value: unknown, type: string | undefined) =>
         ? value
         : cel(value);
 
-// A tab's rows by its `key` column, with blank cells left out.
+// A resource's rows by its `key` column, with blank cells left out.
 function keyed(
   tab: DataTab | undefined,
   name: string,
   key: string,
   typeOf: TypeOf,
   problems: string[],
+  { resource, address }: SourceTerms,
 ): Map<string, Row> {
   const rows = new Map<string, Row>();
   if (!tab || !tab.values.length) {
-    problems.push(`The ${name} tab is missing or empty.`);
+    problems.push(`The ${name} ${resource.singular} is missing or empty.`);
     return rows;
   }
   const [header = [], ...body] = tab.values;
   const names = header.map((h) => String(h));
   const at = names.indexOf(key);
   if (at < 0) {
-    problems.push(`The ${name} tab has no ${key} column.`);
+    problems.push(`The ${name} ${resource.singular} has no ${key} column.`);
     return rows;
   }
+  // A row by its place, the header being 0, and by its key where that names
+  // it alone: a key listed twice does not.
+  const valueAt = (column: number, row: number, id?: string) =>
+    address.value({
+      resource: name,
+      column: { index: column, header: names[column] ?? '' },
+      row: { index: row, key: id },
+    });
   body.forEach((row, index) => {
     if (blank(row[at])) return;
     const id = String(row[at]);
-    if (rows.has(id))
+    const twice = rows.has(id);
+    if (twice)
       problems.push(
-        `The ${name} tab lists ${key} ${id} twice (${cellOf(name, at, index + 1)}); each record needs one row.`,
+        `The ${name} ${resource.singular} lists ${key} ${id} twice (${valueAt(at, index + 1)}); each record needs one row.`,
       );
     const record: Row = {};
     names.forEach((column, i) => {
@@ -137,7 +145,7 @@ function keyed(
       const read = typed(raw, typing.type);
       if (read.issue)
         problems.push(
-          `${cellOf(name, i, index + 1)} (${column}) reads "${String(raw)}": ${read.issue}`,
+          `${valueAt(i, index + 1, twice ? undefined : id)} (${column}) reads "${String(raw)}": ${read.issue}`,
         );
       else record[column] = asCel(read.value, typing.cel);
     });
@@ -361,10 +369,14 @@ function timedColumns(data: DataShape): string[] {
   ];
 }
 
-const noColumnIn = (tabs: string[], column: string) =>
+const noColumnIn = (
+  tabs: string[],
+  column: string,
+  { resource }: SourceTerms,
+) =>
   tabs.length === 1
-    ? `The ${tabs[0]} tab has no ${column} column`
-    : `None of the ${tabs.slice(0, -1).join(', ')} and ${tabs.at(-1)} tabs has a ${column} column`;
+    ? `The ${tabs[0]} ${resource.singular} has no ${column} column`
+    : `None of the ${tabs.slice(0, -1).join(', ')} and ${tabs.at(-1)} ${resource.plural} has a ${column} column`;
 
 // Each column the process declares as another type than the confirmed
 // profile has it: a later change to the declaration is never overruled in
@@ -396,14 +408,14 @@ function missingColumns(read: KeptRead, data: DataShape): string[] {
       const name = column.slice(lookup.as.length + 1);
       if (present([lookup.tab]) && !headerOf(lookup.tab).includes(name))
         problems.push(
-          `${noColumnIn([lookup.tab], name)}, which the data profile lists.`,
+          `${noColumnIn([lookup.tab], name, sourceOf(data))}, which the data profile lists.`,
         );
     } else if (
       present(data.records.tabs) &&
       !data.records.tabs.some((tab) => headerOf(tab).includes(column))
     )
       problems.push(
-        `${noColumnIn(data.records.tabs, column)}, which the data profile lists.`,
+        `${noColumnIn(data.records.tabs, column, sourceOf(data))}, which the data profile lists.`,
       );
   }
   return problems;
@@ -411,6 +423,8 @@ function missingColumns(read: KeptRead, data: DataShape): string[] {
 
 function build(read: KeptRead, data: DataShape): Records {
   const problems: string[] = [];
+  const source = sourceOf(data);
+  const { singular } = source.resource;
   const tabOf = (name: string) => read.tabs.find((t) => t.name === name);
   const [first, ...rest] = data.records.tabs;
   const recordTypes = typerOf(data);
@@ -420,6 +434,7 @@ function build(read: KeptRead, data: DataShape): Records {
     data.records.key,
     recordTypes,
     problems,
+    source,
   );
   const keys = [...listed.keys()];
   const records = new Map(keys.map((key) => [key, { ...listed.get(key)! }]));
@@ -430,20 +445,23 @@ function build(read: KeptRead, data: DataShape): Records {
       data.records.key,
       recordTypes,
       problems,
+      source,
     );
     for (const [key, row] of rows) {
       const record = records.get(key);
       if (record) Object.assign(record, row);
       else
         problems.push(
-          `The ${name} tab has ${data.records.key} ${key}, which the ${first} tab does not list.`,
+          `The ${name} ${singular} has ${data.records.key} ${key}, which the ${first} ${singular} does not list.`,
         );
     }
   }
   for (const record of records.values()) addTiming(record, read, data);
   const header = (tabOf(first ?? '')?.values[0] ?? []).map(String);
   if (tabOf(first ?? '')?.values.length && !header.includes(data.records.name))
-    problems.push(`The ${first} tab has no ${data.records.name} column.`);
+    problems.push(
+      `The ${first} ${singular} has no ${data.records.name} column.`,
+    );
   const lookups = data.lookups.map((lookup) => {
     const rows = keyed(
       tabOf(lookup.tab),
@@ -451,6 +469,7 @@ function build(read: KeptRead, data: DataShape): Records {
       lookup.key,
       typerOf(data, `${lookup.as}.`),
       problems,
+      source,
     );
     for (const key of keys) {
       const via = records.get(key)?.[lookup.via];
@@ -460,7 +479,7 @@ function build(read: KeptRead, data: DataShape): Records {
         );
       else if (rows.size && !rows.has(String(via)))
         problems.push(
-          `${key}'s ${lookup.via} is "${String(via)}", which the ${lookup.tab} tab does not list.`,
+          `${key}'s ${lookup.via} is "${String(via)}", which the ${lookup.tab} ${singular} does not list.`,
         );
     }
     return { ...lookup, rows };
@@ -540,7 +559,7 @@ export function fitting(read: KeptRead, data: DataShape): Records {
   const records = recordsOf(read, data);
   if (records.problems.length)
     throw new Error(
-      `The read does not fit what this process reads: ${records.problems.slice(0, 3).join(' ')}${records.problems.length > 3 ? ` And ${records.problems.length - 3} more.` : ''} Fix the sheet and read it again.`,
+      `The read does not fit what this process reads: ${records.problems.slice(0, 3).join(' ')}${records.problems.length > 3 ? ` And ${records.problems.length - 3} more.` : ''} Fix the ${sourceOf(data).noun} and read it again.`,
     );
   return records;
 }

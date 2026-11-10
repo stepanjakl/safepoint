@@ -12,7 +12,7 @@ import { givenOf } from './checks';
 import { contextFor, run } from './formulas';
 import { dataOf, plain } from './prompts';
 import { profiledFor } from './profile';
-import { fitting, namesOf, type KeptRead, type Row } from './records';
+import { fitting, namesOf, sourceOf, type KeptRead, type Row } from './records';
 import { fingerprintOf } from './store';
 import type { Definition, DefinitionProcess, DefinitionSet } from './types';
 import { stepsFor } from './working';
@@ -234,7 +234,7 @@ async function crossCheckBatch(
         .join('\n')}`,
       `The ${plural} to work them out for: ${keys.join(', ')}.`,
       `How the data fits together:\n${layoutOf(subject)}`,
-      `The data, by tab, a header row then one row per line:\n${dataOf(onlyRecords(read, subject, keys))}`,
+      `The data, by ${sourceOf(subject.data).resource.singular}, a header row then one row per line:\n${dataOf(onlyRecords(read, subject, keys))}`,
     ].join('\n\n'),
     'cross-check',
     resolve,

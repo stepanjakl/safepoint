@@ -10,6 +10,8 @@ const SOURCE_MARKS: Record<
   ComponentType<{ size?: number; className?: string; 'aria-hidden'?: boolean }>
 > = {
   'google-sheets': TableFilled,
+  // The engine's test-only second kind; no source the app declares has it.
+  database: TableFilled,
 };
 
 /*

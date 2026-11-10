@@ -313,6 +313,8 @@ export type ProposalEvent = { at: string } & (
 );
 
 // One thing the app's check of an answer sent back, as a fact about a record.
+// `no-tab` and `tab` are historical names, kept in progress files: the
+// resource a citation names, whatever the source calls it.
 export type AnswerProblem =
   | { kind: 'twice'; key: string }
   | { kind: 'no-values'; key: string }
@@ -429,7 +431,8 @@ export type ProposalRecord = {
   action: 'set' | 'leave';
   values: Record<string, number> | null;
   reason: string;
-  // Cells the model relied on, in A1 notation (<tab>!B3).
+  // Cells the model relied on, as the source addresses them (a sheet's
+  // <tab>!B3).
   cited: string[];
   unsure: string | null;
   verdict: Verdict;
@@ -460,6 +463,7 @@ export type AppliedDecision = {
   failing: string[];
 };
 
+// `cell` is the source's address for it (a sheet's <tab>!B3).
 export type CellChange = {
   key: string;
   field: string;
@@ -470,6 +474,8 @@ export type CellChange = {
 
 export type Application = {
   proposedAt: string;
+  // A historical name, kept in every application written: the output's
+  // resource, whatever the source calls it.
   tab: string;
   at: string;
   // verified: read back as written; mismatch: read back as something else;
@@ -478,7 +484,8 @@ export type Application = {
   status: 'verified' | 'mismatch' | 'failed' | 'undone';
   error: string | null;
   undoneAt: string | null;
-  // The block written, in A1 notation, and its cells either side of it.
+  // The block written, as the source addresses one (a sheet's B2:C12), and
+  // its cells either side of it.
   range: string;
   before: unknown[][];
   after: unknown[][];

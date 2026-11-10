@@ -5,7 +5,7 @@ import {
   settingOf,
   type Draft,
 } from './checks';
-import { recordsOf, type KeptRead } from './records';
+import { recordsOf, sourceOf, type KeptRead } from './records';
 import {
   formulaOf,
   sameShape,
@@ -169,7 +169,7 @@ export async function accept(
     );
   if (recordsOf(read, owner.subject.data).problems.length)
     return refuse(
-      'The read its examples were run on does not fit what this process reads: fix the sheet, read it again, and write it again.',
+      `The read its examples were run on does not fit what this process reads: fix the ${sourceOf(owner.subject.data).noun}, read it again, and write it again.`,
     );
   // The sentence a person approved is written from the shape: the formula
   // kept must be the one that shape gives.

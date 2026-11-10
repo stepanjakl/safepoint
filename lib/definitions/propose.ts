@@ -4,6 +4,8 @@ import path from 'node:path';
 import { z } from 'zod';
 
 import { fallbackChain, type DraftingModel } from '@/lib/models';
+import type { DataShape } from '@/lib/process/model';
+import type { SourceTerms } from '@/lib/sources/model';
 import { runDataDir } from '@/lib/storage/run-data';
 
 import {
@@ -18,7 +20,7 @@ import { limitedGoogle } from './limits';
 import { contextFor, run } from './formulas';
 import { profiledFor } from './profile';
 import { plain, timingOf } from './prompts';
-import { cellOf, fitting, type KeptRead, type Row } from './records';
+import { fitting, sourceOf, type KeptRead, type Row } from './records';
 import { fingerprintOf } from './store';
 import {
   ignoresProposal,
@@ -211,34 +213,55 @@ function newRecordCheck(
   };
 }
 
-// A cell the model cites, as a person finds it: <tab>!B3. Or why it is none.
-type Cite = { tab: string; row: number; column: string };
+// A cell the model cites, as a person finds it: the source's address for
+// it (a sheet's <resource>!B3). Or why it is none.
+type Cite = { resource: string; row: number; column: string };
 type CiteProblem = DistributiveOmit<
   Extract<AnswerProblem, { kind: 'no-tab' | 'no-column' | 'no-row' | 'blank' }>,
   'key'
 >;
-function cellCited(read: KeptRead, cite: Cite): string | CiteProblem {
-  const tab = read.tabs.find((t) => t.name === cite.tab);
-  if (!tab) return { kind: 'no-tab', tab: cite.tab };
+const blank = (raw: unknown) => raw === undefined || raw === null || raw === '';
+// The column a resource's rows are known by, where the process says one.
+const keyColumnOf = (data: DataShape, resource: string) =>
+  data.records.tabs.includes(resource)
+    ? data.records.key
+    : data.lookups.find((lookup) => lookup.tab === resource)?.key;
+function cellCited(
+  read: KeptRead,
+  data: DataShape,
+  cite: Cite,
+): string | CiteProblem {
+  const tab = read.tabs.find((t) => t.name === cite.resource);
+  if (!tab) return { kind: 'no-tab', tab: cite.resource };
   const header = (tab.values[0] ?? []).map(String);
   const column = header.indexOf(cite.column);
   if (column < 0)
-    return { kind: 'no-column', tab: cite.tab, column: cite.column };
+    return { kind: 'no-column', tab: cite.resource, column: cite.column };
   // Rows as the data shows them: the header is row 1.
   const values = tab.values[cite.row - 1];
   if (cite.row < 2 || !values)
-    return { kind: 'no-row', tab: cite.tab, row: cite.row };
-  const raw = values[column];
-  if (raw === undefined || raw === null || raw === '')
-    return { kind: 'blank', cell: cellOf(cite.tab, column, cite.row - 1) };
-  return cellOf(cite.tab, column, cite.row - 1);
+    return { kind: 'no-row', tab: cite.resource, row: cite.row };
+  const keyAt = header.indexOf(keyColumnOf(data, cite.resource) ?? '');
+  const cell = sourceOf(data).address.value({
+    resource: cite.resource,
+    column: { index: column, header: cite.column },
+    row: {
+      index: cite.row - 1,
+      key:
+        keyAt < 0 || blank(values[keyAt]) ? undefined : String(values[keyAt]),
+    },
+  });
+  return blank(values[column]) ? { kind: 'blank', cell } : cell;
 }
 
 /*
   The problems as the model is told them, one sentence each, the records
   left out last and together. A page words the same facts its own way.
 */
-function problemSentences(problems: AnswerProblem[]): string[] {
+function problemSentences(
+  problems: AnswerProblem[],
+  { resource }: SourceTerms,
+): string[] {
   const unanswered = problems
     .filter((p) => p.kind === 'unanswered')
     .map((p) => p.key);
@@ -252,7 +275,9 @@ function problemSentences(problems: AnswerProblem[]): string[] {
         case 'no-values':
           return [`${p.key} sets no values`];
         case 'no-tab':
-          return [`${p.key} cites ${p.tab} is not a tab of the data`];
+          return [
+            `${p.key} cites ${p.tab} is not a ${resource.singular} of the data`,
+          ];
         case 'no-column':
           return [`${p.key} cites ${p.tab} has no ${p.column} column`];
         case 'no-row':
@@ -369,6 +394,9 @@ async function proposeBatch(
     watch?.changed();
   };
   const { singular, plural } = subject.record;
+  const source = sourceOf(subject.data);
+  // The resource a citation names, under the source's own word for it.
+  const citeAs = source.resource.singular;
   const fieldsShape = Object.fromEntries(
     subject.proposal.map((field) => [
       field.id,
@@ -381,10 +409,12 @@ async function proposeBatch(
   const valuesSchema = z.object(fieldsShape);
   const keySchema = z.enum(keys).describe(`The ${singular}'s key`);
   const citeSchema = z.object({
-    tab: z.string(),
+    [citeAs]: z.string(),
     row: z.number().int().describe('The row number the data shows'),
     column: z.string().describe("The header's name for the column"),
-  });
+  }) as unknown as z.ZodType<
+    { row: number; column: string } & Record<string, unknown>
+  >;
   const submitSchema = z.object({
     records: z
       .array(
@@ -473,7 +503,11 @@ async function proposeBatch(
             found.push({ kind: 'no-values', key });
           const cited: string[] = [];
           for (const cite of answer.cited) {
-            const cell = cellCited(read, cite);
+            const cell = cellCited(read, subject.data, {
+              resource: String(cite[citeAs]),
+              row: cite.row,
+              column: cite.column,
+            });
             if (typeof cell === 'string') cited.push(cell);
             else found.push({ ...cell, key });
           }
@@ -497,7 +531,7 @@ async function proposeBatch(
         }
         for (const key of keys)
           if (!answered[key]) found.push({ kind: 'unanswered', key });
-        const problems = problemSentences(found);
+        const problems = problemSentences(found, source);
         same =
           last && JSON.stringify(last) === JSON.stringify(problems)
             ? same + 1
@@ -561,7 +595,7 @@ async function proposeBatch(
                 ]),
             'Never leave a record out.',
             `Use leave for a ${singular} where nothing should change.`,
-            `Read every number from the data${worked ? ' and the values worked out' : ''}, not from memory. Cite the cells you rely on by tab, the row number shown, and the column name.`,
+            `Read every number from the data${worked ? ' and the values worked out' : ''}, not from memory. Cite the cells you rely on by ${citeAs}, the row number shown, and the column name.`,
             `Answer only by calling submit_proposals with every ${singular}; when it reports problems, fix them and submit again. ${plain(subject)}`,
           ].join('\n'),
           prompt: [
@@ -573,7 +607,7 @@ async function proposeBatch(
                   .join('\n')}`
               : `The ${plural} to propose for:\n${keys.map((key) => `- ${key}`).join('\n')}`,
             `How the data fits together:\n${layoutOf(subject)}`,
-            `The data, by tab, each row numbered (row 1 is the header):\n${numberedDataOf(onlyRecords(read, subject, keys))}`,
+            `The data, by ${citeAs}, each row numbered (row 1 is the header):\n${numberedDataOf(onlyRecords(read, subject, keys))}`,
             timingOf(onlyRecords(read, subject, keys), subject.data),
           ].join('\n\n'),
           // Nothing to try values against without checks.

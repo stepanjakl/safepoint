@@ -9,6 +9,7 @@ import {
   cel,
   MOMENT_PREFIX,
   recordsOf,
+  sourceOf,
   type KeptRead,
   type Row,
 } from './records';
@@ -280,7 +281,7 @@ export function describe(read: KeptRead, subject: DefinitionSubject): string {
   return [
     `A formula is standard CEL, evaluated for one ${singular} at a time, with these variables:`,
     `- key: the ${singular}'s key, a string (the ${plural} are ${records.keys.join(', ')}).`,
-    `- record: the ${singular}'s row from the ${data.records.tabs.join(', ')} tabs, joined by its key. For ${key}: ${show(records.record(key))}.`,
+    `- record: the ${singular}'s row from the ${data.records.tabs.join(', ')} ${sourceOf(data).resource.plural}, joined by its key. For ${key}: ${show(records.record(key))}.`,
     ...data.lookups.map(
       (lookup) =>
         `- ${lookup.as}: the ${lookup.tab} row whose ${lookup.key} is the ${singular}'s ${lookup.via}. For ${key}: ${show(lookups[lookup.as] ?? {})}.`,

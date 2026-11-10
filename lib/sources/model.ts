@@ -8,7 +8,12 @@
   Declared here, in code, for now. Safe for the browser.
 */
 
-export type SourceKind = 'google-sheets';
+/*
+  `database` is not declared by any source the app has: it is the engine's
+  second kind, held to it in tests (lib/definitions/conformance.test.ts), so
+  that nothing in lib/definitions/ assumes a sheet.
+*/
+export type SourceKind = 'google-sheets' | 'database';
 
 // What a kind of source calls itself and its parts.
 export const SOURCE_KINDS: Record<
@@ -30,7 +35,94 @@ export const SOURCE_KINDS: Record<
     resource: { singular: 'tab', plural: 'tabs' },
     open: 'Open in Google Sheets',
   },
+  database: {
+    name: 'Database',
+    noun: 'database',
+    mark: 'source-mark-sheets',
+    resource: { singular: 'table', plural: 'tables' },
+    open: 'Open the database',
+  },
 };
+
+/*
+  How a kind of source addresses what it holds, as a person reads it and as
+  a write names its block. Positions count from zero, as a read holds a
+  resource: a grid whose row 0 is the header.
+*/
+type ValueAt = {
+  resource: string;
+  column: { index: number; header: string };
+  // The record's key where the row has one a person would know it by.
+  row: { index: number; key?: string };
+};
+type BlockAt = {
+  top: number;
+  left: number;
+  bottom: number;
+  right: number;
+};
+type SourceAddressing = {
+  // One value, its resource included: a sheet's `Stock!B3`.
+  value: (at: ValueAt) => string;
+  // A rectangle within one resource, which is named apart: a sheet's `B2:C12`.
+  block: (at: BlockAt) => string;
+  // Where a block this kind addressed starts; null for any other text.
+  blockStart: (block: string) => { top: number; left: number } | null;
+};
+
+// A sheet's column letters and row number: column 0, row 0 is A1.
+const a1 = (column: number, row: number) => {
+  let letters = '';
+  for (let n = column + 1; n > 0; n = Math.floor((n - 1) / 26))
+    letters = String.fromCharCode(65 + ((n - 1) % 26)) + letters;
+  return `${letters}${row + 1}`;
+};
+
+const SOURCE_ADDRESSING: Record<SourceKind, SourceAddressing> = {
+  'google-sheets': {
+    value: ({ resource, column, row }) =>
+      `${resource}!${a1(column.index, row.index)}`,
+    block: ({ top, left, bottom, right }) =>
+      `${a1(left, top)}:${a1(right, bottom)}`,
+    blockStart: (block) => {
+      const match = /^([A-Z]+)(\d+)(?::|$)/.exec(block);
+      if (!match) return null;
+      const left =
+        [...match[1]!].reduce(
+          (n, letter) => n * 26 + letter.charCodeAt(0) - 64,
+          0,
+        ) - 1;
+      return { top: Number(match[2]) - 1, left };
+    },
+  },
+  // A row by its key, where it has one, else by the number the data shows it
+  // at (the header is row 1); a column by its name. A block by its positions.
+  database: {
+    value: ({ resource, column, row }) =>
+      `${resource}[${row.key ?? `row ${row.index + 1}`}].${column.header}`,
+    block: ({ top, left, bottom, right }) =>
+      `rows ${top + 1}-${bottom + 1}, columns ${left + 1}-${right + 1}`,
+    blockStart: (block) => {
+      const match = /^rows (\d+)-\d+, columns (\d+)-\d+$/.exec(block);
+      return match
+        ? { top: Number(match[1]) - 1, left: Number(match[2]) - 1 }
+        : null;
+    },
+  },
+};
+
+export type SourceTerms = (typeof SOURCE_KINDS)[SourceKind] & {
+  address: SourceAddressing;
+};
+
+// A kind's words and addressing; a sheet's where no kind is said, as every
+// source was before there were kinds.
+export const sourceTermsOf = (
+  kind: SourceKind = 'google-sheets',
+): SourceTerms => ({
+  ...SOURCE_KINDS[kind],
+  address: SOURCE_ADDRESSING[kind],
+});
 
 export type SourceDeclaration = {
   id: string;
@@ -65,6 +157,8 @@ export function cellUrl(
       const base = url.replace(/[?#].*$/, '').replace(/\/(edit)?$/, '');
       return `${base}/edit#gid=${resourceId}&range=${cell}`;
     }
+    case 'database':
+      return url;
   }
 }
 
