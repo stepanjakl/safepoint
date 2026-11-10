@@ -1,17 +1,43 @@
 import { z } from 'zod';
 
 import { advise } from '@/lib/definitions/advise';
-import { accept, choose, confirmIntent, deny } from '@/lib/definitions/decide';
+import {
+  accept,
+  choose,
+  confirmIntent,
+  deny,
+  rebaseSet,
+} from '@/lib/definitions/decide';
 import { debugDefinition, debugDraft } from '@/lib/definitions/debug';
 import {
   draftProgress,
   startDraft,
   startRewrite,
 } from '@/lib/definitions/draft';
-import { namesOf } from '@/lib/definitions/records';
+import {
+  confirmProfile,
+  ownerFor,
+  profileOf,
+  setColumnBlank,
+  setColumnLabel,
+  setColumnType,
+} from '@/lib/definitions/profile';
+import { fitting, namesOf } from '@/lib/definitions/records';
 import { revisionChanges } from '@/lib/definitions/revision-changes';
-import { listRevisions, loadRevision, loadSet } from '@/lib/definitions/store';
-import type { DefinitionSet } from '@/lib/definitions/types';
+import {
+  listRevisions,
+  loadProfile,
+  loadRevision,
+  loadSet,
+  saveProfile,
+} from '@/lib/definitions/store';
+import {
+  complete,
+  CONFIRM_FIRST,
+  type DataProfile,
+  type DefinitionSet,
+  type ProfileState,
+} from '@/lib/definitions/types';
 import { sentencesOf } from '@/lib/definitions/shapes';
 import { workingOf } from '@/lib/definitions/working';
 import { rejectUnlessLocalDevelopment } from '@/lib/dev/dev-route';
@@ -25,6 +51,34 @@ const text = z.string().min(1).max(20_000);
 const id = z.string().max(80);
 // The model to ask, falling back within its family; the default otherwise.
 const model = draftingModelSchema.optional();
+const column = z.string().min(1).max(160);
+
+async function profileState(readId: string | null): Promise<ProfileState> {
+  const profile = await loadProfile(owner);
+  if (profile)
+    return {
+      state: profile.confirmedAt ? 'confirmed' : 'review',
+      profile,
+    };
+  const read = readId ? await keptRead(readId) : null;
+  let proposed: DataProfile | null = null;
+  try {
+    if (read) {
+      fitting(read, owner.subject.data);
+      proposed = profileOf(read, owner.subject.data);
+    }
+  } catch {
+    // A read that does not fit suggests nothing; the Read step says why.
+  }
+  return { state: 'none', proposed };
+}
+
+// The kept profile, changed and kept as under review.
+async function changeProfile(change: (profile: DataProfile) => DataProfile) {
+  const profile = await loadProfile(owner);
+  if (!profile) throw new Error('No data profile is kept yet.');
+  await saveProfile(owner, change(profile));
+}
 
 // The revisions, each with what it changed from its parent.
 async function historyOf(text: string) {
@@ -60,7 +114,21 @@ export async function POST(request: Request) {
   if (rejected) return rejected;
   const parsed = z
     .discriminatedUnion('action', [
-      z.strictObject({ action: z.literal('get'), text }),
+      z.strictObject({
+        action: z.literal('get'),
+        text,
+        readId: id.nullable().optional(),
+      }),
+      z.strictObject({ action: z.literal('profile'), text, readId: id }),
+      z.strictObject({
+        action: z.literal('profileColumn'),
+        text,
+        column,
+        label: z.string().min(1).max(120).optional(),
+        type: z.enum(['whole_number', 'decimal', 'yes_no', 'text']).optional(),
+        blank: z.enum(['skip', 'fail']).nullable().optional(),
+      }),
+      z.strictObject({ action: z.literal('confirmProfile'), text }),
       z.strictObject({
         action: z.literal('draft'),
         text,
@@ -114,21 +182,30 @@ export async function POST(request: Request) {
     set: DefinitionSet | null,
     drafting: Awaited<ReturnType<typeof draftProgress>>,
   ) => {
-    if (!set) return Response.json({ kind: 'none', drafting });
+    const profile = await profileState(
+      'readId' in body ? (body.readId ?? null) : null,
+    );
+    if (!set) return Response.json({ kind: 'none', drafting, profile });
     const read = set.readId ? await keptRead(set.readId) : null;
+    // Read on the profile the set was drafted on, if it names one.
+    const reading = await ownerFor(owner, set);
     return Response.json({
       kind: 'rules',
       set,
-      names: read ? namesOf(read, owner.subject.data) : {},
+      names: read ? namesOf(read, reading.subject.data) : {},
       // The app's own working of each example, by definition.
       working: read
         ? Object.fromEntries(
-            set.definitions.map((d) => [d.id, workingOf(owner, set, read, d)]),
+            set.definitions.map((d) => [
+              d.id,
+              workingOf(reading, set, read, d),
+            ]),
           )
         : {},
       // Each check's sentence, and each version's where writes disagreed.
-      sentences: read ? sentencesOf(owner.subject, set, read) : {},
+      sentences: read ? sentencesOf(reading.subject, set, read) : {},
       drafting,
+      profile,
       // Every accepted revision, newest first, and the one in use.
       history: await historyOf(body.text),
     });
@@ -148,11 +225,52 @@ export async function POST(request: Request) {
     switch (body.action) {
       case 'get':
         return replyWith(() => loadSet(owner, body.text));
-      case 'draft':
+      case 'draft': {
+        // The engine drafts without a profile too; a person's draft does not.
+        const profile = await loadProfile(owner);
+        if (!profile?.confirmedAt) throw new Error(CONFIRM_FIRST);
         startDraft(owner, body.text, body.version, await readOf(body.readId), {
           model: body.model,
         });
         return replyWith(() => loadSet(owner, body.text));
+      }
+      case 'profile': {
+        const read = await readOf(body.readId);
+        fitting(read, owner.subject.data);
+        await saveProfile(owner, profileOf(read, owner.subject.data));
+        return replyWith(() => loadSet(owner, body.text));
+      }
+      case 'profileColumn': {
+        const { column, label, type, blank } = body;
+        await changeProfile((profile) => {
+          let changed = profile;
+          if (label !== undefined)
+            changed = setColumnLabel(changed, column, label);
+          if (type !== undefined)
+            changed = setColumnType(changed, column, { kind: type });
+          if (blank !== undefined)
+            changed = setColumnBlank(changed, column, blank);
+          return changed;
+        });
+        return replyWith(() => loadSet(owner, body.text));
+      }
+      case 'confirmProfile': {
+        const kept = await loadProfile(owner);
+        if (!kept) throw new Error('No data profile is kept yet.');
+        const confirmed = kept.confirmedAt ? kept : confirmProfile(kept);
+        await saveProfile(owner, confirmed);
+        // Rules under review move onto it, so an answer takes effect without
+        // a redraft; accepted rules keep the profile they were accepted on.
+        const set = await loadSet(owner, body.text);
+        if (set && !complete(set) && set.readId)
+          await rebaseSet(
+            owner,
+            body.text,
+            await readOf(set.readId),
+            confirmed,
+          );
+        return replyWith(() => loadSet(owner, body.text));
+      }
       case 'intent':
         return replyWith(() => confirmIntent(owner, body.text));
       case 'write':
@@ -169,7 +287,13 @@ export async function POST(request: Request) {
         if (!read) throw new Error(READ_GONE);
         return Response.json({
           kind: 'advice',
-          advice: await advise(owner, body.text, set, read, body.id),
+          advice: await advise(
+            await ownerFor(owner, set),
+            body.text,
+            set,
+            read,
+            body.id,
+          ),
         });
       }
       case 'debug': {
@@ -179,7 +303,7 @@ export async function POST(request: Request) {
         const read = readId ? await keptRead(readId) : null;
         if (!read) throw new Error(READ_GONE);
         const debug = debugDefinition(
-          owner,
+          await ownerFor(owner, set),
           body.text,
           set,
           read,
@@ -195,7 +319,7 @@ export async function POST(request: Request) {
         return Response.json({
           kind: 'debugDraft',
           debug: debugDraft(
-            owner,
+            await ownerFor(owner, set),
             body.text,
             set,
             await keptRead(body.readId ?? set.readId ?? ''),

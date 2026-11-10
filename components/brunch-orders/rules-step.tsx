@@ -52,18 +52,29 @@ import {
   said,
 } from '@/components/brunch-orders/rules-parts';
 import {
+  DataProfilePanel,
+  type ProfileChange,
+} from '@/components/brunch-orders/data-profile';
+import {
   acceptable,
+  BLANKS_UNANSWERED,
   canAccept as canAcceptItem,
+  CONFIRM_FIRST,
   ignoresProposal,
   quotedFrom,
   worksOutItself,
   type Definition,
   type DefinitionSet,
   type DraftProgress,
+  type ProfileState,
 } from '@/lib/definitions/types';
 
-// Every reply says whether a draft is running on the server, and how far.
-type RulesResponse = { drafting?: DraftProgress | null } & (
+// Every reply says whether a draft is running on the server, and how far,
+// and how the data profile stands.
+type RulesResponse = {
+  drafting?: DraftProgress | null;
+  profile?: ProfileState;
+} & (
   | {
       kind: 'rules';
       set: DefinitionSet;
@@ -197,10 +208,10 @@ export function RulesStep({
   // What is already found and accepted for these instructions, on arrival:
   // a new run under them starts as far as they have got.
   useEffect(() => {
-    void run({ action: 'get', text }).then((response) => {
+    void run({ action: 'get', text, readId }).then((response) => {
       if (response?.kind === 'rules') report.current(progressOf(response.set));
     });
-  }, [run, text]);
+  }, [run, text, readId]);
   const body = rules.state.kind === 'done' ? rules.state.body : null;
   // The last rules seen stay while an action runs, so the list, and focus in
   // it, are kept.
@@ -230,6 +241,23 @@ export function RulesStep({
   if (body && JSON.stringify(reported) !== JSON.stringify(drafting))
     setDrafting(reported);
   const draftRunning = drafting?.running ?? false;
+  // The data profile as last reported; null until the route has said.
+  const [profile, setProfile] = useState<ProfileState | null>(null);
+  const reportedProfile = body?.profile;
+  if (
+    reportedProfile &&
+    JSON.stringify(reportedProfile) !== JSON.stringify(profile)
+  )
+    setProfile(reportedProfile);
+  const dataConfirmed = profile?.state === 'confirmed';
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileId = useId();
+  const profileHeading = useRef<HTMLHeadingElement>(null);
+  // From a card Accept refused for an unanswered blank, to the question.
+  const showProfile = () => {
+    setProfileOpen(true);
+    requestAnimationFrame(() => profileHeading.current?.focus());
+  };
   // Writing is a wait, not a status the rule has: the card's status gives
   // way to the loader while its rule is written (behind useLoader's delay).
   const ruleLoader = useLoader(Boolean(drafting?.running && drafting.writing));
@@ -251,14 +279,14 @@ export function RulesStep({
     if (!draftRunning || !answered) return;
     const timer = setTimeout(
       () =>
-        void run({ action: 'get', text }).then((response) => {
+        void run({ action: 'get', text, readId }).then((response) => {
           if (response?.kind === 'rules')
             report.current(progressOf(response.set));
         }),
       DRAFT_POLL_MS,
     );
     return () => clearTimeout(timer);
-  }, [draftRunning, answered, body, run, text]);
+  }, [draftRunning, answered, body, run, text, readId]);
   const progress = set ? progressOf(set) : null;
   // Every definition accepted and the intent confirmed: nothing waits here.
   const complete =
@@ -340,6 +368,7 @@ export function RulesStep({
                 act({ action: 'choose', id: item.id, index })
               }
               onAdvise={() => adviceFor(text, item.id)}
+              onShowProfile={profile ? showProfile : undefined}
               debug={
                 <HeadIconButton
                   label={`Debug ${item.name}`}
@@ -373,6 +402,43 @@ export function RulesStep({
         run under these instructions will use them.
       </Lede>
 
+      {profile ? (
+        // One panel throughout, so what it says aloud and where focus is
+        // survive its changes; folded away once the rules are drafted on it.
+        <div className="grid gap-3">
+          {set && dataConfirmed ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="text-dense">The data’s columns are confirmed.</p>
+              <Button
+                size="medium"
+                aria-expanded={profileOpen}
+                aria-controls={profileId}
+                onPress={() => setProfileOpen(!profileOpen)}
+              >
+                {profileOpen
+                  ? 'Hide the data’s columns'
+                  : 'Show the data’s columns'}
+              </Button>
+            </div>
+          ) : null}
+          <Fold open={!set || !dataConfirmed || profileOpen} id={profileId}>
+            <DataProfilePanel
+              state={profile}
+              busy={busy}
+              canRead={readId !== null}
+              drafted={set !== null}
+              headingRef={profileHeading}
+              className={ASKS}
+              onChange={(change: ProfileChange) => {
+                // A person at work in it keeps it open.
+                setProfileOpen(true);
+                act({ ...change, readId });
+              }}
+            />
+          </Fold>
+        </div>
+      ) : null}
+
       {/* Scaffolding for trying the step, as the read's setup is. */}
       <section
         aria-label="Draft setup"
@@ -392,7 +458,7 @@ export function RulesStep({
         <DraftControl
           kept={set?.definitions.length ?? 0}
           accepted={progress?.approved ?? 0}
-          canDraft={readId !== null}
+          canDraft={readId !== null && dataConfirmed}
           busy={busy}
           onDraft={(model) =>
             act({
@@ -407,6 +473,8 @@ export function RulesStep({
           <p className="text-dense text-muted">
             Read the data first: the examples are worked out on it.
           </p>
+        ) : profile && !dataConfirmed ? (
+          <p className="text-dense text-muted">{CONFIRM_FIRST}</p>
         ) : null}
         {/* Always in the page, so its changes are read out; taking no room
             while it has nothing to say. */}
@@ -1247,6 +1315,7 @@ export function DefinitionCard({
   debug,
   onChoose,
   onAdvise,
+  onShowProfile,
   chip,
   activity,
   awaitedFormula,
@@ -1272,6 +1341,8 @@ export function DefinitionCard({
   onChoose?: (index: number) => void;
   // Asks which version the instructions support, for the assistant to show.
   onAdvise?: () => Promise<Advice>;
+  // Leads to the data profile, where an unanswered blank is answered.
+  onShowProfile?: () => void;
   // The rest are only passed by /workbench/draft-progress, which compares what
   // a card could show while a draft runs: its pill, in place of its status...
   chip?: ReactNode;
@@ -1353,6 +1424,13 @@ export function DefinitionCard({
           </p>
         ) : null}
         {item.problem ? <p className="text-dense">{item.problem}</p> : null}
+        {item.problem?.startsWith(BLANKS_UNANSWERED) && onShowProfile ? (
+          <div>
+            <Button size="medium" onPress={onShowProfile}>
+              Answer it in the data’s columns
+            </Button>
+          </div>
+        ) : null}
         {item.unfit ? (
           <FromModel label="Why the model found no shape">
             <p className="text-dense italic">{item.unfit}</p>

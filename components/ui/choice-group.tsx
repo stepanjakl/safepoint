@@ -20,7 +20,8 @@ export function ChoiceGroup<Value extends string>({
 }: {
   label: string;
   options: readonly Choice<Value>[];
-  value: Value;
+  // Null: none chosen yet.
+  value: Value | null;
   onChange: (value: Value) => void;
   isDisabled?: boolean;
 }) {

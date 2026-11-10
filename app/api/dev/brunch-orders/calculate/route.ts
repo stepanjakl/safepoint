@@ -13,6 +13,7 @@ import {
   putRevision,
 } from '@/lib/definitions/store';
 import { staleness } from '@/lib/definitions/fits';
+import { ownerFor } from '@/lib/definitions/profile';
 import { rejectUnlessLocalDevelopment } from '@/lib/dev/dev-route';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { keptRead, READ_GONE } from '@/lib/processes/brunch-orders/reads';
@@ -66,11 +67,13 @@ export async function POST(request: Request) {
       ? await loadRevision(owner, body.text, body.rulebook)
       : null;
     const set = pinned ?? current;
+    // Read on the data profile the rulebook was drafted on, if it names one.
+    const reading = await ownerFor(owner, set);
     // A rulebook kept as it was accepted may no longer fit the data.
-    const stale = staleness(owner, body.text, set, current, read);
+    const stale = staleness(reading, body.text, set, current, read);
     if (stale)
       return Response.json({ kind: 'stale', ...stale }, { status: 409 });
-    const calculation = calculate(owner, set, read);
+    const calculation = calculate(reading, set, read);
     // What a run calculates on is kept as it is, so the run can come back to
     // it; one accepted in full was kept then, and this adds nothing.
     if (!pinned) await putRevision(owner, set, { reason: 'used' });
@@ -80,7 +83,7 @@ export async function POST(request: Request) {
       calculation.fingerprint,
     );
     if (body.action === 'crossCheck') {
-      check = await crossCheck(owner, set, read, body.readId, body.text, {
+      check = await crossCheck(reading, set, read, body.readId, body.text, {
         model: body.model,
       });
       await keepCrossCheck(owner, check);

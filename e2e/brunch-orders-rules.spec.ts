@@ -3,7 +3,10 @@ import { readFileSync } from 'node:fs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { capturedRead } from '@/lib/definitions/captured.fixture';
+import { confirmProfile, profileOf } from '@/lib/definitions/profile';
 import { definitionSetSchema } from '@/lib/definitions/types';
+import { SUBJECT } from '@/lib/processes/brunch-orders/process';
 
 // Brunch orders, phase 2 (docs/processes/brunch-orders/PLAN.md): after the read, the
 // run shows the rules found in its instructions, each with a formula and
@@ -20,6 +23,11 @@ const snapshot = JSON.parse(
 ) as { valueRanges: { range: string; values: string[][] }[] };
 const [, ...products] = snapshot.valueRanges[0]!.values;
 const names = Object.fromEntries(products.map((row) => [row[0], row[1]]));
+// Drafting reads the data through a confirmed profile.
+const profile = {
+  state: 'confirmed',
+  profile: confirmProfile(profileOf(capturedRead(), SUBJECT.data)),
+};
 
 test.beforeEach(async ({ page }) => {
   await page.route('**/api/dev/brunch-orders/rules', async (route) => {
@@ -31,6 +39,7 @@ test.beforeEach(async ({ page }) => {
         set: frozen,
         names,
         history: { head: null, revisions: [] },
+        profile,
       },
     });
   });

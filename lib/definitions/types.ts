@@ -190,6 +190,22 @@ export const dataProfileSchema = z.object({
 export type DataProfile = z.infer<typeof dataProfileSchema>;
 export type ProfileColumn = z.infer<typeof profileColumnSchema>;
 
+/*
+  The data profile as a page shows it: none kept yet, with what a read
+  suggests; or kept, under review or confirmed.
+*/
+export type ProfileState =
+  | { state: 'none'; proposed: DataProfile | null }
+  | { state: 'review' | 'confirmed'; profile: DataProfile };
+
+// Why a person's draft waits: it reads the data through a confirmed profile.
+export const CONFIRM_FIRST =
+  'Confirm the data first: the rules are checked against what its columns hold.';
+
+// How Accept begins its refusal of a rule reading an unanswered blank, so a
+// page can lead from it to the profile.
+export const BLANKS_UNANSWERED = 'Say what a blank cell means before accepting';
+
 // The stored shape's version, kept with each revision, so a revision written
 // before a change of shape can be told apart rather than misread.
 export const RULEBOOK_SCHEMA = 1;

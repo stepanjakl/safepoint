@@ -17,6 +17,7 @@ import {
 import { ownerFor, withProfile } from './profile';
 import { loadSet, putRevision, saveSet, updateSet } from './store';
 import {
+  BLANKS_UNANSWERED,
   complete,
   type DataProfile,
   type Definition,
@@ -175,7 +176,7 @@ export async function accept(
     const open = unansweredBlanks(definition.shape, context);
     if (open.length)
       return refuse(
-        `Say what a blank cell means before accepting: ${open.map((c) => `the ${c.label}`).join(', ')}. Does a rule reading one not apply, or fail?`,
+        `${BLANKS_UNANSWERED}: ${open.map((c) => `the ${c.label}`).join(', ')}. Does a rule reading one not apply, or fail?`,
       );
   }
   const { problems, ran } = review(
