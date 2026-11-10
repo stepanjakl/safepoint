@@ -96,6 +96,94 @@ export const UNTIMED_DOCKS: DefinitionProcess = {
   subject: { ...SUBJECT, data: { ...DATA, timing: undefined } },
 };
 
+/*
+  Dated moments: last_inspected, a date column, as a moment and as hours
+  since. A date is the start of its day in Singapore, the zone its type
+  declares, so 2026-10-20 is 2026-10-19T16:00Z.
+*/
+const INSPECTED = { at: 'last_inspected', label: 'last inspection' };
+const withTiming = (
+  id: string,
+  timing: NonNullable<DataShape['timing']>,
+  types: DataShape['types'] = DATA.types,
+): DefinitionProcess => ({
+  id,
+  subject: { ...SUBJECT, data: { ...DATA, types, timing } },
+});
+export const DATED_DOCKS = withTiming('conformance-docks-dated', {
+  ...DATA.timing,
+  since: { ...DATA.timing.since, inspection_age_hours: INSPECTED },
+  until: { inspection_hours_left: INSPECTED },
+  moments: { ...DATA.timing.moments, inspected: INSPECTED },
+});
+// last_inspected read with its time of day, where a cell has one.
+export const DATETIME_DOCKS = withTiming(
+  'conformance-docks-datetime',
+  { ...DATA.timing, moments: { inspected: INSPECTED } },
+  { ...DATA.types, last_inspected: { kind: 'datetime', timeZone: ZONE } },
+);
+// A period that does not open weekly: a time zone, an observed weekly
+// moment and a dated one, hours until a dated column; no start.
+export const UNOPENED_DOCKS = withTiming('conformance-docks-unopened', {
+  timeZone: ZONE,
+  since: {},
+  until: { inspection_hours_left: INSPECTED },
+  moments: { swept: DATA.timing.moments.swept, inspected: INSPECTED },
+});
+// What needs a weekly opening, declared without one, and a dated moment on
+// a column that holds no dates.
+export const MISDECLARED_DOCKS = withTiming('conformance-docks-misdeclared', {
+  timeZone: ZONE,
+  since: {},
+  until: { hours_to_lock: { day: 'lock_day', time: 'lock_time' } },
+  moments: {
+    lockout: DATA.timing.moments.lockout,
+    noted: { at: 'notes' },
+  },
+});
+
+// Hours from the read to each dock's last inspection: back to the start of
+// that day, Singapore time, from Thu 5 Nov 07:30.
+export const INSPECTED_HOURS: Record<string, number> = {
+  'D-01': -391.5,
+  'D-02': -367.5,
+  'D-03': -871.5,
+  'D-04': -823.5,
+  'D-05': -511.5,
+  'D-06': -199.5,
+  'D-07': -607.5,
+  'D-08': -415.5,
+  'D-09': -751.5,
+  'D-10': -271.5,
+};
+
+// D-06 never inspected; D-10's inspection booked for Tue 10 Nov, after the
+// read: 112.5 hours on.
+export function blankInspectionTabs(): DataTab[] {
+  const tabs = docksTabs();
+  rowOf(tabs, 'Docks', 'D-06')[7] = '';
+  return tabs;
+}
+export function futureInspectionTabs(): DataTab[] {
+  const tabs = docksTabs();
+  rowOf(tabs, 'Docks', 'D-10')[7] = '2026-11-10';
+  return tabs;
+}
+// D-01 inspected at 08:45, read as a date-time.
+export function timedInspectionTabs(): DataTab[] {
+  const tabs = docksTabs();
+  rowOf(tabs, 'Docks', 'D-01')[7] = '2026-10-20 08:45';
+  return tabs;
+}
+
+// Flag a dock not inspected for 30 days, said in hours: no constant can
+// state 720 from "30 days" (a limit, conformance.test.ts).
+export const INSPECT_HOURS = {
+  id: 'inspect_hours',
+  value: 720,
+  quote: 'more than 720 hours',
+};
+
 // Times of day as a sheet gives them: a fraction of a day.
 const at = (hours: number) => hours / 24;
 
@@ -869,3 +957,27 @@ export const VERDICTS: {
   // Full, and no base fare set: nothing fails.
   { key: 'D-10', values: { bikes: 0, fare: 0 }, verdict: 'ready', failing: [] },
 ];
+
+// Rules on a dated moment: hours since it, and before the read or start.
+export const DATED_SHAPES = {
+  overdue: shape({
+    kind: 'flag',
+    when: [
+      {
+        left: 'hours_since:inspected',
+        op: '>',
+        right: 'constant:inspect_hours',
+      },
+    ],
+  }),
+  inspected_first: shape({
+    kind: 'only_when',
+    field: 'bikes',
+    when: [{ left: 'moment:inspected', op: 'before', right: 'moment:read' }],
+  }),
+  inspected_before_start: shape({
+    kind: 'only_when',
+    field: 'bikes',
+    when: [{ left: 'moment:inspected', op: 'before', right: 'moment:start' }],
+  }),
+} satisfies Record<string, Shape>;

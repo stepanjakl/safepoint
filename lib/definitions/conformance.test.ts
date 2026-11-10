@@ -7,6 +7,16 @@ import { review, reviewBreakdown, settingOf, states } from './checks';
 import {
   ANSWERS,
   blankDeparturesTabs,
+  blankInspectionTabs,
+  DATED_DOCKS,
+  DATED_SHAPES,
+  DATETIME_DOCKS,
+  futureInspectionTabs,
+  INSPECT_HOURS,
+  INSPECTED_HOURS,
+  MISDECLARED_DOCKS,
+  timedInspectionTabs,
+  UNOPENED_DOCKS,
   brokenLookupTabs,
   CALCULATED,
   decimalTabs,
@@ -35,7 +45,11 @@ import { debugDefinition, debugDraft } from './debug';
 import { accept, choose, confirmIntent, deny, rebaseSet } from './decide';
 import { findDefinitions } from './find';
 import { fitsRead, staleness } from './fits';
-import { checkFormula } from './formulas';
+import {
+  checkFormula,
+  contextFor as formulaContext,
+  run as runFormula,
+} from './formulas';
 import { answer, call, check, standIn, told } from './models.fixture';
 import {
   confirmProfile,
@@ -60,6 +74,7 @@ import {
   sentenceOf,
   shapeProblems,
   unansweredBlanks,
+  valuesInWords,
   type Shape,
   type ShapeContext,
 } from './shapes';
@@ -1057,9 +1072,9 @@ describe('proposing and writing', () => {
   designed here. Each says exactly what is unsupported.
 */
 describe('limits', () => {
-  // A real date column is typed (as its instant in milliseconds) but is no
-  // moment: a check cannot say "inspected more than 30 days ago".
-  it('reads a date column as a number, never as a moment', () => {
+  // A date column is a moment only where the process declares it one
+  // (DATED_DOCKS); undeclared, it is a number, the instant in milliseconds.
+  it('reads an undeclared date column as a number, not a moment', () => {
     const context = contextFor('stale_sweep');
     expect(
       recordsOf(read, DOCKS.subject.data).types.record.last_inspected,
@@ -1082,9 +1097,9 @@ describe('limits', () => {
       'No moment last_inspected; the moments are start, read, swept, lockout, van.',
     ]);
   });
-  it.todo(
-    'moments from real date and datetime columns (planned: the next package)',
-  );
+  // A constant is quoted in the instructions' own unit: "30 days" states
+  // 30, never the 720 hours hours_since compares with.
+  it.todo('a duration stated in days or weeks, compared with hours since');
   it.todo(
     'a source that is not sheet-shaped: tabs of rows with a header, and cells cited as <tab>!A1 (planned)',
   );
@@ -1116,4 +1131,239 @@ describe('limits', () => {
   it.todo(
     'declaring a type for one tab’s column where another tab shares its name',
   );
+});
+
+describe('dated moments', () => {
+  const data = DATED_DOCKS.subject.data;
+  // A shape on a dated process, with the constant it names.
+  const datedContext = (
+    owner: DefinitionProcess = DATED_DOCKS,
+    on: KeptRead = read,
+    consequence: 'block' | 'decide' = 'decide',
+  ): ShapeContext => ({
+    subject: owner.subject,
+    records: recordsOf(on, owner.subject.data),
+    read: on,
+    consequence,
+    constants: [INSPECT_HOURS],
+    groups: [],
+    earlier: [],
+  });
+  const overdue = (context: ShapeContext, key: string) =>
+    run(formulaOf(DATED_SHAPES.overdue, context), key, context);
+  const run = (formula: string, key: string, context: ShapeContext) =>
+    runFormula(
+      formula,
+      formulaContext(
+        context.read,
+        key,
+        context.subject,
+        {
+          inputs: { bikes: 4, fare: 0 },
+          constants: { inspect_hours: 720 },
+          groups: {},
+        },
+        {},
+      ),
+    );
+
+  it('is the instant its cell holds, as hours from the read, and its hours since', () => {
+    const records = fitting(read, data);
+    for (const key of KEYS) {
+      const row = records.record(key);
+      expect(row[momentColumn('inspected')], key).toBe(INSPECTED_HOURS[key]);
+      expect(row.inspection_age_hours, key).toBe(-INSPECTED_HOURS[key]!);
+      expect(row.inspection_hours_left, key).toBe(INSPECTED_HOURS[key]);
+    }
+    // The weekly moments beside it are as they were.
+    expect(records.record('D-01')[momentColumn('van')]).toBe(26.5);
+    // Held to a profile, it stays a double whatever the read holds.
+    const held = recordsOf(
+      docksRead(blankInspectionTabs()),
+      withProfile(DATED_DOCKS, confirmProfile(profileOf(read, data))).subject
+        .data,
+    );
+    expect(held.types.record[momentColumn('inspected')]).toBe('double');
+    expect(held.record('D-06')).not.toHaveProperty(momentColumn('inspected'));
+    expect(held.record('D-06')).not.toHaveProperty('inspection_age_hours');
+  });
+
+  it('is a date at the start of its day, and a date-time at its time', () => {
+    const records = recordsOf(
+      docksRead(timedInspectionTabs()),
+      DATETIME_DOCKS.subject.data,
+    );
+    // 08:45 on 20 Oct in Singapore is 00:45Z: 382.75 hours before the read.
+    expect(records.record('D-01')[momentColumn('inspected')]).toBe(-382.75);
+    expect(records.record('D-02')[momentColumn('inspected')]).toBe(-367.5);
+  });
+
+  it('flags a dock not inspected for 720 hours, and fails one inspected after the read', () => {
+    const context = datedContext();
+    expect(shapeProblems(DATED_SHAPES.overdue, context)).toEqual([]);
+    expect(formulaOf(DATED_SHAPES.overdue, context)).toBe(
+      '((has(record.moment__inspected)) && (record.moment__inspected <= 0.0) && (!((0.0 - record.moment__inspected) > double(constants.inspect_hours))))',
+    );
+    expect(sentenceOf(DATED_SHAPES.overdue, context)).toBe(
+      'Flag it for a person when the hours from the last inspection to when the data is read is more than 720 (“more than 720 hours”). Where the last inspection is after the data is read, it fails.',
+    );
+    // 871.5, 823.5 and 751.5 hours since: flagged.
+    expect(KEYS.filter((key) => overdue(context, key) === false)).toEqual([
+      'D-03',
+      'D-04',
+      'D-09',
+    ]);
+    // Booked for after the read: never a negative number of hours.
+    const ahead = datedContext(DATED_DOCKS, docksRead(futureInspectionTabs()));
+    expect(ahead.records.record('D-10')[momentColumn('inspected')]).toBe(112.5);
+    expect(overdue(ahead, 'D-10')).toBe(false);
+  });
+
+  it('allows bringing bikes only where the inspection came before the read', () => {
+    const context = datedContext(DATED_DOCKS, read, 'block');
+    expect(formulaOf(DATED_SHAPES.inspected_first, context)).toBe(
+      'bikes == 0 || (has(record.moment__inspected) && (record.moment__inspected < 0.0))',
+    );
+    expect(sentenceOf(DATED_SHAPES.inspected_first, context)).toBe(
+      'The proposed bikes to bring is allowed only when the last inspection is before the data is read. Proposing 0 bikes is always allowed.',
+    );
+    const ahead = datedContext(
+      DATED_DOCKS,
+      docksRead(futureInspectionTabs()),
+      'block',
+    );
+    const formula = formulaOf(DATED_SHAPES.inspected_first, ahead);
+    expect(run(formula, 'D-09', ahead)).toBe(true);
+    expect(run(formula, 'D-10', ahead)).toBe(false);
+    // Against the weekly start, where there is one, which is never blank.
+    expect(formulaOf(DATED_SHAPES.inspected_before_start, context)).toBe(
+      'bikes == 0 || (has(record.moment__inspected) && (record.moment__inspected < record.moment__start))',
+    );
+  });
+
+  it('takes what a blank date means from the profile', () => {
+    const blank = docksRead(blankInspectionTabs());
+    const proposed = profileOf(blank, data);
+    expect(
+      proposed.columns.find((c) => c.column === 'last_inspected'),
+    ).toMatchObject({ type: { kind: 'date' }, blanksSeen: true, blank: null });
+    const unanswered = withProfile(DATED_DOCKS, confirmProfile(proposed));
+    expect(
+      unansweredBlanks(DATED_SHAPES.overdue, datedContext(unanswered, blank)),
+    ).toEqual([{ column: 'last_inspected', label: 'last inspected' }]);
+    const skipped = withProfile(
+      DATED_DOCKS,
+      confirmProfile(setColumnBlank(proposed, 'last_inspected', 'skip')),
+    );
+    const context = datedContext(skipped, blank);
+    expect(unansweredBlanks(DATED_SHAPES.overdue, context)).toEqual([]);
+    expect(formulaOf(DATED_SHAPES.overdue, context)).toBe(
+      '!(has(record.moment__inspected)) || (record.moment__inspected <= 0.0 && (!((0.0 - record.moment__inspected) > double(constants.inspect_hours))))',
+    );
+    expect(sentenceOf(DATED_SHAPES.overdue, context)).toMatch(
+      /Where the last inspection is blank, it does not apply\. Where the last inspection is after the data is read, it fails\.$/,
+    );
+    expect(overdue(context, 'D-06')).toBe(true);
+  });
+
+  it('shows its date in the worked example, with its time where it has one', () => {
+    const working = (owner: DefinitionProcess, on: KeptRead) => {
+      const context = datedContext(owner, on);
+      return valuesInWords(
+        DATED_SHAPES.overdue,
+        context,
+        'D-01',
+        formulaContext(
+          on,
+          'D-01',
+          owner.subject,
+          {
+            inputs: {},
+            constants: { inspect_hours: 720 },
+            groups: {},
+          },
+          {},
+        ),
+      );
+    };
+    expect(working(DATED_DOCKS, read)).toBe(
+      'the hours from the last inspection to when the data is read is 391.5; 720 (“more than 720 hours”) is 720; the last inspection is Tue, 20 Oct 2026',
+    );
+    expect(working(DATETIME_DOCKS, docksRead(timedInspectionTabs()))).toMatch(
+      /the last inspection is Tue, 20 Oct 2026, 08:45$/,
+    );
+  });
+
+  it('works without a weekly opening: no start, dated moments and observed ones', () => {
+    const records = fitting(read, UNOPENED_DOCKS.subject.data);
+    expect(records.record('D-01')).not.toHaveProperty(momentColumn('start'));
+    expect(records.record('D-01')[momentColumn('swept')]).toBe(-13.5);
+    expect(records.record('D-01')[momentColumn('inspected')]).toBe(-391.5);
+    expect(records.record('D-01').inspection_hours_left).toBe(-391.5);
+    const context = datedContext(UNOPENED_DOCKS);
+    expect(shapeProblems(DATED_SHAPES.overdue, context)).toEqual([]);
+    expect(shapeProblems(DATED_SHAPES.inspected_before_start, context)).toEqual(
+      ['No moment start; the moments are read, swept, inspected.'],
+    );
+  });
+
+  it('reports a declaration that needs an opening it lacks, or dates a column without them, once', () => {
+    const { problems } = recordsOf(read, MISDECLARED_DOCKS.subject.data);
+    expect(problems).toEqual([
+      'The process declares hours_to_lock as hours until a weekday and time, but no weekly opening to place it in: give it a dated column, or declare when the period opens.',
+      'The process declares the moment lockout as a deadline, which is placed by the weekly opening, but declares none: give it a dated column, or declare when the period opens.',
+      'The process declares the moment noted from the notes column, which is not typed as a date or date-time.',
+    ]);
+    expect(() => fitting(read, MISDECLARED_DOCKS.subject.data)).toThrow(
+      /hours_to_lock/,
+    );
+  });
+
+  it('tells a shape writer what a dated moment is, and hours since it', async () => {
+    const finder = standIn(answer(FOUND));
+    await findDefinitions(DATED_DOCKS, TEXT, 'v1', read, {
+      resolve: () => finder,
+    });
+    const writer = writing(ANSWERS.fare_floor!);
+    await writeDefinition(DATED_DOCKS, TEXT, read, 'fare_floor', {
+      resolve: () => writer,
+    });
+    expect(told(writer)).toContain(
+      '- inspected: the date in last_inspected; hours_since may read it, and fails where it is after the read',
+    );
+    const formulas = writing(ANSWERS.free_space!);
+    await writeDefinition(DATED_DOCKS, TEXT, read, 'free_space', {
+      resolve: () => formulas,
+    });
+    expect(told(formulas)).toContain(
+      '- inspection_age_hours: how long ago the instant in last_inspected was; negative where it is still to come.',
+    );
+    expect(told(formulas)).toContain(
+      'Dates and date-times (last_inspected) are ints',
+    );
+  });
+
+  it('counts the date column as read by the rule that reads its moment', () => {
+    const set: DefinitionSet = {
+      hash: '',
+      version: 'v1',
+      intent: '',
+      intentConfirmedAt: null,
+      readId: read.id,
+      foundAt: '',
+      model: '',
+      definitions: [
+        {
+          ...EARLIER[0]!,
+          id: 'overdue',
+          result: 'check',
+          consequence: 'decide',
+          formula: formulaOf(DATED_SHAPES.overdue, datedContext()),
+        },
+      ],
+    };
+    expect(
+      debugDraft(DATED_DOCKS, TEXT, set, read).columns!.unread,
+    ).not.toContain('last_inspected');
+  });
 });

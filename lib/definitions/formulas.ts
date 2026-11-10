@@ -318,6 +318,11 @@ export function describe(read: KeptRead, subject: DefinitionSubject): string {
           `Amounts of money (${typedColumns('money')}) are ints, in the currency's smallest unit: 2.50 is 250.`,
         ]
       : []),
+    ...(kinds.has('date') || kinds.has('datetime')
+      ? [
+          `Dates and date-times (${[typedColumns('date'), typedColumns('datetime')].filter(Boolean).join(', ')}) are ints, the instant in milliseconds; a date with no time is the start of its day.`,
+        ]
+      : []),
     ...(data.timing ? [timingOf(read, data)] : []),
     'ceil(x), floor(x) and round(x) round a double to a whole number; they take no int, so divide as doubles: ceil(double(a) / double(b)).',
     'Membership: x in list. Remainder: a % b. Choice: condition ? a : b. Logic: &&, ||, !.',

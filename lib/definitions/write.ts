@@ -1,7 +1,11 @@
 import { generateText, isStepCount, tool, ToolChoiceViolationError } from 'ai';
 import { z } from 'zod';
 
-import type { DefinitionSubject, Moment } from '@/lib/process/model';
+import {
+  isDated,
+  type DefinitionSubject,
+  type WeeklyMoment,
+} from '@/lib/process/model';
 import { fallbackChain, type DraftingModel } from '@/lib/models';
 
 import { DRAFT_MODELS, WRITE_MODELS, withModels } from './calls';
@@ -226,7 +230,7 @@ const TYPE_WORDS: Record<string, string> = {
   string: 'text',
 };
 
-const MOMENT_KINDS: Record<Moment['kind'], string> = {
+const MOMENT_KINDS: Record<WeeklyMoment['kind'], string> = {
   observed: 'the last time it came round by when the data was read',
   deadline: 'the last time it comes round before the planned period starts',
   next: 'the first time it comes round after the data was read',
@@ -253,11 +257,16 @@ function shapeMaterials(setting: Setting) {
       .join(', ');
   const moments = data.timing
     ? [
-        `- ${START}: when the planned period starts${times.start ? `, ${times.start}` : ''}`,
+        ...(data.timing.opens
+          ? [
+              `- ${START}: when the planned period starts${times.start ? `, ${times.start}` : ''}`,
+            ]
+          : []),
         `- ${READ}: when the data was read${times.read ? `, ${times.read}` : ''}`,
-        ...Object.entries(data.timing.moments ?? {}).map(
-          ([name, m]) =>
-            `- ${name}: ${m.day} at ${m.time}, ${MOMENT_KINDS[m.kind]}${m.kind === 'observed' ? '; hours_since may read it' : ''}`,
+        ...Object.entries(data.timing.moments ?? {}).map(([name, m]) =>
+          isDated(m)
+            ? `- ${name}: the date in ${m.at}; hours_since may read it, and fails where it is after the read`
+            : `- ${name}: ${m.day} at ${m.time}, ${MOMENT_KINDS[m.kind]}${m.kind === 'observed' ? '; hours_since may read it' : ''}`,
         ),
       ]
     : [];

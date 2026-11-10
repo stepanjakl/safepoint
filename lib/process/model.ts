@@ -269,20 +269,24 @@ export type DataShape = {
   // Where approved proposals would be written: a tab, one row per record by
   // its key column, one column per proposal field. Absent: nowhere yet.
   output?: { tab: string; key: string };
-  // Columns worked out from when the data was read, in hours, each from a
-  // weekday column and a time-of-day column: `since` how long ago that last
-  // happened, `until` how long is left before that deadline in the week being
-  // planned, negative once it has passed. Never the wall clock, so a read
-  // always gives the same answers.
+  // Columns worked out from when the data was read, in hours: `since` how
+  // long ago a moment happened, `until` how long is left before it, negative
+  // once it has passed. Each is a weekday column and a time-of-day column,
+  // placed in the week (`until` then needs `opens`: the deadline in the week
+  // being planned), or one date or date-time column, the instant it holds.
+  // Never the wall clock, so a read always gives the same answers.
   timing?: {
     timeZone: string;
-    opens: DayTime;
-    since: Record<string, { day: string; time: string }>;
-    until: Record<string, { day: string; time: string }>;
-    // Moments a check can compare, each a weekday and a time-of-day column,
-    // placed by `kind`: observed, the last time it came round by the read;
-    // deadline, the last before the planned period opens; next, the first
-    // after the read. A check compares them, never the hours between.
+    // When the planned period opens each week. Absent for a process whose
+    // period is not weekly: it has no start, and no deadline or next moment.
+    opens?: DayTime;
+    since: Record<string, TimeColumns>;
+    until: Record<string, TimeColumns>;
+    // Moments a check can compare, before or after one another, never by
+    // the hours between. A weekday and time pair is placed by `kind`:
+    // observed, the last time it came round by the read; deadline, the last
+    // before the planned period opens; next, the first after the read. A
+    // dated moment is the instant its cell holds.
     moments?: Record<string, Moment>;
   };
 };
@@ -302,10 +306,23 @@ export type DataProfileTypes = {
   }[];
 };
 
-export type Moment = {
+// A moment's columns: a weekday and a time of day, or one dated column.
+export type TimeColumns = { day: string; time: string } | { at: string };
+
+export type WeeklyMoment = {
   day: string;
   time: string;
   kind: 'observed' | 'deadline' | 'next';
   // How a sentence names it; absent, its name with spaces.
   label?: string;
 };
+
+// One `date` or `datetime` column: the instant its cell holds, a date with
+// no time being the start of that day in the column's time zone.
+export type DatedMoment = { at: string; label?: string };
+
+export type Moment = WeeklyMoment | DatedMoment;
+
+export const isDated = <T extends TimeColumns | Moment>(
+  columns: T,
+): columns is Extract<T, { at: string }> => 'at' in columns;

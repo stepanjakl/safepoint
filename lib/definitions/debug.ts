@@ -16,6 +16,7 @@ import {
   MOMENT_PREFIX,
   momentColumn,
   recordsOf,
+  timeColumnsOf,
   type KeptRead,
 } from './records';
 import {
@@ -149,8 +150,8 @@ function columnsUnread(
       ([name, moment]) => [momentColumn(name), moment] as const,
     ),
   ];
-  for (const [name, { day, time }] of timed)
-    if (used.has(name)) [day, time].forEach((column) => used.add(column));
+  for (const [name, columns] of timed)
+    if (used.has(name)) timeColumnsOf(columns).forEach((c) => used.add(c));
   for (const { as, via } of data.lookups)
     if ([...used].some((column) => column.startsWith(`${as}.`))) used.add(via);
   return [

@@ -1,4 +1,9 @@
-import type { DataShape } from '@/lib/process/model';
+import {
+  isDated,
+  type DataShape,
+  type Moment,
+  type TimeColumns,
+} from '@/lib/process/model';
 import {
   deadlineBefore,
   firstAfter,
@@ -161,43 +166,95 @@ function dayTimeOf(
 const hours = (from: number, to: number) =>
   Math.round(hoursBetween(from, to) * 100) / 100;
 
+// A dated column's instant, or null when its cell is blank: a date or
+// date-time column is read as the instant in milliseconds (field-types.ts).
+const instantOf = (record: Row, { at }: { at: string }) =>
+  record[at] === undefined ? null : Number(record[at]);
+
 function addTiming(record: Row, read: KeptRead, data: DataShape) {
   const { timing } = data;
   if (!timing) return;
+  const { opens, timeZone } = timing;
   const readAt = Date.parse(read.readAt);
-  for (const [name, columns] of Object.entries(timing.since)) {
+  // A weekday and time placed in the week, or a dated cell's own instant.
+  const placed = (
+    columns: TimeColumns,
+    place: (at: DayTime) => number | null,
+  ) => {
+    if (isDated(columns)) return instantOf(record, columns);
     const at = dayTimeOf(record, columns);
-    if (at)
-      record[name] = hours(
-        latestAtOrBefore(at, readAt, timing.timeZone),
-        readAt,
-      );
+    return at ? place(at) : null;
+  };
+  for (const [name, columns] of Object.entries(timing.since)) {
+    const instant = placed(columns, (at) =>
+      latestAtOrBefore(at, readAt, timeZone),
+    );
+    if (instant !== null) record[name] = hours(instant, readAt);
   }
   for (const [name, columns] of Object.entries(timing.until)) {
-    const at = dayTimeOf(record, columns);
-    if (at)
-      record[name] = hours(
-        readAt,
-        deadlineBefore(at, timing.opens, readAt, timing.timeZone),
-      );
+    const instant = placed(columns, (at) =>
+      opens ? deadlineBefore(at, opens, readAt, timeZone) : null,
+    );
+    if (instant !== null) record[name] = hours(readAt, instant);
   }
   // Every moment as hours from the read, so code compares them; the period's
-  // opening is on every record, the read itself is 0.
-  record[momentColumn(START)] = hours(
-    readAt,
-    firstAfter(timing.opens, readAt, timing.timeZone),
-  );
+  // opening is on every record where there is one, the read itself is 0.
+  if (opens)
+    record[momentColumn(START)] = hours(
+      readAt,
+      firstAfter(opens, readAt, timeZone),
+    );
   for (const [name, moment] of Object.entries(timing.moments ?? {})) {
-    const at = dayTimeOf(record, moment);
-    if (!at) continue;
-    const instant =
-      moment.kind === 'observed'
-        ? latestAtOrBefore(at, readAt, timing.timeZone)
-        : moment.kind === 'deadline'
-          ? deadlineBefore(at, timing.opens, readAt, timing.timeZone)
-          : firstAfter(at, readAt, timing.timeZone);
-    record[momentColumn(name)] = hours(readAt, instant);
+    const instant = placed(moment, (at) => {
+      if (isDated(moment)) return null;
+      if (moment.kind === 'observed')
+        return latestAtOrBefore(at, readAt, timeZone);
+      if (!opens) return null;
+      return moment.kind === 'deadline'
+        ? deadlineBefore(at, opens, readAt, timeZone)
+        : firstAfter(at, readAt, timeZone);
+    });
+    if (instant !== null) record[momentColumn(name)] = hours(readAt, instant);
   }
+}
+
+// The columns a moment or a worked-out column is read from.
+export const timeColumnsOf = (columns: TimeColumns | Moment): string[] =>
+  isDated(columns) ? [columns.at] : [columns.day, columns.time];
+
+/*
+  What is wrong with the timing a process declares, said once, where its
+  data is first read: what needs a weekly opening where there is none, and a
+  dated column that is not typed as a date or date-time.
+*/
+function timingProblems(data: DataShape): string[] {
+  const { timing } = data;
+  if (!timing) return [];
+  const problems: string[] = [];
+  const dated = (what: string, { at }: { at: string }) => {
+    const type =
+      data.profile?.columns.find((c) => c.column === at)?.type ??
+      data.types[at];
+    if (type?.kind !== 'date' && type?.kind !== 'datetime')
+      problems.push(
+        `The process declares ${what} from the ${at} column, which is not typed as a date or date-time.`,
+      );
+  };
+  for (const [name, columns] of Object.entries(timing.since))
+    if (isDated(columns)) dated(name, columns);
+  for (const [name, columns] of Object.entries(timing.until))
+    if (isDated(columns)) dated(name, columns);
+    else if (!timing.opens)
+      problems.push(
+        `The process declares ${name} as hours until a weekday and time, but no weekly opening to place it in: give it a dated column, or declare when the period opens.`,
+      );
+  for (const [name, moment] of Object.entries(timing.moments ?? {}))
+    if (isDated(moment)) dated(`the moment ${name}`, moment);
+    else if (moment.kind !== 'observed' && !timing.opens)
+      problems.push(
+        `The process declares the moment ${name} as a ${moment.kind}, which is placed by the weekly opening, but declares none: give it a dated column, or declare when the period opens.`,
+      );
+  return problems;
 }
 
 // The moments every timed process has: when its planned period opens, and
@@ -299,7 +356,7 @@ function timedColumns(data: DataShape): string[] {
   return [
     ...Object.keys(timing.since),
     ...Object.keys(timing.until),
-    momentColumn(START),
+    ...(timing.opens ? [momentColumn(START)] : []),
     ...Object.keys(timing.moments ?? {}).map(momentColumn),
   ];
 }
@@ -412,6 +469,7 @@ function build(read: KeptRead, data: DataShape): Records {
   const lookupTypesSeen = lookups.map(
     (lookup) => [lookup.as, unifyColumns([...lookup.rows.values()])] as const,
   );
+  problems.push(...timingProblems(data));
   if (data.profile)
     problems.push(...declarationsChanged(data), ...missingColumns(read, data));
   return {

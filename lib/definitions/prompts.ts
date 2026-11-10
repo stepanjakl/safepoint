@@ -1,6 +1,6 @@
 import type { DefinitionSubject } from '@/lib/process/model';
 
-import type { DataShape } from '@/lib/process/model';
+import { isDated, type DataShape } from '@/lib/process/model';
 
 import { recordsOf, type KeptRead } from './records';
 import type { Definition, Example } from './types';
@@ -23,13 +23,15 @@ export function timingOf(read: KeptRead, data: DataShape): string {
   const names = [...Object.keys(since), ...Object.keys(until)];
   return [
     `Worked out by the app from when this data was read (${read.readAt}), in hours, each a double on the record:`,
-    ...Object.entries(since).map(
-      ([name, { day, time }]) =>
-        `- ${name}: how long ago ${day} at ${time} last came round.`,
+    ...Object.entries(since).map(([name, columns]) =>
+      isDated(columns)
+        ? `- ${name}: how long ago the instant in ${columns.at} was; negative where it is still to come.`
+        : `- ${name}: how long ago ${columns.day} at ${columns.time} last came round.`,
     ),
-    ...Object.entries(until).map(
-      ([name, { day, time }]) =>
-        `- ${name}: how long is left before ${day} at ${time} in the week being planned; negative once it has passed.`,
+    ...Object.entries(until).map(([name, columns]) =>
+      isDated(columns)
+        ? `- ${name}: how long is left before the instant in ${columns.at}; negative once it has passed.`
+        : `- ${name}: how long is left before ${columns.day} at ${columns.time} in the week being planned; negative once it has passed.`,
     ),
     ...records.keys.map(
       (key) =>

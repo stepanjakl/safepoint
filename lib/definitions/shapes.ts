@@ -1,4 +1,8 @@
-import type { DefinitionSubject } from '@/lib/process/model';
+import {
+  isDated,
+  type DefinitionSubject,
+  type WeeklyMoment,
+} from '@/lib/process/model';
 
 import {
   MOMENT_PREFIX,
@@ -6,6 +10,7 @@ import {
   READ,
   recordsOf,
   START,
+  timeColumnsOf,
   type KeptRead,
   type Records,
 } from './records';
@@ -171,10 +176,23 @@ export function shapeColumn(name: string, subject: DefinitionSubject) {
 }
 
 const NUMBER = ['int', 'double'];
+// Start only where the period opens each week.
 const declaredMoments = (subject: DefinitionSubject) =>
   subject.data.timing
-    ? [START, READ, ...Object.keys(subject.data.timing.moments ?? {})]
+    ? [
+        ...(subject.data.timing.opens ? [START] : []),
+        READ,
+        ...Object.keys(subject.data.timing.moments ?? {}),
+      ]
     : [];
+const momentOf = (name: string, subject: DefinitionSubject) =>
+  subject.data.timing?.moments?.[name];
+// A dated moment has hours since it wherever it has happened by the read,
+// which is known per record: where it has not, the rule fails (below).
+const datedMoment = (name: string, subject: DefinitionSubject) => {
+  const moment = momentOf(name, subject);
+  return moment && isDated(moment) ? moment : null;
+};
 
 /*
   What is wrong with a shape on this read, in words the model can act on.
@@ -215,7 +233,11 @@ function ruleProblems(shape: Rule, context: ShapeContext): string[] {
       problems.push(
         `No moment ${o.moment}; the moments are ${moments.join(', ') || 'none'}.`,
       );
-    else if (subject.data.timing?.moments?.[o.moment]?.kind !== 'observed')
+    else if (
+      !datedMoment(o.moment, subject) &&
+      (momentOf(o.moment, subject) as WeeklyMoment | undefined)?.kind !==
+        'observed'
+    )
       // Hours since a moment still to come would be negative: a sign to get
       // wrong. Only what has happened by the read has hours since it.
       problems.push(
@@ -312,9 +334,21 @@ const blankIn = (column: string, context: ShapeContext): Blank =>
 
 // The columns a moment is read from; start and read are never blank.
 const momentColumns = (name: string, { subject }: ShapeContext) => {
-  const moment = subject.data.timing?.moments?.[name];
-  return moment ? [moment.day, moment.time] : [];
+  const moment = momentOf(name, subject);
+  return moment ? timeColumnsOf(moment) : [];
 };
+
+// The dated moments a shape reads hours since: each must have happened by
+// the read, or the rule fails, never a negative number of hours.
+const datedSince = (shape: Rule, { subject }: ShapeContext) => [
+  ...new Set(
+    operandsOf(shape).flatMap((o) =>
+      o.kind === 'hours_since' && datedMoment(o.moment, subject)
+        ? [o.moment]
+        : [],
+    ),
+  ),
+];
 
 // A moment is skipped only where every column it is read from says so.
 const blankAt = (name: string, context: ShapeContext): Blank =>
@@ -351,6 +385,10 @@ function presentParts(shape: Rule, context: ShapeContext): Present[] {
         formula: `has(record.${momentColumn(m)})`,
         blank: blankAt(m, context),
       })),
+    ...datedSince(shape, context).map((m) => ({
+      formula: `record.${momentColumn(m)} <= 0.0`,
+      blank: 'fail' as const,
+    })),
   ];
 }
 
@@ -479,7 +517,7 @@ function momentWords(name: string, { subject }: ShapeContext) {
   const timing = subject.data.timing;
   if (name === READ) return 'when the data is read';
   if (name === START)
-    return timing
+    return timing?.opens
       ? `the start (${timing.opens.day} ${clock(timing.opens.minutes)})`
       : 'the start';
   return `the ${timing?.moments?.[name]?.label ?? words(name)}`;
@@ -598,6 +636,12 @@ function ruleSentence(shape: Rule, context: ShapeContext): string {
         `Where ${named.map((b) => b.words).join(' or ')} is blank, ${blank === 'skip' ? 'it does not apply' : 'it fails'}.`,
       );
   }
+  // Said always: hours since a date still to come are never a number here.
+  const ahead = datedSince(shape, context).map((m) => momentWords(m, context));
+  if (ahead.length)
+    tail.push(
+      `Where ${ahead.join(' or ')} is after the data is read, it fails.`,
+    );
   const sentence = prefix ? `${prefix}${rule}` : upperFirst(rule);
   return [sentence, ...tail].join(' ');
 }
@@ -1044,6 +1088,24 @@ function momentWhen(
 ): string | null {
   const timing = context.subject.data.timing;
   if (!timing) return null;
+  // A dated moment as its date, and its time where the column holds one.
+  const dated = datedMoment(name, context.subject);
+  if (dated) {
+    const cell = record[dated.at];
+    if (cell === undefined || cell === null) return null;
+    const type =
+      profiled(dated.at, context)?.type ?? context.subject.data.types[dated.at];
+    return new Intl.DateTimeFormat('en-GB', {
+      timeZone: timing.timeZone,
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      ...(type?.kind === 'datetime'
+        ? { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }
+        : {}),
+    }).format(new Date(Number(cell)));
+  }
   const readAt = Date.parse(context.read.readAt);
   const hours = name === READ ? 0 : record[momentColumn(name)];
   return typeof hours === 'number'
