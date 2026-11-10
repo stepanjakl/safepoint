@@ -136,6 +136,10 @@ export const definitionSetSchema = z.object({
   // The confirmed data profile it was drafted on; absent on a set drafted
   // before profiles, whose columns are typed from each read.
   profileId: z.string().optional(),
+  // The keys of the records of the read it was reviewed on, kept when it was
+  // accepted whole; absent on a rulebook accepted before, which then treats
+  // every record as one it has seen (propose.ts, checkProposal).
+  acceptedKeys: z.array(z.string()).optional(),
 });
 
 /*

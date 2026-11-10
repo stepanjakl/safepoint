@@ -91,6 +91,93 @@ describe('checking a proposal', () => {
   });
 });
 
+describe('a record the rulebook was not accepted on', () => {
+  const known = { ...set, acceptedKeys: KEYS };
+  // The data gains a record: a copy of one in every tab, under a new key.
+  const gained = (from: string, key = 'NEW-01') => {
+    const tabs = capturedTabs();
+    for (const tab of tabs) {
+      const row = tab.values.find((r) => r[0] === from);
+      if (row) tab.values.push([key, ...row.slice(1)]);
+    }
+    return capturedRead(tabs);
+  };
+  const added = gained('EG-06');
+  const newOnes = (checks: { id: string }[]) =>
+    checks.filter((c) => c.id === 'new:record');
+
+  it('is for a person to decide, naming the groups by the instructions’ words', () => {
+    // Eggs hold enough, so with nothing proposed it would be ready.
+    expect(
+      checkProposal(owner, set, added, 'NEW-01', { order: 0 }).verdict,
+    ).toBe('ready');
+    const { verdict, checks } = checkProposal(owner, known, added, 'NEW-01', {
+      order: 0,
+    });
+    expect(verdict).toBe('decide');
+    expect(newOnes(checks)).toEqual([
+      {
+        id: 'new:record',
+        name: 'New product since the rules were accepted: a person confirms which of the named groups it belongs to',
+        consequence: 'decide',
+        holds: false,
+        applies: true,
+        steps: [
+          'NEW-01 was not among the products the rules were accepted on',
+          'The rules name groups by their words: "eggs, cherry tomatoes and rocket are on offer"; "a sourdough loaf, a pack of ripe avocados and a pack of feta"',
+        ],
+        error: null,
+      },
+    ]);
+  });
+
+  it('does not stop a check that blocks from blocking', () => {
+    expect(
+      checkProposal(owner, known, gained('SD-01'), 'NEW-01', { order: 80 })
+        .verdict,
+    ).toBe('blocked');
+  });
+
+  it('leaves a record it was accepted on as it is', () => {
+    for (const key of KEYS)
+      expect(checkProposal(owner, known, read, key, { order: 10 })).toEqual(
+        checkProposal(owner, set, read, key, { order: 10 }),
+      );
+  });
+
+  it('adds nothing for a rulebook that kept no keys, or groups nothing', () => {
+    expect(
+      newOnes(checkProposal(owner, set, added, 'NEW-01', { order: 0 }).checks),
+    ).toEqual([]);
+    const ungrouped = {
+      ...known,
+      definitions: known.definitions.map((d) => ({
+        ...d,
+        groups: d.groups.map((g) => ({ ...g, keys: [] })),
+      })),
+    };
+    expect(
+      newOnes(
+        checkProposal(owner, ungrouped, added, 'NEW-01', { order: 0 }).checks,
+      ),
+    ).toEqual([]);
+    expect(
+      newOnes(
+        checkProposal(
+          owner,
+          {
+            ...known,
+            definitions: known.definitions.map((d) => ({ ...d, groups: [] })),
+          },
+          added,
+          'NEW-01',
+          { order: 0 },
+        ).checks,
+      ),
+    ).toEqual([]);
+  });
+});
+
 describe('a calculation that cannot be worked out', () => {
   // One record's first weekend of sales is blank.
   const blank = (sku = 'AV-RR') => {

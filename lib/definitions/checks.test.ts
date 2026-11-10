@@ -5,17 +5,20 @@ import {
   SUBJECT,
 } from '@/lib/processes/brunch-orders/process';
 
-import { capturedRead } from './captured.fixture';
+import { capturedRead, capturedTabs } from './captured.fixture';
 import {
+  differencesBetween,
   problemsOf,
   readingProblems,
   review,
+  reviewBreakdown,
   settingOf,
   states,
   strayNumbers,
   type Against,
   type Draft,
 } from './checks';
+import type { KeptRead } from './records';
 import { definition, example } from './set.fixture';
 import { worksOutItself, type Definition, type DefinitionSet } from './types';
 
@@ -232,28 +235,33 @@ describe('what a formula has to read', () => {
   });
 });
 
+const TEXT = 'The rule.';
+// A check on its own, standing where a draft of it would, on this read.
+const settingFor = (read: KeptRead) => {
+  const item = definition('the_rule', {
+    result: 'check',
+    consequence: 'block',
+  });
+  const set: DefinitionSet = {
+    hash: 'h',
+    version: 'v1',
+    intent: '',
+    intentConfirmedAt: null,
+    readId: read.id,
+    foundAt: '',
+    model: 'test',
+    definitions: [item],
+  };
+  return settingOf(owner, TEXT, set, read, item);
+};
+
 describe('a check’s examples', () => {
   const read = capturedRead();
-  const TEXT = 'The rule.';
   const checked = (
     formula: string,
     examples: Pick<Draft['examples'][number], 'key' | 'inputs' | 'expect'>[],
   ) => {
-    const item = definition('the_rule', {
-      result: 'check',
-      consequence: 'block',
-    });
-    const set: DefinitionSet = {
-      hash: 'h',
-      version: 'v1',
-      intent: '',
-      intentConfirmedAt: null,
-      readId: read.id,
-      foundAt: '',
-      model: 'test',
-      definitions: [item],
-    };
-    return review(settingOf(owner, TEXT, set, read, item), {
+    return review(settingFor(read), {
       formula,
       constants: [],
       groups: [],
@@ -299,6 +307,26 @@ describe('a check’s examples', () => {
         { key: 'SS-125', inputs: { order: 0 }, expect: false },
       ]).problems[0],
     ).toContain('reads nothing from the data');
+  });
+
+  it('finds a check able to fail where only a value of the record itself fails it', () => {
+    // It fails at SD-01's own most, 72, which no fixed value reaches.
+    const only = `!has(record.max_order_units) || order != record.max_order_units`;
+    expect(checked(only, [holds]).problems).toEqual([
+      expect.stringMatching(/^No example where it fails\. Add one, such as /),
+    ]);
+    const part = (examples: (typeof holds)[]) =>
+      reviewBreakdown(settingFor(read), {
+        formula: only,
+        constants: [],
+        groups: [],
+        examples: examples.map((e) => ({ ...e, why: 'By hand.' })),
+      }).find((p) => p.id === 'both-ways')!;
+    expect(part([holds]).note).toBe('On this read it can hold and can fail.');
+    expect(
+      part([holds, { ...holds, inputs: { order: 72 }, expect: false }])
+        .problems,
+    ).toEqual([]);
   });
 
   it('only asks once the examples agree', () => {
@@ -355,5 +383,57 @@ describe('a check that works a quantity out itself', () => {
     expect(
       check('The rule.', 'order > 0', [quoted('a', 'x'), quoted('b', 'y')]),
     ).toBe(false);
+  });
+});
+
+describe('two versions of a check', () => {
+  const MAX = 'record.max_order_units';
+  const draft = (formula: string): Draft => ({
+    formula,
+    constants: [],
+    groups: [],
+    examples: [],
+  });
+  const differ = (a: string, b: string, read = capturedRead()) =>
+    differencesBetween(settingFor(read), draft(a), draft(b));
+  const atMost = `!has(${MAX}) || order <= ${MAX}`;
+
+  // The bakery's most is 72, which no fixed value reaches.
+  it('differ where one is open at the record’s own limit and the other shut', () => {
+    expect(differ(atMost, `!has(${MAX}) || order < ${MAX}`)).toEqual([
+      { key: 'SD-01', inputs: { order: 72 }, results: ['true', 'false'] },
+    ]);
+  });
+
+  it('differ where one limit is a unit lower', () => {
+    expect(differ(atMost, `!has(${MAX}) || order <= ${MAX} - 1`)).toEqual([
+      { key: 'SD-01', inputs: { order: 72 }, results: ['true', 'false'] },
+    ]);
+  });
+
+  it('differ where a step is narrowed to a record’s own odd size', () => {
+    const whole = 'order % record.case_size == 0';
+    const even = `order % 2 == 0 && ${whole}`;
+    // Every case size in the captured read is even, so the two behave alike
+    // on it, whatever is tried.
+    expect(differ(whole, even)).toEqual([]);
+    // One of 77, which no fixed value is a multiple of, tells them apart.
+    const tabs = capturedTabs();
+    const products = tabs.find((t) => t.name === 'Products')!;
+    const column = products.values[0]!.indexOf('case_size');
+    products.values.find((r) => r[0] === 'SD-01')![column] = 77;
+    expect(differ(whole, even, capturedRead(tabs))).toEqual([
+      { key: 'SD-01', inputs: { order: 77 }, results: ['true', 'false'] },
+    ]);
+  });
+
+  it('agree where they really behave alike, however they are worded', () => {
+    expect(differ(atMost, `!has(${MAX}) || !(order > ${MAX})`)).toEqual([]);
+    expect(
+      differ(
+        'order % record.case_size == 0',
+        'order % record.case_size == 0 && order >= 0',
+      ),
+    ).toEqual([]);
   });
 });

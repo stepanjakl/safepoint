@@ -33,27 +33,53 @@ import {
   read its examples were run on: the same checks writing applies, so a
   version that predates a check, or a file edited by hand, is refused with
   the reason rather than accepted. The decision that completes the rulebook
-  keeps it as a revision (store.ts). Where writes disagreed, a person chooses a
+  keeps it as a revision (store.ts), with the keys of the records of the read it
+  was reviewed on. Where writes disagreed, a person chooses a
   version before it can be accepted.
 */
 
+// The records of the read a rulebook was reviewed on, as its profile reads
+// them; null when that read is gone or does not fit, so nothing is said of
+// which records it has seen.
+async function keysOn(
+  owner: DefinitionProcess,
+  set: DefinitionSet,
+  readOf: (id: string) => Promise<KeptRead | null>,
+): Promise<string[] | null> {
+  const read = set.readId ? await readOf(set.readId) : null;
+  if (!read) return null;
+  const records = recordsOf(read, (await ownerFor(owner, set)).subject.data);
+  return records.problems.length ? null : [...records.keys].sort();
+}
+
+// Once a rulebook is complete it is kept as a revision with the records it
+// was accepted on, so a record the data gains later can be told from them.
 async function freezing(
   owner: DefinitionProcess,
   saved: Promise<DefinitionSet | null>,
+  readOf: (id: string) => Promise<KeptRead | null>,
 ): Promise<DefinitionSet | null> {
-  const set = await saved;
-  if (set && complete(set))
+  let set = await saved;
+  if (set && complete(set)) {
+    const acceptedKeys = (await keysOn(owner, set, readOf)) ?? undefined;
+    set = await saveSet(owner, { ...set, acceptedKeys });
     await putRevision(owner, set, { reason: 'accepted' });
+  }
   return set;
 }
 
-export const confirmIntent = (owner: DefinitionProcess, text: string) =>
+export const confirmIntent = (
+  owner: DefinitionProcess,
+  text: string,
+  readOf: (id: string) => Promise<KeptRead | null>,
+) =>
   freezing(
     owner,
     updateSet(owner, text, (s) => ({
       ...s,
       intentConfirmedAt: new Date().toISOString(),
     })),
+    readOf,
   );
 
 export async function deny(
@@ -218,7 +244,7 @@ export async function accept(
         : d,
     ),
   }));
-  return freezing(owner, accepted);
+  return freezing(owner, accepted, readOf);
 }
 
 /*

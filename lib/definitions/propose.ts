@@ -155,7 +155,45 @@ export function checkProposal(
       error: null,
     });
   }
+  const newcomer = newRecordCheck(set, key, subject.record);
+  if (newcomer) checks.push(newcomer);
   return { verdict: verdictOf(checks, accepted.length > 0), checks };
+}
+
+/*
+  A record the rulebook was not accepted on, where an accepted definition
+  groups records by the instructions' words: a formula reading "in the group,
+  or not" would put it with the rest in silence. One check a person decides,
+  made from the process's own words. None for a rulebook that groups nothing,
+  or that kept no record of the keys it was accepted on.
+*/
+function newRecordCheck(
+  set: DefinitionSet,
+  key: string,
+  { singular, plural }: DefinitionProcess['subject']['record'],
+): CheckVerdict | null {
+  if (!set.acceptedKeys || set.acceptedKeys.includes(key)) return null;
+  const quotes = [
+    ...new Set(
+      set.definitions
+        .filter((d) => d.approvedAt)
+        .flatMap((d) => d.groups.filter((g) => g.keys.length))
+        .map((g) => `"${g.quote}"`),
+    ),
+  ];
+  if (!quotes.length) return null;
+  return {
+    id: 'new:record',
+    name: `New ${singular} since the rules were accepted: a person confirms which of the named groups it belongs to`,
+    consequence: 'decide',
+    holds: false,
+    applies: true,
+    steps: [
+      `${key} was not among the ${plural} the rules were accepted on`,
+      `The rules name groups by their words: ${quotes.join('; ')}`,
+    ],
+    error: null,
+  };
 }
 
 // A cell the model cites, as a person finds it: Stock!B3. Or why it is none.

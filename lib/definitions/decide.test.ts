@@ -14,7 +14,14 @@ import { recordsOf } from './records';
 import { inScratchDirectory } from './scratch.fixture';
 import { definition, example, keep, TEXT } from './set.fixture';
 import { formulaOf, type Shape, type ShapeContext } from './shapes';
-import { listRevisions, loadRevision, putRevision, saveProfile } from './store';
+import {
+  fingerprintOf,
+  listRevisions,
+  loadRevision,
+  loadSet,
+  putRevision,
+  saveProfile,
+} from './store';
 import type { DataProfile, Definition } from './types';
 
 // Accepting reruns the whole review on the version kept, against its read:
@@ -89,13 +96,49 @@ describe('accepting a definition', () => {
     });
     await keep([twoWeekends, twoMore]);
     await accepted('two_weekends');
-    await confirmIntent(owner, TEXT);
+    await confirmIntent(owner, TEXT, readOf);
     expect((await listRevisions(owner, TEXT)).revisions).toEqual([]);
     await accepted('two_more');
     const { head, revisions } = await listRevisions(owner, TEXT);
     expect(revisions).toEqual([
       expect.objectContaining({ id: head, parent: null, reason: 'accepted' }),
     ]);
+  });
+});
+
+describe('completing a rulebook', () => {
+  const approvedAt = '2026-11-10T01:00:00.000Z';
+  const KEYS = [...recordsOf(read, owner.subject.data).keys].sort();
+
+  it('keeps the keys of the read it was reviewed on, in the revision and the current rulebook', async () => {
+    const twoMore = definition('two_more', {
+      formula: 'record.weekend_2 + record.weekend_1',
+      examples: [example(59, true)],
+    });
+    await keep([twoWeekends, twoMore]);
+    await accepted('two_weekends');
+    expect((await loadSet(owner, TEXT))?.acceptedKeys).toBeUndefined();
+    await confirmIntent(owner, TEXT, readOf);
+    expect((await loadSet(owner, TEXT))?.acceptedKeys).toBeUndefined();
+    await accepted('two_more');
+    const { head } = await listRevisions(owner, TEXT);
+    const frozen = await loadRevision(owner, TEXT, head!);
+    expect(frozen?.acceptedKeys).toEqual(KEYS);
+    expect(KEYS).toContain('SD-01');
+    // The current rulebook is the one the revision was made from.
+    expect((await loadSet(owner, TEXT))?.acceptedKeys).toEqual(KEYS);
+    expect(fingerprintOf(frozen!)).toBe(head);
+  });
+
+  it('keeps them when the intent is the last decision, and none when the read is gone', async () => {
+    await keep([{ ...twoWeekends, approvedAt }]);
+    const done = await confirmIntent(owner, TEXT, readOf);
+    expect(done?.acceptedKeys).toEqual(KEYS);
+    await keep([{ ...twoWeekends, approvedAt }], {
+      intentConfirmedAt: approvedAt,
+    });
+    const gone = await confirmIntent(owner, TEXT, async () => null);
+    expect(gone?.acceptedKeys).toBeUndefined();
   });
 });
 

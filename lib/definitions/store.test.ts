@@ -40,6 +40,30 @@ const accepted = definition('two_weekends', {
   approvedAt: '2026-10-09T12:00:00.000Z',
 });
 
+describe('a rulebook accepted before keys were kept', () => {
+  const kept = JSON.parse(
+    readFileSync(
+      'fixtures/brunch-orders/rulebooks/v2-91823c6c8281/5b895575e4e7.json',
+      'utf8',
+    ),
+  );
+
+  it('still fits the stored shape, with the id it was kept under', () => {
+    const set = definitionSetSchema.parse(kept);
+    expect(set.acceptedKeys).toBeUndefined();
+    expect(fingerprintOf(set)).toBe('5b895575e4e7');
+  });
+
+  it('is another rulebook once it names the records it was accepted on', () => {
+    const set = definitionSetSchema.parse(kept);
+    const keyed = { ...set, acceptedKeys: ['SD-01'] };
+    expect(fingerprintOf(keyed)).not.toBe(fingerprintOf(set));
+    expect(fingerprintOf({ ...keyed, acceptedKeys: ['SD-01'] })).toBe(
+      fingerprintOf(keyed),
+    );
+  });
+});
+
 describe('the store', () => {
   it('has nothing for instructions never drafted', async () => {
     expect(await loadSet(owner, TEXT)).toBeNull();

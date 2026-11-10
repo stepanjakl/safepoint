@@ -471,11 +471,81 @@ export function readingProblems(
 // The values a field is tried at, to see what a check can do on this read.
 const PROBES = [0, 1, 1_000_000];
 
+// The most values taken from one record's own numbers, nearest first.
+const MOST_OWN_VALUES = 200;
+// A value is a boundary only where whole numbers stay exact.
+const LARGEST_OWN_VALUE = 1_000_000_000;
+// How many whole multiples of a small number are tried, so a step is met.
+const MULTIPLES = [2, 3, 4];
+const SMALL_STEP = 100;
+
+/*
+  The values worth trying for one record besides the fixed ones: every number
+  a formula could read for it (its row, its lookups' rows, the definitions
+  before it, and the constants of the versions), each with one either side,
+  and a few whole multiples of the small ones, so that a rule's edge or step
+  is met wherever this record puts it. Only whole numbers the proposal's
+  fields allow are kept. Those the formulas name come first, then the rest,
+  and the multiples last, so a bound cuts the farthest.
+*/
+function ownValues(setting: Setting, drafts: Draft[], key: string): number[] {
+  const { records, owner, set, read, definition } = setting;
+  const { subject } = owner;
+  const written = drafts.map((d) => d.formula).join(' ');
+  const none = Object.fromEntries(subject.proposal.map((f) => [f.id, 0]));
+  const named: [string, unknown][] = [
+    ...Object.entries(records.record(key)).map(
+      ([column, v]): [string, unknown] => [`record.${column}`, v],
+    ),
+    ...Object.entries(records.lookups(key)).flatMap(([as, row]) =>
+      Object.entries(row).map(([column, v]): [string, unknown] => [
+        `${as}.${column}`,
+        v,
+      ]),
+    ),
+    ...Object.entries(
+      valuesFor(set, read, key, none, definition.id, subject),
+    ).map(([id, v]): [string, unknown] => [`values.${id}`, v]),
+    ...drafts.flatMap((d) =>
+      d.constants.map((c): [string, unknown] => [`constants.${c.id}`, c.value]),
+    ),
+  ];
+  const mins = subject.proposal.flatMap((f) =>
+    f.min === undefined ? [] : [f.min],
+  );
+  const least = mins.length ? Math.max(...mins) : 0;
+  const reads = (name: string) => written.includes(name);
+  const numbers = (wanted: boolean) =>
+    named.flatMap(([name, v]) => {
+      const n = numberOf(v);
+      return n !== null && Number.isFinite(n) && reads(name) === wanted
+        ? [n]
+        : [];
+    });
+  const whole = (n: number) => [...new Set([Math.floor(n), Math.ceil(n)])];
+  const tiersOf = (wanted: boolean) => {
+    const own = numbers(wanted).flatMap(whole);
+    return [
+      own,
+      own.flatMap((n) => [n - 1, n + 1]),
+      own.flatMap((n) =>
+        n >= 2 && n <= SMALL_STEP ? MULTIPLES.map((k) => n * k) : [],
+      ),
+    ];
+  };
+  const [mentioned, other] = [tiersOf(true), tiersOf(false)];
+  const ordered = [0, 1, 2].flatMap((t) => [mentioned[t]!, other[t]!]).flat();
+  return [...new Set(ordered)]
+    .filter((n) => Number.isInteger(n) && n >= least && n <= LARGEST_OWN_VALUE)
+    .slice(0, MOST_OWN_VALUES);
+}
+
 /*
   Whether a check's examples show it working both ways, as far as this read
   lets them. A check cannot always fail: where every delivery arrives in time,
   nothing an order sets can break the arrival rule. So the formula is tried on
-  every record first, and only an outcome it can reach is required.
+  every record first, at the fixed values and at each record's own, and only
+  an outcome it can reach is required.
 */
 function reachOf(setting: Setting, draft: Draft) {
   const { records, owner } = setting;
@@ -490,8 +560,12 @@ function reachOf(setting: Setting, draft: Draft) {
     holds?: Pick<Example, 'key' | 'inputs'>;
     fails?: Pick<Example, 'key' | 'inputs'>;
   } = {};
-  for (const key of records.keys)
-    for (const value of new Set(tried)) {
+  for (const key of records.keys) {
+    const values = new Set([
+      ...tried,
+      ...(fields.length ? ownValues(setting, [draft], key) : []),
+    ]);
+    for (const value of values) {
       const inputs = Object.fromEntries(fields.map((f) => [f, value]));
       try {
         const outcome = runOn(setting, draft, key, inputs);
@@ -500,7 +574,9 @@ function reachOf(setting: Setting, draft: Draft) {
       } catch {
         // A record it cannot be worked out on says nothing either way.
       }
+      if (found.holds && found.fails) return found;
     }
+  }
   return found;
 }
 
@@ -529,8 +605,9 @@ function everyRecordProblems(setting: Setting, draft: Draft): string[] {
     : [];
 }
 
-// The values a field is tried at when comparing two versions: closely where
-// orders usually fall, then further apart.
+// The values a field is tried at when comparing two versions: every whole
+// number up to 20, then steps of 5 and a few large ones. Each record adds its
+// own (ownValues), where a rule's edge or step falls.
 const COMPARED_AT = [
   ...Array.from({ length: 21 }, (_, i) => i),
   ...Array.from({ length: 36 }, (_, i) => 25 + i * 5),
@@ -558,9 +635,11 @@ const outcomeOf = (
 
 /*
   Where two versions of a definition give different answers, on every record at
-  a range of values. How they are worded does not come into it, so two that read
-  differently and behave the same agree. Empty when no difference was found,
-  which is not proof: a value not tried could still tell them apart.
+  a range of values, and at the numbers of the record itself and either side of
+  them, where a limit or a step would show. How they are worded does not come
+  into it, so two that read differently and behave the same agree. Empty when
+  no difference was found, which is not proof: a value not tried could still
+  tell them apart.
 */
 export function differencesBetween(
   setting: Setting,
@@ -571,16 +650,20 @@ export function differencesBetween(
   const fields = owner.subject.proposal
     .map((field) => field.id)
     .filter((id) => readsName(a.formula, id) || readsName(b.formula, id));
-  const values = fields.length
-    ? new Set([
+  const fixed = fields.length
+    ? [
         ...COMPARED_AT,
         ...[...a.examples, ...b.examples].flatMap((e) =>
           fields.map((field) => e.inputs[field] ?? 0),
         ),
-      ])
-    : new Set([0]);
+      ]
+    : [0];
   const found: VersionDifference[] = [];
-  for (const key of records.keys)
+  for (const key of records.keys) {
+    const values = new Set([
+      ...fixed,
+      ...(fields.length ? ownValues(setting, [a, b], key) : []),
+    ]);
     for (const value of values) {
       const inputs = Object.fromEntries(
         owner.subject.proposal.map((field) => [field.id, value]),
@@ -596,6 +679,7 @@ export function differencesBetween(
         break;
       }
     }
+  }
   return found;
 }
 

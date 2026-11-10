@@ -272,7 +272,7 @@ export async function POST(request: Request) {
         return replyWith(() => loadSet(owner, body.text));
       }
       case 'intent':
-        return replyWith(() => confirmIntent(owner, body.text));
+        return replyWith(() => confirmIntent(owner, body.text, keptRead));
       case 'write':
         startRewrite(owner, body.text, await readOf(body.readId), body.id, {
           model: body.model,

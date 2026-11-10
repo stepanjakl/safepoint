@@ -41,14 +41,20 @@ export const hashOf = (text: string) =>
   createHash('sha256').update(text).digest('hex').slice(0, 12);
 
 // The exact accepted rulebook: any change to what was accepted changes it,
-// and so does the data profile it reads on; one with none keeps its old id.
+// and so does the data profile it reads on and the records it was accepted
+// on, since both change what a run's checks say; a rulebook with neither
+// keeps its old id.
 export const fingerprintOf = (set: DefinitionSet) => {
   const accepted = set.definitions
     .filter((d) => d.approvedAt)
     .map((d) => [d.id, d.formula, d.constants, d.groups, d.approvedAt]);
+  const reads = {
+    ...(set.profileId ? { profile: set.profileId } : {}),
+    ...(set.acceptedKeys ? { keys: set.acceptedKeys } : {}),
+  };
   return hashOf(
     JSON.stringify(
-      set.profileId ? { profile: set.profileId, accepted } : accepted,
+      Object.keys(reads).length ? { ...reads, accepted } : accepted,
     ),
   );
 };
