@@ -1,5 +1,5 @@
 {
-  "head": "5b895575e4e7",
+  "head": "4dfb4733e36d",
   "revisions": [
     {
       "id": "d23a4c56d75b",
@@ -16,6 +16,14 @@
       "at": "2026-10-12T16:19:54.000Z",
       "schemaVersion": 1,
       "note": "ripe read as a yes/no column"
+    },
+    {
+      "id": "4dfb4733e36d",
+      "parent": "5b895575e4e7",
+      "reason": "migrated",
+      "at": "2026-11-11T14:46:13.148Z",
+      "schemaVersion": 1,
+      "note": "held to the confirmed data profile"
     }
   ]
 }

@@ -394,5 +394,19 @@
       "deniedAt": null,
       "denial": null
     }
+  ],
+  "profileId": "481dc0e61bc1",
+  "acceptedKeys": [
+    "AV-LS",
+    "AV-RR",
+    "CF-40",
+    "CT-250",
+    "EG-06",
+    "FT-200",
+    "LM-04",
+    "OO-500",
+    "RK-60",
+    "SD-01",
+    "SS-125"
   ]
 }
