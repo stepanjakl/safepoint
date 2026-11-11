@@ -5,7 +5,7 @@ import { expect, test } from '@playwright/test';
 
 import { capturedRead } from '@/lib/definitions/captured.fixture';
 import { confirmProfile, profileOf } from '@/lib/definitions/profile';
-import { definitionSetSchema } from '@/lib/definitions/types';
+import { definitionSetSchema, SCOPE_MISMATCH } from '@/lib/definitions/types';
 import { SUBJECT } from '@/lib/processes/brunch-orders/process';
 
 // Brunch orders, phase 2 (docs/processes/brunch-orders/PLAN.md): after the read, the
@@ -776,4 +776,79 @@ test('versions that disagree are shown as the sentences the app wrote, for a per
   await expect(versions).toHaveCount(0);
   await expect(card.getByRole('button', { name: /^Accept/ })).toBeVisible();
   expect(chosen).toBe(1);
+});
+
+test('a rule whose shape disagrees with how finding read it offers the other reading, by keyboard', async ({
+  page,
+}) => {
+  const set = frozen as { definitions: { id: string; name: string }[] };
+  const rule = set.definitions[1]!;
+  const problem = `${SCOPE_MISMATCH}: the instructions limit the rule to some products, but the shape has no scope. Give its scope, as a group or as conditions.`;
+  const read = (appliesTo: string, problem: string | null) => ({
+    ...set,
+    definitions: set.definitions.map((definition) =>
+      definition.id === rule.id
+        ? { ...definition, appliesTo, problem }
+        : definition,
+    ),
+  });
+  let said: { id: string; value: string } | null = null;
+  await page.route('**/api/dev/brunch-orders/rules', (route) => {
+    const body = route.request().postDataJSON() as {
+      action: string;
+      id?: string;
+      value?: string;
+    };
+    if (body.action === 'appliesTo')
+      said = { id: body.id!, value: body.value! };
+    return route.fulfill({
+      json: {
+        kind: 'rules',
+        set: said ? read('every', null) : read('some', problem),
+        names,
+        history: { head: null, revisions: [] },
+      },
+    });
+  });
+  await page.goto('/examples/brunch-orders');
+  await page.getByRole('button', { name: 'Start run' }).first().click();
+  await page
+    .getByRole('button', { name: 'Read the sheet', exact: true })
+    .last()
+    .click();
+  const card = page
+    .getByRole('listitem')
+    .filter({
+      has: page.getByRole('heading', { name: rule.name, exact: true }),
+    })
+    .last();
+  // How finding read the rule is stated quietly in the model's reading, and
+  // the mismatch with what was written is the card's problem.
+  await expect(card.getByText('For some products').first()).toBeVisible();
+  await expect(card.getByText(problem)).toBeVisible();
+  await expect(
+    card.getByText('Finding read this rule as for only some products.'),
+  ).toBeVisible();
+  // A card finding gave no reading of has no such control.
+  await expect(
+    page.getByRole('button', { name: /^This rule is for/ }),
+  ).toHaveCount(1);
+
+  const other = card.getByRole('button', {
+    name: 'This rule is for every product',
+  });
+  // Reached by keyboard: focus waits until the panel holding it has settled.
+  await expect(async () => {
+    await other.focus();
+    await expect(other).toBeFocused({ timeout: 500 });
+  }).toPass();
+  await page.keyboard.press('Enter');
+  await expect.poll(() => said).toEqual({ id: rule.id, value: 'every' });
+
+  // The control goes with the problem, the reading changes in place, and focus
+  // is on the next step: writing the rule again.
+  await expect(other).toHaveCount(0);
+  await expect(card.getByText(problem)).toHaveCount(0);
+  await expect(card.getByText('For every product').first()).toBeVisible();
+  await expect(card.getByRole('button', { name: 'Write again' })).toBeFocused();
 });

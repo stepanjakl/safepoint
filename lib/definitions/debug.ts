@@ -240,6 +240,7 @@ export function debugDefinition(
     checks: formula
       ? reviewBreakdown(settingOf(owner, text, set, read, definition), {
           formula,
+          shape: definition.shape,
           constants: definition.constants,
           groups: definition.groups,
           examples: definition.examples,
@@ -351,6 +352,7 @@ export function debugDraft(
             text: d.text,
             result: d.result,
             consequence: d.consequence,
+            applies_to: d.appliesTo ?? null,
           })),
           sentences: accounting.map((a) => ({
             n: sentences.indexOf(a.sentence) + 1,

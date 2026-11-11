@@ -838,6 +838,13 @@ function scopeOf(shape: Shape): {
   };
 }
 
+// Whether a shape is limited to some records, by a group or by conditions. A
+// blank-cell guard is the profile's, never the shape's, so it is not one.
+export const hasScope = (shape: Shape): boolean => {
+  const { group, when } = scopeOf(shape);
+  return group !== null || when.length > 0;
+};
+
 /*
   The rule a shape says, or what stops it being read: each kind needs its own
   blanks filled, and what is filled for another kind is ignored.

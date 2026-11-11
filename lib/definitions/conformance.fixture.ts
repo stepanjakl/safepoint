@@ -444,6 +444,8 @@ type Found = {
   text: string;
   result: 'number' | 'check';
   consequence: 'block' | 'decide' | null;
+  // How finding reads a check: stated for every dock, or only for some.
+  applies_to: 'every' | 'some' | null;
 };
 
 const number = (id: string, name: string, text: string): Found => ({
@@ -452,13 +454,15 @@ const number = (id: string, name: string, text: string): Found => ({
   text,
   result: 'number',
   consequence: null,
+  applies_to: null,
 });
 const rule = (
   id: string,
   name: string,
   text: string,
   consequence: 'block' | 'decide',
-): Found => ({ id, name, text, result: 'check', consequence });
+  applies_to: 'every' | 'some' = 'every',
+): Found => ({ id, name, text, result: 'check', consequence, applies_to });
 
 export const FOUND_DEFINITIONS: Found[] = [
   number(
@@ -506,6 +510,7 @@ export const FOUND_DEFINITIONS: Found[] = [
     'Hillside fare cap',
     'At the hillside docks the hire fare must not exceed 300 cents.',
     'block',
+    'some',
   ),
   rule(
     'fare_floor',
@@ -524,6 +529,7 @@ export const FOUND_DEFINITIONS: Found[] = [
     'No kiosk cap',
     'At docks without a kiosk, bring at most 8 bikes.',
     'block',
+    'some',
   ),
 ];
 

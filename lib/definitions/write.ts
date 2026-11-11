@@ -208,6 +208,7 @@ type Answer = Omit<
 // A check's formula is the one code wrote from its shape.
 const draftOf = (answer: Answer, formula = answer.formula ?? ''): Draft => ({
   formula,
+  shape: answer.shape ?? null,
   constants: answer.constants,
   groups: answer.groups,
   examples: answer.examples.map((e) => ({
@@ -774,6 +775,7 @@ export async function writeDefinition(
 
 const draftOfKept = (kept: Kept): Draft => ({
   formula: kept.written.formula!,
+  shape: kept.written.shape ?? null,
   constants: kept.written.constants,
   groups: kept.written.groups,
   examples: kept.examples,

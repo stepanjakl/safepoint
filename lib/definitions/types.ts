@@ -19,6 +19,9 @@ import { shapeSchema } from './shape-schema';
 export const resultSchema = z.enum(['check', 'number']);
 // What failing a check does to the proposal.
 const consequenceSchema = z.enum(['block', 'decide']);
+// How finding read a check: stated for every record, or only for some. Held
+// against the scope of the shape written for it (checks.ts).
+const appliesToSchema = z.enum(['every', 'some']);
 
 // A number the formula uses, and the instructions' words it comes from.
 const constantSchema = z.object({
@@ -89,6 +92,9 @@ const definitionSchema = z.object({
   result: resultSchema,
   // Checks only.
   consequence: consequenceSchema.nullable(),
+  // Checks only; absent on a set found before it was asked, which is then
+  // held to nothing.
+  appliesTo: appliesToSchema.optional(),
   constants: z.array(constantSchema),
   groups: z.array(groupSchema),
   // The definitions its formula reads, worked out from the formula.
@@ -210,6 +216,11 @@ export const CONFIRM_FIRST =
 // page can lead from it to the profile.
 export const BLANKS_UNANSWERED = 'Say what a blank cell means before accepting';
 
+// How a problem begins when the scope a shape gives disagrees with how finding
+// read the rule, so a page can offer to correct the reading.
+export const SCOPE_MISMATCH =
+  'The scope written does not match how the instructions were read';
+
 // The stored shape's version, kept with each revision, so a revision written
 // before a change of shape can be told apart rather than misread.
 export const RULEBOOK_SCHEMA = 1;
@@ -238,6 +249,7 @@ export type Revision = z.infer<typeof revisionSchema>;
 export type RevisionIndex = z.infer<typeof revisionIndexSchema>;
 
 export type Result = z.infer<typeof resultSchema>;
+export type AppliesTo = z.infer<typeof appliesToSchema>;
 export type Example = z.infer<typeof exampleSchema>;
 export type Definition = z.infer<typeof definitionSchema>;
 export type DefinitionSet = z.infer<typeof definitionSetSchema>;

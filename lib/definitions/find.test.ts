@@ -3,7 +3,12 @@ import { describe, expect, it } from 'vitest';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 
 import { capturedRead } from './captured.fixture';
-import { accountingProblems, findDefinitions, sentencesOf } from './find';
+import {
+  accountingProblems,
+  findDefinitions,
+  labelProblems,
+  sentencesOf,
+} from './find';
 import { answer, standIn, told } from './models.fixture';
 import { confirmProfile, profileOf, withProfile } from './profile';
 import { inScratchDirectory } from './scratch.fixture';
@@ -19,6 +24,7 @@ const definition = (id: string, result: 'number' | 'check') => ({
   text: id,
   result,
   consequence: result === 'check' ? ('block' as const) : null,
+  applies_to: result === 'check' ? ('every' as const) : null,
 });
 const TEXT = `We sell milk at the corner shop.
 Expected sales are last week's sales plus 10%.
@@ -166,6 +172,24 @@ describe('what code holds the account to', () => {
   });
 });
 
+describe('what code holds the reading of each check to', () => {
+  it('asks for one on every check, and none on a number', () => {
+    expect(labelProblems(right, owner.subject)).toEqual([]);
+    const without = (...ids: string[]): Found => ({
+      ...right,
+      definitions: right.definitions.map((d) =>
+        ids.includes(d.id) ? { ...d, applies_to: null } : d,
+      ),
+    });
+    expect(labelProblems(without('expected_sales'), owner.subject)).toEqual([]);
+    expect(
+      labelProblems(without('whole_crates', 'cover_sales'), owner.subject),
+    ).toEqual([
+      'No applies_to for whole_crates, cover_sales; say whether the instructions state each for every product or only for some of the products.',
+    ]);
+  });
+});
+
 describe('finding', () => {
   inScratchDirectory();
   const find = (model: ReturnType<typeof standIn>) =>
@@ -210,6 +234,35 @@ describe('finding', () => {
     );
     const kept = await loadSet(owner, TEXT);
     expect(kept?.definitions.map((d) => d.id)).toContain('expected_sales');
+  });
+
+  it('asks for how each check is read, and asks once more for one left without', async () => {
+    const model = standIn(
+      answer({
+        ...right,
+        definitions: right.definitions.map((d) =>
+          d.id === 'cover_sales' ? { ...d, applies_to: null } : d,
+        ),
+      }),
+      answer({
+        ...right,
+        definitions: right.definitions.map((d) =>
+          d.id === 'cover_sales' ? { ...d, applies_to: 'some' as const } : d,
+        ),
+      }),
+    );
+    const set = await find(model);
+    expect(told(model, 0)).toContain(
+      'For each check, say whether the instructions state it for every product or only for some of the products.',
+    );
+    expect(told(model, 1)).toContain('Your last answer did not account');
+    expect(told(model, 1)).toContain('No applies_to for cover_sales');
+    expect(set.refused).toEqual([expect.stringContaining('cover_sales')]);
+    const reading = (id: string) =>
+      set.definitions.find((d) => d.id === id)?.appliesTo;
+    expect(reading('cover_sales')).toBe('some');
+    expect(reading('whole_crates')).toBe('every');
+    expect(reading('expected_sales')).toBeUndefined();
   });
 
   it('records the confirmed data profile the set is drafted on', async () => {

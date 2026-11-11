@@ -6,6 +6,7 @@ import { fitting, sourceOf, type KeptRead } from './records';
 import { hashOf, saveSet } from './store';
 import type { DefinitionProcess, DefinitionSet } from './types';
 import { fallbackChain, type DraftingModel } from '@/lib/models';
+import type { DefinitionSubject } from '@/lib/process/model';
 
 /*
   Finding: the model lists, in plain words, the intent of the instructions
@@ -17,60 +18,72 @@ import { fallbackChain, type DraftingModel } from '@/lib/models';
   folded the quantities into checks in 3 drafts of 4; asked for this, in none of
   5. Code holds the answer complete, and a person sees what was set aside. No
   word of a scenario is involved, so it holds for any instructions.
+
+  It says, for each check, whether the instructions state it for every record
+  or only for some. Code holds each written shape to that (checks.ts): in a real
+  draft a rule limited to some records was written, twice, with no scope, and
+  applied to all of them.
 */
 
-const findSchema = z.object({
-  intent: z
-    .string()
-    .describe('The intent of the instructions, in one plain sentence'),
-  sentences: z
-    .array(
-      z.object({
-        n: z.number().int().describe("The sentence's number"),
-        kind: z
-          .enum(['quantity', 'check', 'context'])
-          .describe(
-            'quantity: helps explain how to work a number out; check: states a condition on a proposal; context: neither',
-          ),
-        definitions: z
-          .array(z.string())
-          .describe(
-            'The ids of the definitions it belongs to; none for context',
-          ),
-      }),
-    )
-    .describe('Every numbered sentence, once'),
-  definitions: z
-    .array(
-      z.object({
-        id: z.string().describe('snake_case, named for what it is'),
-        name: z
-          .string()
-          .describe(
-            "A short name in the instructions' words, two to four words",
-          ),
-        text: z
-          .string()
-          .describe(
-            "What it is, in the instructions' own words or very close; for a number, how they say to work it out",
-          ),
-        result: z
-          .enum(['check', 'number'])
-          .describe(
-            'check: a condition a proposal must meet; number: a quantity a check needs',
-          ),
-        consequence: z
-          .enum(['block', 'decide'])
-          .nullable()
-          .describe(
-            'Checks only: block, a proposal failing it must not go ahead; decide, a person decides. Null for a number.',
-          ),
-      }),
-    )
-    .describe('In order: anything another definition needs comes before it'),
-});
+const findSchema = (subject: DefinitionSubject) =>
+  z.object({
+    intent: z
+      .string()
+      .describe('The intent of the instructions, in one plain sentence'),
+    sentences: z
+      .array(
+        z.object({
+          n: z.number().int().describe("The sentence's number"),
+          kind: z
+            .enum(['quantity', 'check', 'context'])
+            .describe(
+              'quantity: helps explain how to work a number out; check: states a condition on a proposal; context: neither',
+            ),
+          definitions: z
+            .array(z.string())
+            .describe(
+              'The ids of the definitions it belongs to; none for context',
+            ),
+        }),
+      )
+      .describe('Every numbered sentence, once'),
+    definitions: z
+      .array(
+        z.object({
+          id: z.string().describe('snake_case, named for what it is'),
+          name: z
+            .string()
+            .describe(
+              "A short name in the instructions' words, two to four words",
+            ),
+          text: z
+            .string()
+            .describe(
+              "What it is, in the instructions' own words or very close; for a number, how they say to work it out",
+            ),
+          result: z
+            .enum(['check', 'number'])
+            .describe(
+              'check: a condition a proposal must meet; number: a quantity a check needs',
+            ),
+          consequence: z
+            .enum(['block', 'decide'])
+            .nullable()
+            .describe(
+              'Checks only: block, a proposal failing it must not go ahead; decide, a person decides. Null for a number.',
+            ),
+          applies_to: z
+            .enum(['every', 'some'])
+            .nullable()
+            .describe(
+              `Checks only. every: the instructions state the rule for every ${subject.record.singular}; some: they state it only for some of the ${subject.record.plural}, those they name or describe. Null for a number.`,
+            ),
+        }),
+      )
+      .describe('In order: anything another definition needs comes before it'),
+  });
 
-type Found = z.infer<typeof findSchema>;
+type Found = z.infer<ReturnType<typeof findSchema>>;
 
 const idOf = (id: string) => id.replace(/[^a-z0-9_]/gi, '_').toLowerCase();
 
@@ -140,6 +153,21 @@ export function accountingProblems(
   return problems;
 }
 
+// A check the answer gives no reading of, which code could then hold nothing to.
+export function labelProblems(
+  found: Found,
+  { record }: DefinitionSubject,
+): string[] {
+  const unlabelled = found.definitions
+    .filter((d) => d.result === 'check' && !d.applies_to)
+    .map((d) => idOf(d.id));
+  return unlabelled.length
+    ? [
+        `No applies_to for ${unlabelled.join(', ')}; say whether the instructions state each for every ${record.singular} or only for some of the ${record.plural}.`,
+      ]
+    : [];
+}
+
 export type Asking = { model?: DraftingModel | null; resolve?: Resolve };
 
 // Replaces any set kept for these instructions, approvals and all.
@@ -156,7 +184,7 @@ export async function findDefinitions(
   const asking = (problems: string[]) =>
     ask(
       chosen ? fallbackChain(chosen) : DRAFT_MODELS,
-      findSchema,
+      findSchema(subject),
       [
         'You read the instructions of a process and list what they ask, nothing more.',
         'Restate the intent in one sentence.',
@@ -164,6 +192,7 @@ export async function findDefinitions(
         'Each quantity the instructions explain how to work out is its own number, listed with that whole working before the checks that read it, so a check reads it by name rather than repeating it.',
         `Not a number to list: a value the data already holds${read ? ' (its columns are listed below)' : ''}, which is read as it is; or one step of another number's working.`,
         'Account for every numbered sentence: say whether it helps work a quantity out, states a check, or is only context, and which definitions it belongs to.',
+        `For each check, say whether the instructions state it for every ${subject.record.singular} or only for some of the ${subject.record.plural}.`,
         plain(subject),
       ].join('\n'),
       [
@@ -180,11 +209,15 @@ export async function findDefinitions(
       'find',
       resolve,
     );
+  const problemsOf = (found: Found) => [
+    ...accountingProblems(sentences, found),
+    ...labelProblems(found, subject),
+  ];
   let { output, model } = await asking([]);
-  const refused = accountingProblems(sentences, output);
+  const refused = problemsOf(output);
   if (refused.length) {
     ({ output, model } = await asking(refused));
-    const left = accountingProblems(sentences, output);
+    const left = problemsOf(output);
     if (left.length)
       throw new Error(
         `The model did not account for the instructions, so nothing was replaced: ${left.slice(0, 3).join(' ')}`,
@@ -208,6 +241,10 @@ export async function findDefinitions(
       text: d.text,
       result: d.result,
       consequence: d.result === 'check' ? (d.consequence ?? 'block') : null,
+      // Only a check has one; what the shape written for it is held to.
+      ...(d.result === 'check' && d.applies_to
+        ? { appliesTo: d.applies_to }
+        : {}),
       constants: [],
       groups: [],
       uses: [],

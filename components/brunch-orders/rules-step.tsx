@@ -62,7 +62,9 @@ import {
   CONFIRM_FIRST,
   ignoresProposal,
   quotedFrom,
+  SCOPE_MISMATCH,
   worksOutItself,
+  type AppliesTo,
   type Definition,
   type DefinitionSet,
   type DraftProgress,
@@ -369,6 +371,9 @@ export function RulesStep({
               }
               onAdvise={() => adviceFor(text, item.id)}
               onShowProfile={profile ? showProfile : undefined}
+              onSetAppliesTo={(value) =>
+                act({ action: 'appliesTo', id: item.id, value })
+              }
               debug={
                 <HeadIconButton
                   label={`Debug ${item.name}`}
@@ -1203,6 +1208,28 @@ export const anchorOf = (id: string) => `definition-${id}`;
 // A page drawing the same rulebook more than once gives each its own anchors.
 export const CardAnchor = createContext(anchorOf);
 
+// How finding read a check, in the process's words for its records: said of
+// the reading, and of the other one a person may say instead.
+const APPLIES_TO: Record<
+  AppliesTo,
+  { for: string; read: string; other: AppliesTo }
+> = {
+  every: {
+    for: `every ${SUBJECT.record.singular}`,
+    read: `for every ${SUBJECT.record.singular}`,
+    other: 'some',
+  },
+  some: {
+    for: `some ${SUBJECT.record.plural}`,
+    read: `for only some ${SUBJECT.record.plural}`,
+    other: 'every',
+  },
+};
+const CORRECTION: Record<AppliesTo, string> = {
+  every: `This rule is for every ${SUBJECT.record.singular}`,
+  some: `This rule is for only some ${SUBJECT.record.plural}`,
+};
+
 // What a definition is and what failing it does, as pills.
 function DefinitionPills({ item }: { item: Definition }) {
   const kind = kindOf(item);
@@ -1260,6 +1287,14 @@ function DefinitionReading({
           <p className="text-body italic">
             {quoted ? <>&ldquo;{item.text}&rdquo;</> : item.text}
           </p>
+          {item.appliesTo ? (
+            <p className="text-meta text-muted">
+              <MorphingText
+                text={`For ${APPLIES_TO[item.appliesTo].for}`}
+                duration={MORPH_WORDS_MS}
+              />
+            </p>
+          ) : null}
         </FromModel>
         {sentence ? (
           <div className="grid gap-1">
@@ -1316,6 +1351,7 @@ export function DefinitionCard({
   onChoose,
   onAdvise,
   onShowProfile,
+  onSetAppliesTo,
   chip,
   activity,
   awaitedFormula,
@@ -1343,6 +1379,8 @@ export function DefinitionCard({
   onAdvise?: () => Promise<Advice>;
   // Leads to the data profile, where an unanswered blank is answered.
   onShowProfile?: () => void;
+  // Says how the rule is really meant, where finding read it the other way.
+  onSetAppliesTo?: (value: AppliesTo) => void;
   // The rest are only passed by /workbench/draft-progress, which compares what
   // a card could show while a draft runs: its pill, in place of its status...
   chip?: ReactNode;
@@ -1368,6 +1406,19 @@ export function DefinitionCard({
     requestAnimationFrame(() => denyButton.current?.focus());
   };
   const open = !item.approvedAt;
+  // The shape written disagrees with how finding read the rule: a person can
+  // say which is right. The control goes once the reading is changed, so focus
+  // is handed to Write again, the next step.
+  const mismatch = Boolean(
+    item.appliesTo && item.formula && item.problem?.includes(SCOPE_MISMATCH),
+  );
+  const writeButton = useRef<HTMLButtonElement>(null);
+  const corrected = useRef(false);
+  useEffect(() => {
+    if (mismatch || !corrected.current) return;
+    corrected.current = false;
+    writeButton.current?.focus();
+  }, [mismatch]);
   return (
     <li
       id={anchor(item.id)}
@@ -1424,6 +1475,23 @@ export function DefinitionCard({
           </p>
         ) : null}
         {item.problem ? <p className="text-dense">{item.problem}</p> : null}
+        {mismatch && item.appliesTo && onSetAppliesTo ? (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <span className="text-meta text-muted">
+              Finding read this rule as {APPLIES_TO[item.appliesTo].read}.
+            </span>
+            <Button
+              size="medium"
+              isDisabled={busy}
+              onPress={() => {
+                corrected.current = true;
+                onSetAppliesTo(APPLIES_TO[item.appliesTo!].other);
+              }}
+            >
+              {CORRECTION[APPLIES_TO[item.appliesTo].other]}
+            </Button>
+          </div>
+        ) : null}
         {item.problem?.startsWith(BLANKS_UNANSWERED) && onShowProfile ? (
           <div>
             <Button size="medium" onPress={onShowProfile}>
@@ -1524,6 +1592,7 @@ export function DefinitionCard({
               ) : null}
               {open ? (
                 <Button
+                  ref={writeButton}
                   size="medium"
                   isDisabled={busy || !canWrite}
                   onPress={onWrite}

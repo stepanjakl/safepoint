@@ -7,6 +7,7 @@ import {
   confirmIntent,
   deny,
   rebaseSet,
+  setAppliesTo,
 } from '@/lib/definitions/decide';
 import { debugDefinition, debugDraft } from '@/lib/definitions/debug';
 import {
@@ -104,7 +105,9 @@ async function historyOf(text: string) {
   draft finds them again and writes each on the server; write gives one a
   formula and examples on the read, on the server too; intent confirms what the model
   understood; decide accepts one (rechecked in full) or denies it, with what
-  is wrong; choose takes a version where writes disagreed, and advise
+  is wrong; appliesTo says whether a check is meant for every record or only
+  some, where finding read it the other way; choose takes a version where
+  writes disagreed, and advise
   says which the instructions support, for a person to weigh. Each reply names the records the examples are about, and the
   rulebook's revisions. debug and debugDraft say what code finds of one
   definition, or of the draft, on the read: they ask no model.
@@ -149,6 +152,12 @@ export async function POST(request: Request) {
         text,
         id,
         index: z.number().int().min(0).max(5),
+      }),
+      z.strictObject({
+        action: z.literal('appliesTo'),
+        text,
+        id,
+        value: z.enum(['every', 'some']),
       }),
       z.strictObject({ action: z.literal('advise'), text, id }),
       z.strictObject({
@@ -280,6 +289,10 @@ export async function POST(request: Request) {
         return replyWith(() => loadSet(owner, body.text));
       case 'choose':
         return replyWith(() => choose(owner, body.text, body.id, body.index));
+      case 'appliesTo':
+        return replyWith(() =>
+          setAppliesTo(owner, body.text, body.id, body.value, keptRead),
+        );
       case 'advise': {
         const set = await loadSet(owner, body.text);
         if (!set) throw new Error('No rules are kept for these instructions.');

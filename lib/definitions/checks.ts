@@ -12,9 +12,11 @@ import {
 import { profiledFor } from './profile';
 import { describeExample } from './prompts';
 import { recordsOf, type KeptRead, type Records, type Row } from './records';
+import { hasScope } from './shapes';
 import {
   acceptable,
   readsName,
+  SCOPE_MISMATCH,
   type Definition,
   type DefinitionProcess,
   type DefinitionSet,
@@ -31,7 +33,7 @@ import {
 */
 
 // A definition as written: what a draft gives and a kept version holds.
-export type Draft = Pick<Definition, 'constants' | 'groups'> & {
+export type Draft = Pick<Definition, 'constants' | 'groups' | 'shape'> & {
   formula: string;
   examples: Pick<Example, 'key' | 'inputs' | 'expect' | 'why'>[];
 };
@@ -714,6 +716,30 @@ function bothWaysProblems(setting: Setting, draft: Draft): string[] {
   return problems;
 }
 
+/*
+  A shape held to how finding read the rule: stated for some records, it must
+  say which; stated for every record, it must not limit itself. Two readings of
+  the same words compared by code, with no word of the instructions matched. A
+  check with no label, no shape (a formula, a refusal) or no result of check
+  is held to nothing.
+*/
+export function scopeProblems(setting: Setting, draft: Draft): string[] {
+  const { definition, owner } = setting;
+  const { appliesTo } = definition;
+  if (!appliesTo || definition.result !== 'check' || !draft.shape) return [];
+  const scoped = hasScope(draft.shape);
+  const { singular, plural } = owner.subject.record;
+  if (appliesTo === 'some' && !scoped)
+    return [
+      `${SCOPE_MISMATCH}: the instructions limit the rule to some ${plural}, but the shape has no scope. Give its scope, as a group or as conditions.`,
+    ];
+  if (appliesTo === 'every' && scoped)
+    return [
+      `${SCOPE_MISMATCH}: the instructions state the rule for every ${singular}, but the shape has a scope. Remove the scope.`,
+    ];
+  return [];
+}
+
 function reviewParts(setting: Setting, draft: Draft) {
   const { owner, text, records, earlier, definition, read } = setting;
   const words = problemsOf(draft, {
@@ -740,6 +766,7 @@ function reviewParts(setting: Setting, draft: Draft) {
     words,
     typed: typed ? [`The formula: ${typed}`] : [],
     reading: readingProblems(draft, owner.subject, definition.result),
+    scope: scopeProblems(setting, draft),
   };
 }
 
@@ -751,9 +778,10 @@ export function review(setting: Setting, draft: Draft): Review {
     const message = `It reads ${blocked.map((d) => d.name).join(', ')}, which does not work yet: write that again first.`;
     return { problems: [message], ran: null, blocked: message };
   }
-  const { words, typed, reading } = reviewParts(setting, draft);
+  const { words, typed, reading, scope } = reviewParts(setting, draft);
   const problems = [...words, ...typed, ...reading];
-  if (problems.length) return { problems, ran: null, blocked: null };
+  if (problems.length)
+    return { problems: [...problems, ...scope], ran: null, blocked: null };
   const examples = runExamples(setting, draft);
   const disagree = examples.filter((e) => !e.agrees);
   const unworkable = everyRecordProblems(setting, draft);
@@ -764,16 +792,21 @@ export function review(setting: Setting, draft: Draft): Review {
       : [];
   return {
     problems: [
+      ...scope,
       ...disagree.map((e) => disagreement(e, setting, draft)),
       ...unworkable,
       ...oneWay,
     ],
+    // The scope first: it is what a person can correct, and the examples
+    // were written for the other reading.
     ran: {
       examples,
       uses: reads,
-      problem: disagree.length
-        ? `${disagree.length} of ${examples.length} examples disagree with the formula.`
-        : (unworkable[0] ?? oneWay[0] ?? null),
+      problem:
+        scope[0] ??
+        (disagree.length
+          ? `${disagree.length} of ${examples.length} examples disagree with the formula.`
+          : (unworkable[0] ?? oneWay[0] ?? null)),
     },
     blocked: null,
   };
@@ -807,7 +840,7 @@ export type ReviewPart = {
 */
 export function reviewBreakdown(setting: Setting, draft: Draft): ReviewPart[] {
   const { definition, broken } = setting;
-  const { words, typed, reading } = reviewParts(setting, draft);
+  const { words, typed, reading, scope } = reviewParts(setting, draft);
   const reads = readsUnder(draft.formula, 'values');
   const missing = broken.filter((d) => reads.includes(d.id));
   const examples = runExamples(setting, draft);
@@ -841,6 +874,17 @@ export function reviewBreakdown(setting: Setting, draft: Draft): ReviewPart[] {
       problems: reading,
       note: null,
     },
+    // Only where finding gave a reading to hold it to.
+    ...(definition.appliesTo
+      ? [
+          {
+            id: 'scope',
+            label: 'Its scope matches how the instructions were read',
+            problems: scope,
+            note: `Finding read it as for ${definition.appliesTo === 'some' ? `some ${setting.owner.subject.record.plural}` : `every ${setting.owner.subject.record.singular}`}.`,
+          },
+        ]
+      : []),
     {
       id: 'every-record',
       label: 'Can be worked out for every record',

@@ -113,14 +113,24 @@ export const told = (model: MockLanguageModelV4, call = 0) =>
   );
 
 // A find's answer, with every sentence of the text accounted for: one definition
-// each while they last, and the last sentence takes any left over.
+// each while they last, and the last sentence takes any left over. A check read
+// no other way is for every record.
 export function accountedFor<
-  D extends { id: string; result: string },
+  D extends { id: string; result: string; applies_to?: string | null },
   F extends { definitions: D[] },
 >(found: F, text: string) {
   const sentences = sentencesOf(text);
   return {
     ...found,
+    definitions: found.definitions.map((d) => ({
+      ...d,
+      applies_to:
+        d.applies_to !== undefined
+          ? d.applies_to
+          : d.result === 'check'
+            ? 'every'
+            : null,
+    })),
     sentences: sentences.map((_, i) => {
       const last = i === sentences.length - 1;
       const definitions = found.definitions.slice(

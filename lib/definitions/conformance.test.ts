@@ -3,7 +3,13 @@ import { describe, expect, it } from 'vitest';
 import { applyDecisions, prepareWrite, undoApplication } from './apply';
 import type { DecisionMade, OutputSheet } from './apply';
 import { calculate, crossCheck } from './calculate';
-import { review, reviewBreakdown, settingOf, states } from './checks';
+import {
+  review,
+  reviewBreakdown,
+  scopeProblems,
+  settingOf,
+  states,
+} from './checks';
 import {
   ANSWERS,
   blankDeparturesTabs,
@@ -44,7 +50,14 @@ import {
   VERDICTS,
 } from './conformance.fixture';
 import { debugDefinition, debugDraft } from './debug';
-import { accept, choose, confirmIntent, deny, rebaseSet } from './decide';
+import {
+  accept,
+  choose,
+  confirmIntent,
+  deny,
+  rebaseSet,
+  setAppliesTo,
+} from './decide';
 import { findDefinitions } from './find';
 import { fitsRead, staleness } from './fits';
 import {
@@ -52,7 +65,7 @@ import {
   contextFor as formulaContext,
   run as runFormula,
 } from './formulas';
-import { answer, call, check, standIn, told } from './models.fixture';
+import { always, answer, call, check, standIn, told } from './models.fixture';
 import {
   confirmProfile,
   ownerToDraft,
@@ -90,10 +103,12 @@ import {
   loadRevision,
   loadSet,
   saveProfile,
+  updateSet,
 } from './store';
 import {
   BLANKS_UNANSWERED,
   complete,
+  SCOPE_MISMATCH,
   type DataProfile,
   type Definition,
   type DefinitionProcess,
@@ -629,6 +644,331 @@ describe('drafting', () => {
     expect(wrong.find((p) => p.id === 'fits')?.problems[0]).toMatch(
       /int and double never mix/,
     );
+  });
+});
+
+// What finding read of a rule, for every dock or only some, held against the
+// scope of the shape written for it. The fixture's finder labels the two rules
+// the instructions limit to some docks (the hillside cap, the no-kiosk cap).
+describe('how finding read a rule, and the shape written for it', () => {
+  const SOME = `${SCOPE_MISMATCH}: the instructions limit the rule to some docks, but the shape has no scope. Give its scope, as a group or as conditions.`;
+  const EVERY = `${SCOPE_MISMATCH}: the instructions state the rule for every dock, but the shape has a scope. Remove the scope.`;
+  // The hillside cap written with no scope, its examples all on a dock the
+  // scoped rule covers too: the draft that agreed twice, and was wrong.
+  const unscopedHillside = {
+    ...ANSWERS.hillside_fare_cap,
+    constants: (ANSWERS.hillside_fare_cap as { constants: object[] }).constants,
+    groups: [],
+    shape: shape({
+      kind: 'limit',
+      field: 'fare',
+      at: 'most',
+      amount: 'constant:hill_cap',
+    }),
+    examples: [
+      { key: 'D-03', inputs: { bikes: null, fare: 300 }, result: true },
+      { key: 'D-03', inputs: { bikes: null, fare: 301 }, result: false },
+    ].map((e) => ({ ...e, why: 'Worked out by hand.' })),
+  };
+  // Whole racks written as if limited to docks without a kiosk.
+  const scopedRacks = {
+    ...ANSWERS.whole_racks,
+    shape: shape({
+      kind: 'step',
+      field: 'bikes',
+      amount: 'constant:rack',
+      only_for_when: [{ left: 'column:has_kiosk', op: 'is_no', right: null }],
+    }),
+  };
+  const unlabelled = (id: string) =>
+    updateSet(DOCKS, TEXT, (s) => ({
+      ...s,
+      definitions: s.definitions.map((d) =>
+        d.id === id ? { ...d, appliesTo: undefined } : d,
+      ),
+    }));
+  const labelled = (id: string, appliesTo: 'every' | 'some') =>
+    updateSet(DOCKS, TEXT, (s) => ({
+      ...s,
+      definitions: s.definitions.map((d) =>
+        d.id === id ? { ...d, appliesTo } : d,
+      ),
+    }));
+
+  it('asks finding again for a check it gave no reading of, and keeps the labels', async () => {
+    const profile = firstProfile();
+    await saveProfile(DOCKS, profile);
+    const owner = await ownerToDraft(DOCKS);
+    const missing = {
+      ...FOUND,
+      definitions: FOUND_DEFINITIONS.map((d) =>
+        d.id === 'hillside_fare_cap' ? { ...d, applies_to: null } : d,
+      ),
+    };
+    const finder = standIn(answer(missing), answer(FOUND));
+    const set = await findDefinitions(owner, TEXT, 'v1', read, {
+      resolve: () => finder,
+    });
+    expect(told(finder, 1)).toContain(
+      'No applies_to for hillside_fare_cap; say whether the instructions state each for every dock or only for some of the docks.',
+    );
+    expect(told(finder, 0)).toContain(
+      'For each check, say whether the instructions state it for every dock or only for some of the docks.',
+    );
+    expect(byId(set, 'hillside_fare_cap').appliesTo).toBe('some');
+    expect(byId(set, 'no_kiosk_cap').appliesTo).toBe('some');
+    expect(byId(set, 'whole_racks').appliesTo).toBe('every');
+    // A calculation has none to hold anything to.
+    expect(byId(set, 'free_space')).not.toHaveProperty('appliesTo');
+  });
+
+  it('stops a draft when finding still gives no reading the second time', async () => {
+    const missing = {
+      ...FOUND,
+      definitions: FOUND_DEFINITIONS.map((d) => ({ ...d, applies_to: null })),
+    };
+    await expect(
+      findDefinitions(DOCKS, TEXT, 'v1', read, {
+        resolve: () => always(answer(missing)),
+      }),
+    ).rejects.toThrow(/No applies_to for whole_racks/);
+  });
+
+  it('sends back a shape with no scope for a rule limited to some docks, and passes once scoped', async () => {
+    const { owner } = await drafted();
+    const writer = writing(unscopedHillside, ANSWERS.hillside_fare_cap!);
+    const set = await writeDefinition(owner, TEXT, read, 'hillside_fare_cap', {
+      resolve: () => writer,
+    });
+    expect(told(writer, 1)).toContain(
+      'limit the rule to some docks, but the shape has no scope',
+    );
+    expect(byId(set, 'hillside_fare_cap')).toMatchObject({
+      formula: FORMULAS.hillside_fare_cap,
+      problem: null,
+    });
+  });
+
+  it('sends back a scope on a rule stated for every dock, and passes once it is removed', async () => {
+    const { owner } = await drafted();
+    const writer = writing(scopedRacks, ANSWERS.whole_racks!);
+    const set = await writeDefinition(owner, TEXT, read, 'whole_racks', {
+      resolve: () => writer,
+    });
+    expect(told(writer, 1)).toContain(
+      'state the rule for every dock, but the shape has a scope',
+    );
+    expect(byId(set, 'whole_racks')).toMatchObject({
+      formula: FORMULAS.whole_racks,
+      problem: null,
+    });
+  });
+
+  it('cannot come out agreed when both writes drop the scope', async () => {
+    const { owner } = await drafted();
+    const set = await writeAgreed(owner, TEXT, read, 'hillside_fare_cap', {
+      resolve: () => always(check(unscopedHillside)),
+    });
+    expect(byId(set, 'hillside_fare_cap')).toMatchObject({
+      problem: SOME,
+      agreement: null,
+      approvedAt: null,
+    });
+    // Nor can it be accepted as it stands.
+    const refused = byId(
+      await accept(owner, TEXT, 'hillside_fare_cap', readOf),
+      'hillside_fare_cap',
+    );
+    expect(refused.approvedAt).toBeNull();
+    expect(refused.problem).toBe(SOME);
+  });
+
+  it('did agree before it was held to a reading: a rule with no label is held to nothing', async () => {
+    const { owner } = await drafted();
+    await unlabelled('hillside_fare_cap');
+    const set = await writeAgreed(owner, TEXT, read, 'hillside_fare_cap', {
+      resolve: () => always(check(unscopedHillside)),
+    });
+    const d = byId(set, 'hillside_fare_cap');
+    expect(d).toMatchObject({ problem: null });
+    expect(d.agreement).toMatchObject({ status: 'agreed' });
+    expect(
+      byId(await accept(owner, TEXT, 'hillside_fare_cap', readOf), d.id)
+        .approvedAt,
+    ).not.toBeNull();
+  });
+
+  it('does not judge a refusal', async () => {
+    const { owner } = await drafted();
+    const refusal = {
+      constants: [],
+      groups: [],
+      shape: null,
+      none_fits: { reason: 'needs_or', explain: 'It says or.' },
+      examples: [],
+    };
+    const set = await writeAgreed(owner, TEXT, read, 'hillside_fare_cap', {
+      resolve: () => always(check(refusal)),
+    });
+    expect(byId(set, 'hillside_fare_cap')).toMatchObject({
+      formula: null,
+      unfit: 'It says or.',
+    });
+    expect(byId(set, 'hillside_fare_cap').problem).not.toContain(
+      SCOPE_MISMATCH,
+    );
+  });
+
+  it('holds only a shape to the reading: a group or conditions are a scope, a rule’s own conditions and a blank guard are not', async () => {
+    const { owner, set } = await drafted();
+    const draftOf = (id: string, shaped: Shape | null) => {
+      const d = byId(set, id);
+      return {
+        setting: settingOf(owner, TEXT, set, read, d),
+        draft: {
+          formula: d.formula!,
+          shape: shaped,
+          constants: d.constants,
+          groups: d.groups,
+          examples: d.examples,
+        },
+      };
+    };
+    const problems = (id: string, shaped: Shape | null) => {
+      const { setting, draft } = draftOf(id, shaped);
+      return scopeProblems(setting, draft);
+    };
+    const bare = SHAPES.fare_floor;
+    const grouped = SHAPES.hillside_fare_cap;
+    const conditional = SHAPES.no_kiosk_cap;
+    // Labelled some: needs a group or conditions.
+    expect(problems('hillside_fare_cap', bare)).toEqual([SOME]);
+    expect(problems('hillside_fare_cap', grouped)).toEqual([]);
+    expect(problems('hillside_fare_cap', conditional)).toEqual([]);
+    // Labelled every: must have none.
+    expect(problems('fare_floor', bare)).toEqual([]);
+    expect(problems('fare_floor', grouped)).toEqual([EVERY]);
+    expect(problems('fare_floor', conditional)).toEqual([EVERY]);
+    // A rule that is its own conditions has no scope.
+    expect(problems('van_before_lockout', SHAPES.van_before_lockout)).toEqual(
+      [],
+    );
+    expect(problems('stale_sweep', SHAPES.stale_sweep)).toEqual([]);
+    // Written as a formula before shapes: nothing to judge.
+    expect(problems('hillside_fare_cap', null)).toEqual([]);
+    // A calculation has no label.
+    expect(problems('free_space', null)).toEqual([]);
+    // The debug drawer sees it through the same part, only where there is a
+    // reading to hold it to.
+    const { setting, draft } = draftOf('hillside_fare_cap', bare);
+    const part = reviewBreakdown(setting, draft).find((p) => p.id === 'scope');
+    expect(part).toMatchObject({
+      problems: [SOME],
+      note: 'Finding read it as for some docks.',
+    });
+    expect(review(setting, draft).problems[0]).toBe(SOME);
+    await unlabelled('hillside_fare_cap');
+    const after = (await loadSet(owner, TEXT))!;
+    const kept = byId(after, 'hillside_fare_cap');
+    expect(
+      reviewBreakdown(settingOf(owner, TEXT, after, read, kept), draft).map(
+        (p) => p.id,
+      ),
+    ).not.toContain('scope');
+  });
+
+  it('refuses at Accept a reading stored against the shape, and withdraws it when the profile moves', async () => {
+    const { owner, profile } = await drafted();
+    await confirmIntent(owner, TEXT, readOf);
+    for (const { id } of FOUND_DEFINITIONS)
+      await accept(owner, TEXT, id, readOf);
+    expect(
+      byId((await loadSet(owner, TEXT))!, 'whole_racks').approvedAt,
+    ).not.toBe(null);
+    // Stored the other way: the shape has no scope, the reading says some.
+    await labelled('whole_racks', 'some');
+    const refused = byId(
+      await accept(owner, TEXT, 'whole_racks', readOf),
+      'whole_racks',
+    );
+    expect(refused).toMatchObject({ approvedAt: null, problem: SOME });
+    // Accepted again by hand, then the data profile moves: the rebase reviews
+    // every definition again and keeps nothing a reading refuses.
+    await labelled('van_holds', 'every');
+    await accept(owner, TEXT, 'van_holds', readOf);
+    await labelled('van_holds', 'some');
+    const second = secondProfile(profile);
+    await saveProfile(DOCKS, second);
+    const rebased = (await rebaseSet(DOCKS, TEXT, read, second))!;
+    expect(byId(rebased, 'van_holds')).toMatchObject({
+      approvedAt: null,
+      problem: SOME,
+    });
+  });
+
+  it('lets a person correct the reading, withdrawing the rule and what reads it, and reviewing it again', async () => {
+    const { owner } = await drafted();
+    await confirmIntent(owner, TEXT, readOf);
+    for (const { id } of FOUND_DEFINITIONS)
+      await accept(owner, TEXT, id, readOf);
+    await labelled('whole_racks', 'some');
+    const refused = byId(
+      await accept(owner, TEXT, 'whole_racks', readOf),
+      'whole_racks',
+    );
+    expect(refused.problem).toBe(SOME);
+    // fare_floor reads whole_racks, as a formula may read another's result.
+    await updateSet(owner, TEXT, (s) => ({
+      ...s,
+      definitions: s.definitions.map((d) =>
+        d.id === 'fare_floor' ? { ...d, uses: ['whole_racks'] } : d,
+      ),
+    }));
+    expect(
+      byId((await loadSet(owner, TEXT))!, 'fare_floor').approvedAt,
+    ).not.toBeNull();
+    const flipped = (await setAppliesTo(
+      owner,
+      TEXT,
+      'whole_racks',
+      'every',
+      readOf,
+    ))!;
+    expect(byId(flipped, 'whole_racks')).toMatchObject({
+      appliesTo: 'every',
+      approvedAt: null,
+      problem: null,
+    });
+    expect(byId(flipped, 'fare_floor').approvedAt).toBeNull();
+    // Accepted as it was written.
+    expect(
+      byId(await accept(owner, TEXT, 'whole_racks', readOf), 'whole_racks')
+        .approvedAt,
+    ).not.toBeNull();
+
+    // The other way round it says what the new reading makes of the shape.
+    const again = (await setAppliesTo(
+      owner,
+      TEXT,
+      'whole_racks',
+      'some',
+      readOf,
+    ))!;
+    expect(byId(again, 'whole_racks')).toMatchObject({
+      appliesTo: 'some',
+      approvedAt: null,
+      problem: SOME,
+    });
+    // A calculation has no reading to set.
+    expect(
+      byId(
+        (await setAppliesTo(owner, TEXT, 'free_space', 'some', readOf))!,
+        'free_space',
+      ),
+    ).not.toHaveProperty('appliesTo');
+    expect(
+      await setAppliesTo(owner, TEXT, 'nothing', 'some', readOf),
+    ).toBeNull();
   });
 });
 

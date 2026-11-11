@@ -19,6 +19,7 @@ import { loadSet, putRevision, saveSet, updateSet } from './store';
 import {
   BLANKS_UNANSWERED,
   complete,
+  type AppliesTo,
   type DataProfile,
   type Definition,
   type DefinitionProcess,
@@ -138,6 +139,69 @@ export const choose = (
     };
   });
 
+/*
+  A person's correction of how finding read a check: for every record, or only
+  for some. The shape written is held to this reading (checks.ts), so where
+  finding read the words wrongly no write could ever satisfy it. The label
+  changes on the rulebook under review, what was accepted of it and of what
+  reads it is withdrawn, and the version kept is reviewed again so its problem
+  says what the new reading makes of it. The rule is then written again as
+  before; a revision is never touched.
+*/
+export async function setAppliesTo(
+  owner: DefinitionProcess,
+  text: string,
+  id: string,
+  value: AppliesTo,
+  readOf: (id: string) => Promise<KeptRead | null>,
+): Promise<DefinitionSet | null> {
+  const set = await loadSet(owner, text);
+  const definition = set?.definitions.find((d) => d.id === id);
+  if (!set || !definition) return null;
+  if (definition.result !== 'check') return set;
+  owner = await ownerFor(owner, set);
+  const read = set.readId ? await readOf(set.readId) : null;
+  const dependents = dependentsOf(set, id);
+  return updateSet(owner, text, (s) => {
+    const relabelled: DefinitionSet = {
+      ...s,
+      definitions: s.definitions.map((d) =>
+        d.id === id ? { ...d, appliesTo: value } : d,
+      ),
+    };
+    const next = relabelled.definitions.find((d) => d.id === id)!;
+    // A rule with nothing written has nothing to review yet.
+    const reviewed =
+      read && next.formula
+        ? review(settingOf(owner, text, relabelled, read, next), {
+            formula: next.formula,
+            shape: next.shape,
+            constants: next.constants,
+            groups: next.groups,
+            examples: next.examples,
+          })
+        : null;
+    return {
+      ...relabelled,
+      definitions: relabelled.definitions.map((d) => {
+        if (d.id !== id)
+          return dependents.has(d.id) ? { ...d, approvedAt: null } : d;
+        const { ran, problems } = reviewed ?? { ran: null, problems: [] };
+        return {
+          ...d,
+          approvedAt: null,
+          ...(ran ? { examples: ran.examples, uses: ran.uses } : {}),
+          problem: !d.formula
+            ? d.problem
+            : !reviewed
+              ? 'The read its examples were run on is no longer kept: write it again on a new read.'
+              : (ran?.problem ?? (problems.length ? problems.join(' ') : null)),
+        };
+      }),
+    };
+  });
+}
+
 export async function accept(
   owner: DefinitionProcess,
   text: string,
@@ -209,6 +273,7 @@ export async function accept(
     settingOf(owner, text, set, read, definition),
     {
       formula: definition.formula,
+      shape: definition.shape,
       constants: definition.constants,
       groups: definition.groups,
       examples: definition.examples,
@@ -320,6 +385,7 @@ export async function rebaseSet(
     if (next.formula) {
       const { problems, ran } = review(setting, {
         formula: next.formula,
+        shape: next.shape,
         constants: next.constants,
         groups: next.groups,
         examples: next.examples,
@@ -343,6 +409,7 @@ export async function rebaseSet(
       const [a, b] = agreement.versions as [WrittenVersion, WrittenVersion];
       const draftOf = (v: WrittenVersion): Draft => ({
         formula: v.formula,
+        shape: v.shape,
         constants: v.constants,
         groups: v.groups,
         examples: v.examples,
