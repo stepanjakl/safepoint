@@ -724,6 +724,31 @@ still costs requests is the model's own examples: 17 of the 33 answers sent
 back. The arrival rule took 13 requests and came out unconfirmed, because the
 model wanted a failing example the read cannot produce.
 
+## Two readings of a rule's scope, compared by code (11 November)
+
+**What changed.** The draft above wrote a rule for some records as a rule for
+all of them, twice. Finding now says of each check whether the instructions
+state it for every record or only for some, and code holds the written shape to
+that (`scopeProblems` in `checks.ts`): no word of the instructions is matched,
+so it knows no scenario and no language.
+
+**Tried on the real models,** against a key written by hand first, on Brunch
+and the conformance process: 18 finds, 117 of 118 labels right, every find
+accepted first time and no extra requests. Flash, the default finder, read the
+ripe rule as for some in 4 of 4; Flash-Lite in 4 of 5. Then one whole draft of
+v3: 66 requests, 4.5 minutes, both calculations and all seven checks right,
+the ripe rule limited to the ripe column and behaving as the correct rule on
+every record at every order from 0 to 120.
+
+**What it does not show.** The check never had to fire in that draft: every
+write of the ripe rule gave a scope. Four finds a process is few. A rule for
+some records read as for every record passes finding in silence and is then
+held to having no scope, which is why the card says how each rule was read
+and lets a person say the opposite.
+
+**Lesson.** Where two writes can make the same mistake, ask a different
+question whose answer code can compare with theirs.
+
 ## Still open (31 October)
 
 - **Names.** A rule's name is often the first words of its sentence, cut off, which
