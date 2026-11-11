@@ -1893,11 +1893,17 @@ describe('limits', () => {
   it('reads "7:00 pm" as 07:00, as it does now', () => {
     expect(states('by 7:00 pm', 420)).toBe(true);
   });
-  // A day is named by its first three letters, so a word that begins with
-  // them names it too: "monthly" states Monday's 1.
-  it.skip('names a day only by its name or its abbreviation', () => {
+  // A word that only begins like a day names none: "monthly" once stated
+  // Monday's 1.
+  it('names a day only by its name or its short form, as a whole word', () => {
     expect(states('a monthly cap', 1)).toBe(false);
     expect(states('fresh fries', 5)).toBe(false);
+    expect(states('saturated fat', 6)).toBe(false);
+    expect(states("before Saturday's opening", 6)).toBe(true);
+    expect(states('Sat and Sun', 7)).toBe(true);
+    expect(states('closed Tues and Thurs', 2)).toBe(true);
+    expect(states('closed Tues and Thurs', 4)).toBe(true);
+    expect(states('on Mondays', 1)).toBe(true);
   });
   // A weekday cell is read in English abbreviations (lib/sheets), and a
   // yes/no typed as text in English words: other words are read problems.

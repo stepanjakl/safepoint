@@ -50,16 +50,22 @@ const DAY_NAMES = [
   'sunday',
 ];
 
+// The short forms people write: three letters, or the longer usual ones.
+const DAY_SHORT = ['mon', 'tues?', 'wed', 'thu(?:r|rs)?', 'fri', 'sat', 'sun'];
+
 // The language instructions are read in, until a process can say its own.
 export const ENGLISH: InstructionsLanguage = {
   numbersInWords: (said) =>
     NUMBER_WORDS.flatMap((word, n) =>
       new RegExp(`\\b${word}\\b`).test(said) ? [n] : [],
     ),
-  // A day by its first three letters, so "Sat" and "Saturday's" both name it.
+  // A day by its name or its usual short form, as a whole word: "Sat" and
+  // "Saturday's" name it, "saturated" does not.
   daysNamed: (said) =>
     DAY_NAMES.flatMap((day, i) =>
-      new RegExp(`\\b${day.slice(0, 3)}`).test(said) ? [i + 1] : [],
+      new RegExp(`\\b(?:${day}|${DAY_SHORT[i]})s?\\b`).test(said)
+        ? [i + 1]
+        : [],
     ),
   percent: '%|per ?cent',
   // Letters of any script, so a name is never cut where a letter is not a-z;
