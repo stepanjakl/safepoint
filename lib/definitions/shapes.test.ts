@@ -261,6 +261,27 @@ describe('a check written as a shape', () => {
     ]);
   });
 
+  it('says a definition named as a title in plain lower case, and keeps a proper noun', () => {
+    const named = (sales: string, stock: string) =>
+      sentenceOf(
+        COVER,
+        contextOn(capturedRead(), {
+          consequence: 'decide',
+          earlier: earlier.map((d) => ({
+            ...d,
+            name: d.id === 'expected_sales' ? sales : stock,
+          })),
+        }),
+      );
+    expect(named('Expected Sales', 'Stock Available')).toBe(
+      named('Expected sales', 'Stock available'),
+    );
+    // Not every word is capitalised: only the first letter is lowered.
+    expect(named('Sales expected on Saturday', 'Stock')).toContain(
+      'the sales expected on Saturday',
+    );
+  });
+
   it('says the moments it compares, and never one read’s clock', () => {
     expect(sentenceOf(CUTOFF, contextOn(capturedRead()))).toBe(
       'The proposed order is allowed only when the supplier’s cutoff is after the data is read. Proposing 0 units is always allowed.',

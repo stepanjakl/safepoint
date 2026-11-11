@@ -497,6 +497,15 @@ const columnWords = (column: string) => {
 const lowerFirst = (text: string) =>
   /^\p{Lu}\p{Ll}/u.test(text) ? text[0]!.toLowerCase() + text.slice(1) : text;
 const upperFirst = (text: string) => text[0]!.toUpperCase() + text.slice(1);
+// A definition's name inside a sentence. A name written as a title, every
+// word capitalised, is lower-cased throughout; otherwise only its first
+// letter, so a proper noun inside it keeps its capital.
+const nameInSentence = (name: string) => {
+  const parts = name.split(/\s+/).filter(Boolean);
+  const title =
+    parts.length > 1 && parts.every((w) => /^\p{Lu}\p{Ll}/u.test(w));
+  return title ? parts.map(lowerFirst).join(' ') : lowerFirst(name);
+};
 
 // An instant in the process's time zone, as a weekday and a time.
 function when(instant: number, timeZone: string) {
@@ -530,7 +539,7 @@ function operandWords(o: Operand, context: ShapeContext): string {
       return `the ${profiled(o.column, context)?.label ?? columnWords(o.column)}`;
     case 'value': {
       const d = context.earlier.find((one) => one.id === o.id);
-      return `the ${d ? lowerFirst(d.name) : words(o.id)}`;
+      return `the ${d ? nameInSentence(d.name) : words(o.id)}`;
     }
     case 'constant': {
       const c = context.constants.find((one) => one.id === o.id);
