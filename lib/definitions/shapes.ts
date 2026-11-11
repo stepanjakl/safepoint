@@ -15,6 +15,7 @@ import {
   type Records,
 } from './records';
 import { run, type Context } from './formulas';
+import { declaredType } from './profile';
 import type { Shape, ShapeCondition } from './shape-schema';
 import type { Definition, DefinitionSet } from './types';
 
@@ -315,7 +316,7 @@ function isPercent(o: Operand, context: ShapeContext) {
   if (o.kind !== 'column') return false;
   const type =
     profiled(o.column, context)?.type ??
-    context.subject.data.types[o.column.split('.').at(-1)!];
+    declaredType(context.subject.data, o.column.split('.').at(-1)!, o.column);
   return type?.kind === 'percent';
 }
 
@@ -494,7 +495,7 @@ const columnWords = (column: string) => {
   return second ? `${words(first!)} ${words(second)}` : words(first!);
 };
 const lowerFirst = (text: string) =>
-  /^[A-Z][a-z]/.test(text) ? text[0]!.toLowerCase() + text.slice(1) : text;
+  /^\p{Lu}\p{Ll}/u.test(text) ? text[0]!.toLowerCase() + text.slice(1) : text;
 const upperFirst = (text: string) => text[0]!.toUpperCase() + text.slice(1);
 
 // An instant in the process's time zone, as a weekday and a time.
@@ -1128,7 +1129,8 @@ function momentWhen(
 ): string | null {
   const timing = context.subject.data.timing;
   if (!timing) return null;
-  // A dated moment as its date, and its time where the column holds one.
+  // A dated moment as its date, and its time where the column holds one. A
+  // date is a day where its column's zone puts it, so it is shown there.
   const dated = datedMoment(name, context.subject);
   if (dated) {
     const cell = record[dated.at];
@@ -1136,7 +1138,7 @@ function momentWhen(
     const type =
       profiled(dated.at, context)?.type ?? context.subject.data.types[dated.at];
     return new Intl.DateTimeFormat('en-GB', {
-      timeZone: timing.timeZone,
+      timeZone: type?.kind === 'date' ? type.timeZone : timing.timeZone,
       weekday: 'short',
       day: 'numeric',
       month: 'short',

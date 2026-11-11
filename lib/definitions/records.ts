@@ -19,7 +19,7 @@ import {
 } from '@/lib/sheets/field-types';
 import { sourceTermsOf, type SourceTerms } from '@/lib/sources/model';
 
-import { celTypeOf } from './profile';
+import { celTypeOf, declaredType } from './profile';
 
 /*
   How a read becomes the records a formula reads, as the process declares it
@@ -330,7 +330,7 @@ function typerOf(data: DataShape, prefix = ''): TypeOf {
   return (column) => {
     const type = profiled.get(`${prefix}${column}`);
     if (type) return { type, cel: celTypeOf(type) };
-    const declared = data.types[column];
+    const declared = declaredType(data, column, `${prefix}${column}`);
     return declared ? { type: declared } : undefined;
   };
 }
@@ -386,8 +386,11 @@ function declarationsChanged(data: DataShape): string[] {
     type ? type.kind.replaceAll('_', ' ') : 'not known';
   return (data.profile?.columns ?? []).flatMap(({ column, type }) => {
     const lookup = lookupOf(data, column);
-    const declared =
-      data.types[lookup ? column.slice(lookup.as.length + 1) : column];
+    const declared = declaredType(
+      data,
+      lookup ? column.slice(lookup.as.length + 1) : column,
+      column,
+    );
     return declared && JSON.stringify(declared) !== JSON.stringify(type)
       ? [
           `The process declares the ${column} column as ${kind(declared)}, but the data profile has it as ${kind(type)}: confirm the profile again.`,
@@ -438,6 +441,13 @@ function build(read: KeptRead, data: DataShape): Records {
   );
   const keys = [...listed.keys()];
   const records = new Map(keys.map((key) => [key, { ...listed.get(key)! }]));
+  // Which record tab each value came from, so two that disagree are named.
+  const cameFrom = new Map(
+    keys.map((key) => [
+      key,
+      new Map(Object.keys(listed.get(key)!).map((c) => [c, first ?? ''])),
+    ]),
+  );
   for (const name of rest) {
     const rows = keyed(
       tabOf(name),
@@ -449,8 +459,17 @@ function build(read: KeptRead, data: DataShape): Records {
     );
     for (const [key, row] of rows) {
       const record = records.get(key);
-      if (record) Object.assign(record, row);
-      else
+      if (record) {
+        const from = cameFrom.get(key)!;
+        for (const [column, value] of Object.entries(row)) {
+          if (column in record && String(record[column]) !== String(value))
+            problems.push(
+              `${key} has ${column} ${String(record[column])} in the ${from.get(column)} ${singular} and ${String(value)} in the ${name} ${singular}; a record needs one value for each column.`,
+            );
+          from.set(column, name);
+        }
+        Object.assign(record, row);
+      } else
         problems.push(
           `The ${name} ${singular} has ${data.records.key} ${key}, which the ${first} ${singular} does not list.`,
         );

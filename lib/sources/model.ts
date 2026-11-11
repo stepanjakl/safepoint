@@ -68,6 +68,8 @@ type SourceAddressing = {
   block: (at: BlockAt) => string;
   // Where a block this kind addressed starts; null for any other text.
   blockStart: (block: string) => { top: number; left: number } | null;
+  // The resource a value this kind addressed is in; null for any other text.
+  resourceOf: (value: string) => string | null;
 };
 
 // A sheet's column letters and row number: column 0, row 0 is A1.
@@ -94,6 +96,11 @@ const SOURCE_ADDRESSING: Record<SourceKind, SourceAddressing> = {
         ) - 1;
       return { top: Number(match[2]) - 1, left };
     },
+    // A tab's name may hold a "!" itself; the cell after the last one.
+    resourceOf: (value) => {
+      const at = value.lastIndexOf('!');
+      return at > 0 ? value.slice(0, at) : null;
+    },
   },
   // A row by its key, where it has one, else by the number the data shows it
   // at (the header is row 1); a column by its name. A block by its positions.
@@ -107,6 +114,10 @@ const SOURCE_ADDRESSING: Record<SourceKind, SourceAddressing> = {
       return match
         ? { top: Number(match[1]) - 1, left: Number(match[2]) - 1 }
         : null;
+    },
+    resourceOf: (value) => {
+      const at = value.indexOf('[');
+      return at > 0 ? value.slice(0, at) : null;
     },
   },
 };

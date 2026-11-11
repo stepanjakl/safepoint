@@ -268,7 +268,8 @@ export type DataShape = {
   // A table a record reaches: the row of `tab` whose `key` column holds the
   // record's `via` column, read as `as`.
   lookups: { tab: string; key: string; via: string; as: string }[];
-  // By column header; any column not listed is read as written.
+  // By column header, or for a lookup's column by its path, `<as>.<column>`,
+  // which wins; any column not listed is read as written.
   types: Record<string, FieldType>;
   // The confirmed types of every column, which a read is then held to rather
   // than typed from its own values. Absent: typed from each read, as before.

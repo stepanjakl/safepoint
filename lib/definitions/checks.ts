@@ -1,4 +1,5 @@
 import type { DefinitionSubject } from '@/lib/process/model';
+import type { Currency } from '@/lib/sheets/field-types';
 
 import {
   checkFormula,
@@ -9,6 +10,7 @@ import {
   type Given,
   type Scope,
 } from './formulas';
+import { ENGLISH as LANGUAGE } from './language';
 import { profiledFor } from './profile';
 import { describeExample } from './prompts';
 import { recordsOf, type KeptRead, type Records, type Row } from './records';
@@ -172,37 +174,22 @@ export const readsUnder = (formula: string, name: string) => [
   ),
 ];
 
-const NUMBER_WORDS = [
-  'zero',
-  'one',
-  'two',
-  'three',
-  'four',
-  'five',
-  'six',
-  'seven',
-  'eight',
-  'nine',
-  'ten',
-  'eleven',
-  'twelve',
-];
-const DAY_NAMES = [
-  'monday',
-  'tuesday',
-  'wednesday',
-  'thursday',
-  'friday',
-  'saturday',
-  'sunday',
-];
 const near = (a: number, b: number) => Math.abs(a - b) < 1e-9;
 
-// Whether a quote states a value: as a number, a percentage (40% for 40,
-// 0.4 or 1.4), a time of day (07:00 for 420 minutes), a day (Saturday for
-// 6, Monday being 1) or a small number in words. Its words being somewhere
-// in the instructions is not enough: they must say the number.
-export function states(quote: string, value: number): boolean {
+/*
+  Whether a quote states a value: as a number, a percentage (40% for 40,
+  0.4 or 1.4), a time of day (07:00 for 420 minutes), a day (Saturday for
+  6, Monday being 1) or a small number in words, in the instructions'
+  language. Its words being somewhere in the instructions is not enough:
+  they must say the number. An amount marked as one of the currencies the
+  process holds money in also states its minor units (S$3.00 for 300), as a
+  money column holds it.
+*/
+export function states(
+  quote: string,
+  value: number,
+  currencies: readonly Currency[] = [],
+): boolean {
   const said = quote.toLowerCase();
   const clock = /\b(\d{1,2}):(\d{2})\b/g;
   const times = [...said.matchAll(clock)].map(
@@ -211,16 +198,14 @@ export function states(quote: string, value: number): boolean {
   const bare = said.replace(clock, ' ');
   const numbers = [
     ...[...bare.matchAll(/\d+(?:\.\d+)?/g)].map((m) => Number(m[0])),
-    ...NUMBER_WORDS.flatMap((word, n) =>
-      new RegExp(`\\b${word}\\b`).test(said) ? [n] : [],
-    ),
+    ...LANGUAGE.numbersInWords(said),
   ];
-  const percents = [...bare.matchAll(/(\d+(?:\.\d+)?)\s*(?:%|per ?cent)/g)].map(
-    (m) => Number(m[1]),
+  const percent = new RegExp(
+    String.raw`(\d+(?:\.\d+)?)\s*(?:${LANGUAGE.percent})`,
+    'g',
   );
-  const days = DAY_NAMES.flatMap((day, i) =>
-    new RegExp(`\\b${day.slice(0, 3)}`).test(said) ? [i + 1] : [],
-  );
+  const percents = [...bare.matchAll(percent)].map((m) => Number(m[1]));
+  const days = LANGUAGE.daysNamed(said);
   return (
     numbers.some((n) => near(n, value)) ||
     percents.some(
@@ -230,17 +215,69 @@ export function states(quote: string, value: number): boolean {
         near(1 - p / 100, value),
     ) ||
     times.includes(value) ||
-    days.includes(value)
+    days.includes(value) ||
+    currencies.some((currency) =>
+      amountsIn(quote, currency).some((amount) =>
+        near(amount * 10 ** currency.minor_units, value),
+      ),
+    )
   );
 }
 
-// A name's words, singular, for matching a record to the words naming it.
-const nameWords = (value: string) =>
-  value
-    .toLowerCase()
-    .split(/[^a-z]+/)
-    .filter((w) => w.length >= 3)
-    .map((w) => w.replace(/(es|s)$/, ''));
+// The marks a currency is written with: its code and its symbols.
+function marksOf({ code }: Currency): string[] {
+  const marks = new Set([code]);
+  for (const currencyDisplay of ['symbol', 'narrowSymbol'] as const)
+    try {
+      const mark = new Intl.NumberFormat('en', {
+        style: 'currency',
+        currency: code,
+        currencyDisplay,
+      })
+        .formatToParts(1)
+        .find((part) => part.type === 'currency')?.value;
+      if (mark) marks.add(mark);
+    } catch {
+      // A code Intl does not know is written with the code alone.
+    }
+  return [...marks];
+}
+
+const escaped = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/*
+  The amounts a quote writes in this currency: a number with its mark before
+  it, the mark perhaps led by capitals as in S$, or after it as in 3.00 SGD.
+*/
+function amountsIn(quote: string, currency: Currency): number[] {
+  const marks = marksOf(currency).map(escaped).join('|');
+  const amount = String.raw`(\d+(?:\.\d+)?)`;
+  const before = new RegExp(
+    String.raw`(?<![\p{L}\p{N}])\p{Lu}{0,3}(?:${marks})\s?${amount}`,
+    'gu',
+  );
+  const after = new RegExp(
+    String.raw`${amount}\s?(?:${marks})(?![\p{L}\p{N}])`,
+    'gu',
+  );
+  return [...quote.matchAll(before), ...quote.matchAll(after)].map((m) =>
+    Number(m[1]),
+  );
+}
+
+// The currencies a process holds money in, as declared or profiled.
+const currenciesOf = ({ data }: DefinitionSubject): Currency[] => [
+  ...new Map(
+    [
+      ...Object.values(data.types),
+      ...(data.profile?.columns ?? []).flatMap((c) => (c.type ? [c.type] : [])),
+    ].flatMap((type) =>
+      type.kind === 'money'
+        ? [[type.currency.code, type.currency] as const]
+        : [],
+    ),
+  ).values(),
+];
 
 // What a written definition is checked against besides itself.
 export type Against = {
@@ -270,12 +307,13 @@ export function problemsOf(
   const parsed = parseError(formula);
   if (parsed) problems.push(`The formula does not parse: ${parsed}.`);
   const instructions = words(text);
+  const currencies = currenciesOf(subject);
   for (const c of written.constants) {
     if (!instructions.includes(words(c.quote)))
       problems.push(
         `The words for constant ${c.id}, "${c.quote}", are not in the instructions; quote them exactly.`,
       );
-    else if (!states(c.quote, c.value))
+    else if (!states(c.quote, c.value, currencies))
       problems.push(
         `Constant ${c.id} is ${c.value}, but its words "${c.quote}" do not state that number; quote the words of the instructions that give it.`,
       );
@@ -290,12 +328,12 @@ export function problemsOf(
       problems.push(
         `Group ${g.id} names ${unknown.join(', ')}, which are not ${plural} in the data.`,
       );
-    const quoted = new Set(nameWords(g.quote));
+    const quoted = new Set(LANGUAGE.nameWords(g.quote));
     const unnamed = g.keys.filter(
       (k) =>
         keys.includes(k) &&
-        ![...nameWords(names[k] ?? ''), ...nameWords(k)].some((w) =>
-          quoted.has(w),
+        ![...LANGUAGE.nameWords(names[k] ?? ''), ...LANGUAGE.nameWords(k)].some(
+          (w) => quoted.has(w),
         ),
     );
     if (unnamed.length)

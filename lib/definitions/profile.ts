@@ -23,6 +23,14 @@ import type {
   rulebook drafted on it reads exactly what it was drafted on.
 */
 
+// A column's declared type: by its path, `<lookup as>.<column>` for a lookup's,
+// before its header alone, which a column of that name in any resource shares.
+export const declaredType = (
+  data: DataShape,
+  header: string,
+  path: string = header,
+): FieldType | undefined => data.types[path] ?? data.types[header];
+
 const blank = (raw: unknown) => raw === undefined || raw === null || raw === '';
 const words = (name: string) => name.replaceAll('_', ' ');
 
@@ -81,7 +89,7 @@ export function profileOf(read: KeptRead, data: DataShape): DataProfile {
   for (const lookup of data.lookups)
     take(lookup.tab, lookup.key, `${lookup.as}.`);
   const columns: ProfileColumn[] = [...seen].map(([column, entry]) => {
-    const declared = data.types[entry.name] ?? null;
+    const declared = declaredType(data, entry.name, column) ?? null;
     return {
       column,
       type: declared ?? inferred(entry.cells),

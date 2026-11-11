@@ -44,6 +44,7 @@ import type {
   Verdict,
 } from '@/lib/definitions/types';
 import type { DefinitionSubject } from '@/lib/process/model';
+import { sourceTermsOf, type SourceKind } from '@/lib/sources/model';
 import { DRAFTING_MODELS, type DraftingModel } from '@/lib/models';
 
 import { DataDrawer } from './data-drawer';
@@ -257,6 +258,7 @@ export function ProposeStep({
     proposal && shown ? (
       <ProposalTable
         fields={subject.proposal}
+        source={subject.data.source}
         proposal={proposal}
         names={shown.names}
         calculated={shown.calculated}
@@ -426,9 +428,12 @@ export function ProposalTable({
   onDecide,
   onCheck,
   icons = false,
+  source,
 }: {
   // Decisions as their marks alone, each named in its tooltip.
   icons?: boolean;
+  // The kind of source read, which says how a cited cell names its resource.
+  source?: SourceKind;
   // What each record's proposal sets: a column each.
   fields: ProposalField[];
   proposal: Proposal;
@@ -584,7 +589,11 @@ export function ProposalTable({
                         onToggle={() => toggle(key)}
                         onDecide={onDecide}
                         onCheck={onCheck}
-                        onCite={(tab) => view(tab)}
+                        onCite={(cell) => {
+                          const tab =
+                            sourceTermsOf(source).address.resourceOf(cell);
+                          if (tab) view(tab);
+                        }}
                         icons={icons}
                       />
                     ))}
@@ -677,7 +686,7 @@ function ProposalRow({
     key: string,
     values: Record<string, number>,
   ) => Promise<ProposeResponse | null>;
-  onCite: (tab: string) => void;
+  onCite: (cell: string) => void;
 }) {
   // A change in progress: the values typed, and the checks on them.
   const [changing, setChanging] = useState<Record<string, number> | null>(null);
@@ -939,7 +948,7 @@ function ProposalRow({
                     key={cell}
                     type="button"
                     className="value text-meta text-state-advisory underline decoration-dotted underline-offset-2"
-                    onClick={() => onCite(cell.slice(0, cell.lastIndexOf('!')))}
+                    onClick={() => onCite(cell)}
                   >
                     {cell}
                   </button>

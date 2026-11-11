@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
+import { interpretCell } from '@/lib/sheets/field-types';
+
 import { applyDecisions, prepareWrite, undoApplication } from './apply';
 import type { DecisionMade, OutputSheet } from './apply';
 import { calculate, crossCheck } from './calculate';
 import {
+  problemsOf,
   review,
   reviewBreakdown,
   scopeProblems,
@@ -58,13 +61,14 @@ import {
   rebaseSet,
   setAppliesTo,
 } from './decide';
-import { findDefinitions } from './find';
+import { findDefinitions, sentencesOf } from './find';
 import { fitsRead, staleness } from './fits';
 import {
   checkFormula,
   contextFor as formulaContext,
   run as runFormula,
 } from './formulas';
+import { ENGLISH } from './language';
 import { always, answer, call, check, standIn, told } from './models.fixture';
 import {
   confirmProfile,
@@ -1841,28 +1845,129 @@ describe('limits', () => {
   it.todo('a check reading more than one record at a time');
   it.todo('a proposal field that is not a whole number');
 
-  // A money column is held in minor units (base_fare 2.50 is 250), but a
-  // constant is checked against the words that state it: "S$3.00" states 3,
-  // never 300. A rule written in the currency, not its minor unit, cannot
-  // quote a constant that compares with the column.
-  it.skip('quotes a currency amount as the minor units a money column holds', () => {
-    expect(states('at most S$3.00', 300)).toBe(true);
-  });
-  // What it does now: the words state 3, which compares with 3 cents.
+  // An amount marked as a declared currency now states its minor units as
+  // well ("what it was not built on", below); it still states its main unit.
   it('reads a currency amount in its words as the main unit', () => {
     expect(states('at most S$3.00', 3)).toBe(true);
   });
 
-  // Words are read as English: numbers in words, weekday names, plurals.
+  // Words are read as English (language.ts): numbers in words, weekday
+  // names, plurals, sentence stops. A process cannot say its language yet.
   it.todo(
     'instructions in another language: a constant stated in words, or a group naming records by a plural, is refused',
   );
-
-  // Types are declared by header (DataShape.types), so two tabs with a column
-  // of the same name -- a record's and a lookup's -- share one declared type.
   it.todo(
-    'declaring a type for one tab’s column where another tab shares its name',
+    'a process declaring the language its instructions are written in, and the engine reading them in it',
   );
+  // A name's words are runs of letters of three or more, so a script
+  // written without spaces, or with words of one or two letters, names none.
+  it.skip('matches a group to names in a script written without spaces', () => {
+    expect(ENGLISH.nameWords('東京駅前')).toEqual(['東京', '駅前']);
+  });
+  // A sentence ends at a stop followed by a space, as in Latin scripts.
+  it.skip('splits sentences whose stops are not followed by a space', () => {
+    expect(sentencesOf('一つ目の規則。二つ目の規則。')).toEqual([
+      '一つ目の規則。',
+      '二つ目の規則。',
+    ]);
+  });
+  // What the engine writes for a person -- the sentence approved, every
+  // problem, every prompt -- is English, whatever the instructions are in.
+  it.todo(
+    'the sentence a person approves, in the language of the instructions',
+  );
+
+  // Numbers are read as English digits: a thousands separator or a decimal
+  // comma splits one ("1,000" states 1 and 0), and a minus is not read.
+  it.skip('reads a grouped number, a decimal comma and a negative number', () => {
+    expect(states('at most 1,000 bikes', 1000)).toBe(true);
+    expect(states('höchstens 2,5 Stunden', 2.5)).toBe(true);
+    expect(states('no lower than -3', -3)).toBe(true);
+  });
+  // A time is read on a 24-hour clock: "7:00 pm" states 420, 07:00.
+  it.skip('reads a time on a 12-hour clock', () => {
+    expect(states('by 7:00 pm', 1140)).toBe(true);
+    expect(states('by 7pm', 1140)).toBe(true);
+    expect(states('by 7:00 pm', 420)).toBe(false);
+  });
+  it('reads "7:00 pm" as 07:00, as it does now', () => {
+    expect(states('by 7:00 pm', 420)).toBe(true);
+  });
+  // A day is named by its first three letters, so a word that begins with
+  // them names it too: "monthly" states Monday's 1.
+  it.skip('names a day only by its name or its abbreviation', () => {
+    expect(states('a monthly cap', 1)).toBe(false);
+    expect(states('fresh fries', 5)).toBe(false);
+  });
+  // A weekday cell is read in English abbreviations (lib/sheets), and a
+  // yes/no typed as text in English words: other words are read problems.
+  it.skip('reads weekday and yes/no cells written in another language', () => {
+    expect(interpretCell('Sa', { kind: 'weekday' }, false).issue).toBe(
+      undefined,
+    );
+    expect(interpretCell('ja', { kind: 'yes_no' }, false).issue).toBe(
+      undefined,
+    );
+  });
+
+  // A lookup is found by the via column's typed value, while its rows are
+  // keyed by the cell as written: through a weekday column (1 to 7) it never
+  // finds the row of "Wed".
+  it.skip('reaches a lookup through a typed column', () => {
+    const tabs = [
+      ...docksTabs(),
+      {
+        name: 'Shifts',
+        values: [
+          ['day', 'crew_size'],
+          ['Mon', 2],
+          ['Wed', 3],
+          ['Thu', 4],
+        ],
+      },
+    ];
+    const data = {
+      ...DOCKS.subject.data,
+      lookups: [
+        ...DOCKS.subject.data.lookups,
+        { tab: 'Shifts', key: 'day', via: 'swept_day', as: 'shift' },
+      ],
+    };
+    const records = recordsOf(docksRead(tabs), data);
+    expect(records.problems).toEqual([
+      'D-06 has no swept_day, so no Shifts row can be found for it.',
+    ]);
+    expect(records.lookups('D-01').shift).toEqual({
+      day: 'Wed',
+      crew_size: 3n,
+    });
+  });
+  // A shape names a lookup's column `<as>.<column>`, so a header holding a
+  // full stop cannot be named at all.
+  it.skip('reads a column whose header holds a full stop', () => {
+    const tabs = docksTabs();
+    tabs.find((tab) => tab.name === 'Docks')!.values[0]![4] = 'elevation.m';
+    const on = docksRead(tabs);
+    const context: ShapeContext = {
+      ...contextFor('fits_free_space', DOCKS),
+      records: recordsOf(on, DOCKS.subject.data),
+      read: on,
+    };
+    expect(
+      shapeProblems(
+        shape({
+          kind: 'limit',
+          field: 'bikes',
+          at: 'most',
+          amount: 'column:elevation.m',
+        }),
+        context,
+      ),
+    ).toEqual([]);
+  });
+  // A field with no declared least is tried at 0 and above only, so two
+  // versions that differ only below zero are taken to agree.
+  it.todo('comparing two versions at negative values of a field with no min');
 });
 
 describe('dated moments', () => {
@@ -2097,5 +2202,236 @@ describe('dated moments', () => {
     expect(
       debugDraft(DATED_DOCKS, TEXT, set, read).columns!.unread,
     ).not.toContain('last_inspected');
+  });
+});
+
+/*
+  What the engine was not built on: names in other scripts, a column typed
+  apart from another of the same name, an amount quoted in its currency, a
+  date kept in another zone than the process's, two record tabs giving one
+  column two values, and an address read back by its source's own kind.
+*/
+describe('what it was not built on', () => {
+  const subject = DOCKS.subject;
+  const grouped = (quote: string, names: Record<string, string>) =>
+    problemsOf(
+      {
+        constants: [],
+        groups: [{ id: 'named', keys: ['D-01'], quote }],
+        formula: 'key in groups.named',
+        examples: [{ key: 'D-01' }, { key: 'D-02' }],
+      },
+      {
+        text: `Docks named ${quote} take fewer bikes.`,
+        subject,
+        keys: ['D-01', 'D-02'],
+        names,
+        earlier: [],
+        lookupKeys: [],
+      },
+    );
+
+  it('matches a group to names written in letters outside a to z', () => {
+    expect(
+      grouped('Crème brûlée', { 'D-01': 'Crème brûlée', 'D-02': 'Ridge' }),
+    ).toEqual([]);
+    expect(
+      grouped('Набережная', { 'D-01': 'Набережная', 'D-02': 'Ridge' }),
+    ).toEqual([]);
+    // A name sharing no word with the quote is still refused.
+    expect(
+      grouped('Crème brûlée', { 'D-01': 'Marina Bay', 'D-02': 'Ridge' }),
+    ).toEqual([
+      'The words for group named, "Crème brûlée", do not name D-01 (Marina Bay); a group holds only the docks its words name.',
+    ]);
+  });
+
+  it('says an earlier value’s name in a sentence as a word, whatever its first letter', () => {
+    const context = contextFor('fits_free_space');
+    expect(
+      sentenceOf(SHAPES.fits_free_space, {
+        ...context,
+        earlier: context.earlier.map((d) => ({ ...d, name: 'Écart libre' })),
+      }),
+    ).toContain('at most the écart libre');
+  });
+
+  // A Crews column named as one of the Docks tab's, holding percentages.
+  const sharedNameTabs = () => {
+    const tabs = docksTabs();
+    const crews = tabs.find((tab) => tab.name === 'Crews')!.values;
+    crews[0]!.push('capacity');
+    crews[1]!.push('50%');
+    crews[2]!.push('25%');
+    crews[3]!.push('75%');
+    return tabs;
+  };
+  const SHARED: DefinitionProcess = {
+    id: 'conformance-docks-shared-name',
+    subject: {
+      ...subject,
+      data: {
+        ...subject.data,
+        types: { ...subject.data.types, 'team.capacity': { kind: 'percent' } },
+      },
+    },
+  };
+
+  it('types a lookup column by its path, apart from a record column of the same name', () => {
+    const shared = docksRead(sharedNameTabs());
+    const records = fitting(shared, SHARED.subject.data);
+    expect(records.record('D-01').capacity).toBe(20n);
+    expect(records.lookups('D-01').team).toMatchObject({ capacity: 0.5 });
+    expect(records.types.record.capacity).toBe('int');
+    expect(records.types.lookups.team!.capacity).toBe('double');
+    const profile = profileOf(shared, SHARED.subject.data);
+    const column = (name: string) =>
+      profile.columns.find((c) => c.column === name)!;
+    expect(column('team.capacity')).toMatchObject({
+      type: { kind: 'percent' },
+      origin: 'declared',
+    });
+    expect(column('capacity')).toMatchObject({
+      type: { kind: 'whole_number' },
+      origin: 'inferred',
+    });
+    const held = withProfile(SHARED, confirmProfile(profile));
+    expect(recordsOf(shared, held.subject.data).problems).toEqual([]);
+    // A percentage column as a margin is its fraction already.
+    const context: ShapeContext = {
+      ...contextFor('covers_departures', held),
+      records: recordsOf(shared, held.subject.data),
+      read: shared,
+    };
+    expect(
+      formulaOf(
+        shape({
+          kind: 'target',
+          field: 'bikes',
+          base: 'column:bikes_present',
+          compare: 'reach',
+          target: 'column:capacity',
+          margin_pct: 'column:team.capacity',
+        }),
+        context,
+      ),
+    ).toContain('* (1.0 + double(team.capacity)))');
+  });
+
+  const SGD = { code: 'SGD', minor_units: 2 };
+
+  it('lets an amount quoted in its currency state the minor units a money column holds', () => {
+    expect(states('at most S$3.00', 300, [SGD])).toBe(true);
+    expect(states('at most 3.00 SGD', 300, [SGD])).toBe(true);
+    expect(states('at most $3', 300, [SGD])).toBe(true);
+    // Its main unit still, as before.
+    expect(states('at most S$3.00', 3, [SGD])).toBe(true);
+    // Not without a currency's mark, nor where no money is declared.
+    expect(states('at most 3.00', 300, [SGD])).toBe(false);
+    expect(states('at most S$3.00', 300)).toBe(false);
+    expect(states('at most S$3.00', 30, [SGD])).toBe(false);
+    // The process declares its money, so a check reads it from there.
+    const quoted = (quote: string, value: number, on = subject) =>
+      problemsOf(
+        {
+          constants: [{ id: 'fare_cap', value, quote }],
+          groups: [],
+          formula: 'fare <= constants.fare_cap',
+          examples: [],
+        },
+        {
+          text: `No fare above ${quote}.`,
+          subject: on,
+          keys: KEYS,
+          names: {},
+          earlier: [],
+          lookupKeys: [],
+        },
+      );
+    expect(quoted('S$3.00', 300)).toEqual([]);
+    expect(
+      quoted('S$3.00', 300, {
+        ...subject,
+        data: { ...subject.data, types: {} },
+      }),
+    ).toEqual([
+      'Constant fare_cap is 300, but its words "S$3.00" do not state that number; quote the words of the instructions that give it.',
+    ]);
+  });
+
+  it('shows a date as the day its cell holds, in its column’s time zone', () => {
+    const london: DefinitionProcess = {
+      id: 'conformance-docks-dated-london',
+      subject: {
+        ...DATED_DOCKS.subject,
+        data: {
+          ...DATED_DOCKS.subject.data,
+          timing: {
+            ...DATED_DOCKS.subject.data.timing!,
+            timeZone: 'Europe/London',
+          },
+        },
+      },
+    };
+    const context: ShapeContext = {
+      subject: london.subject,
+      records: recordsOf(read, london.subject.data),
+      read,
+      consequence: 'decide',
+      constants: [INSPECT_HOURS],
+      groups: [],
+      earlier: [],
+    };
+    expect(
+      valuesInWords(
+        DATED_SHAPES.overdue,
+        context,
+        'D-01',
+        formulaContext(
+          read,
+          'D-01',
+          london.subject,
+          { inputs: {}, constants: { inspect_hours: 720 }, groups: {} },
+          {},
+        ),
+      ),
+    ).toMatch(/the last inspection is Tue, 20 Oct 2026$/);
+  });
+
+  it('reports a column two record tabs give different values', () => {
+    const tabs = docksTabs();
+    const visits = tabs.find((tab) => tab.name === 'Visits')!.values;
+    visits[0]!.push('capacity');
+    visits[1]!.push(21);
+    visits[2]!.push(16);
+    expect(recordsOf(docksRead(tabs), subject.data).problems).toEqual([
+      'D-01 has capacity 20 in the Docks tab and 21 in the Visits tab; a record needs one value for each column.',
+    ]);
+    const tables = asTables(tabs);
+    expect(
+      recordsOf(docksRead(tables), TABLE_DOCKS.subject.data).problems,
+    ).toEqual([
+      'D-01 has capacity 20 in the docks table and 21 in the visits table; a record needs one value for each column.',
+    ]);
+  });
+
+  it('reads the resource back from a cited value, by its source’s kind', () => {
+    for (const data of [subject.data, TABLE_DOCKS.subject.data]) {
+      const { address } = sourceOf(data);
+      for (const resource of ['Usage', 'usage', 'Usage!Old', 'old usage'])
+        expect(
+          address.resourceOf(
+            address.value({
+              resource,
+              column: { index: 3, header: 'bikes_present' },
+              row: { index: 5, key: 'D-05' },
+            }),
+          ),
+        ).toBe(resource);
+    }
+    expect(sourceOf(subject.data).address.resourceOf('B3')).toBeNull();
+    expect(
+      sourceOf(TABLE_DOCKS.subject.data).address.resourceOf('bikes_present'),
+    ).toBeNull();
   });
 });

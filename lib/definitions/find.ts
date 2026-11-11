@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { ask, DRAFT_MODELS, type Resolve } from './calls';
+import { ENGLISH as LANGUAGE } from './language';
 import { columnsOf, plain, proposalWords } from './prompts';
 import { fitting, sourceOf, type KeptRead } from './records';
 import { hashOf, saveSet } from './store';
@@ -87,21 +88,22 @@ type Found = z.infer<ReturnType<typeof findSchema>>;
 
 const idOf = (id: string) => id.replace(/[^a-z0-9_]/gi, '_').toLowerCase();
 
-// The instructions as sentences, without their list marks. Only whitespace after
-// a stop ends one, so a decimal or a time stays whole. A list item stays whole
-// too: it is one thing being said, and read apart "If that isn't possible" became
-// a rule of its own. A short line is a sentence as well, heading or not: a rule
+// The instructions as sentences, without their list marks, as their language
+// marks them: a decimal or a time stays whole. A list item stays whole too: it
+// is one thing being said, and read apart "If that isn't possible" became a
+// rule of its own. A short line is a sentence as well, heading or not: a rule
 // may be written without a stop.
-const LIST_MARK = /^\s*(?:\d+[.)]|[-*•])\s+/;
-export const sentencesOf = (text: string) =>
-  text
+export const sentencesOf = (text: string) => {
+  const { listMark, sentenceBreak } = LANGUAGE;
+  return text
     .split('\n')
     .flatMap((line) =>
-      LIST_MARK.test(line)
-        ? [line.replace(LIST_MARK, '').trim()]
-        : line.trim().split(/(?<=[.!?])\s+/),
+      listMark.test(line)
+        ? [line.replace(listMark, '').trim()]
+        : line.trim().split(sentenceBreak),
     )
     .filter(Boolean);
+};
 
 // Whatever keeps the answer from accounting for the instructions, in words the
 // model can act on.
