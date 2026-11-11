@@ -45,6 +45,16 @@ async function serveProfile(page: Page, start: DataProfile | null = null) {
       : { state: 'none', proposed };
   await page.route('**/api/dev/brunch-orders/rules', async (route) => {
     const body = route.request().postDataJSON() as Change;
+    // The real route refuses a key an action does not take: an edit or a
+    // confirmation sent with the read came back 400, and nothing changed.
+    if (
+      (body.action === 'profileColumn' || body.action === 'confirmProfile') &&
+      'readId' in body
+    )
+      return route.fulfill({
+        status: 400,
+        json: { kind: 'error', message: 'Invalid request.' },
+      });
     if (body.action === 'profile') kept = proposed;
     if (body.action === 'profileColumn' && kept) {
       if (body.label) kept = setColumnLabel(kept, body.column!, body.label);

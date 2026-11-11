@@ -437,7 +437,11 @@ export function RulesStep({
               onChange={(change: ProfileChange) => {
                 // A person at work in it keeps it open.
                 setProfileOpen(true);
-                act({ ...change, readId });
+                // Only proposing one reads the data: the route takes no
+                // read with an edit or a confirmation, and refuses one.
+                act(
+                  change.action === 'profile' ? { ...change, readId } : change,
+                );
               }}
             />
           </Fold>

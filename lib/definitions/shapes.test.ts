@@ -777,7 +777,7 @@ describe('what a blank cell means, column by column', () => {
     const kept = definitionSetSchema.parse(
       JSON.parse(
         readFileSync(
-          'fixtures/brunch-orders/rulebooks/v3-86c4ba5959e9/current.json',
+          'lib/definitions/rulebook-before-profiles.fixture.json',
           'utf8',
         ),
       ),

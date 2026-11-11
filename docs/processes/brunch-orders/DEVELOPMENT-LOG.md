@@ -749,6 +749,33 @@ and lets a person say the opposite.
 **Lesson.** Where two writes can make the same mistake, ask a different
 question whose answer code can compare with theirs.
 
+## Running it as a person found what the tests had mocked away (11 November)
+
+**What happened.** The first whole run through the app on the finished engine,
+on a live read: profile confirmed, v3 drafted (74 requests, about six minutes),
+every definition checked by code against the accepted v2 rules and accepted,
+then a proposal for all 11 products in 40 seconds. Two defects showed on the
+way, neither in the engine:
+
+- **A failed live read was kept as an empty sheet.** Google refused the read
+  (its per-minute limit), and the read came back with five empty tabs, was kept,
+  and was shown as done. A live read with a failed request is now refused with
+  the service's reason, and nothing is kept.
+- **Answering a blank question did nothing.** The panel sent the read's id with
+  every edit and confirmation; the route takes none there and answered 400, and
+  the page showed no change. The browser test served the route from memory and
+  took any body, so it passed. The panel now sends the id only when proposing a
+  profile, and the test's route refuses what the real one refuses.
+
+Two guards also broke, rightly: they read the rulebook under review from
+`fixtures/`, which changes whenever rules are drafted again. They now read a
+frozen copy beside the tests.
+
+**Lesson.** A route served from memory in a test proves the page, not the
+contract between the page and the route: make the stand-in as strict as the
+real thing. And a guard must hold a frozen copy, never a file the product is
+meant to change.
+
 ## Still open (31 October)
 
 - **Names.** A rule's name is often the first words of its sentence, cut off, which

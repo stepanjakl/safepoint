@@ -34,9 +34,31 @@ const CAPTURED = path.join(
   'sheet-snapshot.json',
 );
 
+// What a failed request said, as one sentence: the service's own message
+// where its error is the JSON it answers with.
+function reasonOf(error: string | null): string | null {
+  if (!error) return null;
+  let said = error;
+  try {
+    const parsed = JSON.parse(error) as { error?: { message?: unknown } };
+    if (typeof parsed.error?.message === 'string') said = parsed.error.message;
+  } catch {
+    // Not JSON: said as it came.
+  }
+  said = said.trim();
+  return /[.!?]$/.test(said) ? said : `${said}.`;
+}
+
 async function load(source: 'captured' | 'live') {
   if (source === 'live') {
     const read = await readWholeSheet();
+    // A request that failed leaves its tabs empty: kept, that would be a
+    // read of an empty sheet, shown as done.
+    const failed = read.requests.find((r) => !r.successful);
+    if (failed)
+      throw new Error(
+        `The sheet could not be read: ${reasonOf(failed.error) ?? `${failed.tool} failed`} Nothing was kept: read it again.`,
+      );
     return { read, label: `Live read through Composio at ${read.readAt}` };
   }
   const read = JSON.parse(await readFile(CAPTURED, 'utf8')) as SheetRead;
