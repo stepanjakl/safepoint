@@ -11,6 +11,14 @@ import {
 } from '@/components/brunch-orders/trial-parts';
 import { Button } from '@/components/ui/button';
 import { ChoiceGroup } from '@/components/ui/choice-group';
+import {
+  DATA_TABLE_BODY,
+  DATA_TABLE_HEAD,
+  DATA_TABLE_HEADING,
+  DATA_TABLE_RULE,
+  DATA_TABLE_RULE_ON,
+  DataTable,
+} from '@/components/ui/data-table';
 import { Fold } from '@/components/ui/fold';
 import { MorphingText } from '@/components/ui/morphing-text';
 import { cx } from '@/lib/cx';
@@ -229,7 +237,7 @@ function Columns({
       );
     onChange(request);
   };
-  const row = (column: ProfileColumn) => (
+  const card = (column: ProfileColumn) => (
     <ColumnRow key={column.column} column={column} onChange={change} />
   );
   return (
@@ -251,7 +259,7 @@ function Columns({
           aria-label="Columns that need an answer"
           data-unanswered=""
         >
-          {open.map(row)}
+          {open.map(card)}
         </ul>
       ) : null}
       <div className="grid gap-2">
@@ -268,12 +276,11 @@ function Columns({
           </Button>
         </div>
         <Fold open={showRest} id={restId}>
-          <ul
-            className="grid gap-2"
-            aria-label={open.length ? 'Other columns' : 'Columns'}
-          >
-            {rest.map(row)}
-          </ul>
+          <ColumnTable
+            name={open.length ? 'Other columns' : 'Columns'}
+            columns={rest}
+            onChange={change}
+          />
         </Fold>
       </div>
       <div className="flex flex-wrap items-center gap-2">
@@ -301,15 +308,17 @@ function Columns({
 
 // Never disabled while a change is out: a control that goes disabled under
 // focus drops it. The panel ignores a change made while one is out.
-function ColumnRow({
+function WordsField({
   column,
+  id,
+  ariaLabel,
   onChange,
 }: {
   column: ProfileColumn;
+  id?: string;
+  ariaLabel?: string;
   onChange: (change: ProfileChange) => void;
 }) {
-  const labelId = useId();
-  const typeId = useId();
   const [label, setLabel] = useState(column.label);
   const [kept, setKept] = useState(column.label);
   if (column.label !== kept) {
@@ -326,9 +335,77 @@ function ColumnRow({
       });
     else setLabel(column.label);
   };
-  const typeWords = column.type
+  return (
+    <input
+      id={id}
+      aria-label={ariaLabel}
+      value={label}
+      onChange={(event) => setLabel(event.target.value)}
+      onBlur={save}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') event.currentTarget.blur();
+        if (event.key === 'Escape') setLabel(column.label);
+      }}
+      className="field text-dense min-h-8 w-full px-3"
+    />
+  );
+}
+
+const typeWordsOf = (column: ProfileColumn) =>
+  column.type
     ? (TYPE_WORDS[column.type.kind] ?? column.type.kind)
     : 'Not known: blank throughout';
+
+function TypeSelect({
+  column,
+  id,
+  ariaLabel,
+  onChange,
+}: {
+  column: ProfileColumn;
+  id?: string;
+  ariaLabel?: string;
+  onChange: (change: ProfileChange) => void;
+}) {
+  return (
+    <select
+      id={id}
+      aria-label={ariaLabel}
+      className="field text-dense min-h-8 w-full px-2"
+      value={column.type?.kind ?? ''}
+      onChange={(event) =>
+        onChange({
+          action: 'profileColumn',
+          column: column.column,
+          type: event.target.value as Choosable,
+        })
+      }
+    >
+      {column.type &&
+      CHOOSABLE.includes(column.type.kind as Choosable) ? null : (
+        <option value={column.type?.kind ?? ''} disabled>
+          {typeWordsOf(column)}
+        </option>
+      )}
+      {CHOOSABLE.map((kind) => (
+        <option key={kind} value={kind}>
+          {TYPE_WORDS[kind]}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+// A column that needs an answer, as a card of its own.
+function ColumnRow({
+  column,
+  onChange,
+}: {
+  column: ProfileColumn;
+  onChange: (change: ProfileChange) => void;
+}) {
+  const labelId = useId();
+  const typeId = useId();
   return (
     <li className="bg-surface-inset rounded-control grid gap-2 p-3">
       <div className="flex flex-wrap items-end gap-3">
@@ -336,50 +413,19 @@ function ColumnRow({
           <span className="text-meta text-muted">
             Called <Code>{column.column}</Code> in the data
           </span>
-          <input
-            id={labelId}
-            value={label}
-            onChange={(event) => setLabel(event.target.value)}
-            onBlur={save}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') event.currentTarget.blur();
-              if (event.key === 'Escape') setLabel(column.label);
-            }}
-            className="field text-dense min-h-8 px-3"
-          />
+          <WordsField column={column} id={labelId} onChange={onChange} />
         </label>
         {column.origin === 'declared' ? (
           <p className="grid gap-1">
             <span className="text-meta text-muted">Type</span>
-            <span className="text-dense">{typeWords}, set by the process</span>
+            <span className="text-dense">
+              {typeWordsOf(column)}, set by the process
+            </span>
           </p>
         ) : (
           <label htmlFor={typeId} className="grid gap-1">
             <span className="text-meta text-muted">Type</span>
-            <select
-              id={typeId}
-              className="field text-dense min-h-8 px-2"
-              value={column.type?.kind ?? ''}
-              onChange={(event) =>
-                onChange({
-                  action: 'profileColumn',
-                  column: column.column,
-                  type: event.target.value as Choosable,
-                })
-              }
-            >
-              {column.type &&
-              CHOOSABLE.includes(column.type.kind as Choosable) ? null : (
-                <option value={column.type?.kind ?? ''} disabled>
-                  {typeWords}
-                </option>
-              )}
-              {CHOOSABLE.map((kind) => (
-                <option key={kind} value={kind}>
-                  {TYPE_WORDS[kind]}
-                </option>
-              ))}
-            </select>
+            <TypeSelect column={column} id={typeId} onChange={onChange} />
           </label>
         )}
       </div>
@@ -404,5 +450,182 @@ function ColumnRow({
         </div>
       ) : null}
     </li>
+  );
+}
+
+// A column read through a lookup is `<lookup>.<column>`; the rest are the
+// record's own, and come first.
+const lookupOf = (column: ProfileColumn) => {
+  const dot = column.column.indexOf('.');
+  return dot > 0 ? column.column.slice(0, dot) : null;
+};
+
+// The columns in the profile's order, a run of one lookup's under its name.
+function groupsOf(columns: ProfileColumn[]) {
+  const groups: { lookup: string | null; columns: ProfileColumn[] }[] = [];
+  for (const column of columns) {
+    const lookup = lookupOf(column);
+    const last = groups.at(-1);
+    if (last && last.lookup === lookup) last.columns.push(column);
+    else groups.push({ lookup, columns: [column] });
+  }
+  return groups;
+}
+
+const COLUMN_SPAN = 3;
+
+// The answered columns, a row each. Every control is named by its column,
+// since the words beside it are a column heading and not a label. At the
+// width the thread is shown at, a fourth column for the meaning of a blank
+// would squeeze the words to half: it sits under the words of the columns
+// that have one.
+function ColumnTable({
+  name,
+  columns,
+  onChange,
+}: {
+  name: string;
+  columns: ProfileColumn[];
+  onChange: (change: ProfileChange) => void;
+}) {
+  return (
+    <DataTable>
+      <div className="min-w-0 overflow-x-auto">
+        <table className={DATA_TABLE_BODY}>
+          <caption className="sr-only">{name}</caption>
+          <thead>
+            <tr>
+              <th
+                scope="col"
+                className={cx(DATA_TABLE_HEAD, 'pr-3 pl-4 text-left')}
+              >
+                In the data
+              </th>
+              <th scope="col" className={cx(DATA_TABLE_HEAD, 'pr-3 text-left')}>
+                Words
+              </th>
+              <th
+                scope="col"
+                className={cx(DATA_TABLE_HEAD, 'w-56 pr-4 text-left')}
+              >
+                Type
+              </th>
+            </tr>
+          </thead>
+          {groupsOf(columns).map((group) => (
+            <tbody key={group.lookup ?? ''}>
+              {group.lookup ? (
+                <tr>
+                  <th
+                    scope="rowgroup"
+                    colSpan={COLUMN_SPAN}
+                    className={cx(
+                      DATA_TABLE_HEADING,
+                      'border-rule-faint border-b px-4 py-2 text-left',
+                    )}
+                  >
+                    {group.lookup}
+                  </th>
+                </tr>
+              ) : null}
+              {group.columns.map((column, index) => (
+                <TableRow
+                  key={column.column}
+                  column={column}
+                  shown={
+                    group.lookup
+                      ? column.column.slice(group.lookup.length + 1)
+                      : column.column
+                  }
+                  ruled={index > 0}
+                  onChange={onChange}
+                />
+              ))}
+            </tbody>
+          ))}
+        </table>
+      </div>
+    </DataTable>
+  );
+}
+
+function TableRow({
+  column,
+  shown,
+  ruled,
+  onChange,
+}: {
+  column: ProfileColumn;
+  // The column's name as its tab calls it, without the lookup's.
+  shown: string;
+  ruled: boolean;
+  onChange: (change: ProfileChange) => void;
+}) {
+  const edge = cx(column.blanksSeen ? 'pt-1.5' : 'py-1.5');
+  return (
+    <>
+      <tr>
+        <th
+          scope="row"
+          className={cx(
+            edge,
+            'pr-3 pl-4 text-left font-normal whitespace-nowrap',
+            ruled && DATA_TABLE_RULE,
+          )}
+        >
+          <Code>{shown}</Code>
+        </th>
+        <td className={cx(edge, 'pr-3', ruled && DATA_TABLE_RULE_ON)}>
+          <WordsField
+            column={column}
+            ariaLabel={`Words for ${column.column}`}
+            onChange={onChange}
+          />
+        </td>
+        <td className={cx(edge, 'pr-4', ruled && DATA_TABLE_RULE_ON)}>
+          {column.origin === 'declared' ? (
+            <span className="text-meta">
+              {typeWordsOf(column)}, set by the process
+            </span>
+          ) : (
+            <TypeSelect
+              column={column}
+              ariaLabel={`Type of ${column.column}`}
+              onChange={onChange}
+            />
+          )}
+        </td>
+      </tr>
+      {column.blanksSeen ? (
+        <tr>
+          <td />
+          <td colSpan={COLUMN_SPAN - 1} className="pr-4 pb-1.5">
+            <label className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span className="text-meta text-muted">
+                Where a cell is blank
+              </span>
+              <select
+                aria-label={`Where ${column.column} is blank`}
+                className="field text-dense min-h-8 px-2"
+                value={column.blank ?? ''}
+                onChange={(event) =>
+                  onChange({
+                    action: 'profileColumn',
+                    column: column.column,
+                    blank: event.target.value as 'skip' | 'fail',
+                  })
+                }
+              >
+                {BLANK_CHOICES.map((choice) => (
+                  <option key={choice.value} value={choice.value}>
+                    {choice.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </td>
+        </tr>
+      ) : null}
+    </>
   );
 }

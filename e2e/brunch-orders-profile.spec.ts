@@ -138,11 +138,24 @@ test('the columns that need an answer come first, and drafting waits for a confi
   await panel
     .getByRole('button', { name: 'Show the other 28 columns' })
     .click();
-  const others = panel.getByRole('list', { name: 'Other columns' });
-  await expect(others.locator('> li')).toHaveCount(28);
-  await expect(others.getByText('Yes or no, set by the process')).toBeVisible();
+  const others = panel.getByRole('table', { name: 'Other columns' });
   await expect(
-    others.getByRole('combobox', { name: 'Type' }).first(),
+    others.getByRole('textbox', { name: /^Words for / }),
+  ).toHaveCount(28);
+  await expect(others.getByText('Yes or no, set by the process')).toBeVisible();
+  // A heading row names the columns, and each row's controls name their column.
+  await expect(others.getByRole('columnheader')).toHaveText([
+    'In the data',
+    'Words',
+    'Type',
+  ]);
+  await expect(
+    others.getByRole('textbox', {
+      name: 'Words for category.margin_floor_pct',
+    }),
+  ).toBeVisible();
+  await expect(
+    others.getByRole('combobox', { name: 'Type of category.margin_floor_pct' }),
   ).toBeVisible();
   expect(await serious(page, 'section[aria-labelledby]')).toEqual([]);
 
@@ -202,7 +215,9 @@ test('an edit after confirming puts it back under review, and drafting waits aga
   const draft = page.getByRole('button', { name: 'Draft the rulebook' });
   await expect(draft).toBeEnabled();
   await panel.getByRole('button', { name: 'Show the 30 columns' }).click();
-  const words = panel.getByRole('textbox', { name: /Called max_order_units/ });
+  const words = panel.getByRole('textbox', {
+    name: 'Words for max_order_units',
+  });
   await words.fill('supplier’s maximum');
   await words.press('Enter');
   await expect(panel.locator('.pill-shape')).toHaveText(/^(Not confirmed)+$/);
@@ -213,6 +228,49 @@ test('an edit after confirming puts it back under review, and drafting waits aga
   await expect(draft).toBeDisabled();
   await expect(page.getByText(CONFIRM_FIRST)).toBeVisible();
   expect(drafts).toEqual([]);
+});
+
+test('a row of the table is edited by keyboard: words, type and the meaning of a blank', async ({
+  page,
+}) => {
+  const confirmed = confirmProfile(
+    setColumnBlank(
+      setColumnBlank(proposed, 'max_order_units', 'skip'),
+      'category.ripe_cover_days',
+      'fail',
+    ),
+  );
+  await serveProfile(page, confirmed);
+  const panel = await openRules(page);
+  await panel.getByRole('button', { name: 'Show the 30 columns' }).click();
+  const table = panel.getByRole('table', { name: 'Columns' });
+  const words = table.getByRole('textbox', {
+    name: 'Words for max_order_units',
+  });
+  const type = table.getByRole('combobox', { name: 'Type of max_order_units' });
+  const blank = table.getByRole('combobox', {
+    name: 'Where max_order_units is blank',
+  });
+
+  // Escape puts the words back; Tab leaves for the type, in reading order.
+  await words.focus();
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.type('not kept');
+  await page.keyboard.press('Escape');
+  await expect(words).toHaveValue('max order units');
+  await page.keyboard.press('Tab');
+  await expect(type).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(blank).toBeFocused();
+
+  // A blank that is answered shows its answer in words and can be changed.
+  await expect(blank).toHaveValue('skip');
+  await expect(
+    table.getByRole('combobox', { name: 'Where sku is blank' }),
+  ).toHaveCount(0);
+  await blank.selectOption('fail');
+  await expect(panel.locator('.pill-shape')).toHaveText(/^(Not confirmed)+$/);
+  await expect(blank).toHaveValue('fail');
 });
 
 test('a rule Accept refused for an unanswered blank leads to the question', async ({
