@@ -703,6 +703,27 @@ on the read cannot be scored by behaviour at all.
 catches before removing it, and when a model's answer is "cleaned up" by code,
 ask what the cleaning throws away.
 
+## A real draft on the finished engine (11 November)
+
+One whole draft of v3 with nothing chosen, in a scratch directory, on a
+confirmed data profile: 66 requests (15 of them refused by the service) and 5.7
+minutes, against about 89 requests for the third v3 draft. It found the two
+calculations and the seven checks, every check came out shaped, and nothing
+split. Both calculations and six checks were right against an answer key
+written by hand.
+
+One was wrong and shown as agreed: the ripe rule came out with no scope, "The
+stock available plus the proposed order must not exceed the expected sales", so
+it blocked ten products it is not about. Both writes dropped "the ripe avocados"
+the same way, and only the sentence would show a person. Nothing checks that a
+rule whose words name some records is limited to them.
+
+A field written `proposed:<field>` (10 answers) or left out (13) cost no
+request, and blank handling and misplaced conditions did not come up. What
+still costs requests is the model's own examples: 17 of the 33 answers sent
+back. The arrival rule took 13 requests and came out unconfirmed, because the
+model wanted a failing example the read cannot produce.
+
 ## Still open (31 October)
 
 - **Names.** A rule's name is often the first words of its sentence, cut off, which
