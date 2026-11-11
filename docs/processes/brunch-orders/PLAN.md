@@ -52,6 +52,15 @@ safety stock), so they stay in the sheet as data. An **Orders** tab is added
 later as the one place the app writes, after approval. Policy, context and the
 promotion's details are not in the sheet.
 
+**To say when a stock count was made,** add a `counted_at` column to the Stock
+tab, holding the date and time of each product's count: a date-time cell, or
+text such as `2026-11-11 07:30` (London time), left blank where it is not known.
+A product with a date is judged by it, so a count made last Thursday is no
+longer read as this Thursday's; one without keeps being judged by its
+`counted_day` and `counted_time`, and a sheet without the column reads as it did.
+A date after the moment the sheet is read is refused, naming its cell. The
+accepted rules and the confirmed data profile need no change.
+
 **The instructions hold everything else**, in the app, versioned like every
 process's instructions: the intent, the promotion (when it runs, what it is
 for), how expected demand is worked out, and the rules in plain words. The
@@ -465,7 +474,8 @@ whose stock count was two days old.
   read may not be what the sheet holds now, and earlier rules may lack ones added
   since. Apply shows the preview and says why. Undo stays open either way.
 
-Present limits. Stock counts carry a weekday and no date, so a count left
-unchanged for weeks reads as this week's: the 30 October live read was identical
-to the 8 October one. Telling them apart needs a date in the sheet. There is no
+Present limits. Stock counts carry a weekday and no date unless the sheet has a
+`counted_at` column (above), so a count left unchanged for weeks reads as this
+week's wherever it has none: the 30 October live read was identical to the
+8 October one. There is no
 sign-in, so the record says what was decided and when, not by whom.

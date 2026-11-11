@@ -23,6 +23,12 @@ import {
   futureInspectionTabs,
   INSPECT_HOURS,
   INSPECTED_HOURS,
+  LOCKOUT_AT_DOCKS,
+  SWEPT_AT_CELLS,
+  SWEPT_AT_DOCKS,
+  SWEPT_AT_HOURS,
+  sweptAtTabs,
+  UNTYPED_SWEPT_AT_DOCKS,
   MISDECLARED_DOCKS,
   timedInspectionTabs,
   UNOPENED_DOCKS,
@@ -2208,6 +2214,287 @@ describe('dated moments', () => {
     expect(
       debugDraft(DATED_DOCKS, TEXT, set, read).columns!.unread,
     ).not.toContain('last_inspected');
+  });
+});
+
+describe('a moment on a date, or else a weekday and time', () => {
+  const data = SWEPT_AT_DOCKS.subject.data;
+  const dated = docksRead(sweptAtTabs());
+  const hoursOf = (on: KeptRead, owner: DefinitionProcess, column: string) => {
+    const records = recordsOf(on, owner.subject.data);
+    return Object.fromEntries(
+      records.keys.map((key) => [key, records.record(key)[column]]),
+    );
+  };
+  // The shape of the sweep rule, on this declaration and read.
+  const contextOn = (
+    owner: DefinitionProcess,
+    on: KeptRead = read,
+  ): ShapeContext => ({
+    subject: owner.subject,
+    records: recordsOf(on, owner.subject.data),
+    read: on,
+    consequence: 'decide',
+    constants: (ANSWERS.stale_sweep as Pick<Definition, 'constants'>).constants,
+    groups: [],
+    earlier: [],
+  });
+  const BEFORE_VAN = shape({
+    kind: 'only_when',
+    field: 'bikes',
+    when: [{ left: 'moment:swept', op: 'before', right: 'moment:van' }],
+  });
+  // Every dock's last sweep as DOCKS has it, from its weekday and time.
+  const WEEKLY = Object.fromEntries(
+    KEYS.map((key) => [key, MOMENTS[key]!.swept]),
+  );
+
+  it('is the instant a record’s date holds, else its weekday and time', () => {
+    expect(recordsOf(dated, data).problems).toEqual([]);
+    // The date wins, a serial number as much as text, and where it is older
+    // than a week; a blank date falls back on Thu 06:00; a dock never swept
+    // by its weekday and time is placed by its date.
+    expect(hoursOf(dated, SWEPT_AT_DOCKS, momentColumn('swept'))).toEqual(
+      SWEPT_AT_HOURS,
+    );
+    expect(Object.keys(SWEPT_AT_CELLS)).toEqual([
+      'D-01',
+      'D-02',
+      'D-03',
+      'D-04',
+      'D-06',
+    ]);
+    // The same instant as hours since it, which is never negative here.
+    expect(hoursOf(dated, SWEPT_AT_DOCKS, 'sweep_age_hours')).toEqual(
+      Object.fromEntries(KEYS.map((key) => [key, -SWEPT_AT_HOURS[key]!])),
+    );
+    // A blank date gives exactly the weekly hours.
+    for (const key of ['D-03', 'D-05', 'D-07', 'D-08', 'D-09', 'D-10'])
+      expect(SWEPT_AT_HOURS[key], key).toBe(WEEKLY[key]);
+    // Moments beside it are as they were.
+    expect(hoursOf(dated, SWEPT_AT_DOCKS, momentColumn('van'))).toEqual(
+      hoursOf(read, DOCKS, momentColumn('van')),
+    );
+  });
+
+  it('falls back on the weekday and time for every record where the source has no such column, with no problem', () => {
+    expect(recordsOf(read, data).problems).toEqual([]);
+    expect(hoursOf(read, SWEPT_AT_DOCKS, momentColumn('swept'))).toEqual(
+      WEEKLY,
+    );
+    expect(hoursOf(read, SWEPT_AT_DOCKS, 'sweep_age_hours')).toEqual(
+      hoursOf(read, DOCKS, 'sweep_age_hours'),
+    );
+    expect(recordsOf(read, data).types.record).not.toHaveProperty('swept_at');
+    // Held to a profile that does not list it, as the confirmed one does not.
+    const held = withProfile(SWEPT_AT_DOCKS, firstProfile(data));
+    expect(
+      held.subject.data.profile?.columns.map((c) => c.column),
+    ).not.toContain('swept_at');
+    expect(recordsOf(read, held.subject.data).problems).toEqual([]);
+    expect(hoursOf(read, held, momentColumn('swept'))).toEqual(WEEKLY);
+  });
+
+  it('reads the column the profile does not list as its declaration types it', () => {
+    const held = withProfile(SWEPT_AT_DOCKS, firstProfile(data));
+    const records = recordsOf(dated, held.subject.data);
+    expect(records.problems).toEqual([]);
+    expect(hoursOf(dated, held, momentColumn('swept'))).toEqual(SWEPT_AT_HOURS);
+    expect(records.types.record[momentColumn('swept')]).toBe('double');
+    // A text cell that is no date is still a problem, by its cell.
+    const tabs = sweptAtTabs({ 'D-05': 'last Tuesday' });
+    expect(recordsOf(docksRead(tabs), held.subject.data).problems).toEqual([
+      'Visits!I6 (swept_at) reads "last Tuesday": Expected a date and time (a date cell, or text like 2026-10-15 08:45).',
+    ]);
+  });
+
+  it('refuses a date after the read on an observed moment, naming its cell, once', () => {
+    const tabs = sweptAtTabs({ 'D-02': '2026-11-06 09:00' });
+    const { problems } = recordsOf(docksRead(tabs), data);
+    expect(problems).toEqual([
+      'Visits!I3 (swept_at) reads "2026-11-06 09:00": it is after the data was read.',
+    ]);
+    expect(() => fitting(docksRead(tabs), data)).toThrow(/Visits!I3/);
+    // A date-time at the read itself has happened.
+    expect(
+      recordsOf(docksRead(sweptAtTabs({ 'D-02': '2026-11-05 07:30' })), data)
+        .problems,
+    ).toEqual([]);
+    // A deadline is still to come: its date may be after the read.
+    const ahead = docksRead(tabs);
+    expect(recordsOf(ahead, LOCKOUT_AT_DOCKS.subject.data).problems).toEqual(
+      [],
+    );
+    expect(
+      hoursOf(ahead, LOCKOUT_AT_DOCKS, momentColumn('lockout'))['D-02'],
+    ).toBe(25.5);
+  });
+
+  it('reports a date column that is not typed, and a kind its place does not give', () => {
+    expect(
+      recordsOf(read, UNTYPED_SWEPT_AT_DOCKS.subject.data).problems,
+    ).toEqual([
+      'The process declares sweep_age_hours from the swept_at column, which is not typed as a date or date-time.',
+      'The process declares the moment swept from the swept_at column, which is not typed as a date or date-time.',
+    ]);
+    const swept = data.timing!.moments!.swept!;
+    const wrong = {
+      ...data,
+      timing: {
+        ...data.timing!,
+        since: { sweep_age_hours: { ...swept, kind: 'deadline' as const } },
+      },
+    };
+    expect(recordsOf(read, wrong).problems).toEqual([
+      'The process declares sweep_age_hours from a dated column and a weekday and time, which are placed as observed, but gives its kind as deadline.',
+    ]);
+  });
+
+  it('allows hours_since exactly where the moment is observed', () => {
+    expect(
+      shapeProblems(SHAPES.stale_sweep, contextOn(SWEPT_AT_DOCKS, dated)),
+    ).toEqual([]);
+    const deadline = shape({
+      kind: 'flag',
+      when: [
+        { left: 'hours_since:lockout', op: '>', right: 'constant:sweep_hours' },
+      ],
+    });
+    expect(shapeProblems(deadline, contextOn(LOCKOUT_AT_DOCKS, dated))).toEqual(
+      [
+        'hours_since:lockout is not a number of hours: lockout may still be to come. Put it before or after another moment instead, as moment:lockout.',
+      ],
+    );
+  });
+
+  it('writes the formula and sentence of the same weekly moment, with no guard against the future', () => {
+    for (const shapeOf of [SHAPES.stale_sweep, BEFORE_VAN]) {
+      for (const on of [read, docksRead(sweptAtTabs({ 'D-03': '' }))]) {
+        const weekly = contextOn(DOCKS, read);
+        const both = contextOn(SWEPT_AT_DOCKS, on);
+        expect(formulaOf(shapeOf, both)).toBe(formulaOf(shapeOf, weekly));
+        expect(sentenceOf(shapeOf, both)).toBe(sentenceOf(shapeOf, weekly));
+      }
+    }
+    expect(formulaOf(SHAPES.stale_sweep, contextOn(SWEPT_AT_DOCKS))).toBe(
+      FORMULAS.stale_sweep,
+    );
+    expect(sentenceOf(SHAPES.stale_sweep, contextOn(SWEPT_AT_DOCKS))).toBe(
+      SENTENCES.stale_sweep,
+    );
+    // Where every dock has a moment, one is never said to be blank.
+    const full = docksRead(
+      sweptAtTabs({ ...SWEPT_AT_CELLS, 'D-05': '2026-11-04 18:00' }),
+    );
+    expect(
+      sentenceOf(SHAPES.stale_sweep, contextOn(SWEPT_AT_DOCKS, full)),
+    ).toBe(
+      SENTENCES.stale_sweep.replace(
+        ' Where the last sweep is blank, it fails.',
+        '',
+      ),
+    );
+  });
+
+  it('takes what a blank means from the weekday and time, never the date', () => {
+    // The profile of a read that has the column: blanks seen in all three.
+    let profile = profileOf(dated, data);
+    expect(profile.columns.find((c) => c.column === 'swept_at')).toMatchObject({
+      type: { kind: 'datetime' },
+      blanksSeen: true,
+      blank: null,
+    });
+    profile = setColumnBlank(profile, 'swept_day', 'skip');
+    const owner = withProfile(SWEPT_AT_DOCKS, confirmProfile(profile));
+    // The time is unanswered, the date is never asked about.
+    expect(
+      unansweredBlanks(SHAPES.stale_sweep, contextOn(owner, dated)),
+    ).toEqual([{ column: 'swept_time', label: 'swept time' }]);
+    profile = setColumnBlank(profile, 'swept_time', 'skip');
+    const answered = withProfile(SWEPT_AT_DOCKS, confirmProfile(profile));
+    const context = contextOn(answered, dated);
+    expect(unansweredBlanks(SHAPES.stale_sweep, context)).toEqual([]);
+    // Skipped, though the date column's own blanks say nothing.
+    expect(formulaOf(SHAPES.stale_sweep, context)).toBe(STALE_SWEEP_SKIPPED);
+    expect(sentenceOf(SHAPES.stale_sweep, context)).not.toMatch(/blank/);
+    // And the weekly process, on the same answers, writes the same.
+    const weekly = contextOn(withProfile(DOCKS, confirmProfile(profile)), read);
+    expect(formulaOf(SHAPES.stale_sweep, weekly)).toBe(STALE_SWEEP_SKIPPED);
+  });
+
+  it('shows its date in the worked example where a record has one, and its weekday and time where not', () => {
+    const working = (key: string) =>
+      valuesInWords(
+        SHAPES.stale_sweep,
+        contextOn(SWEPT_AT_DOCKS, dated),
+        key,
+        formulaContext(
+          dated,
+          key,
+          SWEPT_AT_DOCKS.subject,
+          { inputs: {}, constants: { sweep_hours: 48 }, groups: {} },
+          {},
+        ),
+      );
+    expect(working('D-01')).toBe(
+      'the hours from the last sweep to when the data is read is 11.5; 48 (“more than 48 hours”) is 48; the last sweep is Wed, 4 Nov 2026, 20:00',
+    );
+    // Serial 46329.5.
+    expect(working('D-02')).toMatch(
+      /the last sweep is Tue, 3 Nov 2026, 12:00$/,
+    );
+    // No date: Thu 06:00, as DOCKS shows it.
+    expect(working('D-03')).toBe(
+      'the hours from the last sweep to when the data is read is 1.5; 48 (“more than 48 hours”) is 48; the last sweep is Thu 06:00',
+    );
+  });
+
+  it('tells a shape writer what it is, in the process’s words', async () => {
+    const finder = standIn(answer(FOUND));
+    await findDefinitions(SWEPT_AT_DOCKS, TEXT, 'v1', dated, {
+      resolve: () => finder,
+    });
+    const writer = writing(ANSWERS.fare_floor!);
+    await writeDefinition(SWEPT_AT_DOCKS, TEXT, dated, 'fare_floor', {
+      resolve: () => writer,
+    });
+    expect(told(writer)).toContain(
+      '- swept: the date in swept_at where a record has one, otherwise swept_day at swept_time, the last time it came round by when the data was read; hours_since may read it',
+    );
+    const formulas = writing(ANSWERS.free_space!);
+    await writeDefinition(SWEPT_AT_DOCKS, TEXT, dated, 'free_space', {
+      resolve: () => formulas,
+    });
+    expect(told(formulas)).toContain(
+      '- sweep_age_hours: how long ago the instant in swept_at was where a record has one, otherwise how long ago swept_day at swept_time last came round.',
+    );
+  });
+
+  it('counts the date column and the pair as read by a rule that reads the moment', () => {
+    const set: DefinitionSet = {
+      hash: '',
+      version: 'v1',
+      intent: '',
+      intentConfirmedAt: null,
+      readId: dated.id,
+      foundAt: '',
+      model: '',
+      definitions: [
+        {
+          ...EARLIER[0]!,
+          id: 'stale_sweep',
+          result: 'check',
+          consequence: 'decide',
+          formula: formulaOf(
+            SHAPES.stale_sweep,
+            contextOn(SWEPT_AT_DOCKS, dated),
+          ),
+        },
+      ],
+    };
+    const unread = debugDraft(SWEPT_AT_DOCKS, TEXT, set, dated).columns!.unread;
+    for (const column of ['swept_at', 'swept_day', 'swept_time'])
+      expect(unread).not.toContain(column);
   });
 });
 

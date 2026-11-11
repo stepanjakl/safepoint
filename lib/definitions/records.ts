@@ -1,5 +1,6 @@
 import {
   isDated,
+  isDatedOrWeekly,
   type DataShape,
   type Moment,
   type TimeColumns,
@@ -96,6 +97,10 @@ const asCel = (value: unknown, type: string | undefined) =>
         ? value
         : cel(value);
 
+// The dated columns that may not hold an instant after the data was read:
+// those of an observed moment that also has a weekday and time to fall back on.
+type NotAfter = { columns: Set<string>; readAt: number };
+
 // A resource's rows by its `key` column, with blank cells left out.
 function keyed(
   tab: DataTab | undefined,
@@ -104,6 +109,7 @@ function keyed(
   typeOf: TypeOf,
   problems: string[],
   { resource, address }: SourceTerms,
+  notAfter?: NotAfter,
 ): Map<string, Row> {
   const rows = new Map<string, Row>();
   if (!tab || !tab.values.length) {
@@ -147,7 +153,16 @@ function keyed(
         problems.push(
           `${valueAt(i, index + 1, twice ? undefined : id)} (${column}) reads "${String(raw)}": ${read.issue}`,
         );
-      else record[column] = asCel(read.value, typing.cel);
+      else {
+        if (
+          notAfter?.columns.has(column) &&
+          Number(read.value) > notAfter.readAt
+        )
+          problems.push(
+            `${valueAt(i, index + 1, twice ? undefined : id)} (${column}) reads "${String(raw)}": it is after the data was read.`,
+          );
+        record[column] = asCel(read.value, typing.cel);
+      }
     });
     rows.set(id, record);
   });
@@ -184,12 +199,16 @@ function addTiming(record: Row, read: KeptRead, data: DataShape) {
   if (!timing) return;
   const { opens, timeZone } = timing;
   const readAt = Date.parse(read.readAt);
-  // A weekday and time placed in the week, or a dated cell's own instant.
+  // A dated cell's own instant, else a weekday and time placed in the week.
   const placed = (
     columns: TimeColumns,
     place: (at: DayTime) => number | null,
   ) => {
     if (isDated(columns)) return instantOf(record, columns);
+    const instant = isDatedOrWeekly(columns)
+      ? instantOf(record, columns)
+      : null;
+    if (instant !== null) return instant;
     const at = dayTimeOf(record, columns);
     return at ? place(at) : null;
   };
@@ -228,7 +247,33 @@ function addTiming(record: Row, read: KeptRead, data: DataShape) {
 
 // The columns a moment or a worked-out column is read from.
 export const timeColumnsOf = (columns: TimeColumns | Moment): string[] =>
+  isDated(columns)
+    ? [columns.at]
+    : isDatedOrWeekly(columns)
+      ? [columns.at, columns.day, columns.time]
+      : [columns.day, columns.time];
+
+// The columns whose blanks make a moment blank: a dated column with a weekday
+// and time to fall back on is blank only where they are, so its date is not.
+export const blankColumnsOf = (columns: TimeColumns | Moment): string[] =>
   isDated(columns) ? [columns.at] : [columns.day, columns.time];
+
+// The dated columns an observed moment, or hours since one, may not hold an
+// instant after the read in: there, the weekday and time would have said it
+// was never still to come, so no formula guards it.
+const datesNotAfterRead = (data: DataShape): Set<string> => {
+  const { timing } = data;
+  return new Set(
+    [
+      ...Object.values(timing?.since ?? {}),
+      ...Object.values(timing?.moments ?? {}),
+    ].flatMap((columns) =>
+      isDatedOrWeekly(columns) && columns.kind === 'observed'
+        ? [columns.at]
+        : [],
+    ),
+  );
+};
 
 /*
   What is wrong with the timing a process declares, said once, where its
@@ -248,20 +293,34 @@ function timingProblems(data: DataShape): string[] {
         `The process declares ${what} from the ${at} column, which is not typed as a date or date-time.`,
       );
   };
-  for (const [name, columns] of Object.entries(timing.since))
-    if (isDated(columns)) dated(name, columns);
-  for (const [name, columns] of Object.entries(timing.until))
-    if (isDated(columns)) dated(name, columns);
-    else if (!timing.opens)
+  // Where a dated column also has a weekday and time, those are placed as
+  // the entry's place says, so its `kind` must be that one.
+  const placed = (name: string, columns: TimeColumns, kind: string) => {
+    if (isDatedOrWeekly(columns) && columns.kind !== kind)
+      problems.push(
+        `The process declares ${name} from a dated column and a weekday and time, which are placed as ${kind}, but gives its kind as ${columns.kind}.`,
+      );
+  };
+  for (const [name, columns] of Object.entries(timing.since)) {
+    if (isDated(columns) || isDatedOrWeekly(columns)) dated(name, columns);
+    placed(name, columns, 'observed');
+  }
+  for (const [name, columns] of Object.entries(timing.until)) {
+    if (isDated(columns) || isDatedOrWeekly(columns)) dated(name, columns);
+    placed(name, columns, 'deadline');
+    if (!isDated(columns) && !timing.opens)
       problems.push(
         `The process declares ${name} as hours until a weekday and time, but no weekly opening to place it in: give it a dated column, or declare when the period opens.`,
       );
-  for (const [name, moment] of Object.entries(timing.moments ?? {}))
-    if (isDated(moment)) dated(`the moment ${name}`, moment);
-    else if (moment.kind !== 'observed' && !timing.opens)
+  }
+  for (const [name, moment] of Object.entries(timing.moments ?? {})) {
+    if (isDated(moment) || isDatedOrWeekly(moment))
+      dated(`the moment ${name}`, moment);
+    if (!isDated(moment) && moment.kind !== 'observed' && !timing.opens)
       problems.push(
         `The process declares the moment ${name} as a ${moment.kind}, which is placed by the weekly opening, but declares none: give it a dated column, or declare when the period opens.`,
       );
+  }
   return problems;
 }
 
@@ -431,6 +490,10 @@ function build(read: KeptRead, data: DataShape): Records {
   const tabOf = (name: string) => read.tabs.find((t) => t.name === name);
   const [first, ...rest] = data.records.tabs;
   const recordTypes = typerOf(data);
+  const notAfter = {
+    columns: datesNotAfterRead(data),
+    readAt: Date.parse(read.readAt),
+  };
   const listed = keyed(
     tabOf(first ?? ''),
     first ?? '',
@@ -438,6 +501,7 @@ function build(read: KeptRead, data: DataShape): Records {
     recordTypes,
     problems,
     source,
+    notAfter,
   );
   const keys = [...listed.keys()];
   const records = new Map(keys.map((key) => [key, { ...listed.get(key)! }]));
@@ -456,6 +520,7 @@ function build(read: KeptRead, data: DataShape): Records {
       recordTypes,
       problems,
       source,
+      notAfter,
     );
     for (const [key, row] of rows) {
       const record = records.get(key);

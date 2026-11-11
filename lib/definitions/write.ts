@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import {
   isDated,
+  isDatedOrWeekly,
   type DefinitionSubject,
   type WeeklyMoment,
 } from '@/lib/process/model';
@@ -267,7 +268,7 @@ function shapeMaterials(setting: Setting) {
         ...Object.entries(data.timing.moments ?? {}).map(([name, m]) =>
           isDated(m)
             ? `- ${name}: the date in ${m.at}; hours_since may read it, and fails where it is after the read`
-            : `- ${name}: ${m.day} at ${m.time}, ${MOMENT_KINDS[m.kind]}${m.kind === 'observed' ? '; hours_since may read it' : ''}`,
+            : `- ${name}: ${isDatedOrWeekly(m) ? `the date in ${m.at} where a record has one, otherwise ` : ''}${m.day} at ${m.time}, ${MOMENT_KINDS[m.kind]}${m.kind === 'observed' ? '; hours_since may read it' : ''}`,
         ),
       ]
     : [];

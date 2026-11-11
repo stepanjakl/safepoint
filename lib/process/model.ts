@@ -282,7 +282,8 @@ export type DataShape = {
   // long ago a moment happened, `until` how long is left before it, negative
   // once it has passed. Each is a weekday column and a time-of-day column,
   // placed in the week (`until` then needs `opens`: the deadline in the week
-  // being planned), or one date or date-time column, the instant it holds.
+  // being planned), or one date or date-time column, the instant it holds, or
+  // a dated column that falls back on the pair (`DatedOrWeeklyMoment`).
   // Never the wall clock, so a read always gives the same answers.
   timing?: {
     timeZone: string;
@@ -295,7 +296,8 @@ export type DataShape = {
     // the hours between. A weekday and time pair is placed by `kind`:
     // observed, the last time it came round by the read; deadline, the last
     // before the planned period opens; next, the first after the read. A
-    // dated moment is the instant its cell holds.
+    // dated moment is the instant its cell holds; with a pair as well, the
+    // pair places it where the cell is blank or the source has no such column.
     moments?: Record<string, Moment>;
   };
 };
@@ -315,8 +317,12 @@ export type DataProfileTypes = {
   }[];
 };
 
-// A moment's columns: a weekday and a time of day, or one dated column.
-export type TimeColumns = { day: string; time: string } | { at: string };
+// A moment's columns: a weekday and a time of day, or one dated column, or
+// both (`DatedOrWeeklyMoment`).
+export type TimeColumns =
+  | { day: string; time: string; at?: undefined }
+  | { at: string; day?: undefined }
+  | DatedOrWeeklyMoment;
 
 export type WeeklyMoment = {
   day: string;
@@ -324,14 +330,43 @@ export type WeeklyMoment = {
   kind: 'observed' | 'deadline' | 'next';
   // How a sentence names it; absent, its name with spaces.
   label?: string;
+  // Never set: what tells it from one with a dated column.
+  at?: undefined;
 };
 
 // One `date` or `datetime` column: the instant its cell holds, a date with
 // no time being the start of that day in the column's time zone.
-export type DatedMoment = { at: string; label?: string };
+export type DatedMoment = { at: string; label?: string; day?: undefined };
 
-export type Moment = WeeklyMoment | DatedMoment;
+/*
+  A dated column and a weekday and time pair together, for data that gains
+  its dates after it has been kept without them. For each record, the instant
+  its `at` cell holds; where that cell is blank, or the source has no such
+  column at all, the weekday and time placed by `kind`, exactly as a weekly
+  moment is. Everywhere else it is that weekly moment of its `kind`: the same
+  rules may read it, the same formula and sentence are written for it, and a
+  blank `at` cell is not a blank of the moment, only the pair's cells are. An
+  `observed` one is never in the future: a dated cell after the read is a read
+  problem. As a `since` or `until` entry its `kind` is the one its place
+  gives: `observed` for `since`, `deadline` for `until`.
+*/
+export type DatedOrWeeklyMoment = {
+  at: string;
+  day: string;
+  time: string;
+  kind: 'observed' | 'deadline' | 'next';
+  label?: string;
+};
 
-export const isDated = <T extends TimeColumns | Moment>(
-  columns: T,
-): columns is Extract<T, { at: string }> => 'at' in columns;
+export type Moment = WeeklyMoment | DatedMoment | DatedOrWeeklyMoment;
+
+// A column that is only dated: not one that falls back on a weekday and time.
+export const isDated = (
+  columns: TimeColumns | Moment,
+): columns is { at: string; day?: undefined } =>
+  'at' in columns && !('day' in columns);
+
+// A dated column with a weekday and time to fall back on.
+export const isDatedOrWeekly = (
+  columns: TimeColumns | Moment,
+): columns is DatedOrWeeklyMoment => 'at' in columns && 'day' in columns;

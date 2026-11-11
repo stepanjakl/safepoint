@@ -1,16 +1,17 @@
 import {
   isDated,
+  isDatedOrWeekly,
   type DefinitionSubject,
   type WeeklyMoment,
 } from '@/lib/process/model';
 
 import {
+  blankColumnsOf,
   MOMENT_PREFIX,
   momentColumn,
   READ,
   recordsOf,
   START,
-  timeColumnsOf,
   type KeptRead,
   type Records,
 } from './records';
@@ -333,10 +334,11 @@ const profiled = (column: string, { subject }: ShapeContext) =>
 const blankIn = (column: string, context: ShapeContext): Blank =>
   profiled(column, context)?.blank === 'skip' ? 'skip' : 'fail';
 
-// The columns a moment is read from; start and read are never blank.
+// The columns whose blanks leave a moment blank; start and read are never
+// blank. A date with a weekday and time to fall back on is not one of them.
 const momentColumns = (name: string, { subject }: ShapeContext) => {
   const moment = momentOf(name, subject);
-  return moment ? timeColumnsOf(moment) : [];
+  return moment ? blankColumnsOf(moment) : [];
 };
 
 // The dated moments a shape reads hours since: each must have happened by
@@ -1139,11 +1141,14 @@ function momentWhen(
   const timing = context.subject.data.timing;
   if (!timing) return null;
   // A dated moment as its date, and its time where the column holds one. A
-  // date is a day where its column's zone puts it, so it is shown there.
-  const dated = datedMoment(name, context.subject);
-  if (dated) {
-    const cell = record[dated.at];
-    if (cell === undefined || cell === null) return null;
+  // date is a day where its column's zone puts it, so it is shown there. One
+  // that falls back on a weekday and time shows its date where the record has
+  // one, and the weekday and time where it does not.
+  const moment = momentOf(name, context.subject);
+  const dated =
+    moment && (isDated(moment) || isDatedOrWeekly(moment)) ? moment : null;
+  const cell = dated ? record[dated.at] : null;
+  if (dated && cell !== undefined && cell !== null) {
     const type =
       profiled(dated.at, context)?.type ?? context.subject.data.types[dated.at];
     return new Intl.DateTimeFormat('en-GB', {
@@ -1157,6 +1162,7 @@ function momentWhen(
         : {}),
     }).format(new Date(Number(cell)));
   }
+  if (dated && isDated(dated)) return null;
   const readAt = Date.parse(context.read.readAt);
   const hours = name === READ ? 0 : record[momentColumn(name)];
   return typeof hours === 'number'

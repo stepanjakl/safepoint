@@ -1,4 +1,8 @@
-import type { DataShape, DefinitionSubject } from '@/lib/process/model';
+import type {
+  DataShape,
+  DatedOrWeeklyMoment,
+  DefinitionSubject,
+} from '@/lib/process/model';
 
 import type { DataTab, KeptRead } from './records';
 import type { Shape } from './shapes';
@@ -173,6 +177,99 @@ export const MISDECLARED_DOCKS = withTiming('conformance-docks-misdeclared', {
     noted: { at: 'notes' },
   },
 });
+
+/*
+  A moment on a date-time column that falls back on a weekday and time:
+  swept_at, in the Visits tab where it is added, beside swept_day and
+  swept_time. A record with a date uses it; one with none is placed by its
+  weekday and time, as DOCKS places it. The read has no such column until
+  `sweptAtTabs` adds it.
+*/
+const SWEPT_OR_DATED = {
+  at: 'swept_at',
+  day: 'swept_day',
+  time: 'swept_time',
+  kind: 'observed',
+  label: 'last sweep',
+} satisfies DatedOrWeeklyMoment;
+const SWEPT_AT_TYPES = {
+  ...DATA.types,
+  swept_at: { kind: 'datetime', timeZone: ZONE },
+} satisfies DataShape['types'];
+export const SWEPT_AT_DOCKS = withTiming(
+  'conformance-docks-swept-at',
+  {
+    ...DATA.timing,
+    since: { sweep_age_hours: SWEPT_OR_DATED },
+    moments: { ...DATA.timing.moments, swept: SWEPT_OR_DATED },
+  },
+  SWEPT_AT_TYPES,
+);
+// The lockout, a deadline, on a date as well: no hours since it, and a date
+// after the read is no problem for a moment still to come.
+export const LOCKOUT_AT_DOCKS = withTiming(
+  'conformance-docks-lockout-at',
+  {
+    ...DATA.timing,
+    moments: {
+      ...DATA.timing.moments,
+      lockout: {
+        at: 'swept_at',
+        day: 'lock_day',
+        time: 'lock_time',
+        kind: 'deadline',
+      },
+    },
+  },
+  SWEPT_AT_TYPES,
+);
+// The same, with the date column's type left undeclared.
+export const UNTYPED_SWEPT_AT_DOCKS = withTiming(
+  'conformance-docks-swept-at-untyped',
+  SWEPT_AT_DOCKS.subject.data.timing!,
+);
+
+// swept_at by dock, as a sheet holds it: a date-time cell is a serial number
+// (days since 30 Dec 1899, a fraction for the time), or text.
+export const SWEPT_AT_CELLS: Record<string, string | number> = {
+  // Wed 4 Nov 20:00: 11.5 hours before the read, 2 hours later than the
+  // weekday and time the weekly pair says (Wed 18:00).
+  'D-01': '2026-11-04 20:00',
+  // Serial 46329.5, Tue 3 Nov 12:00: 43.5 hours before the read.
+  'D-02': 46329.5,
+  // Blank: placed by Thu 06:00, 1.5 hours before the read.
+  'D-03': '',
+  // Tue 20 Oct 08:00, older than a week: 383.5 hours before the read, where
+  // the weekday and time (Thu 08:00) said 167.5.
+  'D-04': '2026-10-20 08:00',
+  // Never swept by the weekday and time, but dated: Thu 5 Nov 07:00.
+  'D-06': '2026-11-05 07:00',
+};
+// Hours from the read to each dock's last sweep with swept_at filled as
+// above; the rest are as DOCKS has them (MOMENTS).
+export const SWEPT_AT_HOURS: Record<string, number | undefined> = {
+  'D-01': -11.5,
+  'D-02': -43.5,
+  'D-03': -1.5,
+  'D-04': -383.5,
+  'D-05': -13.5,
+  'D-06': -0.5,
+  'D-07': -70.5,
+  'D-08': -13.5,
+  'D-09': -13.5,
+  'D-10': -1.5,
+};
+
+// The Visits tab with a swept_at column, blank where `cells` says nothing.
+export function sweptAtTabs(
+  cells: Record<string, string | number> = SWEPT_AT_CELLS,
+): DataTab[] {
+  const tabs = docksTabs();
+  const [header, ...rows] = tabIn(tabs, 'Visits');
+  header!.push('swept_at');
+  for (const row of rows) row[8] = cells[String(row[0])] ?? '';
+  return tabs;
+}
 
 // Hours from the read to each dock's last inspection: back to the start of
 // that day, Singapore time, from Thu 5 Nov 07:30.

@@ -1,6 +1,6 @@
 import type { DefinitionSubject } from '@/lib/process/model';
 
-import { isDated, type DataShape } from '@/lib/process/model';
+import { isDated, isDatedOrWeekly, type DataShape } from '@/lib/process/model';
 
 import { recordsOf, type KeptRead } from './records';
 import type { Definition, Example } from './types';
@@ -26,12 +26,12 @@ export function timingOf(read: KeptRead, data: DataShape): string {
     ...Object.entries(since).map(([name, columns]) =>
       isDated(columns)
         ? `- ${name}: how long ago the instant in ${columns.at} was; negative where it is still to come.`
-        : `- ${name}: how long ago ${columns.day} at ${columns.time} last came round.`,
+        : `- ${name}: ${isDatedOrWeekly(columns) ? `how long ago the instant in ${columns.at} was where a record has one, otherwise ` : ''}how long ago ${columns.day} at ${columns.time} last came round.`,
     ),
     ...Object.entries(until).map(([name, columns]) =>
       isDated(columns)
         ? `- ${name}: how long is left before the instant in ${columns.at}; negative once it has passed.`
-        : `- ${name}: how long is left before ${columns.day} at ${columns.time} in the week being planned; negative once it has passed.`,
+        : `- ${name}: how long is left before ${isDatedOrWeekly(columns) ? `the instant in ${columns.at} where a record has one, otherwise ` : ''}${columns.day} at ${columns.time} in the week being planned; negative once it has passed.`,
     ),
     ...records.keys.map(
       (key) =>

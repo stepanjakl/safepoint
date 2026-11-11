@@ -39,6 +39,8 @@ const DATA = {
     ripe: { kind: 'yes_no' },
     counted_day: { kind: 'weekday' },
     counted_time: { kind: 'time_of_day' },
+    // Optional: a sheet without it is read by the weekday and time alone.
+    counted_at: { kind: 'datetime', timeZone: 'Europe/London' },
     delivery_day: { kind: 'weekday' },
     delivery_time: { kind: 'time_of_day' },
     cutoff_day: { kind: 'weekday' },
@@ -49,12 +51,20 @@ const DATA = {
   timing: {
     timeZone: 'Europe/London',
     opens: { day: 'Sat', minutes: 7 * 60 },
-    since: { count_age_hours: { day: 'counted_day', time: 'counted_time' } },
+    since: {
+      count_age_hours: {
+        at: 'counted_at',
+        day: 'counted_day',
+        time: 'counted_time',
+        kind: 'observed',
+      },
+    },
     until: {
       hours_until_cutoff: { day: 'cutoff_day', time: 'cutoff_time' },
     },
     moments: {
       counted: {
+        at: 'counted_at',
         day: 'counted_day',
         time: 'counted_time',
         kind: 'observed',
