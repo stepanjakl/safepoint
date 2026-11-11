@@ -663,6 +663,46 @@ worked out by hand. Four things came out wrong, each invisible on Brunch:
 property of the engine. A second process built to differ on every axis found
 on its first run what a month of the first never showed.
 
+## The idea that sounded right lost again (10 November)
+
+**What was tried.** For a check, code writes the formula and the sentence, and
+the model's own examples have agreed with a misreading before. So: let the model
+give only the shape, in one answer with no tools, and let code write the
+examples. Tried on the real models against an answer key written by hand first,
+on 16 rules (the seven of Brunch v3 and the nine of the conformance process),
+three writes each, scored by behaviour on every record:
+
+| Model, way of writing            | Right | Wrong | Wrongly refused | No valid answer | Requests |
+| -------------------------------- | ----- | ----- | --------------- | --------------- | -------- |
+| 3.5 Flash-Lite, tool loop        | 36    | 1     | 6               | 0               | 121      |
+| 3.5 Flash-Lite, shape only       | 34    | 11    | 0               | 3               | 62       |
+| 3.1 Flash-Lite, tool loop        | 31    | 4     | 7               | 0               | 101      |
+| 3.1 Flash-Lite, shape only       | 33    | 2     | 2               | 9               | 69       |
+| 3.6 Flash, shape only, once each | 11    | 0     | 0               | 0               | 15       |
+
+Out of 48 writes a row, 12 for Flash; the rest were refused by the service.
+
+**What it showed.** Shape only costs about half the requests and almost never
+refuses wrongly, but on the default writer it was wrong 11 times to the tool
+loop's once, and its mistakes repeat: the same wrong shape came back three times
+of three, which is exactly what comparing two writes cannot see. Working an
+example out by hand is what makes Flash-Lite notice it has written another rule.
+The tool loop stays.
+
+Six of the wrong answers were one defect in code, not a misreading: a limit
+written with its condition in `when` had the condition dropped without a word,
+so a rule for some records came out as a rule for all of them, in a fluent
+sentence. Such conditions are now read as the rule's scope, or refused where a
+scope is given as well (`scopeOf` in `shapes.ts`).
+
+**What it does not show.** Three writes of a rule are few and not independent.
+Flash was right on all 11 it answered, one write each. A rule that cannot fail
+on the read cannot be scored by behaviour at all.
+
+**Lesson.** A step that looks like waste can be the check. Measure what it
+catches before removing it, and when a model's answer is "cleaned up" by code,
+ask what the cleaning throws away.
+
 ## Still open (31 October)
 
 - **Names.** A rule's name is often the first words of its sentence, cut off, which

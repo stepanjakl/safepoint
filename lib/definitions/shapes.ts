@@ -810,6 +810,34 @@ function conditionOf(
     : null;
 }
 
+// The kinds whose rule is its conditions; the rest have none of their own.
+const readsWhen = (kind: Shape['kind']) =>
+  kind === 'only_when' || kind === 'flag';
+
+/*
+  What a shape is limited to, as written. An empty group, or the word null, is
+  no group. Conditions written in `when` on a kind that has none of its own
+  (a limit "when" something) are its scope where no other scope is given: a
+  model means the records the rule is for. With another scope beside them they
+  could mean two things, so they are misplaced and the shape is not read.
+*/
+function scopeOf(shape: Shape): {
+  group: string | null;
+  when: ShapeCondition[];
+  misplaced: boolean;
+} {
+  const group = /^(null)?$/i.test((shape.only_for_group ?? '').trim())
+    ? null
+    : shape.only_for_group!.trim();
+  const stray = readsWhen(shape.kind) ? [] : shape.when;
+  const scoped = Boolean(group) || shape.only_for_when.length > 0;
+  return {
+    group,
+    when: stray.length && !scoped ? stray : shape.only_for_when,
+    misplaced: stray.length > 0 && scoped,
+  };
+}
+
 /*
   The rule a shape says, or what stops it being read: each kind needs its own
   blanks filled, and what is filled for another kind is ignored.
@@ -872,13 +900,15 @@ function ruleOf(
           ? { shape: 'flag', flag_when: when as Condition[] }
           : { shape: 'only_when', field, when: when as Condition[] };
   }
-  // An empty group, or the word null, is no group.
-  const group = /^(null)?$/i.test((shape.only_for_group ?? '').trim())
-    ? null
-    : shape.only_for_group!.trim();
-  if (group && shape.only_for_when.length)
+  const { group, when: scopeWritten, misplaced } = scopeOf(shape);
+  if (group && scopeWritten.length)
     problems.push('Limit the rule to a group or to conditions, not both.');
-  const scopeWhen = conditions(shape.only_for_when);
+  // Never dropped in silence: the rule would then hold for every record.
+  if (misplaced)
+    problems.push(
+      `${shape.kind} does not read when: put what limits the rule to some ${context.subject.record.plural} in only_for_when alone, or use only_when.`,
+    );
+  const scopeWhen = conditions(scopeWritten);
   const scope: Rule['scope'] = group
     ? { only: 'group', group }
     : scopeWhen.length && scopeWhen.every(Boolean)
@@ -937,6 +967,7 @@ const READS: Record<Shape['kind'], (keyof Shape)[]> = {
 export function withoutUnused(shape: Shape): Shape {
   const reads = READS[shape.kind];
   const kept = (name: keyof Shape) => reads.includes(name);
+  const scope = scopeOf(shape);
   return {
     ...shape,
     field: kept('field') ? shape.field : null,
@@ -946,7 +977,9 @@ export function withoutUnused(shape: Shape): Shape {
     compare: kept('compare') ? shape.compare : null,
     target: kept('target') ? shape.target : null,
     margin_pct: kept('margin_pct') ? shape.margin_pct : null,
-    when: kept('when') ? shape.when : [],
+    // Conditions a kind does not read are its scope, or stay to be refused.
+    when: kept('when') || scope.misplaced ? shape.when : [],
+    only_for_when: scope.when,
   };
 }
 

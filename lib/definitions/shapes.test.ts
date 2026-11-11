@@ -18,6 +18,7 @@ import {
 import { definition } from './set.fixture';
 import {
   canonicalShape,
+  withoutUnused,
   formulaOf,
   referencesOf,
   valuesInWords,
@@ -436,6 +437,34 @@ describe('a shape written loosely, where only one thing is meant', () => {
       { ...owner.subject.proposal[0]!, id: 'extra' },
     ],
   };
+
+  it('reads conditions on a kind with none of its own as its scope, never dropping them', () => {
+    const ripe = [{ left: 'column:ripe', op: 'is_yes' as const, right: null }];
+    // Dropped, the limit would hold for every record, with nothing to say so.
+    says(
+      { ...SUPPLIER_MAX, when: ripe },
+      { ...SUPPLIER_MAX, only_for_when: ripe },
+    );
+    expect(
+      sentenceOf({ ...SUPPLIER_MAX, when: ripe }, contextOn(capturedRead())),
+    ).toMatch(/^For products where the ripe is yes only: /);
+    expect(
+      withoutUnused({ ...SUPPLIER_MAX, when: ripe }).only_for_when,
+    ).toEqual(ripe);
+    // Beside another scope they could mean two things: said, not guessed.
+    const refused = [
+      'limit does not read when: put what limits the rule to some products in only_for_when alone, or use only_when.',
+    ];
+    const other = [{ left: 'column:ripe', op: 'is_no' as const, right: null }];
+    expect(
+      problems({ ...SUPPLIER_MAX, when: ripe, only_for_when: other }),
+    ).toEqual(refused);
+    expect(
+      problems(
+        withoutUnused({ ...SUPPLIER_MAX, when: ripe, only_for_when: other }),
+      ),
+    ).toEqual(refused);
+  });
 
   it('reads a field written proposed:<id> as the bare id', () => {
     says({ ...SUPPLIER_MAX, field: 'proposed:order' }, SUPPLIER_MAX);
