@@ -1,0 +1,307 @@
+{
+  "id": "481dc0e61bc1",
+  "readId": "2026-11-11T12-13-19-569Z-6e93bf09",
+  "confirmedAt": "2026-11-11T12:15:09.238Z",
+  "columns": [
+    {
+      "column": "sku",
+      "type": {
+        "kind": "text"
+      },
+      "origin": "inferred",
+      "label": "sku",
+      "blanksSeen": false,
+      "blank": null
+    },
+    {
+      "column": "product",
+      "type": {
+        "kind": "text"
+      },
+      "origin": "inferred",
+      "label": "product",
+      "blanksSeen": false,
+      "blank": null
+    },
+    {
+      "column": "category",
+      "type": {
+        "kind": "text"
+      },
+      "origin": "inferred",
+      "label": "category",
+      "blanksSeen": false,
+      "blank": null
+    },
+    {
+      "column": "unit",
+      "type": {
+        "kind": "text"
+      },
+      "origin": "inferred",
+      "label": "unit",
+      "blanksSeen": false,
+      "blank": null
+    },
+    {
+      "column": "regular_price",
+      "type": {
+        "kind": "decimal"
+      },
+      "origin": "inferred",
+      "label": "regular price",
+      "blanksSeen": false,
+      "blank": null
+    },
+    {
+      "column": "cost_price",
+      "type": {
+        "kind": "decimal"
+      },
+      "origin": "inferred",
+      "label": "cost price",
+      "blanksSeen": false,
+      "blank": null
+    },
+    {
+      "column": "case_size",
+      "type": {
+        "kind": "whole_number"
+      },
+      "origin": "inferred",
+      "label": "case size",
+      "blanksSeen": false,
+      "blank": null
+    },
+    {
+      "column": "shelf_life_days",
+      "type": {
+        "kind": "whole_number"
+      },
+      "origin": "inferred",
+      "label": "shelf life days",
+      "blanksSeen": false,
+      "blank": null
+    },
+    {
+      "column": "ripe",
+      "type": {
+        "kind": "yes_no"
+      },
+      "origin": "declared",
+      "label": "ripe",
+      "blanksSeen": false,
+      "blank": null
+    },
+    {
+      "column": "on_hand",
+      "type": {
+        "kind": "whole_number"
+      },
+      "origin": "inferred",
+      "label": "on hand",
+      "blanksSeen": false,
+      "blank": null
+    },
+    {
+      "column": "reserved",
+      "type": {
+        "kind": "whole_number"
+      },
+      "origin": "inferred",
+      "label": "reserved",
+      "blanksSeen": false,
+      "blank": null
+    },
+    {
+      "column": "inbound_before_start",
+      "type": {
+        "kind": "whole_number"
+      },
+      "origin": "inferred",
+      "label": "inbound before start",
+      "blanksSeen": false,
+      "blank": null
+    },
+    {
+      "column": "counted_day",
+      "type": {
+        "kind": "weekday"
+      },
+      "origin": "declared",
+      "label": "counted day",
+      "blanksSeen": false,
+      "blank": null
+    },
+    {
+      "column": "counted_time",
+      "type": {
+        "kind": "time_of_day"
+      },
+      "origin": "declared",
+      "label": "counted time",
+      "blanksSeen": false,
+      "blank": null
+    },
+    {
+      "column": "weekend_1",
+      "type": {
+        "kind": "whole_number"
+      },
+      "origin": "inferred",
+      "label": "weekend 1",
+      "blanksSeen": false,
+      "blank": null
+    },
+    {
+      "column": "weekend_2",
+      "type": {
+        "kind": "whole_number"
+      },
+      "origin": "inferred",
+      "label": "weekend 2",
+      "blanksSeen": false,
+      "blank": null
+    },
+    {
+      "column": "weekend_3",
+      "type": {
+        "kind": "whole_number"
+      },
+      "origin": "inferred",
+      "label": "weekend 3",
+      "blanksSeen": false,
+      "blank": null
+    },
+    {
+      "column": "weekend_4",
+      "type": {
+        "kind": "whole_number"
+      },
+      "origin": "inferred",
+      "label": "weekend 4",
+      "blanksSeen": false,
+      "blank": null
+    },
+    {
+      "column": "supplier",
+      "type": {
+        "kind": "text"
+      },
+      "origin": "inferred",
+      "label": "supplier",
+      "blanksSeen": false,
+      "blank": null
+    },
+    {
+      "column": "delivery_day",
+      "type": {
+        "kind": "weekday"
+      },
+      "origin": "declared",
+      "label": "delivery day",
+      "blanksSeen": false,
+      "blank": null
+    },
+    {
+      "column": "delivery_time",
+      "type": {
+        "kind": "time_of_day"
+      },
+      "origin": "declared",
+      "label": "delivery time",
+      "blanksSeen": false,
+      "blank": null
+    },
+    {
+      "column": "cutoff_day",
+      "type": {
+        "kind": "weekday"
+      },
+      "origin": "declared",
+      "label": "cutoff day",
+      "blanksSeen": false,
+      "blank": null
+    },
+    {
+      "column": "cutoff_time",
+      "type": {
+        "kind": "time_of_day"
+      },
+      "origin": "declared",
+      "label": "cutoff time",
+      "blanksSeen": false,
+      "blank": null
+    },
+    {
+      "column": "max_order_units",
+      "type": {
+        "kind": "whole_number"
+      },
+      "origin": "inferred",
+      "label": "max order units",
+      "blanksSeen": true,
+      "blank": "skip"
+    },
+    {
+      "column": "category.category",
+      "type": {
+        "kind": "text"
+      },
+      "origin": "inferred",
+      "label": "category category",
+      "blanksSeen": false,
+      "blank": null
+    },
+    {
+      "column": "category.margin_floor_pct",
+      "type": {
+        "kind": "whole_number"
+      },
+      "origin": "inferred",
+      "label": "category margin floor pct",
+      "blanksSeen": false,
+      "blank": null
+    },
+    {
+      "column": "category.max_discount_pct",
+      "type": {
+        "kind": "whole_number"
+      },
+      "origin": "inferred",
+      "label": "category max discount pct",
+      "blanksSeen": false,
+      "blank": null
+    },
+    {
+      "column": "category.max_count_age_hours",
+      "type": {
+        "kind": "whole_number"
+      },
+      "origin": "inferred",
+      "label": "category max count age hours",
+      "blanksSeen": false,
+      "blank": null
+    },
+    {
+      "column": "category.safety_pct",
+      "type": {
+        "kind": "whole_number"
+      },
+      "origin": "inferred",
+      "label": "category safety pct",
+      "blanksSeen": false,
+      "blank": null
+    },
+    {
+      "column": "category.ripe_cover_days",
+      "type": {
+        "kind": "whole_number"
+      },
+      "origin": "inferred",
+      "label": "category ripe cover days",
+      "blanksSeen": true,
+      "blank": "skip"
+    }
+  ]
+}
