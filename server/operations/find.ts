@@ -1,3 +1,5 @@
+import 'server-only';
+
 import { foundDefinitions, type Asking } from '@/lib/definitions/find';
 import type { KeptRead } from '@/lib/definitions/records';
 import type { DefinitionProcess, DefinitionSet } from '@/lib/definitions/types';

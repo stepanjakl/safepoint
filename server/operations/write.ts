@@ -1,3 +1,5 @@
+import 'server-only';
+
 import type { Asking } from '@/lib/definitions/find';
 import { settingOf, type Setting } from '@/lib/definitions/checks';
 import { fitting, type KeptRead } from '@/lib/definitions/records';

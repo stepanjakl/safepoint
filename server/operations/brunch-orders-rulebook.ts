@@ -1,3 +1,5 @@
+import 'server-only';
+
 import { z } from 'zod';
 
 import { staleness, type Stale } from '@/lib/definitions/fits';

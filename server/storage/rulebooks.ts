@@ -1,3 +1,5 @@
+import 'server-only';
+
 import { readdir } from 'node:fs/promises';
 import path from 'node:path';
 

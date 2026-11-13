@@ -178,6 +178,14 @@ placeholders such as `values.<id>`, because a real example steers the model.
 - **No test spends quota or writes to `fixtures/`.** Use the stand-in models
   in `models.fixture.ts` and `inScratchDirectory()`. The browser test serves
   a frozen rulebook, because drafting replaces the kept one.
+- **The engine does no file IO.** `lib/definitions/` imports no `node:fs`,
+  React, Next or `@/server`; whatever reads or writes a kept file is under
+  `server/` (`storage/`, `jobs/`, `operations/`), and every module there opens
+  with `import 'server-only'`, so a client bundle that reaches one fails
+  `pnpm build`. ESLint holds the same lines (`eslint.config.mjs`). The one
+  exception is `lib/definitions/limits.ts`, which reaches its file through
+  `server/storage/model-limits.ts`. Vitest aliases `server-only` to an empty
+  module.
 - **Where things are kept.** What a person approves is reviewed in git:
   `fixtures/<process>/rulebooks/<version>-<instructions hash>/`, holding
   `current.json` (the rulebook under review), `<rulebook id>.json` (each
@@ -186,7 +194,7 @@ placeholders such as `values.<id>`, because a real example steers the model.
   makes a new revision through `putRevision` with reason `migrated`; it never
   rewrites one. What runs produce is not:
   `data/<process>/{reads,cross-checks,drafts,proposals,applied}/` (gitignored,
-  `lib/storage/run-data.ts`). `e2e/fixtures/` are frozen copies, held to the
+  `server/storage/run-data.ts`). `e2e/fixtures/` are frozen copies, held to the
   engine by `lib/definitions/e2e-fixtures.test.ts`.
 - `docs/processes/brunch-orders/DEVELOPMENT-LOG.md` records what went wrong and why. Add to it when
   something non-obvious does.

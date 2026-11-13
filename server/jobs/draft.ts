@@ -1,3 +1,5 @@
+import 'server-only';
+
 import path from 'node:path';
 
 import type { Asking } from '@/lib/definitions/find';

@@ -1,3 +1,5 @@
+import 'server-only';
+
 import { rm } from 'node:fs/promises';
 
 import { calculate } from '@/lib/definitions/calculate';

@@ -1,3 +1,5 @@
+import 'server-only';
+
 import { fingerprintOf } from '@/lib/definitions/fingerprint';
 import { newActivity } from '@/lib/definitions/propose';
 import type { KeptRead } from '@/lib/definitions/records';

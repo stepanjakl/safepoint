@@ -1,3 +1,5 @@
+import 'server-only';
+
 import type { z } from 'zod';
 
 import { readKept, writeKept } from '@/server/storage/files';
