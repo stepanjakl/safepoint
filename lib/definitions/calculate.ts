@@ -1,12 +1,11 @@
 import { rm } from 'node:fs/promises';
-import path from 'node:path';
 
 import { z } from 'zod';
 
 import type { DefinitionSubject } from '@/lib/process/model';
-import { runDataDir } from '@/lib/storage/run-data';
 import { fallbackChain, type DraftingModel } from '@/lib/models';
 import { readKept, writeKept } from '@/server/storage/files';
+import { runFile } from '@/server/storage/run-key';
 
 import { ask, DRAFT_MODELS, type Resolve } from './calls';
 import { givenOf } from './checks';
@@ -348,18 +347,15 @@ export async function crossCheck(
 const crossFile = (
   owner: DefinitionProcess,
   readId: string,
-  fp: string,
+  fingerprint: string,
   // A cross-check still being answered, batch by batch.
   part = false,
-) => {
-  // Both name a file: never a path.
-  if (![readId, fp].every((id) => /^[\w-]+$/.test(id)))
-    throw new Error('Not a read or rulebook id.');
-  return path.join(
-    runDataDir(owner.id, 'cross-checks'),
-    `${readId}.${fp}${part ? '.part' : ''}.json`,
+) =>
+  runFile(
+    'cross-checks',
+    { process: owner.id, readId, fingerprint },
+    part ? 'part' : 'whole',
   );
-};
 
 const cellsSchema = z.record(
   z.string(),

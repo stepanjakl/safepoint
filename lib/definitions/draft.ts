@@ -1,7 +1,7 @@
 import path from 'node:path';
 
 import { runDataDir } from '@/lib/storage/run-data';
-import { readKept, writeKept } from '@/server/storage/files';
+import { jobProgress, runningJob, startJob } from '@/server/jobs/run-job';
 
 import { findDefinitions, type Asking } from './find';
 import { ownerToDraft } from './profile';
@@ -23,74 +23,39 @@ import { writeAgreed } from './write';
   says so, rather than vanishing.
 */
 
-// Held on globalThis: a development recompile re-runs this module, and a new
-// map would report a draft still running as stopped.
-const server = globalThis as { definitionDrafts?: Map<string, DraftProgress> };
-const drafts = (server.definitionDrafts ??= new Map<string, DraftProgress>());
-const keyOf = (owner: DefinitionProcess, text: string) =>
-  `${owner.id}:${hashOf(text)}`;
-const fileOf = (owner: DefinitionProcess, text: string) =>
-  path.join(runDataDir(owner.id, 'drafts'), `${hashOf(text)}.json`);
-
 const INTERRUPTED =
   'The server stopped while this was being written, so it did not finish. Try it again.';
 
-const record = (
-  owner: DefinitionProcess,
-  text: string,
-  progress: DraftProgress,
-) => writeKept(fileOf(owner, text), progress, { compact: true });
+const jobFor = (owner: DefinitionProcess, text: string) => ({
+  kind: 'drafts',
+  key: `${owner.id}:${hashOf(text)}`,
+  file: path.join(runDataDir(owner.id, 'drafts'), `${hashOf(text)}.json`),
+  schema: draftProgressSchema,
+  interrupted: INTERRUPTED,
+  compact: true,
+});
 
-export async function draftProgress(
-  owner: DefinitionProcess,
-  text: string,
-): Promise<DraftProgress | null> {
-  // A copy: the draft changes the one held, and a reply built from it could
-  // otherwise say finished beside rules read before it finished.
-  const held = drafts.get(keyOf(owner, text));
-  if (held) return { ...held };
-  const kept = await readKept(fileOf(owner, text), draftProgressSchema, {
-    unreadableIsMissing: true,
-  });
-  if (!kept) return null;
-  // Running, but not on this server: it stopped with the one before.
-  return kept.running ? { ...kept, running: false, error: INTERRUPTED } : kept;
-}
+export const draftProgress = (owner: DefinitionProcess, text: string) =>
+  jobProgress(jobFor(owner, text));
 
 // Runs a job unless one is running for these instructions, recording its
 // progress; what it resolves to is its last word.
-function startJob(
+function startDraftJob(
   owner: DefinitionProcess,
   text: string,
   step: string,
   work: (progress: DraftProgress, note: () => Promise<void>) => Promise<string>,
 ): DraftProgress {
-  const key = keyOf(owner, text);
-  const running = drafts.get(key);
-  if (running?.running) return running;
-  const progress: DraftProgress = {
-    step,
-    error: null,
-    running: true,
-    writing: null,
-  };
-  drafts.set(key, progress);
-  // Recording is a convenience: a failed write never stops the job.
-  const note = () => record(owner, text, progress).catch(() => undefined);
-  void (async () => {
-    await note();
-    try {
+  return startJob({
+    ...jobFor(owner, text),
+    initial: { step, error: null, running: true, writing: null },
+    work: async (progress, note) => {
       progress.step = await work(progress, note);
-    } catch (error) {
-      progress.error =
-        error instanceof Error ? error.message.split('\n')[0]! : 'Failed.';
-    } finally {
-      progress.running = false;
+    },
+    settle: (progress) => {
       progress.writing = null;
-      await note();
-    }
-  })();
-  return progress;
+    },
+  });
 }
 
 // Starts a draft unless a job is running for these instructions; the read must
@@ -102,10 +67,10 @@ export function startDraft(
   read: KeptRead,
   asking: Asking = {},
 ): DraftProgress {
-  const running = drafts.get(keyOf(owner, text));
-  if (running?.running) return running;
+  const running = runningJob<DraftProgress>(jobFor(owner, text));
+  if (running) return running;
   fitting(read, owner.subject.data);
-  return startJob(
+  return startDraftJob(
     owner,
     text,
     'Finding the definitions in the instructions…',
@@ -144,15 +109,20 @@ export function startRewrite(
   id: string,
   asking: Asking = {},
 ): DraftProgress {
-  return startJob(owner, text, 'Writing it again…', async (progress, note) => {
-    progress.writing = id;
-    await writeAgreed(owner, text, read, id, {
-      ...asking,
-      onRun: async (run) => {
-        progress.step = `Writing it again${run > 1 ? `, write ${run}` : ''}…`;
-        await note();
-      },
-    });
-    return 'Written again.';
-  });
+  return startDraftJob(
+    owner,
+    text,
+    'Writing it again…',
+    async (progress, note) => {
+      progress.writing = id;
+      await writeAgreed(owner, text, read, id, {
+        ...asking,
+        onRun: async (run) => {
+          progress.step = `Writing it again${run > 1 ? `, write ${run}` : ''}…`;
+          await note();
+        },
+      });
+      return 'Written again.';
+    },
+  );
 }

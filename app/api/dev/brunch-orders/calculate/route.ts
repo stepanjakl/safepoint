@@ -18,16 +18,13 @@ import { rejectUnlessLocalDevelopment } from '@/lib/dev/dev-route';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { keptRead, READ_GONE } from '@/lib/processes/brunch-orders/reads';
 import { draftingModelSchema } from '@/lib/models';
+import { readIdSchema as readId, rulebookIdSchema } from '@/server/storage/ids';
 
 export const runtime = 'nodejs';
 
 const text = z.string().min(1).max(20_000);
-const readId = z.string().regex(/^[\w-]{1,80}$/);
 // The accepted rulebook a run calculated on, which it keeps using.
-const rulebook = z
-  .string()
-  .regex(/^[0-9a-f]{12}$/)
-  .optional();
+const rulebook = rulebookIdSchema.optional();
 
 /*
   Development only: Calculate, through lib/definitions/calculate. get works

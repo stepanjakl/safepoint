@@ -11,6 +11,7 @@ import {
 } from '@/lib/sheets/composio';
 import { sourceReadsDir } from '@/lib/storage/run-data';
 import { readKept, writeKept, type ReadOptions } from '@/server/storage/files';
+import { FILE_ID } from '@/server/storage/ids';
 
 import {
   columnsOf,
@@ -97,7 +98,7 @@ async function kept(
 ): Promise<KeptSourceRead | null> {
   if (readId === 'captured') return captured(id);
   // A bare id only: nothing outside the reads folder can be named.
-  if (!/^[\w-]+$/.test(readId)) return null;
+  if (!FILE_ID.test(readId)) return null;
   return readKept(
     path.join(sourceReadsDir(id), `${readId}.json`),
     keptSourceReadSchema,

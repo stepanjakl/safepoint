@@ -21,6 +21,7 @@ import {
 import { BRUNCH_ORDERS_ID, DATA_TABS } from './process';
 import { runDataDir } from '@/lib/storage/run-data';
 import { readKept, writeKept } from '@/server/storage/files';
+import { FILE_ID } from '@/server/storage/ids';
 
 /*
   Server-only. A run reads the sheet once, and every later step uses that
@@ -129,7 +130,7 @@ export const READ_GONE =
 
 export async function keptRead(id: string): Promise<KeptRead | null> {
   // A bare id only: nothing outside the reads folder can be named.
-  if (!/^[\w-]+$/.test(id)) return null;
+  if (!FILE_ID.test(id)) return null;
   return readKept(path.join(READS(), `${id}.json`), keptReadSchema);
 }
 

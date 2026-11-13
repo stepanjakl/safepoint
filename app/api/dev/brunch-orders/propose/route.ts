@@ -16,16 +16,13 @@ import {
   rulebookFor,
 } from '@/lib/processes/brunch-orders/rulebook';
 import { draftingModelSchema } from '@/lib/models';
+import { readIdSchema as readId, rulebookIdSchema } from '@/server/storage/ids';
 
 export const runtime = 'nodejs';
 
 const text = z.string().min(1).max(20_000);
-const readId = z.string().regex(/^[\w-]{1,80}$/);
 // The accepted rulebook the run calculated on, which it keeps using.
-const rulebook = z
-  .string()
-  .regex(/^[0-9a-f]{12}$/)
-  .optional();
+const rulebook = rulebookIdSchema.optional();
 const values = z.record(z.string().max(80), z.number().int());
 
 /*

@@ -22,13 +22,14 @@ import {
   evaluationSchema,
   rulebookFor,
 } from '@/lib/processes/brunch-orders/rulebook';
+import { readIdSchema, rulebookIdSchema } from '@/server/storage/ids';
 
 export const runtime = 'nodejs';
 
 const run = {
   text: z.string().min(1).max(20_000),
-  readId: z.string().regex(/^[\w-]{1,80}$/),
-  rulebook: z.string().regex(/^[0-9a-f]{12}$/),
+  readId: readIdSchema,
+  rulebook: rulebookIdSchema,
   evaluation: evaluationSchema,
 };
 const decided = {

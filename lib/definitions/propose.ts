@@ -1,13 +1,13 @@
 import { isStepCount, streamText, tool, ToolChoiceViolationError } from 'ai';
 import { rm } from 'node:fs/promises';
-import path from 'node:path';
 import { z } from 'zod';
 
 import { fallbackChain, type DraftingModel } from '@/lib/models';
 import type { DataShape } from '@/lib/process/model';
 import type { SourceTerms } from '@/lib/sources/model';
-import { runDataDir } from '@/lib/storage/run-data';
+import { jobProgress, startJob } from '@/server/jobs/run-job';
 import { readKept, writeKept } from '@/server/storage/files';
+import { runFile } from '@/server/storage/run-key';
 
 import {
   calculate,
@@ -707,27 +707,26 @@ async function proposeBatch(
   still being answered is kept beside it as a part, batch by batch, so a
   proposal that stops part way asks only for the rest.
 */
-const proposalFile = (
+const runKeyOf = (
   owner: DefinitionProcess,
   readId: string,
-  fp: string,
-  part = false,
-) => {
-  // Both name a file: never a path.
-  if (![readId, fp].every((id) => /^[\w-]+$/.test(id)))
-    throw new Error('Not a read or rulebook id.');
-  return path.join(
-    runDataDir(owner.id, 'proposals'),
-    `${readId}.${fp}${part ? '.part' : ''}.json`,
-  );
-};
+  fingerprint: string,
+) => ({
+  process: owner.id,
+  readId,
+  fingerprint,
+});
 
 // A proposal that cannot be read is reported, never taken for none kept.
 export const keptProposal = (
   owner: DefinitionProcess,
   readId: string,
   fingerprint: string,
-) => readKept(proposalFile(owner, readId, fingerprint), proposalSchema);
+) =>
+  readKept(
+    runFile('proposals', runKeyOf(owner, readId, fingerprint)),
+    proposalSchema,
+  );
 
 // Records a call proposes for: few enough that its answer fits.
 const BATCH = 25;
@@ -765,7 +764,11 @@ export async function propose(
   if (!keys.length) throw new Error('The read has no records.');
   const fingerprint = fingerprintOf(set);
   const models = chosen ? fallbackChain(chosen) : DRAFT_MODELS;
-  const partFile = proposalFile(owner, readId, fingerprint, true);
+  const partFile = runFile(
+    'proposals',
+    runKeyOf(owner, readId, fingerprint),
+    'part',
+  );
   // Only a head start: a part that cannot be read is asked for again.
   const sofar = await readKept(partFile, proposalPartSchema, {
     unreadableIsMissing: true,
@@ -800,7 +803,10 @@ export async function propose(
     // In the records' own order, however the batches came back.
     records: Object.fromEntries(keys.map((key) => [key, records[key]!])),
   };
-  await writeKept(proposalFile(owner, readId, fingerprint), proposal);
+  await writeKept(
+    runFile('proposals', runKeyOf(owner, readId, fingerprint)),
+    proposal,
+  );
   await rm(partFile, { force: true });
   return proposal;
 }
@@ -810,32 +816,30 @@ export async function propose(
   when the page is closed, its progress written as it goes, so one the server
   stopped part way through says so.
 */
-// Held on globalThis for the same reason as draft.ts's drafts.
-const server = globalThis as {
-  definitionProposals?: Map<string, DraftProgress>;
-};
-const jobs = (server.definitionProposals ??= new Map<string, DraftProgress>());
-const jobFile = (owner: DefinitionProcess, readId: string, fp: string) =>
-  proposalFile(owner, readId, `${fp}-progress`);
-
 const INTERRUPTED =
   'The server stopped during this proposal, so it did not finish. Propose again to carry on from where it stopped.';
+
+const jobFor = (
+  owner: DefinitionProcess,
+  readId: string,
+  fingerprint: string,
+) => {
+  const key = runKeyOf(owner, readId, fingerprint);
+  return {
+    kind: 'proposals',
+    key: `${owner.id}:${readId}:${fingerprint}`,
+    file: runFile('proposals', key, 'progress'),
+    schema: draftProgressSchema,
+    interrupted: INTERRUPTED,
+  };
+};
 
 export async function proposalProgress(
   owner: DefinitionProcess,
   readId: string,
   fingerprint: string,
 ): Promise<DraftProgress | null> {
-  // A copy, as in draft.ts: the job changes the one held.
-  const held = jobs.get(`${owner.id}:${readId}:${fingerprint}`);
-  if (held) return { ...held };
-  const kept = await readKept(
-    jobFile(owner, readId, fingerprint),
-    draftProgressSchema,
-    { unreadableIsMissing: true },
-  );
-  if (!kept) return null;
-  return kept.running ? { ...kept, running: false, error: INTERRUPTED } : kept;
+  return jobProgress(jobFor(owner, readId, fingerprint));
 }
 
 export function startProposal(
@@ -846,32 +850,23 @@ export function startProposal(
   text: string,
   options: { model?: DraftingModel | null; resolve?: Resolve } = {},
 ): DraftProgress {
-  const fingerprint = fingerprintOf(set);
-  const key = `${owner.id}:${readId}:${fingerprint}`;
-  const running = jobs.get(key);
-  if (running?.running) return running;
-  const progress: DraftProgress = {
-    step: 'Proposing…',
-    error: null,
-    running: true,
-    activity: newActivity(),
-  };
-  jobs.set(key, progress);
-  const note = () =>
-    writeKept(jobFile(owner, readId, fingerprint), progress).catch(
-      () => undefined,
-    );
-  // A poll reads the job held in memory; the file only outlives a restart,
-  // so a thought arriving word by word is written now and then.
-  let noted = 0;
-  const changed = () => {
-    if (Date.now() - noted < NOTE_EVERY_MS) return;
-    noted = Date.now();
-    void note();
-  };
-  void (async () => {
-    await note();
-    try {
+  return startJob({
+    ...jobFor(owner, readId, fingerprintOf(set)),
+    initial: {
+      step: 'Proposing…',
+      error: null,
+      running: true,
+      activity: newActivity(),
+    },
+    work: async (progress, note) => {
+      // A poll reads the job held in memory; the file only outlives a restart,
+      // so a thought arriving word by word is written now and then.
+      let noted = 0;
+      const changed = () => {
+        if (Date.now() - noted < NOTE_EVERY_MS) return;
+        noted = Date.now();
+        void note();
+      };
       const done = await propose(owner, set, read, readId, text, {
         ...options,
         watch: { activity: progress.activity!, changed },
@@ -882,17 +877,12 @@ export function startProposal(
         },
       });
       progress.step = `Proposed for ${Object.keys(done.records).length} ${owner.subject.record.plural}.`;
-    } catch (error) {
-      progress.error =
-        error instanceof Error ? error.message.split('\n')[0]! : 'Failed.';
-    } finally {
-      progress.running = false;
+    },
+    settle: (progress) => {
       progress.activity!.thought = null;
       progress.activity!.writing = 0;
-      await note();
-    }
-  })();
-  return progress;
+    },
+  });
 }
 
 const NOTE_EVERY_MS = 2000;

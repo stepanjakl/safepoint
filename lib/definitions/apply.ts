@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import { runDataDir } from '@/lib/storage/run-data';
 import { readKept, writeKept } from '@/server/storage/files';
+import { runFile } from '@/server/storage/run-key';
 
 import { profiledFor } from './profile';
 import { checkProposal, noneOf } from './propose';
@@ -69,15 +70,7 @@ const applicationFile = (
   owner: DefinitionProcess,
   readId: string,
   fingerprint: string,
-) => {
-  // Both name a file: never a path.
-  if (![readId, fingerprint].every((id) => /^[\w-]+$/.test(id)))
-    throw new Error('Not a read or rulebook id.');
-  return path.join(
-    runDataDir(owner.id, 'applied'),
-    `${readId}.${fingerprint}.json`,
-  );
-};
+) => runFile('applied', { process: owner.id, readId, fingerprint });
 
 const applicationsSchema = z.array(applicationSchema);
 
