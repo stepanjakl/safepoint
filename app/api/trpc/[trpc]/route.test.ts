@@ -1,14 +1,25 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { inScratchDirectory } from '@/lib/definitions/scratch.fixture';
+import { hashOf } from '@/lib/definitions/fingerprint';
 import { readWholeSheet } from '@/lib/sheets/composio';
+import { accepted, keepAsCurrent } from '@/server/api/run.fixture';
 
-import { GET, POST } from './route';
+import { POST } from './route';
 
 // What a failure looks like once it has left the server: the handler called
 // with a Request in process, nothing on the network. The provider is a
 // stand-in that fails as a real one can, with more than one line.
 
+vi.mock('@/server/storage/brunch-orders-reads', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('@/server/storage/brunch-orders-reads')
+  >()),
+  keptRead: async (id: string) =>
+    id === 'test'
+      ? (await import('@/lib/definitions/captured.fixture')).capturedRead()
+      : null,
+}));
 vi.mock('@/lib/sheets/composio', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/sheets/composio')>()),
   readWholeSheet: vi.fn(),
@@ -22,14 +33,9 @@ const SHEET_ENV = [
   'GOOGLE_SHEETS_SPREADSHEET_ID',
 ];
 
-const query = (path: string, input: unknown) =>
-  GET(
-    new Request(
-      `${BASE}/${path}?input=${encodeURIComponent(JSON.stringify(input))}`,
-    ),
-  );
-
-const mutation = (path: string, body: string) =>
+// The client sends every call as a POST with its input as the body, queries
+// too (components/trpc/provider.tsx).
+const call = (path: string, body: string) =>
   POST(
     new Request(`${BASE}/${path}`, {
       method: 'POST',
@@ -37,6 +43,9 @@ const mutation = (path: string, body: string) =>
       body,
     }),
   );
+const query = (path: string, input: unknown) =>
+  call(path, JSON.stringify(input));
+const mutation = call;
 
 async function answer(response: Response) {
   return { status: response.status, body: await response.json() };
@@ -53,6 +62,17 @@ describe('/api/trpc', () => {
         await query('sources.summary', { source: 'brunch-store-sheet' }),
       ),
     ).toEqual({ status: 200, body: { result: { data: null } } });
+  });
+
+  it('answers a query whose input is as long as the schema allows', async () => {
+    // Far past what a URL carries: the instructions a run answers to.
+    const text = 'x'.repeat(20_000);
+    await keepAsCurrent({ ...accepted, hash: hashOf(text) });
+    const { status, body } = await answer(
+      await query('calculate.get', { text, readId: 'test' }),
+    );
+    expect(status).toBe(200);
+    expect(body.result.data).toMatchObject({ kind: 'calculation' });
   });
 
   it('says "Invalid request." for an input that does not fit, not the issues', async () => {

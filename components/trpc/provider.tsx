@@ -59,7 +59,9 @@ export function QueryProvider({ children }: { children: ReactNode }) {
       links: [
         // Unbatched, so each procedure has its own URL: the browser tests
         // intercept calls one procedure at a time (e2e/trpc.ts).
-        httpLink({ url: '/api/trpc' }),
+        // Every call a POST, queries too: an input can be as long as a
+        // process's instructions, which a URL could not carry.
+        httpLink({ url: '/api/trpc', methodOverride: 'POST' }),
       ],
     }),
   );

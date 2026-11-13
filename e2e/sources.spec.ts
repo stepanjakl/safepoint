@@ -13,10 +13,9 @@ import { mockProcedure } from './trpc';
 const SOURCE = 'brunch-store-sheet';
 
 async function capturedSummary(page: Page): Promise<SourceSummary> {
-  const input = encodeURIComponent(JSON.stringify({ source: SOURCE }));
-  const response = await page.request.get(
-    `/api/trpc/sources.summary?input=${input}`,
-  );
+  const response = await page.request.post('/api/trpc/sources.summary', {
+    data: { source: SOURCE },
+  });
   return (await response.json()).result.data;
 }
 
