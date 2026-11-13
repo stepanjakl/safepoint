@@ -540,8 +540,9 @@ export const applicationSchema = z.looseObject({
   at: z.string(),
   // verified: read back as written; mismatch: read back as something else;
   // failed: the write did not land, so the cells are as they were; undone:
-  // put back as they were by undo.
-  status: z.enum(['verified', 'mismatch', 'failed', 'undone']),
+  // put back as they were by undo; pending: kept before the write, and not
+  // yet read back, so the block may hold either side of it.
+  status: z.enum(['pending', 'verified', 'mismatch', 'failed', 'undone']),
   error: z.string().nullable(),
   undoneAt: z.string().nullable(),
   // The block written, as the source addresses one (a sheet's B2:C12), and
@@ -551,6 +552,12 @@ export const applicationSchema = z.looseObject({
   after: z.array(z.array(z.unknown())),
   changes: z.array(cellChangeSchema),
   decisions: z.record(z.string(), appliedDecisionSchema),
+  // These two last, as apply.ts adds them, so a record reads back to the
+  // byte. The write had to add the resource: its absence means nothing landed.
+  addsResource: z.boolean().optional(),
+  // When an undo began, kept before it writes: one cut short is finished or
+  // cleared by reading the block back.
+  undoStartedAt: z.string().optional(),
 });
 
 export type AppliedDecision = z.infer<typeof appliedDecisionSchema>;

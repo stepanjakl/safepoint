@@ -79,9 +79,11 @@ export function DirectOrdersRun({ process }: { process: ProcessSummary }) {
           ? 'Written and read back'
           : applied?.status === 'mismatch'
             ? 'Check the sheet'
-            : proposed.writes
-              ? `${proposed.writes} to write`
-              : 'Nothing to write'
+            : applied?.status === 'pending'
+              ? 'Not confirmed yet'
+              : proposed.writes
+                ? `${proposed.writes} to write`
+                : 'Nothing to write'
         : step.label;
   // The furthest step a person can act on.
   const latest =

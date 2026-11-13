@@ -115,7 +115,14 @@ export async function POST(request: Request) {
       throw new Error(
         'These decisions were made on an earlier proposal. Decide on the current one.',
       );
-    const application = await keptApplication(owner, read.id, fingerprint);
+    // A write cut short is settled from the sheet where it can be reached,
+    // and shown as not yet confirmed where it cannot.
+    const application = await keptApplication(
+      owner,
+      read.id,
+      fingerprint,
+      cannotReach ? undefined : liveSheet,
+    );
     const shared = {
       tab: owner.subject.data.output?.tab,
       names: namesOf(read, owner.subject.data),

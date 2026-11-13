@@ -1,10 +1,11 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
+import { writeKept } from '@/server/storage/files';
 
 import {
   applyDecisions,
@@ -22,6 +23,28 @@ import { applicationSchema, definitionSetSchema, type Proposal } from './types';
 
 // Writing a decided proposal, on a sheet held in memory: no network, and
 // nothing written to the repository.
+
+// A save can be made to fail, as if the process stopped at that point.
+vi.mock('@/server/storage/files', async (importOriginal) => {
+  const real = await importOriginal<typeof import('@/server/storage/files')>();
+  return { ...real, writeKept: vi.fn(real.writeKept) };
+});
+const { writeKept: realWriteKept } = await vi.importActual<
+  typeof import('@/server/storage/files')
+>('@/server/storage/files');
+const STOPPED = 'The process stopped.';
+// The nth save from now fails; the others are kept as usual.
+const stopAtSave = (nth: number) => {
+  let saves = 0;
+  vi.mocked(writeKept).mockImplementation(async (...args) => {
+    saves += 1;
+    if (saves === nth) throw new Error(STOPPED);
+    return realWriteKept(...args);
+  });
+};
+afterEach(() => {
+  vi.mocked(writeKept).mockImplementation(realWriteKept);
+});
 
 const set = definitionSetSchema.parse(
   JSON.parse(readFileSync('e2e/fixtures/brunch-orders-accepted.json', 'utf8')),
@@ -69,7 +92,8 @@ const proposal: Proposal = {
 const approve: DecisionMade = { kind: 'approve', at: THURSDAY };
 const bothApproved = { 'EG-06': approve, 'CT-250': approve };
 
-// A sheet in memory, with the record of what was asked of it.
+// A sheet in memory, with the record of what was asked of it. Each failure
+// can be turned on and off between calls.
 function memorySheet(
   now: KeptRead,
   tab: unknown[][] | null = null,
@@ -79,18 +103,32 @@ function memorySheet(
     grid: unknown[][] | null;
     added: string[];
     writes: string[];
+    failWrite: boolean;
+    failAdd: boolean;
+    // How many reads of a tab, from now, fail.
+    failReads: number;
   } = {
     grid: tab,
     added: [] as string[],
     writes: [] as string[],
+    failWrite,
+    failAdd: false,
+    failReads: 0,
     readNow: async () => now,
-    readTab: async () => sheet.grid,
+    readTab: async () => {
+      if (sheet.failReads > 0) {
+        sheet.failReads -= 1;
+        throw new Error('The sheet could not be read.');
+      }
+      return sheet.grid;
+    },
     addTab: async (name: string) => {
+      if (sheet.failAdd) throw new Error('The sheet said no.');
       sheet.added.push(name);
       sheet.grid = [];
     },
     writeRange: async (_: string, range: string, values: unknown[][]) => {
-      if (failWrite) throw new Error('The sheet said no.');
+      if (sheet.failWrite) throw new Error('The sheet said no.');
       sheet.writes.push(range);
       const [from = 'A1'] = range.split(':');
       const left = from.charCodeAt(0) - 65;
@@ -512,5 +550,196 @@ describe('undoing a write', () => {
     await write(sheet);
     await undo(sheet);
     expect((await undo(sheet)).kind).toBe('refused');
+  });
+});
+
+describe('a write or undo cut short', () => {
+  const scratch = inScratchDirectory();
+  const undo = (sheet: OutputSheet) =>
+    undoApplication(owner, 'run', 'abc', sheet);
+  const original = () => [
+    ['sku', 'order', 'note'],
+    ['EG-06', 24, 'keep'],
+    ['CT-250', 20, 'keep'],
+  ];
+  const UNCONFIRMED =
+    'The last write to the Orders tab has not been read back to confirm it. Try again once the sheet can be read.';
+  // Every record of the run's writes, oldest first, by what came of each.
+  const statuses = () =>
+    z
+      .array(applicationSchema)
+      .parse(
+        JSON.parse(
+          readFileSync(
+            path.join(scratch(), 'data', owner.id, 'applied', 'run.abc.json'),
+            'utf8',
+          ),
+        ),
+      )
+      .map((one) => one.status);
+
+  it('writes nothing when the record of the write cannot be kept', async () => {
+    const sheet = memorySheet(read(), original());
+    stopAtSave(1);
+    await expect(write(sheet)).rejects.toThrow(STOPPED);
+    expect(sheet.writes).toEqual([]);
+    expect(sheet.grid).toEqual(original());
+  });
+
+  it('settles a write that landed with the cells it replaced, so undo restores them', async () => {
+    const sheet = memorySheet(read(), original());
+    stopAtSave(2);
+    await expect(write(sheet)).rejects.toThrow(STOPPED);
+    expect(sheet.grid?.[1]).toEqual(['EG-06', 12, 'keep']);
+
+    const again = await write(sheet);
+    expect(again.kind === 'refused' && again.prepared.problems[0]).toBe(
+      'This run has already written to the Orders tab. Undo that first to write again.',
+    );
+    expect(sheet.writes).toHaveLength(1);
+    const kept = await keptApplication(owner, 'run', 'abc');
+    expect(kept).toMatchObject({ status: 'verified', error: null });
+    expect(kept?.changes.map((change) => change.before)).toEqual([24, 20]);
+
+    expect((await undo(sheet)).kind).toBe('undone');
+    expect(sheet.grid).toEqual(original());
+  });
+
+  it('settles a write that never landed as failed, and lets it be tried again', async () => {
+    const sheet = memorySheet(read(), original(), { failWrite: true });
+    stopAtSave(2);
+    await expect(write(sheet)).rejects.toThrow(STOPPED);
+    sheet.failWrite = false;
+    expect((await write(sheet)).kind).toBe('written');
+    expect(statuses()).toEqual(['failed', 'verified']);
+    expect(sheet.grid?.[1]).toEqual(['EG-06', 12, 'keep']);
+  });
+
+  it('settles a write that had to add the resource, stopped before adding it', async () => {
+    const sheet = memorySheet(read());
+    sheet.failAdd = true;
+    stopAtSave(2);
+    await expect(write(sheet)).rejects.toThrow(STOPPED);
+    sheet.failAdd = false;
+    expect(sheet.grid).toBeNull();
+    expect((await write(sheet)).kind).toBe('written');
+    expect(statuses()).toEqual(['failed', 'verified']);
+    expect(sheet.added).toEqual(['Orders']);
+  });
+
+  it('settles a write that had to add the resource, stopped once it was added', async () => {
+    const sheet = memorySheet(read(), null, { failWrite: true });
+    stopAtSave(2);
+    await expect(write(sheet)).rejects.toThrow(STOPPED);
+    sheet.failWrite = false;
+    expect(sheet.grid).toEqual([]);
+    expect((await write(sheet)).kind).toBe('written');
+    expect(statuses()).toEqual(['failed', 'verified']);
+    // Added once: the retry finds it there, empty.
+    expect(sheet.added).toEqual(['Orders']);
+  });
+
+  it('settles a write as a mismatch once a written cell is changed, and will not undo it', async () => {
+    const sheet = memorySheet(read(), original());
+    stopAtSave(2);
+    await expect(write(sheet)).rejects.toThrow(STOPPED);
+    sheet.grid![1]![1] = 36;
+    expect(await keptApplication(owner, 'run', 'abc', sheet)).toMatchObject({
+      status: 'mismatch',
+    });
+    expect((await undo(sheet)).kind).toBe('refused');
+    expect(sheet.grid![1]![1]).toBe(36);
+  });
+
+  it('holds back another write, and an undo, until the first is read back', async () => {
+    const sheet = memorySheet(read(), original());
+    stopAtSave(2);
+    await expect(write(sheet)).rejects.toThrow(STOPPED);
+    sheet.failReads = 1;
+    const held = await write(sheet);
+    expect(held.kind === 'refused' && held.prepared.problems[0]).toBe(
+      UNCONFIRMED,
+    );
+    sheet.failReads = 1;
+    expect(await undo(sheet)).toEqual({
+      kind: 'refused',
+      problem: UNCONFIRMED,
+    });
+    expect(sheet.writes).toHaveLength(1);
+    // Without the sheet it is shown as kept, not guessed at.
+    expect(await keptApplication(owner, 'run', 'abc')).toMatchObject({
+      status: 'pending',
+    });
+    expect(await keptApplication(owner, 'run', 'abc', sheet)).toMatchObject({
+      status: 'verified',
+    });
+  });
+
+  // The write is refused, or lands and then errs, and its block cannot be
+  // read back straight after.
+  const unreadAfter = (
+    sheet: ReturnType<typeof memorySheet>,
+    lands: boolean,
+  ): OutputSheet => ({
+    ...sheet,
+    writeRange: async (tab, range, values) => {
+      if (lands) await sheet.writeRange(tab, range, values);
+      sheet.failReads = 1;
+      throw new Error('The service timed out.');
+    },
+  });
+
+  it('keeps what the write was told while it is not read back, and when it settles as failed', async () => {
+    const sheet = memorySheet(read(), original());
+    const outcome = await write(unreadAfter(sheet, false));
+    expect(outcome).toMatchObject({
+      kind: 'written',
+      application: { status: 'pending', error: 'The service timed out.' },
+    });
+    expect(await keptApplication(owner, 'run', 'abc')).toMatchObject({
+      status: 'pending',
+      error: 'The service timed out.',
+    });
+    expect(await keptApplication(owner, 'run', 'abc', sheet)).toMatchObject({
+      status: 'failed',
+      error: 'The service timed out.',
+    });
+  });
+
+  it('clears what the write was told once it settles as verified', async () => {
+    const sheet = memorySheet(read(), original());
+    await write(unreadAfter(sheet, true));
+    expect(await keptApplication(owner, 'run', 'abc')).toMatchObject({
+      status: 'pending',
+      error: 'The service timed out.',
+    });
+    expect(await keptApplication(owner, 'run', 'abc', sheet)).toMatchObject({
+      status: 'verified',
+      error: null,
+    });
+  });
+
+  it('writes nothing back when the undo cannot be marked first', async () => {
+    const sheet = memorySheet(read(), original());
+    await write(sheet);
+    stopAtSave(1);
+    await expect(undo(sheet)).rejects.toThrow(STOPPED);
+    expect(sheet.grid?.[1]).toEqual(['EG-06', 12, 'keep']);
+    expect((await undo(sheet)).kind).toBe('undone');
+    expect(sheet.grid).toEqual(original());
+  });
+
+  it('finishes an undo that landed before it was recorded, and does not repeat it', async () => {
+    const sheet = memorySheet(read(), original());
+    await write(sheet);
+    stopAtSave(2);
+    await expect(undo(sheet)).rejects.toThrow(STOPPED);
+    expect(sheet.grid).toEqual(original());
+    expect(await undo(sheet)).toMatchObject({
+      kind: 'undone',
+      application: { status: 'undone', undoneAt: expect.any(String) },
+    });
+    expect(sheet.writes).toHaveLength(2);
+    expect((await write(sheet)).kind).toBe('written');
   });
 });

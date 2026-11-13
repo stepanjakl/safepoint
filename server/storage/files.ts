@@ -89,6 +89,27 @@ function parseKept<T>(raw: string, file: string, schema: z.ZodType<T>): T {
   return parsed.data;
 }
 
+/*
+  Runs tasks given the same key one after another, in the order given, so a
+  read, change and write of one kept thing cannot interleave with another's
+  within this process. A task that fails does not hold up the next. A task
+  must not wait on another for its own key: it would wait for itself.
+*/
+// Held on globalThis: each route is its own module in development, and a
+// recompile re-runs this one; they must all wait in the same queues.
+const server = globalThis as { keptFileTurns?: Map<string, Promise<unknown>> };
+const turns = (server.keptFileTurns ??= new Map<string, Promise<unknown>>());
+
+export function inTurn<T>(key: string, task: () => Promise<T>): Promise<T> {
+  const run = (turns.get(key) ?? Promise.resolve()).then(task);
+  const settled = run.catch(() => undefined);
+  turns.set(key, settled);
+  void settled.then(() => {
+    if (turns.get(key) === settled) turns.delete(key);
+  });
+  return run;
+}
+
 // Writes calls make in the same instant must not share a temporary file.
 let writes = 0;
 

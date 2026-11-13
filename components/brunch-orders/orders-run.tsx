@@ -195,9 +195,11 @@ export function OrdersRun({ process }: { process: ProcessSummary }) {
               ? 'Written and read back'
               : applied?.status === 'mismatch'
                 ? 'Check the sheet'
-                : proposed.writes
-                  ? `${proposed.writes} to write`
-                  : 'Nothing to write'
+                : applied?.status === 'pending'
+                  ? 'Not confirmed yet'
+                  : proposed.writes
+                    ? `${proposed.writes} to write`
+                    : 'Nothing to write'
             : step.label;
   const steps = ORDER_STEPS.map((step) => ({
     ...step,
@@ -325,7 +327,9 @@ export function OrdersRun({ process }: { process: ProcessSummary }) {
         <span className="text-meta text-muted">
           {wrote
             ? 'Removes it from this browser. What it wrote stays in the sheet.'
-            : 'Removes it from this browser. Nothing was written anywhere.'}
+            : applied?.status === 'pending'
+              ? 'Removes it from this browser. Anything it wrote stays in the sheet.'
+              : 'Removes it from this browser. Nothing was written anywhere.'}
         </span>
       </div>
     </>

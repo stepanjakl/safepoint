@@ -48,6 +48,8 @@ export type ApplyProgress = { status: Application['status'] | null };
 const STANDS: Application['status'][] = ['verified', 'mismatch'];
 
 const RESULT: Record<Application['status'], string> = {
+  pending:
+    'Not confirmed yet: this write has not been read back from the sheet.',
   verified: 'Written, and read back from the sheet as written.',
   mismatch:
     'Written, but the sheet reads back differently. Check the cells below.',
@@ -144,10 +146,13 @@ export function ApplyStep({
   };
 
   const standing = application && STANDS.includes(application.status);
+  // Begun and not read back: it may have written, so it is not offered again.
+  const unconfirmed = application?.status === 'pending';
   const output = subject.data.output;
   const count = (kind: Decision['kind']) =>
     Object.values(decisions).filter((d) => d.kind === kind).length;
-  const changes = standing ? application.changes : (preview?.changes ?? []);
+  const changes =
+    standing || unconfirmed ? application.changes : (preview?.changes ?? []);
   const rows = new Set(changes.map((change) => change.key)).size;
   const held = preview?.newlyFailing ?? [];
   const refused = preview?.problems ?? [];
@@ -204,7 +209,7 @@ export function ApplyStep({
         </div>
       ) : preview?.notWritable ? (
         <p className="text-meta text-muted">{preview.notWritable}</p>
-      ) : (
+      ) : unconfirmed ? null : (
         <>
           {refused.length ? (
             <ul
