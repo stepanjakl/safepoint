@@ -74,6 +74,8 @@ export function ProposeStep({
     gcTime: 0,
     refetchInterval: ({ state: { data } }) =>
       data?.kind === 'proposal' && data.progress?.running ? POLL_MS : false,
+    // As a draft is: left in a background tab, it still has to finish there.
+    refetchIntervalInBackground: true,
   });
   const asked = useQuery(proposalQuery);
   // Starting a job answers as a poll does, into the same query.

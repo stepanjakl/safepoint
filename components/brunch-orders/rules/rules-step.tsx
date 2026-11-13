@@ -95,6 +95,9 @@ export function RulesStep({
       staleTime: 0,
       refetchInterval: ({ state: { data } }) =>
         data?.drafting?.running ? DRAFT_POLL_MS : false,
+      // A draft takes minutes and is left in a background tab: the tab's
+      // working mark and the finished rules must not wait for a return.
+      refetchIntervalInBackground: true,
     },
   );
   const asked = useQuery(rulesQuery);
