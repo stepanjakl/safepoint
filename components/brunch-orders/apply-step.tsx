@@ -1,8 +1,11 @@
 'use client';
 
+import { useMutation } from '@tanstack/react-query';
+import type { inferRouterOutputs } from '@trpc/server';
 import { useEffect, useRef, useState } from 'react';
 
-import { Lede, plural, useTrial } from '@/components/brunch-orders/trial-parts';
+import { Lede, plural, saidBy } from '@/components/brunch-orders/trial-parts';
+import { useTRPC } from '@/components/trpc/provider';
 import { Button } from '@/components/ui/button';
 import {
   DATA_TABLE_BODY,
@@ -18,29 +21,16 @@ import {
 import { cx } from '@/lib/cx';
 import type { Application, CellChange } from '@/lib/definitions/types';
 import type { DefinitionSubject } from '@/lib/process/model';
+import type { AppRouter } from '@/server/api/root';
 
 import type { Decision, Evaluation } from './propose/types';
 
-type NewlyFailing = { id: string; key: string; check: string };
-
-type Preview = {
-  kind: 'preview';
-  tab: string;
-  names: Record<string, string>;
-  // Why this run cannot write, when it cannot.
-  notWritable: string | null;
-  tabExists: boolean;
-  changes: CellChange[];
-  problems: string[];
-  newlyFailing: NewlyFailing[];
-  application: Application | null;
-};
-
-type ApplyReply =
-  | Preview
-  | { kind: 'applied'; application: Application }
-  | { kind: 'stale' }
-  | { kind: 'error'; message: string };
+// What the procedures answer: the preview of what the decisions write (which
+// is also what a refused write answers, so the screen shows why), the record
+// of a write or an undo, or `stale` where the rulebook no longer fits the read.
+type Replies = inferRouterOutputs<AppRouter>['application'];
+type ApplyReply = Replies['preview'] | Replies['write'] | Replies['undo'];
+type Preview = Extract<ApplyReply, { kind: 'preview' }>;
 
 // What this run's write came to, for the step's mark.
 export type ApplyProgress = { status: Application['status'] | null };
@@ -87,8 +77,15 @@ export function ApplyStep({
   decisions: Record<string, Decision>;
   onProgress: (progress: ApplyProgress) => void;
 }) {
-  const apply = useTrial<ApplyReply>('/api/dev/brunch-orders/apply');
-  const { run } = apply;
+  const trpc = useTRPC();
+  // What reaches the sheet is never retried: it could happen twice.
+  const previewing = useMutation(trpc.application.preview.mutationOptions());
+  const writing = useMutation(
+    trpc.application.write.mutationOptions({ retry: false }),
+  );
+  const undoing = useMutation(
+    trpc.application.undo.mutationOptions({ retry: false }),
+  );
   const report = useRef(onProgress);
   useEffect(() => {
     report.current = onProgress;
@@ -103,24 +100,40 @@ export function ApplyStep({
   // Where focus goes once the button a person pressed has gone.
   const [acted, setActed] = useState(false);
 
-  const answer = (reply: ApplyReply | null) => {
-    if (!reply) return setFailure('The request failed.');
+  const answer = (reply: ApplyReply) => {
     setFailure(null);
-    if (reply.kind === 'error') return setFailure(reply.message);
     if (reply.kind === 'stale') return setFailure(NO_LONGER_FIT);
     if (reply.kind === 'preview') setPreview(reply);
     setApplication(reply.application);
     report.current({ status: reply.application?.status ?? null });
   };
+  // What the server said where it would not do it; a request that got no
+  // answer is only said to have failed. What follows the answer (`then`) is
+  // done in the same turn, so the screen changes once: focus goes where the
+  // answer puts the button it is for.
+  const settle = (
+    asked: Promise<ApplyReply>,
+    then?: (reply: ApplyReply | null) => void,
+  ) =>
+    void asked.then(
+      (reply) => {
+        answer(reply);
+        then?.(reply);
+      },
+      (error: unknown) => {
+        setFailure(saidBy(error) ?? 'The request failed.');
+        then?.(null);
+      },
+    );
 
-  const request = (action: string, more: Record<string, unknown> = {}) =>
-    run({ action, text, readId, rulebook, evaluation, ...more });
+  const run = { text, readId, rulebook, evaluation };
   const decided = { proposedAt, decisions: toSend(decisions) };
-  const askPreview = () => request('preview', decided).then(answer);
+  const askPreview = () =>
+    settle(previewing.mutateAsync({ ...run, ...decided }));
 
   const decidedKey = JSON.stringify(decided);
   useEffect(() => {
-    void askPreview();
+    askPreview();
     // Whenever the run or what was decided changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, readId, rulebook, evaluation, decidedKey]);
@@ -128,20 +141,18 @@ export function ApplyStep({
   const write = (acknowledged: string[]) => {
     setConfirming(false);
     setActing(true);
-    void request('write', { ...decided, acknowledged }).then((reply) => {
-      answer(reply);
+    settle(writing.mutateAsync({ ...run, ...decided, acknowledged }), () => {
       setActing(false);
       setActed(true);
     });
   };
   const undo = () => {
     setActing(true);
-    void request('undo').then((reply) => {
-      answer(reply);
+    settle(undoing.mutateAsync(run), (reply) => {
       setActing(false);
       setActed(true);
       // A refused undo keeps its message: only a real one changes the cells.
-      if (reply?.kind === 'applied') void askPreview();
+      if (reply?.kind === 'applied') askPreview();
     });
   };
 

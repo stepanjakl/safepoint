@@ -3,10 +3,10 @@ import { readFileSync } from 'node:fs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
-import { capturedRead } from '@/lib/definitions/captured.fixture';
-import { confirmProfile, profileOf } from '@/lib/definitions/profile';
 import { definitionSetSchema, SCOPE_MISMATCH } from '@/lib/definitions/types';
-import { SUBJECT } from '@/lib/processes/brunch-orders/process';
+
+import { mockRules, rulesReply } from './rules';
+import { mockProcedure } from './trpc';
 
 // Brunch orders, phase 2 (docs/processes/brunch-orders/PLAN.md): after the read, the
 // run shows the rules found in its instructions, each with a formula and
@@ -15,34 +15,17 @@ import { SUBJECT } from '@/lib/processes/brunch-orders/process';
 // new draft replaces; no model is called and the decision test serves replies
 // in memory.
 
-const frozen = JSON.parse(
-  readFileSync('e2e/fixtures/brunch-orders-rules.json', 'utf8'),
-) as unknown;
+const frozen = definitionSetSchema.parse(
+  JSON.parse(readFileSync('e2e/fixtures/brunch-orders-rules.json', 'utf8')),
+);
 const snapshot = JSON.parse(
   readFileSync('fixtures/brunch-orders/sheet-snapshot.json', 'utf8'),
 ) as { valueRanges: { range: string; values: string[][] }[] };
 const [, ...products] = snapshot.valueRanges[0]!.values;
 const names = Object.fromEntries(products.map((row) => [row[0], row[1]]));
-// Drafting reads the data through a confirmed profile.
-const profile = {
-  state: 'confirmed',
-  profile: confirmProfile(profileOf(capturedRead(), SUBJECT.data)),
-};
 
 test.beforeEach(async ({ page }) => {
-  await page.route('**/api/dev/brunch-orders/rules', async (route) => {
-    const body = route.request().postDataJSON() as { action: string };
-    if (body.action !== 'get') return route.continue();
-    await route.fulfill({
-      json: {
-        kind: 'rules',
-        set: frozen,
-        names,
-        history: { head: null, revisions: [] },
-        profile,
-      },
-    });
-  });
+  await mockRules(page, () => ({ data: rulesReply(frozen, { names }) }));
 });
 
 test('the calculations and checks of the instructions, with examples to confirm', async ({
@@ -162,34 +145,22 @@ test('the calculations and checks of the instructions, with examples to confirm'
 test('accepted intent and rule keep the pressed button in place', async ({
   page,
 }) => {
-  let current = definitionSetSchema.parse(frozen);
-  await page.route('**/api/dev/brunch-orders/rules', async (route) => {
-    const body = route.request().postDataJSON() as {
-      action: string;
-      decision?: string;
-      id?: string;
-    };
-    if (body.action === 'intent' || body.action === 'decide')
+  let current = frozen;
+  await mockRules(page, async (path, input) => {
+    if (path === 'rules.intent' || path === 'rules.decide')
       await new Promise((resolve) => setTimeout(resolve, 250));
-    if (body.action === 'intent')
+    if (path === 'rules.intent')
       current = { ...current, intentConfirmedAt: new Date().toISOString() };
-    if (body.action === 'decide' && body.decision === 'accept')
+    if (path === 'rules.decide' && input.decision === 'accept')
       current = {
         ...current,
         definitions: current.definitions.map((definition) =>
-          definition.id === body.id
+          definition.id === input.id
             ? { ...definition, approvedAt: new Date().toISOString() }
             : definition,
         ),
       };
-    await route.fulfill({
-      json: {
-        kind: 'rules',
-        set: current,
-        names,
-        history: { head: null, revisions: [] },
-      },
-    });
+    return { data: rulesReply(current, { names }) };
   });
 
   await page.goto('/examples/brunch-orders');
@@ -271,33 +242,28 @@ test('accepted intent and rule keep the pressed button in place', async ({
 test('a draft under way shows its last rule when it ends, through a failed request', async ({
   page,
 }) => {
-  const set = frozen as { definitions: Record<string, unknown>[] };
   const partial = {
-    ...set,
-    definitions: set.definitions.map((definition, index, all) =>
+    ...frozen,
+    definitions: frozen.definitions.map((definition, index, all) =>
       index === all.length - 1
         ? { ...definition, formula: null, examples: [] }
         : definition,
     ),
   };
-  const rules = (replied: unknown, running: boolean) => ({
-    json: {
-      kind: 'rules',
-      set: replied,
+  const rules = (replied: typeof frozen, running: boolean) => ({
+    data: rulesReply(replied, {
       names,
-      history: { head: null, revisions: [] },
       drafting: { step: 'Writing 5 of 5: Rule 4…', error: null, running },
-    },
+    }),
   });
   let asked = 0;
-  await page.route('**/api/dev/brunch-orders/rules', async (route) => {
+  await mockProcedure(page, 'rules.get', () => {
     asked += 1;
     // The page asks twice on arrival in development. Then a request fails, as
     // one does while the server recompiles, and the draft ends behind it.
-    if (asked <= 2) return route.fulfill(rules(partial, true));
-    if (asked === 3)
-      return route.fulfill({ status: 500, body: '<!DOCTYPE html>' });
-    return route.fulfill(rules(frozen, false));
+    if (asked <= 2) return rules(partial, true);
+    if (asked === 3) return { raw: { status: 500, body: '<!DOCTYPE html>' } };
+    return rules(frozen, false);
   });
 
   await page.goto('/examples/brunch-orders');
@@ -316,27 +282,26 @@ test('a draft under way shows its last rule when it ends, through a failed reque
 test('what the model read as context is there to question', async ({
   page,
 }) => {
-  const set = frozen as Record<string, unknown>;
-  await page.route('**/api/dev/brunch-orders/rules', (route) =>
-    route.fulfill({
-      json: {
-        kind: 'rules',
-        set: {
-          ...set,
-          accounting: [
-            { sentence: 'We sell brunch.', kind: 'context', definitions: [] },
-            {
-              sentence: 'Order in whole cases.',
-              kind: 'check',
-              definitions: ['rule_1'],
-            },
-          ],
-        },
-        names,
-        history: { head: null, revisions: [] },
+  await mockProcedure(page, 'rules.get', {
+    data: rulesReply(
+      {
+        ...frozen,
+        accounting: [
+          {
+            sentence: 'We sell brunch.',
+            kind: 'context',
+            definitions: [],
+          },
+          {
+            sentence: 'Order in whole cases.',
+            kind: 'check',
+            definitions: ['rule_1'],
+          },
+        ],
       },
-    }),
-  );
+      { names },
+    ),
+  });
   await page.goto('/examples/brunch-orders');
   await page.getByRole('button', { name: 'Start run' }).first().click();
   await page
@@ -350,130 +315,115 @@ test('what the model read as context is there to question', async ({
 test('a rule’s debug drawer opens from its card and gives focus back', async ({
   page,
 }) => {
-  const set = frozen as { definitions: { id: string; name: string }[] };
-  const rule = set.definitions[1]!;
-  await page.route('**/api/dev/brunch-orders/rules', (route) => {
-    const body = route.request().postDataJSON() as {
-      action: string;
-      inputs?: { order?: number };
-    };
-    if (body.action === 'debug')
-      return route.fulfill({
-        json: {
-          kind: 'debug',
-          debug: {
-            summary: {
-              id: rule.id,
-              name: rule.name,
-              result: 'check',
-              consequence: 'block',
-              model: 'test-model',
-              written: true,
-              examplesAgree: true,
-              approvedAt: null,
-              deniedAt: null,
-              denial: null,
-              problem: null,
-              worksOutItself: true,
-              reads: [],
-              readBy: [],
-            },
-            source: {
-              text: 'Order in whole cases.',
-              sentences: [
-                {
-                  sentence: 'Order in whole cases.',
-                  kind: 'check',
-                  how: 'states',
-                },
-                {
-                  sentence: 'We open from 07:00.',
-                  kind: 'context',
-                  how: 'quotes',
-                },
-              ],
-              constants: [],
-              groups: [],
-              formula: 'order % record.case_size == 0',
-              columns: { own: ['case_size'], through: [] },
-            },
-            checks: [
-              {
-                id: 'both-ways',
-                label: 'Examples show it holding and failing',
-                problems: ['No example where it fails.'],
-                note: null,
-              },
-            ],
-            read: { id: 'r', readAt: '', source: 'Captured read' },
-            about: { record: 'product', key: 'sku' },
-            fields: [{ id: 'order', label: 'order' }],
-            inputs: { order: body.inputs?.order ?? 0 },
-            records: [
-              {
-                key: 'SD-01',
-                name: 'Sourdough',
-                result: (body.inputs?.order ?? 0) === 8,
-                applies: true,
-                steps: [`${body.inputs?.order ?? 0} % 8 == 0`],
-                error: null,
-              },
-            ],
-          },
+  const rule = frozen.definitions[1]!;
+  await mockProcedure(page, 'rules.debug', (body) => ({
+    data: {
+      kind: 'debug',
+      debug: {
+        summary: {
+          id: rule.id,
+          name: rule.name,
+          result: 'check',
+          consequence: 'block',
+          model: 'test-model',
+          written: true,
+          examplesAgree: true,
+          approvedAt: null,
+          deniedAt: null,
+          denial: null,
+          problem: null,
+          worksOutItself: true,
+          ignoresProposal: false,
+          agreement: null,
+          reads: [],
+          readBy: [],
         },
-      });
-    if (body.action === 'debugDraft')
-      return route.fulfill({
-        json: {
-          kind: 'debugDraft',
-          debug: {
-            version: 'v1',
-            intent: 'Order enough.',
-            intentConfirmedAt: null,
-            model: 'test-model',
-            foundAt: '',
-            readId: 'r',
-            accounting: [
-              {
-                sentence: 'We open from 07:00.',
-                kind: 'context',
-                definitions: [],
-                quotedBy: ['rule_2'],
-              },
-              {
-                sentence: 'Order in whole cases.',
-                kind: 'check',
-                definitions: ['rule_1'],
-                quotedBy: [],
-              },
-            ],
-            accountProblems: [],
-            refused: ['Not accounted for: sentence 2.'],
-            definitions: [],
-            models: [],
-            columns: {
-              rules: [
-                {
-                  id: 'rule_1',
-                  name: 'Rule 1',
-                  written: true,
-                  own: ['case_size'],
-                  through: ['weekend_1'],
-                },
-              ],
-              unread: ['cost_price'],
+        source: {
+          text: 'Order in whole cases.',
+          sentences: [
+            {
+              sentence: 'Order in whole cases.',
+              kind: 'check',
+              how: 'states',
             },
-          },
+            {
+              sentence: 'We open from 07:00.',
+              kind: 'context',
+              how: 'quotes',
+            },
+          ],
+          constants: [],
+          groups: [],
+          formula: 'order % record.case_size == 0',
+          columns: { own: ['case_size'], through: [] },
         },
-      });
-    return route.fulfill({
-      json: {
-        kind: 'rules',
-        set: frozen,
-        names,
-        history: { head: null, revisions: [] },
+        checks: [
+          {
+            id: 'both-ways',
+            label: 'Examples show it holding and failing',
+            problems: ['No example where it fails.'],
+            note: null,
+          },
+        ],
+        read: { id: 'r', readAt: '', source: 'Captured read' },
+        about: { record: 'product', key: 'sku' },
+        fields: [{ id: 'order', label: 'order' }],
+        inputs: { order: body.inputs.order ?? 0 },
+        records: [
+          {
+            key: 'SD-01',
+            name: 'Sourdough',
+            result: (body.inputs.order ?? 0) === 8,
+            applies: true,
+            steps: [`${body.inputs.order ?? 0} % 8 == 0`],
+            error: null,
+          },
+        ],
       },
-    });
+    },
+  }));
+  await mockProcedure(page, 'rules.debugDraft', {
+    data: {
+      kind: 'debugDraft',
+      debug: {
+        version: 'v1',
+        intent: 'Order enough.',
+        intentConfirmedAt: null,
+        model: 'test-model',
+        foundAt: '',
+        readId: 'r',
+        accounting: [
+          {
+            sentence: 'We open from 07:00.',
+            kind: 'context',
+            definitions: [],
+            quotedBy: ['rule_2'],
+          },
+          {
+            sentence: 'Order in whole cases.',
+            kind: 'check',
+            definitions: ['rule_1'],
+            quotedBy: [],
+          },
+        ],
+        accountProblems: [],
+        refused: ['Not accounted for: sentence 2.'],
+        definitions: [],
+        models: [],
+        columns: {
+          rules: [
+            {
+              id: 'rule_1',
+              name: 'Rule 1',
+              written: true,
+              own: ['case_size'],
+              through: ['weekend_1'],
+            },
+          ],
+          unread: ['cost_price'],
+        },
+      },
+    },
   });
   await page.goto('/examples/brunch-orders');
   await page.getByRole('button', { name: 'Start run' }).first().click();
@@ -547,13 +497,10 @@ test('a rule’s debug drawer opens from its card and gives focus back', async (
 test('a rule being written again says so, through a reload, then shows the new one', async ({
   page,
 }) => {
-  const set = frozen as {
-    definitions: { id: string; name: string; formula: string }[];
-  };
-  const rule = set.definitions[1]!;
+  const rule = frozen.definitions[1]!;
   const rewritten = {
-    ...set,
-    definitions: set.definitions.map((definition) =>
+    ...frozen,
+    definitions: frozen.definitions.map((definition) =>
       definition.id === rule.id
         ? { ...definition, text: 'The new version of it.' }
         : definition,
@@ -561,15 +508,11 @@ test('a rule being written again says so, through a reload, then shows the new o
   };
   let writing = false;
   let done = false;
-  await page.route('**/api/dev/brunch-orders/rules', (route) => {
-    const body = route.request().postDataJSON() as { action: string };
-    if (body.action === 'write') writing = true;
-    return route.fulfill({
-      json: {
-        kind: 'rules',
-        set: done ? rewritten : frozen,
+  await mockRules(page, (path) => {
+    if (path === 'rules.write') writing = true;
+    return {
+      data: rulesReply(done ? rewritten : frozen, {
         names,
-        history: { head: null, revisions: [] },
         drafting: writing
           ? {
               step: 'Writing it again…',
@@ -578,8 +521,8 @@ test('a rule being written again says so, through a reload, then shows the new o
               writing: done ? null : rule.id,
             }
           : null,
-      },
-    });
+      }),
+    };
   });
   await page.goto('/examples/brunch-orders');
   await page.getByRole('button', { name: 'Start run' }).first().click();
@@ -620,7 +563,7 @@ test('a rule being written again says so, through a reload, then shows the new o
 test('versions that disagree are shown as the sentences the app wrote, for a person to choose', async ({
   page,
 }) => {
-  const set = frozen as { definitions: { id: string; name: string }[] };
+  const set = frozen;
   const rule = set.definitions[1]!;
   const version = (formula: string) => ({
     formula,
@@ -637,7 +580,7 @@ test('versions that disagree are shown as the sentences the app wrote, for a per
         ? {
             ...definition,
             agreement: {
-              status: 'split',
+              status: 'split' as const,
               runs: 2,
               versions: [
                 version('record.hours_until_cutoff >= 0.0'),
@@ -656,29 +599,10 @@ test('versions that disagree are shown as the sentences the app wrote, for a per
     ),
   };
   let chosen: unknown = null;
-  await page.route('**/api/dev/brunch-orders/rules', (route) => {
-    const body = route.request().postDataJSON() as {
-      action: string;
-      index?: number;
-    };
-    if (body.action === 'choose') chosen = body.index;
-    if (body.action === 'advise')
-      return route.fulfill({
-        json: {
-          kind: 'advice',
-          advice: {
-            verdict: 'version_2',
-            quote: 'Only order what can still be placed before the cutoff.',
-            reason: 'The cutoff must still be ahead when the data is read.',
-            rephrase: null,
-            model: 'test-model',
-          },
-        },
-      });
-    return route.fulfill({
-      json: {
-        kind: 'rules',
-        set: chosen === null ? split : frozen,
+  await mockRules(page, (path, input) => {
+    if (path === 'rules.choose') chosen = input.index;
+    return {
+      data: rulesReply(chosen === null ? split : frozen, {
         names,
         sentences: {
           // Another check, written as a shape: its sentence leads.
@@ -694,9 +618,20 @@ test('versions that disagree are shown as the sentences the app wrote, for a per
             ],
           },
         },
-        history: { head: null, revisions: [] },
+      }),
+    };
+  });
+  await mockProcedure(page, 'rules.advise', {
+    data: {
+      kind: 'advice',
+      advice: {
+        verdict: 'version_2',
+        quote: 'Only order what can still be placed before the cutoff.',
+        reason: 'The cutoff must still be ahead when the data is read.',
+        rephrase: null,
+        model: 'test-model',
       },
-    });
+    },
   });
   await page.goto('/examples/brunch-orders');
   await page.getByRole('button', { name: 'Start run' }).first().click();
@@ -781,10 +716,10 @@ test('versions that disagree are shown as the sentences the app wrote, for a per
 test('a rule whose shape disagrees with how finding read it offers the other reading, by keyboard', async ({
   page,
 }) => {
-  const set = frozen as { definitions: { id: string; name: string }[] };
+  const set = frozen;
   const rule = set.definitions[1]!;
   const problem = `${SCOPE_MISMATCH}: the instructions limit the rule to some products, but the shape has no scope. Give its scope, as a group or as conditions.`;
-  const read = (appliesTo: string, problem: string | null) => ({
+  const read = (appliesTo: 'every' | 'some', problem: string | null) => ({
     ...set,
     definitions: set.definitions.map((definition) =>
       definition.id === rule.id
@@ -792,23 +727,14 @@ test('a rule whose shape disagrees with how finding read it offers the other rea
         : definition,
     ),
   });
-  let said: { id: string; value: string } | null = null;
-  await page.route('**/api/dev/brunch-orders/rules', (route) => {
-    const body = route.request().postDataJSON() as {
-      action: string;
-      id?: string;
-      value?: string;
-    };
-    if (body.action === 'appliesTo')
-      said = { id: body.id!, value: body.value! };
-    return route.fulfill({
-      json: {
-        kind: 'rules',
-        set: said ? read('every', null) : read('some', problem),
+  let said: { id: unknown; value: unknown } | null = null;
+  await mockRules(page, (path, input) => {
+    if (path === 'rules.appliesTo') said = { id: input.id, value: input.value };
+    return {
+      data: rulesReply(said ? read('every', null) : read('some', problem), {
         names,
-        history: { head: null, revisions: [] },
-      },
-    });
+      }),
+    };
   });
   await page.goto('/examples/brunch-orders');
   await page.getByRole('button', { name: 'Start run' }).first().click();

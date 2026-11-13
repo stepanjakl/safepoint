@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useState, type ReactNode } from 'react';
 
 import {
   DrawerOverlay,
   DrawerPanels,
 } from '@/components/app-shell/drawer-overlay';
 import { ModelLimits } from '@/components/brunch-orders/model-limits';
-import { useTrial } from '@/components/brunch-orders/trial-parts';
+import { useTRPC } from '@/components/trpc/provider';
 import {
   DATA_TABLE_BODY,
   DATA_TABLE_HEAD,
@@ -35,11 +36,6 @@ import { TabSwap } from '@/components/ui/swap';
   worked out and tried come with the answer.
 */
 
-type Reply =
-  | { kind: 'debug'; debug: DefinitionDebug }
-  | { kind: 'debugDraft'; debug: DraftDebug }
-  | { kind: 'error'; message: string };
-
 export type Debugging = { kind: 'draft' } | { kind: 'rule'; id: string };
 
 const RULE_TABS = ['Summary', 'Source', 'Checks', 'Values'] as const;
@@ -63,14 +59,11 @@ const KIND: Record<AccountedSentence['kind'], string> = {
 
 export function RulesDebug({
   debugging,
-  route,
   text,
   readId,
   onClose,
 }: {
   debugging: Debugging | null;
-  // The process's rules route.
-  route: string;
   text: string;
   readId: string | null;
   onClose: () => void;
@@ -86,15 +79,9 @@ export function RulesDebug({
       }}
     >
       {shown?.kind === 'draft' ? (
-        <DraftDrawer route={route} text={text} readId={readId} />
+        <DraftDrawer text={text} readId={readId} />
       ) : shown ? (
-        <RuleDrawer
-          key={shown.id}
-          route={route}
-          id={shown.id}
-          text={text}
-          readId={readId}
-        />
+        <RuleDrawer key={shown.id} id={shown.id} text={text} readId={readId} />
       ) : null}
     </DrawerOverlay>
   );
@@ -130,54 +117,37 @@ function Fact({ term, children }: { term: string; children: ReactNode }) {
   );
 }
 
-function Waiting({
-  state,
-  message,
-}: {
-  state: ReturnType<typeof useTrial<Reply>>['state'];
-  message: string | null;
-}) {
+function Waiting({ message }: { message: string | null }) {
   return (
     <p role="status" className="text-dense text-muted">
-      {message ?? (state.kind === 'failed' ? state.message : 'Working it out…')}
+      {message ?? 'Working it out…'}
     </p>
   );
 }
 
 function RuleDrawer({
-  route,
   id,
   text,
   readId,
 }: {
-  route: string;
   id: string;
   text: string;
   readId: string | null;
 }) {
-  const asking = useTrial<Reply>(route);
-  const { run } = asking;
-  const [debug, setDebug] = useState<DefinitionDebug | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const trpc = useTRPC();
   const [tab, setTab] = useState<string>('Summary');
   const [inputs, setInputs] = useState<Record<string, number>>({});
-  // The answer to the last question only: typing asks many.
-  const latest = useRef(0);
-  const inputsKey = JSON.stringify(inputs);
-  useEffect(() => {
-    const asked = (latest.current += 1);
-    void run({
-      action: 'debug',
-      text,
-      readId,
-      id,
-      inputs: JSON.parse(inputsKey) as Record<string, number>,
-    }).then((reply) => {
-      if (asked !== latest.current) return;
-      if (reply?.kind === 'debug') setDebug(reply.debug);
-      if (reply?.kind === 'error') setMessage(reply.message);
-    });
-  }, [run, text, readId, id, inputsKey]);
+  // Asked again each time the drawer opens, and for every value typed: the
+  // answer to the last question shows, and the one before it stays until it
+  // lands, so what is being typed into is not replaced under it.
+  const asked = useQuery(
+    trpc.rules.debug.queryOptions(
+      { text, readId, id, inputs },
+      { staleTime: 0, gcTime: 0 },
+    ),
+  );
+  const [debug, setDebug] = useState<DefinitionDebug | null>(null);
+  if (asked.data && asked.data.debug !== debug) setDebug(asked.data.debug);
   const fails =
     debug?.checks.filter((part) => part.problems.length).length ?? 0;
   return (
@@ -221,7 +191,7 @@ function RuleDrawer({
             </TabSwap>
           </>
         ) : (
-          <Waiting state={asking.state} message={message} />
+          <Waiting message={asked.error?.message ?? null} />
         )}
       </div>
     </DrawerPanels>
@@ -547,22 +517,21 @@ function ValuesView({
 }
 
 function DraftDrawer({
-  route,
   text,
   readId,
 }: {
-  route: string;
   text: string;
   readId: string | null;
 }) {
-  const asking = useTrial<Reply>(route);
-  const { run } = asking;
+  const trpc = useTRPC();
   const [tab, setTab] = useState<string>('Sentences');
-  useEffect(() => {
-    void run({ action: 'debugDraft', text, readId });
-  }, [run, text, readId]);
-  const body = asking.state.kind === 'done' ? asking.state.body : null;
-  const debug = body?.kind === 'debugDraft' ? body.debug : null;
+  const asked = useQuery(
+    trpc.rules.debugDraft.queryOptions(
+      { text, readId },
+      { staleTime: 0, gcTime: 0 },
+    ),
+  );
+  const debug = asked.data?.debug ?? null;
   return (
     <DrawerPanels
       title="Debug: the draft"
@@ -597,10 +566,7 @@ function DraftDrawer({
             </TabSwap>
           </>
         ) : (
-          <Waiting
-            state={asking.state}
-            message={body?.kind === 'error' ? body.message : null}
-          />
+          <Waiting message={asked.error?.message ?? null} />
         )}
       </div>
     </DrawerPanels>

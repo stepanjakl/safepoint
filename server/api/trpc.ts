@@ -59,3 +59,12 @@ export const gatedProcedure = t.procedure.use(({ ctx, next }) => {
     });
   return next();
 });
+
+// What the routes answered for anything that went wrong while working: the
+// message, as a bad gateway.
+export const failed = (error: unknown) =>
+  new TRPCError({
+    code: 'BAD_GATEWAY',
+    message: error instanceof Error ? error.message : 'Failed.',
+    cause: error,
+  });

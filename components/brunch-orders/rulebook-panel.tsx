@@ -1,72 +1,27 @@
 'use client';
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { createContext, useContext, type ReactNode } from 'react';
 
 import { useInstructions } from '@/components/app-shell/instructions/instructions-store';
-import { useTrial } from '@/components/brunch-orders/trial-parts';
+import {
+  type RulesKept,
+  type RulesReply,
+} from '@/components/brunch-orders/rules/rules-queries';
+import { saidBy } from '@/components/brunch-orders/trial-parts';
+import { useTRPC } from '@/components/trpc/provider';
 import { Loader } from '@/components/ui/loader';
 import type { LoaderPhase } from '@/components/ui/working-mark';
-import type { RevisionChanges } from '@/lib/definitions/revision-changes';
-import type {
-  DefinitionSet,
-  Revision,
-  RevisionIndex,
-} from '@/lib/definitions/types';
+import type { Revision } from '@/lib/definitions/types';
 import type { ProcessSummary } from '@/lib/process/model';
 
 // Each revision with what it changed from its parent, where both are kept.
-export type RulebookHistory = Omit<RevisionIndex, 'revisions'> & {
-  revisions: (Revision & { changes: RevisionChanges | null })[];
-};
+export type RulebookHistory = RulesKept['history'];
 
-type RulesResponse =
-  | {
-      kind: 'rules';
-      set: DefinitionSet;
-      names: Record<string, string>;
-      history: RulebookHistory;
-    }
-  | { kind: 'none' }
-  | { kind: 'error'; message: string };
+// What the panel shows of the rulebook: the reply, or why there is none.
+type RulebookBody = RulesReply | { kind: 'error'; message: string };
 
-/*
-  Keep the rulebook outside the swapping tabs: revisiting one refreshes its
-  reply without replacing known content with the loading illustration.
-*/
-function useRulebookState(process: ProcessSummary) {
-  const { current } = useInstructions(process.id, process.instructions);
-  const rules = useTrial<RulesResponse>('/api/dev/brunch-orders/rules');
-  const { run } = rules;
-  const [reply, setReply] = useState<{
-    text: string;
-    body: RulesResponse;
-  } | null>(null);
-  const refresh = useCallback(() => {
-    let cancelled = false;
-    void run({ action: 'get', text: current.text }).then((body) => {
-      if (!cancelled && body) setReply({ text: current.text, body });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [run, current.text]);
-  // A reply for different instructions must never appear under the new version.
-  const body = reply?.text === current.text ? reply.body : null;
-  const set = body?.kind === 'rules' ? body.set : null;
-  const accepted = set?.definitions.filter((d) => d.approvedAt) ?? [];
-  return { current, body, set, accepted, refresh };
-}
-
-const RulebookContext = createContext<ReturnType<
-  typeof useRulebookState
-> | null>(null);
+const RulebookContext = createContext<ProcessSummary | null>(null);
 
 export function RulebookProvider({
   process,
@@ -75,16 +30,33 @@ export function RulebookProvider({
   process: ProcessSummary;
   children: ReactNode;
 }) {
-  const rulebook = useRulebookState(process);
-  return <RulebookContext value={rulebook}>{children}</RulebookContext>;
+  return <RulebookContext value={process}>{children}</RulebookContext>;
 }
 
+/*
+  The rulebook of the current instructions, as a panel shows it. It is the
+  query a run's Rules step writes each answer into, kept by the instructions'
+  text: revisiting a panel refreshes the reply without replacing known content
+  with the loading illustration, a reply for other instructions never appears
+  under the new version, and a decision made on a card is here without a
+  reload.
+*/
 export function useRulebook() {
-  const rulebook = useContext(RulebookContext);
-  if (!rulebook) throw new Error('Rulebook panels need a RulebookProvider.');
-  const { refresh } = rulebook;
-  useEffect(() => refresh(), [refresh]);
-  return rulebook;
+  const process = useContext(RulebookContext);
+  if (!process) throw new Error('Rulebook panels need a RulebookProvider.');
+  const { current } = useInstructions(process.id, process.instructions);
+  const trpc = useTRPC();
+  const asked = useQuery(
+    trpc.rules.get.queryOptions({ text: current.text }, { staleTime: 0 }),
+  );
+  // What the server said where it would not give the rules; a request that
+  // got no answer leaves what is known as it was.
+  const said = asked.isError ? saidBy(asked.error) : null;
+  const body: RulebookBody | null =
+    said !== null ? { kind: 'error', message: said } : (asked.data ?? null);
+  const set = body?.kind === 'rules' ? body.set : null;
+  const accepted = set?.definitions.filter((d) => d.approvedAt) ?? [];
+  return { current, body, set, accepted };
 }
 
 /* The rulebook's first load, on the loader's timing (useLoader). */

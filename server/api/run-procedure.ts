@@ -11,7 +11,7 @@ import {
 import { keptRead, READ_GONE } from '@/server/storage/brunch-orders-reads';
 import { readIdSchema, rulebookIdSchema } from '@/server/storage/ids';
 
-import { gatedProcedure } from './trpc';
+import { failed, gatedProcedure } from './trpc';
 
 /*
   Server-only. The opening every Brunch orders procedure about a run shares:
@@ -46,15 +46,6 @@ export const staleReply = (stale: Stale) => ({
   kind: 'stale' as const,
   ...stale,
 });
-
-// What the routes answered for anything that went wrong while working: the
-// message, as a bad gateway.
-const failed = (error: unknown) =>
-  new TRPCError({
-    code: 'BAD_GATEWAY',
-    message: error instanceof Error ? error.message : 'Failed.',
-    cause: error,
-  });
 
 export const runProcedure = <Schema extends z.ZodType<RunInput>>(
   input: Schema,

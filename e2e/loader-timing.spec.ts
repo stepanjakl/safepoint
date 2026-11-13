@@ -1,4 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
+import { noRules } from './rules';
+import { mockProcedure } from './trpc';
 import {
   LOADER_DELAY_MS,
   LOADER_MIN_MS,
@@ -31,10 +33,11 @@ async function watchLoader(page: Page) {
 }
 
 async function openRules(page: Page, replyAfter: number | null) {
-  await page.route('**/api/dev/brunch-orders/rules', async (route) => {
-    if (replyAfter === null) return;
-    await new Promise((resolve) => setTimeout(resolve, replyAfter));
-    await route.fulfill({ json: { kind: 'none' } });
+  await mockProcedure(page, 'rules.get', async () => {
+    // Never answered: the rulebook stays loading.
+    if (replyAfter === null) await new Promise(() => {});
+    else await new Promise((resolve) => setTimeout(resolve, replyAfter));
+    return { data: noRules() };
   });
   await page.goto('/examples/brunch-orders');
   await page.getByRole('button', { name: 'Rules', exact: true }).click();

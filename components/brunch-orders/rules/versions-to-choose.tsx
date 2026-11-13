@@ -180,23 +180,6 @@ export function VersionsToChoose({
   );
 }
 
-// Asks which of two versions the instructions support; throws what went wrong.
-export async function adviceFor(text: string, id: string): Promise<Advice> {
-  const response = await fetch('/api/dev/brunch-orders/rules', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ action: 'advise', text, id }),
-  });
-  const body = (await response.json().catch(() => null)) as
-    | { kind: 'advice'; advice: Advice }
-    | { kind: 'error'; message: string }
-    | null;
-  if (body?.kind === 'advice') return body.advice;
-  throw new Error(
-    body?.kind === 'error' ? body.message : 'No answer came back.',
-  );
-}
-
 const VERDICT: Record<Advice['verdict'], string> = {
   version_1: 'Version 1 says what the instructions mean.',
   version_2: 'Version 2 says what the instructions mean.',

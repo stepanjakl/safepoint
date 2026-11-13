@@ -1,11 +1,16 @@
+import { mkdirSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { inScratchDirectory } from '@/lib/definitions/scratch.fixture';
+import { TEXT } from '@/lib/definitions/set.fixture';
 import { hashOf } from '@/lib/definitions/fingerprint';
+import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { readWholeSheet } from '@/lib/sheets/composio';
 import { accepted, keepAsCurrent } from '@/server/api/run.fixture';
 
-import { POST } from './route';
+import { GET, POST } from './route';
 
 // What a failure looks like once it has left the server: the handler called
 // with a Request in process, nothing on the network. The provider is a
@@ -114,6 +119,51 @@ describe('/api/trpc', () => {
       httpStatus: 502,
       path: 'sources.read',
     });
+  });
+
+  it('gives a corrupt kept file as its own message, on the first line', async () => {
+    // The rulebook for TEXT cannot be read: the screen is told which file.
+    const folder = path.join(
+      process.cwd(),
+      'fixtures',
+      owner.id,
+      'rulebooks',
+      `v1-${hashOf(TEXT)}`,
+    );
+    mkdirSync(folder, { recursive: true });
+    writeFileSync(path.join(folder, 'current.json'), '{not json');
+    const { status, body } = await answer(
+      await query('rules.get', { text: TEXT }),
+    );
+    expect(status).toBe(502);
+    expect(body.error.message).toBe(
+      `fixtures/${owner.id}/rulebooks/v1-${hashOf(TEXT)}/current.json is not valid JSON.`,
+    );
+    expect(body.error.data).toEqual({
+      code: 'BAD_GATEWAY',
+      httpStatus: 502,
+      path: 'rules.get',
+    });
+  });
+
+  it('does not run a mutation sent as a query: what writes to the sheet is only ever a POST', async () => {
+    for (const path of [
+      'application.write',
+      'application.undo',
+      'application.preview',
+    ]) {
+      const input = encodeURIComponent(
+        JSON.stringify({ text: 'x', readId: 'test', rulebook: '0123456789ab' }),
+      );
+      const { status, body } = await answer(
+        await GET(
+          new Request(`${BASE}/${path}?input=${input}`, { method: 'GET' }),
+        ),
+      );
+      expect(status).toBe(405);
+      expect(body.error.data.code).toBe('METHOD_NOT_SUPPORTED');
+    }
+    expect(readWholeSheet).not.toHaveBeenCalled();
   });
 
   it('refuses a call from another origin before reading its input', async () => {

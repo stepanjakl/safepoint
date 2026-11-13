@@ -14,8 +14,8 @@ import type { AppRouter } from '@/server/api/root';
   page's call never reaches the server. The client sends each call on its own
   (an unbatched link), queries too as POST /api/trpc/<path> with the input as
   its JSON body; the answer is tRPC's own, `{ result: { data } }` or
-  `{ error }` with the status its code maps to. `inputs` collects what the
-  page sent, call by call.
+  `{ error }` with the status its code maps to, or a `raw` response that is
+  not tRPC's. `inputs` collects what the page sent, call by call.
 */
 
 type Inputs = inferRouterInputs<AppRouter>;
@@ -32,8 +32,12 @@ type At<T, P> = P extends `${infer A}.${infer N}`
     : never
   : never;
 
-type Answer<T> =
-  { data: T } | { error: { code: TRPC_ERROR_CODE_KEY; message: string } };
+// `raw` is no tRPC answer at all, as a server that is recompiling gives: the
+// page's call fails without the server having said anything.
+export type Answer<T> =
+  | { data: T }
+  | { error: { code: TRPC_ERROR_CODE_KEY; message: string } }
+  | { raw: { status: number; body: string } };
 
 export async function mockProcedure<P extends ProcedurePath>(
   page: Page,
@@ -54,6 +58,7 @@ export async function mockProcedure<P extends ProcedurePath>(
       const reply = typeof answer === 'function' ? await answer(input) : answer;
       if ('data' in reply)
         return route.fulfill({ json: { result: { data: reply.data } } });
+      if ('raw' in reply) return route.fulfill(reply.raw);
       const { code, message } = reply.error;
       const httpStatus = getHTTPStatusCodeFromError(
         new TRPCError({ code, message }),

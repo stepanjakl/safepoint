@@ -20,22 +20,17 @@ import {
 } from '@/lib/definitions/types';
 import { SUBJECT } from '@/lib/processes/brunch-orders/process';
 
+import { mockRules, noRules, rulesReply } from './rules';
+import { mockProcedure } from './trpc';
+
 // The data's columns, confirmed by a person before the rules are drafted:
-// what each column holds, and what a blank cell means. The rules route is
-// served from memory, changed as the route would change it, so nothing is
+// what each column holds, and what a blank cell means. The rules procedures are
+// served from memory, changed as the server would change it, so nothing is
 // kept and no model is asked.
 
 const proposed = profileOf(capturedRead(), SUBJECT.data);
 
-type Change = {
-  action: string;
-  column?: string;
-  label?: string;
-  type?: 'whole_number' | 'decimal' | 'yes_no' | 'text';
-  blank?: 'skip' | 'fail' | null;
-};
-
-// The route's profile actions, on a profile held here.
+// The procedures' profile actions, on a profile held here.
 async function serveProfile(page: Page, start: DataProfile | null = null) {
   let kept = start;
   const drafts: unknown[] = [];
@@ -43,48 +38,47 @@ async function serveProfile(page: Page, start: DataProfile | null = null) {
     kept
       ? { state: kept.confirmedAt ? 'confirmed' : 'review', profile: kept }
       : { state: 'none', proposed };
-  await page.route('**/api/dev/brunch-orders/rules', async (route) => {
-    const body = route.request().postDataJSON() as Change;
-    // The real route refuses a key an action does not take: an edit or a
-    // confirmation sent with the read came back 400, and nothing changed.
-    if (
-      (body.action === 'profileColumn' || body.action === 'confirmProfile') &&
-      'readId' in body
-    )
-      return route.fulfill({
-        status: 400,
-        json: { kind: 'error', message: 'Invalid request.' },
-      });
-    if (body.action === 'profile') kept = proposed;
-    if (body.action === 'profileColumn' && kept) {
-      if (body.label) kept = setColumnLabel(kept, body.column!, body.label);
-      if (body.type)
-        kept = setColumnType(kept, body.column!, { kind: body.type });
-      if (body.blank !== undefined)
-        kept = setColumnBlank(kept, body.column!, body.blank);
+  const reply = () => ({ data: noRules({ profile: state() }) });
+  await mockRules(page, reply);
+  await mockProcedure(page, 'rules.profile', () => {
+    kept = proposed;
+    return reply();
+  });
+  // The server refuses a key an action does not take: an edit or a
+  // confirmation sent with the read comes back 400, and nothing changes.
+  const invalid = {
+    error: { code: 'BAD_REQUEST' as const, message: 'Invalid request.' },
+  };
+  await mockProcedure(page, 'rules.profileColumn', (input) => {
+    if ('readId' in input) return invalid;
+    if (kept) {
+      if (input.label) kept = setColumnLabel(kept, input.column, input.label);
+      if (input.type)
+        kept = setColumnType(kept, input.column, { kind: input.type });
+      if (input.blank !== undefined)
+        kept = setColumnBlank(kept, input.column, input.blank);
     }
-    if (body.action === 'confirmProfile' && kept && !kept.confirmedAt)
-      kept = confirmProfile(kept);
-    if (body.action === 'draft') {
-      if (!kept?.confirmedAt)
-        return route.fulfill({
-          status: 502,
-          json: { kind: 'error', message: CONFIRM_FIRST, profile: state() },
-        });
-      drafts.push(body);
-      return route.fulfill({
-        json: {
-          kind: 'none',
-          drafting: {
-            step: 'Drafted 0 definitions.',
-            error: null,
-            running: false,
-          },
-          profile: state(),
+    return reply();
+  });
+  await mockProcedure(page, 'rules.confirmProfile', (input) => {
+    if ('readId' in input) return invalid;
+    if (kept && !kept.confirmedAt) kept = confirmProfile(kept);
+    return reply();
+  });
+  await mockProcedure(page, 'rules.draft', (input) => {
+    if (!kept?.confirmedAt)
+      return { error: { code: 'BAD_GATEWAY', message: CONFIRM_FIRST } };
+    drafts.push(input);
+    return {
+      data: noRules({
+        drafting: {
+          step: 'Drafted 0 definitions.',
+          error: null,
+          running: false,
         },
-      });
-    }
-    await route.fulfill({ json: { kind: 'none', profile: state() } });
+        profile: state(),
+      }),
+    };
   });
   return { drafts };
 }
@@ -287,17 +281,9 @@ test('a rule Accept refused for an unanswered blank leads to the question', asyn
     ),
   };
   const kept = confirmProfile(proposed);
-  await page.route('**/api/dev/brunch-orders/rules', (route) =>
-    route.fulfill({
-      json: {
-        kind: 'rules',
-        set,
-        names: {},
-        history: { head: null, revisions: [] },
-        profile: { state: 'confirmed', profile: kept },
-      },
-    }),
-  );
+  await mockRules(page, () => ({
+    data: rulesReply(set, { profile: { state: 'confirmed', profile: kept } }),
+  }));
   await openRules(page);
   const card = page
     .getByRole('list', { name: 'Calculations and checks' })

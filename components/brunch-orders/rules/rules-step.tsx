@@ -1,5 +1,6 @@
 'use client';
 
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useContext, useEffect, useId, useRef, useState } from 'react';
 
 import { ProcessSheetActions } from '@/components/app-shell/process/process-sheet';
@@ -23,13 +24,17 @@ import {
   type Sentences,
 } from '@/components/brunch-orders/rules/definition-card';
 import { DraftControl } from '@/components/brunch-orders/rules/draft-control';
-import { adviceFor } from '@/components/brunch-orders/rules/versions-to-choose';
-import { Lede, plural, useTrial } from '@/components/brunch-orders/trial-parts';
+import {
+  DRAFT_POLL_MS,
+  type RulesReply,
+} from '@/components/brunch-orders/rules/rules-queries';
+import { Lede, plural, saidBy } from '@/components/brunch-orders/trial-parts';
 import { Button } from '@/components/ui/button';
 import { Fold } from '@/components/ui/fold';
 import { Loader } from '@/components/ui/loader';
 import { SEVERITY } from '@/components/ui/pill';
 import { useLoader } from '@/components/ui/working-mark';
+import { useTRPC } from '@/components/trpc/provider';
 import { cx } from '@/lib/cx';
 import { FromModel } from '@/components/brunch-orders/rules-parts';
 import {
@@ -40,28 +45,7 @@ import {
   CONFIRM_FIRST,
   quotedFrom,
   type DefinitionSet,
-  type DraftProgress,
-  type ProfileState,
 } from '@/lib/definitions/types';
-
-// Every reply says whether a draft is running on the server, and how far,
-// and how the data profile stands.
-type RulesResponse = {
-  drafting?: DraftProgress | null;
-  profile?: ProfileState;
-} & (
-  | {
-      kind: 'rules';
-      set: DefinitionSet;
-      names: Record<string, string>;
-      // The app's own working of each example, by definition.
-      working: Record<string, string[][]>;
-      // Each check's sentence, and each version's, by definition.
-      sentences?: Record<string, Sentences>;
-    }
-  | { kind: 'none' }
-  | { kind: 'error'; message: string }
-);
 
 // How far the rules have got, for the step's mark.
 export type RulesProgress = {
@@ -75,9 +59,6 @@ const progressOf = (set: DefinitionSet): RulesProgress => ({
   total: set.definitions.length,
   intent: set.intentConfirmedAt !== null,
 });
-
-// How often to ask how far a draft on the server has got.
-const DRAFT_POLL_MS = 2_000;
 
 /*
   The rules of the instructions this run answers to, and the values they need:
@@ -97,21 +78,59 @@ export function RulesStep({
   readId: string | null;
   onProgress: (progress: RulesProgress) => void;
 }) {
-  const rules = useTrial<RulesResponse>('/api/dev/brunch-orders/rules');
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const sheet = useContext(ProcessSheetActions);
-  const { run } = rules;
   const report = useRef(onProgress);
   useEffect(() => {
     report.current = onProgress;
   });
   // What is already found and accepted for these instructions, on arrival:
-  // a new run under them starts as far as they have got.
+  // a new run under them starts as far as they have got. Asked again every
+  // DRAFT_POLL_MS while a draft runs, even after a failed poll: a failed
+  // request says nothing about the job.
+  const rulesQuery = trpc.rules.get.queryOptions(
+    { text, readId },
+    {
+      staleTime: 0,
+      refetchInterval: ({ state: { data } }) =>
+        data?.drafting?.running ? DRAFT_POLL_MS : false,
+    },
+  );
+  const asked = useQuery(rulesQuery);
+  // Each answer lands in the query, a decision's reply as a poll's does.
+  const keep = (answer: RulesReply) =>
+    queryClient.setQueryData(rulesQuery.queryKey, answer);
+  const [failure, setFailure] = useState<string | null>(null);
+  const kept = {
+    onMutate: () => setFailure(null),
+    onSuccess: keep,
+    onError: (error: unknown) => setFailure(saidBy(error)),
+  };
+  const proposeProfile = useMutation(trpc.rules.profile.mutationOptions(kept));
+  const changeProfile = useMutation(
+    trpc.rules.profileColumn.mutationOptions(kept),
+  );
+  const confirmProfile = useMutation(
+    trpc.rules.confirmProfile.mutationOptions(kept),
+  );
+  const draft = useMutation(trpc.rules.draft.mutationOptions(kept));
+  const confirmIntent = useMutation(trpc.rules.intent.mutationOptions(kept));
+  const rewrite = useMutation(trpc.rules.write.mutationOptions(kept));
+  const choose = useMutation(trpc.rules.choose.mutationOptions(kept));
+  const setAppliesTo = useMutation(trpc.rules.appliesTo.mutationOptions(kept));
+  const decide = useMutation(trpc.rules.decide.mutationOptions(kept));
+  const advise = useMutation(trpc.rules.advise.mutationOptions());
+  // Every answer, the panel's entry for these instructions included.
+  const body = asked.data ?? null;
   useEffect(() => {
-    void run({ action: 'get', text, readId }).then((response) => {
-      if (response?.kind === 'rules') report.current(progressOf(response.set));
-    });
-  }, [run, text, readId]);
-  const body = rules.state.kind === 'done' ? rules.state.body : null;
+    if (body)
+      queryClient.setQueriesData(trpc.rules.get.queryFilter({ text }), body);
+  }, [body, queryClient, trpc, text]);
+  // Each answer reaches the step's mark once, where it holds rules.
+  useEffect(() => {
+    if (body?.kind === 'rules') report.current(progressOf(body.set));
+  }, [body]);
   // The last rules seen stay while an action runs, so the list, and focus in
   // it, are kept.
   const [last, setLast] = useState<{
@@ -125,29 +144,19 @@ export function RulesStep({
     setLast({
       set: current.set,
       names: current.names,
-      working: current.working ?? {},
-      sentences: current.sentences ?? {},
+      working: current.working,
+      sentences: current.sentences,
     });
   const shown = current ?? last;
   const set = shown?.set ?? null;
   const names = shown?.names ?? {};
   const working = shown?.working ?? {};
   const sentences = shown?.sentences ?? {};
-  // A draft runs on the server; the last progress reported stays while the
-  // next question is out.
-  const [drafting, setDrafting] = useState<DraftProgress | null>(null);
-  const reported = body?.drafting ?? null;
-  if (body && JSON.stringify(reported) !== JSON.stringify(drafting))
-    setDrafting(reported);
+  // A draft runs on the server; its progress is the latest answer's.
+  const drafting = body?.drafting ?? null;
   const draftRunning = drafting?.running ?? false;
-  // The data profile as last reported; null until the route has said.
-  const [profile, setProfile] = useState<ProfileState | null>(null);
-  const reportedProfile = body?.profile;
-  if (
-    reportedProfile &&
-    JSON.stringify(reportedProfile) !== JSON.stringify(profile)
-  )
-    setProfile(reportedProfile);
+  // The data profile as last reported; null until the server has said.
+  const profile = body?.profile ?? null;
   const dataConfirmed = profile?.state === 'confirmed';
   const [profileOpen, setProfileOpen] = useState(false);
   const profileId = useId();
@@ -160,32 +169,26 @@ export function RulesStep({
   // Writing is a wait, not a status the rule has: the card's status gives
   // way to the loader while its rule is written (behind useLoader's delay).
   const ruleLoader = useLoader(Boolean(drafting?.running && drafting.writing));
-  const busy = rules.state.kind === 'running' || draftRunning;
-  const [writing, setWriting] = useState(false);
+  const busy =
+    asked.isFetching ||
+    [
+      proposeProfile,
+      changeProfile,
+      confirmProfile,
+      draft,
+      confirmIntent,
+      rewrite,
+      choose,
+      setAppliesTo,
+      decide,
+    ].some((action) => action.isPending) ||
+    draftRunning;
+  const writing = rewrite.isPending || draft.isPending;
   const [debugging, setDebugging] = useState<Debugging | null>(null);
-  const act = (request: Record<string, unknown>) => {
-    setWriting(request.action === 'write' || request.action === 'draft');
-    void run({ ...request, text })
-      .then((response) => {
-        if (response?.kind === 'rules') onProgress(progressOf(response.set));
-      })
-      .finally(() => setWriting(false));
-  };
-  // While it runs, ask again a moment after each answer.
-  // A failed request says nothing about the job, so it is asked again too.
-  const answered = rules.state.kind === 'done' || rules.state.kind === 'failed';
-  useEffect(() => {
-    if (!draftRunning || !answered) return;
-    const timer = setTimeout(
-      () =>
-        void run({ action: 'get', text, readId }).then((response) => {
-          if (response?.kind === 'rules')
-            report.current(progressOf(response.set));
-        }),
-      DRAFT_POLL_MS,
-    );
-    return () => clearTimeout(timer);
-  }, [draftRunning, answered, body, run, text, readId]);
+  // What the server said of the last thing asked of it, where it refused.
+  const said = failure ?? (asked.isError ? saidBy(asked.error) : null);
+  // The server has answered, whatever it answered.
+  const answered = asked.isSuccess || (asked.isError && said !== null);
   const progress = set ? progressOf(set) : null;
   // Every definition accepted and the intent confirmed: nothing waits here.
   const complete =
@@ -206,7 +209,7 @@ export function RulesStep({
           <AcceptDecision
             accepted={set.intentConfirmedAt !== null}
             busy={busy}
-            onAccept={() => act({ action: 'intent' })}
+            onAccept={() => confirmIntent.mutate({ text })}
           />
           {!set.intentConfirmedAt && sheet ? (
             <DecisionButton decision="deny" onPress={sheet.showInstructions}>
@@ -240,7 +243,9 @@ export function RulesStep({
               reads={set.definitions.filter((d) => item.uses.includes(d.id))}
               busy={busy}
               canWrite={readId !== null}
-              onWrite={() => act({ action: 'write', readId, id: item.id })}
+              onWrite={() =>
+                readId && rewrite.mutate({ text, readId, id: item.id })
+              }
               {...(drafting?.running && drafting.writing === item.id
                 ? {
                     chip:
@@ -261,15 +266,20 @@ export function RulesStep({
                   }
                 : {})}
               onDecide={(decision, note) =>
-                act({ action: 'decide', id: item.id, decision, note })
+                decide.mutate({ text, id: item.id, decision, note })
               }
-              onChoose={(index) =>
-                act({ action: 'choose', id: item.id, index })
+              onChoose={(index) => choose.mutate({ text, id: item.id, index })}
+              onAdvise={() =>
+                advise.mutateAsync({ text, id: item.id }).then(
+                  ({ advice }) => advice,
+                  (error: unknown) => {
+                    throw new Error(saidBy(error) ?? 'No answer came back.');
+                  },
+                )
               }
-              onAdvise={() => adviceFor(text, item.id)}
               onShowProfile={profile ? showProfile : undefined}
               onSetAppliesTo={(value) =>
-                act({ action: 'appliesTo', id: item.id, value })
+                setAppliesTo.mutate({ text, id: item.id, value })
               }
               debug={
                 <HeadIconButton
@@ -293,7 +303,6 @@ export function RulesStep({
     <div className="rules-review grid gap-4">
       <RulesDebug
         debugging={debugging}
-        route="/api/dev/brunch-orders/rules"
         text={text}
         readId={readId}
         onClose={() => setDebugging(null)}
@@ -334,11 +343,19 @@ export function RulesStep({
               onChange={(change: ProfileChange) => {
                 // A person at work in it keeps it open.
                 setProfileOpen(true);
-                // Only proposing one reads the data: the route takes no
-                // read with an edit or a confirmation, and refuses one.
-                act(
-                  change.action === 'profile' ? { ...change, readId } : change,
-                );
+                // Only proposing one reads the data: the others take no read.
+                if (change.action === 'profile') {
+                  if (readId) proposeProfile.mutate({ text, readId });
+                } else if (change.action === 'confirmProfile')
+                  confirmProfile.mutate({ text });
+                else
+                  changeProfile.mutate({
+                    text,
+                    column: change.column,
+                    label: change.label,
+                    type: change.type,
+                    blank: change.blank,
+                  });
               }}
             />
           </Fold>
@@ -367,12 +384,8 @@ export function RulesStep({
           canDraft={readId !== null && dataConfirmed}
           busy={busy}
           onDraft={(model) =>
-            act({
-              action: 'draft',
-              version,
-              readId,
-              ...(model ? { model } : {}),
-            })
+            readId &&
+            draft.mutate({ text, version, readId, ...(model ? { model } : {}) })
           }
         />
         {!readId ? (
@@ -387,10 +400,7 @@ export function RulesStep({
         <p
           role="status"
           className={
-            writing ||
-            drafting?.running ||
-            body?.kind === 'error' ||
-            drafting?.error
+            writing || drafting?.running || said !== null || drafting?.error
               ? 'text-meta text-muted'
               : 'sr-only'
           }
@@ -399,14 +409,12 @@ export function RulesStep({
             ? drafting.step
             : writing
               ? 'Working… writing one can take a minute.'
-              : body?.kind === 'error'
-                ? body.message
-                : (drafting?.error ?? '')}
+              : (said ?? drafting?.error ?? '')}
         </p>
       </section>
 
       {!set ? (
-        rules.state.kind === 'done' ? (
+        answered ? (
           <p className="text-dense text-muted">
             Nothing drafted for these instructions yet.
           </p>

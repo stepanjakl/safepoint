@@ -4,7 +4,9 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
 import type { Calculation, CrossCheck } from '@/lib/definitions/calculate';
+import { definitionSetSchema } from '@/lib/definitions/types';
 
+import { rulesReply, type RulesKept } from './rules';
 import { mockProcedure } from './trpc';
 
 // Brunch orders, phase 3 (docs/processes/brunch-orders/PLAN.md): with every
@@ -14,9 +16,9 @@ import { mockProcedure } from './trpc';
 // rulebook, and the engine's calculation on the captured read. The
 // cross-check is served in memory, so no model is called.
 
-const accepted = JSON.parse(
-  readFileSync('e2e/fixtures/brunch-orders-accepted.json', 'utf8'),
-) as unknown;
+const accepted = definitionSetSchema.parse(
+  JSON.parse(readFileSync('e2e/fixtures/brunch-orders-accepted.json', 'utf8')),
+);
 const calculation = JSON.parse(
   readFileSync('e2e/fixtures/brunch-orders-calculation.json', 'utf8'),
 ) as Calculation;
@@ -52,7 +54,7 @@ const check: CrossCheck = {
 
 // Two revisions: the first accepted, then migrated when a column's type
 // changed.
-const history = {
+const history: RulesKept['history'] = {
   head: calculation.fingerprint,
   revisions: [
     {
@@ -62,6 +64,7 @@ const history = {
       at: '2026-10-12T16:19:54.000Z',
       schemaVersion: 1,
       note: 'ripe read as a yes/no column',
+      changes: null,
     },
     {
       id: 'd23a4c56d75b',
@@ -70,6 +73,7 @@ const history = {
       at: '2026-10-12T00:30:27.000Z',
       schemaVersion: 1,
       note: null,
+      changes: null,
     },
   ],
 };
@@ -84,12 +88,8 @@ let current = calculation.fingerprint;
 test.beforeEach(async ({ page }) => {
   stale = false;
   current = calculation.fingerprint;
-  await page.route('**/api/dev/brunch-orders/rules', async (route) => {
-    const body = route.request().postDataJSON() as { action: string };
-    if (body.action !== 'get') return route.continue();
-    await route.fulfill({
-      json: { kind: 'rules', set: accepted, names: {}, history },
-    });
+  await mockProcedure(page, 'rules.get', {
+    data: rulesReply(accepted, { history }),
   });
   // Propose is its own spec's: here it has simply not been asked for.
   await mockProcedure(page, 'propose.get', {

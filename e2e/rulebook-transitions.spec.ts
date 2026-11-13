@@ -2,15 +2,13 @@ import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { definitionSetSchema } from '@/lib/definitions/types';
 
+import { noRules, rulesReply } from './rules';
+import { mockProcedure } from './trpc';
+
 const accepted = definitionSetSchema.parse(
   JSON.parse(readFileSync('e2e/fixtures/brunch-orders-accepted.json', 'utf8')),
 );
-const rulebook = {
-  kind: 'rules',
-  set: accepted,
-  names: {},
-  history: { head: null, revisions: [] },
-};
+const rulebook = rulesReply(accepted);
 
 test.beforeEach(async ({ page, colorScheme }) => {
   await page.addInitScript(
@@ -26,9 +24,9 @@ test('returning to Rules retains its known empty state while refreshing', async 
 }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   let refresh = false;
-  await page.route('**/api/dev/brunch-orders/rules', async (route) => {
+  await mockProcedure(page, 'rules.get', async () => {
     if (refresh) await new Promise((resolve) => setTimeout(resolve, 350));
-    await route.fulfill({ json: { kind: 'none' } });
+    return { data: noRules() };
   });
   await page.goto('/examples/brunch-orders');
   const rules = page.getByRole('button', { name: 'Rules', exact: true });
@@ -106,9 +104,9 @@ test('Rules keeps the retained result while it refreshes newly accepted rules', 
   const refreshed = new Promise<void>((resolve) => {
     releaseRefresh = resolve;
   });
-  await page.route('**/api/dev/brunch-orders/rules', async (route) => {
+  await mockProcedure(page, 'rules.get', async () => {
     if (hasRules) await refreshed;
-    await route.fulfill({ json: hasRules ? rulebook : { kind: 'none' } });
+    return { data: hasRules ? rulebook : noRules() };
   });
   await page.goto('/examples/brunch-orders');
   await page.getByRole('button', { name: 'Rules', exact: true }).click();
@@ -149,9 +147,9 @@ test('changed instructions never show the previous version’s retained rules', 
   const refreshed = new Promise<void>((resolve) => {
     releaseRefresh = resolve;
   });
-  await page.route('**/api/dev/brunch-orders/rules', async (route) => {
+  await mockProcedure(page, 'rules.get', async () => {
     if (changed) await refreshed;
-    await route.fulfill({ json: changed ? { kind: 'none' } : rulebook });
+    return { data: changed ? noRules() : rulebook };
   });
   await page.goto('/examples/brunch-orders');
   await page.getByRole('button', { name: 'Rules', exact: true }).click();

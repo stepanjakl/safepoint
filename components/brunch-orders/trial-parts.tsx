@@ -129,6 +129,12 @@ export function useMutationTrial<T, V>(mutate: (variables: V) => Promise<T>) {
   return { state, run };
 }
 
+// What the server said of a request it would not do, or could not. A request
+// that got no answer says nothing of the thing asked about, and a screen
+// decides what to make of that.
+export const saidBy = (error: unknown): string | null =>
+  error instanceof TRPCClientError && error.data ? error.message : null;
+
 export function TrialControl({
   label,
   runningLabel,

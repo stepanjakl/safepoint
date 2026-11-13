@@ -4,8 +4,16 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
 import type { Calculation } from '@/lib/definitions/calculate';
-import type { CheckVerdict, Proposal, Verdict } from '@/lib/definitions/types';
+import {
+  definitionSetSchema,
+  type Application,
+  type CellChange,
+  type CheckVerdict,
+  type Proposal,
+  type Verdict,
+} from '@/lib/definitions/types';
 
+import { rulesReply } from './rules';
 import { mockProcedure } from './trpc';
 
 // Brunch orders, Propose and Apply (docs/processes/brunch-orders/PLAN.md):
@@ -17,7 +25,9 @@ import { mockProcedure } from './trpc';
 
 const fixture = (name: string) =>
   JSON.parse(readFileSync(`e2e/fixtures/${name}`, 'utf8')) as unknown;
-const accepted = fixture('brunch-orders-accepted.json');
+const accepted = definitionSetSchema.parse(
+  fixture('brunch-orders-accepted.json'),
+);
 const calculation = fixture('brunch-orders-calculation.json') as Calculation;
 const frozen = fixture('brunch-orders-proposal.json') as {
   names: Record<string, string>;
@@ -29,10 +39,9 @@ const frozen = fixture('brunch-orders-proposal.json') as {
   trials: Record<string, Record<string, unknown>>;
 };
 
-type Change = { key: string; before: number | null; after: number };
-let lastChanges: Change[] = [];
-let written: (Record<string, unknown> & { status: string }) | null = null;
-const applicationOf = (changes: Change[]) => ({
+let lastChanges: CellChange[] = [];
+let written: Application | null = null;
+const applicationOf = (changes: CellChange[]): Application => ({
   proposedAt: frozen.proposal.at,
   tab: 'Orders',
   at: '2026-10-29T09:00:00.000Z',
@@ -49,18 +58,7 @@ const applicationOf = (changes: Change[]) => ({
 test.beforeEach(async ({ page }) => {
   written = null;
   lastChanges = [];
-  await page.route('**/api/dev/brunch-orders/rules', async (route) => {
-    const body = route.request().postDataJSON() as { action: string };
-    if (body.action !== 'get') return route.continue();
-    await route.fulfill({
-      json: {
-        kind: 'rules',
-        set: accepted,
-        names: {},
-        history: { head: null, revisions: [] },
-      },
-    });
-  });
+  await mockProcedure(page, 'rules.get', { data: rulesReply(accepted) });
   await mockProcedure(page, 'calculate.get', {
     data: {
       kind: 'calculation',
@@ -69,22 +67,18 @@ test.beforeEach(async ({ page }) => {
       current: calculation.fingerprint,
     },
   });
-  await page.route('**/api/dev/brunch-orders/apply', (route) => {
-    const body = route.request().postDataJSON() as {
-      action: string;
-      decisions?: Record<string, { kind: string; values?: { order: number } }>;
-    };
-    if (body.action === 'write') {
-      written = applicationOf(lastChanges);
-      return route.fulfill({ json: { kind: 'applied', application: written } });
-    }
-    if (body.action === 'undo') {
-      written = { ...written!, status: 'undone' };
-      return route.fulfill({ json: { kind: 'applied', application: written } });
-    }
+  await mockProcedure(page, 'application.write', () => {
+    written = applicationOf(lastChanges);
+    return { data: { kind: 'applied', application: written } };
+  });
+  await mockProcedure(page, 'application.undo', () => {
+    written = { ...written!, status: 'undone' };
+    return { data: { kind: 'applied', application: written } };
+  });
+  await mockProcedure(page, 'application.preview', (body) => {
     lastChanges = Object.entries(frozen.proposal.records).flatMap(
       ([key, record], index) => {
-        const decision = body.decisions?.[key];
+        const decision = body.decisions[key];
         const values = decision?.values ?? record.values;
         return decision && decision.kind !== 'reject' && values
           ? [
@@ -93,14 +87,14 @@ test.beforeEach(async ({ page }) => {
                 field: 'order',
                 cell: `Orders!B${index + 2}`,
                 before: key === 'FT-200' ? 24 : null,
-                after: values.order,
+                after: values.order!,
               },
             ]
           : [];
       },
     );
-    return route.fulfill({
-      json: {
+    return {
+      data: {
         kind: 'preview',
         tab: 'Orders',
         names: frozen.names,
@@ -111,7 +105,7 @@ test.beforeEach(async ({ page }) => {
         newlyFailing: [],
         application: written,
       },
-    });
+    };
   });
   const proposed = {
     data: {
