@@ -19,7 +19,7 @@ import { cx } from '@/lib/cx';
 import type { Application, CellChange } from '@/lib/definitions/types';
 import type { DefinitionSubject } from '@/lib/process/model';
 
-import type { Decision, Evaluation } from './propose-step';
+import type { Decision, Evaluation } from './propose/types';
 
 type NewlyFailing = { id: string; key: string; check: string };
 

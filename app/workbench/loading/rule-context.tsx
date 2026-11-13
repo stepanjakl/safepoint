@@ -2,11 +2,11 @@
 
 import { useCallback, useMemo, type ReactNode } from 'react';
 
+import { CardAnchor } from '@/components/brunch-orders/rules/card-anchor';
 import {
-  CardAnchor,
   DefinitionCard,
   statusOf,
-} from '@/components/brunch-orders/rules-step';
+} from '@/components/brunch-orders/rules/definition-card';
 import { StatusChip } from '@/components/brunch-orders/trial-parts';
 import { Loader } from '@/components/ui/loader';
 import { useLoader } from '@/components/ui/working-mark';
@@ -45,7 +45,7 @@ export function RuleContext({ load }: { load: Load }) {
           Rule being written, in its list
         </h2>
         <p className="value text-meta text-muted">
-          brunch-orders/rules-step.tsx · DefinitionCard
+          brunch-orders/rules/definition-card.tsx · DefinitionCard
         </p>
         <p className="text-dense text-muted-strong max-w-prose">
           The Rules step lists every calculation and check as a card; each card

@@ -47,12 +47,12 @@ import {
   SheetReadCard,
   type RunRead,
 } from '@/components/brunch-orders/orders-run';
-import {
-  ProposalTable,
-  type Decision,
-  type ProposalField,
-  type ProposeResponse,
-} from '@/components/brunch-orders/propose-step';
+import { ProposalTable } from '@/components/brunch-orders/propose/proposal-table';
+import type {
+  Decision,
+  ProposalField,
+  ProposeResponse,
+} from '@/components/brunch-orders/propose/types';
 import { cellUrl, SOURCE_KINDS, type SourceKind } from '@/lib/sources/model';
 import ChainLink1Filled from 'blode-icons-react/icons/chain-link-1-filled';
 import { SourceHead } from '@/components/app-shell/sources/source-head';

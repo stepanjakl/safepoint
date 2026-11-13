@@ -16,10 +16,12 @@ import { PendingDots } from '@/components/brunch-orders/pending-dots';
 import { FromModel } from '@/components/brunch-orders/rules-parts';
 import {
   CardAnchor,
-  DefinitionCard,
   anchorOf,
+} from '@/components/brunch-orders/rules/card-anchor';
+import {
+  DefinitionCard,
   statusOf,
-} from '@/components/brunch-orders/rules-step';
+} from '@/components/brunch-orders/rules/definition-card';
 import { StatusChip } from '@/components/brunch-orders/trial-parts';
 import { Pill, SEVERITY } from '@/components/ui/pill';
 import { cx } from '@/lib/cx';

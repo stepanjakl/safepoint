@@ -7,15 +7,17 @@ import {
   useRulebook,
 } from '@/components/brunch-orders/rulebook-panel';
 import { RulebookHistory } from '@/components/brunch-orders/rulebook-history';
+import { anchorOf } from '@/components/brunch-orders/rules/card-anchor';
 import {
   ASKS,
   CONSEQUENCE,
+  words,
+} from '@/components/brunch-orders/rules/definition-card';
+import {
   Formula,
   linkKey,
   linked,
-  anchorOf,
-  words,
-} from '@/components/brunch-orders/rules-step';
+} from '@/components/brunch-orders/rules/formula';
 import { FilterTabs } from '@/components/ui/filter-tabs';
 import { Pill, SEVERITY } from '@/components/ui/pill';
 import { Arrival, EmptyState, useLoader } from '@/components/ui/working-mark';
@@ -113,7 +115,7 @@ export function RulebookPanel() {
         ) : null}
       </div>
       {/* One listener for every linked name: the one under the pointer is lit
-          wherever it is shown (linkKey, rules-step.tsx). */}
+          wherever it is shown (linkKey, rules/formula.tsx). */}
       <ol
         className="rulebook-tiles"
         aria-label="Accepted rules"

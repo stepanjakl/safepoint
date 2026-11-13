@@ -13,7 +13,8 @@ import { SUBJECT } from '@/lib/processes/brunch-orders/process';
 
 import { ApplyStep, type ApplyProgress } from './apply-step';
 import { Instructions, ReadStep, WithText, type RunRead } from './orders-run';
-import { ProposeStep, type ProposeProgress } from './propose-step';
+import { ProposeStep } from './propose/propose-step';
+import type { ProposeProgress } from './propose/types';
 
 /*
   A Brunch orders run with no rulebook, as a person would meet it: it reads

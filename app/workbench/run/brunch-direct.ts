@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 
 import type { ModelRunView } from '@/components/app-shell/thread/model-run-thread';
-import type { Decision } from '@/components/brunch-orders/propose-step';
+import type { Decision } from '@/components/brunch-orders/propose/types';
 import { blockFor, writesOf } from '@/lib/definitions/apply';
 import { capturedTabs } from '@/lib/definitions/captured.fixture';
 import type { Proposal, ProposalActivity } from '@/lib/definitions/types';

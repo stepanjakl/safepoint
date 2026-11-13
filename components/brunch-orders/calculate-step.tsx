@@ -13,7 +13,7 @@ import {
 } from 'react';
 
 import { FromModel, Step } from '@/components/brunch-orders/rules-parts';
-import { ModelSelect } from '@/components/brunch-orders/rules-step';
+import { ModelSelect } from '@/components/brunch-orders/rules/model-select';
 import {
   Lede,
   Outcome,

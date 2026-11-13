@@ -43,8 +43,9 @@ import { SOURCE_KINDS, sourceById, type SourceKind } from '@/lib/sources/model';
 import { ApplyStep, type ApplyProgress } from './apply-step';
 import { CalculateStep, type CalculateProgress } from './calculate-step';
 import { DataDrawer, type DataTabs } from './data-drawer';
-import { ProposeStep, type ProposeProgress } from './propose-step';
-import { RulesStep, type RulesProgress } from './rules-step';
+import { ProposeStep } from './propose/propose-step';
+import type { ProposeProgress } from './propose/types';
+import { RulesStep, type RulesProgress } from './rules/rules-step';
 
 // How far a run has got, as the browser keeps it: the read's id and summary.
 export type RunRead = {
