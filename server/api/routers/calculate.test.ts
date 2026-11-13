@@ -99,6 +99,30 @@ describe('calculate router', () => {
     ).toEqual(['used']);
   });
 
+  describe('recording the rulebook used', () => {
+    const reasons = async () =>
+      (await listRevisions(owner, TEXT)).revisions.map((r) => r.reason);
+
+    it('adds nothing for a pinned revision, kept when it was accepted', async () => {
+      await putRevision(owner, accepted, { reason: 'accepted' });
+      await caller().calculate.get({ ...run, rulebook: fingerprint });
+      await caller().calculate.crossCheck({ ...run, rulebook: fingerprint });
+      expect(await reasons()).toEqual(['accepted']);
+    });
+
+    it('keeps the current rules as used when nothing is pinned', async () => {
+      await caller().calculate.crossCheck(run);
+      expect(await reasons()).toEqual(['used']);
+    });
+
+    it('keeps the current rules as used when the pinned revision is not kept', async () => {
+      await expect(
+        caller().calculate.get({ ...run, rulebook: '0123456789ab' }),
+      ).resolves.toMatchObject({ kind: 'calculation', current: fingerprint });
+      expect(await reasons()).toEqual(['used']);
+    });
+  });
+
   it('keeps getting the rulebook a run pinned', async () => {
     await putRevision(owner, outdated, { reason: 'accepted' });
     const old = fingerprintOf(outdated);

@@ -13,7 +13,7 @@ import {
   keepCrossCheck,
   keptCrossCheck,
 } from '@/server/storage/cross-checks';
-import { loadSet, putRevision } from '@/server/storage/rulebooks';
+import { putRevision } from '@/server/storage/rulebooks';
 
 import { runFields, runProcedure, staleReply } from '../run-procedure';
 import { router } from '../trpc';
@@ -27,17 +27,20 @@ import { router } from '../trpc';
   which rulebook is current, so the run can move to it.
 */
 
-type Run = { owner: DefinitionProcess; set: DefinitionSet; read: KeptRead };
+type Run = {
+  owner: DefinitionProcess;
+  set: DefinitionSet;
+  current: DefinitionSet;
+  pinned: boolean;
+  read: KeptRead;
+};
 
-async function worked(run: Run, text: string) {
+async function worked(run: Run) {
   const calculation = calculate(run.owner, run.set, run.read);
-  const current = await loadSet(owner, text);
-  if (!current) throw new Error('No rules are kept for these instructions.');
   // What a run calculates on is kept as it is, so the run can come back to
-  // it; one accepted in full was kept then, and this adds nothing.
-  if (fingerprintOf(run.set) === fingerprintOf(current))
-    await putRevision(owner, run.set, { reason: 'used' });
-  return { calculation, current: fingerprintOf(current) };
+  // it; a pinned revision was kept when it was accepted.
+  if (!run.pinned) await putRevision(owner, run.set, { reason: 'used' });
+  return { calculation, current: fingerprintOf(run.current) };
 }
 
 export const calculateRouter = router({
@@ -45,7 +48,7 @@ export const calculateRouter = router({
   // once it is kept, changes nothing.
   get: runProcedure(z.strictObject(runFields)).query(async ({ ctx, input }) => {
     if (ctx.stale) return staleReply(ctx.stale);
-    const { calculation, current } = await worked(ctx, input.text);
+    const { calculation, current } = await worked(ctx);
     return {
       kind: 'calculation' as const,
       calculation,
@@ -58,7 +61,7 @@ export const calculateRouter = router({
     z.strictObject({ ...runFields, model: draftingModelSchema.optional() }),
   ).mutation(async ({ ctx, input }) => {
     if (ctx.stale) return staleReply(ctx.stale);
-    const { calculation, current } = await worked(ctx, input.text);
+    const { calculation, current } = await worked(ctx);
     const check = await crossCheck(
       ctx.owner,
       ctx.set,

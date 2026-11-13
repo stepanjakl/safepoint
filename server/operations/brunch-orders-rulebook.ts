@@ -30,28 +30,40 @@ export async function rulebookFor(
 ): Promise<{
   owner: DefinitionProcess;
   set: DefinitionSet;
+  // The rulebook current for these instructions, which `set` is unless the
+  // run pinned another; and whether `set` is the pinned revision, kept as it
+  // was accepted. With `model` there are no rules: current is the set it
+  // works under, and nothing is pinned.
+  current: DefinitionSet;
+  pinned: boolean;
   stale: Stale | null;
   // The instructions a run must answer to for its write to reach the sheet.
   published: string;
 }> {
-  if (evaluation === 'model')
+  if (evaluation === 'model') {
+    const set = noRules(text);
     return {
       owner: BRUNCH_ORDERS_DIRECT_DEFINITIONS,
-      set: noRules(text),
+      set,
+      current: set,
+      pinned: false,
       stale: null,
       published: brunchOrdersDirectProcess.instructions.text,
     };
+  }
   const current = await loadSet(BRUNCH_ORDERS_DEFINITIONS, text);
   if (!current) throw new Error('No rules are kept for these instructions.');
-  const set =
-    (rulebook
-      ? await loadRevision(BRUNCH_ORDERS_DEFINITIONS, text, rulebook)
-      : null) ?? current;
+  const revision = rulebook
+    ? await loadRevision(BRUNCH_ORDERS_DEFINITIONS, text, rulebook)
+    : null;
+  const set = revision ?? current;
   // The read is held to the data profile the rules were drafted on, if any.
   const owner = await ownerFor(BRUNCH_ORDERS_DEFINITIONS, set);
   return {
     owner,
     set,
+    current,
+    pinned: revision !== null,
     // A rulebook kept as it was accepted may no longer fit the data.
     stale: staleness(owner, text, set, current, read),
     published: brunchOrdersProcess.instructions.text,

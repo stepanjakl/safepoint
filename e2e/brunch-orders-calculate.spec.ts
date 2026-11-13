@@ -78,9 +78,12 @@ type Pinned = { rulebook?: string };
 
 // Set by a test: the rulebook a run pinned no longer fits its read.
 let stale = false;
+// Set by a test: the accepted rulebook has moved on from the run's.
+let current = calculation.fingerprint;
 
 test.beforeEach(async ({ page }) => {
   stale = false;
+  current = calculation.fingerprint;
   await page.route('**/api/dev/brunch-orders/rules', async (route) => {
     const body = route.request().postDataJSON() as { action: string };
     if (body.action !== 'get') return route.continue();
@@ -122,7 +125,7 @@ test.beforeEach(async ({ page }) => {
               kind: 'calculation' as const,
               calculation,
               check: withCheck,
-              current: calculation.fingerprint,
+              current,
             },
           };
   await mockProcedure(page, 'calculate.get', answer(null));
@@ -247,6 +250,28 @@ test('a run whose rules no longer fit its read can move to the current ones', as
   await expect(
     page.getByRole('table', { name: 'Values worked out for every record' }),
   ).toBeVisible();
+});
+
+test('a run calculated on earlier rules says so, and can move to the current ones', async ({
+  page,
+}) => {
+  await readTheSheet(page);
+  await expect(page.getByText('Not proposed').first()).toBeVisible();
+  // The accepted rules are no longer the ones the values come from.
+  current = 'ffffffffffff';
+  await page.reload();
+  await page
+    .locator('button.thread-step-toggle', { hasText: /^Calculate/ })
+    .click();
+  const note = page.getByRole('note').filter({
+    hasText: 'rules accepted for these instructions have changed',
+  });
+  await expect(note).toBeVisible();
+  current = calculation.fingerprint;
+  await note
+    .getByRole('button', { name: 'Calculate on the current rules' })
+    .click();
+  await expect(note).toHaveCount(0);
 });
 
 test('the Inputs tab lists the sheet’s tabs and opens what was read', async ({

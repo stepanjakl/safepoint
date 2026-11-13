@@ -16,8 +16,9 @@ import { gatedProcedure } from './trpc';
 /*
   Server-only. The opening every Brunch orders procedure about a run shares:
   find the read the run kept, then the rulebook it answers to, and say
-  whether that rulebook still fits the read. A handler is given both in its
-  context and begins `if (ctx.stale) return staleReply(ctx.stale)`.
+  whether that rulebook still fits the read. A handler is given all of it
+  (`rulebookFor`'s answer, and the read) in its context, and begins
+  `if (ctx.stale) return staleReply(ctx.stale)`.
 
   A stale rulebook is a result, not an error: the screen shows what no longer
   fits and offers the current rules, so it travels as `{ kind: 'stale', … }`
