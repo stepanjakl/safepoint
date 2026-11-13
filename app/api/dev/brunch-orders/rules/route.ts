@@ -233,7 +233,7 @@ export async function POST(request: Request) {
   try {
     switch (body.action) {
       case 'get':
-        return replyWith(() => loadSet(owner, body.text));
+        return await replyWith(() => loadSet(owner, body.text));
       case 'draft': {
         // The engine drafts without a profile too; a person's draft does not.
         const profile = await loadProfile(owner);
@@ -241,13 +241,13 @@ export async function POST(request: Request) {
         startDraft(owner, body.text, body.version, await readOf(body.readId), {
           model: body.model,
         });
-        return replyWith(() => loadSet(owner, body.text));
+        return await replyWith(() => loadSet(owner, body.text));
       }
       case 'profile': {
         const read = await readOf(body.readId);
         fitting(read, owner.subject.data);
         await saveProfile(owner, profileOf(read, owner.subject.data));
-        return replyWith(() => loadSet(owner, body.text));
+        return await replyWith(() => loadSet(owner, body.text));
       }
       case 'profileColumn': {
         const { column, label, type, blank } = body;
@@ -261,7 +261,7 @@ export async function POST(request: Request) {
             changed = setColumnBlank(changed, column, blank);
           return changed;
         });
-        return replyWith(() => loadSet(owner, body.text));
+        return await replyWith(() => loadSet(owner, body.text));
       }
       case 'confirmProfile': {
         const kept = await loadProfile(owner);
@@ -278,19 +278,21 @@ export async function POST(request: Request) {
             await readOf(set.readId),
             confirmed,
           );
-        return replyWith(() => loadSet(owner, body.text));
+        return await replyWith(() => loadSet(owner, body.text));
       }
       case 'intent':
-        return replyWith(() => confirmIntent(owner, body.text, keptRead));
+        return await replyWith(() => confirmIntent(owner, body.text, keptRead));
       case 'write':
         startRewrite(owner, body.text, await readOf(body.readId), body.id, {
           model: body.model,
         });
-        return replyWith(() => loadSet(owner, body.text));
+        return await replyWith(() => loadSet(owner, body.text));
       case 'choose':
-        return replyWith(() => choose(owner, body.text, body.id, body.index));
+        return await replyWith(() =>
+          choose(owner, body.text, body.id, body.index),
+        );
       case 'appliesTo':
-        return replyWith(() =>
+        return await replyWith(() =>
           setAppliesTo(owner, body.text, body.id, body.value, keptRead),
         );
       case 'advise': {
@@ -340,7 +342,7 @@ export async function POST(request: Request) {
         });
       }
       case 'decide':
-        return replyWith(() =>
+        return await replyWith(() =>
           body.decision === 'accept'
             ? accept(owner, body.text, body.id, keptRead)
             : deny(owner, body.text, body.id, body.note),

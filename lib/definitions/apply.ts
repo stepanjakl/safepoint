@@ -1,18 +1,21 @@
 import { readdir } from 'node:fs/promises';
 import path from 'node:path';
+import { z } from 'zod';
 
 import { runDataDir } from '@/lib/storage/run-data';
+import { readKept, writeKept } from '@/server/storage/files';
 
 import { profiledFor } from './profile';
-import { checkProposal, noneOf, readJson, writeWhole } from './propose';
+import { checkProposal, noneOf } from './propose';
 import { sourceOf, type KeptRead } from './records';
-import type {
-  Application,
-  AppliedDecision,
-  CellChange,
-  DefinitionProcess,
-  DefinitionSet,
-  Proposal,
+import {
+  applicationSchema,
+  type Application,
+  type AppliedDecision,
+  type CellChange,
+  type DefinitionProcess,
+  type DefinitionSet,
+  type Proposal,
 } from './types';
 
 /*
@@ -76,13 +79,17 @@ const applicationFile = (
   );
 };
 
+const applicationsSchema = z.array(applicationSchema);
+
+// A record that cannot be read is reported: writing on would replace it.
 const keptApplications = async (
   owner: DefinitionProcess,
   readId: string,
   fingerprint: string,
 ) =>
-  (await readJson<Application[]>(
+  (await readKept(
     applicationFile(owner, readId, fingerprint),
+    applicationsSchema,
   )) ?? [];
 
 // The latest write of a run's proposal, whatever came of it.
@@ -110,7 +117,13 @@ export async function lastWrite(
   );
   const all = (
     await Promise.all(
-      files.map((name) => readJson<Application[]>(path.join(dir, name))),
+      files.map((name) =>
+        // A summary for a page: a record that cannot be read is left out of
+        // it, and reported where it is acted on.
+        readKept(path.join(dir, name), applicationsSchema, {
+          unreadableIsMissing: true,
+        }),
+      ),
     )
   ).flatMap((kept) => kept ?? []);
   const latest = all.reduce<Application | null>(
@@ -464,7 +477,7 @@ export async function applyDecisions(
     changes: prepared.changes,
     decisions: prepared.decisions,
   };
-  await writeWhole(file, [...kept, application]);
+  await writeKept(file, [...kept, application]);
   return { kind: 'written', application };
 }
 
@@ -504,6 +517,6 @@ export async function undoApplication(
     status: 'undone',
     undoneAt: new Date().toISOString(),
   };
-  await writeWhole(file, [...kept.slice(0, -1), application]);
+  await writeKept(file, [...kept.slice(0, -1), application]);
   return { kind: 'undone', application };
 }

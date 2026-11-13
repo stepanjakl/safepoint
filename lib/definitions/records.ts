@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 import {
   isDated,
   isDatedOrWeekly,
@@ -43,18 +45,23 @@ import { celTypeOf, declaredType } from './profile';
 
 // One resource of the source as read: its header row, then its rows. `tabs`
 // and `tabIds` are historical names, kept because kept reads use them.
-export type DataTab = { name: string; values: unknown[][] };
-export type KeptRead = {
-  id: string;
-  readAt: string;
-  source: string;
-  spreadsheet: {
-    title: string | null;
-    url: string;
-    tabIds?: Record<string, number>;
-  };
-  tabs: DataTab[];
-};
+const dataTabSchema = z.object({
+  name: z.string(),
+  values: z.array(z.array(z.unknown())),
+});
+export const keptReadSchema = z.object({
+  id: z.string(),
+  readAt: z.string(),
+  source: z.string(),
+  spreadsheet: z.object({
+    title: z.string().nullable(),
+    url: z.string(),
+    tabIds: z.record(z.string(), z.number()).optional(),
+  }),
+  tabs: z.array(dataTabSchema),
+});
+export type DataTab = z.infer<typeof dataTabSchema>;
+export type KeptRead = z.infer<typeof keptReadSchema>;
 
 export type Row = Record<string, unknown>;
 

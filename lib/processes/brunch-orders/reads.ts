@@ -1,14 +1,18 @@
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import type { DataTab, KeptRead } from '@/lib/definitions/records';
+import {
+  keptReadSchema,
+  type DataTab,
+  type KeptRead,
+} from '@/lib/definitions/records';
 import type { OutputSheet } from '@/lib/definitions/apply';
 import {
   addTab,
   missingSheetEnv,
   readTab,
   readWholeSheet,
+  sheetReadSchema,
   tabValues,
   writeRange,
   type SheetRead,
@@ -16,6 +20,7 @@ import {
 
 import { BRUNCH_ORDERS_ID, DATA_TABS } from './process';
 import { runDataDir } from '@/lib/storage/run-data';
+import { readKept, writeKept } from '@/server/storage/files';
 
 /*
   Server-only. A run reads the sheet once, and every later step uses that
@@ -61,7 +66,11 @@ async function load(source: 'captured' | 'live') {
       );
     return { read, label: `Live read through Composio at ${read.readAt}` };
   }
-  const read = JSON.parse(await readFile(CAPTURED, 'utf8')) as SheetRead;
+  const read = await readKept(CAPTURED, sheetReadSchema);
+  if (!read)
+    throw new Error(
+      `${path.relative(process.cwd(), CAPTURED)} is not kept: capture a read first.`,
+    );
   return {
     read,
     label: `Captured read from ${read.readAt} (fixtures/${BRUNCH_ORDERS_ID}/sheet-snapshot.json)`,
@@ -73,8 +82,7 @@ export async function captureRead(): Promise<{ file: string; readAt: string }> {
   const read = await readWholeSheet();
   if (!read.requests.every((r) => r.successful))
     throw new Error('The read failed; nothing was saved.');
-  await mkdir(path.dirname(CAPTURED), { recursive: true });
-  await writeFile(CAPTURED, `${JSON.stringify(read, null, 2)}\n`);
+  await writeKept(CAPTURED, read);
   return { file: path.relative(process.cwd(), CAPTURED), readAt: read.readAt };
 }
 
@@ -109,8 +117,9 @@ export async function readAndKeep(
 ): Promise<KeptRead> {
   const { read, label } = await load(source);
   const kept = asKept(read, label);
-  await mkdir(READS(), { recursive: true });
-  await writeFile(path.join(READS(), `${kept.id}.json`), JSON.stringify(kept));
+  await writeKept(path.join(READS(), `${kept.id}.json`), kept, {
+    compact: true,
+  });
   return kept;
 }
 
@@ -121,13 +130,7 @@ export const READ_GONE =
 export async function keptRead(id: string): Promise<KeptRead | null> {
   // A bare id only: nothing outside the reads folder can be named.
   if (!/^[\w-]+$/.test(id)) return null;
-  try {
-    return JSON.parse(
-      await readFile(path.join(READS(), `${id}.json`), 'utf8'),
-    ) as KeptRead;
-  } catch {
-    return null;
-  }
+  return readKept(path.join(READS(), `${id}.json`), keptReadSchema);
 }
 
 // Why a run on this read cannot write to the sheet, or null when it can. A

@@ -1,8 +1,9 @@
 import { google } from '@ai-sdk/google';
 import { APICallError, wrapLanguageModel } from 'ai';
-import { readFileSync } from 'node:fs';
-import { mkdir, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { z } from 'zod';
+
+import { readKeptSync, writeKept } from '@/server/storage/files';
 
 import { quotaOf, type Quota } from './quota';
 
@@ -35,15 +36,19 @@ const MAX_WAIT = 90_000;
 const MAX_TRIES = 3;
 const BUSY_WAIT = 2_000;
 
-type Learned = { limit: number; at: number };
-type Kept = {
+const learnedSchema = z.object({ limit: z.number(), at: z.number() });
+type Learned = z.infer<typeof learnedSchema>;
+export const keptLimitsSchema = z.object({
   // A model and the one it shares quota with.
-  shares: Record<string, string>;
-  perMinute: Record<string, Learned>;
-  perDay: Record<string, Learned>;
+  shares: z.record(z.string(), z.string()).default({}),
+  perMinute: z.record(z.string(), learnedSchema).default({}),
+  perDay: z.record(z.string(), learnedSchema).default({}),
   // Requests sent on a day, as Google's daily limit counts days.
-  used: Record<string, { day: string; count: number }>;
-};
+  used: z
+    .record(z.string(), z.object({ day: z.string(), count: z.number() }))
+    .default({}),
+});
+type Kept = z.infer<typeof keptLimitsSchema>;
 type State = Kept & {
   loaded: string | null;
   // When each recent request went, by group.
@@ -76,27 +81,18 @@ function state(): State {
   const file = fileOf();
   if (held.loaded === file) return held;
   held.loaded = file;
-  try {
-    Object.assign(held, JSON.parse(readFileSync(file, 'utf8')) as Kept);
-  } catch {
-    // Nothing kept yet.
-  }
+  // A convenience: nothing kept, or what cannot be read, is learned afresh.
+  Object.assign(
+    held,
+    readKeptSync(file, keptLimitsSchema, { unreadableIsMissing: true }),
+  );
   return held;
 }
 
-// Waited for, one name each: calls in parallel must not share a temporary file.
-let saves = 0;
 async function keep() {
   const { shares, perMinute, perDay, used } = state();
-  const file = fileOf();
-  const temporary = `${file}.${process.pid}.${(saves += 1)}.tmp`;
   try {
-    await mkdir(path.dirname(file), { recursive: true });
-    await writeFile(
-      temporary,
-      `${JSON.stringify({ shares, perMinute, perDay, used }, null, 2)}\n`,
-    );
-    await rename(temporary, file);
+    await writeKept(fileOf(), { shares, perMinute, perDay, used });
   } catch {
     // Keeping them is a convenience: a failed write never stops a request.
   }

@@ -292,7 +292,9 @@ export function describeEvent(
         event.unsure ? `${event.unsure} unsure` : null,
       ].filter(Boolean);
       const all = event.records === facts.records ? 'all ' : '';
-      const sentBack = sentBackFor(event.problems, facts);
+      // A record kept early on holds each problem as a sentence, which this
+      // has always read as a problem of no known kind: grouped, never named.
+      const sentBack = sentBackFor(event.problems as AnswerProblem[], facts);
       return [
         line(
           `Answered ${all}${records(event.records)}${parts.length ? `: ${parts.join(', ')}` : ''}.`,

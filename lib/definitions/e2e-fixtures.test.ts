@@ -16,6 +16,7 @@ import { namesOf, recordsOf, type KeptRead } from './records';
 import { capturedRead } from './captured.fixture';
 import {
   definitionSetSchema,
+  proposalSchema,
   type DefinitionSet,
   type Proposal,
 } from './types';
@@ -90,6 +91,19 @@ describe('the frozen copies the browser tests serve', () => {
         expect(
           checkProposal(owner, set, read, key, { order: Number(order) }),
         ).toEqual(checked);
+  });
+});
+
+// A proposal kept before the schema was written reads and writes back as the
+// same bytes, so reading one never changes what a file says.
+describe('the frozen proposal', () => {
+  it('reads through the stored shape and writes back unchanged', () => {
+    const { proposal } = json(PROPOSAL);
+    const read = proposalSchema.parse(proposal);
+    expect(JSON.stringify(read)).toBe(JSON.stringify(proposal));
+    expect(JSON.stringify(read, null, 2)).toBe(
+      JSON.stringify(proposal, null, 2),
+    );
   });
 });
 

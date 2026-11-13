@@ -262,85 +262,118 @@ export type AccountedSentence = z.infer<typeof accountedSentenceSchema>;
 // its subject says what a definition is about and how its data is shaped.
 export type DefinitionProcess = { id: string; subject: DefinitionSubject };
 
-// How far a server-side draft has got, while it runs.
-export type DraftProgress = {
-  step: string;
-  error: string | null;
-  running: boolean;
-  // The definition being written right now, so its card can say so.
-  writing?: string | null;
-  // A proposal's model at work, for a person watching it.
-  activity?: ProposalActivity;
-};
-
 /*
-  What a proposal's model has done so far, as it works. Shown to a person
-  watching; never read by code to decide anything.
+  What a server-side job keeps while it runs, and what a proposal's model has
+  done so far: shown to a person watching, never read by code to decide
+  anything. A file is read through these, so one of another shape is reported
+  rather than half-shown.
 */
-export type ProposalActivity = {
-  // The model answering now.
-  model: string | null;
-  // Its latest thought summary, as it writes it.
-  thought: string | null;
-  // Records written into the answer being given, as it arrives.
-  writing: number;
-  events: ProposalEvent[];
-  tokens: { input: number; output: number; thinking: number };
-  // How long the model's steps took, as the SDK measured them.
-  stepMs?: number;
-  // What the model streamed back, part by part, as the SDK gives it: a
-  // text's or a tool input's pieces joined into one part. The tool's answer
-  // is the app's, not the model's, and says so. Absent on older records.
-  stream?: StreamedPart[];
-};
+
+// One thing the app's check of an answer sent back, as a fact about a record.
+// `no-tab` and `tab` are historical names, kept in progress files: the
+// resource a citation names, whatever the source calls it. `key` comes last,
+// as the check adds it.
+const answerProblemSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('twice'), key: z.string() }),
+  z.object({ kind: z.literal('no-values'), key: z.string() }),
+  z.object({ kind: z.literal('unanswered'), key: z.string() }),
+  z.object({ kind: z.literal('no-tab'), tab: z.string(), key: z.string() }),
+  z.object({
+    kind: z.literal('no-column'),
+    tab: z.string(),
+    column: z.string(),
+    key: z.string(),
+  }),
+  z.object({
+    kind: z.literal('no-row'),
+    tab: z.string(),
+    row: z.number(),
+    key: z.string(),
+  }),
+  z.object({ kind: z.literal('blank'), cell: z.string(), key: z.string() }),
+]);
 
 /*
   What happened, as facts with no words: a page words them in the process's
   own nouns, so the engine says nothing of any one process.
 */
-export type ProposalEvent = { at: string } & (
-  | { kind: 'asked'; model: string }
-  | {
-      kind: 'busy';
-      model: string;
-      why: 'quota' | 'slow' | 'unavailable';
-      // Resting until, for quota; the service's status, when it answered.
-      until?: string;
-      status?: number;
-    }
-  | { kind: 'tried'; records: number }
-  | {
-      kind: 'answered';
-      records: number;
-      set: number;
-      leave: number;
-      unsure: number;
-      cited: number;
-      // What the app's checks sent back; none when it took the answer.
-      problems: AnswerProblem[];
-    }
-  | { kind: 'warned'; warnings: string[] }
+const proposalEventSchema = z.discriminatedUnion('kind', [
+  z.object({ at: z.string(), kind: z.literal('asked'), model: z.string() }),
+  z.object({
+    at: z.string(),
+    kind: z.literal('busy'),
+    model: z.string(),
+    why: z.enum(['quota', 'slow', 'unavailable']),
+    // Resting until, for quota; the service's status, when it answered.
+    until: z.string().optional(),
+    status: z.number().optional(),
+  }),
+  z.object({ at: z.string(), kind: z.literal('tried'), records: z.number() }),
+  z.object({
+    at: z.string(),
+    kind: z.literal('answered'),
+    records: z.number(),
+    set: z.number(),
+    leave: z.number(),
+    unsure: z.number(),
+    cited: z.number(),
+    // What the app's checks sent back; none when it took the answer. A record
+    // kept early on holds each as the sentence it was told, not as a fact.
+    problems: z.array(z.union([answerProblemSchema, z.string()])),
+  }),
+  z.object({
+    at: z.string(),
+    kind: z.literal('warned'),
+    warnings: z.array(z.string()),
+  }),
   // A step that ended other than by answering: cut short, filtered, failed.
-  | { kind: 'ended'; reason: string }
-);
+  z.object({ at: z.string(), kind: z.literal('ended'), reason: z.string() }),
+]);
 
-// One thing the app's check of an answer sent back, as a fact about a record.
-// `no-tab` and `tab` are historical names, kept in progress files: the
-// resource a citation names, whatever the source calls it.
-export type AnswerProblem =
-  | { kind: 'twice'; key: string }
-  | { kind: 'no-values'; key: string }
-  | { kind: 'unanswered'; key: string }
-  | { kind: 'no-tab'; key: string; tab: string }
-  | { kind: 'no-column'; key: string; tab: string; column: string }
-  | { kind: 'no-row'; key: string; tab: string; row: number }
-  | { kind: 'blank'; key: string; cell: string };
+const streamedPartSchema = z.object({
+  at: z.string(),
+  from: z.enum(['model', 'app']),
+  part: z.looseObject({ type: z.string() }),
+});
 
-export type StreamedPart = {
-  at: string;
-  from: 'model' | 'app';
-  part: { type: string } & Record<string, unknown>;
-};
+const proposalActivitySchema = z.object({
+  // The model answering now.
+  model: z.string().nullable(),
+  // Its latest thought summary, as it writes it.
+  thought: z.string().nullable(),
+  // Records written into the answer being given, as it arrives.
+  writing: z.number(),
+  events: z.array(proposalEventSchema),
+  tokens: z.object({
+    input: z.number(),
+    output: z.number(),
+    thinking: z.number(),
+  }),
+  // What the model streamed back, part by part, as the SDK gives it: a
+  // text's or a tool input's pieces joined into one part. The tool's answer
+  // is the app's, not the model's, and says so. Absent on older records.
+  stream: z.array(streamedPartSchema).optional(),
+  // How long the model's steps took, as the SDK measured them. After the
+  // stream, as it is written: a key moved would change the file's bytes.
+  stepMs: z.number().optional(),
+});
+
+// How far a server-side draft has got, while it runs.
+export const draftProgressSchema = z.object({
+  step: z.string(),
+  error: z.string().nullable(),
+  running: z.boolean(),
+  // The definition being written right now, so its card can say so.
+  writing: z.string().nullable().optional(),
+  // A proposal's model at work, for a person watching it.
+  activity: proposalActivitySchema.optional(),
+});
+
+export type DraftProgress = z.infer<typeof draftProgressSchema>;
+export type ProposalActivity = z.infer<typeof proposalActivitySchema>;
+export type ProposalEvent = z.infer<typeof proposalEventSchema>;
+export type AnswerProblem = z.infer<typeof answerProblemSchema>;
+export type StreamedPart = z.infer<typeof streamedPartSchema>;
 
 // Shown as working once it has a formula and every example agrees; the
 // server also rechecks the whole definition before accepting it.
@@ -422,88 +455,107 @@ export const complete = (set: DefinitionSet) =>
   accepted checks find it. The verdicts are code's, run again on what the
   model answered, never the model's own account. unchecked: the rulebook has
   no check to run, so nothing says it is ready.
+
+  A proposal's records and an application are read and written back whole, so
+  their objects keep any key they do not name rather than stripping it.
 */
-export type Verdict = 'ready' | 'decide' | 'blocked' | 'unchecked';
+const verdictSchema = z.enum(['ready', 'decide', 'blocked', 'unchecked']);
 
-export type CheckVerdict = {
-  id: string;
-  name: string;
-  consequence: 'block' | 'decide';
-  holds: boolean;
+const checkVerdictSchema = z.looseObject({
+  id: z.string(),
+  name: z.string(),
+  consequence: consequenceSchema,
+  holds: z.boolean(),
   // False when a guard settles it for this record whatever is proposed: it
-  // holds, but says nothing about the values.
-  applies: boolean;
+  // holds, but says nothing about the values. Absent on a proposal kept before
+  // verdicts said so, which reads as applying.
+  applies: z.boolean().optional(),
   // The app's working of the check on these values, or why it could not run.
-  steps: string[];
-  error: string | null;
-};
+  steps: z.array(z.string()),
+  error: z.string().nullable(),
+});
 
-export type ProposalRecord = {
+const proposalRecordSchema = z.looseObject({
   // set: these values; leave: nothing changes for this record.
-  action: 'set' | 'leave';
-  values: Record<string, number> | null;
-  reason: string;
+  action: z.enum(['set', 'leave']),
+  values: z.record(z.string(), z.number()).nullable(),
+  reason: z.string(),
   // Cells the model relied on, as the source addresses them (a sheet's
   // <tab>!B3).
-  cited: string[];
-  unsure: string | null;
-  verdict: Verdict;
-  checks: CheckVerdict[];
-};
+  cited: z.array(z.string()),
+  unsure: z.string().nullable(),
+  verdict: verdictSchema,
+  checks: z.array(checkVerdictSchema),
+});
 
-export type Proposal = {
-  fingerprint: string;
-  readId: string;
-  model: string;
-  at: string;
-  records: Record<string, ProposalRecord>;
-};
+export const proposalSchema = z.object({
+  fingerprint: z.string(),
+  readId: z.string(),
+  model: z.string(),
+  at: z.string(),
+  records: z.record(z.string(), proposalRecordSchema),
+});
+
+// A proposal still being answered, kept batch by batch.
+export const proposalPartSchema = z.object({
+  records: z.record(z.string(), proposalRecordSchema),
+  models: z.array(z.string()),
+});
+
+export type Verdict = z.infer<typeof verdictSchema>;
+export type CheckVerdict = z.infer<typeof checkVerdictSchema>;
+export type ProposalRecord = z.infer<typeof proposalRecordSchema>;
+export type Proposal = z.infer<typeof proposalSchema>;
 
 /*
   What a decided proposal does to its output tab, and the record of doing it:
   kept on the server, so what was written, on which decisions and how the
   checks found them does not depend on a browser's storage.
 */
-export type AppliedDecision = {
-  kind: 'approve' | 'change' | 'reject';
+const appliedDecisionSchema = z.looseObject({
+  kind: z.enum(['approve', 'change', 'reject']),
   // Null when the decision writes nothing.
-  values: Record<string, number> | null;
-  at: string;
+  values: z.record(z.string(), z.number()).nullable(),
+  at: z.string(),
   // For what is written, or left as it is, as the checks found it then.
-  verdict: Verdict | null;
+  verdict: verdictSchema.nullable(),
   // The checks a person let fail, by name.
-  failing: string[];
-};
+  failing: z.array(z.string()),
+});
 
 // `cell` is the source's address for it (a sheet's <tab>!B3).
-export type CellChange = {
-  key: string;
-  field: string;
-  cell: string;
-  before: string | number | boolean | null;
-  after: number;
-};
+const cellChangeSchema = z.looseObject({
+  key: z.string(),
+  field: z.string(),
+  cell: z.string(),
+  before: z.union([z.string(), z.number(), z.boolean(), z.null()]),
+  after: z.number(),
+});
 
-export type Application = {
-  proposedAt: string;
+export const applicationSchema = z.looseObject({
+  proposedAt: z.string(),
   // A historical name, kept in every application written: the output's
   // resource, whatever the source calls it.
-  tab: string;
-  at: string;
+  tab: z.string(),
+  at: z.string(),
   // verified: read back as written; mismatch: read back as something else;
   // failed: the write did not land, so the cells are as they were; undone:
   // put back as they were by undo.
-  status: 'verified' | 'mismatch' | 'failed' | 'undone';
-  error: string | null;
-  undoneAt: string | null;
+  status: z.enum(['verified', 'mismatch', 'failed', 'undone']),
+  error: z.string().nullable(),
+  undoneAt: z.string().nullable(),
   // The block written, as the source addresses one (a sheet's B2:C12), and
   // its cells either side of it.
-  range: string;
-  before: unknown[][];
-  after: unknown[][];
-  changes: CellChange[];
-  decisions: Record<string, AppliedDecision>;
-};
+  range: z.string(),
+  before: z.array(z.array(z.unknown())),
+  after: z.array(z.array(z.unknown())),
+  changes: z.array(cellChangeSchema),
+  decisions: z.record(z.string(), appliedDecisionSchema),
+});
+
+export type AppliedDecision = z.infer<typeof appliedDecisionSchema>;
+export type CellChange = z.infer<typeof cellChangeSchema>;
+export type Application = z.infer<typeof applicationSchema>;
 
 // Around a value an example tried, in a step, so it can be shown as that
 // example's own: private-use characters, never in a formula or the data.

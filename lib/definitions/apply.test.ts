@@ -1,6 +1,8 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
 
 import { beforeEach, describe, expect, it } from 'vitest';
+import { z } from 'zod';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 
@@ -16,7 +18,7 @@ import {
 import { capturedRead, capturedTabs } from './captured.fixture';
 import type { KeptRead } from './records';
 import { inScratchDirectory } from './scratch.fixture';
-import { definitionSetSchema, type Proposal } from './types';
+import { applicationSchema, definitionSetSchema, type Proposal } from './types';
 
 // Writing a decided proposal, on a sheet held in memory: no network, and
 // nothing written to the repository.
@@ -435,7 +437,9 @@ describe('writing a decided proposal', () => {
 });
 
 describe('undoing a write', () => {
-  inScratchDirectory();
+  const scratch = inScratchDirectory();
+  const keptFile = () =>
+    path.join(scratch(), 'data', owner.id, 'applied', 'run.abc.json');
   const undo = (sheet: OutputSheet) =>
     undoApplication(owner, 'run', 'abc', sheet);
 
@@ -453,6 +457,24 @@ describe('undoing a write', () => {
       application: { status: 'undone' },
     });
     expect(sheet.grid?.[1]).toEqual(['EG-06', 24, 'keep']);
+  });
+
+  it('keeps what a record holds, to the byte, as it is read and written back', async () => {
+    const sheet = memorySheet(read());
+    await write(sheet);
+    const once = readFileSync(keptFile(), 'utf8');
+    const written = JSON.parse(once);
+    expect(
+      JSON.stringify(z.array(applicationSchema).parse(written), null, 2),
+    ).toBe(JSON.stringify(written, null, 2));
+    // A key the schema does not name is not lost when undo writes it back.
+    written[0].note = 'kept';
+    written[0].changes[0].origin = 'sheet';
+    writeFileSync(keptFile(), JSON.stringify(written));
+    await undo(sheet);
+    const [undone] = JSON.parse(readFileSync(keptFile(), 'utf8'));
+    expect(undone).toMatchObject({ status: 'undone', note: 'kept' });
+    expect(undone.changes[0].origin).toBe('sheet');
   });
 
   it('clears the cells of a tab that was empty, and allows a new write', async () => {

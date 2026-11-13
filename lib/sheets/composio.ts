@@ -48,31 +48,35 @@ const infoSchema = z.object({
     .optional(),
 });
 
-export type SheetRequestRecord = {
-  tool: string;
-  toolkitVersion: string;
-  arguments: Record<string, unknown>;
-  durationMs: number;
-  successful: boolean;
-  error: string | null;
-};
+const sheetRequestSchema = z.object({
+  tool: z.string(),
+  toolkitVersion: z.string(),
+  arguments: z.record(z.string(), z.unknown()),
+  durationMs: z.number(),
+  successful: z.boolean(),
+  error: z.string().nullable(),
+});
 
-export type SheetRead = {
-  readAt: string;
-  connection: { userId: string; connectedAccountId: string };
-  spreadsheet: {
-    id: string;
-    url: string;
-    title: string | null;
-    timeZone: string | null;
-    locale: string | null;
-    tabIds: Record<string, number>;
-  };
+export type SheetRequestRecord = z.infer<typeof sheetRequestSchema>;
+
+export const sheetReadSchema = z.object({
+  readAt: z.string(),
+  connection: z.object({ userId: z.string(), connectedAccountId: z.string() }),
+  spreadsheet: z.object({
+    id: z.string(),
+    url: z.string(),
+    title: z.string().nullable(),
+    timeZone: z.string().nullable(),
+    locale: z.string().nullable(),
+    tabIds: z.record(z.string(), z.number()),
+  }),
   // Every tab, in the sheet's own order, as discovered at read time.
-  tabs: string[];
-  requests: SheetRequestRecord[];
-  valueRanges: z.infer<typeof valueRangeSchema>[];
-};
+  tabs: z.array(z.string()),
+  requests: z.array(sheetRequestSchema),
+  valueRanges: z.array(valueRangeSchema),
+});
+
+export type SheetRead = z.infer<typeof sheetReadSchema>;
 
 function columnLetters(count: number) {
   let letters = '';

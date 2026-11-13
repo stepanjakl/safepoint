@@ -1,13 +1,16 @@
 import { createHash } from 'node:crypto';
-import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
+import { readdir } from 'node:fs/promises';
 import path from 'node:path';
+import { z } from 'zod';
 
 import {
   readWholeSheet,
+  sheetReadSchema,
   tabValues,
   type SheetRead,
 } from '@/lib/sheets/composio';
 import { sourceReadsDir } from '@/lib/storage/run-data';
+import { readKept, writeKept, type ReadOptions } from '@/server/storage/files';
 
 import {
   columnsOf,
@@ -28,9 +31,17 @@ const CAPTURED: Record<SourceId, string> = {
   'brunch-store-sheet': 'fixtures/brunch-orders/sheet-snapshot.json',
 };
 
-type KeptSourceRead = Omit<SourceSummary, 'resources'> & {
-  resources: SourceValues['resources'];
-};
+export const keptSourceReadSchema = z.object({
+  readId: z.string(),
+  readAt: z.string(),
+  origin: z.enum(['live', 'captured']),
+  title: z.string().nullable(),
+  url: z.string().nullable(),
+  resources: z.array(
+    z.object({ name: z.string(), values: z.array(z.array(z.unknown())) }),
+  ),
+});
+type KeptSourceRead = z.infer<typeof keptSourceReadSchema>;
 
 function fromSheet(
   read: SheetRead,
@@ -68,32 +79,30 @@ function summary(read: KeptSourceRead): SourceSummary {
   };
 }
 
+// The copy in the repository is only a stand-in, so one that cannot be read is
+// the same as none.
 async function captured(id: SourceId): Promise<KeptSourceRead | null> {
-  try {
-    const file = path.join(process.cwd(), CAPTURED[id]);
-    return fromSheet(
-      JSON.parse(await readFile(file, 'utf8')) as SheetRead,
-      'captured',
-    );
-  } catch {
-    return null;
-  }
+  const read = await readKept(
+    path.join(process.cwd(), CAPTURED[id]),
+    sheetReadSchema,
+    { unreadableIsMissing: true },
+  );
+  return read && fromSheet(read, 'captured');
 }
 
 async function kept(
   id: SourceId,
   readId: string,
+  options?: ReadOptions,
 ): Promise<KeptSourceRead | null> {
   if (readId === 'captured') return captured(id);
   // A bare id only: nothing outside the reads folder can be named.
   if (!/^[\w-]+$/.test(readId)) return null;
-  try {
-    return JSON.parse(
-      await readFile(path.join(sourceReadsDir(id), `${readId}.json`), 'utf8'),
-    ) as KeptSourceRead;
-  } catch {
-    return null;
-  }
+  return readKept(
+    path.join(sourceReadsDir(id), `${readId}.json`),
+    keptSourceReadSchema,
+    options,
+  );
 }
 
 // Ids start with the time read, so the last by name is the latest.
@@ -115,7 +124,11 @@ export async function latestSummary(
   id: SourceId,
 ): Promise<SourceSummary | null> {
   const last = await latestId(id);
-  const read = (last ? await kept(id, last) : null) ?? (await captured(id));
+  // The page shows what it can: a read that cannot be read gives way to the
+  // captured copy, and sourceValues says why when it is asked for.
+  const read =
+    (last ? await kept(id, last, { unreadableIsMissing: true }) : null) ??
+    (await captured(id));
   return read ? summary(read) : null;
 }
 
@@ -124,11 +137,9 @@ export async function readSource(id: SourceId): Promise<SourceSummary> {
   const failed = sheet.requests.find((request) => !request.successful);
   if (failed) throw new Error(failed.error ?? 'The read failed.');
   const read = fromSheet(sheet, 'live');
-  await mkdir(sourceReadsDir(id), { recursive: true });
-  await writeFile(
-    path.join(sourceReadsDir(id), `${read.readId}.json`),
-    JSON.stringify(read),
-  );
+  await writeKept(path.join(sourceReadsDir(id), `${read.readId}.json`), read, {
+    compact: true,
+  });
   return summary(read);
 }
 

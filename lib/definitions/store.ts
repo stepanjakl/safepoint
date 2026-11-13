@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, readdir, rename, writeFile } from 'node:fs/promises';
+import { readdir } from 'node:fs/promises';
 import path from 'node:path';
 
-import type { z } from 'zod';
+import { readKept, StoredFileError, writeKept } from '@/server/storage/files';
 
 import {
   dataProfileSchema,
@@ -103,47 +103,10 @@ async function folderOf(
   return found ? path.join(rulebooksOf(owner), found) : null;
 }
 
-export class StoredSetError extends Error {}
+// Kept under its old name for what catches it.
+export const StoredSetError = StoredFileError;
 
-async function readSet(file: string): Promise<DefinitionSet | null> {
-  return readThrough(file, definitionSetSchema);
-}
-
-async function readThrough<T>(
-  file: string,
-  schema: z.ZodType<T>,
-): Promise<T | null> {
-  let raw: string;
-  try {
-    raw = await readFile(file, 'utf8');
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
-    throw error;
-  }
-  const where = path.relative(process.cwd(), file);
-  let json: unknown;
-  try {
-    json = JSON.parse(raw);
-  } catch {
-    throw new StoredSetError(`${where} is not valid JSON.`);
-  }
-  const parsed = schema.safeParse(json);
-  if (!parsed.success)
-    throw new StoredSetError(
-      `${where} does not fit the stored shape: ${parsed.error.issues
-        .slice(0, 3)
-        .map((i) => `${i.path.join('.')}: ${i.message}`)
-        .join('; ')}.`,
-    );
-  return parsed.data;
-}
-
-async function writeWhole(file: string, content: unknown) {
-  await mkdir(path.dirname(file), { recursive: true });
-  const temporary = `${file}.${process.pid}.${Date.now()}.tmp`;
-  await writeFile(temporary, `${JSON.stringify(content, null, 2)}\n`);
-  await rename(temporary, file);
-}
+const readSet = (file: string) => readKept(file, definitionSetSchema);
 
 // The rulebook being drafted and reviewed for these instructions.
 export async function loadSet(
@@ -161,7 +124,7 @@ export async function saveSet(
   const folder =
     (await folderOf(owner, set.hash)) ??
     path.join(rulebooksOf(owner), `${set.version}-${set.hash}`);
-  await writeWhole(path.join(folder, CURRENT), set);
+  await writeKept(path.join(folder, CURRENT), set);
   return set;
 }
 
@@ -183,7 +146,7 @@ const folderFor = async (owner: DefinitionProcess, set: DefinitionSet) =>
   path.join(rulebooksOf(owner), `${set.version}-${set.hash}`);
 
 const indexIn = async (folder: string) =>
-  (await readThrough(path.join(folder, INDEX), revisionIndexSchema)) ?? EMPTY;
+  (await readKept(path.join(folder, INDEX), revisionIndexSchema)) ?? EMPTY;
 
 /*
   Keeps an accepted rulebook as a revision and makes it the head. A revision
@@ -207,9 +170,9 @@ export async function putRevision(
   const folder = await folderFor(owner, set);
   const index = await indexIn(folder);
   const file = path.join(folder, `${id}.json`);
-  if (!(await readSet(file))) await writeWhole(file, set);
+  if (!(await readSet(file))) await writeKept(file, set);
   if (index.revisions.some((r) => r.id === id)) return id;
-  await writeWhole(path.join(folder, INDEX), {
+  await writeKept(path.join(folder, INDEX), {
     head: id,
     revisions: [
       ...index.revisions,
@@ -278,7 +241,7 @@ export async function loadProfile(
 ): Promise<DataProfile | null> {
   const file = path.join(profileFolderOf(owner), CURRENT);
   return sound(
-    await readThrough(file, dataProfileSchema),
+    await readKept(file, dataProfileSchema),
     path.relative(process.cwd(), file),
   );
 }
@@ -291,7 +254,7 @@ export async function saveProfile(
 ): Promise<DataProfile> {
   sound(profile, 'The profile');
   if (profile.confirmedAt) await putProfile(owner, profile);
-  await writeWhole(path.join(profileFolderOf(owner), CURRENT), profile);
+  await writeKept(path.join(profileFolderOf(owner), CURRENT), profile);
   return profile;
 }
 
@@ -304,8 +267,8 @@ export async function putProfile(
   if (!profile.confirmedAt)
     throw new Error('Only a confirmed data profile is kept as confirmed.');
   const file = path.join(profileFolderOf(owner), `${profile.id}.json`);
-  if (!(await readThrough(file, dataProfileSchema)))
-    await writeWhole(file, profile);
+  if (!(await readKept(file, dataProfileSchema)))
+    await writeKept(file, profile);
   return profile.id;
 }
 
@@ -317,7 +280,7 @@ export async function loadConfirmedProfile(
   if (!/^[0-9a-f]{12}$/.test(id)) return null;
   const file = path.join(profileFolderOf(owner), `${id}.json`);
   const where = path.relative(process.cwd(), file);
-  const profile = sound(await readThrough(file, dataProfileSchema), where);
+  const profile = sound(await readKept(file, dataProfileSchema), where);
   if (profile && (profile.id !== id || !profile.confirmedAt))
     throw new StoredSetError(`${where} is not the confirmed profile ${id}.`);
   return profile;

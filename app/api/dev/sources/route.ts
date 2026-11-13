@@ -40,10 +40,18 @@ export async function POST(request: Request) {
       summary: await latestSummary(source),
     });
   if (action === 'values') {
-    const values = await sourceValues(source, parsed.data.read);
-    return values
-      ? Response.json({ kind: 'values', values })
-      : fail('This read is no longer kept on the server.', 404);
+    try {
+      const values = await sourceValues(source, parsed.data.read);
+      return values
+        ? Response.json({ kind: 'values', values })
+        : fail('This read is no longer kept on the server.', 404);
+    } catch (error) {
+      // A kept read that cannot be read is named, not hidden as gone.
+      return fail(
+        error instanceof Error ? error.message : 'The read could not be read.',
+        500,
+      );
+    }
   }
   if (missingSheetEnv().length)
     return fail(`Missing ${missingSheetEnv().join(', ')}.`, 503);

@@ -1,4 +1,4 @@
-import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { rm } from 'node:fs/promises';
 import path from 'node:path';
 
 import { z } from 'zod';
@@ -6,6 +6,7 @@ import { z } from 'zod';
 import type { DefinitionSubject } from '@/lib/process/model';
 import { runDataDir } from '@/lib/storage/run-data';
 import { fallbackChain, type DraftingModel } from '@/lib/models';
+import { readKept, writeKept } from '@/server/storage/files';
 
 import { ask, DRAFT_MODELS, type Resolve } from './calls';
 import { givenOf } from './checks';
@@ -360,13 +361,6 @@ const crossFile = (
   );
 };
 
-async function writeWhole(file: string, value: unknown) {
-  await mkdir(path.dirname(file), { recursive: true });
-  const temporary = `${file}.${process.pid}.${Date.now()}.tmp`;
-  await writeFile(temporary, `${JSON.stringify(value, null, 2)}\n`);
-  await rename(temporary, file);
-}
-
 const cellsSchema = z.record(
   z.string(),
   z.record(
@@ -374,37 +368,28 @@ const cellsSchema = z.record(
     z.object({ model: z.number(), working: z.string(), agrees: z.boolean() }),
   ),
 );
-const partSchema = z.object({
+export const crossCheckPartSchema = z.object({
   cells: cellsSchema,
   models: z.array(z.string()),
 });
-type Part = z.infer<typeof partSchema>;
+type Part = z.infer<typeof crossCheckPartSchema>;
 
 const keepPart = (
   owner: DefinitionProcess,
   readId: string,
   fp: string,
   part: Part,
-) => writeWhole(crossFile(owner, readId, fp, true), part);
+) => writeKept(crossFile(owner, readId, fp, true), part);
 
-async function keptPart(
-  owner: DefinitionProcess,
-  readId: string,
-  fp: string,
-): Promise<Part | null> {
-  try {
-    const raw = await readFile(crossFile(owner, readId, fp, true), 'utf8');
-    const parsed = partSchema.safeParse(JSON.parse(raw));
-    return parsed.success ? parsed.data : null;
-  } catch {
-    return null;
-  }
-}
+const keptPart = (owner: DefinitionProcess, readId: string, fp: string) =>
+  readKept(crossFile(owner, readId, fp, true), crossCheckPartSchema, {
+    unreadableIsMissing: true,
+  });
 
 const dropPart = (owner: DefinitionProcess, readId: string, fp: string) =>
   rm(crossFile(owner, readId, fp, true), { force: true });
 
-const keptSchema = z.object({
+export const crossCheckSchema = z.object({
   fingerprint: z.string(),
   readId: z.string(),
   model: z.string(),
@@ -418,7 +403,7 @@ export async function keepCrossCheck(
   owner: DefinitionProcess,
   check: CrossCheck,
 ): Promise<void> {
-  await writeWhole(crossFile(owner, check.readId, check.fingerprint), check);
+  await writeKept(crossFile(owner, check.readId, check.fingerprint), check);
 }
 
 export async function keptCrossCheck(
@@ -426,11 +411,7 @@ export async function keptCrossCheck(
   readId: string,
   fingerprint: string,
 ): Promise<CrossCheck | null> {
-  try {
-    const raw = await readFile(crossFile(owner, readId, fingerprint), 'utf8');
-    const parsed = keptSchema.safeParse(JSON.parse(raw));
-    return parsed.success ? parsed.data : null;
-  } catch {
-    return null;
-  }
+  return readKept(crossFile(owner, readId, fingerprint), crossCheckSchema, {
+    unreadableIsMissing: true,
+  });
 }

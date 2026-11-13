@@ -1,5 +1,5 @@
 import { isStepCount, streamText, tool, ToolChoiceViolationError } from 'ai';
-import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { rm } from 'node:fs/promises';
 import path from 'node:path';
 import { z } from 'zod';
 
@@ -7,6 +7,7 @@ import { fallbackChain, type DraftingModel } from '@/lib/models';
 import type { DataShape } from '@/lib/process/model';
 import type { SourceTerms } from '@/lib/sources/model';
 import { runDataDir } from '@/lib/storage/run-data';
+import { readKept, writeKept } from '@/server/storage/files';
 
 import {
   calculate,
@@ -23,7 +24,10 @@ import { plain, timingOf } from './prompts';
 import { fitting, sourceOf, type KeptRead, type Row } from './records';
 import { fingerprintOf } from './store';
 import {
+  draftProgressSchema,
   ignoresProposal,
+  proposalPartSchema,
+  proposalSchema,
   type CheckVerdict,
   type DefinitionProcess,
   type DefinitionSet,
@@ -718,26 +722,12 @@ const proposalFile = (
   );
 };
 
-export async function writeWhole(file: string, value: unknown) {
-  await mkdir(path.dirname(file), { recursive: true });
-  const temporary = `${file}.${process.pid}.${Date.now()}.tmp`;
-  await writeFile(temporary, `${JSON.stringify(value, null, 2)}\n`);
-  await rename(temporary, file);
-}
-
-export async function readJson<T>(file: string): Promise<T | null> {
-  try {
-    return JSON.parse(await readFile(file, 'utf8')) as T;
-  } catch {
-    return null;
-  }
-}
-
+// A proposal that cannot be read is reported, never taken for none kept.
 export const keptProposal = (
   owner: DefinitionProcess,
   readId: string,
   fingerprint: string,
-) => readJson<Proposal>(proposalFile(owner, readId, fingerprint));
+) => readKept(proposalFile(owner, readId, fingerprint), proposalSchema);
 
 // Records a call proposes for: few enough that its answer fits.
 const BATCH = 25;
@@ -776,10 +766,10 @@ export async function propose(
   const fingerprint = fingerprintOf(set);
   const models = chosen ? fallbackChain(chosen) : DRAFT_MODELS;
   const partFile = proposalFile(owner, readId, fingerprint, true);
-  const sofar = await readJson<{
-    records: Proposal['records'];
-    models: string[];
-  }>(partFile);
+  // Only a head start: a part that cannot be read is asked for again.
+  const sofar = await readKept(partFile, proposalPartSchema, {
+    unreadableIsMissing: true,
+  });
   const records: Proposal['records'] = { ...sofar?.records };
   const answeredBy = new Set(sofar?.models ?? []);
   const left = keys.filter((key) => !records[key]);
@@ -800,7 +790,7 @@ export async function propose(
     );
     Object.assign(records, answer.records);
     answeredBy.add(answer.model);
-    await writeWhole(partFile, { records, models: [...answeredBy] });
+    await writeKept(partFile, { records, models: [...answeredBy] });
   }
   const proposal: Proposal = {
     fingerprint,
@@ -810,7 +800,7 @@ export async function propose(
     // In the records' own order, however the batches came back.
     records: Object.fromEntries(keys.map((key) => [key, records[key]!])),
   };
-  await writeWhole(proposalFile(owner, readId, fingerprint), proposal);
+  await writeKept(proposalFile(owner, readId, fingerprint), proposal);
   await rm(partFile, { force: true });
   return proposal;
 }
@@ -839,8 +829,10 @@ export async function proposalProgress(
   // A copy, as in draft.ts: the job changes the one held.
   const held = jobs.get(`${owner.id}:${readId}:${fingerprint}`);
   if (held) return { ...held };
-  const kept = await readJson<DraftProgress>(
+  const kept = await readKept(
     jobFile(owner, readId, fingerprint),
+    draftProgressSchema,
+    { unreadableIsMissing: true },
   );
   if (!kept) return null;
   return kept.running ? { ...kept, running: false, error: INTERRUPTED } : kept;
@@ -866,7 +858,7 @@ export function startProposal(
   };
   jobs.set(key, progress);
   const note = () =>
-    writeWhole(jobFile(owner, readId, fingerprint), progress).catch(
+    writeKept(jobFile(owner, readId, fingerprint), progress).catch(
       () => undefined,
     );
   // A poll reads the job held in memory; the file only outlives a restart,

@@ -1,13 +1,17 @@
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { runDataDir } from '@/lib/storage/run-data';
+import { readKept, writeKept } from '@/server/storage/files';
 
 import { findDefinitions, type Asking } from './find';
 import { ownerToDraft } from './profile';
 import { fitting, type KeptRead } from './records';
 import { hashOf } from './store';
-import type { DefinitionProcess, DraftProgress } from './types';
+import {
+  draftProgressSchema,
+  type DefinitionProcess,
+  type DraftProgress,
+} from './types';
 import { writeAgreed } from './write';
 
 /*
@@ -31,17 +35,11 @@ const fileOf = (owner: DefinitionProcess, text: string) =>
 const INTERRUPTED =
   'The server stopped while this was being written, so it did not finish. Try it again.';
 
-async function record(
+const record = (
   owner: DefinitionProcess,
   text: string,
   progress: DraftProgress,
-) {
-  const file = fileOf(owner, text);
-  await mkdir(path.dirname(file), { recursive: true });
-  const temporary = `${file}.${process.pid}.tmp`;
-  await writeFile(temporary, JSON.stringify(progress));
-  await rename(temporary, file);
-}
+) => writeKept(fileOf(owner, text), progress, { compact: true });
 
 export async function draftProgress(
   owner: DefinitionProcess,
@@ -51,12 +49,10 @@ export async function draftProgress(
   // otherwise say finished beside rules read before it finished.
   const held = drafts.get(keyOf(owner, text));
   if (held) return { ...held };
-  let kept: DraftProgress;
-  try {
-    kept = JSON.parse(await readFile(fileOf(owner, text), 'utf8'));
-  } catch {
-    return null;
-  }
+  const kept = await readKept(fileOf(owner, text), draftProgressSchema, {
+    unreadableIsMissing: true,
+  });
+  if (!kept) return null;
   // Running, but not on this server: it stopped with the one before.
   return kept.running ? { ...kept, running: false, error: INTERRUPTED } : kept;
 }

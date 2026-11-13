@@ -35,10 +35,22 @@ export async function POST(request: Request) {
     );
 
   if (parsed.data.action === 'get') {
-    const kept = await keptRead(parsed.data.id);
-    return kept
-      ? Response.json({ kind: 'read', ...kept })
-      : Response.json({ kind: 'error', message: READ_GONE }, { status: 404 });
+    try {
+      const kept = await keptRead(parsed.data.id);
+      return kept
+        ? Response.json({ kind: 'read', ...kept })
+        : Response.json({ kind: 'error', message: READ_GONE }, { status: 404 });
+    } catch (error) {
+      // A kept read that cannot be read is named, not hidden as gone.
+      return Response.json(
+        {
+          kind: 'error',
+          message:
+            error instanceof Error ? error.message : 'The read cannot be read.',
+        },
+        { status: 500 },
+      );
+    }
   }
 
   if (
