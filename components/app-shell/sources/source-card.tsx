@@ -44,7 +44,7 @@ import {
 
 import { SourceDrawer } from './source-drawer';
 import { SourceHead } from './source-head';
-import { useSources, type SourceEntry } from './source-store';
+import { useSources, type SourceEntry } from './source-queries';
 
 const count = (n: number, one: string, many = `${one}s`) =>
   `${n} ${n === 1 ? one : many}`;

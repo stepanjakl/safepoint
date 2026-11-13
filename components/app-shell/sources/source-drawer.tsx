@@ -19,7 +19,7 @@ import { TabSwap } from '@/components/ui/swap';
 import { useLoader } from '@/components/ui/working-mark';
 import type { SourceValues } from '@/lib/sources/model';
 
-import { sourceValues } from './source-store';
+import { useSourceValues } from './source-queries';
 
 type Loaded =
   | { kind: 'idle' | 'loading' }
@@ -57,6 +57,7 @@ export function SourceDrawer({
   const [open, setOpen] = useState(false);
   const [chosen, setChosen] = useState<string | null>(null);
   const [loaded, setLoaded] = useState<Loaded>({ kind: 'idle' });
+  const sourceValues = useSourceValues();
   const values =
     loaded.kind === 'ready' && loaded.values.readId === readId
       ? loaded.values
