@@ -343,3 +343,79 @@ test('the filter shows only what needs a person', async ({ page }) => {
     /CF-40/,
   ]);
 });
+
+// A person changes CF-40 to a whole case, which the step checks after a
+// short pause; what the check answers is each test's own.
+async function changeChilli(page: Page) {
+  const table = await propose(page);
+  const chilli = table.getByRole('row', { name: /^CF-40/ });
+  await chilli.getByRole('button', { name: 'Change' }).click();
+  await table.getByRole('spinbutton', { name: /for CF-40/ }).fill('6');
+}
+const proposeAgain = (page: Page) =>
+  page
+    .getByRole('region', { name: 'Propose setup' })
+    .getByRole('button', { name: 'Propose again' });
+
+test('Propose waits while a check on changed values is still being answered', async ({
+  page,
+}) => {
+  let release = () => {};
+  const held = new Promise<void>((resolve) => (release = resolve));
+  const asked = await mockProcedure(page, 'propose.check', async () => {
+    await held;
+    return {
+      data: {
+        kind: 'check',
+        ...(frozen.trials['CF-40']!['6'] as {
+          verdict: Verdict;
+          checks: CheckVerdict[];
+        }),
+      },
+    };
+  });
+  await changeChilli(page);
+  await expect.poll(() => asked.inputs.length).toBeGreaterThan(0);
+  await expect(proposeAgain(page)).toBeDisabled();
+  release();
+  await expect(proposeAgain(page)).toBeEnabled();
+});
+
+test('a check that is refused is said where the step speaks', async ({
+  page,
+}) => {
+  await mockProcedure(page, 'propose.check', {
+    error: { code: 'BAD_GATEWAY', message: 'The rules could not be read.' },
+  });
+  await changeChilli(page);
+  await expect(
+    page.getByRole('alert').filter({ hasText: 'The rules could not be read.' }),
+  ).toBeVisible();
+});
+
+test('a check that finds the rules stale offers the current ones', async ({
+  page,
+}) => {
+  await mockProcedure(page, 'propose.check', {
+    data: {
+      kind: 'stale',
+      rulebook: 'ab12cd34ef56',
+      problems: [
+        {
+          id: 'order_ripe_avocados_limit',
+          name: 'Ripe avocados limit',
+          problem: 'no such overload: bool == string',
+        },
+      ],
+      current: frozen.proposal.fingerprint,
+    },
+  });
+  await changeChilli(page);
+  const alert = page
+    .getByRole('alert')
+    .filter({ hasText: 'no longer fit the data it read' });
+  await expect(alert).toContainText('Ripe avocados limit');
+  await expect(
+    alert.getByRole('button', { name: 'Use the current rules' }),
+  ).toBeVisible();
+});

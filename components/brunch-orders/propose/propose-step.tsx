@@ -17,6 +17,7 @@ import { ProposalTable } from './proposal-table';
 import type {
   Decision,
   Evaluation,
+  CheckReply,
   ProposalReply,
   ProposeProgress,
 } from './types';
@@ -92,7 +93,32 @@ export function ProposeStep({
   const shown = current ?? last;
   const proposal = asReviewed(shown?.proposal ?? null, evaluation);
   const running = shown?.progress?.running ?? false;
-  const busy = start.isPending || asked.isFetching;
+  // A check answers into the rows, but when it is refused or stale it speaks
+  // here, as the latest answer of any kind did: until another answer lands
+  // (`since` is the proposal answer it was made beside).
+  const [checking, setChecking] = useState(0);
+  const [spoken, setSpoken] = useState<{
+    since: number;
+    stale?: Extract<CheckReply, { kind: 'stale' }>;
+    error?: string;
+  } | null>(null);
+  const speak = (
+    what: {
+      stale?: Extract<CheckReply, { kind: 'stale' }>;
+      error?: string;
+    } | null,
+  ) =>
+    setSpoken(
+      what && {
+        ...what,
+        since:
+          queryClient.getQueryState(proposalQuery.queryKey)?.dataUpdatedAt ?? 0,
+      },
+    );
+  const notice = spoken?.since === asked.dataUpdatedAt ? spoken : null;
+  const stale = notice?.stale ?? (answer?.kind === 'stale' ? answer : null);
+  // Nothing is proposed on values a check has not yet answered for.
+  const busy = start.isPending || asked.isFetching || checking > 0;
   // Decisions belong to the proposal they were made on.
   const decisions =
     kept && proposal && kept.proposedAt === proposal.at ? kept.decisions : {};
@@ -176,18 +202,30 @@ export function ProposeStep({
         readId={readId}
         announced={announced}
         onDecide={decide}
-        onCheck={(key, values) =>
-          queryClient
+        onCheck={(key, values) => {
+          setChecking((count) => count + 1);
+          return queryClient
             .fetchQuery(
               trpc.propose.check.queryOptions({ ...run, key, values }),
             )
-            .catch(() => null)
-        }
+            .then(
+              (reply) => {
+                speak(reply.kind === 'stale' ? { stale: reply } : null);
+                return reply;
+              },
+              (error: Error) => {
+                speak({ error: error.message });
+                return null;
+              },
+            )
+            .finally(() => setChecking((count) => count - 1));
+        }}
       />
     ) : null;
 
   if (automatic) {
     const failure =
+      notice?.error ??
       start.error?.message ??
       asked.error?.message ??
       (!running ? (shown?.progress?.error ?? null) : null);
@@ -229,11 +267,11 @@ export function ProposeStep({
         values against the accepted checks first. The app checks each again; you
         approve, change or reject each one.
       </Lede>
-      {answer?.kind === 'stale' && onMoveRules ? (
-        <StaleRules stale={answer} onMove={onMoveRules} />
-      ) : start.error || asked.error ? (
+      {stale && onMoveRules ? (
+        <StaleRules stale={stale} onMove={onMoveRules} />
+      ) : (notice?.error ?? start.error ?? asked.error) ? (
         <p role="alert" className="text-dense text-state-blocked">
-          {(start.error ?? asked.error)?.message}
+          {notice?.error ?? (start.error ?? asked.error)?.message}
         </p>
       ) : null}
       {/* Scaffolding for trying the step, as the other steps' setups are. */}
