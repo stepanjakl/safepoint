@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 
@@ -7,20 +8,11 @@ import {
   DrawerOverlay,
   DrawerPanels,
 } from '@/components/app-shell/drawer-overlay';
-import { useTrial } from '@/components/brunch-orders/trial-parts';
+import { useTRPC } from '@/components/trpc/provider';
 import { FilterTabs } from '@/components/ui/filter-tabs';
 import { Loader } from '@/components/ui/loader';
 import { TabSwap } from '@/components/ui/swap';
 import { useLoader } from '@/components/ui/working-mark';
-
-type DataResponse =
-  | {
-      kind: 'read';
-      id: string;
-      readAt: string;
-      tabs: { name: string; values: unknown[][] }[];
-    }
-  | { kind: 'error'; message: string };
 
 // One row per line, so a table reads as one: the headers, then each row.
 const asJson = (values: unknown[][]) =>
@@ -49,17 +41,20 @@ export function DataDrawer({
 }) {
   const [open, setOpen] = useState(false);
   const [chosen, setChosen] = useState<string | null>(null);
-  const loading = useTrial<DataResponse>('/api/dev/brunch-orders/read');
-  const body = loading.state.kind === 'done' ? loading.state.body : null;
-  const loader = useLoader(loading.state.kind === 'running');
+  const trpc = useTRPC();
+  // Asked for once the drawer first opens, and again on opening it after a
+  // failure. A kept read never changes, so what came is kept.
+  const loading = useQuery(
+    trpc.read.get.queryOptions(
+      { id: readId },
+      { enabled: open && !preloaded, staleTime: Infinity },
+    ),
+  );
+  const loader = useLoader(loading.isFetching && !loading.data);
   const data = useMemo(
     () =>
-      preloaded
-        ? { id: readId, tabs: preloaded }
-        : body?.kind === 'read' && body.id === readId
-          ? body
-          : null,
-    [preloaded, body, readId],
+      preloaded ? { id: readId, tabs: preloaded } : (loading.data ?? null),
+    [preloaded, loading.data, readId],
   );
   const tabs = useMemo(
     () =>
@@ -80,7 +75,6 @@ export function DataDrawer({
       {children((tab) => {
         if (tab) setChosen(tab);
         setOpen(true);
-        if (!data) void loading.run({ action: 'get', id: readId });
       })}
       <DrawerOverlay isOpen={open} onOpenChange={setOpen}>
         <DrawerPanels
@@ -133,11 +127,7 @@ export function DataDrawer({
               </p>
             ) : (
               <p role="status" className="text-dense text-muted">
-                {body?.kind === 'error'
-                  ? body.message
-                  : loading.state.kind === 'failed'
-                    ? loading.state.message
-                    : ''}
+                {loading.error?.message ?? ''}
               </p>
             )}
           </div>

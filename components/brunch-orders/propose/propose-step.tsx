@@ -1,11 +1,13 @@
 'use client';
 
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 
 import { ModelLimits } from '@/components/brunch-orders/model-limits';
 import { ModelSelect } from '@/components/brunch-orders/rules/model-select';
 import { StaleRules } from '@/components/brunch-orders/stale-rules';
-import { Lede, useTrial } from '@/components/brunch-orders/trial-parts';
+import { Lede } from '@/components/brunch-orders/trial-parts';
+import { useTRPC } from '@/components/trpc/provider';
 import { Button } from '@/components/ui/button';
 import type { Proposal } from '@/lib/definitions/types';
 import type { DefinitionSubject } from '@/lib/process/model';
@@ -15,8 +17,8 @@ import { ProposalTable } from './proposal-table';
 import type {
   Decision,
   Evaluation,
+  ProposalReply,
   ProposeProgress,
-  ProposeResponse,
 } from './types';
 import { needsPerson } from './verdict';
 
@@ -55,23 +57,42 @@ export function ProposeStep({
   onMoveRules?: () => void;
 }) {
   const automatic = evaluation === 'model';
-  const propose = useTrial<ProposeResponse>('/api/dev/brunch-orders/propose');
-  const { run } = propose;
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const report = useRef(onProgress);
   useEffect(() => {
     report.current = onProgress;
   });
   const [model, setModel] = useState<DraftingModel>(DRAFTING_MODELS[0]!);
-  const body = propose.state.kind === 'done' ? propose.state.body : null;
+  const run = { text, readId, rulebook, evaluation };
+  // Asked once per read and rulebook, and again every POLL_MS while the job
+  // runs, even after a failed poll: a failed request says nothing about it.
+  // Asked afresh each time the step opens, since the job may have moved on.
+  const proposalQuery = trpc.propose.get.queryOptions(run, {
+    staleTime: 0,
+    gcTime: 0,
+    refetchInterval: ({ state: { data } }) =>
+      data?.kind === 'proposal' && data.progress?.running ? POLL_MS : false,
+  });
+  const asked = useQuery(proposalQuery);
+  // Starting a job answers as a poll does, into the same query.
+  const start = useMutation(
+    trpc.propose.start.mutationOptions({
+      onSuccess: (answer) =>
+        queryClient.setQueryData(proposalQuery.queryKey, answer),
+    }),
+  );
+  const answer: ProposalReply | null = asked.data ?? null;
   const [last, setLast] = useState<Extract<
-    ProposeResponse,
+    ProposalReply,
     { kind: 'proposal' }
   > | null>(null);
-  const current = body?.kind === 'proposal' ? body : null;
+  const current = answer?.kind === 'proposal' ? answer : null;
   if (current && current !== last) setLast(current);
   const shown = current ?? last;
   const proposal = asReviewed(shown?.proposal ?? null, evaluation);
   const running = shown?.progress?.running ?? false;
+  const busy = start.isPending || asked.isFetching;
   // Decisions belong to the proposal they were made on.
   const decisions =
     kept && proposal && kept.proposedAt === proposal.at ? kept.decisions : {};
@@ -101,49 +122,35 @@ export function ProposeStep({
       decisions: next,
     };
   };
-  const ask = (request: Record<string, unknown>) =>
-    run({ ...request, text, readId, rulebook, evaluation }).then((response) => {
-      if (response?.kind === 'proposal') {
-        const same =
-          kept?.proposedAt && response.proposal?.at === kept.proposedAt;
-        report.current(
-          progressOf(
-            same ? kept.decisions : {},
-            asReviewed(response.proposal, evaluation),
-            response.progress?.running ?? false,
-          ),
-        );
-      }
-      return response;
-    });
+  // Each answer is reported once, held to the decisions kept now.
+  useEffect(() => {
+    if (answer?.kind !== 'proposal') return;
+    const same = kept?.proposedAt && answer.proposal?.at === kept.proposedAt;
+    report.current(
+      progressOf(
+        same ? kept.decisions : {},
+        asReviewed(answer.proposal, evaluation),
+        answer.progress?.running ?? false,
+      ),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [answer]);
 
   // Automatic: proposes once, when nothing is kept, running or failed.
   const proposed = useRef(false);
   useEffect(() => {
-    void ask({ action: 'get' }).then((response) => {
-      if (
-        !automatic ||
-        proposed.current ||
-        response?.kind !== 'proposal' ||
-        response.proposal ||
-        response.progress
-      )
-        return;
-      proposed.current = true;
-      void ask({ action: 'propose' });
-    });
-    // Once per read and rulebook; the poll below asks again while it runs.
+    if (
+      !automatic ||
+      proposed.current ||
+      answer?.kind !== 'proposal' ||
+      answer.proposal ||
+      answer.progress
+    )
+      return;
+    proposed.current = true;
+    start.mutate(run);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [run, text, readId, rulebook]);
-  // A failed request says nothing about the job, so it is asked again too.
-  const answered =
-    propose.state.kind === 'done' || propose.state.kind === 'failed';
-  useEffect(() => {
-    if (!running || !answered) return;
-    const timer = setTimeout(() => void ask({ action: 'get' }), POLL_MS);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [running, answered, body]);
+  }, [automatic, answer]);
 
   const [announced, setAnnounced] = useState('');
   // Several at once where a person decides several (approve all ready).
@@ -170,28 +177,20 @@ export function ProposeStep({
         announced={announced}
         onDecide={decide}
         onCheck={(key, values) =>
-          run({
-            action: 'check',
-            text,
-            readId,
-            rulebook,
-            evaluation,
-            key,
-            values,
-          })
+          queryClient
+            .fetchQuery(
+              trpc.propose.check.queryOptions({ ...run, key, values }),
+            )
+            .catch(() => null)
         }
       />
     ) : null;
 
   if (automatic) {
     const failure =
-      body?.kind === 'error'
-        ? body.message
-        : propose.state.kind === 'failed'
-          ? propose.state.message
-          : !running
-            ? (shown?.progress?.error ?? null)
-            : null;
+      start.error?.message ??
+      asked.error?.message ??
+      (!running ? (shown?.progress?.error ?? null) : null);
     return (
       <div className="grid gap-4">
         {failure ? (
@@ -201,8 +200,8 @@ export function ProposeStep({
             </p>
             <Button
               size="medium"
-              isDisabled={running || propose.state.kind === 'running'}
-              onPress={() => void ask({ action: 'propose' })}
+              isDisabled={running || busy}
+              onPress={() => start.mutate(run)}
             >
               Try again
             </Button>
@@ -230,11 +229,11 @@ export function ProposeStep({
         values against the accepted checks first. The app checks each again; you
         approve, change or reject each one.
       </Lede>
-      {body?.kind === 'stale' && onMoveRules ? (
-        <StaleRules stale={body} onMove={onMoveRules} />
-      ) : body?.kind === 'error' ? (
+      {answer?.kind === 'stale' && onMoveRules ? (
+        <StaleRules stale={answer} onMove={onMoveRules} />
+      ) : start.error || asked.error ? (
         <p role="alert" className="text-dense text-state-blocked">
-          {body.message}
+          {(start.error ?? asked.error)?.message}
         </p>
       ) : null}
       {/* Scaffolding for trying the step, as the other steps' setups are. */}
@@ -251,7 +250,7 @@ export function ProposeStep({
                 autoFocus
                 onPress={() => {
                   setConfirming(false);
-                  void ask({ action: 'propose', model });
+                  start.mutate({ ...run, model });
                 }}
               >
                 Propose again
@@ -261,11 +260,11 @@ export function ProposeStep({
           ) : (
             <Button
               variant={proposal ? 'secondary' : 'primary'}
-              isDisabled={running || propose.state.kind === 'running'}
+              isDisabled={running || busy}
               onPress={() =>
                 hasDecisions
                   ? setConfirming(true)
-                  : void ask({ action: 'propose', model })
+                  : start.mutate({ ...run, model })
               }
             >
               {proposal ? 'Propose again' : 'Propose'}

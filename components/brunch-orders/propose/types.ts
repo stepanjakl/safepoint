@@ -1,33 +1,20 @@
-import type { StaleReply } from '@/components/brunch-orders/stale-rules';
-import type {
-  CheckVerdict,
-  DraftProgress,
-  Proposal,
-  Verdict,
-} from '@/lib/definitions/types';
+import type { inferRouterOutputs } from '@trpc/server';
+
+import type { CheckVerdict, Verdict } from '@/lib/definitions/types';
 import type { DefinitionSubject } from '@/lib/process/model';
+import type { AppRouter } from '@/server/api/root';
 
 export type Calculated = {
   calculations: { id: string; name: string }[];
   rows: Record<string, Record<string, number | null>>;
 };
 
-export type ProposeResponse =
-  | {
-      kind: 'proposal';
-      fingerprint: string;
-      names: Record<string, string>;
-      calculated: Calculated;
-      proposal: Proposal | null;
-      progress: DraftProgress | null;
-    }
-  | {
-      kind: 'check';
-      verdict: Verdict;
-      checks: CheckVerdict[];
-    }
-  | StaleReply
-  | { kind: 'error'; message: string };
+// What the procedures answer: the proposal kept and its job (`get`, and
+// `start` as it begins), and the checks on values being changed (`check`),
+// each or `stale` where the rulebook no longer fits the read.
+type Replies = inferRouterOutputs<AppRouter>['propose'];
+export type ProposalReply = Replies['get'];
+export type CheckReply = Replies['check'];
 
 // A person's decision on one record, kept with the run in this browser.
 export type Decision = {

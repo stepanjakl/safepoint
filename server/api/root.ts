@@ -1,5 +1,9 @@
 import 'server-only';
 
+import { calculateRouter } from './routers/calculate';
+import { modelLimitsRouter } from './routers/model-limits';
+import { proposeRouter } from './routers/propose';
+import { readRouter } from './routers/read';
 import { sourcesRouter } from './routers/sources';
 import { router } from './trpc';
 
@@ -9,6 +13,10 @@ import { router } from './trpc';
   output to it.
 */
 export const appRouter = router({
+  calculate: calculateRouter,
+  modelLimits: modelLimitsRouter,
+  propose: proposeRouter,
+  read: readRouter,
   sources: sourcesRouter,
 });
 

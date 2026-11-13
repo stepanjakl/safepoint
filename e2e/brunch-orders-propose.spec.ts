@@ -4,7 +4,9 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
 import type { Calculation } from '@/lib/definitions/calculate';
-import type { Proposal } from '@/lib/definitions/types';
+import type { CheckVerdict, Proposal, Verdict } from '@/lib/definitions/types';
+
+import { mockProcedure } from './trpc';
 
 // Brunch orders, Propose and Apply (docs/processes/brunch-orders/PLAN.md):
 // with every rule accepted and the values worked out, the model proposes for
@@ -19,7 +21,10 @@ const accepted = fixture('brunch-orders-accepted.json');
 const calculation = fixture('brunch-orders-calculation.json') as Calculation;
 const frozen = fixture('brunch-orders-proposal.json') as {
   names: Record<string, string>;
-  calculated: unknown;
+  calculated: {
+    calculations: { id: string; name: string }[];
+    rows: Record<string, Record<string, number | null>>;
+  };
   proposal: Proposal;
   trials: Record<string, Record<string, unknown>>;
 };
@@ -56,16 +61,14 @@ test.beforeEach(async ({ page }) => {
       },
     });
   });
-  await page.route('**/api/dev/brunch-orders/calculate', (route) =>
-    route.fulfill({
-      json: {
-        kind: 'calculation',
-        calculation,
-        check: null,
-        current: calculation.fingerprint,
-      },
-    }),
-  );
+  await mockProcedure(page, 'calculate.get', {
+    data: {
+      kind: 'calculation',
+      calculation,
+      check: null,
+      current: calculation.fingerprint,
+    },
+  });
   await page.route('**/api/dev/brunch-orders/apply', (route) => {
     const body = route.request().postDataJSON() as {
       action: string;
@@ -110,30 +113,27 @@ test.beforeEach(async ({ page }) => {
       },
     });
   });
-  await page.route('**/api/dev/brunch-orders/propose', (route) => {
-    const body = route.request().postDataJSON() as {
-      action: string;
-      key?: string;
-      values?: { order: number };
-    };
-    if (body.action === 'check')
-      return route.fulfill({
-        json: {
-          kind: 'check',
-          ...(frozen.trials[body.key!]?.[String(body.values!.order)] as object),
-        },
-      });
-    return route.fulfill({
-      json: {
-        kind: 'proposal',
-        fingerprint: frozen.proposal.fingerprint,
-        names: frozen.names,
-        calculated: frozen.calculated,
-        proposal: frozen.proposal,
-        progress: null,
-      },
-    });
-  });
+  const proposed = {
+    data: {
+      kind: 'proposal' as const,
+      fingerprint: frozen.proposal.fingerprint,
+      names: frozen.names,
+      calculated: frozen.calculated,
+      proposal: frozen.proposal,
+      progress: null,
+    },
+  };
+  await mockProcedure(page, 'propose.get', proposed);
+  await mockProcedure(page, 'propose.start', proposed);
+  await mockProcedure(page, 'propose.check', ({ key, values }) => ({
+    data: {
+      kind: 'check',
+      ...(frozen.trials[key]?.[String(values.order)] as {
+        verdict: Verdict;
+        checks: CheckVerdict[];
+      }),
+    },
+  }));
 });
 
 async function propose(page: Page) {

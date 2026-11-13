@@ -5,6 +5,8 @@ import { expect, test, type Page } from '@playwright/test';
 
 import type { Calculation, CrossCheck } from '@/lib/definitions/calculate';
 
+import { mockProcedure } from './trpc';
+
 // Brunch orders, phase 3 (docs/processes/brunch-orders/PLAN.md): with every
 // rule accepted, Calculate works each value out for every record, and the
 // model can cross-check them; the Rules and Inputs tabs show the rulebook and
@@ -72,6 +74,8 @@ const history = {
   ],
 };
 
+type Pinned = { rulebook?: string };
+
 // Set by a test: the rulebook a run pinned no longer fits its read.
 let stale = false;
 
@@ -85,47 +89,44 @@ test.beforeEach(async ({ page }) => {
     });
   });
   // Propose is its own spec's: here it has simply not been asked for.
-  await page.route('**/api/dev/brunch-orders/propose', (route) =>
-    route.fulfill({
-      json: {
-        kind: 'proposal',
-        fingerprint: calculation.fingerprint,
-        names: {},
-        calculated: { calculations: [], rows: {} },
-        proposal: null,
-        progress: null,
-      },
-    }),
-  );
-  await page.route('**/api/dev/brunch-orders/calculate', async (route) => {
-    const body = route.request().postDataJSON() as {
-      action: string;
-      rulebook?: string;
-    };
-    if (stale && body.rulebook)
-      return route.fulfill({
-        status: 409,
-        json: {
-          kind: 'stale',
-          rulebook: body.rulebook,
-          problems: [
-            {
-              id: 'order_ripe_avocados_limit',
-              name: 'Ripe avocados limit',
-              problem: 'no such overload: bool == string',
-            },
-          ],
-          current: calculation.fingerprint,
-        },
-      });
-    await route.fulfill({
-      json: {
-        kind: 'calculation',
-        calculation,
-        check: body.action === 'crossCheck' ? check : null,
-      },
-    });
+  await mockProcedure(page, 'propose.get', {
+    data: {
+      kind: 'proposal',
+      fingerprint: calculation.fingerprint,
+      names: {},
+      calculated: { calculations: [], rows: {} },
+      proposal: null,
+      progress: null,
+    },
   });
+  const answer =
+    <C extends CrossCheck | null>(withCheck: C) =>
+    (input: Pinned) =>
+      stale && input.rulebook
+        ? {
+            data: {
+              kind: 'stale' as const,
+              rulebook: input.rulebook,
+              problems: [
+                {
+                  id: 'order_ripe_avocados_limit',
+                  name: 'Ripe avocados limit',
+                  problem: 'no such overload: bool == string',
+                },
+              ],
+              current: calculation.fingerprint,
+            },
+          }
+        : {
+            data: {
+              kind: 'calculation' as const,
+              calculation,
+              check: withCheck,
+              current: calculation.fingerprint,
+            },
+          };
+  await mockProcedure(page, 'calculate.get', answer(null));
+  await mockProcedure(page, 'calculate.crossCheck', answer(check));
 });
 
 async function readTheSheet(page: Page) {

@@ -1,5 +1,6 @@
 'use client';
 
+import { TRPCClientError } from '@trpc/client';
 import { useCallback, useState, type ReactNode } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -68,6 +69,62 @@ export function useTrial<T>(url: string) {
       }
     },
     [url],
+  );
+  return { state, run };
+}
+
+/*
+  A trial's state for a call made through a mutation: what useTrial keeps,
+  for the screens that show it as TrialControl does. A server's refusal is
+  `done` with no body, as a refusal was an answer; the mutation holds what it
+  said. Only a request that got no answer is `failed`.
+*/
+export function useMutationTrial<T, V>(mutate: (variables: V) => Promise<T>) {
+  const [state, setState] = useState<TrialState<T | null>>({ kind: 'idle' });
+  const run = useCallback(
+    async (variables: V): Promise<T | null> => {
+      const startedAt = performance.now();
+      setState({ kind: 'running', startedAt });
+      const elapsedMs = () => Math.round(performance.now() - startedAt);
+      try {
+        const body = await mutate(variables);
+        setState({
+          kind: 'done',
+          body,
+          status: 200,
+          elapsedMs: elapsedMs(),
+          finishedAt: new Date().toISOString(),
+        });
+        return body;
+      } catch (error) {
+        const status =
+          error instanceof TRPCClientError &&
+          typeof error.data?.httpStatus === 'number'
+            ? (error.data.httpStatus as number)
+            : null;
+        setState(
+          status === null
+            ? {
+                kind: 'failed',
+                message:
+                  error instanceof Error
+                    ? error.message
+                    : 'The request failed.',
+                status: null,
+                elapsedMs: elapsedMs(),
+              }
+            : {
+                kind: 'done',
+                body: null,
+                status,
+                elapsedMs: elapsedMs(),
+                finishedAt: new Date().toISOString(),
+              },
+        );
+        return null;
+      }
+    },
+    [mutate],
   );
   return { state, run };
 }

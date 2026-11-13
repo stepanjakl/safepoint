@@ -1,5 +1,7 @@
 'use client';
 
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { inferRouterOutputs } from '@trpc/server';
 import Check from 'blode-icons-react/icons/checkmark-1-small';
 import ChevronTriangleUp from 'blode-icons-react/icons/chevron-triangle-up-small-filled';
 import Cross from 'blode-icons-react/icons/cross-small';
@@ -19,7 +21,6 @@ import {
   Outcome,
   StatusChip,
   plural,
-  useTrial,
 } from '@/components/brunch-orders/trial-parts';
 import { Button } from '@/components/ui/button';
 import { FilterTabs } from '@/components/ui/filter-tabs';
@@ -35,6 +36,7 @@ import {
   DATA_TABLE_RULE,
   DataTable,
 } from '@/components/ui/data-table';
+import { useTRPC } from '@/components/trpc/provider';
 import { Tooltip } from '@/components/ui/tooltip';
 import { useLoader } from '@/components/ui/working-mark';
 import type {
@@ -44,21 +46,14 @@ import type {
 } from '@/lib/definitions/calculate';
 import { cx } from '@/lib/cx';
 import { DRAFTING_MODELS, type DraftingModel } from '@/lib/models';
+import type { AppRouter } from '@/server/api/root';
 
 import { ModelLimits } from './model-limits';
-import { StaleRules, type StaleReply } from './stale-rules';
+import { StaleRules } from './stale-rules';
 
-type CalculateResponse =
-  | {
-      kind: 'calculation';
-      calculation: Calculation;
-      check: CrossCheck | null;
-      // The accepted rulebook now, which a run pinned to an earlier one can
-      // move to.
-      current: string;
-    }
-  | StaleReply
-  | { kind: 'error'; message: string };
+// `current` is the accepted rulebook now, which a run pinned to an earlier
+// one can move to.
+type CalculateAnswer = inferRouterOutputs<AppRouter>['calculate']['get'];
 
 // How far Calculate has got, for the step's mark: the rulebook it ran on and
 // how many values the model's cross-check agreed with.
@@ -121,10 +116,8 @@ export function CalculateStep({
   calculatedOn: string | null;
   onProgress: (progress: CalculateProgress) => void;
 }) {
-  const calculate = useTrial<CalculateResponse>(
-    '/api/dev/brunch-orders/calculate',
-  );
-  const { run } = calculate;
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const report = useRef(onProgress);
   useEffect(() => {
     report.current = onProgress;
@@ -132,25 +125,37 @@ export function CalculateStep({
   // The rulebook this run calculates on: the one it first used, kept as it
   // was, until the person moves it to the current one.
   const [pin, setPin] = useState(calculatedOn);
+  // Asked afresh each time the step opens: the accepted rules may have
+  // changed since, and a cross-check lands in this same answer.
+  const worked = trpc.calculate.get.queryOptions(
+    { text, readId, rulebook: pin ?? undefined },
+    { staleTime: 0, gcTime: 0 },
+  );
+  const calculated = useQuery(worked);
+  const cross = useMutation(
+    trpc.calculate.crossCheck.mutationOptions({
+      onSuccess: (answer) => queryClient.setQueryData(worked.queryKey, answer),
+    }),
+  );
+  const answer: CalculateAnswer | null = calculated.data ?? null;
   useEffect(() => {
-    void run({ action: 'get', text, readId, rulebook: pin ?? undefined }).then(
-      (response) => {
-        if (response?.kind === 'calculation')
-          report.current(progressOf(response.calculation, response.check));
-      },
-    );
-  }, [run, text, readId, pin]);
+    if (answer?.kind === 'calculation')
+      report.current(progressOf(answer.calculation, answer.check));
+  }, [answer]);
   const [model, setModel] = useState<DraftingModel>(DRAFTING_MODELS[0]!);
-  const body = calculate.state.kind === 'done' ? calculate.state.body : null;
   const [last, setLast] = useState<Extract<
-    CalculateResponse,
+    CalculateAnswer,
     { kind: 'calculation' }
   > | null>(null);
-  const current = body?.kind === 'calculation' ? body : null;
-  if (current && current.calculation !== last?.calculation) setLast(current);
+  const current = answer?.kind === 'calculation' ? answer : null;
+  if (current && current !== last) setLast(current);
   const shown = current ?? last;
-  const busy = calculate.state.kind === 'running';
+  const busy = calculated.isFetching || cross.isPending;
   const working = useLoader(busy);
+  const movePin = () => {
+    cross.reset();
+    setPin(null);
+  };
   // The marks arrive once per cross-check: when it finishes, or when the
   // step is first opened on one this browser has not seen arrive.
   const revealKey = shown?.check
@@ -173,15 +178,11 @@ export function CalculateStep({
   );
   const [showing, setShowing] = useState<Showing>('all');
   const crossCheck = () =>
-    void run({
-      action: 'crossCheck',
+    cross.mutate({
       text,
       readId,
       model,
       rulebook: shown?.calculation.fingerprint,
-    }).then((response) => {
-      if (response?.kind === 'calculation')
-        report.current(progressOf(response.calculation, response.check));
     });
 
   return (
@@ -192,15 +193,11 @@ export function CalculateStep({
         model can cross-check them, working each one out on its own from the
         instructions, without the formulas.
       </Lede>
-      {body?.kind === 'stale' ? (
-        <StaleRules stale={body} onMove={() => setPin(null)} />
-      ) : body?.kind === 'error' ? (
+      {answer?.kind === 'stale' ? (
+        <StaleRules stale={answer} onMove={movePin} />
+      ) : cross.error || calculated.error ? (
         <p role="alert" className="text-dense text-state-blocked">
-          {body.message}
-        </p>
-      ) : calculate.state.kind === 'failed' ? (
-        <p role="alert" className="text-dense text-state-blocked">
-          {calculate.state.message}
+          {(cross.error ?? calculated.error)?.message}
         </p>
       ) : null}
       {shown ? (
@@ -211,7 +208,7 @@ export function CalculateStep({
                 The rules accepted for these instructions have changed since
                 this run calculated. These values are from the rules it used.
               </p>
-              <Button isDisabled={busy} onPress={() => setPin(null)}>
+              <Button isDisabled={busy} onPress={movePin}>
                 Calculate on the current rules
               </Button>
             </div>

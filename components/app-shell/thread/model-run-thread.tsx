@@ -51,7 +51,7 @@ import { ProposalTable } from '@/components/brunch-orders/propose/proposal-table
 import type {
   Decision,
   ProposalField,
-  ProposeResponse,
+  CheckReply,
 } from '@/components/brunch-orders/propose/types';
 import { cellUrl, SOURCE_KINDS, type SourceKind } from '@/lib/sources/model';
 import ChainLink1Filled from 'blode-icons-react/icons/chain-link-1-filled';
@@ -108,7 +108,7 @@ export type ModelRunActions = {
   onCheck: (
     key: string,
     values: Record<string, number>,
-  ) => Promise<ProposeResponse | null>;
+  ) => Promise<CheckReply | null>;
   // Again from the step that stopped.
   onRetry?: () => void;
   onWrite?: () => void;

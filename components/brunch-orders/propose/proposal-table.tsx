@@ -20,12 +20,7 @@ import type { Proposal } from '@/lib/definitions/types';
 import { sourceTermsOf, type SourceKind } from '@/lib/sources/model';
 
 import { PresentRow, ProposalRow } from './proposal-row';
-import type {
-  Calculated,
-  Decision,
-  ProposalField,
-  ProposeResponse,
-} from './types';
+import type { Calculated, Decision, ProposalField, CheckReply } from './types';
 import { VERDICT, needsPerson } from './verdict';
 
 type Showing = 'all' | 'need' | 'decided';
@@ -59,7 +54,7 @@ export function ProposalTable({
   onCheck: (
     key: string,
     values: Record<string, number>,
-  ) => Promise<ProposeResponse | null>;
+  ) => Promise<CheckReply | null>;
 }) {
   const records = Object.entries(proposal.records);
   const needYou = records.filter(

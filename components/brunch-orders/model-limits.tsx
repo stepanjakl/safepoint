@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
-import type { ModelLimits as Limits } from '@/lib/definitions/limits';
+import { useTRPC } from '@/components/trpc/provider';
 import type { DraftingModel } from '@/lib/models';
 
 const POLL_MS = 3000;
@@ -19,23 +19,22 @@ const shortName = (id: string) => id.replace(/^gemini-/, '');
 // How the chosen model's quota stands, before a step spends it and while it
 // does: the waits are otherwise a step that seems to have stopped.
 export function ModelLimits({ model }: { model: DraftingModel }) {
-  const [limits, setLimits] = useState<Limits | null>(null);
-  useEffect(() => {
-    let live = true;
-    const read = () =>
-      fetch(`/api/dev/model-limits?model=${model}`)
-        .then((response) => (response.ok ? response.json() : null))
-        .then((body: Limits | null) => {
-          if (live) setLimits(body);
-        })
-        .catch(() => undefined);
-    void read();
-    const timer = setInterval(() => void read(), POLL_MS);
-    return () => {
-      live = false;
-      clearInterval(timer);
-    };
-  }, [model]);
+  const trpc = useTRPC();
+  // Polled while shown; a change of model keeps the last answer until its own
+  // arrives, and a failed poll hides it until the next one answers. Every
+  // answer is a new object, so the wait counts down at each poll.
+  const query = useQuery(
+    trpc.modelLimits.get.queryOptions(
+      { model },
+      {
+        refetchInterval: POLL_MS,
+        staleTime: 0,
+        structuralSharing: false,
+        placeholderData: keepPreviousData,
+      },
+    ),
+  );
+  const limits = query.isError ? null : query.data;
   if (!limits) return null;
   return (
     <div className="text-meta text-muted grid gap-0.5">

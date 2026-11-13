@@ -28,12 +28,7 @@ import type {
   Verdict,
 } from '@/lib/definitions/types';
 
-import type {
-  Calculated,
-  Decision,
-  ProposalField,
-  ProposeResponse,
-} from './types';
+import type { Calculated, Decision, ProposalField, CheckReply } from './types';
 import { VERDICT } from './verdict';
 
 const valuesWords = (
@@ -75,7 +70,7 @@ export function ProposalRow({
   onCheck: (
     key: string,
     values: Record<string, number>,
-  ) => Promise<ProposeResponse | null>;
+  ) => Promise<CheckReply | null>;
   onCite: (cell: string) => void;
 }) {
   // A change in progress: the values typed, and the checks on them.

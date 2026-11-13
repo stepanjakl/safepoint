@@ -158,7 +158,7 @@ accessibility scan of the thread and the drawer.
 
 **Built.** `lib/processes/brunch-orders/` (the process, its v1 instructions and
 the kept reads), `components/brunch-orders/` (the run's thread and the data
-drawer), `app/api/dev/brunch-orders/read/` and
+drawer), `server/api/routers/read.ts` and
 `app/(shell)/examples/brunch-orders/`. A live run is a shell feature any
 process can use: `liveThread` on `ProcessView`, kept by
 `components/app-shell/runs/live-runs-store.ts`. Page test:

@@ -1,5 +1,6 @@
 'use client';
 
+import { useMutation } from '@tanstack/react-query';
 import ArrowUpRight from 'blode-icons-react/icons/arrow-up-right';
 import ChevronTriangleDown from 'blode-icons-react/icons/chevron-triangle-down-small-filled';
 import TableFilled from 'blode-icons-react/icons/table-filled';
@@ -18,7 +19,7 @@ import {
   Lede,
   TrialControl,
   dateTime,
-  useTrial,
+  useMutationTrial,
 } from '@/components/brunch-orders/trial-parts';
 import { Button } from '@/components/ui/button';
 import {
@@ -29,6 +30,7 @@ import {
 import { ExternalLink } from '@/components/ui/external-link';
 import { Fold } from '@/components/ui/fold';
 import { Loader } from '@/components/ui/loader';
+import { useTRPC } from '@/components/trpc/provider';
 import { useLoader } from '@/components/ui/working-mark';
 import { cx } from '@/lib/cx';
 import type { ProcessStep, ProcessSummary } from '@/lib/process/model';
@@ -58,23 +60,6 @@ export type RunRead = {
   tabs: { name: string; rows: number }[];
   problems?: string[];
 };
-
-type ReadResponse =
-  | {
-      kind: 'kept';
-      id: string;
-      readAt: string;
-      source: string;
-      spreadsheet: {
-        title: string | null;
-        url: string;
-        tabIds?: Record<string, number>;
-      };
-      tabs: { name: string; rows: number }[];
-      // Where the sheet does not fit what this process reads.
-      problems: string[];
-    }
-  | { kind: 'error'; message: string };
 
 // The tabs as the release card's rows: ruled from where a name starts, lit
 // whole under the pointer, the arrow arriving in the end padding
@@ -467,18 +452,20 @@ export function ReadStep({
   onRevealed: () => void;
   automatic?: boolean;
 }) {
-  const reading = useTrial<ReadResponse>('/api/dev/brunch-orders/read');
+  const trpc = useTRPC();
+  const keep = useMutation(trpc.read.keep.mutationOptions());
+  const reading = useMutationTrial(keep.mutateAsync);
   const [source, setSource] = useState<'captured' | 'live'>('captured');
   const name = useId();
+  // What the server said when it would not read; a request that never got
+  // an answer is the trial's own failure.
   const failed =
-    reading.state.kind === 'done' && reading.state.body.kind === 'error'
-      ? reading.state.body.message
-      : null;
+    reading.state.kind === 'done' && keep.error ? keep.error.message : null;
   // Shut until asked for, except for the read just taken, which opens to show it.
   const [open, setOpen] = useState(false);
   const readFrom = (from: 'captured' | 'live') =>
-    void reading.run({ action: 'read', source: from }).then((response) => {
-      if (response?.kind !== 'kept') return;
+    void reading.run({ source: from }).then((response) => {
+      if (!response) return;
       setOpen(true);
       onRead({
         id: response.id,

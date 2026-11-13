@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import type { Stale } from '@/lib/definitions/fits';
 
-export type StaleReply = { kind: 'stale' } & Stale;
+type StaleReply = { kind: 'stale' } & Stale;
 
 /*
   A rulebook kept as it was accepted that no longer fits the data the run
