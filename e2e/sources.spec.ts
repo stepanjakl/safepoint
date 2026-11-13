@@ -8,15 +8,24 @@ import { mockProcedure } from './trpc';
 // A source's panels on Brunch orders: the read the server gave the page is
 // shown without asking again, "Read now" keeps it on screen until a new one
 // lands, and the new one is what both panels show. Reads are served by the
-// test (e2e/trpc.ts); the page's own summary is the captured copy.
+// test (e2e/trpc.ts). The page's own read is whatever the server keeps -- its
+// latest kept read, or the captured copy -- so every figure expected here is
+// worked out from it, never written in.
 
 const SOURCE = 'brunch-store-sheet';
 
-async function capturedSummary(page: Page): Promise<SourceSummary> {
+async function serverSummary(page: Page): Promise<SourceSummary> {
   const response = await page.request.post('/api/trpc/sources.summary', {
     data: { source: SOURCE },
   });
   return (await response.json()).result.data;
+}
+
+// The first input tab the server's read has, with its figures there.
+function inputTab(read: SourceSummary) {
+  const found = read.resources.find((r) => SHEET_USE.inputs.includes(r.name));
+  if (!found) throw new Error('The server’s read has none of the input tabs.');
+  return found;
 }
 
 const openTab = (page: Page, name: RegExp) =>
@@ -29,22 +38,29 @@ const tabRow = (page: Page, tab: string) =>
     .filter({ visible: true })
     .getByRole('button', { name: new RegExp(`^${tab}, `) });
 
+const rows = (tab: string, count: number) =>
+  new RegExp(`^${tab}, ${count} rows?,`);
+
 test('shows the server’s read, keeps it while reading, then shows the new one on both panels', async ({
   page,
 }) => {
-  const captured = await capturedSummary(page);
-  const stock = captured.resources.find((r) => r.name === 'Stock')!;
+  const server = await serverSummary(page);
+  const input = inputTab(server);
   const output = SHEET_USE.outputs[0]!;
-  // A row more in every tab, and the output tab, which the captured copy
-  // does not have, written to.
+  const outputBefore =
+    server.resources.find((r) => r.name === output)?.rows ?? 0;
+  // A row more in every tab, the output tab included (added if the server's
+  // read has none), so each figure differs from what the page was given.
   const fresh: SourceSummary = {
-    ...captured,
+    ...server,
     readId: 'fresh',
     readAt: '2026-11-13T09:30:00.000Z',
     origin: 'live',
     resources: [
-      ...captured.resources.map((r) => ({ ...r, rows: r.rows + 1 })),
-      { name: output, rows: 3, columns: ['sku'] },
+      ...server.resources.map((r) => ({ ...r, rows: r.rows + 1 })),
+      ...(server.resources.some((r) => r.name === output)
+        ? []
+        : [{ name: output, rows: 1, columns: ['sku'] }]),
     ],
   };
 
@@ -61,8 +77,8 @@ test('shows the server’s read, keeps it while reading, then shows the new one 
 
   await page.goto('/examples/brunch-orders');
   await openTab(page, /^Inputs/);
-  await expect(tabRow(page, 'Stock')).toHaveAccessibleName(
-    new RegExp(`^Stock, ${stock.rows} rows`),
+  await expect(tabRow(page, input.name)).toHaveAccessibleName(
+    rows(input.name, input.rows),
   );
 
   await page.getByRole('button', { name: 'Read now' }).click();
@@ -70,26 +86,27 @@ test('shows the server’s read, keeps it while reading, then shows the new one 
     page.getByRole('button', { name: /^(Still )?[Rr]eading…$/ }),
   ).toBeVisible();
   // While it reads, the last read stays.
-  await expect(tabRow(page, 'Stock')).toHaveAccessibleName(
-    new RegExp(`^Stock, ${stock.rows} rows`),
+  await expect(tabRow(page, input.name)).toHaveAccessibleName(
+    rows(input.name, input.rows),
   );
   land();
-  await expect(tabRow(page, 'Stock')).toHaveAccessibleName(
-    new RegExp(`^Stock, ${stock.rows + 1} rows`),
+  await expect(tabRow(page, input.name)).toHaveAccessibleName(
+    rows(input.name, input.rows + 1),
   );
   await expect(page.getByRole('button', { name: 'Read now' })).toBeVisible();
 
+  // Opened only now, Outputs was handed the server's read too; the read made
+  // from Inputs is what it shows.
   await openTab(page, /^Outputs/);
   await expect(tabRow(page, output)).toHaveAccessibleName(
-    new RegExp(`^${output}, 3 rows`),
+    rows(output, outputBefore + 1),
   );
   expect(reads.inputs).toEqual([{ source: SOURCE }]);
   expect(summaries.inputs).toEqual([]);
 });
 
 test('a read that fails keeps the last one and says why', async ({ page }) => {
-  const captured = await capturedSummary(page);
-  const stock = captured.resources.find((r) => r.name === 'Stock')!;
+  const input = inputTab(await serverSummary(page));
   await mockProcedure(page, 'sources.read', {
     error: { code: 'BAD_GATEWAY', message: 'The sheet could not be reached.' },
   });
@@ -104,20 +121,22 @@ test('a read that fails keeps the last one and says why', async ({ page }) => {
   await expect(
     page.getByRole('status').filter({ hasText: reason }),
   ).toHaveCount(1);
-  await expect(tabRow(page, 'Stock')).toHaveAccessibleName(
-    new RegExp(`^Stock, ${stock.rows} rows`),
+  await expect(tabRow(page, input.name)).toHaveAccessibleName(
+    rows(input.name, input.rows),
   );
 });
 
 test('fetches one read’s values once, however often the drawer opens', async ({
   page,
 }) => {
+  const server = await serverSummary(page);
+  const input = inputTab(server);
   const values = await mockProcedure(page, 'sources.values', ({ read }) => ({
     data: {
       readId: read,
       resources: [
         {
-          name: 'Stock',
+          name: input.name,
           values: [
             ['sku', 'on hand'],
             ['AV-RR', 3],
@@ -130,11 +149,12 @@ test('fetches one read’s values once, however often the drawer opens', async (
   await page.goto('/examples/brunch-orders');
   await openTab(page, /^Inputs/);
   for (let open = 0; open < 2; open += 1) {
-    await tabRow(page, 'Stock').click();
+    await tabRow(page, input.name).click();
     const drawer = page.getByRole('dialog');
     await expect(drawer.getByRole('cell', { name: 'AV-RR' })).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(drawer).toBeHidden();
   }
-  expect(values.inputs).toEqual([{ source: SOURCE, read: 'captured' }]);
+  // The read the page was given, asked for once.
+  expect(values.inputs).toEqual([{ source: SOURCE, read: server.readId }]);
 });
