@@ -4,6 +4,7 @@ import path from 'node:path';
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
+import { KEPT_ENGINE_SOURCES } from './engine-sources.fixture';
 import { sentencesOf } from './find';
 import { ENGLISH } from './language';
 
@@ -17,7 +18,7 @@ import { ENGLISH } from './language';
 const DIRECTORY = 'lib/definitions';
 const MODULE = 'language.ts';
 
-const read = (name: string) => readFileSync(path.join(DIRECTORY, name), 'utf8');
+const read = (name: string) => readFileSync(name, 'utf8');
 
 // Every string literal and every regular expression a source writes.
 function literalsIn(name: string, text: string) {
@@ -35,7 +36,7 @@ function literalsIn(name: string, text: string) {
   return { strings, patterns };
 }
 
-const own = literalsIn(MODULE, read(MODULE));
+const own = literalsIn(MODULE, read(path.join(DIRECTORY, MODULE)));
 // The module's words: its literals made of letters alone.
 const WORDS = own.strings
   .filter((s) => /^\p{L}{3,}$/u.test(s))
@@ -46,9 +47,13 @@ const PATTERNS = [
   ...own.strings.filter((s) => /[|?]/.test(s)),
 ];
 
-const others = readdirSync(DIRECTORY)
-  .filter((name) => name.endsWith('.ts') && name !== MODULE)
-  .filter((name) => !/\.(test|fixture)\.ts$/.test(name));
+const others = [
+  ...readdirSync(DIRECTORY)
+    .filter((name) => name.endsWith('.ts') && name !== MODULE)
+    .filter((name) => !/\.(test|fixture)\.ts$/.test(name))
+    .map((name) => path.join(DIRECTORY, name)),
+  ...KEPT_ENGINE_SOURCES,
+];
 
 describe('the language instructions are read in', () => {
   it('gathers the module’s words and patterns', () => {

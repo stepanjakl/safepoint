@@ -2,7 +2,7 @@ import { scopeOf, settingOf } from './checks';
 import { checkFormula } from './formulas';
 import { profiledFor } from './profile';
 import type { KeptRead } from './records';
-import { fingerprintOf } from './store';
+import { fingerprintOf } from './fingerprint';
 import { complete, type DefinitionProcess, type DefinitionSet } from './types';
 
 export type Misfit = { id: string; name: string; problem: string };

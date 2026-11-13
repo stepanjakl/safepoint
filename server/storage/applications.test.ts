@@ -6,20 +6,26 @@ import { z } from 'zod';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { writeKept } from '@/server/storage/files';
-
 import {
   applyDecisions,
-  blockFor,
   keptApplication,
-  prepareWrite,
   undoApplication,
+} from './applications';
+
+import {
+  blockFor,
+  prepareWrite,
   type DecisionMade,
   type OutputSheet,
-} from './apply';
-import { capturedRead, capturedTabs } from './captured.fixture';
-import type { KeptRead } from './records';
-import { inScratchDirectory } from './scratch.fixture';
-import { applicationSchema, definitionSetSchema, type Proposal } from './types';
+} from '@/lib/definitions/apply';
+import { capturedRead, capturedTabs } from '@/lib/definitions/captured.fixture';
+import type { KeptRead } from '@/lib/definitions/records';
+import { inScratchDirectory } from '@/lib/definitions/scratch.fixture';
+import {
+  applicationSchema,
+  definitionSetSchema,
+  type Proposal,
+} from '@/lib/definitions/types';
 
 // Writing a decided proposal, on a sheet held in memory: no network, and
 // nothing written to the repository.

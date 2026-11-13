@@ -1,26 +1,27 @@
 import path from 'node:path';
 
-import { runDataDir } from '@/lib/storage/run-data';
-import { jobProgress, runningJob, startJob } from '@/server/jobs/run-job';
-
-import { findDefinitions, type Asking } from './find';
-import { ownerToDraft } from './profile';
-import { fitting, type KeptRead } from './records';
-import { hashOf } from './store';
+import type { Asking } from '@/lib/definitions/find';
+import { hashOf } from '@/lib/definitions/fingerprint';
+import { fitting, type KeptRead } from '@/lib/definitions/records';
 import {
   draftProgressSchema,
   type DefinitionProcess,
   type DraftProgress,
-} from './types';
-import { writeAgreed } from './write';
+} from '@/lib/definitions/types';
+import { findDefinitions } from '@/server/operations/find';
+import { writeAgreed } from '@/server/operations/write';
+import { ownerToDraft } from '@/server/storage/rulebooks';
+import { runDataDir } from '@/server/storage/run-data';
+
+import { jobProgress, runningJob, startJob } from './run-job';
 
 /*
-  A whole draft: the definitions found again, then each written in order, on
-  the server, so it carries on when the page is closed. Writing one definition
-  again is the same kind of job, for the same reason. One job per version of the
-  instructions. Its progress is held while the server runs and written to
-  data/<process>/drafts/ as it goes, so a job the server stopped part way through
-  says so, rather than vanishing.
+  Server-only. A whole draft: the definitions found again, then each written
+  in order, on the server, so it carries on when the page is closed. Writing
+  one definition again is the same kind of job, for the same reason. One job
+  per version of the instructions. Its progress is held while the server runs
+  and written to data/<process>/drafts/ as it goes, so a job the server
+  stopped part way through says so, rather than vanishing.
 */
 
 const INTERRUPTED =

@@ -2,18 +2,18 @@ import { MockLanguageModelV4 } from 'ai/test';
 import { describe, expect, it } from 'vitest';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
+import { findDefinitions } from '@/server/operations/find';
+import { writeAgreed, writeDefinition } from '@/server/operations/write';
+import { updateSet } from '@/server/storage/rulebooks';
 
 import { DRAFT_MODELS, WRITE_MODELS } from './calls';
 import { capturedRead } from './captured.fixture';
 import { answer, check, standIn, told, accountedFor } from './models.fixture';
-import { findDefinitions } from './find';
 import { inScratchDirectory } from './scratch.fixture';
 import { definition, example as kept, keep, TEXT } from './set.fixture';
-import { updateSet } from './store';
 import type { Shape } from './shapes';
 import type { Definition } from './types';
 import { acceptable, canAccept } from './types';
-import { writeAgreed, writeDefinition } from './write';
 
 // Drafting against stand-in models, kept in a scratch directory: what the
 // model is told, and what is kept when an attempt fails

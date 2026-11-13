@@ -6,12 +6,18 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 
-import { capturedRead, capturedTabs } from './captured.fixture';
+import { capturedRead, capturedTabs } from '@/lib/definitions/captured.fixture';
 import { draftProgress, startDraft, startRewrite } from './draft';
-import { accountedFor, answer, check, standIn } from './models.fixture';
-import { inScratchDirectory } from './scratch.fixture';
-import { TEXT } from './set.fixture';
-import { hashOf, loadSet } from './store';
+import {
+  accountedFor,
+  answer,
+  check,
+  standIn,
+} from '@/lib/definitions/models.fixture';
+import { inScratchDirectory } from '@/lib/definitions/scratch.fixture';
+import { TEXT } from '@/lib/definitions/set.fixture';
+import { hashOf } from '@/lib/definitions/fingerprint';
+import { loadSet } from '@/server/storage/rulebooks';
 
 // A whole draft runs on the server: found, then each definition written, with
 // its progress there to be asked for, and never on a read that does not fit.

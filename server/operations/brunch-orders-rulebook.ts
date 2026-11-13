@@ -1,17 +1,16 @@
 import { z } from 'zod';
 
 import { staleness, type Stale } from '@/lib/definitions/fits';
-import { ownerFor } from '@/lib/definitions/profile';
+import { noRules } from '@/lib/definitions/fingerprint';
 import type { KeptRead } from '@/lib/definitions/records';
-import { loadRevision, loadSet, noRules } from '@/lib/definitions/store';
 import type { DefinitionProcess, DefinitionSet } from '@/lib/definitions/types';
-
 import {
   BRUNCH_ORDERS_DEFINITIONS,
   BRUNCH_ORDERS_DIRECT_DEFINITIONS,
   brunchOrdersDirectProcess,
   brunchOrdersProcess,
-} from './process';
+} from '@/lib/processes/brunch-orders/process';
+import { loadRevision, loadSet, ownerFor } from '@/server/storage/rulebooks';
 
 // Which of the two Brunch orders processes a request is for.
 export const evaluationSchema = z.enum(['rules', 'model']).default('rules');

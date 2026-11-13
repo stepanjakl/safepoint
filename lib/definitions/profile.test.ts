@@ -2,13 +2,16 @@ import { describe, expect, it } from 'vitest';
 
 import type { DataShape } from '@/lib/process/model';
 import { BRUNCH_ORDERS_DEFINITIONS } from '@/lib/processes/brunch-orders/process';
+import {
+  ownerFor,
+  ownerToDraft,
+  saveProfile,
+} from '@/server/storage/rulebooks';
 
 import { capturedRead } from './captured.fixture';
 import {
   celTypeOf,
   confirmProfile,
-  ownerFor,
-  ownerToDraft,
   profiledFor,
   profileOf,
   setColumnBlank,
@@ -19,7 +22,6 @@ import {
 import type { KeptRead } from './records';
 import { inScratchDirectory } from './scratch.fixture';
 import { definitionSetSchema, type DefinitionProcess } from './types';
-import { saveProfile } from './store';
 
 // What a source's columns are, proposed from one read and then fixed. The
 // shape here belongs to no process on purpose: nothing may depend on one.

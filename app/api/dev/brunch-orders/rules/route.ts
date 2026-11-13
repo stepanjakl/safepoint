@@ -1,23 +1,9 @@
 import { z } from 'zod';
 
 import { advise } from '@/lib/definitions/advise';
-import {
-  accept,
-  choose,
-  confirmIntent,
-  deny,
-  rebaseSet,
-  setAppliesTo,
-} from '@/lib/definitions/decide';
 import { debugDefinition, debugDraft } from '@/lib/definitions/debug';
 import {
-  draftProgress,
-  startDraft,
-  startRewrite,
-} from '@/lib/definitions/draft';
-import {
   confirmProfile,
-  ownerFor,
   profileOf,
   setColumnBlank,
   setColumnLabel,
@@ -25,13 +11,6 @@ import {
 } from '@/lib/definitions/profile';
 import { fitting, namesOf } from '@/lib/definitions/records';
 import { revisionChanges } from '@/lib/definitions/revision-changes';
-import {
-  listRevisions,
-  loadProfile,
-  loadRevision,
-  loadSet,
-  saveProfile,
-} from '@/lib/definitions/store';
 import {
   complete,
   CONFIRM_FIRST,
@@ -43,8 +22,25 @@ import { sentencesOf } from '@/lib/definitions/shapes';
 import { workingOf } from '@/lib/definitions/working';
 import { rejectUnlessLocalDevelopment } from '@/lib/dev/dev-route';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
-import { keptRead, READ_GONE } from '@/lib/processes/brunch-orders/reads';
 import { draftingModelSchema } from '@/lib/models';
+import { draftProgress, startDraft, startRewrite } from '@/server/jobs/draft';
+import {
+  accept,
+  choose,
+  confirmIntent,
+  deny,
+  rebaseSet,
+  setAppliesTo,
+} from '@/server/operations/decide';
+import { keptRead, READ_GONE } from '@/server/storage/brunch-orders-reads';
+import {
+  listRevisions,
+  loadProfile,
+  loadRevision,
+  loadSet,
+  ownerFor,
+  saveProfile,
+} from '@/server/storage/rulebooks';
 
 export const runtime = 'nodejs';
 

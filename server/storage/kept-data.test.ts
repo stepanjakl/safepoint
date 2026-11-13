@@ -4,11 +4,6 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
-import {
-  crossCheckPartSchema,
-  crossCheckSchema,
-} from '@/lib/definitions/calculate';
-import { keptLimitsSchema } from '@/lib/definitions/limits';
 import { keptReadSchema } from '@/lib/definitions/records';
 import {
   applicationSchema,
@@ -16,7 +11,9 @@ import {
   proposalPartSchema,
   proposalSchema,
 } from '@/lib/definitions/types';
-import { keptSourceReadSchema } from '@/lib/sources/reads';
+import { crossCheckPartSchema, crossCheckSchema } from './cross-checks';
+import { keptLimitsSchema } from './model-limits';
+import { keptSourceReadSchema } from './source-reads';
 
 /*
   What the server has kept in data/ (gitignored) is history: each file must

@@ -1,18 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
-
 import {
-  calculate,
   crossCheck,
   keepCrossCheck,
   keptCrossCheck,
-} from './calculate';
+} from '@/server/storage/cross-checks';
+
+import { calculate } from './calculate';
 import { capturedRead } from './captured.fixture';
 import { always, answer, standIn, told } from './models.fixture';
 import { inScratchDirectory } from './scratch.fixture';
 import { definition, TEXT } from './set.fixture';
-import { fingerprintOf } from './store';
+import { fingerprintOf } from './fingerprint';
 import type { DefinitionSet } from './types';
 
 // The two calculations as accepted for the Brunch orders instructions, so the

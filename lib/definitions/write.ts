@@ -19,7 +19,6 @@ import {
   differencesBetween,
   review,
   scopeOf,
-  settingOf,
   valuesFor,
   type Draft,
   type Setting,
@@ -34,7 +33,7 @@ import {
   plain,
   proposalWords,
 } from './prompts';
-import { fitting, READ, START, type KeptRead } from './records';
+import { READ, START } from './records';
 import {
   canonicalShape,
   formulaOf,
@@ -49,12 +48,9 @@ import {
   type Shape,
   type ShapeContext,
 } from './shapes';
-import { ownerFor } from './profile';
-import { loadSet, updateSet } from './store';
 import type {
   Agreement,
   Definition,
-  DefinitionProcess,
   DefinitionSet,
   Example,
   WrittenVersion,
@@ -414,7 +410,7 @@ type Kept = {
   problem: string | null;
 };
 
-type Written = {
+export type Written = {
   kept: Kept | null;
   // Whether the last answer passed every check.
   clean: boolean;
@@ -442,7 +438,7 @@ const shapeContextFor = (
 });
 
 // One write: asks the model, and saves nothing.
-async function writeOnce(
+export async function writeOnce(
   setting: Setting,
   { model: chosen = null, resolve }: Asking,
 ): Promise<Written> {
@@ -685,33 +681,17 @@ async function writeOnce(
   };
 }
 
-const settingFor = async (
-  owner: DefinitionProcess,
-  text: string,
-  read: KeptRead,
-  id: string,
-) => {
-  const set = await loadSet(owner, text);
-  // The read is held to the profile the set was drafted on, if it names one.
-  const reading = set ? await ownerFor(owner, set) : owner;
-  fitting(read, reading.subject.data);
-  const definition = set?.definitions.find((d) => d.id === id);
-  return set && definition
-    ? settingOf(reading, text, set, read, definition)
-    : null;
-};
-
-// Keeps a write, or says why there is nothing to keep.
-function keep(
-  { owner, text, read, definition }: Setting,
+// What keeping a write does to the set, or says why there is nothing to keep.
+export function keeping(
+  { read, definition }: Setting,
   written: Written,
   agreement: Agreement | null,
   note: string | null = null,
-) {
+): (s: DefinitionSet) => DefinitionSet {
   const { id } = definition;
   const { kept, unkept, model } = written;
   if (!kept)
-    return updateSet(owner, text, (s) => ({
+    return (s) => ({
       ...s,
       definitions: s.definitions.map((d) =>
         d.id === id
@@ -723,8 +703,8 @@ function keep(
             }
           : d,
       ),
-    }));
-  return updateSet(owner, text, (s) => {
+    });
+  return (s) => {
     // A rewritten definition may change any that reads it.
     const dependents = dependentsOf(s, id);
     return {
@@ -758,20 +738,7 @@ function keep(
             : d,
       ),
     };
-  });
-}
-
-// One write, kept as it stands.
-export async function writeDefinition(
-  owner: DefinitionProcess,
-  text: string,
-  read: KeptRead,
-  id: string,
-  asking: Asking = {},
-): Promise<DefinitionSet | null> {
-  const setting = await settingFor(owner, text, read, id);
-  if (!setting) return null;
-  return keep(setting, await writeOnce(setting, asking), null);
+  };
 }
 
 const draftOfKept = (kept: Kept): Draft => ({
@@ -796,6 +763,14 @@ const versionOf = ({ kept, model }: Written): WrittenVersion => ({
 
 export type WriteRuns = { onRun?: (run: number) => void | Promise<void> };
 
+// What a definition's writes come to: the one to keep, how the passing ones
+// compare, and what stopped a comparison, if anything.
+export type Agreed = {
+  written: Written;
+  agreement: Agreement | null;
+  note?: string | null;
+};
+
 /*
   Writes a definition until two writes have passed every check, each from the same
   input, and compares how those two behave. If they agree, the first is kept. If
@@ -803,15 +778,10 @@ export type WriteRuns = { onRun?: (run: number) => void | Promise<void> };
   two-of-three answer was wrong on 2 of 6 such rules, the same misreading coming up
   twice, and there was no wrong rule where the first two agreed.
 */
-export async function writeAgreed(
-  owner: DefinitionProcess,
-  text: string,
-  read: KeptRead,
-  id: string,
+export async function writeUntilAgreed(
+  setting: Setting,
   { onRun, ...asking }: Asking & WriteRuns = {},
-): Promise<DefinitionSet | null> {
-  const setting = await settingFor(owner, text, read, id);
-  if (!setting) return null;
+): Promise<Agreed> {
   const writes: Written[] = [];
   // A refusal is not a reading of the rule, only a failure to find a shape, so
   // it is never compared: another write is asked for, and any shape wins.
@@ -849,12 +819,15 @@ export async function writeAgreed(
   // Every write refused: the rule fits no shape, and a person rephrases it.
   const refusals = writes.filter((w) => w.clean && refused(w));
   if (!clean.length && refusals.length)
-    return keep(setting, refusals.at(-1)!, {
-      status: 'agreed',
-      runs,
-      versions: refusals.map(versionOf),
-      differences: [],
-    });
+    return {
+      written: refusals.at(-1)!,
+      agreement: {
+        status: 'agreed',
+        runs,
+        versions: refusals.map(versionOf),
+        differences: [],
+      },
+    };
   const versions = clean.map(versionOf);
   if (clean.length === 2) {
     const [a, b] = [clean[0]!.kept!, clean[1]!.kept!];
@@ -870,20 +843,22 @@ export async function writeAgreed(
       )
         ? []
         : differencesBetween(setting, draftOfKept(a), draftOfKept(b));
-    return keep(setting, clean[0]!, {
-      status: status(differences),
-      runs,
-      versions,
-      differences,
-    });
+    return {
+      written: clean[0]!,
+      agreement: {
+        status: status(differences),
+        runs,
+        versions,
+        differences,
+      },
+    };
   }
   if (clean.length === 1)
-    return keep(
-      setting,
-      clean[0]!,
-      { status: 'unconfirmed', runs, versions, differences: [] },
-      stopped ? `Could not be compared: ${stopped}` : null,
-    );
+    return {
+      written: clean[0]!,
+      agreement: { status: 'unconfirmed', runs, versions, differences: [] },
+      note: stopped ? `Could not be compared: ${stopped}` : null,
+    };
   // None passed: the last answer kept, with what was wrong with it.
-  return keep(setting, writes.at(-1)!, null);
+  return { written: writes.at(-1)!, agreement: null };
 }

@@ -14,8 +14,8 @@ import {
   SHEET_INPUTS,
   SHEET_USE,
 } from '@/lib/processes/brunch-orders/process';
-import { lastWrite } from '@/lib/definitions/apply';
-import { latestSummary } from '@/lib/sources/reads';
+import { lastWrite } from '@/server/storage/applications';
+import { latestSummary } from '@/server/storage/source-reads';
 
 /*
   Brunch orders, built one step at a time (docs/processes/brunch-orders/PLAN.md).

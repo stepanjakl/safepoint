@@ -2,7 +2,7 @@ import type { DataShape } from '@/lib/process/model';
 import { interpretCell, type FieldType } from '@/lib/sheets/field-types';
 
 import type { KeptRead } from './records';
-import { loadConfirmedProfile, loadProfile, profileFingerprint } from './store';
+import { profileFingerprint } from './fingerprint';
 import type {
   DataProfile,
   DefinitionProcess,
@@ -19,7 +19,7 @@ import type {
 
   Every change returns a new profile with a new id, and with `confirmedAt`
   cleared: a changed profile is under review until a person confirms it again.
-  The confirmed one it came from stays kept as it was (store.ts), so a
+  The confirmed one it came from stays kept as it was (server/storage/rulebooks.ts), so a
   rulebook drafted on it reads exactly what it was drafted on.
 */
 
@@ -240,36 +240,4 @@ export function profiledFor(
   throw new Error(
     `These rules were drafted on data profile ${set.profileId}, which was not loaded for them.`,
   );
-}
-
-// The process with the confirmed profile a set names loaded, if it names one.
-export async function ownerFor(
-  owner: DefinitionProcess,
-  set: DefinitionSet,
-): Promise<DefinitionProcess> {
-  if (!set.profileId) return withProfile(owner, null);
-  if (owner.subject.data.profile?.id === set.profileId) return owner;
-  const profile = await loadConfirmedProfile(owner, set.profileId);
-  if (!profile)
-    throw new Error(
-      `These rules were drafted on data profile ${set.profileId}, which is not kept.`,
-    );
-  return withProfile(owner, profile);
-}
-
-/*
-  The process a new draft is written on: the kept profile when a person has
-  confirmed it, none when no profile is kept. A profile under review refuses
-  the draft, since rules drafted on it would read types nobody confirmed.
-*/
-export async function ownerToDraft(
-  owner: DefinitionProcess,
-): Promise<DefinitionProcess> {
-  const profile = await loadProfile(owner);
-  if (!profile) return withProfile(owner, null);
-  if (!profile.confirmedAt)
-    throw new Error(
-      'The data profile has changes nobody has confirmed: confirm it before drafting.',
-    );
-  return withProfile(owner, profile);
 }

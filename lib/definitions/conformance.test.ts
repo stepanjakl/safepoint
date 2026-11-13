@@ -1,10 +1,32 @@
 import { describe, expect, it } from 'vitest';
 
 import { interpretCell } from '@/lib/sheets/field-types';
+import { applyDecisions, undoApplication } from '@/server/storage/applications';
+import { crossCheck } from '@/server/storage/cross-checks';
+import {
+  accept,
+  choose,
+  confirmIntent,
+  deny,
+  rebaseSet,
+  setAppliesTo,
+} from '@/server/operations/decide';
+import { findDefinitions } from '@/server/operations/find';
+import { writeAgreed, writeDefinition } from '@/server/operations/write';
+import { propose } from '@/server/storage/proposals';
+import {
+  listRevisions,
+  loadConfirmedProfile,
+  loadRevision,
+  loadSet,
+  ownerToDraft,
+  saveProfile,
+  updateSet,
+} from '@/server/storage/rulebooks';
 
-import { applyDecisions, prepareWrite, undoApplication } from './apply';
+import { prepareWrite } from './apply';
 import type { DecisionMade, OutputSheet } from './apply';
-import { calculate, crossCheck } from './calculate';
+import { calculate } from './calculate';
 import {
   problemsOf,
   review,
@@ -59,15 +81,7 @@ import {
   VERDICTS,
 } from './conformance.fixture';
 import { debugDefinition, debugDraft } from './debug';
-import {
-  accept,
-  choose,
-  confirmIntent,
-  deny,
-  rebaseSet,
-  setAppliesTo,
-} from './decide';
-import { findDefinitions, sentencesOf } from './find';
+import { sentencesOf } from './find';
 import { fitsRead, staleness } from './fits';
 import {
   checkFormula,
@@ -78,14 +92,13 @@ import { ENGLISH } from './language';
 import { always, answer, call, check, standIn, told } from './models.fixture';
 import {
   confirmProfile,
-  ownerToDraft,
   profileOf,
   setColumnBlank,
   setColumnType,
   withProfile,
 } from './profile';
 import { blockFor } from './apply';
-import { checkProposal, newActivity, propose } from './propose';
+import { checkProposal, newActivity } from './propose';
 import {
   fitting,
   momentColumn,
@@ -106,15 +119,7 @@ import {
   type Shape,
   type ShapeContext,
 } from './shapes';
-import {
-  fingerprintOf,
-  listRevisions,
-  loadConfirmedProfile,
-  loadRevision,
-  loadSet,
-  saveProfile,
-  updateSet,
-} from './store';
+import { fingerprintOf } from './fingerprint';
 import {
   BLANKS_UNANSWERED,
   complete,
@@ -126,7 +131,6 @@ import {
   type Proposal,
 } from './types';
 import { workingOf } from './working';
-import { writeAgreed, writeDefinition } from './write';
 
 /*
   The engine run end to end on a second process that shares nothing with

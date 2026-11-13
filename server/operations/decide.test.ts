@@ -2,28 +2,36 @@ import { describe, expect, it } from 'vitest';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 
-import { capturedRead, capturedTabs } from './captured.fixture';
+import { capturedRead, capturedTabs } from '@/lib/definitions/captured.fixture';
 import { accept, choose, confirmIntent, deny, rebaseSet } from './decide';
 import {
   confirmProfile,
   profileOf,
   setColumnBlank,
   withProfile,
-} from './profile';
-import { recordsOf } from './records';
-import { inScratchDirectory } from './scratch.fixture';
-import { definition, example, keep, TEXT } from './set.fixture';
-import { formulaOf, type Shape, type ShapeContext } from './shapes';
+} from '@/lib/definitions/profile';
+import { recordsOf } from '@/lib/definitions/records';
+import { inScratchDirectory } from '@/lib/definitions/scratch.fixture';
+import { definition, example, keep, TEXT } from '@/lib/definitions/set.fixture';
 import {
-  fingerprintOf,
+  formulaOf,
+  type Shape,
+  type ShapeContext,
+} from '@/lib/definitions/shapes';
+import { fingerprintOf } from '@/lib/definitions/fingerprint';
+import {
   listRevisions,
   loadRevision,
   loadSet,
   putRevision,
   saveProfile,
   updateSet,
-} from './store';
-import type { DataProfile, Definition, DefinitionSet } from './types';
+} from '@/server/storage/rulebooks';
+import type {
+  DataProfile,
+  Definition,
+  DefinitionSet,
+} from '@/lib/definitions/types';
 
 // Accepting reruns the whole review on the version kept, against its read:
 // whatever writing would refuse, accepting refuses too, with the reason.

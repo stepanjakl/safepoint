@@ -4,7 +4,7 @@ import { ask, DRAFT_MODELS, type Resolve } from './calls';
 import { ENGLISH as LANGUAGE } from './language';
 import { columnsOf, plain, proposalWords } from './prompts';
 import { fitting, sourceOf, type KeptRead } from './records';
-import { hashOf, saveSet } from './store';
+import { hashOf } from './fingerprint';
 import type { DefinitionProcess, DefinitionSet } from './types';
 import { fallbackChain, type DraftingModel } from '@/lib/models';
 import type { DefinitionSubject } from '@/lib/process/model';
@@ -172,8 +172,8 @@ export function labelProblems(
 
 export type Asking = { model?: DraftingModel | null; resolve?: Resolve };
 
-// Replaces any set kept for these instructions, approvals and all.
-export async function findDefinitions(
+// The set the model's reading of the instructions makes, not yet kept.
+export async function foundDefinitions(
   owner: DefinitionProcess,
   text: string,
   version: string,
@@ -225,7 +225,7 @@ export async function findDefinitions(
         `The model did not account for the instructions, so nothing was replaced: ${left.slice(0, 3).join(' ')}`,
       );
   }
-  return saveSet(owner, {
+  return {
     hash: hashOf(text),
     version,
     intent: output.intent,
@@ -266,5 +266,5 @@ export async function findDefinitions(
         definitions: definitions.map(idOf),
       })),
     ...(refused.length ? { refused } : {}),
-  });
+  };
 }

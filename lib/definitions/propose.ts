@@ -1,37 +1,23 @@
 import { isStepCount, streamText, tool, ToolChoiceViolationError } from 'ai';
-import { rm } from 'node:fs/promises';
 import { z } from 'zod';
 
-import { fallbackChain, type DraftingModel } from '@/lib/models';
+import type { DraftingModel } from '@/lib/models';
 import type { DataShape } from '@/lib/process/model';
 import type { SourceTerms } from '@/lib/sources/model';
-import { jobProgress, startJob } from '@/server/jobs/run-job';
-import { readKept, writeKept } from '@/server/storage/files';
-import { runFile } from '@/server/storage/run-key';
 
-import {
-  calculate,
-  layoutOf,
-  onlyRecords,
-  type Calculation,
-} from './calculate';
-import { DRAFT_MODELS, withModels, type Resolve } from './calls';
+import { layoutOf, onlyRecords, type Calculation } from './calculate';
+import { withModels, type Resolve } from './calls';
 import { dependentsOf, givenOf } from './checks';
 import { limitedGoogle } from './limits';
 import { contextFor, run } from './formulas';
 import { profiledFor } from './profile';
 import { plain, timingOf } from './prompts';
-import { fitting, sourceOf, type KeptRead, type Row } from './records';
-import { fingerprintOf } from './store';
+import { sourceOf, type KeptRead, type Row } from './records';
 import {
-  draftProgressSchema,
   ignoresProposal,
-  proposalPartSchema,
-  proposalSchema,
   type CheckVerdict,
   type DefinitionProcess,
   type DefinitionSet,
-  type DraftProgress,
   type Proposal,
   type AnswerProblem,
   type ProposalActivity,
@@ -42,7 +28,7 @@ import {
 import { applies, stepsFor } from './working';
 
 /*
-  Server-only. Propose: for every record, the values the model would set, why,
+  Propose: for every record, the values the model would set, why,
   the cells it relied on and what it is unsure of, found by trying values
   against the accepted checks before it answers. Every answer is checked again
   by code, and the verdicts kept are code's. A record that no value lets
@@ -377,7 +363,7 @@ const latestThought = (text: string) => {
     : last || null;
 };
 
-async function proposeBatch(
+export async function proposeBatch(
   owner: DefinitionProcess,
   set: DefinitionSet,
   read: KeptRead,
@@ -701,188 +687,3 @@ async function proposeBatch(
     );
   return { records: answered, model };
 }
-
-/*
-  Kept in data/<process>/proposals/ by read and rulebook, written whole; one
-  still being answered is kept beside it as a part, batch by batch, so a
-  proposal that stops part way asks only for the rest.
-*/
-const runKeyOf = (
-  owner: DefinitionProcess,
-  readId: string,
-  fingerprint: string,
-) => ({
-  process: owner.id,
-  readId,
-  fingerprint,
-});
-
-// A proposal that cannot be read is reported, never taken for none kept.
-export const keptProposal = (
-  owner: DefinitionProcess,
-  readId: string,
-  fingerprint: string,
-) =>
-  readKept(
-    runFile('proposals', runKeyOf(owner, readId, fingerprint)),
-    proposalSchema,
-  );
-
-// Records a call proposes for: few enough that its answer fits.
-const BATCH = 25;
-
-export async function propose(
-  owner: DefinitionProcess,
-  set: DefinitionSet,
-  read: KeptRead,
-  readId: string,
-  text: string,
-  {
-    model: chosen = null,
-    resolve,
-    batch = BATCH,
-    onBatch,
-    watch,
-  }: {
-    model?: DraftingModel | null;
-    resolve?: Resolve;
-    batch?: number;
-    // Told as each batch starts: which, of how many.
-    onBatch?: (at: number, of: number) => void;
-    watch?: Watch;
-  } = {},
-): Promise<Proposal> {
-  owner = profiledFor(owner, set);
-  fitting(read, owner.subject.data);
-  const open = set.definitions.filter((d) => !d.approvedAt);
-  if (open.length)
-    throw new Error(
-      `Not every rule is accepted: ${open.map((d) => d.name).join(', ')}.`,
-    );
-  const calculation = calculate(owner, set, read);
-  const keys = calculation.rows.map((row) => row.key);
-  if (!keys.length) throw new Error('The read has no records.');
-  const fingerprint = fingerprintOf(set);
-  const models = chosen ? fallbackChain(chosen) : DRAFT_MODELS;
-  const partFile = runFile(
-    'proposals',
-    runKeyOf(owner, readId, fingerprint),
-    'part',
-  );
-  // Only a head start: a part that cannot be read is asked for again.
-  const sofar = await readKept(partFile, proposalPartSchema, {
-    unreadableIsMissing: true,
-  });
-  const records: Proposal['records'] = { ...sofar?.records };
-  const answeredBy = new Set(sofar?.models ?? []);
-  const left = keys.filter((key) => !records[key]);
-  const batches = Math.ceil(left.length / batch);
-  for (let at = 0; at < left.length; at += batch) {
-    onBatch?.(at / batch + 1, batches);
-    const [first, ...rest] = left.slice(at, at + batch);
-    const answer = await proposeBatch(
-      owner,
-      set,
-      read,
-      text,
-      calculation,
-      [first!, ...rest],
-      models,
-      resolve,
-      watch,
-    );
-    Object.assign(records, answer.records);
-    answeredBy.add(answer.model);
-    await writeKept(partFile, { records, models: [...answeredBy] });
-  }
-  const proposal: Proposal = {
-    fingerprint,
-    readId,
-    model: [...answeredBy].join(', '),
-    at: new Date().toISOString(),
-    // In the records' own order, however the batches came back.
-    records: Object.fromEntries(keys.map((key) => [key, records[key]!])),
-  };
-  await writeKept(
-    runFile('proposals', runKeyOf(owner, readId, fingerprint)),
-    proposal,
-  );
-  await rm(partFile, { force: true });
-  return proposal;
-}
-
-/*
-  A proposal as a server-side job, as a draft is (draft.ts): it carries on
-  when the page is closed, its progress written as it goes, so one the server
-  stopped part way through says so.
-*/
-const INTERRUPTED =
-  'The server stopped during this proposal, so it did not finish. Propose again to carry on from where it stopped.';
-
-const jobFor = (
-  owner: DefinitionProcess,
-  readId: string,
-  fingerprint: string,
-) => {
-  const key = runKeyOf(owner, readId, fingerprint);
-  return {
-    kind: 'proposals',
-    key: `${owner.id}:${readId}:${fingerprint}`,
-    file: runFile('proposals', key, 'progress'),
-    schema: draftProgressSchema,
-    interrupted: INTERRUPTED,
-  };
-};
-
-export async function proposalProgress(
-  owner: DefinitionProcess,
-  readId: string,
-  fingerprint: string,
-): Promise<DraftProgress | null> {
-  return jobProgress(jobFor(owner, readId, fingerprint));
-}
-
-export function startProposal(
-  owner: DefinitionProcess,
-  set: DefinitionSet,
-  read: KeptRead,
-  readId: string,
-  text: string,
-  options: { model?: DraftingModel | null; resolve?: Resolve } = {},
-): DraftProgress {
-  return startJob({
-    ...jobFor(owner, readId, fingerprintOf(set)),
-    initial: {
-      step: 'Proposing…',
-      error: null,
-      running: true,
-      activity: newActivity(),
-    },
-    work: async (progress, note) => {
-      // A poll reads the job held in memory; the file only outlives a restart,
-      // so a thought arriving word by word is written now and then.
-      let noted = 0;
-      const changed = () => {
-        if (Date.now() - noted < NOTE_EVERY_MS) return;
-        noted = Date.now();
-        void note();
-      };
-      const done = await propose(owner, set, read, readId, text, {
-        ...options,
-        watch: { activity: progress.activity!, changed },
-        onBatch: (at, of) => {
-          progress.step =
-            of > 1 ? `Proposing ${at} of ${of} batches…` : 'Proposing…';
-          void note();
-        },
-      });
-      progress.step = `Proposed for ${Object.keys(done.records).length} ${owner.subject.record.plural}.`;
-    },
-    settle: (progress) => {
-      progress.activity!.thought = null;
-      progress.activity!.writing = 0;
-    },
-  });
-}
-
-const NOTE_EVERY_MS = 2000;

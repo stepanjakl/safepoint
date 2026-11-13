@@ -514,7 +514,7 @@ When a person clicks Accept, the server runs the review again against the saved 
 
 Rewriting a definition, or choosing a different draft of that definition, clears approvals from definitions that depend on it.
 
-Sources: [shared checks](../../lib/definitions/checks.ts), [writing loop](../../lib/definitions/write.ts), [acceptance](../../lib/definitions/decide.ts).
+Sources: [shared checks](../../lib/definitions/checks.ts), [writing loop](../../lib/definitions/write.ts), [acceptance](../../server/operations/decide.ts).
 
 ---
 
@@ -581,9 +581,9 @@ Sources: [calculation and cross-checking](../../lib/definitions/calculate.ts), [
 Several important reliability techniques sit outside those named methods:
 
 - **Structured output and restricted execution.** Zod schemas check the shape of model responses. Generated formulas use typed CEL expressions, which code can inspect and execute. This catches malformed output, invalid references, and type errors; a valid formula can still express the wrong policy.
-- **Tool-assisted validation and repair.** `try_formula` and `check_definition` return executable feedback during drafting. Acceptance runs the shared validator again. Similarly, proposal tools test proposed values against accepted business checks, and code computes the final verdicts. The feedback comes from application code rather than a model merely declaring its own answer correct. Step limits and timeouts bound these loops. See [drafting](../../lib/definitions/write.ts), [acceptance](../../lib/definitions/decide.ts), and [proposals](../../lib/definitions/propose.ts).
+- **Tool-assisted validation and repair.** `try_formula` and `check_definition` return executable feedback during drafting. Acceptance runs the shared validator again. Similarly, proposal tools test proposed values against accepted business checks, and code computes the final verdicts. The feedback comes from application code rather than a model merely declaring its own answer correct. Step limits and timeouts bound these loops. See [drafting](../../lib/definitions/write.ts), [acceptance](../../server/operations/decide.ts), and [proposals](../../lib/definitions/propose.ts).
 - **Examples and behavior probes.** Code executes worked examples and tests formulas on records and sampled values. These checks expose inconsistencies and some checks that cannot pass or fail on the tested inputs. They are not exhaustive proofs, and examples written by the same model can share the formula's misunderstanding. See [checks](../../lib/definitions/checks.ts).
-- **Human review with traceable evidence.** A person accepts definitions and separately decides proposed changes. Saved reads and rulebook revisions preserve what the decision used; formula-derived workings explain the arithmetic that actually ran. Disagreement remains visible instead of being converted into a confidence score. See [rulebook storage](../../lib/definitions/store.ts) and [workings](../../lib/definitions/working.ts).
+- **Human review with traceable evidence.** A person accepts definitions and separately decides proposed changes. Saved reads and rulebook revisions preserve what the decision used; formula-derived workings explain the arithmetic that actually ran. Disagreement remains visible instead of being converted into a confidence score. See [rulebook storage](../../server/storage/rulebooks.ts) and [workings](../../lib/definitions/working.ts).
 - **Application-controlled execution and verification.** The application re-reads inputs, checks for changes and rule failures, writes approved values, and reads them back. Conditional undo checks that the written block has not changed before restoring earlier values. These controls address whether an approved action is applied correctly, not whether the underlying policy interpretation is true. See [application and undo](../../lib/definitions/apply.ts).
 - **Evaluation against declared expectations.** The older workbench includes cases for ambiguous, negated, conflicting, and injected source text, with expected facts and proposal behavior checked in code. This provides regression evidence for those cases; it is not a calibrated estimate of production accuracy. See [workbench evaluation](../../lib/model-workbench/evaluation.ts).
 
@@ -674,7 +674,7 @@ Stored rulebooks are validated through Zod. Important saves use temporary files 
 
 However, atomic file replacement is not the same as transactional multi-user persistence. Read-modify-write operations and revision/index updates do not become concurrency-safe merely because each file write is atomic.
 
-Source: [rulebook storage](../../lib/definitions/store.ts).
+Source: [rulebook storage](../../server/storage/rulebooks.ts).
 
 ---
 
@@ -697,7 +697,7 @@ The default policy uses Flash for discovery and proposal-related work, and Flash
 
 The older model-workbench experiments have their own direct provider calls, so the central pacing layer should be understood as the main engine's infrastructure, not necessarily every model request in the repository.
 
-Sources: [draft jobs](../../lib/definitions/draft.ts), [model call orchestration](../../lib/definitions/calls.ts), [request pacing](../../lib/definitions/limits.ts).
+Sources: [draft jobs](../../server/jobs/draft.ts), [model call orchestration](../../lib/definitions/calls.ts), [request pacing](../../lib/definitions/limits.ts).
 
 ---
 

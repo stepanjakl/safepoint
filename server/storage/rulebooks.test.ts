@@ -5,13 +5,16 @@ import { describe, expect, it } from 'vitest';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 
-import { capturedRead } from './captured.fixture';
-import { confirmProfile, profileOf, setColumnBlank } from './profile';
-import { inScratchDirectory } from './scratch.fixture';
-import { definition, keep, TEXT } from './set.fixture';
+import { capturedRead } from '@/lib/definitions/captured.fixture';
 import {
-  fingerprintOf,
-  hashOf,
+  confirmProfile,
+  profileOf,
+  setColumnBlank,
+} from '@/lib/definitions/profile';
+import { inScratchDirectory } from '@/lib/definitions/scratch.fixture';
+import { definition, keep, TEXT } from '@/lib/definitions/set.fixture';
+import { fingerprintOf, hashOf } from '@/lib/definitions/fingerprint';
+import {
   headOf,
   listRevisions,
   loadConfirmedProfile,
@@ -24,8 +27,11 @@ import {
   saveSet,
   StoredSetError,
   updateSet,
-} from './store';
-import { definitionSetSchema, type DefinitionSet } from './types';
+} from './rulebooks';
+import {
+  definitionSetSchema,
+  type DefinitionSet,
+} from '@/lib/definitions/types';
 
 // A kept set is read through its schema and written whole, so a broken file
 // is reported rather than taken for "nothing kept" and overwritten. Each

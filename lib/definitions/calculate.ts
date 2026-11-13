@@ -1,24 +1,20 @@
-import { rm } from 'node:fs/promises';
-
 import { z } from 'zod';
 
 import type { DefinitionSubject } from '@/lib/process/model';
-import { fallbackChain, type DraftingModel } from '@/lib/models';
-import { readKept, writeKept } from '@/server/storage/files';
-import { runFile } from '@/server/storage/run-key';
+import type { DraftingModel } from '@/lib/models';
 
-import { ask, DRAFT_MODELS, type Resolve } from './calls';
+import { ask, type Resolve } from './calls';
 import { givenOf } from './checks';
 import { contextFor, run } from './formulas';
 import { dataOf, plain } from './prompts';
 import { profiledFor } from './profile';
 import { fitting, namesOf, sourceOf, type KeptRead, type Row } from './records';
-import { fingerprintOf } from './store';
+import { fingerprintOf } from './fingerprint';
 import type { Definition, DefinitionProcess, DefinitionSet } from './types';
 import { stepsFor } from './working';
 
 /*
-  Server-only. Calculate: every accepted calculation worked out by code for
+  Calculate: every accepted calculation worked out by code for
   every record of a read. The engine's values are the record; later steps
   read them. The model cross-checks them on its own: it works the same values
   out from the instructions, the data and each value's plain words, never
@@ -178,9 +174,6 @@ export type CrossCheck = {
 const agree = (a: number, b: number) =>
   Math.round(a * 100) === Math.round(b * 100);
 
-// Records a call works out: few enough that the model's answer fits.
-const BATCH = 25;
-
 // The read with only these records' rows in its record tabs; a lookup tab
 // stays whole, as any record may reach any row of it.
 export function onlyRecords(
@@ -207,7 +200,7 @@ export function onlyRecords(
 }
 
 // One call's answer, held to exactly the records it was asked about.
-async function crossCheckBatch(
+export async function crossCheckBatch(
   owner: DefinitionProcess,
   calculation: Calculation,
   read: KeptRead,
@@ -279,135 +272,4 @@ async function crossCheckBatch(
       `The model's answer does not cover every ${singular} once: ${problems.slice(0, 3).join('; ')}.`,
     );
   return { cells, model };
-}
-
-/*
-  The model works every value out again, BATCH records to a call. Each
-  batch's answer is kept as it arrives, so a cross-check that stops part way
-  (quota, a refused answer) asks only for the rest when it is run again.
-*/
-export async function crossCheck(
-  owner: DefinitionProcess,
-  set: DefinitionSet,
-  read: KeptRead,
-  readId: string,
-  text: string,
-  {
-    model: chosen = null,
-    resolve,
-    batch = BATCH,
-  }: { model?: DraftingModel | null; resolve?: Resolve; batch?: number } = {},
-): Promise<CrossCheck> {
-  const calculation = calculate(owner, set, read);
-  const keys = calculation.rows.map((row) => row.key);
-  if (!keys.length) throw new Error('The read has no records.');
-  const { fingerprint } = calculation;
-  const models = chosen ? fallbackChain(chosen) : DRAFT_MODELS;
-  const sofar = await keptPart(owner, readId, fingerprint);
-  const cells: CrossCheck['cells'] = { ...sofar?.cells };
-  const answeredBy = new Set(sofar?.models ?? []);
-  const left = keys.filter((key) => !cells[key]);
-  for (let at = 0; at < left.length; at += batch) {
-    const [first, ...rest] = left.slice(at, at + batch);
-    const answer = await crossCheckBatch(
-      owner,
-      calculation,
-      read,
-      text,
-      [first!, ...rest],
-      models,
-      resolve,
-    );
-    Object.assign(cells, answer.cells);
-    answeredBy.add(answer.model);
-    await keepPart(owner, readId, fingerprint, {
-      cells,
-      models: [...answeredBy],
-    });
-  }
-  await dropPart(owner, readId, fingerprint);
-  const all = keys.flatMap((key) => Object.values(cells[key] ?? {}));
-  return {
-    fingerprint,
-    readId,
-    model: [...answeredBy].join(', '),
-    at: new Date().toISOString(),
-    cells,
-    agreed: all.filter((cell) => cell.agrees).length,
-    total: all.length,
-  };
-}
-
-/*
-  A cross-check is kept in data/<process>/cross-checks/ by read and rulebook:
-  it costs model calls, and the same read on the same rulebook would give the
-  same answer to compare. One still being answered is kept beside it as a
-  part. Each is written beside its file and renamed over it.
-*/
-const crossFile = (
-  owner: DefinitionProcess,
-  readId: string,
-  fingerprint: string,
-  // A cross-check still being answered, batch by batch.
-  part = false,
-) =>
-  runFile(
-    'cross-checks',
-    { process: owner.id, readId, fingerprint },
-    part ? 'part' : 'whole',
-  );
-
-const cellsSchema = z.record(
-  z.string(),
-  z.record(
-    z.string(),
-    z.object({ model: z.number(), working: z.string(), agrees: z.boolean() }),
-  ),
-);
-export const crossCheckPartSchema = z.object({
-  cells: cellsSchema,
-  models: z.array(z.string()),
-});
-type Part = z.infer<typeof crossCheckPartSchema>;
-
-const keepPart = (
-  owner: DefinitionProcess,
-  readId: string,
-  fp: string,
-  part: Part,
-) => writeKept(crossFile(owner, readId, fp, true), part);
-
-const keptPart = (owner: DefinitionProcess, readId: string, fp: string) =>
-  readKept(crossFile(owner, readId, fp, true), crossCheckPartSchema, {
-    unreadableIsMissing: true,
-  });
-
-const dropPart = (owner: DefinitionProcess, readId: string, fp: string) =>
-  rm(crossFile(owner, readId, fp, true), { force: true });
-
-export const crossCheckSchema = z.object({
-  fingerprint: z.string(),
-  readId: z.string(),
-  model: z.string(),
-  at: z.string(),
-  cells: cellsSchema,
-  agreed: z.number(),
-  total: z.number(),
-});
-
-export async function keepCrossCheck(
-  owner: DefinitionProcess,
-  check: CrossCheck,
-): Promise<void> {
-  await writeKept(crossFile(owner, check.readId, check.fingerprint), check);
-}
-
-export async function keptCrossCheck(
-  owner: DefinitionProcess,
-  readId: string,
-  fingerprint: string,
-): Promise<CrossCheck | null> {
-  return readKept(crossFile(owner, readId, fingerprint), crossCheckSchema, {
-    unreadableIsMissing: true,
-  });
 }

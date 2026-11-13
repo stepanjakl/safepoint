@@ -113,7 +113,7 @@ export function stagesOf(set: DefinitionSet, scene: Scene) {
   });
 }
 
-// What the server says today, in its own words (lib/definitions/draft.ts).
+// What the server says today, in its own words (server/jobs/draft.ts).
 export function serverSays(set: DefinitionSet, scene: Scene) {
   const count = set.definitions.length;
   if (!scene.found) return 'Finding the definitions in the instructions…';

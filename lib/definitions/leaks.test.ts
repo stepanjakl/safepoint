@@ -10,6 +10,7 @@ import {
 } from '@/lib/processes/brunch-orders/process';
 
 import { capturedTabs } from './captured.fixture';
+import { KEPT_ENGINE_SOURCES } from './engine-sources.fixture';
 
 /*
   The engine names no process. Every word Brunch orders supplies -- its tabs,
@@ -22,14 +23,15 @@ import { capturedTabs } from './captured.fixture';
 
 const DIRECTORY = 'lib/definitions';
 
-// Engine sources: what a process plugs into, never its tests or fixtures.
-const sources = readdirSync(DIRECTORY)
-  .filter((name) => name.endsWith('.ts'))
-  .filter((name) => !/\.(test|fixture)\.ts$/.test(name))
-  .map((name) => ({
-    name,
-    text: readFileSync(path.join(DIRECTORY, name), 'utf8'),
-  }));
+// Engine sources: what a process plugs into, never its tests or fixtures; and
+// the engine's logic that keeps its files, which lives under server/.
+const sources = [
+  ...readdirSync(DIRECTORY)
+    .filter((name) => name.endsWith('.ts'))
+    .filter((name) => !/\.(test|fixture)\.ts$/.test(name))
+    .map((name) => path.join(DIRECTORY, name)),
+  ...KEPT_ENGINE_SOURCES,
+].map((name) => ({ name, text: readFileSync(name, 'utf8') }));
 
 // Everything the Brunch process supplies, as words a source could repeat.
 function brunchWords(): string[] {

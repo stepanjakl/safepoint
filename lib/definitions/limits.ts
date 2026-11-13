@@ -1,23 +1,28 @@
 import { google } from '@ai-sdk/google';
 import { APICallError, wrapLanguageModel } from 'ai';
-import path from 'node:path';
-import { z } from 'zod';
 
-import { readKeptSync, writeKept } from '@/server/storage/files';
+import {
+  limitsFile,
+  readKeptLimits,
+  writeKeptLimits,
+  type KeptLimits,
+  type Learned,
+} from '@/server/storage/model-limits';
 
 import { quotaOf, type Quota } from './quota';
 
 /*
-  Server-only. Keeps requests to a model within its limits, one request at a
-  time: a tool loop is many requests, and a refusal part way through one used
-  to throw its finished steps away.
+  Keeps requests to a model within its limits, one request at a time: a tool
+  loop is many requests, and a refusal part way through one used to throw its
+  finished steps away.
 
   Nothing can be asked of Google ahead of time: its limits are not in the model
   list or on a response. A refusal does state them, so they are learned from
-  refusals and kept in data/, and a limit learned a week ago is learned afresh,
-  so a raised one is found. A refusal naming another model than the one asked
-  says the two share their quota, whatever the limit's name says; they are one
-  group from then on. GEMINI_REQUESTS_PER_MINUTE overrides what is learned.
+  refusals and kept in data/ (server/storage/model-limits.ts), and a limit
+  learned a week ago is learned afresh, so a raised one is found. A refusal
+  naming another model than the one asked says the two share their quota,
+  whatever the limit's name says; they are one group from then on.
+  GEMINI_REQUESTS_PER_MINUTE overrides what is learned.
 */
 
 // Until a refusal says otherwise: the lowest limit seen on any model, or what
@@ -36,20 +41,7 @@ const MAX_WAIT = 90_000;
 const MAX_TRIES = 3;
 const BUSY_WAIT = 2_000;
 
-const learnedSchema = z.object({ limit: z.number(), at: z.number() });
-type Learned = z.infer<typeof learnedSchema>;
-export const keptLimitsSchema = z.object({
-  // A model and the one it shares quota with.
-  shares: z.record(z.string(), z.string()).default({}),
-  perMinute: z.record(z.string(), learnedSchema).default({}),
-  perDay: z.record(z.string(), learnedSchema).default({}),
-  // Requests sent on a day, as Google's daily limit counts days.
-  used: z
-    .record(z.string(), z.object({ day: z.string(), count: z.number() }))
-    .default({}),
-});
-type Kept = z.infer<typeof keptLimitsSchema>;
-type State = Kept & {
+type State = KeptLimits & {
   loaded: string | null;
   // When each recent request went, by group.
   sent: Record<string, number[]>;
@@ -73,26 +65,20 @@ const empty = (): State => ({
   waiting: {},
 });
 
-// Read when used, so a test can work in a scratch directory.
-const fileOf = () => path.join(process.cwd(), 'data', 'model-limits.json');
-
 function state(): State {
   const held = (server.modelLimits ??= empty());
-  const file = fileOf();
+  const file = limitsFile();
   if (held.loaded === file) return held;
   held.loaded = file;
   // A convenience: nothing kept, or what cannot be read, is learned afresh.
-  Object.assign(
-    held,
-    readKeptSync(file, keptLimitsSchema, { unreadableIsMissing: true }),
-  );
+  Object.assign(held, readKeptLimits(file));
   return held;
 }
 
 async function keep() {
   const { shares, perMinute, perDay, used } = state();
   try {
-    await writeKept(fileOf(), { shares, perMinute, perDay, used });
+    await writeKeptLimits(limitsFile(), { shares, perMinute, perDay, used });
   } catch {
     // Keeping them is a convenience: a failed write never stops a request.
   }

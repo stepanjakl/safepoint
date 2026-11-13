@@ -4,8 +4,10 @@ import {
   review,
   settingOf,
   type Draft,
-} from './checks';
-import { recordsOf, sourceOf, type KeptRead } from './records';
+} from '@/lib/definitions/checks';
+import { fingerprintOf } from '@/lib/definitions/fingerprint';
+import { withProfile } from '@/lib/definitions/profile';
+import { recordsOf, sourceOf, type KeptRead } from '@/lib/definitions/records';
 import {
   formulaOf,
   sameShape,
@@ -13,9 +15,7 @@ import {
   unansweredBlanks,
   type Shape,
   type ShapeContext,
-} from './shapes';
-import { ownerFor, withProfile } from './profile';
-import { fingerprintOf, loadSet, putRevision, updateSet } from './store';
+} from '@/lib/definitions/shapes';
 import {
   BLANKS_UNANSWERED,
   complete,
@@ -25,18 +25,24 @@ import {
   type DefinitionProcess,
   type DefinitionSet,
   type WrittenVersion,
-} from './types';
+} from '@/lib/definitions/types';
+import {
+  loadSet,
+  ownerFor,
+  putRevision,
+  updateSet,
+} from '@/server/storage/rulebooks';
 
 /*
-  A person's decisions. Confirming the intent is a timestamp. Denying a
-  definition keeps what they said was wrong, for the model when it writes
-  again. Accepting reruns the whole review on the version kept, against the
-  read its examples were run on: the same checks writing applies, so a
-  version that predates a check, or a file edited by hand, is refused with
-  the reason rather than accepted. The decision that completes the rulebook
-  keeps it as a revision (store.ts), with the keys of the records of the read it
-  was reviewed on. Where writes disagreed, a person chooses a
-  version before it can be accepted.
+  Server-only. A person's decisions, kept on the rulebook. Confirming the
+  intent is a timestamp. Denying a definition keeps what they said was wrong,
+  for the model when it writes again. Accepting reruns the whole review on the
+  version kept, against the read its examples were run on: the same checks
+  writing applies, so a version that predates a check, or a file edited by
+  hand, is refused with the reason rather than accepted. The decision that
+  completes the rulebook keeps it as a revision (storage/rulebooks.ts), with
+  the keys of the records of the read it was reviewed on. Where writes
+  disagreed, a person chooses a version before it can be accepted.
 */
 
 // The set with the definition of this id changed, and each other one through

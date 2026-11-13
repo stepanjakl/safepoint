@@ -1,14 +1,12 @@
-import { createHash } from 'node:crypto';
 import { readdir } from 'node:fs/promises';
 import path from 'node:path';
 
 import {
-  inTurn,
-  readKept,
-  StoredFileError,
-  writeKept,
-} from '@/server/storage/files';
-
+  hashOf,
+  fingerprintOf,
+  profileFingerprint,
+} from '@/lib/definitions/fingerprint';
+import { withProfile } from '@/lib/definitions/profile';
 import {
   dataProfileSchema,
   definitionSetSchema,
@@ -19,7 +17,9 @@ import {
   type DefinitionSet,
   type Revision,
   type RevisionIndex,
-} from './types';
+} from '@/lib/definitions/types';
+
+import { inTurn, readKept, StoredFileError, writeKept } from './files';
 
 /*
   Server-only. A process's rulebooks are kept in the repository, like any
@@ -41,50 +41,6 @@ import {
   draft cannot overwrite it unseen; a save is written beside the file and
   renamed over it, so a crash mid-save leaves the last good version.
 */
-
-export const hashOf = (text: string) =>
-  createHash('sha256').update(text).digest('hex').slice(0, 12);
-
-// The exact accepted rulebook: any change to what was accepted changes it,
-// and so does the data profile it reads on and the records it was accepted
-// on, since both change what a run's checks say; a rulebook with neither
-// keeps its old id.
-export const fingerprintOf = (set: DefinitionSet) => {
-  const accepted = set.definitions
-    .filter((d) => d.approvedAt)
-    .map((d) => [d.id, d.formula, d.constants, d.groups, d.approvedAt]);
-  const reads = {
-    ...(set.profileId ? { profile: set.profileId } : {}),
-    ...(set.acceptedKeys ? { keys: set.acceptedKeys } : {}),
-  };
-  return hashOf(
-    JSON.stringify(
-      Object.keys(reads).length ? { ...reads, accepted } : accepted,
-    ),
-  );
-};
-
-// A data profile's id: any change to it, confirmation included, changes it.
-export const profileFingerprint = (profile: Omit<DataProfile, 'id'>) =>
-  hashOf(
-    JSON.stringify([profile.readId, profile.confirmedAt, profile.columns]),
-  );
-
-/*
-  The set a process with no rulebook works under: no calculations, no checks.
-  A proposal on it is the model's alone, and a person's review its only check.
-  Never saved: nothing in it is drafted or approved.
-*/
-export const noRules = (text: string): DefinitionSet => ({
-  hash: hashOf(text),
-  version: '',
-  intent: '',
-  intentConfirmedAt: null,
-  readId: null,
-  foundAt: '',
-  model: '',
-  definitions: [],
-});
 
 const CURRENT = 'current.json';
 
@@ -305,4 +261,36 @@ export async function loadConfirmedProfile(
   if (profile && (profile.id !== id || !profile.confirmedAt))
     throw new StoredSetError(`${where} is not the confirmed profile ${id}.`);
   return profile;
+}
+
+// The process with the confirmed profile a set names loaded, if it names one.
+export async function ownerFor(
+  owner: DefinitionProcess,
+  set: DefinitionSet,
+): Promise<DefinitionProcess> {
+  if (!set.profileId) return withProfile(owner, null);
+  if (owner.subject.data.profile?.id === set.profileId) return owner;
+  const profile = await loadConfirmedProfile(owner, set.profileId);
+  if (!profile)
+    throw new Error(
+      `These rules were drafted on data profile ${set.profileId}, which is not kept.`,
+    );
+  return withProfile(owner, profile);
+}
+
+/*
+  The process a new draft is written on: the kept profile when a person has
+  confirmed it, none when no profile is kept. A profile under review refuses
+  the draft, since rules drafted on it would read types nobody confirmed.
+*/
+export async function ownerToDraft(
+  owner: DefinitionProcess,
+): Promise<DefinitionProcess> {
+  const profile = await loadProfile(owner);
+  if (!profile) return withProfile(owner, null);
+  if (!profile.confirmedAt)
+    throw new Error(
+      'The data profile has changes nobody has confirmed: confirm it before drafting.',
+    );
+  return withProfile(owner, profile);
 }

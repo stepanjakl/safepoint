@@ -1,22 +1,19 @@
 import { z } from 'zod';
 
 import { calculate } from '@/lib/definitions/calculate';
-import {
-  checkProposal,
-  keptProposal,
-  proposalProgress,
-  startProposal,
-} from '@/lib/definitions/propose';
+import { fingerprintOf } from '@/lib/definitions/fingerprint';
+import { checkProposal } from '@/lib/definitions/propose';
 import { namesOf } from '@/lib/definitions/records';
-import { fingerprintOf } from '@/lib/definitions/store';
 import { rejectUnlessLocalDevelopment } from '@/lib/dev/dev-route';
-import { keptRead, READ_GONE } from '@/lib/processes/brunch-orders/reads';
+import { draftingModelSchema } from '@/lib/models';
+import { proposalProgress, startProposal } from '@/server/jobs/proposal';
 import {
   evaluationSchema as evaluation,
   rulebookFor,
-} from '@/lib/processes/brunch-orders/rulebook';
-import { draftingModelSchema } from '@/lib/models';
+} from '@/server/operations/brunch-orders-rulebook';
+import { keptRead, READ_GONE } from '@/server/storage/brunch-orders-reads';
 import { readIdSchema as readId, rulebookIdSchema } from '@/server/storage/ids';
+import { keptProposal } from '@/server/storage/proposals';
 
 export const runtime = 'nodejs';
 

@@ -1,6 +1,7 @@
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
+import { saveSet } from '@/server/storage/rulebooks';
 
-import { hashOf, saveSet } from './store';
+import { hashOf } from './fingerprint';
 import type { Definition, DefinitionSet, Example } from './types';
 
 // Kept sets written straight to the store, for tests that start from one.

@@ -10,9 +10,9 @@ import { recordsOf } from '@/lib/definitions/records';
 import { inScratchDirectory } from '@/lib/definitions/scratch.fixture';
 import { definition, example, keep, TEXT } from '@/lib/definitions/set.fixture';
 import { formulaOf, type Shape } from '@/lib/definitions/shapes';
-import { loadProfile, loadSet, saveProfile } from '@/lib/definitions/store';
 import { CONFIRM_FIRST, type DataProfile } from '@/lib/definitions/types';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
+import { loadProfile, loadSet, saveProfile } from '@/server/storage/rulebooks';
 
 import { POST } from './route';
 
@@ -21,12 +21,12 @@ import { POST } from './route';
 // under review onto it. No model is asked; nothing reaches fixtures/.
 
 const { start } = vi.hoisted(() => ({ start: vi.fn() }));
-vi.mock('@/lib/processes/brunch-orders/reads', () => ({
+vi.mock('@/server/storage/brunch-orders-reads', () => ({
   READ_GONE: 'The read is gone.',
   keptRead: async (id: string) => (id === 'test' ? capturedRead() : null),
 }));
-vi.mock('@/lib/definitions/draft', async (actual) => ({
-  ...(await actual<typeof import('@/lib/definitions/draft')>()),
+vi.mock('@/server/jobs/draft', async (actual) => ({
+  ...(await actual<typeof import('@/server/jobs/draft')>()),
   startDraft: start,
 }));
 

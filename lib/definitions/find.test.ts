@@ -1,18 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
+import { findDefinitions } from '@/server/operations/find';
+import { loadSet } from '@/server/storage/rulebooks';
 
 import { capturedRead } from './captured.fixture';
-import {
-  accountingProblems,
-  findDefinitions,
-  labelProblems,
-  sentencesOf,
-} from './find';
+import { accountingProblems, labelProblems, sentencesOf } from './find';
 import { answer, standIn, told } from './models.fixture';
 import { confirmProfile, profileOf, withProfile } from './profile';
 import { inScratchDirectory } from './scratch.fixture';
-import { loadSet } from './store';
 
 // Finding accounts for every sentence of the instructions, and code holds it to
 // that. The instructions here have nothing to do with the process on purpose:

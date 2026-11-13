@@ -1,8 +1,7 @@
 import path from 'node:path';
 
-import { runDataDir } from '@/lib/storage/run-data';
-
 import { FILE_ID } from './ids';
+import { runDataDir } from './run-data';
 
 /*
   Server-only. What names a run: the process, the read it was taken on and the

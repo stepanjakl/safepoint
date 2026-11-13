@@ -3,13 +3,14 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
+import { keptProposal, propose } from '@/server/storage/proposals';
 
 import { capturedRead, capturedTabs } from './captured.fixture';
 import { always, call, standIn, told } from './models.fixture';
-import { checkProposal, keptProposal, newActivity, propose } from './propose';
+import { checkProposal, newActivity } from './propose';
 import { inScratchDirectory } from './scratch.fixture';
 import { TEXT } from './set.fixture';
-import { fingerprintOf, noRules } from './store';
+import { fingerprintOf, noRules } from './fingerprint';
 import { definitionSetSchema, type DefinitionProcess } from './types';
 
 // The accepted rulebook the browser tests serve, held to the engine by
