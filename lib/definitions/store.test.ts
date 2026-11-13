@@ -23,8 +23,9 @@ import {
   saveProfile,
   saveSet,
   StoredSetError,
+  updateSet,
 } from './store';
-import { definitionSetSchema } from './types';
+import { definitionSetSchema, type DefinitionSet } from './types';
 
 // A kept set is read through its schema and written whole, so a broken file
 // is reported rather than taken for "nothing kept" and overwritten. Each
@@ -61,6 +62,42 @@ describe('a rulebook accepted before keys were kept', () => {
     expect(fingerprintOf({ ...keyed, acceptedKeys: ['SD-01'] })).toBe(
       fingerprintOf(keyed),
     );
+  });
+});
+
+describe('updates to one rulebook', () => {
+  const approve = (id: string) => (s: DefinitionSet) => ({
+    ...s,
+    definitions: s.definitions.map((d) =>
+      d.id === id ? { ...d, approvedAt: '2026-11-13T00:00:00.000Z' } : d,
+    ),
+  });
+  const approved = async () =>
+    (await loadSet(owner, TEXT))?.definitions
+      .filter((d) => d.approvedAt)
+      .map((d) => d.id);
+
+  it('lands both of two that overlap', async () => {
+    await keep([definition('first'), definition('second')]);
+    await Promise.all([
+      updateSet(owner, TEXT, approve('first')),
+      updateSet(owner, TEXT, approve('second')),
+    ]);
+    expect(await approved()).toEqual(['first', 'second']);
+  });
+
+  it('lets the next ones through when a change throws', async () => {
+    await keep([definition('first'), definition('second')]);
+    const failing = updateSet(owner, TEXT, () => {
+      throw new Error('No change.');
+    });
+    const after = Promise.all([
+      updateSet(owner, TEXT, approve('first')),
+      updateSet(owner, TEXT, approve('second')),
+    ]);
+    await expect(failing).rejects.toThrow('No change.');
+    await after;
+    expect(await approved()).toEqual(['first', 'second']);
   });
 });
 

@@ -21,8 +21,9 @@ import {
   loadSet,
   putRevision,
   saveProfile,
+  updateSet,
 } from './store';
-import type { DataProfile, Definition } from './types';
+import type { DataProfile, Definition, DefinitionSet } from './types';
 
 // Accepting reruns the whole review on the version kept, against its read:
 // whatever writing would refuse, accepting refuses too, with the reason.
@@ -88,6 +89,57 @@ describe('accepting a definition', () => {
     expect(done.problem).toBe(
       'The read its examples were run on does not fit what this process reads: fix the sheet, read it again, and write it again.',
     );
+  });
+
+  it('approves nothing written again while it was being reviewed', async () => {
+    await keep([twoWeekends]);
+    // A draft writes it again after accept has loaded it, before it saves.
+    let rewritten = false;
+    const rewriting = async (id: string) => {
+      if (!rewritten) {
+        rewritten = true;
+        await updateSet(owner, TEXT, (s) => ({
+          ...s,
+          definitions: s.definitions.map((d) => ({
+            ...d,
+            formula: 'record.weekend_1 * 2',
+          })),
+        }));
+      }
+      return readOf(id);
+    };
+    const done = await accepted('two_weekends', rewriting);
+    expect(done).toMatchObject({
+      formula: 'record.weekend_1 * 2',
+      approvedAt: null,
+      problem:
+        'This rule, or one it reads, was written again while you were deciding: look at it again before accepting it.',
+    });
+  });
+
+  it.each<[string, (s: DefinitionSet) => DefinitionSet]>([
+    ['the read', (s) => ({ ...s, readId: 'another' })],
+    ['the data profile', (s) => ({ ...s, profileId: 'a1b2c3d4e5f6' })],
+    [
+      'what the rule is',
+      (s) => ({
+        ...s,
+        definitions: s.definitions.map((d) => ({ ...d, result: 'check' })),
+      }),
+    ],
+  ])('approves nothing once %s has moved under it', async (_, move) => {
+    await keep([twoWeekends]);
+    let moved = false;
+    const moving = async (id: string) => {
+      if (!moved) {
+        moved = true;
+        await updateSet(owner, TEXT, move);
+      }
+      return readOf(id);
+    };
+    const done = await accepted('two_weekends', moving);
+    expect(done.approvedAt).toBeNull();
+    expect(done.problem).toMatch(/^This rule, or one it reads, was written/);
   });
 
   it('keeps what a person says when they deny one', async () => {

@@ -2,7 +2,12 @@ import { createHash } from 'node:crypto';
 import { readdir } from 'node:fs/promises';
 import path from 'node:path';
 
-import { readKept, StoredFileError, writeKept } from '@/server/storage/files';
+import {
+  inTurn,
+  readKept,
+  StoredFileError,
+  writeKept,
+} from '@/server/storage/files';
 
 import {
   dataProfileSchema,
@@ -117,10 +122,19 @@ export async function loadSet(
   return folder ? readSet(path.join(folder, CURRENT)) : null;
 }
 
-export async function saveSet(
+/*
+  Saves and updates of one rulebook take turns within this process, so an
+  update reads what the one before it saved rather than both reading the same
+  set and the later save dropping the other's change. Other rulebooks do not
+  wait. Nothing run in a turn may save or update the same rulebook.
+*/
+const inTurnFor = <T>(
   owner: DefinitionProcess,
-  set: DefinitionSet,
-): Promise<DefinitionSet> {
+  hash: string,
+  task: () => Promise<T>,
+) => inTurn(path.join(rulebooksOf(owner), hash), task);
+
+async function writeSet(owner: DefinitionProcess, set: DefinitionSet) {
   const folder =
     (await folderOf(owner, set.hash)) ??
     path.join(rulebooksOf(owner), `${set.version}-${set.hash}`);
@@ -128,15 +142,19 @@ export async function saveSet(
   return set;
 }
 
+export const saveSet = (owner: DefinitionProcess, set: DefinitionSet) =>
+  inTurnFor(owner, set.hash, () => writeSet(owner, set));
+
 // Reads the kept set fresh, changes it, and saves it; null when none is kept.
-export async function updateSet(
+export const updateSet = (
   owner: DefinitionProcess,
   text: string,
   change: (set: DefinitionSet) => DefinitionSet,
-): Promise<DefinitionSet | null> {
-  const set = await loadSet(owner, text);
-  return set ? saveSet(owner, change(set)) : null;
-}
+): Promise<DefinitionSet | null> =>
+  inTurnFor(owner, hashOf(text), async () => {
+    const set = await loadSet(owner, text);
+    return set ? writeSet(owner, change(set)) : null;
+  });
 
 const INDEX = 'revisions.json';
 const EMPTY: RevisionIndex = { head: null, revisions: [] };
@@ -166,27 +184,30 @@ export async function putRevision(
     note?: string | null;
   },
 ): Promise<string> {
-  const id = fingerprintOf(set);
-  const folder = await folderFor(owner, set);
-  const index = await indexIn(folder);
-  const file = path.join(folder, `${id}.json`);
-  if (!(await readSet(file))) await writeKept(file, set);
-  if (index.revisions.some((r) => r.id === id)) return id;
-  await writeKept(path.join(folder, INDEX), {
-    head: id,
-    revisions: [
-      ...index.revisions,
-      {
-        id,
-        parent: parent === undefined ? index.head : parent,
-        reason,
-        at: new Date().toISOString(),
-        schemaVersion: RULEBOOK_SCHEMA,
-        note,
-      },
-    ],
-  } satisfies RevisionIndex);
-  return id;
+  // The index is read, added to and written, so it takes its turn too.
+  return inTurnFor(owner, set.hash, async () => {
+    const id = fingerprintOf(set);
+    const folder = await folderFor(owner, set);
+    const index = await indexIn(folder);
+    const file = path.join(folder, `${id}.json`);
+    if (!(await readSet(file))) await writeKept(file, set);
+    if (index.revisions.some((r) => r.id === id)) return id;
+    await writeKept(path.join(folder, INDEX), {
+      head: id,
+      revisions: [
+        ...index.revisions,
+        {
+          id,
+          parent: parent === undefined ? index.head : parent,
+          reason,
+          at: new Date().toISOString(),
+          schemaVersion: RULEBOOK_SCHEMA,
+          note,
+        },
+      ],
+    } satisfies RevisionIndex);
+    return id;
+  });
 }
 
 // A revision a run pinned, or null when it is not kept.

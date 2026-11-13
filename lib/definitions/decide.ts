@@ -15,7 +15,7 @@ import {
   type ShapeContext,
 } from './shapes';
 import { ownerFor, withProfile } from './profile';
-import { loadSet, putRevision, saveSet, updateSet } from './store';
+import { fingerprintOf, loadSet, putRevision, updateSet } from './store';
 import {
   BLANKS_UNANSWERED,
   complete,
@@ -39,6 +39,48 @@ import {
   version before it can be accepted.
 */
 
+// The set with the definition of this id changed, and each other one through
+// `others`, or as it was.
+const changing = (
+  s: DefinitionSet,
+  id: string,
+  change: (d: Definition) => Definition,
+  others: (d: Definition) => Definition = (d) => d,
+): DefinitionSet => ({
+  ...s,
+  definitions: s.definitions.map((d) => (d.id === id ? change(d) : others(d))),
+});
+
+// What review reads of a definition and of each it reads: an approval or a
+// review's findings are kept only on the definitions they were made on.
+const reviewedOf = (s: DefinitionSet, ids: string[]) =>
+  JSON.stringify(
+    ids.map((one) => {
+      const d = s.definitions.find((each) => each.id === one);
+      return d
+        ? [
+            d.result,
+            d.consequence,
+            d.formula,
+            d.shape ?? null,
+            d.constants,
+            d.groups,
+            d.examples.map(({ key, inputs, expect, why }) => [
+              key,
+              inputs,
+              expect,
+              why,
+            ]),
+            d.appliesTo ?? null,
+            d.agreement?.status ?? null,
+          ]
+        : null;
+    }),
+  );
+
+const WRITTEN_AGAIN =
+  'This rule, or one it reads, was written again while you were deciding: look at it again before accepting it.';
+
 // The records of the read a rulebook was reviewed on, as its profile reads
 // them; null when that read is gone or does not fit, so nothing is said of
 // which records it has seen.
@@ -57,16 +99,25 @@ async function keysOn(
 // was accepted on, so a record the data gains later can be told from them.
 async function freezing(
   owner: DefinitionProcess,
+  text: string,
   saved: Promise<DefinitionSet | null>,
   readOf: (id: string) => Promise<KeptRead | null>,
 ): Promise<DefinitionSet | null> {
-  let set = await saved;
-  if (set && complete(set)) {
-    const acceptedKeys = (await keysOn(owner, set, readOf)) ?? undefined;
-    set = await saveSet(owner, { ...set, acceptedKeys });
-    await putRevision(owner, set, { reason: 'accepted' });
-  }
-  return set;
+  const set = await saved;
+  if (!set || !complete(set)) return set;
+  const acceptedKeys = (await keysOn(owner, set, readOf)) ?? undefined;
+  // Only onto the rulebook the keys were taken for: one changed since is
+  // frozen by the decision that completes it again, if one does.
+  let same = false;
+  const kept = await updateSet(owner, text, (s) => {
+    same =
+      complete(s) &&
+      s.readId === set.readId &&
+      fingerprintOf(s) === fingerprintOf(set);
+    return same ? { ...s, acceptedKeys } : s;
+  });
+  if (kept && same) await putRevision(owner, kept, { reason: 'accepted' });
+  return kept;
 }
 
 export const confirmIntent = (
@@ -76,6 +127,7 @@ export const confirmIntent = (
 ) =>
   freezing(
     owner,
+    text,
     updateSet(owner, text, (s) => ({
       ...s,
       intentConfirmedAt: new Date().toISOString(),
@@ -89,19 +141,14 @@ export async function deny(
   id: string,
   note: string | undefined,
 ): Promise<DefinitionSet | null> {
-  return updateSet(owner, text, (s) => ({
-    ...s,
-    definitions: s.definitions.map((d) =>
-      d.id === id
-        ? {
-            ...d,
-            approvedAt: null,
-            deniedAt: new Date().toISOString(),
-            denial: note?.trim() || null,
-          }
-        : d,
-    ),
-  }));
+  return updateSet(owner, text, (s) =>
+    changing(s, id, (d) => ({
+      ...d,
+      approvedAt: null,
+      deniedAt: new Date().toISOString(),
+      denial: note?.trim() || null,
+    })),
+  );
 }
 
 // Takes one of the versions a split left, on the person's word. Anything reading
@@ -114,29 +161,31 @@ export const choose = (
 ) =>
   updateSet(owner, text, (s) => {
     const dependents = dependentsOf(s, id);
-    return {
-      ...s,
-      definitions: s.definitions.map((d) => {
-        const version = d.id === id ? d.agreement?.versions[index] : null;
-        if (d.id === id && version)
-          return {
-            ...d,
-            // The shape goes with the formula: the sentence is written from it.
-            shape: version.shape ?? null,
-            unfit: version.unfit ?? null,
-            formula: version.formula,
-            constants: version.constants,
-            groups: version.groups,
-            uses: version.uses,
-            examples: version.examples,
-            model: version.model,
-            problem: null,
-            approvedAt: null,
-            agreement: { ...d.agreement!, status: 'chosen' as const },
-          };
-        return dependents.has(d.id) ? { ...d, approvedAt: null } : d;
-      }),
-    };
+    return changing(
+      s,
+      id,
+      (d) => {
+        const version = d.agreement?.versions[index];
+        return version
+          ? {
+              ...d,
+              // The shape goes with the formula: the sentence is written from it.
+              shape: version.shape ?? null,
+              unfit: version.unfit ?? null,
+              formula: version.formula,
+              constants: version.constants,
+              groups: version.groups,
+              uses: version.uses,
+              examples: version.examples,
+              model: version.model,
+              problem: null,
+              approvedAt: null,
+              agreement: { ...d.agreement!, status: 'chosen' as const },
+            }
+          : d;
+      },
+      (d) => (dependents.has(d.id) ? { ...d, approvedAt: null } : d),
+    );
   });
 
 /*
@@ -161,18 +210,16 @@ export async function setAppliesTo(
   if (definition.result !== 'check') return set;
   owner = await ownerFor(owner, set);
   const read = set.readId ? await readOf(set.readId) : null;
-  const dependents = dependentsOf(set, id);
   return updateSet(owner, text, (s) => {
-    const relabelled: DefinitionSet = {
-      ...s,
-      definitions: s.definitions.map((d) =>
-        d.id === id ? { ...d, appliesTo: value } : d,
-      ),
-    };
+    // From the set being saved: a rule may have come to read this one since.
+    const dependents = dependentsOf(s, id);
+    const relabelled = changing(s, id, (d) => ({ ...d, appliesTo: value }));
     const next = relabelled.definitions.find((d) => d.id === id)!;
+    // The read and profile were loaded for the set as it was before.
+    const moved = s.readId !== set.readId || s.profileId !== set.profileId;
     // A rule with nothing written has nothing to review yet.
     const reviewed =
-      read && next.formula
+      read && next.formula && !moved
         ? review(settingOf(owner, text, relabelled, read, next), {
             formula: next.formula,
             shape: next.shape,
@@ -181,11 +228,10 @@ export async function setAppliesTo(
             examples: next.examples,
           })
         : null;
-    return {
-      ...relabelled,
-      definitions: relabelled.definitions.map((d) => {
-        if (d.id !== id)
-          return dependents.has(d.id) ? { ...d, approvedAt: null } : d;
+    return changing(
+      relabelled,
+      id,
+      (d) => {
         const { ran, problems } = reviewed ?? { ran: null, problems: [] };
         return {
           ...d,
@@ -193,12 +239,16 @@ export async function setAppliesTo(
           ...(ran ? { examples: ran.examples, uses: ran.uses } : {}),
           problem: !d.formula
             ? d.problem
-            : !reviewed
-              ? 'The read its examples were run on is no longer kept: write it again on a new read.'
-              : (ran?.problem ?? (problems.length ? problems.join(' ') : null)),
+            : moved
+              ? WRITTEN_AGAIN
+              : !reviewed
+                ? 'The read its examples were run on is no longer kept: write it again on a new read.'
+                : (ran?.problem ??
+                  (problems.length ? problems.join(' ') : null)),
         };
-      }),
-    };
+      },
+      (d) => (dependents.has(d.id) ? { ...d, approvedAt: null } : d),
+    );
   });
 }
 
@@ -214,13 +264,29 @@ export async function accept(
   // Accepted against the data profile it was drafted on, if it names one.
   owner = await ownerFor(owner, set);
   const read = set.readId ? await readOf(set.readId) : null;
+  // Kept only while the definition, and each it reads, is still the one
+  // reviewed here: a draft may write it again meanwhile.
+  const decided = (
+    change: (d: Definition) => Definition,
+    reads: string[] = [],
+  ) =>
+    updateSet(owner, text, (s) => {
+      const ids = [...new Set([id, ...definition.uses, ...reads])];
+      // The review ran on the read and profile loaded with the set.
+      const same =
+        s.readId === set.readId &&
+        s.profileId === set.profileId &&
+        reviewedOf(s, ids) === reviewedOf(set, ids);
+      return same
+        ? changing(s, id, change)
+        : changing(s, id, (d) => ({
+            ...d,
+            approvedAt: null,
+            problem: WRITTEN_AGAIN,
+          }));
+    });
   const refuse = (problem: string) =>
-    updateSet(owner, text, (s) => ({
-      ...s,
-      definitions: s.definitions.map((d) =>
-        d.id === id ? { ...d, approvedAt: null, problem } : d,
-      ),
-    }));
+    decided((d) => ({ ...d, approvedAt: null, problem }));
   if (!definition.formula)
     return refuse('Nothing is written to accept yet: write it first.');
   if (definition.agreement?.status === 'split')
@@ -280,36 +346,28 @@ export async function accept(
     },
   );
   if (!ran || problems.length)
-    return updateSet(owner, text, (s) => ({
-      ...s,
-      definitions: s.definitions.map((d) =>
-        d.id === id
-          ? {
-              ...d,
-              approvedAt: null,
-              ...(ran ? { examples: ran.examples, uses: ran.uses } : {}),
-              problem: ran?.problem ?? `Not accepted: ${problems.join(' ')}`,
-            }
-          : d,
-      ),
-    }));
-  const accepted = updateSet(owner, text, (s) => ({
-    ...s,
-    definitions: s.definitions.map((d) =>
-      d.id === id
-        ? {
-            ...d,
-            examples: ran.examples,
-            uses: ran.uses,
-            problem: null,
-            approvedAt: new Date().toISOString(),
-            deniedAt: null,
-            denial: null,
-          }
-        : d,
-    ),
-  }));
-  return freezing(owner, accepted, readOf);
+    return decided(
+      (d) => ({
+        ...d,
+        approvedAt: null,
+        ...(ran ? { examples: ran.examples, uses: ran.uses } : {}),
+        problem: ran?.problem ?? `Not accepted: ${problems.join(' ')}`,
+      }),
+      ran?.uses,
+    );
+  const accepted = decided(
+    (d) => ({
+      ...d,
+      examples: ran.examples,
+      uses: ran.uses,
+      problem: null,
+      approvedAt: new Date().toISOString(),
+      deniedAt: null,
+      denial: null,
+    }),
+    ran.uses,
+  );
+  return freezing(owner, text, accepted, readOf);
 }
 
 /*
@@ -329,119 +387,122 @@ export async function rebaseSet(
 ): Promise<DefinitionSet | null> {
   if (!profile.confirmedAt)
     throw new Error('Only a confirmed data profile can be drafted on.');
-  const set = await loadSet(owner, text);
-  if (!set) return null;
-  const profiled = withProfile(owner, profile);
-  const records = recordsOf(read, profiled.subject.data);
-  if (records.problems.length)
-    throw new Error(
-      `The read does not fit the data profile: ${records.problems.slice(0, 3).join(' ')}`,
-    );
-  const definitions: Definition[] = [];
-  const unapproved = new Set<string>();
-  for (const definition of set.definitions) {
-    const earlier = [...definitions];
-    const contextOf = (
-      written: Pick<Definition, 'constants' | 'groups'>,
-    ): ShapeContext => ({
-      subject: profiled.subject,
-      records,
-      read,
-      consequence: definition.consequence,
-      constants: written.constants,
-      groups: written.groups,
-      earlier,
-    });
-    // Only a shape that leaves blanks to the profile reads differently on it.
-    const rewritten = (
-      written: Pick<Definition, 'constants' | 'groups' | 'formula'> & {
-        shape?: Shape | null;
-      },
-    ) => {
-      const { shape } = written;
-      if (!shape || shape.if_blank || !written.formula) return written.formula;
-      const context = contextOf(written);
-      return shapeProblems(shape, context).length
-        ? written.formula
-        : formulaOf(shape, context);
-    };
-    const formula = rewritten(definition);
-    const versions = definition.agreement?.versions.map(
-      (v): WrittenVersion => ({ ...v, formula: rewritten(v) ?? v.formula }),
-    );
-    let next: Definition = {
-      ...definition,
-      formula,
-      ...(definition.agreement && versions
-        ? { agreement: { ...definition.agreement, versions } }
-        : {}),
-    };
-    const working = {
+  // Worked out on the set as it is saved, so no update between is lost.
+  return updateSet(owner, text, (set) => {
+    const profiled = withProfile(owner, profile);
+    const records = recordsOf(read, profiled.subject.data);
+    if (records.problems.length)
+      throw new Error(
+        `The read does not fit the data profile: ${records.problems.slice(0, 3).join(' ')}`,
+      );
+    const definitions: Definition[] = [];
+    const unapproved = new Set<string>();
+    for (const definition of set.definitions) {
+      const earlier = [...definitions];
+      const contextOf = (
+        written: Pick<Definition, 'constants' | 'groups'>,
+      ): ShapeContext => ({
+        subject: profiled.subject,
+        records,
+        read,
+        consequence: definition.consequence,
+        constants: written.constants,
+        groups: written.groups,
+        earlier,
+      });
+      // Only a shape that leaves blanks to the profile reads differently on it.
+      const rewritten = (
+        written: Pick<Definition, 'constants' | 'groups' | 'formula'> & {
+          shape?: Shape | null;
+        },
+      ) => {
+        const { shape } = written;
+        if (!shape || shape.if_blank || !written.formula)
+          return written.formula;
+        const context = contextOf(written);
+        return shapeProblems(shape, context).length
+          ? written.formula
+          : formulaOf(shape, context);
+      };
+      const formula = rewritten(definition);
+      const versions = definition.agreement?.versions.map(
+        (v): WrittenVersion => ({ ...v, formula: rewritten(v) ?? v.formula }),
+      );
+      let next: Definition = {
+        ...definition,
+        formula,
+        ...(definition.agreement && versions
+          ? { agreement: { ...definition.agreement, versions } }
+          : {}),
+      };
+      const working = {
+        ...set,
+        profileId: profile.id,
+        definitions: [...earlier, next],
+      };
+      const setting = settingOf(profiled, text, working, read, next);
+      if (next.formula) {
+        const { problems, ran } = review(setting, {
+          formula: next.formula,
+          shape: next.shape,
+          constants: next.constants,
+          groups: next.groups,
+          examples: next.examples,
+        });
+        next = {
+          ...next,
+          ...(ran ? { examples: ran.examples, uses: ran.uses } : {}),
+          problem:
+            ran?.problem ?? (problems.length ? problems.join(' ') : null),
+        };
+        if (formula !== definition.formula || !ran || problems.length)
+          unapproved.add(next.id);
+      }
+      // Two writes compared again: the same shape behaves the same.
+      const agreement = next.agreement;
+      if (
+        agreement &&
+        (agreement.status === 'agreed' || agreement.status === 'split') &&
+        agreement.versions.length === 2 &&
+        agreement.versions.every((v) => v.formula)
+      ) {
+        const [a, b] = agreement.versions as [WrittenVersion, WrittenVersion];
+        const draftOf = (v: WrittenVersion): Draft => ({
+          formula: v.formula,
+          shape: v.shape,
+          constants: v.constants,
+          groups: v.groups,
+          examples: v.examples,
+        });
+        const differences =
+          a.shape &&
+          b.shape &&
+          sameShape(
+            { ...contextOf(a), shape: a.shape },
+            { ...contextOf(b), shape: b.shape },
+          )
+            ? []
+            : differencesBetween(setting, draftOf(a), draftOf(b));
+        const status = differences.length ? 'split' : 'agreed';
+        if (status !== agreement.status) unapproved.add(next.id);
+        next = { ...next, agreement: { ...agreement, status, differences } };
+      }
+      definitions.push(next);
+    }
+    const rebased: DefinitionSet = {
       ...set,
       profileId: profile.id,
-      definitions: [...earlier, next],
+      readId: read.id,
+      definitions,
     };
-    const setting = settingOf(profiled, text, working, read, next);
-    if (next.formula) {
-      const { problems, ran } = review(setting, {
-        formula: next.formula,
-        shape: next.shape,
-        constants: next.constants,
-        groups: next.groups,
-        examples: next.examples,
-      });
-      next = {
-        ...next,
-        ...(ran ? { examples: ran.examples, uses: ran.uses } : {}),
-        problem: ran?.problem ?? (problems.length ? problems.join(' ') : null),
-      };
-      if (formula !== definition.formula || !ran || problems.length)
-        unapproved.add(next.id);
-    }
-    // Two writes compared again: the same shape behaves the same.
-    const agreement = next.agreement;
-    if (
-      agreement &&
-      (agreement.status === 'agreed' || agreement.status === 'split') &&
-      agreement.versions.length === 2 &&
-      agreement.versions.every((v) => v.formula)
-    ) {
-      const [a, b] = agreement.versions as [WrittenVersion, WrittenVersion];
-      const draftOf = (v: WrittenVersion): Draft => ({
-        formula: v.formula,
-        shape: v.shape,
-        constants: v.constants,
-        groups: v.groups,
-        examples: v.examples,
-      });
-      const differences =
-        a.shape &&
-        b.shape &&
-        sameShape(
-          { ...contextOf(a), shape: a.shape },
-          { ...contextOf(b), shape: b.shape },
-        )
-          ? []
-          : differencesBetween(setting, draftOf(a), draftOf(b));
-      const status = differences.length ? 'split' : 'agreed';
-      if (status !== agreement.status) unapproved.add(next.id);
-      next = { ...next, agreement: { ...agreement, status, differences } };
-    }
-    definitions.push(next);
-  }
-  const rebased: DefinitionSet = {
-    ...set,
-    profileId: profile.id,
-    readId: read.id,
-    definitions,
-  };
-  const cleared = new Set(unapproved);
-  for (const id of unapproved)
-    for (const dependent of dependentsOf(rebased, id)) cleared.add(dependent);
-  return saveSet(owner, {
-    ...rebased,
-    definitions: definitions.map((d) =>
-      cleared.has(d.id) ? { ...d, approvedAt: null } : d,
-    ),
+    const cleared = new Set(unapproved);
+    for (const id of unapproved)
+      for (const dependent of dependentsOf(rebased, id)) cleared.add(dependent);
+    return {
+      ...rebased,
+      definitions: definitions.map((d) =>
+        cleared.has(d.id) ? { ...d, approvedAt: null } : d,
+      ),
+    };
   });
 }
