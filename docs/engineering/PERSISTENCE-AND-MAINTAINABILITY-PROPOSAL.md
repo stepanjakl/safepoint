@@ -440,3 +440,212 @@ The recommendations are based on source inspection, official documentation
 research, and the Knip run described above. The application suite was not run,
 and the concurrency and crash scenarios were not reproduced. No production
 database, provider connection, or infrastructure was provisioned or changed.
+
+## Review, 13 November 2026
+
+A second reading of this proposal against the working tree, six days later. It
+checked each finding above in the source, read the architecture guide, the
+engine guide, the Brunch orders plan and `TODO.md`, and ran `pnpm check:unused`
+(two unused exports remain, both in `components/ui/extrusion.tsx`). The test
+suite was not run and nothing was changed.
+
+### Verdict
+
+The findings hold. The order of work and two tool choices are revised below.
+
+| Proposal                                       | Verdict                     | Why                                                                                                                                                                           |
+| ---------------------------------------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The findings in "Highest-value changes"        | Confirmed                   | Each was found in the code as described.                                                                                                                                      |
+| One application, no Turborepo, Knip stays      | Agreed                      | Nothing measured calls for more.                                                                                                                                              |
+| PostgreSQL on Neon with Drizzle                | Agreed                      | Already the recorded choice (`TODO.md`, stage 5), and `store.ts` is shaped for it.                                                                                            |
+| Rulebook acceptance as the first database work | Changed                     | Rulebooks are the one record with a good home: reviewed in git and held by frozen tests. Runs, decisions and write records have none, so they go first (Phase 7 of the plan). |
+| tRPC with TanStack Query                       | Adopted, by owner decision  | The evidence alone is thin (about six fetch sites, routes already validated with Zod). The owner wants the experience; the sections below say where it pays for itself.       |
+| Evaluate Inngest                               | Dropped                     | `TODO.md` stages 5 and 6 already choose Vercel Workflow. Evaluate another only if that fails.                                                                                 |
+| A `server/` directory                          | Agreed, now that tRPC is in | Routers, the database and jobs need a home that never reaches the browser.                                                                                                    |
+| Biome                                          | Deferred                    | No measured bottleneck; unrelated to this work.                                                                                                                               |
+
+What forces a database is deployment more than concurrency. Every stateful
+route sits behind `rejectUnlessLocalDevelopment`, there is one user and no
+sign-in, and `fixtures/` and `data/` are written on local disk, which a Vercel
+function cannot do. The concurrency findings are correct but need a second
+writer that does not exist yet.
+
+### Findings the proposal did not have
+
+- **A crash between the sheet write and its record loses the true "before".**
+  In `applyDecisions()`, a process that dies after `writeRange` leaves no
+  record. The output tab is not one of the data tabs `changedTabs` compares, so
+  a retry is allowed, reads the already-written cells as `before`, and Undo
+  then restores the wrong values. Keeping a `pending` record (range, before,
+  after) before the write fixes it with files; a pending record found later is
+  settled by reading the block back, which `sameBlock` already does.
+- **The write record is not validated.** `Application` and `Proposal` are plain
+  TypeScript types (`types.ts`), read back through `readJson<T>()`'s cast.
+- **Five copies of the atomic write, five ways to read.** `writeWhole` is
+  written out in `store.ts`, `draft.ts`, `propose.ts`, `calculate.ts` and
+  `limits.ts`. Reads either throw on a bad file (`readThrough`), return null
+  for anything (`readJson`), parse and return null (`calculate.ts`), or cast
+  (`draft.ts`, `lib/sources/reads.ts`).
+- **Two copies of the job runner.** `startJob` in `draft.ts` and
+  `startProposal` in `propose.ts` are the same forty lines: a map on
+  `globalThis`, a progress file, the interrupted message.
+- **No actor.** The plan's own stated limit is that a record says what was
+  decided, not by whom. The session model has to be chosen before the schema,
+  since every table carries its key.
+- **Nothing replaces git review of a rulebook.** Moving rulebooks to a
+  database removes the diff a person reads today; the proposal treats it as an
+  import.
+- **Model attempts are not kept** (`DEFINITIONS-ENGINE.md`: "What the model did
+  on each attempt is not recorded yet"). For understanding a bad draft this is
+  worth more than several of the tables listed above.
+
+### Revised sequence
+
+1. **Seams, with no new dependency.** One storage module with a schema for
+   every kept file; one job runner; the pending write record; a guard in
+   `accept()` that the definition saved is the one reviewed; an import rule
+   that keeps `node:fs` out of the engine apart from that module.
+2. **tRPC on the existing files.** Routers call the same operations the routes
+   call now, so the client boundary changes while storage does not.
+3. **Decide what the public demonstration runs**, and its session and
+   identity model.
+4. **Phase 7 on Neon and Drizzle.** Runs, decisions as append-only events,
+   write records and model attempts. Rulebook files stay.
+5. **Vercel Workflow** for drafting, proposing and writing, when deployed. The
+   job runner from step 1 is what it replaces.
+6. **Rulebooks into the database** only if drafting must work when deployed,
+   with a revision diff a person can review in the app.
+
+Each step leaves the app working and can stop there.
+
+### Where tRPC earns its place
+
+- **The repeated opening of every route becomes one procedure.** Each Brunch
+  orders route starts the same way: check for local development, find the
+  read, find the rulebook, answer 409 if it is stale. That is a base procedure
+  (`runProcedure`) whose context carries `owner`, `set` and `read`.
+- **Each `action` becomes a procedure.** `rules/route.ts` is 360 lines around
+  one discriminated union of actions; `apply/route.ts` is three. The Zod
+  inputs move across unchanged.
+- **Response types stop living in components.** `ProposeResponse`,
+  `RulesResponse`, `ApplyReply` and the cast in `useTrial<T>()` go; the type
+  is inferred from the procedure.
+- **Three hand-written pollers go.** `propose-step.tsx`, `thread-step.tsx` and
+  `model-limits.tsx` each keep an interval; a query's `refetchInterval` does
+  it. Progress that arrives word by word (`ProposalActivity`) suits a
+  subscription over server-sent events; check that against the installed
+  version's documentation before relying on it.
+- **`source-store.ts` goes**, replaced by a query and its invalidation.
+
+Keep `createStoredRecord` and the dozen stores built on it. They hold browser
+preferences, which is not server state and not TanStack Query's job.
+
+Order of migration: sources, model limits, calculate, propose, rules, apply.
+The write path goes last, once the pattern is settled.
+
+### Other tools
+
+| Tool                                                                                  | Use                                                                                                                                                                                                    | When     |
+| ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- |
+| `server-only`                                                                         | Makes the "Server-only." comments in `store.ts` and `run-data.ts` a build error. Vitest needs an alias for it.                                                                                         | Step 1   |
+| ESLint `no-restricted-imports`                                                        | The engine may not import `node:fs`, React or Next; components may not import `server/`. Enough until it is not; dependency-cruiser only then.                                                         | Step 1   |
+| `@trpc/server`, `@trpc/client`, `@trpc/tanstack-react-query`, `@tanstack/react-query` | The client boundary above.                                                                                                                                                                             | Step 2   |
+| `drizzle-orm`, `drizzle-kit`                                                          | Schema and reviewed SQL migrations.                                                                                                                                                                    | Step 4   |
+| PGlite (`@electric-sql/pglite`)                                                       | Postgres in the test process, so database tests keep the rule that no test touches the network or `fixtures/`. Drizzle has a driver for it.                                                            | Step 4   |
+| fast-check                                                                            | Properties the examples cannot cover: `canonicalShape` twice is the same as once; Undo after a write restores `before`; `differencesBetween` is the same either way round; a rejection writes nothing. | Any time |
+| Vercel Workflow                                                                       | Already chosen.                                                                                                                                                                                        | Step 5   |
+
+Not worth adding: an environment-variable library (four variables; one Zod
+schema in a file does it), a client state library, a state-machine library,
+`superjson` (every date kept is already an ISO string), an authentication
+library before the session model is decided.
+
+### Simplifications
+
+Each removes code or a way to be wrong; none changes behaviour.
+
+1. **`lib/storage/files.ts`:** `readKept(file, schema)` returning the value or
+   null for a missing file and throwing on a corrupt one, and `writeKept`.
+   Replaces the five writes and five reads above.
+2. **One job runner** taking a key, a progress file and the work. Replaces the
+   two copies and is the seam for Vercel Workflow.
+3. **One run key.** `applicationFile`, `proposalFile` and `crossFile` each
+   build `<read id>.<fingerprint>` behind the same guard; ten places test an id
+   with one of two patterns. A `RunKey` (process, read, rulebook) and one
+   function, which later is the primary key of a run.
+4. **Split `rules-step.tsx`** (1,621 lines, up from 1,457 a week ago). Seven
+   other files import `ModelSelect`, `Formula`, `DefinitionCard`, `statusOf`,
+   `anchorOf` and `CONSEQUENCE` from it, the workbench among them. Into a
+   folder: model select, formula, definition card, versions to choose, draft
+   control, and the step that arranges them. `propose-step.tsx` (1,063) splits
+   the same way: step, table, row.
+5. **`decide.ts`** writes `definitions: s.definitions.map((d) => d.id === id ?
+… : d)` six times. One `changing(set, id, change)` says it once.
+6. **Historical names.** `tabs`, `tab` and `cell` in stored contracts mean a
+   resource whatever its kind. Rename them in the same migration that moves a
+   record into the database, so stored shapes migrate once and not twice.
+7. **Placeholder run data.** `lib/process/run-lifecycle.ts` and
+   `placeholder-process.ts` are stand-ins that import the promotion replay.
+   Put them in one folder named as placeholders, so real run state is not
+   built on them by accident.
+8. **The earlier scenario and the workbench.** `lib/promotion-release`,
+   `lib/model-workbench`, `lib/review` and the trial pages under
+   `app/workbench` (68 files, 14,600 lines, more than `components/review`) are
+   paused or settled work. For the owner to decide, page by page, which stay
+   as a reference and which are archived; nothing here should be deleted
+   unseen.
+
+### Folder structure
+
+What misleads today:
+
+- `lib/process` and `lib/processes` differ by one letter and mean different
+  things: the shell's model of a process, and the processes' declarations.
+- `components/brunch-orders` is mostly the engine's screens. They read a
+  `DefinitionSubject`; what ties them to Brunch orders is an imported `SUBJECT`
+  and route addresses written into each file.
+- `lib/definitions` is sixty files in one folder, and holds much more than
+  definitions: reading, profiling, calculating, proposing, writing, model
+  calls, quota and storage.
+- Fixtures have four homes: `fixtures/`, `e2e/fixtures/`, `tests/fixtures/`
+  and `replays/`.
+- `Claude/` at the root is untracked notes.
+
+A restrained target, reached as each step above touches a folder, never as
+one move:
+
+```text
+app/
+  api/trpc/[trpc]/         The one route handler
+components/
+  ui/  app-shell/  review/
+  engine/                  The step screens, given a process (was brunch-orders)
+    rules/  propose/  calculate/  apply/  profile/
+lib/
+  engine/                  Pure: no node:fs, no React, no Next (was definitions)
+    data/                  records, profile, types of a read
+    rules/                 find, write, shapes, checks, formulas, decide
+    run/                   calculate, propose, apply, fits
+    language.ts  types.ts
+  processes/brunch-orders/ Declarations only
+  shell/                   Navigation, routes, schedule (was process)
+  sources/  sheets/  review/  review-presentation/  promotion-release/
+server/                    Never imported by a client component
+  api/                     tRPC context, base procedures, routers
+  storage/                 files.ts now; db/ and schema with step 4
+  jobs/                    The job runner; workflows with step 5
+  model/                   calls, limits, quota
+  integrations/            Composio
+fixtures/                  Everything reviewed in git, tests' copies included
+```
+
+Rules for getting there:
+
+- A rename is its own commit with no other change, so the diff is only paths.
+  `leaks.test.ts`, `knip.jsonc`, `AGENTS.md` and both engine guides name these
+  paths and move with them.
+- `lib/definitions` to `lib/engine` is the costliest rename and the least
+  urgent. Group its files into `data/`, `rules/` and `run/` first; rename the
+  folder only if the name still misleads afterwards.
+- The repository's own rule holds: a folder earns its place when three or more
+  files change together.

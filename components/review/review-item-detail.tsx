@@ -54,7 +54,7 @@ export function ReviewItemDetail({
       <section className="mt-7" aria-labelledby={`${idPrefix}-changes`}>
         <h3
           id={`${idPrefix}-changes`}
-          className="readout text-muted border-floating-ring shadow-separator-bottom-solid flex items-center justify-between border-b pb-2.5 [font-weight:var(--sp-mono-weight-strong)]"
+          className="readout text-muted border-floating-ring shadow-separator-bottom-solid border-b-section flex items-center justify-between pb-2.5 [font-weight:var(--sp-mono-weight-strong)]"
         >
           Proposed changes <span className="value">{detail.deltas.length}</span>
         </h3>

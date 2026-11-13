@@ -147,7 +147,7 @@ function Section({
   return (
     <section
       aria-labelledby={id}
-      className="border-rule-faint grid gap-3 border-t py-5 first:border-t-0 first:pt-0"
+      className="border-rule-faint border-t-section grid gap-3 py-5 first:border-t-0 first:pt-0"
     >
       {title ? (
         <h3 id={id} className="readout text-muted flex min-h-6 items-center">

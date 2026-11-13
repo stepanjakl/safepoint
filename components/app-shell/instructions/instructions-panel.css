@@ -112,9 +112,11 @@
 
 @layer components {
   /* A control at either end sits as far from it as from the band's top and
-     its rule: half of what the head, less that 1px rule, leaves of it. */
+     its rule: half of what the head, less its section rule, leaves of it. */
   .instruction-band {
-    --instruction-band-offset: calc((var(--spacing-sheet-head) - 1px - --spacing(7)) / 2);
+    --instruction-band-offset: calc(
+      (var(--spacing-sheet-head) - var(--section-rule-width) - --spacing(7)) / 2
+    );
     gap: --spacing(4);
     padding-inline-end: var(--instruction-band-offset);
   }

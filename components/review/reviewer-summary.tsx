@@ -15,7 +15,7 @@ export function ReviewerSummary({
   return (
     <section
       aria-labelledby={headingId}
-      className="border-rule-strong bg-surface-inset border-t"
+      className="border-rule-strong bg-surface-inset border-t-section"
     >
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3">
         <h2 id={headingId} className="readout text-muted">

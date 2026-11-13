@@ -106,7 +106,10 @@ function InstructionsPopover({
                 start?.(note);
               }}
             >
-              <Heading slot="title" className="text-dense font-medium">
+              <Heading
+                slot="title"
+                className="border-rule-faint text-dense border-b-section -mx-4 -mt-4 px-4 py-3 font-medium"
+              >
                 Start with instructions
               </Heading>
               <label className="grid gap-1.5">
@@ -128,7 +131,7 @@ function InstructionsPopover({
                 Applies to this run only; the process instructions stay as they
                 are. Saved with the run, not applied to execution yet.
               </p>
-              <div className="flex justify-end gap-2">
+              <div className="border-rule-faint border-t-section -mx-4 -mb-4 flex justify-end gap-2 px-4 py-3">
                 <Button onPress={close}>Cancel</Button>
                 <Button type="submit" variant="primary">
                   Start run

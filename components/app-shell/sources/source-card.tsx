@@ -59,7 +59,7 @@ const count = (n: number, one: string, many = `${one}s`) =>
   the 6-high Edit pill centres on a whole pixel and the two columns start on
   one line.
 */
-const BAND = 'border-rule-faint box-content min-h-10 border-b';
+const BAND = 'border-rule-faint box-content min-h-10 border-b-section';
 // The table heading's face, padded here rather than by DATA_TABLE_HEAD.
 const HEAD = DATA_TABLE_HEADING;
 // Name, rows, columns, and the row's own control.
@@ -360,15 +360,11 @@ function SourceFile({
                       duration={MORPH_WORDS_MS}
                     />
                   </span>
-                  <span className="text-meta text-muted block empty:hidden">
-                    {summary?.origin === 'captured'
-                      ? 'Repository copy'
-                      : summary
-                        ? ''
-                        : entry.summary.kind === 'failed'
-                          ? entry.summary.message
-                          : 'Not read yet'}
-                  </span>
+                  {entry.summary.kind === 'failed' ? (
+                    <span className="text-meta text-muted block">
+                      {entry.summary.message}
+                    </span>
+                  ) : null}
                   {/* Said once, plainly; the page shows it by the ring. */}
                   <span role="status" className="sr-only">
                     {entry.reading
@@ -504,17 +500,9 @@ function ReadRing({ phase, onTurn, onGone }: ReturnType<typeof useReadRing>) {
 }
 
 // A moment in the file's figures, drawn as Last read is: its name, the time
-// in the app's date shape, and a line about it. Spans, not paragraphs, so a
+// in the app's date shape. Spans, not paragraphs, so a
 // panel's rise-in for its lines (process-sheet.css) leaves the figures still.
-export function Moment({
-  label,
-  at,
-  note,
-}: {
-  label: string;
-  at: string | null;
-  note?: string;
-}) {
+export function Moment({ label, at }: { label: string; at: string | null }) {
   return (
     <div className={CELL}>
       <dt className="readout text-muted">{label}</dt>
@@ -522,9 +510,6 @@ export function Moment({
         <span className={cx(VALUE, 'block')}>
           {at ? runStamp(at) : 'Never'}
         </span>
-        {note ? (
-          <span className="text-meta text-muted block">{note}</span>
-        ) : null}
       </dd>
     </div>
   );

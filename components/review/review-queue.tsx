@@ -59,7 +59,7 @@ const SHORT_LABELS: Record<Disposition, string> = {
 // No count: at the row's end it lined up with the change counts and read as a
 // total of them.
 const GROUP_HEAD =
-  'review-group-head readout text-muted border-floating-ring bg-surface-inset sticky top-0 z-3 flex h-sheet-head items-center gap-2 border-b px-5 [font-weight:var(--sp-mono-weight-strong)]';
+  'review-group-head readout text-muted border-floating-ring bg-surface-inset sticky top-0 z-3 flex h-sheet-head items-center gap-2 border-b-section px-5 [font-weight:var(--sp-mono-weight-strong)]';
 const LIST = 'release-list';
 // The whole row is the control. Open is the selected ground, and every part
 // of it keeps the ink it has at rest, so nothing muted lands on that ground.

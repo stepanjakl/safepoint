@@ -38,7 +38,7 @@ export function SourceHead({
   return (
     <header
       className={cx(
-        'border-rule-faint flex items-center justify-between gap-3 border-b pr-3.5 pl-5',
+        'border-rule-faint border-b-section flex items-center justify-between gap-3 pr-3.5 pl-5',
         title ? 'py-2.5' : 'py-3.5',
       )}
     >

@@ -48,7 +48,7 @@ export function CandidateList({
     >
       {categories.map((group) => (
         <ListBoxSection key={group.id} id={group.id}>
-          <Header className="readout border-rule-faint bg-surface-inset text-muted flex min-h-7 items-center justify-between border-b px-4">
+          <Header className="readout border-rule-faint bg-surface-inset text-muted border-b-section flex min-h-7 items-center justify-between px-4">
             <span>{group.label}</span>
             <span>{group.skus.length}</span>
           </Header>

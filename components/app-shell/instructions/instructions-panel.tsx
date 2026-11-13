@@ -542,7 +542,10 @@ function PublishNote({
               onPublish();
             }}
           >
-            <Heading slot="title" className="text-dense font-medium">
+            <Heading
+              slot="title"
+              className="border-rule-faint text-dense border-b-section -mx-4 -mt-4 px-4 py-3 font-medium"
+            >
               Publish {version}
             </Heading>
             <label className="text-meta text-muted grid gap-1.5">
@@ -555,7 +558,7 @@ function PublishNote({
                 className={cx(FIELD, 'text-dense min-h-20 px-3 py-2.5')}
               />
             </label>
-            <div className="flex justify-end">
+            <div className="border-rule-faint border-t-section -mx-4 -mb-4 flex justify-end px-4 py-3">
               <Button size="small" variant="primary" onPress={onPublish}>
                 Publish {version}
                 <KeyHint

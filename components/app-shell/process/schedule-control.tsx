@@ -103,7 +103,7 @@ export function ScheduleFields({
 }) {
   return (
     <>
-      <div className="flex items-center gap-3">
+      <div className="border-rule-faint border-b-section flex items-center gap-3 pb-3">
         {title}
         <Switch
           aria-label="Scheduled runs"

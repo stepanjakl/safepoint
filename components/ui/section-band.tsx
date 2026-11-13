@@ -22,7 +22,7 @@ export function SectionBand({
   return (
     <div
       className={cx(
-        'border-rule-default bg-surface-inset flex min-h-8 items-center justify-between gap-4 border-b px-4 py-1.5',
+        'border-rule-default bg-surface-inset border-b-section flex min-h-8 items-center justify-between gap-4 px-4 py-1.5',
         className,
       )}
     >

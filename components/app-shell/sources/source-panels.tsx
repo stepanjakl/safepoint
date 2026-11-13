@@ -49,18 +49,6 @@ export function SourceInputs({ uses, initial }: Props) {
   );
 }
 
-const WRITE_STATUS: Record<LastWrite['status'], string> = {
-  verified: 'read back as written',
-  mismatch: 'read back differently',
-  failed: 'did not land',
-  undone: 'undone',
-};
-
-// What the last write did, in a line: where, how much, and how it ended.
-function writeNote(write: LastWrite) {
-  return `${write.tab} · ${write.cells} ${write.cells === 1 ? 'cell' : 'cells'} · ${WRITE_STATUS[write.status]}`;
-}
-
 export function SourceOutputs({
   uses,
   initial,
@@ -78,13 +66,7 @@ export function SourceOutputs({
           uses={group}
           side="outputs"
           initial={initial}
-          details={
-            <Moment
-              label="Last write"
-              at={lastWrite?.at ?? null}
-              note={lastWrite ? writeNote(lastWrite) : undefined}
-            />
-          }
+          details={<Moment label="Last write" at={lastWrite?.at ?? null} />}
         />
       ))}
     </div>

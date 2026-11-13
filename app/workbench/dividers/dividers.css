@@ -1,0 +1,14 @@
+@layer components {
+  /* Both boundaries read one width so the comparison changes them together. */
+  [data-divider-width='1'] {
+    --workbench-divider-width: 1px;
+  }
+
+  [data-divider-width='1.5'] {
+    --workbench-divider-width: 1.5px;
+  }
+
+  [data-divider-width='2'] {
+    --workbench-divider-width: 2px;
+  }
+}

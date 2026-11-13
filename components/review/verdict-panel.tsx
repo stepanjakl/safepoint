@@ -24,11 +24,7 @@ export function VerdictPanel({
 
   return (
     <section aria-labelledby={headingId}>
-      <SectionBand
-        id={headingId}
-        title="Verdict"
-        meta="Recorded judgement · deterministic policy"
-      />
+      <SectionBand id={headingId} title="Verdict" />
 
       <div className="grid @xl:grid-cols-2">
         <div className="border-rule-default border-b px-4 py-3 @xl:border-r @xl:border-b-0">
@@ -65,8 +61,7 @@ export function VerdictPanel({
               <MarginScale margin={margin} />
             </LedgerRow>
             <LedgerRow label="Basis">
-              <span className="value">{margin.basis}</span>{' '}
-              <span className="readout text-muted">derived display value</span>
+              <span className="value">{margin.basis}</span>
             </LedgerRow>
           </>
         ) : null}
@@ -111,7 +106,7 @@ export function VerdictPanel({
         </LedgerRow>
       </Ledger>
 
-      <div className="border-rule-default flex flex-wrap items-center gap-x-3 gap-y-2 border-t px-4 py-3">
+      <div className="border-rule-default border-t-section flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
         <Button variant="primary" isDisabled>
           Approve item
         </Button>

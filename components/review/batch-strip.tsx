@@ -19,21 +19,15 @@ export function BatchStrip({ batch }: { batch: BatchPresentation }) {
       aria-label="Proposal outcomes"
       className="ground-raised border-rule-strong bg-surface-primary grid grid-cols-2 border-b @3xl:grid-cols-4"
     >
-      <Cell
-        label="Evaluated"
-        value={counts.evaluated}
-        note="All lines accounted for"
-      />
+      <Cell label="Evaluated" value={counts.evaluated} />
       <Cell
         label="Ready"
         value={counts.ready}
-        note="Eligible, no attention needed"
         marker={<Glyph name={ready.glyph} className={toneText[ready.tone]} />}
       />
       <Cell
         label="Need attention"
         value={counts.needsAttention}
-        note="Eligible, individual approval"
         marker={
           <Glyph name={attention.glyph} className={toneText[attention.tone]} />
         }
@@ -58,7 +52,7 @@ function Cell({
 }: {
   label: string;
   value: number;
-  note: string;
+  note?: string;
   marker?: React.ReactNode;
   last?: boolean;
 }) {
@@ -75,7 +69,7 @@ function Cell({
         {value}
       </dd>
       <dt className="readout text-muted mt-0.5">{label}</dt>
-      <dd className="text-meta text-muted mt-0.5">{note}</dd>
+      {note ? <dd className="text-meta text-muted mt-0.5">{note}</dd> : null}
     </div>
   );
 }

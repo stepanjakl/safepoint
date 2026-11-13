@@ -12,10 +12,7 @@ export function OutputsList({ outputs }: { outputs: SystemLink[] }) {
         The APIs this process may call once changes are approved, what each call
         can genuinely do, and how it is undone.
       </p>
-      <Group
-        labelledBy={SECTION.outputs.id}
-        meta="Nothing is called until a review is approved"
-      >
+      <Group labelledBy={SECTION.outputs.id}>
         {outputs.length === 0 ? (
           <p className="text-dense text-muted py-2">None.</p>
         ) : (

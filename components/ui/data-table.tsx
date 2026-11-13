@@ -52,19 +52,22 @@ export const DATA_TABLE_HEADING =
 // The heading row's face; its cells are inset as the rows' are.
 export const DATA_TABLE_HEAD = cx(
   DATA_TABLE_HEADING,
-  'border-rule-faint border-b py-3',
+  'border-rule-faint border-b-section py-3',
 );
 
 export const DATA_TABLE_SECONDARY_NAME = 'text-muted font-normal';
 
 export const COMPACT_TABLE_BODY =
   'value text-meta border-separate border-spacing-0';
-export const COMPACT_TABLE_CELL =
-  'border-rule-faint border-b px-3 py-1.5 whitespace-nowrap';
+const COMPACT_TABLE_PADDING = 'px-3 py-1.5 whitespace-nowrap';
+export const COMPACT_TABLE_CELL = cx(
+  COMPACT_TABLE_PADDING,
+  'border-rule-faint border-b',
+);
 export const COMPACT_TABLE_HEAD = cx(
-  COMPACT_TABLE_CELL,
+  COMPACT_TABLE_PADDING,
   DATA_TABLE_HEADING,
-  'text-left',
+  'border-rule-faint border-b-section text-left',
 );
 
 // A row's name, in its first cell.

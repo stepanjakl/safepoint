@@ -35,7 +35,7 @@ export function LineDetail({
 
   return (
     <article className="@container">
-      <div className="border-rule-strong border-b px-4 py-3">
+      <div className="border-rule-strong border-b-section px-4 py-3">
         <Link
           // The same process with no item open.
           href={pathname}

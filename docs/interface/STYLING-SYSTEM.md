@@ -708,14 +708,21 @@ bites through. And the content steps in by `--spacing-control-edge`, the width
 
 ### rem for what scales, px for what must not
 
-| Convert to `rem`                   | Keep in `px`                                                                                                        |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| font sizes, spacing, radii         | border, ring and outline widths                                                                                     |
-| breakpoints and container sizes    | shadow offsets, blurs and spreads                                                                                   |
-| component geometry that holds text | drawn rules and connector lines                                                                                     |
-| icon sizes                         | `999px` / `9999px` pill sentinels                                                                                   |
-|                                    | border widths, and **whole** ones: a fraction snaps to whole device pixels, so it lays out differently at 1× and 2× |
-|                                    | sub-pixel optical nudges                                                                                            |
+Structural header, footer and section boundaries use `--section-rule-width`
+(1.5px), published as `border-b-section` / `border-t-section`. The shared
+`rule-below` / `rule-above` treatments read the same width. Ordinary row rules,
+menu separators and outer borders retain their existing weight. The shell's
+notched frame also retains its joined edge geometry. At 100% zoom, Chrome snaps
+the section rule to 1px at 1× density and preserves 1.5px at 2×.
+
+| Convert to `rem`                   | Keep in `px`                                                                                                    |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| font sizes, spacing, radii         | border, ring and outline widths                                                                                 |
+| breakpoints and container sizes    | shadow offsets, blurs and spreads                                                                               |
+| component geometry that holds text | drawn rules and connector lines                                                                                 |
+| icon sizes                         | `999px` / `9999px` pill sentinels                                                                               |
+|                                    | border widths: fractions snap to whole device pixels; the 1.5px section rule intentionally differs at 1× and 2× |
+|                                    | sub-pixel optical nudges                                                                                        |
 
 Tailwind itself follows this split: its breakpoints are rem, its border and ring widths are px. A `0.0625rem` hairline at a 20px root becomes 1.25px and renders blurred.
 

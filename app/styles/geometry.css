@@ -5,6 +5,10 @@
    reaches them as duration-(--duration-pane) or [--notch-angle:30deg].
    ────────────────────────────────────────────────────────────────────────── */
 
+:root {
+  --section-rule-width: 1.5px;
+}
+
 /* Named for what moves, not for how long. */
 :root {
   --duration-state: 150ms;

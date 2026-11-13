@@ -218,6 +218,7 @@
      Without this, `border-menu-edge` falls through to the colour branch and
      silently means nothing. A pointer, so there is still one definition. */
   --border-width-menu-edge: var(--spacing-menu-edge);
+  --border-width-section: var(--section-rule-width);
   /* The edge `control-face` draws, named so layout can measure from it. */
   --spacing-control-edge: 1px;
   /* The edge plus the lit ring inside it, which is as much the pane's edge as

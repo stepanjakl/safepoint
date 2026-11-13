@@ -463,6 +463,13 @@ export default function WorkbenchPage() {
           {' · '}
           <Link
             className="underline underline-offset-4"
+            href="/workbench/dividers"
+          >
+            Header & footer dividers
+          </Link>
+          {' · '}
+          <Link
+            className="underline underline-offset-4"
             href="/workbench/states"
           >
             State illustrations
