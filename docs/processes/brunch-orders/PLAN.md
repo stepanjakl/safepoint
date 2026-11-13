@@ -204,7 +204,7 @@ Kept per instructions version in
 keep it), so every run under the same instructions uses the same approved
 rules, and a new version starts afresh. Code: the engine in
 `lib/definitions/` (see [The engine, as built](#the-engine-as-built)),
-`app/api/dev/brunch-orders/rules/`, `components/brunch-orders/rules-step.tsx`.
+`server/api/routers/rules.ts`, `components/brunch-orders/rules/rules-step.tsx`.
 Tests: `lib/definitions/*.test.ts`, and `e2e/brunch-orders-rules.spec.ts`
 (read-only: no model calls; it checks that focus moves into a denial's note
 and back).

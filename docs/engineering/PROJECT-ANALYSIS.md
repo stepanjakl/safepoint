@@ -640,7 +640,7 @@ Undo restores the prior block only while the block still equals the application'
 
 The current implementation does not provide a distributed transaction between the sheet and its local application record. Read-before-write checks also do not eliminate concurrent changes between those requests. Those are production-hardening boundaries.
 
-Sources: [application engine](../../lib/definitions/apply.ts), [apply endpoint](../../app/api/dev/brunch-orders/apply/route.ts), [Composio adapter](../../lib/sheets/composio.ts).
+Sources: [application engine](../../lib/definitions/apply.ts), [apply procedures](../../server/api/routers/apply.ts), [Composio adapter](../../lib/sheets/composio.ts).
 
 ---
 

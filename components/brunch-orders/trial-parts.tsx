@@ -31,51 +31,9 @@ export type TrialState<T> =
       status: number | null;
     };
 
-export function useTrial<T>(url: string) {
-  const [state, setState] = useState<TrialState<T>>({ kind: 'idle' });
-  const run = useCallback(
-    async (body?: unknown): Promise<T | null> => {
-      const startedAt = performance.now();
-      setState({ kind: 'running', startedAt });
-      try {
-        const response = await fetch(
-          url,
-          body === undefined
-            ? { method: 'POST' }
-            : {
-                method: 'POST',
-                headers: { 'content-type': 'application/json' },
-                body: JSON.stringify(body),
-              },
-        );
-        const payload = (await response.json()) as T;
-        setState({
-          kind: 'done',
-          body: payload,
-          status: response.status,
-          elapsedMs: Math.round(performance.now() - startedAt),
-          finishedAt: new Date().toISOString(),
-        });
-        return payload;
-      } catch (error) {
-        setState({
-          kind: 'failed',
-          message:
-            error instanceof Error ? error.message : 'The request failed.',
-          status: null,
-          elapsedMs: Math.round(performance.now() - startedAt),
-        });
-        return null;
-      }
-    },
-    [url],
-  );
-  return { state, run };
-}
-
 /*
-  A trial's state for a call made through a mutation: what useTrial keeps,
-  for the screens that show it as TrialControl does. A server's refusal is
+  A trial's state for a call made through a mutation, for the screens that
+  show it as TrialControl does. A server's refusal is
   `done` with no body, as a refusal was an answer; the mutation holds what it
   said. Only a request that got no answer is `failed`.
 */
