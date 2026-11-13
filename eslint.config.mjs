@@ -6,7 +6,8 @@ import nextTypeScript from 'eslint-config-next/typescript';
   calculates and decides on what it is given, and knows nothing of files,
   React or Next. Everything that reads or writes a kept file is under server/
   (which the build refuses to put in a client bundle, `server-only`), and
-  components/ and the client files of app/ reach the server only by fetch.
+  components/ and the client files of app/ reach the server only by request,
+  importing at most a type from server/ (the procedures' `AppRouter`).
 */
 
 const FILES = ['fs', 'fs/promises', 'path'].flatMap((name) => [
@@ -68,8 +69,11 @@ const client = {
     },
     {
       group: ['@/server/*'],
+      // A type is erased before the bundle is built; a value would pull the
+      // server into it.
+      allowTypeImports: true,
       message:
-        'A client file cannot reach server/: fetch from a route, and put a shared type in lib/.',
+        'A client file cannot reach server/: call a procedure (useTRPC), and import at most a type from it.',
     },
   ],
 };
@@ -122,7 +126,11 @@ const config = [
       // browser-test fixtures through it, in development only.
       'app/workbench/run/brunch-direct.ts',
     ],
-    rules: { 'no-restricted-imports': ['error', client] },
+    // typescript-eslint's version of the rule, for `allowTypeImports`.
+    rules: {
+      'no-restricted-imports': 'off',
+      '@typescript-eslint/no-restricted-imports': ['error', client],
+    },
   },
   {
     files: ['server/**/*.{ts,tsx}'],

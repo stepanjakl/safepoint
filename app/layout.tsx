@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { DesignControls } from '@/components/dev/design-controls';
 import { DesignPreferencesScript } from '@/components/dev/design-preferences-script';
 import { StyleInspector } from '@/components/dev/style-inspector';
+import { QueryProvider } from '@/components/trpc/provider';
 import { DEFAULT_THEME } from '@/lib/typography';
 
 import './styles/index.css';
@@ -37,7 +38,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         >
           Skip to review
         </a>
-        {children}
+        <QueryProvider>{children}</QueryProvider>
         <DesignControls />
         <StyleInspector />
       </body>
