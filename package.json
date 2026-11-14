@@ -31,6 +31,7 @@
     "db:generate": "NODE_OPTIONS=--conditions=react-server drizzle-kit generate",
     "db:migrate": "node --env-file-if-exists=.env.local --conditions=react-server scripts/db.ts migrate",
     "db:reset": "node --env-file-if-exists=.env.local --conditions=react-server scripts/db.ts reset",
+    "db:import": "node --env-file-if-exists=.env.local --conditions=react-server --import ./scripts/resolve-aliases.mjs scripts/import-kept-data.ts",
     "db:studio": "pnpm db:migrate && node --env-file-if-exists=.env.local --conditions=react-server node_modules/drizzle-kit/bin.cjs studio",
     "fixtures:e2e": "UPDATE_E2E_FIXTURES=1 vitest run lib/definitions/e2e-fixtures.test.ts",
     "trace:token": "node scripts/trace-token.mjs",
