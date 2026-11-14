@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 import { inScratchDirectory } from '@/lib/definitions/scratch.fixture';
@@ -47,7 +47,10 @@ const gate = () => {
   const opened = new Promise<void>((resolve) => (open = resolve));
   return { open, opened };
 };
-const settled = () => new Promise((resolve) => setTimeout(resolve, 20));
+// Until the job's last record is kept: a fixed wait is not long enough when
+// the suite is busy, and failed there.
+const finished = (job: JobRecord<Progress>) =>
+  vi.waitFor(() => expect(kept(job).running).toBe(false));
 
 describe('starting a job', () => {
   it('returns the running job for a second start, without running the work again', async () => {
@@ -63,7 +66,7 @@ describe('starting a job', () => {
     expect(second).toBe(first);
     expect(runningJob(job)).toBe(first);
     hold.open();
-    await settled();
+    await finished(job);
     expect(started).toBe(1);
     expect(runningJob(job)).toBeNull();
   });
@@ -81,11 +84,12 @@ describe('starting a job', () => {
         await hold.opened;
       },
     });
-    await settled();
-    expect(before).toEqual({ step: 'Starting', error: null, running: true });
+    await vi.waitFor(() =>
+      expect(before).toEqual({ step: 'Starting', error: null, running: true }),
+    );
     expect(started.running).toBe(true);
     hold.open();
-    await settled();
+    await finished(job);
     expect(kept(job)).toEqual({ step: 'Done', error: null, running: false });
   });
 
@@ -98,7 +102,7 @@ describe('starting a job', () => {
         throw new Error('It broke.\nThe rest is detail.');
       },
     });
-    await settled();
+    await finished(job);
     expect(progress).toMatchObject({ error: 'It broke.', running: false });
     expect(kept(job)).toMatchObject({ error: 'It broke.', running: false });
   });
@@ -115,7 +119,7 @@ describe('starting a job', () => {
         p.step = 'Tidied';
       },
     });
-    await settled();
+    await finished(job);
     expect(progress.step).toBe('Tidied');
     expect(kept(job).step).toBe('Tidied');
   });
@@ -125,7 +129,8 @@ describe('starting a job', () => {
     const indented = record();
     for (const job of [{ ...compact, compact: true }, indented])
       startJob({ ...job, initial: begin(), work: async () => undefined });
-    await settled();
+    await finished(compact);
+    await finished(indented);
     expect(readFileSync(compact.file, 'utf8')).not.toContain('\n');
     expect(readFileSync(indented.file, 'utf8')).toContain('\n  "step"');
   });
@@ -164,7 +169,7 @@ describe('reading progress', () => {
     held.step = 'Later';
     expect(read!.step).toBe('Starting');
     hold.open();
-    await settled();
+    await finished(job);
   });
 
   it('keeps one kind of job from taking another’s key', async () => {
@@ -173,6 +178,6 @@ describe('reading progress', () => {
     startJob({ ...job, initial: begin(), work: async () => hold.opened });
     expect(runningJob({ kind: 'other', key: job.key })).toBeNull();
     hold.open();
-    await settled();
+    await finished(job);
   });
 });
