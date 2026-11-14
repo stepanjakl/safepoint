@@ -47,3 +47,4 @@ Claude/
 .devtools/
 # Left only if a save of a kept rulebook was interrupted
 fixtures/*/rulebooks/**/*.tmp
+.vercel
