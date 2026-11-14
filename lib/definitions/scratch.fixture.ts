@@ -69,6 +69,15 @@ export function inScratchDatabase() {
   };
 }
 
+/*
+  Both of the above, for what keeps rows and still reads a file from the
+  working directory: the captured copy in fixtures/ is found in no scratch
+  directory, so a source with no kept read has nothing to fall back to.
+*/
+export function inScratchStorage() {
+  return { directory: inScratchDirectory(), database: inScratchDatabase() };
+}
+
 // The rows of plain SQL. Its result's type depends on the driver, which
 // `Database` leaves open; both drivers answer with `rows`.
 export async function rowsOf<T>(db: Database, query: SQL): Promise<T[]> {

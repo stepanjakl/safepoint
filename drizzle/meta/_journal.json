@@ -15,6 +15,13 @@
       "when": 1794679216757,
       "tag": "0001_guards",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794687853067,
+      "tag": "0002_source_reads_latest",
+      "breakpoints": true
     }
   ]
 }

@@ -1,8 +1,9 @@
 import 'server-only';
 
 import { createHash } from 'node:crypto';
-import { readdir } from 'node:fs/promises';
 import path from 'node:path';
+
+import { and, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 
 import {
@@ -19,14 +20,17 @@ import {
   type SourceValues,
 } from '@/lib/sources/model';
 
-import { readKept, writeKept, type ReadOptions } from './files';
+import { database } from '@/server/db/client';
+import { sourceReads } from '@/server/db/schema';
+
+import { readKept } from './files';
 import { FILE_ID } from './ids';
-import { sourceReadsDir } from './run-data';
+import { parseStored } from './stored';
 
 /*
   Server-only. Reading a source from its own page: every resource, kept whole
-  in data/sources/<id>/reads/ (gitignored) so it can be looked into later.
-  Separate from a run's read, which a run takes for itself and keeps with it.
+  in the `source_reads` table so it can be looked into later. Separate from a
+  run's read, which a run takes for itself and keeps with it.
 */
 
 // The copy kept in the repository for each source, until it is read here.
@@ -93,29 +97,38 @@ async function captured(id: SourceId): Promise<KeptSourceRead | null> {
   return read && fromSheet(read, 'captured');
 }
 
+const where = (id: SourceId, readId: string) => `The kept read ${id}/${readId}`;
+
 async function kept(
   id: SourceId,
   readId: string,
-  options?: ReadOptions,
 ): Promise<KeptSourceRead | null> {
   if (readId === 'captured') return captured(id);
-  // A bare id only: nothing outside the reads folder can be named.
+  // A bare id only, as when it named a file.
   if (!FILE_ID.test(readId)) return null;
-  return readKept(
-    path.join(sourceReadsDir(id), `${readId}.json`),
-    keptSourceReadSchema,
-    options,
-  );
+  const [row] = await (
+    await database()
+  )
+    .select({ body: sourceReads.body })
+    .from(sourceReads)
+    .where(and(eq(sourceReads.source, id), eq(sourceReads.readId, readId)));
+  return row
+    ? parseStored(row.body, keptSourceReadSchema, where(id, readId))
+    : null;
 }
 
-// Ids start with the time read, so the last by name is the latest.
-async function latestId(id: SourceId): Promise<string | null> {
-  const names = await readdir(sourceReadsDir(id)).catch(() => []);
-  const ids = names
-    .filter((name) => name.endsWith('.json'))
-    .map((name) => name.slice(0, -'.json'.length))
-    .sort();
-  return ids.at(-1) ?? null;
+// Ids start with the time read, so the last by name was the latest: the last
+// by byte order is, which `source_reads_latest` serves.
+async function latest(id: SourceId) {
+  const [row] = await (
+    await database()
+  )
+    .select({ readId: sourceReads.readId, body: sourceReads.body })
+    .from(sourceReads)
+    .where(eq(sourceReads.source, id))
+    .orderBy(sql`${sourceReads.readId} collate "C" desc`)
+    .limit(1);
+  return row ?? null;
 }
 
 export function isSourceId(id: string): id is SourceId {
@@ -126,12 +139,11 @@ export function isSourceId(id: string): id is SourceId {
 export async function latestSummary(
   id: SourceId,
 ): Promise<SourceSummary | null> {
-  const last = await latestId(id);
+  const last = await latest(id);
   // The page shows what it can: a read that cannot be read gives way to the
   // captured copy, and sourceValues says why when it is asked for.
-  const read =
-    (last ? await kept(id, last, { unreadableIsMissing: true }) : null) ??
-    (await captured(id));
+  const parsed = last && keptSourceReadSchema.safeParse(last.body);
+  const read = (parsed?.success ? parsed.data : null) ?? (await captured(id));
   return read ? summary(read) : null;
 }
 
@@ -139,10 +151,20 @@ export async function readSource(id: SourceId): Promise<SourceSummary> {
   const sheet = await readWholeSheet();
   const failed = sheet.requests.find((request) => !request.successful);
   if (failed) throw new Error(failed.error ?? 'The read failed.');
-  const read = fromSheet(sheet, 'live');
-  await writeKept(path.join(sourceReadsDir(id), `${read.readId}.json`), read, {
-    compact: true,
-  });
+  const read = keptSourceReadSchema.parse(fromSheet(sheet, 'live'));
+  // Written once: an id is the time read and a hash of what was read, so a
+  // second keep of it is the same read and leaves the first as it was.
+  await (
+    await database()
+  )
+    .insert(sourceReads)
+    .values({
+      source: id,
+      readId: read.readId,
+      readAt: new Date(read.readAt),
+      body: read,
+    })
+    .onConflictDoNothing();
   return summary(read);
 }
 

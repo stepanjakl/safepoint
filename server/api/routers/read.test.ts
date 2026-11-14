@@ -1,16 +1,15 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
-import path from 'node:path';
-
 import { TRPCError } from '@trpc/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { inScratchDirectory } from '@/lib/definitions/scratch.fixture';
+import { inScratchDatabase } from '@/lib/definitions/scratch.fixture';
 import { readWholeSheet, type SheetRead } from '@/lib/sheets/composio';
+import { reads } from '@/server/db/schema';
+import { ensureProcess } from '@/server/db/scope';
 import { READ_GONE } from '@/server/storage/brunch-orders-reads';
 
 import { appRouter } from '../root';
 
-// A run's read, called in process on files in a scratch directory. The
+// A run's read, called in process on a scratch database. The
 // provider is a stand-in: nothing reaches the network.
 
 vi.mock('@/lib/sheets/composio', async (importOriginal) => ({
@@ -66,7 +65,7 @@ async function failure(promise: Promise<unknown>) {
 }
 
 describe('read router', () => {
-  const scratch = inScratchDirectory();
+  const db = inScratchDatabase();
   beforeEach(() => {
     vi.stubEnv('NODE_ENV', 'development');
     vi.mocked(readWholeSheet).mockReset();
@@ -113,12 +112,21 @@ describe('read router', () => {
       code: 'NOT_FOUND',
       message: READ_GONE,
     });
-    const reads = path.join(scratch(), 'data', 'brunch-orders', 'reads');
-    mkdirSync(reads, { recursive: true });
-    writeFileSync(path.join(reads, 'broken.json'), '{');
+    // Kept, but not as a read: it is named, not called gone.
+    await ensureProcess(db(), 'brunch-orders');
+    await db()
+      .insert(reads)
+      .values({
+        process: 'brunch-orders',
+        id: 'broken',
+        readAt: new Date(live.readAt),
+        source: 'Stand-in',
+        body: { id: 'broken' } as never,
+      });
     expect(await failure(caller().read.get({ id: 'broken' }))).toEqual({
       code: 'INTERNAL_SERVER_ERROR',
-      message: 'data/brunch-orders/reads/broken.json is not valid JSON.',
+      message:
+        'The kept read brunch-orders/broken does not fit the stored shape: readAt: Invalid input: expected string, received undefined; source: Invalid input: expected string, received undefined; spreadsheet: Invalid input: expected object, received undefined.',
     });
   });
 

@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, symlinkSync } from 'node:fs';
 import path from 'node:path';
 
 import { PGlite } from '@electric-sql/pglite';
@@ -95,6 +95,37 @@ describe('the driver', () => {
     const pool = poolFor(UNREACHABLE, { max: 1 });
     await expect(pool.query('select 1')).rejects.toThrow();
     await pool.end();
+  });
+
+  it('refuses a test that has not set up a database of its own', async () => {
+    await expect(database()).rejects.toThrow('inScratchDatabase');
+    expect(existsSync(path.join(scratch(), 'data'))).toBe(false);
+  });
+
+  it('opens one database for requests that arrive together, and again after it is closed', async () => {
+    vi.stubEnv('SAFEPOINT_PGLITE_IN_TESTS', '1');
+    const folder = path.join(scratch(), 'data', 'pglite');
+    // The migrations are found beside the working directory.
+    symlinkSync(MIGRATIONS, path.join(scratch(), 'drizzle'));
+    // Not yet opened: the first request finds nothing, and so does the second.
+    const [one, two, three] = await Promise.all([
+      database(),
+      database(),
+      database(),
+    ]);
+    expect(two).toBe(one);
+    expect(three).toBe(one);
+    expect(await tables(one)).toContain('source_reads');
+    await one.insert(processes).values({ id: 'first-run' });
+    await closeDatabase();
+    // A second process on the same folder: what the first kept is there, and
+    // it is migrated once, not again.
+    const [again] = await Promise.all([database(), database()]);
+    expect(again).not.toBe(one);
+    expect(await again.select().from(processes)).toMatchObject([
+      { id: 'first-run' },
+    ]);
+    expect(existsSync(folder)).toBe(true);
   });
 
   it('opens PGlite in data/pglite only when asked, migrated', async () => {

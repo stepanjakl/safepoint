@@ -3,6 +3,8 @@ import 'server-only';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 
+import { and, eq } from 'drizzle-orm';
+
 import {
   keptReadSchema,
   type DataTab,
@@ -24,18 +26,20 @@ import {
   type SheetRead,
 } from '@/lib/sheets/composio';
 
+import { database } from '@/server/db/client';
+import { ensureProcess } from '@/server/db/scope';
+import { reads } from '@/server/db/schema';
+
 import { readKept, writeKept } from './files';
 import { FILE_ID } from './ids';
-import { runDataDir } from './run-data';
+import { parseStored } from './stored';
 
 /*
   Server-only. A run reads the sheet once, and every later step uses that
-  read: it is kept here under an id in data/ (gitignored), and the run in the browser
-  holds only the id. Only the data tabs are kept.
+  read: it is kept here under an id in the `reads` table, and the run in the
+  browser holds only the id. Only the data tabs are kept.
 */
 
-// Read when used, so a test can work in a scratch directory.
-const READS = () => runDataDir(BRUNCH_ORDERS_ID, 'reads');
 // The last live read saved in the repository, so tests and the default view
 // need no network. Saving one is an explicit action.
 const CAPTURED = path.join(
@@ -118,25 +122,54 @@ const asKept = (read: SheetRead, label: string): KeptRead => {
   };
 };
 
+// Written once: an id is the time read and a hash of what was read, so a
+// second keep of it is the same read and leaves the first as it was.
+async function keep(read: KeptRead): Promise<KeptRead> {
+  const body = keptReadSchema.parse(read);
+  const db = await database();
+  await ensureProcess(db, BRUNCH_ORDERS_ID);
+  const inserted = await db
+    .insert(reads)
+    .values({
+      process: BRUNCH_ORDERS_ID,
+      id: body.id,
+      readAt: new Date(body.readAt),
+      source: body.source,
+      body,
+    })
+    .onConflictDoNothing()
+    .returning({ id: reads.id });
+  // Already kept: what is kept is what the id names.
+  return inserted.length ? body : ((await keptRead(body.id)) ?? body);
+}
+
 export async function readAndKeep(
   source: 'captured' | 'live',
 ): Promise<KeptRead> {
   const { read, label } = await load(source);
-  const kept = asKept(read, label);
-  await writeKept(path.join(READS(), `${kept.id}.json`), kept, {
-    compact: true,
-  });
-  return kept;
+  return keep(asKept(read, label));
 }
 
-// What a run is told when the read it was taken with is gone from data/.
+// What a run is told when the read it was taken with is no longer kept.
 export const READ_GONE =
   'This run’s data is no longer kept on the server. Start a new run to read the sheet again.';
 
 export async function keptRead(id: string): Promise<KeptRead | null> {
-  // A bare id only: nothing outside the reads folder can be named.
+  // A bare id only, as when it named a file.
   if (!FILE_ID.test(id)) return null;
-  return readKept(path.join(READS(), `${id}.json`), keptReadSchema);
+  const [row] = await (
+    await database()
+  )
+    .select({ body: reads.body })
+    .from(reads)
+    .where(and(eq(reads.process, BRUNCH_ORDERS_ID), eq(reads.id, id)));
+  return row
+    ? parseStored(
+        row.body,
+        keptReadSchema,
+        `The kept read ${BRUNCH_ORDERS_ID}/${id}`,
+      )
+    : null;
 }
 
 // Why a run on this read cannot write to the sheet, or null when it can. A

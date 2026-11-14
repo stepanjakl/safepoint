@@ -148,8 +148,13 @@ export const sourceReads = pgTable(
     createdAt: created(),
   },
   (t) => [
-    // Serves latestId (by id, newest last) and kept().
     primaryKey({ columns: [t.source, t.readId] }),
+    // Serves latestSummary: the latest is the last id by byte order, as the
+    // last file name was, whatever collation the server's database has.
+    index('source_reads_latest').on(
+      t.source,
+      sql`${t.readId} collate "C" desc`,
+    ),
     check('source_reads_id_shape', matches(t.readId, READ_ID)),
     // The captured copy stays in fixtures/; only live reads are kept here.
     check('source_reads_not_captured', sql`${t.readId} <> 'captured'`),

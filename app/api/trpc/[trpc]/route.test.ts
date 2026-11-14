@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { inScratchDirectory } from '@/lib/definitions/scratch.fixture';
+import { inScratchStorage } from '@/lib/definitions/scratch.fixture';
 import { TEXT } from '@/lib/definitions/set.fixture';
 import { hashOf } from '@/lib/definitions/fingerprint';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
@@ -57,7 +57,7 @@ async function answer(response: Response) {
 }
 
 describe('/api/trpc', () => {
-  inScratchDirectory();
+  inScratchStorage();
   beforeEach(() => vi.stubEnv('NODE_ENV', 'development'));
   afterEach(() => vi.unstubAllEnvs());
 

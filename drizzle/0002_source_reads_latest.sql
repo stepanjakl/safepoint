@@ -1,0 +1,1 @@
+CREATE INDEX "source_reads_latest" ON "source_reads" USING btree ("source","read_id" collate "C" desc);

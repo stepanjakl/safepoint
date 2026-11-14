@@ -133,7 +133,16 @@ const server = globalThis as {
 
 export async function database(): Promise<Database> {
   if (server.safepointDatabaseInTests) return server.safepointDatabaseInTests;
-  const opening = (server.safepointDatabase ??= open(driverFor()));
+  const driver = driverFor();
+  // A test that forgot inScratchDatabase() must fail fast, not open (or
+  // leave in a repository) a data/pglite/; client.test.ts opts in.
+  if (
+    process.env.VITEST &&
+    !process.env.SAFEPOINT_PGLITE_IN_TESTS &&
+    driver.kind === 'pglite'
+  )
+    throw new Error('A test reaches the database through inScratchDatabase().');
+  const opening = (server.safepointDatabase ??= open(driver));
   try {
     return (await opening).db;
   } catch (error) {

@@ -1,16 +1,14 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
-import path from 'node:path';
-
 import { TRPCError } from '@trpc/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { inScratchDirectory } from '@/lib/definitions/scratch.fixture';
+import { inScratchStorage } from '@/lib/definitions/scratch.fixture';
 import { readWholeSheet, type SheetRead } from '@/lib/sheets/composio';
+import { sourceReads } from '@/server/db/schema';
 
 import { appRouter } from '../root';
 
-// The sources procedures, called in process, on files in a scratch
-// directory. The provider is a stand-in: nothing reaches the network.
+// The sources procedures, called in process, on a scratch database and directory
+// (the captured copy in fixtures/ is not found there). The provider is a stand-in: nothing reaches the network.
 
 vi.mock('@/lib/sheets/composio', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/sheets/composio')>()),
@@ -66,8 +64,7 @@ async function failure(promise: Promise<unknown>) {
 }
 
 describe('sources router', () => {
-  const scratch = inScratchDirectory();
-  const reads = () => path.join(scratch(), 'data', 'sources', SOURCE, 'reads');
+  const { database: db } = inScratchStorage();
   beforeEach(() => {
     vi.stubEnv('NODE_ENV', 'development');
     vi.mocked(readWholeSheet).mockReset();
@@ -139,8 +136,14 @@ describe('sources router', () => {
   });
 
   it('names a kept read that cannot be read, rather than calling it gone', async () => {
-    mkdirSync(reads(), { recursive: true });
-    writeFileSync(path.join(reads(), 'broken.json'), '{');
+    await db()
+      .insert(sourceReads)
+      .values({
+        source: SOURCE,
+        readId: 'broken',
+        readAt: new Date(sheet.readAt),
+        body: { readId: 'broken' },
+      });
     expect(
       await failure(
         caller().sources.values({ source: SOURCE, read: 'broken' }),
@@ -148,7 +151,7 @@ describe('sources router', () => {
     ).toEqual({
       code: 'INTERNAL_SERVER_ERROR',
       message:
-        'data/sources/brunch-store-sheet/reads/broken.json is not valid JSON.',
+        'The kept read brunch-store-sheet/broken does not fit the stored shape: readAt: Invalid input: expected string, received undefined; origin: Invalid option: expected one of "live"|"captured"; title: Invalid input: expected string, received undefined.',
     });
   });
 });
