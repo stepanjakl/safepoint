@@ -1,6 +1,6 @@
 # Database
 
-Status: designed and migrated, not yet used. Written 14 November 2026. `server/db/` holds the client, the schema and its tests; `drizzle/` holds the migrations. No storage function reads or writes a table yet, and the app opens no database during normal use. The next phases move the functions in `server/storage/` and `server/jobs/` onto these tables, keeping their signatures.
+Status: designed and migrated; in use for a run's reads, a source's reads and learned model limits (batch 4a), not yet for the rest. Written 14 November 2026. `server/db/` holds the client, the schema and its tests; `drizzle/` holds the migrations. Those three kinds are read and written through `database()` with no file fallback; the other storage functions in `server/storage/` and `server/jobs/` still keep files, and the next phases move them onto these tables, keeping their signatures. With no `DATABASE_URL` the app opens PGlite under `data/pglite/` on the first request that needs it; tests use `inScratchDatabase()`, and `database()` refuses a test that has not set one up.
 
 ## Opening it
 
@@ -11,6 +11,8 @@ Status: designed and migrated, not yet used. Written 14 November 2026. `server/d
 | `DATABASE_URL` | node-postgres `Pool`, 5 connections, idle 10 s, timeout 10 s | Interactive transactions need a connection; Fluid compute reuses an instance. Use Neon's pooled URL (`-pooler`). Each setting's reason is in `poolFor`. |
 | No URL         | PGlite on disk, `data/pglite/`, migrated on first use        | The app starts with no credentials (the README's promise, CI's browser job). A development dependency, loaded by dynamic import only on this path.      |
 | Tests          | PGlite in memory, fresh per test (`inScratchDatabase()`)     | No network, no files. Migrated once per test file and copied per test (`clone()`): about 150 ms a test, against 600 ms to create and migrate one.       |
+
+Opened on the first request that asks, not at start: creating and migrating `data/pglite/` measured about 1.5 s (reopening it 0.7 s) including Node's own start, against 30 s browser-test timeouts, and requests arriving together share one open (`database()` stores the promise before awaiting it; `client.test.ts` holds it). The first request of a fresh `pnpm dev` took about 5 s, mostly the route's compile.
 
 Storage functions take a `Database`, which a Drizzle transaction also is, so a caller can run one inside its own `db.transaction(...)`. Plain SQL's result type depends on the driver; prefer the query builder.
 
@@ -23,7 +25,7 @@ pnpm db:studio     # migrates, then browses it; not while pnpm dev holds data/pg
 
 Migrations run over the direct connection (`DATABASE_URL_UNPOOLED`): Neon's pooler is PgBouncer in transaction mode, which a migration's session state does not survive. In production they are to run in the Vercel build, production only; that step is not wired yet. `db:reset` refuses on Vercel and under `NODE_ENV=production`, and on any server unless `SAFEPOINT_RESETTABLE_DATABASE_URL` is that exact URL. Every module in `server/` begins with `import 'server-only'`, which throws outside a React server build; the scripts run Node and drizzle-kit with `--conditions=react-server`, under which the package resolves to its empty module, as Vitest's alias does.
 
-`drizzle/0000_tables.sql` is generated. `drizzle/0001_guards.sql` is written by hand (`drizzle-kit generate --custom`): drizzle-kit cannot write functions or triggers and keeps no record of them, so regenerating neither drops nor repeats it, and `server/db/schema.test.ts` fails if a guard is missing.
+`drizzle/0000_tables.sql` is generated. `drizzle/0002_source_reads_latest.sql` adds the one index a query needed beyond the keys. `drizzle/0001_guards.sql` is written by hand (`drizzle-kit generate --custom`): drizzle-kit cannot write functions or triggers and keeps no record of them, so regenerating neither drops nor repeats it, and `server/db/schema.test.ts` fails if a guard is missing.
 
 ## Tables
 
@@ -55,31 +57,44 @@ Every foreign key restricts deletes; nothing cascades. A decision points at the 
 
 ## What moves where
 
-| Kept today                                                           | Table                                                                                           |
-| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `fixtures/<process>/rulebooks/<version>-<hash>/current.json`         | `current_rulebooks`; the folder's version and hash are `instruction_versions`                   |
-| `fixtures/<process>/rulebooks/<version>-<hash>/<rulebook id>.json`   | `rulebook_revisions.body`                                                                       |
-| `fixtures/<process>/rulebooks/<version>-<hash>/revisions.json`       | `rulebook_revisions` rows in `seq` order, and `rulebook_heads`                                  |
-| `fixtures/<process>/profile/current.json`, `<profile id>.json`       | `current_profiles`, `data_profiles`                                                             |
-| `fixtures/<process>/sheet-snapshot.json`                             | Stays in git: the captured stand-in for a live read                                             |
-| Instructions declared in `lib/processes/<process>/process.ts`        | `instruction_versions`, `origin = 'declared'`, seeded                                           |
-| `data/<process>/reads/<read>.json`                                   | `reads`                                                                                         |
-| `data/sources/<source>/reads/<read>.json`                            | `source_reads`                                                                                  |
-| `data/<process>/cross-checks/<read>.<fp>.json`, `….part.json`        | `cross_checks`; `answer_parts` (`cross-check`)                                                  |
-| `data/<process>/proposals/<read>.<fp>.json`, `….part.json`           | `proposals`; `answer_parts` (`proposal`)                                                        |
-| `data/<process>/proposals/<read>.<fp>-progress.json`                 | `jobs` (`proposals`, key `<read>:<fp>`)                                                         |
-| `data/<process>/drafts/<hash>.json`                                  | `jobs` (`drafts`, key `<hash>`)                                                                 |
-| `data/<process>/applied/<read>.<fp>.json`, an array                  | `applications`, one row per entry                                                               |
-| `data/model-limits.json`                                             | `model_limits`, one row per model                                                               |
-| The job map on `globalThis` (`serverJobs`)                           | `jobs.holder`, `jobs.heartbeat_at`                                                              |
-| `approvedAt`, `deniedAt`, `denial`, `intentConfirmedAt` on a set     | Kept on the body (the fingerprint reads `approvedAt`), and each act also a `rule_decisions` row |
-| `safepoint.live-runs.v1`: `run`                                      | `runs`; `additionalInstructions` too                                                            |
-| `safepoint.live-runs.v1`: `data.propose.decisions`                   | `record_decisions`                                                                              |
-| `safepoint.live-runs.v1`: `data.read`, `rules`, `calculate`, `apply` | Not kept: worked out from `reads`, `current_rulebooks`, `cross_checks`, `applications`          |
-| `safepoint.instructions.v2`: `published`                             | `instruction_versions`, `origin = 'published'`                                                  |
-| Nothing (what the model did on each attempt)                         | `model_attempts`                                                                                |
+| Kept today                                                           | Table                                                                                           | Moved    |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | -------- |
+| `fixtures/<process>/rulebooks/<version>-<hash>/current.json`         | `current_rulebooks`; the folder's version and hash are `instruction_versions`                   | No       |
+| `fixtures/<process>/rulebooks/<version>-<hash>/<rulebook id>.json`   | `rulebook_revisions.body`                                                                       | No       |
+| `fixtures/<process>/rulebooks/<version>-<hash>/revisions.json`       | `rulebook_revisions` rows in `seq` order, and `rulebook_heads`                                  | No       |
+| `fixtures/<process>/profile/current.json`, `<profile id>.json`       | `current_profiles`, `data_profiles`                                                             | No       |
+| `fixtures/<process>/sheet-snapshot.json`                             | Stays in git: the captured stand-in for a live read                                             | No       |
+| Instructions declared in `lib/processes/<process>/process.ts`        | `instruction_versions`, `origin = 'declared'`, seeded                                           | No       |
+| `data/<process>/reads/<read>.json`                                   | `reads`                                                                                         | Yes (4a) |
+| `data/sources/<source>/reads/<read>.json`                            | `source_reads`                                                                                  | Yes (4a) |
+| `data/<process>/cross-checks/<read>.<fp>.json`, `….part.json`        | `cross_checks`; `answer_parts` (`cross-check`)                                                  | No       |
+| `data/<process>/proposals/<read>.<fp>.json`, `….part.json`           | `proposals`; `answer_parts` (`proposal`)                                                        | No       |
+| `data/<process>/proposals/<read>.<fp>-progress.json`                 | `jobs` (`proposals`, key `<read>:<fp>`)                                                         | No       |
+| `data/<process>/drafts/<hash>.json`                                  | `jobs` (`drafts`, key `<hash>`)                                                                 | No       |
+| `data/<process>/applied/<read>.<fp>.json`, an array                  | `applications`, one row per entry                                                               | No       |
+| `data/model-limits.json`                                             | `model_limits`, one row per model                                                               | Yes (4a) |
+| The job map on `globalThis` (`serverJobs`)                           | `jobs.holder`, `jobs.heartbeat_at`                                                              | No       |
+| `approvedAt`, `deniedAt`, `denial`, `intentConfirmedAt` on a set     | Kept on the body (the fingerprint reads `approvedAt`), and each act also a `rule_decisions` row | No       |
+| `safepoint.live-runs.v1`: `run`                                      | `runs`; `additionalInstructions` too                                                            | No       |
+| `safepoint.live-runs.v1`: `data.propose.decisions`                   | `record_decisions`                                                                              | No       |
+| `safepoint.live-runs.v1`: `data.read`, `rules`, `calculate`, `apply` | Not kept: worked out from `reads`, `current_rulebooks`, `cross_checks`, `applications`          | No       |
+| `safepoint.instructions.v2`: `published`                             | `instruction_versions`, `origin = 'published'`                                                  | No       |
+| Nothing (what the model did on each attempt)                         | `model_attempts`                                                                                | No       |
 
 Stay in the browser: `safepoint.instructions.v2`'s unpublished `draft`, and the preferences and previews (`assistant`, `calculate-revealed`, `inputs`, `last-process`, `process-names`, `process-order`, `process-tab`, `review-filter`, `schedules`, `sidebar`, `safepoint.dev.*`).
+
+Run reads and source reads are written once: keeping an id that is kept leaves the first and answers it (a read's id is its time and a hash of what was read, so the same id is the same read), as the file written again used to give the same read. The `reads` row needs its `processes` row, which `ensureProcess` (`server/db/scope.ts`) makes until something seeds that table. "Latest" for a source's reads is the last id in byte order, as the last file name was; `source_reads_latest` (migration `0002`) serves `order by read_id collate "C" desc`, since the primary key's order follows the server's collation, which is not byte order everywhere. A kept body that no longer fits its schema is named (`StoredFileError`), except where a page may fall back to the captured copy (`latestSummary`).
+
+Learned model limits are one row per model, written per model (`saveKeptLimits`) so an instance learning of one model does not undo another's of another. `lib/definitions/limits.ts` reads them once per process through `limitsReady()`, awaited in `takeSlot` (every paced request), in `withModels` (every choice of a model) and in the `modelLimits.get` procedure; its `state()` throws if asked before that, so a path that misses it fails loudly. A failure to read or write is not an error: the learning starts afresh and is tried again at the next request. The day's count is still this process's own number written back, not `used_count + 1` in the statement, so two instances sharing a model undercount until that is done.
+
+## Importing what is kept on disk
+
+```sh
+pnpm db:import             # copies data/ into the database the app would open
+pnpm db:import -- --dry-run
+```
+
+`scripts/import-kept-data.ts` reads the files the server kept before it kept them in tables (the ones `server/storage/kept-data.test.ts` walks), through the same schemas, from `SAFEPOINT_DATA_DIR` or `data/` under the working directory. It inserts what the table lacks, counts a row already there with the same content as present, and reports (exit 1) one there with other content, a file that does not fit its schema or whose name is not its read's id, and a limit the columns cannot hold; nothing is overwritten and no file is written, moved or deleted. It prints, per kind, files found, rows inserted, present and refused. A later batch adds its kind to `KINDS` in `scripts/import-kept-data/kinds.ts`. A model-limits row the app has since updated reads as different; import before the app runs. The scripts load the app's modules through `scripts/resolve-aliases.mjs` (`--import`), which resolves `@/` and extensionless imports as the bundler does.
 
 ## Bodies are `json`, not `jsonb`
 
@@ -100,7 +115,7 @@ Code: a revision's id is `fingerprintOf(body)` and a profile's `profileFingerpri
 - **`updateSet`, a profile under review**: compare-and-set on `revision`: read, apply the pure change, `update … where revision = $seen`, and on no row read again and retry, a few times. No lock is held, it works through the pooler, and the change functions are already pure. `saveSet` replaces by design: an upsert.
 - **`putRevision`**: one transaction under `pg_advisory_xact_lock` on the process and instructions hash: read the head, insert the revision `on conflict do nothing`, and if it was new, move the head. An advisory lock because the head row may not exist yet, so there is nothing to lock with `for update`; transaction-scoped because Neon's pooler cannot hold a session lock.
 - **`applyDecisions`, `undoApplication`, settling**: no lock across the call to the sheet, which can take seconds on a pooled connection. Inserting the pending row is the claim (the unique index refuses a second); settling is `update … where id = $1 and status = 'pending'`; an undo claims with `undo_started_at` where it is null and finishes where it is still that value. A refused claim is answered as today's "already written" or "not read back".
-- **Parts, cross-checks, model limits**: single-statement upserts; a count is `used_count + 1` in the statement.
+- **Parts, cross-checks, model limits**: single-statement upserts; a count is `used_count + 1` in the statement (model limits do not yet: see above).
 - **Jobs**: starting is `insert … on conflict do update … where not running or heartbeat_at < now() - lease returning *`: a row back means this instance holds the job. The holder is one id per server process, renewed with each note and at least every 15 s; a job kept as running whose lease (60 s) has run out is reported as interrupted, as today's job that "is not held in this process".
 
 ## Open questions for the owner

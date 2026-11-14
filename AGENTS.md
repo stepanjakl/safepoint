@@ -183,7 +183,7 @@ placeholders such as `values.<id>`, because a real example steers the model.
   `server/` (`storage/`, `jobs/`, `operations/`), and every module there opens
   with `import 'server-only'`, so a client bundle that reaches one fails
   `pnpm build`. ESLint holds the same lines (`eslint.config.mjs`). The one
-  exception is `lib/definitions/limits.ts`, which reaches its file through
+  exception is `lib/definitions/limits.ts`, which reaches the database through
   `server/storage/model-limits.ts`. Vitest aliases `server-only` to an empty
   module.
 - **Where things are kept.** What a person approves is reviewed in git:
@@ -193,8 +193,13 @@ placeholders such as `values.<id>`, because a real example steers the model.
   parent and reason, and the head). A migration of an accepted rulebook
   makes a new revision through `putRevision` with reason `migrated`; it never
   rewrites one. What runs produce is not:
-  `data/<process>/{reads,cross-checks,drafts,proposals,applied}/` (gitignored,
-  `server/storage/run-data.ts`). `e2e/fixtures/` are frozen copies, held to the
+  `data/<process>/{cross-checks,drafts,proposals,applied}/` (gitignored,
+  `server/storage/run-data.ts`). Runs' reads, a source's reads and the learned
+  model limits are in the database (`docs/engineering/DATABASE.md`): PGlite
+  under `data/pglite/` with no `DATABASE_URL`; `pnpm db:import` copies the
+  files an older checkout kept. A test that keeps rows uses
+  `inScratchDatabase()` (`inScratchStorage()` where it also needs a scratch
+  directory). `e2e/fixtures/` are frozen copies, held to the
   engine by `lib/definitions/e2e-fixtures.test.ts`.
 - `docs/processes/brunch-orders/DEVELOPMENT-LOG.md` records what went wrong and why. Add to it when
   something non-obvious does.
