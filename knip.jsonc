@@ -9,6 +9,8 @@
     "lib/promotion-release/schemas.ts",
     "lib/review/plan-contract.ts",
     "lib/review-presentation/index.ts",
+    // server/db/schema.ts is not listed: Knip's drizzle plugin reads it from
+    // drizzle.config.ts as drizzle-kit does, so its tables count as used.
   ],
   "ignoreDependencies": [
     // Imported by tweakpane's type declarations, which do not depend on it.

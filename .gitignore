@@ -40,6 +40,7 @@ Claude/
 # What runs produce, per process (lib/storage/run-data.ts): reads of live
 # data, model answers and drafting records, which hold full model inputs and
 # outputs. Development only; what is approved is kept under fixtures/.
+# The local PGlite database, data/pglite/, is here too.
 /data/
 
 # Local AI SDK DevTools traces contain full model inputs and outputs.

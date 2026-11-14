@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
   // repositioned: nothing it reports is worth a corner of the shell.
   devIndicators: false,
 
+  // PGlite loads its WebAssembly and data files from beside its own module,
+  // which a bundled copy cannot find (server/db/client.ts). pg is external
+  // by Next's own list.
+  serverExternalPackages: ['@electric-sql/pglite'],
+
   // Webpack holds every compiled module in memory for the life of `pnpm dev`;
   // this trades slightly slower compiles for a lower peak heap.
   experimental: { webpackMemoryOptimizations: true },

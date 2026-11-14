@@ -8,3 +8,5 @@ fixtures/*/sheet-snapshot.json
 fixtures/*/rulebooks/
 # Frozen copies of them, for the browser tests
 e2e/fixtures/
+# Written by drizzle-kit (pnpm db:generate), which rewrites them each time
+drizzle/meta/
