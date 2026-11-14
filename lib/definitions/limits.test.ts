@@ -1,10 +1,21 @@
 import { APICallError, generateText } from 'ai';
 import { MockLanguageModelV4 } from 'ai/test';
+import { sql } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { groupOf, limitsOf, paced, rest, restingUntil } from './limits';
+import { modelLimits } from '@/server/db/schema';
+
+import {
+  groupOf,
+  limitsOf,
+  limitsReady,
+  paced,
+  rest,
+  restingUntil,
+} from './limits';
+import { withModels } from './calls';
 import { answer } from './models.fixture';
-import { inScratchDirectory } from './scratch.fixture';
+import { inScratchDatabase } from './scratch.fixture';
 
 // Keeping to a model's limits, on stand-in models and a stand-in clock. Each
 // test names its own models: what is learned stays for the run.
@@ -78,8 +89,9 @@ const ask = (id: string, mock: MockLanguageModelV4) =>
   generateText({ model: paced(id, mock), prompt: 'hello', maxRetries: 0 });
 
 describe('keeping to a model’s limits', () => {
-  inScratchDirectory();
-  beforeEach(() => {
+  inScratchDatabase();
+  beforeEach(async () => {
+    await limitsReady();
     vi.useFakeTimers({ now: Date.parse('2026-10-31T12:00:00Z') });
   });
   afterEach(() => {
@@ -241,5 +253,113 @@ describe('keeping to a model’s limits', () => {
     vi.stubEnv('GEMINI_REQUESTS_PER_MINUTE', '100');
     expect(limitsOf('set-by-hand', []).perMinute).toBe(100);
     vi.unstubAllEnvs();
+  });
+});
+
+// What is learned is kept in the database, for the next process to read. A
+// process here is the state on globalThis; forgetting it is a restart.
+const process_ = globalThis as { modelLimits?: unknown };
+const restart = () => {
+  const before = process_.modelLimits;
+  process_.modelLimits = undefined;
+  return before;
+};
+
+describe('limits kept in the database', () => {
+  const scratch = inScratchDatabase();
+  beforeEach(async () => {
+    restart();
+    await limitsReady();
+    vi.useFakeTimers({ now: Date.parse('2026-10-31T12:00:00Z') });
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    restart();
+  });
+
+  it('is seen by a fresh process, with the day’s count and the models that share', async () => {
+    await settled(
+      ask(
+        'learned-a',
+        model(
+          refusal('Minute', 15, '1s', 'learned-b'),
+          refusal('Day', 20, '9s'),
+        ),
+      ).catch(() => undefined),
+    );
+    expect(limitsOf('learned-a', ['learned-a', 'learned-b'])).toMatchObject({
+      models: ['learned-a', 'learned-b'],
+      perMinute: 15,
+    });
+    const rows = await scratch().select().from(modelLimits);
+    expect(rows.map((row) => row.model).sort()).toEqual([
+      'learned-a',
+      'learned-b',
+    ]);
+
+    restart();
+    await limitsReady();
+    expect(groupOf('learned-a')).toBe('learned-b');
+    expect(limitsOf('learned-a', ['learned-a', 'learned-b'])).toMatchObject({
+      models: ['learned-a', 'learned-b'],
+      perMinute: 15,
+      usedToday: expect.any(Number),
+    });
+    expect(limitsOf('learned-b', []).usedToday).toBeGreaterThan(0);
+  });
+
+  it('does not let one process undo what another learned of another model', async () => {
+    // Two processes, both started on an empty database.
+    restart();
+    await limitsReady();
+    const one = process_.modelLimits;
+    restart();
+    await limitsReady();
+    const two = process_.modelLimits;
+
+    process_.modelLimits = one;
+    await settled(ask('by-one', model(refusal('Minute', 11, '1s'))));
+    // The second never heard of it, and learns of another model.
+    process_.modelLimits = two;
+    await settled(ask('by-two', model(refusal('Minute', 22, '1s'))));
+
+    restart();
+    await limitsReady();
+    expect(limitsOf('by-one', []).perMinute).toBe(11);
+    expect(limitsOf('by-two', []).perMinute).toBe(22);
+  });
+
+  it('holds what the database says before a request is spent', async () => {
+    await scratch()
+      .insert(modelLimits)
+      .values({ model: 'kept-first', usedDay: '2026-10-31', usedCount: 4 });
+    restart();
+    // Nothing has awaited limitsReady yet: no state to read.
+    expect(() => limitsOf('kept-first', [])).toThrow('limitsReady');
+
+    // withModels reads it before choosing a model, and each request is
+    // paced after reading it too.
+    await withModels(
+      ['kept-first' as never],
+      'test',
+      () => model() as never,
+      async () => 'ok',
+    );
+    expect(limitsOf('kept-first', []).usedToday).toBe(4);
+
+    restart();
+    await ask('kept-first', model());
+    expect(limitsOf('kept-first', []).usedToday).toBe(5);
+  });
+
+  it('goes on without them when they cannot be read or kept', async () => {
+    await scratch().execute(sql`drop table model_limits`);
+    restart();
+    await limitsReady();
+    // Learned afresh, and a request is still answered and counted.
+    await ask('no-table', model());
+    expect(limitsOf('no-table', []).usedToday).toBe(1);
+    // Tried again at the next call, not given up on.
+    expect(limitsOf('no-table', []).perMinute).toBe(5);
   });
 });

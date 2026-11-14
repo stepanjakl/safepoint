@@ -2,11 +2,12 @@ import { google } from '@ai-sdk/google';
 import { APICallError, wrapLanguageModel } from 'ai';
 
 import {
-  limitsFile,
-  readKeptLimits,
-  writeKeptLimits,
+  limitsStore,
+  loadKeptLimits,
+  saveKeptLimits,
   type KeptLimits,
   type Learned,
+  type LimitsStore,
 } from '@/server/storage/model-limits';
 
 import { quotaOf, type Quota } from './quota';
@@ -18,11 +19,16 @@ import { quotaOf, type Quota } from './quota';
 
   Nothing can be asked of Google ahead of time: its limits are not in the model
   list or on a response. A refusal does state them, so they are learned from
-  refusals and kept in data/ (server/storage/model-limits.ts), and a limit
+  refusals and kept in the database (server/storage/model-limits.ts), and a limit
   learned a week ago is learned afresh, so a raised one is found. A refusal
   naming another model than the one asked says the two share their quota,
   whatever the limit's name says; they are one group from then on.
   GEMINI_REQUESTS_PER_MINUTE overrides what is learned.
+
+  What is kept is read once per process, by `limitsReady`, which every path
+  that spends or reports on a request awaits before it reads the state; the
+  state is read synchronously after that, and `state()` refuses to hand out
+  what has not been through it.
 */
 
 // Until a refusal says otherwise: the lowest limit seen on any model, or what
@@ -41,8 +47,14 @@ const MAX_WAIT = 90_000;
 const MAX_TRIES = 3;
 const BUSY_WAIT = 2_000;
 
+// Stands for "tried and could not": the learning starts afresh, and is tried
+// again at the next request.
+const UNAVAILABLE = {};
+
 type State = KeptLimits & {
-  loaded: string | null;
+  // The store these were read from; null before any attempt.
+  loaded: LimitsStore | typeof UNAVAILABLE | null;
+  loading: { store: LimitsStore; done: Promise<void> } | null;
   // When each recent request went, by group.
   sent: Record<string, number[]>;
   // Spent until then, by group.
@@ -56,6 +68,7 @@ type State = KeptLimits & {
 const server = globalThis as { modelLimits?: State };
 const empty = (): State => ({
   loaded: null,
+  loading: null,
   shares: {},
   perMinute: {},
   perDay: {},
@@ -65,20 +78,64 @@ const empty = (): State => ({
   waiting: {},
 });
 
+const LEARNED = ['shares', 'perMinute', 'perDay', 'used'] as const;
+
+async function read(held: State, store: LimitsStore) {
+  try {
+    const kept = await loadKeptLimits(store);
+    // What was learned before a failed attempt is newer than what is kept.
+    const newer = held.loaded === null || held.loaded === UNAVAILABLE;
+    for (const map of LEARNED)
+      Object.assign(held, { [map]: { ...kept[map], ...(newer && held[map]) } });
+    held.loaded = store;
+  } catch {
+    // A convenience: what cannot be read is learned afresh.
+    held.loaded ??= UNAVAILABLE;
+  } finally {
+    held.loading = null;
+  }
+}
+
+/*
+  Reads what is kept, once for the store the process uses, and returns when
+  it has. Awaited where a model request is paced or chosen (`takeSlot`,
+  calls.ts `withModels`: every request goes through both) and where the
+  quota is reported (the modelLimits router); a failure to read is not an
+  error, and a failed read is tried again at the next call.
+*/
+export async function limitsReady(): Promise<void> {
+  const held = (server.modelLimits ??= empty());
+  let store: LimitsStore;
+  try {
+    store = await limitsStore();
+  } catch {
+    held.loaded ??= UNAVAILABLE;
+    return;
+  }
+  if (held.loaded === store) return;
+  if (held.loading?.store !== store)
+    held.loading = { store, done: read(held, store) };
+  await held.loading.done;
+}
+
 function state(): State {
   const held = (server.modelLimits ??= empty());
-  const file = limitsFile();
-  if (held.loaded === file) return held;
-  held.loaded = file;
-  // A convenience: nothing kept, or what cannot be read, is learned afresh.
-  Object.assign(held, readKeptLimits(file));
+  if (held.loaded === null)
+    throw new Error('Model limits are used before limitsReady() is awaited.');
   return held;
 }
 
-async function keep() {
-  const { shares, perMinute, perDay, used } = state();
+// Keeps what is held of these models, each as its own row.
+async function keep(models: (string | null)[]) {
+  const held = state();
+  // Not read: writing now would put a fresh count over what is kept.
+  if (held.loaded === UNAVAILABLE) return;
   try {
-    await writeKeptLimits(limitsFile(), { shares, perMinute, perDay, used });
+    await saveKeptLimits(
+      held.loaded as LimitsStore,
+      models.filter((model) => model !== null),
+      () => held,
+    );
   } catch {
     // Keeping them is a convenience: a failed write never stops a request.
   }
@@ -152,6 +209,7 @@ function wait(ms: number, signal: AbortSignal | undefined) {
 
 // Waits until the model's group may send another request, and counts it.
 async function takeSlot(model: string, signal: AbortSignal | undefined) {
+  await limitsReady();
   const held = state();
   for (;;) {
     const group = groupOf(model);
@@ -161,7 +219,7 @@ async function takeSlot(model: string, signal: AbortSignal | undefined) {
     if (sent.length < perMinuteOf(group)) {
       sent.push(Date.now());
       held.used[group] = { day: dayNow(), count: usedToday(group) + 1 };
-      await keep();
+      await keep([group]);
       return;
     }
     const until = sent[0]! + MINUTE + MARGIN;
@@ -176,6 +234,7 @@ async function takeSlot(model: string, signal: AbortSignal | undefined) {
 
 async function learnFrom(model: string, quota: Quota) {
   const held = state();
+  const before = groupOf(model);
   if (quota.model && quota.model !== model) share(model, quota.model);
   const group = groupOf(model);
   if (quota.requests !== null && quota.window) {
@@ -187,7 +246,7 @@ async function learnFrom(model: string, quota: Quota) {
         count: Math.max(usedToday(group), quota.requests),
       };
   }
-  await keep();
+  await keep([model, quota.model, before, group]);
 }
 
 /*

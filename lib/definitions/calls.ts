@@ -8,7 +8,12 @@ import {
 import type { z } from 'zod';
 
 import { fallbackChain, thinkingLevel, type DraftingModel } from '@/lib/models';
-import { limitedGoogle, rest, restingUntil } from '@/lib/definitions/limits';
+import {
+  limitedGoogle,
+  limitsReady,
+  rest,
+  restingUntil,
+} from '@/lib/definitions/limits';
 import { quotaOf } from '@/lib/definitions/quota';
 
 /*
@@ -91,6 +96,9 @@ export async function withModels<R>(
   call: (model: LanguageModel, options: CallOptions) => Promise<R>,
   tell?: ModelTell,
 ): Promise<{ value: R; model: DraftingModel }> {
+  // What a model has spent is read before any is chosen, so that none is
+  // asked on a guess at its quota.
+  await limitsReady();
   const telemetry = await devtools(name);
   let last: unknown = null;
   for (const model of models) {
