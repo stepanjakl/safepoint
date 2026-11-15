@@ -164,8 +164,9 @@ export async function keptApplication(
   return kept?.record ?? null;
 }
 
-// The latest write of any run, for a page's summary: a record that does not
-// fit is left out of it, and reported where it is acted on.
+// The latest write of any run, for a page's summary: read from columns
+// only, so a record whose bodies no longer fit still shows here, and is
+// reported where it is acted on.
 export async function lastWrite(
   owner: DefinitionProcess,
 ): Promise<LastWrite | null> {
