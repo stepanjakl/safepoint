@@ -6,18 +6,45 @@
   moves or deletes a file, never overwrites a row, and reports what it
   refused rather than failing on it.
 
-  A later batch adds a kind to KINDS: proposals, cross-checks, applications,
-  jobs.
+  A later batch adds a kind to KINDS: applications.
+
+  A proposal, cross-check or part is kept only for a read that is in the
+  database, run reads being imported first: the tables do not key them to the
+  read (the direct process's are on reads kept under another process), so the
+  import is where a proposal for no read is found and refused. A job file kept
+  as running belongs to a process that no longer exists: it is imported as
+  running under a holder whose lease ran out when the file was last written,
+  which the app reads as interrupted, in the words of its kind.
 */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 import { eq, and } from 'drizzle-orm';
+import type { z } from 'zod';
 
 import { keptReadSchema } from '@/lib/definitions/records';
+import {
+  draftProgressSchema,
+  proposalPartSchema,
+  proposalSchema,
+} from '@/lib/definitions/types';
 import type { Database } from '@/server/db/client';
 import { ensureProcess } from '@/server/db/scope';
-import { modelLimits, reads, sourceReads } from '@/server/db/schema';
+import {
+  answerParts,
+  crossChecks,
+  jobs,
+  modelLimits,
+  proposals,
+  reads,
+  sourceReads,
+  type PART_KINDS,
+} from '@/server/db/schema';
+import { LEASE_MS } from '@/server/jobs/run-job';
+import {
+  crossCheckPartSchema,
+  crossCheckSchema,
+} from '@/server/storage/cross-checks';
 import {
   keptLimitsSchema,
   limitsOfRows,
@@ -35,9 +62,18 @@ export type Tally = {
   refused: Refusal[];
 };
 
+// What kinds tell the ones after them: the reads there are, or would be, so
+// a dry run counts a proposal's read as the real run will find it.
+export type Shared = { reads: Set<string> };
+
 export type Kind = {
   name: string;
-  run: (db: Database, dataDir: string, dryRun: boolean) => Promise<Tally>;
+  run: (
+    db: Database,
+    dataDir: string,
+    dryRun: boolean,
+    shared: Shared,
+  ) => Promise<Tally>;
 };
 
 const tally = (): Tally => ({
@@ -143,7 +179,7 @@ async function settle(
 
 const runReads: Kind = {
   name: 'run reads',
-  async run(db, dataDir, dryRun) {
+  async run(db, dataDir, dryRun, shared) {
     const into = tally();
     // data/<process>/reads/<read id>.json; `sources` and `pglite` are not
     // processes, and have no such folder.
@@ -170,6 +206,7 @@ const runReads: Kind = {
             why: `the file is named ${id} but the read says it is ${read.value.id}`,
           });
         } else {
+          const refusedBefore = into.refused.length;
           await settle(
             into,
             what,
@@ -192,6 +229,7 @@ const runReads: Kind = {
             },
             dryRun,
           );
+          if (into.refused.length === refusedBefore) shared.reads.add(id);
         }
       }
     }
@@ -317,4 +355,371 @@ const runModelLimits: Kind = {
 const pick = <T>(map: Record<string, T>, key: string) =>
   key in map ? { [key]: map[key] } : {};
 
-export const KINDS: Kind[] = [runReads, runSourceReads, runModelLimits];
+// What a run keeps under data/<process>/<folder>/, named by its run key:
+// <read>.<rulebook>.json, with `.part` or `-progress` before the extension
+// for a part still being answered and for a job's progress.
+const RUN_FILE =
+  /^([A-Za-z0-9_-]{1,80})\.([A-Za-z0-9_-]+?)(\.part|-progress)?\.json$/;
+type Variant = 'whole' | 'part' | 'progress';
+const variantOf = (suffix: string | undefined): Variant =>
+  suffix === '.part' ? 'part' : suffix === '-progress' ? 'progress' : 'whole';
+
+type RunFile = {
+  processId: string;
+  file: string;
+  what: string;
+  readId: string;
+  fingerprint: string;
+};
+
+// The files of one variant in every process's folder, and the names that are
+// no run key's, which only the whole variant answers for.
+function runFiles(dataDir: string, folder: string, variant: Variant) {
+  const found: RunFile[] = [];
+  const unnamed: string[] = [];
+  for (const processId of subfolders(dataDir)) {
+    const at = path.join(dataDir, processId, folder);
+    for (const name of jsonFiles(at)) {
+      const what = path.join(processId, folder, name);
+      const match = RUN_FILE.exec(name);
+      if (!match) {
+        if (variant === 'whole') unnamed.push(what);
+      } else if (variantOf(match[3]) === variant)
+        found.push({
+          processId,
+          file: path.join(at, name),
+          what,
+          readId: match[1]!,
+          fingerprint: match[2]!,
+        });
+    }
+  }
+  return { found, unnamed };
+}
+
+async function readIsKept(db: Database, shared: Shared, id: string) {
+  if (shared.reads.has(id)) return true;
+  const [row] = await db
+    .select({ id: reads.id })
+    .from(reads)
+    .where(eq(reads.id, id))
+    .limit(1);
+  return Boolean(row);
+}
+
+/*
+  A kind that is a file per run key, whole or a part: read through its
+  schema, saying what its name says where it says anything, and kept only for
+  a read that is in the database. `get` is the body the table already has for
+  the file's key, and `put` writes it.
+*/
+function runKeyed<T>(
+  name: string,
+  folder: string,
+  variant: Variant,
+  schema: z.ZodType<T>,
+  table: {
+    get: (db: Database, f: RunFile, value: T) => Promise<unknown>;
+    put: (db: Database, f: RunFile, value: T) => Promise<void>;
+  },
+  says?: (value: T) => { readId: string; fingerprint: string },
+): Kind {
+  return {
+    name,
+    async run(db, dataDir, dryRun, shared) {
+      const into = tally();
+      const { found, unnamed } = runFiles(dataDir, folder, variant);
+      for (const what of unnamed) {
+        into.files += 1;
+        into.refused.push({
+          what,
+          why: 'the name is not <read>.<rulebook>.json',
+        });
+      }
+      for (const f of found) {
+        into.files += 1;
+        const parsed = parseFile<T>(f.file, schema);
+        if ('why' in parsed) {
+          into.refused.push({ what: f.what, why: parsed.why });
+          continue;
+        }
+        const value = parsed.value;
+        const said = says?.(value);
+        if (!PROCESS_ID.test(f.processId))
+          into.refused.push({
+            what: f.what,
+            why: 'the process is not one the table takes',
+          });
+        else if (
+          said &&
+          (said.readId !== f.readId || said.fingerprint !== f.fingerprint)
+        )
+          into.refused.push({
+            what: f.what,
+            why: `the file is named ${f.readId}.${f.fingerprint} but says it is ${said.readId}.${said.fingerprint}`,
+          });
+        else if (!(await readIsKept(db, shared, f.readId)))
+          into.refused.push({
+            what: f.what,
+            why: `its read ${f.readId} is not in the database`,
+          });
+        else
+          await settle(
+            into,
+            f.what,
+            async () => {
+              const row = await table.get(db, f, value);
+              return row === null ? null : { same: same(row, value) };
+            },
+            async () => {
+              await ensureProcess(db, f.processId);
+              await table.put(db, f, value);
+            },
+            dryRun,
+          );
+      }
+      return into;
+    },
+  };
+}
+
+const runProposals = runKeyed(
+  'proposals',
+  'proposals',
+  'whole',
+  proposalSchema,
+  {
+    async get(db, f, value) {
+      const [row] = await db
+        .select({ body: proposals.body })
+        .from(proposals)
+        .where(
+          and(
+            eq(proposals.process, f.processId),
+            eq(proposals.readId, f.readId),
+            eq(proposals.fingerprint, f.fingerprint),
+            eq(proposals.proposedAt, new Date(value.at)),
+          ),
+        );
+      return row ? row.body : null;
+    },
+    async put(db, f, value) {
+      await db.insert(proposals).values({
+        process: f.processId,
+        readId: f.readId,
+        fingerprint: f.fingerprint,
+        proposedAt: new Date(value.at),
+        model: value.model,
+        body: value,
+      });
+    },
+  },
+  (value) => value,
+);
+
+// A part is one row per kind and run key, replaced as batches arrive.
+const partTable = <T>(kind: (typeof PART_KINDS)[number]) => ({
+  async get(db: Database, f: RunFile) {
+    const [row] = await db
+      .select({ body: answerParts.body })
+      .from(answerParts)
+      .where(
+        and(
+          eq(answerParts.process, f.processId),
+          eq(answerParts.kind, kind),
+          eq(answerParts.readId, f.readId),
+          eq(answerParts.fingerprint, f.fingerprint),
+        ),
+      );
+    return row ? row.body : null;
+  },
+  async put(db: Database, f: RunFile, value: T) {
+    await db.insert(answerParts).values({
+      process: f.processId,
+      kind,
+      readId: f.readId,
+      fingerprint: f.fingerprint,
+      body: value,
+    });
+  },
+});
+
+const runProposalParts = runKeyed(
+  'proposal parts',
+  'proposals',
+  'part',
+  proposalPartSchema,
+  partTable('proposal'),
+);
+
+const runCrossChecks = runKeyed(
+  'cross-checks',
+  'cross-checks',
+  'whole',
+  crossCheckSchema,
+  {
+    async get(db, f) {
+      const [row] = await db
+        .select({ body: crossChecks.body })
+        .from(crossChecks)
+        .where(
+          and(
+            eq(crossChecks.process, f.processId),
+            eq(crossChecks.readId, f.readId),
+            eq(crossChecks.fingerprint, f.fingerprint),
+          ),
+        );
+      return row ? row.body : null;
+    },
+    async put(db, f, value) {
+      await db.insert(crossChecks).values({
+        process: f.processId,
+        readId: f.readId,
+        fingerprint: f.fingerprint,
+        checkedAt: new Date(value.at),
+        model: value.model,
+        agreed: value.agreed,
+        total: value.total,
+        body: value,
+      });
+    },
+  },
+  (value) => value,
+);
+
+const runCrossCheckParts = runKeyed(
+  'cross-check parts',
+  'cross-checks',
+  'part',
+  crossCheckPartSchema,
+  partTable('cross-check'),
+);
+
+/*
+  A job's progress file, into `jobs`. One kept as running is from a process
+  that is gone: it is imported as running under the holder `import`, its
+  lease last renewed when the file was written (and no later than two leases
+  ago), so the app reads it as interrupted, and a start takes the key over.
+*/
+type Progress = ReturnType<typeof draftProgressSchema.parse>;
+type JobFile = { processId: string; what: string; file: string; key: string };
+
+function jobRow(
+  f: JobFile,
+  kind: 'drafts' | 'proposals',
+  progress: Progress,
+  wrote: Date,
+) {
+  return {
+    process: f.processId,
+    kind,
+    key: f.key,
+    step: progress.step,
+    running: progress.running,
+    error: progress.error,
+    writing: progress.writing ?? null,
+    activity: progress.activity ?? null,
+    holder: progress.running ? 'import' : null,
+    heartbeatAt: progress.running
+      ? new Date(Math.min(wrote.getTime(), Date.now() - 2 * LEASE_MS))
+      : null,
+    startedAt: wrote,
+  };
+}
+
+// What a row says of the job, as the file said it.
+const progressOf = (row: {
+  step: string;
+  running: boolean;
+  error: string | null;
+  writing: string | null;
+  activity: unknown;
+}) => [row.step, row.running, row.error, row.writing, row.activity];
+
+function jobKind(
+  name: string,
+  kind: 'drafts' | 'proposals',
+  filesIn: (dataDir: string) => JobFile[],
+): Kind {
+  return {
+    name,
+    async run(db, dataDir, dryRun) {
+      const into = tally();
+      for (const f of filesIn(dataDir)) {
+        into.files += 1;
+        const parsed = parseFile<Progress>(f.file, draftProgressSchema);
+        if ('why' in parsed) {
+          into.refused.push({ what: f.what, why: parsed.why });
+          continue;
+        }
+        if (!PROCESS_ID.test(f.processId)) {
+          into.refused.push({
+            what: f.what,
+            why: 'the process is not one the table takes',
+          });
+          continue;
+        }
+        const row = jobRow(f, kind, parsed.value, statSync(f.file).mtime);
+        await settle(
+          into,
+          f.what,
+          async () => {
+            const [existing] = await db
+              .select()
+              .from(jobs)
+              .where(
+                and(
+                  eq(jobs.process, f.processId),
+                  eq(jobs.kind, kind),
+                  eq(jobs.key, f.key),
+                ),
+              );
+            return existing
+              ? { same: same(progressOf(existing), progressOf(row)) }
+              : null;
+          },
+          async () => {
+            await ensureProcess(db, f.processId);
+            await db.insert(jobs).values(row);
+          },
+          dryRun,
+        );
+      }
+      return into;
+    },
+  };
+}
+
+// data/<process>/proposals/<read>.<rulebook>-progress.json
+const runProposalProgress = jobKind('proposal progress', 'proposals', (dir) =>
+  runFiles(dir, 'proposals', 'progress').found.map((f) => ({
+    processId: f.processId,
+    what: f.what,
+    file: f.file,
+    key: `${f.readId}:${f.fingerprint}`,
+  })),
+);
+
+// data/<process>/drafts/<instructions hash>.json
+const runDraftProgress = jobKind('draft progress', 'drafts', (dir) =>
+  subfolders(dir).flatMap((processId) =>
+    jsonFiles(path.join(dir, processId, 'drafts')).map((name) => ({
+      processId,
+      what: path.join(processId, 'drafts', name),
+      file: path.join(dir, processId, 'drafts', name),
+      key: name.slice(0, -'.json'.length),
+    })),
+  ),
+);
+
+export const KINDS: Kind[] = [
+  runReads,
+  runSourceReads,
+  runModelLimits,
+  runProposals,
+  runProposalParts,
+  runCrossChecks,
+  runCrossCheckParts,
+  runProposalProgress,
+  runDraftProgress,
+];

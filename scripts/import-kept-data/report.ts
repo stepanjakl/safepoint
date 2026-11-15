@@ -4,7 +4,7 @@
 */
 import type { Database } from '@/server/db/client';
 
-import { KINDS, type Kind, type Tally } from './kinds';
+import { KINDS, type Kind, type Shared, type Tally } from './kinds';
 
 export type Report = { kind: string; tally: Tally }[];
 
@@ -14,10 +14,11 @@ export async function importKeptData(
   { dryRun = false, kinds = KINDS }: { dryRun?: boolean; kinds?: Kind[] } = {},
 ): Promise<Report> {
   const report: Report = [];
+  const shared: Shared = { reads: new Set() };
   for (const kind of kinds)
     report.push({
       kind: kind.name,
-      tally: await kind.run(db, dataDir, dryRun),
+      tally: await kind.run(db, dataDir, dryRun, shared),
     });
   return report;
 }
