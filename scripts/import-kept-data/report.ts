@@ -14,7 +14,7 @@ export async function importKeptData(
   { dryRun = false, kinds = KINDS }: { dryRun?: boolean; kinds?: Kind[] } = {},
 ): Promise<Report> {
   const report: Report = [];
-  const shared: Shared = { reads: new Set() };
+  const shared: Shared = { reads: new Set(), proposals: new Set() };
   for (const kind of kinds)
     report.push({
       kind: kind.name,

@@ -6,7 +6,10 @@
   moves or deletes a file, never overwrites a row, and reports what it
   refused rather than failing on it.
 
-  A later batch adds a kind to KINDS: applications.
+  The record of each write to a process's output (data/<process>/applied/,
+  an array) is a row per entry, in order, pointing at the proposal the entry
+  names by its time; an array the table's guards cannot hold as it stands
+  (two writes standing at once) is refused whole, with why.
 
   A proposal, cross-check or part is kept only for a read that is in the
   database, run reads being imported first, under the process that keeps
@@ -20,13 +23,15 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 import { eq, and } from 'drizzle-orm';
-import type { z } from 'zod';
+import { z } from 'zod';
 
 import { keptReadSchema } from '@/lib/definitions/records';
 import {
+  applicationSchema,
   draftProgressSchema,
   proposalPartSchema,
   proposalSchema,
+  type Application,
 } from '@/lib/definitions/types';
 import type { Database } from '@/server/db/client';
 import { ensureProcess } from '@/server/db/scope';
@@ -41,6 +46,8 @@ import {
   type PART_KINDS,
 } from '@/server/db/schema';
 import { LEASE_MS } from '@/server/jobs/run-job';
+import { insertRow, rowsOfKey } from '@/server/storage/application-rows';
+import { recordFields, recordOf } from '@/server/storage/applications';
 import { readProcessOf } from '@/server/storage/brunch-orders-reads';
 import {
   crossCheckPartSchema,
@@ -63,9 +70,12 @@ export type Tally = {
   refused: Refusal[];
 };
 
-// What kinds tell the ones after them: the reads there are, or would be, so
-// a dry run counts a proposal's read as the real run will find it.
-export type Shared = { reads: Set<string> };
+// What kinds tell the ones after them: the reads and proposals there are, or
+// would be, so a dry run counts what points at them as the real run will.
+export type Shared = { reads: Set<string>; proposals: Set<string> };
+
+const proposalKey = (process: string, readId: string, fp: string, at: string) =>
+  `${process}/${readId}.${fp}@${at}`;
 
 export type Kind = {
   name: string;
@@ -427,6 +437,8 @@ function runKeyed<T>(
     put: (db: Database, f: RunFile, value: T) => Promise<void>;
   },
   says?: (value: T) => { readId: string; fingerprint: string },
+  // Told of each file kept, or found kept, for the kinds after it.
+  kept?: (shared: Shared, f: RunFile, value: T) => void,
 ): Kind {
   return {
     name,
@@ -467,7 +479,8 @@ function runKeyed<T>(
             what: f.what,
             why: `its read ${readProcessOf({ id: f.processId })}/${f.readId} is not in the database`,
           });
-        else
+        else {
+          const refusedBefore = into.refused.length;
           await settle(
             into,
             f.what,
@@ -481,6 +494,8 @@ function runKeyed<T>(
             },
             dryRun,
           );
+          if (into.refused.length === refusedBefore) kept?.(shared, f, value);
+        }
       }
       return into;
     },
@@ -520,6 +535,10 @@ const runProposals = runKeyed(
     },
   },
   (value) => value,
+  (shared, f, value) =>
+    shared.proposals.add(
+      proposalKey(f.processId, f.readId, f.fingerprint, value.at),
+    ),
 );
 
 // A part is one row per kind and run key, replaced as batches arrive.
@@ -719,6 +738,153 @@ const runDraftProgress = jobKind('draft progress', 'drafts', (dir) =>
   ),
 );
 
+/*
+  data/<process>/applied/<read>.<rulebook>.json: the record of each write of
+  a run, an array, oldest first. Each entry is a row, in order, so the latest
+  is the one in force as the last entry was. An entry already there (the
+  same place in the run's rows, the same content) is present; one there with
+  other content, which the app may have settled since, is refused with every
+  entry after it, since the order is the record. A file with two writes
+  standing at once (pending, verified or mismatch), which the table's unique
+  index cannot hold, is refused whole. A pending entry is kept pending, its
+  lease given back, and the app settles it once it can read the sheet.
+*/
+const STANDING = new Set(['pending', 'verified', 'mismatch']);
+const FIELDS = new Set(Object.keys(applicationSchema.shape));
+const canonical = (a: Application) => JSON.stringify(recordFields(a));
+// A time as the app writes one, so it reads back as the same string.
+const exactTime = (at: string | null | undefined) =>
+  at === null || at === undefined || new Date(at).toISOString() === at;
+
+const runApplications: Kind = {
+  name: 'applications',
+  async run(db, dataDir, dryRun, shared) {
+    const into = tally();
+    const { found, unnamed } = runFiles(dataDir, 'applied', 'whole');
+    for (const what of unnamed) {
+      into.files += 1;
+      into.refused.push({
+        what,
+        why: 'the name is not <read>.<rulebook>.json',
+      });
+    }
+    for (const f of found) {
+      into.files += 1;
+      const parsed = parseFile<Application[]>(
+        f.file,
+        z.array(applicationSchema),
+      );
+      if ('why' in parsed) {
+        into.refused.push({ what: f.what, why: parsed.why });
+        continue;
+      }
+      const entries = parsed.value;
+      const whyNot = (() => {
+        if (!PROCESS_ID.test(f.processId))
+          return 'the process is not one the table takes';
+        const standing = entries.filter((e) => STANDING.has(e.status)).length;
+        if (standing > 1)
+          return `${standing} of its writes stand at once (pending, verified or mismatch), and a run has at most one: settle or undo them before importing`;
+        for (const [i, entry] of entries.entries()) {
+          const extra = Object.keys(entry).filter((k) => !FIELDS.has(k));
+          if (extra.length)
+            return `entry ${i + 1} holds ${extra.join(', ')}, which the table has no column for`;
+          if (
+            ![entry.at, entry.proposedAt, entry.undoneAt, entry.undoStartedAt]
+              .map(exactTime)
+              .every(Boolean)
+          )
+            return `entry ${i + 1} has a time not written as the app writes one`;
+        }
+        return null;
+      })();
+      if (whyNot) {
+        into.refused.push({ what: f.what, why: whyNot });
+        continue;
+      }
+      if (!(await readIsKept(db, shared, f))) {
+        into.refused.push({
+          what: f.what,
+          why: `its read ${readProcessOf({ id: f.processId })}/${f.readId} is not in the database`,
+        });
+        continue;
+      }
+      const key = {
+        process: f.processId,
+        readId: f.readId,
+        fingerprint: f.fingerprint,
+      };
+      let existing: string[];
+      try {
+        existing = (await rowsOfKey(db, key)).map((row) =>
+          canonical(recordOf(key, row)),
+        );
+      } catch (error) {
+        into.refused.push({ what: f.what, why: reasonOf(error) });
+        continue;
+      }
+      let stopped = false;
+      for (const [i, entry] of entries.entries()) {
+        const what = `${f.what} entry ${i + 1}`;
+        if (stopped) {
+          into.refused.push({ what, why: 'an entry before it was refused' });
+          continue;
+        }
+        if (i < existing.length) {
+          if (existing[i] === canonical(entry)) into.present += 1;
+          else {
+            into.refused.push({
+              what,
+              why: 'the database has a record at this place of the run with other content; left as it is',
+            });
+            stopped = true;
+          }
+          continue;
+        }
+        const [proposal] = await db
+          .select({ id: proposals.id })
+          .from(proposals)
+          .where(
+            and(
+              eq(proposals.process, f.processId),
+              eq(proposals.readId, f.readId),
+              eq(proposals.fingerprint, f.fingerprint),
+              eq(proposals.proposedAt, new Date(entry.proposedAt)),
+            ),
+          );
+        const wouldBe =
+          dryRun &&
+          shared.proposals.has(
+            proposalKey(f.processId, f.readId, f.fingerprint, entry.proposedAt),
+          );
+        if (!proposal && !wouldBe) {
+          into.refused.push({
+            what,
+            why: `the proposal it wrote (${f.processId}/${f.readId}.${f.fingerprint} at ${entry.proposedAt}) is not in the database`,
+          });
+          stopped = true;
+          continue;
+        }
+        try {
+          if (!dryRun)
+            await insertRow(db, {
+              key,
+              readProcess: readProcessOf({ id: f.processId }),
+              proposalId: proposal!.id,
+              application: entry,
+              holder: null,
+            });
+          into.inserted += 1;
+        } catch (error) {
+          into.refused.push({ what, why: reasonOf(error) });
+          stopped = true;
+        }
+      }
+    }
+    return into;
+  },
+};
+
 export const KINDS: Kind[] = [
   runReads,
   runSourceReads,
@@ -729,4 +895,5 @@ export const KINDS: Kind[] = [
   runCrossCheckParts,
   runProposalProgress,
   runDraftProgress,
+  runApplications,
 ];

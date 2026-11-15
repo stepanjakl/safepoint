@@ -15,13 +15,18 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { capturedRead } from '@/lib/definitions/captured.fixture';
 import { inScratchDatabase } from '@/lib/definitions/scratch.fixture';
-import { draftProgressSchema, proposalSchema } from '@/lib/definitions/types';
+import {
+  draftProgressSchema,
+  proposalSchema,
+  type Application,
+} from '@/lib/definitions/types';
 import {
   BRUNCH_ORDERS_DEFINITIONS as owner,
   BRUNCH_ORDERS_DIRECT_DEFINITIONS as direct,
 } from '@/lib/processes/brunch-orders/process';
 import {
   answerParts,
+  applications,
   crossChecks,
   jobs,
   modelLimits,
@@ -31,6 +36,7 @@ import {
 } from '@/server/db/schema';
 import { jobProgress } from '@/server/jobs/run-job';
 import { INTERRUPTED as PROPOSAL_INTERRUPTED } from '@/server/jobs/proposal';
+import { keptApplication } from '@/server/storage/applications';
 import { keptRead } from '@/server/storage/brunch-orders-reads';
 import { keptCrossCheck } from '@/server/storage/cross-checks';
 import { loadKeptLimits } from '@/server/storage/model-limits';
@@ -80,6 +86,52 @@ const CHECK_FP = 'd23a4c56d75b';
 const cells = {
   'ZZ-9': { sales: { model: 3, working: 'Three.', agrees: true } },
 };
+
+// The record of a write, as apply kept it in a file: what it wrote, and what
+// came of it.
+const FIRST_AT = '2026-11-01T09:00:00.000Z';
+const entry = (
+  status: Application['status'],
+  at: string,
+  more: Partial<Application> = {},
+): Application => ({
+  proposedAt: FIRST_AT,
+  tab: 'Orders',
+  at,
+  status,
+  error: status === 'failed' ? 'The sheet said no.' : null,
+  undoneAt: status === 'undone' ? '2026-11-01T11:00:00.000Z' : null,
+  range: 'A1:B2',
+  before: [
+    ['', ''],
+    ['', ''],
+  ],
+  after: [
+    ['sku', 'order'],
+    ['ZZ-9', 3],
+  ],
+  changes: [
+    { key: 'ZZ-9', field: 'order', cell: 'Orders!B2', before: null, after: 3 },
+  ],
+  decisions: {
+    'ZZ-9': {
+      kind: 'approve',
+      values: { order: 3 },
+      at: FIRST_AT,
+      verdict: 'ready',
+      failing: [],
+    },
+  },
+  ...more,
+});
+// A run's writes: one that failed, one undone, and the one standing.
+const WRITES = [
+  entry('failed', '2026-11-01T10:00:00.000Z', { addsResource: true }),
+  entry('undone', '2026-11-01T10:30:00.000Z', {
+    undoStartedAt: '2026-11-01T10:59:00.000Z',
+  }),
+  entry('verified', '2026-11-01T12:00:00.000Z'),
+];
 
 // Every file under the folder, with its content and its time of change.
 function snapshot(dir: string): string[] {
@@ -179,8 +231,16 @@ describe('the import of what is kept on disk', () => {
       running: true,
       writing: 'two_weekends',
     });
-    // Not read as any of them: another kind's, and what is not a kept file.
+    // The writes of two runs, the direct process's cut short before it was
+    // read back, and a run that never wrote.
+    write(folder, `brunch-orders/applied/first.${FP}.json`, WRITES);
+    write(folder, `brunch-orders-direct/applied/first.${CHECK_FP}.json`, [
+      entry('pending', '2026-11-02T10:00:00.000Z', {
+        proposedAt: '2026-11-02T09:00:00.000Z',
+      }),
+    ]);
     write(folder, 'brunch-orders/applied/first.abcdefabcdef.json', []);
+    // Not read as any of them: what is not a kept file.
     write(folder, 'brunch-orders/reads/leftover.json.123.tmp', 'half a file');
   });
   afterEach(() => rmSync(folder, { recursive: true, force: true }));
@@ -196,6 +256,7 @@ describe('the import of what is kept on disk', () => {
     'cross-check parts': [1, 1, 0, 0],
     'proposal progress': [2, 2, 0, 0],
     'draft progress': [2, 2, 0, 0],
+    applications: [3, 4, 0, 0],
   };
   const PRESENT = Object.fromEntries(
     Object.entries(KEPT).map(([kind, [files, inserted]]) => [
@@ -290,8 +351,83 @@ describe('the import of what is kept on disk', () => {
       error: 'Stopped.',
       writing: 'two_weekends',
     });
+    // Each write a row, in order, the latest the one in force, to the byte;
+    // the one cut short pending, for the app to settle.
+    expect(
+      (await db().select().from(applications).orderBy(applications.id)).map(
+        (row) => [row.process, row.status, row.holder],
+      ),
+    ).toEqual([
+      ['brunch-orders', 'failed', null],
+      ['brunch-orders', 'undone', null],
+      ['brunch-orders', 'verified', null],
+      ['brunch-orders-direct', 'pending', null],
+    ]);
+    expect(JSON.stringify(await keptApplication(owner, 'first', FP))).toBe(
+      JSON.stringify(WRITES[2]),
+    );
+    expect(await keptApplication(direct, 'first', CHECK_FP)).toMatchObject({
+      status: 'pending',
+    });
     // Every file as it was.
     expect(snapshot(folder)).toEqual(before);
+  });
+
+  it('refuses the writes of a run it cannot hold as they stand, and says why', async () => {
+    const SECOND_AT = '2026-11-03T09:00:00.000Z';
+    write(
+      folder,
+      `brunch-orders/proposals/second.${FP}.json`,
+      proposalOf('second', FP, SECOND_AT),
+    );
+    // Two writes standing at once, which a run cannot have.
+    write(folder, `brunch-orders/applied/second.${FP}.json`, [
+      entry('verified', '2026-11-03T10:00:00.000Z', { proposedAt: SECOND_AT }),
+      entry('pending', '2026-11-03T11:00:00.000Z', { proposedAt: SECOND_AT }),
+    ]);
+    // A key the table has no column for.
+    write(folder, `brunch-orders/applied/second.${CHECK_FP}.json`, [
+      { ...entry('failed', '2026-11-03T10:00:00.000Z'), note: 'kept' },
+    ]);
+    // A write of a proposal that is not kept.
+    write(folder, `brunch-orders/applied/second.aaaaaaaaaaaa.json`, [
+      entry('failed', '2026-11-03T10:00:00.000Z'),
+    ]);
+    const before = snapshot(folder);
+    const report = await importKeptData(db(), folder);
+    expect(counts(report)).toMatchObject({ applications: [6, 4, 0, 3] });
+    const text = say(report, false);
+    expect(text).toContain(
+      `second.${FP}.json: 2 of its writes stand at once (pending, verified or mismatch), and a run has at most one`,
+    );
+    expect(text).toContain(
+      `second.${CHECK_FP}.json: entry 1 holds note, which the table has no column for`,
+    );
+    expect(text).toContain(
+      `second.aaaaaaaaaaaa.json entry 1: the proposal it wrote (brunch-orders/second.aaaaaaaaaaaa at ${FIRST_AT}) is not in the database`,
+    );
+    expect(await keptApplication(owner, 'second', FP)).toBeNull();
+    expect(snapshot(folder)).toEqual(before);
+  });
+
+  it('refuses a write that changed since it was imported, and every one after it', async () => {
+    await importKeptData(db(), folder);
+    write(folder, `brunch-orders/applied/first.${FP}.json`, [
+      WRITES[0],
+      { ...WRITES[1]!, error: 'Edited since' },
+      WRITES[2],
+      entry('failed', '2026-11-01T13:00:00.000Z'),
+    ]);
+    const report = await importKeptData(db(), folder);
+    expect(counts(report)).toMatchObject({ applications: [3, 0, 2, 3] });
+    const text = say(report, false);
+    expect(text).toContain(
+      `first.${FP}.json entry 2: the database has a record at this place of the run with other content`,
+    );
+    expect(text).toContain(
+      `first.${FP}.json entry 4: an entry before it was refused`,
+    );
+    expect(await db().select().from(applications)).toHaveLength(4);
   });
 
   it('is safe to run twice: everything is then present, and nothing changes', async () => {
@@ -304,6 +440,7 @@ describe('the import of what is kept on disk', () => {
       await db().select().from(answerParts),
       await db().select().from(crossChecks),
       await db().select().from(jobs),
+      await db().select().from(applications),
     ];
     const first = await rows();
     const report = await importKeptData(db(), folder);
@@ -322,6 +459,7 @@ describe('the import of what is kept on disk', () => {
       answerParts,
       crossChecks,
       jobs,
+      applications,
     ])
       expect(await db().select().from(table)).toEqual([]);
     // As it would be after a real one: the same counts either way.

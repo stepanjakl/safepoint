@@ -3,9 +3,8 @@
 
   Copies what the server kept as files under data/ into the database the app
   would open (server/db/client.ts): DATABASE_URL, else PGlite at data/pglite/
-  under the working directory. Run reads, source reads and learned model
-  limits so far; each later batch adds a kind (scripts/import-kept-data/
-  kinds.ts).
+  under the working directory: every kind the server once kept as files
+  (scripts/import-kept-data/kinds.ts).
 
   Safe to run twice: a row already there with the same content is left alone
   and counted as present, and one there with other content is reported and
