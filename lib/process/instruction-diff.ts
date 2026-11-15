@@ -133,6 +133,17 @@ export function paragraphsOf(text: string): string[] {
     .filter(Boolean);
 }
 
+/*
+  Instructions as they are published: spacing is not content, so each
+  paragraph is trimmed and they are separated by exactly one blank line. The
+  server keeps a published version's text in this form and hashes it as it
+  is kept, so the browser and the server agree on "the same text" only if
+  both normalise with this. A declared version is already in this form
+  (server/storage/instructions.test.ts).
+*/
+export const normalisedInstructions = (text: string) =>
+  paragraphsOf(text).join('\n\n');
+
 // Words, punctuation and the whitespace between them. Punctuation is its own
 // token, so "multiple." becoming "multiple, and never above…" marks the comma
 // and what follows, not the word that stayed; whitespace is kept, so a

@@ -3,6 +3,7 @@ import 'server-only';
 import { initTRPC, TRPCError } from '@trpc/server';
 
 import { localDevelopmentRefusal } from '@/lib/dev/dev-route';
+import { Refused } from '@/server/storage/refused';
 
 /*
   Server-only. tRPC's one initialisation: what every procedure is given (the
@@ -46,18 +47,34 @@ const t = initTRPC.context<Context>().create({
 export const router = t.router;
 
 /*
+  Who is acting: the name a decision, a run or a published version is kept
+  under. There is no sign-in yet, so nobody is named; the phase that asks a
+  reviewer's name changes this function and nothing else.
+*/
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const actorOf = (_request: Request): string | null => null;
+
+/*
   Who may call a stateful procedure is decided here and nowhere else: local
   development today, and a signed-in session as well once there is one. The
   gate runs before the input is parsed, as the plain routes refuse first.
+  Past it, a procedure is told who is acting (`ctx.actor`), and a refusal
+  its work throws (`Refused`) reaches the screen in its own words and code.
 */
-export const gatedProcedure = t.procedure.use(({ ctx, next }) => {
+export const gatedProcedure = t.procedure.use(async ({ ctx, next }) => {
   const refusal = localDevelopmentRefusal(ctx.request);
   if (refusal)
     throw new TRPCError({
       code: refusal.status === 404 ? 'NOT_FOUND' : 'FORBIDDEN',
       message: refusal.message,
     });
-  return next();
+  const result = await next({ ctx: { actor: actorOf(ctx.request) } });
+  if (!result.ok && result.error.cause instanceof Refused)
+    throw new TRPCError({
+      code: result.error.cause.code,
+      message: result.error.cause.message,
+    });
+  return result;
 });
 
 // What the routes answered for anything that went wrong while working: the
