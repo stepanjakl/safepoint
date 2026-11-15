@@ -398,10 +398,11 @@ export const runs = pgTable(
   row per proposal made, written once, so a decision or a write points at
   exactly the proposal it was made on. The latest is the one shown. The
   fingerprint is not a key into rulebook_revisions: a process with no
-  rulebook proposes under the empty rulebook's fingerprint (noRules). Nor is
-  the read a key into `reads`: Brunch orders' direct process proposes on
-  reads kept under `brunch-orders`, so (process, read_id) names no row there;
-  the same holds of cross_checks and answer_parts.
+  rulebook proposes under the empty rulebook's fingerprint (noRules). A row
+  has two scopes: `process`, the one it belongs to, and `read_process`, the
+  one whose read it was made on (Brunch orders' direct process proposes on
+  reads kept under `brunch-orders`); the same holds of cross_checks and
+  answer_parts. server/storage/brunch-orders-reads.ts says which.
 */
 export const proposals = pgTable(
   'proposals',
@@ -410,6 +411,7 @@ export const proposals = pgTable(
       .primaryKey()
       .generatedAlwaysAsIdentity(),
     process: processColumn(),
+    readProcess: text('read_process').notNull(),
     readId: text('read_id').notNull(),
     fingerprint: text('fingerprint').notNull(),
     // The proposal's own `at`.
@@ -433,6 +435,11 @@ export const proposals = pgTable(
       'proposals_body_run_key',
       sql`${mirrors(t.fingerprint, t.body, 'fingerprint')} and ${mirrors(t.readId, t.body, 'readId')}`,
     ),
+    foreignKey({
+      name: 'proposals_read_fk',
+      columns: [t.readProcess, t.readId],
+      foreignColumns: [reads.process, reads.id],
+    }).onDelete('restrict'),
   ],
 );
 
@@ -442,6 +449,7 @@ export const crossChecks = pgTable(
   'cross_checks',
   {
     process: processColumn(),
+    readProcess: text('read_process').notNull(),
     readId: text('read_id').notNull(),
     fingerprint: text('fingerprint').notNull(),
     checkedAt: instant('checked_at').notNull(),
@@ -457,6 +465,11 @@ export const crossChecks = pgTable(
       'cross_checks_counts',
       sql`0 <= ${t.agreed} and ${t.agreed} <= ${t.total}`,
     ),
+    foreignKey({
+      name: 'cross_checks_read_fk',
+      columns: [t.readProcess, t.readId],
+      foreignColumns: [reads.process, reads.id],
+    }).onDelete('restrict'),
   ],
 );
 
@@ -469,6 +482,7 @@ export const answerParts = pgTable(
   {
     process: processColumn(),
     kind: text('kind').notNull(),
+    readProcess: text('read_process').notNull(),
     readId: text('read_id').notNull(),
     fingerprint: text('fingerprint').notNull(),
     // proposalPartSchema or crossCheckPartSchema.
@@ -478,6 +492,11 @@ export const answerParts = pgTable(
   (t) => [
     primaryKey({ columns: [t.process, t.kind, t.readId, t.fingerprint] }),
     check('answer_parts_kind', oneOf(t.kind, PART_KINDS)),
+    foreignKey({
+      name: 'answer_parts_read_fk',
+      columns: [t.readProcess, t.readId],
+      foreignColumns: [reads.process, reads.id],
+    }).onDelete('restrict'),
   ],
 );
 

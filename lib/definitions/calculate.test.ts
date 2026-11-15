@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import {
@@ -10,6 +10,7 @@ import {
 import { calculate } from './calculate';
 import { capturedRead } from './captured.fixture';
 import { always, answer, standIn, told } from './models.fixture';
+import { keepStandInRead } from '@/server/storage/reads.fixture';
 import { inScratchStorage } from './scratch.fixture';
 import { definition, TEXT } from './set.fixture';
 import { fingerprintOf } from './fingerprint';
@@ -150,7 +151,8 @@ describe('calculating', () => {
 });
 
 describe('the model cross-checking', () => {
-  inScratchStorage();
+  const { database: db } = inScratchStorage();
+  beforeEach(() => keepStandInRead(db(), 'test'));
   // One entry per record, every value under its id.
   const everyRecord = (change: (key: string, id: string) => number | null) =>
     Object.entries(BY_HAND).map(([key, [sales, target]]) => ({

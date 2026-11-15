@@ -9,9 +9,9 @@
   A later batch adds a kind to KINDS: applications.
 
   A proposal, cross-check or part is kept only for a read that is in the
-  database, run reads being imported first: the tables do not key them to the
-  read (the direct process's are on reads kept under another process), so the
-  import is where a proposal for no read is found and refused. A job file kept
+  database, run reads being imported first, under the process that keeps
+  reads (readProcessOf); the tables refuse one that is not, and the import
+  says so in words first. A job file kept
   as running belongs to a process that no longer exists: it is imported as
   running under a holder whose lease ran out when the file was last written,
   which the app reads as interrupted, in the words of its kind.
@@ -41,6 +41,7 @@ import {
   type PART_KINDS,
 } from '@/server/db/schema';
 import { LEASE_MS } from '@/server/jobs/run-job';
+import { readProcessOf } from '@/server/storage/brunch-orders-reads';
 import {
   crossCheckPartSchema,
   crossCheckSchema,
@@ -229,7 +230,8 @@ const runReads: Kind = {
             },
             dryRun,
           );
-          if (into.refused.length === refusedBefore) shared.reads.add(id);
+          if (into.refused.length === refusedBefore)
+            shared.reads.add(`${processId}/${id}`);
         }
       }
     }
@@ -397,13 +399,15 @@ function runFiles(dataDir: string, folder: string, variant: Variant) {
   return { found, unnamed };
 }
 
-async function readIsKept(db: Database, shared: Shared, id: string) {
-  if (shared.reads.has(id)) return true;
+// The read a run's file was made on, under the process that keeps it (the
+// same one the app's own writes use).
+async function readIsKept(db: Database, shared: Shared, f: RunFile) {
+  const process = readProcessOf({ id: f.processId });
+  if (shared.reads.has(`${process}/${f.readId}`)) return true;
   const [row] = await db
     .select({ id: reads.id })
     .from(reads)
-    .where(eq(reads.id, id))
-    .limit(1);
+    .where(and(eq(reads.process, process), eq(reads.id, f.readId)));
   return Boolean(row);
 }
 
@@ -458,10 +462,10 @@ function runKeyed<T>(
             what: f.what,
             why: `the file is named ${f.readId}.${f.fingerprint} but says it is ${said.readId}.${said.fingerprint}`,
           });
-        else if (!(await readIsKept(db, shared, f.readId)))
+        else if (!(await readIsKept(db, shared, f)))
           into.refused.push({
             what: f.what,
-            why: `its read ${f.readId} is not in the database`,
+            why: `its read ${readProcessOf({ id: f.processId })}/${f.readId} is not in the database`,
           });
         else
           await settle(
@@ -506,6 +510,7 @@ const runProposals = runKeyed(
     async put(db, f, value) {
       await db.insert(proposals).values({
         process: f.processId,
+        readProcess: readProcessOf({ id: f.processId }),
         readId: f.readId,
         fingerprint: f.fingerprint,
         proposedAt: new Date(value.at),
@@ -536,6 +541,7 @@ const partTable = <T>(kind: (typeof PART_KINDS)[number]) => ({
   async put(db: Database, f: RunFile, value: T) {
     await db.insert(answerParts).values({
       process: f.processId,
+      readProcess: readProcessOf({ id: f.processId }),
       kind,
       readId: f.readId,
       fingerprint: f.fingerprint,
@@ -574,6 +580,7 @@ const runCrossChecks = runKeyed(
     async put(db, f, value) {
       await db.insert(crossChecks).values({
         process: f.processId,
+        readProcess: readProcessOf({ id: f.processId }),
         readId: f.readId,
         fingerprint: f.fingerprint,
         checkedAt: new Date(value.at),

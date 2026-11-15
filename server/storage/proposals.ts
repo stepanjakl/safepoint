@@ -21,6 +21,7 @@ import { database } from '@/server/db/client';
 import { ensureProcess } from '@/server/db/scope';
 import { proposals } from '@/server/db/schema';
 
+import { readProcessOf } from './brunch-orders-reads';
 import { dropPart, keepPart, keptPart } from './answer-parts';
 import { parseStored } from './stored';
 
@@ -87,6 +88,7 @@ export async function keepProposal(
       .insert(proposals)
       .values({
         process: owner.id,
+        readProcess: readProcessOf(owner),
         readId: body.readId,
         fingerprint: body.fingerprint,
         proposedAt: new Date(body.at),

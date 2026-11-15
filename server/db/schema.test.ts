@@ -82,6 +82,7 @@ async function proposal(db: Database) {
     .insert(proposals)
     .values({
       process: PROCESS,
+      readProcess: PROCESS,
       readId: READ,
       fingerprint: FINGERPRINT,
       proposedAt: AT,

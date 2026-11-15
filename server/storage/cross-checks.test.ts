@@ -1,10 +1,11 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { CrossCheck } from '@/lib/definitions/calculate';
 import { inScratchDatabase } from '@/lib/definitions/scratch.fixture';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { answerParts, crossChecks } from '@/server/db/schema';
 
+import { keepStandInRead } from './reads.fixture';
 import { keepPart, keptPart } from './answer-parts';
 import {
   crossCheckPartSchema,
@@ -18,6 +19,7 @@ import {
 const db = inScratchDatabase();
 
 const READ = '2026-10-08T21-46-29-441Z-6e93bf09';
+beforeEach(() => keepStandInRead(db(), READ));
 const FINGERPRINT = 'd23a4c56d75b';
 const made = (at: string, agreed = 1): CrossCheck => ({
   fingerprint: FINGERPRINT,
@@ -40,6 +42,15 @@ describe('a kept cross-check', () => {
     const kept = await keptCrossCheck(owner, READ, FINGERPRINT);
     expect(kept).toEqual(check);
     expect(Object.keys(kept!.cells)).toEqual(['ZZ-9', 'SD-01']);
+  });
+
+  it('is refused for a read that is not kept', async () => {
+    await expect(
+      keepCrossCheck(owner, {
+        ...made('2026-11-01T09:00:00.000Z'),
+        readId: 'nowhere',
+      }),
+    ).rejects.toThrow();
   });
 
   it('is replaced by a new one for the same run key', async () => {

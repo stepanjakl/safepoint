@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 
 import { eq, sql } from 'drizzle-orm';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { inScratchDatabase, rowsOf } from '@/lib/definitions/scratch.fixture';
 import {
@@ -13,8 +13,9 @@ import {
   BRUNCH_ORDERS_DEFINITIONS as owner,
   BRUNCH_ORDERS_DIRECT_DEFINITIONS as direct,
 } from '@/lib/processes/brunch-orders/process';
-import { answerParts, proposals } from '@/server/db/schema';
+import { answerParts, crossChecks, proposals } from '@/server/db/schema';
 
+import { keepStandInRead } from './reads.fixture';
 import { dropPart, keepPart, keptPart } from './answer-parts';
 import { keepProposal, keptProposal, runKeyOf } from './proposals';
 
@@ -22,6 +23,8 @@ import { keepProposal, keptProposal, runKeyOf } from './proposals';
 // one kept. A part is replaced as each batch arrives and goes with the whole.
 
 const db = inScratchDatabase();
+// Every read is kept under Brunch orders', whichever process works on it.
+beforeEach(() => keepStandInRead(db(), READ));
 
 const frozen = proposalSchema.parse(
   (
@@ -135,12 +138,144 @@ describe('a kept proposal', () => {
   });
 
   it('is kept for a process whose read is kept under another', async () => {
-    // The direct process proposes on reads kept under `brunch-orders`, so no
-    // read of its own names the proposal's.
+    // The direct process proposes on a read kept under `brunch-orders`.
     await keepProposal(direct, made('2026-11-01T09:00:00.000Z'));
     expect(await keptProposal(direct, READ, FINGERPRINT)).toMatchObject({
       readId: READ,
     });
+    expect(
+      await db()
+        .select({
+          process: proposals.process,
+          readProcess: proposals.readProcess,
+        })
+        .from(proposals),
+    ).toEqual([{ process: direct.id, readProcess: owner.id }]);
+    await keepPart(
+      'proposal',
+      runKeyOf(direct, READ, FINGERPRINT),
+      proposalPartSchema,
+      {
+        records: {},
+        models: [],
+      },
+    );
+    expect(
+      await db()
+        .select({ readProcess: answerParts.readProcess })
+        .from(answerParts),
+    ).toEqual([{ readProcess: owner.id }]);
+  });
+});
+
+describe('the read a row was made on', () => {
+  const refusedFor = async (attempt: Promise<unknown>) => {
+    const error = await attempt.then(
+      () => null,
+      (thrown: unknown) =>
+        thrown as { cause?: { code?: string }; code?: string },
+    );
+    return (error?.cause ?? error)?.code;
+  };
+
+  it('must be kept: a proposal, a cross-check or a part for a read kept nowhere is refused', async () => {
+    await expect(
+      keepProposal(owner, {
+        ...made('2026-11-01T09:00:00.000Z'),
+        readId: 'nowhere',
+      }),
+    ).rejects.toThrow();
+    await expect(
+      keepPart('proposal', { ...key, readId: 'nowhere' }, proposalPartSchema, {
+        records: {},
+        models: [],
+      }),
+    ).rejects.toThrow();
+    expect(await db().select().from(proposals)).toEqual([]);
+    expect(await db().select().from(answerParts)).toEqual([]);
+  });
+
+  it('is refused by the database itself, whatever wrote the row', async () => {
+    const body = made('2026-11-01T09:00:00.000Z');
+    const here = { process: owner.id, fingerprint: FINGERPRINT };
+    await db().execute(
+      sql`insert into processes (id) values (${owner.id}) on conflict do nothing`,
+    );
+    // 23503: foreign_key_violation. Under the right process, with no such read.
+    expect(
+      await refusedFor(
+        db()
+          .insert(proposals)
+          .values({
+            ...here,
+            readProcess: owner.id,
+            readId: 'nowhere',
+            proposedAt: new Date(body.at),
+            model: 'a-model',
+            body: { ...body, readId: 'nowhere' },
+          }),
+      ),
+    ).toBe('23503');
+    // And under another process that has the id kept: the read is of the
+    // process that keeps it, not any with the same id.
+    expect(
+      await refusedFor(
+        db()
+          .insert(answerParts)
+          .values({
+            ...here,
+            kind: 'proposal',
+            readProcess: direct.id,
+            readId: READ,
+            body: {},
+          }),
+      ),
+    ).toBe('23503');
+    expect(
+      await refusedFor(
+        db()
+          .insert(crossChecks)
+          .values({
+            ...here,
+            readProcess: owner.id,
+            readId: 'nowhere',
+            checkedAt: new Date(body.at),
+            model: 'a-model',
+            agreed: 0,
+            total: 0,
+            body: {} as never,
+          }),
+      ),
+    ).toBe('23503');
+  });
+
+  it('cannot be removed while a row points at it: the key restricts deletes', async () => {
+    const keys = await rowsOf<{
+      name: string;
+      onDelete: string;
+      columns: string;
+    }>(
+      db(),
+      sql`select conrelid::regclass::text || '.' || conname as name,
+          confdeltype as "onDelete",
+          (select string_agg(attname, ',' order by ord) from unnest(conkey) with ordinality k(attnum, ord)
+            join pg_attribute a on a.attrelid = conrelid and a.attnum = k.attnum) as columns
+        from pg_constraint
+        where confrelid = 'reads'::regclass
+          and conrelid in ('proposals'::regclass, 'cross_checks'::regclass, 'answer_parts'::regclass)
+        order by name`,
+    );
+    expect(keys).toEqual(
+      ['answer_parts', 'cross_checks', 'proposals'].map((table) => ({
+        name: `${table}.${table}_read_fk`,
+        onDelete: 'r',
+        columns: 'read_process,read_id',
+      })),
+    );
+    await keepProposal(owner, made('2026-11-01T09:00:00.000Z'));
+    // Reads are written once, so the trigger answers first; the key is the
+    // second lock on the same door.
+    await expect(db().execute(sql`delete from reads`)).rejects.toThrow();
   });
 });
 

@@ -4,6 +4,8 @@ import type { DecisionMade, OutputSheet } from '@/lib/definitions/apply';
 import { capturedRead, capturedTabs } from '@/lib/definitions/captured.fixture';
 import { fingerprintOf, hashOf } from '@/lib/definitions/fingerprint';
 import { inScratchStorage } from '@/lib/definitions/scratch.fixture';
+import type { Database } from '@/server/db/client';
+import { keepStandInRead } from '@/server/storage/reads.fixture';
 import type { DefinitionSet, Proposal } from '@/lib/definitions/types';
 import {
   BRUNCH_ORDERS_DEFINITIONS as owner,
@@ -80,6 +82,9 @@ const record = (order: number) => ({
 const approve: DecisionMade = { kind: 'approve', at: THURSDAY };
 const decisions = { 'EG-06': approve, 'CT-250': approve };
 
+// Set by the suite below: where the proposals arranged here are kept.
+let scratchDb!: () => Database;
+
 // The rulebook current for `text`, and a proposal kept for `readId` on it.
 async function arrange(
   readId: string,
@@ -88,6 +93,7 @@ async function arrange(
 ) {
   const set = { ...rulebook, hash: hashOf(text) };
   await keepAsCurrent(set);
+  await keepStandInRead(scratchDb(), readId);
   const fingerprint = fingerprintOf(set);
   const proposal: Proposal = {
     fingerprint,
@@ -113,7 +119,7 @@ async function arrange(
 }
 
 describe('apply router', () => {
-  inScratchStorage();
+  scratchDb = inScratchStorage().database;
   let sheet: ReturnType<typeof memorySheet>;
   beforeEach(() => {
     vi.stubEnv('NODE_ENV', 'development');

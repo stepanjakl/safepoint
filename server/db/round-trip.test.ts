@@ -250,6 +250,7 @@ describe('the accepted rulebook and the frozen proposal, in their tables', () =>
       .insert(proposals)
       .values({
         process: PROCESS,
+        readProcess: PROCESS,
         readId: proposal.readId,
         fingerprint: proposal.fingerprint,
         proposedAt: new Date(proposal.at),

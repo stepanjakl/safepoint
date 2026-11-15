@@ -17,6 +17,7 @@ import { database } from '@/server/db/client';
 import { ensureProcess } from '@/server/db/scope';
 import { crossChecks } from '@/server/db/schema';
 
+import { readProcessOf } from './brunch-orders-reads';
 import { dropPart, keepPart, keptPart } from './answer-parts';
 
 // Records a call works out: few enough that the model's answer fits.
@@ -76,6 +77,7 @@ export async function keepCrossCheck(
     .insert(crossChecks)
     .values({
       process: owner.id,
+      readProcess: readProcessOf(owner),
       readId: body.readId,
       fingerprint: body.fingerprint,
       ...row,

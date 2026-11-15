@@ -417,7 +417,7 @@ describe('the import of what is kept on disk', () => {
     });
     const text = say(report, false);
     expect(text).toContain(
-      'gone.5b895575e4e7.json: its read gone is not in the database',
+      'gone.5b895575e4e7.json: its read brunch-orders/gone is not in the database',
     );
     expect(text).toContain(
       'second.5b895575e4e7.json: the file is named second.5b895575e4e7 but says it is first.5b895575e4e7',
@@ -426,7 +426,7 @@ describe('the import of what is kept on disk', () => {
       'notes.json: the name is not <read>.<rulebook>.json',
     );
     expect(text).toContain(
-      'gone.d23a4c56d75b.part.json: its read gone is not in the database',
+      'gone.d23a4c56d75b.part.json: its read brunch-orders/gone is not in the database',
     );
     expect(text).toContain('broken.json: is not valid JSON');
     expect(snapshot(folder)).toEqual(before);

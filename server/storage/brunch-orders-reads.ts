@@ -40,6 +40,18 @@ import { parseStored } from './stored';
   browser holds only the id. Only the data tabs are kept.
 */
 
+/*
+  Every read is kept under Brunch orders', its direct process's included: the
+  one place that says whose reads a process works on. keptRead and keep use
+  it, and so do the rows made on a read (proposals, cross-checks, parts), as
+  their `read_process`, so the two cannot disagree.
+*/
+const READS_PROCESS = BRUNCH_ORDERS_ID;
+// The process is a parameter so a caller says whose reads it means; today
+// every process's are kept under the one.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const readProcessOf = (_owner: { id: string }) => READS_PROCESS;
+
 // The last live read saved in the repository, so tests and the default view
 // need no network. Saving one is an explicit action.
 const CAPTURED = path.join(
@@ -127,11 +139,11 @@ const asKept = (read: SheetRead, label: string): KeptRead => {
 async function keep(read: KeptRead): Promise<KeptRead> {
   const body = keptReadSchema.parse(read);
   const db = await database();
-  await ensureProcess(db, BRUNCH_ORDERS_ID);
+  await ensureProcess(db, READS_PROCESS);
   const inserted = await db
     .insert(reads)
     .values({
-      process: BRUNCH_ORDERS_ID,
+      process: READS_PROCESS,
       id: body.id,
       readAt: new Date(body.readAt),
       source: body.source,
@@ -162,12 +174,12 @@ export async function keptRead(id: string): Promise<KeptRead | null> {
   )
     .select({ body: reads.body })
     .from(reads)
-    .where(and(eq(reads.process, BRUNCH_ORDERS_ID), eq(reads.id, id)));
+    .where(and(eq(reads.process, READS_PROCESS), eq(reads.id, id)));
   return row
     ? parseStored(
         row.body,
         keptReadSchema,
-        `The kept read ${BRUNCH_ORDERS_ID}/${id}`,
+        `The kept read ${READS_PROCESS}/${id}`,
       )
     : null;
 }

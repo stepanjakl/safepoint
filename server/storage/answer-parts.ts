@@ -7,6 +7,7 @@ import { database, type Database } from '@/server/db/client';
 import { ensureProcess } from '@/server/db/scope';
 import { answerParts, type PART_KINDS } from '@/server/db/schema';
 
+import { readProcessOf } from './brunch-orders-reads';
 import type { RunKey } from './run-key';
 
 /*
@@ -53,7 +54,12 @@ export async function keepPart<T>(
   await ensureProcess(db, key.process);
   await db
     .insert(answerParts)
-    .values({ ...key, kind, body })
+    .values({
+      ...key,
+      readProcess: readProcessOf({ id: key.process }),
+      kind,
+      body,
+    })
     .onConflictDoUpdate({
       target: [
         answerParts.process,

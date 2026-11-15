@@ -1,5 +1,5 @@
 {
-  "id": "7a951252-112d-452e-8ff8-20b54c52b921",
+  "id": "3f5e4a99-7fb5-4953-8c5c-3d0aa185b187",
   "prevId": "7270518d-5af2-46f5-9602-a64770cbb1c4",
   "version": "7",
   "dialect": "postgresql",
@@ -16,6 +16,12 @@
         },
         "kind": {
           "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "read_process": {
+          "name": "read_process",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -56,6 +62,21 @@
             "process"
           ],
           "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "answer_parts_read_fk": {
+          "name": "answer_parts_read_fk",
+          "tableFrom": "answer_parts",
+          "tableTo": "reads",
+          "columnsFrom": [
+            "read_process",
+            "read_id"
+          ],
+          "columnsTo": [
+            "process",
             "id"
           ],
           "onDelete": "restrict",
@@ -395,6 +416,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "read_process": {
+          "name": "read_process",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "read_id": {
           "name": "read_id",
           "type": "text",
@@ -448,6 +475,21 @@
             "process"
           ],
           "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "cross_checks_read_fk": {
+          "name": "cross_checks_read_fk",
+          "tableFrom": "cross_checks",
+          "tableTo": "reads",
+          "columnsFrom": [
+            "read_process",
+            "read_id"
+          ],
+          "columnsTo": [
+            "process",
             "id"
           ],
           "onDelete": "restrict",
@@ -1386,6 +1428,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "read_process": {
+          "name": "read_process",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "read_id": {
           "name": "read_id",
           "type": "text",
@@ -1434,6 +1482,21 @@
             "process"
           ],
           "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "proposals_read_fk": {
+          "name": "proposals_read_fk",
+          "tableFrom": "proposals",
+          "tableTo": "reads",
+          "columnsFrom": [
+            "read_process",
+            "read_id"
+          ],
+          "columnsTo": [
+            "process",
             "id"
           ],
           "onDelete": "restrict",

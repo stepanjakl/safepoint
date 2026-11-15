@@ -109,6 +109,7 @@ import {
   type KeptRead,
 } from './records';
 import { revisionChanges } from './revision-changes';
+import { keepStandInRead } from '@/server/storage/reads.fixture';
 import { inScratchStorage } from './scratch.fixture';
 import {
   formulaOf,
@@ -142,7 +143,7 @@ import { workingOf } from './working';
   repository.
 */
 
-inScratchStorage();
+const { database: db } = inScratchStorage();
 
 const read = docksRead();
 const readOf = async (id: string) => (id === read.id ? read : null);
@@ -1096,6 +1097,7 @@ describe('a frozen revision in use', () => {
         })),
       }),
     );
+    await keepStandInRead(db(), read.id);
     const crossed = await crossCheck(owner, set, read, read.id, TEXT, {
       resolve: () => model,
     });
@@ -1289,6 +1291,7 @@ describe('proposing and writing', () => {
       }),
       call('submit_proposals', ANSWER),
     );
+    await keepStandInRead(db(), read.id);
     const proposal = await propose(done.owner, done.set, read, read.id, TEXT, {
       resolve: () => model,
     });
@@ -1579,6 +1582,7 @@ describe('a source that is not a sheet', () => {
     );
     const activity = newActivity();
     const onTables = tableRead();
+    await keepStandInRead(db(), onTables.id);
     const proposal = await propose(
       owner,
       done.set,

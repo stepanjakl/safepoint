@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { fingerprintOf } from '@/lib/definitions/fingerprint';
 import { inScratchStorage } from '@/lib/definitions/scratch.fixture';
+import { keepStandInRead } from '@/server/storage/reads.fixture';
 import { TEXT } from '@/lib/definitions/set.fixture';
 import { proposalSchema } from '@/lib/definitions/types';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
@@ -49,8 +50,9 @@ const run = { text: TEXT, readId: 'test', evaluation: 'rules' as const };
 const fingerprint = fingerprintOf(accepted);
 
 describe('propose router', () => {
-  inScratchStorage();
+  const { database: db } = inScratchStorage();
   beforeEach(async () => {
+    await keepStandInRead(db(), 'test');
     vi.stubEnv('NODE_ENV', 'development');
     start.mockReset();
     await keepAsCurrent(accepted);

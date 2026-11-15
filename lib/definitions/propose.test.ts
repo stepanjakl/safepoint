@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { answerParts } from '@/server/db/schema';
@@ -9,6 +9,7 @@ import { keptProposal, propose } from '@/server/storage/proposals';
 import { capturedRead, capturedTabs } from './captured.fixture';
 import { always, call, standIn, told } from './models.fixture';
 import { checkProposal, newActivity } from './propose';
+import { keepStandInRead } from '@/server/storage/reads.fixture';
 import { inScratchStorage } from './scratch.fixture';
 import { TEXT } from './set.fixture';
 import { fingerprintOf, noRules } from './fingerprint';
@@ -250,7 +251,8 @@ describe('a set with no accepted check', () => {
 });
 
 describe('a proposal below its minimum', () => {
-  inScratchStorage();
+  const { database: db } = inScratchStorage();
+  beforeEach(() => keepStandInRead(db(), 'test'));
   const least: DefinitionProcess = {
     ...owner,
     subject: {
@@ -311,6 +313,7 @@ describe('a proposal below its minimum', () => {
 
 describe('proposing', () => {
   const { database: db } = inScratchStorage();
+  beforeEach(() => keepStandInRead(db(), 'test'));
   const leave = (key: string) => ({
     key,
     action: 'leave',
