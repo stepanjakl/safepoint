@@ -663,7 +663,9 @@ const STANDING = `('pending', 'verified', 'mismatch')`;
   A write to the process's output and its undo (server/storage/applications.ts).
   Kept as pending before the write, then settled; what was written never
   changes and the status moves only forward (a trigger). A run key has at most
-  one standing write, so two instances cannot both write for one run.
+  one standing write, so two instances cannot both write for one run. A write
+  or an undo in flight holds a lease on its row (`holder`, `heartbeatAt`), so
+  no other caller settles it from a block it has not written yet.
 */
 export const applications = pgTable(
   'applications',
@@ -672,6 +674,8 @@ export const applications = pgTable(
       .primaryKey()
       .generatedAlwaysAsIdentity(),
     process: processColumn(),
+    // The process whose read it was written from, as for proposals.
+    readProcess: text('read_process').notNull(),
     readId: text('read_id').notNull(),
     fingerprint: text('fingerprint').notNull(),
     // The exact proposal written (the record's proposedAt).
@@ -696,6 +700,10 @@ export const applications = pgTable(
       .$type<Record<string, AppliedDecision>>()
       .notNull(),
     actor: text('actor'),
+    // The one write or undo working on the row now, and when it last said
+    // so, by the database's clock; both null when none is.
+    holder: text('holder'),
+    heartbeatAt: instant('heartbeat_at'),
   },
   (t) => [
     unique('applications_scoped').on(t.process, t.id),
@@ -720,6 +728,10 @@ export const applications = pgTable(
       'applications_undo_started',
       sql`${t.undoStartedAt} is null or ${t.status} in ('verified', 'mismatch', 'undone')`,
     ),
+    check(
+      'applications_held',
+      sql`(${t.holder} is null) = (${t.heartbeatAt} is null)`,
+    ),
     foreignKey({
       name: 'applications_proposal_fk',
       columns: [t.process, t.proposalId],
@@ -727,7 +739,7 @@ export const applications = pgTable(
     }).onDelete('restrict'),
     foreignKey({
       name: 'applications_read_fk',
-      columns: [t.process, t.readId],
+      columns: [t.readProcess, t.readId],
       foreignColumns: [reads.process, reads.id],
     }).onDelete('restrict'),
     foreignKey({
@@ -834,9 +846,10 @@ export const ATTEMPT_OUTCOMES = [
 ] as const;
 
 /*
-  One row per model call: what it was for, on what, which model, how it
-  ended, how long and how many tokens. What was asked is a summary; the
-  answer is kept for reading a bad draft afterwards.
+  One row per model call (server/storage/model-attempts.ts): what it was
+  for, on what, which model, how it ended, how long and how many tokens.
+  What was asked and what came back are summaries (sizes, counts, keys),
+  never the prompt or the answer: both hold the data and the instructions.
 */
 export const modelAttempts = pgTable(
   'model_attempts',
@@ -865,6 +878,10 @@ export const modelAttempts = pgTable(
     inputTokens: integer('input_tokens'),
     outputTokens: integer('output_tokens'),
     thinkingTokens: integer('thinking_tokens'),
+    // Requests the call sent (a tool loop sends several, a retry another),
+    // and how long pacing held them back for the model's rate limit.
+    requests: integer('requests'),
+    waitedMs: integer('waited_ms'),
     asked: json('asked').notNull(),
     answer: json('answer'),
     error: text('error'),

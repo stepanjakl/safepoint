@@ -1,16 +1,18 @@
-import { readFileSync, writeFileSync } from 'node:fs';
-import path from 'node:path';
+import { readFileSync } from 'node:fs';
 
+import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { z } from 'zod';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
-import { writeKept } from '@/server/storage/files';
+import { applications } from '@/server/db/schema';
+import * as rows from '@/server/storage/application-rows';
 import {
   applyDecisions,
   keptApplication,
   undoApplication,
 } from './applications';
+import { keepProposal } from './proposals';
+import { keepStandInRead } from './reads.fixture';
 import { memorySheet } from './sheet.fixture';
 
 import {
@@ -21,37 +23,61 @@ import {
 } from '@/lib/definitions/apply';
 import { capturedRead, capturedTabs } from '@/lib/definitions/captured.fixture';
 import type { KeptRead } from '@/lib/definitions/records';
-import { inScratchDirectory } from '@/lib/definitions/scratch.fixture';
+import { inScratchStorage } from '@/lib/definitions/scratch.fixture';
 import {
   applicationSchema,
   definitionSetSchema,
   type Proposal,
 } from '@/lib/definitions/types';
 
-// Writing a decided proposal, on a sheet held in memory: no network, and
-// nothing written to the repository.
+// Writing a decided proposal, on a sheet held in memory and a scratch
+// database: no network, and nothing written to the repository.
 
-// A save can be made to fail, as if the process stopped at that point.
-vi.mock('@/server/storage/files', async (importOriginal) => {
-  const real = await importOriginal<typeof import('@/server/storage/files')>();
-  return { ...real, writeKept: vi.fn(real.writeKept) };
+/*
+  A save of the record can be made to fail, as if the process stopped at that
+  point: each statement that keeps or settles it (application-rows.ts) counts
+  as one save; renewing or giving back the lease does not.
+*/
+const SAVES = [
+  'insertRow',
+  'settleWrite',
+  'leavePending',
+  'markUndo',
+  'settleUndo',
+] as const;
+vi.mock('@/server/storage/application-rows', async (importOriginal) => {
+  const real =
+    await importOriginal<typeof import('@/server/storage/application-rows')>();
+  return {
+    ...real,
+    insertRow: vi.fn(real.insertRow),
+    settleWrite: vi.fn(real.settleWrite),
+    leavePending: vi.fn(real.leavePending),
+    markUndo: vi.fn(real.markUndo),
+    settleUndo: vi.fn(real.settleUndo),
+  };
 });
-const { writeKept: realWriteKept } = await vi.importActual<
-  typeof import('@/server/storage/files')
->('@/server/storage/files');
+const real = await vi.importActual<
+  typeof import('@/server/storage/application-rows')
+>('@/server/storage/application-rows');
 const STOPPED = 'The process stopped.';
 // The nth save from now fails; the others are kept as usual.
 const stopAtSave = (nth: number) => {
   let saves = 0;
-  vi.mocked(writeKept).mockImplementation(async (...args) => {
-    saves += 1;
-    if (saves === nth) throw new Error(STOPPED);
-    return realWriteKept(...args);
-  });
+  for (const name of SAVES)
+    vi.mocked(rows[name]).mockImplementation((async (...args: never[]) => {
+      saves += 1;
+      if (saves === nth) throw new Error(STOPPED);
+      return (real[name] as (...a: never[]) => unknown)(...args);
+    }) as never);
 };
 afterEach(() => {
-  vi.mocked(writeKept).mockImplementation(realWriteKept);
+  for (const name of SAVES)
+    vi.mocked(rows[name]).mockImplementation(real[name] as never);
 });
+
+const storage = inScratchStorage();
+const db = storage.database;
 
 const set = definitionSetSchema.parse(
   JSON.parse(readFileSync('e2e/fixtures/brunch-orders-accepted.json', 'utf8')),
@@ -88,8 +114,10 @@ const record = (order: number, verdict: 'ready' | 'decide' = 'ready') => ({
   verdict,
   checks: [],
 });
+// The run key: a read, and a rulebook's fingerprint.
+const FP = 'abcabcabcabc';
 const proposal: Proposal = {
-  fingerprint: 'abc',
+  fingerprint: FP,
   readId: 'run',
   model: 'test',
   at: '2026-10-29T09:00:00.000Z',
@@ -97,6 +125,12 @@ const proposal: Proposal = {
   records: { 'EG-06': record(12), 'CT-250': record(10) },
 };
 const approve: DecisionMade = { kind: 'approve', at: THURSDAY };
+
+// Where a write's record points: the run's read and the proposal it writes.
+beforeEach(async () => {
+  await keepStandInRead(db(), 'run');
+  await keepProposal(owner, proposal);
+});
 const bothApproved = { 'EG-06': approve, 'CT-250': approve };
 
 const write = (
@@ -108,7 +142,7 @@ const write = (
     owner,
     rulebook,
     runRead,
-    'abc',
+    FP,
     proposal,
     decisions,
     acknowledged,
@@ -180,8 +214,6 @@ describe('the block a write touches', () => {
 });
 
 describe('writing a decided proposal', () => {
-  inScratchDirectory();
-
   let sheet: ReturnType<typeof memorySheet>;
   beforeEach(() => {
     sheet = memorySheet(read());
@@ -196,7 +228,7 @@ describe('writing a decided proposal', () => {
       ['EG-06', 12],
       ['CT-250', 10],
     ]);
-    const kept = await keptApplication(owner, 'run', 'abc');
+    const kept = await keptApplication(owner, 'run', FP);
     expect(kept).toMatchObject({ status: 'verified', range: 'A1:B3' });
     expect(kept?.decisions['EG-06']).toMatchObject({
       kind: 'approve',
@@ -214,7 +246,7 @@ describe('writing a decided proposal', () => {
       ['sku', 'order'],
       ['EG-06', 24],
     ]);
-    const kept = await keptApplication(owner, 'run', 'abc');
+    const kept = await keptApplication(owner, 'run', FP);
     expect(kept?.decisions['CT-250']).toMatchObject({
       kind: 'reject',
       values: null,
@@ -287,7 +319,7 @@ describe('writing a decided proposal', () => {
       acknowledged: ['EG-06:timed', 'CT-250:timed'],
     });
     expect(outcome.kind).toBe('written');
-    const kept = await keptApplication(owner, 'run', 'abc');
+    const kept = await keptApplication(owner, 'run', FP);
     expect(kept?.decisions['EG-06']?.failing).toContain('Timed');
   });
 
@@ -302,9 +334,11 @@ describe('writing a decided proposal', () => {
   });
 
   describe('a record the proposal left', () => {
-    // EG-06 is left; CT-250 is written, and holds every check below.
+    // EG-06 is left; CT-250 is written, and holds every check below. Made
+    // after the other, so it is the proposal kept.
     const withLeft: Proposal = {
       ...proposal,
+      at: '2026-10-29T09:30:00.000Z',
       records: {
         ...proposal.records,
         'EG-06': {
@@ -319,15 +353,17 @@ describe('writing a decided proposal', () => {
       decisions: Record<string, DecisionMade> = bothApproved,
       runRead = read(),
     ) =>
-      applyDecisions(
-        owner,
-        rulebook,
-        runRead,
-        'abc',
-        withLeft,
-        decisions,
-        ['EG-06:timed'],
-        sheet,
+      keepProposal(owner, withLeft).then(() =>
+        applyDecisions(
+          owner,
+          rulebook,
+          runRead,
+          FP,
+          withLeft,
+          decisions,
+          ['EG-06:timed'],
+          sheet,
+        ),
       );
 
     it('is checked on the sheet as read now, and never refuses the write', async () => {
@@ -341,7 +377,7 @@ describe('writing a decided proposal', () => {
         ['sku', 'order'],
         ['CT-250', 10],
       ]);
-      const kept = await keptApplication(owner, 'run', 'abc');
+      const kept = await keptApplication(owner, 'run', FP);
       expect(kept?.decisions['EG-06']).toMatchObject({
         kind: 'approve',
         values: null,
@@ -429,11 +465,7 @@ describe('writing a decided proposal', () => {
 });
 
 describe('undoing a write', () => {
-  const scratch = inScratchDirectory();
-  const keptFile = () =>
-    path.join(scratch(), 'data', owner.id, 'applied', 'run.abc.json');
-  const undo = (sheet: OutputSheet) =>
-    undoApplication(owner, 'run', 'abc', sheet);
+  const undo = (sheet: OutputSheet) => undoApplication(owner, 'run', FP, sheet);
 
   it('puts back what the cells held', async () => {
     const sheet = memorySheet(read(), [
@@ -451,22 +483,52 @@ describe('undoing a write', () => {
     expect(sheet.grid?.[1]).toEqual(['EG-06', 24, 'keep']);
   });
 
+  /*
+    Was: the file read and written back to the byte, and a key the schema
+    does not name surviving undo's rewrite. A record is now columns: it reads
+    back as the very record written, in the schema's order, and what a json
+    column holds keeps a key the schema does not name through every update;
+    a top-level key has no column, and the import refuses an entry with one
+    (scripts/import-kept-data/import.test.ts) rather than losing it.
+  */
   it('keeps what a record holds, to the byte, as it is read and written back', async () => {
     const sheet = memorySheet(read());
+    const outcome = await write(sheet);
+    if (outcome.kind !== 'written') throw new Error('Expected a write.');
+    const kept = await keptApplication(owner, 'run', FP);
+    expect(JSON.stringify(kept)).toBe(JSON.stringify(outcome.application));
+    expect(JSON.stringify(applicationSchema.parse(kept))).toBe(
+      JSON.stringify(kept),
+    );
+  });
+
+  it('keeps a key the schema does not name, inside a column, through an undo', async () => {
+    const sheet = memorySheet(read());
     await write(sheet);
-    const once = readFileSync(keptFile(), 'utf8');
-    const written = JSON.parse(once);
-    expect(
-      JSON.stringify(z.array(applicationSchema).parse(written), null, 2),
-    ).toBe(JSON.stringify(written, null, 2));
-    // A key the schema does not name is not lost when undo writes it back.
-    written[0].note = 'kept';
-    written[0].changes[0].origin = 'sheet';
-    writeFileSync(keptFile(), JSON.stringify(written));
+    const written = sheet.grid!.map((row) => [...row]);
     await undo(sheet);
-    const [undone] = JSON.parse(readFileSync(keptFile(), 'utf8'));
-    expect(undone).toMatchObject({ status: 'undone', note: 'kept' });
-    expect(undone.changes[0].origin).toBe('sheet');
+    // The same write kept again with a key its schema does not name, as an
+    // import of an older record would keep it, and the sheet holding it.
+    const [{ id, ...row }] = (await db().select().from(applications)) as [
+      typeof applications.$inferSelect,
+    ];
+    expect(id).toBeGreaterThan(0);
+    await db()
+      .insert(applications)
+      .values({
+        ...row,
+        status: 'verified',
+        undoneAt: null,
+        undoStartedAt: null,
+        changes: row.changes.map((change, i) =>
+          i ? change : { ...change, origin: 'sheet' },
+        ),
+      });
+    sheet.grid = written;
+    expect(await undo(sheet)).toMatchObject({ kind: 'undone' });
+    const undone = await keptApplication(owner, 'run', FP);
+    expect(undone).toMatchObject({ status: 'undone' });
+    expect(undone?.changes[0]).toMatchObject({ origin: 'sheet' });
   });
 
   it('clears the cells of a tab that was empty, and allows a new write', async () => {
@@ -508,9 +570,7 @@ describe('undoing a write', () => {
 });
 
 describe('a write or undo cut short', () => {
-  const scratch = inScratchDirectory();
-  const undo = (sheet: OutputSheet) =>
-    undoApplication(owner, 'run', 'abc', sheet);
+  const undo = (sheet: OutputSheet) => undoApplication(owner, 'run', FP, sheet);
   const original = () => [
     ['sku', 'order', 'note'],
     ['EG-06', 24, 'keep'],
@@ -519,18 +579,14 @@ describe('a write or undo cut short', () => {
   const UNCONFIRMED =
     'The last write to the Orders tab has not been read back to confirm it. Try again once the sheet can be read.';
   // Every record of the run's writes, oldest first, by what came of each.
-  const statuses = () =>
-    z
-      .array(applicationSchema)
-      .parse(
-        JSON.parse(
-          readFileSync(
-            path.join(scratch(), 'data', owner.id, 'applied', 'run.abc.json'),
-            'utf8',
-          ),
-        ),
-      )
-      .map((one) => one.status);
+  const statuses = async () =>
+    (
+      await db()
+        .select({ status: applications.status })
+        .from(applications)
+        .where(eq(applications.readId, 'run'))
+        .orderBy(applications.id)
+    ).map((one) => one.status);
 
   it('writes nothing when the record of the write cannot be kept', async () => {
     const sheet = memorySheet(read(), original());
@@ -551,7 +607,7 @@ describe('a write or undo cut short', () => {
       'This run has already written to the Orders tab. Undo that first to write again.',
     );
     expect(sheet.writes).toHaveLength(1);
-    const kept = await keptApplication(owner, 'run', 'abc');
+    const kept = await keptApplication(owner, 'run', FP);
     expect(kept).toMatchObject({ status: 'verified', error: null });
     expect(kept?.changes.map((change) => change.before)).toEqual([24, 20]);
 
@@ -565,7 +621,7 @@ describe('a write or undo cut short', () => {
     await expect(write(sheet)).rejects.toThrow(STOPPED);
     sheet.failWrite = false;
     expect((await write(sheet)).kind).toBe('written');
-    expect(statuses()).toEqual(['failed', 'verified']);
+    expect(await statuses()).toEqual(['failed', 'verified']);
     expect(sheet.grid?.[1]).toEqual(['EG-06', 12, 'keep']);
   });
 
@@ -577,7 +633,7 @@ describe('a write or undo cut short', () => {
     sheet.failAdd = false;
     expect(sheet.grid).toBeNull();
     expect((await write(sheet)).kind).toBe('written');
-    expect(statuses()).toEqual(['failed', 'verified']);
+    expect(await statuses()).toEqual(['failed', 'verified']);
     expect(sheet.added).toEqual(['Orders']);
   });
 
@@ -588,7 +644,7 @@ describe('a write or undo cut short', () => {
     sheet.failWrite = false;
     expect(sheet.grid).toEqual([]);
     expect((await write(sheet)).kind).toBe('written');
-    expect(statuses()).toEqual(['failed', 'verified']);
+    expect(await statuses()).toEqual(['failed', 'verified']);
     // Added once: the retry finds it there, empty.
     expect(sheet.added).toEqual(['Orders']);
   });
@@ -598,7 +654,7 @@ describe('a write or undo cut short', () => {
     stopAtSave(2);
     await expect(write(sheet)).rejects.toThrow(STOPPED);
     sheet.grid![1]![1] = 36;
-    expect(await keptApplication(owner, 'run', 'abc', sheet)).toMatchObject({
+    expect(await keptApplication(owner, 'run', FP, sheet)).toMatchObject({
       status: 'mismatch',
     });
     expect((await undo(sheet)).kind).toBe('refused');
@@ -621,10 +677,10 @@ describe('a write or undo cut short', () => {
     });
     expect(sheet.writes).toHaveLength(1);
     // Without the sheet it is shown as kept, not guessed at.
-    expect(await keptApplication(owner, 'run', 'abc')).toMatchObject({
+    expect(await keptApplication(owner, 'run', FP)).toMatchObject({
       status: 'pending',
     });
-    expect(await keptApplication(owner, 'run', 'abc', sheet)).toMatchObject({
+    expect(await keptApplication(owner, 'run', FP, sheet)).toMatchObject({
       status: 'verified',
     });
   });
@@ -650,11 +706,11 @@ describe('a write or undo cut short', () => {
       kind: 'written',
       application: { status: 'pending', error: 'The service timed out.' },
     });
-    expect(await keptApplication(owner, 'run', 'abc')).toMatchObject({
+    expect(await keptApplication(owner, 'run', FP)).toMatchObject({
       status: 'pending',
       error: 'The service timed out.',
     });
-    expect(await keptApplication(owner, 'run', 'abc', sheet)).toMatchObject({
+    expect(await keptApplication(owner, 'run', FP, sheet)).toMatchObject({
       status: 'failed',
       error: 'The service timed out.',
     });
@@ -663,11 +719,11 @@ describe('a write or undo cut short', () => {
   it('clears what the write was told once it settles as verified', async () => {
     const sheet = memorySheet(read(), original());
     await write(unreadAfter(sheet, true));
-    expect(await keptApplication(owner, 'run', 'abc')).toMatchObject({
+    expect(await keptApplication(owner, 'run', FP)).toMatchObject({
       status: 'pending',
       error: 'The service timed out.',
     });
-    expect(await keptApplication(owner, 'run', 'abc', sheet)).toMatchObject({
+    expect(await keptApplication(owner, 'run', FP, sheet)).toMatchObject({
       status: 'verified',
       error: null,
     });

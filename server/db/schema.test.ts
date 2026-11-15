@@ -99,6 +99,7 @@ async function proposal(db: Database) {
 
 const application = (proposalId: number, status = 'pending') => ({
   process: PROCESS,
+  readProcess: PROCESS,
   readId: READ,
   fingerprint: FINGERPRINT,
   proposalId,
@@ -351,12 +352,41 @@ describe('a write to the output', () => {
           .where(one),
       ),
     ).toMatchObject({ message: 'what an application wrote is never changed' });
+    // Nor the read it was written from (0005 adds read_process to the guard).
+    await db.insert(processes).values({ id: 'another-process' });
+    await db.insert(reads).values({
+      process: 'another-process',
+      id: READ,
+      readAt: AT,
+      source: 'A stand-in read',
+      body: { id: READ } as never,
+    });
+    expect(
+      await refused(
+        db
+          .update(applications)
+          .set({ readProcess: 'another-process' })
+          .where(one),
+      ),
+    ).toMatchObject({ message: 'what an application wrote is never changed' });
     expect(await refused(db.delete(applications).where(one))).toMatchObject({
       message: 'applications rows are never removed',
     });
-    // An undo is marked before it writes, and cleared if it never landed.
-    await db.update(applications).set({ undoStartedAt: AT }).where(one);
-    await db.update(applications).set({ undoStartedAt: null }).where(one);
+    // An undo is marked before it writes, and cleared if it never landed;
+    // its lease is taken and given back, both or neither.
+    await db
+      .update(applications)
+      .set({ undoStartedAt: AT, holder: 'an-undo', heartbeatAt: AT })
+      .where(one);
+    expect(
+      await refused(
+        db.update(applications).set({ heartbeatAt: null }).where(one),
+      ),
+    ).toMatchObject({ code: '23514' });
+    await db
+      .update(applications)
+      .set({ undoStartedAt: null, holder: null, heartbeatAt: null })
+      .where(one);
   });
 
   it('is undone only with the time it was undone', async () => {

@@ -352,3 +352,11 @@ export const unconfirmed = (owner: DefinitionProcess, last: Application) => {
   const { noun, resource } = sourceOf(owner.subject.data);
   return `The last write to the ${last.tab} ${resource.singular} has not been read back to confirm it. Try again once the ${noun} can be read.`;
 };
+
+// A write another request is making now, not yet read back.
+export const stillWriting = (owner: DefinitionProcess, last: Application) =>
+  `The last write to the ${last.tab} ${sourceOf(owner.subject.data).resource.singular} is still being made. Try again in a moment.`;
+
+// A write another request is undoing now.
+export const beingUndone = (owner: DefinitionProcess, last: Application) =>
+  `The last write to the ${last.tab} ${sourceOf(owner.subject.data).resource.singular} is being undone. Try again in a moment.`;

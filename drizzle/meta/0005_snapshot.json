@@ -1,0 +1,2637 @@
+{
+  "id": "f7a7ab8f-6d72-4769-8abc-7ab70228693f",
+  "prevId": "f29cd7d1-5e60-41e2-9855-3a3b4084abf4",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.answer_parts": {
+      "name": "answer_parts",
+      "schema": "",
+      "columns": {
+        "process": {
+          "name": "process",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "read_process": {
+          "name": "read_process",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "read_id": {
+          "name": "read_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fingerprint": {
+          "name": "fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "body": {
+          "name": "body",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "answer_parts_process_processes_id_fk": {
+          "name": "answer_parts_process_processes_id_fk",
+          "tableFrom": "answer_parts",
+          "columnsFrom": [
+            "process"
+          ],
+          "tableTo": "processes",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        },
+        "answer_parts_read_fk": {
+          "name": "answer_parts_read_fk",
+          "tableFrom": "answer_parts",
+          "columnsFrom": [
+            "read_process",
+            "read_id"
+          ],
+          "tableTo": "reads",
+          "columnsTo": [
+            "process",
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        }
+      },
+      "compositePrimaryKeys": {
+        "answer_parts_process_kind_read_id_fingerprint_pk": {
+          "name": "answer_parts_process_kind_read_id_fingerprint_pk",
+          "columns": [
+            "process",
+            "kind",
+            "read_id",
+            "fingerprint"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "answer_parts_kind": {
+          "name": "answer_parts_kind",
+          "value": "\"answer_parts\".\"kind\" in ('proposal', 'cross-check')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.applications": {
+      "name": "applications",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "name": "applications_id_seq",
+            "increment": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "startWith": "1",
+            "cache": "1",
+            "cycle": false,
+            "schema": "public",
+            "type": "always"
+          }
+        },
+        "process": {
+          "name": "process",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "read_process": {
+          "name": "read_process",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "read_id": {
+          "name": "read_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fingerprint": {
+          "name": "fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "proposal_id": {
+          "name": "proposal_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "run_id": {
+          "name": "run_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "resource": {
+          "name": "resource",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "range": {
+          "name": "range",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "written_at": {
+          "name": "written_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "error": {
+          "name": "error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "undone_at": {
+          "name": "undone_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "undo_started_at": {
+          "name": "undo_started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "adds_resource": {
+          "name": "adds_resource",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "before": {
+          "name": "before",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "after": {
+          "name": "after",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "changes": {
+          "name": "changes",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "decisions": {
+          "name": "decisions",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor": {
+          "name": "actor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "holder": {
+          "name": "holder",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "heartbeat_at": {
+          "name": "heartbeat_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "applications_one_standing": {
+          "name": "applications_one_standing",
+          "columns": [
+            {
+              "expression": "process",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "read_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "fingerprint",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "where": "\"applications\".\"status\" in ('pending', 'verified', 'mismatch')",
+          "concurrently": false
+        },
+        "applications_by_run_key": {
+          "name": "applications_by_run_key",
+          "columns": [
+            {
+              "expression": "process",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "read_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "fingerprint",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "applications_by_time": {
+          "name": "applications_by_time",
+          "columns": [
+            {
+              "expression": "process",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "written_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "applications_process_processes_id_fk": {
+          "name": "applications_process_processes_id_fk",
+          "tableFrom": "applications",
+          "columnsFrom": [
+            "process"
+          ],
+          "tableTo": "processes",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        },
+        "applications_proposal_fk": {
+          "name": "applications_proposal_fk",
+          "tableFrom": "applications",
+          "columnsFrom": [
+            "process",
+            "proposal_id"
+          ],
+          "tableTo": "proposals",
+          "columnsTo": [
+            "process",
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        },
+        "applications_read_fk": {
+          "name": "applications_read_fk",
+          "tableFrom": "applications",
+          "columnsFrom": [
+            "read_process",
+            "read_id"
+          ],
+          "tableTo": "reads",
+          "columnsTo": [
+            "process",
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        },
+        "applications_run_fk": {
+          "name": "applications_run_fk",
+          "tableFrom": "applications",
+          "columnsFrom": [
+            "process",
+            "run_id"
+          ],
+          "tableTo": "runs",
+          "columnsTo": [
+            "process",
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "applications_scoped": {
+          "name": "applications_scoped",
+          "columns": [
+            "process",
+            "id"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "applications_status": {
+          "name": "applications_status",
+          "value": "\"applications\".\"status\" in ('pending', 'verified', 'mismatch', 'failed', 'undone')"
+        },
+        "applications_undone": {
+          "name": "applications_undone",
+          "value": "(\"applications\".\"status\" = 'undone') = (\"applications\".\"undone_at\" is not null)"
+        },
+        "applications_undo_started": {
+          "name": "applications_undo_started",
+          "value": "\"applications\".\"undo_started_at\" is null or \"applications\".\"status\" in ('verified', 'mismatch', 'undone')"
+        },
+        "applications_held": {
+          "name": "applications_held",
+          "value": "(\"applications\".\"holder\" is null) = (\"applications\".\"heartbeat_at\" is null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.cross_checks": {
+      "name": "cross_checks",
+      "schema": "",
+      "columns": {
+        "process": {
+          "name": "process",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "read_process": {
+          "name": "read_process",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "read_id": {
+          "name": "read_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fingerprint": {
+          "name": "fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "checked_at": {
+          "name": "checked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "model": {
+          "name": "model",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agreed": {
+          "name": "agreed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total": {
+          "name": "total",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "body": {
+          "name": "body",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "cross_checks_process_processes_id_fk": {
+          "name": "cross_checks_process_processes_id_fk",
+          "tableFrom": "cross_checks",
+          "columnsFrom": [
+            "process"
+          ],
+          "tableTo": "processes",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        },
+        "cross_checks_read_fk": {
+          "name": "cross_checks_read_fk",
+          "tableFrom": "cross_checks",
+          "columnsFrom": [
+            "read_process",
+            "read_id"
+          ],
+          "tableTo": "reads",
+          "columnsTo": [
+            "process",
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        }
+      },
+      "compositePrimaryKeys": {
+        "cross_checks_process_read_id_fingerprint_pk": {
+          "name": "cross_checks_process_read_id_fingerprint_pk",
+          "columns": [
+            "process",
+            "read_id",
+            "fingerprint"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "cross_checks_counts": {
+          "name": "cross_checks_counts",
+          "value": "0 <= \"cross_checks\".\"agreed\" and \"cross_checks\".\"agreed\" <= \"cross_checks\".\"total\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.current_profiles": {
+      "name": "current_profiles",
+      "schema": "",
+      "columns": {
+        "process": {
+          "name": "process",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "profile_id": {
+          "name": "profile_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "body": {
+          "name": "body",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_by": {
+          "name": "updated_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "current_profiles_process_processes_id_fk": {
+          "name": "current_profiles_process_processes_id_fk",
+          "tableFrom": "current_profiles",
+          "columnsFrom": [
+            "process"
+          ],
+          "tableTo": "processes",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "current_profiles_id_shape": {
+          "name": "current_profiles_id_shape",
+          "value": "\"current_profiles\".\"profile_id\" ~ '^[0-9a-f]{12}$'"
+        },
+        "current_profiles_body_id": {
+          "name": "current_profiles_body_id",
+          "value": "\"current_profiles\".\"profile_id\" is not distinct from (\"current_profiles\".\"body\" ->> 'id')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.current_rulebooks": {
+      "name": "current_rulebooks",
+      "schema": "",
+      "columns": {
+        "process": {
+          "name": "process",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "instructions_hash": {
+          "name": "instructions_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "body": {
+          "name": "body",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "schema_version": {
+          "name": "schema_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_by": {
+          "name": "updated_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "current_rulebooks_process_processes_id_fk": {
+          "name": "current_rulebooks_process_processes_id_fk",
+          "tableFrom": "current_rulebooks",
+          "columnsFrom": [
+            "process"
+          ],
+          "tableTo": "processes",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        },
+        "current_rulebooks_instructions_fk": {
+          "name": "current_rulebooks_instructions_fk",
+          "tableFrom": "current_rulebooks",
+          "columnsFrom": [
+            "process",
+            "instructions_hash"
+          ],
+          "tableTo": "instruction_versions",
+          "columnsTo": [
+            "process",
+            "hash"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        }
+      },
+      "compositePrimaryKeys": {
+        "current_rulebooks_process_instructions_hash_pk": {
+          "name": "current_rulebooks_process_instructions_hash_pk",
+          "columns": [
+            "process",
+            "instructions_hash"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "current_rulebooks_body_hash": {
+          "name": "current_rulebooks_body_hash",
+          "value": "\"current_rulebooks\".\"instructions_hash\" is not distinct from (\"current_rulebooks\".\"body\" ->> 'hash')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.data_profiles": {
+      "name": "data_profiles",
+      "schema": "",
+      "columns": {
+        "process": {
+          "name": "process",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "read_id": {
+          "name": "read_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "confirmed_at": {
+          "name": "confirmed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "confirmed_by": {
+          "name": "confirmed_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "body": {
+          "name": "body",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "data_profiles_process_processes_id_fk": {
+          "name": "data_profiles_process_processes_id_fk",
+          "tableFrom": "data_profiles",
+          "columnsFrom": [
+            "process"
+          ],
+          "tableTo": "processes",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        }
+      },
+      "compositePrimaryKeys": {
+        "data_profiles_process_id_pk": {
+          "name": "data_profiles_process_id_pk",
+          "columns": [
+            "process",
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "data_profiles_id_shape": {
+          "name": "data_profiles_id_shape",
+          "value": "\"data_profiles\".\"id\" ~ '^[0-9a-f]{12}$'"
+        },
+        "data_profiles_body_id": {
+          "name": "data_profiles_body_id",
+          "value": "\"data_profiles\".\"id\" is not distinct from (\"data_profiles\".\"body\" ->> 'id')"
+        },
+        "data_profiles_body_read": {
+          "name": "data_profiles_body_read",
+          "value": "\"data_profiles\".\"read_id\" is not distinct from (\"data_profiles\".\"body\" ->> 'readId')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.instruction_versions": {
+      "name": "instruction_versions",
+      "schema": "",
+      "columns": {
+        "process": {
+          "name": "process",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hash": {
+          "name": "hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version": {
+          "name": "version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "text": {
+          "name": "text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "origin": {
+          "name": "origin",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "published_by": {
+          "name": "published_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "published_at": {
+          "name": "published_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "instruction_versions_process_processes_id_fk": {
+          "name": "instruction_versions_process_processes_id_fk",
+          "tableFrom": "instruction_versions",
+          "columnsFrom": [
+            "process"
+          ],
+          "tableTo": "processes",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        }
+      },
+      "compositePrimaryKeys": {
+        "instruction_versions_process_hash_pk": {
+          "name": "instruction_versions_process_hash_pk",
+          "columns": [
+            "process",
+            "hash"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "instruction_versions_version": {
+          "name": "instruction_versions_version",
+          "columns": [
+            "process",
+            "version"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "instruction_versions_origin": {
+          "name": "instruction_versions_origin",
+          "value": "\"instruction_versions\".\"origin\" in ('declared', 'published')"
+        },
+        "instruction_versions_hash_is_text": {
+          "name": "instruction_versions_hash_is_text",
+          "value": "\"instruction_versions\".\"hash\" = left(encode(sha256(convert_to(\"instruction_versions\".\"text\", 'UTF8')), 'hex'), 12)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.jobs": {
+      "name": "jobs",
+      "schema": "",
+      "columns": {
+        "process": {
+          "name": "process",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "step": {
+          "name": "step",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "running": {
+          "name": "running",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "error": {
+          "name": "error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "writing": {
+          "name": "writing",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "activity": {
+          "name": "activity",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "holder": {
+          "name": "holder",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "heartbeat_at": {
+          "name": "heartbeat_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "started_by": {
+          "name": "started_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "jobs_running": {
+          "name": "jobs_running",
+          "columns": [
+            {
+              "expression": "heartbeat_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "where": "\"jobs\".\"running\"",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "jobs_process_processes_id_fk": {
+          "name": "jobs_process_processes_id_fk",
+          "tableFrom": "jobs",
+          "columnsFrom": [
+            "process"
+          ],
+          "tableTo": "processes",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        }
+      },
+      "compositePrimaryKeys": {
+        "jobs_process_kind_key_pk": {
+          "name": "jobs_process_kind_key_pk",
+          "columns": [
+            "process",
+            "kind",
+            "key"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "jobs_kind": {
+          "name": "jobs_kind",
+          "value": "\"jobs\".\"kind\" in ('drafts', 'proposals')"
+        },
+        "jobs_held": {
+          "name": "jobs_held",
+          "value": "not \"jobs\".\"running\" or (\"jobs\".\"holder\" is not null and \"jobs\".\"heartbeat_at\" is not null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.model_attempts": {
+      "name": "model_attempts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "name": "model_attempts_id_seq",
+            "increment": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "startWith": "1",
+            "cache": "1",
+            "cycle": false,
+            "schema": "public",
+            "type": "always"
+          }
+        },
+        "process": {
+          "name": "process",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "purpose": {
+          "name": "purpose",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "model": {
+          "name": "model",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "job_kind": {
+          "name": "job_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "job_key": {
+          "name": "job_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "run_id": {
+          "name": "run_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "instructions_hash": {
+          "name": "instructions_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "read_id": {
+          "name": "read_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fingerprint": {
+          "name": "fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "definition_id": {
+          "name": "definition_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "attempt": {
+          "name": "attempt",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "duration_ms": {
+          "name": "duration_ms",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "outcome": {
+          "name": "outcome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "input_tokens": {
+          "name": "input_tokens",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "output_tokens": {
+          "name": "output_tokens",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "thinking_tokens": {
+          "name": "thinking_tokens",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "requests": {
+          "name": "requests",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "waited_ms": {
+          "name": "waited_ms",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "asked": {
+          "name": "asked",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "answer": {
+          "name": "answer",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "error": {
+          "name": "error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "model_attempts_by_time": {
+          "name": "model_attempts_by_time",
+          "columns": [
+            {
+              "expression": "process",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "started_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "model_attempts_by_job": {
+          "name": "model_attempts_by_job",
+          "columns": [
+            {
+              "expression": "process",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "job_kind",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "job_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "model_attempts_by_run": {
+          "name": "model_attempts_by_run",
+          "columns": [
+            {
+              "expression": "process",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "run_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "model_attempts_process_processes_id_fk": {
+          "name": "model_attempts_process_processes_id_fk",
+          "tableFrom": "model_attempts",
+          "columnsFrom": [
+            "process"
+          ],
+          "tableTo": "processes",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "model_attempts_purpose": {
+          "name": "model_attempts_purpose",
+          "value": "\"model_attempts\".\"purpose\" in ('find', 'write', 'cross-check', 'propose', 'advise')"
+        },
+        "model_attempts_outcome": {
+          "name": "model_attempts_outcome",
+          "value": "\"model_attempts\".\"outcome\" in ('answered', 'refused', 'quota', 'busy', 'failed')"
+        },
+        "model_attempts_attempt": {
+          "name": "model_attempts_attempt",
+          "value": "\"model_attempts\".\"attempt\" >= 1"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.model_limits": {
+      "name": "model_limits",
+      "schema": "",
+      "columns": {
+        "model": {
+          "name": "model",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "shares_with": {
+          "name": "shares_with",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "per_minute": {
+          "name": "per_minute",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "per_minute_learned_at": {
+          "name": "per_minute_learned_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "per_day": {
+          "name": "per_day",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "per_day_learned_at": {
+          "name": "per_day_learned_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "used_day": {
+          "name": "used_day",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "used_count": {
+          "name": "used_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "model_limits_per_minute": {
+          "name": "model_limits_per_minute",
+          "value": "(\"model_limits\".\"per_minute\" is null) = (\"model_limits\".\"per_minute_learned_at\" is null) and (\"model_limits\".\"per_minute\" is null or \"model_limits\".\"per_minute\" > 0)"
+        },
+        "model_limits_per_day": {
+          "name": "model_limits_per_day",
+          "value": "(\"model_limits\".\"per_day\" is null) = (\"model_limits\".\"per_day_learned_at\" is null) and (\"model_limits\".\"per_day\" is null or \"model_limits\".\"per_day\" > 0)"
+        },
+        "model_limits_used": {
+          "name": "model_limits_used",
+          "value": "\"model_limits\".\"used_count\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.processes": {
+      "name": "processes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "processes_id_shape": {
+          "name": "processes_id_shape",
+          "value": "\"processes\".\"id\" ~ '^[a-z0-9][a-z0-9-]*$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.proposals": {
+      "name": "proposals",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "name": "proposals_id_seq",
+            "increment": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "startWith": "1",
+            "cache": "1",
+            "cycle": false,
+            "schema": "public",
+            "type": "always"
+          }
+        },
+        "process": {
+          "name": "process",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "read_process": {
+          "name": "read_process",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "read_id": {
+          "name": "read_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fingerprint": {
+          "name": "fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "proposed_at": {
+          "name": "proposed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "model": {
+          "name": "model",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "body": {
+          "name": "body",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "proposals_process_processes_id_fk": {
+          "name": "proposals_process_processes_id_fk",
+          "tableFrom": "proposals",
+          "columnsFrom": [
+            "process"
+          ],
+          "tableTo": "processes",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        },
+        "proposals_read_fk": {
+          "name": "proposals_read_fk",
+          "tableFrom": "proposals",
+          "columnsFrom": [
+            "read_process",
+            "read_id"
+          ],
+          "tableTo": "reads",
+          "columnsTo": [
+            "process",
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "proposals_scoped": {
+          "name": "proposals_scoped",
+          "columns": [
+            "process",
+            "id"
+          ],
+          "nullsNotDistinct": false
+        },
+        "proposals_by_run_key": {
+          "name": "proposals_by_run_key",
+          "columns": [
+            "process",
+            "read_id",
+            "fingerprint",
+            "proposed_at"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "proposals_fingerprint_shape": {
+          "name": "proposals_fingerprint_shape",
+          "value": "\"proposals\".\"fingerprint\" ~ '^[0-9a-f]{12}$'"
+        },
+        "proposals_body_run_key": {
+          "name": "proposals_body_run_key",
+          "value": "\"proposals\".\"fingerprint\" is not distinct from (\"proposals\".\"body\" ->> 'fingerprint') and \"proposals\".\"read_id\" is not distinct from (\"proposals\".\"body\" ->> 'readId')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.reads": {
+      "name": "reads",
+      "schema": "",
+      "columns": {
+        "process": {
+          "name": "process",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "read_at": {
+          "name": "read_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "body": {
+          "name": "body",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "reads_process_processes_id_fk": {
+          "name": "reads_process_processes_id_fk",
+          "tableFrom": "reads",
+          "columnsFrom": [
+            "process"
+          ],
+          "tableTo": "processes",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        }
+      },
+      "compositePrimaryKeys": {
+        "reads_process_id_pk": {
+          "name": "reads_process_id_pk",
+          "columns": [
+            "process",
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "reads_id_shape": {
+          "name": "reads_id_shape",
+          "value": "\"reads\".\"id\" ~ '^[A-Za-z0-9_-]{1,80}$'"
+        },
+        "reads_body_id": {
+          "name": "reads_body_id",
+          "value": "\"reads\".\"id\" is not distinct from (\"reads\".\"body\" ->> 'id')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.record_decisions": {
+      "name": "record_decisions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "name": "record_decisions_id_seq",
+            "increment": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "startWith": "1",
+            "cache": "1",
+            "cycle": false,
+            "schema": "public",
+            "type": "always"
+          }
+        },
+        "process": {
+          "name": "process",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "run_id": {
+          "name": "run_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "proposal_id": {
+          "name": "proposal_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "record_key": {
+          "name": "record_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "values": {
+          "name": "values",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "verdict": {
+          "name": "verdict",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "checks": {
+          "name": "checks",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "actor": {
+          "name": "actor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decided_at": {
+          "name": "decided_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "record_decisions_by_proposal": {
+          "name": "record_decisions_by_proposal",
+          "columns": [
+            {
+              "expression": "process",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "run_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "proposal_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "record_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "record_decisions_process_processes_id_fk": {
+          "name": "record_decisions_process_processes_id_fk",
+          "tableFrom": "record_decisions",
+          "columnsFrom": [
+            "process"
+          ],
+          "tableTo": "processes",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        },
+        "record_decisions_run_fk": {
+          "name": "record_decisions_run_fk",
+          "tableFrom": "record_decisions",
+          "columnsFrom": [
+            "process",
+            "run_id"
+          ],
+          "tableTo": "runs",
+          "columnsTo": [
+            "process",
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        },
+        "record_decisions_proposal_fk": {
+          "name": "record_decisions_proposal_fk",
+          "tableFrom": "record_decisions",
+          "columnsFrom": [
+            "process",
+            "proposal_id"
+          ],
+          "tableTo": "proposals",
+          "columnsTo": [
+            "process",
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "record_decisions_kind": {
+          "name": "record_decisions_kind",
+          "value": "\"record_decisions\".\"kind\" in ('approve', 'change', 'reject', 'withdraw')"
+        },
+        "record_decisions_verdict": {
+          "name": "record_decisions_verdict",
+          "value": "\"record_decisions\".\"verdict\" is null or \"record_decisions\".\"verdict\" in ('ready', 'decide', 'blocked', 'unchecked')"
+        },
+        "record_decisions_values": {
+          "name": "record_decisions_values",
+          "value": "(\"record_decisions\".\"kind\" = 'change') = (\"record_decisions\".\"values\" is not null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.rule_decisions": {
+      "name": "rule_decisions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "name": "rule_decisions_id_seq",
+            "increment": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "startWith": "1",
+            "cache": "1",
+            "cycle": false,
+            "schema": "public",
+            "type": "always"
+          }
+        },
+        "process": {
+          "name": "process",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "instructions_hash": {
+          "name": "instructions_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "definition_id": {
+          "name": "definition_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "definition": {
+          "name": "definition",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rulebook_revision": {
+          "name": "rulebook_revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "version_index": {
+          "name": "version_index",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "applies_to": {
+          "name": "applies_to",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "profile_id": {
+          "name": "profile_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "refusal": {
+          "name": "refusal",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "actor": {
+          "name": "actor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decided_at": {
+          "name": "decided_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "rule_decisions_by_instructions": {
+          "name": "rule_decisions_by_instructions",
+          "columns": [
+            {
+              "expression": "process",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "instructions_hash",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "rule_decisions_process_processes_id_fk": {
+          "name": "rule_decisions_process_processes_id_fk",
+          "tableFrom": "rule_decisions",
+          "columnsFrom": [
+            "process"
+          ],
+          "tableTo": "processes",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        },
+        "rule_decisions_instructions_fk": {
+          "name": "rule_decisions_instructions_fk",
+          "tableFrom": "rule_decisions",
+          "columnsFrom": [
+            "process",
+            "instructions_hash"
+          ],
+          "tableTo": "instruction_versions",
+          "columnsTo": [
+            "process",
+            "hash"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        },
+        "rule_decisions_profile_fk": {
+          "name": "rule_decisions_profile_fk",
+          "tableFrom": "rule_decisions",
+          "columnsFrom": [
+            "process",
+            "profile_id"
+          ],
+          "tableTo": "data_profiles",
+          "columnsTo": [
+            "process",
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "rule_decisions_kind": {
+          "name": "rule_decisions_kind",
+          "value": "\"rule_decisions\".\"kind\" in ('confirm_intent', 'accept', 'deny', 'choose', 'applies_to', 'confirm_profile')"
+        },
+        "rule_decisions_definition": {
+          "name": "rule_decisions_definition",
+          "value": "(\"rule_decisions\".\"kind\" in ('accept', 'deny', 'choose', 'applies_to')) = (\"rule_decisions\".\"definition_id\" is not null and \"rule_decisions\".\"definition\" is not null and \"rule_decisions\".\"rulebook_revision\" is not null)"
+        },
+        "rule_decisions_instructions": {
+          "name": "rule_decisions_instructions",
+          "value": "(\"rule_decisions\".\"kind\" = 'confirm_profile') = (\"rule_decisions\".\"instructions_hash\" is null)"
+        },
+        "rule_decisions_profile": {
+          "name": "rule_decisions_profile",
+          "value": "(\"rule_decisions\".\"kind\" = 'confirm_profile') = (\"rule_decisions\".\"profile_id\" is not null)"
+        },
+        "rule_decisions_choice": {
+          "name": "rule_decisions_choice",
+          "value": "(\"rule_decisions\".\"kind\" = 'choose') = (\"rule_decisions\".\"version_index\" is not null)"
+        },
+        "rule_decisions_applies_to": {
+          "name": "rule_decisions_applies_to",
+          "value": "(\"rule_decisions\".\"kind\" = 'applies_to') = (\"rule_decisions\".\"applies_to\" is not null) and (\"rule_decisions\".\"applies_to\" is null or \"rule_decisions\".\"applies_to\" in ('every', 'some'))"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.rulebook_heads": {
+      "name": "rulebook_heads",
+      "schema": "",
+      "columns": {
+        "process": {
+          "name": "process",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "instructions_hash": {
+          "name": "instructions_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revision_id": {
+          "name": "revision_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "rulebook_heads_process_processes_id_fk": {
+          "name": "rulebook_heads_process_processes_id_fk",
+          "tableFrom": "rulebook_heads",
+          "columnsFrom": [
+            "process"
+          ],
+          "tableTo": "processes",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        },
+        "rulebook_heads_revision_fk": {
+          "name": "rulebook_heads_revision_fk",
+          "tableFrom": "rulebook_heads",
+          "columnsFrom": [
+            "process",
+            "instructions_hash",
+            "revision_id"
+          ],
+          "tableTo": "rulebook_revisions",
+          "columnsTo": [
+            "process",
+            "instructions_hash",
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        }
+      },
+      "compositePrimaryKeys": {
+        "rulebook_heads_process_instructions_hash_pk": {
+          "name": "rulebook_heads_process_instructions_hash_pk",
+          "columns": [
+            "process",
+            "instructions_hash"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.rulebook_revisions": {
+      "name": "rulebook_revisions",
+      "schema": "",
+      "columns": {
+        "process": {
+          "name": "process",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "instructions_hash": {
+          "name": "instructions_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "seq": {
+          "name": "seq",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "identity": {
+            "name": "rulebook_revisions_seq_seq",
+            "increment": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "startWith": "1",
+            "cache": "1",
+            "cycle": false,
+            "schema": "public",
+            "type": "always"
+          }
+        },
+        "parent": {
+          "name": "parent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revised_at": {
+          "name": "revised_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "schema_version": {
+          "name": "schema_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "profile_id": {
+          "name": "profile_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "actor": {
+          "name": "actor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "body": {
+          "name": "body",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "rulebook_revisions_by_instructions": {
+          "name": "rulebook_revisions_by_instructions",
+          "columns": [
+            {
+              "expression": "process",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "instructions_hash",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "seq",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "rulebook_revisions_process_processes_id_fk": {
+          "name": "rulebook_revisions_process_processes_id_fk",
+          "tableFrom": "rulebook_revisions",
+          "columnsFrom": [
+            "process"
+          ],
+          "tableTo": "processes",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        },
+        "rulebook_revisions_instructions_fk": {
+          "name": "rulebook_revisions_instructions_fk",
+          "tableFrom": "rulebook_revisions",
+          "columnsFrom": [
+            "process",
+            "instructions_hash"
+          ],
+          "tableTo": "instruction_versions",
+          "columnsTo": [
+            "process",
+            "hash"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        },
+        "rulebook_revisions_parent_fk": {
+          "name": "rulebook_revisions_parent_fk",
+          "tableFrom": "rulebook_revisions",
+          "columnsFrom": [
+            "process",
+            "instructions_hash",
+            "parent"
+          ],
+          "tableTo": "rulebook_revisions",
+          "columnsTo": [
+            "process",
+            "instructions_hash",
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        },
+        "rulebook_revisions_profile_fk": {
+          "name": "rulebook_revisions_profile_fk",
+          "tableFrom": "rulebook_revisions",
+          "columnsFrom": [
+            "process",
+            "profile_id"
+          ],
+          "tableTo": "data_profiles",
+          "columnsTo": [
+            "process",
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        }
+      },
+      "compositePrimaryKeys": {
+        "rulebook_revisions_process_instructions_hash_id_pk": {
+          "name": "rulebook_revisions_process_instructions_hash_id_pk",
+          "columns": [
+            "process",
+            "instructions_hash",
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "rulebook_revisions_seq": {
+          "name": "rulebook_revisions_seq",
+          "columns": [
+            "seq"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "rulebook_revisions_id_shape": {
+          "name": "rulebook_revisions_id_shape",
+          "value": "\"rulebook_revisions\".\"id\" ~ '^[0-9a-f]{12}$'"
+        },
+        "rulebook_revisions_body_hash": {
+          "name": "rulebook_revisions_body_hash",
+          "value": "\"rulebook_revisions\".\"instructions_hash\" is not distinct from (\"rulebook_revisions\".\"body\" ->> 'hash')"
+        },
+        "rulebook_revisions_body_profile": {
+          "name": "rulebook_revisions_body_profile",
+          "value": "\"rulebook_revisions\".\"profile_id\" is not distinct from (\"rulebook_revisions\".\"body\" ->> 'profileId')"
+        },
+        "rulebook_revisions_reason": {
+          "name": "rulebook_revisions_reason",
+          "value": "\"rulebook_revisions\".\"reason\" in ('accepted', 'migrated', 'used')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.runs": {
+      "name": "runs",
+      "schema": "",
+      "columns": {
+        "process": {
+          "name": "process",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "instructions_hash": {
+          "name": "instructions_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "read_id": {
+          "name": "read_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rulebook_id": {
+          "name": "rulebook_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "stage": {
+          "name": "stage",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "trigger": {
+          "name": "trigger",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "additional_instructions": {
+          "name": "additional_instructions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "started_by": {
+          "name": "started_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "runs_by_start": {
+          "name": "runs_by_start",
+          "columns": [
+            {
+              "expression": "process",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "started_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "runs_process_processes_id_fk": {
+          "name": "runs_process_processes_id_fk",
+          "tableFrom": "runs",
+          "columnsFrom": [
+            "process"
+          ],
+          "tableTo": "processes",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        },
+        "runs_instructions_fk": {
+          "name": "runs_instructions_fk",
+          "tableFrom": "runs",
+          "columnsFrom": [
+            "process",
+            "instructions_hash"
+          ],
+          "tableTo": "instruction_versions",
+          "columnsTo": [
+            "process",
+            "hash"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        },
+        "runs_read_fk": {
+          "name": "runs_read_fk",
+          "tableFrom": "runs",
+          "columnsFrom": [
+            "process",
+            "read_id"
+          ],
+          "tableTo": "reads",
+          "columnsTo": [
+            "process",
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        },
+        "runs_rulebook_fk": {
+          "name": "runs_rulebook_fk",
+          "tableFrom": "runs",
+          "columnsFrom": [
+            "process",
+            "instructions_hash",
+            "rulebook_id"
+          ],
+          "tableTo": "rulebook_revisions",
+          "columnsTo": [
+            "process",
+            "instructions_hash",
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        }
+      },
+      "compositePrimaryKeys": {
+        "runs_process_id_pk": {
+          "name": "runs_process_id_pk",
+          "columns": [
+            "process",
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "runs_stage": {
+          "name": "runs_stage",
+          "value": "\"runs\".\"stage\" in ('instructions', 'read', 'rules', 'calculate', 'propose', 'apply')"
+        },
+        "runs_status": {
+          "name": "runs_status",
+          "value": "\"runs\".\"status\" in ('queued', 'running', 'awaiting_review', 'approved', 'completed', 'held', 'failed', 'superseded', 'cancelled')"
+        },
+        "runs_trigger": {
+          "name": "runs_trigger",
+          "value": "\"runs\".\"trigger\" in ('schedule', 'manual', 'rerun')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.source_reads": {
+      "name": "source_reads",
+      "schema": "",
+      "columns": {
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "read_id": {
+          "name": "read_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "read_at": {
+          "name": "read_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "body": {
+          "name": "body",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "source_reads_latest": {
+          "name": "source_reads_latest",
+          "columns": [
+            {
+              "expression": "source",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "\"read_id\" collate \"C\" desc",
+              "isExpression": true,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "source_reads_source_read_id_pk": {
+          "name": "source_reads_source_read_id_pk",
+          "columns": [
+            "source",
+            "read_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "source_reads_id_shape": {
+          "name": "source_reads_id_shape",
+          "value": "\"source_reads\".\"read_id\" ~ '^[A-Za-z0-9_-]{1,80}$'"
+        },
+        "source_reads_not_captured": {
+          "name": "source_reads_not_captured",
+          "value": "\"source_reads\".\"read_id\" <> 'captured'"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "views": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

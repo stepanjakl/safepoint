@@ -29,6 +29,20 @@
       "when": 1794747084565,
       "tag": "0003_run_data_reads",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794748235885,
+      "tag": "0004_write_leases",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794748241401,
+      "tag": "0005_application_guard",
+      "breakpoints": true
     }
   ]
 }
