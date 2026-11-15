@@ -81,6 +81,8 @@ function schemaOf(file: string): z.ZodType | null {
 
 describe('a body kept as json or jsonb', () => {
   beforeEach(async () => {
+    // The scratch database is emptied between tests, not made again.
+    await db().execute(sql`drop table if exists bodies`);
     await db().execute(
       sql`create table bodies (file text primary key, as_json json, as_jsonb jsonb)`,
     );

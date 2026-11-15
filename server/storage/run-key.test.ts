@@ -20,28 +20,10 @@ const at = (kind: string, name: string) =>
   path.join(scratch(), 'data', 'brunch-orders', kind, name);
 
 describe('the file for a run', () => {
-  it('names each kind of run data as before', () => {
+  it('names a write as before', () => {
     // applicationFile
     expect(runFile('applied', key)).toBe(
       at('applied', 'read-2026_01.abc123def456.json'),
-    );
-    // proposalFile
-    expect(runFile('proposals', key)).toBe(
-      at('proposals', 'read-2026_01.abc123def456.json'),
-    );
-    expect(runFile('proposals', key, 'part')).toBe(
-      at('proposals', 'read-2026_01.abc123def456.part.json'),
-    );
-    // jobFile: -progress joined to the fingerprint, after any part
-    expect(runFile('proposals', key, 'progress')).toBe(
-      at('proposals', 'read-2026_01.abc123def456-progress.json'),
-    );
-    // crossFile
-    expect(runFile('cross-checks', key)).toBe(
-      at('cross-checks', 'read-2026_01.abc123def456.json'),
-    );
-    expect(runFile('cross-checks', key, 'part')).toBe(
-      at('cross-checks', 'read-2026_01.abc123def456.part.json'),
     );
   });
 
@@ -50,7 +32,7 @@ describe('the file for a run', () => {
       expect(() => runFile('applied', { ...key, readId: bad })).toThrow(
         'Not a read or rulebook id.',
       );
-      expect(() => runFile('proposals', { ...key, fingerprint: bad })).toThrow(
+      expect(() => runFile('applied', { ...key, fingerprint: bad })).toThrow(
         'Not a read or rulebook id.',
       );
     }

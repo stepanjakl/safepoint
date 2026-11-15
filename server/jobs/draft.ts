@@ -1,7 +1,5 @@
 import 'server-only';
 
-import path from 'node:path';
-
 import type { Asking } from '@/lib/definitions/find';
 import { hashOf } from '@/lib/definitions/fingerprint';
 import { fitting, type KeptRead } from '@/lib/definitions/records';
@@ -13,7 +11,6 @@ import {
 import { findDefinitions } from '@/server/operations/find';
 import { writeAgreed } from '@/server/operations/write';
 import { ownerToDraft } from '@/server/storage/rulebooks';
-import { runDataDir } from '@/server/storage/run-data';
 
 import { jobProgress, runningJob, startJob } from './run-job';
 
@@ -22,20 +19,19 @@ import { jobProgress, runningJob, startJob } from './run-job';
   in order, on the server, so it carries on when the page is closed. Writing
   one definition again is the same kind of job, for the same reason. One job
   per version of the instructions. Its progress is held while the server runs
-  and written to data/<process>/drafts/ as it goes, so a job the server
-  stopped part way through says so, rather than vanishing.
+  and kept in the `jobs` table as it goes, so a job the server stopped part
+  way through says so, rather than vanishing.
 */
 
 const INTERRUPTED =
   'The server stopped while this was being written, so it did not finish. Try it again.';
 
 const jobFor = (owner: DefinitionProcess, text: string) => ({
-  kind: 'drafts',
-  key: `${owner.id}:${hashOf(text)}`,
-  file: path.join(runDataDir(owner.id, 'drafts'), `${hashOf(text)}.json`),
+  kind: 'drafts' as const,
+  process: owner.id,
+  key: hashOf(text),
   schema: draftProgressSchema,
   interrupted: INTERRUPTED,
-  compact: true,
 });
 
 export const draftProgress = (owner: DefinitionProcess, text: string) =>
@@ -48,7 +44,7 @@ function startDraftJob(
   text: string,
   step: string,
   work: (progress: DraftProgress, note: () => Promise<void>) => Promise<string>,
-): DraftProgress {
+): Promise<DraftProgress> {
   return startJob({
     ...jobFor(owner, text),
     initial: { step, error: null, running: true, writing: null },
@@ -61,17 +57,18 @@ function startDraftJob(
   });
 }
 
-// Starts a draft unless a job is running for these instructions; the read must
-// fit the process's declaration first.
+// Starts a draft unless a job is running for these instructions, here or in
+// another process; the read must fit the process's declaration first, and
+// that is refused at once, not by the promise.
 export function startDraft(
   owner: DefinitionProcess,
   text: string,
   version: string,
   read: KeptRead,
   asking: Asking = {},
-): DraftProgress {
+): Promise<DraftProgress> {
   const running = runningJob<DraftProgress>(jobFor(owner, text));
-  if (running) return running;
+  if (running) return Promise.resolve(running);
   fitting(read, owner.subject.data);
   return startDraftJob(
     owner,
@@ -111,7 +108,7 @@ export function startRewrite(
   read: KeptRead,
   id: string,
   asking: Asking = {},
-): DraftProgress {
+): Promise<DraftProgress> {
   return startDraftJob(
     owner,
     text,

@@ -240,9 +240,15 @@ export const rulesRouter = router({
     // The engine drafts without a profile too; a person's draft does not.
     const profile = await loadProfile(owner);
     if (!profile?.confirmedAt) throw new Error(CONFIRM_FIRST);
-    startDraft(owner, input.text, input.version, await readOf(input.readId), {
-      model: input.model,
-    });
+    await startDraft(
+      owner,
+      input.text,
+      input.version,
+      await readOf(input.readId),
+      {
+        model: input.model,
+      },
+    );
     return replyWith(input.text, input.readId, () =>
       loadSet(owner, input.text),
     );
@@ -257,9 +263,15 @@ export const rulesRouter = router({
   write: rulesProcedure(
     z.strictObject({ text, readId: readIdSchema, id, model }),
   ).mutation(async ({ input }) => {
-    startRewrite(owner, input.text, await readOf(input.readId), input.id, {
-      model: input.model,
-    });
+    await startRewrite(
+      owner,
+      input.text,
+      await readOf(input.readId),
+      input.id,
+      {
+        model: input.model,
+      },
+    );
     return replyWith(input.text, input.readId, () =>
       loadSet(owner, input.text),
     );

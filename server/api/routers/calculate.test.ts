@@ -5,7 +5,7 @@ import { calculate } from '@/lib/definitions/calculate';
 import { capturedRead } from '@/lib/definitions/captured.fixture';
 import { fingerprintOf } from '@/lib/definitions/fingerprint';
 import { always, answer } from '@/lib/definitions/models.fixture';
-import { inScratchDirectory } from '@/lib/definitions/scratch.fixture';
+import { inScratchStorage } from '@/lib/definitions/scratch.fixture';
 import { TEXT } from '@/lib/definitions/set.fixture';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { listRevisions, putRevision } from '@/server/storage/rulebooks';
@@ -75,7 +75,7 @@ function modelWorking() {
 }
 
 describe('calculate router', () => {
-  inScratchDirectory();
+  inScratchStorage();
   beforeEach(async () => {
     vi.stubEnv('NODE_ENV', 'development');
     model.current = modelWorking();

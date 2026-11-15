@@ -109,7 +109,7 @@ import {
   type KeptRead,
 } from './records';
 import { revisionChanges } from './revision-changes';
-import { inScratchDirectory } from './scratch.fixture';
+import { inScratchStorage } from './scratch.fixture';
 import {
   formulaOf,
   sentenceOf,
@@ -142,7 +142,7 @@ import { workingOf } from './working';
   repository.
 */
 
-inScratchDirectory();
+inScratchStorage();
 
 const read = docksRead();
 const readOf = async (id: string) => (id === read.id ? read : null);

@@ -3,13 +3,11 @@ import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { fingerprintOf } from '@/lib/definitions/fingerprint';
-import { inScratchDirectory } from '@/lib/definitions/scratch.fixture';
+import { inScratchStorage } from '@/lib/definitions/scratch.fixture';
 import { TEXT } from '@/lib/definitions/set.fixture';
 import { proposalSchema } from '@/lib/definitions/types';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
-import { writeKept } from '@/server/storage/files';
-import { runFile } from '@/server/storage/run-key';
-import { runKeyOf } from '@/server/storage/proposals';
+import { keepProposal } from '@/server/storage/proposals';
 import { putRevision } from '@/server/storage/rulebooks';
 
 import {
@@ -51,7 +49,7 @@ const run = { text: TEXT, readId: 'test', evaluation: 'rules' as const };
 const fingerprint = fingerprintOf(accepted);
 
 describe('propose router', () => {
-  inScratchDirectory();
+  inScratchStorage();
   beforeEach(async () => {
     vi.stubEnv('NODE_ENV', 'development');
     start.mockReset();
@@ -81,11 +79,12 @@ describe('propose router', () => {
   });
 
   it('gives the proposal kept for this read and rulebook', async () => {
-    const proposal = proposalSchema.parse(frozen.proposal);
-    await writeKept(
-      runFile('proposals', runKeyOf(owner, 'test', fingerprint)),
-      proposal,
-    );
+    const proposal = {
+      ...proposalSchema.parse(frozen.proposal),
+      readId: 'test',
+      fingerprint,
+    };
+    await keepProposal(owner, proposal);
     await expect(caller().propose.get(run)).resolves.toMatchObject({
       proposal: { at: proposal.at },
     });

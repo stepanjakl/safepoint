@@ -10,7 +10,7 @@ import {
 import { calculate } from './calculate';
 import { capturedRead } from './captured.fixture';
 import { always, answer, standIn, told } from './models.fixture';
-import { inScratchDirectory } from './scratch.fixture';
+import { inScratchStorage } from './scratch.fixture';
 import { definition, TEXT } from './set.fixture';
 import { fingerprintOf } from './fingerprint';
 import type { DefinitionSet } from './types';
@@ -150,7 +150,7 @@ describe('calculating', () => {
 });
 
 describe('the model cross-checking', () => {
-  inScratchDirectory();
+  inScratchStorage();
   // One entry per record, every value under its id.
   const everyRecord = (change: (key: string, id: string) => number | null) =>
     Object.entries(BY_HAND).map(([key, [sales, target]]) => ({

@@ -67,9 +67,16 @@ export const proposeRouter = router({
     z.strictObject({ ...run, model: draftingModelSchema.optional() }),
   ).mutation(async ({ ctx, input }) => {
     if (ctx.stale) return staleReply(ctx.stale);
-    startProposal(ctx.owner, ctx.set, ctx.read, input.readId, input.text, {
-      model: input.model,
-    });
+    await startProposal(
+      ctx.owner,
+      ctx.set,
+      ctx.read,
+      input.readId,
+      input.text,
+      {
+        model: input.model,
+      },
+    );
     return await proposalOf(ctx, input.readId);
   }),
 

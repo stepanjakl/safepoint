@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { rm } from 'node:fs/promises';
+import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 
 import {
@@ -13,31 +13,23 @@ import type { KeptRead } from '@/lib/definitions/records';
 import type { DefinitionProcess, DefinitionSet } from '@/lib/definitions/types';
 import { fallbackChain, type DraftingModel } from '@/lib/models';
 
-import { readKept, writeKept } from './files';
-import { runFile } from './run-key';
+import { database } from '@/server/db/client';
+import { ensureProcess } from '@/server/db/scope';
+import { crossChecks } from '@/server/db/schema';
+
+import { dropPart, keepPart, keptPart } from './answer-parts';
 
 // Records a call works out: few enough that the model's answer fits.
 const BATCH = 25;
 
 /*
-  A cross-check is kept in data/<process>/cross-checks/ by read and rulebook:
-  it costs model calls, and the same read on the same rulebook would give the
-  same answer to compare. One still being answered is kept beside it as a
-  part. Each is written beside its file and renamed over it.
+  A cross-check is kept in the `cross_checks` table by read and rulebook: it
+  costs model calls, and the same read on the same rulebook would give the
+  same answer to compare. A new one replaces it. One still being answered is
+  kept as a part. A cross-check or part that no longer fits its schema reads
+  as none kept, since it is recomputed on demand; a database that cannot be
+  read is reported.
 */
-const crossFile = (
-  owner: DefinitionProcess,
-  readId: string,
-  fingerprint: string,
-  // A cross-check still being answered, batch by batch.
-  part = false,
-) =>
-  runFile(
-    'cross-checks',
-    { process: owner.id, readId, fingerprint },
-    part ? 'part' : 'whole',
-  );
-
 const cellsSchema = z.record(
   z.string(),
   z.record(
@@ -49,22 +41,12 @@ export const crossCheckPartSchema = z.object({
   cells: cellsSchema,
   models: z.array(z.string()),
 });
-type Part = z.infer<typeof crossCheckPartSchema>;
 
-const keepPart = (
-  owner: DefinitionProcess,
-  readId: string,
-  fp: string,
-  part: Part,
-) => writeKept(crossFile(owner, readId, fp, true), part);
-
-const keptPart = (owner: DefinitionProcess, readId: string, fp: string) =>
-  readKept(crossFile(owner, readId, fp, true), crossCheckPartSchema, {
-    unreadableIsMissing: true,
-  });
-
-const dropPart = (owner: DefinitionProcess, readId: string, fp: string) =>
-  rm(crossFile(owner, readId, fp, true), { force: true });
+const runKey = (owner: DefinitionProcess, readId: string, fp: string) => ({
+  process: owner.id,
+  readId,
+  fingerprint: fp,
+});
 
 export const crossCheckSchema = z.object({
   fingerprint: z.string(),
@@ -80,7 +62,32 @@ export async function keepCrossCheck(
   owner: DefinitionProcess,
   check: CrossCheck,
 ): Promise<void> {
-  await writeKept(crossFile(owner, check.readId, check.fingerprint), check);
+  const body = crossCheckSchema.parse(check);
+  const db = await database();
+  await ensureProcess(db, owner.id);
+  const row = {
+    checkedAt: new Date(body.at),
+    model: body.model,
+    agreed: body.agreed,
+    total: body.total,
+    body,
+  };
+  await db
+    .insert(crossChecks)
+    .values({
+      process: owner.id,
+      readId: body.readId,
+      fingerprint: body.fingerprint,
+      ...row,
+    })
+    .onConflictDoUpdate({
+      target: [
+        crossChecks.process,
+        crossChecks.readId,
+        crossChecks.fingerprint,
+      ],
+      set: row,
+    });
 }
 
 export async function keptCrossCheck(
@@ -88,9 +95,20 @@ export async function keptCrossCheck(
   readId: string,
   fingerprint: string,
 ): Promise<CrossCheck | null> {
-  return readKept(crossFile(owner, readId, fingerprint), crossCheckSchema, {
-    unreadableIsMissing: true,
-  });
+  const [row] = await (
+    await database()
+  )
+    .select({ body: crossChecks.body })
+    .from(crossChecks)
+    .where(
+      and(
+        eq(crossChecks.process, owner.id),
+        eq(crossChecks.readId, readId),
+        eq(crossChecks.fingerprint, fingerprint),
+      ),
+    );
+  const parsed = row && crossCheckSchema.safeParse(row.body);
+  return parsed?.success ? parsed.data : null;
 }
 
 /*
@@ -115,7 +133,8 @@ export async function crossCheck(
   if (!keys.length) throw new Error('The read has no records.');
   const { fingerprint } = calculation;
   const models = chosen ? fallbackChain(chosen) : DRAFT_MODELS;
-  const sofar = await keptPart(owner, readId, fingerprint);
+  const key = runKey(owner, readId, fingerprint);
+  const sofar = await keptPart('cross-check', key, crossCheckPartSchema);
   const cells: CrossCheck['cells'] = { ...sofar?.cells };
   const answeredBy = new Set(sofar?.models ?? []);
   const left = keys.filter((key) => !cells[key]);
@@ -132,12 +151,12 @@ export async function crossCheck(
     );
     Object.assign(cells, answer.cells);
     answeredBy.add(answer.model);
-    await keepPart(owner, readId, fingerprint, {
+    await keepPart('cross-check', key, crossCheckPartSchema, {
       cells,
       models: [...answeredBy],
     });
   }
-  await dropPart(owner, readId, fingerprint);
+  await dropPart(await database(), 'cross-check', key);
   const all = keys.flatMap((key) => Object.values(cells[key] ?? {}));
   return {
     fingerprint,

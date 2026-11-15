@@ -3,16 +3,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DecisionMade, OutputSheet } from '@/lib/definitions/apply';
 import { capturedRead, capturedTabs } from '@/lib/definitions/captured.fixture';
 import { fingerprintOf, hashOf } from '@/lib/definitions/fingerprint';
-import { inScratchDirectory } from '@/lib/definitions/scratch.fixture';
+import { inScratchStorage } from '@/lib/definitions/scratch.fixture';
 import type { DefinitionSet, Proposal } from '@/lib/definitions/types';
 import {
   BRUNCH_ORDERS_DEFINITIONS as owner,
   brunchOrdersProcess,
 } from '@/lib/processes/brunch-orders/process';
 import { applyDecisions, keptApplication } from '@/server/storage/applications';
-import { writeKept } from '@/server/storage/files';
-import { runKeyOf } from '@/server/storage/proposals';
-import { runFile } from '@/server/storage/run-key';
+import { keepProposal } from '@/server/storage/proposals';
 import { memorySheet } from '@/server/storage/sheet.fixture';
 import { putRevision } from '@/server/storage/rulebooks';
 
@@ -99,10 +97,7 @@ async function arrange(
     // Whole cases that pass every blocking check of the rulebook.
     records: { 'EG-06': record(12), 'CT-250': record(10) },
   };
-  await writeKept(
-    runFile('proposals', runKeyOf(owner, readId, fingerprint)),
-    proposal,
-  );
+  await keepProposal(owner, proposal);
   return {
     set,
     proposal,
@@ -118,7 +113,7 @@ async function arrange(
 }
 
 describe('apply router', () => {
-  inScratchDirectory();
+  inScratchStorage();
   let sheet: ReturnType<typeof memorySheet>;
   beforeEach(() => {
     vi.stubEnv('NODE_ENV', 'development');

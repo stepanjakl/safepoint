@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { rm } from 'node:fs/promises';
+import { and, desc, eq } from 'drizzle-orm';
 
 import { calculate } from '@/lib/definitions/calculate';
 import { DRAFT_MODELS, type Resolve } from '@/lib/definitions/calls';
@@ -17,12 +17,17 @@ import {
 } from '@/lib/definitions/types';
 import { fallbackChain, type DraftingModel } from '@/lib/models';
 
-import { readKept, writeKept } from './files';
-import { runFile } from './run-key';
+import { database } from '@/server/db/client';
+import { ensureProcess } from '@/server/db/scope';
+import { proposals } from '@/server/db/schema';
+
+import { dropPart, keepPart, keptPart } from './answer-parts';
+import { parseStored } from './stored';
 
 /*
-  Kept in data/<process>/proposals/ by read and rulebook, written whole; one
-  still being answered is kept beside it as a part, batch by batch, so a
+  Kept in the `proposals` table by read and rulebook, each written whole and
+  never changed: a proposal made again is a new row and the latest is the one
+  kept. One still being answered is kept as a part, batch by batch, so a
   proposal that stops part way asks only for the rest.
 */
 export const runKeyOf = (
@@ -35,16 +40,64 @@ export const runKeyOf = (
   fingerprint,
 });
 
-// A proposal that cannot be read is reported, never taken for none kept.
-export const keptProposal = (
+// The latest proposal for the run key, by when it was proposed, which
+// `proposals_by_run_key` serves. One that cannot be read is reported, never
+// taken for none kept.
+export async function keptProposal(
   owner: DefinitionProcess,
   readId: string,
   fingerprint: string,
-) =>
-  readKept(
-    runFile('proposals', runKeyOf(owner, readId, fingerprint)),
-    proposalSchema,
-  );
+): Promise<Proposal | null> {
+  const [row] = await (
+    await database()
+  )
+    .select({ body: proposals.body })
+    .from(proposals)
+    .where(
+      and(
+        eq(proposals.process, owner.id),
+        eq(proposals.readId, readId),
+        eq(proposals.fingerprint, fingerprint),
+      ),
+    )
+    .orderBy(desc(proposals.proposedAt))
+    .limit(1);
+  return row
+    ? parseStored(
+        row.body,
+        proposalSchema,
+        `The kept proposal ${owner.id}/${readId}.${fingerprint}`,
+      )
+    : null;
+}
+
+// Keeps a whole proposal and removes the part that led to it in one
+// transaction, so a crash leaves both or neither. Written once: the same
+// proposal again (same instant) leaves the first as it was.
+export async function keepProposal(
+  owner: DefinitionProcess,
+  proposal: Proposal,
+): Promise<Proposal> {
+  const body = proposalSchema.parse(proposal);
+  const key = runKeyOf(owner, body.readId, body.fingerprint);
+  const db = await database();
+  await ensureProcess(db, owner.id);
+  await db.transaction(async (tx) => {
+    await tx
+      .insert(proposals)
+      .values({
+        process: owner.id,
+        readId: body.readId,
+        fingerprint: body.fingerprint,
+        proposedAt: new Date(body.at),
+        model: body.model,
+        body,
+      })
+      .onConflictDoNothing();
+    await dropPart(tx, 'proposal', key);
+  });
+  return body;
+}
 
 // Records a call proposes for: few enough that its answer fits.
 const BATCH = 25;
@@ -82,15 +135,9 @@ export async function propose(
   if (!keys.length) throw new Error('The read has no records.');
   const fingerprint = fingerprintOf(set);
   const models = chosen ? fallbackChain(chosen) : DRAFT_MODELS;
-  const partFile = runFile(
-    'proposals',
-    runKeyOf(owner, readId, fingerprint),
-    'part',
-  );
+  const key = runKeyOf(owner, readId, fingerprint);
   // Only a head start: a part that cannot be read is asked for again.
-  const sofar = await readKept(partFile, proposalPartSchema, {
-    unreadableIsMissing: true,
-  });
+  const sofar = await keptPart('proposal', key, proposalPartSchema);
   const records: Proposal['records'] = { ...sofar?.records };
   const answeredBy = new Set(sofar?.models ?? []);
   const left = keys.filter((key) => !records[key]);
@@ -111,7 +158,10 @@ export async function propose(
     );
     Object.assign(records, answer.records);
     answeredBy.add(answer.model);
-    await writeKept(partFile, { records, models: [...answeredBy] });
+    await keepPart('proposal', key, proposalPartSchema, {
+      records,
+      models: [...answeredBy],
+    });
   }
   const proposal: Proposal = {
     fingerprint,
@@ -121,10 +171,5 @@ export async function propose(
     // In the records' own order, however the batches came back.
     records: Object.fromEntries(keys.map((key) => [key, records[key]!])),
   };
-  await writeKept(
-    runFile('proposals', runKeyOf(owner, readId, fingerprint)),
-    proposal,
-  );
-  await rm(partFile, { force: true });
-  return proposal;
+  return keepProposal(owner, proposal);
 }

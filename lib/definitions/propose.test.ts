@@ -3,12 +3,13 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
+import { answerParts } from '@/server/db/schema';
 import { keptProposal, propose } from '@/server/storage/proposals';
 
 import { capturedRead, capturedTabs } from './captured.fixture';
 import { always, call, standIn, told } from './models.fixture';
 import { checkProposal, newActivity } from './propose';
-import { inScratchDirectory } from './scratch.fixture';
+import { inScratchStorage } from './scratch.fixture';
 import { TEXT } from './set.fixture';
 import { fingerprintOf, noRules } from './fingerprint';
 import { definitionSetSchema, type DefinitionProcess } from './types';
@@ -249,6 +250,7 @@ describe('a set with no accepted check', () => {
 });
 
 describe('a proposal below its minimum', () => {
+  inScratchStorage();
   const least: DefinitionProcess = {
     ...owner,
     subject: {
@@ -308,7 +310,7 @@ describe('a proposal below its minimum', () => {
 });
 
 describe('proposing', () => {
-  inScratchDirectory();
+  const { database: db } = inScratchStorage();
   const leave = (key: string) => ({
     key,
     action: 'leave',
@@ -567,6 +569,12 @@ describe('proposing', () => {
         batch: 6,
       }),
     ).rejects.toThrow(/not answered/);
+    // What it got through is kept as a part, batch by batch.
+    const parts = await db().select().from(answerParts);
+    expect(parts).toHaveLength(1);
+    expect(
+      Object.keys((parts[0]!.body as { records: object }).records),
+    ).toEqual(KEYS.slice(0, 6));
     const rest = standIn(call('submit_proposals', { records: second }));
     const proposal = await propose(owner, set, read, 'test', TEXT, {
       resolve: () => rest,
@@ -575,5 +583,10 @@ describe('proposing', () => {
     expect(rest.doStreamCalls).toHaveLength(1);
     expect(told(rest)).not.toContain('Sourdough');
     expect(Object.keys(proposal.records)).toEqual(KEYS);
+    // The whole is kept, and the part it was made from is gone with it.
+    expect(await db().select().from(answerParts)).toEqual([]);
+    expect(await keptProposal(owner, 'test', fingerprintOf(set))).toEqual(
+      proposal,
+    );
   });
 });

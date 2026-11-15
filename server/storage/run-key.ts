@@ -7,19 +7,14 @@ import { runDataDir } from './run-data';
 
 /*
   Server-only. What names a run: the process, the read it was taken on and the
-  fingerprint of the rulebook it used. Every file a run keeps is found by it, so
-  the way a name is built from it is written here and nowhere else.
+  fingerprint of the rulebook it used. Proposals, cross-checks and their parts
+  are kept by it in the database; the files a run still keeps are found by it,
+  so the way a name is built from it is written here and nowhere else.
 */
 
 export type RunKey = { process: string; readId: string; fingerprint: string };
 
-type Variants = {
-  applied: 'whole';
-  'cross-checks': 'whole' | 'part';
-  proposals: 'whole' | 'part' | 'progress';
-};
-
-export type RunKind = keyof Variants;
+export type RunKind = 'applied';
 
 function assertRunKey({ readId, fingerprint }: RunKey) {
   // Both name a file: never a path.
@@ -27,18 +22,10 @@ function assertRunKey({ readId, fingerprint }: RunKey) {
     throw new Error('Not a read or rulebook id.');
 }
 
-// A part is kept beside the whole while it is being answered, batch by batch;
-// progress is a job's, written as it goes.
-export function runFile<K extends RunKind>(
-  kind: K,
-  key: RunKey,
-  variant?: Variants[K],
-): string {
+export function runFile(kind: RunKind, key: RunKey): string {
   assertRunKey(key);
-  const suffix =
-    variant === 'part' ? '.part' : variant === 'progress' ? '-progress' : '';
   return path.join(
     runDataDir(key.process, kind),
-    `${key.readId}.${key.fingerprint}${suffix}.json`,
+    `${key.readId}.${key.fingerprint}.json`,
   );
 }

@@ -1,6 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import path from 'node:path';
-
+import { and, eq, sql } from 'drizzle-orm';
 import { MockLanguageModelV4 } from 'ai/test';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -14,15 +12,32 @@ import {
   check,
   standIn,
 } from '@/lib/definitions/models.fixture';
-import { inScratchDirectory } from '@/lib/definitions/scratch.fixture';
+import { inScratchStorage } from '@/lib/definitions/scratch.fixture';
 import { TEXT } from '@/lib/definitions/set.fixture';
 import { hashOf } from '@/lib/definitions/fingerprint';
+import { ensureProcess } from '@/server/db/scope';
+import { jobs } from '@/server/db/schema';
 import { loadSet } from '@/server/storage/rulebooks';
 
 // A whole draft runs on the server: found, then each definition written, with
 // its progress there to be asked for, and never on a read that does not fit.
 
-inScratchDirectory();
+const { database: db } = inScratchStorage();
+
+// The row a draft's progress is kept in.
+const draftRow = async (text: string) =>
+  (
+    await db()
+      .select()
+      .from(jobs)
+      .where(
+        and(
+          eq(jobs.process, owner.id),
+          eq(jobs.kind, 'drafts'),
+          eq(jobs.key, hashOf(text)),
+        ),
+      )
+  )[0];
 
 const found = {
   intent: 'Order enough.',
@@ -54,7 +69,9 @@ describe('a draft on the server', () => {
       check(written),
       check(written),
     );
-    startDraft(owner, TEXT, 'v1', capturedRead(), { resolve: () => model });
+    await startDraft(owner, TEXT, 'v1', capturedRead(), {
+      resolve: () => model,
+    });
     const asked = await draftProgress(owner, TEXT);
     expect(asked?.running).toBe(true);
     await vi.waitFor(async () =>
@@ -69,7 +86,7 @@ describe('a draft on the server', () => {
       check(written),
       check(written),
     );
-    const started = startDraft(owner, TEXT, 'v1', capturedRead(), {
+    const started = await startDraft(owner, TEXT, 'v1', capturedRead(), {
       resolve: () => model,
     });
     expect(started.running).toBe(true);
@@ -89,12 +106,20 @@ describe('a draft on the server', () => {
 
   it('says so when the server stopped part way through a draft', async () => {
     const text = `${TEXT} Interrupted.`;
-    const dir = path.join(process.cwd(), 'data', owner.id, 'drafts');
-    mkdirSync(dir, { recursive: true });
-    writeFileSync(
-      path.join(dir, `${hashOf(text)}.json`),
-      JSON.stringify({ step: 'Writing 2 of 5…', error: null, running: true }),
-    );
+    // As a process that has since gone left it: running, its lease long out.
+    await ensureProcess(db(), owner.id);
+    await db()
+      .insert(jobs)
+      .values({
+        process: owner.id,
+        kind: 'drafts',
+        key: hashOf(text),
+        step: 'Writing 2 of 5…',
+        running: true,
+        holder: 'a-process-that-is-gone',
+        heartbeatAt: sql`now() - interval '10 minutes'`,
+        startedAt: sql`now() - interval '10 minutes'`,
+      });
     expect(await draftProgress(owner, text)).toMatchObject({
       running: false,
       error: expect.stringMatching(
@@ -123,7 +148,9 @@ describe('a draft on the server', () => {
         check(written),
         check(written),
       );
-      startDraft(owner, TEXT, 'v1', capturedRead(), { resolve: () => model });
+      await startDraft(owner, TEXT, 'v1', capturedRead(), {
+        resolve: () => model,
+      });
       await settled();
     };
     const again = {
@@ -134,9 +161,15 @@ describe('a draft on the server', () => {
     it('runs as a job, naming what it writes, and keeps the new version', async () => {
       await drafted();
       const model = standIn(check(again), check(again));
-      const job = startRewrite(owner, TEXT, capturedRead(), 'two_weekends', {
-        resolve: () => model,
-      });
+      const job = await startRewrite(
+        owner,
+        TEXT,
+        capturedRead(),
+        'two_weekends',
+        {
+          resolve: () => model,
+        },
+      );
       expect(job).toMatchObject({ running: true, error: null });
       await settled();
       expect(await draftProgress(owner, TEXT)).toMatchObject({
@@ -148,7 +181,7 @@ describe('a draft on the server', () => {
       expect(kept?.definitions[0]?.formula).toBe(again.formula);
     });
 
-    it('says which definition it is on, on disk as well as in memory', async () => {
+    it('says which definition it is on, in the database as well as in memory', async () => {
       await drafted();
       let release = () => {};
       const held = new Promise<void>((done) => {
@@ -161,7 +194,7 @@ describe('a draft on the server', () => {
           return step;
         },
       });
-      startRewrite(owner, TEXT, capturedRead(), 'two_weekends', {
+      await startRewrite(owner, TEXT, capturedRead(), 'two_weekends', {
         resolve: () => model,
       });
       await vi.waitFor(async () =>
@@ -169,15 +202,8 @@ describe('a draft on the server', () => {
           'two_weekends',
         ),
       );
-      const file = path.join(
-        process.cwd(),
-        'data',
-        owner.id,
-        'drafts',
-        `${hashOf(TEXT)}.json`,
-      );
-      await vi.waitFor(() =>
-        expect(JSON.parse(readFileSync(file, 'utf8'))).toMatchObject({
+      await vi.waitFor(async () =>
+        expect(await draftRow(TEXT)).toMatchObject({
           running: true,
           writing: 'two_weekends',
         }),
@@ -194,7 +220,7 @@ describe('a draft on the server', () => {
           throw new Error('The service went away.');
         },
       });
-      startRewrite(owner, TEXT, capturedRead(), 'two_weekends', {
+      await startRewrite(owner, TEXT, capturedRead(), 'two_weekends', {
         resolve: () => model,
       });
       await settled();
@@ -215,7 +241,7 @@ describe('a draft on the server', () => {
           throw new Error('Should not be asked.');
         },
       });
-      expect(second).toBe(first);
+      expect(await second).toBe(await first);
       await settled();
     });
   });

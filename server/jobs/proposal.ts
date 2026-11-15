@@ -12,16 +12,15 @@ import {
 import type { Resolve } from '@/lib/definitions/calls';
 import type { DraftingModel } from '@/lib/models';
 import { propose, runKeyOf } from '@/server/storage/proposals';
-import { runFile } from '@/server/storage/run-key';
 
 import { jobProgress, startJob } from './run-job';
 
 /*
   Server-only. A proposal as a server-side job, as a draft is (draft.ts): it
-  carries on when the page is closed, its progress written as it goes, so one
-  the server stopped part way through says so.
+  carries on when the page is closed, its progress kept in the `jobs` table as
+  it goes, so one the server stopped part way through says so.
 */
-const INTERRUPTED =
+export const INTERRUPTED =
   'The server stopped during this proposal, so it did not finish. Propose again to carry on from where it stopped.';
 
 const jobFor = (
@@ -31,9 +30,9 @@ const jobFor = (
 ) => {
   const key = runKeyOf(owner, readId, fingerprint);
   return {
-    kind: 'proposals',
-    key: `${owner.id}:${readId}:${fingerprint}`,
-    file: runFile('proposals', key, 'progress'),
+    kind: 'proposals' as const,
+    process: key.process,
+    key: `${key.readId}:${key.fingerprint}`,
     schema: draftProgressSchema,
     interrupted: INTERRUPTED,
   };
@@ -54,7 +53,7 @@ export function startProposal(
   readId: string,
   text: string,
   options: { model?: DraftingModel | null; resolve?: Resolve } = {},
-): DraftProgress {
+): Promise<DraftProgress> {
   return startJob({
     ...jobFor(owner, readId, fingerprintOf(set)),
     initial: {
@@ -64,8 +63,9 @@ export function startProposal(
       activity: newActivity(),
     },
     work: async (progress, note) => {
-      // A poll reads the job held in memory; the file only outlives a restart,
-      // so a thought arriving word by word is written now and then.
+      // A poll in this process reads the job held in memory; the row is what
+      // another process or a restart reads, so a thought arriving word by
+      // word is written now and then.
       let noted = 0;
       const changed = () => {
         if (Date.now() - noted < NOTE_EVERY_MS) return;

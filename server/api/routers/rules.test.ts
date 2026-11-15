@@ -9,7 +9,7 @@ import {
   withProfile,
 } from '@/lib/definitions/profile';
 import { recordsOf } from '@/lib/definitions/records';
-import { inScratchDirectory } from '@/lib/definitions/scratch.fixture';
+import { inScratchStorage } from '@/lib/definitions/scratch.fixture';
 import { definition, example, keep, TEXT } from '@/lib/definitions/set.fixture';
 import { formulaOf, type Shape } from '@/lib/definitions/shapes';
 import {
@@ -94,7 +94,7 @@ const split = definition('expected', {
 });
 
 describe('rules router', () => {
-  inScratchDirectory();
+  inScratchStorage();
   beforeEach(() => {
     vi.stubEnv('NODE_ENV', 'development');
     startDraft.mockReset();

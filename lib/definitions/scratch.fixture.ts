@@ -27,41 +27,43 @@ export function inScratchDirectory() {
 const MIGRATIONS = path.join(import.meta.dirname, '..', '..', 'drizzle');
 
 /*
-  Gives each test of the file its own empty database, migrated: a PGlite in
-  memory that `database()` (server/db/client.ts) hands out for the test's
-  duration. The file migrates one database once and each test gets a copy of
-  it (PGlite's clone), which is several times faster than migrating per test
-  and as fresh. Loaded only by the files that call this.
+  Gives each test of the file an empty database, migrated: a PGlite in memory
+  that `database()` (server/db/client.ts) hands out for the test's duration.
+  The file migrates one database once and each test begins by emptying every
+  table and restarting its identities (about 10 ms), where creating and
+  migrating one takes 600 ms and copying a migrated one (PGlite's clone)
+  150 ms. Loaded only by the files that call this.
 */
 export function inScratchDatabase() {
-  let template: PGlite | null = null;
   let client: PGlite | null = null;
   let db: Database | null = null;
+  let tables = '';
   beforeAll(async () => {
     const { PGlite } = await import('@electric-sql/pglite');
     const { drizzle } = await import('drizzle-orm/pglite');
     const { migrate } = await import('drizzle-orm/pglite/migrator');
-    template = await PGlite.create();
-    await migrate(drizzle({ client: template }), {
-      migrationsFolder: MIGRATIONS,
-    });
+    const schema = await import('@/server/db/schema');
+    client = await PGlite.create();
+    const migrated = drizzle({ client, schema });
+    await migrate(migrated, { migrationsFolder: MIGRATIONS });
+    db = migrated;
+    const { rows } = await client.query<{ name: string }>(
+      `select quote_ident(tablename) as name from pg_tables where schemaname = 'public'`,
+    );
+    tables = rows.map((row) => `public.${row.name}`).join(', ');
   });
   beforeEach(async () => {
-    const { drizzle } = await import('drizzle-orm/pglite');
-    const schema = await import('@/server/db/schema');
     const { useDatabaseInTests } = await import('@/server/db/client');
-    client = (await template!.clone()) as PGlite;
-    db = drizzle({ client, schema });
+    await client!.exec(`truncate table ${tables} restart identity cascade`);
     useDatabaseInTests(db);
   });
   afterEach(async () => {
     const { useDatabaseInTests } = await import('@/server/db/client');
     useDatabaseInTests(null);
-    await client?.close();
-    client = db = null;
   });
   afterAll(async () => {
-    await template?.close();
+    await client?.close();
+    client = db = null;
   });
   return () => {
     if (!db) throw new Error('The scratch database exists only in a test.');
