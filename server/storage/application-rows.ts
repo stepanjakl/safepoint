@@ -128,6 +128,8 @@ export type NewRow = {
   key: RunKey;
   readProcess: string;
   proposalId: number;
+  // The kept run it is written through, where it names one.
+  runId: string | null;
   application: Application;
   // The lease, for a write about to be made; none for a record of one made.
   holder: string | null;
@@ -151,6 +153,7 @@ export async function insertRow(db: Database, row: NewRow): Promise<number> {
       readId: row.key.readId,
       fingerprint: row.key.fingerprint,
       proposalId: row.proposalId,
+      runId: row.runId,
       status: a.status,
       resource: a.tab,
       range: a.range,

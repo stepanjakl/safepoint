@@ -50,7 +50,7 @@ import {
   type Row,
 } from './application-rows';
 import { readProcessOf } from './brunch-orders-reads';
-import type { RunKey } from './run-key';
+import { lockRunKey, type RunKey } from './run-key';
 import { parseStored } from './stored';
 
 /*
@@ -293,6 +293,11 @@ function inTheWay(owner: DefinitionProcess, kept: Kept | null): string | null {
   return `This run has already written to the ${output!.tab} ${sourceOf(owner.subject.data).resource.singular}. Undo that first to write again.`;
 }
 
+// What a write through a kept run says when a decision was made after it
+// read the decisions and before it claimed the write: nothing is written.
+export const DECIDED_SINCE =
+  'A decision was changed while this write was being prepared. Look at the decisions again and write.';
+
 export type WriteOutcome =
   | { kind: 'written'; application: Application }
   | { kind: 'refused'; prepared: Prepared };
@@ -314,6 +319,14 @@ export async function applyDecisions(
   decisions: Record<string, DecisionMade>,
   acknowledged: string[],
   sheet: OutputSheet,
+  // The kept run whose decisions these are, read from the server: the row
+  // names it, and the claim is made only if `unchanged` says they are still
+  // the run's decisions, under the run key's lock that a decision holds too
+  // (decisions.ts), so a decision cannot land between the two unseen.
+  through?: {
+    runId: string;
+    unchanged: (db: Database) => Promise<boolean>;
+  },
 ): Promise<WriteOutcome> {
   owner = profiledFor(owner, set);
   const { output } = owner.subject.data;
@@ -359,15 +372,27 @@ export async function applyDecisions(
   // Kept before anything is written: if it cannot be, nothing is. Refused
   // while another write of the run stands, which another caller made since
   // this one looked.
+  const row = {
+    key,
+    readProcess: readProcessOf(owner),
+    proposalId,
+    runId: through?.runId ?? null,
+    application: pending,
+    holder,
+  };
   let id: number;
   try {
-    id = await insertRow(db, {
-      key,
-      readProcess: readProcessOf(owner),
-      proposalId,
-      application: pending,
-      holder,
-    });
+    const claimed = through
+      ? await db.transaction(async (tx) => {
+          await lockRunKey(tx, key);
+          return (await through.unchanged(tx)) ? insertRow(tx, row) : null;
+        })
+      : await insertRow(db, row);
+    if (claimed === null) {
+      prepared.problems.push(DECIDED_SINCE);
+      return { kind: 'refused', prepared };
+    }
+    id = claimed;
   } catch (error) {
     if (!standsAlready(error)) throw error;
     prepared.problems.push(
@@ -439,6 +464,7 @@ async function lost(
     .select({
       readProcess: applications.readProcess,
       proposalId: applications.proposalId,
+      runId: applications.runId,
     })
     .from(applications)
     .where(eq(applications.id, id));
@@ -447,6 +473,7 @@ async function lost(
       key,
       readProcess: scope!.readProcess,
       proposalId: scope!.proposalId,
+      runId: scope!.runId,
       application: readBack,
       holder: null,
     });

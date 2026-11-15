@@ -78,7 +78,8 @@ test.beforeEach(async ({ page }) => {
   await mockProcedure(page, 'application.preview', (body) => {
     lastChanges = Object.entries(frozen.proposal.records).flatMap(
       ([key, record], index) => {
-        const decision = body.decisions[key];
+        // The screens send the decisions they hold, not a kept run's id.
+        const decision = 'decisions' in body ? body.decisions[key] : undefined;
         const values = decision?.values ?? record.values;
         return decision && decision.kind !== 'reject' && values
           ? [

@@ -15,6 +15,7 @@ import { applyDecisions, keptApplication } from '@/server/storage/applications';
 import { keepProposal } from '@/server/storage/proposals';
 import { memorySheet } from '@/server/storage/sheet.fixture';
 import { putRevision } from '@/server/storage/rulebooks';
+import { applications as applicationRows } from '@/server/db/schema';
 
 import {
   accepted,
@@ -23,6 +24,13 @@ import {
   keepAsCurrent,
   outdated,
 } from '../run.fixture';
+import {
+  AT,
+  LATER,
+  keepRulesProposal,
+  rulesFingerprint,
+  startedRun,
+} from '../kept-run.fixture';
 
 // Apply, called in process on a scratch directory, with the sheet held in
 // memory and the reads the captured one: nothing reaches the network.
@@ -586,6 +594,223 @@ describe('apply router', () => {
     ).toMatchObject({
       code: 'NOT_FOUND',
       message: expect.stringMatching(/no longer kept on the server/),
+    });
+  });
+  describe('through a kept run', () => {
+    // A run kept on the server, on the live read, with a proposal of three
+    // records: two ready, one a blocking check stops.
+    async function kept() {
+      await keepRulesProposal(scratchDb(), 'live');
+      const run = await startedRun('brunch-orders', 'live');
+      return { run, on: { ...run, proposedAt: AT } };
+    }
+    const decideAll = (on: {
+      process: string;
+      runId: string;
+      proposedAt: string;
+    }) =>
+      caller().decisions.recordMany({
+        ...on,
+        decisions: [
+          { key: 'EG-06', kind: 'change', values: { order: 24 } },
+          { key: 'CT-250', kind: 'approve' },
+          { key: 'SD-01', kind: 'reject' },
+        ],
+      });
+    const runIds = async () =>
+      (
+        await scratchDb()
+          .select({ runId: applicationRows.runId })
+          .from(applicationRows)
+      ).map((row) => row.runId);
+
+    it('writes exactly what the server holds decided, and records the run', async () => {
+      const { run, on } = await kept();
+      await decideAll(on);
+      const preview = await caller().application.preview(run);
+      if (preview.kind !== 'preview') throw new Error('Expected a preview.');
+      expect(preview.problems).toEqual([]);
+      expect(preview.changes.map((c) => [c.key, c.after])).toEqual([
+        ['EG-06', 24],
+        ['CT-250', 10],
+      ]);
+      const got = await caller().application.write({
+        ...run,
+        acknowledged: [],
+      });
+      expect(got).toMatchObject({
+        kind: 'applied',
+        application: {
+          status: 'verified',
+          proposedAt: AT,
+          decisions: {
+            'EG-06': { kind: 'change', values: { order: 24 } },
+            'CT-250': { kind: 'approve', values: { order: 10 } },
+            'SD-01': { kind: 'reject', values: null },
+          },
+        },
+      });
+      expect(sheet.grid).toEqual([
+        ['sku', 'order'],
+        ['EG-06', 24],
+        ['CT-250', 10],
+      ]);
+      expect(await runIds()).toEqual([run.runId]);
+      // A write made with the decisions in the request names no run.
+      expect(
+        await caller().application.preview({
+          text: PUBLISHED,
+          readId: 'live',
+          rulebook: rulesFingerprint,
+          proposedAt: AT,
+          decisions: {},
+        }),
+      ).toMatchObject({ application: { status: 'verified' } });
+    });
+
+    it('is refused while a record is undecided, and writes nothing', async () => {
+      const { run, on } = await kept();
+      await caller().decisions.record({
+        ...on,
+        decision: { key: 'EG-06', kind: 'approve' },
+      });
+      const got = await caller().application.write({
+        ...run,
+        acknowledged: [],
+      });
+      expect(got).toMatchObject({
+        kind: 'preview',
+        problems: ['Not decided yet: CT-250, SD-01.'],
+      });
+      expect(sheet.writes).toEqual([]);
+      expect(await runIds()).toEqual([]);
+    });
+
+    it('says the decisions were made on an earlier proposal, when they were', async () => {
+      const { run, on } = await kept();
+      await decideAll(on);
+      await keepRulesProposal(scratchDb(), 'live', { at: LATER });
+      expect(await failure(caller().application.preview(run))).toEqual({
+        code: 'BAD_GATEWAY',
+        message:
+          'These decisions were made on an earlier proposal. Decide on the current one.',
+      });
+      // A run that decided nothing yet is only undecided.
+      const fresh = await startedRun('brunch-orders', 'live');
+      const preview = await caller().application.preview(fresh);
+      expect(preview).toMatchObject({
+        problems: ['Not decided yet: EG-06, CT-250, SD-01.'],
+      });
+    });
+
+    it('refuses a decision while the write is in flight, and writes what it began with', async () => {
+      const { run, on } = await kept();
+      await decideAll(on);
+      const gate = sheet.hold('writeRange');
+      const writing = caller().application.write({ ...run, acknowledged: [] });
+      await gate.reached;
+      expect(
+        await failure(
+          caller().decisions.record({
+            ...on,
+            decision: { key: 'CT-250', kind: 'reject' },
+          }),
+        ),
+      ).toEqual({
+        code: 'CONFLICT',
+        message:
+          'The last write to the Orders tab is still being made. Try again in a moment.',
+      });
+      gate.open();
+      expect(await writing).toMatchObject({
+        kind: 'applied',
+        application: { status: 'verified' },
+      });
+      expect(sheet.grid?.[2]).toEqual(['CT-250', 10]);
+      // Once it has landed, deciding is open again; the write keeps what it wrote.
+      await caller().decisions.record({
+        ...on,
+        decision: { key: 'CT-250', kind: 'reject' },
+      });
+      expect(
+        await keptApplication(owner, 'live', rulesFingerprint),
+      ).toMatchObject({ decisions: { 'CT-250': { kind: 'approve' } } });
+    });
+
+    it('gives the write up, unwritten, when a decision moved after it read them', async () => {
+      const { run, on } = await kept();
+      await decideAll(on);
+      // The write has read the decisions and is reading the sheet now.
+      const gate = sheet.hold('readNow');
+      const writing = caller().application.write({ ...run, acknowledged: [] });
+      await gate.reached;
+      await caller().decisions.record({
+        ...on,
+        decision: { key: 'CT-250', kind: 'reject' },
+      });
+      gate.open();
+      expect(await writing).toMatchObject({
+        kind: 'preview',
+        problems: [
+          'A decision was changed while this write was being prepared. Look at the decisions again and write.',
+        ],
+      });
+      expect(sheet.writes).toEqual([]);
+      expect(await runIds()).toEqual([]);
+      // Asked again, it writes what is decided now.
+      expect(
+        await caller().application.write({ ...run, acknowledged: [] }),
+      ).toMatchObject({ kind: 'applied' });
+      expect(sheet.grid).toEqual([
+        ['sku', 'order'],
+        ['EG-06', 24],
+      ]);
+    });
+
+    it('undoes what it wrote, a discarded run too, and writes nothing more once discarded', async () => {
+      const { run, on } = await kept();
+      await decideAll(on);
+      await caller().application.write({ ...run, acknowledged: [] });
+      await caller().runs.discard(run);
+      expect(
+        await failure(caller().application.write({ ...run, acknowledged: [] })),
+      ).toEqual({
+        code: 'CONFLICT',
+        message: 'This run was discarded. Start a new run.',
+      });
+      expect(await failure(caller().application.preview(run))).toMatchObject({
+        code: 'CONFLICT',
+      });
+      expect(await caller().application.undo(run)).toMatchObject({
+        kind: 'applied',
+        application: { status: 'undone' },
+      });
+    });
+
+    it('refuses a run with nothing to write from yet, or not kept', async () => {
+      const started = await caller().runs.start({
+        process: 'brunch-orders',
+        instructions: hashOf(PUBLISHED),
+      });
+      const run = { process: started.process, runId: started.id };
+      expect(await failure(caller().application.preview(run))).toEqual({
+        code: 'CONFLICT',
+        message: 'This run has not read its data yet.',
+      });
+      await keepStandInRead(scratchDb(), 'live');
+      await caller().runs.record({ ...run, readId: 'live' });
+      expect(await failure(caller().application.preview(run))).toEqual({
+        code: 'CONFLICT',
+        message: 'This run has not calculated on a rulebook yet.',
+      });
+      expect(
+        await failure(
+          caller().application.preview({ ...run, runId: 'run-nobody' }),
+        ),
+      ).toEqual({
+        code: 'NOT_FOUND',
+        message: 'This run is not kept on the server.',
+      });
     });
   });
 });

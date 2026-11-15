@@ -871,6 +871,8 @@ const runApplications: Kind = {
               key,
               readProcess: readProcessOf({ id: f.processId }),
               proposalId: proposal!.id,
+              // Runs were kept only in a browser: none is imported.
+              runId: null,
               application: entry,
               holder: null,
             });
