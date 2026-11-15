@@ -464,9 +464,10 @@ whose stock count was two days old.
   the cells it must, so other columns of the tab are kept. The first write adds
   the Orders tab. The block is then read back: verified, mismatch, or failed if
   the cells are untouched, and a failed write can be tried again.
-- **The record is on the server.** `data/<process>/applied/` keeps each write by
-  read and rulebook: every decision, the checks it let fail, and the cells before
-  and after. A run writes once until it is undone. Runs and proposals not yet
+- **The record is on the server.** The `applications` table keeps each write by
+  read and rulebook, a row each: every decision, the checks it let fail, and the
+  cells before and after (`docs/engineering/DATABASE.md`). A run writes once
+  until it is undone, across server instances too. Runs and proposals not yet
   written still keep their decisions in the browser, until phase 7.
 - **Undo only while untouched.** Undo restores the block, and is refused if any
   cell no longer holds what was written. It leaves the added tab in place, empty.

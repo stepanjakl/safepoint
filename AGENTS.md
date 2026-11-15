@@ -192,12 +192,13 @@ placeholders such as `values.<id>`, because a real example steers the model.
   accepted revision, never rewritten) and `revisions.json` (each revision's
   parent and reason, and the head). A migration of an accepted rulebook
   makes a new revision through `putRevision` with reason `migrated`; it never
-  rewrites one. What runs produce is not; the writes to a sheet are still
-  `data/<process>/applied/` (gitignored, `server/storage/run-data.ts`). Runs'
-  reads, a source's reads, proposals, cross-checks and their partial answers,
-  job progress (drafts and proposals) and the learned model limits are in the
-  database (`docs/engineering/DATABASE.md`): PGlite under `data/pglite/` with
-  no `DATABASE_URL`; `pnpm db:import` copies the files an older checkout kept.
+  rewrites one. What runs produce is not: runs' reads, a source's reads,
+  proposals, cross-checks and their partial answers, job progress (drafts
+  and proposals), the record of each write to a sheet, each model request
+  and the learned model limits are in the database
+  (`docs/engineering/DATABASE.md`): PGlite under `data/pglite/` with no
+  `DATABASE_URL`. Nothing a run produces is kept in `data/` any more;
+  `pnpm db:import` copies the files an older checkout kept there.
   A test that keeps rows uses `inScratchDatabase()` (`inScratchStorage()`
   where it also needs a scratch directory); the database is emptied before
   each test, not made again. The browser tests' server runs on PGlite in
