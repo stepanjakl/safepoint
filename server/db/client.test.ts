@@ -60,6 +60,27 @@ describe('the driver', () => {
     });
   });
 
+  it('takes an empty URL for none, and keeps PGlite in a folder of its own when asked', () => {
+    // The browser tests' server is given both empty so a developer's
+    // .env.local cannot send it to a real database.
+    expect(
+      driverFor({
+        DATABASE_URL: '',
+        DATABASE_URL_UNPOOLED: '',
+        SAFEPOINT_PGLITE_DIR: 'data/pglite-e2e',
+      }),
+    ).toEqual({
+      kind: 'pglite',
+      dataDir: path.join(scratch(), 'data', 'pglite-e2e'),
+    });
+    expect(
+      driverFor(
+        { DATABASE_URL: '', DATABASE_URL_UNPOOLED: '' },
+        { migrating: true },
+      ),
+    ).toMatchObject({ kind: 'pglite' });
+  });
+
   it('migrates over the direct connection where one is given', () => {
     const env = {
       DATABASE_URL: 'postgres://u:p@ep-x-pooler.example/db',

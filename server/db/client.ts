@@ -36,7 +36,9 @@ export type Driver =
   Which driver, from the environment, read when called (tests mock
   process.cwd()). `migrating` takes the direct connection where there is one:
   Neon's pooler is PgBouncer in transaction mode, which a migration's session
-  state does not survive.
+  state does not survive. SAFEPOINT_PGLITE_DIR moves the PGlite folder, for the
+  browser tests' server (playwright.config.ts), which must not use the one
+  `pnpm dev` keeps.
 */
 export function driverFor(
   env: Environment = process.env,
@@ -46,7 +48,13 @@ export function driverFor(
     (migrating ? env.DATABASE_URL_UNPOOLED : undefined) || env.DATABASE_URL;
   return url
     ? { kind: 'node-postgres', url }
-    : { kind: 'pglite', dataDir: path.join(process.cwd(), 'data', 'pglite') };
+    : {
+        kind: 'pglite',
+        dataDir: path.resolve(
+          process.cwd(),
+          env.SAFEPOINT_PGLITE_DIR || path.join('data', 'pglite'),
+        ),
+      };
 }
 
 const migrationsFolder = () => path.join(process.cwd(), 'drizzle');
