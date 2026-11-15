@@ -412,6 +412,7 @@ describe('a decision', () => {
       process: PROCESS,
       id: 'run-1',
       instructionsHash: HASH,
+      readProcess: PROCESS,
       readId: READ,
       stage: 'propose',
       status: 'running',
@@ -454,7 +455,11 @@ describe('a decision', () => {
   it('holds what it was made on from being removed', async () => {
     const db = scratch();
     await decided(db);
-    expect(await refused(db.delete(runs))).toMatchObject({ code: '23001' });
+    // A run is never removed at all (0007), whatever points at it.
+    expect(await refused(db.delete(runs))).toMatchObject({
+      code: '23000',
+      message: 'runs rows are never removed',
+    });
     expect(await refused(db.delete(proposals))).toMatchObject({
       code: '23000',
     });
@@ -505,6 +510,65 @@ describe('a decision', () => {
   });
 });
 
+describe('a run', () => {
+  const started = {
+    process: PROCESS,
+    id: 'run-1',
+    instructionsHash: HASH,
+    readProcess: PROCESS,
+    stage: 'read',
+    status: 'running',
+    trigger: 'manual',
+    startedAt: AT,
+  };
+
+  it('moves on, but never changes what it started with', async () => {
+    const db = scratch();
+    await seed(db);
+    await db.insert(runs).values(started);
+    await db
+      .update(runs)
+      .set({ readId: READ, stage: 'propose', status: 'awaiting_review' });
+    for (const change of [
+      { instructionsHash: 'bbbbbbbbbbbb' },
+      { trigger: 'rerun' },
+      { additionalInstructions: 'Also this.' },
+      { startedAt: new Date() },
+      { readProcess: 'another' },
+    ])
+      expect(await refused(db.update(runs).set(change))).toMatchObject({
+        code: '23000',
+        message: 'what a run started with is never changed',
+      });
+  });
+
+  it('reads only what is kept where its process keeps reads', async () => {
+    const db = scratch();
+    await seed(db);
+    await db.insert(runs).values(started);
+    expect(
+      await refused(db.update(runs).set({ readId: 'not-kept' })),
+    ).toMatchObject({ code: '23503' });
+  });
+
+  it('once discarded, stays discarded and moves no further', async () => {
+    const db = scratch();
+    await seed(db);
+    await db.insert(runs).values({ ...started, discardedAt: AT });
+    for (const change of [
+      { discardedAt: null },
+      { discardedAt: new Date() },
+      { stage: 'propose' },
+      { status: 'completed' },
+      { readId: READ },
+    ])
+      expect(await refused(db.update(runs).set(change))).toMatchObject({
+        code: '23000',
+        message: 'a discarded run moves no further',
+      });
+  });
+});
+
 describe('closed sets of values', () => {
   it('refuse a value they do not list', async () => {
     const db = scratch();
@@ -528,6 +592,7 @@ describe('closed sets of values', () => {
         process: PROCESS,
         id: 'run-1',
         instructionsHash: HASH,
+        readProcess: PROCESS,
         stage: 'publish',
         status: 'running',
         trigger: 'manual',
@@ -578,6 +643,7 @@ describe('the migrations', () => {
       'record_decisions_written_once',
       'rule_decisions_written_once',
       'rulebook_revisions_written_once',
+      'runs_keep_their_start',
       'source_reads_written_once',
     ]);
   });

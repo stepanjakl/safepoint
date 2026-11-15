@@ -23,6 +23,7 @@ import {
   type AnswerProblem,
   type ProposalActivity,
   type ProposalEvent,
+  type ProposalRecord,
   type StreamedPart,
   type Verdict,
 } from './types';
@@ -74,6 +75,22 @@ export const noneOf = (subject: DefinitionProcess['subject']) =>
       field.none === undefined ? [] : [[field.id, field.none]],
     ),
   );
+
+/*
+  How a record stands for the person reviewing it. With no rulebook to check
+  it (evaluation `model`), a record the model is unsure of asks for a person,
+  since no check can. The verdict a decision on it is kept with.
+*/
+export const asReviewed = (
+  record: ProposalRecord,
+  evaluation: 'rules' | 'model',
+): ProposalRecord =>
+  evaluation === 'model' &&
+  record.unsure &&
+  record.verdict !== 'decide' &&
+  record.verdict !== 'blocked'
+    ? { ...record, verdict: 'decide' }
+    : record;
 
 // Any check a person must decide on makes it decide; any that blocks, blocked.
 // With no accepted check there is nothing to say it is ready.

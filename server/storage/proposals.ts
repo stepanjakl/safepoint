@@ -18,12 +18,13 @@ import {
 } from '@/lib/definitions/types';
 import { fallbackChain, type DraftingModel } from '@/lib/models';
 
-import { database } from '@/server/db/client';
+import { database, type Database } from '@/server/db/client';
 import { ensureProcess } from '@/server/db/scope';
 import { proposals } from '@/server/db/schema';
 
 import { readProcessOf } from './brunch-orders-reads';
 import { dropPart, keepPart, keptPart } from './answer-parts';
+import type { RunKey } from './run-key';
 import { parseStored } from './stored';
 
 /*
@@ -42,35 +43,50 @@ export const runKeyOf = (
   fingerprint,
 });
 
-// The latest proposal for the run key, by when it was proposed, which
-// `proposals_by_run_key` serves. One that cannot be read is reported, never
-// taken for none kept.
-export async function keptProposal(
-  owner: DefinitionProcess,
-  readId: string,
-  fingerprint: string,
-): Promise<Proposal | null> {
-  const [row] = await (
-    await database()
-  )
-    .select({ body: proposals.body })
+/*
+  The proposal in use for a run key, with the row it is: the latest by when
+  it was proposed, which `proposals_by_run_key` serves. One that cannot be
+  read is reported, never taken for none kept. A decision points at the row.
+*/
+export async function currentProposalOf(
+  key: RunKey,
+  db?: Database,
+): Promise<{ id: number; proposal: Proposal } | null> {
+  db ??= await database();
+  const [row] = await db
+    .select({ id: proposals.id, body: proposals.body })
     .from(proposals)
     .where(
       and(
-        eq(proposals.process, owner.id),
-        eq(proposals.readId, readId),
-        eq(proposals.fingerprint, fingerprint),
+        eq(proposals.process, key.process),
+        eq(proposals.readId, key.readId),
+        eq(proposals.fingerprint, key.fingerprint),
       ),
     )
     .orderBy(desc(proposals.proposedAt))
     .limit(1);
   return row
-    ? parseStored(
-        row.body,
-        proposalSchema,
-        `The kept proposal ${owner.id}/${readId}.${fingerprint}`,
-      )
+    ? {
+        id: row.id,
+        proposal: parseStored(
+          row.body,
+          proposalSchema,
+          `The kept proposal ${key.process}/${key.readId}.${key.fingerprint}`,
+        ),
+      }
     : null;
+}
+
+// The latest proposal for the run key, as above, without its row.
+export async function keptProposal(
+  owner: DefinitionProcess,
+  readId: string,
+  fingerprint: string,
+): Promise<Proposal | null> {
+  return (
+    (await currentProposalOf(runKeyOf(owner, readId, fingerprint)))?.proposal ??
+    null
+  );
 }
 
 // Keeps a whole proposal and removes the part that led to it in one

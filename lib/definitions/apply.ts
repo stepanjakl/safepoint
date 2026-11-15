@@ -220,6 +220,28 @@ export function landed(
       : 'mismatch';
 }
 
+/*
+  What is wrong with values a person sets for a record: each field needs a
+  whole number, at least the least the process allows. The one rule, for a
+  decision when it is made (server/operations/record-decisions.ts) and for
+  the write that uses it.
+*/
+export const valueProblems = (
+  subject: DefinitionProcess['subject'],
+  key: string,
+  values: Record<string, number>,
+): string[] =>
+  subject.proposal
+    .filter(
+      (field) =>
+        !Number.isInteger(values[field.id]) ||
+        (field.min !== undefined && values[field.id]! < field.min),
+    )
+    .map(
+      (field) =>
+        `${key} needs a whole number${field.min === undefined ? '' : `, ${field.min} or more,`} for ${field.label}.`,
+    );
+
 // What the decisions write: nothing for a rejection or a record left as it is.
 export function writesOf(
   proposal: Proposal,
@@ -293,19 +315,9 @@ export async function prepareWrite(
     const left = !write && decision.kind !== 'reject';
     if (!write && !left) continue;
     const values = write?.values ?? noneOf(owner.subject);
-    // Whole numbers, at least the least the process allows.
-    const bad = write
-      ? owner.subject.proposal.filter(
-          (field) =>
-            !Number.isInteger(values[field.id]) ||
-            (field.min !== undefined && values[field.id]! < field.min),
-        )
-      : [];
+    const bad = write ? valueProblems(owner.subject, key, values) : [];
     if (bad.length) {
-      for (const field of bad)
-        problems.push(
-          `${key} needs a whole number${field.min === undefined ? '' : `, ${field.min} or more,`} for ${field.label}.`,
-        );
+      problems.push(...bad);
       continue;
     }
     const was = checkProposal(owner, set, read, key, values);

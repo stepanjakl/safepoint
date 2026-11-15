@@ -341,9 +341,11 @@ export const RUN_STAGES = [
 
 /*
   A run: the instructions it runs under, the read it took and the accepted
-  rulebook it pinned, each a key into what it names. What it has done is
-  found from the rows that point back at it (decisions, applications), not
-  kept on it twice.
+  rulebook it pinned. What it has done is found from the rows that point
+  back at it (decisions, applications), not kept on it twice
+  (server/storage/runs.ts). Never removed, and what it started with never
+  changes (a trigger, drizzle/0007_run_guard.sql); a discarded run is marked,
+  not deleted. Its read has two scopes, as a proposal's does.
 */
 export const runs = pgTable(
   'runs',
@@ -351,11 +353,15 @@ export const runs = pgTable(
     process: processColumn(),
     id: text('id').notNull(),
     instructionsHash: text('instructions_hash').notNull(),
-    // Null until the run has read its data.
+    // The process whose reads it takes (readProcessOf), set at start.
+    readProcess: text('read_process').notNull(),
+    // Null until the run has read its data; a read taken again replaces it.
     readId: text('read_id'),
-    // Null until it pins one; a process with no rulebook never does.
+    // The accepted rulebook it calculates on (fingerprintOf), null until it
+    // pins one; a process with no rulebook never does. Not yet a key into
+    // rulebook_revisions, which is empty until rulebooks are kept there.
     rulebookId: text('rulebook_id'),
-    // The furthest step it has reached.
+    // The step it is at: the furthest one a person can act on now.
     stage: text('stage').notNull(),
     status: text('status').notNull(),
     trigger: text('trigger').notNull(),
@@ -363,6 +369,8 @@ export const runs = pgTable(
     startedBy: text('started_by'),
     startedAt: instant('started_at').notNull(),
     updatedAt: instant('updated_at').notNull().defaultNow(),
+    // Set once, when a person discards it: the list leaves it out.
+    discardedAt: instant('discarded_at'),
   },
   (t) => [
     primaryKey({ columns: [t.process, t.id] }),
@@ -371,6 +379,11 @@ export const runs = pgTable(
     check('runs_stage', oneOf(t.stage, RUN_STAGES)),
     check('runs_status', oneOf(t.status, RUN_STATUSES)),
     check('runs_trigger', oneOf(t.trigger, RUN_TRIGGERS)),
+    check('runs_id_shape', matches(t.id, READ_ID)),
+    check(
+      'runs_rulebook_shape',
+      sql`${t.rulebookId} is null or ${matches(t.rulebookId, HASH)}`,
+    ),
     foreignKey({
       name: 'runs_instructions_fk',
       columns: [t.process, t.instructionsHash],
@@ -378,17 +391,8 @@ export const runs = pgTable(
     }).onDelete('restrict'),
     foreignKey({
       name: 'runs_read_fk',
-      columns: [t.process, t.readId],
+      columns: [t.readProcess, t.readId],
       foreignColumns: [reads.process, reads.id],
-    }).onDelete('restrict'),
-    foreignKey({
-      name: 'runs_rulebook_fk',
-      columns: [t.process, t.instructionsHash, t.rulebookId],
-      foreignColumns: [
-        rulebookRevisions.process,
-        rulebookRevisions.instructionsHash,
-        rulebookRevisions.id,
-      ],
     }).onDelete('restrict'),
   ],
 );
@@ -680,7 +684,8 @@ export const applications = pgTable(
     fingerprint: text('fingerprint').notNull(),
     // The exact proposal written (the record's proposedAt).
     proposalId: bigint('proposal_id', { mode: 'number' }).notNull(),
-    // The run that wrote it, once runs are kept.
+    // The run it was written through, when the write named one; null for
+    // a write whose decisions came in the request (application.ts).
     runId: text('run_id'),
     status: text('status').notNull(),
     // The output's resource (Application.tab) and the block, as the source

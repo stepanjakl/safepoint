@@ -502,6 +502,10 @@ export const proposalPartSchema = z.object({
   models: z.array(z.string()),
 });
 
+// The checks on a record as a person saw them when deciding it, as a
+// decision on it keeps them (server/storage/decisions.ts).
+export const checkVerdictsSchema = z.array(checkVerdictSchema);
+
 export type Verdict = z.infer<typeof verdictSchema>;
 export type CheckVerdict = z.infer<typeof checkVerdictSchema>;
 export type ProposalRecord = z.infer<typeof proposalRecordSchema>;
