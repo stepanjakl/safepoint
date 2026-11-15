@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import type { RecordAttempt } from './attempts';
 import { ask, DRAFT_MODELS, type Resolve } from './calls';
 import { ENGLISH as LANGUAGE } from './language';
 import { columnsOf, plain, proposalWords } from './prompts';
@@ -170,7 +171,12 @@ export function labelProblems(
     : [];
 }
 
-export type Asking = { model?: DraftingModel | null; resolve?: Resolve };
+// How the model is asked: which, through what, and who records each call.
+export type Asking = {
+  model?: DraftingModel | null;
+  resolve?: Resolve;
+  record?: RecordAttempt;
+};
 
 // The set the model's reading of the instructions makes, not yet kept.
 export async function foundDefinitions(
@@ -178,7 +184,7 @@ export async function foundDefinitions(
   text: string,
   version: string,
   read: KeptRead | null,
-  { model: chosen = null, resolve }: Asking = {},
+  { model: chosen = null, resolve, record }: Asking = {},
 ): Promise<DefinitionSet> {
   const { subject } = owner;
   if (read) fitting(read, subject.data);
@@ -210,6 +216,21 @@ export async function foundDefinitions(
         .join('\n\n'),
       'find',
       resolve,
+      record && {
+        record,
+        purpose: 'find',
+        asked: { sentences: sentences.length, reasked: problems.length },
+        judged: (found) => ({
+          refused: problemsOf(found).length > 0,
+          answer: {
+            definitions: found.definitions.map((d) => idOf(d.id)),
+            checks: found.definitions.filter((d) => d.result === 'check')
+              .length,
+            sentences: found.sentences.length,
+            problems: problemsOf(found).length,
+          },
+        }),
+      },
     );
   const problemsOf = (found: Found) => [
     ...accountingProblems(sentences, found),

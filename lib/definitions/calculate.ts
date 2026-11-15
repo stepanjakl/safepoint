@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { DefinitionSubject } from '@/lib/process/model';
 import type { DraftingModel } from '@/lib/models';
 
+import type { RecordAttempt } from './attempts';
 import { ask, type Resolve } from './calls';
 import { givenOf } from './checks';
 import { contextFor, run } from './formulas';
@@ -208,6 +209,7 @@ export async function crossCheckBatch(
   keys: [string, ...string[]],
   models: DraftingModel[],
   resolve: Resolve | undefined,
+  record?: RecordAttempt,
 ): Promise<{ cells: CrossCheck['cells']; model: string }> {
   const { subject } = owner;
   const { singular, plural } = subject.record;
@@ -231,45 +233,73 @@ export async function crossCheckBatch(
     ].join('\n\n'),
     'cross-check',
     resolve,
+    record && {
+      record,
+      purpose: 'cross-check',
+      asked: { records: keys, values: calculation.calculations.length },
+      judged: (answer) => {
+        const { cells, problems } = heldTo(answer);
+        return {
+          refused: problems.length > 0,
+          answer: {
+            records: Object.keys(cells).length,
+            agreed: Object.values(cells)
+              .flatMap((values) => Object.values(values))
+              .filter((cell) => cell.agrees).length,
+            problems: problems.length,
+          },
+        };
+      },
+    },
   );
-  // Every record asked for exactly once; the schema holds each one's values.
-  const problems: string[] = [];
-  const cells: CrossCheck['cells'] = {};
-  for (const answer of output.records) {
-    if (!keys.includes(answer.key))
-      problems.push(`${answer.key} is not asked for`);
-    else if (cells[answer.key])
-      problems.push(`${answer.key} is answered twice`);
-    else {
-      const row = calculation.rows.find((r) => r.key === answer.key)!;
-      cells[answer.key] = Object.fromEntries(
-        calculation.calculations.map((c) => {
-          const given = answer.values[c.id];
-          const engine = row.values[c.id]!.value;
-          if (!given) problems.push(`${answer.key} has no ${c.id}`);
-          return [
-            c.id,
-            {
-              model: given?.value ?? Number.NaN,
-              working: given?.working ?? '',
-              agrees:
-                given !== undefined &&
-                engine !== null &&
-                agree(engine, given.value),
-            },
-          ];
-        }),
-      );
-    }
-  }
-  const missing = keys.filter((key) => !cells[key]);
-  if (missing.length)
-    problems.push(
-      `${missing.length} not answered (${missing.slice(0, 3).join(', ')}${missing.length > 3 ? ', …' : ''})`,
-    );
+  const { cells, problems } = heldTo(output);
   if (problems.length)
     throw new Error(
       `The model's answer does not cover every ${singular} once: ${problems.slice(0, 3).join('; ')}.`,
     );
   return { cells, model };
+
+  // Every record asked for exactly once; the schema holds each one's values.
+  function heldTo(output: {
+    records: {
+      key: string;
+      values: Record<string, { value: number; working: string } | undefined>;
+    }[];
+  }) {
+    const problems: string[] = [];
+    const cells: CrossCheck['cells'] = {};
+    for (const answer of output.records) {
+      if (!keys.includes(answer.key))
+        problems.push(`${answer.key} is not asked for`);
+      else if (cells[answer.key])
+        problems.push(`${answer.key} is answered twice`);
+      else {
+        const row = calculation.rows.find((r) => r.key === answer.key)!;
+        cells[answer.key] = Object.fromEntries(
+          calculation.calculations.map((c) => {
+            const given = answer.values[c.id];
+            const engine = row.values[c.id]!.value;
+            if (!given) problems.push(`${answer.key} has no ${c.id}`);
+            return [
+              c.id,
+              {
+                model: given?.value ?? Number.NaN,
+                working: given?.working ?? '',
+                agrees:
+                  given !== undefined &&
+                  engine !== null &&
+                  agree(engine, given.value),
+              },
+            ];
+          }),
+        );
+      }
+    }
+    const missing = keys.filter((key) => !cells[key]);
+    if (missing.length)
+      problems.push(
+        `${missing.length} not answered (${missing.slice(0, 3).join(', ')}${missing.length > 3 ? ', …' : ''})`,
+      );
+    return { cells, problems };
+  }
 }

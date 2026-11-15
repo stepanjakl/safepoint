@@ -3,12 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { calculate } from '@/lib/definitions/calculate';
 import { capturedRead } from '@/lib/definitions/captured.fixture';
-import { fingerprintOf } from '@/lib/definitions/fingerprint';
+import { fingerprintOf, hashOf } from '@/lib/definitions/fingerprint';
 import { always, answer } from '@/lib/definitions/models.fixture';
 import { inScratchStorage } from '@/lib/definitions/scratch.fixture';
 import { keepStandInRead } from '@/server/storage/reads.fixture';
 import { TEXT } from '@/lib/definitions/set.fixture';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
+import { modelAttempts } from '@/server/db/schema';
 import { listRevisions, putRevision } from '@/server/storage/rulebooks';
 
 import {
@@ -155,6 +156,20 @@ describe('calculate router', () => {
     expect(checked.check?.cells['AV-RR']).toMatchObject({
       expected_sales: { model: 0, agrees: false },
     });
+    // The call, kept with the read and rulebook before the answer came back.
+    expect(await db().select().from(modelAttempts)).toEqual([
+      expect.objectContaining({
+        process: owner.id,
+        purpose: 'cross-check',
+        instructionsHash: hashOf(TEXT),
+        readId: 'test',
+        fingerprint,
+        attempt: 1,
+        outcome: 'answered',
+        asked: expect.objectContaining({ values: 2 }),
+        answer: { records: 11, agreed: 21, problems: 0 },
+      }),
+    ]);
     // A later get finds it kept, without asking the model again.
     model.current = null;
     await expect(

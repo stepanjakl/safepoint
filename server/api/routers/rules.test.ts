@@ -8,6 +8,7 @@ import {
   profileOf,
   withProfile,
 } from '@/lib/definitions/profile';
+import { hashOf } from '@/lib/definitions/fingerprint';
 import { recordsOf } from '@/lib/definitions/records';
 import { inScratchStorage } from '@/lib/definitions/scratch.fixture';
 import { definition, example, keep, TEXT } from '@/lib/definitions/set.fixture';
@@ -26,6 +27,8 @@ import {
   putRevision,
   saveProfile,
 } from '@/server/storage/rulebooks';
+
+import { modelAttempts } from '@/server/db/schema';
 
 import { caller, failure } from '../run.fixture';
 
@@ -57,8 +60,9 @@ vi.mock('@/lib/definitions/advise', async (importOriginal) => {
     await importOriginal<typeof import('@/lib/definitions/advise')>();
   return {
     ...actual,
-    advise: (...[o, t, s, r, id]: Parameters<typeof actual.advise>) =>
+    advise: (...[o, t, s, r, id, options]: Parameters<typeof actual.advise>) =>
       actual.advise(o, t, s, r, id, {
+        ...options,
         resolve: () => model.current as MockLanguageModelV4,
       }),
   };
@@ -94,7 +98,7 @@ const split = definition('expected', {
 });
 
 describe('rules router', () => {
-  inScratchStorage();
+  const { database: scratchDb } = inScratchStorage();
   beforeEach(() => {
     vi.stubEnv('NODE_ENV', 'development');
     startDraft.mockReset();
@@ -520,6 +524,19 @@ describe('rules router', () => {
         kind: 'advice',
         advice: { verdict: 'version_1', reason: 'Only the kit sells more.' },
       });
+      // The call, kept before the answer came back.
+      expect(await scratchDb().select().from(modelAttempts)).toEqual([
+        expect.objectContaining({
+          process: owner.id,
+          purpose: 'advise',
+          definitionId: 'expected',
+          instructionsHash: hashOf(TEXT),
+          readId: 'test',
+          attempt: 1,
+          outcome: 'answered',
+          answer: { verdict: 'version_1' },
+        }),
+      ]);
     });
 
     it('says what is missing', async () => {

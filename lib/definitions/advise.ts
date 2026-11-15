@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import type { RecordAttempt } from './attempts';
 import { ask, DRAFT_MODELS, WRITE_MODELS, type Resolve } from './calls';
 import { groupDifferences } from './group-differences';
 import { limitedGoogle } from './limits';
@@ -135,7 +136,10 @@ export async function advise(
   set: DefinitionSet,
   read: KeptRead,
   id: string,
-  { resolve = limitedGoogle }: { resolve?: Resolve } = {},
+  {
+    resolve = limitedGoogle,
+    record,
+  }: { resolve?: Resolve; record?: RecordAttempt } = {},
 ): Promise<Advice> {
   const prompt = promptFor(owner, text, set, read, id);
   if (!prompt) throw new Error('These versions no longer disagree.');
@@ -153,6 +157,19 @@ export async function advise(
         : prompt,
       `advise-${id}`,
       resolve,
+      record && {
+        record,
+        purpose: 'advise',
+        definitionId: id,
+        asked: { versions: count, again: attempt > 0 },
+        // Refused when its quote is not in the instructions.
+        judged: (answer) => ({
+          refused: !(
+            answer.quote.trim() && plain(text).includes(plain(answer.quote))
+          ),
+          answer: { verdict: answer.verdict },
+        }),
+      },
     );
     const named =
       output.verdict === 'unclear' ? 0 : Number(output.verdict.at(-1));

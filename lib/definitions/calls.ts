@@ -16,12 +16,23 @@ import {
 } from '@/lib/definitions/limits';
 import { quotaOf } from '@/lib/definitions/quota';
 
+import {
+  counting,
+  inTally,
+  newTally,
+  report,
+  type AttemptOutcome,
+  type Recording,
+  type Summary,
+} from './attempts';
+
 /*
   Server-only. Every call to a model goes through `withModels`: the first
   model of the chain with quota answers, and a busy or spent one hands over to
   the next of the same family (never a lighter family, as lib/models.ts holds).
   Waiting is limits.ts's, request by request: what reaches here could not be
-  waited out, so it moves on.
+  waited out, so it moves on. Each model asked is one attempt, reported to
+  the recorder a caller passes, if it passes one (attempts.ts).
 */
 
 // Flash for finding, and for what is not a draft: in three drafts Flash-Lite
@@ -95,6 +106,7 @@ export async function withModels<R>(
   resolve: Resolve,
   call: (model: LanguageModel, options: CallOptions) => Promise<R>,
   tell?: ModelTell,
+  recording?: Recording<R>,
 ): Promise<{ value: R; model: DraftingModel }> {
   // What a model has spent is read before any is chosen, so that none is
   // asked on a guess at its quota.
@@ -113,21 +125,54 @@ export async function withModels<R>(
       continue;
     }
     tell?.({ kind: 'asking', model });
+    const started = Date.now();
+    const tally = newTally();
+    const said = (
+      outcome: AttemptOutcome,
+      answer: Summary | null,
+      error: unknown,
+    ) => report(recording, model, started, tally, outcome, answer, error);
     try {
-      return {
-        value: await call(resolve(model), callOptions(model, telemetry, name)),
-        model,
+      // Tallied only for a recorder: with none, the call is as it was.
+      const options = callOptions(model, telemetry, name);
+      const value = recording?.record
+        ? await inTally(tally, () =>
+            call(counting(resolve(model), tally), options),
+          )
+        : await call(resolve(model), options);
+      let judged: { refused: boolean; answer: Summary | null } = {
+        refused: false,
+        answer: null,
       };
+      try {
+        if (recording?.record && recording.judged)
+          judged = recording.judged(value);
+      } catch {
+        // A summary that cannot be made is left out; the answer stands.
+      }
+      said(judged.refused ? 'refused' : 'answered', judged.answer, null);
+      return { value, model };
     } catch (error) {
       last = error;
+      const cause = RetryError.isInstance(error) ? error.lastError : error;
+      const status = APICallError.isInstance(cause)
+        ? (cause.statusCode ?? 0)
+        : 0;
+      said(
+        timedOut(error) || status >= 500
+          ? 'busy'
+          : status === 429
+            ? 'quota'
+            : 'failed',
+        null,
+        error,
+      );
       // Too slow to answer in time is busy too: the next model, at once.
       if (timedOut(error)) {
         tell?.({ kind: 'busy', model, why: 'slow' });
         continue;
       }
-      const cause = RetryError.isInstance(error) ? error.lastError : error;
       if (!APICallError.isInstance(cause)) throw error;
-      const status = cause.statusCode ?? 0;
       if (status === 429) {
         rest(model, quotaOf(cause).retryAfterMs ?? 3_600_000);
         tell?.({
@@ -161,6 +206,7 @@ export async function ask<T>(
   prompt: string,
   name: string,
   resolve: Resolve = limitedGoogle,
+  recording?: Recording<T>,
 ): Promise<{ output: T; model: string }> {
   const { value, model } = await withModels(
     models,
@@ -177,6 +223,15 @@ export async function ask<T>(
           ...options,
         })
       ).output as T,
+    undefined,
+    recording && {
+      ...recording,
+      asked: {
+        systemChars: system.length,
+        promptChars: prompt.length,
+        ...recording.asked,
+      },
+    },
   );
   return { output: value, model };
 }

@@ -34,6 +34,7 @@ import {
   setAppliesTo,
 } from '@/server/operations/decide';
 import { keptRead, READ_GONE } from '@/server/storage/brunch-orders-reads';
+import { attemptRecorder } from '@/server/storage/model-attempts';
 import { readIdSchema } from '@/server/storage/ids';
 import {
   listRevisions,
@@ -300,6 +301,11 @@ export const rulesRouter = router({
       if (!set) throw new Error(NO_RULES);
       const read = set.readId ? await keptRead(set.readId) : null;
       if (!read) throw new Error(READ_GONE);
+      const record = attemptRecorder({
+        process: owner.id,
+        instructionsHash: set.hash,
+        readId: read.id,
+      });
       return {
         kind: 'advice' as const,
         advice: await advise(
@@ -308,7 +314,8 @@ export const rulesRouter = router({
           set,
           read,
           input.id,
-        ),
+          { record },
+        ).finally(record.settled),
       };
     },
   ),

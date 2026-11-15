@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { fingerprintOf } from '@/lib/definitions/fingerprint';
+import { fingerprintOf, hashOf } from '@/lib/definitions/fingerprint';
 import { newActivity } from '@/lib/definitions/propose';
 import type { KeptRead } from '@/lib/definitions/records';
 import {
@@ -11,6 +11,7 @@ import {
 } from '@/lib/definitions/types';
 import type { Resolve } from '@/lib/definitions/calls';
 import type { DraftingModel } from '@/lib/models';
+import { attemptRecorder } from '@/server/storage/model-attempts';
 import { propose, runKeyOf } from '@/server/storage/proposals';
 
 import { jobProgress, startJob } from './run-job';
@@ -54,8 +55,9 @@ export function startProposal(
   text: string,
   options: { model?: DraftingModel | null; resolve?: Resolve } = {},
 ): Promise<DraftProgress> {
+  const job = jobFor(owner, readId, fingerprintOf(set));
   return startJob({
-    ...jobFor(owner, readId, fingerprintOf(set)),
+    ...job,
     initial: {
       step: 'Proposing…',
       error: null,
@@ -72,15 +74,25 @@ export function startProposal(
         noted = Date.now();
         void note();
       };
+      // Each model call, as part of this job; written before the job ends.
+      const record = attemptRecorder({
+        process: job.process,
+        jobKind: job.kind,
+        jobKey: job.key,
+        instructionsHash: hashOf(text),
+        readId,
+        fingerprint: fingerprintOf(set),
+      });
       const done = await propose(owner, set, read, readId, text, {
         ...options,
+        record,
         watch: { activity: progress.activity!, changed },
         onBatch: (at, of) => {
           progress.step =
             of > 1 ? `Proposing ${at} of ${of} batches…` : 'Proposing…';
           void note();
         },
-      });
+      }).finally(record.settled);
       progress.step = `Proposed for ${Object.keys(done.records).length} ${owner.subject.record.plural}.`;
     },
     settle: (progress) => {

@@ -16,7 +16,7 @@ import { inScratchStorage } from '@/lib/definitions/scratch.fixture';
 import { TEXT } from '@/lib/definitions/set.fixture';
 import { hashOf } from '@/lib/definitions/fingerprint';
 import { ensureProcess } from '@/server/db/scope';
-import { jobs } from '@/server/db/schema';
+import { jobs, modelAttempts } from '@/server/db/schema';
 import { loadSet } from '@/server/storage/rulebooks';
 
 // A whole draft runs on the server: found, then each definition written, with
@@ -102,6 +102,46 @@ describe('a draft on the server', () => {
       formula: 'record.weekend_1 + record.weekend_2',
       problem: null,
     });
+    // Each model call, kept with the job it was part of before it ended: the
+    // find, then the two writes the definition took to agree.
+    const job = {
+      process: owner.id,
+      jobKind: 'drafts',
+      jobKey: hashOf(TEXT),
+      instructionsHash: hashOf(TEXT),
+      readId: capturedRead().id,
+      fingerprint: null,
+      outcome: 'answered',
+      requests: 1,
+    };
+    expect(
+      await db().select().from(modelAttempts).orderBy(modelAttempts.id),
+    ).toEqual([
+      expect.objectContaining({
+        ...job,
+        purpose: 'find',
+        definitionId: null,
+        attempt: 1,
+        asked: expect.objectContaining({ sentences: expect.any(Number) }),
+        answer: expect.objectContaining({
+          definitions: ['two_weekends'],
+          problems: 0,
+        }),
+      }),
+      expect.objectContaining({
+        ...job,
+        purpose: 'write',
+        definitionId: 'two_weekends',
+        attempt: 1,
+        answer: expect.objectContaining({ problems: 0, kept: true }),
+      }),
+      expect.objectContaining({
+        ...job,
+        purpose: 'write',
+        definitionId: 'two_weekends',
+        attempt: 2,
+      }),
+    ]);
   });
 
   it('says so when the server stopped part way through a draft', async () => {

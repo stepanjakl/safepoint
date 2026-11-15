@@ -3,7 +3,7 @@ import 'server-only';
 import { z } from 'zod';
 
 import { calculate } from '@/lib/definitions/calculate';
-import { fingerprintOf } from '@/lib/definitions/fingerprint';
+import { fingerprintOf, hashOf } from '@/lib/definitions/fingerprint';
 import type { KeptRead } from '@/lib/definitions/records';
 import type { DefinitionProcess, DefinitionSet } from '@/lib/definitions/types';
 import { draftingModelSchema } from '@/lib/models';
@@ -13,6 +13,7 @@ import {
   keepCrossCheck,
   keptCrossCheck,
 } from '@/server/storage/cross-checks';
+import { attemptRecorder } from '@/server/storage/model-attempts';
 import { putRevision } from '@/server/storage/rulebooks';
 
 import { runFields, runProcedure, staleReply } from '../run-procedure';
@@ -62,14 +63,20 @@ export const calculateRouter = router({
   ).mutation(async ({ ctx, input }) => {
     if (ctx.stale) return staleReply(ctx.stale);
     const { calculation, current } = await worked(ctx);
+    const record = attemptRecorder({
+      process: ctx.owner.id,
+      instructionsHash: hashOf(input.text),
+      readId: input.readId,
+      fingerprint: calculation.fingerprint,
+    });
     const check = await crossCheck(
       ctx.owner,
       ctx.set,
       ctx.read,
       input.readId,
       input.text,
-      { model: input.model },
-    );
+      { model: input.model, record },
+    ).finally(record.settled);
     await keepCrossCheck(owner, check);
     return { kind: 'calculation' as const, calculation, check, current };
   }),

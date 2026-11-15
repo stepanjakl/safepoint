@@ -13,6 +13,7 @@ import {
   rest,
   restingUntil,
 } from './limits';
+import type { Attempt } from './attempts';
 import { withModels } from './calls';
 import { answer } from './models.fixture';
 import { inScratchDatabase } from './scratch.fixture';
@@ -124,6 +125,41 @@ describe('keeping to a model’s limits', () => {
     await settled(ask('per-minute', mock));
     expect(mock.doGenerateCalls).toHaveLength(2);
     expect(limitsOf('per-minute', []).perMinute).toBe(15);
+  });
+
+  it('records a refusal waited out as one call, its wait and both requests', async () => {
+    const said: Attempt[] = [];
+    const mock = model(refusal('Minute', 15, '4.5s'));
+    await settled(
+      withModels(
+        ['per-minute-recorded'] as never,
+        'test',
+        (id) => paced(id, mock),
+        (languageModel) =>
+          generateText({
+            model: languageModel,
+            prompt: 'hello',
+            maxRetries: 0,
+          }),
+        undefined,
+        {
+          record: (attempt) => said.push(attempt),
+          purpose: 'write',
+          definitionId: 'a_definition',
+          asked: {},
+        },
+      ),
+    );
+    expect(said).toEqual([
+      expect.objectContaining({
+        model: 'per-minute-recorded',
+        definitionId: 'a_definition',
+        outcome: 'answered',
+        requests: 2,
+        waitedMs: expect.any(Number),
+      }),
+    ]);
+    expect(said[0]!.waitedMs).toBeGreaterThanOrEqual(4_500);
   });
 
   it('keeps a tool loop’s progress through a refusal', async () => {

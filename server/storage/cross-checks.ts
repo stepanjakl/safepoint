@@ -1,5 +1,7 @@
 import 'server-only';
 
+import type { RecordAttempt } from '@/lib/definitions/attempts';
+
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 
@@ -128,7 +130,13 @@ export async function crossCheck(
     model: chosen = null,
     resolve,
     batch = BATCH,
-  }: { model?: DraftingModel | null; resolve?: Resolve; batch?: number } = {},
+    record,
+  }: {
+    model?: DraftingModel | null;
+    resolve?: Resolve;
+    batch?: number;
+    record?: RecordAttempt;
+  } = {},
 ): Promise<CrossCheck> {
   const calculation = calculate(owner, set, read);
   const keys = calculation.rows.map((row) => row.key);
@@ -150,6 +158,7 @@ export async function crossCheck(
       [first!, ...rest],
       models,
       resolve,
+      record,
     );
     Object.assign(cells, answer.cells);
     answeredBy.add(answer.model);

@@ -440,7 +440,7 @@ const shapeContextFor = (
 // One write: asks the model, and saves nothing.
 export async function writeOnce(
   setting: Setting,
-  { model: chosen = null, resolve }: Asking,
+  { model: chosen = null, resolve, record }: Asking,
 ): Promise<Written> {
   const { owner, read, definition, set } = setting;
   const { id } = definition;
@@ -638,6 +638,8 @@ export async function writeOnce(
     }),
   };
 
+  const system = instructionsFor(setting);
+  const prompt = promptFor(setting);
   const { model } = await withModels(
     chosen ? fallbackChain(chosen) : WRITE_MODELS,
     `write-${id}`,
@@ -646,8 +648,8 @@ export async function writeOnce(
       try {
         await generateText({
           model: languageModel,
-          system: instructionsFor(setting),
-          prompt: promptFor(setting),
+          system,
+          prompt,
           tools,
           stopWhen: [
             isStepCount(STEPS),
@@ -669,6 +671,29 @@ export async function writeOnce(
         // conversation; what was checked so far stands.
         if (!ToolChoiceViolationError.isInstance(error)) throw error;
       }
+    },
+    undefined,
+    record && {
+      record,
+      purpose: 'write',
+      definitionId: id,
+      asked: {
+        systemChars: system.length,
+        promptChars: prompt.length,
+        earlier: setting.earlier.length,
+      },
+      // Refused unless the checks passed its last answer.
+      judged: () => ({
+        refused: !(last !== null && last.length === 0),
+        answer: {
+          checked: last !== null,
+          problems: last?.length ?? null,
+          kept: kept !== null,
+          shape: kept?.written.shape?.kind ?? null,
+          unfit: kept?.written.unfit ?? null,
+          blocked: blocked !== null,
+        },
+      }),
     },
   );
 

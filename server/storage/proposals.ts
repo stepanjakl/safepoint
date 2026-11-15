@@ -2,6 +2,7 @@ import 'server-only';
 
 import { and, desc, eq } from 'drizzle-orm';
 
+import type { RecordAttempt } from '@/lib/definitions/attempts';
 import { calculate } from '@/lib/definitions/calculate';
 import { DRAFT_MODELS, type Resolve } from '@/lib/definitions/calls';
 import { fingerprintOf } from '@/lib/definitions/fingerprint';
@@ -116,6 +117,7 @@ export async function propose(
     batch = BATCH,
     onBatch,
     watch,
+    record,
   }: {
     model?: DraftingModel | null;
     resolve?: Resolve;
@@ -123,6 +125,7 @@ export async function propose(
     // Told as each batch starts: which, of how many.
     onBatch?: (at: number, of: number) => void;
     watch?: Watch;
+    record?: RecordAttempt;
   } = {},
 ): Promise<Proposal> {
   owner = profiledFor(owner, set);
@@ -157,6 +160,7 @@ export async function propose(
       models,
       resolve,
       watch,
+      record,
     );
     Object.assign(records, answer.records);
     answeredBy.add(answer.model);

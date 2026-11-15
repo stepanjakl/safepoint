@@ -5,6 +5,7 @@ import type { DraftingModel } from '@/lib/models';
 import type { DataShape } from '@/lib/process/model';
 import type { SourceTerms } from '@/lib/sources/model';
 
+import type { RecordAttempt } from './attempts';
 import { layoutOf, onlyRecords, type Calculation } from './calculate';
 import { withModels, type Resolve } from './calls';
 import { dependentsOf, givenOf } from './checks';
@@ -373,6 +374,7 @@ export async function proposeBatch(
   models: DraftingModel[],
   resolve: Resolve | undefined,
   watch?: Watch,
+  record?: RecordAttempt,
 ): Promise<{ records: Proposal['records']; model: string }> {
   const { subject } = owner;
   // A fact for whoever watches, worded by them in the process's nouns.
@@ -678,6 +680,19 @@ export async function proposeBatch(
         watch.activity.thought = null;
         event({ kind: 'asked', model: told.model });
       } else event(told);
+    },
+    record && {
+      record,
+      purpose: 'propose',
+      asked: { records: keys, checks: checks.length },
+      // Refused when no proposal came through the tool.
+      judged: () => ({
+        refused: submitted === null,
+        answer: {
+          records: submitted ? Object.keys(submitted).length : 0,
+          problems: last?.length ?? null,
+        },
+      }),
     },
   );
   const answered = submitted as Proposal['records'] | null;

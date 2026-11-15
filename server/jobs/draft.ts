@@ -10,6 +10,10 @@ import {
 } from '@/lib/definitions/types';
 import { findDefinitions } from '@/server/operations/find';
 import { writeAgreed } from '@/server/operations/write';
+import {
+  attemptRecorder,
+  type Recorder,
+} from '@/server/storage/model-attempts';
 import { ownerToDraft } from '@/server/storage/rulebooks';
 
 import { jobProgress, runningJob, startJob } from './run-job';
@@ -42,14 +46,32 @@ export const draftProgress = (owner: DefinitionProcess, text: string) =>
 function startDraftJob(
   owner: DefinitionProcess,
   text: string,
+  read: KeptRead,
   step: string,
-  work: (progress: DraftProgress, note: () => Promise<void>) => Promise<string>,
+  work: (
+    progress: DraftProgress,
+    note: () => Promise<void>,
+    record: Recorder,
+  ) => Promise<string>,
 ): Promise<DraftProgress> {
+  const job = jobFor(owner, text);
   return startJob({
-    ...jobFor(owner, text),
+    ...job,
     initial: { step, error: null, running: true, writing: null },
     work: async (progress, note) => {
-      progress.step = await work(progress, note);
+      // Each model call, as part of this job; written before the job ends.
+      const record = attemptRecorder({
+        process: job.process,
+        jobKind: job.kind,
+        jobKey: job.key,
+        instructionsHash: job.key,
+        readId: read.id,
+      });
+      try {
+        progress.step = await work(progress, note, record);
+      } finally {
+        await record.settled();
+      }
     },
     settle: (progress) => {
       progress.writing = null;
@@ -73,21 +95,20 @@ export function startDraft(
   return startDraftJob(
     owner,
     text,
+    read,
     'Finding the definitions in the instructions…',
-    async (progress, note) => {
+    async (progress, note, record) => {
       // On the confirmed data profile, when one is kept; the set records it.
       const drafting = await ownerToDraft(owner);
-      const found = await findDefinitions(
-        drafting,
-        text,
-        version,
-        read,
-        asking,
-      );
+      const found = await findDefinitions(drafting, text, version, read, {
+        ...asking,
+        record,
+      });
       for (const [index, definition] of found.definitions.entries()) {
         progress.writing = definition.id;
         await writeAgreed(drafting, text, read, definition.id, {
           ...asking,
+          record,
           onRun: async (run) => {
             progress.step = `Writing ${index + 1} of ${found.definitions.length}: ${definition.name}${run > 1 ? `, write ${run}` : ''}…`;
             await note();
@@ -112,11 +133,13 @@ export function startRewrite(
   return startDraftJob(
     owner,
     text,
+    read,
     'Writing it again…',
-    async (progress, note) => {
+    async (progress, note, record) => {
       progress.writing = id;
       await writeAgreed(owner, text, read, id, {
         ...asking,
+        record,
         onRun: async (run) => {
           progress.step = `Writing it again${run > 1 ? `, write ${run}` : ''}…`;
           await note();

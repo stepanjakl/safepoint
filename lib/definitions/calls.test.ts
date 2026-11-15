@@ -5,6 +5,7 @@ import { z } from 'zod';
 
 import type { DraftingModel } from '@/lib/models';
 
+import type { Attempt } from './attempts';
 import { ask } from './calls';
 import { always, answer } from './models.fixture';
 
@@ -119,5 +120,95 @@ describe('asking a model', () => {
     );
     expect(asked.model).toBe('next-after-slow');
     expect(slow.doGenerateCalls).toHaveLength(1);
+  });
+});
+
+describe('recording each model asked', () => {
+  const spentForTheDay = () =>
+    new MockLanguageModelV4({
+      doGenerate: async () => {
+        throw refused('6585s');
+      },
+    });
+  const asking = (
+    ids: string[],
+    models: Record<string, MockLanguageModelV4>,
+    record?: (attempt: Attempt) => void,
+    refusedIf?: (output: { ok: boolean }) => boolean,
+  ) =>
+    ask(
+      ids as unknown as DraftingModel[],
+      z.object({ ok: z.boolean() }),
+      'system',
+      'prompt',
+      'test',
+      (id) => models[id]!,
+      record && {
+        record,
+        purpose: 'find',
+        asked: { sentences: 2 },
+        judged: (output) => ({
+          refused: refusedIf?.(output) ?? false,
+          answer: { ok: output.ok },
+        }),
+      },
+    );
+
+  it('says how each ended, in turn, with what the provider counted', async () => {
+    const said: Attempt[] = [];
+    await asking(
+      ['spent-recorded', 'next-recorded'],
+      { 'spent-recorded': spentForTheDay(), 'next-recorded': answering() },
+      (attempt) => said.push(attempt),
+    );
+    expect(said).toEqual([
+      expect.objectContaining({
+        purpose: 'find',
+        model: 'spent-recorded',
+        outcome: 'quota',
+        requests: 1,
+        inputTokens: null,
+        answer: null,
+        error: 'You exceeded your current quota.',
+      }),
+      expect.objectContaining({
+        model: 'next-recorded',
+        outcome: 'answered',
+        requests: 1,
+        inputTokens: 1,
+        outputTokens: 1,
+        waitedMs: 0,
+        // The prompt's size, never the prompt.
+        asked: { systemChars: 6, promptChars: 6, sentences: 2 },
+        answer: { ok: true },
+        error: null,
+      }),
+    ]);
+  });
+
+  it('says an answer its checks sent back was refused', async () => {
+    const said: Attempt[] = [];
+    await asking(
+      ['refused-recorded'],
+      { 'refused-recorded': answering() },
+      (attempt) => said.push(attempt),
+      () => true,
+    );
+    expect(said.map((a) => a.outcome)).toEqual(['refused']);
+  });
+
+  it('leaves the call as it was when the recorder fails, or there is none', async () => {
+    const model = answering();
+    const failing = await asking(
+      ['failing-recorder'],
+      { 'failing-recorder': model },
+      () => {
+        throw new Error('The database is gone.');
+      },
+    );
+    expect(failing.output).toEqual({ ok: true });
+    const none = await asking(['no-recorder'], { 'no-recorder': model });
+    expect(none.output).toEqual({ ok: true });
+    expect(model.doGenerateCalls).toHaveLength(2);
   });
 });

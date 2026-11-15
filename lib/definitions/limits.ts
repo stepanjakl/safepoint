@@ -10,6 +10,7 @@ import {
   type LimitsStore,
 } from '@/server/storage/model-limits';
 
+import { heldFor, sentAgain } from './attempts';
 import { quotaOf, type Quota } from './quota';
 
 /*
@@ -224,10 +225,12 @@ async function takeSlot(model: string, signal: AbortSignal | undefined) {
     }
     const until = sent[0]! + MINUTE + MARGIN;
     held.waiting[group] = until;
+    const since = Date.now();
     try {
       await wait(until - Date.now(), signal);
     } finally {
       delete held.waiting[group];
+      heldFor(Date.now() - since);
     }
   }
 }
@@ -280,11 +283,15 @@ export function paced<
                 quota.retryAfterMs <= MAX_WAIT &&
                 tries < MAX_TRIES
               ) {
+                const from = Date.now();
                 await wait(quota.retryAfterMs + MARGIN, signal);
+                heldFor(Date.now() - from);
+                sentAgain();
                 continue;
               }
             } else if (status >= 500 && tries === 1) {
               await wait(BUSY_WAIT, signal);
+              sentAgain();
               continue;
             }
             throw error;
