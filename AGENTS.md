@@ -192,15 +192,18 @@ placeholders such as `values.<id>`, because a real example steers the model.
   accepted revision, never rewritten) and `revisions.json` (each revision's
   parent and reason, and the head). A migration of an accepted rulebook
   makes a new revision through `putRevision` with reason `migrated`; it never
-  rewrites one. What runs produce is not:
-  `data/<process>/{cross-checks,drafts,proposals,applied}/` (gitignored,
-  `server/storage/run-data.ts`). Runs' reads, a source's reads and the learned
-  model limits are in the database (`docs/engineering/DATABASE.md`): PGlite
-  under `data/pglite/` with no `DATABASE_URL`; `pnpm db:import` copies the
-  files an older checkout kept. A test that keeps rows uses
-  `inScratchDatabase()` (`inScratchStorage()` where it also needs a scratch
-  directory). `e2e/fixtures/` are frozen copies, held to the
-  engine by `lib/definitions/e2e-fixtures.test.ts`.
+  rewrites one. What runs produce is not; the writes to a sheet are still
+  `data/<process>/applied/` (gitignored, `server/storage/run-data.ts`). Runs'
+  reads, a source's reads, proposals, cross-checks and their partial answers,
+  job progress (drafts and proposals) and the learned model limits are in the
+  database (`docs/engineering/DATABASE.md`): PGlite under `data/pglite/` with
+  no `DATABASE_URL`; `pnpm db:import` copies the files an older checkout kept.
+  A test that keeps rows uses `inScratchDatabase()` (`inScratchStorage()`
+  where it also needs a scratch directory); the database is emptied before
+  each test, not made again. The browser tests' server runs on PGlite in
+  `data/pglite-e2e/` whatever `.env.local` says (`playwright.config.ts`).
+  `e2e/fixtures/` are frozen copies, held to the engine by
+  `lib/definitions/e2e-fixtures.test.ts`.
 - `docs/processes/brunch-orders/DEVELOPMENT-LOG.md` records what went wrong and why. Add to it when
   something non-obvious does.
 

@@ -358,7 +358,7 @@ Agreed with the owner on 9 October, after every definition was accepted.
   cannot catch (see the direction review). Its answer must cover every
   record and value exactly once. Values agree when equal to two decimal
   places. Nothing is settled automatically: the step stays in attention until
-  every value agrees. The answer is kept in `data/brunch-orders/cross-checks/`
+  every value agrees. The answer is kept in the `cross_checks` table
   by read and rulebook, because it costs a call. It is asked 25 records to a
   call, each with only its records' rows, and kept batch by batch, so one that
   stops part way asks only for the rest. Once it has run, a small filter beside
@@ -419,7 +419,7 @@ accepted, the Rules step collapses to one line that opens the Rules tab.
   said: every key once, every cited cell a real, non-blank data cell, and
   every verdict re-worked; the verdicts kept are code's.
 - **Where it is kept.** The proposal is costly, so it is kept in
-  `data/<process>/proposals/` by read and rulebook, batch by batch so a stop
+  the `proposals` table by read and rulebook, batch by batch so a stop
   part way asks only for the rest. It runs as a background job, as drafting
   does. The decisions belong to the run, in the browser.
 - **Apply is a preview.** It shows what the decided proposal would write to
