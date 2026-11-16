@@ -1,6 +1,6 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { MockLanguageModelV4 } from 'ai/test';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 
@@ -12,7 +12,10 @@ import {
   check,
   standIn,
 } from '@/lib/definitions/models.fixture';
-import { inScratchStorage } from '@/lib/definitions/scratch.fixture';
+import {
+  eventually,
+  inScratchStorage,
+} from '@/lib/definitions/scratch.fixture';
 import { TEXT } from '@/lib/definitions/set.fixture';
 import { hashOf } from '@/lib/definitions/fingerprint';
 import { ensureProcess } from '@/server/db/scope';
@@ -74,7 +77,7 @@ describe('a draft on the server', () => {
     });
     const asked = await draftProgress(owner, TEXT);
     expect(asked?.running).toBe(true);
-    await vi.waitFor(async () =>
+    await eventually(async () =>
       expect((await draftProgress(owner, TEXT))?.running).toBe(false),
     );
     expect(asked?.running).toBe(true);
@@ -90,7 +93,7 @@ describe('a draft on the server', () => {
       resolve: () => model,
     });
     expect(started.running).toBe(true);
-    await vi.waitFor(async () =>
+    await eventually(async () =>
       expect((await draftProgress(owner, TEXT))?.running).toBe(false),
     );
     expect(await draftProgress(owner, TEXT)).toMatchObject({
@@ -179,7 +182,7 @@ describe('a draft on the server', () => {
 
   describe('writing one definition again', () => {
     const settled = () =>
-      vi.waitFor(async () =>
+      eventually(async () =>
         expect((await draftProgress(owner, TEXT))?.running).toBe(false),
       );
     const drafted = async () => {
@@ -237,12 +240,12 @@ describe('a draft on the server', () => {
       await startRewrite(owner, TEXT, capturedRead(), 'two_weekends', {
         resolve: () => model,
       });
-      await vi.waitFor(async () =>
+      await eventually(async () =>
         expect((await draftProgress(owner, TEXT))?.writing).toBe(
           'two_weekends',
         ),
       );
-      await vi.waitFor(async () =>
+      await eventually(async () =>
         expect(await draftRow(TEXT)).toMatchObject({
           running: true,
           writing: 'two_weekends',

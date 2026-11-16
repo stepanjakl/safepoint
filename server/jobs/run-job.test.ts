@@ -2,7 +2,11 @@ import { and, eq, sql } from 'drizzle-orm';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-import { inScratchDatabase, rowsOf } from '@/lib/definitions/scratch.fixture';
+import {
+  eventually,
+  inScratchDatabase,
+  rowsOf,
+} from '@/lib/definitions/scratch.fixture';
 import { ensureProcess } from '@/server/db/scope';
 import { jobs } from '@/server/db/schema';
 
@@ -99,7 +103,7 @@ const gate = () => {
 // Until the job's last record is kept: a fixed wait is not long enough when
 // the suite is busy, and failed there.
 const finished = (job: JobRecord<Progress>) =>
-  vi.waitFor(async () => expect((await kept(job))?.running).toBe(false));
+  eventually(async () => expect((await kept(job))?.running).toBe(false));
 
 afterEach(() => vi.useRealTimers());
 
@@ -136,7 +140,7 @@ describe('starting a job', () => {
         await hold.opened;
       },
     });
-    await vi.waitFor(() =>
+    await eventually(() =>
       expect(before).toEqual({ step: 'Starting', error: null, running: true }),
     );
     expect(started.running).toBe(true);
@@ -354,13 +358,13 @@ describe('the lease', () => {
     await lapse(job);
     expect(await heartbeatAge(job)).toBeGreaterThan(LEASE_MS / 1000 - 10);
     await vi.advanceTimersByTimeAsync(HEARTBEAT_MS);
-    await vi.waitFor(async () =>
+    await eventually(async () =>
       expect(await heartbeatAge(job)).toBeLessThan(LEASE_MS / 1000 / 4),
     );
     // Still its own, and still running, however long it goes on.
     await lapse(job);
     await vi.advanceTimersByTimeAsync(HEARTBEAT_MS * 4);
-    await vi.waitFor(async () =>
+    await eventually(async () =>
       expect(await heartbeatAge(job)).toBeLessThan(LEASE_MS / 1000 / 4),
     );
     expect(await rowOf(job)).toMatchObject({
@@ -403,11 +407,11 @@ describe('the lease', () => {
       throw new Error('connection lost');
     });
     await vi.advanceTimersByTimeAsync(HEARTBEAT_MS);
-    await vi.waitFor(() => expect(failing).toHaveBeenCalled());
+    await eventually(() => expect(failing).toHaveBeenCalled());
     failing.mockRestore();
     expect(await rowOf(job)).toMatchObject({ running: true });
     await vi.advanceTimersByTimeAsync(HEARTBEAT_MS);
-    await vi.waitFor(async () =>
+    await eventually(async () =>
       expect(await heartbeatAge(job)).toBeLessThan(LEASE_MS / 1000 / 4),
     );
     hold.open();
@@ -440,7 +444,7 @@ describe('a database that fails', () => {
       },
     });
     hold.open();
-    await vi.waitFor(() => expect(progress.running).toBe(false));
+    await eventually(() => expect(progress.running).toBe(false));
     expect(progress).toMatchObject({ step: 'Done', error: null });
     // The row never heard the end; this process still knows it.
     expect(await rowOf(job)).toMatchObject({ running: true });
@@ -461,7 +465,7 @@ describe('a database that fails', () => {
     });
     const progress = await startJob({ ...job, initial: begin(), work });
     failing.mockRestore();
-    await vi.waitFor(() => expect(progress.running).toBe(false));
+    await eventually(() => expect(progress.running).toBe(false));
     expect(work).toHaveBeenCalledOnce();
     expect(progress.step).toBe('Done');
   });

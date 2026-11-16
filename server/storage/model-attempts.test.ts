@@ -2,13 +2,16 @@ import { readFileSync } from 'node:fs';
 
 import { APICallError } from 'ai';
 import { MockLanguageModelV4 } from 'ai/test';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { DRAFT_MODELS } from '@/lib/definitions/calls';
 import { capturedRead } from '@/lib/definitions/captured.fixture';
 import { fingerprintOf, hashOf } from '@/lib/definitions/fingerprint';
 import { always, call } from '@/lib/definitions/models.fixture';
-import { inScratchStorage } from '@/lib/definitions/scratch.fixture';
+import {
+  eventually,
+  inScratchStorage,
+} from '@/lib/definitions/scratch.fixture';
 import { TEXT } from '@/lib/definitions/set.fixture';
 import { definitionSetSchema } from '@/lib/definitions/types';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
@@ -79,7 +82,7 @@ const attempts = () =>
 async function proposed(resolve: (id: string) => MockLanguageModelV4) {
   await keepStandInRead(db(), 'test');
   await startProposal(owner, set, read, 'test', TEXT, { resolve });
-  await vi.waitFor(async () =>
+  await eventually(async () =>
     expect((await proposalProgress(owner, 'test', FP))?.running).toBe(false),
   );
   expect((await proposalProgress(owner, 'test', FP))?.error).toBeNull();

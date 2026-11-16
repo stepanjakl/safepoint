@@ -85,3 +85,9 @@ export function inScratchStorage() {
 export async function rowsOf<T>(db: Database, query: SQL): Promise<T[]> {
   return ((await db.execute(query)) as unknown as { rows: T[] }).rows;
 }
+
+// Waits for a check that work started in the background will come to pass.
+// Longer than `vi.waitFor`'s second, which a job keeping its progress in the
+// database can outlast while the whole suite runs; inside a test's own five.
+export const eventually = <T>(check: () => T | Promise<T>) =>
+  vi.waitFor(check, { timeout: 4_000 });
