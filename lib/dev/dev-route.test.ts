@@ -1,0 +1,70 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import {
+  crossOriginRefusal,
+  gateApplies,
+  isLocalDevelopment,
+  localDevelopmentRefusal,
+} from './dev-route';
+
+afterEach(() => vi.unstubAllEnvs());
+
+const url = (href: string) => new URL(href);
+
+describe('isLocalDevelopment', () => {
+  it('is development mode on a loopback host', () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    expect(isLocalDevelopment(url('http://localhost:3000/'))).toBe(true);
+    expect(isLocalDevelopment(url('http://127.0.0.1:3000/'))).toBe(true);
+    expect(isLocalDevelopment(url('http://[::1]:3000/'))).toBe(true);
+    expect(isLocalDevelopment(url('http://192.168.1.20:3000/'))).toBe(false);
+    expect(isLocalDevelopment(url('https://example.com/'))).toBe(false);
+  });
+
+  it('is never true outside development mode', () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    expect(isLocalDevelopment(url('http://localhost:3000/'))).toBe(false);
+  });
+});
+
+describe('localDevelopmentRefusal', () => {
+  it('keeps its three checks and their answers', () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    const at = (host: string, origin?: string) =>
+      localDevelopmentRefusal(
+        new Request(`http://${host}/x`, origin ? { headers: { origin } } : {}),
+      );
+    expect(at('localhost:3000')).toBeNull();
+    expect(at('localhost:3000', 'http://localhost:3000')).toBeNull();
+    expect(at('localhost:3000', 'http://localhost:4000')).toEqual({
+      status: 403,
+      message: 'Cross-origin request rejected.',
+    });
+    expect(at('example.com')).toEqual({ status: 404, message: 'Not found.' });
+  });
+
+  it('shares its cross-origin check', () => {
+    const request = new Request('https://example.com/x', {
+      headers: { origin: 'https://elsewhere.example' },
+    });
+    expect(crossOriginRefusal(request)?.status).toBe(403);
+  });
+});
+
+describe('gateApplies', () => {
+  it('is off in local development and on everywhere else', () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    expect(gateApplies(url('http://localhost:3000/'))).toBe(false);
+    expect(gateApplies(url('https://example.com/'))).toBe(true);
+    vi.stubEnv('NODE_ENV', 'production');
+    expect(gateApplies(url('http://localhost:3000/'))).toBe(true);
+  });
+
+  it('is switched on in local development by SAFEPOINT_GATE=1 alone', () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    vi.stubEnv('SAFEPOINT_GATE', '1');
+    expect(gateApplies(url('http://localhost:3000/'))).toBe(true);
+    vi.stubEnv('SAFEPOINT_GATE', 'true');
+    expect(gateApplies(url('http://localhost:3000/'))).toBe(false);
+  });
+});

@@ -8,14 +8,35 @@ const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]']);
 
 type Refusal = { status: 404 | 403; message: string };
 
-export function localDevelopmentRefusal(request: Request): Refusal | null {
-  const url = new URL(request.url);
-  if (process.env.NODE_ENV !== 'development' || !LOOPBACK.has(url.hostname))
-    return { status: 404, message: 'Not found.' };
+// Development mode on a loopback host: the first two of the three checks, and
+// the one definition of "local development" the shared-password gate
+// (server/access/) uses as well.
+export function isLocalDevelopment(url: URL): boolean {
+  return process.env.NODE_ENV === 'development' && LOOPBACK.has(url.hostname);
+}
+
+// The third check, which a signed-in request passes as well.
+export function crossOriginRefusal(request: Request): Refusal | null {
   const origin = request.headers.get('origin');
-  if (origin !== null && origin !== url.origin)
-    return { status: 403, message: 'Cross-origin request rejected.' };
-  return null;
+  return origin !== null && origin !== new URL(request.url).origin
+    ? { status: 403, message: 'Cross-origin request rejected.' }
+    : null;
+}
+
+export function localDevelopmentRefusal(request: Request): Refusal | null {
+  if (!isLocalDevelopment(new URL(request.url)))
+    return { status: 404, message: 'Not found.' };
+  return crossOriginRefusal(request);
+}
+
+/*
+  Whether the shared password guards a request: always outside local
+  development, and inside it only with SAFEPOINT_GATE=1, so the gate can be
+  tried on a laptop. The development-only routes above never read this switch;
+  they stay local whatever is signed in.
+*/
+export function gateApplies(url: URL): boolean {
+  return process.env.SAFEPOINT_GATE === '1' || !isLocalDevelopment(url);
 }
 
 export function rejectUnlessLocalDevelopment(
