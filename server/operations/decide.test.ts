@@ -3,7 +3,14 @@ import { describe, expect, it } from 'vitest';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 
 import { capturedRead, capturedTabs } from '@/lib/definitions/captured.fixture';
-import { accept, choose, confirmIntent, deny, rebaseSet } from './decide';
+import {
+  accept,
+  choose,
+  confirmIntent,
+  deny,
+  rebaseSet,
+  setAppliesTo,
+} from './decide';
 import {
   confirmProfile,
   profileOf,
@@ -19,6 +26,8 @@ import {
   type ShapeContext,
 } from '@/lib/definitions/shapes';
 import { fingerprintOf } from '@/lib/definitions/fingerprint';
+import { ruleDecisions } from '@/server/db/schema';
+import { asc } from 'drizzle-orm';
 import {
   listRevisions,
   loadRevision,
@@ -36,7 +45,7 @@ import type {
 // Accepting reruns the whole review on the version kept, against its read:
 // whatever writing would refuse, accepting refuses too, with the reason.
 
-inScratchStorage();
+const { database: db } = inScratchStorage();
 const read = capturedRead();
 const readOf = async (id: string) => (id === 'test' ? read : null);
 const accepted = async (id: string, found = readOf) =>
@@ -476,5 +485,115 @@ describe('a rule reading a column with blanks', () => {
     await expect(rebaseSet(owner, TEXT, read, proposed)).rejects.toThrow(
       /confirmed/,
     );
+  });
+});
+
+describe('each decision on the rules', () => {
+  const decisions = async () =>
+    (
+      await db().select().from(ruleDecisions).orderBy(asc(ruleDecisions.id))
+    ).map(
+      ({
+        kind,
+        definitionId,
+        definition,
+        note,
+        versionIndex,
+        appliesTo,
+        refusal,
+        actor,
+        rulebookRevision,
+      }) => ({
+        kind,
+        definitionId,
+        shown: definition?.formula ?? null,
+        note,
+        versionIndex,
+        appliesTo,
+        refusal,
+        actor,
+        rulebookRevision,
+      }),
+    );
+
+  it('is kept with who made it, the definition as shown and the revision it was read at', async () => {
+    await keep([
+      twoWeekends,
+      definition('enough', { result: 'check', formula: 'true' }),
+    ]);
+    await deny(owner, TEXT, 'two_weekends', ' Use all four. ', 'a.person');
+    await accept(owner, TEXT, 'two_weekends', readOf, 'a.person');
+    await setAppliesTo(owner, TEXT, 'enough', 'some', readOf, 'b.person');
+    await confirmIntent(owner, TEXT, readOf, 'b.person');
+    await deny(owner, TEXT, 'nothing', undefined, 'a.person');
+    expect(await decisions()).toEqual([
+      {
+        kind: 'deny',
+        definitionId: 'two_weekends',
+        shown: 'record.weekend_1 + record.weekend_2',
+        note: 'Use all four.',
+        versionIndex: null,
+        appliesTo: null,
+        refusal: null,
+        actor: 'a.person',
+        rulebookRevision: 1,
+      },
+      expect.objectContaining({
+        kind: 'accept',
+        definitionId: 'two_weekends',
+        refusal: null,
+        rulebookRevision: 2,
+      }),
+      expect.objectContaining({
+        kind: 'applies_to',
+        definitionId: 'enough',
+        appliesTo: 'some',
+        actor: 'b.person',
+      }),
+      expect.objectContaining({
+        kind: 'confirm_intent',
+        definitionId: null,
+        actor: 'b.person',
+      }),
+    ]);
+  });
+
+  it('keeps a refused acceptance with why', async () => {
+    await keep([
+      definition('double_first', {
+        formula: 'record.weekend_1 * 2',
+        examples: [example(56, true)],
+      }),
+    ]);
+    await accept(owner, TEXT, 'double_first', readOf);
+    expect(await decisions()).toEqual([
+      expect.objectContaining({
+        kind: 'accept',
+        refusal: expect.stringMatching(/^Not accepted: The formula writes 2/),
+        actor: null,
+      }),
+    ]);
+  });
+
+  it('accepts nothing rewritten at the same moment: the two land one after the other', async () => {
+    await keep([twoWeekends]);
+    const rewrite = updateSet(owner, TEXT, (s) => ({
+      ...s,
+      definitions: s.definitions.map((d) => ({
+        ...d,
+        formula: 'record.weekend_1 * 2',
+        approvedAt: null,
+      })),
+    }));
+    const [done] = await Promise.all([
+      accept(owner, TEXT, 'two_weekends', readOf),
+      rewrite,
+    ]);
+    const kept = (await loadSet(owner, TEXT))!.definitions[0]!;
+    // Whichever landed last, an approval never stands on the rewritten formula.
+    expect(kept.formula).toBe('record.weekend_1 * 2');
+    expect(kept.approvedAt).toBeNull();
+    expect(done).not.toBeNull();
+    expect(await decisions()).toHaveLength(1);
   });
 });
