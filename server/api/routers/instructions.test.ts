@@ -93,10 +93,15 @@ describe('instructions router', () => {
     });
   });
 
-  it('is only for local development, as every stateful procedure is', async () => {
+  it('needs a signed-in person outside development, as every stateful procedure does', async () => {
     vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('SAFEPOINT_ACCESS_KEY', 'a-shared-password-long-enough');
+    vi.stubEnv(
+      'SAFEPOINT_COOKIE_SECRET',
+      'a-signing-secret-of-at-least-thirty-two-characters',
+    );
     expect(
       await failure(caller().instructions.list({ process: PROMOTION })),
-    ).toMatchObject({ code: 'NOT_FOUND' });
+    ).toMatchObject({ code: 'UNAUTHORIZED' });
   });
 });

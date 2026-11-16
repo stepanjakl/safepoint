@@ -1,14 +1,21 @@
 import { TRPCError } from '@trpc/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { SESSION_COOKIE, signSession } from '@/server/access/session';
+
 import { gatedProcedure, router } from './trpc';
 
 // The gate every stateful procedure passes, on a procedure that does nothing
 // else, so a refusal can only come from the gate.
-const gated = router({ ping: gatedProcedure.query(() => 'pong') });
+const gated = router({
+  ping: gatedProcedure.query(() => 'pong'),
+  whoami: gatedProcedure.query(({ ctx }) => ctx.actor),
+});
 
+const caller = (url: string, headers?: HeadersInit) =>
+  gated.createCaller({ request: new Request(url, { headers }) });
 const call = (url: string, headers?: HeadersInit) =>
-  gated.createCaller({ request: new Request(url, { headers }) }).ping();
+  caller(url, headers).ping();
 
 async function refusal(promise: Promise<unknown>) {
   const error = await promise.then(
@@ -36,18 +43,10 @@ describe('gatedProcedure', () => {
     await expect(call('http://[::1]:3000/api/trpc/ping')).resolves.toBe('pong');
   });
 
-  it('is not found outside development', async () => {
-    vi.stubEnv('NODE_ENV', 'production');
-    expect(await refusal(call('http://localhost:3000/api/trpc/ping'))).toEqual({
-      code: 'NOT_FOUND',
-      message: 'Not found.',
-    });
-  });
-
-  it('is not found from a host other than loopback', async () => {
-    expect(
-      await refusal(call('http://192.168.1.20:3000/api/trpc/ping')),
-    ).toEqual({ code: 'NOT_FOUND', message: 'Not found.' });
+  it('names nobody in local development', async () => {
+    await expect(
+      caller('http://localhost:3000/api/trpc/whoami').whoami(),
+    ).resolves.toBeNull();
   });
 
   it('refuses a call from a foreign origin', async () => {
@@ -58,5 +57,83 @@ describe('gatedProcedure', () => {
         }),
       ),
     ).toEqual({ code: 'FORBIDDEN', message: 'Cross-origin request rejected.' });
+  });
+});
+
+describe('gatedProcedure outside local development', () => {
+  const KEY = 'a-shared-password-long-enough';
+  const SECRET = 'a-signing-secret-of-at-least-thirty-two-characters';
+  const URL_ = 'https://safepoint.example/api/trpc/ping';
+  const cookie = async (name = 'Maya', secret = SECRET) => ({
+    cookie: `${SESSION_COOKIE}=${await signSession(name, secret)}`,
+  });
+
+  beforeEach(() => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('SAFEPOINT_ACCESS_KEY', KEY);
+    vi.stubEnv('SAFEPOINT_COOKIE_SECRET', SECRET);
+  });
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('refuses a call with no cookie', async () => {
+    expect(await refusal(call(URL_))).toEqual({
+      code: 'UNAUTHORIZED',
+      message: 'Sign in required.',
+    });
+  });
+
+  it('refuses a cookie that is not a session of this deployment', async () => {
+    for (const headers of [
+      { cookie: `${SESSION_COOKIE}=garbage` },
+      await cookie('Maya', 'another-signing-secret-of-thirty-two-chars'),
+    ])
+      expect((await refusal(call(URL_, headers))).code).toBe('UNAUTHORIZED');
+  });
+
+  it('answers a call with a valid cookie, and says who is acting', async () => {
+    const headers = await cookie('Maya Novak');
+    await expect(call(URL_, headers)).resolves.toBe('pong');
+    await expect(
+      caller('https://safepoint.example/api/trpc/whoami', headers).whoami(),
+    ).resolves.toBe('Maya Novak');
+  });
+
+  it('still refuses a foreign origin, cookie or not', async () => {
+    expect(
+      await refusal(
+        call(URL_, { ...(await cookie()), origin: 'https://evil.example' }),
+      ),
+    ).toEqual({ code: 'FORBIDDEN', message: 'Cross-origin request rejected.' });
+  });
+
+  it('answers a same-origin call with a cookie', async () => {
+    await expect(
+      call(URL_, { ...(await cookie()), origin: 'https://safepoint.example' }),
+    ).resolves.toBe('pong');
+  });
+
+  it('refuses everything while the deployment is not configured', async () => {
+    const headers = await cookie();
+    vi.stubEnv('SAFEPOINT_COOKIE_SECRET', 'short');
+    expect(await refusal(call(URL_, headers))).toEqual({
+      code: 'SERVICE_UNAVAILABLE',
+      message: 'This deployment is not configured.',
+    });
+  });
+
+  it('does not take a loopback host outside development for local', async () => {
+    expect(
+      (await refusal(call('http://localhost:3000/api/trpc/ping'))).code,
+    ).toBe('UNAUTHORIZED');
+  });
+
+  it('applies in local development too with SAFEPOINT_GATE=1, and then names the person', async () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    vi.stubEnv('SAFEPOINT_GATE', '1');
+    const local = 'http://localhost:3000/api/trpc/whoami';
+    expect((await refusal(caller(local).whoami())).code).toBe('UNAUTHORIZED');
+    await expect(caller(local, await cookie('Maya')).whoami()).resolves.toBe(
+      'Maya',
+    );
   });
 });

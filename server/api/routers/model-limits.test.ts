@@ -69,10 +69,18 @@ describe('modelLimits router', () => {
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
   });
 
-  it('is not found outside development', async () => {
+  it('needs a signed-in person outside development', async () => {
     vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('SAFEPOINT_ACCESS_KEY', 'a-shared-password-long-enough');
+    vi.stubEnv(
+      'SAFEPOINT_COOKIE_SECRET',
+      'a-signing-secret-of-at-least-thirty-two-characters',
+    );
     await expect(
       caller().modelLimits.get({ model: DRAFTING_MODELS[0]! }),
-    ).rejects.toMatchObject({ code: 'NOT_FOUND', message: 'Not found.' });
+    ).rejects.toMatchObject({
+      code: 'UNAUTHORIZED',
+      message: 'Sign in required.',
+    });
   });
 });

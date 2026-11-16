@@ -2,7 +2,13 @@ import 'server-only';
 
 import { initTRPC, TRPCError } from '@trpc/server';
 
-import { localDevelopmentRefusal } from '@/lib/dev/dev-route';
+import {
+  crossOriginRefusal,
+  gateApplies,
+  localDevelopmentRefusal,
+} from '@/lib/dev/dev-route';
+import { accessConfig, NOT_CONFIGURED_MESSAGE } from '@/server/access/config';
+import { readSession } from '@/server/access/session';
 import { Refused } from '@/server/storage/refused';
 
 /*
@@ -47,28 +53,46 @@ const t = initTRPC.context<Context>().create({
 export const router = t.router;
 
 /*
-  Who is acting: the name a decision, a run or a published version is kept
-  under. There is no sign-in yet, so nobody is named; the phase that asks a
-  reviewer's name changes this function and nothing else.
-*/
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const actorOf = (_request: Request): string | null => null;
-
-/*
   Who may call a stateful procedure is decided here and nowhere else: local
-  development today, and a signed-in session as well once there is one. The
-  gate runs before the input is parsed, as the plain routes refuse first.
-  Past it, a procedure is told who is acting (`ctx.actor`), and a refusal
-  its work throws (`Refused`) reaches the screen in its own words and code.
+  development as today, or, wherever the shared-password gate applies
+  (lib/dev/dev-route.ts `gateApplies`), a request that carries a valid gate
+  cookie. The request proxy (/proxy.ts) turns the same requests away before
+  they get here; this checks again, on purpose, so a procedure never depends
+  on the proxy having run. A foreign origin is refused either way. The gate
+  runs before the input is parsed, as the plain routes refuse first.
+
+  Past it, a procedure is told who is acting (`ctx.actor`): the name on the
+  cookie, and nobody in local development, which has no sign-in. A refusal its
+  work throws (`Refused`) reaches the screen in its own words and code.
 */
-export const gatedProcedure = t.procedure.use(async ({ ctx, next }) => {
-  const refusal = localDevelopmentRefusal(ctx.request);
-  if (refusal)
+async function actorOf(request: Request): Promise<string | null> {
+  if (!gateApplies(new URL(request.url))) {
+    const refusal = localDevelopmentRefusal(request);
+    if (refusal)
+      throw new TRPCError({
+        code: refusal.status === 404 ? 'NOT_FOUND' : 'FORBIDDEN',
+        message: refusal.message,
+      });
+    return null;
+  }
+  const foreign = crossOriginRefusal(request);
+  if (foreign)
+    throw new TRPCError({ code: 'FORBIDDEN', message: foreign.message });
+  const config = accessConfig();
+  if (config === null)
     throw new TRPCError({
-      code: refusal.status === 404 ? 'NOT_FOUND' : 'FORBIDDEN',
-      message: refusal.message,
+      code: 'SERVICE_UNAVAILABLE',
+      message: NOT_CONFIGURED_MESSAGE,
     });
-  const result = await next({ ctx: { actor: actorOf(ctx.request) } });
+  const session = await readSession(request, config.cookieSecret);
+  if (session === null)
+    throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Sign in required.' });
+  return session.name;
+}
+
+export const gatedProcedure = t.procedure.use(async ({ ctx, next }) => {
+  const actor = await actorOf(ctx.request);
+  const result = await next({ ctx: { actor } });
   if (!result.ok && result.error.cause instanceof Refused)
     throw new TRPCError({
       code: result.error.cause.code,
