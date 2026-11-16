@@ -12,5 +12,6 @@ export const KEPT_ENGINE_SOURCES = [
   'server/storage/applications.ts',
   'server/storage/cross-checks.ts',
   'server/storage/proposals.ts',
+  'server/storage/rulebook-files.ts',
   'server/storage/rulebooks.ts',
 ];

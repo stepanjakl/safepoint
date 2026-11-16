@@ -6,8 +6,6 @@ import { z } from 'zod';
 import { database, type Database } from '@/server/db/client';
 import { modelLimits } from '@/server/db/schema';
 
-import { inTurn } from './files';
-
 /*
   Server-only. What is learned of a model's limits, kept in the `model_limits`
   table, one row per model, so a restart does not start the learning again.
@@ -104,36 +102,78 @@ export async function loadKeptLimits(db: LimitsStore): Promise<KeptLimits> {
   return limitsOfRows(await db.select().from(modelLimits));
 }
 
+// The newer of what is kept and what is written, by when it was learned:
+// a write that arrives late, or from an instance that never heard of a
+// limit, does not undo one learned since.
+const newer = (value: string, at: string) =>
+  sql.raw(
+    `case when excluded.${at} is not null and (model_limits.${at} is null or excluded.${at} >= model_limits.${at}) then excluded.${value} else model_limits.${value} end`,
+  );
+
 /*
-  Keeps what is held of these models, each as its own row: another instance
-  learning of another model at the same time is not undone, as a whole map
-  written back would. One at a time in this process, and the rows are made
-  when their turn comes, so the last to be written is the latest held.
+  Keeps what is held of these models, each as its own row, in one statement:
+  another instance learning of another model at the same time is not undone,
+  as a whole map written back would, and a limit or a count learned
+  elsewhere since is not written over (`newer`, and the day's count only
+  ever goes up within a day). A request is counted by `countRequest`.
 */
-export function saveKeptLimits(
+export async function saveKeptLimits(
   db: LimitsStore,
   models: Iterable<string>,
   held: () => KeptLimits,
 ): Promise<void> {
   const touched = [...new Set(models)];
-  return inTurn('model-limits', async () => {
-    if (!touched.length) return;
-    const kept = held();
-    await db
-      .insert(modelLimits)
-      .values(touched.map((model) => rowOf(model, kept)))
-      .onConflictDoUpdate({
-        target: modelLimits.model,
-        set: {
-          sharesWith: sql`excluded.shares_with`,
-          perMinute: sql`excluded.per_minute`,
-          perMinuteLearnedAt: sql`excluded.per_minute_learned_at`,
-          perDay: sql`excluded.per_day`,
-          perDayLearnedAt: sql`excluded.per_day_learned_at`,
-          usedDay: sql`excluded.used_day`,
-          usedCount: sql`excluded.used_count`,
-          updatedAt: sql`now()`,
-        },
-      });
-  });
+  if (!touched.length) return;
+  const kept = held();
+  await db
+    .insert(modelLimits)
+    .values(touched.map((model) => rowOf(model, kept)))
+    .onConflictDoUpdate({
+      target: modelLimits.model,
+      set: {
+        sharesWith: sql`coalesce(excluded.shares_with, model_limits.shares_with)`,
+        perMinute: newer('per_minute', 'per_minute_learned_at'),
+        perMinuteLearnedAt: newer(
+          'per_minute_learned_at',
+          'per_minute_learned_at',
+        ),
+        perDay: newer('per_day', 'per_day_learned_at'),
+        perDayLearnedAt: newer('per_day_learned_at', 'per_day_learned_at'),
+        usedCount: sql`case
+          when excluded.used_day is null then model_limits.used_count
+          when model_limits.used_day is null or excluded.used_day > model_limits.used_day then excluded.used_count
+          when excluded.used_day = model_limits.used_day then greatest(model_limits.used_count, excluded.used_count)
+          else model_limits.used_count end`,
+        usedDay: sql`greatest(model_limits.used_day, excluded.used_day)`,
+        updatedAt: sql`now()`,
+      },
+    });
+}
+
+/*
+  Counts one request sent on `day` for a model's group, as `used_count + 1`
+  in the statement, so instances sharing a model add to one count rather
+  than each writing back its own. Returns the day and count now kept.
+*/
+export async function countRequest(
+  db: LimitsStore,
+  model: string,
+  day: string,
+): Promise<{ day: string; count: number }> {
+  const [row] = await db
+    .insert(modelLimits)
+    .values({ model, usedDay: day, usedCount: 1 })
+    .onConflictDoUpdate({
+      target: modelLimits.model,
+      set: {
+        usedCount: sql`case
+          when model_limits.used_day = excluded.used_day then model_limits.used_count + 1
+          when model_limits.used_day > excluded.used_day then model_limits.used_count
+          else 1 end`,
+        usedDay: sql`greatest(model_limits.used_day, excluded.used_day)`,
+        updatedAt: sql`now()`,
+      },
+    })
+    .returning({ day: modelLimits.usedDay, count: modelLimits.usedCount });
+  return { day: row!.day!, count: row!.count };
 }

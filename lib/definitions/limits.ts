@@ -3,6 +3,7 @@ import { APICallError, wrapLanguageModel } from 'ai';
 
 import {
   limitsStore,
+  countRequest,
   loadKeptLimits,
   saveKeptLimits,
   type KeptLimits,
@@ -170,6 +171,23 @@ function share(model: string, other: string) {
   delete held.used[from];
 }
 
+// Counts a request of a group, in the database where it can: the count kept
+// there is every instance's, so it is the one held after.
+async function count(group: string) {
+  const held = state();
+  held.used[group] = { day: dayNow(), count: usedToday(group) + 1 };
+  if (held.loaded === UNAVAILABLE) return;
+  try {
+    held.used[group] = await countRequest(
+      held.loaded as LimitsStore,
+      group,
+      held.used[group].day,
+    );
+  } catch {
+    // Keeping it is a convenience: a failed write never stops a request.
+  }
+}
+
 const fresh = (learned: Learned | undefined) =>
   learned && Date.now() - learned.at < LEARNED_FOR ? learned.limit : null;
 
@@ -219,8 +237,7 @@ async function takeSlot(model: string, signal: AbortSignal | undefined) {
     held.sent[group] = sent;
     if (sent.length < perMinuteOf(group)) {
       sent.push(Date.now());
-      held.used[group] = { day: dayNow(), count: usedToday(group) + 1 };
-      await keep([group]);
+      await count(group);
       return;
     }
     const until = sent[0]! + MINUTE + MARGIN;

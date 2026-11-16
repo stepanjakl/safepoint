@@ -98,7 +98,7 @@ async function readExact<T>(
     );
   if (asFile(parsed.data) !== text)
     throw new FixtureError(
-      `${where} is not written as the export writes it (two-space JSON in the schema's order, one newline at the end).`,
+      `${where} is not written as the export writes it (two-space JSON, keys as the schema lists them, one newline at the end).`,
     );
   return parsed.data;
 }

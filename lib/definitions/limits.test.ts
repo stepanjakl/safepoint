@@ -365,6 +365,26 @@ describe('limits kept in the database', () => {
     expect(limitsOf('by-two', []).perMinute).toBe(22);
   });
 
+  it('adds two processes’ requests on one model into one count', async () => {
+    restart();
+    await limitsReady();
+    const one = process_.modelLimits;
+    restart();
+    await limitsReady();
+    const two = process_.modelLimits;
+
+    process_.modelLimits = one;
+    await ask('shared-day', model());
+    process_.modelLimits = two;
+    await ask('shared-day', model());
+    // The second sees the first's request in what it was answered.
+    expect(limitsOf('shared-day', []).usedToday).toBe(2);
+
+    restart();
+    await limitsReady();
+    expect(limitsOf('shared-day', []).usedToday).toBe(2);
+  });
+
   it('holds what the database says before a request is spent', async () => {
     await scratch()
       .insert(modelLimits)
