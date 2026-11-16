@@ -153,7 +153,8 @@ placeholders such as `values.<id>`, because a real example steers the model.
 - **Saved model output is a contract.** Variable names and value
   representations end up inside accepted formulas, so settle them before a
   draft is accepted. A change to the stored shape (`types.ts`) means
-  migrating `fixtures/*/rulebooks/**/*.json` by script, then
+  migrating the kept rulebooks by script, through `putRevision` and
+  `saveSet`, then `pnpm rulebooks:export` for `fixtures/` and
   `pnpm fixtures:e2e` for the browser tests' copies.
 - **A check is a shape, never a model-written formula.** The model fills one
   of the shapes in `shape-schema.ts`; `shapes.ts` writes the formula and the
@@ -186,24 +187,36 @@ placeholders such as `values.<id>`, because a real example steers the model.
   exception is `lib/definitions/limits.ts`, which reaches the database through
   `server/storage/model-limits.ts`. Vitest aliases `server-only` to an empty
   module.
-- **Where things are kept.** What a person approves is reviewed in git:
-  `fixtures/<process>/rulebooks/<version>-<instructions hash>/`, holding
-  `current.json` (the rulebook under review), `<rulebook id>.json` (each
-  accepted revision, never rewritten) and `revisions.json` (each revision's
-  parent and reason, and the head). A migration of an accepted rulebook
-  makes a new revision through `putRevision` with reason `migrated`; it never
-  rewrites one. What runs produce is not: runs (and the instruction versions
-  they run under), each decision on a record as an event, runs' reads, a
-  source's reads, proposals, cross-checks and their partial answers, job progress (drafts
-  and proposals), the record of each write to a sheet, each model request
-  and the learned model limits are in the database
+- **Where things are kept.** Everything is in the database
   (`docs/engineering/DATABASE.md`): PGlite under `data/pglite/` with no
-  `DATABASE_URL`. Nothing a run produces is kept in `data/` any more;
+  `DATABASE_URL`. Rulebooks and data profiles are read and written only
+  through `server/storage/rulebooks.ts`: per instructions version the
+  rulebook under review, each accepted revision (written once, by its
+  fingerprint) and the head, and each act on a rule as a `rule_decisions`
+  row. What a person approves is still reviewed in git:
+  `fixtures/<process>/rulebooks/<version>-<instructions hash>/` (`current.json`,
+  `<rulebook id>.json`, `revisions.json`) and `fixtures/<process>/profile/`
+  seed a database that lacks them on first need (inserting what it lacks,
+  never overwriting what it holds), and `pnpm rulebooks:export` writes the
+  database's state back to them byte for byte; commit what it changes. Never
+  edit those files by hand: seeding refuses a file whose id is not its body
+  or that is not written as the export writes it. A migration of an
+  accepted rulebook makes a new revision through `putRevision` with reason
+  `migrated`, then the export; it never rewrites one. Runs (and the
+  instruction versions they run under), each decision on a record as an
+  event, runs' reads, a source's reads, proposals, cross-checks and their
+  partial answers, job progress (drafts and proposals), the record of each
+  write to a sheet, each model request and the learned model limits are in
+  the database only. Nothing a run produces is kept in `data/` any more;
   `pnpm db:import` copies the files an older checkout kept there.
   A test that keeps rows uses `inScratchDatabase()` (`inScratchStorage()`
-  where it also needs a scratch directory); the database is emptied before
-  each test, not made again. The browser tests' server runs on PGlite in
-  `data/pglite-e2e/` whatever `.env.local` says (`playwright.config.ts`).
+  where it also needs a scratch directory, which is also where seeding looks
+  for `fixtures/`, so a test that keeps rules starts empty); the database is
+  emptied before each test, not made again. A test keeping rules keeps its
+  instructions first (`keepText`, `findKept` in `lib/definitions/set.fixture.ts`).
+  The browser tests' server runs on PGlite in `data/pglite-e2e/` whatever
+  `.env.local` says (`playwright.config.ts`), seeded from `fixtures/` as its
+  first request needs.
   `e2e/fixtures/` are frozen copies, held to the engine by
   `lib/definitions/e2e-fixtures.test.ts`. A browser test that starts a run does
   so on that same database, which every test shares, so it selects its runs by
