@@ -129,10 +129,7 @@ type Fixtures = {
 
 // Reads and checks everything fixtures/ holds for a process, naming the
 // first file that is wrong.
-export async function readFixtures(
-  root: string,
-  process: string,
-): Promise<Fixtures> {
+async function readFixtures(root: string, process: string): Promise<Fixtures> {
   const base = path.join(root, process);
   const name = (...parts: string[]) =>
     path.relative(path.dirname(root), path.join(base, ...parts));

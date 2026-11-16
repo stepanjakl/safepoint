@@ -14,6 +14,7 @@ import {
 import type { Database } from '@/server/db/client';
 import { keepProposal } from '@/server/storage/proposals';
 import { keepStandInRead } from '@/server/storage/reads.fixture';
+import { putRevision } from '@/server/storage/rulebooks';
 
 import { accepted, caller, keepAsCurrent } from './run.fixture';
 
@@ -121,6 +122,9 @@ export async function startedRun(
     process,
     instructions: hashOf(text),
   });
+  // A run pins a kept revision, as Calculate keeps the one it used.
+  if (process === 'brunch-orders')
+    await putRevision(owner, rulesSet, { reason: 'used' });
   await caller().runs.record({
     process,
     runId: run.id,

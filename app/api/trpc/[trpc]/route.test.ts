@@ -4,7 +4,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { inScratchStorage } from '@/lib/definitions/scratch.fixture';
-import { TEXT } from '@/lib/definitions/set.fixture';
+import { keepText, TEXT } from '@/lib/definitions/set.fixture';
 import { hashOf } from '@/lib/definitions/fingerprint';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { readWholeSheet } from '@/lib/sheets/composio';
@@ -72,6 +72,7 @@ describe('/api/trpc', () => {
   it('answers a query whose input is as long as the schema allows', async () => {
     // Far past what a URL carries: the instructions a run answers to.
     const text = 'x'.repeat(20_000);
+    await keepText(text);
     await keepAsCurrent({ ...accepted, hash: hashOf(text) });
     const { status, body } = await answer(
       await query('calculate.get', { text, readId: 'test' }),

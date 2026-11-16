@@ -135,6 +135,7 @@ async function arrange(
     instructions: version.hash,
   });
   const run = { process: 'brunch-orders' as const, runId: started.id };
+  await putRevision(owner, set, { reason: 'accepted' });
   await caller().runs.record({ ...run, readId, rulebook: fingerprint });
   await caller().decisions.recordMany({
     ...run,
