@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 
 import type { ModelRunView } from '@/components/app-shell/thread/model-run-thread';
+import { madeNow } from '@/components/brunch-orders/propose/made-now';
 import type { Decision } from '@/components/brunch-orders/propose/types';
 import { blockFor, writesOf } from '@/lib/definitions/apply';
 import { capturedTabs } from '@/lib/definitions/captured.fixture';
@@ -48,23 +49,22 @@ const at = (seconds: number) =>
 
 // Part way through the review: the first few approved.
 const someDecided: Record<string, Decision> = Object.fromEntries(
-  keys.slice(0, 4).map((key) => [key, { kind: 'approve', at: AT }]),
+  keys.slice(0, 4).map((key) => [key, madeNow('approve', AT)]),
 );
 // Everything decided, one of each kind, so the approval shows all three.
 const allDecided: Record<string, Decision> = Object.fromEntries(
   keys.map((key, index) => [
     key,
     index === 1
-      ? {
-          kind: 'change',
+      ? madeNow('change', AT, {
           values: {
             order: Math.max(0, (proposal.records[key]?.values?.order ?? 0) - 2),
           },
-          at: AT,
-        }
+          checked: { verdict: 'ready', checks: [] },
+        })
       : index === 5
-        ? { kind: 'reject', at: AT }
-        : { kind: 'approve', at: AT },
+        ? madeNow('reject', AT)
+        : madeNow('approve', AT),
   ]),
 );
 
@@ -80,7 +80,16 @@ const read = {
 const needYou = Object.values(proposal.records).filter(
   (record) => record.verdict === 'decide' || record.verdict === 'blocked',
 ).length;
-const writes = writesOf(proposal, allDecided);
+// What the write takes of a decision: what was decided, and when.
+const writes = writesOf(
+  proposal,
+  Object.fromEntries(
+    Object.entries(allDecided).map(([key, { kind, values, at }]) => [
+      key,
+      { kind, ...(values ? { values } : {}), at },
+    ]),
+  ),
+);
 // Last weekend's orders, as the Orders tab holds them before this run writes.
 const lastWeekend = [
   ['sku', 'order'],

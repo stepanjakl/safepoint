@@ -68,9 +68,10 @@ function DirectThread({
   const read = taken && taken.id !== kept.readId ? taken : saved.read;
   const readId = read?.id ?? kept.readId;
   const unfit = Boolean(read?.problems?.length);
-  // The model proposes only on a read that fits: it is judged from the read's
-  // own summary, so nothing is proposed while it is still being loaded.
-  const canPropose = read !== undefined && !unfit;
+  // The model proposes only on a read that fits, judged from the read's own
+  // summary, and once the server has it as the run's: that is what a decision
+  // is kept under.
+  const canPropose = read !== undefined && !unfit && kept.readId === read.id;
   const decidedCount = proposed ? Object.keys(proposed.decisions).length : 0;
   const allDecided =
     proposed?.proposedAt != null &&
@@ -183,7 +184,7 @@ function DirectThread({
                   evaluation="model"
                   text={text}
                   readId={read.id}
-                  progress={proposed}
+                  run={{ process: 'brunch-orders-direct', runId: kept.id }}
                   onProgress={setProposed}
                 />
               </ResponseSection>

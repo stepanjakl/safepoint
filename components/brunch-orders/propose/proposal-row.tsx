@@ -28,6 +28,7 @@ import type {
   Verdict,
 } from '@/lib/definitions/types';
 
+import { madeNow } from './made-now';
 import type { Calculated, Decision, ProposalField, CheckReply } from './types';
 import { VERDICT } from './verdict';
 
@@ -203,13 +204,10 @@ export function ProposalRow({
                     onPress={() => {
                       onDecide(
                         {
-                          [key]: {
-                            kind: 'change',
+                          [key]: madeNow('change', now(), {
                             values: changing,
-                            verdict: checked!.verdict,
-                            checks: checked!.checks,
-                            at: now(),
-                          },
+                            checked: checked!,
+                          }),
                         },
                         `${key} changed to ${valuesWords(changing, fields)}`,
                       );
@@ -273,7 +271,7 @@ export function ProposalRow({
                     isDisabled={record.verdict === 'blocked'}
                     onPress={() =>
                       onDecide(
-                        { [key]: { kind: 'approve', at: now() } },
+                        { [key]: madeNow('approve', now()) },
                         `${key} approved`,
                       )
                     }
@@ -300,7 +298,7 @@ export function ProposalRow({
                       : { children: 'Reject' })}
                     onPress={() =>
                       onDecide(
-                        { [key]: { kind: 'reject', at: now() } },
+                        { [key]: madeNow('reject', now()) },
                         `${key} rejected`,
                       )
                     }

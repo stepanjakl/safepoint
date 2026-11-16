@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import type { Calculation } from '@/lib/definitions/calculate';
 import {
@@ -13,6 +13,7 @@ import {
   type Verdict,
 } from '@/lib/definitions/types';
 
+import { mockDecisions } from './kept-decisions';
 import { rulesReply } from './rules';
 import { mockProcedure } from './trpc';
 
@@ -39,6 +40,7 @@ const frozen = fixture('brunch-orders-proposal.json') as {
   trials: Record<string, Record<string, unknown>>;
 };
 
+let decisions: Awaited<ReturnType<typeof mockDecisions>>;
 let lastChanges: CellChange[] = [];
 let written: Application | null = null;
 const applicationOf = (changes: CellChange[]): Application => ({
@@ -120,6 +122,14 @@ test.beforeEach(async ({ page }) => {
   };
   await mockProcedure(page, 'propose.get', proposed);
   await mockProcedure(page, 'propose.start', proposed);
+  // The decisions are the server's: served here as it answers them.
+  decisions = await mockDecisions(
+    page,
+    frozen.proposal,
+    (key, values) =>
+      frozen.trials[key]?.[String(values.order)] as
+        { verdict: Verdict; checks: CheckVerdict[] } | undefined,
+  );
   await mockProcedure(page, 'propose.check', ({ key, values }) => ({
     data: {
       kind: 'check',
@@ -336,6 +346,73 @@ test('the filter shows only what needs a person', async ({ page }) => {
     /SD-01/,
     /AV-RR/,
     /CF-40/,
+  ]);
+});
+
+const approveRow = (table: Locator, key: RegExp) =>
+  table
+    .getByRole('row', { name: key })
+    .getByRole('button', { name: /^Approve$/ });
+
+test('a decision shows at once, and counts as decided once the server has kept it', async ({
+  page,
+}) => {
+  const table = await propose(page);
+  // The server is slow to answer the next decision.
+  const release = decisions.hold();
+  const row = table.getByRole('row', { name: /^AV-RR/ });
+  await approveRow(table, /^AV-RR/).click();
+  // The row shows it at once; the step's count waits for the server.
+  await expect(row.getByText('Approved', { exact: true })).toBeVisible();
+  await expect(row.getByRole('button', { name: 'Undo' })).toBeVisible();
+  await expect(thread(page).getByText('1 of 11 decided')).toHaveCount(0);
+  release();
+  await expect(
+    thread(page).getByText('1 of 11 decided').first(),
+  ).toBeAttached();
+});
+
+test('a decision the server refuses is taken back and said where the step speaks', async ({
+  page,
+}) => {
+  const table = await propose(page);
+  decisions.refuseWith(
+    'These decisions were made on an earlier proposal. Decide on the current one.',
+  );
+  const row = table.getByRole('row', { name: /^AV-RR/ });
+  await approveRow(table, /^AV-RR/).click();
+  await expect(
+    page.getByRole('alert').filter({ hasText: 'made on an earlier proposal' }),
+  ).toBeVisible();
+  // Not shown as decided: the record is as the server holds it.
+  await expect(row.getByRole('button', { name: /^Approve$/ })).toBeVisible();
+  await expect(row.getByText('Approved', { exact: true })).toHaveCount(0);
+  await expect(
+    thread(page).getByText('11 proposed · 3 need you').first(),
+  ).toBeAttached();
+});
+
+test('decisions are kept: a reload finds them, and undoing one takes it back', async ({
+  page,
+}) => {
+  const table = await propose(page);
+  await page.getByRole('button', { name: /^Approve all 8 ready/ }).click();
+  await expect(
+    thread(page).getByText('8 of 11 decided').first(),
+  ).toBeAttached();
+  await page.reload();
+  await expect(table).toBeVisible({ timeout: 30_000 });
+  await expect(
+    thread(page).getByText('8 of 11 decided').first(),
+  ).toBeAttached();
+  const first = table.getByRole('row', { name: /^FT-200/ });
+  await first.getByRole('button', { name: 'Undo' }).click();
+  await expect(
+    thread(page).getByText('7 of 11 decided').first(),
+  ).toBeAttached();
+  expect(decisions.requests.map((r) => r.path)).toEqual([
+    'recordMany',
+    'withdraw',
   ]);
 });
 

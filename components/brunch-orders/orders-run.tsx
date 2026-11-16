@@ -344,7 +344,7 @@ function OrdersThread({
                   text={text}
                   readId={read.id}
                   rulebook={pinned}
-                  progress={proposed}
+                  run={{ process: 'brunch-orders', runId: kept.id }}
                   onProgress={setProposed}
                   // Back to Calculate once the server has let go of the pin.
                   onMoveRules={() =>

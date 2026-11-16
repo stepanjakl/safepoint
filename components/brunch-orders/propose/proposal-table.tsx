@@ -19,6 +19,7 @@ import { DURATION_STATE } from '@/lib/motion';
 import type { Proposal } from '@/lib/definitions/types';
 import { sourceTermsOf, type SourceKind } from '@/lib/sources/model';
 
+import { madeNow } from './made-now';
 import { PresentRow, ProposalRow } from './proposal-row';
 import type { Calculated, Decision, ProposalField, CheckReply } from './types';
 import { VERDICT, needsPerson } from './verdict';
@@ -237,10 +238,7 @@ export function ProposalTable({
                         const at = new Date().toISOString();
                         onDecide(
                           Object.fromEntries(
-                            ready.map(([key]) => [
-                              key,
-                              { kind: 'approve', at },
-                            ]),
+                            ready.map(([key]) => [key, madeNow('approve', at)]),
                           ),
                           `${ready.length} ${unchecked ? 'not checked' : 'ready'} approved`,
                         );

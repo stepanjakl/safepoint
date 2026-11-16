@@ -2,7 +2,8 @@ import 'server-only';
 
 import { valueProblems } from '@/lib/definitions/apply';
 import { fingerprintOf, noRules } from '@/lib/definitions/fingerprint';
-import { asReviewed, checkProposal } from '@/lib/definitions/propose';
+import { checkProposal } from '@/lib/definitions/propose';
+import { asReviewed } from '@/lib/definitions/reviewed';
 import type { KeptRead } from '@/lib/definitions/records';
 import type {
   DefinitionProcess,

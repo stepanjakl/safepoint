@@ -1,14 +1,16 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { ModelLimits } from '@/components/brunch-orders/model-limits';
 import { ModelSelect } from '@/components/brunch-orders/rules/model-select';
 import { StaleRules } from '@/components/brunch-orders/stale-rules';
 import { Lede } from '@/components/brunch-orders/trial-parts';
+import type { RunProcessId } from '@/components/app-shell/runs/kept-runs';
 import { useTRPC } from '@/components/trpc/provider';
 import { Button } from '@/components/ui/button';
+import { asReviewed as reviewed } from '@/lib/definitions/reviewed';
 import type { Proposal } from '@/lib/definitions/types';
 import type { DefinitionSubject } from '@/lib/process/model';
 import { DRAFTING_MODELS, type DraftingModel } from '@/lib/models';
@@ -16,6 +18,8 @@ import { DRAFTING_MODELS, type DraftingModel } from '@/lib/models';
 import { ProposalTable } from './proposal-table';
 import type {
   Decision,
+  DecidedReply,
+  DecisionsReply,
   Evaluation,
   CheckReply,
   ProposalReply,
@@ -24,6 +28,13 @@ import type {
 import { needsPerson } from './verdict';
 
 const POLL_MS = 2000;
+const NO_DECISIONS: Record<string, Decision> = {};
+
+// A decision as the server is asked to keep it.
+const askedOf = (key: string, decision: Decision) =>
+  decision.kind === 'change'
+    ? { key, kind: 'change' as const, values: decision.values ?? {} }
+    : { key, kind: decision.kind };
 
 /*
   Propose: for every record, the values the model would set, why, and how the
@@ -34,6 +45,14 @@ const POLL_MS = 2000;
   With evaluation `model` there is no rulebook and nothing to set up: the
   model proposes as soon as the step opens, and a record it is unsure of asks
   for a person, since no check can.
+
+  The decisions are the server's (`decisions.*`), kept per record on the run.
+  A decision shows at once, so a person deciding record after record is never
+  made to wait, and is taken back if the server refuses it: its refusal is said
+  where this step speaks, and the record is as the server holds it. Requests
+  go one after another, so the server's answers arrive in the order they were
+  asked, and what the step reports as decided (which gates the write) is only
+  ever what the server holds.
 */
 export function ProposeStep({
   subject,
@@ -41,7 +60,7 @@ export function ProposeStep({
   readId,
   rulebook,
   evaluation = 'rules',
-  progress: kept,
+  run: kept,
   onProgress,
   onMoveRules,
 }: {
@@ -52,7 +71,8 @@ export function ProposeStep({
   // The rulebook this run calculated on; with no rulebook, none.
   rulebook?: string;
   evaluation?: Evaluation;
-  progress: ProposeProgress | undefined;
+  // The run these decisions are kept on, by the id the server gave it.
+  run: { process: RunProcessId; runId: string };
   onProgress: (progress: ProposeProgress) => void;
   // Back to Calculate, on the current rules, when these no longer fit.
   onMoveRules?: () => void;
@@ -66,6 +86,7 @@ export function ProposeStep({
   });
   const [model, setModel] = useState<DraftingModel>(DRAFTING_MODELS[0]!);
   const run = { text, readId, rulebook, evaluation };
+  const decidedOn = { process: kept.process, runId: kept.runId };
   // Asked once per read and rulebook, and again every POLL_MS while the job
   // runs, even after a failed poll: a failed request says nothing about it.
   // Asked afresh each time the step opens, since the job may have moved on.
@@ -121,9 +142,60 @@ export function ProposeStep({
   const stale = notice?.stale ?? (answer?.kind === 'stale' ? answer : null);
   // Nothing is proposed on values a check has not yet answered for.
   const busy = start.isPending || asked.isFetching || checking > 0;
+
+  // What the server holds of the decisions, asked afresh each time the step
+  // opens. A decision answers into it, as a proposal answers into its own.
+  const decidedQuery = trpc.decisions.current.queryOptions(decidedOn, {
+    staleTime: 0,
+  });
+  const decidedAsked = useQuery(decidedQuery);
+  // An answer just given shows from the moment it lands, ahead of the query's
+  // own notice of it, so a row is never drawn undecided in between.
+  const [landed, setLanded] = useState<{
+    at: number;
+    answer: DecisionsReply;
+  } | null>(null);
+  const held: DecisionsReply | null =
+    landed && landed.at > decidedAsked.dataUpdatedAt
+      ? landed.answer
+      : (decidedAsked.data ?? null);
   // Decisions belong to the proposal they were made on.
-  const decisions =
-    kept && proposal && kept.proposedAt === proposal.at ? kept.decisions : {};
+  const heldOn = (at: string | undefined | null) =>
+    at && held?.proposal?.at === at ? held.decisions : NO_DECISIONS;
+  const heldNow = heldOn(proposal?.at);
+  // A proposal the decisions are not on yet (a new one was made): asked again,
+  // once for each, which is what says there are none on it.
+  const refreshed = useRef(new Set<string>());
+  useEffect(() => {
+    const at = proposal?.at;
+    if (!at || !decidedAsked.data || decidedAsked.isFetching) return;
+    if (decidedAsked.data.proposal?.at === at || refreshed.current.has(at))
+      return;
+    refreshed.current.add(at);
+    void queryClient.invalidateQueries({ queryKey: decidedQuery.queryKey });
+  }, [proposal?.at, decidedAsked, decidedQuery.queryKey, queryClient]);
+
+  // Decisions made and not yet answered, over what the server holds: a
+  // decision, or null for one taken back. Each is its request's, so a later
+  // press on the same record is not undone by an earlier answer.
+  const [pending, setPending] = useState<
+    Record<string, { decision: Decision | null; request: number }>
+  >({});
+  const requests = useRef(0);
+  const decisions = useMemo(() => {
+    const next = { ...heldNow };
+    for (const [key, { decision }] of Object.entries(pending))
+      if (decision) next[key] = decision;
+      else delete next[key];
+    return next;
+  }, [heldNow, pending]);
+  // One after another: each answer says what the server holds after it.
+  const scope = { scope: { id: `decisions:${kept.runId}` } };
+  const record = useMutation(trpc.decisions.record.mutationOptions(scope));
+  const recordMany = useMutation(
+    trpc.decisions.recordMany.mutationOptions(scope),
+  );
+  const withdraw = useMutation(trpc.decisions.withdraw.mutationOptions(scope));
 
   const progressOf = (
     next: Record<string, Decision>,
@@ -150,19 +222,19 @@ export function ProposeStep({
       decisions: next,
     };
   };
-  // Each answer is reported once, held to the decisions kept now.
+  // Each answer is reported, held to the decisions the server holds: never a
+  // decision still being asked, so "all decided" is what is kept.
   useEffect(() => {
     if (answer?.kind !== 'proposal') return;
-    const same = kept?.proposedAt && answer.proposal?.at === kept.proposedAt;
     report.current(
       progressOf(
-        same ? kept.decisions : {},
+        heldOn(answer.proposal?.at),
         asReviewed(answer.proposal, evaluation),
         answer.progress?.running ?? false,
       ),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [answer]);
+  }, [answer, held]);
 
   // Automatic: proposes once, when nothing is kept, running or failed.
   const proposed = useRef(false);
@@ -181,14 +253,65 @@ export function ProposeStep({
   }, [automatic, answer]);
 
   const [announced, setAnnounced] = useState('');
-  // Several at once where a person decides several (approve all ready).
+  // Several at once where a person decides several (approve all ready). They
+  // show at once; the server's answer lands in the query, or the refusal is
+  // said and they are taken back.
   const decide = (changes: Record<string, Decision | null>, words: string) => {
-    const next = { ...decisions };
-    for (const [key, decision] of Object.entries(changes))
-      if (decision) next[key] = decision;
-      else delete next[key];
-    onProgress(progressOf(next));
+    if (!proposal) return;
+    const mine = ++requests.current;
+    const entries = Object.entries(changes);
+    setPending((now) => ({
+      ...now,
+      ...Object.fromEntries(
+        entries.map(([key, decision]) => [key, { decision, request: mine }]),
+      ),
+    }));
     setAnnounced(words);
+    const on = { ...decidedOn, proposedAt: proposal.at };
+    const sets = entries.flatMap(([key, decision]) =>
+      decision ? [askedOf(key, decision)] : [],
+    );
+    const asking: Promise<DecidedReply>[] = [
+      ...(sets.length > 1
+        ? [recordMany.mutateAsync({ ...on, decisions: sets })]
+        : sets.length === 1
+          ? [record.mutateAsync({ ...on, decision: sets[0]! })]
+          : []),
+      ...entries.flatMap(([key, decision]) =>
+        decision ? [] : [withdraw.mutateAsync({ ...on, key })],
+      ),
+    ];
+    let refused: Parameters<typeof speak>[0] = null;
+    void Promise.allSettled(
+      asking.map((request) =>
+        request.then((reply) => {
+          if (reply.kind === 'stale') refused ??= { stale: reply };
+          else {
+            setLanded({ at: Date.now(), answer: reply });
+            queryClient.setQueryData(decidedQuery.queryKey, reply);
+          }
+        }),
+      ),
+    ).then((results) => {
+      const failed = results.find((result) => result.status === 'rejected');
+      if (failed)
+        refused ??= {
+          error:
+            failed.reason instanceof Error
+              ? failed.reason.message
+              : 'The request failed.',
+        };
+      // Whatever was not kept goes back to how the server holds it.
+      setPending((now) =>
+        Object.fromEntries(
+          Object.entries(now).filter(([, one]) => one.request !== mine),
+        ),
+      );
+      if (refused) {
+        speak(refused);
+        void queryClient.invalidateQueries({ queryKey: decidedQuery.queryKey });
+      }
+    });
   };
   const [confirming, setConfirming] = useState(false);
   const hasDecisions = Object.keys(decisions).length > 0;
@@ -230,6 +353,7 @@ export function ProposeStep({
       notice?.error ??
       start.error?.message ??
       asked.error?.message ??
+      decidedAsked.error?.message ??
       (!running ? (shown?.progress?.error ?? null) : null);
     return (
       <div className="grid gap-4">
@@ -271,9 +395,13 @@ export function ProposeStep({
       </Lede>
       {stale && onMoveRules ? (
         <StaleRules stale={stale} onMove={onMoveRules} />
-      ) : (notice?.error ?? start.error ?? asked.error) ? (
+      ) : (notice?.error ??
+        start.error ??
+        asked.error ??
+        decidedAsked.error) ? (
         <p role="alert" className="text-dense text-state-blocked">
-          {notice?.error ?? (start.error ?? asked.error)?.message}
+          {notice?.error ??
+            (start.error ?? asked.error ?? decidedAsked.error)?.message}
         </p>
       ) : null}
       {/* Scaffolding for trying the step, as the other steps' setups are. */}
@@ -336,7 +464,7 @@ export function ProposeStep({
 }
 
 // With no rulebook, a record the model is unsure of is one a person decides:
-// no check can say so instead.
+// no check can say so instead (the server judges a decision by the same rule).
 function asReviewed(
   proposal: Proposal | null,
   evaluation: Evaluation,
@@ -347,9 +475,7 @@ function asReviewed(
     records: Object.fromEntries(
       Object.entries(proposal.records).map(([key, record]) => [
         key,
-        record.unsure && !needsPerson(record.verdict)
-          ? { ...record, verdict: 'decide' as const }
-          : record,
+        reviewed(record, evaluation),
       ]),
     ),
   };
