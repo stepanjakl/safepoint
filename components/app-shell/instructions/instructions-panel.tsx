@@ -312,7 +312,8 @@ export function InstructionEditor({
   onDone,
 }: {
   process: ProcessSummary;
-  onDone: () => void;
+  // Done with the editor: opens the version it names, or closes it.
+  onDone: (version?: string) => void;
 }) {
   const store = useInstructions(process.id, process.instructions);
   const { current, next, draft } = store;
@@ -320,6 +321,8 @@ export function InstructionEditor({
   const [confirming, setConfirming] = useState(false);
   const [note, setNote] = useState('');
   const [publishing, setPublishing] = useState(false);
+  // The version the text already was, where publishing it made none.
+  const [already, setAlready] = useState<string | null>(null);
   // Changed since the writer last came into the field: what "Saved" answers.
   // Leaving the field ends it, so the next visit says it afresh.
   const [edited, setEdited] = useState(false);
@@ -339,9 +342,18 @@ export function InstructionEditor({
     setConfirming(false);
     setStep('review');
   };
+  // Waited for, not shown at once: the server names the version, and says so
+  // where the text is one it already keeps.
   const publish = () => {
-    store.publish(normalised, note.trim() || null);
-    onDone();
+    if (store.publishing) return;
+    store.publish(normalised, note.trim() || null).then(
+      ({ version, created }) => {
+        setPublishing(false);
+        if (created) onDone();
+        else setAlready(version.version);
+      },
+      () => undefined,
+    );
   };
   // ⌘↵ moves on wherever focus is, the field included -- it is where a writer
   // is when they finish -- and even where a swap left it on the page. Inside
@@ -407,8 +419,13 @@ export function InstructionEditor({
         note={note}
         onNote={setNote}
         isOpen={publishing}
-        onOpenChange={(open) => setPublishing(open && mode === 'review')}
+        onOpenChange={(open) => {
+          setPublishing(open && mode === 'review');
+          if (open) store.resetPublish();
+        }}
         onPublish={publish}
+        working={store.publishing}
+        failure={store.publishError}
       >
         <Tooltip
           label="No changes yet"
@@ -466,11 +483,28 @@ export function InstructionEditor({
         {body.shown === 'review' ? (
           // Focus lands on the comparison, where the reviewer reads next.
           <div
-            className="p-5 outline-none"
+            className="grid gap-4 p-5 outline-none"
             tabIndex={-1}
             ref={focusInPlace}
             aria-label={`Changes from ${current.version}, review`}
           >
+            {already ? (
+              <div className="flex flex-wrap items-center gap-3">
+                <p role="status" className="text-dense">
+                  That is {already}. These instructions are already published,
+                  so no new version was made.
+                </p>
+                <Button
+                  size="small"
+                  onPress={() => {
+                    store.discardDraft();
+                    onDone(already);
+                  }}
+                >
+                  Open {already}
+                </Button>
+              </div>
+            ) : null}
             <TextDiff
               before={current.text}
               after={normalised}
@@ -513,6 +547,8 @@ function PublishNote({
   isOpen,
   onOpenChange,
   onPublish,
+  working,
+  failure,
   children,
 }: {
   version: string;
@@ -521,6 +557,10 @@ function PublishNote({
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onPublish: () => void;
+  // Waiting for the server: pressing again does nothing, and focus stays.
+  working: boolean;
+  // What the server said where it would not publish.
+  failure: string | null;
   // The band's primary button, which opens this in the review.
   children: ReactNode;
 }) {
@@ -558,9 +598,22 @@ function PublishNote({
                 className={cx(FIELD, 'text-dense min-h-20 px-3 py-2.5')}
               />
             </label>
+            {failure ? (
+              <p role="alert" className="text-meta text-state-blocked">
+                {failure}
+              </p>
+            ) : null}
             <div className="border-rule-faint border-t-section -mx-4 -mb-4 flex justify-end px-4 py-3">
-              <Button size="small" variant="primary" onPress={onPublish}>
-                Publish {version}
+              <Button
+                size="small"
+                variant="primary"
+                aria-disabled={working || undefined}
+                onPress={onPublish}
+              >
+                <MorphingText
+                  text={working ? 'Publishing…' : `Publish ${version}`}
+                  duration={MORPH_WORDS_MS}
+                />
                 <KeyHint
                   keys={['mod', 'enter']}
                   on="button-primary"

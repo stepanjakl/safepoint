@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
+import { mockPromotionInstructions } from './kept-instructions';
+
 /* The sheet's Instructions, Inputs and Outputs tabs, and the detail drawer
    their rows open. Focus is asserted at every close: the drawer hands it
    back to whatever opened it, and a swap keeps the original opener. */
@@ -122,18 +124,19 @@ test('instructions open their latest version beside the list of versions', async
 test('review numbers follow the draft while removed paragraphs keep their original numbers', async ({
   page,
 }) => {
+  // v5 is already published (served as the server would list it); the draft
+  // is the browser's own.
+  await mockPromotionInstructions(page, [
+    {
+      text: 'Keep the first paragraph.\n\nDelete this obsolete paragraph.\n\nKeep this middle anchor.\n\nKeep the final paragraph.',
+      publishedAt: '2026-11-07T10:00:00Z',
+    },
+  ]);
   await page.addInitScript(() => {
     localStorage.setItem(
-      'safepoint.instructions.v2',
+      'safepoint.instructions.v3',
       JSON.stringify({
         'promotion-release': {
-          published: [
-            {
-              text: 'Keep the first paragraph.\n\nDelete this obsolete paragraph.\n\nKeep this middle anchor.\n\nKeep the final paragraph.',
-              publishedAt: '2026-11-07T10:00:00Z',
-              note: null,
-            },
-          ],
           draft:
             'Add a fresh introduction.\n\nKeep the first paragraph.\n\nKeep this middle anchor.\n\nKeep the final paragraph updated.',
         },

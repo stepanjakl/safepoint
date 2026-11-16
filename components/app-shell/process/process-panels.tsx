@@ -268,7 +268,14 @@ export function ProcessPanels({
           headless: true,
           focusOnOpen: false,
           body: (
-            <InstructionEditor process={process} onDone={() => closeAside()} />
+            <InstructionEditor
+              process={process}
+              onDone={(version) =>
+                version
+                  ? openAside({ kind: 'version', version, face: 'text' })
+                  : closeAside()
+              }
+            />
           ),
         };
     }

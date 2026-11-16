@@ -2,6 +2,9 @@ import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { definitionSetSchema } from '@/lib/definitions/types';
 
+import { brunchOrdersProcess } from '@/lib/processes/brunch-orders/process';
+
+import { listedInstructions } from './kept-instructions';
 import { noRules, rulesReply } from './rules';
 import { mockProcedure } from './trpc';
 
@@ -142,6 +145,7 @@ test('Rules keeps the retained result while it refreshes newly accepted rules', 
 test('changed instructions never show the previous version’s retained rules', async ({
   page,
 }) => {
+  const text = 'Changed instructions for this regression.';
   let changed = false;
   let releaseRefresh: (() => void) | undefined;
   const refreshed = new Promise<void>((resolve) => {
@@ -151,29 +155,39 @@ test('changed instructions never show the previous version’s retained rules', 
     if (changed) await refreshed;
     return { data: changed ? noRules() : rulebook };
   });
+  // The publish is served, as the server would answer it: the next label.
+  await mockProcedure(page, 'instructions.publish', () => ({
+    data: {
+      version: listedInstructions(brunchOrdersProcess, [
+        { text, publishedAt: '2026-10-14T10:00:00Z' },
+      ]).versions.at(-1)!,
+      created: true,
+    },
+  }));
   await page.goto('/examples/brunch-orders');
   await page.getByRole('button', { name: 'Rules', exact: true }).click();
   const list = page.getByRole('list', { name: 'Accepted rules' });
   await expect(list.locator('> li')).toHaveCount(accepted.definitions.length);
+
+  // Write and publish the next version from the Instructions tab.
+  await page
+    .getByRole('button', { name: /^Instructions/ })
+    .first()
+    .click();
+  await page.getByRole('button', { name: 'New version' }).click();
+  await page
+    .getByRole('textbox', { name: /^Instructions, draft of/ })
+    .fill(text);
+  await page.getByRole('button', { name: 'Review changes' }).click();
+  await page.getByRole('button', { name: 'Publish v4' }).click();
   changed = true;
-  await page.evaluate(() => {
-    localStorage.setItem(
-      'safepoint.instructions.v2',
-      JSON.stringify({
-        'brunch-orders': {
-          published: [
-            {
-              text: 'Changed instructions for this regression.',
-              publishedAt: '2026-10-14T10:00:00Z',
-              note: null,
-            },
-          ],
-          draft: null,
-        },
-      }),
-    );
-    window.dispatchEvent(new Event('safepoint:instructions'));
-  });
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Publish v4' })
+    .click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Rules', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('Loading the rulebook…');
   await expect(list).toHaveCount(0);
   releaseRefresh?.();
