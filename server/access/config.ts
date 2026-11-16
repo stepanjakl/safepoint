@@ -7,8 +7,8 @@ import 'server-only';
   configuration, and every caller refuses rather than fall open: a short
   password is guessable, and nothing throttles guesses.
 */
-export const MIN_ACCESS_KEY_LENGTH = 16;
-export const MIN_COOKIE_SECRET_LENGTH = 32;
+const MIN_ACCESS_KEY_LENGTH = 16;
+const MIN_COOKIE_SECRET_LENGTH = 32;
 
 export type AccessConfig = { accessKey: string; cookieSecret: string };
 

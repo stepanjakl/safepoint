@@ -15,7 +15,7 @@ import 'server-only';
 
 export const SESSION_COOKIE = 'safepoint-access';
 export const SESSION_LIFETIME_SECONDS = 30 * 24 * 60 * 60;
-export const NAME_MAX_LENGTH = 80;
+const NAME_MAX_LENGTH = 80;
 
 const VERSION = 1;
 // A clock a little ahead of the one that signed is not a forgery.
