@@ -22,7 +22,7 @@ export function StartRunButton() {
   // The tooltips of both buttons stand over the pill, not over their own icon.
   const pill = useRef<HTMLSpanElement>(null);
   if (!selection) return null;
-  const { start, cannotStart } = selection;
+  const { start, cannotStart, starting } = selection;
   return (
     <span
       ref={pill}
@@ -45,7 +45,7 @@ export function StartRunButton() {
         wash="none"
         leads
         unavailable={!start}
-        onPress={start ? () => start() : undefined}
+        onPress={start ? () => void start() : undefined}
       >
         <Play aria-hidden size={14} strokeWidth={1.8} />
       </HeadIconButton>
@@ -54,6 +54,9 @@ export function StartRunButton() {
         cannotStart={cannotStart}
         pill={pill}
       />
+      <span role="status" className="sr-only">
+        {starting ? 'Starting the run…' : ''}
+      </span>
     </span>
   );
 }
@@ -63,7 +66,7 @@ function InstructionsPopover({
   cannotStart,
   pill,
 }: {
-  start: ((instructions?: string) => void) | null;
+  start: ((instructions?: string) => Promise<boolean>) | null;
   cannotStart: string | null;
   pill: RefObject<HTMLSpanElement | null>;
 }) {
@@ -101,9 +104,12 @@ function InstructionsPopover({
               onSubmit={(event) => {
                 event.preventDefault();
                 const note = text.trim();
-                setText('');
                 close();
-                start?.(note);
+                // The note is kept until the run is: a refused start leaves
+                // it to try again.
+                void start?.(note).then((started) => {
+                  if (started) setText('');
+                });
               }}
             >
               <Heading

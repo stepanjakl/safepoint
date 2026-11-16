@@ -63,52 +63,61 @@ export function RunsList({
   );
 
   return (
-    <ol ref={strip} className="sheet-list edge-scroll">
-      {runs.map((run, index) => {
-        // The list runs newest first, so the run after this one in the array
-        // is the older one: a change between them is the moment the
-        // instructions or the rules moved.
-        const older = runs[index + 1];
-        const changes: Change[] = [];
-        if (older && older.instructionsVersion !== run.instructionsVersion)
-          changes.push({
-            kind: 'instructions',
-            from: older.instructionsVersion,
-            to: run.instructionsVersion,
-            on: published.get(run.instructionsVersion),
-            open:
-              onShowVersion && (() => onShowVersion(run.instructionsVersion)),
-          });
-        if (
-          older?.rulebookRevision &&
-          run.rulebookRevision &&
-          older.rulebookRevision !== run.rulebookRevision
-        )
-          changes.push({
-            kind: 'rules',
-            from: older.rulebookRevision,
-            to: run.rulebookRevision,
-            on: revised.get(run.rulebookRevision),
-            open: onShowRules,
-          });
-        return (
-          <li key={run.id}>
-            <RunRow
-              run={run}
-              noun={process.itemNoun}
-              selected={run.id === selection?.selected}
-              onSelect={selection ? () => selection.select(run.id) : undefined}
-            />
-            {changes.length ? (
-              <Boundary
-                changes={changes}
-                year={new Date(run.startedAt).getFullYear()}
+    <>
+      {selection?.startError ? (
+        <p role="alert" className="text-meta text-state-blocked px-4 py-3">
+          {selection.startError}
+        </p>
+      ) : null}
+      <ol ref={strip} className="sheet-list edge-scroll">
+        {runs.map((run, index) => {
+          // The list runs newest first, so the run after this one in the array
+          // is the older one: a change between them is the moment the
+          // instructions or the rules moved.
+          const older = runs[index + 1];
+          const changes: Change[] = [];
+          if (older && older.instructionsVersion !== run.instructionsVersion)
+            changes.push({
+              kind: 'instructions',
+              from: older.instructionsVersion,
+              to: run.instructionsVersion,
+              on: published.get(run.instructionsVersion),
+              open:
+                onShowVersion && (() => onShowVersion(run.instructionsVersion)),
+            });
+          if (
+            older?.rulebookRevision &&
+            run.rulebookRevision &&
+            older.rulebookRevision !== run.rulebookRevision
+          )
+            changes.push({
+              kind: 'rules',
+              from: older.rulebookRevision,
+              to: run.rulebookRevision,
+              on: revised.get(run.rulebookRevision),
+              open: onShowRules,
+            });
+          return (
+            <li key={run.id}>
+              <RunRow
+                run={run}
+                noun={process.itemNoun}
+                selected={run.id === selection?.selected}
+                onSelect={
+                  selection ? () => selection.select(run.id) : undefined
+                }
               />
-            ) : null}
-          </li>
-        );
-      })}
-    </ol>
+              {changes.length ? (
+                <Boundary
+                  changes={changes}
+                  year={new Date(run.startedAt).getFullYear()}
+                />
+              ) : null}
+            </li>
+          );
+        })}
+      </ol>
+    </>
   );
 }
 

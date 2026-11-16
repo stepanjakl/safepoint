@@ -3,7 +3,7 @@ import 'server-only';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
-import { recordsOf } from '@/lib/definitions/records';
+import { recordsOf, type KeptRead } from '@/lib/definitions/records';
 import { SUBJECT } from '@/lib/processes/brunch-orders/process';
 import { missingSheetEnv } from '@/lib/sheets/composio';
 import {
@@ -34,40 +34,51 @@ function requireSheetEnv() {
     });
 }
 
+// A kept read, or the refusal that says it is gone or cannot be read.
+async function keptOrRefuse(id: string) {
+  let kept;
+  try {
+    kept = await keptRead(id);
+  } catch (error) {
+    // A kept read that cannot be read is named, not hidden as gone.
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: said(error, 'The read cannot be read.'),
+      cause: error,
+    });
+  }
+  if (!kept) throw new TRPCError({ code: 'NOT_FOUND', message: READ_GONE });
+  return kept;
+}
+
+// What a card says of a read: when and where, its tabs and their rows, and
+// where the sheet does not fit what this process reads. No values.
+const summaryOf = (kept: KeptRead) => ({
+  id: kept.id,
+  readAt: kept.readAt,
+  source: kept.source,
+  spreadsheet: kept.spreadsheet,
+  tabs: kept.tabs.map((t) => ({ name: t.name, rows: t.values.length })),
+  problems: recordsOf(kept, SUBJECT.data).problems,
+});
+
 export const readRouter = router({
   get: gatedProcedure
     .input(z.strictObject({ id: z.string().max(80) }))
-    .query(async ({ input }) => {
-      let kept;
-      try {
-        kept = await keptRead(input.id);
-      } catch (error) {
-        // A kept read that cannot be read is named, not hidden as gone.
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: said(error, 'The read cannot be read.'),
-          cause: error,
-        });
-      }
-      if (!kept) throw new TRPCError({ code: 'NOT_FOUND', message: READ_GONE });
-      return kept;
-    }),
+    .query(({ input }) => keptOrRefuse(input.id)),
+
+  // `keep`'s answer for a read already kept, so a run that comes back to its
+  // read shows its card without loading every tab's values.
+  summary: gatedProcedure
+    .input(z.strictObject({ id: z.string().max(80) }))
+    .query(async ({ input }) => summaryOf(await keptOrRefuse(input.id))),
 
   keep: gatedProcedure
     .input(z.strictObject({ source: z.enum(['captured', 'live']) }))
     .mutation(async ({ input }) => {
       if (input.source === 'live') requireSheetEnv();
       try {
-        const kept = await readAndKeep(input.source);
-        return {
-          id: kept.id,
-          readAt: kept.readAt,
-          source: kept.source,
-          spreadsheet: kept.spreadsheet,
-          tabs: kept.tabs.map((t) => ({ name: t.name, rows: t.values.length })),
-          // Where the sheet does not fit what this process reads.
-          problems: recordsOf(kept, SUBJECT.data).problems,
-        };
+        return summaryOf(await readAndKeep(input.source));
       } catch (error) {
         throw new TRPCError({
           code: 'BAD_GATEWAY',

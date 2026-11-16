@@ -93,9 +93,9 @@ export function RunView({
       const at = live.run.startedAt;
       return (
         <ThreadPage label={`Run, ${runDay(at)} · ${runTime(at)}`}>
-          {typeof live.data.additionalInstructions === 'string' ? (
+          {live.kept.additionalInstructions ? (
             <RunInstructionsPreview
-              instructions={live.data.additionalInstructions}
+              instructions={live.kept.additionalInstructions}
             />
           ) : null}
           {liveThread}
@@ -171,7 +171,7 @@ function RunEmptyState({ note }: { note: string | null }) {
       )
         return;
       event.preventDefault();
-      start?.();
+      void start?.();
     }
     document.addEventListener('keydown', begin);
     return () => document.removeEventListener('keydown', begin);
@@ -222,7 +222,7 @@ function RunEmptyState({ note }: { note: string | null }) {
               variant="primary"
               size="medium"
               aria-keyshortcuts="Meta+Enter Control+Enter"
-              onPress={() => start()}
+              onPress={() => void start()}
             >
               Start run
               <KeyHint

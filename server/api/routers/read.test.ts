@@ -89,6 +89,20 @@ describe('read router', () => {
     );
   });
 
+  it('summarises a kept read by its id, without its values', async () => {
+    const kept = await caller().read.keep({ source: 'captured' });
+    const summary = await caller().read.summary({ id: kept.id });
+    expect(summary).toEqual(kept);
+    expect(JSON.stringify(summary)).not.toContain('"values"');
+    expect(await failure(caller().read.summary({ id: 'gone' }))).toEqual({
+      code: 'NOT_FOUND',
+      message: READ_GONE,
+    });
+    expect(
+      (await failure(caller().read.summary({ id: 'x'.repeat(81) }))).code,
+    ).toBe('BAD_REQUEST');
+  });
+
   it('keeps the captured read with no network', async () => {
     const kept = await caller().read.keep({ source: 'captured' });
     expect(kept.source).toMatch(/^Captured read/);

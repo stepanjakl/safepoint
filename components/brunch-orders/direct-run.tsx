@@ -3,16 +3,25 @@
 import { useContext, useState } from 'react';
 
 import { ProcessSheetActions } from '@/components/app-shell/process/process-sheet';
-import { useRunSelection } from '@/components/app-shell/runs/run-selection';
+import {
+  useRunSelection,
+  type LiveRun,
+  type RunSelection,
+} from '@/components/app-shell/runs/run-selection';
 import { ResponseSection } from '@/components/app-shell/thread/thread-page';
 import { ThreadStep } from '@/components/app-shell/thread/thread-step';
-import { Button } from '@/components/ui/button';
 import type { ProcessStep, ProcessSummary } from '@/lib/process/model';
 
 import { SUBJECT } from '@/lib/processes/brunch-orders/process';
 
 import { ApplyStep, type ApplyProgress } from './apply-step';
-import { Instructions, ReadStep, WithText, type RunRead } from './orders-run';
+import {
+  DiscardRun,
+  InstructionsText,
+  ReadStep,
+  useRunRead,
+  type RunRead,
+} from './orders-run';
 import { ProposeStep } from './propose/propose-step';
 import type { ProposeProgress } from './propose/types';
 
@@ -20,20 +29,47 @@ import type { ProposeProgress } from './propose/types';
   A Brunch orders run with no rulebook, as a person would meet it: it reads
   the live sheet as it starts and the model proposes from the instructions
   straight after, so the first thing asked of anyone is the review. Nothing is
-  written until they confirm it. Kept in this browser, as the rulebook run is.
+  written until they confirm it. The server keeps the run and its read, as it
+  does the rulebook run's.
 */
 export function DirectOrdersRun({ process }: { process: ProcessSummary }) {
   const selection = useRunSelection();
-  const sheet = useContext(ProcessSheetActions);
-  const [revealingReadId, setRevealingReadId] = useState<string | null>(null);
   const live = selection?.live;
   if (!live || !selection) return null;
-  const read = live.data.read as RunRead | undefined;
-  const proposed = live.data.propose as ProposeProgress | undefined;
-  const applied = live.data.apply as ApplyProgress | undefined;
-  const update = (data: Record<string, unknown>) =>
-    selection.updateLive(live.run.id, data);
+  // How far each step has got is held for this run alone.
+  return (
+    <DirectThread
+      key={live.run.id}
+      process={process}
+      live={live}
+      selection={selection}
+    />
+  );
+}
+
+function DirectThread({
+  process,
+  live,
+  selection,
+}: {
+  process: ProcessSummary;
+  live: LiveRun;
+  selection: RunSelection;
+}) {
+  const sheet = useContext(ProcessSheetActions);
+  const { kept, text } = live;
+  const [revealingReadId, setRevealingReadId] = useState<string | null>(null);
+  const [taken, setTaken] = useState<RunRead | null>(null);
+  const [proposed, setProposed] = useState<ProposeProgress>();
+  const [applied, setApplied] = useState<ApplyProgress>();
+  const saved = useRunRead(kept.readId);
+  // The read just taken shows at once, and goes if the server will not keep
+  // it as the run's; once kept, the server's summary is what is shown.
+  const read = taken && taken.id !== kept.readId ? taken : saved.read;
+  const readId = read?.id ?? kept.readId;
   const unfit = Boolean(read?.problems?.length);
+  // The model proposes only on a read that fits: it is judged from the read's
+  // own summary, so nothing is proposed while it is still being loaded.
   const canPropose = read !== undefined && !unfit;
   const decidedCount = proposed ? Object.keys(proposed.decisions).length : 0;
   const allDecided =
@@ -46,7 +82,7 @@ export function DirectOrdersRun({ process }: { process: ProcessSummary }) {
       case 'instructions':
         return 'complete';
       case 'read':
-        return !read ? 'running' : unfit ? 'blocked' : 'complete';
+        return !readId ? 'running' : unfit ? 'blocked' : 'complete';
       case 'propose':
         return !canPropose
           ? 'pending'
@@ -87,7 +123,7 @@ export function DirectOrdersRun({ process }: { process: ProcessSummary }) {
         : step.label;
   // The furthest step a person can act on.
   const latest =
-    !read || revealingReadId === read.id || unfit
+    !readId || revealingReadId === readId || unfit
       ? 'read'
       : !allDecided
         ? 'propose'
@@ -109,22 +145,21 @@ export function DirectOrdersRun({ process }: { process: ProcessSummary }) {
             headingAction={
               step.id === 'instructions' && sheet
                 ? {
-                    label: live.run.instructionsVersion,
+                    label: kept.instructions.version,
                     onPress: sheet.showInstructions,
                   }
                 : undefined
             }
           >
             {step.id === 'instructions' ? (
-              <Instructions
-                process={process}
-                version={live.run.instructionsVersion}
-              />
+              <InstructionsText text={text} />
             ) : step.id === 'read' ? (
               <ResponseSection>
                 <ReadStep
                   automatic
                   read={read}
+                  loadingRead={readId !== null && read === undefined}
+                  readError={saved.error}
                   revealing={revealingReadId === read?.id}
                   onRevealed={() => setRevealingReadId(null)}
                   onRead={(next) => {
@@ -133,56 +168,49 @@ export function DirectOrdersRun({ process }: { process: ProcessSummary }) {
                         ? null
                         : next.id,
                     );
-                    update({ read: next });
+                    setTaken(next);
+                    selection.record(kept.id, { readId: next.id }).catch(() => {
+                      setTaken(null);
+                      setRevealingReadId(null);
+                    });
                   }}
                 />
               </ResponseSection>
             ) : step.id === 'propose' && canPropose ? (
               <ResponseSection>
-                <WithText
-                  process={process}
-                  version={live.run.instructionsVersion}
-                >
-                  {(text) => (
-                    <ProposeStep
-                      subject={SUBJECT}
-                      evaluation="model"
-                      text={text}
-                      readId={read.id}
-                      progress={proposed}
-                      onProgress={(progress) => update({ propose: progress })}
-                    />
-                  )}
-                </WithText>
+                <ProposeStep
+                  subject={SUBJECT}
+                  evaluation="model"
+                  text={text}
+                  readId={read.id}
+                  progress={proposed}
+                  onProgress={setProposed}
+                />
               </ResponseSection>
             ) : step.id === 'apply' && allDecided && read ? (
               <ResponseSection>
-                <WithText
-                  process={process}
-                  version={live.run.instructionsVersion}
-                >
-                  {(text) => (
-                    <ApplyStep
-                      subject={SUBJECT}
-                      evaluation="model"
-                      text={text}
-                      readId={read.id}
-                      rulebook={proposed.fingerprint}
-                      proposedAt={proposed.proposedAt!}
-                      decisions={proposed.decisions}
-                      onProgress={(progress) => update({ apply: progress })}
-                    />
-                  )}
-                </WithText>
+                <ApplyStep
+                  subject={SUBJECT}
+                  evaluation="model"
+                  text={text}
+                  readId={read.id}
+                  rulebook={proposed.fingerprint}
+                  proposedAt={proposed.proposedAt!}
+                  decisions={proposed.decisions}
+                  onProgress={setApplied}
+                />
               </ResponseSection>
             ) : null}
           </ThreadStep>
         ))}
       </ol>
-      <div className="border-rule-faint mt-8 flex items-center gap-3 border-t pt-4">
-        <Button onPress={() => selection.removeLive(live.run.id)}>
-          Discard this run
-        </Button>
+      {selection.recordError ? (
+        <p role="alert" className="text-dense text-state-blocked mt-6">
+          {selection.recordError}
+        </p>
+      ) : null}
+      <div className="border-rule-faint mt-8 flex flex-wrap items-center gap-3 border-t pt-4">
+        <DiscardRun selection={selection} id={kept.id} />
       </div>
     </>
   );

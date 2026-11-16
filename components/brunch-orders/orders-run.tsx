@@ -1,15 +1,18 @@
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import ArrowUpRight from 'blode-icons-react/icons/arrow-up-right';
 import ChevronTriangleDown from 'blode-icons-react/icons/chevron-triangle-down-small-filled';
 import TableFilled from 'blode-icons-react/icons/table-filled';
 import { useContext, useEffect, useId, useRef, useState } from 'react';
-import type { CSSProperties, ReactNode } from 'react';
+import type { CSSProperties } from 'react';
 
 import { ProcessSheetActions } from '@/components/app-shell/process/process-sheet';
-import { useRunSelection } from '@/components/app-shell/runs/run-selection';
-import { useInstructions } from '@/components/app-shell/instructions/instructions-store';
+import {
+  useRunSelection,
+  type LiveRun,
+  type RunSelection,
+} from '@/components/app-shell/runs/run-selection';
 import {
   RequestBubble,
   ResponseSection,
@@ -49,7 +52,7 @@ import { ProposeStep } from './propose/propose-step';
 import type { ProposeProgress } from './propose/types';
 import { RulesStep, type RulesProgress } from './rules/rules-step';
 
-// How far a run has got, as the browser keeps it: the read's id and summary.
+// A run's read as its card shows it: the read's id and summary.
 export type RunRead = {
   id: string;
   readAt: string;
@@ -60,6 +63,46 @@ export type RunRead = {
   tabs: { name: string; rows: number }[];
   problems?: string[];
 };
+
+// What a read's summary gives the card (`read.keep`, `read.summary`).
+type ReadSummary = {
+  id: string;
+  readAt: string;
+  source: string;
+  spreadsheet: {
+    title: string | null;
+    url?: string;
+    tabIds?: Record<string, number>;
+  };
+  tabs: { name: string; rows: number }[];
+  problems?: string[];
+};
+const runReadOf = (summary: ReadSummary): RunRead => ({
+  id: summary.id,
+  readAt: summary.readAt,
+  source: summary.source,
+  title: summary.spreadsheet.title,
+  url: summary.spreadsheet.url,
+  tabIds: summary.spreadsheet.tabIds,
+  tabs: summary.tabs,
+  problems: summary.problems,
+});
+
+// The read a run kept, by its id: its summary, never its values. A kept read
+// never changes, so what came is kept.
+export function useRunRead(readId: string | null) {
+  const trpc = useTRPC();
+  const asked = useQuery(
+    trpc.read.summary.queryOptions(
+      { id: readId ?? '' },
+      { enabled: readId !== null, staleTime: Infinity },
+    ),
+  );
+  return {
+    read: asked.data ? runReadOf(asked.data) : undefined,
+    error: asked.error?.message ?? null,
+  };
+}
 
 // The tabs as the release card's rows: ruled from where a name starts, lit
 // whole under the pointer, the arrow arriving in the end padding
@@ -83,15 +126,48 @@ const READ_ROW = cx(
 */
 export function OrdersRun({ process }: { process: ProcessSummary }) {
   const selection = useRunSelection();
-  const sheet = useContext(ProcessSheetActions);
-  const [revealingReadId, setRevealingReadId] = useState<string | null>(null);
   const live = selection?.live;
   if (!live || !selection) return null;
-  const read = live.data.read as RunRead | undefined;
-  const rules = live.data.rules as RulesProgress | undefined;
-  const calculated = live.data.calculate as CalculateProgress | undefined;
-  const proposed = live.data.propose as ProposeProgress | undefined;
-  const applied = live.data.apply as ApplyProgress | undefined;
+  // How far each step has got is held for this run alone.
+  return (
+    <OrdersThread
+      key={live.run.id}
+      process={process}
+      live={live}
+      selection={selection}
+    />
+  );
+}
+
+/*
+  The run's read and pin are the server's (`runs.record`); how far the steps
+  have got is not kept anywhere, but worked out again by each step as it
+  opens, from what it summarises, and reported here for the headings.
+*/
+function OrdersThread({
+  live,
+  selection,
+}: {
+  process: ProcessSummary;
+  live: LiveRun;
+  selection: RunSelection;
+}) {
+  const sheet = useContext(ProcessSheetActions);
+  const { kept, text } = live;
+  const version = kept.instructions.version;
+  const [revealingReadId, setRevealingReadId] = useState<string | null>(null);
+  const [taken, setTaken] = useState<RunRead | null>(null);
+  const [rules, setRules] = useState<RulesProgress>();
+  const [calculated, setCalculated] = useState<CalculateProgress>();
+  const [proposed, setProposed] = useState<ProposeProgress>();
+  const [applied, setApplied] = useState<ApplyProgress>();
+  // Counts each move back to Calculate, which starts it afresh.
+  const [moves, setMoves] = useState(0);
+  const saved = useRunRead(kept.readId);
+  // The read just taken shows at once, and goes if the server will not keep
+  // it as the run's; once kept, the server's summary is what is shown.
+  const read = taken && taken.id !== kept.readId ? taken : saved.read;
+  const readId = read?.id ?? kept.readId;
   // What this run has written and not undone.
   const wrote =
     applied?.status === 'verified' || applied?.status === 'mismatch';
@@ -100,9 +176,10 @@ export function OrdersRun({ process }: { process: ProcessSummary }) {
     rules.intent &&
     rules.total > 0 &&
     rules.approved === rules.total;
-  // Propose opens once Calculate has worked the values out.
-  const canPropose =
-    rulesDone && calculated !== undefined && read !== undefined;
+  // Propose opens once Calculate has worked the values out, which the server
+  // knows by the rulebook it pinned: the one a decision is kept under.
+  const pinned = kept.rulebook;
+  const canPropose = rulesDone && read !== undefined && pinned !== null;
   const decidedCount = proposed ? Object.keys(proposed.decisions).length : 0;
   const allDecided =
     proposed?.proposedAt != null &&
@@ -112,13 +189,13 @@ export function OrdersRun({ process }: { process: ProcessSummary }) {
     step.id === 'instructions'
       ? 'complete'
       : step.id === 'read'
-        ? read
+        ? readId
           ? 'complete'
           : 'attention'
         : step.id === 'rules'
           ? rulesDone
             ? 'complete'
-            : read
+            : readId
               ? 'attention'
               : 'pending'
           : step.id === 'calculate'
@@ -142,7 +219,7 @@ export function OrdersRun({ process }: { process: ProcessSummary }) {
                 : 'pending';
   // The furthest step a person can act on.
   const latest =
-    !read || revealingReadId === read.id
+    !readId || revealingReadId === readId
       ? 'read'
       : !rulesDone
         ? 'rules'
@@ -191,6 +268,15 @@ export function OrdersRun({ process }: { process: ProcessSummary }) {
     status: status(step),
     label: label(step),
   }));
+  // Pinning the rulebook is not waited for by the screen, which shows what
+  // Calculate has worked out; Propose opens once the server has the pin.
+  const pin = (progress: CalculateProgress) => {
+    setCalculated(progress);
+    if (progress.fingerprint !== kept.rulebook)
+      selection
+        .record(kept.id, { rulebook: progress.fingerprint })
+        .catch(() => undefined);
+  };
   return (
     <>
       <ol className="thread">
@@ -202,21 +288,20 @@ export function OrdersRun({ process }: { process: ProcessSummary }) {
             headingAction={
               step.id === 'instructions' && sheet
                 ? {
-                    label: live.run.instructionsVersion,
+                    label: version,
                     onPress: sheet.showInstructions,
                   }
                 : undefined
             }
           >
             {step.id === 'instructions' ? (
-              <Instructions
-                process={process}
-                version={live.run.instructionsVersion}
-              />
+              <InstructionsText text={text} />
             ) : step.id === 'read' ? (
               <ResponseSection>
                 <ReadStep
                   read={read}
+                  loadingRead={readId !== null && read === undefined}
+                  readError={saved.error}
                   revealing={revealingReadId === read?.id}
                   onRevealed={() => setRevealingReadId(null)}
                   onRead={(next) => {
@@ -225,79 +310,66 @@ export function OrdersRun({ process }: { process: ProcessSummary }) {
                         ? null
                         : next.id,
                     );
-                    selection.updateLive(live.run.id, { read: next });
+                    setTaken(next);
+                    selection.record(kept.id, { readId: next.id }).catch(() => {
+                      setTaken(null);
+                      setRevealingReadId(null);
+                    });
                   }}
                 />
               </ResponseSection>
             ) : step.id === 'rules' ? (
               <ResponseSection>
-                <RunRules
-                  process={process}
-                  version={live.run.instructionsVersion}
-                  readId={read?.id ?? null}
-                  onProgress={(progress) =>
-                    selection.updateLive(live.run.id, { rules: progress })
-                  }
+                <RulesStep
+                  text={text}
+                  version={version}
+                  readId={readId}
+                  onProgress={setRules}
                 />
               </ResponseSection>
-            ) : step.id === 'calculate' && rulesDone && read ? (
+            ) : step.id === 'calculate' && rulesDone && readId ? (
               <ResponseSection>
-                <RunCalculate
-                  process={process}
-                  version={live.run.instructionsVersion}
-                  readId={read.id}
-                  calculatedOn={calculated?.fingerprint ?? null}
-                  onProgress={(progress) =>
-                    selection.updateLive(live.run.id, { calculate: progress })
-                  }
+                <CalculateStep
+                  key={moves}
+                  text={text}
+                  readId={readId}
+                  calculatedOn={kept.rulebook}
+                  onProgress={pin}
                 />
               </ResponseSection>
             ) : step.id === 'propose' && canPropose ? (
               <ResponseSection>
-                <WithText
-                  process={process}
-                  version={live.run.instructionsVersion}
-                >
-                  {(text) => (
-                    <ProposeStep
-                      subject={SUBJECT}
-                      text={text}
-                      readId={read.id}
-                      rulebook={calculated.fingerprint}
-                      progress={proposed}
-                      onProgress={(progress) =>
-                        selection.updateLive(live.run.id, { propose: progress })
-                      }
-                      onMoveRules={() =>
-                        selection.updateLive(live.run.id, {
-                          calculate: undefined,
-                          propose: undefined,
-                        })
-                      }
-                    />
-                  )}
-                </WithText>
+                <ProposeStep
+                  subject={SUBJECT}
+                  text={text}
+                  readId={read.id}
+                  rulebook={pinned}
+                  progress={proposed}
+                  onProgress={setProposed}
+                  // Back to Calculate once the server has let go of the pin.
+                  onMoveRules={() =>
+                    void selection.record(kept.id, { rulebook: null }).then(
+                      () => {
+                        setCalculated(undefined);
+                        setProposed(undefined);
+                        setMoves((count) => count + 1);
+                      },
+                      () => undefined,
+                    )
+                  }
+                />
               </ResponseSection>
-            ) : step.id === 'apply' && allDecided && read && calculated ? (
+            ) : step.id === 'apply' && allDecided && read && pinned ? (
               <ResponseSection>
-                <WithText
-                  process={process}
-                  version={live.run.instructionsVersion}
-                >
-                  {(text) => (
-                    <ApplyStep
-                      subject={SUBJECT}
-                      text={text}
-                      readId={read.id}
-                      rulebook={calculated.fingerprint}
-                      proposedAt={proposed.proposedAt!}
-                      decisions={proposed.decisions}
-                      onProgress={(progress) =>
-                        selection.updateLive(live.run.id, { apply: progress })
-                      }
-                    />
-                  )}
-                </WithText>
+                <ApplyStep
+                  subject={SUBJECT}
+                  text={text}
+                  readId={read.id}
+                  rulebook={pinned}
+                  proposedAt={proposed.proposedAt!}
+                  decisions={proposed.decisions}
+                  onProgress={setApplied}
+                />
               </ResponseSection>
             ) : (
               <p className="text-dense text-muted">{COMING[step.id]}</p>
@@ -305,112 +377,73 @@ export function OrdersRun({ process }: { process: ProcessSummary }) {
           </ThreadStep>
         ))}
       </ol>
-      <div className="border-rule-faint mt-8 flex items-center gap-3 border-t pt-4">
-        <Button onPress={() => selection.removeLive(live.run.id)}>
-          Discard this run
-        </Button>
-        <span className="text-meta text-muted">
-          {wrote
-            ? 'Removes it from this browser. What it wrote stays in the sheet.'
-            : applied?.status === 'pending'
-              ? 'Removes it from this browser. Anything it wrote stays in the sheet.'
-              : 'Removes it from this browser. Nothing was written anywhere.'}
-        </span>
+      {selection.recordError ? (
+        <p role="alert" className="text-dense text-state-blocked mt-6">
+          {selection.recordError}
+        </p>
+      ) : null}
+      <div className="border-rule-faint mt-8 flex flex-wrap items-center gap-3 border-t pt-4">
+        <DiscardRun
+          selection={selection}
+          id={kept.id}
+          words={
+            wrote
+              ? 'Takes it off the list. What it wrote stays in the sheet.'
+              : applied?.status === 'pending'
+                ? 'Takes it off the list. Anything it wrote stays in the sheet.'
+                : 'Takes it off the list. Nothing was written anywhere.'
+          }
+        />
       </div>
     </>
   );
 }
 
-// The rules of the instructions this run answers to: the text is what they
-// are kept by, so a run under another version finds its own.
-function RunRules({
-  process,
-  version,
-  readId,
-  onProgress,
+/*
+  Discarding is waited for: the run leaves the list once the server has said
+  it is discarded, and a press while it is being said does nothing. The button
+  stays where it is (never disabled) so focus is not lost, and its words say
+  what it is doing.
+*/
+export function DiscardRun({
+  selection,
+  id,
+  words,
 }: {
-  process: ProcessSummary;
-  version: string;
-  readId: string | null;
-  onProgress: (progress: RulesProgress) => void;
+  selection: RunSelection;
+  id: string;
+  words?: string;
 }) {
-  const { versions } = useInstructions(process.id, process.instructions);
-  const text = versions.find((v) => v.version === version)?.text;
-  return text ? (
-    <RulesStep
-      text={text}
-      version={version}
-      readId={readId}
-      onProgress={onProgress}
-    />
-  ) : (
-    <p className="text-dense text-muted">
-      Instructions {version} are not in this browser any more.
-    </p>
-  );
-}
-
-// Calculate on the rules of the instructions this run answers to.
-function RunCalculate({
-  process,
-  version,
-  ...step
-}: {
-  process: ProcessSummary;
-  version: string;
-  readId: string;
-  calculatedOn: string | null;
-  onProgress: (progress: CalculateProgress) => void;
-}) {
-  const { versions } = useInstructions(process.id, process.instructions);
-  const text = versions.find((v) => v.version === version)?.text;
-  return text ? (
-    <CalculateStep text={text} {...step} />
-  ) : (
-    <p className="text-dense text-muted">
-      Instructions {version} are not in this browser any more.
-    </p>
-  );
-}
-
-// The text of the instructions the run answers to, for a step that needs it.
-export function WithText({
-  process,
-  version,
-  children,
-}: {
-  process: ProcessSummary;
-  version: string;
-  children: (text: string) => ReactNode;
-}) {
-  const { versions } = useInstructions(process.id, process.instructions);
-  const text = versions.find((v) => v.version === version)?.text;
-  return text ? (
-    children(text)
-  ) : (
-    <p className="text-dense text-muted">
-      Instructions {version} are not in this browser any more.
-    </p>
-  );
-}
-
-// The instructions the run started under, as its request: the run answers to
-// exactly this version, whatever is published after it.
-export function Instructions({
-  process,
-  version,
-}: {
-  process: ProcessSummary;
-  version: string;
-}) {
-  const { versions } = useInstructions(process.id, process.instructions);
-  const text = versions.find((v) => v.version === version)?.text;
-  return text ? (
-    <InstructionsText text={text} />
-  ) : (
-    <RequestBubble>
-      <p>Instructions {version} are not in this browser any more.</p>
-    </RequestBubble>
+  return (
+    <>
+      <Button
+        aria-disabled={selection.discarding || undefined}
+        onPress={() => {
+          if (selection.discarding) return;
+          // The button goes with the run: focus stays in the runs list, where
+          // the next run is a keypress away, as it would on any other row.
+          void selection.discard(id).then((done) => {
+            // Once the list has dropped the run, two frames on.
+            if (done)
+              requestAnimationFrame(() =>
+                requestAnimationFrame(() =>
+                  document
+                    .querySelector<HTMLElement>('.sheet-row, #main')
+                    ?.focus({ preventScroll: true }),
+                ),
+              );
+          });
+        }}
+      >
+        {selection.discarding ? 'Discarding…' : 'Discard this run'}
+      </Button>
+      {words ? <span className="text-meta text-muted">{words}</span> : null}
+      {selection.discardError ? (
+        <p role="alert" className="text-dense text-state-blocked">
+          {selection.discardError}
+        </p>
+      ) : null}
+    </>
   );
 }
 
@@ -441,18 +474,25 @@ export function InstructionsText({ text }: { text: string }) {
 // Automatic, it reads the live sheet as soon as it is drawn, with no setup.
 export function ReadStep({
   read,
+  loadingRead = false,
+  readError = null,
   onRead,
   revealing,
   onRevealed,
   automatic = false,
 }: {
   read: RunRead | undefined;
+  // The run has a read and its summary is on the way: nothing is read again.
+  loadingRead?: boolean;
+  // Why the run's read could not be shown, where the server would not say.
+  readError?: string | null;
   onRead: (read: RunRead) => void;
   revealing: boolean;
   onRevealed: () => void;
   automatic?: boolean;
 }) {
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const keep = useMutation(trpc.read.keep.mutationOptions());
   const reading = useMutationTrial(keep.mutateAsync);
   const [source, setSource] = useState<'captured' | 'live'>('captured');
@@ -467,27 +507,25 @@ export function ReadStep({
     void reading.run({ source: from }).then((response) => {
       if (!response) return;
       setOpen(true);
-      onRead({
-        id: response.id,
-        readAt: response.readAt,
-        source: response.source,
-        title: response.spreadsheet.title,
-        url: response.spreadsheet.url,
-        tabIds: response.spreadsheet.tabIds,
-        tabs: response.tabs,
-        problems: response.problems,
-      });
+      // The card's own summary is what keeping answered.
+      queryClient.setQueryData(
+        trpc.read.summary.queryKey({ id: response.id }),
+        response,
+      );
+      onRead(runReadOf(response));
     });
   // Once per run: a remount (Strict Mode's included) keeps the ref.
   const asked = useRef(false);
   useEffect(() => {
-    if (!automatic || read || asked.current) return;
+    if (!automatic || read || loadingRead || readError || asked.current) return;
     asked.current = true;
     readFrom('live');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [automatic, read]);
+  }, [automatic, read, loadingRead, readError]);
   const unreadable =
-    reading.state.kind === 'failed' ? reading.state.message : failed;
+    reading.state.kind === 'failed'
+      ? reading.state.message
+      : (failed ?? readError);
   return (
     <div className="grid gap-4">
       {automatic ? (
@@ -503,7 +541,7 @@ export function ReadStep({
             </div>
           ) : (
             <p role="status" className="text-dense text-muted">
-              Reading the sheet…
+              {loadingRead ? 'Loading this run’s read…' : 'Reading the sheet…'}
             </p>
           )}
           {read?.problems?.length ? (
@@ -555,11 +593,17 @@ export function ReadStep({
             runningLabel="Reading…"
             variant={read ? 'secondary' : 'primary'}
             idle={
-              read ? 'This run’s read is below.' : 'Waiting for you to read.'
+              read
+                ? 'This run’s read is below.'
+                : loadingRead
+                  ? 'Loading this run’s read…'
+                  : 'Waiting for you to read.'
             }
             state={reading.state}
             onRun={() => readFrom(source)}
-            summary={failed ?? (read ? `${read.tabs.length} tabs` : null)}
+            summary={
+              failed ?? readError ?? (read ? `${read.tabs.length} tabs` : null)
+            }
           />
           {read ? (
             <p className="text-meta text-muted break-words">{read.source}</p>

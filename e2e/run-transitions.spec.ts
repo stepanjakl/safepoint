@@ -1,5 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
+import { startKeptRun } from './kept-runs';
+
 type Frame = {
   empty: boolean;
   instructions: string | null;
@@ -63,44 +65,21 @@ const chooseAndObserve = (row: Locator, reverse = false) =>
     reverse,
   );
 
+let secondId = '';
+
 test.beforeEach(async ({ page, colorScheme }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.addInitScript(
     (theme) => {
       localStorage.setItem('safepoint.dev.theme', theme);
-      localStorage.setItem(
-        'safepoint.live-runs.v1',
-        JSON.stringify({
-          'brunch-orders': [
-            {
-              run: {
-                id: 'run-second',
-                startedAt: '2026-10-12T10:00:00Z',
-                status: 'running',
-                trigger: 'manual',
-                counts: { items: 0 },
-                instructionsVersion: 'v2',
-              },
-              data: { additionalInstructions: 'Second run.' },
-            },
-            {
-              run: {
-                id: 'run-first',
-                startedAt: '2026-10-11T10:00:00Z',
-                status: 'running',
-                trigger: 'manual',
-                counts: { items: 0 },
-                instructionsVersion: 'v2',
-              },
-              data: { additionalInstructions: 'First run.' },
-            },
-          ],
-        }),
-      );
     },
     colorScheme === 'dark' ? 'dark' : 'light',
   );
-  await page.goto('/examples/brunch-orders?run=run-second');
+  // Two runs, the second started last so it leads the list; any others the
+  // shared test database holds lie below them.
+  await startKeptRun(page, 'brunch-orders', 'First run.');
+  secondId = (await startKeptRun(page, 'brunch-orders', 'Second run.')).id;
+  await page.goto(`/examples/brunch-orders?run=${secondId}`);
   await expect(page.getByText('Second run.', { exact: true })).toBeVisible();
   await expect(page.locator('.run-view > div')).toHaveCSS('opacity', '1');
 });
@@ -278,7 +257,20 @@ test('returning to the outgoing run reverses its fade without an empty page', as
   ).toBe(true);
   expect(frames.some((frame) => frame.inert && frame.opacity < 1)).toBe(true);
   expect(frames.at(-1)?.opacity).toBe(1);
-  await expect(page).toHaveURL(/run=run-second$/);
+  await expect(page).toHaveURL(new RegExp(`run=${secondId}$`));
+});
+
+test('discarding a run waits for the server, then leaves focus in the runs list', async ({
+  page,
+}) => {
+  await page.getByRole('button', { name: 'Discard this run' }).click();
+  await expect(
+    page.locator(`.sheet-row[data-run-id="${secondId}"]`),
+  ).toHaveCount(0);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+    'No run selected',
+  );
+  await expect(page.locator('.sheet-row').first()).toBeFocused();
 });
 
 test('reduced-motion run selection works from the keyboard', async ({
