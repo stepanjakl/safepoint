@@ -8,6 +8,8 @@ import {
 import ArrowUpRight from 'blode-icons-react/icons/arrow-up-right';
 import ShieldCheck from 'blode-icons-react/icons/shield-check-3-filled';
 import Lab from 'blode-icons-react/icons/lab-filled';
+import { Button } from '@/components/ui/button';
+import { useEarlierRuns } from './earlier-runs';
 import { RunRow } from './run-row';
 import { Tooltip } from '@/components/ui/tooltip';
 import { useEdgeScroll } from '@/components/ui/edge-scroll';
@@ -45,6 +47,7 @@ export function RunsList({
   const { versions } = useInstructions(process.id, process.instructions);
   // Which run the rail is on, shared with the page beside it (run-selection).
   const selection = useRunSelection();
+  const earlier = useEarlierRuns(process.id);
   // Only a strip scrolls sideways; as a column it never overflows, so it
   // never fades (runs-list.css, the narrow sheet).
   const strip = useEdgeScroll<HTMLOListElement>();
@@ -64,6 +67,20 @@ export function RunsList({
 
   return (
     <>
+      {earlier.count ? (
+        <div role="note" className="text-meta text-muted grid gap-2 px-4 py-3">
+          <p>
+            Runs started before today were kept only in this browser and are not
+            shown. Anything they wrote to the sheet is still there, with its
+            record.
+          </p>
+          <div>
+            <Button size="small" onPress={earlier.dismiss}>
+              Dismiss
+            </Button>
+          </div>
+        </div>
+      ) : null}
       {selection?.startError ? (
         <p role="alert" className="text-meta text-state-blocked px-4 py-3">
           {selection.startError}

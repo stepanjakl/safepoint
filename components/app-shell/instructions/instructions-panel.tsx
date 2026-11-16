@@ -67,10 +67,8 @@ export function InstructionsPanel({
   onShowVersion: (version: string) => void;
   onEdit: () => void;
 }) {
-  const { current, versions, next, draft } = useInstructions(
-    process.id,
-    process.instructions,
-  );
+  const store = useInstructions(process.id, process.instructions);
+  const { current, versions, next, draft } = store;
   const editing = aside?.kind === 'edit';
   const showing = aside?.kind === 'version' ? aside.version : null;
   // The runs the rail lists, a run started here included.
@@ -79,39 +77,71 @@ export function InstructionsPanel({
     runs.filter((run) => run.instructionsVersion === version).length;
 
   return (
-    <ol className="sheet-list" aria-labelledby={SECTION.instructions.id}>
-      {draft !== null ? (
-        <li>
-          <VersionRow
-            version={next}
-            state="draft"
-            when="Not published"
-            open={editing}
-            onPress={onEdit}
-          />
-        </li>
+    <>
+      {store.earlier.length ? (
+        <div role="note" className="text-meta text-muted grid gap-2 px-4 py-3">
+          <p>
+            Versions published in this browser were kept only here. Publish one
+            again to keep it.
+          </p>
+          <ul className="grid gap-2">
+            {store.earlier.map((one, index) => (
+              <li key={index} className="flex items-center gap-3">
+                <span className="value text-micro">{one.label}</span>
+                <Button
+                  size="small"
+                  aria-label={`Draft from the version ${one.label.toLowerCase()}`}
+                  onPress={() => {
+                    store.saveDraft(one.text);
+                    onEdit();
+                  }}
+                >
+                  Draft from it
+                </Button>
+              </li>
+            ))}
+          </ul>
+          <div>
+            <Button size="small" onPress={store.dismissEarlier}>
+              Dismiss
+            </Button>
+          </div>
+        </div>
       ) : null}
-      {[...versions].reverse().map((version, reversed) => {
-        const index = versions.length - 1 - reversed;
-        const count = ranUnder(version.version);
-        return (
-          <li key={version.version}>
+      <ol className="sheet-list" aria-labelledby={SECTION.instructions.id}>
+        {draft !== null ? (
+          <li>
             <VersionRow
-              version={version.version}
-              state={version === current ? 'current' : null}
-              when={liveRange(versions, index)}
-              runs={
-                count === 0
-                  ? 'No runs'
-                  : `${count} ${count === 1 ? 'run' : 'runs'}`
-              }
-              open={showing === version.version}
-              onPress={() => onShowVersion(version.version)}
+              version={next}
+              state="draft"
+              when="Not published"
+              open={editing}
+              onPress={onEdit}
             />
           </li>
-        );
-      })}
-    </ol>
+        ) : null}
+        {[...versions].reverse().map((version, reversed) => {
+          const index = versions.length - 1 - reversed;
+          const count = ranUnder(version.version);
+          return (
+            <li key={version.version}>
+              <VersionRow
+                version={version.version}
+                state={version === current ? 'current' : null}
+                when={liveRange(versions, index)}
+                runs={
+                  count === 0
+                    ? 'No runs'
+                    : `${count} ${count === 1 ? 'run' : 'runs'}`
+                }
+                open={showing === version.version}
+                onPress={() => onShowVersion(version.version)}
+              />
+            </li>
+          );
+        })}
+      </ol>
+    </>
   );
 }
 

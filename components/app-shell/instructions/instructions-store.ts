@@ -177,6 +177,16 @@ export function useInstructions(
     [earlierRaw, processId],
   );
   const draft = stored ? stored.draft : earlierDraft;
+  // Versions published in this browser before the server kept them: not
+  // brought over, but their text can be taken as a draft.
+  const earlier = useMemo(
+    () =>
+      (parseEarlier(earlierRaw)[processId]?.published ?? []).map((one) => ({
+        text: one.text,
+        label: `Published ${publishedLabel(one.publishedAt)}`,
+      })),
+    [earlierRaw, processId],
+  );
 
   // Oldest first, by number. Declared versions stand in until the server's
   // answer arrives.
@@ -230,6 +240,15 @@ export function useInstructions(
     // Whether the server has said which versions are kept.
     kept: asked.data !== undefined,
     draft,
+    earlier,
+    // Told once: the versions go, the draft stays.
+    dismissEarlier: () => {
+      const all = parseEarlier(earlierStore.read());
+      earlierStore.save({
+        ...all,
+        [processId]: { published: [], draft: all[processId]?.draft ?? null },
+      });
+    },
     saveDraft: (text: string) => saveStored(text),
     discardDraft: () => saveStored(null),
     // Answers the version published, or the one the text already was

@@ -121,6 +121,78 @@ test('instructions open their latest version beside the list of versions', async
   await expect(draft).toBeFocused();
 });
 
+test('versions this browser published before the server did are said, and can become a draft', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    if (localStorage.getItem('safepoint.instructions.v2')) return;
+    localStorage.setItem(
+      'safepoint.instructions.v2',
+      JSON.stringify({
+        'promotion-release': {
+          published: [
+            {
+              text: 'Written in this browser.\n\nKept only here.',
+              publishedAt: '2026-11-07T10:00:00Z',
+              note: null,
+            },
+          ],
+          // An unpublished draft is read once into the new key.
+          draft: 'A draft nobody published.',
+        },
+      }),
+    );
+  });
+  await openTab(page, 'Instructions');
+  const note = page.getByRole('note').filter({
+    hasText: 'Versions published in this browser were kept only here.',
+  });
+  await expect(note).toContainText('Publish one again to keep it.');
+  // The unpublished draft was not lost: it leads the list.
+  await expect(
+    page.getByRole('list', { name: /^Instructions/ }).getByRole('button', {
+      name: /^v5 · Draft/,
+    }),
+  ).toBeVisible();
+  await note.getByRole('button', { name: /^Draft from the version/ }).click();
+  await expect(
+    drawer(page).getByRole('textbox', { name: 'Instructions, draft of v5' }),
+  ).toHaveValue('Written in this browser.\n\nKept only here.');
+  await note.getByRole('button', { name: 'Dismiss' }).click();
+  await expect(note).toHaveCount(0);
+  // The draft is the browser's own, under the new key.
+  expect(
+    await page.evaluate(() =>
+      localStorage.getItem('safepoint.instructions.v3'),
+    ),
+  ).toContain('Written in this browser.');
+});
+
+test('publishing text that is already a version says which, and opens it', async ({
+  page,
+}) => {
+  await openTab(page, 'Instructions');
+  const versions = page.getByRole('list', { name: /^Instructions/ });
+  await versions.getByRole('button', { name: /^v3/ }).click();
+  await drawer(page).getByRole('button', { name: 'Draft from v3' }).click();
+  // v3's own text: reviewing it from v4 is a change, publishing it is not.
+  await drawer(page).getByRole('button', { name: 'Review changes' }).click();
+  await drawer(page).getByRole('button', { name: 'Publish v5' }).click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Publish v5' })
+    .click();
+  await expect(
+    drawer(page).getByText(/^That is v3\. These instructions are already/),
+  ).toBeVisible();
+  await drawer(page).getByRole('button', { name: 'Open v3' }).click();
+  await expect(drawerTitle(page, 'Version v3')).toBeAttached();
+  // Nothing new was kept: v4 is still the live one.
+  await expect(
+    versions.getByRole('button', { name: /^v4 · Live/ }),
+  ).toBeVisible();
+});
+
 test('review numbers follow the draft while removed paragraphs keep their original numbers', async ({
   page,
 }) => {
