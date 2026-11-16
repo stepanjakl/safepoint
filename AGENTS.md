@@ -192,8 +192,9 @@ placeholders such as `values.<id>`, because a real example steers the model.
   accepted revision, never rewritten) and `revisions.json` (each revision's
   parent and reason, and the head). A migration of an accepted rulebook
   makes a new revision through `putRevision` with reason `migrated`; it never
-  rewrites one. What runs produce is not: runs' reads, a source's reads,
-  proposals, cross-checks and their partial answers, job progress (drafts
+  rewrites one. What runs produce is not: runs (and the instruction versions
+  they run under), each decision on a record as an event, runs' reads, a
+  source's reads, proposals, cross-checks and their partial answers, job progress (drafts
   and proposals), the record of each write to a sheet, each model request
   and the learned model limits are in the database
   (`docs/engineering/DATABASE.md`): PGlite under `data/pglite/` with no
@@ -204,7 +205,11 @@ placeholders such as `values.<id>`, because a real example steers the model.
   each test, not made again. The browser tests' server runs on PGlite in
   `data/pglite-e2e/` whatever `.env.local` says (`playwright.config.ts`).
   `e2e/fixtures/` are frozen copies, held to the engine by
-  `lib/definitions/e2e-fixtures.test.ts`.
+  `lib/definitions/e2e-fixtures.test.ts`. A browser test that starts a run does
+  so on that same database, which every test shares, so it selects its runs by
+  the id the server gave (`data-run-id` on a row, `e2e/kept-runs.ts`), never by
+  position; `e2e/kept-decisions.ts` stands in for the decisions procedures
+  where a test serves its own proposal.
 - `docs/processes/brunch-orders/DEVELOPMENT-LOG.md` records what went wrong and why. Add to it when
   something non-obvious does.
 

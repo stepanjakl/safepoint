@@ -72,16 +72,19 @@ one pinned read, one instructions version.
 
 ## Where the data is kept
 
-The read is kept on the server under an id (gitignored), as Calculate already
-does for live reads. The browser remembers only the run itself (its id, the
-instructions version it started under, the read's id and how far it got) in
-`localStorage`, so a reload finds it again.
+The read is kept on the server under an id, as Calculate already does for live
+reads, and so is the run itself: the server names it and keeps the
+instructions version it started under, the read's id and the rulebook it
+pinned (`runs`), and each decision on a record as an event
+(`record_decisions`). The browser keeps only the unpublished instructions
+draft and view preferences, so a run and its decisions survive a cleared
+browser and appear in another one. How far each step has got is worked out
+again by the step as it opens.
 
 Not the whole read in `localStorage`: the read is the run's evidence, and
 later steps that run on the server (calculating, proposing, checking) need the
 same copy. Keeping it there also means one copy, not one per browser, and
-nothing lost when a browser's storage is cleared. Runs move to the database
-with the history work (phase 7).
+nothing lost when a browser's storage is cleared.
 
 ## Phases
 
@@ -468,7 +471,8 @@ whose stock count was two days old.
   read and rulebook, a row each: every decision, the checks it let fail, and the
   cells before and after (`docs/engineering/DATABASE.md`). A run writes once
   until it is undone, across server instances too. Runs and proposals not yet
-  written still keep their decisions in the browser, until phase 7.
+  written keep their decisions on the server as events, per run, and a write
+  takes them from there.
 - **Undo only while untouched.** Undo restores the block, and is refused if any
   cell no longer holds what was written. It leaves the added tab in place, empty.
 - **A captured read cannot write, nor can a run on earlier instructions.** The
