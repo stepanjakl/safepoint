@@ -76,6 +76,7 @@ export function RunRow({
       aria-label={announce(run, noun, status, trigger, stamp)}
       aria-pressed={onSelect ? selected : undefined}
       data-current={selected ? '' : undefined}
+      data-run-id={run.id}
       data-run-status={run.status}
       aria-current={onSelect ? undefined : selected ? 'true' : undefined}
     >

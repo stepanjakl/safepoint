@@ -12,7 +12,11 @@ import type { AppRouter } from '@/server/api/root';
 type Outputs = inferRouterOutputs<AppRouter>;
 
 // Calls a procedure as the page would: a POST with the input as its body.
-async function call<T>(page: Page, path: string, input: unknown): Promise<T> {
+export async function call<T>(
+  page: Page,
+  path: string,
+  input: unknown,
+): Promise<T> {
   const response = await page.request.post(`/api/trpc/${path}`, {
     data: input ?? {},
   });
