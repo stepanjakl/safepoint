@@ -118,6 +118,23 @@ Only the default set is preloaded; the alternates emit `@font-face` rules but do
 
 Vendored under [SIL OFL 1.1](app/fonts/): [Glide](https://blode.co/glide) and [Commit Mono](https://commitmono.com/) (the [Fontsource](https://www.npmjs.com/package/@fontsource/commit-mono) build, which instances the variable source into real 400/500/600 cuts — the upstream release ships only 400 and 700). Inter, Inter Tight, and JetBrains Mono come from Google Fonts through `next/font`.
 
+## Access outside local development
+
+Local development has no gate. Anywhere else, every page and `/api/trpc` sits behind one shared password, and a deployment sets two variables (names in `.env.example`; values in the host's own settings, never in the repository):
+
+- `SAFEPOINT_ACCESS_KEY`, the shared password, at least 16 characters.
+- `SAFEPOINT_COOKIE_SECRET`, the key the cookie is signed with, at least 32 characters.
+
+With either missing or too short, every request is refused with "This deployment is not configured." rather than let anyone in. Generate each with `openssl rand -base64 32`.
+
+A person enters the password and their name once; both are held in a signed cookie for 30 days, and the name is the actor written on each decision. What this is not:
+
+- **One password for everyone.** There are no accounts or roles.
+- **A self-declared name.** The name is whatever the person typed; nothing verifies it.
+- **Unthrottled.** Nothing limits attempts, so the password must be long and random.
+
+To sign everyone out, or to rotate, change `SAFEPOINT_COOKIE_SECRET` (and `SAFEPOINT_ACCESS_KEY`, to change the password). The development-only tools (`/workbench`, `/api/dev`) refuse outside local development whoever is signed in. To try the gate on your own machine, start the server with `SAFEPOINT_GATE=1` and both variables set.
+
 ## Documentation
 
 The [documentation index](docs/README.md) separates current guidance, process plans, research and historical records. Start with:
