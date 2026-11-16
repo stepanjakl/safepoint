@@ -14,6 +14,7 @@ import CodeTree from 'blode-icons-react/icons/code-tree';
 import CodeTreeFilled from 'blode-icons-react/icons/code-tree-filled';
 import Connectors1 from 'blode-icons-react/icons/connectors-1';
 import Connectors1Filled from 'blode-icons-react/icons/connectors-1-filled';
+import Door from 'blode-icons-react/icons/door';
 import DotGrid1x3HorizontalFilled from 'blode-icons-react/icons/dot-grid-1x3-horizontal-filled';
 import FileLock from 'blode-icons-react/icons/file-lock';
 import FileLockFilled from 'blode-icons-react/icons/file-lock-filled';
@@ -99,6 +100,7 @@ const MENU_ICONS = {
   left: ChevronLeft,
   right: ChevronRight,
   more: DotGrid1x3HorizontalFilled,
+  signOut: Door,
   runs: History,
   runsFilled: HistoryFilled,
   systems: Connectors1,

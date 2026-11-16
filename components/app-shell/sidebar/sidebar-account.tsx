@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { GradientAvatar } from '@outpacelabs/avatars';
 
+import { signOut } from '@/app/access/actions';
 import { cx } from '@/lib/cx';
 import { Tooltip } from '@/components/ui/tooltip';
 import { ICON_BUTTON, MENU_RAIL, MenuIcon, RAIL_CELL } from './menu-parts';
@@ -15,7 +16,12 @@ const AVATAR_COLORS = ['#0d9488', '#22d3ee', '#0284c7', '#3f3f46', '#5eead4'];
   The 2px that used to sit in `pr-0.5` was (rail - button) / 2 worked out by
   hand; the cell does that arithmetic itself.
 */
-export function SidebarAccount() {
+export function SidebarAccount({
+  signedInAs = null,
+}: {
+  /** The name on the gate's cookie. Null where there is no gate: local development. */
+  signedInAs?: string | null;
+}) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -31,11 +37,13 @@ export function SidebarAccount() {
     <div className="shell-profile-row group/account shell:h-shell-header flex cursor-pointer items-center justify-between gap-2.5">
       <span
         role="img"
-        aria-label="Maya’s demo avatar"
+        aria-label={
+          signedInAs ? `${signedInAs}’s avatar` : 'Maya’s demo avatar'
+        }
         className={cx(MENU_RAIL, 'relative rounded-full')}
       >
         <GradientAvatar
-          seed="safepoint-maya"
+          seed={signedInAs ? `safepoint-${signedInAs}` : 'safepoint-maya'}
           size={RAIL_CELL}
           colors={AVATAR_COLORS}
           className={cx(
@@ -44,7 +52,26 @@ export function SidebarAccount() {
           )}
         />
       </span>
-      <p className="text-primary text-dense mr-auto font-semibold">Maya</p>
+      <p className="text-primary text-dense mr-auto min-w-0 truncate font-semibold">
+        {signedInAs ?? 'Maya'}
+      </p>
+      {signedInAs ? (
+        // A form, so signing out works before the page has hydrated, and the
+        // rail cell it sits in is the settings button's own.
+        <form action={signOut} className="contents">
+          <span className={MENU_RAIL}>
+            <Tooltip label="Sign out">
+              <button
+                type="submit"
+                className={ICON_BUTTON}
+                aria-label="Sign out"
+              >
+                <MenuIcon name="signOut" />
+              </button>
+            </Tooltip>
+          </span>
+        </form>
+      ) : null}
       <span className={MENU_RAIL}>
         <Tooltip label="Settings">
           <button

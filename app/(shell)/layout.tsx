@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { AppShell } from '@/components/app-shell/app-shell';
+import { signedInAs } from '@/server/access/current';
 
 /*
   The shell is a layout rather than something each page renders, so it stays
@@ -8,6 +9,10 @@ import { AppShell } from '@/components/app-shell/app-shell';
   track laid out at the default width, and the sheet then eased across to the
   saved one. The menu's own state -- search, level -- was lost the same way.
 */
-export default function ShellLayout({ children }: { children: ReactNode }) {
-  return <AppShell>{children}</AppShell>;
+export default async function ShellLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  return <AppShell signedInAs={await signedInAs()}>{children}</AppShell>;
 }

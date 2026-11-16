@@ -67,10 +67,13 @@ const MENU_BACK_BOX = 'rounded-control h-10 px-1.75';
 export function ProcessMenu({
   items: scenarioItems,
   initialOrder,
+  signedInAs = null,
 }: {
   items: ProcessNavigationItem[];
   /** The order the server read from the cookie, for SSR and hydration. */
   initialOrder: string | null;
+  /** The name on the gate's cookie; null where there is no gate. */
+  signedInAs?: string | null;
 }) {
   // Each row under the name it was last given in this browser.
   const names = useProcessNames();
@@ -539,7 +542,7 @@ export function ProcessMenu({
             neighbours -- the distance the account row's own top padding used
             to hold below it. */}
         <div className={MENU_RULE} aria-hidden="true" />
-        <SidebarAccount />
+        <SidebarAccount signedInAs={signedInAs} />
       </div>
     </aside>
   );

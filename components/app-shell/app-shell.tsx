@@ -25,7 +25,14 @@ import {
 } from './shell-page-transition';
 import { ResizableShell } from './resizable-shell';
 
-export async function AppShell({ children }: { children: ReactNode }) {
+export async function AppShell({
+  children,
+  signedInAs = null,
+}: {
+  children: ReactNode;
+  /** The name on the gate's cookie; null where there is no gate. */
+  signedInAs?: string | null;
+}) {
   // The saved order, so the first paint already has the rows where the reader
   // left them rather than hydration moving them there.
   const savedOrder = (await cookies()).get(PROCESS_ORDER_KEY)?.value ?? null;
@@ -67,7 +74,13 @@ export async function AppShell({ children }: { children: ReactNode }) {
   return (
     <ShellPageTransitionProvider processPaths={items.map((item) => item.href)}>
       <ResizableShell
-        navigation={<ProcessMenu items={items} initialOrder={savedOrder} />}
+        navigation={
+          <ProcessMenu
+            items={items}
+            initialOrder={savedOrder}
+            signedInAs={signedInAs}
+          />
+        }
         processes={items}
       >
         {/*
