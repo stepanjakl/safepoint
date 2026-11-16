@@ -38,10 +38,11 @@ import { failed, gatedProcedure } from './trpc';
   `if (ctx.stale) return staleReply(ctx.stale)`.
 
   A run is named one of two ways. By its fields (`runFields`: the text of
-  its instructions, its read, its rulebook, its evaluation), as the screens
-  name it while runs are kept in the browser; or by the run kept on the
-  server (`keptRunFields`: its process and id), from which the server reads
-  all of those itself (`keptRunProcedure`). Both open the same way.
+  its instructions, its read, its rulebook, its evaluation), as Propose,
+  Calculate and Rules name it, which still work from the text; or by the run
+  kept on the server (`keptRunFields`: its process and id), from which the
+  server reads all of those itself (`keptRunProcedure`: Apply and the
+  decisions). Both open the same way.
 
   A stale rulebook is a result, not an error: the screen shows what no longer
   fits and offers the current rules, so it travels as `{ kind: 'stale', … }`
@@ -131,7 +132,7 @@ export const runProcedure = <Schema extends z.ZodType<RunInput>>(
   gatedProcedure.input(input).use(async ({ input, next }) => {
     let run;
     try {
-      run = { ...(await opened(input as RunInput)), kept: null };
+      run = await opened(input as RunInput);
     } catch (error) {
       throw opening(error);
     }
@@ -143,32 +144,27 @@ export const runProcedure = <Schema extends z.ZodType<RunInput>>(
   });
 
 /*
-  A procedure that takes a run by its fields or as it is kept on the server,
-  whichever its input holds (`runId` says which), and opens it the same way.
-  `ctx.kept` is the kept run, or null for one named by its fields.
+  A procedure that takes a run as it is kept on the server (`process`,
+  `runId`), and opens it the same way. `ctx.kept` is the kept run.
 */
-export const keptRunProcedure = <
-  Schema extends z.ZodType<RunInput | KeptRunInput>,
->(
+export const keptRunProcedure = <Schema extends z.ZodType<KeptRunInput>>(
   input: Schema,
   { discarded = 'refuse' }: { discarded?: 'refuse' | 'allow' } = {},
 ) =>
   gatedProcedure.input(input).use(async ({ input, next }) => {
     let run;
     try {
-      const given = input as RunInput | KeptRunInput;
-      if ('runId' in given) {
-        const { run: kept, fields } = await fieldsOf(given, { discarded });
-        const open = await opened(fields);
-        // The rules it pinned, as it was given them: none kept any more is
-        // said, never worked around with whichever rules are current.
-        const key = await runKeyOfKept(runProcess(given.process), kept);
-        if (key?.fingerprint !== fingerprintOf(open.set))
-          throw new Refused(
-            'The rulebook this run calculated on is not kept any more. Calculate again on the current rules.',
-          );
-        run = { ...open, kept };
-      } else run = { ...(await opened(given)), kept: null };
+      const given = input as KeptRunInput;
+      const { run: kept, fields } = await fieldsOf(given, { discarded });
+      const open = await opened(fields);
+      // The rules it pinned, as it was given them: none kept any more is
+      // said, never worked around with whichever rules are current.
+      const key = await runKeyOfKept(runProcess(given.process), kept);
+      if (key?.fingerprint !== fingerprintOf(open.set))
+        throw new Refused(
+          'The rulebook this run calculated on is not kept any more. Calculate again on the current rules.',
+        );
+      run = { ...open, kept };
     } catch (error) {
       throw opening(error);
     }

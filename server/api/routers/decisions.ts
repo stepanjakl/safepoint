@@ -49,7 +49,7 @@ export const decisionsRouter = router({
       : await decide(
           ctx,
           runProcess(input.process),
-          ctx.kept!,
+          ctx.kept,
           input.proposedAt,
           [input.decision as Asked],
           ctx.actor,
@@ -67,7 +67,7 @@ export const decisionsRouter = router({
       : await decide(
           ctx,
           runProcess(input.process),
-          ctx.kept!,
+          ctx.kept,
           input.proposedAt,
           input.decisions as Asked[],
           ctx.actor,
@@ -82,7 +82,7 @@ export const decisionsRouter = router({
       : await decide(
           ctx,
           runProcess(input.process),
-          ctx.kept!,
+          ctx.kept,
           input.proposedAt,
           [{ key: input.key, kind: 'withdraw' }],
           ctx.actor,

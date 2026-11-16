@@ -93,7 +93,11 @@ const decisions = { 'EG-06': approve, 'CT-250': approve };
 // Set by the suite below: where the proposals arranged here are kept.
 let scratchDb!: () => Database;
 
-// The rulebook current for `text`, and a proposal kept for `readId` on it.
+/*
+  A run kept on the server that has read `readId`, pinned the rulebook
+  current for `text` (the version it runs under), and approved both records of
+  the proposal kept for it.
+*/
 async function arrange(
   readId: string,
   text = PUBLISHED,
@@ -107,23 +111,38 @@ async function arrange(
     fingerprint,
     readId,
     model: 'test',
-    at: '2026-10-29T09:00:00.000Z',
+    at: AT,
     // Whole cases that pass every blocking check of the rulebook.
     records: { 'EG-06': record(12), 'CT-250': record(10) },
   };
   await keepProposal(owner, proposal);
-  return {
-    set,
-    proposal,
-    fingerprint,
-    run: {
-      text,
-      readId,
-      rulebook: fingerprint,
-      evaluation: 'rules' as const,
-    },
-    decided: { proposedAt: proposal.at, decisions },
-  };
+  // A version other than the declared one is published first, as a person
+  // would, so a run can start under it.
+  const version =
+    text === PUBLISHED
+      ? { hash: hashOf(PUBLISHED) }
+      : (
+          await caller().instructions.publish({
+            process: 'brunch-orders',
+            text,
+            note: null,
+          })
+        ).version;
+  const started = await caller().runs.start({
+    process: 'brunch-orders',
+    instructions: version.hash,
+  });
+  const run = { process: 'brunch-orders' as const, runId: started.id };
+  await caller().runs.record({ ...run, readId, rulebook: fingerprint });
+  await caller().decisions.recordMany({
+    ...run,
+    proposedAt: proposal.at,
+    decisions: [
+      { key: 'EG-06', kind: 'approve' },
+      { key: 'CT-250', kind: 'approve' },
+    ],
+  });
+  return { set, proposal, fingerprint, run };
 }
 
 describe('apply router', () => {
@@ -139,8 +158,8 @@ describe('apply router', () => {
 
   describe('preview', () => {
     it('says what the decisions write, from the sheet as it is now, and writes nothing', async () => {
-      const { run, decided } = await arrange('live');
-      const got = await caller().application.preview({ ...run, ...decided });
+      const { run } = await arrange('live');
+      const got = await caller().application.preview(run);
       expect(got).toMatchObject({
         kind: 'preview',
         tab: 'Orders',
@@ -161,9 +180,9 @@ describe('apply router', () => {
     });
 
     it('is worked out without asking the sheet when the run cannot write', async () => {
-      const { run, decided } = await arrange('captured');
+      const { run } = await arrange('captured');
       const asked = vi.spyOn(sheet, 'readNow');
-      const got = await caller().application.preview({ ...run, ...decided });
+      const got = await caller().application.preview(run);
       expect(got).toMatchObject({
         kind: 'preview',
         notWritable:
@@ -179,23 +198,19 @@ describe('apply router', () => {
     });
 
     it('says the sheet is not set up, where a live read cannot be written', async () => {
-      const { run, decided } = await arrange('live');
+      const { run } = await arrange('live');
       vi.stubEnv('COMPOSIO_API_KEY', '');
       const asked = vi.spyOn(sheet, 'readNow');
-      expect(
-        await caller().application.preview({ ...run, ...decided }),
-      ).toMatchObject({
+      expect(await caller().application.preview(run)).toMatchObject({
         notWritable: 'Missing COMPOSIO_API_KEY.',
       });
       expect(asked).not.toHaveBeenCalled();
     });
 
     it('says a run on an earlier version of the instructions cannot write', async () => {
-      const { run, decided } = await arrange('live', EARLIER);
+      const { run } = await arrange('live', EARLIER);
       const asked = vi.spyOn(sheet, 'readNow');
-      expect(
-        await caller().application.preview({ ...run, ...decided }),
-      ).toMatchObject({
+      expect(await caller().application.preview(run)).toMatchObject({
         kind: 'preview',
         notWritable:
           'This run answers to an earlier version of the instructions. Start a new run to write to the sheet.',
@@ -204,11 +219,11 @@ describe('apply router', () => {
     });
 
     it('says why the sheet cannot take it, as problems', async () => {
-      const { run, decided } = await arrange('live');
+      const { run } = await arrange('live');
       const tabs = capturedTabs();
       tabs.find((t) => t.name === 'Stock')!.values[1]![1] = 5;
       held.sheet = memorySheet({ ...capturedRead(tabs), id: 'live' });
-      const got = await caller().application.preview({ ...run, ...decided });
+      const got = await caller().application.preview(run);
       if (got.kind !== 'preview') throw new Error('Expected a preview.');
       expect(got.problems[0]).toBe(
         'The sheet has changed since this run read it (Stock). Start a new run to propose from what it holds now.',
@@ -216,8 +231,7 @@ describe('apply router', () => {
     });
 
     it('settles a write that was cut short from the sheet where it can be reached, and shows it as not confirmed where it cannot', async () => {
-      const { run, decided, set, proposal, fingerprint } =
-        await arrange('live');
+      const { run, set, proposal, fingerprint } = await arrange('live');
       // The write lands, but its block cannot be read back straight after.
       const unread: OutputSheet = {
         ...sheet,
@@ -243,46 +257,31 @@ describe('apply router', () => {
       // Not reachable: shown as it was kept.
       vi.stubEnv('COMPOSIO_API_KEY', '');
       const asked = vi.spyOn(sheet, 'readTab');
-      const unsettled = await caller().application.preview({
-        ...run,
-        ...decided,
-      });
+      const unsettled = await caller().application.preview(run);
       expect(unsettled).toMatchObject({
         application: { status: 'pending' },
       });
       expect(asked).not.toHaveBeenCalled();
       // Reachable: settled by reading the block back.
       vi.stubEnv('COMPOSIO_API_KEY', 'stand-in');
-      expect(
-        await caller().application.preview({ ...run, ...decided }),
-      ).toMatchObject({ application: { status: 'verified', error: null } });
+      expect(await caller().application.preview(run)).toMatchObject({
+        application: { status: 'verified', error: null },
+      });
     });
 
-    it('says the decisions are not on the proposal kept, or that none is', async () => {
-      const { run, decided } = await arrange('live');
-      expect(
-        await failure(
-          caller().application.preview({
-            ...run,
-            ...decided,
-            proposedAt: '2026-10-29T10:00:00.000Z',
-          }),
-        ),
-      ).toEqual({
+    it('says the decisions were made on an earlier proposal, or that none is kept', async () => {
+      const { run, proposal } = await arrange('live');
+      // A newer proposal has been kept since they were made.
+      await keepProposal(owner, { ...proposal, at: LATER });
+      expect(await failure(caller().application.preview(run))).toEqual({
         code: 'BAD_GATEWAY',
         message:
           'These decisions were made on an earlier proposal. Decide on the current one.',
       });
-      // Another read has none kept for the rulebook.
-      expect(
-        await failure(
-          caller().application.preview({
-            ...run,
-            ...decided,
-            readId: 'captured',
-          }),
-        ),
-      ).toEqual({
+      // A run on another read has no proposal kept for its rulebook.
+      await keepStandInRead(scratchDb(), 'captured');
+      const other = await startedRun('brunch-orders', 'captured');
+      expect(await failure(caller().application.preview(other))).toEqual({
         code: 'BAD_GATEWAY',
         message: 'This run has no proposal kept.',
       });
@@ -291,10 +290,9 @@ describe('apply router', () => {
 
   describe('write', () => {
     it('writes the decisions, reads them back and answers with the record', async () => {
-      const { run, decided, fingerprint } = await arrange('live');
+      const { run, fingerprint } = await arrange('live');
       const got = await caller().application.write({
         ...run,
-        ...decided,
         acknowledged: [],
       });
       expect(got).toMatchObject({
@@ -310,19 +308,18 @@ describe('apply router', () => {
         status: 'verified',
       });
       // A preview afterwards carries the record kept.
-      expect(
-        await caller().application.preview({ ...run, ...decided }),
-      ).toMatchObject({ application: { status: 'verified' } });
+      expect(await caller().application.preview(run)).toMatchObject({
+        application: { status: 'verified' },
+      });
     });
 
     it('answers a refused write with the preview that says why, and writes nothing', async () => {
-      const { run, decided } = await arrange('live');
+      const { run } = await arrange('live');
       const tabs = capturedTabs();
       tabs.find((t) => t.name === 'Stock')!.values[1]![1] = 5;
       held.sheet = memorySheet({ ...capturedRead(tabs), id: 'live' });
       const got = await caller().application.write({
         ...run,
-        ...decided,
         acknowledged: [],
       });
       expect(got).toMatchObject({
@@ -336,8 +333,8 @@ describe('apply router', () => {
     });
 
     it('will not write twice without an undo', async () => {
-      const { run, decided } = await arrange('live');
-      const input = { ...run, ...decided, acknowledged: [] };
+      const { run } = await arrange('live');
+      const input = { ...run, acknowledged: [] };
       await caller().application.write(input);
       const again = await caller().application.write(input);
       expect(again).toMatchObject({
@@ -354,11 +351,7 @@ describe('apply router', () => {
       const asked = vi.spyOn(sheet, 'readNow');
       expect(
         await failure(
-          caller().application.write({
-            ...captured.run,
-            ...captured.decided,
-            acknowledged: [],
-          }),
+          caller().application.write({ ...captured.run, acknowledged: [] }),
         ),
       ).toEqual({
         code: 'BAD_GATEWAY',
@@ -366,14 +359,11 @@ describe('apply router', () => {
           'This run used a captured read. Start a run from a live read to write to the sheet.',
       });
       // The order of refusals: no proposal is said before that it cannot write.
+      await keepStandInRead(scratchDb(), 'live');
+      const none = await startedRun('brunch-orders', 'live');
       expect(
         await failure(
-          caller().application.write({
-            ...captured.run,
-            ...captured.decided,
-            readId: 'live',
-            acknowledged: [],
-          }),
+          caller().application.write({ ...none, acknowledged: [] }),
         ),
       ).toEqual({
         code: 'BAD_GATEWAY',
@@ -382,11 +372,7 @@ describe('apply router', () => {
       const earlier = await arrange('live', EARLIER);
       expect(
         await failure(
-          caller().application.write({
-            ...earlier.run,
-            ...earlier.decided,
-            acknowledged: [],
-          }),
+          caller().application.write({ ...earlier.run, acknowledged: [] }),
         ),
       ).toEqual({
         code: 'BAD_GATEWAY',
@@ -398,16 +384,10 @@ describe('apply router', () => {
     });
 
     it('is refused for decisions made on an earlier proposal', async () => {
-      const { run, decided } = await arrange('live');
+      const { run, proposal } = await arrange('live');
+      await keepProposal(owner, { ...proposal, at: LATER });
       expect(
-        await failure(
-          caller().application.write({
-            ...run,
-            ...decided,
-            proposedAt: '2026-10-29T10:00:00.000Z',
-            acknowledged: [],
-          }),
-        ),
+        await failure(caller().application.write({ ...run, acknowledged: [] })),
       ).toMatchObject({
         message:
           'These decisions were made on an earlier proposal. Decide on the current one.',
@@ -416,14 +396,10 @@ describe('apply router', () => {
     });
 
     it('answers a failure of the sheet as a bad gateway, in its own words', async () => {
-      const { run, decided } = await arrange('live');
+      const { run } = await arrange('live');
       sheet.failAdd = true;
       expect(
-        await caller().application.write({
-          ...run,
-          ...decided,
-          acknowledged: [],
-        }),
+        await caller().application.write({ ...run, acknowledged: [] }),
       ).toMatchObject({
         kind: 'applied',
         application: { status: 'failed', error: 'The sheet said no.' },
@@ -435,13 +411,7 @@ describe('apply router', () => {
         },
       };
       expect(
-        await failure(
-          caller().application.write({
-            ...run,
-            ...decided,
-            acknowledged: [],
-          }),
-        ),
+        await failure(caller().application.write({ ...run, acknowledged: [] })),
       ).toEqual({
         code: 'BAD_GATEWAY',
         message: 'The sheet could not be reached.\nMore detail.',
@@ -460,12 +430,8 @@ describe('apply router', () => {
         { ...capturedRead(), id: 'live' },
         structuredClone(original),
       );
-      const { run, decided } = await arrange('live');
-      await caller().application.write({
-        ...run,
-        ...decided,
-        acknowledged: [],
-      });
+      const { run } = await arrange('live');
+      await caller().application.write({ ...run, acknowledged: [] });
       expect(sheet.grid?.[1]).toEqual(['EG-06', 12, 'keep']);
       expect(await caller().application.undo(run)).toMatchObject({
         kind: 'applied',
@@ -475,7 +441,7 @@ describe('apply router', () => {
     });
 
     it('stays open for a run on an earlier version of the instructions', async () => {
-      const { run, decided, set, proposal, fingerprint } = await arrange(
+      const { run, set, proposal, fingerprint } = await arrange(
         'live',
         EARLIER,
       );
@@ -486,7 +452,7 @@ describe('apply router', () => {
         { ...capturedRead(), id: 'live', readAt: THURSDAY },
         fingerprint,
         proposal,
-        decided.decisions,
+        decisions,
         [],
         sheet,
       );
@@ -525,21 +491,25 @@ describe('apply router', () => {
           reason: 'accepted',
         },
       );
-      const { run: current, decided } = await arrange('live');
+      const { fingerprint: current } = await arrange('live');
+      // A run pinned to the rulebook as it was before the read stopped fitting it.
       const old = fingerprintOf({ ...outdated, hash: hashOf(PUBLISHED) });
-      const run = { ...current, rulebook: old };
+      const started = await caller().runs.start({
+        process: 'brunch-orders',
+        instructions: hashOf(PUBLISHED),
+      });
+      const run = { process: 'brunch-orders' as const, runId: started.id };
+      await caller().runs.record({ ...run, readId: 'live', rulebook: old });
       const stale = {
         kind: 'stale',
         rulebook: old,
         problems: [expect.objectContaining({ problem: expect.any(String) })],
-        current: current.rulebook,
+        current,
       };
       const asked = vi.spyOn(sheet, 'readNow');
+      await expect(caller().application.preview(run)).resolves.toEqual(stale);
       await expect(
-        caller().application.preview({ ...run, ...decided }),
-      ).resolves.toEqual(stale);
-      await expect(
-        caller().application.write({ ...run, ...decided, acknowledged: [] }),
+        caller().application.write({ ...run, acknowledged: [] }),
       ).resolves.toEqual(stale);
       await expect(caller().application.undo(run)).resolves.toEqual(stale);
       expect(asked).not.toHaveBeenCalled();
@@ -548,28 +518,23 @@ describe('apply router', () => {
   });
 
   it('refuses an input that does not fit, before reaching storage', async () => {
-    const { run, decided } = await arrange('live');
-    const write = { ...run, ...decided, acknowledged: [] };
+    const { run } = await arrange('live');
+    const write = { ...run, acknowledged: [] };
     for (const refused of [
-      caller().application.preview({ ...run, ...decided, text: '' }),
-      caller().application.preview({ ...run, ...decided, readId: '' }),
-      caller().application.preview({ ...run, ...decided, readId: '../x' }),
-      // Apply names the rulebook it calculated on: none is not an option.
+      caller().application.preview({ ...run, runId: '' }),
+      caller().application.preview({ ...run, runId: '../x' }),
       caller().application.preview({
         ...run,
-        ...decided,
-        rulebook: undefined as never,
+        process: 'support-handoff' as never,
       }),
+      // The old inputs, by which the screens named a run before the server
+      // kept it, are not taken.
+      caller().application.preview({ ...run, text: PUBLISHED } as never),
+      caller().application.preview({ ...run, decisions: {} } as never),
       caller().application.preview({
         ...run,
-        ...decided,
-        rulebook: 'not-an-id',
-      }),
-      caller().application.preview({
-        ...run,
-        ...decided,
-        decisions: { 'EG-06': { kind: 'maybe', at: 'x' } } as never,
-      }),
+        rulebook: 'ABCDEF012345',
+      } as never),
       caller().application.write({
         ...write,
         acknowledged: undefined as never,
@@ -579,23 +544,23 @@ describe('apply router', () => {
         acknowledged: Array(1001).fill('x') as string[],
       }),
       caller().application.write({ ...write, extra: 1 } as never),
-      caller().application.undo({ ...run, rulebook: 'ABCDEF012345' }),
+      caller().application.undo({ ...run, readId: 'live' } as never),
     ])
       expect((await failure(refused)).code).toBe('BAD_REQUEST');
     expect(sheet.writes).toEqual([]);
   });
 
   it('says the read is gone', async () => {
-    const { run, decided } = await arrange('live');
-    expect(
-      await failure(
-        caller().application.preview({ ...run, ...decided, readId: 'gone' }),
-      ),
-    ).toMatchObject({
+    const { run } = await arrange('live');
+    // Kept as a row, but not a read the server can give any more.
+    await keepStandInRead(scratchDb(), 'gone');
+    await caller().runs.record({ ...run, readId: 'gone' });
+    expect(await failure(caller().application.preview(run))).toMatchObject({
       code: 'NOT_FOUND',
       message: expect.stringMatching(/no longer kept on the server/),
     });
   });
+
   describe('through a kept run', () => {
     // A run kept on the server, on the live read, with a proposal of three
     // records: two ready, one a blocking check stops.
@@ -656,16 +621,6 @@ describe('apply router', () => {
         ['CT-250', 10],
       ]);
       expect(await runIds()).toEqual([run.runId]);
-      // A write made with the decisions in the request names no run.
-      expect(
-        await caller().application.preview({
-          text: PUBLISHED,
-          readId: 'live',
-          rulebook: rulesFingerprint,
-          proposedAt: AT,
-          decisions: {},
-        }),
-      ).toMatchObject({ application: { status: 'verified' } });
     });
 
     it('is refused while a record is undecided, and writes nothing', async () => {
