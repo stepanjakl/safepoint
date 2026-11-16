@@ -42,6 +42,8 @@ const frozen = fixture('brunch-orders-proposal.json') as {
 
 let decisions: Awaited<ReturnType<typeof mockDecisions>>;
 let lastChanges: CellChange[] = [];
+// What the screen asked of the write: the run by its id, never decisions.
+let sent: { path: string; input: object }[] = [];
 let written: Application | null = null;
 const applicationOf = (changes: CellChange[]): Application => ({
   proposedAt: frozen.proposal.at,
@@ -60,6 +62,7 @@ const applicationOf = (changes: CellChange[]): Application => ({
 test.beforeEach(async ({ page }) => {
   written = null;
   lastChanges = [];
+  sent = [];
   await mockProcedure(page, 'rules.get', { data: rulesReply(accepted) });
   await mockProcedure(page, 'calculate.get', {
     data: {
@@ -69,19 +72,23 @@ test.beforeEach(async ({ page }) => {
       current: calculation.fingerprint,
     },
   });
-  await mockProcedure(page, 'application.write', () => {
+  await mockProcedure(page, 'application.write', (input) => {
+    sent.push({ path: 'write', input });
     written = applicationOf(lastChanges);
     return { data: { kind: 'applied', application: written } };
   });
-  await mockProcedure(page, 'application.undo', () => {
+  await mockProcedure(page, 'application.undo', (input) => {
+    sent.push({ path: 'undo', input });
     written = { ...written!, status: 'undone' };
     return { data: { kind: 'applied', application: written } };
   });
   await mockProcedure(page, 'application.preview', (body) => {
+    sent.push({ path: 'preview', input: body });
     lastChanges = Object.entries(frozen.proposal.records).flatMap(
       ([key, record], index) => {
-        // The screens send the decisions they hold, not a kept run's id.
-        const decision = 'decisions' in body ? body.decisions[key] : undefined;
+        // The server takes the decisions from its own database: the stand-in
+        // reads those it holds.
+        const decision = decisions.kept[key];
         const values = decision?.values ?? record.values;
         return decision && decision.kind !== 'reject' && values
           ? [
@@ -308,6 +315,20 @@ test('a person decides every record, then writes what Apply shows and can undo i
   await expect(
     page.getByRole('button', { name: 'Write 5 rows' }),
   ).toBeFocused();
+
+  // The screen names the run by the id the server gave it, and sends no
+  // decisions, rulebook or text of its own.
+  const run = {
+    process: 'brunch-orders',
+    runId: expect.stringMatching(/^run-/),
+  };
+  expect(sent.find((one) => one.path === 'write')?.input).toEqual({
+    ...run,
+    acknowledged: [],
+  });
+  expect(sent.find((one) => one.path === 'undo')?.input).toEqual(run);
+  for (const one of sent.filter((one) => one.path === 'preview'))
+    expect(one.input).toEqual(run);
 
   const violations = (
     await new AxeBuilder({ page }).include('ol.thread').analyze()

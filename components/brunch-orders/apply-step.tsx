@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import type { inferRouterOutputs } from '@trpc/server';
 import { useEffect, useRef, useState } from 'react';
 
+import type { RunProcessId } from '@/components/app-shell/runs/kept-runs';
 import { Lede, plural, saidBy } from '@/components/brunch-orders/trial-parts';
 import { useTRPC } from '@/components/trpc/provider';
 import { Button } from '@/components/ui/button';
@@ -23,7 +24,7 @@ import type { Application, CellChange } from '@/lib/definitions/types';
 import type { DefinitionSubject } from '@/lib/process/model';
 import type { AppRouter } from '@/server/api/root';
 
-import type { Decision, Evaluation } from './propose/types';
+import type { Decision } from './propose/types';
 
 // What the procedures answer: the preview of what the decisions write (which
 // is also what a refused write answers, so the screen shows why), the record
@@ -59,21 +60,17 @@ const NO_LONGER_FIT =
 */
 export function ApplyStep({
   subject,
-  text,
-  readId,
-  rulebook,
-  evaluation = 'rules',
-  proposedAt,
+  run,
   decisions,
   onProgress,
 }: {
   // The process's subject: what it writes, and to which output.
   subject: DefinitionSubject;
-  text: string;
-  readId: string;
-  rulebook: string;
-  evaluation?: Evaluation;
-  proposedAt: string;
+  // The run that writes, by the id the server gave it: the server reads its
+  // text, read, rulebook and current decisions itself.
+  run: { process: RunProcessId; runId: string };
+  // What the server holds of the decisions, for the counts and for asking the
+  // preview again when one changes.
   decisions: Record<string, Decision>;
   onProgress: (progress: ApplyProgress) => void;
 }) {
@@ -126,22 +123,22 @@ export function ApplyStep({
       },
     );
 
-  const run = { text, readId, rulebook, evaluation };
-  const decided = { proposedAt, decisions: toSend(decisions) };
-  const askPreview = () =>
-    settle(previewing.mutateAsync({ ...run, ...decided }));
+  const askPreview = () => settle(previewing.mutateAsync(run));
 
-  const decidedKey = JSON.stringify(decided);
+  // When each record was decided: a decision changed or made again is a new
+  // time, so the preview is asked again whenever what is decided changes.
+  const decidedKey = JSON.stringify(
+    Object.entries(decisions).map(([key, one]) => [key, one.at]),
+  );
   useEffect(() => {
     askPreview();
-    // Whenever the run or what was decided changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text, readId, rulebook, evaluation, decidedKey]);
+  }, [run.process, run.runId, decidedKey]);
 
   const write = (acknowledged: string[]) => {
     setConfirming(false);
     setActing(true);
-    settle(writing.mutateAsync({ ...run, ...decided, acknowledged }), () => {
+    settle(writing.mutateAsync({ ...run, acknowledged }), () => {
       setActing(false);
       setActed(true);
     });
@@ -287,16 +284,6 @@ export function ApplyStep({
         </>
       )}
     </div>
-  );
-}
-
-// Only what the server reads of a decision: it works out the rest itself.
-function toSend(decisions: Record<string, Decision>) {
-  return Object.fromEntries(
-    Object.entries(decisions).map(([key, { kind, values, at }]) => [
-      key,
-      { kind, ...(values ? { values } : {}), at },
-    ]),
   );
 }
 

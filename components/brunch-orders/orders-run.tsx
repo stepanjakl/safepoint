@@ -363,10 +363,7 @@ function OrdersThread({
               <ResponseSection>
                 <ApplyStep
                   subject={SUBJECT}
-                  text={text}
-                  readId={read.id}
-                  rulebook={pinned}
-                  proposedAt={proposed.proposedAt!}
+                  run={{ process: 'brunch-orders', runId: kept.id }}
                   decisions={proposed.decisions}
                   onProgress={setApplied}
                 />

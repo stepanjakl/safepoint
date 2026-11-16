@@ -192,11 +192,7 @@ function DirectThread({
               <ResponseSection>
                 <ApplyStep
                   subject={SUBJECT}
-                  evaluation="model"
-                  text={text}
-                  readId={read.id}
-                  rulebook={proposed.fingerprint}
-                  proposedAt={proposed.proposedAt!}
+                  run={{ process: 'brunch-orders-direct', runId: kept.id }}
                   decisions={proposed.decisions}
                   onProgress={setApplied}
                 />
