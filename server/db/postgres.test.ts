@@ -10,7 +10,13 @@ import { capturedRead } from '@/lib/definitions/captured.fixture';
 import { hashOf } from '@/lib/definitions/fingerprint';
 import type { KeptRead } from '@/lib/definitions/records';
 import { eventually } from '@/lib/definitions/scratch.fixture';
-import { definitionSetSchema, type Proposal } from '@/lib/definitions/types';
+import { profileOf, setColumnBlank } from '@/lib/definitions/profile';
+import { definition, keepText } from '@/lib/definitions/set.fixture';
+import {
+  definitionSetSchema,
+  type DefinitionSet,
+  type Proposal,
+} from '@/lib/definitions/types';
 import {
   BRUNCH_ORDERS_DEFINITIONS as owner,
   brunchOrdersProcess,
@@ -21,6 +27,7 @@ import {
   proposals,
   reads,
   recordDecisions,
+  rulebookRevisions,
 } from '@/server/db/schema';
 import { keptProcess, runProcess } from '@/server/operations/kept-processes';
 import {
@@ -39,6 +46,17 @@ import { publishVersion } from '@/server/storage/instructions';
 import { currentProposalOf, keepProposal } from '@/server/storage/proposals';
 import { keepStandInRead } from '@/server/storage/reads.fixture';
 import { Refused } from '@/server/storage/refused';
+import { seedRulebooks } from '@/server/storage/rulebook-files';
+import {
+  listRevisions,
+  loadProfile,
+  loadSet,
+  putRevision,
+  saveProfile,
+  saveSet,
+  updateProfile,
+  updateSet,
+} from '@/server/storage/rulebooks';
 import { startRun } from '@/server/storage/runs';
 import { memorySheet } from '@/server/storage/sheet.fixture';
 
@@ -390,6 +408,106 @@ describe.skipIf(!POSTGRES_URL)('on a real PostgreSQL server', () => {
           expect(wrote['CT-250']!.kind).toBe('reject');
       }
       expect(seen.written + seen.writeRefused).toBe(REPEATS);
+    });
+  });
+
+  describe('rulebooks', () => {
+    const base = (text: string): DefinitionSet => ({
+      hash: hashOf(text),
+      version: 'v1',
+      intent: 'Order enough.',
+      intentConfirmedAt: null,
+      readId: 'test',
+      foundAt: '2026-10-08T00:00:00.000Z',
+      model: 'test',
+      definitions: [definition('first'), definition('second')],
+    });
+    const approving = (id: string) => (s: DefinitionSet) => ({
+      ...s,
+      definitions: s.definitions.map((d) =>
+        d.id === id ? { ...d, approvedAt: THURSDAY } : d,
+      ),
+    });
+
+    it('land both of two changes at once, the later worked out again', async () => {
+      for (let at = 0; at < REPEATS; at += 1) {
+        const text = `Rules for a race ${at}.`;
+        await keepText(text);
+        await saveSet(owner, base(text));
+        await Promise.all([
+          updateSet(owner, text, approving('first')),
+          updateSet(owner, text, approving('second')),
+        ]);
+        const kept = await loadSet(owner, text);
+        expect(kept!.definitions.map((d) => d.approvedAt)).toEqual([
+          THURSDAY,
+          THURSDAY,
+        ]);
+      }
+    });
+
+    it('make a straight line of revisions kept at once', async () => {
+      for (let at = 0; at < REPEATS; at += 1) {
+        const text = `Revisions for a race ${at}.`;
+        await keepText(text);
+        const bodies = ['first', 'second', 'third'].map((id) => ({
+          ...base(text),
+          definitions: [
+            definition(id, {
+              formula: 'record.weekend_1',
+              approvedAt: THURSDAY,
+            }),
+          ],
+        }));
+        await Promise.all(
+          bodies.map((body) =>
+            putRevision(owner, body, { reason: 'accepted' }),
+          ),
+        );
+        const { head, revisions } = await listRevisions(owner, text);
+        const oldestFirst = [...revisions].reverse();
+        expect(oldestFirst.map((r) => r.parent)).toEqual([
+          null,
+          oldestFirst[0]!.id,
+          oldestFirst[1]!.id,
+        ]);
+        expect(head).toBe(oldestFirst[2]!.id);
+      }
+    });
+
+    it('change the profile under review losing neither of two at once', async () => {
+      const proposed = profileOf(capturedRead(), owner.subject.data);
+      const [a, b] = proposed.columns;
+      for (let at = 0; at < REPEATS; at += 1) {
+        await saveProfile(owner, proposed);
+        await Promise.all([
+          updateProfile(owner, (p) => setColumnBlank(p, a!.column, 'skip')),
+          updateProfile(owner, (p) => setColumnBlank(p, b!.column, 'fail')),
+        ]);
+        const kept = (await loadProfile(owner))!;
+        expect([kept.columns[0]!.blank, kept.columns[1]!.blank]).toEqual([
+          'skip',
+          'fail',
+        ]);
+      }
+    });
+
+    it('are seeded from fixtures/ once by two servers at once', async () => {
+      for (let at = 0; at < REPEATS; at += 1) {
+        await pg.reset();
+        const reports = await Promise.all([
+          seedRulebooks(pg.db(), owner.id, 'fixtures'),
+          seedRulebooks(pg.db(), owner.id, 'fixtures'),
+        ]);
+        expect(reports.map((r) => r.inserted).sort((x, y) => x - y)).toEqual([
+          0, 10,
+        ]);
+        const [revisions] = await pg
+          .db()
+          .select({ n: count() })
+          .from(rulebookRevisions);
+        expect(revisions!.n).toBe(4);
+      }
     });
   });
 
