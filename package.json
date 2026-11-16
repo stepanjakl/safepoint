@@ -16,6 +16,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
+    "test:postgres": "vitest run --testTimeout 300000 server/db/postgres.test.ts server/db/postgres-schema.test.ts",
     "check:sidebars": "playwright test e2e/sidebars.spec.ts --project=light",
     "check:rail": "node scripts/check-rail-alignment.ts",
     "check:contrast": "playwright test",
