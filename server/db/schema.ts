@@ -359,7 +359,8 @@ export const runs = pgTable(
     readId: text('read_id'),
     // The accepted rulebook it calculates on (fingerprintOf), null until it
     // pins one; a process with no rulebook never does. Not yet a key into
-    // rulebook_revisions, which is empty until rulebooks are kept there.
+    // rulebook_revisions: the browser tests pin a revision of other
+    // instructions (DATABASE.md, "The run's pin is not yet a key").
     rulebookId: text('rulebook_id'),
     // The step it is at: the furthest one a person can act on now.
     stage: text('stage').notNull(),
