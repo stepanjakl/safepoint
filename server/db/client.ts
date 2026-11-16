@@ -137,6 +137,7 @@ export async function open(
 const server = globalThis as {
   safepointDatabase?: Promise<Opened>;
   safepointDatabaseInTests?: Database | null;
+  safepointOnce?: Map<string, Promise<void>>;
 };
 
 export async function database(): Promise<Database> {
@@ -165,6 +166,7 @@ export async function database(): Promise<Database> {
 export async function closeDatabase() {
   const opening = server.safepointDatabase;
   delete server.safepointDatabase;
+  delete server.safepointOnce;
   await (await opening?.catch(() => null))?.close();
 }
 
@@ -173,4 +175,30 @@ export function useDatabaseInTests(db: Database | null) {
   if (!process.env.VITEST)
     throw new Error('Only a test hands the database in.');
   server.safepointDatabaseInTests = db;
+  // A test's database is emptied before each test: nothing done is kept.
+  delete server.safepointOnce;
+}
+
+/*
+  Runs `task` once per key for the database this process has open (seeding
+  rulebooks from fixtures/, server/storage/rulebook-files.ts), and answers
+  every later call with the same promise. A task that fails is forgotten,
+  so the next call tries it again and fails as loudly. Forgotten too when
+  the database is closed or a test hands one in; a database reset under a
+  running server is not noticed until the server restarts.
+*/
+export function oncePerDatabase(
+  key: string,
+  task: () => Promise<void>,
+): Promise<void> {
+  const done = (server.safepointOnce ??= new Map());
+  let running = done.get(key);
+  if (!running) {
+    running = task();
+    done.set(key, running);
+    running.catch(() => {
+      if (done.get(key) === running) done.delete(key);
+    });
+  }
+  return running;
 }

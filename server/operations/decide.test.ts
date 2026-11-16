@@ -11,7 +11,7 @@ import {
   withProfile,
 } from '@/lib/definitions/profile';
 import { recordsOf } from '@/lib/definitions/records';
-import { inScratchDirectory } from '@/lib/definitions/scratch.fixture';
+import { inScratchStorage } from '@/lib/definitions/scratch.fixture';
 import { definition, example, keep, TEXT } from '@/lib/definitions/set.fixture';
 import {
   formulaOf,
@@ -36,7 +36,7 @@ import type {
 // Accepting reruns the whole review on the version kept, against its read:
 // whatever writing would refuse, accepting refuses too, with the reason.
 
-inScratchDirectory();
+inScratchStorage();
 const read = capturedRead();
 const readOf = async (id: string) => (id === 'test' ? read : null);
 const accepted = async (id: string, found = readOf) =>

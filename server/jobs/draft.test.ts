@@ -1,6 +1,6 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { MockLanguageModelV4 } from 'ai/test';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 
@@ -16,7 +16,7 @@ import {
   eventually,
   inScratchStorage,
 } from '@/lib/definitions/scratch.fixture';
-import { TEXT } from '@/lib/definitions/set.fixture';
+import { keepText, TEXT } from '@/lib/definitions/set.fixture';
 import { hashOf } from '@/lib/definitions/fingerprint';
 import { ensureProcess } from '@/server/db/scope';
 import { jobs, modelAttempts } from '@/server/db/schema';
@@ -26,6 +26,12 @@ import { loadSet } from '@/server/storage/rulebooks';
 // its progress there to be asked for, and never on a read that does not fit.
 
 const { database: db } = inScratchStorage();
+
+// Drafting keeps rules for kept instructions, as a run's always are.
+beforeEach(async () => {
+  for (const text of [TEXT, `${TEXT} Interrupted.`, `${TEXT} Again.`])
+    await keepText(text);
+});
 
 // The row a draft's progress is kept in.
 const draftRow = async (text: string) =>

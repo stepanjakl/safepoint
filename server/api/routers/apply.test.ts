@@ -14,6 +14,7 @@ import {
 import { applyDecisions, keptApplication } from '@/server/storage/applications';
 import { keepProposal } from '@/server/storage/proposals';
 import { memorySheet } from '@/server/storage/sheet.fixture';
+import { keepText } from '@/lib/definitions/set.fixture';
 import { putRevision } from '@/server/storage/rulebooks';
 import { applications as applicationRows } from '@/server/db/schema';
 
@@ -104,6 +105,7 @@ async function arrange(
   rulebook: DefinitionSet = accepted,
 ) {
   const set = { ...rulebook, hash: hashOf(text) };
+  await keepText(text);
   await keepAsCurrent(set);
   await keepStandInRead(scratchDb(), readId);
   const fingerprint = fingerprintOf(set);

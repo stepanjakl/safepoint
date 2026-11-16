@@ -43,6 +43,7 @@ import {
   loadSet,
   ownerFor,
   saveProfile,
+  updateProfile,
 } from '@/server/storage/rulebooks';
 
 import { failed, gatedProcedure, router } from '../trpc';
@@ -99,11 +100,15 @@ async function profileState(readId: string | null): Promise<ProfileState> {
   return { state: 'none', proposed };
 }
 
-// The kept profile, changed and kept as under review.
-async function changeProfile(change: (profile: DataProfile) => DataProfile) {
-  const profile = await loadProfile(owner);
-  if (!profile) throw new Error('No data profile is kept yet.');
-  await saveProfile(owner, change(profile));
+// The kept profile, changed and kept as under review, by compare-and-set;
+// what it comes to.
+async function changeProfile(
+  change: (profile: DataProfile) => DataProfile,
+  actor: string | null,
+) {
+  const changed = await updateProfile(owner, change, { actor });
+  if (!changed) throw new Error('No data profile is kept yet.');
+  return changed;
 }
 
 // The revisions, each with what it changed from its parent.
@@ -202,7 +207,7 @@ export const rulesRouter = router({
       type: z.enum(['whole_number', 'decimal', 'yes_no', 'text']).optional(),
       blank: z.enum(['skip', 'fail']).nullable().optional(),
     }),
-  ).mutation(async ({ input }) => {
+  ).mutation(async ({ ctx, input }) => {
     const { column, label, type, blank } = input;
     await changeProfile((profile) => {
       let changed = profile;
@@ -211,16 +216,16 @@ export const rulesRouter = router({
         changed = setColumnType(changed, column, { kind: type });
       if (blank !== undefined) changed = setColumnBlank(changed, column, blank);
       return changed;
-    });
+    }, ctx.actor);
     return replyWith(input.text, null, () => loadSet(owner, input.text));
   }),
 
   confirmProfile: rulesProcedure(z.strictObject({ text })).mutation(
-    async ({ input }) => {
-      const kept = await loadProfile(owner);
-      if (!kept) throw new Error('No data profile is kept yet.');
-      const confirmed = kept.confirmedAt ? kept : confirmProfile(kept);
-      await saveProfile(owner, confirmed);
+    async ({ ctx, input }) => {
+      const confirmed = await changeProfile(
+        (kept) => (kept.confirmedAt ? kept : confirmProfile(kept)),
+        ctx.actor,
+      );
       // Rules under review move onto it, so an answer takes effect without
       // a redraft; accepted rules keep the profile they were accepted on.
       const set = await loadSet(owner, input.text);
@@ -255,9 +260,9 @@ export const rulesRouter = router({
     );
   }),
 
-  intent: rulesProcedure(z.strictObject({ text })).mutation(({ input }) =>
+  intent: rulesProcedure(z.strictObject({ text })).mutation(({ ctx, input }) =>
     replyWith(input.text, null, () =>
-      confirmIntent(owner, input.text, keptRead),
+      confirmIntent(owner, input.text, keptRead, ctx.actor),
     ),
   ),
 
@@ -280,17 +285,24 @@ export const rulesRouter = router({
 
   choose: rulesProcedure(
     z.strictObject({ text, id, index: z.number().int().min(0).max(5) }),
-  ).mutation(({ input }) =>
+  ).mutation(({ ctx, input }) =>
     replyWith(input.text, null, () =>
-      choose(owner, input.text, input.id, input.index),
+      choose(owner, input.text, input.id, input.index, ctx.actor),
     ),
   ),
 
   appliesTo: rulesProcedure(
     z.strictObject({ text, id, value: z.enum(['every', 'some']) }),
-  ).mutation(({ input }) =>
+  ).mutation(({ ctx, input }) =>
     replyWith(input.text, null, () =>
-      setAppliesTo(owner, input.text, input.id, input.value, keptRead),
+      setAppliesTo(
+        owner,
+        input.text,
+        input.id,
+        input.value,
+        keptRead,
+        ctx.actor,
+      ),
     ),
   ),
 
@@ -368,11 +380,11 @@ export const rulesRouter = router({
       decision: z.enum(['accept', 'deny']),
       note: z.string().max(500).optional(),
     }),
-  ).mutation(({ input }) =>
+  ).mutation(({ ctx, input }) =>
     replyWith(input.text, null, () =>
       input.decision === 'accept'
-        ? accept(owner, input.text, input.id, keptRead)
-        : deny(owner, input.text, input.id, input.note),
+        ? accept(owner, input.text, input.id, keptRead, ctx.actor)
+        : deny(owner, input.text, input.id, input.note, ctx.actor),
     ),
   ),
 });

@@ -11,7 +11,7 @@ import {
   rebaseSet,
   setAppliesTo,
 } from '@/server/operations/decide';
-import { findDefinitions } from '@/server/operations/find';
+import { findKept } from './set.fixture';
 import { writeAgreed, writeDefinition } from '@/server/operations/write';
 import { propose } from '@/server/storage/proposals';
 import {
@@ -182,7 +182,7 @@ async function drafted() {
   await saveProfile(DOCKS, profile);
   const owner = await ownerToDraft(DOCKS);
   const finder = standIn(answer(FOUND));
-  await findDefinitions(owner, TEXT, 'v1', read, { resolve: () => finder });
+  await findKept(owner, TEXT, 'v1', read, { resolve: () => finder });
   for (const { id } of FOUND_DEFINITIONS) {
     const writer = writing(ANSWERS[id]!, ANSWERS[id]!);
     await writeAgreed(owner, TEXT, read, id, { resolve: () => writer });
@@ -528,7 +528,7 @@ describe('drafting', () => {
     await saveProfile(DOCKS, profile);
     const owner = await ownerToDraft(DOCKS);
     const finder = standIn(answer(FOUND));
-    await findDefinitions(owner, TEXT, 'v1', read, { resolve: () => finder });
+    await findKept(owner, TEXT, 'v1', read, { resolve: () => finder });
     const writer = writing(ANSWERS.expected_departures!);
     await writeDefinition(owner, TEXT, read, 'expected_departures', {
       resolve: () => writer,
@@ -542,7 +542,7 @@ describe('drafting', () => {
 
   it('tells a writer of a process without timing that there are no moments', async () => {
     const finder = standIn(answer(FOUND));
-    await findDefinitions(UNTIMED_DOCKS, TEXT, 'v1', read, {
+    await findKept(UNTIMED_DOCKS, TEXT, 'v1', read, {
       resolve: () => finder,
     });
     const writer = writing(ANSWERS.fare_floor!);
@@ -721,7 +721,7 @@ describe('how finding read a rule, and the shape written for it', () => {
       ),
     };
     const finder = standIn(answer(missing), answer(FOUND));
-    const set = await findDefinitions(owner, TEXT, 'v1', read, {
+    const set = await findKept(owner, TEXT, 'v1', read, {
       resolve: () => finder,
     });
     expect(told(finder, 1)).toContain(
@@ -743,7 +743,7 @@ describe('how finding read a rule, and the shape written for it', () => {
       definitions: FOUND_DEFINITIONS.map((d) => ({ ...d, applies_to: null })),
     };
     await expect(
-      findDefinitions(DOCKS, TEXT, 'v1', read, {
+      findKept(DOCKS, TEXT, 'v1', read, {
         resolve: () => always(answer(missing)),
       }),
     ).rejects.toThrow(/No applies_to for whole_racks/);
@@ -2178,7 +2178,7 @@ describe('dated moments', () => {
 
   it('tells a shape writer what a dated moment is, and hours since it', async () => {
     const finder = standIn(answer(FOUND));
-    await findDefinitions(DATED_DOCKS, TEXT, 'v1', read, {
+    await findKept(DATED_DOCKS, TEXT, 'v1', read, {
       resolve: () => finder,
     });
     const writer = writing(ANSWERS.fare_floor!);
@@ -2459,7 +2459,7 @@ describe('a moment on a date, or else a weekday and time', () => {
 
   it('tells a shape writer what it is, in the process’s words', async () => {
     const finder = standIn(answer(FOUND));
-    await findDefinitions(SWEPT_AT_DOCKS, TEXT, 'v1', dated, {
+    await findKept(SWEPT_AT_DOCKS, TEXT, 'v1', dated, {
       resolve: () => finder,
     });
     const writer = writing(ANSWERS.fare_floor!);

@@ -1,7 +1,6 @@
 import 'server-only';
 
-import { readdir } from 'node:fs/promises';
-import path from 'node:path';
+import { and, desc, eq, sql } from 'drizzle-orm';
 
 import {
   hashOf,
@@ -12,122 +11,256 @@ import { withProfile } from '@/lib/definitions/profile';
 import {
   dataProfileSchema,
   definitionSetSchema,
-  revisionIndexSchema,
   RULEBOOK_SCHEMA,
+  type AppliesTo,
   type DataProfile,
   type DefinitionProcess,
   type DefinitionSet,
   type Revision,
   type RevisionIndex,
 } from '@/lib/definitions/types';
+import { database, oncePerDatabase, type Database } from '@/server/db/client';
+import {
+  currentProfiles,
+  currentRulebooks,
+  dataProfiles,
+  instructionVersions,
+  ruleDecisions,
+  rulebookHeads,
+  rulebookRevisions,
+} from '@/server/db/schema';
 
-import { inTurn, readKept, StoredFileError, writeKept } from './files';
+import { StoredFileError } from './files';
+import { Refused } from './refused';
+import { seedRulebooks } from './rulebook-files';
+import { parseStored } from './stored';
 
 /*
-  Server-only. A process's rulebooks are kept in the repository, like any
-  approved policy, one folder per version of its instructions:
+  Server-only. A process's rulebooks and data profile, in the database
+  (docs/engineering/DATABASE.md): per version of its instructions, by the
+  hash of their text, the rulebook under review (`current_rulebooks`), each
+  accepted rulebook as a revision written once (`rulebook_revisions`, by its
+  fingerprint) and the one in use (`rulebook_heads`); per process, the
+  profile under review (`current_profiles`) and each confirmed one, written
+  once (`data_profiles`). The rulebook id is a fingerprint of what was
+  accepted, so a run that pins one reads exactly those formulas however the
+  current rulebook changes after.
 
-    fixtures/<process>/rulebooks/<version>-<instructions hash>/
-      current.json      the rulebook being drafted and reviewed
-      <rulebook id>.json each accepted rulebook, a revision, as it was
-      revisions.json    each revision's parent and reason, and the head
+  fixtures/<process>/ holds the reviewed copy in git: the first call for a
+  process seeds what the database lacks from it (rulebook-files.ts), and
+  `pnpm rulebooks:export` writes the database's state back to it.
 
-  The version names the folder for a reader; the hash of the instructions'
-  text is what finds it, since a version name is only this browser's. The
-  rulebook id is a fingerprint of what was accepted, so a run that pins one
-  reads exactly those formulas however the current rulebook changes after.
-  Revisions are reached only through the functions below, so a database can
-  take the files' place without the engine changing.
-
-  A file that does not fit the schema is an error, never "nothing kept", so a
-  draft cannot overwrite it unseen; a save is written beside the file and
-  renamed over it, so a crash mid-save leaves the last good version.
+  A body that does not fit its schema, or whose id is not its content, is
+  an error, never "nothing kept". The rulebook and profile under review
+  change by compare-and-set on their `revision`, which a trigger moves on
+  with every update: a change is worked out on what was read and lands only
+  if nothing landed since, else it is worked out again.
 */
-
-const CURRENT = 'current.json';
-
-// Read when used, so a test can work in a scratch directory.
-const rulebooksOf = (owner: DefinitionProcess) =>
-  path.join(process.cwd(), 'fixtures', owner.id, 'rulebooks');
-
-// The folder kept for these instructions, if there is one.
-async function folderOf(
-  owner: DefinitionProcess,
-  hash: string,
-): Promise<string | null> {
-  let entries: string[];
-  try {
-    entries = await readdir(rulebooksOf(owner));
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
-    throw error;
-  }
-  const found = entries.find((entry) => entry.endsWith(`-${hash}`));
-  return found ? path.join(rulebooksOf(owner), found) : null;
-}
 
 // Kept under its old name for what catches it.
 export const StoredSetError = StoredFileError;
 
-const readSet = (file: string) => readKept(file, definitionSetSchema);
+// The database, with this process's declared instructions and anything
+// fixtures/ holds for it that the database lacks, once per server process.
+async function ready(owner: DefinitionProcess): Promise<Database> {
+  const db = await database();
+  await oncePerDatabase(`rulebooks:${owner.id}`, () =>
+    seedRulebooks(db, owner.id).then(() => undefined),
+  );
+  return db;
+}
+
+const ofRulebook = (process: string, hash: string) =>
+  and(
+    eq(currentRulebooks.process, process),
+    eq(currentRulebooks.instructionsHash, hash),
+  );
+
+async function currentOf(db: Database, process: string, hash: string) {
+  const [row] = await db
+    .select({
+      body: currentRulebooks.body,
+      revision: currentRulebooks.revision,
+    })
+    .from(currentRulebooks)
+    .where(ofRulebook(process, hash));
+  return row
+    ? {
+        set: parseStored(
+          row.body,
+          definitionSetSchema,
+          `The rulebook kept for instructions ${hash}`,
+        ),
+        revision: row.revision,
+      }
+    : null;
+}
 
 // The rulebook being drafted and reviewed for these instructions.
 export async function loadSet(
   owner: DefinitionProcess,
   text: string,
 ): Promise<DefinitionSet | null> {
-  const folder = await folderOf(owner, hashOf(text));
-  return folder ? readSet(path.join(folder, CURRENT)) : null;
+  const db = await ready(owner);
+  return (await currentOf(db, owner.id, hashOf(text)))?.set ?? null;
+}
+
+// A rulebook belongs to a kept version of the instructions: declared ones
+// are kept on first need (ready), published ones when they are published.
+async function mustKeepInstructions(
+  db: Database,
+  process: string,
+  hash: string,
+) {
+  const [kept] = await db
+    .select({ hash: instructionVersions.hash })
+    .from(instructionVersions)
+    .where(
+      and(
+        eq(instructionVersions.process, process),
+        eq(instructionVersions.hash, hash),
+      ),
+    );
+  if (!kept)
+    throw new Refused(
+      'These instructions are not a kept version: publish them before keeping rules for them.',
+    );
+}
+
+// Keeps a set as the rulebook under review for its instructions, replacing
+// any there: what drafting found.
+export async function saveSet(
+  owner: DefinitionProcess,
+  set: DefinitionSet,
+): Promise<DefinitionSet> {
+  const db = await ready(owner);
+  const body = definitionSetSchema.parse(set);
+  await mustKeepInstructions(db, owner.id, body.hash);
+  await db
+    .insert(currentRulebooks)
+    .values({
+      process: owner.id,
+      instructionsHash: body.hash,
+      body,
+      schemaVersion: RULEBOOK_SCHEMA,
+    })
+    .onConflictDoUpdate({
+      target: [currentRulebooks.process, currentRulebooks.instructionsHash],
+      set: {
+        body: sql`excluded.body`,
+        schemaVersion: sql`excluded.schema_version`,
+        updatedAt: sql`now()`,
+        updatedBy: null,
+      },
+    });
+  return body;
 }
 
 /*
-  Saves and updates of one rulebook take turns within this process, so an
-  update reads what the one before it saved rather than both reading the same
-  set and the later save dropping the other's change. Other rulebooks do not
-  wait. Nothing run in a turn may save or update the same rulebook.
+  A person's act on the rules, kept with the change it makes, in the same
+  transaction (`rule_decisions`). Worked out from the rulebook as it was
+  read and as it is changed, so a retry records what finally landed.
 */
-const inTurnFor = <T>(
-  owner: DefinitionProcess,
-  hash: string,
-  task: () => Promise<T>,
-) => inTurn(path.join(rulebooksOf(owner), hash), task);
+export type RuleDecision = {
+  kind: 'confirm_intent' | 'accept' | 'deny' | 'choose' | 'applies_to';
+  // The definition decided on; it is kept as it was before the change.
+  definitionId?: string;
+  note?: string | null;
+  versionIndex?: number;
+  appliesTo?: AppliesTo;
+  // Why code did not take it, where it did not.
+  refusal?: string | null;
+};
 
-async function writeSet(owner: DefinitionProcess, set: DefinitionSet) {
-  const folder =
-    (await folderOf(owner, set.hash)) ??
-    path.join(rulebooksOf(owner), `${set.version}-${set.hash}`);
-  await writeKept(path.join(folder, CURRENT), set);
-  return set;
-}
+export type Deciding = {
+  actor: string | null;
+  decision: (before: DefinitionSet, after: DefinitionSet) => RuleDecision;
+};
 
-export const saveSet = (owner: DefinitionProcess, set: DefinitionSet) =>
-  inTurnFor(owner, set.hash, () => writeSet(owner, set));
+// How many times a change is worked out again on a rulebook that moved.
+const ATTEMPTS = 5;
 
-// Reads the kept set fresh, changes it, and saves it; null when none is kept.
-export const updateSet = (
+export const KEPT_CHANGING =
+  'These rules kept changing while your change was being kept: look at them again and try once more.';
+
+/*
+  Reads the kept set, changes it, and keeps the change only if the set is
+  still the one read (its `revision`); otherwise reads it again and changes
+  that, a few times. No lock is held while the change is worked out. Null
+  when none is kept.
+*/
+export async function updateSet(
   owner: DefinitionProcess,
   text: string,
   change: (set: DefinitionSet) => DefinitionSet,
-): Promise<DefinitionSet | null> =>
-  inTurnFor(owner, hashOf(text), async () => {
-    const set = await loadSet(owner, text);
-    return set ? writeSet(owner, change(set)) : null;
-  });
+  deciding?: Deciding,
+): Promise<DefinitionSet | null> {
+  const db = await ready(owner);
+  const hash = hashOf(text);
+  for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
+    const kept = await currentOf(db, owner.id, hash);
+    if (!kept) return null;
+    const next = definitionSetSchema.parse(change(kept.set));
+    if (next.hash !== hash)
+      throw new Error('A change cannot move a rulebook to other instructions.');
+    const landed = await db.transaction(async (tx) => {
+      const moved = await tx
+        .update(currentRulebooks)
+        .set({
+          body: next,
+          schemaVersion: RULEBOOK_SCHEMA,
+          updatedAt: sql`now()`,
+          updatedBy: deciding?.actor ?? null,
+        })
+        .where(
+          and(
+            ofRulebook(owner.id, hash),
+            eq(currentRulebooks.revision, kept.revision),
+          ),
+        )
+        .returning({ revision: currentRulebooks.revision });
+      if (!moved.length) return false;
+      if (deciding) {
+        const made = deciding.decision(kept.set, next);
+        const definition = made.definitionId
+          ? (kept.set.definitions.find((d) => d.id === made.definitionId) ??
+            null)
+          : null;
+        if (made.definitionId && !definition)
+          throw new Error(`No definition ${made.definitionId} to decide on.`);
+        await tx.insert(ruleDecisions).values({
+          process: owner.id,
+          instructionsHash: hash,
+          kind: made.kind,
+          definitionId: made.definitionId ?? null,
+          definition,
+          rulebookRevision: kept.revision,
+          note: made.note ?? null,
+          versionIndex: made.versionIndex ?? null,
+          appliesTo: made.appliesTo ?? null,
+          refusal: made.refusal ?? null,
+          actor: deciding.actor,
+        });
+      }
+      return true;
+    });
+    if (landed) return next;
+  }
+  throw new Refused(KEPT_CHANGING);
+}
 
-const INDEX = 'revisions.json';
-const EMPTY: RevisionIndex = { head: null, revisions: [] };
-
-const folderFor = async (owner: DefinitionProcess, set: DefinitionSet) =>
-  (await folderOf(owner, set.hash)) ??
-  path.join(rulebooksOf(owner), `${set.version}-${set.hash}`);
-
-const indexIn = async (folder: string) =>
-  (await readKept(path.join(folder, INDEX), revisionIndexSchema)) ?? EMPTY;
+const ofHead = (process: string, hash: string) =>
+  and(
+    eq(rulebookHeads.process, process),
+    eq(rulebookHeads.instructionsHash, hash),
+  );
 
 /*
   Keeps an accepted rulebook as a revision and makes it the head. A revision
   already kept is left as it is, head included: a run going back to the one
-  it pinned does not make it current again. Returns its id.
+  it pinned does not make it current again. Under a transaction-scoped lock
+  on the instructions, so of two at once the second reads the head the first
+  made, and the parents make a straight line. Returns its id.
 */
 export async function putRevision(
   owner: DefinitionProcess,
@@ -136,37 +269,60 @@ export async function putRevision(
     reason,
     parent,
     note = null,
+    actor = null,
   }: {
     reason: Revision['reason'];
     parent?: string | null;
     note?: string | null;
+    actor?: string | null;
   },
 ): Promise<string> {
-  // The index is read, added to and written, so it takes its turn too.
-  return inTurnFor(owner, set.hash, async () => {
-    const id = fingerprintOf(set);
-    const folder = await folderFor(owner, set);
-    const index = await indexIn(folder);
-    const file = path.join(folder, `${id}.json`);
-    if (!(await readSet(file))) await writeKept(file, set);
-    if (index.revisions.some((r) => r.id === id)) return id;
-    await writeKept(path.join(folder, INDEX), {
-      head: id,
-      revisions: [
-        ...index.revisions,
-        {
-          id,
-          parent: parent === undefined ? index.head : parent,
-          reason,
-          at: new Date().toISOString(),
-          schemaVersion: RULEBOOK_SCHEMA,
-          note,
-        },
-      ],
-    } satisfies RevisionIndex);
+  const db = await ready(owner);
+  const body = definitionSetSchema.parse(set);
+  const id = fingerprintOf(body);
+  await mustKeepInstructions(db, owner.id, body.hash);
+  return db.transaction(async (tx) => {
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtextextended(${`rulebook_revisions:${owner.id}:${body.hash}`}, 0))`,
+    );
+    const [head] = await tx
+      .select({ id: rulebookHeads.revisionId })
+      .from(rulebookHeads)
+      .where(ofHead(owner.id, body.hash));
+    const inserted = await tx
+      .insert(rulebookRevisions)
+      .values({
+        process: owner.id,
+        instructionsHash: body.hash,
+        id,
+        parent: parent === undefined ? (head?.id ?? null) : parent,
+        reason,
+        revisedAt: new Date(),
+        schemaVersion: RULEBOOK_SCHEMA,
+        note,
+        profileId: body.profileId ?? null,
+        actor,
+        body,
+      })
+      .onConflictDoNothing()
+      .returning({ id: rulebookRevisions.id });
+    if (inserted.length)
+      await tx
+        .insert(rulebookHeads)
+        .values({
+          process: owner.id,
+          instructionsHash: body.hash,
+          revisionId: id,
+        })
+        .onConflictDoUpdate({
+          target: [rulebookHeads.process, rulebookHeads.instructionsHash],
+          set: { revisionId: id, updatedAt: sql`now()` },
+        });
     return id;
   });
 }
+
+const FINGERPRINT = /^[0-9a-f]{12}$/;
 
 // A revision a run pinned, or null when it is not kept.
 export async function loadRevision(
@@ -174,9 +330,29 @@ export async function loadRevision(
   text: string,
   id: string,
 ): Promise<DefinitionSet | null> {
-  if (!/^[0-9a-f]{12}$/.test(id)) return null;
-  const folder = await folderOf(owner, hashOf(text));
-  return folder ? readSet(path.join(folder, `${id}.json`)) : null;
+  if (!FINGERPRINT.test(id)) return null;
+  const db = await ready(owner);
+  const [row] = await db
+    .select({ body: rulebookRevisions.body })
+    .from(rulebookRevisions)
+    .where(
+      and(
+        eq(rulebookRevisions.process, owner.id),
+        eq(rulebookRevisions.instructionsHash, hashOf(text)),
+        eq(rulebookRevisions.id, id),
+      ),
+    );
+  if (!row) return null;
+  const set = parseStored(
+    row.body,
+    definitionSetSchema,
+    `The kept rulebook ${id}`,
+  );
+  if (fingerprintOf(set) !== id)
+    throw new StoredSetError(
+      `The kept rulebook ${id} does not match its id: it was changed after it was accepted.`,
+    );
+  return set;
 }
 
 // Every revision for these instructions, newest first, and the head.
@@ -184,30 +360,44 @@ export async function listRevisions(
   owner: DefinitionProcess,
   text: string,
 ): Promise<RevisionIndex> {
-  const folder = await folderOf(owner, hashOf(text));
-  const index = folder ? await indexIn(folder) : EMPTY;
-  return { ...index, revisions: [...index.revisions].reverse() };
+  const db = await ready(owner);
+  const hash = hashOf(text);
+  const rows = await db
+    .select({
+      id: rulebookRevisions.id,
+      parent: rulebookRevisions.parent,
+      reason: rulebookRevisions.reason,
+      at: rulebookRevisions.revisedAt,
+      schemaVersion: rulebookRevisions.schemaVersion,
+      note: rulebookRevisions.note,
+    })
+    .from(rulebookRevisions)
+    .where(
+      and(
+        eq(rulebookRevisions.process, owner.id),
+        eq(rulebookRevisions.instructionsHash, hash),
+      ),
+    )
+    .orderBy(desc(rulebookRevisions.seq));
+  const [head] = await db
+    .select({ id: rulebookHeads.revisionId })
+    .from(rulebookHeads)
+    .where(ofHead(owner.id, hash));
+  return {
+    head: head?.id ?? null,
+    revisions: rows.map((row) => ({
+      ...row,
+      reason: row.reason as Revision['reason'],
+      at: row.at.toISOString(),
+    })),
+  };
 }
 
 export const headOf = async (owner: DefinitionProcess, text: string) =>
   (await listRevisions(owner, text)).head;
 
-/*
-  A process's data profile is reviewed in git like its rulebooks, one folder
-  for the source it reads:
-
-    fixtures/<process>/profile/
-      current.json   the profile under review, or the one last confirmed
-      <profile id>.json each confirmed profile, as it was confirmed
-
-  A confirmed profile is written once and never again: a rulebook names the
-  one it was drafted on, and reads exactly that.
-*/
-const profileFolderOf = (owner: DefinitionProcess) =>
-  path.join(process.cwd(), 'fixtures', owner.id, 'profile');
-
-// A profile whose id is not its content was edited by hand or half-written.
-function sound(profile: DataProfile | null, where: string) {
+// A profile whose id is not its content was changed after it was made.
+function sound<T extends DataProfile | null>(profile: T, where: string): T {
   if (profile && profile.id !== profileFingerprint(profile))
     throw new StoredSetError(
       `${where} does not match its id: it was changed after it was made.`,
@@ -215,26 +405,122 @@ function sound(profile: DataProfile | null, where: string) {
   return profile;
 }
 
+async function currentProfileOf(db: Database, process: string) {
+  const [row] = await db
+    .select({ body: currentProfiles.body, revision: currentProfiles.revision })
+    .from(currentProfiles)
+    .where(eq(currentProfiles.process, process));
+  if (!row) return null;
+  const where = `The data profile under review for ${process}`;
+  return {
+    profile: sound(parseStored(row.body, dataProfileSchema, where), where),
+    revision: row.revision,
+  };
+}
+
 export async function loadProfile(
   owner: DefinitionProcess,
 ): Promise<DataProfile | null> {
-  const file = path.join(profileFolderOf(owner), CURRENT);
-  return sound(
-    await readKept(file, dataProfileSchema),
-    path.relative(process.cwd(), file),
-  );
+  const db = await ready(owner);
+  return (await currentProfileOf(db, owner.id))?.profile ?? null;
 }
 
-// Keeps a profile as the one under review; a confirmed one is kept as
-// confirmed too (`putProfile`).
+// Keeps a confirmed profile under its id, once, inside the caller's work.
+async function keepConfirmed(
+  db: Database,
+  process: string,
+  profile: DataProfile,
+  actor: string | null,
+) {
+  await db
+    .insert(dataProfiles)
+    .values({
+      process,
+      id: profile.id,
+      readId: profile.readId,
+      confirmedAt: new Date(profile.confirmedAt!),
+      confirmedBy: actor,
+      body: profile,
+    })
+    .onConflictDoNothing();
+}
+
+// Keeps a profile as the one under review, replacing any there; a confirmed
+// one is kept as confirmed too (`putProfile`).
 export async function saveProfile(
   owner: DefinitionProcess,
   profile: DataProfile,
 ): Promise<DataProfile> {
-  sound(profile, 'The profile');
-  if (profile.confirmedAt) await putProfile(owner, profile);
-  await writeKept(path.join(profileFolderOf(owner), CURRENT), profile);
-  return profile;
+  const body = sound(dataProfileSchema.parse(profile), 'The profile');
+  const db = await ready(owner);
+  await db.transaction(async (tx) => {
+    if (body.confirmedAt) await keepConfirmed(tx, owner.id, body, null);
+    await tx
+      .insert(currentProfiles)
+      .values({ process: owner.id, profileId: body.id, body })
+      .onConflictDoUpdate({
+        target: currentProfiles.process,
+        set: {
+          profileId: sql`excluded.profile_id`,
+          body: sql`excluded.body`,
+          updatedAt: sql`now()`,
+          updatedBy: null,
+        },
+      });
+  });
+  return body;
+}
+
+/*
+  Changes the profile under review by compare-and-set, as updateSet does a
+  rulebook; null when none is kept. A change that confirms it keeps it as
+  confirmed and records the person's confirmation, in the same transaction.
+*/
+export async function updateProfile(
+  owner: DefinitionProcess,
+  change: (profile: DataProfile) => DataProfile,
+  { actor = null }: { actor?: string | null } = {},
+): Promise<DataProfile | null> {
+  const db = await ready(owner);
+  for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
+    const kept = await currentProfileOf(db, owner.id);
+    if (!kept) return null;
+    const next = sound(
+      dataProfileSchema.parse(change(kept.profile)),
+      'The profile',
+    );
+    const landed = await db.transaction(async (tx) => {
+      const moved = await tx
+        .update(currentProfiles)
+        .set({
+          profileId: next.id,
+          body: next,
+          updatedAt: sql`now()`,
+          updatedBy: actor,
+        })
+        .where(
+          and(
+            eq(currentProfiles.process, owner.id),
+            eq(currentProfiles.revision, kept.revision),
+          ),
+        )
+        .returning({ revision: currentProfiles.revision });
+      if (!moved.length) return false;
+      if (next.confirmedAt) {
+        await keepConfirmed(tx, owner.id, next, actor);
+        if (!kept.profile.confirmedAt)
+          await tx.insert(ruleDecisions).values({
+            process: owner.id,
+            kind: 'confirm_profile',
+            profileId: next.id,
+            actor,
+          });
+      }
+      return true;
+    });
+    if (landed) return next;
+  }
+  throw new Refused(KEPT_CHANGING);
 }
 
 // Keeps a confirmed profile under its id, once; returns the id.
@@ -242,13 +528,12 @@ export async function putProfile(
   owner: DefinitionProcess,
   profile: DataProfile,
 ): Promise<string> {
-  sound(profile, 'The profile');
-  if (!profile.confirmedAt)
+  const body = sound(dataProfileSchema.parse(profile), 'The profile');
+  if (!body.confirmedAt)
     throw new Error('Only a confirmed data profile is kept as confirmed.');
-  const file = path.join(profileFolderOf(owner), `${profile.id}.json`);
-  if (!(await readKept(file, dataProfileSchema)))
-    await writeKept(file, profile);
-  return profile.id;
+  const db = await ready(owner);
+  await keepConfirmed(db, owner.id, body, null);
+  return body.id;
 }
 
 // A confirmed profile a rulebook names, or null when it is not kept.
@@ -256,11 +541,16 @@ export async function loadConfirmedProfile(
   owner: DefinitionProcess,
   id: string,
 ): Promise<DataProfile | null> {
-  if (!/^[0-9a-f]{12}$/.test(id)) return null;
-  const file = path.join(profileFolderOf(owner), `${id}.json`);
-  const where = path.relative(process.cwd(), file);
-  const profile = sound(await readKept(file, dataProfileSchema), where);
-  if (profile && (profile.id !== id || !profile.confirmedAt))
+  if (!FINGERPRINT.test(id)) return null;
+  const db = await ready(owner);
+  const [row] = await db
+    .select({ body: dataProfiles.body })
+    .from(dataProfiles)
+    .where(and(eq(dataProfiles.process, owner.id), eq(dataProfiles.id, id)));
+  if (!row) return null;
+  const where = `The confirmed data profile ${id}`;
+  const profile = sound(parseStored(row.body, dataProfileSchema, where), where);
+  if (profile.id !== id || !profile.confirmedAt)
     throw new StoredSetError(`${where} is not the confirmed profile ${id}.`);
   return profile;
 }

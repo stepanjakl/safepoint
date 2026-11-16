@@ -2,15 +2,20 @@ import { MockLanguageModelV4 } from 'ai/test';
 import { describe, expect, it } from 'vitest';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
-import { findDefinitions } from '@/server/operations/find';
 import { writeAgreed, writeDefinition } from '@/server/operations/write';
 import { updateSet } from '@/server/storage/rulebooks';
 
 import { DRAFT_MODELS, WRITE_MODELS } from './calls';
 import { capturedRead } from './captured.fixture';
 import { answer, check, standIn, told, accountedFor } from './models.fixture';
-import { inScratchDirectory } from './scratch.fixture';
-import { definition, example as kept, keep, TEXT } from './set.fixture';
+import { inScratchStorage } from './scratch.fixture';
+import {
+  definition,
+  example as kept,
+  findKept,
+  keep,
+  TEXT,
+} from './set.fixture';
 import type { Shape } from './shapes';
 import type { Definition } from './types';
 import { acceptable, canAccept } from './types';
@@ -98,12 +103,12 @@ const found = {
   ],
 };
 
-inScratchDirectory();
+inScratchStorage();
 
 // The found set, with the first definition written as given.
 async function withFirst(first: Partial<Definition>) {
   const finder = standIn(answer(accountedFor(found, text)));
-  await findDefinitions(owner, text, 'v1', read, { resolve: () => finder });
+  await findKept(owner, text, 'v1', read, { resolve: () => finder });
   return {
     finder,
     ...(await updateSet(owner, text, (s) => ({

@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
-import { findDefinitions } from '@/server/operations/find';
+import { findKept } from './set.fixture';
 import { loadSet } from '@/server/storage/rulebooks';
 
 import { capturedRead } from './captured.fixture';
 import { accountingProblems, labelProblems, sentencesOf } from './find';
 import { answer, standIn, told } from './models.fixture';
 import { confirmProfile, profileOf, withProfile } from './profile';
-import { inScratchDirectory } from './scratch.fixture';
+import { inScratchStorage } from './scratch.fixture';
 
 // Finding accounts for every sentence of the instructions, and code holds it to
 // that. The instructions here have nothing to do with the process on purpose:
@@ -187,9 +187,9 @@ describe('what code holds the reading of each check to', () => {
 });
 
 describe('finding', () => {
-  inScratchDirectory();
+  inScratchStorage();
   const find = (model: ReturnType<typeof standIn>) =>
-    findDefinitions(owner, TEXT, 'v1', capturedRead(), {
+    findKept(owner, TEXT, 'v1', capturedRead(), {
       resolve: () => model,
     });
 
@@ -265,7 +265,7 @@ describe('finding', () => {
     const proposed = profileOf(capturedRead(), owner.subject.data);
     const confirmed = confirmProfile(proposed);
     const on = (profiled: typeof owner) =>
-      findDefinitions(profiled, TEXT, 'v1', capturedRead(), {
+      findKept(profiled, TEXT, 'v1', capturedRead(), {
         resolve: () => standIn(answer(right)),
       });
     expect((await on(owner)).profileId).toBeUndefined();

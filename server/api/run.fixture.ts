@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { TRPCError } from '@trpc/server';
 
 import { hashOf } from '@/lib/definitions/fingerprint';
-import { TEXT } from '@/lib/definitions/set.fixture';
+import { keepText, TEXT } from '@/lib/definitions/set.fixture';
 import {
   definitionSetSchema,
   type DefinitionSet,
@@ -54,4 +54,7 @@ export const outdated: DefinitionSet = {
   ),
 };
 
-export const keepAsCurrent = (set: DefinitionSet) => saveSet(owner, set);
+export const keepAsCurrent = async (set: DefinitionSet) => {
+  await keepText();
+  return saveSet(owner, set);
+};

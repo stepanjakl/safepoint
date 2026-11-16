@@ -20,7 +20,7 @@ import {
   withProfile,
 } from './profile';
 import type { KeptRead } from './records';
-import { inScratchDirectory } from './scratch.fixture';
+import { inScratchStorage } from './scratch.fixture';
 import { definitionSetSchema, type DefinitionProcess } from './types';
 
 // What a source's columns are, proposed from one read and then fixed. The
@@ -272,7 +272,7 @@ describe('the process as a set reads its data', () => {
   });
 
   describe('from the store', () => {
-    inScratchDirectory();
+    inScratchStorage();
 
     it('loads the confirmed profile a set names', async () => {
       const named = { ...set, profileId: profile.id };

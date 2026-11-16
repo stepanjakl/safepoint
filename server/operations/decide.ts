@@ -33,6 +33,7 @@ import {
   ownerFor,
   putRevision,
   updateSet,
+  type RuleDecision,
 } from '@/server/storage/rulebooks';
 
 /*
@@ -44,8 +45,21 @@ import {
   hand, is refused with the reason rather than accepted. The decision that
   completes the rulebook keeps it as a revision (storage/rulebooks.ts), with
   the keys of the records of the read it was reviewed on. Where writes
-  disagreed, a person chooses a version before it can be accepted.
+  disagreed, a person chooses a version before it can be accepted. Each act
+  is also kept as a rule decision, with who made it, in the same
+  transaction as the change it makes; a refused acceptance with why.
 */
+
+const by = (
+  actor: string | null,
+  decision: (before: DefinitionSet, after: DefinitionSet) => RuleDecision,
+) => ({ actor, decision });
+
+// What became of a decision on one definition: null when it was taken.
+const refusalOf = (after: DefinitionSet, id: string) => {
+  const d = after.definitions.find((each) => each.id === id);
+  return d && !d.approvedAt ? (d.problem ?? 'Not accepted.') : null;
+};
 
 // The set with the definition of this id changed, and each other one through
 // `others`, or as it was.
@@ -132,14 +146,20 @@ export const confirmIntent = (
   owner: DefinitionProcess,
   text: string,
   readOf: (id: string) => Promise<KeptRead | null>,
+  actor: string | null = null,
 ) =>
   freezing(
     owner,
     text,
-    updateSet(owner, text, (s) => ({
-      ...s,
-      intentConfirmedAt: new Date().toISOString(),
-    })),
+    updateSet(
+      owner,
+      text,
+      (s) => ({
+        ...s,
+        intentConfirmedAt: new Date().toISOString(),
+      }),
+      by(actor, () => ({ kind: 'confirm_intent' })),
+    ),
     readOf,
   );
 
@@ -148,53 +168,82 @@ export async function deny(
   text: string,
   id: string,
   note: string | undefined,
+  actor: string | null = null,
 ): Promise<DefinitionSet | null> {
-  return updateSet(owner, text, (s) =>
-    changing(s, id, (d) => ({
-      ...d,
-      approvedAt: null,
-      deniedAt: new Date().toISOString(),
-      denial: note?.trim() || null,
+  const set = await loadSet(owner, text);
+  if (!set?.definitions.some((d) => d.id === id)) return set;
+  return updateSet(
+    owner,
+    text,
+    (s) =>
+      changing(s, id, (d) => ({
+        ...d,
+        approvedAt: null,
+        deniedAt: new Date().toISOString(),
+        denial: note?.trim() || null,
+      })),
+    by(actor, () => ({
+      kind: 'deny',
+      definitionId: id,
+      note: note?.trim() || null,
     })),
   );
 }
 
 // Takes one of the versions a split left, on the person's word. Anything reading
 // this definition has to be looked at again, as after any other new version.
-export const choose = (
+export async function choose(
   owner: DefinitionProcess,
   text: string,
   id: string,
   index: number,
-) =>
-  updateSet(owner, text, (s) => {
-    const dependents = dependentsOf(s, id);
-    return changing(
-      s,
-      id,
-      (d) => {
-        const version = d.agreement?.versions[index];
-        return version
-          ? {
-              ...d,
-              // The shape goes with the formula: the sentence is written from it.
-              shape: version.shape ?? null,
-              unfit: version.unfit ?? null,
-              formula: version.formula,
-              constants: version.constants,
-              groups: version.groups,
-              uses: version.uses,
-              examples: version.examples,
-              model: version.model,
-              problem: null,
-              approvedAt: null,
-              agreement: { ...d.agreement!, status: 'chosen' as const },
-            }
-          : d;
-      },
-      (d) => (dependents.has(d.id) ? { ...d, approvedAt: null } : d),
-    );
-  });
+  actor: string | null = null,
+): Promise<DefinitionSet | null> {
+  const set = await loadSet(owner, text);
+  if (!set?.definitions.some((d) => d.id === id)) return set;
+  return updateSet(
+    owner,
+    text,
+    (s) => {
+      const dependents = dependentsOf(s, id);
+      return changing(
+        s,
+        id,
+        (d) => {
+          const version = d.agreement?.versions[index];
+          return version
+            ? {
+                ...d,
+                // The shape goes with the formula: the sentence is written from it.
+                shape: version.shape ?? null,
+                unfit: version.unfit ?? null,
+                formula: version.formula,
+                constants: version.constants,
+                groups: version.groups,
+                uses: version.uses,
+                examples: version.examples,
+                model: version.model,
+                problem: null,
+                approvedAt: null,
+                agreement: { ...d.agreement!, status: 'chosen' as const },
+              }
+            : d;
+        },
+        (d) => (dependents.has(d.id) ? { ...d, approvedAt: null } : d),
+      );
+    },
+    by(actor, (before) => ({
+      kind: 'choose',
+      definitionId: id,
+      versionIndex: index,
+      refusal: before.definitions.find((d) => d.id === id)?.agreement?.versions[
+        index
+      ]
+        ? null
+        : 'There is no such version to choose.',
+    })),
+  );
+}
 
 /*
   A person's correction of how finding read a check: for every record, or only
@@ -211,6 +260,7 @@ export async function setAppliesTo(
   id: string,
   value: AppliesTo,
   readOf: (id: string) => Promise<KeptRead | null>,
+  actor: string | null = null,
 ): Promise<DefinitionSet | null> {
   const set = await loadSet(owner, text);
   const definition = set?.definitions.find((d) => d.id === id);
@@ -218,46 +268,55 @@ export async function setAppliesTo(
   if (definition.result !== 'check') return set;
   owner = await ownerFor(owner, set);
   const read = set.readId ? await readOf(set.readId) : null;
-  return updateSet(owner, text, (s) => {
-    // From the set being saved: a rule may have come to read this one since.
-    const dependents = dependentsOf(s, id);
-    const relabelled = changing(s, id, (d) => ({ ...d, appliesTo: value }));
-    const next = relabelled.definitions.find((d) => d.id === id)!;
-    // The read and profile were loaded for the set as it was before.
-    const moved = s.readId !== set.readId || s.profileId !== set.profileId;
-    // A rule with nothing written has nothing to review yet.
-    const reviewed =
-      read && next.formula && !moved
-        ? review(settingOf(owner, text, relabelled, read, next), {
-            formula: next.formula,
-            shape: next.shape,
-            constants: next.constants,
-            groups: next.groups,
-            examples: next.examples,
-          })
-        : null;
-    return changing(
-      relabelled,
-      id,
-      (d) => {
-        const { ran, problems } = reviewed ?? { ran: null, problems: [] };
-        return {
-          ...d,
-          approvedAt: null,
-          ...(ran ? { examples: ran.examples, uses: ran.uses } : {}),
-          problem: !d.formula
-            ? d.problem
-            : moved
-              ? WRITTEN_AGAIN
-              : !reviewed
-                ? 'The read its examples were run on is no longer kept: write it again on a new read.'
-                : (ran?.problem ??
-                  (problems.length ? problems.join(' ') : null)),
-        };
-      },
-      (d) => (dependents.has(d.id) ? { ...d, approvedAt: null } : d),
-    );
-  });
+  return updateSet(
+    owner,
+    text,
+    (s) => {
+      // From the set being saved: a rule may have come to read this one since.
+      const dependents = dependentsOf(s, id);
+      const relabelled = changing(s, id, (d) => ({ ...d, appliesTo: value }));
+      const next = relabelled.definitions.find((d) => d.id === id)!;
+      // The read and profile were loaded for the set as it was before.
+      const moved = s.readId !== set.readId || s.profileId !== set.profileId;
+      // A rule with nothing written has nothing to review yet.
+      const reviewed =
+        read && next.formula && !moved
+          ? review(settingOf(owner, text, relabelled, read, next), {
+              formula: next.formula,
+              shape: next.shape,
+              constants: next.constants,
+              groups: next.groups,
+              examples: next.examples,
+            })
+          : null;
+      return changing(
+        relabelled,
+        id,
+        (d) => {
+          const { ran, problems } = reviewed ?? { ran: null, problems: [] };
+          return {
+            ...d,
+            approvedAt: null,
+            ...(ran ? { examples: ran.examples, uses: ran.uses } : {}),
+            problem: !d.formula
+              ? d.problem
+              : moved
+                ? WRITTEN_AGAIN
+                : !reviewed
+                  ? 'The read its examples were run on is no longer kept: write it again on a new read.'
+                  : (ran?.problem ??
+                    (problems.length ? problems.join(' ') : null)),
+          };
+        },
+        (d) => (dependents.has(d.id) ? { ...d, approvedAt: null } : d),
+      );
+    },
+    by(actor, () => ({
+      kind: 'applies_to',
+      definitionId: id,
+      appliesTo: value,
+    })),
+  );
 }
 
 export async function accept(
@@ -265,6 +324,7 @@ export async function accept(
   text: string,
   id: string,
   readOf: (id: string) => Promise<KeptRead | null>,
+  actor: string | null = null,
 ): Promise<DefinitionSet | null> {
   const set = await loadSet(owner, text);
   const definition = set?.definitions.find((d) => d.id === id);
@@ -278,21 +338,30 @@ export async function accept(
     change: (d: Definition) => Definition,
     reads: string[] = [],
   ) =>
-    updateSet(owner, text, (s) => {
-      const ids = [...new Set([id, ...definition.uses, ...reads])];
-      // The review ran on the read and profile loaded with the set.
-      const same =
-        s.readId === set.readId &&
-        s.profileId === set.profileId &&
-        reviewedOf(s, ids) === reviewedOf(set, ids);
-      return same
-        ? changing(s, id, change)
-        : changing(s, id, (d) => ({
-            ...d,
-            approvedAt: null,
-            problem: WRITTEN_AGAIN,
-          }));
-    });
+    updateSet(
+      owner,
+      text,
+      (s) => {
+        const ids = [...new Set([id, ...definition.uses, ...reads])];
+        // The review ran on the read and profile loaded with the set.
+        const same =
+          s.readId === set.readId &&
+          s.profileId === set.profileId &&
+          reviewedOf(s, ids) === reviewedOf(set, ids);
+        return same
+          ? changing(s, id, change)
+          : changing(s, id, (d) => ({
+              ...d,
+              approvedAt: null,
+              problem: WRITTEN_AGAIN,
+            }));
+      },
+      by(actor, (_, after) => ({
+        kind: 'accept',
+        definitionId: id,
+        refusal: refusalOf(after, id),
+      })),
+    );
   const refuse = (problem: string) =>
     decided((d) => ({ ...d, approvedAt: null, problem }));
   if (!definition.formula)
