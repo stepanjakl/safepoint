@@ -8,12 +8,12 @@ import 'server-only';
 */
 export type RefusalCode = 'NOT_FOUND' | 'CONFLICT' | 'BAD_REQUEST';
 
+// No parameter property: scripts load this through Node's type stripping.
 export class Refused extends Error {
-  constructor(
-    message: string,
-    readonly code: RefusalCode = 'CONFLICT',
-  ) {
+  readonly code: RefusalCode;
+  constructor(message: string, code: RefusalCode = 'CONFLICT') {
     super(message);
+    this.code = code;
     this.name = 'Refused';
   }
 }
