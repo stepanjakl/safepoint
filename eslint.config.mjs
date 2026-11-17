@@ -20,6 +20,28 @@ const PROCESSES = {
     'Take the process as a prop (components/engine) or from the registry (server/operations/kept-processes.ts), never import a process: this code serves any of them.',
 };
 
+/*
+  The prototype history (app/workbench/history, components/prototype,
+  lib/prototype) is kept as it was and not maintained: nothing else imports
+  it, so removing it later is deleting those folders and nothing more.
+*/
+const FENCED = [
+  'app/workbench/history/**',
+  'components/prototype/**',
+  'lib/prototype/**',
+];
+
+const FENCE = {
+  group: [
+    '@/components/prototype',
+    '@/components/prototype/*',
+    '@/lib/prototype',
+    '@/lib/prototype/*',
+  ],
+  message:
+    'The prototype history is fenced: only app/workbench/history, components/prototype and lib/prototype (and their tests) may import it.',
+};
+
 const FILES = ['fs', 'fs/promises', 'path'].flatMap((name) => [
   {
     name,
@@ -58,6 +80,7 @@ const engine = (serverGroup = ALL_SERVER) => ({
         'The engine is below the UI: components/ and app/ import the engine, never the reverse.',
     },
     PROCESSES,
+    FENCE,
     {
       group: ['@/lib/shell', '@/lib/shell/*'],
       message:
@@ -71,7 +94,7 @@ const engine = (serverGroup = ALL_SERVER) => ({
   ],
 });
 
-const client = (extra = []) => ({
+const client = (extra = [], fenced = false) => ({
   paths: ['fs', 'fs/promises', 'path'].map((name) => ({
     name,
     message:
@@ -91,6 +114,7 @@ const client = (extra = []) => ({
       message:
         'A client file cannot reach server/: call a procedure (useTRPC), and import at most a type from it.',
     },
+    ...(fenced ? [] : [FENCE]),
     ...extra,
   ],
 });
@@ -102,6 +126,7 @@ const server = (extra = []) => ({
       message:
         'server/ is below the UI: put what both need in lib/, and let components/ and app/ import server/.',
     },
+    FENCE,
     ...extra,
   ],
 });
@@ -121,6 +146,12 @@ const config = [
   },
   ...nextCoreWebVitals,
   ...nextTypeScript,
+  {
+    // Everything outside the fence; the blocks below that set this rule for
+    // a folder of their own carry the same pattern.
+    ignores: FENCED,
+    rules: { 'no-restricted-imports': ['error', { patterns: [FENCE] }] },
+  },
   {
     files: ['lib/engine/**/*.{ts,tsx}'],
     ignores: ['lib/engine/**/*.{test,fixture}.{ts,tsx}'],
@@ -152,6 +183,7 @@ const config = [
     // app/workbench (the only client files in app/).
     files: ['components/**/*.{ts,tsx}', 'app/workbench/**/*.{ts,tsx}'],
     ignores: [
+      ...FENCED,
       '**/*.test.{ts,tsx}',
       // Server components: they render on the server and may read it.
       'app/workbench/**/page.tsx',
@@ -163,6 +195,19 @@ const config = [
     rules: {
       'no-restricted-imports': 'off',
       '@typescript-eslint/no-restricted-imports': ['error', client()],
+    },
+  },
+  {
+    // The fenced client files hold the browser's lines like any other, and
+    // may import one another.
+    files: [
+      'components/prototype/**/*.{ts,tsx}',
+      'app/workbench/history/**/*.{ts,tsx}',
+    ],
+    ignores: ['**/*.test.{ts,tsx}', 'app/workbench/history/**/page.tsx'],
+    rules: {
+      'no-restricted-imports': 'off',
+      '@typescript-eslint/no-restricted-imports': ['error', client([], true)],
     },
   },
   {
