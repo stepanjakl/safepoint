@@ -81,6 +81,24 @@ describe('the driver', () => {
     ).toMatchObject({ kind: 'pglite' });
   });
 
+  it('refuses to fall back to PGlite on Vercel, in plain words', async () => {
+    expect(() => driverFor({ VERCEL: '1' })).toThrow(/DATABASE_URL is not set/);
+    expect(() =>
+      driverFor({ VERCEL: '1', DATABASE_URL: '', DATABASE_URL_UNPOOLED: '' }),
+    ).toThrow(/no local one to fall back to/);
+    // With a URL it is the pool as anywhere, and nothing is created on disk.
+    expect(driverFor({ VERCEL: '1', DATABASE_URL: UNREACHABLE })).toEqual({
+      kind: 'node-postgres',
+      url: UNREACHABLE,
+    });
+    // database() reports it as its own failure and, asked again, tries again.
+    vi.stubEnv('VERCEL', '1');
+    vi.stubEnv('DATABASE_URL', '');
+    await expect(database()).rejects.toThrow(/DATABASE_URL is not set/);
+    await expect(database()).rejects.toThrow(/DATABASE_URL is not set/);
+    expect(existsSync(path.join(scratch(), 'data'))).toBe(false);
+  });
+
   it('migrates over the direct connection where one is given', () => {
     const env = {
       DATABASE_URL: 'postgres://u:p@ep-x-pooler.example/db',

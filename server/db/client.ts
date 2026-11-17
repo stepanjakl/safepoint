@@ -15,7 +15,8 @@ import * as schema from './schema.ts';
   transactions need a connection, and Fluid compute reuses an instance, so a
   pool outlives a request. Without it, PGlite, Postgres in this process, kept
   under data/pglite/ so the app starts with no credentials; it is a
-  development dependency, loaded only on that path. Tests hand in a PGlite in
+  development dependency, loaded only on that path, and never on Vercel,
+  where no URL is an error (`driverFor`). Tests hand in a PGlite in
   memory (`useDatabaseInTests`). Nothing here connects until asked.
 */
 
@@ -46,6 +47,13 @@ export function driverFor(
 ): Driver {
   const url =
     (migrating ? env.DATABASE_URL_UNPOOLED : undefined) || env.DATABASE_URL;
+  // A function on Vercel has a read-only disk and no memory from one instance
+  // to the next: an in-process database there would fail on its first write,
+  // or look like it worked and lose everything.
+  if (!url && env.VERCEL)
+    throw new Error(
+      'DATABASE_URL is not set. On Vercel the app keeps everything in the Postgres database that variable names, and has no local one to fall back to: set DATABASE_URL (and DATABASE_URL_UNPOOLED) in the project settings.',
+    );
   return url
     ? { kind: 'node-postgres', url }
     : {
