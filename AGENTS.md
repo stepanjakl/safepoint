@@ -181,9 +181,9 @@ placeholders such as `values.<id>`, because a real example steers the model.
   a frozen rulebook, because drafting replaces the kept one.
 - **The engine does no file IO.** `lib/definitions/` imports no `node:fs`,
   React, Next or `@/server`; whatever reads or writes a kept file is under
-  `server/` (`storage/`, `jobs/`, `operations/`, `workflows/`), and every module there opens
-  with `import 'server-only'`, so a client bundle that reaches one fails
-  `pnpm build`. ESLint holds the same lines (`eslint.config.mjs`). The one
+  `server/` (`storage/`, `jobs/`, `operations/`, `workflows/`), and every
+  module there opens with `import 'server-only'`, so a client bundle that
+  reaches one fails `pnpm build`. ESLint holds the same lines (`eslint.config.mjs`). The one
   exception is `lib/definitions/limits.ts`, which reaches the database through
   `server/storage/model-limits.ts`. Vitest aliases `server-only` to an empty
   module.
