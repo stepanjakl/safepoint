@@ -29,7 +29,7 @@
     inset: 0;
     cursor: pointer;
   }
-  /* Lit as the release list's rows are (release-card.css): by the keyboard, or
+  /* Lit as the list rows are (list-rows.css): by the keyboard, or
      by the pointer where it is real. The rules touching it step back, so the
      fill is one band; its own only while shut, else the working is beneath.
      Not :has() inside :has(), which is invalid and drops the whole rule. */

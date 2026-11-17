@@ -525,17 +525,17 @@ const FOLLOWING_BY_FILE = {
     '--sp-cell-link-ink': { light: 625, dark: -625 },
     '--sp-cell-link-ink-hover': { light: 875, dark: -750, flush: true },
   },
-  'components/review/release-card.css': {
+  'components/ui/list-rows.css': {
     /* A row's change pill: past the row's wash (--sp-row-hover) at
        rest and further again under it, so it keeps its distance; its lead is
-       lighter in light. First set on the floating card. */
-    '--sp-card-pill-face': { light: 100, dark: -75 },
-    '--sp-card-pill-face-hover': { light: 150, dark: -175 },
-    '--sp-card-pill-lead': { light: 25, dark: -150 },
+       lighter in light. */
+    '--sp-list-pill-face': { light: 100, dark: -75 },
+    '--sp-list-pill-face-hover': { light: 150, dark: -175 },
+    '--sp-list-pill-lead': { light: 25, dark: -150 },
     /* Held at -225 in dark, short of the wash's 100: its primary ink cannot
        strengthen, and at -250 it reads 4.47:1. */
-    '--sp-card-pill-lead-hover': { light: 75, dark: -225 },
-    '--sp-card-pill-ink': { light: 900, dark: -700, flush: true },
+    '--sp-list-pill-lead-hover': { light: 75, dark: -225 },
+    '--sp-list-pill-ink': { light: 900, dark: -700, flush: true },
   },
   'components/app-shell/runs/runs-list.css': {
     /* The tally's total: ramp, not a severity tone. Dark's label is ink at

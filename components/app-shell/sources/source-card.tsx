@@ -66,7 +66,7 @@ const HEAD = DATA_TABLE_HEADING;
 const TABLE = 'grid grid-cols-[minmax(0,1fr)_auto_auto_auto] gap-x-3 pb-3';
 const ROW = 'col-span-full grid grid-cols-subgrid items-center';
 const CELLS = 'col-span-3 grid grid-cols-subgrid items-center py-2.5 pl-5';
-const OPENS = cx(CELLS, 'release-row text-dense cursor-pointer text-left');
+const OPENS = cx(CELLS, 'list-row text-dense cursor-pointer text-left');
 // The whole row lights, its own control included, for the pointer or the keyboard.
 const LIT_ROW = cx(
   ROW,
@@ -608,7 +608,7 @@ function ResourceList({
   return (
     <ul
       aria-label={label}
-      className="release-list source-rows col-span-full grid grid-cols-subgrid"
+      className="row-list source-rows col-span-full grid grid-cols-subgrid"
     >
       {rows.map(({ name, found }) => (
         <li
@@ -625,14 +625,14 @@ function ResourceList({
               onClick={() => view(name)}
             >
               <span
-                className={cx('release-row-subject truncate', DATA_TABLE_NAME)}
+                className={cx('list-row-subject truncate', DATA_TABLE_NAME)}
               >
                 {name}
               </span>
-              <span className="release-row-pill release-row-trail justify-self-end">
+              <span className="list-row-pill list-row-trail justify-self-end">
                 <MorphingText text={String(found.rows)} />
               </span>
-              <span className="release-row-trail text-meta text-muted justify-self-end tabular-nums">
+              <span className="list-row-trail text-meta text-muted justify-self-end tabular-nums">
                 <MorphingText text={String(found.columns.length)} />
               </span>
             </button>

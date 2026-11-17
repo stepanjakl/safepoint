@@ -63,33 +63,33 @@ export const CARD_HEAD = 'rule-below p-6 @max-card:p-4';
   card's narrow width the reason drops under the subject.
 */
 const LIST =
-  'release-list grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-3 @max-card:grid-cols-[minmax(0,1fr)_auto]';
-// Its rules are the list's (`.release-list` in release-card.css).
+  'row-list grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-3 @max-card:grid-cols-[minmax(0,1fr)_auto]';
+// Its rules are the list's (`.row-list` in release-card.css).
 const ROW = 'col-span-full grid grid-cols-subgrid';
 const ROW_BUTTON =
-  'release-row group/row control-wash hover:bg-row-hover focus-visible:bg-row-hover col-span-full grid w-full cursor-pointer grid-cols-subgrid items-center gap-y-1 px-6 py-3 text-left text-dense @max-card:px-4';
-// Opened items step back (`.release-row[data-seen]` in release-card.css).
-const ROW_SUBJECT = 'release-row-subject col-start-1 row-start-1 truncate';
+  'list-row group/row control-wash hover:bg-row-hover focus-visible:bg-row-hover col-span-full grid w-full cursor-pointer grid-cols-subgrid items-center gap-y-1 px-6 py-3 text-left text-dense @max-card:px-4';
+// Opened items step back (`.list-row[data-seen]` in release-card.css).
+const ROW_SUBJECT = 'list-row-subject col-start-1 row-start-1 truncate';
 // Colour alone, no face: the pill beside it is the row's one chip.
 // Colour alone, no face, against the column's right edge; with no count
 // beside it, the count's column too, so every reason ends where the next thing
 // begins.
-// Its timing is `.release-row-trail-wide`'s, which slides it as well as
+// Its timing is `.list-row-trail-wide`'s, which slides it as well as
 // inking it; a transition utility here would drop the slide.
 const ROW_REASON =
-  'release-row-trail-wide text-severity-ink col-start-2 row-start-1 justify-self-end text-meta data-[alone]:col-span-2 @max-card:col-start-1 @max-card:row-start-2 @max-card:justify-self-start @max-card:data-[alone]:col-span-1';
+  'list-row-trail-wide text-severity-ink col-start-2 row-start-1 justify-self-end text-meta data-[alone]:col-span-2 @max-card:col-start-1 @max-card:row-start-2 @max-card:justify-self-start @max-card:data-[alone]:col-span-1';
 // Stretched across its column, so every count is the same chip.
 const ROW_COUNT =
-  'release-row-pill release-row-trail col-start-3 row-start-1 @max-card:col-start-2';
-const PILL_LEAD = 'release-row-pill-lead value';
+  'list-row-pill list-row-trail col-start-3 row-start-1 @max-card:col-start-2';
+const PILL_LEAD = 'list-row-pill-lead value';
 // The word beside a count, a shade under it, as the run tallies set theirs.
 const QUIET = 'text-muted-strong';
 // Outside the list, so outside its columns: one line, its arrow in the padding.
 const MORE_ROW =
-  'release-row group/row control-wash hover:bg-row-hover focus-visible:bg-row-hover border-floating-ring shadow-separator-bottom-solid grid w-full cursor-pointer items-center border-b px-6 py-3 text-left text-dense @max-card:px-4';
+  'list-row group/row control-wash hover:bg-row-hover focus-visible:bg-row-hover border-floating-ring shadow-separator-bottom-solid grid w-full cursor-pointer items-center border-b px-6 py-3 text-left text-dense @max-card:px-4';
 // Out of the columns, in the row's end padding: it arrives as the row is lit
-// (`.release-row-arrow` in release-card.css).
-const ARROW = 'release-row-arrow';
+// (`.list-row-arrow` in release-card.css).
+const ARROW = 'list-row-arrow';
 const rowStyle = (
   index: number,
 ): CSSProperties & { '--release-bucket-row-index': number } => ({
@@ -431,7 +431,7 @@ function ChangePill({ deltas }: { deltas: Effect['deltas'] }) {
         <span aria-hidden="true"> →</span>
         <span className="sr-only"> changes to </span>
       </span>
-      <span className={cx('release-row-pill-lead', figure && 'value')}>
+      <span className={cx('list-row-pill-lead', figure && 'value')}>
         {pair.after}
       </span>
     </span>

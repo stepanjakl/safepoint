@@ -104,9 +104,9 @@ export function useRunRead(readId: string | null) {
   };
 }
 
-// The tabs as the release card's rows: ruled from where a name starts, lit
+// The tabs as list rows: ruled from where a name starts, lit
 // whole under the pointer, the arrow arriving in the end padding
-// (`.release-list`, `.release-row-arrow` in release-card.css). Header and rows share its columns.
+// (`.row-list`, `.list-row-arrow` in list-rows.css). Header and rows share its columns.
 // A tab's rows as the drawer counts them: the header row is not one.
 const dataRows = (rows: number) => Math.max(0, rows - 1);
 const capitalised = (word: string) =>
@@ -115,7 +115,7 @@ const READ_TABLE = 'grid grid-cols-[minmax(0,1fr)_auto] gap-x-3';
 const READ_GRID = 'col-span-full grid grid-cols-subgrid items-center px-4';
 const READ_ROW = cx(
   READ_GRID,
-  'release-row group/row control-wash hover:bg-row-hover focus-visible:bg-row-hover text-dense w-full cursor-pointer py-2.5 text-left',
+  'list-row group/row control-wash hover:bg-row-hover focus-visible:bg-row-hover text-dense w-full cursor-pointer py-2.5 text-left',
 );
 
 /*
@@ -726,7 +726,7 @@ export function SheetReadCard({
                   </div>
                   <ul
                     aria-label="Data tabs read"
-                    className="release-list brunch-read-rows col-span-full grid grid-cols-subgrid"
+                    className="row-list brunch-read-rows col-span-full grid grid-cols-subgrid"
                   >
                     {read.tabs.map((tab, index) => (
                       <li
@@ -746,25 +746,22 @@ export function SheetReadCard({
                         >
                           <span
                             className={cx(
-                              'release-row-subject truncate',
+                              'list-row-subject truncate',
                               DATA_TABLE_NAME,
                             )}
                           >
                             {tab.name}
                           </span>
                           {tab.rows ? (
-                            <span className="release-row-pill release-row-trail justify-self-end">
+                            <span className="list-row-pill list-row-trail justify-self-end">
                               <span>{dataRows(tab.rows)}</span>
                             </span>
                           ) : (
-                            <span className="release-row-trail text-meta text-muted justify-self-end">
+                            <span className="list-row-trail text-meta text-muted justify-self-end">
                               Not in the {source.noun}
                             </span>
                           )}
-                          <span
-                            aria-hidden="true"
-                            className="release-row-arrow"
-                          >
+                          <span aria-hidden="true" className="list-row-arrow">
                             <ArrowUpRight size={14} strokeWidth={2} />
                           </span>
                         </button>

@@ -50,7 +50,7 @@
   }
 
   /* A row lit by its own remove control lights as one band, as a row lit by
-     its button does (release-card.css): the rules touching it step back. */
+     its button does (list-rows.css): the rules touching it step back. */
   .source-rows > li:has(:focus-visible)::before,
   .source-rows > li:has(:focus-visible) + li::before {
     opacity: 0;
@@ -148,6 +148,6 @@
 
   /* Rules between a source's resources start where their names do (pl-5). */
   .source-rows {
-    --release-list-inset: calc(var(--spacing) * 5);
+    --row-list-inset: calc(var(--spacing) * 5);
   }
 }

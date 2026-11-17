@@ -60,17 +60,17 @@ const SHORT_LABELS: Record<Disposition, string> = {
 // total of them.
 const GROUP_HEAD =
   'review-group-head readout text-muted border-floating-ring bg-surface-inset sticky top-0 z-3 flex h-sheet-head items-center gap-2 border-b-section px-5 [font-weight:var(--sp-mono-weight-strong)]';
-const LIST = 'release-list';
+const LIST = 'row-list';
 // The whole row is the control. Open is the selected ground, and every part
 // of it keeps the ink it has at rest, so nothing muted lands on that ground.
 // One line: the subject, the reason, and the count ending the row; the reason
 // truncates before the subject does. No set height: the line and the padding
 // make it, so the rows follow the type scale.
 const ROW =
-  'release-row group/row control-wash hover:bg-row-hover focus-visible:bg-row-hover aria-expanded:bg-surface-selected grid w-full cursor-pointer grid-cols-[minmax(0,max-content)_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-5 py-2.5 text-left';
-// Opened items step back (`.release-row[data-seen]` in release-card.css).
+  'list-row group/row control-wash hover:bg-row-hover focus-visible:bg-row-hover aria-expanded:bg-surface-selected grid w-full cursor-pointer grid-cols-[minmax(0,max-content)_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-5 py-2.5 text-left';
+// Opened items step back (`.list-row[data-seen]` in release-card.css).
 const ROW_SUBJECT =
-  'release-row-subject text-dense col-start-1 row-start-1 truncate';
+  'list-row-subject text-dense col-start-1 row-start-1 truncate';
 // A step quieter than the subject: its bucket's ink a touch under the
 // subject's weight, the strong ink when the row is lit.
 const ROW_REASON =

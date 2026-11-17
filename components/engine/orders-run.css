@@ -98,9 +98,9 @@
     }
   }
 
-  /* The tabs as the release card's rows, at the card's 4 inset. */
+  /* The tabs as list rows, at the narrow 4 inset. */
   .brunch-read-rows {
-    --release-list-inset: calc(var(--spacing) * 4);
+    --row-list-inset: calc(var(--spacing) * 4);
   }
 
   .brunch-read-card[data-revealing] .brunch-read-enter {

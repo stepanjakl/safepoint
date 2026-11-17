@@ -82,8 +82,8 @@ describe('style inspector lookups', () => {
 });
 
 it('specificity counts ids, classes and types, and the arguments of :is but not :where', () => {
-  expect(specificityOf('.release-row-pill > *')).toBe(1e3);
-  expect(specificityOf('.release-row-pill-lead + :not(.sr-only)')).toBe(2e3);
+  expect(specificityOf('.list-row-pill > *')).toBe(1e3);
+  expect(specificityOf('.list-row-pill-lead + :not(.sr-only)')).toBe(2e3);
   expect(specificityOf(":root[data-theme='light'] .pill")).toBe(3e3);
   expect(specificityOf('button:hover')).toBe(1e3 + 1);
   expect(specificityOf('#main a::before')).toBe(1e6 + 2);
