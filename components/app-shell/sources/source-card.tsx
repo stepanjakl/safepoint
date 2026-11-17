@@ -32,7 +32,6 @@ import { useLoader } from '@/components/ui/working-mark';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cx } from '@/lib/cx';
 import { runStamp } from '@/lib/shell/run-time';
-import { capitalise } from '@/lib/review-presentation/format';
 import {
   SOURCE_KINDS,
   sourceById,
@@ -46,6 +45,8 @@ import { SourceDrawer } from './source-drawer';
 import { SourceHead } from './source-head';
 import { useSources, type SourceEntry } from './source-queries';
 
+const capitalise = (text: string) =>
+  text.charAt(0).toUpperCase() + text.slice(1);
 const count = (n: number, one: string, many = `${one}s`) =>
   `${n} ${n === 1 ? one : many}`;
 
