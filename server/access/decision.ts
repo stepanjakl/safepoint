@@ -33,11 +33,11 @@ export type AccessDecision =
 const OPEN_PREFIXES = ['/_next/', '/.well-known/workflow/'];
 const OPEN_PATHS = ['/icon.svg'];
 
-const isOpen = (pathname: string) =>
+export const isOpen = (pathname: string) =>
   OPEN_PATHS.includes(pathname) ||
   OPEN_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 
-const isApi = (pathname: string) =>
+export const isApi = (pathname: string) =>
   pathname === '/api' || pathname.startsWith('/api/');
 
 export async function decideAccess(request: Request): Promise<AccessDecision> {

@@ -1,18 +1,38 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-import { decideAccess } from '@/server/access/decision';
+import { decideAccess, type AccessDecision } from '@/server/access/decision';
+import { visitorToIssue } from '@/server/access/issue-visitor';
+import { VISITOR_COOKIE } from '@/server/access/visitor';
 
 /*
   The one gate outside local development: every page and /api/trpc needs the
   signed cookie the gate page sets (server/access/). The decision is in
   server/access/decision.ts; this only answers it. gatedProcedure checks the
   cookie again for itself, on purpose.
+
+  Apart from the gate, a page request without a valid visitor cookie gets one
+  (server/access/issue-visitor.ts). It is added to whatever response the gate
+  gave and never changes the answer; a page let through also sees it on this
+  same request, so the first render already knows the visitor.
 */
-export async function proxy(request: NextRequest) {
-  const decision = await decideAccess(request);
+function answer(
+  request: NextRequest,
+  decision: AccessDecision,
+  cookie?: string,
+) {
   switch (decision.kind) {
-    case 'pass':
-      return NextResponse.next();
+    case 'pass': {
+      if (cookie === undefined) return NextResponse.next();
+      const headers = new Headers(request.headers);
+      // Any visitor cookie already carried is an invalid one: drop it, or it
+      // would be read first.
+      const carried = (headers.get('cookie') ?? '')
+        .split(';')
+        .map((part) => part.trim())
+        .filter((part) => part && !part.startsWith(`${VISITOR_COOKIE}=`));
+      headers.set('cookie', [...carried, cookie].join('; '));
+      return NextResponse.next({ request: { headers } });
+    }
     case 'sign-in':
       return NextResponse.redirect(new URL(decision.location, request.url));
     case 'unauthorized':
@@ -26,6 +46,18 @@ export async function proxy(request: NextRequest) {
         headers: { 'content-type': 'text/plain; charset=utf-8' },
       });
   }
+}
+
+export async function proxy(request: NextRequest) {
+  const decision = await decideAccess(request);
+  const issued = await visitorToIssue(request);
+  const response = answer(
+    request,
+    decision,
+    issued ? `${issued.name}=${issued.value}` : undefined,
+  );
+  if (issued) response.cookies.set(issued.name, issued.value, issued.options);
+  return response;
 }
 
 /*

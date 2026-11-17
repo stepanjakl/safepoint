@@ -3,6 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { proxy } from './proxy';
 import { SESSION_COOKIE, signSession } from './server/access/session';
+import {
+  VISITOR_COOKIE,
+  newVisitor,
+  signVisitor,
+  verifyVisitor,
+} from './server/access/visitor';
 
 const KEY = 'a-shared-password-long-enough';
 const SECRET = 'a-signing-secret-of-at-least-thirty-two-characters';
@@ -128,6 +134,116 @@ describe('the request proxy outside local development', () => {
         );
       }
     });
+  });
+});
+
+describe('the visitor cookie the proxy issues', () => {
+  beforeEach(() => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('SAFEPOINT_ACCESS_KEY', KEY);
+    vi.stubEnv('SAFEPOINT_COOKIE_SECRET', SECRET);
+  });
+  afterEach(() => vi.unstubAllEnvs());
+
+  const issued = (response: Response) =>
+    response.headers
+      .getSetCookie()
+      .find((line) => line.startsWith(`${VISITOR_COOKIE}=`));
+
+  const valueOf = (line: string) => line.split(';')[0]!.split('=')[1]!;
+
+  it('adds a valid one to the gate redirect without changing it', async () => {
+    const response = await proxy(at('/workspace?tab=rules'));
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'https://safepoint.example/access?next=%2Fworkspace%3Ftab%3Drules',
+    );
+    const line = issued(response)!;
+    expect(await verifyVisitor(valueOf(line), SECRET)).not.toBeNull();
+    expect(line).toMatch(/HttpOnly/i);
+    expect(line).toMatch(/SameSite=lax/i);
+    expect(line).toMatch(/Secure/);
+    expect(line).toMatch(/Max-Age=31536000/);
+  });
+
+  it('adds one to a page that passes, and shows it to that same request', async () => {
+    const response = await proxy(at('/workspace', await withCookie()));
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+    const line = issued(response)!;
+    expect(line).toBeDefined();
+    expect(response.headers.get('x-middleware-request-cookie') ?? '').toContain(
+      `${VISITOR_COOKIE}=${valueOf(line)}`,
+    );
+    expect(response.headers.get('x-middleware-request-cookie')).toContain(
+      `${SESSION_COOKIE}=`,
+    );
+  });
+
+  it('adds one to the gate page too', async () => {
+    const response = await proxy(at('/access'));
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+    expect(issued(response)).toBeDefined();
+  });
+
+  it('keeps the one a visitor already has', async () => {
+    const mine = await signVisitor(newVisitor(), SECRET);
+    const response = await proxy(
+      at('/workspace', {
+        headers: { cookie: `${VISITOR_COOKIE}=${mine}` },
+      }),
+    );
+    expect(response.status).toBe(307);
+    expect(issued(response)).toBeUndefined();
+  });
+
+  it('replaces one that is forged, on the request the page sees too', async () => {
+    const forged = await signVisitor(
+      newVisitor(),
+      'another-signing-secret-of-thirty-two-chars',
+    );
+    const session = (await withCookie()).headers.cookie;
+    const response = await proxy(
+      at('/workspace', {
+        headers: { cookie: `${session}; ${VISITOR_COOKIE}=${forged}` },
+      }),
+    );
+    expect(issued(response)).toBeDefined();
+    expect(response.headers.get('x-middleware-request-cookie')).not.toContain(
+      forged,
+    );
+  });
+
+  it.each([
+    ['an API call', '/api/trpc/runs.list'],
+    ['a build asset', '/_next/static/chunks/app.js'],
+    ['the tab icon', '/icon.svg'],
+    ['a Workflow route', '/.well-known/workflow/v1/flow'],
+    ['a file', '/fonts/body.woff2'],
+  ])('adds none to %s', async (_name, path) => {
+    const response = await proxy(at(path, { method: 'POST', body: 'x' }));
+    expect(issued(response)).toBeUndefined();
+  });
+
+  it('adds none where the deployment has no secret, and answers as before', async () => {
+    vi.stubEnv('SAFEPOINT_COOKIE_SECRET', '');
+    const response = await proxy(at('/workspace'));
+    expect(response.status).toBe(503);
+    expect(issued(response)).toBeUndefined();
+  });
+
+  it('is signed with a development secret on a laptop, not Secure', async () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    vi.stubEnv('SAFEPOINT_COOKIE_SECRET', '');
+    const response = await proxy(new NextRequest('http://localhost:3000/'));
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+    const line = issued(response)!;
+    expect(line).not.toMatch(/Secure/);
+    expect(
+      await verifyVisitor(
+        valueOf(line),
+        'wrong-secret-xxxxxxxxxxxxxxxxxxxxxxxxxxx',
+      ),
+    ).toBeNull();
   });
 });
 
