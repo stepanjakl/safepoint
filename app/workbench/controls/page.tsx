@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { ShellPageTransitionProvider } from '@/components/app-shell/shell-page-transition';
@@ -23,18 +22,7 @@ export default function ControlsWorkbenchPage() {
       <header className="grid gap-1">
         <h1 className="text-display font-semibold">Control states</h1>
         <p className="text-meta text-muted max-w-3xl">
-          The real components, each state pinned. Switch theme and neutral
-          family from the design pane.{' '}
-          <Link className="underline underline-offset-4" href="/workbench">
-            Colour reference
-          </Link>
-          {' · '}
-          <Link
-            className="underline underline-offset-4"
-            href="/workbench/drawers"
-          >
-            Drawers
-          </Link>
+          The real components, each state pinned.
         </p>
       </header>
       <ShellPageTransitionProvider processPaths={[]}>

@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { LoadingGallery } from './loading-gallery';
@@ -12,9 +11,6 @@ export default function LoadingWorkbenchPage() {
       className="bg-canvas text-primary grid min-h-dvh content-start gap-8 p-6"
     >
       <header className="grid gap-2">
-        <Link className="text-meta text-muted underline" href="/workbench">
-          Colour reference
-        </Link>
         <h1 className="text-display font-semibold">Loading states</h1>
         <p className="text-body text-muted max-w-prose">
           Every wait the app still shows as plain words, as it is drawn now and

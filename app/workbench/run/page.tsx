@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { sampleDraft } from '../draft-progress/sample';
@@ -30,11 +29,7 @@ export default function RunWorkbenchPage() {
           ·{' '}
           <a className="underline underline-offset-4" href="#player">
             Player
-          </a>{' '}
-          ·{' '}
-          <Link className="underline underline-offset-4" href="/workbench">
-            Colour reference
-          </Link>
+          </a>
         </p>
       </header>
       <RunWorkbench draft={sampleDraft()} brunch={brunchDirectScript()} />

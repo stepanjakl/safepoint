@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { ProcessIcons } from './process-icons';
@@ -22,10 +21,7 @@ export default function ProcessIconsWorkbenchPage() {
           One pair per option, in the row&rsquo;s leading rail cell at the
           menu&rsquo;s icon size: the first row is checked by rules, the second
           the model&rsquo;s judgement, both named alike. Outline at rest, filled
-          as the current row. Switch theme from the design pane.{' '}
-          <Link className="underline underline-offset-4" href="/workbench">
-            Colour reference
-          </Link>
+          as the current row.
         </p>
       </header>
       <ProcessIcons />

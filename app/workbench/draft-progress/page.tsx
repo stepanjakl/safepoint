@@ -30,11 +30,6 @@ export default function DraftProgressWorkbenchPage() {
           <Link className="underline underline-offset-4" href="/workbench/run">
             On the thread step
           </Link>
-          {' · '}
-          Switch theme from the design pane.{' '}
-          <Link className="underline underline-offset-4" href="/workbench">
-            Colour reference
-          </Link>
         </p>
       </header>
       <DraftProgress set={set} names={names} />

@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
@@ -136,12 +135,6 @@ export default function DividersWorkbenchPage() {
     <main id="main" className="bg-canvas text-primary min-h-dvh p-4 sm:p-8">
       <div className="mx-auto grid max-w-7xl gap-8">
         <header className="grid gap-2">
-          <Link
-            href="/workbench"
-            className="text-meta text-muted w-fit underline underline-offset-4"
-          >
-            Colour reference
-          </Link>
           <h1 className="text-display font-semibold">
             Header & footer dividers
           </h1>

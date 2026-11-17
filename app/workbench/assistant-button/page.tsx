@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { AssistantButtonOptions } from './assistant-button';
@@ -21,11 +20,7 @@ export default function AssistantButtonWorkbenchPage() {
           The notch button closed and open, in each candidate colour. Each
           sample is a real header notch; press one to toggle it, and hover to
           see its pointer state. Cyan is already the accent and iris already
-          means awaiting review, so the hues here keep away from both. Switch
-          theme from the design pane.{' '}
-          <Link className="underline underline-offset-4" href="/workbench">
-            Colour reference
-          </Link>
+          means awaiting review, so the hues here keep away from both.
         </p>
       </header>
       <AssistantButtonOptions />

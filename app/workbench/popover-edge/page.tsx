@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { PopoverEdge } from './popover-edge';
@@ -20,11 +19,7 @@ export default function PopoverEdgeWorkbenchPage() {
         <p className="text-meta text-muted max-w-3xl">
           The popover and tooltip as they ship, beside an outer line with and
           without the inner highlight, and the chosen pair of those by theme.
-          The popover sits on the plain surface, the tooltip over text. Switch
-          theme from the design pane.{' '}
-          <Link className="underline underline-offset-4" href="/workbench">
-            Colour reference
-          </Link>
+          The popover sits on the plain surface, the tooltip over text.
         </p>
       </header>
       <PopoverEdge />

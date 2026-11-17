@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { ButtonRounding } from './button-rounding';
@@ -21,11 +20,7 @@ export default function ButtonRoundingWorkbenchPage() {
         <p className="text-meta text-muted max-w-3xl">
           Text buttons with corners, so fully round is left to tabs and
           statuses. Each option applies to every text button at its existing
-          size; the buttons and tabs are live. Switch theme from the design
-          pane.{' '}
-          <Link className="underline underline-offset-4" href="/workbench">
-            Colour reference
-          </Link>
+          size; the buttons and tabs are live.
         </p>
       </header>
       <ButtonRounding />

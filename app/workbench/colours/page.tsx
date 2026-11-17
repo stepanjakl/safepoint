@@ -369,9 +369,9 @@ export default function ColoursPage() {
       <header className="grid gap-1">
         <h1 className="text-display font-semibold">Colour reference</h1>
         <p className={NOTE}>
-          The colour system as this page paints it. Switch theme and neutral
-          family from the design pane: every swatch and ratio re-reads. Steps
-          are light / dark on the one neutral ramp.
+          The colour system as this page paints it. Switch theme (and, in
+          development, neutral family) and every swatch and ratio re-reads.
+          Steps are light / dark on the one neutral ramp.
         </p>
       </header>
 

@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { DrawerWorkbench } from './workbench';
@@ -15,17 +14,7 @@ export default function DrawersWorkbenchPage() {
         <h1 className="text-display font-semibold">Drawers</h1>
         <p className="text-meta text-muted max-w-3xl">
           The shared drawer components, with configurations side by side and a
-          live overlay. Switch theme and neutral family from the design pane.{' '}
-          <Link className="underline underline-offset-4" href="/workbench">
-            Colour reference
-          </Link>
-          {' · '}
-          <Link
-            className="underline underline-offset-4"
-            href="/workbench/controls"
-          >
-            Control states
-          </Link>
+          live overlay.
         </p>
       </header>
       <DrawerWorkbench />

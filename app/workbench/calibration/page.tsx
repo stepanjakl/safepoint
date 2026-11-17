@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { CalibrationLab } from './calibration-lab';
@@ -23,10 +22,7 @@ export default function CalibrationPage() {
         <p className="text-meta text-muted max-w-3xl">
           Which neutral looks as light as its coloured neighbours? Nudge until
           the pairs stop standing out, record a few settings, and read off the
-          median.{' '}
-          <Link className="underline underline-offset-4" href="/workbench">
-            Colour reference
-          </Link>
+          median.
         </p>
       </header>
       <CalibrationLab />

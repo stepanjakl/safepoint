@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { CSSProperties } from 'react';
 
@@ -217,12 +216,6 @@ export default function TableHeadersWorkbenchPage() {
     <main id="main" className="bg-canvas text-primary min-h-dvh p-4 sm:p-8">
       <div className="mx-auto grid max-w-3xl gap-10">
         <header className="grid gap-2">
-          <Link
-            href="/workbench"
-            className="text-meta text-muted w-fit underline underline-offset-4"
-          >
-            Colour reference
-          </Link>
           <h1 className="text-display font-semibold">Table headers</h1>
           <p className="text-body text-muted max-w-prose">
             Column names orient you. Tab names group the values. Compare five

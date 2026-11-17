@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import {
@@ -33,9 +32,6 @@ export default function StatesWorkbenchPage() {
       className="bg-canvas text-primary grid min-h-dvh content-start gap-8 p-6"
     >
       <header className="grid gap-2">
-        <Link className="text-meta text-muted underline" href="/workbench">
-          Colour reference
-        </Link>
         <h1 className="text-display font-semibold">State illustrations</h1>
         <p className="text-body text-muted max-w-prose">
           Candidates for the empty run page, drawn at 96px (line) and 128px

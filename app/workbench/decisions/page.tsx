@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { DecisionTransitions } from './transitions';
@@ -12,9 +11,6 @@ export default function DecisionWorkbenchPage() {
       className="bg-canvas text-primary grid min-h-dvh content-start gap-8 p-6"
     >
       <header className="grid gap-2">
-        <Link className="text-meta text-muted underline" href="/workbench">
-          Colour reference
-        </Link>
         <h1 className="text-display font-semibold">Decision transitions</h1>
         <p className="text-body text-muted max-w-prose">
           Try each action. The pressed control stays in place while its label

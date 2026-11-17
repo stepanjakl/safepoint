@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { PopoverHalo } from './popover-halo';
@@ -20,11 +19,7 @@ export default function PopoverHaloWorkbenchPage() {
         <p className="text-meta text-muted max-w-3xl">
           A blur around the popover instead of a shadow. Each sample straddles
           text and an empty surface, because a blur only shows where there is
-          something behind it. The live popovers below open the real way. Switch
-          theme from the design pane.{' '}
-          <Link className="underline underline-offset-4" href="/workbench">
-            Colour reference
-          </Link>
+          something behind it. The live popovers below open the real way.
         </p>
       </header>
       <PopoverHalo />
