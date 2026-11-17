@@ -12,7 +12,7 @@ import {
   eventually,
   inScratchStorage,
 } from '@/lib/definitions/scratch.fixture';
-import { TEXT } from '@/lib/definitions/set.fixture';
+import { keepText, TEXT } from '@/lib/definitions/set.fixture';
 import { definitionSetSchema } from '@/lib/definitions/types';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { modelAttempts } from '@/server/db/schema';
@@ -20,7 +20,8 @@ import { proposalProgress, startProposal } from '@/server/jobs/proposal';
 
 import { attemptRecorder } from './model-attempts';
 import { propose } from './proposals';
-import { keepStandInRead } from './reads.fixture';
+import { keepRead, keepStandInRead } from './reads.fixture';
+import { saveSet } from './rulebooks';
 
 /*
   Each model call recorded in `model_attempts`, with what it was part of, on
@@ -79,8 +80,12 @@ const busy = () =>
 const attempts = () =>
   db().select().from(modelAttempts).orderBy(modelAttempts.id);
 
+// A job's steps read what it works on where it is kept, by the ids it was
+// started with: the instructions, these rules for them, and the read.
 async function proposed(resolve: (id: string) => MockLanguageModelV4) {
-  await keepStandInRead(db(), 'test');
+  await keepText(TEXT);
+  await saveSet(owner, { ...set, hash: hashOf(TEXT) });
+  await keepRead(db(), read);
   await startProposal(owner, set, read, 'test', TEXT, { resolve });
   await eventually(async () =>
     expect((await proposalProgress(owner, 'test', FP))?.running).toBe(false),

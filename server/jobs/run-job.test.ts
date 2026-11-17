@@ -1,28 +1,29 @@
 import { and, eq, sql } from 'drizzle-orm';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
 import {
   eventually,
   inScratchDatabase,
-  rowsOf,
 } from '@/lib/definitions/scratch.fixture';
 import { ensureProcess } from '@/server/db/scope';
 import { jobs } from '@/server/db/schema';
+import type { RunStatus } from '@/server/workflows/runner';
 
 import {
-  HEARTBEAT_MS,
-  holderId,
+  claimJob,
   jobProgress,
   LEASE_MS,
-  runningJob,
+  noteJob,
+  readJob,
+  recordRun,
   startJob,
   type JobRecord,
 } from './run-job';
 
-// A job runs once under a key, is recorded before and after its work, and a
-// kept "running" that nothing holds, or whose lease has run out, is a job the
-// server stopped.
+// A job is claimed once under a key and done by one workflow run, whose
+// status says whether a job kept as running still is. Under Vitest the run
+// is the workflow function called in this process (server/workflows/runner.ts).
 
 const db = inScratchDatabase();
 
@@ -34,10 +35,9 @@ const schema = z.object({
 type Progress = z.infer<typeof schema>;
 
 const PROCESS = 'test-process';
-const ANOTHER = 'another-process-7f3a';
 
 let serial = 0;
-// A key of its own per test: held jobs outlive a test.
+// A key of its own per test: the runs a test starts outlive it.
 const record = (): JobRecord<Progress> => {
   serial += 1;
   return {
@@ -61,24 +61,31 @@ const rowOf = async (job: JobRecord<Progress>) => {
     );
   return row;
 };
-const kept = async (job: JobRecord<Progress>) => {
-  const row = await rowOf(job);
-  return row && { step: row.step, error: row.error, running: row.running };
-};
 const begin = (): Progress => ({
   step: 'Starting',
   error: null,
   running: true,
 });
 
-// A row as another process left it, its lease renewed `secondsAgo` ago.
+// The in-process runner's runs, for a test to say how one stands.
+const runs = () =>
+  ((
+    globalThis as { safepointRunsInTests?: Map<string, RunStatus> }
+  ).safepointRunsInTests ??= new Map());
+
+// A row as another start left it, written `secondsAgo` ago.
 async function keptBy(
   job: JobRecord<Progress>,
   {
-    holder = ANOTHER,
+    holder = 'another-claim',
+    runId = null,
     secondsAgo,
     ...progress
-  }: Partial<Progress> & { holder?: string; secondsAgo: number },
+  }: Partial<Progress> & {
+    holder?: string;
+    runId?: string | null;
+    secondsAgo: number;
+  },
 ) {
   await ensureProcess(db(), job.process);
   await db()
@@ -90,6 +97,7 @@ async function keptBy(
       ...begin(),
       ...progress,
       holder,
+      runId,
       heartbeatAt: sql`now() - make_interval(secs => ${secondsAgo})`,
       startedAt: sql`now() - make_interval(secs => ${secondsAgo})`,
     });
@@ -100,125 +108,135 @@ const gate = () => {
   const opened = new Promise<void>((resolve) => (open = resolve));
   return { open, opened };
 };
-// Until the job's last record is kept: a fixed wait is not long enough when
-// the suite is busy, and failed there.
-const finished = (job: JobRecord<Progress>) =>
-  eventually(async () => expect((await kept(job))?.running).toBe(false));
 
-afterEach(() => vi.useRealTimers());
+// A workflow that writes its last word under the claim it was given, once
+// let go.
+const working = (job: JobRecord<Progress>, until: Promise<void>) => {
+  const holders: string[] = [];
+  const workflow = async ({ holder }: { holder: string }) => {
+    holders.push(holder);
+    await until;
+    await noteJob(
+      job,
+      { holder },
+      { step: 'Done', error: null, running: false },
+    );
+  };
+  return { holders, workflow };
+};
+
+const started = (
+  job: JobRecord<Progress>,
+  workflow: (input: { holder: string }) => Promise<void>,
+) =>
+  startJob({
+    ...job,
+    initial: begin(),
+    workflow,
+    input: (holder) => ({ holder }),
+  });
 
 describe('starting a job', () => {
-  it('returns the running job for a second start, without running the work again', async () => {
+  it('starts one run for two starts at once; the second answers the first’s progress', async () => {
     const job = record();
     const hold = gate();
-    let started = 0;
-    const work = async () => {
-      started += 1;
-      await hold.opened;
-    };
-    const firstStart = startJob({ ...job, initial: begin(), work });
-    const secondStart = startJob({ ...job, initial: begin(), work });
-    const first = await firstStart;
-    expect(await secondStart).toBe(first);
-    expect(runningJob(job)).toBe(first);
-    hold.open();
-    await finished(job);
-    expect(started).toBe(1);
-    expect(runningJob(job)).toBeNull();
-  });
-
-  it('records progress before the work starts and after it ends', async () => {
-    const job = record();
-    const hold = gate();
-    let before: Progress | undefined;
-    const started = await startJob({
-      ...job,
-      initial: begin(),
-      work: async (progress) => {
-        before = await kept(job);
-        progress.step = 'Done';
-        await hold.opened;
-      },
-    });
-    await eventually(() =>
-      expect(before).toEqual({ step: 'Starting', error: null, running: true }),
-    );
-    expect(started.running).toBe(true);
-    hold.open();
-    await finished(job);
-    expect(await kept(job)).toEqual({
-      step: 'Done',
-      error: null,
-      running: false,
-    });
-  });
-
-  it('turns a thrown error into its first line, and stops running', async () => {
-    const job = record();
-    const progress = await startJob({
-      ...job,
-      initial: begin(),
-      work: async () => {
-        throw new Error('It broke.\nThe rest is detail.');
-      },
-    });
-    await finished(job);
-    expect(progress).toMatchObject({ error: 'It broke.', running: false });
-    expect(await kept(job)).toMatchObject({
-      error: 'It broke.',
-      running: false,
-    });
-  });
-
-  it('tidies on the way out, whether or not the work failed', async () => {
-    const job = record();
-    const progress = await startJob({
-      ...job,
-      initial: { ...begin(), step: 'Busy' },
-      work: async () => {
-        throw new Error('No.');
-      },
-      settle: (p) => {
-        p.step = 'Tidied';
-      },
-    });
-    await finished(job);
-    expect(progress.step).toBe('Tidied');
-    expect((await kept(job))?.step).toBe('Tidied');
-  });
-
-  it('keeps the progress as columns, one holder for the whole process', async () => {
-    const job = record();
-    const hold = gate();
-    await startJob({
-      ...job,
-      initial: begin(),
-      work: async () => hold.opened,
-    });
+    const { holders, workflow } = working(job, hold.opened);
+    const [first, second] = await Promise.all([
+      started(job, workflow),
+      started(job, workflow),
+    ]);
+    expect(holders).toHaveLength(1);
+    expect(second).toEqual(first);
     const row = await rowOf(job);
-    expect(row).toMatchObject({ running: true, holder: holderId() });
-    expect(row?.heartbeatAt).toBeInstanceOf(Date);
+    expect(row).toMatchObject({ running: true, holder: holders[0] });
+    expect(row?.runId).toMatch(/^in-process-/);
     hold.open();
-    await finished(job);
-    expect(holderId()).toBe(holderId());
+    await eventually(async () =>
+      expect(await jobProgress(job)).toEqual({
+        step: 'Done',
+        error: null,
+        running: false,
+      }),
+    );
+  });
+
+  it('says what stopped a start that could not start its run, and stops running', async () => {
+    const job = record();
+    const progress = await startJob({
+      ...job,
+      initial: begin(),
+      // Not a workflow at all: what the runner throws is the job's error.
+      workflow: undefined as never,
+      input: () => ({}),
+    });
+    expect(progress).toMatchObject({
+      running: false,
+      error: expect.any(String),
+    });
+    expect(await jobProgress(job)).toMatchObject({
+      running: false,
+      error: progress.error,
+    });
+  });
+
+  it('can be started again over a job that finished', async () => {
+    const job = record();
+    await keptBy(job, { secondsAgo: 5, running: false, step: 'Done' });
+    const hold = gate();
+    const { holders, workflow } = working(job, hold.opened);
+    await started(job, workflow);
+    expect(holders).toHaveLength(1);
+    hold.open();
+  });
+
+  it('keeps one kind of job, or one process’s, from taking another’s key', async () => {
+    const job = record();
+    await keptBy(job, { secondsAgo: 0, runId: 'live' });
+    runs().set('live', 'running');
+    for (const other of [
+      { ...job, kind: 'proposals' as const },
+      { ...job, process: 'another-process' },
+    ])
+      expect(await claimJob(other, begin())).toHaveProperty('holder');
   });
 });
 
-describe('reading progress', () => {
-  it('reads a kept running job nothing holds as interrupted, in the caller’s words', async () => {
-    const job = record();
-    await keptBy(job, { secondsAgo: LEASE_MS / 1000 + 5 });
-    expect(await jobProgress(job)).toEqual({
-      step: 'Starting',
-      error: 'The server stopped.',
-      running: false,
-    });
+describe('whether a job kept as running is', () => {
+  it('follows its run once the row has not been written for a while', async () => {
+    for (const [status, running] of [
+      ['running', true],
+      ['pending', true],
+      ['completed', false],
+      ['failed', false],
+      ['cancelled', false],
+      ['gone', false],
+    ] as const) {
+      const job = record();
+      const runId = `run-${serial}`;
+      if (status !== 'gone') runs().set(runId, status);
+      await keptBy(job, { runId, secondsAgo: 30, step: 'Writing 2 of 5…' });
+      expect(await jobProgress(job)).toEqual({
+        step: 'Writing 2 of 5…',
+        running,
+        error: running ? null : 'The server stopped.',
+      });
+    }
   });
 
-  it('reads one this process once held, and no longer holds, as interrupted too', async () => {
+  it('takes a row just written at its word, without asking its run', async () => {
     const job = record();
-    await keptBy(job, { holder: holderId(), secondsAgo: 1 });
-    expect(await jobProgress(job)).toMatchObject({
+    // A run nothing knows of: asked, it would read as stopped.
+    await keptBy(job, { runId: 'unknown', secondsAgo: 0 });
+    expect((await jobProgress(job))?.running).toBe(true);
+  });
+
+  it('reads a claim that never recorded a run as running, until its lease runs out', async () => {
+    const young = record();
+    await keptBy(young, { secondsAgo: 1 });
+    expect((await jobProgress(young))?.running).toBe(true);
+    const old = record();
+    await keptBy(old, { secondsAgo: (2 * LEASE_MS) / 1000 });
+    expect(await jobProgress(old)).toMatchObject({
       running: false,
       error: 'The server stopped.',
     });
@@ -227,246 +245,72 @@ describe('reading progress', () => {
   it('gives a finished kept job as it was, and null for none', async () => {
     const job = record();
     expect(await jobProgress(job)).toBeNull();
-    await keptBy(job, {
-      step: 'Done',
-      error: null,
-      running: false,
-      secondsAgo: 5,
-    });
+    await keptBy(job, { secondsAgo: 600, running: false, step: 'Done' });
     expect(await jobProgress(job)).toEqual({
       step: 'Done',
       error: null,
       running: false,
     });
   });
+});
 
-  it('gives a copy of the held job, not the one the work changes', async () => {
+describe('a start over a job kept as running', () => {
+  it('is refused while its run is live, and answers the row', async () => {
     const job = record();
-    const hold = gate();
-    const held = await startJob({
-      ...job,
-      initial: begin(),
-      work: async () => hold.opened,
+    runs().set('live-run', 'running');
+    await keptBy(job, { runId: 'live-run', secondsAgo: 30, step: 'Busy' });
+    expect(await claimJob(job, begin())).toEqual({
+      other: { step: 'Busy', error: null, running: true },
     });
-    const read = await jobProgress(job);
-    expect(read).toEqual(held);
-    expect(read).not.toBe(held);
-    held.step = 'Later';
-    expect(read!.step).toBe('Starting');
-    hold.open();
-    await finished(job);
   });
 
-  it('keeps one kind of job from taking another’s key', async () => {
-    const job = record();
-    const hold = gate();
-    await startJob({ ...job, initial: begin(), work: async () => hold.opened });
-    expect(runningJob({ ...job, kind: 'proposals' })).toBeNull();
-    expect(await jobProgress({ ...job, kind: 'proposals' })).toBeNull();
-    hold.open();
-    await finished(job);
-  });
-
-  it('keeps one process’s job from another’s of the same key', async () => {
-    const job = record();
-    const hold = gate();
-    await startJob({ ...job, initial: begin(), work: async () => hold.opened });
-    expect(runningJob({ ...job, process: 'someone-else' })).toBeNull();
-    hold.open();
-    await finished(job);
+  it('takes the key over once its run is over, or its claim was abandoned', async () => {
+    const over = record();
+    runs().set('failed-run', 'failed');
+    await keptBy(over, { runId: 'failed-run', secondsAgo: 30 });
+    const abandoned = record();
+    await keptBy(abandoned, { secondsAgo: (2 * LEASE_MS) / 1000 });
+    const young = record();
+    await keptBy(young, { secondsAgo: 1 });
+    for (const job of [over, abandoned]) {
+      const claim = await claimJob(job, begin());
+      expect(claim).toHaveProperty('holder');
+      expect(await rowOf(job)).toMatchObject({
+        holder: (claim as { holder: string }).holder,
+        runId: null,
+        running: true,
+      });
+    }
+    expect(await claimJob(young, begin())).toHaveProperty('other');
   });
 });
 
-describe('a job held by another process', () => {
-  it('is not started a second time while its lease is live, and reads as running', async () => {
+describe('writing progress', () => {
+  it('is refused to a claim that lost the key, and taken from the run that holds it', async () => {
     const job = record();
-    await keptBy(job, { step: 'Writing 2 of 5…', secondsAgo: 10 });
-    const work = vi.fn(async () => undefined);
-    const answered = await startJob({ ...job, initial: begin(), work });
-    // What the other process has kept, not an object of this one's.
-    expect(answered).toEqual({
-      step: 'Writing 2 of 5…',
-      error: null,
-      running: true,
-    });
-    expect(runningJob(job)).toBeNull();
-    expect(await jobProgress(job)).toEqual(answered);
-    expect(work).not.toHaveBeenCalled();
-    expect(await rowOf(job)).toMatchObject({ holder: ANOTHER, running: true });
+    await keptBy(job, { holder: 'old-claim', secondsAgo: 120 });
+    const claim = await claimJob(job, begin());
+    if (!('holder' in claim)) throw new Error('Not claimed.');
+    const said = { step: 'Late', error: null, running: true };
+    expect(await noteJob(job, { holder: 'old-claim' }, said)).toBe(false);
+    // The run that already owned the key's token is recorded for this claim,
+    // and writes as itself.
+    await recordRun(job, claim.holder, 'owning-run');
+    expect(
+      await noteJob(
+        job,
+        { holder: 'its-own-claim', runId: 'owning-run' },
+        said,
+      ),
+    ).toBe(true);
+    expect((await readJob(job, schema))?.progress).toEqual(said);
   });
 
-  it('reads as interrupted once its lease has run out, and can then be started again', async () => {
+  it('names its run on the row when the start could not', async () => {
     const job = record();
-    await keptBy(job, { secondsAgo: LEASE_MS / 1000 + 1 });
-    expect(await jobProgress(job)).toMatchObject({
-      running: false,
-      error: 'The server stopped.',
-    });
-    const work = vi.fn(async (progress: Progress) => {
-      progress.step = 'Taken over';
-    });
-    await startJob({ ...job, initial: begin(), work });
-    await finished(job);
-    expect(work).toHaveBeenCalledOnce();
-    expect(await rowOf(job)).toMatchObject({
-      holder: holderId(),
-      step: 'Taken over',
-      running: false,
-      error: null,
-    });
-  });
-
-  it('can be started again over a job that finished', async () => {
-    const job = record();
-    await keptBy(job, { running: false, secondsAgo: 1 });
-    const work = vi.fn(async () => undefined);
-    await startJob({ ...job, initial: begin(), work });
-    await finished(job);
-    expect(work).toHaveBeenCalledOnce();
-  });
-});
-
-describe('the lease', () => {
-  // Only the timer is faked: the database goes on in real time, and its clock
-  // is the one the lease is judged by.
-  const fakeTimer = () =>
-    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
-  const heartbeatAge = async (job: JobRecord<Progress>) => {
-    const [row] = await rowsOf<{ age: string }>(
-      db(),
-      sql`select extract(epoch from now() - heartbeat_at)::text as age from jobs
-        where process = ${job.process} and kind = ${job.kind} and key = ${job.key}`,
-    );
-    return Number(row!.age);
-  };
-  const lapse = (job: JobRecord<Progress>) =>
-    db().execute(sql`
-      update jobs set heartbeat_at = now() - make_interval(secs => ${LEASE_MS / 1000 - 5})
-      where process = ${job.process} and kind = ${job.kind} and key = ${job.key}`);
-
-  it('is renewed while a long piece of work runs, with no note from it', async () => {
-    fakeTimer();
-    const job = record();
-    const hold = gate();
-    await startJob({
-      ...job,
-      initial: begin(),
-      // A model call of minutes: it says nothing meanwhile.
-      work: async () => hold.opened,
-    });
-    // Near the end of its lease, as it would be a minute into the call.
-    await lapse(job);
-    expect(await heartbeatAge(job)).toBeGreaterThan(LEASE_MS / 1000 - 10);
-    await vi.advanceTimersByTimeAsync(HEARTBEAT_MS);
-    await eventually(async () =>
-      expect(await heartbeatAge(job)).toBeLessThan(LEASE_MS / 1000 / 4),
-    );
-    // Still its own, and still running, however long it goes on.
-    await lapse(job);
-    await vi.advanceTimersByTimeAsync(HEARTBEAT_MS * 4);
-    await eventually(async () =>
-      expect(await heartbeatAge(job)).toBeLessThan(LEASE_MS / 1000 / 4),
-    );
-    expect(await rowOf(job)).toMatchObject({
-      holder: holderId(),
-      running: true,
-      step: 'Starting',
-    });
-    hold.open();
-    await finished(job);
-  });
-
-  it('is no longer renewed once the job has ended', async () => {
-    fakeTimer();
-    const job = record();
-    await startJob({
-      ...job,
-      initial: begin(),
-      work: async () => undefined,
-    });
-    await finished(job);
-    expect(vi.getTimerCount()).toBe(0);
-  });
-
-  it('does not stop the job when a renewal fails, and is renewed at the next beat', async () => {
-    fakeTimer();
-    const job = record();
-    const hold = gate();
-    let result = 'unfinished';
-    await startJob({
-      ...job,
-      initial: begin(),
-      work: async (progress) => {
-        await hold.opened;
-        progress.step = 'Done';
-        result = 'finished';
-      },
-    });
-    await lapse(job);
-    const failing = vi.spyOn(db(), 'update').mockImplementation(() => {
-      throw new Error('connection lost');
-    });
-    await vi.advanceTimersByTimeAsync(HEARTBEAT_MS);
-    await eventually(() => expect(failing).toHaveBeenCalled());
-    failing.mockRestore();
-    expect(await rowOf(job)).toMatchObject({ running: true });
-    await vi.advanceTimersByTimeAsync(HEARTBEAT_MS);
-    await eventually(async () =>
-      expect(await heartbeatAge(job)).toBeLessThan(LEASE_MS / 1000 / 4),
-    );
-    hold.open();
-    await finished(job);
-    expect(result).toBe('finished');
-    expect(await kept(job)).toEqual({
-      step: 'Done',
-      error: null,
-      running: false,
-    });
-  });
-});
-
-describe('a database that fails', () => {
-  it('never stops the job when a progress write fails, and says how it ended from memory', async () => {
-    const job = record();
-    const hold = gate();
-    const failing = vi.spyOn(db(), 'update').mockImplementation(() => {
-      throw new Error('connection lost');
-    });
-    const progress = await startJob({
-      ...job,
-      initial: begin(),
-      work: async (p, note) => {
-        p.step = 'Halfway';
-        await note();
-        await hold.opened;
-        p.step = 'Done';
-        await note();
-      },
-    });
-    hold.open();
-    await eventually(() => expect(progress.running).toBe(false));
-    expect(progress).toMatchObject({ step: 'Done', error: null });
-    // The row never heard the end; this process still knows it.
-    expect(await rowOf(job)).toMatchObject({ running: true });
-    expect(await jobProgress(job)).toMatchObject({
-      step: 'Done',
-      running: false,
-    });
-    failing.mockRestore();
-  });
-
-  it('runs the work all the same when the job cannot be recorded at its start', async () => {
-    const job = record();
-    const failing = vi.spyOn(db(), 'insert').mockImplementation(() => {
-      throw new Error('connection lost');
-    });
-    const work = vi.fn(async (p: Progress) => {
-      p.step = 'Done';
-    });
-    const progress = await startJob({ ...job, initial: begin(), work });
-    failing.mockRestore();
-    await eventually(() => expect(progress.running).toBe(false));
-    expect(work).toHaveBeenCalledOnce();
-    expect(progress.step).toBe('Done');
+    const claim = await claimJob(job, begin());
+    if (!('holder' in claim)) throw new Error('Not claimed.');
+    await noteJob(job, { holder: claim.holder, runId: 'the-run' }, begin());
+    expect((await rowOf(job))?.runId).toBe('the-run');
   });
 });

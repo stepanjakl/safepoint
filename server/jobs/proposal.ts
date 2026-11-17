@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { fingerprintOf, hashOf } from '@/lib/definitions/fingerprint';
+import { fingerprintOf, hashOf, noRules } from '@/lib/definitions/fingerprint';
 import { newActivity } from '@/lib/definitions/propose';
 import type { KeptRead } from '@/lib/definitions/records';
 import {
@@ -11,15 +11,18 @@ import {
 } from '@/lib/definitions/types';
 import type { Resolve } from '@/lib/definitions/calls';
 import type { DraftingModel } from '@/lib/models';
-import { attemptRecorder } from '@/server/storage/model-attempts';
-import { propose, runKeyOf } from '@/server/storage/proposals';
+import { runKeyOf } from '@/server/storage/proposals';
+import { proposalWorkflow } from '@/server/workflows/proposal';
+import { holdStandIns } from '@/server/workflows/stand-ins';
 
 import { jobProgress, startJob } from './run-job';
 
 /*
   Server-only. A proposal as a server-side job, as a draft is (draft.ts): it
-  carries on when the page is closed, its progress kept in the `jobs` table as
-  it goes, so one the server stopped part way through says so.
+  carries on when the page is closed, and after a restart or a redeploy (a
+  workflow run, server/workflows/proposal.ts), its progress kept in the
+  `jobs` table as it goes, so one that stopped part way and was not carried
+  on says so.
 */
 export const INTERRUPTED =
   'The server stopped during this proposal, so it did not finish. Propose again to carry on from where it stopped.';
@@ -47,6 +50,8 @@ export async function proposalProgress(
   return jobProgress(jobFor(owner, readId, fingerprint));
 }
 
+// Starts a proposal on the read `readId` names and the rules `set` is,
+// unless one is running for them, here or in another process.
 export function startProposal(
   owner: DefinitionProcess,
   set: DefinitionSet,
@@ -55,7 +60,9 @@ export function startProposal(
   text: string,
   options: { model?: DraftingModel | null; resolve?: Resolve } = {},
 ): Promise<DraftProgress> {
-  const job = jobFor(owner, readId, fingerprintOf(set));
+  const fingerprint = fingerprintOf(set);
+  const job = jobFor(owner, readId, fingerprint);
+  const { resolve } = options;
   return startJob({
     ...job,
     initial: {
@@ -64,42 +71,17 @@ export function startProposal(
       running: true,
       activity: newActivity(),
     },
-    work: async (progress, note) => {
-      // A poll in this process reads the job held in memory; the row is what
-      // another process or a restart reads, so a thought arriving word by
-      // word is written now and then.
-      let noted = 0;
-      const changed = () => {
-        if (Date.now() - noted < NOTE_EVERY_MS) return;
-        noted = Date.now();
-        void note();
-      };
-      // Each model call, as part of this job; written before the job ends.
-      const record = attemptRecorder({
-        process: job.process,
-        jobKind: job.kind,
-        jobKey: job.key,
-        instructionsHash: hashOf(text),
-        readId,
-        fingerprint: fingerprintOf(set),
-      });
-      const done = await propose(owner, set, read, readId, text, {
-        ...options,
-        record,
-        watch: { activity: progress.activity!, changed },
-        onBatch: (at, of) => {
-          progress.step =
-            of > 1 ? `Proposing ${at} of ${of} batches…` : 'Proposing…';
-          void note();
-        },
-      }).finally(record.settled);
-      progress.step = `Proposed for ${Object.keys(done.records).length} ${owner.subject.record.plural}.`;
-    },
-    settle: (progress) => {
-      progress.activity!.thought = null;
-      progress.activity!.writing = 0;
-    },
+    workflow: proposalWorkflow,
+    input: (holder) => ({
+      job: { kind: job.kind, process: job.process, key: job.key },
+      holder,
+      instructions: hashOf(text),
+      readId,
+      fingerprint,
+      // No rules: the model proposes from the instructions alone.
+      rules: fingerprint !== fingerprintOf(noRules(text)),
+      model: options.model ?? null,
+    }),
+    held: resolve ? (holder) => holdStandIns(holder, resolve) : undefined,
   });
 }
-
-const NOTE_EVERY_MS = 2000;

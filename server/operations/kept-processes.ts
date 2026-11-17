@@ -79,3 +79,12 @@ export function runProcess(id: string): RunProcess {
 
 // Every process whose versions are kept, for a test to hold each declaration.
 export const keptProcesses = () => KEPT;
+
+// The process whose definitions a job names by their id (a job's steps are
+// handed ids, server/workflows/): what the engine works for, and the kept
+// process its instruction versions are under.
+export function processOfDefinitions(id: string): RunProcess {
+  const kept = KEPT.find((entry) => entry.runs?.definitions.id === id);
+  if (!kept?.runs) throw new Error(`No definitions are kept for ${id}.`);
+  return kept as RunProcess;
+}

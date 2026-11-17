@@ -20,6 +20,7 @@ import { keepText, TEXT } from '@/lib/definitions/set.fixture';
 import { hashOf } from '@/lib/definitions/fingerprint';
 import { ensureProcess } from '@/server/db/scope';
 import { jobs, modelAttempts } from '@/server/db/schema';
+import { keepRead } from '@/server/storage/reads.fixture';
 import { loadSet } from '@/server/storage/rulebooks';
 
 // A whole draft runs on the server: found, then each definition written, with
@@ -27,10 +28,12 @@ import { loadSet } from '@/server/storage/rulebooks';
 
 const { database: db } = inScratchStorage();
 
-// Drafting keeps rules for kept instructions, as a run's always are.
+// Drafting keeps rules for kept instructions, as a run's always are, and a
+// draft's steps read the read it was started on by its id.
 beforeEach(async () => {
   for (const text of [TEXT, `${TEXT} Interrupted.`, `${TEXT} Again.`])
     await keepText(text);
+  await keepRead(db(), capturedRead());
 });
 
 // The row a draft's progress is kept in.
@@ -290,8 +293,13 @@ describe('a draft on the server', () => {
           throw new Error('Should not be asked.');
         },
       });
-      expect(await second).toBe(await first);
+      // The second answers the first's progress, from the row both read.
+      expect(await second).toEqual(await first);
       await settled();
+      expect(await draftProgress(owner, TEXT)).toMatchObject({
+        step: 'Written again.',
+        error: null,
+      });
     });
   });
 });

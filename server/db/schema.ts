@@ -760,10 +760,13 @@ export const applications = pgTable(
 export const JOB_KINDS = ['drafts', 'proposals'] as const;
 
 /*
-  A background job's progress (DraftProgress, as columns). A running job is
-  held by one server instance (`holder`) on a lease it renews
-  (`heartbeatAt`); one whose lease has run out is a job whose process died,
-  and another instance may take its key over.
+  A background job's progress (DraftProgress, as columns), which the screens
+  read. The work is a Vercel Workflow run (server/workflows/), whose id is
+  `runId`; whether a job kept as running is running is that run's status.
+  Starting claims the key: `holder` names the claim, and its steps write
+  only while it, or their run, still holds the row. `heartbeatAt` is when
+  the row was claimed or last written; a claim that never recorded a run is
+  abandoned once it is older than run-job.ts's LEASE_MS.
 */
 export const jobs = pgTable(
   'jobs',
@@ -781,6 +784,8 @@ export const jobs = pgTable(
     activity: json('activity').$type<ProposalActivity>(),
     holder: text('holder'),
     heartbeatAt: instant('heartbeat_at'),
+    // The Workflow run doing the work, once one is started.
+    runId: text('run_id'),
     startedBy: text('started_by'),
     startedAt: instant('started_at').notNull(),
     updatedAt: instant('updated_at').notNull().defaultNow(),
@@ -792,7 +797,7 @@ export const jobs = pgTable(
       'jobs_held',
       sql`not ${t.running} or (${t.holder} is not null and ${t.heartbeatAt} is not null)`,
     ),
-    // For finding jobs whose lease has run out.
+    // For finding jobs kept as running.
     index('jobs_running')
       .on(t.heartbeatAt)
       .where(sql`${t.running}`),
