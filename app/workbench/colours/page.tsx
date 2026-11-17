@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { CSSProperties, ReactNode } from 'react';
 
@@ -7,7 +6,7 @@ import report from '@/docs/generated/colour-theme-report.json';
 import { Button } from '@/components/ui/button';
 import { TooltipArrowShape } from '@/components/ui/tooltip';
 
-import { Pair, Swatch } from './measure';
+import { Pair, Swatch } from '../measure';
 
 /*
   Development only: the colour system as the page paints it. Every swatch and
@@ -359,7 +358,7 @@ const SECTION = 'grid gap-3';
 const HEADING = 'text-title font-semibold';
 const NOTE = 'text-meta text-muted max-w-3xl';
 
-export default function WorkbenchPage() {
+export default function ColoursPage() {
   if (process.env.NODE_ENV !== 'development') notFound();
 
   return (
@@ -372,108 +371,7 @@ export default function WorkbenchPage() {
         <p className={NOTE}>
           The colour system as this page paints it. Switch theme and neutral
           family from the design pane: every swatch and ratio re-reads. Steps
-          are light / dark on the one neutral ramp.{' '}
-          <Link
-            className="underline underline-offset-4"
-            href="/workbench/controls"
-          >
-            Control states
-          </Link>
-          {' · '}
-          <Link
-            className="underline underline-offset-4"
-            href="/workbench/section-transitions"
-          >
-            Section transitions
-          </Link>
-          {' · '}
-          <Link
-            className="underline underline-offset-4"
-            href="/workbench/drawers"
-          >
-            Drawers
-          </Link>
-          {' · '}
-          <Link
-            className="underline underline-offset-4"
-            href="/workbench/button-rounding"
-          >
-            Button rounding
-          </Link>
-          {' · '}
-          <Link
-            className="underline underline-offset-4"
-            href="/workbench/popover-halo"
-          >
-            Popover halo
-          </Link>
-          {' · '}
-          <Link
-            className="underline underline-offset-4"
-            href="/workbench/popover-edge"
-          >
-            Popover edge
-          </Link>
-          {' · '}
-          <Link
-            className="underline underline-offset-4"
-            href="/workbench/assistant-button"
-          >
-            Assistant button
-          </Link>
-          {' · '}
-          <Link
-            className="underline underline-offset-4"
-            href="/workbench/process-icons"
-          >
-            Process icons
-          </Link>
-          {' · '}
-          <Link
-            className="underline underline-offset-4"
-            href="/workbench/decisions"
-          >
-            Decision transitions
-          </Link>
-          {' · '}
-          <Link className="underline underline-offset-4" href="/workbench/run">
-            Run lifecycle
-          </Link>
-          {' · '}
-          <Link
-            className="underline underline-offset-4"
-            href="/workbench/table-headers"
-          >
-            Table headers
-          </Link>
-          {' · '}
-          <Link
-            className="underline underline-offset-4"
-            href="/workbench/dividers"
-          >
-            Header & footer dividers
-          </Link>
-          {' · '}
-          <Link
-            className="underline underline-offset-4"
-            href="/workbench/states"
-          >
-            State illustrations
-          </Link>
-          {' · '}
-          <Link
-            className="underline underline-offset-4"
-            href="/workbench/loading"
-          >
-            Loading states
-          </Link>
-          {' · '}
-          <Link
-            className="underline underline-offset-4"
-            href="/workbench/draft-progress"
-          >
-            Draft progress
-          </Link>
+          are light / dark on the one neutral ramp.
         </p>
       </header>
 

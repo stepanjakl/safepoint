@@ -133,7 +133,7 @@ paints; see `docs/interface/STYLING-SYSTEM.md` → Finding where a style is writ
 `pnpm trace:token <role>` prints where a role is declared and what it resolves
 to in each theme, and inside each surface for one that follows it; use it
 instead of reading stylesheets hop by hop.
-`/workbench` (development only) is the live colour reference: surfaces, text
+`/workbench/colours` is the live colour reference: surfaces, text
 and edges on their grounds with measured contrast, state scales and the ramp,
 re-read whenever the theme or neutral family changes. Compare colour options
 there, where the user can see them, rather than in screenshots.
