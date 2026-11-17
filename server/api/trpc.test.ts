@@ -2,6 +2,12 @@ import { TRPCError } from '@trpc/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SESSION_COOKIE, signSession } from '@/server/access/session';
+import {
+  VISITOR_COOKIE,
+  newVisitor,
+  signVisitor,
+  visitorSecret,
+} from '@/server/access/visitor';
 
 import { gatedProcedure, router } from './trpc';
 
@@ -10,7 +16,10 @@ import { gatedProcedure, router } from './trpc';
 const gated = router({
   ping: gatedProcedure.query(() => 'pong'),
   whoami: gatedProcedure.query(({ ctx }) => ctx.actor),
+  visitor: gatedProcedure.query(({ ctx }) => ctx.visitor),
 });
+
+const ID = '2f6c1c1e-6f0f-4c6a-9a43-0b5b7e7b7a11';
 
 const caller = (url: string, headers?: HeadersInit) =>
   gated.createCaller({ request: new Request(url, { headers }) });
@@ -135,5 +144,51 @@ describe('gatedProcedure outside local development', () => {
     await expect(caller(local, await cookie('Maya')).whoami()).resolves.toBe(
       'Maya',
     );
+  });
+
+  it('names the visitor when the gate has a session of a different name, and keeps the session name as the actor', async () => {
+    const mine = newVisitor(Date.now(), new Uint8Array([1, 1, 2]), ID);
+    const headers = {
+      cookie: `${(await cookie('Maya')).cookie}; ${VISITOR_COOKIE}=${await signVisitor(mine, SECRET)}`,
+    };
+    const url = 'https://safepoint.example/api/trpc/whoami';
+    await expect(caller(url, headers).whoami()).resolves.toBe('Maya');
+    await expect(caller(url, headers).visitor()).resolves.toEqual({
+      id: ID,
+      name: 'Sunny Shakshuka',
+      orb: 2,
+    });
+  });
+});
+
+describe('the visitor as the actor', () => {
+  const SECRET = 'a-signing-secret-of-at-least-thirty-two-characters';
+  const url = 'http://localhost:3000/api/trpc/whoami';
+  beforeEach(() => vi.stubEnv('NODE_ENV', 'development'));
+  afterEach(() => vi.unstubAllEnvs());
+
+  const withVisitor = async (secret: string) => ({
+    cookie: `${VISITOR_COOKIE}=${await signVisitor(newVisitor(Date.now(), new Uint8Array([0, 0, 0]), ID), secret)}`,
+  });
+
+  it('is who acts in local development, signed with the development secret', async () => {
+    vi.stubEnv('SAFEPOINT_COOKIE_SECRET', '');
+    const headers = await withVisitor(visitorSecret(true, {}) as string);
+    await expect(caller(url, headers).whoami()).resolves.toBe(
+      'Curious Croissant',
+    );
+    await expect(caller(url, headers).visitor()).resolves.toMatchObject({
+      id: ID,
+    });
+  });
+
+  it('is nobody when the cookie is forged or absent', async () => {
+    vi.stubEnv('SAFEPOINT_COOKIE_SECRET', SECRET);
+    const forged = await withVisitor(
+      'another-signing-secret-of-thirty-two-chars',
+    );
+    await expect(caller(url, forged).whoami()).resolves.toBeNull();
+    await expect(caller(url, forged).visitor()).resolves.toBeNull();
+    await expect(caller(url).whoami()).resolves.toBeNull();
   });
 });

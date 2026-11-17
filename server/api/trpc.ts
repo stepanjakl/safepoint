@@ -5,10 +5,12 @@ import { initTRPC, TRPCError } from '@trpc/server';
 import {
   crossOriginRefusal,
   gateApplies,
+  isLocalDevelopment,
   localDevelopmentRefusal,
 } from '@/lib/dev/dev-route';
 import { accessConfig, NOT_CONFIGURED_MESSAGE } from '@/server/access/config';
 import { readSession } from '@/server/access/session';
+import { readVisitor, visitorSecret } from '@/server/access/visitor';
 import { Refused } from '@/server/storage/refused';
 
 /*
@@ -62,10 +64,23 @@ export const router = t.router;
   runs before the input is parsed, as the plain routes refuse first.
 
   Past it, a procedure is told who is acting (`ctx.actor`): the name on the
-  cookie, and nobody in local development, which has no sign-in. A refusal its
+  gate's cookie when there is one, otherwise the visitor's own (the anonymous
+  name the proxy issues), otherwise nobody. `ctx.visitor` carries the visitor
+  whole, id included, for what is counted per visitor later. A refusal its
   work throws (`Refused`) reaches the screen in its own words and code.
 */
-async function actorOf(request: Request): Promise<string | null> {
+type VisitorOnContext = { id: string; name: string; orb: number };
+
+async function visitorOf(request: Request): Promise<VisitorOnContext | null> {
+  const secret = visitorSecret(isLocalDevelopment(new URL(request.url)));
+  if (secret === null) return null;
+  const visitor = await readVisitor(request, secret);
+  return visitor && { id: visitor.id, name: visitor.name, orb: visitor.orb };
+}
+
+async function actorOf(
+  request: Request,
+): Promise<{ actor: string | null; visitor: VisitorOnContext | null }> {
   if (!gateApplies(new URL(request.url))) {
     const refusal = localDevelopmentRefusal(request);
     if (refusal)
@@ -73,7 +88,8 @@ async function actorOf(request: Request): Promise<string | null> {
         code: refusal.status === 404 ? 'NOT_FOUND' : 'FORBIDDEN',
         message: refusal.message,
       });
-    return null;
+    const visitor = await visitorOf(request);
+    return { actor: visitor?.name ?? null, visitor };
   }
   const foreign = crossOriginRefusal(request);
   if (foreign)
@@ -87,12 +103,12 @@ async function actorOf(request: Request): Promise<string | null> {
   const session = await readSession(request, config.cookieSecret);
   if (session === null)
     throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Sign in required.' });
-  return session.name;
+  const visitor = await visitorOf(request);
+  return { actor: session.name, visitor };
 }
 
 export const gatedProcedure = t.procedure.use(async ({ ctx, next }) => {
-  const actor = await actorOf(ctx.request);
-  const result = await next({ ctx: { actor } });
+  const result = await next({ ctx: await actorOf(ctx.request) });
   if (!result.ok && result.error.cause instanceof Refused)
     throw new TRPCError({
       code: result.error.cause.code,
