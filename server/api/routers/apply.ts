@@ -3,16 +3,16 @@ import 'server-only';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
-import { blockFor, prepareWrite, writesOf } from '@/lib/definitions/apply';
-import type { DecisionMade, Prepared } from '@/lib/definitions/apply';
-import { fingerprintOf } from '@/lib/definitions/fingerprint';
-import { namesOf, type KeptRead } from '@/lib/definitions/records';
+import { blockFor, prepareWrite, writesOf } from '@/lib/engine/apply';
+import type { DecisionMade, Prepared } from '@/lib/engine/apply';
+import { fingerprintOf } from '@/lib/engine/fingerprint';
+import { namesOf, type KeptRead } from '@/lib/engine/records';
 import type {
   Application,
   DefinitionProcess,
   DefinitionSet,
   Proposal,
-} from '@/lib/definitions/types';
+} from '@/lib/engine/types';
 import { EARLIER_PROPOSAL } from '@/server/operations/record-decisions';
 import {
   applyDecisions,
@@ -35,7 +35,7 @@ import { keptRunFields, keptRunProcedure, staleReply } from '../run-procedure';
 import { router } from '../trpc';
 
 /*
-  Server-only. Apply, through lib/definitions/apply. `preview` says what the
+  Server-only. Apply, through lib/engine/apply. `preview` says what the
   decisions would write, from the sheet as it is now; `write` writes them and
   reads them back; `undo` puts the cells back while they still hold what was
   written. Every one is a mutation: each reaches the sheet, and a preview may

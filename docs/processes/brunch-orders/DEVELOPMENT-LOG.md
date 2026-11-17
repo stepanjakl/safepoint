@@ -119,7 +119,7 @@ quota until then, and later calls skip it. When a whole family is spent, the
 draft stops and says until when.
 
 **Lesson.** The Brunch weekend drafter had already solved this. The parser for
-Google's refusals was shared (now `lib/definitions/quota.ts`). Before writing
+Google's refusals was shared (now `lib/engine/quota.ts`). Before writing
 infrastructure for a second engine, read what the first one learned.
 
 ## Two drafts, and why prompts alone oscillate
@@ -188,7 +188,7 @@ each with tests:
   test the moment it was added.
 
 The structural debt went with them: the 1,000-line `rules.ts` became
-`lib/definitions/`, one module per job, taking the process as a parameter;
+`lib/engine/`, one module per job, taking the process as a parameter;
 records are built once per read, not on every formula run; the parsed-formula
 cache is bounded; a whole draft runs on the server, so closing the page no
 longer stops it halfway; the write chain no longer drops from Flash to
@@ -640,7 +640,7 @@ reads a lone write's sentence rather than a comparison vouching for it.
 
 The engine claimed to hold for any process, but only Brunch orders had run
 through it. A test-only process of bike-share docks
-(`lib/definitions/conformance.fixture.ts`), with two proposal fields, two
+(`lib/engine/conformance.fixture.ts`), with two proposal fields, two
 lookups, percentages, money and dates, was run end to end against answers
 worked out by hand. Four things came out wrong, each invisible on Brunch:
 

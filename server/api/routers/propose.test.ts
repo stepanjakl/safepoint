@@ -2,11 +2,11 @@ import { readFileSync } from 'node:fs';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { fingerprintOf } from '@/lib/definitions/fingerprint';
-import { inScratchStorage } from '@/lib/definitions/scratch.fixture';
+import { fingerprintOf } from '@/lib/engine/fingerprint';
+import { inScratchStorage } from '@/lib/engine/scratch.fixture';
 import { keepStandInRead } from '@/server/storage/reads.fixture';
-import { TEXT } from '@/lib/definitions/set.fixture';
-import { proposalSchema } from '@/lib/definitions/types';
+import { TEXT } from '@/lib/engine/set.fixture';
+import { proposalSchema } from '@/lib/engine/types';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { keepProposal } from '@/server/storage/proposals';
 import { putRevision } from '@/server/storage/rulebooks';
@@ -34,7 +34,7 @@ vi.mock('@/server/storage/brunch-orders-reads', async (importOriginal) => ({
   >()),
   keptRead: async (id: string) =>
     id === 'test'
-      ? (await import('@/lib/definitions/captured.fixture')).capturedRead()
+      ? (await import('@/lib/engine/captured.fixture')).capturedRead()
       : null,
 }));
 

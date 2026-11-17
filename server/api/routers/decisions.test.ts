@@ -1,9 +1,9 @@
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { capturedRead } from '@/lib/definitions/captured.fixture';
-import { checkProposal } from '@/lib/definitions/propose';
-import { inScratchStorage } from '@/lib/definitions/scratch.fixture';
+import { capturedRead } from '@/lib/engine/captured.fixture';
+import { checkProposal } from '@/lib/engine/propose';
+import { inScratchStorage } from '@/lib/engine/scratch.fixture';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { recordDecisions } from '@/server/db/schema';
 
@@ -28,9 +28,7 @@ vi.mock('@/server/storage/brunch-orders-reads', async (importOriginal) => ({
   keptRead: async (id: string) =>
     ['live', 'other'].includes(id)
       ? {
-          ...(
-            await import('@/lib/definitions/captured.fixture')
-          ).capturedRead(),
+          ...(await import('@/lib/engine/captured.fixture')).capturedRead(),
           id,
         }
       : null,

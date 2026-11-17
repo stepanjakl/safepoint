@@ -11,7 +11,7 @@ import {
   sql,
 } from 'drizzle-orm';
 
-import type { Application } from '@/lib/definitions/types';
+import type { Application } from '@/lib/engine/types';
 import type { Database } from '@/server/db/client';
 import { applications, proposals } from '@/server/db/schema';
 

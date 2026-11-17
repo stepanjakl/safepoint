@@ -6,8 +6,8 @@ import {
   hashOf,
   fingerprintOf,
   profileFingerprint,
-} from '@/lib/definitions/fingerprint';
-import { withProfile } from '@/lib/definitions/profile';
+} from '@/lib/engine/fingerprint';
+import { withProfile } from '@/lib/engine/profile';
 import {
   dataProfileSchema,
   definitionSetSchema,
@@ -18,7 +18,7 @@ import {
   type DefinitionSet,
   type Revision,
   type RevisionIndex,
-} from '@/lib/definitions/types';
+} from '@/lib/engine/types';
 import { database, oncePerDatabase, type Database } from '@/server/db/client';
 import {
   currentProfiles,

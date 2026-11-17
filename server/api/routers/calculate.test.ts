@@ -1,13 +1,13 @@
 import type { MockLanguageModelV4 } from 'ai/test';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { calculate } from '@/lib/definitions/calculate';
-import { capturedRead } from '@/lib/definitions/captured.fixture';
-import { fingerprintOf, hashOf } from '@/lib/definitions/fingerprint';
-import { always, answer } from '@/lib/definitions/models.fixture';
-import { inScratchStorage } from '@/lib/definitions/scratch.fixture';
+import { calculate } from '@/lib/engine/calculate';
+import { capturedRead } from '@/lib/engine/captured.fixture';
+import { fingerprintOf, hashOf } from '@/lib/engine/fingerprint';
+import { always, answer } from '@/lib/engine/models.fixture';
+import { inScratchStorage } from '@/lib/engine/scratch.fixture';
 import { keepStandInRead } from '@/server/storage/reads.fixture';
-import { TEXT } from '@/lib/definitions/set.fixture';
+import { TEXT } from '@/lib/engine/set.fixture';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { modelAttempts } from '@/server/db/schema';
 import { listRevisions, putRevision } from '@/server/storage/rulebooks';
@@ -31,7 +31,7 @@ vi.mock('@/server/storage/brunch-orders-reads', async (importOriginal) => ({
   >()),
   keptRead: async (id: string) =>
     id === 'test'
-      ? (await import('@/lib/definitions/captured.fixture')).capturedRead()
+      ? (await import('@/lib/engine/captured.fixture')).capturedRead()
       : null,
 }));
 vi.mock('@/server/storage/cross-checks', async (importOriginal) => {

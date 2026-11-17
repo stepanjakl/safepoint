@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import { plural } from '@/components/engine/trial-parts';
-import type { Definition, DefinitionSet } from '@/lib/definitions/types';
+import type { Definition, DefinitionSet } from '@/lib/engine/types';
 import { motionTime } from '@/lib/motion-time';
 
 /*
@@ -11,7 +11,7 @@ import { motionTime } from '@/lib/motion-time';
   through. Everything here is simulated: no model, no route, no file.
 */
 
-// The words of the engine's own refusal (lib/definitions/calls.ts).
+// The words of the engine's own refusal (lib/engine/calls.ts).
 const QUOTA =
   'Out of quota: gemini-3.5-flash-lite until 14:20, gemini-3.1-flash-lite until 14:20. Choose a model of another family, or try again later.';
 
@@ -88,7 +88,7 @@ export const SCENES: readonly Scene[] = [
 
 export type Stage = 'written' | 'writing' | 'queued' | 'unreached';
 
-// A rule as the model found it, before it was written (lib/definitions/find.ts).
+// A rule as the model found it, before it was written (lib/engine/find.ts).
 const asFound = (item: Definition): Definition => ({
   ...item,
   constants: [],

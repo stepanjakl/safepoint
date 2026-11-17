@@ -9,8 +9,8 @@ import {
   fingerprintOf,
   hashOf,
   profileFingerprint,
-} from '@/lib/definitions/fingerprint';
-import { inScratchDatabase, rowsOf } from '@/lib/definitions/scratch.fixture';
+} from '@/lib/engine/fingerprint';
+import { inScratchDatabase, rowsOf } from '@/lib/engine/scratch.fixture';
 import {
   dataProfileSchema,
   definitionSetSchema,
@@ -19,7 +19,7 @@ import {
   type DataProfile,
   type DefinitionSet,
   type RevisionIndex,
-} from '@/lib/definitions/types';
+} from '@/lib/engine/types';
 import { brunchOrdersProcess } from '@/lib/processes/brunch-orders/process';
 
 import {

@@ -20,7 +20,7 @@ import {
   DataTable,
 } from '@/components/ui/data-table';
 import { cx } from '@/lib/cx';
-import type { Application, CellChange } from '@/lib/definitions/types';
+import type { Application, CellChange } from '@/lib/engine/types';
 import type { DefinitionSubject } from '@/lib/shell/model';
 import type { AppRouter } from '@/server/api/root';
 

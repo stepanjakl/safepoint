@@ -42,7 +42,7 @@ import {
   CONFIRM_FIRST,
   quotedFrom,
   type DefinitionSet,
-} from '@/lib/definitions/types';
+} from '@/lib/engine/types';
 
 // How far the rules have got, for the step's mark.
 export type RulesProgress = {

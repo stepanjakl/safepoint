@@ -4,13 +4,13 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
-import { keptReadSchema } from '@/lib/definitions/records';
+import { keptReadSchema } from '@/lib/engine/records';
 import {
   applicationSchema,
   draftProgressSchema,
   proposalPartSchema,
   proposalSchema,
-} from '@/lib/definitions/types';
+} from '@/lib/engine/types';
 import { crossCheckPartSchema, crossCheckSchema } from './cross-checks';
 import { keptLimitsSchema } from './model-limits';
 import { keptSourceReadSchema } from './source-reads';

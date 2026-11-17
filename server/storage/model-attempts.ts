@@ -2,14 +2,14 @@ import 'server-only';
 
 import { and, count, eq, gte } from 'drizzle-orm';
 
-import type { Attempt, RecordAttempt } from '@/lib/definitions/attempts';
+import type { Attempt, RecordAttempt } from '@/lib/engine/attempts';
 import { database } from '@/server/db/client';
 import { ensureProcess } from '@/server/db/scope';
 import { modelAttempts, type JOB_KINDS } from '@/server/db/schema';
 
 /*
   Server-only. Keeps what the engine reports of each model call
-  (lib/definitions/attempts.ts) in `model_attempts`, with what the call was
+  (lib/engine/attempts.ts) in `model_attempts`, with what the call was
   part of, which the caller knows and the engine does not. Nothing reads it
   yet; the debug drawers of the Rules step are its natural reader.
 

@@ -18,16 +18,16 @@ import {
   type LastWrite,
   type OutputSheet,
   type Prepared,
-} from '@/lib/definitions/apply';
-import { profiledFor } from '@/lib/definitions/profile';
-import { sourceOf, type KeptRead } from '@/lib/definitions/records';
+} from '@/lib/engine/apply';
+import { profiledFor } from '@/lib/engine/profile';
+import { sourceOf, type KeptRead } from '@/lib/engine/records';
 import {
   applicationSchema,
   type Application,
   type DefinitionProcess,
   type DefinitionSet,
   type Proposal,
-} from '@/lib/definitions/types';
+} from '@/lib/engine/types';
 
 import { database, type Database } from '@/server/db/client';
 import { ensureProcess } from '@/server/db/scope';
@@ -59,7 +59,7 @@ import { parseStored } from './stored';
   before the write and settled by reading the block back, and the write and
   its undo themselves. Each record is a row; the latest of a run key is the
   one in force. What a write would do, and whether it landed, is
-  lib/definitions/apply.ts.
+  lib/engine/apply.ts.
 
   Safe across server instances without a lock held over the sheet
   (docs/engineering/DATABASE.md, "One standing write, settled once"): the

@@ -2,10 +2,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
-import {
-  eventually,
-  inScratchDatabase,
-} from '@/lib/definitions/scratch.fixture';
+import { eventually, inScratchDatabase } from '@/lib/engine/scratch.fixture';
 import { ensureProcess } from '@/server/db/scope';
 import { jobs } from '@/server/db/schema';
 import type { RunStatus } from '@/server/workflows/runner';

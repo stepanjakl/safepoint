@@ -1,6 +1,6 @@
 'use client';
 
-import type { LastWrite } from '@/lib/definitions/apply';
+import type { LastWrite } from '@/lib/engine/apply';
 import {
   sourceById,
   type SourceKind,

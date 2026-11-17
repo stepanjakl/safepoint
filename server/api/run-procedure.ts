@@ -3,8 +3,8 @@ import 'server-only';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
-import { fingerprintOf } from '@/lib/definitions/fingerprint';
-import type { Stale } from '@/lib/definitions/fits';
+import { fingerprintOf } from '@/lib/engine/fingerprint';
+import type { Stale } from '@/lib/engine/fits';
 import {
   evaluationSchema,
   rulebookFor,

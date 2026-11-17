@@ -21,7 +21,7 @@ import { KEPT_ENGINE_SOURCES } from './engine-sources.fixture';
   phrases listed below, each with its reason.
 */
 
-const DIRECTORY = 'lib/definitions';
+const DIRECTORY = 'lib/engine';
 
 // Engine sources: what a process plugs into, never its tests or fixtures; and
 // the engine's logic that keeps its files, which lives under server/.

@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { inScratchDatabase, rowsOf } from '@/lib/definitions/scratch.fixture';
+import { inScratchDatabase, rowsOf } from '@/lib/engine/scratch.fixture';
 import { readWholeSheet, type SheetRead } from '@/lib/sheets/composio';
 import { ensureProcess } from '@/server/db/scope';
 import { reads } from '@/server/db/schema';

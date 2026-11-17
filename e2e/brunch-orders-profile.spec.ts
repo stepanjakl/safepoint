@@ -3,21 +3,21 @@ import { readFileSync } from 'node:fs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
-import { capturedRead } from '@/lib/definitions/captured.fixture';
+import { capturedRead } from '@/lib/engine/captured.fixture';
 import {
   confirmProfile,
   profileOf,
   setColumnBlank,
   setColumnLabel,
   setColumnType,
-} from '@/lib/definitions/profile';
+} from '@/lib/engine/profile';
 import {
   BLANKS_UNANSWERED,
   CONFIRM_FIRST,
   definitionSetSchema,
   type DataProfile,
   type ProfileState,
-} from '@/lib/definitions/types';
+} from '@/lib/engine/types';
 import { SUBJECT } from '@/lib/processes/brunch-orders/process';
 
 import { mockRules, noRules, rulesReply } from './rules';

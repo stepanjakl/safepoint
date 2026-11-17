@@ -1,23 +1,19 @@
 import type { MockLanguageModelV4 } from 'ai/test';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { capturedRead } from '@/lib/definitions/captured.fixture';
-import { always, answer } from '@/lib/definitions/models.fixture';
-import {
-  confirmProfile,
-  profileOf,
-  withProfile,
-} from '@/lib/definitions/profile';
-import { hashOf } from '@/lib/definitions/fingerprint';
-import { recordsOf } from '@/lib/definitions/records';
-import { inScratchStorage } from '@/lib/definitions/scratch.fixture';
-import { definition, example, keep, TEXT } from '@/lib/definitions/set.fixture';
-import { formulaOf, type Shape } from '@/lib/definitions/shapes';
+import { capturedRead } from '@/lib/engine/captured.fixture';
+import { always, answer } from '@/lib/engine/models.fixture';
+import { confirmProfile, profileOf, withProfile } from '@/lib/engine/profile';
+import { hashOf } from '@/lib/engine/fingerprint';
+import { recordsOf } from '@/lib/engine/records';
+import { inScratchStorage } from '@/lib/engine/scratch.fixture';
+import { definition, example, keep, TEXT } from '@/lib/engine/set.fixture';
+import { formulaOf, type Shape } from '@/lib/engine/shapes';
 import {
   CONFIRM_FIRST,
   type DataProfile,
   type WrittenVersion,
-} from '@/lib/definitions/types';
+} from '@/lib/engine/types';
 import { DRAFTING_MODELS } from '@/lib/models';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import {
@@ -47,7 +43,7 @@ vi.mock('@/server/storage/brunch-orders-reads', async (importOriginal) => ({
   >()),
   keptRead: async (id: string) =>
     id === 'test'
-      ? (await import('@/lib/definitions/captured.fixture')).capturedRead()
+      ? (await import('@/lib/engine/captured.fixture')).capturedRead()
       : null,
 }));
 vi.mock('@/server/jobs/draft', async (importOriginal) => ({
@@ -55,9 +51,8 @@ vi.mock('@/server/jobs/draft', async (importOriginal) => ({
   startDraft,
   startRewrite,
 }));
-vi.mock('@/lib/definitions/advise', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@/lib/definitions/advise')>();
+vi.mock('@/lib/engine/advise', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/engine/advise')>();
   return {
     ...actual,
     advise: (...[o, t, s, r, id, options]: Parameters<typeof actual.advise>) =>

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { rejectUnlessLocalDevelopment } from '@/lib/dev/dev-route';
-import { proposalSchema } from '@/lib/definitions/types';
+import { proposalSchema } from '@/lib/engine/types';
 import {
   runProcess,
   runProcessIdSchema,

@@ -3,9 +3,9 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { inScratchStorage } from '@/lib/definitions/scratch.fixture';
-import { keepText, TEXT } from '@/lib/definitions/set.fixture';
-import { hashOf } from '@/lib/definitions/fingerprint';
+import { inScratchStorage } from '@/lib/engine/scratch.fixture';
+import { keepText, TEXT } from '@/lib/engine/set.fixture';
+import { hashOf } from '@/lib/engine/fingerprint';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { readWholeSheet } from '@/lib/sheets/composio';
 import { accepted, keepAsCurrent } from '@/server/api/run.fixture';
@@ -22,7 +22,7 @@ vi.mock('@/server/storage/brunch-orders-reads', async (importOriginal) => ({
   >()),
   keptRead: async (id: string) =>
     id === 'test'
-      ? (await import('@/lib/definitions/captured.fixture')).capturedRead()
+      ? (await import('@/lib/engine/captured.fixture')).capturedRead()
       : null,
 }));
 vi.mock('@/lib/sheets/composio', async (importOriginal) => ({

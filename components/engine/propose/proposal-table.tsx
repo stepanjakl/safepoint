@@ -16,7 +16,7 @@ import { MorphingText } from '@/components/ui/morphing-text';
 import { Pill } from '@/components/ui/pill';
 import { cx } from '@/lib/cx';
 import { DURATION_STATE } from '@/lib/motion';
-import type { Proposal } from '@/lib/definitions/types';
+import type { Proposal } from '@/lib/engine/types';
 import { sourceTermsOf, type SourceKind } from '@/lib/sources/model';
 
 import { madeNow } from './made-now';

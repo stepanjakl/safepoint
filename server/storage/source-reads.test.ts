@@ -5,7 +5,7 @@ import {
   inScratchDatabase,
   inScratchDirectory,
   rowsOf,
-} from '@/lib/definitions/scratch.fixture';
+} from '@/lib/engine/scratch.fixture';
 import { readWholeSheet, type SheetRead } from '@/lib/sheets/composio';
 import { sourceReads } from '@/server/db/schema';
 

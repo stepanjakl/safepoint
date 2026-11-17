@@ -25,14 +25,14 @@ import path from 'node:path';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
 
-import { keptReadSchema } from '@/lib/definitions/records';
+import { keptReadSchema } from '@/lib/engine/records';
 import {
   applicationSchema,
   draftProgressSchema,
   proposalPartSchema,
   proposalSchema,
   type Application,
-} from '@/lib/definitions/types';
+} from '@/lib/engine/types';
 import type { Database } from '@/server/db/client';
 import { ensureProcess } from '@/server/db/scope';
 import {

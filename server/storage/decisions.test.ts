@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { hashOf } from '@/lib/definitions/fingerprint';
-import { inScratchDatabase } from '@/lib/definitions/scratch.fixture';
-import type { Proposal } from '@/lib/definitions/types';
+import { hashOf } from '@/lib/engine/fingerprint';
+import { inScratchDatabase } from '@/lib/engine/scratch.fixture';
+import type { Proposal } from '@/lib/engine/types';
 import {
   BRUNCH_ORDERS_DEFINITIONS as owner,
   brunchOrdersProcess,

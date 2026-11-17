@@ -4,7 +4,7 @@ import path from 'node:path';
 import type { Page } from '@playwright/test';
 import type { inferRouterOutputs } from '@trpc/server';
 
-import { hashOf } from '@/lib/definitions/fingerprint';
+import { hashOf } from '@/lib/engine/fingerprint';
 import {
   BRUNCH_ORDERS_ID,
   brunchOrdersProcess,

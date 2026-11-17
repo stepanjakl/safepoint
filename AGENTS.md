@@ -143,7 +143,7 @@ records it; add a control there when it gains a face.
 
 ## The definitions engine
 
-`lib/definitions/` turns a process's instructions into checked, approved
+`lib/engine/` turns a process's instructions into checked, approved
 formulas (the Brunch orders process; `docs/processes/brunch-orders/PLAN.md` →
 The engine, as built). It must stay process-agnostic: no scenario word in its
 code or prompts. A process supplies everything specific through its
@@ -179,12 +179,12 @@ placeholders such as `values.<id>`, because a real example steers the model.
 - **No test spends quota or writes to `fixtures/`.** Use the stand-in models
   in `models.fixture.ts` and `inScratchDirectory()`. The browser test serves
   a frozen rulebook, because drafting replaces the kept one.
-- **The engine does no file IO.** `lib/definitions/` imports no `node:fs`,
+- **The engine does no file IO.** `lib/engine/` imports no `node:fs`,
   React, Next or `@/server`; whatever reads or writes a kept file is under
   `server/` (`storage/`, `jobs/`, `operations/`, `workflows/`), and every
   module there opens with `import 'server-only'`, so a client bundle that
   reaches one fails `pnpm build`. ESLint holds the same lines (`eslint.config.mjs`). The one
-  exception is `lib/definitions/limits.ts`, which reaches the database through
+  exception is `lib/engine/limits.ts`, which reaches the database through
   `server/storage/model-limits.ts`. Vitest aliases `server-only` to an empty
   module.
 - **Drafts, rewrites and proposals are Vercel Workflow runs**
@@ -222,12 +222,12 @@ placeholders such as `values.<id>`, because a real example steers the model.
   where it also needs a scratch directory, which is also where seeding looks
   for `fixtures/`, so a test that keeps rules starts empty); the database is
   emptied before each test, not made again. A test keeping rules keeps its
-  instructions first (`keepText`, `findKept` in `lib/definitions/set.fixture.ts`).
+  instructions first (`keepText`, `findKept` in `lib/engine/set.fixture.ts`).
   The browser tests' server runs on PGlite in `data/pglite-e2e/` whatever
   `.env.local` says (`playwright.config.ts`), seeded from `fixtures/` as its
   first request needs.
   `e2e/fixtures/` are frozen copies, held to the engine by
-  `lib/definitions/e2e-fixtures.test.ts`. A browser test that starts a run does
+  `lib/engine/e2e-fixtures.test.ts`. A browser test that starts a run does
   so on that same database, which every test shares, so it selects its runs by
   the id the server gave (`data-run-id` on a row, `e2e/kept-runs.ts`), never by
   position; `e2e/kept-decisions.ts` stands in for the decisions procedures

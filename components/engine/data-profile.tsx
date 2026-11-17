@@ -26,7 +26,7 @@ import type {
   DataProfile,
   ProfileColumn,
   ProfileState,
-} from '@/lib/definitions/types';
+} from '@/lib/engine/types';
 
 /*
   What the data's columns hold, for a person to confirm before the rules are

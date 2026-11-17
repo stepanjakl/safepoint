@@ -20,15 +20,15 @@ import {
   prepareWrite,
   type DecisionMade,
   type OutputSheet,
-} from '@/lib/definitions/apply';
-import { capturedRead, capturedTabs } from '@/lib/definitions/captured.fixture';
-import type { KeptRead } from '@/lib/definitions/records';
-import { inScratchStorage } from '@/lib/definitions/scratch.fixture';
+} from '@/lib/engine/apply';
+import { capturedRead, capturedTabs } from '@/lib/engine/captured.fixture';
+import type { KeptRead } from '@/lib/engine/records';
+import { inScratchStorage } from '@/lib/engine/scratch.fixture';
 import {
   applicationSchema,
   definitionSetSchema,
   type Proposal,
-} from '@/lib/definitions/types';
+} from '@/lib/engine/types';
 
 // Writing a decided proposal, on a sheet held in memory and a scratch
 // database: no network, and nothing written to the repository.

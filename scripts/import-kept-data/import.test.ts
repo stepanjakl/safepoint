@@ -13,13 +13,13 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { capturedRead } from '@/lib/definitions/captured.fixture';
-import { inScratchDatabase } from '@/lib/definitions/scratch.fixture';
+import { capturedRead } from '@/lib/engine/captured.fixture';
+import { inScratchDatabase } from '@/lib/engine/scratch.fixture';
 import {
   draftProgressSchema,
   proposalSchema,
   type Application,
-} from '@/lib/definitions/types';
+} from '@/lib/engine/types';
 import {
   BRUNCH_ORDERS_DEFINITIONS as owner,
   BRUNCH_ORDERS_DIRECT_DEFINITIONS as direct,

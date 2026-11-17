@@ -19,7 +19,7 @@ The active hand-off is [Brunch orders](docs/processes/brunch-orders/PLAN.md). It
 The [9 October direction review](docs/processes/brunch-orders/DIRECTION-REVIEW.md) recommends correcting and independently checking the existing definitions, freezing that set, then building Calculate and Propose before further drafting generalisation. This remains proposed work; the completed definitions-engine phase below does not establish the correctness of a particular draft or the reliability of automatic authoring.
 
 - [x] **Phase 1. Instructions and reading.** Start a run, show its instructions, read the five data tabs from a captured or live sheet, and keep the read under an ID.
-- [x] **Phase 2 and 2b. Definitions from instructions.** Find definitions, type-check formulas, run examples, confirm intent and accept or deny each definition. The implementation is in `lib/definitions/`.
+- [x] **Phase 2 and 2b. Definitions from instructions.** Find definitions, type-check formulas, run examples, confirm intent and accept or deny each definition. The implementation is in `lib/engine/`.
 - [ ] **Phase 3. Calculate.** Work out expected demand and required quantities for every product.
 - [ ] **Phase 4. Propose.** Produce one explained order proposal per product.
 - [ ] **Phase 5. Check.** Run accepted definitions on every proposed order.

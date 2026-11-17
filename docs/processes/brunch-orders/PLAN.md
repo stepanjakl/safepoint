@@ -20,7 +20,7 @@ product's actual purpose (proposing what to order) was never built.
 
 Brunch orders starts again from that purpose and grows one step at a time,
 each step working before the next begins. What it reused from Brunch
-weekend's engine moved into `lib/definitions/`, `lib/sheets/` and
+weekend's engine moved into `lib/engine/`, `lib/sheets/` and
 `lib/models.ts`; the rest of that experiment was
 removed on 13 October 2026 ([record](../../archive/BRUNCH-WEEKEND.md)).
 
@@ -206,9 +206,9 @@ Kept per instructions version in
 `fixtures/brunch-orders/rulebooks/<version>-<hash>/current.json` (commit it to
 keep it), so every run under the same instructions uses the same approved
 rules, and a new version starts afresh. Code: the engine in
-`lib/definitions/` (see [The engine, as built](#the-engine-as-built)),
+`lib/engine/` (see [The engine, as built](#the-engine-as-built)),
 `server/api/routers/rules.ts`, `components/engine/rules/rules-step.tsx`.
-Tests: `lib/definitions/*.test.ts`, and `e2e/brunch-orders-rules.spec.ts`
+Tests: `lib/engine/*.test.ts`, and `e2e/brunch-orders-rules.spec.ts`
 (read-only: no model calls; it checks that focus moves into a denial's note
 and back).
 
@@ -302,7 +302,7 @@ proposal sets are declared in `process.ts` (`SUBJECT`); the prompts, and in
 step 3 the screen, use those words, so nothing in the engine or the card says
 "product" or "order" itself.
 
-**Steps.** 1, the engine and its stored shape (now `lib/definitions/`, the
+**Steps.** 1, the engine and its stored shape (now `lib/engine/`, the
 kept fixture migrated by script); 2, the subject's words
 through the prompts and the card; 3, the card: header with what it gives,
 what it says, what it was taken from (constants and groups), how it was tried
@@ -323,7 +323,7 @@ rulebook was converted once to these names; its examples still agree.
 ## The engine, as built
 
 After the review of 8 October the engine moved out of Brunch orders into
-`lib/definitions/`, one module per job, each taking the process
+`lib/engine/`, one module per job, each taking the process
 (`DefinitionProcess`: its id and `SUBJECT`) rather than assuming it:
 
 | Module                | Does                                                                                                                             |
@@ -351,7 +351,7 @@ Agreed with the owner on 9 October, after every definition was accepted.
 
 - **The engine is the record.** Calculate runs every accepted calculation
   for every record of the run's read (`calculate` in
-  `lib/definitions/calculate.ts`); later steps use these values. Each value
+  `lib/engine/calculate.ts`); later steps use these values. Each value
   carries its working, built as the examples' working is. Calculate refuses
   while a calculation is unaccepted.
 - **The model cross-checks it.** On request, the model works the same values
@@ -402,7 +402,7 @@ later step links back rather than repeating it: once the rulebook is fully
 accepted, the Rules step collapses to one line that opens the Rules tab.
 
 - **Check is not a step.** The model proposes; code runs every accepted check
-  on every proposed value (`checkProposal` in `lib/definitions/propose.ts`).
+  on every proposed value (`checkProposal` in `lib/engine/propose.ts`).
   A record's verdict is _blocked_ if a blocking check fails, _decide_ if a
   check that asks a person fails, and _ready_ otherwise. A check that cannot
   be worked out, on a blank cell for instance, counts as failing.
@@ -452,12 +452,12 @@ whose stock count was two days old.
   runs on it are unchanged; v3 is a new set of rules to draft and accept.
 - **Time comes from the read.** A formula compares numbers, and a read gives it
   two more: `count_age_hours` and `hours_until_cutoff` (`DataShape.timing`,
-  `addTiming` in `lib/definitions/records.ts`). They are worked out from
+  `addTiming` in `lib/engine/records.ts`). They are worked out from
   `readAt`, never the wall clock, so a read always gives the same answers. A
   cutoff means the last one at or before the weekend's next opening, so it
   stays missed until that weekend has opened.
 - **Written only on the server's say-so.** The browser sends what a person
-  decided (`lib/definitions/apply.ts`); values for an approval come from the
+  decided (`lib/engine/apply.ts`); values for an approval come from the
   kept proposal. A write reads the sheet again and is refused if a data tab has
   changed, if any record is undecided, or if a blocking check now fails. All the
   checks run again at the moment of writing, because a deadline can pass between

@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-import type { Calculation } from '@/lib/definitions/calculate';
+import type { Calculation } from '@/lib/engine/calculate';
 import {
   definitionSetSchema,
   type Application,
@@ -11,7 +11,7 @@ import {
   type CheckVerdict,
   type Proposal,
   type Verdict,
-} from '@/lib/definitions/types';
+} from '@/lib/engine/types';
 
 import { mockDecisions } from './kept-decisions';
 import { asKeptRulebook, seedKeptRulebooks } from './kept-runs';
@@ -23,7 +23,7 @@ import { mockProcedure } from './trpc';
 // every record and a person decides each; Apply shows what it writes, writes
 // on confirmation and can undo. The sheet is a stand-in served here.
 // Replies are frozen copies (e2e/fixtures/), held to the engine by
-// lib/definitions/e2e-fixtures.test.ts; no model is called.
+// lib/engine/e2e-fixtures.test.ts; no model is called.
 
 const fixture = (name: string) =>
   JSON.parse(readFileSync(`e2e/fixtures/${name}`, 'utf8')) as unknown;

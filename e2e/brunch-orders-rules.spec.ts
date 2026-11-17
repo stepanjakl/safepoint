@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
-import { definitionSetSchema, SCOPE_MISMATCH } from '@/lib/definitions/types';
+import { definitionSetSchema, SCOPE_MISMATCH } from '@/lib/engine/types';
 
 import { mockRules, rulesReply } from './rules';
 import { mockProcedure } from './trpc';

@@ -71,19 +71,19 @@ while retaining development-oriented persistence and execution.
 These are findings from code inspection, rather than reproduced production
 incidents.
 
-For example, `readJson()` in [propose.ts](../../lib/definitions/propose.ts) catches
+For example, `readJson()` in [propose.ts](../../lib/engine/propose.ts) catches
 every failure and returns `null`. Invalid JSON, permission errors, and missing
 files consequently look alike. The rulebook store already distinguishes corrupted
 data from missing data; extend that stronger approach.
 
 The concurrency concern is more subtle. `accept()` in
-[decide.ts](../../lib/definitions/decide.ts) validates a loaded definition and
+[decide.ts](../../lib/engine/decide.ts) validates a loaded definition and
 subsequently updates a freshly loaded set. Under concurrent rewriting, the
 definition being approved could differ from the one checked. The eventual
 operation should mean: **accept this exact definition revision, provided it is
 still current**.
 
-Similarly, `putRevision()` in [store.ts](../../lib/definitions/store.ts) updates
+Similarly, `putRevision()` in [store.ts](../../lib/engine/store.ts) updates
 revision content and its index separately. Atomic file replacement protects an
 individual file from partial replacement; it does not make the whole operation
 transactional.
@@ -142,7 +142,7 @@ A managed database reduces operational work; it still needs a recovery policy.
 
 ## Reliable external writes
 
-In `applyDecisions()` in [apply.ts](../../lib/definitions/apply.ts), the code writes
+In `applyDecisions()` in [apply.ts](../../lib/engine/apply.ts), the code writes
 to the sheet, reads it back, and then saves the application record. Verification
 is valuable, but the interval between the external write and saving its result
 remains a failure boundary.
@@ -240,8 +240,8 @@ A schema can establish that an approval contains a proposal ID. It cannot
 establish that the proposal is current, the actor may approve it, or its evidence
 remains valid.
 
-[checks.ts](../../lib/definitions/checks.ts) and
-[shapes.ts](../../lib/definitions/shapes.ts) already contain valuable domain
+[checks.ts](../../lib/engine/checks.ts) and
+[shapes.ts](../../lib/engine/shapes.ts) already contain valuable domain
 abstractions. Retain them, organize cohesive responsibilities, and expose clear
 entry points.
 
@@ -290,14 +290,14 @@ drizzle/                     Reviewed SQL migrations
 ```
 
 The important change is the dependency direction, not the directory names.
-`lib/definitions` should not need filesystem access, database credentials, or
+`lib/engine` should not need filesystem access, database credentials, or
 React. Server operations coordinate it with storage and providers. Components
 consume application results.
 
 Concrete cleanup opportunities, with sizes measured during this analysis:
 
 - Separate persistence helpers and job orchestration from the 770-line
-  `lib/definitions/propose.ts`.
+  `lib/engine/propose.ts`.
 - Split the 1,457-line `components/brunch-orders/rules-step.tsx` by real
   responsibilities: model selection, rule cards, agreement decisions, and
   orchestration.
@@ -611,7 +611,7 @@ What misleads today:
 - `components/brunch-orders` is mostly the engine's screens. They read a
   `DefinitionSubject`; what ties them to Brunch orders is an imported `SUBJECT`
   and route addresses written into each file.
-- `lib/definitions` is sixty files in one folder, and holds much more than
+- `lib/engine` is sixty files in one folder, and holds much more than
   definitions: reading, profiling, calculating, proposing, writing, model
   calls, quota and storage.
 - Fixtures have four homes: `fixtures/`, `e2e/fixtures/`, `tests/fixtures/`
@@ -651,7 +651,7 @@ Rules for getting there:
 - A rename is its own commit with no other change, so the diff is only paths.
   `leaks.test.ts`, `knip.jsonc`, `AGENTS.md` and both engine guides name these
   paths and move with them.
-- `lib/definitions` to `lib/engine` is the costliest rename and the least
+- `lib/engine` to `lib/engine` is the costliest rename and the least
   urgent. Group its files into `data/`, `rules/` and `run/` first; rename the
   folder only if the name still misleads afterwards.
 - The repository's own rule holds: a folder earns its place when three or more

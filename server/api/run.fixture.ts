@@ -2,12 +2,9 @@ import { readFileSync } from 'node:fs';
 
 import { TRPCError } from '@trpc/server';
 
-import { hashOf } from '@/lib/definitions/fingerprint';
-import { keepText, TEXT } from '@/lib/definitions/set.fixture';
-import {
-  definitionSetSchema,
-  type DefinitionSet,
-} from '@/lib/definitions/types';
+import { hashOf } from '@/lib/engine/fingerprint';
+import { keepText, TEXT } from '@/lib/engine/set.fixture';
+import { definitionSetSchema, type DefinitionSet } from '@/lib/engine/types';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { saveSet } from '@/server/storage/rulebooks';
 

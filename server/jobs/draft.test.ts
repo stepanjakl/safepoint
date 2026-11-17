@@ -4,20 +4,17 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 
-import { capturedRead, capturedTabs } from '@/lib/definitions/captured.fixture';
+import { capturedRead, capturedTabs } from '@/lib/engine/captured.fixture';
 import { draftProgress, startDraft, startRewrite } from './draft';
 import {
   accountedFor,
   answer,
   check,
   standIn,
-} from '@/lib/definitions/models.fixture';
-import {
-  eventually,
-  inScratchStorage,
-} from '@/lib/definitions/scratch.fixture';
-import { keepText, TEXT } from '@/lib/definitions/set.fixture';
-import { hashOf } from '@/lib/definitions/fingerprint';
+} from '@/lib/engine/models.fixture';
+import { eventually, inScratchStorage } from '@/lib/engine/scratch.fixture';
+import { keepText, TEXT } from '@/lib/engine/set.fixture';
+import { hashOf } from '@/lib/engine/fingerprint';
 import { ensureProcess } from '@/server/db/scope';
 import { jobs, modelAttempts } from '@/server/db/schema';
 import { keepRead } from '@/server/storage/reads.fixture';

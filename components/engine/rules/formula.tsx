@@ -6,7 +6,7 @@ import { CardAnchor } from '@/components/engine/rules/card-anchor';
 import { TRIED_VARIABLE, said } from '@/components/engine/rules-parts';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cx } from '@/lib/cx';
-import type { Definition } from '@/lib/definitions/types';
+import type { Definition } from '@/lib/engine/types';
 import { SUBJECT } from '@/lib/processes/brunch-orders/process';
 
 // Where a formula breaks: before each condition joined at its top level by

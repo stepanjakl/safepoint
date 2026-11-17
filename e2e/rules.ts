@@ -1,9 +1,9 @@
 import type { Page } from '@playwright/test';
 import type { inferRouterOutputs } from '@trpc/server';
 
-import { capturedRead } from '@/lib/definitions/captured.fixture';
-import { confirmProfile, profileOf } from '@/lib/definitions/profile';
-import type { DefinitionSet, ProfileState } from '@/lib/definitions/types';
+import { capturedRead } from '@/lib/engine/captured.fixture';
+import { confirmProfile, profileOf } from '@/lib/engine/profile';
+import type { DefinitionSet, ProfileState } from '@/lib/engine/types';
 import { SUBJECT } from '@/lib/processes/brunch-orders/process';
 import type { AppRouter } from '@/server/api/root';
 

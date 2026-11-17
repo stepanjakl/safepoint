@@ -3,13 +3,13 @@ import 'server-only';
 import { and, desc, eq, ne } from 'drizzle-orm';
 import { z } from 'zod';
 
-import { stillWriting } from '@/lib/definitions/apply';
+import { stillWriting } from '@/lib/engine/apply';
 import {
   checkVerdictsSchema,
   type CheckVerdict,
   type DefinitionProcess,
   type Verdict,
-} from '@/lib/definitions/types';
+} from '@/lib/engine/types';
 
 import { database, type Database } from '@/server/db/client';
 import { recordDecisions } from '@/server/db/schema';

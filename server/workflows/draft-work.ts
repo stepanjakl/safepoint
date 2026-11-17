@@ -1,8 +1,8 @@
 import 'server-only';
 
-import type { Definition, DefinitionProcess } from '@/lib/definitions/types';
-import { hashOf } from '@/lib/definitions/fingerprint';
-import { fitting } from '@/lib/definitions/records';
+import type { Definition, DefinitionProcess } from '@/lib/engine/types';
+import { hashOf } from '@/lib/engine/fingerprint';
+import { fitting } from '@/lib/engine/records';
 import { findDefinitions } from '@/server/operations/find';
 import { writeAgreed } from '@/server/operations/write';
 import { loadSet, ownerToDraft } from '@/server/storage/rulebooks';

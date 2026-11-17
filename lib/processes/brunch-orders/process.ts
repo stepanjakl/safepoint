@@ -4,7 +4,7 @@ import type {
   ProcessStep,
   ProcessSummary,
 } from '@/lib/shell/model';
-import type { DefinitionProcess } from '@/lib/definitions/types';
+import type { DefinitionProcess } from '@/lib/engine/types';
 import type { SystemLink } from '@/lib/shell/system-links';
 import type { SourceUse } from '@/lib/sources/model';
 import type { ReleasePlan } from '@/lib/shell/plan-contract';
@@ -118,7 +118,7 @@ export const SUBJECT: DefinitionSubject = {
   reader: 'store owner',
 };
 
-// What the definitions engine (lib/definitions) works for.
+// What the definitions engine (lib/engine) works for.
 export const BRUNCH_ORDERS_DEFINITIONS: DefinitionProcess = {
   id: BRUNCH_ORDERS_ID,
   subject: SUBJECT,

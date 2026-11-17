@@ -5,18 +5,18 @@ import { createInterface } from 'node:readline';
 import { and, count, eq, sql } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
-import type { DecisionMade } from '@/lib/definitions/apply';
-import { capturedRead } from '@/lib/definitions/captured.fixture';
-import { hashOf } from '@/lib/definitions/fingerprint';
-import type { KeptRead } from '@/lib/definitions/records';
-import { eventually } from '@/lib/definitions/scratch.fixture';
-import { profileOf, setColumnBlank } from '@/lib/definitions/profile';
-import { definition, keepText } from '@/lib/definitions/set.fixture';
+import type { DecisionMade } from '@/lib/engine/apply';
+import { capturedRead } from '@/lib/engine/captured.fixture';
+import { hashOf } from '@/lib/engine/fingerprint';
+import type { KeptRead } from '@/lib/engine/records';
+import { eventually } from '@/lib/engine/scratch.fixture';
+import { profileOf, setColumnBlank } from '@/lib/engine/profile';
+import { definition, keepText } from '@/lib/engine/set.fixture';
 import {
   definitionSetSchema,
   type DefinitionSet,
   type Proposal,
-} from '@/lib/definitions/types';
+} from '@/lib/engine/types';
 import {
   BRUNCH_ORDERS_DEFINITIONS as owner,
   brunchOrdersProcess,

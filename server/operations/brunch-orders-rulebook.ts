@@ -2,10 +2,10 @@ import 'server-only';
 
 import { z } from 'zod';
 
-import { staleness, type Stale } from '@/lib/definitions/fits';
-import { noRules } from '@/lib/definitions/fingerprint';
-import type { KeptRead } from '@/lib/definitions/records';
-import type { DefinitionProcess, DefinitionSet } from '@/lib/definitions/types';
+import { staleness, type Stale } from '@/lib/engine/fits';
+import { noRules } from '@/lib/engine/fingerprint';
+import type { KeptRead } from '@/lib/engine/records';
+import type { DefinitionProcess, DefinitionSet } from '@/lib/engine/types';
 import {
   BRUNCH_ORDERS_DEFINITIONS,
   BRUNCH_ORDERS_DIRECT_DEFINITIONS,

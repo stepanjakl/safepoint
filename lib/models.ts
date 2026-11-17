@@ -9,7 +9,7 @@ import { z } from 'zod';
   or out of quota), the draft moves to the next one down the same family; never
   to a lighter family, which would quietly lower the drafting quality. The
   exception is chosen, not fallen into: a draft with no model chosen finds on
-  Flash and writes on Flash-Lite (lib/definitions/calls.ts).
+  Flash and writes on Flash-Lite (lib/engine/calls.ts).
 
   Each family is in order of preference, not age. By 30 October 3.8 and 3.7
   Flash were answering 1 request of 30, nearly all refused as busy, and 3.6 and

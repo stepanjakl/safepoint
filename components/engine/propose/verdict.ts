@@ -1,5 +1,5 @@
 import type { Tone } from '@/components/ui/pill';
-import type { Verdict } from '@/lib/definitions/types';
+import type { Verdict } from '@/lib/engine/types';
 
 export const VERDICT: Record<Verdict, { tone: Tone; label: string }> = {
   ready: { tone: 'ready', label: 'Ready' },

@@ -4,9 +4,9 @@ import { and, eq } from 'drizzle-orm';
 import { RetryableError } from 'workflow';
 import { describe, expect, it } from 'vitest';
 
-import { capturedRead } from '@/lib/definitions/captured.fixture';
-import { ModelsResting } from '@/lib/definitions/calls';
-import { fingerprintOf, hashOf } from '@/lib/definitions/fingerprint';
+import { capturedRead } from '@/lib/engine/captured.fixture';
+import { ModelsResting } from '@/lib/engine/calls';
+import { fingerprintOf, hashOf } from '@/lib/engine/fingerprint';
 import {
   accountedFor,
   always,
@@ -14,14 +14,14 @@ import {
   call,
   check,
   standIn,
-} from '@/lib/definitions/models.fixture';
-import { inScratchStorage } from '@/lib/definitions/scratch.fixture';
-import { keepText, TEXT } from '@/lib/definitions/set.fixture';
+} from '@/lib/engine/models.fixture';
+import { inScratchStorage } from '@/lib/engine/scratch.fixture';
+import { keepText, TEXT } from '@/lib/engine/set.fixture';
 import {
   definitionSetSchema,
   draftProgressSchema,
   type DraftProgress,
-} from '@/lib/definitions/types';
+} from '@/lib/engine/types';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { answerParts, proposals } from '@/server/db/schema';
 import { claimJob } from '@/server/jobs/run-job';

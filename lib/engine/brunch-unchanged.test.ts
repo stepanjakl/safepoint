@@ -33,7 +33,7 @@ const ACCEPTED =
   'fixtures/brunch-orders/rulebooks/v2-91823c6c8281/5b895575e4e7.json';
 // A frozen copy of the rulebook under review as it was before data profiles:
 // the live one changes whenever rules are drafted again, as they should.
-const UNDER_REVIEW = 'lib/definitions/rulebook-before-profiles.fixture.json';
+const UNDER_REVIEW = 'lib/engine/rulebook-before-profiles.fixture.json';
 const KEPT_READ =
   'data/brunch-orders/reads/2026-10-30T19-52-57-107Z-6e93bf09.json';
 

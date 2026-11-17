@@ -11,7 +11,7 @@ import {
   inScratchDatabase,
   inScratchDirectory,
   rowsOf,
-} from '@/lib/definitions/scratch.fixture';
+} from '@/lib/engine/scratch.fixture';
 
 import {
   closeDatabase,

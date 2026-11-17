@@ -1,5 +1,5 @@
-import type { OutputSheet } from '@/lib/definitions/apply';
-import type { KeptRead } from '@/lib/definitions/records';
+import type { OutputSheet } from '@/lib/engine/apply';
+import type { KeptRead } from '@/lib/engine/records';
 
 type Operation = 'readNow' | 'readTab' | 'addTab' | 'writeRange';
 

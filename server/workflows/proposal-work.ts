@@ -1,7 +1,7 @@
 import 'server-only';
 
-import { fingerprintOf, noRules } from '@/lib/definitions/fingerprint';
-import type { DefinitionProcess, DefinitionSet } from '@/lib/definitions/types';
+import { fingerprintOf, noRules } from '@/lib/engine/fingerprint';
+import type { DefinitionProcess, DefinitionSet } from '@/lib/engine/types';
 import {
   answerBatch,
   finishProposal,

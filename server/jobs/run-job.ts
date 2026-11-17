@@ -5,7 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { and, eq, or, sql, type SQL } from 'drizzle-orm';
 import type { z } from 'zod';
 
-import type { ProposalActivity } from '@/lib/definitions/types';
+import type { ProposalActivity } from '@/lib/engine/types';
 import { database } from '@/server/db/client';
 import { ensureProcess } from '@/server/db/scope';
 import { JOB_KINDS, jobs } from '@/server/db/schema';

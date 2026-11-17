@@ -6,8 +6,8 @@ import SparkleFilled from 'blode-icons-react/icons/sparkle-filled';
 import type { ReactNode } from 'react';
 
 import { Code, StatusChip } from '@/components/engine/trial-parts';
-import type { Definition } from '@/lib/definitions/types';
-import { TRIED } from '@/lib/definitions/types';
+import type { Definition } from '@/lib/engine/types';
+import { TRIED } from '@/lib/engine/types';
 import { SUBJECT } from '@/lib/processes/brunch-orders/process';
 
 /*

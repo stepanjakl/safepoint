@@ -7,9 +7,9 @@ import { Formula } from '@/components/engine/rules/formula';
 import { FromModel } from '@/components/engine/rules-parts';
 import { AssistantContext } from '@/components/app-shell/assistant/assistant-state';
 import { Button } from '@/components/ui/button';
-import type { Advice } from '@/lib/definitions/advise';
-import { groupDifferences } from '@/lib/definitions/group-differences';
-import type { Definition } from '@/lib/definitions/types';
+import type { Advice } from '@/lib/engine/advise';
+import { groupDifferences } from '@/lib/engine/group-differences';
+import type { Definition } from '@/lib/engine/types';
 import { SUBJECT } from '@/lib/processes/brunch-orders/process';
 import { wordDiff } from '@/lib/text/word-diff';
 

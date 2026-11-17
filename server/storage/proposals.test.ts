@@ -3,12 +3,12 @@ import { readFileSync } from 'node:fs';
 import { eq, sql } from 'drizzle-orm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { inScratchDatabase, rowsOf } from '@/lib/definitions/scratch.fixture';
+import { inScratchDatabase, rowsOf } from '@/lib/engine/scratch.fixture';
 import {
   proposalPartSchema,
   proposalSchema,
   type Proposal,
-} from '@/lib/definitions/types';
+} from '@/lib/engine/types';
 import {
   BRUNCH_ORDERS_DEFINITIONS as owner,
   BRUNCH_ORDERS_DIRECT_DEFINITIONS as direct,

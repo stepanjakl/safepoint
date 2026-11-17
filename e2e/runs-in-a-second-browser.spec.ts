@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 
 import { expect, test, type Page } from '@playwright/test';
 
-import type { Proposal } from '@/lib/definitions/types';
+import type { Proposal } from '@/lib/engine/types';
 
 import { call } from './kept-runs';
 import { mockProcedure } from './trpc';

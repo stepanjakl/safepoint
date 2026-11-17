@@ -1,13 +1,13 @@
 import 'server-only';
 
-import { foundDefinitions, type Asking } from '@/lib/definitions/find';
-import type { KeptRead } from '@/lib/definitions/records';
-import type { DefinitionProcess, DefinitionSet } from '@/lib/definitions/types';
+import { foundDefinitions, type Asking } from '@/lib/engine/find';
+import type { KeptRead } from '@/lib/engine/records';
+import type { DefinitionProcess, DefinitionSet } from '@/lib/engine/types';
 import { saveSet } from '@/server/storage/rulebooks';
 
 /*
   Server-only. Finding, kept: the engine reads the instructions
-  (lib/definitions/find.ts) and what it finds is saved as the rulebook for
+  (lib/engine/find.ts) and what it finds is saved as the rulebook for
   them.
 */
 

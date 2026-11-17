@@ -1,7 +1,7 @@
 import { TRPCError } from '@trpc/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { inScratchDatabase } from '@/lib/definitions/scratch.fixture';
+import { inScratchDatabase } from '@/lib/engine/scratch.fixture';
 import { readWholeSheet, type SheetRead } from '@/lib/sheets/composio';
 import { reads } from '@/server/db/schema';
 import { ensureProcess } from '@/server/db/scope';

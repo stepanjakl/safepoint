@@ -22,7 +22,7 @@ import {
 import { StatusChip } from '@/components/engine/trial-parts';
 import { Pill, SEVERITY } from '@/components/ui/pill';
 import { cx } from '@/lib/cx';
-import type { DefinitionSet } from '@/lib/definitions/types';
+import type { DefinitionSet } from '@/lib/engine/types';
 
 import { useEasedCards } from './eased-cards';
 import { stagesOf, type Scene, type Stage } from './script';

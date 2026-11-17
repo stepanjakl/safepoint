@@ -2,11 +2,11 @@ import 'server-only';
 
 import { z } from 'zod';
 
-import { calculate } from '@/lib/definitions/calculate';
-import { fingerprintOf } from '@/lib/definitions/fingerprint';
-import { checkProposal } from '@/lib/definitions/propose';
-import { namesOf, type KeptRead } from '@/lib/definitions/records';
-import type { DefinitionProcess, DefinitionSet } from '@/lib/definitions/types';
+import { calculate } from '@/lib/engine/calculate';
+import { fingerprintOf } from '@/lib/engine/fingerprint';
+import { checkProposal } from '@/lib/engine/propose';
+import { namesOf, type KeptRead } from '@/lib/engine/records';
+import type { DefinitionProcess, DefinitionSet } from '@/lib/engine/types';
 import { draftingModelSchema } from '@/lib/models';
 import { proposalProgress, startProposal } from '@/server/jobs/proposal';
 import { evaluationSchema } from '@/server/operations/brunch-orders-rulebook';
@@ -16,7 +16,7 @@ import { runFields, runProcedure, staleReply } from '../run-procedure';
 import { router } from '../trpc';
 
 /*
-  Server-only. Propose, through lib/definitions/propose. `get` returns the
+  Server-only. Propose, through lib/engine/propose. `get` returns the
   kept proposal for the run's read and rulebook, with any job's progress;
   `start` starts the job and returns the same; `check` runs the accepted
   checks on values a person is changing, for one record. With evaluation

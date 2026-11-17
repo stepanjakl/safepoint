@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { inScratchDatabase } from '@/lib/definitions/scratch.fixture';
+import { inScratchDatabase } from '@/lib/engine/scratch.fixture';
 import { DRAFTING_MODELS } from '@/lib/models';
 import { modelLimits } from '@/server/db/schema';
 

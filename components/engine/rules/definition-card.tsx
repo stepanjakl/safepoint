@@ -25,7 +25,7 @@ import { MORPH_WORDS_MS, MorphingText } from '@/components/ui/morphing-text';
 import { Pill } from '@/components/ui/pill';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cx } from '@/lib/cx';
-import type { Advice } from '@/lib/definitions/advise';
+import type { Advice } from '@/lib/engine/advise';
 import {
   acceptable,
   BLANKS_UNANSWERED,
@@ -35,7 +35,7 @@ import {
   worksOutItself,
   type AppliesTo,
   type Definition,
-} from '@/lib/definitions/types';
+} from '@/lib/engine/types';
 import { SUBJECT } from '@/lib/processes/brunch-orders/process';
 
 export function statusOf(item: Definition): { tone: Tone; label: string } {

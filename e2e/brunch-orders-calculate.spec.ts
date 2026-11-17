@@ -3,8 +3,8 @@ import { readFileSync } from 'node:fs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
-import type { Calculation, CrossCheck } from '@/lib/definitions/calculate';
-import { definitionSetSchema } from '@/lib/definitions/types';
+import type { Calculation, CrossCheck } from '@/lib/engine/calculate';
+import { definitionSetSchema } from '@/lib/engine/types';
 
 import { asKeptRulebook, seedKeptRulebooks } from './kept-runs';
 import { rulesReply, type RulesKept } from './rules';

@@ -6,10 +6,10 @@ import {
   review,
   settingOf,
   type Draft,
-} from '@/lib/definitions/checks';
-import { fingerprintOf } from '@/lib/definitions/fingerprint';
-import { withProfile } from '@/lib/definitions/profile';
-import { recordsOf, sourceOf, type KeptRead } from '@/lib/definitions/records';
+} from '@/lib/engine/checks';
+import { fingerprintOf } from '@/lib/engine/fingerprint';
+import { withProfile } from '@/lib/engine/profile';
+import { recordsOf, sourceOf, type KeptRead } from '@/lib/engine/records';
 import {
   formulaOf,
   sameShape,
@@ -17,7 +17,7 @@ import {
   unansweredBlanks,
   type Shape,
   type ShapeContext,
-} from '@/lib/definitions/shapes';
+} from '@/lib/engine/shapes';
 import {
   BLANKS_UNANSWERED,
   complete,
@@ -27,7 +27,7 @@ import {
   type DefinitionProcess,
   type DefinitionSet,
   type WrittenVersion,
-} from '@/lib/definitions/types';
+} from '@/lib/engine/types';
 import {
   loadSet,
   ownerFor,

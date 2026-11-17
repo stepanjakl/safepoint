@@ -9,7 +9,7 @@ import { modelLimits } from '@/server/db/schema';
 /*
   Server-only. What is learned of a model's limits, kept in the `model_limits`
   table, one row per model, so a restart does not start the learning again.
-  How it is learned and used is lib/definitions/limits.ts.
+  How it is learned and used is lib/engine/limits.ts.
 */
 
 const learnedSchema = z.object({ limit: z.number(), at: z.number() });

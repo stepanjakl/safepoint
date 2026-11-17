@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { hashOf } from '@/lib/definitions/fingerprint';
-import { inScratchDatabase } from '@/lib/definitions/scratch.fixture';
+import { hashOf } from '@/lib/engine/fingerprint';
+import { inScratchDatabase } from '@/lib/engine/scratch.fixture';
 import { brunchOrdersProcess } from '@/lib/processes/brunch-orders/process';
 import { runs } from '@/server/db/schema';
 import { keepStandInRead } from '@/server/storage/reads.fixture';

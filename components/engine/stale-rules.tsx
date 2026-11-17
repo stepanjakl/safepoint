@@ -1,13 +1,13 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import type { Stale } from '@/lib/definitions/fits';
+import type { Stale } from '@/lib/engine/fits';
 
 type StaleReply = { kind: 'stale' } & Stale;
 
 /*
   A rulebook kept as it was accepted that no longer fits the data the run
-  read (lib/definitions/fits.ts): what does not fit, and the current rules
+  read (lib/engine/fits.ts): what does not fit, and the current rules
   when the run can move to them. Calculate and Propose say it the same way.
 */
 export function StaleRules({

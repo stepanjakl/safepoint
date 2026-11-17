@@ -1,7 +1,7 @@
 import { Environment } from '@marcbachmann/cel-js';
 
 import type { DefinitionSubject } from '@/lib/shell/model';
-import { ctorFor } from '@/lib/definitions/cel-objects';
+import { ctorFor } from '@/lib/engine/cel-objects';
 import type { FieldType } from '@/lib/sheets/field-types';
 
 import { timingOf } from './prompts';

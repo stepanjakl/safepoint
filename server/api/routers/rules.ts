@@ -2,26 +2,26 @@ import 'server-only';
 
 import { z } from 'zod';
 
-import { advise } from '@/lib/definitions/advise';
-import { debugDefinition, debugDraft } from '@/lib/definitions/debug';
+import { advise } from '@/lib/engine/advise';
+import { debugDefinition, debugDraft } from '@/lib/engine/debug';
 import {
   confirmProfile,
   profileOf,
   setColumnBlank,
   setColumnLabel,
   setColumnType,
-} from '@/lib/definitions/profile';
-import { fitting, namesOf } from '@/lib/definitions/records';
-import { revisionChanges } from '@/lib/definitions/revision-changes';
-import { sentencesOf } from '@/lib/definitions/shapes';
+} from '@/lib/engine/profile';
+import { fitting, namesOf } from '@/lib/engine/records';
+import { revisionChanges } from '@/lib/engine/revision-changes';
+import { sentencesOf } from '@/lib/engine/shapes';
 import {
   complete,
   CONFIRM_FIRST,
   type DataProfile,
   type DefinitionSet,
   type ProfileState,
-} from '@/lib/definitions/types';
-import { workingOf } from '@/lib/definitions/working';
+} from '@/lib/engine/types';
+import { workingOf } from '@/lib/engine/working';
 import { draftingModelSchema } from '@/lib/models';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { draftProgress, startDraft, startRewrite } from '@/server/jobs/draft';
@@ -50,7 +50,7 @@ import { failed, gatedProcedure, router } from '../trpc';
 
 /*
   Server-only. The definitions of one version of the instructions (its text),
-  through lib/definitions. `get` reads them, with any draft running; `draft`
+  through lib/engine. `get` reads them, with any draft running; `draft`
   finds them again and writes each on the server; `write` gives one a formula
   and examples on the read, on the server too; `intent` confirms what the model
   understood; `decide` accepts one (rechecked in full) or denies it, with what

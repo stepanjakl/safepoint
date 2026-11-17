@@ -43,7 +43,7 @@ import type {
   Calculation,
   CrossCell,
   CrossCheck,
-} from '@/lib/definitions/calculate';
+} from '@/lib/engine/calculate';
 import { cx } from '@/lib/cx';
 import { DRAFTING_MODELS, type DraftingModel } from '@/lib/models';
 import type { AppRouter } from '@/server/api/root';

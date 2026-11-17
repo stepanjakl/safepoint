@@ -32,7 +32,7 @@ import type {
   Proposal,
   ProposalActivity,
   StreamedPart,
-} from '@/lib/definitions/types';
+} from '@/lib/engine/types';
 import {
   describeEvent,
   modelRunAnnouncement,

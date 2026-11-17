@@ -2,7 +2,7 @@ import 'server-only';
 
 import { z } from 'zod';
 
-import type { DefinitionProcess } from '@/lib/definitions/types';
+import type { DefinitionProcess } from '@/lib/engine/types';
 import type { ProcessSummary } from '@/lib/shell/model';
 import {
   BRUNCH_ORDERS_DEFINITIONS,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { AnswerProblem, ProposalEvent } from '@/lib/definitions/types';
+import type { AnswerProblem, ProposalEvent } from '@/lib/engine/types';
 
 import { describeEvent, type ModelRunFacts } from './model-run';
 

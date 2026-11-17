@@ -1,6 +1,6 @@
 import 'server-only';
 
-import type { RecordAttempt } from '@/lib/definitions/attempts';
+import type { RecordAttempt } from '@/lib/engine/attempts';
 
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
@@ -9,10 +9,10 @@ import {
   calculate,
   crossCheckBatch,
   type CrossCheck,
-} from '@/lib/definitions/calculate';
-import { DRAFT_MODELS, type Resolve } from '@/lib/definitions/calls';
-import type { KeptRead } from '@/lib/definitions/records';
-import type { DefinitionProcess, DefinitionSet } from '@/lib/definitions/types';
+} from '@/lib/engine/calculate';
+import { DRAFT_MODELS, type Resolve } from '@/lib/engine/calls';
+import type { KeptRead } from '@/lib/engine/records';
+import type { DefinitionProcess, DefinitionSet } from '@/lib/engine/types';
 import { fallbackChain, type DraftingModel } from '@/lib/models';
 
 import { database } from '@/server/db/client';

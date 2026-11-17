@@ -6,10 +6,7 @@ import path from 'node:path';
 import { and, asc, eq, sql } from 'drizzle-orm';
 import type { z } from 'zod';
 
-import {
-  fingerprintOf,
-  profileFingerprint,
-} from '@/lib/definitions/fingerprint';
+import { fingerprintOf, profileFingerprint } from '@/lib/engine/fingerprint';
 import {
   dataProfileSchema,
   definitionSetSchema,
@@ -17,7 +14,7 @@ import {
   type DataProfile,
   type DefinitionSet,
   type RevisionIndex,
-} from '@/lib/definitions/types';
+} from '@/lib/engine/types';
 import type { Database } from '@/server/db/client';
 import { ensureProcess } from '@/server/db/scope';
 import {

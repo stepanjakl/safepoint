@@ -10,8 +10,8 @@ import { Lede } from '@/components/engine/trial-parts';
 import type { RunProcessId } from '@/components/app-shell/runs/kept-runs';
 import { useTRPC } from '@/components/trpc/provider';
 import { Button } from '@/components/ui/button';
-import { asReviewed as reviewed } from '@/lib/definitions/reviewed';
-import type { Proposal } from '@/lib/definitions/types';
+import { asReviewed as reviewed } from '@/lib/engine/reviewed';
+import type { Proposal } from '@/lib/engine/types';
 import type { DefinitionSubject } from '@/lib/shell/model';
 import { DRAFTING_MODELS, type DraftingModel } from '@/lib/models';
 

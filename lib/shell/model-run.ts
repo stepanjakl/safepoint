@@ -3,7 +3,7 @@ import {
   type ProcessStep,
   type RunTrigger,
 } from '@/lib/shell/model';
-import type { AnswerProblem, ProposalEvent } from '@/lib/definitions/types';
+import type { AnswerProblem, ProposalEvent } from '@/lib/engine/types';
 
 /*
   A run the model works out alone, from the instructions and its inputs, with

@@ -279,7 +279,7 @@ tools/                        Local build tooling
 docs/                         Current guides, process logs, research, archives
 ```
 
-One useful distinction: `lib/definitions/` is generic, but the current workflow UI and HTTP routes are still explicitly Brunch-specific. The project has generalized its engine further than its application wiring.
+One useful distinction: `lib/engine/` is generic, but the current workflow UI and HTTP routes are still explicitly Brunch-specific. The project has generalized its engine further than its application wiring.
 
 ---
 
@@ -339,7 +339,7 @@ The engine's major objects are:
 | `Proposal`      | Proposed values or an explicit "leave" action for every record                                                 |
 | `Application`   | Decisions applied, before/after cells, verification outcome, and undo state                                    |
 
-Sources: [process models](../../lib/shell/model.ts), [Brunch declaration](../../lib/processes/brunch-orders/process.ts), [engine contracts](../../lib/definitions/types.ts).
+Sources: [process models](../../lib/shell/model.ts), [Brunch declaration](../../lib/processes/brunch-orders/process.ts), [engine contracts](../../lib/engine/types.ts).
 
 ---
 
@@ -420,7 +420,7 @@ It must link relevant sentences to definitions. Code rejects missing or duplicat
 
 This addresses omission, but it cannot establish semantic correctness: the model can still account for a rule by wrongly calling it context. The UI exposes what was set aside so a person can inspect that decision.
 
-Source: [definition discovery](../../lib/definitions/find.ts).
+Source: [definition discovery](../../lib/engine/find.ts).
 
 ---
 
@@ -469,7 +469,7 @@ The engine applies several checks and evaluation rules:
 
 The record adapter also normalizes types consistently across rows. A column containing both integers and decimals becomes consistently decimal for formula checking.
 
-Source: [formula runtime](../../lib/definitions/formulas.ts).
+Source: [formula runtime](../../lib/engine/formulas.ts).
 
 ---
 
@@ -515,7 +515,7 @@ When a person clicks Accept, the server runs the review again against the saved 
 
 Rewriting a definition, or choosing a different draft of that definition, clears approvals from definitions that depend on it.
 
-Sources: [shared checks](../../lib/definitions/checks.ts), [writing loop](../../lib/definitions/write.ts), [acceptance](../../server/operations/decide.ts).
+Sources: [shared checks](../../lib/engine/checks.ts), [writing loop](../../lib/engine/write.ts), [acceptance](../../server/operations/decide.ts).
 
 ---
 
@@ -563,7 +563,7 @@ One useful nuance: the UI allows proposal generation after calculation even if t
 
 The explanations attached to code calculations are also noteworthy. `working.ts` walks the formula's syntax tree—the parsed structure of its operators and values—to produce intermediate steps. This means the arithmetic shown to the reviewer derives from what actually ran, rather than from a separate model-written explanation.
 
-Sources: [calculation and cross-checking](../../lib/definitions/calculate.ts), [formula workings](../../lib/definitions/working.ts).
+Sources: [calculation and cross-checking](../../lib/engine/calculate.ts), [formula workings](../../lib/engine/working.ts).
 
 ---
 
@@ -571,10 +571,10 @@ Sources: [calculation and cross-checking](../../lib/definitions/calculate.ts), [
 
 | Method from the reference note     | Use in this project                                                                                                                                                                                                                                                                     | What it checks, and its limits                                                                                                                                                                                                                                                                                                                                                                                                                |
 | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Repeated sampling                  | **Implemented as repeated drafting and behavioral comparison.** `writeAgreed` seeks two valid definition drafts from separate model conversations. `differencesBetween` compares their formula results on saved records and sampled proposed values.                                    | Detects disagreement between interpretations. It does not use majority voting to resolve a split. The conversations can use the same model and can repeat the same error. This is **not semantic entropy**: there is no clustering of answers by meaning or entropy calculation. See [writing](../../lib/definitions/write.ts) and [comparison](../../lib/definitions/checks.ts).                                                             |
-| Claim decomposition                | **Related: instruction decomposition with completeness checks.** Instructions are split into sentences or list items, then mapped to calculations, business checks, or context. Code checks that every sentence is accounted for exactly once and that definition references are valid. | Makes missing instructions and individual rule interpretations easier to inspect. It does not split a generated factual answer into atomic claims, retrieve external evidence, and score factual support as a FActScore-style pipeline would. See [definition discovery](../../lib/definitions/find.ts).                                                                                                                                      |
-| Evaluator model / LLM-as-judge     | **Related: independent numerical recomputation.** An optional model call calculates values from instructions, data, and plain-language calculation descriptions without seeing the formulas or their computed results. Code compares the answers.                                       | Provides another interpretation to compare with formula execution. It is not a model grading an existing answer against a rubric, and agreement is not required before proposing changes. The older workbench's evaluation uses coded expectations rather than a model judge. See [cross-checking](../../lib/definitions/calculate.ts) and workbench evaluation (`lib/model-workbench/`, removed; see the tag `archive/promotion-prototype`). |
-| Entailment checking / NLI          | **No general entailment checker.** Deterministic checks verify supporting instruction quotes and some relationships between constants, groups, and source text. Proposal citation checks verify that referenced cells exist and contain data.                                           | These are limited grounding checks. They do not establish that a quote implies the formula or that a cited cell supports the model's explanation. There is no supported/contradicted/neutral classifier in the active engine. See [definition checks](../../lib/definitions/checks.ts) and [proposal checks](../../lib/definitions/propose.ts).                                                                                               |
+| Repeated sampling                  | **Implemented as repeated drafting and behavioral comparison.** `writeAgreed` seeks two valid definition drafts from separate model conversations. `differencesBetween` compares their formula results on saved records and sampled proposed values.                                    | Detects disagreement between interpretations. It does not use majority voting to resolve a split. The conversations can use the same model and can repeat the same error. This is **not semantic entropy**: there is no clustering of answers by meaning or entropy calculation. See [writing](../../lib/engine/write.ts) and [comparison](../../lib/engine/checks.ts).                                                             |
+| Claim decomposition                | **Related: instruction decomposition with completeness checks.** Instructions are split into sentences or list items, then mapped to calculations, business checks, or context. Code checks that every sentence is accounted for exactly once and that definition references are valid. | Makes missing instructions and individual rule interpretations easier to inspect. It does not split a generated factual answer into atomic claims, retrieve external evidence, and score factual support as a FActScore-style pipeline would. See [definition discovery](../../lib/engine/find.ts).                                                                                                                                      |
+| Evaluator model / LLM-as-judge     | **Related: independent numerical recomputation.** An optional model call calculates values from instructions, data, and plain-language calculation descriptions without seeing the formulas or their computed results. Code compares the answers.                                       | Provides another interpretation to compare with formula execution. It is not a model grading an existing answer against a rubric, and agreement is not required before proposing changes. The older workbench's evaluation uses coded expectations rather than a model judge. See [cross-checking](../../lib/engine/calculate.ts) and workbench evaluation (`lib/model-workbench/`, removed; see the tag `archive/promotion-prototype`). |
+| Entailment checking / NLI          | **No general entailment checker.** Deterministic checks verify supporting instruction quotes and some relationships between constants, groups, and source text. Proposal citation checks verify that referenced cells exist and contain data.                                           | These are limited grounding checks. They do not establish that a quote implies the formula or that a cited cell supports the model's explanation. There is no supported/contradicted/neutral classifier in the active engine. See [definition checks](../../lib/engine/checks.ts) and [proposal checks](../../lib/engine/propose.ts).                                                                                               |
 | Logprobs and calibration           | **Not implemented as a reliability score.** The active engine does not derive a probability of correctness from token probabilities or calibrate a score against known outcomes.                                                                                                        | The older model workbench asks for `low`, `medium`, or `high` self-reported certainty and explicitly states that this is not a probability of correctness. It should not be presented as calibrated confidence. See workbench model call (`lib/model-workbench/`, removed; see the tag `archive/promotion-prototype`).                                                                                                                        |
 | Conformal methods                  | **Not implemented.** There is no separate conformal calibration set, coverage target, or calibrated prediction/abstention rule.                                                                                                                                                         | The project's checks and human approvals do not provide a statistical coverage guarantee.                                                                                                                                                                                                                                                                                                                                                     |
 | Embedding similarity and reranking | **Not used in the active definitions pipeline.** The engine supplies process instructions and captured table data directly to the model.                                                                                                                                                | There is no embedding search or reranking stage selecting evidence here. Supplying relevant context helps constrain the task, but does not prove that the model interpreted it correctly.                                                                                                                                                                                                                                                     |
@@ -582,10 +582,10 @@ Sources: [calculation and cross-checking](../../lib/definitions/calculate.ts), [
 Several important reliability techniques sit outside those named methods:
 
 - **Structured output and restricted execution.** Zod schemas check the shape of model responses. Generated formulas use typed CEL expressions, which code can inspect and execute. This catches malformed output, invalid references, and type errors; a valid formula can still express the wrong policy.
-- **Tool-assisted validation and repair.** `try_formula` and `check_definition` return executable feedback during drafting. Acceptance runs the shared validator again. Similarly, proposal tools test proposed values against accepted business checks, and code computes the final verdicts. The feedback comes from application code rather than a model merely declaring its own answer correct. Step limits and timeouts bound these loops. See [drafting](../../lib/definitions/write.ts), [acceptance](../../server/operations/decide.ts), and [proposals](../../lib/definitions/propose.ts).
-- **Examples and behavior probes.** Code executes worked examples and tests formulas on records and sampled values. These checks expose inconsistencies and some checks that cannot pass or fail on the tested inputs. They are not exhaustive proofs, and examples written by the same model can share the formula's misunderstanding. See [checks](../../lib/definitions/checks.ts).
-- **Human review with traceable evidence.** A person accepts definitions and separately decides proposed changes. Saved reads and rulebook revisions preserve what the decision used; formula-derived workings explain the arithmetic that actually ran. Disagreement remains visible instead of being converted into a confidence score. See [rulebook storage](../../server/storage/rulebooks.ts) and [workings](../../lib/definitions/working.ts).
-- **Application-controlled execution and verification.** The application re-reads inputs, checks for changes and rule failures, writes approved values, and reads them back. Conditional undo checks that the written block has not changed before restoring earlier values. These controls address whether an approved action is applied correctly, not whether the underlying policy interpretation is true. See [application and undo](../../lib/definitions/apply.ts).
+- **Tool-assisted validation and repair.** `try_formula` and `check_definition` return executable feedback during drafting. Acceptance runs the shared validator again. Similarly, proposal tools test proposed values against accepted business checks, and code computes the final verdicts. The feedback comes from application code rather than a model merely declaring its own answer correct. Step limits and timeouts bound these loops. See [drafting](../../lib/engine/write.ts), [acceptance](../../server/operations/decide.ts), and [proposals](../../lib/engine/propose.ts).
+- **Examples and behavior probes.** Code executes worked examples and tests formulas on records and sampled values. These checks expose inconsistencies and some checks that cannot pass or fail on the tested inputs. They are not exhaustive proofs, and examples written by the same model can share the formula's misunderstanding. See [checks](../../lib/engine/checks.ts).
+- **Human review with traceable evidence.** A person accepts definitions and separately decides proposed changes. Saved reads and rulebook revisions preserve what the decision used; formula-derived workings explain the arithmetic that actually ran. Disagreement remains visible instead of being converted into a confidence score. See [rulebook storage](../../server/storage/rulebooks.ts) and [workings](../../lib/engine/working.ts).
+- **Application-controlled execution and verification.** The application re-reads inputs, checks for changes and rule failures, writes approved values, and reads them back. Conditional undo checks that the written block has not changed before restoring earlier values. These controls address whether an approved action is applied correctly, not whether the underlying policy interpretation is true. See [application and undo](../../lib/engine/apply.ts).
 - **Evaluation against declared expectations.** The older workbench includes cases for ambiguous, negated, conflicting, and injected source text, with expected facts and proposal behavior checked in code. This provides regression evidence for those cases; it is not a calibrated estimate of production accuracy. See workbench evaluation (`lib/model-workbench/`, removed; see the tag `archive/promotion-prototype`).
 
 For another engineer: **the project uses model generation constrained by schemas and executable rules, repeated-draft disagreement detection, optional independent numerical cross-checks, and human approval before application-owned writes.** Its strongest guarantees concern structure, checked behavior, and execution controls. Whether the accepted rules faithfully capture the intended policy still requires judgment; matching drafts and passing checks are supporting evidence, not proof.
@@ -610,7 +610,7 @@ Each proposal entry carries an action, proposed values where applicable, a reaso
 
 There is a distinction worth retaining when discussing the design: an explicit `leave` action currently receives no proposal checks. It should not be interpreted as evidence that every data-quality rule passed for that record.
 
-Source: [proposal generation and checking](../../lib/definitions/propose.ts).
+Source: [proposal generation and checking](../../lib/engine/propose.ts).
 
 ---
 
@@ -641,7 +641,7 @@ Undo restores the prior block only while the block still equals the application'
 
 The current implementation does not provide a distributed transaction between the sheet and its local application record. Read-before-write checks also do not eliminate concurrent changes between those requests. Those are production-hardening boundaries.
 
-Sources: [application engine](../../lib/definitions/apply.ts), [apply procedures](../../server/api/routers/apply.ts), [Composio adapter](../../lib/sheets/composio.ts).
+Sources: [application engine](../../lib/engine/apply.ts), [apply procedures](../../server/api/routers/apply.ts), [Composio adapter](../../lib/sheets/composio.ts).
 
 ---
 
@@ -698,7 +698,7 @@ The default policy uses Flash for discovery and proposal-related work, and Flash
 
 The older model-workbench experiments have their own direct provider calls, so the central pacing layer should be understood as the main engine's infrastructure, not necessarily every model request in the repository.
 
-Sources: [draft jobs](../../server/jobs/draft.ts), [model call orchestration](../../lib/definitions/calls.ts), [request pacing](../../lib/definitions/limits.ts).
+Sources: [draft jobs](../../server/jobs/draft.ts), [model call orchestration](../../lib/engine/calls.ts), [request pacing](../../lib/engine/limits.ts).
 
 ---
 

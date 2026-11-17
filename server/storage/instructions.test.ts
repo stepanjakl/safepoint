@@ -1,8 +1,8 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
-import { hashOf } from '@/lib/definitions/fingerprint';
-import { inScratchDatabase, rowsOf } from '@/lib/definitions/scratch.fixture';
+import { hashOf } from '@/lib/engine/fingerprint';
+import { inScratchDatabase, rowsOf } from '@/lib/engine/scratch.fixture';
 import { normalisedInstructions } from '@/lib/shell/instruction-diff';
 import { instructionVersions, processes } from '@/server/db/schema';
 import { keptProcess, keptProcesses } from '@/server/operations/kept-processes';

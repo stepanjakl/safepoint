@@ -1,6 +1,6 @@
 /*
   Loaded with `node --import`, for a script that reaches the app's own modules
-  (server/storage/, lib/definitions/): they import each other as `@/lib/...`
+  (server/storage/, lib/engine/): they import each other as `@/lib/...`
   and without an extension, as the bundler and TypeScript resolve them, and
   Node does neither. This resolves both to the file, as tsconfig.json's
   `paths` and `moduleResolution: bundler` do. It resolves; Node itself strips

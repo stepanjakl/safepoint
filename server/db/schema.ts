@@ -19,8 +19,8 @@ import {
   type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
 
-import type { CrossCheck } from '@/lib/definitions/calculate';
-import type { KeptRead } from '@/lib/definitions/records';
+import type { CrossCheck } from '@/lib/engine/calculate';
+import type { KeptRead } from '@/lib/engine/records';
 import type {
   AppliedDecision,
   CellChange,
@@ -30,7 +30,7 @@ import type {
   DefinitionSet,
   Proposal,
   ProposalActivity,
-} from '@/lib/definitions/types';
+} from '@/lib/engine/types';
 
 /*
   Server-only. What the server keeps, as tables (docs/engineering/DATABASE.md).

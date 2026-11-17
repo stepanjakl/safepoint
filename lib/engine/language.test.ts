@@ -15,7 +15,7 @@ import { ENGLISH } from './language';
   interface and nothing else to find.
 */
 
-const DIRECTORY = 'lib/definitions';
+const DIRECTORY = 'lib/engine';
 const MODULE = 'language.ts';
 
 const read = (name: string) => readFileSync(name, 'utf8');

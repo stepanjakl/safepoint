@@ -270,7 +270,7 @@ export type DataShape = {
   types: Record<string, FieldType>;
   // The confirmed types of every column, which a read is then held to rather
   // than typed from its own values. Absent: typed from each read, as before.
-  // Set by the engine (lib/definitions/profile.ts), never by a process.
+  // Set by the engine (lib/engine/profile.ts), never by a process.
   profile?: DataProfileTypes;
   // Where approved proposals would be written: a tab, one row per record by
   // its key column, one column per proposal field. Absent: nowhere yet.

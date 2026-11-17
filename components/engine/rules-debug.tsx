@@ -19,12 +19,12 @@ import {
 import { FilterTabs } from '@/components/ui/filter-tabs';
 import { Pill } from '@/components/ui/pill';
 import { cx } from '@/lib/cx';
-import type { AccountedSentence, Agreement } from '@/lib/definitions/types';
+import type { AccountedSentence, Agreement } from '@/lib/engine/types';
 import type {
   DefinitionDebug,
   DraftDebug,
   RecordWorking,
-} from '@/lib/definitions/debug';
+} from '@/lib/engine/debug';
 import { DRAFTING_MODELS, type DraftingModel } from '@/lib/models';
 import { TabSwap } from '@/components/ui/swap';
 

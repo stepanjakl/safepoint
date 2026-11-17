@@ -2,7 +2,7 @@ import nextCoreWebVitals from 'eslint-config-next/core-web-vitals';
 import nextTypeScript from 'eslint-config-next/typescript';
 
 /*
-  Where code may reach. lib/definitions is the rules engine: it finds, checks,
+  Where code may reach. lib/engine is the rules engine: it finds, checks,
   calculates and decides on what it is given, and knows nothing of files,
   React or Next. Everything that reads or writes a kept file is under server/
   (which the build refuses to put in a client bundle, `server-only`), and
@@ -94,8 +94,8 @@ const config = [
   ...nextCoreWebVitals,
   ...nextTypeScript,
   {
-    files: ['lib/definitions/**/*.{ts,tsx}'],
-    ignores: ['lib/definitions/**/*.{test,fixture}.{ts,tsx}'],
+    files: ['lib/engine/**/*.{ts,tsx}'],
+    ignores: ['lib/engine/**/*.{test,fixture}.{ts,tsx}'],
     rules: { 'no-restricted-imports': ['error', engine()] },
   },
   {
@@ -103,7 +103,7 @@ const config = [
     // engine makes, so limits.ts keeps what it learns through this one
     // module, which holds the file's path and shape. A negation cannot reach
     // into a folder the pattern has excluded, so the folders are listed.
-    files: ['lib/definitions/limits.ts'],
+    files: ['lib/engine/limits.ts'],
     rules: {
       'no-restricted-imports': [
         'error',

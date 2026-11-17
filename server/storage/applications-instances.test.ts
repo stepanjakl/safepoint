@@ -3,11 +3,11 @@ import { readFileSync } from 'node:fs';
 import { eq, sql } from 'drizzle-orm';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { DecisionMade } from '@/lib/definitions/apply';
-import { capturedRead } from '@/lib/definitions/captured.fixture';
-import type { KeptRead } from '@/lib/definitions/records';
-import { inScratchDatabase } from '@/lib/definitions/scratch.fixture';
-import { definitionSetSchema, type Proposal } from '@/lib/definitions/types';
+import type { DecisionMade } from '@/lib/engine/apply';
+import { capturedRead } from '@/lib/engine/captured.fixture';
+import type { KeptRead } from '@/lib/engine/records';
+import { inScratchDatabase } from '@/lib/engine/scratch.fixture';
+import { definitionSetSchema, type Proposal } from '@/lib/engine/types';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { applications } from '@/server/db/schema';
 

@@ -13,8 +13,8 @@ import {
   limitsReady,
   rest,
   restingUntil,
-} from '@/lib/definitions/limits';
-import { quotaOf } from '@/lib/definitions/quota';
+} from '@/lib/engine/limits';
+import { quotaOf } from '@/lib/engine/quota';
 
 import {
   counting,

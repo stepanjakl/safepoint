@@ -37,7 +37,7 @@
     "db:import": "node --env-file-if-exists=.env.local --conditions=react-server --import ./scripts/resolve-aliases.mjs scripts/import-kept-data.ts",
     "db:studio": "pnpm db:migrate && node --env-file-if-exists=.env.local --conditions=react-server node_modules/drizzle-kit/bin.cjs studio",
     "rulebooks:export": "node --env-file-if-exists=.env.local --conditions=react-server --import ./scripts/resolve-aliases.mjs scripts/export-rulebooks.ts",
-    "fixtures:e2e": "UPDATE_E2E_FIXTURES=1 vitest run lib/definitions/e2e-fixtures.test.ts",
+    "fixtures:e2e": "UPDATE_E2E_FIXTURES=1 vitest run lib/engine/e2e-fixtures.test.ts",
     "trace:token": "node scripts/trace-token.mjs",
     "colors:custom": "node scripts/colour-theme/generate.ts",
     "colors:radix": "node scripts/generate-radix-colors.ts"

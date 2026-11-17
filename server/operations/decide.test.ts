@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 
-import { capturedRead, capturedTabs } from '@/lib/definitions/captured.fixture';
+import { capturedRead, capturedTabs } from '@/lib/engine/captured.fixture';
 import {
   accept,
   choose,
@@ -16,16 +16,12 @@ import {
   profileOf,
   setColumnBlank,
   withProfile,
-} from '@/lib/definitions/profile';
-import { recordsOf } from '@/lib/definitions/records';
-import { inScratchStorage } from '@/lib/definitions/scratch.fixture';
-import { definition, example, keep, TEXT } from '@/lib/definitions/set.fixture';
-import {
-  formulaOf,
-  type Shape,
-  type ShapeContext,
-} from '@/lib/definitions/shapes';
-import { fingerprintOf } from '@/lib/definitions/fingerprint';
+} from '@/lib/engine/profile';
+import { recordsOf } from '@/lib/engine/records';
+import { inScratchStorage } from '@/lib/engine/scratch.fixture';
+import { definition, example, keep, TEXT } from '@/lib/engine/set.fixture';
+import { formulaOf, type Shape, type ShapeContext } from '@/lib/engine/shapes';
+import { fingerprintOf } from '@/lib/engine/fingerprint';
 import { ruleDecisions } from '@/server/db/schema';
 import { asc } from 'drizzle-orm';
 import {
@@ -40,7 +36,7 @@ import type {
   DataProfile,
   Definition,
   DefinitionSet,
-} from '@/lib/definitions/types';
+} from '@/lib/engine/types';
 
 // Accepting reruns the whole review on the version kept, against its read:
 // whatever writing would refuse, accepting refuses too, with the reason.

@@ -18,7 +18,7 @@ import { FilterTabs } from '@/components/ui/filter-tabs';
 import { Pill, SEVERITY } from '@/components/ui/pill';
 import { Arrival, EmptyState, useLoader } from '@/components/ui/working-mark';
 import { cx } from '@/lib/cx';
-import type { Definition } from '@/lib/definitions/types';
+import type { Definition } from '@/lib/engine/types';
 
 /*
   The rulebook of the current instructions: the accepted rules as tiles, a

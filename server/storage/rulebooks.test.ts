@@ -5,20 +5,15 @@ import { describe, expect, it } from 'vitest';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 
-import { capturedRead } from '@/lib/definitions/captured.fixture';
+import { capturedRead } from '@/lib/engine/captured.fixture';
 import {
   confirmProfile,
   profileOf,
   setColumnBlank,
-} from '@/lib/definitions/profile';
-import { inScratchStorage } from '@/lib/definitions/scratch.fixture';
-import {
-  definition,
-  keep,
-  keepText,
-  TEXT,
-} from '@/lib/definitions/set.fixture';
-import { fingerprintOf, hashOf } from '@/lib/definitions/fingerprint';
+} from '@/lib/engine/profile';
+import { inScratchStorage } from '@/lib/engine/scratch.fixture';
+import { definition, keep, keepText, TEXT } from '@/lib/engine/set.fixture';
+import { fingerprintOf, hashOf } from '@/lib/engine/fingerprint';
 import { ensureProcess } from '@/server/db/scope';
 import {
   currentRulebooks,
@@ -41,10 +36,7 @@ import {
   updateProfile,
   updateSet,
 } from './rulebooks';
-import {
-  definitionSetSchema,
-  type DefinitionSet,
-} from '@/lib/definitions/types';
+import { definitionSetSchema, type DefinitionSet } from '@/lib/engine/types';
 
 // A kept set is read through its schema, so a broken body is reported rather
 // than taken for "nothing kept" and overwritten. An accepted rulebook a run

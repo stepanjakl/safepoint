@@ -1,15 +1,15 @@
 import 'server-only';
 
-import { valueProblems } from '@/lib/definitions/apply';
-import { fingerprintOf, noRules } from '@/lib/definitions/fingerprint';
-import { checkProposal } from '@/lib/definitions/propose';
-import { asReviewed } from '@/lib/definitions/reviewed';
-import type { KeptRead } from '@/lib/definitions/records';
+import { valueProblems } from '@/lib/engine/apply';
+import { fingerprintOf, noRules } from '@/lib/engine/fingerprint';
+import { checkProposal } from '@/lib/engine/propose';
+import { asReviewed } from '@/lib/engine/reviewed';
+import type { KeptRead } from '@/lib/engine/records';
 import type {
   DefinitionProcess,
   DefinitionSet,
   Proposal,
-} from '@/lib/definitions/types';
+} from '@/lib/engine/types';
 
 import {
   appendDecisions,

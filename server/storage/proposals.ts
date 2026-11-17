@@ -2,20 +2,20 @@ import 'server-only';
 
 import { and, desc, eq } from 'drizzle-orm';
 
-import type { RecordAttempt } from '@/lib/definitions/attempts';
-import { calculate } from '@/lib/definitions/calculate';
-import { DRAFT_MODELS, type Resolve } from '@/lib/definitions/calls';
-import { fingerprintOf } from '@/lib/definitions/fingerprint';
-import { profiledFor } from '@/lib/definitions/profile';
-import { proposeBatch, type Watch } from '@/lib/definitions/propose';
-import { fitting, type KeptRead } from '@/lib/definitions/records';
+import type { RecordAttempt } from '@/lib/engine/attempts';
+import { calculate } from '@/lib/engine/calculate';
+import { DRAFT_MODELS, type Resolve } from '@/lib/engine/calls';
+import { fingerprintOf } from '@/lib/engine/fingerprint';
+import { profiledFor } from '@/lib/engine/profile';
+import { proposeBatch, type Watch } from '@/lib/engine/propose';
+import { fitting, type KeptRead } from '@/lib/engine/records';
 import {
   proposalPartSchema,
   proposalSchema,
   type DefinitionProcess,
   type DefinitionSet,
   type Proposal,
-} from '@/lib/definitions/types';
+} from '@/lib/engine/types';
 import { fallbackChain, type DraftingModel } from '@/lib/models';
 
 import { database, type Database } from '@/server/db/client';

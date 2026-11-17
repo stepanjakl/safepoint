@@ -1,22 +1,22 @@
 import 'server-only';
 
-import type { Asking } from '@/lib/definitions/find';
-import { settingOf, type Setting } from '@/lib/definitions/checks';
-import { fitting, type KeptRead } from '@/lib/definitions/records';
-import type { DefinitionProcess, DefinitionSet } from '@/lib/definitions/types';
+import type { Asking } from '@/lib/engine/find';
+import { settingOf, type Setting } from '@/lib/engine/checks';
+import { fitting, type KeptRead } from '@/lib/engine/records';
+import type { DefinitionProcess, DefinitionSet } from '@/lib/engine/types';
 import {
   keeping,
   writeOnce,
   writeUntilAgreed,
   type WriteRuns,
   type Written,
-} from '@/lib/definitions/write';
-import type { Agreement } from '@/lib/definitions/types';
+} from '@/lib/engine/write';
+import type { Agreement } from '@/lib/engine/types';
 import { loadSet, ownerFor, updateSet } from '@/server/storage/rulebooks';
 
 /*
   Server-only. Writing a definition, kept: the engine writes it
-  (lib/definitions/write.ts) on the rulebook as it is kept now, and what it
+  (lib/engine/write.ts) on the rulebook as it is kept now, and what it
   comes to is saved onto that rulebook, taking its turn with any other update
   of it.
 */

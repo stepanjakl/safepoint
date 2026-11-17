@@ -1,15 +1,15 @@
 import 'server-only';
 
-import { fingerprintOf, hashOf, noRules } from '@/lib/definitions/fingerprint';
-import { newActivity } from '@/lib/definitions/propose';
-import type { KeptRead } from '@/lib/definitions/records';
+import { fingerprintOf, hashOf, noRules } from '@/lib/engine/fingerprint';
+import { newActivity } from '@/lib/engine/propose';
+import type { KeptRead } from '@/lib/engine/records';
 import {
   draftProgressSchema,
   type DefinitionProcess,
   type DefinitionSet,
   type DraftProgress,
-} from '@/lib/definitions/types';
-import type { Resolve } from '@/lib/definitions/calls';
+} from '@/lib/engine/types';
+import type { Resolve } from '@/lib/engine/calls';
 import type { DraftingModel } from '@/lib/models';
 import { runKeyOf } from '@/server/storage/proposals';
 import { proposalWorkflow } from '@/server/workflows/proposal';

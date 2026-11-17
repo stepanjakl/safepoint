@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { DecisionMade, OutputSheet } from '@/lib/definitions/apply';
-import { capturedRead, capturedTabs } from '@/lib/definitions/captured.fixture';
-import { fingerprintOf, hashOf } from '@/lib/definitions/fingerprint';
-import { inScratchStorage } from '@/lib/definitions/scratch.fixture';
+import type { DecisionMade, OutputSheet } from '@/lib/engine/apply';
+import { capturedRead, capturedTabs } from '@/lib/engine/captured.fixture';
+import { fingerprintOf, hashOf } from '@/lib/engine/fingerprint';
+import { inScratchStorage } from '@/lib/engine/scratch.fixture';
 import type { Database } from '@/server/db/client';
 import { keepStandInRead } from '@/server/storage/reads.fixture';
-import type { DefinitionSet, Proposal } from '@/lib/definitions/types';
+import type { DefinitionSet, Proposal } from '@/lib/engine/types';
 import {
   BRUNCH_ORDERS_DEFINITIONS as owner,
   brunchOrdersProcess,
@@ -14,7 +14,7 @@ import {
 import { applyDecisions, keptApplication } from '@/server/storage/applications';
 import { keepProposal } from '@/server/storage/proposals';
 import { memorySheet } from '@/server/storage/sheet.fixture';
-import { keepText } from '@/lib/definitions/set.fixture';
+import { keepText } from '@/lib/engine/set.fixture';
 import { putRevision } from '@/server/storage/rulebooks';
 import { applications as applicationRows } from '@/server/db/schema';
 
@@ -42,7 +42,7 @@ vi.mock('@/server/storage/brunch-orders-reads', async (importOriginal) => {
     await importOriginal<
       typeof import('@/server/storage/brunch-orders-reads')
     >();
-  const { capturedRead } = await import('@/lib/definitions/captured.fixture');
+  const { capturedRead } = await import('@/lib/engine/captured.fixture');
   const reads: Record<string, { id: string; source: string }> = {
     live: { id: 'live', source: 'Live read through Composio at Thursday' },
     captured: { id: 'captured', source: 'Captured read of the sheet' },

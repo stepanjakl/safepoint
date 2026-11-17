@@ -10,8 +10,8 @@
 
 /*
   `database` is not declared by any source the app has: it is the engine's
-  second kind, held to it in tests (lib/definitions/conformance.test.ts), so
-  that nothing in lib/definitions/ assumes a sheet.
+  second kind, held to it in tests (lib/engine/conformance.test.ts), so
+  that nothing in lib/engine/ assumes a sheet.
 */
 export type SourceKind = 'google-sheets' | 'database';
 

@@ -1,9 +1,9 @@
 import 'server-only';
 
-import type { Resolve } from '@/lib/definitions/calls';
+import type { Resolve } from '@/lib/engine/calls';
 
 /*
-  Server-only. A test's stand-in models for a job (lib/definitions/
+  Server-only. A test's stand-in models for a job (lib/engine/
   models.fixture.ts), kept in this process by the claim that started it: a
   function cannot travel in a run's input, and only the steps of the start
   that holds the key may use them. The app never sets one, so its steps ask

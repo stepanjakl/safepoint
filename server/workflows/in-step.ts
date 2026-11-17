@@ -2,11 +2,8 @@ import 'server-only';
 
 import { getWorkflowMetadata, RetryableError } from 'workflow';
 
-import { ModelsResting } from '@/lib/definitions/calls';
-import {
-  draftProgressSchema,
-  type DraftProgress,
-} from '@/lib/definitions/types';
+import { ModelsResting } from '@/lib/engine/calls';
+import { draftProgressSchema, type DraftProgress } from '@/lib/engine/types';
 import { noteJob, readJob } from '@/server/jobs/run-job';
 import { processOfDefinitions } from '@/server/operations/kept-processes';
 import { keptRead, READ_GONE } from '@/server/storage/brunch-orders-reads';
@@ -33,7 +30,7 @@ import type { JobRun, Outcome } from './types';
 */
 
 // Every model spent until this soon is waited for, by the run; longer is said
-// to the person, as it was before (lib/definitions/calls.ts).
+// to the person, as it was before (lib/engine/calls.ts).
 const WAIT_WITHIN_MS = 15 * 60_000;
 
 const firstLine = (error: unknown) =>

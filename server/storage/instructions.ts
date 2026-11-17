@@ -2,7 +2,7 @@ import 'server-only';
 
 import { and, eq, sql } from 'drizzle-orm';
 
-import { hashOf } from '@/lib/definitions/fingerprint';
+import { hashOf } from '@/lib/engine/fingerprint';
 import type { InstructionsVersion } from '@/lib/shell/model';
 import { normalisedInstructions } from '@/lib/shell/instruction-diff';
 

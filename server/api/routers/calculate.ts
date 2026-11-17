@@ -2,10 +2,10 @@ import 'server-only';
 
 import { z } from 'zod';
 
-import { calculate } from '@/lib/definitions/calculate';
-import { fingerprintOf, hashOf } from '@/lib/definitions/fingerprint';
-import type { KeptRead } from '@/lib/definitions/records';
-import type { DefinitionProcess, DefinitionSet } from '@/lib/definitions/types';
+import { calculate } from '@/lib/engine/calculate';
+import { fingerprintOf, hashOf } from '@/lib/engine/fingerprint';
+import type { KeptRead } from '@/lib/engine/records';
+import type { DefinitionProcess, DefinitionSet } from '@/lib/engine/types';
 import { draftingModelSchema } from '@/lib/models';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import {
@@ -20,7 +20,7 @@ import { runFields, runProcedure, staleReply } from '../run-procedure';
 import { router } from '../trpc';
 
 /*
-  Server-only. Calculate, through lib/definitions/calculate. `get` works every
+  Server-only. Calculate, through lib/engine/calculate. `get` works every
   accepted calculation out for every record of a read, with any cross-check
   kept for that read and rulebook; `crossCheck` asks the model to work the
   same values out on its own, keeps its answer and returns both. A run names

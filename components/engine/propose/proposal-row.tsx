@@ -22,11 +22,7 @@ import { IconButton } from '@/components/ui/icon-button';
 import { Pill } from '@/components/ui/pill';
 import { cx } from '@/lib/cx';
 import { DURATION_STATE } from '@/lib/motion';
-import type {
-  CheckVerdict,
-  ProposalRecord,
-  Verdict,
-} from '@/lib/definitions/types';
+import type { CheckVerdict, ProposalRecord, Verdict } from '@/lib/engine/types';
 
 import { madeNow } from './made-now';
 import type { Calculated, Decision, ProposalField, CheckReply } from './types';

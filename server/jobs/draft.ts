@@ -1,13 +1,13 @@
 import 'server-only';
 
-import type { Asking } from '@/lib/definitions/find';
-import { hashOf } from '@/lib/definitions/fingerprint';
-import { fitting, type KeptRead } from '@/lib/definitions/records';
+import type { Asking } from '@/lib/engine/find';
+import { hashOf } from '@/lib/engine/fingerprint';
+import { fitting, type KeptRead } from '@/lib/engine/records';
 import {
   draftProgressSchema,
   type DefinitionProcess,
   type DraftProgress,
-} from '@/lib/definitions/types';
+} from '@/lib/engine/types';
 import { draftWorkflow, rewriteWorkflow } from '@/server/workflows/draft';
 import { writtenNow } from '@/server/workflows/draft-work';
 import type { DraftRun } from '@/server/workflows/types';

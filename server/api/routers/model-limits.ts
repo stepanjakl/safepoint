@@ -2,7 +2,7 @@ import 'server-only';
 
 import { z } from 'zod';
 
-import { limitsOf, limitsReady } from '@/lib/definitions/limits';
+import { limitsOf, limitsReady } from '@/lib/engine/limits';
 import { DRAFTING_MODELS, draftingModelSchema } from '@/lib/models';
 
 import { gatedProcedure, router } from '../trpc';

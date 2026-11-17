@@ -1,10 +1,10 @@
-import { fingerprintOf, hashOf, noRules } from '@/lib/definitions/fingerprint';
+import { fingerprintOf, hashOf, noRules } from '@/lib/engine/fingerprint';
 import type {
   CheckVerdict,
   DefinitionSet,
   Proposal,
   ProposalRecord,
-} from '@/lib/definitions/types';
+} from '@/lib/engine/types';
 import {
   BRUNCH_ORDERS_DEFINITIONS as owner,
   BRUNCH_ORDERS_DIRECT_DEFINITIONS as direct,

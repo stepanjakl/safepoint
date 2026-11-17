@@ -1,6 +1,6 @@
 import type { inferRouterOutputs } from '@trpc/server';
 
-import type { CheckVerdict, Verdict } from '@/lib/definitions/types';
+import type { CheckVerdict, Verdict } from '@/lib/engine/types';
 import type { DefinitionSubject } from '@/lib/shell/model';
 import type { AppRouter } from '@/server/api/root';
 

@@ -15,7 +15,7 @@ import { ShimmerDirections } from './shimmer-directions';
 import { ThreadProgress } from './thread-progress';
 import { BrunchPlayer, BrunchStages } from './brunch-player';
 import type { ScriptedStage } from './brunch-direct';
-import type { DefinitionSet } from '@/lib/definitions/types';
+import type { DefinitionSet } from '@/lib/engine/types';
 
 const LOOKS: { look: ThreadLook; label: string }[] = [
   { look: 'current', label: 'Current' },

@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
-import { definitionSetSchema } from '@/lib/definitions/types';
+import { definitionSetSchema } from '@/lib/engine/types';
 
 import { brunchOrdersProcess } from '@/lib/processes/brunch-orders/process';
 

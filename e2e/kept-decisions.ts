@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 
-import type { CheckVerdict, Proposal, Verdict } from '@/lib/definitions/types';
+import type { CheckVerdict, Proposal, Verdict } from '@/lib/engine/types';
 import type { KeptDecision } from '@/server/storage/decisions';
 
 import { mockProcedure } from './trpc';

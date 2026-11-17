@@ -4,7 +4,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
-import { inScratchDirectory } from '@/lib/definitions/scratch.fixture';
+import { inScratchDirectory } from '@/lib/engine/scratch.fixture';
 
 import { readKept, readKeptSync, StoredFileError, writeKept } from './files';
 
