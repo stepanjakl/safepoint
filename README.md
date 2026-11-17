@@ -178,7 +178,7 @@ Never set in production (or preview): `SAFEPOINT_RESETTABLE_DATABASE_URL`, which
 - The build log says "Migrating the production database before the build." and then "Migrations applied to the server at <host>."; a preview's says "Not migrating".
 - The deployment's address sends you to `/access`; the password and a name sign you in. Without the two secrets, every page says "This deployment is not configured."
 - The sidebar lists Brunch orders twice (the rulebook process and the direct one); `/examples/brunch-orders` opens, a run reads the captured sheet, and the Rules panel shows the nine accepted rules.
-- `/workbench` and `/api/dev/model` answer not found, signed in or not; an unsigned `/api/trpc/runs.list` answers 401.
+- `/workbench` and `/api/dev/stylesheets` answer not found, signed in or not; an unsigned `/api/trpc/runs.list` answers 401.
 - Proposing needs the model key; after it, a run appears in the dashboard's Workflow page.
 
 A step runs within one function invocation, whose limit is the plan's maximum (the generated route asks for `maxDuration: 'max'`, at most 800 seconds): writing one rule, which may take several model calls, must finish inside it. In development nothing needs setting: `pnpm dev` uses the Local World in `.next/workflow-data/`, and `npx workflow web` shows its runs when started with `WORKFLOW_LOCAL_DATA_DIR=.next/workflow-data`.

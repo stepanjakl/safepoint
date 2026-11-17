@@ -74,10 +74,13 @@ describe('the development-only routes, whatever is signed in', () => {
   it('refuse outside local development even with a gate cookie, and never read the gate switch', () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('SAFEPOINT_GATE', '1');
-    const request = new Request('https://safepoint.example/api/dev/model', {
-      method: 'POST',
-      headers: { cookie: 'safepoint-access=anything-at-all' },
-    });
+    const request = new Request(
+      'https://safepoint.example/api/dev/stylesheets',
+      {
+        method: 'POST',
+        headers: { cookie: 'safepoint-access=anything-at-all' },
+      },
+    );
     expect(localDevelopmentRefusal(request)).toEqual({
       status: 404,
       message: 'Not found.',
@@ -90,7 +93,7 @@ describe('the development-only routes, whatever is signed in', () => {
     vi.stubEnv('SAFEPOINT_GATE', '1');
     expect(
       rejectUnlessLocalDevelopment(
-        new Request('http://localhost:3000/api/dev/model'),
+        new Request('http://localhost:3000/api/dev/stylesheets'),
       ),
     ).toBeNull();
   });
