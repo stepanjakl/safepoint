@@ -9,7 +9,7 @@ import { namesOf, type KeptRead } from '@/lib/engine/records';
 import type { DefinitionProcess, DefinitionSet } from '@/lib/engine/types';
 import { draftingModelSchema } from '@/lib/models';
 import { proposalProgress, startProposal } from '@/server/jobs/proposal';
-import { evaluationSchema } from '@/server/operations/brunch-orders-rulebook';
+import { evaluationSchema } from '@/server/operations/run-rulebook';
 import { keptProposal } from '@/server/storage/proposals';
 
 import { runFields, runProcedure, staleReply } from '../run-procedure';
