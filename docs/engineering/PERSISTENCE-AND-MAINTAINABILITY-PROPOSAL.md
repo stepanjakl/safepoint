@@ -2,6 +2,10 @@
 
 Date: 7 November 2026.
 
+Carried out: this proposal and the 13 November review were carried out on branch
+`refactor/persistence`. What was built is in [Database](DATABASE.md) and
+[Architecture](ARCHITECTURE.md); the text below is the proposal as written.
+
 Status: research and recommendations, not an implementation plan already approved
 or a description of production capabilities. Based on the working tree, including
 ongoing uncommitted changes. Read alongside the current

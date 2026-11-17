@@ -835,3 +835,41 @@ meant to change.
   projects test the light theme. Screenshots of dark set the stored preference.
 - **A dev server reload mid-test** shows up as an element "outside of the
   viewport"; rerun before debugging.
+
+## Moving state to the server and deploying it (November 2026)
+
+What went wrong while runs, rulebooks and jobs moved into a database and the
+app was put on Vercel, that a reader would not guess from the code:
+
+- **A stale `tsconfig.tsbuildinfo` hid a type error.** `tsc` is incremental, so
+  with the build info left from before an edit, `pnpm typecheck` passed on code
+  that did not. Delete the file before a typecheck that decides anything
+  (`rm -f tsconfig.tsbuildinfo && pnpm typecheck`).
+- **`jsonb` reorders keys, so bodies are `json`.** A rulebook is a reviewed file
+  in git, and `jsonb` does not keep the order of an object's keys, so a body
+  read back could not be exported to `fixtures/` as the same bytes. `json` keeps
+  the text. `server/db/round-trip.test.ts` holds this against every kept file.
+- **PGlite has one connection, so it cannot prove a lock.** Two callers never
+  really overlap on it, which made the advisory locks and the compare-and-set
+  loops look right. They are proved on a real Postgres (`postgres.test.ts`);
+  the PGlite tests prove the SQL and the constraints, not the concurrency.
+- **Workflow needs `instrumentation.ts` and lazy-loaded steps.** The SDK's
+  Local World does not carry on the runs a stopped `pnpm dev` left unless the
+  server starts it (`instrumentation.ts`), and the workflow's sandbox cannot
+  load the database driver, so a workflow function only orchestrates and each
+  step loads its work with a dynamic import. Under Vitest the directives are not
+  compiled (`server/workflows/runner.ts` stands in), so a unit test does not
+  show either mistake.
+- **The Vercel CLI did not apply `.gitignore`'s folder rules.** It uploaded agent
+  worktrees, kept run data and reports until `.vercelignore` named them, and a
+  per-file upload then hit the Hobby plan's daily file limit. Keep
+  `.vercelignore` in step with `.gitignore`, and deploy from a clean checkout
+  with `--archive=tgz`.
+- **A collapsed thread step kept its last text.** A step folded shut went on
+  showing the words it last had rather than what the run now says of it; a
+  folded step is still read, so what it shows must follow the run.
+- **A pin that is not a key goes wrong in silence.** `runs.rulebook_id` named a
+  revision with no key behind it, so two browser specs pinned one kept for other
+  instructions and nothing complained until the key was restored (`0009`) and
+  fourteen tests failed together. With every `rules` procedure mocked, nothing
+  seeds `fixtures/` either, so such a test asks the server once for the rules.
