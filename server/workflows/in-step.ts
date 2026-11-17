@@ -36,7 +36,7 @@ import type { JobRun, Outcome } from './types';
 // to the person, as it was before (lib/definitions/calls.ts).
 const WAIT_WITHIN_MS = 15 * 60_000;
 
-export const firstLine = (error: unknown) =>
+const firstLine = (error: unknown) =>
   error instanceof Error ? error.message.split('\n')[0]! : 'Failed.';
 
 // The run this step is part of; none when a test calls it directly.
