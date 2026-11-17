@@ -25,10 +25,8 @@ import {
 // the model that cross-checks is a stand-in. Nothing reaches the network.
 
 const model = vi.hoisted(() => ({ current: null as unknown }));
-vi.mock('@/server/storage/brunch-orders-reads', async (importOriginal) => ({
-  ...(await importOriginal<
-    typeof import('@/server/storage/brunch-orders-reads')
-  >()),
+vi.mock('@/server/storage/run-reads', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/server/storage/run-reads')>()),
   keptRead: async (id: string) =>
     id === 'test'
       ? (await import('@/lib/engine/captured.fixture')).capturedRead()

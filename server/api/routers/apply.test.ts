@@ -37,11 +37,9 @@ import {
 // memory and the reads the captured one: nothing reaches the network.
 
 const held = vi.hoisted(() => ({ sheet: null as unknown as OutputSheet }));
-vi.mock('@/server/storage/brunch-orders-reads', async (importOriginal) => {
+vi.mock('@/server/storage/run-reads', async (importOriginal) => {
   const actual =
-    await importOriginal<
-      typeof import('@/server/storage/brunch-orders-reads')
-    >();
+    await importOriginal<typeof import('@/server/storage/run-reads')>();
   const { capturedRead } = await import('@/lib/engine/captured.fixture');
   const reads: Record<string, { id: string; source: string }> = {
     live: { id: 'live', source: 'Live read through Composio at Thursday' },

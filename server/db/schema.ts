@@ -415,7 +415,7 @@ export const runs = pgTable(
   has two scopes: `process`, the one it belongs to, and `read_process`, the
   one whose read it was made on (Brunch orders' direct process proposes on
   reads kept under `brunch-orders`); the same holds of cross_checks and
-  answer_parts. server/storage/brunch-orders-reads.ts says which.
+  answer_parts. server/storage/run-reads.ts says which.
 */
 export const proposals = pgTable(
   'proposals',

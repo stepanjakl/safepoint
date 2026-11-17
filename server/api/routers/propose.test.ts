@@ -28,10 +28,8 @@ vi.mock('@/server/jobs/proposal', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/server/jobs/proposal')>()),
   startProposal: start,
 }));
-vi.mock('@/server/storage/brunch-orders-reads', async (importOriginal) => ({
-  ...(await importOriginal<
-    typeof import('@/server/storage/brunch-orders-reads')
-  >()),
+vi.mock('@/server/storage/run-reads', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/server/storage/run-reads')>()),
   keptRead: async (id: string) =>
     id === 'test'
       ? (await import('@/lib/engine/captured.fixture')).capturedRead()

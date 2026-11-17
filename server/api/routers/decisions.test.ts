@@ -21,10 +21,8 @@ import { caller, failure } from '../run.fixture';
 // Decisions on a kept run's proposal, through the procedures, on a scratch
 // database and directory. The read is the captured one; no model is asked.
 
-vi.mock('@/server/storage/brunch-orders-reads', async (importOriginal) => ({
-  ...(await importOriginal<
-    typeof import('@/server/storage/brunch-orders-reads')
-  >()),
+vi.mock('@/server/storage/run-reads', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/server/storage/run-reads')>()),
   keptRead: async (id: string) =>
     ['live', 'other'].includes(id)
       ? {
