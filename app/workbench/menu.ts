@@ -160,6 +160,12 @@ export const WORKBENCH_GROUPS: readonly WorkbenchGroup[] = [
           'Edit a promotion policy and see each product’s findings change, from the prototype’s recorded evidence.',
       },
       {
+        href: '/workbench/history/explore',
+        title: 'Review explorer',
+        summary:
+          'Change a scenario’s rules or a product’s terms and watch the review’s outcomes move, from recorded data.',
+      },
+      {
         href: '/workbench/history/colour-ramps',
         title: 'Colour ramps',
         summary:

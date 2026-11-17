@@ -75,3 +75,6 @@
 @import '../workbench/run/thread-progress.css';
 @import '../workbench/section-transitions/section-transitions.css';
 @import '../workbench/dividers/dividers.css';
+
+/* The prototype history, after everything current (fenced; see eslint.config.mjs). */
+@import '../workbench/history/explore/review-explorer.css';
