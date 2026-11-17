@@ -31,7 +31,7 @@ import { Glyph } from '@/components/ui/glyph';
 import { cx } from '@/lib/cx';
 import { useSwap } from '@/components/ui/swap';
 import { formatScalar } from './delta';
-import { dispositionGlyph } from './markers';
+import { dispositionGlyph } from '@/components/app-shell/markers';
 
 /*
   The release card's buckets: the bar, one tab per disposition, and the rows of

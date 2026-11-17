@@ -4,7 +4,7 @@ import { Ledger, LedgerRow } from '@/components/ui/ledger';
 import { SectionBand } from '@/components/ui/section-band';
 import type { LineDetail } from '@/lib/review-presentation';
 
-import { eligibilityMarker, toneText } from './markers';
+import { eligibilityMarker, toneText } from '@/components/app-shell/markers';
 
 /*
   The disagreement, first. Agent judgement on the left stays neutral; the

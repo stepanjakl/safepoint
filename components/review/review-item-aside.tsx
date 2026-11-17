@@ -19,7 +19,7 @@ import {
   type Effect,
   type ReleasePlan,
 } from '@/lib/review/plan-contract';
-import { dispositionGlyph } from './markers';
+import { dispositionGlyph } from '@/components/app-shell/markers';
 import { ReviewItemDetail } from './review-item-detail';
 import { useReviewDetail, type ReviewDetailCache } from './use-review-detail';
 

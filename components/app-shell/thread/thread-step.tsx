@@ -26,7 +26,7 @@ import CircleXFilled from 'blode-icons-react/icons/circle-x-filled';
 import ExclamationCircleFilled from 'blode-icons-react/icons/exclamation-circle-filled';
 import { Glyph } from '@/components/ui/glyph';
 import { Tooltip } from '@/components/ui/tooltip';
-import { stepMarker, toneText } from '@/components/review/markers';
+import { stepMarker, toneText } from '@/components/app-shell/markers';
 import {
   STEP_STATUS_LABELS,
   type ProcessStep,

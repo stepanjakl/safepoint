@@ -2,7 +2,7 @@ import { Glyph } from '@/components/ui/glyph';
 import { SectionBand } from '@/components/ui/section-band';
 import type { PresentedGate } from '@/lib/review-presentation';
 
-import { gateMarker, toneText } from './markers';
+import { gateMarker, toneText } from '@/components/app-shell/markers';
 
 /*
   Seven compact disclosure rows. Failed, not-checked and evidence-unavailable

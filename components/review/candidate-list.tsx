@@ -11,7 +11,7 @@ import { Glyph } from '@/components/ui/glyph';
 import type { Sku } from '@/lib/promotion-release';
 import type { CandidateRow, CategoryGroup } from '@/lib/review-presentation';
 
-import { outcomeMarker, toneText } from './markers';
+import { outcomeMarker, toneText } from '@/components/app-shell/markers';
 
 /*
   One listbox for all 27 candidates. Category headers are presentation only;

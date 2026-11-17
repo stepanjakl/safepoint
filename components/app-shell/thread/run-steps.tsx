@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { MORPH_WORDS_MS, MorphingText } from '@/components/ui/morphing-text';
 import { Glyph, type GlyphName } from '@/components/ui/glyph';
 import type { Tone } from '@/components/ui/status-label';
-import { toneText } from '@/components/review/markers';
+import { toneText } from '@/components/app-shell/markers';
 import {
   SystemDisc,
   SystemMeta,

@@ -3,7 +3,7 @@ import { Ledger, LedgerRow } from '@/components/ui/ledger';
 import { SectionBand } from '@/components/ui/section-band';
 import type { EffectNode } from '@/lib/review-presentation';
 
-import { modeMarker, toneText } from './markers';
+import { modeMarker, toneText } from '@/components/app-shell/markers';
 
 /*
   The signature element: one signal line with mode-shaped markers, inside

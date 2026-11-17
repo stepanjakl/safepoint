@@ -9,7 +9,11 @@ import type { LineDetail as LineDetailData } from '@/lib/review-presentation';
 
 import { EffectsRail } from './effects-rail';
 import { EvidenceSection } from './evidence-section';
-import { eligibilityMarker, outcomeMarker, toneText } from './markers';
+import {
+  eligibilityMarker,
+  outcomeMarker,
+  toneText,
+} from '@/components/app-shell/markers';
 import { ReadinessMatrix } from './readiness-matrix';
 import { VerdictPanel } from './verdict-panel';
 

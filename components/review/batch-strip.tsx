@@ -1,7 +1,7 @@
 import { Glyph } from '@/components/ui/glyph';
 import type { BatchPresentation } from '@/lib/review-presentation';
 
-import { outcomeMarker, toneText } from './markers';
+import { outcomeMarker, toneText } from '@/components/app-shell/markers';
 
 /*
   Proposal outcomes for the whole batch. Four aligned cells separated by

@@ -19,7 +19,7 @@ import type { RunStatus } from '@/lib/shell/model';
   nobody has to live with it yet. A solid disc means it is settled, and the
   mark is knocked out of the fill rather than drawn on top, so a settled state
   is heavier at a glance even in grey. Colour is carried by the caller, as
-  currentColor, from the tone the state maps to in markers.ts.
+  currentColor, from the tone the state maps to in components/app-shell/markers.ts.
 */
 
 // 16px of viewBox, so a stroke width reads the same whatever size it is drawn

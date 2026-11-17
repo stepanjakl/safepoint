@@ -1,7 +1,7 @@
 'use client';
 
 import { Glyph } from '@/components/ui/glyph';
-import { modeMarker, toneText } from '@/components/review/markers';
+import { modeMarker, toneText } from '@/components/app-shell/markers';
 import { cx } from '@/lib/cx';
 import type { SystemLink } from '@/lib/shell/system-links';
 import { MODE_LABELS } from '@/lib/review-presentation';

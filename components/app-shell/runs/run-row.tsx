@@ -7,7 +7,11 @@ import Clock from 'blode-icons-react/icons/clock-filled';
 import Cursor from 'blode-icons-react/icons/cursor-1-filled';
 import { Glyph } from '@/components/ui/glyph';
 import { RunStatusIcon } from '@/components/ui/run-status-icon';
-import { outcomeMarker, runTone, toneVar } from '@/components/review/markers';
+import {
+  outcomeMarker,
+  runTone,
+  toneVar,
+} from '@/components/app-shell/markers';
 import {
   RUN_STATUS_LABELS,
   RUN_TRIGGER_LABELS,

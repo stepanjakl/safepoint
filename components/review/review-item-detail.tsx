@@ -3,7 +3,7 @@ import { Glyph } from '@/components/ui/glyph';
 import type { ReviewDetail } from '@/lib/review/contracts';
 import { severityRank } from '@/lib/review/plan-contract';
 import { DeltaValue } from './delta';
-import { dispositionGlyph } from './markers';
+import { dispositionGlyph } from '@/components/app-shell/markers';
 
 /*
   The disclosure stack. Each `<details>` is a rule with a mono +/- in the

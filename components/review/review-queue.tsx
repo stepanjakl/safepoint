@@ -28,7 +28,7 @@ import {
   reviewPage,
   type ReviewFilter,
 } from '@/lib/review/review-navigation';
-import { dispositionGlyph } from './markers';
+import { dispositionGlyph } from '@/components/app-shell/markers';
 import { AttentionLine, StaleRow } from './release-card';
 import { FilterTabs, type FilterTab } from '@/components/ui/filter-tabs';
 
