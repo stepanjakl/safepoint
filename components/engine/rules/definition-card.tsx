@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useId,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
@@ -26,6 +27,7 @@ import { Pill } from '@/components/ui/pill';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cx } from '@/lib/cx';
 import type { Advice } from '@/lib/engine/advise';
+import type { DefinitionSubject } from '@/lib/engine/subject';
 import {
   acceptable,
   BLANKS_UNANSWERED,
@@ -36,7 +38,6 @@ import {
   type AppliesTo,
   type Definition,
 } from '@/lib/engine/types';
-import { SUBJECT } from '@/lib/processes/brunch-orders/process';
 
 export function statusOf(item: Definition): { tone: Tone; label: string } {
   if (item.deniedAt) return { tone: 'blocked', label: 'Denied' };
@@ -120,25 +121,25 @@ export type Sentences = { own: string | null; versions: (string | null)[] };
 
 // How finding read a check, in the process's words for its records: said of
 // the reading, and of the other one a person may say instead.
-const APPLIES_TO: Record<
+const appliesToWords = ({
+  record,
+}: DefinitionSubject): Record<
   AppliesTo,
-  { for: string; read: string; other: AppliesTo }
-> = {
+  { for: string; read: string; other: AppliesTo; correction: string }
+> => ({
   every: {
-    for: `every ${SUBJECT.record.singular}`,
-    read: `for every ${SUBJECT.record.singular}`,
+    for: `every ${record.singular}`,
+    read: `for every ${record.singular}`,
     other: 'some',
+    correction: `This rule is for every ${record.singular}`,
   },
   some: {
-    for: `some ${SUBJECT.record.plural}`,
-    read: `for only some ${SUBJECT.record.plural}`,
+    for: `some ${record.plural}`,
+    read: `for only some ${record.plural}`,
     other: 'every',
+    correction: `This rule is for only some ${record.plural}`,
   },
-};
-const CORRECTION: Record<AppliesTo, string> = {
-  every: `This rule is for every ${SUBJECT.record.singular}`,
-  some: `This rule is for only some ${SUBJECT.record.plural}`,
-};
+});
 
 // What a definition is and what failing it does, as pills.
 function DefinitionPills({ item }: { item: Definition }) {
@@ -163,6 +164,7 @@ function DefinitionPills({ item }: { item: Definition }) {
 // The definition itself, read two ways: in words as the model reads it, and
 // exactly, as the app runs it.
 function DefinitionReading({
+  subject,
   item,
   quoted,
   names,
@@ -171,6 +173,7 @@ function DefinitionReading({
   sentence = null,
   awaitedFormula,
 }: {
+  subject: DefinitionSubject;
   item: Definition;
   quoted: boolean;
   names: Record<string, string>;
@@ -181,10 +184,17 @@ function DefinitionReading({
   // Drawn where the formula goes until there is one.
   awaitedFormula?: ReactNode;
 }) {
+  const appliesTo = useMemo(() => appliesToWords(subject), [subject]);
   const title = item.name;
   const formula = item.formula ? (
     <FromModel label="The model's formula">
-      <Formula item={item} formula={item.formula} names={names} reads={reads} />
+      <Formula
+        subject={subject}
+        item={item}
+        formula={item.formula}
+        names={names}
+        reads={reads}
+      />
     </FromModel>
   ) : null;
   return (
@@ -200,7 +210,7 @@ function DefinitionReading({
           {item.appliesTo ? (
             <p className="text-meta text-muted">
               <MorphingText
-                text={`For ${APPLIES_TO[item.appliesTo].for}`}
+                text={`For ${appliesTo[item.appliesTo].for}`}
                 duration={MORPH_WORDS_MS}
               />
             </p>
@@ -247,6 +257,7 @@ function DefinitionReading({
 }
 
 export function DefinitionCard({
+  subject,
   item,
   quoted,
   names,
@@ -267,6 +278,8 @@ export function DefinitionCard({
   awaitedFormula,
   awaitedExamples,
 }: {
+  // What the process's records and proposal are called and read as.
+  subject: DefinitionSubject;
   item: Definition;
   // The item is the instructions' own words, not the model's restatement.
   quoted: boolean;
@@ -302,6 +315,7 @@ export function DefinitionCard({
   const status = statusOf(item);
   const title = item.name;
   const kind = kindOf(item);
+  const appliesTo = useMemo(() => appliesToWords(subject), [subject]);
   const anchor = useContext(CardAnchor);
   const headingId = useId();
   const [denying, setDenying] = useState(false);
@@ -354,6 +368,7 @@ export function DefinitionCard({
 
       <div className="grid gap-3 p-4">
         <DefinitionReading
+          subject={subject}
           item={item}
           quoted={quoted}
           names={names}
@@ -371,7 +386,12 @@ export function DefinitionCard({
             <h5 id={`${headingId}-examples`} className="readout text-muted">
               Examples
             </h5>
-            <Examples item={item} names={names} working={working} />
+            <Examples
+              subject={subject}
+              item={item}
+              names={names}
+              working={working}
+            />
           </section>
         ) : (
           awaitedExamples
@@ -388,17 +408,17 @@ export function DefinitionCard({
         {mismatch && item.appliesTo && onSetAppliesTo ? (
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             <span className="text-meta text-muted">
-              Finding read this rule as {APPLIES_TO[item.appliesTo].read}.
+              Finding read this rule as {appliesTo[item.appliesTo].read}.
             </span>
             <Button
               size="medium"
               isDisabled={busy}
               onPress={() => {
                 corrected.current = true;
-                onSetAppliesTo(APPLIES_TO[item.appliesTo!].other);
+                onSetAppliesTo(appliesTo[item.appliesTo!].other);
               }}
             >
-              {CORRECTION[APPLIES_TO[item.appliesTo].other]}
+              {appliesTo[appliesTo[item.appliesTo].other].correction}
             </Button>
           </div>
         ) : null}
@@ -417,11 +437,11 @@ export function DefinitionCard({
         {ignoresProposal(
           item,
           reads,
-          SUBJECT.proposal.map((field) => field.id),
+          subject.proposal.map((field) => field.id),
         ) ? (
           <p className="text-dense text-state-advisory">
             No proposed{' '}
-            {SUBJECT.proposal.map((field) => field.label).join(' or ')} can
+            {subject.proposal.map((field) => field.label).join(' or ')} can
             change this check&rsquo;s answer. Right for a rule about the data;
             wrong for a rule about what is proposed.
           </p>
@@ -438,6 +458,7 @@ export function DefinitionCard({
         <div className="min-w-0 flex-1">
           {open && item.agreement?.status === 'split' ? (
             <VersionsToChoose
+              subject={subject}
               item={item}
               names={names}
               sentences={sentences?.versions ?? []}

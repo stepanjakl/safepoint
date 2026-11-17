@@ -6,9 +6,9 @@ import SparkleFilled from 'blode-icons-react/icons/sparkle-filled';
 import type { ReactNode } from 'react';
 
 import { Code, StatusChip } from '@/components/engine/trial-parts';
+import type { DefinitionSubject } from '@/lib/engine/subject';
 import type { Definition } from '@/lib/engine/types';
 import { TRIED } from '@/lib/engine/types';
-import { SUBJECT } from '@/lib/processes/brunch-orders/process';
 
 /*
   The pieces a definition's card is drawn from: the model's mark, a record's
@@ -221,10 +221,13 @@ const RECORD =
 // The examples: each record's examples together, every one with the model's
 // account and the app's working under it.
 export function Examples({
+  subject,
   item,
   names,
   working,
 }: {
+  // The proposal's fields, which the examples that set them are headed by.
+  subject: DefinitionSubject;
   item: Definition;
   names: Record<string, string>;
   working: string[][];
@@ -254,7 +257,7 @@ export function Examples({
               {examples.map((example, index) => (
                 <div key={index} className="grid gap-2">
                   <p className="text-dense flex flex-wrap items-center gap-x-2 gap-y-1">
-                    {SUBJECT.proposal
+                    {subject.proposal
                       .filter((field) => field.id in example.inputs)
                       .map((field) => (
                         <ProposedValue

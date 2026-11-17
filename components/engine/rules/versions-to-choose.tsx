@@ -9,8 +9,8 @@ import { AssistantContext } from '@/components/app-shell/assistant/assistant-sta
 import { Button } from '@/components/ui/button';
 import type { Advice } from '@/lib/engine/advise';
 import { groupDifferences } from '@/lib/engine/group-differences';
+import type { DefinitionSubject } from '@/lib/engine/subject';
 import type { Definition } from '@/lib/engine/types';
-import { SUBJECT } from '@/lib/processes/brunch-orders/process';
 import { wordDiff } from '@/lib/text/word-diff';
 
 /*
@@ -22,6 +22,7 @@ import { wordDiff } from '@/lib/text/word-diff';
   Under each, what it gives on the first record where they part.
 */
 export function VersionsToChoose({
+  subject,
   item,
   names,
   sentences,
@@ -31,6 +32,7 @@ export function VersionsToChoose({
   onWrite,
   onAdvise,
 }: {
+  subject: DefinitionSubject;
   item: Definition;
   names: Record<string, string>;
   sentences: (string | null)[];
@@ -61,7 +63,7 @@ export function VersionsToChoose({
   const given = where
     ? Object.entries(where.inputs)
         .map(([id, value]) => {
-          const field = SUBJECT.proposal.find((f) => f.id === id);
+          const field = subject.proposal.find((f) => f.id === id);
           return `${field ? `the proposed ${field.label.toLowerCase()}` : id} ${value}`;
         })
         .join(', ')
@@ -130,6 +132,7 @@ export function VersionsToChoose({
                     </ul>
                   ) : null}
                   <Formula
+                    subject={subject}
                     item={{
                       ...item,
                       constants: version.constants,

@@ -327,6 +327,7 @@ function OrdersThread({
             ) : step.id === 'rules' ? (
               <ResponseSection>
                 <RulesStep
+                  subject={SUBJECT}
                   text={text}
                   version={version}
                   readId={readId}

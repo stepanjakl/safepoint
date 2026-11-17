@@ -22,6 +22,7 @@ import {
 import { StatusChip } from '@/components/engine/trial-parts';
 import { Pill, SEVERITY } from '@/components/ui/pill';
 import { cx } from '@/lib/cx';
+import { SUBJECT } from '@/lib/processes/brunch-orders/process';
 import type { DefinitionSet } from '@/lib/engine/types';
 
 import { useEasedCards } from './eased-cards';
@@ -340,6 +341,7 @@ export function DraftCards({
             return (
               <DefinitionCard
                 key={item.id}
+                subject={SUBJECT}
                 item={item}
                 quoted={false}
                 names={names}

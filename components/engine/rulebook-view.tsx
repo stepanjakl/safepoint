@@ -18,6 +18,7 @@ import { FilterTabs } from '@/components/ui/filter-tabs';
 import { Pill, SEVERITY } from '@/components/ui/pill';
 import { Arrival, EmptyState, useLoader } from '@/components/ui/working-mark';
 import { cx } from '@/lib/cx';
+import type { DefinitionSubject } from '@/lib/engine/subject';
 import type { Definition } from '@/lib/engine/types';
 
 /*
@@ -36,7 +37,7 @@ const matches = (item: Definition, filter: Filter) =>
     : item.result === 'check' && item.consequence === filter);
 
 export function RulebookPanel() {
-  const { current, body, set, accepted } = useRulebook();
+  const { current, body, set, accepted, subject } = useRulebook();
   const { phase, fadeIn } = useLoader(!body);
   const [filter, setFilter] = useState<Filter>('all');
   const [hot, setHot] = useState<string | null>(null);
@@ -126,6 +127,7 @@ export function RulebookPanel() {
         {shown.map((item) => (
           <RuleTile
             key={item.id}
+            subject={subject}
             item={item}
             quoted={words(current.text).includes(words(item.text))}
             names={names}
@@ -150,12 +152,14 @@ export function RulebookPanel() {
   and a calculation it reads is named in that calculation's colour.
 */
 function RuleTile({
+  subject,
   item,
   quoted,
   names,
   reads,
   hot,
 }: {
+  subject: DefinitionSubject;
   item: Definition;
   quoted: boolean;
   names: Record<string, string>;
@@ -212,6 +216,7 @@ function RuleTile({
       <div className="grid gap-2.5">
         {item.formula ? (
           <Formula
+            subject={subject}
             item={item}
             formula={item.formula}
             names={names}

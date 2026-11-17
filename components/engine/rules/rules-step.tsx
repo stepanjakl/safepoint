@@ -38,6 +38,7 @@ import {
   DataProfilePanel,
   type ProfileChange,
 } from '@/components/engine/data-profile';
+import type { DefinitionSubject } from '@/lib/engine/subject';
 import {
   CONFIRM_FIRST,
   quotedFrom,
@@ -65,11 +66,14 @@ const progressOf = (set: DefinitionSet): RulesProgress => ({
   accepted.
 */
 export function RulesStep({
+  subject,
   text,
   version,
   readId,
   onProgress,
 }: {
+  // What the process's rules are about: its records and what is proposed.
+  subject: DefinitionSubject;
   text: string;
   version: string;
   readId: string | null;
@@ -235,6 +239,7 @@ export function RulesStep({
           {set.definitions.map((item) => (
             <DefinitionCard
               key={item.id}
+              subject={subject}
               item={item}
               quoted={words(text).includes(words(item.text))}
               names={names}

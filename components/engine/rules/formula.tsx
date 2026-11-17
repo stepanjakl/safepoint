@@ -1,13 +1,13 @@
 'use client';
 
-import { useContext, type ReactNode } from 'react';
+import { useContext, useMemo, type ReactNode } from 'react';
 
 import { CardAnchor } from '@/components/engine/rules/card-anchor';
 import { TRIED_VARIABLE, said } from '@/components/engine/rules-parts';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cx } from '@/lib/cx';
+import type { DefinitionSubject } from '@/lib/engine/subject';
 import type { Definition } from '@/lib/engine/types';
-import { SUBJECT } from '@/lib/processes/brunch-orders/process';
 
 // Where a formula breaks: before each condition joined at its top level by
 // || or &&, and, where a condition is a bracketed group of such conditions,
@@ -87,13 +87,6 @@ export const linked = (key: string, hot: string | null) => ({
 const DOTTED =
   'text-state-advisory decoration-state-advisory underline decoration-dotted underline-offset-2';
 
-const READ_ROOTS = [
-  'record',
-  ...SUBJECT.data.lookups.map((lookup) => lookup.as),
-];
-// The proposal's fields: what each example sets, by the name a formula reads.
-// Drawn the same in the formula and in each example's heading.
-const PROPOSAL = new Set(SUBJECT.proposal.map((field) => field.id));
 const TOKEN =
   /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|\b([A-Za-z_]\w*)\.([A-Za-z_]\w*)|\b([A-Za-z_]\w*)\b/g;
 
@@ -110,6 +103,8 @@ function FormulaLine({
   reads,
   still,
   hot,
+  readRoots,
+  proposal,
 }: {
   line: string;
   level: number;
@@ -118,6 +113,9 @@ function FormulaLine({
   reads: Definition[];
   still: boolean;
   hot: string | null;
+  // The names a formula reads data by, and the proposal's fields.
+  readRoots: string[];
+  proposal: Set<string>;
 }) {
   const anchor = useContext(CardAnchor);
   const parts: ReactNode[] = [];
@@ -190,20 +188,20 @@ function FormulaLine({
           whole
         ),
       );
-    } else if (root && READ_ROOTS.includes(root))
+    } else if (root && readRoots.includes(root))
       parts.push(
         <span key={key}>
           <span className="text-muted">{root}.</span>
           <span className="text-primary font-medium">{field}</span>
         </span>,
       );
-    else if (bare && PROPOSAL.has(bare) && still)
+    else if (bare && proposal.has(bare) && still)
       parts.push(
         <span key={key} className={TRIED_VARIABLE}>
           {bare}
         </span>,
       );
-    else if (bare && PROPOSAL.has(bare)) {
+    else if (bare && proposal.has(bare)) {
       parts.push(
         <Tooltip
           key={key}
@@ -238,6 +236,7 @@ function FormulaLine({
   what each is on hover; a calculation also links to its card.
 */
 export function Formula({
+  subject,
   item,
   formula,
   names,
@@ -246,6 +245,8 @@ export function Formula({
   still = false,
   hot = null,
 }: {
+  // What the process's formulas read and set.
+  subject: DefinitionSubject;
   item: Definition;
   formula: string;
   names: Record<string, string>;
@@ -259,6 +260,16 @@ export function Formula({
   // The linked name under the pointer, lit wherever it is shown.
   hot?: string | null;
 }) {
+  const readRoots = useMemo(
+    () => ['record', ...subject.data.lookups.map((lookup) => lookup.as)],
+    [subject],
+  );
+  // The proposal's fields: what each example sets, by the name a formula
+  // reads. Drawn the same in the formula and in each example's heading.
+  const proposal = useMemo(
+    () => new Set(subject.proposal.map((field) => field.id)),
+    [subject],
+  );
   return (
     <div
       role="group"
@@ -279,6 +290,8 @@ export function Formula({
           reads={reads}
           still={still}
           hot={hot}
+          readRoots={readRoots}
+          proposal={proposal}
         />
       ))}
     </div>

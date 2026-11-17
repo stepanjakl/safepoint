@@ -11,6 +11,7 @@ import {
   brunchOrdersProcess,
   SHEET_INPUTS,
   SHEET_USE,
+  SUBJECT,
 } from '@/lib/processes/brunch-orders/process';
 import { lastWrite } from '@/server/storage/applications';
 import { latestSummary } from '@/server/storage/source-reads';
@@ -29,7 +30,7 @@ export default async function BrunchOrdersPage({
     [SHEET_USE.source]: await latestSummary(SHEET_USE.source),
   };
   return (
-    <RulebookProvider process={brunchOrdersProcess}>
+    <RulebookProvider process={brunchOrdersProcess} subject={SUBJECT}>
       <ProcessView
         process={brunchOrdersProcess}
         initialRunId={typeof run === 'string' ? run : null}

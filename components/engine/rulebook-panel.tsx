@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { createContext, useContext, type ReactNode } from 'react';
+import { createContext, useContext, useMemo, type ReactNode } from 'react';
 
 import { useInstructions } from '@/components/app-shell/instructions/instructions-store';
 import {
@@ -12,6 +12,7 @@ import { saidBy } from '@/components/engine/trial-parts';
 import { useTRPC } from '@/components/trpc/provider';
 import { Loader } from '@/components/ui/loader';
 import type { LoaderPhase } from '@/components/ui/working-mark';
+import type { DefinitionSubject } from '@/lib/engine/subject';
 import type { Revision } from '@/lib/engine/types';
 import type { ProcessSummary } from '@/lib/shell/model';
 
@@ -21,16 +22,18 @@ export type RulebookHistory = RulesKept['history'];
 // What the panel shows of the rulebook: the reply, or why there is none.
 type RulebookBody = RulesReply | { kind: 'error'; message: string };
 
-const RulebookContext = createContext<ProcessSummary | null>(null);
+// The process whose rulebook the panels show, and what its rules are about.
+type RulebookOf = { process: ProcessSummary; subject: DefinitionSubject };
+
+const RulebookContext = createContext<RulebookOf | null>(null);
 
 export function RulebookProvider({
   process,
+  subject,
   children,
-}: {
-  process: ProcessSummary;
-  children: ReactNode;
-}) {
-  return <RulebookContext value={process}>{children}</RulebookContext>;
+}: RulebookOf & { children: ReactNode }) {
+  const value = useMemo(() => ({ process, subject }), [process, subject]);
+  return <RulebookContext value={value}>{children}</RulebookContext>;
 }
 
 /*
@@ -42,8 +45,9 @@ export function RulebookProvider({
   reload.
 */
 export function useRulebook() {
-  const process = useContext(RulebookContext);
-  if (!process) throw new Error('Rulebook panels need a RulebookProvider.');
+  const of = useContext(RulebookContext);
+  if (!of) throw new Error('Rulebook panels need a RulebookProvider.');
+  const { process, subject } = of;
   const { current } = useInstructions(process.id, process.instructions);
   const trpc = useTRPC();
   const asked = useQuery(
@@ -56,7 +60,7 @@ export function useRulebook() {
     said !== null ? { kind: 'error', message: said } : (asked.data ?? null);
   const set = body?.kind === 'rules' ? body.set : null;
   const accepted = set?.definitions.filter((d) => d.approvedAt) ?? [];
-  return { current, body, set, accepted };
+  return { current, body, set, accepted, subject };
 }
 
 /* The rulebook's first load, on the loader's timing (useLoader). */
