@@ -11,12 +11,13 @@ export const runtime = 'nodejs';
   request: `calculate.crossCheck` works every record out again, 25 to a call
   and one call after another, each allowed 180 s (lib/definitions/calls.ts),
   and `rules.advise` makes a call that may wait for a model's quota first;
-  either can pass 300 s. 800 s is the Pro plan's ceiling; a Hobby plan stops
-  at 300 s. The sheet's reads and writes (`read.keep`, `sources.read`,
-  `apply.*`) take seconds, and drafts, rewrites and proposals are Workflow
+  either can need longer than 300 s, which is the most a Hobby plan allows (a
+  build asking for more is refused there); on Pro, raise it towards 800 s.
+  The sheet's reads and writes (`read.keep`, `sources.read`, `apply.*`) take
+  seconds, and drafts, rewrites and proposals are Workflow
   runs (server/workflows/), not part of this request.
 */
-export const maxDuration = 800;
+export const maxDuration = 300;
 
 // Every procedure, at /api/trpc/<router>.<procedure>, called by POST with its
 // input as the body. Each procedure gates itself (gatedProcedure).

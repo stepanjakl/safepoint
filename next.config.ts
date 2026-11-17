@@ -30,7 +30,7 @@ const nextConfig: NextConfig = {
   // (server/storage/source-reads.ts, brunch-orders-reads.ts). Each key is a
   // route, scoped to those that reach them: the tRPC route, the Workflow
   // route its steps run in, and the page that shows the captured read. Not
-  // drizzle/: a deployment is migrated by its build (scripts/vercel-build.mjs),
+  // drizzle/: a deployment is migrated by its build (scripts/vercel-build.ts),
   // and only the PGlite path reads it at run time.
   outputFileTracingIncludes: {
     '/api/trpc/\\[trpc\\]': KEPT_FIXTURES,

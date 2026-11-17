@@ -145,7 +145,7 @@ A checklist, in order. Both Brunch orders processes are served wherever the gate
 - **Build command:** leave it empty. Vercel runs the `vercel-build` script in place of `build` (`scripts/vercel-build.ts`). To be explicit, set the build command to `pnpm vercel-build`.
 - **Enable access to System Environment Variables** (Environment Variables), then redeploy. Workflow knows it is deployed by `VERCEL_DEPLOYMENT_ID`, which Vercel exposes only with this setting; without it the build emits local output, every run fails on the read-only filesystem (`EROFS`), and no run appears in the dashboard. The build also reads `VERCEL_ENV` to decide whether to migrate.
 - Nothing to set for Workflow's queue: the request proxy (`proxy.ts`) leaves `/.well-known/workflow/` open, as Workflow authenticates each delivery itself.
-- A plan whose function duration allows 800 seconds (Pro). `app/api/trpc/[trpc]/route.ts` asks for it, for the cross-check and the rule advice, which ask a model inside the request; the default is 300 seconds. On Hobby, which stops at 300, lower the value there if the deployment is refused.
+- Function duration: `app/api/trpc/[trpc]/route.ts` asks for 300 seconds, the most a Hobby plan allows, for the cross-check and the rule advice, which ask a model inside the request and can need longer. On Pro, raise `maxDuration` there towards 800.
 
 **2. Environment variables** (names only; values in the project's settings, never in the repository)
 
