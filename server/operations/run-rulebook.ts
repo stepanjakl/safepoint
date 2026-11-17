@@ -5,7 +5,11 @@ import { noRules } from '@/lib/engine/fingerprint';
 import type { KeptRead } from '@/lib/engine/records';
 import type { DefinitionProcess, DefinitionSet } from '@/lib/engine/types';
 import type { RunProcess } from '@/server/operations/kept-processes';
-import { loadRevision, loadSet, ownerFor } from '@/server/storage/rulebooks';
+import {
+  loadRevision,
+  loadSet,
+  ownerFor,
+} from '@/server/storage/rules/rulebooks';
 
 /*
   What a run of a process works under. Evaluated by `rules`: the accepted

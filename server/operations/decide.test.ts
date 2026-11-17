@@ -31,7 +31,7 @@ import {
   putRevision,
   saveProfile,
   updateSet,
-} from '@/server/storage/rulebooks';
+} from '@/server/storage/rules/rulebooks';
 import type {
   DataProfile,
   Definition,

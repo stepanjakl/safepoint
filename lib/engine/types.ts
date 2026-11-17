@@ -503,7 +503,7 @@ export const proposalPartSchema = z.object({
 });
 
 // The checks on a record as a person saw them when deciding it, as a
-// decision on it keeps them (server/storage/decisions.ts).
+// decision on it keeps them (server/storage/runs/decisions.ts).
 export const checkVerdictsSchema = z.array(checkVerdictSchema);
 
 export type Verdict = z.infer<typeof verdictSchema>;

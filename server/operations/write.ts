@@ -12,7 +12,7 @@ import {
   type Written,
 } from '@/lib/engine/write';
 import type { Agreement } from '@/lib/engine/types';
-import { loadSet, ownerFor, updateSet } from '@/server/storage/rulebooks';
+import { loadSet, ownerFor, updateSet } from '@/server/storage/rules/rulebooks';
 
 /*
   Server-only. Writing a definition, kept: the engine writes it

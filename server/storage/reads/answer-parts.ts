@@ -8,7 +8,7 @@ import { ensureProcess } from '@/server/db/scope';
 import { answerParts, type PART_KINDS } from '@/server/db/schema';
 
 import { readProcessOf } from './run-reads';
-import type { RunKey } from './run-key';
+import type { RunKey } from '@/server/storage/run-key';
 
 /*
   Server-only. A proposal or cross-check still being answered, kept batch by

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { findKept } from './set.fixture';
-import { loadSet } from '@/server/storage/rulebooks';
+import { loadSet } from '@/server/storage/rules/rulebooks';
 
 import { capturedRead } from './captured.fixture';
 import { accountingProblems, labelProblems, sentencesOf } from './find';

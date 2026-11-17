@@ -130,7 +130,8 @@ const config = [
     // The one exception: a model's requests are counted inside the calls the
     // engine makes, so limits.ts keeps what it learns through this one
     // module, which holds the file's path and shape. A negation cannot reach
-    // into a folder the pattern has excluded, so the folders are listed.
+    // into a folder the pattern has excluded, so the folder is let back in
+    // before its other modules are excluded again.
     files: ['lib/engine/limits.ts'],
     rules: {
       'no-restricted-imports': [
@@ -139,7 +140,9 @@ const config = [
           '@/server/jobs/*',
           '@/server/operations/*',
           '@/server/storage/*',
-          '!@/server/storage/model-limits',
+          '!@/server/storage/models',
+          '@/server/storage/models/*',
+          '!@/server/storage/models/model-limits',
         ]),
       ],
     },

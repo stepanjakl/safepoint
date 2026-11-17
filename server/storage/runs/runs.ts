@@ -8,9 +8,12 @@ import { database, type Database } from '@/server/db/client';
 import { instructionVersions, reads, runs } from '@/server/db/schema';
 import type { RunProcess } from '@/server/operations/kept-processes';
 
-import { readProcessOf } from './run-reads';
-import { ensureDeclared, versionByHash } from './instructions';
-import { Refused } from './refused';
+import { readProcessOf } from '@/server/storage/reads/run-reads';
+import {
+  ensureDeclared,
+  versionByHash,
+} from '@/server/storage/rules/instructions';
+import { Refused } from '@/server/storage/refused';
 
 /*
   Server-only. A process's runs, in `runs`: one row a run, made by the

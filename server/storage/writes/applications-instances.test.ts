@@ -11,8 +11,8 @@ import { definitionSetSchema, type Proposal } from '@/lib/engine/types';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { applications } from '@/server/db/schema';
 
-import { keepProposal } from './proposals';
-import { keepStandInRead } from './reads.fixture';
+import { keepProposal } from '@/server/storage/reads/proposals';
+import { keepStandInRead } from '@/server/storage/reads.fixture';
 import { memorySheet } from './sheet.fixture';
 
 /*

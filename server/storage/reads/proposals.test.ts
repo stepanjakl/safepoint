@@ -15,7 +15,7 @@ import {
 } from '@/lib/processes/brunch-orders/process';
 import { answerParts, crossChecks, proposals } from '@/server/db/schema';
 
-import { keepStandInRead } from './reads.fixture';
+import { keepStandInRead } from '@/server/storage/reads.fixture';
 import { dropPart, keepPart, keptPart } from './answer-parts';
 import { keepProposal, keptProposal, runKeyOf } from './proposals';
 

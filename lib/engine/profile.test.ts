@@ -6,7 +6,7 @@ import {
   ownerFor,
   ownerToDraft,
   saveProfile,
-} from '@/server/storage/rulebooks';
+} from '@/server/storage/rules/rulebooks';
 
 import { capturedRead } from './captured.fixture';
 import {

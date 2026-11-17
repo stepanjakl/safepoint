@@ -39,18 +39,21 @@ import {
   DECIDED_SINCE,
   keptApplication,
   undoApplication,
-} from '@/server/storage/applications';
-import { readAndKeep } from '@/server/storage/run-reads';
+} from '@/server/storage/writes/applications';
+import { readAndKeep } from '@/server/storage/reads/run-reads';
 import {
   appendDecisions,
   currentDecisions,
   type NewEvent,
-} from '@/server/storage/decisions';
-import { publishVersion } from '@/server/storage/instructions';
-import { currentProposalOf, keepProposal } from '@/server/storage/proposals';
+} from '@/server/storage/runs/decisions';
+import { publishVersion } from '@/server/storage/rules/instructions';
+import {
+  currentProposalOf,
+  keepProposal,
+} from '@/server/storage/reads/proposals';
 import { keepStandInRead } from '@/server/storage/reads.fixture';
 import { Refused } from '@/server/storage/refused';
-import { seedRulebooks } from '@/server/storage/rulebook-files';
+import { seedRulebooks } from '@/server/storage/rules/rulebook-files';
 import {
   listRevisions,
   loadProfile,
@@ -60,9 +63,9 @@ import {
   saveSet,
   updateProfile,
   updateSet,
-} from '@/server/storage/rulebooks';
-import { startRun } from '@/server/storage/runs';
-import { memorySheet } from '@/server/storage/sheet.fixture';
+} from '@/server/storage/rules/rulebooks';
+import { startRun } from '@/server/storage/runs/runs';
+import { memorySheet } from '@/server/storage/writes/sheet.fixture';
 
 import { inPostgresDatabase, POSTGRES_URL, REPEATS } from './postgres.fixture';
 

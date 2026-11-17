@@ -7,7 +7,7 @@ import {
   runProcessIdSchema,
 } from '@/server/operations/kept-processes';
 import { readIdSchema, rulebookIdSchema } from '@/server/storage/ids';
-import { versionByHash } from '@/server/storage/instructions';
+import { versionByHash } from '@/server/storage/rules/instructions';
 import {
   discardRun,
   listRuns,
@@ -15,13 +15,13 @@ import {
   recordProgress,
   runOrRefuse,
   startRun,
-} from '@/server/storage/runs';
+} from '@/server/storage/runs/runs';
 
 import { keptRunFields } from '../run-procedure';
 import { gatedProcedure, router } from '../trpc';
 
 /*
-  Server-only. A process's runs, kept on the server (server/storage/runs.ts).
+  Server-only. A process's runs, kept on the server (server/storage/runs/runs.ts).
   `start` makes one and names it; `list` gives a process's runs newest first
   without the discarded ones, in one query, with no bodies; `get` gives one
   with the text of its instructions; `record` moves it on; `discard` marks

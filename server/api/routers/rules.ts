@@ -33,8 +33,11 @@ import {
   setAppliesTo,
 } from '@/server/operations/decide';
 import { rulebookProcess } from '@/server/operations/kept-processes';
-import { keptRead as keptReadOf, READ_GONE } from '@/server/storage/run-reads';
-import { attemptRecorder } from '@/server/storage/model-attempts';
+import {
+  keptRead as keptReadOf,
+  READ_GONE,
+} from '@/server/storage/reads/run-reads';
+import { attemptRecorder } from '@/server/storage/models/model-attempts';
 import { readIdSchema } from '@/server/storage/ids';
 import {
   listRevisions,
@@ -44,7 +47,7 @@ import {
   ownerFor,
   saveProfile,
   updateProfile,
-} from '@/server/storage/rulebooks';
+} from '@/server/storage/rules/rulebooks';
 
 import { failed, gatedProcedure, router } from '../trpc';
 

@@ -193,7 +193,7 @@ placeholders such as `values.<id>`, because a real example steers the model.
   module there opens with `import 'server-only'`, so a client bundle that
   reaches one fails `pnpm build`. ESLint holds the same lines
   (`eslint.config.mjs`). The one exception is `lib/engine/limits.ts`, which reaches the database through
-  `server/storage/model-limits.ts`. Vitest aliases `server-only` to an empty
+  `server/storage/models/model-limits.ts`. Vitest aliases `server-only` to an empty
   module.
 - **Drafts, rewrites and proposals are Vercel Workflow runs**
   (`server/workflows/`, started by `server/jobs/`). A workflow function only
@@ -207,7 +207,7 @@ placeholders such as `values.<id>`, because a real example steers the model.
 - **Where things are kept.** Everything is in the database
   (`docs/engineering/DATABASE.md`): PGlite under `data/pglite/` with no
   `DATABASE_URL`. Rulebooks and data profiles are read and written only
-  through `server/storage/rulebooks.ts`: per instructions version the
+  through `server/storage/rules/rulebooks.ts`: per instructions version the
   rulebook under review, each accepted revision (written once, by its
   fingerprint) and the head, and each act on a rule as a `rule_decisions`
   row. What a person approves is still reviewed in git:

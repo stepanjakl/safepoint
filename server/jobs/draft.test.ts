@@ -18,7 +18,7 @@ import { hashOf } from '@/lib/engine/fingerprint';
 import { ensureProcess } from '@/server/db/scope';
 import { jobs, modelAttempts } from '@/server/db/schema';
 import { keepRead } from '@/server/storage/reads.fixture';
-import { loadSet } from '@/server/storage/rulebooks';
+import { loadSet } from '@/server/storage/rules/rulebooks';
 
 // A whole draft runs on the server: found, then each definition written, with
 // its progress there to be asked for, and never on a read that does not fit.

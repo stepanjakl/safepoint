@@ -5,14 +5,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { applications } from '@/server/db/schema';
-import * as rows from '@/server/storage/application-rows';
+import * as rows from '@/server/storage/writes/application-rows';
 import {
   applyDecisions,
   keptApplication,
   undoApplication,
 } from './applications';
-import { keepProposal } from './proposals';
-import { keepStandInRead } from './reads.fixture';
+import { keepProposal } from '@/server/storage/reads/proposals';
+import { keepStandInRead } from '@/server/storage/reads.fixture';
 import { memorySheet } from './sheet.fixture';
 
 import {
@@ -45,9 +45,11 @@ const SAVES = [
   'markUndo',
   'settleUndo',
 ] as const;
-vi.mock('@/server/storage/application-rows', async (importOriginal) => {
+vi.mock('@/server/storage/writes/application-rows', async (importOriginal) => {
   const real =
-    await importOriginal<typeof import('@/server/storage/application-rows')>();
+    await importOriginal<
+      typeof import('@/server/storage/writes/application-rows')
+    >();
   return {
     ...real,
     insertRow: vi.fn(real.insertRow),
@@ -58,8 +60,8 @@ vi.mock('@/server/storage/application-rows', async (importOriginal) => {
   };
 });
 const real = await vi.importActual<
-  typeof import('@/server/storage/application-rows')
->('@/server/storage/application-rows');
+  typeof import('@/server/storage/writes/application-rows')
+>('@/server/storage/writes/application-rows');
 const STOPPED = 'The process stopped.';
 // The nth save from now fails; the others are kept as usual.
 const stopAtSave = (nth: number) => {

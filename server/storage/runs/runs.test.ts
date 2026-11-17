@@ -6,7 +6,7 @@ import { brunchOrdersProcess } from '@/lib/processes/brunch-orders/process';
 import { runs } from '@/server/db/schema';
 import { runProcess } from '@/server/operations/kept-processes';
 
-import { ensureDeclared } from './instructions';
+import { ensureDeclared } from '@/server/storage/rules/instructions';
 import { discardRun, listRuns, startRun } from './runs';
 
 // A process's runs as the list gives them, on a scratch database.

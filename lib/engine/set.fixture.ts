@@ -3,9 +3,9 @@ import { database } from '@/server/db/client';
 import { instructionVersions } from '@/server/db/schema';
 import { ensureProcess } from '@/server/db/scope';
 import { keptProcesses } from '@/server/operations/kept-processes';
-import { ensureDeclared } from '@/server/storage/instructions';
+import { ensureDeclared } from '@/server/storage/rules/instructions';
 import { findDefinitions } from '@/server/operations/find';
-import { saveSet } from '@/server/storage/rulebooks';
+import { saveSet } from '@/server/storage/rules/rulebooks';
 
 import { hashOf } from './fingerprint';
 import type { Definition, DefinitionSet, Example } from './types';

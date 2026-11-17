@@ -139,7 +139,7 @@ export function paragraphsOf(text: string): string[] {
   server keeps a published version's text in this form and hashes it as it
   is kept, so the browser and the server agree on "the same text" only if
   both normalise with this. A declared version is already in this form
-  (server/storage/instructions.test.ts).
+  (server/storage/rules/instructions.test.ts).
 */
 export const normalisedInstructions = (text: string) =>
   paragraphsOf(text).join('\n\n');

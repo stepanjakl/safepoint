@@ -5,7 +5,7 @@ import { hashOf } from '@/lib/engine/fingerprint';
 import { fitting } from '@/lib/engine/records';
 import { findDefinitions } from '@/server/operations/find';
 import { writeAgreed } from '@/server/operations/write';
-import { loadSet, ownerToDraft } from '@/server/storage/rulebooks';
+import { loadSet, ownerToDraft } from '@/server/storage/rules/rulebooks';
 
 import { inStep, instructionsOf, readOf, settle } from './in-step';
 import { standInsFor } from './stand-ins';

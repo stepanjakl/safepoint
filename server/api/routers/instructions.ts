@@ -10,7 +10,7 @@ import {
   listVersions,
   publishVersion,
   versionByHash,
-} from '@/server/storage/instructions';
+} from '@/server/storage/rules/instructions';
 import { Refused } from '@/server/storage/refused';
 
 import { gatedProcedure, router } from '../trpc';

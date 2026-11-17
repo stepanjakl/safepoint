@@ -5,7 +5,7 @@ import type { DataProfile, DefinitionSet } from './types';
 /*
   What names a rulebook, an instructions text or a data profile: hashes of
   their content, so two of the same content have the same name wherever they
-  are kept (server/storage/rulebooks.ts).
+  are kept (server/storage/rules/rulebooks.ts).
 */
 
 export const hashOf = (text: string) =>

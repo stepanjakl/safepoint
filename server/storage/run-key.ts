@@ -16,7 +16,7 @@ export type RunKey = { process: string; readId: string; fingerprint: string };
   Takes a run key's lock for the rest of the transaction: a decision on its
   proposal, and a write's claim through a kept run, each hold it, so of a
   decision and a write begun together one goes first and the other sees
-  what it did (server/storage/decisions.ts, applications.ts).
+  what it did (server/storage/runs/decisions.ts, applications.ts).
   Transaction-scoped, since Neon's pooler cannot hold a session lock.
 */
 export async function lockRunKey(db: Database, key: RunKey) {

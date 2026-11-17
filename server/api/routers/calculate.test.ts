@@ -10,7 +10,7 @@ import { keepStandInRead } from '@/server/storage/reads.fixture';
 import { TEXT } from '@/lib/engine/set.fixture';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { modelAttempts } from '@/server/db/schema';
-import { listRevisions, putRevision } from '@/server/storage/rulebooks';
+import { listRevisions, putRevision } from '@/server/storage/rules/rulebooks';
 
 import {
   accepted,
@@ -25,16 +25,20 @@ import {
 // the model that cross-checks is a stand-in. Nothing reaches the network.
 
 const model = vi.hoisted(() => ({ current: null as unknown }));
-vi.mock('@/server/storage/run-reads', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/server/storage/run-reads')>()),
+vi.mock('@/server/storage/reads/run-reads', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('@/server/storage/reads/run-reads')
+  >()),
   keptRead: async (_reads: unknown, id: string) =>
     id === 'test'
       ? (await import('@/lib/engine/captured.fixture')).capturedRead()
       : null,
 }));
-vi.mock('@/server/storage/cross-checks', async (importOriginal) => {
+vi.mock('@/server/storage/reads/cross-checks', async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import('@/server/storage/cross-checks')>();
+    await importOriginal<
+      typeof import('@/server/storage/reads/cross-checks')
+    >();
   return {
     ...actual,
     crossCheck: (

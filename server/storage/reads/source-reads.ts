@@ -24,9 +24,9 @@ import { database } from '@/server/db/client';
 import { keptProcesses } from '@/server/operations/kept-processes';
 import { sourceReads } from '@/server/db/schema';
 
-import { readKept } from './files';
-import { FILE_ID } from './ids';
-import { parseStored } from './stored';
+import { readKept } from '@/server/storage/files';
+import { FILE_ID } from '@/server/storage/ids';
+import { parseStored } from '@/server/storage/stored';
 
 /*
   Server-only. Reading a source from its own page: every resource, kept whole

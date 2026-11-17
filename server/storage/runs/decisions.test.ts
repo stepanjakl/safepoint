@@ -10,15 +10,18 @@ import {
 import { applications, recordDecisions, runs } from '@/server/db/schema';
 import { runProcess } from '@/server/operations/kept-processes';
 
-import { insertRow } from './application-rows';
+import { insertRow } from '@/server/storage/writes/application-rows';
 import {
   appendDecisions,
   currentDecisions,
   decidedOnEarlier,
   type NewEvent,
 } from './decisions';
-import { currentProposalOf, keepProposal } from './proposals';
-import { keepStandInRead } from './reads.fixture';
+import {
+  currentProposalOf,
+  keepProposal,
+} from '@/server/storage/reads/proposals';
+import { keepStandInRead } from '@/server/storage/reads.fixture';
 import { startRun } from './runs';
 
 // The current decision, worked out from a run's history of events on one

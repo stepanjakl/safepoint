@@ -8,7 +8,7 @@ import {
   decisionsOfRun,
   type Asked,
 } from '@/server/operations/record-decisions';
-import { runOrRefuse } from '@/server/storage/runs';
+import { runOrRefuse } from '@/server/storage/runs/runs';
 
 import { keptRunFields, keptRunProcedure, staleReply } from '../run-procedure';
 import { gatedProcedure, router } from '../trpc';

@@ -19,7 +19,7 @@ import type {
 
   Every change returns a new profile with a new id, and with `confirmedAt`
   cleared: a changed profile is under review until a person confirms it again.
-  The confirmed one it came from stays kept as it was (server/storage/rulebooks.ts), so a
+  The confirmed one it came from stays kept as it was (server/storage/rules/rulebooks.ts), so a
   rulebook drafted on it reads exactly what it was drafted on.
 */
 

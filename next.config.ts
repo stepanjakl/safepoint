@@ -28,8 +28,8 @@ const nextConfig: NextConfig = {
   // Files the server reads by path at run time, which a trace cannot see.
   // Vercel bundles only what a route's trace lists. The fixtures hold the
   // rulebooks and profile a database is seeded from the first time a process
-  // needs them (server/storage/rulebook-files.ts) and the captured sheet read
-  // (server/storage/source-reads.ts, run-reads.ts). Each key is a
+  // needs them (server/storage/rules/rulebook-files.ts) and the captured sheet read
+  // (server/storage/reads/source-reads.ts, run-reads.ts). Each key is a
   // route, scoped to those that reach them: the tRPC route, the Workflow
   // route its steps run in, and the page that shows the captured read. Not
   // drizzle/: a deployment is migrated by its build (scripts/vercel-build.ts),

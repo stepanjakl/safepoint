@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { writeAgreed, writeDefinition } from '@/server/operations/write';
-import { updateSet } from '@/server/storage/rulebooks';
+import { updateSet } from '@/server/storage/rules/rulebooks';
 
 import { DRAFT_MODELS, WRITE_MODELS } from './calls';
 import { capturedRead } from './captured.fixture';

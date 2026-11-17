@@ -15,7 +15,7 @@ import type { Application } from '@/lib/engine/types';
 import type { Database } from '@/server/db/client';
 import { applications, proposals } from '@/server/db/schema';
 
-import type { RunKey } from './run-key';
+import type { RunKey } from '@/server/storage/run-key';
 
 /*
   Server-only. The statements applications.ts keeps a write's record with,

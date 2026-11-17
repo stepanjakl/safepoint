@@ -17,19 +17,19 @@ import {
   type KeptDecision,
   type Kind,
   type NewEvent,
-} from '@/server/storage/decisions';
-import { versionByHash } from '@/server/storage/instructions';
-import { currentProposalOf } from '@/server/storage/proposals';
+} from '@/server/storage/runs/decisions';
+import { versionByHash } from '@/server/storage/rules/instructions';
+import { currentProposalOf } from '@/server/storage/reads/proposals';
 import { Refused } from '@/server/storage/refused';
 import type { RunKey } from '@/server/storage/run-key';
-import type { KeptRun } from '@/server/storage/runs';
+import type { KeptRun } from '@/server/storage/runs/runs';
 
 import type { RunProcess } from './kept-processes';
 
 /*
   Server-only. A person's decisions on the records of a run's proposal, made
   through the server: checked here as the screens and the write check them,
-  then kept as events (server/storage/decisions.ts).
+  then kept as events (server/storage/runs/decisions.ts).
 */
 
 // What a decision is refused with when it was made on an earlier proposal,

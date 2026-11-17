@@ -170,7 +170,7 @@ Never set in production (or preview): `SAFEPOINT_RESETTABLE_DATABASE_URL`, which
 **4. The first deploy**
 
 1. The build applies every migration not yet applied to the production database.
-2. The first request that needs a process's rulebooks seeds them from `fixtures/` (once per server process, inserting only what is missing; `server/storage/rulebook-files.ts`).
+2. The first request that needs a process's rulebooks seeds them from `fixtures/` (once per server process, inserting only what is missing; `server/storage/rules/rulebook-files.ts`).
 3. Drafts, rewrites and proposals run as Workflow runs on the Vercel World; the dashboard's Workflow page lists them.
 
 **5. Check that it worked**

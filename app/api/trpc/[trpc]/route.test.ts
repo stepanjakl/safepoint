@@ -16,8 +16,10 @@ import { GET, POST } from './route';
 // with a Request in process, nothing on the network. The provider is a
 // stand-in that fails as a real one can, with more than one line.
 
-vi.mock('@/server/storage/run-reads', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/server/storage/run-reads')>()),
+vi.mock('@/server/storage/reads/run-reads', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('@/server/storage/reads/run-reads')
+  >()),
   keptRead: async (_reads: unknown, id: string) =>
     id === 'test'
       ? (await import('@/lib/engine/captured.fixture')).capturedRead()

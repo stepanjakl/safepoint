@@ -9,7 +9,7 @@ import {
   type KeptLimits,
   type Learned,
   type LimitsStore,
-} from '@/server/storage/model-limits';
+} from '@/server/storage/models/model-limits';
 
 import { heldFor, sentAgain } from './attempts';
 import { quotaOf, type Quota } from './quota';
@@ -21,7 +21,7 @@ import { quotaOf, type Quota } from './quota';
 
   Nothing can be asked of Google ahead of time: its limits are not in the model
   list or on a response. A refusal does state them, so they are learned from
-  refusals and kept in the database (server/storage/model-limits.ts), and a limit
+  refusals and kept in the database (server/storage/models/model-limits.ts), and a limit
   learned a week ago is learned afresh, so a raised one is found. A refusal
   naming another model than the one asked says the two share their quota,
   whatever the limit's name says; they are one group from then on.

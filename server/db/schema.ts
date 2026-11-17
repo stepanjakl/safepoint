@@ -143,7 +143,7 @@ export const sourceReads = pgTable(
     source: text('source').notNull(),
     readId: text('read_id').notNull(),
     readAt: instant('read_at').notNull(),
-    // The kept read (server/storage/source-reads.ts, keptSourceReadSchema).
+    // The kept read (server/storage/reads/source-reads.ts, keptSourceReadSchema).
     body: json('body').notNull(),
     createdAt: created(),
   },
@@ -343,7 +343,7 @@ export const RUN_STAGES = [
   A run: the instructions it runs under, the read it took and the accepted
   rulebook it pinned. What it has done is found from the rows that point
   back at it (decisions, applications), not kept on it twice
-  (server/storage/runs.ts). Never removed, and what it started with never
+  (server/storage/runs/runs.ts). Never removed, and what it started with never
   changes (a trigger, drizzle/0007_run_guard.sql); a discarded run is marked,
   not deleted. Its read has two scopes, as a proposal's does.
 */
@@ -415,7 +415,7 @@ export const runs = pgTable(
   has two scopes: `process`, the one it belongs to, and `read_process`, the
   one whose read it was made on (Brunch orders' direct process proposes on
   reads kept under `brunch-orders`); the same holds of cross_checks and
-  answer_parts. server/storage/run-reads.ts says which.
+  answer_parts. server/storage/reads/run-reads.ts says which.
 */
 export const proposals = pgTable(
   'proposals',
@@ -673,7 +673,7 @@ export const APPLICATION_STATUSES = [
 const STANDING = `('pending', 'verified', 'mismatch')`;
 
 /*
-  A write to the process's output and its undo (server/storage/applications.ts).
+  A write to the process's output and its undo (server/storage/writes/applications.ts).
   Kept as pending before the write, then settled; what was written never
   changes and the status moves only forward (a trigger). A run key has at most
   one standing write, so two instances cannot both write for one run. A write
@@ -813,7 +813,7 @@ export const jobs = pgTable(
 );
 
 /*
-  What is learned of a model's limits (server/storage/model-limits.ts), one
+  What is learned of a model's limits (server/storage/models/model-limits.ts), one
   row per model. Not scoped by process: a quota belongs to the API key, which
   every process shares.
 */
@@ -865,7 +865,7 @@ export const ATTEMPT_OUTCOMES = [
 ] as const;
 
 /*
-  One row per model call (server/storage/model-attempts.ts): what it was
+  One row per model call (server/storage/models/model-attempts.ts): what it was
   for, on what, which model, how it ended, how long and how many tokens.
   What was asked and what came back are summaries (sizes, counts, keys),
   never the prompt or the answer: both hold the data and the instructions.

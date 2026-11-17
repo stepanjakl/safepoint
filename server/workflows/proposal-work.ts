@@ -6,8 +6,12 @@ import {
   answerBatch,
   finishProposal,
   proposalBatches,
-} from '@/server/storage/proposals';
-import { loadRevision, loadSet, ownerFor } from '@/server/storage/rulebooks';
+} from '@/server/storage/reads/proposals';
+import {
+  loadRevision,
+  loadSet,
+  ownerFor,
+} from '@/server/storage/rules/rulebooks';
 
 import { inStep, instructionsOf, readOf, settle } from './in-step';
 import { standInsFor } from './stand-ins';
@@ -20,7 +24,7 @@ import type { Outcome, ProposalRun } from './types';
   and may be done twice: a batch builds on the part already kept
   (`answer_parts`) and asks only for the records it does not answer, and the
   whole is kept once, at the instant the run chose for it
-  (server/storage/proposals.ts).
+  (server/storage/reads/proposals.ts).
 */
 
 const STARTING = { step: '', error: null, running: true };

@@ -11,9 +11,12 @@ import {
   proposalPartSchema,
   proposalSchema,
 } from '@/lib/engine/types';
-import { crossCheckPartSchema, crossCheckSchema } from './cross-checks';
-import { keptLimitsSchema } from './model-limits';
-import { keptSourceReadSchema } from './source-reads';
+import {
+  crossCheckPartSchema,
+  crossCheckSchema,
+} from '@/server/storage/reads/cross-checks';
+import { keptLimitsSchema } from '@/server/storage/models/model-limits';
+import { keptSourceReadSchema } from '@/server/storage/reads/source-reads';
 
 /*
   What the server has kept in data/ (gitignored) is history: each file must

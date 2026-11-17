@@ -6,14 +6,14 @@ import { ModelsResting } from '@/lib/engine/calls';
 import { draftProgressSchema, type DraftProgress } from '@/lib/engine/types';
 import { noteJob, readJob } from '@/server/jobs/run-job';
 import { processOfDefinitions } from '@/server/operations/kept-processes';
-import { keptRead, READ_GONE } from '@/server/storage/run-reads';
-import { versionByHash } from '@/server/storage/instructions';
+import { keptRead, READ_GONE } from '@/server/storage/reads/run-reads';
+import { versionByHash } from '@/server/storage/rules/instructions';
 import {
   attemptRecorder,
   triesSoFar,
   type AttemptContext,
   type Recorder,
-} from '@/server/storage/model-attempts';
+} from '@/server/storage/models/model-attempts';
 
 import type { JobRun, Outcome } from './types';
 

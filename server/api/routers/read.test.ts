@@ -5,7 +5,7 @@ import { inScratchDatabase } from '@/lib/engine/scratch.fixture';
 import { readWholeSheet, type SheetRead } from '@/lib/sheets/composio';
 import { reads } from '@/server/db/schema';
 import { ensureProcess } from '@/server/db/scope';
-import { READ_GONE } from '@/server/storage/run-reads';
+import { READ_GONE } from '@/server/storage/reads/run-reads';
 
 import { appRouter } from '../root';
 

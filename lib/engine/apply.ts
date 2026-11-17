@@ -29,7 +29,7 @@ import type {
   (`DataShape.source`). Every address is the source's own (`sourceOf`).
 
   What is worked out here, and read back, is the engine's. Keeping the record
-  of a write, writing it and undoing it are server/storage/applications.ts.
+  of a write, writing it and undoing it are server/storage/writes/applications.ts.
 */
 
 export type OutputSheet = {

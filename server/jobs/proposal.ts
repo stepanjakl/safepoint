@@ -11,7 +11,7 @@ import {
 } from '@/lib/engine/types';
 import type { Resolve } from '@/lib/engine/calls';
 import type { DraftingModel } from '@/lib/models';
-import { runKeyOf } from '@/server/storage/proposals';
+import { runKeyOf } from '@/server/storage/reads/proposals';
 import { proposalWorkflow } from '@/server/workflows/proposal';
 import { holdStandIns } from '@/server/workflows/stand-ins';
 

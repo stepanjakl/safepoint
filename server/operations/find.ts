@@ -3,7 +3,7 @@ import 'server-only';
 import { foundDefinitions, type Asking } from '@/lib/engine/find';
 import type { KeptRead } from '@/lib/engine/records';
 import type { DefinitionProcess, DefinitionSet } from '@/lib/engine/types';
-import { saveSet } from '@/server/storage/rulebooks';
+import { saveSet } from '@/server/storage/rules/rulebooks';
 
 /*
   Server-only. Finding, kept: the engine reads the instructions

@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { answerParts } from '@/server/db/schema';
-import { keptProposal, propose } from '@/server/storage/proposals';
+import { keptProposal, propose } from '@/server/storage/reads/proposals';
 
 import { capturedRead, capturedTabs } from './captured.fixture';
 import { always, call, standIn, told } from './models.fixture';

@@ -8,8 +8,8 @@ import {
 } from '@/server/operations/kept-processes';
 import { runKeyOfKept } from '@/server/operations/record-decisions';
 import { runIdSchema } from '@/server/storage/ids';
-import { keepProposal } from '@/server/storage/proposals';
-import { runOrRefuse } from '@/server/storage/runs';
+import { keepProposal } from '@/server/storage/reads/proposals';
+import { runOrRefuse } from '@/server/storage/runs/runs';
 
 export const runtime = 'nodejs';
 

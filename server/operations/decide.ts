@@ -34,7 +34,7 @@ import {
   putRevision,
   updateSet,
   type RuleDecision,
-} from '@/server/storage/rulebooks';
+} from '@/server/storage/rules/rulebooks';
 
 /*
   Server-only. A person's decisions, kept on the rulebook. Confirming the

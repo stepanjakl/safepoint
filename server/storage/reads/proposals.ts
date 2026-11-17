@@ -24,8 +24,8 @@ import { proposals } from '@/server/db/schema';
 
 import { readProcessOf } from './run-reads';
 import { dropPart, keepPart, keptPart } from './answer-parts';
-import type { RunKey } from './run-key';
-import { parseStored } from './stored';
+import type { RunKey } from '@/server/storage/run-key';
+import { parseStored } from '@/server/storage/stored';
 
 /*
   Kept in the `proposals` table by read and rulebook, each written whole and

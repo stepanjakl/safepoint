@@ -4,7 +4,7 @@ import { wrapLanguageModel, type LanguageModel } from 'ai';
 
 /*
   What the engine says of each model call, for whoever is given to record it
-  (server/storage/model-attempts.ts keeps it in `model_attempts`). The engine
+  (server/storage/models/model-attempts.ts keeps it in `model_attempts`). The engine
   only reports: a call made with no `record` is made exactly as before, and a
   recorder that fails never touches the call.
 

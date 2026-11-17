@@ -30,10 +30,10 @@ import {
   rulebookRevisions,
 } from '@/server/db/schema';
 
-import { StoredFileError } from './files';
-import { Refused } from './refused';
+import { StoredFileError } from '@/server/storage/files';
+import { Refused } from '@/server/storage/refused';
 import { seedRulebooks } from './rulebook-files';
-import { parseStored } from './stored';
+import { parseStored } from '@/server/storage/stored';
 
 /*
   Server-only. A process's rulebooks and data profile, in the database

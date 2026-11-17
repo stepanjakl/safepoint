@@ -31,9 +31,9 @@ import {
   type RunReads,
 } from '@/server/operations/kept-processes';
 
-import { readKept, writeKept } from './files';
-import { FILE_ID } from './ids';
-import { parseStored } from './stored';
+import { readKept, writeKept } from '@/server/storage/files';
+import { FILE_ID } from '@/server/storage/ids';
+import { parseStored } from '@/server/storage/stored';
 
 /*
   Server-only. A run reads the sheet once, and every later step uses that

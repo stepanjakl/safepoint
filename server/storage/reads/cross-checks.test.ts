@@ -5,7 +5,7 @@ import { inScratchDatabase } from '@/lib/engine/scratch.fixture';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { answerParts, crossChecks } from '@/server/db/schema';
 
-import { keepStandInRead } from './reads.fixture';
+import { keepStandInRead } from '@/server/storage/reads.fixture';
 import { keepPart, keptPart } from './answer-parts';
 import {
   crossCheckPartSchema,

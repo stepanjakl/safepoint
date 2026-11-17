@@ -12,9 +12,9 @@ import {
   crossCheck,
   keepCrossCheck,
   keptCrossCheck,
-} from '@/server/storage/cross-checks';
-import { attemptRecorder } from '@/server/storage/model-attempts';
-import { putRevision } from '@/server/storage/rulebooks';
+} from '@/server/storage/reads/cross-checks';
+import { attemptRecorder } from '@/server/storage/models/model-attempts';
+import { putRevision } from '@/server/storage/rules/rulebooks';
 
 import { runFields, runProcedure, staleReply } from '../run-procedure';
 import { router } from '../trpc';

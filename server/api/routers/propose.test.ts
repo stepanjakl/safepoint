@@ -8,8 +8,8 @@ import { keepStandInRead } from '@/server/storage/reads.fixture';
 import { TEXT } from '@/lib/engine/set.fixture';
 import { proposalSchema } from '@/lib/engine/types';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
-import { keepProposal } from '@/server/storage/proposals';
-import { putRevision } from '@/server/storage/rulebooks';
+import { keepProposal } from '@/server/storage/reads/proposals';
+import { putRevision } from '@/server/storage/rules/rulebooks';
 
 import {
   accepted,
@@ -28,8 +28,10 @@ vi.mock('@/server/jobs/proposal', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/server/jobs/proposal')>()),
   startProposal: start,
 }));
-vi.mock('@/server/storage/run-reads', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/server/storage/run-reads')>()),
+vi.mock('@/server/storage/reads/run-reads', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('@/server/storage/reads/run-reads')
+  >()),
   keptRead: async (_reads: unknown, id: string) =>
     id === 'test'
       ? (await import('@/lib/engine/captured.fixture')).capturedRead()

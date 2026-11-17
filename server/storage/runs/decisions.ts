@@ -14,11 +14,11 @@ import {
 import { database, type Database } from '@/server/db/client';
 import { recordDecisions } from '@/server/db/schema';
 
-import { latestRow } from './application-rows';
-import { recordOf } from './applications';
-import { Refused } from './refused';
-import { lockRunKey, type RunKey } from './run-key';
-import { parseStored } from './stored';
+import { latestRow } from '@/server/storage/writes/application-rows';
+import { recordOf } from '@/server/storage/writes/applications';
+import { Refused } from '@/server/storage/refused';
+import { lockRunKey, type RunKey } from '@/server/storage/run-key';
+import { parseStored } from '@/server/storage/stored';
 
 /*
   Server-only. A person's decisions on the records of a proposal, in

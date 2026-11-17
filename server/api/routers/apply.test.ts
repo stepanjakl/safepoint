@@ -11,11 +11,14 @@ import {
   BRUNCH_ORDERS_DEFINITIONS as owner,
   brunchOrdersProcess,
 } from '@/lib/processes/brunch-orders/process';
-import { applyDecisions, keptApplication } from '@/server/storage/applications';
-import { keepProposal } from '@/server/storage/proposals';
-import { memorySheet } from '@/server/storage/sheet.fixture';
+import {
+  applyDecisions,
+  keptApplication,
+} from '@/server/storage/writes/applications';
+import { keepProposal } from '@/server/storage/reads/proposals';
+import { memorySheet } from '@/server/storage/writes/sheet.fixture';
 import { keepText } from '@/lib/engine/set.fixture';
-import { putRevision } from '@/server/storage/rulebooks';
+import { putRevision } from '@/server/storage/rules/rulebooks';
 import { applications as applicationRows } from '@/server/db/schema';
 
 import {
@@ -37,9 +40,9 @@ import {
 // memory and the reads the captured one: nothing reaches the network.
 
 const held = vi.hoisted(() => ({ sheet: null as unknown as OutputSheet }));
-vi.mock('@/server/storage/run-reads', async (importOriginal) => {
+vi.mock('@/server/storage/reads/run-reads', async (importOriginal) => {
   const actual =
-    await importOriginal<typeof import('@/server/storage/run-reads')>();
+    await importOriginal<typeof import('@/server/storage/reads/run-reads')>();
   const { capturedRead } = await import('@/lib/engine/captured.fixture');
   const reads: Record<string, { id: string; source: string }> = {
     live: { id: 'live', source: 'Live read through Composio at Thursday' },

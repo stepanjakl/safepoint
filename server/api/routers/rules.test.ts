@@ -22,7 +22,7 @@ import {
   loadSet,
   putRevision,
   saveProfile,
-} from '@/server/storage/rulebooks';
+} from '@/server/storage/rules/rulebooks';
 
 import { modelAttempts } from '@/server/db/schema';
 
@@ -37,8 +37,10 @@ const { startDraft, startRewrite, model } = vi.hoisted(() => ({
   startRewrite: vi.fn(),
   model: { current: null as unknown },
 }));
-vi.mock('@/server/storage/run-reads', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/server/storage/run-reads')>()),
+vi.mock('@/server/storage/reads/run-reads', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('@/server/storage/reads/run-reads')
+  >()),
   keptRead: async (_reads: unknown, id: string) =>
     id === 'test'
       ? (await import('@/lib/engine/captured.fixture')).capturedRead()

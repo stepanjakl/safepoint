@@ -5,7 +5,7 @@ import {
   crossCheck,
   keepCrossCheck,
   keptCrossCheck,
-} from '@/server/storage/cross-checks';
+} from '@/server/storage/reads/cross-checks';
 
 import { calculate } from './calculate';
 import { capturedRead } from './captured.fixture';

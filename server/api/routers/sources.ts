@@ -10,7 +10,7 @@ import {
   latestSummary,
   readSource,
   sourceValues,
-} from '@/server/storage/source-reads';
+} from '@/server/storage/reads/source-reads';
 
 import { gatedProcedure, router } from '../trpc';
 

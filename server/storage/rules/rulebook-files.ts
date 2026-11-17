@@ -27,7 +27,7 @@ import {
 } from '@/server/db/schema';
 import { keptProcesses } from '@/server/operations/kept-processes';
 
-import { StoredFileError, writeKept } from './files';
+import { StoredFileError, writeKept } from '@/server/storage/files';
 import { ensureDeclared } from './instructions';
 
 /*

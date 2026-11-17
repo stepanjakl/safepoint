@@ -3,7 +3,7 @@
 
   Writes the rulebooks and data profiles the database holds back to
   fixtures/, the copy reviewed in git, in its layout and serialisation
-  (server/storage/rulebook-files.ts): commit what it changes. It opens the
+  (server/storage/rules/rulebook-files.ts): commit what it changes. It opens the
   database the app would (server/db/client.ts): DATABASE_URL, else PGlite at
   data/pglite/, which `pnpm dev` must not hold. Each process with a folder in
   fixtures/ is first seeded with what the database lacks of it, as the app
@@ -23,7 +23,7 @@ import { driverFor, open } from '../server/db/client.ts';
 import {
   exportRulebooks,
   seedRulebooks,
-} from '../server/storage/rulebook-files.ts';
+} from '../server/storage/rules/rulebook-files.ts';
 
 const args = process.argv.slice(2);
 let to = path.join(process.cwd(), 'fixtures');

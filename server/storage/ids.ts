@@ -16,7 +16,7 @@ export const READ_ID = /^[\w-]{1,80}$/;
 export const readIdSchema = z.string().regex(READ_ID);
 
 // A run's id as a request carries it. The server makes each one
-// (server/storage/runs.ts); the shape is the table's check.
+// (server/storage/runs/runs.ts); the shape is the table's check.
 export const runIdSchema = z.string().regex(READ_ID);
 
 // An accepted rulebook's id.

@@ -11,7 +11,7 @@ import { ensureProcess } from '@/server/db/scope';
 import { instructionVersions } from '@/server/db/schema';
 import type { KeptProcess } from '@/server/operations/kept-processes';
 
-import { Refused } from './refused';
+import { Refused } from '@/server/storage/refused';
 
 /*
   Server-only. A process's instruction versions, in `instruction_versions`,

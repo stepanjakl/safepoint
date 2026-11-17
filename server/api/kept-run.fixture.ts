@@ -12,9 +12,9 @@ import {
   brunchOrdersProcess,
 } from '@/lib/processes/brunch-orders/process';
 import type { Database } from '@/server/db/client';
-import { keepProposal } from '@/server/storage/proposals';
+import { keepProposal } from '@/server/storage/reads/proposals';
 import { keepStandInRead } from '@/server/storage/reads.fixture';
-import { putRevision } from '@/server/storage/rulebooks';
+import { putRevision } from '@/server/storage/rules/rulebooks';
 
 import { accepted, caller, keepAsCurrent } from './run.fixture';
 

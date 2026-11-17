@@ -10,7 +10,7 @@ import type { DefinitionProcess, DefinitionSet } from '@/lib/engine/types';
 import { draftingModelSchema } from '@/lib/models';
 import { proposalProgress, startProposal } from '@/server/jobs/proposal';
 import { evaluationSchema } from '@/server/operations/kept-processes';
-import { keptProposal } from '@/server/storage/proposals';
+import { keptProposal } from '@/server/storage/reads/proposals';
 
 import { runFields, runProcedure, staleReply } from '../run-procedure';
 import { router } from '../trpc';

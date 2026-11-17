@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import { interpretCell } from '@/lib/sheets/field-types';
-import { applyDecisions, undoApplication } from '@/server/storage/applications';
-import { crossCheck } from '@/server/storage/cross-checks';
+import {
+  applyDecisions,
+  undoApplication,
+} from '@/server/storage/writes/applications';
+import { crossCheck } from '@/server/storage/reads/cross-checks';
 import {
   accept,
   choose,
@@ -13,7 +16,7 @@ import {
 } from '@/server/operations/decide';
 import { findKept } from './set.fixture';
 import { writeAgreed, writeDefinition } from '@/server/operations/write';
-import { propose } from '@/server/storage/proposals';
+import { propose } from '@/server/storage/reads/proposals';
 import {
   listRevisions,
   loadConfirmedProfile,
@@ -22,7 +25,7 @@ import {
   ownerToDraft,
   saveProfile,
   updateSet,
-} from '@/server/storage/rulebooks';
+} from '@/server/storage/rules/rulebooks';
 
 import { prepareWrite } from './apply';
 import type { DecisionMade, OutputSheet } from './apply';

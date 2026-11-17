@@ -2,7 +2,7 @@
   What a process declares for the data its runs read, in a shape no process
   owns. The server keeps a run's read under `process`, reads the source's
   `tabs` into it, and falls back to the `captured` copy where there is no
-  network (server/storage/run-reads.ts).
+  network (server/storage/reads/run-reads.ts).
 */
 export type RunReads = {
   // The process whose `reads` rows a run's read is kept under.

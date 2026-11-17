@@ -16,9 +16,9 @@ import { modelAttempts } from '@/server/db/schema';
 import { proposalProgress, startProposal } from '@/server/jobs/proposal';
 
 import { attemptRecorder } from './model-attempts';
-import { propose } from './proposals';
-import { keepRead, keepStandInRead } from './reads.fixture';
-import { saveSet } from './rulebooks';
+import { propose } from '@/server/storage/reads/proposals';
+import { keepRead, keepStandInRead } from '@/server/storage/reads.fixture';
+import { saveSet } from '@/server/storage/rules/rulebooks';
 
 /*
   Each model call recorded in `model_attempts`, with what it was part of, on

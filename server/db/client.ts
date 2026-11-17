@@ -204,7 +204,7 @@ export function useDatabaseInTests(db: Database | null) {
 
 /*
   Runs `task` once per key for the database this process has open (seeding
-  rulebooks from fixtures/, server/storage/rulebook-files.ts), and answers
+  rulebooks from fixtures/, server/storage/rules/rulebook-files.ts), and answers
   every later call with the same promise. A task that fails is forgotten,
   so the next call tries it again and fails as loudly. Forgotten too when
   the database is closed or a test hands one in; a database reset under a
