@@ -9,6 +9,9 @@ export type WorkbenchEntry = {
   title: string;
   // One line: what the page shows.
   summary: string;
+  // The page draws a frame of its own, so the breadcrumb bar is not added
+  // above it, and it carries its own way back.
+  framed?: true;
 };
 
 export type WorkbenchGroup = {
@@ -153,6 +156,13 @@ export const WORKBENCH_GROUPS: readonly WorkbenchGroup[] = [
     summary:
       'Earlier prototypes, brought back from the archive and kept as they were: not maintained, and nothing else depends on them.',
     entries: [
+      {
+        href: '/workbench/history/promotion',
+        title: 'Promotion run',
+        summary:
+          'The original product idea: a promotion-release review run in the shell, from a recorded replay.',
+        framed: true,
+      },
       {
         href: '/workbench/history/policy',
         title: 'Policy workbench',

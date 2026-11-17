@@ -204,7 +204,11 @@ const config = [
       'components/prototype/**/*.{ts,tsx}',
       'app/workbench/history/**/*.{ts,tsx}',
     ],
-    ignores: ['**/*.test.{ts,tsx}', 'app/workbench/history/**/page.tsx'],
+    ignores: [
+      '**/*.test.{ts,tsx}',
+      // Server components: they render on the server and may read it.
+      'app/workbench/history/**/{page,layout}.tsx',
+    ],
     rules: {
       'no-restricted-imports': 'off',
       '@typescript-eslint/no-restricted-imports': ['error', client([], true)],

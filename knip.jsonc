@@ -8,11 +8,7 @@
   ],
   // The prototype history is kept as it was and not maintained (see the fence
   // in eslint.config.mjs): what it exports and does not use is left alone.
-  "ignore": [
-    "app/workbench/history/**",
-    "components/prototype/**",
-    "lib/prototype/**",
-  ],
+  "ignore": ["components/prototype/**", "lib/prototype/**"],
   "ignoreDependencies": [
     // Imported by tweakpane's type declarations, which do not depend on it.
     "@tweakpane/core",

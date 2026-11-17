@@ -78,3 +78,5 @@
 
 /* The prototype history, after everything current (fenced; see eslint.config.mjs). */
 @import '../workbench/history/explore/review-explorer.css';
+@import '../../components/prototype/review/release-card.css';
+@import '../../components/prototype/review/review-queue.css';

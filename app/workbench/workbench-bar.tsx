@@ -15,6 +15,7 @@ export function WorkbenchBar() {
   const pathname = usePathname();
   const here = workbenchEntryAt(pathname);
   const onMenu = pathname === WORKBENCH_HOME;
+  if (here?.entry.framed) return null;
 
   return (
     <div className="bg-canvas text-primary flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-6 pt-4">
