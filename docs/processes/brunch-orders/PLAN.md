@@ -104,7 +104,7 @@ Each phase ends when it works on the captured read and its page test passes.
 ## Phase 1 in detail
 
 **Process.** "Brunch orders" in the sidebar, at
-`/examples/brunch-orders`. The spreadsheet was cleaned on 8 October to its
+`/processes/brunch-orders`. The spreadsheet was cleaned on 8 October to its
 data tabs: Products, Stock, Sales, Deliveries and Parameters (About, Promotion,
 Kit, Offers, Rules, Notes and Checks were deleted, and the kit's row of
 Parameters cleared; a copy of the sheet before is kept outside the repository).
@@ -159,10 +159,11 @@ its tab is gone:
 and close it from the keyboard, reload and find the run where it was; an
 accessibility scan of the thread and the drawer.
 
-**Built.** `lib/processes/brunch-orders/` (the process, its v1 instructions and
-the kept reads), `components/engine/` (the run's thread and the data
+**Built.** `lib/processes/brunch-orders/` (the process, its v1 instructions, the
+data it reads and its steps), `components/processes/brunch-orders/` (the
+two run screens), `components/engine/` (the generic screens and the data
 drawer), `server/api/routers/read.ts` and
-`app/(shell)/examples/brunch-orders/`. A live run is a shell feature any
+`app/(shell)/processes/brunch-orders/`. A live run is a shell feature any
 process can use: `liveThread` on `ProcessView`, kept by
 `components/app-shell/runs/live-runs-store.ts`. Page test:
 `e2e/brunch-orders.spec.ts`.
@@ -340,8 +341,10 @@ After the review of 8 October the engine moved out of Brunch orders into
 | `draft.ts`            | A whole draft as a server-side job with its progress                                                                             |
 | `calculate.ts`        | Every accepted calculation for every record; the model's independent cross-check, kept by read and rulebook                      |
 
-Brunch orders keeps only what is its own: `process.ts` (the instructions,
-steps, `SUBJECT` with its `DataShape`) and `reads.ts` (reading its sheet).
+Brunch orders keeps only what is its own, in `lib/processes/brunch-orders/`:
+`process.ts` (ids, instructions, summaries), `data.ts` (`SUBJECT` with its
+`DataShape`, the tabs and the captured read) and `steps.ts`; the server reaches
+it through `server/operations/kept-processes.ts`.
 A read that does not fit the declaration is shown in the Read step and is
 not drafted on.
 

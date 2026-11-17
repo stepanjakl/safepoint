@@ -639,7 +639,7 @@ layout centres the icon in its own column and does not carry a rail marker.
 For numbers rather than eyes, start `pnpm dev` and run:
 
 ```
-pnpm check:rail             # the default: /examples/brunch-orders, processes level
+pnpm check:rail             # the default: /processes/brunch-orders, processes level
 pnpm check:rail -- --level all --self-test
 ```
 

@@ -234,7 +234,7 @@ Those versions describe the [repository configuration](../../package.json), not 
 ```text
 app/
   (shell)/                    Pages sharing the persistent application shell
-    examples/
+    processes/
       promotion/              Recorded promotion review
       brunch-orders/          Active development process
   api/

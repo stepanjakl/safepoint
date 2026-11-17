@@ -148,7 +148,12 @@ formulas (the Brunch orders process; `docs/processes/brunch-orders/PLAN.md` →
 The engine, as built). It must stay process-agnostic: no scenario word in its
 code or prompts. A process supplies everything specific through its
 `DefinitionProcess` (`SUBJECT` and its `DataShape`, typed in
-`lib/engine/subject.ts`). Prompt examples use
+`lib/engine/subject.ts`), declared in `lib/processes/<process>/` and handed on:
+`components/engine/` screens receive the subject as props from the run screen
+in `components/processes/<process>/`, and `server/` reaches a process only
+through the registry, `server/operations/kept-processes.ts`; ESLint refuses an
+import of `@/lib/processes` from `lib/engine/`, `components/engine/` and the
+rest of `server/`. Prompt examples use
 placeholders such as `values.<id>`, because a real example steers the model.
 
 - **Saved model output is a contract.** Variable names and value
