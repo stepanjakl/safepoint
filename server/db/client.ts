@@ -113,6 +113,16 @@ export async function open(
   let opened: Opened;
   if (driver.kind === 'node-postgres') {
     const pool = poolFor(driver.url);
+    // On Fluid compute an instance is suspended between requests. Attached,
+    // the pool's idle connections are released before that, held open by
+    // waitUntil for no longer than their idle timeout; unattached, they sit
+    // on Neon's side until it drops them. It does nothing outside a request
+    // on Vercel, and is not loaded anywhere else.
+    if (process.env.VERCEL) {
+      const { attachDatabasePool } =
+        await import('@vercel/functions/db-connections');
+      attachDatabasePool(pool);
+    }
     const db = overPool({ client: pool, schema });
     opened = {
       db,

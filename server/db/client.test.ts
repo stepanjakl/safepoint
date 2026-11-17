@@ -4,6 +4,7 @@ import path from 'node:path';
 import { PGlite } from '@electric-sql/pglite';
 import { sql } from 'drizzle-orm';
 import { Pool } from 'pg';
+import { attachDatabasePool } from '@vercel/functions/db-connections';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -23,6 +24,11 @@ import {
 } from './client';
 import { dropEverything, RESETTABLE, resetRefusal } from './reset';
 import { processes } from './schema';
+
+// Only the call is asserted: the package works inside a Vercel request.
+vi.mock('@vercel/functions/db-connections', () => ({
+  attachDatabasePool: vi.fn(),
+}));
 
 /*
   Which driver the app opens, without reaching any server: a URL that
@@ -46,6 +52,7 @@ describe('the driver', () => {
   const scratch = inScratchDirectory();
   afterEach(async () => {
     vi.unstubAllEnvs();
+    vi.clearAllMocks();
     await closeDatabase();
   });
 
@@ -128,6 +135,21 @@ describe('the driver', () => {
     // The same one for the life of the process.
     expect(await database()).toBe(db);
     expect(existsSync(path.join(scratch(), 'data'))).toBe(false);
+  });
+
+  it('attaches the pool to Vercel only when running there', async () => {
+    vi.stubEnv('DATABASE_URL', UNREACHABLE);
+    const away = await database();
+    expect(attachDatabasePool).not.toHaveBeenCalled();
+    await closeDatabase();
+
+    vi.stubEnv('VERCEL', '1');
+    const db = await database();
+    expect(attachDatabasePool).toHaveBeenCalledOnce();
+    expect(attachDatabasePool).toHaveBeenCalledWith(
+      (db as unknown as { $client: Pool }).$client,
+    );
+    expect(db).not.toBe(away);
   });
 
   it('reports an unreachable server when asked, not before', async () => {

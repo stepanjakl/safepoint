@@ -50,6 +50,7 @@
     "@trpc/client": "11.28.0",
     "@trpc/server": "11.28.0",
     "@trpc/tanstack-react-query": "11.28.0",
+    "@vercel/functions": "3.11.3",
     "ai": "7.0.159",
     "blode-icons-react": "^1.0.1",
     "drizzle-orm": "0.45.4",
