@@ -187,49 +187,12 @@ test('a run can start with additional instructions that stay with it', async ({
   await expect(request).toBeVisible();
 });
 
-test('runs this browser kept before the server did are said once, and the notice can be dismissed', async ({
+test('a run id the list does not hold selects nothing, and leaves the address', async ({
   page,
 }) => {
-  const earlier = (processId: string) => ({
-    [processId]: [{ run: { id: 'run-1790000000000' }, data: {} }],
-  });
-  await page.addInitScript(
-    (kept) => {
-      // Seeded once: a dismissal that wrote the key must not be undone.
-      if (!localStorage.getItem('safepoint.live-runs.v1'))
-        localStorage.setItem('safepoint.live-runs.v1', JSON.stringify(kept));
-    },
-    { ...earlier('brunch-orders'), ...earlier('brunch-orders-direct') },
-  );
-  await page.goto('/examples/brunch-orders');
-  const note = page.getByRole('note').filter({
-    hasText: 'Runs started before today were kept only in this browser',
-  });
-  await expect(note).toContainText(
-    'Anything they wrote to the sheet is still there, with its record.',
-  );
-  // An old run's id selects nothing, and leaves the address without it.
   await page.goto('/examples/brunch-orders?run=run-1790000000000');
   await expect(heading(page)).toHaveText('No run selected');
   await expect(page).not.toHaveURL(/run=/);
-  await note.getByRole('button', { name: 'Dismiss' }).click();
-  await expect(note).toHaveCount(0);
-  // Only this process's entry goes: the other is still to be said.
-  const left = await page.evaluate(() =>
-    Object.keys(
-      JSON.parse(localStorage.getItem('safepoint.live-runs.v1') ?? '{}'),
-    ),
-  );
-  expect(left).toEqual(['brunch-orders-direct']);
-  await page.reload();
-  await expect(heading(page)).toHaveText('No run selected');
-  await expect(note).toHaveCount(0);
-  await page.goto('/examples/brunch-orders-direct');
-  await expect(
-    page
-      .getByRole('note')
-      .filter({ hasText: 'Runs started before today were kept only' }),
-  ).toBeVisible();
 });
 
 test('a boundary shows what moved between two runs, together when no run sits between them', async ({

@@ -168,7 +168,7 @@
   /* Under a boundary band the line is the band's own lower edge, so it runs
      the band's full width, as the band's top edge does. */
   .sheet-list > li:has(> .sheet-break) + li {
-    border-top: var(--section-rule-width) solid var(--sp-raised-ring);
+    border-top: 1px solid var(--sp-raised-ring);
   }
   .sheet-list > li:has(> .sheet-break) + li::before {
     display: none;
@@ -206,8 +206,10 @@
     @apply ground-band;
     background: var(--sp-surface-band);
     /* Carry the lit line below the rule on the header itself so it stays
-       visible with any following content and while the header is sticky. */
-    border-bottom: var(--section-rule-width) solid var(--sp-raised-ring);
+       visible with any following content and while the header is sticky.
+       The row rules' weight; .instruction-band centres its controls on it. */
+    --sheet-head-rule: 1px;
+    border-bottom: var(--sheet-head-rule) solid var(--sp-raised-ring);
     transition: box-shadow var(--duration-state) ease-out;
   }
   /* The lit line. A band on the swap's overlay (sheet-chrome.ts) always draws
@@ -264,7 +266,7 @@
     padding: 0.3125rem var(--spacing-sheet-inset);
     padding-inline: calc(var(--spacing-sheet-inset) + var(--sheet-bleed, 0px))
       calc(var(--spacing-sheet-inset) + var(--sheet-bleed-end, 0px));
-    border-top: var(--section-rule-width) solid var(--sp-raised-ring);
+    border-top: 1px solid var(--sp-raised-ring);
     @apply ground-band;
     background: var(--sp-surface-band);
     color: var(--sp-text-muted);

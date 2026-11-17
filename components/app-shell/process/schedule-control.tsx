@@ -13,6 +13,7 @@ import {
   scheduleLabel,
   type ProcessSchedule,
 } from '@/lib/shell/schedule';
+import { cx } from '@/lib/cx';
 import { useProcessSchedule } from './schedule-store';
 
 const CADENCES = [
@@ -70,6 +71,7 @@ export function ScheduleControl({
           <ScheduleFields
             schedule={schedule}
             update={update}
+            ruled
             title={
               <Heading
                 slot="title"
@@ -94,16 +96,25 @@ export function ScheduleFields({
   schedule,
   update,
   title,
+  ruled = false,
 }: {
   schedule: ProcessSchedule;
   update: ReturnType<typeof useProcessSchedule>[1];
+  // A rule under the title, where nothing else divides it from the fields: the
+  // popover. In Settings the section's own rules already do.
+  ruled?: boolean;
   // The heading, which is the popover's dialog title in one place and a
   // section heading in the other.
   title: ReactNode;
 }) {
   return (
     <>
-      <div className="border-rule-faint border-b-section flex items-center gap-3 pb-3">
+      <div
+        className={cx(
+          'flex items-center gap-3',
+          ruled && 'border-rule-faint border-b-section pb-3',
+        )}
+      >
         {title}
         <Switch
           aria-label="Scheduled runs"

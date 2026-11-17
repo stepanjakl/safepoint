@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
+import { AgentationToolbar } from '@/components/dev/agentation-toolbar';
 import { DesignControls } from '@/components/dev/design-controls';
 import { DesignPreferencesScript } from '@/components/dev/design-preferences-script';
 import { StyleInspector } from '@/components/dev/style-inspector';
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <QueryProvider>{children}</QueryProvider>
         <DesignControls />
         <StyleInspector />
+        <AgentationToolbar />
       </body>
     </html>
   );

@@ -50,6 +50,8 @@ try {
     if (localStorage.getItem(names[1]) === null) localStorage.setItem(names[1], kept);
     localStorage.removeItem(names[0]);
   });
+  // Runs kept in the browser before the server kept them (until 16 Nov 2026).
+  localStorage.removeItem('safepoint.live-runs.v1');
 } catch (error) {}
 var params = new URLSearchParams(location.search);
 var neutrals = ${JSON.stringify(NEUTRALS)};

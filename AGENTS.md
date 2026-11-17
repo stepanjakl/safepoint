@@ -239,6 +239,27 @@ Browser storage keys are `safepoint.<thing>.v<N>`, versioned so a change of
 shape starts afresh; development preferences are `safepoint.dev.<thing>`.
 Window events are `safepoint:<thing>`.
 
+## Annotations from the browser (Agentation)
+
+In development the owner annotates the running app with the Agentation toolbar
+(`components/dev/agentation-toolbar.tsx`); `pnpm dev` starts its server on port
+4747 (`scripts/dev.ts`), and the `agentation` MCP server reads it. When asked to
+**wait for**, **watch** or **take** annotations:
+
+1. Run `pnpm agentation:wait` in the background. It blocks until the owner
+   presses Send Annotations, then prints the batch (id, comment, element,
+   source file, page) and exits 0. Exit 2 means the server is down: ask for
+   `pnpm dev`.
+2. For each annotation: `agentation_acknowledge`, make the change and verify it
+   as the table below requires, then `agentation_resolve` with a one-line
+   summary. When a note is unclear, `agentation_reply` with the question
+   rather than guessing; use `agentation_dismiss` with a reason for one you will
+   not act on.
+3. Report briefly, then start `pnpm agentation:wait` again unless told to stop.
+
+"Check my annotations" without waiting means `agentation_get_all_pending` now.
+Annotations are held in memory, so they last as long as `pnpm dev`.
+
 ## Verification matched to the change
 
 `pnpm check:visual` compares every element's painted colours and box, in thirteen

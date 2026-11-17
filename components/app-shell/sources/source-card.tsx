@@ -59,7 +59,7 @@ const count = (n: number, one: string, many = `${one}s`) =>
   the 6-high Edit pill centres on a whole pixel and the two columns start on
   one line.
 */
-const BAND = 'border-rule-faint box-content min-h-10 border-b-section';
+const BAND = 'border-rule-faint box-content min-h-10';
 // The table heading's face, padded here rather than by DATA_TABLE_HEAD.
 const HEAD = DATA_TABLE_HEADING;
 // Name, rows, columns, and the row's own control.
@@ -271,7 +271,7 @@ function SourceFile({
 
   const table = (view?: (resource: string) => void) => (
     <div className={TABLE}>
-      <div className={cx(ROW, BAND, HEAD, 'pl-5')}>
+      <div className={cx(ROW, BAND, HEAD, 'border-b-section pl-5')}>
         <span aria-hidden>{kind.resource.singular}</span>
         <span aria-hidden className="justify-self-end">
           Rows
@@ -328,7 +328,7 @@ function SourceFile({
       <div className="border-rule-faint flex flex-col border-b lg:border-r lg:border-b-0">
         {/* Inset as the figures' rules are: its rule is their top one, on the
             table heading's line. */}
-        <div className={cx(BAND, 'mx-5 flex items-center')}>
+        <div className={cx(BAND, 'mx-5 flex items-center border-b')}>
           <h4
             id={titleId}
             className="text-dense text-primary leading-snug font-semibold"
