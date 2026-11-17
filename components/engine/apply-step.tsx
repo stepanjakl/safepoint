@@ -22,6 +22,7 @@ import {
 import { cx } from '@/lib/cx';
 import type { Application, CellChange } from '@/lib/engine/types';
 import type { DefinitionSubject } from '@/lib/engine/subject';
+import { sourceTermsOf } from '@/lib/sources/model';
 import type { AppRouter } from '@/server/api/root';
 
 import type { Decision } from './propose/types';
@@ -38,22 +39,21 @@ export type ApplyProgress = { status: Application['status'] | null };
 
 const STANDS: Application['status'][] = ['verified', 'mismatch'];
 
-const RESULT: Record<Application['status'], string> = {
-  pending:
-    'Not confirmed yet: this write has not been read back from the sheet.',
-  verified: 'Written, and read back from the sheet as written.',
-  mismatch:
-    'Written, but the sheet reads back differently. Check the cells below.',
-  failed: 'The write did not land, so the sheet is as it was.',
+// What each result says, in the words of the source the write goes to.
+const resultWords = (noun: string): Record<Application['status'], string> => ({
+  pending: `Not confirmed yet: this write has not been read back from the ${noun}.`,
+  verified: `Written, and read back from the ${noun} as written.`,
+  mismatch: `Written, but the ${noun} reads back differently. Check the cells below.`,
+  failed: `The write did not land, so the ${noun} is as it was.`,
   undone: 'Undone: the cells are back as they were.',
-};
+});
 
 const NO_LONGER_FIT =
   'The rules this run used no longer fit its read. Go back to Propose.';
 
 /*
   Apply: what the decided proposal writes to the output the process declares,
-  cell by cell, read from the sheet as it is now. The server decides whether it
+  cell by cell, read from the source as it is now. The server decides whether it
   can be written and works out what it writes; this only asks. A person
   confirms the write, sees it read back, and can undo it while the cells hold
   what was written.
@@ -157,6 +157,7 @@ export function ApplyStep({
   // Begun and not read back: it may have written, so it is not offered again.
   const unconfirmed = application?.status === 'pending';
   const output = subject.data.output;
+  const { noun, resource } = sourceTermsOf(subject.data.source);
   const count = (kind: Decision['kind']) =>
     Object.values(decisions).filter((d) => d.kind === kind).length;
   const changes =
@@ -174,7 +175,8 @@ export function ApplyStep({
         {output ? (
           <>
             {' '}
-            to the <span className="font-medium">{output.tab}</span> tab
+            to the <span className="font-medium">{output.tab}</span>{' '}
+            {resource.singular}
           </>
         ) : null}
         , cell by cell. Nothing is written until you confirm it.
@@ -201,7 +203,7 @@ export function ApplyStep({
         />
       ) : null}
       <p role="status" className="text-dense">
-        {application ? RESULT[application.status] : null}
+        {application ? resultWords(noun)[application.status] : null}
         {application?.error && application.status !== 'undone'
           ? ` ${application.error}`
           : null}
@@ -260,13 +262,13 @@ export function ApplyStep({
                     isDisabled={acting}
                     onPress={() => write([])}
                   >
-                    Write to the sheet
+                    Write to the {noun}
                   </Button>
                   <Button onPress={() => setConfirming(false)}>Cancel</Button>
                   <span className="text-meta text-muted">
                     {preview.tabExists
-                      ? `Changes ${plural(rows, 'row')} on the ${preview.tab} tab.`
-                      : `Adds the ${preview.tab} tab, with ${plural(rows, 'row')}.`}
+                      ? `Changes ${plural(rows, 'row')} on the ${preview.tab} ${resource.singular}.`
+                      : `Adds the ${preview.tab} ${resource.singular}, with ${plural(rows, 'row')}.`}
                   </span>
                 </>
               ) : (

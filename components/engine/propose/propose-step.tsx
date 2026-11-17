@@ -376,7 +376,9 @@ export function ProposeStep({
           className={proposal && !running ? 'sr-only' : 'text-dense text-muted'}
         >
           {running
-            ? 'Working out the orders from the instructions…'
+            ? `Working out the ${subject.proposal
+                .map((field) => `${field.label}s`)
+                .join(' and ')} from the instructions…`
             : !proposal && !failure
               ? 'Getting the proposal…'
               : ''}
@@ -407,7 +409,7 @@ export function ProposeStep({
       {/* Scaffolding for trying the step, as the other steps' setups are. */}
       <section
         aria-label="Propose setup"
-        className="brunch-trial rounded-shell grid gap-3 p-4"
+        className="trial-setup rounded-shell grid gap-3 p-4"
       >
         <div className="flex flex-wrap items-end gap-3">
           <ModelSelect model={model} busy={running} onChange={setModel} />

@@ -370,7 +370,7 @@ export function RulesStep({
       {/* Scaffolding for trying the step, as the read's setup is. */}
       <section
         aria-label="Draft setup"
-        className="brunch-trial rounded-shell grid gap-3 p-4"
+        className="trial-setup rounded-shell grid gap-3 p-4"
       >
         {set ? (
           <div>

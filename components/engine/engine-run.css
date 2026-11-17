@@ -1,13 +1,13 @@
 @layer components {
   /* Scaffolding for trying the step, not one of its states: neutral and dashed. */
-  .brunch-trial {
+  .trial-setup {
     border: 1px dashed var(--sp-rule-default);
     background-color: var(--sp-surface-inset);
   }
 
   /* The read's own header, outside its card: a run stage's row, washed across
      its width, opening the card the way a stage opens its body. */
-  .brunch-read-head {
+  .read-card-head {
     position: relative;
     isolation: isolate;
     display: flex;
@@ -23,27 +23,27 @@
       background-color var(--duration-state) ease-out;
   }
   /* Still being read: a head with nothing to open yet. */
-  .brunch-read-head[data-reading] {
+  .read-card-head[data-reading] {
     cursor: default;
   }
-  .brunch-read-icon {
+  .read-card-icon {
     flex: none;
     width: var(--thread-mark);
     height: var(--thread-mark);
     color: var(--sp-state-verified-9);
   }
-  .brunch-read-name {
+  .read-card-name {
     font-size: var(--sp-text-dense);
     line-height: var(--sp-text-dense--lh);
     font-weight: var(--font-weight-label);
   }
   /* The success pill ends the row; the chevron after it is only a reveal. */
-  .brunch-read-done {
+  .read-card-done {
     margin-inline-start: auto;
     margin-inline-end: 0;
     transition: margin-inline-end var(--duration-state) ease-out;
   }
-  .brunch-read-chevron {
+  .read-card-chevron {
     position: absolute;
     inset-inline-end: 0.25rem;
     width: 1.375rem;
@@ -55,68 +55,68 @@
       rotate var(--duration-state) ease-out,
       opacity var(--duration-state) ease-out;
   }
-  .brunch-read[data-open] .brunch-read-chevron {
+  .read-card[data-open] .read-card-chevron {
     rotate: 0deg;
   }
-  .brunch-read-head:focus-visible {
+  .read-card-head:focus-visible {
     color: var(--sp-text-primary);
     background-color: var(--sp-surface-hover);
-    .brunch-read-done {
+    .read-card-done {
       margin-inline-end: 1.375rem;
     }
-    .brunch-read-chevron {
+    .read-card-chevron {
       opacity: 1;
     }
-    .brunch-read-count {
+    .read-card-count {
       background-color: var(--sp-thread-fact-face-hover);
     }
   }
   @media (hover: hover) {
-    .brunch-read-head:hover {
+    .read-card-head:hover {
       color: var(--sp-text-primary);
       background-color: var(--sp-surface-hover);
-      .brunch-read-done {
+      .read-card-done {
         margin-inline-end: 1.375rem;
       }
-      .brunch-read-chevron {
+      .read-card-chevron {
         opacity: 1;
       }
-      .brunch-read-count {
+      .read-card-count {
         background-color: var(--sp-thread-fact-face-hover);
       }
     }
   }
 
   /* The card opens in a Fold (components/ui/fold.tsx). */
-  .brunch-read {
+  .read-card {
     display: grid;
   }
   @media (prefers-reduced-motion: reduce) {
-    .brunch-read-done,
-    .brunch-read-chevron {
+    .read-card-done,
+    .read-card-chevron {
       transition: none;
     }
   }
 
   /* The tabs as list rows, at the narrow 4 inset. */
-  .brunch-read-rows {
+  .read-card-rows {
     --row-list-inset: calc(var(--spacing) * 4);
   }
 
-  .brunch-read-card[data-revealing] .brunch-read-enter {
-    --brunch-read-enter: 360ms;
-    --brunch-read-stagger: 90ms;
-    animation: brunch-read-item-in var(--brunch-read-enter) var(--ease-out-quad) both;
-    animation-delay: calc(var(--brunch-read-index, 0) * var(--brunch-read-stagger));
+  .read-card-table[data-revealing] .read-card-enter {
+    --read-card-enter: 360ms;
+    --read-card-stagger: 90ms;
+    animation: read-card-item-in var(--read-card-enter) var(--ease-out-quad) both;
+    animation-delay: calc(var(--read-card-index, 0) * var(--read-card-stagger));
   }
-  @keyframes brunch-read-item-in {
+  @keyframes read-card-item-in {
     from {
       opacity: 0;
       translate: 0 -0.125rem;
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .brunch-read-card[data-revealing] .brunch-read-enter {
+    .read-card-table[data-revealing] .read-card-enter {
       animation: none;
     }
   }

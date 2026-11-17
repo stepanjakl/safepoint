@@ -94,9 +94,9 @@ const READ_ROW = cx(
   'list-row group/row control-wash hover:bg-row-hover focus-visible:bg-row-hover text-dense w-full cursor-pointer py-2.5 text-left',
 );
 
-// Reads the sheet's data tabs once for this run, then waits: the data can be
+// Reads the source's data once for this run, then waits: the data can be
 // looked at in the drawer, and every later step will use this read.
-// Automatic, it reads the live sheet as soon as it is drawn, with no setup.
+// Automatic, it reads the live source as soon as it is drawn, with no setup.
 export function ReadStep({
   kind,
   read,
@@ -121,6 +121,7 @@ export function ReadStep({
 }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const { noun, resource } = SOURCE_KINDS[kind];
   const keep = useMutation(trpc.read.keep.mutationOptions());
   const reading = useMutationTrial(keep.mutateAsync);
   const [source, setSource] = useState<'captured' | 'live'>('captured');
@@ -169,14 +170,16 @@ export function ReadStep({
             </div>
           ) : (
             <p role="status" className="text-dense text-muted">
-              {loadingRead ? 'Loading this run’s read…' : 'Reading the sheet…'}
+              {loadingRead
+                ? 'Loading this run’s read…'
+                : `Reading the ${noun}…`}
             </p>
           )}
           {read?.problems?.length ? (
             <div role="alert" className="grid gap-1">
               <p className="text-dense">
-                The sheet does not fit what this process reads, so nothing is
-                proposed on it. Fix the sheet and start a new run:
+                The {noun} does not fit what this process reads, so nothing is
+                proposed on it. Fix the {noun} and start a new run:
               </p>
               <ul className="text-dense list-disc pl-5">
                 {read.problems.map((problem) => (
@@ -189,11 +192,11 @@ export function ReadStep({
       ) : (
         <section
           aria-label="Read setup"
-          className="brunch-trial rounded-shell grid gap-4 p-4"
+          className="trial-setup rounded-shell grid gap-4 p-4"
         >
           <Lede>
-            Reads the sheet&rsquo;s data tabs once. Every later step of this run
-            uses this read. Nothing is written to the sheet.
+            Reads the {noun}&rsquo;s data {resource.plural} once. Every later
+            step of this run uses this read. Nothing is written to the {noun}.
           </Lede>
           <fieldset className="flex flex-wrap items-center gap-x-5 gap-y-1">
             <legend className="text-meta text-muted mb-1">Read from</legend>
@@ -213,11 +216,11 @@ export function ReadStep({
                 checked={source === 'live'}
                 onChange={() => setSource('live')}
               />
-              The live sheet, through Composio
+              The live {noun}, through Composio
             </label>
           </fieldset>
           <TrialControl
-            label="Read the sheet"
+            label={`Read the ${noun}`}
             runningLabel="Reading…"
             variant={read ? 'secondary' : 'primary'}
             idle={
@@ -230,7 +233,9 @@ export function ReadStep({
             state={reading.state}
             onRun={() => readFrom(source)}
             summary={
-              failed ?? readError ?? (read ? `${read.tabs.length} tabs` : null)
+              failed ??
+              readError ??
+              (read ? `${read.tabs.length} ${resource.plural}` : null)
             }
           />
           {read ? (
@@ -239,8 +244,8 @@ export function ReadStep({
           {read?.problems?.length ? (
             <div role="alert" className="grid gap-1">
               <p className="text-dense">
-                The sheet does not fit what this process reads, so no rules are
-                drafted on it. Fix the sheet and read it again:
+                The {noun} does not fit what this process reads, so no rules are
+                drafted on it. Fix the {noun} and read it again:
               </p>
               <ul className="text-dense list-disc pl-5">
                 {read.problems.map((problem) => (
@@ -295,10 +300,10 @@ export function SheetReadCard({
   const reading = useLoader(!read);
   if (!read)
     return (
-      <div className="brunch-read">
-        <div className="brunch-read-head" data-reading>
-          <TableFilled aria-hidden className="brunch-read-icon" />
-          <span className="brunch-read-name">{source.name}</span>
+      <div className="read-card">
+        <div className="read-card-head" data-reading>
+          <TableFilled aria-hidden className="read-card-icon" />
+          <span className="read-card-name">{source.name}</span>
           {reading.phase ? (
             <Loader
               phase={reading.phase}
@@ -312,33 +317,33 @@ export function SheetReadCard({
   const sourceName = read.title || read.url;
   const setOpen = onOpenChange;
   return (
-    <div className="brunch-read" data-open={open || undefined}>
+    <div className="read-card" data-open={open || undefined}>
       <button
         type="button"
-        className="brunch-read-head group/head"
+        className="read-card-head group/head"
         aria-expanded={open}
         aria-controls={cardId}
         onClick={() => setOpen(!open)}
       >
-        <TableFilled aria-hidden className="brunch-read-icon" />
-        <span className="brunch-read-name">{source.name}</span>
-        <span className="thread-step-fact brunch-read-count">
+        <TableFilled aria-hidden className="read-card-icon" />
+        <span className="read-card-name">{source.name}</span>
+        <span className="thread-step-fact read-card-count">
           {read.tabs.length} {read.tabs.length === 1 ? singular : plural}
         </span>
         <span
           data-severity={3}
-          className="thread-step-fact brunch-read-done bg-severity-pill text-severity-pill-ink group-hover/head:bg-severity-pill-hover group-hover/head:text-severity-pill-strong group-focus-visible/head:bg-severity-pill-hover group-focus-visible/head:text-severity-pill-strong"
+          className="thread-step-fact read-card-done bg-severity-pill text-severity-pill-ink group-hover/head:bg-severity-pill-hover group-hover/head:text-severity-pill-strong group-focus-visible/head:bg-severity-pill-hover group-focus-visible/head:text-severity-pill-strong"
         >
           Read · {dateTime(read.readAt)}
         </span>
-        <ChevronTriangleDown aria-hidden className="brunch-read-chevron" />
+        <ChevronTriangleDown aria-hidden className="read-card-chevron" />
       </button>
       <Fold open={open} id={cardId} className="pt-2">
         <DataTable
           as="article"
-          aria-label="Sheet read"
+          aria-label={`${capitalised(source.noun)} read`}
           data-revealing={revealing || undefined}
-          className="brunch-read-card"
+          className="read-card-table"
         >
           <DataDrawer readId={read.id} preloaded={data}>
             {(view) => (
@@ -349,23 +354,23 @@ export function SheetReadCard({
                     className={cx(
                       READ_GRID,
                       DATA_TABLE_HEAD,
-                      'brunch-read-enter',
+                      'read-card-enter',
                     )}
                   >
                     <span>{capitalised(singular)}</span>
                     <span className="justify-self-end">Rows</span>
                   </div>
                   <ul
-                    aria-label="Data tabs read"
-                    className="row-list brunch-read-rows col-span-full grid grid-cols-subgrid"
+                    aria-label={`Data ${plural} read`}
+                    className="row-list read-card-rows col-span-full grid grid-cols-subgrid"
                   >
                     {read.tabs.map((tab, index) => (
                       <li
                         key={tab.name}
-                        className="brunch-read-enter col-span-full grid grid-cols-subgrid"
+                        className="read-card-enter col-span-full grid grid-cols-subgrid"
                         style={
                           {
-                            '--brunch-read-index': index + 1,
+                            '--read-card-index': index + 1,
                           } as CSSProperties
                         }
                       >
@@ -401,10 +406,10 @@ export function SheetReadCard({
                   </ul>
                 </div>
                 <footer
-                  className="brunch-read-enter flex flex-wrap items-center justify-between gap-3 px-4 py-3.5"
+                  className="read-card-enter flex flex-wrap items-center justify-between gap-3 px-4 py-3.5"
                   style={
                     {
-                      '--brunch-read-index': read.tabs.length + 1,
+                      '--read-card-index': read.tabs.length + 1,
                     } as CSSProperties
                   }
                   onAnimationEnd={(event) => {

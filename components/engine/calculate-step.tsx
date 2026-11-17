@@ -217,7 +217,7 @@ export function CalculateStep({
               setups are. */}
           <section
             aria-label="Cross-check setup"
-            className="brunch-trial rounded-shell grid gap-3 p-4"
+            className="trial-setup rounded-shell grid gap-3 p-4"
           >
             <div className="flex flex-wrap items-end gap-3">
               <ModelSelect model={model} busy={busy} onChange={setModel} />

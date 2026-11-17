@@ -217,9 +217,9 @@ export function LoadingGallery() {
         fix="The sheet's icon stays, since it says what is being read; the count's place takes the inline loader, and the count fades in."
         before={
           <div className={cx(PANE, 'p-3')}>
-            <div className="brunch-read-head" data-reading>
-              <TableFilled aria-hidden className="brunch-read-icon" />
-              <span className="brunch-read-name">Orders sheet</span>
+            <div className="read-card-head" data-reading>
+              <TableFilled aria-hidden className="read-card-icon" />
+              <span className="read-card-name">Orders sheet</span>
               <span className="text-meta text-muted ms-auto">
                 {load.loading ? 'Reading…' : '4 tabs'}
               </span>
@@ -228,9 +228,9 @@ export function LoadingGallery() {
         }
         after={
           <div className={cx(PANE, 'p-3')}>
-            <div className="brunch-read-head" data-reading>
-              <TableFilled aria-hidden className="brunch-read-icon" />
-              <span className="brunch-read-name">Orders sheet</span>
+            <div className="read-card-head" data-reading>
+              <TableFilled aria-hidden className="read-card-icon" />
+              <span className="read-card-name">Orders sheet</span>
               <InlineLoad
                 load={load}
                 className="text-meta text-muted ms-auto"

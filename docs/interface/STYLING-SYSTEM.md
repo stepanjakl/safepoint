@@ -509,7 +509,7 @@ four pills ended up with four class strings.
 | A filter strip             | `FilterTabs`; `size="small"` beside a result rather than over a list                                                        | `components/ui/filter-tabs.tsx`                                     |
 | Buttons in a table row     | `Button` or `DecisionButton` with `size="small"`, so a row's actions stay on one line                                       | `components/ui/button.tsx`, `components/engine/decision-button.tsx` |
 | An input in a list         | `InputRow`, inside the evidence-file inputs list; a source's tabs are `SourceView`                                          | `components/app-shell/inputs/inputs-list.tsx`                       |
-| A step's test controls     | a `section` with `brunch-trial`, labelled "<step> setup"                                                                    | `components/engine/orders-run.css`                                  |
+| A step's test controls     | a `section` with `trial-setup`, labelled "<step> setup"                                                                     | `components/engine/engine-run.css`                                  |
 | An action in a heading row | `Button` with `size="xsmall"` and `shape="round"`, beside the column names                                                  | `components/ui/button.tsx`                                          |
 | An error in a panel        | a bordered box on the blocked tone: `data-severity={0}` with `bg-severity-fill border-severity-pill-ring text-severity-ink` | `app/styles/severity.css`                                           |
 

@@ -304,7 +304,7 @@ const KINDS = [
 
 /*
   A revision's row opens its detail in place, as a read's header opens its
-  card (orders-run.css): the chevron shows under the pointer or focus and
+  card (engine-run.css): the chevron shows under the pointer or focus and
   stays while open, and the detail folds open (components/ui/fold.tsx).
 */
 function Revision({
