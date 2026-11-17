@@ -2,20 +2,20 @@ import { writeFileSync } from 'node:fs';
 
 import { expect, test } from '@playwright/test';
 
-import { summarise } from '../scripts/colour-theme/perceptual/contracts.ts';
+import { summarise } from '../../scripts/colour-theme/perceptual/contracts.ts';
 import {
   openAt,
   setFamily,
-} from '../scripts/colour-theme/perceptual/runner.ts';
+} from '../../scripts/colour-theme/perceptual/runner.ts';
 import {
   FILTER_TABS,
   checkFilterTabs,
   readFilterTabs,
-} from '../scripts/colour-theme/perceptual/recipes/filter-tabs.ts';
+} from '../../scripts/colour-theme/perceptual/recipes/filter-tabs.ts';
 import type {
   Finding,
   Reading,
-} from '../scripts/colour-theme/perceptual/types.ts';
+} from '../../scripts/colour-theme/perceptual/types.ts';
 
 /*
   Perceptual colour contracts (docs/interface/COLOUR-TESTING.md). The theme is a

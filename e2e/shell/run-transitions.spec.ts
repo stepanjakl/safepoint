@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-import { startKeptRun } from './kept-runs';
+import { startKeptRun } from '../support/kept-runs';
 
 type Frame = {
   empty: boolean;

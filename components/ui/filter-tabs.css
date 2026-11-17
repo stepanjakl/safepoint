@@ -215,7 +215,7 @@
   }
   /* Radix's dark rungs are not equally light across hues: at the same rung red
      is about 0.014 darker than the mean of the three, grass about 0.011 lighter
-     (measured by e2e/colour-perception.spec.ts, tone-spread). Each tone takes
+     (measured by e2e/design/colour-perception.spec.ts, tone-spread). Each tone takes
      its own offset in dark so the tones carry one lightness; light needs none. */
   :is(
     .review-tab-indicator,
@@ -262,7 +262,7 @@
   }
   /* Forced colours drop background images, box-shadows and every colour but
      the system's, which left the chosen tab and the spied one looking like
-     every other (e2e/colour-perception.spec.ts finds it). The solid becomes
+     every other (e2e/design/colour-perception.spec.ts finds it). The solid becomes
      the system highlight, with its ink, and the spied tab an outline. */
   @media (forced-colors: active) {
     .review-tab-indicator {

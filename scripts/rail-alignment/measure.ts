@@ -1,6 +1,6 @@
 /*
   The rail measurement, shared by the command-line checker
-  (scripts/check-rail-alignment.ts) and the Playwright test (e2e/rail.spec.ts).
+  (scripts/check-rail-alignment.ts) and the Playwright test (e2e/shell/rail.spec.ts).
   It reads the axes from the live `.rail-axis` element, so the stylesheet stays
   the only place an axis is defined.
 */

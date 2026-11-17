@@ -166,7 +166,7 @@ drawer), `server/api/routers/read.ts` and
 `app/(shell)/processes/brunch-orders/`. A live run is a shell feature any
 process can use: `liveThread` on `ProcessView`, kept by
 `components/app-shell/runs/live-runs-store.ts`. Page test:
-`e2e/brunch-orders.spec.ts`.
+`e2e/engine/brunch-orders.spec.ts`.
 
 ## Phase 2, as built
 
@@ -209,7 +209,7 @@ keep it), so every run under the same instructions uses the same approved
 rules, and a new version starts afresh. Code: the engine in
 `lib/engine/` (see [The engine, as built](#the-engine-as-built)),
 `server/api/routers/rules.ts`, `components/engine/rules/rules-step.tsx`.
-Tests: `lib/engine/*.test.ts`, and `e2e/brunch-orders-rules.spec.ts`
+Tests: `lib/engine/*.test.ts`, and `e2e/engine/brunch-orders-rules.spec.ts`
 (read-only: no model calls; it checks that focus moves into a denial's note
 and back).
 

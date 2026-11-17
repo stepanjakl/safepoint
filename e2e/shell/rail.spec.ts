@@ -5,7 +5,7 @@ import {
   DRIFT_DEFAULT,
   LEVEL_OPENERS,
   measureInPage,
-} from '../scripts/rail-alignment/measure';
+} from '../../scripts/rail-alignment/measure';
 
 /*
   Every marked box in the sidebar sits on its guide axis, at every level. The

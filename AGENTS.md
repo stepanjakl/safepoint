@@ -17,7 +17,7 @@ misalignments were shipped, each invisible until something measured it.
 
 ```
 pnpm dev                                    # the guides are development-only
-pnpm exec playwright test e2e/rail.spec.ts  # pass/fail, in the suite
+pnpm exec playwright test e2e/shell/rail.spec.ts  # pass/fail, in the suite
 pnpm check:rail
 pnpm check:rail -- --level all --self-test
 pnpm check:rail -- --help
@@ -32,7 +32,7 @@ axis is defined. **Keep it that way.** The moment a coordinate is written into
 `scripts/rail-alignment/measure.ts`, it has become the thing it replaced.
 
 The measurement is shared: the CLI prints it as a table for reading, and
-`e2e/rail.spec.ts` runs the same function at every level of both routes so the
+`e2e/shell/rail.spec.ts` runs the same function at every level of both routes so the
 suite holds it. Both launch Chrome with `--force-device-scale-factor=2`;
 emulating the pixel ratio alone leaves border snapping at 1x, and the 1.5px
 search field edge then lays out as 1px.
@@ -70,7 +70,7 @@ for the same property on one element.
 at the root). A new file goes in the folder of the feature it serves; a folder
 earns its place when three or more files change together. The sidebar is split
 into one component per part it draws, with shared shapes and icons in
-`sidebar/menu-parts.tsx`; `e2e/process-menu.spec.ts` covers its search, level
+`sidebar/menu-parts.tsx`; `e2e/shell/process-menu.spec.ts` covers its search, level
 travel and reordering, focus included -- run it after touching any of them.
 
 Content entrance animations wait for every surrounding screen, section or panel
@@ -237,8 +237,8 @@ placeholders such as `values.<id>`, because a real example steers the model.
   `e2e/fixtures/` are frozen copies, held to the engine by
   `lib/engine/e2e-fixtures.test.ts`. A browser test that starts a run does
   so on that same database, which every test shares, so it selects its runs by
-  the id the server gave (`data-run-id` on a row, `e2e/kept-runs.ts`), never by
-  position; `e2e/kept-decisions.ts` stands in for the decisions procedures
+  the id the server gave (`data-run-id` on a row, `e2e/support/kept-runs.ts`), never by
+  position; `e2e/support/kept-decisions.ts` stands in for the decisions procedures
   where a test serves its own proposal.
 - `docs/processes/brunch-orders/DEVELOPMENT-LOG.md` records what went wrong and why. Add to it when
   something non-obvious does.

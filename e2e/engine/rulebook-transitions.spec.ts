@@ -4,9 +4,9 @@ import { definitionSetSchema } from '@/lib/engine/types';
 
 import { brunchOrdersProcess } from '@/lib/processes/brunch-orders/process';
 
-import { listedInstructions } from './kept-instructions';
-import { noRules, rulesReply } from './rules';
-import { mockProcedure } from './trpc';
+import { listedInstructions } from '../support/kept-instructions';
+import { noRules, rulesReply } from '../support/rules';
+import { mockProcedure } from '../support/trpc';
 
 const accepted = definitionSetSchema.parse(
   JSON.parse(readFileSync('e2e/fixtures/brunch-orders-accepted.json', 'utf8')),

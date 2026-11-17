@@ -21,7 +21,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 const UPDATE = process.env.UPDATE_VISUAL === '1';
-const BASELINE_DIR = new URL('./visual-baseline/', import.meta.url);
+const BASELINE_DIR = new URL('../visual-baseline/', import.meta.url);
 
 const SCENARIOS = {
   home: async () => {},

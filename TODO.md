@@ -132,7 +132,7 @@ Runs, reads, rulebooks, proposals, decisions and jobs are kept on the server and
 - [ ] Neon preview branching, so a preview does not share the production database.
 - [ ] A retention limit: reads, proposals and decisions are never deleted ([Database](docs/engineering/DATABASE.md), open question 4).
 - [ ] Record the visual baseline again (`pnpm check:visual:update`, on the machine that checks it); it is knowingly stale.
-- [ ] The known accessibility failure in `e2e/brunch-orders.spec.ts:13` (an axe `label-content-name-mismatch`).
+- [ ] The known accessibility failure in `e2e/engine/brunch-orders.spec.ts:13` (an axe `label-content-name-mismatch`).
 
 ## Later product work
 

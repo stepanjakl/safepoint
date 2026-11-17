@@ -104,8 +104,8 @@ scripts/colour-theme/perceptual/
   contracts.ts    the catalogue: pure functions over readings
   recipes/        one file per component: what to drive, what to read, which contracts
   report.ts       the advisory report
-e2e/colour-perception.spec.ts   tier 0 over every family, surface and theme
-e2e/colour-vision.spec.ts       tier 2
+e2e/design/colour-perception.spec.ts   tier 0 over every family, surface and theme
+e2e/design/colour-vision.spec.ts       tier 2
 app/workbench/calibration/      tier 3
 ```
 
@@ -206,7 +206,7 @@ luminance, gamma or frame timing. Repeat on another display if it matters.
    `app/workbench/controls-gallery.tsx`).
 2. Write `recipes/<component>.ts`: a `read…` function (drive states, return
    readings) and a `check…` function (choose contracts and floors).
-3. Call them from a spec like `e2e/colour-perception.spec.ts`; reuse the family
+3. Call them from a spec like `e2e/design/colour-perception.spec.ts`; reuse the family
    and theme loops.
 4. Run it. Record the smallest measured distance per state, set floors beneath
    them, targets at or above them.

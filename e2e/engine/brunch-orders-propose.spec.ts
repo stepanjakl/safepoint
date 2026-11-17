@@ -13,10 +13,10 @@ import {
   type Verdict,
 } from '@/lib/engine/types';
 
-import { mockDecisions } from './kept-decisions';
-import { asKeptRulebook, seedKeptRulebooks } from './kept-runs';
-import { rulesReply } from './rules';
-import { mockProcedure } from './trpc';
+import { mockDecisions } from '../support/kept-decisions';
+import { asKeptRulebook, seedKeptRulebooks } from '../support/kept-runs';
+import { rulesReply } from '../support/rules';
+import { mockProcedure } from '../support/trpc';
 
 // Brunch orders, Propose and Apply (docs/processes/brunch-orders/PLAN.md):
 // with every rule accepted and the values worked out, the model proposes for

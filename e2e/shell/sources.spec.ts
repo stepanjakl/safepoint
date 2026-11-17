@@ -3,12 +3,12 @@ import { expect, test, type Page } from '@playwright/test';
 import { SHEET_USE } from '@/lib/processes/brunch-orders/data';
 import type { SourceSummary } from '@/lib/sources/model';
 
-import { mockProcedure } from './trpc';
+import { mockProcedure } from '../support/trpc';
 
 // A source's panels on Brunch orders: the read the server gave the page is
 // shown without asking again, "Read now" keeps it on screen until a new one
 // lands, and the new one is what both panels show. Reads are served by the
-// test (e2e/trpc.ts). The page's own read is whatever the server keeps -- its
+// test (e2e/support/trpc.ts). The page's own read is whatever the server keeps -- its
 // latest kept read, or the captured copy -- so every figure expected here is
 // worked out from it, never written in.
 

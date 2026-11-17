@@ -4,8 +4,8 @@ import { expect, test, type Page } from '@playwright/test';
 
 import type { Proposal } from '@/lib/engine/types';
 
-import { call } from './kept-runs';
-import { mockProcedure } from './trpc';
+import { call } from '../support/kept-runs';
+import { mockProcedure } from '../support/trpc';
 
 /*
   What this phase is for: a run, and a decision made on one of its records,

@@ -20,8 +20,8 @@ import {
 } from '@/lib/engine/types';
 import { SUBJECT } from '@/lib/processes/brunch-orders/data';
 
-import { mockRules, noRules, rulesReply } from './rules';
-import { mockProcedure } from './trpc';
+import { mockRules, noRules, rulesReply } from '../support/rules';
+import { mockProcedure } from '../support/trpc';
 
 // The data's columns, confirmed by a person before the rules are drafted:
 // what each column holds, and what a blank cell means. The rules procedures are

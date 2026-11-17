@@ -14,7 +14,7 @@ import { runOrRefuse } from '@/server/storage/runs/runs';
 export const runtime = 'nodejs';
 
 /*
-  Development only, for the browser tests (e2e/runs-in-a-second-browser.spec.ts):
+  Development only, for the browser tests (e2e/engine/runs-in-a-second-browser.spec.ts):
   keeps a proposal for a run that has read its data, so a decision can be made
   on it through the real procedures without a model. Nothing else makes one
   without a model request. The proposal is kept under the run's own key, as the

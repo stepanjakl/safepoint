@@ -6,9 +6,9 @@ import { expect, test, type Page } from '@playwright/test';
 import type { Calculation, CrossCheck } from '@/lib/engine/calculate';
 import { definitionSetSchema } from '@/lib/engine/types';
 
-import { asKeptRulebook, seedKeptRulebooks } from './kept-runs';
-import { rulesReply, type RulesKept } from './rules';
-import { mockProcedure } from './trpc';
+import { asKeptRulebook, seedKeptRulebooks } from '../support/kept-runs';
+import { rulesReply, type RulesKept } from '../support/rules';
+import { mockProcedure } from '../support/trpc';
 
 // Brunch orders, phase 3 (docs/processes/brunch-orders/PLAN.md): with every
 // rule accepted, Calculate works each value out for every record, and the

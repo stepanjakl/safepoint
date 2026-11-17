@@ -31,7 +31,7 @@ Linux CI runner. Commit the lockfile and use `pnpm install --frozen-lockfile`.
 
 ## Scope and repeatability
 
-`e2e/home-contrast.spec.ts` runs the home page, workspace navigation menu,
+`e2e/design/home-contrast.spec.ts` runs the home page, workspace navigation menu,
 focused process search and release-review dialog in **light and dark mode**.
 The default neutral and state palettes are used; this is not an all-palette or
 all-component audit. New visible elements in these states are scanned without
@@ -52,7 +52,7 @@ preferences, can be tested. The suite does not test the theme picker itself.
 ## Results
 
 Only axe's `color-contrast` rule is enabled. This is a contrast suite, not a
-complete accessibility audit. The shared helper is `e2e/contrast.ts`.
+complete accessibility audit. The shared helper is `e2e/support/contrast.ts`.
 
 - **Confirmed violations fail** the test, with no accepted baseline or allowlist.
 - **Incomplete findings** produce console warnings and test annotations. They

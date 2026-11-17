@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { brunchOrdersProcess } from '@/lib/processes/brunch-orders/process';
 
-import { mockInstructions } from './kept-instructions';
+import { mockInstructions } from '../support/kept-instructions';
 
 /* The sheet's Instructions, Inputs and Outputs tabs, and the detail drawer
    their rows open. Focus is asserted at every close: the drawer hands it

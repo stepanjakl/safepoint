@@ -5,8 +5,8 @@ import { expect, test } from '@playwright/test';
 
 import { definitionSetSchema, SCOPE_MISMATCH } from '@/lib/engine/types';
 
-import { mockRules, rulesReply } from './rules';
-import { mockProcedure } from './trpc';
+import { mockRules, rulesReply } from '../support/rules';
+import { mockProcedure } from '../support/trpc';
 
 // Brunch orders, phase 2 (docs/processes/brunch-orders/PLAN.md): after the read, the
 // run shows the rules found in its instructions, each with a formula and

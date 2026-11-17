@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { expectContrast, openHome, scanContrast } from './contrast';
+import { expectContrast, openHome, scanContrast } from '../support/contrast';
 
 test.beforeEach(async ({ page, colorScheme }) => {
   if (colorScheme !== 'light' && colorScheme !== 'dark')

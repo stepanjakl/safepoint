@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
-import { noRules } from './rules';
-import { mockProcedure } from './trpc';
+import { noRules } from '../support/rules';
+import { mockProcedure } from '../support/trpc';
 import {
   LOADER_DELAY_MS,
   LOADER_MIN_MS,
