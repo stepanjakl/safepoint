@@ -3,17 +3,26 @@ import {
   type ProcessStep,
   type RunTrigger,
 } from '@/lib/shell/model';
-import type { RunStage } from '@/lib/shell/placeholder/run-lifecycle';
 import type { AnswerProblem, ProposalEvent } from '@/lib/definitions/types';
 
 /*
   A run the model works out alone, from the instructions and its inputs, with
-  no rulebook: in the run lifecycle's own stages, so it moves as every run
-  does. There is no policy check: nothing but
+  no rulebook: in stages of its own, so it moves as every run does. There is no
+  policy check: nothing but
   the person reviewing checks what the model proposes. The live page works its
   stage out from the run's state; the workbench pins each one.
 */
-export type ModelRunStage = Exclude<RunStage, 'waiting' | 'checking'>;
+export type ModelRunStage =
+  | 'starting'
+  | 'reading'
+  | 'evaluating'
+  | 'awaiting_review'
+  | 'reviewing'
+  | 'ready_to_commit'
+  | 'committing'
+  | 'intervention'
+  | 'committed'
+  | 'stopped';
 
 export const MODEL_RUN_MAIN_LINE: ModelRunStage[] = [
   'starting',
