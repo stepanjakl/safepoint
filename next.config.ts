@@ -3,6 +3,8 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+import { withWorkflow } from 'workflow/next';
+
 const nextConfig: NextConfig = {
   // Next writes AGENTS.md and CLAUDE.md into the repository root by default.
   // Safepoint adds agent instructions deliberately, not as build output.
@@ -51,4 +53,7 @@ const nextConfig: NextConfig = {
   turbopack: {},
 };
 
-export default nextConfig;
+// The Workflow SDK compiles `"use workflow"` and `"use step"` under webpack
+// (pnpm dev) and Turbopack (pnpm build) alike, and generates its routes under
+// app/.well-known/workflow/ (server/workflows/).
+export default withWorkflow(nextConfig);
