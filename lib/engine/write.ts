@@ -6,7 +6,7 @@ import {
   isDatedOrWeekly,
   type DefinitionSubject,
   type WeeklyMoment,
-} from '@/lib/shell/model';
+} from './subject';
 import { fallbackChain, type DraftingModel } from '@/lib/models';
 
 import { DRAFT_MODELS, WRITE_MODELS, withModels } from './calls';

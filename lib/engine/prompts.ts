@@ -1,6 +1,6 @@
-import type { DefinitionSubject } from '@/lib/shell/model';
+import type { DefinitionSubject } from './subject';
 
-import { isDated, isDatedOrWeekly, type DataShape } from '@/lib/shell/model';
+import { isDated, isDatedOrWeekly, type DataShape } from './subject';
 
 import { recordsOf, type KeptRead } from './records';
 import type { Definition, Example } from './types';

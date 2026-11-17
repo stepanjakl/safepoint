@@ -147,7 +147,8 @@ records it; add a control there when it gains a face.
 formulas (the Brunch orders process; `docs/processes/brunch-orders/PLAN.md` →
 The engine, as built). It must stay process-agnostic: no scenario word in its
 code or prompts. A process supplies everything specific through its
-`DefinitionProcess` (`SUBJECT` and its `DataShape`). Prompt examples use
+`DefinitionProcess` (`SUBJECT` and its `DataShape`, typed in
+`lib/engine/subject.ts`). Prompt examples use
 placeholders such as `values.<id>`, because a real example steers the model.
 
 - **Saved model output is a contract.** Variable names and value

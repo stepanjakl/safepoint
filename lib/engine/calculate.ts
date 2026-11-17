@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import type { DefinitionSubject } from '@/lib/shell/model';
+import type { DefinitionSubject } from './subject';
 import type { DraftingModel } from '@/lib/models';
 
 import type { RecordAttempt } from './attempts';

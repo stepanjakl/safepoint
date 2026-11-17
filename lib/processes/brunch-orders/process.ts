@@ -1,9 +1,5 @@
-import type {
-  DataShape,
-  DefinitionSubject,
-  ProcessStep,
-  ProcessSummary,
-} from '@/lib/shell/model';
+import type { ProcessStep, ProcessSummary } from '@/lib/shell/model';
+import type { DataShape, DefinitionSubject } from '@/lib/engine/subject';
 import type { DefinitionProcess } from '@/lib/engine/types';
 import type { SystemLink } from '@/lib/shell/system-links';
 import type { SourceUse } from '@/lib/sources/model';

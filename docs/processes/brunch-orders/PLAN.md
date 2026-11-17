@@ -310,7 +310,7 @@ what it says, what it was taken from (constants and groups), how it was tried
 decision.
 
 **The data shape is the process's too.** How a read becomes records is
-declared beside `SUBJECT` (`DataShape` in `lib/shell/model.ts`): the tabs
+declared beside `SUBJECT` (`DataShape` in `lib/engine/subject.ts`): the tabs
 that hold a record's columns and the key that joins them, the column that names
 a record, each table a record reaches (here Parameters, through `category`),
 and the columns read as a type other than as written. A formula reads `key`,

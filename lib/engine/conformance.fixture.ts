@@ -2,7 +2,7 @@ import type {
   DataShape,
   DatedOrWeeklyMoment,
   DefinitionSubject,
-} from '@/lib/shell/model';
+} from './subject';
 
 import type { DataTab, KeptRead } from './records';
 import type { Shape } from './shapes';

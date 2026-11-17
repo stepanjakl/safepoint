@@ -8,7 +8,7 @@ import { fitting, sourceOf, type KeptRead } from './records';
 import { hashOf } from './fingerprint';
 import type { DefinitionProcess, DefinitionSet } from './types';
 import { fallbackChain, type DraftingModel } from '@/lib/models';
-import type { DefinitionSubject } from '@/lib/shell/model';
+import type { DefinitionSubject } from './subject';
 
 /*
   Finding: the model lists, in plain words, the intent of the instructions

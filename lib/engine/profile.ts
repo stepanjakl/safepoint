@@ -1,4 +1,4 @@
-import type { DataShape } from '@/lib/shell/model';
+import type { DataShape } from './subject';
 import { interpretCell, type FieldType } from '@/lib/sheets/field-types';
 
 import type { KeptRead } from './records';

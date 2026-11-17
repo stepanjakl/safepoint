@@ -12,7 +12,7 @@ import { useTRPC } from '@/components/trpc/provider';
 import { Button } from '@/components/ui/button';
 import { asReviewed as reviewed } from '@/lib/engine/reviewed';
 import type { Proposal } from '@/lib/engine/types';
-import type { DefinitionSubject } from '@/lib/shell/model';
+import type { DefinitionSubject } from '@/lib/engine/subject';
 import { DRAFTING_MODELS, type DraftingModel } from '@/lib/models';
 
 import { ProposalTable } from './proposal-table';
