@@ -101,5 +101,5 @@ outcome and freshness side by side.
 
 The simulated commit-state label, one of two findings that predated the
 2026-09-24 colour refactor, was removed on 2026-09-28 when the release card's
-header replaced it with the run's mode mark. `check:contrast` passed in full
+header (since removed with the earlier prototype) replaced it with the run's mode mark. `check:contrast` passed in full
 on that date.

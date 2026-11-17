@@ -262,7 +262,7 @@ Annotations are held in memory, so they last as long as `pnpm dev`.
 
 ## Verification matched to the change
 
-`pnpm check:visual` compares every element's painted colours and box, in thirteen
+`pnpm check:visual` compares every element's painted colours and box, in ten
 states and both themes, with `e2e/visual-baseline/`. A difference you intended
 is recorded with `pnpm check:visual:update`, and the baseline diff goes in the
 same commit; one you did not intend is a regression. Record the baseline on

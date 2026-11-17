@@ -10,7 +10,6 @@ The detailed requirements remain in [`docs/`](docs/README.md). If this checklist
 - Keep business rules in plain TypeScript, separate from React, Next.js, database, model, and connector code.
 - Add a dependency only when the current slice needs it.
 - Give every batch explicit acceptance criteria and non-goals.
-- Keep the replay mode working as live integrations are added.
 - Finish, test, review, and commit one batch before starting the next.
 
 ## Current track: Brunch orders
@@ -35,7 +34,7 @@ The earlier Brunch weekend experiment was removed on 13 October 2026; its checkl
 
 ## Earlier scenario: promotion release
 
-The ordered build below sequenced the Alderton's scenario. Stages 0 and 1A are complete and the app shell and replay review exist; the remaining items carry over to the sheet track where the plan says so (persistence, durable execution, the Google Sheets sandbox and hardening) and are otherwise paused.
+The ordered build below sequenced the Alderton's scenario. Stages 0 and 1A were completed and the earlier prototype built on them was removed (recoverable from the git tag `archive/promotion-prototype`); the remaining items carry over to the sheet track where the plan says so (persistence, durable execution, the Google Sheets sandbox and hardening) and are otherwise paused.
 
 ### Ordered build
 

@@ -8,7 +8,7 @@ Audience: product, design, engineering, and portfolio reviewers
 
 | Status      | Capabilities in this brief                                                                                                                                                                       |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Implemented | Shared process shell, replay review, promotion-release fixtures and policy replay, and Brunch orders' development read and definition approval.                                                  |
+| Implemented | Shared process shell, and Brunch orders' development read and definition approval.                                                                                                               |
 | In progress | The phased Brunch orders process, governed by its own plan.                                                                                                                                      |
 | Proposed    | Durable approval, external writes, verification, compensation, public sandbox and future-product features. Descriptions below of these outcomes are requirements, not claims about current code. |
 

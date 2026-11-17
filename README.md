@@ -4,7 +4,7 @@ Safepoint helps people review changes proposed by an AI agent before those chang
 
 Instead of asking someone to approve a chat message, Safepoint's intended flow presents a clear change set: what the agent inspected, what it wants to change, what it left out, what looks risky, and what happened after approval. The current examples implement parts of this flow.
 
-> **Status:** The app shell and promotion-release replay review are implemented. [Brunch orders](docs/processes/brunch-orders/PLAN.md) is the active development hand-off: it is built end to end: instructions, a five-tab read, individually approved rules, calculation, order proposals, per-record review and a verified, undoable write to the sheet. Runs, rulebooks, proposals and decisions are kept on the server and the app can be deployed on Vercel behind a shared password. Learning from decisions, real sign-in and wider scope are planned.
+> **Status:** The app shell is implemented. [Brunch orders](docs/processes/brunch-orders/PLAN.md) is the active development hand-off: it is built end to end: instructions, a five-tab read, individually approved rules, calculation, order proposals, per-record review and a verified, undoable write to the sheet. Runs, rulebooks, proposals and decisions are kept on the server and the app can be deployed on Vercel behind a shared password. Learning from decisions, real sign-in and wider scope are planned.
 
 ## The idea
 
@@ -27,7 +27,7 @@ The main demonstration in progress is one store's **Brunch orders** process for 
 - The development flow reads the sheet once, finds definitions in the instructions, checks each formula against worked examples and asks a person to accept or deny each definition.
 - Planned phases calculate demand, propose order quantities, check them against accepted rules, let a person review them, and apply approved orders to the sheet with verification.
 
-The 27-line promotion-release replay remains in the app as an earlier example.
+The earlier promotion-release prototype (a 27-line replay review) was removed; it can be recovered from the git tag `archive/promotion-prototype`.
 
 The planned public demo uses synthetic data and accepts no arbitrary prompts or production credentials.
 

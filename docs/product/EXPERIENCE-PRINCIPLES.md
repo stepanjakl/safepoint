@@ -1,6 +1,6 @@
 # Experience principles
 
-Status: current cross-process guidance, checked against the shell and replay review in October 2026. The [original experience specification](../archive/EXPERIENCE-SPEC.md) describes a proposed promotion-release screen and later approval and execution states; it is a historical design record.
+Status: current cross-process guidance, checked against the shell in October 2026. The [original experience specification](../archive/EXPERIENCE-SPEC.md) describes a proposed promotion-release screen and later approval and execution states; it is a historical design record.
 
 ## Show the decision
 
@@ -18,6 +18,6 @@ Status: current cross-process guidance, checked against the shell and replay rev
 
 ## Planned decisions
 
-Approval, editable proposals, external application, verification and compensation require revision-bound server state and explicit execution evidence. Their detailed promotion-release designs in the archived specification are proposals, not descriptions of the current replay.
+Approval, editable proposals, external application, verification and compensation require revision-bound server state and explicit execution evidence. Their detailed promotion-release designs in the archived specification are proposals, not descriptions of the current code.
 
 See [embedded review](../interface/EMBEDDED-REVIEW.md) for the present shell and [Brunch orders](../processes/brunch-orders/PLAN.md) for the active process's phased interaction work.

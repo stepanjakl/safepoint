@@ -221,7 +221,7 @@ Two rules keep the following roles honest, and both are checked:
 - **A region painted with a pane or floating face carries that ground.** The shell's pane content takes `ground-raised`, and so do the workspace columns, header, batch strip and effects rail, which paint `bg-surface-primary` directly. The drawer's panels -- the review's queue and item among them -- are `surface-floating`, which brings `ground-floating` with it. Without it their content takes the canvas's values. `e2e/colour-system.spec.ts` fails on a painted region with content and no matching ground.
 - **Nothing on `:root` reads a following role.** A custom property resolves where it is declared, so a `:root` alias freezes at the canvas value everywhere. Read the role where it is used (an `@theme inline` entry resolves on the element), or give it an offset of its own. `pnpm check:colours` fails on one.
 
-A divider inside a surface is drawn in that surface's own edge colours: the line in its ring and the lit line beside it in its highlight, so it reads as the surface's edge carried across it. **A header's divider is lit below its rule and a footer's above it** -- always on the body's side, as if the body were the lit region between them. `rule-below` and `rule-above` (`app/styles/controls.css`) draw exactly that in `--sp-ground-ring` and `--sp-ground-edge`, which each `ground-*` utility points at its own surface's ring and highlight (generated from `GROUND_EDGE_ROLES` in `scripts/colour-theme/config.ts`), so one class is right on the pane, a floating card, a drawer or a popover. Every header and footer that spans a surface takes one of them: the drawer's header and footer, the drawer panel's header, the release card's header and footer, the Rules step's cards. The process header and the sheet's section heads keep the same shape by their own means (the header's lit line lies on the sheet frame, so a head's band can cover it). A table's header row or a bordered box without a highlight is not a surface edge and keeps its plain rule. Inside the pane (the header's rule, the runs column's edge, the sheet's rows) that is `--sp-raised-ring` and `--sp-raised-edge`; inside a floating card, `--sp-floating-ring` and `--sp-floating-edge`; inside a recess, `--sp-recessed-ring`. `--sp-divider-etch` is only for rules on the canvas. A lit row's fill covers the divider's lines and, like every band, runs over the surface's highlight to its ring (see Faces and edges).
+A divider inside a surface is drawn in that surface's own edge colours: the line in its ring and the lit line beside it in its highlight, so it reads as the surface's edge carried across it. **A header's divider is lit below its rule and a footer's above it** -- always on the body's side, as if the body were the lit region between them. `rule-below` and `rule-above` (`app/styles/controls.css`) draw exactly that in `--sp-ground-ring` and `--sp-ground-edge`, which each `ground-*` utility points at its own surface's ring and highlight (generated from `GROUND_EDGE_ROLES` in `scripts/colour-theme/config.ts`), so one class is right on the pane, a floating card, a drawer or a popover. Every header and footer that spans a surface takes one of them: the drawer's header and footer, the drawer panel's header, the Rules step's cards. The process header and the sheet's section heads keep the same shape by their own means (the header's lit line lies on the sheet frame, so a head's band can cover it). A table's header row or a bordered box without a highlight is not a surface edge and keeps its plain rule. Inside the pane (the header's rule, the runs column's edge, the sheet's rows) that is `--sp-raised-ring` and `--sp-raised-edge`; inside a floating card, `--sp-floating-ring` and `--sp-floating-edge`; inside a recess, `--sp-recessed-ring`. `--sp-divider-etch` is only for rules on the canvas. A lit row's fill covers the divider's lines and, like every band, runs over the surface's highlight to its ring (see Faces and edges).
 
 A handful of cross-theme warnings are expected and left standing. Light's canvas-to-floating span is two steps where dark's is four, and light text near the white end reaches ratios dark cannot. They are warnings precisely so visual margin does not become an undocumented compliance rule.
 
@@ -501,27 +501,27 @@ Where a value is genuinely dynamic, use a `style` prop rather than an interpolat
 Several shapes recur, and each has one home. A second, hand-drawn copy is how
 four pills ended up with four class strings.
 
-| Shape                      | Use                                                                                                                         | Lives in                                                                   |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| A pill                     | `Pill` with a `tone`; `variant="ringed"` for context, not a state                                                           | `components/ui/pill.tsx`                                                   |
-| A table of data            | `DataTable`, `DATA_TABLE_HEAD`, `DATA_TABLE_NAME`, `DATA_TABLE_RULE`                                                        | `components/ui/data-table.tsx`                                             |
-| Content opening in place   | `Fold`                                                                                                                      | `components/ui/fold.tsx`                                                   |
-| A filter strip             | `FilterTabs`; `size="small"` beside a result rather than over a list                                                        | `components/ui/filter-tabs.tsx`                                            |
+| Shape                      | Use                                                                                                                         | Lives in                                                            |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| A pill                     | `Pill` with a `tone`; `variant="ringed"` for context, not a state                                                           | `components/ui/pill.tsx`                                            |
+| A table of data            | `DataTable`, `DATA_TABLE_HEAD`, `DATA_TABLE_NAME`, `DATA_TABLE_RULE`                                                        | `components/ui/data-table.tsx`                                      |
+| Content opening in place   | `Fold`                                                                                                                      | `components/ui/fold.tsx`                                            |
+| A filter strip             | `FilterTabs`; `size="small"` beside a result rather than over a list                                                        | `components/ui/filter-tabs.tsx`                                     |
 | Buttons in a table row     | `Button` or `DecisionButton` with `size="small"`, so a row's actions stay on one line                                       | `components/ui/button.tsx`, `components/engine/decision-button.tsx` |
-| An input in a list         | `InputRow`, inside the evidence-file inputs list; a source's tabs are `SourceView`                                          | `components/app-shell/inputs/inputs-list.tsx`                              |
+| An input in a list         | `InputRow`, inside the evidence-file inputs list; a source's tabs are `SourceView`                                          | `components/app-shell/inputs/inputs-list.tsx`                       |
 | A step's test controls     | a `section` with `brunch-trial`, labelled "<step> setup"                                                                    | `components/engine/orders-run.css`                                  |
-| An action in a heading row | `Button` with `size="xsmall"` and `shape="round"`, beside the column names                                                  | `components/ui/button.tsx`                                                 |
-| An error in a panel        | a bordered box on the blocked tone: `data-severity={0}` with `bg-severity-fill border-severity-pill-ring text-severity-ink` | `app/styles/severity.css`                                                  |
+| An action in a heading row | `Button` with `size="xsmall"` and `shape="round"`, beside the column names                                                  | `components/ui/button.tsx`                                          |
+| An error in a panel        | a bordered box on the blocked tone: `data-severity={0}` with `bg-severity-fill border-severity-pill-ring text-severity-ink` | `app/styles/severity.css`                                           |
 
 Two shapes are utilities, because stylesheets compose them as well as markup:
 
 - **`pill-shape`** (`controls.css`) is every pill's shape -- inline, centred,
   fully rounded, never wrapping. `Pill` uses it, and the pills that move with
-  stylesheets of their own `@apply` it: a thread step's facts, a release row's
+  stylesheets of their own `@apply` it: a thread step's facts, a list row's
   count, a cross-checked value. Each keeps its own size and face.
 - **`row-rule`** (`controls.css`) is the rule between two rows, drawn over a
   row so it takes no height, from `--row-rule-inset` to the far side. The
-  release list applies it to its items; `DataTable` (as `DATA_TABLE_RULE`)
+  list of rows (`.row-list`) applies it to its items; `DataTable` (as `DATA_TABLE_RULE`)
   to a cell, since Chrome lays a pseudo-element on a `<tr>` out as a cell of
   its own. A table places it with `--row-rule-inset` and `--row-rule-top`.
   The first cell of a row takes `DATA_TABLE_RULE` and every later cell
@@ -639,7 +639,7 @@ layout centres the icon in its own column and does not carry a rail marker.
 For numbers rather than eyes, start `pnpm dev` and run:
 
 ```
-pnpm check:rail             # the default: /examples/states, processes level
+pnpm check:rail             # the default: /examples/brunch-orders, processes level
 pnpm check:rail -- --level all --self-test
 ```
 
@@ -728,7 +728,7 @@ Tailwind itself follows this split: its breakpoints are rem, its border and ring
 
 **Breakpoints must be rem.** A media-query `rem` resolves against the browser's _default_ font size, not the root element. A px threshold mixed into a rem scale keeps its position while the others move, so Tailwind's build-time sort order stops matching the runtime order and the mobile-first cascade can resolve backwards.
 
-Named thresholds: `shell` (56.25rem) is where the sidebar and pane can sit side by side and scroll independently; `runs` (68.75rem) is where the run strip becomes a third column; `card` (25rem) is the container width below which the release card drops to one column.
+Named thresholds: `shell` (56.25rem) is where the sidebar and pane can sit side by side and scroll independently; `runs` (68.75rem) is where the run strip becomes a third column; `card` (25rem) is the container width below which a list's rows pad 4 rather than 6 (`components/ui/list-rows.css`).
 
 ## Development switches
 

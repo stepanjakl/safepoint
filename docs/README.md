@@ -9,19 +9,18 @@ Safepoint lets a person inspect and approve proposed changes before application-
 | Active implementation hand-off | [Brunch orders plan](processes/brunch-orders/PLAN.md) and [development log](processes/brunch-orders/DEVELOPMENT-LOG.md) | In progress                                                 |
 | Product direction              | [Product brief](product/PRODUCT-BRIEF.md)                                                                               | Direction; implemented and future capabilities are labelled |
 | Current architecture           | [Architecture](engineering/ARCHITECTURE.md) and [definitions engine](engineering/DEFINITIONS-ENGINE.md)                 | Code-verified guide                                         |
-| Current interface              | [Embedded review](interface/EMBEDDED-REVIEW.md) and [styling system](interface/STYLING-SYSTEM.md)                       | Implemented guidance, with future work labelled             |
-| Earlier replay scenario        | [Promotion-release data dictionary](processes/promotion-release/DATA-DICTIONARY.md)                                     | Implemented replay contract                                 |
+| Current interface              | [Shell direction](interface/EMBEDDED-REVIEW.md) and [styling system](interface/STYLING-SYSTEM.md)                       | Implemented guidance, with future work labelled             |
 
 **Brunch orders** is the active hand-off. Its route is `/examples/brunch-orders`, beside `/examples/brunch-orders-direct`, where the model works every run out with no rulebook; both are served wherever the gate applies. It reads Products, Stock, Sales, Deliveries and Parameters, then uses `lib/definitions/` to find, check and approve definitions from versioned instructions. It then calculates, proposes and reviews, and writes what a person approves to the Orders tab. Its history and learning phase, and wider scope, remain planned.
 
 The [Brunch orders direction review](processes/brunch-orders/DIRECTION-REVIEW.md) records the 9 October assessment of drafting reliability and product direction, including the proposed next experiment with a corrected, frozen definition set. It is a proposal, not evidence that later phases or reliable automatic authoring are complete.
 
-**Promotion release** is the earlier 27-line replay at `/examples/promotion`. The two examples must not be read as one implementation or one roadmap. The earlier Brunch weekend sheet experiment was removed on 13 October 2026; its [record](archive/BRUNCH-WEEKEND.md) is in the archive.
+The earlier promotion-release prototype (a 27-line replay review with its own evidence, policy and model workbenches) was removed; it can be recovered from the git tag `archive/promotion-prototype`. The earlier Brunch weekend sheet experiment was removed on 13 October 2026; its [record](archive/BRUNCH-WEEKEND.md) is in the archive.
 
 ## By topic
 
 - [Product](product/PRODUCT-BRIEF.md): purpose, terms, principles and future goals. [Experience principles](product/EXPERIENCE-PRINCIPLES.md) contains reusable interaction guidance.
-- [Interface](interface/EMBEDDED-REVIEW.md): shell and review direction; [assistant sidebar](interface/ASSISTANT-SIDEBAR.md), [contrast checks](interface/CONTRAST-CHECKER.md), [colour testing](interface/COLOUR-TESTING.md), and the [unbuilt review overlay URL plan](interface/REVIEW-OVERLAY-PLAN.md).
+- [Interface](interface/EMBEDDED-REVIEW.md): shell direction; [assistant sidebar](interface/ASSISTANT-SIDEBAR.md), [contrast checks](interface/CONTRAST-CHECKER.md) and [colour testing](interface/COLOUR-TESTING.md).
 - [Engineering](engineering/ARCHITECTURE.md): implemented boundaries and explicitly proposed production architecture. The [definitions engine](engineering/DEFINITIONS-ENGINE.md) is the current Brunch orders engine. The [database](engineering/DATABASE.md): its tables, what moves into each, what is already kept there, and its open questions. [Runs on the server](engineering/RUNS-ON-THE-SERVER.md) is the hand-over for moving runs, decisions and instruction versions from the browser onto the server's procedures.
 - [Processes](processes/brunch-orders/PLAN.md): each example's own contract and history.
 - [Research](research/PRIOR-ART.md): supporting comparison and the [LLM rules learning guide](research/LLM-RULES-GUIDE.md), with a [short summary](research/RULES-RESEARCH-SUMMARY.md). Research is evidence, not implementation authority.

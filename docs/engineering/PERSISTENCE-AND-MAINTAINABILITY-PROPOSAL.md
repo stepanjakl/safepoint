@@ -598,6 +598,9 @@ Each removes code or a way to be wrong; none changes behaviour.
    paused or settled work. For the owner to decide, page by page, which stay
    as a reference and which are archived; nothing here should be deleted
    unseen.
+   Decided later by the owner: the prototype was archived under the git tag
+   `archive/promotion-prototype` and removed, with the placeholder run data
+   above and the workbench pages that existed only for it.
 
 ### Folder structure
 
