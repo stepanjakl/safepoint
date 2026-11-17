@@ -2,6 +2,8 @@ import { defineConfig, devices } from '@playwright/test';
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 const TEST_DATABASE = 'data/pglite-e2e';
+// The Local World's runs (server/workflows/), apart from the developer's.
+const TEST_WORKFLOWS = 'data/workflow-e2e';
 
 export default defineConfig({
   testDir: './e2e',
@@ -28,8 +30,8 @@ export default defineConfig({
   webServer: process.env.PLAYWRIGHT_BASE_URL
     ? undefined
     : {
-        // The database folder is cleared as the server starts.
-        command: `rm -rf ${TEST_DATABASE} && pnpm dev`,
+        // The database and workflow folders are cleared as the server starts.
+        command: `rm -rf ${TEST_DATABASE} ${TEST_WORKFLOWS} && pnpm dev`,
         env: {
           // Model requests are intercepted by browser tests; the placeholder
           // enables their controls without a provider credential.
@@ -40,6 +42,10 @@ export default defineConfig({
           DATABASE_URL: '',
           DATABASE_URL_UNPOOLED: '',
           SAFEPOINT_PGLITE_DIR: TEST_DATABASE,
+          // Named, not left to withWorkflow, which otherwise puts every
+          // server's runs in .next/workflow-data whatever the folder says.
+          WORKFLOW_TARGET_WORLD: 'local',
+          WORKFLOW_LOCAL_DATA_DIR: TEST_WORKFLOWS,
         },
         // With reuseExistingServer, a server already on the port is used as
         // it is, whatever database it has: only the one started here is safe.
