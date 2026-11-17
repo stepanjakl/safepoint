@@ -47,7 +47,7 @@ export async function call<T>(
   once for the rulebook (`seedKeptRulebooks`), since seeding is done by the
   first of them to be answered for real.
 */
-export function keptRulebook(): string {
+function keptRulebook(): string {
   const hash = hashOf(brunchOrdersProcess.instructions.text);
   const folder = path.join('fixtures', BRUNCH_ORDERS_ID, 'rulebooks');
   const version = readdirSync(folder).find((entry) =>
