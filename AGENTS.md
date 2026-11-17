@@ -140,6 +140,18 @@ there, where the user can see them, rather than in screenshots.
 `/workbench/controls` renders every control in every React Aria interaction
 state at once, pinned by `app/workbench/pin.tsx`, and `pnpm check:visual`
 records it; add a control there when it gains a face.
+`/workbench` is a public showcase of how the product was designed, a menu of
+pages in groups. The list is `app/workbench/menu.ts` and nothing else: a new
+page is a folder under `app/workbench/` and one entry there, which gives it a
+card on the menu and a breadcrumb. A page renders from fixtures or frozen
+data and calls no model, database or `app/api/dev` route, so it is prerendered
+and may be served in production; one that cannot meet that does not belong in
+the workbench. The **History** group holds earlier prototypes restored from
+the archive. They are kept as they were, not maintained, and fenced: they live
+only in `app/workbench/history/`, `components/prototype/`, `lib/prototype/`
+and `fixtures/prototype/`, and ESLint refuses an import of the last three from
+anywhere else. Do not tidy, restyle or build on them; deleting the four
+folders and the menu's History group removes them.
 
 ## The definitions engine
 

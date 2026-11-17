@@ -27,7 +27,7 @@ The main demonstration in progress is one store's **Brunch orders** process for 
 - The development flow reads the sheet once, finds definitions in the instructions, checks each formula against worked examples and asks a person to accept or deny each definition.
 - Planned phases calculate demand, propose order quantities, check them against accepted rules, let a person review them, and apply approved orders to the sheet with verification.
 
-The earlier promotion-release prototype (a 27-line replay review) was removed; it can be recovered from the git tag `archive/promotion-prototype`.
+The earlier promotion-release prototype (a 27-line replay review) was removed from the app; three of its pages are kept as they were under `/workbench/history`, and the rest can be recovered from the git tag `archive/promotion-prototype`.
 
 The planned public demo uses synthetic data and accepts no arbitrary prompts or production credentials.
 

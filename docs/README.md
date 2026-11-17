@@ -15,7 +15,7 @@ Safepoint lets a person inspect and approve proposed changes before application-
 
 The [Brunch orders direction review](processes/brunch-orders/DIRECTION-REVIEW.md) records the 9 October assessment of drafting reliability and product direction, including the proposed next experiment with a corrected, frozen definition set. It is a proposal, not evidence that later phases or reliable automatic authoring are complete.
 
-The earlier promotion-release prototype (a 27-line replay review with its own evidence, policy and model workbenches) was removed; it can be recovered from the git tag `archive/promotion-prototype`. The earlier Brunch weekend sheet experiment was removed on 13 October 2026; its [record](archive/BRUNCH-WEEKEND.md) is in the archive.
+The earlier promotion-release prototype (a 27-line replay review with its own evidence, policy and model workbenches) was removed from the app; its replay review, policy workbench and review explorer (without the live-model parts) are kept as they were under `/workbench/history`, and the rest can be recovered from the git tag `archive/promotion-prototype`. The earlier Brunch weekend sheet experiment was removed on 13 October 2026; its [record](archive/BRUNCH-WEEKEND.md) is in the archive.
 
 ## By topic
 
