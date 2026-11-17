@@ -4,7 +4,7 @@ Safepoint helps people review changes proposed by an AI agent before those chang
 
 Instead of asking someone to approve a chat message, Safepoint's intended flow presents a clear change set: what the agent inspected, what it wants to change, what it left out, what looks risky, and what happened after approval. The current examples implement parts of this flow.
 
-> **Status:** The app shell and promotion-release replay review are implemented. [Brunch orders](docs/processes/brunch-orders/PLAN.md) is the active development hand-off: its instructions, five-tab read and individually approved definitions are built. Calculation, order proposals, review, sheet write-back and durable history are planned.
+> **Status:** The app shell and promotion-release replay review are implemented. [Brunch orders](docs/processes/brunch-orders/PLAN.md) is the active development hand-off: it is built end to end: instructions, a five-tab read, individually approved rules, calculation, order proposals, per-record review and a verified, undoable write to the sheet. Runs, rulebooks, proposals and decisions are kept on the server and the app can be deployed on Vercel behind a shared password. Learning from decisions, real sign-in and wider scope are planned.
 
 ## The idea
 
@@ -145,6 +145,8 @@ A checklist, in order. Both Brunch orders processes are served wherever the gate
 - **Build command:** leave it empty. Vercel runs the `vercel-build` script in place of `build` (`scripts/vercel-build.ts`). To be explicit, set the build command to `pnpm vercel-build`.
 - **Enable access to System Environment Variables** (Environment Variables), then redeploy. Workflow knows it is deployed by `VERCEL_DEPLOYMENT_ID`, which Vercel exposes only with this setting; without it the build emits local output, every run fails on the read-only filesystem (`EROFS`), and no run appears in the dashboard. The build also reads `VERCEL_ENV` to decide whether to migrate.
 - Nothing to set for Workflow's queue: the request proxy (`proxy.ts`) leaves `/.well-known/workflow/` open, as Workflow authenticates each delivery itself.
+- Deploy from a clean checkout with `vercel deploy --prod --archive=tgz`, which uploads one archive. The per-file upload hit the Hobby plan's daily file limit. The CLI does not apply `.gitignore`'s folder rules (it sent agent worktrees, kept run data and reports), so `.vercelignore` names what must not be uploaded and must be kept in step with `.gitignore` when a new local folder appears.
+- The GitHub integration is disconnected, so nothing deploys on push: every deploy is made by hand as above.
 - Function duration: `app/api/trpc/[trpc]/route.ts` asks for 300 seconds, the most a Hobby plan allows, for the cross-check and the rule advice, which ask a model inside the request and can need longer. On Pro, raise `maxDuration` there towards 800.
 
 **2. Environment variables** (names only; values in the project's settings, never in the repository)
@@ -196,6 +198,6 @@ The [documentation index](docs/README.md) separates current guidance, process pl
 
 ## Next step
 
-Continue the [Brunch orders plan](docs/processes/brunch-orders/PLAN.md) from its next gated phase. The instructions, read and definitions steps are built; later steps remain planned.
+Continue the [Brunch orders plan](docs/processes/brunch-orders/PLAN.md) from its next gated phase; what is still open (sign-in, throttling, retention) is in [`TODO.md`](TODO.md).
 
 The [archived delivery plan](docs/archive/DELIVERY-PLAN.md) records broader persistence, execution and release goals; it does not describe implemented behaviour. The working checklist is in [`TODO.md`](TODO.md).
