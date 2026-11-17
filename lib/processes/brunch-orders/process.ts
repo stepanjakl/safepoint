@@ -2,7 +2,8 @@ import type { DefinitionProcess } from '@/lib/engine/types';
 import type { ProcessSummary } from '@/lib/shell/model';
 import type { ReleasePlan } from '@/lib/shell/plan-contract';
 
-import { SUBJECT } from './data';
+import type { RunReads } from '../types';
+import { CAPTURED_READ, DATA_TABS, SHEET_USE, SUBJECT } from './data';
 import { DIRECT_ORDER_STEPS, ORDER_STEPS } from './steps';
 
 /*
@@ -29,6 +30,15 @@ export const BRUNCH_ORDERS_DEFINITIONS: DefinitionProcess = {
 export const BRUNCH_ORDERS_DIRECT_DEFINITIONS: DefinitionProcess = {
   id: BRUNCH_ORDERS_DIRECT_ID,
   subject: SUBJECT,
+};
+
+// Where its runs' data is read from. Both processes read the same sheet, and
+// every read is kept under the rulebook process's id.
+export const BRUNCH_ORDERS_READS: RunReads = {
+  process: BRUNCH_ORDERS_ID,
+  source: SHEET_USE.source,
+  tabs: DATA_TABS,
+  captured: CAPTURED_READ,
 };
 
 // The first version, kept so a run started under it can still show it.

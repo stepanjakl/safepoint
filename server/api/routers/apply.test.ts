@@ -47,7 +47,7 @@ vi.mock('@/server/storage/run-reads', async (importOriginal) => {
   };
   return {
     ...actual,
-    keptRead: async (id: string) =>
+    keptRead: async (_reads: unknown, id: string) =>
       reads[id]
         ? {
             ...capturedRead(),
@@ -56,13 +56,13 @@ vi.mock('@/server/storage/run-reads', async (importOriginal) => {
           }
         : null,
     // The sheet the test holds, whenever the router reaches for the live one.
-    liveSheet: {
+    liveSheetOf: () => ({
       readNow: () => held.sheet.readNow(),
       readTab: (tab: string) => held.sheet.readTab(tab),
       addTab: (tab: string) => held.sheet.addTab(tab),
       writeRange: (tab: string, range: string, values: unknown[][]) =>
         held.sheet.writeRange(tab, range, values),
-    },
+    }),
   };
 });
 

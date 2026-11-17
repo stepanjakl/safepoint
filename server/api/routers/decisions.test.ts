@@ -23,7 +23,7 @@ import { caller, failure } from '../run.fixture';
 
 vi.mock('@/server/storage/run-reads', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/server/storage/run-reads')>()),
-  keptRead: async (id: string) =>
+  keptRead: async (_reads: unknown, id: string) =>
     ['live', 'other'].includes(id)
       ? {
           ...(await import('@/lib/engine/captured.fixture')).capturedRead(),

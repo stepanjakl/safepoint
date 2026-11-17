@@ -54,7 +54,7 @@ async function opened(run: ProposalRun) {
     owner: await ownerFor(owner, set),
     set,
     text,
-    read: await readOf(run.readId),
+    read: await readOf(run.job.process, run.readId),
     asking: { model: run.model, resolve: standInsFor(run.holder) },
   };
 }

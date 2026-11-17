@@ -25,7 +25,7 @@ const STARTING = { step: '', error: null, running: true, writing: null };
 
 async function opened(run: DraftRun) {
   const { owner, text } = await instructionsOf(run.job.process, run.job.key);
-  const read = await readOf(run.readId);
+  const read = await readOf(run.job.process, run.readId);
   fitting(read, owner.subject.data);
   const asking = { model: run.model, resolve: standInsFor(run.holder) };
   return { owner, text, read, asking };

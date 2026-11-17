@@ -1,29 +1,19 @@
 import 'server-only';
 
-import { z } from 'zod';
-
 import { staleness, type Stale } from '@/lib/engine/fits';
 import { noRules } from '@/lib/engine/fingerprint';
 import type { KeptRead } from '@/lib/engine/records';
 import type { DefinitionProcess, DefinitionSet } from '@/lib/engine/types';
-import {
-  BRUNCH_ORDERS_DEFINITIONS,
-  BRUNCH_ORDERS_DIRECT_DEFINITIONS,
-  brunchOrdersDirectProcess,
-  brunchOrdersProcess,
-} from '@/lib/processes/brunch-orders/process';
+import type { RunProcess } from '@/server/operations/kept-processes';
 import { loadRevision, loadSet, ownerFor } from '@/server/storage/rulebooks';
 
-// Which of the two Brunch orders processes a request is for.
-export const evaluationSchema = z.enum(['rules', 'model']).default('rules');
-
 /*
-  What a Propose or Apply request works under. `rules`: the accepted rulebook
-  the run calculated on, or the current one, and whether it still fits the
-  read. `model`: no rulebook, so nothing can go stale.
+  What a run of a process works under. Evaluated by `rules`: the accepted
+  rulebook the run calculated on, or the current one, and whether it still
+  fits the read. By `model`: no rulebook, so nothing can go stale.
 */
 export async function rulebookFor(
-  evaluation: z.infer<typeof evaluationSchema>,
+  { summary, runs }: RunProcess,
   text: string,
   rulebook: string | undefined,
   read: KeptRead,
@@ -40,25 +30,26 @@ export async function rulebookFor(
   // The instructions a run must answer to for its write to reach the sheet.
   published: string;
 }> {
+  const { definitions, evaluation } = runs;
   if (evaluation === 'model') {
     const set = noRules(text);
     return {
-      owner: BRUNCH_ORDERS_DIRECT_DEFINITIONS,
+      owner: definitions,
       set,
       current: set,
       pinned: false,
       stale: null,
-      published: brunchOrdersDirectProcess.instructions.text,
+      published: summary.instructions.text,
     };
   }
-  const current = await loadSet(BRUNCH_ORDERS_DEFINITIONS, text);
+  const current = await loadSet(definitions, text);
   if (!current) throw new Error('No rules are kept for these instructions.');
   const revision = rulebook
-    ? await loadRevision(BRUNCH_ORDERS_DEFINITIONS, text, rulebook)
+    ? await loadRevision(definitions, text, rulebook)
     : null;
   const set = revision ?? current;
   // The read is held to the data profile the rules were drafted on, if any.
-  const owner = await ownerFor(BRUNCH_ORDERS_DEFINITIONS, set);
+  const owner = await ownerFor(definitions, set);
   return {
     owner,
     set,
@@ -66,6 +57,6 @@ export async function rulebookFor(
     pinned: revision !== null,
     // A rulebook kept as it was accepted may no longer fit the data.
     stale: staleness(owner, text, set, current, read),
-    published: brunchOrdersProcess.instructions.text,
+    published: summary.instructions.text,
   };
 }

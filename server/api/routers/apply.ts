@@ -13,13 +13,14 @@ import type {
   DefinitionSet,
   Proposal,
 } from '@/lib/engine/types';
+import type { RunProcess } from '@/server/operations/kept-processes';
 import { EARLIER_PROPOSAL } from '@/server/operations/record-decisions';
 import {
   applyDecisions,
   keptApplication,
   undoApplication,
 } from '@/server/storage/applications';
-import { liveSheet, whyNotWritable } from '@/server/storage/run-reads';
+import { liveSheetOf, whyNotWritable } from '@/server/storage/run-reads';
 import {
   currentDecisions,
   decidedOnEarlier,
@@ -50,6 +51,7 @@ const acknowledged = {
 };
 
 type Run = {
+  process: RunProcess;
   owner: DefinitionProcess;
   set: DefinitionSet;
   read: KeptRead;
@@ -135,7 +137,7 @@ const madeOf = (decisions: Record<string, KeptDecision>) =>
 
 // What a preview and a write begin the same way, once the decisions are in
 // hand: whether the run may write, and what is already kept of a write.
-async function opened({ owner, set, read, published, text }: Run) {
+async function opened({ process, owner, set, read, published, text }: Run) {
   const fingerprint = fingerprintOf(set);
   const cannotReach = whyNotWritable(read);
   // An earlier version's rules may lack ones added since, so it cannot write.
@@ -149,7 +151,7 @@ async function opened({ owner, set, read, published, text }: Run) {
     owner,
     read.id,
     fingerprint,
-    cannotReach ? undefined : liveSheet,
+    cannotReach ? undefined : liveSheetOf(process.runs.reads),
   );
   const shared: Shared = {
     tab: owner.subject.data.output?.tab,
@@ -183,7 +185,7 @@ export const applyRouter = router({
           ctx.read,
           proposal,
           decisions,
-          liveSheet,
+          liveSheetOf(ctx.process.runs.reads),
         ),
       );
     },
@@ -204,7 +206,7 @@ export const applyRouter = router({
       proposal,
       decisions,
       input.acknowledged,
-      liveSheet,
+      liveSheetOf(ctx.process.runs.reads),
       through,
     );
     // A refused write answers with what the preview would, so the screen
@@ -226,7 +228,7 @@ export const applyRouter = router({
       ctx.owner,
       ctx.read.id,
       fingerprintOf(ctx.set),
-      liveSheet,
+      liveSheetOf(ctx.process.runs.reads),
     );
     if (outcome.kind !== 'undone')
       throw new TRPCError({ code: 'CONFLICT', message: outcome.problem });

@@ -39,7 +39,7 @@ const { startDraft, startRewrite, model } = vi.hoisted(() => ({
 }));
 vi.mock('@/server/storage/run-reads', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/server/storage/run-reads')>()),
-  keptRead: async (id: string) =>
+  keptRead: async (_reads: unknown, id: string) =>
     id === 'test'
       ? (await import('@/lib/engine/captured.fixture')).capturedRead()
       : null,

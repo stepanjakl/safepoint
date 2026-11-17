@@ -7,7 +7,7 @@ import { fingerprintOf, hashOf } from '@/lib/engine/fingerprint';
 import type { KeptRead } from '@/lib/engine/records';
 import type { DefinitionProcess, DefinitionSet } from '@/lib/engine/types';
 import { draftingModelSchema } from '@/lib/models';
-import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
+import { rulebookProcess } from '@/server/operations/kept-processes';
 import {
   crossCheck,
   keepCrossCheck,
@@ -27,6 +27,10 @@ import { router } from '../trpc';
   the rulebook it calculated on, and keeps getting that one; the answer says
   which rulebook is current, so the run can move to it.
 */
+
+// Calculate names no process, as it never did: it is the rulebook process's
+// (server/operations/kept-processes.ts).
+const { definitions: owner } = rulebookProcess().runs;
 
 type Run = {
   owner: DefinitionProcess;

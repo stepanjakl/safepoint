@@ -7,7 +7,7 @@ import { readProcessOf } from '@/server/storage/run-reads';
 // A stand-in read of this id, kept where the app keeps reads, so a proposal,
 // cross-check or part made on it has the read its key points at.
 export async function keepStandInRead(db: Database, id: string) {
-  const process = readProcessOf({ id: '' });
+  const process = readProcessOf({ id: 'brunch-orders' });
   await ensureProcess(db, process);
   await db
     .insert(reads)
@@ -24,7 +24,7 @@ export async function keepStandInRead(db: Database, id: string) {
 // A whole read kept as the app keeps one, for what reads it back by its id:
 // a job's steps are handed the id, never the read.
 export async function keepRead(db: Database, read: KeptRead) {
-  const process = readProcessOf({ id: '' });
+  const process = readProcessOf({ id: 'brunch-orders' });
   await ensureProcess(db, process);
   await db
     .insert(reads)

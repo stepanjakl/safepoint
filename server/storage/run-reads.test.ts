@@ -6,7 +6,10 @@ import { readWholeSheet, type SheetRead } from '@/lib/sheets/composio';
 import { ensureProcess } from '@/server/db/scope';
 import { reads } from '@/server/db/schema';
 
+import { rulebookProcess } from '@/server/operations/kept-processes';
 import { keptRead, readAndKeep, whyNotWritable } from './run-reads';
+
+const RUN_READS = rulebookProcess().runs.reads;
 
 // A run's read, kept in the database and read back. The provider is a
 // stand-in: nothing reaches the network.
@@ -57,8 +60,8 @@ describe('a run’s kept reads', () => {
 
   it('gives back the read that was kept, to the byte', async () => {
     vi.mocked(readWholeSheet).mockResolvedValueOnce(live);
-    const kept = await readAndKeep('live');
-    const got = await keptRead(kept.id);
+    const kept = await readAndKeep(RUN_READS, 'live');
+    const got = await keptRead(RUN_READS, kept.id);
     expect(got).toEqual(kept);
     // As a file of it was written (compact), and as the column holds it.
     expect(JSON.stringify(got)).toBe(JSON.stringify(kept));
@@ -69,32 +72,32 @@ describe('a run’s kept reads', () => {
   });
 
   it('keeps the captured read, with the label a person is shown', async () => {
-    const kept = await readAndKeep('captured');
+    const kept = await readAndKeep(RUN_READS, 'captured');
     expect(kept.source).toMatch(/^Captured read from /);
     expect(readWholeSheet).not.toHaveBeenCalled();
-    expect(await keptRead(kept.id)).toEqual(kept);
+    expect(await keptRead(RUN_READS, kept.id)).toEqual(kept);
     expect(whyNotWritable(kept)).toMatch(/captured read/);
   });
 
   it('keeps one read once: keeping it again answers the same read', async () => {
     vi.mocked(readWholeSheet).mockResolvedValue(live);
-    const first = await readAndKeep('live');
-    const again = await readAndKeep('live');
+    const first = await readAndKeep(RUN_READS, 'live');
+    const again = await readAndKeep(RUN_READS, 'live');
     expect(again).toEqual(first);
     // Together, as two requests can arrive.
     const together = await Promise.all([
-      readAndKeep('live'),
-      readAndKeep('live'),
+      readAndKeep(RUN_READS, 'live'),
+      readAndKeep(RUN_READS, 'live'),
     ]);
     expect(together).toEqual([first, first]);
     expect(await storedText()).toEqual([JSON.stringify(first)]);
   });
 
   it('says a read is not kept for an id that is not kept, or not an id', async () => {
-    await readAndKeep('captured');
-    expect(await keptRead('gone')).toBeNull();
+    await readAndKeep(RUN_READS, 'captured');
+    expect(await keptRead(RUN_READS, 'gone')).toBeNull();
     for (const id of ['../x', 'a/b', 'a.json', '', ' ', 'x'.repeat(81)])
-      expect(await keptRead(id)).toBeNull();
+      expect(await keptRead(RUN_READS, id)).toBeNull();
   });
 
   it('names a read that is kept but cannot be read, rather than calling it gone', async () => {
@@ -108,7 +111,7 @@ describe('a run’s kept reads', () => {
         source: 'x',
         body: { id: 'unreadable', tabs: 'none' } as never,
       });
-    await expect(keptRead('unreadable')).rejects.toThrow(
+    await expect(keptRead(RUN_READS, 'unreadable')).rejects.toThrow(
       'The kept read brunch-orders/unreadable does not fit the stored shape',
     );
   });

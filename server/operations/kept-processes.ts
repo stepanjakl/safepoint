@@ -7,35 +7,54 @@ import type { ProcessSummary } from '@/lib/shell/model';
 import {
   BRUNCH_ORDERS_DEFINITIONS,
   BRUNCH_ORDERS_DIRECT_DEFINITIONS,
+  BRUNCH_ORDERS_READS,
   brunchOrdersDirectProcess,
   brunchOrdersProcess,
 } from '@/lib/processes/brunch-orders/process';
+import type { RunReads } from '@/lib/processes/types';
+
+export type { RunReads };
 
 /*
-  Server-only. The processes the server keeps anything for, by id: each one's
-  own declaration (its instructions and their earlier versions, its steps),
-  and, for one whose runs are kept on the server, what the definitions engine
-  works for. Every process here has its instruction versions kept; only the
-  ones with `runs` have runs, decisions and writes.
+  Server-only. The one place the server learns of a process: it maps a
+  process's id to its declaration, and nothing else under server/ imports
+  lib/processes (ESLint holds the line). A process here has its own
+  declaration (its instructions and their earlier versions, its steps) and its
+  instruction versions kept; one whose runs are kept on the server also has
+  what the definitions engine works for, how a run reaches its result and
+  where its data is read from, and has runs, decisions and writes.
 */
+
+// How a run reaches its result: from an accepted rulebook, or by asking a model.
+export const evaluationSchema = z.enum(['rules', 'model']).default('rules');
+export type Evaluation = z.infer<typeof evaluationSchema>;
 
 export type KeptProcess = {
   summary: ProcessSummary;
   // Where runs are kept: the engine's own process, which owns proposals and
-  // writes, and how a run reaches its result.
-  runs?: { definitions: DefinitionProcess; evaluation: 'rules' | 'model' };
+  // writes, how a run reaches its result, and where its data is read from.
+  runs?: {
+    definitions: DefinitionProcess;
+    evaluation: Evaluation;
+    reads: RunReads;
+  };
 };
 
 const KEPT: KeptProcess[] = [
   {
     summary: brunchOrdersProcess,
-    runs: { definitions: BRUNCH_ORDERS_DEFINITIONS, evaluation: 'rules' },
+    runs: {
+      definitions: BRUNCH_ORDERS_DEFINITIONS,
+      evaluation: 'rules',
+      reads: BRUNCH_ORDERS_READS,
+    },
   },
   {
     summary: brunchOrdersDirectProcess,
     runs: {
       definitions: BRUNCH_ORDERS_DIRECT_DEFINITIONS,
       evaluation: 'model',
+      reads: BRUNCH_ORDERS_READS,
     },
   },
 ];
@@ -78,3 +97,16 @@ export function processOfDefinitions(id: string): RunProcess {
   if (!kept?.runs) throw new Error(`No definitions are kept for ${id}.`);
   return kept as RunProcess;
 }
+
+// The process a request is for when it names how its run reaches its result
+// and not the process: the one that does.
+export function processOfEvaluation(evaluation: Evaluation): RunProcess {
+  const kept = KEPT.find((entry) => entry.runs?.evaluation === evaluation);
+  if (!kept?.runs) throw new Error(`No process works by ${evaluation}.`);
+  return kept as RunProcess;
+}
+
+// The process whose rulebook the rules, calculate and read procedures work on.
+// Their inputs name no process, as they never did: it is the one that has a
+// rulebook, which a second such process would have to be told apart from.
+export const rulebookProcess = () => processOfEvaluation('rules');

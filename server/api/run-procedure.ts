@@ -7,12 +7,12 @@ import { fingerprintOf } from '@/lib/engine/fingerprint';
 import type { Stale } from '@/lib/engine/fits';
 import {
   evaluationSchema,
-  rulebookFor,
-} from '@/server/operations/run-rulebook';
-import {
+  processOfEvaluation,
   runProcess,
   runProcessIdSchema,
+  type RunProcess,
 } from '@/server/operations/kept-processes';
+import { rulebookFor } from '@/server/operations/run-rulebook';
 import { runKeyOfKept } from '@/server/operations/record-decisions';
 import { keptRead, READ_GONE } from '@/server/storage/run-reads';
 import {
@@ -31,7 +31,7 @@ import {
 import { failed, gatedProcedure } from './trpc';
 
 /*
-  Server-only. The opening every Brunch orders procedure about a run shares:
+  Server-only. The opening every procedure about a run shares:
   find the read the run kept, then the rulebook it answers to, and say
   whether that rulebook still fits the read. A handler is given all of it
   (`rulebookFor`'s answer, and the read) in its context, and begins
@@ -63,8 +63,8 @@ export const keptRunFields = {
   runId: runIdSchema,
 };
 
-// What a procedure's input must hold. `evaluation` is the Brunch orders
-// process to work under, `rules` when it says nothing.
+// What a procedure's input must hold. `evaluation` is how the run reaches its
+// result, which says which process to work under: `rules` when it says nothing.
 type RunInput = {
   text: string;
   readId: string;
@@ -78,13 +78,17 @@ export const staleReply = (stale: Stale) => ({
   ...stale,
 });
 
-async function opened({ text, readId, rulebook, evaluation }: RunInput) {
-  const read = await keptRead(readId);
+async function opened(
+  { text, readId, rulebook }: RunInput,
+  process: RunProcess,
+) {
+  const read = await keptRead(process.runs.reads, readId);
   if (!read) throw new TRPCError({ code: 'NOT_FOUND', message: READ_GONE });
   return {
+    process,
     read,
     text,
-    ...(await rulebookFor(evaluation ?? 'rules', text, rulebook, read)),
+    ...(await rulebookFor(process, text, rulebook, read)),
   };
 }
 
@@ -132,7 +136,11 @@ export const runProcedure = <Schema extends z.ZodType<RunInput>>(
   gatedProcedure.input(input).use(async ({ input, next }) => {
     let run;
     try {
-      run = await opened(input as RunInput);
+      const named = input as RunInput;
+      run = await opened(
+        named,
+        processOfEvaluation(named.evaluation ?? 'rules'),
+      );
     } catch (error) {
       throw opening(error);
     }
@@ -156,7 +164,7 @@ export const keptRunProcedure = <Schema extends z.ZodType<KeptRunInput>>(
     try {
       const given = input as KeptRunInput;
       const { run: kept, fields } = await fieldsOf(given, { discarded });
-      const open = await opened(fields);
+      const open = await opened(fields, runProcess(given.process));
       // The rules it pinned, as it was given them: none kept any more is
       // said, never worked around with whichever rules are current.
       const key = await runKeyOfKept(runProcess(given.process), kept);

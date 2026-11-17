@@ -21,6 +21,7 @@ import {
 } from '@/lib/sources/model';
 
 import { database } from '@/server/db/client';
+import { keptProcesses } from '@/server/operations/kept-processes';
 import { sourceReads } from '@/server/db/schema';
 
 import { readKept } from './files';
@@ -34,9 +35,11 @@ import { parseStored } from './stored';
 */
 
 // The copy kept in the repository for each source, until it is read here.
-const CAPTURED: Record<SourceId, string> = {
-  'brunch-store-sheet': 'fixtures/brunch-orders/sheet-snapshot.json',
-};
+const CAPTURED: Record<string, string> = Object.fromEntries(
+  keptProcesses().flatMap(({ runs }) =>
+    runs ? [[runs.reads.source, runs.reads.captured]] : [],
+  ),
+);
 
 export const keptSourceReadSchema = z.object({
   readId: z.string(),
@@ -89,9 +92,11 @@ function summary(read: KeptSourceRead): SourceSummary {
 // The copy in the repository is only a stand-in, so one that cannot be read is
 // the same as none.
 async function captured(id: SourceId): Promise<KeptSourceRead | null> {
+  const file = CAPTURED[id];
+  if (!file) return null;
   const read = await readKept(
     // Not traced by itself, so next.config.ts includes the file where it is read.
-    path.join(/*turbopackIgnore: true*/ process.cwd(), CAPTURED[id]),
+    path.join(/*turbopackIgnore: true*/ process.cwd(), file),
     sheetReadSchema,
     { unreadableIsMissing: true },
   );

@@ -107,8 +107,9 @@ export async function instructionsOf(process: string, hash: string) {
   return { owner: kept.runs.definitions, text: version.text };
 }
 
-export async function readOf(readId: string) {
-  const read = await keptRead(readId);
+// The read a job works on, kept under the reads of the process it is for.
+export async function readOf(process: string, readId: string) {
+  const read = await keptRead(processOfDefinitions(process).runs.reads, readId);
   if (!read) throw new Error(READ_GONE);
   return read;
 }

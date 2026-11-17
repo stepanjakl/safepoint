@@ -101,3 +101,7 @@ export const SUBJECT: DefinitionSubject = {
   proposal: [{ id: 'order', label: 'order', unit: 'units', none: 0, min: 0 }],
   reader: 'store owner',
 };
+
+// The copy of the sheet's read kept in the repository, so tests and the
+// default view need no network. Saving a new one is an explicit action.
+export const CAPTURED_READ = 'fixtures/brunch-orders/sheet-snapshot.json';

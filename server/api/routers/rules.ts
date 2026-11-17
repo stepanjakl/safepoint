@@ -23,7 +23,6 @@ import {
 } from '@/lib/engine/types';
 import { workingOf } from '@/lib/engine/working';
 import { draftingModelSchema } from '@/lib/models';
-import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { draftProgress, startDraft, startRewrite } from '@/server/jobs/draft';
 import {
   accept,
@@ -33,7 +32,8 @@ import {
   rebaseSet,
   setAppliesTo,
 } from '@/server/operations/decide';
-import { keptRead, READ_GONE } from '@/server/storage/run-reads';
+import { rulebookProcess } from '@/server/operations/kept-processes';
+import { keptRead as keptReadOf, READ_GONE } from '@/server/storage/run-reads';
 import { attemptRecorder } from '@/server/storage/model-attempts';
 import { readIdSchema } from '@/server/storage/ids';
 import {
@@ -63,6 +63,11 @@ import { failed, gatedProcedure, router } from '../trpc';
   profile and the rulebook's revisions. `debug` and `debugDraft` say what code
   finds of one definition, or of the draft, on the read: they ask no model.
 */
+
+// The procedures here name no process, as they never did: they are the
+// rulebook process's (server/operations/kept-processes.ts).
+const { definitions: owner, reads } = rulebookProcess().runs;
+const keptRead = (id: string) => keptReadOf(reads, id);
 
 const text = z.string().min(1).max(20_000);
 const id = z.string().max(80);

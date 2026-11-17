@@ -29,7 +29,11 @@ import {
   recordDecisions,
   rulebookRevisions,
 } from '@/server/db/schema';
-import { keptProcess, runProcess } from '@/server/operations/kept-processes';
+import {
+  keptProcess,
+  rulebookProcess,
+  runProcess,
+} from '@/server/operations/kept-processes';
 import {
   applyDecisions,
   DECIDED_SINCE,
@@ -61,6 +65,8 @@ import { startRun } from '@/server/storage/runs';
 import { memorySheet } from '@/server/storage/sheet.fixture';
 
 import { inPostgresDatabase, POSTGRES_URL, REPEATS } from './postgres.fixture';
+
+const RUN_READS = rulebookProcess().runs.reads;
 
 /*
   The locks and guarded statements, under real concurrency: a PostgreSQL
@@ -516,8 +522,8 @@ describe.skipIf(!POSTGRES_URL)('on a real PostgreSQL server', () => {
       for (let at = 0; at < REPEATS; at += 1) {
         await pg.reset();
         const both = await Promise.all([
-          readAndKeep('captured'),
-          readAndKeep('captured'),
+          readAndKeep(RUN_READS, 'captured'),
+          readAndKeep(RUN_READS, 'captured'),
         ]);
         expect(both[0]).toEqual(both[1]);
         const [kept] = await pg.db().select({ n: count() }).from(reads);

@@ -11,8 +11,6 @@ import {
   type KeptRead,
 } from '@/lib/engine/records';
 import type { OutputSheet } from '@/lib/engine/apply';
-import { BRUNCH_ORDERS_ID } from '@/lib/processes/brunch-orders/process';
-import { DATA_TABS } from '@/lib/processes/brunch-orders/data';
 import {
   addTab,
   missingSheetEnv,
@@ -27,6 +25,11 @@ import {
 import { database } from '@/server/db/client';
 import { ensureProcess } from '@/server/db/scope';
 import { reads } from '@/server/db/schema';
+import {
+  keptProcesses,
+  rulebookProcess,
+  type RunReads,
+} from '@/server/operations/kept-processes';
 
 import { readKept, writeKept } from './files';
 import { FILE_ID } from './ids';
@@ -35,29 +38,29 @@ import { parseStored } from './stored';
 /*
   Server-only. A run reads the sheet once, and every later step uses that
   read: it is kept here under an id in the `reads` table, and the run in the
-  browser holds only the id. Only the data tabs are kept.
+  browser holds only the id. Only the data tabs are kept. Every function here
+  is given the process's `RunReads` (what it declares: where its reads are
+  kept, which tabs, and the captured copy), from the registry.
 */
 
 /*
-  Every read is kept under Brunch orders', its direct process's included: the
-  one place that says whose reads a process works on. keptRead and keep use
-  it, and so do the rows made on a read (proposals, cross-checks, parts), as
-  their `read_process`, so the two cannot disagree.
+  The process whose reads a process's are kept under: the one place that says
+  whose reads a process works on (a direct process proposes on the reads kept
+  under the rulebook one). keptRead and keep use it, and so do the rows made
+  on a read (proposals, cross-checks, parts), as their `read_process`, so the
+  two cannot disagree. An id no process keeps, as an old file's folder, is
+  read as the rulebook process's, as it always was.
 */
-const READS_PROCESS = BRUNCH_ORDERS_ID;
-// The process is a parameter so a caller says whose reads it means; today
-// every process's are kept under the one.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const readProcessOf = (_owner: { id: string }) => READS_PROCESS;
+export function readProcessOf(owner: { id: string }): string {
+  const kept = keptProcesses().find(
+    (entry) => entry.runs?.definitions.id === owner.id,
+  );
+  return (kept?.runs ?? rulebookProcess().runs).reads.process;
+}
 
 // The last live read saved in the repository, so tests and the default view
 // need no network. Saving one is an explicit action.
-const CAPTURED = path.join(
-  process.cwd(),
-  'fixtures',
-  BRUNCH_ORDERS_ID,
-  'sheet-snapshot.json',
-);
+const capturedPath = (of: RunReads) => path.join(process.cwd(), of.captured);
 
 // What a failed request said, as one sentence: the service's own message
 // where its error is the JSON it answers with.
@@ -74,7 +77,8 @@ function reasonOf(error: string | null): string | null {
   return /[.!?]$/.test(said) ? said : `${said}.`;
 }
 
-async function load(source: 'captured' | 'live') {
+async function load(of: RunReads, source: 'captured' | 'live') {
+  const captured = capturedPath(of);
   if (source === 'live') {
     const read = await readWholeSheet();
     // A request that failed leaves its tabs empty: kept, that would be a
@@ -86,35 +90,38 @@ async function load(source: 'captured' | 'live') {
       );
     return { read, label: `Live read through Composio at ${read.readAt}` };
   }
-  const read = await readKept(CAPTURED, sheetReadSchema);
+  const read = await readKept(captured, sheetReadSchema);
   if (!read)
     throw new Error(
-      `${path.relative(process.cwd(), CAPTURED)} is not kept: capture a read first.`,
+      `${path.relative(process.cwd(), captured)} is not kept: capture a read first.`,
     );
   return {
     read,
-    label: `Captured read from ${read.readAt} (fixtures/${BRUNCH_ORDERS_ID}/sheet-snapshot.json)`,
+    label: `Captured read from ${read.readAt} (${of.captured})`,
   };
 }
 
 // Saves a live read as the captured one; refused if any request failed.
-export async function captureRead(): Promise<{ file: string; readAt: string }> {
+export async function captureRead(
+  of: RunReads,
+): Promise<{ file: string; readAt: string }> {
   const read = await readWholeSheet();
   if (!read.requests.every((r) => r.successful))
     throw new Error('The read failed; nothing was saved.');
-  await writeKept(CAPTURED, read);
-  return { file: path.relative(process.cwd(), CAPTURED), readAt: read.readAt };
+  const captured = capturedPath(of);
+  await writeKept(captured, read);
+  return { file: path.relative(process.cwd(), captured), readAt: read.readAt };
 }
 
 // The data tabs of a read, in the order the process lists them; a tab the
 // sheet does not have comes back empty, so a missing tab shows rather than
 // vanishing.
-function dataTabs(read: SheetRead): DataTab[] {
-  return DATA_TABS.map((name) => ({ name, values: tabValues(read, name) }));
+function dataTabs(of: RunReads, read: SheetRead): DataTab[] {
+  return of.tabs.map((name) => ({ name, values: tabValues(read, name) }));
 }
 
-const asKept = (read: SheetRead, label: string): KeptRead => {
-  const tabs = dataTabs(read);
+const asKept = (of: RunReads, read: SheetRead, label: string): KeptRead => {
+  const tabs = dataTabs(of, read);
   const hash = createHash('sha256')
     .update(JSON.stringify(tabs))
     .digest('hex')
@@ -134,14 +141,14 @@ const asKept = (read: SheetRead, label: string): KeptRead => {
 
 // Written once: an id is the time read and a hash of what was read, so a
 // second keep of it is the same read and leaves the first as it was.
-async function keep(read: KeptRead): Promise<KeptRead> {
+async function keep(of: RunReads, read: KeptRead): Promise<KeptRead> {
   const body = keptReadSchema.parse(read);
   const db = await database();
-  await ensureProcess(db, READS_PROCESS);
+  await ensureProcess(db, of.process);
   const inserted = await db
     .insert(reads)
     .values({
-      process: READS_PROCESS,
+      process: of.process,
       id: body.id,
       readAt: new Date(body.readAt),
       source: body.source,
@@ -150,21 +157,25 @@ async function keep(read: KeptRead): Promise<KeptRead> {
     .onConflictDoNothing()
     .returning({ id: reads.id });
   // Already kept: what is kept is what the id names.
-  return inserted.length ? body : ((await keptRead(body.id)) ?? body);
+  return inserted.length ? body : ((await keptRead(of, body.id)) ?? body);
 }
 
 export async function readAndKeep(
+  of: RunReads,
   source: 'captured' | 'live',
 ): Promise<KeptRead> {
-  const { read, label } = await load(source);
-  return keep(asKept(read, label));
+  const { read, label } = await load(of, source);
+  return keep(of, asKept(of, read, label));
 }
 
 // What a run is told when the read it was taken with is no longer kept.
 export const READ_GONE =
   'This run’s data is no longer kept on the server. Start a new run to read the sheet again.';
 
-export async function keptRead(id: string): Promise<KeptRead | null> {
+export async function keptRead(
+  of: RunReads,
+  id: string,
+): Promise<KeptRead | null> {
   // A bare id only, as when it named a file.
   if (!FILE_ID.test(id)) return null;
   const [row] = await (
@@ -172,13 +183,9 @@ export async function keptRead(id: string): Promise<KeptRead | null> {
   )
     .select({ body: reads.body })
     .from(reads)
-    .where(and(eq(reads.process, READS_PROCESS), eq(reads.id, id)));
+    .where(and(eq(reads.process, of.process), eq(reads.id, id)));
   return row
-    ? parseStored(
-        row.body,
-        keptReadSchema,
-        `The kept read ${READS_PROCESS}/${id}`,
-      )
+    ? parseStored(row.body, keptReadSchema, `The kept read ${of.process}/${id}`)
     : null;
 }
 
@@ -193,14 +200,14 @@ export function whyNotWritable(read: KeptRead): string | null {
 
 // The sheet as a write sees it. Not kept: it only proves the run's read still
 // holds, and times the checks at the moment of writing.
-export const liveSheet: OutputSheet = {
+export const liveSheetOf = (of: RunReads): OutputSheet => ({
   async readNow() {
     const read = await readWholeSheet();
     const failed = read.requests.find((r) => !r.successful);
     if (failed) throw new Error(failed.error ?? 'The read failed.');
-    return asKept(read, `Live read through Composio at ${read.readAt}`);
+    return asKept(of, read, `Live read through Composio at ${read.readAt}`);
   },
   readTab,
   addTab,
   writeRange,
-};
+});

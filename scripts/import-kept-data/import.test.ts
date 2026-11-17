@@ -37,6 +37,7 @@ import {
 import { jobProgress } from '@/server/jobs/run-job';
 import { INTERRUPTED as PROPOSAL_INTERRUPTED } from '@/server/jobs/proposal';
 import { keptApplication } from '@/server/storage/applications';
+import { rulebookProcess } from '@/server/operations/kept-processes';
 import { keptRead } from '@/server/storage/run-reads';
 import { keptCrossCheck } from '@/server/storage/cross-checks';
 import { loadKeptLimits } from '@/server/storage/model-limits';
@@ -44,6 +45,8 @@ import { keptProposal } from '@/server/storage/proposals';
 import { sourceValues } from '@/server/storage/source-reads';
 
 import { importKeptData, refusals, describe as say } from './report';
+
+const RUN_READS = rulebookProcess().runs.reads;
 
 // The import on a made-up data folder and a scratch database: what it copies,
 // that running it twice changes nothing, what it refuses, and that it leaves
@@ -279,7 +282,10 @@ describe('the import of what is kept on disk', () => {
     expect(counts(report)).toEqual(KEPT);
     expect(refusals(report)).toBe(0);
 
-    expect(await keptRead('first')).toEqual({ ...capturedRead(), id: 'first' });
+    expect(await keptRead(RUN_READS, 'first')).toEqual({
+      ...capturedRead(),
+      id: 'first',
+    });
     expect(
       (await db().select().from(reads))
         .map((r) => `${r.process}/${r.id}`)
@@ -519,7 +525,7 @@ describe('the import of what is kept on disk', () => {
     expect(text).toContain('shapeless.json: does not fit the stored shape');
     expect(text).toContain('model-b: a value of it does not fit the table');
     // The row that was kept is the one that was kept.
-    expect((await keptRead('first'))!.source).toBe('captured');
+    expect((await keptRead(RUN_READS, 'first'))!.source).toBe('captured');
     expect(
       (await db().select().from(modelLimits)).find((r) => r.model === 'model-b')
         ?.perDay,

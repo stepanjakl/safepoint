@@ -4,8 +4,8 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { recordsOf, type KeptRead } from '@/lib/engine/records';
-import { SUBJECT } from '@/lib/processes/brunch-orders/data';
 import { missingSheetEnv } from '@/lib/sheets/composio';
+import { rulebookProcess } from '@/server/operations/kept-processes';
 import {
   captureRead,
   keptRead,
@@ -20,6 +20,11 @@ import { gatedProcedure, router } from '../trpc';
   for that same read by its id (`get`). `capture` saves a live read as the
   captured one that the tests and the default view use.
 */
+
+// These procedures name no process, as they never did: they are the rulebook
+// process's (server/operations/kept-processes.ts), whose reads every process
+// shares.
+const { definitions, reads } = rulebookProcess().runs;
 
 const said = (error: unknown, otherwise: string) =>
   error instanceof Error ? error.message : otherwise;
@@ -38,7 +43,7 @@ function requireSheetEnv() {
 async function keptOrRefuse(id: string) {
   let kept;
   try {
-    kept = await keptRead(id);
+    kept = await keptRead(reads, id);
   } catch (error) {
     // A kept read that cannot be read is named, not hidden as gone.
     throw new TRPCError({
@@ -59,7 +64,7 @@ const summaryOf = (kept: KeptRead) => ({
   source: kept.source,
   spreadsheet: kept.spreadsheet,
   tabs: kept.tabs.map((t) => ({ name: t.name, rows: t.values.length })),
-  problems: recordsOf(kept, SUBJECT.data).problems,
+  problems: recordsOf(kept, definitions.subject.data).problems,
 });
 
 export const readRouter = router({
@@ -78,7 +83,7 @@ export const readRouter = router({
     .mutation(async ({ input }) => {
       if (input.source === 'live') requireSheetEnv();
       try {
-        return summaryOf(await readAndKeep(input.source));
+        return summaryOf(await readAndKeep(reads, input.source));
       } catch (error) {
         throw new TRPCError({
           code: 'BAD_GATEWAY',
@@ -91,7 +96,7 @@ export const readRouter = router({
   capture: gatedProcedure.mutation(async () => {
     requireSheetEnv();
     try {
-      return await captureRead();
+      return await captureRead(reads);
     } catch (error) {
       throw new TRPCError({
         code: 'BAD_GATEWAY',
