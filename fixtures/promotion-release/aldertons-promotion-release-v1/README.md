@@ -6,7 +6,7 @@ Version `1.0.1` corrected the mozzarella line's earlier promotion order to 150 u
 
 See the [Stage 1A data-flow map](../../../docs/archive/STAGE-1A-BRIEF.md#current-data-flow) for how these files pass through validation and reach application code.
 
-The [promotion-release data dictionary](../../../docs/processes/promotion-release/DATA-DICTIONARY.md) explains every business field and controlled value in plain language. The matching reviewed outputs live separately under [`replays/`](../../../replays/promotion-release/aldertons-promotion-release-v1/README.md).
+The [promotion-release data dictionary](../../../docs/processes/promotion-release/DATA-DICTIONARY.md) explains every business field and controlled value in plain language. The matching reviewed outputs live separately under [`fixtures/replays/`](../../replays/promotion-release/aldertons-promotion-release-v1/README.md).
 
 ## Source evidence
 

@@ -2,14 +2,14 @@
 
 This directory contains version `1.0.2` of the reviewed Fresh Food Weekend replay. A replay represents the output of a previous accepted run; it is not source evidence supplied to the agent.
 
-The matching fictional source evidence lives under [`fixtures/`](../../../fixtures/promotion-release/aldertons-promotion-release-v1/README.md). The [promotion-release data dictionary](../../../docs/processes/promotion-release/DATA-DICTIONARY.md) explains the fields and controlled values.
+The matching fictional source evidence lives under [`fixtures/promotion-release/`](../../../promotion-release/aldertons-promotion-release-v1/README.md). The [promotion-release data dictionary](../../../../docs/processes/promotion-release/DATA-DICTIONARY.md) explains the fields and controlled values.
 
 ## Why this is separate
 
 ```text
-fixtures/       what the agent may inspect
-replays/        what a completed run produced
-tests/fixtures/ what automated tests expect
+fixtures/promotion-release/ what the agent may inspect
+fixtures/replays/           what a completed run produced
+fixtures/tests/             what automated tests expect
 ```
 
 Keeping these locations separate prevents a replayed answer from being mistaken for source evidence and prevents the test oracle from becoming a shortcut to a runtime result.
@@ -34,4 +34,4 @@ Stage 3 will calculate policy from source data and the proposal. At that point t
 
 ## Test oracle
 
-The separate `tests/fixtures/promotion-release/evaluation-oracle.json` records expected observations and permitted safe alternatives. Runtime and interface code must never import it.
+The separate `fixtures/tests/promotion-release/evaluation-oracle.json` records expected observations and permitted safe alternatives. Runtime and interface code must never import it.

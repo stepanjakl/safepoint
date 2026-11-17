@@ -269,8 +269,9 @@ lib/
   model-workbench/            AI experiments and evaluation
   storage/                    Runtime storage locations
 
-fixtures/                     Captured inputs and approved rulebook revisions
-replays/                      Recorded proposal and policy outputs
+fixtures/                     Captured inputs, approved rulebook revisions,
+                              replays/ (recorded proposal and policy outputs)
+                              and tests/ (the test oracle)
 data/                         Gitignored runtime results
 e2e/                          Browser tests and frozen test fixtures
 scripts/                      Colour generation and structural checks

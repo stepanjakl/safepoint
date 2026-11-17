@@ -9,8 +9,8 @@ import promotionBriefJson from '../../fixtures/promotion-release/aldertons-promo
 import shortlistProvenanceJson from '../../fixtures/promotion-release/aldertons-promotion-release-v1/shortlist-provenance.json';
 import supplierTermsJson from '../../fixtures/promotion-release/aldertons-promotion-release-v1/supplier-terms.json';
 import supplyPositionJson from '../../fixtures/promotion-release/aldertons-promotion-release-v1/supply-position.json';
-import policyEvaluationJson from '../../replays/promotion-release/aldertons-promotion-release-v1/policy-evaluation-replay.json';
-import promotionReleasePlanJson from '../../replays/promotion-release/aldertons-promotion-release-v1/promotion-release-plan.json';
+import policyEvaluationJson from '../../fixtures/replays/promotion-release/aldertons-promotion-release-v1/policy-evaluation-replay.json';
+import promotionReleasePlanJson from '../../fixtures/replays/promotion-release/aldertons-promotion-release-v1/promotion-release-plan.json';
 
 import {
   EXPECTED_SKUS,

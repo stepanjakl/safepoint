@@ -7,9 +7,9 @@ import promotionBriefJson from '../../fixtures/promotion-release/aldertons-promo
 import shortlistProvenanceJson from '../../fixtures/promotion-release/aldertons-promotion-release-v1/shortlist-provenance.json';
 import supplierTermsJson from '../../fixtures/promotion-release/aldertons-promotion-release-v1/supplier-terms.json';
 import supplyPositionJson from '../../fixtures/promotion-release/aldertons-promotion-release-v1/supply-position.json';
-import policyEvaluationJson from '../../replays/promotion-release/aldertons-promotion-release-v1/policy-evaluation-replay.json';
-import promotionReleasePlanJson from '../../replays/promotion-release/aldertons-promotion-release-v1/promotion-release-plan.json';
-import evaluationOracleJson from '../../tests/fixtures/promotion-release/evaluation-oracle.json';
+import policyEvaluationJson from '../../fixtures/replays/promotion-release/aldertons-promotion-release-v1/policy-evaluation-replay.json';
+import promotionReleasePlanJson from '../../fixtures/replays/promotion-release/aldertons-promotion-release-v1/promotion-release-plan.json';
+import evaluationOracleJson from '../../fixtures/tests/promotion-release/evaluation-oracle.json';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 

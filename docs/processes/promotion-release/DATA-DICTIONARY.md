@@ -18,11 +18,11 @@ Safepoint deliberately keeps three kinds of data in different locations:
 
 ```mermaid
 flowchart LR
-    Evidence["fixtures/<br/>fictional source evidence"]
-    Replay["replays/<br/>reviewed previous output"]
+    Evidence["fixtures/promotion-release/<br/>fictional source evidence"]
+    Replay["fixtures/replays/<br/>reviewed previous output"]
     Loader["loadReviewedReplay()<br/>validates and joins"]
     Review["ReviewedReplay<br/>input for the interface"]
-    Oracle["tests/fixtures/<br/>expected test observations"]
+    Oracle["fixtures/tests/<br/>expected test observations"]
     Tests["Vitest only"]
 
     Evidence --> Loader
@@ -34,13 +34,13 @@ flowchart LR
 
 In Stage 4, the live agent will inspect only the source evidence through four read-only tools and produce a new proposal through the same schema boundary. It will not read the curated replay or test oracle.
 
-| Location          | Meaning                                                                               | May the application read it? |
-| ----------------- | ------------------------------------------------------------------------------------- | ---------------------------- |
-| `fixtures/`       | Fictional facts representing what source systems currently report                     | Yes                          |
-| `replays/`        | A reviewed proposal and temporary policy result representing a previous completed run | Yes, through the loader      |
-| `tests/fixtures/` | Expected observations used to check the scenario and future agent behaviour           | No; tests only               |
+| Location                      | Meaning                                                                               | May the application read it? |
+| ----------------------------- | ------------------------------------------------------------------------------------- | ---------------------------- |
+| `fixtures/promotion-release/` | Fictional facts representing what source systems currently report                     | Yes                          |
+| `fixtures/replays/`           | A reviewed proposal and temporary policy result representing a previous completed run | Yes, through the loader      |
+| `fixtures/tests/`             | Expected observations used to check the scenario and future agent behaviour           | No; tests only               |
 
-The folders are separate even though all three contain synthetic data. A replay must never be supplied to a live agent as evidence, and an oracle must never be used to manufacture a runtime answer.
+The folders are separate, side by side under `fixtures/`, even though all three contain synthetic data. A replay must never be supplied to a live agent as evidence, and an oracle must never be used to manufacture a runtime answer.
 
 ### Planned live and fallback paths
 
@@ -48,10 +48,10 @@ The interface is intentionally independent of where a valid proposal came from. 
 
 ```mermaid
 flowchart LR
-    Evidence["Source evidence<br/>fixtures/"]
+    Evidence["Source evidence<br/>fixtures/promotion-release/"]
     Tools["Four read-only tools<br/>catalogue · demand · supply · context"]
     Agent["Language model<br/>judgement only"]
-    Replay["Reviewed proposal<br/>replays/"]
+    Replay["Reviewed proposal<br/>fixtures/replays/"]
     Contract["PromotionReleasePlan<br/>Zod validation"]
     Policy["Deterministic policy<br/>calculated by Safepoint"]
     Join["Join source facts,<br/>agent assessment, and policy"]
@@ -284,7 +284,7 @@ File: `policy-rules.json`
 
 ## Agent proposal replay
 
-File: `replays/promotion-release/aldertons-promotion-release-v1/promotion-release-plan.json`
+File: `fixtures/replays/promotion-release/aldertons-promotion-release-v1/promotion-release-plan.json`
 
 This is a reviewed example of what the future live agent must produce. It contains judgement and intended changes, not a copy of current source facts.
 
@@ -362,7 +362,7 @@ Every candidate contains each gate exactly once.
 
 ## Policy evaluation replay
 
-File: `replays/promotion-release/aldertons-promotion-release-v1/policy-evaluation-replay.json`
+File: `fixtures/replays/promotion-release/aldertons-promotion-release-v1/policy-evaluation-replay.json`
 
 This is temporary reviewed output for the static interface. It is separate from the agent plan because policy must be independently calculated. Stage 3 replaces this file as the runtime source with the real policy engine.
 
