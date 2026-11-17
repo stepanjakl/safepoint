@@ -590,7 +590,7 @@ describe.skipIf(!POSTGRES_URL)('on a real PostgreSQL server', () => {
         [
           '--conditions=react-server',
           '--import',
-          './scripts/resolve-aliases.mjs',
+          './scripts/runtime/resolve-aliases.mjs',
           '--input-type=module',
           '-e',
           CHILD,

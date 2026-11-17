@@ -39,9 +39,9 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-import { readStylesheets, subjectClasses } from '../lib/dev/stylesheets.ts';
+import { readStylesheets, subjectClasses } from '../../lib/dev/stylesheets.ts';
 
-const root = new URL('..', import.meta.url).pathname;
+const root = new URL('../..', import.meta.url).pathname;
 const stylesheets = ['app', 'components'];
 const sources = ['app', 'components', 'lib'];
 

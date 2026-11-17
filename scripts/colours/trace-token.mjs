@@ -17,9 +17,9 @@
 
 import { fileURLToPath } from 'node:url';
 
-import { readStylesheets } from '../lib/dev/stylesheets.ts';
+import { readStylesheets } from '../../lib/dev/stylesheets.ts';
 
-const root = fileURLToPath(new URL('..', import.meta.url));
+const root = fileURLToPath(new URL('../..', import.meta.url));
 const args = process.argv.slice(2);
 const familyAt = args.indexOf('--neutral');
 const family = familyAt === -1 ? null : args[familyAt + 1];

@@ -10,7 +10,7 @@ import { existsSync, statSync } from 'node:fs';
 import { registerHooks } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
-const root = new URL('../', import.meta.url);
+const root = new URL('../../', import.meta.url);
 const EXTENSIONS = ['.ts', '.tsx', '/index.ts', '/index.tsx'];
 
 const isFile = (url) => {

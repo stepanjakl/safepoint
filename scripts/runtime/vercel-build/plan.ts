@@ -1,6 +1,6 @@
 /*
   What the Vercel build does with the database, decided from the environment
-  alone so a test can ask it (scripts/vercel-build.ts only carries it out).
+  alone so a test can ask it (scripts/runtime/vercel-build.ts only carries it out).
 
   Only a production build migrates. A preview build may share the production
   database unless Neon preview branching is set up, and a preview of a branch

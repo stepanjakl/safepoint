@@ -345,7 +345,7 @@ test('muted ink never paints on a selected surface', async ({ page }) => {
 });
 
 /* Coloured text and white labels, measured as the page resolves them. The
-   colour contracts in scripts/colour-theme cover the neutral ramp only; these
+   colour contracts in scripts/colours/colour-theme cover the neutral ramp only; these
    are mixes of Radix steps, so they are read here rather than restated. */
 async function contrastOf(page: Page, pairs: [string, string][]) {
   return page.evaluate((list) => {

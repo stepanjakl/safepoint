@@ -3,7 +3,7 @@ import { defineConfig } from 'drizzle-kit';
 /*
   For drizzle-kit: `pnpm db:generate` writes a migration from
   server/db/schema.ts (no database needed), `pnpm db:studio` migrates and browses one.
-  Migrations are applied by `pnpm db:migrate` (scripts/db.ts), through the
+  Migrations are applied by `pnpm db:migrate` (scripts/db/db.ts), through the
   same driver choice the app makes (server/db/client.ts).
 
   The schema imports `server-only`, which throws outside a React server

@@ -2,7 +2,7 @@
 
 import { Agentation, type Annotation } from 'agentation';
 
-// The Agentation server `pnpm dev` starts (scripts/dev.ts); agents read it
+// The Agentation server `pnpm dev` starts (scripts/runtime/dev.ts); agents read it
 // through the agentation MCP server and wait on it with `pnpm agentation:wait`.
 const ENDPOINT = 'http://localhost:4747';
 
@@ -40,7 +40,7 @@ async function sendToAgent(output: string, annotations: Annotation[]) {
   }
 }
 
-// scripts/dev.ts sets the flag, and sets it off where it starts no annotation
+// scripts/runtime/dev.ts sets the flag, and sets it off where it starts no annotation
 // server (AGENTATION=off): the toolbar then neither renders nor touches storage.
 export function AgentationToolbar() {
   if (process.env.NODE_ENV !== 'development') return null;

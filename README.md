@@ -142,7 +142,7 @@ A checklist, in order. Both Brunch orders processes are served wherever the gate
 **1. Project settings** (Settings in the Vercel project)
 
 - Framework preset Next.js, Node.js version 24.x (`engines`), install command the default (`pnpm install --frozen-lockfile`). Fluid compute on (the default for new projects).
-- **Build command:** leave it empty. Vercel runs the `vercel-build` script in place of `build` (`scripts/vercel-build.ts`). To be explicit, set the build command to `pnpm vercel-build`.
+- **Build command:** leave it empty. Vercel runs the `vercel-build` script in place of `build` (`scripts/runtime/vercel-build.ts`). To be explicit, set the build command to `pnpm vercel-build`.
 - **Enable access to System Environment Variables** (Environment Variables), then redeploy. Workflow knows it is deployed by `VERCEL_DEPLOYMENT_ID`, which Vercel exposes only with this setting; without it the build emits local output, every run fails on the read-only filesystem (`EROFS`), and no run appears in the dashboard. The build also reads `VERCEL_ENV` to decide whether to migrate.
 - Nothing to set for Workflow's queue: the request proxy (`proxy.ts`) leaves `/.well-known/workflow/` open, as Workflow authenticates each delivery itself.
 - Deploy from a clean checkout with `vercel deploy --prod --archive=tgz`, which uploads one archive. The per-file upload hit the Hobby plan's daily file limit. The CLI does not apply `.gitignore`'s folder rules (it sent agent worktrees, kept run data and reports), so `.vercelignore` names what must not be uploaded and must be kept in step with `.gitignore` when a new local folder appears.

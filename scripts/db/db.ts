@@ -11,17 +11,17 @@
   Run with Node's `react-server` condition (package.json), under which the
   `server-only` the modules begin with is the empty module.
 */
-import { driverFor, open } from '../server/db/client.ts';
-import { dropEverything, resetRefusal } from '../server/db/reset.ts';
+import { driverFor, open } from '../../server/db/client.ts';
+import { dropEverything, resetRefusal } from '../../server/db/reset.ts';
 
 const command = process.argv[2];
 if (command !== 'migrate' && command !== 'reset') {
-  console.error('Usage: node scripts/db.ts migrate | reset');
+  console.error('Usage: node scripts/db/db.ts migrate | reset');
   process.exit(1);
 }
 
 // --direct: a migration that must not run over the pooled connection (the
-// Vercel build, scripts/vercel-build.ts). Without a direct URL it refuses,
+// Vercel build, scripts/runtime/vercel-build.ts). Without a direct URL it refuses,
 // rather than fall back to DATABASE_URL or a PGlite folder.
 if (process.argv.includes('--direct') && !process.env.DATABASE_URL_UNPOOLED) {
   console.error('Refused: --direct needs DATABASE_URL_UNPOOLED.');

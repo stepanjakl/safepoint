@@ -491,7 +491,7 @@ describe('undoing a write', () => {
     back as the very record written, in the schema's order, and what a json
     column holds keeps a key the schema does not name through every update;
     a top-level key has no column, and the import refuses an entry with one
-    (scripts/import-kept-data/import.test.ts) rather than losing it.
+    (scripts/db/import-kept-data/import.test.ts) rather than losing it.
   */
   it('keeps what a record holds, to the byte, as it is read and written back', async () => {
     const sheet = memorySheet(read());

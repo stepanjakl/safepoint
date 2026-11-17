@@ -4,7 +4,7 @@
   Copies what the server kept as files under data/ into the database the app
   would open (server/db/client.ts): DATABASE_URL, else PGlite at data/pglite/
   under the working directory: every kind the server once kept as files
-  (scripts/import-kept-data/kinds.ts).
+  (scripts/db/import-kept-data/kinds.ts).
 
   Safe to run twice: a row already there with the same content is left alone
   and counted as present, and one there with other content is reported and
@@ -15,12 +15,12 @@
   Exit 0 done, 1 something was refused, 2 it could not run.
 
   Run with Node's `react-server` condition and the alias resolver
-  (package.json), as scripts/db.ts is.
+  (package.json), as scripts/db/db.ts is.
 */
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 
-import { driverFor, open } from '../server/db/client.ts';
+import { driverFor, open } from '../../server/db/client.ts';
 
 import {
   describe,

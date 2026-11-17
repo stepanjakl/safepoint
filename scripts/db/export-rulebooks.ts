@@ -14,16 +14,16 @@
   Exit 0 done, 1 refused or failed, 2 it could not run.
 
   Run with Node's `react-server` condition and the alias resolver
-  (package.json), as scripts/import-kept-data.ts is.
+  (package.json), as scripts/db/import-kept-data.ts is.
 */
 import { existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 
-import { driverFor, open } from '../server/db/client.ts';
+import { driverFor, open } from '../../server/db/client.ts';
 import {
   exportRulebooks,
   seedRulebooks,
-} from '../server/storage/rules/rulebook-files.ts';
+} from '../../server/storage/rules/rulebook-files.ts';
 
 const args = process.argv.slice(2);
 let to = path.join(process.cwd(), 'fixtures');

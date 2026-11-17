@@ -5,23 +5,23 @@ import { expect, test } from '@playwright/test';
 import {
   distinguishable,
   summarise,
-} from '../../scripts/colour-theme/perceptual/contracts.ts';
+} from '../../scripts/colours/colour-theme/perceptual/contracts.ts';
 import {
   deltaE2000,
   simulate,
   wcag,
   type Deficiency,
-} from '../../scripts/colour-theme/perceptual/metrics.ts';
-import { FILTER_TABS } from '../../scripts/colour-theme/perceptual/recipes/filter-tabs.ts';
+} from '../../scripts/colours/colour-theme/perceptual/metrics.ts';
+import { FILTER_TABS } from '../../scripts/colours/colour-theme/perceptual/recipes/filter-tabs.ts';
 import {
   openAt,
   sampleFill,
   withDeficiency,
-} from '../../scripts/colour-theme/perceptual/runner.ts';
+} from '../../scripts/colours/colour-theme/perceptual/runner.ts';
 import type {
   Finding,
   Reading,
-} from '../../scripts/colour-theme/perceptual/types.ts';
+} from '../../scripts/colours/colour-theme/perceptual/types.ts';
 
 /*
   Tier 2 of docs/interface/COLOUR-TESTING.md: other eyes and other palettes.

@@ -19,7 +19,7 @@
   which it drives over the DevTools Protocol with no dependencies -- Node has a
   WebSocket and the protocol is JSON.
 
-  Run `node scripts/check-rail-alignment.ts --help`.
+  Run `node scripts/checks/check-rail-alignment.ts --help`.
 */
 
 import { spawn } from 'node:child_process';
@@ -61,7 +61,7 @@ type Options = {
 const HELP = `
 check-rail-alignment — measure the sidebar against its own guide axes
 
-  node scripts/check-rail-alignment.ts [options]
+  node scripts/checks/check-rail-alignment.ts [options]
 
   --url <url>           default http://localhost:3000 (falls back to :3001)
   --route <path>        repeatable; default /processes/brunch-orders; use / for the sheet header

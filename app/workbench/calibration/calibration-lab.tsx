@@ -7,7 +7,7 @@ import { FilterTabs, type FilterTab } from '@/components/ui/filter-tabs';
 import {
   lightnessModels,
   type LightnessModels,
-} from '@/scripts/colour-theme/perceptual/metrics';
+} from '@/scripts/colours/colour-theme/perceptual/metrics';
 
 const TABS: FilterTab[] = [
   { key: 'all', short: 'All', label: 'All', count: 24 },

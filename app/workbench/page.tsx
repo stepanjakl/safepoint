@@ -499,8 +499,8 @@ export default function WorkbenchPage() {
         <p className={NOTE}>
           Canvas, pane and floating, each a layer apart, and a recess one layer
           below whichever surface it is cut into -- all from LAYER_STEP and
-          SURFACE_THEMES in scripts/colour-theme/config.ts. Every ring clears
-          both its face and its ground; every surface has a highlight.
+          SURFACE_THEMES in scripts/colours/colour-theme/config.ts. Every ring
+          clears both its face and its ground; every surface has a highlight.
         </p>
         <div className="grid grid-cols-[repeat(auto-fit,minmax(18rem,1fr))] gap-6">
           <RecessStack label="Recess on the canvas" on="canvas" />
@@ -516,8 +516,8 @@ export default function WorkbenchPage() {
         <p className={NOTE}>
           Hover, selected, rules, the secondary button and the menu chip, inside
           each surface. Each is a fixed step distance from the face it sits on
-          (FOLLOWING_ROLES in scripts/colour-theme/config.ts), so it holds the
-          same perceived difference wherever it is drawn.
+          (FOLLOWING_ROLES in scripts/colours/colour-theme/config.ts), so it
+          holds the same perceived difference wherever it is drawn.
         </p>
         <div className="grid gap-6 sm:grid-cols-4">
           {(Object.keys(GROUND_LABEL) as Ground[]).map((ground) => (

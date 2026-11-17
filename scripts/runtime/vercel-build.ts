@@ -3,7 +3,7 @@
   place of `build`): on a production build, apply drizzle/'s migrations over
   the direct connection and then build; on any other, just build. A failed
   migration fails the build, so a deployment never goes live on a schema it
-  was not written for. The reasoning is in scripts/vercel-build/plan.ts.
+  was not written for. The reasoning is in scripts/runtime/vercel-build/plan.ts.
 
   Exit 0 built, 1 refused or something failed.
 */
@@ -26,11 +26,11 @@ if (plan.kind === 'build') {
   console.log(`Not migrating: ${plan.reason}.`);
 } else {
   console.log('Migrating the production database before the build.');
-  // scripts/db.ts as `pnpm db:migrate` runs it, but over the direct
+  // scripts/db/db.ts as `pnpm db:migrate` runs it, but over the direct
   // connection alone (--direct), and without .env.local, which Vercel has not.
   run(process.execPath, [
     '--conditions=react-server',
-    'scripts/db.ts',
+    'scripts/db/db.ts',
     'migrate',
     '--direct',
   ]);

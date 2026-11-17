@@ -68,7 +68,7 @@ export function driverFor(
 }
 
 // Read only by the PGlite path: a deployment's database is migrated by its
-// build (scripts/vercel-build.ts), so drizzle/ is not traced into a function.
+// build (scripts/runtime/vercel-build.ts), so drizzle/ is not traced into a function.
 const migrationsFolder = () =>
   path.join(/*turbopackIgnore: true*/ process.cwd(), 'drizzle');
 

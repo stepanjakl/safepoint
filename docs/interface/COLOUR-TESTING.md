@@ -12,7 +12,7 @@ them to another component.
 ```sh
 pnpm check:perception           # the blocking contracts, light project
 pnpm check:perception:report    # the same, plus the advisory report
-pnpm exec vitest run scripts/colour-theme   # metrics and contracts, no browser
+pnpm exec vitest run scripts/colours/colour-theme   # metrics and contracts, no browser
 ```
 
 Start the dev server first, or let Playwright start it (`playwright.config.ts`).
@@ -28,7 +28,7 @@ they cannot all be right. So nothing here asks a model to _decide_ a look. A
 model may say that a part is exactly as far from its surface as it was last
 week, that it clears a visibility floor, or that two parts moved apart. When the
 models disagree on a sign, the question goes to a person, and the answer is
-recorded in `PERCEPTUAL_OFFSETS` (`scripts/colour-theme/config.ts`) so the next
+recorded in `PERCEPTUAL_OFFSETS` (`scripts/colours/colour-theme/config.ts`) so the next
 person starts from it.
 
 ## Concepts
@@ -97,7 +97,7 @@ tier is the cheapest one that can answer its question.
 ## How the checks are built
 
 ```
-scripts/colour-theme/perceptual/
+scripts/colours/colour-theme/perceptual/
   metrics.ts      numbers: lstar, oklabL, deltaE2000, wcag, apca, simulate, hellwig, lightnessModels
   types.ts        Reading (one measured colour) and Finding (one verdict)
   runner.ts       open a page at a theme and family; vision emulation; pixel sampling
