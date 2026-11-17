@@ -548,37 +548,30 @@ describe.skipIf(!POSTGRES_URL)('on a real PostgreSQL server', () => {
 
   /*
     Two server processes starting one job at once: each is a Node process
-    of its own (its own job map and holder), on this run's schema, waiting
-    for `go <key>` to start a job under that key, and answering whether its
-    work ran. A job's work lasts a second, longer than any claim takes, so
-    the second claim always meets a live lease.
+    of its own, on this run's schema, waiting for `go <key>` to claim the
+    key as a start does before it starts the job's workflow run, and
+    answering whether it holds it. A claim records no run here, and lapses
+    only after LEASE_MS, so the second claim always meets a live one.
   */
   describe('jobs', () => {
     const CHILD = `
       import { createInterface } from 'node:readline';
       const { z } = await import('zod');
       const { sql } = await import('drizzle-orm');
-      const { startJob } = await import('@/server/jobs/run-job');
+      const { claimJob } = await import('@/server/jobs/run-job');
       const { database, closeDatabase } = await import('@/server/db/client');
       await (await database()).execute(sql\`select 1\`);
       const schema = z.object({ step: z.string(), running: z.boolean(), error: z.string().nullable() });
-      const running = [];
       console.log('ready');
       for await (const line of createInterface({ input: process.stdin })) {
         if (line === 'end') break;
         const key = line.slice(3);
-        let ran = false;
-        const progress = await startJob({
-          kind: 'drafts', process: 'postgres-test', key, schema,
-          interrupted: 'Stopped.',
-          initial: { step: 'Working', running: true, error: null },
-          work: async () => { ran = true; await new Promise((done) => setTimeout(done, 1000)); },
-        });
-        if (ran) running.push(progress);
-        console.log(JSON.stringify({ key, ran }));
+        const claim = await claimJob(
+          { kind: 'drafts', process: 'postgres-test', key, schema, interrupted: 'Stopped.' },
+          { step: 'Working', running: true, error: null },
+        );
+        console.log(JSON.stringify({ key, ran: 'holder' in claim }));
       }
-      while (running.some((p) => p.running)) await new Promise((done) => setTimeout(done, 50));
-      await new Promise((done) => setTimeout(done, 200));
       await closeDatabase();
     `;
     type Child = { process: ChildProcessWithoutNullStreams; lines: string[] };
@@ -617,7 +610,7 @@ describe.skipIf(!POSTGRES_URL)('on a real PostgreSQL server', () => {
       return answer!;
     };
 
-    it('run once for two starts of one key at once, in two processes', async () => {
+    it('are claimed by one of two starts of one key at once, in two processes', async () => {
       const both = [spawned(), spawned()];
       try {
         for (const child of both) await ready(child);
