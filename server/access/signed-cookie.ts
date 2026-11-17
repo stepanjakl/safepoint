@@ -12,13 +12,13 @@ import 'server-only';
 const encoder = new TextEncoder();
 const decoder = new TextDecoder('utf-8', { fatal: true });
 
-export const toBase64Url = (bytes: Uint8Array): string =>
+const toBase64Url = (bytes: Uint8Array): string =>
   btoa(String.fromCharCode(...bytes))
     .replaceAll('+', '-')
     .replaceAll('/', '_')
     .replaceAll('=', '');
 
-export function fromBase64Url(text: string): Uint8Array<ArrayBuffer> | null {
+function fromBase64Url(text: string): Uint8Array<ArrayBuffer> | null {
   if (!/^[A-Za-z0-9_-]*$/.test(text)) return null;
   try {
     const binary = atob(text.replaceAll('-', '+').replaceAll('_', '/'));
