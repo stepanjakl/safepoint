@@ -743,7 +743,7 @@ const ANCHORED_BY_FILE = {
       dark: TOOLTIP.dark.shift + TOOLTIP.dark.highlight,
     },
   },
-  'components/brunch-orders/rulebook-history.css': {
+  'components/engine/rulebook-history.css': {
     /* Half the shared hover: a timeline's rows are passed over far more
        often than opened, and the line runs over the wash. */
     '--sp-timeline-hover': {

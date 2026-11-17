@@ -3,7 +3,7 @@
 import TableFilled from 'blode-icons-react/icons/table-filled';
 import { useEffect, useState, type ReactNode } from 'react';
 
-import { StatusChip } from '@/components/brunch-orders/trial-parts';
+import { StatusChip } from '@/components/engine/trial-parts';
 import { Button } from '@/components/ui/button';
 import {
   COMPACT_TABLE_BODY,

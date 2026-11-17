@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-import { DecisionButton } from '@/components/brunch-orders/decision-button';
+import { DecisionButton } from '@/components/engine/decision-button';
 import { Button } from '@/components/ui/button';
 import { MORPH_WORDS_MS, MorphingText } from '@/components/ui/morphing-text';
 

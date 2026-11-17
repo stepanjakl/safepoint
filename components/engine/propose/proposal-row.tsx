@@ -7,8 +7,8 @@ import Pencil from 'blode-icons-react/icons/pencil';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Fragment, useEffect, useState, type ReactNode } from 'react';
 
-import { DecisionButton } from '@/components/brunch-orders/decision-button';
-import { FromModel, Step } from '@/components/brunch-orders/rules-parts';
+import { DecisionButton } from '@/components/engine/decision-button';
+import { FromModel, Step } from '@/components/engine/rules-parts';
 import { Button } from '@/components/ui/button';
 import {
   DATA_TABLE_NAME,

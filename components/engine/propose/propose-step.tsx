@@ -3,10 +3,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { ModelLimits } from '@/components/brunch-orders/model-limits';
-import { ModelSelect } from '@/components/brunch-orders/rules/model-select';
-import { StaleRules } from '@/components/brunch-orders/stale-rules';
-import { Lede } from '@/components/brunch-orders/trial-parts';
+import { ModelLimits } from '@/components/engine/model-limits';
+import { ModelSelect } from '@/components/engine/rules/model-select';
+import { StaleRules } from '@/components/engine/stale-rules';
+import { Lede } from '@/components/engine/trial-parts';
 import type { RunProcessId } from '@/components/app-shell/runs/kept-runs';
 import { useTRPC } from '@/components/trpc/provider';
 import { Button } from '@/components/ui/button';

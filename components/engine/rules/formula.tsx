@@ -2,8 +2,8 @@
 
 import { useContext, type ReactNode } from 'react';
 
-import { CardAnchor } from '@/components/brunch-orders/rules/card-anchor';
-import { TRIED_VARIABLE, said } from '@/components/brunch-orders/rules-parts';
+import { CardAnchor } from '@/components/engine/rules/card-anchor';
+import { TRIED_VARIABLE, said } from '@/components/engine/rules-parts';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cx } from '@/lib/cx';
 import type { Definition } from '@/lib/definitions/types';

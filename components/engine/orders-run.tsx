@@ -23,7 +23,7 @@ import {
   TrialControl,
   dateTime,
   useMutationTrial,
-} from '@/components/brunch-orders/trial-parts';
+} from '@/components/engine/trial-parts';
 import { Button } from '@/components/ui/button';
 import {
   DATA_TABLE_HEAD,

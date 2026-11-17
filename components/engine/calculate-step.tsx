@@ -14,14 +14,14 @@ import {
   type CSSProperties,
 } from 'react';
 
-import { FromModel, Step } from '@/components/brunch-orders/rules-parts';
-import { ModelSelect } from '@/components/brunch-orders/rules/model-select';
+import { FromModel, Step } from '@/components/engine/rules-parts';
+import { ModelSelect } from '@/components/engine/rules/model-select';
 import {
   Lede,
   Outcome,
   StatusChip,
   plural,
-} from '@/components/brunch-orders/trial-parts';
+} from '@/components/engine/trial-parts';
 import { Button } from '@/components/ui/button';
 import { FilterTabs } from '@/components/ui/filter-tabs';
 import { Fold } from '@/components/ui/fold';

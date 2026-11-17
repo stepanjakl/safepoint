@@ -12,17 +12,14 @@ import {
 } from 'react';
 import { flushSync } from 'react-dom';
 
-import { PendingDots } from '@/components/brunch-orders/pending-dots';
-import { FromModel } from '@/components/brunch-orders/rules-parts';
-import {
-  CardAnchor,
-  anchorOf,
-} from '@/components/brunch-orders/rules/card-anchor';
+import { PendingDots } from '@/components/engine/pending-dots';
+import { FromModel } from '@/components/engine/rules-parts';
+import { CardAnchor, anchorOf } from '@/components/engine/rules/card-anchor';
 import {
   DefinitionCard,
   statusOf,
-} from '@/components/brunch-orders/rules/definition-card';
-import { StatusChip } from '@/components/brunch-orders/trial-parts';
+} from '@/components/engine/rules/definition-card';
+import { StatusChip } from '@/components/engine/trial-parts';
 import { Pill, SEVERITY } from '@/components/ui/pill';
 import { cx } from '@/lib/cx';
 import type { DefinitionSet } from '@/lib/definitions/types';

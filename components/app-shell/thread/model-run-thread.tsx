@@ -41,22 +41,22 @@ import {
   type ModelRunStage,
 } from '@/lib/shell/model-run';
 
-import type { DataTabs } from '@/components/brunch-orders/data-drawer';
+import type { DataTabs } from '@/components/engine/data-drawer';
 import {
   InstructionsText,
   SheetReadCard,
   type RunRead,
-} from '@/components/brunch-orders/orders-run';
-import { ProposalTable } from '@/components/brunch-orders/propose/proposal-table';
+} from '@/components/engine/orders-run';
+import { ProposalTable } from '@/components/engine/propose/proposal-table';
 import type {
   Decision,
   ProposalField,
   CheckReply,
-} from '@/components/brunch-orders/propose/types';
+} from '@/components/engine/propose/types';
 import { cellUrl, SOURCE_KINDS, type SourceKind } from '@/lib/sources/model';
 import ChainLink1Filled from 'blode-icons-react/icons/chain-link-1-filled';
 import { SourceHead } from '@/components/app-shell/sources/source-head';
-import { plural } from '@/components/brunch-orders/trial-parts';
+import { plural } from '@/components/engine/trial-parts';
 
 // One source a run writes to, and the cells it changes there, in any of its
 // resources (a sheet's tabs): each change names its own.

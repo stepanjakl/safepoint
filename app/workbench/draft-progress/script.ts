@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-import { plural } from '@/components/brunch-orders/trial-parts';
+import { plural } from '@/components/engine/trial-parts';
 import type { Definition, DefinitionSet } from '@/lib/definitions/types';
 import { motionTime } from '@/lib/motion-time';
 

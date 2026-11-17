@@ -7,8 +7,8 @@ import { useInstructions } from '@/components/app-shell/instructions/instruction
 import {
   type RulesKept,
   type RulesReply,
-} from '@/components/brunch-orders/rules/rules-queries';
-import { saidBy } from '@/components/brunch-orders/trial-parts';
+} from '@/components/engine/rules/rules-queries';
+import { saidBy } from '@/components/engine/trial-parts';
 import { useTRPC } from '@/components/trpc/provider';
 import { Loader } from '@/components/ui/loader';
 import type { LoaderPhase } from '@/components/ui/working-mark';

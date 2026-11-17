@@ -7,14 +7,11 @@ import { ProcessSheetActions } from '@/components/app-shell/process/process-shee
 // Deep import: Blode's barrel is the whole icon library.
 import Bug from 'blode-icons-react/icons/bug';
 
-import { DecisionButton } from '@/components/brunch-orders/decision-button';
-import {
-  RulesDebug,
-  type Debugging,
-} from '@/components/brunch-orders/rules-debug';
+import { DecisionButton } from '@/components/engine/decision-button';
+import { RulesDebug, type Debugging } from '@/components/engine/rules-debug';
 import { HeadIconButton } from '@/components/app-shell/head-icon-button';
-import { PendingDots } from '@/components/brunch-orders/pending-dots';
-import { anchorOf } from '@/components/brunch-orders/rules/card-anchor';
+import { PendingDots } from '@/components/engine/pending-dots';
+import { anchorOf } from '@/components/engine/rules/card-anchor';
 import {
   ASKS,
   AcceptDecision,
@@ -22,13 +19,13 @@ import {
   statusOf,
   words,
   type Sentences,
-} from '@/components/brunch-orders/rules/definition-card';
-import { DraftControl } from '@/components/brunch-orders/rules/draft-control';
+} from '@/components/engine/rules/definition-card';
+import { DraftControl } from '@/components/engine/rules/draft-control';
 import {
   DRAFT_POLL_MS,
   type RulesReply,
-} from '@/components/brunch-orders/rules/rules-queries';
-import { Lede, plural, saidBy } from '@/components/brunch-orders/trial-parts';
+} from '@/components/engine/rules/rules-queries';
+import { Lede, plural, saidBy } from '@/components/engine/trial-parts';
 import { Button } from '@/components/ui/button';
 import { Fold } from '@/components/ui/fold';
 import { Loader } from '@/components/ui/loader';
@@ -36,11 +33,11 @@ import { SEVERITY } from '@/components/ui/pill';
 import { useLoader } from '@/components/ui/working-mark';
 import { useTRPC } from '@/components/trpc/provider';
 import { cx } from '@/lib/cx';
-import { FromModel } from '@/components/brunch-orders/rules-parts';
+import { FromModel } from '@/components/engine/rules-parts';
 import {
   DataProfilePanel,
   type ProfileChange,
-} from '@/components/brunch-orders/data-profile';
+} from '@/components/engine/data-profile';
 import {
   CONFIRM_FIRST,
   quotedFrom,

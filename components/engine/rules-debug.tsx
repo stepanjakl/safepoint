@@ -7,7 +7,7 @@ import {
   DrawerOverlay,
   DrawerPanels,
 } from '@/components/app-shell/drawer-overlay';
-import { ModelLimits } from '@/components/brunch-orders/model-limits';
+import { ModelLimits } from '@/components/engine/model-limits';
 import { useTRPC } from '@/components/trpc/provider';
 import {
   DATA_TABLE_BODY,

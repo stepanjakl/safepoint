@@ -2,9 +2,9 @@
 
 import { useContext, useId } from 'react';
 
-import { DecisionButton } from '@/components/brunch-orders/decision-button';
-import { Formula } from '@/components/brunch-orders/rules/formula';
-import { FromModel } from '@/components/brunch-orders/rules-parts';
+import { DecisionButton } from '@/components/engine/decision-button';
+import { Formula } from '@/components/engine/rules/formula';
+import { FromModel } from '@/components/engine/rules-parts';
 import { AssistantContext } from '@/components/app-shell/assistant/assistant-state';
 import { Button } from '@/components/ui/button';
 import type { Advice } from '@/lib/definitions/advise';

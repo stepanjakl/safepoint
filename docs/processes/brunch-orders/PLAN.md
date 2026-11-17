@@ -160,7 +160,7 @@ and close it from the keyboard, reload and find the run where it was; an
 accessibility scan of the thread and the drawer.
 
 **Built.** `lib/processes/brunch-orders/` (the process, its v1 instructions and
-the kept reads), `components/brunch-orders/` (the run's thread and the data
+the kept reads), `components/engine/` (the run's thread and the data
 drawer), `server/api/routers/read.ts` and
 `app/(shell)/examples/brunch-orders/`. A live run is a shell feature any
 process can use: `liveThread` on `ProcessView`, kept by
@@ -207,7 +207,7 @@ Kept per instructions version in
 keep it), so every run under the same instructions uses the same approved
 rules, and a new version starts afresh. Code: the engine in
 `lib/definitions/` (see [The engine, as built](#the-engine-as-built)),
-`server/api/routers/rules.ts`, `components/brunch-orders/rules/rules-step.tsx`.
+`server/api/routers/rules.ts`, `components/engine/rules/rules-step.tsx`.
 Tests: `lib/definitions/*.test.ts`, and `e2e/brunch-orders-rules.spec.ts`
 (read-only: no model calls; it checks that focus moves into a denial's note
 and back).

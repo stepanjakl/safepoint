@@ -13,8 +13,8 @@ import {
   ThreadStep,
   type ThreadLook,
 } from '@/components/app-shell/thread/thread-step';
-import { anchorOf } from '@/components/brunch-orders/rules/card-anchor';
-import { statusOf } from '@/components/brunch-orders/rules/definition-card';
+import { anchorOf } from '@/components/engine/rules/card-anchor';
+import { statusOf } from '@/components/engine/rules/definition-card';
 import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cx } from '@/lib/cx';

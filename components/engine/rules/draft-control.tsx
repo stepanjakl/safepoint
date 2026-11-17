@@ -2,9 +2,9 @@
 
 import { useRef, useState } from 'react';
 
-import { ModelLimits } from '@/components/brunch-orders/model-limits';
-import { ModelSelect } from '@/components/brunch-orders/rules/model-select';
-import { plural } from '@/components/brunch-orders/trial-parts';
+import { ModelLimits } from '@/components/engine/model-limits';
+import { ModelSelect } from '@/components/engine/rules/model-select';
+import { plural } from '@/components/engine/trial-parts';
 import { Button } from '@/components/ui/button';
 import type { DraftingModel } from '@/lib/models';
 

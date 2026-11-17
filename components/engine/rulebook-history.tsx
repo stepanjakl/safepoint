@@ -12,7 +12,7 @@ import {
 import {
   REASONS,
   type RulebookHistory as History,
-} from '@/components/brunch-orders/rulebook-panel';
+} from '@/components/engine/rulebook-panel';
 import { Button } from '@/components/ui/button';
 import { Fold } from '@/components/ui/fold';
 import { Pill } from '@/components/ui/pill';

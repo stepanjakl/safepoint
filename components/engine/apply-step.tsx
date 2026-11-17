@@ -5,7 +5,7 @@ import type { inferRouterOutputs } from '@trpc/server';
 import { useEffect, useRef, useState } from 'react';
 
 import type { RunProcessId } from '@/components/app-shell/runs/kept-runs';
-import { Lede, plural, saidBy } from '@/components/brunch-orders/trial-parts';
+import { Lede, plural, saidBy } from '@/components/engine/trial-parts';
 import { useTRPC } from '@/components/trpc/provider';
 import { Button } from '@/components/ui/button';
 import {

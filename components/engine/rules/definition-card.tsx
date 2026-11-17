@@ -9,17 +9,17 @@ import {
   type ReactNode,
 } from 'react';
 
-import { DecisionButton } from '@/components/brunch-orders/decision-button';
-import { CardAnchor } from '@/components/brunch-orders/rules/card-anchor';
-import { Formula } from '@/components/brunch-orders/rules/formula';
-import { VersionsToChoose } from '@/components/brunch-orders/rules/versions-to-choose';
+import { DecisionButton } from '@/components/engine/decision-button';
+import { CardAnchor } from '@/components/engine/rules/card-anchor';
+import { Formula } from '@/components/engine/rules/formula';
+import { VersionsToChoose } from '@/components/engine/rules/versions-to-choose';
 import {
   Assignment,
   DEFINED_NAME,
   Examples,
   FromModel,
-} from '@/components/brunch-orders/rules-parts';
-import { StatusChip, type Tone } from '@/components/brunch-orders/trial-parts';
+} from '@/components/engine/rules-parts';
+import { StatusChip, type Tone } from '@/components/engine/trial-parts';
 import { Button } from '@/components/ui/button';
 import { MORPH_WORDS_MS, MorphingText } from '@/components/ui/morphing-text';
 import { Pill } from '@/components/ui/pill';

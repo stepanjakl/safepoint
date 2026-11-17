@@ -2,12 +2,12 @@
 
 import { useCallback, useMemo, type ReactNode } from 'react';
 
-import { CardAnchor } from '@/components/brunch-orders/rules/card-anchor';
+import { CardAnchor } from '@/components/engine/rules/card-anchor';
 import {
   DefinitionCard,
   statusOf,
-} from '@/components/brunch-orders/rules/definition-card';
-import { StatusChip } from '@/components/brunch-orders/trial-parts';
+} from '@/components/engine/rules/definition-card';
+import { StatusChip } from '@/components/engine/trial-parts';
 import { Loader } from '@/components/ui/loader';
 import { useLoader } from '@/components/ui/working-mark';
 import { cx } from '@/lib/cx';
