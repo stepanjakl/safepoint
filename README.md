@@ -137,14 +137,51 @@ To sign everyone out, or to rotate, change `SAFEPOINT_COOKIE_SECRET` (and `SAFEP
 
 ## Deploying to Vercel
 
-Drafting a rulebook, writing one rule again and proposing are Vercel Workflow runs (`server/workflows/`), so a long job carries on when its function is frozen or replaced. On Vercel they use the Vercel World with nothing to configure in the app, but the project needs:
+A checklist, in order. Both Brunch orders processes are served wherever the gate applies; the development tools (`/workbench`, `/api/dev`) are not, whoever is signed in. Nothing here is done by the repository: each step is a setting in Vercel or Neon.
 
-- **Enable access to System Environment Variables** (Settings, then Environment Variables), and a redeploy after turning it on. Workflow knows it is deployed by `VERCEL_DEPLOYMENT_ID`, which Vercel exposes only with this setting; without it the build emits local output, every run fails on the read-only filesystem (`EROFS`), and no run appears in the dashboard.
-- **No `WORKFLOW_TARGET_WORLD`.** Workflow picks the Vercel World itself. `local` fails on the first write, and `vercel` does not make up for the setting above.
-- **The database variables and migrations**, as for the rest of the app: a run's steps read and write the database, and `drizzle/0008_job_runs.sql` adds the column a job's run is recorded in.
-- **`/.well-known/workflow/` left open** by the request proxy (`proxy.ts`, tested in `proxy.test.ts`): Workflow's queue delivers each step there and authenticates it itself.
+**1. Project settings** (Settings in the Vercel project)
+
+- Framework preset Next.js, Node.js version 24.x (`engines`), install command the default (`pnpm install --frozen-lockfile`). Fluid compute on (the default for new projects).
+- **Build command:** leave it empty. Vercel runs the `vercel-build` script in place of `build` (`scripts/vercel-build.ts`). To be explicit, set the build command to `pnpm vercel-build`.
+- **Enable access to System Environment Variables** (Environment Variables), then redeploy. Workflow knows it is deployed by `VERCEL_DEPLOYMENT_ID`, which Vercel exposes only with this setting; without it the build emits local output, every run fails on the read-only filesystem (`EROFS`), and no run appears in the dashboard. The build also reads `VERCEL_ENV` to decide whether to migrate.
+- Nothing to set for Workflow's queue: the request proxy (`proxy.ts`) leaves `/.well-known/workflow/` open, as Workflow authenticates each delivery itself.
+- A plan whose function duration allows 800 seconds (Pro). `app/api/trpc/[trpc]/route.ts` asks for it, for the cross-check and the rule advice, which ask a model inside the request; the default is 300 seconds. On Hobby, which stops at 300, lower the value there if the deployment is refused.
+
+**2. Environment variables** (names only; values in the project's settings, never in the repository)
+
+| Name                                                                                                       | What it is                                                                                                                    | Production                  | Preview                                         |
+| ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------- | ----------------------------------------------- |
+| `SAFEPOINT_ACCESS_KEY`                                                                                     | The shared password, at least 16 characters.                                                                                  | yes                         | yes                                             |
+| `SAFEPOINT_COOKIE_SECRET`                                                                                  | The key the cookie is signed with, at least 32 characters.                                                                    | yes                         | yes                                             |
+| `DATABASE_URL`                                                                                             | Neon's pooled URL (host ending `-pooler`). Unset on Vercel, a request that needs the database fails with a message naming it. | yes                         | a Neon preview branch's, if branching is set up |
+| `DATABASE_URL_UNPOOLED`                                                                                    | Neon's direct URL, which migrations use. A production build without it stops.                                                 | yes                         | only with the above                             |
+| `GOOGLE_GENERATIVE_AI_API_KEY`                                                                             | The model key, for drafting, rewriting, proposing, cross-checks and advice.                                                   | yes                         | if previews should draft                        |
+| `COMPOSIO_API_KEY`, `COMPOSIO_USER_ID`, `COMPOSIO_GOOGLESHEETS_ACCOUNT_ID`, `GOOGLE_SHEETS_SPREADSHEET_ID` | The live Google Sheet, read and written through Composio. Without them the captured read still works.                         | if the live sheet is wanted | if previews should reach it (they write to it)  |
+| `GEMINI_REQUESTS_PER_MINUTE`                                                                               | Optional. Requests a minute per model group.                                                                                  | optional                    | optional                                        |
+
+Never set in production (or preview): `SAFEPOINT_RESETTABLE_DATABASE_URL`, which marks a database as one `pnpm db:reset` may drop; `SAFEPOINT_GATE`, which only turns the gate on in local development; `SAFEPOINT_PGLITE_DIR` and `SAFEPOINT_DATA_DIR`, which belong to local files; and `WORKFLOW_TARGET_WORLD` and `WORKFLOW_LOCAL_DATA_DIR`. Workflow picks the Vercel World itself; `local` fails on the first write, and `vercel` does not make up for the system-variables setting above. A preview that shares the production database writes to it: give previews a Neon branch of their own, or leave them without `DATABASE_URL` so they refuse.
+
+**3. The build**
+
+`vercel-build` migrates, then builds, and only for `VERCEL_ENV=production`: it applies `drizzle/` over `DATABASE_URL_UNPOOLED` (never the pooled URL) and stops the build if that fails or if either URL is missing. A preview or development build, and a local `pnpm build`, do not touch a database: a preview may share the production database unless Neon preview branching is set up, and would otherwise migrate production before anyone had promoted it. `next.config.ts` lists the files the server reads at run time (`fixtures/brunch-orders/`), so Vercel bundles them with the routes that need them.
+
+**4. The first deploy**
+
+1. The build applies every migration not yet applied to the production database.
+2. The first request that needs a process's rulebooks seeds them from `fixtures/` (once per server process, inserting only what is missing; `server/storage/rulebook-files.ts`).
+3. Drafts, rewrites and proposals run as Workflow runs on the Vercel World; the dashboard's Workflow page lists them.
+
+**5. Check that it worked**
+
+- The build log says "Migrating the production database before the build." and then "Migrations applied to the server at <host>."; a preview's says "Not migrating".
+- The deployment's address sends you to `/access`; the password and a name sign you in. Without the two secrets, every page says "This deployment is not configured."
+- The sidebar lists Brunch orders twice (the rulebook process and the direct one); `/examples/brunch-orders` opens, a run reads the captured sheet, and the Rules panel shows the nine accepted rules.
+- `/workbench` and `/api/dev/model` answer not found, signed in or not; an unsigned `/api/trpc/runs.list` answers 401.
+- Proposing needs the model key; after it, a run appears in the dashboard's Workflow page.
 
 A step runs within one function invocation, whose limit is the plan's maximum (the generated route asks for `maxDuration: 'max'`, at most 800 seconds): writing one rule, which may take several model calls, must finish inside it. In development nothing needs setting: `pnpm dev` uses the Local World in `.next/workflow-data/`, and `npx workflow web` shows its runs when started with `WORKFLOW_LOCAL_DATA_DIR=.next/workflow-data`.
+
+To try production mode on your own machine, run `pnpm build`, then `next start` with `NODE_ENV=production`, both gate variables, `DATABASE_URL=` empty and `SAFEPOINT_PGLITE_DIR` pointing at a scratch folder outside the repository. Chromium accepts the `Secure` cookie from `http://localhost`; another browser or host needs https.
 
 ## Documentation
 

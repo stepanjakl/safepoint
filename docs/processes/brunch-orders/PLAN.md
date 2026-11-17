@@ -103,7 +103,7 @@ Each phase ends when it works on the captured read and its page test passes.
 
 ## Phase 1 in detail
 
-**Process.** "Brunch orders" in the sidebar, development only, at
+**Process.** "Brunch orders" in the sidebar, at
 `/examples/brunch-orders`. The spreadsheet was cleaned on 8 October to its
 data tabs: Products, Stock, Sales, Deliveries and Parameters (About, Promotion,
 Kit, Offers, Rules, Notes and Checks were deleted, and the kit's row of
