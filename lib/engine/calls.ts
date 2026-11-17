@@ -50,13 +50,14 @@ export type Resolve = (id: DraftingModel) => LanguageModel;
 
 // Every model of a chain is spent: said as before, with when the first is
 // back, so a caller that can wait without holding a process may.
+// No parameter property: Node's type stripping, which runs the scripts,
+// refuses them (AGENTS.md).
 export class ModelsResting extends Error {
-  constructor(
-    message: string,
-    readonly until: number,
-  ) {
+  readonly until: number;
+  constructor(message: string, until: number) {
     super(message);
     this.name = 'ModelsResting';
+    this.until = until;
   }
 }
 
