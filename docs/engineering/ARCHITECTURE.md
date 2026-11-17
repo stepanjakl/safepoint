@@ -1,10 +1,10 @@
 # Architecture
 
-Status: current implementation guide, checked against the repository in October 2026. The [original technical design](../archive/TECHNICAL-DESIGN.md) contains a fuller proposed production system; it is a dated design record, not a claim that those services exist.
+Status: current implementation guide, checked against the repository in November 2026, after the move of runs, rulebooks and jobs to the server. The [original technical design](../archive/TECHNICAL-DESIGN.md) contains a fuller proposed production system; it is a dated design record, not a claim that those services exist.
 
 ## Implemented boundaries
 
-The Next.js App Router serves a shared process shell. `lib/shell/routes.ts` maps process summaries to their pages. `components/app-shell/` owns navigation, tabs, runs and thread layout; `components/review/` renders the shared review presentation. Both Brunch orders processes are in the navigation and served wherever the gate applies, deployed or local. The development tools (`/workbench`, `app/api/dev/`, `components/dev/`) check for local development before use and answer not found elsewhere.
+The Next.js App Router serves a shared process shell. `lib/shell/routes.ts` maps process summaries to their pages. `components/app-shell/` owns navigation, tabs, runs and thread layout; `components/engine/` holds the screens a process with a rulebook is worked through (rules, calculate, propose, apply), which serve any such process; `components/review/` renders the shared review presentation. Both Brunch orders processes are in the navigation and served wherever the gate applies, deployed or local. The development tools (`/workbench`, `app/api/dev/`, `components/dev/`) check for local development before use and answer not found elsewhere.
 
 The promotion-release example loads validated fictional evidence and a reviewed replay through `lib/promotion-release/`. `lib/review/` adapts that replay into the shared release-plan presentation. The replay item API loads details on demand. A preview review surface is not evidence of an external write.
 
@@ -13,6 +13,14 @@ Brunch orders is the active development process. `lib/processes/brunch-orders/` 
 A process's data lives in **sources**, kept apart from what the process does with them. `lib/sources/model.ts` declares each source (a Google spreadsheet today, in code until sources can be added in the app) and its kind's vocabulary; a source knows its resources (a sheet's tabs), their rows and their columns, and nothing of any process. A process names only the resources it reads and writes (`SourceUse`, for Brunch orders `SHEET_USE`); a resource may be in both lists, and what it means to the process stays in its `DataShape`. Reading a source from its own page (`server/storage/source-reads.ts`, through the `sources` procedures in `server/api/routers/sources.ts`) keeps every tab whole in the `source_reads` table; until the first such read the captured snapshot stands in. This is separate from a run's read, which the run takes and keeps for itself. The Outputs tab's last write comes from the process's kept writes (`lastWrite` in `server/storage/applications.ts`). The screens are `components/app-shell/sources/`.
 
 The models the app may call are listed in `lib/models.ts`; typed sheet cells and the week arithmetic they use are in `lib/sheets/`. The earlier Brunch weekend experiment, which these grew out of, was removed on 13 October 2026.
+
+## Where things live
+
+- `app/`: routes and pages (`(shell)/` the app, `workbench/` the development laboratories, `api/trpc` the one stateful door, `api/dev` the plain development routes, `access/` the password page), and `styles/`, the one stylesheet entry.
+- `components/`: `app-shell/` (the shell, by feature), `engine/` (the rulebook screens), `review/` (the replay review), `ui/` (controls), `trpc/` (the client's provider), `access/` and `dev/`.
+- `lib/`: code that runs on either side and holds no state. `definitions/` is the engine (kept flat, one file a concern); `shell/` the process model, navigation, routes and run lifecycle, with `shell/placeholder/` the stand-in runs for the promotion example; `processes/` what each process declares; `sources/` and `sheets/` the data a process reads and writes; `promotion-release/`, `review/` and `review-presentation/` the replay example.
+- `server/`: everything that touches the database, a file, a model or a sheet, each module opening with `import 'server-only'`. `api/` the procedures, `storage/` where each kind of thing is kept and read back, `jobs/` and `workflows/` the background work, `operations/` what a procedure does across several stores, `access/` the gate, `db/` the schema and client.
+- `drizzle/`: the migrations. `fixtures/`: the reviewed copy of what a person approves (`<process>/rulebooks/`, `<process>/profile/`), the captured sheet read, and the promotion example's evidence, `replays/` and test oracle (`tests/`). `e2e/`: browser tests and their frozen copies. `scripts/` and `tools/`: generators and structural checks. `data/` (ignored): what runs write locally with no `DATABASE_URL`.
 
 ## How a route becomes a procedure
 
