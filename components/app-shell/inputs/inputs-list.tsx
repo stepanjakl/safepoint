@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 
-import type { InputDetail } from '@/lib/process/input-details';
-import { byAttention, type SystemLink } from '@/lib/process/system-links';
+import type { InputDetail } from '@/lib/shell/input-details';
+import { byAttention, type SystemLink } from '@/lib/shell/system-links';
 import {
   Group,
   NOTE,

@@ -2,8 +2,8 @@ import {
   RUN_TRIGGER_LABELS,
   type ProcessStep,
   type RunTrigger,
-} from '@/lib/process/model';
-import type { RunStage } from '@/lib/process/run-lifecycle';
+} from '@/lib/shell/model';
+import type { RunStage } from '@/lib/shell/run-lifecycle';
 import type { AnswerProblem, ProposalEvent } from '@/lib/definitions/types';
 
 /*

@@ -3,8 +3,8 @@ import 'server-only';
 import { and, eq, sql } from 'drizzle-orm';
 
 import { hashOf } from '@/lib/definitions/fingerprint';
-import type { InstructionsVersion } from '@/lib/process/model';
-import { normalisedInstructions } from '@/lib/process/instruction-diff';
+import type { InstructionsVersion } from '@/lib/shell/model';
+import { normalisedInstructions } from '@/lib/shell/instruction-diff';
 
 import { database, type Database } from '@/server/db/client';
 import { ensureProcess } from '@/server/db/scope';

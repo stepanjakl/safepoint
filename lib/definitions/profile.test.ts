@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { DataShape } from '@/lib/process/model';
+import type { DataShape } from '@/lib/shell/model';
 import { BRUNCH_ORDERS_DEFINITIONS } from '@/lib/processes/brunch-orders/process';
 import {
   ownerFor,

@@ -1,9 +1,9 @@
 import type { Page } from '@playwright/test';
 
 import { hashOf } from '@/lib/definitions/fingerprint';
-import { normalisedInstructions } from '@/lib/process/instruction-diff';
-import type { ProcessSummary } from '@/lib/process/model';
-import { promotionProcess } from '@/lib/process/placeholder-process';
+import { normalisedInstructions } from '@/lib/shell/instruction-diff';
+import type { ProcessSummary } from '@/lib/shell/model';
+import { promotionProcess } from '@/lib/shell/placeholder-process';
 import type { KeptVersion } from '@/server/storage/instructions';
 
 import { mockProcedure } from './trpc';

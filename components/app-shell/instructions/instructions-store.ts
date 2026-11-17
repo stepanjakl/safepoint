@@ -6,7 +6,7 @@ import { useMemo, useSyncExternalStore } from 'react';
 import { z } from 'zod';
 import { useTRPC } from '@/components/trpc/provider';
 import { createStoredRecord, parseStored } from '../stored-record';
-import type { ProcessSummary } from '@/lib/process/model';
+import type { ProcessSummary } from '@/lib/shell/model';
 import type { AppRouter } from '@/server/api/root';
 
 /*

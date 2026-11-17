@@ -3,7 +3,7 @@
 import { Glyph } from '@/components/ui/glyph';
 import { modeMarker, toneText } from '@/components/review/markers';
 import { cx } from '@/lib/cx';
-import type { SystemLink } from '@/lib/process/system-links';
+import type { SystemLink } from '@/lib/shell/system-links';
 import { MODE_LABELS } from '@/lib/review-presentation';
 import { SystemIcon } from './system-icon';
 

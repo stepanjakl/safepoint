@@ -12,7 +12,7 @@ import {
   WEEKDAYS,
   scheduleLabel,
   type ProcessSchedule,
-} from '@/lib/process/schedule';
+} from '@/lib/shell/schedule';
 import { useProcessSchedule } from './schedule-store';
 
 const CADENCES = [

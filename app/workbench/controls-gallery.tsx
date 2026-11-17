@@ -18,8 +18,8 @@ import {
   RUN_STATUS_LABELS,
   type ProcessSummary,
   type RunStatus,
-} from '@/lib/process/model';
-import type { SystemLink } from '@/lib/process/system-links';
+} from '@/lib/shell/model';
+import type { SystemLink } from '@/lib/shell/system-links';
 
 import { Pin, type PinnedState } from './pin';
 

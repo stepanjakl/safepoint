@@ -2,7 +2,7 @@ import { isStepCount, streamText, tool, ToolChoiceViolationError } from 'ai';
 import { z } from 'zod';
 
 import type { DraftingModel } from '@/lib/models';
-import type { DataShape } from '@/lib/process/model';
+import type { DataShape } from '@/lib/shell/model';
 import type { SourceTerms } from '@/lib/sources/model';
 
 import type { RecordAttempt } from './attempts';

@@ -1,12 +1,12 @@
 'use client';
 
 import { useContext, useState, type ReactNode } from 'react';
-import type { ProcessAnalysis, RunTrigger } from '@/lib/process/model';
+import type { ProcessAnalysis, RunTrigger } from '@/lib/shell/model';
 import {
   byAttention,
   needsAttention,
   type SystemLink,
-} from '@/lib/process/system-links';
+} from '@/lib/shell/system-links';
 import {
   reviewAt,
   RUN_TOOK,
@@ -15,7 +15,7 @@ import {
   stepsAt,
   type RunFacts,
   type RunStage,
-} from '@/lib/process/run-lifecycle';
+} from '@/lib/shell/run-lifecycle';
 import type { ReleasePlan } from '@/lib/review/plan-contract';
 import { ReplayReview } from '@/components/review/replay-review';
 import type { ReviewOpenRequest } from '@/components/review/review-experience';

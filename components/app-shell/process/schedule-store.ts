@@ -3,7 +3,7 @@
 import { useMemo, useSyncExternalStore } from 'react';
 import { z } from 'zod';
 import { createStoredRecord, parseStored } from '../stored-record';
-import { WEEKDAYS, type ProcessSchedule } from '@/lib/process/schedule';
+import { WEEKDAYS, type ProcessSchedule } from '@/lib/shell/schedule';
 
 // A person's changes to a schedule, keyed by process id. Only what they
 // changed is stored: the process supplies the rest, so a schedule nobody has

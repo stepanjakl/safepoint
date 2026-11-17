@@ -23,7 +23,7 @@ import { Tooltip } from '@/components/ui/tooltip';
 import {
   restoreProcessOrder,
   type ProcessNavigationItem,
-} from '@/lib/process/navigation';
+} from '@/lib/shell/navigation';
 import {
   readProcessOrder,
   saveProcessOrder,

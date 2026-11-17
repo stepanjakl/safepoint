@@ -13,10 +13,10 @@ import {
   type ReactNode,
 } from 'react';
 import { cx } from '@/lib/cx';
-import { LAST_PROCESS_KEY } from '@/lib/process/navigation';
-import type { InputDetail } from '@/lib/process/input-details';
-import type { ProcessSummary } from '@/lib/process/model';
-import type { SystemLink } from '@/lib/process/system-links';
+import { LAST_PROCESS_KEY } from '@/lib/shell/navigation';
+import type { InputDetail } from '@/lib/shell/input-details';
+import type { ProcessSummary } from '@/lib/shell/model';
+import type { SystemLink } from '@/lib/shell/system-links';
 import { useInstructions } from '@/components/app-shell/instructions/instructions-store';
 import { useRemovedInputs } from '@/components/app-shell/inputs/inputs-store';
 import { writePreferenceCookie } from '@/components/app-shell/stored-record';

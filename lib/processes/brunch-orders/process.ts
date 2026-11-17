@@ -3,9 +3,9 @@ import type {
   DefinitionSubject,
   ProcessStep,
   ProcessSummary,
-} from '@/lib/process/model';
+} from '@/lib/shell/model';
 import type { DefinitionProcess } from '@/lib/definitions/types';
-import type { SystemLink } from '@/lib/process/system-links';
+import type { SystemLink } from '@/lib/shell/system-links';
 import type { SourceUse } from '@/lib/sources/model';
 import type { ReleasePlan } from '@/lib/review/plan-contract';
 

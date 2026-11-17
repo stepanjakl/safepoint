@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { hashOf } from '@/lib/definitions/fingerprint';
 import { inScratchDatabase, rowsOf } from '@/lib/definitions/scratch.fixture';
-import { normalisedInstructions } from '@/lib/process/instruction-diff';
+import { normalisedInstructions } from '@/lib/shell/instruction-diff';
 import { instructionVersions, processes } from '@/server/db/schema';
 import { keptProcess, keptProcesses } from '@/server/operations/kept-processes';
 

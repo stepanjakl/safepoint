@@ -31,7 +31,7 @@ import { MORPH_WORDS_MS, MorphingText } from '@/components/ui/morphing-text';
 import { useLoader } from '@/components/ui/working-mark';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cx } from '@/lib/cx';
-import { runStamp } from '@/lib/process/run-time';
+import { runStamp } from '@/lib/shell/run-time';
 import { capitalise } from '@/lib/review-presentation/format';
 import {
   SOURCE_KINDS,

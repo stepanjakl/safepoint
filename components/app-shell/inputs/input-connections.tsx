@@ -2,8 +2,8 @@
 
 import { Dialog, Heading, Modal, ModalOverlay } from 'react-aria-components';
 import { Button } from '@/components/ui/button';
-import type { InputDetail } from '@/lib/process/input-details';
-import type { SystemLink } from '@/lib/process/system-links';
+import type { InputDetail } from '@/lib/shell/input-details';
+import type { SystemLink } from '@/lib/shell/system-links';
 import { NOTE } from '@/components/app-shell/process/panel-parts';
 import { SystemDisc } from '@/components/app-shell/system/system-parts';
 

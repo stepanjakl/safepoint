@@ -3,8 +3,8 @@ import { notFound } from 'next/navigation';
 
 import { ShellPageTransitionProvider } from '@/components/app-shell/shell-page-transition';
 import { loadReviewedReplay } from '@/lib/promotion-release';
-import { promotionProcess } from '@/lib/process/placeholder-process';
-import { presentPromotionInputs } from '@/lib/process/system-links';
+import { promotionProcess } from '@/lib/shell/placeholder-process';
+import { presentPromotionInputs } from '@/lib/shell/system-links';
 
 import { ControlsGallery } from '../controls-gallery';
 

@@ -39,7 +39,7 @@ import {
   modelRunStepsAt,
   type ModelRunFacts,
   type ModelRunStage,
-} from '@/lib/process/model-run';
+} from '@/lib/shell/model-run';
 
 import type { DataTabs } from '@/components/brunch-orders/data-drawer';
 import {

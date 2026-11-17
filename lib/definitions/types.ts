@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import type { DefinitionSubject } from '@/lib/process/model';
+import type { DefinitionSubject } from '@/lib/shell/model';
 
 import { shapeSchema } from './shape-schema';
 

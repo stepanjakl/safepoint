@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from 'react';
 import { z } from 'zod';
-import { PROCESS_TAB_KEY as STORAGE_KEY } from '@/lib/process/navigation';
+import { PROCESS_TAB_KEY as STORAGE_KEY } from '@/lib/shell/navigation';
 import {
   createStoredRecord,
   parseStored,

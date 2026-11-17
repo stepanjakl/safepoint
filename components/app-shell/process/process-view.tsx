@@ -1,9 +1,9 @@
 import { cookies } from 'next/headers';
 import type { ReactNode } from 'react';
-import { PROCESS_TAB_KEY } from '@/lib/process/navigation';
-import type { InputDetail } from '@/lib/process/input-details';
-import type { ProcessSummary } from '@/lib/process/model';
-import type { SystemLink } from '@/lib/process/system-links';
+import { PROCESS_TAB_KEY } from '@/lib/shell/navigation';
+import type { InputDetail } from '@/lib/shell/input-details';
+import type { ProcessSummary } from '@/lib/shell/model';
+import type { SystemLink } from '@/lib/shell/system-links';
 import type { PlayableRun } from '@/components/app-shell/runs/run-view';
 import { ProcessSheet, type ProcessPolicy } from './process-sheet';
 

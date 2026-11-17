@@ -317,7 +317,7 @@ export const rulebookHeads = pgTable(
   ],
 );
 
-// lib/process/model.ts (RunStatus, RunTrigger) and the process's step ids.
+// lib/shell/model.ts (RunStatus, RunTrigger) and the process's step ids.
 export const RUN_STATUSES = [
   'queued',
   'running',

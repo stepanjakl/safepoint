@@ -10,7 +10,7 @@ import {
 } from './checks';
 import { accountingProblems, sentencesOf } from './find';
 import { contextFor, run } from './formulas';
-import type { DefinitionSubject } from '@/lib/process/model';
+import type { DefinitionSubject } from '@/lib/shell/model';
 
 import {
   MOMENT_PREFIX,

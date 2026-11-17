@@ -13,12 +13,12 @@ import SettingsGear from 'blode-icons-react/icons/settings-gear-1';
 import { Notch } from '@/components/ui/notch';
 import { useEdgeScroll } from '@/components/ui/edge-scroll';
 import { cx } from '@/lib/cx';
-import type { ProcessSummary } from '@/lib/process/model';
+import type { ProcessSummary } from '@/lib/shell/model';
 import {
   needsAttention,
   worstFreshness,
   type SystemLink,
-} from '@/lib/process/system-links';
+} from '@/lib/shell/system-links';
 import { ProcessContentTransition } from './process-content-transition';
 import type { ProcessTab } from './process-tab-store';
 import { ProcessTitle } from './process-title';

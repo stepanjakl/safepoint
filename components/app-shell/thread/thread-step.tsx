@@ -31,7 +31,7 @@ import {
   STEP_STATUS_LABELS,
   type ProcessStep,
   type RunTrigger,
-} from '@/lib/process/model';
+} from '@/lib/shell/model';
 import { cx } from '@/lib/cx';
 
 /*

@@ -10,7 +10,7 @@ import {
   MODEL_RUN_MAIN_LINE,
   type ModelRunFacts,
   type ModelRunStage,
-} from '@/lib/process/model-run';
+} from '@/lib/shell/model-run';
 import {
   BRUNCH_ORDERS_DIRECT_DEFINITIONS as owner,
   brunchOrdersDirectProcess,

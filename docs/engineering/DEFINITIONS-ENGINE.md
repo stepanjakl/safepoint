@@ -49,7 +49,7 @@ Writing has been tested only against a sheet and a table held in memory, and the
 
 - A moment on a date that falls back on a weekday and time is only as good as the sheet fills it: a record with a blank date is judged by its weekday and time as before, so a product nobody has recounted since the column was added still reads as counted at that weekday and time this week. The fall back says nothing of which cells were meant to be dated, and a date after the read, on an observed moment, stops the whole read until it is corrected.
 - A date column is a moment only where the process declares it one; a duration in days or weeks cannot be compared with hours since a moment, as a constant must be quoted in the instructions' own unit.
-- A source of any kind is held as resources of rows under a header row, and a write is one rectangular block of one resource; the database kind exists only in tests, and screens outside the engine (`lib/process/model-run.ts`, the run and output components) still word citations and cells as a sheet's.
+- A source of any kind is held as resources of rows under a header row, and a write is one rectangular block of one resource; the database kind exists only in tests, and screens outside the engine (`lib/shell/model-run.ts`, the run and output components) still word citations and cells as a sheet's.
 - A record is one row of each record tab; a key listed twice is a read problem.
 - A check sees one record at a time.
 - Proposal fields are whole numbers, and a field with no declared `min` is tried at 0 and above only, so two versions that differ only below zero agree.

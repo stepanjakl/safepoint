@@ -10,7 +10,7 @@ import {
 } from '@/components/review/review-item-detail';
 import { Glyph } from '@/components/ui/glyph';
 import { Ledger, LedgerRow } from '@/components/ui/ledger';
-import type { InputDetail } from '@/lib/process/input-details';
+import type { InputDetail } from '@/lib/shell/input-details';
 import { RemoveInputDialog } from './input-connections';
 
 // A filter earns its place once the records outrun a glance.

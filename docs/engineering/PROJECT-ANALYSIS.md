@@ -338,7 +338,7 @@ The engine's major objects are:
 | `Proposal`      | Proposed values or an explicit "leave" action for every record                                                 |
 | `Application`   | Decisions applied, before/after cells, verification outcome, and undo state                                    |
 
-Sources: [process models](../../lib/process/model.ts), [Brunch declaration](../../lib/processes/brunch-orders/process.ts), [engine contracts](../../lib/definitions/types.ts).
+Sources: [process models](../../lib/shell/model.ts), [Brunch declaration](../../lib/processes/brunch-orders/process.ts), [engine contracts](../../lib/definitions/types.ts).
 
 ---
 

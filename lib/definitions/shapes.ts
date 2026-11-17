@@ -3,7 +3,7 @@ import {
   isDatedOrWeekly,
   type DefinitionSubject,
   type WeeklyMoment,
-} from '@/lib/process/model';
+} from '@/lib/shell/model';
 
 import {
   blankColumnsOf,

@@ -1,4 +1,4 @@
-import type { DefinitionSubject } from '@/lib/process/model';
+import type { DefinitionSubject } from '@/lib/shell/model';
 import type { Currency } from '@/lib/sheets/field-types';
 
 import {

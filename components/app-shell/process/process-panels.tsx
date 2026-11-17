@@ -5,10 +5,10 @@ import { useDetailHold } from '@/components/ui/screen-settled';
 import { Loader } from '@/components/ui/loader';
 import { EmptyState, useLoader } from '@/components/ui/working-mark';
 import { cx } from '@/lib/cx';
-import type { InputDetail } from '@/lib/process/input-details';
-import type { ProcessSummary } from '@/lib/process/model';
-import { runStamp } from '@/lib/process/run-time';
-import { byAttention, type SystemLink } from '@/lib/process/system-links';
+import type { InputDetail } from '@/lib/shell/input-details';
+import type { ProcessSummary } from '@/lib/shell/model';
+import { runStamp } from '@/lib/shell/run-time';
+import { byAttention, type SystemLink } from '@/lib/shell/system-links';
 import {
   DrawerAside,
   viewKey,

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { hashOf } from '@/lib/definitions/fingerprint';
 import { inScratchDatabase } from '@/lib/definitions/scratch.fixture';
-import { promotionProcess } from '@/lib/process/placeholder-process';
+import { promotionProcess } from '@/lib/shell/placeholder-process';
 
 import { caller, failure } from '../run.fixture';
 

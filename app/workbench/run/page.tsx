@@ -2,9 +2,9 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { loadReviewedReplay } from '@/lib/promotion-release';
-import { promotionProcess } from '@/lib/process/placeholder-process';
-import { presentRunFacts } from '@/lib/process/run-lifecycle';
-import { presentPromotionInputs } from '@/lib/process/system-links';
+import { promotionProcess } from '@/lib/shell/placeholder-process';
+import { presentRunFacts } from '@/lib/shell/run-lifecycle';
+import { presentPromotionInputs } from '@/lib/shell/system-links';
 import { presentPromotionPlan } from '@/lib/review/promotion-adapter';
 
 import { sampleDraft } from '../draft-progress/sample';

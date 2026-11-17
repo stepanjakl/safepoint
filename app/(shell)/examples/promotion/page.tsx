@@ -3,11 +3,11 @@ import { ProcessView } from '@/components/app-shell/process/process-view';
 import { RunThread } from '@/components/app-shell/thread/run-thread';
 import { loadReviewedReplay } from '@/lib/promotion-release';
 import { parseSkuParam } from '@/lib/review-presentation';
-import { promotionProcess } from '@/lib/process/placeholder-process';
-import { presentPromotionInputDetails } from '@/lib/process/input-details';
-import { presentPromotionInputs } from '@/lib/process/system-links';
+import { promotionProcess } from '@/lib/shell/placeholder-process';
+import { presentPromotionInputDetails } from '@/lib/shell/input-details';
+import { presentPromotionInputs } from '@/lib/shell/system-links';
 import { presentPromotionPlan } from '@/lib/review/promotion-adapter';
-import { presentRunFacts } from '@/lib/process/run-lifecycle';
+import { presentRunFacts } from '@/lib/shell/run-lifecycle';
 
 export default async function ReviewPage({
   searchParams,

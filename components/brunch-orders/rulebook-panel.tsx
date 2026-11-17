@@ -13,7 +13,7 @@ import { useTRPC } from '@/components/trpc/provider';
 import { Loader } from '@/components/ui/loader';
 import type { LoaderPhase } from '@/components/ui/working-mark';
 import type { Revision } from '@/lib/definitions/types';
-import type { ProcessSummary } from '@/lib/process/model';
+import type { ProcessSummary } from '@/lib/shell/model';
 
 // Each revision with what it changed from its parent, where both are kept.
 export type RulebookHistory = RulesKept['history'];

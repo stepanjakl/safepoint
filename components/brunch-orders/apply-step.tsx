@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/data-table';
 import { cx } from '@/lib/cx';
 import type { Application, CellChange } from '@/lib/definitions/types';
-import type { DefinitionSubject } from '@/lib/process/model';
+import type { DefinitionSubject } from '@/lib/shell/model';
 import type { AppRouter } from '@/server/api/root';
 
 import type { Decision } from './propose/types';

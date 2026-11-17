@@ -1,7 +1,7 @@
 'use client';
 
 import { useId, type SVGProps } from 'react';
-import type { RunStatus } from '@/lib/process/model';
+import type { RunStatus } from '@/lib/shell/model';
 
 /*
   The nine states a run can be in, as one family.

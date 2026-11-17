@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
 import { useTRPC } from '@/components/trpc/provider';
-import type { ProcessRun, RunStatus, RunTrigger } from '@/lib/process/model';
+import type { ProcessRun, RunStatus, RunTrigger } from '@/lib/shell/model';
 import type { AppRouter } from '@/server/api/root';
 
 /*

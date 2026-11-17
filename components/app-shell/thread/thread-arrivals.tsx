@@ -10,7 +10,7 @@ import {
 } from 'react';
 // Deep import, as in thread-step.tsx: the barrel is the whole library.
 import ArrowDown from 'blode-icons-react/icons/arrow-down';
-import type { ProcessStep } from '@/lib/process/model';
+import type { ProcessStep } from '@/lib/shell/model';
 import { Button } from '@/components/ui/button';
 import { motionTime } from '@/lib/motion-time';
 import { useFollowRun } from './follow-run';

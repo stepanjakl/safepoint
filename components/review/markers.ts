@@ -1,4 +1,4 @@
-import type { RunStatus, StepStatus } from '@/lib/process/model';
+import type { RunStatus, StepStatus } from '@/lib/shell/model';
 import type { Disposition } from '@/lib/review/plan-contract';
 import type { ReviewOutcome } from '@/lib/promotion-release';
 import type { AdapterMode, PresentedGate } from '@/lib/review-presentation';

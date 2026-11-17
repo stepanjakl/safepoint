@@ -1,6 +1,6 @@
 # Embedded review direction
 
-Status: implemented shell and replay-review direction from September 2026, with planned work labelled in each section. The navigation account below predates the development-only Brunch examples; check `lib/process/routes.ts` for the current route list. It supersedes the standalone-first composition in the [Stage 1B brief](../archive/STAGE-1B-BRIEF.md), [experience specification](../archive/EXPERIENCE-SPEC.md) and [Fable handoff](../archive/FABLE-VISUAL-DIRECTION.md).
+Status: implemented shell and replay-review direction from September 2026, with planned work labelled in each section. The navigation account below predates the development-only Brunch examples; check `lib/shell/routes.ts` for the current route list. It supersedes the standalone-first composition in the [Stage 1B brief](../archive/STAGE-1B-BRIEF.md), [experience specification](../archive/EXPERIENCE-SPEC.md) and [Fable handoff](../archive/FABLE-VISUAL-DIRECTION.md).
 
 Safepoint appears as a compact review response in an existing conversation. It expands into a focused review surface and eventually returns a durable result to that same conversation. The conversation provides context; the structured change set defines what a person reviews.
 

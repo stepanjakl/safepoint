@@ -1,4 +1,4 @@
-import type { ProcessAnalysis } from '@/lib/process/model';
+import type { ProcessAnalysis } from '@/lib/shell/model';
 
 /*
   What the run worked out before it proposed anything. It sits between the

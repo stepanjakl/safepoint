@@ -14,7 +14,7 @@ import { RunRow } from './run-row';
 import { Tooltip } from '@/components/ui/tooltip';
 import { useEdgeScroll } from '@/components/ui/edge-scroll';
 import { useRunSelection } from './run-selection';
-import type { ProcessSummary } from '@/lib/process/model';
+import type { ProcessSummary } from '@/lib/shell/model';
 
 /*
   The process's runs: one divided list, newest first. A row is `RunRow`; this

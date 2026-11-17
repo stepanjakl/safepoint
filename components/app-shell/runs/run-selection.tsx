@@ -1,8 +1,8 @@
 'use client';
 
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
-import type { ProcessRun, ProcessSummary } from '@/lib/process/model';
-import type { RunStage } from '@/lib/process/run-lifecycle';
+import type { ProcessRun, ProcessSummary } from '@/lib/shell/model';
+import type { RunStage } from '@/lib/shell/run-lifecycle';
 import { motionTime } from '@/lib/motion-time';
 import { useInstructions } from '@/components/app-shell/instructions/instructions-store';
 import {

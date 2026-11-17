@@ -11,7 +11,7 @@ import { MenuIcon } from '@/components/app-shell/sidebar/menu-parts';
 import {
   EVALUATION_DESCRIPTIONS,
   type ProcessSummary,
-} from '@/lib/process/model';
+} from '@/lib/shell/model';
 import { PROCESS_NAME_MAX, useProcessName } from './process-names-store';
 import { ScheduleFields } from './schedule-control';
 import { useProcessSchedule } from './schedule-store';

@@ -14,8 +14,8 @@ import {
   type ProcessRun,
   type RunStatus,
   type RunTrigger,
-} from '@/lib/process/model';
-import { runDay, runStamp, runTime } from '@/lib/process/run-time';
+} from '@/lib/shell/model';
+import { runDay, runStamp, runTime } from '@/lib/shell/run-time';
 
 /*
   One run, in two lines and four pieces.

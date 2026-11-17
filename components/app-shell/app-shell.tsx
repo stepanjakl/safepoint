@@ -4,12 +4,12 @@ import { loadReviewedReplay } from '@/lib/promotion-release';
 import {
   promotionProcess,
   supportProcess,
-} from '@/lib/process/placeholder-process';
+} from '@/lib/shell/placeholder-process';
 import {
   PROCESS_ORDER_KEY,
   processNavigationItem,
-} from '@/lib/process/navigation';
-import { processHref } from '@/lib/process/routes';
+} from '@/lib/shell/navigation';
+import { processHref } from '@/lib/shell/routes';
 import { presentPromotionPlan } from '@/lib/review/promotion-adapter';
 import { supportPlan } from '@/lib/review/support-fixture';
 import {

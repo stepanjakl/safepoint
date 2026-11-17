@@ -7,8 +7,8 @@ import DotGrid2x3Filled from 'blode-icons-react/icons/dot-grid-2x3-filled';
 
 import { cx } from '@/lib/cx';
 import { useShellPageNavigation } from '@/components/app-shell/shell-page-transition';
-import { EVALUATION_LABELS } from '@/lib/process/model';
-import type { ProcessNavigationItem } from '@/lib/process/navigation';
+import { EVALUATION_LABELS } from '@/lib/shell/model';
+import type { ProcessNavigationItem } from '@/lib/shell/navigation';
 import { Glyph } from '@/components/ui/glyph';
 import { OverflowTooltip, Tooltip } from '@/components/ui/tooltip';
 import { MENU_RAIL, MenuIcon } from './menu-parts';

@@ -1,6 +1,6 @@
 import { Environment } from '@marcbachmann/cel-js';
 
-import type { DefinitionSubject } from '@/lib/process/model';
+import type { DefinitionSubject } from '@/lib/shell/model';
 import { ctorFor } from '@/lib/definitions/cel-objects';
 import type { FieldType } from '@/lib/sheets/field-types';
 

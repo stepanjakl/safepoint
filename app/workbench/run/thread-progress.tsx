@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cx } from '@/lib/cx';
 import type { DefinitionSet } from '@/lib/definitions/types';
-import type { ProcessStep } from '@/lib/process/model';
+import type { ProcessStep } from '@/lib/shell/model';
 import { COMING, ORDER_STEPS } from '@/lib/processes/brunch-orders/process';
 
 import { DraftCards } from '../draft-progress/draft-cards';

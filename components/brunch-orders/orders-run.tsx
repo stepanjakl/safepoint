@@ -36,7 +36,7 @@ import { Loader } from '@/components/ui/loader';
 import { useTRPC } from '@/components/trpc/provider';
 import { useLoader } from '@/components/ui/working-mark';
 import { cx } from '@/lib/cx';
-import type { ProcessStep, ProcessSummary } from '@/lib/process/model';
+import type { ProcessStep, ProcessSummary } from '@/lib/shell/model';
 import {
   COMING,
   ORDER_STEPS,

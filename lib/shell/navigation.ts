@@ -1,4 +1,4 @@
-import type { ProcessEvaluation } from '@/lib/process/model';
+import type { ProcessEvaluation } from '@/lib/shell/model';
 import type { ReleasePlan } from '@/lib/review/plan-contract';
 import {
   evaluationCounts,

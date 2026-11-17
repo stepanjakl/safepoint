@@ -173,7 +173,7 @@ const SHEET_ALLOWED: { text: RegExp; why: string }[] = [
   },
   {
     text: /^no-tab$/,
-    why: 'a kind of answer problem, kept in progress files and read by lib/process/model-run.ts; it means the resource cited',
+    why: 'a kind of answer problem, kept in progress files and read by lib/shell/model-run.ts; it means the resource cited',
   },
   {
     text: /^tab$/,

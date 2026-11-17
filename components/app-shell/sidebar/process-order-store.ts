@@ -4,7 +4,7 @@ import {
   createStoredRecord,
   writePreferenceCookie,
 } from '@/components/app-shell/stored-record';
-import { PROCESS_ORDER_KEY as STORAGE_KEY } from '@/lib/process/navigation';
+import { PROCESS_ORDER_KEY as STORAGE_KEY } from '@/lib/shell/navigation';
 
 // Mirrored to a cookie: the order belongs to the menu, not to a route, and the
 // server reads it to draw the first paint in the saved order.

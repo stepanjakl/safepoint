@@ -21,7 +21,7 @@ import Store1Filled from 'blode-icons-react/icons/store-1-filled';
 import TableFilled from 'blode-icons-react/icons/table-filled';
 import TagFilled from 'blode-icons-react/icons/tag-filled';
 import TruckFilled from 'blode-icons-react/icons/truck-filled';
-import type { IconKey } from '@/lib/process/system-links';
+import type { IconKey } from '@/lib/shell/system-links';
 
 // A disc passes nothing but the hidden flag, so the shared vocabulary asks each
 // shipped icon for no broader interface than that.

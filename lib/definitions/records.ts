@@ -6,7 +6,7 @@ import {
   type DataShape,
   type Moment,
   type TimeColumns,
-} from '@/lib/process/model';
+} from '@/lib/shell/model';
 import {
   deadlineBefore,
   firstAfter,

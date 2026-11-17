@@ -8,7 +8,7 @@ import {
   type PointerEvent,
 } from 'react';
 
-import { moveProcess } from '@/lib/process/navigation';
+import { moveProcess } from '@/lib/shell/navigation';
 
 /*
   The pitch of the list: a row plus the gap to the next one. The single

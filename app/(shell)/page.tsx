@@ -4,8 +4,8 @@ import {
   LAST_PROCESS_KEY,
   PROCESS_ORDER_KEY,
   landingProcess,
-} from '@/lib/process/navigation';
-import { PROCESS_ROUTES, processHref } from '@/lib/process/routes';
+} from '@/lib/shell/navigation';
+import { PROCESS_ROUTES, processHref } from '@/lib/shell/routes';
 
 /*
   The root is not a page of its own: it opens the process the reader was last

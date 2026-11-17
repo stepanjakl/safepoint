@@ -11,7 +11,7 @@ import {
 } from '@/components/app-shell/thread/model-run-thread';
 import type { Decision } from '@/components/brunch-orders/propose/types';
 import { Button } from '@/components/ui/button';
-import { MODEL_RUN_STAGE_LABELS } from '@/lib/process/model-run';
+import { MODEL_RUN_STAGE_LABELS } from '@/lib/shell/model-run';
 import { motionTime } from '@/lib/motion-time';
 
 import type { ScriptedStage } from './brunch-direct';

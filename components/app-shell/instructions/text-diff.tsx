@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { cx } from '@/lib/cx';
-import { diffText } from '@/lib/process/instruction-diff';
+import { diffText } from '@/lib/shell/instruction-diff';
 
 /*
   A change to the instructions, read in the text's own face and measure. A

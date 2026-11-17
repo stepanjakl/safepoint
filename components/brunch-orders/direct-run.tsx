@@ -10,7 +10,7 @@ import {
 } from '@/components/app-shell/runs/run-selection';
 import { ResponseSection } from '@/components/app-shell/thread/thread-page';
 import { ThreadStep } from '@/components/app-shell/thread/thread-step';
-import type { ProcessStep, ProcessSummary } from '@/lib/process/model';
+import type { ProcessStep, ProcessSummary } from '@/lib/shell/model';
 
 import { SUBJECT } from '@/lib/processes/brunch-orders/process';
 

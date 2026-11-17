@@ -3,11 +3,11 @@ import 'server-only';
 import { z } from 'zod';
 
 import type { DefinitionProcess } from '@/lib/definitions/types';
-import type { ProcessSummary } from '@/lib/process/model';
+import type { ProcessSummary } from '@/lib/shell/model';
 import {
   promotionProcess,
   supportProcess,
-} from '@/lib/process/placeholder-process';
+} from '@/lib/shell/placeholder-process';
 import {
   BRUNCH_ORDERS_DEFINITIONS,
   BRUNCH_ORDERS_DIRECT_DEFINITIONS,

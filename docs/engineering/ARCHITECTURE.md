@@ -4,7 +4,7 @@ Status: current implementation guide, checked against the repository in October 
 
 ## Implemented boundaries
 
-The Next.js App Router serves a shared process shell. `lib/process/routes.ts` maps process summaries to their pages. `components/app-shell/` owns navigation, tabs, runs and thread layout; `components/review/` renders the shared review presentation. Both Brunch orders processes are in the navigation and served wherever the gate applies, deployed or local. The development tools (`/workbench`, `app/api/dev/`, `components/dev/`) check for local development before use and answer not found elsewhere.
+The Next.js App Router serves a shared process shell. `lib/shell/routes.ts` maps process summaries to their pages. `components/app-shell/` owns navigation, tabs, runs and thread layout; `components/review/` renders the shared review presentation. Both Brunch orders processes are in the navigation and served wherever the gate applies, deployed or local. The development tools (`/workbench`, `app/api/dev/`, `components/dev/`) check for local development before use and answer not found elsewhere.
 
 The promotion-release example loads validated fictional evidence and a reviewed replay through `lib/promotion-release/`. `lib/review/` adapts that replay into the shared release-plan presentation. The replay item API loads details on demand. A preview review surface is not evidence of an external write.
 

@@ -1,4 +1,4 @@
-import type { SystemLink } from '@/lib/process/system-links';
+import type { SystemLink } from '@/lib/shell/system-links';
 import {
   SystemDisc,
   SystemMeta,
