@@ -40,7 +40,10 @@ async function sendToAgent(output: string, annotations: Annotation[]) {
   }
 }
 
+// scripts/dev.ts sets the flag, and sets it off where it starts no annotation
+// server (AGENTATION=off): the toolbar then neither renders nor touches storage.
 export function AgentationToolbar() {
   if (process.env.NODE_ENV !== 'development') return null;
+  if (process.env.NEXT_PUBLIC_AGENTATION !== 'on') return null;
   return <Agentation endpoint={ENDPOINT} onSubmit={sendToAgent} />;
 }

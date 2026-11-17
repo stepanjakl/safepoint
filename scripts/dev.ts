@@ -2,7 +2,8 @@
   `pnpm dev`: the Next development server, and beside it the Agentation server
   the development toolbar sends annotations to (components/dev/agentation-toolbar.tsx).
   Agentation starts only when its port is free, so a second dev server, or one
-  started by Playwright (AGENTATION=off), shares the first or goes without.
+  started by Playwright (AGENTATION=off), shares the first or goes without; with
+  AGENTATION=off the toolbar is not drawn either (NEXT_PUBLIC_AGENTATION).
   Arguments are passed to `next dev`.
 */
 import { spawn, type ChildProcess } from 'node:child_process';
@@ -40,7 +41,15 @@ if (process.env.AGENTATION !== 'off' && !(await portInUse(AGENTATION_PORT))) {
 const next = spawn(
   'node_modules/.bin/next',
   ['dev', '--webpack', ...process.argv.slice(2)],
-  { stdio: 'inherit' },
+  {
+    stdio: 'inherit',
+    // Inlined into the client bundle: the toolbar renders only where an
+    // annotation server is meant to be (AGENTATION=off is not).
+    env: {
+      ...process.env,
+      NEXT_PUBLIC_AGENTATION: process.env.AGENTATION === 'off' ? 'off' : 'on',
+    },
+  },
 );
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {

@@ -4,7 +4,10 @@ import { configDefaults, defineConfig } from 'vitest/config';
 const here = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 
 export default defineConfig({
-  test: { exclude: [...configDefaults.exclude, 'e2e/**'] },
+  test: {
+    // .claude/ holds agent worktrees, each a whole copy of the repository.
+    exclude: [...configDefaults.exclude, 'e2e/**', '.claude/**'],
+  },
   resolve: {
     alias: {
       '@': here('.'),
