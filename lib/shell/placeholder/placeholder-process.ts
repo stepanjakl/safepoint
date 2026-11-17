@@ -2,7 +2,7 @@
 // the process model (model.ts) with the two processes the portfolio shows, so
 // the review can be seen in the context it will actually appear in.
 
-import type { ProcessSummary } from './model';
+import type { ProcessSummary } from '../model';
 
 export const promotionProcess: ProcessSummary = {
   id: 'promotion-release',

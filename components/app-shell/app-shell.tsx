@@ -4,7 +4,7 @@ import { loadReviewedReplay } from '@/lib/promotion-release';
 import {
   promotionProcess,
   supportProcess,
-} from '@/lib/shell/placeholder-process';
+} from '@/lib/shell/placeholder/placeholder-process';
 import {
   PROCESS_ORDER_KEY,
   processNavigationItem,

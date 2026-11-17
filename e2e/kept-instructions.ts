@@ -3,7 +3,7 @@ import type { Page } from '@playwright/test';
 import { hashOf } from '@/lib/definitions/fingerprint';
 import { normalisedInstructions } from '@/lib/shell/instruction-diff';
 import type { ProcessSummary } from '@/lib/shell/model';
-import { promotionProcess } from '@/lib/shell/placeholder-process';
+import { promotionProcess } from '@/lib/shell/placeholder/placeholder-process';
 import type { KeptVersion } from '@/server/storage/instructions';
 
 import { mockProcedure } from './trpc';

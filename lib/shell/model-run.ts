@@ -3,7 +3,7 @@ import {
   type ProcessStep,
   type RunTrigger,
 } from '@/lib/shell/model';
-import type { RunStage } from '@/lib/shell/run-lifecycle';
+import type { RunStage } from '@/lib/shell/placeholder/run-lifecycle';
 import type { AnswerProblem, ProposalEvent } from '@/lib/definitions/types';
 
 /*

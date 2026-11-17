@@ -15,7 +15,7 @@ import {
   stepsAt,
   type RunFacts,
   type RunStage,
-} from '@/lib/shell/run-lifecycle';
+} from '@/lib/shell/placeholder/run-lifecycle';
 import type { ReleasePlan } from '@/lib/review/plan-contract';
 import { ReplayReview } from '@/components/review/replay-review';
 import type { ReviewOpenRequest } from '@/components/review/review-experience';

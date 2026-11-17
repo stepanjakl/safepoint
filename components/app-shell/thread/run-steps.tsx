@@ -21,7 +21,7 @@ import {
   nonEmptyDispositions,
 } from '@/lib/review/plan-derivations';
 import { byAttention, type SystemLink } from '@/lib/shell/system-links';
-import type { RunFacts, RunStage } from '@/lib/shell/run-lifecycle';
+import type { RunFacts, RunStage } from '@/lib/shell/placeholder/run-lifecycle';
 import { cx } from '@/lib/cx';
 
 /*

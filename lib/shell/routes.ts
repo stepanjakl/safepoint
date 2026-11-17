@@ -5,7 +5,10 @@ import {
   brunchOrdersProcess,
 } from '@/lib/processes/brunch-orders/process';
 import type { ProcessSummary } from './model';
-import { promotionProcess, supportProcess } from './placeholder-process';
+import {
+  promotionProcess,
+  supportProcess,
+} from './placeholder/placeholder-process';
 
 /*
   Where each process lives. The root is none of them: it opens the process the

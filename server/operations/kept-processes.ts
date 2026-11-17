@@ -7,7 +7,7 @@ import type { ProcessSummary } from '@/lib/shell/model';
 import {
   promotionProcess,
   supportProcess,
-} from '@/lib/shell/placeholder-process';
+} from '@/lib/shell/placeholder/placeholder-process';
 import {
   BRUNCH_ORDERS_DEFINITIONS,
   BRUNCH_ORDERS_DIRECT_DEFINITIONS,

@@ -23,7 +23,7 @@ import {
   RUN_STAGE_LABELS,
   RUN_STAGES,
   type RunStage,
-} from '@/lib/shell/run-lifecycle';
+} from '@/lib/shell/placeholder/run-lifecycle';
 
 type Thread = Omit<
   ComponentProps<typeof RunThread>,

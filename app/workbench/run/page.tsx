@@ -2,8 +2,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { loadReviewedReplay } from '@/lib/promotion-release';
-import { promotionProcess } from '@/lib/shell/placeholder-process';
-import { presentRunFacts } from '@/lib/shell/run-lifecycle';
+import { promotionProcess } from '@/lib/shell/placeholder/placeholder-process';
+import { presentRunFacts } from '@/lib/shell/placeholder/run-lifecycle';
 import { presentPromotionInputs } from '@/lib/shell/system-links';
 import { presentPromotionPlan } from '@/lib/review/promotion-adapter';
 

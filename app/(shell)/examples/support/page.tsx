@@ -8,7 +8,7 @@ import { InitialAnalysis } from '@/components/app-shell/thread/initial-analysis'
 import { ProcessView } from '@/components/app-shell/process/process-view';
 import { ThreadStep } from '@/components/app-shell/thread/thread-step';
 import { ReplayReview } from '@/components/review/replay-review';
-import { supportProcess } from '@/lib/shell/placeholder-process';
+import { supportProcess } from '@/lib/shell/placeholder/placeholder-process';
 import { supportPlan } from '@/lib/review/support-fixture';
 
 export default async function SupportExamplePage({

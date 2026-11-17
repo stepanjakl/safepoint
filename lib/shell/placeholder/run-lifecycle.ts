@@ -4,15 +4,19 @@
 // docs/archive/EXPERIENCE-SPEC.md, so the thread can be designed against every one of
 // them before anything produces them.
 
-import type { ReviewedReplay } from '../promotion-release';
-import type { ReleasePlan } from '../review/plan-contract';
+import type { ReviewedReplay } from '../../promotion-release';
+import type { ReleasePlan } from '../../review/plan-contract';
 import {
   evaluationCounts,
   needingAttention,
   type ReviewProgress,
-} from '../review/plan-derivations';
-import { RUN_TRIGGER_LABELS, type ProcessStep, type RunTrigger } from './model';
-import { needsAttention, type SystemLink } from './system-links';
+} from '../../review/plan-derivations';
+import {
+  RUN_TRIGGER_LABELS,
+  type ProcessStep,
+  type RunTrigger,
+} from '../model';
+import { needsAttention, type SystemLink } from '../system-links';
 
 export const RUN_STAGES = [
   'waiting',

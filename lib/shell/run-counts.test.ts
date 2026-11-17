@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { loadReviewedReplay } from '@/lib/promotion-release';
-import { promotionProcess, supportProcess } from './placeholder-process';
+import {
+  promotionProcess,
+  supportProcess,
+} from './placeholder/placeholder-process';
 import { evaluationCounts } from '@/lib/review/plan-derivations';
 import { presentPromotionPlan } from '@/lib/review/promotion-adapter';
 import { supportPlan } from '@/lib/review/support-fixture';
