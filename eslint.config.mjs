@@ -8,7 +8,17 @@ import nextTypeScript from 'eslint-config-next/typescript';
   (which the build refuses to put in a client bundle, `server-only`), and
   components/ and the client files of app/ reach the server only by request,
   importing at most a type from server/ (the procedures' `AppRouter`).
+  What a process declares (lib/processes) is reached by the screens and pages
+  of that process, and on the server only through the registry
+  (server/operations/kept-processes.ts): the engine, its screens and the rest
+  of server/ take the process as an input.
 */
+
+const PROCESSES = {
+  group: ['@/lib/processes', '@/lib/processes/*'],
+  message:
+    'Take the process as a prop (components/engine) or from the registry (server/operations/kept-processes.ts), never import a process: this code serves any of them.',
+};
 
 const FILES = ['fs', 'fs/promises', 'path'].flatMap((name) => [
   {
@@ -47,6 +57,7 @@ const engine = (serverGroup = ALL_SERVER) => ({
       message:
         'The engine is below the UI: components/ and app/ import the engine, never the reverse.',
     },
+    PROCESSES,
     {
       group: ['@/lib/shell', '@/lib/shell/*'],
       message:
@@ -60,7 +71,7 @@ const engine = (serverGroup = ALL_SERVER) => ({
   ],
 });
 
-const client = {
+const client = (extra = []) => ({
   paths: ['fs', 'fs/promises', 'path'].map((name) => ({
     name,
     message:
@@ -80,8 +91,20 @@ const client = {
       message:
         'A client file cannot reach server/: call a procedure (useTRPC), and import at most a type from it.',
     },
+    ...extra,
   ],
-};
+});
+
+const server = (extra = []) => ({
+  patterns: [
+    {
+      group: ['@/components/*', '@/app/*'],
+      message:
+        'server/ is below the UI: put what both need in lib/, and let components/ and app/ import server/.',
+    },
+    ...extra,
+  ],
+});
 
 const config = [
   {
@@ -136,25 +159,35 @@ const config = [
     // typescript-eslint's version of the rule, for `allowTypeImports`.
     rules: {
       'no-restricted-imports': 'off',
-      '@typescript-eslint/no-restricted-imports': ['error', client],
+      '@typescript-eslint/no-restricted-imports': ['error', client()],
+    },
+  },
+  {
+    // The generic screens: the run screen that owns a process hands them what
+    // is specific to it (components/processes/<process>/).
+    files: ['components/engine/**/*.{ts,tsx}'],
+    ignores: ['**/*.test.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': 'off',
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        client([PROCESSES]),
+      ],
     },
   },
   {
     files: ['server/**/*.{ts,tsx}'],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              group: ['@/components/*', '@/app/*'],
-              message:
-                'server/ is below the UI: put what both need in lib/, and let components/ and app/ import server/.',
-            },
-          ],
-        },
-      ],
-    },
+    rules: { 'no-restricted-imports': ['error', server()] },
+  },
+  {
+    // Except the registry, which is where the server learns of a process, and
+    // the tests and fixtures, which stand a process in.
+    files: ['server/**/*.{ts,tsx}'],
+    ignores: [
+      'server/operations/kept-processes.ts',
+      'server/**/*.{test,fixture}.{ts,tsx}',
+    ],
+    rules: { 'no-restricted-imports': ['error', server([PROCESSES])] },
   },
 ];
 
