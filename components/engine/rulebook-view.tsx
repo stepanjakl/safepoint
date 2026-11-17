@@ -17,7 +17,7 @@ import { Formula, linkKey, linked } from '@/components/engine/rules/formula';
 import { FilterTabs } from '@/components/ui/filter-tabs';
 import { Pill, SEVERITY } from '@/components/ui/pill';
 import { Arrival, EmptyState, useLoader } from '@/components/ui/working-mark';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import type { DefinitionSubject } from '@/lib/engine/subject';
 import type { Definition } from '@/lib/engine/types';
 

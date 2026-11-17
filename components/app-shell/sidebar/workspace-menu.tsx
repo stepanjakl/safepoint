@@ -1,6 +1,6 @@
 import type { CSSProperties, Ref } from 'react';
 
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import {
   MENU_CHEVRON,
   MENU_CHEVRON_BOX,

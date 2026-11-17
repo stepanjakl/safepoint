@@ -19,7 +19,7 @@ import {
   DATA_TABLE_RULE_ON,
   DataTable,
 } from '@/components/ui/data-table';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import type { Application, CellChange } from '@/lib/engine/types';
 import type { DefinitionSubject } from '@/lib/engine/subject';
 import { sourceTermsOf } from '@/lib/sources/model';

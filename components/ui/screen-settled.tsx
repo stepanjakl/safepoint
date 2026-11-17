@@ -12,7 +12,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useReducedMotion } from 'motion/react';
-import { DETAIL_AFTER } from '@/lib/motion';
+import { DETAIL_AFTER } from '@/lib/ui/motion';
 
 /*
   Whether the screen around a part has finished coming in. Each transition

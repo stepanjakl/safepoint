@@ -12,12 +12,12 @@ import {
 import { Brand } from '@/components/ui/brand';
 import { useShellPageNavigation } from '@/components/app-shell/shell-page-transition';
 import { useReducedMotion } from 'motion/react';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import {
   DURATION_PANE,
   DURATION_STATE,
   EASE_OUT_EMPHASIZED,
-} from '@/lib/motion';
+} from '@/lib/ui/motion';
 import { KeyHint } from '@/components/ui/key-hint';
 import { Tooltip } from '@/components/ui/tooltip';
 import {

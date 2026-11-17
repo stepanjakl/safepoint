@@ -3,7 +3,7 @@
 import type { RefObject } from 'react';
 import { motion, type Transition } from 'motion/react';
 
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import { MENU_RAIL, MENU_RULE, MenuIcon } from './menu-parts';
 
 /*

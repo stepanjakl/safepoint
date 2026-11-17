@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { plural } from '@/components/engine/trial-parts';
 import type { Definition, DefinitionSet } from '@/lib/engine/types';
-import { motionTime } from '@/lib/motion-time';
+import { motionTime } from '@/lib/ui/motion-time';
 
 /*
   The one scripted draft both /workbench/draft-progress and /workbench/run walk

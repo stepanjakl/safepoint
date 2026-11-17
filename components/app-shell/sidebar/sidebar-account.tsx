@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { GradientAvatar } from '@outpacelabs/avatars';
 
 import { signOut } from '@/app/access/actions';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import { Tooltip } from '@/components/ui/tooltip';
 import { ICON_BUTTON, MENU_RAIL, MenuIcon, RAIL_CELL } from './menu-parts';
 

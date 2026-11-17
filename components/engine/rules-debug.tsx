@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/data-table';
 import { FilterTabs } from '@/components/ui/filter-tabs';
 import { Pill } from '@/components/ui/pill';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import type { AccountedSentence, Agreement } from '@/lib/engine/types';
 import type {
   DefinitionDebug,

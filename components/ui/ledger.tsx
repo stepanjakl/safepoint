@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 
 /*
   Aligned label/value rows on faint rules. Labels sit in a fixed column at

@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode, type Ref } from 'react';
 import { Button as AriaButton, type ButtonProps } from 'react-aria-components';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import { ICON_BOX, ICON_QUIET, type Shape } from './button';
 import { Tooltip } from './tooltip';
 

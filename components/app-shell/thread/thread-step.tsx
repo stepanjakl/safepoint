@@ -3,7 +3,7 @@
 // arrives unresolved. It also holds whether the step is folded.
 'use client';
 
-import { pacedDuration } from '@/lib/motion';
+import { pacedDuration } from '@/lib/ui/motion';
 import {
   createContext,
   useContext,
@@ -32,7 +32,7 @@ import {
   type ProcessStep,
   type RunTrigger,
 } from '@/lib/shell/model';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 
 /*
   Two looks while they are compared on /workbench/run. `current` is the thread

@@ -14,8 +14,8 @@ import {
   DURATION_TAB_LEAVE,
   EASE_OUT_EMPHASIZED,
   EASE_OUT_QUAD,
-} from '@/lib/motion';
-import { motionTime } from '@/lib/motion-time';
+} from '@/lib/ui/motion';
+import { motionTime } from '@/lib/ui/motion-time';
 
 /*
   One place trading what it shows: the run beside the rail, a tab's body, the

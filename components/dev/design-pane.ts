@@ -10,7 +10,7 @@ import {
   TYPESCALE_LABELS,
   THEME_CHOICES,
   DEFAULT_THEME,
-} from '@/lib/typography';
+} from '@/lib/ui/typography';
 import {
   readTypeface,
   readMono,

@@ -12,7 +12,7 @@ import {
   type AnimationEvent,
   type ReactNode,
 } from 'react';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import { LAST_PROCESS_KEY } from '@/lib/shell/navigation';
 import type { InputDetail } from '@/lib/shell/input-details';
 import type { ProcessSummary } from '@/lib/shell/model';

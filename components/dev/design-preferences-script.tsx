@@ -26,7 +26,7 @@ import {
   THEME_STORAGE_KEY,
   TYPEFACE_PICKER_SETS,
   TYPEFACE_STORAGE_KEY,
-} from '@/lib/typography';
+} from '@/lib/ui/typography';
 
 /*
   Applies the stored development preferences to <html> before first paint, so

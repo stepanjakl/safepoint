@@ -32,7 +32,7 @@ import { Loader } from '@/components/ui/loader';
 import { SEVERITY } from '@/components/ui/pill';
 import { useLoader } from '@/components/ui/working-mark';
 import { useTRPC } from '@/components/trpc/provider';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import { FromModel } from '@/components/engine/rules-parts';
 import {
   DataProfilePanel,

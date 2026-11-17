@@ -1,7 +1,7 @@
 import ChainLink1Filled from 'blode-icons-react/icons/chain-link-1-filled';
 import type { ComponentPropsWithRef } from 'react';
 
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 
 export function ExternalLink({
   children,

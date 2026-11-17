@@ -30,7 +30,7 @@ import { ICON_FILLED, IconButton } from '@/components/ui/icon-button';
 import { MORPH_WORDS_MS, MorphingText } from '@/components/ui/morphing-text';
 import { useLoader } from '@/components/ui/working-mark';
 import { Tooltip } from '@/components/ui/tooltip';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import { runStamp } from '@/lib/shell/run-time';
 import {
   SOURCE_KINDS,

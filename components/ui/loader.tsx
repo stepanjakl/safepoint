@@ -10,8 +10,8 @@ import {
   WorkingMark,
   type LoaderPhase,
 } from '@/components/ui/working-mark';
-import { cx } from '@/lib/cx';
-import { DURATION_PANE } from '@/lib/motion';
+import { cx } from '@/lib/ui/cx';
+import { DURATION_PANE } from '@/lib/ui/motion';
 
 /*
   A wait: the working mark and its words, the words crossed by one pass of

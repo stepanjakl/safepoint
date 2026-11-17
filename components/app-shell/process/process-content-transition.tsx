@@ -4,7 +4,7 @@ import { motion, useReducedMotion } from 'motion/react';
 import { useState, type ReactNode } from 'react';
 import { useShellPageNavigation } from '@/components/app-shell/shell-page-transition';
 import { SettledLayer } from '@/components/ui/screen-settled';
-import { DURATION_PANE, DURATION_STATE, EASE_OUT_QUAD } from '@/lib/motion';
+import { DURATION_PANE, DURATION_STATE, EASE_OUT_QUAD } from '@/lib/ui/motion';
 
 export function ProcessContentTransition({
   children,

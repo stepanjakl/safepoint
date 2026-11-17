@@ -2,7 +2,7 @@
 
 import { Glyph } from '@/components/ui/glyph';
 import { modeMarker, toneText } from '@/components/app-shell/markers';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import { MODE_LABELS, type SystemLink } from '@/lib/shell/system-links';
 import { SystemIcon } from './system-icon';
 

@@ -17,7 +17,7 @@ import { anchorOf } from '@/components/engine/rules/card-anchor';
 import { statusOf } from '@/components/engine/rules/definition-card';
 import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import type { DefinitionSet } from '@/lib/engine/types';
 import type { ProcessStep } from '@/lib/shell/model';
 import { COMING, ORDER_STEPS } from '@/lib/processes/brunch-orders/steps';

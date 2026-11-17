@@ -10,7 +10,7 @@ import {
 } from 'react-aria-components';
 // Deep import: Blode's barrel is the whole icon library.
 import X from 'blode-icons-react/icons/x';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import { CLOSE_BUTTON, PANEL } from './drawer-aside';
 
 /*

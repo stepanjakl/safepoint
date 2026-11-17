@@ -12,7 +12,7 @@ import Lab from 'blode-icons-react/icons/lab';
 import SettingsGear from 'blode-icons-react/icons/settings-gear-1';
 import { Notch } from '@/components/ui/notch';
 import { useEdgeScroll } from '@/components/ui/edge-scroll';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import type { ProcessSummary } from '@/lib/shell/model';
 import {
   needsAttention,

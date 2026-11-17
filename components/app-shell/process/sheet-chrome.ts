@@ -2,8 +2,8 @@
 
 import { useReducedMotion } from 'motion/react';
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
-import { pacedDuration } from '@/lib/motion';
-import { motionTime } from '@/lib/motion-time';
+import { pacedDuration } from '@/lib/ui/motion';
+import { motionTime } from '@/lib/ui/motion-time';
 
 /*
   The sheet's frame -- each section's head band and the divider between its

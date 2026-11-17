@@ -11,7 +11,7 @@ import {
 import ArrowDown from 'blode-icons-react/icons/arrow-down';
 import type { ProcessStep } from '@/lib/shell/model';
 import { Button } from '@/components/ui/button';
-import { motionTime } from '@/lib/motion-time';
+import { motionTime } from '@/lib/ui/motion-time';
 import { useFollowRun } from './follow-run';
 import {
   ThreadLookContext,

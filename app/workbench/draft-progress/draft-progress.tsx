@@ -6,7 +6,7 @@ import { useWorkingFavicon } from '@/components/app-shell/runs/working-favicon';
 import { Button } from '@/components/ui/button';
 import { Fold } from '@/components/ui/fold';
 import { Pill } from '@/components/ui/pill';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import type { DefinitionSet } from '@/lib/engine/types';
 
 import {

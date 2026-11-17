@@ -10,7 +10,7 @@ import {
 import { StatusChip } from '@/components/engine/trial-parts';
 import { Loader } from '@/components/ui/loader';
 import { useLoader } from '@/components/ui/working-mark';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import { SUBJECT } from '@/lib/processes/brunch-orders/data';
 
 import { sampleDraft } from '../draft-progress/sample';

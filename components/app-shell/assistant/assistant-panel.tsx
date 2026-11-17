@@ -14,7 +14,7 @@ import {
   DURATION_STATE,
   EMPTY_STATE_ARRIVE,
   EMPTY_STATE_STAGGER,
-} from '@/lib/motion';
+} from '@/lib/ui/motion';
 import {
   ContextPicker,
   HistoryButton,

@@ -2,7 +2,7 @@
 
 import { motion, useAnimationControls, useReducedMotion } from 'motion/react';
 import { useRef } from 'react';
-import { EASE_OUT_QUAD } from '@/lib/motion';
+import { EASE_OUT_QUAD } from '@/lib/ui/motion';
 import { BiomorphicSymbol } from './biomorphic-symbol';
 import {
   BRAND_TURN_DURATION,

@@ -25,7 +25,7 @@ import { Button } from '@/components/ui/button';
 import { MORPH_WORDS_MS, MorphingText } from '@/components/ui/morphing-text';
 import { Pill } from '@/components/ui/pill';
 import { Tooltip } from '@/components/ui/tooltip';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import type { Advice } from '@/lib/engine/advise';
 import type { DefinitionSubject } from '@/lib/engine/subject';
 import {

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { motion, type Transition } from 'motion/react';
 import DotGrid2x3Filled from 'blode-icons-react/icons/dot-grid-2x3-filled';
 
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import { useShellPageNavigation } from '@/components/app-shell/shell-page-transition';
 import { EVALUATION_LABELS } from '@/lib/shell/model';
 import type { ProcessNavigationItem } from '@/lib/shell/navigation';

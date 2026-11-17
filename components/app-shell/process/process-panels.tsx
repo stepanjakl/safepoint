@@ -4,7 +4,7 @@ import { useLayoutEffect, useRef, useSyncExternalStore } from 'react';
 import { useDetailHold } from '@/components/ui/screen-settled';
 import { Loader } from '@/components/ui/loader';
 import { EmptyState, useLoader } from '@/components/ui/working-mark';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import type { InputDetail } from '@/lib/shell/input-details';
 import type { ProcessSummary } from '@/lib/shell/model';
 import { runStamp } from '@/lib/shell/run-time';

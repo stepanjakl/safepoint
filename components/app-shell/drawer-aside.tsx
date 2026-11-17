@@ -9,7 +9,7 @@ import {
   type ReactNode,
   type Ref,
 } from 'react';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import { useDetailHold } from '@/components/ui/screen-settled';
 
 /*

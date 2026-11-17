@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import type { CSSProperties } from 'react';
 
 import { DATA_TABLE_RULE, DataTable } from '@/components/ui/data-table';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 
 type Treatment = 'current' | 'quiet' | 'open' | 'fills' | 'folder' | 'rhythm';
 

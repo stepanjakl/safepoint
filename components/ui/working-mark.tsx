@@ -8,8 +8,8 @@ import {
   StateIllustration,
   type StateIllustrationName,
 } from '@/components/ui/state-illustration';
-import { cx } from '@/lib/cx';
-import { DURATION_PANE } from '@/lib/motion';
+import { cx } from '@/lib/ui/cx';
+import { DURATION_PANE } from '@/lib/ui/motion';
 
 /*
   The mark's three petals let go and light again one after another, clockwise

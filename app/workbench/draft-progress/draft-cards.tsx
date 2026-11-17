@@ -21,7 +21,7 @@ import {
 } from '@/components/engine/rules/definition-card';
 import { StatusChip } from '@/components/engine/trial-parts';
 import { Pill, SEVERITY } from '@/components/ui/pill';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import { SUBJECT } from '@/lib/processes/brunch-orders/data';
 import type { DefinitionSet } from '@/lib/engine/types';
 

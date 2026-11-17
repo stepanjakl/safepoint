@@ -10,7 +10,7 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from 'react-aria-components';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 
 /*
   The queue's filter, as one strip of tabs in a field-faced track. The choice

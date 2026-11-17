@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/data-table';
 import { Fold } from '@/components/ui/fold';
 import { MorphingText } from '@/components/ui/morphing-text';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import type {
   DataProfile,
   ProfileColumn,

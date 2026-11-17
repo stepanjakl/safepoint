@@ -9,7 +9,7 @@ import {
   BRAND_TURN_TIMES,
 } from '@/components/ui/brand-turn';
 import { useShellPageNavigation } from './shell-page-transition';
-import { EASE_OUT_QUAD } from '@/lib/motion';
+import { EASE_OUT_QUAD } from '@/lib/ui/motion';
 
 type Phrase =
   | { kind: 'plain'; text: string }

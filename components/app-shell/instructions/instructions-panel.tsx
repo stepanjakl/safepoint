@@ -3,7 +3,7 @@
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Dialog, DialogTrigger, Heading, Popover } from 'react-aria-components';
 import { useEffect, useEffectEvent, useState, type ReactNode } from 'react';
-import { DURATION_PANE, DURATION_STATE } from '@/lib/motion';
+import { DURATION_PANE, DURATION_STATE } from '@/lib/ui/motion';
 // Deep import: Blode's barrel is the whole icon library.
 import CircleHalfFill from 'blode-icons-react/icons/circle-half-fill';
 import Check from 'blode-icons-react/icons/checkmark-1-filled';
@@ -14,7 +14,7 @@ import { KeyHint } from '@/components/ui/key-hint';
 import { MORPH_WORDS_MS, MorphingText } from '@/components/ui/morphing-text';
 import { TabSwap, useSwap } from '@/components/ui/swap';
 import { Tooltip } from '@/components/ui/tooltip';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import { diffText, paragraphsOf } from '@/lib/shell/instruction-diff';
 import type { ProcessSummary } from '@/lib/shell/model';
 import type { AsideView } from '@/components/app-shell/drawer-aside';

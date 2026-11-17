@@ -5,7 +5,7 @@ import { useContext, useMemo, type ReactNode } from 'react';
 import { CardAnchor } from '@/components/engine/rules/card-anchor';
 import { TRIED_VARIABLE, said } from '@/components/engine/rules-parts';
 import { Tooltip } from '@/components/ui/tooltip';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import type { DefinitionSubject } from '@/lib/engine/subject';
 import type { Definition } from '@/lib/engine/types';
 

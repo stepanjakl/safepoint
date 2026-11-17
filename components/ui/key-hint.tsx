@@ -3,8 +3,8 @@
 // Deep imports: Blode's barrel is the whole icon library.
 import CornerDownLeft from 'blode-icons-react/icons/arrow-corner-down-left';
 import Cmd from 'blode-icons-react/icons/cmd';
-import { useModifierKey } from '@/lib/modifier-key';
-import { cx } from '@/lib/cx';
+import { useModifierKey } from '@/lib/ui/modifier-key';
+import { cx } from '@/lib/ui/cx';
 
 /*
   A shortcut drawn as keys: the keys that have a symbol as an icon and the rest as text in the same ink. `mod` is ⌘ on Apple

@@ -44,7 +44,7 @@ import type {
   CrossCell,
   CrossCheck,
 } from '@/lib/engine/calculate';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import { DRAFTING_MODELS, type DraftingModel } from '@/lib/models';
 import type { AppRouter } from '@/server/api/root';
 

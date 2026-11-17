@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import { diffText } from '@/lib/shell/instruction-diff';
 
 /*

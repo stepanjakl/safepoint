@@ -20,8 +20,8 @@ import {
 import { Fold } from '@/components/ui/fold';
 import { IconButton } from '@/components/ui/icon-button';
 import { Pill } from '@/components/ui/pill';
-import { cx } from '@/lib/cx';
-import { DURATION_STATE } from '@/lib/motion';
+import { cx } from '@/lib/ui/cx';
+import { DURATION_STATE } from '@/lib/ui/motion';
 import type { CheckVerdict, ProposalRecord, Verdict } from '@/lib/engine/types';
 
 import { madeNow } from './made-now';

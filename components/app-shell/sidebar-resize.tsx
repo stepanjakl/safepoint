@@ -5,7 +5,7 @@ import { Dialog, Popover } from 'react-aria-components';
 import { motion } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
-import { DURATION_STATE } from '@/lib/motion';
+import { DURATION_STATE } from '@/lib/ui/motion';
 import type { SidebarController } from './use-resizable-sidebar';
 
 export function SidebarResizeHandle({

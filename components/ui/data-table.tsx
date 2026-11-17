@@ -1,6 +1,6 @@
 import type { ComponentPropsWithRef, ReactNode } from 'react';
 
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 
 /*
   A table of data on its own face: a ruled card on the primary surface, its

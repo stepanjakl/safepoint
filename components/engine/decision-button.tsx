@@ -5,7 +5,7 @@ import type { ComponentProps, ReactNode } from 'react';
 
 import { MorphingLabel, plainLabel } from '@/components/ui/morphing-text';
 import { Tooltip } from '@/components/ui/tooltip';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 
 const DECISION = {
   accept: { severity: 3, Icon: Check },

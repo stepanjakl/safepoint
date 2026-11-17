@@ -23,11 +23,11 @@ write(
     },
   }),
 );
-write('lib/cx.ts', 'export function cx(...c: unknown[]) { return c; }\n');
+write('lib/ui/cx.ts', 'export function cx(...c: unknown[]) { return c; }\n');
 write(
   'components/table.tsx',
   [
-    "import { cx } from '@/lib/cx';",
+    "import { cx } from '@/lib/ui/cx';",
     "export const NAME = 'font-semibold';",
     "export const STYLES = { quiet: 'text-muted', loud: 'text-primary' };",
     'export function Table({ className }: { className?: string }) {',
@@ -41,7 +41,7 @@ write(
 write(
   'app/page.tsx',
   [
-    "import { cx } from '@/lib/cx';",
+    "import { cx } from '@/lib/ui/cx';",
     "import { NAME, STYLES, Table } from '@/components/table';",
     'export default function Page({ open }: { open: boolean }) {',
     "  const face = (kind: 'quiet' | 'loud') => STYLES[kind];",

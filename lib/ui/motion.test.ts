@@ -10,7 +10,7 @@ import {
 } from './motion';
 
 // The whole folder, so a token moving between its files does not break this.
-const dir = new URL('../app/styles/', import.meta.url);
+const dir = new URL('../../app/styles/', import.meta.url);
 const tokens = readdirSync(dir)
   .filter((file) => file.endsWith('.css'))
   .map((file) => readFileSync(new URL(file, dir), 'utf8'))

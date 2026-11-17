@@ -6,7 +6,7 @@ import { DesignControls } from '@/components/dev/design-controls';
 import { DesignPreferencesScript } from '@/components/dev/design-preferences-script';
 import { StyleInspector } from '@/components/dev/style-inspector';
 import { QueryProvider } from '@/components/trpc/provider';
-import { DEFAULT_THEME } from '@/lib/typography';
+import { DEFAULT_THEME } from '@/lib/ui/typography';
 
 import './styles/index.css';
 import { fontVariables } from './typography';

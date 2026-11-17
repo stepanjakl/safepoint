@@ -4,7 +4,7 @@ import { motion, useReducedMotion } from 'motion/react';
 import { usePathname, useRouter } from 'next/navigation';
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import { SettledLayer } from '@/components/ui/screen-settled';
-import { DURATION_PANE, DURATION_STATE, EASE_OUT_QUAD } from '@/lib/motion';
+import { DURATION_PANE, DURATION_STATE, EASE_OUT_QUAD } from '@/lib/ui/motion';
 
 type PendingRoute = { from: string; to: string };
 type WorkspaceReveal = 'waiting' | 'opening' | 'fading' | 'complete' | null;

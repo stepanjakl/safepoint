@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 
 /*
   The one repeated structural device: a compact inset band with a readout

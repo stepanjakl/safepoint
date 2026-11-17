@@ -25,7 +25,7 @@ import { Fold } from '@/components/ui/fold';
 import { Loader } from '@/components/ui/loader';
 import { useTRPC } from '@/components/trpc/provider';
 import { useLoader } from '@/components/ui/working-mark';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import { SOURCE_KINDS, type SourceKind } from '@/lib/sources/model';
 
 // A run's read as its card shows it: the read's id and summary.

@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
 
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 
 /*
   Content that opens and shuts in place, as a thread step's body does (fold.css):

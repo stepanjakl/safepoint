@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 
 /*
   The bite a pane's corner takes, so controls can sit on the canvas beside a

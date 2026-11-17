@@ -4,7 +4,7 @@ import { Button as AriaButton, type ButtonProps } from 'react-aria-components';
 
 import type { Ref } from 'react';
 
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import { MorphingLabel, plainLabel } from './morphing-text';
 
 type Variant = 'primary' | 'secondary' | 'danger';

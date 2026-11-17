@@ -13,7 +13,7 @@ import {
   type MonoChoice,
   type ThemeChoice,
   type TypefaceSet,
-} from '@/lib/typography';
+} from '@/lib/ui/typography';
 
 /*
   <html> is the store: data-typeface, data-mono and data-theme are what

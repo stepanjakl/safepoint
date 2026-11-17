@@ -5,7 +5,7 @@ import {
   Switch as AriaSwitch,
   type SwitchProps as AriaSwitchProps,
 } from 'react-aria-components';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 
 const TRACK = 'switch-track control-face control-hairline rounded-full';
 const THUMB = 'switch-thumb';

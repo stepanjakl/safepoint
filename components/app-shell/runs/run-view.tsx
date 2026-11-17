@@ -9,7 +9,7 @@ import { useSwap } from '@/components/ui/swap';
 import { KeyHint } from '@/components/ui/key-hint';
 import { useScreenSettled } from '@/components/ui/screen-settled';
 import { StateIllustration } from '@/components/ui/state-illustration';
-import { EMPTY_STATE_ARRIVE, EMPTY_STATE_STAGGER } from '@/lib/motion';
+import { EMPTY_STATE_ARRIVE, EMPTY_STATE_STAGGER } from '@/lib/ui/motion';
 import type { ProcessSummary } from '@/lib/shell/model';
 import { runDay, runTime } from '@/lib/shell/run-time';
 import { RunSelectionProvider, useRunSelection } from './run-selection';

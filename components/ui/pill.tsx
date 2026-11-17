@@ -1,6 +1,6 @@
 import type { ComponentPropsWithRef } from 'react';
 
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 
 import { MorphingLabel, plainLabel } from './morphing-text';
 

@@ -12,7 +12,7 @@ import {
 import type { Decision } from '@/components/engine/propose/types';
 import { Button } from '@/components/ui/button';
 import { MODEL_RUN_STAGE_LABELS } from '@/lib/shell/model-run';
-import { motionTime } from '@/lib/motion-time';
+import { motionTime } from '@/lib/ui/motion-time';
 
 import type { ScriptedStage } from './brunch-direct';
 

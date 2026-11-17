@@ -14,8 +14,8 @@ import {
 import { FilterTabs } from '@/components/ui/filter-tabs';
 import { MorphingText } from '@/components/ui/morphing-text';
 import { Pill } from '@/components/ui/pill';
-import { cx } from '@/lib/cx';
-import { DURATION_STATE } from '@/lib/motion';
+import { cx } from '@/lib/ui/cx';
+import { DURATION_STATE } from '@/lib/ui/motion';
 import type { Proposal } from '@/lib/engine/types';
 import { sourceTermsOf, type SourceKind } from '@/lib/sources/model';
 

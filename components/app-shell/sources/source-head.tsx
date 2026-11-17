@@ -1,7 +1,7 @@
 import TableFilled from 'blode-icons-react/icons/table-filled';
 import type { ComponentType, ReactNode } from 'react';
 
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import { SOURCE_KINDS, type SourceKind } from '@/lib/sources/model';
 
 // Each kind's mark, drawn in its hue without a face of its own.

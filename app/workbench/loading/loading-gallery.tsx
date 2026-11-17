@@ -20,7 +20,7 @@ import {
   LOADER_SLOW_MS,
   useLoader,
 } from '@/components/ui/working-mark';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 
 import { DRAWER, PANE, Side, type Load } from './parts';
 import { RuleContext } from './rule-context';

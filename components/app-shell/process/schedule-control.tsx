@@ -13,7 +13,7 @@ import {
   scheduleLabel,
   type ProcessSchedule,
 } from '@/lib/shell/schedule';
-import { cx } from '@/lib/cx';
+import { cx } from '@/lib/ui/cx';
 import { useProcessSchedule } from './schedule-store';
 
 const CADENCES = [

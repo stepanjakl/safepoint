@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type RefObject } from 'react';
-import { motionTime } from '@/lib/motion-time';
+import { motionTime } from '@/lib/ui/motion-time';
 
 // Long enough for a step to arrive and unfold; following ends sooner if the
 // reader takes the scroll.
