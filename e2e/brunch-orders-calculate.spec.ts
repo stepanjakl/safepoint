@@ -138,7 +138,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function readTheSheet(page: Page) {
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   await page.getByRole('button', { name: 'Start run' }).first().click();
   await expect(page.getByText('Waiting for you to read.')).toBeVisible();
   await page
@@ -282,7 +282,7 @@ test('a run calculated on earlier rules says so, and can move to the current one
 test('the Inputs tab lists the sheet’s tabs and opens what was read', async ({
   page,
 }) => {
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   await page
     .locator('header.process-header')
     .getByRole('button', { name: /^Inputs/ })

@@ -25,7 +25,7 @@ import { latestSummary } from '@/server/storage/source-reads';
 */
 export default async function BrunchOrdersPage({
   searchParams,
-}: PageProps<'/examples/brunch-orders'>) {
+}: PageProps<'/processes/brunch-orders'>) {
   const run = (await searchParams).run;
   const written = await lastWrite(BRUNCH_ORDERS_DEFINITIONS);
   const sheets = {

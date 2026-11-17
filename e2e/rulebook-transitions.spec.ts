@@ -31,7 +31,7 @@ test('returning to Rules retains its known empty state while refreshing', async 
     if (refresh) await new Promise((resolve) => setTimeout(resolve, 350));
     return { data: noRules() };
   });
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   const rules = page.getByRole('button', { name: 'Rules', exact: true });
   await rules.click();
   await expect(
@@ -111,7 +111,7 @@ test('Rules keeps the retained result while it refreshes newly accepted rules', 
     if (hasRules) await refreshed;
     return { data: hasRules ? rulebook : noRules() };
   });
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   await page.getByRole('button', { name: 'Rules', exact: true }).click();
   await expect(
     page.getByText('Nothing is accepted yet.', { exact: true }),
@@ -164,7 +164,7 @@ test('changed instructions never show the previous version’s retained rules', 
       created: true,
     },
   }));
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   await page.getByRole('button', { name: 'Rules', exact: true }).click();
   const list = page.getByRole('list', { name: 'Accepted rules' });
   await expect(list.locator('> li')).toHaveCount(accepted.definitions.length);

@@ -8,7 +8,7 @@ test('the inspector names where an element’s styles are written', async ({
   colorScheme,
 }) => {
   test.skip(colorScheme === 'dark', 'The lookup is theme-independent.');
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   const inputs = page.getByRole('button', { name: /^Inputs/ }).first();
   await expect(inputs).toBeVisible();
 
@@ -78,7 +78,7 @@ test('holding Option peeks, and Option-click pins past the key', async ({
   colorScheme,
 }) => {
   test.skip(colorScheme === 'dark', 'The gesture is theme-independent.');
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   const inputs = page.getByRole('button', { name: /^Inputs/ }).first();
   await expect(inputs).toBeVisible();
   const panel = page.getByRole('region', { name: 'Style inspector' });
@@ -125,7 +125,7 @@ test('Option-click on the sidebar handle still resets it', async ({
   colorScheme,
 }) => {
   test.skip(colorScheme === 'dark', 'The gesture is theme-independent.');
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   const handle = page.locator('.sidebar-handle[data-side="left"]');
   await expect(handle).toHaveAttribute('aria-valuenow', '250');
   await handle.focus();
@@ -144,7 +144,7 @@ test('a shadow brought in by @apply traces to the rule that sets its colour, and
   colorScheme,
 }) => {
   test.skip(colorScheme === 'dark', 'The lookup is theme-independent.');
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   const row = page.locator('li.process-menu-row[data-current]');
   await expect(row).toBeVisible();
   const box = (await row.boundingBox())!;
@@ -195,7 +195,7 @@ test('the panel stays usable over an open modal', async ({
   colorScheme,
 }) => {
   test.skip(colorScheme === 'dark', 'The gesture is theme-independent.');
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   await page
     .getByRole('button', { name: 'Start run with instructions' })
     .click();

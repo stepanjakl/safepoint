@@ -24,8 +24,8 @@ test.use({
 });
 
 for (const route of [
-  '/examples/brunch-orders',
-  '/examples/brunch-orders-direct',
+  '/processes/brunch-orders',
+  '/processes/brunch-orders-direct',
 ]) {
   test(`the sidebar sits on its axes at ${route}`, async ({
     page,

@@ -31,7 +31,7 @@ test.beforeEach(async ({ page }) => {
 test('the calculations and checks of the instructions, with examples to confirm', async ({
   page,
 }) => {
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   await page.getByRole('button', { name: 'Start run' }).first().click();
   await expect(page.getByText('Waiting for you to read.')).toBeVisible();
   await page
@@ -163,7 +163,7 @@ test('accepted intent and rule keep the pressed button in place', async ({
     return { data: rulesReply(current, { names }) };
   });
 
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   await page.getByRole('button', { name: 'Start run' }).first().click();
   await page.getByRole('button', { name: 'Read the sheet' }).last().click();
 
@@ -266,7 +266,7 @@ test('a draft under way shows its last rule when it ends, through a failed reque
     return rules(frozen, false);
   });
 
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   await page.getByRole('button', { name: 'Start run' }).first().click();
   await page
     .getByRole('button', { name: 'Read the sheet', exact: true })
@@ -302,7 +302,7 @@ test('what the model read as context is there to question', async ({
       { names },
     ),
   });
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   await page.getByRole('button', { name: 'Start run' }).first().click();
   await page
     .getByRole('button', { name: 'Read the sheet', exact: true })
@@ -425,7 +425,7 @@ test('a rule’s debug drawer opens from its card and gives focus back', async (
       },
     },
   });
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   await page.getByRole('button', { name: 'Start run' }).first().click();
   await page
     .getByRole('button', { name: 'Read the sheet', exact: true })
@@ -524,7 +524,7 @@ test('a rule being written again says so, through a reload, then shows the new o
       }),
     };
   });
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   await page.getByRole('button', { name: 'Start run' }).first().click();
   await page
     .getByRole('button', { name: 'Read the sheet', exact: true })
@@ -633,7 +633,7 @@ test('versions that disagree are shown as the sentences the app wrote, for a per
       },
     },
   });
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   await page.getByRole('button', { name: 'Start run' }).first().click();
   await page
     .getByRole('button', { name: 'Read the sheet', exact: true })
@@ -736,7 +736,7 @@ test('a rule whose shape disagrees with how finding read it offers the other rea
       }),
     };
   });
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   await page.getByRole('button', { name: 'Start run' }).first().click();
   await page
     .getByRole('button', { name: 'Read the sheet', exact: true })

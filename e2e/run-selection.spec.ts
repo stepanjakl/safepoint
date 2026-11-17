@@ -9,7 +9,7 @@ const heading = (page: Page) => page.getByRole('heading', { level: 1 });
 test('a run can start with additional instructions that stay with it', async ({
   page,
 }) => {
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   await page
     .getByRole('button', { name: 'Start run with instructions' })
     .click();
@@ -35,7 +35,7 @@ test('a run can start with additional instructions that stay with it', async ({
 test('a run id the list does not hold selects nothing, and leaves the address', async ({
   page,
 }) => {
-  await page.goto('/examples/brunch-orders?run=run-1790000000000');
+  await page.goto('/processes/brunch-orders?run=run-1790000000000');
   await expect(heading(page)).toHaveText('No run selected');
   await expect(page).not.toHaveURL(/run=/);
 });

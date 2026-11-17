@@ -162,7 +162,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function propose(page: Page) {
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   await page.getByRole('button', { name: 'Start run' }).first().click();
   await expect(page.getByText('Waiting for you to read.')).toBeVisible();
   await page

@@ -8,7 +8,7 @@ export async function openHome(page: Page, theme: 'light' | 'dark') {
     },
     { theme },
   );
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   await expect(
     page.getByRole('button', { name: 'Search processes', exact: true }),
   ).toBeVisible();

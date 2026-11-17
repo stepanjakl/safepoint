@@ -10,7 +10,7 @@ import { SHEET_INPUTS } from '@/lib/processes/brunch-orders/data';
 */
 export default async function BrunchOrdersDirectPage({
   searchParams,
-}: PageProps<'/examples/brunch-orders-direct'>) {
+}: PageProps<'/processes/brunch-orders-direct'>) {
   const run = (await searchParams).run;
   return (
     <ProcessView

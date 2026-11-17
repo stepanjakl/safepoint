@@ -39,7 +39,7 @@ async function openRules(page: Page, replyAfter: number | null) {
     else await new Promise((resolve) => setTimeout(resolve, replyAfter));
     return { data: noRules() };
   });
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   await page.getByRole('button', { name: 'Rules', exact: true }).click();
 }
 

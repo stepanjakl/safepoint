@@ -11,7 +11,7 @@ test('moved design controls scroll within the remaining viewport height', async 
       JSON.stringify({ left: 100, top: 300 }),
     );
   });
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   const panel = page.locator('.sp-devctl');
   const toggle = panel.getByRole('button', { name: 'Design controls' });
   await toggle.click();
@@ -65,7 +65,7 @@ test('moved design controls scroll within the remaining viewport height', async 
 });
 
 test('design controls can be moved, persisted, and reset', async ({ page }) => {
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   await page.evaluate(() =>
     localStorage.removeItem('safepoint.dev.controls-position'),
   );

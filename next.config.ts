@@ -5,6 +5,8 @@ import { pathToFileURL } from 'node:url';
 
 import { withWorkflow } from 'workflow/next';
 
+import { MOVED_ROUTES } from './lib/shell/moved-routes';
+
 const CAPTURED_READ = './fixtures/brunch-orders/sheet-snapshot.json';
 const KEPT_FIXTURES = ['./fixtures/brunch-orders/**/*'];
 
@@ -35,8 +37,11 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     '/api/trpc/\\[trpc\\]': KEPT_FIXTURES,
     '/.well-known/workflow/v1/flow': KEPT_FIXTURES,
-    '/examples/brunch-orders': [CAPTURED_READ],
+    '/processes/brunch-orders': [CAPTURED_READ],
   },
+
+  // Addresses that moved, permanently (lib/shell/moved-routes.ts).
+  redirects: async () => MOVED_ROUTES.map((route) => ({ ...route })),
 
   // Webpack holds every compiled module in memory for the life of `pnpm dev`;
   // this trades slightly slower compiles for a lower peak heap.

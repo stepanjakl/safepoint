@@ -15,7 +15,7 @@ test('settings help, choice selection and heading rhythm', async ({
     },
     colorScheme === 'dark' ? 'dark' : 'light',
   );
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   const openSettings = () =>
     page.getByRole('button', { name: 'Settings', exact: true }).last().click();
   await openSettings();
@@ -111,7 +111,7 @@ test('schedule changes animate height without sliding content', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   await page
     .getByRole('button', { name: 'Settings', exact: true })
     .last()

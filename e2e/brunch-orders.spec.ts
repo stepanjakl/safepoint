@@ -13,7 +13,7 @@ const serious = async (page: Page, include: string) =>
 test('a run shows its instructions, reads the sheet and keeps the read', async ({
   page,
 }) => {
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   await page.getByRole('button', { name: 'Start run' }).first().click();
 
   // The instructions the run answers to, open as its request.
@@ -170,7 +170,7 @@ test('a run shows its instructions, reads the sheet and keeps the read', async (
 
 test('a reduced-motion read still hands off to the rules', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   await page.getByRole('button', { name: 'Start run' }).first().click();
   await page.getByRole('button', { name: 'Runs', exact: true }).click();
   const read = page.getByRole('button', {

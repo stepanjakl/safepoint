@@ -9,7 +9,7 @@ import { mockInstructions } from './kept-instructions';
    back to whatever opened it, and a swap keeps the original opener. */
 
 async function openTab(page: Page, tab: 'Inputs' | 'Instructions' | 'Outputs') {
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   await expect(
     page.getByRole('button', { name: 'Search processes', exact: true }),
   ).toBeVisible();
@@ -182,7 +182,7 @@ test('returning to a tab during its fade restores the page immediately', async (
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   const tab = (name: string) =>
     page.getByRole('button', { name: new RegExp(`^${name}`) }).first();
   const layer = page.locator('.process-sheet-swap').first();
@@ -208,7 +208,7 @@ test('tab handoff keeps dividers still, fades the list once and holds the detail
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
 
   const instructions = page
     .getByRole('button', { name: /^Instructions/ })
@@ -245,7 +245,7 @@ test('the frame holds through a tab swap and is handed back once the next sectio
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   await page
     .getByRole('button', { name: /^Instructions/ })
     .first()
@@ -339,7 +339,7 @@ test('every section waits for its tab fade before rows and details arrive', asyn
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   for (const tab of ['Instructions']) {
     expectSectionAfterScreen(
       await observeSectionEntrance(
@@ -352,7 +352,7 @@ test('every section waits for its tab fade before rows and details arrive', asyn
 test('rows wait for a process navigation fade', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   // The other process opens on the tab it was left on, which has rows.
-  await page.goto('/examples/brunch-orders-direct');
+  await page.goto('/processes/brunch-orders-direct');
   await page
     .getByRole('button', { name: /^Instructions/ })
     .first()
@@ -360,10 +360,10 @@ test('rows wait for a process navigation fade', async ({ page }) => {
   await expect(
     page.getByRole('heading', { level: 2, name: /^Instructions/ }),
   ).toBeVisible();
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   expectSectionAfterScreen(
     await observeSectionEntrance(
-      page.locator('a[href="/examples/brunch-orders-direct"]').first(),
+      page.locator('a[href="/processes/brunch-orders-direct"]').first(),
     ),
   );
 });

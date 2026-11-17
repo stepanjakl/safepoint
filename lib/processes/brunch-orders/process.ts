@@ -14,11 +14,11 @@ import { DIRECT_ORDER_STEPS, ORDER_STEPS } from './steps';
 */
 
 export const BRUNCH_ORDERS_ID = 'brunch-orders';
-export const BRUNCH_ORDERS_HREF = '/examples/brunch-orders';
+export const BRUNCH_ORDERS_HREF = '/processes/brunch-orders';
 // The same orders worked out by the model on every run, with no rulebook: the
 // quicker demo, as nothing has to be drafted and approved first.
 const BRUNCH_ORDERS_DIRECT_ID = 'brunch-orders-direct';
-export const BRUNCH_ORDERS_DIRECT_HREF = '/examples/brunch-orders-direct';
+export const BRUNCH_ORDERS_DIRECT_HREF = '/processes/brunch-orders-direct';
 
 // What the definitions engine (lib/engine) works for.
 export const BRUNCH_ORDERS_DEFINITIONS: DefinitionProcess = {

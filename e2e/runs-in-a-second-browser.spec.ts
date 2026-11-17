@@ -56,7 +56,7 @@ test('a run started in one browser, and a decision made on it, are there in a fr
   });
 
   // Started from the screen, in the first browser.
-  await page.goto('/examples/brunch-orders-direct');
+  await page.goto('/processes/brunch-orders-direct');
   await page.getByRole('button', { name: 'Start run' }).first().click();
   await expect(page).toHaveURL(/run=run-/);
   const runId = new URL(page.url()).searchParams.get('run')!;
@@ -124,7 +124,7 @@ test('a run started in one browser, and a decision made on it, are there in a fr
   try {
     const other = await second.newPage();
     await serveProposal(other);
-    await other.goto('/examples/brunch-orders-direct');
+    await other.goto('/processes/brunch-orders-direct');
     expect(await other.evaluate(() => localStorage.length)).toBe(0);
     // The run is in its list, found by the id the server gave it.
     await other.locator(`.sheet-row[data-run-id="${runId}"]`).click();

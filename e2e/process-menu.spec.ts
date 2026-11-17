@@ -7,8 +7,8 @@ import { expect, test, type Page } from '@playwright/test';
 const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
 
 /* Both processes carry the one name, so a row is told apart by where it goes. */
-const BRUNCH = '/examples/brunch-orders';
-const DIRECT = '/examples/brunch-orders-direct';
+const BRUNCH = '/processes/brunch-orders';
+const DIRECT = '/processes/brunch-orders-direct';
 
 function menuLink(page: Page, href: string) {
   return page
@@ -139,7 +139,7 @@ test('travelling between levels moves focus to the arrival control', async ({
   ).toBeFocused();
 
   await menuLink(page, DIRECT).click();
-  await expect(page).toHaveURL(/\/examples\/brunch-orders-direct$/);
+  await expect(page).toHaveURL(/\/processes\/brunch-orders-direct$/);
   await page.goBack();
   await expect(page).toHaveURL(/\/workspace$/);
   await expect(
@@ -255,12 +255,12 @@ test('process navigation fades content while the pane and assistant stay steady'
         requestAnimationFrame(sample);
         document
           .querySelector<HTMLAnchorElement>(
-            'a[href="/examples/brunch-orders-direct"]',
+            'a[href="/processes/brunch-orders-direct"]',
           )
           ?.click();
       }),
   );
-  await expect(page).toHaveURL(/\/examples\/brunch-orders-direct$/);
+  await expect(page).toHaveURL(/\/processes\/brunch-orders-direct$/);
   expect(frames[0]?.route).toBe(BRUNCH);
   expect(frames[0]?.selectedProcess).toBe(DIRECT);
   expect(frames.every((frame) => frame.selectedProcess === DIRECT)).toBe(true);
@@ -288,7 +288,7 @@ test('keyboard activation selects a process before its screen loads', async ({
     releaseNavigation = resolve;
   });
   await page.route(
-    /\/examples\/brunch-orders-direct(?:\?|$)/,
+    /\/processes\/brunch-orders-direct(?:\?|$)/,
     async (route) => {
       await navigationReady;
       await route.continue();
@@ -302,12 +302,12 @@ test('keyboard activation selects a process before its screen loads', async ({
     await expect(
       page.locator('.process-menu-row[data-current] a'),
     ).toHaveAttribute('href', DIRECT);
-    await expect(page).toHaveURL(/\/examples\/brunch-orders$/);
+    await expect(page).toHaveURL(/\/processes\/brunch-orders$/);
     await expect(direct).toBeFocused();
   } finally {
     releaseNavigation();
   }
-  await expect(page).toHaveURL(/\/examples\/brunch-orders-direct$/);
+  await expect(page).toHaveURL(/\/processes\/brunch-orders-direct$/);
 });
 
 test('returning to the workspace skips the intro, but refreshing replays it', async ({

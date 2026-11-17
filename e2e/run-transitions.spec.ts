@@ -79,7 +79,7 @@ test.beforeEach(async ({ page, colorScheme }) => {
   // shared test database holds lie below them.
   await startKeptRun(page, 'brunch-orders', 'First run.');
   secondId = (await startKeptRun(page, 'brunch-orders', 'Second run.')).id;
-  await page.goto(`/examples/brunch-orders?run=${secondId}`);
+  await page.goto(`/processes/brunch-orders?run=${secondId}`);
   await expect(page.getByText('Second run.', { exact: true })).toBeVisible();
   await expect(page.locator('.run-view > div')).toHaveCSS('opacity', '1');
 });
@@ -210,7 +210,7 @@ test('the empty page arrives after another process has finished coming in', asyn
 }) => {
   const arrival = observeArrival(page);
   await page
-    .locator('a[href="/examples/brunch-orders-direct"]')
+    .locator('a[href="/processes/brunch-orders-direct"]')
     .first()
     .click();
   expectArrivalAfterScreen(await arrival);
@@ -219,7 +219,7 @@ test('the empty page arrives after another process has finished coming in', asyn
 // The browser holds the old page until the new one paints, so a reload that
 // moves nothing cannot be told from no reload at all.
 test('a reload leaves the page where it was', async ({ page }) => {
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   await page.addInitScript(
     `window.arrival = (${sampleArrival.toString()})(1500);`,
   );
@@ -238,7 +238,7 @@ test('a process loaded directly under reduced motion is not left hidden', async 
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   await expect(page.locator('.process-sheet-frame')).toHaveCSS('opacity', '1');
   await expect(
     page.getByText('Choose a run, or start a new one.', { exact: true }),

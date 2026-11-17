@@ -64,7 +64,7 @@ check-rail-alignment — measure the sidebar against its own guide axes
   node scripts/check-rail-alignment.ts [options]
 
   --url <url>           default http://localhost:3000 (falls back to :3001)
-  --route <path>        repeatable; default /examples/brunch-orders; use / for the sheet header
+  --route <path>        repeatable; default /processes/brunch-orders; use / for the sheet header
   --level <name>        processes | search | workspace | arrange | all
                         default processes. 'search' opens the search field,
                         which is closed and unmeasured at rest; 'arrange' opens
@@ -132,7 +132,7 @@ function parseArgs(argv: string[]): Options {
     else fail(`unknown option ${arg} (try --help)`);
   }
   if (options.routes.length === 0)
-    options.routes.push('/examples/brunch-orders');
+    options.routes.push('/processes/brunch-orders');
   if (
     !['processes', 'search', 'workspace', 'arrange', 'all'].includes(
       options.level,

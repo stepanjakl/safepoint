@@ -84,7 +84,7 @@ async function serveProfile(page: Page, start: DataProfile | null = null) {
 }
 
 const openRules = async (page: Page) => {
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   await page.getByRole('button', { name: 'Start run' }).first().click();
   await page
     .getByRole('button', { name: 'Read the sheet', exact: true })

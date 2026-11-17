@@ -15,7 +15,7 @@ test('home page', async ({ page }, testInfo) => {
 });
 
 test('no run selected', async ({ page, colorScheme }, testInfo) => {
-  await page.goto('/examples/brunch-orders-direct');
+  await page.goto('/processes/brunch-orders-direct');
   await expect(
     page.getByRole('heading', { level: 1, name: 'No run selected' }),
   ).toBeAttached();

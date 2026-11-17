@@ -75,7 +75,7 @@ test('shows the server’s read, keeps it while reading, then shows the new one 
     return { data: fresh };
   });
 
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   await openTab(page, /^Inputs/);
   await expect(tabRow(page, input.name)).toHaveAccessibleName(
     rows(input.name, input.rows),
@@ -111,7 +111,7 @@ test('a read that fails keeps the last one and says why', async ({ page }) => {
     error: { code: 'BAD_GATEWAY', message: 'The sheet could not be reached.' },
   });
 
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   await openTab(page, /^Inputs/);
   await page.getByRole('button', { name: 'Read now' }).click();
   const reason = 'The read failed: The sheet could not be reached.';
@@ -146,7 +146,7 @@ test('fetches one read’s values once, however often the drawer opens', async (
     },
   }));
 
-  await page.goto('/examples/brunch-orders');
+  await page.goto('/processes/brunch-orders');
   await openTab(page, /^Inputs/);
   for (let open = 0; open < 2; open += 1) {
     await tabRow(page, input.name).click();

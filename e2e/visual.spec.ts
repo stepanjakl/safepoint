@@ -42,7 +42,7 @@ const SCENARIOS = {
   'row-hover': async (page: Page) => {
     await page
       .getByRole('navigation', { name: 'Processes' })
-      .locator('a[href="/examples/brunch-orders-direct"]')
+      .locator('a[href="/processes/brunch-orders-direct"]')
       .hover();
   },
   arrange: async (page: Page) => {
@@ -94,7 +94,7 @@ const SCENARIOS = {
 } satisfies Record<string, (page: Page) => Promise<void>>;
 
 const ROUTES: Partial<Record<keyof typeof SCENARIOS, string>> = {
-  empty: '/examples/brunch-orders-direct',
+  empty: '/processes/brunch-orders-direct',
   controls: '/workbench/controls',
 };
 
@@ -258,7 +258,7 @@ test(
     const captured: Capture = {};
     for (const [name, arrive] of Object.entries(SCENARIOS)) {
       await page.goto(
-        ROUTES[name as keyof typeof SCENARIOS] ?? '/examples/brunch-orders',
+        ROUTES[name as keyof typeof SCENARIOS] ?? '/processes/brunch-orders',
       );
       await expect(
         READY[name as keyof typeof SCENARIOS]?.(page) ??
