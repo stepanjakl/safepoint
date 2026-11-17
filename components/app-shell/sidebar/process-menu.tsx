@@ -40,7 +40,7 @@ import {
 } from './menu-parts';
 import { ProcessList } from './process-list';
 import { ProcessSearch } from './process-search';
-import { SidebarAccount } from './sidebar-account';
+import { SidebarAccount, type AnonymousVisitor } from './sidebar-account';
 import { SidebarNotice } from './sidebar-notice';
 import { useProcessReorder } from './use-process-reorder';
 import { WorkspaceMenu } from './workspace-menu';
@@ -68,12 +68,15 @@ export function ProcessMenu({
   items: scenarioItems,
   initialOrder,
   signedInAs = null,
+  visitor = null,
 }: {
   items: ProcessNavigationItem[];
   /** The order the server read from the cookie, for SSR and hydration. */
   initialOrder: string | null;
   /** The name on the gate's cookie; null where there is no gate. */
   signedInAs?: string | null;
+  /** Who the anonymous visitor cookie names, shown when no one is signed in. */
+  visitor?: AnonymousVisitor | null;
 }) {
   // Each row under the name it was last given in this browser.
   const names = useProcessNames();
@@ -542,7 +545,7 @@ export function ProcessMenu({
             neighbours -- the distance the account row's own top padding used
             to hold below it. */}
         <div className={MENU_RULE} aria-hidden="true" />
-        <SidebarAccount signedInAs={signedInAs} />
+        <SidebarAccount signedInAs={signedInAs} visitor={visitor} />
       </div>
     </aside>
   );

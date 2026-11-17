@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 
 import { AppShell } from '@/components/app-shell/app-shell';
 import { QuietQueries } from '@/components/prototype/promotion/quiet-queries';
-import { signedInAs } from '@/server/access/current';
+import { currentVisitor, signedInAs } from '@/server/access/current';
 
 /*
   The prototype ran inside the product's shell, so it is drawn in the shell
@@ -16,7 +16,12 @@ export default async function PromotionLayout({
 }) {
   return (
     <QuietQueries>
-      <AppShell signedInAs={await signedInAs()}>{children}</AppShell>
+      <AppShell
+        signedInAs={await signedInAs()}
+        visitor={await currentVisitor()}
+      >
+        {children}
+      </AppShell>
     </QuietQueries>
   );
 }

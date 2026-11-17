@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { AppShell } from '@/components/app-shell/app-shell';
-import { signedInAs } from '@/server/access/current';
+import { currentVisitor, signedInAs } from '@/server/access/current';
 
 /*
   The shell is a layout rather than something each page renders, so it stays
@@ -14,5 +14,9 @@ export default async function ShellLayout({
 }: {
   children: ReactNode;
 }) {
-  return <AppShell signedInAs={await signedInAs()}>{children}</AppShell>;
+  return (
+    <AppShell signedInAs={await signedInAs()} visitor={await currentVisitor()}>
+      {children}
+    </AppShell>
+  );
 }

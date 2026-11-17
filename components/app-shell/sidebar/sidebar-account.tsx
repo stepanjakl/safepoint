@@ -5,10 +5,14 @@ import { GradientAvatar } from '@outpacelabs/avatars';
 
 import { signOut } from '@/app/access/actions';
 import { cx } from '@/lib/ui/cx';
+import { VISITOR_ORB_FILLS } from '@/lib/shell/visitor-orb';
 import { Tooltip } from '@/components/ui/tooltip';
 import { ICON_BUTTON, MENU_RAIL, MenuIcon, RAIL_CELL } from './menu-parts';
 
 const AVATAR_COLORS = ['#0d9488', '#22d3ee', '#0284c7', '#3f3f46', '#5eead4'];
+
+// What the anonymous visitor cookie names; the orb index picks the face.
+export type AnonymousVisitor = { name: string; orb: number };
 
 /*
   Both ends are rail cells, so the row states no offsets of its own: the avatar
@@ -18,10 +22,15 @@ const AVATAR_COLORS = ['#0d9488', '#22d3ee', '#0284c7', '#3f3f46', '#5eead4'];
 */
 export function SidebarAccount({
   signedInAs = null,
+  visitor = null,
 }: {
   /** The name on the gate's cookie. Null where there is no gate: local development. */
   signedInAs?: string | null;
+  /** The anonymous visitor, drawn as an orb when no one is signed in. */
+  visitor?: AnonymousVisitor | null;
 }) {
+  const named = signedInAs ?? visitor?.name ?? null;
+  const orb = signedInAs === null && visitor ? visitor : null;
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -37,23 +46,32 @@ export function SidebarAccount({
     <div className="shell-profile-row group/account shell:h-shell-header flex cursor-pointer items-center justify-between gap-2.5">
       <span
         role="img"
-        aria-label={
-          signedInAs ? `${signedInAs}’s avatar` : 'Maya’s demo avatar'
-        }
+        aria-label={named ? `${named}’s avatar` : 'Maya’s demo avatar'}
         className={cx(MENU_RAIL, 'relative rounded-full')}
       >
-        <GradientAvatar
-          seed={signedInAs ? `safepoint-${signedInAs}` : 'safepoint-maya'}
-          size={RAIL_CELL}
-          colors={AVATAR_COLORS}
-          className={cx(
-            'transition-opacity duration-(--duration-pane) ease-out',
-            ready ? 'opacity-100' : 'opacity-0',
-          )}
-        />
+        {orb ? (
+          // A flat mark of 16px, an even box, so it sits on the rail's axis.
+          <span
+            aria-hidden="true"
+            className={cx(
+              'size-4 rounded-full',
+              VISITOR_ORB_FILLS[orb.orb % VISITOR_ORB_FILLS.length],
+            )}
+          />
+        ) : (
+          <GradientAvatar
+            seed={signedInAs ? `safepoint-${signedInAs}` : 'safepoint-maya'}
+            size={RAIL_CELL}
+            colors={AVATAR_COLORS}
+            className={cx(
+              'transition-opacity duration-(--duration-pane) ease-out',
+              ready ? 'opacity-100' : 'opacity-0',
+            )}
+          />
+        )}
       </span>
       <p className="text-primary text-dense mr-auto min-w-0 truncate font-semibold">
-        {signedInAs ?? 'Maya'}
+        {named ?? 'Maya'}
       </p>
       {signedInAs ? (
         // A form, so signing out works before the page has hydrated, and the

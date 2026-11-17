@@ -21,10 +21,13 @@ import { ResizableShell } from './resizable-shell';
 export async function AppShell({
   children,
   signedInAs = null,
+  visitor = null,
 }: {
   children: ReactNode;
   /** The name on the gate's cookie; null where there is no gate. */
   signedInAs?: string | null;
+  /** The anonymous visitor's name and orb, shown when no one is signed in. */
+  visitor?: { name: string; orb: number } | null;
 }) {
   // The saved order, so the first paint already has the rows where the reader
   // left them rather than hydration moving them there.
@@ -54,6 +57,7 @@ export async function AppShell({
             items={items}
             initialOrder={savedOrder}
             signedInAs={signedInAs}
+            visitor={visitor}
           />
         }
         processes={items}
