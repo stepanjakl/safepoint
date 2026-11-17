@@ -1,14 +1,10 @@
-import { notFound } from 'next/navigation';
-
 import { PopoverHalo } from './popover-halo';
 
 /*
-  Development only: a feathered backdrop blur around the popover in place of a
+  A feathered backdrop blur around the popover in place of a
   cast shadow, at candidate sizes, over text and over an empty surface.
 */
 export default function PopoverHaloWorkbenchPage() {
-  if (process.env.NODE_ENV !== 'development') notFound();
-
   return (
     <main
       id="main"

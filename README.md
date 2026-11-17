@@ -133,11 +133,11 @@ A person enters the password and their name once; both are held in a signed cook
 - **A self-declared name.** The name is whatever the person typed; nothing verifies it.
 - **Unthrottled.** Nothing limits attempts, so the password must be long and random.
 
-To sign everyone out, or to rotate, change `SAFEPOINT_COOKIE_SECRET` (and `SAFEPOINT_ACCESS_KEY`, to change the password). The development-only tools (`/workbench`, `/api/dev`) refuse outside local development whoever is signed in. To try the gate on your own machine, start the server with `SAFEPOINT_GATE=1` and both variables set.
+To sign everyone out, or to rotate, change `SAFEPOINT_COOKIE_SECRET` (and `SAFEPOINT_ACCESS_KEY`, to change the password). The development-only tools (`/api/dev`, the style inspector and design controls) refuse outside local development whoever is signed in; `/workbench` follows the gate like any page. To try the gate on your own machine, start the server with `SAFEPOINT_GATE=1` and both variables set.
 
 ## Deploying to Vercel
 
-A checklist, in order. Both Brunch orders processes are served wherever the gate applies; the development tools (`/workbench`, `/api/dev`) are not, whoever is signed in. Nothing here is done by the repository: each step is a setting in Vercel or Neon.
+A checklist, in order. Both Brunch orders processes are served wherever the gate applies; the development tools (`/api/dev`) are not, whoever is signed in, and `/workbench` is served to anyone the gate lets in. Nothing here is done by the repository: each step is a setting in Vercel or Neon.
 
 **1. Project settings** (Settings in the Vercel project)
 
@@ -178,7 +178,7 @@ Never set in production (or preview): `SAFEPOINT_RESETTABLE_DATABASE_URL`, which
 - The build log says "Migrating the production database before the build." and then "Migrations applied to the server at <host>."; a preview's says "Not migrating".
 - The deployment's address sends you to `/access`; the password and a name sign you in. Without the two secrets, every page says "This deployment is not configured."
 - The sidebar lists Brunch orders twice (the rulebook process and the direct one); `/processes/brunch-orders` opens, a run reads the captured sheet, and the Rules panel shows the nine accepted rules.
-- `/workbench` and `/api/dev/stylesheets` answer not found, signed in or not; an unsigned `/api/trpc/runs.list` answers 401.
+- `/api/dev/stylesheets` answers not found, signed in or not; `/workbench` opens once signed in; an unsigned `/api/trpc/runs.list` answers 401.
 - Proposing needs the model key; after it, a run appears in the dashboard's Workflow page.
 
 A step runs within one function invocation, whose limit is the plan's maximum (the generated route asks for `maxDuration: 'max'`, at most 800 seconds): writing one rule, which may take several model calls, must finish inside it. In development nothing needs setting: `pnpm dev` uses the Local World in `.next/workflow-data/`, and `npx workflow web` shows its runs when started with `WORKFLOW_LOCAL_DATA_DIR=.next/workflow-data`.

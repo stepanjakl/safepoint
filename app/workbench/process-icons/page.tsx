@@ -1,15 +1,11 @@
-import { notFound } from 'next/navigation';
-
 import { ProcessIcons } from './process-icons';
 
 /*
-  Development only: candidate icon pairs for a process's evaluation in the
+  Candidate icon pairs for a process's evaluation in the
   sidebar -- checked by rules (deterministic) or the model's judgement
   (non-deterministic). The pair chosen moves into the sidebar's MENU_ICONS.
 */
 export default function ProcessIconsWorkbenchPage() {
-  if (process.env.NODE_ENV !== 'development') notFound();
-
   return (
     <main
       id="main"

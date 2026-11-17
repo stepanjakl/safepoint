@@ -1,10 +1,6 @@
-import { notFound } from 'next/navigation';
-
 import { LoadingGallery } from './loading-gallery';
 
 export default function LoadingWorkbenchPage() {
-  if (process.env.NODE_ENV !== 'development') notFound();
-
   return (
     <main
       id="main"

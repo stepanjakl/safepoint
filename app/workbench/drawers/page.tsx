@@ -1,10 +1,6 @@
-import { notFound } from 'next/navigation';
-
 import { DrawerWorkbench } from './workbench';
 
 export default function DrawersWorkbenchPage() {
-  if (process.env.NODE_ENV !== 'development') notFound();
-
   return (
     <main
       id="main"

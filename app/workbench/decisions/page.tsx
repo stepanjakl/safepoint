@@ -1,10 +1,6 @@
-import { notFound } from 'next/navigation';
-
 import { DecisionTransitions } from './transitions';
 
 export default function DecisionWorkbenchPage() {
-  if (process.env.NODE_ENV !== 'development') notFound();
-
   return (
     <main
       id="main"

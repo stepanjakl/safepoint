@@ -1,15 +1,11 @@
-import { notFound } from 'next/navigation';
-
 import { ButtonRounding } from './button-rounding';
 
 /*
-  Development only: the real text buttons at candidate radii, beside the tabs
+  The real text buttons at candidate radii, beside the tabs
   and status pills they should read apart from. The option that wins moves into
   Button; slanted buttons and the header's icon circles are not in question.
 */
 export default function ButtonRoundingWorkbenchPage() {
-  if (process.env.NODE_ENV !== 'development') notFound();
-
   return (
     <main
       id="main"

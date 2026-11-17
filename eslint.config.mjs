@@ -155,8 +155,8 @@ const config = [
       '**/*.test.{ts,tsx}',
       // Server components: they render on the server and may read it.
       'app/workbench/**/page.tsx',
-      // Not a client file: the run workbench's server page reads the frozen
-      // browser-test fixtures through it, in development only.
+      // Not a client file: the run workbench's server page builds its
+      // script from the frozen fixtures, where it is rendered.
       'app/workbench/run/brunch-direct.ts',
     ],
     // typescript-eslint's version of the rule, for `allowTypeImports`.

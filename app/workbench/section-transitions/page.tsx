@@ -1,9 +1,6 @@
-import { notFound } from 'next/navigation';
 import { SectionTransitions } from './section-transitions';
 
 export default function SectionTransitionsPage() {
-  if (process.env.NODE_ENV !== 'development') notFound();
-
   return (
     <main
       id="main"

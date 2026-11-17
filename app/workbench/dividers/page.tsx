@@ -1,5 +1,3 @@
-import { notFound } from 'next/navigation';
-
 import { Button } from '@/components/ui/button';
 import {
   DATA_TABLE_BODY,
@@ -129,8 +127,6 @@ function PanelSample() {
 }
 
 export default function DividersWorkbenchPage() {
-  if (process.env.NODE_ENV !== 'development') notFound();
-
   return (
     <main id="main" className="bg-canvas text-primary min-h-dvh p-4 sm:p-8">
       <div className="mx-auto grid max-w-7xl gap-8">

@@ -1,14 +1,10 @@
-import { notFound } from 'next/navigation';
-
 import { PopoverEdge } from './popover-edge';
 
 /*
-  Development only: the popover and tooltip as they ship, beside each with an
+  The popover and tooltip as they ship, beside each with an
   outer line just outside the border.
 */
 export default function PopoverEdgeWorkbenchPage() {
-  if (process.env.NODE_ENV !== 'development') notFound();
-
   return (
     <main
       id="main"

@@ -1,4 +1,3 @@
-import { notFound } from 'next/navigation';
 import type { CSSProperties } from 'react';
 
 import { DATA_TABLE_RULE, DataTable } from '@/components/ui/data-table';
@@ -210,8 +209,6 @@ function TablePreview({ treatment }: { treatment: Treatment }) {
 }
 
 export default function TableHeadersWorkbenchPage() {
-  if (process.env.NODE_ENV !== 'development') notFound();
-
   return (
     <main id="main" className="bg-canvas text-primary min-h-dvh p-4 sm:p-8">
       <div className="mx-auto grid max-w-3xl gap-10">

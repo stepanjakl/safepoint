@@ -1,14 +1,10 @@
-import { notFound } from 'next/navigation';
-
 import { AssistantButtonOptions } from './assistant-button';
 
 /*
-  Development only: ways for the assistant's notch button to say the panel is
+  Ways for the assistant's notch button to say the panel is
   open, once the panel no longer has a heading and close button of its own.
 */
 export default function AssistantButtonWorkbenchPage() {
-  if (process.env.NODE_ENV !== 'development') notFound();
-
   return (
     <main
       id="main"

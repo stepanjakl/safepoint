@@ -1,4 +1,3 @@
-import { notFound } from 'next/navigation';
 import type { CSSProperties, ReactNode } from 'react';
 
 import report from '@/docs/generated/colour-theme-report.json';
@@ -9,7 +8,7 @@ import { TooltipArrowShape } from '@/components/ui/tooltip';
 import { Pair, Swatch } from '../measure';
 
 /*
-  Development only: the colour system as the page paints it. Every swatch and
+  The colour system as the page paints it. Every swatch and
   every ratio is read live, so switching theme or neutral family in the design
   pane updates the page in place. Step numbers come from the generated colour
   report, which `pnpm check:colours` keeps in step with the stylesheets.
@@ -359,8 +358,6 @@ const HEADING = 'text-title font-semibold';
 const NOTE = 'text-meta text-muted max-w-3xl';
 
 export default function ColoursPage() {
-  if (process.env.NODE_ENV !== 'development') notFound();
-
   return (
     <main
       id="main"

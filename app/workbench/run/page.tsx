@@ -1,18 +1,14 @@
-import { notFound } from 'next/navigation';
-
 import { sampleDraft } from '../draft-progress/sample';
 import { brunchDirectScript } from './brunch-direct';
 import { RunWorkbench } from './run-player';
 
 /*
-  Development only: a Brunch orders run with no rulebook at every stage of its
+  A Brunch orders run with no rulebook at every stage of its
   lifecycle, from frozen fixtures, with a player that steps one thread through
   the stages so the folding and the marker can be watched rather than inferred,
   and the loading marks and a draft on a step beside it.
 */
 export default function RunWorkbenchPage() {
-  if (process.env.NODE_ENV !== 'development') notFound();
-
   return (
     <main
       id="main"

@@ -1,17 +1,13 @@
-import { notFound } from 'next/navigation';
-
 import { CalibrationLab } from './calibration-lab';
 
 /*
-  Development only: the one place a person, not a model, decides something
+  The one place a person, not a model, decides something
   about colour. It sets a neutral part beside its coloured counterparts and
   lets you nudge it until the two look equally light; the median of several
   settings is the number to record (docs/interface/COLOUR-TESTING.md →
   Calibration). Models are shown beside it, never instead of it.
 */
 export default function CalibrationPage() {
-  if (process.env.NODE_ENV !== 'development') notFound();
-
   return (
     <main
       id="main"

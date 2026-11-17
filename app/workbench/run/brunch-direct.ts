@@ -1,11 +1,12 @@
-import { readFileSync } from 'node:fs';
-
+import frozenProposal from '@/e2e/fixtures/brunch-orders-proposal.json';
+import snapshot from '@/fixtures/brunch-orders/sheet-snapshot.json';
 import type { ModelRunView } from '@/components/app-shell/thread/model-run-thread';
 import { madeNow } from '@/components/engine/propose/made-now';
 import type { Decision } from '@/components/engine/propose/types';
 import { blockFor, writesOf } from '@/lib/engine/apply';
-import { capturedTabs } from '@/lib/engine/captured.fixture';
+import type { DataTab } from '@/lib/engine/records';
 import type { Proposal, ProposalActivity } from '@/lib/engine/types';
+import { DATA_TABS } from '@/lib/processes/brunch-orders/data';
 import {
   MODEL_RUN_MAIN_LINE,
   type ModelRunFacts,
@@ -16,8 +17,10 @@ import {
   brunchOrdersDirectProcess,
 } from '@/lib/processes/brunch-orders/process';
 
+import recordedActivity from './brunch-activity.json';
+
 /*
-  Development only: a Brunch orders run with no rulebook at every stage, from
+  A Brunch orders run with no rulebook at every stage, from
   the frozen fixtures the browser tests use -- the captured sheet and a kept
   proposal -- so each stage can be designed without a model or the sheet.
   The proposal's checks are dropped: with no rulebook there are none, and a
@@ -25,9 +28,10 @@ import {
   while proposing is written here to look like what the engine reports.
 */
 
-const frozen = JSON.parse(
-  readFileSync('e2e/fixtures/brunch-orders-proposal.json', 'utf8'),
-) as { names: Record<string, string>; proposal: Proposal };
+const frozen = frozenProposal as unknown as {
+  names: Record<string, string>;
+  proposal: Proposal;
+};
 
 const proposal: Proposal = {
   ...frozen.proposal,
@@ -68,7 +72,14 @@ const allDecided: Record<string, Decision> = Object.fromEntries(
   ]),
 );
 
-const tabs = capturedTabs();
+// The captured read's tabs, each on its own copy: a stage changes some.
+const tabs: DataTab[] = DATA_TABS.map((name) => ({
+  name,
+  values: structuredClone(
+    (snapshot.valueRanges.find((range) => range.range.startsWith(name))
+      ?.values ?? []) as unknown[][],
+  ),
+}));
 const read = {
   id: 'workbench',
   readAt: AT,
@@ -102,9 +113,9 @@ const changes = blockFor(lastWeekend, owner, writes).changes;
   proposal (brunch-activity.json): each moment it changed, at the time it did,
   with its clock moved to this run's. Nothing here is written by hand.
 */
-const recorded = JSON.parse(
-  readFileSync('app/workbench/run/brunch-activity.json', 'utf8'),
-) as { frames: { t: number; running: boolean; activity: ProposalActivity }[] };
+const recorded = recordedActivity as unknown as {
+  frames: { t: number; running: boolean; activity: ProposalActivity }[];
+};
 const recordedFrom =
   Date.parse(
     recorded.frames.flatMap((frame) => frame.activity.events)[0]?.at ?? AT,

@@ -1,5 +1,3 @@
-import { notFound } from 'next/navigation';
-
 import { ShellPageTransitionProvider } from '@/components/app-shell/shell-page-transition';
 import { brunchOrdersProcess } from '@/lib/processes/brunch-orders/process';
 import { SHEET_INPUTS } from '@/lib/processes/brunch-orders/data';
@@ -7,13 +5,11 @@ import { SHEET_INPUTS } from '@/lib/processes/brunch-orders/data';
 import { ControlsGallery } from '../controls-gallery';
 
 /*
-  Development only: every control in every interaction state at once, pinned
+  Every control in every interaction state at once, pinned
   rather than hovered, so a face can be compared across its states without
   reaching each one by hand. The visual baseline records this page too.
 */
 export default function ControlsWorkbenchPage() {
-  if (process.env.NODE_ENV !== 'development') notFound();
-
   return (
     <main
       id="main"
