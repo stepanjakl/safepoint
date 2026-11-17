@@ -12,16 +12,16 @@ import { ResponseSection } from '@/components/app-shell/thread/thread-page';
 import { ThreadStep } from '@/components/app-shell/thread/thread-step';
 import type { ProcessStep, ProcessSummary } from '@/lib/shell/model';
 
-import { SUBJECT } from '@/lib/processes/brunch-orders/data';
+import { SHEET_USE, SUBJECT } from '@/lib/processes/brunch-orders/data';
+import { sourceById } from '@/lib/sources/model';
 
 import { ApplyStep, type ApplyProgress } from '@/components/engine/apply-step';
 import {
-  DiscardRun,
-  InstructionsText,
   ReadStep,
   useRunRead,
   type RunRead,
-} from './orders-run';
+} from '@/components/engine/read-step';
+import { DiscardRun, InstructionsText } from '@/components/engine/run-parts';
 import { ProposeStep } from '@/components/engine/propose/propose-step';
 import type { ProposeProgress } from '@/components/engine/propose/types';
 
@@ -157,6 +157,7 @@ function DirectThread({
             ) : step.id === 'read' ? (
               <ResponseSection>
                 <ReadStep
+                  kind={sourceById(SHEET_USE.source)?.kind ?? 'google-sheets'}
                   automatic
                   read={read}
                   loadingRead={readId !== null && read === undefined}

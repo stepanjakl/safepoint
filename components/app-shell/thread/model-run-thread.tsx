@@ -42,11 +42,8 @@ import {
 } from '@/lib/shell/model-run';
 
 import type { DataTabs } from '@/components/engine/data-drawer';
-import {
-  InstructionsText,
-  SheetReadCard,
-  type RunRead,
-} from '@/components/processes/brunch-orders/orders-run';
+import { SheetReadCard, type RunRead } from '@/components/engine/read-step';
+import { InstructionsText } from '@/components/engine/run-parts';
 import { ProposalTable } from '@/components/engine/propose/proposal-table';
 import type {
   Decision,
