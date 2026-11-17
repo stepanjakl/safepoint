@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import { accessConfig } from './config';
+import { cookieValue } from './signed-cookie';
 import {
   SESSION_COOKIE,
   SESSION_LIFETIME_SECONDS,
   cleanName,
-  cookieValue,
   passwordMatches,
   readSession,
   signSession,
