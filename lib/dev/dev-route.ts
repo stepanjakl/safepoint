@@ -15,7 +15,11 @@ export function isLocalDevelopment(url: URL): boolean {
   return process.env.NODE_ENV === 'development' && LOOPBACK.has(url.hostname);
 }
 
-// The third check, which a signed-in request passes as well.
+// The third check, which a signed-in request passes as well. On Vercel Next
+// builds request.url from the Host header and x-forwarded-proto (its build
+// sets trustHostHeader), so it is the address the browser used and no
+// forwarded header needs reading here. A server of one's own behind a proxy
+// would see its bind address instead, and would refuse every POST.
 export function crossOriginRefusal(request: Request): Refusal | null {
   const origin = request.headers.get('origin');
   return origin !== null && origin !== new URL(request.url).origin
