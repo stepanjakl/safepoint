@@ -21,8 +21,8 @@ import {
   type Disposition,
   type Effect,
   type ReleasePlan,
-} from '@/lib/review/plan-contract';
-import { evaluationCounts, planState } from '@/lib/review/plan-derivations';
+} from '@/lib/shell/plan-contract';
+import { evaluationCounts, planState } from '@/lib/shell/plan-derivations';
 import {
   reviewEffects,
   reviewPage,

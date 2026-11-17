@@ -1,5 +1,5 @@
 import { reviewDetailSchema } from './contracts';
-import { releasePlanSchema, type Disposition } from './plan-contract';
+import { releasePlanSchema, type Disposition } from '@/lib/shell/plan-contract';
 
 // A contrasting, synthetic presentation fixture with no SKU, currency, margin
 // or grocery assumptions. Checks are recorded, not run.

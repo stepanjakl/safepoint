@@ -3,7 +3,7 @@ import {
   type Disposition,
   type Effect,
   type ReleasePlan,
-} from './plan-contract';
+} from '@/lib/shell/plan-contract';
 
 export type ReviewFilter = Disposition | 'all' | 'failures';
 

@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback } from 'react';
-import type { ReleasePlan } from '@/lib/review/plan-contract';
-import { planState } from '@/lib/review/plan-derivations';
+import type { ReleasePlan } from '@/lib/shell/plan-contract';
+import { planState } from '@/lib/shell/plan-derivations';
 import { galleryPlans, galleryDetail } from '@/lib/review/states-fixture';
 import { ReviewExperience } from './review-experience';
 

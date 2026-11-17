@@ -16,7 +16,7 @@ import {
   type RunFacts,
   type RunStage,
 } from '@/lib/shell/placeholder/run-lifecycle';
-import type { ReleasePlan } from '@/lib/review/plan-contract';
+import type { ReleasePlan } from '@/lib/shell/plan-contract';
 import { ReplayReview } from '@/components/review/replay-review';
 import type { ReviewOpenRequest } from '@/components/review/review-experience';
 import { ProcessSheetActions } from '@/components/app-shell/process/process-sheet';

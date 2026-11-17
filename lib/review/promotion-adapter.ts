@@ -11,7 +11,7 @@ import {
   type Effect,
   type LabelledDelta,
   type Reason,
-} from './plan-contract';
+} from '@/lib/shell/plan-contract';
 import { reviewDetailSchema } from './contracts';
 
 function dispositionFor(detail: LineDetail): Disposition {

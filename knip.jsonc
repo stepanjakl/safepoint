@@ -7,7 +7,7 @@
     // not only for what imports them today.
     "lib/promotion-release/index.ts",
     "lib/promotion-release/schemas.ts",
-    "lib/review/plan-contract.ts",
+    "lib/shell/plan-contract.ts",
     "lib/review-presentation/index.ts",
     // server/db/schema.ts is not listed: Knip's drizzle plugin reads it from
     // drizzle.config.ts as drizzle-kit does, so its tables count as used.

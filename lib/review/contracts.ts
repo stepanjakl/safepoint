@@ -1,6 +1,9 @@
 import { z } from 'zod';
 
-import { dispositionSchema, labelledDeltaSchema } from './plan-contract';
+import {
+  dispositionSchema,
+  labelledDeltaSchema,
+} from '@/lib/shell/plan-contract';
 
 // A presentation boundary, not an execution authorisation or a policy engine.
 // Process adapters own domain validation, calculations and source mapping.

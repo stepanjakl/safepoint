@@ -7,7 +7,7 @@ import { useContext, useId } from 'react';
 import { AssistantContext } from '@/components/app-shell/assistant/assistant-state';
 import { Button } from '@/components/ui/button';
 import { Glyph } from '@/components/ui/glyph';
-import { severityRank, type ReleasePlan } from '@/lib/review/plan-contract';
+import { severityRank, type ReleasePlan } from '@/lib/shell/plan-contract';
 import {
   appliedSummary,
   attentionLine,
@@ -17,7 +17,7 @@ import {
   totalOf,
   type DispositionCounts,
   type ReviewProgress,
-} from '@/lib/review/plan-derivations';
+} from '@/lib/shell/plan-derivations';
 import { cx } from '@/lib/cx';
 import {
   Buckets,

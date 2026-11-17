@@ -1,5 +1,5 @@
 import type { RunStatus, StepStatus } from '@/lib/shell/model';
-import type { Disposition } from '@/lib/review/plan-contract';
+import type { Disposition } from '@/lib/shell/plan-contract';
 import type { ReviewOutcome } from '@/lib/promotion-release';
 import type { PresentedGate } from '@/lib/review-presentation';
 import type { AdapterMode } from '@/lib/shell/system-links';

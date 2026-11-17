@@ -1,10 +1,10 @@
 import type { ProcessEvaluation } from '@/lib/shell/model';
-import type { ReleasePlan } from '@/lib/review/plan-contract';
+import type { ReleasePlan } from '@/lib/shell/plan-contract';
 import {
   evaluationCounts,
   planState,
   type DispositionCounts,
-} from '@/lib/review/plan-derivations';
+} from '@/lib/shell/plan-derivations';
 
 export type ProcessNavigationItem = {
   id: string;

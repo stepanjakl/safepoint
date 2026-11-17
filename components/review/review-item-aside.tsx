@@ -18,7 +18,7 @@ import {
   severityRank,
   type Effect,
   type ReleasePlan,
-} from '@/lib/review/plan-contract';
+} from '@/lib/shell/plan-contract';
 import { dispositionGlyph } from '@/components/app-shell/markers';
 import { ReviewItemDetail } from './review-item-detail';
 import { useReviewDetail, type ReviewDetailCache } from './use-review-detail';

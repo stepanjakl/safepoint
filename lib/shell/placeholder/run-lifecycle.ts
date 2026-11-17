@@ -5,12 +5,12 @@
 // them before anything produces them.
 
 import type { ReviewedReplay } from '../../promotion-release';
-import type { ReleasePlan } from '../../review/plan-contract';
+import type { ReleasePlan } from '.././plan-contract';
 import {
   evaluationCounts,
   needingAttention,
   type ReviewProgress,
-} from '../../review/plan-derivations';
+} from '.././plan-derivations';
 import {
   RUN_TRIGGER_LABELS,
   type ProcessStep,

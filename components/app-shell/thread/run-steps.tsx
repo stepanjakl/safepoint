@@ -14,12 +14,12 @@ import {
   DISPOSITION_LABELS,
   severityRank,
   type ReleasePlan,
-} from '@/lib/review/plan-contract';
+} from '@/lib/shell/plan-contract';
 import {
   barSegments,
   evaluationCounts,
   nonEmptyDispositions,
-} from '@/lib/review/plan-derivations';
+} from '@/lib/shell/plan-derivations';
 import { byAttention, type SystemLink } from '@/lib/shell/system-links';
 import type { RunFacts, RunStage } from '@/lib/shell/placeholder/run-lifecycle';
 import { cx } from '@/lib/cx';

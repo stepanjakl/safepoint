@@ -2,8 +2,8 @@
 
 import { useCallback } from 'react';
 import { reviewDetailSchema } from '@/lib/review/contracts';
-import type { ReleasePlan } from '@/lib/review/plan-contract';
-import type { ReviewProgress } from '@/lib/review/plan-derivations';
+import type { ReleasePlan } from '@/lib/shell/plan-contract';
+import type { ReviewProgress } from '@/lib/shell/plan-derivations';
 import { ReviewExperience, type ReviewOpenRequest } from './review-experience';
 
 // The local replay host owns transport. The shared UI knows no URL or SKU.

@@ -12,8 +12,8 @@ import {
 } from '@/components/app-shell/drawer-overlay';
 import { useAsidePanel } from '@/components/app-shell/use-aside-panel';
 import type { LoadReviewDetail } from '@/lib/review/contracts';
-import type { Disposition, ReleasePlan } from '@/lib/review/plan-contract';
-import type { ReviewProgress } from '@/lib/review/plan-derivations';
+import type { Disposition, ReleasePlan } from '@/lib/shell/plan-contract';
+import type { ReviewProgress } from '@/lib/shell/plan-derivations';
 import {
   reviewEffects,
   type ReviewFilter,

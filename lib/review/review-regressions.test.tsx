@@ -15,7 +15,7 @@ import {
   reviewPage,
   type ReviewFilter,
 } from './review-navigation';
-import { releasePlanSchema } from './plan-contract';
+import { releasePlanSchema } from '@/lib/shell/plan-contract';
 
 function Queue({
   plan,

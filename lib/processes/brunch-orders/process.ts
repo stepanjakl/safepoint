@@ -7,7 +7,7 @@ import type {
 import type { DefinitionProcess } from '@/lib/definitions/types';
 import type { SystemLink } from '@/lib/shell/system-links';
 import type { SourceUse } from '@/lib/sources/model';
-import type { ReleasePlan } from '@/lib/review/plan-contract';
+import type { ReleasePlan } from '@/lib/shell/plan-contract';
 
 /*
   Brunch orders: the order proposal, built one step at a time from its purpose

@@ -3,7 +3,7 @@ import {
   type Disposition,
   type PlanStatus,
   type ReleasePlan,
-} from './plan-contract';
+} from '@/lib/shell/plan-contract';
 import { reviewDetailSchema } from './contracts';
 const reasons = [
   { key: 'margin_floor', label: 'Below the margin floor' },

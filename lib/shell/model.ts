@@ -113,7 +113,7 @@ export const RUN_TRIGGER_LABELS: Record<RunTrigger, string> = {
 
 /*
   What the run produced, in the review's own words and the review's own order:
-  these are `DispositionCounts` from lib/review/plan-derivations, which is what
+  these are `DispositionCounts` from lib/shell/plan-derivations, which is what
   the process menu's release preview already counts. The rail and the preview
   answer the same question about the same run, so a reader who has learned one
   has learned the other -- same names, same colours, same order, blocked first.

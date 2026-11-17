@@ -17,7 +17,7 @@ import {
   type Disposition,
   type Effect,
   type ReleasePlan,
-} from '@/lib/review/plan-contract';
+} from '@/lib/shell/plan-contract';
 import {
   barSegments,
   bucketRows,
@@ -26,7 +26,7 @@ import {
   nonEmptyDispositions,
   totalOf,
   type ReasonRollUp,
-} from '@/lib/review/plan-derivations';
+} from '@/lib/shell/plan-derivations';
 import { Glyph } from '@/components/ui/glyph';
 import { cx } from '@/lib/cx';
 import { useSwap } from '@/components/ui/swap';

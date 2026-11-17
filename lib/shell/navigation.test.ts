@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadReviewedReplay } from '../promotion-release';
 import { presentPromotionPlan } from '../review/promotion-adapter';
 import { supportPlan } from '../review/support-fixture';
-import { evaluationCounts } from '../review/plan-derivations';
+import { evaluationCounts } from './plan-derivations';
 import {
   landingProcess,
   moveProcess,

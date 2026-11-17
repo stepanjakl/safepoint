@@ -1,7 +1,7 @@
 import ArrowUpRight from 'blode-icons-react/icons/arrow-up-right';
 import { Glyph } from '@/components/ui/glyph';
 import type { ReviewDetail } from '@/lib/review/contracts';
-import { severityRank } from '@/lib/review/plan-contract';
+import { severityRank } from '@/lib/shell/plan-contract';
 import { DeltaValue } from './delta';
 import { dispositionGlyph } from '@/components/app-shell/markers';
 

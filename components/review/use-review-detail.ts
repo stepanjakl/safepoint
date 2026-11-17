@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { LoadReviewDetail, ReviewDetail } from '@/lib/review/contracts';
-import type { ReleasePlan } from '@/lib/review/plan-contract';
+import type { ReleasePlan } from '@/lib/shell/plan-contract';
 
 type DetailState =
   | { kind: 'loaded'; detail: ReviewDetail }

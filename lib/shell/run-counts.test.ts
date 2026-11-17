@@ -5,10 +5,10 @@ import {
   promotionProcess,
   supportProcess,
 } from './placeholder/placeholder-process';
-import { evaluationCounts } from '@/lib/review/plan-derivations';
+import { evaluationCounts } from '@/lib/shell/plan-derivations';
 import { presentPromotionPlan } from '@/lib/review/promotion-adapter';
 import { supportPlan } from '@/lib/review/support-fixture';
-import type { ReleasePlan } from '@/lib/review/plan-contract';
+import type { ReleasePlan } from '@/lib/shell/plan-contract';
 import type { ProcessSummary } from './model';
 
 /*
