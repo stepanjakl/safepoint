@@ -537,6 +537,19 @@ const FOLLOWING_BY_FILE = {
     '--sp-list-pill-lead-hover': { light: 75, dark: -225 },
     '--sp-list-pill-ink': { light: 900, dark: -700, flush: true },
   },
+  /*
+    The promotion prototype's row pill (components/prototype/review), kept as
+    it was: the same steps the list row's pill takes, which it was the first
+    of, so it paints exactly as it did. Preserved with the prototype and not
+    to be tuned for any other use.
+  */
+  'components/prototype/review/release-card.css': {
+    '--sp-card-pill-face': { light: 100, dark: -75 },
+    '--sp-card-pill-face-hover': { light: 150, dark: -175 },
+    '--sp-card-pill-lead': { light: 25, dark: -150 },
+    '--sp-card-pill-lead-hover': { light: 75, dark: -225 },
+    '--sp-card-pill-ink': { light: 900, dark: -700, flush: true },
+  },
   'components/app-shell/runs/runs-list.css': {
     /* The tally's total: ramp, not a severity tone. Dark's label is ink at
        75%; light gives it its own step against each face. */
