@@ -4,7 +4,7 @@ import type { inferRouterOutputs } from '@trpc/server';
 import { capturedRead } from '@/lib/engine/captured.fixture';
 import { confirmProfile, profileOf } from '@/lib/engine/profile';
 import type { DefinitionSet, ProfileState } from '@/lib/engine/types';
-import { SUBJECT } from '@/lib/processes/brunch-orders/process';
+import { SUBJECT } from '@/lib/processes/brunch-orders/data';
 import type { AppRouter } from '@/server/api/root';
 
 import { mockProcedure, type Answer } from './trpc';

@@ -1,9 +1,9 @@
-import type { ProcessStep, ProcessSummary } from '@/lib/shell/model';
-import type { DataShape, DefinitionSubject } from '@/lib/engine/subject';
 import type { DefinitionProcess } from '@/lib/engine/types';
-import type { SystemLink } from '@/lib/shell/system-links';
-import type { SourceUse } from '@/lib/sources/model';
+import type { ProcessSummary } from '@/lib/shell/model';
 import type { ReleasePlan } from '@/lib/shell/plan-contract';
+
+import { SUBJECT } from './data';
+import { DIRECT_ORDER_STEPS, ORDER_STEPS } from './steps';
 
 /*
   Brunch orders: the order proposal, built one step at a time from its purpose
@@ -18,101 +18,6 @@ export const BRUNCH_ORDERS_HREF = '/examples/brunch-orders';
 // quicker demo, as nothing has to be drafted and approved first.
 const BRUNCH_ORDERS_DIRECT_ID = 'brunch-orders-direct';
 export const BRUNCH_ORDERS_DIRECT_HREF = '/examples/brunch-orders-direct';
-
-// Where a product's columns are, and the category parameters it reaches. The
-// spreadsheet has other tabs, from the Brunch weekend experiment; they are not
-// this process's data and are left out.
-const DATA = {
-  records: {
-    tabs: ['Products', 'Stock', 'Sales', 'Deliveries'],
-    key: 'sku',
-    name: 'product',
-  },
-  lookups: [
-    { tab: 'Parameters', key: 'category', via: 'category', as: 'category' },
-  ],
-  types: {
-    ripe: { kind: 'yes_no' },
-    counted_day: { kind: 'weekday' },
-    counted_time: { kind: 'time_of_day' },
-    // Optional: a sheet without it is read by the weekday and time alone.
-    counted_at: { kind: 'datetime', timeZone: 'Europe/London' },
-    delivery_day: { kind: 'weekday' },
-    delivery_time: { kind: 'time_of_day' },
-    cutoff_day: { kind: 'weekday' },
-    cutoff_time: { kind: 'time_of_day' },
-  },
-  output: { tab: 'Orders', key: 'sku' },
-  // The promotion's opening, as the instructions state it.
-  timing: {
-    timeZone: 'Europe/London',
-    opens: { day: 'Sat', minutes: 7 * 60 },
-    since: {
-      count_age_hours: {
-        at: 'counted_at',
-        day: 'counted_day',
-        time: 'counted_time',
-        kind: 'observed',
-      },
-    },
-    until: {
-      hours_until_cutoff: { day: 'cutoff_day', time: 'cutoff_time' },
-    },
-    moments: {
-      counted: {
-        at: 'counted_at',
-        day: 'counted_day',
-        time: 'counted_time',
-        kind: 'observed',
-        label: 'stock count',
-      },
-      cutoff: {
-        day: 'cutoff_day',
-        time: 'cutoff_time',
-        kind: 'deadline',
-        label: 'supplier’s cutoff',
-      },
-      delivery: {
-        day: 'delivery_day',
-        time: 'delivery_time',
-        kind: 'next',
-        label: 'delivery',
-      },
-    },
-  },
-} satisfies DataShape;
-
-// The tabs a run reads.
-export const DATA_TABS = [
-  ...DATA.records.tabs,
-  ...DATA.lookups.map((lookup) => lookup.tab),
-];
-
-// The sheet's tabs this process reads and the one it writes. What they hold is
-// the source's to say (lib/sources); what the process makes of them is DATA.
-export const SHEET_USE: SourceUse = {
-  source: 'brunch-store-sheet',
-  inputs: DATA_TABS,
-  outputs: [DATA.output.tab],
-};
-
-// The same tabs as the process's inputs, for the header's count.
-export const SHEET_INPUTS: SystemLink[] = DATA_TABS.map((tab) => ({
-  id: tab,
-  label: tab,
-  icon: 'sheet',
-  direction: 'input',
-  file: `Google Sheet · ${tab}`,
-}));
-
-// What its definitions are worked out for, and what a proposal sets.
-export const SUBJECT: DefinitionSubject = {
-  record: { singular: 'product', plural: 'products' },
-  data: DATA,
-  // Ordering nothing is always open to a person: no rule can forbid it.
-  proposal: [{ id: 'order', label: 'order', unit: 'units', none: 0, min: 0 }],
-  reader: 'store owner',
-};
 
 // What the definitions engine (lib/engine) works for.
 export const BRUNCH_ORDERS_DEFINITIONS: DefinitionProcess = {
@@ -198,55 +103,6 @@ Rules
 6. If a product's stock count is older than its category allows, flag it for a person to decide, even when nothing is ordered.
 7. Stock available plus the order must not exceed the ripe avocados we expect to sell.`;
 
-// Each step of a run, in order. The thread sets each one's status from the
-// run's progress; the phase in each label says which part of the plan brings
-// a step that is not built yet.
-export const ORDER_STEPS: ProcessStep[] = [
-  {
-    id: 'instructions',
-    name: 'Instructions',
-    status: 'complete',
-    origin: 'manual',
-  },
-  { id: 'read', name: 'Read the sheet', status: 'attention' },
-  {
-    id: 'rules',
-    name: 'Rules',
-    label: 'From the instructions',
-    status: 'pending',
-  },
-  {
-    id: 'calculate',
-    name: 'Calculate',
-    label: 'From the rules',
-    status: 'pending',
-  },
-  {
-    id: 'propose',
-    name: 'Propose',
-    label: 'From the values',
-    status: 'pending',
-  },
-  {
-    id: 'apply',
-    name: 'Apply',
-    label: 'To the Orders tab',
-    status: 'pending',
-  },
-];
-
-// What each step not built yet will do, in place of its body.
-export const COMING: Record<string, string> = {
-  rules:
-    'The rules found in the instructions, each turned into a check and approved on its own against worked examples.',
-  calculate:
-    'Expected demand, stock available before the start and what is required, worked out for every product.',
-  propose:
-    'What to set for every record, why, and how the accepted checks find it, for a person to approve, change or reject.',
-  apply:
-    'What the decided proposal writes to the sheet, cell by cell, before and after.',
-};
-
 export const brunchOrdersProcess: ProcessSummary = {
   id: BRUNCH_ORDERS_ID,
   name: 'Brunch orders',
@@ -312,14 +168,6 @@ export const brunchOrdersProcess: ProcessSummary = {
   itemNoun: 'product',
   runs: [],
 };
-
-// Its steps: no rulebook to draft, so nothing to calculate from; the model
-// proposes straight from the instructions and the sheet.
-const DIRECT_ORDER_STEPS: ProcessStep[] = ORDER_STEPS.filter(
-  (step) => step.id !== 'rules' && step.id !== 'calculate',
-).map((step) =>
-  step.id === 'propose' ? { ...step, label: 'From the instructions' } : step,
-);
 
 export const brunchOrdersDirectProcess: ProcessSummary = {
   ...brunchOrdersProcess,

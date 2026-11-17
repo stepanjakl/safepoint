@@ -11,7 +11,7 @@ import { StatusChip } from '@/components/engine/trial-parts';
 import { Loader } from '@/components/ui/loader';
 import { useLoader } from '@/components/ui/working-mark';
 import { cx } from '@/lib/cx';
-import { SUBJECT } from '@/lib/processes/brunch-orders/process';
+import { SUBJECT } from '@/lib/processes/brunch-orders/data';
 
 import { sampleDraft } from '../draft-progress/sample';
 import { PANE, Side, type Load } from './parts';

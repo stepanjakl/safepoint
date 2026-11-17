@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  BRUNCH_ORDERS_DEFINITIONS as owner,
-  SUBJECT,
-} from '@/lib/processes/brunch-orders/process';
+import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
+import { SUBJECT } from '@/lib/processes/brunch-orders/data';
 
 import { capturedRead, capturedTabs } from './captured.fixture';
 import {

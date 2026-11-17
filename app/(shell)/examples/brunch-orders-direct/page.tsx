@@ -1,9 +1,7 @@
 import { ProcessView } from '@/components/app-shell/process/process-view';
 import { DirectOrdersRun } from '@/components/processes/brunch-orders/direct-run';
-import {
-  brunchOrdersDirectProcess,
-  SHEET_INPUTS,
-} from '@/lib/processes/brunch-orders/process';
+import { brunchOrdersDirectProcess } from '@/lib/processes/brunch-orders/process';
+import { SHEET_INPUTS } from '@/lib/processes/brunch-orders/data';
 
 /*
   Brunch orders worked out by the model on every run, with no rulebook: a run

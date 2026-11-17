@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 
-import { DATA_TABS } from '@/lib/processes/brunch-orders/process';
+import { DATA_TABS } from '@/lib/processes/brunch-orders/data';
 import type { SheetRead } from '@/lib/sheets/composio';
 
 import type { DataTab, KeptRead } from './records';

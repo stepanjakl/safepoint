@@ -12,7 +12,7 @@ import { ResponseSection } from '@/components/app-shell/thread/thread-page';
 import { ThreadStep } from '@/components/app-shell/thread/thread-step';
 import type { ProcessStep, ProcessSummary } from '@/lib/shell/model';
 
-import { SUBJECT } from '@/lib/processes/brunch-orders/process';
+import { SUBJECT } from '@/lib/processes/brunch-orders/data';
 
 import { ApplyStep, type ApplyProgress } from '@/components/engine/apply-step';
 import {

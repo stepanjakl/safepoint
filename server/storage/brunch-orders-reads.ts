@@ -11,10 +11,8 @@ import {
   type KeptRead,
 } from '@/lib/engine/records';
 import type { OutputSheet } from '@/lib/engine/apply';
-import {
-  BRUNCH_ORDERS_ID,
-  DATA_TABS,
-} from '@/lib/processes/brunch-orders/process';
+import { BRUNCH_ORDERS_ID } from '@/lib/processes/brunch-orders/process';
+import { DATA_TABS } from '@/lib/processes/brunch-orders/data';
 import {
   addTab,
   missingSheetEnv,

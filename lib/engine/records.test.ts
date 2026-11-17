@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  BRUNCH_ORDERS_DEFINITIONS,
-  SUBJECT,
-} from '@/lib/processes/brunch-orders/process';
+import { BRUNCH_ORDERS_DEFINITIONS } from '@/lib/processes/brunch-orders/process';
+import { SUBJECT } from '@/lib/processes/brunch-orders/data';
 
 import { capturedRead, capturedTabs } from './captured.fixture';
 import { checkFormula } from './formulas';

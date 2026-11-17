@@ -9,10 +9,12 @@ import {
 import {
   BRUNCH_ORDERS_DEFINITIONS,
   brunchOrdersProcess,
+} from '@/lib/processes/brunch-orders/process';
+import {
   SHEET_INPUTS,
   SHEET_USE,
   SUBJECT,
-} from '@/lib/processes/brunch-orders/process';
+} from '@/lib/processes/brunch-orders/data';
 import { lastWrite } from '@/server/storage/applications';
 import { latestSummary } from '@/server/storage/source-reads';
 

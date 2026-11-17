@@ -20,7 +20,7 @@ import { Tooltip } from '@/components/ui/tooltip';
 import { cx } from '@/lib/cx';
 import type { DefinitionSet } from '@/lib/engine/types';
 import type { ProcessStep } from '@/lib/shell/model';
-import { COMING, ORDER_STEPS } from '@/lib/processes/brunch-orders/process';
+import { COMING, ORDER_STEPS } from '@/lib/processes/brunch-orders/steps';
 
 import { DraftCards } from '../draft-progress/draft-cards';
 import {

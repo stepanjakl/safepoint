@@ -4,10 +4,8 @@ import path from 'node:path';
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
-import {
-  BRUNCH_ORDERS_DEFINITIONS,
-  DATA_TABS,
-} from '@/lib/processes/brunch-orders/process';
+import { BRUNCH_ORDERS_DEFINITIONS } from '@/lib/processes/brunch-orders/process';
+import { DATA_TABS } from '@/lib/processes/brunch-orders/data';
 
 import { capturedTabs } from './captured.fixture';
 import { KEPT_ENGINE_SOURCES } from './engine-sources.fixture';

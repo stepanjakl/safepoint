@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { SHEET_USE } from '@/lib/processes/brunch-orders/process';
+import { SHEET_USE } from '@/lib/processes/brunch-orders/data';
 import type { SourceSummary } from '@/lib/sources/model';
 
 import { mockProcedure } from './trpc';

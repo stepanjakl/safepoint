@@ -4,7 +4,7 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { recordsOf, type KeptRead } from '@/lib/engine/records';
-import { SUBJECT } from '@/lib/processes/brunch-orders/process';
+import { SUBJECT } from '@/lib/processes/brunch-orders/data';
 import { missingSheetEnv } from '@/lib/sheets/composio';
 import {
   captureRead,

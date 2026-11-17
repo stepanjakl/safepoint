@@ -37,12 +37,8 @@ import { useTRPC } from '@/components/trpc/provider';
 import { useLoader } from '@/components/ui/working-mark';
 import { cx } from '@/lib/cx';
 import type { ProcessStep, ProcessSummary } from '@/lib/shell/model';
-import {
-  COMING,
-  ORDER_STEPS,
-  SHEET_USE,
-  SUBJECT,
-} from '@/lib/processes/brunch-orders/process';
+import { SHEET_USE, SUBJECT } from '@/lib/processes/brunch-orders/data';
+import { COMING, ORDER_STEPS } from '@/lib/processes/brunch-orders/steps';
 import { SOURCE_KINDS, sourceById, type SourceKind } from '@/lib/sources/model';
 
 import { ApplyStep, type ApplyProgress } from '@/components/engine/apply-step';

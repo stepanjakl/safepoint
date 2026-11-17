@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { SUBJECT } from '@/lib/processes/brunch-orders/process';
+import { SUBJECT } from '@/lib/processes/brunch-orders/data';
 
 import { capturedRead } from './captured.fixture';
 import {

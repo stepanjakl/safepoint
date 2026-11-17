@@ -2,10 +2,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { ShellPageTransitionProvider } from '@/components/app-shell/shell-page-transition';
-import {
-  brunchOrdersProcess,
-  SHEET_INPUTS,
-} from '@/lib/processes/brunch-orders/process';
+import { brunchOrdersProcess } from '@/lib/processes/brunch-orders/process';
+import { SHEET_INPUTS } from '@/lib/processes/brunch-orders/data';
 
 import { ControlsGallery } from '../controls-gallery';
 

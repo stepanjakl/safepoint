@@ -18,7 +18,7 @@ import {
   type DataProfile,
   type ProfileState,
 } from '@/lib/engine/types';
-import { SUBJECT } from '@/lib/processes/brunch-orders/process';
+import { SUBJECT } from '@/lib/processes/brunch-orders/data';
 
 import { mockRules, noRules, rulesReply } from './rules';
 import { mockProcedure } from './trpc';
