@@ -1,0 +1,38 @@
+# What `vercel deploy` leaves behind. With this file present the CLI does not
+# read .gitignore, and without it the CLI (65.16) sent folders .gitignore
+# names: agent worktrees, kept run data, local reports. So everything local
+# is named here; keep it in step with .gitignore when a new local folder
+# appears. Secrets (.env.local) and node_modules are never sent by the CLI,
+# and are named anyway.
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+.vercel
+
+# Dependencies and build output
+node_modules
+.next
+.swc
+tsconfig.tsbuildinfo
+next-env.d.ts
+
+# What runs keep locally, and local Workflow state
+data
+.workflow-data
+
+# Agent configuration, installed skills, worktrees and notes
+.claude
+.agents
+.codex
+.cursor
+Claude
+
+# Editor and tool output
+.vscode
+.devtools
+.DS_Store
+playwright-report
+test-results
+coverage
