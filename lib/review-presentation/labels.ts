@@ -1,6 +1,6 @@
 import { type ReviewLine, type ReviewOutcome } from '../promotion-release';
+import { MODE_LABELS, type AdapterMode } from '@/lib/shell/system-links';
 import {
-  type AdapterMode,
   type AgentRecommendation,
   type Gate,
   type GateObligation,
@@ -80,12 +80,6 @@ export const OBLIGATION_LABELS: Record<GateObligation, string> = {
   required: 'Required',
   advisory: 'Advisory',
   not_applicable: 'Not applicable',
-};
-
-export const MODE_LABELS: Record<AdapterMode, string> = {
-  live_sandbox: 'Live sandbox',
-  simulated: 'Simulated',
-  preview_only: 'Preview only',
 };
 
 export type SemanticAction = NonNullable<

@@ -11,7 +11,8 @@
     types           the shapes all of the above produce
 */
 export { parseSkuParam, presentReview } from './present-review';
-export { GATE_LABELS, MODE_LABELS } from './labels';
+export { GATE_LABELS } from './labels';
+export { MODE_LABELS } from '@/lib/shell/system-links';
 export {
   formatDuration,
   formatLondonDateTime,

@@ -2,7 +2,16 @@ import type {
   ReviewedReplay,
   ScenarioEvidencePack,
 } from '../promotion-release';
-import type { AdapterMode } from '../review-presentation';
+
+// What an output can genuinely do: change a live system, only pretend to, or
+// show what it would have changed.
+export type AdapterMode = 'live_sandbox' | 'simulated' | 'preview_only';
+
+export const MODE_LABELS: Record<AdapterMode, string> = {
+  live_sandbox: 'Live sandbox',
+  simulated: 'Simulated',
+  preview_only: 'Preview only',
+};
 
 export type IconKey =
   | 'brief'

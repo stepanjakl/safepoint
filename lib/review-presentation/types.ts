@@ -3,6 +3,7 @@ import {
   type ReviewOutcome,
   type Sku,
 } from '../promotion-release';
+import type { AdapterMode } from '@/lib/shell/system-links';
 
 /* The shapes the presenter produces: serialisable strings and numbers for
    the interface, and nothing it has to compute again. */
@@ -64,7 +65,7 @@ export type GateResult =
   ReviewLine['agentAssessment']['gateAssessments'][number]['result'];
 export type GateObligation =
   ReviewLine['policyEvaluation']['gateObligations'][number]['obligation'];
-export type AdapterMode = 'live_sandbox' | 'simulated' | 'preview_only';
+export type { AdapterMode };
 
 export type PresentedFinding = {
   id: string;

@@ -1,4 +1,5 @@
 import { type ReviewLine } from '../promotion-release';
+import { MODE_LABELS } from '@/lib/shell/system-links';
 import { presentEvidence, resolveEvidence } from './evidence';
 import {
   formatLondonDateTime,
@@ -14,7 +15,6 @@ import {
   FINDING_TITLES,
   GATE_LABELS,
   GATE_RESULT_LABELS,
-  MODE_LABELS,
   NEXT_ACTIONS,
   OBLIGATION_LABELS,
   OUTCOME_LABELS,
