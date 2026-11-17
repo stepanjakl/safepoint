@@ -154,6 +154,12 @@ export const WORKBENCH_GROUPS: readonly WorkbenchGroup[] = [
       'Earlier prototypes, brought back from the archive and kept as they were: not maintained, and nothing else depends on them.',
     entries: [
       {
+        href: '/workbench/history/policy',
+        title: 'Policy workbench',
+        summary:
+          'Edit a promotion policy and see each product’s findings change, from the prototype’s recorded evidence.',
+      },
+      {
         href: '/workbench/history/colour-ramps',
         title: 'Colour ramps',
         summary:
