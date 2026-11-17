@@ -45,12 +45,18 @@ import {
 } from '@/lib/processes/brunch-orders/process';
 import { SOURCE_KINDS, sourceById, type SourceKind } from '@/lib/sources/model';
 
-import { ApplyStep, type ApplyProgress } from './apply-step';
-import { CalculateStep, type CalculateProgress } from './calculate-step';
-import { DataDrawer, type DataTabs } from './data-drawer';
-import { ProposeStep } from './propose/propose-step';
-import type { ProposeProgress } from './propose/types';
-import { RulesStep, type RulesProgress } from './rules/rules-step';
+import { ApplyStep, type ApplyProgress } from '@/components/engine/apply-step';
+import {
+  CalculateStep,
+  type CalculateProgress,
+} from '@/components/engine/calculate-step';
+import { DataDrawer, type DataTabs } from '@/components/engine/data-drawer';
+import { ProposeStep } from '@/components/engine/propose/propose-step';
+import type { ProposeProgress } from '@/components/engine/propose/types';
+import {
+  RulesStep,
+  type RulesProgress,
+} from '@/components/engine/rules/rules-step';
 
 // A run's read as its card shows it: the read's id and summary.
 export type RunRead = {

@@ -14,7 +14,7 @@ import type { ProcessStep, ProcessSummary } from '@/lib/shell/model';
 
 import { SUBJECT } from '@/lib/processes/brunch-orders/process';
 
-import { ApplyStep, type ApplyProgress } from './apply-step';
+import { ApplyStep, type ApplyProgress } from '@/components/engine/apply-step';
 import {
   DiscardRun,
   InstructionsText,
@@ -22,8 +22,8 @@ import {
   useRunRead,
   type RunRead,
 } from './orders-run';
-import { ProposeStep } from './propose/propose-step';
-import type { ProposeProgress } from './propose/types';
+import { ProposeStep } from '@/components/engine/propose/propose-step';
+import type { ProposeProgress } from '@/components/engine/propose/types';
 
 /*
   A Brunch orders run with no rulebook, as a person would meet it: it reads

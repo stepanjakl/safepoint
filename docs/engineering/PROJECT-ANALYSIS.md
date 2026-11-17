@@ -738,7 +738,7 @@ Local persistence uses a shared `createStoredRecord` abstraction with `useSyncEx
 
 The Brunch workflow composes individual step components and derives their status from progress. That keeps the operational sequence visible, though some step components have become large and mix fetching, state, and detailed presentation.
 
-Sources: [persistent shell layout](<../../app/(shell)/layout.tsx>), [browser storage abstraction](../../components/app-shell/stored-record.ts), [Brunch run composition](../../components/engine/orders-run.tsx).
+Sources: [persistent shell layout](<../../app/(shell)/layout.tsx>), [browser storage abstraction](../../components/app-shell/stored-record.ts), [Brunch run composition](../../components/processes/brunch-orders/orders-run.tsx).
 
 ---
 
