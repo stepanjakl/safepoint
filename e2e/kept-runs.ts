@@ -1,6 +1,14 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import path from 'node:path';
+
 import type { Page } from '@playwright/test';
 import type { inferRouterOutputs } from '@trpc/server';
 
+import { hashOf } from '@/lib/definitions/fingerprint';
+import {
+  BRUNCH_ORDERS_ID,
+  brunchOrdersProcess,
+} from '@/lib/processes/brunch-orders/process';
 import type { AppRouter } from '@/server/api/root';
 
 /*
@@ -26,6 +34,46 @@ export async function call<T>(
   };
   if (!body.result) throw new Error(`${path}: ${body.error?.message}`);
   return body.result.data;
+}
+
+/*
+  The revision the server keeps for the Brunch orders instructions a run starts
+  under (seeding keeps what is in fixtures/): the one a run may pin, since the
+  pin is a key into the revisions kept for the run's own instructions. The
+  frozen copies in e2e/fixtures/ were accepted under an earlier version, so a
+  test that lets the screen pin the rulebook it calculated on serves them
+  under this fingerprint instead (`asKeptRulebook`); nothing else about them
+  changes. A test that mocks every `rules` procedure must also ask the server
+  once for the rulebook (`seedKeptRulebooks`), since seeding is done by the
+  first of them to be answered for real.
+*/
+export function keptRulebook(): string {
+  const hash = hashOf(brunchOrdersProcess.instructions.text);
+  const folder = path.join('fixtures', BRUNCH_ORDERS_ID, 'rulebooks');
+  const version = readdirSync(folder).find((entry) =>
+    entry.endsWith(`-${hash}`),
+  );
+  if (!version)
+    throw new Error(`No rulebook is kept for instructions ${hash}.`);
+  const { head } = JSON.parse(
+    readFileSync(path.join(folder, version, 'revisions.json'), 'utf8'),
+  ) as { head: string };
+  return head;
+}
+
+// A frozen reply with the fingerprint it was frozen under replaced.
+export function asKeptRulebook<T>(frozen: T, fingerprint: string): T {
+  return JSON.parse(
+    JSON.stringify(frozen).replaceAll(fingerprint, keptRulebook()),
+  ) as T;
+}
+
+// Has the server keep what fixtures/ holds for the process: its first
+// answer from the rulebooks does.
+export async function seedKeptRulebooks(page: Page): Promise<void> {
+  await call(page, 'rules.get', {
+    text: brunchOrdersProcess.instructions.text,
+  });
 }
 
 // Starts a run under the process's current instructions, as the Start run

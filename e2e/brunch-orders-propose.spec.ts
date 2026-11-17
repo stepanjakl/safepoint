@@ -14,6 +14,7 @@ import {
 } from '@/lib/definitions/types';
 
 import { mockDecisions } from './kept-decisions';
+import { asKeptRulebook, seedKeptRulebooks } from './kept-runs';
 import { rulesReply } from './rules';
 import { mockProcedure } from './trpc';
 
@@ -29,16 +30,27 @@ const fixture = (name: string) =>
 const accepted = definitionSetSchema.parse(
   fixture('brunch-orders-accepted.json'),
 );
-const calculation = fixture('brunch-orders-calculation.json') as Calculation;
-const frozen = fixture('brunch-orders-proposal.json') as {
-  names: Record<string, string>;
-  calculated: {
-    calculations: { id: string; name: string }[];
-    rows: Record<string, Record<string, number | null>>;
-  };
-  proposal: Proposal;
-  trials: Record<string, Record<string, unknown>>;
-};
+// The screen pins the rulebook a calculation is on, and the server keeps a
+// pin only for a revision kept for the run's instructions.
+const frozenCalculation = fixture(
+  'brunch-orders-calculation.json',
+) as Calculation;
+const calculation = asKeptRulebook(
+  frozenCalculation,
+  frozenCalculation.fingerprint,
+);
+const frozen = asKeptRulebook(
+  fixture('brunch-orders-proposal.json') as {
+    names: Record<string, string>;
+    calculated: {
+      calculations: { id: string; name: string }[];
+      rows: Record<string, Record<string, number | null>>;
+    };
+    proposal: Proposal;
+    trials: Record<string, Record<string, unknown>>;
+  },
+  frozenCalculation.fingerprint,
+);
 
 let decisions: Awaited<ReturnType<typeof mockDecisions>>;
 let lastChanges: CellChange[] = [];
@@ -60,6 +72,7 @@ const applicationOf = (changes: CellChange[]): Application => ({
 });
 
 test.beforeEach(async ({ page }) => {
+  await seedKeptRulebooks(page);
   written = null;
   lastChanges = [];
   sent = [];

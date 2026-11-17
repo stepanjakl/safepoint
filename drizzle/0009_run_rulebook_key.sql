@@ -1,0 +1,1 @@
+ALTER TABLE "runs" ADD CONSTRAINT "runs_rulebook_fk" FOREIGN KEY ("process","instructions_hash","rulebook_id") REFERENCES "public"."rulebook_revisions"("process","instructions_hash","id") ON DELETE restrict ON UPDATE no action;

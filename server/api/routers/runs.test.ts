@@ -6,7 +6,12 @@ import { brunchOrdersProcess } from '@/lib/processes/brunch-orders/process';
 import { runs } from '@/server/db/schema';
 import { keepStandInRead } from '@/server/storage/reads.fixture';
 
-import { DIRECT, PUBLISHED, rulesFingerprint } from '../kept-run.fixture';
+import {
+  DIRECT,
+  keepRulesRevision,
+  PUBLISHED,
+  rulesFingerprint,
+} from '../kept-run.fixture';
 import { caller, failure } from '../run.fixture';
 
 // The runs procedures, called in process on a scratch database.
@@ -84,6 +89,7 @@ describe('runs router', () => {
       instructions: V3,
     });
     const at = { process: 'brunch-orders' as const, runId: id };
+    await keepRulesRevision();
     expect(
       await caller().runs.record({
         ...at,

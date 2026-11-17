@@ -551,6 +551,34 @@ describe('a run', () => {
     ).toMatchObject({ code: '23503' });
   });
 
+  it('pins only a revision kept for its own instructions', async () => {
+    const db = scratch();
+    await seed(db);
+    await db.insert(runs).values(started);
+    await db.insert(rulebookRevisions).values(revision('aaaaaaaaaaaa'));
+    expect(
+      await refused(db.update(runs).set({ rulebookId: 'bbbbbbbbbbbb' })),
+    ).toMatchObject({ code: '23503' });
+    await db.update(runs).set({ rulebookId: 'aaaaaaaaaaaa' });
+    // A revision kept for other instructions is not one for this run.
+    await db.insert(instructionVersions).values({
+      process: PROCESS,
+      hash: hashOf('Order less.'),
+      version: 'v2',
+      text: 'Order less.',
+      origin: 'declared',
+      publishedAt: AT,
+    });
+    await db.insert(rulebookRevisions).values({
+      ...revision('cccccccccccc'),
+      instructionsHash: hashOf('Order less.'),
+      body: { hash: hashOf('Order less.'), id: 'cccccccccccc' } as never,
+    });
+    expect(
+      await refused(db.update(runs).set({ rulebookId: 'cccccccccccc' })),
+    ).toMatchObject({ code: '23503' });
+  });
+
   it('once discarded, stays discarded and moves no further', async () => {
     const db = scratch();
     await seed(db);

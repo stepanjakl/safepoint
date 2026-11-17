@@ -6,6 +6,7 @@ import { expect, test, type Page } from '@playwright/test';
 import type { Calculation, CrossCheck } from '@/lib/definitions/calculate';
 import { definitionSetSchema } from '@/lib/definitions/types';
 
+import { asKeptRulebook, seedKeptRulebooks } from './kept-runs';
 import { rulesReply, type RulesKept } from './rules';
 import { mockProcedure } from './trpc';
 
@@ -19,9 +20,12 @@ import { mockProcedure } from './trpc';
 const accepted = definitionSetSchema.parse(
   JSON.parse(readFileSync('e2e/fixtures/brunch-orders-accepted.json', 'utf8')),
 );
-const calculation = JSON.parse(
+const frozen = JSON.parse(
   readFileSync('e2e/fixtures/brunch-orders-calculation.json', 'utf8'),
 ) as Calculation;
+// The screen pins the rulebook a calculation is on, and the server keeps a
+// pin only for a revision kept for the run's instructions.
+const calculation = asKeptRulebook(frozen, frozen.fingerprint);
 
 // The model agrees everywhere but one value: it did not round up.
 const check: CrossCheck = {
@@ -86,6 +90,7 @@ let stale = false;
 let current = calculation.fingerprint;
 
 test.beforeEach(async ({ page }) => {
+  await seedKeptRulebooks(page);
   stale = false;
   current = calculation.fingerprint;
   await mockProcedure(page, 'rules.get', {

@@ -358,9 +358,8 @@ export const runs = pgTable(
     // Null until the run has read its data; a read taken again replaces it.
     readId: text('read_id'),
     // The accepted rulebook it calculates on (fingerprintOf), null until it
-    // pins one; a process with no rulebook never does. Not yet a key into
-    // rulebook_revisions: the browser tests pin a revision of other
-    // instructions (DATABASE.md, "The run's pin is not yet a key").
+    // pins one; a process with no rulebook never does. A revision kept for
+    // this run's own instructions (runs_rulebook_fk).
     rulebookId: text('rulebook_id'),
     // The step it is at: the furthest one a person can act on now.
     stage: text('stage').notNull(),
@@ -394,6 +393,15 @@ export const runs = pgTable(
       name: 'runs_read_fk',
       columns: [t.readProcess, t.readId],
       foreignColumns: [reads.process, reads.id],
+    }).onDelete('restrict'),
+    foreignKey({
+      name: 'runs_rulebook_fk',
+      columns: [t.process, t.instructionsHash, t.rulebookId],
+      foreignColumns: [
+        rulebookRevisions.process,
+        rulebookRevisions.instructionsHash,
+        rulebookRevisions.id,
+      ],
     }).onDelete('restrict'),
   ],
 );

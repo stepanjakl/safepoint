@@ -111,6 +111,10 @@ export async function keepDirectProposal(
   return proposal;
 }
 
+// A run pins a kept revision, as Calculate keeps the one it used.
+export const keepRulesRevision = () =>
+  putRevision(owner, rulesSet, { reason: 'used' });
+
 // A run started and moved on to its read and, for the rulebook process, its
 // pinned rulebook, through the procedures as the screens will.
 export async function startedRun(
@@ -122,9 +126,7 @@ export async function startedRun(
     process,
     instructions: hashOf(text),
   });
-  // A run pins a kept revision, as Calculate keeps the one it used.
-  if (process === 'brunch-orders')
-    await putRevision(owner, rulesSet, { reason: 'used' });
+  if (process === 'brunch-orders') await keepRulesRevision();
   await caller().runs.record({
     process,
     runId: run.id,
