@@ -11,7 +11,7 @@ import type { Advice } from '@/lib/engine/advise';
 import { groupDifferences } from '@/lib/engine/group-differences';
 import type { DefinitionSubject } from '@/lib/engine/subject';
 import type { Definition } from '@/lib/engine/types';
-import { wordDiff } from '@/lib/text/word-diff';
+import { wordDiff } from '@/lib/ui/word-diff';
 
 /*
   Writes that came out different, for a person to choose between, in the
