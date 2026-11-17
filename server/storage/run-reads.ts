@@ -59,8 +59,10 @@ export function readProcessOf(owner: { id: string }): string {
 }
 
 // The last live read saved in the repository, so tests and the default view
-// need no network. Saving one is an explicit action.
-const capturedPath = (of: RunReads) => path.join(process.cwd(), of.captured);
+// need no network. Saving one is an explicit action. Not traced by itself:
+// next.config.ts includes the files where they are read.
+const capturedPath = (of: RunReads) =>
+  path.join(/*turbopackIgnore: true*/ process.cwd(), of.captured);
 
 // What a failed request said, as one sentence: the service's own message
 // where its error is the JSON it answers with.
