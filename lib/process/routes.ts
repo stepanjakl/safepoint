@@ -15,13 +15,10 @@ import { promotionProcess, supportProcess } from './placeholder-process';
 export const PROCESS_ROUTES: { process: ProcessSummary; href: string }[] = [
   { process: promotionProcess, href: '/examples/promotion' },
   { process: supportProcess, href: '/examples/support' },
-  // Built step by step, development only (docs/processes/brunch-orders/PLAN.md).
-  ...(process.env.NODE_ENV === 'development'
-    ? [
-        { process: brunchOrdersProcess, href: BRUNCH_ORDERS_HREF },
-        { process: brunchOrdersDirectProcess, href: BRUNCH_ORDERS_DIRECT_HREF },
-      ]
-    : []),
+  // The two processes a deployment exists to show, built step by step
+  // (docs/processes/brunch-orders/PLAN.md).
+  { process: brunchOrdersProcess, href: BRUNCH_ORDERS_HREF },
+  { process: brunchOrdersDirectProcess, href: BRUNCH_ORDERS_DIRECT_HREF },
 ];
 
 export function processHref(id: string) {

@@ -22,9 +22,6 @@ import {
   works for. Every process here has its instruction versions kept; only the
   ones with `runs` have runs, decisions and writes. The placeholder processes
   play a recorded run and keep none.
-
-  Not gated on NODE_ENV as lib/process/routes.ts is: what is kept does not
-  depend on whether a page is shown.
 */
 
 export type KeptProcess = {

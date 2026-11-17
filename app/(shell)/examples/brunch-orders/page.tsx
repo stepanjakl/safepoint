@@ -1,5 +1,3 @@
-import { notFound } from 'next/navigation';
-
 import { ProcessView } from '@/components/app-shell/process/process-view';
 import { OrdersRun } from '@/components/brunch-orders/orders-run';
 import { RulebookProvider } from '@/components/brunch-orders/rulebook-panel';
@@ -19,13 +17,12 @@ import { latestSummary } from '@/server/storage/source-reads';
 
 /*
   Brunch orders, built one step at a time (docs/processes/brunch-orders/PLAN.md).
-  Development only. A run is started by hand and moves only when a person
+  A run is started by hand and moves only when a person
   acts; it is kept in this browser, its read of the sheet on the server.
 */
 export default async function BrunchOrdersPage({
   searchParams,
 }: PageProps<'/examples/brunch-orders'>) {
-  if (process.env.NODE_ENV !== 'development') notFound();
   const run = (await searchParams).run;
   const written = await lastWrite(BRUNCH_ORDERS_DEFINITIONS);
   const sheets = {

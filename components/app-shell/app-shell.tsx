@@ -52,24 +52,20 @@ export async function AppShell({
       evaluation: supportProcess.evaluation,
       plan: supportPlan,
     }),
-    ...(process.env.NODE_ENV === 'development'
-      ? [
-          processNavigationItem({
-            id: brunchOrdersProcess.id,
-            href: processHref(brunchOrdersProcess.id),
-            name: brunchOrdersProcess.name,
-            evaluation: brunchOrdersProcess.evaluation,
-            plan: brunchOrdersPlan,
-          }),
-          processNavigationItem({
-            id: brunchOrdersDirectProcess.id,
-            href: processHref(brunchOrdersDirectProcess.id),
-            name: brunchOrdersDirectProcess.name,
-            evaluation: brunchOrdersDirectProcess.evaluation,
-            plan: brunchOrdersDirectPlan,
-          }),
-        ]
-      : []),
+    processNavigationItem({
+      id: brunchOrdersProcess.id,
+      href: processHref(brunchOrdersProcess.id),
+      name: brunchOrdersProcess.name,
+      evaluation: brunchOrdersProcess.evaluation,
+      plan: brunchOrdersPlan,
+    }),
+    processNavigationItem({
+      id: brunchOrdersDirectProcess.id,
+      href: processHref(brunchOrdersDirectProcess.id),
+      name: brunchOrdersDirectProcess.name,
+      evaluation: brunchOrdersDirectProcess.evaluation,
+      plan: brunchOrdersDirectPlan,
+    }),
   ];
   return (
     <ShellPageTransitionProvider processPaths={items.map((item) => item.href)}>
