@@ -180,12 +180,14 @@ placeholders such as `values.<id>`, because a real example steers the model.
 - **No test spends quota or writes to `fixtures/`.** Use the stand-in models
   in `models.fixture.ts` and `inScratchDirectory()`. The browser test serves
   a frozen rulebook, because drafting replaces the kept one.
-- **The engine does no file IO.** `lib/engine/` imports no `node:fs`,
-  React, Next or `@/server`; whatever reads or writes a kept file is under
+- **The engine does no file IO, and sits below the app.** `lib/engine/`
+  imports no `node:fs`, React, Next, `@/server`, `@/lib/shell`, `@/components`
+  or `@/app`; the types it works on are its own (`lib/engine/subject.ts`), and
+  the shell imports them, never the reverse. Whatever reads or writes a kept file is under
   `server/` (`storage/`, `jobs/`, `operations/`, `workflows/`), and every
   module there opens with `import 'server-only'`, so a client bundle that
-  reaches one fails `pnpm build`. ESLint holds the same lines (`eslint.config.mjs`). The one
-  exception is `lib/engine/limits.ts`, which reaches the database through
+  reaches one fails `pnpm build`. ESLint holds the same lines
+  (`eslint.config.mjs`). The one exception is `lib/engine/limits.ts`, which reaches the database through
   `server/storage/model-limits.ts`. Vitest aliases `server-only` to an empty
   module.
 - **Drafts, rewrites and proposals are Vercel Workflow runs**

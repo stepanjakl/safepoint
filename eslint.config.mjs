@@ -4,7 +4,7 @@ import nextTypeScript from 'eslint-config-next/typescript';
 /*
   Where code may reach. lib/engine is the rules engine: it finds, checks,
   calculates and decides on what it is given, and knows nothing of files,
-  React or Next. Everything that reads or writes a kept file is under server/
+  the shell, React or Next. Everything that reads or writes a kept file is under server/
   (which the build refuses to put in a client bundle, `server-only`), and
   components/ and the client files of app/ reach the server only by request,
   importing at most a type from server/ (the procedures' `AppRouter`).
@@ -46,6 +46,11 @@ const engine = (serverGroup = ALL_SERVER) => ({
       group: ['@/components/*', '@/app/*'],
       message:
         'The engine is below the UI: components/ and app/ import the engine, never the reverse.',
+    },
+    {
+      group: ['@/lib/shell', '@/lib/shell/*'],
+      message:
+        "The engine is below the shell: lib/shell imports the engine, never the reverse. Put the engine's own types in lib/engine/subject.ts.",
     },
     {
       group: serverGroup,
