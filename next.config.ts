@@ -5,6 +5,9 @@ import { pathToFileURL } from 'node:url';
 
 import { withWorkflow } from 'workflow/next';
 
+const CAPTURED_READ = './fixtures/brunch-orders/sheet-snapshot.json';
+const KEPT_FIXTURES = ['./fixtures/brunch-orders/**/*'];
+
 const nextConfig: NextConfig = {
   // Next writes AGENTS.md and CLAUDE.md into the repository root by default.
   // Safepoint adds agent instructions deliberately, not as build output.
@@ -19,6 +22,21 @@ const nextConfig: NextConfig = {
   // which a bundled copy cannot find (server/db/client.ts). pg is external
   // by Next's own list.
   serverExternalPackages: ['@electric-sql/pglite'],
+
+  // Files the server reads by path at run time, which a trace cannot see.
+  // Vercel bundles only what a route's trace lists. The fixtures hold the
+  // rulebooks and profile a database is seeded from the first time a process
+  // needs them (server/storage/rulebook-files.ts) and the captured sheet read
+  // (server/storage/source-reads.ts, brunch-orders-reads.ts). Each key is a
+  // route, scoped to those that reach them: the tRPC route, the Workflow
+  // route its steps run in, and the page that shows the captured read. Not
+  // drizzle/: a deployment is migrated by its build (scripts/vercel-build.mjs),
+  // and only the PGlite path reads it at run time.
+  outputFileTracingIncludes: {
+    '/api/trpc/\\[trpc\\]': KEPT_FIXTURES,
+    '/.well-known/workflow/v1/flow': KEPT_FIXTURES,
+    '/examples/brunch-orders': [CAPTURED_READ],
+  },
 
   // Webpack holds every compiled module in memory for the life of `pnpm dev`;
   // this trades slightly slower compiles for a lower peak heap.

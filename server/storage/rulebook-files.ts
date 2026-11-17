@@ -253,7 +253,12 @@ export type SeedReport = { inserted: number; present: number };
 export async function seedRulebooks(
   db: Database,
   process: string,
-  root = path.join(globalThis.process.cwd(), 'fixtures'),
+  // Traced by next.config.ts (outputFileTracingIncludes), not by guessing at
+  // this path, which would take in every folder named fixtures.
+  root = path.join(
+    /*turbopackIgnore: true*/ globalThis.process.cwd(),
+    'fixtures',
+  ),
 ): Promise<SeedReport> {
   const fixtures = await readFixtures(root, process);
   const report: SeedReport = { inserted: 0, present: 0 };

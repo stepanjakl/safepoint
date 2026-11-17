@@ -51,13 +51,18 @@ export function driverFor(
     : {
         kind: 'pglite',
         dataDir: path.resolve(
-          process.cwd(),
+          // Not traced: a chosen folder, never part of a deployment
+          // (next.config.ts, outputFileTracingIncludes).
+          /*turbopackIgnore: true*/ process.cwd(),
           env.SAFEPOINT_PGLITE_DIR || path.join('data', 'pglite'),
         ),
       };
 }
 
-const migrationsFolder = () => path.join(process.cwd(), 'drizzle');
+// Read only by the PGlite path: a deployment's database is migrated by its
+// build (scripts/vercel-build.mjs), so drizzle/ is not traced into a function.
+const migrationsFolder = () =>
+  path.join(/*turbopackIgnore: true*/ process.cwd(), 'drizzle');
 
 type Opened = {
   db: Database;

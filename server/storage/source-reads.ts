@@ -90,7 +90,8 @@ function summary(read: KeptSourceRead): SourceSummary {
 // the same as none.
 async function captured(id: SourceId): Promise<KeptSourceRead | null> {
   const read = await readKept(
-    path.join(process.cwd(), CAPTURED[id]),
+    // Not traced by itself, so next.config.ts includes the file where it is read.
+    path.join(/*turbopackIgnore: true*/ process.cwd(), CAPTURED[id]),
     sheetReadSchema,
     { unreadableIsMissing: true },
   );
