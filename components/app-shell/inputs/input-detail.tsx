@@ -3,15 +3,23 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Button as AriaButton } from 'react-aria-components';
-import {
-  DISCLOSURE,
-  DISCLOSURE_BODY,
-  SUMMARY,
-} from '@/components/review/review-item-detail';
 import { Glyph } from '@/components/ui/glyph';
 import { Ledger, LedgerRow } from '@/components/ui/ledger';
 import type { InputDetail } from '@/lib/shell/input-details';
 import { RemoveInputDialog } from './input-connections';
+
+/*
+  The disclosure stack. Each `<details>` is a rule with a mono +/- in the
+  gutter, which is a pseudo element on the summary and so stays in CSS; the
+  `disclosure` class is that hook.
+*/
+const DISCLOSURE = 'disclosure border-rule-faint border-b';
+// Keyboard focus is a wash, so the summary reaches out past the text by the
+// same amount it pads back in: the wash has room at both ends and the marker
+// and label stay where they were.
+const SUMMARY =
+  'control-wash rounded-control focus-visible:bg-surface-hover -mx-2 flex min-h-12 cursor-pointer flex-wrap items-baseline gap-x-3 gap-y-1 px-2 py-3.5 text-dense [&>span]:text-muted [&>span]:ml-auto [&>span]:text-meta';
+const DISCLOSURE_BODY = 'pb-5 pl-5.5 text-dense leading-relaxed';
 
 // A filter earns its place once the records outrun a glance.
 const FILTER_FROM = 8;
