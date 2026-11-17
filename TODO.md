@@ -26,7 +26,7 @@ The [9 October direction review](docs/processes/brunch-orders/DIRECTION-REVIEW.m
 - [ ] **Phase 5. Check.** Run accepted definitions on every proposed order.
 - [ ] **Phase 6. Review.** Approve, change within allowed bounds or reject each order.
 - [ ] **Phase 7. Apply.** Write approved orders, read them back and support safe undo.
-- [ ] **Phase 8. History and learning.** Persist runs, reads and decisions; derive reviewable instruction suggestions.
+- [ ] **Phase 8. History and learning.** Runs, reads and decisions are persisted on the server; what remains is deriving reviewable instruction suggestions from them.
 - [ ] **Phase 9. Wider scope.** Add further purposes one at a time with examples.
 
 ## Removed experiment: Brunch weekend
@@ -97,17 +97,6 @@ The ordered build below sequenced the Alderton's scenario. Stages 0 and 1A are c
   - Keep replay as the default application path. Do not add a public generation endpoint, persistence, or a long-lived human-review workflow in this stage.
   - **Gate:** the feasibility report proves that model output can pass the real schema, makes failures visible, and does not select a replay because it was the most flattering run.
 
-- [ ] **5. Add persistence and durable proposal generation**
-  - Provision a Neon development database with separate preview and production configuration reserved for later stages.
-  - Define Drizzle Postgres schemas and migrations for sessions, agent and workflow runs, proposal batches, candidates, evidence, review events, effects, attempts, and audit events.
-  - Before creating the Neon project, choose and record a supported Vercel and Neon region pair and measure the deployed path; do not assume Workflow is pinned to `iad1`.
-  - Compare `node-postgres` with Vercel Fluid compute against Neon's HTTP driver for the implemented access pattern. Use WebSockets only if an interactive transaction is actually required, and use the direct connection for migrations.
-  - Add a simple seed and reset path for local development.
-  - Confirm that data can be inspected through local Drizzle Studio and Neon's hosted Tables interface.
-  - Run live proposal generation as a separate Vercel Workflow that stores a validated proposal and ends before human review.
-  - Treat every `start()` call as a new run. Use a unique application operation and atomic first-step claim so duplicate starts cannot create two accepted batches or hide duplicate model cost.
-  - **Gate:** a review survives reload, its history is inspectable, and redeploying during generation cannot lose completed steps or grant the model write authority.
-
 - [ ] **6. Build deterministic execution with fake adapters**
   - Add Vercel Workflow SDK and implement separate commit and compensation workflows.
   - Keep orchestration in workflow functions and network or database side effects in workflow steps.
@@ -133,6 +122,18 @@ The ordered build below sequenced the Alderton's scenario. Stages 0 and 1A are c
   - Deploy the public sandbox and write the case study. No video is required.
   - Confirm bounded live generation falls back automatically to the labelled replay when a model or dependency is unavailable.
   - **Gate:** the release checklist in [`docs/archive/DELIVERY-PLAN.md`](docs/archive/DELIVERY-PLAN.md) passes in the deployed environment.
+
+## Open after moving state to the server
+
+Runs, reads, rulebooks, proposals, decisions and jobs are kept on the server and the app is deployable ([Database](docs/engineering/DATABASE.md), [Architecture](docs/engineering/ARCHITECTURE.md)). What is still open:
+
+- [ ] Real sign-in and roles. The gate is one shared password and a self-declared name.
+- [ ] Throttle attempts at the gate.
+- [ ] Share model-limit state across instances. Learned limits and the day's count are in the database, but which model is resting and the requests made this minute are per instance.
+- [ ] Neon preview branching, so a preview does not share the production database.
+- [ ] A retention limit: reads, proposals and decisions are never deleted ([Database](docs/engineering/DATABASE.md), open question 4).
+- [ ] Record the visual baseline again (`pnpm check:visual:update`, on the machine that checks it); it is knowingly stale.
+- [ ] The known accessibility failure in `e2e/brunch-orders.spec.ts:13` (an axe `label-content-name-mismatch`).
 
 ## Later product work
 
