@@ -265,6 +265,10 @@ In development the owner annotates the running app with the Agentation toolbar
    not act on.
 3. Report briefly, then start `pnpm agentation:wait` again unless told to stop.
 
+`AGENTATION=off` in the environment of `pnpm dev` starts no server and draws no
+toolbar (`scripts/runtime/dev.ts` sets `NEXT_PUBLIC_AGENTATION`; Playwright's
+server is started that way).
+
 "Check my annotations" without waiting means `agentation_get_all_pending` now.
 Annotations are held in memory, so they last as long as `pnpm dev`.
 
