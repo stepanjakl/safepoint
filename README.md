@@ -135,6 +135,17 @@ A person enters the password and their name once; both are held in a signed cook
 
 To sign everyone out, or to rotate, change `SAFEPOINT_COOKIE_SECRET` (and `SAFEPOINT_ACCESS_KEY`, to change the password). The development-only tools (`/workbench`, `/api/dev`) refuse outside local development whoever is signed in. To try the gate on your own machine, start the server with `SAFEPOINT_GATE=1` and both variables set.
 
+## Deploying to Vercel
+
+Drafting a rulebook, writing one rule again and proposing are Vercel Workflow runs (`server/workflows/`), so a long job carries on when its function is frozen or replaced. On Vercel they use the Vercel World with nothing to configure in the app, but the project needs:
+
+- **Enable access to System Environment Variables** (Settings, then Environment Variables), and a redeploy after turning it on. Workflow knows it is deployed by `VERCEL_DEPLOYMENT_ID`, which Vercel exposes only with this setting; without it the build emits local output, every run fails on the read-only filesystem (`EROFS`), and no run appears in the dashboard.
+- **No `WORKFLOW_TARGET_WORLD`.** Workflow picks the Vercel World itself. `local` fails on the first write, and `vercel` does not make up for the setting above.
+- **The database variables and migrations**, as for the rest of the app: a run's steps read and write the database, and `drizzle/0008_job_runs.sql` adds the column a job's run is recorded in.
+- **`/.well-known/workflow/` left open** by the request proxy (`proxy.ts`, tested in `proxy.test.ts`): Workflow's queue delivers each step there and authenticates it itself.
+
+A step runs within one function invocation, whose limit is the plan's maximum (the generated route asks for `maxDuration: 'max'`, at most 800 seconds): writing one rule, which may take several model calls, must finish inside it. In development nothing needs setting: `pnpm dev` uses the Local World in `.next/workflow-data/`, and `npx workflow web` shows its runs when started with `WORKFLOW_LOCAL_DATA_DIR=.next/workflow-data`.
+
 ## Documentation
 
 The [documentation index](docs/README.md) separates current guidance, process plans, research and historical records. Start with:

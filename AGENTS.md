@@ -181,12 +181,21 @@ placeholders such as `values.<id>`, because a real example steers the model.
   a frozen rulebook, because drafting replaces the kept one.
 - **The engine does no file IO.** `lib/definitions/` imports no `node:fs`,
   React, Next or `@/server`; whatever reads or writes a kept file is under
-  `server/` (`storage/`, `jobs/`, `operations/`), and every module there opens
+  `server/` (`storage/`, `jobs/`, `operations/`, `workflows/`), and every module there opens
   with `import 'server-only'`, so a client bundle that reaches one fails
   `pnpm build`. ESLint holds the same lines (`eslint.config.mjs`). The one
   exception is `lib/definitions/limits.ts`, which reaches the database through
   `server/storage/model-limits.ts`. Vitest aliases `server-only` to an empty
   module.
+- **Drafts, rewrites and proposals are Vercel Workflow runs**
+  (`server/workflows/`, started by `server/jobs/`). A workflow function only
+  orchestrates; a `'use step'` function loads its work by dynamic import
+  (`draft-steps.ts`), because the workflow's bundle keeps a step module's
+  imports and `pnpm build` refuses the database driver in its sandbox. A
+  step is handed ids, never what they name, and may run twice, so it looks
+  for what it would make before making it (`server/workflows/steps.test.ts`).
+  Under Vitest the run is the workflow called in the test's process
+  (`runner.ts`); a test hands a job its stand-in models as before.
 - **Where things are kept.** Everything is in the database
   (`docs/engineering/DATABASE.md`): PGlite under `data/pglite/` with no
   `DATABASE_URL`. Rulebooks and data profiles are read and written only
