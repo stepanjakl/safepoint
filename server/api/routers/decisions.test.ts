@@ -388,7 +388,7 @@ describe('decisions router', () => {
       { ...on, decision: { key: 'EG-06', kind: 'change' } },
       {
         ...on,
-        process: 'promotion-release',
+        process: 'nobody',
         decision: { key: 'EG-06', kind: 'approve' },
       },
       { ...on, runId: '../x', decision: { key: 'EG-06', kind: 'approve' } },

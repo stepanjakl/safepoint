@@ -8,15 +8,14 @@ test.beforeEach(async ({ page, colorScheme }) => {
 });
 
 test('home page', async ({ page }, testInfo) => {
-  // The run's own heading, not its request step, whose drawing is still changing.
   await expect(
-    page.getByRole('heading', { level: 1, name: /^Run, / }),
+    page.getByRole('heading', { level: 1, name: 'No run selected' }),
   ).toBeAttached();
   await expectContrast(page, testInfo, 'home');
 });
 
 test('no run selected', async ({ page, colorScheme }, testInfo) => {
-  await page.goto('/examples/promotion');
+  await page.goto('/examples/brunch-orders-direct');
   await expect(
     page.getByRole('heading', { level: 1, name: 'No run selected' }),
   ).toBeAttached();
@@ -46,23 +45,11 @@ test('process search', async ({ page }, testInfo) => {
     exact: true,
   });
   await expect(search).toBeFocused();
-  await search.fill('Promotion');
+  await search.fill('Brunch');
   await expect(
-    page.getByRole('link', { name: 'Promotion release', exact: true }),
+    page.getByRole('link', { name: 'Brunch orders', exact: true }).first(),
   ).toBeVisible();
   await expectContrast(page, testInfo, 'search');
-});
-
-test('release review', async ({ page }, testInfo) => {
-  await page
-    .getByRole('button', { name: 'Review release', exact: true })
-    .click();
-  await expect(page.getByRole('dialog')).toBeVisible();
-  await page.locator('.review-queue button[aria-expanded]').first().click();
-  await expect(
-    page.getByText('Loading item details…', { exact: true }),
-  ).toBeHidden();
-  await expectContrast(page, testInfo, 'review');
 });
 
 test('arranging the process list', async ({ page }, testInfo) => {
@@ -79,25 +66,17 @@ test('a tooltip', async ({ page }, testInfo) => {
   await expectContrast(page, testInfo, 'tooltip');
 });
 
-/* The example pages put states the home page never shows side by side --
-   every run outcome, every freshness -- so a colour that fails only in one
-   of them is still found. */
-for (const [name, path] of [
-  ['states example', '/examples/states'],
-  ['support example', '/examples/support?run=run-42'],
-] as const) {
-  test(name, async ({ page, colorScheme }, testInfo) => {
-    await page.goto(path);
-    await expect(
-      page.getByRole('button', { name: 'Search processes', exact: true }),
-    ).toBeVisible();
-    await page.evaluate((value) => {
-      document.documentElement.dataset.theme = value;
-    }, colorScheme as string);
-    await page.evaluate(() => document.fonts.ready);
-    await expectContrast(page, testInfo, name);
-  });
-}
+/* The run workbench draws a run at every stage side by side -- every step
+   state -- so a colour that fails only in one of them is still found. */
+test('run lifecycle', async ({ page, colorScheme }, testInfo) => {
+  await page.goto('/workbench/run');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await page.evaluate((value) => {
+    document.documentElement.dataset.theme = value;
+  }, colorScheme as string);
+  await page.evaluate(() => document.fonts.ready);
+  await expectContrast(page, testInfo, 'run lifecycle');
+});
 
 test('scanner detects an injected contrast regression', async ({
   page,

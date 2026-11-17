@@ -1,13 +1,15 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { mockPromotionInstructions } from './kept-instructions';
+import { brunchOrdersProcess } from '@/lib/processes/brunch-orders/process';
+
+import { mockInstructions } from './kept-instructions';
 
 /* The sheet's Instructions, Inputs and Outputs tabs, and the detail drawer
    their rows open. Focus is asserted at every close: the drawer hands it
    back to whatever opened it, and a swap keeps the original opener. */
 
 async function openTab(page: Page, tab: 'Inputs' | 'Instructions' | 'Outputs') {
-  await page.goto('/examples/promotion?run=run-104');
+  await page.goto('/examples/brunch-orders');
   await expect(
     page.getByRole('button', { name: 'Search processes', exact: true }),
   ).toBeVisible();
@@ -23,85 +25,28 @@ async function openTab(page: Page, tab: 'Inputs' | 'Instructions' | 'Outputs') {
 const drawer = (page: Page) => page.locator('.drawer-aside');
 const drawerTitle = (page: Page, name: string | RegExp) =>
   drawer(page).getByRole('heading', { name });
-const inputRow = (page: Page, name: string) =>
-  page
-    .locator('.process-panels')
-    .getByRole('button', { name: new RegExp(`^${name}`) });
-
-test('an input opens its detail, and Escape hands focus back to its row', async ({
-  page,
-}) => {
-  await openTab(page, 'Inputs');
-  const row = inputRow(page, 'Supply position');
-  await row.click();
-  await expect(drawerTitle(page, 'Supply position')).toBeVisible();
-  await expect(row).toHaveAttribute('aria-expanded', 'true');
-
-  await page.keyboard.press('Escape');
-  await expect(drawer(page)).toHaveCount(0);
-  await expect(row).toBeFocused();
-  await expect(row).toHaveAttribute('aria-expanded', 'false');
-});
-
-test('the row that opened the detail closes it again', async ({ page }) => {
-  await openTab(page, 'Inputs');
-  const row = inputRow(page, 'Campaign brief');
-  await row.click();
-  await expect(drawerTitle(page, 'Campaign brief')).toBeVisible();
-  await row.click();
-  await expect(drawer(page)).toHaveCount(0);
-  await expect(row).toBeFocused();
-});
-
-test('opening another input swaps the detail in place', async ({ page }) => {
-  await openTab(page, 'Inputs');
-  await inputRow(page, 'Supply position').click();
-  await expect(drawerTitle(page, 'Supply position')).toBeVisible();
-  const second = inputRow(page, 'Demand forecast');
-  await second.click();
-  await expect(drawerTitle(page, 'Demand forecast')).toBeVisible();
-  await expect(drawerTitle(page, 'Supply position')).toHaveCount(0);
-  await expect(second).toHaveAttribute('aria-expanded', 'true');
-
-  await page.keyboard.press('Escape');
-  await expect(drawer(page)).toHaveCount(0);
-  await expect(second).toBeFocused();
-});
-
-test('Add opens the preview panel and closes back onto itself', async ({
-  page,
-}) => {
-  await openTab(page, 'Inputs');
-  const add = page.getByRole('button', { name: 'Add an input, preview' });
-  await add.click();
-  await expect(drawerTitle(page, 'Add an input')).toBeVisible();
-  await expect(add).toHaveAttribute('aria-expanded', 'true');
-  await page.keyboard.press('Escape');
-  await expect(drawer(page)).toHaveCount(0);
-  await expect(add).toBeFocused();
-});
 
 test('instructions open their latest version beside the list of versions', async ({
   page,
 }) => {
   await openTab(page, 'Instructions');
   const versions = page.getByRole('list', { name: /^Instructions/ });
-  const current = versions.getByRole('button', { name: /^v4 · Live/ });
+  const current = versions.getByRole('button', { name: /^v3 · Live/ });
   // The latest opens with the tab, and leaves focus where it was.
-  await expect(drawerTitle(page, 'Version v4')).toBeAttached();
+  await expect(drawerTitle(page, 'Version v3')).toBeAttached();
   await expect(current).toHaveAttribute('aria-expanded', 'true');
-  const diff = drawer(page).getByRole('list', { name: 'Changes from v3' });
+  const diff = drawer(page).getByRole('list', { name: 'Changes from v2' });
   await expect(diff).toHaveCount(0);
   // Each version says how many runs ran under it.
   await expect(current).toContainText('run');
 
   // The same panel turns to what changed, and back.
-  const changes = drawer(page).getByRole('radio', { name: 'Changes from v3' });
+  const changes = drawer(page).getByRole('radio', { name: 'Changes from v2' });
   await changes.click();
   await expect(changes).toBeChecked();
   await expect(diff).toBeVisible();
   await expect(diff.getByText('Added:')).not.toHaveCount(0);
-  await drawer(page).getByRole('radio', { name: 'Text of v4' }).click();
+  await drawer(page).getByRole('radio', { name: 'Text of v3' }).click();
   await expect(diff).toHaveCount(0);
 
   // The row that has it open closes it.
@@ -110,11 +55,11 @@ test('instructions open their latest version beside the list of versions', async
   await expect(current).toBeFocused();
 
   // An earlier version is restored as a draft, which then leads the list.
-  await versions.getByRole('button', { name: /^v3/ }).click();
-  await expect(drawerTitle(page, 'Version v3')).toBeAttached();
-  await drawer(page).getByRole('button', { name: 'Draft from v3' }).click();
-  await expect(drawerTitle(page, 'New version v5')).toBeVisible();
-  const draft = versions.getByRole('button', { name: /^v5 · Draft/ });
+  await versions.getByRole('button', { name: /^v2/ }).click();
+  await expect(drawerTitle(page, 'Version v2')).toBeAttached();
+  await drawer(page).getByRole('button', { name: 'Draft from v2' }).click();
+  await expect(drawerTitle(page, 'New version v4')).toBeVisible();
+  const draft = versions.getByRole('button', { name: /^v4 · Draft/ });
   await expect(draft).toHaveAttribute('aria-expanded', 'true');
   await page.keyboard.press('Escape');
   await expect(drawer(page)).toHaveCount(0);
@@ -129,7 +74,7 @@ test('versions this browser published before the server did are said, and can be
     localStorage.setItem(
       'safepoint.instructions.v2',
       JSON.stringify({
-        'promotion-release': {
+        'brunch-orders': {
           published: [
             {
               text: 'Written in this browser.\n\nKept only here.',
@@ -151,12 +96,12 @@ test('versions this browser published before the server did are said, and can be
   // The unpublished draft was not lost: it leads the list.
   await expect(
     page.getByRole('list', { name: /^Instructions/ }).getByRole('button', {
-      name: /^v5 · Draft/,
+      name: /^v4 · Draft/,
     }),
   ).toBeVisible();
   await note.getByRole('button', { name: /^Draft from the version/ }).click();
   await expect(
-    drawer(page).getByRole('textbox', { name: 'Instructions, draft of v5' }),
+    drawer(page).getByRole('textbox', { name: 'Instructions, draft of v4' }),
   ).toHaveValue('Written in this browser.\n\nKept only here.');
   await note.getByRole('button', { name: 'Dismiss' }).click();
   await expect(note).toHaveCount(0);
@@ -173,32 +118,32 @@ test('publishing text that is already a version says which, and opens it', async
 }) => {
   await openTab(page, 'Instructions');
   const versions = page.getByRole('list', { name: /^Instructions/ });
-  await versions.getByRole('button', { name: /^v3/ }).click();
-  await drawer(page).getByRole('button', { name: 'Draft from v3' }).click();
-  // v3's own text: reviewing it from v4 is a change, publishing it is not.
+  await versions.getByRole('button', { name: /^v2/ }).click();
+  await drawer(page).getByRole('button', { name: 'Draft from v2' }).click();
+  // v2's own text: reviewing it from v3 is a change, publishing it is not.
   await drawer(page).getByRole('button', { name: 'Review changes' }).click();
-  await drawer(page).getByRole('button', { name: 'Publish v5' }).click();
+  await drawer(page).getByRole('button', { name: 'Publish v4' }).click();
   await page
     .getByRole('dialog')
-    .getByRole('button', { name: 'Publish v5' })
+    .getByRole('button', { name: 'Publish v4' })
     .click();
   await expect(
-    drawer(page).getByText(/^That is v3\. These instructions are already/),
+    drawer(page).getByText(/^That is v2\. These instructions are already/),
   ).toBeVisible();
-  await drawer(page).getByRole('button', { name: 'Open v3' }).click();
-  await expect(drawerTitle(page, 'Version v3')).toBeAttached();
-  // Nothing new was kept: v4 is still the live one.
+  await drawer(page).getByRole('button', { name: 'Open v2' }).click();
+  await expect(drawerTitle(page, 'Version v2')).toBeAttached();
+  // Nothing new was kept: v3 is still the live one.
   await expect(
-    versions.getByRole('button', { name: /^v4 · Live/ }),
+    versions.getByRole('button', { name: /^v3 · Live/ }),
   ).toBeVisible();
 });
 
 test('review numbers follow the draft while removed paragraphs keep their original numbers', async ({
   page,
 }) => {
-  // v5 is already published (served as the server would list it); the draft
+  // v4 is already published (served as the server would list it); the draft
   // is the browser's own.
-  await mockPromotionInstructions(page, [
+  await mockInstructions(page, brunchOrdersProcess, [
     {
       text: 'Keep the first paragraph.\n\nDelete this obsolete paragraph.\n\nKeep this middle anchor.\n\nKeep the final paragraph.',
       publishedAt: '2026-11-07T10:00:00Z',
@@ -208,7 +153,7 @@ test('review numbers follow the draft while removed paragraphs keep their origin
     localStorage.setItem(
       'safepoint.instructions.v3',
       JSON.stringify({
-        'promotion-release': {
+        'brunch-orders': {
           draft:
             'Add a fresh introduction.\n\nKeep the first paragraph.\n\nKeep this middle anchor.\n\nKeep the final paragraph updated.',
         },
@@ -216,9 +161,9 @@ test('review numbers follow the draft while removed paragraphs keep their origin
     );
   });
   await openTab(page, 'Instructions');
-  await drawer(page).getByRole('button', { name: 'Continue v6' }).click();
+  await drawer(page).getByRole('button', { name: 'Continue v5' }).click();
   await drawer(page).getByRole('button', { name: 'Review changes' }).click();
-  const diff = drawer(page).getByRole('list', { name: 'Changes from v5' });
+  const diff = drawer(page).getByRole('list', { name: 'Changes from v4' });
   await expect(diff.locator('.clause-number')).toHaveText([
     '01',
     '02',
@@ -233,22 +178,11 @@ test('review numbers follow the draft while removed paragraphs keep their origin
   await expect(rows.nth(4).locator('ins')).toContainText('updated');
 });
 
-test('outputs list every destination with how it is undone', async ({
-  page,
-}) => {
-  await openTab(page, 'Outputs');
-  const region = page.getByRole('region', { name: 'Outputs 4' });
-  await expect(region.getByRole('listitem')).toHaveCount(4);
-  await expect(region).toContainText('Simulation only.');
-  // Outputs open nothing, so there is no empty detail column.
-  await expect(drawer(page)).toHaveCount(0);
-});
-
 test('returning to a tab during its fade restores the page immediately', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.goto('/examples/promotion?run=run-104');
+  await page.goto('/examples/brunch-orders');
   const tab = (name: string) =>
     page.getByRole('button', { name: new RegExp(`^${name}`) }).first();
   const layer = page.locator('.process-sheet-swap').first();
@@ -274,13 +208,15 @@ test('tab handoff keeps dividers still, fades the list once and holds the detail
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.goto('/examples/promotion?run=run-104');
+  await page.goto('/examples/brunch-orders');
 
-  const inputs = page.getByRole('button', { name: /^Inputs/ }).first();
+  const instructions = page
+    .getByRole('button', { name: /^Instructions/ })
+    .first();
   // The outgoing section first; the incoming one is rendered after it, hidden.
   const leaving = page.locator('.process-sheet-swap').first();
-  await inputs.click();
-  await expect(inputs).toHaveAttribute('aria-current', 'true');
+  await instructions.click();
+  await expect(instructions).toHaveAttribute('aria-current', 'true');
   await expect(leaving).toHaveAttribute('inert', '');
   expect(
     await leaving.evaluate((element) => {
@@ -309,7 +245,7 @@ test('the frame holds through a tab swap and is handed back once the next sectio
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.goto('/examples/promotion?run=run-104');
+  await page.goto('/examples/brunch-orders');
   await page
     .getByRole('button', { name: /^Instructions/ })
     .first()
@@ -403,8 +339,8 @@ test('every section waits for its tab fade before rows and details arrive', asyn
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.goto('/examples/promotion?run=run-104');
-  for (const tab of ['Inputs', 'Instructions', 'Outputs', 'Runs']) {
+  await page.goto('/examples/brunch-orders');
+  for (const tab of ['Instructions']) {
     expectSectionAfterScreen(
       await observeSectionEntrance(
         page.getByRole('button', { name: new RegExp(`^${tab}`) }).first(),
@@ -415,10 +351,19 @@ test('every section waits for its tab fade before rows and details arrive', asyn
 
 test('rows wait for a process navigation fade', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
+  // The other process opens on the tab it was left on, which has rows.
+  await page.goto('/examples/brunch-orders-direct');
+  await page
+    .getByRole('button', { name: /^Instructions/ })
+    .first()
+    .click();
+  await expect(
+    page.getByRole('heading', { level: 2, name: /^Instructions/ }),
+  ).toBeVisible();
   await page.goto('/examples/brunch-orders');
   expectSectionAfterScreen(
     await observeSectionEntrance(
-      page.locator('a[href="/examples/promotion"]').first(),
+      page.locator('a[href="/examples/brunch-orders-direct"]').first(),
     ),
   );
 });

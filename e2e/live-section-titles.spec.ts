@@ -16,7 +16,7 @@ test('live section titles morph in one aligned overlay, then hand back', async (
   );
   for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 1000 });
-    await page.goto('/examples/promotion?run=run-104');
+    await page.goto('/examples/brunch-orders');
     let previous = 'Runs';
     for (const title of [
       'Instructions',
@@ -160,7 +160,7 @@ test('reduced motion keeps native headings without a title overlay', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/examples/promotion?run=run-104');
+  await page.goto('/examples/brunch-orders');
   await page.getByRole('button', { name: /^Instructions:/ }).click();
   await expect(
     page.getByRole('heading', { name: 'Instructions', exact: true, level: 2 }),

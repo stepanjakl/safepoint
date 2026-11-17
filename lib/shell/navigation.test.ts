@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { loadReviewedReplay } from '../promotion-release';
-import { presentPromotionPlan } from '../review/promotion-adapter';
-import { supportPlan } from '../review/support-fixture';
+import type { Disposition, ReleasePlan } from './plan-contract';
 import { evaluationCounts } from './plan-derivations';
 import {
   landingProcess,
@@ -10,61 +8,87 @@ import {
   restoreProcessOrder,
 } from './navigation';
 
-const ids = ['promotion', 'support', 'new-process'];
+const ids = ['alpha', 'beta', 'new-process'];
+
+const effect = (id: string, disposition: Disposition) => ({
+  id,
+  subject: id,
+  subtitle: '',
+  deltas: [],
+  reasonKey: null,
+  findingIds: [],
+  evidenceIds: [],
+  disposition,
+});
+
+// A recorded review with one line in each of three places.
+const plan: ReleasePlan = {
+  id: 'plan',
+  revision: 'r1',
+  title: 'Plan',
+  source: 'A test',
+  context: '',
+  evaluatedAt: '2026-09-09T00:00:00Z',
+  mode: 'replay',
+  noun: { one: 'line', other: 'lines' },
+  reviewLabel: 'Review the lines',
+  reasons: [],
+  effects: [
+    effect('a', 'blocked'),
+    effect('b', 'needs_decision'),
+    effect('c', 'will_apply'),
+  ],
+  status: { kind: 'preview' },
+};
 
 describe('process navigation', () => {
   it('recovers saved order after processes are added, removed, or duplicated', () => {
     expect(
-      restoreProcessOrder(ids, '["support","removed","support","promotion"]'),
-    ).toEqual(['support', 'promotion', 'new-process']);
+      restoreProcessOrder(ids, '["beta","removed","beta","alpha"]'),
+    ).toEqual(['beta', 'alpha', 'new-process']);
   });
   it('ignores malformed browser preferences', () => {
-    for (const saved of [null, '{', '{}', '["support",null]', '42']) {
+    for (const saved of [null, '{', '{}', '["beta",null]', '42']) {
       expect(restoreProcessOrder(ids, saved)).toEqual(ids);
     }
   });
   it('moves only a known process, clamps destinations, and preserves the original for cancellation', () => {
-    expect(moveProcess(ids, 'promotion', 2)).toEqual([
-      'support',
+    expect(moveProcess(ids, 'alpha', 2)).toEqual([
+      'beta',
       'new-process',
-      'promotion',
+      'alpha',
     ]);
-    expect(moveProcess(ids, 'support', -1)).toEqual([
-      'support',
-      'promotion',
+    expect(moveProcess(ids, 'beta', -1)).toEqual([
+      'beta',
+      'alpha',
       'new-process',
     ]);
-    expect(moveProcess(ids, 'support', 100)).toEqual([
-      'promotion',
+    expect(moveProcess(ids, 'beta', 100)).toEqual([
+      'alpha',
       'new-process',
-      'support',
+      'beta',
     ]);
     expect(moveProcess(ids, 'removed', 0)).toEqual(ids);
     expect(moveProcess([], 'removed', 0)).toEqual([]);
-    expect(ids).toEqual(['promotion', 'support', 'new-process']);
+    expect(ids).toEqual(['alpha', 'beta', 'new-process']);
   });
-  it('derives badges from each real review and preserves the replay boundary', () => {
-    for (const plan of [
-      presentPromotionPlan(loadReviewedReplay()),
-      supportPlan,
-    ]) {
-      const counts = evaluationCounts(plan.effects);
-      const item = processNavigationItem({
-        id: 'process',
-        href: '/',
-        name: 'Process',
-        evaluation: 'rules',
-        plan,
-      });
-      expect(item.status.label).toBe(`${counts.blocked} blocked`);
-      expect(item.status.description).toContain(
-        `${counts.needs_decision} awaiting a decision`,
-      );
-      expect(item.status.description).toContain('Replay · nothing applied.');
-    }
+  it('derives badges from the review and preserves the replay boundary', () => {
+    const counts = evaluationCounts(plan.effects);
+    const item = processNavigationItem({
+      id: 'process',
+      href: '/',
+      name: 'Process',
+      evaluation: 'rules',
+      plan,
+    });
+    expect(item.status.label).toBe(`${counts.blocked} blocked`);
+    expect(item.status.description).toContain(
+      `${counts.needs_decision} awaiting a decision`,
+    );
+    expect(item.status.description).toContain('Replay · nothing applied.');
   });
   it('gives run failures precedence over an empty result and never labels a simulated receipt applied', () => {
-    const empty = { ...supportPlan, effects: [] };
+    const empty = { ...plan, effects: [] };
     const incomplete = processNavigationItem({
       id: 'process',
       href: '/',
@@ -79,7 +103,7 @@ describe('process navigation', () => {
       name: 'Process',
       evaluation: 'rules',
       plan: {
-        ...supportPlan,
+        ...plan,
         status: {
           kind: 'applied',
           at: '2026-09-09',
@@ -93,21 +117,21 @@ describe('process navigation', () => {
   });
   it('lands on the last process open, else the first awaiting review in the saved order', () => {
     const processes = [
-      { id: 'promotion', awaitingReview: false },
-      { id: 'support', awaitingReview: true },
+      { id: 'alpha', awaitingReview: false },
+      { id: 'beta', awaitingReview: true },
       { id: 'new-process', awaitingReview: true },
     ];
-    expect(landingProcess(processes, null, 'promotion')).toBe('promotion');
-    expect(landingProcess(processes, null, null)).toBe('support');
-    expect(
-      landingProcess(processes, '["new-process","support"]', 'removed'),
-    ).toBe('new-process');
+    expect(landingProcess(processes, null, 'alpha')).toBe('alpha');
+    expect(landingProcess(processes, null, null)).toBe('beta');
+    expect(landingProcess(processes, '["new-process","beta"]', 'removed')).toBe(
+      'new-process',
+    );
     expect(
       landingProcess(
         processes.map((p) => ({ ...p, awaitingReview: false })),
-        '["support"]',
+        '["beta"]',
         null,
       ),
-    ).toBe('support');
+    ).toBe('beta');
   });
 });

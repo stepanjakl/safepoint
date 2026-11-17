@@ -8,7 +8,7 @@ test('the inspector names where an element’s styles are written', async ({
   colorScheme,
 }) => {
   test.skip(colorScheme === 'dark', 'The lookup is theme-independent.');
-  await page.goto('/examples/promotion?run=run-104');
+  await page.goto('/examples/brunch-orders');
   const inputs = page.getByRole('button', { name: /^Inputs/ }).first();
   await expect(inputs).toBeVisible();
 
@@ -51,9 +51,11 @@ test('the inspector names where an element’s styles are written', async ({
   });
   await expect(face).toContainText('background-image');
   await expect(face).toContainText(
-    /--control-face-top = #[0-9a-f]{6} ← (interact:)?control-header-button-(blocked|caution)/,
+    /--control-face-top = #[0-9a-f]{6} ← (interact:)?control-header-button-[a-z]+/,
   );
-  await expect(face).toContainText(/--radix-[a-z]+-11 = #[0-9a-f]{6} ← :root/);
+  await expect(face).toContainText(
+    /--(radix-[a-z]+-11|sp-neutral-\d+) = #[0-9a-f]{6} ← :root/,
+  );
   // A setter says what reads it.
   await expect(utility).toContainText(
     'read by control-face · background-image',
@@ -76,7 +78,7 @@ test('holding Option peeks, and Option-click pins past the key', async ({
   colorScheme,
 }) => {
   test.skip(colorScheme === 'dark', 'The gesture is theme-independent.');
-  await page.goto('/examples/promotion?run=run-104');
+  await page.goto('/examples/brunch-orders');
   const inputs = page.getByRole('button', { name: /^Inputs/ }).first();
   await expect(inputs).toBeVisible();
   const panel = page.getByRole('region', { name: 'Style inspector' });
@@ -123,7 +125,7 @@ test('Option-click on the sidebar handle still resets it', async ({
   colorScheme,
 }) => {
   test.skip(colorScheme === 'dark', 'The gesture is theme-independent.');
-  await page.goto('/examples/promotion?run=run-104');
+  await page.goto('/examples/brunch-orders');
   const handle = page.locator('.sidebar-handle[data-side="left"]');
   await expect(handle).toHaveAttribute('aria-valuenow', '250');
   await handle.focus();
@@ -142,7 +144,7 @@ test('a shadow brought in by @apply traces to the rule that sets its colour, and
   colorScheme,
 }) => {
   test.skip(colorScheme === 'dark', 'The lookup is theme-independent.');
-  await page.goto('/examples/promotion?run=run-104');
+  await page.goto('/examples/brunch-orders');
   const row = page.locator('li.process-menu-row[data-current]');
   await expect(row).toBeVisible();
   const box = (await row.boundingBox())!;
@@ -193,9 +195,11 @@ test('the panel stays usable over an open modal', async ({
   colorScheme,
 }) => {
   test.skip(colorScheme === 'dark', 'The gesture is theme-independent.');
-  await page.goto('/examples/promotion?run=run-104');
-  await page.getByRole('button', { name: 'Review release' }).click();
-  const close = page.getByRole('button', { name: 'Close review' });
+  await page.goto('/examples/brunch-orders');
+  await page
+    .getByRole('button', { name: 'Start run with instructions' })
+    .click();
+  const close = page.getByRole('button', { name: 'Cancel' });
   await expect(close).toBeVisible();
 
   // Opened after the modal, so React Aria sees it arrive while hiding.
@@ -209,8 +213,10 @@ test('the panel stays usable over an open modal', async ({
   // Pin the heading inside the modal, then step out from it: the panel's own
   // button answers, rather than the page beneath taking the click.
   // Point first: the panel moves to the side away from what it inspects,
-  // which here is the drawer's heading, under where the panel starts.
-  const heading = page.getByRole('heading', { name: 'Release review' });
+  // which here is the popover's heading, under where the panel starts.
+  const heading = page.getByRole('heading', {
+    name: 'Start with instructions',
+  });
   const box = (await heading.boundingBox())!;
   await page.mouse.move(box.x + 10, box.y + box.height / 2);
   const head = panel.locator('.spi-head strong');
@@ -218,7 +224,6 @@ test('the panel stays usable over an open modal', async ({
   await page.mouse.click(box.x + 10, box.y + box.height / 2);
   await panel.getByRole('button', { name: 'Parent' }).click();
   await expect(head).not.toHaveText(/^<h2>/);
-  await expect(head).not.toContainText('drawer-overlay');
 
   // Child retraces every Parent step, then goes; a new pin forgets the way.
   const child = panel.getByRole('button', { name: 'Child' });

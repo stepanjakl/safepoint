@@ -48,7 +48,7 @@ const VARIANTS: readonly { id: Variant; name: string; note: string }[] = [
   {
     id: 'bar',
     name: '3 · A bar under the head',
-    note: 'Bar and sentence at the top of the body, as a promotion run’s evaluation already draws its bar. Familiar, and it leaves the head alone, but it scrolls away with the head.',
+    note: 'Bar and sentence at the top of the body. Familiar, and it leaves the head alone, but it scrolls away with the head.',
   },
   {
     id: 'segments',
@@ -98,7 +98,7 @@ function stepOf(variant: Variant, set: DefinitionSet, scene: Scene) {
   return step;
 }
 
-// The evaluation bar's own parts (run-steps.tsx), which grow as the count ticks.
+// The progress bar's own parts, which grow as the count ticks.
 function Bar({ scene, count }: { scene: Scene; count: number }) {
   return (
     <div aria-hidden className="flex h-1.5 gap-0.5">

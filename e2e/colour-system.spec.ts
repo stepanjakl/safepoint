@@ -45,7 +45,7 @@ function designControls(page: Page) {
 }
 
 test('the neutral family follows the preference contract', async ({ page }) => {
-  await page.goto('/examples/promotion?neutral=steel');
+  await page.goto('/examples/brunch-orders?neutral=steel');
   await waitForHome(page);
   const html = page.locator('html');
   await expect(html).toHaveAttribute('data-neutral', 'steel');
@@ -75,10 +75,10 @@ test('the neutral family follows the preference contract', async ({ page }) => {
 
   /* A stored choice survives a reload; an invalid URL value falls through
      to it -- including a palette name from the retired Tailwind neutrals. */
-  await page.goto('/examples/promotion?run=run-104');
+  await page.goto('/examples/brunch-orders');
   await waitForHome(page);
   await expect(html).toHaveAttribute('data-neutral', 'clay');
-  await page.goto('/examples/promotion?neutral=zinc');
+  await page.goto('/examples/brunch-orders?neutral=zinc');
   await waitForHome(page);
   await expect(html).toHaveAttribute('data-neutral', 'clay');
 
@@ -100,7 +100,7 @@ test('a valid URL choice works when storage is unavailable', async ({
       },
     });
   });
-  await page.goto('/examples/promotion?neutral=moss');
+  await page.goto('/examples/brunch-orders?neutral=moss');
   await waitForHome(page);
   await expect(page.locator('html')).toHaveAttribute('data-neutral', 'moss');
 });
@@ -108,7 +108,7 @@ test('a valid URL choice works when storage is unavailable', async ({
 test('every neutral family paints its own ramp', async ({ page }) => {
   const canvases: Record<string, string> = {};
   for (const family of FAMILIES) {
-    await page.goto(`/examples/promotion?neutral=${family}`);
+    await page.goto(`/examples/brunch-orders?neutral=${family}`);
     await waitForHome(page);
     canvases[family] = await resolvedColour(page, '--sp-canvas');
   }
@@ -118,7 +118,7 @@ test('every neutral family paints its own ramp', async ({ page }) => {
 });
 
 test('every structural edge is opaque', async ({ page }) => {
-  await page.goto('/examples/promotion?run=run-104');
+  await page.goto('/examples/brunch-orders');
   await waitForHome(page);
   for (const token of OPAQUE_EDGE_TOKENS) {
     const value = await resolvedColour(page, token);
@@ -132,41 +132,27 @@ test('every structural edge is opaque', async ({ page }) => {
 
 /* A surface-following role (hover, rules, fields, pills...) resolves against
    the nearest ground-* above it, so a region painted with a pane, floating or
-   band face but no ground hands its content another surface's values. That is how the review
-   dialog lost its pane-tuned rules; this catches the next one. */
+   band face but no ground hands its content another surface's values. That is how the dialog
+   lost its pane-tuned rules; this catches the next one. */
 test('every painted pane or floating region hands its content its ground', async ({
   page,
 }) => {
   const states: [string, (page: Page) => Promise<void>][] = [
     ['home', async () => {}],
-    [
-      'review',
-      async (page) => {
-        await page.getByRole('button', { name: 'Review release' }).click();
-        await expect(page.getByRole('dialog')).toBeVisible();
-        await page
-          .locator('.review-queue button[aria-expanded]')
-          .first()
-          .click();
-      },
-    ],
-    [
-      'input detail',
-      async (page) => {
-        await page
-          .getByRole('button', { name: /^Inputs/ })
-          .first()
-          .click();
-        await page
-          .locator('.process-panels')
-          .getByRole('button', { name: /^Supply position/ })
-          .click();
-        await expect(page.locator('.drawer-aside')).toBeVisible();
-      },
-    ],
+    ...['Inputs', 'Rules', 'Instructions'].map(
+      (tab): [string, (page: Page) => Promise<void>] => [
+        tab,
+        async (page) => {
+          await page
+            .getByRole('button', { name: new RegExp(`^${tab}`) })
+            .first()
+            .click();
+        },
+      ],
+    ),
   ];
   for (const [name, arrive] of states) {
-    await page.goto('/examples/promotion?run=run-104');
+    await page.goto('/examples/brunch-orders');
     await waitForHome(page);
     await arrive(page);
     const orphans = await page.evaluate(() => {
@@ -209,9 +195,11 @@ test('every painted pane or floating region hands its content its ground', async
 test('the primary action keeps its ring under the pointer', async ({
   page,
 }) => {
-  await page.goto('/examples/promotion?run=run-104');
+  await page.goto('/examples/brunch-orders');
   await waitForHome(page);
-  const button = page.getByRole('button', { name: 'Review release' });
+  const button = page.getByRole('main').getByRole('button', {
+    name: 'Start run',
+  });
   await button.scrollIntoViewIfNeeded();
   await button.hover();
   /* The ring stays apart from the face at both ends, with no highlight. Polled,
@@ -294,14 +282,13 @@ test('muted ink never paints on a selected surface', async ({ page }) => {
   /* The palette leaves --sp-text-muted below AA on --sp-surface-selected in
      light, which is safe only because every consumer of that fill swaps its
      ink to primary in the same rule. */
-  await page.goto('/examples/promotion?run=run-104');
+  await page.goto('/examples/brunch-orders');
   await waitForHome(page);
-  await page.getByRole('button', { name: 'Review release' }).click();
-  await expect(page.getByRole('dialog')).toBeVisible();
-  await page.locator('.review-queue button[aria-expanded]').first().click();
-  await expect(
-    page.getByText('Loading item details…', { exact: true }),
-  ).toBeHidden();
+  // An open search paints its button with the selected fill.
+  await page
+    .getByRole('button', { name: 'Search processes', exact: true })
+    .click();
+  await page.mouse.move(900, 600);
   const result = await page.evaluate(() => {
     /* The selected fill follows the surface it is inside, so it is resolved
        in each element's own ground rather than once at the root. */
@@ -399,7 +386,7 @@ const ratio = (line: string) => {
 test('state text clears AA on every surface it can sit on', async ({
   page,
 }) => {
-  await page.goto('/examples/promotion?run=run-104');
+  await page.goto('/examples/brunch-orders');
   await waitForHome(page);
   const states = [
     'advisory',
@@ -433,7 +420,7 @@ test('state text clears AA on every surface it can sit on', async ({
 test('white labels hold their measured floor on the coloured faces', async ({
   page,
 }) => {
-  await page.goto('/examples/promotion?run=run-104');
+  await page.goto('/examples/brunch-orders');
   await waitForHome(page);
   /* The primary button's top stops sit right at about 3:1, so they are not held
      here. Its bottom stops, the flat Save-order face and its hover hold the
@@ -450,7 +437,7 @@ test('white labels hold their measured floor on the coloured faces', async ({
 
 test('usable in forced colours and at a narrow viewport', async ({ page }) => {
   await page.emulateMedia({ forcedColors: 'active' });
-  await page.goto('/examples/promotion?run=run-104');
+  await page.goto('/examples/brunch-orders');
   await waitForHome(page);
   const search = page.getByRole('button', {
     name: 'Search processes',

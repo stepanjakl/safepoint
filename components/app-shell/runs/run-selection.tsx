@@ -2,8 +2,6 @@
 
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { ProcessRun, ProcessSummary } from '@/lib/shell/model';
-import type { RunStage } from '@/lib/shell/placeholder/run-lifecycle';
-import { motionTime } from '@/lib/motion-time';
 import { useInstructions } from '@/components/app-shell/instructions/instructions-store';
 import {
   processRunOf,
@@ -11,10 +9,9 @@ import {
   type KeptRun,
   type RunProcessId,
 } from './kept-runs';
-import { useWorkingFavicon } from './working-favicon';
 
 /*
-  Which run the process page is showing, and the run a person started here.
+  Which run the process page is showing.
 
   One choice for the rail and the page beside it: picking a row shows that
   run, picking it again shows nothing, and a run with no recorded thread shows
@@ -22,48 +19,24 @@ import { useWorkingFavicon } from './working-favicon';
   in the address (?run=), so a link or a reload opens the same run; a page
   arrived at without one opens on nothing.
 
-  Placeholder: a started run plays the recorded run's stages on a timer, up to
-  the review, because nothing yet starts a real one. It is never written to the
-  address, since a reload could not find it again.
-
-  A process with a live thread starts a real run instead: the server keeps it
+  A process with a live thread starts a real run: the server keeps it
   (kept-runs.ts), names it, and it moves only when a person acts on the page.
   An id in the address that the server does not keep selects nothing.
 */
 const NO_RUNS: KeptRun[] = [];
-const PLAYED: RunStage[] = [
-  'starting',
-  'reading',
-  'evaluating',
-  'checking',
-  'awaiting_review',
-];
-// Long enough for a finishing step's mark to leave and the next to arrive;
-// the moment before the run begins is brief.
-const STAGE_MS = 4800;
-const STARTING_MS = 1200;
-// The bar fills while the candidates are evaluated; it gets time to be seen.
-const EVALUATING_MS = 8400;
 
 // The kept run being shown, with the text of the instructions it runs under.
 export type LiveRun = { run: ProcessRun; kept: KeptRun; text: string };
 
-export type StartedRun = {
-  run: ProcessRun;
-  stage: RunStage;
-  additionalInstructions: string;
-};
-
 export type RunSelection = {
-  // The process's runs, newest first, a started one at the top.
+  // The process's runs, newest first.
   runs: ProcessRun[];
   selected: string | null;
   // Shows a run, or shows nothing when it is the one already shown.
   select: (id: string) => void;
-  started: StartedRun | null;
-  // Null where this process cannot play a run, or while one is starting or
-  // playing. The text, when given, is kept with the run. Answers whether a
-  // run was started: a live one is waited for, since the server names it.
+  // Null where this process cannot start a run, or while one is starting. The
+  // text, when given, is kept with the run. Answers whether a run was started:
+  // it is waited for, since the server names it.
   start: ((additionalInstructions?: string) => Promise<boolean>) | null;
   // Why start is null, for the control that would have offered it.
   cannotStart: string | null;
@@ -97,22 +70,14 @@ export function useRunSelection() {
 export function useRunSelectionState({
   process,
   initialRunId,
-  canPlay,
   liveThread = false,
-  version,
 }: {
   process: ProcessSummary;
   initialRunId: string | null;
-  // Whether this process has a recorded run to play. Only the promotion does.
-  canPlay: boolean;
   // Whether this process draws a live run's thread, run step by step.
   liveThread?: boolean;
-  // The instructions a started run runs under.
-  version: string;
 }): RunSelection {
   const [selected, setSelected] = useState(initialRunId);
-  const [started, setStarted] = useState<StartedRun | null>(null);
-  const recorded = process.runs.find((run) => run.current);
   const kept = useKeptRuns(process.id, liveThread);
   const { versions, current } = useInstructions(
     process.id,
@@ -146,105 +111,46 @@ export function useRunSelectionState({
     } else setSelected((now) => (now === selected ? null : now));
   }, [liveThread, selected, isSuccess, isFetching, refetch, keptRuns]);
 
-  // Kept in the address as it changes, never for a started run. Replaced with
-  // null state, so Next takes the address as its own: passing its old state
+  // Kept in the address as it changes. Replaced with null state, so Next takes the address as its own: passing its old state
   // back makes a later router refresh restore the address without the run.
   useEffect(() => {
     const url = new URL(window.location.href);
-    if (selected && selected !== started?.run.id)
-      url.searchParams.set('run', selected);
+    if (selected) url.searchParams.set('run', selected);
     else url.searchParams.delete('run');
     if (url.href !== window.location.href)
       window.history.replaceState(null, '', url);
-  }, [selected, started?.run.id]);
+  }, [selected]);
 
-  // One stage every STAGE_MS until the review, where a run waits for a person.
-  const playing = started !== null && started.stage !== 'awaiting_review';
-  useWorkingFavicon(playing);
-  useEffect(() => {
-    if (!playing) return;
-    const timer = setTimeout(
-      () =>
-        setStarted((current) => {
-          if (!current) return current;
-          const at = PLAYED.indexOf(current.stage) + 1;
-          const stage = PLAYED[at]!;
-          const done = stage === 'awaiting_review';
-          return {
-            stage,
-            additionalInstructions: current.additionalInstructions,
-            run: {
-              ...current.run,
-              status: done ? 'awaiting_review' : 'running',
-              progress: done ? undefined : { at: at + 1, of: PLAYED.length },
-              counts: done && recorded ? recorded.counts : current.run.counts,
-            },
-          };
-        }),
-      motionTime(
-        started?.stage === 'starting'
-          ? STARTING_MS
-          : started?.stage === 'evaluating'
-            ? EVALUATING_MS
-            : STAGE_MS,
-      ),
-    );
-    return () => clearTimeout(timer);
-  }, [playing, started?.stage, recorded]);
-
-  const cannotStart = liveThread
-    ? kept.start.isPending
+  const cannotStart = !liveThread
+    ? 'This process has no run to start.'
+    : kept.start.isPending
       ? 'Starting the run…'
       : current.hash === null
         ? 'Reading the instructions…'
-        : null
-    : !canPlay
-      ? 'This example has no recorded run to play.'
-      : playing
-        ? 'A run is already running.'
         : null;
 
   const start = async (additionalInstructions = '') => {
     if (cannotStart) return false;
-    if (liveThread) {
-      try {
-        const run = await kept.start.mutateAsync({
-          process: process.id as RunProcessId,
-          instructions: current.hash!,
-          additionalInstructions: additionalInstructions || null,
-        });
-        setSelected(run.id);
-        return true;
-      } catch {
-        return false;
-      }
+    try {
+      const run = await kept.start.mutateAsync({
+        process: process.id as RunProcessId,
+        instructions: current.hash!,
+        additionalInstructions: additionalInstructions || null,
+      });
+      setSelected(run.id);
+      return true;
+    } catch {
+      return false;
     }
-    const run: ProcessRun = {
-      id: `run-started-${Date.now()}`,
-      startedAt: new Date().toISOString(),
-      status: 'running',
-      trigger: 'manual',
-      counts: { items: 0 },
-      progress: { at: 1, of: PLAYED.length },
-      instructionsVersion: version,
-    };
-    setStarted({ run, stage: PLAYED[0]!, additionalInstructions });
-    setSelected(run.id);
-    return true;
   };
 
   return {
-    runs: [
-      ...(started ? [started.run] : []),
-      ...keptRuns.map(processRunOf),
-      ...process.runs,
-    ],
+    runs: [...keptRuns.map(processRunOf), ...process.runs],
     selected,
     select: (id) => {
       kept.start.reset();
       setSelected((current) => (current === id ? null : id));
     },
-    started,
     start: cannotStart ? null : start,
     cannotStart,
     starting: kept.start.isPending,

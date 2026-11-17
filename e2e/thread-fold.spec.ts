@@ -3,9 +3,11 @@ import { expect, test } from '@playwright/test';
 test('long thread folds and open-body resizes have bounded motion', async ({
   page,
 }) => {
-  await page.goto('/examples/promotion?run=run-104');
+  await page.goto('/workbench/run');
+  // The run workbench's stages, held still: the player and the draft above
+  // them can run slowed.
   const step = page
-    .locator('.thread-step')
+    .locator('section[aria-labelledby="every-stage"] .thread-step')
     .filter({ has: page.locator('button.thread-step-toggle') })
     .first();
   const toggle = step.locator('button.thread-step-toggle');

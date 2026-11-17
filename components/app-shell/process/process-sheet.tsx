@@ -31,10 +31,7 @@ import {
   RunSelectionProvider,
   useRunSelectionState,
 } from '@/components/app-shell/runs/run-selection';
-import {
-  RunView,
-  type PlayableRun,
-} from '@/components/app-shell/runs/run-view';
+import { RunView } from '@/components/app-shell/runs/run-view';
 import { StartRunButton } from '@/components/app-shell/runs/start-run-button';
 import { SECTION } from './panel-parts';
 import { ScheduleControl } from './schedule-control';
@@ -97,7 +94,6 @@ export function ProcessSheet({
   inputDetails,
   run,
   initialRunId = null,
-  playable,
   policy,
   liveThread,
   rulesPanel,
@@ -120,8 +116,6 @@ export function ProcessSheet({
   liveThread?: ReactNode;
   // The run to open on, from the address; none opens on the empty page.
   initialRunId?: string | null;
-  // What a started run is drawn from, where this process can play one.
-  playable?: PlayableRun;
   // The cookie's copy of the tab last open in each process, for the first paint.
   savedTabs?: string | null;
 }) {
@@ -174,8 +168,8 @@ export function ProcessSheet({
   // Arriving from another process is an entrance too, for the detail's beat.
   const { enteringProcess } = useShellPageNavigation();
   // Inputs can be changed, as a preview, only where they have details to
-  // show: the promotion scenario's files. Everything downstream reads the kept
-  // set, so a removed input leaves the count and the list together.
+  // show. Everything downstream reads the kept set, so a removed input leaves
+  // the count and the list together.
   const { removed, remove, restore } = useRemovedInputs(process.id);
   // The current version, which a publish in this browser can move on.
   const { current, versions } = useInstructions(
@@ -198,9 +192,7 @@ export function ProcessSheet({
   const selection = useRunSelectionState({
     process,
     initialRunId,
-    canPlay: playable !== undefined,
     liveThread: liveThread !== undefined,
-    version,
   });
 
   // The section a swap has landed, so what it holds can begin its own entrance.
@@ -250,12 +242,7 @@ export function ProcessSheet({
         </aside>
         <RunsDetail>
           <ProcessSheetActions value={actions}>
-            <RunView
-              process={process}
-              recorded={run}
-              playable={playable}
-              liveThread={liveThread}
-            />
+            <RunView process={process} recorded={run} liveThread={liveThread} />
           </ProcessSheetActions>
         </RunsDetail>
       </div>

@@ -2,9 +2,10 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { ShellPageTransitionProvider } from '@/components/app-shell/shell-page-transition';
-import { loadReviewedReplay } from '@/lib/promotion-release';
-import { promotionProcess } from '@/lib/shell/placeholder/placeholder-process';
-import { presentPromotionInputs } from '@/lib/shell/system-links';
+import {
+  brunchOrdersProcess,
+  SHEET_INPUTS,
+} from '@/lib/processes/brunch-orders/process';
 
 import { ControlsGallery } from '../controls-gallery';
 
@@ -15,8 +16,6 @@ import { ControlsGallery } from '../controls-gallery';
 */
 export default function ControlsWorkbenchPage() {
   if (process.env.NODE_ENV !== 'development') notFound();
-
-  const inputs = presentPromotionInputs(loadReviewedReplay());
 
   return (
     <main
@@ -41,7 +40,7 @@ export default function ControlsWorkbenchPage() {
         </p>
       </header>
       <ShellPageTransitionProvider processPaths={[]}>
-        <ControlsGallery process={promotionProcess} inputs={inputs} />
+        <ControlsGallery process={brunchOrdersProcess} inputs={SHEET_INPUTS} />
       </ShellPageTransitionProvider>
     </main>
   );

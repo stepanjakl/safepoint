@@ -120,8 +120,8 @@ export type ModelRunActions = {
 
 /*
   The thread of a run the model works out alone: its instructions, the sheet
-  it read, the model at work, the review and the approval, moving as the
-  promotion's run moves (thread-arrivals.tsx). It only draws: the live page
+  it read, the model at work, the review and the approval, moving as every
+  run moves (thread-arrivals.tsx). It only draws: the live page
   and the workbench say what stage the run is at and what each button does.
 */
 export function ModelRunThread({

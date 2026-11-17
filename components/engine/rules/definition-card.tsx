@@ -79,8 +79,8 @@ const kindOf = (item: Definition) =>
 
 export const words = (value: string) => value.replace(/\s+/g, ' ').trim();
 
-// What waits on a person is drawn as the release card is (`CARD` in
-// release-card.tsx): a floating face that stands off the step around it.
+// What waits on a person is drawn as a card: a floating face that stands off
+// the step around it.
 export const ASKS = 'control-face surface-floating rounded-shell';
 
 export function AcceptDecision({

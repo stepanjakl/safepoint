@@ -1,17 +1,10 @@
 import type { ReactNode } from 'react';
 import { cookies } from 'next/headers';
-import { loadReviewedReplay } from '@/lib/promotion-release';
-import {
-  promotionProcess,
-  supportProcess,
-} from '@/lib/shell/placeholder/placeholder-process';
 import {
   PROCESS_ORDER_KEY,
   processNavigationItem,
 } from '@/lib/shell/navigation';
 import { processHref } from '@/lib/shell/routes';
-import { presentPromotionPlan } from '@/lib/review/promotion-adapter';
-import { supportPlan } from '@/lib/review/support-fixture';
 import {
   brunchOrdersDirectPlan,
   brunchOrdersDirectProcess,
@@ -38,20 +31,6 @@ export async function AppShell({
   const savedOrder = (await cookies()).get(PROCESS_ORDER_KEY)?.value ?? null;
   // Only navigation summaries cross the client boundary, not the full plans.
   const items = [
-    processNavigationItem({
-      id: promotionProcess.id,
-      href: processHref(promotionProcess.id),
-      name: promotionProcess.name,
-      evaluation: promotionProcess.evaluation,
-      plan: presentPromotionPlan(loadReviewedReplay()),
-    }),
-    processNavigationItem({
-      id: supportProcess.id,
-      href: processHref(supportProcess.id),
-      name: supportProcess.name,
-      evaluation: supportProcess.evaluation,
-      plan: supportPlan,
-    }),
     processNavigationItem({
       id: brunchOrdersProcess.id,
       href: processHref(brunchOrdersProcess.id),

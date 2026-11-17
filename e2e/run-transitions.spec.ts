@@ -209,14 +209,17 @@ test('the empty page arrives after another process has finished coming in', asyn
   page,
 }) => {
   const arrival = observeArrival(page);
-  await page.locator('a[href="/examples/promotion"]').first().click();
+  await page
+    .locator('a[href="/examples/brunch-orders-direct"]')
+    .first()
+    .click();
   expectArrivalAfterScreen(await arrival);
 });
 
 // The browser holds the old page until the new one paints, so a reload that
 // moves nothing cannot be told from no reload at all.
 test('a reload leaves the page where it was', async ({ page }) => {
-  await page.goto('/examples/promotion');
+  await page.goto('/examples/brunch-orders');
   await page.addInitScript(
     `window.arrival = (${sampleArrival.toString()})(1500);`,
   );
@@ -235,7 +238,7 @@ test('a process loaded directly under reduced motion is not left hidden', async 
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/examples/promotion');
+  await page.goto('/examples/brunch-orders');
   await expect(page.locator('.process-sheet-frame')).toHaveCSS('opacity', '1');
   await expect(
     page.getByText('Choose a run, or start a new one.', { exact: true }),

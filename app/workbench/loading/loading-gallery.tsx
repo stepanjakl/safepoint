@@ -243,31 +243,6 @@ export function LoadingGallery() {
         }
       />
 
-      <Case
-        title="Model review buttons (development only)"
-        where="workbench/explore/review-explorer.tsx · workbench/model/workbench.tsx"
-        fix="As the trial control: the inline loader beside the button carries the wait."
-        before={
-          <div className={cx(PANE, 'flex items-center gap-3 p-5')}>
-            <Button isDisabled={load.loading}>
-              {load.loading ? 'Reviewing…' : 'Run live model'}
-            </Button>
-          </div>
-        }
-        after={
-          <div className={cx(PANE, 'flex items-center gap-3 p-5')}>
-            <Button isDisabled={load.loading}>Run live model</Button>
-            <InlineLoad
-              load={load}
-              className="text-meta text-muted"
-              label="Reviewing…"
-            >
-              <p>Reviewed 18 items · 9.4 s</p>
-            </InlineLoad>
-          </div>
-        }
-      />
-
       <RuleContext load={load} />
     </div>
   );

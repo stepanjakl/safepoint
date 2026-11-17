@@ -1,16 +1,8 @@
 'use client';
 
 import { motion } from 'motion/react';
-import {
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-  type ComponentProps,
-  type ReactNode,
-} from 'react';
+import { useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ProcessSheetActions } from '@/components/app-shell/process/process-sheet';
-import { RunThread } from '@/components/app-shell/thread/run-thread';
 import { ThreadPage } from '@/components/app-shell/thread/thread-page';
 import { Button } from '@/components/ui/button';
 import { useSwap } from '@/components/ui/swap';
@@ -23,21 +15,10 @@ import { runDay, runTime } from '@/lib/shell/run-time';
 import { RunSelectionProvider, useRunSelection } from './run-selection';
 import { RunInstructionsPreview } from './run-instructions-preview';
 
-// What a started run is drawn from: the recorded run's evidence and plan.
-export type PlayableRun = Omit<
-  ComponentProps<typeof RunThread>,
-  | 'stage'
-  | 'requestLabel'
-  | 'initialItemId'
-  | 'look'
-  | 'trigger'
-  | 'instructionsVersion'
->;
-
 /*
   The page beside the rail: the run the rail has chosen, or the empty page.
   Only the current run has a recorded thread, which the server builds and
-  hands in; a started run is drawn here, stage by stage, from the same data.
+  hands in; a live run's is drawn here.
 
   A change of run swaps content within the fixed thread column. The page fades
   in place so its internal rules never move with the selection.
@@ -48,12 +29,10 @@ const NONE = '';
 export function RunView({
   process,
   recorded,
-  playable,
   liveThread,
 }: {
   process: ProcessSummary;
   recorded: ReactNode;
-  playable?: PlayableRun;
   // A live run's thread, drawn for whichever live run is chosen; it reads
   // the run from the selection.
   liveThread?: ReactNode;
@@ -65,8 +44,7 @@ export function RunView({
   const keyOf = (id: string) =>
     id &&
     (id === process.runs.find((run) => run.current)?.id ||
-      (selection?.live && liveThread && id === selection.live.run.id) ||
-      (selection?.started && playable && id === selection.started.run.id))
+      (selection?.live && liveThread && id === selection.live.run.id))
       ? id
       : NONE;
   const target = keyOf(selection?.selected ?? NONE);
@@ -99,25 +77,6 @@ export function RunView({
             />
           ) : null}
           {liveThread}
-        </ThreadPage>
-      );
-    }
-    const started = pageSelection?.started;
-    if (started && playable && id === started.run.id) {
-      const at = started.run.startedAt;
-      return (
-        <ThreadPage label={`Run, ${runDay(at)} · ${runTime(at)}`}>
-          <RunInstructionsPreview
-            instructions={started.additionalInstructions}
-          />
-          <RunThread
-            key={started.run.id}
-            stage={started.stage}
-            requestLabel={`${runDay(at)} · ${runTime(at)}`}
-            trigger={started.run.trigger}
-            instructionsVersion={started.run.instructionsVersion}
-            {...playable}
-          />
         </ThreadPage>
       );
     }

@@ -1,63 +1,21 @@
 'use client';
 
-import { useEffect, useRef, useState, type ComponentProps } from 'react';
+import { useEffect, useRef, useState } from 'react';
 // Deep import, as in thread-step.tsx: the barrel is the whole library.
 import CircleCheckFilled from 'blode-icons-react/icons/circle-check-filled';
 
-import { RunThread } from '@/components/app-shell/thread/run-thread';
 import {
   RunningRing,
   SegmentedRing,
   type ThreadLook,
 } from '@/components/app-shell/thread/thread-step';
 import { Button } from '@/components/ui/button';
-import { useWorkingFavicon } from '@/components/app-shell/runs/working-favicon';
-import { motionTime } from '@/lib/motion-time';
 import { SPEEDS, useSlowMotion } from './slow-motion';
 import { ShimmerDirections } from './shimmer-directions';
 import { ThreadProgress } from './thread-progress';
 import { BrunchPlayer, BrunchStages } from './brunch-player';
 import type { ScriptedStage } from './brunch-direct';
 import type { DefinitionSet } from '@/lib/definitions/types';
-import {
-  RUN_STAGE_LABELS,
-  RUN_STAGES,
-  type RunStage,
-} from '@/lib/shell/placeholder/run-lifecycle';
-
-type Thread = Omit<
-  ComponentProps<typeof RunThread>,
-  'stage' | 'request' | 'initialItemId' | 'look'
->;
-
-const REQUEST = (
-  <p>Check the promotion release and show me what needs attention.</p>
-);
-
-// The stopped run is a branch, not a stage after the commit, so the player
-// walks the main line and the gallery below shows the branch.
-const MAIN_LINE = RUN_STAGES.filter((stage) => stage !== 'stopped');
-// Long enough for a finishing mark to leave and for the next step to arrive
-// and unfold. The empty moment before the request is brief, and the request
-// then needs time to drop in and open before the run starts reading.
-const STEP_MS = 5200;
-const STAGE_HOLD_MS: Partial<Record<RunStage, number>> = {
-  waiting: 1600,
-  starting: 2800,
-  // Long enough to watch the bar fill as the candidates are evaluated.
-  evaluating: 9000,
-};
-
-// A pane, declared as one, so what follows the surface reads the pane's face.
-const COLUMN =
-  'ground-raised bg-surface-primary rounded-shell min-w-0 p-6 max-sm:p-4';
-
-type Process = 'promotion' | 'brunch';
-
-const PROCESSES: { process: Process; label: string }[] = [
-  { process: 'brunch', label: 'Brunch orders · model' },
-  { process: 'promotion', label: 'Promotion release' },
-];
 
 const LOOKS: { look: ThreadLook; label: string }[] = [
   { look: 'current', label: 'Current' },
@@ -67,17 +25,14 @@ const LOOKS: { look: ThreadLook; label: string }[] = [
 // The two thread looks side by side in time rather than in space: one switch
 // for the player and every stage below it, so a stage is compared with itself.
 export function RunWorkbench({
-  thread,
   draft,
   brunch,
 }: {
-  thread: Thread;
   draft: { set: DefinitionSet; names: Record<string, string> };
   // A Brunch orders run with no rulebook, at every stage (brunch-direct.ts).
   brunch: { mainLine: ScriptedStage[]; branches: ScriptedStage[] };
 }) {
   const [look, setLook] = useState<ThreadLook>('proposed');
-  const [process, setProcess] = useState<Process>('brunch');
   return (
     <>
       <ThreadProgress look={look} {...draft} />
@@ -85,21 +40,6 @@ export function RunWorkbench({
       <MarkLifecycle />
       <ShimmerDirections />
       <div className="flex flex-wrap items-center gap-3">
-        <p className="readout text-muted" id="process">
-          Process
-        </p>
-        <div role="group" aria-labelledby="process" className="flex gap-2">
-          {PROCESSES.map((option) => (
-            <Button
-              key={option.process}
-              variant={option.process === process ? 'primary' : 'secondary'}
-              aria-pressed={option.process === process}
-              onPress={() => setProcess(option.process)}
-            >
-              {option.label}
-            </Button>
-          ))}
-        </div>
         <p className="readout text-muted" id="look">
           Thread look
         </p>
@@ -116,41 +56,11 @@ export function RunWorkbench({
           ))}
         </div>
       </div>
-      {process === 'brunch' ? (
-        <>
-          <BrunchPlayer stages={brunch.mainLine} look={look} />
-          <BrunchStages
-            stages={[...brunch.mainLine.slice(1), ...brunch.branches]}
-            look={look}
-          />
-        </>
-      ) : (
-        <PromotionRuns thread={thread} look={look} />
-      )}
-    </>
-  );
-}
-
-function PromotionRuns({ thread, look }: { thread: Thread; look: ThreadLook }) {
-  return (
-    <>
-      <RunPlayer thread={thread} look={look} />
-      <section aria-labelledby="every-stage" className="grid gap-4">
-        <h2 id="every-stage" className="text-title font-semibold">
-          Every stage
-        </h2>
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,40rem),1fr))] gap-x-6 gap-y-10">
-          {/* Before the request there is nothing to draw. */}
-          {RUN_STAGES.filter((stage) => stage !== 'waiting').map((stage) => (
-            <RunStageColumn
-              key={stage}
-              stage={stage}
-              thread={thread}
-              look={look}
-            />
-          ))}
-        </div>
-      </section>
+      <BrunchPlayer stages={brunch.mainLine} look={look} />
+      <BrunchStages
+        stages={[...brunch.mainLine.slice(1), ...brunch.branches]}
+        look={look}
+      />
     </>
   );
 }
@@ -330,93 +240,5 @@ function LifecycleMark({
         ) : null}
       </span>
     </div>
-  );
-}
-
-function RunPlayer({ thread, look }: { thread: Thread; look: ThreadLook }) {
-  const [index, setIndex] = useState(0);
-  const [playing, setPlaying] = useState(false);
-  const stage = MAIN_LINE[index]!;
-  const last = index === MAIN_LINE.length - 1;
-
-  // Playing past the last stage is simply finished: the timer stops arming.
-  const running = playing && !last;
-  useWorkingFavicon(running);
-  useEffect(() => {
-    if (!running) return;
-    const timer = setTimeout(
-      () => setIndex((at) => at + 1),
-      motionTime(STAGE_HOLD_MS[stage] ?? STEP_MS),
-    );
-    return () => clearTimeout(timer);
-  }, [running, index, stage]);
-
-  return (
-    <section aria-labelledby="player" className="grid max-w-190 gap-4">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <h2 id="player" className="text-title font-semibold">
-          Player
-        </h2>
-        <div className="flex gap-2">
-          <Button
-            isDisabled={index === 0}
-            onPress={() => {
-              setPlaying(false);
-              setIndex((at) => at - 1);
-            }}
-          >
-            Back
-          </Button>
-          <Button
-            variant="primary"
-            onPress={() => {
-              if (last) {
-                setIndex(0);
-                setPlaying(true);
-              } else setPlaying(!playing);
-            }}
-          >
-            {running ? 'Pause' : last ? 'Replay' : 'Play'}
-          </Button>
-          <Button
-            isDisabled={last}
-            onPress={() => {
-              setPlaying(false);
-              setIndex((at) => at + 1);
-            }}
-          >
-            Next
-          </Button>
-        </div>
-        <p className="readout text-muted">
-          {index + 1} / {MAIN_LINE.length} · {RUN_STAGE_LABELS[stage]}
-        </p>
-      </div>
-      <div className={COLUMN}>
-        <RunThread stage={stage} request={REQUEST} look={look} {...thread} />
-      </div>
-    </section>
-  );
-}
-
-function RunStageColumn({
-  stage,
-  thread,
-  look,
-}: {
-  stage: RunStage;
-  thread: Thread;
-  look: ThreadLook;
-}) {
-  return (
-    <section
-      aria-label={RUN_STAGE_LABELS[stage]}
-      className="grid content-start gap-2.5"
-    >
-      <p className="readout text-muted">{RUN_STAGE_LABELS[stage]}</p>
-      <div className={COLUMN}>
-        <RunThread stage={stage} request={REQUEST} look={look} {...thread} />
-      </div>
-    </section>
   );
 }

@@ -55,8 +55,3 @@ export function rejectUnlessLocalDevelopment(
     )
   );
 }
-
-// A provider error can echo the request back; never let the key out with it.
-export function redactKey(text: string, key: string | undefined): string {
-  return key ? text.replaceAll(key, '[redacted]') : text;
-}

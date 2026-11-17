@@ -431,7 +431,7 @@ export function ControlsGallery({
       <Section title="Field">
         <div className={GRID}>
           <StateHeadings />
-          {['', 'Promotion'].map((value) => (
+          {['', 'Brunch'].map((value) => (
             <StateRow
               key={value}
               name={value ? 'holding a value' : 'empty'}

@@ -5,10 +5,6 @@ import { z } from 'zod';
 import type { DefinitionProcess } from '@/lib/definitions/types';
 import type { ProcessSummary } from '@/lib/shell/model';
 import {
-  promotionProcess,
-  supportProcess,
-} from '@/lib/shell/placeholder/placeholder-process';
-import {
   BRUNCH_ORDERS_DEFINITIONS,
   BRUNCH_ORDERS_DIRECT_DEFINITIONS,
   brunchOrdersDirectProcess,
@@ -20,8 +16,7 @@ import {
   own declaration (its instructions and their earlier versions, its steps),
   and, for one whose runs are kept on the server, what the definitions engine
   works for. Every process here has its instruction versions kept; only the
-  ones with `runs` have runs, decisions and writes. The placeholder processes
-  play a recorded run and keep none.
+  ones with `runs` have runs, decisions and writes.
 */
 
 export type KeptProcess = {
@@ -32,8 +27,6 @@ export type KeptProcess = {
 };
 
 const KEPT: KeptProcess[] = [
-  { summary: promotionProcess },
-  { summary: supportProcess },
   {
     summary: brunchOrdersProcess,
     runs: { definitions: BRUNCH_ORDERS_DEFINITIONS, evaluation: 'rules' },

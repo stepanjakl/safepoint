@@ -5,7 +5,7 @@
     pnpm check:visual:update   re-record it, after an intended change
 
   Each element's colours, shadows, opacity and box are read from the live page
-  in thirteen states and both themes. A difference fails with the element, the
+  in ten states and both themes. A difference fails with the element, the
   property, and the old and new values -- the check that caught a stray tile
   outline, a dead brand colour and a contrast shift in the colour refactor.
 
@@ -42,7 +42,7 @@ const SCENARIOS = {
   'row-hover': async (page: Page) => {
     await page
       .getByRole('navigation', { name: 'Processes' })
-      .getByRole('link', { name: 'Support handoff', exact: true })
+      .locator('a[href="/examples/brunch-orders-direct"]')
       .hover();
   },
   arrange: async (page: Page) => {
@@ -57,36 +57,13 @@ const SCENARIOS = {
       .click();
     await page
       .getByRole('searchbox', { name: 'Search processes' })
-      .fill('Promotion');
-  },
-  review: async (page: Page) => {
-    await page.getByRole('button', { name: 'Review release' }).click();
-    await expect(page.getByRole('dialog')).toBeVisible();
-    await page.locator('.review-queue button[aria-expanded]').first().click();
-    await expect(
-      page.getByText('Loading item details…', { exact: true }),
-    ).toBeHidden();
+      .fill('Brunch');
   },
   tooltip: async (page: Page) => {
     await page
       .getByRole('button', { name: 'Search processes', exact: true })
       .focus();
     await expect(page.locator('.app-tooltip')).toBeVisible();
-  },
-  'input-detail': async (page: Page) => {
-    await page
-      .getByRole('button', { name: /^Inputs/ })
-      .first()
-      .click();
-    await page
-      .locator('.process-panels')
-      .getByRole('button', { name: /^Supply position/ })
-      .click();
-    await expect(
-      page
-        .locator('.drawer-aside')
-        .getByRole('heading', { name: 'Supply position' }),
-    ).toBeVisible();
   },
   instructions: async (page: Page) => {
     await page
@@ -106,10 +83,8 @@ const SCENARIOS = {
       page.getByRole('heading', { level: 2, name: /^Outputs/ }),
     ).toBeVisible();
   },
-  support: async () => {},
   // No run chosen: the empty page and its start.
   empty: async () => {},
-  states: async () => {},
   // Every control in every interaction state, pinned once hydrated.
   controls: async (page: Page) => {
     await expect(
@@ -119,9 +94,7 @@ const SCENARIOS = {
 } satisfies Record<string, (page: Page) => Promise<void>>;
 
 const ROUTES: Partial<Record<keyof typeof SCENARIOS, string>> = {
-  empty: '/examples/promotion',
-  support: '/examples/support?run=run-42',
-  states: '/examples/states',
+  empty: '/examples/brunch-orders-direct',
   controls: '/workbench/controls',
 };
 
@@ -285,8 +258,7 @@ test(
     const captured: Capture = {};
     for (const [name, arrive] of Object.entries(SCENARIOS)) {
       await page.goto(
-        ROUTES[name as keyof typeof SCENARIOS] ??
-          '/examples/promotion?run=run-104',
+        ROUTES[name as keyof typeof SCENARIOS] ?? '/examples/brunch-orders',
       );
       await expect(
         READY[name as keyof typeof SCENARIOS]?.(page) ??

@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  DISPOSITIONS,
-  DISPOSITION_LABELS,
   labelledDeltaSchema,
   releasePlanSchema,
   type Disposition,
@@ -9,15 +7,9 @@ import {
   type PlanStatus,
 } from './plan-contract';
 import {
-  ROW_BUDGET,
   evaluationCounts,
   nonEmptyDispositions,
   planState,
-  rollUpByReason,
-  selectedCounts,
-  totalOf,
-  attentionLine,
-  bucketRows,
 } from './plan-derivations';
 
 const noun = { one: 'item', other: 'items' };
@@ -148,18 +140,14 @@ describe('counts', () => {
     effect('d', 'will_apply'),
   ];
 
-  it('evaluation counts ignore exclusion so blockers cannot be erased', () => {
-    const excluded = new Set(['a']);
-    expect(evaluationCounts(effects).blocked).toBe(1);
-    expect(selectedCounts(effects, excluded).blocked).toBe(0);
-    // The state is still driven by evaluation, not selection.
+  it('counts every effect once, in its own bucket', () => {
+    expect(evaluationCounts(effects)).toEqual({
+      blocked: 1,
+      needs_decision: 1,
+      deferred: 0,
+      will_apply: 2,
+    });
     expect(planState(plan(effects))).toBe('mixed');
-  });
-
-  it('selected counts fall to zero when everything is excluded', () => {
-    const excluded = new Set(effects.map((e) => e.id));
-    expect(totalOf(selectedCounts(effects, excluded))).toBe(0);
-    expect(totalOf(evaluationCounts(effects))).toBe(4);
   });
 
   it('lists non-empty dispositions in severity order', () => {
@@ -217,168 +205,5 @@ describe('planState precedence', () => {
       planState(plan([effect('a', 'blocked'), effect('b', 'will_apply')])),
     ]);
     expect(seen.size).toBe(8);
-  });
-});
-
-describe('attention line', () => {
-  it('counts what needs a person, and cannot disagree with the tabs', () => {
-    const effects = [
-      effect('a', 'blocked'),
-      effect('b', 'blocked'),
-      effect('c', 'needs_decision'),
-      effect('d', 'will_apply'),
-    ];
-    const counts = evaluationCounts(effects);
-    expect(attentionLine(counts, noun)).toBe('3 of 4 items need attention.');
-    expect(counts.blocked).toBe(2);
-    expect(counts.needs_decision).toBe(1);
-  });
-
-  // The line used to enumerate every bucket, which put the same distribution
-  // on screen three times over. The tabs are the only place those digits live.
-  it('does not restate the per-bucket counts the tabs carry', () => {
-    const counts = evaluationCounts([
-      effect('a', 'blocked'),
-      effect('b', 'needs_decision'),
-      effect('c', 'deferred'),
-    ]);
-    const line = attentionLine(counts, noun);
-    for (const disposition of [
-      'blocked',
-      'needs_decision',
-      'deferred',
-    ] as const) {
-      expect(line).not.toContain(DISPOSITION_LABELS[disposition].toLowerCase());
-    }
-  });
-
-  it('agrees in the singular', () => {
-    expect(
-      attentionLine(
-        evaluationCounts([effect('a', 'blocked'), effect('b', 'will_apply')]),
-        noun,
-      ),
-    ).toBe('1 of 2 items needs attention.');
-  });
-
-  it('counts deferred and awaiting alongside blocked', () => {
-    const counts = evaluationCounts([
-      effect('a', 'deferred'),
-      effect('b', 'needs_decision'),
-      effect('c', 'will_apply'),
-    ]);
-    expect(attentionLine(counts, noun)).toBe('2 of 3 items need attention.');
-  });
-
-  it('speaks plainly when everything will apply', () => {
-    const counts = evaluationCounts([
-      effect('a', 'will_apply'),
-      effect('b', 'will_apply'),
-    ]);
-    expect(attentionLine(counts, noun)).toBe(
-      '2 items will apply. Nothing needs attention.',
-    );
-  });
-
-  it('carries no domain noun beyond the supplied one', () => {
-    const rows = attentionLine(evaluationCounts([effect('a', 'blocked')]), {
-      one: 'row',
-      other: 'rows',
-    });
-    expect(rows).toBe('1 of 1 row needs attention.');
-  });
-});
-
-describe('bucket rows', () => {
-  it('shows every item at or below the row budget', () => {
-    const effects = Array.from({ length: ROW_BUDGET }, (_, i) =>
-      effect(`e${i}`, 'blocked'),
-    );
-    const rows = bucketRows(effects, []);
-    expect(rows.kind).toBe('items');
-    if (rows.kind !== 'items') return;
-    expect(rows.items).toHaveLength(ROW_BUDGET);
-    expect(rows.hidden).toBe(0);
-  });
-
-  it('rolls up past the budget and counts the remainder in items', () => {
-    const effects = Array.from({ length: 40 }, (_, i) =>
-      effect(`e${i}`, 'blocked', `r${i % 8}`),
-    );
-    const reasons = Array.from({ length: 8 }, (_, i) => ({
-      key: `r${i}`,
-      label: `Reason ${i}`,
-    }));
-    const rows = bucketRows(effects, reasons);
-    expect(rows.kind).toBe('reasons');
-    if (rows.kind !== 'reasons') return;
-    // "and N more" has to mean N things the reader could have looked at.
-    const shown = rows.reasons.reduce((sum, row) => sum + row.count, 0);
-    expect(shown + rows.hidden).toBe(40);
-  });
-});
-
-describe('roll up by reason', () => {
-  it('groups by key and keeps reason counts bounded as items grow', () => {
-    const effects = Array.from({ length: 40 }, (_, i) =>
-      effect(
-        `e${i}`,
-        'blocked',
-        i % 2 === 0 ? 'margin_floor' : 'evidence_stale',
-      ),
-    );
-    const rows = rollUpByReason(effects, [
-      { key: 'margin_floor', label: 'Below margin floor' },
-      { key: 'evidence_stale', label: 'Evidence out of date' },
-    ]);
-    expect(rows).toEqual([
-      { key: 'margin_floor', label: 'Below margin floor', count: 20 },
-      { key: 'evidence_stale', label: 'Evidence out of date', count: 20 },
-    ]);
-    expect(effects.length).toBeGreaterThan(ROW_BUDGET);
-  });
-
-  it('surfaces unattributed rows rather than dropping them', () => {
-    const rows = rollUpByReason([effect('a', 'blocked', null)], []);
-    expect(rows).toEqual([
-      { key: '__unattributed__', label: 'No recorded reason', count: 1 },
-    ]);
-  });
-
-  it('does not pool evidence across items sharing a reason', () => {
-    const effects = [
-      effect('a', 'blocked', 'margin_floor'),
-      effect('b', 'blocked', 'margin_floor'),
-    ];
-    expect(effects[0]!.evidenceIds).toEqual(['ev-a']);
-    expect(effects[1]!.evidenceIds).toEqual(['ev-b']);
-  });
-});
-
-describe('copy rules', () => {
-  const actionish = Object.values(DISPOSITION_LABELS);
-
-  it('uses sentence case and no terminal punctuation on labels', () => {
-    for (const label of actionish) {
-      expect(label).not.toMatch(/[.!]$/);
-      expect(label).toBe(label.charAt(0).toUpperCase() + label.slice(1));
-      expect(label.slice(1)).toBe(
-        label.slice(1).replace(/\b[A-Z]/g, (m) => m.toLowerCase()),
-      );
-    }
-  });
-
-  it('bans apology and filler vocabulary', () => {
-    const corpus = [
-      ...actionish,
-      attentionLine(evaluationCounts([]), noun),
-    ].join(' ');
-    expect(corpus).not.toMatch(/successfully|please|sorry|!/i);
-  });
-
-  it('holds one label per disposition on the scale', () => {
-    expect(Object.keys(DISPOSITION_LABELS).sort()).toEqual(
-      [...DISPOSITIONS].sort(),
-    );
   });
 });

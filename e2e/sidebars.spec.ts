@@ -88,7 +88,7 @@ test('the resize hint belongs to the grip and its tooltip stays anchored', async
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/examples/promotion?run=run-104');
+  await page.goto('/examples/brunch-orders');
 
   const handle = page.locator('.sidebar-handle[data-side="left"]');
   const grip = handle.locator('.sidebar-handle-mark');
@@ -175,7 +175,7 @@ test('the sidebars resize, remember, and recover', async ({
   page.on('pageerror', (error) => errors.push(error.message));
 
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/examples/promotion?run=run-104');
+  await page.goto('/examples/brunch-orders');
   await expect(page.locator('.sidebar-handle').first()).toHaveAttribute(
     'aria-valuenow',
     '250',
@@ -277,8 +277,11 @@ test('the sidebars resize, remember, and recover', async ({
   });
 
   await test.step('a route change keeps the draft; a reload keeps only preferences', async () => {
-    await page.locator('a[href="/examples/support"]').first().click();
-    await page.waitForURL('**/examples/support');
+    await page
+      .locator('a[href="/examples/brunch-orders-direct"]')
+      .first()
+      .click();
+    await page.waitForURL('**/examples/brunch-orders-direct');
     await expect
       .poll(async () => (await assistant(page)).draft)
       .toBe('Explain this run');
@@ -463,7 +466,7 @@ test('the assistant answers its shortcut from anywhere, and Enter in its field',
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/examples/promotion');
+  await page.goto('/examples/brunch-orders');
   const opener = page.locator('button[aria-label="Assistant"]');
   const field = page.getByRole('textbox', { name: 'Message' });
   await expect(opener).toHaveAttribute('aria-expanded', 'false');
@@ -478,7 +481,9 @@ test('the assistant answers its shortcut from anywhere, and Enter in its field',
   ).toHaveCount(0);
 
   // Open, from elsewhere on the page: back to its message, still open.
-  await page.locator('.sheet-row').first().focus();
+  await page
+    .getByRole('button', { name: 'Search processes', exact: true })
+    .focus();
   await page.keyboard.press(`${modifier}+i`);
   await expect(field).toBeFocused();
   await expect(opener).toHaveAttribute('aria-expanded', 'true');
@@ -498,7 +503,7 @@ test('the assistant answers its shortcut from anywhere, and Enter in its field',
 
   // The context follows the page until another is chosen, and can be none.
   const context = page.getByRole('button', { name: /^Context:/ });
-  await expect(context).toHaveAccessibleName('Context: Promotion release');
+  await expect(context).toHaveAccessibleName('Context: Brunch orders');
   // From the keyboard: the development controls bar overlaps it in dev.
   await context.press('Enter');
   await page.getByRole('menuitemradio', { name: 'No context' }).press('Enter');

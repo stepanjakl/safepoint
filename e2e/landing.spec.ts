@@ -6,12 +6,12 @@ import { expect, test } from '@playwright/test';
 */
 test('the root opens the process last open', async ({ page }) => {
   await page.goto('/?run=run-104');
-  await expect(page).toHaveURL(/\/examples\/promotion\?run=run-104$/);
+  await expect(page).toHaveURL(/\/examples\/brunch-orders\?run=run-104$/);
 
-  await page.goto('/examples/support');
+  await page.goto('/examples/brunch-orders-direct');
   await expect(
     page.getByRole('heading', { level: 1, name: 'No run selected' }),
   ).toBeVisible();
   await page.goto('/');
-  await expect(page).toHaveURL(/\/examples\/support$/);
+  await expect(page).toHaveURL(/\/examples\/brunch-orders-direct$/);
 });

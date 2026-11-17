@@ -5,10 +5,6 @@ import {
   brunchOrdersProcess,
 } from '@/lib/processes/brunch-orders/process';
 import type { ProcessSummary } from './model';
-import {
-  promotionProcess,
-  supportProcess,
-} from './placeholder/placeholder-process';
 
 /*
   Where each process lives. The root is none of them: it opens the process the
@@ -16,8 +12,6 @@ import {
   its own for its link to mean that process.
 */
 export const PROCESS_ROUTES: { process: ProcessSummary; href: string }[] = [
-  { process: promotionProcess, href: '/examples/promotion' },
-  { process: supportProcess, href: '/examples/support' },
   // The two processes a deployment exists to show, built step by step
   // (docs/processes/brunch-orders/PLAN.md).
   { process: brunchOrdersProcess, href: BRUNCH_ORDERS_HREF },

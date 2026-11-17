@@ -207,7 +207,7 @@ describe('runs router', () => {
     });
     for (const call of [
       caller().runs.start({
-        process: 'promotion-release',
+        process: 'nobody',
         instructions: V3,
       } as never),
       caller().runs.start({ process: 'brunch-orders', instructions: 'v3' }),

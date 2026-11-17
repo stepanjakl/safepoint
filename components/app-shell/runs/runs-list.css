@@ -130,8 +130,8 @@
     pointer-events: none;
   }
   /* A lit run -- chosen, focused or under the pointer -- takes the rules above
-     and below it, so its fill reads as one shape, as a release row's does in
-     its card and the head's line does above the first run. A band's own edges
+     and below it, so its fill reads as one shape, as a list row's does
+     and the head's line does above the first run. A band's own edges
      stay: it is a row of its own, and the lit fill stops at its line. The hover
      arm only where hover is real. */
   .sheet-list > li::before,

@@ -23,7 +23,10 @@ test.use({
   launchOptions: { args: ['--force-device-scale-factor=2'] },
 });
 
-for (const route of ['/examples/states', '/examples/promotion']) {
+for (const route of [
+  '/examples/brunch-orders',
+  '/examples/brunch-orders-direct',
+]) {
   test(`the sidebar sits on its axes at ${route}`, async ({
     page,
     colorScheme,

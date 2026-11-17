@@ -4,7 +4,6 @@ import { PROCESS_TAB_KEY } from '@/lib/shell/navigation';
 import type { InputDetail } from '@/lib/shell/input-details';
 import type { ProcessSummary } from '@/lib/shell/model';
 import type { SystemLink } from '@/lib/shell/system-links';
-import type { PlayableRun } from '@/components/app-shell/runs/run-view';
 import { ProcessSheet, type ProcessPolicy } from './process-sheet';
 
 /*
@@ -18,7 +17,6 @@ export async function ProcessView({
   inputs = [],
   inputDetails,
   initialRunId = null,
-  playable,
   policy,
   liveThread,
   rulesPanel,
@@ -31,8 +29,6 @@ export async function ProcessView({
   inputDetails?: Record<string, InputDetail>;
   // The run the page opens on, from ?run=; none opens on the empty page.
   initialRunId?: string | null;
-  // What a started run is drawn from, where the process can play one.
-  playable?: PlayableRun;
   // A process's own policy panel in place of the instructions tab.
   policy?: ProcessPolicy;
   // A process run step by step on the page: its live run's thread.
@@ -53,7 +49,6 @@ export async function ProcessView({
       inputDetails={inputDetails}
       run={children}
       initialRunId={initialRunId}
-      playable={playable}
       policy={policy}
       liveThread={liveThread}
       rulesPanel={rulesPanel}

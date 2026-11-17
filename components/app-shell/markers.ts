@@ -1,25 +1,21 @@
 import type { RunStatus, StepStatus } from '@/lib/shell/model';
-import type { Disposition } from '@/lib/shell/plan-contract';
-import type { ReviewOutcome } from '@/lib/promotion-release';
-import type { PresentedGate } from '@/lib/review-presentation';
 import type { AdapterMode } from '@/lib/shell/system-links';
 import type { GlyphName } from '@/components/ui/glyph';
 import type { Tone } from '@/components/ui/status-label';
 
 /*
   Shape and tone for every state the interface shows. Shape is primary so
-  meaning survives without colour; the same pairs are used in rows, identity
-  bands, gates and the effects rail.
+  meaning survives without colour; the same pairs are used in the run rows and
+  the thread.
 */
 
+// What a run counts: a line held, one needing a decision, one put aside.
 export const outcomeMarker: Record<
-  ReviewOutcome,
+  'needs_attention' | 'held' | 'excluded',
   { glyph: GlyphName; tone: Tone }
 > = {
-  ready: { glyph: 'circle', tone: 'verified' },
   needs_attention: { glyph: 'triangle', tone: 'decision' },
   held: { glyph: 'square', tone: 'blocked' },
-  unverifiable: { glyph: 'struck', tone: 'unavailable' },
   excluded: { glyph: 'dash', tone: 'unavailable' },
 };
 
@@ -35,16 +31,6 @@ export const stepMarker: Record<StepStatus, { glyph: GlyphName; tone: Tone }> =
     running: { glyph: 'dotted', tone: 'advisory' },
     pending: { glyph: 'minus', tone: 'unavailable' },
   };
-
-// A line's place in the plan, as the release card's rows draw it: the review's
-// outcome shapes again, so a blocked row and a held line are the same mark.
-// Colour comes from the row's own severity, which the bar and tabs share.
-export const dispositionGlyph: Record<Disposition, GlyphName> = {
-  blocked: 'square',
-  needs_decision: 'triangle',
-  deferred: 'dash',
-  will_apply: 'circle',
-};
 
 /*
   A run's state, as a tone only. The shape is not here: a run is a lifecycle
@@ -62,25 +48,6 @@ export const runTone: Record<RunStatus, Tone> = {
   failed: 'blocked',
   superseded: 'unavailable',
   cancelled: 'unavailable',
-};
-
-export const eligibilityMarker: Record<
-  'eligible' | 'blocked',
-  { glyph: GlyphName; tone: Tone }
-> = {
-  eligible: { glyph: 'check', tone: 'verified' },
-  blocked: { glyph: 'cross', tone: 'blocked' },
-};
-
-export const gateMarker: Record<
-  PresentedGate['result'],
-  { glyph: GlyphName; tone: Tone }
-> = {
-  passed: { glyph: 'check', tone: 'verified' },
-  failed: { glyph: 'cross', tone: 'blocked' },
-  not_checked: { glyph: 'minus', tone: 'unavailable' },
-  evidence_unavailable: { glyph: 'struck', tone: 'unavailable' },
-  not_applicable: { glyph: 'dash', tone: 'unavailable' },
 };
 
 export const modeMarker: Record<AdapterMode, { glyph: GlyphName; tone: Tone }> =

@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 // A presentation boundary, not an execution authorisation or a policy engine.
 // Process adapters own domain validation, calculations and source mapping.
-// Every count in this module is derived from `effects`; nothing is stored twice,
-// so the verdict line and the pills beneath it cannot disagree.
+// Every count is derived from `effects`; nothing is stored twice, so the
+// counts and the state cannot disagree.
 
 // An ordered severity scale, not a fixed set. Index is the severity rank, and
 // colour is bound to position rather than label, so adding a bucket is a
@@ -16,22 +16,8 @@ export const DISPOSITIONS = [
   'will_apply',
 ] as const;
 
-export const dispositionSchema = z.enum(DISPOSITIONS);
+const dispositionSchema = z.enum(DISPOSITIONS);
 export type Disposition = (typeof DISPOSITIONS)[number];
-
-// One frame, held across the whole scale: where the item sits in the plan.
-// The brief asks for a verb the user can perform, which `will_apply` cannot
-// satisfy; consistency is the more important half of that rule.
-export const DISPOSITION_LABELS: Record<Disposition, string> = {
-  blocked: 'Blocked',
-  needs_decision: 'Awaiting a decision',
-  deferred: 'Deferred',
-  will_apply: 'Will apply',
-};
-
-export function severityRank(disposition: Disposition): number {
-  return DISPOSITIONS.indexOf(disposition);
-}
 
 // Presentation hints for a numeric delta. Domain-neutral on purpose: the
 // contract carries the numbers so direction and derived values are computed
@@ -42,8 +28,6 @@ const displayHintSchema = z.strictObject({
   scale: z.number().positive().optional(),
   precision: z.number().int().min(0).max(6).optional(),
 });
-
-export type DisplayHint = z.infer<typeof displayHintSchema>;
 
 // `before: null` means the prior value was not observed. `create` means there
 // is no prior value. Collapsing those is how invented before-values get in.
@@ -118,18 +102,6 @@ function coerceUnknownKind(value: unknown): unknown {
 
 const labelShape = { label: z.string().min(1) };
 
-export const deltaSchema = z.preprocess(
-  coerceUnknownKind,
-  z.discriminatedUnion('kind', [
-    scalarDeltaSchema,
-    categoricalDeltaSchema,
-    createDeltaSchema,
-    destroyDeltaSchema,
-    setDeltaSchema,
-    opaqueDeltaSchema,
-  ]),
-);
-
 export const labelledDeltaSchema = z.preprocess(
   coerceUnknownKind,
   z.discriminatedUnion('kind', [
@@ -141,9 +113,6 @@ export const labelledDeltaSchema = z.preprocess(
     opaqueDeltaSchema.extend(labelShape),
   ]),
 );
-
-export type Delta = z.infer<typeof deltaSchema>;
-export type LabelledDelta = z.infer<typeof labelledDeltaSchema>;
 
 // The reviewable unit is the item, not the individual change: an item is what
 // gets excluded, decided on and approved. `deltas` is ordered by the engine;
@@ -165,12 +134,10 @@ export const effectSchema = z.strictObject({
 
 export type Effect = z.infer<typeof effectSchema>;
 
-export const reasonSchema = z.strictObject({
+const reasonSchema = z.strictObject({
   key: z.string().min(1),
   label: z.string().min(1),
 });
-
-export type Reason = z.infer<typeof reasonSchema>;
 
 // Each variant carries what its UI actually needs. An aggregate failure count
 // cannot identify rows, so the failures filter would have nothing to filter.
@@ -210,12 +177,10 @@ export type PlanStatus = z.infer<typeof planStatusSchema>;
 
 // The engine supplies exactly one domain word. Everything else in the chrome
 // is fixed, so swapping the payload for another domain changes no strings here.
-export const nounSchema = z.strictObject({
+const nounSchema = z.strictObject({
   one: z.string().min(1),
   other: z.string().min(1),
 });
-
-export type Noun = z.infer<typeof nounSchema>;
 
 export const releasePlanSchema = z
   .strictObject({

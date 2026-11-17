@@ -1,7 +1,5 @@
 // The process model: a process, its runs, the steps of a run's thread, and the
-// labels each status is read aloud as. Only the two processes that fill it are
-// placeholders (placeholder/placeholder-process.ts); this is the shape the engine will
-// supply.
+// labels each status is read aloud as.
 //
 // `instructionsVersion` on a run is not decoration. The review contract already
 // binds a decision to an exact revision, and instructions are the other input
@@ -214,8 +212,7 @@ export type ProcessSummary = {
     previous: InstructionsVersion[];
   };
   // Ordered. The thread renders in this order and the page supplies each
-  // step's box by id. Absent where the thread is derived from the run's stage
-  // instead (placeholder/run-lifecycle.ts).
+  // step's box by id.
   steps?: ProcessStep[];
   analysis: ProcessAnalysis;
   // What this process counts, for the places a tally has to be read aloud:

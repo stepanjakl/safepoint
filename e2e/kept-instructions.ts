@@ -3,7 +3,6 @@ import type { Page } from '@playwright/test';
 import { hashOf } from '@/lib/definitions/fingerprint';
 import { normalisedInstructions } from '@/lib/shell/instruction-diff';
 import type { ProcessSummary } from '@/lib/shell/model';
-import { promotionProcess } from '@/lib/shell/placeholder/placeholder-process';
 import type { KeptVersion } from '@/server/storage/instructions';
 
 import { mockProcedure } from './trpc';
@@ -52,9 +51,13 @@ export function listedInstructions(
   return { versions, next: `v${number + 1}` };
 }
 
-// Serves the promotion process's list with versions already published.
-export function mockPromotionInstructions(page: Page, published: Published[]) {
+// Serves a process's list with versions already published.
+export function mockInstructions(
+  page: Page,
+  process: ProcessSummary,
+  published: Published[],
+) {
   return mockProcedure(page, 'instructions.list', {
-    data: listedInstructions(promotionProcess, published),
+    data: listedInstructions(process, published),
   });
 }
