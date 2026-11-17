@@ -121,29 +121,17 @@ export async function keepProposal(
 // Records a call proposes for: few enough that its answer fits.
 const BATCH = 25;
 
-export async function propose(
-  owner: DefinitionProcess,
-  set: DefinitionSet,
-  read: KeptRead,
-  readId: string,
-  text: string,
-  {
-    model: chosen = null,
-    resolve,
-    batch = BATCH,
-    onBatch,
-    watch,
-    record,
-  }: {
-    model?: DraftingModel | null;
-    resolve?: Resolve;
-    batch?: number;
-    // Told as each batch starts: which, of how many.
-    onBatch?: (at: number, of: number) => void;
-    watch?: Watch;
-    record?: RecordAttempt;
-  } = {},
-): Promise<Proposal> {
+// How the model is asked, and who watches and records it as it answers.
+type Asking = {
+  model?: DraftingModel | null;
+  resolve?: Resolve;
+  watch?: Watch;
+  record?: RecordAttempt;
+};
+
+// What a proposal is made on: the process its rules were drafted on, every
+// rule accepted, and a read that fits.
+function opening(owner: DefinitionProcess, set: DefinitionSet, read: KeptRead) {
   owner = profiledFor(owner, set);
   fitting(read, owner.subject.data);
   const open = set.definitions.filter((d) => !d.approvedAt);
@@ -154,44 +142,121 @@ export async function propose(
   const calculation = calculate(owner, set, read);
   const keys = calculation.rows.map((row) => row.key);
   if (!keys.length) throw new Error('The read has no records.');
-  const fingerprint = fingerprintOf(set);
-  const models = chosen ? fallbackChain(chosen) : DRAFT_MODELS;
-  const key = runKeyOf(owner, readId, fingerprint);
+  return { owner, calculation, keys };
+}
+
+/*
+  A proposal in three parts, each of which may be done again (a job's step
+  run twice, server/workflows/proposal-steps.ts): the records still to
+  answer, in batches; one batch answered and kept in the part; the whole kept
+  from the part. `propose` below is the three in turn.
+*/
+
+// The records the part does not answer yet, in batches of `batch`.
+export async function proposalBatches(
+  owner: DefinitionProcess,
+  set: DefinitionSet,
+  read: KeptRead,
+  readId: string,
+  batch = BATCH,
+): Promise<string[][]> {
+  const { keys } = opening(owner, set, read);
+  const key = runKeyOf(owner, readId, fingerprintOf(set));
   // Only a head start: a part that cannot be read is asked for again.
   const sofar = await keptPart('proposal', key, proposalPartSchema);
-  const records: Proposal['records'] = { ...sofar?.records };
-  const answeredBy = new Set(sofar?.models ?? []);
-  const left = keys.filter((key) => !records[key]);
-  const batches = Math.ceil(left.length / batch);
-  for (let at = 0; at < left.length; at += batch) {
-    onBatch?.(at / batch + 1, batches);
-    const [first, ...rest] = left.slice(at, at + batch);
-    const answer = await proposeBatch(
-      owner,
-      set,
-      read,
-      text,
-      calculation,
-      [first!, ...rest],
-      models,
-      resolve,
-      watch,
-      record,
+  const left = keys.filter((key) => !sofar?.records[key]);
+  const batches: string[][] = [];
+  for (let at = 0; at < left.length; at += batch)
+    batches.push(left.slice(at, at + batch));
+  return batches;
+}
+
+// Answers the records of a batch the part does not answer yet, and keeps
+// them in it: a record it already answers is not asked for again.
+export async function answerBatch(
+  owner: DefinitionProcess,
+  set: DefinitionSet,
+  read: KeptRead,
+  readId: string,
+  text: string,
+  batch: string[],
+  { model: chosen = null, resolve, watch, record }: Asking = {},
+): Promise<void> {
+  const opened = opening(owner, set, read);
+  const key = runKeyOf(owner, readId, fingerprintOf(set));
+  const sofar = await keptPart('proposal', key, proposalPartSchema);
+  const [first, ...rest] = batch.filter((key) => !sofar?.records[key]);
+  if (!first) return;
+  const answer = await proposeBatch(
+    opened.owner,
+    set,
+    read,
+    text,
+    opened.calculation,
+    [first, ...rest],
+    chosen ? fallbackChain(chosen) : DRAFT_MODELS,
+    resolve,
+    watch,
+    record,
+  );
+  await keepPart('proposal', key, proposalPartSchema, {
+    records: { ...sofar?.records, ...answer.records },
+    models: [...new Set([...(sofar?.models ?? []), answer.model])],
+  });
+}
+
+/*
+  Keeps the whole proposal the part makes, proposed `at`, in the records'
+  own order however the batches came back. Done again for the same `at`, it
+  finds the one it kept (whose part is gone) and keeps nothing more.
+*/
+export async function finishProposal(
+  owner: DefinitionProcess,
+  set: DefinitionSet,
+  read: KeptRead,
+  readId: string,
+  at: string,
+): Promise<Proposal> {
+  const { keys } = opening(owner, set, read);
+  const fingerprint = fingerprintOf(set);
+  const key = runKeyOf(owner, readId, fingerprint);
+  const kept = await currentProposalOf(key);
+  if (kept?.proposal.at === at) return kept.proposal;
+  const sofar = await keptPart('proposal', key, proposalPartSchema);
+  const missing = keys.filter((key) => !sofar?.records[key]);
+  if (!sofar || missing.length)
+    throw new Error(
+      `Not every record was answered: ${missing.slice(0, 5).join(', ')}.`,
     );
-    Object.assign(records, answer.records);
-    answeredBy.add(answer.model);
-    await keepPart('proposal', key, proposalPartSchema, {
-      records,
-      models: [...answeredBy],
-    });
-  }
-  const proposal: Proposal = {
+  return keepProposal(owner, {
     fingerprint,
     readId,
-    model: [...answeredBy].join(', '),
-    at: new Date().toISOString(),
-    // In the records' own order, however the batches came back.
-    records: Object.fromEntries(keys.map((key) => [key, records[key]!])),
-  };
-  return keepProposal(owner, proposal);
+    model: sofar.models.join(', '),
+    at,
+    records: Object.fromEntries(keys.map((key) => [key, sofar.records[key]!])),
+  });
+}
+
+export async function propose(
+  owner: DefinitionProcess,
+  set: DefinitionSet,
+  read: KeptRead,
+  readId: string,
+  text: string,
+  {
+    batch = BATCH,
+    onBatch,
+    ...asking
+  }: Asking & {
+    batch?: number;
+    // Told as each batch starts: which, of how many.
+    onBatch?: (at: number, of: number) => void;
+  } = {},
+): Promise<Proposal> {
+  const batches = await proposalBatches(owner, set, read, readId, batch);
+  for (const [at, keys] of batches.entries()) {
+    onBatch?.(at + 1, batches.length);
+    await answerBatch(owner, set, read, readId, text, keys, asking);
+  }
+  return finishProposal(owner, set, read, readId, new Date().toISOString());
 }

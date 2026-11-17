@@ -48,6 +48,18 @@ export const WRITE_MODELS: DraftingModel[] = fallbackChain(
 // The model by id; replaced in tests.
 export type Resolve = (id: DraftingModel) => LanguageModel;
 
+// Every model of a chain is spent: said as before, with when the first is
+// back, so a caller that can wait without holding a process may.
+export class ModelsResting extends Error {
+  constructor(
+    message: string,
+    readonly until: number,
+  ) {
+    super(message);
+    this.name = 'ModelsResting';
+  }
+}
+
 // A call's own timeout aborts it with a TimeoutError, wrapped or not.
 const timedOut = (error: unknown): boolean =>
   typeof error === 'object' &&
@@ -192,8 +204,9 @@ export async function withModels<R>(
   }
   const resting = models.filter((m) => restingUntil(m));
   if (resting.length === models.length)
-    throw new Error(
+    throw new ModelsResting(
       `Out of quota: ${resting.map((m) => `${m} until ${clock(restingUntil(m)!)}`).join(', ')}. Choose a model of another family, or try again later.`,
+      Math.min(...resting.map((m) => restingUntil(m)!)),
     );
   throw last instanceof Error ? last : new Error('The model service failed.');
 }

@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { and, count, eq, gte } from 'drizzle-orm';
+
 import type { Attempt, RecordAttempt } from '@/lib/definitions/attempts';
 import { database } from '@/server/db/client';
 import { ensureProcess } from '@/server/db/scope';
@@ -29,10 +31,51 @@ export type AttemptContext = {
 
 export type Recorder = RecordAttempt & { settled: () => Promise<void> };
 
-export function attemptRecorder(context: AttemptContext): Recorder {
+// What a try is numbered by: what it was for.
+const triedFor = (purpose: string, definitionId: string | null) =>
+  `${purpose}:${definitionId ?? ''}`;
+
+/*
+  The tries a job has made since it started, by what each was for: a job's
+  work is done in steps (server/workflows/), each with a recorder of its own,
+  and a step's tries are numbered on from these.
+*/
+export async function triesSoFar(
+  context: AttemptContext &
+    Required<Pick<AttemptContext, 'jobKind' | 'jobKey'>>,
+  since: Date,
+): Promise<Map<string, number>> {
+  const rows = await (
+    await database()
+  )
+    .select({
+      purpose: modelAttempts.purpose,
+      definitionId: modelAttempts.definitionId,
+      tries: count(),
+    })
+    .from(modelAttempts)
+    .where(
+      and(
+        eq(modelAttempts.process, context.process),
+        eq(modelAttempts.jobKind, context.jobKind),
+        eq(modelAttempts.jobKey, context.jobKey),
+        gte(modelAttempts.startedAt, since),
+      ),
+    )
+    .groupBy(modelAttempts.purpose, modelAttempts.definitionId);
+  return new Map(
+    rows.map((row) => [triedFor(row.purpose, row.definitionId), row.tries]),
+  );
+}
+
+export function attemptRecorder(
+  context: AttemptContext,
+  // Tries already made, numbered on from (triesSoFar).
+  before: Map<string, number> = new Map(),
+): Recorder {
   const writing = new Set<Promise<void>>();
   // Which try each is, from 1, of what it was for.
-  const tries = new Map<string, number>();
+  const tries = new Map(before);
   const keep = async (attempt: Attempt, number: number) => {
     const db = await database();
     await ensureProcess(db, context.process);
@@ -62,7 +105,7 @@ export function attemptRecorder(context: AttemptContext): Recorder {
     });
   };
   const record: RecordAttempt = (attempt) => {
-    const of = `${attempt.purpose}:${attempt.definitionId ?? ''}`;
+    const of = triedFor(attempt.purpose, attempt.definitionId);
     const number = (tries.get(of) ?? 0) + 1;
     tries.set(of, number);
     // A record only: a row that cannot be written is let go.
