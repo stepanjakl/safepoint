@@ -147,6 +147,20 @@ export const WORKBENCH_GROUPS: readonly WorkbenchGroup[] = [
       },
     ],
   },
+  {
+    id: 'history',
+    title: 'History',
+    summary:
+      'Earlier prototypes, brought back from the archive and kept as they were: not maintained, and nothing else depends on them.',
+    entries: [
+      {
+        href: '/workbench/history/colour-ramps',
+        title: 'Colour ramps',
+        summary:
+          'The first colour workbench: the neutral ramp’s revisions in both themes, with the contrast measured on each step.',
+      },
+    ],
+  },
 ];
 
 // The group and entry a pathname belongs to, for the breadcrumb.
