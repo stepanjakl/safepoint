@@ -97,6 +97,7 @@ const LEAVE_FALLBACK_MS = 300;
 export function DrawerAside({
   current,
   leaving,
+  persistentBand,
   direction,
   exiting,
   onExited,
@@ -107,6 +108,8 @@ export function DrawerAside({
   current: AsideLayer;
   // The content being swapped out, for as long as it takes to leave.
   leaving: AsideLayer | null;
+  // A band whose controls and labels keep their identity across body swaps.
+  persistentBand?: ReactNode;
   // Which way the latest swap travels; both layers move with it.
   direction: SwapDirection;
   // The whole panel is leaving.
@@ -179,36 +182,29 @@ export function DrawerAside({
 
   // The content moves the way the list does: an item further down rises.
   const motion = direction === 'down' ? 'up' : 'down';
-  // One element, keyed, so content moving from current to leaving keeps its
-  // instance -- its scroll position and its state -- while it fades out.
-  const layer = leaving ? (
+  const shown = leaving ?? current;
+  const swapClass = leaving
+    ? 'swap-leave'
+    : swapped || current.key !== openedWith
+      ? 'swap-enter'
+      : undefined;
+  const layer = (
     <AsideContent
-      key={leaving.key}
-      layer={leaving}
-      titleId={titleId}
-      className="swap-leave"
-      motion={motion}
-      inert
-      onAnimationEnd={(event) => {
-        if (event.target === event.currentTarget) onLeft();
-      }}
-    />
-  ) : swapped || current.key !== openedWith ? (
-    <AsideContent
-      key={current.key}
-      layer={current}
+      key={persistentBand ? undefined : shown.key}
+      layer={shown}
       titleId={titleId}
       headingRef={heading}
-      className="swap-enter"
-      motion={motion}
-    />
-  ) : (
-    <AsideContent
-      key={current.key}
-      layer={current}
-      titleId={titleId}
-      headingRef={heading}
-      className="drawer-aside-content"
+      persistentBand={persistentBand}
+      swapClass={swapClass}
+      motion={swapClass ? motion : undefined}
+      inert={Boolean(leaving)}
+      onAnimationEnd={
+        leaving
+          ? (event) => {
+              if (event.target === event.currentTarget) onLeft();
+            }
+          : undefined
+      }
     />
   );
 
@@ -241,7 +237,8 @@ function AsideContent({
   layer,
   titleId,
   headingRef,
-  className,
+  persistentBand,
+  swapClass,
   motion,
   inert = false,
   onAnimationEnd,
@@ -249,21 +246,30 @@ function AsideContent({
   layer: AsideLayer;
   titleId: string;
   headingRef?: Ref<HTMLHeadingElement>;
-  className: string;
+  persistentBand?: ReactNode;
+  swapClass?: 'swap-leave' | 'swap-enter';
   motion?: 'up' | 'down';
   inert?: boolean;
   onAnimationEnd?: (event: AnimationEvent<HTMLDivElement>) => void;
 }) {
+  // Keep the outgoing scroller mounted until it finishes leaving.
+  const swapProps = {
+    inert,
+    'aria-hidden': inert || undefined,
+    'data-motion': motion,
+    onAnimationEnd,
+  };
   return (
     <div
-      // Leaving content can be neither reached nor read.
-      inert={inert}
-      aria-hidden={inert || undefined}
-      data-motion={motion}
-      onAnimationEnd={onAnimationEnd}
+      {...(persistentBand ? {} : swapProps)}
       className={cx(
-        'col-start-1 row-start-1 grid min-h-0 grid-rows-[auto_minmax(0,1fr)]',
-        className,
+        'col-start-1 row-start-1 grid min-h-0',
+        persistentBand
+          ? 'drawer-aside-content grid-rows-[auto_auto_minmax(0,1fr)]'
+          : cx(
+              'grid-rows-[auto_minmax(0,1fr)]',
+              swapClass ?? 'drawer-aside-content',
+            ),
       )}
     >
       <header
@@ -278,8 +284,8 @@ function AsideContent({
         <div className="grid min-w-0 gap-0.5">
           <p className="readout text-muted">{layer.eyebrow}</p>
           <h2
-            ref={headingRef}
-            id={inert ? undefined : titleId}
+            ref={inert && !persistentBand ? undefined : headingRef}
+            id={inert && !persistentBand ? undefined : titleId}
             tabIndex={-1}
             className="text-title [font-weight:550] outline-none"
           >
@@ -290,7 +296,15 @@ function AsideContent({
           ) : null}
         </div>
       </header>
-      <div className="swap-body overflow-y-auto overscroll-contain">
+      {persistentBand}
+      <div
+        key={persistentBand ? layer.key : undefined}
+        {...(persistentBand ? swapProps : {})}
+        className={cx(
+          'swap-body overflow-y-auto overscroll-contain',
+          persistentBand ? cx('row-start-3', swapClass) : undefined,
+        )}
+      >
         {layer.body}
       </div>
     </div>

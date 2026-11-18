@@ -32,6 +32,7 @@
    line apart, as two paragraphs do in the field. */
 :root {
   --clause-gutter: 2rem;
+  --clause-sign: --spacing(6);
   --clause-gap: --spacing(1);
 }
 @utility clause-row {
@@ -47,7 +48,7 @@
      padding, so the lines also wrap where the comparison's do. */
   .draft-field {
     padding-block: calc((1lh - var(--clause-gap)) / 2 - var(--spacing-field-edge));
-    padding-inline: calc(var(--clause-gutter) - var(--spacing-field-edge))
+    padding-inline: calc(var(--clause-gutter) + var(--clause-sign) - var(--spacing-field-edge))
       calc(--spacing(3) - var(--spacing-field-edge));
   }
   /* Over the field, inset as its text is (.draft-field) and edged as it is,
@@ -57,7 +58,7 @@
     inset: --spacing(5);
     border: var(--spacing-field-edge) solid transparent;
     padding-block: calc((1lh - var(--clause-gap)) / 2 - var(--spacing-field-edge));
-    padding-inline: calc(var(--clause-gutter) - var(--spacing-field-edge))
+    padding-inline: calc(var(--clause-gutter) + var(--clause-sign) - var(--spacing-field-edge))
       calc(--spacing(3) - var(--spacing-field-edge));
     color: transparent;
     white-space: pre-wrap;
@@ -76,7 +77,7 @@
   .draft-number > * {
     position: absolute;
     inset-block: 0;
-    inset-inline-end: 0;
+    inset-inline-end: var(--clause-sign);
     display: grid;
     place-items: center;
     width: var(--clause-gutter);

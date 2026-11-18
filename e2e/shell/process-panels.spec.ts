@@ -3,6 +3,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { brunchOrdersProcess } from '@/lib/processes/brunch-orders/process';
 
 import { mockInstructions } from '../support/kept-instructions';
+import { mockProcedure } from '../support/trpc';
 
 /* The sheet's Instructions, Inputs and Outputs tabs, and the detail drawer
    their rows open. Focus is asserted at every close: the drawer hands it
@@ -111,6 +112,82 @@ test('versions this browser published before the server did are said, and can be
       localStorage.getItem('safepoint.instructions.v3'),
     ),
   ).toContain('Written in this browser.');
+});
+
+test('the instruction pill stays in place as its version and status change', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await mockInstructions(page, brunchOrdersProcess, []);
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      'safepoint.instructions.v3',
+      JSON.stringify({ 'brunch-orders': { draft: 'A draft in progress.' } }),
+    );
+  });
+  await openTab(page, 'Instructions');
+
+  const detail = drawer(page);
+  const pill = detail.locator('.draft-pill');
+  await expect(pill.locator('.sr-only').first()).toHaveText('v3 Live');
+  const fades = await detail
+    .locator('.instruction-band')
+    .evaluateHandle((band) => {
+      const counts = { entering: 0, leaving: 0, pill: 0 };
+      band.addEventListener('animationstart', (event) => {
+        if (
+          !(event instanceof AnimationEvent) ||
+          !(event.target instanceof Element)
+        )
+          return;
+        if (
+          event.target.matches('.draft-pill') ||
+          event.target.querySelector('.draft-pill')
+        ) {
+          counts.pill += 1;
+        }
+        if (event.animationName === 'swap-fade-in') counts.entering += 1;
+        if (event.animationName === 'swap-fade-out') counts.leaving += 1;
+      });
+      return counts;
+    });
+  const original = await pill.elementHandle();
+  const position = () =>
+    pill.evaluate((element) => {
+      const { x, y } = element.getBoundingClientRect();
+      return { x, y };
+    });
+  const origin = await position();
+  const versions = page.getByRole('list', { name: /^Instructions/ });
+
+  for (const [rowName, label] of [
+    [/^v4 · Draft/, 'v4 Draft'],
+    [/^v2,/, 'v2'],
+    [/^v3 · Live/, 'v3 Live'],
+  ] as const) {
+    const row = versions.getByRole('button', { name: rowName });
+    await row.press('Enter');
+    await expect(pill.locator('.sr-only').first()).toHaveText(label);
+    expect(
+      await pill.evaluate((element, first) => element === first, original),
+    ).toBe(true);
+    expect(await position()).toEqual(origin);
+    await expect(pill).toHaveCSS('opacity', '1');
+    if (label === 'v4 Draft') {
+      await expect(
+        detail.getByRole('textbox', { name: 'Instructions, draft of v4' }),
+      ).toBeFocused();
+      await expect
+        .poll(() => fades.jsonValue())
+        .toEqual({
+          entering: 2,
+          leaving: 2,
+          pill: 0,
+        });
+    } else {
+      await expect(row).toBeFocused();
+    }
+  }
 });
 
 test('publishing text that is already a version says which, and opens it', async ({
@@ -349,10 +426,10 @@ test('every section waits for its tab fade before rows and details arrive', asyn
   }
 });
 
-test('rows wait for a process navigation fade', async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: 'no-preference' });
-  // The other process opens on the tab it was left on, which has rows.
-  await page.goto('/processes/brunch-orders-direct');
+test('navigating between processes always opens the runs screen', async ({
+  page,
+}) => {
+  await page.goto('/processes/brunch-orders');
   await page
     .getByRole('button', { name: /^Instructions/ })
     .first()
@@ -360,7 +437,74 @@ test('rows wait for a process navigation fade', async ({ page }) => {
   await expect(
     page.getByRole('heading', { level: 2, name: /^Instructions/ }),
   ).toBeVisible();
-  await page.goto('/processes/brunch-orders');
+
+  await page
+    .locator('a[href="/processes/brunch-orders-direct"]')
+    .first()
+    .click();
+  await expect(
+    page.getByRole('heading', { level: 2, name: /^Runs/ }).first(),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Runs', exact: true }).first(),
+  ).toHaveAttribute('aria-current', 'true');
+
+  await page
+    .getByRole('button', { name: /^Instructions/ })
+    .first()
+    .click();
+  await expect(
+    page.getByRole('heading', { level: 2, name: /^Instructions/ }),
+  ).toBeVisible();
+
+  await page.locator('a[href="/processes/brunch-orders"]').first().click();
+  await expect(
+    page.getByRole('heading', { level: 2, name: /^Runs/ }).first(),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Runs', exact: true }).first(),
+  ).toHaveAttribute('aria-current', 'true');
+
+  await page
+    .locator('a[href="/processes/brunch-orders-direct"]')
+    .first()
+    .click();
+  await expect(
+    page.getByRole('heading', { level: 2, name: /^Runs/ }).first(),
+  ).toBeVisible();
+});
+
+test('rows wait for a process navigation fade', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await mockProcedure(page, 'runs.list', (input) => ({
+    data:
+      input.process === 'brunch-orders-direct'
+        ? [
+            {
+              id: 'run-fade-test',
+              process: 'brunch-orders-direct',
+              startedAt: '2026-11-18T10:00:00.000Z',
+              updatedAt: '2026-11-18T10:00:00.000Z',
+              startedBy: null,
+              discardedAt: null,
+              stage: 'read',
+              status: 'running',
+              trigger: 'manual',
+              instructions: { version: 'v1', hash: 'test-hash' },
+              additionalInstructions: null,
+              readId: null,
+              rulebook: null,
+            },
+          ]
+        : [],
+  }));
+  // Visit the target once so its runs query is cached before navigating back.
+  await page.goto('/processes/brunch-orders-direct');
+  await expect(page.locator('.process-runs-list li').first()).toBeVisible();
+  await page.locator('a[href="/processes/brunch-orders"]').first().click();
+  await expect(page).toHaveURL(/\/processes\/brunch-orders$/);
+  await expect(page.getByRole('button', { name: /^Rules/ })).toBeVisible();
+  await expect(page.locator('[data-entrance-held]')).toHaveCount(0);
   expectSectionAfterScreen(
     await observeSectionEntrance(
       page.locator('a[href="/processes/brunch-orders-direct"]').first(),

@@ -1,42 +1,93 @@
 'use client';
 
-import { useContext, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { inferRouterOutputs } from '@trpc/server';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { ProcessSheetActions } from '@/components/app-shell/process/process-sheet';
 import {
   useRunSelection,
   type LiveRun,
   type RunSelection,
 } from '@/components/app-shell/runs/run-selection';
-import { ResponseSection } from '@/components/app-shell/thread/thread-page';
-import { ThreadStep } from '@/components/app-shell/thread/thread-step';
-import type { ProcessStep, ProcessSummary } from '@/lib/shell/model';
-
-import { SHEET_USE, SUBJECT } from '@/lib/processes/brunch-orders/data';
-import { sourceById } from '@/lib/sources/model';
-
-import { ApplyStep, type ApplyProgress } from '@/components/engine/apply-step';
+import { useWorkingFavicon } from '@/components/app-shell/runs/working-favicon';
 import {
-  ReadStep,
+  ModelRunThread,
+  type ModelRunActions,
+  type ModelRunView,
+} from '@/components/app-shell/thread/model-run-thread';
+import {
+  runReadOf,
   useRunRead,
   type RunRead,
 } from '@/components/engine/read-step';
-import { DiscardRun, InstructionsText } from '@/components/engine/run-parts';
-import { ProposeStep } from '@/components/engine/propose/propose-step';
-import type { ProposeProgress } from '@/components/engine/propose/types';
+import { DiscardRun } from '@/components/engine/run-parts';
+import { saidBy } from '@/components/engine/trial-parts';
+import type {
+  CheckReply,
+  DecidedReply,
+  Decision,
+  DecisionsReply,
+  ProposalReply,
+} from '@/components/engine/propose/types';
+import { needsPerson } from '@/components/engine/propose/verdict';
+import { useTRPC } from '@/components/trpc/provider';
+import { asReviewed as reviewed } from '@/lib/engine/reviewed';
+import type { Application, Proposal } from '@/lib/engine/types';
+import { SHEET_USE, SUBJECT } from '@/lib/processes/brunch-orders/data';
+import type { ProcessSummary, RunTrigger } from '@/lib/shell/model';
+import type { ModelRunFacts, ModelRunStage } from '@/lib/shell/model-run';
+import { runDay, runTime } from '@/lib/shell/run-time';
+import { sourceById } from '@/lib/sources/model';
+import type { AppRouter } from '@/server/api/root';
+
+const POLL_MS = 2000;
+const NO_DECISIONS: Record<string, Decision> = {};
+
+const askedOf = (key: string, decision: Decision) =>
+  decision.kind === 'change'
+    ? { key, kind: 'change' as const, values: decision.values ?? {} }
+    : { key, kind: decision.kind };
+
+type ApplyReplies = inferRouterOutputs<AppRouter>['application'];
+type ApplyReply =
+  | ApplyReplies['preview']
+  | ApplyReplies['write']
+  | ApplyReplies['undo'];
+type Preview = Extract<ApplyReply, { kind: 'preview' }>;
+
+function asReviewed(proposal: Proposal | null): Proposal | null {
+  if (!proposal) return null;
+  return {
+    ...proposal,
+    records: Object.fromEntries(
+      Object.entries(proposal.records).map(([key, record]) => [
+        key,
+        reviewed(record, 'model'),
+      ]),
+    ),
+  };
+}
+
+import { DirectMockRun } from './direct-mock-run';
 
 /*
-  A Brunch orders run with no rulebook, as a person would meet it: it reads
-  the live sheet as it starts and the model proposes from the instructions
-  straight after, so the first thing asked of anyone is the review. Nothing is
-  written until they confirm it. The server keeps the run and its read, as it
-  does the rulebook run's.
+  A Brunch orders run with no rulebook, as a person meets it: it reads the live
+  sheet as it starts and the model proposes from the instructions straight
+  after, drawn with the shared `ModelRunThread` that `/workbench/run` renders.
+  Nothing is written until a person decides every record and approves the write.
 */
 export function DirectOrdersRun({ process }: { process: ProcessSummary }) {
   const selection = useRunSelection();
   const live = selection?.live;
   if (!live || !selection) return null;
-  // How far each step has got is held for this run alone.
+  if (live.mock)
+    return (
+      <DirectMockRun
+        key={live.run.id}
+        runId={live.run.id}
+        selection={selection}
+      />
+    );
   return (
     <DirectThread
       key={live.run.id}
@@ -48,7 +99,6 @@ export function DirectOrdersRun({ process }: { process: ProcessSummary }) {
 }
 
 function DirectThread({
-  process,
   live,
   selection,
 }: {
@@ -56,155 +106,431 @@ function DirectThread({
   live: LiveRun;
   selection: RunSelection;
 }) {
-  const sheet = useContext(ProcessSheetActions);
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const { kept, text } = live;
-  const [revealingReadId, setRevealingReadId] = useState<string | null>(null);
+  const sourceKind = sourceById(SHEET_USE.source)?.kind ?? 'google-sheets';
+
+  // 1. Reading the sheet.
   const [taken, setTaken] = useState<RunRead | null>(null);
-  const [proposed, setProposed] = useState<ProposeProgress>();
-  const [applied, setApplied] = useState<ApplyProgress>();
+  const [readFailure, setReadFailure] = useState<string | null>(null);
   const saved = useRunRead(kept.readId);
-  // The read just taken shows at once, and goes if the server will not keep
-  // it as the run's; once kept, the server's summary is what is shown.
   const read = taken && taken.id !== kept.readId ? taken : saved.read;
   const readId = read?.id ?? kept.readId;
-  const unfit = Boolean(read?.problems?.length);
-  // The model proposes only on a read that fits, judged from the read's own
-  // summary, and once the server has it as the run's: that is what a decision
-  // is kept under.
-  const canPropose = read !== undefined && !unfit && kept.readId === read.id;
-  const decidedCount = proposed ? Object.keys(proposed.decisions).length : 0;
-  const allDecided =
-    proposed?.proposedAt != null &&
-    proposed.total > 0 &&
-    decidedCount === proposed.total;
+  const keepRead = useMutation(trpc.read.keep.mutationOptions());
+  const readFromLive = () => {
+    setReadFailure(null);
+    void keepRead
+      .mutateAsync({ source: 'live' })
+      .then((response) => {
+        queryClient.setQueryData(
+          trpc.read.summary.queryKey({ id: response.id }),
+          response,
+        );
+        const next = runReadOf(response);
+        setTaken(next);
+        selection.record(kept.id, { readId: next.id }).catch(() => {
+          setTaken(null);
+        });
+      })
+      .catch((error: unknown) => {
+        setReadFailure(saidBy(error) ?? 'The read failed.');
+      });
+  };
+  const askedRead = useRef(false);
+  useEffect(() => {
+    if (readId || saved.error || askedRead.current) return;
+    askedRead.current = true;
+    readFromLive();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readId, saved.error]);
 
-  const status = (step: ProcessStep): ProcessStep['status'] => {
-    switch (step.id) {
-      case 'instructions':
-        return 'complete';
-      case 'read':
-        return !readId ? 'running' : unfit ? 'blocked' : 'complete';
-      case 'propose':
-        return !canPropose
-          ? 'pending'
-          : !proposed?.proposedAt || proposed.running
-            ? 'running'
-            : allDecided
-              ? 'complete'
-              : 'attention';
-      case 'apply':
-        return !allDecided
-          ? 'pending'
-          : proposed.writes === 0 || applied?.status === 'verified'
-            ? 'complete'
-            : 'attention';
-      default:
-        return 'pending';
+  const unfit = read?.problems ?? [];
+  const readError = readFailure ?? saved.error;
+  const canPropose =
+    read !== undefined && unfit.length === 0 && kept.readId === read.id;
+
+  // 2. Proposing from the instructions.
+  const runInput = {
+    text,
+    readId: read?.id ?? '',
+    evaluation: 'model' as const,
+  };
+  const proposalQuery = trpc.propose.get.queryOptions(runInput, {
+    enabled: canPropose,
+    staleTime: 0,
+    gcTime: 0,
+    refetchInterval: ({ state: { data } }) =>
+      data?.kind === 'proposal' && data.progress?.running ? POLL_MS : false,
+    refetchIntervalInBackground: true,
+  });
+  const proposalAsked = useQuery(proposalQuery);
+  const startProposal = useMutation(
+    trpc.propose.start.mutationOptions({
+      onSuccess: (answer) =>
+        queryClient.setQueryData(proposalQuery.queryKey, answer),
+    }),
+  );
+  const answer: ProposalReply | null = proposalAsked.data ?? null;
+  const [lastProposal, setLastProposal] = useState<Extract<
+    ProposalReply,
+    { kind: 'proposal' }
+  > | null>(null);
+  const currentProposal = answer?.kind === 'proposal' ? answer : null;
+  if (currentProposal && currentProposal !== lastProposal)
+    setLastProposal(currentProposal);
+  const shown = currentProposal ?? lastProposal;
+  const proposal = asReviewed(shown?.proposal ?? null);
+  const proposing = shown?.progress?.running ?? false;
+
+  const autoProposed = useRef(false);
+  useEffect(() => {
+    if (
+      !canPropose ||
+      autoProposed.current ||
+      answer?.kind !== 'proposal' ||
+      answer.proposal ||
+      answer.progress
+    )
+      return;
+    autoProposed.current = true;
+    startProposal.mutate(runInput);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canPropose, answer]);
+
+  // 3. Decisions on the proposal.
+  const decidedOn = {
+    process: 'brunch-orders-direct' as const,
+    runId: kept.id,
+  };
+  const decidedQuery = trpc.decisions.current.queryOptions(decidedOn, {
+    enabled: canPropose,
+    staleTime: 0,
+  });
+  const decidedAsked = useQuery(decidedQuery);
+  const [landed, setLanded] = useState<{
+    at: number;
+    answer: DecisionsReply;
+  } | null>(null);
+  const held: DecisionsReply | null =
+    landed && landed.at > decidedAsked.dataUpdatedAt
+      ? landed.answer
+      : (decidedAsked.data ?? null);
+  const heldOn = (at: string | undefined | null) =>
+    at && held?.proposal?.at === at ? held.decisions : NO_DECISIONS;
+  const heldNow = heldOn(proposal?.at);
+
+  const refreshed = useRef(new Set<string>());
+  useEffect(() => {
+    const at = proposal?.at;
+    if (!at || !decidedAsked.data || decidedAsked.isFetching) return;
+    if (decidedAsked.data.proposal?.at === at || refreshed.current.has(at))
+      return;
+    refreshed.current.add(at);
+    void queryClient.invalidateQueries({ queryKey: decidedQuery.queryKey });
+  }, [proposal?.at, decidedAsked, decidedQuery.queryKey, queryClient]);
+
+  const [pending, setPending] = useState<
+    Record<string, { decision: Decision | null; request: number }>
+  >({});
+  const requests = useRef(0);
+  const decisions = useMemo(() => {
+    const next = { ...heldNow };
+    for (const [key, { decision }] of Object.entries(pending))
+      if (decision) next[key] = decision;
+      else delete next[key];
+    return next;
+  }, [heldNow, pending]);
+  const scope = { scope: { id: `decisions:${kept.id}` } };
+  const record = useMutation(trpc.decisions.record.mutationOptions(scope));
+  const recordMany = useMutation(
+    trpc.decisions.recordMany.mutationOptions(scope),
+  );
+  const withdraw = useMutation(trpc.decisions.withdraw.mutationOptions(scope));
+  const [announced, setAnnounced] = useState('');
+  const [decideError, setDecideError] = useState<string | null>(null);
+
+  const decide = (changes: Record<string, Decision | null>, words: string) => {
+    if (!proposal) return;
+    setDecideError(null);
+    const mine = ++requests.current;
+    const entries = Object.entries(changes);
+    setPending((now) => ({
+      ...now,
+      ...Object.fromEntries(
+        entries.map(([key, decision]) => [key, { decision, request: mine }]),
+      ),
+    }));
+    setAnnounced(words);
+    const on = { ...decidedOn, proposedAt: proposal.at };
+    const sets = entries.flatMap(([key, decision]) =>
+      decision ? [askedOf(key, decision)] : [],
+    );
+    const asking: Promise<DecidedReply>[] = [
+      ...(sets.length > 1
+        ? [recordMany.mutateAsync({ ...on, decisions: sets })]
+        : sets.length === 1
+          ? [record.mutateAsync({ ...on, decision: sets[0]! })]
+          : []),
+      ...entries.flatMap(([key, decision]) =>
+        decision ? [] : [withdraw.mutateAsync({ ...on, key })],
+      ),
+    ];
+    let error: string | null = null;
+    void Promise.allSettled(
+      asking.map((request) =>
+        request.then((reply) => {
+          if (reply.kind !== 'stale') {
+            setLanded({ at: Date.now(), answer: reply });
+            queryClient.setQueryData(decidedQuery.queryKey, reply);
+          }
+        }),
+      ),
+    ).then((results) => {
+      const failed = results.find((result) => result.status === 'rejected');
+      if (failed)
+        error =
+          failed.reason instanceof Error
+            ? failed.reason.message
+            : 'The request failed.';
+      setPending((now) =>
+        Object.fromEntries(
+          Object.entries(now).filter(([, one]) => one.request !== mine),
+        ),
+      );
+      if (error) {
+        setDecideError(error);
+        void queryClient.invalidateQueries({ queryKey: decidedQuery.queryKey });
+      }
+    });
+  };
+
+  const records = proposal ? Object.entries(proposal.records) : [];
+  const totalRecords = records.length;
+  const needYou = records.filter(
+    ([key, one]) => !decisions[key] && needsPerson(one.verdict),
+  ).length;
+  const decidedCount = Object.keys(decisions).length;
+  const heldDecidedCount = Object.keys(heldNow).length;
+  const allDecided = totalRecords > 0 && heldDecidedCount === totalRecords;
+
+  // 4. Previewing, writing and undoing the approved decisions.
+  const previewing = useMutation(trpc.application.preview.mutationOptions());
+  const writing = useMutation(
+    trpc.application.write.mutationOptions({ retry: false }),
+  );
+  const undoing = useMutation(
+    trpc.application.undo.mutationOptions({ retry: false }),
+  );
+  const [preview, setPreview] = useState<Preview | null>(null);
+  const [application, setApplication] = useState<Application | null>(null);
+  const [applyFailure, setApplyFailure] = useState<string | null>(null);
+  const [acting, setActing] = useState(false);
+
+  const handleApplyReply = (reply: ApplyReply) => {
+    setApplyFailure(null);
+    if (reply.kind === 'stale') return;
+    if (reply.kind === 'preview') setPreview(reply);
+    setApplication(reply.application);
+  };
+  const askPreview = () => {
+    void previewing
+      .mutateAsync(decidedOn)
+      .then(handleApplyReply)
+      .catch((error: unknown) => {
+        setApplyFailure(saidBy(error) ?? 'The request failed.');
+      });
+  };
+  const decidedKey = JSON.stringify(
+    Object.entries(heldNow).map(([key, one]) => [key, one.at]),
+  );
+  useEffect(() => {
+    if (!allDecided) return;
+    askPreview();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allDecided, decidedKey]);
+
+  const onWrite = () => {
+    setActing(true);
+    void writing
+      .mutateAsync({ ...decidedOn, acknowledged: [] })
+      .then((reply) => {
+        handleApplyReply(reply);
+        setActing(false);
+      })
+      .catch((error: unknown) => {
+        setApplyFailure(saidBy(error) ?? 'The write failed.');
+        setActing(false);
+      });
+  };
+  const onUndo = () => {
+    setActing(true);
+    void undoing
+      .mutateAsync(decidedOn)
+      .then((reply) => {
+        handleApplyReply(reply);
+        setActing(false);
+        if (reply.kind === 'applied') askPreview();
+      })
+      .catch((error: unknown) => {
+        setApplyFailure(saidBy(error) ?? 'The undo failed.');
+        setActing(false);
+      });
+  };
+
+  const proposalFailure =
+    startProposal.error?.message ??
+    proposalAsked.error?.message ??
+    (!proposing ? (shown?.progress?.error ?? null) : null);
+
+  const standing =
+    application &&
+    (application.status === 'verified' || application.status === 'mismatch');
+  const unconfirmed = application?.status === 'pending';
+  const changes =
+    standing || unconfirmed ? application.changes : (preview?.changes ?? []);
+  const writeProblems = [
+    ...(preview?.notWritable ? [preview.notWritable] : []),
+    ...(preview?.problems ?? []),
+    ...(applyFailure ? [applyFailure] : []),
+  ];
+
+  // Derive the ModelRunStage from the live state.
+  const stage: ModelRunStage =
+    !read && readError && !keepRead.isPending
+      ? 'stopped'
+      : !read || !canPropose
+        ? unfit.length > 0
+          ? 'evaluating'
+          : 'reading'
+        : !proposal && proposalFailure && !proposing && !startProposal.isPending
+          ? 'stopped'
+          : !proposal || proposing || startProposal.isPending
+            ? 'evaluating'
+            : !allDecided
+              ? decidedCount > 0
+                ? 'reviewing'
+                : 'awaiting_review'
+              : writing.isPending
+                ? 'committing'
+                : application?.status === 'mismatch'
+                  ? 'intervention'
+                  : application?.status === 'verified'
+                    ? 'committed'
+                    : 'ready_to_commit';
+
+  useWorkingFavicon(
+    stage === 'reading' || stage === 'evaluating' || stage === 'committing',
+  );
+
+  const stopped: ModelRunFacts['stopped'] =
+    stage !== 'stopped'
+      ? null
+      : !read
+        ? { at: 'sources', reason: readError ?? 'The read failed.' }
+        : {
+            at: 'evaluation',
+            reason: proposalFailure ?? 'No proposal came back.',
+          };
+
+  const view: ModelRunView = {
+    stage,
+    facts: {
+      requestLabel: `${runDay(live.run.startedAt)} · ${runTime(live.run.startedAt)}`,
+      trigger: (kept.trigger as RunTrigger) ?? 'manual',
+      subject: {
+        one: SUBJECT.record.singular,
+        other: SUBJECT.record.plural,
+        field: SUBJECT.proposal[0]?.label ?? 'value',
+      },
+      sources: 1,
+      tabs: read?.tabs.length ?? 0,
+      unfit,
+      records: totalRecords,
+      needYou,
+      decided: decidedCount,
+      writes: changes.length,
+      output: SUBJECT.data.output?.tab ?? 'the sheet',
+      stopped,
+      mismatch:
+        application?.status === 'mismatch'
+          ? (application.error ??
+            'The sheet reads back differently from what was written.')
+          : null,
+    },
+    fields: SUBJECT.proposal,
+    instructions: { version: kept.instructions.version, text },
+    sourceKind,
+    read: read ?? null,
+    activity: shown?.progress?.activity ?? null,
+    review:
+      proposal && shown
+        ? {
+            proposal,
+            names: shown.names,
+            decisions,
+          }
+        : null,
+    write: allDecided
+      ? {
+          outputs: read
+            ? [
+                {
+                  id: 'orders',
+                  kind: sourceKind,
+                  title: read.title ?? 'Sheet',
+                  key: SUBJECT.data.output?.key ?? 'Record',
+                  url: read.url,
+                  resourceIds: read.tabIds,
+                  changes,
+                },
+              ]
+            : [],
+          problems: writeProblems,
+          writtenAt:
+            application?.status === 'verified' ? application.at : null,
+        }
+      : null,
+  };
+
+  const onCheck = async (
+    key: string,
+    values: Record<string, number>,
+  ): Promise<CheckReply | null> => {
+    try {
+      return await queryClient.fetchQuery(
+        trpc.propose.check.queryOptions({ ...runInput, key, values }),
+      );
+    } catch {
+      return null;
     }
   };
-  const label = (step: ProcessStep) =>
-    step.id === 'propose' && proposed?.proposedAt && !proposed.running
-      ? allDecided
-        ? 'All decided'
-        : decidedCount
-          ? `${decidedCount} of ${proposed.total} decided`
-          : proposed.needYou
-            ? `${proposed.total} proposed · ${proposed.needYou} need you`
-            : `${proposed.total} proposed · not checked`
-      : step.id === 'apply' && allDecided
-        ? applied?.status === 'verified'
-          ? 'Written and read back'
-          : applied?.status === 'mismatch'
-            ? 'Check the sheet'
-            : applied?.status === 'pending'
-              ? 'Not confirmed yet'
-              : proposed.writes
-                ? `${proposed.writes} to write`
-                : 'Nothing to write'
-        : step.label;
-  // The furthest step a person can act on.
-  const latest =
-    !readId || revealingReadId === readId || unfit
-      ? 'read'
-      : !allDecided
-        ? 'propose'
-        : 'apply';
-  const steps = (process.steps ?? []).map((step) => ({
-    ...step,
-    status: status(step),
-    label: label(step),
-  }));
+
+  const actions: ModelRunActions = {
+    onDecide: decide,
+    onCheck,
+    onRetry:
+      stopped?.at === 'sources'
+        ? readFromLive
+        : stopped?.at === 'evaluation'
+          ? () => startProposal.mutate(runInput)
+          : undefined,
+    onWrite,
+    onUndo,
+    busy:
+      acting ||
+      keepRead.isPending ||
+      startProposal.isPending ||
+      proposalAsked.isFetching,
+    announced,
+  };
 
   return (
     <>
-      <ol className="thread">
-        {steps.map((step) => (
-          <ThreadStep
-            key={step.id}
-            step={step}
-            latest={step.id === latest}
-            headingAction={
-              step.id === 'instructions' && sheet
-                ? {
-                    label: kept.instructions.version,
-                    onPress: sheet.showInstructions,
-                  }
-                : undefined
-            }
-          >
-            {step.id === 'instructions' ? (
-              <InstructionsText text={text} />
-            ) : step.id === 'read' ? (
-              <ResponseSection>
-                <ReadStep
-                  kind={sourceById(SHEET_USE.source)?.kind ?? 'google-sheets'}
-                  automatic
-                  read={read}
-                  loadingRead={readId !== null && read === undefined}
-                  readError={saved.error}
-                  revealing={revealingReadId === read?.id}
-                  onRevealed={() => setRevealingReadId(null)}
-                  onRead={(next) => {
-                    setRevealingReadId(
-                      matchMedia('(prefers-reduced-motion: reduce)').matches
-                        ? null
-                        : next.id,
-                    );
-                    setTaken(next);
-                    selection.record(kept.id, { readId: next.id }).catch(() => {
-                      setTaken(null);
-                      setRevealingReadId(null);
-                    });
-                  }}
-                />
-              </ResponseSection>
-            ) : step.id === 'propose' && canPropose ? (
-              <ResponseSection>
-                <ProposeStep
-                  subject={SUBJECT}
-                  evaluation="model"
-                  text={text}
-                  readId={read.id}
-                  run={{ process: 'brunch-orders-direct', runId: kept.id }}
-                  onProgress={setProposed}
-                />
-              </ResponseSection>
-            ) : step.id === 'apply' && allDecided && read ? (
-              <ResponseSection>
-                <ApplyStep
-                  subject={SUBJECT}
-                  run={{ process: 'brunch-orders-direct', runId: kept.id }}
-                  decisions={proposed.decisions}
-                  onProgress={setApplied}
-                />
-              </ResponseSection>
-            ) : null}
-          </ThreadStep>
-        ))}
-      </ol>
-      {selection.recordError ? (
+      <ModelRunThread run={view} actions={actions} look="proposed" />
+      {decideError || selection.recordError ? (
         <p role="alert" className="text-dense text-state-blocked mt-6">
-          {selection.recordError}
+          {decideError ?? selection.recordError}
         </p>
       ) : null}
       <div className="border-rule-faint mt-8 flex flex-wrap items-center gap-3 border-t pt-4">

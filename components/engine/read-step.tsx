@@ -53,7 +53,7 @@ type ReadSummary = {
   tabs: { name: string; rows: number }[];
   problems?: string[];
 };
-const runReadOf = (summary: ReadSummary): RunRead => ({
+export const runReadOf = (summary: ReadSummary): RunRead => ({
   id: summary.id,
   readAt: summary.readAt,
   source: summary.source,
@@ -106,6 +106,7 @@ export function ReadStep({
   revealing,
   onRevealed,
   automatic = false,
+  mock = false,
 }: {
   // The kind of source the run reads from, which names its parts.
   kind: SourceKind;
@@ -118,6 +119,7 @@ export function ReadStep({
   revealing: boolean;
   onRevealed: () => void;
   automatic?: boolean;
+  mock?: boolean;
 }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -132,7 +134,20 @@ export function ReadStep({
     reading.state.kind === 'done' && keep.error ? keep.error.message : null;
   // Shut until asked for, except for the read just taken, which opens to show it.
   const [open, setOpen] = useState(false);
-  const readFrom = (from: 'captured' | 'live') =>
+  const readFrom = (from: 'captured' | 'live') => {
+    if (mock) {
+      setOpen(true);
+      onRead(
+        read ?? {
+          id: 'mock',
+          readAt: new Date().toISOString(),
+          source: 'Mock read',
+          title: null,
+          tabs: [],
+        },
+      );
+      return;
+    }
     void reading.run({ source: from }).then((response) => {
       if (!response) return;
       setOpen(true);
@@ -143,6 +158,7 @@ export function ReadStep({
       );
       onRead(runReadOf(response));
     });
+  };
   // Once per run: a remount (Strict Mode's included) keeps the ref.
   const asked = useRef(false);
   useEffect(() => {

@@ -102,7 +102,16 @@ export function useAsidePanel<View>({
     const reduce = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
     ).matches;
-    setLeaving((was) => (!aside || exiting || reduce ? null : (was ?? aside)));
+    setLeaving((was) => {
+      if (
+        !aside ||
+        exiting ||
+        reduce ||
+        (was && viewKey(was) === viewKey(view))
+      )
+        return null;
+      return was ?? aside;
+    });
     if (aside && !exiting) setDirection(swapDirection(aside, view));
     setExiting(false);
     setAside(view);

@@ -19,6 +19,7 @@ export function DraftControl({
   canDraft,
   busy,
   onDraft,
+  mock = false,
 }: {
   kept: number;
   accepted: number;
@@ -26,6 +27,7 @@ export function DraftControl({
   busy: boolean;
   // No model: the recommended pair, one to find and one to write.
   onDraft: (model: DraftingModel | null) => void;
+  mock?: boolean;
 }) {
   const [model, setModel] = useState<DraftingModel | null>(null);
   const [confirming, setConfirming] = useState(false);
@@ -69,11 +71,11 @@ export function DraftControl({
         )}
       </div>
       {model ? (
-        <ModelLimits model={model} />
+        <ModelLimits model={model} enabled={!mock} />
       ) : (
         <>
-          <ModelLimits model="gemini-3.6-flash" />
-          <ModelLimits model="gemini-3.5-flash-lite" />
+          <ModelLimits model="gemini-3.6-flash" enabled={!mock} />
+          <ModelLimits model="gemini-3.5-flash-lite" enabled={!mock} />
         </>
       )}
       <p className="text-meta text-muted max-w-prose">

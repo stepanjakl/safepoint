@@ -5,73 +5,41 @@ import { useDetailHold } from '@/components/ui/screen-settled';
 import { Loader } from '@/components/ui/loader';
 import { EmptyState, useLoader } from '@/components/ui/working-mark';
 import { cx } from '@/lib/ui/cx';
-import type { InputDetail } from '@/lib/shell/input-details';
 import type { ProcessSummary } from '@/lib/shell/model';
-import { runStamp } from '@/lib/shell/run-time';
-import { byAttention, type SystemLink } from '@/lib/shell/system-links';
 import {
   DrawerAside,
   viewKey,
-  type AsideLayer,
   type AsideView,
 } from '@/components/app-shell/drawer-aside';
-import { AddInputPanel } from '@/components/app-shell/inputs/input-connections';
-import { InputDetailView } from '@/components/app-shell/inputs/input-detail';
 import {
-  InstructionEditor,
+  InstructionDetail,
   InstructionsPanel,
-  InstructionVersionView,
 } from '@/components/app-shell/instructions/instructions-panel';
 import { useInstructions } from '@/components/app-shell/instructions/instructions-store';
 import { ProcessSettings } from './process-settings';
 import { useAsidePanel } from '@/components/app-shell/use-aside-panel';
-import { OutputsList } from './outputs-list';
-import { SECTION } from './panel-parts';
-import { InputsList } from '@/components/app-shell/inputs/inputs-list';
+import { SECTION, type ProcessTab } from './panel-parts';
 import { SectionRow } from '@/components/app-shell/runs/section-row';
-import type { ProcessTab } from './process-tab-store';
-import {
-  SystemDisc,
-  SystemMeta,
-} from '@/components/app-shell/system/system-parts';
 
 /*
   What the process is, in the sheet rather than over it. The header's menu
   chooses which of these is showing; the run itself is the other half of that
   choice and lives in process-sheet.tsx.
 
-  Each one is a list beside a detail. The detail is the same panel the drawer
-  used, with its swap, its direction and its focus handling unchanged -- only
-  where it sits has changed. Below the two-column width the detail takes the
-  list's place, as it did in the drawer.
+  Instructions open as a list beside a detail. The detail is the same panel the
+  drawer used, with its swap, its direction and its focus handling unchanged --
+  only where it sits has changed. Below the two-column width the detail takes
+  the list's place, as it did in the drawer.
 */
-// The Inputs section row's Add button, where focus goes after an input is
-// removed.
-const ADD_INPUT_ID = 'add-input';
-const ADD_BUTTON =
-  'control-wash text-muted hover:bg-surface-selected hover:text-primary focus-visible:bg-surface-selected focus-visible:text-primary aria-expanded:bg-surface-selected aria-expanded:text-primary rounded-control text-meta inline-flex min-h-7 cursor-pointer items-center gap-1 px-1.5';
 
-/*
-  The list keeps a readable measure and the detail takes the rest. One column
-  below that, where the detail replaces the list rather than squeezing it --
-  and one column at any width for the tabs whose rows do not open anything,
-  which would otherwise hold a second column open for nothing.
-*/
 // One row the height of the sheet, so each column scrolls on its own rather
 // than the row growing to the longer of the two.
 const COLUMNS =
   'grid h-full min-h-0 grid-cols-[minmax(0,1fr)] shell:grid-rows-[minmax(0,1fr)]';
-const TWO_COLUMNS =
-  '@sheet-narrow/sheet:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] @sheet-narrow/sheet:[&>*]:min-w-0 @sheet-wide/sheet:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]';
 
 // Versions are a short word and a date, so their list gives the text more.
 const NARROW_LIST =
   '@sheet-narrow/sheet:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] @sheet-narrow/sheet:[&>*]:min-w-0 @sheet-wide/sheet:grid-cols-[minmax(0,18rem)_minmax(0,1fr)]';
-
-// Which tabs have a detail to put beside their list.
-const OPENS_DETAIL = new Set<ProcessTab>(['instructions', 'inputs']);
-
-type AsidePanel = Omit<AsideLayer, 'key'>;
 
 const noSubscription = () => () => {};
 
@@ -79,29 +47,14 @@ export function ProcessPanels({
   process,
   tab,
   openView = null,
-  inputs,
-  availableInputs = [],
-  inputDetails = {},
-  onRemoveInput,
-  onAddInput,
-  onLeave,
 }: {
   process: ProcessSummary;
   tab: Exclude<ProcessTab, 'runs'>;
   // A detail to open with, asked for from outside the panel -- a version's
-  // change log from the runs rail, an input from the run's thread. The panel
-  // is keyed on it upstream, so it is read once, at mount.
+  // change log from the runs rail. The panel is keyed on it upstream, so it is
+  // read once, at mount.
   openView?: AsideView | null;
-  // The process's inputs only; removed ones arrive as availableInputs.
-  inputs: SystemLink[];
-  availableInputs?: SystemLink[];
-  inputDetails?: Record<string, InputDetail>;
-  onRemoveInput?: (id: string) => void;
-  onAddInput?: (id: string) => void;
-  // Back to the run, for a link that leaves this panel behind.
-  onLeave: () => void;
 }) {
-  const { outputs } = process;
   // Aliased away from `current`: a bare `current` read in render is what a
   // misread ref looks like, both to a reader and to the lint rule that guards
   // against one.
@@ -110,17 +63,9 @@ export function ProcessPanels({
     current: version,
     next,
   } = useInstructions(process.id, process.instructions);
-  const run = process.runs.find((entry) => entry.current);
 
-  // Where one view sits in the list it was chosen from: inputs in the order
-  // the Inputs tab lists them, versions oldest first, as the pager steps
-  // through them. Anything else keeps the default.
+  // Versions oldest first, as the pager steps through them.
   const place = (view: AsideView) => {
-    if (view.kind === 'input') {
-      return [...inputs]
-        .sort(byAttention)
-        .findIndex((input) => input.id === view.id);
-    }
     if (view.kind === 'version') {
       return versions.findIndex((entry) => entry.version === view.version);
     }
@@ -135,7 +80,6 @@ export function ProcessPanels({
     closeAside,
     finishExit,
     onKeyDownCapture,
-    forgetOpener,
     settleLeaving,
   } = useAsidePanel({
     initial: openView,
@@ -144,11 +88,6 @@ export function ProcessPanels({
     sameList: (from, to) => from.kind === to.kind,
     scope: '.process-panels',
   });
-  // Opening a review item leaves this panel behind: the item is in the run.
-  const leaveForRun = () => {
-    finishExit();
-    onLeave();
-  };
 
   // The latest version opens beside the list with the tab, as the text the
   // tab is about -- but only where the two sit side by side. Below that it
@@ -188,99 +127,37 @@ export function ProcessPanels({
       ? asidePanel(leaving)
       : null;
 
-  function asidePanel(view: AsideView): AsidePanel | null {
-    switch (view.kind) {
-      case 'input': {
-        const link = inputs.find((input) => input.id === view.id);
-        const detail = inputDetails[view.id];
-        if (!link || !detail) return null;
-        return {
-          eyebrow: 'Input',
-          title: detail.label,
-          announce: detail.label,
-          leading: <SystemDisc link={link} />,
-          meta: <SystemMeta link={link} />,
-          body: (
-            <InputDetailView
-              detail={detail}
-              onNavigate={leaveForRun}
-              onRemove={
-                onRemoveInput
-                  ? () => {
-                      // The input leaves the list with this, so the panel
-                      // goes at once rather than animating an empty face.
-                      onRemoveInput(view.id);
-                      forgetOpener();
-                      finishExit();
-                      requestAnimationFrame(() =>
-                        document.getElementById(ADD_INPUT_ID)?.focus(),
-                      );
-                    }
-                  : undefined
-              }
-            />
-          ),
-        };
-      }
-      case 'add-input':
-        return onAddInput
-          ? {
-              eyebrow: 'Inputs · Preview',
-              title: 'Add an input',
-              announce: 'Add an input',
-              meta: 'One of the scenario’s own evidence files.',
-              body: (
-                <AddInputPanel
-                  available={availableInputs}
-                  details={inputDetails}
-                  onAdd={onAddInput}
-                />
-              ),
-            }
-          : null;
-      case 'version': {
-        const index = versions.findIndex(
-          (version) => version.version === view.version,
-        );
-        const to = versions[index];
-        if (!to) return null;
-        return {
-          eyebrow: 'Instructions',
-          title: `Version ${to.version}`,
-          announce: `Version ${to.version}`,
-          headless: true,
-          focusOnOpen: !view.passive,
-          body: (
-            <InstructionVersionView
-              process={process}
-              version={to.version}
-              face={view.face}
-              onEdit={() => openAside({ kind: 'edit' })}
-            />
-          ),
-        };
-      }
-      case 'edit':
-        return {
-          eyebrow: 'Instructions',
-          title: `New version ${next}`,
-          announce: `New version ${next}`,
-          headless: true,
-          focusOnOpen: false,
-          body: (
-            <InstructionEditor
-              process={process}
-              onDone={(version) =>
-                version
-                  ? openAside({ kind: 'version', version, face: 'text' })
-                  : closeAside()
-              }
-            />
-          ),
-        };
+  function asidePanel(view: AsideView) {
+    if (view.kind === 'version') {
+      if (!versions.some((entry) => entry.version === view.version))
+        return null;
+      const title = `Version ${view.version}`;
+      return {
+        view,
+        key: viewKey(view),
+        eyebrow: 'Instructions',
+        title,
+        announce: title,
+        headless: true,
+        focusOnOpen: !view.passive,
+      };
     }
+    if (view.kind === 'edit') {
+      const title = `New version ${next}`;
+      return {
+        view,
+        key: viewKey(view),
+        eyebrow: 'Instructions',
+        title,
+        announce: title,
+        headless: true,
+        focusOnOpen: false,
+      };
+    }
+    return null;
   }
 
+  const opensDetail = tab === 'instructions';
   const list =
     tab === 'instructions' ? (
       <InstructionsPanel
@@ -291,32 +168,15 @@ export function ProcessPanels({
         }
         onEdit={() => openAside({ kind: 'edit' })}
       />
-    ) : tab === 'inputs' ? (
-      <InputsList
-        inputs={inputs}
-        details={inputDetails}
-        runLabel={run ? runStamp(run.startedAt) : undefined}
-        openId={!exiting && aside?.kind === 'input' ? aside.id : null}
-        editable={onAddInput !== undefined}
-        onOpen={(id) => openAside({ kind: 'input', id })}
-      />
-    ) : tab === 'outputs' ? (
-      <OutputsList outputs={outputs} />
-    ) : (
+    ) : tab === 'settings' ? (
       <ProcessSettings process={process} />
-    );
+    ) : null;
 
   return (
     <div
-      className={cx(
-        'process-panels',
-        COLUMNS,
-        OPENS_DETAIL.has(tab) &&
-          (tab === 'instructions' ? NARROW_LIST : TWO_COLUMNS),
-        OPENS_DETAIL.has(tab) && 'sheet-column-edge',
-      )}
-      onKeyDownCapture={onKeyDownCapture}
       ref={root}
+      className={cx('process-panels', COLUMNS, opensDetail && NARROW_LIST)}
+      onKeyDownCapture={onKeyDownCapture}
     >
       <div
         // Where the detail is showing and the two do not fit, it takes this
@@ -325,7 +185,7 @@ export function ProcessPanels({
           'process-panel-list sheet-bleed shell:min-h-0 shell:overflow-y-auto shell:overscroll-contain border-raised-ring min-w-0',
           // Rows run to the column's edges; prose pads itself back.
           tab !== 'instructions' && 'sheet-bleed-head',
-          OPENS_DETAIL.has(tab)
+          opensDetail
             ? cx(
                 '@sheet-narrow/sheet:border-r @max-sheet-narrow/sheet:sheet-bleed-end',
                 tab !== 'instructions' &&
@@ -337,51 +197,37 @@ export function ProcessPanels({
       >
         {/* The same first row the runs rail has, so every section of the
             sheet names itself in the same place and none of them spends a
-            header on it. Its one control is the section's own. */}
-        <SectionRow
-          id={SECTION[tab].id}
-          title={SECTION[tab].title}
-          count={
-            tab === 'inputs'
-              ? inputs.length
-              : tab === 'outputs'
-                ? outputs.length
-                : undefined
-          }
-        >
-          {tab === 'inputs' && onAddInput ? (
-            <button
-              type="button"
-              id={ADD_INPUT_ID}
-              onClick={() => openAside({ kind: 'add-input' })}
-              aria-expanded={!exiting && aside?.kind === 'add-input'}
-              className={ADD_BUTTON}
-            >
-              <span aria-hidden="true">+</span> Add
-              <span className="sr-only"> an input, preview</span>
-            </button>
-          ) : null}
-        </SectionRow>
+            header on it. */}
+        <SectionRow id={SECTION[tab].id} title={SECTION[tab].title} />
         {list}
       </div>
-      {aside && panel ? (
-        <DrawerAside
-          current={{ key: viewKey(aside), ...panel }}
-          leaving={
-            leaving && leavingPanel
-              ? { key: viewKey(leaving), ...leavingPanel }
-              : null
+      {panel ? (
+        <InstructionDetail
+          process={process}
+          view={(leavingPanel ?? panel).view}
+          swapping={leavingPanel !== null}
+          onEdit={() => openAside({ kind: 'edit' })}
+          onDone={(version) =>
+            version
+              ? openAside({ kind: 'version', version, face: 'text' })
+              : closeAside()
           }
-          direction={direction}
-          exiting={exiting}
-          onExited={finishExit}
-          onLeft={settleLeaving}
-          flat
-          // Over the column edge's lit line (.sheet-column-edge), so a band
-          // leading the detail covers it as the list's head covers its own.
-          className="z-1"
+          renderPanel={(band, body) => (
+            <DrawerAside
+              current={{ ...panel, body }}
+              leaving={leavingPanel ? { ...leavingPanel, body } : null}
+              persistentBand={band}
+              direction={direction}
+              exiting={exiting}
+              onExited={finishExit}
+              onLeft={settleLeaving}
+              flat
+              // The detail band covers the column edge's lit line.
+              className="z-1"
+            />
+          )}
         />
-      ) : OPENS_DETAIL.has(tab) ? (
+      ) : opensDetail ? (
         // Only where a row opens something: a column that can never fill is
         // not an empty state, it is a mistake.
         <div
@@ -394,11 +240,9 @@ export function ProcessPanels({
             <EmptyState
               role="status"
               fadeIn={loader.fadeIn}
-              title={tab === 'inputs' ? 'No input open.' : 'No version open.'}
+              title="No version open."
             >
-              {tab === 'inputs'
-                ? 'Choose an input to read the records it gave this run.'
-                : 'Choose a version to read it and see what changed in it.'}
+              Choose a version to read it and see what changed in it.
             </EmptyState>
           )}
         </div>

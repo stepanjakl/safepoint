@@ -1,9 +1,10 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useContext, useEffect, useId, useRef, useState } from 'react';
+import { useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
 
 import { ProcessSheetActions } from '@/components/app-shell/process/process-sheet';
+import { useWorkingFavicon } from '@/components/app-shell/runs/working-favicon';
 // Deep import: Blode's barrel is the whole icon library.
 import Bug from 'blode-icons-react/icons/bug';
 
@@ -22,15 +23,30 @@ import {
 } from '@/components/engine/rules/definition-card';
 import { DraftControl } from '@/components/engine/rules/draft-control';
 import {
+  AwaitedExamples,
+  AwaitedFormula,
+  Crossfade,
+  DraftSegments,
+  activityOfDraft,
+  chipOfStage,
+  stageOfDefinition,
+  useDraftBeatClock,
+  useLeavingState,
+} from '@/components/engine/rules/draft-progress';
+import { useEasedCards } from '@/components/engine/rules/eased-cards';
+import {
   DRAFT_POLL_MS,
   type RulesReply,
 } from '@/components/engine/rules/rules-queries';
-import { Lede, plural, saidBy } from '@/components/engine/trial-parts';
+import {
+  Lede,
+  StatusChip,
+  plural,
+  saidBy,
+} from '@/components/engine/trial-parts';
 import { Button } from '@/components/ui/button';
 import { Fold } from '@/components/ui/fold';
-import { Loader } from '@/components/ui/loader';
 import { SEVERITY } from '@/components/ui/pill';
-import { useLoader } from '@/components/ui/working-mark';
 import { useTRPC } from '@/components/trpc/provider';
 import { cx } from '@/lib/ui/cx';
 import { FromModel } from '@/components/engine/rules-parts';
@@ -43,19 +59,31 @@ import {
   CONFIRM_FIRST,
   quotedFrom,
   type DefinitionSet,
+  type DraftProgress,
 } from '@/lib/engine/types';
 
 // How far the rules have got, for the step's mark.
 export type RulesProgress = {
   approved: number;
+  written: number;
   total: number;
   intent: boolean;
+  running: boolean;
+  found: boolean;
+  error: string | null;
 };
 
-const progressOf = (set: DefinitionSet): RulesProgress => ({
-  approved: set.definitions.filter((d) => d.approvedAt).length,
-  total: set.definitions.length,
-  intent: set.intentConfirmedAt !== null,
+const progressOf = (
+  set: DefinitionSet | null,
+  drafting: DraftProgress | null,
+): RulesProgress => ({
+  approved: set ? set.definitions.filter((d) => d.approvedAt).length : 0,
+  written: set ? set.definitions.filter((d) => d.formula).length : 0,
+  total: set?.definitions.length ?? 0,
+  intent: set !== null && set.intentConfirmedAt !== null,
+  running: drafting?.running ?? false,
+  found: set !== null && set.definitions.length > 0,
+  error: drafting?.error ?? null,
 });
 
 /*
@@ -71,6 +99,7 @@ export function RulesStep({
   version,
   readId,
   onProgress,
+  mock = false,
 }: {
   // What the process's rules are about: its records and what is proposed.
   subject: DefinitionSubject;
@@ -78,6 +107,7 @@ export function RulesStep({
   version: string;
   readId: string | null;
   onProgress: (progress: RulesProgress) => void;
+  mock?: boolean;
 }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -93,9 +123,10 @@ export function RulesStep({
   const rulesQuery = trpc.rules.get.queryOptions(
     { text, readId },
     {
-      staleTime: 0,
+      enabled: !mock,
+      staleTime: mock ? Infinity : 0,
       refetchInterval: ({ state: { data } }) =>
-        data?.drafting?.running ? DRAFT_POLL_MS : false,
+        !mock && data?.drafting?.running ? DRAFT_POLL_MS : false,
       // A draft takes minutes and is left in a background tab: the tab's
       // working mark and the finished rules must not wait for a return.
       refetchIntervalInBackground: true,
@@ -128,12 +159,18 @@ export function RulesStep({
   // Every answer, the panel's entry for these instructions included.
   const body = asked.data ?? null;
   useEffect(() => {
-    if (body)
+    if (body && !mock)
       queryClient.setQueriesData(trpc.rules.get.queryFilter({ text }), body);
-  }, [body, queryClient, trpc, text]);
-  // Each answer reaches the step's mark once, where it holds rules.
+  }, [body, mock, queryClient, trpc, text]);
+  // Each answer reaches the step's mark once, where it holds rules or a draft.
   useEffect(() => {
-    if (body?.kind === 'rules') report.current(progressOf(body.set));
+    if (body)
+      report.current(
+        progressOf(
+          body.kind === 'rules' ? body.set : null,
+          body.drafting ?? null,
+        ),
+      );
   }, [body]);
   // The last rules seen stay while an action runs, so the list, and focus in
   // it, are kept.
@@ -152,13 +189,42 @@ export function RulesStep({
       sentences: current.sentences,
     });
   const shown = current ?? last;
-  const set = shown?.set ?? null;
-  const names = shown?.names ?? {};
-  const working = shown?.working ?? {};
-  const sentences = shown?.sentences ?? {};
   // A draft runs on the server; its progress is the latest answer's.
-  const drafting = body?.drafting ?? null;
+  const latestDrafting = body?.drafting ?? null;
+  const list = useRef<HTMLOListElement>(null);
+  const leavingState = useMemo(
+    () => ({ shown, drafting: latestDrafting }),
+    [shown, latestDrafting],
+  );
+  const {
+    shown: { shown: displayed, drafting },
+    leaving,
+  } = useLeavingState(
+    list,
+    leavingState,
+    (previous, next) =>
+      Boolean(
+        previous.drafting?.running &&
+        previous.shown?.set &&
+        (!next.drafting?.running ||
+          next.drafting?.writing !== previous.drafting?.writing ||
+          next.shown?.set.definitions.filter((d) => d.formula).length !==
+            previous.shown?.set.definitions.filter((d) => d.formula).length),
+      ),
+    true,
+  );
+  const set = displayed?.set ?? null;
+  const names = displayed?.names ?? {};
+  const working = displayed?.working ?? {};
+  const sentences = displayed?.sentences ?? {};
   const draftRunning = drafting?.running ?? false;
+  useWorkingFavicon(draftRunning);
+  const easedChange = useMemo(
+    () => ({ set, running: draftRunning, writing: drafting?.writing ?? null }),
+    [set, draftRunning, drafting?.writing],
+  );
+  useEasedCards(list, easedChange, { enabled: true, hold: true });
+  useDraftBeatClock(list);
   // The data profile as last reported; null until the server has said.
   const profile = body?.profile ?? null;
   const dataConfirmed = profile?.state === 'confirmed';
@@ -170,9 +236,6 @@ export function RulesStep({
     setProfileOpen(true);
     requestAnimationFrame(() => profileHeading.current?.focus());
   };
-  // Writing is a wait, not a status the rule has: the card's status gives
-  // way to the loader while its rule is written (behind useLoader's delay).
-  const ruleLoader = useLoader(Boolean(drafting?.running && drafting.writing));
   const busy =
     asked.isFetching ||
     [
@@ -192,8 +255,11 @@ export function RulesStep({
   // What the server said of the last thing asked of it, where it refused.
   const said = failure ?? (asked.isError ? saidBy(asked.error) : null);
   // The server has answered, whatever it answered.
-  const answered = asked.isSuccess || (asked.isError && said !== null);
-  const progress = set ? progressOf(set) : null;
+  const answered =
+    asked.isSuccess ||
+    (asked.isError && said !== null) ||
+    (mock && body !== null);
+  const progress = set ? progressOf(set, drafting) : null;
   // Every definition accepted and the intent confirmed: nothing waits here.
   const complete =
     set !== null &&
@@ -203,8 +269,20 @@ export function RulesStep({
     set.intentConfirmedAt !== null;
   const [showAll, setShowAll] = useState(false);
   const cardsId = useId();
+  const stages = set
+    ? set.definitions.map((item) => ({
+        item,
+        stage: stageOfDefinition(set.definitions, item, drafting),
+      }))
+    : [];
+  const showSegments = Boolean(
+    set && set.definitions.length > 0 && (draftRunning || drafting?.error),
+  );
   const cards = set ? (
     <>
+      {showSegments ? (
+        <DraftSegments stages={stages} error={Boolean(drafting?.error)} />
+      ) : null}
       <div className={cx(ASKS, 'grid gap-3 p-4')}>
         <FromModel label="The intent, as the model reads it">
           <p className="text-body">{set.intent}</p>
@@ -213,7 +291,19 @@ export function RulesStep({
           <AcceptDecision
             accepted={set.intentConfirmedAt !== null}
             busy={busy}
-            onAccept={() => confirmIntent.mutate({ text })}
+            onAccept={() => {
+              if (mock && current) {
+                keep({
+                  ...current,
+                  set: {
+                    ...current.set,
+                    intentConfirmedAt: new Date().toISOString(),
+                  },
+                });
+                return;
+              }
+              confirmIntent.mutate({ text });
+            }}
           />
           {!set.intentConfirmedAt && sheet ? (
             <DecisionButton decision="deny" onPress={sheet.showInstructions}>
@@ -225,80 +315,136 @@ export function RulesStep({
 
       <div className="rules-list grid gap-4">
         <PendingDots
-          pending={set.definitions
-            .filter((d) => !d.approvedAt)
-            .map((d) => ({
-              id: d.id,
-              name: d.name,
-              status: statusOf(d).label,
-              severity: SEVERITY[statusOf(d).tone],
+          pending={stages
+            .filter(
+              ({ item, stage }) =>
+                !item.approvedAt &&
+                (stage === 'written' || stage === 'unreached'),
+            )
+            .map(({ item }) => ({
+              id: item.id,
+              name: item.name,
+              status: statusOf(item).label,
+              severity: SEVERITY[statusOf(item).tone],
             }))}
           anchorOf={anchorOf}
         />
-        <ol className="grid gap-3" aria-label="Calculations and checks">
-          {set.definitions.map((item) => (
-            <DefinitionCard
-              key={item.id}
-              subject={subject}
-              item={item}
-              quoted={words(text).includes(words(item.text))}
-              names={names}
-              working={working[item.id] ?? []}
-              sentences={sentences[item.id]}
-              reads={set.definitions.filter((d) => item.uses.includes(d.id))}
-              busy={busy}
-              canWrite={readId !== null}
-              onWrite={() =>
-                readId && rewrite.mutate({ text, readId, id: item.id })
-              }
-              {...(drafting?.running && drafting.writing === item.id
-                ? {
-                    chip:
-                      ruleLoader.phase && ruleLoader.phase !== 'waiting' ? (
-                        <Loader
-                          phase={ruleLoader.phase}
-                          label="Writing…"
-                          announce={false}
-                          className="text-meta"
-                        />
-                      ) : undefined,
-                    activity: item.formula ? (
-                      <p className="text-meta text-muted">
-                        Being written again. This is the version before it,
-                        until the new one is ready.
-                      </p>
-                    ) : null,
+        <ol
+          ref={list}
+          className="draft-arriving grid gap-3"
+          data-draft-holds-scroll=""
+          aria-label="Calculations and checks"
+        >
+          {stages.map(({ item, stage }) => {
+            const chip = chipOfStage(stage, 'blue-dashed');
+            const status = statusOf(item);
+            const activity =
+              stage === 'writing'
+                ? activityOfDraft(drafting?.step ?? '', Boolean(item.formula))
+                : null;
+            return (
+              <DefinitionCard
+                key={item.id}
+                subject={subject}
+                item={item}
+                quoted={words(text).includes(words(item.text))}
+                names={names}
+                working={working[item.id] ?? []}
+                sentences={sentences[item.id]}
+                reads={set.definitions.filter((d) => item.uses.includes(d.id))}
+                busy={busy}
+                canWrite={readId !== null}
+                onWrite={() =>
+                  !mock &&
+                  readId &&
+                  rewrite.mutate({ text, readId, id: item.id })
+                }
+                chip={
+                  <Crossfade id={stage} className="draft-chip">
+                    {chip ?? (
+                      <StatusChip tone={status.tone}>{status.label}</StatusChip>
+                    )}
+                  </Crossfade>
+                }
+                activity={
+                  activity ? (
+                    <p
+                      className="text-meta text-muted-strong"
+                      data-leaving={leaving ? '' : undefined}
+                    >
+                      <Crossfade id={activity}>{activity}</Crossfade>
+                    </p>
+                  ) : undefined
+                }
+                awaitedFormula={
+                  stage === 'writing' && !item.formula ? (
+                    <AwaitedFormula live leaving={leaving} />
+                  ) : undefined
+                }
+                awaitedExamples={
+                  stage === 'writing' && !item.examples.length ? (
+                    <AwaitedExamples live leaving={leaving} />
+                  ) : undefined
+                }
+                onDecide={(decision, note) => {
+                  if (mock && current) {
+                    const now = new Date().toISOString();
+                    keep({
+                      ...current,
+                      set: {
+                        ...current.set,
+                        definitions: current.set.definitions.map((d) =>
+                          d.id === item.id
+                            ? decision === 'accept'
+                              ? {
+                                  ...d,
+                                  approvedAt: now,
+                                  deniedAt: null,
+                                  denial: null,
+                                }
+                              : {
+                                  ...d,
+                                  approvedAt: null,
+                                  deniedAt: now,
+                                  denial: note ?? null,
+                                }
+                            : d,
+                        ),
+                      },
+                    });
+                    return;
                   }
-                : {})}
-              onDecide={(decision, note) =>
-                decide.mutate({ text, id: item.id, decision, note })
-              }
-              onChoose={(index) => choose.mutate({ text, id: item.id, index })}
-              onAdvise={() =>
-                advise.mutateAsync({ text, id: item.id }).then(
-                  ({ advice }) => advice,
-                  (error: unknown) => {
-                    throw new Error(saidBy(error) ?? 'No answer came back.');
-                  },
-                )
-              }
-              onShowProfile={profile ? showProfile : undefined}
-              onSetAppliesTo={(value) =>
-                setAppliesTo.mutate({ text, id: item.id, value })
-              }
-              debug={
-                <HeadIconButton
-                  label={`Debug ${item.name}`}
-                  tooltip={{ label: 'Debug this rule' }}
-                  size="alone"
-                  wash="none"
-                  onPress={() => setDebugging({ kind: 'rule', id: item.id })}
-                >
-                  <Bug className="size-4" aria-hidden />
-                </HeadIconButton>
-              }
-            />
-          ))}
+                  decide.mutate({ text, id: item.id, decision, note });
+                }}
+                onChoose={(index) =>
+                  !mock && choose.mutate({ text, id: item.id, index })
+                }
+                onAdvise={() =>
+                  advise.mutateAsync({ text, id: item.id }).then(
+                    ({ advice }) => advice,
+                    (error: unknown) => {
+                      throw new Error(saidBy(error) ?? 'No answer came back.');
+                    },
+                  )
+                }
+                onShowProfile={profile ? showProfile : undefined}
+                onSetAppliesTo={(value) =>
+                  !mock && setAppliesTo.mutate({ text, id: item.id, value })
+                }
+                debug={
+                  <HeadIconButton
+                    label={`Debug ${item.name}`}
+                    tooltip={{ label: 'Debug this rule' }}
+                    size="alone"
+                    wash="none"
+                    onPress={() => setDebugging({ kind: 'rule', id: item.id })}
+                  >
+                    <Bug className="size-4" aria-hidden />
+                  </HeadIconButton>
+                }
+              />
+            );
+          })}
         </ol>
       </div>
     </>
@@ -388,7 +534,9 @@ export function RulesStep({
           accepted={progress?.approved ?? 0}
           canDraft={readId !== null && dataConfirmed}
           busy={busy}
+          mock={mock}
           onDraft={(model) =>
+            !mock &&
             readId &&
             draft.mutate({ text, version, readId, ...(model ? { model } : {}) })
           }

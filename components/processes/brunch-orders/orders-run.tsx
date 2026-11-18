@@ -33,6 +33,8 @@ import {
 } from '@/components/engine/rules/rules-step';
 import { DiscardRun, InstructionsText } from '@/components/engine/run-parts';
 
+import { OrdersMockRun } from './orders-mock-run';
+
 /*
   A Brunch orders run, step by step. It moves only when a person acts: the
   instructions it runs under, reading the sheet, then the rules. The later
@@ -43,6 +45,14 @@ export function OrdersRun({ process }: { process: ProcessSummary }) {
   const selection = useRunSelection();
   const live = selection?.live;
   if (!live || !selection) return null;
+  if (live.mock)
+    return (
+      <OrdersMockRun
+        key={live.run.id}
+        live={live}
+        selection={selection}
+      />
+    );
   // How far each step has got is held for this run alone.
   return (
     <OrdersThread
@@ -108,11 +118,13 @@ function OrdersThread({
           ? 'complete'
           : 'attention'
         : step.id === 'rules'
-          ? rulesDone
-            ? 'complete'
-            : readId
-              ? 'attention'
-              : 'pending'
+          ? rules?.running
+            ? 'running'
+            : rulesDone
+              ? 'complete'
+              : readId
+                ? 'attention'
+                : 'pending'
           : step.id === 'calculate'
             ? !rulesDone
               ? 'pending'
@@ -145,10 +157,16 @@ function OrdersThread({
             : 'apply';
   // What each step has come to, in its heading, where it has a state yet.
   const label = (step: ProcessStep) =>
-    step.id === 'rules' && rules?.total
-      ? rules.approved === rules.total
-        ? 'All rules accepted'
-        : `${rules.approved} of ${rules.total} accepted`
+    step.id === 'rules' && (rules?.running || rules?.total)
+      ? rules.running
+        ? rules.found
+          ? `${rules.written} of ${rules.total} written`
+          : 'Finding the rules'
+        : rules.error && rules.written < rules.total
+          ? `${rules.written} of ${rules.total} written`
+          : rules.approved === rules.total
+            ? 'All rules accepted'
+            : `${rules.approved} of ${rules.total} accepted`
       : step.id === 'calculate' && rulesDone
         ? !calculated?.checked
           ? 'Not cross-checked'
@@ -178,10 +196,20 @@ function OrdersThread({
                     ? `${proposed.writes} to write`
                     : 'Nothing to write'
             : step.label;
+  const flag = (step: ProcessStep) =>
+    step.id === 'rules' && !rules?.running && rules?.error
+      ? `Stopped: ${rules.error.split(/[.:]/)[0]!.toLowerCase()}`
+      : undefined;
+  const progress = (step: ProcessStep) =>
+    step.id === 'rules' && rules?.running && rules.found
+      ? { at: rules.written, of: rules.total }
+      : undefined;
   const steps = ORDER_STEPS.map((step) => ({
     ...step,
     status: status(step),
     label: label(step),
+    flag: flag(step),
+    progress: progress(step),
   }));
   // Pinning the rulebook is not waited for by the screen, which shows what
   // Calculate has worked out; Propose opens once the server has the pin.

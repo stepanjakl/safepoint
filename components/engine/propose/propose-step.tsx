@@ -63,6 +63,7 @@ export function ProposeStep({
   run: kept,
   onProgress,
   onMoveRules,
+  mock = false,
 }: {
   // The process's subject: what each record's proposal sets.
   subject: DefinitionSubject;
@@ -76,6 +77,7 @@ export function ProposeStep({
   onProgress: (progress: ProposeProgress) => void;
   // Back to Calculate, on the current rules, when these no longer fit.
   onMoveRules?: () => void;
+  mock?: boolean;
 }) {
   const automatic = evaluation === 'model';
   const trpc = useTRPC();
@@ -91,10 +93,13 @@ export function ProposeStep({
   // runs, even after a failed poll: a failed request says nothing about it.
   // Asked afresh each time the step opens, since the job may have moved on.
   const proposalQuery = trpc.propose.get.queryOptions(run, {
-    staleTime: 0,
-    gcTime: 0,
+    enabled: !mock,
+    staleTime: mock ? Infinity : 0,
+    gcTime: mock ? Infinity : 0,
     refetchInterval: ({ state: { data } }) =>
-      data?.kind === 'proposal' && data.progress?.running ? POLL_MS : false,
+      !mock && data?.kind === 'proposal' && data.progress?.running
+        ? POLL_MS
+        : false,
     // As a draft is: left in a background tab, it still has to finish there.
     refetchIntervalInBackground: true,
   });
@@ -146,7 +151,8 @@ export function ProposeStep({
   // What the server holds of the decisions, asked afresh each time the step
   // opens. A decision answers into it, as a proposal answers into its own.
   const decidedQuery = trpc.decisions.current.queryOptions(decidedOn, {
-    staleTime: 0,
+    enabled: !mock,
+    staleTime: mock ? Infinity : 0,
   });
   const decidedAsked = useQuery(decidedQuery);
   // An answer just given shows from the moment it lands, ahead of the query's
@@ -258,6 +264,21 @@ export function ProposeStep({
   // said and they are taken back.
   const decide = (changes: Record<string, Decision | null>, words: string) => {
     if (!proposal) return;
+    if (mock) {
+      const next = { ...decisions };
+      for (const [key, decision] of Object.entries(changes))
+        if (decision) next[key] = decision;
+        else delete next[key];
+      const reply: DecisionsReply = {
+        kind: 'decisions',
+        proposal: { id: 1, at: proposal.at },
+        decisions: next,
+      };
+      setLanded({ at: Date.now(), answer: reply });
+      queryClient.setQueryData(decidedQuery.queryKey, reply);
+      setAnnounced(words);
+      return;
+    }
     const mine = ++requests.current;
     const entries = Object.entries(changes);
     setPending((now) => ({
@@ -328,6 +349,12 @@ export function ProposeStep({
         announced={announced}
         onDecide={decide}
         onCheck={(key, values) => {
+          if (mock)
+            return Promise.resolve({
+              kind: 'check',
+              verdict: 'ready',
+              checks: [],
+            });
           setChecking((count) => count + 1);
           return queryClient
             .fetchQuery(
@@ -441,7 +468,7 @@ export function ProposeStep({
             </Button>
           )}
         </div>
-        <ModelLimits model={model} />
+        <ModelLimits model={model} enabled={!mock} />
         <p
           role="status"
           className={

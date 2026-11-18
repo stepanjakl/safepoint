@@ -18,14 +18,12 @@ import type { InputDetail } from '@/lib/shell/input-details';
 import type { ProcessSummary } from '@/lib/shell/model';
 import type { SystemLink } from '@/lib/shell/system-links';
 import { useInstructions } from '@/components/app-shell/instructions/instructions-store';
-import { useRemovedInputs } from '@/components/app-shell/inputs/inputs-store';
 import { writePreferenceCookie } from '@/components/app-shell/stored-record';
 import { ProcessHeader } from './process-header';
 import { ProcessContentTransition } from './process-content-transition';
 import { ProcessPanels } from './process-panels';
 import { useSheetChrome } from './sheet-chrome';
 import type { AsideView } from '@/components/app-shell/drawer-aside';
-import { useProcessTab, type ProcessTab } from './process-tab-store';
 import { RunsList } from '@/components/app-shell/runs/runs-list';
 import {
   RunSelectionProvider,
@@ -33,7 +31,7 @@ import {
 } from '@/components/app-shell/runs/run-selection';
 import { RunView } from '@/components/app-shell/runs/run-view';
 import { StartRunButton } from '@/components/app-shell/runs/start-run-button';
-import { SECTION } from './panel-parts';
+import { SECTION, type ProcessTab } from './panel-parts';
 import { ScheduleControl } from './schedule-control';
 import { SectionRow } from '@/components/app-shell/runs/section-row';
 import { useShellPageNavigation } from '@/components/app-shell/shell-page-transition';
@@ -91,7 +89,6 @@ export const ProcessSheetActions = createContext<{
 export function ProcessSheet({
   process,
   inputs = [],
-  inputDetails,
   run,
   initialRunId = null,
   policy,
@@ -99,7 +96,6 @@ export function ProcessSheet({
   rulesPanel,
   inputsPanel,
   outputsPanel,
-  savedTabs = null,
 }: {
   process: ProcessSummary;
   inputs?: SystemLink[];
@@ -116,12 +112,8 @@ export function ProcessSheet({
   liveThread?: ReactNode;
   // The run to open on, from the address; none opens on the empty page.
   initialRunId?: string | null;
-  // The cookie's copy of the tab last open in each process, for the first paint.
-  savedTabs?: string | null;
 }) {
-  const [stored, setTab] = useProcessTab(process.id, savedTabs);
-  // A Rules tab kept from a process that has one means nothing on another.
-  const tab = stored === 'rules' && rulesPanel === undefined ? 'runs' : stored;
+  const [tab, setTab] = useState<ProcessTab>('runs');
   // The root opens the process last open (app/(shell)/page.tsx).
   useEffect(() => {
     writePreferenceCookie(LAST_PROCESS_KEY, process.id);
@@ -136,17 +128,12 @@ export function ProcessSheet({
   const [openView, setOpenView] = useState<AsideView | null>(null);
   // Counts the requests, so a second one remounts the panels it is for.
   const [request, setRequest] = useState(0);
-  // Set once the reader chooses a tab: a stored one that only storage knew of,
-  // applied on hydration, is put in place without a swap.
-  const [chosen, setChosen] = useState(false);
   const ask = (view: AsideView, next: ProcessTab) => {
-    setChosen(true);
     setOpenView(view);
     setRequest((count) => count + 1);
     setTab(next);
   };
   const chooseTab = (next: ProcessTab) => {
-    setChosen(true);
     setOpenView(null);
     setTab(next);
   };
@@ -160,26 +147,19 @@ export function ProcessSheet({
   const { shown, incoming, layer, entering } = useSwap(
     tab,
     TAB_MOTION,
-    chosen,
+    true,
     undefined,
     frameReady === tab,
   );
   if (incoming !== null && frameReady !== null) setFrameReady(null);
   // Arriving from another process is an entrance too, for the detail's beat.
   const { enteringProcess } = useShellPageNavigation();
-  // Inputs can be changed, as a preview, only where they have details to
-  // show. Everything downstream reads the kept set, so a removed input leaves
-  // the count and the list together.
-  const { removed, remove, restore } = useRemovedInputs(process.id);
   // The current version, which a publish in this browser can move on.
   const { current, versions } = useInstructions(
     process.id,
     process.instructions,
   );
   const { version } = current;
-  const kept = inputs.filter((input) => !removed.has(input.id));
-  const available = inputs.filter((input) => removed.has(input.id));
-  const editable = inputDetails !== undefined;
   const actions = {
     showInput: (id: string) => ask({ kind: 'input', id }, 'inputs'),
     showVersion,
@@ -270,12 +250,6 @@ export function ProcessSheet({
         process={process}
         tab={key}
         openView={openView}
-        inputs={kept}
-        availableInputs={available}
-        inputDetails={inputDetails}
-        onRemoveInput={editable ? remove : undefined}
-        onAddInput={editable ? restore : undefined}
-        onLeave={() => chooseTab('runs')}
       />
     );
 
@@ -287,7 +261,7 @@ export function ProcessSheet({
           version={policy?.version ?? version}
           instructionsLabel={policy?.label}
           hasRules={rulesPanel !== undefined}
-          inputs={kept}
+          inputs={inputs}
           outputs={process.outputs}
           tab={tab}
           onTabChange={chooseTab}

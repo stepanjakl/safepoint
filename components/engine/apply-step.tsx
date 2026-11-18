@@ -63,6 +63,7 @@ export function ApplyStep({
   run,
   decisions,
   onProgress,
+  mock,
 }: {
   // The process's subject: what it writes, and to which output.
   subject: DefinitionSubject;
@@ -73,6 +74,12 @@ export function ApplyStep({
   // preview again when one changes.
   decisions: Record<string, Decision>;
   onProgress: (progress: ApplyProgress) => void;
+  // A local mock run's preview and actions, so no server call is made.
+  mock?: {
+    preview: Preview;
+    onWrite?: () => void;
+    onUndo?: () => void;
+  };
 }) {
   const trpc = useTRPC();
   // What reaches the sheet is never retried: it could happen twice.
@@ -87,8 +94,10 @@ export function ApplyStep({
   useEffect(() => {
     report.current = onProgress;
   });
-  const [preview, setPreview] = useState<Preview | null>(null);
-  const [application, setApplication] = useState<Application | null>(null);
+  const [previewState, setPreview] = useState<Preview | null>(null);
+  const [applicationState, setApplication] = useState<Application | null>(null);
+  const preview = mock?.preview ?? previewState;
+  const application = mock ? mock.preview.application : applicationState;
   const [failure, setFailure] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   // A write or undo under way. A preview refreshing behind it disables nothing,
@@ -123,7 +132,10 @@ export function ApplyStep({
       },
     );
 
-  const askPreview = () => settle(previewing.mutateAsync(run));
+  const askPreview = () => {
+    if (mock) return;
+    settle(previewing.mutateAsync(run));
+  };
 
   // When each record was decided: a decision changed or made again is a new
   // time, so the preview is asked again whenever what is decided changes.
@@ -131,12 +143,21 @@ export function ApplyStep({
     Object.entries(decisions).map(([key, one]) => [key, one.at]),
   );
   useEffect(() => {
+    if (mock) {
+      report.current({ status: mock.preview.application?.status ?? null });
+      return;
+    }
     askPreview();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [run.process, run.runId, decidedKey]);
+  }, [run.process, run.runId, decidedKey, mock]);
 
   const write = (acknowledged: string[]) => {
     setConfirming(false);
+    if (mock) {
+      mock.onWrite?.();
+      setActed(true);
+      return;
+    }
     setActing(true);
     settle(writing.mutateAsync({ ...run, acknowledged }), () => {
       setActing(false);
@@ -144,6 +165,11 @@ export function ApplyStep({
     });
   };
   const undo = () => {
+    if (mock) {
+      mock.onUndo?.();
+      setActed(true);
+      return;
+    }
     setActing(true);
     settle(undoing.mutateAsync(run), (reply) => {
       setActing(false);

@@ -12,7 +12,7 @@
 
 @utility diff-clause-row {
   @apply clause-row;
-  grid-template-columns: var(--clause-gutter) --spacing(6) minmax(0, 1fr);
+  grid-template-columns: var(--clause-gutter) var(--clause-sign) minmax(0, 1fr);
 }
 
 :root {

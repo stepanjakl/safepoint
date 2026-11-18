@@ -296,7 +296,7 @@ function SourceFile({
             }
             onPress={() => setEditing((on) => !on)}
           >
-            <MorphingText text={editing ? 'Done' : 'Edit'} />
+            {editing ? 'Done' : 'Edit'}
           </Button>
         </span>
       </div>

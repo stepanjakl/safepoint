@@ -1,22 +1,14 @@
 'use client';
 
-import {
-  useId,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react';
+import { useId, useRef, useState, type ReactNode } from 'react';
 
 import {
   ThreadLookContext,
   ThreadStep,
   type ThreadLook,
 } from '@/components/app-shell/thread/thread-step';
-import { anchorOf } from '@/components/engine/rules/card-anchor';
-import { statusOf } from '@/components/engine/rules/definition-card';
+import { DraftSegments } from '@/components/engine/rules/draft-progress';
 import { Button } from '@/components/ui/button';
-import { Tooltip } from '@/components/ui/tooltip';
 import { cx } from '@/lib/ui/cx';
 import type { DefinitionSet } from '@/lib/engine/types';
 import type { ProcessStep } from '@/lib/shell/model';
@@ -117,61 +109,6 @@ function Bar({ scene, count }: { scene: Scene; count: number }) {
   );
 }
 
-// One segment per rule, in the order they are written. Each says on hover or
-// focus what its card's pill says, and leads to that card.
-function Segments({
-  id,
-  set,
-  scene,
-}: {
-  // The anchors of the cards it leads to (DraftCards).
-  id: string;
-  set: DefinitionSet;
-  scene: Scene;
-}) {
-  const row = useRef<HTMLDivElement>(null);
-  // On one clock with the word and placeholders on the card below.
-  useLayoutEffect(() => {
-    row.current?.getAnimations({ subtree: true }).forEach((animation) => {
-      if ((animation as CSSAnimation).animationName === 'draft-segment-beat')
-        animation.startTime = 0;
-    });
-  });
-  return (
-    <div ref={row} role="group" aria-label="Each rule" className="flex gap-1">
-      {stagesOf(set, scene).map(({ item, stage }) => {
-        const status =
-          stage === 'writing'
-            ? 'Writing'
-            : stage === 'queued'
-              ? 'Up next'
-              : statusOf(item).label;
-        return (
-          <Tooltip key={item.id} label={item.name} description={status}>
-            <a
-              href={`#${id}-${anchorOf(item.id)}`}
-              aria-label={`${item.name}: ${status}`}
-              className="draft-segment"
-            >
-              <span
-                data-writing={stage === 'writing' ? '' : undefined}
-                className={cx(
-                  'draft-segment-bar',
-                  stage === 'written'
-                    ? scene.error
-                      ? 'bg-muted'
-                      : 'bg-state-advisory'
-                    : stage !== 'writing' && 'bg-rule-faint',
-                )}
-              />
-            </a>
-          </Tooltip>
-        );
-      })}
-    </div>
-  );
-}
-
 // What sits at the top of the step's body, where a variant puts anything there.
 function Above({
   variant,
@@ -204,7 +141,11 @@ function Above({
   if (variant === 'segments')
     return (
       <div className="grid gap-2">
-        <Segments id={variant} set={set} scene={scene} />
+        <DraftSegments
+          prefix={variant}
+          stages={stagesOf(set, scene)}
+          error={Boolean(scene.error)}
+        />
         {reason}
       </div>
     );

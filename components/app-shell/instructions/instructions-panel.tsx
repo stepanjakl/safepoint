@@ -220,133 +220,37 @@ function VersionRow({
   changed in it from the one before. The current version is edited from here;
   an earlier one is restored as a draft, never republished as it stands.
 */
-export function InstructionVersionView({
+type InstructionsAsideView = Extract<AsideView, { kind: 'version' | 'edit' }>;
+
+export function InstructionDetail({
   process,
-  version,
-  face,
+  view,
+  swapping,
   onEdit,
-}: {
-  process: ProcessSummary;
-  version: string;
-  face: 'text' | 'changes';
-  onEdit: () => void;
-}) {
-  const store = useInstructions(process.id, process.instructions);
-  const { versions, current, draft } = store;
-  const index = versions.findIndex((entry) => entry.version === version);
-  const to = versions[index];
-  const from = index > 0 ? versions[index - 1] : undefined;
-  const [shown, setShown] = useState(from ? face : 'text');
-  if (!to) return null;
-  const isCurrent = to === current;
-  const changesLabel = from ? `Changes from ${from.version}` : '';
-
-  return (
-    <Banded
-      band={
-        <>
-          {from ? (
-            // The track's outline, not its first tab, starts where the band's title
-            // would (.instruction-tabs).
-            <span className="instruction-tabs">
-              <FilterTabs
-                size="small"
-                tabs={[
-                  {
-                    key: 'text',
-                    short: to.version,
-                    label: `Text of ${to.version}`,
-                  },
-                  { key: 'changes', short: changesLabel, label: changesLabel },
-                ]}
-                selected={shown}
-                onChange={setShown}
-                leadKey={null}
-                ariaLabel={`Instructions ${to.version}`}
-                menuLabel="Other views"
-                className="w-fit"
-              />
-            </span>
-          ) : (
-            <span className="text-dense value">{to.version}</span>
-          )}
-          <Button
-            size="small"
-            onPress={() => {
-              // Restoring replaces any draft. The current one needs none: the
-              // editor starts from its text, and a draft is kept once written.
-              if (!isCurrent) store.saveDraft(to.text);
-              onEdit();
-            }}
-          >
-            {/* Never an edit: a published version stays as it was, and this
-              starts the next one. */}
-            {isCurrent
-              ? draft === null
-                ? 'New version'
-                : `Continue ${store.next}`
-              : `Draft from ${to.version}`}
-          </Button>
-        </>
-      }
-    >
-      <TabSwap selected={shown} className="p-5">
-        {(face) =>
-          face === 'changes' && from ? (
-            <TextDiff before={from.text} after={to.text} label={changesLabel} />
-          ) : (
-            <Clauses text={to.text} />
-          )
-        }
-      </TabSwap>
-    </Banded>
-  );
-}
-
-/*
-  A detail led by a band, in the section row's face (.sheet-head), holding
-  what the panel is showing and its actions. The band stays put and only what
-  is under it scrolls, so the scrollbar starts below it.
-*/
-function Banded({ band, children }: { band: ReactNode; children: ReactNode }) {
-  return (
-    <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)]">
-      <div
-        // Held still through a swap, as a header is (swap.css).
-        className="sheet-head instruction-band swap-band"
-      >
-        {band}
-      </div>
-      <div className="min-h-0 overflow-y-auto overscroll-contain">
-        {children}
-      </div>
-    </div>
-  );
-}
-
-/*
-  Writing the next version, in the side panel: one field for the whole text,
-  then a review of what it changes before it is published. One field because
-  instructions are prose and a box per clause fights anyone writing more than a
-  sentence; the structure a reviewer needs comes back in the comparison.
-
-  The panel has no header: a band stays at its top through both steps, saying
-  what the draft changes so far and holding that step's actions. The field
-  sets its text where the comparison sets it (.draft-field), so turning to the
-  review leaves every unchanged paragraph where it was.
-*/
-type EditorActions = 'write' | 'confirm-discard' | 'review';
-
-export function InstructionEditor({
-  process,
   onDone,
+  renderPanel,
 }: {
   process: ProcessSummary;
+  view: InstructionsAsideView;
+  swapping: boolean;
+  onEdit: () => void;
   // Done with the editor: opens the version it names, or closes it.
   onDone: (version?: string) => void;
+  renderPanel: (band: ReactNode, body: ReactNode) => ReactNode;
 }) {
   const store = useInstructions(process.id, process.instructions);
-  const { current, next, draft } = store;
+  const { versions, current, next, draft } = store;
+
+  const isEdit = view.kind === 'edit';
+  const index = isEdit
+    ? -1
+    : versions.findIndex((entry) => entry.version === view.version);
+  const to = isEdit ? undefined : versions[index];
+  const from = !isEdit && index > 0 ? versions[index - 1] : undefined;
+
+  const [shown, setShown] = useState<'text' | 'changes'>(
+    !isEdit && from ? view.face : 'text',
+  );
   const [step, setStep] = useState<'write' | 'review'>('write');
   const [confirming, setConfirming] = useState(false);
   const [note, setNote] = useState('');
@@ -357,18 +261,40 @@ export function InstructionEditor({
   // Leaving the field ends it, so the next visit says it afresh.
   const [edited, setEdited] = useState(false);
 
+  const viewSignature = isEdit
+    ? 'edit'
+    : `version:${view.version}:${view.face}`;
+  const [prevSignature, setPrevSignature] = useState(viewSignature);
+  if (prevSignature !== viewSignature) {
+    setPrevSignature(viewSignature);
+    if (isEdit) {
+      setStep('write');
+      setConfirming(false);
+      setNote('');
+      setPublishing(false);
+      setAlready(null);
+      setEdited(false);
+    } else {
+      setShown(from ? view.face : 'text');
+    }
+  }
+
   // Spacing is not content: the draft is compared and published with its
   // paragraphs trimmed and separated by exactly one blank line.
   const normalised = paragraphsOf(draft ?? current.text).join('\n\n');
   const pending = diffText(current.text, normalised);
   const changed = pending.paragraphsChanged > 0 && normalised !== '';
 
-  const body = useSwap(step, (_, to) => (to === 'review' ? 'up' : 'down'));
+  const body = useSwap(
+    isEdit ? step : 'write',
+    (_, nextStep) => (nextStep === 'review' ? 'up' : 'down'),
+    isEdit,
+  );
   const mode: EditorActions =
     step === 'review' ? 'review' : confirming ? 'confirm-discard' : 'write';
 
   const review = () => {
-    if (!changed) return;
+    if (!isEdit || !changed) return;
     setConfirming(false);
     setStep('review');
   };
@@ -393,6 +319,7 @@ export function InstructionEditor({
     else if (mode === 'review') setPublishing(true);
   });
   useEffect(() => {
+    if (!isEdit || swapping) return;
     function onKeyDown(event: KeyboardEvent) {
       if (event.key !== 'Enter' || !(event.metaKey || event.ctrlKey)) return;
       if (event.altKey || event.shiftKey || event.defaultPrevented) return;
@@ -401,15 +328,13 @@ export function InstructionEditor({
     }
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, []);
+  }, [isEdit, swapping]);
 
-  /*
-    Two buttons for the whole session, whatever the step: their words morph
-    from one step's actions to the next, so nothing in the band comes and
-    goes. Pressed, a button keeps focus under it as its words change -- and
-    what it turns into is always the safe way out: Discard draft becomes Keep
-    writing, Back to writing becomes Discard draft, which only asks.
-  */
+  if (!isEdit && !to) return null;
+
+  const isCurrent = !isEdit && to === current;
+  const changesLabel = from ? `Changes from ${from.version}` : '';
+
   const LABELS = {
     write: { secondary: 'Discard draft', primary: 'Review changes' },
     'confirm-discard': { secondary: 'Keep writing', primary: 'Discard' },
@@ -429,8 +354,9 @@ export function InstructionEditor({
     }
     // In the review the press opens the publish note (its DialogTrigger).
   };
-  const actions = (
-    <div className="flex items-center gap-1.5">
+
+  const editActions = (
+    <div className="swap-band-fade flex items-center gap-1.5">
       <span
         className="band-collapse draft-question text-meta text-muted"
         data-open={mode === 'confirm-discard' || undefined}
@@ -494,21 +420,66 @@ export function InstructionEditor({
     </div>
   );
 
-  return (
-    <Banded
-      band={
-        <>
-          <DraftSummary
-            version={next}
-            from={current.version}
-            diff={pending}
-            changed={changed}
-            saved={edited && step === 'write'}
-          />
-          {actions}
-        </>
-      }
-    >
+  return renderPanel(
+    <div className="sheet-head instruction-band swap-band" inert={swapping}>
+      <div className="flex min-w-0 items-center gap-2">
+        <DraftSummary
+          version={isEdit ? next : to!.version}
+          stateLabel={
+            isEdit ? STATE.draft.label : isCurrent ? STATE.current.label : null
+          }
+          saved={isEdit && edited && step === 'write'}
+          summary={
+            isEdit
+              ? { from: current.version, diff: pending, changed }
+              : undefined
+          }
+        />
+        {!isEdit && from && to ? (
+          <span className="instruction-tabs swap-band-fade min-w-0">
+            <FilterTabs
+              size="small"
+              tabs={[
+                {
+                  key: 'text',
+                  short: 'Text',
+                  label: `Text of ${to.version}`,
+                },
+                { key: 'changes', short: 'Changes', label: changesLabel },
+              ]}
+              selected={shown}
+              onChange={setShown}
+              leadKey={null}
+              ariaLabel={`Instructions ${to.version}`}
+              menuLabel="Other views"
+            />
+          </span>
+        ) : null}
+      </div>
+      {isEdit ? (
+        editActions
+      ) : (
+        <Button
+          size="small"
+          className="swap-band-fade shrink-0"
+          onPress={() => {
+            // Restoring replaces any draft. The current one needs none: the
+            // editor starts from its text, and a draft is kept once written.
+            if (!isCurrent) store.saveDraft(to!.text);
+            onEdit();
+          }}
+        >
+          {/* Never an edit: a published version stays as it was, and this
+                starts the next one. */}
+          {isCurrent
+            ? draft === null
+              ? 'New version'
+              : `Continue ${store.next}`
+            : `Draft from ${to!.version}`}
+        </Button>
+      )}
+    </div>,
+    isEdit ? (
       <motion.div key={body.shown} {...body.layer}>
         {body.shown === 'review' ? (
           // Focus lands on the comparison, where the reviewer reads next.
@@ -560,9 +531,25 @@ export function InstructionEditor({
           </div>
         )}
       </motion.div>
-    </Banded>
+    ) : (
+      <TabSwap selected={shown} className="p-5">
+        {(face) =>
+          face === 'changes' && from ? (
+            <TextDiff
+              before={from.text}
+              after={to!.text}
+              label={changesLabel}
+            />
+          ) : (
+            <Clauses text={to!.text} />
+          )
+        }
+      </TabSwap>
+    ),
   );
 }
+
+type EditorActions = 'write' | 'confirm-discard' | 'review';
 
 /*
   Publishing asks for its reason as it happens: a note beside the button that
@@ -741,91 +728,111 @@ function useFirstSave(saved: boolean) {
 */
 function DraftSummary({
   version,
-  from,
-  diff,
-  changed,
+  stateLabel,
   saved,
+  summary,
 }: {
   version: string;
-  from: string;
-  diff: ReturnType<typeof diffText>;
-  changed: boolean;
+  stateLabel: string | null;
   // Changed since the field was entered: every keystroke is kept as it lands.
   saved: boolean;
+  summary?: {
+    from: string;
+    diff: ReturnType<typeof diffText>;
+    changed: boolean;
+  };
 }) {
-  const announcing = useFirstSave(saved);
-  const paragraphs = diff.paragraphs.length;
-  const touched = diff.paragraphsChanged;
+  const paragraphs = summary?.diff.paragraphs.length ?? 0;
+  const touched = summary?.diff.paragraphsChanged ?? 0;
   const strip = `${touched} of ${paragraphs} ${paragraphs === 1 ? 'paragraph' : 'paragraphs'} changed`;
   return (
     <div className="flex min-w-0 items-center gap-5">
-      {/* Set as the tabs' word is, so a draft's band reads as a version's. */}
       <span
-        className="draft-pill text-meta text-primary whitespace-nowrap"
+        className="draft-pill text-meta text-primary shrink-0 whitespace-nowrap"
         data-saved={saved || undefined}
       >
-        <span>
-          Draft&nbsp;<span className="font-semibold">{version}</span>
+        <MorphingText
+          text={stateLabel ? `${version} ${stateLabel}` : version}
+          duration={MORPH_WORDS_MS}
+        />
+        {summary ? <DraftSaved saved={saved} /> : null}
+      </span>
+      {summary ? (
+        <span className="swap-band-fade text-meta flex min-w-0 items-center gap-3 whitespace-nowrap">
+          <Tooltip
+            label={
+              summary.changed ? strip : `No changes from ${summary.from} yet`
+            }
+            placement="bottom"
+          >
+            <span
+              role="img"
+              aria-label={
+                summary.changed ? strip : `No changes from ${summary.from} yet`
+              }
+              tabIndex={0}
+              className="draft-glance"
+            >
+              <DraftMap diff={summary.diff} />
+            </span>
+          </Tooltip>
+          {summary.changed ? (
+            <span className="flex items-center gap-1">
+              <AnimatePresence initial={false}>
+                {summary.diff.wordsAdded > 0 ? (
+                  <DraftCount
+                    key="added"
+                    kind="added"
+                    value={summary.diff.wordsAdded}
+                  />
+                ) : null}
+                {summary.diff.wordsRemoved > 0 ? (
+                  <DraftCount
+                    key="removed"
+                    kind="removed"
+                    value={summary.diff.wordsRemoved}
+                  />
+                ) : null}
+              </AnimatePresence>
+            </span>
+          ) : (
+            <span className="text-muted">
+              No changes from {summary.from} yet
+            </span>
+          )}
         </span>
-        {/* Opens on the first change since the field was entered -- the
-            chip's room, then its check and word -- and the word goes again
-            after a moment; the check stays until the writer leaves the field.
-            Staged as the runs list's arrow opens in its pill. */}
-        <span
-          className="band-collapse"
-          data-open={saved || undefined}
-          aria-hidden="true"
-        >
-          <span>
-            <span className="draft-saved-face text-micro">
-              <Check aria-hidden className="draft-saved-check" />
-              <span
-                className="band-collapse draft-saved-word"
-                data-open={announcing || undefined}
-              >
-                <span>Saved</span>
-              </span>
+      ) : null}
+    </div>
+  );
+}
+
+function DraftSaved({ saved }: { saved: boolean }) {
+  const announcing = useFirstSave(saved);
+  return (
+    <>
+      {/* The check stays until the writer leaves the field.
+          Its label closes on the save announcement's timer. */}
+      <span
+        className="band-collapse"
+        data-open={saved || undefined}
+        aria-hidden="true"
+      >
+        <span>
+          <span className="draft-saved-face text-micro">
+            <Check aria-hidden className="draft-saved-check" />
+            <span
+              className="band-collapse draft-saved-word"
+              data-open={announcing || undefined}
+            >
+              <span>Saved</span>
             </span>
           </span>
         </span>
-        <span className="sr-only" role="status">
-          {announcing ? 'Draft saved' : ''}
-        </span>
       </span>
-      <span className="text-meta flex min-w-0 items-center gap-3 whitespace-nowrap">
-        <Tooltip
-          label={changed ? strip : `No changes from ${from} yet`}
-          placement="bottom"
-        >
-          <span
-            role="img"
-            aria-label={changed ? strip : `No changes from ${from} yet`}
-            tabIndex={0}
-            className="draft-glance"
-          >
-            <DraftMap diff={diff} />
-          </span>
-        </Tooltip>
-        {changed ? (
-          <span className="flex items-center gap-1">
-            <AnimatePresence initial={false}>
-              {diff.wordsAdded > 0 ? (
-                <DraftCount key="added" kind="added" value={diff.wordsAdded} />
-              ) : null}
-              {diff.wordsRemoved > 0 ? (
-                <DraftCount
-                  key="removed"
-                  kind="removed"
-                  value={diff.wordsRemoved}
-                />
-              ) : null}
-            </AnimatePresence>
-          </span>
-        ) : (
-          <span className="text-muted">No changes from {from} yet</span>
-        )}
+      <span className="sr-only" role="status">
+        {announcing ? 'Draft saved' : ''}
       </span>
-    </div>
+    </>
   );
 }
 

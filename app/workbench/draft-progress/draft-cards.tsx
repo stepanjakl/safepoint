@@ -1,39 +1,39 @@
 'use client';
 
-import { useReducedMotion } from 'motion/react';
-import {
-  useCallback,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type AnimationEvent,
-  type ReactNode,
-  type RefObject,
-} from 'react';
-import { flushSync } from 'react-dom';
+import { useCallback, useRef } from 'react';
 
 import { PendingDots } from '@/components/engine/pending-dots';
-import { FromModel } from '@/components/engine/rules-parts';
 import { CardAnchor, anchorOf } from '@/components/engine/rules/card-anchor';
 import {
   DefinitionCard,
   statusOf,
 } from '@/components/engine/rules/definition-card';
+import {
+  AwaitedExamples,
+  AwaitedFormula,
+  Crossfade,
+  UpNextPill,
+  WritingPill,
+  chipOfStage,
+  useDraftBeatClock,
+  useLeavingState,
+  type PillStyle,
+} from '@/components/engine/rules/draft-progress';
+import { useEasedCards } from '@/components/engine/rules/eased-cards';
 import { StatusChip } from '@/components/engine/trial-parts';
-import { Pill, SEVERITY } from '@/components/ui/pill';
+import { SEVERITY } from '@/components/ui/pill';
 import { cx } from '@/lib/ui/cx';
 import { SUBJECT } from '@/lib/processes/brunch-orders/data';
 import type { DefinitionSet } from '@/lib/engine/types';
 
-import { useEasedCards } from './eased-cards';
-import { stagesOf, type Scene, type Stage } from './script';
+import { stagesOf, type Scene } from './script';
 
 /*
   The real cards at one scene of the draft, with whatever an option adds: its
   pills, its placeholders, its line. The buttons are real and do nothing.
 */
 
-export type PillStyle = 'blue-dashed' | 'blue' | 'ringed' | 'words';
+export { Crossfade, UpNextPill, WritingPill, type PillStyle };
 
 export const PILL_STYLES: readonly {
   id: PillStyle;
@@ -62,205 +62,12 @@ export const PILL_STYLES: readonly {
   },
 ];
 
-const BLUE =
-  'pill-shape text-meta bg-tried-face text-state-advisory px-2 py-0.5 font-medium';
-const WORDS = 'text-meta text-muted';
-
-export function WritingPill({ style }: { style: PillStyle }) {
-  const word = <span className="draft-beat">Writing</span>;
-  if (style === 'words') return <span className={WORDS}>{word}</span>;
-  if (style === 'ringed')
-    return (
-      <Pill tone="neutral" variant="ringed">
-        {word}
-      </Pill>
-    );
-  return <span className={cx(BLUE, 'draft-beat-white')}>{word}</span>;
-}
-
-export function UpNextPill({ style }: { style: PillStyle }) {
-  if (style === 'words') return <span className={WORDS}>Up next</span>;
-  if (style === 'ringed')
-    return (
-      <Pill tone="neutral" variant="ringed">
-        Up next
-      </Pill>
-    );
-  if (style === 'blue') return <span className={BLUE}>Up next</span>;
-  return (
-    <span className="draft-pill-dashed pill-shape text-meta text-muted px-2 py-0.5 font-medium">
-      Up next
-    </span>
-  );
-}
-
-function WritingDots() {
-  return (
-    <span aria-hidden className="draft-dots">
-      <span />
-      <span />
-      <span />
-    </span>
-  );
-}
-
-// `dots` is the earlier options' pill: the three dots, ringed for what is next.
-function chipOf(stage: Stage, pills: PillStyle | 'dots') {
-  if (stage === 'writing')
-    return pills === 'dots' ? (
-      <StatusChip tone="neutral">
-        Writing
-        <WritingDots />
-      </StatusChip>
-    ) : (
-      <WritingPill style={pills} />
-    );
-  if (stage === 'queued')
-    return pills === 'dots' ? (
-      <Pill tone="neutral" variant="ringed">
-        Up next
-      </Pill>
-    ) : (
-      <UpNextPill style={pills} />
-    );
-  return undefined;
-}
-
-const LINE = 'draft-line bg-surface-hover-strong rounded-control block h-2.5';
-
-function AwaitedFormula({
-  live,
-  leaving,
-}: {
-  live: boolean;
-  leaving: boolean;
-}) {
-  return (
-    <div
-      aria-hidden
-      data-shimmer={live ? '' : undefined}
-      data-leaving={leaving ? '' : undefined}
-    >
-      <FromModel label="The model's formula">
-        <div className="bg-surface-floating rounded-control grid gap-1.5 px-3 py-2">
-          <span className={cx(LINE, 'w-full')} />
-          <span className={cx(LINE, 'w-2/3')} />
-        </div>
-      </FromModel>
-    </div>
-  );
-}
-
-function AwaitedExamples({
-  live,
-  leaving,
-}: {
-  live: boolean;
-  leaving: boolean;
-}) {
-  return (
-    <div
-      aria-hidden
-      data-shimmer={live ? '' : undefined}
-      data-leaving={leaving ? '' : undefined}
-      className="grid gap-3"
-    >
-      <span className="readout text-muted">Examples</span>
-      <div className="grid gap-5 px-4">
-        {/* About what three examples take, as most rules have. */}
-        {[0, 1, 2].map((record) => (
-          <div key={record} className="grid gap-2">
-            <span className={cx(LINE, 'w-1/3')} />
-            <span className={cx(LINE, 'w-full')} />
-            <span className={cx(LINE, 'w-full')} />
-            <span className={cx(LINE, 'w-2/3')} />
-            <span className={cx(LINE, 'w-1/2')} />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 const NOTHING = () => undefined;
 
-// What is said fades in over what it replaces, which keeps no room of its own.
-export function Crossfade({
-  id,
-  className,
-  children,
-}: {
-  // What changing means: the words themselves, or which pill it is.
-  id: string;
-  className?: string;
-  children: ReactNode;
-}) {
-  const still = useReducedMotion();
-  const [now, setNow] = useState({ id, node: children });
-  const [was, setWas] = useState<typeof now | null>(null);
-  if (id !== now.id) {
-    setWas(now);
-    setNow({ id, node: children });
-  }
-  return (
-    <span
-      className={cx('draft-crossfade', className)}
-      onAnimationEnd={(event: AnimationEvent) => {
-        if (event.animationName === 'draft-crossfade-out') setWas(null);
-      }}
-    >
-      <span key={id} className="draft-crossfade-now">
-        {children}
-      </span>
-      {was && !still ? (
-        <span key={was.id} aria-hidden className="draft-crossfade-was">
-          {was.node}
-        </span>
-      ) : null}
-    </span>
-  );
-}
-
-/*
-  What the cards draw: the scene, once what it replaces has gone. A rule whose
-  placeholders are about to be replaced keeps them while they fade out, so the
-  new content arrives into their place rather than over them.
-*/
-function useLeavingScene(
-  list: RefObject<HTMLOListElement | null>,
-  scene: Scene,
-  enabled: boolean,
-) {
-  const [shown, setShown] = useState(scene);
-  const stillWriting =
-    scene.running && scene.found && scene.written === shown.written;
-  const leaving =
-    enabled && shown !== scene && shown.found && shown.running && !stillWriting;
-  if (shown !== scene && !leaving) setShown(scene);
-  useLayoutEffect(() => {
-    if (!leaving) return;
-    let current = true;
-    const fades = [
-      ...(list.current?.querySelectorAll('[data-leaving]') ?? []),
-    ].flatMap((part) =>
-      part
-        .getAnimations()
-        .filter(
-          (animation) =>
-            (animation as CSSAnimation).animationName === 'draft-leave',
-        ),
-    );
-    void Promise.allSettled(fades.map((fade) => fade.finished)).then(() => {
-      // Sync, as any commit from an event is: PendingDots disconnects its
-      // observer in an effect, and one held back past a frame sees it unmounted.
-      if (current) flushSync(() => setShown(scene));
-    });
-    return () => {
-      current = false;
-    };
-  }, [list, leaving, scene]);
-  return { shown, leaving };
-}
+const shouldLeaveScene = (previous: Scene, next: Scene) =>
+  previous.found &&
+  previous.running &&
+  !(next.running && next.found && next.written === previous.written);
 
 export function DraftCards({
   id,
@@ -290,23 +97,14 @@ export function DraftCards({
   hold?: boolean;
 }) {
   const list = useRef<HTMLOListElement>(null);
-  const { shown: scene, leaving } = useLeavingScene(
+  const { shown: scene, leaving } = useLeavingState(
     list,
     latest,
+    shouldLeaveScene,
     eased && placeholder !== undefined,
   );
   useEasedCards(list, scene, { enabled: eased, hold });
-  // A card's word and placeholders on one clock, after every render: a pill
-  // restyled or a line shown again would otherwise restart out of step.
-  useLayoutEffect(() => {
-    list.current
-      ?.querySelectorAll('.draft-beat, [data-shimmer] .draft-line')
-      .forEach((element) =>
-        element.getAnimations().forEach((animation) => {
-          animation.startTime = 0;
-        }),
-      );
-  });
+  useDraftBeatClock(list);
   const anchor = useCallback((rule: string) => `${id}-${anchorOf(rule)}`, [id]);
   const stages = stagesOf(set, scene);
   const shown = oneByOne
@@ -336,7 +134,7 @@ export function DraftCards({
             const awaited =
               stage === 'writing' ||
               (stage === 'queued' && placeholder === 'all');
-            const chip = pills ? chipOf(stage, pills) : undefined;
+            const chip = pills ? chipOfStage(stage, pills) : undefined;
             const status = statusOf(item);
             return (
               <DefinitionCard

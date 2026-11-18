@@ -109,12 +109,14 @@ export function CalculateStep({
   readId,
   calculatedOn,
   onProgress,
+  mock = false,
 }: {
   text: string;
   readId: string;
   // The rulebook the run last calculated on, if any.
   calculatedOn: string | null;
   onProgress: (progress: CalculateProgress) => void;
+  mock?: boolean;
 }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -129,7 +131,7 @@ export function CalculateStep({
   // changed since, and a cross-check lands in this same answer.
   const worked = trpc.calculate.get.queryOptions(
     { text, readId, rulebook: pin ?? undefined },
-    { staleTime: 0, gcTime: 0 },
+    { enabled: !mock, staleTime: mock ? Infinity : 0, gcTime: mock ? Infinity : 0 },
   );
   const calculated = useQuery(worked);
   const cross = useMutation(
@@ -236,7 +238,7 @@ export function CalculateStep({
                 </Button>
               ) : null}
             </div>
-            <ModelLimits model={model} />
+            <ModelLimits model={model} enabled={!mock} />
             <p className="text-meta text-muted max-w-prose">
               The model works every value out again from the instructions and
               the data, without the formulas. If the model is busy or out of

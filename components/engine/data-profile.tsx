@@ -20,7 +20,7 @@ import {
   DataTable,
 } from '@/components/ui/data-table';
 import { Fold } from '@/components/ui/fold';
-import { MorphingText } from '@/components/ui/morphing-text';
+import { MORPH_WORDS_MS, MorphingText } from '@/components/ui/morphing-text';
 import { cx } from '@/lib/ui/cx';
 import type {
   DataProfile,
@@ -251,6 +251,7 @@ function Columns({
                 ? `${plural(open.length, 'column has', 'columns have')} blank cells with no meaning yet. Not confirmed.`
                 : 'Every blank has a meaning. Not confirmed: confirm it to draft the rules.'
           }
+          duration={MORPH_WORDS_MS}
         />
       </p>
       {open.length ? (

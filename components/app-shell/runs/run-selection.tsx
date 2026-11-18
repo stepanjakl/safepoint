@@ -24,9 +24,17 @@ import {
   An id in the address that the server does not keep selects nothing.
 */
 const NO_RUNS: KeptRun[] = [];
+const MOCK_PREFIX = 'mock-';
+
+export const isMockRunId = (id: string) => id.startsWith(MOCK_PREFIX);
 
 // The kept run being shown, with the text of the instructions it runs under.
-export type LiveRun = { run: ProcessRun; kept: KeptRun; text: string };
+export type LiveRun = {
+  run: ProcessRun;
+  kept: KeptRun;
+  text: string;
+  mock?: boolean;
+};
 
 export type RunSelection = {
   // The process's runs, newest first.
@@ -38,6 +46,8 @@ export type RunSelection = {
   // text, when given, is kept with the run. Answers whether a run was started:
   // it is waited for, since the server names it.
   start: ((additionalInstructions?: string) => Promise<boolean>) | null;
+  // Starts a local mock run in memory only (no server call, no database write).
+  startMock: ((additionalInstructions?: string) => boolean) | null;
   // Why start is null, for the control that would have offered it.
   cannotStart: string | null;
   // A live run being started: the server has not answered yet.
@@ -77,24 +87,34 @@ export function useRunSelectionState({
   // Whether this process draws a live run's thread, run step by step.
   liveThread?: boolean;
 }): RunSelection {
-  const [selected, setSelected] = useState(initialRunId);
+  const [selected, setSelected] = useState(
+    initialRunId && isMockRunId(initialRunId) ? null : initialRunId,
+  );
+  const [mockRuns, setMockRuns] = useState<KeptRun[]>([]);
   const kept = useKeptRuns(process.id, liveThread);
   const { versions, current } = useInstructions(
     process.id,
     process.instructions,
   );
   const keptRuns = kept.runs.data ?? NO_RUNS;
+  const allLiveRuns = [...mockRuns, ...keptRuns];
   const keptRun = liveThread
-    ? keptRuns.find((entry) => entry.id === selected)
+    ? allLiveRuns.find((entry) => entry.id === selected)
     : undefined;
   // Its text comes with the versions, by label; until they are known the
   // thread waits, as for a run not yet listed.
   const text = keptRun
-    ? versions.find((one) => one.version === keptRun.instructions.version)?.text
+    ? (versions.find((one) => one.version === keptRun.instructions.version)
+        ?.text ?? current.text)
     : undefined;
   const live: LiveRun | null =
     keptRun && text !== undefined
-      ? { run: processRunOf(keptRun), kept: keptRun, text }
+      ? {
+          run: processRunOf(keptRun),
+          kept: keptRun,
+          text,
+          mock: isMockRunId(keptRun.id),
+        }
       : null;
 
   // An id the server does not keep (an old one, a mistyped one) selects
@@ -103,7 +123,8 @@ export function useRunSelectionState({
   const asked = useRef(new Set<string>());
   const { isSuccess, isFetching, refetch } = kept.runs;
   useEffect(() => {
-    if (!liveThread || !selected || !isSuccess || isFetching) return;
+    if (!liveThread || !selected || isMockRunId(selected)) return;
+    if (!isSuccess || isFetching) return;
     if (keptRuns.some((entry) => entry.id === selected)) return;
     if (!asked.current.has(selected)) {
       asked.current.add(selected);
@@ -144,21 +165,74 @@ export function useRunSelectionState({
     }
   };
 
+  const startMock = (additionalInstructions = '') => {
+    if (!liveThread) return false;
+    const id = `${MOCK_PREFIX}${Date.now()}`;
+    const now = new Date().toISOString();
+    const mockRun: KeptRun = {
+      id,
+      process: process.id as RunProcessId,
+      startedAt: now,
+      updatedAt: now,
+      startedBy: null,
+      discardedAt: null,
+      stage: 'read',
+      status: 'running',
+      trigger: 'manual',
+      instructions: {
+        version: current.version,
+        hash: current.hash ?? 'mock',
+      },
+      additionalInstructions: additionalInstructions || null,
+      readId: null,
+      rulebook: null,
+    };
+    setMockRuns((list) => [mockRun, ...list]);
+    setSelected(id);
+    return true;
+  };
+
   return {
-    runs: [...keptRuns.map(processRunOf), ...process.runs],
+    runs: [...allLiveRuns.map(processRunOf), ...process.runs],
     selected,
     select: (id) => {
       kept.start.reset();
       setSelected((current) => (current === id ? null : id));
     },
     start: cannotStart ? null : start,
+    startMock: liveThread ? startMock : null,
     cannotStart,
     starting: kept.start.isPending,
     startError: kept.start.error?.message ?? null,
     live,
-    record: (id, progress) => kept.record(id, progress),
+    record: (id, progress) => {
+      if (isMockRunId(id)) {
+        setMockRuns((list) =>
+          list.map((one) =>
+            one.id === id
+              ? {
+                  ...one,
+                  ...(progress.readId !== undefined
+                    ? { readId: progress.readId }
+                    : {}),
+                  ...(progress.rulebook !== undefined
+                    ? { rulebook: progress.rulebook }
+                    : {}),
+                }
+              : one,
+          ),
+        );
+        return Promise.resolve();
+      }
+      return kept.record(id, progress);
+    },
     recordError: kept.recordError,
     discard: async (id) => {
+      if (isMockRunId(id)) {
+        setMockRuns((list) => list.filter((one) => one.id !== id));
+        setSelected((now) => (now === id ? null : now));
+        return true;
+      }
       try {
         await kept.discard.mutateAsync({
           process: process.id as RunProcessId,

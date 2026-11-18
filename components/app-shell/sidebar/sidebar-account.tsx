@@ -5,6 +5,7 @@ import { GradientAvatar } from '@outpacelabs/avatars';
 
 import { signOut } from '@/app/access/actions';
 import { cx } from '@/lib/ui/cx';
+import { visitorPalette } from '@/lib/shell/visitor-orb';
 import { Tooltip } from '@/components/ui/tooltip';
 import { ICON_BUTTON, MENU_RAIL, MenuIcon, RAIL_CELL } from './menu-parts';
 
@@ -37,12 +38,12 @@ export function SidebarAccount({
       ? `safepoint-visitor-${visitor.id}`
       : 'safepoint-maya';
 
-  // Visitors get their own colour palette derived from the orb index, so each
-  // visitor's avatar is visually distinct. Signed-in users share the brand
+  // Visitors get their own colour palette derived from their name (food hue
+  // modulated by adjective). Signed-in users and the fallback share the brand
   // palette; the seed alone differentiates them.
-  const avatarColors = visitor
-    ? VISITOR_PALETTES[visitor.orb % VISITOR_PALETTES.length]
-    : AVATAR_COLORS;
+  const avatarColors =
+    (!signedInAs && visitor ? visitorPalette(visitor.name) : null) ??
+    AVATAR_COLORS;
 
   const [ready, setReady] = useState(false);
   const [hovered, setHovered] = useState(false);
@@ -64,7 +65,7 @@ export function SidebarAccount({
     >
       <span
         role="img"
-        aria-label={named ? `${named}'s avatar` : 'Maya\u2019s demo avatar'}
+        aria-label={named ? `${named}’s avatar` : 'Maya’s demo avatar'}
         className={cx(MENU_RAIL, 'relative rounded-full')}
       >
         <GradientAvatar
@@ -158,7 +159,7 @@ function ScrollingName({
     >
       <span
         ref={innerRef}
-        className="inline-block whitespace-nowrap transition-transform duration-700 ease-in-out"
+        className="inline-block whitespace-nowrap transition-transform duration-700 ease-in-out motion-reduce:transition-none"
         style={{
           transitionDelay: scrolled ? '300ms' : '0ms',
           transform: scrolled ? `translateX(-${overflow}px)` : 'none',
@@ -169,23 +170,3 @@ function ScrollingName({
     </p>
   );
 }
-
-/*
-  Six palettes, one per orb index, so each visitor's gradient reads differently.
-  Drawn from the same hue families as the orb fills they replace, shifted to
-  mesh-gradient territory: three to five stops that the engine blends.
-*/
-const VISITOR_PALETTES: string[][] = [
-  // Advisory blue
-  ['#2563eb', '#38bdf8', '#6366f1', '#818cf8', '#0ea5e9'],
-  // Verified green
-  ['#059669', '#34d399', '#10b981', '#6ee7b7', '#047857'],
-  // Caution amber
-  ['#d97706', '#fbbf24', '#f59e0b', '#fcd34d', '#b45309'],
-  // Decision violet
-  ['#7c3aed', '#a78bfa', '#8b5cf6', '#c4b5fd', '#6d28d9'],
-  // Live teal
-  ['#0d9488', '#2dd4bf', '#14b8a6', '#5eead4', '#0f766e'],
-  // Simulated rose
-  ['#e11d48', '#fb7185', '#f43f5e', '#fda4af', '#be123c'],
-];

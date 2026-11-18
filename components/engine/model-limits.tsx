@@ -18,7 +18,13 @@ const shortName = (id: string) => id.replace(/^gemini-/, '');
 
 // How the chosen model's quota stands, before a step spends it and while it
 // does: the waits are otherwise a step that seems to have stopped.
-export function ModelLimits({ model }: { model: DraftingModel }) {
+export function ModelLimits({
+  model,
+  enabled = true,
+}: {
+  model: DraftingModel;
+  enabled?: boolean;
+}) {
   const trpc = useTRPC();
   // Polled while shown; a change of model keeps the last answer until its own
   // arrives, and a failed poll hides it until the next one answers. Every
@@ -27,7 +33,8 @@ export function ModelLimits({ model }: { model: DraftingModel }) {
     trpc.modelLimits.get.queryOptions(
       { model },
       {
-        refetchInterval: POLL_MS,
+        enabled,
+        refetchInterval: enabled ? POLL_MS : false,
         staleTime: 0,
         structuralSharing: false,
         placeholderData: keepPreviousData,

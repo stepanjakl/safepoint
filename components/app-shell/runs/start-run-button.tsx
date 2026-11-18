@@ -23,7 +23,7 @@ export function StartRunButton() {
   // The tooltips of both buttons stand over the pill, not over their own icon.
   const pill = useRef<HTMLSpanElement>(null);
   if (!selection) return null;
-  const { start, cannotStart, starting } = selection;
+  const { start, startMock, cannotStart, starting } = selection;
   return (
     <span
       ref={pill}
@@ -52,6 +52,7 @@ export function StartRunButton() {
       </HeadIconButton>
       <InstructionsPopover
         start={start}
+        startMock={startMock}
         cannotStart={cannotStart}
         pill={pill}
       />
@@ -64,17 +65,20 @@ export function StartRunButton() {
 
 function InstructionsPopover({
   start,
+  startMock,
   cannotStart,
   pill,
 }: {
   start: ((instructions?: string) => Promise<boolean>) | null;
+  startMock: ((instructions?: string) => boolean) | null;
   cannotStart: string | null;
   pill: RefObject<HTMLSpanElement | null>;
 }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
+  const canOpen = Boolean(start || startMock);
   return (
-    <DialogTrigger isOpen={open && !!start} onOpenChange={setOpen}>
+    <DialogTrigger isOpen={open && canOpen} onOpenChange={setOpen}>
       <HeadIconButton
         label="Start run with instructions"
         tooltip={{
@@ -86,7 +90,7 @@ function InstructionsPopover({
         }}
         size="in-pill-small"
         wash="strong"
-        unavailable={!start}
+        unavailable={!canOpen}
         onPress={() => setOpen(true)}
       >
         <ChevronDown aria-hidden size={12} strokeWidth={1.8} />
@@ -128,11 +132,29 @@ function InstructionsPopover({
                 placeholder="What should this run focus on?…"
                 className="field text-body text-primary w-full resize-y px-3 py-2"
               />
-              <div className="flex justify-end gap-1.5">
+              <div className="flex flex-wrap items-center justify-end gap-1.5">
+                {startMock ? (
+                  <Button
+                    size="small"
+                    className="me-auto"
+                    onPress={() => {
+                      const note = text.trim();
+                      close();
+                      if (startMock(note)) setText('');
+                    }}
+                  >
+                    Start mock run
+                  </Button>
+                ) : null}
                 <Button size="small" onPress={close}>
                   Cancel
                 </Button>
-                <Button size="small" type="submit" variant="primary">
+                <Button
+                  size="small"
+                  type="submit"
+                  variant="primary"
+                  isDisabled={!start}
+                >
                   Start run
                 </Button>
               </div>

@@ -1,6 +1,4 @@
-import { cookies } from 'next/headers';
 import type { ReactNode } from 'react';
-import { PROCESS_TAB_KEY } from '@/lib/shell/navigation';
 import type { InputDetail } from '@/lib/shell/input-details';
 import type { ProcessSummary } from '@/lib/shell/model';
 import type { SystemLink } from '@/lib/shell/system-links';
@@ -9,10 +7,9 @@ import { ProcessSheet, type ProcessPolicy } from './process-sheet';
 /*
   The process page's server half: it loads nothing itself, but it is where the
   run's thread is built, so the thread stays server-rendered while the sheet
-  around it -- the header menu, the tab it has chosen -- is client state. It
-  reads the saved tab's cookie, so the sheet is first drawn on that tab.
+  around it -- the header menu, the tab it has chosen -- is client state.
 */
-export async function ProcessView({
+export function ProcessView({
   process,
   inputs = [],
   inputDetails,
@@ -41,9 +38,9 @@ export async function ProcessView({
   outputsPanel?: ReactNode;
   children: ReactNode;
 }) {
-  const savedTabs = (await cookies()).get(PROCESS_TAB_KEY)?.value ?? null;
   return (
     <ProcessSheet
+      key={process.id}
       process={process}
       inputs={inputs}
       inputDetails={inputDetails}
@@ -54,7 +51,6 @@ export async function ProcessView({
       rulesPanel={rulesPanel}
       inputsPanel={inputsPanel}
       outputsPanel={outputsPanel}
-      savedTabs={savedTabs}
     />
   );
 }
