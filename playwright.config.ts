@@ -46,8 +46,9 @@ export default defineConfig({
           // server's runs in .next/workflow-data whatever the folder says.
           WORKFLOW_TARGET_WORLD: 'local',
           WORKFLOW_LOCAL_DATA_DIR: TEST_WORKFLOWS,
-          // No annotation server for tests (scripts/runtime/dev.ts).
+          // No annotation server or AI SDK DevTools for tests (scripts/runtime/dev.ts).
           AGENTATION: 'off',
+          DEVTOOLS: 'off',
         },
         // With reuseExistingServer, a server already on the port is used as
         // it is, whatever database it has: only the one started here is safe.

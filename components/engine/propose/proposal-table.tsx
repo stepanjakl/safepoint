@@ -213,7 +213,7 @@ export function ProposalTable({
             <div
               role="group"
               aria-label="Proposal summary"
-              className="ground-raised border-rule-faint bg-surface-primary border-t-section sticky bottom-0 z-3 flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+              className="ground-raised border-raised-ring bg-surface-primary border-t-section sticky bottom-0 z-3 flex flex-wrap items-center justify-between gap-3 px-4 py-3"
             >
               <div className="flex flex-wrap items-center gap-2">
                 {counts.map(({ verdict, count }) => (

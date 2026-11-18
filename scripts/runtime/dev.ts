@@ -1,15 +1,23 @@
 /*
-  `pnpm dev`: the Next development server, and beside it the Agentation server
-  the development toolbar sends annotations to (components/dev/agentation-toolbar.tsx).
-  Agentation starts only when its port is free, so a second dev server, or one
-  started by Playwright (AGENTATION=off), shares the first or goes without; with
-  AGENTATION=off the toolbar is not drawn either (NEXT_PUBLIC_AGENTATION).
+  `pnpm dev`: the Next development server, beside it the Agentation server
+  the development toolbar sends annotations to (components/dev/agentation-toolbar.tsx),
+  and the AI SDK DevTools viewer (`pnpm exec devtools`).
+  Sidecars start only when their port is free, so a second dev server, or one
+  started by Playwright (AGENTATION=off, DEVTOOLS=off), shares the first or goes
+  without; with AGENTATION=off the toolbar is not drawn either (NEXT_PUBLIC_AGENTATION).
   Arguments are passed to `next dev`.
 */
 import { spawn, type ChildProcess } from 'node:child_process';
 import { connect } from 'node:net';
 
 const AGENTATION_PORT = 4747;
+const parsedDevtoolsPort = Number.parseInt(
+  process.env.AI_SDK_DEVTOOLS_PORT ?? '',
+  10,
+);
+const DEVTOOLS_PORT = Number.isFinite(parsedDevtoolsPort)
+  ? parsedDevtoolsPort
+  : 4983;
 
 function portInUse(port: number): Promise<boolean> {
   return new Promise((resolve) => {
@@ -38,6 +46,21 @@ if (process.env.AGENTATION !== 'off' && !(await portInUse(AGENTATION_PORT))) {
   });
 }
 
+let devtools: ChildProcess | undefined;
+if (
+  process.env.DEVTOOLS !== 'off' &&
+  !process.env.CI &&
+  !(await portInUse(DEVTOOLS_PORT))
+) {
+  devtools = spawn('node_modules/.bin/devtools', [], {
+    env: process.env,
+    stdio: ['ignore', 'inherit', 'inherit'],
+  });
+  devtools.on('error', (error) => {
+    console.warn(`AI SDK DevTools did not start: ${error.message}`);
+  });
+}
+
 const next = spawn(
   'node_modules/.bin/next',
   ['dev', '--webpack', ...process.argv.slice(2)],
@@ -56,10 +79,12 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, () => {
     next.kill(signal);
     agentation?.kill(signal);
+    devtools?.kill(signal);
   });
 }
 
 next.on('exit', (code, signal) => {
   agentation?.kill();
+  devtools?.kill();
   process.exit(code ?? (signal ? 1 : 0));
 });

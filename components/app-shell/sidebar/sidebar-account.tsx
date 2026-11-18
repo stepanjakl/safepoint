@@ -1,18 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { GradientAvatar } from '@outpacelabs/avatars';
 
 import { signOut } from '@/app/access/actions';
 import { cx } from '@/lib/ui/cx';
-import { VISITOR_ORB_FILLS } from '@/lib/shell/visitor-orb';
 import { Tooltip } from '@/components/ui/tooltip';
 import { ICON_BUTTON, MENU_RAIL, MenuIcon, RAIL_CELL } from './menu-parts';
 
 const AVATAR_COLORS = ['#0d9488', '#22d3ee', '#0284c7', '#3f3f46', '#5eead4'];
 
-// What the anonymous visitor cookie names; the orb index picks the face.
-export type AnonymousVisitor = { name: string; orb: number };
+// What the anonymous visitor cookie names; the id seeds the avatar.
+export type AnonymousVisitor = { id: string; name: string; orb: number };
 
 /*
   Both ends are rail cells, so the row states no offsets of its own: the avatar
@@ -30,8 +29,23 @@ export function SidebarAccount({
   visitor?: AnonymousVisitor | null;
 }) {
   const named = signedInAs ?? visitor?.name ?? null;
-  const orb = signedInAs === null && visitor ? visitor : null;
+  // Every user gets a GradientAvatar: signed-in users keyed by their name,
+  // visitors by their stable cookie id, and the fallback by a fixed seed.
+  const avatarSeed = signedInAs
+    ? `safepoint-${signedInAs}`
+    : visitor
+      ? `safepoint-visitor-${visitor.id}`
+      : 'safepoint-maya';
+
+  // Visitors get their own colour palette derived from the orb index, so each
+  // visitor's avatar is visually distinct. Signed-in users share the brand
+  // palette; the seed alone differentiates them.
+  const avatarColors = visitor
+    ? VISITOR_PALETTES[visitor.orb % VISITOR_PALETTES.length]
+    : AVATAR_COLORS;
+
   const [ready, setReady] = useState(false);
+  const [hovered, setHovered] = useState(false);
 
   useEffect(() => {
     // GradientAvatar renders to a <canvas> inside an effect. Fading the avatar
@@ -43,36 +57,27 @@ export function SidebarAccount({
   }, []);
 
   return (
-    <div className="shell-profile-row group/account shell:h-shell-header flex cursor-pointer items-center justify-between gap-2.5">
+    <div
+      className="shell-profile-row group/account shell:h-shell-header flex cursor-pointer items-center justify-between gap-2.5"
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
+    >
       <span
         role="img"
-        aria-label={named ? `${named}’s avatar` : 'Maya’s demo avatar'}
+        aria-label={named ? `${named}'s avatar` : 'Maya\u2019s demo avatar'}
         className={cx(MENU_RAIL, 'relative rounded-full')}
       >
-        {orb ? (
-          // A flat mark of 16px, an even box, so it sits on the rail's axis.
-          <span
-            aria-hidden="true"
-            className={cx(
-              'size-4 rounded-full',
-              VISITOR_ORB_FILLS[orb.orb % VISITOR_ORB_FILLS.length],
-            )}
-          />
-        ) : (
-          <GradientAvatar
-            seed={signedInAs ? `safepoint-${signedInAs}` : 'safepoint-maya'}
-            size={RAIL_CELL}
-            colors={AVATAR_COLORS}
-            className={cx(
-              'transition-opacity duration-(--duration-pane) ease-out',
-              ready ? 'opacity-100' : 'opacity-0',
-            )}
-          />
-        )}
+        <GradientAvatar
+          seed={avatarSeed}
+          size={RAIL_CELL}
+          colors={avatarColors}
+          className={cx(
+            'transition-opacity duration-(--duration-pane) ease-out',
+            ready ? 'opacity-100' : 'opacity-0',
+          )}
+        />
       </span>
-      <p className="text-primary text-dense mr-auto min-w-0 truncate font-semibold">
-        {named ?? 'Maya'}
-      </p>
+      <ScrollingName hovered={hovered}>{named ?? 'Maya'}</ScrollingName>
       {signedInAs ? (
         // A form, so signing out works before the page has hydrated, and the
         // rail cell it sits in is the settings button's own.
@@ -111,3 +116,76 @@ export function SidebarAccount({
     </div>
   );
 }
+
+/*
+  A name that truncates when it overflows, then smoothly scrolls to reveal the
+  rest on hover. The overflow distance is measured with a ResizeObserver and
+  applied as a translateX transition — the text slides exactly far enough and
+  no further, then returns when the pointer leaves.
+*/
+function ScrollingName({
+  children,
+  hovered,
+}: {
+  children: string;
+  hovered: boolean;
+}) {
+  const outerRef = useRef<HTMLParagraphElement>(null);
+  const innerRef = useRef<HTMLSpanElement>(null);
+  const [overflow, setOverflow] = useState(0);
+
+  const measure = useCallback(() => {
+    const outer = outerRef.current;
+    const inner = innerRef.current;
+    if (!outer || !inner) return;
+    const diff = inner.scrollWidth - outer.clientWidth;
+    setOverflow(diff > 0 ? diff : 0);
+  }, []);
+
+  useEffect(() => {
+    measure();
+    const observer = new ResizeObserver(measure);
+    if (outerRef.current) observer.observe(outerRef.current);
+    return () => observer.disconnect();
+  }, [measure, children]);
+
+  const scrolled = hovered && overflow > 0;
+
+  return (
+    <p
+      ref={outerRef}
+      className="text-primary text-dense mr-auto min-w-0 overflow-hidden font-semibold"
+    >
+      <span
+        ref={innerRef}
+        className="inline-block whitespace-nowrap transition-transform duration-700 ease-in-out"
+        style={{
+          transitionDelay: scrolled ? '300ms' : '0ms',
+          transform: scrolled ? `translateX(-${overflow}px)` : 'none',
+        }}
+      >
+        {children}
+      </span>
+    </p>
+  );
+}
+
+/*
+  Six palettes, one per orb index, so each visitor's gradient reads differently.
+  Drawn from the same hue families as the orb fills they replace, shifted to
+  mesh-gradient territory: three to five stops that the engine blends.
+*/
+const VISITOR_PALETTES: string[][] = [
+  // Advisory blue
+  ['#2563eb', '#38bdf8', '#6366f1', '#818cf8', '#0ea5e9'],
+  // Verified green
+  ['#059669', '#34d399', '#10b981', '#6ee7b7', '#047857'],
+  // Caution amber
+  ['#d97706', '#fbbf24', '#f59e0b', '#fcd34d', '#b45309'],
+  // Decision violet
+  ['#7c3aed', '#a78bfa', '#8b5cf6', '#c4b5fd', '#6d28d9'],
+  // Live teal
+  ['#0d9488', '#2dd4bf', '#14b8a6', '#5eead4', '#0f766e'],
+  // Simulated rose
+  ['#e11d48', '#fb7185', '#f43f5e', '#fda4af', '#be123c'],
+];

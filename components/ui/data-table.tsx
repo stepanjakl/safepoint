@@ -34,7 +34,7 @@ export function DataTable({
         'min-w-0',
         variant === 'compact'
           ? 'bg-surface-inset rounded-control overflow-auto'
-          : 'ground-raised border-rule-faint bg-surface-primary rounded-shell overflow-clip border',
+          : 'ground-raised border-raised-ring bg-surface-primary rounded-shell overflow-clip border',
         className,
       )}
     >
@@ -52,7 +52,7 @@ export const DATA_TABLE_HEADING =
 // The heading row's face; its cells are inset as the rows' are.
 export const DATA_TABLE_HEAD = cx(
   DATA_TABLE_HEADING,
-  'border-rule-faint border-b-section py-3',
+  'border-raised-ring border-b-section py-3',
 );
 
 export const DATA_TABLE_SECONDARY_NAME = 'text-muted font-normal';
@@ -67,7 +67,7 @@ export const COMPACT_TABLE_CELL = cx(
 export const COMPACT_TABLE_HEAD = cx(
   COMPACT_TABLE_PADDING,
   DATA_TABLE_HEADING,
-  'border-rule-faint border-b-section text-left',
+  'border-raised-ring border-b-section text-left',
 );
 
 // A row's name, in its first cell.

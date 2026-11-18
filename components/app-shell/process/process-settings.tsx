@@ -72,7 +72,7 @@ export function ProcessSettings({ process }: { process: ProcessSummary }) {
                 <button
                   type="button"
                   aria-label="How evaluation works"
-                  className="text-muted-strong hover:text-primary focus-visible:text-primary focus-visible:outline-field-edge-active inline-grid size-6 flex-none cursor-help place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
+                  className="control-wash text-muted hover:text-primary focus-visible:text-primary focus-visible:outline-field-edge-active inline-grid size-6 flex-none cursor-help place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
                   <CircleInfo aria-hidden size={16} strokeWidth={1.5} />
                 </button>

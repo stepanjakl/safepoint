@@ -614,7 +614,7 @@ function PublishNote({
           >
             <Heading
               slot="title"
-              className="border-rule-faint text-dense border-b-section -mx-4 -mt-4 px-4 py-3 font-medium"
+              className="rule-below text-dense -mx-4 -mt-4 px-4 py-3 font-medium"
             >
               Publish {version}
             </Heading>
@@ -633,7 +633,7 @@ function PublishNote({
                 {failure}
               </p>
             ) : null}
-            <div className="border-rule-faint border-t-section -mx-4 -mb-4 flex justify-end px-4 py-3">
+            <div className="rule-above -mx-4 -mb-4 flex justify-end px-4 py-3">
               <Button
                 size="small"
                 variant="primary"

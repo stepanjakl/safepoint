@@ -721,7 +721,7 @@ function OutputCells({
                     <Fact text={plural(cells.length, 'value')} />
                     <span
                       aria-hidden
-                      className="border-rule-faint border-b-section min-w-0 flex-1"
+                      className="border-raised-ring border-b-section min-w-0 flex-1"
                     />
                   </span>
                 </th>

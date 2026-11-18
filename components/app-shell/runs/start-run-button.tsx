@@ -6,6 +6,7 @@ import { Dialog, DialogTrigger, Heading, Popover } from 'react-aria-components';
 import ChevronDown from 'blode-icons-react/icons/chevron-down';
 import Play from 'blode-icons-react/icons/play';
 import { HeadIconButton } from '@/components/app-shell/head-icon-button';
+import { agentationPopoverProps } from '@/components/dev/agentation-popover';
 import { Button } from '@/components/ui/button';
 import { useRunSelection } from './run-selection';
 
@@ -96,11 +97,12 @@ function InstructionsPopover({
         placement="bottom start"
         offset={6}
         className="popover-motion control-face surface-popover rounded-shell w-[min(20rem,calc(100vw-2rem))]"
+        {...agentationPopoverProps()}
       >
-        <Dialog className="grid gap-3 p-4 outline-none">
+        <Dialog className="p-3 outline-none">
           {({ close }) => (
             <form
-              className="grid gap-3"
+              className="grid gap-2.5"
               onSubmit={(event) => {
                 event.preventDefault();
                 const note = text.trim();
@@ -112,34 +114,25 @@ function InstructionsPopover({
                 });
               }}
             >
-              <Heading
-                slot="title"
-                className="border-rule-faint text-dense border-b-section -mx-4 -mt-4 px-4 py-3 font-medium"
-              >
+              <Heading slot="title" className="text-dense font-medium">
                 Start with instructions
               </Heading>
-              <label className="grid gap-1.5">
-                <span className="text-meta text-muted">
-                  Additional instructions for this run · Optional
-                </span>
-                <textarea
-                  autoFocus
-                  name="additionalInstructions"
-                  autoComplete="off"
-                  rows={4}
-                  value={text}
-                  onChange={(event) => setText(event.target.value)}
-                  placeholder="What should this run focus on?…"
-                  className="field text-body text-primary w-full resize-y px-3 py-2"
-                />
-              </label>
-              <p className="text-meta text-muted leading-normal">
-                Applies to this run only; the process instructions stay as they
-                are. Saved with the run, not applied to execution yet.
-              </p>
-              <div className="border-rule-faint border-t-section -mx-4 -mb-4 flex justify-end gap-2 px-4 py-3">
-                <Button onPress={close}>Cancel</Button>
-                <Button type="submit" variant="primary">
+              <textarea
+                autoFocus
+                aria-label="Additional instructions"
+                name="additionalInstructions"
+                autoComplete="off"
+                rows={4}
+                value={text}
+                onChange={(event) => setText(event.target.value)}
+                placeholder="What should this run focus on?…"
+                className="field text-body text-primary w-full resize-y px-3 py-2"
+              />
+              <div className="flex justify-end gap-1.5">
+                <Button size="small" onPress={close}>
+                  Cancel
+                </Button>
+                <Button size="small" type="submit" variant="primary">
                   Start run
                 </Button>
               </div>

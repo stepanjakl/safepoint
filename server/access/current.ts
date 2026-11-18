@@ -22,6 +22,7 @@ export async function signedInAs(): Promise<string | null> {
 // Local development is judged on the host the request came to, as the proxy
 // judges it.
 export async function currentVisitor(): Promise<{
+  id: string;
   name: string;
   orb: number;
 } | null> {
@@ -38,5 +39,5 @@ export async function currentVisitor(): Promise<{
     (await cookies()).get(VISITOR_COOKIE)?.value,
     secret,
   );
-  return visitor && { name: visitor.name, orb: visitor.orb };
+  return visitor && { id: visitor.id, name: visitor.name, orb: visitor.orb };
 }

@@ -89,6 +89,9 @@ export const VISITOR_NOUNS = [
   'Smoothie',
 ] as const;
 
+export type VisitorAdjective = (typeof VISITOR_ADJECTIVES)[number];
+export type VisitorNoun = (typeof VISITOR_NOUNS)[number];
+
 // The first two bytes pick the words, so a name is a function of its bytes.
 export function visitorName(bytes: Uint8Array): string {
   const adjective =

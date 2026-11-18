@@ -110,10 +110,7 @@ export function ScheduleFields({
   return (
     <>
       <div
-        className={cx(
-          'flex items-center gap-3',
-          ruled && 'border-rule-faint border-b-section pb-3',
-        )}
+        className={cx('flex items-center gap-3', ruled && 'rule-below pb-3')}
       >
         {title}
         <Switch

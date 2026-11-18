@@ -272,7 +272,14 @@ function SourceFile({
 
   const table = (view?: (resource: string) => void) => (
     <div className={TABLE}>
-      <div className={cx(ROW, BAND, HEAD, 'border-b-section pl-5')}>
+      <div
+        className={cx(
+          ROW,
+          BAND,
+          HEAD,
+          'border-raised-ring border-b-section pl-5',
+        )}
+      >
         <span aria-hidden>{kind.resource.singular}</span>
         <span aria-hidden className="justify-self-end">
           Rows

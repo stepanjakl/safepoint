@@ -521,7 +521,7 @@ function ColumnTable({
                     colSpan={COLUMN_SPAN}
                     className={cx(
                       DATA_TABLE_HEADING,
-                      'border-rule-faint border-b-section px-4 py-2 text-left',
+                      'border-raised-ring border-b-section px-4 py-2 text-left',
                     )}
                   >
                     {group.lookup}
