@@ -210,7 +210,7 @@ function PopoverSample({ surface }: { surface: 'floating' | 'popover' }) {
     <div
       className={`control-face rounded-shell grid w-64 gap-3 p-4 ${surface === 'popover' ? 'surface-popover' : 'surface-floating'}`}
     >
-      <span className="text-dense font-medium">Start with instructions</span>
+      <span className="text-dense font-medium">Start with a note</span>
       <div className="field text-body text-muted px-3 py-2">
         What should this run focus on?…
       </div>

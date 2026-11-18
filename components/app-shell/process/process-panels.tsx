@@ -18,8 +18,9 @@ import {
 import { useInstructions } from '@/components/app-shell/instructions/instructions-store';
 import { ProcessSettings } from './process-settings';
 import { useAsidePanel } from '@/components/app-shell/use-aside-panel';
-import { SECTION, type ProcessTab } from './panel-parts';
+import { SECTION } from './panel-parts';
 import { SectionRow } from '@/components/app-shell/runs/section-row';
+import type { ProcessTab } from './process-tab-store';
 
 /*
   What the process is, in the sheet rather than over it. The header's menu

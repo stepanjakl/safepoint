@@ -43,7 +43,7 @@ import {
 
 import type { DataTabs } from '@/components/engine/data-drawer';
 import { SheetReadCard, type RunRead } from '@/components/engine/read-step';
-import { InstructionsText } from '@/components/engine/run-parts';
+import { InstructionsText, RunNote } from '@/components/engine/run-parts';
 import { ProposalTable } from '@/components/engine/propose/proposal-table';
 import type {
   Decision,
@@ -77,8 +77,8 @@ export type ModelRunView = {
   facts: ModelRunFacts;
   // What each record's proposal sets, as the process declares it.
   fields: ProposalField[];
-  // The instructions the run answers to.
-  instructions: { version: string; text: string };
+  // The instructions the run answers to, and any one-off note saved with it.
+  instructions: { version: string; text: string; note?: string | null };
   // The kind of source read, which says what it and its parts are called.
   sourceKind: SourceKind;
   read: RunRead | null;
@@ -152,7 +152,14 @@ export function ModelRunThread({
       : sheet?.showVersion(version);
 
   const boxes: Record<string, ReactNode> = {
-    request: <InstructionsText text={run.instructions.text} />,
+    request: run.instructions.note ? (
+      <div className="grid gap-3">
+        <RunNote text={run.instructions.note} />
+        <InstructionsText text={run.instructions.text} />
+      </div>
+    ) : (
+      <InstructionsText text={run.instructions.text} />
+    ),
     sources:
       stopped?.at === 'sources' ? (
         <Stopped reason={stopped.reason} again="Read again" {...actions} />

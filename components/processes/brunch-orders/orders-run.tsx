@@ -31,7 +31,11 @@ import {
   RulesStep,
   type RulesProgress,
 } from '@/components/engine/rules/rules-step';
-import { DiscardRun, InstructionsText } from '@/components/engine/run-parts';
+import {
+  DiscardRun,
+  InstructionsText,
+  RunNote,
+} from '@/components/engine/run-parts';
 
 import { OrdersMockRun } from './orders-mock-run';
 
@@ -47,11 +51,7 @@ export function OrdersRun({ process }: { process: ProcessSummary }) {
   if (!live || !selection) return null;
   if (live.mock)
     return (
-      <OrdersMockRun
-        key={live.run.id}
-        live={live}
-        selection={selection}
-      />
+      <OrdersMockRun key={live.run.id} live={live} selection={selection} />
     );
   // How far each step has got is held for this run alone.
   return (
@@ -238,7 +238,14 @@ function OrdersThread({
             }
           >
             {step.id === 'instructions' ? (
-              <InstructionsText text={text} />
+              kept.additionalInstructions ? (
+                <div className="grid gap-3">
+                  <RunNote text={kept.additionalInstructions} />
+                  <InstructionsText text={text} />
+                </div>
+              ) : (
+                <InstructionsText text={text} />
+              )
             ) : step.id === 'read' ? (
               <ResponseSection>
                 <ReadStep

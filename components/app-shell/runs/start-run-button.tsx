@@ -80,9 +80,9 @@ function InstructionsPopover({
   return (
     <DialogTrigger isOpen={open && canOpen} onOpenChange={setOpen}>
       <HeadIconButton
-        label="Start run with instructions"
+        label="Start run with a note"
         tooltip={{
-          label: 'Start with instructions',
+          label: 'Start with a note',
           description:
             cannotStart ?? 'Add a note for this run before it starts.',
           placement: 'right',
@@ -119,11 +119,11 @@ function InstructionsPopover({
               }}
             >
               <Heading slot="title" className="text-dense font-medium">
-                Start with instructions
+                Start with a note
               </Heading>
               <textarea
                 autoFocus
-                aria-label="Additional instructions"
+                aria-label="Note for this run"
                 name="additionalInstructions"
                 autoComplete="off"
                 rows={4}

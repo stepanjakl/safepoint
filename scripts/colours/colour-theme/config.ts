@@ -482,6 +482,15 @@ const FOLLOWING_BY_FILE = {
     '--sp-drawer-close-ring-top-hover': { light: 275, dark: -375 },
     '--sp-drawer-close-ring-bottom-hover': { light: 600, dark: -250 },
   },
+  'app/styles/severity.css': {
+    /* Neutral pills follow the ground via ramp steps rather than oklch(from ...)
+       so low-chroma neutral families cannot drop hue to `none` (0deg). */
+    '--sp-neutral-pill': { light: 100, dark: -125 },
+    '--sp-neutral-pill-hover': { light: 200, dark: -225 },
+    '--sp-neutral-pill-ring': { light: 150, dark: -200 },
+    '--sp-neutral-pill-ink': { light: 575, dark: -575 },
+    '--sp-neutral-pill-strong': { light: 775, dark: -725, flush: true },
+  },
   'components/ui/switch.css': {
     /* Keep both resting stops off their ground: the switch follows every
        surface, including recesses, without its lower face blending into it. */

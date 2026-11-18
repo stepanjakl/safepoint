@@ -60,7 +60,7 @@ const count = (n: number, one: string, many = `${one}s`) =>
   the 6-high Edit pill centres on a whole pixel and the two columns start on
   one line.
 */
-const BAND = 'border-rule-faint box-content min-h-10';
+const BAND = 'box-content min-h-10';
 // The table heading's face, padded here rather than by DATA_TABLE_HEAD.
 const HEAD = DATA_TABLE_HEADING;
 // Name, rows, columns, and the row's own control.
@@ -272,33 +272,30 @@ function SourceFile({
 
   const table = (view?: (resource: string) => void) => (
     <div className={TABLE}>
-      <div
-        className={cx(
-          ROW,
-          BAND,
-          HEAD,
-          'border-raised-ring border-b-section pl-5',
-        )}
-      >
-        <span aria-hidden>{kind.resource.singular}</span>
-        <span aria-hidden className="justify-self-end">
-          Rows
-        </span>
-        <span aria-hidden className="justify-self-end">
-          Columns
-        </span>
-        <span className={ACTIONS}>
-          <Button
-            size="xsmall"
-            shape="round"
-            aria-label={
-              editing ? 'Done' : `Edit ${kind.resource.plural} in ${title}`
-            }
-            onPress={() => setEditing((on) => !on)}
-          >
-            {editing ? 'Done' : 'Edit'}
-          </Button>
-        </span>
+      {/* Draw the rule outside `HEAD`'s `ground-band` so it matches the rest of
+          the file's `rule-faint` borders rather than shifting to the band's step. */}
+      <div className="border-rule-faint border-b-section col-span-full grid grid-cols-subgrid">
+        <div className={cx(ROW, BAND, HEAD, 'pl-5')}>
+          <span aria-hidden>{kind.resource.singular}</span>
+          <span aria-hidden className="justify-self-end">
+            Rows
+          </span>
+          <span aria-hidden className="justify-self-end">
+            Columns
+          </span>
+          <span className={ACTIONS}>
+            <Button
+              size="xsmall"
+              shape="round"
+              aria-label={
+                editing ? 'Done' : `Edit ${kind.resource.plural} in ${title}`
+              }
+              onPress={() => setEditing((on) => !on)}
+            >
+              {editing ? 'Done' : 'Edit'}
+            </Button>
+          </span>
+        </div>
       </div>
       <ResourceList
         label={`${title}: ${kind.resource.plural}`}
@@ -336,7 +333,12 @@ function SourceFile({
       <div className="border-rule-faint flex flex-col border-b lg:border-r lg:border-b-0">
         {/* Inset as the figures' rules are: its rule is their top one, on the
             table heading's line. */}
-        <div className={cx(BAND, 'mx-5 flex items-center border-b')}>
+        <div
+          className={cx(
+            BAND,
+            'border-rule-faint mx-5 flex items-center border-b',
+          )}
+        >
           <h4
             id={titleId}
             className="text-dense text-primary leading-snug font-semibold"

@@ -10,11 +10,9 @@ test('a run can start with additional instructions that stay with it', async ({
   page,
 }) => {
   await page.goto('/processes/brunch-orders');
-  await page
-    .getByRole('button', { name: 'Start run with instructions' })
-    .click();
+  await page.getByRole('button', { name: 'Start run with a note' }).click();
   const note = page.getByRole('textbox', {
-    name: /Additional instructions for this run/,
+    name: /Note for this run/,
   });
   await expect(note).toBeFocused();
   await note.fill('  Focus on missing prices.\nKeep the report concise.  ');

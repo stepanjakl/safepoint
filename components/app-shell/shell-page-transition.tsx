@@ -20,6 +20,7 @@ const ShellPageNavigation = createContext<{
   leavingProcess: boolean;
   enteringProcess: boolean;
   enteringShell: boolean;
+  navigated: boolean;
   leaveTo: (href: string) => void;
   finishLeaving: () => void;
   workspaceReveal: WorkspaceReveal;
@@ -69,6 +70,7 @@ export function ShellPageTransitionProvider({
     isProcessRoute(journey.previous);
   const enteringShell =
     path === '/workspace' || journey.previous === '/workspace';
+  const navigated = journey.previous !== path;
 
   function leaveTo(href: string) {
     if (href === path || leaving) return;
@@ -115,6 +117,7 @@ export function ShellPageTransitionProvider({
         leavingProcess,
         enteringProcess,
         enteringShell,
+        navigated,
         leaveTo,
         finishLeaving,
         workspaceReveal,

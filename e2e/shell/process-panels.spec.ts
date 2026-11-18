@@ -426,7 +426,7 @@ test('every section waits for its tab fade before rows and details arrive', asyn
   }
 });
 
-test('navigating between processes always opens the runs screen', async ({
+test('reloading keeps the open tab while navigating between processes opens runs', async ({
   page,
 }) => {
   await page.goto('/processes/brunch-orders');
@@ -437,6 +437,14 @@ test('navigating between processes always opens the runs screen', async ({
   await expect(
     page.getByRole('heading', { level: 2, name: /^Instructions/ }),
   ).toBeVisible();
+
+  await page.reload();
+  await expect(
+    page.getByRole('heading', { level: 2, name: /^Instructions/ }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: /^Instructions/ }).first(),
+  ).toHaveAttribute('aria-current', 'true');
 
   await page
     .locator('a[href="/processes/brunch-orders-direct"]')
@@ -461,6 +469,11 @@ test('navigating between processes always opens the runs screen', async ({
   await expect(
     page.getByRole('heading', { level: 2, name: /^Runs/ }).first(),
   ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Runs', exact: true }).first(),
+  ).toHaveAttribute('aria-current', 'true');
+
+  await page.reload();
   await expect(
     page.getByRole('button', { name: 'Runs', exact: true }).first(),
   ).toHaveAttribute('aria-current', 'true');

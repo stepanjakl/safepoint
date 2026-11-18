@@ -101,6 +101,7 @@
   --sp-draft-glance-focus: light-dark(var(--sp-neutral-150), var(--sp-neutral-725));
   /* A step up from the band in both themes: a label on it, not a control. */
   --sp-draft-pill-face: light-dark(var(--sp-neutral-25), var(--sp-neutral-725));
+  --sp-draft-pill-state-ink: light-dark(var(--sp-neutral-600), var(--sp-neutral-300));
   /* "Saved", a step further into the pill, as a word count sits on the band. */
   --sp-draft-saved-face: light-dark(var(--sp-neutral-100), var(--sp-neutral-650));
   --sp-draft-saved-ink: light-dark(var(--sp-neutral-700), var(--sp-neutral-200));
@@ -152,6 +153,10 @@
     background: var(--sp-draft-pill-face);
     font-weight: var(--font-weight-medium);
     transition: padding var(--duration-pane) ease-out;
+  }
+  .draft-pill :is([torph-id='Draft'], [torph-id='Live']) {
+    color: var(--sp-draft-pill-state-ink);
+    font-weight: var(--font-weight-semibold);
   }
   .draft-pill[data-saved] {
     padding-inline-end: calc((var(--draft-pill-height) - var(--draft-saved-height)) / 2);

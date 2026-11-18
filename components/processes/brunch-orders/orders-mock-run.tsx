@@ -44,7 +44,11 @@ import {
   RulesStep,
   type RulesProgress,
 } from '@/components/engine/rules/rules-step';
-import { DiscardRun, InstructionsText } from '@/components/engine/run-parts';
+import {
+  DiscardRun,
+  InstructionsText,
+  RunNote,
+} from '@/components/engine/run-parts';
 import { useTRPC } from '@/components/trpc/provider';
 import { blockFor, writesOf } from '@/lib/engine/apply-block';
 import type { Calculation, CrossCheck } from '@/lib/engine/calculate';
@@ -326,7 +330,10 @@ export const ORDERS_MOCK_STAGES: readonly (ThreadPlayerStep & {
 const STEP_MS = 3800;
 
 function rulesReplyForStage(stage: OrdersStageKey): RulesReply {
-  const baseProfile = { state: 'confirmed' as const, profile: confirmedProfile };
+  const baseProfile = {
+    state: 'confirmed' as const,
+    profile: confirmedProfile,
+  };
   const baseHistory = { head: calculation.fingerprint, revisions: [] };
   switch (stage) {
     case 'read-waiting':
@@ -515,17 +522,14 @@ export function OrdersMockRun({
 
   // Seed QueryClient cache synchronously before child steps render or re-render.
   useLayoutEffect(() => {
-    queryClient.setQueryData(
-      trpc.read.summary.queryKey({ id: MOCK_READ_ID }),
-      {
-        id: MOCK_READ_ID,
-        readAt: AT,
-        source: mockKeptRead.source,
-        spreadsheet: mockKeptRead.spreadsheet,
-        tabs: mockRunRead.tabs,
-        problems: [],
-      },
-    );
+    queryClient.setQueryData(trpc.read.summary.queryKey({ id: MOCK_READ_ID }), {
+      id: MOCK_READ_ID,
+      readAt: AT,
+      source: mockKeptRead.source,
+      spreadsheet: mockKeptRead.spreadsheet,
+      tabs: mockRunRead.tabs,
+      problems: [],
+    });
     queryClient.setQueryData(
       trpc.read.get.queryKey({ id: MOCK_READ_ID }),
       mockKeptRead,
@@ -642,13 +646,16 @@ export function OrdersMockRun({
 
   useEffect(() => {
     if (!running) return;
-    const timer = setTimeout(() => {
-      setIndex((current) => {
-        const next = current + 1;
-        if (next >= lastMainIndex) setPlaying(false);
-        return Math.min(next, lastMainIndex);
-      });
-    }, motionTime(STEP_MS) / rate);
+    const timer = setTimeout(
+      () => {
+        setIndex((current) => {
+          const next = current + 1;
+          if (next >= lastMainIndex) setPlaying(false);
+          return Math.min(next, lastMainIndex);
+        });
+      },
+      motionTime(STEP_MS) / rate,
+    );
     return () => clearTimeout(timer);
   }, [running, index, lastMainIndex, rate]);
 
@@ -656,7 +663,9 @@ export function OrdersMockRun({
   const [calculated, setCalculated] = useState<CalculateProgress>();
   const [proposed, setProposed] = useState<ProposeProgress>();
   const [applied, setApplied] = useState<ApplyProgress>();
-  useWorkingFavicon(running || Boolean(rules?.running) || Boolean(proposed?.running));
+  useWorkingFavicon(
+    running || Boolean(rules?.running) || Boolean(proposed?.running),
+  );
 
   // Sync step progress with the selected mock stage.
   const rulesDone =
@@ -751,16 +760,15 @@ export function OrdersMockRun({
                       : 'attention'
                 : 'pending';
 
-  const latest =
-    !readId
-      ? 'read'
-      : !rulesDone
-        ? 'rules'
-        : !canPropose || stage.key === 'branch-calc-differ'
-          ? 'calculate'
-          : !allDecided
-            ? 'propose'
-            : 'apply';
+  const latest = !readId
+    ? 'read'
+    : !rulesDone
+      ? 'rules'
+      : !canPropose || stage.key === 'branch-calc-differ'
+        ? 'calculate'
+        : !allDecided
+          ? 'propose'
+          : 'apply';
 
   const label = (step: ProcessStep) =>
     step.id === 'rules' && (rules?.running || rules?.total)
@@ -854,7 +862,14 @@ export function OrdersMockRun({
             }
           >
             {step.id === 'instructions' ? (
-              <InstructionsText text={text} />
+              live.kept.additionalInstructions ? (
+                <div className="grid gap-3">
+                  <RunNote text={live.kept.additionalInstructions} />
+                  <InstructionsText text={text} />
+                </div>
+              ) : (
+                <InstructionsText text={text} />
+              )
             ) : step.id === 'read' ? (
               <ResponseSection>
                 <ReadStep

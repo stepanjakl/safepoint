@@ -13,7 +13,6 @@ import { EMPTY_STATE_ARRIVE, EMPTY_STATE_STAGGER } from '@/lib/ui/motion';
 import type { ProcessSummary } from '@/lib/shell/model';
 import { runDay, runTime } from '@/lib/shell/run-time';
 import { RunSelectionProvider, useRunSelection } from './run-selection';
-import { RunInstructionsPreview } from './run-instructions-preview';
 
 /*
   The page beside the rail: the run the rail has chosen, or the empty page.
@@ -71,11 +70,6 @@ export function RunView({
       const at = live.run.startedAt;
       return (
         <ThreadPage label={`Run, ${runDay(at)} · ${runTime(at)}`}>
-          {live.kept.additionalInstructions ? (
-            <RunInstructionsPreview
-              instructions={live.kept.additionalInstructions}
-            />
-          ) : null}
           {liveThread}
         </ThreadPage>
       );

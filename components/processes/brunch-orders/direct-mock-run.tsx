@@ -131,22 +131,30 @@ export function DirectMockRun({
     const hold = frames.length
       ? frames.at(-1)!.t + AFTER_FRAMES_MS
       : (STAGE_HOLD_MS[scripted.key] ?? STEP_MS);
-    const timer = setTimeout(() => {
-      setIndex((current) => {
-        const next = current + 1;
-        if (next >= lastMainIndex) setPlaying(false);
-        return Math.min(next, lastMainIndex);
-      });
-    }, motionTime(hold) / rate);
+    const timer = setTimeout(
+      () => {
+        setIndex((current) => {
+          const next = current + 1;
+          if (next >= lastMainIndex) setPlaying(false);
+          return Math.min(next, lastMainIndex);
+        });
+      },
+      motionTime(hold) / rate,
+    );
     return () => clearTimeout(timer);
   }, [running, index, scripted.key, frames, lastMainIndex, rate]);
 
+  const activeView = frames[at]?.view ?? scripted.view;
+  const runNote = selection.live?.kept.additionalInstructions;
   const { view, actions } = useScriptedActions(
-    frames[at]?.view ?? scripted.view,
+    runNote
+      ? {
+          ...activeView,
+          instructions: { ...activeView.instructions, note: runNote },
+        }
+      : activeView,
     () =>
-      setIndex((current) =>
-        current < lastMainIndex ? current + 1 : current,
-      ),
+      setIndex((current) => (current < lastMainIndex ? current + 1 : current)),
   );
 
   return (

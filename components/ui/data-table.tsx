@@ -67,7 +67,7 @@ export const COMPACT_TABLE_CELL = cx(
 export const COMPACT_TABLE_HEAD = cx(
   COMPACT_TABLE_PADDING,
   DATA_TABLE_HEADING,
-  'border-raised-ring border-b-section text-left',
+  'border-rule-faint border-b-section text-left',
 );
 
 // A row's name, in its first cell.

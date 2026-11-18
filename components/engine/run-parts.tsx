@@ -52,10 +52,19 @@ export function DiscardRun({
   );
 }
 
+// A one-off note saved with this run, inside the Instructions step.
+export function RunNote({ text }: { text: string }) {
+  return (
+    <RequestBubble label="Note" peekLines={5}>
+      <p className="text-body break-words whitespace-pre-wrap">{text}</p>
+    </RequestBubble>
+  );
+}
+
 // Instructions as a request: each section's first line is its title.
 export function InstructionsText({ text }: { text: string }) {
   return (
-    <RequestBubble>
+    <RequestBubble peekLines={10}>
       <div className="grid gap-3">
         {text.split(/\n\s*\n/).map((section, i) => {
           // A section's first line is its title, when it has more.

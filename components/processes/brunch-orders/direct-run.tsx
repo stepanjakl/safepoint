@@ -50,9 +50,7 @@ const askedOf = (key: string, decision: Decision) =>
 
 type ApplyReplies = inferRouterOutputs<AppRouter>['application'];
 type ApplyReply =
-  | ApplyReplies['preview']
-  | ApplyReplies['write']
-  | ApplyReplies['undo'];
+  ApplyReplies['preview'] | ApplyReplies['write'] | ApplyReplies['undo'];
 type Preview = Extract<ApplyReply, { kind: 'preview' }>;
 
 function asReviewed(proposal: Proposal | null): Proposal | null {
@@ -459,7 +457,11 @@ function DirectThread({
           : null,
     },
     fields: SUBJECT.proposal,
-    instructions: { version: kept.instructions.version, text },
+    instructions: {
+      version: kept.instructions.version,
+      text,
+      note: kept.additionalInstructions,
+    },
     sourceKind,
     read: read ?? null,
     activity: shown?.progress?.activity ?? null,
@@ -487,8 +489,7 @@ function DirectThread({
               ]
             : [],
           problems: writeProblems,
-          writtenAt:
-            application?.status === 'verified' ? application.at : null,
+          writtenAt: application?.status === 'verified' ? application.at : null,
         }
       : null,
   };

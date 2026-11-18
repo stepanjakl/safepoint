@@ -20,7 +20,7 @@ import {
   type SystemLink,
 } from '@/lib/shell/system-links';
 import { ProcessContentTransition } from './process-content-transition';
-import type { ProcessTab } from './panel-parts';
+import type { ProcessTab } from './process-tab-store';
 import { ProcessTitle } from './process-title';
 import { Assistant } from '@/components/app-shell/assistant/assistant';
 

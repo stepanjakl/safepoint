@@ -1,0 +1,58 @@
+/* ── Request bubble ─────────────────────────────────────────────────────────
+   Progressive text reveal for clamped run notes and standing instructions:
+   grid-template-rows and the bottom fade overlay share the --fold-* pace so
+   ThreadStep's ResizeObserver yields to the nested transition.
+   ────────────────────────────────────────────────────────────────────────── */
+
+@layer components {
+  .text-reveal {
+    --fold-duration: clamp(
+      var(--fold-min),
+      calc(var(--fold-height, 230) * var(--fold-pace)),
+      var(--fold-max)
+    );
+    display: grid;
+    grid-template-rows: auto;
+  }
+  .text-reveal[data-overflows] {
+    grid-template-rows: var(--reveal-closed);
+  }
+  .text-reveal[data-overflows][data-open] {
+    grid-template-rows: var(--reveal-open);
+  }
+  .text-reveal[data-ready] {
+    transition: grid-template-rows var(--fold-duration) var(--ease-fold);
+  }
+  .text-reveal-clip {
+    position: relative;
+    min-height: 0;
+    overflow: clip;
+  }
+  .text-reveal[data-overflows] > .text-reveal-clip::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: var(--reveal-fade-size, 0px);
+    background: linear-gradient(to bottom, transparent, var(--sp-surface-primary));
+    pointer-events: none;
+    opacity: 1;
+  }
+  .text-reveal[data-overflows][data-open] > .text-reveal-clip::after {
+    opacity: 0;
+  }
+  .text-reveal[data-ready] > .text-reveal-clip::after {
+    transition: opacity var(--fold-duration) var(--ease-fold);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .text-reveal[data-ready],
+    .text-reveal[data-ready] > .text-reveal-clip::after {
+      transition: none;
+    }
+  }
+  @media (forced-colors: active) {
+    .text-reveal-clip::after {
+      display: none;
+    }
+  }
+}

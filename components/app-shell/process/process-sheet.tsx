@@ -24,6 +24,7 @@ import { ProcessContentTransition } from './process-content-transition';
 import { ProcessPanels } from './process-panels';
 import { useSheetChrome } from './sheet-chrome';
 import type { AsideView } from '@/components/app-shell/drawer-aside';
+import { useProcessTab, type ProcessTab } from './process-tab-store';
 import { RunsList } from '@/components/app-shell/runs/runs-list';
 import {
   RunSelectionProvider,
@@ -31,7 +32,7 @@ import {
 } from '@/components/app-shell/runs/run-selection';
 import { RunView } from '@/components/app-shell/runs/run-view';
 import { StartRunButton } from '@/components/app-shell/runs/start-run-button';
-import { SECTION, type ProcessTab } from './panel-parts';
+import { SECTION } from './panel-parts';
 import { ScheduleControl } from './schedule-control';
 import { SectionRow } from '@/components/app-shell/runs/section-row';
 import { useShellPageNavigation } from '@/components/app-shell/shell-page-transition';
@@ -96,6 +97,7 @@ export function ProcessSheet({
   rulesPanel,
   inputsPanel,
   outputsPanel,
+  savedTabs = null,
 }: {
   process: ProcessSummary;
   inputs?: SystemLink[];
@@ -112,8 +114,21 @@ export function ProcessSheet({
   liveThread?: ReactNode;
   // The run to open on, from the address; none opens on the empty page.
   initialRunId?: string | null;
+  // The cookie's copy of the tab last open in each process, for the first paint.
+  savedTabs?: string | null;
 }) {
-  const [tab, setTab] = useState<ProcessTab>('runs');
+  // Arriving from another process is an entrance too, for the detail's beat.
+  // In-app navigation falls back to Runs; reloads keep the tab last open.
+  const { enteringProcess, navigated } = useShellPageNavigation();
+  const [stored, setTab, resetTab] = useProcessTab(process.id, savedTabs);
+  const [landedOnRuns, setLandedOnRuns] = useState(navigated);
+  useEffect(() => {
+    if (landedOnRuns) resetTab();
+  }, [landedOnRuns, resetTab]);
+  // A Rules tab kept from a process that has one means nothing on another.
+  const resolved =
+    stored === 'rules' && rulesPanel === undefined ? 'runs' : stored;
+  const tab = landedOnRuns ? 'runs' : resolved;
   // The root opens the process last open (app/(shell)/page.tsx).
   useEffect(() => {
     writePreferenceCookie(LAST_PROCESS_KEY, process.id);
@@ -128,12 +143,19 @@ export function ProcessSheet({
   const [openView, setOpenView] = useState<AsideView | null>(null);
   // Counts the requests, so a second one remounts the panels it is for.
   const [request, setRequest] = useState(0);
+  // Set once the reader chooses a tab: a stored one that only storage knew of,
+  // applied on hydration, is put in place without a swap.
+  const [chosen, setChosen] = useState(false);
   const ask = (view: AsideView, next: ProcessTab) => {
+    setChosen(true);
+    setLandedOnRuns(false);
     setOpenView(view);
     setRequest((count) => count + 1);
     setTab(next);
   };
   const chooseTab = (next: ProcessTab) => {
+    setChosen(true);
+    setLandedOnRuns(false);
     setOpenView(null);
     setTab(next);
   };
@@ -147,13 +169,11 @@ export function ProcessSheet({
   const { shown, incoming, layer, entering } = useSwap(
     tab,
     TAB_MOTION,
-    true,
+    chosen,
     undefined,
     frameReady === tab,
   );
   if (incoming !== null && frameReady !== null) setFrameReady(null);
-  // Arriving from another process is an entrance too, for the detail's beat.
-  const { enteringProcess } = useShellPageNavigation();
   // The current version, which a publish in this browser can move on.
   const { current, versions } = useInstructions(
     process.id,

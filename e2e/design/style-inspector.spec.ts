@@ -196,9 +196,7 @@ test('the panel stays usable over an open modal', async ({
 }) => {
   test.skip(colorScheme === 'dark', 'The gesture is theme-independent.');
   await page.goto('/processes/brunch-orders');
-  await page
-    .getByRole('button', { name: 'Start run with instructions' })
-    .click();
+  await page.getByRole('button', { name: 'Start run with a note' }).click();
   const close = page.getByRole('button', { name: 'Cancel' });
   await expect(close).toBeVisible();
 
@@ -215,7 +213,7 @@ test('the panel stays usable over an open modal', async ({
   // Point first: the panel moves to the side away from what it inspects,
   // which here is the popover's heading, under where the panel starts.
   const heading = page.getByRole('heading', {
-    name: 'Start with instructions',
+    name: 'Start with a note',
   });
   const box = (await heading.boundingBox())!;
   await page.mouse.move(box.x + 10, box.y + box.height / 2);

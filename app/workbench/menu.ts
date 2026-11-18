@@ -37,6 +37,12 @@ export const WORKBENCH_GROUPS: readonly WorkbenchGroup[] = [
           'A Brunch orders run at every stage, with a player that steps one thread through them.',
       },
       {
+        href: '/workbench/run-instructions',
+        title: 'Run instructions',
+        summary:
+          'A run’s own note bubble alongside the standing process instructions inside the Instructions step.',
+      },
+      {
         href: '/workbench/draft-progress',
         title: 'Draft progress',
         summary:
