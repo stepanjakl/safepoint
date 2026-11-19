@@ -1,6 +1,6 @@
 'use client';
 
-import type { ComponentProps, ReactNode } from 'react';
+import type { ComponentProps, ReactNode, Ref } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
 import { Tooltip } from '@/components/ui/tooltip';
 
@@ -47,7 +47,9 @@ export function HeadIconButton({
   unavailable = false,
   mark = false,
   leads = false,
+  descriptionId,
   onPress,
+  ref,
   className = '',
   children,
 }: {
@@ -55,7 +57,7 @@ export function HeadIconButton({
   label: string;
   tooltip: Pick<
     ComponentProps<typeof Tooltip>,
-    'label' | 'description' | 'placement' | 'triggerRef'
+    'label' | 'description' | 'placement' | 'triggerRef' | 'isDisabled'
   >;
   size: keyof typeof SIZES;
   wash: keyof typeof WASHES;
@@ -66,14 +68,18 @@ export function HeadIconButton({
   mark?: boolean;
   // In a pill: the button whose pointer brings up the pill's own wash.
   leads?: boolean;
+  descriptionId?: string;
   onPress?: () => void;
+  ref?: Ref<HTMLButtonElement>;
   className?: string;
   children: ReactNode;
 }) {
   return (
     <Tooltip {...tooltip}>
       <AriaButton
+        ref={ref}
         aria-label={label}
+        aria-describedby={descriptionId}
         aria-disabled={unavailable ? 'true' : undefined}
         data-leads={leads || undefined}
         onPress={unavailable ? undefined : onPress}

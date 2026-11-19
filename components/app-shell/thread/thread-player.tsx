@@ -1,8 +1,14 @@
 'use client';
 
-import { useEffect, type RefObject } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useSyncExternalStore,
+  type RefObject,
+} from 'react';
 
 import { Button } from '@/components/ui/button';
+import { Select } from '@/components/ui/select';
 
 export type ThreadPlayerStep = {
   key: string;
@@ -43,6 +49,78 @@ export function useSlowMotion(
   }, [container, rate]);
 }
 
+const MOCK_STAGE_STORAGE_PREFIX = 'safepoint.mock-stage.v1:';
+const stageListeners = new Set<() => void>();
+const stageFallback = new Map<string, string>();
+
+export function mockStageStorageKey(runId: string) {
+  return `${MOCK_STAGE_STORAGE_PREFIX}${runId}`;
+}
+
+function subscribeStage(listener: () => void) {
+  stageListeners.add(listener);
+  window.addEventListener('storage', listener);
+  return () => {
+    stageListeners.delete(listener);
+    window.removeEventListener('storage', listener);
+  };
+}
+
+function readStageKey(runId: string): string | null {
+  try {
+    return window.sessionStorage.getItem(mockStageStorageKey(runId));
+  } catch {
+    return stageFallback.get(runId) ?? null;
+  }
+}
+
+function writeStageKey(runId: string, key: string) {
+  stageFallback.set(runId, key);
+  try {
+    window.sessionStorage.setItem(mockStageStorageKey(runId), key);
+  } catch {
+    // Private browsing or blocked site data: keep in-memory fallback.
+  }
+  stageListeners.forEach((listener) => listener());
+}
+
+/**
+ * Keeps the active mock stage index in `sessionStorage` keyed by `runId`,
+ * restoring it after hydration so reloads land on the same step.
+ */
+export function usePersistedMockStage(
+  runId: string,
+  steps: readonly ThreadPlayerStep[],
+) {
+  const index = useSyncExternalStore(
+    subscribeStage,
+    () => {
+      const saved = readStageKey(runId);
+      if (!saved) return 0;
+      const found = steps.findIndex((step) => step.key === saved);
+      return found >= 0 ? found : 0;
+    },
+    () => 0,
+  );
+
+  const setIndex = useCallback(
+    (next: number | ((current: number) => number)) => {
+      const saved = readStageKey(runId);
+      const currentFound = saved
+        ? steps.findIndex((step) => step.key === saved)
+        : -1;
+      const current = currentFound >= 0 ? currentFound : 0;
+      const target = typeof next === 'function' ? next(current) : next;
+      const clamped = Math.max(0, Math.min(target, steps.length - 1));
+      const key = steps[clamped]?.key;
+      if (key) writeStageKey(runId, key);
+    },
+    [runId, steps],
+  );
+
+  return [index, setIndex] as const;
+}
+
 /*
   Sticky floating player bar for stepping, playing, pausing, jumping to a stage
   or branch/error state, and toggling playback speed in a mock run.
@@ -70,7 +148,7 @@ export function ThreadPlayerBar({
   const branchSteps = steps
     .map((step, i) => ({ ...step, index: i }))
     .filter((step) => step.group === 'branch');
-  const lastMainIndex = (mainSteps.at(-1)?.index ?? steps.length - 1);
+  const lastMainIndex = mainSteps.at(-1)?.index ?? steps.length - 1;
   const current = steps[index] ?? steps[0]!;
   const isBranch = current.group === 'branch';
   const atLastMain = !isBranch && index >= lastMainIndex;
@@ -78,39 +156,39 @@ export function ThreadPlayerBar({
   return (
     <section
       aria-label="Mock run player"
-      className="thread-player-bar ground-floating control-face surface-popover rounded-shell sticky top-3 z-20 mb-6 flex flex-wrap items-center gap-2 p-2.5"
+      className="thread-player-bar ground-floating control-face surface-popover rounded-shell sticky top-3 z-20 -mx-4 mb-6 flex flex-wrap items-center gap-2 p-2.5 max-sm:-mx-2"
     >
       <div className="flex items-center gap-1.5">
         <Button
           size="small"
-          onPress={() =>
-            onSelect(index <= 0 ? lastMainIndex : index - 1)
-          }
+          onPress={() => onSelect(index <= 0 ? lastMainIndex : index - 1)}
         >
           Back
         </Button>
-        <Button
-          size="small"
-          variant="primary"
-          onPress={onTogglePlay}
-        >
+        <Button size="small" variant="primary" onPress={onTogglePlay}>
           {playing ? 'Pause' : atLastMain ? 'Replay' : 'Play'}
         </Button>
         <Button
           size="small"
-          onPress={() =>
-            onSelect(index >= steps.length - 1 ? 0 : index + 1)
-          }
+          onPress={() => onSelect(index >= steps.length - 1 ? 0 : index + 1)}
         >
           Next
+        </Button>
+        <Button
+          size="small"
+          isDisabled={index === 0 && !playing}
+          onPress={() => onSelect(0)}
+        >
+          Reset
         </Button>
       </div>
 
       <label className="flex min-w-0 flex-1 basis-48 items-center gap-2">
         <span className="sr-only">Mock run stage</span>
-        <select
+        <Select
           aria-label="Mock run stage"
-          className="field text-dense min-h-7 min-w-0 flex-1 px-2"
+          size="small"
+          className="min-w-0 flex-1"
           value={index}
           onChange={(event) => onSelect(Number(event.target.value))}
         >
@@ -138,7 +216,7 @@ export function ThreadPlayerBar({
               </option>
             ))
           )}
-        </select>
+        </Select>
       </label>
 
       <div

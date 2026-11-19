@@ -38,15 +38,10 @@ import {
   DRAFT_POLL_MS,
   type RulesReply,
 } from '@/components/engine/rules/rules-queries';
-import {
-  Lede,
-  StatusChip,
-  plural,
-  saidBy,
-} from '@/components/engine/trial-parts';
+import { Lede, plural, saidBy } from '@/components/engine/trial-parts';
 import { Button } from '@/components/ui/button';
 import { Fold } from '@/components/ui/fold';
-import { SEVERITY } from '@/components/ui/pill';
+import { Pill, SEVERITY } from '@/components/ui/pill';
 import { useTRPC } from '@/components/trpc/provider';
 import { cx } from '@/lib/ui/cx';
 import { FromModel } from '@/components/engine/rules-parts';
@@ -99,6 +94,7 @@ export function RulesStep({
   version,
   readId,
   onProgress,
+  debug = false,
   mock = false,
 }: {
   // What the process's rules are about: its records and what is proposed.
@@ -107,6 +103,7 @@ export function RulesStep({
   version: string;
   readId: string | null;
   onProgress: (progress: RulesProgress) => void;
+  debug?: boolean;
   mock?: boolean;
 }) {
   const trpc = useTRPC();
@@ -267,6 +264,33 @@ export function RulesStep({
     progress.total > 0 &&
     progress.approved === progress.total &&
     set.intentConfirmedAt !== null;
+  // In automatic mode, drafts once as soon as the read and confirmed profile
+  // are ready and no rules or draft exist yet.
+  const autoDrafted = useRef(false);
+  useEffect(() => {
+    if (
+      debug ||
+      mock ||
+      autoDrafted.current ||
+      !readId ||
+      !dataConfirmed ||
+      !asked.isSuccess ||
+      current !== null ||
+      latestDrafting !== null
+    )
+      return;
+    autoDrafted.current = true;
+    draft.mutate({ text, version, readId });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    debug,
+    mock,
+    readId,
+    dataConfirmed,
+    asked.isSuccess,
+    current,
+    latestDrafting,
+  ]);
   const [showAll, setShowAll] = useState(false);
   const cardsId = useId();
   const stages = set
@@ -361,9 +385,7 @@ export function RulesStep({
                 }
                 chip={
                   <Crossfade id={stage} className="draft-chip">
-                    {chip ?? (
-                      <StatusChip tone={status.tone}>{status.label}</StatusChip>
-                    )}
+                    {chip ?? <Pill tone={status.tone}>{status.label}</Pill>}
                   </Crossfade>
                 }
                 activity={
@@ -432,15 +454,19 @@ export function RulesStep({
                   !mock && setAppliesTo.mutate({ text, id: item.id, value })
                 }
                 debug={
-                  <HeadIconButton
-                    label={`Debug ${item.name}`}
-                    tooltip={{ label: 'Debug this rule' }}
-                    size="alone"
-                    wash="none"
-                    onPress={() => setDebugging({ kind: 'rule', id: item.id })}
-                  >
-                    <Bug className="size-4" aria-hidden />
-                  </HeadIconButton>
+                  debug ? (
+                    <HeadIconButton
+                      label={`Debug ${item.name}`}
+                      tooltip={{ label: 'Debug this rule' }}
+                      size="alone"
+                      wash="none"
+                      onPress={() =>
+                        setDebugging({ kind: 'rule', id: item.id })
+                      }
+                    >
+                      <Bug className="size-4" aria-hidden />
+                    </HeadIconButton>
+                  ) : undefined
                 }
               />
             );
@@ -513,58 +539,98 @@ export function RulesStep({
         </div>
       ) : null}
 
-      {/* Scaffolding for trying the step, as the read's setup is. */}
-      <section
-        aria-label="Draft setup"
-        className="trial-setup rounded-shell grid gap-3 p-4"
-      >
-        {set ? (
-          <div>
-            <Button
-              size="medium"
-              onPress={() => setDebugging({ kind: 'draft' })}
-            >
-              <Bug className="size-4" aria-hidden />
-              Debug the draft
-            </Button>
-          </div>
-        ) : null}
-        <DraftControl
-          kept={set?.definitions.length ?? 0}
-          accepted={progress?.approved ?? 0}
-          canDraft={readId !== null && dataConfirmed}
-          busy={busy}
-          mock={mock}
-          onDraft={(model) =>
-            !mock &&
-            readId &&
-            draft.mutate({ text, version, readId, ...(model ? { model } : {}) })
-          }
-        />
-        {!readId ? (
-          <p className="text-dense text-muted">
-            Read the data first: the examples are worked out on it.
-          </p>
-        ) : profile && !dataConfirmed ? (
-          <p className="text-dense text-muted">{CONFIRM_FIRST}</p>
-        ) : null}
-        {/* Always in the page, so its changes are read out; taking no room
-            while it has nothing to say. */}
-        <p
-          role="status"
-          className={
-            writing || drafting?.running || said !== null || drafting?.error
-              ? 'text-meta text-muted'
-              : 'sr-only'
-          }
+      {debug ? (
+        /* Scaffolding for trying the step, as the read's setup is. */
+        <section
+          aria-label="Draft setup"
+          className="trial-setup rounded-shell grid gap-3 p-4"
         >
-          {drafting?.running
-            ? drafting.step
-            : writing
-              ? 'Working… writing one can take a minute.'
-              : (said ?? drafting?.error ?? '')}
-        </p>
-      </section>
+          {set ? (
+            <div>
+              <Button
+                size="medium"
+                onPress={() => setDebugging({ kind: 'draft' })}
+              >
+                <Bug className="size-4" aria-hidden />
+                Debug the draft
+              </Button>
+            </div>
+          ) : null}
+          <DraftControl
+            kept={set?.definitions.length ?? 0}
+            accepted={progress?.approved ?? 0}
+            canDraft={readId !== null && dataConfirmed}
+            busy={busy}
+            mock={mock}
+            onDraft={(model) =>
+              !mock &&
+              readId &&
+              draft.mutate({
+                text,
+                version,
+                readId,
+                ...(model ? { model } : {}),
+              })
+            }
+          />
+          {!readId ? (
+            <p className="text-dense text-muted">
+              Read the data first: the examples are worked out on it.
+            </p>
+          ) : profile && !dataConfirmed ? (
+            <p className="text-dense text-muted">{CONFIRM_FIRST}</p>
+          ) : null}
+          {/* Always in the page, so its changes are read out; taking no room
+              while it has nothing to say. */}
+          <p
+            role="status"
+            className={
+              writing || drafting?.running || said !== null || drafting?.error
+                ? 'text-meta text-muted'
+                : 'sr-only'
+            }
+          >
+            {drafting?.running
+              ? drafting.step
+              : writing
+                ? 'Working… writing one can take a minute.'
+                : (said ?? drafting?.error ?? '')}
+          </p>
+        </section>
+      ) : (
+        <>
+          {!draftRunning && (said !== null || drafting?.error) ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <p role="alert" className="text-dense text-state-blocked">
+                {said ?? drafting?.error}
+              </p>
+              {readId !== null && dataConfirmed ? (
+                <Button
+                  size="medium"
+                  isDisabled={busy}
+                  onPress={() =>
+                    !mock && draft.mutate({ text, version, readId })
+                  }
+                >
+                  Try again
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
+          <p
+            role="status"
+            className={
+              writing || drafting?.running ? 'text-meta text-muted' : 'sr-only'
+            }
+          >
+            {drafting?.running
+              ? drafting.step
+              : writing
+                ? 'Working… writing one can take a minute.'
+                : ''}
+          </p>
+        </>
+      )}
 
       {!set ? (
         answered ? (

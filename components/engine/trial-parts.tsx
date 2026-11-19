@@ -6,7 +6,6 @@ import { useCallback, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader } from '@/components/ui/loader';
 import { useLoader } from '@/components/ui/working-mark';
-import { Pill, type Tone } from '@/components/ui/pill';
 
 /*
   The pieces every build-in-the-open step shares: a button the reader presses,
@@ -142,19 +141,6 @@ export function TrialControl({
       </p>
     </div>
   );
-}
-
-export type { Tone } from '@/components/ui/pill';
-
-// A status in the review's pill, in its bucket's tone.
-export function StatusChip({
-  tone,
-  children,
-}: {
-  tone: Tone;
-  children: ReactNode;
-}) {
-  return <Pill tone={tone}>{children}</Pill>;
 }
 
 // What a step came to, first and in one line, before any of the why.

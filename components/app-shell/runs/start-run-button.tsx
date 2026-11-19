@@ -1,13 +1,19 @@
 'use client';
 
-import { useRef, useState, type RefObject } from 'react';
+import { useId, useRef, useState, type RefObject } from 'react';
 import { Dialog, DialogTrigger, Heading, Popover } from 'react-aria-components';
 // Deep import: Blode's barrel is the whole icon library.
 import ChevronDown from 'blode-icons-react/icons/chevron-down';
 import Play from 'blode-icons-react/icons/play';
 import { HeadIconButton } from '@/components/app-shell/head-icon-button';
-import { agentationPopoverProps } from '@/components/dev/agentation-popover';
+import { useWalkthrough } from '@/components/app-shell/walkthrough';
+import {
+  useAgentationPopoverDismiss,
+  useAgentationPopoverProps,
+} from '@/components/dev/agentation-popover';
 import { Button } from '@/components/ui/button';
+import { useScreenSettled } from '@/components/ui/screen-settled';
+import { WalkthroughHint } from '@/components/ui/walkthrough-hint';
 import { useRunSelection } from './run-selection';
 
 /*
@@ -20,46 +26,94 @@ import { useRunSelection } from './run-selection';
 */
 export function StartRunButton() {
   const selection = useRunSelection();
+  const walkthrough = useWalkthrough();
+  const screenSettled = useScreenSettled();
+  const hintId = useId();
+  const [noteOpen, setNoteOpen] = useState(false);
   // The tooltips of both buttons stand over the pill, not over their own icon.
   const pill = useRef<HTMLSpanElement>(null);
+  const startButtonRef = useRef<HTMLButtonElement>(null);
   if (!selection) return null;
-  const { start, startMock, cannotStart, starting } = selection;
+  const { start, startMock, cannotStart, starting, selected } = selection;
+  const showHint =
+    walkthrough?.step === 'start-run' &&
+    screenSettled &&
+    !noteOpen &&
+    !selected &&
+    Boolean(start || startMock);
+  const startAndAdvance = start
+    ? async (note?: string) => {
+        walkthrough?.advance('start-run');
+        return start(note);
+      }
+    : null;
+  const startMockAndAdvance = startMock
+    ? (note?: string) => {
+        walkthrough?.advance('start-run');
+        return startMock(note);
+      }
+    : null;
+  const handleNoteOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) walkthrough?.advance('start-run');
+    setNoteOpen(nextOpen);
+  };
   return (
-    <span
-      ref={pill}
-      className={`control-wash bg-surface-hover -my-1 flex h-7 items-center rounded-full p-0.5 ${
-        start
-          ? 'has-[[data-leads]:hover]:bg-surface-hover-strong has-[button:focus-visible]:bg-surface-selected'
-          : ''
-      }`}
-    >
-      <HeadIconButton
-        label="Start run"
-        tooltip={{
-          label: 'Start run',
-          description:
-            cannotStart ?? 'Runs now, under the current instructions.',
-          placement: 'right',
-          triggerRef: pill,
-        }}
-        size="in-pill"
-        wash="none"
-        leads
-        unavailable={!start}
-        onPress={start ? () => void start() : undefined}
+    <>
+      <span
+        ref={pill}
+        className={`control-wash bg-surface-hover -my-1 flex h-7 items-center rounded-full p-0.5 ${
+          start
+            ? 'has-[[data-leads]:hover]:bg-surface-hover-strong has-[button:focus-visible]:bg-surface-selected'
+            : ''
+        }`}
       >
-        <Play aria-hidden size={14} strokeWidth={1.8} />
-      </HeadIconButton>
-      <InstructionsPopover
-        start={start}
-        startMock={startMock}
-        cannotStart={cannotStart}
-        pill={pill}
-      />
-      <span role="status" className="sr-only">
-        {starting ? 'Starting the run…' : ''}
+        <HeadIconButton
+          ref={startButtonRef}
+          label="Start run"
+          descriptionId={showHint ? hintId : undefined}
+          tooltip={{
+            label: 'Start run',
+            description:
+              cannotStart ?? 'Runs now, under the current instructions.',
+            placement: 'right',
+            triggerRef: pill,
+            isDisabled: showHint,
+          }}
+          size="in-pill"
+          wash="none"
+          leads
+          unavailable={!start}
+          onPress={startAndAdvance ? () => void startAndAdvance() : undefined}
+        >
+          <Play aria-hidden size={14} strokeWidth={1.8} />
+        </HeadIconButton>
+        <InstructionsPopover
+          start={startAndAdvance}
+          startMock={startMockAndAdvance}
+          cannotStart={cannotStart}
+          pill={pill}
+          open={noteOpen}
+          onOpenChange={handleNoteOpenChange}
+          tooltipDisabled={showHint}
+        />
+        <span role="status" className="sr-only">
+          {starting ? 'Starting the run…' : ''}
+        </span>
       </span>
-    </span>
+      <WalkthroughHint
+        isOpen={showHint}
+        step="start-run"
+        title="Start a run"
+        descriptionId={hintId}
+        targetRef={pill}
+        focusRef={startButtonRef}
+        onDismiss={() => walkthrough?.dismiss()}
+        onInteractOutside={() => walkthrough?.advance('start-run')}
+      >
+        Start a run to generate a proposal, or open the arrow menu to try a mock
+        run.
+      </WalkthroughHint>
+    </>
   );
 }
 
@@ -68,17 +122,30 @@ function InstructionsPopover({
   startMock,
   cannotStart,
   pill,
+  open,
+  onOpenChange,
+  tooltipDisabled,
 }: {
   start: ((instructions?: string) => Promise<boolean>) | null;
   startMock: ((instructions?: string) => boolean) | null;
   cannotStart: string | null;
   pill: RefObject<HTMLSpanElement | null>;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  tooltipDisabled: boolean;
 }) {
-  const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
+  const popoverRef = useRef<HTMLDivElement>(null);
   const canOpen = Boolean(start || startMock);
+  const popoverProps = useAgentationPopoverProps(pill);
+  useAgentationPopoverDismiss(
+    open && canOpen,
+    () => onOpenChange(false),
+    popoverRef,
+    pill,
+  );
   return (
-    <DialogTrigger isOpen={open && canOpen} onOpenChange={setOpen}>
+    <DialogTrigger isOpen={open && canOpen} onOpenChange={onOpenChange}>
       <HeadIconButton
         label="Start run with a note"
         tooltip={{
@@ -87,21 +154,22 @@ function InstructionsPopover({
             cannotStart ?? 'Add a note for this run before it starts.',
           placement: 'right',
           triggerRef: pill,
+          isDisabled: open || tooltipDisabled,
         }}
         size="in-pill-small"
         wash="strong"
         unavailable={!canOpen}
-        onPress={() => setOpen(true)}
       >
         <ChevronDown aria-hidden size={12} strokeWidth={1.8} />
       </HeadIconButton>
       <Popover
+        ref={popoverRef}
         // From the pill's left edge, over the thread, not from the chevron.
         triggerRef={pill}
         placement="bottom start"
         offset={6}
         className="popover-motion control-face surface-popover rounded-shell w-[min(20rem,calc(100vw-2rem))]"
-        {...agentationPopoverProps()}
+        {...popoverProps}
       >
         <Dialog className="p-3 outline-none">
           {({ close }) => (

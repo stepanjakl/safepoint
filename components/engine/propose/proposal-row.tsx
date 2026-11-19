@@ -432,7 +432,12 @@ export function PresentRow({
     <motion.tr
       className={className}
       initial={reduceMotion ? false : { opacity: 0 }}
-      animate={{ opacity: 1 }}
+      animate={{
+        opacity: 1,
+        transition: reduceMotion
+          ? { duration: 0 }
+          : { duration: 0.24, delay: 0.14, ease: 'easeOut' },
+      }}
       exit={reduceMotion ? undefined : { opacity: 0 }}
       transition={{ duration: DURATION_STATE, ease: 'easeOut' }}
     >

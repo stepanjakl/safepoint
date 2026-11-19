@@ -33,7 +33,7 @@ const NOTICE_BOX = cx(
 // Icon shares row one with the title; the caption sits under it.
 export function SidebarNotice() {
   return (
-    <div className={NOTICE_BOX}>
+    <div className={NOTICE_BOX} data-sidebar-notice>
       <span className="sidebar-notice-rail grid flex-none place-items-center">
         <MenuIcon name="info" />
       </span>

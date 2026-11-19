@@ -72,6 +72,9 @@ const applicationOf = (changes: CellChange[]): Application => ({
 });
 
 test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('safepoint.dev.run-debug', 'on');
+  });
   await seedKeptRulebooks(page);
   written = null;
   lastChanges = [];

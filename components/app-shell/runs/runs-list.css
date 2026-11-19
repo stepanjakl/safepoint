@@ -65,6 +65,17 @@
   inherits: false;
   initial-value: transparent;
 }
+/* Registered so the runs column's top/bottom fades ease in and out on scroll. */
+@property --runs-fade-top {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+@property --runs-fade-bottom {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
 
 /* Lets a sheet's rules reach the pane's ring across its lit edge (.sheet-bleed);
    without it the frames around the sheet clip them at the edge. */
@@ -507,6 +518,7 @@
      two colours. A state that darkens under a pointer claims it changed. */
   .sheet-row-status {
     color: var(--sheet-status);
+    transition: color var(--duration-state) ease-out;
   }
   .sheet-row-status svg {
     color: inherit;
@@ -686,6 +698,9 @@
     button.sheet-break::after {
       transition: none;
     }
+    .process-runs-list > .sheet-list {
+      transition: none;
+    }
   }
   @media (forced-colors: active) {
     /* Forced colours flatten the current row's fill, and there is no rail left
@@ -712,6 +727,55 @@
     }
     .sheet-seg + .sheet-seg-total {
       margin-inline-start: var(--sheet-total-gap);
+    }
+  }
+  @container sheet (width >= 52rem) {
+    /* Mask the list rather than overlaying the pane: a lit row's bleed still
+       covers the pane's inner highlight when unmasked, while scrolled edges
+       dissolve the row back to reveal that highlight underneath without ever
+       masking the scroller's scrollbar. */
+    .process-runs-list[data-runs-scrollable] > .sheet-list {
+      --runs-fade: 1.5rem;
+      --runs-fade-top: 0px;
+      --runs-fade-bottom: 0px;
+      transition:
+        --runs-fade-top var(--duration-state) ease-out,
+        --runs-fade-bottom var(--duration-state) ease-out;
+      mask-image: linear-gradient(
+        to bottom,
+        transparent,
+        #000 var(--runs-fade-top),
+        #000 calc(100% - var(--runs-fade-bottom)),
+        transparent
+      );
+      mask-size: 100% var(--runs-view-height, 100%);
+      mask-repeat: no-repeat;
+      mask-position: 0 var(--runs-scroll-y, 0%);
+    }
+    @supports (animation-timeline: scroll()) {
+      .process-runs-list[data-runs-scrollable] > .sheet-list {
+        animation: runs-scroll-mask linear both;
+        animation-timeline: --runs-scroll;
+      }
+    }
+    .process-runs-list[data-fade-top] > .sheet-list {
+      --runs-fade-top: var(--runs-fade);
+    }
+    .process-runs-list[data-fade-bottom] > .sheet-list {
+      --runs-fade-bottom: var(--runs-fade);
+    }
+  }
+  @media (forced-colors: active), print {
+    .process-runs-list > .sheet-list {
+      mask-image: none;
+    }
+  }
+  @keyframes runs-scroll-mask {
+    from {
+      mask-position: 0 0%;
+    }
+    to {
+      mask-position: 0 100%;
     }
   }
   /* Too narrow for three columns: the rail becomes a strip above the thread,

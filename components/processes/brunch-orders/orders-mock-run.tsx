@@ -16,12 +16,14 @@ import frozenRules from '@/e2e/fixtures/brunch-orders-rules.json';
 import frozenProfile from '@/fixtures/brunch-orders/profile/current.json';
 import snapshot from '@/fixtures/brunch-orders/sheet-snapshot.json';
 import { ProcessSheetActions } from '@/components/app-shell/process/process-sheet';
+import { useFollowRun } from '@/components/app-shell/thread/follow-run';
 import type {
   LiveRun,
   RunSelection,
 } from '@/components/app-shell/runs/run-selection';
 import {
   ThreadPlayerBar,
+  usePersistedMockStage,
   useSlowMotion,
   type ThreadPlayerStep,
 } from '@/components/app-shell/thread/thread-player';
@@ -45,9 +47,9 @@ import {
   type RulesProgress,
 } from '@/components/engine/rules/rules-step';
 import {
-  DiscardRun,
   InstructionsText,
   RunNote,
+  useRunDebug,
 } from '@/components/engine/run-parts';
 import { useTRPC } from '@/components/trpc/provider';
 import { blockFor, writesOf } from '@/lib/engine/apply-block';
@@ -466,7 +468,6 @@ function rulesReplyForStage(stage: OrdersStageKey): RulesReply {
 
 export function OrdersMockRun({
   live,
-  selection,
 }: {
   live: LiveRun;
   selection: RunSelection;
@@ -474,14 +475,18 @@ export function OrdersMockRun({
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const sheet = useContext(ProcessSheetActions);
+  const debug = useRunDebug();
   const { kept, text } = live;
   const mockText = `${text}\n<!-- mock -->`;
   const version = kept.instructions.version;
 
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = usePersistedMockStage(kept.id, ORDERS_MOCK_STAGES);
+  const [runKey, setRunKey] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [rate, setRate] = useState(1);
   const container = useRef<HTMLDivElement>(null);
+  const thread = useRef<HTMLOListElement>(null);
+  useFollowRun(thread, undefined, false, undefined, runKey);
   useSlowMotion(container, rate);
 
   const stage = ORDERS_MOCK_STAGES[index] ?? ORDERS_MOCK_STAGES[0]!;
@@ -494,6 +499,38 @@ export function OrdersMockRun({
   const hasRead = stage.key !== 'read-waiting';
   const read = hasRead ? mockRunRead : undefined;
   const readId = hasRead ? MOCK_READ_ID : null;
+
+  const [revealingRead, setRevealingRead] = useState(false);
+  const [prevHasRead, setPrevHasRead] = useState(hasRead);
+  if (prevHasRead !== hasRead) {
+    setPrevHasRead(hasRead);
+    setRevealingRead(
+      hasRead && !matchMedia('(prefers-reduced-motion: reduce)').matches,
+    );
+  }
+
+  const totalProposals = Object.keys(proposalData.proposal.records).length;
+  const [proposedShown, setProposedShown] = useState(totalProposals);
+  const [prevProposeKey, setPrevProposeKey] = useState(stage.key);
+  if (prevProposeKey !== stage.key) {
+    setPrevProposeKey(stage.key);
+    if (stage.key === 'propose-review') {
+      const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      setProposedShown(reduced ? totalProposals : 1);
+    } else {
+      setProposedShown(totalProposals);
+    }
+  }
+  useEffect(() => {
+    if (stage.key !== 'propose-review' || proposedShown >= totalProposals) {
+      return;
+    }
+    const timer = setTimeout(
+      () => setProposedShown((count) => Math.min(totalProposals, count + 1)),
+      motionTime(260) / rate,
+    );
+    return () => clearTimeout(timer);
+  }, [stage.key, proposedShown, totalProposals, rate]);
 
   const reachedCalculate = [
     'calculate-worked',
@@ -579,6 +616,15 @@ export function OrdersMockRun({
     if (reachedPropose && pinned) {
       const isProposing = stage.key === 'propose-running';
       const isQuotaError = stage.key === 'branch-propose-quota';
+      const visibleRecords =
+        stage.key === 'propose-review' && proposedShown < totalProposals
+          ? Object.fromEntries(
+              Object.entries(proposalData.proposal.records).slice(
+                0,
+                proposedShown,
+              ),
+            )
+          : proposalData.proposal.records;
       const propReply = {
         kind: 'proposal' as const,
         fingerprint: pinned,
@@ -587,7 +633,11 @@ export function OrdersMockRun({
         proposal:
           isProposing || isQuotaError
             ? null
-            : { ...proposalData.proposal, fingerprint: pinned },
+            : {
+                ...proposalData.proposal,
+                records: visibleRecords,
+                fingerprint: pinned,
+              },
         progress: isProposing
           ? {
               step: 'Proposing for 11 products…',
@@ -640,6 +690,8 @@ export function OrdersMockRun({
     readId,
     reachedCalculate,
     reachedPropose,
+    proposedShown,
+    totalProposals,
     pinned,
     kept.id,
   ]);
@@ -657,7 +709,7 @@ export function OrdersMockRun({
       motionTime(STEP_MS) / rate,
     );
     return () => clearTimeout(timer);
-  }, [running, index, lastMainIndex, rate]);
+  }, [running, index, lastMainIndex, rate, setIndex]);
 
   const [rules, setRules] = useState<RulesProgress>();
   const [calculated, setCalculated] = useState<CalculateProgress>();
@@ -739,9 +791,13 @@ export function OrdersMockRun({
           : step.id === 'calculate'
             ? !rulesDone
               ? 'pending'
-              : calculated?.checked && calculated.agreed === calculated.total
-                ? 'complete'
-                : 'attention'
+              : calculated?.checked
+                ? calculated.agreed === calculated.total
+                  ? 'complete'
+                  : 'attention'
+                : !debug && calculated
+                  ? 'complete'
+                  : 'attention'
             : step.id === 'propose'
               ? !canPropose
                 ? 'pending'
@@ -783,7 +839,11 @@ export function OrdersMockRun({
             : `${rules.approved} of ${rules.total} accepted`
       : step.id === 'calculate' && rulesDone
         ? !calculated?.checked
-          ? 'Not cross-checked'
+          ? debug
+            ? 'Not cross-checked'
+            : calculated
+              ? `${calculated.total} ${calculated.total === 1 ? 'value' : 'values'} worked out`
+              : step.label
           : calculated.agreed === calculated.total
             ? `All ${calculated.total} match the model`
             : `${calculated.total - calculated.agreed} don’t match the model`
@@ -834,10 +894,12 @@ export function OrdersMockRun({
         rate={rate}
         onSelect={(next) => {
           setPlaying(false);
+          if (next === 0) setRunKey((key) => key + 1);
           setIndex(next);
         }}
         onTogglePlay={() => {
           if (isBranch || atLastMain) {
+            setRunKey((key) => key + 1);
             setIndex(0);
             setPlaying(true);
           } else {
@@ -846,7 +908,7 @@ export function OrdersMockRun({
         }}
         onRateChange={setRate}
       />
-      <ol className="thread">
+      <ol ref={thread} className="thread">
         {steps.map((step) => (
           <ThreadStep
             key={step.id}
@@ -875,8 +937,9 @@ export function OrdersMockRun({
                 <ReadStep
                   kind={sourceById(SHEET_USE.source)?.kind ?? 'google-sheets'}
                   read={read}
-                  revealing={false}
-                  onRevealed={() => undefined}
+                  revealing={revealingRead}
+                  onRevealed={() => setRevealingRead(false)}
+                  automatic={!debug}
                   mock
                   onRead={() => {
                     if (stage.key === 'read-waiting') setIndex(1);
@@ -891,6 +954,7 @@ export function OrdersMockRun({
                   version={version}
                   readId={readId}
                   onProgress={setRules}
+                  debug={debug}
                   mock
                 />
               </ResponseSection>
@@ -902,19 +966,20 @@ export function OrdersMockRun({
                   readId={readId}
                   calculatedOn={pinned}
                   onProgress={setCalculated}
+                  debug={debug}
                   mock
                 />
               </ResponseSection>
             ) : step.id === 'propose' && canPropose && read && pinned ? (
               <ResponseSection>
                 <ProposeStep
-                  key={stage.key}
                   subject={SUBJECT}
                   text={mockText}
                   readId={read.id}
                   rulebook={pinned}
                   run={{ process: 'brunch-orders', runId: kept.id }}
                   onProgress={setProposed}
+                  debug={debug}
                   mock
                 />
               </ResponseSection>
@@ -959,13 +1024,6 @@ export function OrdersMockRun({
           </ThreadStep>
         ))}
       </ol>
-      <div className="border-rule-faint mt-8 flex flex-wrap items-center gap-3 border-t pt-4">
-        <DiscardRun
-          selection={selection}
-          id={kept.id}
-          words="Takes this mock run off the list. Nothing was called or written."
-        />
-      </div>
     </div>
   );
 }

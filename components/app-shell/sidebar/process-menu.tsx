@@ -46,6 +46,7 @@ import { useProcessReorder } from './use-process-reorder';
 import { WorkspaceMenu } from './workspace-menu';
 import { WalkthroughHint } from '@/components/ui/walkthrough-hint';
 import { useScreenSettled } from '@/components/ui/screen-settled';
+import { useWalkthrough } from '@/components/app-shell/walkthrough';
 
 /*
   The title row that leads with a chevron. Symmetric padding and no edge of its
@@ -88,9 +89,8 @@ export function ProcessMenu({
   // process is read here rather than handed down by each page.
   const current = usePathname();
   const screenSettled = useScreenSettled();
+  const walkthrough = useWalkthrough();
   const hintId = useId();
-  const [hintFinished, setHintFinished] = useState(current !== '/workspace');
-  if (current !== '/workspace' && !hintFinished) setHintFinished(true);
   const {
     leaveTo,
     workspaceReveal,
@@ -181,13 +181,27 @@ export function ProcessMenu({
         ? 'workspace'
         : 'processes';
   const showHint =
+    walkthrough?.step === 'open-processes' &&
     current === '/workspace' &&
     level === 'workspace' &&
     workspaceAttentionReady &&
-    screenSettled &&
-    !hintFinished;
+    screenSettled;
+  const [levelSettled, setLevelSettled] = useState(true);
+  const [settledForLevel, setSettledForLevel] = useState(level);
+  if (settledForLevel !== level) {
+    setSettledForLevel(level);
+    setLevelSettled(Boolean(reduceMotion));
+  }
+  useEffect(() => {
+    if (levelSettled) return;
+    const timer = window.setTimeout(
+      () => setLevelSettled(true),
+      DURATION_PANE * 1000 + 80,
+    );
+    return () => window.clearTimeout(timer);
+  }, [levelSettled]);
   const setLevel = (next: typeof level) => {
-    if (next === 'processes') setHintFinished(true);
+    if (next === 'processes') walkthrough?.advance('open-processes');
     setLevelChoice({ path: current, level: next });
   };
   // Whether either level has been travelled to yet. The side fades animate on
@@ -233,6 +247,7 @@ export function ProcessMenu({
       }
       focusSearch.current = true;
       if (level !== 'processes') {
+        walkthrough?.advance('open-processes');
         setTravelled(true);
         setLevelChoice({ path: current, level: 'processes' });
       }
@@ -240,7 +255,7 @@ export function ProcessMenu({
     }
     document.addEventListener('keydown', jumpToSearch);
     return () => document.removeEventListener('keydown', jumpToSearch);
-  }, [current, level, customising, searchOpen, workspaceReveal]);
+  }, [current, level, customising, searchOpen, walkthrough, workspaceReveal]);
   const reorder = useProcessReorder({ order, customising, draft, setDraft });
 
   function openSearch() {
@@ -262,7 +277,6 @@ export function ProcessMenu({
   }
 
   function navigate(next: typeof level) {
-    setHintFinished(true);
     focusLevel.current = true;
     setTravelled(true);
     setLevel(next);
@@ -291,14 +305,16 @@ export function ProcessMenu({
     >
       <WalkthroughHint
         isOpen={showHint}
+        step="open-processes"
         title="Let’s see it in action"
         descriptionId={hintId}
         targetRef={enterRef}
-        onDismiss={() => setHintFinished(true)}
+        onDismiss={() => walkthrough?.dismiss()}
+        onInteractOutside={() => walkthrough?.advance('open-processes')}
       >
-        Open Processes to explore a few example tasks the agent can help with.
-        Choose one to see what the agent proposes and how you can review the
-        changes before approving them.
+        Open <strong className="text-primary font-semibold">Processes</strong>{' '}
+        to see example tasks the agent can propose and you can review before
+        approving.
       </WalkthroughHint>
       {/* Alignment guides; the design pane's Debug folder switches them on. */}
       <div className="rail-axis" aria-hidden="true" />
@@ -432,6 +448,14 @@ export function ProcessMenu({
           <div
             className="ease-out-emphasized shell:h-full grid w-[200%] translate-x-0 grid-cols-2 items-start transition-transform duration-(--duration-pane) data-[level=processes]:-translate-x-1/2"
             data-level={level}
+            onTransitionEnd={(event) => {
+              if (
+                event.target === event.currentTarget &&
+                event.propertyName === 'transform'
+              ) {
+                setLevelSettled(true);
+              }
+            }}
           >
             <div
               className="ease-out-emphasized max-shell:px-1 shell:px-menu-fade shell:h-full shell:min-h-0 flex min-w-0 flex-col py-1 opacity-100 transition-opacity duration-(--duration-pane) aria-hidden:opacity-0"
@@ -534,6 +558,14 @@ export function ProcessMenu({
                 showGrip={showGrip}
                 gripTransition={gripTransition}
                 reorder={reorder}
+                pickHintReady={
+                  current === '/workspace' &&
+                  level === 'processes' &&
+                  levelSettled &&
+                  screenSettled &&
+                  !customising &&
+                  !searchOpen
+                }
               />
             </div>
           </div>

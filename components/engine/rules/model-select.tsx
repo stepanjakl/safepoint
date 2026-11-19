@@ -1,5 +1,6 @@
 'use client';
 
+import { Select } from '@/components/ui/select';
 import { DRAFTING_MODELS, type DraftingModel } from '@/lib/models';
 
 // Which model to ask; a busy or spent one hands over to the next older one
@@ -19,8 +20,8 @@ export function ModelSelect<M extends DraftingModel | null = DraftingModel>({
   return (
     <label className="grid gap-1">
       <span className="text-meta text-muted">Model</span>
-      <select
-        className="field text-dense min-h-9 px-2"
+      <Select
+        size="large"
         value={model ?? ''}
         disabled={busy}
         onChange={(e) => onChange((e.target.value || null) as M)}
@@ -31,7 +32,7 @@ export function ModelSelect<M extends DraftingModel | null = DraftingModel>({
             {id}
           </option>
         ))}
-      </select>
+      </Select>
     </label>
   );
 }

@@ -9,6 +9,7 @@ import {
 } from 'react';
 // Deep import, as in thread-step.tsx: the barrel is the whole library.
 import ArrowDown from 'blode-icons-react/icons/arrow-down';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { ProcessStep } from '@/lib/shell/model';
 import { Button } from '@/components/ui/button';
 import { motionTime } from '@/lib/ui/motion-time';
@@ -142,8 +143,14 @@ export function Thread<S extends string>({
       : steps;
   const thread = useRef<HTMLOListElement>(null);
   const newest = shown.at(-1);
-  const { behind, catchUp } = useFollowRun(thread, newest?.id);
+  const { behind, catchUp } = useFollowRun(
+    thread,
+    newest?.id,
+    Boolean(end),
+    shown.length,
+  );
   const paused = useRestWhenUnseen(thread);
+  const reduceMotion = useReducedMotion();
 
   return (
     <ThreadLookContext value={look}>
@@ -181,14 +188,30 @@ export function Thread<S extends string>({
       ) : null}
       {/* For a reader scrolled away when a step arrived. No height of its
           own, so appearing moves nothing; the button rises out of it. */}
-      {behind && newest ? (
-        <div className="sticky bottom-4 flex h-0 items-end justify-center">
-          <Button variant="primary" onPress={catchUp}>
-            {newest.name}
-            <ArrowDown aria-hidden size={14} strokeWidth={2.5} />
-          </Button>
-        </div>
-      ) : null}
+      <AnimatePresence>
+        {behind && newest ? (
+          <motion.div
+            key="catch-up"
+            className="pointer-events-none sticky bottom-4 z-20 flex h-0 items-end justify-center"
+            initial={reduceMotion ? false : { opacity: 0, y: 8, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={
+              reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.96 }
+            }
+            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <Button
+              variant="primary"
+              size="small"
+              className="pointer-events-auto"
+              onPress={catchUp}
+            >
+              Jump to {newest.name}
+              <ArrowDown aria-hidden size={13} strokeWidth={2.5} />
+            </Button>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
       {/* Mounted with the thread so it is in place before the first change
           it announces. A milestone per stage, never a running count. */}
       <p className="sr-only" role="status">

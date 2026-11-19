@@ -1,6 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const E2E_PORT = 3001;
+const baseURL =
+  process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${E2E_PORT}`;
 const TEST_DATABASE = 'data/pglite-e2e';
 // The Local World's runs (server/workflows/), apart from the developer's.
 const TEST_WORKFLOWS = 'data/workflow-e2e';
@@ -31,8 +33,11 @@ export default defineConfig({
     ? undefined
     : {
         // The database and workflow folders are cleared as the server starts.
-        command: `rm -rf ${TEST_DATABASE} ${TEST_WORKFLOWS} && pnpm dev`,
+        command: `rm -rf ${TEST_DATABASE} ${TEST_WORKFLOWS} && pnpm dev -p ${E2E_PORT}`,
         env: {
+          // Separate Next output directory so Playwright can run beside an
+          // already-running `pnpm dev` without contending on `.next/dev/lock`.
+          NEXT_DIST_DIR: '.next-e2e',
           // Model requests are intercepted by browser tests; the placeholder
           // enables their controls without a provider credential.
           GOOGLE_GENERATIVE_AI_API_KEY: 'playwright-synthetic-key',
@@ -50,10 +55,10 @@ export default defineConfig({
           AGENTATION: 'off',
           DEVTOOLS: 'off',
         },
-        // With reuseExistingServer, a server already on the port is used as
-        // it is, whatever database it has: only the one started here is safe.
+        // Never reuse a developer's server: Playwright must always talk to its
+        // own isolated server and PGlite database.
         url: baseURL,
-        reuseExistingServer: !process.env.CI,
+        reuseExistingServer: false,
         timeout: 120_000,
       },
 });

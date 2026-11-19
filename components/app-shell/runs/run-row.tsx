@@ -5,7 +5,9 @@ import type { CSSProperties } from 'react';
 import ArrowRotateClockwise from 'blode-icons-react/icons/arrow-rotate-clockwise-filled';
 import Clock from 'blode-icons-react/icons/clock-filled';
 import Cursor from 'blode-icons-react/icons/cursor-1-filled';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Glyph } from '@/components/ui/glyph';
+import { MorphingText } from '@/components/ui/morphing-text';
 import { RunStatusIcon } from '@/components/ui/run-status-icon';
 import {
   outcomeMarker,
@@ -59,6 +61,7 @@ export function RunRow({
   const TriggerIcon = TRIGGER_ICON[run.trigger];
   const trigger = RUN_TRIGGER_LABELS[run.trigger];
   const stamp = runStamp(run.startedAt);
+  const reduceMotion = useReducedMotion();
 
   return (
     /*
@@ -102,8 +105,21 @@ export function RunRow({
           } as CSSProperties
         }
       >
-        {status}
-        <RunStatusIcon status={run.status} size={16} />
+        <MorphingText text={status} />
+        <span className="relative inline-flex size-4 flex-none items-center justify-center">
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.span
+              key={run.status}
+              className="inline-flex items-center justify-center"
+              initial={reduceMotion ? false : { opacity: 0, scale: 0.75 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.75 }}
+              transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <RunStatusIcon status={run.status} size={16} />
+            </motion.span>
+          </AnimatePresence>
+        </span>
       </span>
       <span aria-hidden="true" className="sheet-row-when">
         <TriggerIcon size={11} className="flex-none" />

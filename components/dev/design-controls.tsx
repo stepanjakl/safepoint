@@ -7,6 +7,9 @@ const POSITION_STORAGE_KEY = 'safepoint.dev.controls-position';
 
 type PanelPosition = { left: number; top: number };
 
+const BANNER_GAP = 8;
+const MIN_BANNER_TOP = 80;
+
 /** Load the imperative debug UI only in development, after hydration. */
 export function DesignControls() {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -16,6 +19,7 @@ export function DesignControls() {
     if (process.env.NODE_ENV !== 'development' || !host) return;
     let cancelled = false;
     let dispose: (() => void) | undefined;
+    const disposeBannerAnchor = trackBannerAnchor(host);
     void import('./design-pane')
       .then(({ mountDesignPane }) => {
         if (!cancelled) {
@@ -60,6 +64,7 @@ export function DesignControls() {
 
     return () => {
       cancelled = true;
+      disposeBannerAnchor();
       dispose?.();
       window.removeEventListener('keydown', onKeyDown);
     };
@@ -85,11 +90,11 @@ export function DesignControls() {
 const PANEL_CSS = `
 .sp-devctl {
   position: fixed;
-  right: 16px;
-  bottom: 16px;
+  left: var(--sp-devctl-left, 16px);
+  bottom: var(--sp-devctl-bottom, 16px);
   z-index: 2147483000;
   width: min(320px, calc(100vw - 32px));
-  max-height: calc(100dvh - 32px);
+  max-height: max(120px, calc(100dvh - var(--sp-devctl-bottom, 16px) - 16px));
   overflow: hidden;
   color-scheme: dark;
   font-family: ui-sans-serif, system-ui, sans-serif;
@@ -134,7 +139,7 @@ function enablePanelMovement(host: HTMLElement) {
   help.id = 'sp-devctl-move-help';
   help.className = 'sp-devctl-sr-only';
   help.textContent =
-    'Drag to move. Use the arrow keys to reposition, Shift plus an arrow for larger steps, or Home to reset.';
+    'Drag to move, or double-click to reset. Use the arrow keys to reposition, Shift plus an arrow for larger steps, or Home to reset.';
   host.append(help);
   const previousDescription = handle.getAttribute('aria-describedby');
   handle.setAttribute(
@@ -225,7 +230,7 @@ function enablePanelMovement(host: HTMLElement) {
       }
     }
   } catch {
-    // The default bottom-right position remains usable without site storage.
+    // The default anchored position remains usable without site storage.
   }
 
   function onPointerDown(event: PointerEvent) {
@@ -300,6 +305,11 @@ function enablePanelMovement(host: HTMLElement) {
     }
   }
 
+  function onDoubleClick() {
+    if (!customPosition) return;
+    resetPosition();
+  }
+
   function onResize() {
     if (customPosition) savePosition(currentPosition());
   }
@@ -309,6 +319,7 @@ function enablePanelMovement(host: HTMLElement) {
   handle.addEventListener('pointerup', onPointerUp);
   handle.addEventListener('pointercancel', onPointerCancel);
   handle.addEventListener('click', onClick, true);
+  handle.addEventListener('dblclick', onDoubleClick);
   handle.addEventListener('keydown', onKeyDown);
   window.addEventListener('resize', onResize);
 
@@ -318,6 +329,7 @@ function enablePanelMovement(host: HTMLElement) {
     handle.removeEventListener('pointerup', onPointerUp);
     handle.removeEventListener('pointercancel', onPointerCancel);
     handle.removeEventListener('click', onClick, true);
+    handle.removeEventListener('dblclick', onDoubleClick);
     handle.removeEventListener('keydown', onKeyDown);
     window.removeEventListener('resize', onResize);
     handle.classList.remove('sp-devctl-move-handle');
@@ -327,5 +339,66 @@ function enablePanelMovement(host: HTMLElement) {
       handle.removeAttribute('aria-describedby');
     }
     help.remove();
+  };
+}
+
+function trackBannerAnchor(host: HTMLElement) {
+  let observedNotice: HTMLElement | null = null;
+  let frame = 0;
+
+  const sync = () => {
+    frame = 0;
+    const notice = document.querySelector<HTMLElement>('[data-sidebar-notice]');
+    if (notice !== observedNotice) {
+      resizeObserver.disconnect();
+      observedNotice = notice;
+      if (notice) resizeObserver.observe(notice);
+    }
+    if (!notice || notice.closest('[inert], [aria-hidden="true"]') !== null) {
+      host.style.removeProperty('--sp-devctl-left');
+      host.style.removeProperty('--sp-devctl-bottom');
+      return;
+    }
+    const rect = notice.getBoundingClientRect();
+    if (
+      rect.width <= 0 ||
+      rect.height <= 0 ||
+      rect.left < 0 ||
+      rect.top <= MIN_BANNER_TOP ||
+      rect.bottom > window.innerHeight
+    ) {
+      host.style.removeProperty('--sp-devctl-left');
+      host.style.removeProperty('--sp-devctl-bottom');
+      return;
+    }
+    host.style.setProperty('--sp-devctl-left', `${Math.round(rect.left)}px`);
+    host.style.setProperty(
+      '--sp-devctl-bottom',
+      `${Math.round(window.innerHeight - rect.top + BANNER_GAP)}px`,
+    );
+  };
+
+  const scheduleSync = () => {
+    if (!frame) frame = requestAnimationFrame(sync);
+  };
+
+  const resizeObserver = new ResizeObserver(scheduleSync);
+  const mutationObserver = new MutationObserver(scheduleSync);
+  mutationObserver.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['inert', 'aria-hidden', 'data-collapsed'],
+  });
+  window.addEventListener('resize', scheduleSync);
+  sync();
+
+  return () => {
+    if (frame) cancelAnimationFrame(frame);
+    resizeObserver.disconnect();
+    mutationObserver.disconnect();
+    window.removeEventListener('resize', scheduleSync);
+    host.style.removeProperty('--sp-devctl-left');
+    host.style.removeProperty('--sp-devctl-bottom');
   };
 }

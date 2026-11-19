@@ -332,6 +332,8 @@ function Revision({
   })).filter((kind) => kind.count > 0);
   const pill =
     'group-hover/row:bg-severity-pill-hover group-hover/row:text-severity-pill-strong group-focus-visible/row:bg-severity-pill-hover group-focus-visible/row:text-severity-pill-strong control-wash';
+  const neutralPill =
+    'group-hover/row:bg-neutral-pill-hover group-hover/row:text-neutral-pill-strong group-focus-visible/row:bg-neutral-pill-hover group-focus-visible/row:text-neutral-pill-strong control-wash';
   return (
     <li className="grid">
       <AriaButton
@@ -379,7 +381,7 @@ function Revision({
           </Pill>
         ) : null}
         {entry.sample ? (
-          <Pill tone="neutral" className={pill}>
+          <Pill tone="neutral" className={neutralPill}>
             Sample
           </Pill>
         ) : null}

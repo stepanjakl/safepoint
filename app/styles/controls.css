@@ -330,6 +330,12 @@
   white-space: nowrap;
 }
 
+@utility pill-dashed {
+  --pill-dash-width: 1px;
+  outline: var(--pill-dash-width) dashed var(--sp-text-muted-soft);
+  outline-offset: calc(-1 * var(--pill-dash-width));
+}
+
 /* The rule between two rows, drawn over a row's top (or, with --row-rule-top,
    a table cell's bottom: a <tr> cannot hold it) from --row-rule-inset on. */
 @utility row-rule {

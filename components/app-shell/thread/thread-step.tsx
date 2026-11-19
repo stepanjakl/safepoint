@@ -483,6 +483,17 @@ export function ThreadStep({
   }, []);
   const earned = keepOpen || earnsOpen(step, latest);
   const [open, setOpen] = useState(earned);
+  // Set the fold's height synchronously before paint when opening so the CSS
+  // transition reads the real body height instead of a prior placeholder's.
+  useLayoutEffect(() => {
+    const fold = foldRef.current;
+    const body = bodyRef.current;
+    if (!fold || !body || !open) return;
+    fold.style.setProperty(
+      '--thread-fold-height',
+      String(Math.round(body.offsetHeight)),
+    );
+  }, [open]);
   const [settled, setSettled] = useState(earned);
   // Opened by the reader rather than by the run: it stays open as the run
   // moves on. One they shut opens again only when the step earns it anew.

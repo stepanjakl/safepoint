@@ -3,7 +3,7 @@
 import TableFilled from 'blode-icons-react/icons/table-filled';
 import { useEffect, useState, type ReactNode } from 'react';
 
-import { StatusChip } from '@/components/engine/trial-parts';
+import { Pill } from '@/components/ui/pill';
 import { Button } from '@/components/ui/button';
 import {
   COMPACT_TABLE_BODY,
@@ -456,7 +456,7 @@ function ItemDetail() {
 function CalculateResult() {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <StatusChip tone="ready">All 24 match the model</StatusChip>
+      <Pill tone="ready">All 24 match the model</Pill>
       <span className="text-meta text-muted">On the accepted rules</span>
     </div>
   );

@@ -278,3 +278,25 @@ export function setRailGuides(next: boolean) {
   persist(RAIL_GUIDES_STORAGE_KEY, next ? 'on' : 'off');
   emit();
 }
+
+/*
+  Step-by-step run debugging. Off by default so a deterministic run advances
+  automatically from reading the source through calculating and proposing; on,
+  it reveals each step's manual trial setup, model picker, cross-check, and
+  rule debuggers.
+*/
+export const RUN_DEBUG_STORAGE_KEY = 'safepoint.dev.run-debug';
+
+export function readRunDebug(): boolean {
+  return document.documentElement.dataset.runDebug === 'on';
+}
+
+export function setRunDebug(next: boolean) {
+  if (next) {
+    document.documentElement.dataset.runDebug = 'on';
+  } else {
+    delete document.documentElement.dataset.runDebug;
+  }
+  persist(RUN_DEBUG_STORAGE_KEY, next ? 'on' : 'off');
+  emit();
+}

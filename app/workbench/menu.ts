@@ -37,6 +37,12 @@ export const WORKBENCH_GROUPS: readonly WorkbenchGroup[] = [
           'A Brunch orders run at every stage, with a player that steps one thread through them.',
       },
       {
+        href: '/workbench/proposing-steps',
+        title: 'Proposing sub-steps',
+        summary:
+          'The model activity log inside a proposing step: typography, timestamps, line grammar and transitions.',
+      },
+      {
         href: '/workbench/run-instructions',
         title: 'Run instructions',
         summary:

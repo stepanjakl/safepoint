@@ -1,16 +1,18 @@
 'use client';
 
-import { useState, type CSSProperties } from 'react';
+import { useId, useRef, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { motion, type Transition } from 'motion/react';
 import DotGrid2x3Filled from 'blode-icons-react/icons/dot-grid-2x3-filled';
 
 import { cx } from '@/lib/ui/cx';
 import { useShellPageNavigation } from '@/components/app-shell/shell-page-transition';
+import { useWalkthrough } from '@/components/app-shell/walkthrough';
 import { EVALUATION_LABELS } from '@/lib/shell/model';
 import type { ProcessNavigationItem } from '@/lib/shell/navigation';
 import { Glyph } from '@/components/ui/glyph';
 import { OverflowTooltip, Tooltip } from '@/components/ui/tooltip';
+import { WalkthroughHint } from '@/components/ui/walkthrough-hint';
 import { MENU_RAIL, MenuIcon } from './menu-parts';
 import { ROW_HEIGHT, type ProcessReorder } from './use-process-reorder';
 
@@ -106,6 +108,7 @@ export function ProcessList({
   showGrip,
   gripTransition,
   reorder,
+  pickHintReady = false,
 }: {
   items: ProcessNavigationItem[];
   order: string[];
@@ -115,8 +118,13 @@ export function ProcessList({
   showGrip: boolean;
   gripTransition: Transition;
   reorder: ProcessReorder;
+  pickHintReady?: boolean;
 }) {
   const { destinationPath, leaveTo } = useShellPageNavigation();
+  const walkthrough = useWalkthrough();
+  const pickHintId = useId();
+  const firstLinkRef = useRef<HTMLAnchorElement>(null);
+  const emptyAnchorRef = useRef<HTMLElement>(null);
   const {
     drag,
     scrollRef,
@@ -141,6 +149,17 @@ export function ProcessList({
     }
     return anchor;
   };
+
+  const firstId =
+    visibleOrder.find(
+      (id) => items.find((entry) => entry.id === id)?.evaluation === 'model',
+    ) ?? visibleOrder[0];
+  const firstAnchor = firstId ? rowAnchor(firstId) : emptyAnchorRef;
+  const showPickHint =
+    walkthrough?.step === 'pick-process' &&
+    pickHintReady &&
+    firstId !== undefined &&
+    !drag;
 
   return (
     <>
@@ -320,8 +339,14 @@ export function ProcessList({
                   ) : (
                     <OverflowTooltip label={item.name}>
                       <Link
+                        ref={id === firstId ? firstLinkRef : undefined}
                         className={cx(MENU_LABEL, 'process-menu-link')}
                         href={item.href}
+                        aria-describedby={
+                          showPickHint && id === firstId
+                            ? pickHintId
+                            : undefined
+                        }
                         onClick={(event) => {
                           if (
                             current === item.href ||
@@ -334,6 +359,7 @@ export function ProcessList({
                           )
                             return;
                           event.preventDefault();
+                          walkthrough?.advance('pick-process');
                           leaveTo(item.href);
                         }}
                         aria-current={
@@ -393,6 +419,18 @@ export function ProcessList({
           ) : null}
         </div>
       </div>
+      <WalkthroughHint
+        isOpen={showPickHint}
+        step="pick-process"
+        title="Choose a process"
+        descriptionId={pickHintId}
+        targetRef={firstAnchor}
+        focusRef={firstLinkRef}
+        onDismiss={() => walkthrough?.dismiss()}
+        onInteractOutside={() => walkthrough?.advance('pick-process')}
+      >
+        Open a process to inspect its runs and see what the agent proposes.
+      </WalkthroughHint>
     </>
   );
 }

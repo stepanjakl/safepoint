@@ -17,6 +17,7 @@ import {
   ShellPageTransitionProvider,
 } from './shell-page-transition';
 import { ResizableShell } from './resizable-shell';
+import { WalkthroughProvider } from './walkthrough';
 
 export async function AppShell({
   children,
@@ -35,34 +36,35 @@ export async function AppShell({
   // Only navigation summaries cross the client boundary, not the full plans.
   const items = [
     processNavigationItem({
-      id: brunchOrdersProcess.id,
-      href: processHref(brunchOrdersProcess.id),
-      name: brunchOrdersProcess.name,
-      evaluation: brunchOrdersProcess.evaluation,
-      plan: brunchOrdersPlan,
-    }),
-    processNavigationItem({
       id: brunchOrdersDirectProcess.id,
       href: processHref(brunchOrdersDirectProcess.id),
       name: brunchOrdersDirectProcess.name,
       evaluation: brunchOrdersDirectProcess.evaluation,
       plan: brunchOrdersDirectPlan,
     }),
+    processNavigationItem({
+      id: brunchOrdersProcess.id,
+      href: processHref(brunchOrdersProcess.id),
+      name: brunchOrdersProcess.name,
+      evaluation: brunchOrdersProcess.evaluation,
+      plan: brunchOrdersPlan,
+    }),
   ];
   return (
     <ShellPageTransitionProvider processPaths={items.map((item) => item.href)}>
-      <ResizableShell
-        navigation={
-          <ProcessMenu
-            items={items}
-            initialOrder={savedOrder}
-            signedInAs={signedInAs}
-            visitor={visitor}
-          />
-        }
-        processes={items}
-      >
-        {/*
+      <WalkthroughProvider>
+        <ResizableShell
+          navigation={
+            <ProcessMenu
+              items={items}
+              initialOrder={savedOrder}
+              signedInAs={signedInAs}
+              visitor={visitor}
+            />
+          }
+          processes={items}
+        >
+          {/*
         A containing block for its descendants. Absolutely positioned content --
         every sr-only span among it -- otherwise resolves against the initial
         containing block, escapes the clipping here, and drags the document's
@@ -88,14 +90,15 @@ export async function AppShell({
         With the inset one level down, the face keeps the whole box and the
         content alone steps in, past the ring rather than onto it.
       */}
-        <div className="ground-raised rounded-shell shell:h-full shell:overflow-hidden relative isolate min-w-0 overflow-clip has-[.notch]:rounded-tr-none">
-          <div
-            aria-hidden="true"
-            className="control-face surface-raised rounded-shell pointer-events-none absolute inset-0 -z-10"
-          />
-          <ShellPageTransition>{children}</ShellPageTransition>
-        </div>
-      </ResizableShell>
+          <div className="ground-raised rounded-shell shell:h-full shell:overflow-hidden relative isolate min-w-0 overflow-clip has-[.notch]:rounded-tr-none">
+            <div
+              aria-hidden="true"
+              className="control-face surface-raised rounded-shell pointer-events-none absolute inset-0 -z-10"
+            />
+            <ShellPageTransition>{children}</ShellPageTransition>
+          </div>
+        </ResizableShell>
+      </WalkthroughProvider>
     </ShellPageTransitionProvider>
   );
 }

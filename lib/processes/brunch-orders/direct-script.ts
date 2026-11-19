@@ -241,19 +241,35 @@ export function brunchDirectScript(): {
   mainLine: ScriptedStage[];
   branches: ScriptedStage[];
 } {
+  const evaluatingFrames = PROPOSING.slice(1);
+  const evaluatingFrom = evaluatingFrames[0]?.t ?? 0;
+
   return {
-    mainLine: MODEL_RUN_MAIN_LINE.map((stage) => ({
-      key: stage,
-      label: stage,
-      view: viewAt(stage),
-      frames:
-        stage === 'evaluating'
-          ? PROPOSING.map((frame) => ({
-              t: frame.t,
-              view: viewAt(stage, {}, frame.activity),
-            }))
-          : undefined,
-    })),
+    mainLine: MODEL_RUN_MAIN_LINE.flatMap((stage): ScriptedStage[] => {
+      const entry: ScriptedStage = {
+        key: stage,
+        label: stage,
+        view: viewAt(stage),
+        frames:
+          stage === 'evaluating'
+            ? evaluatingFrames.map((frame) => ({
+                t: frame.t - evaluatingFrom,
+                view: viewAt(stage, {}, frame.activity),
+              }))
+            : undefined,
+      };
+      if (stage === 'evaluating') {
+        return [
+          {
+            key: 'choosing-model',
+            label: 'Propose · choosing a model',
+            view: viewAt('evaluating', {}, PROPOSING[0]!.activity),
+          },
+          entry,
+        ];
+      }
+      return [entry];
+    }),
     branches: [
       {
         key: 'stopped-read',

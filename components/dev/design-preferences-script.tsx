@@ -9,6 +9,7 @@ import {
   MOTION_STORAGE_KEY,
   NEUTRAL_STORAGE_KEY,
   RAIL_GUIDES_STORAGE_KEY,
+  RUN_DEBUG_STORAGE_KEY,
   DEFAULT_SLANT_RADIUS,
   SLANT_RADIUS_MAX,
   SLANT_RADIUS_MIN,
@@ -121,6 +122,9 @@ try {
   }
   if (localStorage.getItem(${JSON.stringify(RAIL_GUIDES_STORAGE_KEY)}) === 'on') {
     root.dataset.railGuides = 'on';
+  }
+  if (localStorage.getItem(${JSON.stringify(RUN_DEBUG_STORAGE_KEY)}) === 'on') {
+    root.dataset.runDebug = 'on';
   }
   var theme = localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});
   // The layout renders the default theme; 'system' is the absence of one.

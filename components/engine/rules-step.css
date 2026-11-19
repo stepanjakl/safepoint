@@ -278,12 +278,6 @@
     }
   }
 
-  .draft-pill-dashed {
-    --draft-dash-width: 1px;
-    outline: var(--draft-dash-width) dashed var(--sp-text-muted-soft);
-    outline-offset: calc(-1 * var(--draft-dash-width));
-  }
-
   .draft-crossfade {
     --draft-crossfade-time: 420ms;
     position: relative;

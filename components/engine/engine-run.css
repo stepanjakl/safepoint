@@ -103,11 +103,25 @@
     --row-list-inset: calc(var(--spacing) * 4);
   }
 
-  .read-card-table[data-revealing] .read-card-enter {
+  .read-card-table[data-revealing] {
+    --read-card-after: 300ms;
+    --read-card-table-enter: 260ms;
+    --read-card-rows-after: 380ms;
     --read-card-enter: 360ms;
     --read-card-stagger: 90ms;
+    animation: read-card-table-in var(--read-card-table-enter) var(--ease-out-quad)
+      var(--read-card-after) both;
+  }
+  .read-card-table[data-revealing] .read-card-enter {
     animation: read-card-item-in var(--read-card-enter) var(--ease-out-quad) both;
-    animation-delay: calc(var(--read-card-index, 0) * var(--read-card-stagger));
+    animation-delay: calc(
+      var(--read-card-rows-after) + var(--read-card-index, 0) * var(--read-card-stagger)
+    );
+  }
+  @keyframes read-card-table-in {
+    from {
+      opacity: 0;
+    }
   }
   @keyframes read-card-item-in {
     from {
@@ -116,6 +130,7 @@
     }
   }
   @media (prefers-reduced-motion: reduce) {
+    .read-card-table[data-revealing],
     .read-card-table[data-revealing] .read-card-enter {
       animation: none;
     }

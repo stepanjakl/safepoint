@@ -25,6 +25,9 @@ const [, ...products] = snapshot.valueRanges[0]!.values;
 const names = Object.fromEntries(products.map((row) => [row[0], row[1]]));
 
 test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('safepoint.dev.run-debug', 'on');
+  });
   await mockRules(page, () => ({ data: rulesReply(frozen, { names }) }));
 });
 

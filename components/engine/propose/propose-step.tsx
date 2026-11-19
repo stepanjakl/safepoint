@@ -63,6 +63,7 @@ export function ProposeStep({
   run: kept,
   onProgress,
   onMoveRules,
+  debug = false,
   mock = false,
 }: {
   // The process's subject: what each record's proposal sets.
@@ -77,9 +78,11 @@ export function ProposeStep({
   onProgress: (progress: ProposeProgress) => void;
   // Back to Calculate, on the current rules, when these no longer fit.
   onMoveRules?: () => void;
+  debug?: boolean;
   mock?: boolean;
 }) {
   const automatic = evaluation === 'model';
+  const autoStart = automatic || !debug;
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const report = useRef(onProgress);
@@ -246,7 +249,8 @@ export function ProposeStep({
   const proposed = useRef(false);
   useEffect(() => {
     if (
-      !automatic ||
+      !autoStart ||
+      mock ||
       proposed.current ||
       answer?.kind !== 'proposal' ||
       answer.proposal ||
@@ -256,7 +260,7 @@ export function ProposeStep({
     proposed.current = true;
     start.mutate(run);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [automatic, answer]);
+  }, [autoStart, mock, answer]);
 
   const [announced, setAnnounced] = useState('');
   // Several at once where a person decides several (approve all ready). They
@@ -375,13 +379,14 @@ export function ProposeStep({
       />
     ) : null;
 
+  const failure =
+    notice?.error ??
+    start.error?.message ??
+    asked.error?.message ??
+    decidedAsked.error?.message ??
+    (!running ? (shown?.progress?.error ?? null) : null);
+
   if (automatic) {
-    const failure =
-      notice?.error ??
-      start.error?.message ??
-      asked.error?.message ??
-      decidedAsked.error?.message ??
-      (!running ? (shown?.progress?.error ?? null) : null);
     return (
       <div className="grid gap-4">
         {failure ? (
@@ -424,69 +429,98 @@ export function ProposeStep({
       </Lede>
       {stale && onMoveRules ? (
         <StaleRules stale={stale} onMove={onMoveRules} />
-      ) : (notice?.error ??
-        start.error ??
-        asked.error ??
-        decidedAsked.error) ? (
-        <p role="alert" className="text-dense text-state-blocked">
-          {notice?.error ??
-            (start.error ?? asked.error ?? decidedAsked.error)?.message}
-        </p>
-      ) : null}
-      {/* Scaffolding for trying the step, as the other steps' setups are. */}
-      <section
-        aria-label="Propose setup"
-        className="trial-setup rounded-shell grid gap-3 p-4"
-      >
-        <div className="flex flex-wrap items-end gap-3">
-          <ModelSelect model={model} busy={running} onChange={setModel} />
-          {confirming ? (
-            <>
-              <Button
-                variant="primary"
-                autoFocus
-                onPress={() => {
-                  setConfirming(false);
-                  start.mutate({ ...run, model });
-                }}
-              >
-                Propose again
-              </Button>
-              <Button onPress={() => setConfirming(false)}>Cancel</Button>
-            </>
-          ) : (
-            <Button
-              variant={proposal ? 'secondary' : 'primary'}
-              isDisabled={running || busy}
-              onPress={() =>
-                hasDecisions
-                  ? setConfirming(true)
-                  : start.mutate({ ...run, model })
-              }
-            >
-              {proposal ? 'Propose again' : 'Propose'}
-            </Button>
-          )}
+      ) : debug ? (
+        (notice?.error ?? start.error ?? asked.error ?? decidedAsked.error) ? (
+          <p role="alert" className="text-dense text-state-blocked">
+            {notice?.error ??
+              (start.error ?? asked.error ?? decidedAsked.error)?.message}
+          </p>
+        ) : null
+      ) : failure ? (
+        <div className="flex flex-wrap items-center gap-3">
+          <p role="alert" className="text-dense text-state-blocked">
+            {failure}
+          </p>
+          <Button
+            size="medium"
+            isDisabled={running || busy}
+            onPress={() => !mock && start.mutate(run)}
+          >
+            Try again
+          </Button>
         </div>
-        <ModelLimits model={model} enabled={!mock} />
+      ) : null}
+      {debug ? (
+        /* Scaffolding for trying the step, as the other steps' setups are. */
+        <section
+          aria-label="Propose setup"
+          className="trial-setup rounded-shell grid gap-3 p-4"
+        >
+          <div className="flex flex-wrap items-end gap-3">
+            <ModelSelect model={model} busy={running} onChange={setModel} />
+            {confirming ? (
+              <>
+                <Button
+                  variant="primary"
+                  autoFocus
+                  onPress={() => {
+                    setConfirming(false);
+                    start.mutate({ ...run, model });
+                  }}
+                >
+                  Propose again
+                </Button>
+                <Button onPress={() => setConfirming(false)}>Cancel</Button>
+              </>
+            ) : (
+              <Button
+                variant={proposal ? 'secondary' : 'primary'}
+                isDisabled={running || busy}
+                onPress={() =>
+                  hasDecisions
+                    ? setConfirming(true)
+                    : start.mutate({ ...run, model })
+                }
+              >
+                {proposal ? 'Propose again' : 'Propose'}
+              </Button>
+            )}
+          </div>
+          <ModelLimits model={model} enabled={!mock} />
+          <p
+            role="status"
+            className={
+              running || shown?.progress?.error
+                ? 'text-meta text-muted'
+                : 'sr-only'
+            }
+          >
+            {running
+              ? (shown?.progress?.step ?? 'Proposing…')
+              : (shown?.progress?.error ?? '')}
+          </p>
+          {confirming ? (
+            <p className="text-meta text-muted max-w-prose">
+              A new proposal starts afresh: the decisions made on this one go.
+            </p>
+          ) : null}
+        </section>
+      ) : (
         <p
           role="status"
           className={
-            running || shown?.progress?.error
-              ? 'text-meta text-muted'
+            running || (!proposal && !failure && !stale)
+              ? 'text-dense text-muted'
               : 'sr-only'
           }
         >
           {running
             ? (shown?.progress?.step ?? 'Proposing…')
-            : (shown?.progress?.error ?? '')}
+            : !proposal && !failure && !stale
+              ? 'Getting the proposal…'
+              : ''}
         </p>
-        {confirming ? (
-          <p className="text-meta text-muted max-w-prose">
-            A new proposal starts afresh: the decisions made on this one go.
-          </p>
-        ) : null}
-      </section>
+      )}
       {table}
     </div>
   );

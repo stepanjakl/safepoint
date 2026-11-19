@@ -6,6 +6,7 @@ node_modules/
 dist/
 build/
 .next/
+.next-e2e/
 coverage/
 *.tsbuildinfo
 next-env.d.ts
@@ -49,7 +50,8 @@ Claude/
 fixtures/*/rulebooks/**/*.tmp
 .vercel
 
-# Vercel Workflow in development: the Local World's runs (.next/workflow-data
+# Vercel Workflow in development: the Local World's runs (.next/
+.next-e2e/workflow-data
 # under pnpm dev; .workflow-data/ where the CLI or a script makes one), and
 # the cache of the SWC plugin that compiles its directives. The routes it
 # generates under app/.well-known/workflow/ carry their own .gitignore.

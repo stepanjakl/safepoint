@@ -1,7 +1,7 @@
 'use client';
 
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { useContext, useId, useState, type ReactNode } from 'react';
+import { useContext, useEffect, useId, useState, type ReactNode } from 'react';
 
 import { ProcessSheetActions } from '@/components/app-shell/process/process-sheet';
 import {
@@ -24,9 +24,10 @@ import {
 } from '@/components/ui/data-table';
 import { Fold } from '@/components/ui/fold';
 import { MORPH_WORDS_MS, MorphingText } from '@/components/ui/morphing-text';
-import { Pill } from '@/components/ui/pill';
+import { Pill, SEVERITY } from '@/components/ui/pill';
 import { cx } from '@/lib/ui/cx';
 import { DURATION_STATE } from '@/lib/ui/motion';
+import { motionTime } from '@/lib/ui/motion-time';
 import type {
   CellChange,
   Proposal,
@@ -43,6 +44,7 @@ import {
 
 import type { DataTabs } from '@/components/engine/data-drawer';
 import { SheetReadCard, type RunRead } from '@/components/engine/read-step';
+import { useRunDebug } from '@/components/engine/run-parts';
 import { InstructionsText, RunNote } from '@/components/engine/run-parts';
 import { ProposalTable } from '@/components/engine/propose/proposal-table';
 import type {
@@ -142,6 +144,20 @@ export function ModelRunThread({
   );
   const stopped = stage === 'stopped' ? facts.stopped : null;
   const [readOpen, setReadOpen] = useState(true);
+  const shownRead = stage === 'reading' ? null : run.read;
+  const [revealingRead, setRevealingRead] = useState(false);
+  const [prevReadId, setPrevReadId] = useState<string | null>(
+    shownRead?.id ?? null,
+  );
+  const nextReadId = shownRead?.id ?? null;
+  if (prevReadId !== nextReadId) {
+    setPrevReadId(nextReadId);
+    setRevealingRead(
+      nextReadId !== null &&
+        arrivals.watched &&
+        !matchMedia('(prefers-reduced-motion: reduce)').matches,
+    );
+  }
 
   // The version opens the sheet's Instructions tab, as on the rulebook run.
   const sheet = useContext(ProcessSheetActions);
@@ -162,7 +178,12 @@ export function ModelRunThread({
     ),
     sources:
       stopped?.at === 'sources' ? (
-        <Stopped reason={stopped.reason} again="Read again" {...actions} />
+        <Stopped
+          title="Could not read the sheet"
+          reason={stopped.reason}
+          again="Read again"
+          {...actions}
+        />
       ) : (
         <ResponseSection>
           <div className="grid gap-3">
@@ -177,9 +198,11 @@ export function ModelRunThread({
             ) : null}
             <SheetReadCard
               kind={run.sourceKind}
-              read={stage === 'reading' ? null : run.read}
+              read={shownRead}
               open={readOpen}
               onOpenChange={setReadOpen}
+              revealing={revealingRead}
+              onRevealed={() => setRevealingRead(false)}
               data={run.data}
             />
           </div>
@@ -188,7 +211,12 @@ export function ModelRunThread({
     evaluation:
       stopped?.at === 'evaluation' ? (
         <div className="grid gap-4">
-          <Stopped reason={stopped.reason} again="Propose again" {...actions} />
+          <Stopped
+            title="Could not finish the proposal"
+            reason={stopped.reason}
+            again="Propose again"
+            {...actions}
+          />
           <ModelAt
             activity={run.activity}
             facts={facts}
@@ -256,21 +284,49 @@ export function ModelRunThread({
   Every line is an engine event worded in the process's own nouns
   (describeEvent). The exact stream is one press away beneath it.
 */
-function ModelAt({
+export function ModelAt({
   activity,
   facts,
   version,
   working,
+  debug,
+  rate = 1,
 }: {
   activity: ProposalActivity | null;
   facts: ModelRunFacts;
   version: string;
   working: boolean;
+  debug?: boolean;
+  rate?: number;
 }) {
+  const runDebug = useRunDebug();
+  const showDebug = debug ?? runDebug;
   const reduceMotion = useReducedMotion();
-  const lines = (activity?.events ?? []).flatMap((event) =>
+  const allLines = (activity?.events ?? []).flatMap((event) =>
     describeEvent(event, facts, version),
   );
+  const [shownCount, setShownCount] = useState(allLines.length);
+  const [prevTotal, setPrevTotal] = useState(allLines.length);
+  if (prevTotal !== allLines.length) {
+    setPrevTotal(allLines.length);
+    if (reduceMotion || allLines.length <= shownCount) {
+      setShownCount(allLines.length);
+    } else if (allLines.length > shownCount) {
+      setShownCount(shownCount + 1);
+    }
+  }
+  useEffect(() => {
+    if (reduceMotion || shownCount >= allLines.length) return;
+    const timer = setTimeout(
+      () => setShownCount((count) => Math.min(allLines.length, count + 1)),
+      motionTime(720) / rate,
+    );
+    return () => clearTimeout(timer);
+  }, [reduceMotion, shownCount, allLines.length, rate]);
+
+  const lines = allLines.slice(0, shownCount);
+  const draining = shownCount < allLines.length;
+  const firstAt = lines[0]?.at;
   const tokens = activity?.tokens;
   // What the run waits on: the answer to a request, or to a send-back. An
   // answer the app took leaves nothing to wait for.
@@ -287,105 +343,184 @@ function ModelAt({
             : null;
   const [raw, setRaw] = useState(false);
   const rawId = useId();
+  const showWaiting = Boolean(
+    draining || (working && (!latest || waitingOn || activity?.writing)),
+  );
+  const [everWaited, setEverWaited] = useState(showWaiting);
+  if (showWaiting && !everWaited) setEverWaited(true);
+
+  const [initialKeys] = useState(
+    () =>
+      new Set([
+        ...lines.map((line, index) => `${index}-${line.at}`),
+        ...(showWaiting ? ['waiting'] : []),
+      ]),
+  );
+
+  // Hold the last thought text while Folding shut so it does not vanish mid-collapse.
+  const [lastThought, setLastThought] = useState<string | null>(
+    activity?.thought ?? null,
+  );
+  if (activity?.thought && activity.thought !== lastThought) {
+    setLastThought(activity.thought);
+  }
+  const thoughtOpen = Boolean(working && activity?.thought);
+
+  const liveStatusText = activity?.writing
+    ? 'Writing the answer'
+    : waitingOn
+      ? `Waiting for ${waitingOn}…`
+      : 'Choosing a model…';
+  // Hold the last active waiting label while draining or collapsing out.
+  const [statusText, setStatusText] = useState(liveStatusText);
+  if (showWaiting && !draining && liveStatusText !== statusText) {
+    setStatusText(liveStatusText);
+  }
+
+  const progressPct = activity?.writing
+    ? Math.min(100, Math.round((activity.writing / facts.records) * 100))
+    : 0;
+
   const arrive = {
     initial: reduceMotion ? false : { opacity: 0, y: 4 },
     animate: { opacity: 1, y: 0 },
     exit: reduceMotion ? undefined : { opacity: 0 },
-    transition: { duration: DURATION_STATE, ease: 'easeOut' },
-  } as const;
+    transition: { duration: DURATION_STATE, ease: 'easeOut' as const },
+  };
   const stream = activity?.stream ?? [];
   return (
     <div className="grid gap-3">
       <ol aria-label="What happened" className="model-log">
-        <AnimatePresence initial={false}>
-          {lines.map((line, index) => (
-            <motion.li
-              key={`${index}-${line.at}`}
+        {lines.map((line, index) => {
+          const key = `${index}-${line.at}`;
+          const elapsed = elapsedSince(line.at, firstAt);
+          return (
+            <li
+              key={key}
               className="model-log-item"
+              data-entering={!initialKeys.has(key) || undefined}
+              data-latest={
+                (!showWaiting && index === lines.length - 1) || undefined
+              }
               data-problem={line.problem || undefined}
               data-by={line.by}
-              {...arrive}
             >
-              <span aria-hidden className="model-log-dot" />
-              {line.details ? (
-                <LineWithDetails text={line.text} details={line.details} />
-              ) : (
-                <span className="text-pretty">{line.text}</span>
-              )}
-              <time
-                dateTime={line.at}
-                className="value text-meta text-muted tabular-nums"
-              >
-                {clock(line.at)}
-              </time>
-            </motion.li>
-          ))}
-          {working && (!latest || waitingOn || activity?.writing) ? (
-            <motion.li
-              key="waiting"
-              className="model-log-item"
-              data-pending
-              {...arrive}
-            >
-              <span aria-hidden className="model-log-dot" />
-              <span className="text-dense text-muted">
-                {activity?.writing ? (
-                  <>
-                    Writing the answer ·{' '}
-                    <span className="value tabular-nums">
-                      <MorphingText
-                        text={`${Math.min(activity.writing, facts.records)} of ${facts.records}`}
+              <div className="model-log-clip">
+                <div className="model-log-row">
+                  <span aria-hidden className="model-log-dot" />
+                  <span className="model-log-body">
+                    {line.details ? (
+                      <LineWithDetails
+                        text={line.text}
+                        details={line.details}
                       />
+                    ) : (
+                      <span className="text-pretty">{line.text}</span>
+                    )}
+                  </span>
+                  {elapsed ? (
+                    <time dateTime={line.at} className="model-log-time">
+                      {elapsed}
+                    </time>
+                  ) : null}
+                </div>
+              </div>
+            </li>
+          );
+        })}
+        {everWaited ? (
+          <li
+            key="waiting"
+            className="model-log-item"
+            data-entering={!initialKeys.has('waiting') || undefined}
+            data-pending={showWaiting || undefined}
+            data-collapsed={!showWaiting || undefined}
+            aria-hidden={!showWaiting || undefined}
+          >
+            <div className="model-log-clip">
+              <div className="model-log-row">
+                <span aria-hidden className="model-log-dot" />
+                <span className="model-log-body flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.span
+                      key={statusText}
+                      className="model-log-active"
+                      initial={reduceMotion ? false : { opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={reduceMotion ? undefined : { opacity: 0 }}
+                      transition={{
+                        duration: reduceMotion ? 0 : DURATION_STATE,
+                        ease: 'easeOut',
+                      }}
+                    >
+                      {statusText}
+                    </motion.span>
+                  </AnimatePresence>
+                  {activity?.writing ? (
+                    <span className="inline-flex items-center gap-2">
+                      <span className="text-micro text-muted tabular-nums">
+                        <MorphingText
+                          text={`${Math.min(activity.writing, facts.records)} of ${facts.records}`}
+                        />
+                      </span>
+                      <span aria-hidden className="model-log-track">
+                        <span
+                          className="model-log-fill"
+                          style={{ width: `${progressPct}%` }}
+                        />
+                      </span>
                     </span>
-                  </>
-                ) : waitingOn ? (
-                  `Waiting for ${waitingOn}…`
-                ) : (
-                  'Choosing a model…'
-                )}
-              </span>
-            </motion.li>
-          ) : null}
-        </AnimatePresence>
+                  ) : null}
+                </span>
+              </div>
+            </div>
+          </li>
+        ) : null}
       </ol>
-      {working && activity?.thought ? (
-        <figure className="bg-surface-inset rounded-control grid gap-1.5 p-3">
-          <figcaption className="readout text-muted">Thinking</figcaption>
-          <Thought text={activity.thought} />
-        </figure>
-      ) : null}
-      {(tokens && tokens.input + tokens.output > 0) || stream.length ? (
-        <div className="flex flex-wrap items-center gap-2">
-          {tokens && tokens.input + tokens.output > 0 ? (
-            <>
-              {/* Facts about the step, as its heading's facts are drawn. */}
-              <Fact text={`${thousands(tokens.input)} tokens in`} />
-              <Fact text={`${thousands(tokens.output)} out`} />
-              {tokens.thinking ? (
-                <Fact text={`${thousands(tokens.thinking)} thinking`} />
-              ) : null}
-              {activity?.stepMs ? (
-                <Fact text={seconds(activity.stepMs)} />
-              ) : null}
-            </>
-          ) : null}
-          {stream.length ? (
-            <Button
-              size="xsmall"
-              aria-expanded={raw}
-              aria-controls={rawId}
-              onPress={() => setRaw(!raw)}
-            >
-              {raw ? 'Hide' : 'Show'} raw model output
-            </Button>
-          ) : null}
-        </div>
-      ) : null}
-      {stream.length ? (
-        <Fold open={raw} id={rawId}>
-          <ModelOutput stream={stream} arrive={arrive} />
-        </Fold>
-      ) : null}
+      <Fold open={thoughtOpen}>
+        {lastThought ? (
+          <figure className="bg-surface-inset rounded-control grid gap-1.5 p-3">
+            <figcaption className="readout text-muted">Thinking</figcaption>
+            <Thought text={lastThought} />
+          </figure>
+        ) : null}
+      </Fold>
+      <Fold open={Boolean(tokens && tokens.input + tokens.output > 0)}>
+        {tokens && tokens.input + tokens.output > 0 ? (
+          <div className="model-log-meta flex flex-wrap items-center gap-2">
+            {/* Facts about the step, as its heading's facts are drawn. */}
+            <Fact text={`${thousands(tokens.input)} tokens in`} />
+            <Fact text={`${thousands(tokens.output)} out`} />
+            {tokens.thinking ? (
+              <Fact text={`${thousands(tokens.thinking)} thinking`} />
+            ) : null}
+            {activity?.stepMs ? <Fact text={seconds(activity.stepMs)} /> : null}
+          </div>
+        ) : null}
+      </Fold>
+      <Fold open={showDebug && stream.length > 0}>
+        {showDebug && stream.length > 0 ? (
+          <section
+            aria-label="Debug"
+            className="trial-setup rounded-shell grid gap-3 p-4"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="readout text-muted">Debug</span>
+              <Button
+                size="xsmall"
+                aria-expanded={raw}
+                aria-controls={rawId}
+                onPress={() => setRaw(!raw)}
+              >
+                {raw ? 'Hide' : 'Show'} raw model output
+              </Button>
+            </div>
+            <Fold open={raw} id={rawId}>
+              <ModelOutput stream={stream} arrive={arrive} />
+            </Fold>
+          </section>
+        ) : null}
+      </Fold>
     </div>
   );
 }
@@ -509,28 +644,34 @@ function Thought({ text }: { text: string }) {
 }
 
 function Stopped({
+  title,
   reason,
   again,
   onRetry,
   busy,
 }: {
+  title: string;
   reason: string;
   again: string;
   onRetry?: () => void;
   busy?: boolean;
 }) {
   return (
-    <AlertBox
-      action={
-        onRetry ? (
-          <Button size="small" isDisabled={busy} onPress={onRetry}>
-            {again}
-          </Button>
-        ) : null
-      }
+    <div
+      role="alert"
+      data-severity={SEVERITY.blocked}
+      className="thread-stopped bg-severity-fill border-severity-pill-ring rounded-shell grid justify-items-start gap-3 border px-4.5 py-3.5 text-pretty"
     >
-      {reason}
-    </AlertBox>
+      <div className="grid gap-1">
+        <p className="text-dense text-severity-strong font-medium">{title}</p>
+        <p className="text-dense text-severity-ink break-words">{reason}</p>
+      </div>
+      {onRetry ? (
+        <Button size="small" isDisabled={busy} onPress={onRetry}>
+          {again}
+        </Button>
+      ) : null}
+    </div>
   );
 }
 
@@ -848,6 +989,13 @@ const cellParts = (change: CellChange) => {
     tab: at < 0 ? '' : change.cell.slice(0, at),
     address: change.cell.slice(at + 1),
   };
+};
+
+const elapsedSince = (iso: string, startIso: string | undefined) => {
+  if (!startIso) return '';
+  const delta = Math.max(0, Date.parse(iso) - Date.parse(startIso));
+  const secs = Math.round(delta / 1000);
+  return secs === 0 ? '0s' : `+${secs}s`;
 };
 
 const clock = (at: string) =>

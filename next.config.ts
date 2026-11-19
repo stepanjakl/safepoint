@@ -11,6 +11,10 @@ const CAPTURED_READ = './fixtures/brunch-orders/sheet-snapshot.json';
 const KEPT_FIXTURES = ['./fixtures/brunch-orders/**/*'];
 
 const nextConfig: NextConfig = {
+  // Separate dev server (e.g. Playwright on its own port) can use its own
+  // distDir so it does not contend with `.next/dev/lock`.
+  distDir: process.env.NEXT_DIST_DIR || '.next',
+
   // Next writes AGENTS.md and CLAUDE.md into the repository root by default.
   // Safepoint adds agent instructions deliberately, not as build output.
   agentRules: false,

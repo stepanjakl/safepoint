@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import {
   Button as AriaButton,
   Menu,
@@ -113,6 +113,8 @@ export function FilterTabs<Key extends string>({
   numberShortcuts = false,
   size = 'default',
   className,
+  trackRef,
+  descriptionId,
 }: {
   tabs: FilterTab<Key>[];
   selected: Key;
@@ -125,6 +127,8 @@ export function FilterTabs<Key extends string>({
   numberShortcuts?: boolean;
   size?: keyof typeof SIZE;
   className?: string;
+  trackRef?: RefObject<HTMLDivElement | null>;
+  descriptionId?: string;
 }) {
   const track = useRef<HTMLDivElement>(null);
   const measure = useRef<HTMLDivElement>(null);
@@ -244,8 +248,12 @@ export function FilterTabs<Key extends string>({
 
   return (
     <div
-      ref={track}
+      ref={(element) => {
+        track.current = element;
+        if (trackRef) trackRef.current = element;
+      }}
       data-size={size}
+      aria-describedby={descriptionId}
       className={cx(
         // Isolated: its layers (z-1 solid, z-2 words) stay inside the strip
         // rather than rising over a sticky header it scrolls under.

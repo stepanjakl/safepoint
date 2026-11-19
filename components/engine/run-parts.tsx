@@ -1,8 +1,15 @@
 'use client';
 
+import { useSyncExternalStore } from 'react';
+
+import { readRunDebug, subscribe } from '@/components/dev/design-preferences';
 import { Button } from '@/components/ui/button';
 import type { RunSelection } from '@/components/app-shell/runs/run-selection';
 import { RequestBubble } from '@/components/app-shell/thread/thread-page';
+
+export function useRunDebug(): boolean {
+  return useSyncExternalStore(subscribe, readRunDebug, () => false);
+}
 
 /*
   Discarding is waited for: the run leaves the list once the server has said

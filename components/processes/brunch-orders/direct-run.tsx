@@ -20,7 +20,6 @@ import {
   useRunRead,
   type RunRead,
 } from '@/components/engine/read-step';
-import { DiscardRun } from '@/components/engine/run-parts';
 import { saidBy } from '@/components/engine/trial-parts';
 import type {
   CheckReply,
@@ -534,9 +533,6 @@ function DirectThread({
           {decideError ?? selection.recordError}
         </p>
       ) : null}
-      <div className="border-rule-faint mt-8 flex flex-wrap items-center gap-3 border-t pt-4">
-        <DiscardRun selection={selection} id={kept.id} />
-      </div>
     </>
   );
 }

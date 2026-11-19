@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  useEffect,
   useId,
   useLayoutEffect,
   useRef,
@@ -11,6 +12,7 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { Pill } from '@/components/ui/pill';
+import { scrollerOf } from './follow-run';
 
 type RevealMetrics = {
   closed: number;
@@ -93,6 +95,8 @@ export function RequestBubble({
   peekLines?: number;
   children: ReactNode;
 }) {
+  const bubbleRef = useRef<HTMLDivElement>(null);
+  const revealRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
   const contentId = useId();
   const [all, setAll] = useState(false);
@@ -123,6 +127,58 @@ export function RequestBubble({
     };
   }, [peekLines, children]);
 
+  useEffect(() => {
+    if (!all) return;
+    const bubble = bubbleRef.current;
+    const reveal = revealRef.current;
+    if (!bubble || !reveal) return;
+    const scroller = scrollerOf(bubble);
+    const margin = 16;
+    let active = true;
+
+    const adjust = () => {
+      if (!active) return;
+      const bubbleRect = bubble.getBoundingClientRect();
+      const viewportBottom = scroller
+        ? scroller.getBoundingClientRect().bottom
+        : window.innerHeight;
+      const delta = bubbleRect.bottom - (viewportBottom - margin);
+      if (delta <= 0.5) return;
+      if (scroller) scroller.scrollTop += delta;
+      else window.scrollBy(0, delta);
+    };
+
+    const stop = () => {
+      active = false;
+      observer.disconnect();
+    };
+    const onTransitionEnd = (event: TransitionEvent) => {
+      if (
+        event.target === reveal &&
+        event.propertyName === 'grid-template-rows'
+      ) {
+        adjust();
+        stop();
+      }
+    };
+
+    const observer = new ResizeObserver(adjust);
+    observer.observe(bubble);
+    reveal.addEventListener('transitionend', onTransitionEnd);
+    window.addEventListener('wheel', stop, { passive: true, once: true });
+    window.addEventListener('touchmove', stop, { passive: true, once: true });
+    const fallback = setTimeout(stop, 650);
+
+    return () => {
+      active = false;
+      clearTimeout(fallback);
+      observer.disconnect();
+      reveal.removeEventListener('transitionend', onTransitionEnd);
+      window.removeEventListener('wheel', stop);
+      window.removeEventListener('touchmove', stop);
+    };
+  }, [all]);
+
   const revealStyle = {
     '--reveal-closed': `${metrics.closed}px`,
     '--reveal-open': `${metrics.open}px`,
@@ -131,9 +187,13 @@ export function RequestBubble({
   } as CSSProperties;
 
   return (
-    <div className="border-rule-faint bg-surface-primary rounded-shell rounded-br-region ml-auto grid max-w-[84%] justify-items-start gap-2.5 border px-4.5 py-3.5 max-sm:max-w-[94%]">
+    <div
+      ref={bubbleRef}
+      className="border-rule-faint bg-surface-primary rounded-shell rounded-br-region ml-auto grid max-w-[84%] justify-items-start gap-2.5 border px-4.5 py-3.5 max-sm:max-w-[94%]"
+    >
       {label ? <Pill tone="neutral">{label}</Pill> : null}
       <div
+        ref={revealRef}
         id={contentId}
         className="text-reveal w-full"
         data-overflows={metrics.overflows || undefined}

@@ -44,11 +44,81 @@
     stroke-linejoin: round;
   }
 
+  /* Compositor-tracked cutout and callout when CSS Anchor Positioning is
+     available; unsupported browsers fall back to Floating UI + the SVG mask. */
+  @supports (anchor-name: --a) and (top: anchor(bottom)) {
+    .walkthrough-backdrop-anchor {
+      --walkthrough-halo: calc(var(--spacing) * 1.5);
+      position: fixed;
+      inset: auto;
+      z-index: 99999;
+      pointer-events: none;
+      position-anchor: var(--walkthrough-anchor);
+      top: calc(anchor(top) - var(--walkthrough-halo));
+      left: calc(anchor(left) - var(--walkthrough-halo));
+      width: calc(anchor-size(width) + var(--walkthrough-halo) * 2);
+      height: calc(anchor-size(height) + var(--walkthrough-halo) * 2);
+      border-radius: calc(var(--walkthrough-radius, 0px) + var(--walkthrough-halo));
+      box-shadow: 0 0 0 100vmax var(--sp-walkthrough-scrim);
+      background: transparent;
+      fill: none;
+    }
+
+    .walkthrough-hint[data-anchored='true'] {
+      position: fixed;
+      inset: auto;
+      margin: 0;
+      z-index: 100000;
+      position-anchor: var(--walkthrough-anchor);
+    }
+
+    .walkthrough-hint[data-anchored='true'][data-placement='right'] {
+      left: calc(anchor(right) + 16px);
+      top: calc(anchor(center) - var(--walkthrough-title-center, 24px));
+    }
+
+    .walkthrough-hint[data-anchored='true'][data-placement='bottom'] {
+      top: calc(anchor(bottom) + 16px);
+      left: clamp(
+        12px,
+        calc(anchor(center) - min(19rem, calc(100vw - 1.5rem)) / 2),
+        calc(100vw - min(19rem, calc(100vw - 1.5rem)) - 12px)
+      );
+      position-try-fallbacks: flip-block;
+    }
+
+    .walkthrough-hint[data-anchored='true'][data-placement='bottom'][data-align='start'] {
+      left: clamp(12px, anchor(left), calc(100vw - min(19rem, calc(100vw - 1.5rem)) - 12px));
+    }
+
+    .walkthrough-hint[data-anchored='true'][data-placement='right'] > .walkthrough-arrow {
+      position: absolute;
+      right: 100%;
+      top: calc(var(--walkthrough-title-center, 24px) - 8px);
+    }
+
+    .walkthrough-hint[data-anchored='true'][data-placement='bottom'] > .walkthrough-arrow {
+      position: absolute;
+      bottom: 100%;
+      left: calc(50% - 8px);
+    }
+
+    .walkthrough-hint[data-anchored='true'][data-placement='bottom'][data-align='start']
+      > .walkthrough-arrow {
+      left: clamp(14px, calc(anchor-size(width) / 2 - 8px), calc(100% - 30px));
+    }
+  }
+
   .walkthrough-hint {
     --walkthrough-edge: 1px;
     --walkthrough-placement: bottom;
     border-width: var(--walkthrough-edge);
     pointer-events: auto;
+  }
+  .app-tooltip.walkthrough-hint {
+    width: 19rem;
+    max-width: min(19rem, calc(100vw - 1.5rem));
+    padding: 0.875rem 0.75rem 0.75rem;
   }
 
   .walkthrough-dismiss {

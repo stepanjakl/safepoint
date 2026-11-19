@@ -20,8 +20,7 @@ import {
   type PillStyle,
 } from '@/components/engine/rules/draft-progress';
 import { useEasedCards } from '@/components/engine/rules/eased-cards';
-import { StatusChip } from '@/components/engine/trial-parts';
-import { SEVERITY } from '@/components/ui/pill';
+import { Pill, SEVERITY } from '@/components/ui/pill';
 import { cx } from '@/lib/ui/cx';
 import { SUBJECT } from '@/lib/processes/brunch-orders/data';
 import type { DefinitionSet } from '@/lib/engine/types';
@@ -155,11 +154,7 @@ export function DraftCards({
                       id={`${stage}-${String(pills)}`}
                       className="draft-chip"
                     >
-                      {chip ?? (
-                        <StatusChip tone={status.tone}>
-                          {status.label}
-                        </StatusChip>
-                      )}
+                      {chip ?? <Pill tone={status.tone}>{status.label}</Pill>}
                     </Crossfade>
                   ) : (
                     chip

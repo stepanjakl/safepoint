@@ -32,6 +32,9 @@ const proposed = profileOf(capturedRead(), SUBJECT.data);
 
 // The procedures' profile actions, on a profile held here.
 async function serveProfile(page: Page, start: DataProfile | null = null) {
+  await page.addInitScript(() => {
+    localStorage.setItem('safepoint.dev.run-debug', 'on');
+  });
   let kept = start;
   const drafts: unknown[] = [];
   const state = (): ProfileState =>

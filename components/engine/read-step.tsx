@@ -22,9 +22,8 @@ import {
 } from '@/components/ui/data-table';
 import { ExternalLink } from '@/components/ui/external-link';
 import { Fold } from '@/components/ui/fold';
-import { Loader } from '@/components/ui/loader';
+import { Pill } from '@/components/ui/pill';
 import { useTRPC } from '@/components/trpc/provider';
-import { useLoader } from '@/components/ui/working-mark';
 import { cx } from '@/lib/ui/cx';
 import { SOURCE_KINDS, type SourceKind } from '@/lib/sources/model';
 
@@ -162,11 +161,12 @@ export function ReadStep({
   // Once per run: a remount (Strict Mode's included) keeps the ref.
   const asked = useRef(false);
   useEffect(() => {
-    if (!automatic || read || loadingRead || readError || asked.current) return;
+    if (!automatic || mock || read || loadingRead || readError || asked.current)
+      return;
     asked.current = true;
     readFrom('live');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [automatic, read, loadingRead, readError]);
+  }, [automatic, mock, read, loadingRead, readError]);
   const unreadable =
     reading.state.kind === 'failed'
       ? reading.state.message
@@ -313,20 +313,12 @@ export function SheetReadCard({
   const cardId = useId();
   const source = SOURCE_KINDS[kind];
   const { singular, plural } = source.resource;
-  const reading = useLoader(!read);
   if (!read)
     return (
       <div className="read-card">
         <div className="read-card-head" data-reading>
           <TableFilled aria-hidden className="read-card-icon" />
           <span className="read-card-name">{source.name}</span>
-          {reading.phase ? (
-            <Loader
-              phase={reading.phase}
-              label="Reading…"
-              className="text-meta"
-            />
-          ) : null}
         </div>
       </div>
     );
@@ -346,12 +338,13 @@ export function SheetReadCard({
         <span className="thread-step-fact read-card-count">
           {read.tabs.length} {read.tabs.length === 1 ? singular : plural}
         </span>
-        <span
-          data-severity={3}
-          className="thread-step-fact read-card-done bg-severity-pill text-severity-pill-ink group-hover/head:bg-severity-pill-hover group-hover/head:text-severity-pill-strong group-focus-visible/head:bg-severity-pill-hover group-focus-visible/head:text-severity-pill-strong"
+        <Pill
+          tone="ready"
+          size="compact"
+          className="read-card-done group-hover/head:bg-severity-pill-hover group-hover/head:text-severity-pill-strong group-focus-visible/head:bg-severity-pill-hover group-focus-visible/head:text-severity-pill-strong"
         >
           Read · {dateTime(read.readAt)}
-        </span>
+        </Pill>
         <ChevronTriangleDown aria-hidden className="read-card-chevron" />
       </button>
       <Fold open={open} id={cardId} className="pt-2">
@@ -403,7 +396,7 @@ export function SheetReadCard({
                             )}
                           >
                             {tab.name}
-                          </span>
+                          </span>{' '}
                           {tab.rows ? (
                             <span className="list-row-pill list-row-trail justify-self-end">
                               <span>{dataRows(tab.rows)}</span>

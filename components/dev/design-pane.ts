@@ -19,6 +19,8 @@ import {
   readMotionSpeed,
   readRailGuides,
   setRailGuides,
+  readRunDebug,
+  setRunDebug,
   setTypeface,
   setMono,
   setTypescale,
@@ -61,6 +63,7 @@ function readPreferences() {
     cornerBalance: readCornerBalance(),
     speed: readMotionSpeed(),
     railGuides: readRailGuides(),
+    runDebug: readRunDebug(),
   };
 }
 
@@ -178,6 +181,14 @@ export function mountDesignPane(host: HTMLElement) {
     'CSS transitions and animations; respects reduced motion. Timers keep normal speed.';
 
   const debug = pane.addFolder({ title: 'Debug' });
+  const runDebugBinding = debug
+    .addBinding(model, 'runDebug', { label: 'Step by step' })
+    .on('change', (event) => setRunDebug(event.value));
+  runDebugBinding.element.title =
+    'Shows the step-by-step run setup controls, model pickers, cross-checks, and rule debuggers.';
+  runDebugBinding.element
+    .querySelector('input')
+    ?.setAttribute('aria-label', 'Step-by-step run debug controls');
   const railBinding = debug
     .addBinding(model, 'railGuides', { label: 'Icon axis' })
     .on('change', (event) => setRailGuides(event.value));
@@ -208,6 +219,7 @@ export function mountDesignPane(host: HTMLElement) {
     setCornerBalance(DEFAULT_CORNER_BALANCE);
     setMotionSpeed(DEFAULT_MOTION_SPEED);
     setRailGuides(false);
+    setRunDebug(false);
   });
 
   let activeSpeed = model.speed;

@@ -73,22 +73,31 @@ test('design controls can be moved, persisted, and reset', async ({ page }) => {
 
   const panel = page.locator('.sp-devctl');
   const toggle = panel.getByRole('button', { name: 'Design controls' });
+  const notice = page.locator('[data-sidebar-notice]');
   await expect(toggle).toBeVisible();
+  await expect(notice).toBeVisible();
   await expect(page.locator('#sp-devctl-move-help')).toHaveCSS(
     'clip',
     'rect(0px, 0px, 0px, 0px)',
   );
 
+  const noticeBox = await notice.boundingBox();
+  if (!noticeBox) throw new Error('Sidebar notice has no bounds');
+  await expect
+    .poll(async () => (await panel.boundingBox())?.x)
+    .toBe(Math.round(noticeBox.x));
   const before = await panel.boundingBox();
   if (!before) throw new Error('Design controls panel has no bounds');
+  expect(before.y + before.height).toBeLessThan(noticeBox.y);
+
   const start = { x: before.x + before.width / 2, y: before.y + 12 };
   await page.mouse.move(start.x, start.y);
   await page.mouse.down();
-  await page.mouse.move(start.x - 120, start.y - 90, { steps: 8 });
+  await page.mouse.move(start.x + 120, start.y - 90, { steps: 8 });
   await page.mouse.up();
 
   const moved = await panel.boundingBox();
-  expect(moved?.x).toBe(before.x - 120);
+  expect(moved?.x).toBe(before.x + 120);
   expect(moved?.y).toBe(before.y - 90);
   await expect(toggle).toHaveAttribute('aria-expanded', 'false');
   await expect
@@ -118,6 +127,23 @@ test('design controls can be moved, persisted, and reset', async ({ page }) => {
   const reset = await panel.boundingBox();
   expect(reset?.x).toBe(before.x);
   expect(reset?.y).toBe(before.y);
+
+  // Move again and double-click the header to reset back to default.
+  await toggle.focus();
+  await page.keyboard.press('Shift+ArrowRight');
+  await expect
+    .poll(async () => (await panel.boundingBox())?.x)
+    .toBe(before.x + 64);
+  await toggle.dblclick();
+  await expect.poll(async () => (await panel.boundingBox())?.x).toBe(before.x);
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        localStorage.getItem('safepoint.dev.controls-position'),
+      ),
+    )
+    .toBeNull();
   await expect
     .poll(() =>
       page.evaluate(() =>

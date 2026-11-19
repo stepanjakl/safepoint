@@ -14,7 +14,6 @@ import { flushSync } from 'react-dom';
 import { FromModel } from '@/components/engine/rules-parts';
 import { anchorOf } from '@/components/engine/rules/card-anchor';
 import { statusOf } from '@/components/engine/rules/definition-card';
-import { StatusChip } from '@/components/engine/trial-parts';
 import { Pill } from '@/components/ui/pill';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cx } from '@/lib/ui/cx';
@@ -24,8 +23,6 @@ export type PillStyle = 'blue-dashed' | 'blue' | 'ringed' | 'words';
 
 export type DraftStage = 'written' | 'writing' | 'queued' | 'unreached';
 
-const BLUE =
-  'pill-shape text-meta bg-tried-face text-state-advisory px-2 py-0.5 font-medium';
 const WORDS = 'text-meta text-muted';
 
 export function WritingPill({ style = 'blue-dashed' }: { style?: PillStyle }) {
@@ -37,7 +34,11 @@ export function WritingPill({ style = 'blue-dashed' }: { style?: PillStyle }) {
         {word}
       </Pill>
     );
-  return <span className={cx(BLUE, 'draft-beat-white')}>{word}</span>;
+  return (
+    <Pill tone="advisory" className="draft-beat-white">
+      {word}
+    </Pill>
+  );
 }
 
 export function UpNextPill({ style = 'blue-dashed' }: { style?: PillStyle }) {
@@ -48,11 +49,11 @@ export function UpNextPill({ style = 'blue-dashed' }: { style?: PillStyle }) {
         Up next
       </Pill>
     );
-  if (style === 'blue') return <span className={BLUE}>Up next</span>;
+  if (style === 'blue') return <Pill tone="advisory">Up next</Pill>;
   return (
-    <span className="draft-pill-dashed pill-shape text-meta text-muted px-2 py-0.5 font-medium">
+    <Pill tone="neutral" variant="dashed">
       Up next
-    </span>
+    </Pill>
   );
 }
 
@@ -73,10 +74,10 @@ export function chipOfStage(
 ) {
   if (stage === 'writing')
     return pills === 'dots' ? (
-      <StatusChip tone="neutral">
+      <Pill tone="neutral">
         Writing
         <WritingDots />
-      </StatusChip>
+      </Pill>
     ) : (
       <WritingPill style={pills} />
     );

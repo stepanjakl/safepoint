@@ -234,6 +234,15 @@
     }
   }
 
+  @container sheet (width >= 52rem) {
+    /* Published to the list child (runs-list.css) so scroll masks track scroll
+       on the compositor without covering the scrollbar or pane highlights. */
+    .process-runs-list {
+      scroll-timeline-name: --runs-scroll;
+      scroll-timeline-axis: y;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .process-sheet-frame [data-detail-held],
     [data-section-forming] :is(.process-panel-list, .process-runs-list) :is(li, p:not(.sr-only)) {

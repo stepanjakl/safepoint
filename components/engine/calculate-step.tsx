@@ -16,16 +16,12 @@ import {
 
 import { FromModel, Step } from '@/components/engine/rules-parts';
 import { ModelSelect } from '@/components/engine/rules/model-select';
-import {
-  Lede,
-  Outcome,
-  StatusChip,
-  plural,
-} from '@/components/engine/trial-parts';
+import { Lede, Outcome, plural } from '@/components/engine/trial-parts';
 import { Button } from '@/components/ui/button';
 import { FilterTabs } from '@/components/ui/filter-tabs';
 import { Fold } from '@/components/ui/fold';
 import { Loader } from '@/components/ui/loader';
+import { Pill } from '@/components/ui/pill';
 import {
   DATA_TABLE_BODY,
   DATA_TABLE_HEAD,
@@ -109,6 +105,7 @@ export function CalculateStep({
   readId,
   calculatedOn,
   onProgress,
+  debug = false,
   mock = false,
 }: {
   text: string;
@@ -116,6 +113,7 @@ export function CalculateStep({
   // The rulebook the run last calculated on, if any.
   calculatedOn: string | null;
   onProgress: (progress: CalculateProgress) => void;
+  debug?: boolean;
   mock?: boolean;
 }) {
   const trpc = useTRPC();
@@ -131,7 +129,11 @@ export function CalculateStep({
   // changed since, and a cross-check lands in this same answer.
   const worked = trpc.calculate.get.queryOptions(
     { text, readId, rulebook: pin ?? undefined },
-    { enabled: !mock, staleTime: mock ? Infinity : 0, gcTime: mock ? Infinity : 0 },
+    {
+      enabled: !mock,
+      staleTime: mock ? Infinity : 0,
+      gcTime: mock ? Infinity : 0,
+    },
   );
   const calculated = useQuery(worked);
   const cross = useMutation(
@@ -191,9 +193,10 @@ export function CalculateStep({
     <div className="grid gap-4">
       <Lede>
         Code works out every value the accepted rules define, for each record of
-        this run&rsquo;s data. These are the values the later steps use. The
-        model can cross-check them, working each one out on its own from the
-        instructions, without the formulas.
+        this run&rsquo;s data. These are the values the later steps use.
+        {debug
+          ? ' The model can cross-check them, working each one out on its own from the instructions, without the formulas.'
+          : null}
       </Lede>
       {answer?.kind === 'stale' ? (
         <StaleRules stale={answer} onMove={movePin} />
@@ -215,44 +218,48 @@ export function CalculateStep({
               </Button>
             </div>
           ) : null}
-          {/* Scaffolding for trying the step, as the read's and the rules'
-              setups are. */}
-          <section
-            aria-label="Cross-check setup"
-            className="trial-setup rounded-shell grid gap-3 p-4"
-          >
-            <div className="flex flex-wrap items-end gap-3">
-              <ModelSelect model={model} busy={busy} onChange={setModel} />
-              <Button
-                variant={shown.check ? 'secondary' : 'primary'}
-                isDisabled={busy}
-                onPress={crossCheck}
-              >
-                {shown.check
-                  ? 'Cross-check again'
-                  : 'Cross-check with the model'}
-              </Button>
-              {shown.check ? (
-                <Button onPress={() => setReplays((count) => count + 1)}>
-                  Replay the marks
+          {debug ? (
+            /* Scaffolding for trying the step, as the read's and the rules'
+                setups are. */
+            <section
+              aria-label="Cross-check setup"
+              className="trial-setup rounded-shell grid gap-3 p-4"
+            >
+              <div className="flex flex-wrap items-end gap-3">
+                <ModelSelect model={model} busy={busy} onChange={setModel} />
+                <Button
+                  variant={shown.check ? 'secondary' : 'primary'}
+                  isDisabled={busy}
+                  onPress={crossCheck}
+                >
+                  {shown.check
+                    ? 'Cross-check again'
+                    : 'Cross-check with the model'}
                 </Button>
-              ) : null}
-            </div>
-            <ModelLimits model={model} enabled={!mock} />
-            <p className="text-meta text-muted max-w-prose">
-              The model works every value out again from the instructions and
-              the data, without the formulas. If the model is busy or out of
-              quota, the next older one of its family answers.
-            </p>
-          </section>
-          <CrossCheckResult
-            check={shown.check}
-            busy={busy}
-            records={shown.calculation.rows.length}
-            differing={differing.size}
-            showing={showing}
-            onShow={setShowing}
-          />
+                {shown.check ? (
+                  <Button onPress={() => setReplays((count) => count + 1)}>
+                    Replay the marks
+                  </Button>
+                ) : null}
+              </div>
+              <ModelLimits model={model} enabled={!mock} />
+              <p className="text-meta text-muted max-w-prose">
+                The model works every value out again from the instructions and
+                the data, without the formulas. If the model is busy or out of
+                quota, the next older one of its family answers.
+              </p>
+            </section>
+          ) : null}
+          {debug || shown.check !== null ? (
+            <CrossCheckResult
+              check={shown.check}
+              busy={busy}
+              records={shown.calculation.rows.length}
+              differing={differing.size}
+              showing={showing}
+              onShow={setShowing}
+            />
+          ) : null}
           <ValuesTable
             key={replays}
             calculation={shown.calculation}
@@ -307,7 +314,7 @@ function CrossCheckResult({
           {check ? (
             <Outcome>
               {differ ? (
-                <StatusChip tone="blocked">
+                <Pill tone="blocked">
                   <Cross
                     aria-hidden
                     size={12}
@@ -315,9 +322,9 @@ function CrossCheckResult({
                     className="me-1"
                   />
                   {differ} of {check.total} don&rsquo;t match the model
-                </StatusChip>
+                </Pill>
               ) : (
-                <StatusChip tone="ready">
+                <Pill tone="ready">
                   <Check
                     aria-hidden
                     size={12}
@@ -325,7 +332,7 @@ function CrossCheckResult({
                     className="me-1"
                   />
                   All {check.total} match the model
-                </StatusChip>
+                </Pill>
               )}
             </Outcome>
           ) : working.phase ? (
@@ -554,9 +561,9 @@ function ValuesTable({
                                     <span aria-hidden>→</span>
                                   ) : null}
                                   <span className="sr-only">gives</span>
-                                  <StatusChip tone="neutral">
+                                  <Pill tone="neutral">
                                     {cell.error ?? cell.value}
-                                  </StatusChip>
+                                  </Pill>
                                 </p>
                                 {cross ? (
                                   <FromModel>

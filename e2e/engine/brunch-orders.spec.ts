@@ -1,9 +1,21 @@
+import { readFileSync } from 'node:fs';
+
+import type { inferRouterOutputs } from '@trpc/server';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
+import type { Calculation } from '@/lib/engine/calculate';
+import { definitionSetSchema, type Proposal } from '@/lib/engine/types';
+import type { AppRouter } from '@/server/api/root';
+
+import { asKeptRulebook, call, seedKeptRulebooks } from '../support/kept-runs';
+import { rulesReply } from '../support/rules';
+import { mockProcedure } from '../support/trpc';
+
 // Brunch orders, phase 1 (docs/processes/brunch-orders/PLAN.md): a run started by hand
-// shows its instructions, waits for a person to read the sheet, and keeps
-// that read. The captured read needs no network.
+// shows its instructions, reads the sheet, and keeps that read. By default it
+// advances automatically through the deterministic steps without debug setup;
+// turning on the step-by-step debug preference reveals the manual setup controls.
 
 const serious = async (page: Page, include: string) =>
   (await new AxeBuilder({ page }).include(include).analyze()).violations
@@ -13,6 +25,9 @@ const serious = async (page: Page, include: string) =>
 test('a run shows its instructions, reads the sheet and keeps the read', async ({
   page,
 }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('safepoint.dev.run-debug', 'on');
+  });
   await page.goto('/processes/brunch-orders');
   await page.getByRole('button', { name: 'Start run' }).first().click();
 
@@ -162,13 +177,12 @@ test('a run shows its instructions, reads the sheet and keeps the read', async (
   await expect(
     page.getByRole('list', { name: 'Data tabs read' }),
   ).toBeVisible();
-
-  // And it can be discarded.
-  await page.getByRole('button', { name: 'Discard this run' }).click();
-  await expect(head).toHaveCount(0);
 });
 
 test('a reduced-motion read still hands off to the rules', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('safepoint.dev.run-debug', 'on');
+  });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/processes/brunch-orders');
   await page.getByRole('button', { name: 'Start run' }).first().click();
@@ -183,5 +197,110 @@ test('a reduced-motion read still hands off to the rules', async ({ page }) => {
     page
       .locator('ol.thread')
       .getByRole('button', { name: 'Rules', exact: true }),
+  ).toBeVisible();
+});
+
+test('by default a run advances automatically from reading to proposing, and Tweakpane toggles the debug controls', async ({
+  page,
+}) => {
+  await seedKeptRulebooks(page);
+  const accepted = definitionSetSchema.parse(
+    JSON.parse(
+      readFileSync('e2e/fixtures/brunch-orders-accepted.json', 'utf8'),
+    ),
+  );
+  const frozenCalc = JSON.parse(
+    readFileSync('e2e/fixtures/brunch-orders-calculation.json', 'utf8'),
+  ) as Calculation;
+  const calculation = asKeptRulebook(frozenCalc, frozenCalc.fingerprint);
+  const frozenProp = asKeptRulebook(
+    JSON.parse(
+      readFileSync('e2e/fixtures/brunch-orders-proposal.json', 'utf8'),
+    ) as {
+      names: Record<string, string>;
+      calculated: {
+        calculations: { id: string; name: string }[];
+        rows: Record<string, Record<string, number | null>>;
+      };
+      proposal: Proposal;
+    },
+    frozenCalc.fingerprint,
+  );
+
+  const readSources: string[] = [];
+  let proposalStarted = 0;
+  await page.goto('/processes/brunch-orders');
+  const capturedSummary = await call<
+    inferRouterOutputs<AppRouter>['read']['keep']
+  >(page, 'read.keep', { source: 'captured' });
+  await mockProcedure(page, 'read.keep', (input) => {
+    readSources.push(input.source);
+    return { data: capturedSummary };
+  });
+  await mockProcedure(page, 'rules.get', { data: rulesReply(accepted) });
+  await mockProcedure(page, 'calculate.get', {
+    data: {
+      kind: 'calculation',
+      calculation,
+      check: null,
+      current: calculation.fingerprint,
+    },
+  });
+  await mockProcedure(page, 'propose.get', () => ({
+    data: {
+      kind: 'proposal' as const,
+      fingerprint: frozenProp.proposal.fingerprint,
+      names: frozenProp.names,
+      calculated: frozenProp.calculated,
+      proposal: proposalStarted > 0 ? frozenProp.proposal : null,
+      progress: null,
+    },
+  }));
+  await mockProcedure(page, 'propose.start', () => {
+    proposalStarted += 1;
+    return {
+      data: {
+        kind: 'proposal' as const,
+        fingerprint: frozenProp.proposal.fingerprint,
+        names: frozenProp.names,
+        calculated: frozenProp.calculated,
+        proposal: frozenProp.proposal,
+        progress: null,
+      },
+    };
+  });
+
+  await page.getByRole('button', { name: 'Start run' }).first().click();
+
+  const table = page.getByRole('table', {
+    name: 'What is proposed for every record',
+  });
+  await expect(table).toBeVisible({ timeout: 30_000 });
+  expect(readSources).toEqual(['live']);
+  expect(proposalStarted).toBe(1);
+
+  // None of the trial/debug setup sections are rendered by default.
+  await expect(page.getByRole('region', { name: 'Read setup' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Draft setup' })).toHaveCount(
+    0,
+  );
+  await expect(
+    page.getByRole('region', { name: 'Cross-check setup' }),
+  ).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Propose setup' })).toHaveCount(
+    0,
+  );
+  await expect(
+    page.locator('ol.thread').getByText('22 values worked out').first(),
+  ).toBeAttached();
+
+  // Toggling Step by step in Design controls reveals the debug sections.
+  const panel = page.locator('.sp-devctl');
+  await panel.getByRole('button', { name: 'Design controls' }).click();
+  await panel
+    .locator('label:has(input[aria-label="Step-by-step run debug controls"])')
+    .click();
+  await expect(
+    page.getByRole('region', { name: 'Propose setup' }),
   ).toBeVisible();
 });

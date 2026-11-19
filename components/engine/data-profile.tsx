@@ -3,12 +3,7 @@
 import { useEffect, useId, useRef, useState, type Ref } from 'react';
 
 import { DecisionButton } from '@/components/engine/decision-button';
-import {
-  Code,
-  StatusChip,
-  dateTime,
-  plural,
-} from '@/components/engine/trial-parts';
+import { Code, dateTime, plural } from '@/components/engine/trial-parts';
 import { Button } from '@/components/ui/button';
 import { ChoiceGroup } from '@/components/ui/choice-group';
 import {
@@ -21,6 +16,8 @@ import {
 } from '@/components/ui/data-table';
 import { Fold } from '@/components/ui/fold';
 import { MORPH_WORDS_MS, MorphingText } from '@/components/ui/morphing-text';
+import { Pill } from '@/components/ui/pill';
+import { Select } from '@/components/ui/select';
 import { cx } from '@/lib/ui/cx';
 import type {
   DataProfile,
@@ -126,9 +123,9 @@ export function DataProfilePanel({
         </h4>
         {state && state.state !== 'none' ? (
           <span className="ml-auto">
-            <StatusChip tone={confirmed ? 'ready' : 'decision'}>
+            <Pill tone={confirmed ? 'ready' : 'decision'}>
               {confirmed ? 'Confirmed' : 'Not confirmed'}
-            </StatusChip>
+            </Pill>
           </span>
         ) : null}
       </div>
@@ -369,10 +366,11 @@ function TypeSelect({
   onChange: (change: ProfileChange) => void;
 }) {
   return (
-    <select
+    <Select
       id={id}
       aria-label={ariaLabel}
-      className="field text-dense min-h-8 w-full px-2"
+      size="medium"
+      className="w-full"
       value={column.type?.kind ?? ''}
       onChange={(event) =>
         onChange({
@@ -393,7 +391,7 @@ function TypeSelect({
           {TYPE_WORDS[kind]}
         </option>
       ))}
-    </select>
+    </Select>
   );
 }
 
@@ -605,9 +603,9 @@ function TableRow({
               <span className="text-meta text-muted">
                 Where a cell is blank
               </span>
-              <select
+              <Select
                 aria-label={`Where ${column.column} is blank`}
-                className="field text-dense min-h-8 px-2"
+                size="medium"
                 value={column.blank ?? ''}
                 onChange={(event) =>
                   onChange({
@@ -622,7 +620,7 @@ function TableRow({
                     {choice.label}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
           </td>
         </tr>

@@ -72,6 +72,7 @@ test.beforeEach(async ({ page, colorScheme }) => {
   await page.addInitScript(
     (theme) => {
       localStorage.setItem('safepoint.dev.theme', theme);
+      localStorage.setItem('safepoint.dev.run-debug', 'on');
     },
     colorScheme === 'dark' ? 'dark' : 'light',
   );
@@ -261,19 +262,6 @@ test('returning to the outgoing run reverses its fade without an empty page', as
   expect(frames.some((frame) => frame.inert && frame.opacity < 1)).toBe(true);
   expect(frames.at(-1)?.opacity).toBe(1);
   await expect(page).toHaveURL(new RegExp(`run=${secondId}$`));
-});
-
-test('discarding a run waits for the server, then leaves focus in the runs list', async ({
-  page,
-}) => {
-  await page.getByRole('button', { name: 'Discard this run' }).click();
-  await expect(
-    page.locator(`.sheet-row[data-run-id="${secondId}"]`),
-  ).toHaveCount(0);
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-    'No run selected',
-  );
-  await expect(page.locator('.sheet-row').first()).toBeFocused();
 });
 
 test('reduced-motion run selection works from the keyboard', async ({

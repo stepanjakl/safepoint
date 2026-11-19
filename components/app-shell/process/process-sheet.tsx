@@ -6,6 +6,7 @@ import { MorphingText, MORPH_WORDS_MS } from '@/components/ui/morphing-text';
 import {
   Activity,
   createContext,
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -189,6 +190,7 @@ export function ProcessSheet({
     showRules: rulesPanel === undefined ? undefined : () => chooseTab('rules'),
     currentVersion: version,
   };
+  const scrollRuns = useVerticalScrollFade();
   const selection = useRunSelectionState({
     process,
     initialRunId,
@@ -222,6 +224,7 @@ export function ProcessSheet({
         {/* Full-bleed: the list draws its own rules edge to edge, and
               padding on the column would leave them floating short of it. */}
         <aside
+          ref={scrollRuns}
           aria-labelledby="runs-heading"
           className="process-runs-list sheet-bleed @sheet-wide/sheet:sheet-bleed-bottom @max-sheet-wide/sheet:sheet-bleed-end border-raised-ring shadow-separator-right-strong @sheet-wide/sheet:border-b-0 @sheet-wide/sheet:border-r shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative border-b"
         >
@@ -468,4 +471,69 @@ function SinglePanel({
       </div>
     </div>
   );
+}
+
+function useVerticalScrollFade<T extends HTMLElement>() {
+  return useCallback((element: T | null) => {
+    if (!element) return;
+    const supportsTimeline = CSS.supports('animation-timeline', 'scroll()');
+    const update = () => {
+      const room = element.scrollHeight - element.clientHeight;
+      const scrollable = room > 0.5;
+      toggleDataAttribute(element, 'data-runs-scrollable', scrollable);
+      if (scrollable) {
+        const head = element.querySelector('.sheet-head');
+        const headHeight = head instanceof HTMLElement ? head.offsetHeight : 0;
+        element.style.setProperty(
+          '--runs-view-height',
+          `${Math.max(0, element.clientHeight - headHeight)}px`,
+        );
+        if (!supportsTimeline) {
+          element.style.setProperty(
+            '--runs-scroll-y',
+            `${(element.scrollTop / room) * 100}%`,
+          );
+        }
+      } else {
+        element.style.removeProperty('--runs-view-height');
+        element.style.removeProperty('--runs-scroll-y');
+      }
+      toggleDataAttribute(
+        element,
+        'data-fade-top',
+        scrollable && element.scrollTop > 0.5,
+      );
+      toggleDataAttribute(
+        element,
+        'data-fade-bottom',
+        scrollable && element.scrollTop < room - 0.5,
+      );
+    };
+
+    const resize = new ResizeObserver(update);
+    const watch = () => {
+      resize.disconnect();
+      resize.observe(element);
+      for (const child of element.children) resize.observe(child);
+    };
+    const children = new MutationObserver(() => {
+      watch();
+      update();
+    });
+    children.observe(element, { childList: true });
+    watch();
+    update();
+
+    element.addEventListener('scroll', update, { passive: true });
+    return () => {
+      resize.disconnect();
+      children.disconnect();
+      element.removeEventListener('scroll', update);
+    };
+  }, []);
+}
+
+function toggleDataAttribute(element: HTMLElement, name: string, on: boolean) {
+  if (on) element.setAttribute(name, '');
+  else element.removeAttribute(name);
 }

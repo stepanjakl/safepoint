@@ -1,8 +1,17 @@
 'use client';
 
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
-import type { ProcessRun, ProcessSummary } from '@/lib/shell/model';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
+import type { ProcessRun, ProcessSummary, RunStatus } from '@/lib/shell/model';
 import { useInstructions } from '@/components/app-shell/instructions/instructions-store';
+import { mockStageStorageKey } from '@/components/app-shell/thread/thread-player';
+import { useWalkthrough } from '@/components/app-shell/walkthrough';
 import {
   processRunOf,
   useKeptRuns,
@@ -25,8 +34,72 @@ import {
 */
 const NO_RUNS: KeptRun[] = [];
 const MOCK_PREFIX = 'mock-';
+const MOCK_RUNS_STORAGE_PREFIX = 'safepoint.mock-runs.v1:';
+const mockRunsListeners = new Set<() => void>();
+const mockRunsCache = new Map<
+  string,
+  { raw: string | null; runs: KeptRun[] }
+>();
+const mockRunsFallback = new Map<string, KeptRun[]>();
 
 export const isMockRunId = (id: string) => id.startsWith(MOCK_PREFIX);
+
+function mockRunsStorageKey(processId: string) {
+  return `${MOCK_RUNS_STORAGE_PREFIX}${processId}`;
+}
+
+function subscribeMockRuns(listener: () => void) {
+  mockRunsListeners.add(listener);
+  window.addEventListener('storage', listener);
+  return () => {
+    mockRunsListeners.delete(listener);
+    window.removeEventListener('storage', listener);
+  };
+}
+
+function readStoredMockRuns(processId: string): KeptRun[] {
+  try {
+    const raw = window.sessionStorage.getItem(mockRunsStorageKey(processId));
+    const cached = mockRunsCache.get(processId);
+    if (cached && cached.raw === raw) return cached.runs;
+    if (!raw) {
+      mockRunsCache.set(processId, { raw, runs: NO_RUNS });
+      return NO_RUNS;
+    }
+    const parsed: unknown = JSON.parse(raw);
+    const runs = Array.isArray(parsed)
+      ? parsed.filter(
+          (entry): entry is KeptRun =>
+            typeof entry === 'object' &&
+            entry !== null &&
+            typeof (entry as KeptRun).id === 'string' &&
+            isMockRunId((entry as KeptRun).id),
+        )
+      : NO_RUNS;
+    mockRunsCache.set(processId, { raw, runs });
+    return runs;
+  } catch {
+    return mockRunsFallback.get(processId) ?? NO_RUNS;
+  }
+}
+
+function writeStoredMockRuns(processId: string, runs: KeptRun[]) {
+  mockRunsFallback.set(processId, runs);
+  try {
+    const key = mockRunsStorageKey(processId);
+    if (runs.length === 0) {
+      window.sessionStorage.removeItem(key);
+      mockRunsCache.set(processId, { raw: null, runs: NO_RUNS });
+    } else {
+      const raw = JSON.stringify(runs);
+      window.sessionStorage.setItem(key, raw);
+      mockRunsCache.set(processId, { raw, runs });
+    }
+  } catch {
+    // Private browsing or blocked site data: keep in-memory fallback.
+  }
+  mockRunsListeners.forEach((listener) => listener());
+}
 
 // The kept run being shown, with the text of the instructions it runs under.
 export type LiveRun = {
@@ -63,6 +136,8 @@ export type RunSelection = {
     progress: { readId?: string; rulebook?: string | null },
   ) => Promise<unknown>;
   recordError: string | null;
+  // Updates a local mock run's status in session storage as its script advances.
+  setMockStatus?: (id: string, status: RunStatus) => void;
   // Discarding is waited for: the run leaves the list once the server says so.
   discard: (id: string) => Promise<boolean>;
   discarding: boolean;
@@ -77,6 +152,34 @@ export function useRunSelection() {
   return useContext(RunSelectionContext);
 }
 
+function createMockRun(
+  processId: RunProcessId,
+  version: string,
+  hash: string | null,
+  additionalInstructions: string,
+): KeptRun {
+  const id = `${MOCK_PREFIX}${Date.now()}`;
+  const now = new Date().toISOString();
+  return {
+    id,
+    process: processId,
+    startedAt: now,
+    updatedAt: now,
+    startedBy: null,
+    discardedAt: null,
+    stage: 'read',
+    status: 'running',
+    trigger: 'manual',
+    instructions: {
+      version,
+      hash: hash ?? 'mock',
+    },
+    additionalInstructions: additionalInstructions || null,
+    readId: null,
+    rulebook: null,
+  };
+}
+
 export function useRunSelectionState({
   process,
   initialRunId,
@@ -87,10 +190,19 @@ export function useRunSelectionState({
   // Whether this process draws a live run's thread, run step by step.
   liveThread?: boolean;
 }): RunSelection {
-  const [selected, setSelected] = useState(
-    initialRunId && isMockRunId(initialRunId) ? null : initialRunId,
+  const walkthrough = useWalkthrough();
+  const [selected, setSelected] = useState(initialRunId);
+  const mockRuns = useSyncExternalStore(
+    subscribeMockRuns,
+    () => (liveThread ? readStoredMockRuns(process.id) : NO_RUNS),
+    () => NO_RUNS,
   );
-  const [mockRuns, setMockRuns] = useState<KeptRun[]>([]);
+  const setMockRuns = (update: (current: KeptRun[]) => KeptRun[]) => {
+    const current = readStoredMockRuns(process.id);
+    const next = update(current);
+    if (next === current) return;
+    writeStoredMockRuns(process.id, next);
+  };
   const kept = useKeptRuns(process.id, liveThread);
   const { versions, current } = useInstructions(
     process.id,
@@ -167,28 +279,14 @@ export function useRunSelectionState({
 
   const startMock = (additionalInstructions = '') => {
     if (!liveThread) return false;
-    const id = `${MOCK_PREFIX}${Date.now()}`;
-    const now = new Date().toISOString();
-    const mockRun: KeptRun = {
-      id,
-      process: process.id as RunProcessId,
-      startedAt: now,
-      updatedAt: now,
-      startedBy: null,
-      discardedAt: null,
-      stage: 'read',
-      status: 'running',
-      trigger: 'manual',
-      instructions: {
-        version: current.version,
-        hash: current.hash ?? 'mock',
-      },
-      additionalInstructions: additionalInstructions || null,
-      readId: null,
-      rulebook: null,
-    };
+    const mockRun = createMockRun(
+      process.id as RunProcessId,
+      current.version,
+      current.hash,
+      additionalInstructions,
+    );
     setMockRuns((list) => [mockRun, ...list]);
-    setSelected(id);
+    setSelected(mockRun.id);
     return true;
   };
 
@@ -197,6 +295,7 @@ export function useRunSelectionState({
     selected,
     select: (id) => {
       kept.start.reset();
+      if (selected !== id) walkthrough?.advance('start-run');
       setSelected((current) => (current === id ? null : id));
     },
     start: cannotStart ? null : start,
@@ -227,8 +326,21 @@ export function useRunSelectionState({
       return kept.record(id, progress);
     },
     recordError: kept.recordError,
+    setMockStatus: (id, status) => {
+      if (!isMockRunId(id)) return;
+      setMockRuns((list) => {
+        const target = list.find((one) => one.id === id);
+        if (!target || target.status === status) return list;
+        return list.map((one) => (one.id === id ? { ...one, status } : one));
+      });
+    },
     discard: async (id) => {
       if (isMockRunId(id)) {
+        try {
+          window.sessionStorage.removeItem(mockStageStorageKey(id));
+        } catch {
+          // Ignore blocked storage.
+        }
         setMockRuns((list) => list.filter((one) => one.id !== id));
         setSelected((now) => (now === id ? null : now));
         return true;

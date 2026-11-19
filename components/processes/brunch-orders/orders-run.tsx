@@ -1,6 +1,6 @@
 'use client';
 
-import { useContext, useState } from 'react';
+import { useContext, useRef, useState } from 'react';
 
 import { ProcessSheetActions } from '@/components/app-shell/process/process-sheet';
 import {
@@ -8,6 +8,7 @@ import {
   type LiveRun,
   type RunSelection,
 } from '@/components/app-shell/runs/run-selection';
+import { useFollowRun } from '@/components/app-shell/thread/follow-run';
 import { ResponseSection } from '@/components/app-shell/thread/thread-page';
 import { ThreadStep } from '@/components/app-shell/thread/thread-step';
 import type { ProcessStep, ProcessSummary } from '@/lib/shell/model';
@@ -32,9 +33,9 @@ import {
   type RulesProgress,
 } from '@/components/engine/rules/rules-step';
 import {
-  DiscardRun,
   InstructionsText,
   RunNote,
+  useRunDebug,
 } from '@/components/engine/run-parts';
 
 import { OrdersMockRun } from './orders-mock-run';
@@ -78,6 +79,7 @@ function OrdersThread({
   selection: RunSelection;
 }) {
   const sheet = useContext(ProcessSheetActions);
+  const debug = useRunDebug();
   const { kept, text } = live;
   const version = kept.instructions.version;
   const [revealingReadId, setRevealingReadId] = useState<string | null>(null);
@@ -93,9 +95,6 @@ function OrdersThread({
   // it as the run's; once kept, the server's summary is what is shown.
   const read = taken && taken.id !== kept.readId ? taken : saved.read;
   const readId = read?.id ?? kept.readId;
-  // What this run has written and not undone.
-  const wrote =
-    applied?.status === 'verified' || applied?.status === 'mismatch';
   const rulesDone =
     rules !== undefined &&
     rules.intent &&
@@ -128,15 +127,21 @@ function OrdersThread({
           : step.id === 'calculate'
             ? !rulesDone
               ? 'pending'
-              : calculated?.checked && calculated.agreed === calculated.total
-                ? 'complete'
-                : 'attention'
+              : calculated?.checked
+                ? calculated.agreed === calculated.total
+                  ? 'complete'
+                  : 'attention'
+                : !debug && calculated
+                  ? 'complete'
+                  : 'attention'
             : step.id === 'propose'
               ? !canPropose
                 ? 'pending'
-                : allDecided
-                  ? 'complete'
-                  : 'attention'
+                : proposed?.running
+                  ? 'running'
+                  : allDecided
+                    ? 'complete'
+                    : 'attention'
               : step.id === 'apply'
                 ? !allDecided
                   ? 'pending'
@@ -169,7 +174,11 @@ function OrdersThread({
             : `${rules.approved} of ${rules.total} accepted`
       : step.id === 'calculate' && rulesDone
         ? !calculated?.checked
-          ? 'Not cross-checked'
+          ? debug
+            ? 'Not cross-checked'
+            : calculated
+              ? `${calculated.total} ${calculated.total === 1 ? 'value' : 'values'} worked out`
+              : step.label
           : calculated.agreed === calculated.total
             ? `All ${calculated.total} match the model`
             : `${calculated.total - calculated.agreed} don’t match the model`
@@ -220,9 +229,12 @@ function OrdersThread({
         .record(kept.id, { rulebook: progress.fingerprint })
         .catch(() => undefined);
   };
+  const thread = useRef<HTMLOListElement>(null);
+  useFollowRun(thread, undefined);
+
   return (
     <>
-      <ol className="thread">
+      <ol ref={thread} className="thread">
         {steps.map((step) => (
           <ThreadStep
             key={step.id}
@@ -255,6 +267,7 @@ function OrdersThread({
                   readError={saved.error}
                   revealing={revealingReadId === read?.id}
                   onRevealed={() => setRevealingReadId(null)}
+                  automatic={!debug}
                   onRead={(next) => {
                     setRevealingReadId(
                       matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -277,6 +290,7 @@ function OrdersThread({
                   version={version}
                   readId={readId}
                   onProgress={setRules}
+                  debug={debug}
                 />
               </ResponseSection>
             ) : step.id === 'calculate' && rulesDone && readId ? (
@@ -287,6 +301,7 @@ function OrdersThread({
                   readId={readId}
                   calculatedOn={kept.rulebook}
                   onProgress={pin}
+                  debug={debug}
                 />
               </ResponseSection>
             ) : step.id === 'propose' && canPropose ? (
@@ -298,6 +313,7 @@ function OrdersThread({
                   rulebook={pinned}
                   run={{ process: 'brunch-orders', runId: kept.id }}
                   onProgress={setProposed}
+                  debug={debug}
                   // Back to Calculate once the server has let go of the pin.
                   onMoveRules={() =>
                     void selection.record(kept.id, { rulebook: null }).then(
@@ -331,19 +347,6 @@ function OrdersThread({
           {selection.recordError}
         </p>
       ) : null}
-      <div className="border-rule-faint mt-8 flex flex-wrap items-center gap-3 border-t pt-4">
-        <DiscardRun
-          selection={selection}
-          id={kept.id}
-          words={
-            wrote
-              ? 'Takes it off the list. What it wrote stays in the sheet.'
-              : applied?.status === 'pending'
-                ? 'Takes it off the list. Anything it wrote stays in the sheet.'
-                : 'Takes it off the list. Nothing was written anywhere.'
-          }
-        />
-      </div>
     </>
   );
 }

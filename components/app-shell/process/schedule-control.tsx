@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { Dialog, DialogTrigger, Heading, Popover } from 'react-aria-components';
 // Deep import: Blode's barrel is the whole icon library.
 import Clock from 'blode-icons-react/icons/clock';
@@ -8,6 +8,10 @@ import { Switch } from '@/components/ui/switch';
 import { ChoiceGroup } from '@/components/ui/choice-group';
 import { Fold } from '@/components/ui/fold';
 import { HeadIconButton } from '@/components/app-shell/head-icon-button';
+import {
+  useAgentationPopoverDismiss,
+  useAgentationPopoverProps,
+} from '@/components/dev/agentation-popover';
 import {
   WEEKDAYS,
   scheduleLabel,
@@ -45,14 +49,26 @@ export function ScheduleControl({
   schedule: ProcessSchedule;
 }) {
   const [schedule, update] = useProcessSchedule(processId, initial);
+  const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const popoverProps = useAgentationPopoverProps(triggerRef);
+  useAgentationPopoverDismiss(
+    open,
+    () => setOpen(false),
+    popoverRef,
+    triggerRef,
+  );
   return (
-    <DialogTrigger>
+    <DialogTrigger isOpen={open} onOpenChange={setOpen}>
       <HeadIconButton
+        ref={triggerRef}
         label={`Schedule: ${scheduleLabel(schedule)}`}
         tooltip={{
           label: 'Schedule',
           description: scheduleLabel(schedule),
           placement: 'bottom',
+          isDisabled: open,
         }}
         size="alone"
         wash="rest"
@@ -62,10 +78,12 @@ export function ScheduleControl({
         <Clock aria-hidden size={14} strokeWidth={1.8} />
       </HeadIconButton>
       <Popover
+        ref={popoverRef}
         // Opens over the thread, not back over the sidebar the rail sits beside.
         placement="bottom start"
         offset={6}
         className="popover-motion control-face surface-popover rounded-shell w-[min(18rem,calc(100vw-2rem))]"
+        {...popoverProps}
       >
         <Dialog className="grid gap-3 p-4 outline-none">
           <ScheduleFields
@@ -110,7 +128,10 @@ export function ScheduleFields({
   return (
     <>
       <div
-        className={cx('flex items-center gap-3', ruled && 'rule-below pb-3')}
+        className={cx(
+          'flex items-center gap-3',
+          ruled && 'border-rule-faint border-b pb-3',
+        )}
       >
         {title}
         <Switch

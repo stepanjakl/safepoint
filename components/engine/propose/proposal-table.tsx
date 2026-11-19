@@ -1,8 +1,9 @@
 'use client';
 
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 
+import { useWalkthrough } from '@/components/app-shell/walkthrough';
 import { DataDrawer } from '@/components/engine/data-drawer';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,6 +15,8 @@ import {
 import { FilterTabs } from '@/components/ui/filter-tabs';
 import { MorphingText } from '@/components/ui/morphing-text';
 import { Pill } from '@/components/ui/pill';
+import { useScreenSettled } from '@/components/ui/screen-settled';
+import { WalkthroughHint } from '@/components/ui/walkthrough-hint';
 import { cx } from '@/lib/ui/cx';
 import { DURATION_STATE } from '@/lib/ui/motion';
 import type { Proposal } from '@/lib/engine/types';
@@ -85,11 +88,25 @@ export function ProposalTable({
       return next;
     });
   const tableId = useId();
+  const walkthrough = useWalkthrough();
+  const screenSettled = useScreenSettled();
+  const reviewHintId = useId();
+  const filterBarRef = useRef<HTMLDivElement>(null);
+  const showReviewHint =
+    walkthrough?.step === 'review-proposal' &&
+    screenSettled &&
+    records.length > 0;
+  const decide: typeof onDecide = (changes, words) => {
+    walkthrough?.advance('review-proposal');
+    onDecide(changes, words);
+  };
 
   return (
     <div className="grid gap-3">
       <div className="flex">
         <FilterTabs
+          trackRef={filterBarRef}
+          descriptionId={showReviewHint ? reviewHintId : undefined}
           size="small"
           ariaLabel="Records to show"
           tabs={[
@@ -117,6 +134,18 @@ export function ProposalTable({
           onChange={setShowing}
         />
       </div>
+      <WalkthroughHint
+        isOpen={showReviewHint}
+        step="review-proposal"
+        title="Review and decide"
+        descriptionId={reviewHintId}
+        targetRef={filterBarRef}
+        preferredPlacement="bottom-start"
+        onDismiss={() => walkthrough?.dismiss()}
+        onInteractOutside={() => walkthrough?.advance('review-proposal')}
+      >
+        Check each proposal and decide. Nothing changes until you approve.
+      </WalkthroughHint>
       <p role="status" className="sr-only">
         {announced}
       </p>
@@ -196,7 +225,7 @@ export function ProposalTable({
                         ruled={rowIndex < shown.length - 1}
                         calculated={calculated}
                         onToggle={() => toggle(key)}
-                        onDecide={onDecide}
+                        onDecide={decide}
                         onCheck={onCheck}
                         onCite={(cell) => {
                           const tab =
@@ -236,7 +265,7 @@ export function ProposalTable({
                       size="medium"
                       onPress={() => {
                         const at = new Date().toISOString();
-                        onDecide(
+                        decide(
                           Object.fromEntries(
                             ready.map(([key]) => [key, madeNow('approve', at)]),
                           ),

@@ -9,6 +9,9 @@ const heading = (page: Page) => page.getByRole('heading', { level: 1 });
 test('a run can start with additional instructions that stay with it', async ({
   page,
 }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('safepoint.dev.run-debug', 'on');
+  });
   await page.goto('/processes/brunch-orders');
   await page.getByRole('button', { name: 'Start run with a note' }).click();
   const note = page.getByRole('textbox', {
@@ -36,4 +39,28 @@ test('a run id the list does not hold selects nothing, and leaves the address', 
   await page.goto('/processes/brunch-orders?run=run-1790000000000');
   await expect(heading(page)).toHaveText('No run selected');
   await expect(page).not.toHaveURL(/run=/);
+});
+
+test('the runs column fades edges only while runs extend past them', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 420 });
+  await page.goto('/processes/brunch-orders');
+  const aside = page.locator('.process-runs-list');
+  await expect(aside.locator('.sheet-row').first()).toBeVisible();
+
+  await expect(aside).not.toHaveAttribute('data-fade-top');
+  await expect(aside).toHaveAttribute('data-fade-bottom', '');
+
+  await aside.evaluate((element) => {
+    element.scrollTop = 60;
+  });
+  await expect(aside).toHaveAttribute('data-fade-top', '');
+  await expect(aside).toHaveAttribute('data-fade-bottom', '');
+
+  await aside.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+  await expect(aside).toHaveAttribute('data-fade-top', '');
+  await expect(aside).not.toHaveAttribute('data-fade-bottom');
 });

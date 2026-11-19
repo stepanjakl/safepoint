@@ -7,8 +7,8 @@ import {
   DefinitionCard,
   statusOf,
 } from '@/components/engine/rules/definition-card';
-import { StatusChip } from '@/components/engine/trial-parts';
 import { Loader } from '@/components/ui/loader';
+import { Pill } from '@/components/ui/pill';
 import { useLoader } from '@/components/ui/working-mark';
 import { cx } from '@/lib/ui/cx';
 import { SUBJECT } from '@/lib/processes/brunch-orders/data';
@@ -63,7 +63,7 @@ export function RuleContext({ load }: { load: Load }) {
         <Side label="Before">
           {list('before', (id) =>
             id === writing && load.loading ? (
-              <StatusChip tone="neutral">Writing…</StatusChip>
+              <Pill tone="neutral">Writing…</Pill>
             ) : undefined,
           )}
         </Side>
@@ -113,9 +113,9 @@ function ListOf({
                 onDecide={NOTHING}
                 chip={
                   chipFor(item.id) ?? (
-                    <StatusChip tone={statusOf(item).tone}>
+                    <Pill tone={statusOf(item).tone}>
                       {statusOf(item).label}
-                    </StatusChip>
+                    </Pill>
                   )
                 }
                 activity={

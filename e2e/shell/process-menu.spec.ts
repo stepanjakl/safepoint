@@ -326,6 +326,8 @@ test('returning to the workspace skips the intro, but refreshing replays it', as
   await expect(phrases).toHaveCount(15);
   await expect(phrases.first()).toHaveCSS('opacity', '1');
   await expect(phrases.last()).toHaveCSS('opacity', '1');
+  await expect(page.locator('.walkthrough-hint')).toBeVisible();
+  await page.keyboard.press('Escape');
   await expect(page.locator('.workspace-menu-shine')).toHaveAttribute(
     'data-shine',
     'true',

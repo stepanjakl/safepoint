@@ -90,6 +90,9 @@ let stale = false;
 let current = calculation.fingerprint;
 
 test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('safepoint.dev.run-debug', 'on');
+  });
   await seedKeptRulebooks(page);
   stale = false;
   current = calculation.fingerprint;

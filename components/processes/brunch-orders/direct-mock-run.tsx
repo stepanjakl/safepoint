@@ -11,17 +11,34 @@ import {
 } from '@/components/app-shell/thread/model-run-thread';
 import {
   ThreadPlayerBar,
+  usePersistedMockStage,
   useSlowMotion,
   type ThreadPlayerStep,
 } from '@/components/app-shell/thread/thread-player';
 import type { Decision } from '@/components/engine/propose/types';
-import { DiscardRun } from '@/components/engine/run-parts';
 import {
   brunchDirectScript,
   type ScriptedStage,
 } from '@/lib/processes/brunch-orders/direct-script';
-import { MODEL_RUN_STAGE_LABELS } from '@/lib/shell/model-run';
+import {
+  MODEL_RUN_STAGE_LABELS,
+  type ModelRunStage,
+} from '@/lib/shell/model-run';
+import type { RunStatus } from '@/lib/shell/model';
 import { motionTime } from '@/lib/ui/motion-time';
+
+const STAGE_TO_RUN_STATUS: Record<ModelRunStage, RunStatus> = {
+  starting: 'queued',
+  reading: 'running',
+  evaluating: 'running',
+  awaiting_review: 'awaiting_review',
+  reviewing: 'awaiting_review',
+  ready_to_commit: 'approved',
+  committing: 'approved',
+  intervention: 'held',
+  committed: 'completed',
+  stopped: 'failed',
+};
 
 const STEP_MS = 5200;
 const STAGE_HOLD_MS: Partial<Record<string, number>> = { starting: 2800 };
@@ -94,7 +111,8 @@ export function DirectMockRun({
     [allStages],
   );
 
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = usePersistedMockStage(runId, steps);
+  const [runKey, setRunKey] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [rate, setRate] = useState(1);
   const container = useRef<HTMLDivElement>(null);
@@ -142,9 +160,15 @@ export function DirectMockRun({
       motionTime(hold) / rate,
     );
     return () => clearTimeout(timer);
-  }, [running, index, scripted.key, frames, lastMainIndex, rate]);
+  }, [running, index, scripted.key, frames, lastMainIndex, rate, setIndex]);
 
   const activeView = frames[at]?.view ?? scripted.view;
+  const nextStatus = STAGE_TO_RUN_STATUS[activeView.stage];
+  const setMockStatus = selection.setMockStatus;
+  useEffect(() => {
+    setMockStatus?.(runId, nextStatus);
+  }, [runId, nextStatus, setMockStatus]);
+
   const runNote = selection.live?.kept.additionalInstructions;
   const { view, actions } = useScriptedActions(
     runNote
@@ -166,10 +190,14 @@ export function DirectMockRun({
         rate={rate}
         onSelect={(next) => {
           setPlaying(false);
+          setFrame({ index: next, at: 0 });
+          if (next === 0) setRunKey((key) => key + 1);
           setIndex(next);
         }}
         onTogglePlay={() => {
           if (isBranch || atLastMain) {
+            setFrame({ index: 0, at: 0 });
+            setRunKey((key) => key + 1);
             setIndex(0);
             setPlaying(true);
           } else {
@@ -178,14 +206,13 @@ export function DirectMockRun({
         }}
         onRateChange={setRate}
       />
-      <ModelRunThread run={view} actions={actions} look="proposed" keepOpen />
-      <div className="border-rule-faint mt-8 flex flex-wrap items-center gap-3 border-t pt-4">
-        <DiscardRun
-          selection={selection}
-          id={runId}
-          words="Takes this mock run off the list. Nothing was called or written."
-        />
-      </div>
+      <ModelRunThread
+        key={runKey}
+        run={view}
+        actions={actions}
+        look="proposed"
+        keepOpen
+      />
     </div>
   );
 }

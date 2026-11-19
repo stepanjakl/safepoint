@@ -36,6 +36,11 @@
   --color-severity-pill-ring: var(--severity-pill-ring);
   --color-severity-pill-ink: var(--severity-pill-ink);
   --color-severity-pill-strong: var(--severity-pill-strong);
+  --color-neutral-pill: var(--sp-neutral-pill);
+  --color-neutral-pill-hover: var(--sp-neutral-pill-hover);
+  --color-neutral-pill-ring: var(--sp-neutral-pill-ring);
+  --color-neutral-pill-ink: var(--sp-neutral-pill-ink);
+  --color-neutral-pill-strong: var(--sp-neutral-pill-strong);
   --color-severity-solid: light-dark(var(--severity-11), var(--severity-7));
   --color-severity-on-solid: light-dark(var(--severity-1), var(--severity-12));
   --color-severity-bar: var(--severity-9);
@@ -46,68 +51,6 @@
 }
 
 @layer components {
-  /* Coloured pills follow the ground by shifting their Radix rungs' OKLab
-     lightness; neutral pills read generated ramp steps directly so low-chroma
-     neutrals never drop hue to `none` (0deg) in relative colour syntax. */
-  [data-severity='0'],
-  [data-severity='1'],
-  [data-severity='3'] {
-    --severity-pill: light-dark(
-      oklch(
-        from var(--severity-4) calc(l + var(--sp-ground-lift-light) - var(--sp-layer-lift-light)) c
-          h
-      ),
-      oklch(
-        from var(--severity-5) calc(l + var(--sp-ground-lift-dark) - var(--sp-layer-lift-dark)) c h
-      )
-    );
-    --severity-pill-hover: light-dark(
-      oklch(
-        from var(--severity-4)
-          calc(
-            l + var(--sp-ground-lift-light) - var(--sp-layer-lift-light) -
-              var(--pill-hover-lift-light, 2 * var(--sp-layer-lift-light))
-          )
-          c h
-      ),
-      oklch(
-        from var(--severity-5)
-          calc(
-            l + var(--sp-ground-lift-dark) - var(--sp-layer-lift-dark) +
-              var(--pill-hover-lift-dark, 2 * var(--sp-layer-lift-dark))
-          )
-          c h
-      )
-    );
-    --severity-pill-ring: light-dark(
-      oklch(
-        from var(--severity-5) calc(l + var(--sp-ground-lift-light) - var(--sp-layer-lift-light)) c
-          h
-      ),
-      oklch(
-        from var(--severity-6) calc(l + var(--sp-ground-lift-dark) - var(--sp-layer-lift-dark)) c h
-      )
-    );
-    --severity-pill-ink: light-dark(
-      oklch(
-        from color-mix(in oklab, var(--severity-12) 40%, var(--severity-11))
-          calc(l + var(--sp-ground-lift-light) - var(--sp-layer-lift-light)) c h
-      ),
-      oklch(
-        from var(--severity-11) calc(l + var(--sp-ground-lift-dark) - var(--sp-layer-lift-dark)) c h
-      )
-    );
-    --severity-pill-strong: light-dark(
-      oklch(
-        from var(--severity-12) calc(l + var(--sp-ground-lift-light) - var(--sp-layer-lift-light)) c
-          h
-      ),
-      oklch(
-        from var(--severity-12) calc(l + var(--sp-ground-lift-dark) - var(--sp-layer-lift-dark)) c h
-      )
-    );
-  }
-
   /* Coloured pills follow the ground by shifting their Radix rungs' OKLab
      lightness; neutral pills read generated ramp steps directly so low-chroma
      neutrals never drop hue to `none` (0deg) in relative colour syntax. */

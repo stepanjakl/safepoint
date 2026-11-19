@@ -80,33 +80,213 @@ test('the arrow lines up with the title and both layers animate out', async ({
   await expect(backdrop).toHaveCount(0);
 });
 
-test('the hint preserves focus and completes through keyboard activation', async ({
+test('the hint preserves focus and advances through keyboard activation', async ({
   page,
 }) => {
   await page.goto('/workspace');
   const hint = page.locator('.walkthrough-hint');
-  await expect(hint).toBeVisible();
+  await expect(hint).toHaveAttribute('data-walkthrough-step', 'open-processes');
   await expect(page.locator('body')).toBeFocused();
   await expect(page.locator('.walkthrough-backdrop')).toBeVisible();
   const processes = page.getByRole('button', { name: /^Processes/ });
   await expect(processes).toHaveAccessibleDescription(
-    /review the changes before approving them/,
+    /review before approving/,
   );
   await processes.focus();
   await page.keyboard.press('Enter');
-  await expect(hint).toHaveCount(0);
-  await expect(page.locator('.walkthrough-backdrop')).toHaveCount(0);
   const back = page.getByRole('button', { name: 'Back to workspace menu' });
   await expect(back).toBeFocused();
+  await expect(hint).toHaveAttribute('data-walkthrough-step', 'pick-process');
+  // Returning to the workspace menu without leaving /workspace does not restart step 1.
   await back.click();
   await expect(processes).toBeFocused();
   await expect(hint).toHaveCount(0);
   await expect(processes).not.toHaveAttribute('aria-describedby');
   await page.reload();
-  await expect(hint).toBeVisible();
+  await expect(hint).toHaveAttribute('data-walkthrough-step', 'open-processes');
   await processes.click();
+  await expect(hint).toHaveAttribute('data-walkthrough-step', 'pick-process');
+});
+
+test('the full walkthrough runs across all four steps and restarts on /workspace', async ({
+  page,
+}) => {
+  // Landing directly on a process route never starts the walkthrough.
+  await page.goto('/processes/brunch-orders-direct');
+  const hint = page.locator('.walkthrough-hint');
   await expect(hint).toHaveCount(0);
-  await expect(page.locator('.walkthrough-backdrop')).toHaveCount(0);
+
+  // Visiting /workspace starts at step 1.
+  await page.goto('/workspace');
+  await expect(hint).toHaveAttribute('data-walkthrough-step', 'open-processes');
+  await page.getByRole('button', { name: /^Processes/ }).click();
+
+  // Step 2: non-deterministic process is first and targeted by the hint.
+  await expect(hint).toHaveAttribute('data-walkthrough-step', 'pick-process');
+  const firstProcess = page.locator('a.process-menu-link').first();
+  await expect(firstProcess).toHaveAttribute(
+    'href',
+    '/processes/brunch-orders-direct',
+  );
+  await expect(firstProcess).toHaveAccessibleDescription(/inspect its runs/);
+  await firstProcess.click();
+
+  // Step 3: start a run, with a true pill cutout matching the button box.
+  await expect(page).toHaveURL(/\/processes\/brunch-orders-direct$/);
+  await expect(hint).toHaveAttribute('data-walkthrough-step', 'start-run');
+  await expect
+    .poll(async () =>
+      page.locator('.walkthrough-cutout').evaluate((cutout) => {
+        const start = document.querySelector('button[aria-label="Start run"]');
+        const pill = start?.parentElement;
+        if (!pill) return false;
+        const box = pill.getBoundingClientRect();
+        const expectedRadius = Math.min(box.width, box.height) / 2;
+        if (cutout instanceof SVGRectElement) {
+          return (
+            Math.abs(Number(cutout.getAttribute('x')) - box.x) < 0.5 &&
+            Math.abs(Number(cutout.getAttribute('y')) - box.y) < 0.5 &&
+            Math.abs(Number(cutout.getAttribute('width')) - box.width) < 0.5 &&
+            Math.abs(Number(cutout.getAttribute('height')) - box.height) <
+              0.5 &&
+            Math.abs(Number(cutout.getAttribute('rx')) - expectedRadius) <
+              0.5 &&
+            Math.abs(Number(cutout.getAttribute('ry')) - expectedRadius) < 0.5
+          );
+        }
+        const halo = 6;
+        const c = cutout.getBoundingClientRect();
+        const radius = parseFloat(getComputedStyle(cutout).borderRadius) || 0;
+        return (
+          Math.abs(c.x - (box.x - halo)) < 0.5 &&
+          Math.abs(c.y - (box.y - halo)) < 0.5 &&
+          Math.abs(c.width - (box.width + halo * 2)) < 0.5 &&
+          Math.abs(c.height - (box.height + halo * 2)) < 0.5 &&
+          Math.abs(radius - (expectedRadius + halo)) < 0.5
+        );
+      }),
+    )
+    .toBe(true);
+  await page.getByRole('button', { name: 'Start run with a note' }).click();
+  await expect(hint).toHaveCount(0);
+  // Closing the popover keeps step 3 completed rather than reopening it.
+  await page.getByRole('button', { name: 'Cancel' }).click();
+  await expect(hint).toHaveCount(0);
+  await page.getByRole('button', { name: 'Start run with a note' }).click();
+  await page.getByRole('button', { name: 'Start mock run' }).click();
+
+  // Step 4: review and decide shows during the mock run once proposals arrive.
+  const stageSelect = page.getByRole('combobox', { name: 'Mock run stage' });
+  const reviewValue = await stageSelect
+    .locator('option', { hasText: /Awaiting review/i })
+    .first()
+    .getAttribute('value');
+  expect(reviewValue).not.toBeNull();
+  await stageSelect.selectOption(reviewValue!);
+  await expect(hint).toHaveAttribute(
+    'data-walkthrough-step',
+    'review-proposal',
+  );
+  // Step 4's cutout matches the filter track on all sides, and tooltip + arrow track scroll.
+  await expect
+    .poll(async () =>
+      page.evaluate(() => {
+        const cutout = document.querySelector('.walkthrough-cutout');
+        const track = document.querySelector('.field-track');
+        const arrow = document.querySelector(
+          '.walkthrough-hint .app-tooltip-arrow',
+        );
+        if (!cutout || !track || !arrow) return false;
+        const box = track.getBoundingClientRect();
+        const arrowBox = arrow.getBoundingClientRect();
+        const expectedRadius = Math.min(box.width, box.height) / 2;
+        const arrowCenter = arrowBox.left + arrowBox.width / 2;
+        const arrowAligned =
+          arrowCenter >= box.left && arrowCenter <= box.right;
+        if (cutout instanceof SVGRectElement) {
+          return (
+            Math.abs(Number(cutout.getAttribute('x')) - box.x) < 1 &&
+            Math.abs(Number(cutout.getAttribute('y')) - box.y) < 1 &&
+            Math.abs(Number(cutout.getAttribute('width')) - box.width) < 1 &&
+            Math.abs(Number(cutout.getAttribute('height')) - box.height) < 1 &&
+            Math.abs(Number(cutout.getAttribute('rx')) - expectedRadius) < 1 &&
+            Math.abs(Number(cutout.getAttribute('ry')) - expectedRadius) < 1 &&
+            arrowAligned
+          );
+        }
+        const halo = 6;
+        const c = cutout.getBoundingClientRect();
+        const radius = parseFloat(getComputedStyle(cutout).borderRadius) || 0;
+        return (
+          Math.abs(c.x - (box.x - halo)) < 1 &&
+          Math.abs(c.y - (box.y - halo)) < 1 &&
+          Math.abs(c.width - (box.width + halo * 2)) < 1 &&
+          Math.abs(c.height - (box.height + halo * 2)) < 1 &&
+          Math.abs(radius - (expectedRadius + halo)) < 1 &&
+          arrowAligned
+        );
+      }),
+    )
+    .toBe(true);
+  await page.getByRole('button', { name: /Approve all/ }).click();
+  await expect(hint).toHaveCount(0);
+
+  // Returning to /workspace after finishing starts the walkthrough again.
+  await page.getByRole('button', { name: 'Back to workspace menu' }).click();
+  await expect(page).toHaveURL(/\/workspace$/);
+  await expect(hint).toHaveAttribute('data-walkthrough-step', 'open-processes');
+});
+
+test('clicking outside hides the current step without cancelling later steps', async ({
+  page,
+}) => {
+  await page.goto('/workspace');
+  const hint = page.locator('.walkthrough-hint');
+  await expect(hint).toHaveAttribute('data-walkthrough-step', 'open-processes');
+
+  // Clicking outside step 1 hides it immediately.
+  await page.locator('main').click();
+  await expect(hint).toHaveCount(0);
+
+  // Opening Processes still reveals step 2.
+  await page.getByRole('button', { name: /^Processes/ }).click();
+  await expect(hint).toHaveAttribute('data-walkthrough-step', 'pick-process');
+
+  // Clicking outside step 2 hides it without cancelling step 3.
+  await page.locator('main').click();
+  await expect(hint).toHaveCount(0);
+  await page
+    .locator('a.process-menu-link[href="/processes/brunch-orders-direct"]')
+    .click();
+  await expect(hint).toHaveAttribute('data-walkthrough-step', 'start-run');
+
+  // Clicking outside step 3 hides it immediately.
+  await page.locator('main').click();
+  await expect(hint).toHaveCount(0);
+});
+
+test('dismissing any step completes the whole walkthrough until returning to /workspace', async ({
+  page,
+}) => {
+  await page.goto('/workspace');
+  const hint = page.locator('.walkthrough-hint');
+  await expect(hint).toHaveAttribute('data-walkthrough-step', 'open-processes');
+  await page.getByRole('button', { name: /^Processes/ }).click();
+  await expect(hint).toHaveAttribute('data-walkthrough-step', 'pick-process');
+
+  // Dismiss step 2: later steps must not appear on the process page.
+  await page.keyboard.press('Escape');
+  await expect(hint).toHaveCount(0);
+  await page
+    .locator('a.process-menu-link[href="/processes/brunch-orders-direct"]')
+    .click();
+  await expect(page).toHaveURL(/\/processes\/brunch-orders-direct$/);
+  await expect(hint).toHaveCount(0);
+
+  // Returning to /workspace restarts the walkthrough from step 1.
+  await page.getByRole('button', { name: 'Back to workspace menu' }).click();
+  await expect(page).toHaveURL(/\/workspace$/);
+  await expect(hint).toHaveAttribute('data-walkthrough-step', 'open-processes');
 });
 
 test('Escape and the dismiss control close the hint without trapping focus', async ({
@@ -179,11 +359,21 @@ test('the pointer fits narrow layouts and follows resizing in both themes', asyn
           const button = document.querySelector('.workspace-menu-entry');
           if (!button) return false;
           const box = button.getBoundingClientRect();
+          if (cutout instanceof SVGRectElement) {
+            return (
+              Number(cutout.getAttribute('x')) === box.x &&
+              Number(cutout.getAttribute('y')) === box.y &&
+              Number(cutout.getAttribute('width')) === box.width &&
+              Number(cutout.getAttribute('height')) === box.height
+            );
+          }
+          const halo = 6;
+          const c = cutout.getBoundingClientRect();
           return (
-            Number(cutout.getAttribute('x')) === box.x &&
-            Number(cutout.getAttribute('y')) === box.y &&
-            Number(cutout.getAttribute('width')) === box.width &&
-            Number(cutout.getAttribute('height')) === box.height
+            Math.abs(c.x - (box.x - halo)) < 0.5 &&
+            Math.abs(c.y - (box.y - halo)) < 0.5 &&
+            Math.abs(c.width - (box.width + halo * 2)) < 0.5 &&
+            Math.abs(c.height - (box.height + halo * 2)) < 0.5
           );
         }),
       )

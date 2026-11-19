@@ -5,7 +5,8 @@ import Cross from 'blode-icons-react/icons/cross-small';
 import SparkleFilled from 'blode-icons-react/icons/sparkle-filled';
 import type { ReactNode } from 'react';
 
-import { Code, StatusChip } from '@/components/engine/trial-parts';
+import { Code } from '@/components/engine/trial-parts';
+import { Pill } from '@/components/ui/pill';
 import type { DefinitionSubject } from '@/lib/engine/subject';
 import type { Definition } from '@/lib/engine/types';
 import { TRIED } from '@/lib/engine/types';
@@ -92,19 +93,17 @@ function Outcome({
     <>
       {/* The result is a value, not a verdict, so it stays neutral; whether
           it matches the model's example is said beside it. */}
-      <StatusChip tone="neutral">
-        {example.error ?? said(item, example.actual)}
-      </StatusChip>
+      <Pill tone="neutral">{example.error ?? said(item, example.actual)}</Pill>
       {example.agrees ? (
-        <StatusChip tone="ready">
+        <Pill tone="ready">
           <Check aria-hidden size={12} strokeWidth={2.75} className="me-1" />
           Matches the model
-        </StatusChip>
+        </Pill>
       ) : (
-        <StatusChip tone="blocked">
+        <Pill tone="blocked">
           <Cross aria-hidden size={12} strokeWidth={2.75} className="me-1" />
           Doesn&rsquo;t match the model
-        </StatusChip>
+        </Pill>
       )}
     </>
   );

@@ -14,8 +14,8 @@ import type { ProcessSummary } from './model';
 export const PROCESS_ROUTES: { process: ProcessSummary; href: string }[] = [
   // The two processes a deployment exists to show, built step by step
   // (docs/processes/brunch-orders/PLAN.md).
-  { process: brunchOrdersProcess, href: BRUNCH_ORDERS_HREF },
   { process: brunchOrdersDirectProcess, href: BRUNCH_ORDERS_DIRECT_HREF },
+  { process: brunchOrdersProcess, href: BRUNCH_ORDERS_HREF },
 ];
 
 export function processHref(id: string) {

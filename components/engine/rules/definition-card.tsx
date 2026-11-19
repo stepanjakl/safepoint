@@ -20,10 +20,9 @@ import {
   Examples,
   FromModel,
 } from '@/components/engine/rules-parts';
-import { StatusChip, type Tone } from '@/components/engine/trial-parts';
 import { Button } from '@/components/ui/button';
 import { MORPH_WORDS_MS, MorphingText } from '@/components/ui/morphing-text';
-import { Pill } from '@/components/ui/pill';
+import { Pill, type Tone } from '@/components/ui/pill';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cx } from '@/lib/ui/cx';
 import type { Advice } from '@/lib/engine/advise';
@@ -357,7 +356,7 @@ export function DefinitionCard({
             data-accepted={item.approvedAt ? '' : undefined}
             aria-hidden={item.approvedAt ? true : undefined}
           >
-            {chip ?? <StatusChip tone={status.tone}>{status.label}</StatusChip>}
+            {chip ?? <Pill tone={status.tone}>{status.label}</Pill>}
           </span>
         </div>
         <h4 id={headingId} className="text-dense font-semibold">

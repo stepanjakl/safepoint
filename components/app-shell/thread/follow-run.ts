@@ -1,83 +1,188 @@
 'use client';
 
 import { useEffect, useRef, useState, type RefObject } from 'react';
-import { motionTime } from '@/lib/ui/motion-time';
 
-// Long enough for a step to arrive and unfold; following ends sooner if the
-// reader takes the scroll.
-const FOLLOW_MS = 4000;
+const BOTTOM_THRESHOLD_PX = 24;
 
 const reducedMotion = () =>
   matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+export function scrollerOf(element: Element | null): HTMLElement | null {
+  for (
+    let node = element?.parentElement ?? null;
+    node;
+    node = node.parentElement
+  ) {
+    const { overflowY } = getComputedStyle(node);
+    if (overflowY === 'auto' || overflowY === 'scroll') return node;
+  }
+  return null;
+}
+
+function scrollToBottom(
+  scroller: HTMLElement | null,
+  behavior: ScrollBehavior = 'instant',
+) {
+  if (scroller) {
+    scroller.scrollTo({ top: scroller.scrollHeight, behavior });
+  } else {
+    window.scrollTo({
+      top: document.documentElement.scrollHeight,
+      behavior,
+    });
+  }
+}
+
 /*
-  Keeps a live run's newest step in view for a reader who was watching the
-  end of the thread, and only for them. One who had scrolled away to read is
-  left where they are and told a step has arrived instead: `behind` is true
-  until the newest step is on screen, and `catchUp` takes them to it.
+  Keeps a live run's newest step and growing content in view for a reader who
+  is at the bottom of the container, and only for them. One who scrolls away to
+  read is left where they are and told a step has arrived instead: `behind` is
+  true until they return to the bottom, and `catchUp` takes them there.
 */
 export function useFollowRun(
   list: RefObject<HTMLOListElement | null>,
   lastId: string | undefined,
+  hasEnd = false,
+  stepCount?: number,
+  resetKey: number | string = 0,
 ) {
   const [behind, setBehind] = useState(false);
-  // Whether the last step drawn was on screen, as last observed: read when a
-  // new one arrives, before the observer moves on to it.
-  const lastSeen = useRef(true);
+  const pinned = useRef(true);
+  const catchingUp = useRef(false);
+  // Once the reader has seen the newest section (at the bottom or via an arrival),
+  // scrolling away from it again brings the catch-up button back.
+  const canShowBehind = useRef(false);
   // The newest step last followed or passed over. Compared by id, not by
   // whether this has mounted: an effect run twice for the same step (React's
   // development check does exactly that) must not read as an arrival.
   const previousId = useRef<string | undefined>(undefined);
+  const previousCount = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     const thread = list.current;
-    const item = thread?.lastElementChild;
-    if (!thread || !item) return;
-    const arrived =
-      previousId.current !== undefined && previousId.current !== lastId;
-    previousId.current = lastId;
-    const wasWatching = lastSeen.current;
+    if (!thread) return;
 
-    const seen = new IntersectionObserver(([entry]) => {
-      lastSeen.current = entry?.isIntersecting ?? false;
-      if (lastSeen.current) setBehind(false);
-    });
-    seen.observe(item);
-    if (!arrived) return () => seen.disconnect();
-    if (!wasWatching) {
-      const timer = setTimeout(() => setBehind(true));
-      return () => {
-        clearTimeout(timer);
-        seen.disconnect();
-      };
-    }
+    const scroller = scrollerOf(thread);
+    const scrollTarget = scroller ?? window;
+    const atBottom = () => {
+      if (scroller) {
+        return (
+          scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight <=
+          BOTTOM_THRESHOLD_PX
+        );
+      }
+      const doc = document.documentElement;
+      return (
+        doc.scrollHeight - window.scrollY - window.innerHeight <=
+        BOTTOM_THRESHOLD_PX
+      );
+    };
 
-    // Follow while the step arrives and unfolds, frame by frame with its
-    // growth rather than smoothly, so the scroll moves exactly as it does.
-    let following = true;
-    const stop = () => (following = false);
+    const atLatest = () => {
+      const latest = thread.lastElementChild;
+      if (!latest) return false;
+      const viewportBottom = scroller
+        ? scroller.getBoundingClientRect().bottom
+        : window.innerHeight;
+      return (
+        latest.getBoundingClientRect().top <=
+        viewportBottom - BOTTOM_THRESHOLD_PX
+      );
+    };
+
+    // Start pinned so a newly started run auto-follows before the user has
+    // scrolled (including while content is still shorter than the container).
+    pinned.current = true;
+    catchingUp.current = false;
+    canShowBehind.current = false;
+    const clearBehind = resetKey ? setTimeout(() => setBehind(false)) : null;
+
+    const onScroll = () => {
+      const bottom = atBottom();
+      if (bottom) {
+        pinned.current = true;
+      } else if (!catchingUp.current) {
+        pinned.current = false;
+      }
+
+      if (bottom || atLatest()) {
+        catchingUp.current = false;
+        canShowBehind.current = true;
+        setBehind(false);
+      } else if (!catchingUp.current && canShowBehind.current) {
+        setBehind(true);
+      }
+    };
+
+    const onUserInput = () => {
+      catchingUp.current = false;
+    };
+
+    // Follow frame by frame as steps arrive or expand while pinned to bottom.
+    // Skip the initial observation on mount so opening a run does not jump.
+    let initialized = false;
     const growth = new ResizeObserver(() => {
-      if (following) item.scrollIntoView({ block: 'nearest' });
+      if (!initialized) {
+        initialized = true;
+        return;
+      }
+      if (pinned.current) scrollToBottom(scroller);
     });
     growth.observe(thread);
-    const end = setTimeout(stop, motionTime(FOLLOW_MS));
-    const taken = ['wheel', 'touchmove', 'keydown'] as const;
-    taken.forEach((type) =>
-      window.addEventListener(type, stop, { passive: true }),
+
+    scrollTarget.addEventListener('scroll', onScroll, { passive: true });
+    const inputs = ['wheel', 'touchmove', 'keydown'] as const;
+    inputs.forEach((type) =>
+      window.addEventListener(type, onUserInput, { passive: true }),
     );
     return () => {
-      seen.disconnect();
+      if (clearBehind) clearTimeout(clearBehind);
       growth.disconnect();
-      clearTimeout(end);
-      taken.forEach((type) => window.removeEventListener(type, stop));
+      scrollTarget.removeEventListener('scroll', onScroll);
+      inputs.forEach((type) => window.removeEventListener(type, onUserInput));
     };
-  }, [list, lastId]);
+  }, [list, resetKey]);
+
+  useEffect(() => {
+    const restarted =
+      stepCount !== undefined &&
+      previousCount.current !== undefined &&
+      stepCount < previousCount.current;
+    previousCount.current = stepCount;
+
+    const arrived =
+      !restarted &&
+      previousId.current !== undefined &&
+      previousId.current !== lastId;
+    previousId.current = lastId;
+
+    if (restarted) {
+      pinned.current = true;
+      catchingUp.current = false;
+      canShowBehind.current = false;
+      const timer = setTimeout(() => setBehind(false));
+      return () => clearTimeout(timer);
+    }
+
+    if (arrived) {
+      canShowBehind.current = true;
+      if (pinned.current) {
+        scrollToBottom(scrollerOf(list.current));
+      } else {
+        const timer = setTimeout(() => setBehind(true));
+        return () => clearTimeout(timer);
+      }
+    } else if (hasEnd && pinned.current) {
+      scrollToBottom(scrollerOf(list.current));
+    }
+  }, [list, lastId, hasEnd, stepCount]);
 
   const catchUp = () => {
-    list.current?.lastElementChild?.scrollIntoView({
-      block: 'nearest',
-      behavior: reducedMotion() ? 'auto' : 'smooth',
-    });
+    pinned.current = true;
+    canShowBehind.current = true;
+    const smooth = !reducedMotion();
+    catchingUp.current = smooth;
+    scrollToBottom(scrollerOf(list.current), smooth ? 'smooth' : 'instant');
     setBehind(false);
   };
 
