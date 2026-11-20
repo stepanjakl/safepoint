@@ -21,7 +21,18 @@ const NOTHING: Quota = {
 };
 
 export function quotaOf(cause: unknown): Quota {
-  if (!APICallError.isInstance(cause) || !cause.responseBody) return NOTHING;
+  if (!APICallError.isInstance(cause)) return NOTHING;
+  const retryAfter = cause.responseHeaders?.['retry-after']?.trim();
+  const secondsFromHeader = retryAfter ? Number(retryAfter) : Number.NaN;
+  const waitFromHeader = Number.isFinite(secondsFromHeader)
+    ? secondsFromHeader * 1000
+    : retryAfter
+      ? Date.parse(retryAfter) - Date.now()
+      : Number.NaN;
+  const headerDelay = Number.isFinite(waitFromHeader)
+    ? Math.max(0, Math.ceil(waitFromHeader))
+    : null;
+  if (!cause.responseBody) return { ...NOTHING, retryAfterMs: headerDelay };
   try {
     const body = JSON.parse(cause.responseBody) as {
       error?: {
@@ -48,7 +59,9 @@ export function quotaOf(cause: unknown): Quota {
             .replace(/([a-z])([A-Z])/g, '$1 $2')
             .toLowerCase()}${violation.quotaValue ? `, limit ${Number(violation.quotaValue).toLocaleString('en-GB')}` : ''}`
         : null,
-      retryAfterMs: Number.isFinite(seconds) ? Math.ceil(seconds * 1000) : null,
+      retryAfterMs: Number.isFinite(seconds)
+        ? Math.ceil(seconds * 1000)
+        : headerDelay,
       window: /PerMinute/.test(id)
         ? 'minute'
         : /PerDay/.test(id)
@@ -58,6 +71,6 @@ export function quotaOf(cause: unknown): Quota {
       model: violation?.quotaDimensions?.model ?? null,
     };
   } catch {
-    return NOTHING;
+    return { ...NOTHING, retryAfterMs: headerDelay };
   }
 }

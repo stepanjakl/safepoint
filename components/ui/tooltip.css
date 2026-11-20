@@ -182,9 +182,31 @@
         inset 0 0 0 calc(var(--edge-ring) + var(--highlight-pane)) var(--tooltip-highlight),
         0 0 0 var(--highlight-outline) var(--tooltip-outline);
     }
+    /* Outline sits under the fill: edge (0.75) + 2 * outline (0.75) = 2.25. */
+    :root[data-edges='retina'] .tooltip-arrow-outline {
+      stroke-width: 2.25;
+    }
     :root[data-edges='retina'] .tooltip-arrow-edge,
     :root[data-edges='retina'] .tooltip-arrow-highlight {
       stroke-width: 0.75;
+    }
+    /* With border-width: 0, OverlayArrow anchors at the outer edge (1px further
+       out than default), so shift by 1 + 0.375 = 1.375px to align ARROW.edge
+       (y=1) on the 0.75px inset ring, and nudge highlight +0.25px to y=0.25. */
+    :root[data-edges='retina'] .tooltip-arrow-highlight {
+      transform: translateY(0.25px);
+    }
+    :root[data-edges='retina'] .app-tooltip-arrow svg {
+      transform: translateY(-1.375px);
+    }
+    :root[data-edges='retina'] .app-tooltip-arrow[data-placement='bottom'] svg {
+      transform: translateY(1.375px) rotate(180deg);
+    }
+    :root[data-edges='retina'] .app-tooltip-arrow[data-placement='left'] svg {
+      transform: translateX(-1.375px) rotate(-90deg);
+    }
+    :root[data-edges='retina'] .app-tooltip-arrow[data-placement='right'] svg {
+      transform: translateX(1.375px) rotate(90deg);
     }
   }
 

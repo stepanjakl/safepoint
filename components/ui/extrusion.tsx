@@ -541,6 +541,7 @@ export function Extrusion({
               fill="none"
               stroke="white"
               strokeWidth={STROKE}
+              style={{ strokeWidth: 'var(--edge-hairline)' }}
               strokeLinecap="round"
               strokeLinejoin="round"
             />

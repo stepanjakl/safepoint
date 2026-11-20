@@ -3,6 +3,7 @@ import 'server-only';
 import { z } from 'zod';
 
 import { limitsOf, limitsReady } from '@/lib/engine/limits';
+import { availableModels } from '@/lib/engine/model-provider';
 import { DRAFTING_MODELS, draftingModelSchema } from '@/lib/models';
 
 import { gatedProcedure, router } from '../trpc';
@@ -12,6 +13,7 @@ import { gatedProcedure, router } from '../trpc';
   Google nothing.
 */
 export const modelLimitsRouter = router({
+  available: gatedProcedure.query(availableModels),
   get: gatedProcedure
     .input(z.strictObject({ model: draftingModelSchema }))
     .query(async ({ input }) => {

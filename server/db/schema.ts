@@ -21,6 +21,7 @@ import {
 
 import type { CrossCheck } from '@/lib/engine/calculate';
 import type { KeptRead } from '@/lib/engine/records';
+import type { ModelPlan } from '@/lib/models';
 import type {
   AppliedDecision,
   CellChange,
@@ -366,6 +367,7 @@ export const runs = pgTable(
     status: text('status').notNull(),
     trigger: text('trigger').notNull(),
     additionalInstructions: text('additional_instructions'),
+    modelPlan: text('model_plan').$type<ModelPlan>(),
     startedBy: text('started_by'),
     startedAt: instant('started_at').notNull(),
     updatedAt: instant('updated_at').notNull().defaultNow(),

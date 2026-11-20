@@ -505,6 +505,7 @@ test('rows wait for a process navigation fade', async ({ page }) => {
               trigger: 'manual',
               instructions: { version: 'v1', hash: 'test-hash' },
               additionalInstructions: null,
+              modelPlan: null,
               readId: null,
               rulebook: null,
             },

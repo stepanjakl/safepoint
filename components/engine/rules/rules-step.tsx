@@ -21,6 +21,7 @@ import {
   words,
   type Sentences,
 } from '@/components/engine/rules/definition-card';
+import type { ModelPlan } from '@/lib/models';
 import { DraftControl } from '@/components/engine/rules/draft-control';
 import {
   AwaitedExamples,
@@ -94,6 +95,8 @@ export function RulesStep({
   text,
   version,
   readId,
+  runId,
+  modelPlan,
   onProgress,
   debug = false,
   mock = false,
@@ -103,6 +106,8 @@ export function RulesStep({
   text: string;
   version: string;
   readId: string | null;
+  runId?: string;
+  modelPlan?: ModelPlan | null;
   onProgress: (progress: RulesProgress) => void;
   debug?: boolean;
   mock?: boolean;
@@ -281,7 +286,7 @@ export function RulesStep({
     )
       return;
     autoDrafted.current = true;
-    draft.mutate({ text, version, readId });
+    draft.mutate({ text, version, readId, runId });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     debug,
@@ -382,7 +387,7 @@ export function RulesStep({
                 onWrite={() =>
                   !mock &&
                   readId &&
-                  rewrite.mutate({ text, readId, id: item.id })
+                  rewrite.mutate({ text, readId, id: item.id, runId })
                 }
                 chip={
                   <Crossfade id={stage} className="draft-chip">
@@ -443,7 +448,7 @@ export function RulesStep({
                   !mock && choose.mutate({ text, id: item.id, index })
                 }
                 onAdvise={() =>
-                  advise.mutateAsync({ text, id: item.id }).then(
+                  advise.mutateAsync({ text, id: item.id, runId }).then(
                     ({ advice }) => advice,
                     (error: unknown) => {
                       throw new Error(saidBy(error) ?? 'No answer came back.');
@@ -563,6 +568,7 @@ export function RulesStep({
             canDraft={readId !== null && dataConfirmed}
             busy={busy}
             mock={mock}
+            modelPlan={modelPlan}
             onDraft={(model) =>
               !mock &&
               readId &&
@@ -570,6 +576,7 @@ export function RulesStep({
                 text,
                 version,
                 readId,
+                runId,
                 ...(model ? { model } : {}),
               })
             }
@@ -609,7 +616,7 @@ export function RulesStep({
                     size="small"
                     isDisabled={busy}
                     onPress={() =>
-                      !mock && draft.mutate({ text, version, readId })
+                      !mock && draft.mutate({ text, version, readId, runId })
                     }
                   >
                     Try again

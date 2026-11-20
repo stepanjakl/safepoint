@@ -13,6 +13,8 @@ import { evaluationSchema } from '@/server/operations/kept-processes';
 import { keptProposal } from '@/server/storage/reads/proposals';
 
 import { runFields, runProcedure, staleReply } from '../run-procedure';
+import { runIdSchema } from '@/server/storage/ids';
+import { modelForRun } from '@/server/storage/runs/runs';
 import { router } from '../trpc';
 
 /*
@@ -64,7 +66,11 @@ export const proposeRouter = router({
   ),
 
   start: runProcedure(
-    z.strictObject({ ...run, model: draftingModelSchema.optional() }),
+    z.strictObject({
+      ...run,
+      model: draftingModelSchema.optional(),
+      runId: runIdSchema.optional(),
+    }),
   ).mutation(async ({ ctx, input }) => {
     if (ctx.stale) return staleReply(ctx.stale);
     await startProposal(
@@ -74,7 +80,11 @@ export const proposeRouter = router({
       input.readId,
       input.text,
       {
-        model: input.model,
+        model: await modelForRun(
+          ctx.process.summary.id,
+          input.runId,
+          input.model,
+        ),
       },
     );
     return await proposalOf(ctx, input.readId);

@@ -235,7 +235,7 @@ function DirectThread({
     )
       return;
     autoProposed.current = true;
-    startProposal.mutate(runInput);
+    startProposal.mutate({ ...runInput, runId: kept.id });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canPropose, answer]);
 
@@ -539,6 +539,7 @@ function DirectThread({
       version: kept.instructions.version,
       text,
       note: kept.additionalInstructions,
+      modelPlan: kept.modelPlan,
     },
     sourceKind,
     read: read ?? null,
@@ -592,7 +593,7 @@ function DirectThread({
       stopped?.at === 'sources'
         ? readFromLive
         : stopped?.at === 'evaluation'
-          ? () => startProposal.mutate(runInput)
+          ? () => startProposal.mutate({ ...runInput, runId: kept.id })
           : undefined,
     onStartMock: selection.startMock
       ? () => void selection.startMock?.()

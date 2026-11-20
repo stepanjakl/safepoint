@@ -9,6 +9,7 @@ import {
   useSyncExternalStore,
 } from 'react';
 import type { ProcessRun, ProcessSummary, RunStatus } from '@/lib/shell/model';
+import type { ModelPlan } from '@/lib/models';
 import { useInstructions } from '@/components/app-shell/instructions/instructions-store';
 import { mockStageStorageKey } from '@/components/app-shell/thread/thread-player';
 import { useWalkthrough } from '@/components/app-shell/walkthrough';
@@ -118,7 +119,12 @@ export type RunSelection = {
   // Null where this process cannot start a run, or while one is starting. The
   // text, when given, is kept with the run. Answers whether a run was started:
   // it is waited for, since the server names it.
-  start: ((additionalInstructions?: string) => Promise<boolean>) | null;
+  start:
+    | ((
+        additionalInstructions?: string,
+        modelPlan?: ModelPlan,
+      ) => Promise<boolean>)
+    | null;
   // Starts a local mock run in memory only (no server call, no database write).
   startMock: ((additionalInstructions?: string) => boolean) | null;
   // Why start is null, for the control that would have offered it.
@@ -186,6 +192,7 @@ function createMockRun(
       hash: hash ?? 'mock',
     },
     additionalInstructions: additionalInstructions || null,
+    modelPlan: null,
     readId: null,
     rulebook: null,
   };
@@ -276,13 +283,14 @@ export function useRunSelectionState({
         ? 'Reading the instructions…'
         : null;
 
-  const start = async (additionalInstructions = '') => {
+  const start = async (additionalInstructions = '', modelPlan?: ModelPlan) => {
     if (cannotStart) return false;
     try {
       const run = await kept.start.mutateAsync({
         process: process.id as RunProcessId,
         instructions: current.hash!,
         additionalInstructions: additionalInstructions || null,
+        modelPlan,
       });
       setSelected(run.id);
       return true;

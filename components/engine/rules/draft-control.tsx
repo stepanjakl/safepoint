@@ -6,7 +6,14 @@ import { ModelLimits } from '@/components/engine/model-limits';
 import { ModelSelect } from '@/components/engine/rules/model-select';
 import { plural } from '@/components/engine/trial-parts';
 import { Button } from '@/components/ui/button';
-import type { DraftingModel } from '@/lib/models';
+import {
+  GEMINI_FIND,
+  GEMINI_WRITE,
+  modelPlanLabel,
+  modelsFor,
+  type DraftingModel,
+  type ModelPlan,
+} from '@/lib/models';
 
 /*
   A new rulebook for these instructions, from the data as this run read it:
@@ -20,6 +27,7 @@ export function DraftControl({
   busy,
   onDraft,
   mock = false,
+  modelPlan,
 }: {
   kept: number;
   accepted: number;
@@ -28,8 +36,12 @@ export function DraftControl({
   // No model: the recommended pair, one to find and one to write.
   onDraft: (model: DraftingModel | null) => void;
   mock?: boolean;
+  modelPlan?: ModelPlan | null;
 }) {
   const [model, setModel] = useState<DraftingModel | null>(null);
+  const quotaModel = modelPlan
+    ? modelsFor({ plan: modelPlan }, [GEMINI_FIND])[0]
+    : model;
   const [confirming, setConfirming] = useState(false);
   const draftButton = useRef<HTMLButtonElement>(null);
   const cancel = () => {
@@ -39,12 +51,18 @@ export function DraftControl({
   return (
     <div className="grid gap-2">
       <div className="flex flex-wrap items-end gap-3">
-        <ModelSelect
-          model={model}
-          busy={busy}
-          recommended="3.6 Flash to find, 3.5 Flash-Lite to write"
-          onChange={setModel}
-        />
+        {modelPlan ? (
+          <p className="text-meta text-muted">
+            Using {modelPlanLabel(modelPlan)}
+          </p>
+        ) : (
+          <ModelSelect
+            model={model}
+            busy={busy}
+            recommended="3.6 Flash to find, 3.5 Flash-Lite to write"
+            onChange={setModel}
+          />
+        )}
         {confirming ? (
           <>
             <Button
@@ -70,18 +88,18 @@ export function DraftControl({
           </Button>
         )}
       </div>
-      {model ? (
-        <ModelLimits model={model} enabled={!mock} />
+      {quotaModel && modelPlan !== 'gemini' ? (
+        <ModelLimits model={quotaModel} enabled={!mock} />
       ) : (
         <>
-          <ModelLimits model="gemini-3.6-flash" enabled={!mock} />
-          <ModelLimits model="gemini-3.5-flash-lite" enabled={!mock} />
+          <ModelLimits model={GEMINI_FIND} enabled={!mock} />
+          <ModelLimits model={GEMINI_WRITE} enabled={!mock} />
         </>
       )}
       <p className="text-meta text-muted max-w-prose">
         {confirming
           ? `This replaces the ${plural(kept, 'definition')} kept for these instructions${accepted ? `, and the ${accepted} you accepted,` : ''} with a new draft worked out on the data as this run read it.`
-          : 'Finds the calculations and checks in the instructions, then writes each one on the data as this run read it. If the model is busy or out of quota, the next one of its family answers.'}
+          : 'Finds the calculations and checks in the instructions, then writes each one on the data as this run read it. Gemini models fall back within their family when busy or out of quota.'}
       </p>
     </div>
   );

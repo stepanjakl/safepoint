@@ -23,6 +23,7 @@
     "test:postgres": "vitest run --testTimeout 300000 server/db/postgres.test.ts server/db/postgres-schema.test.ts",
     "check:sidebars": "playwright test e2e/shell/sidebars.spec.ts --project=light",
     "check:rail": "node scripts/checks/check-rail-alignment.ts",
+    "check:edges": "node scripts/checks/check-retina-edges.ts",
     "check:contrast": "playwright test",
     "check:visual": "playwright test e2e/design/visual.spec.ts",
     "check:visual:update": "UPDATE_VISUAL=1 playwright test e2e/design/visual.spec.ts",
@@ -46,6 +47,7 @@
   },
   "dependencies": {
     "@ai-sdk/google": "4.0.109",
+    "@ai-sdk/openai-compatible": "3.0.83",
     "@composio/core": "0.27.0",
     "@floating-ui/react-dom": "^2.1.9",
     "@marcbachmann/cel-js": "8.0.0",

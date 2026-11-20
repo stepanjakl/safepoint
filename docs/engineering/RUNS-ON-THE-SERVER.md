@@ -32,6 +32,8 @@ Until 5b landed, a Brunch orders run, its decisions and any instructions version
 
 The direct process differs: it has no Rules or Calculate step, reads the live sheet as the run opens, proposes at once, and works under the empty rulebook of its instructions (`noRules(text)`), so it never pins one.
 
+Start run's options save an optional note and a model plan. The plan is fixed once the run starts. Drafting, rewriting, advice, cross-checking and proposals look it up by the run's id. A single model leads its provider's fallback order. The Gemini fleet keeps separate orders for finding and writing rules. A run can reuse an approved rulebook for its instruction version. Captured reads for these runs have distinct ids so one provider's proposal and cross-check results cannot be picked up by a different run on the same snapshot.
+
 On the server (`runs`): the id is the server's; `instructions_hash` names a kept `instruction_versions` row; `read_id` is set by `runs.record` and may be replaced; `rulebook_id` is the pin (rulebook process only), cleared with `rulebook: null`; `stage` is the step the screen shows as latest, `status` is one of `running`, `awaiting_review`, `approved`, `completed`; `discarded_at` marks a discarded run, which the list leaves out and which moves no further. Decisions are `record_decisions` events; rules, calculate, propose and apply progress are not kept, but worked out from what they summarise (table below).
 
 ## Procedures

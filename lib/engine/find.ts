@@ -7,7 +7,11 @@ import { columnsOf, plain, proposalWords } from './prompts';
 import { fitting, sourceOf, type KeptRead } from './records';
 import { hashOf } from './fingerprint';
 import type { DefinitionProcess, DefinitionSet } from './types';
-import { fallbackChain, type DraftingModel } from '@/lib/models';
+import {
+  modelsFor,
+  type DraftingModel,
+  type ModelPreference,
+} from '@/lib/models';
 import type { DefinitionSubject } from './subject';
 
 /*
@@ -173,7 +177,7 @@ export function labelProblems(
 
 // How the model is asked: which, through what, and who records each call.
 export type Asking = {
-  model?: DraftingModel | null;
+  model?: ModelPreference | null;
   resolve?: Resolve;
   record?: RecordAttempt;
 };
@@ -189,9 +193,10 @@ export async function foundDefinitions(
   const { subject } = owner;
   if (read) fitting(read, subject.data);
   const sentences = sentencesOf(text);
-  const asking = (problems: string[]) =>
+  const models = modelsFor(chosen, DRAFT_MODELS);
+  const asking = (candidates: DraftingModel[], problems: string[]) =>
     ask(
-      chosen ? fallbackChain(chosen) : DRAFT_MODELS,
+      candidates,
       findSchema(subject),
       [
         'You read the instructions of a process and list what they ask, nothing more.',
@@ -236,11 +241,19 @@ export async function foundDefinitions(
     ...accountingProblems(sentences, found),
     ...labelProblems(found, subject),
   ];
-  let { output, model } = await asking([]);
+  let { output, model } = await asking(models, []);
   const refused = problemsOf(output);
   if (refused.length) {
-    ({ output, model } = await asking(refused));
-    const left = problemsOf(output);
+    const chosenPlan = chosen !== null && typeof chosen !== 'string';
+    const starting = chosenPlan ? models.slice(models.indexOf(model)) : models;
+    ({ output, model } = await asking(starting, refused));
+    let left = problemsOf(output);
+    let remaining = models.slice(models.indexOf(model) + 1);
+    while (chosenPlan && left.length && remaining.length) {
+      ({ output, model } = await asking(remaining, left));
+      left = problemsOf(output);
+      remaining = models.slice(models.indexOf(model) + 1);
+    }
     if (left.length)
       throw new Error(
         `The model did not account for the instructions, so nothing was replaced: ${left.slice(0, 3).join(' ')}`,

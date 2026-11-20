@@ -52,6 +52,8 @@ pnpm dev
 
 The application is then served at http://localhost:3000. The app runs without credentials. The development-only model pages need `GOOGLE_GENERATIVE_AI_API_KEY`, and reading the Google Sheet needs the Composio variables listed in `.env.example`; put real values in `.env.local`.
 
+To try Groq or OpenRouter, add `GROQ_API_KEY` or `OPENROUTER_API_KEY` to `.env.local` and restart the dev server. Open the arrow beside Start run to choose a provider fleet or a specific starting model. The run uses the fallback order for that selection.
+
 Checks:
 
 ```bash

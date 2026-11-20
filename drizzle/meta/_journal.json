@@ -71,6 +71,13 @@
       "when": 1794880324982,
       "tag": "0009_run_rulebook_key",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795144098959,
+      "tag": "0010_run_model_plan",
+      "breakpoints": true
     }
   ]
 }

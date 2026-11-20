@@ -1,6 +1,6 @@
 import 'server-only';
 
-import type { DraftingModel } from '@/lib/models';
+import type { ModelPreference } from '@/lib/models';
 import type { JobKey } from '@/server/jobs/run-job';
 
 /*
@@ -17,7 +17,7 @@ export type Outcome<T> = { done: T } | { stopped: string };
 
 export type DraftRun = JobRun & {
   readId: string;
-  model: DraftingModel | null;
+  model: ModelPreference | null;
 };
 
 export type DraftFind = DraftRun & {
@@ -38,5 +38,5 @@ export type ProposalRun = JobRun & {
   readId: string;
   fingerprint: string;
   rules: boolean;
-  model: DraftingModel | null;
+  model: ModelPreference | null;
 };

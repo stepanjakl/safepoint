@@ -100,6 +100,7 @@ const READ_ROW = cx(
 export function ReadStep({
   kind,
   read,
+  runId,
   loadingRead = false,
   readError = null,
   onRead,
@@ -111,6 +112,7 @@ export function ReadStep({
   // The kind of source the run reads from, which names its parts.
   kind: SourceKind;
   read: RunRead | undefined;
+  runId?: string;
   // The run has a read and its summary is on the way: nothing is read again.
   loadingRead?: boolean;
   // Why the run's read could not be shown, where the server would not say.
@@ -148,7 +150,7 @@ export function ReadStep({
       );
       return;
     }
-    void reading.run({ source: from }).then((response) => {
+    void reading.run({ source: from, runId }).then((response) => {
       if (!response) return;
       setOpen(true);
       // The card's own summary is what keeping answered.

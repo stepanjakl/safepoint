@@ -144,7 +144,7 @@
     inset-inline: calc(var(--spacing-sheet-inset) + var(--sheet-bleed, 0px)) 0;
     z-index: 1;
     height: 1px;
-    box-shadow: inset 0 var(--edge-hairline) 0 var(--sp-raised-ring);
+    box-shadow: inset 0 var(--edge-rule) 0 var(--sp-raised-ring);
     pointer-events: none;
   }
   /* A lit run -- chosen, focused or under the pointer -- takes the rules above
@@ -854,8 +854,10 @@
       display: block;
       inset-block: 0;
       inset-inline: 0 auto;
-      width: 1px;
+      width: var(--edge-rule);
+      height: auto;
       border-top-width: 0;
+      box-shadow: none;
       background: var(--sp-raised-ring);
     }
     /* The seam faces the chosen run, on whichever side it is. */
@@ -885,7 +887,8 @@
   }
 
   @media (min-resolution: 2dppx) {
-    :root[data-edges='retina'] .sheet-head {
+    :root[data-edges='retina'] .sheet-head,
+    :root[data-edges='retina'] .sheet-chrome-band {
       border-bottom-width: 0;
       box-shadow:
         inset 0 calc(var(--edge-hairline) * -1) 0 var(--sp-raised-ring),
@@ -893,13 +896,7 @@
     }
 
     :root[data-edges='retina']
-      .process-sheet-frame[data-chrome-borrowed]
-      > .process-sheet-swap
-      .sheet-head {
-      box-shadow: none;
-    }
-
-    :root[data-edges='retina']
+      .process-sheet-frame:not([data-chrome-borrowed])
       .sheet-head:has(
         + .sheet-list
           > li:first-child
@@ -912,6 +909,7 @@
 
     @media (hover: hover) {
       :root[data-edges='retina']
+        .process-sheet-frame:not([data-chrome-borrowed])
         .sheet-head:has(+ .sheet-list > li:first-child > .sheet-row:hover) {
         box-shadow:
           inset 0 calc(var(--edge-hairline) * -1) 0 var(--sp-raised-ring),
@@ -919,21 +917,11 @@
       }
     }
 
-    :root[data-edges='retina'] .sheet-break,
-    :root[data-edges='retina'] .sheet-list > li:has(> .sheet-break) + li {
-      border-top-width: 0;
-      box-shadow: inset 0 var(--edge-hairline) 0 var(--sp-raised-ring);
-    }
-
-    :root[data-edges='retina'] .sheet-list > li:last-child {
-      border-bottom-width: 0;
-      box-shadow: inset 0 calc(var(--edge-hairline) * -1) 0 var(--sp-raised-ring);
-    }
-
-    @container sheet (width < 52rem) {
-      :root[data-edges='retina'] .process-runs-list > .sheet-list > li:last-child {
-        box-shadow: none;
-      }
+    :root[data-edges='retina']
+      .process-sheet-frame[data-chrome-borrowed]
+      > .process-sheet-swap
+      .sheet-head {
+      box-shadow: none;
     }
   }
 }

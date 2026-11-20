@@ -198,6 +198,7 @@ function Scene({
               fill="none"
               className="stroke-primary"
               strokeWidth={OUTER}
+              style={{ strokeWidth: 'var(--section-rule-width)' }}
             />
           );
         return (
@@ -205,6 +206,11 @@ function Scene({
             key={i}
             d={rounded(points, true)}
             strokeWidth={shape.outline ? OUTER : INNER}
+            style={{
+              strokeWidth: shape.outline
+                ? 'var(--section-rule-width)'
+                : 'var(--edge-hairline)',
+            }}
             className={
               shape.outline
                 ? 'stroke-muted fill-none'

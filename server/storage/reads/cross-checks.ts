@@ -13,7 +13,7 @@ import {
 import { DRAFT_MODELS, type Resolve } from '@/lib/engine/calls';
 import type { KeptRead } from '@/lib/engine/records';
 import type { DefinitionProcess, DefinitionSet } from '@/lib/engine/types';
-import { fallbackChain, type DraftingModel } from '@/lib/models';
+import { modelsFor, type ModelPreference } from '@/lib/models';
 
 import { database } from '@/server/db/client';
 import { ensureProcess } from '@/server/db/scope';
@@ -132,7 +132,7 @@ export async function crossCheck(
     batch = BATCH,
     record,
   }: {
-    model?: DraftingModel | null;
+    model?: ModelPreference | null;
     resolve?: Resolve;
     batch?: number;
     record?: RecordAttempt;
@@ -142,7 +142,7 @@ export async function crossCheck(
   const keys = calculation.rows.map((row) => row.key);
   if (!keys.length) throw new Error('The read has no records.');
   const { fingerprint } = calculation;
-  const models = chosen ? fallbackChain(chosen) : DRAFT_MODELS;
+  const models = modelsFor(chosen, DRAFT_MODELS);
   const key = runKey(owner, readId, fingerprint);
   const sofar = await keptPart('cross-check', key, crossCheckPartSchema);
   const cells: CrossCheck['cells'] = { ...sofar?.cells };

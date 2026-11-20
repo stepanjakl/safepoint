@@ -533,6 +533,7 @@ describe('a run', () => {
       { instructionsHash: 'bbbbbbbbbbbb' },
       { trigger: 'rerun' },
       { additionalInstructions: 'Also this.' },
+      { modelPlan: 'groq' as const },
       { startedAt: new Date() },
       { readProcess: 'another' },
     ])

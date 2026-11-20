@@ -38,7 +38,7 @@ import {
   READ_GONE,
 } from '@/server/storage/reads/run-reads';
 import { attemptRecorder } from '@/server/storage/models/model-attempts';
-import { readIdSchema } from '@/server/storage/ids';
+import { readIdSchema, runIdSchema } from '@/server/storage/ids';
 import {
   listRevisions,
   loadProfile,
@@ -48,6 +48,8 @@ import {
   saveProfile,
   updateProfile,
 } from '@/server/storage/rules/rulebooks';
+
+import { modelForRun } from '@/server/storage/runs/runs';
 
 import { failed, gatedProcedure, router } from '../trpc';
 
@@ -249,6 +251,7 @@ export const rulesRouter = router({
       version: z.string().max(20),
       readId: readIdSchema,
       model,
+      runId: runIdSchema.optional(),
     }),
   ).mutation(async ({ input }) => {
     // The engine drafts without a profile too; a person's draft does not.
@@ -260,7 +263,7 @@ export const rulesRouter = router({
       input.version,
       await readOf(input.readId),
       {
-        model: input.model,
+        model: await modelForRun(owner.id, input.runId, input.model),
       },
     );
     return replyWith(input.text, input.readId, () =>
@@ -275,7 +278,13 @@ export const rulesRouter = router({
   ),
 
   write: rulesProcedure(
-    z.strictObject({ text, readId: readIdSchema, id, model }),
+    z.strictObject({
+      text,
+      readId: readIdSchema,
+      id,
+      model,
+      runId: runIdSchema.optional(),
+    }),
   ).mutation(async ({ input }) => {
     await startRewrite(
       owner,
@@ -283,7 +292,7 @@ export const rulesRouter = router({
       await readOf(input.readId),
       input.id,
       {
-        model: input.model,
+        model: await modelForRun(owner.id, input.runId, input.model),
       },
     );
     return replyWith(input.text, input.readId, () =>
@@ -315,30 +324,30 @@ export const rulesRouter = router({
   ),
 
   // Asks the model, so a mutation though it keeps nothing.
-  advise: rulesProcedure(z.strictObject({ text, id })).mutation(
-    async ({ input }) => {
-      const set = await loadSet(owner, input.text);
-      if (!set) throw new Error(NO_RULES);
-      const read = set.readId ? await keptRead(set.readId) : null;
-      if (!read) throw new Error(READ_GONE);
-      const record = attemptRecorder({
-        process: owner.id,
-        instructionsHash: set.hash,
-        readId: read.id,
-      });
-      return {
-        kind: 'advice' as const,
-        advice: await advise(
-          await ownerFor(owner, set),
-          input.text,
-          set,
-          read,
-          input.id,
-          { record },
-        ).finally(record.settled),
-      };
-    },
-  ),
+  advise: rulesProcedure(
+    z.strictObject({ text, id, runId: runIdSchema.optional() }),
+  ).mutation(async ({ input }) => {
+    const set = await loadSet(owner, input.text);
+    if (!set) throw new Error(NO_RULES);
+    const read = set.readId ? await keptRead(set.readId) : null;
+    if (!read) throw new Error(READ_GONE);
+    const record = attemptRecorder({
+      process: owner.id,
+      instructionsHash: set.hash,
+      readId: read.id,
+    });
+    return {
+      kind: 'advice' as const,
+      advice: await advise(
+        await ownerFor(owner, set),
+        input.text,
+        set,
+        read,
+        input.id,
+        { model: await modelForRun(owner.id, input.runId), record },
+      ).finally(record.settled),
+    };
+  }),
 
   debug: rulesProcedure(
     z.strictObject({

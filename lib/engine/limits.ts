@@ -1,6 +1,8 @@
 import { google } from '@ai-sdk/google';
 import { APICallError, wrapLanguageModel } from 'ai';
 
+import { isTrialModel, TRIAL_MODELS } from '@/lib/models';
+
 import {
   limitsStore,
   countRequest,
@@ -145,6 +147,8 @@ async function keep(models: (string | null)[]) {
 
 export function groupOf(model: string): string {
   const { shares } = state();
+  if (isTrialModel(model) && TRIAL_MODELS[model].provider === 'openrouter')
+    return 'openrouter';
   let group = model;
   while (shares[group]) group = shares[group]!;
   return group;
@@ -192,6 +196,8 @@ const fresh = (learned: Learned | undefined) =>
   learned && Date.now() - learned.at < LEARNED_FOR ? learned.limit : null;
 
 function perMinuteOf(group: string): number {
+  if (group === 'openrouter') return 20;
+  if (isTrialModel(group)) return 30;
   const set = Number(process.env.GEMINI_REQUESTS_PER_MINUTE);
   return set > 0
     ? set
@@ -278,43 +284,50 @@ async function learnFrom(model: string, quota: Quota) {
 export function paced<
   M extends Parameters<typeof wrapLanguageModel>[0]['model'],
 >(id: string, model: M) {
+  async function request<R>(
+    send: () => PromiseLike<R>,
+    signal: AbortSignal | undefined,
+  ): Promise<R> {
+    for (let tries = 1; ; tries++) {
+      await takeSlot(id, signal);
+      try {
+        return await send();
+      } catch (error) {
+        if (!APICallError.isInstance(error)) throw error;
+        const status = error.statusCode ?? 0;
+        if (status === 429) {
+          const quota = quotaOf(error);
+          if (!isTrialModel(id)) await learnFrom(id, quota);
+          if (
+            quota.window !== 'day' &&
+            quota.retryAfterMs !== null &&
+            quota.retryAfterMs <= MAX_WAIT &&
+            tries < MAX_TRIES
+          ) {
+            const from = Date.now();
+            await wait(quota.retryAfterMs + MARGIN, signal);
+            heldFor(Date.now() - from);
+            sentAgain();
+            continue;
+          }
+        } else if (status >= 500 && tries === 1) {
+          await wait(BUSY_WAIT, signal);
+          sentAgain();
+          continue;
+        }
+        throw error;
+      }
+    }
+  }
   return wrapLanguageModel({
     model,
     middleware: {
       specificationVersion: 'v4',
-      wrapGenerate: async ({ doGenerate, params }) => {
-        const signal = params.abortSignal;
-        for (let tries = 1; ; tries++) {
-          await takeSlot(id, signal);
-          try {
-            return await doGenerate();
-          } catch (error) {
-            if (!APICallError.isInstance(error)) throw error;
-            const status = error.statusCode ?? 0;
-            if (status === 429) {
-              const quota = quotaOf(error);
-              await learnFrom(id, quota);
-              if (
-                quota.window !== 'day' &&
-                quota.retryAfterMs !== null &&
-                quota.retryAfterMs <= MAX_WAIT &&
-                tries < MAX_TRIES
-              ) {
-                const from = Date.now();
-                await wait(quota.retryAfterMs + MARGIN, signal);
-                heldFor(Date.now() - from);
-                sentAgain();
-                continue;
-              }
-            } else if (status >= 500 && tries === 1) {
-              await wait(BUSY_WAIT, signal);
-              sentAgain();
-              continue;
-            }
-            throw error;
-          }
-        }
-      },
+      wrapGenerate: ({ doGenerate, params }) =>
+        request(doGenerate, params.abortSignal),
+      wrapStream: isTrialModel(id)
+        ? ({ doStream, params }) => request(doStream, params.abortSignal)
+        : undefined,
     },
   });
 }
@@ -322,13 +335,17 @@ export function paced<
 // The app's own models: Google's, kept to their limits. A test gives its own.
 export const limitedGoogle = (id: string) => paced(id, google(id));
 
+// OpenRouter shares the request allowance, but an upstream refusal can affect one model.
+const restKey = (model: string) =>
+  isTrialModel(model) ? model : groupOf(model);
+
 export function rest(model: string, ms: number) {
-  state().resting[groupOf(model)] = Date.now() + ms;
+  state().resting[restKey(model)] = Date.now() + ms;
 }
 
 // Until when a model is spent, if it is.
 export function restingUntil(model: string): number | null {
-  const until = state().resting[groupOf(model)] ?? 0;
+  const until = state().resting[restKey(model)] ?? 0;
   return until > Date.now() ? until : null;
 }
 

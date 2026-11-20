@@ -1,6 +1,7 @@
 'use client';
 
 import { useId, useRef, useState, type RefObject } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Dialog, DialogTrigger, Heading, Popover } from 'react-aria-components';
 // Deep import: Blode's barrel is the whole icon library.
 import BoltFilled from 'blode-icons-react/icons/bolt-filled';
@@ -14,7 +15,17 @@ import {
 } from '@/components/dev/agentation-popover';
 import { Button } from '@/components/ui/button';
 import { useScreenSettled } from '@/components/ui/screen-settled';
+import { Select } from '@/components/ui/select';
 import { WalkthroughHint } from '@/components/ui/walkthrough-hint';
+import { useTRPC } from '@/components/trpc/provider';
+import {
+  availableModelPlan,
+  DRAFTING_MODELS,
+  isTrialModel,
+  modelPlanLabel,
+  modelPlanSchema,
+  type ModelPlan,
+} from '@/lib/models';
 import { useRunSelection } from './run-selection';
 
 /*
@@ -43,9 +54,9 @@ export function StartRunButton() {
     !selected &&
     Boolean(start || startMock);
   const startAndAdvance = start
-    ? async (note?: string) => {
+    ? async (note?: string, modelPlan?: ModelPlan) => {
         walkthrough?.advance('start-run');
-        return start(note);
+        return start(note, modelPlan);
       }
     : null;
   const startMockAndAdvance = startMock
@@ -111,8 +122,8 @@ export function StartRunButton() {
         onDismiss={() => walkthrough?.dismiss()}
         onInteractOutside={() => walkthrough?.advance('start-run')}
       >
-        Start a run to generate a proposal, or open the arrow menu to try a mock
-        run.
+        Start a run to generate a proposal, or open the arrow menu to choose its
+        models or try a mock run.
       </WalkthroughHint>
     </>
   );
@@ -127,7 +138,8 @@ function InstructionsPopover({
   onOpenChange,
   tooltipDisabled,
 }: {
-  start: ((instructions?: string) => Promise<boolean>) | null;
+  start:
+    ((instructions?: string, modelPlan?: ModelPlan) => Promise<boolean>) | null;
   startMock: ((instructions?: string) => boolean) | null;
   cannotStart: string | null;
   pill: RefObject<HTMLSpanElement | null>;
@@ -136,6 +148,7 @@ function InstructionsPopover({
   tooltipDisabled: boolean;
 }) {
   const [text, setText] = useState('');
+  const [modelPlan, setModelPlan] = useState<ModelPlan | ''>('');
   const popoverRef = useRef<HTMLDivElement>(null);
   const canOpen = Boolean(start || startMock);
   const popoverProps = useAgentationPopoverProps(pill);
@@ -150,9 +163,10 @@ function InstructionsPopover({
       <HeadIconButton
         label="Start run with a note"
         tooltip={{
-          label: 'Start with a note',
+          label: 'Run options',
           description:
-            cannotStart ?? 'Add a note for this run before it starts.',
+            cannotStart ??
+            'Choose the models and add an optional note for this run.',
           placement: 'right',
           triggerRef: pill,
           isDisabled: open || tooltipDisabled,
@@ -169,21 +183,24 @@ function InstructionsPopover({
         triggerRef={pill}
         placement="bottom start"
         offset={6}
-        className="popover-motion control-face surface-popover rounded-shell w-[min(20rem,calc(100vw-2rem))]"
+        className="popover-motion control-face surface-popover rounded-shell w-80 max-w-[calc(100dvw_-_2rem)]"
         {...popoverProps}
       >
         <Dialog className="p-3 outline-none">
           {({ close }) => (
             <form
-              className="grid gap-2.5"
+              className="grid grid-cols-1 gap-2.5"
               onSubmit={(event) => {
                 event.preventDefault();
                 const note = text.trim();
                 close();
                 // The note is kept until the run is: a refused start leaves
                 // it to try again.
-                void start?.(note).then((started) => {
-                  if (started) setText('');
+                void start?.(note, modelPlan || 'gemini').then((started) => {
+                  if (started) {
+                    setText('');
+                    setModelPlan('');
+                  }
                 });
               }}
             >
@@ -201,6 +218,9 @@ function InstructionsPopover({
                 placeholder="What should this run focus on?…"
                 className="field text-body text-primary w-full resize-y px-3 py-2"
               />
+              {start ? (
+                <RunModelSelect modelPlan={modelPlan} onChange={setModelPlan} />
+              ) : null}
               <div className="flex flex-wrap items-center justify-end gap-1.5">
                 {startMock ? (
                   <Button
@@ -233,5 +253,55 @@ function InstructionsPopover({
         </Dialog>
       </Popover>
     </DialogTrigger>
+  );
+}
+
+const GEMINI_MODELS = DRAFTING_MODELS.filter((id) => !isTrialModel(id));
+
+function RunModelSelect({
+  modelPlan,
+  onChange,
+}: {
+  modelPlan: ModelPlan | '';
+  onChange: (modelPlan: ModelPlan) => void;
+}) {
+  const trpc = useTRPC();
+  const available =
+    useQuery(
+      trpc.modelLimits.available.queryOptions(undefined, {
+        staleTime: Infinity,
+      }),
+    ).data ?? GEMINI_MODELS;
+  const fleets = (['gemini', 'groq', 'openrouter'] as const).filter((plan) =>
+    availableModelPlan(plan, available),
+  );
+  return (
+    <Select
+      value={modelPlan}
+      aria-label="Models for this run"
+      className="min-w-0"
+      onChange={(event) => {
+        const picked = modelPlanSchema.safeParse(event.target.value);
+        if (picked.success) onChange(picked.data);
+      }}
+    >
+      <option value="" disabled>
+        Models for this run
+      </option>
+      <optgroup label="Provider fleets">
+        {fleets.map((plan) => (
+          <option key={plan} value={plan}>
+            {modelPlanLabel(plan)}
+          </option>
+        ))}
+      </optgroup>
+      <optgroup label="Start with a specific model">
+        {available.map((model) => (
+          <option key={model} value={model}>
+            {modelPlanLabel(model)}
+          </option>
+        ))}
+      </optgroup>
+    </Select>
   );
 }

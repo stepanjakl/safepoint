@@ -1,7 +1,13 @@
 'use client';
 
 import { Select } from '@/components/ui/select';
-import { DRAFTING_MODELS, type DraftingModel } from '@/lib/models';
+import { useQuery } from '@tanstack/react-query';
+import { useTRPC } from '@/components/trpc/provider';
+import {
+  DRAFTING_MODELS,
+  isTrialModel,
+  type DraftingModel,
+} from '@/lib/models';
 
 // Which model to ask; a busy or spent one hands over to the next older one
 // of its family on the server.
@@ -17,6 +23,12 @@ export function ModelSelect<M extends DraftingModel | null = DraftingModel>({
   recommended?: string;
   onChange: (model: M) => void;
 }) {
+  const trpc = useTRPC();
+  const { data: available } = useQuery(
+    trpc.modelLimits.available.queryOptions(undefined, { staleTime: Infinity }),
+  );
+  const models = available ?? DRAFTING_MODELS.filter((id) => !isTrialModel(id));
+
   return (
     <label className="grid gap-1">
       <span className="text-meta text-muted">Model</span>
@@ -27,7 +39,7 @@ export function ModelSelect<M extends DraftingModel | null = DraftingModel>({
         onChange={(e) => onChange((e.target.value || null) as M)}
       >
         {recommended ? <option value="">{recommended}</option> : null}
-        {DRAFTING_MODELS.map((id) => (
+        {models.map((id) => (
           <option key={id} value={id}>
             {id}
           </option>

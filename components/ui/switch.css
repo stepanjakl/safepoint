@@ -75,8 +75,8 @@
 
   .switch-thumb {
     position: absolute;
-    inset-block-start: calc(var(--switch-thumb-gap) - var(--spacing-control-edge));
-    inset-inline-start: calc(var(--switch-thumb-gap) - var(--spacing-control-edge));
+    inset-block-start: calc(var(--switch-thumb-gap) - var(--edge-rule));
+    inset-inline-start: calc(var(--switch-thumb-gap) - var(--edge-rule));
     inline-size: var(--switch-thumb);
     block-size: calc(var(--switch-track-block) - 2 * var(--switch-thumb-gap));
     border-radius: 9999px;
@@ -140,5 +140,12 @@
 
   .switch[data-disabled] .switch-thumb {
     opacity: 0.6;
+  }
+
+  @media (forced-colors: active), print {
+    .switch-thumb {
+      inset-block-start: calc(var(--switch-thumb-gap) - var(--spacing-control-edge));
+      inset-inline-start: calc(var(--switch-thumb-gap) - var(--spacing-control-edge));
+    }
   }
 }

@@ -161,7 +161,9 @@
       border-right-color: transparent;
       box-shadow: none;
     }
-    & .sheet-column-edge::after {
+    & .sheet-column-edge::after,
+    & .process-runs::before,
+    & .process-panels::before {
       visibility: hidden;
     }
   }
@@ -252,6 +254,21 @@
 }
 
 @media (min-resolution: 2dppx) {
+  :root[data-edges='retina'] .sheet-chrome-divider {
+    background: transparent;
+    box-shadow: var(--shadow-separator-right-strong);
+  }
+
+  /* Paint the 0.75px divider above .sheet-chrome-band while keeping its right
+     lit highlight below the adjacent band (no stacking context on the parent). */
+  :root[data-edges='retina'] .sheet-chrome-divider::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    box-shadow: inset calc(var(--edge-hairline) * -1) 0 0 var(--sp-raised-ring);
+  }
+
   @container sheet (width >= 52rem) {
     :root[data-edges='retina'] .process-runs-list {
       border-right-width: 0;
@@ -286,6 +303,7 @@
 
   @container sheet (width >= 44rem) {
     :root[data-edges='retina'] .sheet-column-edge::after {
+      z-index: 4;
       width: 1px;
       background: transparent;
       box-shadow:
@@ -293,10 +311,26 @@
         var(--shadow-separator-right-strong);
     }
 
+    :root[data-edges='retina'] .process-panels {
+      position: relative;
+    }
+
     :root[data-edges='retina'] .process-panel-list {
       border-right-width: 0;
-      padding-inline-end: var(--edge-hairline);
+      box-shadow: none;
+    }
+
+    :root[data-edges='retina'] .process-panels:has(> .process-panel-list + *)::before {
+      content: '';
+      position: absolute;
+      z-index: 4;
+      grid-row: 1 / 2;
+      grid-column: 1 / 2;
+      inset-block: 0 calc(var(--spacing-control-highlight) * -1);
+      inset-inline-end: 0;
+      width: 1px;
       box-shadow: inset calc(var(--edge-hairline) * -1) 0 0 var(--sp-raised-ring);
+      pointer-events: none;
     }
   }
 }

@@ -3,7 +3,8 @@ import { z } from 'zod';
 import type { RecordAttempt } from './attempts';
 import { ask, DRAFT_MODELS, WRITE_MODELS, type Resolve } from './calls';
 import { groupDifferences } from './group-differences';
-import { limitedGoogle } from './limits';
+import { resolveModel } from './model-provider';
+import { modelsFor, type ModelPreference } from '@/lib/models';
 import { namesOf, type KeptRead } from './records';
 import { sentencesOf } from './shapes';
 import type { DefinitionProcess, DefinitionSet } from './types';
@@ -137,9 +138,14 @@ export async function advise(
   read: KeptRead,
   id: string,
   {
-    resolve = limitedGoogle,
+    resolve = resolveModel,
     record,
-  }: { resolve?: Resolve; record?: RecordAttempt } = {},
+    model: preference,
+  }: {
+    resolve?: Resolve;
+    record?: RecordAttempt;
+    model?: ModelPreference;
+  } = {},
 ): Promise<Advice> {
   const prompt = promptFor(owner, text, set, read, id);
   if (!prompt) throw new Error('These versions no longer disagree.');
@@ -149,7 +155,7 @@ export async function advise(
   // A quote not in the instructions is asked for once more, then left out.
   for (let attempt = 0; attempt < 2; attempt += 1) {
     const { output, model } = await ask(
-      ADVICE_MODELS,
+      modelsFor(preference, ADVICE_MODELS),
       adviceSchema,
       SYSTEM,
       attempt

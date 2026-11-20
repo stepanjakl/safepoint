@@ -14,7 +14,14 @@ import { Button } from '@/components/ui/button';
 import { asReviewed as reviewed } from '@/lib/engine/reviewed';
 import type { Proposal } from '@/lib/engine/types';
 import type { DefinitionSubject } from '@/lib/engine/subject';
-import { DRAFTING_MODELS, type DraftingModel } from '@/lib/models';
+import {
+  DRAFTING_MODELS,
+  GEMINI_FIND,
+  modelPlanLabel,
+  modelsFor,
+  type DraftingModel,
+  type ModelPlan,
+} from '@/lib/models';
 
 import { ProposalTable } from './proposal-table';
 import type {
@@ -62,6 +69,7 @@ export function ProposeStep({
   rulebook,
   evaluation = 'rules',
   run: kept,
+  modelPlan,
   onProgress,
   onMoveRules,
   debug = false,
@@ -76,6 +84,7 @@ export function ProposeStep({
   evaluation?: Evaluation;
   // The run these decisions are kept on, by the id the server gave it.
   run: { process: RunProcessId; runId: string };
+  modelPlan?: ModelPlan | null;
   onProgress: (progress: ProposeProgress) => void;
   // Back to Calculate, on the current rules, when these no longer fit.
   onMoveRules?: () => void;
@@ -92,6 +101,10 @@ export function ProposeStep({
   });
   const [model, setModel] = useState<DraftingModel>(DRAFTING_MODELS[0]!);
   const run = { text, readId, rulebook, evaluation };
+  const startInput = { ...run, runId: kept.runId };
+  const quotaModel = modelPlan
+    ? modelsFor({ plan: modelPlan }, [GEMINI_FIND])[0]
+    : model;
   const decidedOn = { process: kept.process, runId: kept.runId };
   // Asked once per read and rulebook, and again every POLL_MS while the job
   // runs, even after a failed poll: a failed request says nothing about it.
@@ -259,7 +272,7 @@ export function ProposeStep({
     )
       return;
     proposed.current = true;
-    start.mutate(run);
+    start.mutate(startInput);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoStart, mock, answer]);
 
@@ -397,7 +410,7 @@ export function ProposeStep({
               <Button
                 size="small"
                 isDisabled={running || busy}
-                onPress={() => start.mutate(run)}
+                onPress={() => start.mutate(startInput)}
               >
                 Try again
               </Button>
@@ -446,7 +459,7 @@ export function ProposeStep({
             <Button
               size="small"
               isDisabled={running || busy}
-              onPress={() => !mock && start.mutate(run)}
+              onPress={() => !mock && start.mutate(startInput)}
             >
               Try again
             </Button>
@@ -462,7 +475,13 @@ export function ProposeStep({
           className="trial-setup rounded-shell grid gap-3 p-4"
         >
           <div className="flex flex-wrap items-end gap-3">
-            <ModelSelect model={model} busy={running} onChange={setModel} />
+            {modelPlan ? (
+              <p className="text-meta text-muted">
+                Using {modelPlanLabel(modelPlan)}
+              </p>
+            ) : (
+              <ModelSelect model={model} busy={running} onChange={setModel} />
+            )}
             {confirming ? (
               <>
                 <Button
@@ -470,7 +489,10 @@ export function ProposeStep({
                   autoFocus
                   onPress={() => {
                     setConfirming(false);
-                    start.mutate({ ...run, model });
+                    start.mutate({
+                      ...startInput,
+                      model: modelPlan ? undefined : model,
+                    });
                   }}
                 >
                   Propose again
@@ -484,14 +506,19 @@ export function ProposeStep({
                 onPress={() =>
                   hasDecisions
                     ? setConfirming(true)
-                    : start.mutate({ ...run, model })
+                    : start.mutate({
+                        ...startInput,
+                        model: modelPlan ? undefined : model,
+                      })
                 }
               >
                 {proposal ? 'Propose again' : 'Propose'}
               </Button>
             )}
           </div>
-          <ModelLimits model={model} enabled={!mock} />
+          {quotaModel ? (
+            <ModelLimits model={quotaModel} enabled={!mock} />
+          ) : null}
           <p
             role="status"
             className={

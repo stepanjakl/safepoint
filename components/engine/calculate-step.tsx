@@ -42,7 +42,14 @@ import type {
   CrossCheck,
 } from '@/lib/engine/calculate';
 import { cx } from '@/lib/ui/cx';
-import { DRAFTING_MODELS, type DraftingModel } from '@/lib/models';
+import {
+  DRAFTING_MODELS,
+  GEMINI_FIND,
+  modelPlanLabel,
+  modelsFor,
+  type DraftingModel,
+  type ModelPlan,
+} from '@/lib/models';
 import type { AppRouter } from '@/server/api/root';
 
 import { ModelLimits } from './model-limits';
@@ -105,6 +112,8 @@ export function CalculateStep({
   text,
   readId,
   calculatedOn,
+  runId,
+  modelPlan,
   onProgress,
   debug = false,
   mock = false,
@@ -113,6 +122,8 @@ export function CalculateStep({
   readId: string;
   // The rulebook the run last calculated on, if any.
   calculatedOn: string | null;
+  runId?: string;
+  modelPlan?: ModelPlan | null;
   onProgress: (progress: CalculateProgress) => void;
   debug?: boolean;
   mock?: boolean;
@@ -148,6 +159,9 @@ export function CalculateStep({
       report.current(progressOf(answer.calculation, answer.check));
   }, [answer]);
   const [model, setModel] = useState<DraftingModel>(DRAFTING_MODELS[0]!);
+  const quotaModel = modelPlan
+    ? modelsFor({ plan: modelPlan }, [GEMINI_FIND])[0]
+    : model;
   const [last, setLast] = useState<Extract<
     CalculateAnswer,
     { kind: 'calculation' }
@@ -186,7 +200,8 @@ export function CalculateStep({
     cross.mutate({
       text,
       readId,
-      model,
+      runId,
+      model: modelPlan ? undefined : model,
       rulebook: shown?.calculation.fingerprint,
     });
 
@@ -225,7 +240,13 @@ export function CalculateStep({
               className="trial-setup rounded-shell grid gap-3 p-4"
             >
               <div className="flex flex-wrap items-end gap-3">
-                <ModelSelect model={model} busy={busy} onChange={setModel} />
+                {modelPlan ? (
+                  <p className="text-meta text-muted">
+                    Using {modelPlanLabel(modelPlan)}
+                  </p>
+                ) : (
+                  <ModelSelect model={model} busy={busy} onChange={setModel} />
+                )}
                 <Button
                   variant={shown.check ? 'secondary' : 'primary'}
                   isDisabled={busy}
@@ -241,11 +262,12 @@ export function CalculateStep({
                   </Button>
                 ) : null}
               </div>
-              <ModelLimits model={model} enabled={!mock} />
+              {quotaModel ? (
+                <ModelLimits model={quotaModel} enabled={!mock} />
+              ) : null}
               <p className="text-meta text-muted max-w-prose">
                 The model works every value out again from the instructions and
-                the data, without the formulas. If the model is busy or out of
-                quota, the next older one of its family answers.
+                the data, without the formulas.
               </p>
             </section>
           ) : null}

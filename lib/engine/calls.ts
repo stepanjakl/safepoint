@@ -2,18 +2,23 @@ import {
   APICallError,
   generateText,
   Output,
+  NoObjectGeneratedError,
+  NoOutputGeneratedError,
   RetryError,
   type LanguageModel,
 } from 'ai';
 import type { z } from 'zod';
 
-import { fallbackChain, thinkingLevel, type DraftingModel } from '@/lib/models';
 import {
-  limitedGoogle,
-  limitsReady,
-  rest,
-  restingUntil,
-} from '@/lib/engine/limits';
+  fallbackChain,
+  GEMINI_FIND,
+  GEMINI_WRITE,
+  isTrialModel,
+  thinkingLevel,
+  type DraftingModel,
+} from '@/lib/models';
+import { limitsReady, rest, restingUntil } from '@/lib/engine/limits';
+import { resolveModel } from './model-provider';
 import { quotaOf } from '@/lib/engine/quota';
 
 import {
@@ -38,12 +43,10 @@ import {
 // Flash for finding, and for what is not a draft: in three drafts Flash-Lite
 // folded a number the instructions define into a check when finding. A person
 // may choose another model.
-export const DRAFT_MODELS: DraftingModel[] = fallbackChain('gemini-3.6-flash');
+export const DRAFT_MODELS = fallbackChain(GEMINI_FIND);
 // Flash-Lite for writing, which is many requests and which the checks hold to
 // account: it allows 500 requests a day to Flash's 20.
-export const WRITE_MODELS: DraftingModel[] = fallbackChain(
-  'gemini-3.5-flash-lite',
-);
+export const WRITE_MODELS = fallbackChain(GEMINI_WRITE);
 
 // The model by id; replaced in tests.
 export type Resolve = (id: DraftingModel) => LanguageModel;
@@ -117,7 +120,11 @@ export async function withModels<R>(
   models: DraftingModel[],
   name: string,
   resolve: Resolve,
-  call: (model: LanguageModel, options: CallOptions) => Promise<R>,
+  call: (
+    model: LanguageModel,
+    options: CallOptions,
+    id: DraftingModel,
+  ) => Promise<R>,
   tell?: ModelTell,
   recording?: Recording<R>,
 ): Promise<{ value: R; model: DraftingModel }> {
@@ -150,9 +157,9 @@ export async function withModels<R>(
       const options = callOptions(model, telemetry, name);
       const value = recording?.record
         ? await inTally(tally, () =>
-            call(counting(resolve(model), tally), options),
+            call(counting(resolve(model), tally), options, model),
           )
-        : await call(resolve(model), options);
+        : await call(resolve(model), options, model);
       let judged: { refused: boolean; answer: Summary | null } = {
         refused: false,
         answer: null,
@@ -171,6 +178,12 @@ export async function withModels<R>(
       const status = APICallError.isInstance(cause)
         ? (cause.statusCode ?? 0)
         : 0;
+      const invalidAnswer =
+        NoObjectGeneratedError.isInstance(cause) ||
+        NoOutputGeneratedError.isInstance(cause) ||
+        (status === 400 &&
+          APICallError.isInstance(cause) &&
+          /tool call validation failed/i.test(cause.message));
       said(
         timedOut(error) || status >= 500
           ? 'busy'
@@ -185,6 +198,7 @@ export async function withModels<R>(
         tell?.({ kind: 'busy', model, why: 'slow' });
         continue;
       }
+      if (invalidAnswer) continue;
       if (!APICallError.isInstance(cause)) throw error;
       if (status === 429) {
         rest(model, quotaOf(cause).retryAfterMs ?? 3_600_000);
@@ -219,14 +233,14 @@ export async function ask<T>(
   system: string,
   prompt: string,
   name: string,
-  resolve: Resolve = limitedGoogle,
+  resolve: Resolve = resolveModel,
   recording?: Recording<T>,
-): Promise<{ output: T; model: string }> {
+): Promise<{ output: T; model: DraftingModel }> {
   const { value, model } = await withModels(
     models,
     name,
     resolve,
-    async (languageModel, options) =>
+    async (languageModel, options, id) =>
       (
         await generateText({
           model: languageModel,
@@ -235,6 +249,9 @@ export async function ask<T>(
           output: Output.object({ schema }),
           timeout: { totalMs: 180_000 },
           ...options,
+          providerOptions: isTrialModel(id)
+            ? { openaiCompatible: { strictJsonSchema: false } }
+            : options.providerOptions,
         })
       ).output as T,
     undefined,

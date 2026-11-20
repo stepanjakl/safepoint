@@ -41,7 +41,7 @@
   .rulebook-timeline-tail,
   .rulebook-timeline-trail {
     fill: none;
-    stroke-width: 1;
+    stroke-width: var(--edge-hairline);
     stroke-linecap: round;
   }
   .rulebook-timeline-line {
@@ -54,7 +54,7 @@
      still shows at the end of a dash pushed off its path. */
   .rulebook-timeline-trail {
     stroke: var(--sp-timeline-trail);
-    stroke-width: 1.5;
+    stroke-width: var(--section-rule-width);
     stroke-dasharray: 1 2;
     stroke-dashoffset: 1;
     opacity: 0;

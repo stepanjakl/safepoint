@@ -347,7 +347,7 @@
     top: var(--row-rule-top, 0);
     z-index: 1;
     height: 1px;
-    box-shadow: inset 0 var(--edge-hairline) 0 var(--sp-rule-faint);
+    box-shadow: inset 0 var(--edge-rule) 0 var(--sp-rule-faint);
     pointer-events: none;
     transition: opacity var(--duration-state) ease-out;
   }
@@ -430,7 +430,10 @@
       .control-button-primary,
       .control-button-secondary,
       .control-button-danger,
-      .header-button
+      .control-drawer-close,
+      .control-tone,
+      .header-button,
+      .switch-track
     ):not(.slant) {
     border: 0.5px solid transparent;
     background-image:

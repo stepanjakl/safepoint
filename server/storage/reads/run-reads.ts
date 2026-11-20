@@ -122,12 +122,18 @@ function dataTabs(of: RunReads, read: SheetRead): DataTab[] {
   return of.tabs.map((name) => ({ name, values: tabValues(read, name) }));
 }
 
-const asKept = (of: RunReads, read: SheetRead, label: string): KeptRead => {
+const asKept = (
+  of: RunReads,
+  read: SheetRead,
+  label: string,
+  runId?: string,
+): KeptRead => {
   const tabs = dataTabs(of, read);
   const hash = createHash('sha256')
     .update(JSON.stringify(tabs))
+    .update(runId ?? '')
     .digest('hex')
-    .slice(0, 8);
+    .slice(0, runId ? 16 : 8);
   return {
     id: `${read.readAt.replace(/[:.]/g, '-')}-${hash}`,
     readAt: read.readAt,
@@ -165,9 +171,14 @@ async function keep(of: RunReads, read: KeptRead): Promise<KeptRead> {
 export async function readAndKeep(
   of: RunReads,
   source: 'captured' | 'live',
+  runId?: string,
 ): Promise<KeptRead> {
   const { read, label } = await load(of, source);
-  return keep(of, asKept(of, read, label));
+  // A captured snapshot can be tried by several runs with different models.
+  return keep(
+    of,
+    asKept(of, read, label, source === 'captured' ? runId : undefined),
+  );
 }
 
 // What a run is told when the read it was taken with is no longer kept.

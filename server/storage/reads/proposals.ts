@@ -16,7 +16,7 @@ import {
   type DefinitionSet,
   type Proposal,
 } from '@/lib/engine/types';
-import { fallbackChain, type DraftingModel } from '@/lib/models';
+import { modelsFor, type ModelPreference } from '@/lib/models';
 
 import { database, type Database } from '@/server/db/client';
 import { ensureProcess } from '@/server/db/scope';
@@ -123,7 +123,7 @@ const BATCH = 25;
 
 // How the model is asked, and who watches and records it as it answers.
 type Asking = {
-  model?: DraftingModel | null;
+  model?: ModelPreference | null;
   resolve?: Resolve;
   watch?: Watch;
   record?: RecordAttempt;
@@ -194,7 +194,7 @@ export async function answerBatch(
     text,
     opened.calculation,
     [first, ...rest],
-    chosen ? fallbackChain(chosen) : DRAFT_MODELS,
+    modelsFor(chosen, DRAFT_MODELS),
     resolve,
     watch,
     record,

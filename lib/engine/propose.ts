@@ -1,7 +1,7 @@
 import { isStepCount, streamText, tool, ToolChoiceViolationError } from 'ai';
 import { z } from 'zod';
 
-import type { DraftingModel } from '@/lib/models';
+import { isTrialModel, type DraftingModel } from '@/lib/models';
 import type { DataShape } from './subject';
 import type { SourceTerms } from '@/lib/sources/model';
 
@@ -9,7 +9,7 @@ import type { RecordAttempt } from './attempts';
 import { layoutOf, onlyRecords, type Calculation } from './calculate';
 import { withModels, type Resolve } from './calls';
 import { dependentsOf, givenOf } from './checks';
-import { limitedGoogle } from './limits';
+import { resolveModel } from './model-provider';
 import { contextFor, run } from './formulas';
 import { profiledFor } from './profile';
 import { plain, timingOf } from './prompts';
@@ -569,8 +569,8 @@ export async function proposeBatch(
   const { model } = await withModels(
     models,
     'propose',
-    resolve ?? limitedGoogle,
-    async (languageModel, options) => {
+    resolve ?? resolveModel,
+    async (languageModel, options, id) => {
       try {
         const answer = streamText({
           model: languageModel,
@@ -613,16 +613,18 @@ export async function proposeBatch(
           timeout: { stepMs: 180_000, totalMs: 900_000 },
           ...options,
           // Its thought summaries, for a person watching it work.
-          providerOptions: {
-            ...options.providerOptions,
-            google: {
-              ...options.providerOptions?.google,
-              thinkingConfig: {
-                ...options.providerOptions?.google.thinkingConfig,
-                includeThoughts: true,
+          providerOptions: isTrialModel(id)
+            ? options.providerOptions
+            : {
+                ...options.providerOptions,
+                google: {
+                  ...options.providerOptions?.google,
+                  thinkingConfig: {
+                    ...options.providerOptions?.google.thinkingConfig,
+                    includeThoughts: true,
+                  },
+                },
               },
-            },
-          },
           // An error is a part of the stream, rethrown below so the next
           // model is tried as with any failed call.
           onError: () => undefined,

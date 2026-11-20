@@ -7,10 +7,10 @@ import {
   type DefinitionSubject,
   type WeeklyMoment,
 } from './subject';
-import { fallbackChain, type DraftingModel } from '@/lib/models';
+import { modelsFor, type DraftingModel } from '@/lib/models';
 
 import { DRAFT_MODELS, WRITE_MODELS, withModels } from './calls';
-import { limitedGoogle } from './limits';
+import { resolveModel } from './model-provider';
 import {
   dependentsOf,
   givenOf,
@@ -641,9 +641,9 @@ export async function writeOnce(
   const system = instructionsFor(setting);
   const prompt = promptFor(setting);
   const { model } = await withModels(
-    chosen ? fallbackChain(chosen) : WRITE_MODELS,
+    modelsFor(chosen, WRITE_MODELS),
     `write-${id}`,
-    resolve ?? limitedGoogle,
+    resolve ?? resolveModel,
     async (languageModel, options) => {
       try {
         await generateText({
@@ -818,7 +818,9 @@ export async function writeUntilAgreed(
   for (let run = 1; passed().length < 2; run += 1) {
     // A model a person chose is kept; otherwise repeated refusals move on.
     const escalated =
-      !asking.model && refusedSoFar() >= REFUSALS_BEFORE_STRONGER;
+      (!asking.model ||
+        (typeof asking.model !== 'string' && asking.model.plan === 'gemini')) &&
+      refusedSoFar() >= REFUSALS_BEFORE_STRONGER;
     if (escalated ? stronger >= STRONGER_WRITES : run > WRITES_AT_MOST) break;
     await onRun?.(run);
     try {

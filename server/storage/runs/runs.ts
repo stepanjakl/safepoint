@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 
 import { and, desc, eq, isNull, sql } from 'drizzle-orm';
 
+import type { DraftingModel, ModelPlan, ModelPreference } from '@/lib/models';
 import { database, type Database } from '@/server/db/client';
 import { instructionVersions, reads, runs } from '@/server/db/schema';
 import type { RunProcess } from '@/server/operations/kept-processes';
@@ -52,6 +53,7 @@ export type KeptRun = {
   status: string;
   trigger: string;
   additionalInstructions: string | null;
+  modelPlan: ModelPlan | null;
   startedBy: string | null;
   startedAt: string;
   updatedAt: string;
@@ -74,6 +76,7 @@ const COLUMNS = {
   status: runs.status,
   trigger: runs.trigger,
   additionalInstructions: runs.additionalInstructions,
+  modelPlan: runs.modelPlan,
   startedBy: runs.startedBy,
   startedAt: runs.startedAt,
   updatedAt: runs.updatedAt,
@@ -91,6 +94,7 @@ type Row = {
   status: string;
   trigger: string;
   additionalInstructions: string | null;
+  modelPlan: ModelPlan | null;
   startedBy: string | null;
   startedAt: Date;
   updatedAt: Date;
@@ -107,6 +111,7 @@ const runOf = (row: Row): KeptRun => ({
   status: row.status,
   trigger: row.trigger,
   additionalInstructions: row.additionalInstructions,
+  modelPlan: row.modelPlan,
   startedBy: row.startedBy,
   startedAt: row.startedAt.toISOString(),
   updatedAt: row.updatedAt.toISOString(),
@@ -145,6 +150,17 @@ export async function runOrRefuse(process: string, id: string) {
   return run;
 }
 
+export async function modelForRun(
+  process: string,
+  runId: string | undefined,
+  model?: DraftingModel,
+): Promise<ModelPreference | undefined> {
+  if (!runId) return model;
+  const run = await runOrRefuse(process, runId);
+  if (run.discardedAt) throw new Refused(RUN_DISCARDED);
+  return run.modelPlan ? { plan: run.modelPlan } : model;
+}
+
 /*
   Starts a run under a kept version of the process's instructions, at its
   first step after them, and answers it with the id the server gave it. Two
@@ -156,6 +172,7 @@ export async function startRun(
     instructions: string;
     trigger: 'manual' | 'rerun';
     additionalInstructions: string | null;
+    modelPlan?: ModelPlan;
     actor: string | null;
   },
 ): Promise<KeptRun> {
@@ -180,6 +197,7 @@ export async function startRun(
     status: 'running',
     trigger: start.trigger,
     additionalInstructions: start.additionalInstructions,
+    modelPlan: start.modelPlan,
     startedBy: start.actor,
     startedAt: sql`now()`,
   });

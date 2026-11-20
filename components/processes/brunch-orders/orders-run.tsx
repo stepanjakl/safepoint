@@ -36,6 +36,7 @@ import {
 import {
   InstructionsText,
   RunNote,
+  RunModelLabel,
   useRunDebug,
 } from '@/components/engine/run-parts';
 
@@ -251,9 +252,14 @@ function OrdersThread({
             }
           >
             {step.id === 'instructions' ? (
-              kept.additionalInstructions ? (
+              kept.additionalInstructions || kept.modelPlan ? (
                 <div className="grid gap-3">
-                  <RunNote text={kept.additionalInstructions} />
+                  {kept.modelPlan ? (
+                    <RunModelLabel plan={kept.modelPlan} />
+                  ) : null}
+                  {kept.additionalInstructions ? (
+                    <RunNote text={kept.additionalInstructions} />
+                  ) : null}
                   <InstructionsText text={text} />
                 </div>
               ) : (
@@ -263,6 +269,7 @@ function OrdersThread({
               <ResponseSection>
                 <ReadStep
                   kind={sourceById(SHEET_USE.source)?.kind ?? 'google-sheets'}
+                  runId={kept.modelPlan ? kept.id : undefined}
                   read={read}
                   loadingRead={readId !== null && read === undefined}
                   readError={saved.error}
@@ -290,6 +297,8 @@ function OrdersThread({
                   text={text}
                   version={version}
                   readId={readId}
+                  runId={kept.id}
+                  modelPlan={kept.modelPlan}
                   onProgress={setRules}
                   debug={debug}
                 />
@@ -301,6 +310,8 @@ function OrdersThread({
                   text={text}
                   readId={readId}
                   calculatedOn={kept.rulebook}
+                  runId={kept.id}
+                  modelPlan={kept.modelPlan}
                   onProgress={pin}
                   debug={debug}
                 />
@@ -313,6 +324,7 @@ function OrdersThread({
                   readId={read.id}
                   rulebook={pinned}
                   run={{ process: 'brunch-orders', runId: kept.id }}
+                  modelPlan={kept.modelPlan}
                   onProgress={setProposed}
                   debug={debug}
                   // Back to Calculate once the server has let go of the pin.

@@ -29,6 +29,7 @@ describe('runs router', () => {
       process: 'brunch-orders',
       instructions: V3,
       additionalInstructions: '  Order for 60 kits this time. ',
+      modelPlan: 'gemini-3.1-flash-lite',
     });
     expect(run).toMatchObject({
       process: 'brunch-orders',
@@ -40,6 +41,7 @@ describe('runs router', () => {
       status: 'running',
       trigger: 'manual',
       additionalInstructions: 'Order for 60 kits this time.',
+      modelPlan: 'gemini-3.1-flash-lite',
       startedBy: null,
       discardedAt: null,
     });

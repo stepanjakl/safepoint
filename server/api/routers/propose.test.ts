@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { fingerprintOf } from '@/lib/engine/fingerprint';
+import { fingerprintOf, hashOf } from '@/lib/engine/fingerprint';
 import { inScratchStorage } from '@/lib/engine/scratch.fixture';
 import { keepStandInRead } from '@/server/storage/reads.fixture';
 import { TEXT } from '@/lib/engine/set.fixture';
@@ -10,6 +10,7 @@ import { proposalSchema } from '@/lib/engine/types';
 import { BRUNCH_ORDERS_DEFINITIONS as owner } from '@/lib/processes/brunch-orders/process';
 import { keepProposal } from '@/server/storage/reads/proposals';
 import { putRevision } from '@/server/storage/rules/rulebooks';
+import { PUBLISHED } from '../kept-run.fixture';
 
 import {
   accepted,
@@ -104,6 +105,21 @@ describe('propose router', () => {
       TEXT,
       { model: 'gemini-3.5-flash' },
     ]);
+  });
+
+  it('uses the model plan saved with the run when starting a proposal', async () => {
+    vi.stubEnv('GROQ_API_KEY', 'stand-in');
+    const { id } = await caller().runs.start({
+      process: 'brunch-orders',
+      instructions: hashOf(PUBLISHED),
+      modelPlan: 'groq',
+    });
+    await caller().propose.start({
+      ...run,
+      runId: id,
+      model: 'gemini-3.5-flash',
+    });
+    expect(start.mock.calls[0]?.[5]).toEqual({ model: { plan: 'groq' } });
   });
 
   it('checks the values a person is changing, for one record', async () => {

@@ -10,7 +10,7 @@ import {
   type DraftProgress,
 } from '@/lib/engine/types';
 import type { Resolve } from '@/lib/engine/calls';
-import type { DraftingModel } from '@/lib/models';
+import type { ModelPreference } from '@/lib/models';
 import { runKeyOf } from '@/server/storage/reads/proposals';
 import { proposalWorkflow } from '@/server/workflows/proposal';
 import { holdStandIns } from '@/server/workflows/stand-ins';
@@ -58,7 +58,7 @@ export function startProposal(
   read: KeptRead,
   readId: string,
   text: string,
-  options: { model?: DraftingModel | null; resolve?: Resolve } = {},
+  options: { model?: ModelPreference | null; resolve?: Resolve } = {},
 ): Promise<DraftProgress> {
   const fingerprint = fingerprintOf(set);
   const job = jobFor(owner, readId, fingerprint);

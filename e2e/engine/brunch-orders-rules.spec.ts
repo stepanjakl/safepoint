@@ -4,6 +4,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
 import { definitionSetSchema, SCOPE_MISMATCH } from '@/lib/engine/types';
+import { DRAFTING_MODELS } from '@/lib/models';
 
 import { mockRules, rulesReply } from '../support/rules';
 import { mockProcedure } from '../support/trpc';
@@ -143,6 +144,59 @@ test('the calculations and checks of the instructions, with examples to confirm'
     await new AxeBuilder({ page }).include('ol.thread').analyze()
   ).violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
   expect(violations.map((v) => v.id)).toEqual([]);
+});
+
+test('a run keeps its selected model when it drafts after a reload', async ({
+  page,
+}) => {
+  await mockProcedure(page, 'modelLimits.available', { data: DRAFTING_MODELS });
+  const draft = await mockProcedure(page, 'rules.draft', {
+    data: rulesReply(frozen, { names }),
+  });
+
+  await page.goto('/processes/brunch-orders');
+  const trigger = page.getByRole('button', { name: 'Start run with a note' });
+  await trigger.focus();
+  await page.keyboard.press('Enter');
+  const options = page.getByRole('dialog', { name: 'Start with a note' });
+  const model = options.getByRole('combobox', { name: 'Models for this run' });
+  await expect(model).toHaveValue('');
+  await expect(
+    model.getByRole('option', { name: 'Models for this run' }),
+  ).toBeDisabled();
+  await expect(
+    model.getByRole('option', { name: 'Groq fleet' }),
+  ).toBeAttached();
+  await expect(
+    model.getByRole('option', { name: 'OpenRouter fleet' }),
+  ).toBeAttached();
+  await expect(
+    options.getByRole('textbox', { name: 'Note for this run' }),
+  ).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(model).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(options).toBeHidden();
+  await expect(trigger).toBeFocused();
+
+  await trigger.click();
+  await model.selectOption('gemini-3.1-flash-lite');
+  await options.getByRole('button', { name: 'Start run', exact: true }).click();
+  await expect(page).toHaveURL(/run=run-/);
+  const runId = new URL(page.url()).searchParams.get('run');
+  await page.reload();
+  await expect(
+    page.getByText('Using gemini-3.1-flash-lite', { exact: true }).first(),
+  ).toBeVisible();
+  await page
+    .getByRole('button', { name: 'Read the sheet', exact: true })
+    .last()
+    .click();
+  await page.getByRole('button', { name: 'Draft a new rulebook' }).click();
+  await page.getByRole('button', { name: 'Replace the rulebook' }).click();
+  await expect
+    .poll(() => draft.inputs)
+    .toEqual([expect.objectContaining({ runId })]);
 });
 
 test('accepted intent and rule keep the pressed button in place', async ({

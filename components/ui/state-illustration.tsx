@@ -37,6 +37,7 @@ const line = {
   fill: 'none',
   stroke: 'currentColor',
   strokeWidth: STROKE,
+  style: { strokeWidth: 'var(--edge-hairline)' },
   strokeLinecap: 'round',
   strokeLinejoin: 'round',
 } as const;

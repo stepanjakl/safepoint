@@ -5,7 +5,12 @@ import { findKept } from './set.fixture';
 import { loadSet } from '@/server/storage/rules/rulebooks';
 
 import { capturedRead } from './captured.fixture';
-import { accountingProblems, labelProblems, sentencesOf } from './find';
+import {
+  accountingProblems,
+  foundDefinitions,
+  labelProblems,
+  sentencesOf,
+} from './find';
 import { answer, standIn, told } from './models.fixture';
 import { confirmProfile, profileOf, withProfile } from './profile';
 import { inScratchStorage } from './scratch.fixture';
@@ -230,6 +235,22 @@ describe('finding', () => {
     );
     const kept = await loadSet(owner, TEXT);
     expect(kept?.definitions.map((d) => d.id)).toContain('expected_sales');
+  });
+
+  it('uses the next model in the run plan after an incomplete correction', async () => {
+    const wrong = { ...right, definitions: [CRATES, COVER] };
+    const primary = 'groq:openai/gpt-oss-120b';
+    const fallback = 'groq:openai/gpt-oss-20b';
+    const incomplete = standIn(answer(wrong), answer(wrong));
+    const complete = standIn(answer(right));
+    const found = await foundDefinitions(owner, TEXT, 'v1', capturedRead(), {
+      model: { plan: primary },
+      resolve: (id) => (id === primary ? incomplete : complete),
+    });
+    expect(found.model).toBe(fallback);
+    expect(found.definitions.map((definition) => definition.id)).toContain(
+      'expected_sales',
+    );
   });
 
   it('asks for how each check is read, and asks once more for one left without', async () => {

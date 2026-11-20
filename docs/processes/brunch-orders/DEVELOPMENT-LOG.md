@@ -873,3 +873,17 @@ app was put on Vercel, that a reader would not guess from the code:
   instructions and nothing complained until the key was restored (`0009`) and
   fourteen tests failed together. With every `rules` procedure mocked, nothing
   seeds `fixtures/` either, so such a test asks the server once for the rules.
+
+## A proposal can pass while a draft fails
+
+On 20 November 2026, a live comparison used the same two synthetic products
+for Groq and OpenRouter. Both Groq models and OpenRouter's Nemotron gave the
+expected quantities, 24 and 32. Nemotron's draft still failed because it did
+not connect an instruction sentence to a check. Ling was rate-limited by its
+upstream host.
+
+Groq accepted a first tool call with parsed reasoning, then rejected
+`reasoning_content` on the next request when the SDK sent it back with the
+tool result. Requesting hidden reasoning fixed the protocol error for
+GPT-OSS 20B. A useful provider trial needs to exercise schema output and a
+tool exchange across multiple turns.

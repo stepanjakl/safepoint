@@ -2,11 +2,14 @@ import 'server-only';
 
 import { z } from 'zod';
 
+import { availableModels } from '@/lib/engine/model-provider';
+import { availableModelPlan, modelPlanSchema } from '@/lib/models';
 import {
   runProcess,
   runProcessIdSchema,
 } from '@/server/operations/kept-processes';
 import { readIdSchema, rulebookIdSchema } from '@/server/storage/ids';
+import { Refused } from '@/server/storage/refused';
 import { versionByHash } from '@/server/storage/rules/instructions';
 import {
   discardRun,
@@ -40,16 +43,26 @@ export const runsRouter = router({
         trigger: z.enum(['manual', 'rerun']).default('manual'),
         // A note for this run alone, as the start control takes one.
         additionalInstructions: z.string().max(20_000).nullable().default(null),
+        modelPlan: modelPlanSchema.optional(),
       }),
     )
-    .mutation(({ ctx, input }) =>
-      startRun(runProcess(input.process), {
+    .mutation(({ ctx, input }) => {
+      if (
+        input.modelPlan &&
+        !availableModelPlan(input.modelPlan, availableModels())
+      )
+        throw new Refused(
+          'This model is unavailable. Choose another model for this run.',
+          'BAD_REQUEST',
+        );
+      return startRun(runProcess(input.process), {
         instructions: input.instructions,
         trigger: input.trigger,
         additionalInstructions: input.additionalInstructions?.trim() || null,
+        modelPlan: input.modelPlan,
         actor: ctx.actor,
-      }),
-    ),
+      });
+    }),
 
   list: gatedProcedure
     .input(

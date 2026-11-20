@@ -72,6 +72,17 @@ describe('read router', () => {
   });
   afterEach(() => vi.unstubAllEnvs());
 
+  it('keeps one captured snapshot separate for each named run', async () => {
+    const first = { source: 'captured', runId: 'run-first' } as const;
+    const a = await caller().read.keep(first);
+    const b = await caller().read.keep({ ...first, runId: 'run-second' });
+    expect(b.readAt).toBe(a.readAt);
+    expect(b.id).not.toBe(a.id);
+    await expect(caller().read.keep(first)).resolves.toMatchObject({
+      id: a.id,
+    });
+  });
+
   it('keeps a read of the live sheet, and gives it back by its id', async () => {
     for (const name of SHEET_ENV) vi.stubEnv(name, 'stand-in');
     vi.mocked(readWholeSheet).mockResolvedValueOnce(live);

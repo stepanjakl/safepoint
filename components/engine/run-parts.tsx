@@ -6,6 +6,7 @@ import { readRunDebug, subscribe } from '@/components/dev/design-preferences';
 import { AlertBox } from '@/components/ui/alert-box';
 import { Button } from '@/components/ui/button';
 import type { RunSelection } from '@/components/app-shell/runs/run-selection';
+import { modelPlanLabel, type ModelPlan } from '@/lib/models';
 import { RequestBubble } from '@/components/app-shell/thread/thread-page';
 
 export function useRunDebug(): boolean {
@@ -56,6 +57,10 @@ export function DiscardRun({
       ) : null}
     </>
   );
+}
+
+export function RunModelLabel({ plan }: { plan: ModelPlan }) {
+  return <p className="text-meta text-muted">Using {modelPlanLabel(plan)}</p>;
 }
 
 // A one-off note saved with this run, inside the Instructions step.

@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { recordsOf, type KeptRead } from '@/lib/engine/records';
 import { missingSheetEnv } from '@/lib/sheets/composio';
 import { rulebookProcess } from '@/server/operations/kept-processes';
+import { runIdSchema } from '@/server/storage/ids';
 import {
   captureRead,
   keptRead,
@@ -79,11 +80,16 @@ export const readRouter = router({
     .query(async ({ input }) => summaryOf(await keptOrRefuse(input.id))),
 
   keep: gatedProcedure
-    .input(z.strictObject({ source: z.enum(['captured', 'live']) }))
+    .input(
+      z.strictObject({
+        source: z.enum(['captured', 'live']),
+        runId: runIdSchema.optional(),
+      }),
+    )
     .mutation(async ({ input }) => {
       if (input.source === 'live') requireSheetEnv();
       try {
-        return summaryOf(await readAndKeep(reads, input.source));
+        return summaryOf(await readAndKeep(reads, input.source, input.runId));
       } catch (error) {
         throw new TRPCError({
           code: 'BAD_GATEWAY',
