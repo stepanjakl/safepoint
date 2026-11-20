@@ -28,13 +28,15 @@ import { Refused } from '@/server/storage/refused';
 */
 
 // How a run a person moves can stand. The others the table allows
-// (queued, held, failed, superseded, cancelled) belong to runs a schedule
-// starts, which nothing does yet.
+// (queued, superseded, cancelled) belong to runs a schedule starts,
+// which nothing does yet.
 export const PROGRESS_STATUSES = [
   'running',
   'awaiting_review',
   'approved',
   'completed',
+  'held',
+  'failed',
 ] as const;
 export type ProgressStatus = (typeof PROGRESS_STATUSES)[number];
 

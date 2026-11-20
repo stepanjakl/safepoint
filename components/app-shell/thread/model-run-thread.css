@@ -170,7 +170,7 @@
   /* The app's own doing -- sending, checking -- is hollow; the model's is filled. */
   .model-log-item[data-by='app'] .model-log-dot {
     background-color: transparent;
-    box-shadow: inset 0 0 0 1.5px var(--sp-rule-strong);
+    box-shadow: inset 0 0 0 var(--edge-field) var(--sp-rule-strong);
   }
   .model-log-item[data-problem] .model-log-dot {
     background-color: var(--sp-state-blocked);
@@ -213,6 +213,35 @@
   }
   .model-log-meta {
     animation: model-log-fade var(--model-log-text-in) var(--ease-out-quad) both;
+  }
+  /* Edge fades sit inside the card's px-4.5 (1.125rem) gutters outside the
+     text, so resting copy is 100% opaque while sliding copy feathers out on
+     both sides without clipping or mask toggling. */
+  .model-thought-body {
+    position: relative;
+    overflow-x: clip;
+    margin-inline: -1.125rem;
+    padding-inline: 1.125rem;
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 1.125rem,
+      #000 calc(100% - 1.125rem),
+      transparent
+    );
+  }
+  .model-thought-title {
+    position: relative;
+    overflow: hidden;
+    margin-inline: -1.125rem -0.5rem;
+    padding-inline: 1.125rem 0.5rem;
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 1.125rem,
+      #000 calc(100% - 0.5rem),
+      transparent
+    );
   }
   @keyframes model-log-fade {
     from {

@@ -61,15 +61,15 @@
     gap: 0.125rem;
     max-width: min(15rem, calc(100vw - 1.5rem));
     padding: var(--tooltip-padding-block) 0.5rem;
-    border: 1px solid var(--tooltip-edge);
+    border: var(--edge-rule) solid var(--tooltip-edge);
     border-radius: var(--tooltip-radius);
     background: var(--tooltip-face);
     /* Edges only, no cast shadow: the tooltip is anchored to its trigger rather
        than floating above the page, and the arrow can draw an edge but not a
        shadow -- a drop shadow on the box alone would detach the two. */
     box-shadow:
-      inset 0 0 0 1px var(--tooltip-highlight),
-      0 0 0 1px var(--tooltip-outline);
+      inset 0 0 0 var(--highlight-pane) var(--tooltip-highlight),
+      0 0 0 var(--highlight-outline) var(--tooltip-outline);
     color: var(--sp-tooltip-ink);
     font-size: var(--sp-text-meta);
     line-height: var(--sp-text-meta--lh);
@@ -174,7 +174,24 @@
     transform: translateX(0.5px) rotate(90deg);
   }
 
+  @media (min-resolution: 2dppx) {
+    :root[data-edges='retina'] .app-tooltip {
+      border-width: 0;
+      box-shadow:
+        inset 0 0 0 var(--edge-ring) var(--tooltip-edge),
+        inset 0 0 0 calc(var(--edge-ring) + var(--highlight-pane)) var(--tooltip-highlight),
+        0 0 0 var(--highlight-outline) var(--tooltip-outline);
+    }
+    :root[data-edges='retina'] .tooltip-arrow-edge,
+    :root[data-edges='retina'] .tooltip-arrow-highlight {
+      stroke-width: 0.75;
+    }
+  }
+
   @media (forced-colors: active) {
+    :root[data-edges='retina'] .app-tooltip {
+      border-width: 1px;
+    }
     .app-tooltip {
       --tooltip-face: Canvas;
       --tooltip-edge: CanvasText;

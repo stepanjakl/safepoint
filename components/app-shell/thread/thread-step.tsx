@@ -25,6 +25,7 @@ import ClockFilled from 'blode-icons-react/icons/clock-filled';
 import CircleXFilled from 'blode-icons-react/icons/circle-x-filled';
 import ExclamationCircleFilled from 'blode-icons-react/icons/exclamation-circle-filled';
 import { Glyph } from '@/components/ui/glyph';
+import { SMOOTH_HEIGHT_ANIMATION_ID } from '@/components/ui/smooth-height';
 import { Tooltip } from '@/components/ui/tooltip';
 import { stepMarker, toneText } from '@/components/app-shell/markers';
 import {
@@ -454,14 +455,17 @@ export function ThreadStep({
         step?.dataset.open === undefined ||
         step.dataset.entering !== undefined ||
         fold.getAnimations().length > 0 ||
-        // A fold inside the body eases itself; following it frame by frame
-        // would restart this ease each frame and hold the inner one back.
+        // A fold or SmoothHeight inside the body eases itself; following it
+        // frame by frame would restart this ease each frame and clip content
+        // below it.
         body
           .getAnimations({ subtree: true })
           .some(
             (animation) =>
-              animation instanceof CSSTransition &&
-              animation.transitionProperty === 'grid-template-rows',
+              animation.id === SMOOTH_HEIGHT_ANIMATION_ID ||
+              (animation instanceof CSSTransition &&
+                (animation.transitionProperty === 'grid-template-rows' ||
+                  animation.transitionProperty === 'height')),
           ) ||
         prefersReducedMotion()
       )
@@ -501,20 +505,24 @@ export function ThreadStep({
   // Shutting on screen, until the fold's own transition ends.
   const [closing, setClosing] = useState(false);
   // This pass's fold, for the body below: a set state is only read next pass.
-  let opening = open;
+  let closingNow = closing;
   if (settled !== earned) {
     setSettled(earned);
     if (earned || !kept) {
-      if (open && !earned && !prefersReducedMotion()) setClosing(true);
+      if (open && !earned && !prefersReducedMotion()) {
+        setClosing(true);
+        closingNow = true;
+      }
       setOpen(earned);
-      opening = earned;
     }
   }
-  // A fold that shuts keeps the box it showed open, so it closes over what
-  // the reader saw rather than first growing into the finished box.
+  // A fold that shuts keeps the box it showed open only while closing, so it
+  // closes over what the reader saw rather than first growing into the
+  // finished box; once shut, it updates while hidden so reopening never replays
+  // an exit animation.
   const [heldBody, setHeldBody] = useState(children);
-  if (opening && heldBody !== children) setHeldBody(children);
-  const body = opening ? children : heldBody;
+  if (!closingNow && heldBody !== children) setHeldBody(children);
+  const body = closingNow ? heldBody : children;
   // Whether the step finished while on screen: its marker settles once. Read
   // at the change, so a step that loads finished never plays it.
   const [status, setStatus] = useState(step.status);
@@ -683,6 +691,7 @@ export function ThreadStep({
               aria-expanded={open}
               aria-controls={bodyId}
               onClick={() => {
+                setClosing(false);
                 setKept(!open);
                 setOpen(!open);
               }}

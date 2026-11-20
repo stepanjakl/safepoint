@@ -1,5 +1,6 @@
 'use client';
 
+import { AlertBox } from '@/components/ui/alert-box';
 import { Button } from '@/components/ui/button';
 import type { Stale } from '@/lib/engine/fits';
 
@@ -18,28 +19,34 @@ export function StaleRules({
   onMove: () => void;
 }) {
   return (
-    <div role="alert" className="text-dense grid gap-2">
-      <p className="text-state-blocked">
-        The rules this run uses no longer fit the data it read.
-      </p>
-      <ul className="grid gap-1">
-        {stale.problems.map((problem) => (
-          <li key={problem.id}>
-            <span className="font-medium">{problem.name}</span>:{' '}
-            <span className="text-muted">{problem.problem}</span>
-          </li>
-        ))}
-      </ul>
-      {stale.current ? (
-        <div>
-          <Button onPress={onMove}>Use the current rules</Button>
-        </div>
-      ) : (
-        <p className="text-muted">
-          The current rules do not fit it either: draft them again in the Rules
-          step.
-        </p>
-      )}
-    </div>
+    <AlertBox
+      title="The rules this run uses no longer fit the data it read."
+      action={
+        stale.current ? (
+          <Button size="small" onPress={onMove}>
+            Use the current rules
+          </Button>
+        ) : undefined
+      }
+    >
+      <div className="grid gap-2">
+        <ul className="grid gap-1">
+          {stale.problems.map((problem) => (
+            <li key={problem.id}>
+              <span className="text-severity-strong font-medium">
+                {problem.name}
+              </span>
+              : {problem.problem}
+            </li>
+          ))}
+        </ul>
+        {stale.current ? null : (
+          <p>
+            The current rules do not fit it either: draft them again in the
+            Rules step.
+          </p>
+        )}
+      </div>
+    </AlertBox>
   );
 }

@@ -1,0 +1,41 @@
+/* Callout tones beyond the severity buckets (blocked, decision): cyan for
+   product actions like trying a mock run, and a soft neutral card for
+   contextual notes such as model thinking. */
+:root {
+  --sp-callout-accent-face: light-dark(var(--radix-cyan-3), var(--radix-cyan-dark-3));
+  --sp-callout-accent-ring: light-dark(var(--radix-cyan-5), var(--radix-cyan-dark-6));
+  --sp-callout-accent-strong: light-dark(var(--radix-cyan-12), var(--radix-cyan-dark-12));
+  --sp-callout-accent-ink: light-dark(
+    color-mix(in oklab, var(--radix-cyan-12) 40%, var(--radix-cyan-11)),
+    var(--radix-cyan-dark-11)
+  );
+  --sp-callout-neutral-face: light-dark(var(--sp-neutral-100), var(--sp-neutral-825));
+  --sp-callout-neutral-ring: light-dark(var(--sp-neutral-250), var(--sp-neutral-700));
+  --sp-callout-neutral-strong: var(--sp-text-primary);
+  --sp-callout-neutral-ink: var(--sp-text-muted-strong);
+}
+
+@layer components {
+  .alert-box[data-tone='accent'] {
+    --alert-face: var(--sp-callout-accent-face);
+    --alert-ring: var(--sp-callout-accent-ring);
+    --alert-strong: var(--sp-callout-accent-strong);
+    --alert-ink: var(--sp-callout-accent-ink);
+  }
+  .alert-box[data-tone='neutral'] {
+    --alert-face: var(--sp-callout-neutral-face);
+    --alert-ring: var(--sp-callout-neutral-ring);
+    --alert-strong: var(--sp-callout-neutral-strong);
+    --alert-ink: var(--sp-callout-neutral-ink);
+  }
+  .alert-box[data-tone] {
+    background-color: var(--alert-face);
+    border-color: var(--alert-ring);
+  }
+  .alert-box[data-tone] .alert-box-title {
+    color: var(--alert-strong);
+  }
+  .alert-box[data-tone] .alert-box-ink {
+    color: var(--alert-ink);
+  }
+}

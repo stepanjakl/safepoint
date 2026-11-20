@@ -52,9 +52,10 @@ export function useThreadArrivals<S extends string>(
   stage: S,
   stepIds: string[],
   look: ThreadLook,
+  enterFirst = false,
 ): ThreadArrivals<S> {
   const [firstStage] = useState(stage);
-  const watched = stage !== firstStage;
+  const watched = enterFirst || stage !== firstStage;
   const [drawn, setDrawn] = useState(stepIds);
   const busy = useRef(new Set<string>());
   const [settledAt, setSettledAt] = useState(0);
@@ -148,6 +149,8 @@ export function Thread<S extends string>({
     newest?.id,
     Boolean(end),
     shown.length,
+    0,
+    newest?.status === 'running',
   );
   const paused = useRestWhenUnseen(thread);
   const reduceMotion = useReducedMotion();

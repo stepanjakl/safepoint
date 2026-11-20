@@ -9,6 +9,7 @@ import { StaleRules } from '@/components/engine/stale-rules';
 import { Lede } from '@/components/engine/trial-parts';
 import type { RunProcessId } from '@/components/app-shell/runs/kept-runs';
 import { useTRPC } from '@/components/trpc/provider';
+import { AlertBox } from '@/components/ui/alert-box';
 import { Button } from '@/components/ui/button';
 import { asReviewed as reviewed } from '@/lib/engine/reviewed';
 import type { Proposal } from '@/lib/engine/types';
@@ -390,18 +391,20 @@ export function ProposeStep({
     return (
       <div className="grid gap-4">
         {failure ? (
-          <div className="flex flex-wrap items-center gap-3">
-            <p role="alert" className="text-dense text-state-blocked">
-              {failure}
-            </p>
-            <Button
-              size="medium"
-              isDisabled={running || busy}
-              onPress={() => start.mutate(run)}
-            >
-              Try again
-            </Button>
-          </div>
+          <AlertBox
+            title="Could not finish the proposal"
+            action={
+              <Button
+                size="small"
+                isDisabled={running || busy}
+                onPress={() => start.mutate(run)}
+              >
+                Try again
+              </Button>
+            }
+          >
+            {failure}
+          </AlertBox>
         ) : null}
         <p
           role="status"
@@ -431,24 +434,26 @@ export function ProposeStep({
         <StaleRules stale={stale} onMove={onMoveRules} />
       ) : debug ? (
         (notice?.error ?? start.error ?? asked.error ?? decidedAsked.error) ? (
-          <p role="alert" className="text-dense text-state-blocked">
+          <AlertBox>
             {notice?.error ??
               (start.error ?? asked.error ?? decidedAsked.error)?.message}
-          </p>
+          </AlertBox>
         ) : null
       ) : failure ? (
-        <div className="flex flex-wrap items-center gap-3">
-          <p role="alert" className="text-dense text-state-blocked">
-            {failure}
-          </p>
-          <Button
-            size="medium"
-            isDisabled={running || busy}
-            onPress={() => !mock && start.mutate(run)}
-          >
-            Try again
-          </Button>
-        </div>
+        <AlertBox
+          title="Could not finish the proposal"
+          action={
+            <Button
+              size="small"
+              isDisabled={running || busy}
+              onPress={() => !mock && start.mutate(run)}
+            >
+              Try again
+            </Button>
+          }
+        >
+          {failure}
+        </AlertBox>
       ) : null}
       {debug ? (
         /* Scaffolding for trying the step, as the other steps' setups are. */

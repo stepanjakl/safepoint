@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveNeutral } from './design-preferences';
+import { resolveEdgePreset, resolveNeutral } from './design-preferences';
 
 describe('neutral family preference resolution', () => {
   it('gives a valid URL choice precedence over storage', () => {
@@ -12,5 +12,18 @@ describe('neutral family preference resolution', () => {
     expect(resolveNeutral('zinc', 'moss')).toBe('moss');
     expect(resolveNeutral('unknown', 'zinc')).toBe('graphite');
     expect(resolveNeutral(null, null)).toBe('graphite');
+  });
+});
+
+describe('edge preset preference resolution', () => {
+  it('gives a valid URL choice precedence over storage', () => {
+    expect(resolveEdgePreset('retina', 'highlights')).toBe('retina');
+    expect(resolveEdgePreset('highlights', 'retina')).toBe('highlights');
+  });
+
+  it('falls through invalid URL and storage values to default', () => {
+    expect(resolveEdgePreset('thin', 'highlights')).toBe('highlights');
+    expect(resolveEdgePreset('unknown', 'thin')).toBe('default');
+    expect(resolveEdgePreset(null, null)).toBe('default');
   });
 });

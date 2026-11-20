@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from 'react';
 
 import { readRunDebug, subscribe } from '@/components/dev/design-preferences';
+import { AlertBox } from '@/components/ui/alert-box';
 import { Button } from '@/components/ui/button';
 import type { RunSelection } from '@/components/app-shell/runs/run-selection';
 import { RequestBubble } from '@/components/app-shell/thread/thread-page';
@@ -51,9 +52,7 @@ export function DiscardRun({
       </Button>
       {words ? <span className="text-meta text-muted">{words}</span> : null}
       {selection.discardError ? (
-        <p role="alert" className="text-dense text-state-blocked">
-          {selection.discardError}
-        </p>
+        <AlertBox size="compact">{selection.discardError}</AlertBox>
       ) : null}
     </>
   );

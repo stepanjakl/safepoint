@@ -76,7 +76,7 @@
        change colour, never size. */
     --thread-mark: 1.125rem;
     /* A bar rather than a border, for its rounded ends. */
-    --thread-line: 1.5px;
+    --thread-line: var(--section-rule-width);
     /* The clearance between the line and the markers it joins, a little more
        below it than above, so the line reads as leaving one step for the next. */
     --thread-line-space: 0.4375rem;

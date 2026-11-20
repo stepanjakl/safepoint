@@ -56,3 +56,16 @@
     }
   }
 }
+
+@media (min-resolution: 2dppx) {
+  :root[data-edges='retina'] .request-bubble-card {
+    border-width: 0;
+    box-shadow: inset 0 0 0 var(--edge-ring) var(--sp-rule-faint);
+  }
+}
+
+@media (forced-colors: active) {
+  :root[data-edges='retina'] .request-bubble-card {
+    border-width: 1px;
+  }
+}

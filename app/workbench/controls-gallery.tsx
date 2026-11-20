@@ -8,6 +8,7 @@ import { Button as AriaButton } from 'react-aria-components';
 import { AssistantContext } from '@/components/app-shell/assistant/assistant-state';
 import { CLOSE_BUTTON } from '@/components/app-shell/drawer-aside';
 import { ProcessHeader } from '@/components/app-shell/process/process-header';
+import { RunRow } from '@/components/app-shell/runs/run-row';
 import { Button, type Slant } from '@/components/ui/button';
 import { WalkthroughDismiss } from '@/components/ui/walkthrough-hint';
 import { ChoiceGroup } from '@/components/ui/choice-group';
@@ -16,6 +17,7 @@ import { RunStatusIcon } from '@/components/ui/run-status-icon';
 import { Switch, type SwitchSize } from '@/components/ui/switch';
 import {
   RUN_STATUS_LABELS,
+  type ProcessRun,
   type ProcessSummary,
   type RunStatus,
 } from '@/lib/shell/model';
@@ -558,6 +560,134 @@ export function ControlsGallery({
           ))}
         </div>
       </Section>
+
+      <Section title="Run rows">
+        <RunRowGallery />
+      </Section>
     </>
+  );
+}
+
+const SAMPLE_RUNS: ProcessRun[] = [
+  {
+    id: 'run-sample-queued',
+    startedAt: '2026-11-19T14:30:00Z',
+    status: 'queued',
+    trigger: 'schedule',
+    counts: { items: 0 },
+    instructionsVersion: 'v1',
+  },
+  {
+    id: 'run-sample-running',
+    startedAt: '2026-11-19T14:12:00Z',
+    status: 'running',
+    trigger: 'manual',
+    counts: { items: 0 },
+    instructionsVersion: 'v1',
+  },
+  {
+    id: 'run-sample-awaiting-review',
+    startedAt: '2026-11-19T13:45:00Z',
+    status: 'awaiting_review',
+    trigger: 'schedule',
+    counts: { items: 24, blocked: 2, needsDecision: 5 },
+    instructionsVersion: 'v1',
+  },
+  {
+    id: 'mock-sample-awaiting-review',
+    startedAt: '2026-11-19T13:30:00Z',
+    status: 'awaiting_review',
+    trigger: 'manual',
+    counts: { items: 0 },
+    instructionsVersion: 'v1',
+  },
+  {
+    id: 'run-sample-approved',
+    startedAt: '2026-11-19T11:20:00Z',
+    status: 'approved',
+    trigger: 'manual',
+    counts: { items: 24 },
+    instructionsVersion: 'v1',
+  },
+  {
+    id: 'run-sample-completed',
+    startedAt: '2026-11-18T16:05:00Z',
+    status: 'completed',
+    trigger: 'schedule',
+    counts: { items: 24 },
+    instructionsVersion: 'v1',
+  },
+  {
+    id: 'run-sample-held',
+    startedAt: '2026-11-18T12:15:00Z',
+    status: 'held',
+    trigger: 'rerun',
+    counts: { items: 18, blocked: 1 },
+    instructionsVersion: 'v1',
+  },
+  {
+    id: 'run-sample-failed',
+    startedAt: '2026-11-18T09:40:00Z',
+    status: 'failed',
+    trigger: 'manual',
+    counts: { items: 0 },
+    instructionsVersion: 'v1',
+  },
+  {
+    id: 'run-sample-superseded',
+    startedAt: '2026-11-17T15:10:00Z',
+    status: 'superseded',
+    trigger: 'schedule',
+    counts: { items: 16, needsDecision: 3, deferred: 1 },
+    instructionsVersion: 'v1',
+  },
+  {
+    id: 'run-sample-cancelled',
+    startedAt: '2026-11-17T08:00:00Z',
+    status: 'cancelled',
+    trigger: 'manual',
+    counts: { items: 0 },
+    instructionsVersion: 'v1',
+  },
+];
+
+function RunRowGallery() {
+  const [selected, setSelected] = useState<string | null>(null);
+  return (
+    <div className="flex flex-wrap gap-6">
+      <div className="grid gap-2">
+        <span className={LABEL}>Rest (click to select)</span>
+        <div className="ground-raised bg-surface-primary border-edge-subtle rounded-shell w-72 overflow-hidden border">
+          <ol className="sheet-list">
+            {SAMPLE_RUNS.map((run) => (
+              <li key={run.id}>
+                <RunRow
+                  run={run}
+                  noun="item"
+                  selected={selected === run.id}
+                  onSelect={() =>
+                    setSelected((current) =>
+                      current === run.id ? null : run.id,
+                    )
+                  }
+                />
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+      <div className="grid gap-2">
+        <span className={LABEL}>Selected</span>
+        <div className="ground-raised bg-surface-primary border-edge-subtle rounded-shell w-72 overflow-hidden border">
+          <ol className="sheet-list">
+            {SAMPLE_RUNS.map((run) => (
+              <li key={run.id}>
+                <RunRow run={run} noun="item" selected onSelect={() => {}} />
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+    </div>
   );
 }

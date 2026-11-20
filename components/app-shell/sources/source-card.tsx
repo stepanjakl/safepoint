@@ -389,7 +389,9 @@ function SourceFile({
             </dl>
           </div>
           {entry.readError ? (
-            <AlertBox>The read failed: {entry.readError}</AlertBox>
+            <AlertBox size="compact">
+              The read failed: {entry.readError}
+            </AlertBox>
           ) : null}
           {/* At the foot, and never nearer the figures than 30 (gap and pad). */}
           <div className="mt-auto flex items-center gap-1.5 pt-5">

@@ -14,6 +14,7 @@ import {
   dateTime,
   useMutationTrial,
 } from '@/components/engine/trial-parts';
+import { AlertBox } from '@/components/ui/alert-box';
 import { Button } from '@/components/ui/button';
 import {
   DATA_TABLE_HEAD,
@@ -176,14 +177,16 @@ export function ReadStep({
       {automatic ? (
         <>
           {read ? null : unreadable ? (
-            <div className="flex flex-wrap items-center gap-3">
-              <p role="alert" className="text-dense text-state-blocked">
-                {unreadable}
-              </p>
-              <Button size="medium" onPress={() => readFrom('live')}>
-                Read again
-              </Button>
-            </div>
+            <AlertBox
+              title={`Could not read the ${noun}`}
+              action={
+                <Button size="small" onPress={() => readFrom('live')}>
+                  Read again
+                </Button>
+              }
+            >
+              {unreadable}
+            </AlertBox>
           ) : (
             <p role="status" className="text-dense text-muted">
               {loadingRead
@@ -192,17 +195,15 @@ export function ReadStep({
             </p>
           )}
           {read?.problems?.length ? (
-            <div role="alert" className="grid gap-1">
-              <p className="text-dense">
-                The {noun} does not fit what this process reads, so nothing is
-                proposed on it. Fix the {noun} and start a new run:
-              </p>
-              <ul className="text-dense list-disc pl-5">
+            <AlertBox
+              title={`The ${noun} does not fit what this process reads, so nothing is proposed on it. Fix the ${noun} and start a new run:`}
+            >
+              <ul className="list-disc pl-5">
                 {read.problems.map((problem) => (
                   <li key={problem}>{problem}</li>
                 ))}
               </ul>
-            </div>
+            </AlertBox>
           ) : null}
         </>
       ) : (
@@ -258,17 +259,15 @@ export function ReadStep({
             <p className="text-meta text-muted break-words">{read.source}</p>
           ) : null}
           {read?.problems?.length ? (
-            <div role="alert" className="grid gap-1">
-              <p className="text-dense">
-                The {noun} does not fit what this process reads, so no rules are
-                drafted on it. Fix the {noun} and read it again:
-              </p>
-              <ul className="text-dense list-disc pl-5">
+            <AlertBox
+              title={`The ${noun} does not fit what this process reads, so no rules are drafted on it. Fix the ${noun} and read it again:`}
+            >
+              <ul className="list-disc pl-5">
                 {read.problems.map((problem) => (
                   <li key={problem}>{problem}</li>
                 ))}
               </ul>
-            </div>
+            </AlertBox>
           ) : null}
         </section>
       )}

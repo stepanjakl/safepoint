@@ -84,6 +84,13 @@ Text that changes in place morphs; it never jumps. A `Button` or
 not as an element. Anything else that changes its words or figures -- a pill, a
 count, a label beside an icon -- wraps them in `MorphingText`.
 
+Containers whose content changes height in place (paged cards, swapped panels,
+dynamic callout bodies) ease their height with `SmoothHeight`
+(`components/ui/smooth-height.tsx`, paced by `pacedDuration(..., 'fold', delta)`
+and `--ease-fold`) rather than snapping or adding ad-hoc CSS `height`
+transitions, so height changes stay consistent across the app and never fight an
+enclosing `ThreadStep`.
+
 A comment in a stylesheet earns its place only by preventing a specific wrong
 edit: a measured constraint, a browser behaviour, or a cross-file dependency.
 Two lines. Longer reasoning goes in `docs/interface/STYLING-SYSTEM.md`, not in the CSS.
@@ -91,6 +98,11 @@ Two lines. Longer reasoning goes in `docs/interface/STYLING-SYSTEM.md`, not in t
 `pnpm dev` runs webpack, not Turbopack, on purpose: only webpack gives each rule
 a source map to its own stylesheet and lets `tools/postcss-light-dark` fold
 Lightning CSS's `light-dark()` polyfill back, so DevTools reads like the source.
+
+When making multi-file edits while `pnpm dev` may be running, bracket the batch
+with `pnpm dev:pause` before the first edit and `pnpm dev:resume` once the edits
+(and any quick fixes) are complete so webpack compiles everything in one reload.
+Always run `pnpm dev:resume` before finishing, even if the task stops early.
 
 ## Colours
 

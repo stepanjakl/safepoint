@@ -23,9 +23,10 @@ import type { RunStatus } from '@/lib/shell/model';
 */
 
 // 16px of viewBox, so a stroke width reads the same whatever size it is drawn
-// at. The ring sits one stroke in from the edge; the disc fills to it.
+// at. Solid discs step slightly inside the ring's outer edge (6.6 vs 7.0) so
+// filled and hollow states match optically at 16px.
 const RING = 6.25;
-const DISC = 7;
+const DISC = 6.6;
 
 export function RunStatusIcon({
   status,
@@ -101,12 +102,12 @@ const ring = <circle cx="8" cy="8" r={RING} />;
 
 /*
   A running run is drawn as the run thread's active step is: a pale track, an
-  arc of the state's own colour a third of the way round it, and a dot in the
+  arc of the state's own colour most of the way round it, and a dot in the
   middle. Still rather than turning: the rail lists runs, and a spinner in a
   list of four rows is four things moving for no information. The thread's
   marker is the one that turns.
 */
-const ARC = 'M8 1.75 A6.25 6.25 0 0 1 13.41 11.125';
+const ARC = 'M8 1.75 A6.25 6.25 0 1 1 3.98 12.79';
 
 type Shape = {
   // A solid disc with the mark knocked out of it, rather than a ring.
@@ -123,8 +124,8 @@ const SHAPES: Record<RunStatus, Shape> = {
         cx="8"
         cy="8"
         r={RING}
-        strokeDasharray="0.1 3"
-        strokeWidth={1.75}
+        strokeDasharray="0.1 2.9"
+        strokeWidth={1.5}
       />
     ),
   },
@@ -141,36 +142,32 @@ const SHAPES: Record<RunStatus, Shape> = {
     mark: (
       <>
         <path d={ARC} />
-        <circle cx="8" cy="8" r="2.5" fill="currentColor" stroke="none" />
+        <circle cx="8" cy="8" r="2.25" fill="currentColor" stroke="none" />
       </>
     ),
   },
-  // The one state that is asking for something. A solid disc, because it is
-  // the loudest thing the rail can show, and the mark that means "you".
+  // Still open and waiting on a person: a closed ring with the centre dot,
+  // matching `running` and `approved` in stroke weight so it stands out by
+  // hue rather than visual mass.
   awaiting_review: {
-    fill: true,
-    mark: (
-      <>
-        <path d="M8 4.4 L8 8.6" />
-        {/* A round cap on a hair of a line: the dot under the bar. */}
-        <path d="M8 11.05 L8 11.1" />
-      </>
-    ),
+    ring,
+    mark: <circle cx="8" cy="8" r="2.25" fill="currentColor" stroke="none" />,
   },
   // Decided, but it has not reached anything yet: the ring is still open.
   approved: {
     ring,
-    mark: <path d="M5 8.2 L7.1 10.3 L11 5.9" strokeWidth={1.6} />,
+    mark: <path d="M5.1 8.2 L7.1 10.2 L10.9 6" strokeWidth={1.6} />,
   },
   // Decided and applied. The only state a reader can stop thinking about.
-  completed: { fill: true, mark: <path d="M4.9 8.2 L7.1 10.4 L11.1 5.8" /> },
-  // Stopped on purpose, and it can still move.
+  completed: { fill: true, mark: <path d="M5.1 8.2 L7.1 10.2 L10.9 6" /> },
+  // Stopped on purpose, and it can still move: hollow ring with pause bars so
+  // it stays distinct from terminal failure.
   held: {
-    fill: true,
+    ring,
     mark: (
       <>
-        <path d="M6.3 5.3 L6.3 10.7" />
-        <path d="M9.7 5.3 L9.7 10.7" />
+        <path d="M6.4 5.5 L6.4 10.5" strokeWidth={1.6} />
+        <path d="M9.6 5.5 L9.6 10.5" strokeWidth={1.6} />
       </>
     ),
   },
@@ -178,16 +175,21 @@ const SHAPES: Record<RunStatus, Shape> = {
     fill: true,
     mark: (
       <>
-        <path d="M5.7 5.7 L10.3 10.3" />
-        <path d="M10.3 5.7 L5.7 10.3" />
+        <path d="M5.8 5.8 L10.2 10.2" />
+        <path d="M10.2 5.8 L5.8 10.2" />
       </>
     ),
   },
-  cancelled: { fill: true, mark: <path d="M5.3 8 L10.7 8" /> },
+  cancelled: { fill: true, mark: <path d="M5.4 8 L10.6 8" /> },
   // Passed over rather than stopped: nobody decided, and a newer run replaced
-  // it. Hollow, because it was never settled -- only overtaken.
+  // it. Hollow, with a small forward arrow.
   superseded: {
     ring,
-    mark: <path d="M5.2 10.8 L10.8 5.2" strokeWidth={1.6} />,
+    mark: (
+      <>
+        <path d="M5.7 10.3 L10.1 5.9" strokeWidth={1.5} />
+        <path d="M6.8 5.9 L10.1 5.9 L10.1 9.2" strokeWidth={1.5} />
+      </>
+    ),
   },
 };

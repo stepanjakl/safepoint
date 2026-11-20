@@ -613,8 +613,8 @@ const ANCHORED_BY_FILE = {
   },
   'components/app-shell/sidebar/sidebar-notice.css': {
     '--sp-notice-face': { on: 'canvas', light: -25, dark: -75 },
-    '--sp-notice-edge-top': { on: 'canvas', light: 125, dark: -125 },
-    '--sp-notice-edge-bottom': { on: 'canvas', light: 125, dark: -125 },
+    '--sp-notice-edge-top': { on: 'canvas', light: 125, dark: -175 },
+    '--sp-notice-edge-bottom': { on: 'canvas', light: 125, dark: -175 },
     '--sp-notice-highlight': { highlightOf: '--sp-notice-face' },
   },
   'components/app-shell/process/process-header.css': {

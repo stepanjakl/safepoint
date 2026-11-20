@@ -30,17 +30,39 @@ import type {
 } from '@/components/engine/propose/types';
 import { needsPerson } from '@/components/engine/propose/verdict';
 import { useTRPC } from '@/components/trpc/provider';
+import { AlertBox } from '@/components/ui/alert-box';
 import { asReviewed as reviewed } from '@/lib/engine/reviewed';
 import type { Application, Proposal } from '@/lib/engine/types';
 import { SHEET_USE, SUBJECT } from '@/lib/processes/brunch-orders/data';
 import type { ProcessSummary, RunTrigger } from '@/lib/shell/model';
-import type { ModelRunFacts, ModelRunStage } from '@/lib/shell/model-run';
+import {
+  subjectFromTab,
+  type ModelRunFacts,
+  type ModelRunStage,
+} from '@/lib/shell/model-run';
 import { runDay, runTime } from '@/lib/shell/run-time';
-import { sourceById } from '@/lib/sources/model';
+import { SOURCE_KINDS, sourceById } from '@/lib/sources/model';
+import { motionTime } from '@/lib/ui/motion-time';
 import type { AppRouter } from '@/server/api/root';
 
 const POLL_MS = 2000;
 const NO_DECISIONS: Record<string, Decision> = {};
+
+const STAGE_PROGRESS_STATUS: Record<
+  ModelRunStage,
+  'running' | 'awaiting_review' | 'approved' | 'completed' | 'held' | 'failed'
+> = {
+  starting: 'running',
+  reading: 'running',
+  evaluating: 'running',
+  stopped: 'failed',
+  awaiting_review: 'awaiting_review',
+  reviewing: 'awaiting_review',
+  ready_to_commit: 'approved',
+  committing: 'approved',
+  intervention: 'held',
+  committed: 'completed',
+};
 
 const askedOf = (key: string, decision: Decision) =>
   decision.kind === 'change'
@@ -108,6 +130,27 @@ function DirectThread({
   const { kept, text } = live;
   const sourceKind = sourceById(SHEET_USE.source)?.kind ?? 'google-sheets';
 
+  // A run opened with a saved read already has server state to hydrate: load
+  // its read, proposal and decisions in parallel and wait for them before
+  // mounting ModelRunThread so it opens straight at its real stage instead of
+  // starting at 'reading' and replaying arrivals.
+  const [startedWithRead] = useState(kept.readId !== null);
+  const [hydrated, setHydrated] = useState(!startedWithRead);
+  // A freshly started run opens on 'starting' so Instructions plays its
+  // entrance sequence before Reading inputs arrives (while the live read
+  // already runs in the background).
+  const [startingBeat, setStartingBeat] = useState(
+    () =>
+      !startedWithRead &&
+      (typeof matchMedia === 'undefined' ||
+        !matchMedia('(prefers-reduced-motion: reduce)').matches),
+  );
+  useEffect(() => {
+    if (!startingBeat) return;
+    const timer = setTimeout(() => setStartingBeat(false), motionTime(1600));
+    return () => clearTimeout(timer);
+  }, [startingBeat]);
+
   // 1. Reading the sheet.
   const [taken, setTaken] = useState<RunRead | null>(null);
   const [readFailure, setReadFailure] = useState<string | null>(null);
@@ -148,13 +191,14 @@ function DirectThread({
     read !== undefined && unfit.length === 0 && kept.readId === read.id;
 
   // 2. Proposing from the instructions.
+  const hasSavedRead = kept.readId !== null;
   const runInput = {
     text,
-    readId: read?.id ?? '',
+    readId: readId ?? '',
     evaluation: 'model' as const,
   };
   const proposalQuery = trpc.propose.get.queryOptions(runInput, {
-    enabled: canPropose,
+    enabled: canPropose || hasSavedRead,
     staleTime: 0,
     gcTime: 0,
     refetchInterval: ({ state: { data } }) =>
@@ -201,7 +245,7 @@ function DirectThread({
     runId: kept.id,
   };
   const decidedQuery = trpc.decisions.current.queryOptions(decidedOn, {
-    enabled: canPropose,
+    enabled: canPropose || hasSavedRead,
     staleTime: 0,
   });
   const decidedAsked = useQuery(decidedQuery);
@@ -393,8 +437,9 @@ function DirectThread({
   ];
 
   // Derive the ModelRunStage from the live state.
-  const stage: ModelRunStage =
-    !read && readError && !keepRead.isPending
+  const stage: ModelRunStage = startingBeat
+    ? 'starting'
+    : !read && readError && !keepRead.isPending
       ? 'stopped'
       : !read || !canPropose
         ? unfit.length > 0
@@ -416,9 +461,42 @@ function DirectThread({
                     ? 'committed'
                     : 'ready_to_commit';
 
+  if (!hydrated) {
+    const readDone = read !== undefined || saved.error !== null;
+    const proposalDone =
+      !readDone ||
+      unfit.length > 0 ||
+      saved.error !== null ||
+      proposalAsked.isFetched;
+    const decisionsDone = !proposalDone || !proposal || decidedAsked.isFetched;
+    const applicationDone =
+      !decisionsDone ||
+      !allDecided ||
+      preview !== null ||
+      application !== null ||
+      applyFailure !== null;
+    if (readDone && proposalDone && decisionsDone && applicationDone)
+      setHydrated(true);
+  }
+
   useWorkingFavicon(
-    stage === 'reading' || stage === 'evaluating' || stage === 'committing',
+    hydrated &&
+      (stage === 'reading' || stage === 'evaluating' || stage === 'committing'),
   );
+
+  // Keep the server's run status (and the runs rail) in sync with the live stage.
+  const progressStatus = STAGE_PROGRESS_STATUS[stage];
+  const recordedStatus = useRef<string | null>(null);
+  useEffect(() => {
+    if (!hydrated) return;
+    if (kept.status === progressStatus) return;
+    if (recordedStatus.current === progressStatus) return;
+    recordedStatus.current = progressStatus;
+    void selection
+      .record(kept.id, { status: progressStatus })
+      .catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, kept.id, kept.status, progressStatus]);
 
   const stopped: ModelRunFacts['stopped'] =
     stage !== 'stopped'
@@ -430,14 +508,15 @@ function DirectThread({
             reason: proposalFailure ?? 'No proposal came back.',
           };
 
+  const sourceNoun = SOURCE_KINDS[sourceKind].noun;
+  const recordNoun = subjectFromTab(read?.tabs[0]?.name);
   const view: ModelRunView = {
     stage,
     facts: {
       requestLabel: `${runDay(live.run.startedAt)} · ${runTime(live.run.startedAt)}`,
       trigger: (kept.trigger as RunTrigger) ?? 'manual',
       subject: {
-        one: SUBJECT.record.singular,
-        other: SUBJECT.record.plural,
+        ...recordNoun,
         field: SUBJECT.proposal[0]?.label ?? 'value',
       },
       sources: 1,
@@ -447,12 +526,12 @@ function DirectThread({
       needYou,
       decided: decidedCount,
       writes: changes.length,
-      output: SUBJECT.data.output?.tab ?? 'the sheet',
+      output: SUBJECT.data.output?.tab ?? `the ${sourceNoun}`,
       stopped,
       mismatch:
         application?.status === 'mismatch'
           ? (application.error ??
-            'The sheet reads back differently from what was written.')
+            `The ${sourceNoun} reads back differently from what was written.`)
           : null,
     },
     fields: SUBJECT.proposal,
@@ -479,7 +558,7 @@ function DirectThread({
                 {
                   id: 'orders',
                   kind: sourceKind,
-                  title: read.title ?? 'Sheet',
+                  title: read.title ?? 'Source',
                   key: SUBJECT.data.output?.key ?? 'Record',
                   url: read.url,
                   resourceIds: read.tabIds,
@@ -515,6 +594,9 @@ function DirectThread({
         : stopped?.at === 'evaluation'
           ? () => startProposal.mutate(runInput)
           : undefined,
+    onStartMock: selection.startMock
+      ? () => void selection.startMock?.()
+      : undefined,
     onWrite,
     onUndo,
     busy:
@@ -525,13 +607,20 @@ function DirectThread({
     announced,
   };
 
+  if (!hydrated) return null;
+
   return (
     <>
-      <ModelRunThread run={view} actions={actions} look="proposed" />
+      <ModelRunThread
+        run={view}
+        actions={actions}
+        look="proposed"
+        enterFirst={!startedWithRead}
+      />
       {decideError || selection.recordError ? (
-        <p role="alert" className="text-dense text-state-blocked mt-6">
+        <AlertBox className="mt-6">
           {decideError ?? selection.recordError}
-        </p>
+        </AlertBox>
       ) : null}
     </>
   );

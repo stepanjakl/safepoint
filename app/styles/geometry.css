@@ -6,7 +6,49 @@
    ────────────────────────────────────────────────────────────────────────── */
 
 :root {
+  --edge-control: 1px;
+  --edge-ring: 1px;
+  --edge-menu: 1px;
+  --edge-menu-emphasis: 1.5px;
+  --edge-field: 1.5px;
   --section-rule-width: 1.5px;
+  --edge-rule: 1px;
+  --edge-hairline: 1px;
+  --highlight-pane: 1px;
+  --highlight-hairline: 0.75px;
+  --highlight-sheet: 1px;
+  --highlight-outline: 1px;
+  --separator-strong: 1px;
+}
+
+/* Retina edge modes selected from the design pane (`data-edges`). Guarded by
+   2dppx so 1x displays stay at default: `retina` draws optical 0.75px rings
+   and highlights (0.5px hairlines), 1.5px -> 1px rules/fields, and 0.5px
+   plain borders; `highlights` trims inner sheens and outer lit lines only. */
+@media (min-resolution: 2dppx) {
+  :root[data-edges='retina'] {
+    --edge-control: 0.75px;
+    --edge-ring: 0.75px;
+    --edge-menu: 1px;
+    --edge-menu-emphasis: 1px;
+    --edge-field: 1px;
+    --section-rule-width: 1px;
+    --edge-rule: 0.5px;
+    --edge-hairline: 0.75px;
+    --highlight-pane: 0.75px;
+    --highlight-hairline: 0.5px;
+    --highlight-sheet: 0.75px;
+    --highlight-outline: 0.75px;
+    --separator-strong: 0.75px;
+  }
+
+  :root[data-edges='highlights'] {
+    --highlight-pane: 0.75px;
+    --highlight-hairline: 0.5px;
+    --highlight-sheet: 0.75px;
+    --highlight-outline: 0.75px;
+    --separator-strong: 0.75px;
+  }
 }
 
 /* Named for what moves, not for how long. */

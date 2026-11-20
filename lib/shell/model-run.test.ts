@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { AnswerProblem, ProposalEvent } from '@/lib/engine/types';
 
-import { describeEvent, type ModelRunFacts } from './model-run';
+import { describeEvent, subjectFromTab, type ModelRunFacts } from './model-run';
 
 const AT = '2026-11-06T11:49:05.000Z';
 type Facts = Pick<ModelRunFacts, 'subject' | 'sources' | 'records'>;
@@ -132,5 +132,27 @@ describe('the proposing timeline, in any process’s words', () => {
     expect(said({ at: AT, kind: 'ended', reason: 'length' })[0]?.text).toBe(
       'The answer was cut short at the length limit.',
     );
+  });
+});
+
+describe('subjectFromTab', () => {
+  it('derives singular and plural nouns from the primary input tab', () => {
+    expect(subjectFromTab('Products')).toEqual({
+      one: 'product',
+      other: 'products',
+    });
+    expect(subjectFromTab('Categories')).toEqual({
+      one: 'category',
+      other: 'categories',
+    });
+    expect(subjectFromTab('Order_Items')).toEqual({
+      one: 'order item',
+      other: 'order items',
+    });
+    expect(subjectFromTab('Boxes')).toEqual({ one: 'box', other: 'boxes' });
+    expect(subjectFromTab(undefined)).toEqual({
+      one: 'record',
+      other: 'records',
+    });
   });
 });

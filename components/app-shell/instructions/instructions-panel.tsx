@@ -8,6 +8,7 @@ import { DURATION_PANE, DURATION_STATE } from '@/lib/ui/motion';
 import CircleHalfFill from 'blode-icons-react/icons/circle-half-fill';
 import Check from 'blode-icons-react/icons/checkmark-1-filled';
 import { RunStatusIcon } from '@/components/ui/run-status-icon';
+import { AlertBox } from '@/components/ui/alert-box';
 import { Button } from '@/components/ui/button';
 import { FilterTabs } from '@/components/ui/filter-tabs';
 import { KeyHint } from '@/components/ui/key-hint';
@@ -615,11 +616,7 @@ function PublishNote({
                 className={cx(FIELD, 'text-dense min-h-20 px-3 py-2.5')}
               />
             </label>
-            {failure ? (
-              <p role="alert" className="text-meta text-state-blocked">
-                {failure}
-              </p>
-            ) : null}
+            {failure ? <AlertBox size="compact">{failure}</AlertBox> : null}
             <div className="rule-above -mx-4 -mb-4 flex justify-end px-4 py-3">
               <Button
                 size="small"

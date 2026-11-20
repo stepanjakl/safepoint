@@ -113,8 +113,8 @@
   /* A whole pixel for panes and cards; a hairline for anything icon- or
      button-sized, where a full pixel reads as a second border.
      `control-hairline` asks for the second. */
-  --spacing-control-highlight: 1px;
-  --spacing-control-highlight-hairline: 0.75px;
+  --spacing-control-highlight: var(--highlight-pane);
+  --spacing-control-highlight-hairline: var(--highlight-hairline);
   /* Track dimensions and thumb width; components/ui/switch.css derives the rest. */
   --spacing-switch-sm-track-inline: 2.125rem;
   --spacing-switch-sm-track-block: 1rem;
@@ -131,7 +131,7 @@
     var(--control-highlight-width, var(--spacing-control-highlight)) var(--control-highlight);
   /* A divider inside a pane: it lies on the pane's face, as its own edge does,
      so it takes the pane's edge colour and matches its sides. */
-  --shadow-separator-right-strong: 1px 0 0 var(--sp-raised-edge);
+  --shadow-separator-right-strong: var(--separator-strong) 0 0 var(--sp-raised-edge);
   /* A rule on the canvas. A shadow, not a border: Chrome snaps a border to
      whole device pixels, so 0.75px draws as 0.5px at 2x. */
   --shadow-rule-etch: 0 var(--spacing-control-highlight-hairline) 0 var(--sp-divider-etch);
@@ -194,7 +194,7 @@
   --spacing-sheet-head: 2.5rem;
   /* A whole pixel, not the control highlight's three quarters: at 0.75px a 1x
      display paints a partial line or none. */
-  --spacing-sheet-highlight: 1px;
+  --spacing-sheet-highlight: var(--highlight-sheet);
   /* One of the row's two fixed measures; the bar's height is the other. */
   --spacing-sheet-mark: 1rem;
   /* A little under the line it shares with the day and the time. A readout of
@@ -206,21 +206,23 @@
   --spacing-menu-end: 0.625rem; /* 10px */
   /* A whole pixel, because that is the one width that lays out the same at 1x
      and 2x. Everything measured from this edge reads the token. */
-  --spacing-menu-edge: 1px;
+  --spacing-menu-edge: var(--edge-menu);
   /* Two heavier edges, each placed where it cannot move an axis. The search
      field's does cross them, so it takes the difference out of its insets. */
-  --spacing-menu-current-edge: 1.5px;
+  --spacing-menu-current-edge: var(--edge-menu-emphasis);
   /* Heavier than the resting hairline, so a row in flight reads as picked up.
      Grown outward, so the label and handle stay where the drag began. */
-  --spacing-menu-drag-edge: 1.5px;
-  --spacing-field-edge: 1.5px;
+  --spacing-menu-drag-edge: var(--edge-menu-emphasis);
+  --spacing-field-edge: var(--edge-field);
   /* The same hairline under the namespace `border-*` reads its width from.
      Without this, `border-menu-edge` falls through to the colour branch and
      silently means nothing. A pointer, so there is still one definition. */
   --border-width-menu-edge: var(--spacing-menu-edge);
   --border-width-section: var(--section-rule-width);
+  --default-border-width: var(--edge-rule);
+  --spacing-px: var(--edge-hairline);
   /* The edge `control-face` draws, named so layout can measure from it. */
-  --spacing-control-edge: 1px;
+  --spacing-control-edge: var(--edge-control);
   /* The edge plus the lit ring inside it, which is as much the pane's edge as
      the border. Content stepped in by the border alone sits on top of the
      ring -- invisible until something in there is opaque and full-bleed. */

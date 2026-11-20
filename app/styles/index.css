@@ -26,6 +26,7 @@
 @import './drawer.css';
 
 /* Components. The order is the cascade order of their layered rules. */
+@import '../../components/ui/alert-box.css';
 @import '../../components/ui/data-table.css';
 @import '../../components/ui/external-link.css';
 @import '../../components/ui/switch.css';
@@ -76,6 +77,7 @@
 @import '../workbench/run/thread-progress.css';
 @import '../workbench/section-transitions/section-transitions.css';
 @import '../workbench/dividers/dividers.css';
+@import '../workbench/highlight-crispness/highlight-crispness.css';
 
 /* The prototype history, after everything current (fenced; see eslint.config.mjs). */
 @import '../workbench/history/explore/review-explorer.css';

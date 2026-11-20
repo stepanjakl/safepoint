@@ -179,3 +179,10 @@
     );
   }
 }
+
+@media (min-resolution: 2dppx) {
+  :root[data-edges='retina'] .process-header {
+    border-bottom-width: 0;
+    box-shadow: inset 0 calc(var(--edge-hairline) * -1) 0 var(--notch-edge);
+  }
+}

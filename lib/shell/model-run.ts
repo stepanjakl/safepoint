@@ -71,6 +71,29 @@ const reached = (stage: ModelRunStage, from: ModelRunStage) =>
 const plural = (count: number, one: string, other = `${one}s`) =>
   `${count} ${count === 1 ? one : other}`;
 
+/*
+  Derives singular and plural record nouns from a source's primary tab/table
+  name (e.g. "Products" -> product / products, "Categories" -> category /
+  categories) so threads stay agnostic of process-specific naming.
+*/
+export function subjectFromTab(
+  tabName: string | undefined,
+  fallback: { one: string; other: string } = {
+    one: 'record',
+    other: 'records',
+  },
+): { one: string; other: string } {
+  const clean = tabName?.replaceAll(/[_-]+/g, ' ').trim().toLowerCase();
+  if (!clean) return fallback;
+  if (clean.endsWith('ies') && clean.length > 3)
+    return { one: `${clean.slice(0, -3)}y`, other: clean };
+  if (/(?:ches|shes|xes|zes|sses)$/.test(clean))
+    return { one: clean.slice(0, -2), other: clean };
+  if (clean.endsWith('s') && !clean.endsWith('ss') && clean.length > 1)
+    return { one: clean.slice(0, -1), other: clean };
+  return { one: clean, other: `${clean}s` };
+}
+
 export function modelRunStepsAt(
   stage: ModelRunStage,
   facts: ModelRunFacts,
@@ -116,7 +139,7 @@ export function modelRunStepsAt(
             flag: facts.unfit.length ? 'Does not fit' : undefined,
             status: facts.unfit.length ? 'blocked' : 'complete',
             note: facts.unfit.length
-              ? 'Nothing is proposed on a sheet the process cannot read.'
+              ? 'Nothing is proposed on a source the process cannot read.'
               : undefined,
           },
   );
@@ -126,7 +149,7 @@ export function modelRunStepsAt(
     const stopped = stage === 'stopped';
     steps.push({
       id: 'evaluation',
-      name: stopped ? 'Proposal' : 'Proposing',
+      name: stopped ? 'Evaluation' : 'Evaluating',
       label: records,
       flag: stopped ? 'Stopped' : undefined,
       status: stopped ? 'blocked' : 'running',
@@ -138,9 +161,8 @@ export function modelRunStepsAt(
   }
   steps.push({
     id: 'evaluation',
-    name: 'Proposal',
-    label: `${records} proposed`,
-    flag: facts.needYou ? `${facts.needYou} unsure` : undefined,
+    name: 'Evaluation',
+    label: `${records} evaluated`,
     status: 'complete',
   });
 
@@ -180,7 +202,7 @@ export function modelRunStepsAt(
               id: 'commit',
               name: 'Approval',
               label: rows,
-              flag: 'Check the sheet',
+              flag: 'Check the output',
               status: 'blocked',
               note: facts.mismatch ?? undefined,
             }
@@ -199,7 +221,7 @@ export function modelRunAnnouncement(stage: ModelRunStage): string {
   return {
     starting: 'Run requested. Starting.',
     reading: 'Reading the inputs.',
-    evaluating: 'Inputs read. Proposing.',
+    evaluating: 'Inputs read. Evaluating.',
     awaiting_review: 'Proposal ready for review.',
     reviewing: 'Review in progress.',
     ready_to_commit: 'Everything decided. Awaiting approval.',
@@ -213,7 +235,7 @@ export function modelRunAnnouncement(stage: ModelRunStage): string {
 export const MODEL_RUN_STAGE_LABELS: Record<ModelRunStage, string> = {
   starting: 'Starting',
   reading: 'Reading inputs',
-  evaluating: 'Proposing',
+  evaluating: 'Evaluating',
   awaiting_review: 'Awaiting review',
   reviewing: 'In review',
   ready_to_commit: 'Awaiting approval',

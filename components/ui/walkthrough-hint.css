@@ -110,7 +110,7 @@
   }
 
   .walkthrough-hint {
-    --walkthrough-edge: 1px;
+    --walkthrough-edge: var(--edge-rule);
     --walkthrough-placement: bottom;
     border-width: var(--walkthrough-edge);
     pointer-events: auto;
@@ -129,12 +129,12 @@
     width: calc(var(--spacing) * 6);
     height: calc(var(--spacing) * 6);
     padding: 0;
-    border: 1px solid var(--sp-walkthrough-dismiss-edge);
+    border: var(--edge-rule) solid var(--sp-walkthrough-dismiss-edge);
     border-radius: 50%;
     background: var(--sp-walkthrough-dismiss-face);
     box-shadow:
-      inset 0 0 0 1px var(--sp-walkthrough-dismiss-highlight),
-      0 0 0 1px var(--sp-tooltip-outline);
+      inset 0 0 0 var(--highlight-pane) var(--sp-walkthrough-dismiss-highlight),
+      0 0 0 var(--highlight-outline) var(--sp-tooltip-outline);
     color: var(--sp-walkthrough-dismiss-ink);
     cursor: pointer;
     transition:
@@ -155,7 +155,7 @@
     background: var(--sp-walkthrough-dismiss-face-hover);
     border-color: var(--sp-walkthrough-dismiss-edge-hover);
     box-shadow:
-      inset 0 0 0 1px var(--sp-walkthrough-dismiss-highlight-hover),
+      inset 0 0 0 var(--highlight-pane) var(--sp-walkthrough-dismiss-highlight-hover),
       0 0 0 1px var(--sp-tooltip-outline);
   }
   /* Keep the page's scheme here: tooltip contents otherwise force dark. */

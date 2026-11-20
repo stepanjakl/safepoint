@@ -1,6 +1,9 @@
 import {
   CORNER_BALANCE_STORAGE_KEY,
+  DEFAULT_EDGE_PRESET,
   DEFAULT_NEUTRAL,
+  EDGE_PRESETS,
+  EDGES_STORAGE_KEY,
   NEUTRALS,
   DEFAULT_CORNER_BALANCE,
   DEFAULT_MOTION_SPEED,
@@ -70,6 +73,21 @@ if (neutral && neutral !== ${JSON.stringify(DEFAULT_NEUTRAL)}
   root.dataset.neutral = neutral;
 } else {
   delete root.dataset.neutral;
+}
+var edgePresets = ${JSON.stringify(EDGE_PRESETS)};
+var edges = params.get('edges');
+if (edgePresets.indexOf(edges) === -1) {
+  try {
+    edges = localStorage.getItem(${JSON.stringify(EDGES_STORAGE_KEY)});
+  } catch (error) {
+    edges = null;
+  }
+}
+if (edges && edges !== ${JSON.stringify(DEFAULT_EDGE_PRESET)}
+    && edgePresets.indexOf(edges) !== -1) {
+  root.dataset.edges = edges;
+} else {
+  delete root.dataset.edges;
 }
 try {
   var sets = ${JSON.stringify([...TYPEFACE_PICKER_SETS])};

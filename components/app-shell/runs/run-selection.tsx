@@ -133,7 +133,18 @@ export type RunSelection = {
   // refused for a run discarded or not kept, which `recordError` says.
   record: (
     id: string,
-    progress: { readId?: string; rulebook?: string | null },
+    progress: {
+      readId?: string;
+      rulebook?: string | null;
+      stage?: string;
+      status?:
+        | 'running'
+        | 'awaiting_review'
+        | 'approved'
+        | 'completed'
+        | 'held'
+        | 'failed';
+    },
   ) => Promise<unknown>;
   recordError: string | null;
   // Updates a local mock run's status in session storage as its script advances.
@@ -209,7 +220,10 @@ export function useRunSelectionState({
     process.instructions,
   );
   const keptRuns = kept.runs.data ?? NO_RUNS;
-  const allLiveRuns = [...mockRuns, ...keptRuns];
+  const allLiveRuns = [...mockRuns, ...keptRuns].sort((a, b) => {
+    const diff = Date.parse(b.startedAt) - Date.parse(a.startedAt);
+    return diff !== 0 ? diff : b.id.localeCompare(a.id);
+  });
   const keptRun = liveThread
     ? allLiveRuns.find((entry) => entry.id === selected)
     : undefined;
@@ -291,7 +305,10 @@ export function useRunSelectionState({
   };
 
   return {
-    runs: [...allLiveRuns.map(processRunOf), ...process.runs],
+    runs: [...allLiveRuns.map(processRunOf), ...process.runs].sort((a, b) => {
+      const diff = Date.parse(b.startedAt) - Date.parse(a.startedAt);
+      return diff !== 0 ? diff : b.id.localeCompare(a.id);
+    }),
     selected,
     select: (id) => {
       kept.start.reset();

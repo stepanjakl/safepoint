@@ -11,6 +11,7 @@ import {
 import { useFollowRun } from '@/components/app-shell/thread/follow-run';
 import { ResponseSection } from '@/components/app-shell/thread/thread-page';
 import { ThreadStep } from '@/components/app-shell/thread/thread-step';
+import { AlertBox } from '@/components/ui/alert-box';
 import type { ProcessStep, ProcessSummary } from '@/lib/shell/model';
 import { SHEET_USE, SUBJECT } from '@/lib/processes/brunch-orders/data';
 import { COMING, ORDER_STEPS } from '@/lib/processes/brunch-orders/steps';
@@ -343,9 +344,7 @@ function OrdersThread({
         ))}
       </ol>
       {selection.recordError ? (
-        <p role="alert" className="text-dense text-state-blocked mt-6">
-          {selection.recordError}
-        </p>
+        <AlertBox className="mt-6">{selection.recordError}</AlertBox>
       ) : null}
     </>
   );

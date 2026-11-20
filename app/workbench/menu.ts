@@ -110,6 +110,12 @@ export const WORKBENCH_GROUPS: readonly WorkbenchGroup[] = [
         summary:
           'Rules of 1px, 1.5px and 2px on a table, a popover and a panel.',
       },
+      {
+        href: '/workbench/highlight-crispness',
+        title: 'Highlight crispness',
+        summary:
+          'Inset box-shadow vs pixel-snapped border and outline for inner highlights and lit dividers.',
+      },
     ],
   },
   {

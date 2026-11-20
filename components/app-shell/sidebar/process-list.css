@@ -207,6 +207,14 @@
     }
   }
 
+  @media (min-resolution: 2dppx) {
+    :root[data-edges='retina'] .process-menu-row:not([data-dragging]) {
+      border-width: 0.5px;
+      padding-inline: 0.5px;
+      padding-block: calc(var(--spacing-menu-current-edge) - 0.5px);
+    }
+  }
+
   @media (forced-colors: active) {
     .process-menu-row[data-current] {
       outline: 1px solid Highlight;
@@ -225,5 +233,13 @@
     .process-list-fade::after {
       display: none;
     }
+  }
+}
+
+/* Unlayered so it overrides @utility surface-menu-badge's hairline width:
+   inside a 0.75px inset ring, 0.5px gets eaten by the ring's inner edge. */
+@media (min-resolution: 2dppx) {
+  :root[data-edges='retina'] .surface-menu-badge {
+    --control-highlight-width: var(--highlight-pane);
   }
 }

@@ -6,6 +6,7 @@ import { pathToFileURL } from 'node:url';
 import { withWorkflow } from 'workflow/next';
 
 import { MOVED_ROUTES } from './lib/shell/moved-routes';
+import { createDevPausePlugin } from './scripts/runtime/dev-pause-plugin';
 
 const CAPTURED_READ = './fixtures/brunch-orders/sheet-snapshot.json';
 const KEPT_FIXTURES = ['./fixtures/brunch-orders/**/*'];
@@ -70,6 +71,7 @@ const nextConfig: NextConfig = {
               : `webpack:///${info.absoluteResourcePath}`;
           },
         }),
+        createDevPausePlugin(nextConfig.distDir ?? '.next'),
       );
     }
     return config;

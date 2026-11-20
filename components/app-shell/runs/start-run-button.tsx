@@ -3,6 +3,7 @@
 import { useId, useRef, useState, type RefObject } from 'react';
 import { Dialog, DialogTrigger, Heading, Popover } from 'react-aria-components';
 // Deep import: Blode's barrel is the whole icon library.
+import BoltFilled from 'blode-icons-react/icons/bolt-filled';
 import ChevronDown from 'blode-icons-react/icons/chevron-down';
 import Play from 'blode-icons-react/icons/play';
 import { HeadIconButton } from '@/components/app-shell/head-icon-button';
@@ -211,6 +212,7 @@ function InstructionsPopover({
                       if (startMock(note)) setText('');
                     }}
                   >
+                    <BoltFilled aria-hidden size={13} className="flex-none" />
                     Start mock run
                   </Button>
                 ) : null}

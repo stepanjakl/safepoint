@@ -3,6 +3,7 @@
 import type { CSSProperties } from 'react';
 // Deep imports: Blode's barrel is the whole icon library.
 import ArrowRotateClockwise from 'blode-icons-react/icons/arrow-rotate-clockwise-filled';
+import BoltFilled from 'blode-icons-react/icons/bolt-filled';
 import Clock from 'blode-icons-react/icons/clock-filled';
 import Cursor from 'blode-icons-react/icons/cursor-1-filled';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
@@ -14,6 +15,7 @@ import {
   runTone,
   toneVar,
 } from '@/components/app-shell/markers';
+import { isMockRunId } from './run-selection';
 import {
   RUN_STATUS_LABELS,
   RUN_TRIGGER_LABELS,
@@ -58,6 +60,7 @@ export function RunRow({
 }) {
   const tone = runTone[run.status];
   const status = RUN_STATUS_LABELS[run.status];
+  const mock = isMockRunId(run.id);
   const TriggerIcon = TRIGGER_ICON[run.trigger];
   const trigger = RUN_TRIGGER_LABELS[run.trigger];
   const stamp = runStamp(run.startedAt);
@@ -80,7 +83,7 @@ export function RunRow({
       type="button"
       className="sheet-row"
       onClick={onSelect}
-      aria-label={announce(run, noun, status, trigger, stamp)}
+      aria-label={announce(run, noun, status, trigger, stamp, mock)}
       aria-pressed={onSelect ? selected : undefined}
       data-current={selected ? '' : undefined}
       data-run-id={run.id}
@@ -127,11 +130,18 @@ export function RunRow({
           {runTime(run.startedAt)}
         </span>
       </span>
-      <Tally
-        counts={run.counts}
-        settled={SETTLED_WELL.has(run.status)}
-        noun={noun}
-      />
+      {mock && !run.counts.items ? (
+        <span aria-hidden="true" className="sheet-mock-pill text-micro">
+          <BoltFilled size={10} className="flex-none" />
+          <span>Mock</span>
+        </span>
+      ) : (
+        <Tally
+          counts={run.counts}
+          settled={SETTLED_WELL.has(run.status)}
+          noun={noun}
+        />
+      )}
     </button>
   );
 }
@@ -239,6 +249,7 @@ function announce(
   status: string,
   trigger: string,
   stamp: string,
+  mock: boolean,
 ): string {
   const parts = [
     `${run.counts.items} ${noun}${run.counts.items === 1 ? '' : 's'}`,
@@ -252,5 +263,6 @@ function announce(
   }
   if (run.duration) parts.push(`took ${run.duration}`);
   if (run.decidedBy) parts.push(`decided by ${run.decidedBy}`);
-  return `${status}. ${stamp}. ${trigger}. ${parts.join(', ')}.`;
+  const prefix = mock ? 'Mock run. ' : '';
+  return `${prefix}${status}. ${stamp}. ${trigger}. ${parts.join(', ')}.`;
 }

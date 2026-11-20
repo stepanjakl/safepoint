@@ -1,6 +1,9 @@
 import frozenProposal from '@/e2e/fixtures/brunch-orders-proposal.json';
 import snapshot from '@/fixtures/brunch-orders/sheet-snapshot.json';
-import type { ModelRunView } from '@/components/app-shell/thread/model-run-thread';
+import type {
+  ModelRunView,
+  OutputWrite,
+} from '@/components/app-shell/thread/model-run-thread';
 import { madeNow } from '@/components/engine/propose/made-now';
 import type { Decision } from '@/components/engine/propose/types';
 import { blockFor, writesOf } from '@/lib/engine/apply-block';
@@ -91,27 +94,69 @@ const read = {
 const needYou = Object.values(proposal.records).filter(
   (record) => record.verdict === 'decide' || record.verdict === 'blocked',
 ).length;
-// What the write takes of a decision: what was decided, and when.
-const writes = writesOf(
-  proposal,
-  Object.fromEntries(
-    Object.entries(allDecided).map(([key, { kind, values, at }]) => [
-      key,
-      { kind, ...(values ? { values } : {}), at },
-    ]),
-  ),
-);
 // Last weekend's orders, as the Orders tab holds them before this run writes.
 const lastWeekend = [
   ['sku', 'order'],
   ...keys.map((key, index) => [key, index % 3 === 0 ? '' : 8 + index * 4]),
 ];
-const changes = blockFor(lastWeekend, owner, writes).changes;
+
+// Computes the exact output tables and cell changes for any set of decisions,
+// matching what the live run's preview produces.
+export function mockWriteOutputs(
+  decisions: Record<string, Decision>,
+): OutputWrite[] {
+  const writes = writesOf(
+    proposal,
+    Object.fromEntries(
+      Object.entries(decisions).map(([key, { kind, values, at: when }]) => [
+        key,
+        { kind, ...(values ? { values } : {}), at: when },
+      ]),
+    ),
+  );
+  const nextChanges = blockFor(lastWeekend, owner, writes).changes;
+  return [
+    {
+      id: 'orders',
+      kind: 'google-sheets',
+      title: read.title,
+      key: owner.subject.data.output?.key ?? 'Record',
+      url: read.url,
+      resourceIds: { Orders: 0, 'Standing orders': 1834920517 },
+      changes: nextChanges,
+    },
+    // A second source whose changes span two tabs, to design for
+    // a run that writes to more than one place.
+    {
+      id: 'orders-copy',
+      kind: 'google-sheets',
+      title: 'Brunch store · supplier copy',
+      key: owner.subject.data.output?.key ?? 'Record',
+      url: read.url,
+      resourceIds: { Orders: 0, 'Standing orders': 1834920517 },
+      changes: nextChanges.map((change, index) =>
+        index % 2
+          ? {
+              ...change,
+              cell: change.cell.replace(/^[^!]*!/, 'Standing orders!'),
+            }
+          : change,
+      ),
+    },
+  ];
+}
+
+const defaultOutputs = mockWriteOutputs(allDecided);
+const defaultWritesCount = defaultOutputs.reduce(
+  (total, output) => total + output.changes.length,
+  0,
+);
 
 /*
   What the engine reported while the model worked, recorded from one real
   proposal (brunch-activity.json): each moment it changed, at the time it did,
-  with its clock moved to this run's. Nothing here is written by hand.
+  with its clock moved to this run's. Realistic thinking summaries are attached
+  to the active frames so the mock exercises the Thinking section too.
 */
 const recorded = recordedActivity as unknown as {
   frames: { t: number; running: boolean; activity: ProposalActivity }[];
@@ -127,10 +172,55 @@ const rebased = (activity: ProposalActivity): ProposalActivity => ({
   events: activity.events.map((event) => ({ ...event, at: moved(event.at) })),
   stream: activity.stream?.map((kept) => ({ ...kept, at: moved(kept.at) })),
 });
+const FRAME_THOUGHTS: (string | null)[] = [
+  null,
+  null,
+  '**Reading stock levels and weekend targets**\nChecking current on-hand counts against the standing orders and weekend cover rules for each item before calculating order quantities.',
+  '**Re-checking flagged items**\nTwo items fell outside the expected pack multiples; recalculating their order quantities against the minimum batch sizes and perishable lead times.',
+  '**Verifying final order quantities**\nAll 12 items now satisfy stock cover and pack-size rules; flagging uncertain estimates for human review before finalising the proposal.',
+];
+const FRAME_THINKING_TOKENS = [0, 0, 0, 612, 1240];
 const PROPOSING = recorded.frames
   .filter((frame) => frame.running)
-  .map((frame) => ({ t: frame.t, activity: rebased(frame.activity) }));
-const ANSWERED_ACTIVITY = rebased(recorded.frames.at(-1)!.activity);
+  .map((frame, index) => {
+    const base = rebased(frame.activity);
+    const thinking = FRAME_THINKING_TOKENS[index] ?? 0;
+    return {
+      t: frame.t,
+      activity: {
+        ...base,
+        thought: base.thought ?? FRAME_THOUGHTS[index] ?? null,
+        tokens: base.tokens
+          ? {
+              ...base.tokens,
+              thinking: base.tokens.thinking || thinking,
+            }
+          : base.tokens,
+      },
+    };
+  });
+const answeredBase = rebased(recorded.frames.at(-1)!.activity);
+const mockReasoningText = FRAME_THOUGHTS.filter((t): t is string =>
+  Boolean(t),
+).join('\n');
+const ANSWERED_ACTIVITY: ProposalActivity = {
+  ...answeredBase,
+  thought: null,
+  stream: [
+    ...(answeredBase.stream ?? []),
+    {
+      at: answeredBase.events.at(-1)?.at ?? AT,
+      from: 'model',
+      part: { type: 'reasoning-start', text: mockReasoningText },
+    },
+  ],
+  tokens: answeredBase.tokens
+    ? {
+        ...answeredBase.tokens,
+        thinking: answeredBase.tokens.thinking || 1240,
+      }
+    : answeredBase.tokens,
+};
 
 const facts = (
   decisions: Record<string, Decision>,
@@ -150,7 +240,7 @@ const facts = (
   needYou,
   decided: Object.keys(decisions).length,
   // Every cell written, in both outputs below.
-  writes: changes.length * 2,
+  writes: defaultWritesCount,
   output: owner.subject.data.output?.tab ?? 'the sheet',
   stopped: null,
   mismatch: null,
@@ -193,35 +283,7 @@ function viewAt(
     review: proposed ? { proposal, names: frozen.names, decisions } : null,
     write: DECIDED.includes(stage)
       ? {
-          outputs: [
-            {
-              id: 'orders',
-              kind: 'google-sheets',
-              title: read.title,
-              key: owner.subject.data.output?.key ?? 'Record',
-              url: read.url,
-              resourceIds: { Orders: 0, 'Standing orders': 1834920517 },
-              changes,
-            },
-            // A second source whose changes span two tabs, to design for
-            // a run that writes to more than one place.
-            {
-              id: 'orders-copy',
-              kind: 'google-sheets',
-              title: 'Brunch store · supplier copy',
-              key: owner.subject.data.output?.key ?? 'Record',
-              url: read.url,
-              resourceIds: { Orders: 0, 'Standing orders': 1834920517 },
-              changes: changes.map((change, index) =>
-                index % 2
-                  ? {
-                      ...change,
-                      cell: change.cell.replace(/^[^!]*!/, 'Standing orders!'),
-                    }
-                  : change,
-              ),
-            },
-          ],
+          outputs: defaultOutputs,
           problems: [],
           writtenAt: stage === 'committed' ? at(372) : null,
         }
@@ -241,35 +303,21 @@ export function brunchDirectScript(): {
   mainLine: ScriptedStage[];
   branches: ScriptedStage[];
 } {
-  const evaluatingFrames = PROPOSING.slice(1);
-  const evaluatingFrom = evaluatingFrames[0]?.t ?? 0;
+  const evaluatingFrom = PROPOSING[0]?.t ?? 0;
 
   return {
-    mainLine: MODEL_RUN_MAIN_LINE.flatMap((stage): ScriptedStage[] => {
-      const entry: ScriptedStage = {
-        key: stage,
-        label: stage,
-        view: viewAt(stage),
-        frames:
-          stage === 'evaluating'
-            ? evaluatingFrames.map((frame) => ({
-                t: frame.t - evaluatingFrom,
-                view: viewAt(stage, {}, frame.activity),
-              }))
-            : undefined,
-      };
-      if (stage === 'evaluating') {
-        return [
-          {
-            key: 'choosing-model',
-            label: 'Propose · choosing a model',
-            view: viewAt('evaluating', {}, PROPOSING[0]!.activity),
-          },
-          entry,
-        ];
-      }
-      return [entry];
-    }),
+    mainLine: MODEL_RUN_MAIN_LINE.map((stage): ScriptedStage => ({
+      key: stage,
+      label: stage,
+      view: viewAt(stage),
+      frames:
+        stage === 'evaluating'
+          ? PROPOSING.map((frame) => ({
+              t: frame.t - evaluatingFrom,
+              view: viewAt(stage, {}, frame.activity),
+            }))
+          : undefined,
+    })),
     branches: [
       {
         key: 'stopped-read',

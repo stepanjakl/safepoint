@@ -34,7 +34,7 @@ export function DataTable({
         'min-w-0',
         variant === 'compact'
           ? 'bg-surface-inset rounded-control overflow-auto'
-          : 'ground-raised border-raised-ring bg-surface-primary rounded-shell overflow-clip border',
+          : 'data-table-card ground-raised bg-surface-primary rounded-shell overflow-clip',
         className,
       )}
     >

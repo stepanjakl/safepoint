@@ -39,6 +39,7 @@ import {
   type RulesReply,
 } from '@/components/engine/rules/rules-queries';
 import { Lede, plural, saidBy } from '@/components/engine/trial-parts';
+import { AlertBox } from '@/components/ui/alert-box';
 import { Button } from '@/components/ui/button';
 import { Fold } from '@/components/ui/fold';
 import { Pill, SEVERITY } from '@/components/ui/pill';
@@ -600,22 +601,24 @@ export function RulesStep({
       ) : (
         <>
           {!draftRunning && (said !== null || drafting?.error) ? (
-            <div className="flex flex-wrap items-center gap-3">
-              <p role="alert" className="text-dense text-state-blocked">
-                {said ?? drafting?.error}
-              </p>
-              {readId !== null && dataConfirmed ? (
-                <Button
-                  size="medium"
-                  isDisabled={busy}
-                  onPress={() =>
-                    !mock && draft.mutate({ text, version, readId })
-                  }
-                >
-                  Try again
-                </Button>
-              ) : null}
-            </div>
+            <AlertBox
+              title="Could not draft the rules"
+              action={
+                readId !== null && dataConfirmed ? (
+                  <Button
+                    size="small"
+                    isDisabled={busy}
+                    onPress={() =>
+                      !mock && draft.mutate({ text, version, readId })
+                    }
+                  >
+                    Try again
+                  </Button>
+                ) : null
+              }
+            >
+              {said ?? drafting?.error}
+            </AlertBox>
           ) : null}
           <p
             role="status"

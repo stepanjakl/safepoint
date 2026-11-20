@@ -9,6 +9,7 @@ import ArrowUpRight from 'blode-icons-react/icons/arrow-up-right';
 import ShieldCheck from 'blode-icons-react/icons/shield-check-3-filled';
 import Lab from 'blode-icons-react/icons/lab-filled';
 import { RunRow } from './run-row';
+import { AlertBox } from '@/components/ui/alert-box';
 import { Tooltip } from '@/components/ui/tooltip';
 import { useEdgeScroll } from '@/components/ui/edge-scroll';
 import { useRunSelection } from './run-selection';
@@ -65,9 +66,9 @@ export function RunsList({
   return (
     <>
       {selection?.startError ? (
-        <p role="alert" className="text-meta text-state-blocked px-4 py-3">
-          {selection.startError}
-        </p>
+        <div className="px-3 pt-2">
+          <AlertBox size="compact">{selection.startError}</AlertBox>
+        </div>
       ) : null}
       <ol ref={strip} className="sheet-list edge-scroll">
         {runs.map((run, index) => {

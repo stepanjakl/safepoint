@@ -138,6 +138,45 @@ export function setNeutral(next: Neutral) {
   emit();
 }
 
+/* Retina edge & highlight mode (`app/styles/geometry.css`).
+   The default binds on :root (1×), so it is the absence of the attribute. */
+export const EDGES_STORAGE_KEY = 'safepoint.dev.edges';
+export const EDGE_PRESETS = ['default', 'retina', 'highlights'] as const;
+export type EdgePreset = (typeof EDGE_PRESETS)[number];
+export const DEFAULT_EDGE_PRESET: EdgePreset = 'default';
+export const EDGE_PRESET_LABELS: Record<EdgePreset, string> = {
+  default: 'Default (1×)',
+  retina: 'Retina (0.75px)',
+  highlights: 'Retina (highlights 0.75px)',
+};
+
+function isEdgePreset(value: unknown): value is EdgePreset {
+  return EDGE_PRESETS.includes(value as EdgePreset);
+}
+
+export function resolveEdgePreset(
+  urlValue: string | null,
+  storedValue: string | null,
+): EdgePreset {
+  if (isEdgePreset(urlValue)) return urlValue;
+  return isEdgePreset(storedValue) ? storedValue : DEFAULT_EDGE_PRESET;
+}
+
+export function readEdgePreset(): EdgePreset {
+  const value = document.documentElement.dataset.edges;
+  return isEdgePreset(value) ? value : DEFAULT_EDGE_PRESET;
+}
+
+export function setEdgePreset(next: EdgePreset) {
+  if (next === DEFAULT_EDGE_PRESET) {
+    delete document.documentElement.dataset.edges;
+  } else {
+    document.documentElement.dataset.edges = next;
+  }
+  persist(EDGES_STORAGE_KEY, next);
+  emit();
+}
+
 /** Private browsing and blocked site data throw rather than no-op. */
 function persist(key: string, value: string) {
   try {

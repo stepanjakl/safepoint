@@ -24,9 +24,15 @@ import {
 } from '@/components/ui/data-table';
 import { Fold } from '@/components/ui/fold';
 import { MORPH_WORDS_MS, MorphingText } from '@/components/ui/morphing-text';
-import { Pill, SEVERITY } from '@/components/ui/pill';
+import { Pill } from '@/components/ui/pill';
+import { SmoothHeight } from '@/components/ui/smooth-height';
 import { cx } from '@/lib/ui/cx';
-import { DURATION_STATE } from '@/lib/ui/motion';
+import {
+  DURATION_STATE,
+  DURATION_TAB_LEAVE,
+  EASE_OUT_EMPHASIZED,
+  EASE_OUT_QUAD,
+} from '@/lib/ui/motion';
 import { motionTime } from '@/lib/ui/motion-time';
 import type {
   CellChange,
@@ -53,7 +59,10 @@ import type {
   CheckReply,
 } from '@/components/engine/propose/types';
 import { cellUrl, SOURCE_KINDS, type SourceKind } from '@/lib/sources/model';
+import BoltFilled from 'blode-icons-react/icons/bolt-filled';
 import ChainLink1Filled from 'blode-icons-react/icons/chain-link-1-filled';
+import ChevronLeft from 'blode-icons-react/icons/chevron-left';
+import ChevronRight from 'blode-icons-react/icons/chevron-right';
 import { SourceHead } from '@/components/app-shell/sources/source-head';
 import { plural } from '@/components/engine/trial-parts';
 
@@ -110,6 +119,8 @@ export type ModelRunActions = {
   ) => Promise<CheckReply | null>;
   // Again from the step that stopped.
   onRetry?: () => void;
+  // Switch to a local mock run with sample data when a live step fails.
+  onStartMock?: () => void;
   onWrite?: () => void;
   onUndo?: () => void;
   // A request under way, which the buttons wait for.
@@ -128,12 +139,15 @@ export function ModelRunThread({
   actions,
   look = 'proposed',
   keepOpen = false,
+  enterFirst = false,
 }: {
   run: ModelRunView;
   actions: ModelRunActions;
   look?: ThreadLook;
   // For a demo: every step stays open as it finishes.
   keepOpen?: boolean;
+  // Play the first step's entrance animation (for a freshly started run).
+  enterFirst?: boolean;
 }) {
   const { stage, facts } = run;
   const steps = modelRunStepsAt(stage, facts);
@@ -141,6 +155,7 @@ export function ModelRunThread({
     stage,
     steps.map((step) => step.id),
     look,
+    enterFirst,
   );
   const stopped = stage === 'stopped' ? facts.stopped : null;
   const [readOpen, setReadOpen] = useState(true);
@@ -161,6 +176,7 @@ export function ModelRunThread({
 
   // The version opens the sheet's Instructions tab, as on the rulebook run.
   const sheet = useContext(ProcessSheetActions);
+  const sourceNoun = SOURCE_KINDS[run.sourceKind].noun;
   const version = run.instructions.version;
   const openInstructions = () =>
     sheet?.currentVersion === version
@@ -179,7 +195,7 @@ export function ModelRunThread({
     sources:
       stopped?.at === 'sources' ? (
         <Stopped
-          title="Could not read the sheet"
+          title={`Could not read the ${sourceNoun}`}
           reason={stopped.reason}
           again="Read again"
           {...actions}
@@ -188,7 +204,9 @@ export function ModelRunThread({
         <ResponseSection>
           <div className="grid gap-3">
             {facts.unfit.length ? (
-              <AlertBox title="The sheet does not fit what this process reads. Fix it and start a new run:">
+              <AlertBox
+                title={`The ${sourceNoun} does not fit what this process reads. Fix it and start a new run:`}
+              >
                 <ul className="list-disc pl-5">
                   {facts.unfit.map((problem) => (
                     <li key={problem}>{problem}</li>
@@ -309,20 +327,22 @@ export function ModelAt({
   const [prevTotal, setPrevTotal] = useState(allLines.length);
   if (prevTotal !== allLines.length) {
     setPrevTotal(allLines.length);
-    if (reduceMotion || allLines.length <= shownCount) {
+    if (reduceMotion || !working || allLines.length <= shownCount) {
       setShownCount(allLines.length);
     } else if (allLines.length > shownCount) {
       setShownCount(shownCount + 1);
     }
+  } else if (!working && shownCount < allLines.length) {
+    setShownCount(allLines.length);
   }
   useEffect(() => {
-    if (reduceMotion || shownCount >= allLines.length) return;
+    if (reduceMotion || !working || shownCount >= allLines.length) return;
     const timer = setTimeout(
       () => setShownCount((count) => Math.min(allLines.length, count + 1)),
       motionTime(720) / rate,
     );
     return () => clearTimeout(timer);
-  }, [reduceMotion, shownCount, allLines.length, rate]);
+  }, [reduceMotion, working, shownCount, allLines.length, rate]);
 
   const lines = allLines.slice(0, shownCount);
   const draining = shownCount < allLines.length;
@@ -357,14 +377,37 @@ export function ModelAt({
       ]),
   );
 
-  // Hold the last thought text while Folding shut so it does not vanish mid-collapse.
-  const [lastThought, setLastThought] = useState<string | null>(
-    activity?.thought ?? null,
+  // Extract every reasoning section from the kept stream (so finished runs
+  // reloaded from the server still show all thinking steps even after
+  // `activity.thought` is cleared), and fall back to accumulating live
+  // `activity.thought` values when the stream carries no reasoning parts.
+  const streamThoughts = thoughtsFromActivity(activity);
+  const [liveThoughts, setLiveThoughts] = useState<string[]>(() =>
+    activity?.thought ? [activity.thought] : [],
   );
-  if (activity?.thought && activity.thought !== lastThought) {
-    setLastThought(activity.thought);
+  const [viewedThought, setViewedThought] = useState<number | null>(null);
+  const [thoughtDir, setThoughtDir] = useState<1 | -1>(1);
+  if (
+    activity &&
+    activity.events.length === 0 &&
+    !activity.thought &&
+    liveThoughts.length > 0
+  ) {
+    setLiveThoughts([]);
+    setViewedThought(null);
+    setThoughtDir(1);
+  } else if (activity?.thought && liveThoughts.at(-1) !== activity.thought) {
+    setLiveThoughts([...liveThoughts, activity.thought]);
+    if (viewedThought === null) setThoughtDir(1);
   }
-  const thoughtOpen = Boolean(working && activity?.thought);
+  const thoughts = streamThoughts.length > 0 ? streamThoughts : liveThoughts;
+  const activeThoughtIndex =
+    viewedThought === null
+      ? Math.max(0, thoughts.length - 1)
+      : Math.min(viewedThought, Math.max(0, thoughts.length - 1));
+  const activeThought = thoughts[activeThoughtIndex] ?? null;
+  const parsedThought = activeThought ? thoughtParts(activeThought) : null;
+  const thoughtOpen = Boolean(activeThought);
 
   const liveStatusText = activity?.writing
     ? 'Writing the answer'
@@ -389,7 +432,7 @@ export function ModelAt({
   };
   const stream = activity?.stream ?? [];
   return (
-    <div className="grid gap-3">
+    <div className="grid">
       <ol aria-label="What happened" className="model-log">
         {lines.map((line, index) => {
           const key = `${index}-${line.at}`;
@@ -478,16 +521,103 @@ export function ModelAt({
         ) : null}
       </ol>
       <Fold open={thoughtOpen}>
-        {lastThought ? (
-          <figure className="bg-surface-inset rounded-control grid gap-1.5 p-3">
-            <figcaption className="readout text-muted">Thinking</figcaption>
-            <Thought text={lastThought} />
-          </figure>
+        {parsedThought ? (
+          <div className="pt-3">
+            <AlertBox
+              tone="neutral"
+              title={
+                parsedThought.title ? (
+                  <div className="model-thought-title">
+                    <AnimatePresence
+                      mode="wait"
+                      initial={false}
+                      custom={thoughtDir}
+                    >
+                      <motion.p
+                        key={activeThoughtIndex}
+                        custom={thoughtDir}
+                        className="text-meta font-medium text-pretty"
+                        variants={thoughtSlideVariants(Boolean(reduceMotion))}
+                        initial="enter"
+                        animate="center"
+                        exit="exit"
+                      >
+                        {parsedThought.title}
+                      </motion.p>
+                    </AnimatePresence>
+                  </div>
+                ) : undefined
+              }
+              trailing={
+                thoughts.length > 1 ? (
+                  <div
+                    role="group"
+                    aria-label="Thinking steps"
+                    className="inline-flex items-center gap-1"
+                  >
+                    <span className="text-micro text-muted px-1 tabular-nums">
+                      <MorphingText
+                        text={`${activeThoughtIndex + 1} / ${thoughts.length}`}
+                      />
+                    </span>
+                    <Button
+                      size="xsmall"
+                      shape="round"
+                      className="size-6 px-0"
+                      aria-label="Previous thinking step"
+                      isDisabled={activeThoughtIndex <= 0}
+                      onPress={() => {
+                        setThoughtDir(-1);
+                        setViewedThought(Math.max(0, activeThoughtIndex - 1));
+                      }}
+                    >
+                      <ChevronLeft
+                        aria-hidden
+                        size={15}
+                        strokeWidth={2.2}
+                        className="flex-none"
+                      />
+                    </Button>
+                    <Button
+                      size="xsmall"
+                      shape="round"
+                      className="size-6 px-0"
+                      aria-label="Next thinking step"
+                      isDisabled={activeThoughtIndex >= thoughts.length - 1}
+                      onPress={() => {
+                        const next = activeThoughtIndex + 1;
+                        setThoughtDir(1);
+                        setViewedThought(
+                          next >= thoughts.length - 1 ? null : next,
+                        );
+                      }}
+                    >
+                      <ChevronRight
+                        aria-hidden
+                        size={15}
+                        strokeWidth={2.2}
+                        className="flex-none"
+                      />
+                    </Button>
+                  </div>
+                ) : undefined
+              }
+            >
+              {parsedThought.body ? (
+                <ThoughtBodySlide
+                  slideKey={activeThoughtIndex}
+                  direction={thoughtDir}
+                  reduceMotion={Boolean(reduceMotion)}
+                  body={parsedThought.body}
+                />
+              ) : null}
+            </AlertBox>
+          </div>
         ) : null}
       </Fold>
       <Fold open={Boolean(tokens && tokens.input + tokens.output > 0)}>
         {tokens && tokens.input + tokens.output > 0 ? (
-          <div className="model-log-meta flex flex-wrap items-center gap-2">
+          <div className="model-log-meta flex flex-wrap items-center gap-2 pt-3.5">
             {/* Facts about the step, as its heading's facts are drawn. */}
             <Fact text={`${thousands(tokens.input)} tokens in`} />
             <Fact text={`${thousands(tokens.output)} out`} />
@@ -500,25 +630,27 @@ export function ModelAt({
       </Fold>
       <Fold open={showDebug && stream.length > 0}>
         {showDebug && stream.length > 0 ? (
-          <section
-            aria-label="Debug"
-            className="trial-setup rounded-shell grid gap-3 p-4"
-          >
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="readout text-muted">Debug</span>
-              <Button
-                size="xsmall"
-                aria-expanded={raw}
-                aria-controls={rawId}
-                onPress={() => setRaw(!raw)}
-              >
-                {raw ? 'Hide' : 'Show'} raw model output
-              </Button>
-            </div>
-            <Fold open={raw} id={rawId}>
-              <ModelOutput stream={stream} arrive={arrive} />
-            </Fold>
-          </section>
+          <div className="pt-3">
+            <section
+              aria-label="Debug"
+              className="trial-setup rounded-shell grid gap-3 p-4"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="readout text-muted">Debug</span>
+                <Button
+                  size="xsmall"
+                  aria-expanded={raw}
+                  aria-controls={rawId}
+                  onPress={() => setRaw(!raw)}
+                >
+                  {raw ? 'Hide' : 'Show'} raw model output
+                </Button>
+              </div>
+              <Fold open={raw} id={rawId}>
+                <ModelOutput stream={stream} arrive={arrive} />
+              </Fold>
+            </section>
+          </div>
         ) : null}
       </Fold>
     </div>
@@ -626,20 +758,86 @@ function ModelOutput({
   );
 }
 
-// A thought summary, its bold title as a title: **Title**, then the text.
-function Thought({ text }: { text: string }) {
+// Extracts every **Title** reasoning section kept in the model's stream.
+function thoughtsFromActivity(activity: ProposalActivity | null): string[] {
+  if (!activity?.stream?.length) return [];
+  const sections: string[] = [];
+  for (const entry of activity.stream) {
+    if (
+      (entry.part.type === 'reasoning-start' ||
+        entry.part.type === 'reasoning-delta' ||
+        entry.part.type === 'reasoning') &&
+      typeof entry.part.text === 'string'
+    ) {
+      for (const raw of entry.part.text.split(/\n(?=\*\*)/)) {
+        const trimmed = raw.trim();
+        if (trimmed) sections.push(trimmed);
+      }
+    }
+  }
+  return sections;
+}
+
+// A thought summary split into its bold title (**Title**) and body text.
+function thoughtParts(text: string): { title: string | null; body: string } {
   const match = /^…?\*\*(.+?)\*\*\s*([^]*)$/.exec(text);
+  if (!match) return { title: null, body: text };
+  return { title: match[1] ?? null, body: match[2] ?? '' };
+}
+
+function thoughtSlideVariants(reduceMotion: boolean) {
+  return {
+    enter: (dir: number) =>
+      reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: dir * 18 },
+    center: {
+      opacity: 1,
+      x: 0,
+      transition: {
+        duration: reduceMotion ? 0 : DURATION_STATE,
+        ease: EASE_OUT_EMPHASIZED,
+      },
+    },
+    exit: (dir: number) => ({
+      opacity: 0,
+      x: reduceMotion ? 0 : dir * -18,
+      transition: {
+        duration: reduceMotion ? 0 : DURATION_TAB_LEAVE,
+        ease: EASE_OUT_QUAD,
+      },
+    }),
+  };
+}
+
+// Exits cleanly before entering (no overlap/ghosting) and uses SmoothHeight so
+// the box itself eases smoothly between thoughts of different lengths without
+// fighting ThreadStep or clipping content below it.
+function ThoughtBodySlide({
+  slideKey,
+  direction,
+  reduceMotion,
+  body,
+}: {
+  slideKey: number;
+  direction: 1 | -1;
+  reduceMotion: boolean;
+  body: string;
+}) {
   return (
-    <p className="text-dense text-muted-strong text-pretty whitespace-pre-line">
-      {match ? (
-        <>
-          <span className="text-primary font-medium">{match[1]}</span>
-          {match[2] ? `\n${match[2]}` : ''}
-        </>
-      ) : (
-        text
-      )}
-    </p>
+    <SmoothHeight className="model-thought-body">
+      <AnimatePresence mode="wait" initial={false} custom={direction}>
+        <motion.p
+          key={slideKey}
+          custom={direction}
+          className="text-meta leading-relaxed text-pretty whitespace-pre-line"
+          variants={thoughtSlideVariants(reduceMotion)}
+          initial="enter"
+          animate="center"
+          exit="exit"
+        >
+          {body}
+        </motion.p>
+      </AnimatePresence>
+    </SmoothHeight>
   );
 }
 
@@ -648,28 +846,54 @@ function Stopped({
   reason,
   again,
   onRetry,
+  onStartMock,
   busy,
 }: {
   title: string;
   reason: string;
   again: string;
   onRetry?: () => void;
+  onStartMock?: () => void;
   busy?: boolean;
 }) {
   return (
-    <div
-      role="alert"
-      data-severity={SEVERITY.blocked}
-      className="thread-stopped bg-severity-fill border-severity-pill-ring rounded-shell grid justify-items-start gap-3 border px-4.5 py-3.5 text-pretty"
-    >
-      <div className="grid gap-1">
-        <p className="text-dense text-severity-strong font-medium">{title}</p>
-        <p className="text-dense text-severity-ink break-words">{reason}</p>
-      </div>
-      {onRetry ? (
-        <Button size="small" isDisabled={busy} onPress={onRetry}>
-          {again}
-        </Button>
+    <div className="grid gap-3">
+      <AlertBox
+        title={title}
+        className="thread-stopped"
+        action={
+          onRetry ? (
+            <Button size="small" isDisabled={busy} onPress={onRetry}>
+              {again}
+            </Button>
+          ) : null
+        }
+      >
+        {reason}
+      </AlertBox>
+      {onStartMock ? (
+        <AlertBox
+          tone="accent"
+          className="thread-stopped"
+          title={
+            <span className="flex items-center gap-1.5">
+              <BoltFilled
+                aria-hidden
+                size={14}
+                className="alert-box-ink flex-none"
+              />
+              Try a mock run instead
+            </span>
+          }
+          action={
+            <Button size="small" variant="primary" onPress={onStartMock}>
+              Start mock run
+            </Button>
+          }
+        >
+          Walk through the full flow with sample data — no live connection
+          needed.
+        </AlertBox>
       ) : null}
     </div>
   );

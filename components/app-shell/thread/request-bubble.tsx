@@ -189,7 +189,7 @@ export function RequestBubble({
   return (
     <div
       ref={bubbleRef}
-      className="border-rule-faint bg-surface-primary rounded-shell rounded-br-region ml-auto grid max-w-[84%] justify-items-start gap-2.5 border px-4.5 py-3.5 max-sm:max-w-[94%]"
+      className="request-bubble-card border-rule-faint bg-surface-primary rounded-shell rounded-br-region ml-auto grid max-w-[84%] justify-items-start gap-2.5 border px-4.5 py-3.5 max-sm:max-w-[94%]"
     >
       {label ? <Pill tone="neutral">{label}</Pill> : null}
       <div

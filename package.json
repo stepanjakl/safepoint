@@ -9,6 +9,8 @@
   "packageManager": "pnpm@10.34.5",
   "scripts": {
     "dev": "node scripts/runtime/dev.ts",
+    "dev:pause": "node scripts/runtime/dev-pause.ts pause",
+    "dev:resume": "node scripts/runtime/dev-pause.ts resume",
     "agentation:wait": "node scripts/runtime/agentation-wait.ts",
     "build": "next build",
     "vercel-build": "node scripts/runtime/vercel-build.ts",

@@ -1,7 +1,7 @@
 'use client';
 
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { useId, useRef, useState } from 'react';
+import { useId, useLayoutEffect, useRef, useState } from 'react';
 
 import { useWalkthrough } from '@/components/app-shell/walkthrough';
 import { DataDrawer } from '@/components/engine/data-drawer';
@@ -92,6 +92,30 @@ export function ProposalTable({
   const screenSettled = useScreenSettled();
   const reviewHintId = useId();
   const filterBarRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLElement>(null);
+  const headRef = useRef<HTMLTableSectionElement>(null);
+  const footRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const card = cardRef.current;
+    const head = headRef.current;
+    const foot = footRef.current;
+    if (!card || !head || !foot) return;
+    const sync = () => {
+      card.style.setProperty(
+        '--proposal-head-height',
+        `${head.getBoundingClientRect().height}px`,
+      );
+      card.style.setProperty(
+        '--proposal-foot-height',
+        `${foot.getBoundingClientRect().height}px`,
+      );
+    };
+    sync();
+    const observer = new ResizeObserver(sync);
+    observer.observe(head);
+    observer.observe(foot);
+    return () => observer.disconnect();
+  }, []);
   const showReviewHint =
     walkthrough?.step === 'review-proposal' &&
     screenSettled &&
@@ -151,13 +175,13 @@ export function ProposalTable({
       </p>
       <DataDrawer readId={readId}>
         {(view) => (
-          <DataTable>
-            <div className="min-w-0 overflow-x-auto overflow-y-hidden">
+          <DataTable ref={cardRef} className="proposal-table-card">
+            <div className="proposal-table-scroll min-w-0 overflow-x-auto overflow-y-hidden">
               <table className={cx('calc-table', DATA_TABLE_BODY)}>
                 <caption className="sr-only">
                   What is proposed for every record
                 </caption>
-                <thead>
+                <thead ref={headRef}>
                   <tr>
                     <th
                       scope="col"
@@ -239,48 +263,55 @@ export function ProposalTable({
                 </tbody>
               </table>
             </div>
-            <div
-              role="group"
-              aria-label="Proposal summary"
-              className="ground-raised border-raised-ring bg-surface-primary border-t-section sticky bottom-0 z-3 flex flex-wrap items-center justify-between gap-3 px-4 py-3"
-            >
-              <div className="flex flex-wrap items-center gap-2">
-                {counts.map(({ verdict, count }) => (
-                  <Pill key={verdict} tone={VERDICT[verdict].tone}>
-                    {count} {VERDICT[verdict].label.toLowerCase()}
-                  </Pill>
-                ))}
-              </div>
-              <AnimatePresence initial={false}>
-                {ready.length ? (
-                  <motion.div
-                    key="approve-ready"
-                    className="ml-auto"
-                    initial={reduceMotion ? false : { opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={reduceMotion ? undefined : { opacity: 0 }}
-                    transition={{ duration: DURATION_STATE, ease: 'easeOut' }}
-                  >
-                    <Button
-                      size="medium"
-                      onPress={() => {
-                        const at = new Date().toISOString();
-                        decide(
-                          Object.fromEntries(
-                            ready.map(([key]) => [key, madeNow('approve', at)]),
-                          ),
-                          `${ready.length} ${unchecked ? 'not checked' : 'ready'} approved`,
-                        );
-                      }}
+            <div className="proposal-table-sticky-track">
+              <div
+                ref={footRef}
+                role="group"
+                aria-label="Proposal summary"
+                className="ground-raised border-raised-ring bg-surface-primary border-t-section pointer-events-auto sticky bottom-0 z-3 flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  {counts.map(({ verdict, count }) => (
+                    <Pill key={verdict} tone={VERDICT[verdict].tone}>
+                      {count} {VERDICT[verdict].label.toLowerCase()}
+                    </Pill>
+                  ))}
+                </div>
+                <AnimatePresence initial={false}>
+                  {ready.length ? (
+                    <motion.div
+                      key="approve-ready"
+                      className="ml-auto"
+                      initial={reduceMotion ? false : { opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={reduceMotion ? undefined : { opacity: 0 }}
+                      transition={{ duration: DURATION_STATE, ease: 'easeOut' }}
                     >
-                      <span>
-                        Approve all <MorphingText text={String(ready.length)} />{' '}
-                        {unchecked ? 'not checked' : 'ready'}
-                      </span>
-                    </Button>
-                  </motion.div>
-                ) : null}
-              </AnimatePresence>
+                      <Button
+                        size="medium"
+                        onPress={() => {
+                          const at = new Date().toISOString();
+                          decide(
+                            Object.fromEntries(
+                              ready.map(([key]) => [
+                                key,
+                                madeNow('approve', at),
+                              ]),
+                            ),
+                            `${ready.length} ${unchecked ? 'not checked' : 'ready'} approved`,
+                          );
+                        }}
+                      >
+                        <span>
+                          Approve all{' '}
+                          <MorphingText text={String(ready.length)} />{' '}
+                          {unchecked ? 'not checked' : 'ready'}
+                        </span>
+                      </Button>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
+              </div>
             </div>
           </DataTable>
         )}

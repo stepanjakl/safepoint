@@ -42,7 +42,7 @@ export function AccessForm({ next }: { next: string }) {
         <Label className={LABEL}>Your name</Label>
         <Input className={FIELD} maxLength={80} />
       </TextField>
-      {state.error ? <AlertBox>{state.error}</AlertBox> : null}
+      {state.error ? <AlertBox size="compact">{state.error}</AlertBox> : null}
       <Button type="submit" variant="primary" isPending={pending}>
         {pending ? 'Checking…' : 'Continue'}
       </Button>

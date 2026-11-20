@@ -71,7 +71,7 @@
       oklch(from var(--sp-rules-calculation) calc(l + var(--calculation-lift-light)) c h),
       oklch(from var(--sp-rules-calculation) calc(l + var(--calculation-lift-dark)) c h)
     );
-    box-shadow: inset 0 0 0 1px
+    box-shadow: inset 0 0 0 var(--highlight-pane)
       light-dark(
         oklch(from var(--sp-rules-calculation-ring) calc(l + var(--calculation-lift-light)) c h),
         oklch(from var(--sp-rules-calculation-ring) calc(l + var(--calculation-lift-dark)) c h)

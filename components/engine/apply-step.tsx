@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { RunProcessId } from '@/components/app-shell/runs/kept-runs';
 import { Lede, plural, saidBy } from '@/components/engine/trial-parts';
 import { useTRPC } from '@/components/trpc/provider';
+import { AlertBox } from '@/components/ui/alert-box';
 import { Button } from '@/components/ui/button';
 import {
   DATA_TABLE_BODY,
@@ -214,11 +215,7 @@ export function ApplyStep({
           {rows ? `${plural(rows, 'row')} to write.` : 'Nothing to write.'}
         </span>
       </p>
-      {failure ? (
-        <p role="alert" className="text-dense text-state-blocked">
-          {failure}
-        </p>
-      ) : null}
+      {failure ? <AlertBox>{failure}</AlertBox> : null}
       {changes.length ? (
         <ChangesTable
           fields={subject.proposal}
@@ -248,14 +245,13 @@ export function ApplyStep({
       ) : unconfirmed ? null : (
         <>
           {refused.length ? (
-            <ul
-              role="alert"
-              className="text-dense text-state-blocked grid gap-1"
-            >
-              {refused.map((problem) => (
-                <li key={problem}>{problem}</li>
-              ))}
-            </ul>
+            <AlertBox>
+              <ul className="list-disc pl-5">
+                {refused.map((problem) => (
+                  <li key={problem}>{problem}</li>
+                ))}
+              </ul>
+            </AlertBox>
           ) : null}
           {canWrite && held.length ? (
             <div className="grid gap-2">

@@ -26,12 +26,12 @@
      throws work away. Its own stops; no other control reads them. */
   --sp-button-danger-face-top: light-dark(var(--radix-red-9), var(--radix-red-dark-9));
   --sp-button-danger-face-bottom: light-dark(var(--radix-red-10), var(--radix-red-dark-8));
-  --sp-button-danger-ring-top: light-dark(var(--radix-red-11), var(--radix-red-dark-10));
-  --sp-button-danger-ring-bottom: light-dark(var(--radix-red-11), var(--radix-red-dark-7));
+  --sp-button-danger-ring-top: light-dark(var(--radix-red-11), var(--radix-red-dark-11));
+  --sp-button-danger-ring-bottom: light-dark(var(--radix-red-11), var(--radix-red-dark-9));
   --sp-button-danger-face-top-hover: light-dark(var(--radix-red-10), var(--radix-red-dark-10));
   --sp-button-danger-face-bottom-hover: light-dark(var(--radix-red-11), var(--radix-red-dark-9));
-  --sp-button-danger-ring-top-hover: light-dark(var(--radix-red-11), var(--radix-red-dark-11));
-  --sp-button-danger-ring-bottom-hover: light-dark(var(--radix-red-12), var(--radix-red-dark-9));
+  --sp-button-danger-ring-top-hover: light-dark(var(--radix-red-11), var(--radix-red-dark-12));
+  --sp-button-danger-ring-bottom-hover: light-dark(var(--radix-red-12), var(--radix-red-dark-10));
   /* A key hint on a lit face: quieter than the label's white, still its own tint. */
   --sp-button-primary-key: light-dark(var(--radix-cyan-2), var(--radix-cyan-dark-12));
   /* A flat dot that says "on" beside a control. */
@@ -314,9 +314,9 @@
   &::after {
     content: '';
     position: absolute;
-    inset: calc(-2 * var(--spacing-control-edge));
-    border: var(--spacing-control-edge) solid var(--sp-popover-outline);
-    border-radius: calc(var(--radius-shell) + var(--spacing-control-edge));
+    inset: calc(-1 * (var(--spacing-control-edge) + var(--highlight-outline)));
+    border: var(--highlight-outline) solid var(--sp-popover-outline);
+    border-radius: calc(var(--radius-shell) + var(--highlight-outline));
     pointer-events: none;
   }
 }
@@ -346,7 +346,8 @@
     inset-inline: var(--row-rule-inset, 1rem) 0;
     top: var(--row-rule-top, 0);
     z-index: 1;
-    border-top: 1px solid var(--sp-rule-faint);
+    height: 1px;
+    box-shadow: inset 0 var(--edge-hairline) 0 var(--sp-rule-faint);
     pointer-events: none;
     transition: opacity var(--duration-state) ease-out;
   }
@@ -370,13 +371,13 @@
   position: relative;
   z-index: 1;
   border-bottom: var(--section-rule-width) solid var(--sp-ground-ring);
-  box-shadow: 0 1px 0 var(--sp-ground-edge);
+  box-shadow: 0 var(--highlight-pane) 0 var(--sp-ground-edge);
 }
 @utility rule-above {
   position: relative;
   z-index: 1;
   border-top: var(--section-rule-width) solid var(--sp-ground-ring);
-  box-shadow: 0 -1px 0 var(--sp-ground-edge);
+  box-shadow: 0 calc(var(--highlight-pane) * -1) 0 var(--sp-ground-edge);
 }
 
 @utility surface-recessed {
@@ -391,16 +392,87 @@
 /* A plain bordered surface with a shallow top sheen: it encloses content
    rather than inviting a press, so it stays flat. */
 @utility enclosure {
-  border: 1px solid var(--sp-rule-strong);
+  border: var(--edge-rule) solid var(--sp-rule-strong);
   border-radius: var(--radius-control);
   /* Here, not a :root role: a gradient resolves where it is declared. */
-  background-image: linear-gradient(to bottom, var(--sp-enclosure-edge) 0 1px, transparent 1px);
+  background-image: linear-gradient(
+    to bottom,
+    var(--sp-enclosure-edge) 0 var(--highlight-pane),
+    transparent var(--highlight-pane)
+  );
+}
+
+/* Optical 0.75px rings on retina (2dppx+) when `data-edges="retina"` is
+   active: stacked inset box-shadows follow any border-radius automatically and
+   stay symmetric on subpixel button widths without Blink's border snapping. */
+@media (min-resolution: 2dppx) {
+  :root[data-edges='retina'] .control-face:not(.slant) {
+    border-width: 0;
+    background-image: linear-gradient(
+      to bottom,
+      var(--control-face-top),
+      var(--control-face-bottom)
+    );
+    background-origin: border-box;
+    background-clip: border-box;
+    box-shadow:
+      inset 0 0 0 var(--edge-ring) var(--control-ring-top),
+      inset 0 0 0
+        calc(var(--edge-ring) + var(--control-highlight-width, var(--spacing-control-highlight)))
+        var(--control-highlight);
+  }
+
+  /* Gradient-ring buttons keep control-face's real border at 0.5px (1 crisp
+     device px at 2x) so the vertical ring gradient and every corner radius
+     stay exact across subpixel widths. */
+  :root[data-edges='retina']
+    .control-face:is(
+      .control-button-primary,
+      .control-button-secondary,
+      .control-button-danger,
+      .header-button
+    ):not(.slant) {
+    border: 0.5px solid transparent;
+    background-image:
+      linear-gradient(to bottom, var(--control-face-top), var(--control-face-bottom)),
+      linear-gradient(to bottom, var(--control-ring-top), var(--control-ring-bottom));
+    background-origin: padding-box, border-box;
+    background-clip: padding-box, border-box;
+    box-shadow: inset 0 0 0 var(--control-highlight-width, var(--spacing-control-highlight))
+      var(--control-highlight);
+  }
+
+  :root[data-edges='retina'] .control-face.surface-popover:not(.slant) {
+    box-shadow:
+      inset 0 0 0 var(--edge-ring) var(--control-ring-top),
+      inset 0 0 0
+        calc(var(--edge-ring) + var(--control-highlight-width, var(--spacing-control-highlight)))
+        var(--control-highlight),
+      0 0 0 var(--highlight-outline) var(--sp-popover-outline);
+  }
+
+  :root[data-edges='retina'] .control-face.surface-popover:not(.slant)::after {
+    display: none;
+  }
+
+  :root[data-edges='retina'] .enclosure {
+    border-width: 0;
+    box-shadow: inset 0 0 0 var(--edge-hairline) var(--sp-rule-strong);
+  }
 }
 
 @media (forced-colors: active), print {
   .control-face,
   .enclosure {
     background-image: none;
+  }
+
+  :root[data-edges='retina'] .control-face:not(.slant) {
+    border-width: var(--control-face-border-width);
+  }
+
+  :root[data-edges='retina'] .enclosure {
+    border-width: 1px;
   }
 
   /* The ring carries the boundary, so a real border has to come back. */

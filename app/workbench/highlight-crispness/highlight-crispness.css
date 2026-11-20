@@ -1,0 +1,158 @@
+@layer components {
+  /* Scope each mode locally so all three render side by side on one screen.
+     Re-binds the --spacing-* aliases because :root computes them once at the
+     root (whereas the live Design Pane sets data-edges directly on <html>). */
+  .hc-mode {
+    --edge-control: 1px;
+    --edge-field: 1.5px;
+    --section-rule-width: 1.5px;
+    --edge-rule: 1px;
+    --highlight-pane: 1px;
+    --highlight-hairline: 0.75px;
+    --spacing-control-edge: var(--edge-control);
+    --spacing-field-edge: var(--edge-field);
+    --spacing-control-highlight: var(--highlight-pane);
+    --spacing-control-highlight-hairline: var(--highlight-hairline);
+  }
+
+  @media (min-resolution: 2dppx) {
+    .hc-mode[data-hc-mode='highlights'] {
+      --highlight-pane: 0.75px;
+      --highlight-hairline: 0.5px;
+    }
+
+    .hc-mode[data-hc-mode='0.5'] {
+      --edge-control: 0.5px;
+      --edge-field: 1px;
+      --section-rule-width: 1px;
+      --edge-rule: 0.5px;
+      --highlight-pane: 0.75px;
+      --highlight-hairline: 0.5px;
+    }
+  }
+
+  /* Optical 0.75px border via box-shadow (solid ring + inner highlight). */
+  .hc-shadow-border-pane {
+    @apply ground-raised;
+    background: var(--sp-surface-primary);
+    box-shadow:
+      0 0 0 0.75px var(--sp-raised-ring),
+      inset 0 0 0 0.75px var(--sp-raised-edge);
+  }
+
+  .hc-shadow-border-card {
+    @apply ground-floating;
+    background: var(--sp-surface-floating);
+    box-shadow:
+      0 0 0 0.75px var(--sp-floating-ring),
+      inset 0 0 0 0.75px var(--sp-floating-edge);
+  }
+}
+
+/* Gradient-ring button candidates on /workbench/highlight-crispness.
+   Unlayered so they stay pinned regardless of the live `data-edges` mode. */
+.hc-btn-1px.control-face {
+  border: 1px solid transparent;
+  background-image:
+    linear-gradient(to bottom, var(--control-face-top), var(--control-face-bottom)),
+    linear-gradient(to bottom, var(--control-ring-top), var(--control-ring-bottom));
+  background-origin: padding-box, border-box;
+  background-clip: padding-box, border-box;
+  box-shadow: inset 0 0 0 0.75px var(--control-highlight);
+}
+
+/* Option 1: real 0.5px border (1 crisp device px at 2x). */
+.hc-btn-05px.control-face {
+  border: 0.5px solid transparent;
+  background-image:
+    linear-gradient(to bottom, var(--control-face-top), var(--control-face-bottom)),
+    linear-gradient(to bottom, var(--control-ring-top), var(--control-ring-bottom));
+  background-origin: padding-box, border-box;
+  background-clip: padding-box, border-box;
+  box-shadow: inset 0 0 0 0.5px var(--control-highlight);
+}
+
+/* Option 2: dual clip-path (inset(0) on button + inset(0.75px) on ::before). */
+.hc-btn-clip.rounded-control {
+  --control-radius: var(--radius-control);
+}
+.hc-btn-clip.rounded-icon {
+  --control-radius: var(--radius-icon);
+}
+.hc-btn-clip.rounded-shell {
+  --control-radius: var(--radius-shell);
+}
+.hc-btn-clip.rounded-full {
+  --control-radius: 9999px;
+}
+
+.hc-btn-clip.control-face {
+  position: relative;
+  isolation: isolate;
+  border: 0;
+  background-image: linear-gradient(to bottom, var(--control-ring-top), var(--control-ring-bottom));
+  background-origin: border-box;
+  background-clip: border-box;
+  box-shadow: none;
+  clip-path: inset(0px round var(--control-radius, var(--radius-icon)));
+}
+
+.hc-btn-clip.control-face::before {
+  --control-face-top: inherit;
+  --control-face-bottom: inherit;
+  --control-highlight: inherit;
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(to bottom, var(--control-face-top), var(--control-face-bottom));
+  box-shadow: inset 0 0 0 0.5px var(--control-highlight);
+  clip-path: inset(0.75px round calc(var(--control-radius, var(--radius-icon)) - 0.75px));
+  pointer-events: none;
+}
+
+/* Option 3: inline SVG painting BOTH face gradient fill and 0.75px ring stroke
+   on one vector shape so there is zero HTML/SVG corner conflation seam. */
+.hc-btn-svg.control-face {
+  position: relative;
+  isolation: isolate;
+  --hc-face-top: var(--control-face-top);
+  --hc-face-bottom: var(--control-face-bottom);
+  --hc-ring-top: var(--control-ring-top);
+  --hc-ring-bottom: var(--control-ring-bottom);
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.hc-btn-svg-ring {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.hc-btn-svg-rect {
+  rx: calc(var(--control-radius, var(--radius-icon)) - 0.375px);
+  ry: calc(var(--control-radius, var(--radius-icon)) - 0.375px);
+}
+
+.hc-btn-svg-face-top {
+  stop-color: var(--hc-face-top);
+}
+
+.hc-btn-svg-face-bottom {
+  stop-color: var(--hc-face-bottom);
+}
+
+.hc-btn-svg-stop-top {
+  stop-color: var(--hc-ring-top);
+}
+
+.hc-btn-svg-stop-bottom {
+  stop-color: var(--hc-ring-bottom);
+}

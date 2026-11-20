@@ -10,6 +10,12 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { connect } from 'node:net';
 
+import { clearStaleDevPause } from './dev-pause-plugin.ts';
+
+if (clearStaleDevPause()) {
+  console.log('[dev-pause] Cleared stale pause file on startup.');
+}
+
 const AGENTATION_PORT = 4747;
 const parsedDevtoolsPort = Number.parseInt(
   process.env.AI_SDK_DEVTOOLS_PORT ?? '',

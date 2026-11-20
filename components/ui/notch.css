@@ -141,12 +141,12 @@
     --n-down-1: var(--n-down);
   }
   .notch-at[data-k='2'] {
-    --n-k: calc(var(--n-e) * 2);
+    --n-k: calc(var(--n-e) + var(--spacing-control-highlight));
   }
   .notch-paint {
     top: 0;
     right: 0;
-    bottom: calc(var(--n-e) * -2);
+    bottom: calc((var(--n-e) + var(--spacing-control-highlight)) * -1);
     left: calc(var(--n-x) * -1);
   }
 
@@ -188,7 +188,7 @@
      pane's face rather than on that sheen. */
   .notch-under {
     bottom: auto;
-    height: calc(var(--n-e) * 2);
+    height: calc(var(--n-e) + var(--spacing-control-highlight));
     background: var(--notch-pane-color);
   }
 
@@ -268,7 +268,7 @@
     --s-h: 100cqh;
     --s-w: 100cqw;
     --s-e: var(--control-face-border-width);
-    --s-hw: var(--control-highlight-width, 1px);
+    --s-hw: var(--control-highlight-width, var(--spacing-control-highlight));
     --s-r: var(--slant-radius, var(--radius-shell));
     --s-f: 4px;
     --s-px: calc(var(--s-h) / 2 * tan(var(--slant-lean)) + var(--s-f));

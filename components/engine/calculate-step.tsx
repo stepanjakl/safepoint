@@ -17,6 +17,7 @@ import {
 import { FromModel, Step } from '@/components/engine/rules-parts';
 import { ModelSelect } from '@/components/engine/rules/model-select';
 import { Lede, Outcome, plural } from '@/components/engine/trial-parts';
+import { AlertBox } from '@/components/ui/alert-box';
 import { Button } from '@/components/ui/button';
 import { FilterTabs } from '@/components/ui/filter-tabs';
 import { Fold } from '@/components/ui/fold';
@@ -201,9 +202,7 @@ export function CalculateStep({
       {answer?.kind === 'stale' ? (
         <StaleRules stale={answer} onMove={movePin} />
       ) : cross.error || calculated.error ? (
-        <p role="alert" className="text-dense text-state-blocked">
-          {(cross.error ?? calculated.error)?.message}
-        </p>
+        <AlertBox>{(cross.error ?? calculated.error)?.message}</AlertBox>
       ) : null}
       {shown ? (
         <>

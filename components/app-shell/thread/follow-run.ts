@@ -45,10 +45,15 @@ export function useFollowRun(
   hasEnd = false,
   stepCount?: number,
   resetKey: number | string = 0,
+  followGrowth = true,
 ) {
   const [behind, setBehind] = useState(false);
   const pinned = useRef(true);
   const catchingUp = useRef(false);
+  const followGrowthRef = useRef(followGrowth);
+  useEffect(() => {
+    followGrowthRef.current = followGrowth;
+  }, [followGrowth]);
   // Once the reader has seen the newest section (at the bottom or via an arrival),
   // scrolling away from it again brings the catch-up button back.
   const canShowBehind = useRef(false);
@@ -97,6 +102,17 @@ export function useFollowRun(
     canShowBehind.current = false;
     const clearBehind = resetKey ? setTimeout(() => setBehind(false)) : null;
 
+    // A run opened already past the first screen (e.g. awaiting review) starts
+    // at scrollTop 0 with its latest step below the fold: offer the jump button
+    // straight away instead of waiting for a new step to arrive.
+    const initialCheck = requestAnimationFrame(() => {
+      canShowBehind.current = true;
+      if (!atBottom()) {
+        pinned.current = false;
+        if (!atLatest()) setBehind(true);
+      }
+    });
+
     const onScroll = () => {
       const bottom = atBottom();
       if (bottom) {
@@ -118,15 +134,22 @@ export function useFollowRun(
       catchingUp.current = false;
     };
 
-    // Follow frame by frame as steps arrive or expand while pinned to bottom.
-    // Skip the initial observation on mount so opening a run does not jump.
+    // Follow frame by frame as an active running step grows while pinned to
+    // the bottom. Never hijack scroll when the thread is idle (user expanding
+    // earlier steps or paging through thinking) or shrinking.
     let initialized = false;
+    let lastHeight = 0;
     const growth = new ResizeObserver(() => {
+      const nextHeight = thread.offsetHeight;
       if (!initialized) {
         initialized = true;
+        lastHeight = nextHeight;
         return;
       }
-      if (pinned.current) scrollToBottom(scroller);
+      const grew = nextHeight > lastHeight;
+      lastHeight = nextHeight;
+      if (grew && pinned.current && followGrowthRef.current)
+        scrollToBottom(scroller);
     });
     growth.observe(thread);
 
@@ -136,6 +159,7 @@ export function useFollowRun(
       window.addEventListener(type, onUserInput, { passive: true }),
     );
     return () => {
+      cancelAnimationFrame(initialCheck);
       if (clearBehind) clearTimeout(clearBehind);
       growth.disconnect();
       scrollTarget.removeEventListener('scroll', onScroll);
