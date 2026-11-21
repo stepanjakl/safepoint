@@ -473,6 +473,7 @@ const FOLLOWING_BY_FILE = {
   },
   'app/styles/roles.css': {
     '--sp-surface-control': { light: -25, dark: -100 },
+    '--sp-surface-disabled': { light: 25, dark: 25 },
     /* The darkest light ground and muted ink's thinnest margin, so a control
        taking it moves its ink to primary. */
     '--sp-surface-selected': SELECTED,
@@ -524,6 +525,7 @@ const FOLLOWING_BY_FILE = {
     '--sp-field-edge': { light: 150, dark: -150 },
     '--sp-field-edge-hover': { light: 200, dark: -425 },
     '--sp-field-edge-active': { light: 500, dark: -600 },
+    '--sp-off-ring': { light: 175, dark: -200 },
     /* A one-pixel band rather than a fade, whose colour would depend on what
        lies under it. */
     '--sp-enclosure-edge': { light: -25, dark: -150 },
@@ -543,9 +545,9 @@ const FOLLOWING_BY_FILE = {
   'app/styles/drawer.css': {
     /* Shared by the regular drawer close button and mobile icon buttons. */
     '--sp-icon-button-face-top': { light: -25, dark: -125 },
-    '--sp-icon-button-face-bottom': { light: 50, dark: -25 },
+    '--sp-icon-button-face-bottom': { light: 50, dark: -50 },
     '--sp-icon-button-ring-top': { light: 175, dark: -250 },
-    '--sp-icon-button-ring-bottom': { light: 275, dark: -100 },
+    '--sp-icon-button-ring-bottom': { light: 275, dark: -150 },
     '--sp-icon-button-face-top-hover': { light: -25, dark: -175 },
     '--sp-icon-button-face-bottom-hover': { light: 175, dark: -75 },
     '--sp-icon-button-ring-top-hover': { light: 275, dark: -375 },
@@ -874,6 +876,10 @@ const ANCHORED_BY_FILE = {
     },
   },
   'components/engine/rulebook-history.css': {
+    /* A quiet metadata chip: on dark surfaces, one rung below the shared
+       neutral pill in both face and ink, without changing its light balance. */
+    '--sp-timeline-code-face': { on: 'floating', light: 100, dark: -50 },
+    '--sp-timeline-code-ink': { on: 'floating', light: 575, dark: -500 },
     /* Half the shared hover: a timeline's rows are passed over far more
        often than opened, and the line runs over the wash. */
     '--sp-timeline-hover': {
@@ -1068,11 +1074,10 @@ export const ROLE_ASSIGNMENTS = {
   surfaceSelected: relativeRole('--sp-surface-selected'),
   surfaceSelectedStrong: relativeRole('--sp-surface-selected-strong'),
   surfaceSelectedMid: relativeRole('--sp-surface-selected-mid'),
-  surfaceDisabled: {
-    cssVariable: '--sp-surface-disabled',
-    light: 50,
-    dark: 950,
-  },
+  surfaceDisabled: relativeRole('--sp-surface-disabled'),
+  disabledRing: relativeRole('--sp-off-ring'),
+  timelineCodeFace: relativeRole('--sp-timeline-code-face'),
+  timelineCodeInk: relativeRole('--sp-timeline-code-ink'),
   textPrimary: {
     cssVariable: '--sp-text-primary',
     light: 925,
@@ -1196,6 +1201,15 @@ export const CONTRAST_CONTRACTS: readonly ContrastContract[] = [
     rationale: 'Ordinary text in dialogs, tooltips, and floating panels.',
   },
   {
+    id: 'timeline-code-ink-on-face',
+    classification: 'required',
+    foreground: 'timelineCodeInk',
+    background: 'timelineCodeFace',
+    minimum: 4.5,
+    target: 4.5,
+    rationale: 'Revision identifiers remain readable in their subdued chip.',
+  },
+  {
     id: 'primary-on-inset-surface',
     classification: 'required',
     foreground: 'textPrimary',
@@ -1267,6 +1281,15 @@ export const CONTRAST_CONTRACTS: readonly ContrastContract[] = [
     minimum: 4.5,
     target: 7,
     rationale: 'Neutral action labels use inverse text.',
+  },
+  {
+    id: 'disabled-ring-on-face',
+    classification: 'required',
+    foreground: 'disabledRing',
+    background: 'surfaceDisabled',
+    minimum: 1.2,
+    target: 1.5,
+    rationale: 'Disabled controls keep a visible edge on each surface.',
   },
   {
     id: 'field-focus-on-face',

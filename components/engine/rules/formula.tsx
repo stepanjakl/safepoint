@@ -276,7 +276,7 @@ export function Formula({
       aria-label={`Formula of ${item.name}`}
       className={cx(
         // Isolated: a lit name's face sits under its text (rules-step.css).
-        'rules-formula value text-meta rounded-control isolate grid gap-0.5 px-3 py-2',
+        'rules-formula value text-meta rounded-control isolate grid min-w-0 grid-cols-1 gap-0.5 px-3 py-2',
         face,
       )}
     >

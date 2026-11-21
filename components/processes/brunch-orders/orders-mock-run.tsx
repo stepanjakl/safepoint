@@ -15,8 +15,9 @@ import frozenProposal from '@/e2e/fixtures/brunch-orders-proposal.json';
 import frozenRules from '@/e2e/fixtures/brunch-orders-rules.json';
 import frozenProfile from '@/fixtures/brunch-orders/profile/current.json';
 import snapshot from '@/fixtures/brunch-orders/sheet-snapshot.json';
+import { useRunProgress } from '@/components/app-shell/runs/run-progress';
 import { ProcessSheetActions } from '@/components/app-shell/process/process-sheet';
-import { useFollowRun } from '@/components/app-shell/thread/follow-run';
+import { Thread } from '@/components/app-shell/thread/thread-arrivals';
 import type {
   LiveRun,
   RunSelection,
@@ -28,7 +29,6 @@ import {
   type ThreadPlayerStep,
 } from '@/components/app-shell/thread/thread-player';
 import { ResponseSection } from '@/components/app-shell/thread/thread-page';
-import { ThreadStep } from '@/components/app-shell/thread/thread-step';
 import { ApplyStep, type ApplyProgress } from '@/components/engine/apply-step';
 import {
   CalculateStep,
@@ -74,6 +74,8 @@ import type { ProcessStep } from '@/lib/shell/model';
 import { sourceById } from '@/lib/sources/model';
 import { motionTime } from '@/lib/ui/motion-time';
 import { useWorkingFavicon } from '@/components/app-shell/runs/working-favicon';
+
+import { ordersAnnouncement, ordersRunStatus } from './orders-progress';
 
 const AT = '2026-11-06T11:49:00.000Z';
 const MOCK_READ_ID = 'mock-captured-read';
@@ -468,6 +470,7 @@ function rulesReplyForStage(stage: OrdersStageKey): RulesReply {
 
 export function OrdersMockRun({
   live,
+  selection,
 }: {
   live: LiveRun;
   selection: RunSelection;
@@ -485,8 +488,6 @@ export function OrdersMockRun({
   const [playing, setPlaying] = useState(false);
   const [rate, setRate] = useState(1);
   const container = useRef<HTMLDivElement>(null);
-  const thread = useRef<HTMLOListElement>(null);
-  useFollowRun(thread, undefined, false, undefined, runKey);
   useSlowMotion(container, rate);
 
   const stage = ORDERS_MOCK_STAGES[index] ?? ORDERS_MOCK_STAGES[0]!;
@@ -826,6 +827,18 @@ export function OrdersMockRun({
           ? 'propose'
           : 'apply';
 
+  const runStatus = ordersRunStatus({
+    latest,
+    proposalReady: Boolean(proposed?.proposedAt),
+    noWrites: previewChanges.length === 0,
+    application: effectiveApplied?.status,
+    stopped:
+      stage.key === 'branch-rules-quota' ||
+      stage.key === 'branch-propose-quota',
+    held: stage.key === 'branch-calc-differ',
+  });
+  useRunProgress(selection, kept.id, kept.status, runStatus);
+
   const label = (step: ProcessStep) =>
     step.id === 'rules' && (rules?.running || rules?.total)
       ? rules.running
@@ -908,22 +921,31 @@ export function OrdersMockRun({
         }}
         onRateChange={setRate}
       />
-      <ol ref={thread} className="thread">
-        {steps.map((step) => (
-          <ThreadStep
-            key={step.id}
-            step={step}
-            latest={step.id === latest}
-            headingAction={
-              step.id === 'instructions' && sheet
-                ? {
-                    label: version,
-                    onPress: sheet.showInstructions,
-                  }
-                : undefined
-            }
-          >
-            {step.id === 'instructions' ? (
+      <Thread
+        steps={steps}
+        look="proposed"
+        latestId={latest}
+        resetKey={runKey}
+        announcement={ordersAnnouncement(
+          latest,
+          runStatus,
+          previewChanges.length === 0,
+        )}
+        headingActions={{
+          instructions: sheet
+            ? {
+                label: version,
+                onPress:
+                  version === sheet.currentVersion
+                    ? sheet.showInstructions
+                    : () => sheet.showVersion(version),
+              }
+            : undefined,
+        }}
+        boxes={Object.fromEntries(
+          steps.map((step) => [
+            step.id,
+            step.id === 'instructions' ? (
               live.kept.additionalInstructions ? (
                 <div className="grid gap-3">
                   <RunNote text={live.kept.additionalInstructions} />
@@ -986,7 +1008,6 @@ export function OrdersMockRun({
             ) : step.id === 'apply' && allDecided && read && pinned ? (
               <ResponseSection>
                 <ApplyStep
-                  key={stage.key}
                   subject={SUBJECT}
                   run={{ process: 'brunch-orders', runId: kept.id }}
                   decisions={proposed?.decisions ?? allDecisions}
@@ -1020,10 +1041,10 @@ export function OrdersMockRun({
               </ResponseSection>
             ) : (
               <p className="text-dense text-muted">{COMING[step.id]}</p>
-            )}
-          </ThreadStep>
-        ))}
-      </ol>
+            ),
+          ]),
+        )}
+      />
     </div>
   );
 }

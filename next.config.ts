@@ -25,6 +25,11 @@ const nextConfig: NextConfig = {
   // repositioned: nothing it reports is worth a corner of the shell.
   devIndicators: false,
 
+  // Mobile clients on the LAN need the dev WebSocket to hydrate the page.
+  allowedDevOrigins: process.env.SAFEPOINT_DEV_HOST
+    ? [process.env.SAFEPOINT_DEV_HOST]
+    : undefined,
+
   // PGlite loads its WebAssembly and data files from beside its own module,
   // which a bundled copy cannot find (server/db/client.ts). pg is external
   // by Next's own list.

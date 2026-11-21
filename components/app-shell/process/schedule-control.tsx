@@ -85,7 +85,7 @@ export function ScheduleControl({
         className="popover-motion control-face surface-popover rounded-shell w-[min(18rem,calc(100vw-2rem))]"
         {...popoverProps}
       >
-        <Dialog className="grid gap-3 p-4 outline-none">
+        <Dialog className="grid gap-3 p-3 outline-none">
           <ScheduleFields
             schedule={schedule}
             update={update}

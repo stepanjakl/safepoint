@@ -188,7 +188,6 @@
   @media (width < 56.25rem) {
     :is(.process-header, .shell-menu-notch) {
       --slant-height: 2.25rem;
-      --narrow-slant-padding: 0.25rem;
       --narrow-slant-width: 2.75rem;
       /* The clipped ring starts at the padding box, so the notch measures from it. */
       --slant-layout-border-width: 0px;

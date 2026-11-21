@@ -9,7 +9,11 @@ import {
   type LiveRun,
   type RunSelection,
 } from '@/components/app-shell/runs/run-selection';
-import { useRunReady } from '@/components/app-shell/runs/run-readiness';
+import {
+  MODEL_RUN_PROGRESS,
+  useRunProgress,
+} from '@/components/app-shell/runs/run-progress';
+import { useRunRestoration } from '@/components/app-shell/runs/run-readiness';
 import { useWorkingFavicon } from '@/components/app-shell/runs/working-favicon';
 import {
   ModelRunThread,
@@ -48,22 +52,6 @@ import type { AppRouter } from '@/server/api/root';
 
 const POLL_MS = 2000;
 const NO_DECISIONS: Record<string, Decision> = {};
-
-const STAGE_PROGRESS_STATUS: Record<
-  ModelRunStage,
-  'running' | 'awaiting_review' | 'approved' | 'completed' | 'held' | 'failed'
-> = {
-  starting: 'running',
-  reading: 'running',
-  evaluating: 'running',
-  stopped: 'failed',
-  awaiting_review: 'awaiting_review',
-  reviewing: 'awaiting_review',
-  ready_to_commit: 'approved',
-  committing: 'approved',
-  intervention: 'held',
-  committed: 'completed',
-};
 
 const askedOf = (key: string, decision: Decision) =>
   decision.kind === 'change'
@@ -135,15 +123,15 @@ function DirectThread({
   // its read, proposal and decisions in parallel and wait for them before
   // mounting ModelRunThread so it opens straight at its real stage instead of
   // starting at 'reading' and replaying arrivals.
-  const [startedWithRead] = useState(kept.readId !== null);
-  const [hydrated, setHydrated] = useState(!startedWithRead);
-  useRunReady(hydrated);
+  const { restoring, reopened, finishRestoring } = useRunRestoration(
+    kept.readId,
+  );
   // A freshly started run opens on 'starting' so Instructions plays its
   // entrance sequence before Reading inputs arrives (while the live read
   // already runs in the background).
   const [startingBeat, setStartingBeat] = useState(
     () =>
-      !startedWithRead &&
+      !reopened &&
       (typeof matchMedia === 'undefined' ||
         !matchMedia('(prefers-reduced-motion: reduce)').matches),
   );
@@ -372,7 +360,13 @@ function DirectThread({
 
   const handleApplyReply = (reply: ApplyReply) => {
     setApplyFailure(null);
-    if (reply.kind === 'stale') return;
+    if (reply.kind === 'stale') {
+      setPreview(null);
+      setApplyFailure(
+        'The saved decisions need to be reviewed again before writing.',
+      );
+      return;
+    }
     if (reply.kind === 'preview') setPreview(reply);
     setApplication(reply.application);
   };
@@ -393,10 +387,10 @@ function DirectThread({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allDecided, decidedKey]);
 
-  const onWrite = () => {
+  const onWrite = (acknowledged: string[]) => {
     setActing(true);
     void writing
-      .mutateAsync({ ...decidedOn, acknowledged: [] })
+      .mutateAsync({ ...decidedOn, acknowledged })
       .then((reply) => {
         handleApplyReply(reply);
         setActing(false);
@@ -435,7 +429,6 @@ function DirectThread({
   const writeProblems = [
     ...(preview?.notWritable ? [preview.notWritable] : []),
     ...(preview?.problems ?? []),
-    ...(applyFailure ? [applyFailure] : []),
   ];
 
   // Derive the ModelRunStage from the live state.
@@ -463,7 +456,7 @@ function DirectThread({
                     ? 'committed'
                     : 'ready_to_commit';
 
-  if (!hydrated) {
+  if (restoring) {
     const readDone = read !== undefined || saved.error !== null;
     const proposalDone =
       !readDone ||
@@ -478,27 +471,26 @@ function DirectThread({
       application !== null ||
       applyFailure !== null;
     if (readDone && proposalDone && decisionsDone && applicationDone)
-      setHydrated(true);
+      finishRestoring();
   }
 
   useWorkingFavicon(
-    hydrated &&
+    !restoring &&
       (stage === 'reading' || stage === 'evaluating' || stage === 'committing'),
   );
 
-  // Keep the server's run status (and the runs rail) in sync with the live stage.
-  const progressStatus = STAGE_PROGRESS_STATUS[stage];
-  const recordedStatus = useRef<string | null>(null);
-  useEffect(() => {
-    if (!hydrated) return;
-    if (kept.status === progressStatus) return;
-    if (recordedStatus.current === progressStatus) return;
-    recordedStatus.current = progressStatus;
-    void selection
-      .record(kept.id, { status: progressStatus })
-      .catch(() => undefined);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, kept.id, kept.status, progressStatus]);
+  const noChanges =
+    allDecided &&
+    preview !== null &&
+    changes.length === 0 &&
+    writeProblems.length === 0 &&
+    !applyFailure;
+  const progress = unconfirmed
+    ? 'held'
+    : noChanges
+      ? 'completed'
+      : MODEL_RUN_PROGRESS[stage];
+  useRunProgress(selection, kept.id, kept.status, restoring ? null : progress);
 
   const stopped: ModelRunFacts['stopped'] =
     stage !== 'stopped'
@@ -570,6 +562,13 @@ function DirectThread({
               ]
             : [],
           problems: writeProblems,
+          error: applyFailure,
+          held: preview?.newlyFailing,
+          applicationStatus: application?.status,
+          preview: preview
+            ? { tab: preview.tab, tabExists: preview.tabExists }
+            : undefined,
+          noChanges,
           writtenAt: application?.status === 'verified' ? application.at : null,
         }
       : null,
@@ -604,13 +603,14 @@ function DirectThread({
     onUndo,
     busy:
       acting ||
+      previewing.isPending ||
       keepRead.isPending ||
       startProposal.isPending ||
       proposalAsked.isFetching,
     announced,
   };
 
-  if (!hydrated) return null;
+  if (restoring) return null;
 
   return (
     <>
@@ -618,7 +618,7 @@ function DirectThread({
         run={view}
         actions={actions}
         look="proposed"
-        enterFirst={!startedWithRead}
+        enterFirst={!reopened}
       />
       {decideError || selection.recordError ? (
         <AlertBox className="mt-6">

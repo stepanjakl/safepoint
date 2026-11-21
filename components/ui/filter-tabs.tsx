@@ -1,15 +1,8 @@
 'use client';
 
+import ChevronDown from 'blode-icons-react/icons/chevron-down';
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
-import {
-  Button as AriaButton,
-  Menu,
-  MenuItem,
-  MenuTrigger,
-  Popover,
-  ToggleButton,
-  ToggleButtonGroup,
-} from 'react-aria-components';
+import { ToggleButton, ToggleButtonGroup } from 'react-aria-components';
 import { cx } from '@/lib/ui/cx';
 
 /*
@@ -86,20 +79,11 @@ const ALL_COUNT =
   'bg-filter-face group-data-[selected]/tab:bg-filter-chip-chosen group-data-[selected]/tab:text-filter-neutral-on-solid';
 const COUNT =
   'review-tab-count review-filter-wash value relative z-2 text-micro font-label inline-grid place-items-center rounded-full px-1';
-const MORE_DOT =
-  'review-filter-dot bg-filter-dot size-1.5 flex-none rounded-full';
 const DIVIDER = 'review-filter-divider';
 
 // The chosen face, under the tabs: the bucket's solid, or a neutral one for
 // "All". No edge: the solid is the whole mark.
 const INDICATOR = 'review-tab-indicator';
-
-// The other tabs, where the strip is too narrow to show them: the tab's own
-// shape and ink, so "More" reads as part of the strip.
-const MORE =
-  'review-filter-focus control-wash text-muted-strong interact:text-primary data-[pressed]:text-primary inline-flex cursor-pointer items-center gap-1 rounded-full px-2.5 py-1 text-dense font-medium whitespace-nowrap outline-none';
-const MENU_ITEM =
-  'review-filter-item control-wash text-primary data-[focused]:bg-surface-hover flex cursor-pointer items-center gap-2 rounded-control p-1 pe-2.5 text-dense font-medium outline-none';
 
 export function FilterTabs<Key extends string>({
   tabs,
@@ -145,7 +129,7 @@ export function FilterTabs<Key extends string>({
     null,
   );
   // Whether the whole strip fits on one line. Where it does not, the chosen
-  // tab stays and the rest move into a menu, rather than wrapping the track
+  // tab stays and the rest move into a select, rather than wrapping the track
   // into two rows of pills.
   const [collapsed, setCollapsed] = useState(false);
 
@@ -241,10 +225,6 @@ export function FilterTabs<Key extends string>({
   const chosen = tabs.find((tab) => tab.key === selected);
   const shown = collapsed ? tabs.filter((tab) => tab.key === selected) : tabs;
   const rest = collapsed ? tabs.filter((tab) => tab.key !== selected) : [];
-  // The most urgent hidden bucket with something in it: the first two ranks.
-  const urgent = rest
-    .filter((tab) => (tab.count ?? 0) > 0 && (tab.severity ?? 9) <= 1)
-    .sort((a, b) => a.severity! - b.severity!)[0];
 
   return (
     <div
@@ -338,56 +318,43 @@ export function FilterTabs<Key extends string>({
         />
       ) : null}
       {rest.length ? (
-        <MenuTrigger>
-          <AriaButton className={MORE}>
-            More
-            {urgent ? (
-              <>
-                <span
-                  aria-hidden="true"
-                  className={MORE_DOT}
-                  data-severity={urgent.severity}
-                />
-                <span className="sr-only">, {urgent.label} has items</span>
-              </>
-            ) : null}
-            <span aria-hidden="true">▾</span>
-          </AriaButton>
-          <Popover
-            placement="bottom end"
-            offset={6}
-            className="control-face surface-floating rounded-shell p-1"
+        <span
+          data-review-filter-more
+          className={cx(
+            TAB,
+            SIZE[size],
+            WORD_START[size],
+            'text-muted-strong hover:text-primary has-[:focus-visible]:text-primary hover:bg-filter-wash active:bg-filter-wash shrink-0',
+          )}
+        >
+          <span aria-hidden="true">More</span>
+          <ChevronDown
+            aria-hidden
+            size={14}
+            strokeWidth={2.25}
+            className="-translate-y-px"
+          />
+          <select
+            className="absolute inset-0 size-full cursor-pointer opacity-0"
+            aria-label={`More: ${menuLabel}`}
+            value=""
+            onChange={(event) => {
+              const tab = rest[event.currentTarget.selectedIndex - 1];
+              if (tab) onChange(tab.key);
+            }}
           >
-            <Menu
-              aria-label={menuLabel}
-              className="grid gap-0.5 outline-none"
-              onAction={(key) => onChange(key as Key)}
-            >
-              {rest.map((tab) => (
-                <MenuItem
-                  key={tab.key}
-                  id={tab.key}
-                  textValue={tab.label}
-                  className={MENU_ITEM}
-                  data-severity={tab.severity}
-                >
-                  {tab.count === undefined ? null : (
-                    <span
-                      className={cx(
-                        COUNT,
-                        'bg-filter-chip',
-                        tab.severity !== undefined && 'text-severity-strong',
-                      )}
-                    >
-                      {tab.count}
-                    </span>
-                  )}
-                  {tab.label}
-                </MenuItem>
-              ))}
-            </Menu>
-          </Popover>
-        </MenuTrigger>
+            <option value="" disabled>
+              More
+            </option>
+            {rest.map((tab, index) => (
+              <option key={tab.key} value={index}>
+                {tab.count === undefined
+                  ? tab.label
+                  : `${tab.label} (${tab.count})`}
+              </option>
+            ))}
+          </select>
+        </span>
       ) : null}
       {/* The full strip, unseen, for measuring whether it fits. */}
       <div

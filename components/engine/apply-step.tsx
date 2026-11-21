@@ -8,7 +8,6 @@ import type { RunProcessId } from '@/components/app-shell/runs/kept-runs';
 import { Lede, plural, saidBy } from '@/components/engine/trial-parts';
 import { useTRPC } from '@/components/trpc/provider';
 import { AlertBox } from '@/components/ui/alert-box';
-import { Button } from '@/components/ui/button';
 import {
   DATA_TABLE_BODY,
   DATA_TABLE_HEAD,
@@ -26,6 +25,7 @@ import type { DefinitionSubject } from '@/lib/engine/subject';
 import { sourceTermsOf } from '@/lib/sources/model';
 import type { AppRouter } from '@/server/api/root';
 
+import { WriteControls, writePreviewNote, writeResult } from './write-controls';
 import type { Decision } from './propose/types';
 
 // What the procedures answer: the preview of what the decisions write (which
@@ -39,15 +39,6 @@ type Preview = Extract<ApplyReply, { kind: 'preview' }>;
 export type ApplyProgress = { status: Application['status'] | null };
 
 const STANDS: Application['status'][] = ['verified', 'mismatch'];
-
-// What each result says, in the words of the source the write goes to.
-const resultWords = (noun: string): Record<Application['status'], string> => ({
-  pending: `Not confirmed yet: this write has not been read back from the ${noun}.`,
-  verified: `Written, and read back from the ${noun} as written.`,
-  mismatch: `Written, but the ${noun} reads back differently. Check the cells below.`,
-  failed: `The write did not land, so the ${noun} is as it was.`,
-  undone: 'Undone: the cells are back as they were.',
-});
 
 const NO_LONGER_FIT =
   'The rules this run used no longer fit its read. Go back to Propose.';
@@ -64,6 +55,7 @@ export function ApplyStep({
   run,
   decisions,
   onProgress,
+  onReadyChange,
   mock,
 }: {
   // The process's subject: what it writes, and to which output.
@@ -75,6 +67,7 @@ export function ApplyStep({
   // preview again when one changes.
   decisions: Record<string, Decision>;
   onProgress: (progress: ApplyProgress) => void;
+  onReadyChange?: (ready: boolean) => void;
   // A local mock run's preview and actions, so no server call is made.
   mock?: {
     preview: Preview;
@@ -100,13 +93,9 @@ export function ApplyStep({
   const preview = mock?.preview ?? previewState;
   const application = mock ? mock.preview.application : applicationState;
   const [failure, setFailure] = useState<string | null>(null);
-  const [confirming, setConfirming] = useState(false);
   // A write or undo under way. A preview refreshing behind it disables nothing,
   // since that would drop focus from the button it lands on.
   const [acting, setActing] = useState(false);
-  // Where focus goes once the button a person pressed has gone.
-  const [acted, setActed] = useState(false);
-
   const answer = (reply: ApplyReply) => {
     setFailure(null);
     if (reply.kind === 'stale') return setFailure(NO_LONGER_FIT);
@@ -135,7 +124,7 @@ export function ApplyStep({
 
   const askPreview = () => {
     if (mock) return;
-    settle(previewing.mutateAsync(run));
+    settle(previewing.mutateAsync(run), () => onReadyChange?.(true));
   };
 
   // When each record was decided: a decision changed or made again is a new
@@ -143,38 +132,35 @@ export function ApplyStep({
   const decidedKey = JSON.stringify(
     Object.entries(decisions).map(([key, one]) => [key, one.at]),
   );
+  const mocked = mock !== undefined;
+  const mockStatus = mock?.preview.application?.status ?? null;
   useEffect(() => {
-    if (mock) {
-      report.current({ status: mock.preview.application?.status ?? null });
+    if (mocked) {
+      report.current({ status: mockStatus });
       return;
     }
     askPreview();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [run.process, run.runId, decidedKey, mock]);
+  }, [run.process, run.runId, decidedKey, mocked, mockStatus]);
 
   const write = (acknowledged: string[]) => {
-    setConfirming(false);
     if (mock) {
       mock.onWrite?.();
-      setActed(true);
       return;
     }
     setActing(true);
     settle(writing.mutateAsync({ ...run, acknowledged }), () => {
       setActing(false);
-      setActed(true);
     });
   };
   const undo = () => {
     if (mock) {
       mock.onUndo?.();
-      setActed(true);
       return;
     }
     setActing(true);
     settle(undoing.mutateAsync(run), (reply) => {
       setActing(false);
-      setActed(true);
       // A refused undo keeps its message: only a real one changes the cells.
       if (reply?.kind === 'applied') askPreview();
     });
@@ -226,87 +212,47 @@ export function ApplyStep({
         />
       ) : null}
       <p role="status" className="text-dense">
-        {application ? resultWords(noun)[application.status] : null}
+        {writing.isPending
+          ? 'Writing the approved changes.'
+          : application
+            ? writeResult(noun, application.status)
+            : null}
         {application?.error && application.status !== 'undone'
           ? ` ${application.error}`
           : null}
       </p>
-      {standing ? (
-        <div className="flex flex-wrap items-center gap-3">
-          <Button isDisabled={acting} autoFocus={acted} onPress={undo}>
-            Undo the write
-          </Button>
-          <span className="text-meta text-muted">
-            Possible while the cells hold what was written.
-          </span>
-        </div>
-      ) : preview?.notWritable ? (
+      {!standing && preview?.notWritable ? (
         <p className="text-meta text-muted">{preview.notWritable}</p>
-      ) : unconfirmed ? null : (
-        <>
-          {refused.length ? (
-            <AlertBox>
-              <ul className="list-disc pl-5">
-                {refused.map((problem) => (
-                  <li key={problem}>{problem}</li>
-                ))}
-              </ul>
-            </AlertBox>
-          ) : null}
-          {canWrite && held.length ? (
-            <div className="grid gap-2">
-              <p className="text-dense">
-                Since you decided, these now ask for a person:
-              </p>
-              <ul className="text-dense grid gap-1">
-                {held.map((failing) => (
-                  <li key={failing.id}>
-                    {failing.key}: {failing.check}
-                  </li>
-                ))}
-              </ul>
-              <div>
-                <Button
-                  isDisabled={acting}
-                  onPress={() => write(held.map((failing) => failing.id))}
-                >
-                  Write them anyway
-                </Button>
-              </div>
-            </div>
-          ) : canWrite ? (
-            <div className="flex flex-wrap items-center gap-3">
-              {confirming ? (
-                <>
-                  <Button
-                    variant="primary"
-                    autoFocus
-                    isDisabled={acting}
-                    onPress={() => write([])}
-                  >
-                    Write to the {noun}
-                  </Button>
-                  <Button onPress={() => setConfirming(false)}>Cancel</Button>
-                  <span className="text-meta text-muted">
-                    {preview.tabExists
-                      ? `Changes ${plural(rows, 'row')} on the ${preview.tab} ${resource.singular}.`
-                      : `Adds the ${preview.tab} ${resource.singular}, with ${plural(rows, 'row')}.`}
-                  </span>
-                </>
-              ) : (
-                <Button
-                  variant="primary"
-                  isDisabled={acting}
-                  autoFocus={acted}
-                  onPress={() => setConfirming(true)}
-                >
-                  Write {plural(rows, 'row')}
-                </Button>
-              )}
-            </div>
-          ) : null}
-        </>
-      )}
+      ) : null}
+      {!standing && !unconfirmed && refused.length ? (
+        <AlertBox>
+          <ul className="list-disc pl-5">
+            {refused.map((problem) => (
+              <li key={problem}>{problem}</li>
+            ))}
+          </ul>
+        </AlertBox>
+      ) : null}
+      <WriteControls
+        noun={noun}
+        rows={rows}
+        note={
+          preview
+            ? writePreviewNote({
+                rows,
+                tab: preview.tab,
+                tabExists: preview.tabExists,
+                resource: resource.singular,
+              })
+            : undefined
+        }
+        held={held}
+        canWrite={Boolean(canWrite && !standing && !unconfirmed)}
+        canUndo={Boolean(standing)}
+        busy={acting}
+        onWrite={write}
+        onUndo={undo}
+      />
     </div>
   );
 }

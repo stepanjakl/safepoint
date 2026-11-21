@@ -44,6 +44,37 @@ describe('localDevelopmentRefusal', () => {
     expect(at('example.com')).toEqual({ status: 404, message: 'Not found.' });
   });
 
+  it('can check the browser origin against the configured dev host', () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    vi.stubEnv('SAFEPOINT_DEV_HOST', '172.20.10.12');
+    const check = (origin: string, host = '172.20.10.12:3000') =>
+      new Request('http://localhost:3000/api/trpc/runs.list', {
+        method: 'POST',
+        headers: { origin, host },
+      });
+    const options = { allowDevHost: true };
+    expect(
+      localDevelopmentRefusal(check('http://172.20.10.12:3000'), options),
+    ).toBeNull();
+    expect(
+      localDevelopmentRefusal(check('http://172.20.10.12:3000'))?.status,
+    ).toBe(403);
+    expect(
+      localDevelopmentRefusal(check('http://172.20.10.12:4000'), options)
+        ?.status,
+    ).toBe(403);
+    expect(
+      localDevelopmentRefusal(
+        check('http://172.20.10.12:3000', 'localhost:3000'),
+        options,
+      )?.status,
+    ).toBe(403);
+    vi.stubEnv('NODE_ENV', 'production');
+    expect(
+      crossOriginRefusal(check('http://172.20.10.12:3000'), options)?.status,
+    ).toBe(403);
+  });
+
   it('shares its cross-origin check', () => {
     const request = new Request('https://example.com/x', {
       headers: { origin: 'https://elsewhere.example' },

@@ -256,7 +256,7 @@ export function SidebarResizeHandle({
         triggerRef={handle}
         placement={side === 'left' ? 'right' : 'left'}
         offset={8}
-        className="control-face surface-floating rounded-shell p-2"
+        className="control-face surface-floating rounded-shell p-3"
       >
         <Dialog
           aria-label={`${Panel} width`}

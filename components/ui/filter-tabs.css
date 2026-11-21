@@ -8,7 +8,6 @@
   --color-filter-neutral-on-solid: var(--sp-filter-neutral-on-solid);
   /* The parts below, lifted with the surface: see "Following the surface". */
   --color-filter-ink: var(--filter-ink);
-  --color-filter-dot: var(--filter-dot);
   --color-filter-wash: var(--filter-wash);
   --color-filter-chip: var(--filter-chip);
   --color-filter-chip-hover: var(--filter-chip-hover);
@@ -47,19 +46,19 @@
   &:hover {
     border-color: var(--sp-filter-track-edge-hover);
   }
-  &:has([data-focus-visible]) {
+  &:has([data-focus-visible], select:focus-visible) {
     border-color: var(--sp-filter-track-edge-active);
   }
 }
 
 @utility review-filter-focus {
   outline: none;
-  &:is(:focus-visible, [data-focus-visible]) {
+  &:is(:focus-visible, [data-focus-visible], :has(> select:focus-visible)) {
     outline: 2px solid var(--sp-filter-track-edge-active);
     outline-offset: 2px;
   }
   @media (forced-colors: active) {
-    &:is(:focus-visible, [data-focus-visible]) {
+    &:is(:focus-visible, [data-focus-visible], :has(> select:focus-visible)) {
       outline-color: Highlight;
     }
   }
@@ -164,8 +163,7 @@
      same lightness. */
   .review-tab-indicator,
   .review-tab-home,
-  .review-filter-item,
-  .review-filter-dot,
+  [data-review-filter-more],
   [data-review-filter] {
     --filter-lift-light: calc(var(--sp-ground-lift-light) - var(--sp-layer-lift-light));
     --filter-lift-dark: calc(
@@ -178,7 +176,6 @@
     --filter-chip-chosen-step: light-dark(var(--sp-neutral-50), var(--sp-neutral-800));
     --filter-wash-step: light-dark(var(--sp-neutral-100), var(--sp-neutral-800));
     --filter-edge-step: light-dark(var(--sp-neutral-175), var(--sp-neutral-625));
-    --filter-dot-step: light-dark(var(--sp-neutral-475), var(--sp-neutral-275));
     --filter-ink: var(--sp-filter-neutral-on-solid);
     --filter-chip: light-dark(
       oklch(from var(--filter-chip-step) calc(l + var(--filter-lift-light)) c h),
@@ -208,42 +205,24 @@
       oklch(from var(--filter-edge-step) calc(l + var(--filter-lift-light)) c h),
       oklch(from var(--filter-edge-step) calc(l + var(--filter-lift-dark)) c h)
     );
-    --filter-dot: light-dark(
-      oklch(from var(--filter-dot-step) calc(l + var(--filter-lift-light)) c h),
-      oklch(from var(--filter-dot-step) calc(l + var(--filter-lift-dark)) c h)
-    );
+  }
+  [data-review-filter-more] > select {
+    -webkit-tap-highlight-color: transparent;
   }
   /* Radix's dark rungs are not equally light across hues: at the same rung red
      is about 0.014 darker than the mean of the three, grass about 0.011 lighter
      (measured by e2e/design/colour-perception.spec.ts, tone-spread). Each tone takes
      its own offset in dark so the tones carry one lightness; light needs none. */
-  :is(
-    .review-tab-indicator,
-    .review-filter-item,
-    .review-filter-dot,
-    [data-review-filter]
-  )[data-severity='0'] {
+  :is(.review-tab-indicator, [data-review-filter])[data-severity='0'] {
     --filter-trim-dark: 0.014;
   }
-  :is(
-    .review-tab-indicator,
-    .review-filter-item,
-    .review-filter-dot,
-    [data-review-filter]
-  )[data-severity='1'] {
+  :is(.review-tab-indicator, [data-review-filter])[data-severity='1'] {
     --filter-trim-dark: -0.003;
   }
-  :is(
-    .review-tab-indicator,
-    .review-filter-item,
-    .review-filter-dot,
-    [data-review-filter]
-  )[data-severity='3'] {
+  :is(.review-tab-indicator, [data-review-filter])[data-severity='3'] {
     --filter-trim-dark: -0.011;
   }
   .review-tab-indicator[data-severity]:not([data-severity='2']),
-  .review-filter-item[data-severity]:not([data-severity='2']),
-  .review-filter-dot[data-severity]:not([data-severity='2']),
   [data-review-filter][data-severity]:not([data-severity='2']) {
     --filter-chip-step: light-dark(var(--severity-6), var(--severity-4));
     --filter-chip-hover-step: light-dark(var(--severity-7), var(--severity-6));
@@ -252,7 +231,6 @@
     --filter-chip-chosen-step: light-dark(var(--severity-4), var(--severity-3));
     --filter-wash-step: light-dark(var(--severity-5), var(--severity-3));
     --filter-edge-step: var(--severity-6);
-    --filter-dot-step: var(--severity-11);
     /* Its ink follows the surface in dark, where the solid lifts toward it and
        a fixed rung would lose contrast; light's only gains. */
     --filter-ink: light-dark(

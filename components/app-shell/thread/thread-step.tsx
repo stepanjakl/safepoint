@@ -42,6 +42,7 @@ import { cx } from '@/lib/ui/cx';
 */
 export type ThreadLook = 'current' | 'proposed';
 export const ThreadLookContext = createContext<ThreadLook>('proposed');
+export const ThreadStepOpenContext = createContext(true);
 
 /*
   The proposed marks: every one a filled circle of one size, drawn from the
@@ -398,6 +399,7 @@ export function ThreadStep({
   latest = false,
   current = latest,
   enter = false,
+  restoring = false,
   flagAction,
   reference,
   headingAction,
@@ -416,6 +418,8 @@ export function ThreadStep({
   current?: boolean;
   // Arrived while the reader watched, rather than with the page: it eases in.
   enter?: boolean;
+  // Saved state can arrive while a thread is still hidden.
+  restoring?: boolean;
   // Whether the step is still moving after a change on screen -- its mark
   // leaving, its fold shutting -- so the thread can hold what comes next.
   onBusy?: (id: string, busy: boolean) => void;
@@ -433,7 +437,7 @@ export function ThreadStep({
   useLayoutEffect(() => {
     const fold = foldRef.current;
     const body = bodyRef.current;
-    if (!fold || !body) return;
+    if (!fold || !body || restoring) return;
     let last: number | undefined;
     const observer = new ResizeObserver(([entry]) => {
       const height = entry?.borderBoxSize[0]?.blockSize ?? body.offsetHeight;
@@ -484,7 +488,7 @@ export function ThreadStep({
     });
     observer.observe(body);
     return () => observer.disconnect();
-  }, []);
+  }, [restoring]);
   const earned = keepOpen || earnsOpen(step, latest);
   const [open, setOpen] = useState(earned);
   // Set the fold's height synchronously before paint when opening so the CSS
@@ -492,12 +496,12 @@ export function ThreadStep({
   useLayoutEffect(() => {
     const fold = foldRef.current;
     const body = bodyRef.current;
-    if (!fold || !body || !open) return;
+    if (!fold || !body || !open || restoring) return;
     fold.style.setProperty(
       '--thread-fold-height',
       String(Math.round(body.offsetHeight)),
     );
-  }, [open]);
+  }, [open, restoring]);
   const [settled, setSettled] = useState(earned);
   // Opened by the reader rather than by the run: it stays open as the run
   // moves on. One they shut opens again only when the step earns it anew.
@@ -509,7 +513,7 @@ export function ThreadStep({
   if (settled !== earned) {
     setSettled(earned);
     if (earned || !kept) {
-      if (open && !earned && !prefersReducedMotion()) {
+      if (!restoring && open && !earned && !prefersReducedMotion()) {
         setClosing(true);
         closingNow = true;
       }
@@ -534,9 +538,9 @@ export function ThreadStep({
   const [travelled] = useState(enter && step.status === 'running');
   let settlingNow = settling;
   if (status !== step.status) {
-    settlingNow = status === 'running';
+    settlingNow = !restoring && status === 'running';
     setSettling(settlingNow);
-    if (step.status === 'running') setArrived(true);
+    if (!restoring && step.status === 'running') setArrived(true);
     setStatus(step.status);
   }
   // Only the proposed ring leaves on screen and reports when it has; the
@@ -557,9 +561,13 @@ export function ThreadStep({
   } | null>(row.flag ? { text: row.flag } : null);
   if (row.flag) {
     if (flag?.text !== row.flag || flag.motion === 'out')
-      setFlag({ text: row.flag, motion: 'in' });
+      setFlag(
+        restoring ? { text: row.flag } : { text: row.flag, motion: 'in' },
+      );
   } else if (flag && flag.motion !== 'out') {
-    setFlag(prefersReducedMotion() ? null : { ...flag, motion: 'out' });
+    setFlag(
+      restoring || prefersReducedMotion() ? null : { ...flag, motion: 'out' },
+    );
   }
   // Set at mount and cleared once the arrival has played, so a step that was
   // already here keeps still, and a later fold opens without the wait.
@@ -613,6 +621,8 @@ export function ThreadStep({
   const [reveal, setReveal] = useState(false);
 
   const showWindow = reveal && row.window !== undefined;
+  const factText = (text: string) =>
+    restoring ? text : <MorphingText text={text} duration={MORPH_WORDS_MS} />;
   const marker = (inButton: boolean) => (
     <Marker
       step={step}
@@ -633,6 +643,7 @@ export function ThreadStep({
     <li
       ref={stepRef}
       className="thread-step"
+      tabIndex={-1}
       data-status={step.status}
       data-latest={latest || undefined}
       data-current={current || undefined}
@@ -667,9 +678,7 @@ export function ThreadStep({
             <StepLink label={headingAction.label} inHeading />
             {/* Its fact still stands beside the link: when it was asked. */}
             {row.label ? (
-              <span className="thread-step-fact">
-                <MorphingText text={row.label} duration={MORPH_WORDS_MS} />
-              </span>
+              <span className="thread-step-fact">{factText(row.label)}</span>
             ) : null}
           </span>
         </button>
@@ -704,9 +713,7 @@ export function ThreadStep({
           {row.label || flag || reference ? (
             <span className="thread-step-facts">
               {row.label ? (
-                <span className="thread-step-fact">
-                  <MorphingText text={row.label} duration={MORPH_WORDS_MS} />
-                </span>
+                <span className="thread-step-fact">{factText(row.label)}</span>
               ) : null}
               {/* Its own pill, in the step's tone: the part of the fact that is
                 the problem, divided from the part that is not -- and, where
@@ -719,7 +726,7 @@ export function ThreadStep({
                     data-motion={flag.motion}
                     onClick={flagAction.onPress}
                   >
-                    <MorphingText text={flag.text} duration={MORPH_WORDS_MS} />
+                    {factText(flag.text)}
                     <ArrowUpRight
                       aria-hidden
                       size={12}
@@ -737,7 +744,7 @@ export function ThreadStep({
                         setFlag(null);
                     }}
                   >
-                    <MorphingText text={flag.text} duration={MORPH_WORDS_MS} />
+                    {factText(flag.text)}
                   </span>
                 )
               ) : null}
@@ -746,10 +753,7 @@ export function ThreadStep({
                   <StepLink label={reference.label} action={reference.action} />
                 ) : (
                   <span className="thread-step-fact">
-                    <MorphingText
-                      text={reference.label}
-                      duration={MORPH_WORDS_MS}
-                    />
+                    {factText(reference.label)}
                   </span>
                 )
               ) : null}
@@ -808,7 +812,7 @@ export function ThreadStep({
       >
         <div className="thread-step-clip">
           <div ref={bodyRef} className="thread-step-body">
-            {body}
+            <ThreadStepOpenContext value={open}>{body}</ThreadStepOpenContext>
           </div>
         </div>
       </div>

@@ -93,9 +93,11 @@ test('a run started in one browser, and a decision made on it, are there in a fr
     ([, record]) =>
       record.verdict === 'ready' && record.values && !record.unsure,
   )!;
-  const row = table.getByRole('row', { name: new RegExp(`^${key}`) });
-  await row.getByRole('button', { name: /^Approve$/ }).click();
-  await expect(row.getByText('Approved', { exact: true })).toBeVisible();
+  await table
+    .getByRole('button', { name: `Approve ${key}`, exact: true })
+    .click();
+  const undoName = `Undo the decision on ${key}`;
+  await expect(table.getByRole('button', { name: undoName })).toBeVisible();
   const total = Object.keys(frozen.proposal.records).length;
   await expect(
     page.locator('ol.thread').getByText(`1 of ${total} decided`).first(),
@@ -134,11 +136,7 @@ test('a run started in one browser, and a decision made on it, are there in a fr
     });
     await expect(copy).toBeVisible({ timeout: 30_000 });
     // And so is the decision.
-    await expect(
-      copy
-        .getByRole('row', { name: new RegExp(`^${key}`) })
-        .getByText('Approved', { exact: true }),
-    ).toBeVisible();
+    await expect(copy.getByRole('button', { name: undoName })).toBeVisible();
     await expect(
       other.locator('ol.thread').getByText(`1 of ${total} decided`).first(),
     ).toBeAttached();

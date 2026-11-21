@@ -46,7 +46,6 @@ export function NavigationNotch() {
     <Notch side="left" className="shell-menu-notch shell:hidden">
       <Button
         slant="left"
-        className="max-shell:ps-0 max-shell:pe-(--narrow-slant-padding)"
         ref={registerOpener}
         aria-label="Menu"
         aria-haspopup="dialog"

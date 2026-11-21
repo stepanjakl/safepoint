@@ -14,6 +14,7 @@ import {
   type CSSProperties,
 } from 'react';
 
+import { useStepReady } from '@/components/app-shell/runs/run-readiness';
 import { FromModel, Step } from '@/components/engine/rules-parts';
 import { ModelSelect } from '@/components/engine/rules/model-select';
 import { Lede, Outcome, plural } from '@/components/engine/trial-parts';
@@ -115,6 +116,7 @@ export function CalculateStep({
   runId,
   modelPlan,
   onProgress,
+  onReadyChange,
   debug = false,
   mock = false,
 }: {
@@ -125,6 +127,7 @@ export function CalculateStep({
   runId?: string;
   modelPlan?: ModelPlan | null;
   onProgress: (progress: CalculateProgress) => void;
+  onReadyChange?: (ready: boolean) => void;
   debug?: boolean;
   mock?: boolean;
 }) {
@@ -158,6 +161,7 @@ export function CalculateStep({
     if (answer?.kind === 'calculation')
       report.current(progressOf(answer.calculation, answer.check));
   }, [answer]);
+  useStepReady(calculated.isFetched && !calculated.isFetching, onReadyChange);
   const [model, setModel] = useState<DraftingModel>(DRAFTING_MODELS[0]!);
   const quotaModel = modelPlan
     ? modelsFor({ plan: modelPlan }, [GEMINI_FIND])[0]

@@ -56,6 +56,7 @@
   --sp-recess-menu-row-hover: light-dark(var(--sp-neutral-150), var(--sp-neutral-900));
   --sp-recess-menu-row-selected: light-dark(var(--sp-neutral-200), var(--sp-neutral-850));
   --sp-recess-surface-control: light-dark(var(--sp-neutral-75), var(--sp-neutral-850));
+  --sp-recess-surface-disabled: light-dark(var(--sp-neutral-125), var(--sp-neutral-975));
   --sp-recess-surface-selected: light-dark(var(--sp-neutral-225), var(--sp-neutral-775));
   --sp-recess-surface-hover: light-dark(var(--sp-neutral-150), var(--sp-neutral-850));
   --sp-recess-row-hover: light-dark(var(--sp-neutral-150), var(--sp-neutral-900));
@@ -96,15 +97,16 @@
   --sp-recess-field-edge: light-dark(var(--sp-neutral-250), var(--sp-neutral-800));
   --sp-recess-field-edge-hover: light-dark(var(--sp-neutral-300), var(--sp-neutral-525));
   --sp-recess-field-edge-active: light-dark(var(--sp-neutral-600), var(--sp-neutral-350));
+  --sp-recess-off-ring: light-dark(var(--sp-neutral-275), var(--sp-neutral-750));
   --sp-recess-enclosure-edge: light-dark(var(--sp-neutral-75), var(--sp-neutral-800));
   --sp-recess-filter-face: light-dark(var(--sp-neutral-100), var(--sp-neutral-950));
   --sp-recess-filter-track-edge: light-dark(var(--sp-neutral-250), var(--sp-neutral-800));
   --sp-recess-filter-track-edge-active: light-dark(var(--sp-neutral-625), var(--sp-neutral-275));
   --sp-recess-filter-track-edge-hover: light-dark(var(--sp-neutral-275), var(--sp-neutral-750));
   --sp-recess-icon-button-face-top: light-dark(var(--sp-neutral-75), var(--sp-neutral-825));
-  --sp-recess-icon-button-face-bottom: light-dark(var(--sp-neutral-150), var(--sp-neutral-925));
+  --sp-recess-icon-button-face-bottom: light-dark(var(--sp-neutral-150), var(--sp-neutral-900));
   --sp-recess-icon-button-ring-top: light-dark(var(--sp-neutral-275), var(--sp-neutral-700));
-  --sp-recess-icon-button-ring-bottom: light-dark(var(--sp-neutral-375), var(--sp-neutral-850));
+  --sp-recess-icon-button-ring-bottom: light-dark(var(--sp-neutral-375), var(--sp-neutral-800));
   --sp-recess-icon-button-face-top-hover: light-dark(var(--sp-neutral-75), var(--sp-neutral-775));
   --sp-recess-icon-button-face-bottom-hover: light-dark(
     var(--sp-neutral-275),
@@ -190,6 +192,7 @@
   --sp-band-menu-row-hover: light-dark(var(--sp-neutral-150), var(--sp-neutral-825));
   --sp-band-menu-row-selected: light-dark(var(--sp-neutral-200), var(--sp-neutral-775));
   --sp-band-surface-control: light-dark(var(--sp-neutral-75), var(--sp-neutral-775));
+  --sp-band-surface-disabled: light-dark(var(--sp-neutral-125), var(--sp-neutral-900));
   --sp-band-surface-selected: light-dark(var(--sp-neutral-225), var(--sp-neutral-700));
   --sp-band-surface-hover: light-dark(var(--sp-neutral-150), var(--sp-neutral-775));
   --sp-band-row-hover: light-dark(var(--sp-neutral-150), var(--sp-neutral-825));
@@ -224,15 +227,16 @@
   --sp-band-field-edge: light-dark(var(--sp-neutral-250), var(--sp-neutral-725));
   --sp-band-field-edge-hover: light-dark(var(--sp-neutral-300), var(--sp-neutral-450));
   --sp-band-field-edge-active: light-dark(var(--sp-neutral-600), var(--sp-neutral-275));
+  --sp-band-off-ring: light-dark(var(--sp-neutral-275), var(--sp-neutral-675));
   --sp-band-enclosure-edge: light-dark(var(--sp-neutral-75), var(--sp-neutral-725));
   --sp-band-filter-face: light-dark(var(--sp-neutral-100), var(--sp-neutral-875));
   --sp-band-filter-track-edge: light-dark(var(--sp-neutral-250), var(--sp-neutral-725));
   --sp-band-filter-track-edge-active: light-dark(var(--sp-neutral-625), var(--sp-neutral-200));
   --sp-band-filter-track-edge-hover: light-dark(var(--sp-neutral-275), var(--sp-neutral-675));
   --sp-band-icon-button-face-top: light-dark(var(--sp-neutral-75), var(--sp-neutral-750));
-  --sp-band-icon-button-face-bottom: light-dark(var(--sp-neutral-150), var(--sp-neutral-850));
+  --sp-band-icon-button-face-bottom: light-dark(var(--sp-neutral-150), var(--sp-neutral-825));
   --sp-band-icon-button-ring-top: light-dark(var(--sp-neutral-275), var(--sp-neutral-625));
-  --sp-band-icon-button-ring-bottom: light-dark(var(--sp-neutral-375), var(--sp-neutral-775));
+  --sp-band-icon-button-ring-bottom: light-dark(var(--sp-neutral-375), var(--sp-neutral-725));
   --sp-band-icon-button-face-top-hover: light-dark(var(--sp-neutral-75), var(--sp-neutral-700));
   --sp-band-icon-button-face-bottom-hover: light-dark(var(--sp-neutral-275), var(--sp-neutral-800));
   --sp-band-icon-button-ring-top-hover: light-dark(var(--sp-neutral-375), var(--sp-neutral-500));
@@ -322,6 +326,7 @@
   --sp-menu-row-hover: light-dark(var(--sp-neutral-100), var(--sp-neutral-800));
   --sp-menu-row-selected: light-dark(var(--sp-neutral-150), var(--sp-neutral-750));
   --sp-surface-control: light-dark(var(--sp-neutral-25), var(--sp-neutral-750));
+  --sp-surface-disabled: light-dark(var(--sp-neutral-75), var(--sp-neutral-875));
   --sp-surface-selected: light-dark(var(--sp-neutral-175), var(--sp-neutral-675));
   --sp-surface-hover: light-dark(var(--sp-neutral-100), var(--sp-neutral-750));
   --sp-row-hover: light-dark(var(--sp-neutral-100), var(--sp-neutral-800));
@@ -344,15 +349,16 @@
   --sp-field-edge: light-dark(var(--sp-neutral-200), var(--sp-neutral-700));
   --sp-field-edge-hover: light-dark(var(--sp-neutral-250), var(--sp-neutral-425));
   --sp-field-edge-active: light-dark(var(--sp-neutral-550), var(--sp-neutral-250));
+  --sp-off-ring: light-dark(var(--sp-neutral-225), var(--sp-neutral-650));
   --sp-enclosure-edge: light-dark(var(--sp-neutral-25), var(--sp-neutral-700));
   --sp-filter-face: light-dark(var(--sp-neutral-50), var(--sp-neutral-850));
   --sp-filter-track-edge: light-dark(var(--sp-neutral-200), var(--sp-neutral-700));
   --sp-filter-track-edge-active: light-dark(var(--sp-neutral-575), var(--sp-neutral-175));
   --sp-filter-track-edge-hover: light-dark(var(--sp-neutral-225), var(--sp-neutral-650));
   --sp-icon-button-face-top: light-dark(var(--sp-neutral-25), var(--sp-neutral-725));
-  --sp-icon-button-face-bottom: light-dark(var(--sp-neutral-100), var(--sp-neutral-825));
+  --sp-icon-button-face-bottom: light-dark(var(--sp-neutral-100), var(--sp-neutral-800));
   --sp-icon-button-ring-top: light-dark(var(--sp-neutral-225), var(--sp-neutral-600));
-  --sp-icon-button-ring-bottom: light-dark(var(--sp-neutral-325), var(--sp-neutral-750));
+  --sp-icon-button-ring-bottom: light-dark(var(--sp-neutral-325), var(--sp-neutral-700));
   --sp-icon-button-face-top-hover: light-dark(var(--sp-neutral-25), var(--sp-neutral-675));
   --sp-icon-button-face-bottom-hover: light-dark(var(--sp-neutral-225), var(--sp-neutral-775));
   --sp-icon-button-ring-top-hover: light-dark(var(--sp-neutral-325), var(--sp-neutral-475));
@@ -420,6 +426,7 @@
   --sp-recess-menu-row-hover: light-dark(var(--sp-neutral-125), var(--sp-neutral-850));
   --sp-recess-menu-row-selected: light-dark(var(--sp-neutral-175), var(--sp-neutral-800));
   --sp-recess-surface-control: light-dark(var(--sp-neutral-50), var(--sp-neutral-800));
+  --sp-recess-surface-disabled: light-dark(var(--sp-neutral-100), var(--sp-neutral-925));
   --sp-recess-surface-selected: light-dark(var(--sp-neutral-200), var(--sp-neutral-725));
   --sp-recess-surface-hover: light-dark(var(--sp-neutral-125), var(--sp-neutral-800));
   --sp-recess-row-hover: light-dark(var(--sp-neutral-125), var(--sp-neutral-850));
@@ -460,15 +467,16 @@
   --sp-recess-field-edge: light-dark(var(--sp-neutral-225), var(--sp-neutral-750));
   --sp-recess-field-edge-hover: light-dark(var(--sp-neutral-275), var(--sp-neutral-475));
   --sp-recess-field-edge-active: light-dark(var(--sp-neutral-575), var(--sp-neutral-300));
+  --sp-recess-off-ring: light-dark(var(--sp-neutral-250), var(--sp-neutral-700));
   --sp-recess-enclosure-edge: light-dark(var(--sp-neutral-50), var(--sp-neutral-750));
   --sp-recess-filter-face: light-dark(var(--sp-neutral-75), var(--sp-neutral-900));
   --sp-recess-filter-track-edge: light-dark(var(--sp-neutral-225), var(--sp-neutral-750));
   --sp-recess-filter-track-edge-active: light-dark(var(--sp-neutral-600), var(--sp-neutral-225));
   --sp-recess-filter-track-edge-hover: light-dark(var(--sp-neutral-250), var(--sp-neutral-700));
   --sp-recess-icon-button-face-top: light-dark(var(--sp-neutral-50), var(--sp-neutral-775));
-  --sp-recess-icon-button-face-bottom: light-dark(var(--sp-neutral-125), var(--sp-neutral-875));
+  --sp-recess-icon-button-face-bottom: light-dark(var(--sp-neutral-125), var(--sp-neutral-850));
   --sp-recess-icon-button-ring-top: light-dark(var(--sp-neutral-250), var(--sp-neutral-650));
-  --sp-recess-icon-button-ring-bottom: light-dark(var(--sp-neutral-350), var(--sp-neutral-800));
+  --sp-recess-icon-button-ring-bottom: light-dark(var(--sp-neutral-350), var(--sp-neutral-750));
   --sp-recess-icon-button-face-top-hover: light-dark(var(--sp-neutral-50), var(--sp-neutral-725));
   --sp-recess-icon-button-face-bottom-hover: light-dark(
     var(--sp-neutral-250),
@@ -554,6 +562,7 @@
   --sp-band-menu-row-hover: light-dark(var(--sp-neutral-125), var(--sp-neutral-775));
   --sp-band-menu-row-selected: light-dark(var(--sp-neutral-175), var(--sp-neutral-725));
   --sp-band-surface-control: light-dark(var(--sp-neutral-50), var(--sp-neutral-725));
+  --sp-band-surface-disabled: light-dark(var(--sp-neutral-100), var(--sp-neutral-850));
   --sp-band-surface-selected: light-dark(var(--sp-neutral-200), var(--sp-neutral-650));
   --sp-band-surface-hover: light-dark(var(--sp-neutral-125), var(--sp-neutral-725));
   --sp-band-row-hover: light-dark(var(--sp-neutral-125), var(--sp-neutral-775));
@@ -588,15 +597,16 @@
   --sp-band-field-edge: light-dark(var(--sp-neutral-225), var(--sp-neutral-675));
   --sp-band-field-edge-hover: light-dark(var(--sp-neutral-275), var(--sp-neutral-400));
   --sp-band-field-edge-active: light-dark(var(--sp-neutral-575), var(--sp-neutral-225));
+  --sp-band-off-ring: light-dark(var(--sp-neutral-250), var(--sp-neutral-625));
   --sp-band-enclosure-edge: light-dark(var(--sp-neutral-50), var(--sp-neutral-675));
   --sp-band-filter-face: light-dark(var(--sp-neutral-75), var(--sp-neutral-825));
   --sp-band-filter-track-edge: light-dark(var(--sp-neutral-225), var(--sp-neutral-675));
   --sp-band-filter-track-edge-active: light-dark(var(--sp-neutral-600), var(--sp-neutral-150));
   --sp-band-filter-track-edge-hover: light-dark(var(--sp-neutral-250), var(--sp-neutral-625));
   --sp-band-icon-button-face-top: light-dark(var(--sp-neutral-50), var(--sp-neutral-700));
-  --sp-band-icon-button-face-bottom: light-dark(var(--sp-neutral-125), var(--sp-neutral-800));
+  --sp-band-icon-button-face-bottom: light-dark(var(--sp-neutral-125), var(--sp-neutral-775));
   --sp-band-icon-button-ring-top: light-dark(var(--sp-neutral-250), var(--sp-neutral-575));
-  --sp-band-icon-button-ring-bottom: light-dark(var(--sp-neutral-350), var(--sp-neutral-725));
+  --sp-band-icon-button-ring-bottom: light-dark(var(--sp-neutral-350), var(--sp-neutral-675));
   --sp-band-icon-button-face-top-hover: light-dark(var(--sp-neutral-50), var(--sp-neutral-650));
   --sp-band-icon-button-face-bottom-hover: light-dark(var(--sp-neutral-250), var(--sp-neutral-750));
   --sp-band-icon-button-ring-top-hover: light-dark(var(--sp-neutral-350), var(--sp-neutral-450));
@@ -683,6 +693,7 @@
   --sp-menu-row-hover: light-dark(var(--sp-neutral-75), var(--sp-neutral-750));
   --sp-menu-row-selected: light-dark(var(--sp-neutral-125), var(--sp-neutral-700));
   --sp-surface-control: light-dark(var(--sp-neutral-0), var(--sp-neutral-700));
+  --sp-surface-disabled: light-dark(var(--sp-neutral-50), var(--sp-neutral-825));
   --sp-surface-selected: light-dark(var(--sp-neutral-150), var(--sp-neutral-625));
   --sp-surface-hover: light-dark(var(--sp-neutral-75), var(--sp-neutral-700));
   --sp-row-hover: light-dark(var(--sp-neutral-75), var(--sp-neutral-750));
@@ -705,15 +716,16 @@
   --sp-field-edge: light-dark(var(--sp-neutral-175), var(--sp-neutral-650));
   --sp-field-edge-hover: light-dark(var(--sp-neutral-225), var(--sp-neutral-375));
   --sp-field-edge-active: light-dark(var(--sp-neutral-525), var(--sp-neutral-200));
+  --sp-off-ring: light-dark(var(--sp-neutral-200), var(--sp-neutral-600));
   --sp-enclosure-edge: light-dark(var(--sp-neutral-0), var(--sp-neutral-650));
   --sp-filter-face: light-dark(var(--sp-neutral-25), var(--sp-neutral-800));
   --sp-filter-track-edge: light-dark(var(--sp-neutral-175), var(--sp-neutral-650));
   --sp-filter-track-edge-active: light-dark(var(--sp-neutral-550), var(--sp-neutral-125));
   --sp-filter-track-edge-hover: light-dark(var(--sp-neutral-200), var(--sp-neutral-600));
   --sp-icon-button-face-top: light-dark(var(--sp-neutral-0), var(--sp-neutral-675));
-  --sp-icon-button-face-bottom: light-dark(var(--sp-neutral-75), var(--sp-neutral-775));
+  --sp-icon-button-face-bottom: light-dark(var(--sp-neutral-75), var(--sp-neutral-750));
   --sp-icon-button-ring-top: light-dark(var(--sp-neutral-200), var(--sp-neutral-550));
-  --sp-icon-button-ring-bottom: light-dark(var(--sp-neutral-300), var(--sp-neutral-700));
+  --sp-icon-button-ring-bottom: light-dark(var(--sp-neutral-300), var(--sp-neutral-650));
   --sp-icon-button-face-top-hover: light-dark(var(--sp-neutral-0), var(--sp-neutral-625));
   --sp-icon-button-face-bottom-hover: light-dark(var(--sp-neutral-200), var(--sp-neutral-725));
   --sp-icon-button-ring-top-hover: light-dark(var(--sp-neutral-300), var(--sp-neutral-425));
@@ -781,6 +793,7 @@
   --sp-recess-menu-row-hover: light-dark(var(--sp-neutral-100), var(--sp-neutral-800));
   --sp-recess-menu-row-selected: light-dark(var(--sp-neutral-150), var(--sp-neutral-750));
   --sp-recess-surface-control: light-dark(var(--sp-neutral-25), var(--sp-neutral-750));
+  --sp-recess-surface-disabled: light-dark(var(--sp-neutral-75), var(--sp-neutral-875));
   --sp-recess-surface-selected: light-dark(var(--sp-neutral-175), var(--sp-neutral-675));
   --sp-recess-surface-hover: light-dark(var(--sp-neutral-100), var(--sp-neutral-750));
   --sp-recess-row-hover: light-dark(var(--sp-neutral-100), var(--sp-neutral-800));
@@ -821,15 +834,16 @@
   --sp-recess-field-edge: light-dark(var(--sp-neutral-200), var(--sp-neutral-700));
   --sp-recess-field-edge-hover: light-dark(var(--sp-neutral-250), var(--sp-neutral-425));
   --sp-recess-field-edge-active: light-dark(var(--sp-neutral-550), var(--sp-neutral-250));
+  --sp-recess-off-ring: light-dark(var(--sp-neutral-225), var(--sp-neutral-650));
   --sp-recess-enclosure-edge: light-dark(var(--sp-neutral-25), var(--sp-neutral-700));
   --sp-recess-filter-face: light-dark(var(--sp-neutral-50), var(--sp-neutral-850));
   --sp-recess-filter-track-edge: light-dark(var(--sp-neutral-200), var(--sp-neutral-700));
   --sp-recess-filter-track-edge-active: light-dark(var(--sp-neutral-575), var(--sp-neutral-175));
   --sp-recess-filter-track-edge-hover: light-dark(var(--sp-neutral-225), var(--sp-neutral-650));
   --sp-recess-icon-button-face-top: light-dark(var(--sp-neutral-25), var(--sp-neutral-725));
-  --sp-recess-icon-button-face-bottom: light-dark(var(--sp-neutral-100), var(--sp-neutral-825));
+  --sp-recess-icon-button-face-bottom: light-dark(var(--sp-neutral-100), var(--sp-neutral-800));
   --sp-recess-icon-button-ring-top: light-dark(var(--sp-neutral-225), var(--sp-neutral-600));
-  --sp-recess-icon-button-ring-bottom: light-dark(var(--sp-neutral-325), var(--sp-neutral-750));
+  --sp-recess-icon-button-ring-bottom: light-dark(var(--sp-neutral-325), var(--sp-neutral-700));
   --sp-recess-icon-button-face-top-hover: light-dark(var(--sp-neutral-25), var(--sp-neutral-675));
   --sp-recess-icon-button-face-bottom-hover: light-dark(
     var(--sp-neutral-225),
@@ -915,6 +929,7 @@
   --sp-band-menu-row-hover: light-dark(var(--sp-neutral-100), var(--sp-neutral-725));
   --sp-band-menu-row-selected: light-dark(var(--sp-neutral-150), var(--sp-neutral-675));
   --sp-band-surface-control: light-dark(var(--sp-neutral-25), var(--sp-neutral-675));
+  --sp-band-surface-disabled: light-dark(var(--sp-neutral-75), var(--sp-neutral-800));
   --sp-band-surface-selected: light-dark(var(--sp-neutral-175), var(--sp-neutral-600));
   --sp-band-surface-hover: light-dark(var(--sp-neutral-100), var(--sp-neutral-675));
   --sp-band-row-hover: light-dark(var(--sp-neutral-100), var(--sp-neutral-725));
@@ -949,15 +964,16 @@
   --sp-band-field-edge: light-dark(var(--sp-neutral-200), var(--sp-neutral-625));
   --sp-band-field-edge-hover: light-dark(var(--sp-neutral-250), var(--sp-neutral-350));
   --sp-band-field-edge-active: light-dark(var(--sp-neutral-550), var(--sp-neutral-175));
+  --sp-band-off-ring: light-dark(var(--sp-neutral-225), var(--sp-neutral-575));
   --sp-band-enclosure-edge: light-dark(var(--sp-neutral-25), var(--sp-neutral-625));
   --sp-band-filter-face: light-dark(var(--sp-neutral-50), var(--sp-neutral-775));
   --sp-band-filter-track-edge: light-dark(var(--sp-neutral-200), var(--sp-neutral-625));
   --sp-band-filter-track-edge-active: light-dark(var(--sp-neutral-575), var(--sp-neutral-100));
   --sp-band-filter-track-edge-hover: light-dark(var(--sp-neutral-225), var(--sp-neutral-575));
   --sp-band-icon-button-face-top: light-dark(var(--sp-neutral-25), var(--sp-neutral-650));
-  --sp-band-icon-button-face-bottom: light-dark(var(--sp-neutral-100), var(--sp-neutral-750));
+  --sp-band-icon-button-face-bottom: light-dark(var(--sp-neutral-100), var(--sp-neutral-725));
   --sp-band-icon-button-ring-top: light-dark(var(--sp-neutral-225), var(--sp-neutral-525));
-  --sp-band-icon-button-ring-bottom: light-dark(var(--sp-neutral-325), var(--sp-neutral-675));
+  --sp-band-icon-button-ring-bottom: light-dark(var(--sp-neutral-325), var(--sp-neutral-625));
   --sp-band-icon-button-face-top-hover: light-dark(var(--sp-neutral-25), var(--sp-neutral-600));
   --sp-band-icon-button-face-bottom-hover: light-dark(var(--sp-neutral-225), var(--sp-neutral-700));
   --sp-band-icon-button-ring-top-hover: light-dark(var(--sp-neutral-325), var(--sp-neutral-400));
@@ -1044,6 +1060,7 @@
   --sp-menu-row-hover: light-dark(var(--sp-neutral-50), var(--sp-neutral-700));
   --sp-menu-row-selected: light-dark(var(--sp-neutral-100), var(--sp-neutral-650));
   --sp-surface-control: light-dark(var(--sp-neutral-0), var(--sp-neutral-650));
+  --sp-surface-disabled: light-dark(var(--sp-neutral-25), var(--sp-neutral-775));
   --sp-surface-selected: light-dark(var(--sp-neutral-125), var(--sp-neutral-575));
   --sp-surface-hover: light-dark(var(--sp-neutral-50), var(--sp-neutral-650));
   --sp-row-hover: light-dark(var(--sp-neutral-50), var(--sp-neutral-700));
@@ -1066,15 +1083,16 @@
   --sp-field-edge: light-dark(var(--sp-neutral-150), var(--sp-neutral-600));
   --sp-field-edge-hover: light-dark(var(--sp-neutral-200), var(--sp-neutral-325));
   --sp-field-edge-active: light-dark(var(--sp-neutral-500), var(--sp-neutral-150));
+  --sp-off-ring: light-dark(var(--sp-neutral-175), var(--sp-neutral-550));
   --sp-enclosure-edge: light-dark(var(--sp-neutral-0), var(--sp-neutral-600));
   --sp-filter-face: light-dark(var(--sp-neutral-0), var(--sp-neutral-750));
   --sp-filter-track-edge: light-dark(var(--sp-neutral-150), var(--sp-neutral-600));
   --sp-filter-track-edge-active: light-dark(var(--sp-neutral-525), var(--sp-neutral-75));
   --sp-filter-track-edge-hover: light-dark(var(--sp-neutral-175), var(--sp-neutral-550));
   --sp-icon-button-face-top: light-dark(var(--sp-neutral-0), var(--sp-neutral-625));
-  --sp-icon-button-face-bottom: light-dark(var(--sp-neutral-50), var(--sp-neutral-725));
+  --sp-icon-button-face-bottom: light-dark(var(--sp-neutral-50), var(--sp-neutral-700));
   --sp-icon-button-ring-top: light-dark(var(--sp-neutral-175), var(--sp-neutral-500));
-  --sp-icon-button-ring-bottom: light-dark(var(--sp-neutral-275), var(--sp-neutral-650));
+  --sp-icon-button-ring-bottom: light-dark(var(--sp-neutral-275), var(--sp-neutral-600));
   --sp-icon-button-face-top-hover: light-dark(var(--sp-neutral-0), var(--sp-neutral-575));
   --sp-icon-button-face-bottom-hover: light-dark(var(--sp-neutral-175), var(--sp-neutral-675));
   --sp-icon-button-ring-top-hover: light-dark(var(--sp-neutral-275), var(--sp-neutral-375));
@@ -1142,6 +1160,7 @@
   --sp-recess-menu-row-hover: light-dark(var(--sp-neutral-75), var(--sp-neutral-750));
   --sp-recess-menu-row-selected: light-dark(var(--sp-neutral-125), var(--sp-neutral-700));
   --sp-recess-surface-control: light-dark(var(--sp-neutral-0), var(--sp-neutral-700));
+  --sp-recess-surface-disabled: light-dark(var(--sp-neutral-50), var(--sp-neutral-825));
   --sp-recess-surface-selected: light-dark(var(--sp-neutral-150), var(--sp-neutral-625));
   --sp-recess-surface-hover: light-dark(var(--sp-neutral-75), var(--sp-neutral-700));
   --sp-recess-row-hover: light-dark(var(--sp-neutral-75), var(--sp-neutral-750));
@@ -1179,15 +1198,16 @@
   --sp-recess-field-edge: light-dark(var(--sp-neutral-175), var(--sp-neutral-650));
   --sp-recess-field-edge-hover: light-dark(var(--sp-neutral-225), var(--sp-neutral-375));
   --sp-recess-field-edge-active: light-dark(var(--sp-neutral-525), var(--sp-neutral-200));
+  --sp-recess-off-ring: light-dark(var(--sp-neutral-200), var(--sp-neutral-600));
   --sp-recess-enclosure-edge: light-dark(var(--sp-neutral-0), var(--sp-neutral-650));
   --sp-recess-filter-face: light-dark(var(--sp-neutral-25), var(--sp-neutral-800));
   --sp-recess-filter-track-edge: light-dark(var(--sp-neutral-175), var(--sp-neutral-650));
   --sp-recess-filter-track-edge-active: light-dark(var(--sp-neutral-550), var(--sp-neutral-125));
   --sp-recess-filter-track-edge-hover: light-dark(var(--sp-neutral-200), var(--sp-neutral-600));
   --sp-recess-icon-button-face-top: light-dark(var(--sp-neutral-0), var(--sp-neutral-675));
-  --sp-recess-icon-button-face-bottom: light-dark(var(--sp-neutral-75), var(--sp-neutral-775));
+  --sp-recess-icon-button-face-bottom: light-dark(var(--sp-neutral-75), var(--sp-neutral-750));
   --sp-recess-icon-button-ring-top: light-dark(var(--sp-neutral-200), var(--sp-neutral-550));
-  --sp-recess-icon-button-ring-bottom: light-dark(var(--sp-neutral-300), var(--sp-neutral-700));
+  --sp-recess-icon-button-ring-bottom: light-dark(var(--sp-neutral-300), var(--sp-neutral-650));
   --sp-recess-icon-button-face-top-hover: light-dark(var(--sp-neutral-0), var(--sp-neutral-625));
   --sp-recess-icon-button-face-bottom-hover: light-dark(
     var(--sp-neutral-200),
@@ -1273,6 +1293,7 @@
   --sp-band-menu-row-hover: light-dark(var(--sp-neutral-75), var(--sp-neutral-675));
   --sp-band-menu-row-selected: light-dark(var(--sp-neutral-125), var(--sp-neutral-625));
   --sp-band-surface-control: light-dark(var(--sp-neutral-0), var(--sp-neutral-625));
+  --sp-band-surface-disabled: light-dark(var(--sp-neutral-50), var(--sp-neutral-750));
   --sp-band-surface-selected: light-dark(var(--sp-neutral-150), var(--sp-neutral-550));
   --sp-band-surface-hover: light-dark(var(--sp-neutral-75), var(--sp-neutral-625));
   --sp-band-row-hover: light-dark(var(--sp-neutral-75), var(--sp-neutral-675));
@@ -1304,15 +1325,16 @@
   --sp-band-field-edge: light-dark(var(--sp-neutral-175), var(--sp-neutral-575));
   --sp-band-field-edge-hover: light-dark(var(--sp-neutral-225), var(--sp-neutral-300));
   --sp-band-field-edge-active: light-dark(var(--sp-neutral-525), var(--sp-neutral-125));
+  --sp-band-off-ring: light-dark(var(--sp-neutral-200), var(--sp-neutral-525));
   --sp-band-enclosure-edge: light-dark(var(--sp-neutral-0), var(--sp-neutral-575));
   --sp-band-filter-face: light-dark(var(--sp-neutral-25), var(--sp-neutral-725));
   --sp-band-filter-track-edge: light-dark(var(--sp-neutral-175), var(--sp-neutral-575));
   --sp-band-filter-track-edge-active: light-dark(var(--sp-neutral-550), var(--sp-neutral-50));
   --sp-band-filter-track-edge-hover: light-dark(var(--sp-neutral-200), var(--sp-neutral-525));
   --sp-band-icon-button-face-top: light-dark(var(--sp-neutral-0), var(--sp-neutral-600));
-  --sp-band-icon-button-face-bottom: light-dark(var(--sp-neutral-75), var(--sp-neutral-700));
+  --sp-band-icon-button-face-bottom: light-dark(var(--sp-neutral-75), var(--sp-neutral-675));
   --sp-band-icon-button-ring-top: light-dark(var(--sp-neutral-200), var(--sp-neutral-475));
-  --sp-band-icon-button-ring-bottom: light-dark(var(--sp-neutral-300), var(--sp-neutral-625));
+  --sp-band-icon-button-ring-bottom: light-dark(var(--sp-neutral-300), var(--sp-neutral-575));
   --sp-band-icon-button-face-top-hover: light-dark(var(--sp-neutral-0), var(--sp-neutral-550));
   --sp-band-icon-button-face-bottom-hover: light-dark(var(--sp-neutral-200), var(--sp-neutral-650));
   --sp-band-icon-button-ring-top-hover: light-dark(var(--sp-neutral-300), var(--sp-neutral-350));
@@ -1391,6 +1413,7 @@
   --sp-menu-row-hover: var(--sp-recess-menu-row-hover);
   --sp-menu-row-selected: var(--sp-recess-menu-row-selected);
   --sp-surface-control: var(--sp-recess-surface-control);
+  --sp-surface-disabled: var(--sp-recess-surface-disabled);
   --sp-surface-selected: var(--sp-recess-surface-selected);
   --sp-surface-hover: var(--sp-recess-surface-hover);
   --sp-row-hover: var(--sp-recess-row-hover);
@@ -1413,6 +1436,7 @@
   --sp-field-edge: var(--sp-recess-field-edge);
   --sp-field-edge-hover: var(--sp-recess-field-edge-hover);
   --sp-field-edge-active: var(--sp-recess-field-edge-active);
+  --sp-off-ring: var(--sp-recess-off-ring);
   --sp-enclosure-edge: var(--sp-recess-enclosure-edge);
   --sp-filter-face: var(--sp-recess-filter-face);
   --sp-filter-track-edge: var(--sp-recess-filter-track-edge);
@@ -1495,6 +1519,7 @@
   --sp-menu-row-hover: var(--sp-band-menu-row-hover);
   --sp-menu-row-selected: var(--sp-band-menu-row-selected);
   --sp-surface-control: var(--sp-band-surface-control);
+  --sp-surface-disabled: var(--sp-band-surface-disabled);
   --sp-surface-selected: var(--sp-band-surface-selected);
   --sp-surface-hover: var(--sp-band-surface-hover);
   --sp-row-hover: var(--sp-band-row-hover);
@@ -1517,6 +1542,7 @@
   --sp-field-edge: var(--sp-band-field-edge);
   --sp-field-edge-hover: var(--sp-band-field-edge-hover);
   --sp-field-edge-active: var(--sp-band-field-edge-active);
+  --sp-off-ring: var(--sp-band-off-ring);
   --sp-enclosure-edge: var(--sp-band-enclosure-edge);
   --sp-filter-face: var(--sp-band-filter-face);
   --sp-filter-track-edge: var(--sp-band-filter-track-edge);

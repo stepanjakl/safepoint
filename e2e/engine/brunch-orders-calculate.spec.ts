@@ -6,7 +6,12 @@ import { expect, test, type Page } from '@playwright/test';
 import type { Calculation, CrossCheck } from '@/lib/engine/calculate';
 import { definitionSetSchema } from '@/lib/engine/types';
 
-import { asKeptRulebook, seedKeptRulebooks } from '../support/kept-runs';
+import {
+  asKeptRulebook,
+  call,
+  seedKeptRulebooks,
+  startKeptRun,
+} from '../support/kept-runs';
 import { rulesReply, type RulesKept } from '../support/rules';
 import { mockProcedure } from '../support/trpc';
 
@@ -149,6 +154,61 @@ async function readTheSheet(page: Page) {
     .last()
     .click();
 }
+
+test('a saved run opens with its completed steps already settled', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  const process = 'brunch-orders';
+  const run = await startKeptRun(page, process);
+  const read = await call<{ id: string }>(page, 'read.keep', {
+    source: 'captured',
+  });
+  await call(page, 'runs.record', {
+    process,
+    runId: run.id,
+    readId: read.id,
+    rulebook: calculation.fingerprint,
+  });
+  const { promise, resolve } = Promise.withResolvers<void>();
+  const rules = await mockProcedure(page, 'rules.get', async () => {
+    await promise;
+    return { data: rulesReply(accepted, { history }) };
+  });
+
+  await page.goto(`/processes/${process}?run=${run.id}`);
+  const thread = page.locator('ol.thread');
+  try {
+    await expect.poll(() => rules.inputs.length).toBeGreaterThan(0);
+    await expect(thread).toBeHidden();
+  } finally {
+    resolve();
+  }
+  const firstVisible = await page.waitForFunction(() => {
+    const thread = document.querySelector('ol.thread');
+    if (!thread?.getClientRects().length) return;
+    return Array.from(thread.querySelectorAll('.thread-step'), (step) => ({
+      latest: step.hasAttribute('data-latest')
+        ? step.querySelector('.thread-step-toggle')?.textContent
+        : null,
+      foldMoving: Boolean(
+        step.querySelector('.thread-step-fold')?.getAnimations().length,
+      ),
+    }));
+  });
+  const steps = await firstVisible.jsonValue();
+  expect(steps?.flatMap((step) => step.latest ?? [])).toEqual(['Propose']);
+  expect(steps?.some((step) => step.foldMoving)).toBe(false);
+  await expect(
+    thread.getByRole('img', { name: 'Rules. Complete.' }),
+  ).toBeVisible();
+  await expect(
+    thread.getByRole('button', { name: 'Rules', exact: true }),
+  ).toHaveAttribute('aria-expanded', 'false');
+  await expect(
+    thread.getByRole('button', { name: 'Propose', exact: true }).first(),
+  ).toHaveAttribute('aria-expanded', 'true');
+});
 
 test('every value worked out for every record, cross-checked by the model', async ({
   page,

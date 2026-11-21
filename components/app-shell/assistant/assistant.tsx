@@ -26,12 +26,7 @@ export function Assistant({
       onPress={toggle}
       // Open, it wears the assistant's own face (assistant.css), which also
       // inks the icon and label: the button's text utility would outrank it.
-      className={cx(
-        'assistant-button',
-        compact
-          ? 'max-shell:ps-(--narrow-slant-padding) max-shell:pe-0 shell:px-5'
-          : 'px-5',
-      )}
+      className={cx('assistant-button', compact ? 'shell:px-5' : 'px-5')}
     >
       <Robot
         aria-hidden

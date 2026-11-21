@@ -140,18 +140,44 @@ test('fetches one read’s values once, however often the drawer opens', async (
           values: [
             ['sku', 'on hand'],
             ['AV-RR', 3],
+            ...Array.from({ length: 50 }, (_, index) => [
+              `SKU-${index}`,
+              index,
+            ]),
           ],
         },
       ],
     },
   }));
 
-  await page.goto('/processes/brunch-orders');
+  await page.goto('/processes/brunch-orders-direct');
   await openTab(page, /^Inputs/);
   for (let open = 0; open < 2; open += 1) {
     await tabRow(page, input.name).click();
     const drawer = page.getByRole('dialog');
     await expect(drawer.getByRole('cell', { name: 'AV-RR' })).toBeVisible();
+    const table = drawer.getByRole('region', {
+      name: `${input.name}, as read`,
+    });
+    const corner = table.getByRole('columnheader', {
+      name: 'Row',
+      exact: true,
+    });
+    await expect(corner).toHaveText('Row');
+    await expect(table.getByRole('rowheader').first()).toHaveText('1');
+    const fade = () =>
+      corner.evaluate(
+        (element) => getComputedStyle(element, '::after').opacity,
+      );
+    await expect.poll(fade).toBe('0');
+    await table.evaluate((element) => {
+      element.scrollTo({ top: element.scrollHeight, behavior: 'instant' });
+    });
+    await expect.poll(fade).toBe('1');
+    await table.evaluate((element) => {
+      element.scrollTo({ top: 0, behavior: 'instant' });
+    });
+    await expect.poll(fade).toBe('0');
     await page.keyboard.press('Escape');
     await expect(drawer).toBeHidden();
   }

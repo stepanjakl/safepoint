@@ -39,10 +39,6 @@
   /* The icon squares' ink, resting and under the pointer. */
   --sp-icon-quiet-ink: light-dark(var(--sp-neutral-825), var(--sp-neutral-150));
   --sp-icon-quiet-ink-hover: light-dark(var(--sp-neutral-925), var(--sp-neutral-100));
-  /* Unavailable. Flat, so it cannot read as live; fixed steps, not surface
-     offsets, since an offset would fall off the ramp inside a dark recess. */
-  --sp-off-face: light-dark(var(--sp-neutral-50), var(--sp-neutral-950));
-  --sp-off-ring: light-dark(var(--sp-neutral-225), var(--sp-neutral-750));
   /* The line outside a popover's border: none in light, a step past the canvas
      in dark. A fixed step, since it lies on whatever the popover opens over. */
   --sp-popover-outline: light-dark(transparent, var(--sp-neutral-925));
@@ -69,6 +65,7 @@
   --sp-field-edge: light-dark(var(--sp-neutral-225), var(--sp-neutral-750));
   --sp-field-edge-hover: light-dark(var(--sp-neutral-275), var(--sp-neutral-475));
   --sp-field-edge-active: light-dark(var(--sp-neutral-575), var(--sp-neutral-300));
+  --sp-off-ring: light-dark(var(--sp-neutral-250), var(--sp-neutral-700));
   --sp-enclosure-edge: light-dark(var(--sp-neutral-50), var(--sp-neutral-750));
   --sp-divider-etch: light-dark(var(--sp-neutral-25), var(--sp-neutral-925));
 }
@@ -287,6 +284,13 @@
   }
 }
 
+@utility field-off {
+  background-color: var(--sp-surface-disabled);
+  border-color: var(--sp-off-ring);
+  color: var(--sp-text-muted);
+  cursor: not-allowed;
+}
+
 /* A text field, as the process search draws one; every field shares it. The
    edge is its focus indicator, so focus comes last and a pointer never wins. */
 @utility field {
@@ -312,6 +316,14 @@
   &:is(:hover, [data-hovered], :focus-within, [data-focus-visible])::placeholder,
   &:is(:hover, [data-hovered], :focus-within, [data-focus-visible]) ::placeholder {
     color: var(--sp-text-muted-strong);
+  }
+  &:is(:disabled, [data-disabled]) {
+    @apply field-off;
+
+    &::placeholder,
+    & ::placeholder {
+      color: var(--sp-text-muted);
+    }
   }
   @media (forced-colors: active) {
     /* Inset, because a field's container can clip at its edges. */
@@ -380,8 +392,8 @@
 
 /* Unavailable: flat on both layers, so it cannot be mistaken for a live one. */
 @utility control-off {
-  --control-face-top: var(--sp-off-face);
-  --control-face-bottom: var(--sp-off-face);
+  --control-face-top: var(--sp-surface-disabled);
+  --control-face-bottom: var(--sp-surface-disabled);
   --control-ring-top: var(--sp-off-ring);
   --control-ring-bottom: var(--sp-off-ring);
   --control-highlight: transparent;

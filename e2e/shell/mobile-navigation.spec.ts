@@ -161,7 +161,13 @@ test('touch opens and dismisses the mobile menu and switches the process section
   const drawer = page.getByRole('dialog', { name: 'Menu', exact: true });
   await menu.tap();
   await expect(drawer).toBeVisible();
-  await drawer.getByRole('button', { name: 'Close menu' }).tap();
+  const close = drawer.getByRole('button', { name: 'Close menu' });
+  const drawerBox = (await drawer.boundingBox())!;
+  const closeBox = (await close.boundingBox())!;
+  expect(closeBox.x + closeBox.width / 2).toBeLessThan(
+    drawerBox.x + drawerBox.width / 2,
+  );
+  await close.tap();
   await expect(drawer).toBeHidden();
 
   await page.goto(processRoute);

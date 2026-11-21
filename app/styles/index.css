@@ -62,6 +62,7 @@
 @import '../../components/ui/list-rows.css';
 @import '../../components/engine/engine-run.css';
 @import '../../components/app-shell/sources/source-card.css';
+@import '../../components/app-shell/sources/source-drawer.css';
 @import '../../components/engine/decision-button.css';
 @import '../../components/engine/rules-step.css';
 @import '../../components/engine/rulebook-view.css';

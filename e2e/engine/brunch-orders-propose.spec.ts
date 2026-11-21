@@ -257,7 +257,7 @@ test('a person decides every record, then writes what Apply shows and can undo i
   await expect(save).toBeEnabled();
   await save.press('Enter');
   await expect(
-    chilli.getByText('Changed to order 6', { exact: true }),
+    chilli.getByRole('button', { name: /Changed to order 6/ }),
   ).toBeVisible();
 
   // The two a person must decide: one approved, one rejected.
@@ -437,7 +437,11 @@ test('decisions are kept: a reload finds them, and undoing one takes it back', a
   await expect(
     thread(page).getByText('8 of 11 decided').first(),
   ).toBeAttached();
+  const id = new URL(page.url()).searchParams.get('run');
+  const row = page.locator(`[data-run-id="${id}"]`);
+  await expect(row).toHaveAccessibleName(/^Awaiting review\./);
   await page.reload();
+  await expect(row).toHaveAccessibleName(/^Awaiting review\./);
   await expect(table).toBeVisible({ timeout: 30_000 });
   await expect(
     thread(page).getByText('8 of 11 decided').first(),

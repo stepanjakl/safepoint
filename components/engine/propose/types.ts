@@ -41,6 +41,7 @@ export type ProposeProgress = {
   fingerprint: string;
   proposedAt: string | null;
   running: boolean;
+  failed: boolean;
   total: number;
   needYou: number;
   // Decided records that would write values: what Apply has to show.

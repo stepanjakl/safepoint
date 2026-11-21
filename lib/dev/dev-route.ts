@@ -20,17 +20,34 @@ export function isLocalDevelopment(url: URL): boolean {
 // sets trustHostHeader), so it is the address the browser used and no
 // forwarded header needs reading here. A server of one's own behind a proxy
 // would see its bind address instead, and would refuse every POST.
-export function crossOriginRefusal(request: Request): Refusal | null {
+export function crossOriginRefusal(
+  request: Request,
+  { allowDevHost = false } = {},
+): Refusal | null {
+  const url = new URL(request.url);
+  const hostname = process.env.SAFEPOINT_DEV_HOST;
+  // Next dev builds the app route's URL with its startup hostname.
+  const devHost = url.port ? `${hostname}:${url.port}` : hostname;
+  const requestOrigin =
+    allowDevHost &&
+    hostname &&
+    isLocalDevelopment(url) &&
+    request.headers.get('host') === devHost
+      ? `${url.protocol}//${devHost}`
+      : url.origin;
   const origin = request.headers.get('origin');
-  return origin !== null && origin !== new URL(request.url).origin
+  return origin !== null && origin !== requestOrigin
     ? { status: 403, message: 'Cross-origin request rejected.' }
     : null;
 }
 
-export function localDevelopmentRefusal(request: Request): Refusal | null {
+export function localDevelopmentRefusal(
+  request: Request,
+  options?: { allowDevHost?: boolean },
+): Refusal | null {
   if (!isLocalDevelopment(new URL(request.url)))
     return { status: 404, message: 'Not found.' };
-  return crossOriginRefusal(request);
+  return crossOriginRefusal(request, options);
 }
 
 /*

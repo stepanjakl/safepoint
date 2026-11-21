@@ -1,16 +1,17 @@
 'use client';
 
-import { useContext, useRef, useState } from 'react';
+import { useContext, useState } from 'react';
 
+import { useRunProgress } from '@/components/app-shell/runs/run-progress';
 import { ProcessSheetActions } from '@/components/app-shell/process/process-sheet';
+import { useRunRestoration } from '@/components/app-shell/runs/run-readiness';
 import {
   useRunSelection,
   type LiveRun,
   type RunSelection,
 } from '@/components/app-shell/runs/run-selection';
-import { useFollowRun } from '@/components/app-shell/thread/follow-run';
+import { Thread } from '@/components/app-shell/thread/thread-arrivals';
 import { ResponseSection } from '@/components/app-shell/thread/thread-page';
-import { ThreadStep } from '@/components/app-shell/thread/thread-step';
 import { AlertBox } from '@/components/ui/alert-box';
 import type { ProcessStep, ProcessSummary } from '@/lib/shell/model';
 import { SHEET_USE, SUBJECT } from '@/lib/processes/brunch-orders/data';
@@ -41,6 +42,8 @@ import {
 } from '@/components/engine/run-parts';
 
 import { OrdersMockRun } from './orders-mock-run';
+
+import { ordersAnnouncement, ordersRunStatus } from './orders-progress';
 
 /*
   A Brunch orders run, step by step. It moves only when a person acts: the
@@ -83,8 +86,14 @@ function OrdersThread({
   const sheet = useContext(ProcessSheetActions);
   const debug = useRunDebug();
   const { kept, text } = live;
+  const { restoring, finishRestoring } = useRunRestoration(kept.readId);
+  const [rulesReady, setRulesReady] = useState(false);
+  const [calculateReady, setCalculateReady] = useState(false);
+  const [proposeReady, setProposeReady] = useState(false);
+  const [applyReady, setApplyReady] = useState(false);
   const version = kept.instructions.version;
   const [revealingReadId, setRevealingReadId] = useState<string | null>(null);
+  const [readFailure, setReadFailure] = useState<string | null>(null);
   const [taken, setTaken] = useState<RunRead | null>(null);
   const [rules, setRules] = useState<RulesProgress>();
   const [calculated, setCalculated] = useState<CalculateProgress>();
@@ -111,6 +120,17 @@ function OrdersThread({
     proposed?.proposedAt != null &&
     proposed.total > 0 &&
     decidedCount === proposed.total;
+  const canCalculate = rulesDone && readId !== null;
+  const canApply = allDecided && read !== undefined && pinned !== null;
+  if (
+    restoring &&
+    (saved.read !== undefined || saved.error !== null) &&
+    rulesReady &&
+    (!canCalculate || calculateReady) &&
+    (!canPropose || proposeReady) &&
+    (!canApply || applyReady)
+  )
+    finishRestoring();
   const status = (step: ProcessStep): ProcessStep['status'] =>
     step.id === 'instructions'
       ? 'complete'
@@ -147,9 +167,11 @@ function OrdersThread({
               : step.id === 'apply'
                 ? !allDecided
                   ? 'pending'
-                  : proposed.writes === 0 || applied?.status === 'verified'
-                    ? 'complete'
-                    : 'attention'
+                  : applied?.status === 'mismatch'
+                    ? 'blocked'
+                    : proposed.writes === 0 || applied?.status === 'verified'
+                      ? 'complete'
+                      : 'attention'
                 : 'pending';
   // The furthest step a person can act on.
   const latest =
@@ -163,6 +185,25 @@ function OrdersThread({
             ? 'propose'
             : 'apply';
   // What each step has come to, in its heading, where it has a state yet.
+  const runStatus = ordersRunStatus({
+    latest,
+    proposalReady: Boolean(proposed?.proposedAt),
+    noWrites: proposed?.writes === 0,
+    application: applied?.status,
+    stopped: Boolean(
+      saved.error ||
+      readFailure ||
+      (latest === 'propose' && proposed?.failed) ||
+      (latest === 'rules' && !rules?.running && rules?.error),
+    ),
+    held: Boolean(
+      latest === 'calculate' &&
+      calculated?.checked &&
+      calculated.agreed < calculated.total,
+    ),
+  });
+  useRunProgress(selection, kept.id, kept.status, restoring ? null : runStatus);
+
   const label = (step: ProcessStep) =>
     step.id === 'rules' && (rules?.running || rules?.total)
       ? rules.running
@@ -231,27 +272,33 @@ function OrdersThread({
         .record(kept.id, { rulebook: progress.fingerprint })
         .catch(() => undefined);
   };
-  const thread = useRef<HTMLOListElement>(null);
-  useFollowRun(thread, undefined);
-
   return (
     <>
-      <ol ref={thread} className="thread">
-        {steps.map((step) => (
-          <ThreadStep
-            key={step.id}
-            step={step}
-            latest={step.id === latest}
-            headingAction={
-              step.id === 'instructions' && sheet
-                ? {
-                    label: version,
-                    onPress: sheet.showInstructions,
-                  }
-                : undefined
-            }
-          >
-            {step.id === 'instructions' ? (
+      <Thread
+        steps={steps}
+        look="proposed"
+        latestId={latest}
+        restoring={restoring}
+        announcement={ordersAnnouncement(
+          latest,
+          runStatus,
+          proposed?.writes === 0,
+        )}
+        headingActions={{
+          instructions: sheet
+            ? {
+                label: version,
+                onPress:
+                  version === sheet.currentVersion
+                    ? sheet.showInstructions
+                    : () => sheet.showVersion(version),
+              }
+            : undefined,
+        }}
+        boxes={Object.fromEntries(
+          steps.map((step) => [
+            step.id,
+            step.id === 'instructions' ? (
               kept.additionalInstructions || kept.modelPlan ? (
                 <div className="grid gap-3">
                   {kept.modelPlan ? (
@@ -273,6 +320,7 @@ function OrdersThread({
                   read={read}
                   loadingRead={readId !== null && read === undefined}
                   readError={saved.error}
+                  onFailure={setReadFailure}
                   revealing={revealingReadId === read?.id}
                   onRevealed={() => setRevealingReadId(null)}
                   automatic={!debug}
@@ -300,10 +348,11 @@ function OrdersThread({
                   runId={kept.id}
                   modelPlan={kept.modelPlan}
                   onProgress={setRules}
+                  onReadyChange={restoring ? setRulesReady : undefined}
                   debug={debug}
                 />
               </ResponseSection>
-            ) : step.id === 'calculate' && rulesDone && readId ? (
+            ) : step.id === 'calculate' && canCalculate ? (
               <ResponseSection>
                 <CalculateStep
                   key={moves}
@@ -313,6 +362,7 @@ function OrdersThread({
                   runId={kept.id}
                   modelPlan={kept.modelPlan}
                   onProgress={pin}
+                  onReadyChange={restoring ? setCalculateReady : undefined}
                   debug={debug}
                 />
               </ResponseSection>
@@ -326,6 +376,7 @@ function OrdersThread({
                   run={{ process: 'brunch-orders', runId: kept.id }}
                   modelPlan={kept.modelPlan}
                   onProgress={setProposed}
+                  onReadyChange={restoring ? setProposeReady : undefined}
                   debug={debug}
                   // Back to Calculate once the server has let go of the pin.
                   onMoveRules={() =>
@@ -340,21 +391,22 @@ function OrdersThread({
                   }
                 />
               </ResponseSection>
-            ) : step.id === 'apply' && allDecided && read && pinned ? (
+            ) : step.id === 'apply' && canApply ? (
               <ResponseSection>
                 <ApplyStep
                   subject={SUBJECT}
                   run={{ process: 'brunch-orders', runId: kept.id }}
                   decisions={proposed.decisions}
                   onProgress={setApplied}
+                  onReadyChange={restoring ? setApplyReady : undefined}
                 />
               </ResponseSection>
             ) : (
               <p className="text-dense text-muted">{COMING[step.id]}</p>
-            )}
-          </ThreadStep>
-        ))}
-      </ol>
+            ),
+          ]),
+        )}
+      />
       {selection.recordError ? (
         <AlertBox className="mt-6">{selection.recordError}</AlertBox>
       ) : null}

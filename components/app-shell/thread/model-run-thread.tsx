@@ -35,6 +35,7 @@ import {
 } from '@/lib/ui/motion';
 import { motionTime } from '@/lib/ui/motion-time';
 import type {
+  Application,
   CellChange,
   Proposal,
   ProposalActivity,
@@ -48,6 +49,12 @@ import {
   type ModelRunStage,
 } from '@/lib/shell/model-run';
 
+import {
+  WriteControls,
+  writePreviewNote,
+  writeResult,
+  type HeldWriteCheck,
+} from '@/components/engine/write-controls';
 import type { DataTabs } from '@/components/engine/data-drawer';
 import { SheetReadCard, type RunRead } from '@/components/engine/read-step';
 import { useRunDebug } from '@/components/engine/run-parts';
@@ -63,7 +70,12 @@ import type {
   ProposalField,
   CheckReply,
 } from '@/components/engine/propose/types';
-import { cellUrl, SOURCE_KINDS, type SourceKind } from '@/lib/sources/model';
+import {
+  cellUrl,
+  SOURCE_KINDS,
+  sourceTermsOf,
+  type SourceKind,
+} from '@/lib/sources/model';
 import BoltFilled from 'blode-icons-react/icons/bolt-filled';
 import ChainLink1Filled from 'blode-icons-react/icons/chain-link-1-filled';
 import ChevronLeft from 'blode-icons-react/icons/chevron-left';
@@ -116,6 +128,11 @@ export type ModelRunView = {
     // Each place the decisions are written, in turn.
     outputs: OutputWrite[];
     problems: string[];
+    error?: string | null;
+    held?: HeldWriteCheck[];
+    applicationStatus?: Application['status'];
+    preview?: { tab?: string; tabExists: boolean };
+    noChanges?: boolean;
     // When the write was read back, once it was.
     writtenAt: string | null;
   } | null;
@@ -131,7 +148,7 @@ export type ModelRunActions = {
   onRetry?: () => void;
   // Switch to a local mock run with sample data when a live step fails.
   onStartMock?: () => void;
-  onWrite?: () => void;
+  onWrite?: (acknowledged: string[]) => void;
   onUndo?: () => void;
   // A request under way, which the buttons wait for.
   busy?: boolean;
@@ -168,7 +185,6 @@ export function ModelRunThread({
     enterFirst,
   );
   const stopped = stage === 'stopped' ? facts.stopped : null;
-  const [readOpen, setReadOpen] = useState(true);
   const shownRead = stage === 'reading' ? null : run.read;
   const [revealingRead, setRevealingRead] = useState(false);
   const [prevReadId, setPrevReadId] = useState<string | null>(
@@ -233,8 +249,6 @@ export function ModelRunThread({
             <SheetReadCard
               kind={run.sourceKind}
               read={shownRead}
-              open={readOpen}
-              onOpenChange={setReadOpen}
               revealing={revealingRead}
               onRevealed={() => setRevealingRead(false)}
               data={run.data}
@@ -286,6 +300,7 @@ export function ModelRunThread({
       <ResponseSection>
         <Approval
           stage={stage}
+          sourceKind={run.sourceKind}
           field={facts.subject.field}
           write={run.write}
           names={run.review?.names ?? {}}
@@ -303,7 +318,14 @@ export function ModelRunThread({
       steps={steps}
       boxes={boxes}
       look={look}
-      announcement={modelRunAnnouncement(arrivals.announced)}
+      announcement={
+        arrivals.announced === 'ready_to_commit' && run.write?.noChanges
+          ? 'Everything decided. Nothing to write.'
+          : arrivals.announced === 'ready_to_commit' &&
+              run.write?.applicationStatus === 'pending'
+            ? 'Awaiting confirmation of the write.'
+            : modelRunAnnouncement(arrivals.announced)
+      }
       keepOpen={keepOpen}
       headingActions={{
         request: { label: version, onPress: openInstructions },
@@ -926,6 +948,7 @@ function Stopped({
 */
 function Approval({
   stage,
+  sourceKind,
   field,
   write,
   names,
@@ -936,23 +959,33 @@ function Approval({
   busy,
 }: {
   stage: ModelRunStage;
+  sourceKind: SourceKind;
   field: string;
   write: NonNullable<ModelRunView['write']>;
   names: Record<string, string>;
   decisions: Record<string, Decision>;
   mismatch: string | null;
-  onWrite?: () => void;
+  onWrite?: (acknowledged: string[]) => void;
   onUndo?: () => void;
   busy?: boolean;
 }) {
   const count = (kind: Decision['kind']) =>
     Object.values(decisions).filter((d) => d.kind === kind).length;
   const written = stage === 'committed' || stage === 'intervention';
-  const cells = write.outputs.reduce(
-    (total, output) => total + output.changes.length,
+  const rows = write.outputs.reduce(
+    (total, output) =>
+      total + new Set(output.changes.map((change) => change.key)).size,
     0,
   );
-  const n = plural(cells, 'value');
+  const { noun, resource } = sourceTermsOf(sourceKind);
+  const status =
+    write.applicationStatus ??
+    (stage === 'committed'
+      ? 'verified'
+      : stage === 'intervention'
+        ? 'mismatch'
+        : undefined);
+  const preview = write.preview;
 
   return (
     <div className="grid gap-4">
@@ -960,6 +993,7 @@ function Approval({
       {stage === 'intervention' && mismatch ? (
         <AlertBox>{mismatch}</AlertBox>
       ) : null}
+      {write.error ? <AlertBox>{write.error}</AlertBox> : null}
       {write.problems.length ? (
         <AlertBox>
           <ul className="grid gap-1">
@@ -988,42 +1022,45 @@ function Approval({
           written={written}
         />
       ))}
-      <AnimatePresence initial={false} mode="popLayout">
-        <motion.div
-          key={stage}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: DURATION_STATE, ease: 'easeOut' }}
-        >
-          {stage === 'ready_to_commit' && cells ? (
-            <div className="flex flex-wrap items-center gap-3">
-              <Button
-                variant="primary"
-                size="medium"
-                isDisabled={busy || write.problems.length > 0 || !onWrite}
-                onPress={onWrite}
-              >
-                Approve and write {n}
-              </Button>
-            </div>
-          ) : stage === 'committed' ? (
-            <div className="flex flex-wrap items-center gap-3">
-              <Pill tone="ready">
-                Written and read back
-                {write.writtenAt ? ` · ${clock(write.writtenAt)}` : ''}
-              </Pill>
-              <Button
-                size="medium"
-                isDisabled={busy || !onUndo}
-                onPress={onUndo}
-              >
-                Undo the write
-              </Button>
-            </div>
-          ) : null}
-        </motion.div>
-      </AnimatePresence>
+      {status === 'verified' || status === 'mismatch' ? (
+        <p className="text-dense">
+          {writeResult(noun, status)}
+          {status === 'verified' && write.writtenAt
+            ? ` · ${clock(write.writtenAt)}`
+            : ''}
+        </p>
+      ) : null}
+      {status === 'pending' || write.noChanges ? (
+        <p className="text-dense">
+          {status === 'pending'
+            ? writeResult(noun, status)
+            : 'Nothing to write.'}
+        </p>
+      ) : null}
+      <p className="text-dense" role="status">
+        {status === 'failed' || status === 'undone'
+          ? writeResult(noun, status)
+          : null}
+      </p>
+      <WriteControls
+        noun={noun}
+        rows={rows}
+        note={
+          preview &&
+          writePreviewNote({ ...preview, rows, resource: resource.singular })
+        }
+        held={write.held}
+        canWrite={
+          stage === 'ready_to_commit' &&
+          rows > 0 &&
+          status !== 'pending' &&
+          write.problems.length === 0
+        }
+        canUndo={written}
+        busy={busy}
+        onWrite={onWrite}
+        onUndo={onUndo}
+      />
     </div>
   );
 }

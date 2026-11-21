@@ -28,7 +28,7 @@ export function Select({
       <select
         {...props}
         className={cx(
-          'field text-dense col-start-1 row-start-1 w-full min-w-0 appearance-none py-1 pr-7 pl-2.5 disabled:cursor-not-allowed disabled:opacity-60',
+          'field text-dense col-start-1 row-start-1 w-full min-w-0 appearance-none py-1 pr-7 pl-2.5',
           SIZES[size],
         )}
       >

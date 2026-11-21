@@ -592,7 +592,7 @@ function PublishNote({
       >
         <Dialog className="outline-none">
           <div
-            className="grid gap-3 p-4"
+            className="grid gap-3 p-3"
             onKeyDown={(event) => {
               if (event.key !== 'Enter' || !(event.metaKey || event.ctrlKey))
                 return;

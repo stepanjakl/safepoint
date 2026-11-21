@@ -390,7 +390,9 @@ function Revision({
         </span>
       </AriaButton>
       <Fold open={open} id={detailId} className="rulebook-timeline-detail">
-        {entry.note ? <p className="text-meta">{entry.note}</p> : null}
+        {entry.note ? (
+          <p className="rulebook-timeline-note text-meta">{entry.note}</p>
+        ) : null}
         {changes && counts.length ? (
           <ul
             aria-label={`What ${entry.id} changed`}
@@ -417,7 +419,7 @@ function Revision({
         ) : null}
         {/* The revision's file name, for tracing it: a footnote, not content. */}
         <p className="rulebook-timeline-id">
-          <span className="readout text-muted">Revision</span>
+          <span className="rulebook-timeline-readout text-muted">Revision</span>
           <code className="rulebook-timeline-code value">{entry.id}</code>
         </p>
       </Fold>

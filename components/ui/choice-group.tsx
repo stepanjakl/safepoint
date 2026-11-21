@@ -9,7 +9,7 @@ type Choice<Value extends string> = {
 };
 
 const CHOICE =
-  'control-wash bg-field-face border-field-edge text-primary data-[hovered]:border-field-edge-hover data-[focus-visible]:border-field-edge-active data-[focus-visible]:outline-2 data-[focus-visible]:outline-field-edge-active data-[focus-visible]:outline-offset-2 data-[selected]:bg-surface-hover data-[selected]:border-field-edge-hover data-[selected]:font-medium data-[disabled]:text-muted data-[disabled]:cursor-not-allowed inline-flex min-h-8 min-w-0 cursor-pointer items-center justify-center rounded-full border px-2.5 py-1 text-meta whitespace-nowrap';
+  'control-wash bg-field-face border-field-edge text-primary data-[hovered]:border-field-edge-hover data-[focus-visible]:border-field-edge-active data-[focus-visible]:outline-2 data-[focus-visible]:outline-field-edge-active data-[focus-visible]:outline-offset-2 data-[selected]:not-data-[disabled]:bg-surface-hover data-[selected]:not-data-[disabled]:border-field-edge-hover data-[selected]:font-medium data-[disabled]:field-off inline-flex min-h-8 min-w-0 cursor-pointer items-center justify-center rounded-full border px-2.5 py-1 text-meta whitespace-nowrap';
 
 export function ChoiceGroup<Value extends string>({
   label,

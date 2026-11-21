@@ -119,10 +119,16 @@ export function Thread<S extends string>({
   references = {},
   headingActions = {},
   keepOpen = false,
+  latestId = steps.at(-1)?.id,
+  restoring = false,
+  resetKey = 0,
 }: {
   // Every step stays open as it finishes (ThreadStep's keepOpen).
   keepOpen?: boolean;
-  arrivals: ThreadArrivals<S>;
+  arrivals?: ThreadArrivals<S>;
+  latestId?: string;
+  restoring?: boolean;
+  resetKey?: number;
   steps: ProcessStep[];
   boxes: Record<string, ReactNode>;
   look: ThreadLook;
@@ -137,28 +143,31 @@ export function Thread<S extends string>({
     { label: string; onPress: () => void } | undefined
   >;
 }) {
-  const { watched, drawn, hurried, onBusy } = arrivals;
+  const { watched, drawn, hurried, onBusy } = arrivals ?? {};
   const shown =
-    look === 'proposed'
+    look === 'proposed' && drawn
       ? steps.filter((step) => drawn.includes(step.id))
       : steps;
   const thread = useRef<HTMLOListElement>(null);
-  const newest = shown.at(-1);
+  const newest = arrivals
+    ? shown.at(-1)
+    : shown.find((step) => step.id === latestId);
   const { behind, catchUp } = useFollowRun(
     thread,
-    newest?.id,
+    restoring ? undefined : newest?.id,
     Boolean(end),
     shown.length,
-    0,
+    restoring ? 'restoring' : resetKey,
     newest?.status === 'running',
   );
-  const paused = useRestWhenUnseen(thread);
+  const paused = useRestWhenUnseen(thread, !restoring);
   const reduceMotion = useReducedMotion();
 
   return (
     <ThreadLookContext value={look}>
       <ol
-        ref={thread}
+        ref={restoring ? undefined : thread}
+        style={{ display: restoring ? 'none' : undefined }}
         className="thread"
         data-look={look}
         data-paused={paused || undefined}
@@ -169,9 +178,10 @@ export function Thread<S extends string>({
             step={step}
             // Of the stage, not of what is drawn: a finished step folds as it
             // finishes, though the next has yet to arrive.
-            latest={step.id === steps.at(-1)?.id}
+            latest={step.id === latestId}
             current={step.id === newest?.id}
             enter={watched && !hurried}
+            restoring={restoring}
             onBusy={onBusy}
             flagAction={flagActions[step.id]}
             reference={references[step.id]}
@@ -192,7 +202,7 @@ export function Thread<S extends string>({
       {/* For a reader scrolled away when a step arrived. No height of its
           own, so appearing moves nothing; the button rises out of it. */}
       <AnimatePresence>
-        {behind && newest ? (
+        {!restoring && behind && newest ? (
           <motion.div
             key="catch-up"
             className="pointer-events-none sticky bottom-4 z-20 flex h-0 items-end justify-center"
@@ -218,7 +228,7 @@ export function Thread<S extends string>({
       {/* Mounted with the thread so it is in place before the first change
           it announces. A milestone per stage, never a running count. */}
       <p className="sr-only" role="status">
-        {announcement}
+        {restoring ? '' : announcement}
       </p>
     </ThreadLookContext>
   );
@@ -228,11 +238,14 @@ export function Thread<S extends string>({
   Whether the thread is out of sight -- scrolled away or in a hidden tab --
   when its looping marks and shimmer can rest rather than repaint unseen.
 */
-function useRestWhenUnseen(list: RefObject<HTMLOListElement | null>) {
+function useRestWhenUnseen(
+  list: RefObject<HTMLOListElement | null>,
+  active: boolean,
+) {
   const [unseen, setUnseen] = useState(false);
   useEffect(() => {
     const thread = list.current;
-    if (!thread) return;
+    if (!thread || !active) return;
     let inView = true;
     const update = () => setUnseen(!inView || document.hidden);
     const seen = new IntersectionObserver(([entry]) => {
@@ -245,6 +258,6 @@ function useRestWhenUnseen(list: RefObject<HTMLOListElement | null>) {
       seen.disconnect();
       document.removeEventListener('visibilitychange', update);
     };
-  }, [list]);
+  }, [list, active]);
   return unseen;
 }

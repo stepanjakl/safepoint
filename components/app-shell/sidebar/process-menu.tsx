@@ -357,7 +357,21 @@ export function ProcessMenu({
         // Both ends use rail cells, so mark sizing never changes their axes.
         className="shell-header-row shell:h-shell-header max-shell:px-1 max-shell:pt-1 max-shell:pb-4 flex flex-none items-center justify-between gap-2"
       >
-        <Brand markCellClassName={MENU_RAIL} />
+        <div className="flex min-w-0 items-center gap-1.5">
+          {drawer?.narrow ? (
+            <span className={MENU_RAIL}>
+              <AriaButton
+                slot="close"
+                className={ICON_BUTTON}
+                aria-label="Close menu"
+                autoFocus={!searchOnOpen}
+              >
+                <NavigationMenuIcon closing />
+              </AriaButton>
+            </span>
+          ) : null}
+          <Brand markCellClassName={MENU_RAIL} />
+        </div>
         <div className="max-shell:gap-1.5 shell:gap-0.75 flex flex-none items-center">
           <div
             className="ease-out-emphasized shell:data-[level=workspace]:translate-x-4 max-shell:gap-1.5 shell:gap-0.75 flex flex-none items-center transition-[translate,opacity] duration-(--duration-pane) data-[level=workspace]:pointer-events-none data-[level=workspace]:opacity-0"
@@ -448,18 +462,6 @@ export function ProcessMenu({
               </Tooltip>
             </span>
           </div>
-          {drawer?.narrow ? (
-            <span className={MENU_RAIL}>
-              <AriaButton
-                slot="close"
-                className={ICON_BUTTON}
-                aria-label="Close menu"
-                autoFocus={!searchOnOpen}
-              >
-                <NavigationMenuIcon closing />
-              </AriaButton>
-            </span>
-          ) : null}
         </div>
       </div>
       {/*

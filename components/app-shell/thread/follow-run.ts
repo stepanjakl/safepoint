@@ -33,6 +33,15 @@ function scrollToBottom(
   }
 }
 
+function scrollToCurrent(thread: HTMLOListElement | null) {
+  const current = thread?.querySelector(':scope > [data-current]');
+  if (current && current !== thread?.lastElementChild) {
+    current.scrollIntoView({ block: 'start', behavior: 'instant' });
+  } else {
+    scrollToBottom(scrollerOf(thread));
+  }
+}
+
 /*
   Keeps a live run's newest step and growing content in view for a reader who
   is at the bottom of the container, and only for them. One who scrolls away to
@@ -84,14 +93,16 @@ export function useFollowRun(
     };
 
     const atLatest = () => {
-      const latest = thread.lastElementChild;
+      const latest =
+        thread.querySelector(':scope > [data-current]') ??
+        thread.lastElementChild;
       if (!latest) return false;
-      const viewportBottom = scroller
-        ? scroller.getBoundingClientRect().bottom
-        : window.innerHeight;
+      const viewport = scroller?.getBoundingClientRect();
+      const step = latest.getBoundingClientRect();
       return (
-        latest.getBoundingClientRect().top <=
-        viewportBottom - BOTTOM_THRESHOLD_PX
+        step.bottom > (viewport?.top ?? 0) &&
+        step.top <=
+          (viewport?.bottom ?? window.innerHeight) - BOTTOM_THRESHOLD_PX
       );
     };
 
@@ -115,7 +126,7 @@ export function useFollowRun(
 
     const onScroll = () => {
       const bottom = atBottom();
-      if (bottom) {
+      if (bottom || (catchingUp.current && atLatest())) {
         pinned.current = true;
       } else if (!catchingUp.current) {
         pinned.current = false;
@@ -191,13 +202,13 @@ export function useFollowRun(
     if (arrived) {
       canShowBehind.current = true;
       if (pinned.current) {
-        scrollToBottom(scrollerOf(list.current));
+        scrollToCurrent(list.current);
       } else {
         const timer = setTimeout(() => setBehind(true));
         return () => clearTimeout(timer);
       }
     } else if (hasEnd && pinned.current) {
-      scrollToBottom(scrollerOf(list.current));
+      scrollToCurrent(list.current);
     }
   }, [list, lastId, hasEnd, stepCount]);
 
@@ -205,8 +216,19 @@ export function useFollowRun(
     pinned.current = true;
     canShowBehind.current = true;
     const smooth = !reducedMotion();
-    catchingUp.current = smooth;
-    scrollToBottom(scrollerOf(list.current), smooth ? 'smooth' : 'instant');
+    catchingUp.current = true;
+    const current = list.current?.querySelector<HTMLElement>(
+      ':scope > [data-current]',
+    );
+    const target =
+      current?.querySelector<HTMLElement>(
+        'button.thread-step-toggle, button.thread-step-heading-action',
+      ) ?? current;
+    target?.focus({ preventScroll: true });
+    target?.scrollIntoView({
+      block: 'center',
+      behavior: smooth ? 'smooth' : 'instant',
+    });
     setBehind(false);
   };
 

@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { RunSelection } from '@/components/app-shell/runs/run-selection';
+import {
+  MODEL_RUN_PROGRESS,
+  useRunProgress,
+} from '@/components/app-shell/runs/run-progress';
 import { useWorkingFavicon } from '@/components/app-shell/runs/working-favicon';
 import {
   ModelRunThread,
@@ -22,26 +26,9 @@ import {
   mockWriteOutputs,
   type ScriptedStage,
 } from '@/lib/processes/brunch-orders/direct-script';
-import {
-  MODEL_RUN_STAGE_LABELS,
-  type ModelRunStage,
-} from '@/lib/shell/model-run';
-import type { RunStatus } from '@/lib/shell/model';
+import { MODEL_RUN_STAGE_LABELS } from '@/lib/shell/model-run';
 import { runDay, runTime } from '@/lib/shell/run-time';
 import { motionTime } from '@/lib/ui/motion-time';
-
-const STAGE_TO_RUN_STATUS: Record<ModelRunStage, RunStatus> = {
-  starting: 'queued',
-  reading: 'running',
-  evaluating: 'running',
-  awaiting_review: 'awaiting_review',
-  reviewing: 'awaiting_review',
-  ready_to_commit: 'approved',
-  committing: 'approved',
-  intervention: 'held',
-  committed: 'completed',
-  stopped: 'failed',
-};
 
 const STEP_MS = 5200;
 const STAGE_HOLD_MS: Partial<Record<string, number>> = { starting: 2800 };
@@ -149,11 +136,12 @@ export function DirectMockRun({
   }, [running, index, scripted.key, frames, lastMainIndex, rate, setIndex]);
 
   const activeView = frames[at]?.view ?? scripted.view;
-  const nextStatus = STAGE_TO_RUN_STATUS[activeView.stage];
-  const setMockStatus = selection.setMockStatus;
-  useEffect(() => {
-    setMockStatus?.(runId, nextStatus);
-  }, [runId, nextStatus, setMockStatus]);
+  useRunProgress(
+    selection,
+    runId,
+    selection.live?.kept.status,
+    MODEL_RUN_PROGRESS[activeView.stage],
+  );
 
   const decisions = userDecisions ?? activeView.review?.decisions ?? {};
   const computedOutputs = useMemo(

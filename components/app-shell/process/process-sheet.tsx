@@ -223,7 +223,7 @@ export function ProcessSheet({
       // Clipped to the pane's inner radius. The lists inside are full-bleed
       // and carry fills of their own, and at the pane's own radius they
       // paint over the edge its face draws in the bottom corners.
-      <div className="shell:@max-sheet-wide/sheet:grid-rows-[auto_minmax(0,1fr)] shell:min-h-0 @sheet-wide/sheet:grid-cols-[232px_minmax(0,1fr)] rounded-b-shell-inner clip-past-pane-highlight process-runs grid grid-cols-[minmax(0,1fr)] overflow-clip">
+      <div className="shell:@max-sheet-wide/sheet:grid-rows-[auto_minmax(0,1fr)] shell:min-h-0 @sheet-wide/sheet:grid-cols-[232px_minmax(0,1fr)] rounded-b-shell-inner clip-past-pane-highlight process-runs grid grid-cols-[minmax(0,1fr)]">
         {/* Full-bleed: the list draws its own rules edge to edge, and
               padding on the column would leave them floating short of it. */}
         <aside
@@ -301,7 +301,7 @@ export function ProcessSheet({
         {/* The frame the tab bodies trade places in, clipped to the pane's inner
             radius so a body or its scrollbar never crosses the corner's edge. */}
         <ProcessContentTransition
-          className="process-sheet-frame shell:grid shell:min-h-0 shell:grid-rows-[minmax(0,1fr)] rounded-b-shell-inner shell:rounded-tr-shell-inner clip-past-pane-highlight grid-cols-[minmax(0,1fr)] overflow-clip"
+          className="process-sheet-frame shell:grid shell:min-h-0 shell:grid-rows-[minmax(0,1fr)] rounded-b-shell-inner shell:rounded-tr-shell-inner clip-past-pane-highlight grid-cols-[minmax(0,1fr)]"
           finishesLeaving
         >
           <div ref={chrome} className="sheet-chrome" aria-hidden="true" />

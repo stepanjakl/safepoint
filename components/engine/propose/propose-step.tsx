@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { useStepReady } from '@/components/app-shell/runs/run-readiness';
 import { ModelLimits } from '@/components/engine/model-limits';
 import { ModelSelect } from '@/components/engine/rules/model-select';
 import { StaleRules } from '@/components/engine/stale-rules';
@@ -71,6 +72,7 @@ export function ProposeStep({
   run: kept,
   modelPlan,
   onProgress,
+  onReadyChange,
   onMoveRules,
   debug = false,
   mock = false,
@@ -86,6 +88,7 @@ export function ProposeStep({
   run: { process: RunProcessId; runId: string };
   modelPlan?: ModelPlan | null;
   onProgress: (progress: ProposeProgress) => void;
+  onReadyChange?: (ready: boolean) => void;
   // Back to Calculate, on the current rules, when these no longer fit.
   onMoveRules?: () => void;
   debug?: boolean;
@@ -224,12 +227,14 @@ export function ProposeStep({
     next: Record<string, Decision>,
     from = proposal,
     isRunning = running,
+    failed = false,
   ): ProposeProgress => {
     const records = from ? Object.entries(from.records) : [];
     return {
       fingerprint: from?.fingerprint ?? rulebook ?? '',
       proposedAt: from?.at ?? null,
       running: isRunning,
+      failed,
       total: records.length,
       needYou: records.filter(
         ([key, record]) => !next[key] && needsPerson(record.verdict),
@@ -247,17 +252,31 @@ export function ProposeStep({
   };
   // Each answer is reported, held to the decisions the server holds: never a
   // decision still being asked, so "all decided" is what is kept.
+  const proposalFailed =
+    !proposal &&
+    !running &&
+    !start.isPending &&
+    Boolean(start.error || asked.error || shown?.progress?.error);
   useEffect(() => {
-    if (answer?.kind !== 'proposal') return;
+    if (answer?.kind !== 'proposal' && !proposalFailed) return;
+    const current = answer?.kind === 'proposal' ? answer : null;
     report.current(
       progressOf(
-        heldOn(answer.proposal?.at),
-        asReviewed(answer.proposal, evaluation),
-        answer.progress?.running ?? false,
+        heldOn(current?.proposal?.at),
+        asReviewed(current?.proposal ?? null, evaluation),
+        current?.progress?.running ?? false,
+        proposalFailed,
       ),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [answer, held]);
+  }, [answer, held, proposalFailed]);
+  useStepReady(
+    asked.isFetched &&
+      !asked.isFetching &&
+      decidedAsked.isFetched &&
+      !decidedAsked.isFetching,
+    onReadyChange,
+  );
 
   // Automatic: proposes once, when nothing is kept, running or failed.
   const proposed = useRef(false);

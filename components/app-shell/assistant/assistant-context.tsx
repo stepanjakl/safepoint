@@ -164,11 +164,16 @@ export function HistoryButton({
 }) {
   return (
     <DialogTrigger>
-      <IconButton label="History" shape="round" hideTooltip={hideTooltip}>
-        <History aria-hidden size={16} strokeWidth={1.8} />
+      <IconButton
+        label="History"
+        face="quiet"
+        shape="round"
+        hideTooltip={hideTooltip}
+      >
+        <History aria-hidden size={17} strokeWidth={1.8} />
       </IconButton>
       <Popover placement="bottom end" offset={6} className={`${POPOVER} w-64`}>
-        <Dialog className="grid gap-1 p-4 outline-none">
+        <Dialog className="grid gap-1 p-3 outline-none">
           <Heading slot="title" className="text-dense font-medium">
             History
           </Heading>

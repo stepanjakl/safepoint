@@ -198,39 +198,90 @@ test('a saved run waits for its thread before fading in', async ({ page }) => {
   ).toBe(true);
 });
 
-test('a run summary updates when a decision changes', async ({ page }) => {
+async function openMockRun(
+  page: Page,
+  process: 'brunch-orders' | 'brunch-orders-direct',
+  stage: string,
+) {
   const id = 'mock-1795037597235';
-  await page.addInitScript((runId) => {
-    const at = '2026-11-19T10:53:17.235Z';
-    sessionStorage.setItem(
-      'safepoint.mock-runs.v1:brunch-orders-direct',
-      JSON.stringify([
-        {
-          id: runId,
-          process: 'brunch-orders-direct',
-          startedAt: at,
-          updatedAt: at,
-          startedBy: null,
-          discardedAt: null,
-          stage: 'read',
-          status: 'awaiting_review',
-          trigger: 'manual',
-          instructions: { version: 'v1', hash: 'mock' },
-          additionalInstructions: null,
-          modelPlan: null,
-          readId: null,
-          rulebook: null,
-        },
-      ]),
-    );
-    sessionStorage.setItem(
-      `safepoint.mock-stage.v1:${runId}`,
-      'awaiting_review',
-    );
-  }, id);
-  await page.goto(`/processes/brunch-orders-direct?run=${id}`);
+  await page.addInitScript(
+    ({ runId, process, stage }) => {
+      const at = '2026-11-19T10:53:17.235Z';
+      sessionStorage.setItem(
+        `safepoint.mock-runs.v1:${process}`,
+        JSON.stringify([
+          {
+            id: runId,
+            process,
+            startedAt: at,
+            updatedAt: at,
+            startedBy: null,
+            discardedAt: null,
+            stage: 'read',
+            status: 'awaiting_review',
+            trigger: 'manual',
+            instructions: { version: 'v1', hash: 'mock' },
+            additionalInstructions: null,
+            modelPlan: null,
+            readId: null,
+            rulebook: null,
+          },
+        ]),
+      );
+      sessionStorage.setItem(`safepoint.mock-stage.v1:${runId}`, stage);
+    },
+    { runId: id, process, stage },
+  );
+  await page.goto(`/processes/${process}?run=${id}`);
+  return page.locator(`[data-run-id="${id}"]`);
+}
+
+test('a run summary updates and writing can be confirmed or cancelled from the keyboard', async ({
+  page,
+}) => {
+  const row = await openMockRun(
+    page,
+    'brunch-orders-direct',
+    'awaiting_review',
+  );
   const thread = page.locator('.run-view');
   await expect(thread).toContainText('Awaiting a reviewer');
+  const inputs = thread.getByRole('button', { name: 'Inputs', exact: true });
+  const sheet = thread.getByRole('button', { name: /^Google Sheets/ });
+  const chevron = sheet.locator('.read-card-chevron');
+  await inputs.press('Enter');
+  await expect(sheet).toHaveAttribute('aria-expanded', 'true');
+  await expect(chevron).toHaveCSS('rotate', '0deg');
+  const pill = sheet.locator('.read-card-done');
+  await expect(chevron).toHaveCSS('opacity', '0');
+  await expect(pill).toHaveCSS('margin-inline-end', '0px');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await pill.evaluate((element) => {
+    let slides = 0;
+    element.addEventListener('transitionend', (event) => {
+      if (
+        event instanceof TransitionEvent &&
+        event.target === element &&
+        event.propertyName.startsWith('margin-')
+      )
+        element.setAttribute('data-completed-slides', String(++slides));
+    });
+  });
+  await sheet.hover();
+  await expect(pill).toHaveAttribute('data-completed-slides', '1');
+  await expect(chevron).toHaveCSS('opacity', '1');
+  await expect(pill).not.toHaveCSS('margin-inline-end', '0px');
+  await inputs.hover();
+  await expect(pill).toHaveAttribute('data-completed-slides', '2');
+  await expect(chevron).toHaveCSS('opacity', '0');
+  await expect(pill).toHaveCSS('margin-inline-end', '0px');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await sheet.press('Enter');
+  await expect(sheet).toHaveAttribute('aria-expanded', 'false');
+  await expect(chevron).toHaveCSS('rotate', '-90deg');
+  await inputs.press('Enter');
+  await inputs.press('Enter');
+  await expect(sheet).toHaveAttribute('aria-expanded', 'true');
   const stage = page.getByRole('combobox', { name: 'Mock run stage' });
   const reviewing = await stage
     .locator('option', { hasText: /in review/i })
@@ -251,7 +302,54 @@ test('a run summary updates when a decision changes', async ({ page }) => {
   await stage.selectOption(approval!);
   await expect(thread.locator('table.output-cells')).toHaveCount(1);
   await expect(thread.getByText('Brunch store · supplier copy')).toHaveCount(0);
+  await expect(row).toHaveAccessibleName(/^Mock run\. Approved\./);
+  const prepare = thread.getByRole('button', { name: /^Write \d+ rows?$/ });
+  const confirm = thread.getByRole('button', { name: 'Write to the sheet' });
+  await prepare.press('Enter');
+  await expect(confirm).toBeFocused();
+  await thread
+    .getByRole('button', { name: 'Cancel', exact: true })
+    .press('Enter');
+  await expect(prepare).toBeFocused();
+  await expect(row).toHaveAccessibleName(/^Mock run\. Approved\./);
+  await prepare.press('Enter');
+  await confirm.press('Enter');
+  const undo = thread.getByRole('button', { name: 'Undo the write' });
+  await expect(undo).toBeFocused();
+  await expect(row).toHaveAccessibleName(/^Mock run\. Completed\./);
+  await undo.press('Enter');
+  await expect(prepare).toBeFocused();
+  await expect(row).toHaveAccessibleName(/^Mock run\. Approved\./);
 });
+
+for (const [process, stage] of [
+  ['brunch-orders', 'branch-apply-mismatch'],
+  ['brunch-orders-direct', 'intervention'],
+] as const) {
+  test(`${process} mock can undo a write that reads back differently`, async ({
+    page,
+  }) => {
+    if (process === 'brunch-orders') {
+      await page.setViewportSize({ width: 1440, height: 390 });
+    }
+    const row = await openMockRun(page, process, stage);
+    await expect(row).toHaveAccessibleName(/^Mock run[.] Held[.]/);
+    const thread = page.locator('.run-view');
+    if (process === 'brunch-orders') {
+      const jump = thread.getByRole('button', { name: 'Jump to Apply' });
+      await jump.press('Enter');
+      await expect(
+        thread.getByRole('button', { name: 'Apply', exact: true }),
+      ).toBeFocused();
+    }
+    const undo = thread.getByRole('button', { name: 'Undo the write' });
+    await undo.press('Enter');
+    await expect(
+      thread.getByRole('button', { name: /^Write [0-9]+ rows?$/ }),
+    ).toBeFocused();
+    await expect(row).toHaveAccessibleName(/^Mock run[.] Approved[.]/);
+  });
+}
 
 test('the runs column fades edges only while runs extend past them', async ({
   page,

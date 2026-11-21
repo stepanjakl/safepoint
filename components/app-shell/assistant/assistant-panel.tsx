@@ -7,6 +7,7 @@ import ArrowUp from 'blode-icons-react/icons/arrow-up';
 import X from 'blode-icons-react/icons/x';
 import { Button as AriaButton } from 'react-aria-components';
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { Loader } from '@/components/ui/loader';
 import { useLoader } from '@/components/ui/working-mark';
 import {
@@ -49,9 +50,8 @@ export function AssistantPanel({
   onDraftChange,
   composer,
 }: {
-  // Docked beside the sheet, the header's notch button says it is open and
-  // closes it, so the panel carries no heading or close button of its own.
-  // As an overlay it covers that button, and keeps both.
+  // Docked beside the sheet or shown as an overlay, the header keeps the same
+  // history and close controls.
   docked?: boolean;
   // Every process it can be asked about, and the one the page is showing.
   processes?: ContextProcess[];
@@ -91,21 +91,20 @@ export function AssistantPanel({
 
   return (
     <div className="assistant-panel" data-docked={docked || undefined}>
-      {/* Level with the notch button across the gap when docked; the
-          overlay's own heading and close button otherwise. */}
+      {/* Level with the notch row when docked; both modes keep the same
+          history and close icon pair. */}
       <header className="assistant-bar flex items-center justify-between gap-3">
         {docked ? null : <h2 className="text-title font-medium">Assistant</h2>}
         <span className="ms-auto flex items-center gap-2">
           <HistoryButton hideTooltip={!assistant.open} />
-          {docked ? null : (
-            <Button
-              aria-label="Close assistant"
-              onPress={assistant.close}
-              className="w-11"
-            >
-              <X aria-hidden size={16} strokeWidth={1.8} className="size-4" />
-            </Button>
-          )}
+          <IconButton
+            label="Close assistant"
+            face="quiet"
+            shape="round"
+            onPress={assistant.close}
+          >
+            <X aria-hidden size={17} strokeWidth={1.8} />
+          </IconButton>
         </span>
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">

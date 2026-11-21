@@ -214,10 +214,11 @@ test('a run shows its instructions, reads the sheet and keeps the read', async (
     .getByRole('button', { name: 'Read the sheet', exact: true })
     .first()
     .click();
-  // Shut until asked for, then open from the keyboard.
+  await expect(head).toHaveAttribute('aria-expanded', 'true');
+  await head.press('Enter');
   await expect(head).toHaveAttribute('aria-expanded', 'false');
-  await head.focus();
-  await page.keyboard.press('Enter');
+  await read.first().press('Enter');
+  await read.first().press('Enter');
   await expect(head).toHaveAttribute('aria-expanded', 'true');
   await expect(
     page.getByRole('list', { name: 'Data tabs read' }),

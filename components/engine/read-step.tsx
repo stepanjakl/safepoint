@@ -4,9 +4,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import ArrowUpRight from 'blode-icons-react/icons/arrow-up-right';
 import ChevronTriangleDown from 'blode-icons-react/icons/chevron-triangle-down-small-filled';
 import TableFilled from 'blode-icons-react/icons/table-filled';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useContext, useEffect, useId, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 
+import { ThreadStepOpenContext } from '@/components/app-shell/thread/thread-step';
 import { DataDrawer, type DataTabs } from '@/components/engine/data-drawer';
 import {
   Lede,
@@ -104,6 +105,7 @@ export function ReadStep({
   loadingRead = false,
   readError = null,
   onRead,
+  onFailure,
   revealing,
   onRevealed,
   automatic = false,
@@ -118,6 +120,7 @@ export function ReadStep({
   // Why the run's read could not be shown, where the server would not say.
   readError?: string | null;
   onRead: (read: RunRead) => void;
+  onFailure?: (failure: string | null) => void;
   revealing: boolean;
   onRevealed: () => void;
   automatic?: boolean;
@@ -134,11 +137,8 @@ export function ReadStep({
   // an answer is the trial's own failure.
   const failed =
     reading.state.kind === 'done' && keep.error ? keep.error.message : null;
-  // Shut until asked for, except for the read just taken, which opens to show it.
-  const [open, setOpen] = useState(false);
   const readFrom = (from: 'captured' | 'live') => {
     if (mock) {
-      setOpen(true);
       onRead(
         read ?? {
           id: 'mock',
@@ -152,7 +152,6 @@ export function ReadStep({
     }
     void reading.run({ source: from, runId }).then((response) => {
       if (!response) return;
-      setOpen(true);
       // The card's own summary is what keeping answered.
       queryClient.setQueryData(
         trpc.read.summary.queryKey({ id: response.id }),
@@ -174,6 +173,9 @@ export function ReadStep({
     reading.state.kind === 'failed'
       ? reading.state.message
       : (failed ?? readError);
+  useEffect(() => {
+    onFailure?.(keep.isPending ? null : unreadable);
+  }, [keep.isPending, onFailure, unreadable]);
   return (
     <div className="grid gap-4">
       {automatic ? (
@@ -277,8 +279,6 @@ export function ReadStep({
         <SheetReadCard
           kind={kind}
           read={read}
-          open={open}
-          onOpenChange={setOpen}
           revealing={revealing}
           onRevealed={onRevealed}
         />
@@ -289,29 +289,34 @@ export function ReadStep({
 
 /*
   The run's read of a source as a card: its resources (a sheet's tabs) and
-  their rows, folded open for the read just taken, with the data one press
-  away. Without a read yet, only its head, saying it is being read. What the
-  source and its parts are called comes from its kind (lib/sources).
+  their rows, folded open when the enclosing step opens or a read arrives.
+  While reading, the header uses the source name from lib/sources.
 */
 export function SheetReadCard({
   kind,
   read,
-  open,
-  onOpenChange,
   revealing = false,
   onRevealed = () => undefined,
   data,
 }: {
   kind: SourceKind;
   read: RunRead | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   revealing?: boolean;
   onRevealed?: () => void;
   // The tabs' values, where they are at hand rather than fetched by id.
   data?: DataTabs;
 }) {
   const cardId = useId();
+  const stepOpen = useContext(ThreadStepOpenContext);
+  const readId = read?.id;
+  const [previousStepOpen, setPreviousStepOpen] = useState(stepOpen);
+  const [previousReadId, setPreviousReadId] = useState(readId);
+  const [open, setOpen] = useState(true);
+  if (stepOpen !== previousStepOpen || readId !== previousReadId) {
+    setPreviousStepOpen(stepOpen);
+    setPreviousReadId(readId);
+    if (stepOpen || readId !== previousReadId) setOpen(true);
+  }
   const source = SOURCE_KINDS[kind];
   const { singular, plural } = source.resource;
   if (!read)
@@ -324,9 +329,8 @@ export function SheetReadCard({
       </div>
     );
   const sourceName = read.title || read.url;
-  const setOpen = onOpenChange;
   return (
-    <div className="read-card" data-open={open || undefined}>
+    <div className="read-card">
       <button
         type="button"
         className="read-card-head group/head"
@@ -339,13 +343,15 @@ export function SheetReadCard({
         <span className="thread-step-fact read-card-count">
           {read.tabs.length} {read.tabs.length === 1 ? singular : plural}
         </span>
-        <Pill
-          tone="ready"
-          size="compact"
-          className="read-card-done group-hover/head:bg-severity-pill-hover group-hover/head:text-severity-pill-strong group-focus-visible/head:bg-severity-pill-hover group-focus-visible/head:text-severity-pill-strong"
-        >
-          Read · {dateTime(read.readAt)}
-        </Pill>
+        <span className="read-card-done inline-flex">
+          <Pill
+            tone="ready"
+            size="compact"
+            className="group-hover/head:bg-severity-pill-hover group-hover/head:text-severity-pill-strong group-focus-visible/head:bg-severity-pill-hover group-focus-visible/head:text-severity-pill-strong"
+          >
+            Read · {dateTime(read.readAt)}
+          </Pill>
+        </span>
         <ChevronTriangleDown aria-hidden className="read-card-chevron" />
       </button>
       <Fold open={open} id={cardId} className="pt-2">

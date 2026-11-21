@@ -88,7 +88,15 @@
    least 1px so a 0.75px retina bleed does not land on a half 2x device pixel
    (260.75px -> 521.5) and snap inward, exposing a white sliver beside the ring. */
 @utility clip-past-pane-highlight {
+  overflow: clip;
   overflow-clip-margin: 1px;
+
+  @supports not (overflow-clip-margin: 1px) {
+    @media (width < 56.25rem) {
+      /* The pane clips mobile content. Clipping here cuts dividers short. */
+      overflow: visible;
+    }
+  }
 }
 
 /* A column against the pane's side runs over its highlight to the ring, so

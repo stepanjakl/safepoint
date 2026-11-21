@@ -1,5 +1,14 @@
 # AGENTS.md
 
+## Before editing
+
+1. If the task could change more than one file and `pnpm dev` may be running,
+   run `pnpm dev:pause` before the first edit. If a one-file task grows, pause
+   before editing the second file.
+2. Run `pnpm dev:resume` after the batch and any quick fixes, before checking the
+   changes in the browser. If you paused and the task stops early, resume before
+   ending the turn. This lets webpack compile the batch in one reload.
+
 Instructions for coding agents working in this repository. Humans should read
 [`docs/interface/STYLING-SYSTEM.md`](docs/interface/STYLING-SYSTEM.md) and
 [`docs/engineering/ARCHITECTURE.md`](docs/engineering/ARCHITECTURE.md) first; this file only
@@ -119,11 +128,6 @@ Two lines. Longer reasoning goes in `docs/interface/STYLING-SYSTEM.md`, not in t
 `pnpm dev` runs webpack, not Turbopack, on purpose: only webpack gives each rule
 a source map to its own stylesheet and lets `tools/postcss-light-dark` fold
 Lightning CSS's `light-dark()` polyfill back, so DevTools reads like the source.
-
-When making multi-file edits while `pnpm dev` may be running, bracket the batch
-with `pnpm dev:pause` before the first edit and `pnpm dev:resume` once the edits
-(and any quick fixes) are complete so webpack compiles everything in one reload.
-Always run `pnpm dev:resume` before finishing, even if the task stops early.
 
 ## Colours
 

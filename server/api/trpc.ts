@@ -82,7 +82,7 @@ async function actorOf(
   request: Request,
 ): Promise<{ actor: string | null; visitor: VisitorOnContext | null }> {
   if (!gateApplies(new URL(request.url))) {
-    const refusal = localDevelopmentRefusal(request);
+    const refusal = localDevelopmentRefusal(request, { allowDevHost: true });
     if (refusal)
       throw new TRPCError({
         code: refusal.status === 404 ? 'NOT_FOUND' : 'FORBIDDEN',
@@ -91,7 +91,7 @@ async function actorOf(
     const visitor = await visitorOf(request);
     return { actor: visitor?.name ?? null, visitor };
   }
-  const foreign = crossOriginRefusal(request);
+  const foreign = crossOriginRefusal(request, { allowDevHost: true });
   if (foreign)
     throw new TRPCError({ code: 'FORBIDDEN', message: foreign.message });
   const config = accessConfig();

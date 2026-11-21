@@ -39,9 +39,8 @@ const cellText = (cell: unknown) =>
 
 /*
   One read of a source, a resource at a time, as a table of exactly what was
-  read: the sheet's own row numbers down the side, so a row named here is the
-  row to look for in the sheet. Whatever opens it gets `view`, which opens it
-  at a resource or where it was left.
+  read, with data rows numbered below the header. The `view` callback opens
+  the requested resource or returns to the one last viewed.
 */
 export function SourceDrawer({
   source,
@@ -171,14 +170,22 @@ function ResourceTable({
       tabIndex={0}
       role="region"
       aria-label={`${name}, as read`}
-      className="min-h-0 flex-1"
+      className="source-resource-table min-h-0 flex-1"
+      onScroll={({ currentTarget }) => {
+        currentTarget.toggleAttribute(
+          'data-scrolled',
+          currentTarget.scrollTop > 0,
+        );
+      }}
     >
       <table className={COMPACT_TABLE_BODY}>
         <thead>
           <tr>
-            <th scope="col" className={`${ROW_NUMBER} top-0 z-2`}>
+            <th
+              scope="col"
+              className={`${ROW_NUMBER} source-resource-corner top-0 z-2`}
+            >
               <span className="sr-only">Row</span>
-              <span aria-hidden="true">1</span>
             </th>
             {cells(header).map((cell, index) => (
               <th key={index} scope="col" className={HEAD}>
@@ -191,7 +198,7 @@ function ResourceTable({
           {rows.map((row, index) => (
             <tr key={index}>
               <th scope="row" className={ROW_NUMBER}>
-                {index + 2}
+                {index + 1}
               </th>
               {cells(row).map((cell, column) => (
                 <td key={column} className={CELL}>
