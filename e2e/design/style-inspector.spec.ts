@@ -106,6 +106,21 @@ test('holding Option peeks, and Option-click pins past the key', async ({
   await page.keyboard.up('Alt');
   await expect(panel).toContainText('<button>');
   await expect(inputs).not.toHaveAttribute('aria-current', 'true');
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  await panel.getByRole('button', { name: 'Copy reference' }).press('Enter');
+  await expect(panel.getByRole('status')).toHaveText('Copied');
+  const reference = await page.evaluate(() => navigator.clipboard.readText());
+  expect(reference).toContain('Page: /processes/brunch-orders');
+  expect(reference).toMatch(/Source: .*process-header\.tsx:\d+/);
+  expect(reference).toMatch(/Component: \S+/);
+  const selector = reference.split('Selector: ')[1]!;
+  expect(
+    await inputs.evaluate((element, css) => {
+      const matches = document.querySelectorAll(css);
+      return matches.length === 1 && matches[0] === element;
+    }, selector),
+  ).toBe(true);
+
   await page.keyboard.press('Escape');
   await page.keyboard.press('Escape');
   await expect(panel).toHaveCount(0);

@@ -150,6 +150,14 @@
       --assistant-icon: var(--sp-text-primary);
     }
   }
+  @media (width < 56.25rem) {
+    .assistant-button[data-compact][aria-expanded='false'] {
+      --slant-face-image: initial;
+      --slant-face-top: none;
+      --slant-ring-image: initial;
+      --slant-ring-top: none;
+    }
+  }
   .assistant-button-label {
     color: var(--assistant-ink);
   }

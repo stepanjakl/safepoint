@@ -90,11 +90,12 @@ export function RunRow({
       data-run-status={run.status}
       aria-current={onSelect ? undefined : selected ? 'true' : undefined}
     >
-      {/* Mono, so the day and the time under it set on one measure. It is a
-            word half the time -- Today, Yesterday -- but it is read as a stamp
-            either way, and a proportional day over a tabular time made two
-            columns out of one fact. */}
-      <span aria-hidden="true" className="sheet-row-day value">
+      {/* One interface face for the stamp; tabular figures keep its numeric
+          parts aligned without turning the words Today and Yesterday mono. */}
+      <span
+        aria-hidden="true"
+        className="sheet-row-day font-medium tabular-nums"
+      >
         {runDay(run.startedAt)}
       </span>
       <span
@@ -126,7 +127,7 @@ export function RunRow({
       </span>
       <span aria-hidden="true" className="sheet-row-when">
         <TriggerIcon size={11} className="flex-none" />
-        <span className="value text-micro tracking-wider">
+        <span className="text-micro font-medium tracking-wider tabular-nums">
           {runTime(run.startedAt)}
         </span>
       </span>

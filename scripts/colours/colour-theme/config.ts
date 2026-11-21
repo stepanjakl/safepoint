@@ -1,6 +1,8 @@
+const RAMP_INCREMENT = 25;
+
 export const COLOUR_STEPS = Array.from(
   { length: 41 },
-  (_, index) => index * 25,
+  (_, index) => index * RAMP_INCREMENT,
 ) as readonly number[];
 
 export const THEMES = ['light', 'dark'] as const;
@@ -279,11 +281,11 @@ export const recessRoles = (recess: `--${string}`) =>
     highlight: `${recess}-edge`,
   }) as const;
 
-function rampStep(value: number, what: string) {
+function rampStep(value: number, what: string, detail = '') {
   const last = COLOUR_STEPS.at(-1)!;
-  if (!Number.isInteger(value / 25) || value < 0 || value > last) {
+  if (!Number.isInteger(value / RAMP_INCREMENT) || value < 0 || value > last) {
     throw new Error(
-      `${what} lands on step ${value}, which is not on the 0-${last} ramp; change LAYER_STEP or SURFACE_THEMES.`,
+      `${what} lands on step ${value}, which is not on the 0-${last} ramp.${detail}`,
     );
   }
   return value;
@@ -365,9 +367,6 @@ type SurfaceKey = keyof typeof SURFACE_LAYERS;
 type Offset = {
   light: number;
   dark: number;
-  /* An ink near the end of the ramp, which stops at that end on a ground too
-     light (or too dark) to go further, as every role does on the popover. */
-  flush?: true;
 };
 
 /* Roles that follow whichever surface they are inside. At the root they sit
@@ -397,7 +396,81 @@ const TOOLTIP = {
 const WALKTHROUGH_DISMISS = { face: 75, ink: -450, hover: -25 };
 const HOVER = { light: 50, dark: -100 };
 const SELECTED = { light: 125, dark: -175 };
+const SELECTED_STRONG = {
+  light: SELECTED.light + (SELECTED.light - HOVER.light),
+  dark: SELECTED.dark + (SELECTED.dark - HOVER.dark),
+};
+
+function selectedIconStop(
+  centre: Offset,
+  { end, ring = false }: { end: 'top' | 'bottom'; ring?: boolean },
+): Offset {
+  const gradient = end === 'top' ? -2 * LAYER_STEP : 2 * LAYER_STEP;
+  const edge = ring ? 5 * LAYER_STEP : 0;
+  return {
+    light: centre.light + gradient + edge,
+    dark: centre.dark + gradient - edge,
+  };
+}
+
+const MENU_ROW_STEP = 2 * LAYER_STEP;
+const DESKTOP_BANNER_BACKGROUND_OFFSET = { light: -25, dark: -50 };
+const MOBILE_BANNER_BACKGROUND_OFFSET = { light: 50, dark: -25 };
+const DESKTOP_BANNER_BORDER_OFFSET_FROM_BACKGROUND = { light: 150, dark: 150 };
+const DESKTOP_BANNER_HIGHLIGHT_OFFSET_FROM_BACKGROUND = {
+  light: -25,
+  dark: -75,
+};
+const MOBILE_BANNER_BORDER_OFFSET_FROM_BACKGROUND = { light: 150, dark: -100 };
+const MOBILE_BANNER_HIGHLIGHT_OFFSET_FROM_BACKGROUND = {
+  light: -25,
+  dark: 75,
+};
+
+function noticeRelief(background: Offset, border: Offset, highlight: Offset) {
+  return {
+    edge: {
+      light: background.light + border.light,
+      dark: background.dark + border.dark,
+    },
+    highlight: {
+      light: background.light + highlight.light,
+      dark: background.dark + highlight.dark,
+    },
+  };
+}
+
+const notice = noticeRelief(
+  DESKTOP_BANNER_BACKGROUND_OFFSET,
+  DESKTOP_BANNER_BORDER_OFFSET_FROM_BACKGROUND,
+  DESKTOP_BANNER_HIGHLIGHT_OFFSET_FROM_BACKGROUND,
+);
+const mobileDarkEdgeDirection =
+  MOBILE_BANNER_BACKGROUND_OFFSET.dark > 0 ? 1 : -1;
+const drawerNotice = noticeRelief(
+  MOBILE_BANNER_BACKGROUND_OFFSET,
+  {
+    ...MOBILE_BANNER_BORDER_OFFSET_FROM_BACKGROUND,
+    dark:
+      MOBILE_BANNER_BORDER_OFFSET_FROM_BACKGROUND.dark *
+      mobileDarkEdgeDirection,
+  },
+  {
+    ...MOBILE_BANNER_HIGHLIGHT_OFFSET_FROM_BACKGROUND,
+    dark:
+      MOBILE_BANNER_HIGHLIGHT_OFFSET_FROM_BACKGROUND.dark *
+      mobileDarkEdgeDirection,
+  },
+);
+
 const FOLLOWING_BY_FILE = {
+  'components/app-shell/sidebar/process-list.css': {
+    '--sp-menu-row-hover': { light: MENU_ROW_STEP, dark: -MENU_ROW_STEP },
+    '--sp-menu-row-selected': {
+      light: 2 * MENU_ROW_STEP,
+      dark: -2 * MENU_ROW_STEP,
+    },
+  },
   'app/styles/roles.css': {
     '--sp-surface-control': { light: -25, dark: -100 },
     /* The darkest light ground and muted ink's thinnest margin, so a control
@@ -426,10 +499,7 @@ const FOLLOWING_BY_FILE = {
       light: SELECTED.light + LAYER_STEP,
       dark: SELECTED.dark - LAYER_STEP,
     },
-    '--sp-surface-selected-strong': {
-      light: SELECTED.light + (SELECTED.light - HOVER.light),
-      dark: SELECTED.dark + (SELECTED.dark - HOVER.dark),
-    },
+    '--sp-surface-selected-strong': SELECTED_STRONG,
     /* Rules are present, not bright: a divider should be found, not seen first. */
     '--sp-rule-faint': { light: 175, dark: -150 },
     '--sp-rule-default': { light: 225, dark: -200 },
@@ -471,16 +541,43 @@ const FOLLOWING_BY_FILE = {
     '--sp-filter-track-edge-hover': { light: 175, dark: -200 },
   },
   'app/styles/drawer.css': {
-    /* Set at the secondary button's steps but separate, so tuning a button moves
-       no close button. */
-    '--sp-drawer-close-face-top': { light: -25, dark: -100 },
-    '--sp-drawer-close-face-bottom': { light: 50, dark: 0 },
-    '--sp-drawer-close-ring-top': { light: 175, dark: -250 },
-    '--sp-drawer-close-ring-bottom': { light: 275, dark: -100 },
-    '--sp-drawer-close-face-top-hover': { light: -25, dark: -175 },
-    '--sp-drawer-close-face-bottom-hover': { light: 175, dark: -50 },
-    '--sp-drawer-close-ring-top-hover': { light: 275, dark: -375 },
-    '--sp-drawer-close-ring-bottom-hover': { light: 600, dark: -250 },
+    /* Shared by the regular drawer close button and mobile icon buttons. */
+    '--sp-icon-button-face-top': { light: -25, dark: -125 },
+    '--sp-icon-button-face-bottom': { light: 50, dark: -25 },
+    '--sp-icon-button-ring-top': { light: 175, dark: -250 },
+    '--sp-icon-button-ring-bottom': { light: 275, dark: -100 },
+    '--sp-icon-button-face-top-hover': { light: -25, dark: -175 },
+    '--sp-icon-button-face-bottom-hover': { light: 175, dark: -75 },
+    '--sp-icon-button-ring-top-hover': { light: 275, dark: -375 },
+    '--sp-icon-button-ring-bottom-hover': { light: 600, dark: -250 },
+  },
+  'components/app-shell/sidebar/navigation-drawer.css': {
+    '--sp-drawer-toggle-face-top': selectedIconStop(SELECTED, { end: 'top' }),
+    '--sp-drawer-toggle-face-bottom': selectedIconStop(SELECTED, {
+      end: 'bottom',
+    }),
+    '--sp-drawer-toggle-ring-top': selectedIconStop(SELECTED, {
+      end: 'top',
+      ring: true,
+    }),
+    '--sp-drawer-toggle-ring-bottom': selectedIconStop(SELECTED, {
+      end: 'bottom',
+      ring: true,
+    }),
+    '--sp-drawer-toggle-face-top-hover': selectedIconStop(SELECTED_STRONG, {
+      end: 'top',
+    }),
+    '--sp-drawer-toggle-face-bottom-hover': selectedIconStop(SELECTED_STRONG, {
+      end: 'bottom',
+    }),
+    '--sp-drawer-toggle-ring-top-hover': selectedIconStop(SELECTED_STRONG, {
+      end: 'top',
+      ring: true,
+    }),
+    '--sp-drawer-toggle-ring-bottom-hover': selectedIconStop(SELECTED_STRONG, {
+      end: 'bottom',
+      ring: true,
+    }),
   },
   'app/styles/severity.css': {
     /* Neutral pills follow the ground via ramp steps rather than oklch(from ...)
@@ -489,7 +586,7 @@ const FOLLOWING_BY_FILE = {
     '--sp-neutral-pill-hover': { light: 200, dark: -225 },
     '--sp-neutral-pill-ring': { light: 150, dark: -200 },
     '--sp-neutral-pill-ink': { light: 575, dark: -575 },
-    '--sp-neutral-pill-strong': { light: 775, dark: -725, flush: true },
+    '--sp-neutral-pill-strong': { light: 775, dark: -725 },
   },
   'components/ui/switch.css': {
     /* Keep both resting stops off their ground: the switch follows every
@@ -524,7 +621,7 @@ const FOLLOWING_BY_FILE = {
     '--sp-thread-link-face-hover': { light: 175, dark: -225 },
     '--sp-thread-link-face-active': { light: 200, dark: -275 },
     '--sp-thread-link-ink': { light: 625, dark: -625 },
-    '--sp-thread-link-ink-hover': { light: 875, dark: -750, flush: true },
+    '--sp-thread-link-ink-hover': { light: 875, dark: -750 },
   },
   'components/app-shell/thread/model-run-thread.css': {
     /* A cell address that opens its cell: set at the thread link's steps but
@@ -532,7 +629,7 @@ const FOLLOWING_BY_FILE = {
     '--sp-cell-link-face': { light: 125, dark: -125 },
     '--sp-cell-link-face-hover': { light: 200, dark: -275 },
     '--sp-cell-link-ink': { light: 625, dark: -625 },
-    '--sp-cell-link-ink-hover': { light: 875, dark: -750, flush: true },
+    '--sp-cell-link-ink-hover': { light: 875, dark: -750 },
   },
   'components/ui/list-rows.css': {
     /* A row's change pill: past the row's wash (--sp-row-hover) at
@@ -544,7 +641,7 @@ const FOLLOWING_BY_FILE = {
     /* Held at -225 in dark, short of the wash's 100: its primary ink cannot
        strengthen, and at -250 it reads 4.47:1. */
     '--sp-list-pill-lead-hover': { light: 75, dark: -225 },
-    '--sp-list-pill-ink': { light: 900, dark: -700, flush: true },
+    '--sp-list-pill-ink': { light: 900, dark: -700 },
   },
   /*
     The promotion prototype's row pill (components/prototype/review), kept as
@@ -557,7 +654,7 @@ const FOLLOWING_BY_FILE = {
     '--sp-card-pill-face-hover': { light: 150, dark: -175 },
     '--sp-card-pill-lead': { light: 25, dark: -150 },
     '--sp-card-pill-lead-hover': { light: 75, dark: -225 },
-    '--sp-card-pill-ink': { light: 900, dark: -700, flush: true },
+    '--sp-card-pill-ink': { light: 900, dark: -700 },
   },
   'components/app-shell/runs/runs-list.css': {
     /* The tally's total: ramp, not a severity tone. Dark's label is ink at
@@ -571,9 +668,9 @@ const FOLLOWING_BY_FILE = {
     '--sp-sheet-total-lead': { light: 100, dark: -150 },
     '--sp-sheet-total-lead-hover': { light: 75, dark: -250 },
     '--sp-sheet-total-lead-current': { light: 50, dark: -275 },
-    '--sp-sheet-total-ink': { light: 775, dark: -750, flush: true },
-    '--sp-sheet-total-ink-hover': { light: 825, dark: -800, flush: true },
-    '--sp-sheet-total-ink-current': { light: 875, dark: -800, flush: true },
+    '--sp-sheet-total-ink': { light: 775, dark: -750 },
+    '--sp-sheet-total-ink-hover': { light: 825, dark: -800 },
+    '--sp-sheet-total-ink-current': { light: 875, dark: -800 },
     '--sp-sheet-total-label': { light: 600, dark: -575 },
     '--sp-sheet-total-label-hover': { light: 650, dark: -625 },
     '--sp-sheet-total-label-current': { light: 675, dark: -675 },
@@ -582,7 +679,7 @@ const FOLLOWING_BY_FILE = {
     '--sp-sheet-break-ink': { light: 425, dark: -425 },
     '--sp-sheet-break-ink-hover': { light: 625, dark: -625 },
     '--sp-sheet-chip-ink': { light: 625, dark: -625 },
-    '--sp-sheet-chip-ink-hover': { light: 875, dark: -750, flush: true },
+    '--sp-sheet-chip-ink-hover': { light: 875, dark: -750 },
   },
 } as const satisfies Record<string, Record<`--${string}`, Offset>>;
 
@@ -606,16 +703,27 @@ const ANCHORED_BY_FILE = {
     '--sp-keycap-face': { on: 'canvas', light: -50, dark: -125 },
     '--sp-keycap-ring': { on: 'canvas', light: 125, dark: -250 },
     '--sp-keycap-highlight': { highlightOf: '--sp-keycap-face' },
-    /* The current row: the pane's geometry, its own stops. */
-    '--sp-menu-current-face-top': { on: 'canvas', light: -50, dark: -125 },
-    '--sp-menu-current-face-bottom': { on: 'canvas', light: -50, dark: -125 },
+    '--sp-drawer-menu-current-ring-bottom': {
+      on: 'floating',
+      light: 150,
+      dark: 50,
+    },
     '--sp-menu-current-ring-bottom': { on: 'canvas', light: 125, dark: 25 },
   },
   'components/app-shell/sidebar/sidebar-notice.css': {
-    '--sp-notice-face': { on: 'canvas', light: -25, dark: -75 },
-    '--sp-notice-edge-top': { on: 'canvas', light: 125, dark: -175 },
-    '--sp-notice-edge-bottom': { on: 'canvas', light: 125, dark: -175 },
-    '--sp-notice-highlight': { highlightOf: '--sp-notice-face' },
+    '--sp-drawer-notice-face': {
+      on: 'floating',
+      ...MOBILE_BANNER_BACKGROUND_OFFSET,
+    },
+    '--sp-drawer-notice-edge': { on: 'floating', ...drawerNotice.edge },
+    '--sp-drawer-notice-highlight': {
+      on: 'floating',
+      ...drawerNotice.highlight,
+    },
+    '--sp-notice-face': { on: 'canvas', ...DESKTOP_BANNER_BACKGROUND_OFFSET },
+    '--sp-notice-edge-top': { on: 'canvas', ...notice.edge },
+    '--sp-notice-edge-bottom': { on: 'canvas', ...notice.edge },
+    '--sp-notice-highlight': { on: 'canvas', ...notice.highlight },
   },
   'components/app-shell/process/process-header.css': {
     /* Drawn from the secondary button's stops but separate, so tuning the header moves no
@@ -838,8 +946,19 @@ export const DRAWN_BANDS: ReadonlySet<GroundContext> = new Set([
   'floating-band',
 ]);
 
-/* A role asked for lighter than the lightest step stops at that step. Only the
-   popover reaches it: its face is already the end of the ramp in light. */
+/* These inks intentionally saturate on grounds at the end of the ramp. */
+const SATURATING_INKS = new Set([
+  '--sp-neutral-pill-strong',
+  '--sp-thread-link-ink-hover',
+  '--sp-cell-link-ink-hover',
+  '--sp-list-pill-ink',
+  '--sp-card-pill-ink',
+  '--sp-sheet-total-ink',
+  '--sp-sheet-total-ink-hover',
+  '--sp-sheet-total-ink-current',
+  '--sp-sheet-chip-ink-hover',
+]);
+
 const toRamp = (value: number, flush: boolean) =>
   flush ? Math.min(Math.max(value, 0), COLOUR_STEPS.at(-1)!) : value;
 
@@ -850,10 +969,21 @@ const offsetFrom = (
   flush = false,
 ): Record<Theme, number> => {
   const steps = SURFACE_STEPS.get(face)!;
-  return {
-    light: rampStep(toRamp(steps.light + role.light, flush), `light ${what}`),
-    dark: rampStep(toRamp(steps.dark + role.dark, flush), `dark ${what}`),
+  const stepFor = (theme: Theme) => {
+    const surface = steps[theme];
+    const offset = role[theme];
+    const value = toRamp(surface + offset, flush);
+    const nearest = toRamp(
+      Math.round(value / RAMP_INCREMENT) * RAMP_INCREMENT,
+      true,
+    );
+    return rampStep(
+      value,
+      `${theme} ${what}`,
+      ` Offset ${offset} on surface step ${surface}. Try ${theme}: ${nearest - surface}.`,
+    );
   };
+  return { light: stepFor('light'), dark: stepFor('dark') };
 };
 
 /* A following role's steps inside one context. */
@@ -864,7 +994,7 @@ export function followingAt(variable: `--${string}`, context: GroundContext) {
     GROUND_CONTEXTS[context],
     role,
     `${variable} in ${context}`,
-    context.startsWith('popover') || role.flush === true,
+    context.startsWith('popover') || SATURATING_INKS.has(variable),
   );
 }
 

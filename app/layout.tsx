@@ -3,10 +3,11 @@ import type { ReactNode } from 'react';
 
 import { AgentationToolbar } from '@/components/dev/agentation-toolbar';
 import { DesignControls } from '@/components/dev/design-controls';
+import { DEFAULT_EDGE_PRESET } from '@/components/dev/design-preferences';
 import { DesignPreferencesScript } from '@/components/dev/design-preferences-script';
 import { StyleInspector } from '@/components/dev/style-inspector';
 import { QueryProvider } from '@/components/trpc/provider';
-import { DEFAULT_THEME } from '@/lib/ui/typography';
+import { DEFAULT_MONO, DEFAULT_THEME } from '@/lib/ui/typography';
 
 import './styles/index.css';
 import { fontVariables } from './typography';
@@ -18,14 +19,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    // The default theme is rendered, not left to the preferences script, so it
-    // holds where the script does not run. suppressHydrationWarning: the
-    // script replaces it, and may add data-neutral, from a development
-    // preference before React hydrates.
+    // The preferences script can apply saved choices before hydration.
     <html
       lang="en-GB"
       className={fontVariables}
       data-theme={DEFAULT_THEME}
+      data-edges={DEFAULT_EDGE_PRESET}
+      data-mono={DEFAULT_MONO}
       suppressHydrationWarning
     >
       <head>

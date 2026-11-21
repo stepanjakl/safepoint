@@ -10,8 +10,11 @@ import { presentRunFacts } from '@/lib/prototype/promotion/placeholder/run-lifec
 import { presentPromotionInputs } from '@/lib/prototype/promotion/system-links';
 import { presentPromotionPlan } from '@/lib/prototype/review/promotion-adapter';
 import { parseSkuParam } from '@/lib/prototype/review-presentation';
+import { runStamp } from '@/lib/shell/run-time';
 
 import { HistoryNote } from '../history-note';
+import { PromotionInputs } from './promotion-inputs';
+import { OutputsList } from './outputs-list';
 
 export default async function PromotionRunPage({
   searchParams,
@@ -45,7 +48,14 @@ export default async function PromotionRunPage({
     <ProcessView
       process={promotionProcess}
       inputs={inputs}
-      inputDetails={presentPromotionInputDetails(replay)}
+      inputsPanel={
+        <PromotionInputs
+          inputs={inputs}
+          details={presentPromotionInputDetails(replay)}
+          runLabel={recorded ? runStamp(recorded.startedAt) : undefined}
+        />
+      }
+      outputsPanel={<OutputsList outputs={promotionProcess.outputs} />}
       initialRunId={initialRunId}
     >
       <ThreadPage label="Run, Thu 4 Sep · 09:00">

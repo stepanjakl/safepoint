@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useRef, useState, type CSSProperties } from 'react';
+import { useContext, useId, useRef, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { motion, type Transition } from 'motion/react';
 import DotGrid2x3Filled from 'blode-icons-react/icons/dot-grid-2x3-filled';
@@ -14,6 +14,7 @@ import { Glyph } from '@/components/ui/glyph';
 import { OverflowTooltip, Tooltip } from '@/components/ui/tooltip';
 import { WalkthroughHint } from '@/components/ui/walkthrough-hint';
 import { MENU_RAIL, MenuIcon } from './menu-parts';
+import { NavigationDrawerContext } from './navigation-drawer';
 import { ROW_HEIGHT, type ProcessReorder } from './use-process-reorder';
 
 /*
@@ -120,6 +121,7 @@ export function ProcessList({
   reorder: ProcessReorder;
   pickHintReady?: boolean;
 }) {
+  const drawer = useContext(NavigationDrawerContext);
   const { destinationPath, leaveTo } = useShellPageNavigation();
   const walkthrough = useWalkthrough();
   const pickHintId = useId();
@@ -349,7 +351,7 @@ export function ProcessList({
                         }
                         onClick={(event) => {
                           if (
-                            current === item.href ||
+                            (current === item.href && !drawer?.open) ||
                             event.defaultPrevented ||
                             event.button !== 0 ||
                             event.metaKey ||
@@ -359,6 +361,8 @@ export function ProcessList({
                           )
                             return;
                           event.preventDefault();
+                          drawer?.close();
+                          if (current === item.href) return;
                           walkthrough?.advance('pick-process');
                           leaveTo(item.href);
                         }}
@@ -440,17 +444,12 @@ export function ProcessList({
   the same map, so a tone cannot mean one colour in one and another in the
   other. The 8% wash is what the tone's own text colour is legible on.
 
-  `decision` is the tone a line waiting on a person takes -- see
-  --sp-state-decision in app/styles/state.css for why it is not caution's
-  amber -- and the runs rail paints the same three counts in the same three
-  tones and the same order, so the two readings of one run agree.
 */
 const TONE_CHIP: Record<
-  ProcessNavigationItem['status']['tone'] | 'neutral' | 'decision',
+  ProcessNavigationItem['status']['tone'] | 'neutral',
   string
 > = {
   blocked: 'text-state-blocked bg-state-blocked/8',
-  decision: 'text-state-decision bg-state-decision/8',
   caution: 'text-state-caution bg-state-caution/8',
   verified: 'text-state-verified bg-state-verified/8',
   neutral: 'text-muted bg-surface-inset',
@@ -463,7 +462,7 @@ function ProcessStatusContent({
 }) {
   const counts = [
     ['blocked', 'Blocked', status.counts.blocked],
-    ['decision', 'Needs a decision', status.counts.needs_decision],
+    ['caution', 'Needs a decision', status.counts.needs_decision],
     ['neutral', 'Deferred', status.counts.deferred],
     ['verified', 'Ready for review', status.counts.will_apply],
   ] as const;

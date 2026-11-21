@@ -52,4 +52,10 @@
     letter-spacing: -0.025em;
     line-height: 1.3;
   }
+
+  @media (width < 56.25rem) {
+    .workspace-intro {
+      padding-block: clamp(3rem, 6vw, 5rem);
+    }
+  }
 }

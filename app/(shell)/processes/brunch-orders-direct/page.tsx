@@ -1,3 +1,5 @@
+import { SinglePanel } from '@/components/app-shell/process/process-sheet';
+import { SECTION } from '@/components/app-shell/process/panel-parts';
 import { ProcessView } from '@/components/app-shell/process/process-view';
 import { DirectOrdersRun } from '@/components/processes/brunch-orders/direct-run';
 import {
@@ -34,7 +36,11 @@ export default async function BrunchOrdersDirectPage({
         <DirectOrdersRun key="live" process={brunchOrdersDirectProcess} />
       }
       inputs={SHEET_INPUTS}
-      inputsPanel={<SourceInputs uses={[SHEET_USE]} initial={sheets} />}
+      inputsPanel={
+        <SinglePanel {...SECTION.inputs} width="full">
+          <SourceInputs uses={[SHEET_USE]} initial={sheets} />
+        </SinglePanel>
+      }
       outputsPanel={
         <SourceOutputs
           uses={[SHEET_USE]}

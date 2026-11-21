@@ -30,20 +30,22 @@ export function useAgentationPopoverProps(
 /**
  * React Aria's `usePopover` disables outside-click dismissal when `isNonModal`
  * is true, falling back to `shouldCloseOnBlur` (which ignores clicks on
- * non-focusable elements). This restores outside-click dismissal in
- * development while still ignoring clicks on the Agentation UI.
+ * non-focusable elements). This restores outside-click dismissal for non-modal popovers while ignoring
+ * clicks on the Agentation UI.
  */
 export function useAgentationPopoverDismiss(
   isOpen: boolean,
   onClose: () => void,
   popoverRef: RefObject<HTMLElement | null>,
   triggerRef?: RefObject<HTMLElement | null>,
+  isNonModal = false,
 ) {
   useEffect(() => {
     if (
       !isOpen ||
-      process.env.NODE_ENV !== 'development' ||
-      process.env.NEXT_PUBLIC_AGENTATION !== 'on'
+      (!isNonModal &&
+        (process.env.NODE_ENV !== 'development' ||
+          process.env.NEXT_PUBLIC_AGENTATION !== 'on'))
     ) {
       return;
     }
@@ -57,5 +59,17 @@ export function useAgentationPopoverDismiss(
     };
     document.addEventListener('pointerdown', onPointerDown);
     return () => document.removeEventListener('pointerdown', onPointerDown);
-  }, [isOpen, onClose, popoverRef, triggerRef]);
+  }, [isOpen, onClose, popoverRef, triggerRef, isNonModal]);
+}
+
+/** Dismiss on an outside press while letting the pressed control receive it. */
+export function useNonModalPopover(
+  isOpen: boolean,
+  onClose: () => void,
+  popoverRef: RefObject<HTMLElement | null>,
+  triggerRef: RefObject<HTMLElement | null>,
+) {
+  const agentationProps = useAgentationPopoverProps(triggerRef);
+  useAgentationPopoverDismiss(isOpen, onClose, popoverRef, triggerRef, true);
+  return { ...agentationProps, isNonModal: true };
 }

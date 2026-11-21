@@ -13,4 +13,10 @@
     color: var(--sp-text-primary);
     text-decoration-color: currentColor;
   }
+
+  @media (min-resolution: 2dppx) {
+    :root[data-edges='retina'] .external-link {
+      text-decoration-thickness: 0.5px;
+    }
+  }
 }

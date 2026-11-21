@@ -2,7 +2,9 @@
 
 import { usePathname } from 'next/navigation';
 import {
+  useContext,
   useEffect,
+  useEffectEvent,
   useId,
   useLayoutEffect,
   useRef,
@@ -12,6 +14,7 @@ import {
 import { Brand } from '@/components/ui/brand';
 import { useShellPageNavigation } from '@/components/app-shell/shell-page-transition';
 import { useReducedMotion } from 'motion/react';
+import { Button as AriaButton } from 'react-aria-components';
 import { cx } from '@/lib/ui/cx';
 import {
   DURATION_PANE,
@@ -31,6 +34,7 @@ import {
 } from './process-order-store';
 import { useProcessNames } from '@/components/app-shell/process/process-names-store';
 import {
+  DISCLOSURE_ICON_BUTTON,
   ICON_BUTTON,
   MENU_CHEVRON,
   MENU_CHEVRON_BOX,
@@ -44,6 +48,10 @@ import { SidebarAccount, type AnonymousVisitor } from './sidebar-account';
 import { SidebarNotice } from './sidebar-notice';
 import { useProcessReorder } from './use-process-reorder';
 import { WorkspaceMenu } from './workspace-menu';
+import {
+  NavigationDrawerContext,
+  NavigationMenuIcon,
+} from './navigation-drawer';
 import { WalkthroughHint } from '@/components/ui/walkthrough-hint';
 import { useScreenSettled } from '@/components/ui/screen-settled';
 import { useWalkthrough } from '@/components/app-shell/walkthrough';
@@ -57,7 +65,7 @@ import { useWalkthrough } from '@/components/app-shell/walkthrough';
   The edge matters: while this carried a 1.5px transparent border and the
   workspace item did not, the two chevrons were 1.5px out of step.
 */
-const MENU_BACK_BOX = 'rounded-control h-10 px-1.75';
+const MENU_BACK_BOX = 'rounded-control shell:px-1.75 h-10';
 
 /*
   The sidebar: the brand row and its two toggles, the two levels it travels
@@ -79,6 +87,8 @@ export function ProcessMenu({
   /** Who the anonymous visitor cookie names, shown when no one is signed in. */
   visitor?: AnonymousVisitor | null;
 }) {
+  const drawer = useContext(NavigationDrawerContext);
+  const searchOnOpen = drawer?.searchOnOpen ?? false;
   // Each row under the name it was last given in this browser.
   const names = useProcessNames();
   const items = scenarioItems.map((item) => ({
@@ -228,6 +238,25 @@ export function ProcessMenu({
     searchRef.current?.focus({ preventScroll: true });
     focusSearch.current = false;
   }, [level, searchOpen]);
+  const showSearch = useEffectEvent(() => {
+    if (level === 'processes' && searchOpen) {
+      searchRef.current?.focus({ preventScroll: true });
+      return;
+    }
+    focusSearch.current = true;
+    if (level !== 'processes') {
+      walkthrough?.advance('open-processes');
+      setTravelled(true);
+      setLevelChoice({ path: current, level: 'processes' });
+    }
+    setSearchOpen(true);
+  });
+  useEffect(() => {
+    if (!searchOnOpen) return;
+    const frame = requestAnimationFrame(() => showSearch());
+    return () => cancelAnimationFrame(frame);
+  }, [searchOnOpen]);
+
   useEffect(() => {
     function jumpToSearch(event: KeyboardEvent) {
       if (
@@ -236,26 +265,21 @@ export function ProcessMenu({
       )
         return;
       if (event.key !== 'k' && event.key !== 'K') return;
-      if (event.altKey || !(event.metaKey || event.ctrlKey)) return;
+      if (
+        event.defaultPrevented ||
+        event.altKey ||
+        !(event.metaKey || event.ctrlKey)
+      )
+        return;
       // Arranging keeps the field closed. Leave the key to the browser rather
       // than swallowing it to do nothing.
       if (customising) return;
       event.preventDefault();
-      if (level === 'processes' && searchOpen) {
-        searchRef.current?.focus({ preventScroll: true });
-        return;
-      }
-      focusSearch.current = true;
-      if (level !== 'processes') {
-        walkthrough?.advance('open-processes');
-        setTravelled(true);
-        setLevelChoice({ path: current, level: 'processes' });
-      }
-      setSearchOpen(true);
+      showSearch();
     }
     document.addEventListener('keydown', jumpToSearch);
     return () => document.removeEventListener('keydown', jumpToSearch);
-  }, [current, level, customising, searchOpen, walkthrough, workspaceReveal]);
+  }, [customising, workspaceReveal]);
   const reorder = useProcessReorder({ order, customising, draft, setDraft });
 
   function openSearch() {
@@ -283,6 +307,7 @@ export function ProcessMenu({
     closeSearch();
     setPreviewHandles(false);
     if (next === 'workspace' && current !== '/workspace') {
+      drawer?.close();
       leaveTo('/workspace');
     }
   }
@@ -330,99 +355,111 @@ export function ProcessMenu({
       */}
       <div
         // Both ends use rail cells, so mark sizing never changes their axes.
-        className="shell-header-row shell:h-shell-header max-shell:pt-1 max-shell:pb-4 flex flex-none items-center justify-between gap-2 px-0"
+        className="shell-header-row shell:h-shell-header max-shell:px-1 max-shell:pt-1 max-shell:pb-4 flex flex-none items-center justify-between gap-2"
       >
         <Brand markCellClassName={MENU_RAIL} />
-        <div
-          className="ease-out-emphasized flex flex-none items-center gap-0.75 transition-[translate,opacity] duration-(--duration-pane) data-[level=workspace]:pointer-events-none data-[level=workspace]:translate-x-4 data-[level=workspace]:opacity-0"
-          data-level={level}
-          inert={level !== 'processes'}
-          aria-hidden={level !== 'processes'}
-        >
-          {/*
+        <div className="max-shell:gap-1.5 shell:gap-0.75 flex flex-none items-center">
+          <div
+            className="ease-out-emphasized shell:data-[level=workspace]:translate-x-4 max-shell:gap-1.5 shell:gap-0.75 flex flex-none items-center transition-[translate,opacity] duration-(--duration-pane) data-[level=workspace]:pointer-events-none data-[level=workspace]:opacity-0"
+            data-level={level}
+            inert={level !== 'processes'}
+            aria-hidden={level !== 'processes'}
+          >
+            {/*
             A disclosure, not a toggle: it opens a region rather than switching
             a mode, so it says so through aria-expanded -- and lights for as
             long as the field is out, which is also as long as a filter can be
             on. The shortcut lives in its tooltip, where it is read before the
             field opens rather than inside a field that is already open.
           */}
-          <Tooltip
-            label={
-              customising ? 'Finish arranging to search' : 'Search processes'
-            }
-            description={
-              customising ? undefined : (
-                <KeyHint keys={['mod', 'K']} on="tooltip" />
-              )
-            }
-          >
-            <button
-              ref={searchButtonRef}
-              type="button"
-              className={cx(
-                ICON_BUTTON,
-                'aria-expanded:bg-surface-selected aria-expanded:text-primary aria-expanded:hover:bg-menu-wash-pressed aria-expanded:focus-visible:bg-menu-wash-pressed',
-              )}
-              aria-label="Search processes"
-              aria-expanded={searchOpen}
-              aria-controls="process-search"
-              aria-keyshortcuts="Meta+K Control+K"
-              aria-disabled={customising || undefined}
-              // Keeps focus in the field on a click, so the field's blur does
-              // not close it a moment before this click would open it again.
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => {
-                if (customising) return;
-                if (!searchOpen) {
-                  openSearch();
-                  return;
+            <span className={cx(MENU_RAIL, 'shell:contents')}>
+              <Tooltip
+                label={
+                  customising
+                    ? 'Finish arranging to search'
+                    : 'Search processes'
                 }
-                // The field held focus through the press; hand it to this
-                // button before the field goes inert, not to the page.
-                closeSearch();
-                searchButtonRef.current?.focus();
-              }}
-            >
-              <MenuIcon name="search" />
-            </button>
-          </Tooltip>
-          <span className={MENU_RAIL}>
-            <Tooltip label={customising ? 'Save order' : 'Arrange processes'}>
-              <button
-                ref={editRef}
-                type="button"
-                // The one accented control in the sidebar, and only while
-                // arranging: it is the way back out of the mode. A flat fill
-                // on the quiet wash, as the search toggle beside it, so one
-                // background carries every state and nothing trails it.
-                className={cx(
-                  ICON_BUTTON,
-                  'aria-pressed:bg-commit-face aria-pressed:hover:bg-commit-hover aria-pressed:focus-visible:bg-commit-hover aria-pressed:text-white aria-pressed:hover:text-white aria-pressed:focus-visible:text-white',
-                )}
-                aria-label={customising ? 'Save order' : 'Arrange processes'}
-                aria-pressed={customising}
-                onMouseEnter={() => setPreviewHandles(true)}
-                onMouseLeave={() => setPreviewHandles(false)}
-                onFocus={() => setPreviewHandles(true)}
-                onBlur={() => setPreviewHandles(false)}
-                onClick={() => {
-                  if (customising) finishCustomising();
-                  else {
-                    closeSearch();
-                    setLevel('processes');
-                    setDraft(savedOrder);
-                  }
-                }}
+                description={
+                  customising ? undefined : (
+                    <KeyHint keys={['mod', 'K']} on="tooltip" />
+                  )
+                }
               >
-                {/*
+                <button
+                  ref={searchButtonRef}
+                  type="button"
+                  className={DISCLOSURE_ICON_BUTTON}
+                  aria-label="Search processes"
+                  aria-expanded={searchOpen}
+                  aria-controls="process-search"
+                  aria-keyshortcuts="Meta+K Control+K"
+                  aria-disabled={customising || undefined}
+                  // Keeps focus in the field on a click, so the field's blur does
+                  // not close it a moment before this click would open it again.
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => {
+                    if (customising) return;
+                    if (!searchOpen) {
+                      openSearch();
+                      return;
+                    }
+                    // The field held focus through the press; hand it to this
+                    // button before the field goes inert, not to the page.
+                    closeSearch();
+                    searchButtonRef.current?.focus();
+                  }}
+                >
+                  <MenuIcon name="search" />
+                </button>
+              </Tooltip>
+            </span>
+            <span className={MENU_RAIL}>
+              <Tooltip label={customising ? 'Save order' : 'Arrange processes'}>
+                <button
+                  ref={editRef}
+                  type="button"
+                  // On desktop the accent marks the way out of arrange mode.
+                  className={cx(
+                    ICON_BUTTON,
+                    'sidebar-menu-toggle max-shell:aria-pressed:text-primary shell:aria-pressed:bg-commit-face shell:aria-pressed:hover:bg-commit-hover shell:aria-pressed:focus-visible:bg-commit-hover shell:aria-pressed:text-white shell:aria-pressed:hover:text-white shell:aria-pressed:focus-visible:text-white',
+                  )}
+                  aria-label={customising ? 'Save order' : 'Arrange processes'}
+                  aria-pressed={customising}
+                  onMouseEnter={() => setPreviewHandles(true)}
+                  onMouseLeave={() => setPreviewHandles(false)}
+                  onFocus={() => setPreviewHandles(true)}
+                  onBlur={() => setPreviewHandles(false)}
+                  onClick={() => {
+                    if (customising) finishCustomising();
+                    else {
+                      closeSearch();
+                      setLevel('processes');
+                      setDraft(savedOrder);
+                    }
+                  }}
+                >
+                  {/*
                   One glyph in both states. The button is a toggle and says so
                   through aria-pressed and its own label; swapping in a tick
                   would only repeat the brand mark two elements to the left.
                 */}
-                <MenuIcon name="arrange" />
-              </button>
-            </Tooltip>
-          </span>
+                  <MenuIcon name="arrange" />
+                </button>
+              </Tooltip>
+            </span>
+          </div>
+          {drawer?.narrow ? (
+            <span className={MENU_RAIL}>
+              <AriaButton
+                slot="close"
+                className={ICON_BUTTON}
+                aria-label="Close menu"
+                autoFocus={!searchOnOpen}
+              >
+                <NavigationMenuIcon closing />
+              </AriaButton>
+            </span>
+          ) : null}
         </div>
       </div>
       {/*
@@ -516,7 +553,9 @@ export function ProcessMenu({
                   aria-label="Back to workspace menu"
                   onClick={() => navigate('workspace')}
                 >
-                  <span className={MENU_CHEVRON_BOX}>
+                  <span
+                    className={cx(MENU_CHEVRON_BOX, 'max-shell:w-menu-rail')}
+                  >
                     <MenuIcon
                       name="left"
                       className={MENU_CHEVRON}
@@ -526,7 +565,10 @@ export function ProcessMenu({
                   <span className="flex-1 text-center">Processes</span>
                   {/* Balances the chevron so the title centres on the row,
                       and is the slot the add button sits over. */}
-                  <span className={MENU_CHEVRON} aria-hidden="true" />
+                  <span
+                    className={cx(MENU_CHEVRON, 'max-shell:w-menu-rail')}
+                    aria-hidden="true"
+                  />
                 </button>
                 {/* The cell passes the pointer through, so the sliver of it
                     either side of the button still belongs to the back
@@ -534,7 +576,7 @@ export function ProcessMenu({
                 <span
                   className={cx(
                     MENU_RAIL,
-                    'pointer-events-none col-start-1 row-start-1 self-center justify-self-end',
+                    'process-menu-add pointer-events-none col-start-1 row-start-1 self-center justify-self-end',
                   )}
                 >
                   <Tooltip label="Add process">

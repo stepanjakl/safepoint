@@ -14,11 +14,13 @@
   --section-rule-width: 1.5px;
   --edge-rule: 1px;
   --edge-hairline: 1px;
+  --structural-divider-border: 0px;
   --highlight-pane: 1px;
   --highlight-hairline: 0.75px;
   --highlight-sheet: 1px;
   --highlight-outline: 1px;
   --separator-strong: 1px;
+  --pane-inset: 2px;
 }
 
 /* Retina edge modes selected from the design pane (`data-edges`). Guarded by
@@ -40,6 +42,7 @@
     --highlight-sheet: 0.75px;
     --highlight-outline: 0.75px;
     --separator-strong: 0.75px;
+    --pane-inset: 1.5px;
   }
 
   :root[data-edges='highlights'] {
@@ -48,6 +51,12 @@
     --highlight-sheet: 0.75px;
     --highlight-outline: 0.75px;
     --separator-strong: 0.75px;
+  }
+}
+
+@media (forced-colors: active) {
+  :root {
+    --structural-divider-border: 1px;
   }
 }
 

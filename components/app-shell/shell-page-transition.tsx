@@ -149,7 +149,7 @@ export function ShellPageTransition({ children }: { children: ReactNode }) {
   return (
     <motion.div
       key={path}
-      className="p-pane-inset shell:h-full min-w-0"
+      className="p-pane-inset shell:h-full max-shell:grid min-w-0"
       initial={fades && enteringShell && !reduceMotion ? { opacity: 0 } : false}
       animate={{ opacity: leaving && fades ? 0 : 1 }}
       transition={{

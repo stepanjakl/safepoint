@@ -16,7 +16,7 @@ import { Tooltip } from './tooltip';
 */
 // Also for a link drawn as one of these buttons.
 export const ICON_FILLED =
-  'control-wash bg-surface-hover text-icon-quiet-ink hover:bg-surface-selected hover:text-icon-quiet-ink-hover focus-visible:bg-surface-selected focus-visible:text-icon-quiet-ink-hover';
+  'control-wash max-shell:icon-button-wash bg-surface-hover text-icon-quiet-ink hover:bg-surface-selected hover:text-icon-quiet-ink-hover focus-visible:bg-surface-selected focus-visible:text-icon-quiet-ink-hover';
 const FACES = {
   quiet: ICON_QUIET,
   filled: ICON_FILLED,

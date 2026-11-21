@@ -1,9 +1,17 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { ProcessSheetActions } from '@/components/app-shell/process/process-sheet';
 import { ThreadPage } from '@/components/app-shell/thread/thread-page';
+import { AlertBox } from '@/components/ui/alert-box';
 import { Button } from '@/components/ui/button';
 import { useSwap } from '@/components/ui/swap';
 import { KeyHint } from '@/components/ui/key-hint';
@@ -13,6 +21,7 @@ import { EMPTY_STATE_ARRIVE, EMPTY_STATE_STAGGER } from '@/lib/ui/motion';
 import type { ProcessSummary } from '@/lib/shell/model';
 import { runDay, runTime } from '@/lib/shell/run-time';
 import { RunSelectionProvider, useRunSelection } from './run-selection';
+import { RunReadiness } from './run-readiness';
 
 /*
   The page beside the rail: the run the rail has chosen, or the empty page.
@@ -43,11 +52,30 @@ export function RunView({
   const keyOf = (id: string) =>
     id &&
     (id === process.runs.find((run) => run.current)?.id ||
-      (selection?.live && liveThread && id === selection.live.run.id))
+      (liveThread &&
+        (id === selection?.live?.run.id ||
+          id === selection?.instructionLoad?.runId)))
       ? id
       : NONE;
   const target = keyOf(selection?.selected ?? NONE);
-  const { shown, layer } = useSwap(target, () => 'fade');
+  const [readiness, setReadiness] = useState({ id: '', ready: true });
+  const { shown, layer } = useSwap(
+    target,
+    () => 'fade',
+    true,
+    undefined,
+    readiness.id !== target || readiness.ready,
+  );
+  const reportReady = useCallback(
+    (ready: boolean) => {
+      setReadiness((previous) =>
+        previous.id === shown && previous.ready === ready
+          ? previous
+          : { id: shown, ready },
+      );
+    },
+    [shown],
+  );
   // The outgoing thread and its consumers keep the selection they were drawn
   // from until the fade ends; the rail already reflects the new selection.
   const [shownSelection, setShownSelection] = useState(selection);
@@ -55,6 +83,13 @@ export function RunView({
     setShownSelection(selection);
   const pageSelection = shown === target ? selection : shownSelection;
   const runs = pageSelection?.runs ?? process.runs;
+  const instructions = pageSelection?.instructionLoad;
+  const waiting = instructions?.runId === shown ? instructions : null;
+  const instructionMessage = waiting
+    ? waiting.failed
+      ? `Couldn’t load instructions ${waiting.version} for this run.`
+      : `Loading instructions ${waiting.version}…`
+    : null;
 
   // A new page starts at its top, once the old one has gone.
   useEffect(() => {
@@ -65,6 +100,19 @@ export function RunView({
   const page = (id: string): ReactNode => {
     if (id && id === process.runs.find((run) => run.current)?.id)
       return recorded;
+    if (waiting) {
+      return (
+        <ThreadPage label="Run instructions">
+          {waiting.failed ? (
+            <AlertBox role="note" title={instructionMessage}>
+              Reopen this run to try again.
+            </AlertBox>
+          ) : (
+            <p className="text-dense text-muted">{instructionMessage}</p>
+          )}
+        </ThreadPage>
+      );
+    }
     const live = pageSelection?.live;
     if (live && liveThread && id === live.run.id) {
       const at = live.run.startedAt;
@@ -91,9 +139,13 @@ export function RunView({
     <div ref={view} className="run-view">
       <motion.div key={`page:${shown}`} {...layer}>
         <RunSelectionProvider value={pageSelection}>
-          {page(shown)}
+          <RunReadiness value={reportReady}>{page(shown)}</RunReadiness>
         </RunSelectionProvider>
       </motion.div>
+      <p role="status" className="sr-only">
+        {instructionMessage ??
+          (readiness.id === shown && !readiness.ready ? 'Loading run…' : null)}
+      </p>
     </div>
   );
 }

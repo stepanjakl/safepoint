@@ -14,7 +14,7 @@ export const outcomeMarker: Record<
   'needs_attention' | 'held' | 'excluded',
   { glyph: GlyphName; tone: Tone }
 > = {
-  needs_attention: { glyph: 'triangle', tone: 'decision' },
+  needs_attention: { glyph: 'triangle', tone: 'caution' },
   held: { glyph: 'square', tone: 'blocked' },
   excluded: { glyph: 'dash', tone: 'unavailable' },
 };
@@ -26,7 +26,7 @@ export const outcomeMarker: Record<
 export const stepMarker: Record<StepStatus, { glyph: GlyphName; tone: Tone }> =
   {
     complete: { glyph: 'check', tone: 'verified' },
-    attention: { glyph: 'triangle', tone: 'decision' },
+    attention: { glyph: 'triangle', tone: 'caution' },
     blocked: { glyph: 'square', tone: 'blocked' },
     running: { glyph: 'dotted', tone: 'advisory' },
     pending: { glyph: 'minus', tone: 'unavailable' },
@@ -41,7 +41,7 @@ export const stepMarker: Record<StepStatus, { glyph: GlyphName; tone: Tone }> =
 export const runTone: Record<RunStatus, Tone> = {
   queued: 'unavailable',
   running: 'advisory',
-  awaiting_review: 'decision',
+  awaiting_review: 'caution',
   approved: 'verified',
   completed: 'verified',
   held: 'blocked',

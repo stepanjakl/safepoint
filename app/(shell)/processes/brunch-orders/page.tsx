@@ -1,3 +1,5 @@
+import { SinglePanel } from '@/components/app-shell/process/process-sheet';
+import { SECTION } from '@/components/app-shell/process/panel-parts';
 import { ProcessView } from '@/components/app-shell/process/process-view';
 import { OrdersRun } from '@/components/processes/brunch-orders/orders-run';
 import { RulebookProvider } from '@/components/engine/rulebook-panel';
@@ -40,7 +42,11 @@ export default async function BrunchOrdersPage({
         // checked as a list child there, and warns without one.
         liveThread={<OrdersRun key="live" process={brunchOrdersProcess} />}
         inputs={SHEET_INPUTS}
-        inputsPanel={<SourceInputs uses={[SHEET_USE]} initial={sheets} />}
+        inputsPanel={
+          <SinglePanel {...SECTION.inputs} width="full">
+            <SourceInputs uses={[SHEET_USE]} initial={sheets} />
+          </SinglePanel>
+        }
         outputsPanel={
           <SourceOutputs
             uses={[SHEET_USE]}

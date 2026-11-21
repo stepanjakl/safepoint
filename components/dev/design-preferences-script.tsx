@@ -1,6 +1,5 @@
 import {
   CORNER_BALANCE_STORAGE_KEY,
-  DEFAULT_EDGE_PRESET,
   DEFAULT_NEUTRAL,
   EDGE_PRESETS,
   EDGES_STORAGE_KEY,
@@ -22,6 +21,7 @@ import {
   TILE_CHROMA_SCALE_STORAGE_KEY,
 } from './design-preferences';
 import {
+  LEGACY_MONO_STORAGE_KEY,
   MONO_CHOICES,
   RENAMED_STORAGE_KEYS,
   TYPESCALES,
@@ -33,7 +33,7 @@ import {
 } from '@/lib/ui/typography';
 
 /*
-  Applies the stored development preferences to <html> before first paint, so
+  Applies the stored appearance and development preferences to <html> before first paint, so
   a chosen typeface or theme does not flash the default first. Server-rendered
   and synchronous by design; it must run ahead of hydration.
 
@@ -41,12 +41,8 @@ import {
   attributes React rendered, which is a mismatch React would otherwise report.
 */
 export function DesignPreferencesScript() {
-  if (process.env.NODE_ENV !== 'development') {
-    return null;
-  }
-
-  const source = `
-var root = document.documentElement;
+  const development = process.env.NODE_ENV === 'development';
+  const developmentSetup = `
 try {
   ${JSON.stringify(RENAMED_STORAGE_KEYS)}.forEach(function (names) {
     var kept = localStorage.getItem(names[0]);
@@ -57,7 +53,12 @@ try {
   // Runs kept in the browser before the server kept them (until 16 Nov 2026).
   localStorage.removeItem('safepoint.live-runs.v1');
 } catch (error) {}
-var params = new URLSearchParams(location.search);
+`.trim();
+  const source = `
+(function () {
+var root = document.documentElement;
+var params = new URLSearchParams(${development ? 'location.search' : "''"});
+${development ? developmentSetup : ''}
 var neutrals = ${JSON.stringify(NEUTRALS)};
 var neutral = params.get('neutral');
 if (neutrals.indexOf(neutral) === -1) {
@@ -83,23 +84,47 @@ if (edgePresets.indexOf(edges) === -1) {
     edges = null;
   }
 }
-if (edges && edges !== ${JSON.stringify(DEFAULT_EDGE_PRESET)}
-    && edgePresets.indexOf(edges) !== -1) {
-  root.dataset.edges = edges;
-} else {
+if (edges === 'default') {
   delete root.dataset.edges;
+} else if (edgePresets.indexOf(edges) !== -1) {
+  root.dataset.edges = edges;
 }
+${development ? developmentPreferences : ''}
+try {
+  var theme = localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});
+  if (theme === 'system') {
+    delete root.dataset.theme;
+  } else if (theme === 'light' || theme === 'dark') {
+    root.dataset.theme = theme;
+  }
+} catch (error) {}
+})();
+`.trim();
+
+  return <script dangerouslySetInnerHTML={{ __html: source }} />;
+}
+
+const developmentPreferences = `
 try {
   var sets = ${JSON.stringify([...TYPEFACE_PICKER_SETS])};
-  var monos = ${JSON.stringify(MONO_CHOICES.filter((choice) => choice !== 'match'))};
+  var monos = ${JSON.stringify(MONO_CHOICES)};
   var typeface = params.get('font')
     || localStorage.getItem(${JSON.stringify(TYPEFACE_STORAGE_KEY)});
   if (sets.indexOf(typeface) !== -1) {
     root.dataset.typeface = typeface;
   }
-  var mono = params.get('mono')
-    || localStorage.getItem(${JSON.stringify(MONO_STORAGE_KEY)});
-  if (monos.indexOf(mono) !== -1) {
+  var mono = params.get('mono');
+  if (monos.indexOf(mono) === -1) {
+    mono = localStorage.getItem(${JSON.stringify(MONO_STORAGE_KEY)});
+    if (mono === null) {
+      var legacyMono = localStorage.getItem(${JSON.stringify(LEGACY_MONO_STORAGE_KEY)});
+      // The old reset saved 'match', so only carry over named fonts.
+      if (legacyMono !== 'match') mono = legacyMono;
+    }
+  }
+  if (mono === 'match') {
+    delete root.dataset.mono;
+  } else if (monos.indexOf(mono) !== -1) {
     root.dataset.mono = mono;
   }
   var motionSpeeds = ${JSON.stringify(MOTION_SPEEDS)};
@@ -144,17 +169,7 @@ try {
   if (localStorage.getItem(${JSON.stringify(RUN_DEBUG_STORAGE_KEY)}) === 'on') {
     root.dataset.runDebug = 'on';
   }
-  var theme = localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});
-  // The layout renders the default theme; 'system' is the absence of one.
-  if (theme === 'light' || theme === 'dark') {
-    root.dataset.theme = theme;
-  } else if (theme === 'system') {
-    delete root.dataset.theme;
-  }
 } catch (error) {
   // No stored preference is readable; the token defaults stand.
 }
 `.trim();
-
-  return <script dangerouslySetInnerHTML={{ __html: source }} />;
-}

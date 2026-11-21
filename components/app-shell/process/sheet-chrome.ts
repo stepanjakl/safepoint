@@ -468,9 +468,12 @@ class SheetChrome {
     delete frame.dataset.chromeStaging;
     if (!('chromeBorrowed' in frame.dataset)) return;
     // The sections' own frame comes back as it is, without its transitions.
+    // Flush style while `chromeReturning` holds `transition: none` so the
+    // settled `box-shadow` commits before transitions are re-enabled.
     frame.dataset.chromeReturning = '';
     delete frame.dataset.chromeBorrowed;
-    requestAnimationFrame(() => delete frame.dataset.chromeReturning);
+    void frame.offsetWidth;
+    delete frame.dataset.chromeReturning;
   }
 }
 

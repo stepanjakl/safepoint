@@ -139,13 +139,13 @@ export function setNeutral(next: Neutral) {
 }
 
 /* Retina edge & highlight mode (`app/styles/geometry.css`).
-   The default binds on :root (1×), so it is the absence of the attribute. */
+   The 1× preset binds on :root when the attribute is absent. */
 export const EDGES_STORAGE_KEY = 'safepoint.dev.edges';
 export const EDGE_PRESETS = ['default', 'retina', 'highlights'] as const;
 export type EdgePreset = (typeof EDGE_PRESETS)[number];
-export const DEFAULT_EDGE_PRESET: EdgePreset = 'default';
+export const DEFAULT_EDGE_PRESET: EdgePreset = 'retina';
 export const EDGE_PRESET_LABELS: Record<EdgePreset, string> = {
-  default: 'Default (1×)',
+  default: 'Standard (1×)',
   retina: 'Retina (0.75px)',
   highlights: 'Retina (highlights 0.75px)',
 };
@@ -164,11 +164,11 @@ export function resolveEdgePreset(
 
 export function readEdgePreset(): EdgePreset {
   const value = document.documentElement.dataset.edges;
-  return isEdgePreset(value) ? value : DEFAULT_EDGE_PRESET;
+  return isEdgePreset(value) ? value : 'default';
 }
 
 export function setEdgePreset(next: EdgePreset) {
-  if (next === DEFAULT_EDGE_PRESET) {
+  if (next === 'default') {
     delete document.documentElement.dataset.edges;
   } else {
     document.documentElement.dataset.edges = next;

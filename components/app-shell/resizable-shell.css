@@ -8,6 +8,12 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
+  @media (width < 56.25rem) {
+    .shell-pane {
+      min-block-size: calc(100dvh - 2 * var(--spacing-shell-inset));
+    }
+  }
+
   @media (width >= 56.25rem) {
     .resizable-shell {
       --sidebar-width: var(--spacing-sidebar-default);
@@ -303,5 +309,31 @@
   }
   .resizable-shell[data-resizing] .assistant-content {
     transition: none;
+  }
+}
+
+/* Paint the shell pane's 0.75px outer ring above full-bleed sheet headers and
+   rows (z-5, still under .process-header/.notch at z-10) so 1px sheet-bleed
+   covers the inner highlight cleanly without eating half a pixel of the ring. */
+@media (min-resolution: 2dppx) {
+  :root[data-edges='retina'] .shell-pane > .surface-raised {
+    box-shadow: inset 0 0 0 calc(var(--edge-ring) + var(--spacing-control-highlight))
+      var(--control-highlight);
+  }
+
+  :root[data-edges='retina'] .shell-pane::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    border-radius: var(--radius-shell);
+    box-shadow: inset 0 0 0 var(--edge-ring) var(--sp-raised-ring);
+    pointer-events: none;
+  }
+}
+
+@media (forced-colors: active), print {
+  :root[data-edges='retina'] .shell-pane::after {
+    display: none;
   }
 }

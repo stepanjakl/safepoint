@@ -15,22 +15,28 @@
   3. geometry-drift: positioned inner control parts (e.g. `.switch-thumb`,
      `.header-button-count`) must keep the same outer-edge clearances between
      `default` and `retina` modes.
-  4. chrome-swap: during a section swap (`[data-chrome-borrowed]`), every
+  4. subpixel-edge-grid: sheet headers and frames must land on whole 2x
+     device pixels so 0.75px box-shadow highlights render uniformly (1.5 dev px)
+     across composited and non-composited layers.
+  5. chrome-swap: during a section swap (`[data-chrome-borrowed]`), every
      `.sheet-chrome-band` must carry a bottom edge, borrowed `.sheet-head`s
-     must resolve to `box-shadow: none`, borrowed column dividers must be
-     hidden, and `.sheet-chrome-divider` must paint above `.sheet-chrome-band`.
+     must resolve to `box-shadow: none`, `.sheet-chrome-divider` must paint
+     above `.sheet-chrome-band`, borrowed column dividers must not double-paint
+     the outer vertical highlight, and release must not trigger a spurious
+     `box-shadow` transition on `.sheet-head`.
 
   Run `pnpm check:edges -- --help`.
 */
 
-import { chromium, type Page } from '@playwright/test';
+import { chromium, expect, type Locator, type Page } from '@playwright/test';
 
 type Violation = {
   check:
     | 'occluded-inset-border'
     | 'gradient-ring-loss'
     | 'geometry-drift'
-    | 'chrome-swap';
+    | 'chrome-swap'
+    | 'subpixel-edge-grid';
   context: string;
   selector: string;
   detail: string;
@@ -51,14 +57,24 @@ function parseArgs(argv: string[]): CliOptions {
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
-    if (arg === '--help' || arg === '-h') help = true;
-    else if (arg === '--base-url' && argv[i + 1]) baseUrl = argv[++i]!;
-    else if (arg === '--url' && argv[i + 1]) routes.push(argv[++i]!);
-    else if (
-      arg === '--theme' &&
-      (argv[i + 1] === 'light' || argv[i + 1] === 'dark')
-    )
-      theme = argv[++i] as 'light' | 'dark';
+    if (arg === '--') continue;
+    if (arg === '--help' || arg === '-h') {
+      help = true;
+      continue;
+    }
+
+    const value = argv[i + 1];
+    if (arg !== '--base-url' && arg !== '--url' && arg !== '--theme') {
+      throw new Error(`Unknown option ${arg}. Use --help for usage.`);
+    }
+    if (!value || value.startsWith('-')) {
+      throw new Error(`Missing value for ${arg}.`);
+    }
+    if (arg === '--base-url') baseUrl = value;
+    else if (arg === '--url') routes.push(value);
+    else if (value === 'light' || value === 'dark') theme = value;
+    else throw new Error(`Unknown theme ${value}. Use light or dark.`);
+    i++;
   }
 
   return {
@@ -75,9 +91,137 @@ function withEdges(
   edges: 'default' | 'retina',
 ) {
   const url = new URL(route, `${baseUrl}/`);
-  if (edges === 'retina') url.searchParams.set('edges', 'retina');
-  else url.searchParams.delete('edges');
+  url.searchParams.set('edges', edges);
   return url.toString();
+}
+
+const CHECK_TIMEOUT = 5000;
+const PROCESS_FRAME = '.process-sheet-frame';
+const AUDIT_TARGETS =
+  '.control-face, .switch-track, .header-button, .process-header, .process-sheet-frame, .sheet-head';
+
+async function loadMode(
+  page: Page,
+  opts: CliOptions,
+  route: string,
+  edges: 'default' | 'retina',
+) {
+  const label = `${route} [${edges}]`;
+  const url = withEdges(opts.baseUrl, route, edges);
+  const response = await page.goto(url, { waitUntil: 'networkidle' });
+  if (!response?.ok()) {
+    throw new Error(
+      `${label} returned ${response ? `HTTP ${response.status()}` : 'no HTTP response'} from ${page.url()}.`,
+    );
+  }
+
+  const html = page.locator('html');
+  const expected = edges === 'retina' ? 'retina' : null;
+  const actual = await html.getAttribute('data-edges');
+  if (actual !== expected) {
+    throw new Error(
+      `${label} expected data-edges=${expected ?? '(absent)'}, received ${actual ?? '(absent)'}. Use the development server.`,
+    );
+  }
+  await expect(html, `${label} theme`).toHaveAttribute(
+    'data-theme',
+    opts.theme,
+  );
+  const display = await page.evaluate(() => ({
+    ratio: devicePixelRatio,
+    retina: matchMedia('(min-resolution: 2dppx)').matches,
+    reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
+  }));
+  if (display.ratio !== 2 || !display.retina || display.reducedMotion) {
+    throw new Error(
+      `${label} requires 2× DPR, the 2dppx media query, and motion enabled. Received DPR ${display.ratio}, 2dppx=${display.retina}, reduced motion=${display.reducedMotion}.`,
+    );
+  }
+  await expect(
+    page.locator(AUDIT_TARGETS).filter({ visible: true }).first(),
+    `${label} has no visible edge audit targets`,
+  ).toBeVisible({ timeout: CHECK_TIMEOUT });
+  await page.evaluate(() => document.fonts.ready);
+  return (await page.locator(PROCESS_FRAME).count()) > 0;
+}
+
+function processTabs(page: Page): [ProcessTab, ProcessTab, ...ProcessTab[]] {
+  const header = page.locator('.process-header');
+  return [
+    {
+      title: 'Runs',
+      button: header.getByRole('button', { name: /^Runs$/ }),
+      heading: '#runs-heading',
+    },
+    {
+      title: 'Instructions',
+      button: header.getByRole('button', { name: /: version /i }),
+      heading: '#instructions-heading, #policy-heading',
+    },
+    {
+      title: 'Rules',
+      button: header.getByRole('button', { name: /^Rules$/ }),
+      heading: '#rules-heading',
+      optional: true,
+    },
+    {
+      title: 'Inputs',
+      button: header.getByRole('button', { name: /^Inputs:/ }),
+      heading: '#inputs-heading',
+      optional: true,
+    },
+    {
+      title: 'Outputs',
+      button: header.getByRole('button', { name: /^Outputs:/ }),
+      heading: '#outputs-heading',
+    },
+    {
+      title: 'Settings',
+      button: header.getByRole('button', { name: /^Settings$/ }),
+      heading: '#settings-heading',
+    },
+  ];
+}
+
+type ProcessTab = {
+  title: string;
+  button: Locator;
+  heading: string;
+  optional?: boolean;
+};
+
+async function openInitialRuns(page: Page, runs: ProcessTab, context: string) {
+  if (
+    (await runs.button.getAttribute('aria-current', {
+      timeout: CHECK_TIMEOUT,
+    })) !== 'true'
+  ) {
+    await runs.button.click({ timeout: CHECK_TIMEOUT });
+  }
+  await waitForTab(page, runs, context);
+}
+
+async function waitForTab(page: Page, tab: ProcessTab, context: string) {
+  const label = `${context} (${tab.title})`;
+  const frame = page.locator(PROCESS_FRAME);
+  await expect(tab.button, `${label} tab selection`).toHaveAttribute(
+    'aria-current',
+    'true',
+    { timeout: CHECK_TIMEOUT },
+  );
+  await expect(
+    frame.locator(tab.heading),
+    `${label} section heading`,
+  ).toBeVisible({ timeout: CHECK_TIMEOUT });
+  await expect(frame, `${label} chrome handoff`).not.toHaveAttribute(
+    'data-chrome-borrowed',
+    '',
+    { timeout: CHECK_TIMEOUT },
+  );
+  await expect(
+    frame.locator('> .process-sheet-swap').filter({ visible: true }),
+    `${label} section entrance`,
+  ).toHaveCSS('opacity', '1', { timeout: CHECK_TIMEOUT });
 }
 
 // Controls that intentionally use a 0.75px solid inset ring in retina mode
@@ -233,6 +377,21 @@ async function auditStaticPage(
           }
         }
 
+        // 3. Subpixel device-grid check on sheet headers/frames: a 0.75px
+        // box-shadow highlight on a half device pixel (.25/.75 CSS px at 2x)
+        // snaps between 1.0 and 1.5 dev px depending on compositing layer.
+        if (el.matches('.process-header, .process-sheet-frame, .sheet-head')) {
+          const r = el.getBoundingClientRect();
+          if (Math.abs(r.bottom * 2 - Math.round(r.bottom * 2)) > 0.05) {
+            issues.push({
+              check: 'subpixel-edge-grid',
+              context: ctx,
+              selector: describe(el),
+              detail: `bottom=${r.bottom.toFixed(2)}px lands on a fractional 2x device pixel (${(r.bottom * 2).toFixed(2)}), causing 0.75px highlights to vary between 1.0 and 1.5 dev px`,
+            });
+          }
+        }
+
         // 2. Occluded inset-shadow border check
         const insetEdges = parseInsetEdges(cs.boxShadow);
         if (insetEdges.length === 0) continue;
@@ -306,38 +465,30 @@ async function auditStaticPage(
 async function auditChromeSwap(
   page: Page,
   context: string,
+  tabs: readonly [ProcessTab, ProcessTab],
 ): Promise<Violation[]> {
   const issues: Violation[] = [];
-  const hasFrame = (await page.locator('.process-sheet-frame').count()) > 0;
-  if (!hasFrame) return issues;
+  const [runs, instructions] = tabs;
 
-  const instructionsBtn = page.getByRole('button', { name: /instructions:/i });
-  const runsBtn = page.getByRole('button', { name: 'Runs', exact: true });
-  if ((await instructionsBtn.count()) === 0 || (await runsBtn.count()) === 0)
-    return issues;
+  const swaps = [
+    [runs, instructions],
+    [instructions, runs],
+  ] as const;
+  for (const [from, to] of swaps) {
+    const label = `${context} (${from.title} -> ${to.title})`;
 
-  const swaps: [string, typeof instructionsBtn][] = [
-    ['Runs -> Instructions', instructionsBtn],
-    ['Instructions -> Runs', runsBtn],
-  ];
-
-  for (const [label, button] of swaps) {
-    await button.click();
-    try {
-      await page.waitForSelector(
-        '.process-sheet-frame[data-chrome-borrowed] .sheet-chrome-band',
-        {
-          timeout: 2000,
-        },
+    const sampleSwap = (swapLabel: string) => {
+      const frame = document.querySelector(
+        '.process-sheet-frame[data-chrome-borrowed]',
       );
-    } catch {
-      continue;
-    }
-
-    const found = await page.evaluate((swapLabel) => {
+      const bands = frame
+        ? [...frame.querySelectorAll('.sheet-chrome-band')].filter(
+            (band) => band.getBoundingClientRect().height > 0,
+          )
+        : [];
+      if (!bands.length) return false;
       const errs: Violation[] = [];
 
-      const bands = [...document.querySelectorAll('.sheet-chrome-band')];
       for (const band of bands) {
         const cs = getComputedStyle(band);
         const bw = parseFloat(cs.borderBottomWidth);
@@ -369,18 +520,40 @@ async function auditChromeSwap(
         }
       }
 
-      for (const sel of ['.process-runs', '.process-panels']) {
-        const host = document.querySelector(
-          `.process-sheet-frame[data-chrome-borrowed] > .process-sheet-swap ${sel}`,
-        );
-        if (!host) continue;
-        const beforeCs = getComputedStyle(host, '::before');
-        if (beforeCs.content !== 'none' && beforeCs.visibility !== 'hidden') {
+      // Ensure borrowed column dividers do not double-paint the outer vertical
+      // highlight on top of `.sheet-chrome-divider` (which darkens its 50%
+      // antialiased pixel to 75% right before release).
+      const borrowedPanels = document.querySelector(
+        '.process-sheet-frame[data-chrome-borrowed] > .process-sheet-swap .process-panels',
+      );
+      if (borrowedPanels) {
+        const afterCs = getComputedStyle(borrowedPanels, '::after');
+        if (afterCs.content !== 'none' && afterCs.visibility !== 'hidden') {
           errs.push({
             check: 'chrome-swap',
             context: swapLabel,
-            selector: `${sel}::before`,
-            detail: `borrowed column divider remained visible during swap (visibility=${beforeCs.visibility})`,
+            selector: '.process-panels::after',
+            detail: `vertical highlight remained visible during swap (visibility=${afterCs.visibility}), double-painting over .sheet-chrome-divider`,
+          });
+        }
+      }
+
+      const borrowedRuns = document.querySelector(
+        '.process-sheet-frame[data-chrome-borrowed] > .process-sheet-swap .process-runs',
+      );
+      if (borrowedRuns) {
+        const beforeCs = getComputedStyle(borrowedRuns, '::before');
+        const hasOuterShadow =
+          beforeCs.boxShadow !== 'none' &&
+          beforeCs.boxShadow
+            .split(/,(?![^(]*\))/)
+            .some((part) => !/\binset\b/.test(part));
+        if (beforeCs.content !== 'none' && hasOuterShadow) {
+          errs.push({
+            check: 'chrome-swap',
+            context: swapLabel,
+            selector: '.process-runs::before',
+            detail: `outer highlight remained in box-shadow during swap (${beforeCs.boxShadow}), double-painting over .sheet-chrome-divider`,
           });
         }
       }
@@ -411,16 +584,83 @@ async function auditChromeSwap(
       }
 
       return errs;
-    }, `${context} (${label})`);
+    };
 
+    // Start observing before the click so a short-lived band still gets sampled.
+    const [observed] = await Promise.all([
+      page
+        .waitForFunction(sampleSwap, label, { timeout: CHECK_TIMEOUT })
+        .catch((error: unknown) => {
+          throw new Error(
+            `${label} did not show a borrowed .sheet-chrome-band.`,
+            { cause: error },
+          );
+        }),
+      to.button.click({ timeout: CHECK_TIMEOUT }),
+    ]);
+
+    const found = await observed.jsonValue();
+    await observed.dispose();
+    if (!found) throw new Error(`${label} could not sample the borrowed band.`);
     issues.push(...found);
-    await page.waitForFunction(
-      () => !document.querySelector('[data-chrome-borrowed]'),
-      {
-        timeout: 3000,
-      },
-    );
-    await page.waitForTimeout(150);
+
+    // Verify handoff commits cleanly without a spurious box-shadow transition
+    // on `.sheet-head` (which would blink the retina bottom border out and in).
+    const sampleHandoff = (swapLabel: string) => {
+      if (
+        document.querySelector('.process-sheet-frame[data-chrome-borrowed]')
+      ) {
+        return false;
+      }
+      const errs: Violation[] = [];
+      for (const head of document.querySelectorAll(
+        '.process-sheet-swap .sheet-head',
+      )) {
+        const anims = head
+          .getAnimations()
+          .filter(
+            (a) =>
+              a instanceof CSSTransition &&
+              a.transitionProperty === 'box-shadow' &&
+              a.playState === 'running',
+          );
+        if (anims.length > 0) {
+          errs.push({
+            check: 'chrome-swap',
+            context: `${swapLabel} (handoff)`,
+            selector: `.sheet-head (${head.textContent?.trim().slice(0, 20)})`,
+            detail:
+              'spurious box-shadow transition running on handoff (border blinks on release)',
+          });
+        }
+      }
+      // Ensure the settled Instructions two-column view paints its vertical
+      // highlight beside the divider (matching `.sheet-chrome-divider`).
+      const panels = document.querySelector(
+        '.process-panels:has(> .process-panel-list + *)',
+      );
+      if (panels) {
+        const afterCs = getComputedStyle(panels, '::after');
+        if (afterCs.content === 'none' || afterCs.boxShadow === 'none') {
+          errs.push({
+            check: 'chrome-swap',
+            context: `${swapLabel} (settled)`,
+            selector: '.process-panels::after',
+            detail: `vertical highlight missing after swap (content=${afterCs.content}, boxShadow=${afterCs.boxShadow})`,
+          });
+        }
+      }
+      return errs;
+    };
+    const handoff = await page.waitForFunction(sampleHandoff, label, {
+      timeout: CHECK_TIMEOUT,
+    });
+    const handoffIssues = await handoff.jsonValue();
+    await handoff.dispose();
+    if (!handoffIssues)
+      throw new Error(`${label} could not sample the handoff.`);
+    issues.push(...handoffIssues);
+    await waitForTab(page, to, context);
   }
 
   return issues;
@@ -480,14 +720,18 @@ async function main() {
       [
         'Usage: pnpm check:edges [-- --url <path>]... [--base-url <url>] [--theme light|dark]',
         '',
-        'Checks universal retina (2dppx) edge invariants on live app routes:',
+        'Checks edge invariants on the development server at 2×.',
+        'Process sheets include tab swaps. Other supported pages get static checks.',
+        'Exit status: 0 passed, 1 edge violations, 2 check could not complete.',
+        '',
         '  1. occluded-inset-border  opaque children covering an inset box-shadow border',
         '  2. gradient-ring-loss     gradient-ring .control-face flattened to solid shadow',
         '  3. geometry-drift         inner control clearances drifting between default & retina',
-        '  4. chrome-swap            header/divider glitches during [data-chrome-borrowed] swaps',
+        '  4. subpixel-edge-grid     sheet headers/frames landing on half 2x device pixels',
+        '  5. chrome-swap            header/divider/highlight glitches during swaps & handoff',
       ].join('\n'),
     );
-    process.exit(0);
+    return;
   }
 
   const browser = await chromium.launch({
@@ -499,6 +743,7 @@ async function main() {
     const context = await browser.newContext({
       viewport: { width: 1200, height: 900 },
       deviceScaleFactor: 2,
+      reducedMotion: 'no-preference',
     });
     const page = await context.newPage();
 
@@ -507,23 +752,46 @@ async function main() {
     }, opts.theme);
 
     for (const route of opts.routes) {
-      // Capture default control geometry first
-      await page.goto(withEdges(opts.baseUrl, route, 'default'), {
-        waitUntil: 'networkidle',
-      });
-      await page.waitForTimeout(250);
+      const [runs, instructions, ...others] = processTabs(page);
+      const defaultContext = `${route} [default]`;
+      const hasSheet = await loadMode(page, opts, route, 'default');
+      if (hasSheet) await openInitialRuns(page, runs, defaultContext);
       const defaultGeom = await captureControlGeometry(page);
+      if (hasSheet) {
+        violations.push(
+          ...(await auditChromeSwap(page, defaultContext, [
+            runs,
+            instructions,
+          ])),
+        );
+      }
 
-      // Load retina mode
-      await page.goto(withEdges(opts.baseUrl, route, 'retina'), {
-        waitUntil: 'networkidle',
-      });
-      await page.waitForTimeout(250);
+      const context = `${route} [retina]`;
+      const retinaHasSheet = await loadMode(page, opts, route, 'retina');
+      if (hasSheet !== retinaHasSheet) {
+        throw new Error(
+          `${route} did not render the same process sheet in both modes.`,
+        );
+      }
+      if (hasSheet) await openInitialRuns(page, runs, context);
       const retinaGeom = await captureControlGeometry(page);
 
-      for (const [key, base] of Object.entries(defaultGeom)) {
+      const controls = new Set([
+        ...Object.keys(defaultGeom),
+        ...Object.keys(retinaGeom),
+      ]);
+      for (const key of controls) {
+        const base = defaultGeom[key];
         const ret = retinaGeom[key];
-        if (!ret) continue;
+        if (!base || !ret) {
+          violations.push({
+            check: 'geometry-drift',
+            context: route,
+            selector: key,
+            detail: `control missing in ${base ? 'retina' : 'default'} mode`,
+          });
+          continue;
+        }
         for (const side of base.sides) {
           const diff = Math.abs(ret.gaps[side] - base.gaps[side]);
           if (diff > 0.25) {
@@ -537,38 +805,26 @@ async function main() {
         }
       }
 
-      // Static audit on initial view
-      violations.push(...(await auditStaticPage(page, `${route} (initial)`)));
+      violations.push(...(await auditStaticPage(page, `${context} (initial)`)));
+      if (!hasSheet) {
+        console.log(
+          `${route}: static edge checks only. This page has no process sheet.`,
+        );
+        continue;
+      }
 
-      // Chrome-swap transition audit (when process sheet tabs exist)
-      violations.push(...(await auditChromeSwap(page, route)));
-
-      // Audit each process tab if present (Instructions, Sources, Rules, Settings)
-      const tabButtons = [
-        ['instructions', page.getByRole('button', { name: /instructions:/i })],
-        ['sources', page.getByRole('button', { name: /sources/i })],
-        ['rules', page.getByRole('button', { name: /rules/i })],
-        ['settings', page.getByRole('button', { name: /settings/i })],
-      ] as const;
-
-      for (const [name, locator] of tabButtons) {
-        if ((await locator.count()) !== 1) continue;
-        await locator.click();
-        await page
-          .waitForFunction(
-            () => !document.querySelector('[data-chrome-borrowed]'),
-            {
-              timeout: 3000,
-            },
-          )
-          .catch(() => {});
-        await page.waitForTimeout(250);
-        violations.push(...(await auditStaticPage(page, `${route} (${name})`)));
+      violations.push(
+        ...(await auditChromeSwap(page, context, [runs, instructions])),
+      );
+      for (const tab of [instructions, ...others]) {
+        if (tab.optional && (await tab.button.count()) === 0) continue;
+        await tab.button.click({ timeout: CHECK_TIMEOUT });
+        await waitForTab(page, tab, context);
+        violations.push(
+          ...(await auditStaticPage(page, `${context} (${tab.title})`)),
+        );
       }
     }
-  } catch (err) {
-    console.error('Could not run retina edge check:', err);
-    process.exit(2);
   } finally {
     await browser.close();
   }
@@ -577,7 +833,7 @@ async function main() {
     console.log(
       `PASS: 0 retina edge violations across ${opts.routes.join(', ')} (${opts.theme}, 2x).`,
     );
-    process.exit(0);
+    return;
   }
 
   console.error(`FAIL: ${violations.length} retina edge violation(s):\n`);
@@ -586,7 +842,13 @@ async function main() {
     console.error(`    ${v.selector}`);
     console.error(`    ${v.detail}\n`);
   }
-  process.exit(1);
+  process.exitCode = 1;
 }
 
-void main();
+void main().catch((error: unknown) => {
+  console.error(
+    'Could not run retina edge check:',
+    error instanceof Error ? error.message : error,
+  );
+  process.exitCode = 2;
+});

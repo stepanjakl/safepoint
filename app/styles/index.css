@@ -35,6 +35,7 @@
 @import '../../components/ui/filter-tabs.css';
 @import '../../components/ui/edge-scroll.css';
 @import '../../components/app-shell/thread/thread-step.css';
+@import '../../components/app-shell/drawer-overlay.css';
 @import '../../components/app-shell/thread/request-bubble.css';
 @import '../../components/app-shell/thread/model-run-thread.css';
 @import '../../components/app-shell/system/system-parts.css';
@@ -42,6 +43,7 @@
 @import '../../components/app-shell/sidebar/sidebar-notice.css';
 @import '../../components/app-shell/sidebar/process-search.css';
 @import '../../components/app-shell/sidebar/process-menu.css';
+@import '../../components/app-shell/sidebar/navigation-drawer.css';
 @import '../../components/app-shell/sidebar/process-list.css';
 @import '../../components/app-shell/sidebar/workspace-menu.css';
 @import '../../components/app-shell/process/process-title.css';

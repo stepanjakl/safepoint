@@ -1,7 +1,6 @@
 import { cookies } from 'next/headers';
 import type { ReactNode } from 'react';
 import { PROCESS_TAB_KEY } from '@/lib/shell/navigation';
-import type { InputDetail } from '@/lib/shell/input-details';
 import type { ProcessSummary } from '@/lib/shell/model';
 import type { SystemLink } from '@/lib/shell/system-links';
 import { ProcessSheet, type ProcessPolicy } from './process-sheet';
@@ -15,7 +14,6 @@ import { ProcessSheet, type ProcessPolicy } from './process-sheet';
 export async function ProcessView({
   process,
   inputs = [],
-  inputDetails,
   initialRunId = null,
   policy,
   liveThread,
@@ -26,7 +24,6 @@ export async function ProcessView({
 }: {
   process: ProcessSummary;
   inputs?: SystemLink[];
-  inputDetails?: Record<string, InputDetail>;
   // The run the page opens on, from ?run=; none opens on the empty page.
   initialRunId?: string | null;
   // A process's own policy panel in place of the instructions tab.
@@ -35,7 +32,7 @@ export async function ProcessView({
   liveThread?: ReactNode;
   // A process's own rulebook, shown as a Rules tab.
   rulesPanel?: ReactNode;
-  // A process's own Inputs tab, in place of the evidence files' list.
+  // The complete Inputs section, which may show a list and a detail side by side.
   inputsPanel?: ReactNode;
   // And its own Outputs tab, in place of the list of outputs.
   outputsPanel?: ReactNode;
@@ -47,7 +44,6 @@ export async function ProcessView({
       key={process.id}
       process={process}
       inputs={inputs}
-      inputDetails={inputDetails}
       run={children}
       initialRunId={initialRunId}
       policy={policy}

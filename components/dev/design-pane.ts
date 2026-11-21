@@ -4,6 +4,7 @@ import {
   TYPEFACE_PICKER_SETS,
   DEFAULT_TYPESCALE,
   TYPEFACE_SET_LABELS,
+  DEFAULT_MONO,
   MONO_CHOICES,
   MONO_CHOICE_LABELS,
   TYPESCALES,
@@ -228,7 +229,7 @@ export function mountDesignPane(host: HTMLElement) {
 
   pane.addButton({ title: 'Reset defaults' }).on('click', () => {
     setTypeface(DEFAULT_TYPEFACE_SET);
-    setMono('match');
+    setMono(DEFAULT_MONO);
     setTypescale(DEFAULT_TYPESCALE);
     setTheme(DEFAULT_THEME);
     setNeutral(DEFAULT_NEUTRAL);

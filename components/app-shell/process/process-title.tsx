@@ -66,9 +66,7 @@ export function ProcessTitle({
 
   return (
     <>
-      {/* Its whole width, always: the header row scrolls rather than cut the
-          name short. */}
-      <h2 className="text-title flex flex-none [font-weight:550]">
+      <h2 className="process-header-title max-shell:text-body shell:text-title flex flex-none [font-weight:550]">
         <span
           onMouseDown={onMouseDown}
           className="title-field inline-grid min-w-0 cursor-text grid-cols-[minmax(0,max-content)] items-center"
@@ -100,7 +98,7 @@ export function ProcessTitle({
                 event.currentTarget.blur();
               }
             }}
-            className="col-start-1 row-start-1 w-full min-w-0 bg-transparent text-ellipsis outline-none"
+            className="col-start-1 row-start-1 w-full min-w-0 bg-transparent text-ellipsis outline-none focus:text-clip"
           />
         </span>
       </h2>

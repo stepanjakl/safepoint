@@ -1,4 +1,10 @@
-import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import Color from 'colorjs.io';
@@ -80,18 +86,21 @@ function renderRoleBlock(file: URL) {
 }
 
 /* A relative-role file with its block as config.ts would write it. */
-function withRoleBlock(file: URL) {
-  const source = readFileSync(file, 'utf8');
+function replaceRoleBlock(file: string | URL, source: string, block: string) {
   const start = source.indexOf(BLOCK_START);
   const end = source.indexOf(BLOCK_END);
   if (start < 0 || end < start)
     throw new Error(
-      `${fileURLToPath(file)}: add the generated-roles markers where its relative roles belong.`,
+      `${file}: add the generated-roles markers where its relative roles belong.`,
     );
-  return (
-    source.slice(0, start) +
-    renderRoleBlock(file) +
-    source.slice(end + BLOCK_END.length)
+  return source.slice(0, start) + block + source.slice(end + BLOCK_END.length);
+}
+
+function withRoleBlock(file: URL) {
+  return replaceRoleBlock(
+    file,
+    readFileSync(file, 'utf8'),
+    renderRoleBlock(file),
   );
 }
 
@@ -1073,17 +1082,30 @@ function assertContracts(artifacts: GeneratedArtifacts) {
   }
 }
 
+function writeChangedFile(path: string | URL, content: string) {
+  if (!existsSync(path) || readFileSync(path, 'utf8') !== content)
+    writeFileSync(path, content);
+}
+
 export async function writeArtifacts() {
   const artifacts = await buildArtifacts();
   assertContracts(artifacts);
   mkdirSync(new URL('../../../docs/generated/', import.meta.url), {
     recursive: true,
   });
-  writeFileSync(CSS_OUTPUT, artifacts.css);
-  writeFileSync(SURFACES_OUTPUT, artifacts.surfaces);
-  for (const [path, content] of artifacts.roleFiles)
-    writeFileSync(path, content);
-  writeFileSync(REPORT_OUTPUT, artifacts.report);
+  writeChangedFile(CSS_OUTPUT, artifacts.css);
+  writeChangedFile(SURFACES_OUTPUT, artifacts.surfaces);
+  for (const [path, content] of artifacts.roleFiles) {
+    const block = content.slice(
+      content.indexOf(BLOCK_START),
+      content.indexOf(BLOCK_END) + BLOCK_END.length,
+    );
+    writeChangedFile(
+      path,
+      replaceRoleBlock(path, readFileSync(path, 'utf8'), block),
+    );
+  }
+  writeChangedFile(REPORT_OUTPUT, artifacts.report);
   return artifacts;
 }
 

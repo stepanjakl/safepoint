@@ -1,6 +1,16 @@
 'use client';
 
-import type { KeyboardEvent, ReactElement, ReactNode } from 'react';
+import {
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type PointerEvent,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
 import {
   Button as AriaButton,
   Dialog,
@@ -39,7 +49,11 @@ export function DrawerOverlay({
   isOpen,
   onOpenChange,
   children,
+  side = 'right',
+  id,
 }: {
+  side?: 'left' | 'right';
+  id?: string;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   // `DrawerPanels`. Separate so what is in the panels can be keyed on each
@@ -52,10 +66,15 @@ export function DrawerOverlay({
       onOpenChange={onOpenChange}
       isDismissable
       // Inset by the shell's own padding so the panels line up with the panes.
-      className="drawer-overlay p-shell-inset fixed inset-0 z-40 flex justify-end"
+      className={cx(
+        'drawer-overlay p-shell-inset fixed inset-0 z-40 flex',
+        side === 'left' ? 'justify-start' : 'justify-end',
+      )}
     >
-      <Modal className="drawer-modal flex h-full max-w-full">
-        <Dialog className="h-full outline-none">{children}</Dialog>
+      <Modal className="drawer-modal flex h-full max-w-full" data-side={side}>
+        <Dialog id={id} className="h-full outline-none">
+          {children}
+        </Dialog>
       </Modal>
     </ModalOverlay>
   );
@@ -67,6 +86,9 @@ export function DrawerPanels({
   aside,
   onKeyDownCapture,
   width = 'content',
+  resizable = false,
+  mainWidth,
+  onMainWidthChange,
   className,
   children,
 }: {
@@ -77,11 +99,78 @@ export function DrawerPanels({
   aside: ReactElement | null;
   onKeyDownCapture?: (event: KeyboardEvent) => void;
   width?: 'content' | 'fixed';
+  // A single panel that can be resized from its left edge.
+  resizable?: boolean;
+  mainWidth?: number | null;
+  onMainWidthChange?: (width: number, commit: boolean) => void;
   // A hook for the list inside the first panel.
   className?: string;
   // The first panel's body, under its header.
   children: ReactNode;
 }) {
+  const mainPanel = useRef<HTMLDivElement>(null);
+  const drag = useRef<{
+    pointerId: number;
+    startX: number;
+    width: number;
+  } | null>(null);
+  const [isResizing, setIsResizing] = useState(false);
+  const [limits, setLimits] = useState<{
+    min: number;
+    max: number;
+    current: number;
+  } | null>(null);
+  const controlsId = useId();
+
+  useLayoutEffect(() => {
+    if (!resizable) return;
+    const panel = mainPanel.current;
+    if (!panel) return;
+    const update = () => {
+      const style = getComputedStyle(panel);
+      const min = Number.parseFloat(style.minWidth) || 0;
+      const max =
+        Number.parseFloat(style.maxWidth) ||
+        panel.parentElement?.clientWidth ||
+        min;
+      setLimits({ min, max, current: panel.getBoundingClientRect().width });
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(panel);
+    if (panel.parentElement) observer.observe(panel.parentElement);
+    window.addEventListener('resize', update);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', update);
+    };
+  }, [resizable]);
+
+  function resizeFromPointer(
+    event: PointerEvent<HTMLDivElement>,
+    commit: boolean,
+  ) {
+    const session = drag.current;
+    if (!session || session.pointerId !== event.pointerId) return;
+    const panel = mainPanel.current;
+    if (!panel) return;
+    const style = getComputedStyle(panel);
+    const min = Number.parseFloat(style.minWidth) || 0;
+    const max =
+      Number.parseFloat(style.maxWidth) ||
+      panel.parentElement?.clientWidth ||
+      Infinity;
+    const next = Math.max(
+      min,
+      Math.min(max, session.width + session.startX - event.clientX),
+    );
+    onMainWidthChange?.(next, commit);
+    if (commit) {
+      drag.current = null;
+      setIsResizing(false);
+    }
+  }
+
   return (
     <div
       className="gap-shell-inset flex h-full justify-end"
@@ -89,35 +178,118 @@ export function DrawerPanels({
     >
       {aside}
       <div
-        data-drawer-main
-        className={cx(
-          PANEL,
-          width === 'fixed' ? DRAWER_ASIDE_WIDTH : MAIN_WIDTH,
-          'flex flex-col',
-          // Where both do not fit, the second panel takes this one's place
-          // rather than squeezing beside it.
-          aside ? 'max-lg:hidden' : null,
-          className,
-        )}
+        className={cx('drawer-resize-frame', aside ? 'max-lg:hidden' : null)}
+        data-resizable={resizable || undefined}
       >
-        <header className="rule-below flex shrink-0 items-center justify-between gap-4 px-5 py-3">
-          <Heading
-            slot="title"
-            className="text-title min-w-0 [font-weight:550]"
-          >
-            {title}
-          </Heading>
-          <AriaButton slot="close" className={CLOSE_BUTTON}>
-            <X
-              aria-hidden
-              size={18}
-              strokeWidth={2.2}
-              className="size-3.5 flex-none"
-            />
-            <span className="sr-only">{closeLabel}</span>
-          </AriaButton>
-        </header>
-        <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+        <div
+          ref={mainPanel}
+          id={resizable ? controlsId : undefined}
+          data-drawer-main
+          data-resizing={isResizing || undefined}
+          className={cx(
+            PANEL,
+            resizable
+              ? 'drawer-resizable-panel'
+              : width === 'fixed'
+                ? DRAWER_ASIDE_WIDTH
+                : MAIN_WIDTH,
+            'flex flex-col',
+            // Where both do not fit, the second panel takes this one's place
+            // rather than squeezing beside it.
+            aside ? 'max-lg:hidden' : null,
+            className,
+          )}
+          style={
+            resizable && mainWidth !== null && mainWidth !== undefined
+              ? ({ '--drawer-width': `${mainWidth}px` } as CSSProperties)
+              : undefined
+          }
+        >
+          <header className="drawer-panel-header flex shrink-0 items-center justify-between gap-4 px-5 pt-3">
+            <Heading
+              slot="title"
+              className="text-title min-w-0 [font-weight:550]"
+            >
+              {title}
+            </Heading>
+            <AriaButton slot="close" className={CLOSE_BUTTON}>
+              <X
+                aria-hidden
+                size={18}
+                strokeWidth={2.2}
+                className="size-3.5 flex-none"
+              />
+              <span className="sr-only">{closeLabel}</span>
+            </AriaButton>
+          </header>
+          <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+        </div>
+        {resizable ? (
+          <div
+            role="separator"
+            tabIndex={0}
+            aria-label="Resize sheet data drawer"
+            aria-orientation="vertical"
+            aria-controls={controlsId}
+            aria-valuemin={limits?.min ?? 0}
+            aria-valuemax={limits?.max}
+            aria-valuenow={Math.round(mainWidth ?? limits?.current ?? 0)}
+            aria-valuetext={`${Math.round(mainWidth ?? limits?.current ?? 0)} pixels wide`}
+            className="drawer-resize-handle"
+            data-resizing={isResizing || undefined}
+            onPointerDown={(event) => {
+              if (event.button !== 0 || !mainPanel.current) return;
+              event.preventDefault();
+              const panel = mainPanel.current;
+              drag.current = {
+                pointerId: event.pointerId,
+                startX: event.clientX,
+                width: panel.getBoundingClientRect().width,
+              };
+              event.currentTarget.setPointerCapture(event.pointerId);
+              setIsResizing(true);
+            }}
+            onPointerMove={(event) => resizeFromPointer(event, false)}
+            onPointerUp={(event) => resizeFromPointer(event, true)}
+            onPointerCancel={(event) => {
+              const session = drag.current;
+              if (!session || session.pointerId !== event.pointerId) return;
+              onMainWidthChange?.(session.width, true);
+              drag.current = null;
+              setIsResizing(false);
+            }}
+            onLostPointerCapture={() => {
+              const session = drag.current;
+              if (session) onMainWidthChange?.(session.width, true);
+              drag.current = null;
+              setIsResizing(false);
+            }}
+            onKeyDown={(event) => {
+              if (!mainPanel.current) return;
+              const panel = mainPanel.current;
+              const style = getComputedStyle(panel);
+              const min = Number.parseFloat(style.minWidth) || 0;
+              const max =
+                Number.parseFloat(style.maxWidth) ||
+                panel.parentElement?.clientWidth ||
+                Infinity;
+              const current = panel.getBoundingClientRect().width;
+              const next =
+                event.key === 'Home'
+                  ? min
+                  : event.key === 'End'
+                    ? max
+                    : event.key === 'ArrowLeft'
+                      ? Math.min(max, current + 16)
+                      : event.key === 'ArrowRight'
+                        ? Math.max(min, current - 16)
+                        : null;
+              if (next === null) return;
+              event.preventDefault();
+              onMainWidthChange?.(next, true);
+            }}
+          />
+        ) : null}
       </div>
     </div>
   );

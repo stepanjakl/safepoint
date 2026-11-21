@@ -22,13 +22,20 @@ const serious = async (page: Page, include: string) =>
     .filter((v) => v.impact === 'serious' || v.impact === 'critical')
     .map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(', ')}`);
 
+test.use({
+  deviceScaleFactor: 2,
+  launchOptions: { args: ['--force-device-scale-factor=2'] },
+});
+
 test('a run shows its instructions, reads the sheet and keeps the read', async ({
   page,
 }) => {
   await page.addInitScript(() => {
     localStorage.setItem('safepoint.dev.run-debug', 'on');
   });
-  await page.goto('/processes/brunch-orders');
+  await page.goto('/processes/brunch-orders?edges=retina');
+  await expect(page.locator('html')).toHaveAttribute('data-edges', 'retina');
+  expect(await page.evaluate(() => devicePixelRatio)).toBe(2);
   await page.getByRole('button', { name: 'Start run' }).first().click();
 
   // The instructions the run answers to, open as its request.
@@ -125,6 +132,10 @@ test('a run shows its instructions, reads the sheet and keeps the read', async (
       name: 'Open in Google Sheets (opens in a new tab)',
     }),
   ).toHaveAttribute('href', /docs\.google\.com\/spreadsheets/);
+  await expect(card.locator('.external-link')).toHaveCSS(
+    'text-decoration-thickness',
+    '0.5px',
+  );
   await expect(card.getByRole('button', { name: 'View data' })).toHaveClass(
     /rounded-icon/,
   );
@@ -134,6 +145,39 @@ test('a run shows its instructions, reads the sheet and keeps the read', async (
   await view.focus();
   await page.keyboard.press('Enter');
   const drawer = page.getByRole('dialog', { name: 'Sheet data' });
+  const panel = drawer.locator('[data-drawer-main]');
+  const resize = drawer.getByRole('separator', {
+    name: 'Resize sheet data drawer',
+  });
+  const resizeGuide = await resize.evaluate((element) => {
+    const line = getComputedStyle(element, '::before');
+    const handleBox = element.getBoundingClientRect();
+    const panelBox = element
+      .parentElement!.querySelector('[data-drawer-main]')!
+      .getBoundingClientRect();
+    const edge = parseFloat(
+      getComputedStyle(element).getPropertyValue('--edge-ring'),
+    );
+    return {
+      width: line.width,
+      center: handleBox.left + parseFloat(line.left),
+      edgeCenter: panelBox.left + edge / 2,
+    };
+  });
+  expect(resizeGuide.width).toBe('0.5px');
+  expect(Math.abs(resizeGuide.center - resizeGuide.edgeCenter)).toBeLessThan(
+    0.05,
+  );
+  expect((await resize.boundingBox())!.width).toBe(
+    (await page.locator('.sidebar-handle[data-side="left"]').boundingBox())!
+      .width,
+  );
+  const beforeResize = (await panel.boundingBox())!.width;
+  await resize.focus();
+  await page.keyboard.press('ArrowLeft');
+  await expect
+    .poll(async () => (await panel.boundingBox())!.width)
+    .toBeGreaterThan(beforeResize);
   const tabs = drawer.getByRole('radiogroup', { name: 'Data tabs' });
   await expect(tabs.getByRole('radio', { name: /^Products,/ })).toBeChecked();
   const width = (await drawer.locator('[data-drawer-main]').boundingBox())!
@@ -158,6 +202,7 @@ test('a run shows its instructions, reads the sheet and keeps the read', async (
   });
   await salesRow.click();
   await expect(tabs.getByRole('radio', { name: /^Sales,/ })).toBeChecked();
+  expect((await panel.boundingBox())!.width).toBe(width);
   await page.keyboard.press('Escape');
   await expect(drawer).toHaveCount(0);
   await expect(salesRow).toBeFocused();

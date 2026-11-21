@@ -113,7 +113,7 @@ function Sample({
           className="control-face surface-raised rounded-shell pointer-events-none absolute inset-0 -z-10"
         />
         <div className="p-pane-inset">
-          <header className="process-header -mx-control-highlight px-control-highlight relative z-10 grid grid-cols-[minmax(0,1fr)_auto] border-b">
+          <header className="process-header relative z-10 grid grid-cols-[minmax(0,1fr)_auto]">
             <div className="-mt-pane-inset -mb-control-edge text-title flex min-w-0 items-center px-4 [font-weight:550]">
               Brunch orders
             </div>

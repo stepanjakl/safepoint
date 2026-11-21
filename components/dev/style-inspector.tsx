@@ -55,6 +55,86 @@ import {
   without a restart.
 */
 
+function selectorOf(element: Element) {
+  let selector = '';
+  for (let node: Element | null = element; node; node = node.parentElement) {
+    const suffix: string = selector ? ` > ${selector}` : '';
+    const tag = window.CSS.escape(node.localName);
+    const candidates = [
+      node.id && `#${window.CSS.escape(node.id)}`,
+      ...['data-testid', 'aria-label'].map((name) => {
+        const value = node.getAttribute(name);
+        return value && `${tag}[${name}=${window.CSS.escape(value)}]`;
+      }),
+      tag,
+    ];
+    for (const candidate of candidates) {
+      if (!candidate) continue;
+      const matches = document.querySelectorAll(candidate + suffix);
+      if (matches.length === 1 && matches[0] === element)
+        return candidate + suffix;
+    }
+    const parent = node.parentElement;
+    const position = parent ? Array.from(parent.children).indexOf(node) + 1 : 1;
+    selector = `${tag}:nth-child(${position})${suffix}`;
+  }
+  return selector;
+}
+
+function CopyReference({
+  target,
+  by,
+  root,
+}: {
+  target: Element;
+  by: Written[];
+  root?: string;
+}) {
+  const [feedback, setFeedback] = useState<{
+    target: Element;
+    message: string;
+  }>();
+  async function copy() {
+    try {
+      const selector = selectorOf(target);
+      const owners = by.length ? by : await componentsOf(target);
+      const owner =
+        owners.find((step) => !step.library && step.file) ??
+        owners.find((step) => !step.library) ??
+        owners[0];
+      const prefix = root && root.replace(/\/$/, '') + '/';
+      const file =
+        prefix && owner?.file?.startsWith(prefix)
+          ? owner.file.slice(prefix.length)
+          : owner?.file;
+      await navigator.clipboard.writeText(
+        [
+          owner?.name && `Component: ${owner.name}`,
+          file &&
+            `Source: ${[file, owner?.line, owner?.column].filter(Boolean).join(':')}`,
+          `Page: ${location.pathname}`,
+          `Selector: ${selector}`,
+        ]
+          .filter(Boolean)
+          .join('\n'),
+      );
+      setFeedback({ target, message: 'Copied' });
+    } catch {
+      setFeedback({ target, message: 'Copy failed' });
+    }
+  }
+  return (
+    <>
+      <button type="button" onClick={copy}>
+        Copy reference
+      </button>
+      <span role="status">
+        {feedback?.target === target ? feedback.message : ''}
+      </span>
+    </>
+  );
+}
+
 /* Marks the inspector's own elements, which it never inspects. */
 const ROOT = 'data-style-inspector';
 /* Set on <html> while inspecting, for the crosshair. */
@@ -1432,11 +1512,13 @@ function Inspector() {
           <OriginContext value={originOf}>
             <Needle value={needle}>
               <div className="spi-body">
-                {writer ? (
-                  <Writers by={by} writer={writer} open={open} />
-                ) : null}
-                {target && (canParent || child?.isConnected) ? (
+                {target ? (
                   <div className="spi-buttons">
+                    <CopyReference
+                      target={target}
+                      by={by}
+                      root={lookup?.root}
+                    />
                     {canParent ? (
                       <button
                         type="button"
@@ -1462,6 +1544,9 @@ function Inspector() {
                       </button>
                     ) : null}
                   </div>
+                ) : null}
+                {writer ? (
+                  <Writers by={by} writer={writer} open={open} />
                 ) : null}
                 {!report ? (
                   <p className="spi-hint">
@@ -2023,7 +2108,8 @@ html[${INSPECTING}] body *:not([${ROOT}] *) { cursor: crosshair !important; }
 .spi-fields .spi-from { min-width: 0; }
 
 /* Buttons and the filter, as Tweakpane's. */
-.spi-buttons { display: flex; gap: var(--gap); padding: 0 var(--pad); }
+.spi-buttons { display: flex; align-items: center; gap: var(--gap); padding: 0 var(--pad); }
+.spi-buttons [role="status"]:empty { display: contents; }
 .spi-buttons button {
   flex: 1; height: var(--unit); line-height: var(--unit);
   background: var(--btn-bg); color: var(--btn-fg); font-weight: bold;

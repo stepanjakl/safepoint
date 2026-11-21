@@ -148,6 +148,120 @@
   transition-timing-function: ease-out;
 }
 
+@utility control-drawer-close {
+  --control-face-top: var(--sp-icon-button-face-top);
+  --control-face-bottom: var(--sp-icon-button-face-bottom);
+  --control-ring-top: var(--sp-icon-button-ring-top);
+  --control-ring-bottom: var(--sp-icon-button-ring-bottom);
+  --control-highlight: transparent;
+}
+
+@utility control-drawer-close-hover {
+  --control-face-top: var(--sp-icon-button-face-top-hover);
+  --control-face-bottom: var(--sp-icon-button-face-bottom-hover);
+  --control-ring-top: var(--sp-icon-button-ring-top-hover);
+  --control-ring-bottom: var(--sp-icon-button-ring-bottom-hover);
+}
+
+@utility icon-button-edge {
+  @apply control-wash;
+  position: relative;
+  transition-property: color, background-color, --control-face-top, --control-face-bottom;
+
+  /* Mask out the centre so the ring can fade independently of the face. */
+  &::after {
+    --control-ring-top: var(
+      --icon-button-open-ring-top,
+      var(--icon-button-rest, var(--sp-icon-button-ring-top))
+    );
+    --control-ring-bottom: var(
+      --icon-button-open-ring-bottom,
+      var(--icon-button-rest, var(--sp-icon-button-ring-bottom))
+    );
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: var(--edge-rule);
+    border-radius: inherit;
+    background: linear-gradient(to bottom, var(--control-ring-top), var(--control-ring-bottom));
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+    transition:
+      --control-ring-top var(--duration-state) ease-out,
+      --control-ring-bottom var(--duration-state) ease-out;
+  }
+
+  @variant hover {
+    &::after {
+      --control-ring-top: var(
+        --icon-button-open-ring-top-hover,
+        var(--sp-icon-button-ring-top-hover)
+      );
+      --control-ring-bottom: var(
+        --icon-button-open-ring-bottom-hover,
+        var(--sp-icon-button-ring-bottom-hover)
+      );
+    }
+  }
+
+  &:is(:focus-visible, :active)::after {
+    --control-ring-top: var(
+      --icon-button-open-ring-top-hover,
+      var(--sp-icon-button-ring-top-hover)
+    );
+    --control-ring-bottom: var(
+      --icon-button-open-ring-bottom-hover,
+      var(--sp-icon-button-ring-bottom-hover)
+    );
+  }
+}
+
+@utility icon-button-wash {
+  --control-face-top: var(--icon-button-rest, var(--sp-icon-button-face-top));
+  --control-face-bottom: var(--icon-button-rest, var(--sp-icon-button-face-bottom));
+  background-image: linear-gradient(to bottom, var(--control-face-top), var(--control-face-bottom));
+
+  @variant hover {
+    --control-face-top: var(--sp-icon-button-face-top-hover);
+    --control-face-bottom: var(--sp-icon-button-face-bottom-hover);
+  }
+
+  &:is(:focus-visible, :active) {
+    --control-face-top: var(--sp-icon-button-face-top-hover);
+    --control-face-bottom: var(--sp-icon-button-face-bottom-hover);
+  }
+
+  &:is([aria-expanded='true'], [aria-pressed='true']) {
+    --control-face-top: var(--icon-button-open-face-top, transparent);
+    --control-face-bottom: var(--icon-button-open-face-bottom, transparent);
+
+    @variant hover {
+      --control-face-top: var(
+        --icon-button-open-face-top-hover,
+        var(--icon-button-open-face-top, transparent)
+      );
+      --control-face-bottom: var(
+        --icon-button-open-face-bottom-hover,
+        var(--icon-button-open-face-bottom, transparent)
+      );
+    }
+
+    &:is(:focus-visible, :active) {
+      --control-face-top: var(
+        --icon-button-open-face-top-hover,
+        var(--icon-button-open-face-top, transparent)
+      );
+      --control-face-bottom: var(
+        --icon-button-open-face-bottom-hover,
+        var(--icon-button-open-face-bottom, transparent)
+      );
+    }
+  }
+}
+
 /* A popover opening from its trigger: the tooltip's scale and fade, a step
    slower because it holds controls. The origin is the anchored edge, so it
    opens away from the trigger on any placement. Reduced motion ends it in

@@ -5,7 +5,7 @@ import ChevronTriangleUp from 'blode-icons-react/icons/chevron-triangle-up-small
 import Cross from 'blode-icons-react/icons/cross-small';
 import Pencil from 'blode-icons-react/icons/pencil';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { Fragment, useEffect, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { DecisionButton } from '@/components/engine/decision-button';
 import { FromModel, Step } from '@/components/engine/rules-parts';
@@ -70,6 +70,8 @@ export function ProposalRow({
   ) => Promise<CheckReply | null>;
   onCite: (cell: string) => void;
 }) {
+  const nameRef = useRef<HTMLSpanElement>(null);
+  const compactNameRef = useRef<HTMLSpanElement>(null);
   // A change in progress: the values typed, and the checks on them.
   const [changing, setChanging] = useState<Record<string, number> | null>(null);
   const [checked, setChecked] = useState<{
@@ -115,13 +117,20 @@ export function ProposalRow({
       <PresentRow className="calc-row align-top">
         <th
           scope="row"
-          className="py-2.75 pr-3 pl-6 text-left font-medium whitespace-nowrap"
+          className="py-2.75 pr-3 pl-6 text-left font-medium whitespace-nowrap max-sm:w-full max-sm:max-w-0"
         >
           <button
             type="button"
             aria-expanded={expanded}
             aria-controls={id}
             onClick={onToggle}
+            onWheel={(event) => {
+              const name = nameRef.current?.getClientRects().length
+                ? nameRef.current
+                : compactNameRef.current;
+              if (name)
+                name.scrollLeft += event.shiftKey ? event.deltaY : event.deltaX;
+            }}
             className="calc-row-toggle text-left"
           >
             <ChevronTriangleUp aria-hidden className="calc-row-chevron" />
@@ -131,16 +140,30 @@ export function ProposalRow({
               {decision ? `, ${decided(decision, fields)}` : ''}
             </span>
           </button>
-          {name ? <span className={DATA_TABLE_NAME_UNDER}>{name}</span> : null}
+          {name ? (
+            <span
+              ref={compactNameRef}
+              className={cx(DATA_TABLE_NAME_UNDER, 'truncate')}
+            >
+              {name}
+            </span>
+          ) : null}
         </th>
         <td
           className={cx(
             DATA_TABLE_NAME_COLUMN,
             DATA_TABLE_SECONDARY_NAME,
-            'py-2.75 pr-3',
+            'w-full max-w-0 py-2.75 pr-3',
           )}
         >
-          {name || null}
+          {name ? (
+            <span
+              ref={nameRef}
+              className="block overflow-hidden text-ellipsis whitespace-nowrap"
+            >
+              {name}
+            </span>
+          ) : null}
         </td>
         {fields.map((field) => (
           <td
@@ -174,10 +197,10 @@ export function ProposalRow({
             )}
           </td>
         ))}
-        <td className="py-2 pl-3">
+        <td className="py-2 pl-3 align-middle">
           <Pill tone={VERDICT[verdict].tone}>{VERDICT[verdict].label}</Pill>
         </td>
-        <td className="py-1.5 pr-4 pl-3 text-right">
+        <td className="py-1.5 pr-4 pl-3 text-right align-middle">
           {/* One set of controls gives way to the next, never jumps. */}
           <AnimatePresence initial={false} mode="popLayout">
             <motion.div
@@ -228,7 +251,9 @@ export function ProposalRow({
               ) : decision ? (
                 <>
                   <Pill tone={decision.kind === 'reject' ? 'neutral' : 'ready'}>
-                    {decided(decision, fields)}
+                    {decision.kind === 'change'
+                      ? 'Changed'
+                      : decided(decision, fields)}
                   </Pill>
                   {icons ? (
                     <IconButton

@@ -20,6 +20,22 @@ const asJson = (values: unknown[][]) =>
     ? `[\n${values.map((row) => `  ${JSON.stringify(row)}`).join(',\n')}\n]`
     : '[]';
 
+const WIDTH_KEY = 'safepoint.drawer-data.v1';
+
+function readDrawerWidth() {
+  try {
+    const stored = Number(window.localStorage.getItem(WIDTH_KEY));
+    const rem = Number.parseFloat(
+      getComputedStyle(document.documentElement).fontSize,
+    );
+    return Number.isFinite(stored) && stored > 0 && rem > 0
+      ? stored * rem
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 /*
   The run's read as it came from the sheet: one data tab at a time, as JSON,
   headers and rows exactly as read. Fetched by the read's id when opened, so
@@ -41,6 +57,7 @@ export function DataDrawer({
 }) {
   const [open, setOpen] = useState(false);
   const [chosen, setChosen] = useState<string | null>(null);
+  const [drawerWidth, setDrawerWidth] = useState<number | null>(null);
   const trpc = useTRPC();
   // Asked for once the drawer first opens, and again on opening it after a
   // failure. A kept read never changes, so what came is kept.
@@ -74,6 +91,7 @@ export function DataDrawer({
     <>
       {children((tab) => {
         if (tab) setChosen(tab);
+        setDrawerWidth(readDrawerWidth());
         setOpen(true);
       })}
       <DrawerOverlay isOpen={open} onOpenChange={setOpen}>
@@ -82,6 +100,21 @@ export function DataDrawer({
           closeLabel="Close"
           aside={null}
           width="fixed"
+          resizable
+          mainWidth={drawerWidth}
+          onMainWidthChange={(width, commit) => {
+            setDrawerWidth(width);
+            if (!commit) return;
+            try {
+              const rem = Number.parseFloat(
+                getComputedStyle(document.documentElement).fontSize,
+              );
+              if (rem > 0)
+                window.localStorage.setItem(WIDTH_KEY, String(width / rem));
+            } catch {
+              // The current tab still keeps the new width in React state.
+            }
+          }}
         >
           <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 p-5">
             {loader.phase ? (
@@ -100,26 +133,30 @@ export function DataDrawer({
                   ariaLabel="Data tabs"
                   menuLabel="Other data tabs"
                 />
-                <TabSwap
-                  selected={selected}
-                  className="flex min-h-0 min-w-0 flex-1 flex-col"
+                <pre
+                  tabIndex={0}
+                  aria-label={`${selectedTab.name}, as read`}
+                  className="bg-surface-inset rounded-control value text-meta min-h-0 min-w-0 flex-1 overflow-auto p-3"
                 >
-                  {(key) => {
-                    // The tab on screen, which trails the chosen one
-                    // through the fade.
-                    const tab =
-                      data.tabs.find((one) => one.name === key) ?? selectedTab;
-                    return (
-                      <pre
-                        tabIndex={0}
-                        aria-label={`${tab.name}, as read`}
-                        className="bg-surface-inset rounded-control value text-meta min-h-0 min-w-0 flex-1 overflow-auto p-3"
-                      >
-                        {asJson(tab.values)}
-                      </pre>
-                    );
-                  }}
-                </TabSwap>
+                  <TabSwap
+                    selected={selected}
+                    motionBetween={(from, to) =>
+                      tabs.findIndex((tab) => tab.key === to) >
+                      tabs.findIndex((tab) => tab.key === from)
+                        ? 'left'
+                        : 'right'
+                    }
+                  >
+                    {(key) =>
+                      asJson(
+                        (
+                          data.tabs.find((tab) => tab.name === key) ??
+                          selectedTab
+                        ).values,
+                      )
+                    }
+                  </TabSwap>
+                </pre>
               </>
             ) : data ? (
               <p className="text-dense text-muted">

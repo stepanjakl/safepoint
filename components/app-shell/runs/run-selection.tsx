@@ -1,5 +1,6 @@
 'use client';
 
+import { skipToken, useQuery } from '@tanstack/react-query';
 import {
   createContext,
   useContext,
@@ -13,6 +14,7 @@ import type { ModelPlan } from '@/lib/models';
 import { useInstructions } from '@/components/app-shell/instructions/instructions-store';
 import { mockStageStorageKey } from '@/components/app-shell/thread/thread-player';
 import { useWalkthrough } from '@/components/app-shell/walkthrough';
+import { useTRPC } from '@/components/trpc/provider';
 import {
   processRunOf,
   useKeptRuns,
@@ -135,6 +137,7 @@ export type RunSelection = {
   startError: string | null;
   // The live run being shown, and how its thread records its progress.
   live: LiveRun | null;
+  instructionLoad: { runId: string; version: string; failed: boolean } | null;
   // The read it took and the rulebook it pinned (null takes the pin away);
   // refused for a run discarded or not kept, which `recordError` says.
   record: (
@@ -208,6 +211,7 @@ export function useRunSelectionState({
   // Whether this process draws a live run's thread, run step by step.
   liveThread?: boolean;
 }): RunSelection {
+  const trpc = useTRPC();
   const walkthrough = useWalkthrough();
   const [selected, setSelected] = useState(initialRunId);
   const mockRuns = useSyncExternalStore(
@@ -234,19 +238,38 @@ export function useRunSelectionState({
   const keptRun = liveThread
     ? allLiveRuns.find((entry) => entry.id === selected)
     : undefined;
-  // Its text comes with the versions, by label; until they are known the
-  // thread waits, as for a run not yet listed.
-  const text = keptRun
-    ? (versions.find((one) => one.version === keptRun.instructions.version)
-        ?.text ?? current.text)
+  const mock = keptRun ? isMockRunId(keptRun.id) : false;
+  const savedRun = mock ? undefined : keptRun;
+  const hash = savedRun?.instructions.hash;
+  const listed = hash
+    ? versions.find((version) => version.hash === hash)
     : undefined;
+  const pinned = useQuery(
+    trpc.instructions.get.queryOptions(
+      hash && !listed
+        ? { process: process.id as RunProcessId, hash }
+        : skipToken,
+    ),
+  );
+  const text = mock
+    ? (versions.find((one) => one.version === keptRun?.instructions.version)
+        ?.text ?? current.text)
+    : (listed ?? pinned.data)?.text;
+  const instructionLoad =
+    savedRun && text === undefined
+      ? {
+          runId: savedRun.id,
+          version: savedRun.instructions.version,
+          failed: pinned.isError,
+        }
+      : null;
   const live: LiveRun | null =
     keptRun && text !== undefined
       ? {
           run: processRunOf(keptRun),
           kept: keptRun,
           text,
-          mock: isMockRunId(keptRun.id),
+          mock,
         }
       : null;
 
@@ -329,6 +352,7 @@ export function useRunSelectionState({
     starting: kept.start.isPending,
     startError: kept.start.error?.message ?? null,
     live,
+    instructionLoad,
     record: (id, progress) => {
       if (isMockRunId(id)) {
         setMockRuns((list) =>

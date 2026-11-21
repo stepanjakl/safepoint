@@ -125,24 +125,6 @@ export function mockWriteOutputs(
       resourceIds: { Orders: 0, 'Standing orders': 1834920517 },
       changes: nextChanges,
     },
-    // A second source whose changes span two tabs, to design for
-    // a run that writes to more than one place.
-    {
-      id: 'orders-copy',
-      kind: 'google-sheets',
-      title: 'Brunch store · supplier copy',
-      key: owner.subject.data.output?.key ?? 'Record',
-      url: read.url,
-      resourceIds: { Orders: 0, 'Standing orders': 1834920517 },
-      changes: nextChanges.map((change, index) =>
-        index % 2
-          ? {
-              ...change,
-              cell: change.cell.replace(/^[^!]*!/, 'Standing orders!'),
-            }
-          : change,
-      ),
-    },
   ];
 }
 

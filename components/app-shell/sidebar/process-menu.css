@@ -48,13 +48,23 @@
   @media (hover: hover) {
     .process-menu-back:hover {
       color: var(--sp-text-primary);
-      background-color: var(--sp-menu-wash);
+      background-color: var(--process-menu-hover, var(--sp-menu-wash));
     }
   }
 
   .process-menu-back:focus-visible {
     color: var(--sp-text-primary);
-    background-color: var(--sp-menu-wash-strong);
+    background-color: var(--process-menu-focus, var(--sp-menu-wash-strong));
+  }
+
+  .navigation-drawer-panel .process-menu-back:focus-visible + .process-menu-add {
+    --icon-button-rest: transparent;
+  }
+
+  @media (hover: hover) {
+    .navigation-drawer-panel .process-menu-back:hover + .process-menu-add {
+      --icon-button-rest: transparent;
+    }
   }
 
   /* A soft boundary for panes to dissolve into, rather than the hard clip

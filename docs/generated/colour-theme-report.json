@@ -644,8 +644,8 @@
           {
             "id": "muted-on-notice",
             "light": 6.237,
-            "dark": 5.955,
-            "ratio": 1.047
+            "dark": 6.338,
+            "ratio": 1.016
           },
           {
             "id": "inverse-on-action",
@@ -2699,8 +2699,8 @@
           "minimum": 4.5,
           "rationale": "Notice captions are ordinary-size text.",
           "foregroundStep": 325,
-          "backgroundStep": 825,
-          "ratio": 5.955,
+          "backgroundStep": 850,
+          "ratio": 6.338,
           "passed": true,
           "metTarget": true
         },
@@ -4097,8 +4097,8 @@
           {
             "id": "muted-on-notice",
             "light": 6.196,
-            "dark": 5.979,
-            "ratio": 1.036
+            "dark": 6.365,
+            "ratio": 1.027
           },
           {
             "id": "inverse-on-action",
@@ -6147,8 +6147,8 @@
           "minimum": 4.5,
           "rationale": "Notice captions are ordinary-size text.",
           "foregroundStep": 325,
-          "backgroundStep": 825,
-          "ratio": 5.979,
+          "backgroundStep": 850,
+          "ratio": 6.365,
           "passed": true,
           "metTarget": true
         },
@@ -7545,8 +7545,8 @@
           {
             "id": "muted-on-notice",
             "light": 6.239,
-            "dark": 5.955,
-            "ratio": 1.048
+            "dark": 6.337,
+            "ratio": 1.016
           },
           {
             "id": "inverse-on-action",
@@ -9600,8 +9600,8 @@
           "minimum": 4.5,
           "rationale": "Notice captions are ordinary-size text.",
           "foregroundStep": 325,
-          "backgroundStep": 825,
-          "ratio": 5.955,
+          "backgroundStep": 850,
+          "ratio": 6.337,
           "passed": true,
           "metTarget": true
         },
@@ -10998,8 +10998,8 @@
           {
             "id": "muted-on-notice",
             "light": 6.145,
-            "dark": 6.003,
-            "ratio": 1.024
+            "dark": 6.392,
+            "ratio": 1.04
           },
           {
             "id": "inverse-on-action",
@@ -13048,8 +13048,8 @@
           "minimum": 4.5,
           "rationale": "Notice captions are ordinary-size text.",
           "foregroundStep": 325,
-          "backgroundStep": 825,
-          "ratio": 6.003,
+          "backgroundStep": 850,
+          "ratio": 6.392,
           "passed": true,
           "metTarget": true
         },
@@ -14446,8 +14446,8 @@
           {
             "id": "muted-on-notice",
             "light": 6.216,
-            "dark": 5.966,
-            "ratio": 1.042
+            "dark": 6.35,
+            "ratio": 1.022
           },
           {
             "id": "inverse-on-action",
@@ -16496,8 +16496,8 @@
           "minimum": 4.5,
           "rationale": "Notice captions are ordinary-size text.",
           "foregroundStep": 325,
-          "backgroundStep": 825,
-          "ratio": 5.966,
+          "backgroundStep": 850,
+          "ratio": 6.35,
           "passed": true,
           "metTarget": true
         },
@@ -17501,8 +17501,8 @@
       {
         "id": "muted-on-notice",
         "light": 6.237,
-        "dark": 5.955,
-        "ratio": 1.047
+        "dark": 6.338,
+        "ratio": 1.016
       },
       {
         "id": "inverse-on-action",
@@ -17928,7 +17928,7 @@
     "noticeFace": {
       "cssVariable": "--sp-notice-face",
       "light": 50,
-      "dark": 825
+      "dark": 850
     },
     "tooltipFace": {
       "cssVariable": "--tooltip-face",
@@ -17965,7 +17965,7 @@
     "noticeHighlight": {
       "cssVariable": "--sp-notice-highlight",
       "light": 25,
-      "dark": 875
+      "dark": 775
     },
     "tooltipHighlight": {
       "cssVariable": "--sp-tooltip-highlight",
@@ -18657,8 +18657,8 @@
       "id": "noticeFace",
       "cssVariable": "--sp-notice-face",
       "theme": "dark",
-      "expected": 825,
-      "actual": 825,
+      "expected": 850,
+      "actual": 850,
       "passed": true
     },
     {
@@ -18801,8 +18801,8 @@
       "id": "noticeHighlight",
       "cssVariable": "--sp-notice-highlight",
       "theme": "dark",
-      "expected": 875,
-      "actual": 875,
+      "expected": 775,
+      "actual": 775,
       "passed": true
     },
     {
@@ -21785,8 +21785,8 @@
       "minimum": 4.5,
       "rationale": "Notice captions are ordinary-size text.",
       "foregroundStep": 325,
-      "backgroundStep": 825,
-      "ratio": 5.955,
+      "backgroundStep": 850,
+      "ratio": 6.338,
       "passed": true,
       "metTarget": true
     },

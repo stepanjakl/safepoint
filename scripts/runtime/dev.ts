@@ -10,6 +10,8 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { connect } from 'node:net';
 
+import { watchColours } from '../colours/colour-theme/watch.ts';
+
 import { clearStaleDevPause } from './dev-pause-plugin.ts';
 
 if (clearStaleDevPause()) {
@@ -67,6 +69,9 @@ if (
   });
 }
 
+const colourWatch = watchColours();
+await colourWatch.ready;
+
 const next = spawn(
   'node_modules/.bin/next',
   ['dev', '--webpack', ...process.argv.slice(2)],
@@ -83,6 +88,7 @@ const next = spawn(
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, () => {
+    colourWatch.close();
     next.kill(signal);
     agentation?.kill(signal);
     devtools?.kill(signal);
@@ -90,6 +96,7 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
 }
 
 next.on('exit', (code, signal) => {
+  colourWatch.close();
   agentation?.kill();
   devtools?.kill();
   process.exit(code ?? (signal ? 1 : 0));

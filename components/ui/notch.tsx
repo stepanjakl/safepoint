@@ -18,12 +18,14 @@ import { cx } from '@/lib/ui/cx';
 export function Notch({
   children,
   className,
+  side = 'right',
 }: {
   children: ReactNode;
   className?: string;
+  side?: 'left' | 'right';
 }) {
   return (
-    <div className={cx('notch', className)}>
+    <div className={cx('notch', className)} data-side={side}>
       <span aria-hidden="true" className="notch-shape">
         <span className="notch-paint notch-face" />
         <span className="notch-at" data-k="1">

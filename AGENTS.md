@@ -43,6 +43,27 @@ even box, not a nudge. An **allowed** entry is a deliberate offset recorded in
 the script's allowlist with its reason; it is still watched, and is reported
 again if it moves.
 
+## Checking retina edges
+
+When touching borders, highlights, `control-face` rings, or sheet chrome
+transitions, run `pnpm check:edges` (with `pnpm dev` running) to verify `2×`
+retina edge invariants across live routes:
+
+```
+pnpm check:edges
+pnpm check:edges -- --theme dark --url /processes/brunch-orders
+pnpm check:edges -- --help
+```
+
+It checks occluded `inset box-shadow` borders, flattened gradient rings,
+default-vs-retina control geometry drift, subpixel `2×` header/frame placement,
+and mid-transition/handoff chrome swaps in both `default` and `retina` modes.
+Exit 0 clean, 1 violations found, 2 it could not run.
+
+For a visible gap, overdraw, or thickness change at a divider junction, use the
+[2× painted-junction checks](docs/interface/STYLING-SYSTEM.md#checking-painted-divider-junctions)
+alongside the edge audit.
+
 ## Alignment, when you are changing layout
 
 Put the icon in a rail cell (`MENU_RAIL` in

@@ -24,7 +24,7 @@ import { MenuIcon } from './menu-parts';
 */
 const NOTICE_BOX = cx(
   // The face: control-face's geometry, the notice's own stops, its sheen.
-  'control-face surface-notice rounded-shell grid grid-cols-[min-content_auto] items-center gap-x-3 p-3 max-shell:py-sidebar-grip-offset',
+  'control-face shell:surface-notice max-shell:surface-notice-in-drawer rounded-shell grid grid-cols-[min-content_auto] items-center gap-x-3 p-3 max-shell:py-sidebar-grip-offset',
   // The type. `leading-normal` is the box's own; both text children re-assert
   // `text-micro` and so carry micro's tighter 14px line instead.
   'text-state-advisory text-micro leading-normal',

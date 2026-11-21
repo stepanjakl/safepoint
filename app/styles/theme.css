@@ -226,7 +226,7 @@
   /* The edge plus the lit ring inside it, which is as much the pane's edge as
      the border. Content stepped in by the border alone sits on top of the
      ring -- invisible until something in there is opaque and full-bleed. */
-  --spacing-pane-inset: calc(var(--spacing-control-edge) + var(--spacing-control-highlight));
+  --spacing-pane-inset: var(--pane-inset);
   /* One step tighter than the pane: at the outer radius a fill inside paints
      over the edge in the corners. */
   --radius-shell-inner: calc(var(--radius-shell) - var(--spacing-pane-inset));

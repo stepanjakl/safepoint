@@ -1,8 +1,10 @@
 'use client';
 
 import {
+  useCallback,
   useEffect,
   useEffectEvent,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -35,6 +37,14 @@ import { usePathname } from 'next/navigation';
 import { useShellPageNavigation } from './shell-page-transition';
 import { useProcessNames } from './process/process-names-store';
 import { useResizableSidebar } from './use-resizable-sidebar';
+import {
+  NavigationDrawer,
+  NavigationDrawerContext,
+} from './sidebar/navigation-drawer';
+
+const WIDE_SHELL = '(width >= 56.25rem)';
+const wideShell = () => window.matchMedia(WIDE_SHELL).matches;
+const serverWideShell = () => true;
 
 /** Layout owns the two independent panels; server-rendered children stay opaque. */
 export function ResizableShell({
@@ -48,6 +58,26 @@ export function ResizableShell({
   processes?: { id: string; href: string; name: string }[];
   children: ReactNode;
 }) {
+  const drawerId = useId();
+  const menuOpener = useRef<HTMLButtonElement>(null);
+  const registerOpener = useCallback((button: HTMLButtonElement | null) => {
+    menuOpener.current = button;
+  }, []);
+  const [menu, setMenu] = useState<'closed' | 'open' | 'search'>('closed');
+  const wide = useSyncExternalStore(
+    (notify) => {
+      const query = window.matchMedia(WIDE_SHELL);
+      const change = () => {
+        if (query.matches) setMenu('closed');
+        notify();
+      };
+      query.addEventListener('change', change);
+      return () => query.removeEventListener('change', change);
+    },
+    wideShell,
+    serverWideShell,
+  );
+  const menuOpen = !wide && menu !== 'closed';
   const path = usePathname();
   const names = useProcessNames();
   const shown = processes.find(
@@ -171,14 +201,27 @@ export function ResizableShell({
   }, [left.collapsed, leftContentRef, leftHandleRef]);
 
   useEffect(() => {
-    if (!left.collapsed || workspaceRevealLocked) return;
+    if (wide && (!left.collapsed || workspaceRevealLocked)) return;
     const revealForSearch = (event: globalThis.KeyboardEvent) => {
       if (
         event.key.toLowerCase() !== 'k' ||
         event.altKey ||
+        event.defaultPrevented ||
         !(event.metaKey || event.ctrlKey)
       )
         return;
+      if (!wide) {
+        if (
+          !menuOpen &&
+          !open &&
+          !menuOpener.current?.closest('[aria-hidden="true"]')
+        ) {
+          event.preventDefault();
+          menuOpener.current?.focus({ preventScroll: true });
+          setMenu('search');
+        }
+        return;
+      }
       flushSync(() =>
         saveSidebarPreferences({
           ...parseSidebarPreferences(readSidebarPreferences()),
@@ -188,7 +231,7 @@ export function ResizableShell({
     };
     document.addEventListener('keydown', revealForSearch, true);
     return () => document.removeEventListener('keydown', revealForSearch, true);
-  }, [left.collapsed, workspaceRevealLocked]);
+  }, [left.collapsed, workspaceRevealLocked, wide, menuOpen, open]);
 
   useLayoutEffect(() => {
     if (open && !wasOpen.current)
@@ -239,6 +282,7 @@ export function ResizableShell({
   useEffect(() => {
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
       if (
+        menuOpen ||
         event.key.toLowerCase() !== 'i' ||
         event.altKey ||
         event.shiftKey ||
@@ -251,7 +295,7 @@ export function ResizableShell({
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, []);
+  }, [menuOpen]);
   const assistantContext = {
     id: right.navigationId,
     open,
@@ -334,103 +378,120 @@ export function ResizableShell({
   };
 
   return (
-    <AssistantContext value={assistantContext}>
-      <div
-        className="resizable-shell bg-canvas p-shell-inset max-shell:gap-3.5 shell:h-dvh shell:overflow-hidden relative grid"
-        style={style}
-        data-collapsed={left.collapsed || undefined}
-        data-resizing={left.preview !== null || undefined}
-        data-dragging={left.isDragging || right.isDragging || undefined}
-        data-assistant-resizing={right.preview !== null || undefined}
-        data-workspace-reveal={
-          workspaceRevealActive ? workspaceReveal : undefined
-        }
-        onTransitionEnd={(event) => {
-          if (
-            workspaceReveal === 'opening' &&
-            event.target === event.currentTarget &&
-            event.propertyName === 'grid-template-columns'
-          )
-            finishWorkspaceReveal();
-        }}
-      >
-        <div className="shell-axis" aria-hidden="true" />
+    <NavigationDrawerContext
+      value={{
+        id: drawerId,
+        narrow: !wide,
+        registerOpener,
+        open: menuOpen,
+        searchOnOpen: menu === 'search',
+        show: () => setMenu('open'),
+        close: () => setMenu('closed'),
+      }}
+    >
+      <AssistantContext value={assistantContext}>
         <div
-          ref={modeProbe}
-          className="assistant-mode-probe pointer-events-none invisible absolute h-0"
-          aria-hidden="true"
-        />
-        <SidebarSizeProbes controller={left} />
-        <SidebarSizeProbes controller={right} />
-        <div className="sidebar-column shell:min-h-0 min-w-0">
-          <div
-            id={left.navigationId}
-            ref={leftContentRef}
-            className="sidebar-navigation shell:h-full"
-            inert={
-              left.collapsed || workspaceRevealLocked || left.preview !== null
-            }
-            aria-hidden={
-              left.collapsed ||
-              workspaceRevealLocked ||
-              left.preview !== null ||
-              undefined
-            }
-          >
-            {navigation}
-          </div>
-        </div>
-        <div className="shell:min-h-0 relative min-w-0">
-          <SidebarResizeHandle
-            controller={left}
-            disabled={workspaceRevealLocked}
-          />
-          <div className="shell:h-full @container/sheet min-w-0">
-            {children}
-          </div>
-        </div>
-        {docked ? (
-          <aside
-            id={right.navigationId}
-            aria-label="Assistant"
-            className="assistant-dock relative min-h-0 min-w-0"
-            data-open={open || undefined}
-            onKeyDown={onPanelKeyDown}
-          >
-            {open ? <SidebarResizeHandle controller={right} /> : null}
-            {panel}
-          </aside>
-        ) : null}
-      </div>
-      {!docked ? (
-        <ModalOverlay
-          isOpen={open}
-          onOpenChange={(value) => {
-            if (!value) close();
-          }}
-          isDismissable
-          isKeyboardDismissDisabled={
-            right.preview !== null || right.optionsOpen
-          }
-          className="assistant-overlay drawer-overlay p-shell-inset fixed inset-0 z-50 flex justify-end"
+          className="resizable-shell bg-canvas p-shell-inset max-shell:gap-3.5 shell:h-dvh shell:overflow-hidden relative grid"
           style={style}
-          data-resizing={right.preview !== null || undefined}
-          data-dragging={right.isDragging || undefined}
+          data-collapsed={left.collapsed || undefined}
+          data-resizing={left.preview !== null || undefined}
+          data-dragging={left.isDragging || right.isDragging || undefined}
+          data-assistant-resizing={right.preview !== null || undefined}
+          data-workspace-reveal={
+            workspaceRevealActive ? workspaceReveal : undefined
+          }
+          onTransitionEnd={(event) => {
+            if (
+              workspaceReveal === 'opening' &&
+              event.target === event.currentTarget &&
+              event.propertyName === 'grid-template-columns'
+            )
+              finishWorkspaceReveal();
+          }}
         >
-          <Modal className="assistant-modal bg-canvas rounded-shell relative h-full min-h-0">
-            <Dialog
+          <div className="shell-axis" aria-hidden="true" />
+          <div
+            ref={modeProbe}
+            className="assistant-mode-probe pointer-events-none invisible absolute h-0"
+            aria-hidden="true"
+          />
+          <SidebarSizeProbes controller={left} />
+          <SidebarSizeProbes controller={right} />
+          {wide ? (
+            <div className="sidebar-column max-shell:hidden shell:min-h-0 min-w-0">
+              <div
+                id={left.navigationId}
+                ref={leftContentRef}
+                className="sidebar-navigation shell:h-full"
+                inert={
+                  left.collapsed ||
+                  workspaceRevealLocked ||
+                  left.preview !== null
+                }
+                aria-hidden={
+                  left.collapsed ||
+                  workspaceRevealLocked ||
+                  left.preview !== null ||
+                  undefined
+                }
+              >
+                {navigation}
+              </div>
+            </div>
+          ) : null}
+          <div className="shell:min-h-0 relative min-w-0">
+            <SidebarResizeHandle
+              controller={left}
+              disabled={workspaceRevealLocked}
+            />
+            <div className="shell:h-full @container/sheet min-w-0">
+              {children}
+            </div>
+          </div>
+          {docked ? (
+            <aside
               id={right.navigationId}
               aria-label="Assistant"
-              className="h-full outline-none"
+              className="assistant-dock relative min-h-0 min-w-0"
+              data-open={open || undefined}
+              onKeyDown={onPanelKeyDown}
             >
-              <div className="h-full" onKeyDown={onPanelKeyDown}>
-                <SidebarResizeHandle controller={right} />
-                {panel}
-              </div>
-            </Dialog>
-          </Modal>
-        </ModalOverlay>
-      ) : null}
-    </AssistantContext>
+              {open ? <SidebarResizeHandle controller={right} /> : null}
+              {panel}
+            </aside>
+          ) : null}
+        </div>
+        {!wide ? <NavigationDrawer>{navigation}</NavigationDrawer> : null}
+        {!docked ? (
+          <ModalOverlay
+            isOpen={open}
+            onOpenChange={(value) => {
+              if (!value) close();
+            }}
+            isDismissable
+            isKeyboardDismissDisabled={
+              right.preview !== null || right.optionsOpen
+            }
+            className="assistant-overlay drawer-overlay p-shell-inset fixed inset-0 z-50 flex justify-end"
+            style={style}
+            data-resizing={right.preview !== null || undefined}
+            data-dragging={right.isDragging || undefined}
+          >
+            <Modal className="assistant-modal bg-canvas rounded-shell relative h-full min-h-0">
+              <Dialog
+                id={right.navigationId}
+                aria-label="Assistant"
+                className="h-full outline-none"
+              >
+                <div className="h-full" onKeyDown={onPanelKeyDown}>
+                  <SidebarResizeHandle controller={right} />
+                  {panel}
+                </div>
+              </Dialog>
+            </Modal>
+          </ModalOverlay>
+        ) : null}
+      </AssistantContext>
+    </NavigationDrawerContext>
   );
 }

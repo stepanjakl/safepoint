@@ -9,6 +9,7 @@ import {
   type LiveRun,
   type RunSelection,
 } from '@/components/app-shell/runs/run-selection';
+import { useRunReady } from '@/components/app-shell/runs/run-readiness';
 import { useWorkingFavicon } from '@/components/app-shell/runs/working-favicon';
 import {
   ModelRunThread,
@@ -136,6 +137,7 @@ function DirectThread({
   // starting at 'reading' and replaying arrivals.
   const [startedWithRead] = useState(kept.readId !== null);
   const [hydrated, setHydrated] = useState(!startedWithRead);
+  useRunReady(hydrated);
   // A freshly started run opens on 'starting' so Instructions plays its
   // entrance sequence before Reading inputs arrives (while the live read
   // already runs in the background).

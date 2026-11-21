@@ -23,7 +23,7 @@ describe('edge preset preference resolution', () => {
 
   it('falls through invalid URL and storage values to default', () => {
     expect(resolveEdgePreset('thin', 'highlights')).toBe('highlights');
-    expect(resolveEdgePreset('unknown', 'thin')).toBe('default');
-    expect(resolveEdgePreset(null, null)).toBe('default');
+    expect(resolveEdgePreset('unknown', 'thin')).toBe('retina');
+    expect(resolveEdgePreset(null, null)).toBe('retina');
   });
 });

@@ -15,7 +15,6 @@ import {
 } from 'react';
 import { cx } from '@/lib/ui/cx';
 import { LAST_PROCESS_KEY } from '@/lib/shell/navigation';
-import type { InputDetail } from '@/lib/shell/input-details';
 import type { ProcessSummary } from '@/lib/shell/model';
 import type { SystemLink } from '@/lib/shell/system-links';
 import { useInstructions } from '@/components/app-shell/instructions/instructions-store';
@@ -75,6 +74,11 @@ export const ProcessSheetActions = createContext<{
   currentVersion: string;
 } | null>(null);
 
+export const ProcessInputNavigation = createContext<{
+  initialInputId: string | null;
+  returnToRun: () => void;
+} | null>(null);
+
 /*
   The sheet, and what it is showing. The header's menu chooses between the run
   -- the list of runs beside the thread of the current one -- and the four
@@ -102,7 +106,6 @@ export function ProcessSheet({
 }: {
   process: ProcessSummary;
   inputs?: SystemLink[];
-  inputDetails?: Record<string, InputDetail>;
   // A process's own rulebook, as a Rules tab; and its own Inputs and Outputs
   // tabs, in place of the evidence files' and outputs' lists.
   rulesPanel?: ReactNode;
@@ -226,7 +229,7 @@ export function ProcessSheet({
         <aside
           ref={scrollRuns}
           aria-labelledby="runs-heading"
-          className="process-runs-list sheet-bleed @sheet-wide/sheet:sheet-bleed-bottom @max-sheet-wide/sheet:sheet-bleed-end border-raised-ring shadow-separator-right-strong @sheet-wide/sheet:border-b-0 @sheet-wide/sheet:border-r shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative border-b"
+          className="process-runs-list sheet-bleed @sheet-wide/sheet:sheet-bleed-bottom @max-sheet-wide/sheet:sheet-bleed-end shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative"
         >
           <SectionRow id="runs-heading" title="Runs">
             <span className="flex items-center gap-1">
@@ -256,9 +259,15 @@ export function ProcessSheet({
     ) : key === 'instructions' && policy ? (
       <PolicyPanel policy={policy} />
     ) : key === 'inputs' && inputsPanel ? (
-      <SinglePanel {...SECTION.inputs} width="full">
+      <ProcessInputNavigation
+        key={request}
+        value={{
+          initialInputId: openView?.kind === 'input' ? openView.id : null,
+          returnToRun: () => chooseTab('runs'),
+        }}
+      >
         {inputsPanel}
-      </SinglePanel>
+      </ProcessInputNavigation>
     ) : key === 'outputs' && outputsPanel ? (
       <SinglePanel {...SECTION.outputs} width="full">
         {outputsPanel}
@@ -278,7 +287,7 @@ export function ProcessSheet({
 
   return (
     <RunSelectionProvider value={selection}>
-      <div className="shell:grid shell:h-full shell:grid-rows-[auto_minmax(0,1fr)]">
+      <div className="shell:h-full grid grid-rows-[auto_minmax(0,1fr)]">
         <ProcessHeader
           process={process}
           version={policy?.version ?? version}
@@ -292,7 +301,7 @@ export function ProcessSheet({
         {/* The frame the tab bodies trade places in, clipped to the pane's inner
             radius so a body or its scrollbar never crosses the corner's edge. */}
         <ProcessContentTransition
-          className="process-sheet-frame shell:grid shell:min-h-0 shell:grid-rows-[minmax(0,1fr)] rounded-b-shell-inner rounded-tr-shell-inner clip-past-pane-highlight grid-cols-[minmax(0,1fr)] overflow-clip"
+          className="process-sheet-frame shell:grid shell:min-h-0 shell:grid-rows-[minmax(0,1fr)] rounded-b-shell-inner shell:rounded-tr-shell-inner clip-past-pane-highlight grid-cols-[minmax(0,1fr)] overflow-clip"
           finishesLeaving
         >
           <div ref={chrome} className="sheet-chrome" aria-hidden="true" />
@@ -428,7 +437,7 @@ function RunsDetail({ children }: { children: ReactNode }) {
   );
 }
 
-function SinglePanel({
+export function SinglePanel({
   id,
   title,
   count,

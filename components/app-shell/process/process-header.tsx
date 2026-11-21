@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback, useLayoutEffect, useRef, type Ref } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
 // Deep imports: Blode's barrel is the whole icon library. The two data icons
 // are one drawing: the same tray, with the arrow turned in or out, so the pair
@@ -30,7 +31,8 @@ import { Assistant } from '@/components/app-shell/assistant/assistant';
   the sheet is showing is the darker one, so the row says where you already
   are.
 */
-const MENU = 'flex flex-none items-center gap-1 rounded-full p-1';
+const MENU =
+  'flex items-center gap-1 max-shell:pe-2 shell:flex-none shell:rounded-full shell:p-1';
 
 /*
   No ink here: which of the three steps an item is written in belongs with the
@@ -119,6 +121,7 @@ function ProcessMenu({
   outputs,
   tab,
   onTabChange,
+  menuRef,
 }: {
   version: string;
   // What a process calls its instructions, where it brings its own panel.
@@ -129,6 +132,7 @@ function ProcessMenu({
   outputs: SystemLink[];
   tab: ProcessTab;
   onTabChange: (tab: ProcessTab) => void;
+  menuRef: Ref<HTMLDivElement>;
 }) {
   const attention = inputs.filter(needsAttention).length;
   const worst = worstFreshness(inputs);
@@ -139,102 +143,107 @@ function ProcessMenu({
 
   return (
     <div className={MENU}>
-      {/* It ends in its word rather than a count, so it ends in the padding it
+      <div
+        ref={menuRef}
+        className="process-header-tabs-scroll edge-scroll max-shell:flex max-shell:min-w-0 max-shell:flex-1 max-shell:items-center max-shell:gap-1 max-shell:overflow-x-auto max-shell:ps-sheet-inset max-shell:pe-3 max-shell:py-2 shell:contents"
+      >
+        {/* It ends in its word rather than a count, so it ends in the padding it
           starts with: the derived end inset belongs to the items whose last
           thing is a pill. */}
-      <AriaButton
-        onPress={() => onTabChange('runs')}
-        aria-label="Runs"
-        aria-current={tab === 'runs' ? 'true' : undefined}
-        className={cx(ITEM, 'pe-3', face('runs'))}
-      >
-        <History
-          aria-hidden
-          size={16}
-          strokeWidth={1.8}
-          className={cx('flex-none', icon('runs'))}
-        />
-        <span>Runs</span>
-      </AriaButton>
-      <AriaButton
-        onPress={() => onTabChange('instructions')}
-        aria-label={`${instructionsLabel}: version ${version}`}
-        aria-current={tab === 'instructions' ? 'true' : undefined}
-        className={cx(ITEM, face('instructions'))}
-      >
-        <Lab
-          aria-hidden
-          size={16}
-          strokeWidth={1.8}
-          className={cx('flex-none -translate-y-px', icon('instructions'))}
-        />
-        <span>{instructionsLabel}</span>
-        <span className={COUNT}>{version}</span>
-      </AriaButton>
-      {hasRules ? (
         <AriaButton
-          onPress={() => onTabChange('rules')}
-          aria-label="Rules"
-          aria-current={tab === 'rules' ? 'true' : undefined}
-          className={cx(ITEM, 'pe-3', face('rules'))}
+          onPress={() => onTabChange('runs')}
+          aria-label="Runs"
+          aria-current={tab === 'runs' ? 'true' : undefined}
+          className={cx(ITEM, 'pe-3', face('runs'))}
         >
-          <ShieldCheck
+          <History
             aria-hidden
             size={16}
             strokeWidth={1.8}
-            className={cx('flex-none -translate-y-px', icon('rules'))}
+            className={cx('flex-none', icon('runs'))}
           />
-          <span>Rules</span>
+          <span>Runs</span>
         </AriaButton>
-      ) : null}
-      {inputs.length > 0 ? (
         <AriaButton
-          onPress={() => onTabChange('inputs')}
-          aria-label={`Inputs: ${plural(inputs.length, 'file', 'files')}${
-            attention ? `, ${attention} ${condition}` : ''
-          }`}
-          aria-current={tab === 'inputs' ? 'true' : undefined}
-          data-has-state-dot={worst || undefined}
-          className={cx(ITEM, face('inputs', worst ?? 'none'))}
+          onPress={() => onTabChange('instructions')}
+          aria-label={`${instructionsLabel}: version ${version}`}
+          aria-current={tab === 'instructions' ? 'true' : undefined}
+          className={cx(ITEM, face('instructions'))}
         >
-          <ArrowInbox
+          <Lab
             aria-hidden
             size={16}
             strokeWidth={1.8}
-            className={cx('flex-none -translate-y-px', icon('inputs'))}
+            className={cx('flex-none -translate-y-px', icon('instructions'))}
           />
-          <span>Inputs</span>
-          {worst ? (
-            <span className="inline-flex items-center gap-1.5">
+          <span>{instructionsLabel}</span>
+          <span className={COUNT}>{version}</span>
+        </AriaButton>
+        {hasRules ? (
+          <AriaButton
+            onPress={() => onTabChange('rules')}
+            aria-label="Rules"
+            aria-current={tab === 'rules' ? 'true' : undefined}
+            className={cx(ITEM, 'pe-3', face('rules'))}
+          >
+            <ShieldCheck
+              aria-hidden
+              size={16}
+              strokeWidth={1.8}
+              className={cx('flex-none -translate-y-px', icon('rules'))}
+            />
+            <span>Rules</span>
+          </AriaButton>
+        ) : null}
+        {inputs.length > 0 ? (
+          <AriaButton
+            onPress={() => onTabChange('inputs')}
+            aria-label={`Inputs: ${plural(inputs.length, 'file', 'files')}${
+              attention ? `, ${attention} ${condition}` : ''
+            }`}
+            aria-current={tab === 'inputs' ? 'true' : undefined}
+            data-has-state-dot={worst || undefined}
+            className={cx(ITEM, face('inputs', worst ?? 'none'))}
+          >
+            <ArrowInbox
+              aria-hidden
+              size={16}
+              strokeWidth={1.8}
+              className={cx('flex-none -translate-y-px', icon('inputs'))}
+            />
+            <span>Inputs</span>
+            {worst ? (
+              <span className="inline-flex items-center gap-1.5">
+                <span className={COUNT}>{inputs.length}</span>
+                <span
+                  aria-hidden="true"
+                  className={cx(
+                    'size-1.5 flex-none rounded-full',
+                    STATE_DOT[worst],
+                  )}
+                />
+              </span>
+            ) : (
               <span className={COUNT}>{inputs.length}</span>
-              <span
-                aria-hidden="true"
-                className={cx(
-                  'size-1.5 flex-none rounded-full',
-                  STATE_DOT[worst],
-                )}
-              />
-            </span>
-          ) : (
-            <span className={COUNT}>{inputs.length}</span>
-          )}
+            )}
+          </AriaButton>
+        ) : null}
+        <AriaButton
+          onPress={() => onTabChange('outputs')}
+          aria-label={`Outputs: ${plural(outputs.length, 'API', 'APIs')}`}
+          aria-current={tab === 'outputs' ? 'true' : undefined}
+          className={cx(ITEM, face('outputs'))}
+        >
+          <ArrowOutOfBox
+            aria-hidden
+            size={16}
+            strokeWidth={1.8}
+            className={cx('flex-none -translate-y-px', icon('outputs'))}
+          />
+          <span>Outputs</span>
+          <span className={COUNT}>{outputs.length}</span>
         </AriaButton>
-      ) : null}
-      <AriaButton
-        onPress={() => onTabChange('outputs')}
-        aria-label={`Outputs: ${plural(outputs.length, 'API', 'APIs')}`}
-        aria-current={tab === 'outputs' ? 'true' : undefined}
-        className={cx(ITEM, face('outputs'))}
-      >
-        <ArrowOutOfBox
-          aria-hidden
-          size={16}
-          strokeWidth={1.8}
-          className={cx('flex-none -translate-y-px', icon('outputs'))}
-        />
-        <span>Outputs</span>
-        <span className={COUNT}>{outputs.length}</span>
-      </AriaButton>
+      </div>
       <AriaButton
         onPress={() => onTabChange('settings')}
         aria-label="Settings"
@@ -286,21 +295,53 @@ export function ProcessHeader({
   onTabChange: (tab: ProcessTab) => void;
 }) {
   const row = useEdgeScroll<HTMLDivElement>();
+  const tabScroll = useEdgeScroll<HTMLDivElement>();
+  const tabs = useRef<HTMLDivElement>(null);
+  const tabRow = useCallback(
+    (element: HTMLDivElement | null) => {
+      tabs.current = element;
+      return tabScroll(element);
+    },
+    [tabScroll],
+  );
+
+  useLayoutEffect(() => {
+    const scroller = tabs.current;
+    if (!scroller) return;
+    const reveal = () => {
+      if (getComputedStyle(scroller).overflowX !== 'auto') return;
+      const active = scroller.querySelector('[aria-current="true"]');
+      if (!active) return;
+      const item = active.getBoundingClientRect();
+      const viewport = scroller.getBoundingClientRect();
+      const gutter = Number.parseFloat(
+        getComputedStyle(scroller).scrollPaddingInlineStart,
+      );
+      if (item.left < viewport.left + gutter)
+        scroller.scrollLeft += item.left - viewport.left - gutter;
+      else if (item.right > viewport.right - gutter)
+        scroller.scrollLeft += item.right - viewport.right + gutter;
+    };
+    reveal();
+    const resize = new ResizeObserver(reveal);
+    resize.observe(scroller);
+    return () => resize.disconnect();
+  }, [tab]);
   return (
     // Above the sticky section heads, so the notch stays in the layer of the
     // edge it continues. Widened over the pane's highlight and padded back, so
     // only its rule crosses it to the ring. The lit line under the rule is the
     // sheet frame's (process-sheet.css), beneath the sheet, so a head's band
     // covers it.
-    <header className="process-header -mx-control-highlight px-control-highlight relative z-10 grid grid-cols-[minmax(0,1fr)_auto] border-b">
+    <header className="process-header shell:grid-cols-[minmax(0,1fr)_auto] relative z-10 grid">
       {/* Both cells recover the same top inset and bottom edge, so their
           centres agree even when the pane's highlight thickness changes. */}
-      <ProcessContentTransition className="-mt-pane-inset -mb-control-edge grid min-w-0">
+      <ProcessContentTransition className="-mt-pane-inset shell:-mb-control-edge grid min-w-0">
         {/* Nothing in the row shrinks or hides when it runs out of width: the
             row scrolls instead, and fades at the side with more to show. */}
         <div
           ref={row}
-          className="edge-scroll flex min-w-0 items-center justify-between gap-x-4 overflow-x-auto px-4 sm:px-6"
+          className="edge-scroll shell:flex shell:items-center shell:justify-between shell:gap-x-4 shell:overflow-x-auto shell:px-6 min-w-0"
         >
           <ProcessTitle processId={process.id} fallback={process.name} />
           <ProcessMenu
@@ -311,6 +352,7 @@ export function ProcessHeader({
             outputs={outputs}
             tab={tab}
             onTabChange={onTabChange}
+            menuRef={tabRow}
           />
         </div>
       </ProcessContentTransition>
@@ -319,8 +361,8 @@ export function ProcessHeader({
           square, parallel to the pane's side and the notch's gap in from it.
           Top and right recover the pane inset; the bottom overlaps only the
           header's border, keeping its rule and sheen level with the notch. */}
-      <Notch className="-mt-pane-inset -mr-pane-inset -mb-control-edge">
-        <Assistant slant="left" />
+      <Notch className="process-assistant-notch shell:-mt-pane-inset shell:-mr-pane-inset shell:-mb-control-edge">
+        <Assistant slant="left" compact />
       </Notch>
     </header>
   );

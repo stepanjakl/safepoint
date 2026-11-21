@@ -20,10 +20,12 @@ test('a fresh browser is named in the account row, and keeps the name', async ({
   await expect(accountName(page)).not.toHaveText('Maya');
   const name = (await accountName(page).textContent())!;
   expect(name).toMatch(/^\S+ \S+$/);
-  await expect(page.locator('.shell-profile-row [role="img"]')).toHaveAttribute(
-    'aria-label',
-    `${name}’s avatar`,
-  );
+  await expect(
+    page.getByRole('button', {
+      name: `Spin ${name}’s profile orb`,
+      exact: true,
+    }),
+  ).toBeVisible();
 
   const cookie = (await first.cookies()).find((one) => one.name === COOKIE)!;
   expect(cookie.httpOnly).toBe(true);
@@ -45,4 +47,21 @@ test('a fresh browser is named in the account row, and keeps the name', async ({
 
   await first.close();
   await second.close();
+});
+
+test('visitors start in dark and retina and can keep other choices', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const root = page.locator('html');
+  await expect(root).toHaveAttribute('data-theme', 'dark');
+  await expect(root).toHaveAttribute('data-edges', 'retina');
+
+  await page.evaluate(() => {
+    localStorage.setItem('safepoint.dev.theme', 'light');
+    localStorage.setItem('safepoint.dev.edges', 'default');
+  });
+  await page.reload();
+  await expect(root).toHaveAttribute('data-theme', 'light');
+  await expect(root).not.toHaveAttribute('data-edges', /.+/);
 });

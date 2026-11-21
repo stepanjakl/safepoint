@@ -177,21 +177,18 @@ export function ProcessPanels({
     <div
       ref={root}
       className={cx('process-panels', COLUMNS, opensDetail && NARROW_LIST)}
+      data-tab={tab}
       onKeyDownCapture={onKeyDownCapture}
     >
       <div
         // Where the detail is showing and the two do not fit, it takes this
         // column's place rather than squeezing beside it.
         className={cx(
-          'process-panel-list sheet-bleed shell:min-h-0 shell:overflow-y-auto shell:overscroll-contain border-raised-ring min-w-0',
+          'process-panel-list sheet-bleed shell:min-h-0 shell:overflow-y-auto shell:overscroll-contain min-w-0',
           // Rows run to the column's edges; prose pads itself back.
           tab !== 'instructions' && 'sheet-bleed-head',
           opensDetail
-            ? cx(
-                '@sheet-narrow/sheet:border-r @max-sheet-narrow/sheet:sheet-bleed-end',
-                tab !== 'instructions' &&
-                  '@max-sheet-narrow/sheet:sheet-bleed-end-head',
-              )
+            ? '@max-sheet-narrow/sheet:sheet-bleed-end'
             : 'sheet-bleed-end sheet-bleed-end-head',
           panel ? '@max-sheet-narrow/sheet:hidden' : null,
         )}

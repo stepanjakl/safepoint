@@ -73,6 +73,7 @@ export const MONO_CHOICES = [
 ] as const;
 
 export type MonoChoice = (typeof MONO_CHOICES)[number];
+export const DEFAULT_MONO = 'sans' satisfies MonoChoice;
 
 export function isMonoChoice(value: unknown): value is MonoChoice {
   return MONO_CHOICES.includes(value as MonoChoice);
@@ -121,18 +122,19 @@ export function isThemeChoice(value: unknown): value is ThemeChoice {
 
 // Rendered on <html> by the layout. 'system' is the absence of the attribute,
 // so it is a choice a person makes, never the default.
-export const DEFAULT_THEME: ThemeChoice = 'light';
+export const DEFAULT_THEME: ThemeChoice = 'dark';
 
 // Development preferences, kept as the others are: safepoint.dev.<thing>.
 export const TYPEFACE_STORAGE_KEY = 'safepoint.dev.typeface';
-export const MONO_STORAGE_KEY = 'safepoint.dev.mono';
+export const MONO_STORAGE_KEY = 'safepoint.dev.mono.v2';
+export const LEGACY_MONO_STORAGE_KEY = 'safepoint.dev.mono';
 export const THEME_STORAGE_KEY = 'safepoint.dev.theme';
 export const TYPESCALE_STORAGE_KEY = 'safepoint.dev.typescale';
 // Their names before 12 October 2026, moved over once by the preferences
 // script. Drop once no browser in use still holds them.
 export const RENAMED_STORAGE_KEYS: [string, string][] = [
   ['safepoint:typeface', TYPEFACE_STORAGE_KEY],
-  ['safepoint:mono', MONO_STORAGE_KEY],
+  ['safepoint:mono', LEGACY_MONO_STORAGE_KEY],
   ['safepoint:theme', THEME_STORAGE_KEY],
   ['safepoint:typescale', TYPESCALE_STORAGE_KEY],
 ];

@@ -2,18 +2,16 @@
 
 import { useId, useRef, useState, type RefObject } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Dialog, DialogTrigger, Heading, Popover } from 'react-aria-components';
+import { DialogTrigger, Popover } from 'react-aria-components';
 // Deep import: Blode's barrel is the whole icon library.
 import BoltFilled from 'blode-icons-react/icons/bolt-filled';
 import ChevronDown from 'blode-icons-react/icons/chevron-down';
 import Play from 'blode-icons-react/icons/play';
 import { HeadIconButton } from '@/components/app-shell/head-icon-button';
 import { useWalkthrough } from '@/components/app-shell/walkthrough';
-import {
-  useAgentationPopoverDismiss,
-  useAgentationPopoverProps,
-} from '@/components/dev/agentation-popover';
+import { useNonModalPopover } from '@/components/dev/agentation-popover';
 import { Button } from '@/components/ui/button';
+import { NonModalPopoverPanel } from '@/components/ui/non-modal-popover-panel';
 import { useScreenSettled } from '@/components/ui/screen-settled';
 import { Select } from '@/components/ui/select';
 import { WalkthroughHint } from '@/components/ui/walkthrough-hint';
@@ -151,16 +149,18 @@ function InstructionsPopover({
   const [modelPlan, setModelPlan] = useState<ModelPlan | ''>('');
   const popoverRef = useRef<HTMLDivElement>(null);
   const canOpen = Boolean(start || startMock);
-  const popoverProps = useAgentationPopoverProps(pill);
-  useAgentationPopoverDismiss(
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const close = () => onOpenChange(false);
+  const popoverProps = useNonModalPopover(
     open && canOpen,
-    () => onOpenChange(false),
+    close,
     popoverRef,
-    pill,
+    triggerRef,
   );
   return (
     <DialogTrigger isOpen={open && canOpen} onOpenChange={onOpenChange}>
       <HeadIconButton
+        ref={triggerRef}
         label="Start run with a note"
         tooltip={{
           label: 'Run options',
@@ -186,71 +186,69 @@ function InstructionsPopover({
         className="popover-motion control-face surface-popover rounded-shell w-80 max-w-[calc(100dvw_-_2rem)]"
         {...popoverProps}
       >
-        <Dialog className="p-3 outline-none">
-          {({ close }) => (
-            <form
-              className="grid grid-cols-1 gap-2.5"
-              onSubmit={(event) => {
-                event.preventDefault();
-                const note = text.trim();
-                close();
-                // The note is kept until the run is: a refused start leaves
-                // it to try again.
-                void start?.(note, modelPlan || 'gemini').then((started) => {
-                  if (started) {
-                    setText('');
-                    setModelPlan('');
-                  }
-                });
-              }}
-            >
-              <Heading slot="title" className="text-dense font-medium">
-                Start with a note
-              </Heading>
-              <textarea
-                autoFocus
-                aria-label="Note for this run"
-                name="additionalInstructions"
-                autoComplete="off"
-                rows={4}
-                value={text}
-                onChange={(event) => setText(event.target.value)}
-                placeholder="What should this run focus on?…"
-                className="field text-body text-primary w-full resize-y px-3 py-2"
-              />
-              {start ? (
-                <RunModelSelect modelPlan={modelPlan} onChange={setModelPlan} />
-              ) : null}
-              <div className="flex flex-wrap items-center justify-end gap-1.5">
-                {startMock ? (
-                  <Button
-                    size="small"
-                    className="me-auto"
-                    onPress={() => {
-                      const note = text.trim();
-                      close();
-                      if (startMock(note)) setText('');
-                    }}
-                  >
-                    <BoltFilled aria-hidden size={13} className="flex-none" />
-                    Start mock run
-                  </Button>
-                ) : null}
-                <Button size="small" onPress={close}>
-                  Cancel
-                </Button>
+        <NonModalPopoverPanel
+          title="Start with a note"
+          className="grid gap-2.5 p-3"
+        >
+          <form
+            className="grid grid-cols-1 gap-2.5"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const note = text.trim();
+              close();
+              // The note is kept until the run is: a refused start leaves
+              // it to try again.
+              void start?.(note, modelPlan || 'gemini').then((started) => {
+                if (started) {
+                  setText('');
+                  setModelPlan('');
+                }
+              });
+            }}
+          >
+            <textarea
+              autoFocus
+              aria-label="Note for this run"
+              name="additionalInstructions"
+              autoComplete="off"
+              rows={4}
+              value={text}
+              onChange={(event) => setText(event.target.value)}
+              placeholder="What should this run focus on?…"
+              className="field text-body text-primary w-full resize-y px-3 py-2"
+            />
+            {start ? (
+              <RunModelSelect modelPlan={modelPlan} onChange={setModelPlan} />
+            ) : null}
+            <div className="flex flex-wrap items-center justify-end gap-1.5">
+              {startMock ? (
                 <Button
                   size="small"
-                  type="submit"
-                  variant="primary"
-                  isDisabled={!start}
+                  className="me-auto"
+                  onPress={() => {
+                    const note = text.trim();
+                    close();
+                    if (startMock(note)) setText('');
+                  }}
                 >
-                  Start run
+                  <BoltFilled aria-hidden size={13} className="flex-none" />
+                  Start mock run
                 </Button>
-              </div>
-            </form>
-          )}
-        </Dialog>
+              ) : null}
+              <Button size="small" onPress={close}>
+                Cancel
+              </Button>
+              <Button
+                size="small"
+                type="submit"
+                variant="primary"
+                isDisabled={!start}
+              >
+                Start run
+              </Button>
+            </div>
+          </form>
+        </NonModalPopoverPanel>
       </Popover>
     </DialogTrigger>
   );

@@ -3,31 +3,32 @@
      Not an inset shadow: that would follow the frame's corner round the notch. */
   .process-sheet-frame {
     position: relative;
-    background: linear-gradient(var(--sp-raised-edge), var(--sp-raised-edge)) top / 100%
-      var(--highlight-pane) no-repeat;
+    @media (width >= 56.25rem) {
+      background: linear-gradient(var(--sp-raised-edge), var(--sp-raised-edge)) top / 100%
+        var(--highlight-pane) no-repeat;
+    }
   }
-  /* The notch arc's highlight, which the notch leaves to the sheet
-     (--notch-corner-highlight): its .notch::after box and circle in
-     components/ui/notch.css, highlight band only. The frame's own corner is
-     centred a ring-width higher, so it cannot draw this. Under the sheet. */
-  .process-sheet-frame::before {
-    content: '';
-    position: absolute;
-    top: calc(var(--spacing-control-edge) * -1);
-    right: calc(var(--spacing-pane-inset) * -1);
-    z-index: -1;
-    width: calc(var(--notch-corner) + var(--spacing-control-edge));
-    height: calc(var(--notch-corner) + var(--spacing-control-edge));
-    background: radial-gradient(
-      circle at var(--spacing-control-edge) var(--notch-corner),
-      transparent
-        calc(var(--notch-corner) - var(--spacing-control-edge) - var(--spacing-control-highlight)),
-      var(--sp-raised-edge)
-        calc(var(--notch-corner) - var(--spacing-control-edge) - var(--spacing-control-highlight)),
-      var(--sp-raised-edge) calc(var(--notch-corner) - var(--spacing-control-edge)),
-      transparent calc(var(--notch-corner) - var(--spacing-control-edge))
-    );
-    pointer-events: none;
+  /* The section heads cover the highlight along the top, including the arc. */
+  @supports (clip-path: shape(from 0 0, line to 1px 1px)) {
+    @media (forced-colors: none) and (width >= 56.25rem) {
+      .process-sheet-frame::before {
+        @apply notch-highlight-arc;
+        content: '';
+        position: absolute;
+        top: 0;
+        right: calc(var(--spacing-pane-inset) * -1);
+        z-index: -1;
+        background: var(--sp-raised-edge);
+        pointer-events: none;
+      }
+    }
+  }
+
+  @media (width < 56.25rem) {
+    .process-sheet-frame,
+    .process-sheet-swap {
+      display: grid;
+    }
   }
 
   /* The header's lit line again, over the thread scrolling beneath it: the
@@ -58,6 +59,10 @@
   @container sheet (width < 52rem) {
     .process-runs {
       position: relative;
+
+      @media (width < 56.25rem) {
+        grid-template-rows: auto 1fr;
+      }
     }
     .process-runs::after {
       content: '';
@@ -89,16 +94,87 @@
       grid-column: 1 / 2;
       inset-block: 0 calc(var(--spacing-control-highlight) * -1);
       inset-inline-end: 0;
-      width: var(--edge-rule);
+      pointer-events: none;
+    }
+
+    .process-panels {
+      position: relative;
+    }
+
+    /* Lit highlight beside the list/detail divider, starting below the detail's
+       .sheet-head so the header band stays unlit while the body matches
+       .sheet-chrome-divider in every edge mode. */
+    .process-panels[data-tab='instructions']::after {
+      content: '';
+      position: absolute;
+      z-index: 2;
+      grid-row: 1 / 2;
+      grid-column: 1 / 2;
+      inset-block: var(--spacing-sheet-head) calc(var(--spacing-control-highlight) * -1);
+      inset-inline-end: 0;
+      width: 1px;
+      box-shadow: var(--shadow-separator-right-strong);
       pointer-events: none;
     }
   }
-  /* The runs rail's edge: the ring, and the detail's lit line inside it. The
-     swap's divider (sheet-chrome.ts) is painted here too, so the two match. */
-  .sheet-column-edge::after,
+  /* Keep the divider above the bands and its highlight below the adjacent band. */
   .sheet-chrome-divider {
-    background: var(--sp-raised-ring);
     box-shadow: var(--shadow-separator-right-strong);
+  }
+
+  .sheet-chrome-divider::after,
+  .sheet-column-edge::after,
+  .process-runs::before,
+  .process-panels[data-tab='instructions']::before {
+    --column-divider: inset calc(var(--edge-hairline) * -1) 0 0 var(--sp-raised-ring);
+    z-index: 4;
+    width: 1px;
+    border-right: var(--structural-divider-border) solid CanvasText;
+    box-shadow: var(--column-divider);
+  }
+
+  .sheet-column-edge::after {
+    box-shadow: var(--column-divider), var(--shadow-separator-right-strong);
+  }
+
+  .sheet-chrome-divider::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+  }
+
+  @container sheet (width >= 52rem) {
+    .process-runs::before {
+      content: '';
+      position: absolute;
+      grid-row: 1 / 2;
+      grid-column: 1 / 2;
+      inset-block: 0 calc(var(--spacing-control-highlight) * -1);
+      inset-inline-end: 0;
+      box-shadow: var(--column-divider), var(--shadow-separator-right-strong);
+      pointer-events: none;
+    }
+  }
+
+  @container sheet (width < 52rem) {
+    .process-runs-list {
+      padding-block-end: max(0px, var(--edge-hairline) - var(--structural-divider-border));
+      border-bottom: var(--structural-divider-border) solid CanvasText;
+      box-shadow: inset 0 calc(var(--edge-hairline) * -1) 0 var(--sp-raised-ring);
+    }
+  }
+
+  @container sheet (width >= 44rem) {
+    .process-panels[data-tab='instructions']::before {
+      content: '';
+      position: absolute;
+      grid-row: 1 / 2;
+      grid-column: 1 / 2;
+      inset-block: 0 calc(var(--spacing-control-highlight) * -1);
+      inset-inline-end: 0;
+      pointer-events: none;
+    }
   }
 
   /* The frame through a tab swap (sheet-chrome.ts): under the sections, which
@@ -157,13 +233,14 @@
   }
   /* The bands lent out go in runs-list.css, beside .sheet-head. */
   .process-sheet-frame[data-chrome-borrowed] > .process-sheet-swap {
-    & :is(.process-runs-list, .process-panel-list) {
-      border-right-color: transparent;
+    & .process-runs::before {
+      box-shadow: var(--column-divider);
+    }
+    & .process-runs-list {
       box-shadow: none;
     }
     & .sheet-column-edge::after,
-    & .process-runs::before,
-    & .process-panels::before {
+    & .process-panels::after {
       visibility: hidden;
     }
   }
@@ -249,88 +326,6 @@
     .process-sheet-frame [data-detail-held],
     [data-section-forming] :is(.process-panel-list, .process-runs-list) :is(li, p:not(.sr-only)) {
       animation: none;
-    }
-  }
-}
-
-@media (min-resolution: 2dppx) {
-  :root[data-edges='retina'] .sheet-chrome-divider {
-    background: transparent;
-    box-shadow: var(--shadow-separator-right-strong);
-  }
-
-  /* Paint the 0.75px divider above .sheet-chrome-band while keeping its right
-     lit highlight below the adjacent band (no stacking context on the parent). */
-  :root[data-edges='retina'] .sheet-chrome-divider::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    box-shadow: inset calc(var(--edge-hairline) * -1) 0 0 var(--sp-raised-ring);
-  }
-
-  @container sheet (width >= 52rem) {
-    :root[data-edges='retina'] .process-runs-list {
-      border-right-width: 0;
-      box-shadow: none;
-    }
-
-    /* Draw the 0.75px column divider on the non-scrolling grid overlay above
-       .sheet-head (z-3) and lit rows so the header band stops at the border. */
-    :root[data-edges='retina'] .process-runs::before {
-      content: '';
-      position: absolute;
-      z-index: 4;
-      grid-row: 1 / 2;
-      grid-column: 1 / 2;
-      inset-block: 0 calc(var(--spacing-control-highlight) * -1);
-      inset-inline-end: 0;
-      width: 1px;
-      box-shadow:
-        inset calc(var(--edge-hairline) * -1) 0 0 var(--sp-raised-ring),
-        var(--shadow-separator-right-strong);
-      pointer-events: none;
-    }
-  }
-
-  @container sheet (width < 52rem) {
-    :root[data-edges='retina'] .process-runs-list {
-      border-bottom-width: 0;
-      padding-block-end: var(--edge-hairline);
-      box-shadow: inset 0 calc(var(--edge-hairline) * -1) 0 var(--sp-raised-ring);
-    }
-  }
-
-  @container sheet (width >= 44rem) {
-    :root[data-edges='retina'] .sheet-column-edge::after {
-      z-index: 4;
-      width: 1px;
-      background: transparent;
-      box-shadow:
-        inset calc(var(--edge-hairline) * -1) 0 0 var(--sp-raised-ring),
-        var(--shadow-separator-right-strong);
-    }
-
-    :root[data-edges='retina'] .process-panels {
-      position: relative;
-    }
-
-    :root[data-edges='retina'] .process-panel-list {
-      border-right-width: 0;
-      box-shadow: none;
-    }
-
-    :root[data-edges='retina'] .process-panels:has(> .process-panel-list + *)::before {
-      content: '';
-      position: absolute;
-      z-index: 4;
-      grid-row: 1 / 2;
-      grid-column: 1 / 2;
-      inset-block: 0 calc(var(--spacing-control-highlight) * -1);
-      inset-inline-end: 0;
-      width: 1px;
-      box-shadow: inset calc(var(--edge-hairline) * -1) 0 0 var(--sp-raised-ring);
-      pointer-events: none;
     }
   }
 }

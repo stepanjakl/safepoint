@@ -26,11 +26,22 @@ function fail(message: string): never {
 
 const response = await fetch(`${SERVER}/events?agent=true`, {
   headers: { Accept: 'text/event-stream' },
-}).catch(() =>
+}).catch((error: unknown) => {
+  const cause = error instanceof Error ? error.cause : undefined;
+  const code =
+    typeof cause === 'object' && cause !== null && 'code' in cause
+      ? cause.code
+      : undefined;
+  if (code === 'EPERM' || code === 'EACCES')
+    fail(
+      `Access to ${SERVER} was denied (${code}). Retry the listener with permission to connect to the local server.`,
+    );
+  if (code === 'ECONNREFUSED')
+    fail(`No Agentation server answered at ${SERVER}. Start it with pnpm dev.`);
   fail(
-    `The Agentation server is not running at ${SERVER}. Start it with pnpm dev.`,
-  ),
-);
+    `Could not connect to the Agentation server at ${SERVER}: ${String(error)}`,
+  );
+});
 if (!response.ok || !response.body)
   fail(`The Agentation server answered ${response.status}.`);
 

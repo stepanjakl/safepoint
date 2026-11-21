@@ -27,9 +27,7 @@ export function MorphingText({
   return (
     <>
       <span aria-hidden="true">
-        <TextMorph as="span" duration={duration}>
-          {text}
-        </TextMorph>
+        <MorphingLabel text={text} duration={duration} />
       </span>
       <span className="sr-only">{text}</span>
     </>

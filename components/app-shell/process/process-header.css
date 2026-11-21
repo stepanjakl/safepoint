@@ -146,7 +146,11 @@
     /* The sheet frame draws this arc's highlight, under the sheet, so a head's
        band beneath the corner covers it as it covers the side's. */
     --notch-corner-highlight: transparent;
-    border-color: var(--notch-edge);
+    margin-inline: -1px;
+    padding-inline: 1px;
+    padding-block-end: max(0px, var(--edge-hairline) - var(--structural-divider-border));
+    border-bottom: var(--structural-divider-border) solid CanvasText;
+    box-shadow: inset 0 calc(var(--edge-hairline) * -1) 0 var(--notch-edge);
   }
 
   /* Geometry only; the stops are utilities. The count pill sits the same
@@ -180,9 +184,133 @@
   }
 }
 
-@media (min-resolution: 2dppx) {
-  :root[data-edges='retina'] .process-header {
-    border-bottom-width: 0;
-    box-shadow: inset 0 calc(var(--edge-hairline) * -1) 0 var(--notch-edge);
+@layer components {
+  @media (width < 56.25rem) {
+    :is(.process-header, .shell-menu-notch) {
+      --slant-height: 2.25rem;
+      --narrow-slant-padding: 0.25rem;
+      --narrow-slant-width: 2.75rem;
+      /* The clipped ring starts at the padding box, so the notch measures from it. */
+      --slant-layout-border-width: 0px;
+      --slant-paint-bleed: var(--spacing-control-edge);
+      --notch-side-cover: '';
+      --notch-bend-top: var(--radius-icon);
+      --notch-corner: var(--radius-icon);
+      --slant-radius: var(--radius-icon);
+      --narrow-notch-edge: var(--edge-ring);
+      --narrow-notch-floor-inset: calc(var(--notch-gap) + var(--narrow-notch-edge));
+      /* The notch's slope crosses its midpoint below the flush control's midpoint. */
+      --narrow-notch-slope-inset: calc(
+        var(--notch-gap) / cos(var(--notch-angle)) - var(--narrow-notch-floor-inset) / 2 *
+          tan(var(--notch-angle))
+      );
+      --narrow-title-height: calc(var(--slant-height) + var(--narrow-notch-floor-inset));
+    }
+
+    .process-header {
+      --notch-corner-highlight: var(--sp-raised-edge);
+      --narrow-notch-width: calc(var(--narrow-slant-width) + var(--narrow-notch-slope-inset));
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .process-header::after {
+      content: '';
+      position: absolute;
+      inset-block-start: 100%;
+      /* Meet the side highlights at the ring's inner edge in both modes. */
+      inset-inline: calc(var(--edge-ring) - var(--spacing-pane-inset) + 1px);
+      block-size: var(--spacing-pane-inset);
+      box-shadow: inset 0 var(--highlight-pane) 0 var(--sp-raised-edge);
+      pointer-events: none;
+    }
+
+    .process-header-title {
+      position: relative;
+      block-size: var(--narrow-title-height);
+      align-items: center;
+      justify-content: center;
+      padding-inline: calc(var(--narrow-notch-width) + 1rem);
+    }
+
+    .process-header-title::before,
+    .process-header-title::after {
+      content: '';
+      position: absolute;
+      inset-inline: 0;
+      block-size: var(--spacing-pane-inset);
+      pointer-events: none;
+    }
+
+    .process-header-title::before {
+      inset-block-start: 100%;
+      background: var(--sp-raised-edge);
+      clip-path: inset(0 0 calc(100% - var(--highlight-pane)));
+    }
+
+    .process-header-title::after {
+      inset-block-end: 0;
+      background: var(--notch-edge);
+      clip-path: inset(calc(100% - var(--narrow-notch-edge)) 0 0);
+    }
+
+    @supports (clip-path: shape(from 0 0, line to 1px 1px)) {
+      /* The notches own the turns. Join on the flat floor, inside each tangent. */
+      .process-header-title::before,
+      .process-header-title::after {
+        inset-inline: calc(var(--notch-corner) - var(--spacing-pane-inset));
+      }
+    }
+
+    @media (forced-colors: active) {
+      .process-header::after,
+      .process-header-title::before {
+        display: none;
+      }
+
+      .process-header-title::after {
+        background: CanvasText;
+        forced-color-adjust: none;
+      }
+    }
+
+    .process-header-title input:not(:focus) {
+      text-align: center;
+    }
+
+    .process-header-tabs-scroll {
+      scroll-padding-inline: var(--edge-fade);
+    }
+
+    :is(.shell-menu-notch, .process-header .process-assistant-notch) {
+      --notch-edge-width: var(--narrow-notch-edge);
+      --notch-highlight-start: var(--notch-edge-width);
+      /* The side ring resumes at the tangent. Overlap thickens its fractional edge. */
+      --notch-side-tail: 0px;
+      position: absolute;
+      block-size: var(--narrow-title-height);
+      padding-block: 0 var(--narrow-notch-floor-inset);
+    }
+
+    :is(.shell-menu-notch, .process-assistant-notch) > .slant {
+      inline-size: var(--narrow-slant-width);
+    }
+
+    .shell-pane > .shell-menu-notch {
+      inset-block-start: 0;
+      inset-inline-start: 0;
+      z-index: 20;
+      padding-inline: 0 var(--narrow-notch-slope-inset);
+    }
+
+    /* Bleed the mirrored paint box past its turn so only the path antialiases the edge. */
+    .shell-menu-notch :is(.notch-face, .notch-edge) {
+      right: calc(-1 * var(--notch-edge-width));
+    }
+
+    .process-header .process-assistant-notch {
+      inset-block-start: calc(-1 * var(--spacing-pane-inset));
+      inset-inline-end: calc(-1 * var(--spacing-pane-inset) + 1px);
+      padding-inline: var(--narrow-notch-slope-inset) 0;
+    }
   }
 }

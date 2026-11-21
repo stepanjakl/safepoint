@@ -133,16 +133,16 @@
   /* needs a decision */
   [data-severity='1'] {
     --severity: var(--severity-11);
-    --severity-1: var(--sp-state-decision-1);
-    --severity-3: var(--sp-state-decision-3);
-    --severity-4: var(--sp-state-decision-4);
-    --severity-5: var(--sp-state-decision-5);
-    --severity-6: var(--sp-state-decision-6);
-    --severity-7: var(--sp-state-decision-7);
-    --severity-9: var(--sp-state-decision-9);
-    --severity-10: var(--sp-state-decision-10);
-    --severity-11: var(--sp-state-decision-11);
-    --severity-12: var(--sp-state-decision-12);
+    --severity-1: var(--sp-state-caution-1);
+    --severity-3: var(--sp-state-caution-3);
+    --severity-4: var(--sp-state-caution-4);
+    --severity-5: var(--sp-state-caution-5);
+    --severity-6: var(--sp-state-caution-6);
+    --severity-7: var(--sp-state-caution-7);
+    --severity-9: var(--sp-state-caution-9);
+    --severity-10: var(--sp-state-caution-10);
+    --severity-11: var(--sp-state-caution-11);
+    --severity-12: var(--sp-state-caution-12);
   }
   /* deferred */
   [data-severity='2'] {

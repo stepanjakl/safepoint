@@ -150,14 +150,16 @@ export function useSwap<K extends string>(
 export function TabSwap<K extends string>({
   selected,
   className,
+  motionBetween = () => 'fade',
   children,
 }: {
   selected: K;
   className?: string;
+  motionBetween?: (from: K, to: K) => SwapMotion;
   // Drawn for the key on screen, which trails `selected` through the fade.
   children: (shown: K) => ReactNode;
 }) {
-  const { shown, layer } = useSwap(selected, () => 'fade', true, TAB_PACE);
+  const { shown, layer } = useSwap(selected, motionBetween, true, TAB_PACE);
   const body = useRef<HTMLDivElement>(null);
   const [first] = useState(shown);
   // A body scrolled past its start opens the next one at its start, rather

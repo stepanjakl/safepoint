@@ -13,7 +13,7 @@ import type { AppRouter } from '@/server/api/root';
   as it now stands and writes it into the list, so the screen changes once and
   nothing refetches. A run is not read on its own: the list holds every field
   a thread needs but the text of its instructions, which the instruction
-  versions give by label.
+  versions give by hash.
 */
 export type KeptRun = inferRouterOutputs<AppRouter>['runs']['list'][number];
 export type RunProcessId =

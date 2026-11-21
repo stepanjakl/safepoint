@@ -16,6 +16,7 @@ import {
   ShellPageTransition,
   ShellPageTransitionProvider,
 } from './shell-page-transition';
+import { NavigationNotch } from './sidebar/navigation-drawer';
 import { ResizableShell } from './resizable-shell';
 import { WalkthroughProvider } from './walkthrough';
 
@@ -90,11 +91,12 @@ export async function AppShell({
         With the inset one level down, the face keeps the whole box and the
         content alone steps in, past the ring rather than onto it.
       */}
-          <div className="ground-raised rounded-shell shell:h-full shell:overflow-hidden relative isolate min-w-0 overflow-clip has-[.notch]:rounded-tr-none">
+          <div className="shell-pane ground-raised rounded-shell shell:h-full shell:overflow-hidden max-shell:grid max-shell:has-[.notch[data-side=left]]:rounded-tl-none relative isolate min-w-0 overflow-clip has-[.notch[data-side=right]]:rounded-tr-none">
             <div
               aria-hidden="true"
               className="control-face surface-raised rounded-shell pointer-events-none absolute inset-0 -z-10"
             />
+            <NavigationNotch />
             <ShellPageTransition>{children}</ShellPageTransition>
           </div>
         </ResizableShell>

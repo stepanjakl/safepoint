@@ -28,6 +28,28 @@
   --sp-notch-edge: var(--sp-raised-ring);
 }
 
+@utility notch-highlight-arc {
+  --arc-edge: var(--notch-edge-width, var(--spacing-control-edge));
+  --arc-start: var(--notch-highlight-start, 0px);
+  --arc-radius: calc(var(--notch-corner) - var(--arc-edge));
+  --arc-inner-radius: calc(var(--arc-radius) - var(--spacing-control-highlight));
+  --arc-end: calc(100% - var(--arc-edge));
+  --arc-inner-end: calc(var(--arc-end) - var(--spacing-control-highlight));
+  width: calc(var(--notch-corner) + var(--arc-edge));
+  height: calc(var(--arc-radius) + var(--notch-side-tail, var(--arc-edge)));
+  clip-path: shape(
+    from var(--arc-start) 0,
+    line to var(--arc-edge) 0,
+    arc to var(--arc-end) var(--arc-radius) of var(--arc-radius) cw,
+    line to var(--arc-end) 100%,
+    line to var(--arc-inner-end) 100%,
+    line to var(--arc-inner-end) var(--arc-radius),
+    arc to var(--arc-edge) var(--spacing-control-highlight) of var(--arc-inner-radius) ccw,
+    line to var(--arc-start) var(--spacing-control-highlight),
+    close
+  );
+}
+
 @layer components {
   .notch {
     --notch-face-color: var(--notch-face, var(--sp-notch-face));
@@ -54,6 +76,34 @@
     --notch-inset: calc(var(--notch-gap) + var(--notch-edge-width));
     padding-block: var(--notch-inset);
     padding-inline: calc(var(--notch-gap) / cos(var(--notch-angle))) var(--notch-inset);
+  }
+
+  .notch[data-side='left'] {
+    justify-content: flex-start;
+    padding-inline: var(--notch-inset) calc(var(--notch-gap) / cos(var(--notch-angle)));
+  }
+  /* The notch owns the pane's side through the turn; hide the ring behind it. */
+  .notch::before {
+    content: var(--notch-side-cover, none);
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-end: 0;
+    inline-size: var(--spacing-pane-inset);
+    block-size: calc(100% + var(--notch-corner) - var(--notch-edge-width));
+    z-index: -2;
+    background: var(--notch-face-color);
+    pointer-events: none;
+  }
+  .notch[data-side='left']::before {
+    inset-inline: 0 auto;
+  }
+  .notch[data-side='left'] > .notch-shape,
+  .notch[data-side='left'] > .slant > .slant-shape,
+  .notch[data-side='left']::after {
+    scale: -1 1;
+  }
+  .notch[data-side='left']::after {
+    inset-inline: 0 auto;
   }
 
   /* The outline in the notch's box: W wide, H tall, pane's top edge at 0 and
@@ -88,8 +138,10 @@
     );
     /* How far the painted layers reach back over the header cell. */
     --n-x: calc(var(--n-h) / 2 * var(--n-t) + var(--n-rt));
-    /* Where the floor hands over to the corner below it. */
-    --n-end: calc(var(--n-x) + var(--n-w) - var(--notch-corner));
+    --n-right: calc(var(--n-x) + var(--n-w));
+    --n-end: calc(var(--n-right) - var(--notch-corner));
+    --n-turn: calc(var(--n-h) - var(--n-e) + var(--notch-corner));
+    --n-outer-turn: arc to var(--n-right) var(--n-turn) of var(--notch-corner) cw;
     --n-k: 0px;
     position: absolute;
     inset: 0;
@@ -150,23 +202,38 @@
     left: calc(var(--n-x) * -1);
   }
 
-  /* The canvas: everything on the far side of the outline, to the pane's
-     edge. */
+  /* Keep the floor and turn in the same clips so the browser rasterises the join once. */
+  .notch-face,
+  .notch-edge {
+    bottom: calc(var(--notch-corner) * -1);
+  }
   .notch-face {
     background: var(--notch-face-color);
     clip-path: shape(
       from var(--n-start-0),
       var(--n-down-0),
-      line to calc(var(--n-x) + var(--n-w)) calc(var(--n-h) - var(--n-e)),
-      line to calc(var(--n-x) + var(--n-w)) 0,
+      var(--n-outer-turn),
+      line to var(--n-right) 0,
       close
     );
   }
   /* Between offsets 0 and e, in the pane's ring colour. Opaque, so along the
      floor it takes the header's rule over; under the slope the rule shows. */
   .notch-edge {
+    --n-tail: calc(var(--n-turn) + var(--notch-side-tail, var(--n-e)));
+    --n-inner-right: calc(var(--n-right) - var(--n-e));
     background: var(--notch-edge-color);
-    clip-path: shape(from var(--n-start-0), var(--n-down-0), var(--n-up), close);
+    clip-path: shape(
+      from var(--n-start-0),
+      var(--n-down-0),
+      var(--n-outer-turn),
+      line to var(--n-right) var(--n-tail),
+      line to var(--n-inner-right) var(--n-tail),
+      line to var(--n-inner-right) var(--n-turn),
+      arc to var(--n-end) var(--n-fy) of calc(var(--notch-corner) - var(--n-e)) ccw,
+      var(--n-up),
+      close
+    );
   }
   /* Between offsets e and 2e. Along the floor that band is the row the
      header's sheen already lies in, so the box stops at the rule -- below it
@@ -192,29 +259,15 @@
     background: var(--notch-pane-color);
   }
 
-  /* One arc draws the pane's inset highlight, edge and outside canvas. Its
-     transparent centre leaves the pane face free to transition beneath it.
-     --notch-corner-highlight hands the highlight to a layer beneath instead. */
+  /* The highlight sits inside the clipped ring. A sheet can paint it beneath its rows. */
   .notch::after {
+    @apply notch-highlight-arc;
     content: '';
     position: absolute;
-    top: calc(100% - var(--notch-edge-width));
+    top: 100%;
     right: 0;
-    width: calc(var(--notch-corner) + var(--notch-edge-width));
-    height: calc(var(--notch-corner) + var(--notch-edge-width));
-    background: radial-gradient(
-      circle at var(--notch-edge-width) var(--notch-corner),
-      transparent
-        calc(var(--notch-corner) - var(--notch-edge-width) - var(--spacing-control-highlight)),
-      var(--notch-corner-highlight, var(--notch-highlight-color))
-        calc(var(--notch-corner) - var(--notch-edge-width) - var(--spacing-control-highlight)),
-      var(--notch-corner-highlight, var(--notch-highlight-color))
-        calc(var(--notch-corner) - var(--notch-edge-width)),
-      var(--notch-edge-color) calc(var(--notch-corner) - var(--notch-edge-width)),
-      var(--notch-edge-color) var(--notch-corner),
-      var(--notch-face-color) var(--notch-corner)
-    );
-    clip-path: inset(0 0 var(--notch-edge-width) var(--notch-edge-width));
+    z-index: -1;
+    background: var(--notch-corner-highlight, var(--notch-highlight-color));
     pointer-events: none;
   }
 
@@ -243,6 +296,7 @@
   }
   @supports (clip-path: shape(from 0 0, line to 1px 1px)) {
     .slant {
+      border-width: var(--slant-layout-border-width, var(--control-face-border-width));
       background-image: none;
       box-shadow: none;
     }
@@ -268,6 +322,8 @@
     --s-h: 100cqh;
     --s-w: 100cqw;
     --s-e: var(--control-face-border-width);
+    /* Fill past the clip so fractional edges are antialiased only once. */
+    --s-bleed: var(--slant-paint-bleed, 0px);
     --s-hw: var(--control-highlight-width, var(--spacing-control-highlight));
     --s-r: var(--slant-radius, var(--radius-shell));
     --s-f: 4px;
@@ -392,7 +448,7 @@
         --slant-ring-image,
         linear-gradient(to bottom, var(--control-ring-top), var(--control-ring-bottom))
       )
-      0 var(--s-f) / 100% var(--s-h) no-repeat;
+      0 calc(var(--s-f) - var(--s-bleed)) / 100% calc(var(--s-h) + 2 * var(--s-bleed)) no-repeat;
     clip-path: shape(from var(--s-start), var(--s-path));
   }
   .slant-face {
@@ -400,7 +456,8 @@
         --slant-face-image,
         linear-gradient(to bottom, var(--control-face-top), var(--control-face-bottom))
       )
-      0 calc(var(--s-f) + var(--s-e)) / 100% calc(var(--s-h) - var(--s-e) * 2) no-repeat;
+      0 calc(var(--s-f) + var(--s-e) - var(--s-bleed)) / 100%
+      calc(var(--s-h) - 2 * var(--s-e) + 2 * var(--s-bleed)) no-repeat;
     clip-path: shape(from var(--s-start), var(--s-path));
   }
   .slant-ring::before,
@@ -430,6 +487,7 @@
      slant keeps control-face's own square face. */
   @supports not (clip-path: shape(from 0 0, line to 1px 1px)) {
     .notch-shape,
+    .notch::before,
     .notch::after,
     .slant-shape {
       display: none;

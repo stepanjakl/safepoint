@@ -572,9 +572,11 @@ export function ModelAt({
                     className="inline-flex items-center gap-1"
                   >
                     <span className="text-micro text-muted px-1 tabular-nums">
-                      <MorphingText
-                        text={`${activeThoughtIndex + 1} / ${thoughts.length}`}
-                      />
+                      <span className="text-primary font-semibold">
+                        <MorphingText text={String(activeThoughtIndex + 1)} />
+                      </span>
+                      {' / '}
+                      <MorphingText text={String(thoughts.length)} />
                     </span>
                     <Button
                       size="xsmall"

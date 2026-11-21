@@ -163,15 +163,15 @@ export function Button({
 */
 // The icon button's box, with no corners of its own; ICON_SHAPE adds them.
 export const ICON_BOX =
-  'inline-grid flex-none cursor-pointer place-items-center p-0';
+  'max-shell:icon-button-edge inline-grid flex-none cursor-pointer place-items-center p-0';
 export const ICON_SHAPE = `${ICON_BOX} rounded-icon`;
 
 /*
-  The quiet face: a wash on hover or keyboard focus, nothing at rest. The two
-  are one state -- the app draws no focus outline of its own, so focus is this
+  The quiet face has a faint wash at rest on narrow screens. Hover and focus
+  share a stronger wash -- the app draws no focus outline of its own, so focus is this
   wash (see :focus-visible in app/styles/base.css). It carries the transition,
   so a pressed or open square recolours the same background -- the sidebar's
   Save-order and search toggles -- rather than adding a face that would trail it.
 */
 export const ICON_QUIET =
-  'control-wash text-icon-quiet-ink hover:bg-surface-selected hover:text-icon-quiet-ink-hover focus-visible:bg-surface-selected focus-visible:text-icon-quiet-ink-hover';
+  'control-wash text-icon-quiet-ink max-shell:icon-button-wash hover:bg-surface-selected hover:text-icon-quiet-ink-hover focus-visible:bg-surface-selected focus-visible:text-icon-quiet-ink-hover';

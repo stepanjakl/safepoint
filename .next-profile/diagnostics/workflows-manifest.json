@@ -1,0 +1,240 @@
+{
+  "version": "1.0.0",
+  "steps": {
+    "node_modules/.pnpm/@workflow+core@5.5.0_ws@8.23.0/node_modules/@workflow/core/dist/runtime/run.js": {
+      "Run#cancel": {
+        "stepId": "step//@workflow/core/runtime/run@5.5.0//Run#cancel"
+      },
+      "Run#completedAt": {
+        "stepId": "step//@workflow/core/runtime/run@5.5.0//Run#completedAt"
+      },
+      "Run#createdAt": {
+        "stepId": "step//@workflow/core/runtime/run@5.5.0//Run#createdAt"
+      },
+      "Run#exists": {
+        "stepId": "step//@workflow/core/runtime/run@5.5.0//Run#exists"
+      },
+      "Run#getReadable": {
+        "stepId": "step//@workflow/core/runtime/run@5.5.0//Run#getReadable"
+      },
+      "Run#getWritable": {
+        "stepId": "step//@workflow/core/runtime/run@5.5.0//Run#getWritable"
+      },
+      "Run#readReturnValue": {
+        "stepId": "step//@workflow/core/runtime/run@5.5.0//Run#readReturnValue"
+      },
+      "Run#startedAt": {
+        "stepId": "step//@workflow/core/runtime/run@5.5.0//Run#startedAt"
+      },
+      "Run#status": {
+        "stepId": "step//@workflow/core/runtime/run@5.5.0//Run#status"
+      },
+      "Run#wakeUp": {
+        "stepId": "step//@workflow/core/runtime/run@5.5.0//Run#wakeUp"
+      },
+      "Run#workflowName": {
+        "stepId": "step//@workflow/core/runtime/run@5.5.0//Run#workflowName"
+      },
+      "Run.readFinishedRunIds": {
+        "stepId": "step//@workflow/core/runtime/run@5.5.0//Run.readFinishedRunIds"
+      }
+    },
+    "node_modules/.pnpm/@workflow+core@5.5.0_ws@8.23.0/node_modules/@workflow/core/dist/runtime/start.js": {
+      "start": {
+        "stepId": "step//@workflow/core/runtime/start@5.5.0//start"
+      }
+    },
+    "node_modules/.pnpm/workflow@5.5.0_@aws-sdk+credential-provider-web-identity@3.972.88_@swc+core@1.15.3_@swc_8633609b88c79bb72686df5ac4e5cac2/node_modules/workflow/dist/internal/builtins.js": {
+      "__builtin_response_array_buffer": {
+        "stepId": "__builtin_response_array_buffer"
+      },
+      "__builtin_response_json": {
+        "stepId": "__builtin_response_json"
+      },
+      "__builtin_response_text": {
+        "stepId": "__builtin_response_text"
+      },
+      "__builtin_set_attributes": {
+        "stepId": "__builtin_set_attributes"
+      }
+    },
+    "node_modules/.pnpm/workflow@5.5.0_@aws-sdk+credential-provider-web-identity@3.972.88_@swc+core@1.15.3_@swc_8633609b88c79bb72686df5ac4e5cac2/node_modules/workflow/dist/stdlib.js": {
+      "fetch": {
+        "stepId": "step//./node_modules/.pnpm/workflow@5.5.0_@aws-sdk+credential-provider-web-identity@3.972.88_@swc+core@1.15.3_@swc_8633609b88c79bb72686df5ac4e5cac2/node_modules/workflow/dist/stdlib//fetch"
+      }
+    },
+    "server/workflows/draft-steps.ts": {
+      "findStep": {
+        "stepId": "step//./server/workflows/draft-steps//findStep"
+      },
+      "settleDraft": {
+        "stepId": "step//./server/workflows/draft-steps//settleDraft"
+      },
+      "writeStep": {
+        "stepId": "step//./server/workflows/draft-steps//writeStep"
+      }
+    },
+    "server/workflows/proposal-steps.ts": {
+      "batchStep": {
+        "stepId": "step//./server/workflows/proposal-steps//batchStep"
+      },
+      "batchesStep": {
+        "stepId": "step//./server/workflows/proposal-steps//batchesStep"
+      },
+      "finishStep": {
+        "stepId": "step//./server/workflows/proposal-steps//finishStep"
+      },
+      "settleProposal": {
+        "stepId": "step//./server/workflows/proposal-steps//settleProposal"
+      }
+    }
+  },
+  "workflows": {
+    "server/workflows/draft.ts": {
+      "draftWorkflow": {
+        "workflowId": "workflow//./server/workflows/draft//draftWorkflow",
+        "graph": {
+          "nodes": [
+            {
+              "id": "start",
+              "type": "workflowStart",
+              "data": {
+                "label": "Start: draftWorkflow",
+                "nodeKind": "workflow_start"
+              }
+            },
+            {
+              "id": "end",
+              "type": "workflowEnd",
+              "data": {
+                "label": "Return",
+                "nodeKind": "workflow_end"
+              }
+            }
+          ],
+          "edges": [
+            {
+              "id": "e_start_end",
+              "source": "start",
+              "target": "end",
+              "type": "default"
+            }
+          ]
+        }
+      },
+      "rewriteWorkflow": {
+        "workflowId": "workflow//./server/workflows/draft//rewriteWorkflow",
+        "graph": {
+          "nodes": [
+            {
+              "id": "start",
+              "type": "workflowStart",
+              "data": {
+                "label": "Start: rewriteWorkflow",
+                "nodeKind": "workflow_start"
+              }
+            },
+            {
+              "id": "end",
+              "type": "workflowEnd",
+              "data": {
+                "label": "Return",
+                "nodeKind": "workflow_end"
+              }
+            }
+          ],
+          "edges": [
+            {
+              "id": "e_start_end",
+              "source": "start",
+              "target": "end",
+              "type": "default"
+            }
+          ]
+        }
+      }
+    },
+    "server/workflows/proposal.ts": {
+      "proposalWorkflow": {
+        "workflowId": "workflow//./server/workflows/proposal//proposalWorkflow",
+        "graph": {
+          "nodes": [
+            {
+              "id": "start",
+              "type": "workflowStart",
+              "data": {
+                "label": "Start: proposalWorkflow",
+                "nodeKind": "workflow_start"
+              }
+            },
+            {
+              "id": "end",
+              "type": "workflowEnd",
+              "data": {
+                "label": "Return",
+                "nodeKind": "workflow_end"
+              }
+            }
+          ],
+          "edges": [
+            {
+              "id": "e_start_end",
+              "source": "start",
+              "target": "end",
+              "type": "default"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "classes": {
+    "node_modules/.pnpm/@ai-sdk+google@4.0.109_zod@4.6.7/node_modules/@ai-sdk/google/dist/index.js": {
+      "GoogleEmbeddingModel": {
+        "classId": "class//@ai-sdk/google@4.0.109//GoogleEmbeddingModel"
+      },
+      "GoogleImageModel": {
+        "classId": "class//@ai-sdk/google@4.0.109//GoogleImageModel"
+      },
+      "GoogleInteractionsLanguageModel": {
+        "classId": "class//@ai-sdk/google@4.0.109//GoogleInteractionsLanguageModel"
+      },
+      "GoogleLanguageModel": {
+        "classId": "class//@ai-sdk/google@4.0.109//GoogleLanguageModel"
+      },
+      "GoogleSpeechModel": {
+        "classId": "class//@ai-sdk/google@4.0.109//GoogleSpeechModel"
+      },
+      "GoogleSpeechTranslationModel": {
+        "classId": "class//@ai-sdk/google@4.0.109//GoogleSpeechTranslationModel"
+      },
+      "GoogleTranscriptionModel": {
+        "classId": "class//@ai-sdk/google@4.0.109//GoogleTranscriptionModel"
+      }
+    },
+    "node_modules/.pnpm/@ai-sdk+openai-compatible@3.0.83_zod@4.6.7/node_modules/@ai-sdk/openai-compatible/dist/index.js": {
+      "OpenAICompatibleChatLanguageModel": {
+        "classId": "class//@ai-sdk/openai-compatible@3.0.83//OpenAICompatibleChatLanguageModel"
+      },
+      "OpenAICompatibleCompletionLanguageModel": {
+        "classId": "class//@ai-sdk/openai-compatible@3.0.83//OpenAICompatibleCompletionLanguageModel"
+      },
+      "OpenAICompatibleEmbeddingModel": {
+        "classId": "class//@ai-sdk/openai-compatible@3.0.83//OpenAICompatibleEmbeddingModel"
+      },
+      "OpenAICompatibleImageModel": {
+        "classId": "class//@ai-sdk/openai-compatible@3.0.83//OpenAICompatibleImageModel"
+      }
+    },
+    "node_modules/.pnpm/@ai-sdk+provider-utils@5.0.72_zod@4.6.7/node_modules/@ai-sdk/provider-utils/dist/experimental-decision/index.js": {
+      "DecisionLanguageModel": {
+        "classId": "class//@ai-sdk/provider-utils/experimental-decision@5.0.72//DecisionLanguageModel"
+      }
+    },
+    "node_modules/.pnpm/@workflow+core@5.5.0_ws@8.23.0/node_modules/@workflow/core/dist/runtime/run.js": {
+      "Run": {
+        "classId": "class//@workflow/core/runtime/run@5.5.0//Run"
+      }
+    }
+  }
+}

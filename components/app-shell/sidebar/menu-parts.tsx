@@ -57,6 +57,7 @@ export const MENU_CHEVRON_BOX =
 const ICON_BUTTON_SHAPE = `${ICON_SHAPE} rail-mark size-7.5`;
 const ICON_BUTTON_QUIET = `${ICON_QUIET} group-hover/heading:bg-menu-wash-faint group-hover/heading:text-primary group-focus-within/heading:bg-menu-wash-faint group-focus-within/heading:text-primary`;
 export const ICON_BUTTON = `${ICON_BUTTON_SHAPE} ${ICON_BUTTON_QUIET}`;
+export const DISCLOSURE_ICON_BUTTON = `${ICON_BUTTON} sidebar-menu-toggle aria-expanded:text-primary shell:aria-expanded:bg-surface-selected shell:aria-expanded:hover:bg-menu-wash-pressed shell:aria-expanded:focus-visible:bg-menu-wash-pressed`;
 
 /*
   One rail cell, the leading column the brand mark, a row's icon, the notice
