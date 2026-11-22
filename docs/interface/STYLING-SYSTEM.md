@@ -375,8 +375,8 @@ reduced motion immediate. Interaction feedback and ongoing activity retain
 their own timing.
 
 **Entrances stagger only when a screen arrives.** A load or a navigation brings
-fresh data, so its rows, detail column and empty state rise in after the
-screen settles. A tab chosen afterwards, or a list swapped in place, shows
+fresh data, so its rows and empty state rise in after the screen settles; the
+detail column beside them comes with the list, never after it. A tab chosen afterwards, or a list swapped in place, shows
 what is already in memory: its layer fades out and in at the tab pace
 (`TAB_PACE`, `components/ui/swap.tsx`) and nothing inside it moves. A part
 reads `useScreenArriving()` once at mount; `ScreenArrival` turns it off the
@@ -388,8 +388,9 @@ page out every frame and stutters in Safari.
 tab mounted in a hidden `Activity`, so coming back shows it rather than
 building it again. Hidden is `display: none`, and a CSS animation restarts
 when its element is shown again: an entrance on something that stays mounted
-comes off once it has played (`RunsDetail`'s hold, `data-entered` and the
-cleared swap class in `drawer-aside.tsx`).
+comes off once it has played (`data-entered` and the cleared swap class in
+`drawer-aside.tsx`), and a thread already drawn reports itself ready at once
+(`useRunReady`) rather than hiding its page again.
 
 **Timings are tokens, named for what moves, on the component that owns the motion.** A sequence is written as tokens derived from one another -- a phase starts where the one before it ends -- so retiming one phase carries the rest. A number restated in a second place drifts; JavaScript that needs a timing reads it from the computed style or, better, does not need it (below). A stagger is computed in CSS too: the component hands over an element's place and the count (`--calc-index`, `--calc-count` in `calculate-step.css`), never a delay in milliseconds.
 

@@ -15,7 +15,15 @@
   }
 
   .data-table-card {
-    border: var(--edge-rule) solid var(--sp-raised-ring);
+    --data-table-border: var(--edge-rule);
+    border: var(--data-table-border) solid var(--sp-raised-ring);
+  }
+
+  /* Clipping the card itself would clip its retina ring on the ring's own
+     curve, antialiasing its outer pixel twice; the content clips here instead. */
+  .data-table-clip {
+    overflow: clip;
+    border-radius: calc(var(--radius-shell) - var(--data-table-border));
   }
 
   .data-table-simple tbody tr + tr > :first-child {
@@ -24,8 +32,8 @@
 
   @media (min-resolution: 2dppx) {
     :root[data-edges='retina'] .data-table-card {
+      --data-table-border: 0px;
       position: relative;
-      border-width: 0;
     }
 
     :root[data-edges='retina'] .data-table-card::after {
@@ -44,7 +52,7 @@
 
   @media (forced-colors: active) {
     :root[data-edges='retina'] .data-table-card {
-      border-width: 1px;
+      --data-table-border: 1px;
     }
 
     :root[data-edges='retina'] .data-table-card::after {

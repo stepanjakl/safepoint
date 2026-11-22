@@ -221,7 +221,9 @@ function labReport(
         if (!summary)
           summary = reading.profiles.length
             ? describe(at(reading.profiles, 0).colours)
-            : `${reading.joins.length} joins`;
+            : reading.crop
+              ? 'shape'
+              : `${reading.joins.length} joins`;
         const own = [...reading.problems];
         if (engine !== reference) {
           const ref = byEngine.get(reference)!.get(id);

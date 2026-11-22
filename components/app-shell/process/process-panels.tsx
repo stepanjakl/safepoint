@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useDetailHold } from '@/components/ui/screen-settled';
 import { EmptyState } from '@/components/ui/working-mark';
 import { cx } from '@/lib/ui/cx';
 import type { ProcessSummary } from '@/lib/shell/model';
@@ -19,6 +18,7 @@ import { ProcessSettings } from './process-settings';
 import { useAsidePanel } from '@/components/app-shell/use-aside-panel';
 import { SECTION } from './panel-parts';
 import { SectionRow } from '@/components/app-shell/runs/section-row';
+import { MorphingLabel } from '@/components/ui/morphing-text';
 import type { ProcessTab } from './process-tab-store';
 
 /*
@@ -61,6 +61,7 @@ export function ProcessPanels({
     versions,
     current: version,
     next,
+    draft,
   } = useInstructions(process.id, process.instructions);
 
   // Versions oldest first, as the pager steps through them.
@@ -99,9 +100,6 @@ export function ProcessPanels({
     sameList: (from, to) => from.kind === to.kind,
     scope: '.process-panels',
   });
-
-  // The empty column trails the list as an open detail does (DrawerAside).
-  const emptyHold = useDetailHold();
 
   const panel = aside ? asidePanel(aside) : null;
   const leavingPanel =
@@ -189,7 +187,20 @@ export function ProcessPanels({
         )}
       >
         {/* Named for assistive technology only: the header's tab says it. */}
-        <SectionRow id={SECTION[tab].id} title={SECTION[tab].title} />
+        <SectionRow id={SECTION[tab].id} title={SECTION[tab].title}>
+          {tab === 'instructions' ? (
+            <button
+              type="button"
+              className="sheet-action-pill text-meta text-primary enabled:hover:bg-surface-hover-strong focus-visible:bg-surface-selected px-2.5 font-medium whitespace-nowrap enabled:cursor-pointer disabled:opacity-50"
+              disabled={aside?.kind === 'edit' && !exiting}
+              onClick={() => openAside({ kind: 'edit' })}
+            >
+              <MorphingLabel
+                text={draft === null ? 'New version' : `Continue ${next}`}
+              />
+            </button>
+          ) : null}
+        </SectionRow>
         {list}
       </div>
       {panel ? (
@@ -222,10 +233,7 @@ export function ProcessPanels({
       ) : opensDetail ? (
         // Only where a row opens something: a column that can never fill is
         // not an empty state, it is a mistake.
-        <div
-          {...emptyHold.props}
-          className="@sheet-wide/sheet:flex hidden min-h-0 flex-col overflow-y-auto px-8"
-        >
+        <div className="@sheet-wide/sheet:flex hidden min-h-0 flex-col overflow-y-auto px-8">
           <EmptyState role="status" title="No version open.">
             Choose a version to read it and see what changed in it.
           </EmptyState>

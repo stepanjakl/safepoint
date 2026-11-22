@@ -12,12 +12,14 @@ import { cx } from '@/lib/ui/cx';
 export function Fold({
   open,
   id,
+  divider,
   className,
   children,
 }: {
   open: boolean;
   // For the control's aria-controls.
   id?: string;
+  divider?: boolean;
   // On the content, where its padding belongs, so a shut fold is nil.
   className?: string;
   children: ReactNode;
@@ -40,6 +42,7 @@ export function Fold({
       id={id}
       className="fold"
       data-open={open || undefined}
+      data-divider={divider || undefined}
       inert={!open}
     >
       <div className="fold-clip">

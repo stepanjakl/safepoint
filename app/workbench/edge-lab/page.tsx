@@ -1,3 +1,6 @@
+import { Button } from '@/components/ui/button';
+import { Notch } from '@/components/ui/notch';
+
 import { EdgeLabPixelRatio } from './pixel-ratio';
 
 /*
@@ -11,6 +14,12 @@ import { EdgeLabPixelRatio } from './pixel-ratio';
                  live     the app's own tokens
   data-sides     which sides carry the line
   data-total     the line's full width in CSS px, ring and highlight together
+
+  Notch specimens are the app's own Notch and slanted Button on a pane, as
+  the process header draws them. Their offset widens the button, so the
+  notch's sloped edge lands on every fraction of a pixel; they are compared
+  with the reference browser by pixels, and their straight lines read for
+  steps and broken joins.
 */
 
 const WIDTHS = ['0.5', '0.75', '1', '1.5'] as const;
@@ -125,6 +134,65 @@ function Specimen({
   );
 }
 
+const NOTCHES = [
+  { variant: 'right', side: 'right' },
+  // The menu's notch: mirrored, so drawn by its own rules.
+  { variant: 'left', side: 'left' },
+] as const;
+
+function NotchSpecimen({
+  variant,
+  side,
+  offset,
+}: {
+  variant: string;
+  side: 'left' | 'right';
+  offset: string;
+}) {
+  const notch = (
+    <Notch
+      side={side}
+      className={
+        side === 'right'
+          ? '-mt-pane-inset -mr-pane-inset -mb-control-edge'
+          : '-mt-pane-inset -ml-pane-inset -mb-control-edge'
+      }
+    >
+      <Button
+        // Always the left side, as in the app: a left notch mirrors it.
+        slant="left"
+        aria-label="Specimen"
+        excludeFromTabOrder
+        className="edge-lab-slant"
+      />
+    </Notch>
+  );
+  return (
+    <div className="edge-lab-cell">
+      <div
+        className="edge-lab-pane ground-raised"
+        data-specimen={`notch/${variant}/plain/${offset}`}
+        data-kind="notch"
+        data-recipe="notch"
+        data-approach="live"
+        data-sides="all"
+        data-total="0"
+        data-variant={variant}
+        data-side={side}
+        data-off={offset}
+      >
+        <div className="control-face surface-raised edge-lab-pane-face" />
+        <div className="p-pane-inset">
+          <header className="process-header edge-lab-header">
+            {side === 'left' ? notch : <div />}
+            {side === 'right' ? notch : <div />}
+          </header>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Section({
   kind,
   recipes,
@@ -167,6 +235,18 @@ export default function EdgeLabPage() {
         <Section kind="ring" recipes={RINGS} widths={WIDTHS} />
         <Section kind="line" recipes={LINES} widths={WIDTHS} />
         <Section kind="junction" recipes={JUNCTIONS} widths={['0.75']} />
+        <div className="edge-lab-grid" data-kind="notch">
+          {NOTCHES.flatMap(({ variant, side }) =>
+            OFFSETS.map((offset) => (
+              <NotchSpecimen
+                key={`${variant}/${offset}`}
+                variant={variant}
+                side={side}
+                offset={offset}
+              />
+            )),
+          )}
+        </div>
       </div>
       <EdgeLabPixelRatio target="[data-edge-lab]" />
     </main>

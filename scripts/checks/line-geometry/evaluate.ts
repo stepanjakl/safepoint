@@ -23,6 +23,7 @@ import {
   type Side,
 } from './analyse.ts';
 import type { Capture, SpecimenBox } from './capture.ts';
+import { compareAligned, cropRegion, type Crop } from './compare.ts';
 
 /* ── The lab ───────────────────────────────────────────────────────────── */
 
@@ -34,8 +35,14 @@ export type SpecimenReading = {
   /* For junction specimens: each line end and how it meets the line it ends
      against, as text that compares equal across browsers when the drawing is. */
   joins: string[];
+  /* For notch specimens: the specimen and 4px round it, compared by pixels. */
+  crop?: Crop;
   problems: string[];
 };
+
+/* A notch's curves and slope differ between engines by this much at most
+   when drawn alike (the cross-engine corner floor, LINE-TESTING.md). */
+const SHAPE_TOLERANCE = 16;
 
 export const gated = (approach: string) =>
   approach === 'border' || approach === 'layered';
@@ -115,6 +122,41 @@ export function readSpecimen(
   const problems: string[] = [];
   const profiles: SpecimenReading['profiles'] = [];
   const joins: string[] = [];
+
+  if (sp.kind === 'notch') {
+    const margin = 4;
+    const region = {
+      x: rect.x - margin * scale,
+      y: rect.y - margin * scale,
+      width: rect.width + 2 * margin * scale,
+      height: rect.height + 2 * margin * scale,
+    };
+    const opts = segmentOptions(scale);
+    const segments = findSegments(image, region, opts);
+    for (const j of findJunctions(segments, opts.maxBand))
+      if (j.relation === 'gap' || j.relation === 'overshoot')
+        problems.push(junctionText(j, rect));
+    for (const step of thicknessSteps(segments))
+      problems.push(
+        `a line changes from ${thickness(step.before)} to ${thickness(step.after)}dp`,
+      );
+    const crop = cropRegion(
+      image,
+      scale,
+      sp.x - margin,
+      sp.y - margin,
+      sp.width + 2 * margin,
+      sp.height + 2 * margin,
+    );
+    return {
+      id: sp.id,
+      approach: sp.approach,
+      profiles,
+      joins,
+      crop,
+      problems,
+    };
+  }
 
   if (sp.kind === 'junction') {
     const region = {
@@ -217,6 +259,12 @@ export function compareReadings(
   other: SpecimenReading,
   refName: string,
 ) {
+  if (reference.crop && other.crop) {
+    // No alignment: a box a fraction of a pixel off is what this looks for.
+    const d = compareAligned(reference.crop, other.crop, { search: 0 });
+    if (d.max <= SHAPE_TOLERANCE) return null;
+    return `differs from ${refName} by up to ${d.max} levels, ${d.visible} pixels past 8 (mean ${d.mean.toFixed(2)})`;
+  }
   if (reference.profiles.length) {
     const differs = other.profiles.some((p, i) => {
       const ref = reference.profiles[i];

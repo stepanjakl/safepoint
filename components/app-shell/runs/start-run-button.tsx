@@ -71,7 +71,7 @@ export function StartRunButton() {
     <>
       <span
         ref={pill}
-        className={`control-wash bg-surface-hover -my-1 flex h-7 items-center rounded-full p-0.5 ${
+        className={`sheet-action-pill -my-1 p-0.5 ${
           start
             ? 'has-[[data-leads]:hover]:bg-surface-hover-strong has-[button:focus-visible]:bg-surface-selected'
             : ''

@@ -12,9 +12,6 @@ export const DURATION_PANE = 0.22;
 /** A tab's old body going (Motion only): quick, as the new one waits on it. */
 export const DURATION_TAB_LEAVE = 0.1;
 
-/** --detail-after: a detail column trailing its list on arrival. */
-export const DETAIL_AFTER = 0.15;
-
 /** --ease-out-emphasized. */
 export const EASE_OUT_EMPHASIZED = [0.22, 1, 0.36, 1] as const;
 

@@ -82,6 +82,11 @@ const proposed = {
   },
 };
 
+test.use({
+  deviceScaleFactor: 2,
+  launchOptions: { args: ['--force-device-scale-factor=2'] },
+});
+
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('safepoint.dev.run-debug', 'on');
@@ -252,7 +257,7 @@ for (const width of [1440, 390]) {
       });
       expect(centerOffset).toBeLessThanOrEqual(1);
     }
-    await approve.focus();
+    await approve.click({ trial: true });
     await approve.evaluate((button) => {
       const footer = button.closest('[role="group"]');
       const card = button.closest('.proposal-table-card');
@@ -311,7 +316,7 @@ for (const width of [1440, 390]) {
         { once: true },
       );
     });
-    await page.keyboard.press('Enter');
+    await approve.press('Enter');
     await expect(summary).toHaveAttribute('data-test-transition', /./);
     const transition = await summary.getAttribute('data-test-transition');
     const { largestGap, largestPillReversal, sawIntermediateHeight } =
@@ -487,20 +492,47 @@ test('a record opens to the model’s reason and the checks’ working', async (
   const table = await propose(page);
   const avocados = table.getByRole('button', { name: /^AV-RR/ });
   await page.mouse.move(0, 0);
-  await avocados.focus();
   const details = page.locator(
     `[id="${await avocados.getAttribute('aria-controls')}"]`,
   );
-  const dividerOpacity = () =>
-    details.evaluate(
-      (fold) => getComputedStyle(fold.parentElement!, '::before').opacity,
-    );
-  // A keyboard highlight covers the collapsed rule without fading it.
-  expect(await dividerOpacity()).toBe('1');
+  const body = details.locator('.fold-body');
+  const restingRule = () =>
+    details.evaluate((fold) => {
+      const rule = getComputedStyle(fold, '::before');
+      return [rule.opacity, rule.filter];
+    });
+  await expect.poll(restingRule).toEqual(['1', 'opacity(1)']);
+  await expect(body).toHaveCSS('opacity', '0');
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.keyboard.press('Enter');
+  await avocados.hover();
+  await expect.poll(restingRule).toEqual(['1', 'opacity(0)']);
+  await details.evaluate((fold) => {
+    const body = fold.querySelector('.fold-body');
+    if (!body) throw new Error('Missing accordion content');
+    fold.addEventListener('transitionstart', (event) => {
+      if (
+        !(event instanceof TransitionEvent) ||
+        event.target !== fold ||
+        event.propertyName !== 'grid-template-rows'
+      )
+        return;
+      fold.setAttribute(
+        'data-test-rule-during-fold',
+        `${getComputedStyle(fold, '::before').opacity}/${getComputedStyle(body).opacity}`,
+      );
+    });
+  });
+  await avocados.click();
+  await expect(details).toHaveAttribute('data-test-rule-during-fold', '0/0');
   await expect(avocados).toHaveAttribute('aria-expanded', 'true');
-  expect(await dividerOpacity()).toBe('1');
+  await expect(body).toHaveCSS(
+    'transition-delay',
+    await details.evaluate((fold) => getComputedStyle(fold).transitionDuration),
+  );
+  expect(
+    await body.evaluate((node) => getComputedStyle(node, '::before').content),
+  ).toBe('""');
+  await expect(body).toHaveCSS('opacity', '1');
   await expect(
     table.getByText(/Unsure: Covering the target needs more/).last(),
   ).toBeVisible();
@@ -512,6 +544,104 @@ test('a record opens to the model’s reason and the checks’ working', async (
   await expect(checks.getByRole('listitem').last()).toContainText(
     /Supplier delivery limit\s*Doesn’t apply/,
   );
+});
+
+test('a thin divider reaches the top of the next accordion row', async ({
+  page,
+}) => {
+  await page.addInitScript(() =>
+    localStorage.setItem('safepoint.dev.edges', 'retina'),
+  );
+  const table = await propose(page);
+  const row = table.getByRole('row', { name: /^AV-RR/ });
+  await row.scrollIntoViewIfNeeded();
+  await page.mouse.move(0, 0);
+  const bounds = await row.boundingBox();
+  if (!bounds) throw new Error('Missing proposal row geometry');
+  const x = Math.ceil(bounds.x + 28);
+  const y = Math.floor(bounds.y) - 2;
+  const bytes = await page.screenshot({
+    clip: {
+      x,
+      y,
+      width: Math.floor(bounds.x + bounds.width - x - 5),
+      height: 4,
+    },
+  });
+  const samples = await page.evaluate(
+    async ({ bytes, junction }) => {
+      const bitmap = await createImageBitmap(new Blob([new Uint8Array(bytes)]));
+      const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('Could not read divider pixels');
+      context.drawImage(bitmap, 0, 0);
+      const pixel = (x: number, y: number) =>
+        Array.from(context.getImageData(x, y, 1, 1).data);
+      const rowTop = Math.round(junction * devicePixelRatio);
+      return [0, Math.floor(bitmap.width / 2), bitmap.width - 1].map((x) => ({
+        surface: pixel(x, rowTop - 3),
+        divider: pixel(x, rowTop - 1),
+        row: pixel(x, rowTop),
+      }));
+    },
+    { bytes: [...bytes], junction: bounds.y - y },
+  );
+  for (const sample of samples) {
+    expect(sample.divider).not.toEqual(sample.surface);
+    expect(sample.row).toEqual(sample.surface);
+    expect(sample.divider).toEqual(samples[0]?.divider);
+  }
+});
+
+test('the summary divider waits for the last record to expand', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  const table = await propose(page);
+  const last = table.getByRole('button', { name: /^OO-500/ });
+  const summary = page.getByRole('group', { name: 'Proposal summary' });
+  await last.click({ trial: true });
+  const foldId = await last.getAttribute('aria-controls');
+  const ruleOpacity = () =>
+    summary.evaluate(
+      (element) => getComputedStyle(element, '::before').opacity,
+    );
+  const restingRule = () =>
+    summary.evaluate((element) => {
+      const rule = getComputedStyle(element, '::after');
+      return [rule.opacity, rule.filter];
+    });
+  await page.mouse.move(0, 0);
+  await expect.poll(restingRule).toEqual(['1', 'opacity(1)']);
+  await last.hover();
+  await expect.poll(restingRule).toEqual(['1', 'opacity(0)']);
+  await expect.poll(ruleOpacity).toBe('0');
+  await summary.evaluate((element, id) => {
+    const fold = id && document.getElementById(id);
+    if (!fold) throw new Error('Missing last proposal fold');
+    fold.addEventListener('transitionstart', (event) => {
+      if (event.target !== fold || event.propertyName !== 'grid-template-rows')
+        return;
+      const open = getComputedStyle(element, '::before');
+      const resting = getComputedStyle(element, '::after');
+      const heightDuration = getComputedStyle(fold).transitionDuration;
+      element.setAttribute(
+        'data-test-rule-during-fold',
+        `${open.opacity}/${resting.opacity}/${open.transitionDelay === heightDuration}`,
+      );
+    });
+  }, foldId);
+  await last.click();
+  await expect(summary).toHaveAttribute(
+    'data-test-rule-during-fold',
+    '0/0/true',
+  );
+  await expect.poll(ruleOpacity).toBe('1');
+  await last.click();
+  await expect(last).toHaveAttribute('aria-expanded', 'false');
+  await expect.poll(ruleOpacity).toBe('0');
+  await page.mouse.move(0, 0);
+  await expect.poll(restingRule).toEqual(['1', 'opacity(1)']);
 });
 
 test('source citations highlight only the cited value in the sheet drawer', async ({
@@ -590,17 +720,33 @@ test('the filter shows only what needs a person', async ({ page }) => {
   await toggle.press('Enter');
   await expect(needYou).toBeHidden();
   const body = table.locator('tbody');
-  await body.evaluate((element) => {
-    const observer = new MutationObserver(() => {
-      if (element.querySelectorAll('th[scope="row"]').length !== 3) return;
-      element.setAttribute(
-        'data-test-swap-opacity',
-        getComputedStyle(element).opacity,
+  const retained = table.getByRole('row', { name: /^AV-RR/ });
+  const removed = table.getByRole('row', { name: /^FT-200/ });
+  await retained.evaluate((row) => {
+    const body = row.closest('tbody');
+    if (!body) throw new Error('Missing table body');
+    const removed = [...body.rows].find((item) =>
+      item.cells[0]?.textContent?.startsWith('FT-200'),
+    );
+    if (!removed) throw new Error('Missing filtered record');
+    let lowestOpacity = 1;
+    let faded = false;
+    const sample = () => {
+      lowestOpacity = Math.min(
+        lowestOpacity,
+        Number(getComputedStyle(row).opacity),
+        Number(getComputedStyle(body).opacity),
       );
-      observer.disconnect();
-    });
-    observer.observe(element, { childList: true });
+      if (removed.isConnected) {
+        faded ||= Number(getComputedStyle(removed).opacity) < 1;
+        requestAnimationFrame(sample);
+      } else {
+        row.setAttribute('data-test-filter', `${lowestOpacity}/${faded}`);
+      }
+    };
+    requestAnimationFrame(sample);
   });
+  await expect(removed).toBeVisible();
   await page
     .getByRole('radiogroup', { name: 'Records to show' })
     .getByRole('radio', { name: /^Records that need you/ })
@@ -610,8 +756,28 @@ test('the filter shows only what needs a person', async ({ page }) => {
     /AV-RR/,
     /CF-40/,
   ]);
-  await expect(body).toHaveAttribute('data-test-swap-opacity', '0');
+  await expect(retained).toHaveAttribute('data-test-filter', '1/true');
   await expect(body).toHaveCSS('opacity', '1');
+  await body.evaluate((element) => {
+    const observer = new MutationObserver(() => {
+      const grown = [...element.querySelectorAll('tr')].find((row) =>
+        row.cells[0]?.textContent?.startsWith('FT-200'),
+      );
+      if (!grown) return;
+      element.setAttribute(
+        'data-test-enter',
+        `${grown.getBoundingClientRect().height > 0}/${getComputedStyle(grown).opacity}`,
+      );
+      observer.disconnect();
+    });
+    observer.observe(element, { childList: true });
+  });
+  await page
+    .getByRole('radiogroup', { name: 'Records to show' })
+    .getByRole('radio', { name: /^All records/ })
+    .click();
+  await expect(body).toHaveAttribute('data-test-enter', 'true/0');
+  await expect(removed).toHaveCSS('opacity', '1');
 });
 
 const approveRow = (table: Locator, key: RegExp) =>
@@ -644,6 +810,60 @@ test('row controls leave before their replacements enter', async ({ page }) => {
   await expect(row).toHaveAttribute('data-test-controls', 'sequential');
   await expect(row.getByRole('button', { name: /^AV-RR/ })).toBeFocused();
 });
+
+for (const width of [1440, 390]) {
+  test(`the inline value editor keeps the table geometry at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    const avocado = frozen.proposal.records['AV-RR'];
+    if (!avocado) throw new Error('Missing avocado proposal fixture');
+    const { verdict, checks } = avocado;
+    await mockProcedure(page, 'propose.check', {
+      data: { kind: 'check', verdict, checks },
+    });
+    const table = await propose(page);
+    const row = table.getByRole('row', { name: /^AV-RR/ });
+    const change = row.getByRole('button', { name: /^(Change|Change AV-RR)$/ });
+    await change.click({ trial: true });
+    const geometry = () =>
+      row.evaluate((element) =>
+        [...element.children].map((cell) => {
+          const { width, height } = cell.getBoundingClientRect();
+          return [width, height];
+        }),
+      );
+    const before = await geometry();
+    await change.click();
+    const editor = row.getByRole('spinbutton');
+    await expect(editor).toBeFocused();
+    await expect(editor).toHaveValue('50');
+    await expect(row.getByRole('button', { name: 'Cancel' })).toBeVisible();
+    const alignment = await editor.evaluate((input) => {
+      const value = input.closest('td')?.querySelector('span.value');
+      if (!value) throw new Error('Missing original quantity');
+      const bounds = input.getBoundingClientRect();
+      const original = value.getBoundingClientRect();
+      const style = getComputedStyle(input);
+      return {
+        right:
+          bounds.right -
+          parseFloat(style.paddingRight) -
+          parseFloat(style.borderRightWidth) -
+          original.right,
+        center:
+          (bounds.top + bounds.bottom - original.top - original.bottom) / 2,
+      };
+    });
+    expect(Math.abs(alignment.right)).toBeLessThanOrEqual(1);
+    expect(Math.abs(alignment.center)).toBeLessThanOrEqual(1);
+    expect(await geometry()).toEqual(before);
+    await editor.fill('123456789');
+    expect(await geometry()).toEqual(before);
+    await row.getByRole('button', { name: 'Cancel' }).click();
+    expect(await geometry()).toEqual(before);
+  });
+}
 
 test('a decision shows at once, and counts as decided once the server has kept it', async ({
   page,

@@ -15,6 +15,7 @@ import {
 } from 'react';
 
 import {
+  JUST_ASKED_MS,
   settledOnce,
   useStepReady,
 } from '@/components/app-shell/runs/run-readiness';
@@ -34,7 +35,6 @@ import {
   DATA_TABLE_NAME_COLUMN,
   DATA_TABLE_NAME_UNDER,
   DATA_TABLE_SECONDARY_NAME,
-  DATA_TABLE_RULE,
   DataTable,
 } from '@/components/ui/data-table';
 import { useTRPC } from '@/components/trpc/provider';
@@ -152,7 +152,7 @@ export function CalculateStep({
     { text, readId, rulebook: pin ?? undefined },
     {
       enabled: !mock,
-      staleTime: mock ? Infinity : 0,
+      staleTime: mock ? Infinity : JUST_ASKED_MS,
     },
   );
   const calculated = useQuery(worked);
@@ -178,7 +178,9 @@ export function CalculateStep({
   const current = answer?.kind === 'calculation' ? answer : null;
   if (current && current !== last) setLast(current);
   const shown = current ?? last;
-  const busy = calculated.isFetching || cross.isPending;
+  // Not a refresh behind values already shown (see rules-step's `busy`).
+  const busy =
+    (calculated.isFetching && !calculated.isRefetching) || cross.isPending;
   const working = useLoader(busy);
   const movePin = () => {
     cross.reset();
@@ -563,15 +565,10 @@ function ValuesTable({
                   </tr>
                   {/* Always there, folded shut, and ruled off from the next record. */}
                   <tr>
-                    <td
-                      colSpan={calculations.length + 2}
-                      className={cx(
-                        'p-0',
-                        rowIndex < rows.length - 1 && DATA_TABLE_RULE,
-                      )}
-                    >
+                    <td colSpan={calculations.length + 2} className="p-0">
                       <Fold
                         open={expanded}
+                        divider={rowIndex < rows.length - 1}
                         id={`${tableId}-${row.key}`}
                         className="px-6 pt-1 pb-4"
                       >

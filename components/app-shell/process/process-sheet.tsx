@@ -34,9 +34,7 @@ import { SectionRow } from '@/components/app-shell/runs/section-row';
 import { useShellPageNavigation } from '@/components/app-shell/shell-page-transition';
 import {
   ScreenArrival,
-  SectionClock,
   SettledLayer,
-  useDetailHold,
   useScreenArriving,
   useScreenSettled,
 } from '@/components/ui/screen-settled';
@@ -226,8 +224,6 @@ export function ProcessSheet({
           aria-labelledby="runs-heading"
           className="process-runs-list sheet-bleed @sheet-wide/sheet:sheet-bleed-bottom @max-sheet-wide/sheet:sheet-bleed-end shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative"
         >
-          {/* The action first, where the rows' text starts; the setting at
-              the end. */}
           <SectionRow id="runs-heading" title="Runs">
             <StartRunButton />
             <ScheduleControl
@@ -329,9 +325,7 @@ export function ProcessSheet({
                     <SettledLayer
                       settled={visible && (!entering || landed === key)}
                     >
-                      <SectionClock>
-                        <Forming>{section(key)}</Forming>
-                      </SectionClock>
+                      <Forming>{section(key)}</Forming>
                     </SettledLayer>
                   </motion.div>
                 </Activity>
@@ -405,44 +399,11 @@ function rising(element: Element) {
     );
 }
 
-/*
-  The run beside the rail. The section around it has landed (SettledLayer);
-  where it trails the list, its own fade's end is what releases the run --
-  read from the animation, which may have ended before hydration, and which
-  reduced motion never starts. Once ended the hold comes off: a tab kept
-  hidden and shown again would otherwise play its fade a second time.
-*/
+// The run beside the rail: it comes in with its section, not after it.
 function RunsDetail({ children }: { children: ReactNode }) {
-  const { held, props } = useDetailHold();
-  const [ended, setEnded] = useState(!held);
-  const column = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const element = column.current;
-    if (ended || !element) return;
-    const fade = element
-      .getAnimations()
-      .find(
-        (animation) =>
-          animation instanceof CSSAnimation &&
-          animation.animationName === 'process-section-enter',
-      );
-    let live = true;
-    const end = () => {
-      if (live) setEnded(true);
-    };
-    if (fade) fade.finished.then(end, end);
-    else requestAnimationFrame(end);
-    return () => {
-      live = false;
-    };
-  }, [ended]);
   return (
-    <div
-      {...(ended ? {} : props)}
-      ref={column}
-      className="process-runs-detail shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative"
-    >
-      <SettledLayer settled={ended}>{children}</SettledLayer>
+    <div className="process-runs-detail shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative">
+      {children}
     </div>
   );
 }

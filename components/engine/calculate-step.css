@@ -2,7 +2,6 @@
   /* Rules end each record's folded cell, from where the keys start. */
   .calc-table {
     --row-rule-inset: 1.5rem;
-    --row-rule-top: calc(100% - 1px);
   }
 
   /* A record's toggle: the triangle points at the record shut, down at its
@@ -31,20 +30,26 @@
   }
   /* Lit as the list rows are (list-rows.css): by the keyboard, or
      by the pointer where it is real. The rules touching it step back, so the
-     fill is one band. The highlighted row covers its own rule while shut. */
+     fill is one band. Only the resting rule hides under its own highlight. */
   .calc-row:has(.calc-row-toggle:focus-visible) {
     background-color: var(--sp-row-hover);
   }
-  .calc-table tr:has(+ .calc-row > th > .calc-row-toggle:focus-visible) > td::before {
-    opacity: 0;
+  .calc-table tr:has(+ .calc-row > th > .calc-row-toggle:focus-visible) > td {
+    --fold-divider-hover-opacity: 0;
+  }
+  .calc-row:has(.calc-row-toggle:focus-visible) + tr > td {
+    --fold-resting-divider-hover-opacity: 0;
   }
   /* The whole row, its decision buttons too: they sit above the toggle's cover. */
   @media (hover: hover) {
     .calc-row:hover {
       background-color: var(--sp-row-hover);
     }
-    .calc-table tr:has(+ .calc-row:hover) > td::before {
-      opacity: 0;
+    .calc-table tr:has(+ .calc-row:hover) > td {
+      --fold-divider-hover-opacity: 0;
+    }
+    .calc-row:hover + tr > td {
+      --fold-resting-divider-hover-opacity: 0;
     }
   }
   .calc-row :is(button, input, a):not(.calc-row-toggle) {

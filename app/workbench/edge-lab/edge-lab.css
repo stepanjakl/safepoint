@@ -259,4 +259,46 @@
           color-mix(in srgb, var(--lab-ring) var(--edge-hairline-cover), transparent);
     }
   }
+
+  /* ── Notches: the app's Notch and slanted Button on a pane, the pane and
+     header drawn as app-shell.tsx and process-header.tsx draw them, without
+     the pane's clip. The offset widens the button, not the box. ── */
+  .edge-lab-grid[data-kind='notch'] {
+    grid-template-columns: repeat(5, 232px);
+    grid-auto-rows: 112px;
+  }
+  .edge-lab-pane {
+    position: absolute;
+    inset-block-start: 12px;
+    inset-inline-start: 12px;
+    isolation: isolate;
+    inline-size: 208px;
+    block-size: 88px;
+    border-radius: var(--radius-shell);
+  }
+  .edge-lab-pane[data-side='right'] {
+    border-start-end-radius: 0;
+  }
+  .edge-lab-pane[data-side='left'] {
+    border-start-start-radius: 0;
+  }
+  .edge-lab-pane-face {
+    position: absolute;
+    inset: 0;
+    z-index: -10;
+    border-radius: var(--radius-shell);
+    pointer-events: none;
+  }
+  .edge-lab-header {
+    position: relative;
+    z-index: 10;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .edge-lab-pane[data-side='left'] .edge-lab-header {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .edge-lab-slant {
+    inline-size: calc(48px + var(--lab-off));
+  }
 }

@@ -124,6 +124,26 @@ stack-layered/0.75/radius  [layered, must pass]
 quarter of the way along the bottom side). `3dp where 2dp is meant` compares the
 profile's length with the declared width.
 
+The last grid holds **notch specimens**: the app's own `Notch` and slanted
+`Button` on a pane fragment, the pane and header drawn as `app-shell.tsx` and
+`process-header.tsx` draw them (the header is `.process-header`, so its rule
+is the live one). Their offset widens the button rather than moving the box,
+so the notch's sloped edge lands on every fraction of a pixel, which is what
+`NotchSnap` corrects. Rows: `right` and `left` (the menu's mirrored notch), as
+the app draws them. (Held at `--notch-snap: 0`, the specimens off the grid
+differed from Chrome in about twice as many pixels: the snap earns its place.) A notch has slopes and bends that no side profile can
+read, so each one is judged two ways: its straight lines for thickness steps,
+gaps and overshoots, as a junction is, and its whole box against the reference
+browser by pixels, unaligned, failing past 16 levels (the cross-engine corner
+floor plus a little). Both are reported, never gated: the lab compares
+browsers, and the notch still differs between them (see
+[Open work](#open-work)).
+
+```
+notch/right/plain  [live, reported]
+  webkit: +0.33: differs from chromium by up to 39 levels, 407 pixels past 8 (mean 0.19)
+```
+
 To add a specimen, add a recipe to `RINGS`, `LINES` or `JUNCTIONS` in
 `app/workbench/edge-lab/page.tsx` and its rule in `edge-lab.css`. Keep the cell
 sizes whole pixels.
@@ -237,6 +257,12 @@ one pixel instead of two and paint it a pixel into the frame's ring, and move
 the column divider a pixel right. Drawn layered, the junction is identical in
 all three.
 
+The data table's corners, once its clip moved one element in
+(`.data-table-clip`): the bottom corner identical to an unclipped ring in
+Chromium and WebKit (0 levels; 17-18 before), the top within 2. The pane's
+corner, once its clip was rounded tighter: within 3 of the workbench reference
+(19 before).
+
 ## Investigating a difference
 
 What worked, in this order:
@@ -272,15 +298,16 @@ What worked, in this order:
 
 ## Causes found, and the rule each gives
 
-| Cause                                                                 | What it looked like                                                                   | Rule                                                                                                                                                        |
-| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A fractional width in a shadow, gradient stop, clip or element height | Safari's rings one pixel on two sides, two on the others; rules a pixel thin or thick | Draw it as whole-device-pixel layers: `-solid` and `-soft` from `geometry.css`                                                                              |
-| A box edge between device pixels                                      | A curve or line a third or half of a device pixel off in WebKit                       | Put the box on the grid: whole-pixel tokens, or, for a box sized by its content, snap it as `NotchSnap` does                                                |
-| A clip whose curve is the ring's own curve                            | The ring's outermost pixel thinner round the corners, in every browser                | Never clip a ring on its own curve: round the clip tighter when the face is a separate layer (the pane), or clip in an inner element (the data table, open) |
-| `overflow-clip-margin`, which Safari does not support                 | Rules stopping two device pixels short of the ring                                    | In `@supports not (overflow-clip-margin: 1px)`, clip the paint with `clip-path: inset(-1px round …)` and the element's radii grown by that pixel            |
-| A border or outline round a curve in Chrome                           | The same ring 20-30 levels off the shadow-drawn one on the arc                        | Draw rounded rings as shadows; borders only where there is no curve to match                                                                                |
-| Safari softening an inset shadow inside a radius                      | The last soft pixel 3-4 levels lighter                                                | Inherent; below what can be seen. Corners differ between engines by 12-13 levels at most, whatever draws them                                               |
-| Half pixels that cancel out                                           | Fixing one edge onto the grid moves another off (the narrow notch)                    | Change the geometry as a whole, never one length of it                                                                                                      |
+| Cause                                                                 | What it looked like                                                                   | Rule                                                                                                                                                      |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A fractional width in a shadow, gradient stop, clip or element height | Safari's rings one pixel on two sides, two on the others; rules a pixel thin or thick | Draw it as whole-device-pixel layers: `-solid` and `-soft` from `geometry.css`                                                                            |
+| A box edge between device pixels                                      | A curve or line a third or half of a device pixel off in WebKit                       | Put the box on the grid: whole-pixel tokens, or, for a box sized by its content, snap it as `NotchSnap` does                                              |
+| A clip whose curve is the ring's own curve                            | The ring's outermost pixel thinner round the corners, in every browser                | Never clip a ring on its own curve: round the clip tighter when the face is a separate layer (the pane), or clip in an inner element (`.data-table-clip`) |
+| `overflow-clip-margin`, which Safari does not support                 | Rules stopping two device pixels short of the ring                                    | In `@supports not (overflow-clip-margin: 1px)`, clip the paint with `clip-path: inset(-1px round …)` and the element's radii grown by that pixel          |
+| A border or outline round a curve in Chrome                           | The same ring 20-30 levels off the shadow-drawn one on the arc                        | Draw rounded rings as shadows; borders only where there is no curve to match                                                                              |
+| Safari softening an inset shadow inside a radius                      | The last soft pixel 3-4 levels lighter                                                | Inherent; below what can be seen. Corners differ between engines by 12-13 levels at most, whatever draws them                                             |
+| A `clip-path` that ends on its own box's edge (WebKit)                | The notch's face let the pane's ring show through as a faint line above the turn      | Let the shape and its box reach past the edge it covers (`.notch-face`, 1px)                                                                              |
+| Half pixels that cancel out                                           | Fixing one edge onto the grid moves another off (the narrow notch)                    | Change the geometry as a whole, never one length of it                                                                                                    |
 
 ## Pitfalls in measuring
 
@@ -307,18 +334,15 @@ What worked, in this order:
 
 ## Open work
 
-- **Data-table corners.** `DataTable`'s standard card paints its face, clips to
-  its radius and draws its ring on `::after` inside that clip, so its ring's
-  outermost pixel is antialiased twice (worst 17-18 levels against an
-  unclipped ring). Borders and outlines measured worse in Chrome. The plan:
-  the outer card keeps `className`, `ref`, `as`, props, face, radius and ring
-  and stops clipping; a new inner element wraps the children and clips at the
-  face's radius, inside any border. The proposal table's top padding (the
-  sticky track's containing-block trick in `engine-run.css`) moves to that
-  inner element; `.proposal-table-card` stays on the outer one for its test.
-  The read card's fade stays on the outer card, so the ring fades with it.
-  Verify with `lines:compare` at the table's corners, and the propose and
-  read-step tests.
+- **The slanted button's own width.** The notch's inset is now rounded up to
+  a device pixel (`--notch-inset`, and `--spacing-shell-header` with it: 6px
+  where 5px gap and 0.75px edge made 5.75), which put the button's top and
+  bottom on the grid and halved the notch specimens' difference from Chrome
+  at offsets 0 and 0.5 (worst 49 to 20-22). Where the button's width is
+  itself a fraction (offsets 0.25, 0.33, 0.75; in the app, its label's
+  width), its slanted side is still off the grid and WebKit differs by 32-47.
+  `NotchSnap` could round the button's width up the same way it rounds the
+  notch's.
 - **The narrow notch.** Its floor (`--narrow-title-height`, 41.75px) and its
   side turn (`--notch-corner` minus the edge, 9.25px below) are half device
   pixels that add up to a whole one. WebKit draws the narrow header's band a

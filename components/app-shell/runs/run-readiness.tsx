@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useLayoutEffect,
+  useRef,
   useState,
 } from 'react';
 
@@ -21,16 +22,26 @@ export function useRunShown() {
 }
 
 // A saved thread mounts before its requests finish. Keep its page's entrance
-// held until it can draw the restored thread in full.
+// held until it can draw the restored thread in full. Once drawn it stays
+// ready: shown again from a hidden tab, which runs this effect anew, it says
+// so at once rather than hiding the page for two frames and fading it back.
 function useRunReady(ready: boolean) {
   const { report } = useContext(RunReadiness);
+  const drawn = useRef(false);
   useLayoutEffect(() => {
+    if (ready && drawn.current) {
+      report(true);
+      return;
+    }
     report(false);
     if (!ready) return;
     // Let the committed thread paint hidden before the page's fade starts.
     let second = 0;
     const first = requestAnimationFrame(() => {
-      second = requestAnimationFrame(() => report(true));
+      second = requestAnimationFrame(() => {
+        drawn.current = true;
+        report(true);
+      });
     });
     return () => {
       cancelAnimationFrame(first);
@@ -71,3 +82,11 @@ export function settledOnce(query: {
 }) {
   return query.data !== undefined || (query.isFetched && !query.isFetching);
 }
+
+/*
+  How long a step's answer counts as just asked. A thread's data is asked for
+  as it opens (and as its row is pointed at), and its steps mount a moment
+  later: within this they take that answer rather than ask again. Past it, a
+  step opening still asks afresh, behind what it shows.
+*/
+export const JUST_ASKED_MS = 2_000;

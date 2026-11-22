@@ -82,10 +82,7 @@
   }
   /* Opened with its section, the section's own fade brings it in. With
      nothing travelling, its content needs no delay to wait out. */
-  .drawer-aside[data-flat]:is([data-with-section], [data-entered]):not(
-      [data-detail-held],
-      [data-exiting]
-    ) {
+  .drawer-aside[data-flat]:is([data-with-section], [data-entered]):not([data-exiting]) {
     animation: none;
   }
   .drawer-aside[data-flat] .drawer-aside-content {

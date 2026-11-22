@@ -1,6 +1,11 @@
 'use client';
 
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import {
+  AnimatePresence,
+  LayoutGroup,
+  motion,
+  useReducedMotion,
+} from 'motion/react';
 import { useId, useLayoutEffect, useRef, useState } from 'react';
 
 import { useWalkthrough } from '@/components/app-shell/walkthrough';
@@ -17,10 +22,9 @@ import { MorphingText } from '@/components/ui/morphing-text';
 import { Pill } from '@/components/ui/pill';
 import { useScreenSettled } from '@/components/ui/screen-settled';
 import { SmoothHeight } from '@/components/ui/smooth-height';
-import { TAB_PACE, useSwap } from '@/components/ui/swap';
 import { WalkthroughHint } from '@/components/ui/walkthrough-hint';
 import { cx } from '@/lib/ui/cx';
-import { DURATION_STATE } from '@/lib/ui/motion';
+import { DURATION_PANE, DURATION_STATE, EASE_OUT_QUAD } from '@/lib/ui/motion';
 import type { Proposal } from '@/lib/engine/types';
 import { sourceTermsOf, type SourceKind } from '@/lib/sources/model';
 
@@ -74,9 +78,8 @@ export function ProposalTable({
   const decided = records.filter(([key]) => decisions[key]);
   const reduceMotion = useReducedMotion();
   const [showing, setShowing] = useState<Showing>('all');
-  const { shown: view, layer } = useSwap(showing, () => 'fade', true, TAB_PACE);
   const shown =
-    view === 'need' ? needYou : view === 'decided' ? decided : records;
+    showing === 'need' ? needYou : showing === 'decided' ? decided : records;
   const counts = (['blocked', 'decide', 'ready', 'unchecked'] as const)
     .map((verdict) => ({
       verdict,
@@ -84,12 +87,6 @@ export function ProposalTable({
     }))
     .filter((entry) => entry.count);
   const [open, setOpen] = useState<Set<string>>(new Set());
-  const toggle = (key: string) =>
-    setOpen((was) => {
-      const next = new Set(was);
-      if (!next.delete(key)) next.add(key);
-      return next;
-    });
   const tableId = useId();
   const walkthrough = useWalkthrough();
   const screenSettled = useScreenSettled();
@@ -97,6 +94,21 @@ export function ProposalTable({
   const filterBarRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLElement>(null);
   const headRef = useRef<HTMLTableSectionElement>(null);
+  const toggle = (key: string) => {
+    if (key === shown.at(-1)?.[0]) {
+      const fold = document.getElementById(`${tableId}-${key}`);
+      if (fold)
+        cardRef.current?.style.setProperty(
+          '--proposal-last-fold-duration',
+          getComputedStyle(fold).getPropertyValue('--fold-duration'),
+        );
+    }
+    setOpen((was) => {
+      const next = new Set(was);
+      if (!next.delete(key)) next.add(key);
+      return next;
+    });
+  };
   useLayoutEffect(() => {
     const card = cardRef.current;
     const head = headRef.current;
@@ -219,58 +231,82 @@ export function ProposalTable({
                       </th>
                     </tr>
                   </thead>
-                  <motion.tbody {...layer}>
-                    {shown.length === 0 ? (
-                      <tr key="empty">
-                        <td
-                          colSpan={fields.length + 4}
-                          className="text-muted px-6 py-2.75"
-                        >
-                          {view === 'need'
-                            ? 'Nothing needs you.'
-                            : 'Nothing decided yet.'}
-                        </td>
-                      </tr>
-                    ) : null}
-                    {shown.map(([key, record], rowIndex) => (
-                      <ProposalRow
-                        key={key}
-                        fields={fields}
-                        id={`${tableId}-${key}`}
-                        recordKey={key}
-                        name={names[key] ?? ''}
-                        record={record}
-                        decision={decisions[key]}
-                        expanded={open.has(key)}
-                        ruled={rowIndex < shown.length - 1}
-                        calculated={calculated}
-                        source={source}
-                        onToggle={() => toggle(key)}
-                        onDecide={decide}
-                        onCheck={onCheck}
-                        onCite={(cell) => {
-                          const address = sourceTermsOf(source).address;
-                          const tab = address.resourceOf(cell);
-                          if (!tab) return;
-                          const position =
-                            source === 'database'
-                              ? null
-                              : address.blockStart(cell.slice(tab.length + 1));
-                          cite(
-                            tab,
-                            position ? { ...position, label: cell } : undefined,
-                          );
-                        }}
-                        icons={icons}
-                      />
-                    ))}
-                  </motion.tbody>
+                  <tbody>
+                    <LayoutGroup>
+                      <AnimatePresence initial={false}>
+                        {shown.length === 0 ? (
+                          <motion.tr
+                            key="empty"
+                            initial={reduceMotion ? false : { opacity: 0 }}
+                            animate={{
+                              opacity: 1,
+                              transition: {
+                                delay: reduceMotion ? 0 : DURATION_PANE,
+                                duration: reduceMotion ? 0 : DURATION_STATE,
+                                ease: EASE_OUT_QUAD,
+                              },
+                            }}
+                            exit={reduceMotion ? undefined : { opacity: 0 }}
+                            transition={{
+                              duration: DURATION_STATE,
+                              ease: EASE_OUT_QUAD,
+                            }}
+                          >
+                            <td
+                              colSpan={fields.length + 4}
+                              className="text-muted px-6 py-2.75"
+                            >
+                              {showing === 'need'
+                                ? 'Nothing needs you.'
+                                : 'Nothing decided yet.'}
+                            </td>
+                          </motion.tr>
+                        ) : null}
+                        {shown.map(([key, record], rowIndex) => (
+                          <ProposalRow
+                            key={key}
+                            fields={fields}
+                            id={`${tableId}-${key}`}
+                            recordKey={key}
+                            name={names[key] ?? ''}
+                            record={record}
+                            decision={decisions[key]}
+                            expanded={open.has(key)}
+                            ruled={rowIndex < shown.length - 1}
+                            calculated={calculated}
+                            source={source}
+                            onToggle={() => toggle(key)}
+                            onDecide={decide}
+                            onCheck={onCheck}
+                            onCite={(cell) => {
+                              const address = sourceTermsOf(source).address;
+                              const tab = address.resourceOf(cell);
+                              if (!tab) return;
+                              const position =
+                                source === 'database'
+                                  ? null
+                                  : address.blockStart(
+                                      cell.slice(tab.length + 1),
+                                    );
+                              cite(
+                                tab,
+                                position
+                                  ? { ...position, label: cell }
+                                  : undefined,
+                              );
+                            }}
+                            icons={icons}
+                          />
+                        ))}
+                      </AnimatePresence>
+                    </LayoutGroup>
+                  </tbody>
                 </table>
               </div>
               <div
                 role="group"
                 aria-label="Proposal summary"
-                className="ground-raised border-raised-ring bg-surface-primary border-t-section sticky bottom-0 z-3"
+                className="proposal-table-summary ground-raised bg-surface-primary border-t-section sticky bottom-0 z-3 border-transparent"
               >
                 <SmoothHeight className="sm:grid sm:content-center">
                   <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">

@@ -1,7 +1,6 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
-  DETAIL_AFTER,
   DURATION_PANE,
   DURATION_STATE,
   EASE_OUT_EMPHASIZED,
@@ -39,7 +38,6 @@ describe('motion tokens', () => {
   it('mirror the durations in app/styles/', () => {
     expect(DURATION_STATE).toBe(seconds(token('duration-state')));
     expect(DURATION_PANE).toBe(seconds(token('duration-pane')));
-    expect(DETAIL_AFTER).toBe(seconds(token('detail-after')));
   });
 
   it('mirror the emphasized curve in app/styles/', () => {

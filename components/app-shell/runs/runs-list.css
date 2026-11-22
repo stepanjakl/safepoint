@@ -61,11 +61,6 @@
   inherits: false;
   initial-value: transparent;
 }
-@property --sheet-seam {
-  syntax: '<color>';
-  inherits: false;
-  initial-value: transparent;
-}
 @property --sheet-fill-end {
   syntax: '<color>';
   inherits: false;
@@ -138,6 +133,10 @@
   }
 }
 
+@utility sheet-action-pill {
+  @apply control-wash bg-surface-hover flex h-7 items-center rounded-full;
+}
+
 @layer components {
   .sheet-list {
     display: flex;
@@ -186,17 +185,27 @@
       opacity: 0;
     }
   }
-  /* Only beside the chosen run, on the side facing it, and only where no
-     band lies between them. The seam's colour comes with the pointer
-     (.sheet-row's hover arm), so it shows for a hovered run beside the
-     chosen one, and nowhere else. */
-  @container sheet (width >= 52rem) {
-    .sheet-list > li:has(> .sheet-row[data-current]:last-child) + li > .sheet-row {
-      --sheet-seam-size: 100% var(--spacing-sheet-highlight);
-    }
-    .sheet-list > li:has(+ li > .sheet-row[data-current]) > .sheet-row:last-child {
-      --sheet-seam-end-size: 100% var(--spacing-sheet-highlight);
-    }
+  /* One opaque stroke from the following row's edge in either direction.
+     A soft pixel would blend with a different fill when selection swaps sides. */
+  .sheet-list > li + li::after {
+    --sheet-seam-width: max(var(--dp), var(--highlight-sheet-solid));
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: var(--sheet-seam-width);
+    z-index: 2;
+    pointer-events: none;
+    background: var(--sp-sheet-seam);
+    opacity: 0;
+    transition: opacity var(--duration-state) ease-out;
+  }
+  .sheet-list
+    > li:has(> .sheet-row[data-current]:last-child)
+    + li:is(:hover, :focus-within):not(:has(> .sheet-break:is(:hover, :focus-within)))::after,
+  .sheet-list
+    > li:is(:hover, :focus-within):has(> .sheet-row:last-child)
+    + li:has(> .sheet-row[data-current])::after {
+    opacity: 1;
   }
   /* Under a boundary band the line is the band's own lower edge, so it runs
      the band's full width, as the band's top edge does. */
@@ -243,6 +252,41 @@
     padding-block-end: calc(var(--sheet-head-rule) - var(--structural-divider-border));
     border-bottom: var(--structural-divider-border) solid CanvasText;
     transition: box-shadow var(--duration-state) ease-out;
+  }
+  .process-runs-list > .sheet-head {
+    justify-content: flex-start;
+  }
+  :root[data-rail-guides='on'] .process-runs-list::after,
+  :root[data-rail-guides='on'] .process-runs-list .sheet-row::after {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    inset-inline: calc(var(--spacing-sheet-inset) + var(--sheet-bleed, 0px) - 0.5px)
+      calc(var(--spacing-sheet-inset) + var(--sheet-bleed-end, 0px) - 0.5px);
+    z-index: 4;
+    pointer-events: none;
+    border-inline: 1px solid color-mix(in oklab, red 60%, transparent);
+  }
+  :root[data-rail-guides='on'] .process-runs-list > .sheet-head [data-leads]::after,
+  :root[data-rail-guides='on'] .process-runs-list > .sheet-head > button::after {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: calc(50% - 0.5px);
+    width: 1px;
+    background: color-mix(in oklab, dodgerblue 75%, transparent);
+    pointer-events: none;
+  }
+  :root[data-rail-guides='on'] .process-runs-list .sheet-row::after {
+    display: none;
+  }
+  @container sheet (width < 52rem) {
+    :root[data-rail-guides='on'] .process-runs-list .sheet-row::after {
+      display: block;
+    }
+    :root[data-rail-guides='on'] .process-runs-list::after {
+      display: none;
+    }
   }
   @media (width < 56.25rem) {
     .process-runs-list > .sheet-head {
@@ -294,7 +338,7 @@
     width: 100%;
     /* On the rows' axis, not its own: it is read in the run of the list, and
        the rows above and below it are what it is read against. */
-    padding: 0.3125rem var(--spacing-sheet-inset);
+    padding-block: 0.3125rem;
     padding-inline: calc(var(--spacing-sheet-inset) + var(--sheet-bleed, 0px))
       calc(var(--spacing-sheet-inset) + var(--sheet-bleed-end, 0px));
     border-top: var(--edge-rule) solid var(--sp-raised-ring);
@@ -397,7 +441,6 @@
     column-gap: 0.625rem;
     row-gap: var(--spacing-sheet-band-gap);
     width: 100%;
-    padding: var(--spacing-sheet-inset);
     /* Two pixels less above and below than at the sides: the marks keep their
        corner on the horizontal inset, and the row loses four pixels. */
     padding-block: calc(var(--spacing-sheet-inset) - 0.125rem);
@@ -409,26 +452,10 @@
     cursor: pointer;
     /* Fades toward the column's divider; over the pane's highlight, as the
        row's own bleed is. */
-    /* Over the fill, a one-pixel seam on the edge it shares with the chosen
-       run, set where that run is (below). It fades with the fill, being one
-       of its stops. */
-    --sheet-seam-size: 0 0;
-    --sheet-seam-end-size: 0 0;
-    --sheet-seam-end-position: 0 100%;
-    background-image:
-      linear-gradient(var(--sheet-seam), var(--sheet-seam)),
-      linear-gradient(var(--sheet-seam), var(--sheet-seam)),
-      linear-gradient(to right, var(--sheet-fill), var(--sheet-fill-end));
-    background-position:
-      0 0,
-      var(--sheet-seam-end-position),
-      0 0;
-    background-size: var(--sheet-seam-size), var(--sheet-seam-end-size), auto;
-    background-repeat: no-repeat;
+    background-image: linear-gradient(to right, var(--sheet-fill), var(--sheet-fill-end));
     transition:
       --sheet-fill var(--duration-state) ease-out,
-      --sheet-fill-end var(--duration-state) ease-out,
-      --sheet-seam var(--duration-state) ease-out;
+      --sheet-fill-end var(--duration-state) ease-out;
   }
   /* One step and one curve for everything in the row: a part on its own
      timing arrives late to a change it is part of. color and background-color
@@ -460,7 +487,6 @@
   .sheet-row:not([data-current]):hover,
   .sheet-row:not([data-current]):focus-visible,
   .sheet-row:not([data-current]):focus-within {
-    --sheet-seam: var(--sp-sheet-seam);
     --sheet-fill: var(--sp-sheet-hover);
     --sheet-fill-end: var(--sp-sheet-hover-end);
     --sheet-ink: var(--sp-sheet-date-hover);
@@ -470,8 +496,6 @@
     --sheet-total-ink: var(--sp-sheet-total-ink-hover);
     --sheet-total-label-ink: var(--sp-sheet-total-label-hover);
   }
-  /* No seam of its own: the chosen run is divided from a neighbour only
-     while that neighbour is under the pointer. */
   .sheet-row[data-current] {
     --sheet-fill: var(--sp-sheet-current);
     --sheet-fill-end: var(--sp-sheet-hover);
@@ -733,6 +757,7 @@
   }
   @media (prefers-reduced-motion: reduce) {
     .sheet-head,
+    .sheet-list > li::after,
     .sheet-row,
     .sheet-row *,
     .sheet-break,
@@ -873,13 +898,26 @@
       box-shadow: none;
       background: var(--sp-raised-ring);
     }
-    /* The seam faces the chosen run, on whichever side it is. */
-    .process-runs-list > .sheet-list > li:has(> .sheet-row[data-current]) + li > .sheet-row {
-      --sheet-seam-size: var(--spacing-sheet-highlight) 100%;
+    .sheet-list > li + li::after {
+      display: none;
     }
-    .process-runs-list > .sheet-list > li:has(+ li > .sheet-row[data-current]) > .sheet-row {
-      --sheet-seam-end-size: var(--spacing-sheet-highlight) 100%;
-      --sheet-seam-end-position: 100% 0;
+    .process-runs-list > .sheet-list > li + li::after {
+      display: block;
+      inset-block: 0;
+      inset-inline: 0 auto;
+      width: var(--sheet-seam-width);
+      height: auto;
+    }
+    /* The strip hides version boundaries, so every adjacent run can meet. */
+    .process-runs-list
+      > .sheet-list
+      > li:has(> .sheet-row[data-current])
+      + li:is(:hover, :focus-within)::after,
+    .process-runs-list
+      > .sheet-list
+      > li:is(:hover, :focus-within)
+      + li:has(> .sheet-row[data-current])::after {
+      opacity: 1;
     }
     /* The column's rule is the strip's floor, so no run draws one of its own. */
     .process-runs-list > .sheet-list > li:last-child {

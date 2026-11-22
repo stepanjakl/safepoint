@@ -25,6 +25,7 @@ export function DataTable({
 }) {
   // A div takes every prop an article does.
   const Element = as as 'article';
+  const standard = variant === 'standard';
   return (
     <Element
       {...props}
@@ -32,13 +33,15 @@ export function DataTable({
         // min-w-0: in a grid it would otherwise grow to its table's width.
         // Each variant owns its face and radius.
         'min-w-0',
-        variant === 'compact'
-          ? 'bg-surface-inset rounded-control overflow-auto'
-          : 'data-table-card ground-raised bg-surface-primary rounded-shell overflow-clip',
+        standard
+          ? 'data-table-card ground-raised bg-surface-primary rounded-shell'
+          : 'bg-surface-inset rounded-control overflow-auto',
         className,
       )}
     >
-      {children}
+      {/* The standard card clips its content one element in, so its ring,
+          on the card, is never clipped on its own curve (data-table.css). */}
+      {standard ? <div className="data-table-clip">{children}</div> : children}
     </Element>
   );
 }

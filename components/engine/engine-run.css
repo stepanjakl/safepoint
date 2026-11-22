@@ -144,10 +144,32 @@
     }
   }
 
+  /* The original value sizes the cell. Match its right edge inside the field. */
+  .proposal-value-editor {
+    position: absolute;
+    z-index: 1;
+    inset-block: --spacing(-1);
+    --proposal-value-inset: calc(--spacing(1) + var(--spacing-field-edge));
+    inset-inline-end: calc(-1 * var(--proposal-value-inset));
+    inline-size: calc(100% + 2 * var(--proposal-value-inset));
+    min-inline-size: calc(4ch + --spacing(2));
+  }
+  .proposal-value-input {
+    appearance: textfield;
+    padding-inline: --spacing(1);
+  }
+  .proposal-value-input::-webkit-inner-spin-button,
+  .proposal-value-input::-webkit-outer-spin-button {
+    appearance: none;
+    margin: 0;
+  }
+
   /* Start the sticky containing block at the head's bottom rule.
      The table extends above it, and the footer reserves its height in flow. */
   .proposal-table-card {
     --proposal-head-inset: calc(var(--proposal-head-height, 41px) - var(--section-rule-width));
+  }
+  .proposal-table-card > .data-table-clip {
     padding-block-start: var(--proposal-head-inset);
   }
   .proposal-table-scroll {
@@ -155,5 +177,53 @@
   }
   .proposal-table-sticky-track {
     display: flow-root;
+  }
+  /* Keep the sticky border's space while fading its paint with the last fold. */
+  .proposal-table-summary::before,
+  .proposal-table-summary::after {
+    content: '';
+    position: absolute;
+    inset-block-start: 0;
+    translate: 0 -100%;
+    inset-inline: 0;
+    border-top: var(--section-rule-width) solid var(--sp-raised-ring);
+    pointer-events: none;
+  }
+  .proposal-table-summary::before {
+    opacity: 0;
+    transition: opacity var(--fold-fade) ease-out;
+  }
+  .proposal-table-summary::after {
+    filter: opacity(var(--proposal-summary-divider-hover-opacity, 1));
+    transition:
+      filter var(--duration-state) ease-out,
+      opacity var(--fold-fade) ease-out
+        calc(var(--proposal-last-fold-duration, var(--fold-max)) + var(--fold-fade));
+  }
+  .proposal-table-sticky-track:has(tbody > tr:last-child > td > .fold[data-open])
+    > .proposal-table-summary {
+    &::before {
+      opacity: 1;
+      transition-delay: var(--proposal-last-fold-duration, var(--fold-max));
+    }
+    &::after {
+      opacity: 0;
+      transition: none;
+    }
+  }
+  .proposal-table-sticky-track:has(.calc-row:nth-last-child(2) .calc-row-toggle:focus-visible)
+    > .proposal-table-summary {
+    --proposal-summary-divider-hover-opacity: 0;
+  }
+  @media (hover: hover) {
+    .proposal-table-sticky-track:has(.calc-row:nth-last-child(2):hover) > .proposal-table-summary {
+      --proposal-summary-divider-hover-opacity: 0;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .proposal-table-summary::before,
+    .proposal-table-summary::after {
+      transition: none;
+    }
   }
 }

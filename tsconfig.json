@@ -41,7 +41,9 @@
     ".next-e2e-propose-fade/types/**/*.ts",
     ".next-e2e-propose-fade/dev/types/**/*.ts",
     ".next/prod/types/**/*.ts",
-    ".next/prod/dev/types/**/*.ts"
+    ".next/prod/dev/types/**/*.ts",
+    ".next-e2e/row-sequence/types/**/*.ts",
+    ".next-e2e/row-sequence/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

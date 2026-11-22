@@ -73,7 +73,9 @@
        The start side leans: two parallel lines crossing d apart in height are
        d*cos(angle) apart square to each other, so the gap along the floor is
        the gap over that cosine. */
-    --notch-inset: calc(var(--notch-gap) + var(--notch-edge-width));
+    /* Rounded up to a device pixel: off it, WebKit draws the slanted control's
+       curves and bottom edge unlike Chrome. theme.css rounds the header alike. */
+    --notch-inset: round(up, calc(var(--notch-gap) + var(--notch-edge-width)), var(--dp));
     padding-block: var(--notch-inset);
     /* --notch-snap puts the sloped side's edge on a device pixel (notch-snap.tsx). */
     padding-inline: calc(var(--notch-gap) / cos(var(--notch-angle)) + var(--notch-snap, 0px))
@@ -216,9 +218,15 @@
       from var(--n-start-0),
       var(--n-down-0),
       var(--n-outer-turn),
-      line to var(--n-right) 0,
+      line to calc(var(--n-right) + 1px) var(--n-turn),
+      line to calc(var(--n-right) + 1px) 0,
       close
     );
+  }
+  /* Past the pane's edge above the turn: WebKit antialiases a clip that ends
+     on its box's edge, and the pane's ring then shows through (LINE-TESTING.md). */
+  .notch-face {
+    right: -1px;
   }
   /* Between offsets 0 and e, in the pane's ring colour. Opaque, so along the
      floor it takes the header's rule over; under the slope the rule shows. */

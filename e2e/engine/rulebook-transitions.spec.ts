@@ -176,7 +176,7 @@ test('changed instructions never show the previous version’s retained rules', 
     .getByRole('button', { name: /^Instructions/ })
     .first()
     .click();
-  await page.getByRole('button', { name: 'New version' }).click();
+  await page.getByRole('button', { name: 'New version', exact: true }).click();
   await page
     .getByRole('textbox', { name: /^Instructions, draft of/ })
     .fill(text);

@@ -65,6 +65,15 @@ test('instructions open their latest version beside the list of versions', async
   await page.keyboard.press('Escape');
   await expect(drawer(page)).toHaveCount(0);
   await expect(draft).toBeFocused();
+
+  const resume = page.getByRole('button', { name: 'Continue v4', exact: true });
+  await draft.press('Shift+Tab');
+  await expect(resume).toBeFocused();
+  await resume.press('Enter');
+  await expect(draft).toHaveAttribute('aria-expanded', 'true');
+  await expect(resume).toBeDisabled();
+  await page.keyboard.press('Escape');
+  await expect(draft).toBeFocused();
 });
 
 test('versions this browser published before the server did are said, and can become a draft', async ({
@@ -179,9 +188,11 @@ test('the instruction pill stays in place as its version and status change', asy
       ).toBeFocused();
       await expect
         .poll(() => fades.jsonValue())
+        // The live version's tabs leave for the draft's two controls; its
+        // New version is on the list's band, which does not change.
         .toEqual({
           entering: 2,
-          leaving: 2,
+          leaving: 1,
           pill: 0,
         });
     } else {
@@ -238,7 +249,8 @@ test('review numbers follow the draft while removed paragraphs keep their origin
     );
   });
   await openTab(page, 'Instructions');
-  await drawer(page).getByRole('button', { name: 'Continue v5' }).click();
+  // The tab's action is on the list's band, as Start run is on the runs'.
+  await page.getByRole('button', { name: 'Continue v5', exact: true }).click();
   await drawer(page).getByRole('button', { name: 'Review changes' }).click();
   const diff = drawer(page).getByRole('list', { name: 'Changes from v4' });
   await expect(diff.locator('.clause-number')).toHaveText([
@@ -313,12 +325,11 @@ test('tab handoff fades the whole section once and shows its detail with it', as
   const entering = page.locator('.process-sheet-swap[data-swap-entering]');
   await expect(entering).toBeAttached();
   // The layer's fade is the section's only one: none of its parts fade or
-  // rise inside it, and the detail does not trail the list.
+  // rise inside it.
   await expect(
     entering.locator('.process-panel-list > :not(h2)').first(),
   ).toHaveCSS('animation-name', 'none');
   await expect(entering.locator('[data-section-forming]')).toHaveCount(0);
-  await expect(entering.locator('[data-detail-held]')).toHaveCount(0);
   await expect(entering).not.toHaveAttribute('inert');
 });
 
@@ -328,7 +339,7 @@ async function observeSectionEntrance(
   trigger: import('@playwright/test').Locator,
 ) {
   return trigger.evaluate((button) => {
-    const frames: { screen: number; row: number; detail: number | null }[] = [];
+    const frames: { screen: number; row: number }[] = [];
     const started = performance.now();
     if (!(button instanceof HTMLElement)) throw new Error('Missing trigger');
     button.click();
@@ -354,14 +365,7 @@ async function observeSectionEntrance(
             parent = parent.parentElement
           )
             screen *= Number(getComputedStyle(parent).opacity);
-          const detail = row
-            .closest('.process-sheet-swap')
-            ?.querySelector('[data-detail-held]');
-          frames.push({
-            screen,
-            row: Number(getComputedStyle(row).opacity),
-            detail: detail ? Number(getComputedStyle(detail).opacity) : null,
-          });
+          frames.push({ screen, row: Number(getComputedStyle(row).opacity) });
         }
         if ((frames.length > 0 && !row) || performance.now() - started > 8000)
           resolve(frames);
@@ -378,9 +382,7 @@ function expectSectionAfterScreen(
   expect(frames.length).toBeGreaterThan(2);
   expect(frames.some((frame) => frame.screen < 1)).toBe(true);
   expect(
-    frames.filter(
-      (frame) => frame.screen < 1 && (frame.row > 0 || (frame.detail ?? 0) > 0),
-    ),
+    frames.filter((frame) => frame.screen < 1 && frame.row > 0),
     'content started arriving before its screen settled',
   ).toEqual([]);
   expect(frames.some((frame) => frame.screen === 1 && frame.row > 0)).toBe(
@@ -442,7 +444,6 @@ test('rows rise in when the screen loads, and a tab shows its rows at once', asy
     page.locator('.process-sheet-swap').filter({ visible: true }),
   ).toHaveCSS('opacity', '1');
   expect(await forming()).toBe(0);
-  await expect(page.locator('[data-detail-held]')).toHaveCount(0);
 });
 
 test('reloading keeps the open tab while navigating between processes opens runs', async ({

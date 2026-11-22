@@ -185,7 +185,8 @@ async function main() {
       edges: o!.edges,
       scale: 2,
       ...viewport,
-      fullPage: false,
+      // Whole page, so a box below the fold (a lab specimen) is in the image.
+      fullPage: true,
       css,
       probes: [box],
     });

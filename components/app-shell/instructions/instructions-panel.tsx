@@ -477,26 +477,22 @@ export function InstructionDetail({
           </span>
         ) : null}
       </div>
+      {/* A new version starts from the list's own band; here only an
+          earlier version offers itself as the next one's start. Restoring
+          replaces any draft: never an edit, as a published version stays as
+          it was. */}
       {isEdit ? (
         editActions
-      ) : (
+      ) : isCurrent ? null : (
         <Button
           size="small"
-          className={cx('shrink-0', crossing && 'swap-band-fade')}
+          className="swap-band-fade shrink-0"
           onPress={() => {
-            // Restoring replaces any draft. The current one needs none: the
-            // editor starts from its text, and a draft is kept once written.
-            if (!isCurrent) store.saveDraft(to!.text);
+            store.saveDraft(to!.text);
             onEdit();
           }}
         >
-          {/* Never an edit: a published version stays as it was, and this
-                starts the next one. */}
-          {isCurrent
-            ? draft === null
-              ? 'New version'
-              : `Continue ${store.next}`
-            : `Draft from ${to!.version}`}
+          {`Draft from ${to!.version}`}
         </Button>
       )}
     </div>,

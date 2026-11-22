@@ -161,9 +161,11 @@
      shell, and still has to line up with the panes inside it. */
   --radius-shell: 0.625rem; /* 10px  panes, cards, dialogs, 36px buttons */
   --spacing-shell-inset: 10px;
-  /* Sidebar end rows share the notch's full frame, including both insets. */
+  /* Sidebar end rows share the notch's full frame, including both insets,
+     each rounded up to a device pixel as notch.css rounds them. */
   --spacing-shell-header: calc(
-    var(--slant-height) + 2 * (var(--notch-gap) + var(--spacing-control-edge))
+    var(--slant-height) + 2 *
+      round(up, calc(var(--notch-gap) + var(--spacing-control-edge)), var(--dp))
   );
   /* Adjustable navigation: protect the sheet's reading width near the shell
      breakpoint. These also size the probes read by the pointer/keyboard code. */
@@ -204,9 +206,6 @@
   /* The list column beside a detail, runs and versions alike, so the divider
      stays put as the reader changes tab. */
   --spacing-sheet-rail: 14.5rem;
-  /* A whole pixel, not the control highlight's three quarters: at 0.75px a 1x
-     display paints a partial line or none. */
-  --spacing-sheet-highlight: var(--highlight-sheet);
   /* One of the row's two fixed measures; the bar's height is the other. */
   --spacing-sheet-mark: 1rem;
   /* A little under the line it shares with the day and the time. A readout of

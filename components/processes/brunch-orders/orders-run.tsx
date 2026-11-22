@@ -4,6 +4,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -158,10 +159,16 @@ function OrdersThread({
   const { kept, text } = live;
   const { restoring, finishRestoring } = useRunRestoration(kept.readId);
   // Every step's data at once, rather than each as the one before answers.
-  // Once per run: the thread is keyed on it.
+  // Once per run: the thread is keyed on it, and kept in a hidden tab, which
+  // runs its effects again when shown -- the steps ask afresh then anyway.
   const prefetch = useOrdersPrefetch();
   const [opened] = useState(live);
-  useEffect(() => prefetch(opened), [prefetch, opened]);
+  const asked = useRef(false);
+  useEffect(() => {
+    if (asked.current) return;
+    asked.current = true;
+    prefetch(opened);
+  }, [prefetch, opened]);
   const [rulesReady, setRulesReady] = useState(false);
   const [calculateReady, setCalculateReady] = useState(false);
   const [proposeReady, setProposeReady] = useState(false);

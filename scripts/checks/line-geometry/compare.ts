@@ -13,24 +13,26 @@ import type { Pixels } from './png.ts';
 
 export type Crop = { width: number; height: number; data: Uint8Array };
 
-/* `size` CSS px square, device pixels out, from (x, y) CSS px. */
+/* `size` CSS px square (or `size` by `tall`), device pixels out, from (x, y) CSS px. */
 export function cropRegion(
   image: Pixels,
   scale: number,
   x: number,
   y: number,
   size: number,
+  tall = size,
 ): Crop {
-  const n = Math.round(size * scale);
+  const w = Math.round(size * scale);
+  const h = Math.round(tall * scale);
   const x0 = Math.round(x * scale);
   const y0 = Math.round(y * scale);
-  const data = new Uint8Array(n * n * 3);
-  for (let row = 0; row < n; row++)
-    for (let col = 0; col < n; col++) {
+  const data = new Uint8Array(w * h * 3);
+  for (let row = 0; row < h; row++)
+    for (let col = 0; col < w; col++) {
       const from = ((y0 + row) * image.width + x0 + col) * 3;
-      data.set(image.data.subarray(from, from + 3), (row * n + col) * 3);
+      data.set(image.data.subarray(from, from + 3), (row * w + col) * 3);
     }
-  return { width: n, height: n, data };
+  return { width: w, height: h, data };
 }
 
 export type Corner = 'top left' | 'top right' | 'bottom left' | 'bottom right';

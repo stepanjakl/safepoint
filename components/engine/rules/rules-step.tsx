@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
 
 import {
+  JUST_ASKED_MS,
   settledOnce,
   useStepReady,
 } from '@/components/app-shell/runs/run-readiness';
@@ -141,7 +142,7 @@ export function RulesStep({
     { text, readId },
     {
       enabled: !mock,
-      staleTime: mock ? Infinity : 0,
+      staleTime: mock ? Infinity : JUST_ASKED_MS,
       refetchInterval: ({ state: { data } }) =>
         !mock && data?.drafting?.running ? DRAFT_POLL_MS : false,
       // A draft takes minutes and is left in a background tab: the tab's
@@ -256,8 +257,10 @@ export function RulesStep({
     setProfileOpen(true);
     requestAnimationFrame(() => profileHeading.current?.focus());
   };
+  // Not a refresh behind rules already shown: a run opened again shows them
+  // at once, and its controls must not grey out and back while it asks.
   const busy =
-    asked.isFetching ||
+    (asked.isFetching && !asked.isRefetching) ||
     [
       proposeProfile,
       changeProfile,

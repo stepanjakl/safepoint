@@ -114,10 +114,9 @@ export function RunView({
   // A wait for the next run that outlasts the loader's delay is said: the old
   // run fades and the loader takes its place until the new one is ready. A
   // shorter one keeps the old run up, so a quick switch never flashes.
-  const loading = useLoader(
-    shown !== target && preparing,
-    RUN_LOADER_DELAY_MS,
-  );
+  // Whether the previous page is still up or already gone -- from the empty
+  // page the swap is immediate, and the new thread waits unseen.
+  const loading = useLoader(preparing, RUN_LOADER_DELAY_MS);
   const waitShown = loading.phase === 'shown' || loading.phase === 'slow';
 
   // A new page starts at its top, once the old one has gone -- or once the

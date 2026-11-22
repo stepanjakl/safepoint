@@ -29,13 +29,12 @@ import {
   DATA_TABLE_NAME_COLUMN,
   DATA_TABLE_NAME_UNDER,
   DATA_TABLE_SECONDARY_NAME,
-  DATA_TABLE_RULE,
 } from '@/components/ui/data-table';
 import { Fold } from '@/components/ui/fold';
 import { IconButton } from '@/components/ui/icon-button';
 import { Pill } from '@/components/ui/pill';
 import { cx } from '@/lib/ui/cx';
-import { DURATION_STATE } from '@/lib/ui/motion';
+import { DURATION_PANE, DURATION_STATE, EASE_OUT_QUAD } from '@/lib/ui/motion';
 import type { CheckVerdict, ProposalRecord, Verdict } from '@/lib/engine/types';
 import { sourceTermsOf, type SourceKind } from '@/lib/sources/model';
 
@@ -140,10 +139,32 @@ export function ProposalRow({
     setChecked(null);
   };
 
+  const present = useIsPresent();
+  const reduceMotion = useReducedMotion();
+  const rowMotion = {
+    inert: !present,
+    layout: reduceMotion ? false : ('position' as const),
+    initial: reduceMotion ? false : { opacity: 0 },
+    animate: {
+      opacity: 1,
+      transition: {
+        duration: reduceMotion ? 0 : DURATION_STATE,
+        delay: reduceMotion ? 0 : DURATION_PANE,
+        ease: EASE_OUT_QUAD,
+      },
+    },
+    exit: reduceMotion
+      ? undefined
+      : {
+          opacity: 0,
+          transition: { duration: DURATION_STATE, ease: EASE_OUT_QUAD },
+        },
+    transition: { layout: { duration: DURATION_PANE, ease: EASE_OUT_QUAD } },
+  };
   const decisionState = changing ? 'changing' : decision ? 'decided' : 'open';
   return (
     <Fragment>
-      <tr className="calc-row align-top">
+      <motion.tr {...rowMotion} className="calc-row align-top">
         <th
           scope="row"
           className="py-2.75 pr-3 pl-6 text-left font-medium whitespace-nowrap max-sm:w-full max-sm:max-w-0"
@@ -195,36 +216,42 @@ export function ProposalRow({
             </span>
           ) : null}
         </td>
-        {fields.map((field) => (
+        {fields.map((field, index) => (
           <td
             key={field.id}
             className="py-2.75 pl-3 text-right whitespace-nowrap"
           >
-            {changing ? (
-              <input
-                type="number"
-                inputMode="numeric"
-                step={1}
-                aria-label={`${field.label} for ${key}`}
-                value={changing[field.id]}
-                autoFocus
-                onChange={(event) =>
-                  setChanging({
-                    ...changing,
-                    [field.id]: Math.trunc(Number(event.target.value) || 0),
-                  })
-                }
-                className="field text-dense min-h-7 w-20 px-2 text-right"
-              />
-            ) : record.action === 'leave' && !decision?.values ? (
-              // A quiet mark in a column of figures: nothing to order.
-              <span className="text-muted">
-                <span aria-hidden>—</span>
-                <span className="sr-only">No change</span>
+            <div className="relative">
+              <span className={cx(changing && 'invisible')}>
+                {record.action === 'leave' && !decision?.values ? (
+                  <span className="text-muted">
+                    <span aria-hidden>—</span>
+                    <span className="sr-only">No change</span>
+                  </span>
+                ) : (
+                  <span className="value">{values?.[field.id]}</span>
+                )}
               </span>
-            ) : (
-              <span className="value tabular-nums">{values?.[field.id]}</span>
-            )}
+              {changing ? (
+                <div className="proposal-value-editor">
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    step={1}
+                    aria-label={`${field.label} for ${key}`}
+                    value={changing[field.id]}
+                    autoFocus={index === 0}
+                    onChange={(event) =>
+                      setChanging({
+                        ...changing,
+                        [field.id]: Math.trunc(Number(event.target.value) || 0),
+                      })
+                    }
+                    className="proposal-value-input field value block size-full text-right"
+                  />
+                </div>
+              ) : null}
+            </div>
           </td>
         ))}
         <td className="py-2 pl-3 align-middle">
@@ -351,13 +378,15 @@ export function ProposalRow({
             </DecisionControls>
           </AnimatePresence>
         </td>
-      </tr>
-      <tr>
-        <td
-          colSpan={fields.length + 4}
-          className={cx('p-0', ruled && DATA_TABLE_RULE)}
-        >
-          <Fold open={expanded} id={id} className="grid gap-5 px-6 pt-1 pb-4">
+      </motion.tr>
+      <motion.tr {...rowMotion}>
+        <td colSpan={fields.length + 4} className="p-0">
+          <Fold
+            open={expanded}
+            divider={ruled}
+            id={id}
+            className="grid gap-5 px-6 pt-1 pb-4"
+          >
             <FromModel
               label={<h3 className="readout text-muted">Model rationale</h3>}
             >
@@ -469,7 +498,7 @@ export function ProposalRow({
             ) : null}
           </Fold>
         </td>
-      </tr>
+      </motion.tr>
     </Fragment>
   );
 }

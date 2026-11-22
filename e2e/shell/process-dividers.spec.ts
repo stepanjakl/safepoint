@@ -125,7 +125,8 @@ for (const mode of ['default', 'retina']) {
       const image = await page.screenshot({
         clip: {
           x: clipX,
-          y: Math.floor(bottom) - 2,
+          // From the floor itself, which can sit on a half pixel at 2x.
+          y: bottom - 2,
           width: paneRight + 3 - clipX,
           height: 4,
         },

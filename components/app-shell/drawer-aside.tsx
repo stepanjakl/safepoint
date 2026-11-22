@@ -10,10 +10,7 @@ import {
   type Ref,
 } from 'react';
 import { cx } from '@/lib/ui/cx';
-import {
-  useDetailHold,
-  useScreenSettled,
-} from '@/components/ui/screen-settled';
+import { useScreenSettled } from '@/components/ui/screen-settled';
 
 /*
   The setup drawer's second panel. The drawer on the right holds what a
@@ -128,9 +125,6 @@ export function DrawerAside({
 }) {
   const titleId = useId();
   const heading = useRef<HTMLHeadingElement>(null);
-  // As a sheet column it trails the list it opened beside; over the sheet it
-  // is a panel of its own and arrives when it opens.
-  const hold = useDetailHold();
   // Mounted while the section around it is still arriving: that section's
   // fade is its arrival, so it has none of its own (drawer.css).
   const settled = useScreenSettled();
@@ -227,7 +221,6 @@ export function DrawerAside({
 
   return (
     <section
-      {...(flat && !entered ? hold.props : {})}
       aria-labelledby={titleId}
       data-exiting={exiting || undefined}
       data-flat={flat || undefined}

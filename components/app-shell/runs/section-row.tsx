@@ -23,8 +23,7 @@ export function SectionRow({
   title: string;
   // The size of what follows, where knowing it before reading is worth it.
   count?: number;
-  // The section's controls, spread across the band: the first at its start,
-  // the last at its end.
+  // The section's controls in display order.
   children?: ReactNode;
 }) {
   const heading = (

@@ -208,15 +208,7 @@
     }
   }
 
-  /* The detail follows the list's start after the screen settles; its end
-     releases the run (RunsDetail). */
-  .process-sheet-frame [data-detail-held] {
-    animation: process-section-enter var(--duration-pane) var(--ease-out-quad) var(--detail-hold)
-      both;
-  }
-
   /* Pause the entrance and its stagger until every surrounding fade ends. */
-  .process-sheet-frame [data-detail-held][data-entrance-held],
   [data-section-forming][data-entrance-held]
     :is(.process-panel-list, .process-runs-list)
     :is(li, p:not(.sr-only)) {
@@ -224,7 +216,7 @@
   }
 
   /* A section forms: each row rises into place after the one above it. The
-     detail fades in after them (--detail-after) without rising: it is a page. */
+     detail beside it is simply there: it is a page, not a row. */
   [data-section-forming] {
     & :is(.process-panel-list, .process-runs-list) :is(li, p:not(.sr-only)) {
       /* Past the seventh row the rest arrive together, as the eighth. */
@@ -263,15 +255,6 @@
     }
   }
 
-  @keyframes process-section-enter {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
   @container sheet (width >= 52rem) {
     /* Published to the list child (runs-list.css) so scroll masks track scroll
        on the compositor without covering the scrollbar or pane highlights. */
@@ -282,7 +265,6 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .process-sheet-frame [data-detail-held],
     [data-section-forming] :is(.process-panel-list, .process-runs-list) :is(li, p:not(.sr-only)) {
       animation: none;
     }

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import {
+  JUST_ASKED_MS,
   settledOnce,
   useStepReady,
 } from '@/components/app-shell/runs/run-readiness';
@@ -118,7 +119,7 @@ export function ProposeStep({
   // the last answer is kept and shown meanwhile.
   const proposalQuery = trpc.propose.get.queryOptions(run, {
     enabled: !mock,
-    staleTime: mock ? Infinity : 0,
+    staleTime: mock ? Infinity : JUST_ASKED_MS,
     refetchInterval: ({ state: { data } }) =>
       !mock && data?.kind === 'proposal' && data.progress?.running
         ? POLL_MS
@@ -169,13 +170,17 @@ export function ProposeStep({
   const notice = spoken?.since === asked.dataUpdatedAt ? spoken : null;
   const stale = notice?.stale ?? (answer?.kind === 'stale' ? answer : null);
   // Nothing is proposed on values a check has not yet answered for.
-  const busy = start.isPending || asked.isFetching || checking > 0;
+  // Not a refresh behind a proposal already shown (see rules-step's `busy`).
+  const busy =
+    start.isPending ||
+    (asked.isFetching && !asked.isRefetching) ||
+    checking > 0;
 
   // What the server holds of the decisions, asked afresh each time the step
   // opens. A decision answers into it, as a proposal answers into its own.
   const decidedQuery = trpc.decisions.current.queryOptions(decidedOn, {
     enabled: !mock,
-    staleTime: mock ? Infinity : 0,
+    staleTime: mock ? Infinity : JUST_ASKED_MS,
   });
   const decidedAsked = useQuery(decidedQuery);
   // An answer just given shows from the moment it lands, ahead of the query's

@@ -164,9 +164,6 @@
   --duration-state: 150ms;
   --duration-row: 180ms;
   --duration-pane: 220ms;
-  /* How long a detail column trails the list it belongs to on arrival
-     (useDetailHold), however soon its own content is ready. */
-  --detail-after: 150ms;
   /* Between one row and the next as a section forms ([data-section-forming]). */
   --form-step: 20ms;
   /* A fold opens at a pace set by its content's height, within these limits;
