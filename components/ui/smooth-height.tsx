@@ -28,20 +28,27 @@ export function SmoothHeight({
     const inner = innerRef.current;
     if (!clip || !inner) return;
     let last: number | undefined;
+    let animation: Animation | undefined;
     const observer = new ResizeObserver(([entry]) => {
       const height = entry?.borderBoxSize[0]?.blockSize ?? inner.offsetHeight;
-      const from = last;
+      if (height === last) return;
+      const start =
+        animation?.playState === 'running'
+          ? clip.getBoundingClientRect().height
+          : last;
       last = height;
+
+      // Keep the last measurement in layout until the next animation starts.
+      clip.style.height = `${height}px`;
+      animation?.cancel();
       if (
-        from === undefined ||
-        Math.abs(height - from) < 1 ||
+        start === undefined ||
+        Math.abs(height - start) < 1 ||
         matchMedia('(prefers-reduced-motion: reduce)').matches
       )
         return;
-      const easing = clip.getAnimations();
-      const start = easing.length ? clip.getBoundingClientRect().height : from;
-      easing.forEach((animation) => animation.cancel());
-      clip.animate(
+
+      animation = clip.animate(
         { height: [`${start}px`, `${height}px`] },
         {
           id: SMOOTH_HEIGHT_ANIMATION_ID,
@@ -51,7 +58,11 @@ export function SmoothHeight({
       );
     });
     observer.observe(inner);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      animation?.cancel();
+      clip.style.removeProperty('height');
+    };
   }, []);
 
   return (

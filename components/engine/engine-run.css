@@ -72,6 +72,7 @@
     .read-card-chevron {
       opacity: 1;
       color: var(--sp-text-primary);
+      transition-delay: 0ms, 0ms, var(--duration-state);
     }
     .read-card-count {
       background-color: var(--sp-thread-fact-face-hover);
@@ -87,6 +88,7 @@
       .read-card-chevron {
         opacity: 1;
         color: var(--sp-text-primary);
+        transition-delay: 0ms, 0ms, var(--duration-state);
       }
       .read-card-count {
         background-color: var(--sp-thread-fact-face-hover);
@@ -142,23 +144,32 @@
     }
   }
 
-  /* Keeps the sticky proposal summary footer below the table's <thead>,
-     overlaying the header's bottom rule instead of sliding over its cells. */
+  /* Start the sticky containing block at the head's bottom rule.
+     The table extends above it, and the footer reserves its height in flow. */
   .proposal-table-card {
-    display: grid;
-    grid-template-rows: calc(var(--proposal-head-height, 41px) - var(--section-rule-width)) auto;
+    --proposal-head-inset: calc(var(--proposal-head-height, 41px) - var(--section-rule-width));
+    padding-block-start: var(--proposal-head-inset);
   }
   .proposal-table-scroll {
-    grid-column: 1;
-    grid-row: 1 / 3;
-    padding-bottom: var(--proposal-foot-height, 0px);
+    margin-block-start: calc(-1 * var(--proposal-head-inset));
   }
   .proposal-table-sticky-track {
-    grid-column: 1;
-    grid-row: 2 / 3;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    pointer-events: none;
+    display: flow-root;
+  }
+}
+
+@layer components {
+  .data-cited-value {
+    color: var(--sp-state-advisory-12);
+    background-color: light-dark(var(--sp-state-advisory-4), var(--sp-state-advisory-5));
+    font-weight: 600;
+  }
+}
+
+@media (forced-colors: active) {
+  .data-cited-value {
+    forced-color-adjust: none;
+    color: HighlightText;
+    background-color: Highlight;
   }
 }

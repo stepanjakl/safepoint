@@ -225,8 +225,8 @@ export function useFollowRun(
         'button.thread-step-toggle, button.thread-step-heading-action',
       ) ?? current;
     target?.focus({ preventScroll: true });
-    target?.scrollIntoView({
-      block: 'center',
+    current?.scrollIntoView({
+      block: 'start',
       behavior: smooth ? 'smooth' : 'instant',
     });
     setBehind(false);

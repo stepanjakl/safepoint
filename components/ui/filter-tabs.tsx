@@ -39,7 +39,7 @@ export type FilterTab<Key extends string = string> = {
   so a stretched "All" keeps its word in the middle of its section.
 */
 const TAB =
-  'review-filter-focus review-filter-wash group/tab relative inline-flex cursor-pointer items-center rounded-full font-medium whitespace-nowrap outline-none';
+  'review-filter-focus review-filter-wash group/tab relative inline-flex cursor-pointer items-center rounded-full font-medium whitespace-nowrap';
 // Each size's type, height and ends; the small one sits beside a result.
 const SIZE = {
   default: 'gap-1.5 py-1 pe-3 text-dense',
@@ -94,6 +94,7 @@ export function FilterTabs<Key extends string>({
   leadKey = 'all',
   ariaLabel = 'Filter by disposition',
   menuLabel = 'Other filters',
+  collapseToMenu = true,
   numberShortcuts = false,
   size = 'default',
   className,
@@ -108,6 +109,7 @@ export function FilterTabs<Key extends string>({
   leadKey?: string | null;
   ariaLabel?: string;
   menuLabel?: string;
+  collapseToMenu?: boolean;
   numberShortcuts?: boolean;
   size?: keyof typeof SIZE;
   className?: string;
@@ -136,7 +138,7 @@ export function FilterTabs<Key extends string>({
   useLayoutEffect(() => {
     const element = track.current;
     const ruler = measure.current;
-    if (!element || !ruler) return;
+    if (!collapseToMenu || !element || !ruler) return;
     const fit = () => {
       // The ruler is the full strip, laid out but unseen; the track's own
       // content box is the room it has.
@@ -152,8 +154,11 @@ export function FilterTabs<Key extends string>({
     fit();
     const observer = new ResizeObserver(fit);
     observer.observe(element);
+    observer.observe(ruler);
     return () => observer.disconnect();
-  }, [tabs]);
+  }, [collapseToMenu, tabs]);
+
+  const showMenu = collapseToMenu && collapsed;
 
   useLayoutEffect(() => {
     const element = track.current;
@@ -180,7 +185,7 @@ export function FilterTabs<Key extends string>({
             ).find((tab) => tab.dataset.reviewFilter === leadKey);
       const nextTab = allTab?.nextElementSibling;
       const divider =
-        !collapsed && allTab && nextTab
+        !showMenu && allTab && nextTab
           ? (allTab.getBoundingClientRect().right +
               nextTab.getBoundingClientRect().left) /
               2 -
@@ -220,11 +225,11 @@ export function FilterTabs<Key extends string>({
     for (const tab of element.querySelectorAll('[data-review-filter]'))
       observer.observe(tab);
     return () => observer.disconnect();
-  }, [selected, tabs.length, collapsed, leadKey]);
+  }, [selected, tabs.length, showMenu, leadKey]);
 
   const chosen = tabs.find((tab) => tab.key === selected);
-  const shown = collapsed ? tabs.filter((tab) => tab.key === selected) : tabs;
-  const rest = collapsed ? tabs.filter((tab) => tab.key !== selected) : [];
+  const shown = showMenu ? tabs.filter((tab) => tab.key === selected) : tabs;
+  const rest = showMenu ? tabs.filter((tab) => tab.key !== selected) : [];
 
   return (
     <div
@@ -233,11 +238,14 @@ export function FilterTabs<Key extends string>({
         if (trackRef) trackRef.current = element;
       }}
       data-size={size}
+      data-scroll-tabs={!collapseToMenu || undefined}
       aria-describedby={descriptionId}
       className={cx(
         // Isolated: its layers (z-1 solid, z-2 words) stay inside the strip
         // rather than rising over a sticky header it scrolls under.
-        'field-track relative isolate flex justify-between gap-0.5 rounded-full',
+        'field-track relative isolate flex justify-start gap-0.5 rounded-full',
+        collapseToMenu ? 'max-w-full' : 'w-max',
+        collapseToMenu && (showMenu ? 'w-full' : 'w-fit'),
         className,
       )}
     >
@@ -274,7 +282,7 @@ export function FilterTabs<Key extends string>({
           const [next] = keys;
           if (next !== undefined && next !== selected) onChange(next as Key);
         }}
-        className="flex min-w-0 flex-1 justify-between gap-0.5"
+        className="flex min-w-0 justify-start gap-0.5"
       >
         {shown.map((tab) => (
           <ToggleButton
@@ -289,6 +297,7 @@ export function FilterTabs<Key extends string>({
             className={cx(
               TAB,
               SIZE[size],
+              showMenu && 'min-w-0',
               // The inset is the count chip's; a tab without one pads evenly.
               tab.count === undefined ? WORD_START[size] : CHIP_START[size],
               tab.severity !== undefined
@@ -306,7 +315,7 @@ export function FilterTabs<Key extends string>({
               scrolling && tab.severity !== undefined ? '' : undefined
             }
           >
-            <Content tab={tab} lead={tab.key === leadKey} />
+            <Content tab={tab} lead={tab.key === leadKey} truncate={showMenu} />
           </ToggleButton>
         ))}
       </ToggleButtonGroup>
@@ -332,7 +341,7 @@ export function FilterTabs<Key extends string>({
             aria-hidden
             size={14}
             strokeWidth={2.25}
-            className="-translate-y-px"
+            className="relative start-0.5"
           />
           <select
             className="absolute inset-0 size-full cursor-pointer opacity-0"
@@ -357,29 +366,31 @@ export function FilterTabs<Key extends string>({
         </span>
       ) : null}
       {/* The full strip, unseen, for measuring whether it fits. */}
-      <div
-        ref={measure}
-        aria-hidden="true"
-        // Its own full width, not capped at the track's: an absolute box
-        // shrinks to fit its container, and would never measure as too wide.
-        className="pointer-events-none invisible absolute flex w-max gap-0.5"
-      >
-        {tabs.map((tab) => (
-          // With each tab's own padding and margin, so the ruler is as wide as
-          // the strip at its narrowest.
-          <span
-            key={tab.key}
-            className={cx(
-              TAB,
-              SIZE[size],
-              tab.count === undefined ? WORD_START[size] : CHIP_START[size],
-              tab.key === leadKey && ALL_BOX,
-            )}
-          >
-            <Content tab={tab} lead={tab.key === leadKey} />
-          </span>
-        ))}
-      </div>
+      {collapseToMenu && (
+        <div
+          ref={measure}
+          aria-hidden="true"
+          // Its own full width, not capped at the track's: an absolute box
+          // shrinks to fit its container, and would never measure as too wide.
+          className="pointer-events-none invisible absolute flex w-max gap-0.5"
+        >
+          {tabs.map((tab) => (
+            // With each tab's own padding and margin, so the ruler is as wide as
+            // the strip at its narrowest.
+            <span
+              key={tab.key}
+              className={cx(
+                TAB,
+                SIZE[size],
+                tab.count === undefined ? WORD_START[size] : CHIP_START[size],
+                tab.key === leadKey && ALL_BOX,
+              )}
+            >
+              <Content tab={tab} lead={tab.key === leadKey} />
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -387,9 +398,11 @@ export function FilterTabs<Key extends string>({
 function Content<Key extends string>({
   tab,
   lead,
+  truncate = false,
 }: {
   tab: FilterTab<Key>;
   lead: boolean;
+  truncate?: boolean;
 }) {
   return (
     <>
@@ -405,7 +418,14 @@ function Content<Key extends string>({
           {tab.count}
         </span>
       )}
-      <span className="relative z-2 flex-1 text-center">{tab.short}</span>
+      <span
+        className={cx(
+          'relative z-2 flex-1 text-center',
+          truncate && 'truncate',
+        )}
+      >
+        {tab.short}
+      </span>
     </>
   );
 }

@@ -103,6 +103,7 @@ export function RulebookPanel() {
           tabs={tabs}
           selected={filter}
           onChange={setFilter}
+          collapseToMenu={false}
           ariaLabel="Filter rules"
           menuLabel="Other rule filters"
           className="w-fit"

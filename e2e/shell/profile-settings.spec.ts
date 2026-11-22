@@ -99,7 +99,7 @@ test('profile settings work inside the mobile navigation drawer', async ({
   await expect(settings).toBeFocused();
 });
 
-test('an outside click activates Search from either popover', async ({
+test('popover triggers toggle and an outside click activates Search', async ({
   page,
 }) => {
   await page.goto('/processes/brunch-orders');
@@ -122,6 +122,12 @@ test('an outside click activates Search from either popover', async ({
   ] as const) {
     await trigger.click();
     const dialog = page.getByRole('dialog', { name: title, exact: true });
+    await expect(dialog).toBeVisible();
+    await trigger.click();
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+
+    await trigger.press('Space');
     await expect(dialog).toBeVisible();
     await search.click();
     await expect(dialog).toBeHidden();

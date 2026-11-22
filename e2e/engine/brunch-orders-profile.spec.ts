@@ -293,9 +293,9 @@ test('a rule Accept refused for an unanswered blank leads to the question', asyn
     .locator('> li')
     .nth(2);
   await expect(card.getByText(refused)).toBeVisible();
-  await expect(
-    page.getByText('The data’s columns are confirmed.'),
-  ).toBeVisible();
+  await expect(page.getByText('The data’s columns are confirmed.')).toHaveCount(
+    0,
+  );
   await card
     .getByRole('button', { name: 'Answer it in the data’s columns' })
     .click();

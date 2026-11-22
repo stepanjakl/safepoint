@@ -8,7 +8,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { DecisionButton } from '@/components/engine/decision-button';
-import { FromModel, Step } from '@/components/engine/rules-parts';
+import { Step } from '@/components/engine/rules-parts';
 import { Button } from '@/components/ui/button';
 import {
   DATA_TABLE_NAME,
@@ -23,6 +23,7 @@ import { Pill } from '@/components/ui/pill';
 import { cx } from '@/lib/ui/cx';
 import { DURATION_STATE } from '@/lib/ui/motion';
 import type { CheckVerdict, ProposalRecord, Verdict } from '@/lib/engine/types';
+import { sourceTermsOf, type SourceKind } from '@/lib/sources/model';
 
 import { madeNow } from './made-now';
 import type { Calculated, Decision, ProposalField, CheckReply } from './types';
@@ -46,6 +47,7 @@ export function ProposalRow({
   expanded,
   ruled,
   calculated,
+  source,
   onToggle,
   onDecide,
   onCheck,
@@ -62,6 +64,7 @@ export function ProposalRow({
   expanded: boolean;
   ruled: boolean;
   calculated: Calculated;
+  source?: SourceKind;
   onToggle: () => void;
   onDecide: (changes: Record<string, Decision | null>, words: string) => void;
   onCheck: (
@@ -335,8 +338,9 @@ export function ProposalRow({
           colSpan={fields.length + 4}
           className={cx('p-0', ruled && DATA_TABLE_RULE)}
         >
-          <Fold open={expanded} id={id} className="grid gap-3 px-6 pt-1 pb-4">
-            <FromModel label="The model's reason">
+          <Fold open={expanded} id={id} className="grid gap-4 px-6 pt-1 pb-4">
+            <section className="grid gap-1">
+              <h3 className="readout text-muted">Model rationale</h3>
               <p className="text-dense">{record.reason}</p>
               {record.unsure ? (
                 <p className="text-dense">
@@ -344,32 +348,47 @@ export function ProposalRow({
                   {record.unsure}
                 </p>
               ) : null}
-            </FromModel>
+            </section>
             {record.cited.length ? (
-              <Facts label="Cells it relied on">
-                {record.cited.map((cell) => (
-                  <button
-                    key={cell}
-                    type="button"
-                    className="value text-meta text-state-advisory underline decoration-dotted underline-offset-2"
-                    onClick={() => onCite(cell)}
-                  >
-                    {cell}
-                  </button>
-                ))}
-              </Facts>
+              <section className="grid gap-1">
+                <h3 className="readout text-muted">Source cells</h3>
+                <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                  {record.cited.map((cell) => {
+                    const sheet =
+                      source === 'database'
+                        ? null
+                        : sourceTermsOf(source).address.resourceOf(cell);
+                    return (
+                      <button
+                        key={cell}
+                        type="button"
+                        className="text-dense focus-visible:outline-state-advisory rounded-sm text-left hover:underline hover:underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2"
+                        onClick={() => onCite(cell)}
+                      >
+                        {sheet ? <>{sheet} </> : null}
+                        <span className="value text-state-advisory underline decoration-dotted underline-offset-2">
+                          {sheet ? cell.slice(sheet.length + 1) : cell}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
             ) : null}
             {calculated.calculations.length ? (
-              <Facts label="Worked out in Calculate">
-                {calculated.calculations.map((c) => (
-                  <span key={c.id} className="text-meta">
-                    {c.name}{' '}
-                    <span className="value font-medium">
-                      {calculated.rows[key]?.[c.id] ?? '—'}
-                    </span>
-                  </span>
-                ))}
-              </Facts>
+              <section className="grid gap-1">
+                <h3 className="readout text-muted">Calculated values</h3>
+                <dl className="flex flex-wrap gap-x-6 gap-y-2">
+                  {calculated.calculations.map((c) => (
+                    <div key={c.id} className="grid gap-0.5">
+                      <dt className="text-meta text-muted">{c.name}</dt>
+                      <dd className="value text-dense text-primary font-medium tabular-nums">
+                        {calculated.rows[key]?.[c.id] ?? '—'}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </section>
             ) : null}
             {checks?.length ? (
               <ul className="grid gap-2" aria-label={`Checks on ${key}`}>
@@ -420,16 +439,6 @@ export function ProposalRow({
         </td>
       </PresentRow>
     </Fragment>
-  );
-}
-
-// A row of facts with its label, as the row's detail lists them.
-function Facts({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-      <span className="readout text-muted">{label}</span>
-      {children}
-    </p>
   );
 }
 

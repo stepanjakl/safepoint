@@ -6,6 +6,7 @@ import {
   WORKING_FRAME_MS as FRAME_MS,
   WORKING_RESTING as RESTING,
 } from '@/components/ui/working-mark';
+import { useRunShown } from './run-readiness';
 
 /*
   While a run is working, the tab's icon lights its petals in turn
@@ -17,8 +18,9 @@ import {
   reduced motion.
 */
 export function useWorkingFavicon(working: boolean) {
+  const active = useRunShown() && working;
   useEffect(() => {
-    if (!working || matchMedia('(prefers-reduced-motion: reduce)').matches)
+    if (!active || matchMedia('(prefers-reduced-motion: reduce)').matches)
       return;
     const link = document.querySelector<HTMLLinkElement>('link[rel~="icon"]');
     if (!link) return;
@@ -56,5 +58,5 @@ export function useWorkingFavicon(working: boolean) {
       clearInterval(timer);
       link.href = original;
     };
-  }, [working]);
+  }, [active]);
 }

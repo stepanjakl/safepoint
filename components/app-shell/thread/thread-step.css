@@ -65,6 +65,87 @@
 }
 
 @layer components {
+  .thread-jump[data-status='running'] {
+    --sp-button-primary-face-top: var(--radix-sky-dark-7);
+    --sp-button-primary-face-bottom: var(--radix-sky-dark-6);
+    --sp-button-primary-ring-top: light-dark(var(--radix-sky-11), var(--radix-sky-dark-10));
+    --sp-button-primary-ring-bottom: light-dark(var(--radix-sky-11), var(--radix-sky-dark-7));
+    --sp-button-primary-face-top-hover: light-dark(var(--radix-sky-11), var(--radix-sky-dark-8));
+    --sp-button-primary-face-bottom-hover: light-dark(
+      var(--radix-sky-dark-6),
+      var(--radix-sky-dark-7)
+    );
+    --sp-button-primary-ring-top-hover: light-dark(var(--radix-sky-11), var(--radix-sky-dark-11));
+    --sp-button-primary-ring-bottom-hover: light-dark(var(--radix-sky-12), var(--radix-sky-dark-8));
+  }
+  .thread-jump[data-status='attention'] {
+    --sp-button-primary-face-top: light-dark(var(--radix-amber-11), var(--radix-amber-dark-7));
+    --sp-button-primary-face-bottom: var(--radix-amber-dark-6);
+    --sp-button-primary-ring-top: light-dark(var(--radix-amber-12), var(--radix-amber-dark-9));
+    --sp-button-primary-ring-bottom: light-dark(var(--radix-amber-12), var(--radix-amber-dark-7));
+    --sp-button-primary-face-top-hover: light-dark(
+      var(--radix-amber-dark-6),
+      var(--radix-amber-dark-8)
+    );
+    --sp-button-primary-face-bottom-hover: light-dark(
+      var(--radix-amber-dark-5),
+      var(--radix-amber-dark-7)
+    );
+    --sp-button-primary-ring-top-hover: light-dark(
+      var(--radix-amber-12),
+      var(--radix-amber-dark-11)
+    );
+    --sp-button-primary-ring-bottom-hover: light-dark(
+      var(--radix-amber-12),
+      var(--radix-amber-dark-9)
+    );
+  }
+  .thread-jump[data-status='blocked'] {
+    --sp-button-primary-face-top: light-dark(var(--radix-red-10), var(--radix-red-dark-8));
+    --sp-button-primary-face-bottom: light-dark(var(--radix-red-11), var(--radix-red-dark-6));
+    --sp-button-primary-ring-top: light-dark(var(--radix-red-11), var(--radix-red-dark-11));
+    --sp-button-primary-ring-bottom: light-dark(var(--radix-red-11), var(--radix-red-dark-8));
+    --sp-button-primary-face-top-hover: light-dark(var(--radix-red-11), var(--radix-red-dark-9));
+    --sp-button-primary-face-bottom-hover: light-dark(
+      var(--radix-red-dark-7),
+      var(--radix-red-dark-8)
+    );
+    --sp-button-primary-ring-top-hover: light-dark(var(--radix-red-11), var(--radix-red-dark-12));
+    --sp-button-primary-ring-bottom-hover: light-dark(var(--radix-red-12), var(--radix-red-dark-9));
+  }
+  .thread-jump-content {
+    --jump-label-fade: calc(var(--duration-state) / 2);
+    display: grid;
+    min-width: 0;
+    grid-template-columns: auto minmax(0, 0fr);
+    align-items: center;
+    transition: grid-template-columns var(--duration-state) var(--ease-out-quad)
+      var(--jump-label-fade);
+  }
+  .thread-jump-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0;
+    transition: opacity var(--jump-label-fade) ease-out;
+  }
+  .thread-jump-label > :first-child {
+    margin-inline-start: 0.5rem;
+  }
+  .thread-jump:is([data-hovered], [data-focus-visible]) .thread-jump-content {
+    grid-template-columns: auto minmax(0, 1fr);
+    transition-delay: 0ms;
+  }
+  .thread-jump:is([data-hovered], [data-focus-visible]) .thread-jump-label {
+    opacity: 1;
+    transition-delay: calc(var(--duration-state) * 5 / 6);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .thread-jump-content,
+    .thread-jump-label {
+      transition: none;
+    }
+  }
+
   .thread {
     /* Shared by the row gap and by the connector, so the line always reaches
        the next marker no matter what the spacing becomes. */
@@ -1074,6 +1155,24 @@
   .thread-step-flag {
     --flag-lift-light: calc(var(--sp-ground-lift-light) - var(--sp-layer-lift-light));
     --flag-lift-dark: calc(var(--sp-ground-lift-dark) - var(--sp-layer-lift-dark));
+  }
+  .thread-step[data-flag-when-closed] .thread-step-flag {
+    opacity: 1;
+    pointer-events: none;
+    transition:
+      opacity var(--thread-fade) ease-out,
+      display var(--thread-fade) allow-discrete,
+      color var(--duration-state) ease-out,
+      background-color var(--duration-state) ease-out;
+  }
+  .thread-step[data-flag-when-closed][data-open] .thread-step-flag {
+    display: none;
+    opacity: 0;
+  }
+  @starting-style {
+    .thread-step[data-flag-when-closed]:not([data-open]) .thread-step-flag {
+      opacity: 0;
+    }
   }
   .thread-step[data-status='attention'] .thread-step-flag {
     color: light-dark(

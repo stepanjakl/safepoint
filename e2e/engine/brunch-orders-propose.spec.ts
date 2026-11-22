@@ -179,6 +179,14 @@ async function propose(page: Page) {
   return table;
 }
 const thread = (page: Page) => page.locator('ol.thread');
+const proposeToggle = (page: Page) =>
+  thread(page).getByRole('button', { name: 'Propose', exact: true });
+const decidedFilter = (page: Page, count: number) =>
+  page.getByRole('radio', { name: `Decided records, ${count}`, exact: true });
+const proposalFact = (page: Page, text: string) =>
+  thread(page)
+    .locator('.thread-step-fact, .thread-step-flag')
+    .filter({ has: page.getByText(text, { exact: true }) });
 
 for (const width of [1440, 390]) {
   test(`bulk approval stays at the bottom while reviewing at ${width}px`, async ({
@@ -218,9 +226,98 @@ for (const width of [1440, 390]) {
     await page.keyboard.press('Enter');
     await expect(approve).toHaveCount(0);
     await expect(bar).toBeVisible();
-    await expect(
-      thread(page).getByText('8 of 11 decided').first(),
-    ).toBeAttached();
+    await expect(decidedFilter(page, 8)).toBeVisible();
+  });
+}
+
+for (const width of [1440, 390]) {
+  test(`the proposal card and sticky summary shrink together at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 700 });
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await propose(page);
+    const approve = page.getByRole('button', { name: /^Approve all 8 ready/ });
+    const summary = page.getByRole('group', { name: 'Proposal summary' });
+    if (width === 1440) {
+      const centerOffset = await approve.evaluate((button) => {
+        const pill = button.closest('[role="group"]')?.querySelector('span');
+        if (!pill) throw new Error('Missing proposal summary pill');
+        const middle = (element: Element) => {
+          const { top, height } = element.getBoundingClientRect();
+          return top + height / 2;
+        };
+        return Math.abs(middle(button) - middle(pill));
+      });
+      expect(centerOffset).toBeLessThanOrEqual(1);
+    }
+    await approve.focus();
+    await approve.evaluate((button) => {
+      const footer = button.closest('[role="group"]');
+      const card = button.closest('.proposal-table-card');
+      const table = card?.querySelector('table');
+      const pill = footer?.querySelector('span');
+      if (!footer || !card || !table || !pill)
+        throw new Error('Missing proposal layout');
+
+      button.addEventListener(
+        'keydown',
+        () => {
+          const reservedSpace = () =>
+            card.getBoundingClientRect().bottom -
+            table.getBoundingClientRect().bottom -
+            parseFloat(getComputedStyle(card).borderBottomWidth);
+          const initialHeight = footer.getBoundingClientRect().height;
+          const pillOffset = () =>
+            footer.getBoundingClientRect().bottom -
+            pill.getBoundingClientRect().top;
+          let closestToBottom = pillOffset();
+          let largestPillReversal = 0;
+          let largestGap = 0;
+          const heights = new Set<number>();
+          const deadline = performance.now() + 750;
+          const sample = () => {
+            const height = footer.getBoundingClientRect().height;
+            heights.add(height);
+            const offset = pillOffset();
+            closestToBottom = Math.min(closestToBottom, offset);
+            largestPillReversal = Math.max(
+              largestPillReversal,
+              offset - closestToBottom,
+            );
+            largestGap = Math.max(
+              largestGap,
+              Math.abs(reservedSpace() - height),
+            );
+            if (performance.now() < deadline) {
+              requestAnimationFrame(sample);
+            } else {
+              footer.setAttribute(
+                'data-test-transition',
+                JSON.stringify({
+                  largestGap,
+                  largestPillReversal,
+                  sawIntermediateHeight: [...heights].some(
+                    (sample) =>
+                      sample < initialHeight - 1 && sample > height + 1,
+                  ),
+                }),
+              );
+            }
+          };
+          requestAnimationFrame(sample);
+        },
+        { once: true },
+      );
+    });
+    await page.keyboard.press('Enter');
+    await expect(summary).toHaveAttribute('data-test-transition', /./);
+    const transition = await summary.getAttribute('data-test-transition');
+    const { largestGap, largestPillReversal, sawIntermediateHeight } =
+      JSON.parse(transition ?? '{}');
+    expect(sawIntermediateHeight).toBe(true);
+    expect(largestGap).toBeLessThanOrEqual(1);
+    expect(largestPillReversal).toBeLessThanOrEqual(1);
   });
 }
 
@@ -228,13 +325,16 @@ test('a person decides every record, then writes what Apply shows and can undo i
   page,
 }) => {
   const table = await propose(page);
-  // The rules collapse to one line: the Rules tab shows them.
+  await expect(
+    page.getByRole('list', { name: 'Applied rules' }).getByRole('listitem'),
+  ).toContainText([
+    'Stock available is what we have on hand',
+    'Order in whole cases.',
+    'Never order more than the supplier can deliver.',
+  ]);
   await expect(
     page.getByText(/Using the accepted rules: 2 calculations, 5 checks/),
   ).toBeVisible();
-  await expect(
-    thread(page).getByText('11 proposed · 3 need you').first(),
-  ).toBeAttached();
   await expect(table.getByRole('rowheader')).toHaveCount(11);
 
   // What a record that blocks cannot do, and what it can.
@@ -244,9 +344,7 @@ test('a person decides every record, then writes what Apply shows and can undo i
 
   // Approve every ready one at once.
   await page.getByRole('button', { name: /^Approve all 8 ready/ }).click();
-  await expect(
-    thread(page).getByText('8 of 11 decided').first(),
-  ).toBeAttached();
+  await expect(decidedFilter(page, 8)).toBeVisible();
 
   // Change the blocked one to a whole case, from the keyboard.
   await chilli.getByRole('button', { name: 'Change' }).click();
@@ -269,7 +367,11 @@ test('a person decides every record, then writes what Apply shows and can undo i
     .getByRole('row', { name: /^SD-01/ })
     .getByRole('button', { name: /^Reject$/ })
     .click();
-  await expect(thread(page).getByText('All decided').first()).toBeAttached();
+  await expect(proposeToggle(page)).toHaveAttribute('aria-expanded', 'false');
+  await expect(proposalFact(page, '11 items')).toBeVisible();
+  await expect(
+    thread(page).locator('.thread-step-flag').filter({ hasText: 'need you' }),
+  ).toHaveCount(0);
   await expect(
     page.getByRole('status').filter({ hasText: 'SD-01 rejected' }),
   ).toBeAttached();
@@ -352,6 +454,32 @@ test('a person decides every record, then writes what Apply shows and can undo i
   expect(violations.map((v) => v.id)).toEqual([]);
 });
 
+test('the applied rules button opens the Rules tab from the keyboard', async ({
+  page,
+}) => {
+  await propose(page);
+  const rulesStep = thread(page).getByRole('button', {
+    name: 'Rules',
+    exact: true,
+  });
+  if ((await rulesStep.getAttribute('aria-expanded')) === 'false') {
+    await rulesStep.click();
+  }
+  const openRules = page.getByRole('button', { name: 'Open the Rules tab' });
+  await openRules.scrollIntoViewIfNeeded();
+  await openRules.focus();
+  await expect(openRules).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(
+    page
+      .locator('header.process-header')
+      .getByRole('button', { name: 'Rules', exact: true }),
+  ).toHaveAttribute('aria-current', 'true');
+  await expect(
+    page.getByRole('list', { name: 'Accepted rules' }),
+  ).toBeVisible();
+});
+
 test('a record opens to the model’s reason and the checks’ working', async ({
   page,
 }) => {
@@ -363,7 +491,7 @@ test('a record opens to the model’s reason and the checks’ working', async (
   await expect(
     table.getByText(/Unsure: Covering the target needs more/).last(),
   ).toBeVisible();
-  await expect(table.getByRole('button', { name: 'Stock!B3' })).toBeVisible();
+  await expect(table.getByRole('button', { name: 'Stock B3' })).toBeVisible();
   const checks = table.getByRole('list', { name: 'Checks on AV-RR' });
   await expect(checks.getByRole('listitem')).toHaveCount(5);
   await expect(checks.getByText('62.0 >= 71.5')).toBeVisible();
@@ -373,8 +501,55 @@ test('a record opens to the model’s reason and the checks’ working', async (
   );
 });
 
+test('source citations highlight only the cited value in the sheet drawer', async ({
+  page,
+}) => {
+  const table = await propose(page);
+  await table.getByRole('button', { name: /^FT-200/ }).click();
+  const stock = table.getByRole('button', { name: 'Stock B6' });
+  await stock.focus();
+  await stock.press('Enter');
+  const drawer = page.getByRole('dialog', { name: 'Sheet data' });
+  const citation = drawer.locator('mark');
+  await expect(citation).toHaveCount(1);
+  await expect(citation).toHaveAttribute('title', 'Stock!B6');
+  await expect(citation).toHaveText('17');
+  await expect(citation).toBeInViewport();
+
+  await page.keyboard.press('Escape');
+  await expect(stock).toBeFocused();
+  await table.getByRole('button', { name: 'Products G6' }).click();
+  await expect(citation).toHaveCount(1);
+  await expect(citation).toHaveAttribute('title', 'Products!G6');
+  await expect(citation).toBeInViewport();
+});
+
 test('the filter shows only what needs a person', async ({ page }) => {
   const table = await propose(page);
+  await expect(proposalFact(page, '11 items')).toBeVisible();
+  const needYou = proposalFact(page, '3 need you');
+  const toggle = proposeToggle(page);
+  await expect(needYou).toBeHidden();
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await toggle.press('Enter');
+  await expect(needYou).toBeVisible();
+  await expect(needYou).toHaveCSS(
+    'transition-property',
+    'opacity, display, color, background-color',
+  );
+  await expect(needYou).toHaveCSS('translate', 'none');
+  await toggle.blur();
+  await page.mouse.move(0, 0);
+  const face = await needYou.evaluate(
+    (pill) => getComputedStyle(pill).backgroundColor,
+  );
+  await toggle.hover();
+  await expect(needYou).not.toHaveCSS('background-color', face);
+  await page.mouse.move(0, 0);
+  await expect(needYou).toHaveCSS('background-color', face);
+  await expect(proposalFact(page, '11 items')).toBeVisible();
+  await toggle.press('Enter');
+  await expect(needYou).toBeHidden();
   await page
     .getByRole('radiogroup', { name: 'Records to show' })
     .getByRole('radio', { name: /^Records that need you/ })
@@ -402,11 +577,10 @@ test('a decision shows at once, and counts as decided once the server has kept i
   // The row shows it at once; the step's count waits for the server.
   await expect(row.getByText('Approved', { exact: true })).toBeVisible();
   await expect(row.getByRole('button', { name: 'Undo' })).toBeVisible();
-  await expect(thread(page).getByText('1 of 11 decided')).toHaveCount(0);
+  await proposeToggle(page).press('Enter');
+  await expect(proposalFact(page, '3 need you')).toBeVisible();
   release();
-  await expect(
-    thread(page).getByText('1 of 11 decided').first(),
-  ).toBeAttached();
+  await expect(proposalFact(page, '2 need you')).toBeVisible();
 });
 
 test('a decision the server refuses is taken back and said where the step speaks', async ({
@@ -424,9 +598,7 @@ test('a decision the server refuses is taken back and said where the step speaks
   // Not shown as decided: the record is as the server holds it.
   await expect(row.getByRole('button', { name: /^Approve$/ })).toBeVisible();
   await expect(row.getByText('Approved', { exact: true })).toHaveCount(0);
-  await expect(
-    thread(page).getByText('11 proposed · 3 need you').first(),
-  ).toBeAttached();
+  await expect(decidedFilter(page, 0)).toBeVisible();
 });
 
 test('decisions are kept: a reload finds them, and undoing one takes it back', async ({
@@ -434,23 +606,17 @@ test('decisions are kept: a reload finds them, and undoing one takes it back', a
 }) => {
   const table = await propose(page);
   await page.getByRole('button', { name: /^Approve all 8 ready/ }).click();
-  await expect(
-    thread(page).getByText('8 of 11 decided').first(),
-  ).toBeAttached();
+  await expect(decidedFilter(page, 8)).toBeVisible();
   const id = new URL(page.url()).searchParams.get('run');
   const row = page.locator(`[data-run-id="${id}"]`);
   await expect(row).toHaveAccessibleName(/^Awaiting review\./);
   await page.reload();
   await expect(row).toHaveAccessibleName(/^Awaiting review\./);
   await expect(table).toBeVisible({ timeout: 30_000 });
-  await expect(
-    thread(page).getByText('8 of 11 decided').first(),
-  ).toBeAttached();
+  await expect(decidedFilter(page, 8)).toBeVisible();
   const first = table.getByRole('row', { name: /^FT-200/ });
   await first.getByRole('button', { name: 'Undo' }).click();
-  await expect(
-    thread(page).getByText('7 of 11 decided').first(),
-  ).toBeAttached();
+  await expect(decidedFilter(page, 7)).toBeVisible();
   expect(decisions.requests.map((r) => r.path)).toEqual([
     'recordMany',
     'withdraw',

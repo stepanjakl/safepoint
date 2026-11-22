@@ -12,6 +12,7 @@ import ArrowDown from 'blode-icons-react/icons/arrow-down';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { ProcessStep } from '@/lib/shell/model';
 import { Button } from '@/components/ui/button';
+import { MorphingText } from '@/components/ui/morphing-text';
 import { motionTime } from '@/lib/ui/motion-time';
 import { useFollowRun } from './follow-run';
 import {
@@ -214,13 +215,24 @@ export function Thread<S extends string>({
             transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
           >
             <Button
-              variant="primary"
-              size="small"
-              className="pointer-events-auto"
+              aria-label={`Jump to ${newest.name}`}
+              className="thread-jump pointer-events-auto max-w-full"
+              shape="round"
+              size="touch"
+              variant={
+                newest.status === 'pending' || newest.status === 'complete'
+                  ? 'secondary'
+                  : 'primary'
+              }
+              data-status={newest.status}
               onPress={catchUp}
             >
-              Jump to {newest.name}
-              <ArrowDown aria-hidden size={13} strokeWidth={2.5} />
+              <span className="thread-jump-content" aria-hidden>
+                <ArrowDown size={16} strokeWidth={2.5} />
+                <span className="thread-jump-label">
+                  <MorphingText text={`Jump to ${newest.name}`} />
+                </span>
+              </span>
             </Button>
           </motion.div>
         ) : null}

@@ -38,6 +38,7 @@ export default defineConfig({
           // Separate Next output directory so Playwright can run beside an
           // already-running `pnpm dev` without contending on `.next/dev/lock`.
           NEXT_DIST_DIR: '.next-e2e',
+          SAFEPOINT_DEV_PAUSE: '0',
           // Model requests are intercepted by browser tests; the placeholder
           // enables their controls without a provider credential.
           GOOGLE_GENERATIVE_AI_API_KEY: 'playwright-synthetic-key',

@@ -10,9 +10,9 @@
 import {
   existsSync,
   mkdirSync,
+  readFileSync,
   unlinkSync,
-  watch,
-  type FSWatcher,
+  writeFileSync,
 } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 
@@ -30,16 +30,34 @@ export function clearStaleDevPause(
   cwd = process.cwd(),
 ): boolean {
   const pausePath = resolveDevPausePath(distDir, cwd);
-  if (!existsSync(pausePath)) return false;
+  const leftovers = [pausePath + '.resume', pausePath + '.result', pausePath];
+  let clearedPause = false;
+  for (const path of leftovers) {
+    try {
+      unlinkSync(path);
+      clearedPause ||= path === pausePath;
+    } catch {
+      // The file may already have been removed.
+    }
+  }
+  return clearedPause;
+}
+
+export function readDevPauseFile(path: string): string | null {
   try {
-    unlinkSync(pausePath);
-    return true;
-  } catch {
-    return false;
+    return readFileSync(path, 'utf8').trim();
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && error.code === 'ENOENT')
+      return null;
+    throw error;
   }
 }
 
+type Compilation = { hash?: string; hasErrors(): boolean };
+
 export type WebpackWatching = {
+  running?: boolean;
+  invalidate(): void;
   suspend(): void;
   resume(): void;
 };
@@ -47,7 +65,8 @@ export type WebpackWatching = {
 export type WebpackCompilerLike = {
   watching?: WebpackWatching;
   hooks: {
-    done: { tap(name: string, fn: () => void): void };
+    done: { tap(name: string, fn: (stats: Compilation) => void): void };
+    failed: { tap(name: string, fn: () => void): void };
     watchClose: { tap(name: string, fn: () => void): void };
   };
 };
@@ -55,9 +74,15 @@ export type WebpackCompilerLike = {
 class PauseGate {
   private readonly pausePath: string;
   private readonly label: string;
-  private readonly watchings = new Set<WebpackWatching>();
+  private readonly watchings = new Map<WebpackWatching, string | undefined>();
   private paused = false;
-  private watcher: FSWatcher | null = null;
+  private lastRequest: string | null = null;
+  private pending: {
+    request: string;
+    compilers: Set<WebpackWatching>;
+    changed: boolean;
+    failed: boolean;
+  } | null = null;
   private pollTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(pausePath: string) {
@@ -65,11 +90,13 @@ class PauseGate {
     this.label = relative(process.cwd(), pausePath) || pausePath;
   }
 
-  register(watching: WebpackWatching): void {
+  register(watching: WebpackWatching, hash: string | undefined): void {
     const first = this.watchings.size === 0;
     if (first) {
       this.paused = existsSync(this.pausePath);
-      this.startWatching();
+      mkdirSync(dirname(this.pausePath), { recursive: true });
+      this.pollTimer = setInterval(() => this.sync(), 100);
+      this.pollTimer.unref();
       if (this.paused) {
         console.log(
           `[dev-pause] Rebuilds paused (run \`pnpm dev:resume\` or remove ${this.label} to apply changes)`,
@@ -79,62 +106,60 @@ class PauseGate {
       this.sync();
     }
 
-    this.watchings.add(watching);
+    this.watchings.set(watching, hash);
     if (this.paused) {
       watching.suspend();
     }
   }
 
+  complete(watching: WebpackWatching, stats?: Compilation): void {
+    const previousHash = this.watchings.get(watching);
+    if (stats) this.watchings.set(watching, stats.hash);
+    const pending = this.pending;
+    if (!pending?.compilers.delete(watching)) return;
+
+    pending.failed ||= !stats || stats.hasErrors();
+    pending.changed ||= stats?.hash !== previousHash;
+    if (pending.compilers.size > 0) return;
+
+    const outcome = pending.failed
+      ? 'failed'
+      : pending.changed
+        ? 'compiled'
+        : 'unchanged';
+    writeFileSync(this.pausePath + '.result', pending.request + '\n' + outcome);
+    this.pending = null;
+  }
+
   unregister(watching: WebpackWatching): void {
+    this.complete(watching);
     this.watchings.delete(watching);
-    if (this.watchings.size === 0) {
-      this.stopWatching();
-    }
-  }
-
-  private startWatching(): void {
-    if (this.watcher || this.pollTimer) return;
-    const dir = dirname(this.pausePath);
-    try {
-      mkdirSync(dir, { recursive: true });
-      this.watcher = watch(dir, { persistent: false }, (_event, filename) => {
-        if (filename && filename !== DEV_PAUSE_FILE) return;
-        this.sync();
-      });
-      this.watcher.on('error', () => {
-        this.watcher?.close();
-        this.watcher = null;
-        this.startPolling();
-      });
-    } catch {
-      this.startPolling();
-    }
-  }
-
-  private startPolling(): void {
-    if (this.pollTimer) return;
-    this.pollTimer = setInterval(() => this.sync(), 250);
-    this.pollTimer.unref();
-  }
-
-  private stopWatching(): void {
-    this.watcher?.close();
-    this.watcher = null;
-    if (this.pollTimer) {
+    if (this.watchings.size === 0 && this.pollTimer) {
       clearInterval(this.pollTimer);
       this.pollTimer = null;
     }
   }
 
   private sync(): void {
+    const request = readDevPauseFile(this.pausePath + '.resume');
+    if (this.pending?.request === request) return;
+    this.pending = null;
     const shouldPause = existsSync(this.pausePath);
-    if (shouldPause === this.paused) return;
-    this.paused = shouldPause;
+    const newRequest = !shouldPause && request && request !== this.lastRequest;
+    if (shouldPause === this.paused && !newRequest) return;
+
+    if (newRequest) {
+      this.lastRequest = request;
+      this.pending = {
+        request,
+        compilers: new Set(this.watchings.keys()),
+        changed: false,
+        failed: false,
+      };
+    }
 
     if (shouldPause) {
-      for (const watching of this.watchings) {
-        watching.suspend();
-      }
+      for (const watching of this.watchings.keys()) watching.suspend();
       console.log(
         `[dev-pause] Rebuilds paused (run \`pnpm dev:resume\` or remove ${this.label} to apply changes)`,
       );
@@ -142,10 +167,13 @@ class PauseGate {
       console.log(
         '[dev-pause] Rebuilds resumed — applying accumulated changes',
       );
-      for (const watching of this.watchings) {
+      for (const watching of this.watchings.keys()) {
         watching.resume();
+        // Invalidate idle compilers only after releasing the suspended build.
+        if (newRequest && !watching.running) watching.invalidate();
       }
     }
+    this.paused = shouldPause;
   }
 }
 
@@ -170,10 +198,18 @@ export function createDevPausePlugin(distDir: string, cwd = process.cwd()) {
 
       // Register after the initial compile finishes so `next dev` never blocks
       // on startup even if the pause file already exists.
-      compiler.hooks.done.tap('DevPausePlugin', () => {
-        if (registered || !compiler.watching) return;
+      compiler.hooks.done.tap('DevPausePlugin', (stats) => {
+        if (registered) {
+          gate.complete(registered, stats);
+          return;
+        }
+        if (!compiler.watching) return;
         registered = compiler.watching;
-        gate.register(registered);
+        gate.register(registered, stats.hash);
+      });
+
+      compiler.hooks.failed.tap('DevPausePlugin', () => {
+        if (registered) gate.complete(registered);
       });
 
       compiler.hooks.watchClose.tap('DevPausePlugin', () => {

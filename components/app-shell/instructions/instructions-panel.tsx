@@ -451,6 +451,7 @@ export function InstructionDetail({
               selected={shown}
               onChange={setShown}
               leadKey={null}
+              collapseToMenu={false}
               ariaLabel={`Instructions ${to.version}`}
               menuLabel="Other views"
             />

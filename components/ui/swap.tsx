@@ -65,7 +65,9 @@ export function useSwap<K extends string>(
   pace: SwapPace = PANE_PACE,
   // False holds the new content unseen once it is mounted, for a caller that
   // has to read its layout before it may show (sheet-chrome.ts).
-  canShow = true,
+  canShow: boolean | ((shown: K) => boolean) = true,
+  // A caller can hold the outgoing content until its replacement is ready.
+  canSwap: (shown: K) => boolean = () => true,
 ) {
   const reduceMotion = useReducedMotion();
   // The key on screen, whether it is fading out, and how it came in.
@@ -73,11 +75,12 @@ export function useSwap<K extends string>(
   const [shown, setShown] = useState(target);
   const [leaving, setLeaving] = useState<SwapMotion | 'done' | null>(null);
   const [entering, setEntering] = useState<SwapMotion | null>(null);
+  const ready = canSwap(shown);
   if (!animate || reduceMotion) {
-    if (shown !== target) setShown(target);
+    if (shown !== target && ready) setShown(target);
     if (leaving !== null) setLeaving(null);
     if (entering !== null) setEntering(null);
-  } else if (leaving !== null && shown === target) {
+  } else if (leaving !== null && (shown === target || !ready)) {
     // A quick return should reverse the current fade, not blank the same page.
     setLeaving(null);
     setEntering(null);
@@ -85,12 +88,13 @@ export function useSwap<K extends string>(
     setEntering(motionBetween(shown, target));
     setShown(target);
     setLeaving(null);
-  } else if (leaving === null && shown !== target) {
+  } else if (leaving === null && shown !== target && ready) {
     setLeaving(motionBetween(shown, target));
   }
 
   const fading = leaving !== null && leaving !== 'done';
   const out = leaving !== null;
+  const visible = typeof canShow === 'function' ? canShow(shown) : canShow;
   useEffect(() => {
     if (!fading) return;
     const timer = window.setTimeout(
@@ -116,7 +120,7 @@ export function useSwap<K extends string>(
           ? { opacity: 0, x: enterOffset.x, y: enterOffset.y }
           : false,
       animate: {
-        opacity: out || (entering && !canShow) ? 0 : 1,
+        opacity: out || (entering && !visible) ? 0 : 1,
         x: exitOffset.x,
         y: exitOffset.y,
       },

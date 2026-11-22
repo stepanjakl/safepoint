@@ -131,39 +131,55 @@ test('a saved run waits for its thread before fading in', async ({ page }) => {
   ]);
   const pinned = instructions.versions.at(-1)!;
   const runId = 'run-1795082400000';
+  const previousId = 'run-1795082400001';
+  const readId = 'read-1795082400000';
   await mockProcedure(page, 'runs.list', {
-    data: [
-      {
-        id: runId,
-        process: process.id,
-        instructions: { hash: pinned.hash, version: pinned.version },
-        readId: 'read-1795082400000',
-        rulebook: null,
-        stage: 'propose',
-        status: 'running',
-        trigger: 'manual',
-        additionalInstructions: null,
-        modelPlan: null,
-        startedBy: null,
-        startedAt: at,
-        updatedAt: at,
-        discardedAt: null,
-      },
-    ],
+    data: [runId, previousId].map((id) => ({
+      id,
+      process: process.id,
+      instructions: { hash: pinned.hash, version: pinned.version },
+      readId: id === runId ? readId : 'read-1795082400001',
+      rulebook: null,
+      stage: 'read',
+      status: 'failed',
+      trigger: 'manual',
+      additionalInstructions: id === previousId ? 'Previous run note.' : null,
+      modelPlan: null,
+      startedBy: null,
+      startedAt: at,
+      updatedAt: at,
+      discardedAt: null,
+    })),
   });
   await mockProcedure(page, 'instructions.list', { data: instructions });
   const release = Promise.withResolvers<void>();
-  const read = await mockProcedure(page, 'read.summary', async () => {
+  const read = await mockProcedure(page, 'read.summary', async ({ id }) => {
+    if (id !== readId)
+      return {
+        error: { code: 'NOT_FOUND', message: 'Previous read unavailable.' },
+      };
     await release.promise;
     return { error: { code: 'NOT_FOUND', message: 'Saved read unavailable.' } };
   });
-  await page.goto('/processes/brunch-orders-direct');
-  await page.locator(`[data-run-id="${runId}"]`).click();
-  await expect.poll(() => read.inputs.length).toBeGreaterThan(0);
+  await page.goto(`/processes/brunch-orders-direct?run=${previousId}`);
+  await expect(
+    page.getByText('Previous run note.', { exact: true }),
+  ).toBeVisible();
   const layer = page.locator('.run-view > div').first();
-  // Wait beyond the normal entrance, while the saved read is still held.
-  await page.waitForTimeout(600);
-  await expect(layer).toHaveCSS('opacity', '0');
+  await expect(layer).toHaveCSS('opacity', '1');
+  await page.locator(`[data-run-id="${runId}"]`).click();
+  await expect
+    .poll(() => read.inputs.some((input) => input.id === readId))
+    .toBe(true);
+  try {
+    // Wait beyond a full swap while the saved read is still held.
+    await page.waitForTimeout(600);
+    await expect(layer).toHaveCSS('opacity', '1', { timeout: 1000 });
+    await expect(layer).toContainText('Previous run note.');
+  } catch (error) {
+    release.resolve();
+    throw error;
+  }
   await page.evaluate(() => {
     const frames: { content: boolean; opacity: number }[] = [];
     Object.assign(window, { runEntranceFrames: frames });
@@ -181,8 +197,8 @@ test('a saved run waits for its thread before fading in', async ({ page }) => {
     requestAnimationFrame(sample);
   });
   release.resolve();
-  await expect(layer).toHaveCSS('opacity', '1');
   await expect(layer).toContainText('Saved read unavailable.');
+  await expect(layer).toHaveCSS('opacity', '1');
   const frames = await page.evaluate(
     () =>
       Reflect.get(window, 'runEntranceFrames') as {
@@ -190,7 +206,7 @@ test('a saved run waits for its thread before fading in', async ({ page }) => {
         opacity: number;
       }[],
   );
-  expect(frames.find((frame) => frame.content)?.opacity).toBe(0);
+  expect(frames.find((frame) => frame.content)?.opacity).toBeLessThan(0.5);
   expect(
     frames.some(
       (frame) => frame.content && frame.opacity > 0 && frame.opacity < 1,
@@ -267,8 +283,28 @@ test('a run summary updates and writing can be confirmed or cancelled from the k
         element.setAttribute('data-completed-slides', String(++slides));
     });
   });
+  await chevron.evaluate((element) => {
+    element.addEventListener('transitionstart', (event) => {
+      if (
+        event instanceof TransitionEvent &&
+        event.target === element &&
+        event.propertyName === 'opacity'
+      ) {
+        const pill = element.previousElementSibling;
+        if (pill)
+          element.setAttribute(
+            'data-fade-started-after-slide',
+            String(pill.getAttribute('data-completed-slides') === '1'),
+          );
+      }
+    });
+  });
   await sheet.hover();
   await expect(pill).toHaveAttribute('data-completed-slides', '1');
+  await expect(chevron).toHaveAttribute(
+    'data-fade-started-after-slide',
+    'true',
+  );
   await expect(chevron).toHaveCSS('opacity', '1');
   await expect(pill).not.toHaveCSS('margin-inline-end', '0px');
   await inputs.hover();
@@ -289,11 +325,15 @@ test('a run summary updates and writing can be confirmed or cancelled from the k
     .getAttribute('value');
   expect(reviewing).not.toBeNull();
   await stage.selectOption(reviewing!);
-  await expect(thread).toContainText('4 of 11 decided');
+  await expect(
+    thread.getByRole('radio', { name: 'Decided records, 4', exact: true }),
+  ).toBeVisible();
   await thread
     .getByRole('button', { name: 'Undo the decision on SD-01' })
     .click();
-  await expect(thread).toContainText('3 of 11 decided');
+  await expect(
+    thread.getByRole('radio', { name: 'Decided records, 3', exact: true }),
+  ).toBeVisible();
   const approval = await stage
     .locator('option', { hasText: /awaiting approval/i })
     .first()
@@ -337,10 +377,34 @@ for (const [process, stage] of [
     const thread = page.locator('.run-view');
     if (process === 'brunch-orders') {
       const jump = thread.getByRole('button', { name: 'Jump to Apply' });
+      const apply = thread.getByRole('button', { name: 'Apply', exact: true });
       await jump.press('Enter');
-      await expect(
-        thread.getByRole('button', { name: 'Apply', exact: true }),
-      ).toBeFocused();
+      await expect(apply).toBeFocused();
+      await expect
+        .poll(() =>
+          apply.evaluate((heading) => {
+            const section = heading.closest('[data-current]');
+            if (!section) throw new Error('Apply is not the current section');
+            let scroller = section.parentElement;
+            while (
+              scroller &&
+              !['auto', 'scroll'].includes(getComputedStyle(scroller).overflowY)
+            ) {
+              scroller = scroller.parentElement;
+            }
+            if (!scroller) throw new Error('Run scroller is missing');
+            const distanceToSection =
+              section.getBoundingClientRect().top -
+              scroller.getBoundingClientRect().top -
+              scroller.clientTop;
+            const remainingScroll =
+              scroller.scrollHeight -
+              scroller.scrollTop -
+              scroller.clientHeight;
+            return Math.abs(Math.min(distanceToSection, remainingScroll));
+          }),
+        )
+        .toBeLessThan(2);
     }
     const undo = thread.getByRole('button', { name: 'Undo the write' });
     await undo.press('Enter');

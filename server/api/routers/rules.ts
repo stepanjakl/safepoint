@@ -38,7 +38,11 @@ import {
   READ_GONE,
 } from '@/server/storage/reads/run-reads';
 import { attemptRecorder } from '@/server/storage/models/model-attempts';
-import { readIdSchema, runIdSchema } from '@/server/storage/ids';
+import {
+  readIdSchema,
+  rulebookIdSchema,
+  runIdSchema,
+} from '@/server/storage/ids';
 import {
   listRevisions,
   loadProfile,
@@ -197,6 +201,14 @@ export const rulesRouter = router({
       loadSet(owner, input.text),
     ),
   ),
+
+  applied: rulesProcedure(
+    z.strictObject({ text, rulebook: rulebookIdSchema.nullable() }),
+  ).query(async ({ input }) => {
+    if (!input.rulebook) return null;
+    const revision = await loadRevision(owner, input.text, input.rulebook);
+    return revision?.definitions.map(({ id, text }) => ({ id, text })) ?? null;
+  }),
 
   profile: rulesProcedure(
     z.strictObject({ text, readId: readIdSchema }),

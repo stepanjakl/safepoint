@@ -117,6 +117,7 @@ export function CalculateStep({
   modelPlan,
   onProgress,
   onReadyChange,
+  restoring = false,
   debug = false,
   mock = false,
 }: {
@@ -128,6 +129,7 @@ export function CalculateStep({
   modelPlan?: ModelPlan | null;
   onProgress: (progress: CalculateProgress) => void;
   onReadyChange?: (ready: boolean) => void;
+  restoring?: boolean;
   debug?: boolean;
   mock?: boolean;
 }) {
@@ -179,15 +181,20 @@ export function CalculateStep({
     cross.reset();
     setPin(null);
   };
-  // The marks arrive once per cross-check: when it finishes, or when the
-  // step is first opened on one this browser has not seen arrive.
+  // A cross-check restored with the thread already has its marks in place.
   const revealKey = shown?.check
     ? `${shown.check.fingerprint}:${shown.check.at}`
     : null;
   const [replays, setReplays] = useState(0);
-  const [reveal] = useState(() => new Set<string>());
-  if (revealKey && !reveal.has(revealKey) && !seenReveal(revealKey))
-    reveal.add(revealKey);
+  const [reveal, setReveal] = useState<{
+    key: string;
+    animate: boolean;
+  } | null>(null);
+  if (revealKey && reveal?.key !== revealKey)
+    setReveal({
+      key: revealKey,
+      animate: !restoring && !seenReveal(revealKey),
+    });
   useEffect(() => {
     if (revealKey) markRevealed(revealKey);
   }, [revealKey]);
@@ -291,7 +298,7 @@ export function CalculateStep({
             check={shown.check}
             only={showing === 'differ' ? differing : null}
             reveal={
-              revealKey !== null && (replays > 0 || reveal.has(revealKey))
+              revealKey !== null && (replays > 0 || reveal?.animate === true)
             }
           />
           <p className="text-meta text-muted">

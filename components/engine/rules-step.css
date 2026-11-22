@@ -47,9 +47,7 @@
     /* An inline-block indents its own first line: the formula's hanging
        indent (FormulaLine) would pull every name back over its neighbour. */
     text-indent: 0;
-    transition:
-      color var(--duration-state) ease-out,
-      font-weight var(--duration-state) ease-out;
+    transition: color var(--duration-state) ease-out;
     &::before {
       content: '';
       position: absolute;
@@ -59,12 +57,8 @@
       @apply control-wash;
     }
   }
-  /* Its other places take the mono's strong weight, a step up and no wider
-     (mono glyphs keep their advance; type.css holds both per typeface): the
-     eye goes to where it is used, not to where the pointer already is. */
   .rules-linked[data-hot] {
     color: var(--rules-linked-ink);
-    font-weight: var(--sp-mono-weight-strong);
     &::before {
       background-color: var(--rules-linked-face);
     }
@@ -72,14 +66,12 @@
        already marks it, so only its other places step forward. */
     &:hover {
       color: var(--rules-linked-rest);
-      font-weight: var(--sp-mono-weight);
     }
   }
   /* Pointed at inside a formula, a name lights its places elsewhere only: its
      repeats in the same formula stay at rest, as the reader is already there. */
   .rules-formula:has(.rules-linked:hover) .rules-linked[data-hot]:not(:hover) {
     color: var(--rules-linked-rest);
-    font-weight: var(--sp-mono-weight);
     &::before {
       background-color: transparent;
     }

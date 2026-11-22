@@ -230,13 +230,7 @@ function OrdersThread({
             ? 'Proposing…'
             : !proposed?.proposedAt
               ? 'Not proposed'
-              : allDecided
-                ? 'All decided'
-                : decidedCount
-                  ? `${decidedCount} of ${proposed.total} decided`
-                  : proposed.needYou
-                    ? `${proposed.total} proposed · ${proposed.needYou} need you`
-                    : `${proposed.total} proposed · all ready`
+              : `${proposed.total} ${proposed.total === 1 ? 'item' : 'items'}`
           : step.id === 'apply' && allDecided
             ? applied?.status === 'verified'
               ? 'Written and read back'
@@ -251,7 +245,13 @@ function OrdersThread({
   const flag = (step: ProcessStep) =>
     step.id === 'rules' && !rules?.running && rules?.error
       ? `Stopped: ${rules.error.split(/[.:]/)[0]!.toLowerCase()}`
-      : undefined;
+      : step.id === 'propose' &&
+          canPropose &&
+          !proposed?.running &&
+          proposed?.proposedAt &&
+          proposed.needYou > 0
+        ? `${proposed.needYou} need you`
+        : undefined;
   const progress = (step: ProcessStep) =>
     step.id === 'rules' && rules?.running && rules.found
       ? { at: rules.written, of: rules.total }
@@ -261,6 +261,7 @@ function OrdersThread({
     status: status(step),
     label: label(step),
     flag: flag(step),
+    flagWhenClosed: step.id === 'propose',
     progress: progress(step),
   }));
   // Pinning the rulebook is not waited for by the screen, which shows what
@@ -346,6 +347,7 @@ function OrdersThread({
                   version={version}
                   readId={readId}
                   runId={kept.id}
+                  rulebook={pinned}
                   modelPlan={kept.modelPlan}
                   onProgress={setRules}
                   onReadyChange={restoring ? setRulesReady : undefined}
@@ -363,6 +365,7 @@ function OrdersThread({
                   modelPlan={kept.modelPlan}
                   onProgress={pin}
                   onReadyChange={restoring ? setCalculateReady : undefined}
+                  restoring={restoring}
                   debug={debug}
                 />
               </ResponseSection>

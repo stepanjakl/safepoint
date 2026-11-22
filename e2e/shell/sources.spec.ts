@@ -138,7 +138,11 @@ test('fetches one read’s values once, however often the drawer opens', async (
         {
           name: input.name,
           values: [
-            ['sku', 'on hand'],
+            [
+              'sku',
+              'on hand',
+              ...Array.from({ length: 20 }, (_, i) => `Column ${i}`),
+            ],
             ['AV-RR', 3],
             ...Array.from({ length: 50 }, (_, index) => [
               `SKU-${index}`,
@@ -146,6 +150,7 @@ test('fetches one read’s values once, however often the drawer opens', async (
             ]),
           ],
         },
+        { name: 'Second sheet', values: [['item'], ['A']] },
       ],
     },
   }));
@@ -164,20 +169,56 @@ test('fetches one read’s values once, however often the drawer opens', async (
       exact: true,
     });
     await expect(corner).toHaveText('Row');
-    await expect(table.getByRole('rowheader').first()).toHaveText('1');
-    const fade = () =>
-      corner.evaluate(
-        (element) => getComputedStyle(element, '::after').opacity,
+    const header = table.getByRole('columnheader', { name: 'sku' });
+    for (const property of [
+      'background-color',
+      'border-bottom-color',
+      'border-bottom-width',
+      'border-bottom-style',
+    ]) {
+      await expect(corner).toHaveCSS(
+        property,
+        await header.evaluate(
+          (element, name) => getComputedStyle(element).getPropertyValue(name),
+          property,
+        ),
       );
-    await expect.poll(fade).toBe('0');
+    }
+    await expect(table.getByRole('rowheader').first()).toHaveText('1');
+    const headerRow = await corner.evaluateHandle((cell) => cell.parentElement);
     await table.evaluate((element) => {
-      element.scrollTo({ top: element.scrollHeight, behavior: 'instant' });
+      element.scrollTo({
+        top: element.scrollHeight,
+        left: element.scrollWidth,
+        behavior: 'instant',
+      });
     });
-    await expect.poll(fade).toBe('1');
-    await table.evaluate((element) => {
-      element.scrollTo({ top: 0, behavior: 'instant' });
+
+    const second = drawer.getByRole('radio', { name: 'Second sheet, 1' });
+    await second.focus();
+    await page.keyboard.press('Space');
+    const secondTable = drawer.getByRole('region', {
+      name: 'Second sheet, as read',
     });
-    await expect.poll(fade).toBe('0');
+    await expect(secondTable.getByRole('cell', { name: 'A' })).toBeVisible();
+    expect(
+      await secondTable
+        .getByRole('columnheader', { name: 'item' })
+        .evaluate(
+          (cell, previousRow) => cell.parentElement === previousRow,
+          headerRow,
+        ),
+    ).toBe(true);
+    await headerRow.dispose();
+
+    await drawer.getByRole('radio', { name: `${input.name}, 51` }).click();
+    await expect(table.getByRole('cell', { name: 'AV-RR' })).toBeVisible();
+    expect(
+      await table.evaluate(({ scrollLeft, scrollTop }) => [
+        scrollLeft,
+        scrollTop,
+      ]),
+    ).toEqual([0, 0]);
     await page.keyboard.press('Escape');
     await expect(drawer).toBeHidden();
   }

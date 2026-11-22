@@ -555,14 +555,15 @@ export function ThreadStep({
   // A flag comes and goes rather than popping: one that appears after the
   // step was drawn fades in, and one that is withdrawn stays, fading, until
   // it has gone. Under reduced motion nothing fades, so it simply goes.
+  const flagText = row.flagWhenClosed ? undefined : row.flag;
   const [flag, setFlag] = useState<{
     text: string;
     motion?: 'in' | 'out';
-  } | null>(row.flag ? { text: row.flag } : null);
-  if (row.flag) {
-    if (flag?.text !== row.flag || flag.motion === 'out')
+  } | null>(flagText ? { text: flagText } : null);
+  if (flagText) {
+    if (flag?.text !== flagText || flag.motion === 'out')
       setFlag(
-        restoring ? { text: row.flag } : { text: row.flag, motion: 'in' },
+        restoring ? { text: flagText } : { text: flagText, motion: 'in' },
       );
   } else if (flag && flag.motion !== 'out') {
     setFlag(
@@ -648,6 +649,7 @@ export function ThreadStep({
       data-latest={latest || undefined}
       data-current={current || undefined}
       data-open={open || undefined}
+      data-flag-when-closed={row.flagWhenClosed || undefined}
       data-entering={entering || undefined}
       // The line into this step stays dotted until its mark has left.
       data-settling={leaving || undefined}
@@ -710,7 +712,7 @@ export function ThreadStep({
               {row.name}
             </button>
           )}
-          {row.label || flag || reference ? (
+          {row.label || row.flag || flag || reference ? (
             <span className="thread-step-facts">
               {row.label ? (
                 <span className="thread-step-fact">{factText(row.label)}</span>
@@ -718,7 +720,14 @@ export function ThreadStep({
               {/* Its own pill, in the step's tone: the part of the fact that is
                 the problem, divided from the part that is not -- and, where
                 there is somewhere to take the reader, the way there. */}
-              {flag ? (
+              {row.flagWhenClosed && row.flag ? (
+                <span
+                  className="thread-step-flag"
+                  aria-hidden={open || undefined}
+                >
+                  {factText(row.flag)}
+                </span>
+              ) : flag ? (
                 flagAction && flag.motion !== 'out' ? (
                   <button
                     type="button"
@@ -739,6 +748,7 @@ export function ThreadStep({
                   <span
                     className="thread-step-flag"
                     data-motion={flag.motion}
+                    aria-hidden={flag.motion === 'out' || undefined}
                     onAnimationEnd={(event) => {
                       if (event.animationName === 'thread-fact-out')
                         setFlag(null);

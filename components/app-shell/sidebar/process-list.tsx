@@ -55,10 +55,10 @@ const MENU_LABEL =
   sits in exactly the same place whether the handles are being previewed or
   used, and switching between the two modes moves nothing.
 
-  Only the three colour states live here. The travel -- growing out of the row
-  and collapsing back into it -- belongs to the motion wrapper around them,
-  because an element that is entering or leaving the DOM cannot animate with a
-  class: there is no frame on which the old value was ever applied.
+  The preview-to-handle colour lives on the persistent motion wrapper, so it
+  can interpolate even as the preview span is replaced by a button. The travel
+  -- growing out of the row and collapsing back into it -- belongs there too:
+  an element entering or leaving the DOM has no frame to animate from.
 */
 const GRIP_BOX =
   'control-wash rounded-section grid h-8 w-6 flex-none place-items-center border-menu-edge border-transparent';
@@ -68,7 +68,7 @@ const GRIP_BOX =
   lighter: it is an advertisement, not a target. In the mode itself the handle
   is solid, in arrange mode's teal, and pointing at it only deepens the colour.
 */
-const GRIP_PREVIEW = `${GRIP_BOX} text-muted pointer-events-none`;
+const GRIP_PREVIEW = `${GRIP_BOX} pointer-events-none`;
 /*
   Pointing at a handle changes only its colour -- the cursor already says it can
   be picked up, and an edge around six dots is more furniture than the gesture
@@ -76,7 +76,7 @@ const GRIP_PREVIEW = `${GRIP_BOX} text-muted pointer-events-none`;
   list. Keyboard focus is left to the global :focus-visible outline rather than
   restyled, so it stays the same indicator as everywhere else.
 */
-const GRIP_HANDLE = `${GRIP_BOX} text-commit-ink hover:text-commit-ink-strong focus-visible:text-commit-ink-strong group-data-[dragging]/row:text-commit-ink-strong group-data-[dragging]/row:cursor-grabbing cursor-grab touch-none`;
+const GRIP_HANDLE = `${GRIP_BOX} hover:text-commit-ink-strong focus-visible:text-commit-ink-strong group-data-[dragging]/row:text-commit-ink-strong group-data-[dragging]/row:cursor-grabbing cursor-grab touch-none`;
 
 /*
   The evaluation mark, outline at rest and filled while its row is lit --
@@ -276,7 +276,8 @@ export function ProcessList({
                     <motion.div
                       data-grip
                       className={cx(
-                        'col-start-1 row-start-1 grid place-items-center',
+                        'col-start-1 row-start-1 grid place-items-center transition-colors duration-(--duration-state) ease-out',
+                        customising ? 'text-commit-ink' : 'text-muted',
                         !showGrip && 'pointer-events-none',
                       )}
                       initial={false}

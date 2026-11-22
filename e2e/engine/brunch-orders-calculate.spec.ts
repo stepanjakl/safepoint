@@ -175,6 +175,9 @@ test('a saved run opens with its completed steps already settled', async ({
     await promise;
     return { data: rulesReply(accepted, { history }) };
   });
+  await mockProcedure(page, 'calculate.get', {
+    data: { kind: 'calculation', calculation, check, current },
+  });
 
   await page.goto(`/processes/${process}?run=${run.id}`);
   const thread = page.locator('ol.thread');
@@ -208,6 +211,12 @@ test('a saved run opens with its completed steps already settled', async ({
   await expect(
     thread.getByRole('button', { name: 'Propose', exact: true }).first(),
   ).toHaveAttribute('aria-expanded', 'true');
+  await thread.getByRole('button', { name: 'Calculate', exact: true }).click();
+  const match = thread.locator('.calc-value', {
+    hasText: ', the model gives 64.2',
+  });
+  await expect(match).toBeAttached();
+  await expect(match).toHaveCSS('animation-name', 'none');
 });
 
 test('every value worked out for every record, cross-checked by the model', async ({

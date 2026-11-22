@@ -33,6 +33,7 @@ export type ProcessStep = {
   // The part of the fact that is the problem -- "1 not current" -- drawn in
   // the step's own tone after the label. Absent when nothing is wrong.
   flag?: string;
+  flagWhenClosed?: boolean;
   // What the step took, once it has finished. A running step has none: a
   // duration is what it took, not how long it has been.
   duration?: string;

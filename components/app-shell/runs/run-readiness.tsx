@@ -8,12 +8,22 @@ import {
   useState,
 } from 'react';
 
-export const RunReadiness = createContext<(ready: boolean) => void>(() => {});
+export const RunReadiness = createContext<{
+  report: (ready: boolean) => void;
+  shown: boolean;
+}>({
+  report: () => {},
+  shown: true,
+});
+
+export function useRunShown() {
+  return useContext(RunReadiness).shown;
+}
 
 // A saved thread mounts before its requests finish. Keep its page's entrance
 // held until it can draw the restored thread in full.
 function useRunReady(ready: boolean) {
-  const report = useContext(RunReadiness);
+  const { report } = useContext(RunReadiness);
   useLayoutEffect(() => {
     report(false);
     if (!ready) return;

@@ -2,12 +2,17 @@
 
 ## Before editing
 
-1. If the task could change more than one file and `pnpm dev` may be running,
-   run `pnpm dev:pause` before the first edit. If a one-file task grows, pause
-   before editing the second file.
-2. Run `pnpm dev:resume` after the batch and any quick fixes, before checking the
-   changes in the browser. If you paused and the task stops early, resume before
-   ending the turn. This lets webpack compile the batch in one reload.
+Keep webpack watching during ordinary edits. Group related edits into a batch,
+then check the affected routes after webpack finishes. Use Playwright's managed
+server for tests that write data. It has its own port, build output, PGlite
+database and workflow store.
+
+When editing concurrently with someone who needs a stable preview, use a
+sibling Git worktree with its own port and local data paths.
+
+Hard pause is for runtime diagnosis. If the server was started with
+`SAFEPOINT_DEV_PAUSE=1 pnpm dev`, pair `SAFEPOINT_DEV_PAUSE=1 pnpm dev:pause`
+with `pnpm dev:resume` before using the browser or ending the turn.
 
 Instructions for coding agents working in this repository. Humans should read
 [`docs/interface/STYLING-SYSTEM.md`](docs/interface/STYLING-SYSTEM.md) and

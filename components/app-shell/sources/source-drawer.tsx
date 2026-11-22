@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 
 import {
@@ -15,7 +15,6 @@ import {
 } from '@/components/ui/data-table';
 import { FilterTabs } from '@/components/ui/filter-tabs';
 import { Loader } from '@/components/ui/loader';
-import { TabSwap } from '@/components/ui/swap';
 import { useLoader } from '@/components/ui/working-mark';
 import type { SourceValues } from '@/lib/sources/model';
 
@@ -30,8 +29,8 @@ type Loaded =
 // the corner sits above both.
 const EDGE = COMPACT_TABLE_CELL;
 const CELL = `${EDGE} text-left`;
-const HEAD = `${COMPACT_TABLE_HEAD} sticky top-0 z-1`;
-const ROW_NUMBER = `${EDGE} text-muted bg-surface-inset sticky left-0 text-right font-normal`;
+const HEAD = `${COMPACT_TABLE_HEAD} sticky top-0 z-2`;
+const ROW_NUMBER = `${EDGE} text-muted bg-surface-inset sticky left-0 z-1 text-right font-normal`;
 
 // A cell as the sheet returned it: unformatted, so a time is its serial number.
 const cellText = (cell: unknown) =>
@@ -72,9 +71,9 @@ export function SourceDrawer({
       })) ?? [],
     [values],
   );
-  const selected = tabs.some((tab) => tab.key === chosen)
-    ? chosen
-    : tabs[0]?.key;
+  const resource =
+    values?.resources.find((one) => one.name === chosen) ??
+    values?.resources[0];
 
   const loader = useLoader(loaded.kind === 'loading');
 
@@ -110,32 +109,19 @@ export function SourceDrawer({
                 size="panel"
                 label="Loading the read…"
               />
-            ) : values && selected ? (
+            ) : resource ? (
               <>
-                <FilterTabs
-                  tabs={tabs}
-                  selected={selected}
-                  onChange={setChosen}
-                  leadKey={null}
-                  ariaLabel="Tabs"
-                  menuLabel="Other tabs"
-                />
-                <TabSwap
-                  selected={selected}
-                  className="flex min-h-0 min-w-0 flex-1 flex-col"
-                >
-                  {(key) => {
-                    const resource = values.resources.find(
-                      (one) => one.name === key,
-                    );
-                    return resource ? (
-                      <ResourceTable
-                        name={resource.name}
-                        values={resource.values}
-                      />
-                    ) : null;
-                  }}
-                </TabSwap>
+                <div className="shrink-0 overflow-x-auto">
+                  <FilterTabs
+                    tabs={tabs}
+                    selected={resource.name}
+                    onChange={setChosen}
+                    leadKey={null}
+                    ariaLabel="Tabs"
+                    collapseToMenu={false}
+                  />
+                </div>
+                <ResourceTable name={resource.name} values={resource.values} />
               </>
             ) : values ? (
               <p className="text-dense text-muted">Nothing in this read.</p>
@@ -158,32 +144,36 @@ function ResourceTable({
   name: string;
   values: unknown[][];
 }) {
+  const scroller = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    scroller.current?.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [name]);
+
   const width = Math.max(0, ...values.map((row) => row.length));
   const [header = [], ...rows] = values;
-  if (values.length === 0)
-    return <p className="text-dense text-muted">{name} is empty.</p>;
   const cells = (row: unknown[]) =>
     Array.from({ length: width }, (_, index) => cellText(row[index]));
   return (
     <DataTable
+      ref={scroller}
       variant="compact"
       tabIndex={0}
       role="region"
       aria-label={`${name}, as read`}
-      className="source-resource-table min-h-0 flex-1"
-      onScroll={({ currentTarget }) => {
-        currentTarget.toggleAttribute(
-          'data-scrolled',
-          currentTarget.scrollTop > 0,
-        );
-      }}
+      className="min-h-0 flex-1 focus-visible:-outline-offset-2"
     >
-      <table className={COMPACT_TABLE_BODY}>
+      {values.length === 0 && (
+        <p className="text-dense text-muted p-3">{name} is empty.</p>
+      )}
+      <table
+        className={`${COMPACT_TABLE_BODY} min-w-full`}
+        hidden={values.length === 0}
+      >
         <thead>
           <tr>
             <th
               scope="col"
-              className={`${ROW_NUMBER} source-resource-corner top-0 z-2`}
+              className={`${COMPACT_TABLE_HEAD} sticky top-0 left-0 z-3 w-px`}
             >
               <span className="sr-only">Row</span>
             </th>

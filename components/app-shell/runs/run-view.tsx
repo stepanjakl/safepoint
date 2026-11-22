@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type ReactNode,
@@ -20,7 +21,11 @@ import { StateIllustration } from '@/components/ui/state-illustration';
 import { EMPTY_STATE_ARRIVE, EMPTY_STATE_STAGGER } from '@/lib/ui/motion';
 import type { ProcessSummary } from '@/lib/shell/model';
 import { runDay, runTime } from '@/lib/shell/run-time';
-import { RunSelectionProvider, useRunSelection } from './run-selection';
+import {
+  RunSelectionProvider,
+  useRunSelection,
+  type RunSelection,
+} from './run-selection';
 import { RunReadiness } from './run-readiness';
 
 /*
@@ -58,57 +63,64 @@ export function RunView({
       ? id
       : NONE;
   const target = keyOf(selection?.selected ?? NONE);
-  const [readiness, setReadiness] = useState({ id: '', ready: true });
+  const [readiness, setReadiness] = useState<Record<string, boolean>>({});
+  const instructions = selection?.instructionLoad;
+  const waiting = instructions?.runId === target ? instructions : null;
+  const waitForThread = Boolean(
+    selection?.live?.kept.readId && !selection.live.mock,
+  );
+  const preparing =
+    (waitForThread && readiness[target] !== true) ||
+    Boolean(waiting && !waiting.failed);
   const { shown, layer } = useSwap(
     target,
     () => 'fade',
     true,
     undefined,
-    readiness.id !== target || readiness.ready,
+    (current) => readiness[current] !== false,
+    (current) => current === NONE || !preparing,
   );
-  const reportReady = useCallback(
-    (ready: boolean) => {
-      setReadiness((previous) =>
-        previous.id === shown && previous.ready === ready
-          ? previous
-          : { id: shown, ready },
-      );
-    },
-    [shown],
-  );
+  const reportReady = useCallback((id: string, ready: boolean | undefined) => {
+    setReadiness((previous) => {
+      if (previous[id] === ready) return previous;
+      const next = { ...previous };
+      if (ready === undefined) delete next[id];
+      else next[id] = ready;
+      return next;
+    });
+  }, []);
   // The outgoing thread and its consumers keep the selection they were drawn
   // from until the fade ends; the rail already reflects the new selection.
   const [shownSelection, setShownSelection] = useState(selection);
   if (shown === target && shownSelection !== selection)
     setShownSelection(selection);
   const pageSelection = shown === target ? selection : shownSelection;
-  const runs = pageSelection?.runs ?? process.runs;
-  const instructions = pageSelection?.instructionLoad;
-  const waiting = instructions?.runId === shown ? instructions : null;
-  const instructionMessage = waiting
-    ? waiting.failed
-      ? `Couldn’t load instructions ${waiting.version} for this run.`
-      : `Loading instructions ${waiting.version}…`
-    : null;
+  const staged = shown !== NONE && shown !== target && waitForThread;
 
   // A new page starts at its top, once the old one has gone.
-  useEffect(() => {
+  useLayoutEffect(() => {
     const scroller = view.current?.parentElement;
     if (scroller) scroller.scrollTop = 0;
   }, [shown]);
 
-  const page = (id: string): ReactNode => {
+  const page = (
+    id: string,
+    pageSelection: RunSelection | null,
+    active: boolean,
+  ): ReactNode => {
     if (id && id === process.runs.find((run) => run.current)?.id)
       return recorded;
-    if (waiting) {
+    const instructions = pageSelection?.instructionLoad;
+    if (instructions?.runId === id) {
+      const message = instructionMessage(instructions);
       return (
         <ThreadPage label="Run instructions">
-          {waiting.failed ? (
-            <AlertBox role="note" title={instructionMessage}>
+          {instructions.failed ? (
+            <AlertBox role="note" title={message}>
               Reopen this run to try again.
             </AlertBox>
           ) : (
-            <p className="text-dense text-muted">{instructionMessage}</p>
+            <p className="text-dense text-muted">{message}</p>
           )}
         </ThreadPage>
       );
@@ -117,12 +129,16 @@ export function RunView({
     if (live && liveThread && id === live.run.id) {
       const at = live.run.startedAt;
       return (
-        <ThreadPage label={`Run, ${runDay(at)} · ${runTime(at)}`}>
+        <ThreadPage
+          primary={active}
+          label={`Run, ${runDay(at)} · ${runTime(at)}`}
+        >
           {liveThread}
         </ThreadPage>
       );
     }
     const chosen = pageSelection?.selected;
+    const runs = pageSelection?.runs ?? process.runs;
     const run = chosen ? runs.find((entry) => entry.id === chosen) : undefined;
     return (
       <RunEmptyState
@@ -137,16 +153,74 @@ export function RunView({
 
   return (
     <div ref={view} className="run-view">
-      <motion.div key={`page:${shown}`} {...layer}>
-        <RunSelectionProvider value={pageSelection}>
-          <RunReadiness value={reportReady}>{page(shown)}</RunReadiness>
-        </RunSelectionProvider>
-      </motion.div>
+      {/* Restore the next thread at the real column width without affecting the scroller. */}
+      {(staged ? [shown, target] : [shown]).map((id) => {
+        const active = id === shown;
+        const context = active ? pageSelection : selection;
+        return (
+          <motion.div
+            key={id}
+            {...(active ? layer : { initial: false, animate: { opacity: 0 } })}
+            inert={!active || (shown !== target && preparing) || layer.inert}
+            className={
+              active
+                ? undefined
+                : 'invisible absolute inset-x-0 top-0 h-0 overflow-clip'
+            }
+          >
+            <RunPage
+              id={id}
+              selection={context}
+              onReady={reportReady}
+              shown={active}
+            >
+              {page(id, context, active)}
+            </RunPage>
+          </motion.div>
+        );
+      })}
       <p role="status" className="sr-only">
-        {instructionMessage ??
-          (readiness.id === shown && !readiness.ready ? 'Loading run…' : null)}
+        {waiting
+          ? instructionMessage(waiting)
+          : preparing
+            ? 'Loading run…'
+            : null}
       </p>
     </div>
+  );
+}
+
+function instructionMessage({
+  failed,
+  version,
+}: NonNullable<RunSelection['instructionLoad']>) {
+  return failed
+    ? `Couldn’t load instructions ${version} for this run.`
+    : `Loading instructions ${version}…`;
+}
+
+function RunPage({
+  id,
+  selection,
+  onReady,
+  shown,
+  children,
+}: {
+  id: string;
+  selection: RunSelection | null;
+  onReady: (id: string, ready: boolean | undefined) => void;
+  shown: boolean;
+  children: ReactNode;
+}) {
+  const report = useCallback(
+    (ready: boolean) => onReady(id, ready),
+    [id, onReady],
+  );
+  useLayoutEffect(() => () => onReady(id, undefined), [id, onReady]);
+  return (
+    <RunSelectionProvider value={selection}>
+      <RunReadiness value={{ report, shown }}>{children}</RunReadiness>
+    </RunSelectionProvider>
   );
 }
 

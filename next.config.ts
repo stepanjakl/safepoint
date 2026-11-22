@@ -25,10 +25,12 @@ const nextConfig: NextConfig = {
   // repositioned: nothing it reports is worth a corner of the shell.
   devIndicators: false,
 
-  // Mobile clients on the LAN need the dev WebSocket to hydrate the page.
-  allowedDevOrigins: process.env.SAFEPOINT_DEV_HOST
-    ? [process.env.SAFEPOINT_DEV_HOST]
-    : undefined,
+  // Next already allows localhost. Also allow numeric loopback and the LAN host.
+  allowedDevOrigins: [
+    '127.0.0.1',
+    '[::1]',
+    ...(process.env.SAFEPOINT_DEV_HOST ? [process.env.SAFEPOINT_DEV_HOST] : []),
+  ],
 
   // PGlite loads its WebAssembly and data files from beside its own module,
   // which a bundled copy cannot find (server/db/client.ts). pg is external
@@ -63,6 +65,8 @@ const nextConfig: NextConfig = {
   // tools/postcss-light-dark runs before the polyfill it folds exists.
   webpack(config, { dev, webpack }) {
     if (dev) {
+      // Coalesce nearby file writes without blocking on-demand compilation.
+      config.watchOptions = { ...config.watchOptions, aggregateTimeout: 150 };
       // Emit CSS maps separately from Next's JavaScript devtool setting.
       config.plugins.push(
         new webpack.SourceMapDevToolPlugin({
@@ -76,8 +80,12 @@ const nextConfig: NextConfig = {
               : `webpack:///${info.absoluteResourcePath}`;
           },
         }),
-        createDevPausePlugin(nextConfig.distDir ?? '.next'),
       );
+      if (process.env.SAFEPOINT_DEV_PAUSE === '1') {
+        config.plugins.push(
+          createDevPausePlugin(nextConfig.distDir ?? '.next'),
+        );
+      }
     }
     return config;
   },

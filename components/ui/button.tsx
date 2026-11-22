@@ -19,7 +19,7 @@ export type Slant = 'left' | 'right' | 'both';
 // No transition utility here: control-face owns the timing, because the
 // gradient stops it animates are its own contract.
 const base =
-  'inline-flex min-w-11 items-center justify-center gap-2 font-medium whitespace-nowrap data-[disabled]:cursor-not-allowed data-[disabled]:control-off data-[disabled]:text-muted';
+  'inline-flex items-center justify-center gap-2 font-medium whitespace-nowrap data-[disabled]:cursor-not-allowed data-[disabled]:control-off data-[disabled]:text-muted';
 
 /*
   Each variant in two halves: the stops, which say what colour the face is in
@@ -54,6 +54,7 @@ const sizes = {
   small: 'control-face text-meta h-7',
   medium: 'control-face text-dense h-8',
   large: 'control-face text-dense h-9',
+  touch: 'control-face text-dense h-10 pointer-coarse:h-11',
 } as const;
 const shapes = {
   corners: {
@@ -61,12 +62,14 @@ const shapes = {
     small: 'rounded-control px-2.5',
     medium: 'rounded-icon px-3',
     large: 'rounded-shell px-3.5',
+    touch: 'rounded-shell px-3.5',
   },
   round: {
     xsmall: 'rounded-full px-2.5',
     small: 'rounded-full px-3',
     medium: 'rounded-full px-3.5',
     large: 'rounded-full px-4',
+    touch: 'rounded-full px-2.5',
   },
 } as const;
 export type Shape = keyof typeof shapes;
@@ -120,6 +123,9 @@ export function Button({
       className={cx(
         base,
         faces[variant],
+        !slant && size === 'touch'
+          ? 'min-w-10 pointer-coarse:min-w-11'
+          : 'min-w-11',
         // Size with the shape, not in `base`: a slant's height is a token
         // sized to its header, and two utilities for one property would be
         // settled by stylesheet order.

@@ -158,6 +158,23 @@ describe('rules router', () => {
     });
   });
 
+  it('lists the pinned rule wording in order after the current wording changes', async () => {
+    const first = { ...twoWeekends, text: 'Add the two prior weekends.' };
+    const second = definition('minimum', { text: 'Order at least one case.' });
+    await keep([first, second]);
+    const revision = await putRevision(owner, (await loadSet(owner, TEXT))!, {
+      reason: 'accepted',
+    });
+    await keep([{ ...first, text: 'Use only the most recent weekend.' }]);
+
+    expect(
+      await caller().rules.applied({ text: TEXT, rulebook: revision }),
+    ).toEqual([
+      { id: first.id, text: first.text },
+      { id: second.id, text: second.text },
+    ]);
+  });
+
   describe('the data profile', () => {
     it('is kept under review when proposed from the read', async () => {
       const kept = await caller().rules.profile(run);

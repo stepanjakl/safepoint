@@ -97,6 +97,7 @@ export function RulesStep({
   version,
   readId,
   runId,
+  rulebook = null,
   modelPlan,
   onProgress,
   onReadyChange,
@@ -109,6 +110,7 @@ export function RulesStep({
   version: string;
   readId: string | null;
   runId?: string;
+  rulebook?: string | null;
   modelPlan?: ModelPlan | null;
   onProgress: (progress: RulesProgress) => void;
   onReadyChange?: (ready: boolean) => void;
@@ -117,6 +119,12 @@ export function RulesStep({
 }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const applied = useQuery(
+    trpc.rules.applied.queryOptions(
+      { text, rulebook },
+      { enabled: rulebook !== null && !mock, staleTime: Infinity },
+    ),
+  );
   const sheet = useContext(ProcessSheetActions);
   const report = useRef(onProgress);
   useEffect(() => {
@@ -486,6 +494,12 @@ export function RulesStep({
     </>
   ) : null;
 
+  const appliedRules = rulebook
+    ? applied.data
+    : complete
+      ? set.definitions
+      : null;
+
   return (
     <div className="rules-review grid gap-4">
       <RulesDebug
@@ -494,58 +508,133 @@ export function RulesStep({
         readId={readId}
         onClose={() => setDebugging(null)}
       />
-      <Lede>
-        The model turns your instructions into calculations and checks, and
-        tries each on records from the data. Accept the ones it got right; every
-        run under these instructions will use them.
-      </Lede>
-
-      {profile ? (
-        // One panel throughout, so what it says aloud and where focus is
-        // survive its changes; folded away once the rules are drafted on it.
+      {appliedRules ? (
         <div className="grid gap-3">
-          {set && dataConfirmed ? (
+          <ul
+            role="list"
+            aria-label="Applied rules"
+            className="text-dense divide-rule-faint divide-y"
+          >
+            {appliedRules.map((rule) => (
+              <li key={rule.id} className="py-3 first:pt-0 last:pb-0">
+                {rule.text}
+              </li>
+            ))}
+          </ul>
+          {sheet?.showRules ? (
+            <Button
+              size="small"
+              className="justify-self-start"
+              onPress={sheet.showRules}
+            >
+              Open the Rules tab
+            </Button>
+          ) : null}
+        </div>
+      ) : rulebook ? (
+        <p className="text-dense text-muted">
+          {applied.isPending
+            ? 'Loading the applied rules…'
+            : 'The applied rules could not be loaded.'}
+        </p>
+      ) : (
+        <Lede>
+          The model turns your instructions into calculations and checks, and
+          tries each on records from the data. Accept the ones it got right;
+          every run under these instructions will use them.
+        </Lede>
+      )}
+
+      {(profile && (!complete || !dataConfirmed)) || (debug && complete) ? (
+        <div
+          className={
+            debug && ((profile && set && dataConfirmed) || complete)
+              ? 'trial-setup rounded-shell grid gap-3 p-4'
+              : 'grid gap-3'
+          }
+        >
+          {profile ? (
+            // One panel throughout, so what it says aloud and where focus is
+            // survive its changes; folded away once the rules are drafted on it.
+            <div className="grid gap-3">
+              {debug && set && dataConfirmed ? (
+                <div className="flex flex-wrap items-center gap-3">
+                  <p className="text-dense">
+                    The data’s columns are confirmed.
+                  </p>
+                  <Button
+                    size="medium"
+                    aria-expanded={profileOpen}
+                    aria-controls={profileId}
+                    onPress={() => setProfileOpen(!profileOpen)}
+                  >
+                    {profileOpen
+                      ? 'Hide the data’s columns'
+                      : 'Show the data’s columns'}
+                  </Button>
+                </div>
+              ) : null}
+              <Fold
+                open={
+                  !set ||
+                  !dataConfirmed ||
+                  (profileOpen && (debug || !complete))
+                }
+                id={profileId}
+              >
+                <DataProfilePanel
+                  state={profile}
+                  busy={busy}
+                  canRead={readId !== null}
+                  drafted={set !== null}
+                  headingRef={profileHeading}
+                  className={ASKS}
+                  onChange={(change: ProfileChange) => {
+                    // A person at work in it keeps it open.
+                    setProfileOpen(true);
+                    // Only proposing one reads the data: the others take no read.
+                    if (change.action === 'profile') {
+                      if (readId) proposeProfile.mutate({ text, readId });
+                    } else if (change.action === 'confirmProfile')
+                      confirmProfile.mutate({ text });
+                    else
+                      changeProfile.mutate({
+                        text,
+                        column: change.column,
+                        label: change.label,
+                        type: change.type,
+                        blank: change.blank,
+                      });
+                  }}
+                />
+              </Fold>
+            </div>
+          ) : null}
+          {debug && set && complete ? (
             <div className="flex flex-wrap items-center gap-3">
-              <p className="text-dense">The data’s columns are confirmed.</p>
+              <p className="text-dense">
+                Using the accepted rules:{' '}
+                {plural(
+                  set.definitions.filter((d) => d.result === 'number').length,
+                  'calculation',
+                )}
+                ,{' '}
+                {plural(
+                  set.definitions.filter((d) => d.result === 'check').length,
+                  'check',
+                )}
+                .
+              </p>
               <Button
                 size="medium"
-                aria-expanded={profileOpen}
-                aria-controls={profileId}
-                onPress={() => setProfileOpen(!profileOpen)}
+                aria-expanded={showAll}
+                aria-controls={cardsId}
+                onPress={() => setShowAll(!showAll)}
               >
-                {profileOpen
-                  ? 'Hide the data’s columns'
-                  : 'Show the data’s columns'}
+                {showAll ? 'Hide the rules' : 'Show the rules'}
               </Button>
             </div>
           ) : null}
-          <Fold open={!set || !dataConfirmed || profileOpen} id={profileId}>
-            <DataProfilePanel
-              state={profile}
-              busy={busy}
-              canRead={readId !== null}
-              drafted={set !== null}
-              headingRef={profileHeading}
-              className={ASKS}
-              onChange={(change: ProfileChange) => {
-                // A person at work in it keeps it open.
-                setProfileOpen(true);
-                // Only proposing one reads the data: the others take no read.
-                if (change.action === 'profile') {
-                  if (readId) proposeProfile.mutate({ text, readId });
-                } else if (change.action === 'confirmProfile')
-                  confirmProfile.mutate({ text });
-                else
-                  changeProfile.mutate({
-                    text,
-                    column: change.column,
-                    label: change.label,
-                    type: change.type,
-                    blank: change.blank,
-                  });
-              }}
-            />
-          </Fold>
         </div>
       ) : null}
 
@@ -647,46 +736,17 @@ export function RulesStep({
       )}
 
       {!set ? (
-        answered ? (
+        answered && !rulebook ? (
           <p className="text-dense text-muted">
             Nothing drafted for these instructions yet.
           </p>
         ) : null
-      ) : complete ? (
-        // Accepted whole: one line, as the Rules tab shows the rulebook.
-        <>
-          <div className="flex flex-wrap items-center gap-3">
-            <p className="text-dense">
-              Using the accepted rules:{' '}
-              {plural(
-                set.definitions.filter((d) => d.result === 'number').length,
-                'calculation',
-              )}
-              ,{' '}
-              {plural(
-                set.definitions.filter((d) => d.result === 'check').length,
-                'check',
-              )}
-              .
-            </p>
-            {sheet?.showRules ? (
-              <Button size="medium" onPress={sheet.showRules}>
-                Open the Rules tab
-              </Button>
-            ) : null}
-            <Button
-              size="medium"
-              aria-expanded={showAll}
-              aria-controls={cardsId}
-              onPress={() => setShowAll(!showAll)}
-            >
-              {showAll ? 'Hide the rules' : 'Show the rules'}
-            </Button>
-          </div>
+      ) : complete || rulebook ? (
+        debug ? (
           <Fold open={showAll} id={cardsId} className="grid gap-4">
             {cards}
           </Fold>
-        </>
+        ) : null
       ) : (
         <>
           <SetAside set={set} />

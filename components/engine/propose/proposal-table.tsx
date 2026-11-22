@@ -16,6 +16,7 @@ import { FilterTabs } from '@/components/ui/filter-tabs';
 import { MorphingText } from '@/components/ui/morphing-text';
 import { Pill } from '@/components/ui/pill';
 import { useScreenSettled } from '@/components/ui/screen-settled';
+import { SmoothHeight } from '@/components/ui/smooth-height';
 import { WalkthroughHint } from '@/components/ui/walkthrough-hint';
 import { cx } from '@/lib/ui/cx';
 import { DURATION_STATE } from '@/lib/ui/motion';
@@ -94,26 +95,19 @@ export function ProposalTable({
   const filterBarRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLElement>(null);
   const headRef = useRef<HTMLTableSectionElement>(null);
-  const footRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const card = cardRef.current;
     const head = headRef.current;
-    const foot = footRef.current;
-    if (!card || !head || !foot) return;
+    if (!card || !head) return;
     const sync = () => {
       card.style.setProperty(
         '--proposal-head-height',
         `${head.getBoundingClientRect().height}px`,
       );
-      card.style.setProperty(
-        '--proposal-foot-height',
-        `${foot.getBoundingClientRect().height}px`,
-      );
     };
     sync();
     const observer = new ResizeObserver(sync);
     observer.observe(head);
-    observer.observe(foot);
     return () => observer.disconnect();
   }, []);
   const showReviewHint =
@@ -176,141 +170,160 @@ export function ProposalTable({
       <DataDrawer readId={readId}>
         {(view) => (
           <DataTable ref={cardRef} className="proposal-table-card">
-            <div className="proposal-table-scroll min-w-0 overflow-x-auto overflow-y-hidden">
-              <table className={cx('calc-table', DATA_TABLE_BODY)}>
-                <caption className="sr-only">
-                  What is proposed for every record
-                </caption>
-                <thead ref={headRef}>
-                  <tr>
-                    <th
-                      scope="col"
-                      className={cx(DATA_TABLE_HEAD, 'pr-3 pl-6 text-left')}
-                    >
-                      Record
-                    </th>
-                    <th
-                      scope="col"
-                      className={cx(
-                        DATA_TABLE_HEAD,
-                        DATA_TABLE_NAME_COLUMN,
-                        'pr-3',
-                      )}
-                    >
-                      <span className="sr-only">Name</span>
-                    </th>
-                    {fields.map((field) => (
-                      <th
-                        key={field.id}
-                        scope="col"
-                        className={cx(DATA_TABLE_HEAD, 'pl-3 text-right')}
-                      >
-                        {field.label}
-                      </th>
-                    ))}
-                    <th
-                      scope="col"
-                      className={cx(DATA_TABLE_HEAD, 'pl-3 text-left')}
-                    >
-                      Verdict
-                    </th>
-                    <th
-                      scope="col"
-                      className={cx(DATA_TABLE_HEAD, 'pr-4 pl-3 text-right')}
-                    >
-                      Decision
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <AnimatePresence initial={false}>
-                    {shown.length === 0 ? (
-                      <PresentRow key="empty">
-                        <td
-                          colSpan={fields.length + 4}
-                          className="text-muted px-6 py-2.75"
-                        >
-                          {showing === 'need'
-                            ? 'Nothing needs you.'
-                            : 'Nothing decided yet.'}
-                        </td>
-                      </PresentRow>
-                    ) : null}
-                    {shown.map(([key, record], rowIndex) => (
-                      <ProposalRow
-                        key={key}
-                        fields={fields}
-                        id={`${tableId}-${key}`}
-                        recordKey={key}
-                        name={names[key] ?? ''}
-                        record={record}
-                        decision={decisions[key]}
-                        expanded={open.has(key)}
-                        ruled={rowIndex < shown.length - 1}
-                        calculated={calculated}
-                        onToggle={() => toggle(key)}
-                        onDecide={decide}
-                        onCheck={onCheck}
-                        onCite={(cell) => {
-                          const tab =
-                            sourceTermsOf(source).address.resourceOf(cell);
-                          if (tab) view(tab);
-                        }}
-                        icons={icons}
-                      />
-                    ))}
-                  </AnimatePresence>
-                </tbody>
-              </table>
-            </div>
             <div className="proposal-table-sticky-track">
+              <div className="proposal-table-scroll min-w-0 overflow-x-auto overflow-y-hidden">
+                <table className={cx('calc-table', DATA_TABLE_BODY)}>
+                  <caption className="sr-only">
+                    What is proposed for every record
+                  </caption>
+                  <thead ref={headRef}>
+                    <tr>
+                      <th
+                        scope="col"
+                        className={cx(DATA_TABLE_HEAD, 'pr-3 pl-6 text-left')}
+                      >
+                        Record
+                      </th>
+                      <th
+                        scope="col"
+                        className={cx(
+                          DATA_TABLE_HEAD,
+                          DATA_TABLE_NAME_COLUMN,
+                          'pr-3',
+                        )}
+                      >
+                        <span className="sr-only">Name</span>
+                      </th>
+                      {fields.map((field) => (
+                        <th
+                          key={field.id}
+                          scope="col"
+                          className={cx(DATA_TABLE_HEAD, 'pl-3 text-right')}
+                        >
+                          {field.label}
+                        </th>
+                      ))}
+                      <th
+                        scope="col"
+                        className={cx(DATA_TABLE_HEAD, 'pl-3 text-left')}
+                      >
+                        Verdict
+                      </th>
+                      <th
+                        scope="col"
+                        className={cx(DATA_TABLE_HEAD, 'pr-4 pl-3 text-right')}
+                      >
+                        Decision
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <AnimatePresence initial={false}>
+                      {shown.length === 0 ? (
+                        <PresentRow key="empty">
+                          <td
+                            colSpan={fields.length + 4}
+                            className="text-muted px-6 py-2.75"
+                          >
+                            {showing === 'need'
+                              ? 'Nothing needs you.'
+                              : 'Nothing decided yet.'}
+                          </td>
+                        </PresentRow>
+                      ) : null}
+                      {shown.map(([key, record], rowIndex) => (
+                        <ProposalRow
+                          key={key}
+                          fields={fields}
+                          id={`${tableId}-${key}`}
+                          recordKey={key}
+                          name={names[key] ?? ''}
+                          record={record}
+                          decision={decisions[key]}
+                          expanded={open.has(key)}
+                          ruled={rowIndex < shown.length - 1}
+                          calculated={calculated}
+                          source={source}
+                          onToggle={() => toggle(key)}
+                          onDecide={decide}
+                          onCheck={onCheck}
+                          onCite={(cell) => {
+                            const address = sourceTermsOf(source).address;
+                            const tab = address.resourceOf(cell);
+                            if (!tab) return;
+                            const position =
+                              source === 'database'
+                                ? null
+                                : address.blockStart(
+                                    cell.slice(tab.length + 1),
+                                  );
+                            view(
+                              tab,
+                              position
+                                ? { ...position, label: cell }
+                                : undefined,
+                            );
+                          }}
+                          icons={icons}
+                        />
+                      ))}
+                    </AnimatePresence>
+                  </tbody>
+                </table>
+              </div>
               <div
-                ref={footRef}
                 role="group"
                 aria-label="Proposal summary"
-                className="ground-raised border-raised-ring bg-surface-primary border-t-section pointer-events-auto sticky bottom-0 z-3 flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+                className="ground-raised border-raised-ring bg-surface-primary border-t-section sticky bottom-0 z-3"
               >
-                <div className="flex flex-wrap items-center gap-2">
-                  {counts.map(({ verdict, count }) => (
-                    <Pill key={verdict} tone={VERDICT[verdict].tone}>
-                      {count} {VERDICT[verdict].label.toLowerCase()}
-                    </Pill>
-                  ))}
-                </div>
-                <AnimatePresence initial={false}>
-                  {ready.length ? (
-                    <motion.div
-                      key="approve-ready"
-                      className="ml-auto"
-                      initial={reduceMotion ? false : { opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={reduceMotion ? undefined : { opacity: 0 }}
-                      transition={{ duration: DURATION_STATE, ease: 'easeOut' }}
-                    >
-                      <Button
-                        size="medium"
-                        onPress={() => {
-                          const at = new Date().toISOString();
-                          decide(
-                            Object.fromEntries(
-                              ready.map(([key]) => [
-                                key,
-                                madeNow('approve', at),
-                              ]),
-                            ),
-                            `${ready.length} ${unchecked ? 'not checked' : 'ready'} approved`,
-                          );
-                        }}
-                      >
-                        <span>
-                          Approve all{' '}
-                          <MorphingText text={String(ready.length)} />{' '}
-                          {unchecked ? 'not checked' : 'ready'}
-                        </span>
-                      </Button>
-                    </motion.div>
-                  ) : null}
-                </AnimatePresence>
+                <SmoothHeight className="sm:grid sm:content-center">
+                  <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {counts.map(({ verdict, count }) => (
+                        <Pill key={verdict} tone={VERDICT[verdict].tone}>
+                          {count} {VERDICT[verdict].label.toLowerCase()}
+                        </Pill>
+                      ))}
+                    </div>
+                    <AnimatePresence initial={false}>
+                      {ready.length ? (
+                        <motion.div
+                          key="approve-ready"
+                          className="ml-auto"
+                          initial={reduceMotion ? false : { opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={reduceMotion ? undefined : { opacity: 0 }}
+                          transition={{
+                            duration: DURATION_STATE,
+                            ease: 'easeOut',
+                          }}
+                        >
+                          <Button
+                            size="medium"
+                            onPress={() => {
+                              const at = new Date().toISOString();
+                              decide(
+                                Object.fromEntries(
+                                  ready.map(([key]) => [
+                                    key,
+                                    madeNow('approve', at),
+                                  ]),
+                                ),
+                                `${ready.length} ${unchecked ? 'not checked' : 'ready'} approved`,
+                              );
+                            }}
+                          >
+                            <span>
+                              Approve all{' '}
+                              <MorphingText text={String(ready.length)} />{' '}
+                              {unchecked ? 'not checked' : 'ready'}
+                            </span>
+                          </Button>
+                        </motion.div>
+                      ) : null}
+                    </AnimatePresence>
+                  </div>
+                </SmoothHeight>
               </div>
             </div>
           </DataTable>

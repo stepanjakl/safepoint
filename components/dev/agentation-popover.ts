@@ -71,5 +71,11 @@ export function useNonModalPopover(
 ) {
   const agentationProps = useAgentationPopoverProps(triggerRef);
   useAgentationPopoverDismiss(isOpen, onClose, popoverRef, triggerRef, true);
-  return { ...agentationProps, isNonModal: true };
+  return {
+    isNonModal: true,
+    // Focus can leave the panel before the trigger's press toggles it.
+    shouldCloseOnInteractOutside:
+      agentationProps.shouldCloseOnInteractOutside ??
+      ((element: Element) => !triggerRef.current?.contains(element)),
+  };
 }

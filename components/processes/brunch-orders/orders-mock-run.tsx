@@ -772,8 +772,6 @@ export function OrdersMockRun({
     ? { status: mockApplication.status }
     : applied;
 
-  const decidedCount = proposed ? Object.keys(proposed.decisions).length : 0;
-
   const status = (step: ProcessStep): ProcessStep['status'] =>
     step.id === 'instructions'
       ? 'complete'
@@ -865,13 +863,7 @@ export function OrdersMockRun({
             ? 'Proposing…'
             : !proposed?.proposedAt
               ? 'Not proposed'
-              : allDecided
-                ? 'All decided'
-                : decidedCount
-                  ? `${decidedCount} of ${proposed.total} decided`
-                  : proposed.needYou
-                    ? `${proposed.total} proposed · ${proposed.needYou} need you`
-                    : `${proposed.total} proposed · all ready`
+              : `${proposed.total} ${proposed.total === 1 ? 'item' : 'items'}`
           : step.id === 'apply' && allDecided
             ? effectiveApplied?.status === 'verified'
               ? 'Written and read back'
@@ -883,7 +875,13 @@ export function OrdersMockRun({
   const flag = (step: ProcessStep) =>
     step.id === 'rules' && !rules?.running && rules?.error
       ? `Stopped: ${rules.error.split(/[.:]/)[0]!.toLowerCase()}`
-      : undefined;
+      : step.id === 'propose' &&
+          canPropose &&
+          !proposed?.running &&
+          proposed?.proposedAt &&
+          proposed.needYou > 0
+        ? `${proposed.needYou} need you`
+        : undefined;
 
   const progress = (step: ProcessStep) =>
     step.id === 'rules' && rules?.running && rules.found
@@ -895,6 +893,7 @@ export function OrdersMockRun({
     status: status(step),
     label: label(step),
     flag: flag(step),
+    flagWhenClosed: step.id === 'propose',
     progress: progress(step),
   }));
 

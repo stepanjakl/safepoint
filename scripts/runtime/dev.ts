@@ -12,7 +12,10 @@ import { connect } from 'node:net';
 
 import { watchColours } from '../colours/colour-theme/watch.ts';
 
+import { loadDevConfig } from './dev-config.ts';
 import { clearStaleDevPause } from './dev-pause-plugin.ts';
+
+const devConfig = loadDevConfig();
 
 if (clearStaleDevPause()) {
   console.log('[dev-pause] Cleared stale pause file on startup.');
@@ -39,7 +42,7 @@ function portInUse(port: number): Promise<boolean> {
 }
 
 let agentation: ChildProcess | undefined;
-if (process.env.AGENTATION !== 'off' && !(await portInUse(AGENTATION_PORT))) {
+if (devConfig.agentationEnabled && !(await portInUse(AGENTATION_PORT))) {
   agentation = spawn(
     'node_modules/.bin/agentation-mcp',
     ['server', '--port', String(AGENTATION_PORT)],
@@ -81,7 +84,7 @@ const next = spawn(
     // annotation server is meant to be (AGENTATION=off is not).
     env: {
       ...process.env,
-      NEXT_PUBLIC_AGENTATION: process.env.AGENTATION === 'off' ? 'off' : 'on',
+      NEXT_PUBLIC_AGENTATION: devConfig.nextPublicAgentation,
     },
   },
 );

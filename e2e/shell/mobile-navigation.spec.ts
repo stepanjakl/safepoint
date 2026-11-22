@@ -142,6 +142,14 @@ test('the mobile menu has modal dismissal, search and destination navigation', a
 
   await opener.click();
   await expect(close).toBeVisible();
+  const drawerBox = (await drawer.boundingBox())!;
+  const logoBox = (await drawer
+    .locator('[aria-label="Safepoint"] > .rail-mark')
+    .boundingBox())!;
+  const closeBox = (await close.boundingBox())!;
+  const drawerCenter = drawerBox.x + drawerBox.width / 2;
+  expect(logoBox.x + logoBox.width / 2).toBeLessThan(drawerCenter);
+  expect(closeBox.x + closeBox.width / 2).toBeGreaterThan(drawerCenter);
   await page.setViewportSize({ width: 1000, height: 844 });
   await expect(drawer).toHaveCount(0);
   await expect(opener).toBeHidden();
@@ -164,7 +172,7 @@ test('touch opens and dismisses the mobile menu and switches the process section
   const close = drawer.getByRole('button', { name: 'Close menu' });
   const drawerBox = (await drawer.boundingBox())!;
   const closeBox = (await close.boundingBox())!;
-  expect(closeBox.x + closeBox.width / 2).toBeLessThan(
+  expect(closeBox.x + closeBox.width / 2).toBeGreaterThan(
     drawerBox.x + drawerBox.width / 2,
   );
   await close.tap();

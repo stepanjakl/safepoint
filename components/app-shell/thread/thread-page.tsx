@@ -10,17 +10,19 @@ export function ThreadPage({
   label,
   eyebrow,
   title,
+  primary = true,
   children,
 }: {
   // The page's name for a screen reader, where no title is shown.
   label?: string;
   eyebrow?: string;
   title?: string;
+  primary?: boolean;
   children: ReactNode;
 }) {
   return (
     <main
-      id="main"
+      id={primary ? 'main' : undefined}
       tabIndex={-1}
       className="mx-auto w-[min(100%,760px)] flex-1 px-6 pt-10 pb-8 max-sm:px-4 max-sm:py-7"
     >
