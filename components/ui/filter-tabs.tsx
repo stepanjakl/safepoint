@@ -23,6 +23,9 @@ export type FilterTab<Key extends string = string> = {
   count?: number;
   // The bucket's rank, for its colour. "All" has none and stays neutral.
   severity?: number;
+  // Kept in its place with nothing to show, rather than leaving the strip:
+  // a view the item in hand does not have. Its label says why.
+  disabled?: boolean;
 };
 
 /*
@@ -68,7 +71,7 @@ const ALL_TAB = cx(
 );
 const NEUTRAL_TAB = cx(
   HOVER_FACE,
-  'text-muted-strong data-[hovered]:not-data-[selected]:text-primary data-[focus-visible]:not-data-[selected]:text-primary data-[selected]:text-filter-neutral-on-solid',
+  'text-muted-strong data-[hovered]:not-data-[selected]:text-primary data-[focus-visible]:not-data-[selected]:text-primary data-[selected]:text-filter-neutral-on-solid data-[disabled]:cursor-not-allowed data-[disabled]:text-muted',
 );
 // The count's chip: a rung past the track at rest, a rung more under the
 // pointer or when its group is spied, and a step of the solid when chosen.
@@ -288,6 +291,7 @@ export function FilterTabs<Key extends string>({
           <ToggleButton
             key={tab.key}
             id={tab.key}
+            isDisabled={tab.disabled}
             aria-label={
               tab.count === undefined ? tab.label : `${tab.label}, ${tab.count}`
             }

@@ -201,6 +201,9 @@
   /* Set once so the four sections cannot disagree. 2.5rem clears a 28px
      control with a quarter of its height either side. */
   --spacing-sheet-head: 2.5rem;
+  /* The list column beside a detail, runs and versions alike, so the divider
+     stays put as the reader changes tab. */
+  --spacing-sheet-rail: 14.5rem;
   /* A whole pixel, not the control highlight's three quarters: at 0.75px a 1x
      display paints a partial line or none. */
   --spacing-sheet-highlight: var(--highlight-sheet);

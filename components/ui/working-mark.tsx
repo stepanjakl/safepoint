@@ -98,7 +98,11 @@ export type LoaderPhase = 'waiting' | 'shown' | 'slow';
   waited, so its content arrives rather than cuts in; content it already
   had, as on a revisit, is simply there.
 */
-export function useLoader(loading: boolean): {
+export function useLoader(
+  loading: boolean,
+  // Longer where what it stands in for is still on screen meanwhile.
+  delay = LOADER_DELAY_MS,
+): {
   phase: LoaderPhase | null;
   fadeIn: boolean;
 } {
@@ -112,13 +116,13 @@ export function useLoader(loading: boolean): {
     const show = setTimeout(() => {
       shownAt.current ??= performance.now();
       setPhase((current) => current ?? 'shown');
-    }, LOADER_DELAY_MS);
+    }, delay);
     const slow = setTimeout(() => setPhase('slow'), LOADER_SLOW_MS);
     return () => {
       clearTimeout(show);
       clearTimeout(slow);
     };
-  }, [loading]);
+  }, [loading, delay]);
 
   useEffect(() => {
     if (loading || phase === null) return;

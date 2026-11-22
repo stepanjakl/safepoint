@@ -142,6 +142,9 @@ export type ProcessRun = {
   duration?: string;
   // Where a running run has got to, against the process's steps.
   progress?: { at: number; of: number };
+  // What a running run is doing, where the server can say: a job working for
+  // it, or nothing, waiting for a person at the step named by its id.
+  activity?: { working: true } | { working: false; at: string };
   // Who decided, once someone has.
   decidedBy?: string;
   instructionsVersion: string;

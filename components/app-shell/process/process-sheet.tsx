@@ -1,8 +1,6 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { createPortal } from 'react-dom';
-import { MorphingText, MORPH_WORDS_MS } from '@/components/ui/morphing-text';
 import {
   Activity,
   createContext,
@@ -10,7 +8,6 @@ import {
   useEffect,
   useRef,
   useState,
-  type AnimationEvent,
   type ReactNode,
 } from 'react';
 import { cx } from '@/lib/ui/cx';
@@ -22,7 +19,6 @@ import { writePreferenceCookie } from '@/components/app-shell/stored-record';
 import { ProcessHeader } from './process-header';
 import { ProcessContentTransition } from './process-content-transition';
 import { ProcessPanels } from './process-panels';
-import { useSheetChrome } from './sheet-chrome';
 import type { AsideView } from '@/components/app-shell/drawer-aside';
 import { useProcessTab, type ProcessTab } from './process-tab-store';
 import { RunsList } from '@/components/app-shell/runs/runs-list';
@@ -37,12 +33,15 @@ import { ScheduleControl } from './schedule-control';
 import { SectionRow } from '@/components/app-shell/runs/section-row';
 import { useShellPageNavigation } from '@/components/app-shell/shell-page-transition';
 import {
+  ScreenArrival,
   SectionClock,
   SettledLayer,
   useDetailHold,
+  useScreenArriving,
   useScreenSettled,
 } from '@/components/ui/screen-settled';
-import { useSwap } from '@/components/ui/swap';
+import { TAB_PACE, useSwap } from '@/components/ui/swap';
+import { motionTime } from '@/lib/ui/motion-time';
 
 const TAB_MOTION = (): 'fade' => 'fade';
 
@@ -123,7 +122,7 @@ export function ProcessSheet({
 }) {
   // Arriving from another process is an entrance too, for the detail's beat.
   // In-app navigation falls back to Runs; reloads keep the tab last open.
-  const { enteringProcess, navigated } = useShellPageNavigation();
+  const { navigated } = useShellPageNavigation();
   const [stored, setTab, resetTab] = useProcessTab(process.id, savedTabs);
   const [landedOnRuns, setLandedOnRuns] = useState(navigated);
   useEffect(() => {
@@ -165,19 +164,14 @@ export function ProcessSheet({
   };
   const showVersion = (version: string) =>
     ask({ kind: 'version', version, face: 'changes' }, 'instructions');
-  // The selected tab answers at once; its previous body fades before the new
-  // section arrives, without moving the dividers inside either layout.
-  // The tab shown is held unseen until the sheet's frame has moved onto it
-  // (sheet-chrome.ts), so the line is in place before what it divides.
-  const [frameReady, setFrameReady] = useState<ProcessTab | null>(null);
+  // The selected tab answers at once; its previous body fades out and the
+  // next fades in, at a tab's pace, frame and all.
   const { shown, incoming, layer, entering } = useSwap(
     tab,
     TAB_MOTION,
     chosen,
-    undefined,
-    frameReady === tab,
+    TAB_PACE,
   );
-  if (incoming !== null && frameReady !== null) setFrameReady(null);
   // The current version, which a publish in this browser can move on.
   const { current, versions } = useInstructions(
     process.id,
@@ -202,15 +196,16 @@ export function ProcessSheet({
 
   // The section a swap has landed, so what it holds can begin its own entrance.
   const [landed, setLanded] = useState<ProcessTab | null>(null);
-  // The frame's bands and divider, held and moved through a swap.
-  const chrome = useRef<HTMLDivElement>(null);
-  const chromeTitles = useSheetChrome(chrome, {
-    shown,
-    incoming,
-    settled: incoming === null && (!entering || landed === shown),
-    onShow: setFrameReady,
-  });
   if (incoming && landed !== null) setLanded(null);
+  /*
+    Every tab shown so far stays rendered, hidden, so coming back to one shows
+    it rather than building it again: a run's thread is thousands of elements.
+    The one coming in is rendered ahead too, so the swap only has to show it.
+  */
+  const [visited, setVisited] = useState<ProcessTab[]>([shown]);
+  if (!visited.includes(shown)) setVisited([...visited, shown]);
+  const layers =
+    incoming && !visited.includes(incoming) ? [...visited, incoming] : visited;
 
   const section = (key: ProcessTab) =>
     key === 'runs' ? (
@@ -223,7 +218,7 @@ export function ProcessSheet({
       // Clipped to the pane's inner radius. The lists inside are full-bleed
       // and carry fills of their own, and at the pane's own radius they
       // paint over the edge its face draws in the bottom corners.
-      <div className="shell:@max-sheet-wide/sheet:grid-rows-[auto_minmax(0,1fr)] shell:min-h-0 @sheet-wide/sheet:grid-cols-[232px_minmax(0,1fr)] rounded-b-shell-inner clip-past-pane-highlight process-runs grid grid-cols-[minmax(0,1fr)]">
+      <div className="shell:@max-sheet-wide/sheet:grid-rows-[auto_minmax(0,1fr)] shell:min-h-0 @sheet-wide/sheet:grid-cols-[var(--spacing-sheet-rail)_minmax(0,1fr)] rounded-b-shell-inner clip-past-pane-highlight process-runs grid grid-cols-[minmax(0,1fr)]">
         {/* Full-bleed: the list draws its own rules edge to edge, and
               padding on the column would leave them floating short of it. */}
         <aside
@@ -231,14 +226,14 @@ export function ProcessSheet({
           aria-labelledby="runs-heading"
           className="process-runs-list sheet-bleed @sheet-wide/sheet:sheet-bleed-bottom @max-sheet-wide/sheet:sheet-bleed-end shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative"
         >
+          {/* The action first, where the rows' text starts; the setting at
+              the end. */}
           <SectionRow id="runs-heading" title="Runs">
-            <span className="flex items-center gap-1">
-              <ScheduleControl
-                processId={process.id}
-                schedule={process.schedule}
-              />
-              <StartRunButton />
-            </span>
+            <StartRunButton />
+            <ScheduleControl
+              processId={process.id}
+              schedule={process.schedule}
+            />
           </SectionRow>
           <RunsList
             process={process}
@@ -304,76 +299,55 @@ export function ProcessSheet({
           className="process-sheet-frame shell:grid shell:min-h-0 shell:grid-rows-[minmax(0,1fr)] rounded-b-shell-inner shell:rounded-tr-shell-inner clip-past-pane-highlight grid-cols-[minmax(0,1fr)]"
           finishesLeaving
         >
-          <div ref={chrome} className="sheet-chrome" aria-hidden="true" />
-          {chromeTitles.map(({ host, text }, index) =>
-            createPortal(
-              <MorphingText text={text} duration={MORPH_WORDS_MS} />,
-              host,
-              String(index),
-            ),
-          )}
-          {/* The section on screen, and the one coming while it fades out:
-              rendered hidden beforehand, so the swap only has to show it and a
-              heavy section cannot stall its own fade-in. */}
-          {(incoming ? [shown, incoming] : [shown]).map((key) => {
-            const visible = key === shown;
-            return (
-              <Activity key={key} mode={visible ? 'visible' : 'hidden'}>
-                <motion.div
-                  {...(visible ? layer : { initial: { opacity: 0 } })}
-                  onAnimationComplete={(definition) => {
-                    if (!visible) return;
-                    layer.onAnimationComplete(definition);
-                    if (
-                      typeof definition === 'object' &&
-                      definition !== null &&
-                      'opacity' in definition &&
-                      definition.opacity === 1
-                    )
-                      setLanded(key);
-                  }}
-                  className="process-sheet-swap shell:grid shell:min-h-0 shell:grid-rows-[minmax(0,1fr)] relative z-1 grid-cols-[minmax(0,1fr)]"
-                  data-swap-entering={(visible && entering) || undefined}
-                >
-                  <SettledLayer
-                    settled={visible && (!entering || landed === key)}
+          <ScreenArrival>
+            {layers.map((key) => {
+              const visible = key === shown;
+              return (
+                <Activity key={key} mode={visible ? 'visible' : 'hidden'}>
+                  <motion.div
+                    {...(visible
+                      ? layer
+                      : {
+                          initial: { opacity: 0 },
+                          animate: { opacity: 0 },
+                          transition: { duration: 0 },
+                        })}
+                    onAnimationComplete={(definition) => {
+                      if (!visible) return;
+                      layer.onAnimationComplete(definition);
+                      if (
+                        typeof definition === 'object' &&
+                        definition !== null &&
+                        'opacity' in definition &&
+                        definition.opacity === 1
+                      )
+                        setLanded(key);
+                    }}
+                    className="process-sheet-swap shell:grid shell:min-h-0 shell:grid-rows-[minmax(0,1fr)] relative z-1 grid-cols-[minmax(0,1fr)]"
+                    data-swap-entering={(visible && entering) || undefined}
                   >
-                    <SectionClock
-                      entering={!visible || entering || enteringProcess}
+                    <SettledLayer
+                      settled={visible && (!entering || landed === key)}
                     >
-                      <Forming
-                        active={
-                          key !== 'settings' &&
-                          (!visible || entering || enteringProcess)
-                        }
-                      >
-                        {section(key)}
-                      </Forming>
-                    </SectionClock>
-                  </SettledLayer>
-                </motion.div>
-              </Activity>
-            );
-          })}
+                      <SectionClock>
+                        <Forming>{section(key)}</Forming>
+                      </SectionClock>
+                    </SettledLayer>
+                  </motion.div>
+                </Activity>
+              );
+            })}
+          </ScreenArrival>
         </ProcessContentTransition>
       </div>
     </RunSelectionProvider>
   );
 }
 
-// One column, the width of a run's thread, under the same first row every
-// section of the sheet has.
+// One column, the width of a run's thread. Its version is on the header's tab.
 function PolicyPanel({ policy }: { policy: ProcessPolicy }) {
   return (
-    <SinglePanel
-      id="policy-heading"
-      title={policy.label}
-      chip={
-        <span className="bg-menu-chip value text-micro text-muted-strong rounded-control px-1.5 py-0.5">
-          {policy.version}
-        </span>
-      }
-    >
+    <SinglePanel id="policy-heading" title={policy.label}>
       {policy.content}
     </SinglePanel>
   );
@@ -382,34 +356,37 @@ function PolicyPanel({ policy }: { policy: ProcessPolicy }) {
 // A panel a process brings of its own, in one column.
 /*
   Marks a section as forming while its rows rise into place (process-sheet.css),
-  and lets go once the last of them has, so a
-  row that arrives later -- a run just started -- does not rise in on its own.
+  and lets go once the last of them has, so a row that arrives later -- a run
+  just started -- does not rise in on its own. Only a section arriving with its
+  screen forms (ScreenArrival); one reached by a tab is shown as it is.
+
+  Rows the first fetch brings soon after still rise. Past FORM_WINDOW_MS with
+  nothing rising, the section has formed: on a reload its rows can finish
+  before hydration, so their end is never heard.
 */
-function Forming({
-  active,
-  children,
-}: {
-  active: boolean;
-  children: ReactNode;
-}) {
-  const [formed, setFormed] = useState(!active);
+const FORM_WINDOW_MS = 1000;
+
+function Forming({ children }: { children: ReactNode }) {
+  const arriving = useScreenArriving();
+  const [formed, setFormed] = useState(!arriving);
   const settled = useScreenSettled();
+  const root = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (formed || !settled) return;
+    const timer = window.setTimeout(() => {
+      if (root.current && !rising(root.current)) setFormed(true);
+    }, motionTime(FORM_WINDOW_MS));
+    return () => window.clearTimeout(timer);
+  }, [formed, settled]);
   return (
     <div
+      ref={root}
       className="contents"
       data-section-forming={formed ? undefined : true}
       data-entrance-held={!settled || undefined}
       onAnimationEnd={(event) => {
         if (event.animationName !== 'section-form-in') return;
-        const rising = event.currentTarget
-          .getAnimations({ subtree: true })
-          .some(
-            (animation) =>
-              animation instanceof CSSAnimation &&
-              animation.animationName === 'section-form-in' &&
-              animation.playState === 'running',
-          );
-        if (!rising) setFormed(true);
+        if (!rising(event.currentTarget)) setFormed(true);
       }}
     >
       {children}
@@ -417,20 +394,53 @@ function Forming({
   );
 }
 
+function rising(element: Element) {
+  return element
+    .getAnimations({ subtree: true })
+    .some(
+      (animation) =>
+        animation instanceof CSSAnimation &&
+        animation.animationName === 'section-form-in' &&
+        animation.playState === 'running',
+    );
+}
+
 /*
   The run beside the rail. The section around it has landed (SettledLayer);
-  where it trails the list, its own fade's end is what releases the run.
+  where it trails the list, its own fade's end is what releases the run --
+  read from the animation, which may have ended before hydration, and which
+  reduced motion never starts. Once ended the hold comes off: a tab kept
+  hidden and shown again would otherwise play its fade a second time.
 */
 function RunsDetail({ children }: { children: ReactNode }) {
   const { held, props } = useDetailHold();
   const [ended, setEnded] = useState(!held);
+  const column = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const element = column.current;
+    if (ended || !element) return;
+    const fade = element
+      .getAnimations()
+      .find(
+        (animation) =>
+          animation instanceof CSSAnimation &&
+          animation.animationName === 'process-section-enter',
+      );
+    let live = true;
+    const end = () => {
+      if (live) setEnded(true);
+    };
+    if (fade) fade.finished.then(end, end);
+    else requestAnimationFrame(end);
+    return () => {
+      live = false;
+    };
+  }, [ended]);
   return (
     <div
-      {...props}
+      {...(ended ? {} : props)}
+      ref={column}
       className="process-runs-detail shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative"
-      onAnimationEnd={(event: AnimationEvent<HTMLElement>) => {
-        if (event.target === event.currentTarget) setEnded(true);
-      }}
     >
       <SettledLayer settled={ended}>{children}</SettledLayer>
     </div>
@@ -440,27 +450,21 @@ function RunsDetail({ children }: { children: ReactNode }) {
 export function SinglePanel({
   id,
   title,
-  count,
-  chip,
   width = 'reading',
   children,
 }: {
   id: string;
   title: string;
-  count?: number;
-  chip?: ReactNode;
   // A measure for reading, or room for a grid of cards.
   width?: 'reading' | 'wide' | 'full';
   children: ReactNode;
 }) {
   return (
     <div className="process-panels grid h-full min-h-0 grid-cols-[minmax(0,1fr)]">
-      {/* A column, so the section takes the height below its row and an
+      {/* A column, so the section takes the height below the header and an
           empty state can centre in it. */}
       <div className="process-panel-list sheet-bleed sheet-bleed-head sheet-bleed-end sheet-bleed-end-head shell:min-h-0 shell:overflow-y-auto shell:overscroll-contain flex min-w-0 flex-col">
-        <SectionRow id={id} title={title} count={count}>
-          {chip}
-        </SectionRow>
+        <SectionRow id={id} title={title} />
         <section
           aria-labelledby={id}
           className={cx(

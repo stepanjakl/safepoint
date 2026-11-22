@@ -89,9 +89,16 @@ pnpm check:lines -- --help
 Never judge a fractional shadow or gradient by Chrome alone: Safari rounds it
 to whole device pixels. Never write a fractional edge as one shadow or stop:
 write its `-solid` and `-soft` layers from the split width tokens in
-`app/styles/geometry.css` (STYLING-SYSTEM.md → Faces and edges). For Safari, quit it first -- `safaridriver` must launch
-its own. [`docs/interface/LINE-TESTING.md`](docs/interface/LINE-TESTING.md)
-explains the checker, its output and what it has measured.
+`app/styles/geometry.css` (STYLING-SYSTEM.md → Faces and edges).
+
+To find why a line differs before editing anything, `pnpm lines:compare`
+compares one region (a corner, a junction) across browsers, against a
+workbench reference and under CSS variants (`--help`). Iterate in Chromium and
+WebKit, which run headless. Safari has to stay in front while it is measured,
+so confirm there once, with the owner's say-so, and quit Safari first:
+`safaridriver` must launch its own.
+[`docs/interface/LINE-TESTING.md`](docs/interface/LINE-TESTING.md) explains
+both tools, the method, the causes found so far and the open work.
 
 For a visible gap, overdraw, or thickness change at a divider junction, use the
 [2× painted-junction checks](docs/interface/STYLING-SYSTEM.md#checking-painted-divider-junctions)

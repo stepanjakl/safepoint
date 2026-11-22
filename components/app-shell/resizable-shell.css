@@ -8,6 +8,13 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
+  /* The pane's corners only clip; the face and the ring draw them at
+     --radius-shell. Rounded tighter, the clip's curve runs just outside theirs:
+     where the two curves met, the clip faded the ring's outermost pixel again. */
+  .shell-pane {
+    border-radius: calc(var(--radius-shell) - 2px);
+  }
+
   @media (width < 56.25rem) {
     .shell-pane {
       min-block-size: calc(100dvh - 2 * var(--spacing-shell-inset));

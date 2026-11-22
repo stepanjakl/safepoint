@@ -1,7 +1,10 @@
 import { SinglePanel } from '@/components/app-shell/process/process-sheet';
 import { SECTION } from '@/components/app-shell/process/panel-parts';
 import { ProcessView } from '@/components/app-shell/process/process-view';
-import { OrdersRun } from '@/components/processes/brunch-orders/orders-run';
+import {
+  OrdersRun,
+  OrdersRunPrefetch,
+} from '@/components/processes/brunch-orders/orders-run';
 import { RulebookProvider } from '@/components/engine/rulebook-panel';
 import { RulebookPanel } from '@/components/engine/rulebook-view';
 import {
@@ -35,29 +38,31 @@ export default async function BrunchOrdersPage({
   };
   return (
     <RulebookProvider process={brunchOrdersProcess} subject={SUBJECT}>
-      <ProcessView
-        process={brunchOrdersProcess}
-        initialRunId={typeof run === 'string' ? run : null}
-        // Keyed: an element made here and drawn inside a client component is
-        // checked as a list child there, and warns without one.
-        liveThread={<OrdersRun key="live" process={brunchOrdersProcess} />}
-        inputs={SHEET_INPUTS}
-        inputsPanel={
-          <SinglePanel {...SECTION.inputs} width="full">
-            <SourceInputs uses={[SHEET_USE]} initial={sheets} />
-          </SinglePanel>
-        }
-        outputsPanel={
-          <SourceOutputs
-            uses={[SHEET_USE]}
-            initial={sheets}
-            lastWrite={written}
-          />
-        }
-        rulesPanel={<RulebookPanel />}
-      >
-        {null}
-      </ProcessView>
+      <OrdersRunPrefetch>
+        <ProcessView
+          process={brunchOrdersProcess}
+          initialRunId={typeof run === 'string' ? run : null}
+          // Keyed: an element made here and drawn inside a client component is
+          // checked as a list child there, and warns without one.
+          liveThread={<OrdersRun key="live" process={brunchOrdersProcess} />}
+          inputs={SHEET_INPUTS}
+          inputsPanel={
+            <SinglePanel {...SECTION.inputs} width="full">
+              <SourceInputs uses={[SHEET_USE]} initial={sheets} />
+            </SinglePanel>
+          }
+          outputsPanel={
+            <SourceOutputs
+              uses={[SHEET_USE]}
+              initial={sheets}
+              lastWrite={written}
+            />
+          }
+          rulesPanel={<RulebookPanel />}
+        >
+          {null}
+        </ProcessView>
+      </OrdersRunPrefetch>
     </RulebookProvider>
   );
 }

@@ -1,6 +1,15 @@
 'use client';
 
-import { useContext, useState } from 'react';
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react';
+import { useQueryClient, type QueryClient } from '@tanstack/react-query';
+import { useTRPC } from '@/components/trpc/provider';
+import { RunPrefetch } from '@/components/app-shell/runs/run-prefetch';
 
 import { useRunProgress } from '@/components/app-shell/runs/run-progress';
 import { ProcessSheetActions } from '@/components/app-shell/process/process-sheet';
@@ -46,6 +55,67 @@ import { OrdersMockRun } from './orders-mock-run';
 import { ordersAnnouncement, ordersRunStatus } from './orders-progress';
 
 /*
+  Everything a kept run's thread asks for when it opens, asked for at once:
+  its read and rules, and -- where it pinned a rulebook, so its rules were
+  done and it got as far as Calculate -- its values, proposal and decisions,
+  which the steps would otherwise ask for only once the rules had answered.
+  The same keys the steps use (rules-step, calculate-step, propose-step), so
+  what comes is what they show. Asked again only past PREFETCH_FRESH_MS, so a
+  pointer crossing the rail does not ask over and over.
+*/
+const PREFETCH_FRESH_MS = 10_000;
+
+function useOrdersPrefetch() {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  return useCallback(
+    (live: LiveRun) => prefetchOrdersRun(queryClient, trpc, live),
+    [queryClient, trpc],
+  );
+}
+
+function prefetchOrdersRun(
+  queryClient: QueryClient,
+  trpc: ReturnType<typeof useTRPC>,
+  { kept, text, mock }: LiveRun,
+) {
+  const readId = kept.readId;
+  if (mock || readId === null) return;
+  const fresh = { staleTime: PREFETCH_FRESH_MS };
+  void queryClient.prefetchQuery(
+    trpc.read.summary.queryOptions({ id: readId }, fresh),
+  );
+  void queryClient.prefetchQuery(
+    trpc.rules.get.queryOptions({ text, readId }, fresh),
+  );
+  const rulebook = kept.rulebook;
+  if (rulebook === null) return;
+  void queryClient.prefetchQuery(
+    trpc.rules.applied.queryOptions({ text, rulebook }, fresh),
+  );
+  void queryClient.prefetchQuery(
+    trpc.calculate.get.queryOptions({ text, readId, rulebook }, fresh),
+  );
+  void queryClient.prefetchQuery(
+    trpc.propose.get.queryOptions(
+      { text, readId, rulebook, evaluation: 'rules' },
+      fresh,
+    ),
+  );
+  void queryClient.prefetchQuery(
+    trpc.decisions.current.queryOptions(
+      { process: 'brunch-orders', runId: kept.id },
+      fresh,
+    ),
+  );
+}
+
+// Lets the rail ask for a run's data as a row is pointed at or focused.
+export function OrdersRunPrefetch({ children }: { children: ReactNode }) {
+  return <RunPrefetch value={useOrdersPrefetch()}>{children}</RunPrefetch>;
+}
+
+/*
   A Brunch orders run, step by step. It moves only when a person acts: the
   instructions it runs under, reading the sheet, then the rules. The later
   steps are listed with the phase that brings each one
@@ -87,6 +157,11 @@ function OrdersThread({
   const debug = useRunDebug();
   const { kept, text } = live;
   const { restoring, finishRestoring } = useRunRestoration(kept.readId);
+  // Every step's data at once, rather than each as the one before answers.
+  // Once per run: the thread is keyed on it.
+  const prefetch = useOrdersPrefetch();
+  const [opened] = useState(live);
+  useEffect(() => prefetch(opened), [prefetch, opened]);
   const [rulesReady, setRulesReady] = useState(false);
   const [calculateReady, setCalculateReady] = useState(false);
   const [proposeReady, setProposeReady] = useState(false);

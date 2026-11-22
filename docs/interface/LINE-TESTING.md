@@ -17,6 +17,8 @@ pnpm check:lines -- --browser chromium,webkit,safari    # and Safari itself
 pnpm check:lines -- --route /processes/brunch-orders    # a real screen
 pnpm check:lines -- --theme dark --scale 3              # dark theme, at 3×
 pnpm check:lines -- --route /workbench/rounded-edges --browser chromium,safari --loupe
+pnpm lines:compare -- --box .shell-pane --corner 'bottom left' --radius 10 \
+  --reference /workbench/rounded-edges --reference-box '[data-specimen="layered/pane"]'
 pnpm check:lines -- --help
 pnpm exec playwright test e2e/design/line-geometry.spec.ts --project=light
 pnpm exec vitest run scripts/checks/line-geometry       # the measuring code, no browser
@@ -35,6 +37,9 @@ Exit 0 clean, 1 findings that fail, 2 it could not run.
   automation_. Settings › Developer › _Allow remote automation_ must be on, and
   `safaridriver --enable` run once. The checker opens its own Safari window and
   closes the session when it is done; you can reopen your own Safari afterwards.
+  Safari stops rendering while its window is covered or in the background, so
+  it comes to the front while it is measured; the checker refuses to measure a
+  frame Safari has not painted. Chromium and WebKit run headless.
 
 Safari draws at the screen's own pixel ratio (2× on a Retina Mac); `--scale`
 sets the ratio for Chromium and WebKit only. Its window cannot be larger than
@@ -184,9 +189,10 @@ sheen, splits it locally the same way. See
 
 ## Rounded controls
 
-`/workbench/rounded-edges` draws a control's ring and sheen four ways on the
+`/workbench/rounded-edges` draws a control's ring and sheen five ways on the
 app's widths and shapes (button, icon square, pill, card, pane): fractional
-shadows as before, layered (what the app draws), a 0.5px border ring, and a
+shadows as before, layered (what the app draws), a 0.5px border ring, layered
+borders (every band a border, on the element and two pseudo-elements), and a
 border for the ring's solid pixel with only its soft pixel as a shadow. In
 Safari, measured on 22 November 2026:
 
@@ -195,11 +201,16 @@ Safari, measured on 22 November 2026:
 | fractional           | uneven: one pixel on two sides, two on the others                                         |
 | layered              | even; the sheen's soft last pixel lands a few levels lighter inside a radius; pills exact |
 | 0.5px border ring    | identical in every browser, the ring one device pixel instead of one and a half           |
+| layered borders      | identical in every browser on the straight sides                                          |
 | border + soft shadow | the ring as Chrome's; the sheen as layered                                                |
 
-Inside a radius, Safari softens the inner edge of any inset shadow; a border it
-draws exactly. Only a ring that is a border, with no soft pixel, is identical
-everywhere.
+Inside a radius, Safari softens the inner edge of any inset shadow along the
+straight sides; it draws a border exactly. Round the corners themselves, with
+Safari's captures aligned to Chrome's, the curve differs least with layered
+shadows (worst pixel 11-13 levels, under ten pixels past 8 levels per corner),
+then layered borders (19-22), then a 0.5px border (28-37) and fractional
+shadows (36-45): each engine antialiases a curve its own way, whatever draws
+it. The app keeps layered shadows.
 
 ## What has been measured
 
@@ -226,6 +237,100 @@ one pixel instead of two and paint it a pixel into the frame's ring, and move
 the column divider a pixel right. Drawn layered, the junction is identical in
 all three.
 
+## Investigating a difference
+
+What worked, in this order:
+
+1. **Find it.** `pnpm check:lines -- --route <screen>` marks every line that
+   differs between browsers or changes along its length; `--loupe` on a page of
+   specimens, or `pnpm lines:compare` on any region, enlarges it.
+2. **Compare against something known to be right.** A workbench specimen drawn
+   the same way (`/workbench/rounded-edges`, the edge lab) in the _same_
+   browser is the reference for a live screen; another browser is the
+   reference for an engine difference. Make sure the reference is right where
+   it is compared: an unclipped table is a fair reference at its bottom
+   corners, not at its top ones, where its header band then shows past the
+   curve.
+3. **Measure what you mean.** `lines:compare --radius` scores only the pixels
+   on a corner's arc, so a rule or row shifted nearby does not count against
+   the curve. Crops are aligned within two device pixels first: text above a
+   box lays out a pixel apart in different engines, and every box below it
+   moves with it.
+4. **Isolate the cause with CSS variants, not edits.** `--variant 'name=css'`
+   adds a stylesheet for one capture: switch a clip off, hide a layer, try a
+   radius. A diagnostic variant (`overflow: visible`) that fixes the
+   difference names the cause; a candidate fix then has to match it. Injected
+   rules lose to the page's own on specificity -- use `!important`, or the
+   variant silently changes nothing.
+5. **Check positions, not only widths.** `--probe`-style box reads
+   (`capture.ts` `probes`) give each element's box in CSS px; times the pixel
+   ratio, any fraction is a box between device pixels, which engines round
+   differently.
+6. **Iterate headless, confirm in Safari.** Playwright's WebKit reproduces most
+   of Safari's rounding and runs without a window. Confirm in Safari once, and
+   run a Safari capture twice before believing it (see below).
+
+## Causes found, and the rule each gives
+
+| Cause                                                                 | What it looked like                                                                   | Rule                                                                                                                                                        |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A fractional width in a shadow, gradient stop, clip or element height | Safari's rings one pixel on two sides, two on the others; rules a pixel thin or thick | Draw it as whole-device-pixel layers: `-solid` and `-soft` from `geometry.css`                                                                              |
+| A box edge between device pixels                                      | A curve or line a third or half of a device pixel off in WebKit                       | Put the box on the grid: whole-pixel tokens, or, for a box sized by its content, snap it as `NotchSnap` does                                                |
+| A clip whose curve is the ring's own curve                            | The ring's outermost pixel thinner round the corners, in every browser                | Never clip a ring on its own curve: round the clip tighter when the face is a separate layer (the pane), or clip in an inner element (the data table, open) |
+| `overflow-clip-margin`, which Safari does not support                 | Rules stopping two device pixels short of the ring                                    | In `@supports not (overflow-clip-margin: 1px)`, clip the paint with `clip-path: inset(-1px round …)` and the element's radii grown by that pixel            |
+| A border or outline round a curve in Chrome                           | The same ring 20-30 levels off the shadow-drawn one on the arc                        | Draw rounded rings as shadows; borders only where there is no curve to match                                                                                |
+| Safari softening an inset shadow inside a radius                      | The last soft pixel 3-4 levels lighter                                                | Inherent; below what can be seen. Corners differ between engines by 12-13 levels at most, whatever draws them                                               |
+| Half pixels that cancel out                                           | Fixing one edge onto the grid moves another off (the narrow notch)                    | Change the geometry as a whole, never one length of it                                                                                                      |
+
+## Pitfalls in measuring
+
+- **Safari renders only while visible.** A covered or background window stops
+  painting, and WebDriver then returns an old frame: the same variant measured
+  fixed in two runs and broken in a third. `capture.ts` now refuses to
+  measure when no animation frame arrives, and shoots until two frames agree.
+- **Playwright's WebKit is not Safari.** It differs on several native cases
+  (see the table above). Iterate in it; decide in Safari.
+- **A page that polls never goes network-idle.** Captures wait for `load` and
+  then for the page to settle.
+- **Infinite animations cannot be finished**; captures pause them.
+- **Safari's screen bounds its window.** When Safari is asked for, the checkers
+  capture it first and read every browser at the viewport it got.
+- **Colour noise.** Safari's screenshots carry 1-2 levels of noise on flat
+  faces, and its long lines come out as many short segments in a screen
+  reading; the tolerances allow for the first, and the segment count is not a
+  verdict.
+- **A T-junction is not a poke-through.** A line that continues past a junction
+  can change its layers for a few pixels; the checker counts a stub only when
+  nothing continues after it.
+- **The dev server recompiles under you** while files change: a timed-out page
+  is usually that, not the change under test.
+
+## Open work
+
+- **Data-table corners.** `DataTable`'s standard card paints its face, clips to
+  its radius and draws its ring on `::after` inside that clip, so its ring's
+  outermost pixel is antialiased twice (worst 17-18 levels against an
+  unclipped ring). Borders and outlines measured worse in Chrome. The plan:
+  the outer card keeps `className`, `ref`, `as`, props, face, radius and ring
+  and stops clipping; a new inner element wraps the children and clips at the
+  face's radius, inside any border. The proposal table's top padding (the
+  sticky track's containing-block trick in `engine-run.css`) moves to that
+  inner element; `.proposal-table-card` stays on the outer one for its test.
+  The read card's fade stays on the outer card, so the ring fades with it.
+  Verify with `lines:compare` at the table's corners, and the propose and
+  read-step tests.
+- **The narrow notch.** Its floor (`--narrow-title-height`, 41.75px) and its
+  side turn (`--notch-corner` minus the edge, 9.25px below) are half device
+  pixels that add up to a whole one. WebKit draws the narrow header's band a
+  device pixel thicker than Chrome. Redraw the notch's floor, side turn, cover
+  and arc on the grid together, then re-measure the notch-join test's rows
+  (`e2e/shell/process-dividers.spec.ts`, "mobile notch borders").
+- **The top of the runs column in Safari** -- the divider meeting the header
+  rule, the sheen below the header at the pane's left edge -- after the sheet
+  rework then in progress settles.
+- **The visual baseline** (`pnpm check:visual:update`) once the tree is
+  otherwise clean, so it records these edges and nothing else.
+
 ## Limits
 
 - **Rounded corners in Safari.** Safari softens an inset shadow inside a
@@ -233,17 +338,13 @@ all three.
   `174·205·236` where Chrome reads `174·206`. The third pixel is about four
   levels off the face, below what can be seen but above the checker's
   tolerance, so those rows fail in Safari by design. A plain `border` with the
-  same radius is exact; see [Rounded controls](#rounded-controls).
-- **Positions as well as widths.** A box whose edge falls between device pixels
-  is placed by each engine's own rounding, so a line can sit a pixel apart even
-  at a whole-pixel width. On the process screen at a narrow window one pane
-  edge does; the checker reports it as a line ending elsewhere or a pixel
-  thicker.
+  same radius is exact on straight sides; see [Rounded controls](#rounded-controls).
 - **3× screens.** WebKit is uneven at 3× where a box sits off the device-pixel
   grid, and four-layer stacks gain a pixel on one side even on it, because one
   device pixel (1/3px) is not a whole number of WebKit's 1/64px layout units.
-- **Corners are not measured.** Each engine antialiases curves its own way;
-  profiles are read on straight sides, clear of the radius.
+- **Corners in the lab are not measured.** Each engine antialiases curves its
+  own way; profiles are read on straight sides, clear of the radius. Use
+  `lines:compare --radius` for a curve.
 - **Zoom.** Browser zoom gives fractional ratios such as 2.2×, where no CSS
   width is a whole number of device pixels; expect small differences there.
 - **CI runs Chromium on Linux only.** The spec's Chromium half runs there; the
@@ -252,15 +353,20 @@ all three.
 
 ## Where things are
 
-| File                                       | Does                                                                          |
-| ------------------------------------------ | ----------------------------------------------------------------------------- |
-| `scripts/checks/check-line-geometry.ts`    | the command line: options, tables, marked-up screenshots                      |
-| `scripts/checks/line-geometry/capture.ts`  | screenshots from Playwright and from Safari's WebDriver, and page preparation |
-| `scripts/checks/line-geometry/analyse.ts`  | profiles, segments, junctions, comparisons -- pixels in, no browser           |
-| `scripts/checks/line-geometry/evaluate.ts` | verdicts: the lab against its declarations, a screen against itself           |
-| `scripts/checks/line-geometry/png.ts`      | PNG decoding and encoding with `node:zlib`                                    |
-| `app/workbench/edge-lab/`                  | the lab page and its recipes                                                  |
-| `app/workbench/rounded-edges/`             | a rounded control's ring and sheen four ways                                  |
-| `app/styles/geometry.css`                  | `--dp` and every width split into `-solid`, `-soft`, `-cover`                 |
-| `components/ui/device-pixel-script.tsx`    | sets `--dp` before first paint and when the ratio changes                     |
-| `e2e/design/line-geometry.spec.ts`         | holds the lab in the suite                                                    |
+| File                                       | Does                                                                                        |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| `scripts/checks/check-line-geometry.ts`    | `pnpm check:lines`: lab tables, screen readings, marked-up screenshots, loupes              |
+| `scripts/checks/compare-lines.ts`          | `pnpm lines:compare`: one region across browsers, a reference page and CSS variants         |
+| `scripts/checks/line-geometry/capture.ts`  | captures from Playwright and Safari's WebDriver: page preparation, extra CSS, element boxes |
+| `scripts/checks/line-geometry/analyse.ts`  | profiles, segments, junctions, comparisons -- pixels in, no browser                         |
+| `scripts/checks/line-geometry/evaluate.ts` | verdicts: the lab against its declarations, a screen against itself                         |
+| `scripts/checks/line-geometry/compare.ts`  | region crops, aligned comparison, arc masks, enlarged sheets                                |
+| `scripts/checks/line-geometry/png.ts`      | PNG decoding and encoding with `node:zlib`                                                  |
+| `app/workbench/edge-lab/`                  | the lab page and its recipes                                                                |
+| `app/workbench/rounded-edges/`             | a rounded control's ring and sheen five ways                                                |
+| `app/styles/geometry.css`                  | `--dp` and every width split into `-solid`, `-soft`, `-cover`                               |
+| `components/ui/device-pixel-script.tsx`    | sets `--dp` before first paint and when the ratio changes                                   |
+| `components/ui/notch-snap.tsx`             | puts a notch's loose edge on a device pixel                                                 |
+| `components/app-shell/resizable-shell.css` | the pane's clip, rounded tighter than its ring                                              |
+| `components/app-shell/runs/runs-list.css`  | `clip-past-pane-highlight`, with Safari's `clip-path` fallback                              |
+| `e2e/design/line-geometry.spec.ts`         | holds the lab in the suite                                                                  |

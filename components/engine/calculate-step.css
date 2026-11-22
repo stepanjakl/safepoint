@@ -31,15 +31,11 @@
   }
   /* Lit as the list rows are (list-rows.css): by the keyboard, or
      by the pointer where it is real. The rules touching it step back, so the
-     fill is one band; its own only while shut, else the working is beneath.
-     Not :has() inside :has(), which is invalid and drops the whole rule. */
+     fill is one band. The highlighted row covers its own rule while shut. */
   .calc-row:has(.calc-row-toggle:focus-visible) {
     background-color: var(--sp-row-hover);
   }
-  tr:has(+ .calc-row > th > .calc-row-toggle:focus-visible) > td::before {
-    opacity: 0;
-  }
-  .calc-row:has(.calc-row-toggle[aria-expanded='false']:focus-visible) + tr > td::before {
+  .calc-table tr:has(+ .calc-row > th > .calc-row-toggle:focus-visible) > td::before {
     opacity: 0;
   }
   /* The whole row, its decision buttons too: they sit above the toggle's cover. */
@@ -47,10 +43,7 @@
     .calc-row:hover {
       background-color: var(--sp-row-hover);
     }
-    tr:has(+ .calc-row:hover) > td::before {
-      opacity: 0;
-    }
-    .calc-row:has(.calc-row-toggle[aria-expanded='false']):hover + tr > td::before {
+    .calc-table tr:has(+ .calc-row:hover) > td::before {
       opacity: 0;
     }
   }

@@ -86,9 +86,12 @@ export function useAsidePanel<View>({
     setExiting(true);
   };
   const openAside = (view: View) => {
-    // The control that opened the panel closes it.
+    // The control that opened the panel closes it -- unless the list's width
+    // is hiding the panel, where choosing it is what shows it.
     if (aside && !exiting && viewKey(aside) === viewKey(view)) {
-      closeAside();
+      const panel = document.querySelector(`${scope} .drawer-aside`);
+      if (panel && panel.getClientRects().length === 0) setAside(view);
+      else closeAside();
       return;
     }
     const active = document.activeElement;

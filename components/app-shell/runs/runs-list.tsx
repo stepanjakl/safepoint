@@ -107,6 +107,10 @@ export function RunsList({
                 onSelect={
                   selection ? () => selection.select(run.id) : undefined
                 }
+                onIntent={() => selection?.prefetch?.(run.id)}
+                stepName={(id) =>
+                  process.steps?.find((step) => step.id === id)?.name ?? id
+                }
               />
               {changes.length ? (
                 <Boundary

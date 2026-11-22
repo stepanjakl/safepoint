@@ -49,7 +49,10 @@ const OPPOSITE: Record<SwapMotion, SwapMotion> = {
 export type SwapPace = { leave: number; enter: number };
 const PANE_PACE: SwapPace = { leave: DURATION_STATE, enter: DURATION_PANE };
 // A tab's body is a smaller thing to trade than a page, so it goes quicker.
-const TAB_PACE: SwapPace = { leave: DURATION_TAB_LEAVE, enter: DURATION_STATE };
+export const TAB_PACE: SwapPace = {
+  leave: DURATION_TAB_LEAVE,
+  enter: DURATION_STATE,
+};
 
 // The fade-out normally ends in Motion's completion callback; this covers
 // a missed event. At the fade's own pace (motionTime): a slowed fade would
@@ -63,8 +66,8 @@ export function useSwap<K extends string>(
   // such as a stored preference arriving after hydration, is not a journey.
   animate = true,
   pace: SwapPace = PANE_PACE,
-  // False holds the new content unseen once it is mounted, for a caller that
-  // has to read its layout before it may show (sheet-chrome.ts).
+  // False holds the new content unseen once it is mounted, for a caller whose
+  // replacement is not ready to be read yet (run-view.tsx).
   canShow: boolean | ((shown: K) => boolean) = true,
   // A caller can hold the outgoing content until its replacement is ready.
   canSwap: (shown: K) => boolean = () => true,

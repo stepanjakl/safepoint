@@ -175,11 +175,6 @@
   --fold-min: 200ms;
   --fold-max: 350ms;
   --fold-fade: 160ms;
-  /* The sheet's frame between tabs (sheet-chrome.ts): its line crosses at a
-     pace set by how far it goes, within these limits. */
-  --travel-pace: 0.35ms;
-  --travel-min: 160ms;
-  --travel-max: 380ms;
 }
 
 /* Tile saturation ceilings, as OKLCH chroma. A tile keeps its lightness and

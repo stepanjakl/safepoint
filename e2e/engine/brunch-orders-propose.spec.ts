@@ -486,9 +486,21 @@ test('a record opens to the model’s reason and the checks’ working', async (
 }) => {
   const table = await propose(page);
   const avocados = table.getByRole('button', { name: /^AV-RR/ });
+  await page.mouse.move(0, 0);
   await avocados.focus();
+  const details = page.locator(
+    `[id="${await avocados.getAttribute('aria-controls')}"]`,
+  );
+  const dividerOpacity = () =>
+    details.evaluate(
+      (fold) => getComputedStyle(fold.parentElement!, '::before').opacity,
+    );
+  // A keyboard highlight covers the collapsed rule without fading it.
+  expect(await dividerOpacity()).toBe('1');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.keyboard.press('Enter');
   await expect(avocados).toHaveAttribute('aria-expanded', 'true');
+  expect(await dividerOpacity()).toBe('1');
   await expect(
     table.getByText(/Unsure: Covering the target needs more/).last(),
   ).toBeVisible();
@@ -549,12 +561,12 @@ test('source citations highlight only the cited value in the sheet drawer', asyn
 });
 
 test('the filter shows only what needs a person', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
   const table = await propose(page);
   await expect(proposalFact(page, '11 items')).toBeVisible();
   const needYou = proposalFact(page, '3 need you');
   const toggle = proposeToggle(page);
   await expect(needYou).toBeHidden();
-  await page.emulateMedia({ reducedMotion: 'no-preference' });
   await toggle.press('Enter');
   await expect(needYou).toBeVisible();
   await expect(needYou).toHaveCSS(
@@ -564,9 +576,12 @@ test('the filter shows only what needs a person', async ({ page }) => {
   await expect(needYou).toHaveCSS('translate', 'none');
   await toggle.blur();
   await page.mouse.move(0, 0);
-  const face = await needYou.evaluate(
-    (pill) => getComputedStyle(pill).backgroundColor,
-  );
+  const face = await needYou.evaluate(async (pill) => {
+    await Promise.allSettled(
+      pill.getAnimations().map((motion) => motion.finished),
+    );
+    return getComputedStyle(pill).backgroundColor;
+  });
   await toggle.hover();
   await expect(needYou).not.toHaveCSS('background-color', face);
   await page.mouse.move(0, 0);
@@ -574,6 +589,18 @@ test('the filter shows only what needs a person', async ({ page }) => {
   await expect(proposalFact(page, '11 items')).toBeVisible();
   await toggle.press('Enter');
   await expect(needYou).toBeHidden();
+  const body = table.locator('tbody');
+  await body.evaluate((element) => {
+    const observer = new MutationObserver(() => {
+      if (element.querySelectorAll('th[scope="row"]').length !== 3) return;
+      element.setAttribute(
+        'data-test-swap-opacity',
+        getComputedStyle(element).opacity,
+      );
+      observer.disconnect();
+    });
+    observer.observe(element, { childList: true });
+  });
   await page
     .getByRole('radiogroup', { name: 'Records to show' })
     .getByRole('radio', { name: /^Records that need you/ })
@@ -583,12 +610,40 @@ test('the filter shows only what needs a person', async ({ page }) => {
     /AV-RR/,
     /CF-40/,
   ]);
+  await expect(body).toHaveAttribute('data-test-swap-opacity', '0');
+  await expect(body).toHaveCSS('opacity', '1');
 });
 
 const approveRow = (table: Locator, key: RegExp) =>
   table
     .getByRole('row', { name: key })
     .getByRole('button', { name: /^Approve$/ });
+
+test('row controls leave before their replacements enter', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  const table = await propose(page);
+  const row = table.getByRole('row', { name: /^AV-RR/ });
+  const approve = approveRow(table, /^AV-RR/);
+  await approve.click({ trial: true });
+  await row.evaluate((element) => {
+    const observer = new MutationObserver(() => {
+      const buttons = [...element.querySelectorAll('button')].map((button) =>
+        button.textContent?.trim(),
+      );
+      if (!buttons.includes('Undo')) return;
+      element.setAttribute(
+        'data-test-controls',
+        buttons.includes('Approve') ? 'overlap' : 'sequential',
+      );
+      observer.disconnect();
+    });
+    observer.observe(element, { childList: true, subtree: true });
+  });
+  await approve.press('Enter');
+  await expect(row.getByRole('button', { name: 'Undo' })).toBeVisible();
+  await expect(row).toHaveAttribute('data-test-controls', 'sequential');
+  await expect(row.getByRole('button', { name: /^AV-RR/ })).toBeFocused();
+});
 
 test('a decision shows at once, and counts as decided once the server has kept it', async ({
   page,

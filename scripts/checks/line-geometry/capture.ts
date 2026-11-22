@@ -38,6 +38,10 @@ export type Capture = {
   page: { edges: string | null; theme: string | null; dpr: number };
   /* The layout viewport, CSS px. */
   viewport: { width: number; height: number };
+  probes: Record<
+    string,
+    { x: number; y: number; width: number; height: number } | null
+  >;
 };
 
 export type CaptureOptions = {
@@ -48,6 +52,10 @@ export type CaptureOptions = {
   width: number;
   height: number;
   fullPage: boolean;
+  /* Appended to the preparation stylesheet: a variant to measure. */
+  css?: string;
+  /* Selectors whose first match's box is reported (CSS px, image origin). */
+  probes?: string[];
 };
 
 /* Hidden, not removed: nothing below changes layout. -webkit-text-fill-color
@@ -79,13 +87,27 @@ const PREPARE_SCRIPT = ({ css, edges }: { css: string; edges: string }) => {
   style.dataset.lineGeometry = '';
   style.textContent = css;
   document.head.append(style);
-  for (const animation of document.getAnimations()) animation.finish?.();
+  // An infinite animation cannot be finished (it throws); it is paused.
+  for (const animation of document.getAnimations()) {
+    try {
+      animation.finish();
+    } catch {
+      animation.pause();
+    }
+  }
 };
 
-const READ_SCRIPT = () => {
+const READ_SCRIPT = (probes: string[]) => {
   const sx = window.scrollX;
   const sy = window.scrollY;
+  const box = (selector: string) => {
+    const el = document.querySelector(selector);
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return { x: r.x + sx, y: r.y + sy, width: r.width, height: r.height };
+  };
   return {
+    probes: Object.fromEntries(probes.map((p) => [p, box(p)])),
     edges: document.documentElement.dataset.edges ?? null,
     theme: document.documentElement.dataset.theme ?? null,
     dpr: window.devicePixelRatio,
@@ -141,18 +163,19 @@ export async function capturePlaywright(
         localStorage.setItem('safepoint.dev.theme', theme);
       } catch {}
     }, opts.theme);
-    const response = await page.goto(opts.url, { waitUntil: 'networkidle' });
+    // Not networkidle: a page polling a run in progress never goes quiet.
+    const response = await page.goto(opts.url, { waitUntil: 'load' });
     if (!response?.ok())
       throw new Error(
         `${opts.url} returned ${response?.status() ?? 'nothing'}.`,
       );
     await page.evaluate(() => document.fonts.ready);
     await page.evaluate(PREPARE_SCRIPT, {
-      css: PREPARE_CSS,
+      css: PREPARE_CSS + (opts.css ?? ''),
       edges: opts.edges,
     });
-    await settle(400);
-    const read = await page.evaluate(READ_SCRIPT);
+    await settle(1200);
+    const read = await page.evaluate(READ_SCRIPT, opts.probes ?? []);
     const png = await page.screenshot({ fullPage: opts.fullPage });
     const image = decodePng(png);
     return {
@@ -162,6 +185,7 @@ export async function capturePlaywright(
       specimens: read.specimens,
       page: { edges: read.edges, theme: read.theme, dpr: read.dpr },
       viewport: { width: opts.width, height: opts.height },
+      probes: read.probes,
     };
   } finally {
     await browser.close();
@@ -307,7 +331,10 @@ export async function captureSafari(opts: CaptureOptions): Promise<Capture[]> {
     }, opts.theme);
     await call('POST', '/url', { url: opts.url });
     await run(() => document.fonts.ready.then(() => true));
-    await run(PREPARE_SCRIPT, { css: PREPARE_CSS, edges: opts.edges });
+    await run(PREPARE_SCRIPT, {
+      css: PREPARE_CSS + (opts.css ?? ''),
+      edges: opts.edges,
+    });
     await settle(600);
     const view = await run<{
       innerWidth: number;
@@ -329,11 +356,36 @@ export async function captureSafari(opts: CaptureOptions): Promise<Capture[]> {
         return window.scrollY;
       }, top);
       await settle(200);
-      const read = await run<ReturnType<typeof READ_SCRIPT>>(READ_SCRIPT);
-      const png = Buffer.from(
-        (await call('GET', '/screenshot')) as string,
-        'base64',
+      const read = await run<ReturnType<typeof READ_SCRIPT>>(
+        READ_SCRIPT,
+        opts.probes ?? [],
       );
+      // Safari stops rendering while its window is covered or in the
+      // background, and then hands back a stale frame. Wait for two frames;
+      // if none comes, say so rather than measure an old picture.
+      const rendering = await run<boolean>(
+        () =>
+          new Promise((resolve) => {
+            setTimeout(() => resolve(false), 1500);
+            requestAnimationFrame(() =>
+              requestAnimationFrame(() => resolve(true)),
+            );
+          }),
+      );
+      if (!rendering) {
+        throw new Error(
+          'Safari is not rendering: its window must stay visible, not covered or minimised, while it is measured.',
+        );
+      }
+      const shoot = async () =>
+        Buffer.from((await call('GET', '/screenshot')) as string, 'base64');
+      let png = await shoot();
+      for (let attempt = 0; attempt < 6; attempt++) {
+        await settle(250);
+        const again = await shoot();
+        if (again.equals(png)) break;
+        png = again;
+      }
       const image = decodePng(png);
       const scale = image.width / view.innerWidth;
       const visible = image.height / scale;
@@ -346,6 +398,12 @@ export async function captureSafari(opts: CaptureOptions): Promise<Capture[]> {
           .filter((sp) => sp.y >= 8 && sp.y + sp.height <= visible - 8),
         page: { edges: read.edges, theme: read.theme, dpr: read.dpr },
         viewport: { width: view.innerWidth, height: view.innerHeight },
+        probes: Object.fromEntries(
+          Object.entries(read.probes).map(([k, r]) => [
+            k,
+            r && { ...r, y: r.y - sy },
+          ]),
+        ),
       });
       if (!opts.fullPage) break;
     }

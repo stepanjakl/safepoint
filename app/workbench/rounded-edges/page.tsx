@@ -23,6 +23,11 @@ const OPTIONS = [
     note: 'The ring as a border, which no browser softens, with the sheen inside it. Exact, but the ring is one device pixel rather than one and a half.',
   },
   {
+    id: 'borders',
+    title: 'Layered borders',
+    note: 'The layered weights, every band drawn as a border on the element and two pseudo-elements. Identical to Chrome on the straight sides in Safari; round the corners no closer than layered shadows, and it takes both pseudo-elements.',
+  },
+  {
     id: 'hybrid',
     title: 'Border and soft shadow',
     note: 'The ring’s solid pixel as a border, only its soft pixel and the sheen as shadows. The ring’s weight as layered, the solid pixel exact.',

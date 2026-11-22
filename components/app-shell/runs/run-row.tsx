@@ -52,14 +52,33 @@ export function RunRow({
   noun,
   selected = run.current === true,
   onSelect,
+  onIntent,
+  stepName = (id) => id,
 }: {
   run: ProcessRun;
   noun: string;
   selected?: boolean;
   onSelect?: () => void;
+  // Pointed at or focused: the run is likely to be chosen next.
+  onIntent?: () => void;
+  // A step's name, for a run waiting at it.
+  stepName?: (id: string) => string;
 }) {
   const tone = runTone[run.status];
-  const status = RUN_STATUS_LABELS[run.status];
+  /*
+    Running says nothing about who it is waiting for. Where the server knows,
+    a run a job is working on says so, and one waiting for a person says
+    whose turn it is and where -- with the ring of a run waiting on a person,
+    in the running tone, quieter than one awaiting review.
+  */
+  const activity = run.status === 'running' ? run.activity : undefined;
+  const waitingAt = activity && !activity.working ? activity.at : null;
+  const status = activity?.working
+    ? 'Working'
+    : waitingAt !== null
+      ? `Your turn · ${stepName(waitingAt)}`
+      : RUN_STATUS_LABELS[run.status];
+  const mark: RunStatus = waitingAt !== null ? 'awaiting_review' : run.status;
   const mock = isMockRunId(run.id);
   const TriggerIcon = TRIGGER_ICON[run.trigger];
   const trigger = RUN_TRIGGER_LABELS[run.trigger];
@@ -83,6 +102,8 @@ export function RunRow({
       type="button"
       className="sheet-row"
       onClick={onSelect}
+      onPointerEnter={onIntent}
+      onFocus={onIntent}
       aria-label={announce(run, noun, status, trigger, stamp, mock)}
       aria-pressed={onSelect ? selected : undefined}
       data-current={selected ? '' : undefined}
@@ -113,14 +134,14 @@ export function RunRow({
         <span className="relative inline-flex size-4 flex-none items-center justify-center">
           <AnimatePresence mode="popLayout" initial={false}>
             <motion.span
-              key={run.status}
+              key={mark}
               className="inline-flex items-center justify-center"
               initial={reduceMotion ? false : { opacity: 0, scale: 0.75 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.75 }}
               transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
             >
-              <RunStatusIcon status={run.status} size={16} />
+              <RunStatusIcon status={mark} size={16} />
             </motion.span>
           </AnimatePresence>
         </span>

@@ -11,7 +11,6 @@ import {
   type CSSProperties,
   type ReactNode,
 } from 'react';
-import { useReducedMotion } from 'motion/react';
 import { DETAIL_AFTER } from '@/lib/ui/motion';
 
 /*
@@ -55,8 +54,33 @@ export function SettledLayer({
 }
 
 /*
+  Whether a part is arriving with its screen: the first paint after a load or
+  a navigation, when its data has just come. Entrances stagger then and only
+  then. Anything mounted once the screen has settled -- another tab, a list
+  swapped in place -- is already local, so it is simply shown. A part reads it
+  once, at mount (useState), since it turns false as soon as the screen lands.
+*/
+const ScreenArriving = createContext(false);
+
+export function useScreenArriving() {
+  return useContext(ScreenArriving);
+}
+
+export function ScreenArrival({ children }: { children: ReactNode }) {
+  const settled = useScreenSettled();
+  const [arriving, setArriving] = useState(true);
+  // A frame after landing: whatever mounted with the screen has read it by then.
+  useEffect(() => {
+    if (!settled) return;
+    const frame = requestAnimationFrame(() => setArriving(false));
+    return () => cancelAnimationFrame(frame);
+  }, [settled]);
+  return <ScreenArriving value={arriving}>{children}</ScreenArriving>;
+}
+
+/*
   When the section a detail belongs to began coming in: null where it was
-  simply there (a first paint, reduced motion), unset until it is shown -- it
+  simply there (a tab, a later mount, reduced motion), unset until it is shown -- it
   may be rendered ahead, hidden. A detail shown with its section is held the
   whole DETAIL_AFTER after the screen settles; one mounted
   later is held for what is left of it, so the list always leads by the same
@@ -64,16 +88,12 @@ export function SettledLayer({
 */
 const SectionStart = createContext<RefObject<number | null> | null>(null);
 
-export function SectionClock({
-  entering,
-  children,
-}: {
-  entering: boolean;
-  children: ReactNode;
-}) {
-  const reduceMotion = useReducedMotion();
-  // Decided at mount: the section is keyed, so each arrival has its own.
-  const [timed] = useState(() => entering && !reduceMotion);
+export function SectionClock({ children }: { children: ReactNode }) {
+  const arriving = useScreenArriving();
+  // Decided at mount: the section is keyed, so each arrival has its own. Only
+  // one arriving with its screen trails its detail; a tab shows both at once.
+  // Not by reduced motion, which the server cannot know: CSS drops the fade.
+  const [timed] = useState(arriving);
   const start = useRef<number | null>(null);
   const settled = useScreenSettled();
   // The list and detail delays share their start after every outer fade ends.

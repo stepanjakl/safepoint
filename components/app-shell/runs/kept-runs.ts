@@ -32,6 +32,7 @@ export const processRunOf = (run: KeptRun): ProcessRun => ({
   trigger: run.trigger as RunTrigger,
   counts: { items: 0 },
   instructionsVersion: run.instructions.version,
+  ...(run.activity ? { activity: run.activity } : {}),
 });
 
 export function useKeptRuns(processId: string, enabled: boolean) {
@@ -65,8 +66,14 @@ export function useKeptRuns(processId: string, enabled: boolean) {
   const record = useMutation(
     trpc.runs.record.mutationOptions({
       scope: { id: `runs-record:${processId}` },
+      // What the run was doing stays until the list is asked again: the
+      // answer to a record does not say.
       onSuccess: (run) =>
-        change((list) => list.map((one) => (one.id === run.id ? run : one))),
+        change((list) =>
+          list.map((one) =>
+            one.id === run.id ? { ...run, activity: one.activity } : one,
+          ),
+        ),
     }),
   );
   const discard = useMutation(

@@ -39,6 +39,10 @@ const jobFor = (owner: DefinitionProcess, text: string) => ({
 export const draftProgress = (owner: DefinitionProcess, text: string) =>
   jobProgress(jobFor(owner, text));
 
+// The same job by the hash of its instructions, as a run keeps them.
+export const draftProgressByHash = (owner: DefinitionProcess, hash: string) =>
+  jobProgress({ ...jobFor(owner, ''), key: hash });
+
 // What every draft job's run is given: ids, never what they name.
 const runOf = (
   job: ReturnType<typeof jobFor>,

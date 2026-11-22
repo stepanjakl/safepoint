@@ -2,8 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { hashOf } from '@/lib/engine/fingerprint';
 import { inScratchDatabase } from '@/lib/engine/scratch.fixture';
-import { brunchOrdersProcess } from '@/lib/processes/brunch-orders/process';
-import { runs } from '@/server/db/schema';
+import { sql } from 'drizzle-orm';
+
+import {
+  BRUNCH_ORDERS_DEFINITIONS,
+  brunchOrdersProcess,
+} from '@/lib/processes/brunch-orders/process';
+import { ensureProcess } from '@/server/db/scope';
+import { jobs, runs } from '@/server/db/schema';
 import { keepStandInRead } from '@/server/storage/reads.fixture';
 
 import {
@@ -82,6 +88,53 @@ describe('runs router', () => {
       [second.id, 'v3'],
       [first.id, 'v1'],
     ]);
+  });
+
+  it('says what a running run is doing: waiting at its step, or a job working for it', async () => {
+    await keepStandInRead(db(), 'live');
+    const { id } = await caller().runs.start({
+      process: 'brunch-orders',
+      instructions: V3,
+    });
+    const activity = async () =>
+      (await caller().runs.list({ process: 'brunch-orders' })).find(
+        (run) => run.id === id,
+      )?.activity;
+    expect(await activity()).toEqual({ working: false, at: 'read' });
+    await caller().runs.record({
+      process: 'brunch-orders',
+      runId: id,
+      readId: 'live',
+    });
+    expect(await activity()).toEqual({ working: false, at: 'rules' });
+
+    // A draft of rules under its instructions, just claimed.
+    await ensureProcess(db(), BRUNCH_ORDERS_DEFINITIONS.id);
+    await db()
+      .insert(jobs)
+      .values({
+        process: BRUNCH_ORDERS_DEFINITIONS.id,
+        kind: 'drafts',
+        key: V3,
+        step: 'finding',
+        running: true,
+        error: null,
+        holder: 'test-holder',
+        heartbeatAt: sql`now()`,
+        startedAt: sql`now()`,
+      });
+    expect(await activity()).toEqual({ working: true });
+
+    // A run moved by a model says only its status.
+    const direct = await caller().runs.start({
+      process: 'brunch-orders-direct',
+      instructions: hashOf(DIRECT),
+    });
+    const [listed] = await caller().runs.list({
+      process: 'brunch-orders-direct',
+    });
+    expect(listed).toMatchObject({ id: direct.id, status: 'running' });
+    expect(listed).not.toHaveProperty('activity');
   });
 
   it('records the read, the pinned rulebook, the step and the status', async () => {

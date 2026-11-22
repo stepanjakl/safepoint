@@ -103,6 +103,10 @@ export function RequestBubble({
   const [ready, setReady] = useState(false);
   const [metrics, setMetrics] = useState<RevealMetrics>(EMPTY_METRICS);
 
+  // Measured by the observer alone: its first report comes after the page's
+  // own layout and before paint, so the first frame is right without forcing
+  // a layout in the middle of mounting a whole thread. It also sees the text
+  // change, so a new render of the same words measures nothing.
   useLayoutEffect(() => {
     const inner = innerRef.current;
     if (!inner) return;
@@ -117,7 +121,6 @@ export function RequestBubble({
           : next,
       );
     };
-    measure();
     const observer = new ResizeObserver(measure);
     observer.observe(inner);
     const frame = requestAnimationFrame(() => setReady(true));
@@ -125,7 +128,7 @@ export function RequestBubble({
       cancelAnimationFrame(frame);
       observer.disconnect();
     };
-  }, [peekLines, children]);
+  }, [peekLines]);
 
   useEffect(() => {
     if (!all) return;

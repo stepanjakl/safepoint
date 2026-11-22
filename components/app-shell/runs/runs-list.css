@@ -91,10 +91,15 @@
   overflow: clip;
   overflow-clip-margin: 1px;
 
+  /* Safari has no clip margin and would cut every bleed short of the ring.
+     Clip the paint instead, a pixel out, with --clip-past-round giving the
+     element's corner radii grown by that pixel (process-sheet.css). */
   @supports not (overflow-clip-margin: 1px) {
+    overflow: visible;
+    clip-path: inset(-1px round var(--clip-past-round, 0px));
     @media (width < 56.25rem) {
       /* The pane clips mobile content. Clipping here cuts dividers short. */
-      overflow: visible;
+      clip-path: none;
     }
   }
 }
@@ -245,10 +250,8 @@
       top: auto;
     }
   }
-  /* The lit line. A band on the swap's overlay (sheet-chrome.ts) always draws
-     it: the lit row that hides it here has faded out with the content. */
-  .sheet-head,
-  .sheet-chrome-band {
+  /* The lit line. */
+  .sheet-head {
     --sheet-head-highlight: var(--sp-raised-edge);
     box-shadow:
       inset 0 calc(var(--edge-hairline-solid) * -1) 0 var(--sp-raised-ring),
@@ -258,31 +261,16 @@
       0 var(--highlight-sheet-soft) 0
         color-mix(in srgb, var(--sheet-head-highlight) var(--highlight-sheet-cover), transparent);
   }
-  /* Lent to the swap's overlay (sheet-chrome.ts), and coming back, without
-     transitions: a lit line easing in would flash where it already shows. */
-  .process-sheet-frame[data-chrome-borrowed] > .process-sheet-swap .sheet-head {
-    background: transparent;
-    border-bottom-width: 0;
-    padding-block-end: var(--sheet-head-rule);
-    box-shadow: none;
-  }
-  .process-sheet-frame:is([data-chrome-borrowed], [data-chrome-returning])
-    > .process-sheet-swap
-    .sheet-head {
-    transition: none;
-  }
   /* Over a run list the head's line is the one under it. The head paints above
      the rows, so its line steps back while the run under it is lit, or it
      would lie across that fill. */
-  .process-sheet-frame:not([data-chrome-borrowed])
-    .sheet-head:has(
-      + .sheet-list > li:first-child > .sheet-row:is([data-current], :focus-visible, :focus-within)
-    ) {
+  .sheet-head:has(
+    + .sheet-list > li:first-child > .sheet-row:is([data-current], :focus-visible, :focus-within)
+  ) {
     --sheet-head-highlight: transparent;
   }
   @media (hover: hover) {
-    .process-sheet-frame:not([data-chrome-borrowed])
-      .sheet-head:has(+ .sheet-list > li:first-child > .sheet-row:hover) {
+    .sheet-head:has(+ .sheet-list > li:first-child > .sheet-row:hover) {
       --sheet-head-highlight: transparent;
     }
   }

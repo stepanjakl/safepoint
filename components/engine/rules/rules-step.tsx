@@ -3,7 +3,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
 
-import { useStepReady } from '@/components/app-shell/runs/run-readiness';
+import {
+  settledOnce,
+  useStepReady,
+} from '@/components/app-shell/runs/run-readiness';
 import { ProcessSheetActions } from '@/components/app-shell/process/process-sheet';
 import { useWorkingFavicon } from '@/components/app-shell/runs/working-favicon';
 // Deep import: Blode's barrel is the whole icon library.
@@ -186,7 +189,9 @@ export function RulesStep({
         ),
       );
   }, [body]);
-  useStepReady(asked.isFetched && !asked.isFetching, onReadyChange);
+  // Ready on what it holds: a cached answer shows at once while a fresh one
+  // is asked for behind it.
+  useStepReady(settledOnce(asked), onReadyChange);
   // The last rules seen stay while an action runs, so the list, and focus in
   // it, are kept.
   const [last, setLast] = useState<{

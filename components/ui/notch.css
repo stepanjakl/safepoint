@@ -75,12 +75,15 @@
        the gap over that cosine. */
     --notch-inset: calc(var(--notch-gap) + var(--notch-edge-width));
     padding-block: var(--notch-inset);
-    padding-inline: calc(var(--notch-gap) / cos(var(--notch-angle))) var(--notch-inset);
+    /* --notch-snap puts the sloped side's edge on a device pixel (notch-snap.tsx). */
+    padding-inline: calc(var(--notch-gap) / cos(var(--notch-angle)) + var(--notch-snap, 0px))
+      var(--notch-inset);
   }
 
   .notch[data-side='left'] {
     justify-content: flex-start;
-    padding-inline: var(--notch-inset) calc(var(--notch-gap) / cos(var(--notch-angle)));
+    padding-inline: var(--notch-inset)
+      calc(var(--notch-gap) / cos(var(--notch-angle)) + var(--notch-snap, 0px));
   }
   /* The notch owns the pane's side through the turn; hide the ring behind it. */
   .notch::before {

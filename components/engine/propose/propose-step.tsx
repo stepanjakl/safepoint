@@ -3,7 +3,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { useStepReady } from '@/components/app-shell/runs/run-readiness';
+import {
+  settledOnce,
+  useStepReady,
+} from '@/components/app-shell/runs/run-readiness';
 import { ModelLimits } from '@/components/engine/model-limits';
 import { ModelSelect } from '@/components/engine/rules/model-select';
 import { StaleRules } from '@/components/engine/stale-rules';
@@ -111,11 +114,11 @@ export function ProposeStep({
   const decidedOn = { process: kept.process, runId: kept.runId };
   // Asked once per read and rulebook, and again every POLL_MS while the job
   // runs, even after a failed poll: a failed request says nothing about it.
-  // Asked afresh each time the step opens, since the job may have moved on.
+  // Asked afresh each time the step opens, since the job may have moved on;
+  // the last answer is kept and shown meanwhile.
   const proposalQuery = trpc.propose.get.queryOptions(run, {
     enabled: !mock,
     staleTime: mock ? Infinity : 0,
-    gcTime: mock ? Infinity : 0,
     refetchInterval: ({ state: { data } }) =>
       !mock && data?.kind === 'proposal' && data.progress?.running
         ? POLL_MS
@@ -270,13 +273,7 @@ export function ProposeStep({
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [answer, held, proposalFailed]);
-  useStepReady(
-    asked.isFetched &&
-      !asked.isFetching &&
-      decidedAsked.isFetched &&
-      !decidedAsked.isFetching,
-    onReadyChange,
-  );
+  useStepReady(settledOnce(asked) && settledOnce(decidedAsked), onReadyChange);
 
   // Automatic: proposes once, when nothing is kept, running or failed.
   const proposed = useRef(false);

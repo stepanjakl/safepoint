@@ -103,9 +103,12 @@ test('content that ends a wait fades in; content already known does not', async 
     'No run selected',
   );
   await page.getByRole('button', { name: 'Rules', exact: true }).click();
-  await expect(page.getByText('Nothing is accepted yet.')).toBeVisible();
-  await expect.poll(arrivals).toHaveLength(2);
-  const [first, revisit] = await arrivals();
-  expect(first).toBe(0);
-  expect(revisit).toBe(1);
+  // A tab once shown is kept: coming back shows the same state, at full
+  // strength, rather than making it again.
+  const state = page
+    .getByRole('status')
+    .filter({ hasText: 'Nothing is accepted yet.' });
+  await expect(state).toBeVisible();
+  await expect(state).toHaveCSS('opacity', '1');
+  expect(await arrivals()).toEqual([0]);
 });

@@ -1,6 +1,19 @@
 @layer components {
   /* The header's lit line, painted under the sheet so a head's band covers it.
      Not an inset shadow: that would follow the frame's corner round the notch. */
+  /* The corners clip-past-pane-highlight clips round in Safari: each frame's
+     rounded-* utilities, grown by the pixel the clip reaches past them. */
+  .process-runs,
+  .process-sheet-frame {
+    --clip-past-radius: calc(var(--radius-shell-inner) + 1px);
+    --clip-past-round: 0 0 var(--clip-past-radius) var(--clip-past-radius);
+  }
+  .process-sheet-frame {
+    @media (width >= 56.25rem) {
+      --clip-past-round: 0 var(--clip-past-radius) var(--clip-past-radius) var(--clip-past-radius);
+    }
+  }
+
   .process-sheet-frame {
     position: relative;
     @media (width >= 56.25rem) {
@@ -128,8 +141,7 @@
     }
 
     /* Lit highlight beside the list/detail divider, starting below the detail's
-       .sheet-head so the header band stays unlit while the body matches
-       .sheet-chrome-divider in every edge mode. */
+       .sheet-head so the header band stays unlit. */
     .process-panels[data-tab='instructions']::after {
       content: '';
       position: absolute;
@@ -143,12 +155,6 @@
       pointer-events: none;
     }
   }
-  /* Keep the divider above the bands and its highlight below the adjacent band. */
-  .sheet-chrome-divider {
-    box-shadow: var(--shadow-separator-right-strong);
-  }
-
-  .sheet-chrome-divider::after,
   .sheet-column-edge::after,
   .process-runs::before,
   .process-panels[data-tab='instructions']::before {
@@ -164,13 +170,6 @@
 
   .sheet-column-edge::after {
     box-shadow: var(--column-divider), var(--shadow-separator-right-strong);
-  }
-
-  .sheet-chrome-divider::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: 1;
   }
 
   @container sheet (width >= 52rem) {
@@ -209,83 +208,11 @@
     }
   }
 
-  /* The frame through a tab swap (sheet-chrome.ts): under the sections, which
-     sit above it, and drawn only while the sections' own is lent out. */
-  .sheet-chrome {
-    /* How long the line takes to cross: set per move, by distance. */
-    --chrome-travel: var(--duration-pane);
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-  }
-  .sheet-chrome > * {
-    position: absolute;
-    box-sizing: border-box;
-  }
-  .sheet-chrome-title {
-    position: absolute;
-    white-space: pre;
-  }
-  /* Keep the native heading accessible while its measured overlay copy morphs. */
-  .process-sheet-frame[data-chrome-borrowed] [data-section-title] {
-    opacity: 0;
-  }
-  .sheet-chrome-divider {
-    top: 0;
-    bottom: calc(var(--spacing-control-highlight) * -1);
-    width: 1px;
-  }
-  .sheet-chrome[data-moving] > * {
-    transition-property: left, top, width, height, opacity, background-color, box-shadow;
-    transition-duration: var(--chrome-travel);
-    transition-timing-function: --theme(--ease-out-emphasized);
-  }
-  /* Vertical arrivals land softly; departures stay short. Horizontal edges
-     keep the divider's pace so the frame stays joined throughout the move. */
-  .sheet-chrome[data-moving] > [data-chrome-pace='band'] {
-    --chrome-band-duration: var(--duration-pane);
-    --chrome-band-ease: var(--ease-out-emphasized);
-    transition-property: left, width, top, height, opacity;
-    transition-duration:
-      var(--chrome-travel), var(--chrome-travel), var(--chrome-band-duration),
-      var(--chrome-band-duration), var(--chrome-band-duration);
-    transition-timing-function:
-      --theme(--ease-out-emphasized), --theme(--ease-out-emphasized), var(--chrome-band-ease),
-      var(--chrome-band-ease), var(--chrome-band-ease);
-  }
-  .sheet-chrome[data-moving] > [data-chrome-pace='band'][data-chrome-leaving] {
-    --chrome-band-duration: var(--duration-state);
-    --chrome-band-ease: var(--ease-in-out-quad);
-  }
-  /* Shown but unseen while the frame moves onto it (sheet-chrome.ts): every
-     entrance inside waits paused, its delay too, then all start together. */
-  .process-sheet-frame[data-chrome-staging] > .process-sheet-swap * {
-    animation-play-state: paused !important;
-  }
-  /* The bands lent out go in runs-list.css, beside .sheet-head. */
-  .process-sheet-frame[data-chrome-borrowed] > .process-sheet-swap {
-    & .process-runs::before {
-      box-shadow: var(--column-divider);
-    }
-    & .process-runs-list {
-      box-shadow: none;
-    }
-    & .sheet-column-edge::after,
-    & .process-panels::after {
-      visibility: hidden;
-    }
-  }
   /* The detail follows the list's start after the screen settles; its end
      releases the run (RunsDetail). */
   .process-sheet-frame [data-detail-held] {
     animation: process-section-enter var(--duration-pane) var(--ease-out-quad) var(--detail-hold)
       both;
-  }
-  /* The held column's fade is the arrival: an aside's own content fade,
-     delayed for a travel a sheet column does not make, would add a second beat. */
-  .process-sheet-frame [data-detail-held] .drawer-aside-content {
-    animation: none;
   }
 
   /* Pause the entrance and its stagger until every surrounding fade ends. */

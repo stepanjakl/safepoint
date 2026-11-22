@@ -58,3 +58,16 @@ export function useStepReady(
 ) {
   useEffect(() => onReadyChange?.(ready), [ready, onReadyChange]);
 }
+
+/*
+  Whether a step's query has something to show: an answer, kept from before
+  or just in, or a settled failure to say so. A refetch behind a kept answer
+  does not hold the run back.
+*/
+export function settledOnce(query: {
+  data: unknown;
+  isFetched: boolean;
+  isFetching: boolean;
+}) {
+  return query.data !== undefined || (query.isFetched && !query.isFetching);
+}

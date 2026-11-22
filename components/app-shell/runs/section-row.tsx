@@ -1,18 +1,16 @@
 import type { ReactNode } from 'react';
 
 /*
-  The first row of a section's list, naming the section it belongs to.
+  What a section is called, and the controls that belong to it.
 
-  It is a row rather than a header above the list on purpose. The sheet shows
-  four sections in the same column -- runs, inputs, outputs, settings -- and a
-  header outside the scroller would charge each of them the same strip of
-  vertical space while leaving the list below it unlabelled the moment it
-  scrolls. As the list's own sticky first row it costs that space once and goes
-  on saying what the reader is looking at.
+  The name is for assistive technology only: the header's selected tab already
+  says which section is showing, so a visible title would repeat it. A
+  section's list points at the heading (aria-labelledby).
 
-  It is also the one place each section's single most relevant control belongs:
-  the schedule beside the runs it produces, Add beside the inputs it adds to.
-  Anything more than one belongs in the list, not in its label.
+  Only a section with a control of its own draws the band: Start run and the
+  schedule above the runs they produce. It is the list's sticky first row, so
+  those controls stay in reach as the list scrolls. A section with nothing to
+  put there starts its content at the top instead of under an empty strip.
 */
 export function SectionRow({
   id,
@@ -23,45 +21,21 @@ export function SectionRow({
   // The heading's id, so the list it labels can point at it.
   id: string;
   title: string;
-  // The size of what follows, where knowing it before scrolling is worth
-  // something. A section whose length is not a fact about it leaves it off.
+  // The size of what follows, where knowing it before reading is worth it.
   count?: number;
-  // The section's one control, at the row's end.
+  // The section's controls, spread across the band: the first at its start,
+  // the last at its end.
   children?: ReactNode;
 }) {
+  const heading = (
+    <h2 id={id} className="sr-only">
+      {count === undefined ? title : `${title} ${count}`}
+    </h2>
+  );
+  if (!children) return heading;
   return (
     <div className="sheet-head">
-      {/*
-        The readout one step up, through the utility face's own strong weight
-        rather than a number. Each typeface set decides what that step is for
-        the mono it ships -- Geist and Inter have a real 600, and Glide, which
-        ships a single weight, pins strong to its 400 so the step quietly
-        becomes no step instead of a synthetic bold smearing at this size.
-      */}
-      <h2
-        id={id}
-        className="readout text-muted [font-weight:var(--sp-mono-weight-strong)]"
-      >
-        {/* Match Torph's glyph boxes so handing back never changes text layout. */}
-        <span
-          data-section-title={title}
-          aria-hidden="true"
-          className="inline-block"
-        >
-          {Array.from(title).map((letter, index) => (
-            <span key={index} className="inline-block">
-              {letter === ' ' ? '\u00a0' : letter}
-            </span>
-          ))}
-        </span>
-        <span className="sr-only">{title}</span>
-        {count !== undefined ? (
-          <>
-            {' '}
-            <span className="value">{count}</span>
-          </>
-        ) : null}
-      </h2>
+      {heading}
       {children}
     </div>
   );

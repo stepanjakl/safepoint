@@ -4,8 +4,21 @@ import ArrowRotateCounterClockwise from 'blode-icons-react/icons/arrow-rotate-co
 import ChevronTriangleUp from 'blode-icons-react/icons/chevron-triangle-up-small-filled';
 import Cross from 'blode-icons-react/icons/cross-small';
 import Pencil from 'blode-icons-react/icons/pencil';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  AnimatePresence,
+  motion,
+  useIsPresent,
+  useReducedMotion,
+} from 'motion/react';
+import {
+  Fragment,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from 'react';
 
 import { DecisionButton } from '@/components/engine/decision-button';
 import { FromModel, Step } from '@/components/engine/rules-parts';
@@ -86,6 +99,7 @@ export function ProposalRow({
   ) => Promise<CheckReply | null>;
   onCite: (cell: string) => void;
 }) {
+  const toggleRef = useRef<HTMLButtonElement>(null);
   const nameRef = useRef<HTMLSpanElement>(null);
   const compactNameRef = useRef<HTMLSpanElement>(null);
   // A change in progress: the values typed, and the checks on them.
@@ -126,16 +140,16 @@ export function ProposalRow({
     setChecked(null);
   };
 
-  const reduceMotion = useReducedMotion();
   const decisionState = changing ? 'changing' : decision ? 'decided' : 'open';
   return (
     <Fragment>
-      <PresentRow className="calc-row align-top">
+      <tr className="calc-row align-top">
         <th
           scope="row"
           className="py-2.75 pr-3 pl-6 text-left font-medium whitespace-nowrap max-sm:w-full max-sm:max-w-0"
         >
           <button
+            ref={toggleRef}
             type="button"
             aria-expanded={expanded}
             aria-controls={id}
@@ -217,16 +231,8 @@ export function ProposalRow({
           <Pill tone={VERDICT[verdict].tone}>{VERDICT[verdict].label}</Pill>
         </td>
         <td className="py-1.5 pr-4 pl-3 text-right align-middle">
-          {/* One set of controls gives way to the next, never jumps. */}
-          <AnimatePresence initial={false} mode="popLayout">
-            <motion.div
-              key={decisionState}
-              className="flex items-center justify-end gap-1.5"
-              initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={reduceMotion ? undefined : { opacity: 0, scale: 0.96 }}
-              transition={{ duration: DURATION_STATE, ease: 'easeOut' }}
-            >
+          <AnimatePresence initial={false} mode="wait">
+            <DecisionControls key={decisionState} focusFallback={toggleRef}>
               {changing ? (
                 <>
                   <DecisionButton
@@ -342,11 +348,11 @@ export function ProposalRow({
                   />
                 </>
               )}
-            </motion.div>
+            </DecisionControls>
           </AnimatePresence>
         </td>
-      </PresentRow>
-      <PresentRow>
+      </tr>
+      <tr>
         <td
           colSpan={fields.length + 4}
           className={cx('p-0', ruled && DATA_TABLE_RULE)}
@@ -463,7 +469,7 @@ export function ProposalRow({
             ) : null}
           </Fold>
         </td>
-      </PresentRow>
+      </tr>
     </Fragment>
   );
 }
@@ -475,33 +481,37 @@ const decided = (decision: Decision, fields: ProposalField[]) =>
       ? 'Rejected'
       : `Changed to ${valuesWords(decision.values, fields)}`;
 
-/*
-  A table row that comes and goes by fading, as a filter shows and hides
-  records; the rows after it close up at once, so nothing slides under the
-  pointer. Inside AnimatePresence, its exit plays before it leaves.
-*/
-export function PresentRow({
-  className,
+function DecisionControls({
   children,
+  focusFallback,
 }: {
-  className?: string;
   children: ReactNode;
+  focusFallback: RefObject<HTMLButtonElement | null>;
 }) {
+  const present = useIsPresent();
   const reduceMotion = useReducedMotion();
+  const controls = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const group = controls.current;
+    if (!group) return;
+    if (!present && group.contains(document.activeElement))
+      focusFallback.current?.focus({ preventScroll: true });
+    group.inert = !present;
+  }, [present, focusFallback]);
+
   return (
-    <motion.tr
-      className={className}
+    <motion.div
+      ref={controls}
+      className="flex items-center justify-end gap-1.5"
       initial={reduceMotion ? false : { opacity: 0 }}
-      animate={{
-        opacity: 1,
-        transition: reduceMotion
-          ? { duration: 0 }
-          : { duration: 0.24, delay: 0.14, ease: 'easeOut' },
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{
+        duration: reduceMotion ? 0 : DURATION_STATE,
+        ease: 'easeOut',
       }}
-      exit={reduceMotion ? undefined : { opacity: 0 }}
-      transition={{ duration: DURATION_STATE, ease: 'easeOut' }}
     >
       {children}
-    </motion.tr>
+    </motion.div>
   );
 }

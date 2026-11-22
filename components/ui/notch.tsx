@@ -2,6 +2,8 @@ import type { ReactNode } from 'react';
 
 import { cx } from '@/lib/ui/cx';
 
+import { NotchSnap } from './notch-snap';
+
 /*
   The bite a pane's corner takes, so controls can sit on the canvas beside a
   header. Place it as the last cell of a header row, pulled over the pane's
@@ -36,6 +38,7 @@ export function Notch({
           <span className="notch-paint notch-edge" />
         </span>
       </span>
+      <NotchSnap />
       {children}
     </div>
   );

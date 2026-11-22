@@ -227,6 +227,7 @@ export function InstructionDetail({
   process,
   view,
   swapping,
+  crossing = false,
   onEdit,
   onDone,
   renderPanel,
@@ -234,6 +235,9 @@ export function InstructionDetail({
   process: ProcessSummary;
   view: InstructionsAsideView;
   swapping: boolean;
+  // The swap is between a version and the draft, whose band holds other
+  // controls: those fade out and in. Between versions the band holds still.
+  crossing?: boolean;
   onEdit: () => void;
   // Done with the editor: opens the version it names, or closes it.
   onDone: (version?: string) => void;
@@ -436,8 +440,16 @@ export function InstructionDetail({
               : undefined
           }
         />
-        {!isEdit && from && to ? (
-          <span className="instruction-tabs swap-band-fade min-w-0">
+        {/* The band holds still as versions change: its controls stay where
+            they are and only their words and states change. The first
+            version keeps its Changes tab, with nothing before it to show. */}
+        {!isEdit && to ? (
+          <span
+            className={cx(
+              'instruction-tabs min-w-0',
+              crossing && 'swap-band-fade',
+            )}
+          >
             <FilterTabs
               size="small"
               tabs={[
@@ -446,9 +458,16 @@ export function InstructionDetail({
                   short: 'Text',
                   label: `Text of ${to.version}`,
                 },
-                { key: 'changes', short: 'Changes', label: changesLabel },
+                {
+                  key: 'changes',
+                  short: 'Changes',
+                  label: from
+                    ? changesLabel
+                    : `No changes: ${to.version} is the first version`,
+                  disabled: !from,
+                },
               ]}
-              selected={shown}
+              selected={from ? shown : 'text'}
               onChange={setShown}
               leadKey={null}
               collapseToMenu={false}
@@ -463,7 +482,7 @@ export function InstructionDetail({
       ) : (
         <Button
           size="small"
-          className="swap-band-fade shrink-0"
+          className={cx('shrink-0', crossing && 'swap-band-fade')}
           onPress={() => {
             // Restoring replaces any draft. The current one needs none: the
             // editor starts from its text, and a draft is kept once written.

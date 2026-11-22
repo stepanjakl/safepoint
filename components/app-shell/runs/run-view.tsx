@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import {
   useCallback,
   useContext,
+  useDeferredValue,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -15,8 +16,18 @@ import { ThreadPage } from '@/components/app-shell/thread/thread-page';
 import { AlertBox } from '@/components/ui/alert-box';
 import { Button } from '@/components/ui/button';
 import { useSwap } from '@/components/ui/swap';
+import { Loader } from '@/components/ui/loader';
+import { useLoader } from '@/components/ui/working-mark';
+
+// The previous run stays up meanwhile, so a wait is said later than a panel's:
+// past most first visits, which land within this, so the loader rarely holds
+// a run back for its minimum.
+const RUN_LOADER_DELAY_MS = 600;
 import { KeyHint } from '@/components/ui/key-hint';
-import { useScreenSettled } from '@/components/ui/screen-settled';
+import {
+  useScreenArriving,
+  useScreenSettled,
+} from '@/components/ui/screen-settled';
 import { StateIllustration } from '@/components/ui/state-illustration';
 import { EMPTY_STATE_ARRIVE, EMPTY_STATE_STAGGER } from '@/lib/ui/motion';
 import type { ProcessSummary } from '@/lib/shell/model';
@@ -95,13 +106,26 @@ export function RunView({
   if (shown === target && shownSelection !== selection)
     setShownSelection(selection);
   const pageSelection = shown === target ? selection : shownSelection;
-  const staged = shown !== NONE && shown !== target && waitForThread;
+  // The next thread is built a render behind the choice, at low priority, so
+  // the rail answers the click in its own frame and building cannot stall it.
+  const building = useDeferredValue(target);
+  const staged =
+    shown !== NONE && shown !== target && waitForThread && building === target;
+  // A wait for the next run that outlasts the loader's delay is said: the old
+  // run fades and the loader takes its place until the new one is ready. A
+  // shorter one keeps the old run up, so a quick switch never flashes.
+  const loading = useLoader(
+    shown !== target && preparing,
+    RUN_LOADER_DELAY_MS,
+  );
+  const waitShown = loading.phase === 'shown' || loading.phase === 'slow';
 
-  // A new page starts at its top, once the old one has gone.
+  // A new page starts at its top, once the old one has gone -- or once the
+  // loader has taken its place, which sits in the column's first screen.
   useLayoutEffect(() => {
     const scroller = view.current?.parentElement;
     if (scroller) scroller.scrollTop = 0;
-  }, [shown]);
+  }, [shown, waitShown]);
 
   const page = (
     id: string,
@@ -160,7 +184,12 @@ export function RunView({
         return (
           <motion.div
             key={id}
-            {...(active ? layer : { initial: false, animate: { opacity: 0 } })}
+            {...(active
+              ? {
+                  ...layer,
+                  animate: waitShown ? { opacity: 0 } : layer.animate,
+                }
+              : { initial: false, animate: { opacity: 0 } })}
             inert={!active || (shown !== target && preparing) || layer.inert}
             className={
               active
@@ -179,6 +208,16 @@ export function RunView({
           </motion.div>
         );
       })}
+      {waitShown && loading.phase ? (
+        <div className="absolute inset-x-0 top-0 grid h-full place-items-center">
+          <Loader
+            phase={loading.phase}
+            size="page"
+            label="Loading run…"
+            announce={false}
+          />
+        </div>
+      ) : null}
       <p role="status" className="sr-only">
         {waiting
           ? instructionMessage(waiting)
@@ -224,9 +263,10 @@ function RunPage({
   );
 }
 
-// Each part of the empty page rises into place, one after the other, once the
-// screen around it has finished coming in. Mounted into a screen already there,
-// as on a load or a change of run, it is simply there too.
+// Each part of the empty page rises into place, one after the other, when it
+// arrives with its screen -- a load or a navigation -- once the screen around it
+// has finished coming in. Mounted later, by a tab or a change of run, it is
+// simply there.
 const ARRIVE = EMPTY_STATE_ARRIVE;
 
 /* Nothing chosen, or nothing to show: what the product does, and a way in. */
@@ -236,7 +276,8 @@ function RunEmptyState({ note }: { note: string | null }) {
   // What a run follows, one tab away; absent where there is no sheet.
   const actions = useContext(ProcessSheetActions);
   const settled = useScreenSettled();
-  const [rises] = useState(!settled);
+  const arriving = useScreenArriving();
+  const [rises] = useState(arriving);
   // The key the button advertises. Left to a field that is being typed in.
   useEffect(() => {
     if (!start) return;

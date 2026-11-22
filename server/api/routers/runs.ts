@@ -8,11 +8,16 @@ import {
   runProcess,
   runProcessIdSchema,
 } from '@/server/operations/kept-processes';
+import {
+  runActivities,
+  type RunActivity,
+} from '@/server/operations/run-activity';
 import { readIdSchema, rulebookIdSchema } from '@/server/storage/ids';
 import { Refused } from '@/server/storage/refused';
 import { versionByHash } from '@/server/storage/rules/instructions';
 import {
   discardRun,
+  type KeptRun,
   listRuns,
   PROGRESS_STATUSES,
   recordProgress,
@@ -72,9 +77,17 @@ export const runsRouter = router({
         discarded: z.boolean().default(false),
       }),
     )
-    .query(({ input }) =>
-      listRuns(input.process, { discarded: input.discarded }),
-    ),
+    .query(async ({ input }) => {
+      const runs = await listRuns(input.process, {
+        discarded: input.discarded,
+      });
+      // What each running run is doing: working, or waiting at a step.
+      const activities = await runActivities(runProcess(input.process), runs);
+      return runs.map((run): KeptRun & { activity?: RunActivity } => {
+        const activity = activities.get(run.id);
+        return activity ? { ...run, activity } : run;
+      });
+    }),
 
   get: gatedProcedure
     .input(z.strictObject(keptRunFields))

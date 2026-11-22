@@ -18,12 +18,6 @@
   4. subpixel-edge-grid: sheet headers and frames must land on whole 2x
      device pixels so 0.75px box-shadow highlights render uniformly (1.5 dev px)
      across composited and non-composited layers.
-  5. chrome-swap: during a section swap (`[data-chrome-borrowed]`), every
-     `.sheet-chrome-band` must carry a bottom edge, borrowed `.sheet-head`s
-     must resolve to `box-shadow: none`, `.sheet-chrome-divider` must paint
-     above `.sheet-chrome-band`, borrowed column dividers must not double-paint
-     the outer vertical highlight, and release must not trigger a spurious
-     `box-shadow` transition on `.sheet-head`.
 
   Run `pnpm check:edges -- --help`.
 */
@@ -35,7 +29,6 @@ type Violation = {
     | 'occluded-inset-border'
     | 'gradient-ring-loss'
     | 'geometry-drift'
-    | 'chrome-swap'
     | 'subpixel-edge-grid';
   context: string;
   selector: string;
@@ -213,11 +206,6 @@ async function waitForTab(page: Page, tab: ProcessTab, context: string) {
     frame.locator(tab.heading),
     `${label} section heading`,
   ).toBeVisible({ timeout: CHECK_TIMEOUT });
-  await expect(frame, `${label} chrome handoff`).not.toHaveAttribute(
-    'data-chrome-borrowed',
-    '',
-    { timeout: CHECK_TIMEOUT },
-  );
   await expect(
     frame.locator('> .process-sheet-swap').filter({ visible: true }),
     `${label} section entrance`,
@@ -462,210 +450,6 @@ async function auditStaticPage(
   );
 }
 
-async function auditChromeSwap(
-  page: Page,
-  context: string,
-  tabs: readonly [ProcessTab, ProcessTab],
-): Promise<Violation[]> {
-  const issues: Violation[] = [];
-  const [runs, instructions] = tabs;
-
-  const swaps = [
-    [runs, instructions],
-    [instructions, runs],
-  ] as const;
-  for (const [from, to] of swaps) {
-    const label = `${context} (${from.title} -> ${to.title})`;
-
-    const sampleSwap = (swapLabel: string) => {
-      const frame = document.querySelector(
-        '.process-sheet-frame[data-chrome-borrowed]',
-      );
-      const bands = frame
-        ? [...frame.querySelectorAll('.sheet-chrome-band')].filter(
-            (band) => band.getBoundingClientRect().height > 0,
-          )
-        : [];
-      if (!bands.length) return false;
-      const errs: Violation[] = [];
-
-      for (const band of bands) {
-        const cs = getComputedStyle(band);
-        const bw = parseFloat(cs.borderBottomWidth);
-        const hasInsetBottom = cs.boxShadow.includes('inset');
-        if (bw < 0.25 && !hasInsetBottom) {
-          errs.push({
-            check: 'chrome-swap',
-            context: swapLabel,
-            selector: '.sheet-chrome-band',
-            detail: `cloned header band lost its bottom border during swap (borderBottomWidth=${cs.borderBottomWidth}, boxShadow=${cs.boxShadow})`,
-          });
-        }
-      }
-
-      const borrowedHeads = [
-        ...document.querySelectorAll(
-          '.process-sheet-frame[data-chrome-borrowed] > .process-sheet-swap .sheet-head',
-        ),
-      ];
-      for (const head of borrowedHeads) {
-        const cs = getComputedStyle(head);
-        if (cs.boxShadow !== 'none') {
-          errs.push({
-            check: 'chrome-swap',
-            context: swapLabel,
-            selector: `.sheet-head (${head.textContent?.trim().slice(0, 20)})`,
-            detail: `borrowed .sheet-head leaked boxShadow during swap: ${cs.boxShadow}`,
-          });
-        }
-      }
-
-      // Ensure borrowed column dividers do not double-paint the outer vertical
-      // highlight on top of `.sheet-chrome-divider` (which darkens its 50%
-      // antialiased pixel to 75% right before release).
-      const borrowedPanels = document.querySelector(
-        '.process-sheet-frame[data-chrome-borrowed] > .process-sheet-swap .process-panels',
-      );
-      if (borrowedPanels) {
-        const afterCs = getComputedStyle(borrowedPanels, '::after');
-        if (afterCs.content !== 'none' && afterCs.visibility !== 'hidden') {
-          errs.push({
-            check: 'chrome-swap',
-            context: swapLabel,
-            selector: '.process-panels::after',
-            detail: `vertical highlight remained visible during swap (visibility=${afterCs.visibility}), double-painting over .sheet-chrome-divider`,
-          });
-        }
-      }
-
-      const borrowedRuns = document.querySelector(
-        '.process-sheet-frame[data-chrome-borrowed] > .process-sheet-swap .process-runs',
-      );
-      if (borrowedRuns) {
-        const beforeCs = getComputedStyle(borrowedRuns, '::before');
-        const hasOuterShadow =
-          beforeCs.boxShadow !== 'none' &&
-          beforeCs.boxShadow
-            .split(/,(?![^(]*\))/)
-            .some((part) => !/\binset\b/.test(part));
-        if (beforeCs.content !== 'none' && hasOuterShadow) {
-          errs.push({
-            check: 'chrome-swap',
-            context: swapLabel,
-            selector: '.process-runs::before',
-            detail: `outer highlight remained in box-shadow during swap (${beforeCs.boxShadow}), double-painting over .sheet-chrome-divider`,
-          });
-        }
-      }
-
-      const dividers = [...document.querySelectorAll('.sheet-chrome-divider')];
-      for (const div of dividers) {
-        const dr = div.getBoundingClientRect();
-        const dcs = getComputedStyle(div);
-        const afterCs = getComputedStyle(div, '::after');
-        const divZ = Number(dcs.zIndex) || 0;
-        const afterZ =
-          afterCs.content !== 'none' ? Number(afterCs.zIndex) || 0 : -1;
-
-        for (const band of bands) {
-          const br = band.getBoundingClientRect();
-          const overlapsX =
-            br.left < dr.right - 0.1 && br.right > dr.left + 0.1;
-          const bandZ = Number(getComputedStyle(band).zIndex) || 0;
-          if (overlapsX && Math.max(divZ, afterZ) <= bandZ) {
-            errs.push({
-              check: 'chrome-swap',
-              context: swapLabel,
-              selector: '.sheet-chrome-divider',
-              detail: `divider (x=${dr.left.toFixed(2)}..${dr.right.toFixed(2)}, z=${divZ}, ::after z=${afterZ}) is covered by .sheet-chrome-band (x=${br.left.toFixed(2)}..${br.right.toFixed(2)}, z=${bandZ})`,
-            });
-          }
-        }
-      }
-
-      return errs;
-    };
-
-    // Start observing before the click so a short-lived band still gets sampled.
-    const [observed] = await Promise.all([
-      page
-        .waitForFunction(sampleSwap, label, { timeout: CHECK_TIMEOUT })
-        .catch((error: unknown) => {
-          throw new Error(
-            `${label} did not show a borrowed .sheet-chrome-band.`,
-            { cause: error },
-          );
-        }),
-      to.button.click({ timeout: CHECK_TIMEOUT }),
-    ]);
-
-    const found = await observed.jsonValue();
-    await observed.dispose();
-    if (!found) throw new Error(`${label} could not sample the borrowed band.`);
-    issues.push(...found);
-
-    // Verify handoff commits cleanly without a spurious box-shadow transition
-    // on `.sheet-head` (which would blink the retina bottom border out and in).
-    const sampleHandoff = (swapLabel: string) => {
-      if (
-        document.querySelector('.process-sheet-frame[data-chrome-borrowed]')
-      ) {
-        return false;
-      }
-      const errs: Violation[] = [];
-      for (const head of document.querySelectorAll(
-        '.process-sheet-swap .sheet-head',
-      )) {
-        const anims = head
-          .getAnimations()
-          .filter(
-            (a) =>
-              a instanceof CSSTransition &&
-              a.transitionProperty === 'box-shadow' &&
-              a.playState === 'running',
-          );
-        if (anims.length > 0) {
-          errs.push({
-            check: 'chrome-swap',
-            context: `${swapLabel} (handoff)`,
-            selector: `.sheet-head (${head.textContent?.trim().slice(0, 20)})`,
-            detail:
-              'spurious box-shadow transition running on handoff (border blinks on release)',
-          });
-        }
-      }
-      // Ensure the settled Instructions two-column view paints its vertical
-      // highlight beside the divider (matching `.sheet-chrome-divider`).
-      const panels = document.querySelector(
-        '.process-panels:has(> .process-panel-list + *)',
-      );
-      if (panels) {
-        const afterCs = getComputedStyle(panels, '::after');
-        if (afterCs.content === 'none' || afterCs.boxShadow === 'none') {
-          errs.push({
-            check: 'chrome-swap',
-            context: `${swapLabel} (settled)`,
-            selector: '.process-panels::after',
-            detail: `vertical highlight missing after swap (content=${afterCs.content}, boxShadow=${afterCs.boxShadow})`,
-          });
-        }
-      }
-      return errs;
-    };
-    const handoff = await page.waitForFunction(sampleHandoff, label, {
-      timeout: CHECK_TIMEOUT,
-    });
-    const handoffIssues = await handoff.jsonValue();
-    await handoff.dispose();
-    if (!handoffIssues)
-      throw new Error(`${label} could not sample the handoff.`);
-    issues.push(...handoffIssues);
-    await waitForTab(page, to, context);
-  }
-
-  return issues;
-}
-
 type Side = 'gapTop' | 'gapBottom' | 'gapLeft' | 'gapRight';
 type GeometryEntry = {
   sides: Side[];
@@ -721,14 +505,13 @@ async function main() {
         'Usage: pnpm check:edges [-- --url <path>]... [--base-url <url>] [--theme light|dark]',
         '',
         'Checks edge invariants on the development server at 2×.',
-        'Process sheets include tab swaps. Other supported pages get static checks.',
+        'Process sheets are checked on every tab. Other supported pages get static checks.',
         'Exit status: 0 passed, 1 edge violations, 2 check could not complete.',
         '',
         '  1. occluded-inset-border  opaque children covering an inset box-shadow border',
         '  2. gradient-ring-loss     gradient-ring .control-face flattened to solid shadow',
         '  3. geometry-drift         inner control clearances drifting between default & retina',
         '  4. subpixel-edge-grid     sheet headers/frames landing on half 2x device pixels',
-        '  5. chrome-swap            header/divider/highlight glitches during swaps & handoff',
       ].join('\n'),
     );
     return;
@@ -757,14 +540,6 @@ async function main() {
       const hasSheet = await loadMode(page, opts, route, 'default');
       if (hasSheet) await openInitialRuns(page, runs, defaultContext);
       const defaultGeom = await captureControlGeometry(page);
-      if (hasSheet) {
-        violations.push(
-          ...(await auditChromeSwap(page, defaultContext, [
-            runs,
-            instructions,
-          ])),
-        );
-      }
 
       const context = `${route} [retina]`;
       const retinaHasSheet = await loadMode(page, opts, route, 'retina');
@@ -813,9 +588,6 @@ async function main() {
         continue;
       }
 
-      violations.push(
-        ...(await auditChromeSwap(page, context, [runs, instructions])),
-      );
       for (const tab of [instructions, ...others]) {
         if (tab.optional && (await tab.button.count()) === 0) continue;
         await tab.button.click({ timeout: CHECK_TIMEOUT });

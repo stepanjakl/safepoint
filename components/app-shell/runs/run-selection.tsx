@@ -15,6 +15,7 @@ import { useInstructions } from '@/components/app-shell/instructions/instruction
 import { mockStageStorageKey } from '@/components/app-shell/thread/thread-player';
 import { useWalkthrough } from '@/components/app-shell/walkthrough';
 import { useTRPC } from '@/components/trpc/provider';
+import { RunPrefetch } from './run-prefetch';
 import {
   processRunOf,
   useKeptRuns,
@@ -118,6 +119,8 @@ export type RunSelection = {
   selected: string | null;
   // Shows a run, or shows nothing when it is the one already shown.
   select: (id: string) => void;
+  // Asks for a run's data ahead of it being shown (RunPrefetch).
+  prefetch?: (id: string) => void;
   // Null where this process cannot start a run, or while one is starting. The
   // text, when given, is kept with the run. Answers whether a run was started:
   // it is waited for, since the server names it.
@@ -226,6 +229,7 @@ export function useRunSelectionState({
     writeStoredMockRuns(process.id, next);
   };
   const kept = useKeptRuns(process.id, liveThread);
+  const prefetcher = useContext(RunPrefetch);
   const { versions, current } = useInstructions(
     process.id,
     process.instructions,
@@ -341,6 +345,16 @@ export function useRunSelectionState({
       return diff !== 0 ? diff : b.id.localeCompare(a.id);
     }),
     selected,
+    prefetch: (id) => {
+      if (!prefetcher || id === selected || isMockRunId(id)) return;
+      const run = keptRuns.find((entry) => entry.id === id);
+      const text = run
+        ? versions.find((version) => version.hash === run.instructions.hash)
+            ?.text
+        : undefined;
+      if (run && text !== undefined)
+        prefetcher({ run: processRunOf(run), kept: run, text });
+    },
     select: (id) => {
       kept.start.reset();
       if (selected !== id) walkthrough?.advance('start-run');

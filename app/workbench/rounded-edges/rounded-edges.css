@@ -105,6 +105,48 @@
         color-mix(in srgb, var(--re-sheen) var(--re-inner-cover), transparent);
   }
 
+  /* Every band a border, which Safari draws exactly round a curve: the ring's
+     solid part on the element, its soft pixel (over the sheen) on ::before,
+     the sheen on ::after with its own soft pixel as an inward outline. */
+  .rounded-edges-specimen[data-option='borders'] {
+    --re-radius: 0px;
+    position: relative;
+    border: var(--edge-ring-solid) solid var(--re-ring);
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      pointer-events: none;
+    }
+    &::before {
+      inset: 0;
+      border: var(--dp) solid
+        color-mix(in srgb, var(--re-ring) var(--edge-ring-cover), var(--re-sheen));
+      border-radius: max(0px, calc(var(--re-radius) - var(--edge-ring-solid)));
+    }
+    &::after {
+      --re-band: max(0px, calc(var(--re-stack-solid) - var(--edge-ring-soft)));
+      inset: var(--dp);
+      border: var(--re-band) solid var(--re-sheen);
+      border-radius: max(0px, calc(var(--re-radius) - var(--edge-ring-soft)));
+      outline: var(--dp) solid
+        color-mix(in srgb, var(--re-sheen) var(--re-stack-cover), transparent);
+      outline-offset: calc(-1 * (var(--re-band) + var(--dp)));
+    }
+  }
+  .rounded-edges-specimen[data-option='borders'][data-shape='button'] {
+    --re-radius: var(--radius-control);
+  }
+  .rounded-edges-specimen[data-option='borders'][data-shape='icon'] {
+    --re-radius: var(--radius-icon);
+  }
+  .rounded-edges-specimen[data-option='borders'][data-shape='pill'] {
+    --re-radius: 11px;
+  }
+  .rounded-edges-specimen[data-option='borders']:is([data-shape='card'], [data-shape='pane']) {
+    --re-radius: var(--radius-shell);
+  }
+
   .rounded-edges-row {
     display: grid;
     grid-template-columns: 240px 1fr;

@@ -89,7 +89,19 @@ function stubsPast(short: Segment[], junctions: Junction[], minLength: number) {
         s.to - s.from + 1 < minLength &&
         (forward ? s.from === far + 1 : s.to === far - 1),
     );
-    if (stub) out.push(stub);
+    // A line that carries on past the junction (a T, a crossing) is not a
+    // stub, even where its layers change for a few pixels after it.
+    const continues =
+      stub &&
+      short.some(
+        (s) =>
+          s !== stub &&
+          s.orientation === stub.orientation &&
+          s.bandFrom <= stub.bandTo &&
+          s.bandTo >= stub.bandFrom &&
+          (forward ? s.from === stub.to + 1 : s.to === stub.from - 1),
+      );
+    if (stub && !continues) out.push(stub);
   }
   return out;
 }

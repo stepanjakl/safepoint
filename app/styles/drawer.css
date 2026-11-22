@@ -80,6 +80,17 @@
   .drawer-aside[data-flat][data-exiting] {
     animation-name: drawer-aside-fade-out;
   }
+  /* Opened with its section, the section's own fade brings it in. With
+     nothing travelling, its content needs no delay to wait out. */
+  .drawer-aside[data-flat]:is([data-with-section], [data-entered]):not(
+      [data-detail-held],
+      [data-exiting]
+    ) {
+    animation: none;
+  }
+  .drawer-aside[data-flat] .drawer-aside-content {
+    animation: none;
+  }
   @keyframes drawer-aside-fade-in {
     from {
       opacity: 0;

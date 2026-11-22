@@ -281,7 +281,7 @@ test('returning to a tab during its fade restores the page immediately', async (
   ).toBeVisible();
 });
 
-test('tab handoff keeps dividers still, fades the list once and holds the detail behind it', async ({
+test('tab handoff fades the whole section once and shows its detail with it', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
@@ -291,59 +291,35 @@ test('tab handoff keeps dividers still, fades the list once and holds the detail
     .getByRole('button', { name: /^Instructions/ })
     .first();
   // The outgoing section first; the incoming one is rendered after it, hidden.
+  // Its fade is a tab's, a tenth of a second, so what it does is recorded as
+  // it happens rather than caught afterwards.
   const leaving = page.locator('.process-sheet-swap').first();
+  const seen = await leaving.evaluateHandle((element) => {
+    const record = { inert: false, moved: false };
+    new MutationObserver(() => {
+      if (!element.hasAttribute('inert')) return;
+      record.inert = true;
+      const transform = new DOMMatrix(getComputedStyle(element).transform);
+      if (transform.m41 !== 0 || transform.m42 !== 0) record.moved = true;
+    }).observe(element, { attributes: true, attributeFilter: ['inert'] });
+    return record;
+  });
   await instructions.click();
   await expect(instructions).toHaveAttribute('aria-current', 'true');
-  await expect(leaving).toHaveAttribute('inert', '');
-  expect(
-    await leaving.evaluate((element) => {
-      const transform = new DOMMatrix(getComputedStyle(element).transform);
-      return [transform.m41, transform.m42];
-    }),
-  ).toEqual([0, 0]);
+  await expect
+    .poll(() => seen.jsonValue())
+    .toEqual({ inert: true, moved: false });
 
   const entering = page.locator('.process-sheet-swap[data-swap-entering]');
   await expect(entering).toBeAttached();
-  // The layer's fade is the list's only one: none of its parts fade inside it.
-  for (const part of [
-    entering.locator('.process-panel-list > .sheet-head'),
-    entering.locator('.process-panel-list > :not(.sheet-head)').first(),
-  ])
-    await expect(part).toHaveCSS('animation-name', 'none');
-  // Shown with its section, the detail column waits the whole beat.
-  await expect(entering.locator('[data-detail-held]')).toHaveCSS(
-    'animation-delay',
-    '0.15s',
-  );
-  await expect(entering).not.toHaveAttribute('inert');
-});
-
-test('the frame holds through a tab swap and is handed back once the next section has landed', async ({
-  page,
-}) => {
-  await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.goto('/processes/brunch-orders');
-  await page
-    .getByRole('button', { name: /^Instructions/ })
-    .first()
-    .click();
-  const frame = page.locator('.process-sheet-frame');
-  await expect(frame).not.toHaveAttribute('data-chrome-borrowed');
-
-  await page
-    .getByRole('button', { name: /^Outputs/ })
-    .first()
-    .click();
-  // The sections' own bands and divider are lent to the overlay meanwhile.
-  await expect(frame).toHaveAttribute('data-chrome-borrowed', '');
-  await expect(frame.locator('.sheet-chrome > *').first()).toBeAttached();
-
-  // Afterwards nothing is lent out, and the section's own band paints again.
-  await expect(frame).not.toHaveAttribute('data-chrome-borrowed');
-  await expect(frame.locator('.sheet-chrome > *')).toHaveCount(0);
+  // The layer's fade is the section's only one: none of its parts fade or
+  // rise inside it, and the detail does not trail the list.
   await expect(
-    frame.locator('.process-sheet-swap .sheet-head').first(),
-  ).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    entering.locator('.process-panel-list > :not(h2)').first(),
+  ).toHaveCSS('animation-name', 'none');
+  await expect(entering.locator('[data-section-forming]')).toHaveCount(0);
+  await expect(entering.locator('[data-detail-held]')).toHaveCount(0);
+  await expect(entering).not.toHaveAttribute('inert');
 });
 
 // Sample painted frames rather than waiting for a final screenshot: an entrance
@@ -412,18 +388,61 @@ function expectSectionAfterScreen(
   );
 }
 
-test('every section waits for its tab fade before rows and details arrive', async ({
+test('rows rise in when the screen loads, and a tab shows its rows at once', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.goto('/processes/brunch-orders');
-  for (const tab of ['Instructions']) {
-    expectSectionAfterScreen(
-      await observeSectionEntrance(
-        page.getByRole('button', { name: new RegExp(`^${tab}`) }).first(),
-      ),
+  // Counts every section that starts forming, from the first parsed node.
+  await page.addInitScript(() => {
+    const seen = { forming: 0 };
+    Object.assign(window, { __forming: seen });
+    new MutationObserver((records) => {
+      for (const record of records) {
+        const nodes =
+          record.type === 'attributes'
+            ? [record.target]
+            : [...record.addedNodes];
+        for (const node of nodes)
+          if (
+            node instanceof Element &&
+            (node.matches('[data-section-forming]') ||
+              node.querySelector('[data-section-forming]'))
+          )
+            seen.forming++;
+      }
+    }).observe(document, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ['data-section-forming'],
+    });
+  });
+  const forming = () =>
+    page.evaluate(
+      () =>
+        (window as unknown as { __forming: { forming: number } }).__forming
+          .forming,
     );
-  }
+
+  await page.goto('/processes/brunch-orders');
+  await expect.poll(forming).toBeGreaterThan(0);
+  await expect(page.locator('[data-section-forming]')).toHaveCount(0);
+
+  await page.evaluate(() => {
+    (
+      window as unknown as { __forming: { forming: number } }
+    ).__forming.forming = 0;
+  });
+  const instructions = page
+    .getByRole('button', { name: /^Instructions/ })
+    .first();
+  await instructions.click();
+  await expect(instructions).toHaveAttribute('aria-current', 'true');
+  await expect(
+    page.locator('.process-sheet-swap').filter({ visible: true }),
+  ).toHaveCSS('opacity', '1');
+  expect(await forming()).toBe(0);
+  await expect(page.locator('[data-detail-held]')).toHaveCount(0);
 });
 
 test('reloading keeps the open tab while navigating between processes opens runs', async ({

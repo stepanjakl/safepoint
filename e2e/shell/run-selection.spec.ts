@@ -172,9 +172,12 @@ test('a saved run waits for its thread before fading in', async ({ page }) => {
     .poll(() => read.inputs.some((input) => input.id === readId))
     .toBe(true);
   try {
-    // Wait beyond a full swap while the saved read is still held.
-    await page.waitForTimeout(600);
-    await expect(layer).toHaveCSS('opacity', '1', { timeout: 1000 });
+    // Past the run loader's delay (600ms) the wait is said: the previous run
+    // steps back and the loader stands in its place until the saved one is
+    // ready.
+    await page.waitForTimeout(900);
+    await expect(page.locator('.run-view')).toContainText('Loading run…');
+    await expect(layer).toHaveCSS('opacity', '0', { timeout: 1000 });
     await expect(layer).toContainText('Previous run note.');
   } catch (error) {
     release.resolve();

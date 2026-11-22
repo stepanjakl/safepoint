@@ -37,7 +37,10 @@ test('returning to Rules retains its known empty state while refreshing', async 
   await expect(
     page.getByText('Nothing is accepted yet.', { exact: true }),
   ).toBeVisible();
-  await expect(page.locator('.process-sheet-swap')).toHaveCSS('opacity', '1');
+  // Each tab once shown is kept, hidden: the one on screen is the visible one.
+  await expect(
+    page.locator('.process-sheet-swap').filter({ visible: true }),
+  ).toHaveCSS('opacity', '1');
   await page.getByRole('button', { name: 'Runs', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(
     'No run selected',
@@ -56,8 +59,7 @@ test('returning to Rules retains its known empty state while refreshing', async 
           }[] = [];
           const started = performance.now();
           function sample() {
-            const layer = document.querySelector('.process-sheet-swap');
-            const content = layer?.querySelector(
+            const content = document.querySelector(
               'section[aria-labelledby="rules-heading"]',
             );
             if (content) {

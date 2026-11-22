@@ -14,7 +14,10 @@ import {
   type CSSProperties,
 } from 'react';
 
-import { useStepReady } from '@/components/app-shell/runs/run-readiness';
+import {
+  settledOnce,
+  useStepReady,
+} from '@/components/app-shell/runs/run-readiness';
 import { FromModel, Step } from '@/components/engine/rules-parts';
 import { ModelSelect } from '@/components/engine/rules/model-select';
 import { Lede, Outcome, plural } from '@/components/engine/trial-parts';
@@ -143,13 +146,13 @@ export function CalculateStep({
   // was, until the person moves it to the current one.
   const [pin, setPin] = useState(calculatedOn);
   // Asked afresh each time the step opens: the accepted rules may have
-  // changed since, and a cross-check lands in this same answer.
+  // changed since, and a cross-check lands in this same answer. The last
+  // answer is kept and shown meanwhile, so a run opened again shows at once.
   const worked = trpc.calculate.get.queryOptions(
     { text, readId, rulebook: pin ?? undefined },
     {
       enabled: !mock,
       staleTime: mock ? Infinity : 0,
-      gcTime: mock ? Infinity : 0,
     },
   );
   const calculated = useQuery(worked);
@@ -163,7 +166,7 @@ export function CalculateStep({
     if (answer?.kind === 'calculation')
       report.current(progressOf(answer.calculation, answer.check));
   }, [answer]);
-  useStepReady(calculated.isFetched && !calculated.isFetching, onReadyChange);
+  useStepReady(settledOnce(calculated), onReadyChange);
   const [model, setModel] = useState<DraftingModel>(DRAFTING_MODELS[0]!);
   const quotaModel = modelPlan
     ? modelsFor({ plan: modelPlan }, [GEMINI_FIND])[0]

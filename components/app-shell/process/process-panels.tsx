@@ -1,9 +1,8 @@
 'use client';
 
-import { useLayoutEffect, useRef, useSyncExternalStore } from 'react';
+import { useState } from 'react';
 import { useDetailHold } from '@/components/ui/screen-settled';
-import { Loader } from '@/components/ui/loader';
-import { EmptyState, useLoader } from '@/components/ui/working-mark';
+import { EmptyState } from '@/components/ui/working-mark';
 import { cx } from '@/lib/ui/cx';
 import type { ProcessSummary } from '@/lib/shell/model';
 import {
@@ -38,11 +37,10 @@ import type { ProcessTab } from './process-tab-store';
 const COLUMNS =
   'grid h-full min-h-0 grid-cols-[minmax(0,1fr)] shell:grid-rows-[minmax(0,1fr)]';
 
-// Versions are a short word and a date, so their list gives the text more.
+// Versions are a short word and a date: the runs rail's width, so the divider
+// does not move between the two tabs.
 const NARROW_LIST =
-  '@sheet-narrow/sheet:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] @sheet-narrow/sheet:[&>*]:min-w-0 @sheet-wide/sheet:grid-cols-[minmax(0,18rem)_minmax(0,1fr)]';
-
-const noSubscription = () => () => {};
+  '@sheet-narrow/sheet:grid-cols-[minmax(0,var(--spacing-sheet-rail))_minmax(0,1fr)] @sheet-narrow/sheet:[&>*]:min-w-0';
 
 export function ProcessPanels({
   process,
@@ -83,42 +81,25 @@ export function ProcessPanels({
     onKeyDownCapture,
     settleLeaving,
   } = useAsidePanel({
-    initial: openView,
+    // The latest version is open from the first render, so the server sends
+    // it with the list. Where the two do not fit side by side, the sheet's
+    // width alone hides it and the list keeps its place (`passive` below).
+    initial:
+      openView ??
+      (tab === 'instructions'
+        ? {
+            kind: 'version',
+            version: version.version,
+            face: 'text',
+            passive: true,
+          }
+        : null),
     place,
     viewKey,
     sameList: (from, to) => from.kind === to.kind,
     scope: '.process-panels',
   });
 
-  // The latest version opens beside the list with the tab, as the text the
-  // tab is about -- but only where the two sit side by side. Below that it
-  // would take the list's place, so the grid's own columns decide.
-  const root = useRef<HTMLDivElement>(null);
-  useLayoutEffect(() => {
-    if (tab !== 'instructions' || openView || !root.current) {
-      return;
-    }
-    const columns = getComputedStyle(root.current).gridTemplateColumns;
-    if (columns.split(' ').length < 2) return;
-    openAside({
-      kind: 'version',
-      version: version.version,
-      face: 'text',
-      passive: true,
-    });
-    // Once, as the tab arrives: the panels are keyed on it upstream.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // The detail is chosen in the browser -- the latest version opens once the
-  // columns are measured -- so until then the column waits rather than saying
-  // nothing is open.
-  const hydrated = useSyncExternalStore(
-    noSubscription,
-    () => true,
-    () => false,
-  );
-  const loader = useLoader(!hydrated);
   // The empty column trails the list as an open detail does (DrawerAside).
   const emptyHold = useDetailHold();
 
@@ -127,6 +108,18 @@ export function ProcessPanels({
     leaving && aside && viewKey(leaving) !== viewKey(aside)
       ? asidePanel(leaving)
       : null;
+  // What the detail last swapped from, kept through the arrival, so its band
+  // knows whether the swap crossed between a version and the draft.
+  const [swap, setSwap] = useState({
+    key: panel?.key,
+    kind: panel?.view.kind,
+    from: panel?.view.kind,
+  });
+  if (swap.key !== panel?.key)
+    setSwap({ key: panel?.key, kind: panel?.view.kind, from: swap.kind });
+  const crossing = leavingPanel
+    ? leavingPanel.view.kind !== panel?.view.kind
+    : swap.from !== swap.kind;
 
   function asidePanel(view: AsideView) {
     if (view.kind === 'version') {
@@ -159,6 +152,9 @@ export function ProcessPanels({
   }
 
   const opensDetail = tab === 'instructions';
+  // The version that opened with the tab, not one a person chose: below the
+  // two-column width it gives way to the list instead of replacing it.
+  const passive = panel?.view.kind === 'version' && panel.view.passive === true;
   const list =
     tab === 'instructions' ? (
       <InstructionsPanel
@@ -175,7 +171,6 @@ export function ProcessPanels({
 
   return (
     <div
-      ref={root}
       className={cx('process-panels', COLUMNS, opensDetail && NARROW_LIST)}
       data-tab={tab}
       onKeyDownCapture={onKeyDownCapture}
@@ -190,12 +185,10 @@ export function ProcessPanels({
           opensDetail
             ? '@max-sheet-narrow/sheet:sheet-bleed-end'
             : 'sheet-bleed-end sheet-bleed-end-head',
-          panel ? '@max-sheet-narrow/sheet:hidden' : null,
+          panel && !passive ? '@max-sheet-narrow/sheet:hidden' : null,
         )}
       >
-        {/* The same first row the runs rail has, so every section of the
-            sheet names itself in the same place and none of them spends a
-            header on it. */}
+        {/* Named for assistive technology only: the header's tab says it. */}
         <SectionRow id={SECTION[tab].id} title={SECTION[tab].title} />
         {list}
       </div>
@@ -204,6 +197,7 @@ export function ProcessPanels({
           process={process}
           view={(leavingPanel ?? panel).view}
           swapping={leavingPanel !== null}
+          crossing={crossing}
           onEdit={() => openAside({ kind: 'edit' })}
           onDone={(version) =>
             version
@@ -221,7 +215,7 @@ export function ProcessPanels({
               onLeft={settleLeaving}
               flat
               // The detail band covers the column edge's lit line.
-              className="z-1"
+              className={cx('z-1', passive && '@max-sheet-narrow/sheet:hidden')}
             />
           )}
         />
@@ -232,17 +226,9 @@ export function ProcessPanels({
           {...emptyHold.props}
           className="@sheet-wide/sheet:flex hidden min-h-0 flex-col overflow-y-auto px-8"
         >
-          {loader.phase ? (
-            <Loader phase={loader.phase} size="page" label="Loading…" />
-          ) : (
-            <EmptyState
-              role="status"
-              fadeIn={loader.fadeIn}
-              title="No version open."
-            >
-              Choose a version to read it and see what changed in it.
-            </EmptyState>
-          )}
+          <EmptyState role="status" title="No version open.">
+            Choose a version to read it and see what changed in it.
+          </EmptyState>
         </div>
       ) : null}
     </div>

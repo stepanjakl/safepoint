@@ -189,7 +189,7 @@ const expectArrivalAfterScreen = (frames: ArrivalFrame[]) => {
   expect(frames.at(-1)).toEqual({ own: 1, screen: 1 });
 };
 
-test('the empty page arrives after a tab has finished coming in', async ({
+test('the empty page comes back with its tab, without rising again', async ({
   page,
 }) => {
   await page.locator('.sheet-row').first().click();
@@ -200,10 +200,54 @@ test('the empty page arrives after a tab has finished coming in', async ({
     .getByRole('button', { name: /^Instructions/ })
     .first()
     .click();
-  await expect(page.locator('.process-runs-detail')).toHaveCount(0);
-  const arrival = observeArrival(page);
-  await page.getByRole('button', { name: 'Runs', exact: true }).click();
-  expectArrivalAfterScreen(await arrival);
+  // Kept, hidden, while another tab is shown: the same page comes back.
+  await expect(page.locator('.process-runs-detail')).toBeHidden();
+  const frames = await page.evaluate(
+    () =>
+      new Promise<ArrivalFrame[]>((resolve) => {
+        const words = 'Choose a run, or start a new one.';
+        const kept = Array.from(document.querySelectorAll('p')).find(
+          (paragraph) => paragraph.textContent === words,
+        );
+        const main = kept?.closest('main');
+        if (!kept || !main) throw new Error('The empty page was not kept');
+        const product = (from: Element | null, stop: Element | null) => {
+          let opacity = 1;
+          for (let at = from; at && at !== stop; at = at.parentElement)
+            opacity *= Number(getComputedStyle(at).opacity);
+          return opacity;
+        };
+        const frames: ArrivalFrame[] = [];
+        const started = performance.now();
+        function sample() {
+          if (kept!.getClientRects().length > 0)
+            frames.push({
+              own: product(kept!, main!),
+              screen: product(main!, null),
+            });
+          const last = frames.at(-1);
+          if (
+            (last?.own === 1 && last.screen === 1) ||
+            performance.now() - started > 5000
+          )
+            resolve(frames);
+          else requestAnimationFrame(sample);
+        }
+        document
+          .querySelector<HTMLButtonElement>(
+            '.process-header button[aria-label="Runs"]',
+          )
+          ?.click();
+        requestAnimationFrame(sample);
+      }),
+  );
+  expect(frames.length).toBeGreaterThan(2);
+  expect(frames[0]!.screen, 'the tab was not fading in').toBeLessThan(1);
+  expect(
+    frames.filter((frame) => frame.own < 1),
+    'the empty page rose again on a tab it had already shown',
+  ).toEqual([]);
+  expect(frames.at(-1)).toEqual({ own: 1, screen: 1 });
 });
 
 test('the empty page arrives after another process has finished coming in', async ({
@@ -217,22 +261,30 @@ test('the empty page arrives after another process has finished coming in', asyn
   expectArrivalAfterScreen(await arrival);
 });
 
-// The browser holds the old page until the new one paints, so a reload that
-// moves nothing cannot be told from no reload at all.
-test('a reload leaves the page where it was', async ({ page }) => {
+// A load is an arrival: the run column trails the list in, and the empty
+// page's parts rise into it, once.
+test('a reload brings the empty page in once', async ({ page }) => {
   await page.goto('/processes/brunch-orders');
   await page.addInitScript(
-    `window.arrival = (${sampleArrival.toString()})(1500);`,
+    `window.arrival = (${sampleArrival.toString()})(3000);`,
   );
   await page.reload();
   const frames = await page.evaluate(
     () => (window as unknown as { arrival: Promise<ArrivalFrame[]> }).arrival,
   );
   expect(frames.length).toBeGreaterThan(10);
-  expect(
-    frames.filter((frame) => frame.own < 1 || frame.screen < 1),
-    'something faded on a reload',
-  ).toEqual([]);
+  expect(frames[0]!.own, 'the empty page did not rise').toBeLessThan(1);
+  // Its column trails the list in, and its parts rise: each only ever comes
+  // up, so nothing shown first flashes away.
+  for (let index = 1; index < frames.length; index++) {
+    expect(frames[index]!.own).toBeGreaterThanOrEqual(
+      frames[index - 1]!.own - 0.01,
+    );
+    expect(frames[index]!.screen).toBeGreaterThanOrEqual(
+      frames[index - 1]!.screen - 0.01,
+    );
+  }
+  expect(frames.at(-1)).toEqual({ own: 1, screen: 1 });
 });
 
 test('a process loaded directly under reduced motion is not left hidden', async ({
