@@ -245,26 +245,21 @@
   }
   .assistant-modal {
     width: var(--assistant-track, var(--spacing-assistant-default));
-    transition: width var(--duration-pane) var(--ease-out-quad);
+    --assistant-width-duration: var(--duration-pane);
+    translate: 0;
+    opacity: 1;
+    transition:
+      width var(--assistant-width-duration) var(--ease-out-quad),
+      translate var(--duration-pane) var(--ease-out-quad),
+      opacity var(--duration-pane) var(--ease-out-quad);
   }
   .assistant-overlay[data-resizing] .assistant-modal {
-    transition: none;
+    --assistant-width-duration: 0s;
   }
-  .assistant-overlay[data-entering] .assistant-modal {
-    animation: assistant-enter var(--duration-pane) var(--ease-out-quad);
-  }
-  .assistant-overlay[data-exiting] .assistant-modal {
-    animation: assistant-enter var(--duration-pane) var(--ease-out-quad) reverse;
-  }
-  @keyframes assistant-enter {
-    from {
-      translate: 100%;
-      opacity: 0;
-    }
-    to {
-      translate: 0;
-      opacity: 1;
-    }
+  .assistant-modal[data-entering],
+  .assistant-modal[data-exiting] {
+    translate: calc(100% + var(--spacing-shell-inset));
+    opacity: 0;
   }
   @media (width >= 80rem) {
     .assistant-mode-probe {
@@ -289,7 +284,6 @@
   }
   @media (prefers-reduced-motion: reduce) {
     .assistant-overlay .assistant-modal {
-      animation: none;
       transition: none;
     }
   }
@@ -316,19 +310,11 @@
    rows (z-5, still under .process-header/.notch at z-10) so 1px sheet-bleed
    covers the inner highlight cleanly without eating half a pixel of the ring. */
 @media (min-resolution: 2dppx) {
-  @media (width < 56.25rem) {
-    @supports not (overflow-clip-margin: 1px) {
-      /* WebKit snaps the pane shadow to two 2× pixels. Give the notch clips
-         the same width so the curve meets the straight edge without a step. */
-      :root[data-edges='retina'] .shell-pane {
-        --edge-ring: 1px;
-      }
-    }
-  }
-
   :root[data-edges='retina'] .shell-pane > .surface-raised {
-    box-shadow: inset 0 0 0 calc(var(--edge-ring) + var(--spacing-control-highlight))
-      var(--control-highlight);
+    box-shadow:
+      inset 0 0 0 var(--ring-pane-solid) var(--control-highlight),
+      inset 0 0 0 var(--ring-pane-soft)
+        color-mix(in srgb, var(--control-highlight) var(--ring-pane-cover), transparent);
   }
 
   :root[data-edges='retina'] .shell-pane::after {
@@ -337,7 +323,10 @@
     inset: 0;
     z-index: 5;
     border-radius: var(--radius-shell);
-    box-shadow: inset 0 0 0 var(--edge-ring) var(--sp-raised-ring);
+    box-shadow:
+      inset 0 0 0 var(--edge-ring-solid) var(--sp-raised-ring),
+      inset 0 0 0 var(--edge-ring-soft)
+        color-mix(in srgb, var(--sp-raised-ring) var(--edge-ring-cover), transparent);
     pointer-events: none;
   }
 }

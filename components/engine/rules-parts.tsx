@@ -47,7 +47,7 @@ export function FromModel({
   label,
   children,
 }: {
-  label?: string;
+  label?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -55,9 +55,9 @@ export function FromModel({
       {label ? (
         <>
           <SparkleFilled aria-hidden className="rules-model-mark" />
-          <span className="rules-model-label text-meta text-state-advisory">
+          <div className="rules-model-label text-meta text-state-advisory">
             {label}
-          </span>
+          </div>
         </>
       ) : null}
       <div className="rules-model-body grid gap-1">{children}</div>

@@ -71,6 +71,17 @@ const applicationOf = (changes: CellChange[]): Application => ({
   decisions: {},
 });
 
+const proposed = {
+  data: {
+    kind: 'proposal' as const,
+    fingerprint: frozen.proposal.fingerprint,
+    names: frozen.names,
+    calculated: frozen.calculated,
+    proposal: frozen.proposal,
+    progress: null,
+  },
+};
+
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('safepoint.dev.run-debug', 'on');
@@ -133,16 +144,6 @@ test.beforeEach(async ({ page }) => {
       },
     };
   });
-  const proposed = {
-    data: {
-      kind: 'proposal' as const,
-      fingerprint: frozen.proposal.fingerprint,
-      names: frozen.names,
-      calculated: frozen.calculated,
-      proposal: frozen.proposal,
-      progress: null,
-    },
-  };
   await mockProcedure(page, 'propose.get', proposed);
   await mockProcedure(page, 'propose.start', proposed);
   // The decisions are the server's: served here as it answers them.
@@ -504,16 +505,39 @@ test('a record opens to the model’s reason and the checks’ working', async (
 test('source citations highlight only the cited value in the sheet drawer', async ({
   page,
 }) => {
+  const record = proposed.data.proposal.records['FT-200']!;
+  const grouped = {
+    data: {
+      ...proposed.data,
+      proposal: {
+        ...proposed.data.proposal,
+        records: {
+          ...proposed.data.proposal.records,
+          'FT-200': { ...record, cited: [...record.cited, 'Stock!C6'] },
+        },
+      },
+    },
+  };
+  await mockProcedure(page, 'propose.get', grouped);
+  await mockProcedure(page, 'propose.start', grouped);
   const table = await propose(page);
   await table.getByRole('button', { name: /^FT-200/ }).click();
   const stock = table.getByRole('button', { name: 'Stock B6' });
+  const detail = table.getByRole('row').filter({
+    has: page.getByRole('button', { name: 'Stock B6' }),
+  });
+  await expect(detail.getByText('Stock', { exact: true })).toHaveCount(1);
+  await expect(detail.getByRole('button', { name: 'Stock C6' })).toHaveText(
+    'C6',
+  );
+  await expect(stock).toHaveText('B6');
   await stock.focus();
   await stock.press('Enter');
   const drawer = page.getByRole('dialog', { name: 'Sheet data' });
-  const citation = drawer.locator('mark');
+  const citation = drawer.locator('td[data-cited]');
   await expect(citation).toHaveCount(1);
   await expect(citation).toHaveAttribute('title', 'Stock!B6');
-  await expect(citation).toHaveText('17');
+  await expect(citation).toHaveText('17 Cited cell Stock!B6');
   await expect(citation).toBeInViewport();
 
   await page.keyboard.press('Escape');

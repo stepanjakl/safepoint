@@ -36,24 +36,29 @@ for (const mode of ['default', 'retina'] as const) {
     const header = page.locator('.process-header');
     const runs = page.locator('.process-runs');
     const runHead = runs.locator('.sheet-head').first();
-    const width = mode === 'retina' ? '0.75px' : '1px';
+    // A solid layer and a soft one, whole device pixels each (geometry.css):
+    // 0.75px is 0.5px solid and 1px at half strength; 1px is all solid.
+    const [solid, soft] =
+      mode === 'retina' ? ['0.5px', '1px'] : ['1px', '1.5px'];
+    const layers = (x: (width: string) => string) =>
+      expect.stringMatching(new RegExp(`${x(solid)} inset.*${x(soft)} inset`));
     await expect
       .poll(() => dividerPaint(header, 'bottom'))
       .toMatchObject({
         border: '0px',
-        shadow: expect.stringContaining(`0px -${width} 0px 0px inset`),
+        shadow: layers((w) => `0px -${w} 0px 0px`),
       });
     await expect
       .poll(() => dividerPaint(runHead, 'bottom'))
       .toMatchObject({
         border: '0px',
-        shadow: expect.stringContaining(`0px -${width} 0px 0px inset`),
+        shadow: layers((w) => `0px -${w} 0px 0px`),
       });
     await expect
       .poll(() => dividerPaint(runs, 'right', '::before'))
       .toMatchObject({
         border: '0px',
-        shadow: expect.stringContaining(`-${width} 0px 0px 0px inset`),
+        shadow: layers((w) => `-${w} 0px 0px 0px`),
       });
 
     await page.emulateMedia({ forcedColors: 'active' });
@@ -214,12 +219,17 @@ for (const mode of ['default', 'retina']) {
     const header = page.locator('.process-header');
     const menu = page.getByRole('button', { name: 'Menu', exact: true });
     await expect(menu).toBeVisible();
-    const width = mode === 'retina' ? '0.75px' : '1px';
+    // A solid layer and a soft one, whole device pixels each (geometry.css):
+    // 0.75px is 0.5px solid and 1px at half strength; 1px is all solid.
+    const [solid, soft] =
+      mode === 'retina' ? ['0.5px', '1px'] : ['1px', '1.5px'];
+    const layers = (x: (width: string) => string) =>
+      expect.stringMatching(new RegExp(`${x(solid)} inset.*${x(soft)} inset`));
     await expect
       .poll(() => dividerPaint(header, 'bottom'))
       .toMatchObject({
         border: '0px',
-        shadow: expect.stringContaining(`0px -${width} 0px 0px inset`),
+        shadow: layers((w) => `0px -${w} 0px 0px`),
       });
     await page.evaluate(() => document.fonts.ready);
 

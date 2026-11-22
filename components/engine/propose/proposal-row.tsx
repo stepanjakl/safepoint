@@ -8,7 +8,8 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { DecisionButton } from '@/components/engine/decision-button';
-import { Step } from '@/components/engine/rules-parts';
+import { FromModel, Step } from '@/components/engine/rules-parts';
+import { Code } from '@/components/engine/trial-parts';
 import { Button } from '@/components/ui/button';
 import {
   DATA_TABLE_NAME,
@@ -36,6 +37,18 @@ const valuesWords = (
   values
     ? fields.map((field) => `${field.label} ${values[field.id]}`).join(', ')
     : 'no change';
+
+function citationsByTab(cells: string[], source?: SourceKind) {
+  const address = sourceTermsOf(source).address;
+  const groups = new Map<string | null, string[]>();
+  for (const cell of cells) {
+    const tab = source === 'database' ? null : address.resourceOf(cell);
+    const group = groups.get(tab);
+    if (group) group.push(cell);
+    else groups.set(tab, [cell]);
+  }
+  return [...groups];
+}
 
 export function ProposalRow({
   fields,
@@ -338,9 +351,10 @@ export function ProposalRow({
           colSpan={fields.length + 4}
           className={cx('p-0', ruled && DATA_TABLE_RULE)}
         >
-          <Fold open={expanded} id={id} className="grid gap-4 px-6 pt-1 pb-4">
-            <section className="grid gap-1">
-              <h3 className="readout text-muted">Model rationale</h3>
+          <Fold open={expanded} id={id} className="grid gap-5 px-6 pt-1 pb-4">
+            <FromModel
+              label={<h3 className="readout text-muted">Model rationale</h3>}
+            >
               <p className="text-dense">{record.reason}</p>
               {record.unsure ? (
                 <p className="text-dense">
@@ -348,42 +362,50 @@ export function ProposalRow({
                   {record.unsure}
                 </p>
               ) : null}
-            </section>
+            </FromModel>
             {record.cited.length ? (
-              <section className="grid gap-1">
+              <section className="grid gap-2">
                 <h3 className="readout text-muted">Source cells</h3>
-                <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                  {record.cited.map((cell) => {
-                    const sheet =
-                      source === 'database'
-                        ? null
-                        : sourceTermsOf(source).address.resourceOf(cell);
-                    return (
-                      <button
-                        key={cell}
-                        type="button"
-                        className="text-dense focus-visible:outline-state-advisory rounded-sm text-left hover:underline hover:underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2"
-                        onClick={() => onCite(cell)}
-                      >
-                        {sheet ? <>{sheet} </> : null}
-                        <span className="value text-state-advisory underline decoration-dotted underline-offset-2">
-                          {sheet ? cell.slice(sheet.length + 1) : cell}
-                        </span>
-                      </button>
-                    );
-                  })}
+                <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
+                  {citationsByTab(record.cited, source).map(([tab, cells]) => (
+                    <div
+                      key={tab ?? ''}
+                      className="text-dense flex flex-wrap items-baseline gap-x-2 gap-y-1"
+                    >
+                      {tab ? <span>{tab}</span> : null}
+                      {cells.map((cell) => {
+                        const reference = tab
+                          ? cell.slice(tab.length + 1)
+                          : cell;
+                        return (
+                          <button
+                            key={cell}
+                            type="button"
+                            aria-label={tab ? `${tab} ${reference}` : undefined}
+                            className="value text-state-advisory focus-visible:outline-state-advisory rounded-sm underline decoration-dotted underline-offset-2 hover:decoration-solid focus-visible:outline-2 focus-visible:outline-offset-2"
+                            onClick={() => onCite(cell)}
+                          >
+                            {reference}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ))}
                 </div>
               </section>
             ) : null}
             {calculated.calculations.length ? (
-              <section className="grid gap-1">
-                <h3 className="readout text-muted">Calculated values</h3>
-                <dl className="flex flex-wrap gap-x-6 gap-y-2">
+              <section className="grid gap-2">
+                <h3 className="readout text-muted">Calculations</h3>
+                <dl className="grid gap-2">
                   {calculated.calculations.map((c) => (
-                    <div key={c.id} className="grid gap-0.5">
-                      <dt className="text-meta text-muted">{c.name}</dt>
-                      <dd className="value text-dense text-primary font-medium tabular-nums">
-                        {calculated.rows[key]?.[c.id] ?? '—'}
+                    <div
+                      key={c.id}
+                      className="flex flex-wrap items-baseline gap-2"
+                    >
+                      <dt className="font-medium">{c.name}</dt>
+                      <dd>
+                        <Code>{calculated.rows[key]?.[c.id] ?? '—'}</Code>
                       </dd>
                     </div>
                   ))}
@@ -391,49 +413,53 @@ export function ProposalRow({
               </section>
             ) : null}
             {checks?.length ? (
-              <ul className="grid gap-2" aria-label={`Checks on ${key}`}>
-                {/* Those a guard settles for this record come last: they
+              <section className="grid gap-2">
+                <h3 className="readout text-muted">Rule checks</h3>
+                <ul className="grid gap-2" aria-label={`Checks on ${key}`}>
+                  {/* Those a guard settles for this record come last: they
                     say nothing about the values. Decisions kept before the
                     verdicts said so read as applying. */}
-                {[...checks]
-                  .sort(
-                    (a, b) =>
-                      Number(a.applies === false) - Number(b.applies === false),
-                  )
-                  .map((check) => (
-                    <li key={check.id} className="grid gap-1">
-                      <span className="flex flex-wrap items-center gap-2">
-                        <span className="font-medium">{check.name}</span>
-                        <Pill
-                          tone={
-                            check.applies === false
-                              ? 'neutral'
+                  {[...checks]
+                    .sort(
+                      (a, b) =>
+                        Number(a.applies === false) -
+                        Number(b.applies === false),
+                    )
+                    .map((check) => (
+                      <li key={check.id} className="grid gap-1">
+                        <span className="flex flex-wrap items-center gap-2">
+                          <span className="font-medium">{check.name}</span>
+                          <Pill
+                            tone={
+                              check.applies === false
+                                ? 'neutral'
+                                : check.holds
+                                  ? 'ready'
+                                  : check.consequence === 'block'
+                                    ? 'blocked'
+                                    : 'decision'
+                            }
+                          >
+                            {check.applies === false
+                              ? 'Doesn’t apply'
                               : check.holds
-                                ? 'ready'
-                                : check.consequence === 'block'
-                                  ? 'blocked'
-                                  : 'decision'
-                          }
-                        >
-                          {check.applies === false
-                            ? 'Doesn’t apply'
-                            : check.holds
-                              ? 'Holds'
-                              : 'Fails'}
-                        </Pill>
-                      </span>
-                      <span className="text-meta text-muted flex flex-wrap items-center gap-x-1.5 gap-y-1">
-                        {check.error ??
-                          check.steps.map((step, index) => (
-                            <span key={index} className="contents">
-                              {index ? <span aria-hidden>→</span> : null}
-                              <Step text={step} />
-                            </span>
-                          ))}
-                      </span>
-                    </li>
-                  ))}
-              </ul>
+                                ? 'Holds'
+                                : 'Fails'}
+                          </Pill>
+                        </span>
+                        <span className="text-meta text-muted flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                          {check.error ??
+                            check.steps.map((step, index) => (
+                              <span key={index} className="contents">
+                                {index ? <span aria-hidden>→</span> : null}
+                                <Step text={step} />
+                              </span>
+                            ))}
+                        </span>
+                      </li>
+                    ))}
+                </ul>
+              </section>
             ) : null}
           </Fold>
         </td>

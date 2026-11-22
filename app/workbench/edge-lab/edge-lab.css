@@ -1,0 +1,262 @@
+/* /workbench/edge-lab: every way a line is drawn, at every width and sub-pixel
+   offset, for scripts/checks/check-line-geometry.ts to measure. Cells are
+   whole pixels; only a specimen's own offset may be fractional. */
+@layer components {
+  .edge-lab {
+    /* One device pixel. EdgeLabPixelRatio sets it from devicePixelRatio. */
+    --lab-dp: 0.5px;
+    --lab-ring: var(--sp-raised-ring);
+    --lab-highlight: var(--sp-raised-edge);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: start;
+    gap: 32px;
+    padding: 24px;
+  }
+
+  .edge-lab-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 64px);
+    grid-auto-rows: 48px;
+  }
+
+  .edge-lab-grid[data-kind='junction'] {
+    grid-template-columns: repeat(5, 120px);
+    grid-auto-rows: 96px;
+  }
+
+  .edge-lab-cell {
+    position: relative;
+  }
+
+  .edge-lab-specimen {
+    @apply ground-raised;
+    position: absolute;
+    inset-block-start: calc(12px + var(--lab-off));
+    inset-inline-start: calc(12px + var(--lab-off));
+    inline-size: 40px;
+    block-size: 24px;
+    background-color: var(--sp-surface-primary);
+
+    /* A width split into whole device pixels: the solid part, one pixel more,
+       and how much of that last pixel the width covers. */
+    --lab-solid: max(var(--lab-dp), round(down, var(--lab-w), var(--lab-dp)));
+    --lab-soft: calc(var(--lab-solid) + var(--lab-dp));
+    --lab-cover: calc((var(--lab-w) - var(--lab-solid)) / var(--lab-dp) * 100%);
+    --lab-w2: calc(2 * var(--lab-w));
+    --lab-solid2: max(var(--lab-dp), round(down, var(--lab-w2), var(--lab-dp)));
+    --lab-soft2: calc(var(--lab-solid2) + var(--lab-dp));
+    --lab-cover2: calc((var(--lab-w2) - var(--lab-solid2)) / var(--lab-dp) * 100%);
+    --lab-ring-soft: color-mix(in srgb, var(--lab-ring) var(--lab-cover), transparent);
+    --lab-highlight-soft: color-mix(in srgb, var(--lab-highlight) var(--lab-cover2), transparent);
+  }
+
+  .edge-lab-grid[data-kind='junction'] .edge-lab-specimen {
+    inline-size: 96px;
+    block-size: 72px;
+  }
+
+  [data-w='0.5'] {
+    --lab-w: 0.5px;
+  }
+  [data-w='0.75'] {
+    --lab-w: 0.75px;
+  }
+  [data-w='1'] {
+    --lab-w: 1px;
+  }
+  [data-w='1.5'] {
+    --lab-w: 1.5px;
+  }
+  [data-off='0'] {
+    --lab-off: 0px;
+  }
+  [data-off='0.25'] {
+    --lab-off: 0.25px;
+  }
+  [data-off='0.33'] {
+    --lab-off: 0.33px;
+  }
+  [data-off='0.5'] {
+    --lab-off: 0.5px;
+  }
+  [data-off='0.75'] {
+    --lab-off: 0.75px;
+  }
+  .edge-lab-specimen[data-variant='radius'] {
+    border-radius: 8px;
+  }
+  .edge-lab-specimen[data-variant='composited'] {
+    will-change: transform;
+  }
+
+  /* ── Rings ── */
+  [data-recipe='ring-border'] {
+    border: var(--lab-w) solid var(--lab-ring);
+  }
+  [data-recipe='ring-inset'] {
+    box-shadow: inset 0 0 0 var(--lab-w) var(--lab-ring);
+  }
+  [data-recipe='ring-outset'] {
+    box-shadow: 0 0 0 var(--lab-w) var(--lab-ring);
+  }
+  [data-recipe='ring-inset-layered'] {
+    box-shadow:
+      inset 0 0 0 var(--lab-solid) var(--lab-ring),
+      inset 0 0 0 var(--lab-soft) var(--lab-ring-soft);
+  }
+  /* The solid part as a border, which every engine draws exactly with a radius
+     too; only the soft last pixel is a shadow. */
+  [data-recipe='ring-border-layered'] {
+    border: var(--lab-solid) solid var(--lab-ring);
+    box-shadow: inset 0 0 0 var(--lab-dp) var(--lab-ring-soft);
+  }
+  [data-recipe='ring-outset-layered'] {
+    box-shadow:
+      0 0 0 var(--lab-solid) var(--lab-ring),
+      0 0 0 var(--lab-soft) var(--lab-ring-soft);
+  }
+  [data-recipe='stack'] {
+    box-shadow:
+      inset 0 0 0 var(--lab-w) var(--lab-ring),
+      inset 0 0 0 var(--lab-w2) var(--lab-highlight);
+  }
+  [data-recipe='stack-layered'] {
+    box-shadow:
+      inset 0 0 0 var(--lab-solid) var(--lab-ring),
+      inset 0 0 0 var(--lab-soft) var(--lab-ring-soft),
+      inset 0 0 0 var(--lab-solid2) var(--lab-highlight),
+      inset 0 0 0 var(--lab-soft2) var(--lab-highlight-soft);
+  }
+
+  /* ── Single lines, along the bottom ── */
+  [data-recipe='line-border'] {
+    border-block-end: var(--lab-w) solid var(--lab-ring);
+  }
+  [data-recipe='line-inset'] {
+    box-shadow: inset 0 calc(var(--lab-w) * -1) 0 var(--lab-ring);
+  }
+  [data-recipe='line-inset-layered'] {
+    box-shadow:
+      inset 0 calc(var(--lab-solid) * -1) 0 var(--lab-ring),
+      inset 0 calc(var(--lab-soft) * -1) 0 var(--lab-ring-soft);
+  }
+  [data-recipe='line-gradient'] {
+    background-image: linear-gradient(
+      to top,
+      var(--lab-ring) var(--lab-w),
+      transparent var(--lab-w)
+    );
+  }
+  [data-recipe='line-gradient-layered'] {
+    background-image: linear-gradient(
+      to top,
+      var(--lab-ring) var(--lab-solid),
+      var(--lab-ring-soft) var(--lab-solid) var(--lab-soft),
+      transparent var(--lab-soft)
+    );
+  }
+  [data-recipe='line-element']::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    block-size: var(--lab-w);
+    background: var(--lab-ring);
+  }
+
+  /* ── Junctions: a frame's ring over its inner highlight, a header rule and
+     a column divider below it, painted as the process sheet paints them. ── */
+  .edge-lab-frame-ring {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    border-radius: inherit;
+    pointer-events: none;
+  }
+  .edge-lab-rule {
+    block-size: 24px;
+  }
+  .edge-lab-divider {
+    position: absolute;
+    inset-block: 24px 0;
+    inset-inline-start: 32px;
+    inline-size: 1px;
+  }
+
+  [data-recipe='junction-native'] {
+    box-shadow: inset 0 0 0 var(--lab-w2) var(--lab-highlight);
+    & .edge-lab-frame-ring {
+      box-shadow: inset 0 0 0 var(--lab-w) var(--lab-ring);
+    }
+    & .edge-lab-rule {
+      box-shadow: inset 0 calc(var(--lab-w) * -1) 0 var(--lab-ring);
+    }
+    & .edge-lab-divider {
+      box-shadow: inset calc(var(--lab-w) * -1) 0 0 var(--lab-ring);
+    }
+  }
+
+  /* The rules as borders on a shadow-drawn frame. */
+  [data-recipe='junction-mixed'] {
+    box-shadow: inset 0 0 0 var(--lab-w2) var(--lab-highlight);
+    & .edge-lab-frame-ring {
+      box-shadow: inset 0 0 0 var(--lab-w) var(--lab-ring);
+    }
+    & .edge-lab-rule {
+      border-block-end: var(--lab-w) solid var(--lab-ring);
+    }
+    & .edge-lab-divider {
+      border-inline-end: var(--lab-w) solid var(--lab-ring);
+    }
+  }
+
+  [data-recipe='junction-layered'] {
+    box-shadow:
+      inset 0 0 0 var(--lab-solid2) var(--lab-highlight),
+      inset 0 0 0 var(--lab-soft2) var(--lab-highlight-soft);
+    & .edge-lab-frame-ring {
+      box-shadow:
+        inset 0 0 0 var(--lab-solid) var(--lab-ring),
+        inset 0 0 0 var(--lab-soft) var(--lab-ring-soft);
+    }
+    & .edge-lab-rule {
+      box-shadow:
+        inset 0 calc(var(--lab-solid) * -1) 0 var(--lab-ring),
+        inset 0 calc(var(--lab-soft) * -1) 0 var(--lab-ring-soft);
+    }
+    & .edge-lab-divider {
+      box-shadow:
+        inset calc(var(--lab-solid) * -1) 0 0 var(--lab-ring),
+        inset calc(var(--lab-soft) * -1) 0 0 var(--lab-ring-soft);
+    }
+  }
+
+  /* The app's own tokens, drawn as the process sheet draws them
+     (resizable-shell.css, process-sheet.css, runs-list.css), so this row
+     moves when they do. */
+  [data-recipe='junction-live'] {
+    box-shadow:
+      inset 0 0 0 var(--ring-pane-solid) var(--lab-highlight),
+      inset 0 0 0 var(--ring-pane-soft)
+        color-mix(in srgb, var(--lab-highlight) var(--ring-pane-cover), transparent);
+    & .edge-lab-frame-ring {
+      box-shadow:
+        inset 0 0 0 var(--edge-ring-solid) var(--lab-ring),
+        inset 0 0 0 var(--edge-ring-soft)
+          color-mix(in srgb, var(--lab-ring) var(--edge-ring-cover), transparent);
+    }
+    & .edge-lab-rule {
+      box-shadow:
+        inset 0 calc(var(--edge-hairline-solid) * -1) 0 var(--lab-ring),
+        inset 0 calc(var(--edge-hairline-soft) * -1) 0
+          color-mix(in srgb, var(--lab-ring) var(--edge-hairline-cover), transparent);
+    }
+    & .edge-lab-divider {
+      box-shadow:
+        inset calc(var(--edge-hairline-solid) * -1) 0 0 var(--lab-ring),
+        inset calc(var(--edge-hairline-soft) * -1) 0 0
+          color-mix(in srgb, var(--lab-ring) var(--edge-hairline-cover), transparent);
+    }
+  }
+}

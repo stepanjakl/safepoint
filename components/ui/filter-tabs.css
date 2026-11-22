@@ -68,7 +68,10 @@
   @apply control-wash;
   /* The group the list is at: an inset edge, so the tab does not move. */
   &[data-spied] {
-    box-shadow: inset 0 0 0 var(--spacing-control-edge) var(--filter-edge);
+    box-shadow:
+      inset 0 0 0 var(--edge-control-solid) var(--filter-edge),
+      inset 0 0 0 var(--edge-control-soft)
+        color-mix(in srgb, var(--filter-edge) var(--edge-control-cover), transparent);
   }
   &[data-scroll-active],
   [data-scroll-active] & {

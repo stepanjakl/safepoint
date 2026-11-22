@@ -16,7 +16,10 @@
     position: absolute;
     inset-inline: var(--drawer-header-highlight-inset);
     inset-block: 0;
-    box-shadow: 0 var(--highlight-pane) 0 var(--sp-ground-edge);
+    box-shadow:
+      0 var(--highlight-pane-solid) 0 var(--sp-ground-edge),
+      0 var(--highlight-pane-soft) 0
+        color-mix(in srgb, var(--sp-ground-edge) var(--highlight-pane-cover), transparent);
     pointer-events: none;
     content: '';
   }

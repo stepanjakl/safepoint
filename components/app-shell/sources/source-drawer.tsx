@@ -1,40 +1,24 @@
 'use client';
 
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 
 import {
   DrawerOverlay,
   DrawerPanels,
 } from '@/components/app-shell/drawer-overlay';
-import {
-  COMPACT_TABLE_BODY,
-  COMPACT_TABLE_CELL,
-  COMPACT_TABLE_HEAD,
-  DataTable,
-} from '@/components/ui/data-table';
 import { FilterTabs } from '@/components/ui/filter-tabs';
 import { Loader } from '@/components/ui/loader';
 import { useLoader } from '@/components/ui/working-mark';
 import type { SourceValues } from '@/lib/sources/model';
 
+import { ResourceTable } from './resource-table';
 import { useSourceValues } from './source-queries';
 
 type Loaded =
   | { kind: 'idle' | 'loading' }
   | { kind: 'ready'; values: SourceValues }
   | { kind: 'failed'; message: string };
-
-// Opaque sticky faces keep scrolling cells under the header and row numbers;
-// the corner sits above both.
-const EDGE = COMPACT_TABLE_CELL;
-const CELL = `${EDGE} text-left`;
-const HEAD = `${COMPACT_TABLE_HEAD} sticky top-0 z-2`;
-const ROW_NUMBER = `${EDGE} text-muted bg-surface-inset sticky left-0 z-1 text-right font-normal`;
-
-// A cell as the sheet returned it: unformatted, so a time is its serial number.
-const cellText = (cell: unknown) =>
-  cell === null || cell === undefined ? '' : String(cell);
 
 /*
   One read of a source, a resource at a time, as a table of exactly what was
@@ -134,71 +118,5 @@ export function SourceDrawer({
         </DrawerPanels>
       </DrawerOverlay>
     </>
-  );
-}
-
-function ResourceTable({
-  name,
-  values,
-}: {
-  name: string;
-  values: unknown[][];
-}) {
-  const scroller = useRef<HTMLElement>(null);
-  useLayoutEffect(() => {
-    scroller.current?.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-  }, [name]);
-
-  const width = Math.max(0, ...values.map((row) => row.length));
-  const [header = [], ...rows] = values;
-  const cells = (row: unknown[]) =>
-    Array.from({ length: width }, (_, index) => cellText(row[index]));
-  return (
-    <DataTable
-      ref={scroller}
-      variant="compact"
-      tabIndex={0}
-      role="region"
-      aria-label={`${name}, as read`}
-      className="min-h-0 flex-1 focus-visible:-outline-offset-2"
-    >
-      {values.length === 0 && (
-        <p className="text-dense text-muted p-3">{name} is empty.</p>
-      )}
-      <table
-        className={`${COMPACT_TABLE_BODY} min-w-full`}
-        hidden={values.length === 0}
-      >
-        <thead>
-          <tr>
-            <th
-              scope="col"
-              className={`${COMPACT_TABLE_HEAD} sticky top-0 left-0 z-3 w-px`}
-            >
-              <span className="sr-only">Row</span>
-            </th>
-            {cells(header).map((cell, index) => (
-              <th key={index} scope="col" className={HEAD}>
-                {cell}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, index) => (
-            <tr key={index}>
-              <th scope="row" className={ROW_NUMBER}>
-                {index + 1}
-              </th>
-              {cells(row).map((cell, column) => (
-                <td key={column} className={CELL}>
-                  {cell}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </DataTable>
   );
 }

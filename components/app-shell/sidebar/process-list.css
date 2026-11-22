@@ -31,6 +31,9 @@
   --control-ring-bottom: var(--menu-badge-ring, var(--sp-keycap-ring));
   --control-highlight: var(--menu-badge-highlight, var(--sp-keycap-highlight));
   --control-highlight-width: var(--spacing-control-highlight-hairline);
+  --control-highlight-solid: var(--highlight-hairline-solid);
+  --control-highlight-soft: var(--highlight-hairline-soft);
+  --control-highlight-cover: var(--highlight-hairline-cover);
 }
 
 @layer components {
@@ -249,5 +252,8 @@
 @media (min-resolution: 2dppx) {
   :root[data-edges='retina'] .surface-menu-badge {
     --control-highlight-width: var(--highlight-pane);
+    --control-highlight-solid: var(--highlight-pane-solid);
+    --control-highlight-soft: var(--highlight-pane-soft);
+    --control-highlight-cover: var(--highlight-pane-cover);
   }
 }

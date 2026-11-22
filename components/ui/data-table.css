@@ -34,7 +34,10 @@
       inset: 0;
       z-index: 3;
       border-radius: inherit;
-      box-shadow: inset 0 0 0 var(--edge-ring) var(--sp-raised-ring);
+      box-shadow:
+        inset 0 0 0 var(--edge-ring-solid) var(--sp-raised-ring),
+        inset 0 0 0 var(--edge-ring-soft)
+          color-mix(in srgb, var(--sp-raised-ring) var(--edge-ring-cover), transparent);
       pointer-events: none;
     }
   }
@@ -47,5 +50,47 @@
     :root[data-edges='retina'] .data-table-card::after {
       display: none;
     }
+  }
+}
+
+@layer components {
+  .compact-table-header > tr > th {
+    position: relative;
+  }
+
+  .compact-table-header > tr > th:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    inset-block: --spacing(1);
+    inset-inline-end: 0;
+    border-inline-end: var(--edge-rule) solid var(--sp-rule-default);
+    pointer-events: none;
+  }
+
+  table :is(th, td)[data-cited] {
+    position: relative;
+    isolation: isolate;
+    color: var(--sp-state-advisory-12);
+    font-weight: 600;
+  }
+
+  table :is(th, td)[data-cited]::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: --spacing(0.5);
+    border-radius: var(--radius-region);
+    background-color: light-dark(var(--sp-state-advisory-4), var(--sp-state-advisory-5));
+  }
+}
+
+@media (forced-colors: active) {
+  table :is(th, td)[data-cited] {
+    forced-color-adjust: none;
+    color: HighlightText;
+  }
+
+  table :is(th, td)[data-cited]::before {
+    background-color: Highlight;
   }
 }

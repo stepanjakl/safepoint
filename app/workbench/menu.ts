@@ -116,6 +116,18 @@ export const WORKBENCH_GROUPS: readonly WorkbenchGroup[] = [
         summary:
           'Inset box-shadow vs pixel-snapped border and outline for inner highlights and lit dividers.',
       },
+      {
+        href: '/workbench/edge-lab',
+        title: 'Edge lab',
+        summary:
+          'Every way a line is drawn, at every width and sub-pixel offset, for pnpm check:lines to measure in each browser.',
+      },
+      {
+        href: '/workbench/rounded-edges',
+        title: 'Rounded edges',
+        summary:
+          'A rounded control’s ring and sheen four ways, to compare in Chrome and Safari: fractional, layered, a 0.5px border, and both.',
+      },
     ],
   },
   {

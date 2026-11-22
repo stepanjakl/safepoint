@@ -150,7 +150,10 @@
     padding-inline: 1px;
     padding-block-end: max(0px, var(--edge-hairline) - var(--structural-divider-border));
     border-bottom: var(--structural-divider-border) solid CanvasText;
-    box-shadow: inset 0 calc(var(--edge-hairline) * -1) 0 var(--notch-edge);
+    box-shadow:
+      inset 0 calc(var(--edge-hairline-solid) * -1) 0 var(--notch-edge),
+      inset 0 calc(var(--edge-hairline-soft) * -1) 0
+        color-mix(in srgb, var(--notch-edge) var(--edge-hairline-cover), transparent);
   }
 
   /* Geometry only; the stops are utilities. The count pill sits the same
@@ -219,7 +222,10 @@
       /* Meet the side highlights at the ring's inner edge in both modes. */
       inset-inline: calc(var(--edge-ring) - var(--spacing-pane-inset) + 1px);
       block-size: var(--spacing-pane-inset);
-      box-shadow: inset 0 var(--highlight-pane) 0 var(--sp-raised-edge);
+      box-shadow:
+        inset 0 var(--highlight-pane-solid) 0 var(--sp-raised-edge),
+        inset 0 var(--highlight-pane-soft) 0
+          color-mix(in srgb, var(--sp-raised-edge) var(--highlight-pane-cover), transparent);
       pointer-events: none;
     }
 

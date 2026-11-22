@@ -4,8 +4,17 @@
   .process-sheet-frame {
     position: relative;
     @media (width >= 56.25rem) {
-      background: linear-gradient(var(--sp-raised-edge), var(--sp-raised-edge)) top / 100%
-        var(--highlight-pane) no-repeat;
+      /* Solid and soft, as every fractional line is (geometry.css). */
+      --lit-soft: color-mix(
+        in srgb,
+        var(--sp-raised-edge) var(--highlight-pane-cover),
+        transparent
+      );
+      background:
+        linear-gradient(var(--sp-raised-edge), var(--sp-raised-edge)) top / 100%
+          var(--highlight-pane-solid) no-repeat,
+        linear-gradient(var(--lit-soft), var(--lit-soft)) top / 100% var(--highlight-pane-soft)
+          no-repeat;
     }
   }
   /* The section heads cover the highlight along the top, including the arc. */
@@ -47,9 +56,17 @@
       grid-column: 2 / 3;
       inset-inline: 0;
       top: 0;
-      height: var(--highlight-pane);
-      background: linear-gradient(var(--sp-raised-edge), var(--sp-raised-edge)) top / 100%
-        var(--highlight-pane) no-repeat;
+      height: var(--highlight-pane-soft);
+      --lit-soft: color-mix(
+        in srgb,
+        var(--sp-raised-edge) var(--highlight-pane-cover),
+        transparent
+      );
+      background:
+        linear-gradient(var(--sp-raised-edge), var(--sp-raised-edge)) top / 100%
+          var(--highlight-pane-solid) no-repeat,
+        linear-gradient(var(--lit-soft), var(--lit-soft)) top / 100% var(--highlight-pane-soft)
+          no-repeat;
       pointer-events: none;
     }
   }
@@ -73,8 +90,17 @@
       grid-column: 1 / -1;
       inset-inline: 0;
       top: 0;
-      height: var(--highlight-pane);
-      background: var(--sp-raised-edge);
+      height: var(--highlight-pane-soft);
+      --lit-soft: color-mix(
+        in srgb,
+        var(--sp-raised-edge) var(--highlight-pane-cover),
+        transparent
+      );
+      background:
+        linear-gradient(var(--sp-raised-edge), var(--sp-raised-edge)) top / 100%
+          var(--highlight-pane-solid) no-repeat,
+        linear-gradient(var(--lit-soft), var(--lit-soft)) top / 100% var(--highlight-pane-soft)
+          no-repeat;
       pointer-events: none;
     }
   }
@@ -126,7 +152,10 @@
   .sheet-column-edge::after,
   .process-runs::before,
   .process-panels[data-tab='instructions']::before {
-    --column-divider: inset calc(var(--edge-hairline) * -1) 0 0 var(--sp-raised-ring);
+    --column-divider:
+      inset calc(var(--edge-hairline-solid) * -1) 0 0 var(--sp-raised-ring),
+      inset calc(var(--edge-hairline-soft) * -1) 0 0
+        color-mix(in srgb, var(--sp-raised-ring) var(--edge-hairline-cover), transparent);
     z-index: 4;
     width: 1px;
     border-right: var(--structural-divider-border) solid CanvasText;
@@ -161,7 +190,10 @@
     .process-runs-list {
       padding-block-end: max(0px, var(--edge-hairline) - var(--structural-divider-border));
       border-bottom: var(--structural-divider-border) solid CanvasText;
-      box-shadow: inset 0 calc(var(--edge-hairline) * -1) 0 var(--sp-raised-ring);
+      box-shadow:
+        inset 0 calc(var(--edge-hairline-solid) * -1) 0 var(--sp-raised-ring),
+        inset 0 calc(var(--edge-hairline-soft) * -1) 0
+          color-mix(in srgb, var(--sp-raised-ring) var(--edge-hairline-cover), transparent);
     }
   }
 

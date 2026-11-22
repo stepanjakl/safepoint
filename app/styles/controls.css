@@ -338,6 +338,9 @@
    variant of each. */
 @utility control-hairline {
   --control-highlight-width: var(--spacing-control-highlight-hairline);
+  --control-highlight-solid: var(--highlight-hairline-solid);
+  --control-highlight-soft: var(--highlight-hairline-soft);
+  --control-highlight-cover: var(--highlight-hairline-cover);
 }
 
 /* The primary button, built as the secondary is. */
@@ -497,13 +500,19 @@
   position: relative;
   z-index: 1;
   border-bottom: var(--section-rule-width) solid var(--sp-ground-ring);
-  box-shadow: 0 var(--highlight-pane) 0 var(--sp-ground-edge);
+  box-shadow:
+    0 var(--highlight-pane-solid) 0 var(--sp-ground-edge),
+    0 var(--highlight-pane-soft) 0
+      color-mix(in srgb, var(--sp-ground-edge) var(--highlight-pane-cover), transparent);
 }
 @utility rule-above {
   position: relative;
   z-index: 1;
   border-top: var(--section-rule-width) solid var(--sp-ground-ring);
-  box-shadow: 0 calc(var(--highlight-pane) * -1) 0 var(--sp-ground-edge);
+  box-shadow:
+    0 calc(var(--highlight-pane-solid) * -1) 0 var(--sp-ground-edge),
+    0 calc(var(--highlight-pane-soft) * -1) 0
+      color-mix(in srgb, var(--sp-ground-edge) var(--highlight-pane-cover), transparent);
 }
 
 @utility surface-recessed {
@@ -523,16 +532,37 @@
   /* Here, not a :root role: a gradient resolves where it is declared. */
   background-image: linear-gradient(
     to bottom,
-    var(--sp-enclosure-edge) 0 var(--highlight-pane),
-    transparent var(--highlight-pane)
+    var(--sp-enclosure-edge) 0 var(--highlight-pane-solid),
+    color-mix(in srgb, var(--sp-enclosure-edge) var(--highlight-pane-cover), transparent)
+      var(--highlight-pane-solid) var(--highlight-pane-soft),
+    transparent var(--highlight-pane-soft)
   );
 }
 
 /* Optical 0.75px rings on retina (2dppx+) when `data-edges="retina"` is
    active: stacked inset box-shadows follow any border-radius automatically and
-   stay symmetric on subpixel button widths without Blink's border snapping. */
+   stay symmetric on subpixel button widths without Blink's border snapping.
+   Ring and sheen are each a solid and a soft layer (geometry.css); the sheen
+   ends at ring + sheen width, split here because the width is the face's. */
 @media (min-resolution: 2dppx) {
   :root[data-edges='retina'] .control-face:not(.slant) {
+    --ring-sheen: calc(
+      var(--edge-ring) + var(--control-highlight-width, var(--spacing-control-highlight))
+    );
+    --ring-sheen-solid: round(down, var(--ring-sheen), var(--dp));
+    --ring-sheen-soft: calc(var(--ring-sheen-solid) + var(--dp));
+    --ring-sheen-cover: clamp(
+      0%,
+      calc((var(--ring-sheen) - var(--ring-sheen-solid)) / var(--dp) * 100%),
+      100%
+    );
+    --ring-sheen-shadow:
+      inset 0 0 0 var(--edge-ring-solid) var(--control-ring-top),
+      inset 0 0 0 var(--edge-ring-soft)
+        color-mix(in srgb, var(--control-ring-top) var(--edge-ring-cover), transparent),
+      inset 0 0 0 var(--ring-sheen-solid) var(--control-highlight),
+      inset 0 0 0 var(--ring-sheen-soft)
+        color-mix(in srgb, var(--control-highlight) var(--ring-sheen-cover), transparent);
     border-width: 0;
     background-image: linear-gradient(
       to bottom,
@@ -541,11 +571,7 @@
     );
     background-origin: border-box;
     background-clip: border-box;
-    box-shadow:
-      inset 0 0 0 var(--edge-ring) var(--control-ring-top),
-      inset 0 0 0
-        calc(var(--edge-ring) + var(--control-highlight-width, var(--spacing-control-highlight)))
-        var(--control-highlight);
+    box-shadow: var(--ring-sheen-shadow);
   }
 
   /* Gradient-ring buttons keep control-face's real border at 0.5px (1 crisp
@@ -567,17 +593,15 @@
       linear-gradient(to bottom, var(--control-ring-top), var(--control-ring-bottom));
     background-origin: padding-box, border-box;
     background-clip: padding-box, border-box;
-    box-shadow: inset 0 0 0 var(--control-highlight-width, var(--spacing-control-highlight))
-      var(--control-highlight);
+    box-shadow: --theme(--shadow-control-highlight);
   }
 
   :root[data-edges='retina'] .control-face.surface-popover:not(.slant) {
     box-shadow:
-      inset 0 0 0 var(--edge-ring) var(--control-ring-top),
-      inset 0 0 0
-        calc(var(--edge-ring) + var(--control-highlight-width, var(--spacing-control-highlight)))
-        var(--control-highlight),
-      0 0 0 var(--highlight-outline) var(--sp-popover-outline);
+      var(--ring-sheen-shadow),
+      0 0 0 var(--highlight-outline-solid) var(--sp-popover-outline),
+      0 0 0 var(--highlight-outline-soft)
+        color-mix(in srgb, var(--sp-popover-outline) var(--highlight-outline-cover), transparent);
   }
 
   :root[data-edges='retina'] .control-face.surface-popover:not(.slant)::after {
@@ -586,7 +610,10 @@
 
   :root[data-edges='retina'] .enclosure {
     border-width: 0;
-    box-shadow: inset 0 0 0 var(--edge-hairline) var(--sp-rule-strong);
+    box-shadow:
+      inset 0 0 0 var(--edge-hairline-solid) var(--sp-rule-strong),
+      inset 0 0 0 var(--edge-hairline-soft)
+        color-mix(in srgb, var(--sp-rule-strong) var(--edge-hairline-cover), transparent);
   }
 }
 

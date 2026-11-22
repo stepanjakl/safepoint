@@ -188,9 +188,11 @@ test('a run shows its instructions, reads the sheet and keeps the read', async (
   expect(
     (await drawer.locator('[data-drawer-main]').boundingBox())!.width,
   ).toBe(width);
-  await expect(drawer.getByLabel('Stock, as read')).toContainText(
-    '["sku","on_hand","reserved"',
-  );
+  const stock = drawer.getByRole('region', { name: 'Stock, as read' });
+  await expect(stock.getByRole('columnheader', { name: 'sku' })).toBeVisible();
+  await expect(
+    stock.getByRole('columnheader', { name: 'on_hand' }),
+  ).toBeVisible();
   expect(await serious(page, '[role="dialog"]')).toEqual([]);
   await page.keyboard.press('Escape');
   await expect(drawer).toHaveCount(0);

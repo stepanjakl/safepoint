@@ -157,19 +157,3 @@
     display: flow-root;
   }
 }
-
-@layer components {
-  .data-cited-value {
-    color: var(--sp-state-advisory-12);
-    background-color: light-dark(var(--sp-state-advisory-4), var(--sp-state-advisory-5));
-    font-weight: 600;
-  }
-}
-
-@media (forced-colors: active) {
-  .data-cited-value {
-    forced-color-adjust: none;
-    color: HighlightText;
-    background-color: Highlight;
-  }
-}

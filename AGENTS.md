@@ -74,6 +74,25 @@ default-vs-retina control geometry drift, subpixel `2×` header/frame placement,
 and mid-transition/handoff chrome swaps in both `default` and `retina` modes.
 Exit 0 clean, 1 violations found, 2 it could not run.
 
+To see what each browser actually paints -- thickness in device pixels,
+evenness all round, junctions -- run `pnpm check:lines` (with `pnpm dev`
+running). It reads `/workbench/edge-lab` by default and any route given with
+`--route`, in Chromium and WebKit, and Safari itself with
+`--browser chromium,webkit,safari`:
+
+```
+pnpm check:lines
+pnpm check:lines -- --route /processes/brunch-orders --theme dark
+pnpm check:lines -- --help
+```
+
+Never judge a fractional shadow or gradient by Chrome alone: Safari rounds it
+to whole device pixels. Never write a fractional edge as one shadow or stop:
+write its `-solid` and `-soft` layers from the split width tokens in
+`app/styles/geometry.css` (STYLING-SYSTEM.md → Faces and edges). For Safari, quit it first -- `safaridriver` must launch
+its own. [`docs/interface/LINE-TESTING.md`](docs/interface/LINE-TESTING.md)
+explains the checker, its output and what it has measured.
+
 For a visible gap, overdraw, or thickness change at a divider junction, use the
 [2× painted-junction checks](docs/interface/STYLING-SYSTEM.md#checking-painted-divider-junctions)
 alongside the edge audit.

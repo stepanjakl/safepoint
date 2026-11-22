@@ -68,8 +68,12 @@
        than floating above the page, and the arrow can draw an edge but not a
        shadow -- a drop shadow on the box alone would detach the two. */
     box-shadow:
-      inset 0 0 0 var(--highlight-pane) var(--tooltip-highlight),
-      0 0 0 var(--highlight-outline) var(--tooltip-outline);
+      inset 0 0 0 var(--highlight-pane-solid) var(--tooltip-highlight),
+      inset 0 0 0 var(--highlight-pane-soft)
+        color-mix(in srgb, var(--tooltip-highlight) var(--highlight-pane-cover), transparent),
+      0 0 0 var(--highlight-outline-solid) var(--tooltip-outline),
+      0 0 0 var(--highlight-outline-soft)
+        color-mix(in srgb, var(--tooltip-outline) var(--highlight-outline-cover), transparent);
     color: var(--sp-tooltip-ink);
     font-size: var(--sp-text-meta);
     line-height: var(--sp-text-meta--lh);
@@ -178,9 +182,15 @@
     :root[data-edges='retina'] .app-tooltip {
       border-width: 0;
       box-shadow:
-        inset 0 0 0 var(--edge-ring) var(--tooltip-edge),
-        inset 0 0 0 calc(var(--edge-ring) + var(--highlight-pane)) var(--tooltip-highlight),
-        0 0 0 var(--highlight-outline) var(--tooltip-outline);
+        inset 0 0 0 var(--edge-ring-solid) var(--tooltip-edge),
+        inset 0 0 0 var(--edge-ring-soft)
+          color-mix(in srgb, var(--tooltip-edge) var(--edge-ring-cover), transparent),
+        inset 0 0 0 var(--ring-pane-solid) var(--tooltip-highlight),
+        inset 0 0 0 var(--ring-pane-soft)
+          color-mix(in srgb, var(--tooltip-highlight) var(--ring-pane-cover), transparent),
+        0 0 0 var(--highlight-outline-solid) var(--tooltip-outline),
+        0 0 0 var(--highlight-outline-soft)
+          color-mix(in srgb, var(--tooltip-outline) var(--highlight-outline-cover), transparent);
     }
     /* Outline sits under the fill: edge (0.75) + 2 * outline (0.75) = 2.25. */
     :root[data-edges='retina'] .tooltip-arrow-outline {

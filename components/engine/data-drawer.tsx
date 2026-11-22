@@ -1,80 +1,22 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Fragment, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 
 import {
   DrawerOverlay,
   DrawerPanels,
 } from '@/components/app-shell/drawer-overlay';
+import {
+  ResourceTable,
+  type CitedCell,
+} from '@/components/app-shell/sources/resource-table';
 import { useTRPC } from '@/components/trpc/provider';
 import { FilterTabs } from '@/components/ui/filter-tabs';
 import { Loader } from '@/components/ui/loader';
 import { TabSwap } from '@/components/ui/swap';
 import { Arrival, useLoader } from '@/components/ui/working-mark';
-
-// One row per line, so a table reads as one: the headers, then each row.
-const asJson = (values: unknown[][]) =>
-  values.length
-    ? `[\n${values.map((row) => `  ${JSON.stringify(row)}`).join(',\n')}\n]`
-    : '[]';
-
-type CitedCell = { top: number; left: number; label: string };
-
-function CitedValue({ label, children }: { label: string; children: string }) {
-  const mark = useRef<HTMLElement>(null);
-  useLayoutEffect(() => {
-    const frame = requestAnimationFrame(() => {
-      mark.current?.scrollIntoView({
-        block: 'center',
-        inline: 'nearest',
-        behavior: 'instant',
-      });
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [label]);
-  return (
-    <mark ref={mark} className="data-cited-value" title={label}>
-      {children}
-    </mark>
-  );
-}
-
-function ReadJson({ values, cell }: { values: unknown[][]; cell?: CitedCell }) {
-  const row = cell && values[cell.top];
-  if (!cell || !row || cell.left < 0 || cell.left >= row.length)
-    return asJson(values);
-
-  const encode = (value: unknown) => JSON.stringify(value) ?? 'null';
-  const before = row.slice(0, cell.left).map(encode);
-  const after = row.slice(cell.left + 1).map(encode);
-  return (
-    <>
-      {'[\n'}
-      {values.map((entry, index) => (
-        <Fragment key={index}>
-          {index ? ',\n' : ''}
-          {'  '}
-          {index === cell.top ? (
-            <>
-              {'['}
-              {before.length ? before.join(',') + ',' : ''}
-              <CitedValue label={cell.label}>
-                {encode(entry[cell.left])}
-              </CitedValue>
-              {after.length ? ',' + after.join(',') : ''}
-              {']'}
-            </>
-          ) : (
-            JSON.stringify(entry)
-          )}
-        </Fragment>
-      ))}
-      {'\n]'}
-    </>
-  );
-}
 
 const WIDTH_KEY = 'safepoint.drawer-data.v1';
 
@@ -93,7 +35,7 @@ function readDrawerWidth() {
 }
 
 /*
-  The run's read as it came from the sheet: one data tab at a time, as JSON,
+  The run's read as it came from the sheet: one data tab at a time,
   headers and rows exactly as read. Fetched by the read's id when opened, so
   it is always the run's own read. Whatever opens it -- the card's button, a
   tab's row -- gets `view`, which opens it at a tab or where it was left.
@@ -197,36 +139,28 @@ export function DataDrawer({
                   ariaLabel="Data tabs"
                   menuLabel="Other data tabs"
                 />
-                {cited && selected === chosen ? (
-                  <p className="sr-only">Cited cell {cited.label}</p>
-                ) : null}
-                <pre
-                  tabIndex={0}
-                  aria-label={`${selectedTab.name}, as read`}
-                  className="bg-surface-inset rounded-control value text-meta min-h-0 min-w-0 flex-1 overflow-auto p-3 leading-relaxed"
+                <TabSwap
+                  selected={selected}
+                  className="flex min-h-0 min-w-0 flex-1 flex-col"
+                  motionBetween={(from, to) =>
+                    tabs.findIndex((tab) => tab.key === to) >
+                    tabs.findIndex((tab) => tab.key === from)
+                      ? 'left'
+                      : 'right'
+                  }
                 >
-                  <TabSwap
-                    selected={selected}
-                    motionBetween={(from, to) =>
-                      tabs.findIndex((tab) => tab.key === to) >
-                      tabs.findIndex((tab) => tab.key === from)
-                        ? 'left'
-                        : 'right'
-                    }
-                  >
-                    {(key) => (
-                      <ReadJson
-                        values={
-                          (
-                            data.tabs.find((tab) => tab.name === key) ??
-                            selectedTab
-                          ).values
-                        }
-                        cell={key === chosen ? cited : undefined}
+                  {(key) => {
+                    const tab =
+                      data.tabs.find((tab) => tab.name === key) ?? selectedTab;
+                    return (
+                      <ResourceTable
+                        name={tab.name}
+                        values={tab.values}
+                        cited={key === chosen ? cited : undefined}
                       />
-                    )}
-                  </TabSwap>
-                </pre>
+                    );
+                  }}
+                </TabSwap>
               </Arrival>
             ) : data ? (
               <Arrival

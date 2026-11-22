@@ -24,6 +24,7 @@
     "check:sidebars": "playwright test e2e/shell/sidebars.spec.ts --project=light",
     "check:rail": "node scripts/checks/check-rail-alignment.ts",
     "check:edges": "node scripts/checks/check-retina-edges.ts",
+    "check:lines": "node scripts/checks/check-line-geometry.ts",
     "check:contrast": "playwright test",
     "check:visual": "playwright test e2e/design/visual.spec.ts",
     "check:visual:update": "UPDATE_VISUAL=1 playwright test e2e/design/visual.spec.ts",

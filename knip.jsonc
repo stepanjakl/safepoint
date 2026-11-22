@@ -13,6 +13,8 @@
     // Imported by tweakpane's type declarations, which do not depend on it.
     "@tweakpane/core",
   ],
+  // Ships with macOS Safari; pnpm check:lines starts it to reach Safari.
+  "ignoreBinaries": ["safaridriver"],
   // A type a module uses may stay exported as part of its API.
   "ignoreExportsUsedInFile": { "type": true, "interface": true },
 }

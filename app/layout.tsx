@@ -7,6 +7,7 @@ import { DEFAULT_EDGE_PRESET } from '@/components/dev/design-preferences';
 import { DesignPreferencesScript } from '@/components/dev/design-preferences-script';
 import { StyleInspector } from '@/components/dev/style-inspector';
 import { QueryProvider } from '@/components/trpc/provider';
+import { DevicePixelScript } from '@/components/ui/device-pixel-script';
 import { DEFAULT_MONO, DEFAULT_THEME } from '@/lib/ui/typography';
 
 import './styles/index.css';
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <head>
         <title>Safepoint</title>
         <DesignPreferencesScript />
+        <DevicePixelScript />
       </head>
       <body className="bg-canvas text-primary" suppressHydrationWarning>
         <a

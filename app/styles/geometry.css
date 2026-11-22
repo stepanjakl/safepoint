@@ -60,6 +60,105 @@
   }
 }
 
+/* One device pixel. DevicePixelScript sets the exact value for any ratio
+   (zoom included); these cover the first paint. */
+:root {
+  --dp: 1px;
+}
+@media (resolution: 1.5dppx) {
+  :root {
+    --dp: calc(1px / 1.5);
+  }
+}
+@media (resolution: 2dppx) {
+  :root {
+    --dp: 0.5px;
+  }
+}
+@media (resolution: 3dppx) {
+  :root {
+    --dp: calc(1px / 3);
+  }
+}
+
+/* Each edge width split into whole device pixels: -solid, one pixel more
+   (-soft), and how much of that pixel the width covers (-cover). A line is
+   drawn as a solid layer and a soft one at that strength, so Safari, which
+   rounds a fractional shadow or gradient stop per edge, paints what Chrome
+   antialiases. See docs/interface/LINE-TESTING.md. */
+:root {
+  --edge-ring-solid: round(down, var(--edge-ring), var(--dp));
+  --edge-ring-soft: calc(var(--edge-ring-solid) + var(--dp));
+  --edge-ring-cover: clamp(
+    0%,
+    calc((var(--edge-ring) - var(--edge-ring-solid)) / var(--dp) * 100%),
+    100%
+  );
+  --edge-control-solid: round(down, var(--edge-control), var(--dp));
+  --edge-control-soft: calc(var(--edge-control-solid) + var(--dp));
+  --edge-control-cover: clamp(
+    0%,
+    calc((var(--edge-control) - var(--edge-control-solid)) / var(--dp) * 100%),
+    100%
+  );
+  --edge-hairline-solid: round(down, var(--edge-hairline), var(--dp));
+  --edge-hairline-soft: calc(var(--edge-hairline-solid) + var(--dp));
+  --edge-hairline-cover: clamp(
+    0%,
+    calc((var(--edge-hairline) - var(--edge-hairline-solid)) / var(--dp) * 100%),
+    100%
+  );
+  --highlight-pane-solid: round(down, var(--highlight-pane), var(--dp));
+  --highlight-pane-soft: calc(var(--highlight-pane-solid) + var(--dp));
+  --highlight-pane-cover: clamp(
+    0%,
+    calc((var(--highlight-pane) - var(--highlight-pane-solid)) / var(--dp) * 100%),
+    100%
+  );
+  --highlight-hairline-solid: round(down, var(--highlight-hairline), var(--dp));
+  --highlight-hairline-soft: calc(var(--highlight-hairline-solid) + var(--dp));
+  --highlight-hairline-cover: clamp(
+    0%,
+    calc((var(--highlight-hairline) - var(--highlight-hairline-solid)) / var(--dp) * 100%),
+    100%
+  );
+  --highlight-sheet-solid: round(down, var(--highlight-sheet), var(--dp));
+  --highlight-sheet-soft: calc(var(--highlight-sheet-solid) + var(--dp));
+  --highlight-sheet-cover: clamp(
+    0%,
+    calc((var(--highlight-sheet) - var(--highlight-sheet-solid)) / var(--dp) * 100%),
+    100%
+  );
+  --highlight-outline-solid: round(down, var(--highlight-outline), var(--dp));
+  --highlight-outline-soft: calc(var(--highlight-outline-solid) + var(--dp));
+  --highlight-outline-cover: clamp(
+    0%,
+    calc((var(--highlight-outline) - var(--highlight-outline-solid)) / var(--dp) * 100%),
+    100%
+  );
+  --separator-strong-solid: round(down, var(--separator-strong), var(--dp));
+  --separator-strong-soft: calc(var(--separator-strong-solid) + var(--dp));
+  --separator-strong-cover: clamp(
+    0%,
+    calc((var(--separator-strong) - var(--separator-strong-solid)) / var(--dp) * 100%),
+    100%
+  );
+  /* A ring with a pane's sheen inside it: where the sheen ends. */
+  --ring-pane: calc(var(--edge-ring) + var(--highlight-pane));
+  --ring-pane-solid: round(down, var(--ring-pane), var(--dp));
+  --ring-pane-soft: calc(var(--ring-pane-solid) + var(--dp));
+  --ring-pane-cover: clamp(
+    0%,
+    calc((var(--ring-pane) - var(--ring-pane-solid)) / var(--dp) * 100%),
+    100%
+  );
+  /* A control's sheen, split as above. Set beside --control-highlight-width
+     wherever that is set (control-hairline), so the two inherit together. */
+  --control-highlight-solid: var(--highlight-pane-solid);
+  --control-highlight-soft: var(--highlight-pane-soft);
+  --control-highlight-cover: var(--highlight-pane-cover);
+}
+
 /* Named for what moves, not for how long. */
 :root {
   --duration-state: 150ms;

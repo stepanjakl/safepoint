@@ -251,8 +251,12 @@
   .sheet-chrome-band {
     --sheet-head-highlight: var(--sp-raised-edge);
     box-shadow:
-      inset 0 calc(var(--edge-hairline) * -1) 0 var(--sp-raised-ring),
-      0 var(--spacing-sheet-highlight) 0 var(--sheet-head-highlight);
+      inset 0 calc(var(--edge-hairline-solid) * -1) 0 var(--sp-raised-ring),
+      inset 0 calc(var(--edge-hairline-soft) * -1) 0
+        color-mix(in srgb, var(--sp-raised-ring) var(--edge-hairline-cover), transparent),
+      0 var(--highlight-sheet-solid) 0 var(--sheet-head-highlight),
+      0 var(--highlight-sheet-soft) 0
+        color-mix(in srgb, var(--sheet-head-highlight) var(--highlight-sheet-cover), transparent);
   }
   /* Lent to the swap's overlay (sheet-chrome.ts), and coming back, without
      transitions: a lit line easing in would flash where it already shows. */

@@ -127,14 +127,23 @@
   --spacing-switch-lg-track-block: 1.375rem;
   --spacing-switch-lg-thumb: 1.125rem;
   --spacing-switch-thumb-gap: 0.25rem;
-  --shadow-control-highlight: inset 0 0 0
-    var(--control-highlight-width, var(--spacing-control-highlight)) var(--control-highlight);
+  /* Each line below is two layers, solid and soft (app/styles/geometry.css). */
+  --shadow-control-highlight:
+    inset 0 0 0 var(--control-highlight-solid) var(--control-highlight),
+    inset 0 0 0 var(--control-highlight-soft)
+      color-mix(in srgb, var(--control-highlight) var(--control-highlight-cover), transparent);
   /* A divider inside a pane: it lies on the pane's face, as its own edge does,
      so it takes the pane's edge colour and matches its sides. */
-  --shadow-separator-right-strong: var(--separator-strong) 0 0 var(--sp-raised-edge);
+  --shadow-separator-right-strong:
+    var(--separator-strong-solid) 0 0 var(--sp-raised-edge),
+    var(--separator-strong-soft) 0 0
+      color-mix(in srgb, var(--sp-raised-edge) var(--separator-strong-cover), transparent);
   /* A rule on the canvas. A shadow, not a border: Chrome snaps a border to
      whole device pixels, so 0.75px draws as 0.5px at 2x. */
-  --shadow-rule-etch: 0 var(--spacing-control-highlight-hairline) 0 var(--sp-divider-etch);
+  --shadow-rule-etch:
+    0 var(--highlight-hairline-solid) 0 var(--sp-divider-etch),
+    0 var(--highlight-hairline-soft) 0
+      color-mix(in srgb, var(--sp-divider-etch) var(--highlight-hairline-cover), transparent);
 
   /* Every curve a stylesheet eases by; component CSS names one, never writes
      cubic-bezier() itself (pnpm check:tokens). */

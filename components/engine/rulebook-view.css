@@ -71,11 +71,14 @@
       oklch(from var(--sp-rules-calculation) calc(l + var(--calculation-lift-light)) c h),
       oklch(from var(--sp-rules-calculation) calc(l + var(--calculation-lift-dark)) c h)
     );
-    box-shadow: inset 0 0 0 var(--highlight-pane)
-      light-dark(
-        oklch(from var(--sp-rules-calculation-ring) calc(l + var(--calculation-lift-light)) c h),
-        oklch(from var(--sp-rules-calculation-ring) calc(l + var(--calculation-lift-dark)) c h)
-      );
+    --calculation-ring: light-dark(
+      oklch(from var(--sp-rules-calculation-ring) calc(l + var(--calculation-lift-light)) c h),
+      oklch(from var(--sp-rules-calculation-ring) calc(l + var(--calculation-lift-dark)) c h)
+    );
+    box-shadow:
+      inset 0 0 0 var(--highlight-pane-solid) var(--calculation-ring),
+      inset 0 0 0 var(--highlight-pane-soft)
+        color-mix(in srgb, var(--calculation-ring) var(--highlight-pane-cover), transparent);
   }
 
   /* A calculation spans two, from its kind alone, so filtering never resizes it. */

@@ -1,0 +1,121 @@
+/* /workbench/rounded-edges: four ways to draw a rounded control's ring and
+   sheen, on the app's own widths, measured by pnpm check:lines. */
+@layer components {
+  .rounded-edges-specimen {
+    @apply ground-raised;
+    box-sizing: border-box;
+    background-color: var(--sp-surface-primary);
+    --re-ring: var(--sp-raised-ring);
+    --re-sheen: var(--sp-raised-edge);
+    --re-sheen-width: var(--highlight-pane);
+
+    /* The sheen alone, the ring and sheen together, and what is left of them
+       inside a ring's solid part: each split as geometry.css splits a width. */
+    --re-sheen-solid: round(down, var(--re-sheen-width), var(--dp));
+    --re-sheen-soft: calc(var(--re-sheen-solid) + var(--dp));
+    --re-sheen-cover: clamp(
+      0%,
+      calc((var(--re-sheen-width) - var(--re-sheen-solid)) / var(--dp) * 100%),
+      100%
+    );
+    --re-stack: calc(var(--edge-ring) + var(--re-sheen-width));
+    --re-stack-solid: round(down, var(--re-stack), var(--dp));
+    --re-stack-soft: calc(var(--re-stack-solid) + var(--dp));
+    --re-stack-cover: clamp(
+      0%,
+      calc((var(--re-stack) - var(--re-stack-solid)) / var(--dp) * 100%),
+      100%
+    );
+    --re-inner: calc(var(--re-stack) - var(--edge-ring-solid));
+    --re-inner-solid: round(down, var(--re-inner), var(--dp));
+    --re-inner-soft: calc(var(--re-inner-solid) + var(--dp));
+    --re-inner-cover: clamp(
+      0%,
+      calc((var(--re-inner) - var(--re-inner-solid)) / var(--dp) * 100%),
+      100%
+    );
+  }
+
+  .rounded-edges-specimen[data-sheen='hairline'] {
+    --re-sheen-width: var(--highlight-hairline);
+  }
+
+  .rounded-edges-specimen[data-shape='button'] {
+    inline-size: 96px;
+    block-size: 28px;
+    border-radius: var(--radius-control);
+  }
+  .rounded-edges-specimen[data-shape='icon'] {
+    inline-size: 32px;
+    block-size: 32px;
+    border-radius: var(--radius-icon);
+  }
+  .rounded-edges-specimen[data-shape='pill'] {
+    inline-size: 72px;
+    block-size: 22px;
+    border-radius: 999px;
+  }
+  .rounded-edges-specimen[data-shape='card'] {
+    inline-size: 160px;
+    block-size: 56px;
+    border-radius: var(--radius-shell);
+  }
+  .rounded-edges-specimen[data-shape='pane'] {
+    inline-size: 224px;
+    block-size: 96px;
+    border-radius: var(--radius-shell);
+  }
+
+  /* As the app drew them until now: fractional shadows, left to the engine. */
+  .rounded-edges-specimen[data-option='native'] {
+    box-shadow:
+      inset 0 0 0 var(--edge-ring) var(--re-ring),
+      inset 0 0 0 var(--re-stack) var(--re-sheen);
+  }
+
+  /* As the app draws them now: each edge a solid and a soft layer. */
+  .rounded-edges-specimen[data-option='layered'] {
+    box-shadow:
+      inset 0 0 0 var(--edge-ring-solid) var(--re-ring),
+      inset 0 0 0 var(--edge-ring-soft)
+        color-mix(in srgb, var(--re-ring) var(--edge-ring-cover), transparent),
+      inset 0 0 0 var(--re-stack-solid) var(--re-sheen),
+      inset 0 0 0 var(--re-stack-soft)
+        color-mix(in srgb, var(--re-sheen) var(--re-stack-cover), transparent);
+  }
+
+  /* The ring as a border of whole device pixels, which no engine softens;
+     the sheen inside it is still a shadow. A lighter ring than 0.75px. */
+  .rounded-edges-specimen[data-option='border'] {
+    border: var(--edge-rule) solid var(--re-ring);
+    box-shadow:
+      inset 0 0 0 var(--re-sheen-solid) var(--re-sheen),
+      inset 0 0 0 var(--re-sheen-soft)
+        color-mix(in srgb, var(--re-sheen) var(--re-sheen-cover), transparent);
+  }
+
+  /* The ring's solid part as a border, only its soft pixel as a shadow, and
+     the sheen beneath that. */
+  .rounded-edges-specimen[data-option='hybrid'] {
+    border: var(--edge-ring-solid) solid var(--re-ring);
+    box-shadow:
+      inset 0 0 0 var(--dp) color-mix(in srgb, var(--re-ring) var(--edge-ring-cover), transparent),
+      inset 0 0 0 var(--re-inner-solid) var(--re-sheen),
+      inset 0 0 0 var(--re-inner-soft)
+        color-mix(in srgb, var(--re-sheen) var(--re-inner-cover), transparent);
+  }
+
+  .rounded-edges-row {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .rounded-edges-shapes {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    min-block-size: 120px;
+  }
+}

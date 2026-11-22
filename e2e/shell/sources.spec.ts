@@ -170,20 +170,15 @@ test('fetches one read’s values once, however often the drawer opens', async (
     });
     await expect(corner).toHaveText('Row');
     const header = table.getByRole('columnheader', { name: 'sku' });
-    for (const property of [
+    const headerBand = table.locator('thead');
+    await expect(headerBand).toHaveCSS('position', 'sticky');
+    await expect(corner).toHaveCSS(
       'background-color',
-      'border-bottom-color',
-      'border-bottom-width',
-      'border-bottom-style',
-    ]) {
-      await expect(corner).toHaveCSS(
-        property,
-        await header.evaluate(
-          (element, name) => getComputedStyle(element).getPropertyValue(name),
-          property,
-        ),
-      );
-    }
+      await headerBand.evaluate(
+        (element) => getComputedStyle(element).backgroundColor,
+      ),
+    );
+    await expect(header).toHaveCSS('border-bottom-width', '0px');
     await expect(table.getByRole('rowheader').first()).toHaveText('1');
     const headerRow = await corner.evaluateHandle((cell) => cell.parentElement);
     await table.evaluate((element) => {
