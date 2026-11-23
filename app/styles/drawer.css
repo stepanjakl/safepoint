@@ -70,8 +70,9 @@
     );
     margin-inline-end: calc(var(--aside-bleed) * -1);
   }
-  /* Alone in the sheet, it meets the pane's other side too. */
-  @container sheet (width < 44rem) {
+  /* Alone in the sheet, it meets the pane's other side too: under the strip
+     the list becomes below the two-column width (process-panels.tsx). */
+  @container sheet (width < 52rem) {
     .drawer-aside[data-flat] {
       --band-start: var(--band-end);
       --row-band-start: var(--row-band-end);

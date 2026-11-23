@@ -18,6 +18,7 @@
   /* The line outside the border, round the arrow too: none in light, a step
      past the canvas in dark, as the popover's (controls.css). */
   --sp-tooltip-outline: light-dark(transparent, var(--sp-neutral-925));
+  --sp-tooltip-outline-soft: light-dark(transparent, var(--sp-neutral-875));
 }
 
 /* Registered so light-dark() resolves on the box, in the page's scheme: the
@@ -44,6 +45,7 @@
     --tooltip-edge: var(--sp-tooltip-edge);
     --tooltip-highlight: var(--sp-tooltip-highlight);
     --tooltip-outline: var(--sp-tooltip-outline);
+    --tooltip-outline-soft: var(--sp-tooltip-outline-soft);
     /* A one-line box as tall as the controls it labels (min-h-7): what the
        line and both borders leave of that height, split above and below. */
     --tooltip-padding-block: calc((var(--spacing) * 7 - 1lh - 2px) / 2);
@@ -158,6 +160,10 @@
   .tooltip-arrow-fill {
     fill: var(--tooltip-face);
   }
+  /* The layered edge is the 2x arrow's (below). */
+  .tooltip-arrow-layer {
+    display: none;
+  }
   .tooltip-arrow-edge {
     fill: none;
     stroke: var(--tooltip-edge);
@@ -179,26 +185,72 @@
   }
 
   @media (min-resolution: 2dppx) {
+    /* Each soft row opaque, a fixed mix of what it lies between, as the
+       pane's edge is; outside, the outline's solid pixel and a fainter one,
+       fixed steps since it lies over whatever is behind (LINE-TESTING.md,
+       floating edges). */
     :root[data-edges='retina'] .app-tooltip {
       border-width: 0;
       box-shadow:
         inset 0 0 0 var(--edge-ring-solid) var(--tooltip-edge),
         inset 0 0 0 var(--edge-ring-soft)
-          color-mix(in srgb, var(--tooltip-edge) var(--edge-ring-cover), transparent),
+          color-mix(in srgb, var(--tooltip-edge) var(--edge-ring-cover), var(--tooltip-highlight)),
         inset 0 0 0 var(--ring-pane-solid) var(--tooltip-highlight),
         inset 0 0 0 var(--ring-pane-soft)
-          color-mix(in srgb, var(--tooltip-highlight) var(--ring-pane-cover), transparent),
+          color-mix(in srgb, var(--tooltip-highlight) var(--ring-pane-cover), var(--tooltip-face)),
         0 0 0 var(--highlight-outline-solid) var(--tooltip-outline),
-        0 0 0 var(--highlight-outline-soft)
-          color-mix(in srgb, var(--tooltip-outline) var(--highlight-outline-cover), transparent);
+        0 0 0 calc(2 * var(--highlight-outline-solid)) var(--tooltip-outline-soft);
     }
-    /* Outline sits under the fill: edge (0.75) + 2 * outline (0.75) = 2.25. */
+    /* The arrow draws its edge as the box does: each layer a stroke on the
+       box's outer edge line (ARROW.edge, 0.375px further out than the ring's
+       centre), twice the layer's depth wide and clipped to the arrow's
+       inside; the outline the same under the fill, so only its outer half
+       shows. The single-stroke paths are the default edges' arrow. */
+    :root[data-edges='retina'] :is(.tooltip-arrow-edge, .tooltip-arrow-highlight) {
+      display: none;
+    }
+    /* The single-stroke outline is the outline's soft row here: on the same
+       line, under the outline's solid stroke, twice as deep. */
     :root[data-edges='retina'] .tooltip-arrow-outline {
-      stroke-width: 2.25;
+      transform: translateY(0.375px);
+      stroke: var(--tooltip-outline-soft);
+      stroke-width: calc(4 * var(--highlight-outline-solid));
     }
-    :root[data-edges='retina'] .tooltip-arrow-edge,
-    :root[data-edges='retina'] .tooltip-arrow-highlight {
-      stroke-width: 0.75;
+    :root[data-edges='retina'] .tooltip-arrow-layer {
+      display: inline;
+      transform: translateY(0.375px);
+    }
+    :root[data-edges='retina'] .tooltip-arrow-layer,
+    :root[data-edges='retina'] .tooltip-arrow-layer path {
+      fill: none;
+    }
+    :root[data-edges='retina'] .tooltip-arrow-rim {
+      stroke: var(--tooltip-outline);
+      stroke-width: calc(2 * var(--tooltip-outline-width, var(--highlight-outline-solid)));
+    }
+    :root[data-edges='retina'] .tooltip-arrow-ring {
+      stroke: var(--tooltip-edge);
+      stroke-width: calc(2 * var(--edge-ring-solid));
+    }
+    :root[data-edges='retina'] .tooltip-arrow-ring-soft {
+      stroke: color-mix(
+        in srgb,
+        var(--tooltip-edge) var(--edge-ring-cover),
+        var(--tooltip-highlight)
+      );
+      stroke-width: calc(2 * var(--edge-ring-soft));
+    }
+    :root[data-edges='retina'] .tooltip-arrow-sheen {
+      stroke: var(--tooltip-highlight);
+      stroke-width: calc(2 * var(--ring-pane-solid));
+    }
+    :root[data-edges='retina'] .tooltip-arrow-sheen-soft {
+      stroke: color-mix(
+        in srgb,
+        var(--tooltip-highlight) var(--ring-pane-cover),
+        var(--tooltip-face)
+      );
+      stroke-width: calc(2 * var(--ring-pane-soft));
     }
     /* With border-width: 0, OverlayArrow anchors at the outer edge (1px further
        out than default), so shift by 1 + 0.375 = 1.375px to align ARROW.edge
@@ -229,6 +281,7 @@
       --tooltip-edge: CanvasText;
       --tooltip-highlight: Canvas;
       --tooltip-outline: Canvas;
+      --tooltip-outline-soft: Canvas;
     }
   }
 }

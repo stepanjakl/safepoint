@@ -25,6 +25,7 @@
     "check:rail": "node scripts/checks/check-rail-alignment.ts",
     "check:edges": "node scripts/checks/check-retina-edges.ts",
     "check:lines": "node scripts/checks/check-line-geometry.ts",
+    "check:junctions": "node scripts/checks/check-edge-junctions.ts",
     "lines:compare": "node scripts/checks/compare-lines.ts",
     "check:contrast": "playwright test",
     "check:visual": "playwright test e2e/design/visual.spec.ts",

@@ -1,0 +1,177 @@
+/* /workbench/floating-edges: a popover's and a tooltip's edge four ways. The
+   app draws 'rim'; the others override its retina edges on this page only. */
+@layer components {
+  .floating-edges {
+    display: grid;
+    align-content: start;
+    gap: 24px;
+    padding: 32px 24px 64px;
+  }
+  /* Fixed heights and widths, so every specimen lands on whole pixels and
+     the arrow's junction with the box is read where the app's would be. */
+  .floating-edges > h1 {
+    block-size: 2.5rem;
+  }
+  .floating-edges-intro {
+    max-inline-size: 48rem;
+    block-size: 4.5rem;
+  }
+  .floating-edges-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 30rem);
+    gap: 32px;
+  }
+  .floating-edges-option {
+    display: grid;
+    grid-template-rows: 6rem auto;
+    align-content: start;
+    gap: 12px;
+  }
+  .floating-edges-backdrop {
+    display: grid;
+    gap: 24px;
+    padding: 16px;
+  }
+  .floating-edges-popover {
+    inline-size: 18rem;
+    block-size: 9rem;
+  }
+  .floating-edges-backdrop ul {
+    block-size: 8rem;
+  }
+  /* Over the text, so the outline lies on more than one shade. */
+  .floating-edges-tooltip {
+    position: absolute;
+    inset-block-start: 8px;
+    inset-inline-start: 6rem;
+    inline-size: 15rem;
+  }
+  .floating-edges-arrow {
+    position: absolute;
+    inset-block-start: 100%;
+    inset-inline-start: 50%;
+    translate: -50% 0;
+  }
+}
+
+/* Unlayered: the app's retina edges are written in layers. */
+@media (min-resolution: 2dppx) {
+  /* As they shipped until November 2026: every soft row translucent. */
+  :root[data-edges='retina'] [data-floating='now'] .control-face.surface-popover {
+    box-shadow:
+      var(--ring-sheen-shadow),
+      0 0 0 var(--highlight-outline-solid) var(--sp-popover-outline),
+      0 0 0 var(--highlight-outline-soft)
+        color-mix(in srgb, var(--sp-popover-outline) var(--highlight-outline-cover), transparent);
+  }
+  :root[data-edges='retina'] [data-floating='now'] .app-tooltip {
+    box-shadow:
+      inset 0 0 0 var(--edge-ring-solid) var(--tooltip-edge),
+      inset 0 0 0 var(--edge-ring-soft)
+        color-mix(in srgb, var(--tooltip-edge) var(--edge-ring-cover), transparent),
+      inset 0 0 0 var(--ring-pane-solid) var(--tooltip-highlight),
+      inset 0 0 0 var(--ring-pane-soft)
+        color-mix(in srgb, var(--tooltip-highlight) var(--ring-pane-cover), transparent),
+      0 0 0 var(--highlight-outline-solid) var(--tooltip-outline),
+      0 0 0 var(--highlight-outline-soft)
+        color-mix(in srgb, var(--tooltip-outline) var(--highlight-outline-cover), transparent);
+  }
+  /* Its arrow: one stroke each for outline, edge and highlight. */
+  :root[data-edges='retina'] [data-floating='now'] .tooltip-arrow-layer {
+    display: none;
+  }
+  :root[data-edges='retina']
+    [data-floating='now']
+    :is(.tooltip-arrow-outline, .tooltip-arrow-edge, .tooltip-arrow-highlight) {
+    display: inline;
+  }
+  :root[data-edges='retina'] [data-floating='now'] .tooltip-arrow-outline {
+    transform: none;
+    stroke: var(--tooltip-outline);
+    stroke-width: 2.25;
+  }
+  :root[data-edges='retina']
+    [data-floating='now']
+    :is(.tooltip-arrow-edge, .tooltip-arrow-highlight) {
+    stroke-width: 0.75;
+  }
+  /* Opaque inside: each soft row a fixed mix of what it lies between. */
+  :root[data-edges='retina']
+    [data-floating]:not([data-floating='now'])
+    .control-face.surface-popover {
+    --floating-ring-soft: color-mix(
+      in srgb,
+      var(--control-ring-top) var(--edge-ring-cover),
+      var(--control-highlight)
+    );
+    --floating-sheen-soft: color-mix(
+      in srgb,
+      var(--control-highlight) var(--ring-sheen-cover),
+      var(--control-face-top)
+    );
+    --floating-inside:
+      inset 0 0 0 var(--edge-ring-solid) var(--control-ring-top),
+      inset 0 0 0 var(--edge-ring-soft) var(--floating-ring-soft),
+      inset 0 0 0 var(--ring-sheen-solid) var(--control-highlight),
+      inset 0 0 0 var(--ring-sheen-soft) var(--floating-sheen-soft);
+    box-shadow:
+      var(--floating-inside),
+      0 0 0 var(--highlight-outline-solid) var(--sp-popover-outline),
+      0 0 0 var(--highlight-outline-soft)
+        color-mix(in srgb, var(--sp-popover-outline) var(--highlight-outline-cover), transparent);
+  }
+  :root[data-edges='retina'] [data-floating]:not([data-floating='now']) .app-tooltip {
+    --floating-ring-soft: color-mix(
+      in srgb,
+      var(--tooltip-edge) var(--edge-ring-cover),
+      var(--tooltip-highlight)
+    );
+    --floating-sheen-soft: color-mix(
+      in srgb,
+      var(--tooltip-highlight) var(--ring-pane-cover),
+      var(--tooltip-face)
+    );
+    --floating-inside:
+      inset 0 0 0 var(--edge-ring-solid) var(--tooltip-edge),
+      inset 0 0 0 var(--edge-ring-soft) var(--floating-ring-soft),
+      inset 0 0 0 var(--ring-pane-solid) var(--tooltip-highlight),
+      inset 0 0 0 var(--ring-pane-soft) var(--floating-sheen-soft);
+    box-shadow:
+      var(--floating-inside),
+      0 0 0 var(--highlight-outline-solid) var(--tooltip-outline),
+      0 0 0 var(--highlight-outline-soft)
+        color-mix(in srgb, var(--tooltip-outline) var(--highlight-outline-cover), transparent);
+  }
+
+  /* The outline at whole device pixels, solid; the arrow's outline as wide
+     (--tooltip-outline-width, tooltip.css). */
+  :root[data-edges='retina'] [data-floating='half'] {
+    --floating-outline: var(--highlight-outline-solid);
+  }
+  :root[data-edges='retina'] [data-floating='whole'] {
+    --floating-outline: calc(2 * var(--dp));
+    --tooltip-outline-width: var(--floating-outline);
+  }
+  /* The others draw no soft row beyond the outline: their arrow drops the
+     app's (tooltip.css). */
+  :root[data-edges='retina']
+    [data-floating]:is([data-floating='opaque'], [data-floating='half'], [data-floating='whole'])
+    .tooltip-arrow-outline {
+    display: none;
+  }
+
+  :root[data-edges='retina']
+    [data-floating]:is([data-floating='half'], [data-floating='whole'])
+    .control-face.surface-popover {
+    box-shadow:
+      var(--floating-inside),
+      0 0 0 var(--floating-outline) var(--sp-popover-outline);
+  }
+  :root[data-edges='retina']
+    [data-floating]:is([data-floating='half'], [data-floating='whole'])
+    .app-tooltip {
+    box-shadow:
+      var(--floating-inside),
+      0 0 0 var(--floating-outline) var(--tooltip-outline);
+  }
+}

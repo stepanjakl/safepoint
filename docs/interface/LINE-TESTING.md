@@ -411,6 +411,51 @@ its own, and they meet in an L inside the corner, as the pane's ring and
 sheen do; the band covers both. `/workbench/section-rules` shows the meeting
 as it was, as drawn, and with no highlight in the corner.
 
+### In every browser, at every width
+
+The specs read Chromium at 1440px. `pnpm check:junctions`
+(`scripts/checks/check-edge-junctions.ts`) runs the same rules -- the pane's
+sides and foot, each divider's crossings, the lit first row -- on the live
+app in Chromium, WebKit and Safari, both themes and both soft row styles, at
+the widths given (`--width 1000,1312`; Safari's window is bounded by the
+screen, 1312px here). Undoing the header rule's or the run strip's fix fails
+it at exactly that place.
+
+What it found that the specs could not: below 52rem the run list becomes a
+strip across the top, and its bottom rule's soft row doubled at both sides
+-- in every engine. What a whole-screen diff of Safari against the others
+found that is not an edge: Safari paints the blue fills a greyer blue,
+dithers gradients, and Chromium places the header's tab pills a device pixel
+off WebKit and Safari (text widths differ).
+
+### Floating edges
+
+Tooltips and popovers draw their ring and sheen as the pane does: each soft
+row an opaque mix of what it lies between. Their dark outline lies over
+whatever is behind them, so it is drawn as the ring is but in fixed steps: a
+solid device pixel of the outline (`--sp-*-outline`, neutral-925 in dark) and
+beyond it a fainter one (`--sp-*-outline-soft`, neutral-875), its soft row;
+both are transparent in light. Four lines in all, each one device pixel.
+
+The tooltip's arrow draws the same layers. At 2x every layer is a stroke on
+the box's outer edge line, twice the layer's depth wide and clipped to the
+arrow's inside (`TooltipArrowShape`), so ring, soft row and highlight run on
+from the box's own; the outline and its soft row are strokes on that line
+under the fill, so only their outer halves show. The single-stroke paths are
+the default edges' arrow. `/workbench/floating-edges` shows the edge five
+ways: as it was, opaque inside, the outline at 0.5px and at 1px, and the
+app's.
+
+### The list as a strip
+
+Below 52rem the Runs and Instructions lists are a strip across the top
+(`.sheet-strip`), with the run or version under it. The strip's floor is a
+rule drawn as bands, its padding the rule's whole depth so it ends on a
+device pixel. A lit item's fill meets the solid rows above and below it --
+the list reaches over the head rule's soft row and the strip's own, and
+each item pads out by as much -- and the dividers between items reach both
+solid rows.
+
 ### Pages and tests
 
 - `/workbench/edge-junctions` builds the app's pane in small from its own
@@ -544,6 +589,7 @@ What worked, in this order:
 | A translucent soft row over its own rule's solid layer                        | A section head's rule two solid rows while the row under it is lit, 0.75px beside it       | Keep a rule's soft row opaque, mixed with the sheen, whatever lies beneath (`.sheet-head`)                                                                |
 | A divider painted above a rule that runs across it                            | The band's rule broken for one pixel where it crosses the Instructions divider             | Open the divider's clip on the rule's solid row, so the rule beneath shows through (`--divider-rule-row`)                                                 |
 | A rule's soft row reaching the side under its translucent soft column         | A dot where the header's rule, and each section head's, meets the pane's left side         | Start the rule's soft row at the ring's depth, as a band (`--header-rule-from`; the head's rule as bands in `.sheet-head::before`)                        |
+| A rule drawn as a full-width inset shadow at a narrower layout                | The run strip's bottom rule doubled the soft row at both sides of the pane, below 52rem    | Draw it as bands whose soft row stops at `--band-start`/`--band-end`; check narrower widths too (`check:junctions --width`)                               |
 | A divider's soft column reaching the foot under its translucent soft row      | A dot where each column divider meets the pane's foot                                      | End the soft column with the lit line, above the ring's soft row (`--column-divider-clip`); the solid column runs on                                      |
 | Half pixels that cancel out                                                   | Fixing one edge onto the grid moves another off (the narrow notch)                         | Change the geometry as a whole, never one length of it                                                                                                    |
 
@@ -680,6 +726,8 @@ What worked, in this order:
 | `app/workbench/soft-rows/`                                          | each way the edge meets another line, enlarged: the soft row translucent beside opaque      |
 | `app/workbench/edge-junctions/`, `e2e/shell/edge-junctions.spec.ts` | the app's pane in small, and pixel tests of every place its edge meets another line         |
 | `app/workbench/rounded-edges/`                                      | a rounded control's ring and sheen five ways                                                |
+| `app/workbench/floating-edges/`                                     | a popover's and a tooltip's edge four ways: before, opaque inside, outline 0.5px, 1px       |
+| `scripts/checks/check-edge-junctions.ts`                            | `pnpm check:junctions`: the pane's junction rules in Chromium, WebKit and Safari, any width |
 | `app/styles/geometry.css`                                           | `--dp` and every width split into `-solid`, `-soft`, `-cover`                               |
 | `components/ui/device-pixel-script.tsx`                             | sets `--dp` before first paint and when the ratio changes                                   |
 | `components/ui/notch-snap.tsx`                                      | puts a notch's loose edge on a device pixel                                                 |

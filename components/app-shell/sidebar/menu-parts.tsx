@@ -33,6 +33,8 @@ import X from 'blode-icons-react/icons/x';
 import { ICON_QUIET, ICON_SHAPE } from '@/components/ui/button';
 
 export const MENU_TITLE = 'text-menu-link text-dense font-semibold';
+export const MENU_LEVEL_BUTTON =
+  'text-dense rounded-control flex h-10 w-full items-center font-semibold';
 export const MENU_CHEVRON = 'size-5 flex-none';
 /*
   A chevron needs a wrapper of its own only so the alignment guide has something

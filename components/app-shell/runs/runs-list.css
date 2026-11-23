@@ -355,28 +355,34 @@
       --sheet-fill-end var(--duration-state) ease-out;
     pointer-events: none;
   }
-  .sheet-head:has(+ .sheet-list > li:first-child > .sheet-row[data-current])::before {
-    --sheet-fill: var(--sp-sheet-current);
-    --sheet-fill-end: var(--sp-sheet-hover);
-    --sheet-head-soft-start: var(--row-band-start, 0px);
-    --sheet-head-soft-end: var(--row-band-end, 0px);
-  }
-  .sheet-head:has(
-      + .sheet-list
-        > li:first-child
-        > .sheet-row:not([data-current]):is(:focus-visible, :focus-within)
-    )::before {
-    --sheet-fill: var(--sp-sheet-hover);
-    --sheet-fill-end: var(--sp-sheet-hover-end);
-    --sheet-head-soft-start: var(--row-band-start, 0px);
-    --sheet-head-soft-end: var(--row-band-end, 0px);
-  }
-  @media (hover: hover) {
-    .sheet-head:has(+ .sheet-list > li:first-child > .sheet-row:not([data-current]):hover)::before {
+  /* In the column only: in the strip every row lies under the head, and the
+     strip reaches over the head's soft row itself (.sheet-strip). */
+  @container sheet (width >= 52rem) {
+    .sheet-head:has(+ .sheet-list > li:first-child > .sheet-row[data-current])::before {
+      --sheet-fill: var(--sp-sheet-current);
+      --sheet-fill-end: var(--sp-sheet-hover);
+      --sheet-head-soft-start: var(--row-band-start, 0px);
+      --sheet-head-soft-end: var(--row-band-end, 0px);
+    }
+    .sheet-head:has(
+        + .sheet-list
+          > li:first-child
+          > .sheet-row:not([data-current]):is(:focus-visible, :focus-within)
+      )::before {
       --sheet-fill: var(--sp-sheet-hover);
       --sheet-fill-end: var(--sp-sheet-hover-end);
       --sheet-head-soft-start: var(--row-band-start, 0px);
       --sheet-head-soft-end: var(--row-band-end, 0px);
+    }
+    @media (hover: hover) {
+      .sheet-head:has(
+          + .sheet-list > li:first-child > .sheet-row:not([data-current]):hover
+        )::before {
+        --sheet-fill: var(--sp-sheet-hover);
+        --sheet-fill-end: var(--sp-sheet-hover-end);
+        --sheet-head-soft-start: var(--row-band-start, 0px);
+        --sheet-head-soft-end: var(--row-band-end, 0px);
+      }
     }
   }
   .sheet-head::after {
@@ -979,7 +985,7 @@
     /* Level 0, not under the runs' own z-index: the list's scroll fades mask
        it into a layer of its own, which only document order can lift over
        the head. */
-    .process-runs-list > .sheet-head {
+    .sheet-strip > .sheet-head {
       z-index: 0;
       background: none;
     }
@@ -987,10 +993,10 @@
        over its lit line, to the floor, faded beside a lit run as in the column,
        where that run's seam takes over (.sheet-row). Painted as a fill, so
        its border colour never changes between layouts. */
-    .process-runs-list > .sheet-list > li + li {
+    .sheet-strip > .sheet-list > li + li {
       border-inline-start-width: 0;
     }
-    .process-runs-list > .sheet-list > li + li::before {
+    .sheet-strip > .sheet-list > li + li::before {
       display: block;
       inset-block: 0;
       inset-inline: 0 auto;
@@ -1003,7 +1009,7 @@
     .sheet-list > li + li::after {
       display: none;
     }
-    .process-runs-list > .sheet-list > li + li::after {
+    .sheet-strip > .sheet-list > li + li::after {
       display: block;
       inset-block: 0;
       inset-inline: 0 auto;
@@ -1011,18 +1017,29 @@
       height: auto;
     }
     /* The strip hides version boundaries, so every adjacent run can meet. */
-    .process-runs-list
+    .sheet-strip
       > .sheet-list
       > li:has(> .sheet-row[data-current])
       + li:is(:hover, :focus-within)::after,
-    .process-runs-list
+    .sheet-strip
       > .sheet-list
       > li:is(:hover, :focus-within)
       + li:has(> .sheet-row[data-current])::after {
       opacity: 1;
     }
+    /* A lit run's fill meets the solid rows above and below it, as a lit row
+       meets the pane's ring: the list reaches over the head rule's soft row
+       and the strip's own, and each run pads out by as much, so nothing
+       moves (the padding is .sheet-row's plus that). */
+    .sheet-strip > .sheet-list {
+      --strip-soft: calc(var(--edge-hairline-depth) - var(--edge-hairline-solid));
+      margin-block: calc(var(--strip-soft) * -1);
+    }
+    .sheet-strip > .sheet-list > li > .sheet-row {
+      padding-block: calc(var(--spacing-sheet-inset) - 0.125rem + var(--strip-soft));
+    }
     /* The column's rule is the strip's floor, so no run draws one of its own. */
-    .process-runs-list > .sheet-list > li:last-child {
+    .sheet-strip > .sheet-list > li:last-child {
       border-bottom-width: 0;
     }
     /* A lit run takes the rules either side of it, as a lit row in the column

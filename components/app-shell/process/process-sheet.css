@@ -90,14 +90,16 @@
   /* Narrow, the runs strip sits under the header as one more row: a lit
      line under the strip too, over the thread, as the header has under it. */
   @container sheet (width < 52rem) {
-    .process-runs {
+    .process-runs,
+    .process-panels[data-tab='instructions'] {
       position: relative;
 
       @media (width < 56.25rem) {
         grid-template-rows: auto 1fr;
       }
     }
-    .process-runs::after {
+    .process-runs::after,
+    .process-panels[data-tab='instructions']::after {
       content: '';
       position: absolute;
       z-index: 3;
@@ -224,17 +226,31 @@
   }
 
   @container sheet (width < 52rem) {
-    .process-runs-list {
-      padding-block-end: max(0px, var(--edge-hairline) - var(--structural-divider-border));
+    /* The rule's whole depth, so the strip ends on a device pixel. */
+    .sheet-strip {
+      padding-block-end: max(0px, var(--edge-hairline-depth) - var(--structural-divider-border));
       border-bottom: var(--structural-divider-border) solid CanvasText;
-      box-shadow:
-        inset 0 calc(var(--edge-hairline-solid) * -1) 0 var(--sp-raised-ring),
-        inset 0 calc(var(--edge-hairline-soft) * -1) 0
-          color-mix(in srgb, var(--sp-raised-ring) var(--edge-hairline-cover), transparent);
+      /* Bands, not an inset shadow: the soft row stops short of the side's
+         soft column (sheet-band), or the two double where the rule meets it. */
+      background:
+        linear-gradient(var(--sp-raised-ring), var(--sp-raised-ring)) 0 100% / 100%
+          var(--edge-hairline-solid) no-repeat,
+        linear-gradient(
+            color-mix(in srgb, var(--sp-raised-ring) var(--edge-hairline-cover), transparent),
+            color-mix(in srgb, var(--sp-raised-ring) var(--edge-hairline-cover), transparent)
+          )
+          var(--band-start, 0px) calc(100% - var(--edge-hairline-solid)) /
+          calc(100% - var(--band-start, 0px) - var(--band-end, 0px))
+          calc(var(--edge-hairline-soft) - var(--edge-hairline-solid)) no-repeat;
+    }
+    @media (forced-colors: active) {
+      .sheet-strip {
+        background: none;
+      }
     }
   }
 
-  @container sheet (width >= 44rem) {
+  @container sheet (width >= 52rem) {
     .process-panels[data-tab='instructions']::before {
       content: '';
       position: absolute;

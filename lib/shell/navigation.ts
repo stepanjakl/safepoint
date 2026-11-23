@@ -11,6 +11,8 @@ export type ProcessNavigationItem = {
   href: string;
   name: string;
   evaluation: ProcessEvaluation;
+  /** The process the sidebar offers a mock run of. */
+  mockRun?: boolean;
   status: {
     label: string;
     description: string;
@@ -28,12 +30,14 @@ export function processNavigationItem({
   name,
   evaluation,
   plan,
+  mockRun,
 }: {
   id: string;
   href: string;
   name: string;
   evaluation: ProcessEvaluation;
   plan: ReleasePlan;
+  mockRun?: boolean;
 }): ProcessNavigationItem {
   const counts = evaluationCounts(plan.effects);
   const state = planState(plan);
@@ -74,6 +78,7 @@ export function processNavigationItem({
     href,
     name,
     evaluation,
+    ...(mockRun ? { mockRun } : {}),
     status: {
       ...status,
       counts,

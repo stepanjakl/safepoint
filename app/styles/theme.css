@@ -131,7 +131,11 @@
   --shadow-control-highlight:
     inset 0 0 0 var(--control-highlight-solid) var(--control-highlight),
     inset 0 0 0 var(--control-highlight-soft)
-      color-mix(in srgb, var(--control-highlight) var(--control-highlight-cover), transparent);
+      color-mix(
+        in srgb,
+        var(--control-highlight-soft-ink, var(--control-highlight)) var(--control-highlight-cover),
+        transparent
+      );
   /* A divider inside a pane: it lies on the pane's face, as its own edge does,
      so it takes the pane's edge colour and matches its sides. */
   --shadow-separator-right-strong:

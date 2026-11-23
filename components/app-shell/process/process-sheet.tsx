@@ -6,6 +6,7 @@ import {
   createContext,
   useCallback,
   useEffect,
+  useEffectEvent,
   useRef,
   useState,
   type ReactNode,
@@ -22,6 +23,11 @@ import { ProcessPanels } from './process-panels';
 import type { AsideView } from '@/components/app-shell/drawer-aside';
 import { useProcessTab, type ProcessTab } from './process-tab-store';
 import { RunsList } from '@/components/app-shell/runs/runs-list';
+import {
+  NEW_MOCK_RUN,
+  subscribeMockRunLaunch,
+} from '@/components/app-shell/runs/mock-run-launch';
+import { useWalkthrough } from '@/components/app-shell/walkthrough';
 import {
   RunSelectionProvider,
   useRunSelectionState,
@@ -204,11 +210,32 @@ export function ProcessSheet({
     currentVersion: version,
   };
   const scrollRuns = useVerticalScrollFade();
+  const hasLiveThread = liveThread !== undefined;
+  const asksForMockRun = initialRunId === NEW_MOCK_RUN;
   const selection = useRunSelectionState({
     process,
-    initialRunId,
-    liveThread: liveThread !== undefined,
+    initialRunId: asksForMockRun ? null : initialRunId,
+    liveThread: hasLiveThread,
   });
+  const walkthrough = useWalkthrough();
+  const launchMockRun = useEffectEvent(() => {
+    if (selection.startMock?.()) {
+      chooseTab('runs');
+      walkthrough?.advance('start-run');
+    }
+  });
+  // Once per arrival: Strict Mode runs the effect twice, a second run would
+  // be a second mock run.
+  const launchedOnArrival = useRef(false);
+  useEffect(() => {
+    if (!asksForMockRun || launchedOnArrival.current) return;
+    launchedOnArrival.current = true;
+    launchMockRun();
+  }, [asksForMockRun]);
+  useEffect(() => {
+    if (!hasLiveThread) return;
+    return subscribeMockRunLaunch(process.id, launchMockRun);
+  }, [process.id, hasLiveThread]);
 
   // The section a swap has landed, so what it holds can begin its own entrance.
   const [landed, setLanded] = useState<ProcessTab | null>(null);
@@ -240,7 +267,7 @@ export function ProcessSheet({
         <aside
           ref={scrollRuns}
           aria-labelledby="runs-heading"
-          className="process-runs-list sheet-bleed @sheet-wide/sheet:sheet-bleed-bottom @max-sheet-wide/sheet:sheet-bleed-end shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative"
+          className="process-runs-list sheet-strip sheet-bleed @sheet-wide/sheet:sheet-bleed-bottom @max-sheet-wide/sheet:sheet-bleed-end shell:min-h-0 shell:min-w-0 shell:overflow-y-auto shell:overscroll-contain relative"
         >
           <SectionRow id="runs-heading" title="Runs">
             <StartRunButton />

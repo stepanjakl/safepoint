@@ -108,7 +108,10 @@ without crossing it; `e2e/support/edge-pixels.ts` checks that on any element. It
 `/workbench/edge-junctions`, the app's pane built from its own parts, and
 fails on a seam, a broken rule, a divider short of the rule or a soft row
 doubled or tinted. LINE-TESTING.md → "Where the edge meets other lines"
-explains how the edge is drawn and why.
+explains how the edge is drawn and why. The specs run in Chromium at one
+width; `pnpm check:junctions` (with `pnpm dev` running) holds the app's pane
+to the same rules in Chromium, WebKit and Safari, at any `--width` -- run it
+once before calling a junction done, with Safari quit first (`--help`).
 
 For a visible gap, overdraw, or thickness change at a divider junction, use the
 [2× painted-junction checks](docs/interface/STYLING-SYSTEM.md#checking-painted-divider-junctions)

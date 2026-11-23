@@ -42,6 +42,7 @@ export async function AppShell({
       name: brunchOrdersDirectProcess.name,
       evaluation: brunchOrdersDirectProcess.evaluation,
       plan: brunchOrdersDirectPlan,
+      mockRun: true,
     }),
     processNavigationItem({
       id: brunchOrdersProcess.id,

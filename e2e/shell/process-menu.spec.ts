@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { LAST_PROCESS_KEY } from '@/lib/shell/navigation';
 
 /* The sidebar's behaviour: search, level travel, and reordering by keyboard
    and pointer. Focus is asserted at every step, because the menu moves it by
@@ -45,6 +46,38 @@ function processNames(page: Page) {
 
 test.beforeEach(async ({ page }) => {
   await page.context().clearCookies();
+});
+
+test('the sidebar starts a fresh mock run on the model process', async ({
+  page,
+}) => {
+  await openHome(page);
+  const shortcut = page
+    .getByRole('navigation', { name: 'Processes' })
+    .getByRole('button', { name: /^Try a mock run/ });
+  const player = page.locator('[aria-label="Mock run player"]');
+
+  await expect
+    .poll(async () =>
+      (await page.context().cookies()).some(
+        (cookie) => cookie.name === LAST_PROCESS_KEY,
+      ),
+    )
+    .toBe(true);
+  await shortcut.press('Enter');
+  await expect(page).toHaveURL(/\/processes\/brunch-orders-direct\?run=mock-/);
+  await expect(player).toBeVisible();
+  const firstRun = new URL(page.url()).searchParams.get('run');
+
+  await page
+    .locator('.process-header')
+    .getByRole('button', { name: 'Settings', exact: true })
+    .click();
+  await expect(player).toBeHidden();
+  await shortcut.press('Space');
+  await expect(page).not.toHaveURL(`${DIRECT}?run=${firstRun}`);
+  await expect(page).toHaveURL(/\/processes\/brunch-orders-direct\?run=mock-/);
+  await expect(player).toBeVisible();
 });
 
 test('⌘K opens search, filters, and Escape unwinds in two steps', async ({

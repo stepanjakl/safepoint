@@ -38,6 +38,7 @@ import {
   ICON_BUTTON,
   MENU_CHEVRON,
   MENU_CHEVRON_BOX,
+  MENU_LEVEL_BUTTON,
   MENU_RAIL,
   MENU_RULE,
   MenuIcon,
@@ -65,7 +66,7 @@ import { useWalkthrough } from '@/components/app-shell/walkthrough';
   The edge matters: while this carried a 1.5px transparent border and the
   workspace item did not, the two chevrons were 1.5px out of step.
 */
-const MENU_BACK_BOX = 'rounded-control shell:px-1.75 h-10';
+const MENU_BACK_BOX = cx(MENU_LEVEL_BUTTON, 'shell:px-1.75');
 
 /*
   The sidebar: the brand row and its two toggles, the two levels it travels
@@ -550,7 +551,7 @@ export function ProcessMenu({
                   className={cx(
                     'process-menu-back',
                     MENU_BACK_BOX,
-                    'text-dense col-start-1 row-start-1 flex w-full items-center font-semibold',
+                    'col-start-1 row-start-1',
                   )}
                   aria-label="Back to workspace menu"
                   onClick={() => navigate('workspace')}
@@ -595,6 +596,11 @@ export function ProcessMenu({
               </div>
               <ProcessList
                 items={items}
+                mockRunProcess={
+                  customising || searchOpen
+                    ? undefined
+                    : items.find((item) => item.mockRun)
+                }
                 order={order}
                 visibleOrder={visibleOrder}
                 current={current}

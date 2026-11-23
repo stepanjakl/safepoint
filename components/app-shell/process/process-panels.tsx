@@ -36,13 +36,14 @@ import type { ProcessTab } from './process-tab-store';
 
 // One row the height of the sheet, so each column scrolls on its own rather
 // than the row growing to the longer of the two.
-const COLUMNS =
-  'grid h-full min-h-0 grid-cols-[minmax(0,1fr)] shell:grid-rows-[minmax(0,1fr)]';
+const COLUMNS = 'grid h-full min-h-0 grid-cols-[minmax(0,1fr)]';
+const ONE_ROW = 'shell:grid-rows-[minmax(0,1fr)]';
 
 // Versions are a short word and a date: the runs rail's width, so the divider
-// does not move between the two tabs.
+// does not move between the two tabs. Narrower, the list is a strip across
+// the top with the version under it, as Runs lays out its runs.
 const NARROW_LIST =
-  '@sheet-narrow/sheet:grid-cols-[minmax(0,var(--spacing-sheet-rail))_minmax(0,1fr)] @sheet-narrow/sheet:[&>*]:min-w-0';
+  '@sheet-wide/sheet:grid-cols-[minmax(0,var(--spacing-sheet-rail))_minmax(0,1fr)] @sheet-wide/sheet:[&>*]:min-w-0 shell:@sheet-wide/sheet:grid-rows-[minmax(0,1fr)] shell:@max-sheet-wide/sheet:grid-rows-[auto_minmax(0,1fr)]';
 
 export function ProcessPanels({
   process,
@@ -86,8 +87,8 @@ export function ProcessPanels({
     settleLeaving,
   } = useAsidePanel({
     // The latest version is open from the first render, so the server sends
-    // it with the list. Where the two do not fit side by side, the sheet's
-    // width alone hides it and the list keeps its place (`passive` below).
+    // it with the list. Where the two do not fit side by side, the list is a
+    // strip above it.
     initial:
       openView ??
       (tab === 'instructions'
@@ -153,9 +154,6 @@ export function ProcessPanels({
   }
 
   const opensDetail = tab === 'instructions';
-  // The version that opened with the tab, not one a person chose: below the
-  // two-column width it gives way to the list instead of replacing it.
-  const passive = panel?.view.kind === 'version' && panel.view.passive === true;
   const list =
     tab === 'instructions' ? (
       <InstructionsPanel
@@ -172,7 +170,11 @@ export function ProcessPanels({
 
   return (
     <div
-      className={cx('process-panels', COLUMNS, opensDetail && NARROW_LIST)}
+      className={cx(
+        'process-panels',
+        COLUMNS,
+        opensDetail ? NARROW_LIST : ONE_ROW,
+      )}
       data-tab={tab}
       onKeyDownCapture={onKeyDownCapture}
     >
@@ -184,9 +186,8 @@ export function ProcessPanels({
           // Rows run to the column's edges; prose pads itself back.
           tab !== 'instructions' && 'sheet-bleed-head',
           opensDetail
-            ? '@max-sheet-narrow/sheet:sheet-bleed-end'
+            ? 'sheet-strip @max-sheet-wide/sheet:sheet-bleed-end'
             : 'sheet-bleed-end sheet-bleed-end-head',
-          panel && !passive ? '@max-sheet-narrow/sheet:hidden' : null,
         )}
       >
         {/* Named for assistive technology only: the header's tab says it. */}
@@ -237,7 +238,7 @@ export function ProcessPanels({
               onLeft={settleLeaving}
               flat
               // The detail band covers the column edge's lit line.
-              className={cx('z-1', passive && '@max-sheet-narrow/sheet:hidden')}
+              className="z-1"
             />
           )}
         />

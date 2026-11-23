@@ -179,6 +179,12 @@ export const WORKBENCH_GROUPS: readonly WorkbenchGroup[] = [
           'The popover and tooltip as they ship, beside an outer line with and without the inner highlight.',
       },
       {
+        href: '/workbench/floating-edges',
+        title: 'Floating edges',
+        summary:
+          'A popover’s and a tooltip’s edge with its soft rows opaque, and its dark outline at whole device pixels.',
+      },
+      {
         href: '/workbench/assistant-button',
         title: 'Assistant button',
         summary:

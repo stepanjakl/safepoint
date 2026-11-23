@@ -40,8 +40,10 @@
   --sp-icon-quiet-ink: light-dark(var(--sp-neutral-825), var(--sp-neutral-150));
   --sp-icon-quiet-ink-hover: light-dark(var(--sp-neutral-925), var(--sp-neutral-100));
   /* The line outside a popover's border: none in light, a step past the canvas
-     in dark. A fixed step, since it lies on whatever the popover opens over. */
+     in dark. A fixed step, since it lies on whatever the popover opens over;
+     at 2x a fainter step beyond it is its soft row, as a ring's is. */
   --sp-popover-outline: light-dark(transparent, var(--sp-neutral-925));
+  --sp-popover-outline-soft: light-dark(transparent, var(--sp-neutral-875));
 }
 
 @theme inline {
@@ -117,7 +119,7 @@
    transition-* utility beside this -- it replaces the list and the face snaps. */
 @utility control-face {
   @apply shadow-control-highlight;
-  --control-face-border-width: var(--spacing-control-edge);
+  --control-face-border-width: var(--control-ring-width, var(--spacing-control-edge));
   border: var(--control-face-border-width) solid transparent;
   background-image:
     linear-gradient(to bottom, var(--control-face-top), var(--control-face-bottom)),
@@ -578,8 +580,12 @@
    ends at ring + sheen width, split here because the width is the face's. */
 @media (min-resolution: 2dppx) {
   :root[data-edges='retina'] .control-face:not(.slant) {
+    --ring-width: var(--control-ring-width, var(--edge-ring));
+    --ring-solid: round(down, var(--ring-width), var(--dp));
+    --ring-soft: calc(var(--ring-solid) + var(--dp));
+    --ring-cover: clamp(0%, calc((var(--ring-width) - var(--ring-solid)) / var(--dp) * 100%), 100%);
     --ring-sheen: calc(
-      var(--edge-ring) + var(--control-highlight-width, var(--spacing-control-highlight))
+      var(--ring-width) + var(--control-highlight-width, var(--spacing-control-highlight))
     );
     --ring-sheen-solid: round(down, var(--ring-sheen), var(--dp));
     --ring-sheen-soft: calc(var(--ring-sheen-solid) + var(--dp));
@@ -589,12 +595,20 @@
       100%
     );
     --ring-sheen-shadow:
-      inset 0 0 0 var(--edge-ring-solid) var(--control-ring-top),
-      inset 0 0 0 var(--edge-ring-soft)
-        color-mix(in srgb, var(--control-ring-top) var(--edge-ring-cover), transparent),
+      inset 0 0 0 var(--ring-solid) var(--control-ring-top),
+      inset 0 0 0 var(--ring-soft)
+        color-mix(
+          in srgb,
+          var(--control-ring-soft-ink, var(--control-ring-top)) var(--ring-cover),
+          transparent
+        ),
       inset 0 0 0 var(--ring-sheen-solid) var(--control-highlight),
       inset 0 0 0 var(--ring-sheen-soft)
-        color-mix(in srgb, var(--control-highlight) var(--ring-sheen-cover), transparent);
+        color-mix(
+          in srgb,
+          var(--control-highlight-soft-ink, var(--control-highlight)) var(--ring-sheen-cover),
+          transparent
+        );
     border-width: 0;
     background-image: linear-gradient(
       to bottom,
@@ -628,12 +642,23 @@
     box-shadow: --theme(--shadow-control-highlight);
   }
 
+  /* Each soft row opaque, as the pane's edge is; the outline a solid device
+     pixel and a fainter one beyond it, fixed steps since it lies over
+     whatever is behind the popover (/workbench/floating-edges). */
   :root[data-edges='retina'] .control-face.surface-popover:not(.slant) {
     box-shadow:
-      var(--ring-sheen-shadow),
+      inset 0 0 0 var(--edge-ring-solid) var(--control-ring-top),
+      inset 0 0 0 var(--edge-ring-soft)
+        color-mix(in srgb, var(--control-ring-top) var(--edge-ring-cover), var(--control-highlight)),
+      inset 0 0 0 var(--ring-sheen-solid) var(--control-highlight),
+      inset 0 0 0 var(--ring-sheen-soft)
+        color-mix(
+          in srgb,
+          var(--control-highlight) var(--ring-sheen-cover),
+          var(--control-face-top)
+        ),
       0 0 0 var(--highlight-outline-solid) var(--sp-popover-outline),
-      0 0 0 var(--highlight-outline-soft)
-        color-mix(in srgb, var(--sp-popover-outline) var(--highlight-outline-cover), transparent);
+      0 0 0 calc(2 * var(--highlight-outline-solid)) var(--sp-popover-outline-soft);
   }
 
   :root[data-edges='retina'] .control-face.surface-popover:not(.slant)::after {

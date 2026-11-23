@@ -3,17 +3,22 @@
 import { useContext, useId, useRef, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { motion, type Transition } from 'motion/react';
+import BoltFilled from 'blode-icons-react/icons/bolt-filled';
 import DotGrid2x3Filled from 'blode-icons-react/icons/dot-grid-2x3-filled';
 
 import { cx } from '@/lib/ui/cx';
 import { useShellPageNavigation } from '@/components/app-shell/shell-page-transition';
 import { useWalkthrough } from '@/components/app-shell/walkthrough';
+import {
+  mockRunHref,
+  requestMockRunHere,
+} from '@/components/app-shell/runs/mock-run-launch';
 import { EVALUATION_LABELS } from '@/lib/shell/model';
 import type { ProcessNavigationItem } from '@/lib/shell/navigation';
 import { Glyph } from '@/components/ui/glyph';
 import { OverflowTooltip, Tooltip } from '@/components/ui/tooltip';
 import { WalkthroughHint } from '@/components/ui/walkthrough-hint';
-import { MENU_RAIL, MenuIcon } from './menu-parts';
+import { MENU_LEVEL_BUTTON, MENU_RAIL, MenuIcon } from './menu-parts';
 import { NavigationDrawerContext } from './navigation-drawer';
 import { ROW_HEIGHT, type ProcessReorder } from './use-process-reorder';
 
@@ -102,6 +107,7 @@ function Grip() {
  */
 export function ProcessList({
   items,
+  mockRunProcess,
   order,
   visibleOrder,
   current,
@@ -112,6 +118,7 @@ export function ProcessList({
   pickHintReady = false,
 }: {
   items: ProcessNavigationItem[];
+  mockRunProcess?: ProcessNavigationItem;
   order: string[];
   visibleOrder: string[];
   current: string;
@@ -122,7 +129,7 @@ export function ProcessList({
   pickHintReady?: boolean;
 }) {
   const drawer = useContext(NavigationDrawerContext);
-  const { destinationPath, leaveTo } = useShellPageNavigation();
+  const { destinationPath, leaveTo, leaving } = useShellPageNavigation();
   const walkthrough = useWalkthrough();
   const pickHintId = useId();
   const firstLinkRef = useRef<HTMLAnchorElement>(null);
@@ -421,6 +428,35 @@ export function ProcessList({
             <p className="text-muted text-meta px-2.5 py-3">
               No matching processes.
             </p>
+          ) : null}
+          {mockRunProcess ? (
+            <button
+              type="button"
+              className={cx(
+                MENU_LEVEL_BUTTON,
+                'process-mock-button relative isolate mt-2',
+              )}
+              onClick={() => {
+                if (leaving) return;
+                drawer?.close();
+                walkthrough?.advance('pick-process');
+                if (destinationPath === mockRunProcess.href)
+                  requestMockRunHere(mockRunProcess.id);
+                else leaveTo(mockRunHref(mockRunProcess.href));
+              }}
+            >
+              <span
+                aria-hidden="true"
+                className="control-face surface-process-mock rounded-control pointer-events-none absolute inset-0 -z-10"
+              />
+              <span className={MENU_RAIL}>
+                <BoltFilled aria-hidden size={16} />
+              </span>
+              <span className="min-w-0 flex-1 truncate text-center">
+                Try a mock run
+              </span>
+              <span className="w-menu-rail flex-none" aria-hidden="true" />
+            </button>
           ) : null}
         </div>
       </div>

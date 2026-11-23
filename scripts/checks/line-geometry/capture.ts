@@ -208,9 +208,9 @@ async function freePort() {
   });
 }
 
-type Session = { base: string; id: string; driver: ChildProcess };
+export type Session = { base: string; id: string; driver: ChildProcess };
 
-async function webdriver(
+export async function webdriver(
   base: string,
   method: string,
   path: string,
@@ -237,7 +237,8 @@ async function webdriver(
   return json.value as unknown;
 }
 
-async function openSafari(): Promise<Session> {
+/* Also used by check-edge-junctions.ts, which drives its own pages. */
+export async function openSafari(): Promise<Session> {
   const port = await freePort();
   const driver = spawn('safaridriver', ['-p', String(port)], {
     stdio: 'ignore',

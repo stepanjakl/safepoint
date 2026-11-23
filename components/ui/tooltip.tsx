@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -44,14 +45,32 @@ function arrowPaths(tipRadius: number) {
 
 const ARROW = arrowPaths(ARROW_TIP_RADIUS);
 
-/** The arrow alone, for /workbench to draw beside a static box. */
+/**
+ * The arrow alone, for /workbench to draw beside a static box. At 2x it draws
+ * its edge as the box does (tooltip.css): every layer a stroke on the box's
+ * outer edge line, clipped to the arrow's inside, so ring, soft row,
+ * highlight and outline run on from the box's own at the same widths.
+ */
 export function TooltipArrowShape() {
+  const inside = `tooltip-arrow-${useId().replace(/[^\w-]/g, '')}`;
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      <defs>
+        <clipPath id={inside}>
+          <path d={ARROW.fill} />
+        </clipPath>
+      </defs>
       <path className="tooltip-arrow-outline" d={ARROW.edge} />
+      <path className="tooltip-arrow-layer tooltip-arrow-rim" d={ARROW.edge} />
       <path className="tooltip-arrow-fill" d={ARROW.fill} />
       <path className="tooltip-arrow-edge" d={ARROW.edge} />
       <path className="tooltip-arrow-highlight" d={ARROW.highlight} />
+      <g className="tooltip-arrow-layer" clipPath={`url(#${inside})`}>
+        <path className="tooltip-arrow-sheen-soft" d={ARROW.edge} />
+        <path className="tooltip-arrow-sheen" d={ARROW.edge} />
+        <path className="tooltip-arrow-ring-soft" d={ARROW.edge} />
+        <path className="tooltip-arrow-ring" d={ARROW.edge} />
+      </g>
     </svg>
   );
 }
