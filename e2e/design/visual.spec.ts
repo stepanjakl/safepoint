@@ -151,7 +151,17 @@ async function capture(page: Page): Promise<Record<string, Recorded>> {
         );
       const half = (n: number) => (Math.round(n * 2) / 2).toString();
       const out: Record<string, { values: string[]; label: string }> = {};
-      const skip = '[aria-label="Design and motion controls"], script, style';
+      // Left out: the design controls; what each visitor is given at random
+      // (the account row's name and orb); the walkthrough, which arrives on
+      // a timer; and the route announcer.
+      const skip = [
+        '[aria-label="Design and motion controls"]',
+        'script',
+        'style',
+        '.shell-profile-row',
+        '[class*="walkthrough"]',
+        'next-route-announcer',
+      ].join(', ');
       const pathOf = (element: Element) => {
         const parts: string[] = [];
         for (
@@ -159,14 +169,23 @@ async function capture(page: Page): Promise<Record<string, Recorded>> {
           node && node !== document.body;
           node = node.parentElement
         ) {
+          // Counted among the siblings kept, so one left out (the route
+          // announcer, there or not) shifts nothing after it.
           parts.unshift(
-            String(Array.from(node.parentElement!.children).indexOf(node)),
+            String(
+              Array.from(node.parentElement!.children)
+                .filter((sibling) => !sibling.matches(skip))
+                .indexOf(node),
+            ),
           );
         }
         return `${parts.join('.')}:${element.tagName.toLowerCase()}`;
       };
       for (const element of document.querySelectorAll('body *')) {
         if (element.closest(skip)) continue;
+        // Nothing hidden paints; a view hidden mid-entrance keeps whatever
+        // opacity its fade had reached, which differs from run to run.
+        if (!element.checkVisibility({ visibilityProperty: true })) continue;
         const path = pathOf(element);
         const html = element as HTMLElement;
         const label = [
@@ -275,7 +294,16 @@ test(
       await page.mouse.move(1439, 899);
       await arrive(page);
       await page.waitForTimeout(150);
-      captured[name] = await capture(page);
+      // Until two captures agree: a fade driven by script, not CSS, runs on
+      // past the stylesheet that stops animations.
+      let recorded = await capture(page);
+      for (let attempt = 0; attempt < 8; attempt++) {
+        await page.waitForTimeout(250);
+        const again = await capture(page);
+        if (JSON.stringify(again) === JSON.stringify(recorded)) break;
+        recorded = again;
+      }
+      captured[name] = recorded;
     }
 
     const file = new URL(`${theme}.json`, BASELINE_DIR);

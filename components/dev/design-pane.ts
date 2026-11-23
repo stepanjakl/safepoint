@@ -40,11 +40,6 @@ import {
   EDGE_PRESET_LABELS,
   readEdgePreset,
   setEdgePreset,
-  DEFAULT_SOFT_ROWS,
-  SOFT_ROWS,
-  SOFT_ROWS_LABELS,
-  readSoftRows,
-  setSoftRows,
   DEFAULT_TILE_CHROMA_SCALE,
   TILE_CHROMA_SCALE_MAX,
   TILE_CHROMA_SCALE_MIN,
@@ -70,7 +65,6 @@ function readPreferences() {
     theme: readTheme(),
     neutral: readNeutral(),
     edges: readEdgePreset(),
-    softRows: readSoftRows(),
     tileChromaScale: readTileChromaScale(),
     slantRadius: readSlantRadius(),
     cornerBalance: readCornerBalance(),
@@ -116,22 +110,10 @@ export function mountDesignPane(host: HTMLElement) {
     .on('change', (event) => setEdgePreset(event.value));
   edgesBinding.element.title =
     'Retina (2dppx+) weights: optical 0.75px rings & highlights (0.5px hairlines), 1.5px → 1px rules/fields, 0.5px plain borders (1x displays stay at default). Highlights mode trims inner sheens and outer lit lines only.';
-  const softRowsBinding = appearance
-    .addBinding(model, 'softRows', {
-      label: 'Soft rows',
-      options: SOFT_ROWS.map((value) => ({
-        text: SOFT_ROWS_LABELS[value],
-        value,
-      })),
-    })
-    .on('change', (event) => setSoftRows(event.value));
-  softRowsBinding.element.title =
-    'How the pane’s edge draws its soft row: translucent over whatever lies beneath, or one opaque shade under the sheet’s lines. /workbench/soft-rows shows the difference.';
   const bindings = [
     themeBinding,
     neutralBinding,
     edgesBinding,
-    softRowsBinding,
     appearance
       .addBinding(model, 'typeface', {
         label: 'Typeface',
@@ -252,7 +234,6 @@ export function mountDesignPane(host: HTMLElement) {
     setTheme(DEFAULT_THEME);
     setNeutral(DEFAULT_NEUTRAL);
     setEdgePreset(DEFAULT_EDGE_PRESET);
-    setSoftRows(DEFAULT_SOFT_ROWS);
     setTileChromaScale(DEFAULT_TILE_CHROMA_SCALE);
     setSlantRadius(DEFAULT_SLANT_RADIUS);
     setCornerBalance(DEFAULT_CORNER_BALANCE);

@@ -49,17 +49,6 @@ export const at = (image: Pixels, x: number, y: number) =>
 // further in the surface; along runs the length of the edge.
 export type Edge = (depth: number, along: number) => number;
 
-export function edges(image: Pixels) {
-  const right = image.width - 1;
-  const bottom = image.height - 1;
-  return {
-    left: ((depth, along) => at(image, depth, along)) as Edge,
-    right: ((depth, along) => at(image, right - depth, along)) as Edge,
-    top: ((depth, along) => at(image, along, depth)) as Edge,
-    bottom: ((depth, along) => at(image, along, bottom - depth)) as Edge,
-  };
-}
-
 // The commonest value at one depth along an edge.
 function usual(edge: Edge, depth: number, from: number, to: number) {
   const counts = new Map<number, number>();

@@ -12,8 +12,6 @@ import {
   NEUTRAL_STORAGE_KEY,
   RAIL_GUIDES_STORAGE_KEY,
   RUN_DEBUG_STORAGE_KEY,
-  SOFT_ROWS,
-  SOFT_ROWS_STORAGE_KEY,
   DEFAULT_SLANT_RADIUS,
   SLANT_RADIUS_MAX,
   SLANT_RADIUS_MIN,
@@ -90,19 +88,6 @@ if (edges === 'default') {
   delete root.dataset.edges;
 } else if (edgePresets.indexOf(edges) !== -1) {
   root.dataset.edges = edges;
-}
-var softRows = params.get('soft-rows');
-if (${JSON.stringify(SOFT_ROWS)}.indexOf(softRows) === -1) {
-  try {
-    softRows = localStorage.getItem(${JSON.stringify(SOFT_ROWS_STORAGE_KEY)});
-  } catch (error) {
-    softRows = null;
-  }
-}
-if (softRows === 'opaque') {
-  root.dataset.softRows = softRows;
-} else {
-  delete root.dataset.softRows;
 }
 ${development ? developmentPreferences : ''}
 try {

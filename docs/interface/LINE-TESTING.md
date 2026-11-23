@@ -214,27 +214,28 @@ The pane's edge is two device pixels at 2x, and most of the edge work of
 November 2026 was about what happens where another line meets them. The
 names used here, in the code and on `/workbench/soft-rows`:
 
-| Name         | What it is                                                                 |
-| ------------ | -------------------------------------------------------------------------- |
-| solid row    | the ring's outer device pixel, the ring colour (`--edge-ring-solid`)       |
-| soft row     | the ring's next device pixel, the ring colour at `--edge-ring-cover`       |
-| highlight    | the pane's lit pixel inside the ring (the sheen)                           |
-| rule         | a hairline across the sheet: a row rule, a head's rule, the header's rule  |
-| band         | a full-width fill: a section head, the boundary band (`.sheet-break`)      |
-| lit row      | a hovered, focused or current row's fill                                   |
-| ring overlay | `.shell-pane::after` (z 5): the pane's solid and soft rows, over the sheet |
-| sheet layer  | `.process-sheet-swap` (z 1): everything in the sheet, under the overlay    |
+| Name         | What it is                                                                |
+| ------------ | ------------------------------------------------------------------------- |
+| solid row    | the ring's outer device pixel, the ring colour (`--edge-ring-solid`)      |
+| soft row     | the ring's next device pixel, the ring colour at `--edge-ring-cover`      |
+| highlight    | the pane's lit pixel inside the ring (the sheen)                          |
+| rule         | a hairline across the sheet: a row rule, a head's rule, the header's rule |
+| band         | a full-width fill: a section head, the boundary band (`.sheet-break`)     |
+| lit row      | a hovered, focused or current row's fill                                  |
+| ring overlay | `.shell-pane::after` (z 5): the pane's solid row, over the sheet          |
+| sheet layer  | `.process-sheet-swap` (z 1): everything in the sheet, under the overlay   |
 
 The stacking decides most of it. The ring overlay lies over the sheet so no
 band or row can cover the ring; nothing inside the sheet layer can rise above
 it, whatever its `z-index`; the header (z 10) lies over both.
 
-### How it is drawn now: a translucent soft row
+### How it was first drawn: a translucent soft row
 
-The soft row is the ring colour at half strength over whatever lies beneath,
-so a rule running under it still reads as ring there and joins the solid row
-by itself. Where two soft rows land on one pixel they double, and that is
-what each piece below prevents:
+Until November 2026 the soft row was the ring colour at half strength over
+whatever lay beneath, so a rule running under it still read as ring there
+and joined the solid row by itself. Where two soft rows landed on one pixel
+they doubled, and that is what each piece below prevented; they remain, and
+still hold with the opaque soft row the app draws now (below):
 
 - **The header's rule runs solid on top, then soft**, so the row under the
   header reads like the pane's sides: 174, 210, 246 in light, 58, 39, 19 in
@@ -269,7 +270,7 @@ It was tried as injected CSS against the current drawing, in Chromium,
 WebKit and Safari, light and dark, at the bend, foot, turn, a band and the
 divider:
 
-| Case                                | Translucent (now)        | Opaque                           |
+| Case                                | Translucent (before)     | Opaque (the app)                 |
 | ----------------------------------- | ------------------------ | -------------------------------- |
 | Bend, turn, plain side              | correct                  | the same, within 2-7 levels      |
 | A band beside the side              | needs the pull-back      | correct with nothing extra       |
@@ -291,44 +292,42 @@ round the notch); opacity needs one wherever another line meets the edge
 `/workbench/soft-rows` shows each case enlarged, a square per device pixel,
 the two side by side.
 
-### The opaque soft row, as built
+### The opaque soft row, as the app draws it
 
-Both styles are now drawn, switched by `data-soft-rows` (the design
-controls' "Soft rows", `?soft-rows=` in the address; translucent when unset).
-The attribute only sets two variables (`app/styles/geometry.css`), so it
-works on any ancestor and the nearest wins -- `/workbench/soft-row-styles`
-shows both at once that way:
+Both styles were built behind a switch, measured, and the opaque one kept;
+the switch is gone. Every soft row is one fixed shade, the ring mixed with
+the sheen:
 
-- `--soft-row-in-face`: the pane's soft row moves from the ring overlay, over
-  the sheet, into the pane's face, under it (`resizable-shell.css`). A rule
-  running to the ring then paints over the soft row and joins the solid row,
-  which answers the first broken row of the table.
-- `--soft-row-under`: the notch's soft band is mixed with the sheen rather
-  than laid over what is beneath.
+- The pane's soft row lies in its face, under the sheet
+  (`.shell-pane > .surface-raised`, `resizable-shell.css`); the ring overlay
+  above the sheet draws the solid row alone. A rule running to the ring paints
+  over the soft row and joins the solid row, which answers the first broken
+  row of the table.
+- The notch's soft band is mixed with the sheen (`.notch-edge-soft`).
 
-The other two broken rows needed no mode of their own:
+The other two broken rows needed nothing of their own:
 
 - The notch's soft band leaves out the header rule's solid row (two
   background bands, above and below it), so the foot crosses the rule
-  without breaking it in either style.
+  without breaking it.
 - The header rule's soft row stays translucent over the highlight the sheet
   frame paints under it, which is exactly the opaque shade and lets the
   divider through.
 
 With the soft row under the sheet, the burden moves: anything in the sheen's
 colour that reaches the ring would now cover it. Each such piece stops at the
-ring's whole depth (`--edge-ring-depth`) in both styles: the bands
+ring's whole depth (`--edge-ring-depth`): the bands
 (`sheet-band`), the head's lit line (now `.sheet-head::after`, as a shadow
 cannot be shortened at one end), the sheet frame's arc round the turn, and
 the lit line beside a column divider (`--column-divider-lit`, ended by a
 clip, `--column-divider-clip`, while the divider runs on). The dividers themselves end on the
 solid row, on whole pixels (`--divider-to-ring`).
 
-Measured: the two styles differ on the lab page by 6-7 levels at most
-(antialiasing on curves), the side check finds nothing in any tab in either
-style, and in Safari both match Chrome within about 10 levels at the bend,
-foot, turn, a band and the divider. The junction tests run in both styles,
-and undoing any of the pieces above fails exactly its own check.
+Measured before the choice: the two styles differed on the lab page by 6-7
+levels at most (antialiasing on curves), the side check found nothing in any
+tab in either, and in Safari both matched Chrome within about 10 levels at
+the bend, foot, turn, a band and the divider. Undoing any of the pieces
+above fails exactly its own check.
 
 ### A rule with its lit line is one line
 
@@ -369,8 +368,7 @@ The rules all of the above keep, at any surface with a ring:
    a band, a turn, or the soft row of a line meeting it. Never a shade
    between the two -- that is two soft rows on one pixel. The one exception
    is a lit row: its fill runs to the solid row (`--row-band-start`), so
-   beside it the soft row is the fill, or in the translucent style the soft
-   row over the fill. Above a lit first row the head's rule gives its soft
+   beside it the soft row is the fill. Above a lit first row the head's rule gives its soft
    row to the fill too (`.sheet-head::before`). `surface-edges.spec.ts`
    holds both ("a lit row's fill meets the solid rows round it"), and
    `crossingFaults` compares only the solid row on a side with a lit row.
@@ -379,7 +377,7 @@ The rules all of the above keep, at any surface with a ring:
 deep and checks the three (`edgeFaults`, `surfaceFaults`). A line counts only
 where it runs straight in from the edge, so text and icons near it do not.
 `e2e/shell/surface-edges.spec.ts` holds the app's pane in every tab and both
-soft row styles, the section rule card and definition cards to them; along the
+themes, the section rule card and definition cards to them; along the
 pane's foot, which the sheet scrolls under, a line may also stop at the soft
 row. Undoing a fix shows as the rule it breaks: a sheen across the ring reads
 "the solid row 246, not 176".
@@ -400,7 +398,7 @@ rule inside the sheet, neither is a ring, and they need rules of their own
 
 `surface-edges.spec.ts` finds every crossing from the page -- the header's
 rule, and each section head that ends or starts at a divider -- in Runs and
-Instructions, both themes and both soft row styles. Rule 3 of the edge used to
+Instructions, in both themes. Rule 3 of the edge used to
 allow a blend beside a line, and that let this doubling through, at the
 dividers and where the header's rule and each head's meet the pane's side;
 it no longer does. The pane's side is read from the header's rule down, not
@@ -416,7 +414,7 @@ as it was, as drawn, and with no highlight in the corner.
 The specs read Chromium at 1440px. `pnpm check:junctions`
 (`scripts/checks/check-edge-junctions.ts`) runs the same rules -- the pane's
 sides and foot, each divider's crossings, the lit first row -- on the live
-app in Chromium, WebKit and Safari, both themes and both soft row styles, at
+app in Chromium, WebKit and Safari, in both themes, at
 the widths given (`--width 1000,1312`; Safari's window is bounded by the
 screen, 1312px here). Undoing the header rule's or the run strip's fix fails
 it at exactly that place.
@@ -678,9 +676,7 @@ What worked, in this order:
 - **The top of the runs column in Safari** -- the divider meeting the header
   rule, the sheen below the header at the pane's left edge -- after the sheet
   rework then in progress settles.
-- **Which soft row is the default.** Both are built and measured (above);
-  translucent binds when nothing is set. WebKit still shows the bend's lead a
-  column 2-3 levels off in either.
+- **WebKit shows the bend's lead** a column 2-3 levels off.
 - **`pnpm check:tokens`** fails on classes styled from two stylesheets,
   among them `.data-table-clip` (data-table.css and engine-run.css) and the
   notch's `.notch-face`, `.notch-edge` and `.slant` in process-header.css.
@@ -720,13 +716,12 @@ What worked, in this order:
 | `scripts/checks/line-geometry/compare.ts`                           | region crops, aligned comparison, arc masks, enlarged sheets                                |
 | `scripts/checks/line-geometry/png.ts`                               | PNG decoding and encoding with `node:zlib`                                                  |
 | `app/workbench/edge-lab/`                                           | the lab page and its recipes                                                                |
-| `app/workbench/soft-row-styles/`                                    | the junction panes in both soft row styles at once                                          |
 | `app/workbench/section-rules/`                                      | `rule-below` and `rule-above` three ways, and a divider meeting a band's rule three ways    |
 | `e2e/support/edge-pixels.ts`, `e2e/shell/surface-edges.spec.ts`     | the three rules every edge keeps, where two lines cross, and the app held to them           |
-| `app/workbench/soft-rows/`                                          | each way the edge meets another line, enlarged: the soft row translucent beside opaque      |
+| `app/workbench/soft-rows/`                                          | each way the edge meets another line, enlarged: why the soft row is opaque                  |
 | `app/workbench/edge-junctions/`, `e2e/shell/edge-junctions.spec.ts` | the app's pane in small, and pixel tests of every place its edge meets another line         |
 | `app/workbench/rounded-edges/`                                      | a rounded control's ring and sheen five ways                                                |
-| `app/workbench/floating-edges/`                                     | a popover's and a tooltip's edge four ways: before, opaque inside, outline 0.5px, 1px       |
+| `app/workbench/floating-edges/`                                     | a popover's and a tooltip's edge five ways, the app's with the outline's soft row           |
 | `scripts/checks/check-edge-junctions.ts`                            | `pnpm check:junctions`: the pane's junction rules in Chromium, WebKit and Safari, any width |
 | `app/styles/geometry.css`                                           | `--dp` and every width split into `-solid`, `-soft`, `-cover`                               |
 | `components/ui/device-pixel-script.tsx`                             | sets `--dp` before first paint and when the ratio changes                                   |

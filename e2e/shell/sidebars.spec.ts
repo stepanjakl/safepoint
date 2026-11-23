@@ -475,10 +475,10 @@ test('the assistant answers its shortcut from anywhere, and Enter in its field',
   await page.keyboard.press(`${modifier}+i`);
   await expect(opener).toHaveAttribute('aria-expanded', 'true');
   await expect(field).toBeFocused();
-  // Docked, the notch button is its heading and its close.
+  // Docked, it keeps the drawer's history and close pair (assistant-panel.tsx).
   await expect(
     page.locator('button[aria-label="Close assistant"]'),
-  ).toHaveCount(0);
+  ).toHaveCount(1);
 
   // Open, from elsewhere on the page: back to its message, still open.
   await page

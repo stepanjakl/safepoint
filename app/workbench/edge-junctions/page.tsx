@@ -10,9 +10,6 @@ import { JunctionPane } from './junction-pane';
   - every rule that meets the pane's side reaches its solid ring;
   - the side's soft row reads the same beside a band, a lit row, the turn
     and nothing at all.
-
-  It follows the design controls' soft rows; /workbench/soft-row-styles shows
-  both at once.
 */
 
 export default function EdgeJunctionsPage() {

@@ -32,7 +32,6 @@ check-edge-junctions — the pane's edges and junctions, read from pixels
   --url <url>           default http://localhost:3000
   --browser <list>      chromium, webkit, safari; default chromium,webkit,safari
   --theme <list>        light, dark; default both
-  --soft-rows <list>    translucent, opaque; default both
   --width <list>        viewport widths in CSS px; default 1312
                         (Safari's window is bounded by the screen)
   --height <px>         default 739
@@ -305,10 +304,7 @@ function faultsIn(image: Pixels, g: Geometry) {
     const row = px(g.lit.row);
     const [ring, soft, fill] = [0, 1, 2].map((d) => at(image, left + d, row));
     const found: string[] = [];
-    if (
-      soft! < Math.min(ring!, fill!) - SAME ||
-      soft! > Math.max(ring!, fill!) + SAME
-    )
+    if (Math.abs(soft! - fill!) > SAME)
       found.push(`beside the row: ${ring}/${soft}/${fill}`);
     for (const x of [g.lit.head.x + 40, g.lit.head.x + g.lit.head.w - 6]) {
       const rule = px(g.lit.head.bottom);
@@ -323,12 +319,7 @@ function faultsIn(image: Pixels, g: Geometry) {
   return faults;
 }
 
-async function checkOne(
-  driver: Driver,
-  base: string,
-  theme: string,
-  softRows: string,
-) {
+async function checkOne(driver: Driver, base: string, theme: string) {
   const faults: Record<string, string[]> = {};
   const read: string[] = [];
   await driver.goto(`${base}/workbench`);
@@ -336,7 +327,7 @@ async function checkOne(
     `(t) => { localStorage.setItem('safepoint.dev.theme', t); return true; }`,
     theme,
   );
-  await driver.goto(`${base}/processes/brunch-orders?soft-rows=${softRows}`);
+  await driver.goto(`${base}/processes/brunch-orders`);
   await settle(2500);
   await driver.exec(
     `(css) => { const s = document.createElement('style'); s.textContent = css; document.head.append(s); return document.fonts.ready.then(() => true); }`,
@@ -372,7 +363,6 @@ async function main() {
   const base = list(args, '--url', 'http://localhost:3000')[0]!;
   const engines = list(args, '--browser', 'chromium,webkit,safari');
   const themes = list(args, '--theme', 'light,dark');
-  const softRows = list(args, '--soft-rows', 'translucent,opaque');
   const widths = list(args, '--width', '1312').map(Number);
   const height = Number(list(args, '--height', '739')[0]);
   try {
@@ -393,17 +383,16 @@ async function main() {
               height,
             );
       try {
-        for (const theme of themes)
-          for (const soft of softRows) {
-            const { faults, read } = await checkOne(driver, base, theme, soft);
-            const keys = Object.keys(faults);
-            failed ||= keys.length > 0;
-            console.log(
-              `${engine} ${width}px ${theme} ${soft}: ${keys.length ? `${keys.length} faulty` : 'clean'} -- ${read.join(', ')}`,
-            );
-            for (const key of keys)
-              console.log(`  ${key}: ${faults[key]!.join('; ')}`);
-          }
+        for (const theme of themes) {
+          const { faults, read } = await checkOne(driver, base, theme);
+          const keys = Object.keys(faults);
+          failed ||= keys.length > 0;
+          console.log(
+            `${engine} ${width}px ${theme}: ${keys.length ? `${keys.length} faulty` : 'clean'} -- ${read.join(', ')}`,
+          );
+          for (const key of keys)
+            console.log(`  ${key}: ${faults[key]!.join('; ')}`);
+        }
       } finally {
         await driver.close();
       }

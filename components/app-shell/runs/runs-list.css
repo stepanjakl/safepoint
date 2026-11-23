@@ -319,7 +319,8 @@
      solid row outside, then the soft row mixed with the sheen, then the sheen
      (the ring and sheen split, geometry.css). The rule's rows lie in the head;
      the sheen under it stops short of the ring's soft row as the band does
-     (sheet-band), since an opaque soft row lies under the sheet. */
+     (sheet-band), since the ring's soft row lies under the sheet, in the
+     pane's face (resizable-shell.css). */
   /* The rule as bands: the solid row across to the ring, the soft row short
      of the ring's soft row as the band is (sheet-band), or the two double
      there. While the row under it is lit, the soft row is that row's fill,

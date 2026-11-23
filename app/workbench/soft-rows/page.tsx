@@ -3,9 +3,10 @@
   per device pixel, in the theme's own colours. The edge is two pixels -- a
   solid row and a soft row -- and the question is what the soft row is made
   of: the ring colour at half strength over whatever lies beneath it
-  (translucent, as the app draws it), or one fixed mixed shade (opaque). Each
-  square's colour is that mix worked out, so the comparison shows the same
-  results the pixel tests measure (e2e/shell/edge-junctions.spec.ts).
+  (translucent, as the app drew it until November 2026), or one fixed mixed
+  shade (opaque, as it draws it now). Each square's colour is that mix worked
+  out, so the comparison shows the same results the pixel tests measure
+  (e2e/shell/edge-junctions.spec.ts).
 */
 
 // One square. The keys are what the pixel is made of; soft-* is the soft row
@@ -245,8 +246,8 @@ export default function SoftRowsPage() {
         The pane’s edge is two device pixels: a solid row and a soft row. The
         soft row is what makes a 0.75px line read as 0.75px. Each square below
         is one device pixel, enlarged. The left column draws the soft row
-        translucent, as the app does now; the right one draws it opaque, with
-        other lines ending exactly at it.
+        translucent, as the app did; the right one draws it opaque, as it does
+        now, with other lines ending exactly at it.
       </p>
       <ul className="soft-rows-legend">
         {LEGEND.map(([pixel, label]) => (
@@ -262,8 +263,10 @@ export default function SoftRowsPage() {
       </ul>
       <div className="soft-rows-table">
         <span />
-        <h2 className="text-muted-strong font-semibold">Translucent (now)</h2>
-        <h2 className="text-muted-strong font-semibold">Opaque</h2>
+        <h2 className="text-muted-strong font-semibold">
+          Translucent (before)
+        </h2>
+        <h2 className="text-muted-strong font-semibold">Opaque (the app)</h2>
         {CASES.map((item) => (
           <section key={item.title} className="soft-rows-case">
             <div>
@@ -283,9 +286,10 @@ export default function SoftRowsPage() {
         ))}
       </div>
       <p className="soft-rows-intro text-muted">
-        Translucent needs a fix only where two soft rows overlap: a few places,
-        all round the notch. Opaque needs one wherever another line meets or
-        crosses a soft row: every rule, divider and crossing.
+        Translucent needed a fix wherever two soft rows overlapped, and its
+        shade changed with whatever lay beneath. Opaque is one shade everywhere:
+        the soft row lies in the face under the sheet, and every rule, divider
+        and crossing paints over it to the solid row.
       </p>
     </main>
   );

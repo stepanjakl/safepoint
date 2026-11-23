@@ -95,6 +95,16 @@ test('settings help, choice selection and heading rhythm', async ({
         choiceEdges: choices.map(
           (choice) => getComputedStyle(choice).borderTopWidth,
         ),
+        // The plain border every choice takes: 1px, or 0.5px at 2x in retina
+        // edges (--edge-rule, geometry.css).
+        plainEdge: (() => {
+          const probe = document.createElement('div');
+          probe.style.borderTop = 'var(--default-border-width) solid';
+          document.body.append(probe);
+          const width = getComputedStyle(probe).borderTopWidth;
+          probe.remove();
+          return width;
+        })(),
         overflow: document.documentElement.scrollWidth > innerWidth,
       };
     });
@@ -102,7 +112,10 @@ test('settings help, choice selection and heading rhythm', async ({
     expect(geometry.scheduleGap).toBe(12);
     expect(geometry.choiceFaces[0]).toBe(geometry.fieldFace);
     expect(geometry.choiceFaces[1]).not.toBe(geometry.fieldFace);
-    expect(geometry.choiceEdges).toEqual(['1px', '1px']);
+    expect(geometry.choiceEdges).toEqual([
+      geometry.plainEdge,
+      geometry.plainEdge,
+    ]);
     expect(geometry.overflow).toBe(false);
   }
 });

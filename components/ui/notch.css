@@ -285,15 +285,15 @@
       close
     );
   }
-  /* Not over the pane side's own soft row, which reaches up into the turn
-     and is right over whatever lies beneath, a band or the sheen. Nor over
-     the header rule's solid row, which the foot crosses: two bands, above and
-     below it, so an opaque soft row (geometry.css) leaves the rule whole. */
+  /* Opaque, the ring mixed with the sheen, as every soft row is. Not over the
+     pane side's own soft row, which reaches up into the turn; nor over the
+     header rule's solid row, which the foot crosses: two bands, above and
+     below it, so the rule stays whole. */
   .notch-edge-soft {
     --n-soft-color: color-mix(
       in srgb,
       var(--notch-edge-color) var(--notch-edge-cover),
-      var(--soft-row-under, transparent)
+      var(--sp-raised-edge)
     );
     background:
       linear-gradient(var(--n-soft-color), var(--n-soft-color)) top / 100%

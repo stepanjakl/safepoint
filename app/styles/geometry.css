@@ -165,21 +165,6 @@
   --control-highlight-cover: var(--highlight-pane-cover);
 }
 
-/* How a soft row is drawn (design-preferences.ts, SOFT_ROWS; LINE-TESTING.md →
-   "Where the edge meets other lines"). Translucent: the ring colour at its
-   cover over whatever lies beneath, the pane's in the ring overlay over the
-   sheet. Opaque: one shade, ring mixed with the sheen, the pane's in its face
-   under the sheet, so the sheet's rules paint over it to the solid row. Set on
-   <html>, or on a lab specimen's wrapper; the nearest wins. */
-[data-soft-rows='translucent'] {
-  --soft-row-under: transparent;
-  --soft-row-in-face: 0;
-}
-[data-soft-rows='opaque'] {
-  --soft-row-under: var(--sp-raised-edge);
-  --soft-row-in-face: 1;
-}
-
 /* Named for what moves, not for how long. */
 :root {
   --duration-state: 150ms;

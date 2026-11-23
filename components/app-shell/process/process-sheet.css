@@ -42,7 +42,7 @@
         content: '';
         /* From the ring's whole depth in, so the box stays on device pixels
            (WebKit shifts the clip of a box it snaps) and the band never lies on
-           the ring's soft row, which an opaque soft row (geometry.css) shows. */
+           the ring's soft row, which lies in the pane's face (resizable-shell.css). */
         --notch-edge-width: var(--edge-ring-depth);
         --notch-arc-width: calc(
           var(--spacing-control-edge) + var(--spacing-control-highlight) - var(--edge-ring-depth)

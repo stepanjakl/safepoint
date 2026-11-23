@@ -45,11 +45,13 @@
 
 @utility surface-process-mock {
   --control-ring-width: var(--spacing-control-edge);
-  --control-highlight-width: var(--control-ring-width);
+  /* The middle line is retina's only: at default edges the outer line alone. */
+  --control-highlight-width: 0px;
 
   @media (min-resolution: 2dppx) {
     :root[data-edges='retina'] & {
       --control-ring-width: var(--dp);
+      --control-highlight-width: var(--control-ring-width);
     }
   }
 

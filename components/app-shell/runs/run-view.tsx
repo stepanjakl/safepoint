@@ -276,7 +276,7 @@ function RunEmptyState({ note }: { note: string | null }) {
   const actions = useContext(ProcessSheetActions);
   const settled = useScreenSettled();
   const arriving = useScreenArriving();
-  const [rises] = useState(arriving);
+  const [entrancePending, setEntrancePending] = useState(arriving);
   // The key the button advertises. Left to a field that is being typed in.
   useEffect(() => {
     if (!start) return;
@@ -303,8 +303,11 @@ function RunEmptyState({ note }: { note: string | null }) {
     >
       <motion.div
         className="grid max-w-88 justify-items-center gap-7 text-center"
-        initial={rises ? 'hidden' : false}
-        animate={!rises || settled ? 'shown' : 'hidden'}
+        initial={entrancePending ? 'hidden' : false}
+        animate={entrancePending && !settled ? 'hidden' : 'shown'}
+        onAnimationStart={(variant) => {
+          if (variant === 'shown') setEntrancePending(false);
+        }}
         transition={{ staggerChildren: EMPTY_STATE_STAGGER }}
       >
         <h1 className="sr-only">{note ?? 'No run selected'}</h1>

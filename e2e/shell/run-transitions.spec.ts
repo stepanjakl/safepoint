@@ -189,65 +189,96 @@ const expectArrivalAfterScreen = (frames: ArrivalFrame[]) => {
   expect(frames.at(-1)).toEqual({ own: 1, screen: 1 });
 };
 
-test('the empty page comes back with its tab, without rising again', async ({
+test('the empty page stays still across tab switches after its entrance', async ({
   page,
 }) => {
-  await page.locator('.sheet-row').first().click();
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-    'No run selected',
-  );
-  await page
-    .getByRole('button', { name: /^Instructions/ })
-    .first()
-    .click();
-  // Kept, hidden, while another tab is shown: the same page comes back.
-  await expect(page.locator('.process-runs-detail')).toBeHidden();
-  const frames = await page.evaluate(
-    () =>
-      new Promise<ArrivalFrame[]>((resolve) => {
-        const words = 'Choose a run, or start a new one.';
-        const kept = Array.from(document.querySelectorAll('p')).find(
-          (paragraph) => paragraph.textContent === words,
-        );
-        const main = kept?.closest('main');
-        if (!kept || !main) throw new Error('The empty page was not kept');
-        const product = (from: Element | null, stop: Element | null) => {
-          let opacity = 1;
-          for (let at = from; at && at !== stop; at = at.parentElement)
-            opacity *= Number(getComputedStyle(at).opacity);
-          return opacity;
-        };
-        const frames: ArrivalFrame[] = [];
-        const started = performance.now();
-        function sample() {
-          if (kept!.getClientRects().length > 0)
-            frames.push({
-              own: product(kept!, main!),
-              screen: product(main!, null),
-            });
-          const last = frames.at(-1);
-          if (
-            (last?.own === 1 && last.screen === 1) ||
-            performance.now() - started > 5000
-          )
-            resolve(frames);
-          else requestAnimationFrame(sample);
-        }
-        document
-          .querySelector<HTMLButtonElement>(
-            '.process-header button[aria-label="Runs"]',
-          )
-          ?.click();
-        requestAnimationFrame(sample);
-      }),
-  );
-  expect(frames.length).toBeGreaterThan(2);
-  expect(frames[0]!.screen, 'the tab was not fading in').toBeLessThan(1);
-  expect(
-    frames.filter((frame) => frame.own < 1),
-    'the empty page rose again on a tab it had already shown',
-  ).toEqual([]);
-  expect(frames.at(-1)).toEqual({ own: 1, screen: 1 });
+  await page.goto('/processes/brunch-orders');
+  const actions = page.getByRole('button', { name: 'Review instructions' });
+  await expect(actions.locator('..')).toHaveCSS('opacity', '1');
+  const swaps = await page.evaluate(async () => {
+    const main = document.querySelector('.process-runs-detail main');
+    const layer = main?.closest('.process-sheet-swap');
+    const [illustration, copy, actions] =
+      main?.querySelectorAll(':scope > div > div') ?? [];
+    if (!main || !layer || !illustration || !copy || !actions)
+      throw new Error('The empty run page is missing');
+    const parts = {
+      illustration,
+      headline: copy.children[0]!,
+      description: copy.children[1]!,
+      actions,
+    };
+    function observeTab(name: 'Instructions' | 'Runs') {
+      const tab = Array.from(
+        document.querySelectorAll<HTMLButtonElement>('.process-header button'),
+      ).find((button) => button.getAttribute('aria-label')?.startsWith(name));
+      if (!tab) throw new Error(`Missing ${name} tab`);
+
+      return new Promise<{ faded: boolean; moved: string[] }>(
+        (resolve, reject) => {
+          const moved = new Set<string>();
+          const started = performance.now();
+          let faded = false;
+          let shownAt: number | undefined;
+          function sample(now: number) {
+            if (!main!.getClientRects().length) {
+              if (name === 'Instructions') {
+                resolve({ faded, moved: [...moved] });
+                return;
+              }
+            } else {
+              const opacity = Number(getComputedStyle(layer!).opacity);
+              faded ||= opacity > 0 && opacity < 1;
+              if (opacity > 0.01) {
+                shownAt ??= now;
+                for (const [part, element] of Object.entries(parts)) {
+                  const style = getComputedStyle(element);
+                  const y =
+                    style.transform === 'none'
+                      ? 0
+                      : new DOMMatrixReadOnly(style.transform).m42;
+                  if (Number(style.opacity) < 0.999 || Math.abs(y) > 0.01)
+                    moved.add(part);
+                }
+              }
+              // Keep sampling after the tab fade, when the stagger can still run.
+              if (
+                name === 'Runs' &&
+                shownAt !== undefined &&
+                now - shownAt > 850
+              ) {
+                resolve({ faded, moved: [...moved] });
+                return;
+              }
+            }
+            if (now - started > 5000)
+              reject(new Error(`Timed out switching to ${name}`));
+            else requestAnimationFrame(sample);
+          }
+          tab.click();
+          requestAnimationFrame(sample);
+        },
+      );
+    }
+
+    const swaps = [];
+    for (const name of [
+      'Instructions',
+      'Runs',
+      'Instructions',
+      'Runs',
+    ] as const)
+      swaps.push({ name, ...(await observeTab(name)) });
+    return swaps;
+  });
+  for (const { name, faded, moved } of swaps) {
+    expect(faded, `the tab layer did not fade while switching to ${name}`).toBe(
+      true,
+    );
+    expect(moved, `empty-state parts moved while switching to ${name}`).toEqual(
+      [],
+    );
+  }
 });
 
 test('the empty page arrives after another process has finished coming in', async ({

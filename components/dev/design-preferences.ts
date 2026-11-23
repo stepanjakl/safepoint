@@ -177,35 +177,6 @@ export function setEdgePreset(next: EdgePreset) {
   emit();
 }
 
-/* How the pane's edge draws its soft row (docs/interface/LINE-TESTING.md →
-   "Where the edge meets other lines"): translucent over whatever lies
-   beneath, or one opaque shade under the sheet's own lines. Translucent binds
-   when the attribute is absent. */
-export const SOFT_ROWS_STORAGE_KEY = 'safepoint.dev.soft-rows';
-export const SOFT_ROWS = ['translucent', 'opaque'] as const;
-export type SoftRows = (typeof SOFT_ROWS)[number];
-export const DEFAULT_SOFT_ROWS: SoftRows = 'translucent';
-export const SOFT_ROWS_LABELS: Record<SoftRows, string> = {
-  translucent: 'Translucent',
-  opaque: 'Opaque',
-};
-
-export function readSoftRows(): SoftRows {
-  return document.documentElement.dataset.softRows === 'opaque'
-    ? 'opaque'
-    : 'translucent';
-}
-
-export function setSoftRows(next: SoftRows) {
-  if (next === DEFAULT_SOFT_ROWS) {
-    delete document.documentElement.dataset.softRows;
-  } else {
-    document.documentElement.dataset.softRows = next;
-  }
-  persist(SOFT_ROWS_STORAGE_KEY, next);
-  emit();
-}
-
 /** Private browsing and blocked site data throw rather than no-op. */
 function persist(key: string, value: string) {
   try {

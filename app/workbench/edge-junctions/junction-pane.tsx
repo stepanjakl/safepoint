@@ -5,7 +5,7 @@ import { Notch } from '@/components/ui/notch';
   The app's pane in small, built from its own parts -- the pane, its face and
   ring, the process header with its notch, the sheet frame, and two columns of
   the sheet -- so a change to any of them shows. Used by /workbench/edge-
-  junctions, which the pixel tests read, and /workbench/soft-row-styles.
+  junctions, which the pixel tests read, and /workbench/section-rules.
 
   With endHead, a section head lies under the notch's turn, as Instructions
   has; without, nothing does, as in Runs. With firstCurrent, the row under

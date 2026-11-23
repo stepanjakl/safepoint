@@ -59,32 +59,19 @@ async function geometry(page: Page, name: string): Promise<Geometry> {
   });
 }
 
-// The edge modes and soft row styles read: the soft row's style only matters
-// where the edge is fractional, on retina.
-const SETTINGS = [
-  { mode: 'retina', softRows: 'translucent' },
-  { mode: 'retina', softRows: 'opaque' },
-  { mode: 'default', softRows: 'translucent' },
-] as const;
-
-for (const { mode, softRows } of SETTINGS) {
+for (const mode of ['retina', 'default'] as const) {
   for (const theme of ['light', 'dark'] as const) {
-    test.describe(`edge junctions in ${mode}, ${softRows} soft rows and ${theme}`, () => {
+    test.describe(`edge junctions in ${mode} and ${theme}`, () => {
       test.beforeEach(async ({ page }) => {
         await page.addInitScript((value) => {
           localStorage.setItem('safepoint.dev.theme', value);
         }, theme);
-        await page.goto(
-          `/workbench/edge-junctions?edges=${mode}&soft-rows=${softRows}`,
-        );
+        await page.goto(`/workbench/edge-junctions?edges=${mode}`);
         expect(await page.evaluate(() => devicePixelRatio)).toBe(2);
         await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
         await expect
           .poll(() => page.locator('html').getAttribute('data-edges'))
           .toBe(mode === 'retina' ? 'retina' : null);
-        await expect
-          .poll(() => page.locator('html').getAttribute('data-soft-rows'))
-          .toBe(softRows === 'opaque' ? 'opaque' : null);
         await page.evaluate(() => document.fonts.ready);
       });
 

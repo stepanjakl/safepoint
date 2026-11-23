@@ -126,19 +126,13 @@ export const WORKBENCH_GROUPS: readonly WorkbenchGroup[] = [
         href: '/workbench/soft-rows',
         title: 'Soft rows',
         summary:
-          'Why the pane’s edge draws its soft row translucent: each case enlarged, translucent beside opaque.',
+          'Why the pane’s edge draws its soft row opaque: each case enlarged, as it was translucent beside as it is now.',
       },
       {
         href: '/workbench/section-rules',
         title: 'Section rules',
         summary:
           'The divider under a header and above a footer three ways, to choose how it matches the pane’s edge.',
-      },
-      {
-        href: '/workbench/soft-row-styles',
-        title: 'Soft row styles',
-        summary:
-          'The pane’s edge drawn both ways side by side: its soft row translucent, and opaque under the sheet’s lines.',
       },
       {
         href: '/workbench/edge-junctions',
