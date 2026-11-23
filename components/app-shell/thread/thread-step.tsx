@@ -20,6 +20,7 @@ import ArrowUpRight from 'blode-icons-react/icons/arrow-up-right';
 import ChevronTriangleDown from 'blode-icons-react/icons/chevron-triangle-down-small-filled';
 import ArrowsRepeatCircleFilled from 'blode-icons-react/icons/arrows-repeat-circle-filled';
 import CircleCheckFilled from 'blode-icons-react/icons/circle-check-filled';
+import CircleMinusFilled from 'blode-icons-react/icons/circle-minus-filled';
 import CirclePersonFilled from 'blode-icons-react/icons/circle-person-filled';
 import ClockFilled from 'blode-icons-react/icons/clock-filled';
 import CircleXFilled from 'blode-icons-react/icons/circle-x-filled';
@@ -91,7 +92,7 @@ function ProposedMark({
     return <Origin aria-hidden className="thread-icon" />;
   }
   if (status === 'pending')
-    return <Glyph name={stepMarker.pending.glyph} size={10} />;
+    return <CircleMinusFilled aria-hidden className="thread-icon" />;
   if (status === 'running' || leaving)
     return (
       <SegmentedRing
@@ -279,7 +280,7 @@ function Marker({
   return inButton ? (
     mark
   ) : (
-    <Tooltip label={status} description={step.note} placement="right">
+    <Tooltip label={status} description={step.note}>
       {mark}
     </Tooltip>
   );
@@ -295,14 +296,18 @@ export type StepReference = {
   action?: FlagAction;
 };
 
-function StepLink({
+export function StepLink({
   label,
   action,
   inHeading = false,
+  revealArrow = inHeading,
+  size,
 }: {
   label: string;
   action?: FlagAction;
   inHeading?: boolean;
+  revealArrow?: boolean;
+  size?: 'compact';
 }) {
   const content = (
     <>
@@ -311,17 +316,27 @@ function StepLink({
         aria-hidden
         size={12}
         strokeWidth={2.5}
-        className={inHeading ? 'thread-step-heading-arrow' : 'flex-none'}
+        className={revealArrow ? 'thread-step-heading-arrow' : 'flex-none'}
       />
       {action ? <span className="sr-only"> — {action.label}</span> : null}
     </>
   );
   return action ? (
-    <button type="button" className="thread-step-link" onClick={action.onPress}>
+    <button
+      type="button"
+      className="thread-step-link"
+      data-size={size}
+      onClick={action.onPress}
+    >
       {content}
     </button>
   ) : (
-    <span className="thread-step-link thread-step-heading-pill">{content}</span>
+    <span
+      className="thread-step-link thread-step-heading-pill"
+      data-size={size}
+    >
+      {content}
+    </span>
   );
 }
 

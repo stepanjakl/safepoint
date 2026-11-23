@@ -1,6 +1,11 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useContext, useId, useState } from 'react';
+
+import { ProcessRuleNavigation } from '@/components/app-shell/process/process-sheet';
+import { JUST_ASKED_MS } from '@/components/app-shell/runs/run-readiness';
+import { useTRPC } from '@/components/trpc/provider';
 
 import {
   RulebookLoading,
@@ -38,6 +43,16 @@ const matches = (item: Definition, filter: Filter) =>
 
 export function RulebookPanel() {
   const { current, body, set, accepted, subject } = useRulebook();
+  const navigation = useContext(ProcessRuleNavigation);
+  const revision = navigation?.revision ?? null;
+  const trpc = useTRPC();
+  const older = revision && revision.text !== current.text ? revision : null;
+  const historical = useQuery(
+    trpc.rules.get.queryOptions(
+      { text: older?.text ?? current.text },
+      { enabled: older !== null, staleTime: JUST_ASKED_MS },
+    ),
+  );
   const { phase, fadeIn } = useLoader(!body);
   const [filter, setFilter] = useState<Filter>('all');
   const [hot, setHot] = useState<string | null>(null);
@@ -72,28 +87,56 @@ export function RulebookPanel() {
   const names = body?.kind === 'rules' ? body.names : {};
   const history = body?.kind === 'rules' ? body.history : null;
 
+  const revisionHistory = older
+    ? historical.data?.kind === 'rules'
+      ? historical.data.history
+      : null
+    : history;
+  const historyControl =
+    history?.revisions.length || navigation?.revision ? (
+      <RulebookHistory
+        history={history}
+        target={
+          navigation?.revision
+            ? {
+                id: navigation.revision.id,
+                history: revisionHistory,
+                loading: older !== null && historical.isPending,
+                onClose: navigation.clearRevision,
+              }
+            : undefined
+        }
+      />
+    ) : null;
+
   if (phase || !body) return <RulebookLoading phase={phase ?? 'waiting'} />;
   if (body.kind === 'error')
     return (
-      <EmptyState
-        role="alert"
-        fadeIn={fadeIn}
-        title="The rulebook could not be read."
-      >
-        {body.message}
-      </EmptyState>
+      <>
+        {historyControl}
+        <EmptyState
+          role="alert"
+          fadeIn={fadeIn}
+          title="The rulebook could not be read."
+        >
+          {body.message}
+        </EmptyState>
+      </>
     );
   if (!accepted.length)
     return (
-      <EmptyState
-        role="status"
-        fadeIn={fadeIn}
-        title="Nothing is accepted yet."
-      >
-        A run&rsquo;s Rules step is where the rules for instructions{' '}
-        <span className="value">{current.version}</span> are drafted and
-        accepted.
-      </EmptyState>
+      <>
+        {historyControl}
+        <EmptyState
+          role="status"
+          fadeIn={fadeIn}
+          title="Nothing is accepted yet."
+        >
+          A run&rsquo;s Rules step is where the rules for instructions{' '}
+          <span className="value">{current.version}</span> are drafted and
+          accepted.
+        </EmptyState>
+      </>
     );
 
   return (
@@ -108,9 +151,7 @@ export function RulebookPanel() {
           menuLabel="Other rule filters"
           className="w-fit"
         />
-        {history?.revisions.length ? (
-          <RulebookHistory history={history} />
-        ) : null}
+        {historyControl}
       </div>
       {/* One listener for every linked name: the one under the pointer is lit
           wherever it is shown (linkKey, rules/formula.tsx). */}

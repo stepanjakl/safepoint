@@ -781,6 +781,7 @@ const ANCHORED_BY_FILE = {
   'components/app-shell/thread/thread-step.css': {
     '--sp-thread-line': { on: 'primary', light: 225, dark: -200 },
     '--sp-thread-done': { on: 'primary', light: 450, dark: -375 },
+    '--sp-thread-done-hover': { on: 'primary', light: 500, dark: -425 },
   },
   'components/ui/walkthrough-hint.css': {
     '--sp-walkthrough-dismiss-face': {

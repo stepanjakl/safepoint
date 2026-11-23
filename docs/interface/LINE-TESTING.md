@@ -127,7 +127,8 @@ profile's length with the declared width.
 The last grid holds **notch specimens**: the app's own `Notch` and slanted
 `Button` on a pane fragment, the pane and header drawn as `app-shell.tsx` and
 `process-header.tsx` draw them (the header is `.process-header`, so its rule
-is the live one). Their offset widens the button rather than moving the box,
+is the live one), with the sheet's frame under the right notch for the lit
+line under the rule and the arc round the turn (`process-sheet.css`). Their offset widens the button rather than moving the box,
 so the notch's sloped edge lands on every fraction of a pixel, which is what
 `NotchSnap` corrects. Rows: `right` and `left` (the menu's mirrored notch), as
 the app draws them. (Held at `--notch-snap: 0`, the specimens off the grid
@@ -307,6 +308,9 @@ What worked, in this order:
 | A border or outline round a curve in Chrome                           | The same ring 20-30 levels off the shadow-drawn one on the arc                        | Draw rounded rings as shadows; borders only where there is no curve to match                                                                              |
 | Safari softening an inset shadow inside a radius                      | The last soft pixel 3-4 levels lighter                                                | Inherent; below what can be seen. Corners differ between engines by 12-13 levels at most, whatever draws them                                             |
 | A `clip-path` that ends on its own box's edge (WebKit)                | The notch's face let the pane's ring show through as a faint line above the turn      | Let the shape and its box reach past the edge it covers (`.notch-face`, 1px)                                                                              |
+| A fill's background box ending on a half device pixel                 | The slanted button's top ring two solid pixels: the face's box snapped down off it    | Paint a fill past its clip (`--s-bleed`), so only the clip's edge is antialiased                                                                          |
+| A curved line drawn as one antialiased band                           | The notch's bends one blurred band where the pane's own corners read solid then soft  | Draw it as the straight sides are: a solid band and a soft one, each clipped (`.notch-edge`, `.notch-edge-soft`)                                          |
+| Two layered lines laid one over the other                             | The notch's floor and turn on the header's rule: the soft row doubled, 20 levels dark | Lay the upper line's soft row on what the lower one's lies on -- the highlight, in `.notch-under` -- never on the other line                              |
 | Half pixels that cancel out                                           | Fixing one edge onto the grid moves another off (the narrow notch)                    | Change the geometry as a whole, never one length of it                                                                                                    |
 
 ## Pitfalls in measuring

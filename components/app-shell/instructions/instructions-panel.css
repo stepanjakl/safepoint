@@ -4,6 +4,24 @@
    ────────────────────────────────────────────────────────────────────────── */
 
 @layer components {
+  .instruction-action-icons {
+    display: grid;
+  }
+  .instruction-action-icons > svg {
+    grid-area: 1 / 1;
+    opacity: 0;
+    transition: opacity var(--duration-state) ease-out;
+  }
+  .instruction-action-icons:not([data-has-draft]) > :first-child,
+  .instruction-action-icons[data-has-draft] > :last-child {
+    opacity: 1;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .instruction-action-icons > svg {
+      transition: none;
+    }
+  }
+
   /* The run state's box: the mark's height, so the version opposite centres. */
   .instruction-row-state {
     display: inline-flex;
@@ -211,10 +229,6 @@
     opacity: 1;
     transition-delay: 0ms, 0ms, var(--duration-state);
   }
-  /* Each reads the gap of the row it sits in. */
-  .draft-question {
-    --collapse-gap: --spacing(1.5);
-  }
   .draft-saved-check {
     flex: none;
     width: var(--draft-saved-check);
@@ -231,9 +245,10 @@
     padding-inline-end: --spacing(0.5);
     transition-delay: 0ms;
   }
-  /* The button's own gap-2 before its key hint (button.tsx). */
-  .draft-key {
-    --collapse-gap: --spacing(2);
+  .draft-key,
+  .draft-key[data-open] {
+    overflow: clip;
+    transition-delay: 0ms;
   }
   /* One mark per paragraph -- or per run of them, past the cap -- in order. */
   .draft-map {

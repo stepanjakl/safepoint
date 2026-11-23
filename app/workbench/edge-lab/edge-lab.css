@@ -289,6 +289,16 @@
     border-radius: var(--radius-shell);
     pointer-events: none;
   }
+  .edge-lab-pane-inset {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    block-size: 100%;
+  }
+  /* The app has no wide left notch, so its frame draws the arc on the right
+     only; mirrored, as a left notch mirrors its shape. */
+  .edge-lab-pane[data-side='left'] .process-sheet-frame {
+    scale: -1 1;
+  }
   .edge-lab-header {
     position: relative;
     z-index: 10;

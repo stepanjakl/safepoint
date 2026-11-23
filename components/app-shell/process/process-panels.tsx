@@ -1,6 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import EditSmall from 'blode-icons-react/icons/edit-small-1';
+import PencilLine from 'blode-icons-react/icons/pencil-line';
+import { HeadIconButton } from '@/components/app-shell/head-icon-button';
 import { EmptyState } from '@/components/ui/working-mark';
 import { cx } from '@/lib/ui/cx';
 import type { ProcessSummary } from '@/lib/shell/model';
@@ -18,7 +21,6 @@ import { ProcessSettings } from './process-settings';
 import { useAsidePanel } from '@/components/app-shell/use-aside-panel';
 import { SECTION } from './panel-parts';
 import { SectionRow } from '@/components/app-shell/runs/section-row';
-import { MorphingLabel } from '@/components/ui/morphing-text';
 import type { ProcessTab } from './process-tab-store';
 
 /*
@@ -63,6 +65,7 @@ export function ProcessPanels({
     next,
     draft,
   } = useInstructions(process.id, process.instructions);
+  const draftAction = draft === null ? 'New version' : `Continue ${next}`;
 
   // Versions oldest first, as the pager steps through them.
   const place = (view: AsideView) => {
@@ -189,16 +192,24 @@ export function ProcessPanels({
         {/* Named for assistive technology only: the header's tab says it. */}
         <SectionRow id={SECTION[tab].id} title={SECTION[tab].title}>
           {tab === 'instructions' ? (
-            <button
-              type="button"
-              className="sheet-action-pill text-meta text-primary enabled:hover:bg-surface-hover-strong focus-visible:bg-surface-selected px-2.5 font-medium whitespace-nowrap enabled:cursor-pointer disabled:opacity-50"
-              disabled={aside?.kind === 'edit' && !exiting}
-              onClick={() => openAside({ kind: 'edit' })}
+            <HeadIconButton
+              label={draftAction}
+              tooltip={{ label: draftAction, placement: 'bottom' }}
+              size="alone"
+              wash="rest"
+              unavailable={aside?.kind === 'edit' && !exiting}
+              onPress={() => openAside({ kind: 'edit' })}
             >
-              <MorphingLabel
-                text={draft === null ? 'New version' : `Continue ${next}`}
-              />
-            </button>
+              <span
+                aria-hidden="true"
+                className="instruction-action-icons"
+                data-has-draft={draft !== null || undefined}
+              >
+                {/* The compose outline is a filled path, two units thick. */}
+                <EditSmall size={14} />
+                <PencilLine size={14} strokeWidth={2} />
+              </span>
+            </HeadIconButton>
           ) : null}
         </SectionRow>
         {list}

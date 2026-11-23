@@ -36,6 +36,8 @@ test('instructions open their latest version beside the list of versions', async
   // The latest opens with the tab, and leaves focus where it was.
   await expect(drawerTitle(page, 'Version v3')).toBeAttached();
   await expect(current).toHaveAttribute('aria-expanded', 'true');
+  const start = page.getByRole('button', { name: 'New version', exact: true });
+  await expect(start.locator('svg').first()).toHaveCSS('opacity', '1');
   const diff = drawer(page).getByRole('list', { name: 'Changes from v2' });
   await expect(diff).toHaveCount(0);
   // Each version says how many runs ran under it.
@@ -55,6 +57,11 @@ test('instructions open their latest version beside the list of versions', async
   await expect(drawer(page)).toHaveCount(0);
   await expect(current).toBeFocused();
 
+  await start.click();
+  await expect(drawerTitle(page, 'New version v4')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(drawer(page)).toHaveCount(0);
+
   // An earlier version is restored as a draft, which then leads the list.
   await versions.getByRole('button', { name: /^v2/ }).click();
   await expect(drawerTitle(page, 'Version v2')).toBeAttached();
@@ -67,8 +74,10 @@ test('instructions open their latest version beside the list of versions', async
   await expect(draft).toBeFocused();
 
   const resume = page.getByRole('button', { name: 'Continue v4', exact: true });
+  await expect(resume.locator('svg').last()).toHaveCSS('opacity', '1');
   await draft.press('Shift+Tab');
   await expect(resume).toBeFocused();
+  await expect(page.getByRole('tooltip')).toHaveText('Continue v4');
   await resume.press('Enter');
   await expect(draft).toHaveAttribute('aria-expanded', 'true');
   await expect(resume).toBeDisabled();

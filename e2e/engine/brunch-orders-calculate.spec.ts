@@ -308,6 +308,80 @@ test('the Rules tab shows the accepted rulebook, read-only', async ({
   await expect(migrated.first()).toContainText('Current');
 });
 
+test('the calculation links to the exact revision, even after the head moves', async ({
+  page,
+}) => {
+  const newer = history.revisions[1]!;
+  const previous = history.revisions[0]!;
+  await mockProcedure(page, 'rules.get', {
+    data: rulesReply(accepted, {
+      history: {
+        head: newer.id,
+        revisions: [
+          { ...newer, parent: previous.id, at: '2026-10-13T00:30:27.000Z' },
+          ...Array.from({ length: 25 }, (_, index) => ({
+            ...newer,
+            id: (index + 1).toString(16).padStart(12, '0'),
+            reason: 'used' as const,
+            at: new Date(Date.parse(newer.at) - index * 60_000).toISOString(),
+          })),
+          { ...previous, parent: null, at: '2026-10-10T00:30:27.000Z' },
+        ],
+      },
+    }),
+  });
+  await readTheSheet(page);
+  await expect(page.getByText('Not proposed').first()).toBeVisible();
+  await page.getByRole('button', { name: 'Calculate', exact: true }).click();
+  const revision = page.getByRole('button', {
+    name: `${calculation.fingerprint} — Open in rulebook history`,
+  });
+  await expect(revision).toBeVisible();
+  const arrow = revision.locator('svg');
+  await expect(arrow).toHaveCSS('opacity', '0');
+  await revision.hover();
+  await expect(arrow).toHaveCSS('opacity', '1');
+  await page.mouse.move(0, 0);
+  await revision.focus();
+  await page.keyboard.press('Shift+Tab');
+  await page.keyboard.press('Tab');
+  await expect(revision).toBeFocused();
+  await expect(arrow).toHaveCSS('opacity', '1');
+  await page.keyboard.press('Enter');
+
+  await expect(
+    page
+      .locator('header.process-header')
+      .getByRole('button', { name: 'Rules', exact: true, includeHidden: true }),
+  ).toHaveAttribute('aria-current', 'true');
+  const dialog = page.getByRole('dialog', { name: 'Rulebook history' });
+  const selected = dialog.getByRole('button', { name: /^Migrated/ }).first();
+  await expect(selected).toHaveAttribute('aria-current', 'true');
+  await expect(selected).toHaveAttribute('aria-expanded', 'true');
+  await expect(selected).toBeFocused();
+  await expect(selected).toBeInViewport();
+  await expect(
+    dialog.getByText(calculation.fingerprint, { exact: true }),
+  ).toBeVisible();
+  await expect(
+    dialog.getByRole('button', { name: /Accepted.*Current/ }),
+  ).toHaveAttribute('aria-expanded', 'false');
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(
+    page.getByRole('button', { name: 'History', exact: true }),
+  ).toBeFocused();
+
+  await page.setViewportSize({ width: 820, height: 900 });
+  await page
+    .locator('header.process-header')
+    .getByRole('button', { name: 'Runs', exact: true })
+    .click();
+  await revision.click();
+  await expect(selected).toHaveAttribute('aria-current', 'true');
+  await expect(selected).toHaveAttribute('aria-expanded', 'true');
+});
+
 test('a run whose rules no longer fit its read can move to the current ones', async ({
   page,
 }) => {

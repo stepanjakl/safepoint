@@ -36,7 +36,7 @@ const WASHES = {
 // answers its own pointer, and an open popover looks as the pointer left it;
 // keyboard focus takes the darker wash, as the app draws no focus outline.
 const INK =
-  'control-wash hover:text-primary focus-visible:text-primary data-[pressed]:text-primary';
+  'hover:text-primary focus-visible:text-primary data-[pressed]:text-primary';
 
 export function HeadIconButton({
   label,
@@ -83,7 +83,7 @@ export function HeadIconButton({
         aria-disabled={unavailable ? 'true' : undefined}
         data-leads={leads || undefined}
         onPress={unavailable ? undefined : onPress}
-        className={`relative grid place-items-center rounded-full ${SIZES[size]} ${WASHES[wash]} ${
+        className={`control-wash relative grid place-items-center rounded-full ${SIZES[size]} ${WASHES[wash]} ${
           unavailable
             ? 'text-muted cursor-default'
             : `${INK} ${active ? 'text-primary' : 'text-muted-strong'}`

@@ -23,6 +23,17 @@ async function dividerPaint(
   );
 }
 
+// The header's rule is the top edge of the sheet under it, solid outside:
+// the soft row first, then the ring at the hairline's whole depth. 0.75px is
+// 0.5px solid and a half-strength row to 1px; 1px is all solid.
+function headerRule(mode: string) {
+  const [soft, depth] =
+    mode === 'retina' ? ['-0.5px', '-1px'] : ['0px', '-1px'];
+  return expect.stringMatching(
+    new RegExp(`0px ${soft} 0px 0px inset.*0px ${depth} 0px 0px inset`),
+  );
+}
+
 for (const mode of ['default', 'retina'] as const) {
   test(`main process dividers keep their rule in ${mode} and forced colors`, async ({
     page,
@@ -44,10 +55,7 @@ for (const mode of ['default', 'retina'] as const) {
       expect.stringMatching(new RegExp(`${x(solid)} inset.*${x(soft)} inset`));
     await expect
       .poll(() => dividerPaint(header, 'bottom'))
-      .toMatchObject({
-        border: '0px',
-        shadow: layers((w) => `0px -${w} 0px 0px`),
-      });
+      .toMatchObject({ border: '0px', shadow: headerRule(mode) });
     await expect
       .poll(() => dividerPaint(runHead, 'bottom'))
       .toMatchObject({
@@ -220,18 +228,9 @@ for (const mode of ['default', 'retina']) {
     const header = page.locator('.process-header');
     const menu = page.getByRole('button', { name: 'Menu', exact: true });
     await expect(menu).toBeVisible();
-    // A solid layer and a soft one, whole device pixels each (geometry.css):
-    // 0.75px is 0.5px solid and 1px at half strength; 1px is all solid.
-    const [solid, soft] =
-      mode === 'retina' ? ['0.5px', '1px'] : ['1px', '1.5px'];
-    const layers = (x: (width: string) => string) =>
-      expect.stringMatching(new RegExp(`${x(solid)} inset.*${x(soft)} inset`));
     await expect
       .poll(() => dividerPaint(header, 'bottom'))
-      .toMatchObject({
-        border: '0px',
-        shadow: layers((w) => `0px -${w} 0px 0px`),
-      });
+      .toMatchObject({ border: '0px', shadow: headerRule(mode) });
     await page.evaluate(() => document.fonts.ready);
 
     const pane = (await page.locator('.shell-pane').boundingBox())!;

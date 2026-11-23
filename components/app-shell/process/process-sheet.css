@@ -7,6 +7,17 @@
   .process-sheet-frame {
     --clip-past-radius: calc(var(--radius-shell-inner) + 1px);
     --clip-past-round: 0 0 var(--clip-past-radius) var(--clip-past-radius);
+    /* What shows of the pane's sheen under the header's rule, which paints its
+       first --edge-hairline-depth, as a side's ring does (geometry.css). */
+    --lit-soft: calc(var(--ring-pane-soft) - var(--edge-hairline-depth));
+    --lit-line:
+      linear-gradient(var(--sp-raised-edge), var(--sp-raised-edge)) top / 100%
+        calc(var(--ring-pane-solid) - var(--edge-hairline-depth)) no-repeat,
+      linear-gradient(
+          color-mix(in srgb, var(--sp-raised-edge) var(--ring-pane-cover), transparent),
+          color-mix(in srgb, var(--sp-raised-edge) var(--ring-pane-cover), transparent)
+        )
+        top / 100% var(--lit-soft) no-repeat;
   }
   .process-sheet-frame {
     @media (width >= 56.25rem) {
@@ -17,17 +28,7 @@
   .process-sheet-frame {
     position: relative;
     @media (width >= 56.25rem) {
-      /* Solid and soft, as every fractional line is (geometry.css). */
-      --lit-soft: color-mix(
-        in srgb,
-        var(--sp-raised-edge) var(--highlight-pane-cover),
-        transparent
-      );
-      background:
-        linear-gradient(var(--sp-raised-edge), var(--sp-raised-edge)) top / 100%
-          var(--highlight-pane-solid) no-repeat,
-        linear-gradient(var(--lit-soft), var(--lit-soft)) top / 100% var(--highlight-pane-soft)
-          no-repeat;
+      background: var(--lit-line);
     }
   }
   /* The section heads cover the highlight along the top, including the arc. */
@@ -36,8 +37,14 @@
       .process-sheet-frame::before {
         @apply notch-highlight-arc;
         content: '';
+        /* From the rule's outer row, so the box stays on device pixels (WebKit
+           shifts the clip of a box it snaps); the rule and the notch's line
+           cover the band's first edge-width, as the pane's ring covers its sheen. */
+        --notch-edge-width: 0px;
+        --notch-arc-width: calc(var(--spacing-control-edge) + var(--spacing-control-highlight));
+        --notch-side-tail: var(--edge-hairline-depth);
         position: absolute;
-        top: 0;
+        top: calc(var(--edge-hairline-depth) * -1);
         right: calc(var(--spacing-pane-inset) * -1);
         z-index: -1;
         background: var(--sp-raised-edge);
@@ -69,17 +76,8 @@
       grid-column: 2 / 3;
       inset-inline: 0;
       top: 0;
-      height: var(--highlight-pane-soft);
-      --lit-soft: color-mix(
-        in srgb,
-        var(--sp-raised-edge) var(--highlight-pane-cover),
-        transparent
-      );
-      background:
-        linear-gradient(var(--sp-raised-edge), var(--sp-raised-edge)) top / 100%
-          var(--highlight-pane-solid) no-repeat,
-        linear-gradient(var(--lit-soft), var(--lit-soft)) top / 100% var(--highlight-pane-soft)
-          no-repeat;
+      height: var(--lit-soft);
+      background: var(--lit-line);
       pointer-events: none;
     }
   }

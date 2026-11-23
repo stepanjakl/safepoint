@@ -362,16 +362,6 @@ export function InstructionDetail({
 
   const editActions = (
     <div className="swap-band-fade flex items-center gap-1.5">
-      <span
-        className="band-collapse draft-question text-meta text-muted"
-        data-open={mode === 'confirm-discard' || undefined}
-        aria-hidden="true"
-      >
-        <span className="whitespace-nowrap">Discard the draft of {next}?</span>
-      </span>
-      <span className="sr-only" role="status">
-        {mode === 'confirm-discard' ? `Discard the draft of ${next}?` : ''}
-      </span>
       <Button size="small" onPress={pressSecondary}>
         <MorphingText text={LABELS.secondary} duration={MORPH_WORDS_MS} />
       </Button>
@@ -404,19 +394,25 @@ export function InstructionDetail({
             }
             onPress={pressPrimary}
           >
-            <MorphingText text={LABELS.primary} duration={MORPH_WORDS_MS} />
-            <span
-              className="band-collapse draft-key"
-              data-open={(mode !== 'confirm-discard' && !blocked) || undefined}
-              // Said by the button's aria-keyshortcuts, open or not.
-              aria-hidden="true"
-            >
-              <span>
-                <KeyHint
-                  keys={['mod', 'enter']}
-                  on="button-primary"
-                  className="pointer-coarse:hidden"
-                />
+            <span className="inline-flex items-center">
+              <span className="relative flex-none overflow-clip">
+                <MorphingText text={LABELS.primary} duration={MORPH_WORDS_MS} />
+              </span>
+              <span
+                className="band-collapse draft-key"
+                data-open={
+                  (mode !== 'confirm-discard' && !blocked) || undefined
+                }
+                // Said by the button's aria-keyshortcuts, open or not.
+                aria-hidden="true"
+              >
+                <span className="flex justify-end">
+                  <KeyHint
+                    keys={['mod', 'enter']}
+                    on="button-primary"
+                    className="ps-2 pointer-coarse:hidden"
+                  />
+                </span>
               </span>
             </span>
           </Button>

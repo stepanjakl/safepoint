@@ -143,6 +143,9 @@
     calc((var(--separator-strong) - var(--separator-strong-solid)) / var(--dp) * 100%),
     100%
   );
+  /* How deep a hairline paints, in whole device pixels: a rule's solid and
+     soft rows together. What lies under a rule starts this far down. */
+  --edge-hairline-depth: round(up, var(--edge-hairline), var(--dp));
   /* A ring with a pane's sheen inside it: where the sheen ends. */
   --ring-pane: calc(var(--edge-ring) + var(--highlight-pane));
   --ring-pane-solid: round(down, var(--ring-pane), var(--dp));

@@ -31,10 +31,18 @@ export function Notch({
       <span aria-hidden="true" className="notch-shape">
         <span className="notch-paint notch-face" />
         <span className="notch-at" data-k="1">
+          <span className="notch-at" data-k="soft">
+            <span className="notch-paint notch-lining" />
+          </span>
           <span className="notch-at" data-k="2">
             <span className="notch-paint notch-under" />
             <span className="notch-paint notch-sheen" />
           </span>
+        </span>
+        <span className="notch-at" data-k="soft">
+          <span className="notch-paint notch-edge notch-edge-soft" />
+        </span>
+        <span className="notch-at" data-k="solid">
           <span className="notch-paint notch-edge" />
         </span>
       </span>

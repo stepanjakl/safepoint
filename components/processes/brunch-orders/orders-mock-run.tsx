@@ -58,6 +58,7 @@ import type { DataTab, KeptRead } from '@/lib/engine/records';
 import {
   dataProfileSchema,
   definitionSetSchema,
+  RULEBOOK_SCHEMA,
   type Application,
   type Definition,
   type DefinitionSet,
@@ -338,7 +339,20 @@ function rulesReplyForStage(stage: OrdersStageKey): RulesReply {
     state: 'confirmed' as const,
     profile: confirmedProfile,
   };
-  const baseHistory = { head: calculation.fingerprint, revisions: [] };
+  const baseHistory = {
+    head: calculation.fingerprint,
+    revisions: [
+      {
+        id: calculation.fingerprint,
+        parent: null,
+        reason: 'accepted' as const,
+        at: AT,
+        schemaVersion: RULEBOOK_SCHEMA,
+        note: null,
+        changes: null,
+      },
+    ],
+  };
   switch (stage) {
     case 'read-waiting':
     case 'read-done':

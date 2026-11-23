@@ -7,6 +7,7 @@ import ChevronTriangleUp from 'blode-icons-react/icons/chevron-triangle-up-small
 import Cross from 'blode-icons-react/icons/cross-small';
 import {
   Fragment,
+  useContext,
   useEffect,
   useId,
   useRef,
@@ -19,6 +20,8 @@ import {
   settledOnce,
   useStepReady,
 } from '@/components/app-shell/runs/run-readiness';
+import { ProcessSheetActions } from '@/components/app-shell/process/process-sheet';
+import { StepLink } from '@/components/app-shell/thread/thread-step';
 import { FromModel, Step } from '@/components/engine/rules-parts';
 import { ModelSelect } from '@/components/engine/rules/model-select';
 import { Lede, Outcome, plural } from '@/components/engine/trial-parts';
@@ -138,6 +141,7 @@ export function CalculateStep({
 }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const showRevision = useContext(ProcessSheetActions)?.showRuleRevision;
   const report = useRef(onProgress);
   useEffect(() => {
     report.current = onProgress;
@@ -306,10 +310,23 @@ export function CalculateStep({
               revealKey !== null && (replays > 0 || reveal?.animate === true)
             }
           />
-          <p className="text-meta text-muted">
+          <p className="text-meta text-muted font-medium">
             On the accepted rules{' '}
-            <code className="value">{shown.calculation.fingerprint}</code> (
-            {plural(shown.calculation.accepted, 'definition')}).
+            {showRevision ? (
+              <StepLink
+                label={shown.calculation.fingerprint}
+                action={{
+                  label: 'Open in rulebook history',
+                  onPress: () =>
+                    showRevision({ text, id: shown.calculation.fingerprint }),
+                }}
+                size="compact"
+                revealArrow
+              />
+            ) : (
+              <code className="value">{shown.calculation.fingerprint}</code>
+            )}{' '}
+            ({plural(shown.calculation.accepted, 'definition')}).
           </p>
         </>
       ) : working.phase ? (

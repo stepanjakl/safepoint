@@ -67,8 +67,16 @@ export const ProcessSheetActions = createContext<{
   showInstructions: () => void;
   // Only where the process keeps a rulebook to show.
   showRules?: () => void;
+  showRuleRevision?: (revision: RuleRevisionTarget) => void;
   // The instructions now, which a run may predate.
   currentVersion: string;
+} | null>(null);
+
+type RuleRevisionTarget = { text: string; id: string };
+
+export const ProcessRuleNavigation = createContext<{
+  revision: RuleRevisionTarget | null;
+  clearRevision: () => void;
 } | null>(null);
 
 export const ProcessInputNavigation = createContext<{
@@ -141,6 +149,7 @@ export function ProcessSheet({
     this only says which one to mount with, and it is cleared the moment the
     reader chooses a tab themselves.
   */
+  const [revision, setRevision] = useState<RuleRevisionTarget | null>(null);
   const [openView, setOpenView] = useState<AsideView | null>(null);
   // Counts the requests, so a second one remounts the panels it is for.
   const [request, setRequest] = useState(0);
@@ -148,6 +157,7 @@ export function ProcessSheet({
   // applied on hydration, is put in place without a swap.
   const [chosen, setChosen] = useState(false);
   const ask = (view: AsideView, next: ProcessTab) => {
+    setRevision(null);
     setChosen(true);
     setLandedOnRuns(false);
     setOpenView(view);
@@ -155,6 +165,7 @@ export function ProcessSheet({
     setTab(next);
   };
   const chooseTab = (next: ProcessTab) => {
+    setRevision(null);
     setChosen(true);
     setLandedOnRuns(false);
     setOpenView(null);
@@ -183,6 +194,13 @@ export function ProcessSheet({
       versions.findIndex((entry) => entry.version === version) > 0,
     showInstructions: () => chooseTab('instructions'),
     showRules: rulesPanel === undefined ? undefined : () => chooseTab('rules'),
+    showRuleRevision:
+      rulesPanel === undefined
+        ? undefined
+        : (target: RuleRevisionTarget) => {
+            chooseTab('rules');
+            setRevision(target);
+          },
     currentVersion: version,
   };
   const scrollRuns = useVerticalScrollFade();
@@ -245,7 +263,11 @@ export function ProcessSheet({
       </div>
     ) : key === 'rules' ? (
       <SinglePanel {...SECTION.rules} width="wide">
-        {rulesPanel}
+        <ProcessRuleNavigation
+          value={{ revision, clearRevision: () => setRevision(null) }}
+        >
+          {rulesPanel}
+        </ProcessRuleNavigation>
       </SinglePanel>
     ) : key === 'instructions' && policy ? (
       <PolicyPanel policy={policy} />

@@ -1,6 +1,12 @@
 'use client';
 
-import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react';
 import { Button as AriaButton } from 'react-aria-components';
 // Deep import: Blode's barrel is the whole icon library.
 import ChevronTriangleDown from 'blode-icons-react/icons/chevron-triangle-down-small-filled';
@@ -16,6 +22,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Fold } from '@/components/ui/fold';
 import { Pill } from '@/components/ui/pill';
+import { useScreenSettled } from '@/components/ui/screen-settled';
 
 /*
   The rulebook's revisions in a drawer, by day.
@@ -103,18 +110,54 @@ function byDay(entries: Entry[]) {
   return days;
 }
 
-export function RulebookHistory({ history }: { history: History }) {
+export function RulebookHistory({
+  history,
+  target,
+}: {
+  history: History | null;
+  target?: {
+    id: string;
+    history: History | null;
+    loading: boolean;
+    onClose: () => void;
+  };
+}) {
   const [open, setOpen] = useState(false);
-  const entries: Entry[] = [
-    ...history.revisions,
-    ...samplesBefore(history.revisions.at(-1)?.at),
-  ];
+  const settled = useScreenSettled();
+  const trigger = useRef<HTMLButtonElement>(null);
+  const targetId = target?.id;
+
+  useEffect(() => {
+    if (!targetId || !settled) return;
+    const frame = requestAnimationFrame(() => {
+      trigger.current?.focus({ preventScroll: true });
+      setOpen(true);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [targetId, settled]);
+
+  const shown = target ? target.history : history;
+  const selected =
+    target && shown?.revisions.some(({ id }) => id === target.id)
+      ? target.id
+      : undefined;
+  const entries: Entry[] = shown
+    ? [...shown.revisions, ...samplesBefore(shown.revisions.at(-1)?.at)]
+    : [];
   return (
     <>
-      <Button size="small" onPress={() => setOpen(true)}>
-        History
-      </Button>
-      <DrawerOverlay isOpen={open} onOpenChange={setOpen}>
+      {history?.revisions.length ? (
+        <Button ref={trigger} size="small" onPress={() => setOpen(true)}>
+          History
+        </Button>
+      ) : null}
+      <DrawerOverlay
+        isOpen={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (!next) target?.onClose();
+        }}
+      >
         <DrawerPanels
           title="Rulebook history"
           closeLabel="Close"
@@ -122,7 +165,20 @@ export function RulebookHistory({ history }: { history: History }) {
           width="fixed"
         >
           <div className="min-h-0 flex-1 overflow-y-auto p-3">
-            <Timeline entries={entries} head={history.head} />
+            {target && !selected ? (
+              <p role="status" className="text-meta text-muted">
+                {target.loading
+                  ? 'Loading the revision…'
+                  : `Revision ${target.id} could not be found.`}
+              </p>
+            ) : shown ? (
+              <Timeline
+                key={selected ?? 'history'}
+                entries={entries}
+                head={shown.head}
+                selected={selected}
+              />
+            ) : null}
           </div>
         </DrawerPanels>
       </DrawerOverlay>
@@ -143,14 +199,17 @@ type Ink = {
 function Timeline({
   entries,
   head,
+  selected,
 }: {
   entries: Entry[];
   head: string | null;
+  selected?: string;
 }) {
   const frame = useRef<HTMLDivElement>(null);
   // Open revisions in the order they were opened. The light runs from the top
   // to the last one opened, or to the current rulebook with none open.
-  const [opened, setOpened] = useState<string[]>(head ? [head] : []);
+  const initial = selected ?? head;
+  const [opened, setOpened] = useState<string[]>(initial ? [initial] : []);
   const [ink, setInk] = useState<Ink | null>(null);
 
   const days = byDay(entries);
@@ -273,6 +332,7 @@ function Timeline({
                       key={entry.id}
                       entry={entry}
                       head={entry.id === head}
+                      selected={entry.id === selected}
                       open={opened.includes(entry.id)}
                       lit={at <= target}
                       delay={delay(at)}
@@ -311,6 +371,7 @@ function Revision({
   entry,
   head,
   open,
+  selected,
   lit,
   delay,
   onToggle,
@@ -318,11 +379,17 @@ function Revision({
   entry: Entry;
   head: boolean;
   open: boolean;
+  selected: boolean;
   lit: boolean;
   // When its dot lights or dims, as the light travels.
   delay: CSSProperties;
   onToggle: () => void;
 }) {
+  const row = useRef<HTMLButtonElement>(null);
+  useLayoutEffect(() => {
+    if (selected) row.current?.scrollIntoView({ block: 'center' });
+  }, [selected]);
+
   const detailId = `revision-${entry.id}`;
   const changes = entry.changes;
   // What it did, by kind, leaving out a kind it did none of.
@@ -337,6 +404,9 @@ function Revision({
   return (
     <li className="grid">
       <AriaButton
+        ref={row}
+        autoFocus={selected}
+        aria-current={selected ? 'true' : undefined}
         onPress={onToggle}
         aria-expanded={open}
         aria-controls={detailId}

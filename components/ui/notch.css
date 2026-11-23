@@ -31,10 +31,11 @@
 @utility notch-highlight-arc {
   --arc-edge: var(--notch-edge-width, var(--spacing-control-edge));
   --arc-start: var(--notch-highlight-start, 0px);
+  --arc-width: var(--notch-arc-width, var(--spacing-control-highlight));
   --arc-radius: calc(var(--notch-corner) - var(--arc-edge));
-  --arc-inner-radius: calc(var(--arc-radius) - var(--spacing-control-highlight));
+  --arc-inner-radius: calc(var(--arc-radius) - var(--arc-width));
   --arc-end: calc(100% - var(--arc-edge));
-  --arc-inner-end: calc(var(--arc-end) - var(--spacing-control-highlight));
+  --arc-inner-end: calc(var(--arc-end) - var(--arc-width));
   width: calc(var(--notch-corner) + var(--arc-edge));
   height: calc(var(--arc-radius) + var(--notch-side-tail, var(--arc-edge)));
   clip-path: shape(
@@ -44,8 +45,8 @@
     line to var(--arc-end) 100%,
     line to var(--arc-inner-end) 100%,
     line to var(--arc-inner-end) var(--arc-radius),
-    arc to var(--arc-edge) var(--spacing-control-highlight) of var(--arc-inner-radius) ccw,
-    line to var(--arc-start) var(--spacing-control-highlight),
+    arc to var(--arc-edge) var(--arc-width) of var(--arc-inner-radius) ccw,
+    line to var(--arc-start) var(--arc-width),
     close
   );
 }
@@ -57,6 +58,18 @@
     --notch-highlight-color: var(--notch-highlight, var(--sp-notch-highlight));
     --notch-pane-color: var(--notch-pane, var(--sp-notch-pane));
     --notch-edge-width: var(--spacing-control-edge);
+    /* Drawn as every fractional line is, solid and soft (geometry.css), so the
+       bends read as the pane's straight edges do. */
+    --notch-edge-solid: round(down, var(--notch-edge-width), var(--dp));
+    --notch-edge-soft: calc(var(--notch-edge-solid) + var(--dp));
+    --notch-edge-cover: clamp(
+      0%,
+      calc((var(--notch-edge-width) - var(--notch-edge-solid)) / var(--dp) * 100%),
+      100%
+    );
+    /* How far above the box's foot the floor's line starts: the edge's painted
+       depth, so the floor lies on the header's rule pixel for pixel. */
+    --notch-floor: round(up, var(--notch-edge-width), var(--dp));
     position: relative;
     /* Above the header cell its slope overhangs, and the pane below the floor
        its corner hangs into. */
@@ -94,7 +107,7 @@
     inset-block-start: 0;
     inset-inline-end: 0;
     inline-size: var(--spacing-pane-inset);
-    block-size: calc(100% + var(--notch-corner) - var(--notch-edge-width));
+    block-size: calc(100% + var(--notch-corner) - var(--notch-floor));
     z-index: -2;
     background: var(--notch-face-color);
     pointer-events: none;
@@ -112,7 +125,7 @@
   }
 
   /* The outline in the notch's box: W wide, H tall, pane's top edge at 0 and
-     the header rule's top at H - e. The slope crosses the start edge at
+     the header rule's top at H - f. The slope crosses the start edge at
      mid-height, the same point a slant's edge crosses its own box.
      --n-k is the offset toward the pane: a slope moves by k/cos along the
      floor, the top bend's radius shrinks by k and the foot's grows. All three
@@ -127,6 +140,7 @@
     --n-h: 100cqh;
     --n-w: 100cqw;
     --n-e: var(--notch-edge-width);
+    --n-f: var(--notch-floor);
     /* Obtuse (90deg + angle, pane's side), so it scales like a slant's obtuse
        corners -- see .slant-shape -- by its own balance. */
     --n-rt: calc(var(--notch-bend-top) / pow(var(--n-m), var(--notch-bend-balance, 0)));
@@ -145,7 +159,7 @@
     --n-x: calc(var(--n-h) / 2 * var(--n-t) + var(--n-rt));
     --n-right: calc(var(--n-x) + var(--n-w));
     --n-end: calc(var(--n-right) - var(--notch-corner));
-    --n-turn: calc(var(--n-h) - var(--n-e) + var(--notch-corner));
+    --n-turn: calc(var(--n-h) - var(--n-f) + var(--notch-corner));
     --n-outer-turn: arc to var(--n-right) var(--n-turn) of var(--notch-corner) cw;
     --n-k: 0px;
     position: absolute;
@@ -156,10 +170,10 @@
   .notch-shape,
   .notch-at {
     --n-v1: calc((var(--n-k) - var(--n-h) / 2) * var(--n-t) - var(--n-k) / var(--n-c));
-    --n-v2: calc((var(--n-h) / 2 - var(--n-e) + var(--n-k)) * var(--n-t) - var(--n-k) / var(--n-c));
+    --n-v2: calc((var(--n-h) / 2 - var(--n-f) + var(--n-k)) * var(--n-t) - var(--n-k) / var(--n-c));
     --n-dt: calc((var(--n-rt) - var(--n-k)) * var(--n-m));
     --n-db: calc((var(--n-rb) + var(--n-k)) * var(--n-m));
-    --n-fy: calc(var(--n-h) - var(--n-e) + var(--n-k));
+    --n-fy: calc(var(--n-h) - var(--n-f) + var(--n-k));
     /* Down: from the top edge, round the bend, down the slope, round the
        foot, along the floor. */
     --n-start: calc(var(--n-x) + var(--n-v1) - var(--n-dt)) var(--n-k);
@@ -192,13 +206,23 @@
   .notch-at {
     inset: 0;
   }
+  /* The sheen starts inside the solid line, so its own antialiased edge is
+     covered and only the line's shows. */
   .notch-at[data-k='1'] {
-    --n-k: var(--n-e);
+    --n-k: calc(var(--notch-edge-solid) / 2);
     --n-start-1: var(--n-start);
     --n-down-1: var(--n-down);
+    --n-turn-1: arc to calc(var(--n-right) - var(--n-k)) var(--n-turn) of
+      calc(var(--notch-corner) - var(--n-k)) cw;
   }
   .notch-at[data-k='2'] {
     --n-k: calc(var(--n-e) + var(--spacing-control-highlight));
+  }
+  .notch-at[data-k='soft'] {
+    --n-k: var(--notch-edge-soft);
+  }
+  .notch-at[data-k='solid'] {
+    --n-k: var(--notch-edge-solid);
   }
   .notch-paint {
     top: 0;
@@ -223,16 +247,17 @@
       close
     );
   }
-  /* Past the pane's edge above the turn: WebKit antialiases a clip that ends
-     on its box's edge, and the pane's ring then shows through (LINE-TESTING.md). */
-  .notch-face {
+  /* Past the pane's edge: WebKit antialiases a clip that ends on its box's
+     edge, so the pane's ring shows through the face and the tail's end thins. */
+  .notch-face,
+  .notch-edge {
     right: -1px;
   }
-  /* Between offsets 0 and e, in the pane's ring colour. Opaque, so along the
-     floor it takes the header's rule over; under the slope the rule shows. */
+  /* Between offset 0 and the wrapper's, in the pane's ring colour: solid, and
+     soft over it. Along the floor they lie exactly on the header's rule. */
   .notch-edge {
-    --n-tail: calc(var(--n-turn) + var(--notch-side-tail, var(--n-e)));
-    --n-inner-right: calc(var(--n-right) - var(--n-e));
+    --n-tail: calc(var(--n-turn) + var(--notch-side-tail, var(--n-f)));
+    --n-inner-right: calc(var(--n-right) - var(--n-k));
     background: var(--notch-edge-color);
     clip-path: shape(
       from var(--n-start-0),
@@ -241,17 +266,30 @@
       line to var(--n-right) var(--n-tail),
       line to var(--n-inner-right) var(--n-tail),
       line to var(--n-inner-right) var(--n-turn),
-      arc to var(--n-end) var(--n-fy) of calc(var(--notch-corner) - var(--n-e)) ccw,
+      arc to var(--n-end) var(--n-fy) of calc(var(--notch-corner) - var(--n-k)) ccw,
       var(--n-up),
       close
     );
   }
-  /* Between offsets e and 2e. Along the floor that band is the row the
-     header's sheen already lies in, so the box stops at the rule -- below it
-     the white would be laid twice. */
+  /* Its tail lies on the arc's highlight tail, which covers the side's own
+     soft row there. */
+  .notch-edge-soft {
+    background: color-mix(in srgb, var(--notch-edge-color) var(--notch-edge-cover), transparent);
+  }
+  /* Under the line, out to offset e + highlight, round the turn too. Below the
+     rule the sheet draws that band, so the box stops at the rule. */
   .notch-sheen,
-  .notch-under {
-    clip-path: shape(from var(--n-start-1), var(--n-down-1), var(--n-up), close);
+  .notch-under,
+  .notch-lining {
+    clip-path: shape(
+      from var(--n-start-1),
+      var(--n-down-1),
+      var(--n-turn-1),
+      line to calc(var(--n-right) - var(--n-k)) var(--n-turn),
+      arc to var(--n-end) var(--n-fy) of calc(var(--notch-corner) - var(--n-k)) ccw,
+      var(--n-up),
+      close
+    );
   }
   .notch-sheen {
     bottom: 0;
@@ -262,12 +300,20 @@
     );
   }
   /* The same at the top: the pane's own sheen runs along its top edge under
-     the start of the bend, so for its first two rows the band is laid on the
+     the start of the bend, so for its first rows the band is laid on the
      pane's face rather than on that sheen. */
   .notch-under {
     bottom: auto;
     height: calc(var(--n-e) + var(--spacing-control-highlight));
     background: var(--notch-pane-color);
+  }
+  /* Where the line lies on the header's rule, its soft band is laid on the
+     highlight, as the rule's soft row is, so that row is not doubled. Only
+     under the soft band and in that row: anywhere else it would show. */
+  .notch-lining {
+    bottom: 0;
+    background: linear-gradient(var(--notch-highlight-color), var(--notch-highlight-color)) bottom /
+      100% calc(var(--n-f) - var(--notch-edge-solid)) no-repeat;
   }
 
   /* The highlight sits inside the clipped ring. A sheet can paint it beneath its rows. */
@@ -275,7 +321,8 @@
     @apply notch-highlight-arc;
     content: '';
     position: absolute;
-    top: 100%;
+    /* The arc's band starts an edge-width in from the floor's line. */
+    top: calc(100% + var(--notch-edge-width) - var(--notch-floor));
     right: 0;
     z-index: -1;
     background: var(--notch-corner-highlight, var(--notch-highlight-color));
@@ -333,8 +380,9 @@
     --s-h: 100cqh;
     --s-w: 100cqw;
     --s-e: var(--control-face-border-width);
-    /* Fill past the clip so fractional edges are antialiased only once. */
-    --s-bleed: var(--slant-paint-bleed, 0px);
+    /* Fill past the clip so fractional edges are antialiased only once. At 0,
+       the face's box snaps to a device pixel and leaves the top ring solid. */
+    --s-bleed: var(--slant-paint-bleed, var(--s-e));
     --s-hw: var(--control-highlight-width, var(--spacing-control-highlight));
     --s-r: var(--slant-radius, var(--radius-shell));
     --s-f: 4px;
@@ -532,6 +580,7 @@
       outline: none;
     }
     .notch-sheen,
+    .notch-lining,
     .slant-sheen,
     .slant-ring::before,
     .slant-face::before,

@@ -712,7 +712,10 @@ control's layers read its `control-face` stops, so variants, hover and disabled 
 animate it as they would a square button. The outlines read the box through container
 units, so nothing needs to know how tall the header is. The notch is the last
 cell of a header row: it stretches with the row, so its floor lands on the rule the other
-cell draws however the heading wraps.
+cell draws however the heading wraps. The notch's edge is two bands, solid and soft, as
+every fractional line is, so its bends read as the pane's straight sides do; and the
+header's rule is drawn the same way round, solid on top, soft below, then the sheen the
+sheet draws under it, so the floor, the turn and the side are one line.
 
 | Token                                                                  | Default                                                                   | Decides                                                                                                                                                                                                                                                                             |
 | ---------------------------------------------------------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

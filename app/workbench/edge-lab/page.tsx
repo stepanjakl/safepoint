@@ -16,7 +16,7 @@ import { EdgeLabPixelRatio } from './pixel-ratio';
   data-total     the line's full width in CSS px, ring and highlight together
 
   Notch specimens are the app's own Notch and slanted Button on a pane, as
-  the process header draws them. Their offset widens the button, so the
+  the process header and the sheet frame under it draw them. Their offset widens the button, so the
   notch's sloped edge lands on every fraction of a pixel; they are compared
   with the reference browser by pixels, and their straight lines read for
   steps and broken joins.
@@ -182,11 +182,14 @@ function NotchSpecimen({
         data-off={offset}
       >
         <div className="control-face surface-raised edge-lab-pane-face" />
-        <div className="p-pane-inset">
+        <div className="edge-lab-pane-inset p-pane-inset">
           <header className="process-header edge-lab-header">
             {side === 'left' ? notch : <div />}
             {side === 'right' ? notch : <div />}
           </header>
+          {/* The sheet's frame: the lit line under the rule and the arc round
+              the turn, mirrored beside a left notch (edge-lab.css). */}
+          <div className="process-sheet-frame rounded-b-shell-inner rounded-tr-shell-inner" />
         </div>
       </div>
     </div>
