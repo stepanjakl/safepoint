@@ -246,6 +246,56 @@ for (const theme of ['light', 'dark'] as const) {
   });
 }
 
+// Below 52rem the list is a strip across the top: a lit item's fill meets the
+// head rule's solid row above it and the strip rule's below, with no soft row
+// between (.sheet-strip, runs-list.css).
+for (const theme of ['light', 'dark'] as const) {
+  test(`a lit strip item's fill meets the solid rows round it, ${theme}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1000, height: 739 });
+    await open(page, '/processes/brunch-orders', theme);
+    await page
+      .getByRole('button', { name: /^Instructions:/ })
+      .first()
+      .click();
+    await page.mouse.move(0, 0);
+    const strip = page.locator('.process-panel-list.sheet-strip');
+    const item = strip.locator('.sheet-row[data-current]');
+    await expect(item).toBeVisible();
+    const { x, head, foot } = await strip.evaluate((element) => {
+      const row = element
+        .querySelector('.sheet-row[data-current]')!
+        .getBoundingClientRect();
+      return {
+        x: row.x + row.width / 2,
+        head: element.querySelector('.sheet-head')!.getBoundingClientRect()
+          .bottom,
+        foot: element.getBoundingClientRect().bottom,
+      };
+    });
+    // Two CSS px either side of each rule, so four device rows of each: the
+    // head's solid and soft rows are rows 2 and 3, the fill from row 4; over
+    // the strip's foot the fill runs to row 1, then the soft and solid rows.
+    const column = async (y: number) =>
+      regionPixels(page, { x: Math.floor(x), y: y - 2, width: 1, height: 4 });
+    const above = await column(head);
+    const below = await column(foot);
+    const faults: string[] = [];
+    const [solidTop, softTop, fillTop] = [2, 3, 5].map((y) => at(above, 0, y));
+    if (Math.abs(softTop! - fillTop!) > SAME)
+      faults.push(`under the head's rule: ${solidTop}/${softTop}/${fillTop}`);
+    const [fillFoot, softFoot, solidFoot] = [1, 2, 3].map((y) =>
+      at(below, 0, y),
+    );
+    if (Math.abs(softFoot! - fillFoot!) > SAME)
+      faults.push(
+        `over the strip's rule: ${fillFoot}/${softFoot}/${solidFoot}`,
+      );
+    expect(faults).toEqual([]);
+  });
+}
+
 for (const theme of ['light', 'dark'] as const) {
   test(`section rules meet a card's edge, ${theme}`, async ({ page }) => {
     await open(page, '/workbench/section-rules', theme);

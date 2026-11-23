@@ -16,6 +16,7 @@ import frozenRules from '@/e2e/fixtures/brunch-orders-rules.json';
 import frozenProfile from '@/fixtures/brunch-orders/profile/current.json';
 import snapshot from '@/fixtures/brunch-orders/sheet-snapshot.json';
 import { useRunProgress } from '@/components/app-shell/runs/run-progress';
+import { useRunRestoration } from '@/components/app-shell/runs/run-readiness';
 import { ProcessSheetActions } from '@/components/app-shell/process/process-sheet';
 import { Thread } from '@/components/app-shell/thread/thread-arrivals';
 import type {
@@ -730,6 +731,14 @@ export function OrdersMockRun({
   const [calculated, setCalculated] = useState<CalculateProgress>();
   const [proposed, setProposed] = useState<ProposeProgress>();
   const [applied, setApplied] = useState<ApplyProgress>();
+  // A mock opens on its saved stage, which the steps report only once they
+  // have mounted: held unseen until they have, as a saved run is, so its
+  // folds and headings do not settle on screen.
+  const { restoring, finishRestoring } = useRunRestoration(kept.id);
+  const [rulesReady, setRulesReady] = useState(false);
+  const [calculateReady, setCalculateReady] = useState(false);
+  const [proposeReady, setProposeReady] = useState(false);
+  const [applyReady, setApplyReady] = useState(false);
   useWorkingFavicon(
     running || Boolean(rules?.running) || Boolean(proposed?.running),
   );
@@ -785,6 +794,19 @@ export function OrdersMockRun({
   const effectiveApplied: ApplyProgress | undefined = mockApplication
     ? { status: mockApplication.status }
     : applied;
+
+  // Each step drawn below has reported, which may draw the next.
+  const showsCalculate = rulesDone && readId !== null;
+  const showsPropose = canPropose && read !== undefined && pinned !== null;
+  const showsApply = allDecided && read !== undefined && pinned !== null;
+  if (
+    restoring &&
+    rulesReady &&
+    (!showsCalculate || calculateReady) &&
+    (!showsPropose || proposeReady) &&
+    (!showsApply || applyReady)
+  )
+    finishRestoring();
 
   const status = (step: ProcessStep): ProcessStep['status'] =>
     step.id === 'instructions'
@@ -939,6 +961,7 @@ export function OrdersMockRun({
         look="proposed"
         latestId={latest}
         resetKey={runKey}
+        restoring={restoring}
         announcement={ordersAnnouncement(
           latest,
           runStatus,
@@ -989,6 +1012,7 @@ export function OrdersMockRun({
                   version={version}
                   readId={readId}
                   onProgress={setRules}
+                  onReadyChange={restoring ? setRulesReady : undefined}
                   debug={debug}
                   mock
                 />
@@ -1001,6 +1025,8 @@ export function OrdersMockRun({
                   readId={readId}
                   calculatedOn={pinned}
                   onProgress={setCalculated}
+                  onReadyChange={restoring ? setCalculateReady : undefined}
+                  restoring={restoring}
                   debug={debug}
                   mock
                 />
@@ -1014,6 +1040,7 @@ export function OrdersMockRun({
                   rulebook={pinned}
                   run={{ process: 'brunch-orders', runId: kept.id }}
                   onProgress={setProposed}
+                  onReadyChange={restoring ? setProposeReady : undefined}
                   debug={debug}
                   mock
                 />
@@ -1025,6 +1052,7 @@ export function OrdersMockRun({
                   run={{ process: 'brunch-orders', runId: kept.id }}
                   decisions={proposed?.decisions ?? allDecisions}
                   onProgress={setApplied}
+                  onReadyChange={restoring ? setApplyReady : undefined}
                   mock={{
                     preview: {
                       kind: 'preview',

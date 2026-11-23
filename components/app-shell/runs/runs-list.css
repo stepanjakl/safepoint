@@ -549,7 +549,8 @@
     width: 100%;
     /* Two pixels less above and below than at the sides: the marks keep their
        corner on the horizontal inset, and the row loses four pixels. */
-    padding-block: calc(var(--spacing-sheet-inset) - 0.125rem);
+    /* --strip-soft: what the strip reaches over its rules' soft rows (below). */
+    padding-block: calc(var(--spacing-sheet-inset) - 0.125rem + var(--strip-soft, 0px));
     padding-inline: calc(var(--spacing-sheet-inset) + var(--sheet-bleed, 0px))
       calc(var(--spacing-sheet-inset) + var(--sheet-bleed-end, 0px));
     /* Lit, it covers a neighbouring rule's lit line (z-1); under the heads. */
@@ -964,9 +965,11 @@
       overflow-x: auto;
       overscroll-behavior-x: contain;
     }
+    /* One width for every item, on whole pixels, so the dividers between
+       them land on device pixels: sized to their text, a run's width was
+       fractional and its divider soft. Holds the widest item as written. */
     .sheet-list > li {
-      flex: 0 0 auto;
-      min-width: 11.5rem;
+      flex: 0 0 13.5rem;
     }
     .sheet-list > li + li,
     .sheet-list > li:has(> .sheet-break) + li {
@@ -1030,14 +1033,11 @@
     }
     /* A lit run's fill meets the solid rows above and below it, as a lit row
        meets the pane's ring: the list reaches over the head rule's soft row
-       and the strip's own, and each run pads out by as much, so nothing
-       moves (the padding is .sheet-row's plus that). */
+       and the strip's own, and each run pads out by as much (.sheet-row), so
+       nothing moves. */
     .sheet-strip > .sheet-list {
       --strip-soft: calc(var(--edge-hairline-depth) - var(--edge-hairline-solid));
       margin-block: calc(var(--strip-soft) * -1);
-    }
-    .sheet-strip > .sheet-list > li > .sheet-row {
-      padding-block: calc(var(--spacing-sheet-inset) - 0.125rem + var(--strip-soft));
     }
     /* The column's rule is the strip's floor, so no run draws one of its own. */
     .sheet-strip > .sheet-list > li:last-child {

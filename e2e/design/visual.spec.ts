@@ -159,7 +159,10 @@ async function capture(page: Page): Promise<Record<string, Recorded>> {
         'script',
         'style',
         '.shell-profile-row',
-        '[class*="walkthrough"]',
+        '.walkthrough-backdrop',
+        '.walkthrough-scrim',
+        '.walkthrough-halo',
+        '.walkthrough-hint',
         'next-route-announcer',
       ].join(', ');
       const pathOf = (element: Element) => {

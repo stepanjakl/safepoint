@@ -103,14 +103,19 @@ export function RequestBubble({
   const [ready, setReady] = useState(false);
   const [metrics, setMetrics] = useState<RevealMetrics>(EMPTY_METRICS);
 
-  // Measured by the observer alone: its first report comes after the page's
-  // own layout and before paint, so the first frame is right without forcing
-  // a layout in the middle of mounting a whole thread. It also sees the text
-  // change, so a new render of the same words measures nothing.
+  // Measured once as it mounts, so the first frame is folded: the observer's
+  // answer lands a task later, after an open frame has been painted and the
+  // step around it has taken that height as its own. The observer then sees
+  // the text change. A bubble mounted unlaid -- a restoring thread is
+  // display: none -- measures nothing until it has a box, and folds only
+  // after that first real measure, so it does not collapse on screen.
+  const [measured, setMeasured] = useState(false);
   useLayoutEffect(() => {
     const inner = innerRef.current;
     if (!inner) return;
     const measure = () => {
+      if (inner.getClientRects().length === 0) return;
+      setMeasured(true);
       const next = measureLineMetrics(inner, peekLines);
       setMetrics((prev) =>
         prev.closed === next.closed &&
@@ -121,14 +126,17 @@ export function RequestBubble({
           : next,
       );
     };
+    measure();
     const observer = new ResizeObserver(measure);
     observer.observe(inner);
-    const frame = requestAnimationFrame(() => setReady(true));
-    return () => {
-      cancelAnimationFrame(frame);
-      observer.disconnect();
-    };
+    return () => observer.disconnect();
   }, [peekLines]);
+  // Folds animate from the frame after the measure has been drawn.
+  useEffect(() => {
+    if (!measured || ready) return;
+    const frame = requestAnimationFrame(() => setReady(true));
+    return () => cancelAnimationFrame(frame);
+  }, [measured, ready]);
 
   useEffect(() => {
     if (!all) return;

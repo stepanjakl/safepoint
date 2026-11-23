@@ -375,6 +375,16 @@ the machine that checks it -- text metrics depend on installed fonts -- and on
 the server Playwright starts (`pnpm dev`, webpack): Turbopack polyfills
 `light-dark()` and rounds some mixes one unit apart. It is the one check CI
 (`.github/workflows/checks.yml`) does not run, tagged `@local-baseline`.
+After recording, run `pnpm check:visual` once more: a baseline that fails
+against itself has caught something random, not a regression. The capture
+already leaves out what differs by design -- the visitor's random name and
+orb, the walkthrough (it arrives on a timer), the route announcer, anything
+not rendered -- and captures until two reads agree; find the new source and
+leave it out the same way rather than recording again.
+
+A test that pins a geometry value asserts the token it comes from, never the
+number: `--edge-rule` is 1px or 0.5px by edge mode, and a literal `1px` in
+`process-settings.spec.ts` went stale when retina edges halved it.
 
 The Playwright `dark` project renders the light theme. The app's theme comes
 from a stored preference (`safepoint.dev.theme` in localStorage), not the

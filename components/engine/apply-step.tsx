@@ -137,6 +137,7 @@ export function ApplyStep({
   useEffect(() => {
     if (mocked) {
       report.current({ status: mockStatus });
+      onReadyChange?.(true);
       return;
     }
     askPreview();

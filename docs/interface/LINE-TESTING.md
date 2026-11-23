@@ -452,7 +452,9 @@ rule drawn as bands, its padding the rule's whole depth so it ends on a
 device pixel. A lit item's fill meets the solid rows above and below it --
 the list reaches over the head rule's soft row and the strip's own, and
 each item pads out by as much -- and the dividers between items reach both
-solid rows.
+solid rows. Every item is one width, 13.5rem, so the dividers land on whole
+pixels: sized to their text, runs came out at fractions (192.22px) and their
+dividers drew soft. `surface-edges.spec.ts` holds the lit item at 1000px.
 
 ### Pages and tests
 
@@ -592,6 +594,19 @@ What worked, in this order:
 | Half pixels that cancel out                                                   | Fixing one edge onto the grid moves another off (the narrow notch)                         | Change the geometry as a whole, never one length of it                                                                                                    |
 
 ## Pitfalls in measuring
+
+- **A layout has more than one width.** The specs read the pane at 1440px;
+  below 52rem the lists become strips and a rule that met nothing at full
+  width meets the pane's sides. Run `pnpm check:junctions -- --width
+1000,1312` after touching a sheet's layout.
+- **Safari's window is bounded by the screen** (1312 by about 850 here), and
+  `safaridriver` captures only the viewport: a specimen further down a page
+  is not in the capture. Scroll it into view first, or keep specimens near
+  the top of the page.
+- **A dev server that reloads interrupts a navigation.** Another session's
+  saves rebuild the page under a running check; `check:junctions` retries an
+  aborted navigation, and a check that fails on one should be run again
+  before it is believed.
 
 - **A check whose range starts past a junction cannot see it.** The pane's
   left side was read from two rows below the header, so the dot where the

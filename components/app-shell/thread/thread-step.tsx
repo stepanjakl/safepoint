@@ -473,6 +473,12 @@ export function ThreadStep({
         !clip ||
         step?.dataset.open === undefined ||
         step.dataset.entering !== undefined ||
+        // Settling while its page is still unseen (a restored run before it
+        // fades in): there is nothing to ease from.
+        !fold.checkVisibility({
+          opacityProperty: true,
+          visibilityProperty: true,
+        }) ||
         fold.getAnimations().length > 0 ||
         // A fold or SmoothHeight inside the body eases itself; following it
         // frame by frame would restart this ease each frame and clip content

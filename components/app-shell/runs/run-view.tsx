@@ -19,9 +19,8 @@ import { useSwap } from '@/components/ui/swap';
 import { Loader } from '@/components/ui/loader';
 import { useLoader } from '@/components/ui/working-mark';
 
-// The previous run stays up meanwhile, so a wait is said later than a panel's:
-// past most first visits, which land within this, so the loader rarely holds
-// a run back for its minimum.
+// A wait is said later than a panel's: past most first visits, which land
+// within this, so the loader rarely holds a run back for its minimum.
 const RUN_LOADER_DELAY_MS = 600;
 import { KeyHint } from '@/components/ui/key-hint';
 import {
@@ -83,13 +82,14 @@ export function RunView({
   const preparing =
     (waitForThread && readiness[target] !== true) ||
     Boolean(waiting && !waiting.failed);
+  // The old run leaves as soon as another is chosen; the new one waits unseen
+  // until it can be drawn in full.
   const { shown, layer } = useSwap(
     target,
     () => 'fade',
     true,
     undefined,
     (current) => readiness[current] !== false,
-    (current) => current === NONE || !preparing,
   );
   const reportReady = useCallback((id: string, ready: boolean | undefined) => {
     setReadiness((previous) => {
@@ -111,11 +111,8 @@ export function RunView({
   const building = useDeferredValue(target);
   const staged =
     shown !== NONE && shown !== target && waitForThread && building === target;
-  // A wait for the next run that outlasts the loader's delay is said: the old
-  // run fades and the loader takes its place until the new one is ready. A
-  // shorter one keeps the old run up, so a quick switch never flashes.
-  // Whether the previous page is still up or already gone -- from the empty
-  // page the swap is immediate, and the new thread waits unseen.
+  // A wait for the next run that outlasts the loader's delay is said: the
+  // loader stands in the emptied column until the new run is ready.
   const loading = useLoader(preparing, RUN_LOADER_DELAY_MS);
   const waitShown = loading.phase === 'shown' || loading.phase === 'slow';
 

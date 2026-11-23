@@ -69,8 +69,6 @@ export function useSwap<K extends string>(
   // False holds the new content unseen once it is mounted, for a caller whose
   // replacement is not ready to be read yet (run-view.tsx).
   canShow: boolean | ((shown: K) => boolean) = true,
-  // A caller can hold the outgoing content until its replacement is ready.
-  canSwap: (shown: K) => boolean = () => true,
 ) {
   const reduceMotion = useReducedMotion();
   // The key on screen, whether it is fading out, and how it came in.
@@ -78,12 +76,11 @@ export function useSwap<K extends string>(
   const [shown, setShown] = useState(target);
   const [leaving, setLeaving] = useState<SwapMotion | 'done' | null>(null);
   const [entering, setEntering] = useState<SwapMotion | null>(null);
-  const ready = canSwap(shown);
   if (!animate || reduceMotion) {
-    if (shown !== target && ready) setShown(target);
+    if (shown !== target) setShown(target);
     if (leaving !== null) setLeaving(null);
     if (entering !== null) setEntering(null);
-  } else if (leaving !== null && (shown === target || !ready)) {
+  } else if (leaving !== null && shown === target) {
     // A quick return should reverse the current fade, not blank the same page.
     setLeaving(null);
     setEntering(null);
@@ -91,7 +88,7 @@ export function useSwap<K extends string>(
     setEntering(motionBetween(shown, target));
     setShown(target);
     setLeaving(null);
-  } else if (leaving === null && shown !== target && ready) {
+  } else if (leaving === null && shown !== target) {
     setLeaving(motionBetween(shown, target));
   }
 

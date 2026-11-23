@@ -170,7 +170,8 @@ export function CalculateStep({
     if (answer?.kind === 'calculation')
       report.current(progressOf(answer.calculation, answer.check));
   }, [answer]);
-  useStepReady(settledOnce(calculated), onReadyChange);
+  // A mock asks nothing: what it was given is all it will hold.
+  useStepReady(mock || settledOnce(calculated), onReadyChange);
   const [model, setModel] = useState<DraftingModel>(DRAFTING_MODELS[0]!);
   const quotaModel = modelPlan
     ? modelsFor({ plan: modelPlan }, [GEMINI_FIND])[0]
