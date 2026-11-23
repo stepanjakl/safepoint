@@ -1,0 +1,20 @@
+/* /workbench/soft-row-styles: the junction panes (edge-junctions.css) in both
+   soft row styles. */
+@layer components {
+  .soft-row-styles {
+    display: grid;
+    gap: 32px;
+    padding: 32px 24px 64px;
+  }
+  .soft-row-styles-intro {
+    max-inline-size: 48rem;
+  }
+  .soft-row-styles-specimen {
+    display: grid;
+    gap: 16px;
+  }
+  .soft-row-styles-figure {
+    display: grid;
+    gap: 8px;
+  }
+}

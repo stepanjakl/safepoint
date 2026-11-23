@@ -146,8 +146,9 @@
     /* The sheet frame draws this arc's highlight, under the sheet, so a head's
        band beneath the corner covers it as it covers the side's. */
     --notch-corner-highlight: transparent;
-    margin-inline: -1px;
-    padding-inline: 1px;
+    --header-bleed: 1px;
+    margin-inline: calc(var(--header-bleed) * -1);
+    padding-inline: var(--header-bleed);
     padding-block-end: max(0px, var(--edge-hairline) - var(--structural-divider-border));
     border-bottom: var(--structural-divider-border) solid CanvasText;
     /* The top edge of the sheet below, drawn as the pane's sides are: solid
@@ -191,6 +192,31 @@
 }
 
 @layer components {
+  /* Beside the sheet, the soft row is laid on the highlight the frame paints
+     under it (process-sheet.css), so a column's divider runs up to the solid
+     row through it. Bands, not an inset shadow: the solid row is not the last.
+     The soft row starts past the side's soft column, or the two double there. */
+  @media (width >= 56.25rem) and (forced-colors: none) {
+    .process-header {
+      --header-rule-soft: calc(var(--edge-hairline-depth) - var(--edge-hairline-solid));
+      --header-rule-from: max(
+        0px,
+        var(--edge-ring-depth) + var(--header-bleed) - var(--spacing-pane-inset)
+      );
+      --header-rule-soft-color: color-mix(
+        in srgb,
+        var(--notch-edge) var(--edge-hairline-cover),
+        transparent
+      );
+      box-shadow: none;
+      background:
+        linear-gradient(var(--notch-edge), var(--notch-edge)) 0
+          calc(100% - var(--header-rule-soft)) / 100% var(--edge-hairline-solid) no-repeat,
+        linear-gradient(var(--header-rule-soft-color), var(--header-rule-soft-color))
+          var(--header-rule-from) bottom / 100% var(--header-rule-soft) no-repeat;
+    }
+  }
+
   @media (width < 56.25rem) {
     :is(.process-header, .shell-menu-notch) {
       --slant-height: 2.25rem;

@@ -189,7 +189,7 @@ function NotchSpecimen({
           </header>
           {/* The sheet's frame: the lit line under the rule and the arc round
               the turn, mirrored beside a left notch (edge-lab.css). */}
-          <div className="process-sheet-frame rounded-b-shell-inner rounded-tr-shell-inner" />
+          <div className="process-sheet-frame rounded-b-shell-inner rounded-tr-shell-inner clip-past-pane-highlight" />
         </div>
       </div>
     </div>

@@ -29,6 +29,9 @@
     position: relative;
     @media (width >= 56.25rem) {
       background: var(--lit-line);
+      /* The highlight under the header rule's soft row, above this box. */
+      box-shadow: 0 calc(var(--edge-hairline-solid) - var(--edge-hairline-depth)) 0 0
+        var(--sp-raised-edge);
     }
   }
   /* The section heads cover the highlight along the top, including the arc. */
@@ -37,14 +40,16 @@
       .process-sheet-frame::before {
         @apply notch-highlight-arc;
         content: '';
-        /* From the rule's outer row, so the box stays on device pixels (WebKit
-           shifts the clip of a box it snaps); the rule and the notch's line
-           cover the band's first edge-width, as the pane's ring covers its sheen. */
-        --notch-edge-width: 0px;
-        --notch-arc-width: calc(var(--spacing-control-edge) + var(--spacing-control-highlight));
+        /* From the ring's whole depth in, so the box stays on device pixels
+           (WebKit shifts the clip of a box it snaps) and the band never lies on
+           the ring's soft row, which an opaque soft row (geometry.css) shows. */
+        --notch-edge-width: var(--edge-ring-depth);
+        --notch-arc-width: calc(
+          var(--spacing-control-edge) + var(--spacing-control-highlight) - var(--edge-ring-depth)
+        );
         --notch-side-tail: var(--edge-hairline-depth);
         position: absolute;
-        top: calc(var(--edge-hairline-depth) * -1);
+        top: calc(var(--edge-ring-depth) - var(--edge-hairline-depth));
         right: calc(var(--spacing-pane-inset) * -1);
         z-index: -1;
         background: var(--sp-raised-edge);
@@ -146,20 +151,54 @@
       z-index: 2;
       grid-row: 1 / 2;
       grid-column: 1 / 2;
-      inset-block: var(--spacing-sheet-head) calc(var(--spacing-control-highlight) * -1);
+      /* Down to the ring's soft row, not over it (geometry.css, soft rows). */
+      inset-block: var(--spacing-sheet-head)
+        calc(var(--edge-ring-depth) - var(--spacing-pane-inset));
       inset-inline-end: 0;
       width: 1px;
-      box-shadow: var(--shadow-separator-right-strong);
+      box-shadow:
+        calc(var(--ring-pane-solid) - var(--edge-hairline-depth)) 0 0 var(--sp-raised-edge),
+        calc(var(--ring-pane-soft) - var(--edge-hairline-depth)) 0 0
+          color-mix(in srgb, var(--sp-raised-edge) var(--ring-pane-cover), transparent);
       pointer-events: none;
     }
   }
   .sheet-column-edge::after,
   .process-runs::before,
   .process-panels[data-tab='instructions']::before {
+    /* With its lit line, one line drawn as the pane's edge is: the solid
+       column outside (left), the soft column mixed with the sheen, then the
+       sheen beside it (the ring and sheen split, geometry.css). */
     --column-divider:
-      inset calc(var(--edge-hairline-solid) * -1) 0 0 var(--sp-raised-ring),
-      inset calc(var(--edge-hairline-soft) * -1) 0 0
-        color-mix(in srgb, var(--sp-raised-ring) var(--edge-hairline-cover), transparent);
+      inset var(--edge-hairline-solid) 0 0 var(--sp-raised-ring),
+      inset calc(var(--edge-hairline-solid) - var(--edge-hairline-depth)) 0 0
+        color-mix(in srgb, var(--sp-raised-ring) var(--edge-hairline-cover), var(--sp-raised-edge));
+    --column-lit: calc(var(--ring-pane-solid) - var(--edge-hairline-depth));
+    --column-lit-soft: calc(var(--ring-pane-soft) - var(--edge-hairline-depth));
+    /* Up through the header rule's soft row to its solid one (process-header.css). */
+    --divider-from-rule: calc(var(--edge-hairline-solid) - var(--edge-hairline-depth));
+    /* Down through the ring's soft row to its solid one, on whole pixels. */
+    --divider-to-ring: calc(var(--edge-ring-solid) - var(--spacing-pane-inset));
+    /* The lit line and the soft column beside it, drawn by the same box. A
+       clip ends both above the ring's soft row; the solid column runs on. */
+    --divider-lit-pull: calc(var(--edge-ring-depth) - var(--edge-ring-solid));
+    /* Its soft column starts below the rule's soft row, which lies over it:
+       two soft rows on one pixel double (LINE-TESTING.md). */
+    --divider-soft-from: calc(var(--edge-hairline-depth) - var(--edge-hairline-solid));
+    --column-divider-lit:
+      var(--column-lit) 0 0 var(--sp-raised-edge),
+      var(--column-lit-soft) 0 0
+        color-mix(in srgb, var(--sp-raised-edge) var(--ring-pane-cover), transparent);
+    --column-divider-clip: polygon(
+      0 -1px,
+      var(--edge-hairline-solid) -1px,
+      var(--edge-hairline-solid) var(--divider-soft-from),
+      calc(100% + 2px) var(--divider-soft-from),
+      calc(100% + 2px) calc(100% - var(--divider-lit-pull)),
+      var(--edge-hairline-solid) calc(100% - var(--divider-lit-pull)),
+      var(--edge-hairline-solid) 100%,
+      0 100%
+    );
     z-index: 4;
     width: 1px;
     border-right: var(--structural-divider-border) solid CanvasText;
@@ -176,9 +215,10 @@
       position: absolute;
       grid-row: 1 / 2;
       grid-column: 1 / 2;
-      inset-block: 0 calc(var(--spacing-control-highlight) * -1);
+      inset-block: var(--divider-from-rule) var(--divider-to-ring);
       inset-inline-end: 0;
-      box-shadow: var(--column-divider), var(--shadow-separator-right-strong);
+      box-shadow: var(--column-divider), var(--column-divider-lit);
+      clip-path: var(--column-divider-clip);
       pointer-events: none;
     }
   }
@@ -200,8 +240,27 @@
       position: absolute;
       grid-row: 1 / 2;
       grid-column: 1 / 2;
-      inset-block: 0 calc(var(--spacing-control-highlight) * -1);
+      /* The heads on both sides make one rule: its solid row runs through
+         the soft column, so the clip opens there onto the head beneath. */
+      --divider-rule-row: calc(
+        var(--spacing-sheet-head) - var(--edge-hairline-depth) - var(--divider-from-rule)
+      );
+      inset-block: var(--divider-from-rule) var(--divider-to-ring);
       inset-inline-end: 0;
+      clip-path: polygon(
+        0 -1px,
+        var(--edge-hairline-solid) -1px,
+        var(--edge-hairline-solid) var(--divider-soft-from),
+        100% var(--divider-soft-from),
+        100% var(--divider-rule-row),
+        var(--edge-hairline-solid) var(--divider-rule-row),
+        var(--edge-hairline-solid) calc(var(--divider-rule-row) + var(--edge-hairline-solid)),
+        100% calc(var(--divider-rule-row) + var(--edge-hairline-solid)),
+        100% calc(100% - var(--divider-lit-pull)),
+        var(--edge-hairline-solid) calc(100% - var(--divider-lit-pull)),
+        var(--edge-hairline-solid) 100%,
+        0 100%
+      );
       pointer-events: none;
     }
   }

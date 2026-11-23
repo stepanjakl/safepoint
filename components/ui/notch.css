@@ -141,6 +141,10 @@
     --n-w: 100cqw;
     --n-e: var(--notch-edge-width);
     --n-f: var(--notch-floor);
+    /* Every layer starts at least this far back along the pane's top edge,
+       where it repeats the pane's own edge, on a device pixel counted from the
+       pane's side (on the grid), so no pixel there is partly covered. */
+    --n-lead: 1px;
     /* Obtuse (90deg + angle, pane's side), so it scales like a slant's obtuse
        corners -- see .slant-shape -- by its own balance. */
     --n-rt: calc(var(--notch-bend-top) / pow(var(--n-m), var(--notch-bend-balance, 0)));
@@ -174,10 +178,19 @@
     --n-dt: calc((var(--n-rt) - var(--n-k)) * var(--n-m));
     --n-db: calc((var(--n-rb) + var(--n-k)) * var(--n-m));
     --n-fy: calc(var(--n-h) - var(--n-f) + var(--n-k));
-    /* Down: from the top edge, round the bend, down the slope, round the
+    /* Down: along the top edge, round the bend, down the slope, round the
        foot, along the floor. */
-    --n-start: calc(var(--n-x) + var(--n-v1) - var(--n-dt)) var(--n-k);
+    --n-lead-x: calc(
+      var(--n-right) -
+        round(
+          up,
+          var(--n-right) - var(--n-x) - var(--n-v1) + var(--n-dt) + var(--n-lead),
+          var(--dp)
+        )
+    );
+    --n-start: var(--n-lead-x) var(--n-k);
     --n-down:
+      line to calc(var(--n-x) + var(--n-v1) - var(--n-dt)) var(--n-k),
       arc to calc(var(--n-x) + var(--n-v1) + var(--n-dt) * var(--n-s))
         calc(var(--n-k) + var(--n-dt) * var(--n-c)) of calc(var(--n-rt) - var(--n-k)) cw,
       line to calc(var(--n-x) + var(--n-v2) - var(--n-db) * var(--n-s))
@@ -194,7 +207,8 @@
       line to calc(var(--n-x) + var(--n-v1) + var(--n-dt) * var(--n-s))
         calc(var(--n-k) + var(--n-dt) * var(--n-c)),
       arc to calc(var(--n-x) + var(--n-v1) - var(--n-dt)) var(--n-k) of
-        calc(var(--n-rt) - var(--n-k)) ccw;
+        calc(var(--n-rt) - var(--n-k)) ccw,
+      line to var(--n-lead-x) var(--n-k);
   }
   .notch-shape {
     --n-start-0: var(--n-start);
@@ -271,10 +285,26 @@
       close
     );
   }
-  /* Its tail lies on the arc's highlight tail, which covers the side's own
-     soft row there. */
+  /* Not over the pane side's own soft row, which reaches up into the turn
+     and is right over whatever lies beneath, a band or the sheen. Nor over
+     the header rule's solid row, which the foot crosses: two bands, above and
+     below it, so an opaque soft row (geometry.css) leaves the rule whole. */
   .notch-edge-soft {
-    background: color-mix(in srgb, var(--notch-edge-color) var(--notch-edge-cover), transparent);
+    --n-soft-color: color-mix(
+      in srgb,
+      var(--notch-edge-color) var(--notch-edge-cover),
+      var(--soft-row-under, transparent)
+    );
+    background:
+      linear-gradient(var(--n-soft-color), var(--n-soft-color)) top / 100%
+        calc(100% - var(--notch-corner) - var(--n-f)) no-repeat,
+      linear-gradient(var(--n-soft-color), var(--n-soft-color)) bottom / 100%
+        calc(var(--notch-corner) + var(--n-f) - var(--notch-edge-solid)) no-repeat;
+    mask-image: linear-gradient(
+      to left,
+      transparent calc(1px + var(--notch-edge-soft)),
+      #000 calc(1px + var(--notch-edge-soft))
+    );
   }
   /* Under the line, out to offset e + highlight, round the turn too. Below the
      rule the sheet draws that band, so the box stops at the rule. */

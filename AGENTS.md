@@ -100,6 +100,16 @@ so confirm there once, with the owner's say-so, and quit Safari first:
 [`docs/interface/LINE-TESTING.md`](docs/interface/LINE-TESTING.md) explains
 both tools, the method, the causes found so far and the open work.
 
+Where a surface's edge meets another line -- the header's rule, the notch, a
+column divider, a section rule, a band or a lit row against the pane's side
+or a card's -- run `pnpm exec playwright test e2e/shell/edge-junctions.spec.ts
+e2e/shell/surface-edges.spec.ts`. Every line must join the ring it reaches
+without crossing it; `e2e/support/edge-pixels.ts` checks that on any element. It reads
+`/workbench/edge-junctions`, the app's pane built from its own parts, and
+fails on a seam, a broken rule, a divider short of the rule or a soft row
+doubled or tinted. LINE-TESTING.md → "Where the edge meets other lines"
+explains how the edge is drawn and why.
+
 For a visible gap, overdraw, or thickness change at a divider junction, use the
 [2× painted-junction checks](docs/interface/STYLING-SYSTEM.md#checking-painted-divider-junctions)
 alongside the edge audit.

@@ -1,0 +1,123 @@
+/* /workbench/section-rules: rule-below and rule-above three ways. The
+   variants override the utilities on this page only. */
+@layer components {
+  .section-rules {
+    display: grid;
+    align-content: start;
+    gap: 24px;
+    padding: 32px 24px 64px;
+  }
+  .section-rules-intro {
+    max-inline-size: 48rem;
+  }
+  /* Captions share a row, so the cards start level for comparison. */
+  .section-rules-options {
+    display: grid;
+    /* Whole pixels, so each card's ring lies on device pixels and the pixel
+       tests (e2e/shell/surface-edges.spec.ts) read it cleanly. */
+    grid-template-columns: repeat(auto-fill, 22rem);
+    grid-auto-rows: auto;
+    gap: 12px 32px;
+    max-inline-size: 72rem;
+  }
+  .section-rules-option {
+    display: grid;
+    grid-row: span 2;
+    grid-template-rows: subgrid;
+  }
+  .section-rules-card {
+    border-radius: var(--radius-shell);
+  }
+  .section-rules-junctions {
+    display: grid;
+    gap: 40px;
+  }
+  .section-rules-junction {
+    display: grid;
+    gap: 12px;
+  }
+  .section-rules-junction figcaption {
+    max-inline-size: 48rem;
+  }
+}
+
+/* Unlayered: the utilities they override sit in the utilities layer. */
+/* As the pane's edge: a 0.75px rule split once with its sheen. The solid
+   row is the border; the soft row, mixed with the sheen, and the sheen lie
+   beyond it. */
+.section-rules-card[data-rule='pane'] {
+  --section-rule-soft: color-mix(
+    in srgb,
+    var(--sp-ground-ring) var(--edge-hairline-cover),
+    var(--sp-ground-edge)
+  );
+  --section-rule-lit-soft: color-mix(
+    in srgb,
+    var(--sp-ground-edge) var(--ring-pane-cover),
+    transparent
+  );
+}
+.section-rules-card[data-rule='pane'] .rule-below {
+  border-bottom-width: var(--edge-hairline-solid);
+  box-shadow:
+    0 calc(var(--edge-hairline-depth) - var(--edge-hairline-solid)) 0 var(--section-rule-soft),
+    0 calc(var(--ring-pane-solid) - var(--edge-hairline-solid)) 0 var(--sp-ground-edge),
+    0 calc(var(--ring-pane-soft) - var(--edge-hairline-solid)) 0 var(--section-rule-lit-soft);
+}
+.section-rules-card[data-rule='pane'] .rule-above {
+  border-top-width: var(--edge-hairline-solid);
+  box-shadow:
+    0 calc(var(--edge-hairline-solid) - var(--edge-hairline-depth)) 0 var(--section-rule-soft),
+    0 calc(var(--edge-hairline-solid) - var(--ring-pane-solid)) 0 var(--sp-ground-edge),
+    0 calc(var(--edge-hairline-solid) - var(--ring-pane-soft)) 0 var(--section-rule-lit-soft);
+}
+
+/* The two not chosen draw their own lines in place of the utility's layer. */
+.section-rules-card:is([data-rule='pane'], [data-rule='before']) .rule-below::after,
+.section-rules-card:is([data-rule='pane'], [data-rule='before']) .rule-above::before {
+  display: none;
+}
+.section-rules-card:is([data-rule='pane'], [data-rule='before']) .rule-below {
+  border-bottom-color: var(--sp-ground-ring);
+}
+.section-rules-card:is([data-rule='pane'], [data-rule='before']) .rule-above {
+  border-top-color: var(--sp-ground-ring);
+}
+
+/* As the app drew them until November 2026: the sheen as two lines of its
+   own, across the ring. */
+.section-rules-card[data-rule='before'] .rule-below {
+  box-shadow:
+    0 var(--highlight-pane-solid) 0 var(--sp-ground-edge),
+    0 var(--highlight-pane-soft) 0
+      color-mix(in srgb, var(--sp-ground-edge) var(--highlight-pane-cover), transparent);
+}
+.section-rules-card[data-rule='before'] .rule-above {
+  box-shadow:
+    0 calc(var(--highlight-pane-solid) * -1) 0 var(--sp-ground-edge),
+    0 calc(var(--highlight-pane-soft) * -1) 0
+      color-mix(in srgb, var(--sp-ground-edge) var(--highlight-pane-cover), transparent);
+}
+
+/* Divider meets band rule: as the app drew it before the fixes, and with
+   no highlight in the corner. The fixed one is the app's own. */
+.section-rules-junction[data-junction='now'] .process-panels[data-tab='instructions']::before {
+  clip-path: none;
+}
+.section-rules-junction[data-junction='now'] .sheet-head {
+  box-shadow:
+    inset 0 calc(var(--edge-hairline-solid) - var(--edge-hairline-depth)) 0
+      color-mix(
+        in srgb,
+        var(--sp-raised-ring) var(--edge-hairline-cover),
+        var(--sheet-head-highlight)
+      ),
+    inset 0 calc(var(--edge-hairline-depth) * -1) 0 var(--sp-raised-ring);
+}
+.section-rules-junction[data-junction='now'] .sheet-head::before {
+  display: none;
+}
+.section-rules-junction[data-junction='plain'] .sheet-head::after,
+.section-rules-junction[data-junction='plain'] .process-panels[data-tab='instructions']::after {
+  display: none;
+}

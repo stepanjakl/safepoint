@@ -493,26 +493,58 @@
 }
 
 /* A header's and a footer's divider, in the edge of whatever surface holds
-   them: its ring, lit on the body's side -- below a header, above a footer. */
+   them: its ring, lit on the body's side -- below a header, above a footer.
+   The rule is --section-rule-width, the lit line one whole row of sheen
+   (--highlight-pane-solid). Both meet the surface's ring rather than cross
+   it: the rule ends at the ring's solid row, which it joins, the lit line at
+   its soft row. A border or a shadow cannot stop short of its box's ends, so
+   one layer paints both, each band inset by its own amount; the border keeps
+   its place, unpainted. Forced colours keep the plain border. */
 /* Over what scrolls beneath the lit line (z-1); a lit row (z-2) and a sticky
    band (z-3) still cover it. */
 @utility rule-below {
   position: relative;
   z-index: 1;
   border-bottom: var(--section-rule-width) solid var(--sp-ground-ring);
-  box-shadow:
-    0 var(--highlight-pane-solid) 0 var(--sp-ground-edge),
-    0 var(--highlight-pane-soft) 0
-      color-mix(in srgb, var(--sp-ground-edge) var(--highlight-pane-cover), transparent);
+  @media (forced-colors: none) {
+    border-bottom-color: transparent;
+    &::after {
+      content: '';
+      position: absolute;
+      inset-inline: 0;
+      inset-block-end: calc((var(--section-rule-width) + var(--highlight-pane-solid)) * -1);
+      block-size: calc(var(--section-rule-width) + var(--highlight-pane-solid));
+      background:
+        linear-gradient(var(--sp-ground-ring), var(--sp-ground-ring)) var(--edge-ring-solid) 0 /
+          calc(100% - 2 * var(--edge-ring-solid)) var(--section-rule-width) no-repeat,
+        linear-gradient(var(--sp-ground-edge), var(--sp-ground-edge)) var(--edge-ring-depth)
+          var(--section-rule-width) / calc(100% - 2 * var(--edge-ring-depth))
+          var(--highlight-pane-solid) no-repeat;
+      pointer-events: none;
+    }
+  }
 }
 @utility rule-above {
   position: relative;
   z-index: 1;
   border-top: var(--section-rule-width) solid var(--sp-ground-ring);
-  box-shadow:
-    0 calc(var(--highlight-pane-solid) * -1) 0 var(--sp-ground-edge),
-    0 calc(var(--highlight-pane-soft) * -1) 0
-      color-mix(in srgb, var(--sp-ground-edge) var(--highlight-pane-cover), transparent);
+  @media (forced-colors: none) {
+    border-top-color: transparent;
+    &::before {
+      content: '';
+      position: absolute;
+      inset-inline: 0;
+      inset-block-start: calc((var(--section-rule-width) + var(--highlight-pane-solid)) * -1);
+      block-size: calc(var(--section-rule-width) + var(--highlight-pane-solid));
+      background:
+        linear-gradient(var(--sp-ground-edge), var(--sp-ground-edge)) var(--edge-ring-depth) 0 /
+          calc(100% - 2 * var(--edge-ring-depth)) var(--highlight-pane-solid) no-repeat,
+        linear-gradient(var(--sp-ground-ring), var(--sp-ground-ring)) var(--edge-ring-solid)
+          var(--highlight-pane-solid) / calc(100% - 2 * var(--edge-ring-solid))
+          var(--section-rule-width) no-repeat;
+      pointer-events: none;
+    }
+  }
 }
 
 @utility surface-recessed {

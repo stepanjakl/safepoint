@@ -146,6 +146,9 @@
   /* How deep a hairline paints, in whole device pixels: a rule's solid and
      soft rows together. What lies under a rule starts this far down. */
   --edge-hairline-depth: round(up, var(--edge-hairline), var(--dp));
+  /* The same for a pane's ring: a band stops this far in from the pane's
+     side, so the ring's soft row lies on the sheen, as everywhere else. */
+  --edge-ring-depth: round(up, var(--edge-ring), var(--dp));
   /* A ring with a pane's sheen inside it: where the sheen ends. */
   --ring-pane: calc(var(--edge-ring) + var(--highlight-pane));
   --ring-pane-solid: round(down, var(--ring-pane), var(--dp));
@@ -160,6 +163,21 @@
   --control-highlight-solid: var(--highlight-pane-solid);
   --control-highlight-soft: var(--highlight-pane-soft);
   --control-highlight-cover: var(--highlight-pane-cover);
+}
+
+/* How a soft row is drawn (design-preferences.ts, SOFT_ROWS; LINE-TESTING.md →
+   "Where the edge meets other lines"). Translucent: the ring colour at its
+   cover over whatever lies beneath, the pane's in the ring overlay over the
+   sheet. Opaque: one shade, ring mixed with the sheen, the pane's in its face
+   under the sheet, so the sheet's rules paint over it to the solid row. Set on
+   <html>, or on a lab specimen's wrapper; the nearest wins. */
+[data-soft-rows='translucent'] {
+  --soft-row-under: transparent;
+  --soft-row-in-face: 0;
+}
+[data-soft-rows='opaque'] {
+  --soft-row-under: var(--sp-raised-edge);
+  --soft-row-in-face: 1;
 }
 
 /* Named for what moves, not for how long. */

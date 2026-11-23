@@ -1,0 +1,40 @@
+/* /workbench/edge-junctions: the app's pane in small, for
+   e2e/shell/edge-junctions.spec.ts. Whole-pixel boxes, so every line lands
+   where the app's would. */
+@layer components {
+  .edge-junctions {
+    display: grid;
+    gap: 32px;
+    padding: 24px;
+  }
+  .edge-junctions-pane {
+    /* Wide enough for the sheet's desktop layout: past 52rem its list is a column. */
+    inline-size: 900px;
+    block-size: 280px;
+  }
+  .edge-junctions-inset {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    block-size: 100%;
+  }
+  .edge-junctions-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .edge-junctions-slant {
+    inline-size: 96px;
+  }
+  .edge-junctions-columns {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr);
+    min-block-size: 0;
+  }
+  .edge-junctions-column {
+    min-inline-size: 0;
+  }
+  .edge-junctions-row {
+    block-size: 36px;
+  }
+  .edge-junctions-break {
+    block-size: 24px;
+  }
+}

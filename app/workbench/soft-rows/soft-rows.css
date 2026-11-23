@@ -1,0 +1,116 @@
+/* /workbench/soft-rows: the pane's edge, one square per device pixel. Every
+   colour is the mix the browser would paint, from the theme's own roles. */
+@layer components {
+  .soft-rows {
+    --soft-ring: var(--sp-raised-ring);
+    --soft-highlight: var(--sp-raised-edge);
+    --soft-rule: var(--sp-raised-ring);
+    --soft-band: var(--sp-surface-band);
+    --soft-face: var(--sp-surface-primary);
+    /* Half the ring over what lies beneath: the soft row of a 0.75px line on
+       a 2x screen. */
+    --soft-over: 50%;
+    display: grid;
+    gap: 24px;
+    max-inline-size: 64rem;
+    padding: 32px 24px 64px;
+  }
+  .soft-rows-intro {
+    max-inline-size: 48rem;
+  }
+  .soft-rows-legend {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+    gap: 8px 24px;
+  }
+  .soft-rows-legend li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .soft-rows-legend .soft-rows-pixel {
+    outline: 1px solid var(--sp-raised-ring);
+  }
+  .soft-rows-table {
+    display: grid;
+    grid-template-columns: minmax(12rem, 1fr) minmax(0, 1.2fr) minmax(0, 1.2fr);
+    gap: 20px 32px;
+    align-items: start;
+  }
+  .soft-rows-case {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    padding-block-start: 20px;
+    border-block-start: 1px solid var(--sp-raised-ring);
+  }
+  .soft-rows-case p {
+    margin-block-start: 4px;
+  }
+  /* Held to their content: the case row is as tall as its longest caption,
+     and a stretched grid would open gaps between the pixel rows. */
+  .soft-rows-figure {
+    display: grid;
+    align-content: start;
+    gap: 10px;
+  }
+  .soft-rows-figure figcaption {
+    color: var(--sp-text-muted);
+  }
+  .soft-rows-figure figcaption[data-ok] {
+    color: var(--sp-text-primary);
+  }
+  .soft-rows-grid {
+    display: grid;
+    inline-size: max-content;
+    outline: 1px solid var(--sp-raised-ring);
+  }
+  .soft-rows-row {
+    display: flex;
+  }
+  .soft-rows-pixel {
+    display: block;
+    flex: none;
+    inline-size: 22px;
+    block-size: 22px;
+  }
+  .soft-rows-pixel[data-pixel='canvas'] {
+    background: var(--sp-canvas);
+  }
+  .soft-rows-pixel[data-pixel='solid'] {
+    background: var(--soft-ring);
+  }
+  .soft-rows-pixel[data-pixel='highlight'] {
+    background: var(--soft-highlight);
+  }
+  .soft-rows-pixel[data-pixel='face'] {
+    background: var(--soft-face);
+  }
+  .soft-rows-pixel[data-pixel='rule'] {
+    background: var(--soft-rule);
+  }
+  .soft-rows-pixel[data-pixel='band'] {
+    background: var(--soft-band);
+  }
+  .soft-rows-pixel[data-pixel='soft-highlight'] {
+    background: color-mix(in srgb, var(--soft-ring) var(--soft-over), var(--soft-highlight));
+  }
+  .soft-rows-pixel[data-pixel='soft-rule'] {
+    background: color-mix(in srgb, var(--soft-ring) var(--soft-over), var(--soft-rule));
+  }
+  .soft-rows-pixel[data-pixel='soft-band'] {
+    background: color-mix(in srgb, var(--soft-ring) var(--soft-over), var(--soft-band));
+  }
+  /* A soft row over another soft row over the highlight: doubled. */
+  .soft-rows-pixel[data-pixel='soft-soft'] {
+    background: color-mix(
+      in srgb,
+      var(--soft-ring) var(--soft-over),
+      color-mix(in srgb, var(--soft-ring) var(--soft-over), var(--soft-highlight))
+    );
+  }
+  /* The same shade wherever it lies: ring mixed with highlight. */
+  .soft-rows-pixel[data-pixel='opaque'] {
+    background: color-mix(in srgb, var(--soft-ring) var(--soft-over), var(--soft-highlight));
+  }
+}

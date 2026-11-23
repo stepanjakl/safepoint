@@ -100,9 +100,16 @@
 }
 
 /* A column against the pane's side runs over its highlight to the ring, so
-   its rules, bands and lit rows reach it; text pads itself back. */
+   its rules reach it; text pads itself back. Its bands paint --band-start
+   short (sheet-band), clear of the ring's soft row; its rows' fills reach the
+   solid row (--row-band-start, .sheet-row). */
 @utility sheet-bleed {
   --sheet-bleed: 1px;
+  --band-start: max(0px, var(--edge-ring-depth) + var(--sheet-bleed) - var(--spacing-pane-inset));
+  --row-band-start: max(
+    0px,
+    var(--edge-ring-solid) + var(--sheet-bleed) - var(--spacing-pane-inset)
+  );
   margin-inline-start: calc(var(--sheet-bleed) * -1);
 }
 /* And over the highlight below, so rows scrolled to the bottom reach the ring. */
@@ -120,6 +127,11 @@
    radius, or its band paints over the ring. */
 @utility sheet-bleed-end {
   --sheet-bleed-end: 1px;
+  --band-end: max(0px, var(--edge-ring-depth) + var(--sheet-bleed-end) - var(--spacing-pane-inset));
+  --row-band-end: max(
+    0px,
+    var(--edge-ring-solid) + var(--sheet-bleed-end) - var(--spacing-pane-inset)
+  );
   margin-inline-end: calc(var(--sheet-bleed-end) * -1);
   & > .sheet-head {
     border-start-end-radius: calc(var(--notch-corner) - var(--spacing-control-edge));
@@ -131,6 +143,14 @@
   & > .sheet-head {
     margin-inline-end: calc(var(--sheet-bleed-end) * -1);
   }
+}
+
+/* A band's paint, short of the ring's soft row at a side the column bleeds
+   to (sheet-bleed). Paint only, so nothing in the band moves. */
+@utility sheet-band {
+  background-position: var(--band-start, 0px) 0;
+  background-size: calc(100% - var(--band-start, 0px) - var(--band-end, 0px)) 100%;
+  background-repeat: no-repeat;
 }
 
 @utility sheet-action-pill {
@@ -246,7 +266,8 @@
     /* Opaque, not a wash: rows pass underneath it. A band, so what sits on
        it keeps its distance from the band. */
     @apply ground-band;
-    background: var(--sp-surface-band);
+    background: linear-gradient(var(--sp-surface-band), var(--sp-surface-band));
+    @apply sheet-band;
     /* Reserve the divider's depth so sheet controls centre above it. */
     --sheet-head-rule: max(var(--edge-hairline), var(--structural-divider-border));
     padding-block-end: calc(var(--sheet-head-rule) - var(--structural-divider-border));
@@ -294,16 +315,93 @@
       top: auto;
     }
   }
-  /* The lit line. */
+  /* The rule and its lit line are one line, drawn as the pane's edge is: the
+     solid row outside, then the soft row mixed with the sheen, then the sheen
+     (the ring and sheen split, geometry.css). The rule's rows lie in the head;
+     the sheen under it stops short of the ring's soft row as the band does
+     (sheet-band), since an opaque soft row lies under the sheet. */
+  /* The rule as bands: the solid row across to the ring, the soft row short
+     of the ring's soft row as the band is (sheet-band), or the two double
+     there. While the row under it is lit, the soft row is that row's fill,
+     from the same stops over the same span, so the fill meets the solid row. */
   .sheet-head {
     --sheet-head-highlight: var(--sp-raised-edge);
-    box-shadow:
-      inset 0 calc(var(--edge-hairline-solid) * -1) 0 var(--sp-raised-ring),
-      inset 0 calc(var(--edge-hairline-soft) * -1) 0
-        color-mix(in srgb, var(--sp-raised-ring) var(--edge-hairline-cover), transparent),
-      0 var(--highlight-sheet-solid) 0 var(--sheet-head-highlight),
-      0 var(--highlight-sheet-soft) 0
-        color-mix(in srgb, var(--sheet-head-highlight) var(--highlight-sheet-cover), transparent);
+  }
+  .sheet-head::before {
+    --sheet-head-rule-soft: calc(var(--edge-hairline-depth) - var(--edge-hairline-solid));
+    --sheet-head-rule-soft-color: color-mix(
+      in srgb,
+      var(--sp-raised-ring) var(--edge-hairline-cover),
+      var(--sp-raised-edge)
+    );
+    --sheet-fill: var(--sheet-head-rule-soft-color);
+    --sheet-fill-end: var(--sheet-head-rule-soft-color);
+    --sheet-head-soft-start: var(--band-start, 0px);
+    --sheet-head-soft-end: var(--band-end, 0px);
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    block-size: var(--edge-hairline-depth);
+    background:
+      linear-gradient(var(--sp-raised-ring), var(--sp-raised-ring)) top / 100%
+        var(--edge-hairline-solid) no-repeat,
+      linear-gradient(to right, var(--sheet-fill), var(--sheet-fill-end))
+        var(--sheet-head-soft-start) bottom /
+        calc(100% - var(--sheet-head-soft-start) - var(--sheet-head-soft-end))
+        var(--sheet-head-rule-soft) no-repeat;
+    transition:
+      --sheet-fill var(--duration-state) ease-out,
+      --sheet-fill-end var(--duration-state) ease-out;
+    pointer-events: none;
+  }
+  .sheet-head:has(+ .sheet-list > li:first-child > .sheet-row[data-current])::before {
+    --sheet-fill: var(--sp-sheet-current);
+    --sheet-fill-end: var(--sp-sheet-hover);
+    --sheet-head-soft-start: var(--row-band-start, 0px);
+    --sheet-head-soft-end: var(--row-band-end, 0px);
+  }
+  .sheet-head:has(
+      + .sheet-list
+        > li:first-child
+        > .sheet-row:not([data-current]):is(:focus-visible, :focus-within)
+    )::before {
+    --sheet-fill: var(--sp-sheet-hover);
+    --sheet-fill-end: var(--sp-sheet-hover-end);
+    --sheet-head-soft-start: var(--row-band-start, 0px);
+    --sheet-head-soft-end: var(--row-band-end, 0px);
+  }
+  @media (hover: hover) {
+    .sheet-head:has(+ .sheet-list > li:first-child > .sheet-row:not([data-current]):hover)::before {
+      --sheet-fill: var(--sp-sheet-hover);
+      --sheet-fill-end: var(--sp-sheet-hover-end);
+      --sheet-head-soft-start: var(--row-band-start, 0px);
+      --sheet-head-soft-end: var(--row-band-end, 0px);
+    }
+  }
+  .sheet-head::after {
+    --sheet-head-lit: calc(var(--ring-pane-solid) - var(--edge-hairline-depth));
+    --sheet-head-lit-soft: calc(var(--ring-pane-soft) - var(--edge-hairline-depth));
+    content: '';
+    position: absolute;
+    inset-block-start: 100%;
+    inset-inline: var(--band-start, 0px) var(--band-end, 0px);
+    block-size: var(--sheet-head-lit-soft);
+    background:
+      linear-gradient(var(--sheet-head-highlight), var(--sheet-head-highlight)) top / 100%
+        var(--sheet-head-lit) no-repeat,
+      linear-gradient(
+          color-mix(in srgb, var(--sheet-head-highlight) var(--ring-pane-cover), transparent),
+          color-mix(in srgb, var(--sheet-head-highlight) var(--ring-pane-cover), transparent)
+        )
+        top / 100% var(--sheet-head-lit-soft) no-repeat;
+    pointer-events: none;
+  }
+  @media (forced-colors: active) {
+    .sheet-head::before,
+    .sheet-head::after {
+      display: none;
+    }
   }
   /* Over a run list the head's line is the one under it. The head paints above
      the rows, so its line steps back while the run under it is lit, or it
@@ -343,7 +441,8 @@
       calc(var(--spacing-sheet-inset) + var(--sheet-bleed-end, 0px));
     border-top: var(--edge-rule) solid var(--sp-raised-ring);
     @apply ground-band;
-    background: var(--sp-surface-band);
+    background: linear-gradient(var(--sp-surface-band), var(--sp-surface-band));
+    @apply sheet-band;
     color: var(--sp-text-muted);
   }
   .sheet-break-pills {
@@ -450,9 +549,12 @@
     z-index: 2;
     text-align: start;
     cursor: pointer;
-    /* Fades toward the column's divider; over the pane's highlight, as the
-       row's own bleed is. */
+    /* Fades toward the column's divider; over the pane's highlight and its
+       soft row, to the ring's solid row. */
+    --band-start: var(--row-band-start, 0px);
+    --band-end: var(--row-band-end, 0px);
     background-image: linear-gradient(to right, var(--sheet-fill), var(--sheet-fill-end));
+    @apply sheet-band;
     transition:
       --sheet-fill var(--duration-state) ease-out,
       --sheet-fill-end var(--duration-state) ease-out;

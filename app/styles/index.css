@@ -81,6 +81,10 @@
 @import '../workbench/dividers/dividers.css';
 @import '../workbench/highlight-crispness/highlight-crispness.css';
 @import '../workbench/edge-lab/edge-lab.css';
+@import '../workbench/edge-junctions/edge-junctions.css';
+@import '../workbench/soft-rows/soft-rows.css';
+@import '../workbench/soft-row-styles/soft-row-styles.css';
+@import '../workbench/section-rules/section-rules.css';
 @import '../workbench/rounded-edges/rounded-edges.css';
 
 /* The prototype history, after everything current (fenced; see eslint.config.mjs). */

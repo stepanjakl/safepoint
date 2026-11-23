@@ -317,8 +317,12 @@
    rows (z-5, still under .process-header/.notch at z-10) so 1px sheet-bleed
    covers the inner highlight cleanly without eating half a pixel of the ring. */
 @media (min-resolution: 2dppx) {
+  /* An opaque soft row lies here, under the sheet (geometry.css); 0 wide
+     otherwise. */
   :root[data-edges='retina'] .shell-pane > .surface-raised {
     box-shadow:
+      inset 0 0 0 calc(var(--edge-ring-soft) * var(--soft-row-in-face, 0))
+        color-mix(in srgb, var(--sp-raised-ring) var(--edge-ring-cover), var(--sp-raised-edge)),
       inset 0 0 0 var(--ring-pane-solid) var(--control-highlight),
       inset 0 0 0 var(--ring-pane-soft)
         color-mix(in srgb, var(--control-highlight) var(--ring-pane-cover), transparent);
@@ -330,9 +334,14 @@
     inset: 0;
     z-index: 5;
     border-radius: var(--radius-shell);
+    /* The soft row folds into the solid one when it lies in the face. */
     box-shadow:
       inset 0 0 0 var(--edge-ring-solid) var(--sp-raised-ring),
-      inset 0 0 0 var(--edge-ring-soft)
+      inset 0 0 0
+        calc(
+          var(--edge-ring-soft) - (var(--edge-ring-soft) - var(--edge-ring-solid)) *
+            var(--soft-row-in-face, 0)
+        )
         color-mix(in srgb, var(--sp-raised-ring) var(--edge-ring-cover), transparent);
     pointer-events: none;
   }

@@ -25,7 +25,8 @@ async function dividerPaint(
 
 // The header's rule is the top edge of the sheet under it, solid outside:
 // the soft row first, then the ring at the hairline's whole depth. 0.75px is
-// 0.5px solid and a half-strength row to 1px; 1px is all solid.
+// 0.5px solid and a half-strength row to 1px; 1px is all solid. Narrow, where
+// no sheet frame lies under it, it is drawn as these two shadows.
 function headerRule(mode: string) {
   const [soft, depth] =
     mode === 'retina' ? ['-0.5px', '-1px'] : ['0px', '-1px'];
@@ -47,26 +48,37 @@ for (const mode of ['default', 'retina'] as const) {
     const header = page.locator('.process-header');
     const runs = page.locator('.process-runs');
     const runHead = runs.locator('.sheet-head').first();
-    // A solid layer and a soft one, whole device pixels each (geometry.css):
-    // 0.75px is 0.5px solid and 1px at half strength; 1px is all solid.
-    const [solid, soft] =
-      mode === 'retina' ? ['0.5px', '1px'] : ['1px', '1.5px'];
-    const layers = (x: (width: string) => string) =>
-      expect.stringMatching(new RegExp(`${x(solid)} inset.*${x(soft)} inset`));
+    // Beside the sheet the rule is drawn as bands; its pixels, and the column
+    // dividers meeting it, are read below.
     await expect
       .poll(() => dividerPaint(header, 'bottom'))
-      .toMatchObject({ border: '0px', shadow: headerRule(mode) });
+      .toMatchObject({ border: '0px' });
+    // A section head's rule is drawn as the header's, as bands (solid
+    // outside, then the soft row short of the ring's); surface-edges.spec.ts
+    // reads its pixels where it meets the side and each divider.
     await expect
       .poll(() => dividerPaint(runHead, 'bottom'))
-      .toMatchObject({
-        border: '0px',
-        shadow: layers((w) => `0px -${w} 0px 0px`),
-      });
+      .toMatchObject({ border: '0px' });
+    const [ruleSolid, ruleSoft] =
+      mode === 'retina' ? ['0.5px', '0.5px'] : ['1px', '0px'];
+    await expect
+      .poll(() =>
+        runHead.evaluate(
+          (element) => getComputedStyle(element, '::before').backgroundSize,
+        ),
+      )
+      .toMatch(new RegExp(`^100% ${ruleSolid}, .+ ${ruleSoft}$`));
+    // The divider likewise, across: its solid column from the left, then the
+    // soft column, mixed with the sheet's sheen, from the right.
+    const [solid, soft] =
+      mode === 'retina' ? ['0.5px', '-0.5px'] : ['1px', '0px'];
     await expect
       .poll(() => dividerPaint(runs, 'right', '::before'))
       .toMatchObject({
         border: '0px',
-        shadow: layers((w) => `-${w} 0px 0px 0px`),
+        shadow: expect.stringMatching(
+          new RegExp(`${solid} 0px 0px 0px inset.*${soft} 0px 0px 0px inset`),
+        ),
       });
 
     await page.emulateMedia({ forcedColors: 'active' });
@@ -98,6 +110,97 @@ for (const mode of ['default', 'retina'] as const) {
       .poll(() => dividerPaint(runs.locator('.process-runs-list'), 'bottom'))
       .toEqual(fallback);
   });
+}
+
+for (const mode of ['default', 'retina']) {
+  for (const theme of ['light', 'dark']) {
+    test(`column dividers run up to the header rule's solid row in ${mode} and ${theme}`, async ({
+      page,
+    }) => {
+      await page.addInitScript((value) => {
+        localStorage.setItem('safepoint.dev.theme', value);
+      }, theme);
+      await page.goto(`/processes/brunch-orders?edges=${mode}`);
+      expect(await page.evaluate(() => devicePixelRatio)).toBe(2);
+      await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+
+      const views = [
+        { tab: /^Runs$/, column: '.process-runs' },
+        {
+          tab: /^Instructions:/,
+          column: '.process-panels[data-tab="instructions"]',
+        },
+      ];
+      for (const { tab, column } of views) {
+        await page.getByRole('button', { name: tab }).click();
+        const grid = page.locator(column);
+        await expect(grid).toBeVisible();
+        // The divider is the right edge of the grid's first track.
+        const { x, bottom } = await grid.evaluate((element) => {
+          const box = element.getBoundingClientRect();
+          const style = getComputedStyle(element);
+          const first = parseFloat(style.gridTemplateColumns);
+          const header = document
+            .querySelector('.process-header')!
+            .getBoundingClientRect();
+          return {
+            x: box.left + parseFloat(style.paddingLeft) + first,
+            bottom: header.bottom,
+          };
+        });
+        await expect
+          .poll(async () => {
+            // From the rule's top row down past the header; the divider's
+            // ring is its last device pixel, the rule's ring its first row.
+            const image = await page.screenshot({
+              clip: {
+                x: Math.floor(x) - 30,
+                y: bottom - 1,
+                width: 31,
+                height: 3,
+              },
+            });
+            return page.evaluate(
+              async ({ bytes, dividerX }) => {
+                const bitmap = await createImageBitmap(
+                  new Blob([new Uint8Array(bytes)]),
+                );
+                const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+                const context = canvas.getContext('2d')!;
+                context.drawImage(bitmap, 0, 0);
+                const { data } = context.getImageData(
+                  0,
+                  0,
+                  bitmap.width,
+                  bitmap.height,
+                );
+                const at = (column: number, row: number) =>
+                  data.slice(
+                    (row * bitmap.width + column) * 4,
+                    (row * bitmap.width + column) * 4 + 3,
+                  );
+                const ring = at(0, 0);
+                // The divider's solid column is its outer, left device pixel.
+                const column = Math.round(dividerX * 2) - 2;
+                let worst = 0;
+                for (let row = 0; row < bitmap.height; row++) {
+                  const pixel = at(column, row);
+                  for (let channel = 0; channel < 3; channel++)
+                    worst = Math.max(
+                      worst,
+                      Math.abs(pixel[channel]! - ring[channel]!),
+                    );
+                }
+                bitmap.close();
+                return worst;
+              },
+              { bytes: Array.from(image), dividerX: x - (Math.floor(x) - 30) },
+            );
+          })
+          .toBeLessThanOrEqual(3);
+      }
+    });
+  }
 }
 
 for (const mode of ['default', 'retina']) {
