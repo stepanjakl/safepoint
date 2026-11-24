@@ -277,3 +277,33 @@ describe('the request proxy in local development', () => {
     expect(response.status).toBe(503);
   });
 });
+
+describe('the request proxy on a public deployment', () => {
+  beforeEach(() => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('SAFEPOINT_ACCESS', 'public');
+    vi.stubEnv('SAFEPOINT_ACCESS_KEY', '');
+    vi.stubEnv('SAFEPOINT_COOKIE_SECRET', SECRET);
+  });
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('lets every page and API call through without a password, and issues a visitor cookie', async () => {
+    for (const path of ['/', '/processes/brunch-orders']) {
+      const response = await proxy(at(path));
+      expect(response.status).toBe(200);
+      expect(
+        response.headers
+          .getSetCookie()
+          .some((line) => line.startsWith(`${VISITOR_COOKIE}=`)),
+      ).toBe(true);
+    }
+    // The API answers for itself: tRPC asks for the visitor cookie.
+    expect((await proxy(at('/api/trpc/x'))).status).toBe(200);
+  });
+
+  it('refuses every request without the cookie secret', async () => {
+    vi.stubEnv('SAFEPOINT_COOKIE_SECRET', '');
+    const response = await proxy(at('/'));
+    expect(response.status).toBe(503);
+  });
+});

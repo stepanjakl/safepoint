@@ -258,7 +258,7 @@ describe('a reset', () => {
       expect(await tables(db())).toEqual([]);
       const { migrate } = await import('drizzle-orm/pglite/migrator');
       await migrate(db() as never, { migrationsFolder: MIGRATIONS });
-      expect(await tables(db())).toHaveLength(20);
+      expect(await tables(db())).toHaveLength(21);
       expect(await db().select().from(processes)).toEqual([]);
     });
   });

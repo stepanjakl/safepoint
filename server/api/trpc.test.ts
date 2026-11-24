@@ -192,3 +192,61 @@ describe('the visitor as the actor', () => {
     await expect(caller(url).whoami()).resolves.toBeNull();
   });
 });
+
+describe('gatedProcedure on a public deployment', () => {
+  const SECRET = 'a-signing-secret-of-at-least-thirty-two-characters';
+  const URL_ = 'https://safepoint.example/api/trpc/ping';
+  const visitorCookie = async () => ({
+    cookie: `${VISITOR_COOKIE}=${await signVisitor(newVisitor(Date.now(), new Uint8Array(16), ID), SECRET)}`,
+  });
+
+  beforeEach(() => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('SAFEPOINT_ACCESS', 'public');
+    vi.stubEnv('SAFEPOINT_COOKIE_SECRET', SECRET);
+  });
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('needs no password, only the visitor cookie, and names the visitor', async () => {
+    const headers = await visitorCookie();
+    await expect(call(URL_, headers)).resolves.toBe('pong');
+    const named = await caller(
+      'https://safepoint.example/api/trpc/visitor',
+      headers,
+    ).visitor();
+    await expect(
+      caller('https://safepoint.example/api/trpc/whoami', headers).whoami(),
+    ).resolves.toBe(named?.name);
+  });
+
+  it('refuses a call without a visitor cookie of this deployment', async () => {
+    expect(await refusal(call(URL_))).toEqual({
+      code: 'UNAUTHORIZED',
+      message: 'Reload the page to carry on.',
+    });
+    expect(
+      (await refusal(call(URL_, { cookie: `${VISITOR_COOKIE}=garbage` }))).code,
+    ).toBe('UNAUTHORIZED');
+  });
+
+  it('still refuses a foreign origin', async () => {
+    expect(
+      (
+        await refusal(
+          call(URL_, {
+            ...(await visitorCookie()),
+            origin: 'https://evil.example',
+          }),
+        )
+      ).code,
+    ).toBe('FORBIDDEN');
+  });
+
+  it('refuses everything without the cookie secret', async () => {
+    const headers = await visitorCookie();
+    vi.stubEnv('SAFEPOINT_COOKIE_SECRET', 'short');
+    expect((await refusal(call(URL_, headers))).code).toBe(
+      'SERVICE_UNAVAILABLE',
+    );
+  });
+});

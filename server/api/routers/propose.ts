@@ -15,7 +15,7 @@ import { keptProposal } from '@/server/storage/reads/proposals';
 import { runFields, runProcedure, staleReply } from '../run-procedure';
 import { runIdSchema } from '@/server/storage/ids';
 import { modelForRun } from '@/server/storage/runs/runs';
-import { router } from '../trpc';
+import { limited, router } from '../trpc';
 
 /*
   Server-only. Propose, through lib/engine/propose. `get` returns the
@@ -71,24 +71,26 @@ export const proposeRouter = router({
       model: draftingModelSchema.optional(),
       runId: runIdSchema.optional(),
     }),
-  ).mutation(async ({ ctx, input }) => {
-    if (ctx.stale) return staleReply(ctx.stale);
-    await startProposal(
-      ctx.owner,
-      ctx.set,
-      ctx.read,
-      input.readId,
-      input.text,
-      {
-        model: await modelForRun(
-          ctx.process.summary.id,
-          input.runId,
-          input.model,
-        ),
-      },
-    );
-    return await proposalOf(ctx, input.readId);
-  }),
+  )
+    .use(limited('model'))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.stale) return staleReply(ctx.stale);
+      await startProposal(
+        ctx.owner,
+        ctx.set,
+        ctx.read,
+        input.readId,
+        input.text,
+        {
+          model: await modelForRun(
+            ctx.process.summary.id,
+            input.runId,
+            input.model,
+          ),
+        },
+      );
+      return await proposalOf(ctx, input.readId);
+    }),
 
   check: runProcedure(
     z.strictObject({

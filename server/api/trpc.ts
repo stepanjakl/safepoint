@@ -8,8 +8,13 @@ import {
   isLocalDevelopment,
   localDevelopmentRefusal,
 } from '@/lib/dev/dev-route';
-import { accessConfig, NOT_CONFIGURED_MESSAGE } from '@/server/access/config';
+import {
+  accessConfig,
+  NOT_CONFIGURED_MESSAGE,
+  publicAccess,
+} from '@/server/access/config';
 import { readSession } from '@/server/access/session';
+import { addressOf, spend, type UsageKind } from '@/server/access/usage';
 import { readVisitor, visitorSecret } from '@/server/access/visitor';
 import { Refused } from '@/server/storage/refused';
 
@@ -78,9 +83,16 @@ async function visitorOf(request: Request): Promise<VisitorOnContext | null> {
   return visitor && { id: visitor.id, name: visitor.name, orb: visitor.orb };
 }
 
-async function actorOf(
-  request: Request,
-): Promise<{ actor: string | null; visitor: VisitorOnContext | null }> {
+type Actor = {
+  actor: string | null;
+  visitor: VisitorOnContext | null;
+  // Where the deployment is open to anyone (config.ts `publicAccess`).
+  open: boolean;
+  // Local development: nothing is counted (`limited` below).
+  local: boolean;
+};
+
+async function actorOf(request: Request): Promise<Actor> {
   if (!gateApplies(new URL(request.url))) {
     const refusal = localDevelopmentRefusal(request, { allowDevHost: true });
     if (refusal)
@@ -89,11 +101,33 @@ async function actorOf(
         message: refusal.message,
       });
     const visitor = await visitorOf(request);
-    return { actor: visitor?.name ?? null, visitor };
+    return {
+      actor: visitor?.name ?? null,
+      visitor,
+      open: false,
+      local: isLocalDevelopment(new URL(request.url)),
+    };
   }
   const foreign = crossOriginRefusal(request, { allowDevHost: true });
   if (foreign)
     throw new TRPCError({ code: 'FORBIDDEN', message: foreign.message });
+  // Open to anyone: the visitor cookie the proxy issues on every page is
+  // what a procedure asks for, so a caller has at least loaded a page.
+  const open = publicAccess();
+  if (open === 'unconfigured')
+    throw new TRPCError({
+      code: 'SERVICE_UNAVAILABLE',
+      message: NOT_CONFIGURED_MESSAGE,
+    });
+  if (open === 'public') {
+    const visitor = await visitorOf(request);
+    if (visitor === null)
+      throw new TRPCError({
+        code: 'UNAUTHORIZED',
+        message: 'Reload the page to carry on.',
+      });
+    return { actor: visitor.name, visitor, open: true, local: false };
+  }
   const config = accessConfig();
   if (config === null)
     throw new TRPCError({
@@ -104,7 +138,7 @@ async function actorOf(
   if (session === null)
     throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Sign in required.' });
   const visitor = await visitorOf(request);
-  return { actor: session.name, visitor };
+  return { actor: session.name, visitor, open: false, local: false };
 }
 
 export const gatedProcedure = t.procedure.use(async ({ ctx, next }) => {
@@ -116,6 +150,33 @@ export const gatedProcedure = t.procedure.use(async ({ ctx, next }) => {
     });
   return result;
 });
+
+/*
+  A procedure that spends something limited a day (server/access/usage.ts):
+  counted before its work, for the visitor, their address and everyone.
+  Nothing is counted in local development. Used after `.input()`, so a
+  malformed request spends nothing.
+*/
+export const limited = (
+  kind: UsageKind,
+  when: (input: unknown) => boolean = () => true,
+) =>
+  t.middleware(async ({ ctx, input, next }) => {
+    const { request, local, visitor } = ctx as Context & Partial<Actor>;
+    if (!local && when(input)) {
+      const spent = await spend(kind, {
+        visitor: visitor?.id ?? null,
+        address: addressOf(request),
+        secret: process.env.SAFEPOINT_COOKIE_SECRET ?? '',
+      });
+      if (!spent.ok)
+        throw new TRPCError({
+          code: 'TOO_MANY_REQUESTS',
+          message: spent.message,
+        });
+    }
+    return next();
+  });
 
 // What the routes answered for anything that went wrong while working: the
 // message, as a bad gateway.

@@ -891,6 +891,30 @@ export const modelLimits = pgTable(
   ],
 );
 
+/*
+  What a deployment has spent today (server/access/usage.ts): one row per
+  kind of work, per who spent it (a visitor, an address, or everyone) and per
+  day in UTC. Counts only ever go up; a day's rows are simply left behind.
+*/
+export const USAGE_KINDS = ['runs', 'model', 'reads', 'writes'] as const;
+
+export const usageCounts = pgTable(
+  'usage_counts',
+  {
+    kind: text('kind').notNull(),
+    // `visitor:<id>`, `ip:<hash>` or `all`.
+    subject: text('subject').notNull(),
+    day: date('day', { mode: 'string' }).notNull(),
+    count: integer('count').notNull().default(0),
+    updatedAt: instant('updated_at').notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.kind, t.subject, t.day] }),
+    check('usage_counts_kind', oneOf(t.kind, USAGE_KINDS)),
+    check('usage_counts_count', sql`${t.count} >= 0`),
+  ],
+);
+
 export const ATTEMPT_PURPOSES = [
   'find',
   'write',

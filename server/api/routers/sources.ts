@@ -12,7 +12,7 @@ import {
   sourceValues,
 } from '@/server/storage/reads/source-reads';
 
-import { gatedProcedure, router } from '../trpc';
+import { gatedProcedure, limited, router } from '../trpc';
 
 /*
   Server-only. What a source holds (`summary`), one read's values for the data
@@ -59,22 +59,25 @@ export const sourcesRouter = router({
       return values;
     }),
 
-  read: gatedProcedure.input(sourceInput).mutation(async ({ input }) => {
-    const source = known(input.source);
-    const missing = missingSheetEnv();
-    if (missing.length)
-      throw new TRPCError({
-        code: 'SERVICE_UNAVAILABLE',
-        message: `Missing ${missing.join(', ')}.`,
-      });
-    try {
-      return await readSource(source);
-    } catch (error) {
-      throw new TRPCError({
-        code: 'BAD_GATEWAY',
-        message: said(error, 'The read failed.'),
-        cause: error,
-      });
-    }
-  }),
+  read: gatedProcedure
+    .input(sourceInput)
+    .use(limited('reads'))
+    .mutation(async ({ input }) => {
+      const source = known(input.source);
+      const missing = missingSheetEnv();
+      if (missing.length)
+        throw new TRPCError({
+          code: 'SERVICE_UNAVAILABLE',
+          message: `Missing ${missing.join(', ')}.`,
+        });
+      try {
+        return await readSource(source);
+      } catch (error) {
+        throw new TRPCError({
+          code: 'BAD_GATEWAY',
+          message: said(error, 'The read failed.'),
+          cause: error,
+        });
+      }
+    }),
 });

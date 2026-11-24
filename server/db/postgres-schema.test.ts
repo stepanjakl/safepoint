@@ -46,7 +46,7 @@ describe('the migrations applied into a schema of their own', () => {
     );
     expect(tables).toContain('runs');
     expect(tables).toContain('record_decisions');
-    expect(tables).toHaveLength(20);
+    expect(tables).toHaveLength(21);
     expect(
       (
         await client.query<{ name: string }>(

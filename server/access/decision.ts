@@ -2,7 +2,7 @@ import 'server-only';
 
 import { gateApplies } from '@/lib/dev/dev-route';
 
-import { accessConfig, NOT_CONFIGURED_MESSAGE } from './config';
+import { accessConfig, NOT_CONFIGURED_MESSAGE, publicAccess } from './config';
 import { GATE_PATH, gateLocation } from './return-path';
 import { readSession } from './session';
 
@@ -43,6 +43,13 @@ export const isApi = (pathname: string) =>
 export async function decideAccess(request: Request): Promise<AccessDecision> {
   const url = new URL(request.url);
   if (!gateApplies(url) || isOpen(url.pathname)) return { kind: 'pass' };
+
+  // A public deployment lets every page through; its procedures ask for the
+  // visitor cookie themselves.
+  const open = publicAccess();
+  if (open === 'public') return { kind: 'pass' };
+  if (open === 'unconfigured')
+    return { kind: 'unconfigured', message: NOT_CONFIGURED_MESSAGE };
 
   // Before anything else is read: a deployment without both values answers
   // nothing, the gate page included, rather than let anyone in.

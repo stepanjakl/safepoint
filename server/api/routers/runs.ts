@@ -26,7 +26,7 @@ import {
 } from '@/server/storage/runs/runs';
 
 import { keptRunFields } from '../run-procedure';
-import { gatedProcedure, router } from '../trpc';
+import { gatedProcedure, limited, router } from '../trpc';
 
 /*
   Server-only. A process's runs, kept on the server (server/storage/runs/runs.ts).
@@ -53,6 +53,7 @@ export const runsRouter = router({
         ownRulebook: z.boolean().default(false),
       }),
     )
+    .use(limited('runs'))
     .mutation(({ ctx, input }) => {
       if (
         input.modelPlan &&
@@ -60,6 +61,12 @@ export const runsRouter = router({
       )
         throw new Refused(
           'This model is unavailable. Choose another model for this run.',
+          'BAD_REQUEST',
+        );
+      // Open to anyone, a note goes into the model's prompt: kept short.
+      if (ctx.open && (input.additionalInstructions?.length ?? 0) > 2000)
+        throw new Refused(
+          'In this public demo a note can be up to 2,000 characters.',
           'BAD_REQUEST',
         );
       // A run with rules of its own compares models: development's alone.
@@ -138,5 +145,17 @@ export const runsRouter = router({
 
   discard: gatedProcedure
     .input(z.strictObject(keptRunFields))
-    .mutation(({ input }) => discardRun(input.process, input.runId)),
+    .mutation(async ({ ctx, input }) => {
+      // Open to anyone, a visitor discards the runs they started, not
+      // another's.
+      if (ctx.open) {
+        const run = await runOrRefuse(input.process, input.runId);
+        if (run.startedBy !== ctx.actor)
+          throw new Refused(
+            'Only whoever started this run can discard it.',
+            'BAD_REQUEST',
+          );
+      }
+      return discardRun(input.process, input.runId);
+    }),
 });

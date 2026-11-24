@@ -31,7 +31,7 @@ import { currentProposalOf, runKeyOf } from '@/server/storage/reads/proposals';
 import type { KeptRun } from '@/server/storage/runs/runs';
 
 import { keptRunFields, keptRunProcedure, staleReply } from '../run-procedure';
-import { router } from '../trpc';
+import { limited, router } from '../trpc';
 
 /*
   Server-only. Apply, through lib/engine/apply. `preview` says what the
@@ -222,48 +222,50 @@ export const applyRouter = router({
     },
   ),
 
-  write: keptRunProcedure(
-    z.strictObject({ ...keptRunFields, ...acknowledged }),
-  ).mutation(async ({ ctx, input }) => {
-    if (ctx.stale) return staleReply(ctx.stale);
-    const { proposal, decisions, through } = await decidedOf(ctx);
-    const { fingerprint, notWritable, shared } = await opened(ctx);
-    if (notWritable) throw new Error(notWritable);
-    const outcome = await applyDecisions(
-      ctx.owner,
-      ctx.set,
-      ctx.read,
-      fingerprint,
-      proposal,
-      decisions,
-      input.acknowledged,
-      liveSheetOf(ctx.process.runs.reads),
-      through,
-      headersOf(ctx),
-    );
-    // A refused write answers with what the preview would, so the screen
-    // shows why (it was a 409 with the preview as its body).
-    return outcome.kind === 'written'
-      ? { kind: 'applied' as const, application: outcome.application }
-      : previewOf(shared, null, outcome.prepared);
-  }),
+  write: keptRunProcedure(z.strictObject({ ...keptRunFields, ...acknowledged }))
+    .use(limited('writes'))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.stale) return staleReply(ctx.stale);
+      const { proposal, decisions, through } = await decidedOf(ctx);
+      const { fingerprint, notWritable, shared } = await opened(ctx);
+      if (notWritable) throw new Error(notWritable);
+      const outcome = await applyDecisions(
+        ctx.owner,
+        ctx.set,
+        ctx.read,
+        fingerprint,
+        proposal,
+        decisions,
+        input.acknowledged,
+        liveSheetOf(ctx.process.runs.reads),
+        through,
+        headersOf(ctx),
+      );
+      // A refused write answers with what the preview would, so the screen
+      // shows why (it was a 409 with the preview as its body).
+      return outcome.kind === 'written'
+        ? { kind: 'applied' as const, application: outcome.application }
+        : previewOf(shared, null, outcome.prepared);
+    }),
 
   // Undo stays open: what was written can be taken back whatever came
   // since, a discarded run's write included.
   undo: keptRunProcedure(z.strictObject(keptRunFields), {
     discarded: 'allow',
-  }).mutation(async ({ ctx }) => {
-    if (ctx.stale) return staleReply(ctx.stale);
-    const cannotReach = whyNotWritable(ctx.read);
-    if (cannotReach) throw new Error(cannotReach);
-    const outcome = await undoApplication(
-      ctx.owner,
-      ctx.read.id,
-      fingerprintOf(ctx.set),
-      liveSheetOf(ctx.process.runs.reads),
-    );
-    if (outcome.kind !== 'undone')
-      throw new TRPCError({ code: 'CONFLICT', message: outcome.problem });
-    return { kind: 'applied' as const, application: outcome.application };
-  }),
+  })
+    .use(limited('writes'))
+    .mutation(async ({ ctx }) => {
+      if (ctx.stale) return staleReply(ctx.stale);
+      const cannotReach = whyNotWritable(ctx.read);
+      if (cannotReach) throw new Error(cannotReach);
+      const outcome = await undoApplication(
+        ctx.owner,
+        ctx.read.id,
+        fingerprintOf(ctx.set),
+        liveSheetOf(ctx.process.runs.reads),
+      );
+      if (outcome.kind !== 'undone')
+        throw new TRPCError({ code: 'CONFLICT', message: outcome.problem });
+      return { kind: 'applied' as const, application: outcome.application };
+    }),
 });

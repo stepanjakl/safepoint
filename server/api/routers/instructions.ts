@@ -1,5 +1,9 @@
 import 'server-only';
 
+import {
+  SHARED_INSTRUCTIONS_LOCKED,
+  sharedRulesLocked,
+} from '@/server/access/shared-rules';
 import { z } from 'zod';
 
 import {
@@ -67,12 +71,14 @@ export const instructionsRouter = router({
         note: z.string().max(2000).nullable(),
       }),
     )
-    .mutation(({ ctx, input }) =>
-      publishVersion(
+    .mutation(({ ctx, input }) => {
+      if (sharedRulesLocked(ctx.open))
+        throw new Refused(SHARED_INSTRUCTIONS_LOCKED, 'BAD_REQUEST');
+      return publishVersion(
         keptProcess(input.process),
         input.text,
         input.note?.trim() || null,
         ctx.actor,
-      ),
-    ),
+      );
+    }),
 });

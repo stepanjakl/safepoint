@@ -23,7 +23,7 @@ import {
 import { runFields, runProcedure, staleReply } from '../run-procedure';
 import { runIdSchema } from '@/server/storage/ids';
 import { modelForRun } from '@/server/storage/runs/runs';
-import { router } from '../trpc';
+import { limited, router } from '../trpc';
 
 /*
   Server-only. Calculate, through lib/engine/calculate. `get` works every
@@ -76,31 +76,33 @@ export const calculateRouter = router({
       model: draftingModelSchema.optional(),
       runId: runIdSchema.optional(),
     }),
-  ).mutation(async ({ ctx, input }) => {
-    if (ctx.stale) return staleReply(ctx.stale);
-    const { calculation, current } = await worked(ctx);
-    const record = attemptRecorder({
-      process: ctx.owner.id,
-      instructionsHash: hashOf(input.text),
-      readId: input.readId,
-      fingerprint: calculation.fingerprint,
-    });
-    const check = await crossCheck(
-      ctx.owner,
-      ctx.set,
-      ctx.read,
-      input.readId,
-      input.text,
-      {
-        model: await modelForRun(
-          ctx.process.summary.id,
-          input.runId,
-          input.model,
-        ),
-        record,
-      },
-    ).finally(record.settled);
-    await keepCrossCheck(owner, check);
-    return { kind: 'calculation' as const, calculation, check, current };
-  }),
+  )
+    .use(limited('model'))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.stale) return staleReply(ctx.stale);
+      const { calculation, current } = await worked(ctx);
+      const record = attemptRecorder({
+        process: ctx.owner.id,
+        instructionsHash: hashOf(input.text),
+        readId: input.readId,
+        fingerprint: calculation.fingerprint,
+      });
+      const check = await crossCheck(
+        ctx.owner,
+        ctx.set,
+        ctx.read,
+        input.readId,
+        input.text,
+        {
+          model: await modelForRun(
+            ctx.process.summary.id,
+            input.runId,
+            input.model,
+          ),
+          record,
+        },
+      ).finally(record.settled);
+      await keepCrossCheck(owner, check);
+      return { kind: 'calculation' as const, calculation, check, current };
+    }),
 });

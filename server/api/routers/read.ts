@@ -14,7 +14,7 @@ import {
   readAndKeep,
 } from '@/server/storage/reads/run-reads';
 
-import { gatedProcedure, router } from '../trpc';
+import { gatedProcedure, limited, router } from '../trpc';
 
 /*
   Server-only. A run reads the sheet's data tabs once (`keep`), and later asks
@@ -86,6 +86,12 @@ export const readRouter = router({
         runId: runIdSchema.optional(),
       }),
     )
+    .use(
+      limited(
+        'reads',
+        (input) => (input as { source?: string }).source === 'live',
+      ),
+    )
     .mutation(async ({ input }) => {
       if (input.source === 'live') requireSheetEnv();
       try {
@@ -99,7 +105,10 @@ export const readRouter = router({
       }
     }),
 
-  capture: gatedProcedure.mutation(async () => {
+  // Saves the captured read as a file: a laptop's, never a deployment's.
+  capture: gatedProcedure.mutation(async ({ ctx }) => {
+    if (!ctx.local)
+      throw new TRPCError({ code: 'NOT_FOUND', message: 'Not found.' });
     requireSheetEnv();
     try {
       return await captureRead(reads);

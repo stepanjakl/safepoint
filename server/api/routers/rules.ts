@@ -57,7 +57,11 @@ import {
 
 import { modelForRun, rulebookAtFor } from '@/server/storage/runs/runs';
 
-import { failed, gatedProcedure, router } from '../trpc';
+import { TRPCError } from '@trpc/server';
+
+import { sharedRulesLocked } from '@/server/access/shared-rules';
+
+import { failed, gatedProcedure, limited, router } from '../trpc';
 
 /*
   Server-only. The definitions of one version of the instructions (its text),
@@ -194,6 +198,23 @@ async function replyWith(
 const placeOf = (input: { text: string; runId?: string }) =>
   rulebookAtFor(owner.id, input.runId, input.text);
 
+/*
+  Where a deployment is open to anyone, the rulebook a run shares with every
+  other run is read-only (server/access/shared-rules.ts): a procedure that
+  changes it, or the profile under it, asks this first. A run's own rulebook
+  stays its own to change.
+*/
+async function mayChange(
+  ctx: { open?: boolean },
+  input: { text: string; runId?: string },
+) {
+  if (!sharedRulesLocked(ctx.open ?? false)) return;
+  if (typeof (await placeOf(input)) === 'string')
+    throw new TRPCError({ code: 'FORBIDDEN', message: SHARED_RULES_LOCKED });
+}
+const SHARED_RULES_LOCKED =
+  'In this public demo the shared rules are fixed, so a run can use them but not change them.';
+
 // Every procedure on the rules may name the run it is for.
 const runId = runIdSchema.optional();
 
@@ -221,15 +242,18 @@ export const rulesRouter = router({
     return revision?.definitions.map(({ id, text }) => ({ id, text })) ?? null;
   }),
 
-  profile: rulesProcedure(
-    z.strictObject({ text, runId, readId: readIdSchema }),
-  ).mutation(async ({ input }) => {
-    const at = await placeOf(input);
-    const read = await readOf(input.readId);
-    fitting(read, owner.subject.data);
-    await saveProfile(owner, profileOf(read, owner.subject.data));
-    return replyWith(at, input.readId, () => loadSet(owner, at));
-  }),
+  profile: rulesProcedure(z.strictObject({ text, runId, readId: readIdSchema }))
+    .use(async ({ ctx, input, next }) => {
+      await mayChange(ctx, input as { text: string; runId?: string });
+      return next();
+    })
+    .mutation(async ({ input }) => {
+      const at = await placeOf(input);
+      const read = await readOf(input.readId);
+      fitting(read, owner.subject.data);
+      await saveProfile(owner, profileOf(read, owner.subject.data));
+      return replyWith(at, input.readId, () => loadSet(owner, at));
+    }),
 
   profileColumn: rulesProcedure(
     z.strictObject({
@@ -240,22 +264,33 @@ export const rulesRouter = router({
       type: z.enum(['whole_number', 'decimal', 'yes_no', 'text']).optional(),
       blank: z.enum(['skip', 'fail']).nullable().optional(),
     }),
-  ).mutation(async ({ ctx, input }) => {
-    const at = await placeOf(input);
-    const { column, label, type, blank } = input;
-    await changeProfile((profile) => {
-      let changed = profile;
-      if (label !== undefined) changed = setColumnLabel(changed, column, label);
-      if (type !== undefined)
-        changed = setColumnType(changed, column, { kind: type });
-      if (blank !== undefined) changed = setColumnBlank(changed, column, blank);
-      return changed;
-    }, ctx.actor);
-    return replyWith(at, null, () => loadSet(owner, at));
-  }),
+  )
+    .use(async ({ ctx, input, next }) => {
+      await mayChange(ctx, input as { text: string; runId?: string });
+      return next();
+    })
+    .mutation(async ({ ctx, input }) => {
+      const at = await placeOf(input);
+      const { column, label, type, blank } = input;
+      await changeProfile((profile) => {
+        let changed = profile;
+        if (label !== undefined)
+          changed = setColumnLabel(changed, column, label);
+        if (type !== undefined)
+          changed = setColumnType(changed, column, { kind: type });
+        if (blank !== undefined)
+          changed = setColumnBlank(changed, column, blank);
+        return changed;
+      }, ctx.actor);
+      return replyWith(at, null, () => loadSet(owner, at));
+    }),
 
-  confirmProfile: rulesProcedure(z.strictObject({ text, runId })).mutation(
-    async ({ ctx, input }) => {
+  confirmProfile: rulesProcedure(z.strictObject({ text, runId }))
+    .use(async ({ ctx, input, next }) => {
+      await mayChange(ctx, input as { text: string; runId?: string });
+      return next();
+    })
+    .mutation(async ({ ctx, input }) => {
       const at = await placeOf(input);
       const confirmed = await changeProfile(
         (kept) => (kept.confirmedAt ? kept : confirmProfile(kept)),
@@ -267,8 +302,7 @@ export const rulesRouter = router({
       if (set && !complete(set) && set.readId)
         await rebaseSet(owner, at, await readOf(set.readId), confirmed);
       return replyWith(at, null, () => loadSet(owner, at));
-    },
-  ),
+    }),
 
   draft: rulesProcedure(
     z.strictObject({
@@ -278,25 +312,34 @@ export const rulesRouter = router({
       model,
       runId,
     }),
-  ).mutation(async ({ input }) => {
-    const at = await placeOf(input);
-    // The engine drafts without a profile too; a person's draft does not.
-    const profile = await loadProfile(owner);
-    if (!profile?.confirmedAt) throw new Error(CONFIRM_FIRST);
-    await startDraft(owner, at, input.version, await readOf(input.readId), {
-      model: await modelForRun(owner.id, input.runId, input.model),
-    });
-    return replyWith(at, input.readId, () => loadSet(owner, at));
-  }),
+  )
+    .use(async ({ ctx, input, next }) => {
+      await mayChange(ctx, input as { text: string; runId?: string });
+      return next();
+    })
+    .use(limited('model'))
+    .mutation(async ({ input }) => {
+      const at = await placeOf(input);
+      // The engine drafts without a profile too; a person's draft does not.
+      const profile = await loadProfile(owner);
+      if (!profile?.confirmedAt) throw new Error(CONFIRM_FIRST);
+      await startDraft(owner, at, input.version, await readOf(input.readId), {
+        model: await modelForRun(owner.id, input.runId, input.model),
+      });
+      return replyWith(at, input.readId, () => loadSet(owner, at));
+    }),
 
-  intent: rulesProcedure(z.strictObject({ text, runId })).mutation(
-    async ({ ctx, input }) => {
+  intent: rulesProcedure(z.strictObject({ text, runId }))
+    .use(async ({ ctx, input, next }) => {
+      await mayChange(ctx, input as { text: string; runId?: string });
+      return next();
+    })
+    .mutation(async ({ ctx, input }) => {
       const at = await placeOf(input);
       return replyWith(at, null, () =>
         confirmIntent(owner, at, keptRead, ctx.actor),
       );
-    },
-  ),
+    }),
 
   write: rulesProcedure(
     z.strictObject({
@@ -306,35 +349,52 @@ export const rulesRouter = router({
       model,
       runId,
     }),
-  ).mutation(async ({ input }) => {
-    const at = await placeOf(input);
-    await startRewrite(owner, at, await readOf(input.readId), input.id, {
-      model: await modelForRun(owner.id, input.runId, input.model),
-    });
-    return replyWith(at, input.readId, () => loadSet(owner, at));
-  }),
+  )
+    .use(async ({ ctx, input, next }) => {
+      await mayChange(ctx, input as { text: string; runId?: string });
+      return next();
+    })
+    .use(limited('model'))
+    .mutation(async ({ input }) => {
+      const at = await placeOf(input);
+      await startRewrite(owner, at, await readOf(input.readId), input.id, {
+        model: await modelForRun(owner.id, input.runId, input.model),
+      });
+      return replyWith(at, input.readId, () => loadSet(owner, at));
+    }),
 
   choose: rulesProcedure(
     z.strictObject({ text, runId, id, index: z.number().int().min(0).max(5) }),
-  ).mutation(async ({ ctx, input }) => {
-    const at = await placeOf(input);
-    return replyWith(at, null, () =>
-      choose(owner, at, input.id, input.index, ctx.actor),
-    );
-  }),
+  )
+    .use(async ({ ctx, input, next }) => {
+      await mayChange(ctx, input as { text: string; runId?: string });
+      return next();
+    })
+    .mutation(async ({ ctx, input }) => {
+      const at = await placeOf(input);
+      return replyWith(at, null, () =>
+        choose(owner, at, input.id, input.index, ctx.actor),
+      );
+    }),
 
   appliesTo: rulesProcedure(
     z.strictObject({ text, runId, id, value: z.enum(['every', 'some']) }),
-  ).mutation(async ({ ctx, input }) => {
-    const at = await placeOf(input);
-    return replyWith(at, null, () =>
-      setAppliesTo(owner, at, input.id, input.value, keptRead, ctx.actor),
-    );
-  }),
+  )
+    .use(async ({ ctx, input, next }) => {
+      await mayChange(ctx, input as { text: string; runId?: string });
+      return next();
+    })
+    .mutation(async ({ ctx, input }) => {
+      const at = await placeOf(input);
+      return replyWith(at, null, () =>
+        setAppliesTo(owner, at, input.id, input.value, keptRead, ctx.actor),
+      );
+    }),
 
   // Asks the model, so a mutation though it keeps nothing.
-  advise: rulesProcedure(z.strictObject({ text, id, runId })).mutation(
-    async ({ input }) => {
+  advise: rulesProcedure(z.strictObject({ text, id, runId }))
+    .use(limited('model'))
+    .mutation(async ({ input }) => {
       const at = await placeOf(input);
       const set = await loadSet(owner, at);
       if (!set) throw new Error(NO_RULES);
@@ -357,8 +417,7 @@ export const rulesRouter = router({
           { model: await modelForRun(owner.id, input.runId), record },
         ).finally(record.settled),
       };
-    },
-  ),
+    }),
 
   debug: rulesProcedure(
     z.strictObject({
@@ -412,12 +471,17 @@ export const rulesRouter = router({
       decision: z.enum(['accept', 'deny']),
       note: z.string().max(500).optional(),
     }),
-  ).mutation(async ({ ctx, input }) => {
-    const at = await placeOf(input);
-    return replyWith(at, null, () =>
-      input.decision === 'accept'
-        ? accept(owner, at, input.id, keptRead, ctx.actor)
-        : deny(owner, at, input.id, input.note, ctx.actor),
-    );
-  }),
+  )
+    .use(async ({ ctx, input, next }) => {
+      await mayChange(ctx, input as { text: string; runId?: string });
+      return next();
+    })
+    .mutation(async ({ ctx, input }) => {
+      const at = await placeOf(input);
+      return replyWith(at, null, () =>
+        input.decision === 'accept'
+          ? accept(owner, at, input.id, keptRead, ctx.actor)
+          : deny(owner, at, input.id, input.note, ctx.actor),
+      );
+    }),
 });
