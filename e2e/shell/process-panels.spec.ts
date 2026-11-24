@@ -535,6 +535,7 @@ test('rows wait for a process navigation fade', async ({ page }) => {
               instructions: { version: 'v1', hash: 'test-hash' },
               additionalInstructions: null,
               modelPlan: null,
+              ownRulebook: false,
               readId: null,
               rulebook: null,
             },

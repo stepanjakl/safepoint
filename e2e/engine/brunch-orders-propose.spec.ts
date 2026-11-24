@@ -373,6 +373,9 @@ test('a person decides every record, then writes what Apply shows and can undo i
     .getByRole('row', { name: /^SD-01/ })
     .getByRole('button', { name: /^Reject$/ })
     .click();
+  // Every record decided, Propose waits for the person to confirm them.
+  await expect(proposeToggle(page)).toHaveAttribute('aria-expanded', 'true');
+  await page.getByRole('button', { name: 'Confirm decisions' }).click();
   await expect(proposeToggle(page)).toHaveAttribute('aria-expanded', 'false');
   await expect(proposalFact(page, '11 items')).toBeVisible();
   await expect(

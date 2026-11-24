@@ -165,6 +165,10 @@ and `--ease-fold`) rather than snapping or adding ad-hoc CSS `height`
 transitions, so height changes stay consistent across the app and never fight an
 enclosing `ThreadStep`.
 
+Content that appears or disappears in place (a status line, an alert, a
+loader, a box of controls) opens height first and then fades in, with
+`Reveal` (`components/ui/reveal.tsx`); never mount it with a jump.
+
 A comment in a stylesheet earns its place only by preventing a specific wrong
 edit: a measured constraint, a browser behaviour, or a cross-file dependency.
 Two lines. Longer reasoning goes in `docs/interface/STYLING-SYSTEM.md`, not in the CSS.

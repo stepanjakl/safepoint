@@ -229,9 +229,11 @@ describe('apply router', () => {
       held.sheet = memorySheet({ ...capturedRead(tabs), id: 'live' });
       const got = await caller().application.preview(run);
       if (got.kind !== 'preview') throw new Error('Expected a preview.');
-      expect(got.problems[0]).toBe(
-        'The sheet has changed since this run read it (Stock). Start a new run to propose from what it holds now.',
-      );
+      expect(got.problems).toEqual([]);
+      expect(got.newlyFailing[0]).toMatchObject({
+        id: 'changed-since-read',
+        key: 'Stock',
+      });
     });
 
     it('settles a write that was cut short from the sheet where it can be reached, and shows it as not confirmed where it cannot', async () => {
@@ -330,7 +332,8 @@ describe('apply router', () => {
         kind: 'preview',
         tab: 'Orders',
         notWritable: null,
-        problems: [expect.stringMatching(/^The sheet has changed since/)],
+        problems: [],
+        newlyFailing: [expect.objectContaining({ id: 'changed-since-read' })],
         application: null,
       });
       expect((held.sheet as typeof sheet).writes).toEqual([]);

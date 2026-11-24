@@ -46,7 +46,7 @@ describe('the migrations applied into a schema of their own', () => {
     );
     expect(tables).toContain('runs');
     expect(tables).toContain('record_decisions');
-    expect(tables).toHaveLength(19);
+    expect(tables).toHaveLength(20);
     expect(
       (
         await client.query<{ name: string }>(
@@ -79,7 +79,7 @@ describe('the migrations applied into a schema of their own', () => {
          join pg_namespace pn on pn.oid = p.pronamespace
        where not t.tgisinternal and tn.nspname = $1 and pn.nspname = $1`,
     );
-    expect(triggers).toHaveLength(12);
+    expect(triggers).toHaveLength(13);
   });
 
   it('points every foreign key at a table of the schema', async () => {

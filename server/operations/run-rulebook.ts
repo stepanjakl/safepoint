@@ -9,6 +9,8 @@ import {
   loadRevision,
   loadSet,
   ownerFor,
+  textOf,
+  type RulebookAt,
 } from '@/server/storage/rules/rulebooks';
 
 /*
@@ -18,7 +20,7 @@ import {
 */
 export async function rulebookFor(
   { summary, runs }: RunProcess,
-  text: string,
+  at: RulebookAt,
   rulebook: string | undefined,
   read: KeptRead,
 ): Promise<{
@@ -35,6 +37,7 @@ export async function rulebookFor(
   published: string;
 }> {
   const { definitions, evaluation } = runs;
+  const text = textOf(at);
   if (evaluation === 'model') {
     const set = noRules(text);
     return {
@@ -46,7 +49,7 @@ export async function rulebookFor(
       published: summary.instructions.text,
     };
   }
-  const current = await loadSet(definitions, text);
+  const current = await loadSet(definitions, at);
   if (!current) throw new Error('No rules are kept for these instructions.');
   const revision = rulebook
     ? await loadRevision(definitions, text, rulebook)

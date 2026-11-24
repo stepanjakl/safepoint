@@ -8,6 +8,12 @@ import type { RunProcessId } from '@/components/app-shell/runs/kept-runs';
 import { Lede, plural, saidBy } from '@/components/engine/trial-parts';
 import { useTRPC } from '@/components/trpc/provider';
 import { AlertBox } from '@/components/ui/alert-box';
+import { Button } from '@/components/ui/button';
+import { Loader } from '@/components/ui/loader';
+import { MorphingText } from '@/components/ui/morphing-text';
+import { Reveal } from '@/components/ui/reveal';
+import { SmoothHeight } from '@/components/ui/smooth-height';
+import { useLoader } from '@/components/ui/working-mark';
 import {
   DATA_TABLE_BODY,
   DATA_TABLE_HEAD,
@@ -81,6 +87,8 @@ export function ApplyStep({
   const writing = useMutation(
     trpc.application.write.mutationOptions({ retry: false }),
   );
+  // A write that takes a moment shows that it is under way, with the loader.
+  const writingLoader = useLoader(writing.isPending);
   const undoing = useMutation(
     trpc.application.undo.mutationOptions({ retry: false }),
   );
@@ -125,6 +133,11 @@ export function ApplyStep({
   const askPreview = () => {
     if (mock) return;
     settle(previewing.mutateAsync(run), () => onReadyChange?.(true));
+  };
+  // Asked again by a person: what failed goes, so the answer is seen to come.
+  const askAgain = () => {
+    setFailure(null);
+    askPreview();
   };
 
   // When each record was decided: a decision changed or made again is a new
@@ -199,61 +212,113 @@ export function ApplyStep({
         Approved {count('approve')}, changed {count('change')}, rejected{' '}
         {count('reject')}.{' '}
         <span className="text-muted">
-          {rows ? `${plural(rows, 'row')} to write.` : 'Nothing to write.'}
+          {/* Said of the preview, once there is one: before it, or where it
+              failed, nothing is known yet of what would be written. */}
+          <MorphingText
+            text={
+              preview || standing || unconfirmed
+                ? rows
+                  ? `${plural(rows, 'row')} to write.`
+                  : 'Nothing to write.'
+                : failure
+                  ? 'What it would write is not known yet.'
+                  : 'Working out what it writes…'
+            }
+          />
         </span>
       </p>
-      {failure ? <AlertBox>{failure}</AlertBox> : null}
-      {changes.length ? (
-        <ChangesTable
-          fields={subject.proposal}
-          changes={changes}
-          names={preview?.names ?? {}}
-          outputKey={output?.key}
-          written={Boolean(standing)}
-        />
-      ) : null}
-      <p role="status" className="text-dense">
-        {writing.isPending
-          ? 'Writing the approved changes.'
-          : application
-            ? writeResult(noun, application.status)
-            : null}
-        {application?.error && application.status !== 'undone'
-          ? ` ${application.error}`
-          : null}
-      </p>
-      {!standing && preview?.notWritable ? (
-        <p className="text-meta text-muted">{preview.notWritable}</p>
-      ) : null}
-      {!standing && !unconfirmed && refused.length ? (
-        <AlertBox>
-          <ul className="list-disc pl-5">
-            {refused.map((problem) => (
-              <li key={problem}>{problem}</li>
-            ))}
-          </ul>
-        </AlertBox>
-      ) : null}
-      <WriteControls
-        noun={noun}
-        rows={rows}
-        note={
-          preview
-            ? writePreviewNote({
-                rows,
-                tab: preview.tab,
-                tabExists: preview.tabExists,
-                resource: resource.singular,
-              })
-            : undefined
-        }
-        held={held}
-        canWrite={Boolean(canWrite && !standing && !unconfirmed)}
-        canUndo={Boolean(standing)}
-        busy={acting}
-        onWrite={write}
-        onUndo={undo}
-      />
+      {/* What comes and goes below opens height first (Reveal), each with the
+          step's gap above it, so the list keeps no gap of its own. */}
+      <div className="-mt-4 grid">
+        <Reveal show={Boolean(failure)} gap="pt-4">
+          <AlertBox
+            action={
+              mock ? undefined : (
+                <Button
+                  size="small"
+                  isDisabled={acting || previewing.isPending}
+                  onPress={askAgain}
+                >
+                  Try again
+                </Button>
+              )
+            }
+          >
+            {failure}
+          </AlertBox>
+        </Reveal>
+        <Reveal show={changes.length > 0} gap="pt-4">
+          <ChangesTable
+            fields={subject.proposal}
+            changes={changes}
+            names={preview?.names ?? {}}
+            outputKey={output?.key}
+            written={Boolean(standing)}
+          />
+        </Reveal>
+        <div role="status" className="text-dense">
+          <Reveal
+            show={
+              writingLoader.phase === 'shown' || writingLoader.phase === 'slow'
+            }
+            gap="pt-4"
+          >
+            <Loader
+              phase={writingLoader.phase === 'slow' ? 'slow' : 'shown'}
+              label="Writing the approved changes…"
+              announce={false}
+            />
+          </Reveal>
+          <Reveal show={!writing.isPending && Boolean(application)} gap="pt-4">
+            {application ? writeResult(noun, application.status) : null}
+            {application?.error && application.status !== 'undone'
+              ? ` ${application.error}`
+              : null}
+          </Reveal>
+        </div>
+        <Reveal show={Boolean(!standing && preview?.notWritable)} gap="pt-4">
+          <p className="text-meta text-muted">{preview?.notWritable}</p>
+        </Reveal>
+        <Reveal
+          show={Boolean(!standing && !unconfirmed && refused.length)}
+          gap="pt-4"
+        >
+          <AlertBox>
+            <ul className="list-disc pl-5">
+              {refused.map((problem) => (
+                <li key={problem}>{problem}</li>
+              ))}
+            </ul>
+          </AlertBox>
+        </Reveal>
+        <Reveal
+          show={Boolean((canWrite && !standing && !unconfirmed) || standing)}
+          gap="pt-4"
+        >
+          <SmoothHeight>
+            <WriteControls
+              noun={noun}
+              rows={rows}
+              note={
+                preview
+                  ? writePreviewNote({
+                      rows,
+                      tab: preview.tab,
+                      tabExists: preview.tabExists,
+                      resource: resource.singular,
+                    })
+                  : undefined
+              }
+              held={held}
+              canWrite={Boolean(canWrite && !standing && !unconfirmed)}
+              canUndo={Boolean(standing)}
+              busy={acting}
+              onWrite={write}
+              onUndo={undo}
+            />
+          </SmoothHeight>
+        </Reveal>
+      </div>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
 import { useTRPC } from '@/components/trpc/provider';
+import { modelPlanShortLabel } from '@/lib/models';
 import type { ProcessRun, RunStatus, RunTrigger } from '@/lib/shell/model';
 import type { AppRouter } from '@/server/api/root';
 
@@ -28,12 +29,29 @@ type Progress = Omit<
 export const processRunOf = (run: KeptRun): ProcessRun => ({
   id: run.id,
   startedAt: run.startedAt,
-  status: run.status as RunStatus,
+  // A job that stopped it is said as the run's screen says it, unopened.
+  status:
+    run.activity && !run.activity.working && run.activity.stopped
+      ? 'failed'
+      : (run.status as RunStatus),
   trigger: run.trigger as RunTrigger,
   counts: { items: 0 },
   instructionsVersion: run.instructions.version,
   ...(run.activity ? { activity: run.activity } : {}),
+  ...(SHOW_MODELS && (run.modelPlan || run.ownRulebook)
+    ? {
+        models: {
+          label: run.modelPlan
+            ? modelPlanShortLabel(run.modelPlan)
+            : 'Default models',
+          ownRulebook: run.ownRulebook,
+        },
+      }
+    : {}),
 });
+
+// Which models a run used is development's to compare, for now.
+const SHOW_MODELS = process.env.NODE_ENV === 'development';
 
 export function useKeptRuns(processId: string, enabled: boolean) {
   const trpc = useTRPC();

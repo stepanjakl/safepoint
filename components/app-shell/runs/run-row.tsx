@@ -164,6 +164,13 @@ export function RunRow({
           noun={noun}
         />
       )}
+      {run.models ? (
+        // Development only: which models it ran on, to compare them.
+        <span aria-hidden="true" className="sheet-row-models text-micro">
+          {run.models.label}
+          {run.models.ownRulebook ? ' · own rules' : ''}
+        </span>
+      ) : null}
     </button>
   );
 }
@@ -286,5 +293,8 @@ function announce(
   if (run.duration) parts.push(`took ${run.duration}`);
   if (run.decidedBy) parts.push(`decided by ${run.decidedBy}`);
   const prefix = mock ? 'Mock run. ' : '';
-  return `${prefix}${status}. ${stamp}. ${trigger}. ${parts.join(', ')}.`;
+  const models = run.models
+    ? ` ${run.models.label}${run.models.ownRulebook ? ', with its own rules' : ''}.`
+    : '';
+  return `${prefix}${status}. ${stamp}. ${trigger}.${models} ${parts.join(', ')}.`;
 }

@@ -109,7 +109,8 @@ describe('trial model providers', () => {
       response_format: { type: 'json_schema', json_schema: { strict: false } },
       ...(id === openrouter
         ? { provider: { require_parameters: true } }
-        : { reasoning_format: 'hidden' }),
+        : // Room for an answer after Groq's hidden reasoning.
+          { reasoning_format: 'hidden', max_completion_tokens: 32_768 }),
     });
   });
 

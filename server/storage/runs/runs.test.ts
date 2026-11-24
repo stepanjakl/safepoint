@@ -57,6 +57,7 @@ describe('the list of runs', () => {
       trigger: 'manual',
       additionalInstructions: null,
       modelPlan: null,
+      ownRulebook: false,
       startedBy: null,
       startedAt: '2026-11-01T09:00:00.000Z',
       updatedAt: expect.any(String),

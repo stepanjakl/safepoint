@@ -12,7 +12,13 @@ import {
   type Written,
 } from '@/lib/engine/write';
 import type { Agreement } from '@/lib/engine/types';
-import { loadSet, ownerFor, updateSet } from '@/server/storage/rules/rulebooks';
+import {
+  loadSet,
+  ownerFor,
+  textOf,
+  updateSet,
+  type RulebookAt,
+} from '@/server/storage/rules/rulebooks';
 
 /*
   Server-only. Writing a definition, kept: the engine writes it
@@ -23,11 +29,12 @@ import { loadSet, ownerFor, updateSet } from '@/server/storage/rules/rulebooks';
 
 const settingFor = async (
   owner: DefinitionProcess,
-  text: string,
+  at: RulebookAt,
   read: KeptRead,
   id: string,
 ) => {
-  const set = await loadSet(owner, text);
+  const text = textOf(at);
+  const set = await loadSet(owner, at);
   // The read is held to the profile the set was drafted on, if it names one.
   const reading = set ? await ownerFor(owner, set) : owner;
   fitting(read, reading.subject.data);
@@ -39,40 +46,36 @@ const settingFor = async (
 
 // Keeps a write, or says why there is nothing to keep.
 const keep = (
+  at: RulebookAt,
   setting: Setting,
   written: Written,
   agreement: Agreement | null,
   note: string | null = null,
-) =>
-  updateSet(
-    setting.owner,
-    setting.text,
-    keeping(setting, written, agreement, note),
-  );
+) => updateSet(setting.owner, at, keeping(setting, written, agreement, note));
 
 // One write, kept as it stands.
 export async function writeDefinition(
   owner: DefinitionProcess,
-  text: string,
+  at: RulebookAt,
   read: KeptRead,
   id: string,
   asking: Asking = {},
 ): Promise<DefinitionSet | null> {
-  const setting = await settingFor(owner, text, read, id);
+  const setting = await settingFor(owner, at, read, id);
   if (!setting) return null;
-  return keep(setting, await writeOnce(setting, asking), null);
+  return keep(at, setting, await writeOnce(setting, asking), null);
 }
 
 // Writes a definition until two writes agree, and keeps what that comes to.
 export async function writeAgreed(
   owner: DefinitionProcess,
-  text: string,
+  at: RulebookAt,
   read: KeptRead,
   id: string,
   options: Asking & WriteRuns = {},
 ): Promise<DefinitionSet | null> {
-  const setting = await settingFor(owner, text, read, id);
+  const setting = await settingFor(owner, at, read, id);
   if (!setting) return null;
   const { written, agreement, note } = await writeUntilAgreed(setting, options);
-  return keep(setting, written, agreement, note);
+  return keep(at, setting, written, agreement, note);
 }

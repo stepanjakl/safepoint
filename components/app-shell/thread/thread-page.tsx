@@ -24,7 +24,7 @@ export function ThreadPage({
     <main
       id={primary ? 'main' : undefined}
       tabIndex={-1}
-      className="mx-auto w-[min(100%,760px)] flex-1 px-6 pt-10 pb-8 max-sm:px-4 max-sm:py-7"
+      className="thread-page mx-auto w-[min(100%,760px)] flex-1 px-6 pt-10 max-sm:px-4 max-sm:pt-7"
     >
       {title ? (
         <div className="mb-8 max-sm:mb-6">

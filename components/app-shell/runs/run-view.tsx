@@ -48,6 +48,9 @@ import { RunReadiness } from './run-readiness';
 */
 // The empty page's key: no run.
 const NONE = '';
+// A blank page's key, while the chosen run is still being found: a reload
+// shows neither the empty page nor the run until it is known which.
+const PENDING = '\u0000pending';
 
 export function RunView({
   process,
@@ -69,19 +72,30 @@ export function RunView({
     (id === process.runs.find((run) => run.current)?.id ||
       (liveThread &&
         (id === selection?.live?.run.id ||
-          id === selection?.instructionLoad?.runId)))
+          (id === selection?.instructionLoad?.runId &&
+            selection.instructionLoad.failed))))
       ? id
       : NONE;
-  const target = keyOf(selection?.selected ?? NONE);
-  const [readiness, setReadiness] = useState<Record<string, boolean>>({});
+  // A run whose instructions are still being fetched is as yet unknown too:
+  // only their failure has anything to say.
   const instructions = selection?.instructionLoad;
-  const waiting = instructions?.runId === target ? instructions : null;
+  const target =
+    selection?.pending ||
+    (instructions &&
+      !instructions.failed &&
+      instructions.runId === selection?.selected)
+      ? PENDING
+      : keyOf(selection?.selected ?? NONE);
+  const [readiness, setReadiness] = useState<Record<string, boolean>>({});
+  // A page fades in only once it has been drawn, unseen: a heavy thread
+  // mounted in the fade's first frame would otherwise skip its fade.
+  const [drawn, setDrawn] = useState<Record<string, true>>({});
+  const failure = instructions?.runId === target ? instructions : null;
   const waitForThread = Boolean(
     selection?.live?.kept.readId && !selection.live.mock,
   );
   const preparing =
-    (waitForThread && readiness[target] !== true) ||
-    Boolean(waiting && !waiting.failed);
+    target === PENDING || (waitForThread && readiness[target] !== true);
   // The old run leaves as soon as another is chosen; the new one waits unseen
   // until it can be drawn in full.
   const { shown, layer } = useSwap(
@@ -89,7 +103,9 @@ export function RunView({
     () => 'fade',
     true,
     undefined,
-    (current) => readiness[current] !== false,
+    (current) =>
+      readiness[current] !== false && (current === PENDING || !!drawn[current]),
+    (current) => current === PENDING,
   );
   const reportReady = useCallback((id: string, ready: boolean | undefined) => {
     setReadiness((previous) => {
@@ -97,6 +113,15 @@ export function RunView({
       const next = { ...previous };
       if (ready === undefined) delete next[id];
       else next[id] = ready;
+      return next;
+    });
+  }, []);
+  const reportDrawn = useCallback((id: string, drawn: boolean) => {
+    setDrawn((previous) => {
+      if (Boolean(previous[id]) === drawn) return previous;
+      const next = { ...previous };
+      if (drawn) next[id] = true;
+      else delete next[id];
       return next;
     });
   }, []);
@@ -110,7 +135,11 @@ export function RunView({
   // the rail answers the click in its own frame and building cannot stall it.
   const building = useDeferredValue(target);
   const staged =
-    shown !== NONE && shown !== target && waitForThread && building === target;
+    shown !== NONE &&
+    shown !== PENDING &&
+    shown !== target &&
+    waitForThread &&
+    building === target;
   // A wait for the next run that outlasts the loader's delay is said: the
   // loader stands in the emptied column until the new run is ready.
   const loading = useLoader(preparing, RUN_LOADER_DELAY_MS);
@@ -128,23 +157,18 @@ export function RunView({
     pageSelection: RunSelection | null,
     active: boolean,
   ): ReactNode => {
+    if (id === PENDING) return null;
     if (id && id === process.runs.find((run) => run.current)?.id)
       return recorded;
     const instructions = pageSelection?.instructionLoad;
-    if (instructions?.runId === id) {
-      const message = instructionMessage(instructions);
+    if (instructions?.runId === id && instructions.failed)
       return (
         <ThreadPage label="Run instructions">
-          {instructions.failed ? (
-            <AlertBox role="note" title={message}>
-              Reopen this run to try again.
-            </AlertBox>
-          ) : (
-            <p className="text-dense text-muted">{message}</p>
-          )}
+          <AlertBox role="note" title={instructionFailure(instructions)}>
+            Reopen this run to try again.
+          </AlertBox>
         </ThreadPage>
       );
-    }
     const live = pageSelection?.live;
     if (live && liveThread && id === live.run.id) {
       const at = live.run.startedAt;
@@ -197,6 +221,7 @@ export function RunView({
               id={id}
               selection={context}
               onReady={reportReady}
+              onDrawn={reportDrawn}
               shown={active}
             >
               {page(id, context, active)}
@@ -215,8 +240,8 @@ export function RunView({
         </div>
       ) : null}
       <p role="status" className="sr-only">
-        {waiting
-          ? instructionMessage(waiting)
+        {failure
+          ? instructionFailure(failure)
           : preparing
             ? 'Loading run…'
             : null}
@@ -225,28 +250,39 @@ export function RunView({
   );
 }
 
-function instructionMessage({
-  failed,
+function instructionFailure({
   version,
 }: NonNullable<RunSelection['instructionLoad']>) {
-  return failed
-    ? `Couldn’t load instructions ${version} for this run.`
-    : `Loading instructions ${version}…`;
+  return `Couldn’t load instructions ${version} for this run.`;
 }
 
 function RunPage({
   id,
   selection,
   onReady,
+  onDrawn,
   shown,
   children,
 }: {
   id: string;
   selection: RunSelection | null;
   onReady: (id: string, ready: boolean | undefined) => void;
+  onDrawn: (id: string, drawn: boolean) => void;
   shown: boolean;
   children: ReactNode;
 }) {
+  // Drawn once two frames have passed since it mounted: the first paints it.
+  useLayoutEffect(() => {
+    let second = 0;
+    const first = requestAnimationFrame(() => {
+      second = requestAnimationFrame(() => onDrawn(id, true));
+    });
+    return () => {
+      cancelAnimationFrame(first);
+      cancelAnimationFrame(second);
+      onDrawn(id, false);
+    };
+  }, [id, onDrawn]);
   const report = useCallback(
     (ready: boolean) => onReady(id, ready),
     [id, onReady],

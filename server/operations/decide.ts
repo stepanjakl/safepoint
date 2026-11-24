@@ -32,8 +32,11 @@ import {
   loadSet,
   ownerFor,
   putRevision,
+  runOf,
+  textOf,
   updateSet,
   type RuleDecision,
+  type RulebookAt,
 } from '@/server/storage/rules/rulebooks';
 
 /*
@@ -121,7 +124,7 @@ async function keysOn(
 // was accepted on, so a record the data gains later can be told from them.
 async function freezing(
   owner: DefinitionProcess,
-  text: string,
+  at: RulebookAt,
   saved: Promise<DefinitionSet | null>,
   readOf: (id: string) => Promise<KeptRead | null>,
 ): Promise<DefinitionSet | null> {
@@ -131,29 +134,30 @@ async function freezing(
   // Only onto the rulebook the keys were taken for: one changed since is
   // frozen by the decision that completes it again, if one does.
   let same = false;
-  const kept = await updateSet(owner, text, (s) => {
+  const kept = await updateSet(owner, at, (s) => {
     same =
       complete(s) &&
       s.readId === set.readId &&
       fingerprintOf(s) === fingerprintOf(set);
     return same ? { ...s, acceptedKeys } : s;
   });
-  if (kept && same) await putRevision(owner, kept, { reason: 'accepted' });
+  if (kept && same)
+    await putRevision(owner, kept, { reason: 'accepted', run: runOf(at) });
   return kept;
 }
 
 export const confirmIntent = (
   owner: DefinitionProcess,
-  text: string,
+  at: RulebookAt,
   readOf: (id: string) => Promise<KeptRead | null>,
   actor: string | null = null,
 ) =>
   freezing(
     owner,
-    text,
+    at,
     updateSet(
       owner,
-      text,
+      at,
       (s) => ({
         ...s,
         intentConfirmedAt: new Date().toISOString(),
@@ -165,16 +169,16 @@ export const confirmIntent = (
 
 export async function deny(
   owner: DefinitionProcess,
-  text: string,
+  at: RulebookAt,
   id: string,
   note: string | undefined,
   actor: string | null = null,
 ): Promise<DefinitionSet | null> {
-  const set = await loadSet(owner, text);
+  const set = await loadSet(owner, at);
   if (!set?.definitions.some((d) => d.id === id)) return set;
   return updateSet(
     owner,
-    text,
+    at,
     (s) =>
       changing(s, id, (d) => ({
         ...d,
@@ -194,16 +198,16 @@ export async function deny(
 // this definition has to be looked at again, as after any other new version.
 export async function choose(
   owner: DefinitionProcess,
-  text: string,
+  at: RulebookAt,
   id: string,
   index: number,
   actor: string | null = null,
 ): Promise<DefinitionSet | null> {
-  const set = await loadSet(owner, text);
+  const set = await loadSet(owner, at);
   if (!set?.definitions.some((d) => d.id === id)) return set;
   return updateSet(
     owner,
-    text,
+    at,
     (s) => {
       const dependents = dependentsOf(s, id);
       return changing(
@@ -256,13 +260,14 @@ export async function choose(
 */
 export async function setAppliesTo(
   owner: DefinitionProcess,
-  text: string,
+  at: RulebookAt,
   id: string,
   value: AppliesTo,
   readOf: (id: string) => Promise<KeptRead | null>,
   actor: string | null = null,
 ): Promise<DefinitionSet | null> {
-  const set = await loadSet(owner, text);
+  const text = textOf(at);
+  const set = await loadSet(owner, at);
   const definition = set?.definitions.find((d) => d.id === id);
   if (!set || !definition) return null;
   if (definition.result !== 'check') return set;
@@ -270,7 +275,7 @@ export async function setAppliesTo(
   const read = set.readId ? await readOf(set.readId) : null;
   return updateSet(
     owner,
-    text,
+    at,
     (s) => {
       // From the set being saved: a rule may have come to read this one since.
       const dependents = dependentsOf(s, id);
@@ -321,12 +326,13 @@ export async function setAppliesTo(
 
 export async function accept(
   owner: DefinitionProcess,
-  text: string,
+  at: RulebookAt,
   id: string,
   readOf: (id: string) => Promise<KeptRead | null>,
   actor: string | null = null,
 ): Promise<DefinitionSet | null> {
-  const set = await loadSet(owner, text);
+  const text = textOf(at);
+  const set = await loadSet(owner, at);
   const definition = set?.definitions.find((d) => d.id === id);
   if (!set || !definition) return null;
   // Accepted against the data profile it was drafted on, if it names one.
@@ -340,7 +346,7 @@ export async function accept(
   ) =>
     updateSet(
       owner,
-      text,
+      at,
       (s) => {
         const ids = [...new Set([id, ...definition.uses, ...reads])];
         // The review ran on the read and profile loaded with the set.
@@ -444,7 +450,7 @@ export async function accept(
     }),
     ran.uses,
   );
-  return freezing(owner, text, accepted, readOf);
+  return freezing(owner, at, accepted, readOf);
 }
 
 /*
@@ -458,14 +464,15 @@ export async function accept(
 */
 export async function rebaseSet(
   owner: DefinitionProcess,
-  text: string,
+  at: RulebookAt,
   read: KeptRead,
   profile: DataProfile,
 ): Promise<DefinitionSet | null> {
+  const text = textOf(at);
   if (!profile.confirmedAt)
     throw new Error('Only a confirmed data profile can be drafted on.');
   // Worked out on the set as it is saved, so no update between is lost.
-  return updateSet(owner, text, (set) => {
+  return updateSet(owner, at, (set) => {
     const profiled = withProfile(owner, profile);
     const records = recordsOf(read, profiled.subject.data);
     if (records.problems.length)

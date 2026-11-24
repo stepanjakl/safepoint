@@ -49,6 +49,8 @@ export const runsRouter = router({
         // A note for this run alone, as the start control takes one.
         additionalInstructions: z.string().max(20_000).nullable().default(null),
         modelPlan: modelPlanSchema.optional(),
+        // Drafts its own rulebook rather than the one its instructions share.
+        ownRulebook: z.boolean().default(false),
       }),
     )
     .mutation(({ ctx, input }) => {
@@ -60,11 +62,18 @@ export const runsRouter = router({
           'This model is unavailable. Choose another model for this run.',
           'BAD_REQUEST',
         );
+      // A run with rules of its own compares models: development's alone.
+      if (input.ownRulebook && process.env.NODE_ENV !== 'development')
+        throw new Refused(
+          'A run keeps rules of its own in development only.',
+          'BAD_REQUEST',
+        );
       return startRun(runProcess(input.process), {
         instructions: input.instructions,
         trigger: input.trigger,
         additionalInstructions: input.additionalInstructions?.trim() || null,
         modelPlan: input.modelPlan,
+        ownRulebook: input.ownRulebook,
         actor: ctx.actor,
       });
     }),

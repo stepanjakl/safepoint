@@ -8,6 +8,10 @@ import type {
   Proposal,
 } from './types';
 
+// The acknowledgement a write needs where its data changed since the read
+// (apply.ts): one id, so the controls can word it apart from a check.
+export const CHANGED_SINCE_READ = 'changed-since-read';
+
 /*
   Working out the block of cells a set of decided writes touches on a tab's
   grid, with no model or storage dependency, so both the engine's write
@@ -50,6 +54,8 @@ export function blockFor(
   grid: unknown[][],
   owner: DefinitionProcess,
   writes: { key: string; values: Record<string, number> }[],
+  // The header a field is written under, where it is not the field's id.
+  headers: Record<string, string> = {},
 ): { block: Block | null; changes: CellChange[]; problems: string[] } {
   const { output } = owner.subject.data;
   if (!output) throw new Error('This process declares no output.');
@@ -76,9 +82,10 @@ export function blockFor(
   let nextColumn = empty ? 1 : header.length;
   const columnOf = Object.fromEntries(
     fields.map((field) => {
-      const at = empty ? -1 : header.indexOf(field);
+      const name = headers[field] ?? field;
+      const at = empty ? -1 : header.indexOf(name);
       if (at >= 0) return [field, at];
-      put(0, nextColumn, field);
+      put(0, nextColumn, name);
       return [field, nextColumn++];
     }),
   );
@@ -105,7 +112,7 @@ export function blockFor(
         field,
         cell: address.value({
           resource: output.tab,
-          column: { index: column, header: field },
+          column: { index: column, header: headers[field] ?? field },
           // Listed more than once, the key does not name the row alone.
           row: { index: row, key: found.length > 1 ? undefined : key },
         }),

@@ -120,6 +120,7 @@ export function CalculateStep({
   readId,
   calculatedOn,
   runId,
+  ownRulebook = false,
   modelPlan,
   onProgress,
   onReadyChange,
@@ -132,6 +133,8 @@ export function CalculateStep({
   // The rulebook the run last calculated on, if any.
   calculatedOn: string | null;
   runId?: string;
+  // The run keeps a rulebook of its own, so its rules are found by the run.
+  ownRulebook?: boolean;
   modelPlan?: ModelPlan | null;
   onProgress: (progress: CalculateProgress) => void;
   onReadyChange?: (ready: boolean) => void;
@@ -153,7 +156,12 @@ export function CalculateStep({
   // changed since, and a cross-check lands in this same answer. The last
   // answer is kept and shown meanwhile, so a run opened again shows at once.
   const worked = trpc.calculate.get.queryOptions(
-    { text, readId, rulebook: pin ?? undefined },
+    {
+      text,
+      readId,
+      rulebook: pin ?? undefined,
+      ...(ownRulebook && runId ? { runId } : {}),
+    },
     {
       enabled: !mock,
       staleTime: mock ? Infinity : JUST_ASKED_MS,

@@ -3,7 +3,7 @@ import 'server-only';
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import { and, asc, eq, sql } from 'drizzle-orm';
+import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import type { z } from 'zod';
 
 import { fingerprintOf, profileFingerprint } from '@/lib/engine/fingerprint';
@@ -407,9 +407,11 @@ export async function exportRulebooks(
     );
   }
 
+  // A run's own revisions are that run's, not the reviewed history.
   const revisions = await db
     .select()
     .from(rulebookRevisions)
+    .where(isNull(rulebookRevisions.runId))
     .orderBy(asc(rulebookRevisions.seq));
   const heads = await db.select().from(rulebookHeads);
   const indexes = new Map<string, RevisionIndex>();

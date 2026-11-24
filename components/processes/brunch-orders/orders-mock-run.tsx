@@ -77,7 +77,11 @@ import { sourceById } from '@/lib/sources/model';
 import { motionTime } from '@/lib/ui/motion-time';
 import { useWorkingFavicon } from '@/components/app-shell/runs/working-favicon';
 
-import { ordersAnnouncement, ordersRunStatus } from './orders-progress';
+import {
+  ordersAnnouncement,
+  ordersRunStatus,
+  stoppedFlag,
+} from './orders-progress';
 
 const AT = '2026-11-06T11:49:00.000Z';
 const MOCK_READ_ID = 'mock-captured-read';
@@ -910,7 +914,7 @@ export function OrdersMockRun({
 
   const flag = (step: ProcessStep) =>
     step.id === 'rules' && !rules?.running && rules?.error
-      ? `Stopped: ${rules.error.split(/[.:]/)[0]!.toLowerCase()}`
+      ? stoppedFlag(rules.error)
       : step.id === 'propose' &&
           canPropose &&
           !proposed?.running &&

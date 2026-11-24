@@ -46,6 +46,13 @@ export const TRIAL_MODELS = {
     id: 'inclusionai/ling-3.2-flash:free',
     label: 'Ling 3.2 Flash · OpenRouter',
   },
+  // Development only: Claude through the CLI signed in on this machine
+  // (server/models/claude-cli.ts), offered once the server has provided it.
+  'local:claude-opus': {
+    provider: 'local',
+    id: 'opus',
+    label: 'Claude Opus · local',
+  },
 } as const;
 
 type TrialModel = keyof typeof TRIAL_MODELS;
@@ -107,11 +114,12 @@ export function modelsFor(
       (id) => isTrialModel(id) && TRIAL_MODELS[id].provider === plan,
     );
   if (!isTrialModel(plan)) return fallbackChain(plan);
+  const { provider } = TRIAL_MODELS[plan];
+  // A local model has no fleet to fall back on.
+  if (provider === 'local') return [plan];
   return [
     plan,
-    ...modelsFor({ plan: TRIAL_MODELS[plan].provider }, []).filter(
-      (id) => id !== plan,
-    ),
+    ...modelsFor({ plan: provider }, []).filter((id) => id !== plan),
   ];
 }
 
@@ -125,4 +133,16 @@ export function modelPlanLabel(plan: ModelPlan): string {
 
 export function availableModelPlan(plan: ModelPlan, models: DraftingModel[]) {
   return modelsFor({ plan }, [GEMINI_FIND]).every((id) => models.includes(id));
+}
+
+// A plan in a few words, for a run's row: a fleet by its provider, a Gemini
+// model by its version and kind, a trial model by its name alone.
+export function modelPlanShortLabel(plan: ModelPlan): string {
+  if (plan === 'gemini' || plan === 'groq' || plan === 'openrouter')
+    return MODEL_FLEETS[plan];
+  if (isTrialModel(plan)) return TRIAL_MODELS[plan].label.split(' · ')[0]!;
+  return plan
+    .replace(/^gemini-/, 'Gemini ')
+    .replace(/-flash-lite$/, ' Flash-Lite')
+    .replace(/-flash$/, ' Flash');
 }

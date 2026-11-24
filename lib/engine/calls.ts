@@ -64,6 +64,19 @@ export class ModelsResting extends Error {
   }
 }
 
+/*
+  Every model of a chain was busy (a 5xx, or too slow), or resting: a spike
+  in demand, which passes. Said as the last model said it, with a short wait,
+  so a draft waits and asks again rather than stopping part way.
+*/
+export const BUSY_WAIT_MS = 90_000;
+export class ModelsBusy extends ModelsResting {
+  constructor(message: string, until: number) {
+    super(message, until);
+    this.name = 'ModelsBusy';
+  }
+}
+
 // A call's own timeout aborts it with a TimeoutError, wrapped or not.
 const timedOut = (error: unknown): boolean =>
   typeof error === 'object' &&
@@ -133,6 +146,8 @@ export async function withModels<R>(
   await limitsReady();
   const telemetry = await devtools(name);
   let last: unknown = null;
+  // Whether each model passed over was only busy or resting.
+  let onlyBusy = true;
   for (const model of models) {
     const resting = restingUntil(model);
     if (resting) {
@@ -178,6 +193,8 @@ export async function withModels<R>(
       const status = APICallError.isInstance(cause)
         ? (cause.statusCode ?? 0)
         : 0;
+      // No status at all: the connection itself failed, which passes too.
+      const unreached = APICallError.isInstance(cause) && status === 0;
       const invalidAnswer =
         NoObjectGeneratedError.isInstance(cause) ||
         NoOutputGeneratedError.isInstance(cause) ||
@@ -185,7 +202,7 @@ export async function withModels<R>(
           APICallError.isInstance(cause) &&
           /tool call validation failed/i.test(cause.message));
       said(
-        timedOut(error) || status >= 500
+        timedOut(error) || status >= 500 || unreached
           ? 'busy'
           : status === 429
             ? 'quota'
@@ -198,6 +215,7 @@ export async function withModels<R>(
         tell?.({ kind: 'busy', model, why: 'slow' });
         continue;
       }
+      if (status < 500 && status !== 429 && !unreached) onlyBusy = false;
       if (invalidAnswer) continue;
       if (!APICallError.isInstance(cause)) throw error;
       if (status === 429) {
@@ -210,7 +228,7 @@ export async function withModels<R>(
         });
         continue;
       }
-      if (status >= 500) {
+      if (status >= 500 || unreached) {
         tell?.({ kind: 'busy', model, why: 'unavailable', status });
         continue;
       }
@@ -222,6 +240,11 @@ export async function withModels<R>(
     throw new ModelsResting(
       `Out of quota: ${resting.map((m) => `${m} until ${clock(restingUntil(m)!)}`).join(', ')}. Choose a model of another family, or try again later.`,
       Math.min(...resting.map((m) => restingUntil(m)!)),
+    );
+  if (onlyBusy && last instanceof Error && models.length)
+    throw new ModelsBusy(
+      last.message.split('\n')[0]!,
+      Date.now() + BUSY_WAIT_MS,
     );
   throw last instanceof Error ? last : new Error('The model service failed.');
 }

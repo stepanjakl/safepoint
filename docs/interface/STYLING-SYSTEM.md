@@ -374,6 +374,16 @@ detail columns, empty states and loading marks obey the same sequence. Keep
 reduced motion immediate. Interaction feedback and ongoing activity retain
 their own timing.
 
+**Content that comes and goes in place opens height first.** A status line,
+an alert, a box of controls or a loader that appears inside a step uses
+`Reveal` (`components/ui/reveal.tsx`): its space eases open on the fold curve,
+then the content fades in; leaving, it fades, then the space closes, so
+nothing below jumps. Its gap above is its own padding, so a closed one takes
+no room; inside a container with a gap, cancel the gap with a negative
+margin on the `Reveal` (as `-mt-4` with `pt-4`). Content that stays and
+changes height uses `SmoothHeight`; a panel arriving after a load uses
+`Arrival` (`working-mark.tsx`).
+
 **Entrances stagger only when a screen arrives.** A load or a navigation brings
 fresh data, so its rows and empty state rise in after the screen settles; the
 detail column beside them comes with the list, never after it. A tab chosen afterwards, or a list swapped in place, shows

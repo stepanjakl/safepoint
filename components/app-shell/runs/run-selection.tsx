@@ -117,6 +117,10 @@ export type RunSelection = {
   // The process's runs, newest first.
   runs: ProcessRun[];
   selected: string | null;
+  // A run is chosen, as a reload's address chooses one, but not yet found:
+  // the list is still being asked for, or the browser's own runs have not
+  // been read. Neither a run nor the empty page is drawn meanwhile.
+  pending: boolean;
   // Shows a run, or shows nothing when it is the one already shown.
   select: (id: string) => void;
   // Asks for a run's data ahead of it being shown (RunPrefetch).
@@ -128,6 +132,8 @@ export type RunSelection = {
     | ((
         additionalInstructions?: string,
         modelPlan?: ModelPlan,
+        // Drafts a rulebook of its own (development only, to compare models).
+        ownRulebook?: boolean,
       ) => Promise<boolean>)
     | null;
   // Starts a local mock run in memory only (no server call, no database write).
@@ -175,6 +181,8 @@ export function useRunSelection() {
   return useContext(RunSelectionContext);
 }
 
+const noSubscription = () => () => {};
+
 function createMockRun(
   processId: RunProcessId,
   version: string,
@@ -199,6 +207,7 @@ function createMockRun(
     },
     additionalInstructions: additionalInstructions || null,
     modelPlan: null,
+    ownRulebook: false,
     readId: null,
     rulebook: null,
   };
@@ -229,6 +238,12 @@ export function useRunSelectionState({
     writeStoredMockRuns(process.id, next);
   };
   const kept = useKeptRuns(process.id, liveThread);
+  // Mock runs live in this browser alone: unread until hydration.
+  const hydrated = useSyncExternalStore(
+    noSubscription,
+    () => true,
+    () => false,
+  );
   const prefetcher = useContext(RunPrefetch);
   const { versions, current } = useInstructions(
     process.id,
@@ -243,6 +258,14 @@ export function useRunSelectionState({
     ? allLiveRuns.find((entry) => entry.id === selected)
     : undefined;
   const mock = keptRun ? isMockRunId(keptRun.id) : false;
+  // An unknown id is let go by the effect below, so a kept run's wait ends
+  // either way; a mock's ends with hydration.
+  const pending =
+    liveThread &&
+    selected !== null &&
+    keptRun === undefined &&
+    !process.runs.some((run) => run.id === selected) &&
+    (isMockRunId(selected) ? !hydrated : !kept.runs.isError);
   const savedRun = mock ? undefined : keptRun;
   const hash = savedRun?.instructions.hash;
   const listed = hash
@@ -310,7 +333,11 @@ export function useRunSelectionState({
         ? 'Reading the instructions…'
         : null;
 
-  const start = async (additionalInstructions = '', modelPlan?: ModelPlan) => {
+  const start = async (
+    additionalInstructions = '',
+    modelPlan?: ModelPlan,
+    ownRulebook = false,
+  ) => {
     if (cannotStart) return false;
     try {
       const run = await kept.start.mutateAsync({
@@ -318,6 +345,7 @@ export function useRunSelectionState({
         instructions: current.hash!,
         additionalInstructions: additionalInstructions || null,
         modelPlan,
+        ownRulebook,
       });
       setSelected(run.id);
       return true;
@@ -345,6 +373,7 @@ export function useRunSelectionState({
       return diff !== 0 ? diff : b.id.localeCompare(a.id);
     }),
     selected,
+    pending,
     prefetch: (id) => {
       if (!prefetcher || id === selected || isMockRunId(id)) return;
       const run = keptRuns.find((entry) => entry.id === id);

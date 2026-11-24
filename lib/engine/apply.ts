@@ -1,5 +1,6 @@
 import {
   blockFor,
+  CHANGED_SINCE_READ,
   cellsOfBlock,
   sameBlock,
   writesOf,
@@ -21,6 +22,7 @@ import type {
 
 export {
   blockFor,
+  CHANGED_SINCE_READ,
   cellsOfBlock,
   sameBlock,
   writesOf,
@@ -134,6 +136,7 @@ export async function prepareWrite(
   proposal: Proposal,
   decisions: Record<string, DecisionMade>,
   sheet: OutputSheet,
+  headers: Record<string, string> = {},
 ): Promise<Prepared> {
   owner = profiledFor(owner, set);
   const { output } = owner.subject.data;
@@ -149,15 +152,25 @@ export async function prepareWrite(
     if (!proposal.records[key])
       problems.push(`${key} is not in this proposal.`);
 
+  /*
+    Data changed since the run's read asks a person, as a check that newly
+    fails does: a value the sheet works out from the time changes with no
+    one recounting anything. Every check runs again on what it holds now, so
+    a rule that blocks still blocks on it.
+  */
   const now = await sheet.readNow();
   const changed = changedTabs(read, now);
-  if (changed.length)
-    problems.push(
-      `The ${sourceOf(owner.subject.data).noun} has changed since this run read it (${changed.join(', ')}). Start a new run to propose from what it holds now.`,
-    );
+  const newlyFailing: NewlyFailing[] = changed.length
+    ? [
+        {
+          id: CHANGED_SINCE_READ,
+          key: changed.join(', '),
+          check: `changed in the ${sourceOf(owner.subject.data).noun} since this run read it`,
+        },
+      ]
+    : [];
 
   const writes = writesOf(proposal, decisions);
-  const newlyFailing: NewlyFailing[] = [];
   const applied: Record<string, AppliedDecision> = {};
   for (const [key, decision] of Object.entries(decisions)) {
     const write = writes.find((w) => w.key === key);
@@ -179,9 +192,15 @@ export async function prepareWrite(
       continue;
     }
     const was = checkProposal(owner, set, read, key, values);
-    const is = changed.length
-      ? was
-      : checkProposal(owner, set, now, key, values);
+    let is: typeof was;
+    try {
+      is = checkProposal(owner, set, now, key, values);
+    } catch {
+      problems.push(
+        `${key} cannot be checked on what the ${sourceOf(owner.subject.data).noun} holds now. Start a new run.`,
+      );
+      continue;
+    }
     const failing = is.checks.filter((check) => !check.holds);
     applied[key].verdict = is.verdict;
     applied[key].failing = failing.map((check) => check.name);
@@ -203,7 +222,7 @@ export async function prepareWrite(
     block,
     changes,
     problems: tabProblems,
-  } = blockFor(grid ?? [], owner, writes);
+  } = blockFor(grid ?? [], owner, writes, headers);
   return {
     problems: [...problems, ...tabProblems],
     newlyFailing,

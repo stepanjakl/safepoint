@@ -24,6 +24,7 @@ import { versionByHash } from '@/server/storage/rules/instructions';
 import { Refused } from '@/server/storage/refused';
 import {
   RUN_DISCARDED,
+  rulebookAtFor,
   runOrRefuse,
   type KeptRun,
 } from '@/server/storage/runs/runs';
@@ -55,6 +56,8 @@ export const runFields = {
   text: z.string().min(1).max(20_000),
   readId: readIdSchema,
   rulebook: rulebookIdSchema.optional(),
+  // The run, where it keeps a rulebook of its own: its rules are those.
+  runId: runIdSchema.optional(),
 };
 
 // A run kept on the server, by its process and the id the server gave it.
@@ -69,6 +72,7 @@ type RunInput = {
   text: string;
   readId: string;
   rulebook?: string | undefined;
+  runId?: string | undefined;
   evaluation?: z.infer<typeof evaluationSchema> | undefined;
 };
 type KeptRunInput = { process: string; runId: string };
@@ -79,16 +83,18 @@ export const staleReply = (stale: Stale) => ({
 });
 
 async function opened(
-  { text, readId, rulebook }: RunInput,
+  { text, readId, rulebook, runId }: RunInput,
   process: RunProcess,
 ) {
   const read = await keptRead(process.runs.reads, readId);
   if (!read) throw new TRPCError({ code: 'NOT_FOUND', message: READ_GONE });
+  const at = await rulebookAtFor(process.summary.id, runId, text);
   return {
     process,
     read,
     text,
-    ...(await rulebookFor(process, text, rulebook, read)),
+    at,
+    ...(await rulebookFor(process, at, rulebook, read)),
   };
 }
 
@@ -120,6 +126,7 @@ async function fieldsOf(
       text: version.text,
       readId: run.readId,
       rulebook: run.rulebook ?? undefined,
+      runId: run.id,
       evaluation,
     },
   };

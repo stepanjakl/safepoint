@@ -15,6 +15,7 @@ import { Lede } from '@/components/engine/trial-parts';
 import type { RunProcessId } from '@/components/app-shell/runs/kept-runs';
 import { useTRPC } from '@/components/trpc/provider';
 import { AlertBox } from '@/components/ui/alert-box';
+import { Reveal } from '@/components/ui/reveal';
 import { Button } from '@/components/ui/button';
 import { asReviewed as reviewed } from '@/lib/engine/reviewed';
 import type { Proposal } from '@/lib/engine/types';
@@ -74,6 +75,9 @@ export function ProposeStep({
   rulebook,
   evaluation = 'rules',
   run: kept,
+  ownRulebook = false,
+  confirmed,
+  onConfirm,
   modelPlan,
   onProgress,
   onReadyChange,
@@ -90,6 +94,11 @@ export function ProposeStep({
   evaluation?: Evaluation;
   // The run these decisions are kept on, by the id the server gave it.
   run: { process: RunProcessId; runId: string };
+  // The run keeps a rulebook of its own, so its rules are found by the run.
+  ownRulebook?: boolean;
+  // Whether a person has confirmed the decisions, and how they do.
+  confirmed?: boolean;
+  onConfirm?: () => void;
   modelPlan?: ModelPlan | null;
   onProgress: (progress: ProposeProgress) => void;
   onReadyChange?: (ready: boolean) => void;
@@ -107,7 +116,13 @@ export function ProposeStep({
     report.current = onProgress;
   });
   const [model, setModel] = useState<DraftingModel>(DRAFTING_MODELS[0]!);
-  const run = { text, readId, rulebook, evaluation };
+  const run = {
+    text,
+    readId,
+    rulebook,
+    evaluation,
+    ...(ownRulebook ? { runId: kept.runId } : {}),
+  };
   const startInput = { ...run, runId: kept.runId };
   const quotaModel = modelPlan
     ? modelsFor({ plan: modelPlan }, [GEMINI_FIND])[0]
@@ -387,6 +402,8 @@ export function ProposeStep({
         readId={readId}
         announced={announced}
         onDecide={decide}
+        onConfirm={mock ? undefined : onConfirm}
+        confirmed={confirmed}
         onCheck={(key, values) => {
           if (mock)
             return Promise.resolve({
@@ -424,7 +441,7 @@ export function ProposeStep({
   if (automatic) {
     return (
       <div className="grid gap-4">
-        {failure ? (
+        <Reveal show={Boolean(failure)} gap="pt-4" className="-mt-4">
           <AlertBox
             title="Could not finish the proposal"
             action={
@@ -439,7 +456,7 @@ export function ProposeStep({
           >
             {failure}
           </AlertBox>
-        ) : null}
+        </Reveal>
         <p
           role="status"
           className={proposal && !running ? 'sr-only' : 'text-dense text-muted'}
@@ -473,22 +490,24 @@ export function ProposeStep({
               (start.error ?? asked.error ?? decidedAsked.error)?.message}
           </AlertBox>
         ) : null
-      ) : failure ? (
-        <AlertBox
-          title="Could not finish the proposal"
-          action={
-            <Button
-              size="small"
-              isDisabled={running || busy}
-              onPress={() => !mock && start.mutate(startInput)}
-            >
-              Try again
-            </Button>
-          }
-        >
-          {failure}
-        </AlertBox>
-      ) : null}
+      ) : (
+        <Reveal show={Boolean(failure)} gap="pt-4" className="-mt-4">
+          <AlertBox
+            title="Could not finish the proposal"
+            action={
+              <Button
+                size="small"
+                isDisabled={running || busy}
+                onPress={() => !mock && start.mutate(startInput)}
+              >
+                Try again
+              </Button>
+            }
+          >
+            {failure}
+          </AlertBox>
+        </Reveal>
+      )}
       {debug ? (
         /* Scaffolding for trying the step, as the other steps' setups are. */
         <section

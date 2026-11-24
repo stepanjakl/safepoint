@@ -61,11 +61,14 @@ export function RulesDebug({
   debugging,
   text,
   readId,
+  runId,
   onClose,
 }: {
   debugging: Debugging | null;
   text: string;
   readId: string | null;
+  // The run whose own rules these are, if any.
+  runId?: string;
   onClose: () => void;
 }) {
   // What was last open stays while the drawer animates out.
@@ -79,9 +82,15 @@ export function RulesDebug({
       }}
     >
       {shown?.kind === 'draft' ? (
-        <DraftDrawer text={text} readId={readId} />
+        <DraftDrawer text={text} readId={readId} runId={runId} />
       ) : shown ? (
-        <RuleDrawer key={shown.id} id={shown.id} text={text} readId={readId} />
+        <RuleDrawer
+          key={shown.id}
+          id={shown.id}
+          text={text}
+          readId={readId}
+          runId={runId}
+        />
       ) : null}
     </DrawerOverlay>
   );
@@ -129,10 +138,12 @@ function RuleDrawer({
   id,
   text,
   readId,
+  runId,
 }: {
   id: string;
   text: string;
   readId: string | null;
+  runId?: string;
 }) {
   const trpc = useTRPC();
   const [tab, setTab] = useState<string>('Summary');
@@ -142,7 +153,7 @@ function RuleDrawer({
   // lands, so what is being typed into is not replaced under it.
   const asked = useQuery(
     trpc.rules.debug.queryOptions(
-      { text, readId, id, inputs },
+      { text, readId, runId, id, inputs },
       { staleTime: 0, gcTime: 0 },
     ),
   );
@@ -519,15 +530,17 @@ function ValuesView({
 function DraftDrawer({
   text,
   readId,
+  runId,
 }: {
   text: string;
   readId: string | null;
+  runId?: string;
 }) {
   const trpc = useTRPC();
   const [tab, setTab] = useState<string>('Sentences');
   const asked = useQuery(
     trpc.rules.debugDraft.queryOptions(
-      { text, readId },
+      { text, readId, runId },
       { staleTime: 0, gcTime: 0 },
     ),
   );

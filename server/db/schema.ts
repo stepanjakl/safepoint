@@ -254,6 +254,9 @@ export const rulebookRevisions = pgTable(
     // The confirmed profile it reads its data through, as its body names it.
     profileId: text('profile_id'),
     actor: text('actor'),
+    // The run it was accepted in, for one that keeps its own rulebook: such a
+    // revision is that run's alone, never a head, and never exported.
+    runId: text('run_id'),
     body: json('body').$type<DefinitionSet>().notNull(),
     createdAt: created(),
   },
@@ -368,6 +371,9 @@ export const runs = pgTable(
     trigger: text('trigger').notNull(),
     additionalInstructions: text('additional_instructions'),
     modelPlan: text('model_plan').$type<ModelPlan>(),
+    // Drafts and reviews a rulebook of its own (run_rulebooks), apart from the
+    // one kept for its instructions.
+    ownRulebook: boolean('own_rulebook').notNull().default(false),
     startedBy: text('started_by'),
     startedAt: instant('started_at').notNull(),
     updatedAt: instant('updated_at').notNull().defaultNow(),
@@ -404,6 +410,42 @@ export const runs = pgTable(
         rulebookRevisions.instructionsHash,
         rulebookRevisions.id,
       ],
+    }).onDelete('restrict'),
+  ],
+);
+
+/*
+  The rulebook under review of a run that keeps its own (runs.own_rulebook):
+  current_rulebooks for one run, so runs drafting the same instructions with
+  different models do not replace one another's.
+*/
+export const runRulebooks = pgTable(
+  'run_rulebooks',
+  {
+    process: processColumn(),
+    runId: text('run_id').notNull(),
+    instructionsHash: text('instructions_hash').notNull(),
+    body: json('body').$type<DefinitionSet>().notNull(),
+    schemaVersion: integer('schema_version').notNull(),
+    revision: integer('revision').notNull().default(1),
+    updatedAt: instant('updated_at').notNull().defaultNow(),
+    updatedBy: text('updated_by'),
+  },
+  (t) => [
+    primaryKey({ columns: [t.process, t.runId] }),
+    check(
+      'run_rulebooks_body_hash',
+      mirrors(t.instructionsHash, t.body, 'hash'),
+    ),
+    foreignKey({
+      name: 'run_rulebooks_run_fk',
+      columns: [t.process, t.runId],
+      foreignColumns: [runs.process, runs.id],
+    }).onDelete('restrict'),
+    foreignKey({
+      name: 'run_rulebooks_instructions_fk',
+      columns: [t.process, t.instructionsHash],
+      foreignColumns: [instructionVersions.process, instructionVersions.hash],
     }).onDelete('restrict'),
   ],
 );
@@ -620,6 +662,8 @@ export const ruleDecisions = pgTable(
     profileId: text('profile_id'),
     // Why code did not take it, where it did not.
     refusal: text('refusal'),
+    // The run whose own rulebook it was made on, if any.
+    runId: text('run_id'),
     actor: text('actor'),
     decidedAt: instant('decided_at').notNull().defaultNow(),
   },

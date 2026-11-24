@@ -141,10 +141,7 @@ function connect() {
           successful: result.successful,
           error: result.successful
             ? null
-            : redact(
-                String(result.error ?? 'Unknown error'),
-                env.COMPOSIO_API_KEY,
-              ),
+            : redact(errorText(result.error), env.COMPOSIO_API_KEY),
         },
         data: result.data as unknown,
       };
@@ -242,6 +239,33 @@ export async function readWholeSheet(): Promise<SheetRead> {
     requests: [info.record, values.record],
     valueRanges: parsedValues.success ? parsedValues.data.valueRanges : [],
   };
+}
+
+/*
+  Composio passes the service's error on as its JSON body, printed over many
+  lines; a person is told its message, never a line of JSON.
+*/
+export const READS_SPENT =
+  'Google Sheets allows only so many reads a minute, and they are used up for now. Try again in a minute.';
+
+export function errorText(raw: unknown): string {
+  const text = String(raw ?? 'Unknown error');
+  let message = text;
+  try {
+    const body = JSON.parse(text) as {
+      error?: { message?: unknown; code?: unknown; status?: unknown } | string;
+      message?: unknown;
+    };
+    const error = typeof body.error === 'object' ? body.error : undefined;
+    if (error?.code === 429 || error?.status === 'RESOURCE_EXHAUSTED')
+      return READS_SPENT;
+    const said = error ? error.message : body.message;
+    if (typeof said === 'string' && said.trim()) message = said.trim();
+  } catch {
+    // Not JSON: said as it came.
+  }
+  // Its per-minute limit, said in Google's words: said in a person's.
+  return /quota exceeded .*per minute/i.test(message) ? READS_SPENT : message;
 }
 
 // What a call that had to succeed came back with, or why it did not.

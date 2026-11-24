@@ -45,9 +45,15 @@ export function ProposalTable({
   announced,
   onDecide,
   onCheck,
+  onConfirm,
+  confirmed = false,
   icons = false,
   source,
 }: {
+  // Once every record is decided, a person confirms them, which offers the
+  // write; none where the run moves on by itself.
+  onConfirm?: () => void;
+  confirmed?: boolean;
   // Decisions as their marks alone, each named in its tooltip.
   icons?: boolean;
   // The kind of source read, which says how a cited cell names its resource.
@@ -350,6 +356,26 @@ export function ProposalTable({
                               <MorphingText text={String(ready.length)} />{' '}
                               {unchecked ? 'not checked' : 'ready'}
                             </span>
+                          </Button>
+                        </motion.div>
+                      ) : !needYou.length && onConfirm && !confirmed ? (
+                        <motion.div
+                          key="confirm"
+                          className="ml-auto"
+                          initial={reduceMotion ? false : { opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={reduceMotion ? undefined : { opacity: 0 }}
+                          transition={{
+                            duration: DURATION_STATE,
+                            ease: 'easeOut',
+                          }}
+                        >
+                          <Button
+                            size="medium"
+                            variant="primary"
+                            onPress={onConfirm}
+                          >
+                            Confirm decisions
                           </Button>
                         </motion.div>
                       ) : null}

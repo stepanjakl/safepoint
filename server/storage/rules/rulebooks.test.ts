@@ -37,6 +37,8 @@ import {
   updateSet,
 } from './rulebooks';
 import { definitionSetSchema, type DefinitionSet } from '@/lib/engine/types';
+import { runProcess } from '@/server/operations/kept-processes';
+import { rulebookAtFor, startRun } from '@/server/storage/runs/runs';
 
 // A kept set is read through its schema, so a broken body is reported rather
 // than taken for "nothing kept" and overwritten. An accepted rulebook a run
@@ -429,5 +431,69 @@ describe('the data profile in the store', () => {
       { reason: 'accepted' },
     );
     expect((await loadRevision(owner, TEXT, id))?.profileId).toBe(confirmed.id);
+  });
+});
+
+describe('a run that keeps its own rulebook', () => {
+  const ownRun = async () =>
+    (
+      await startRun(runProcess(owner.id), {
+        instructions: hashOf(TEXT),
+        trigger: 'manual',
+        additionalInstructions: null,
+        modelPlan: 'groq',
+        ownRulebook: true,
+        actor: null,
+      })
+    ).id;
+
+  it('drafts, decides and accepts apart from the shared one', async () => {
+    const shared = await keep([definition('first')]);
+    const run = await ownRun();
+    const at = await rulebookAtFor(owner.id, run, TEXT);
+    expect(at).toEqual({ text: TEXT, run });
+    await saveSet(
+      owner,
+      { ...shared, definitions: [definition('first'), definition('second')] },
+      { run },
+    );
+    expect((await loadSet(owner, TEXT))?.definitions).toHaveLength(1);
+    expect((await loadSet(owner, at))?.definitions).toHaveLength(2);
+
+    const decided = await updateSet(
+      owner,
+      at,
+      (s) => ({
+        ...s,
+        definitions: s.definitions.map((d) => ({ ...d, approvedAt: 'now' })),
+      }),
+      {
+        actor: null,
+        decision: () => ({ kind: 'accept', definitionId: 'first' }),
+      },
+    );
+    expect((await loadSet(owner, TEXT))?.definitions[0]?.approvedAt).toBe(null);
+    const [decision] = await db().select().from(ruleDecisions);
+    expect(decision?.runId).toBe(run);
+
+    const id = await putRevision(owner, decided!, {
+      reason: 'accepted',
+      run,
+    });
+    // The shared history neither lists it nor moves its head to it.
+    expect(await headOf(owner, TEXT)).toBeNull();
+    expect((await listRevisions(owner, TEXT)).revisions).toEqual([]);
+    expect(await headOf(owner, at)).toBe(id);
+    expect(await loadRevision(owner, TEXT, id)).toEqual(decided);
+  });
+
+  it('is not the place for rules of other instructions', async () => {
+    await keep([definition('first')]);
+    const run = await ownRun();
+    await expect(rulebookAtFor(owner.id, run, `${TEXT} again`)).rejects.toThrow(
+      'other instructions',
+    );
+    // Without a run, or for a run sharing its instructions' rules: the shared.
+    expect(await rulebookAtFor(owner.id, undefined, TEXT)).toBe(TEXT);
   });
 });

@@ -14,7 +14,11 @@ import {
   keptCrossCheck,
 } from '@/server/storage/reads/cross-checks';
 import { attemptRecorder } from '@/server/storage/models/model-attempts';
-import { putRevision } from '@/server/storage/rules/rulebooks';
+import {
+  putRevision,
+  runOf,
+  type RulebookAt,
+} from '@/server/storage/rules/rulebooks';
 
 import { runFields, runProcedure, staleReply } from '../run-procedure';
 import { runIdSchema } from '@/server/storage/ids';
@@ -40,13 +44,15 @@ type Run = {
   current: DefinitionSet;
   pinned: boolean;
   read: KeptRead;
+  at: RulebookAt;
 };
 
 async function worked(run: Run) {
   const calculation = calculate(run.owner, run.set, run.read);
   // What a run calculates on is kept as it is, so the run can come back to
   // it; a pinned revision was kept when it was accepted.
-  if (!run.pinned) await putRevision(owner, run.set, { reason: 'used' });
+  if (!run.pinned)
+    await putRevision(owner, run.set, { reason: 'used', run: runOf(run.at) });
   return { calculation, current: fingerprintOf(run.current) };
 }
 

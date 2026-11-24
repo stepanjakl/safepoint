@@ -1,7 +1,11 @@
 import 'server-only';
 
+import { complete } from '@/lib/engine/types';
 import { draftProgressByHash } from '@/server/jobs/draft';
 import { proposalProgress } from '@/server/jobs/proposal';
+import { currentProposalOf, runKeyOf } from '@/server/storage/reads/proposals';
+import { versionByHash } from '@/server/storage/rules/instructions';
+import { loadSet } from '@/server/storage/rules/rulebooks';
 import type { KeptRun } from '@/server/storage/runs/runs';
 
 import type { RunProcess } from './kept-processes';
@@ -14,8 +18,15 @@ import type { RunProcess } from './kept-processes';
   a pinned rulebook is Propose. Elsewhere the run says nothing more than its
   status. The jobs are the ones those steps start: a draft of rules under
   the run's instructions, a proposal on its read and rulebook.
+
+  A job that ended with an error, and left the step undone, has stopped the
+  run (`stopped`), as the run's screen says when it is open: so the list
+  says so too, without the run being opened first.
 */
-export type RunActivity = { working: true } | { working: false; at: string };
+export type RunActivity =
+  { working: true } | { working: false; at: string; stopped?: true };
+
+type Asked = { running: boolean; error: string | null } | null;
 
 export async function runActivities(
   kept: RunProcess,
@@ -26,21 +37,27 @@ export async function runActivities(
   const owner = kept.runs.definitions;
   // Runs under one version share its draft job, and runs on one read and
   // rulebook share a proposal: each is asked once.
-  const asked = new Map<string, Promise<boolean>>();
-  const working = (
-    key: string,
-    ask: () => Promise<{ running: boolean } | null>,
-  ) => {
+  const asked = new Map<string, Promise<Asked>>();
+  const progressOf = (key: string, ask: () => Promise<Asked>) => {
     if (!asked.has(key))
       asked.set(
         key,
-        ask().then(
-          (progress) => progress?.running === true,
-          () => false,
-        ),
+        ask().catch(() => null),
       );
     return asked.get(key)!;
   };
+  // Whether the step a job ended with an error at is still undone.
+  const rulesUndone = async (run: KeptRun) => {
+    const version = await versionByHash(kept, run.instructions.hash);
+    if (!version) return false;
+    const set = await loadSet(
+      owner,
+      run.ownRulebook ? { text: version.text, run: run.id } : version.text,
+    );
+    return !set || !complete(set);
+  };
+  const proposalUndone = async (run: KeptRun) =>
+    !(await currentProposalOf(runKeyOf(owner, run.readId!, run.rulebook!)));
   await Promise.all(
     runs
       .filter((run) => run.status === 'running' && run.discardedAt === null)
@@ -51,19 +68,37 @@ export async function runActivities(
             : run.rulebook === null
               ? 'rules'
               : 'propose';
-        const busy =
+        const progress =
           at === 'rules'
-            ? await working(`drafts:${run.instructions.hash}`, () =>
-                draftProgressByHash(owner, run.instructions.hash),
+            ? await progressOf(
+                `drafts:${run.instructions.hash}:${run.ownRulebook ? run.id : ''}`,
+                () =>
+                  draftProgressByHash(
+                    owner,
+                    run.instructions.hash,
+                    run.ownRulebook ? run.id : null,
+                  ),
               )
             : at === 'propose' && run.readId && run.rulebook
-              ? await working(`proposals:${run.readId}:${run.rulebook}`, () =>
-                  proposalProgress(owner, run.readId!, run.rulebook!),
+              ? await progressOf(
+                  `proposals:${run.readId}:${run.rulebook}`,
+                  () => proposalProgress(owner, run.readId!, run.rulebook!),
                 )
-              : false;
+              : null;
+        if (progress?.running) {
+          activities.set(run.id, { working: true });
+          return;
+        }
+        const stopped =
+          Boolean(progress?.error) &&
+          (await (
+            at === 'rules' ? rulesUndone(run) : proposalUndone(run)
+          ).catch(() => false));
         activities.set(
           run.id,
-          busy ? { working: true } : { working: false, at },
+          stopped
+            ? { working: false, at, stopped: true }
+            : { working: false, at },
         );
       }),
   );

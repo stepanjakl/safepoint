@@ -2,6 +2,7 @@ import 'server-only';
 
 import { findStep, settleDraft, writeStep } from './draft-steps';
 import type { DraftFind, Rewrite } from './types';
+import { said } from './said';
 
 /*
   Server-only. A draft as a Vercel Workflow run (server/jobs/draft.ts starts
@@ -15,9 +16,6 @@ import type { DraftFind, Rewrite } from './types';
 
 const drafted = (count: number) =>
   `Drafted ${count} definition${count === 1 ? '' : 's'}.`;
-
-const said = (error: unknown) =>
-  error instanceof Error ? error.message.split('\n')[0]! : 'Failed.';
 
 export async function draftWorkflow(run: DraftFind) {
   'use workflow';

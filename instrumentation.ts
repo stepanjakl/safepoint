@@ -10,5 +10,13 @@ export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     const { getWorld } = await import('workflow/runtime');
     await (await getWorld()).start?.();
+    // Development only: Claude through this machine's CLI, as a model to
+    // compare (server/models/claude-cli.ts).
+    if (process.env.NODE_ENV === 'development') {
+      const { provideLocalModels } =
+        await import('@/lib/engine/model-provider');
+      const { claudeCli } = await import('@/server/models/claude-cli');
+      provideLocalModels((id) => claudeCli(id) as never);
+    }
   }
 }

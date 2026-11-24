@@ -639,6 +639,16 @@
      0.9, cursor 1.2), and a mono letter has a side bearing of its own, so the
      box's start edge is pulled back half a pixel to put the clock under the
      day's first letter; the cursor's point reads by its mass. */
+  /* Development only: the models a run used, across both columns. */
+  .sheet-row-models {
+    grid-column: 1 / -1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 500;
+    color: var(--sheet-ink-quiet);
+  }
   .sheet-row-when > svg:first-child {
     margin-inline-start: -0.03125rem;
   }

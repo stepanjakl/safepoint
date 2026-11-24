@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 
+import { AlertBox } from '@/components/ui/alert-box';
 import { Button } from '@/components/ui/button';
+import { CHANGED_SINCE_READ } from '@/lib/engine/apply-block';
 import type { Application } from '@/lib/engine/types';
 import { plural } from './trial-parts';
 
@@ -84,29 +86,34 @@ export function WriteControls({
 
   if (held.length) {
     return (
-      <div className="grid gap-2">
-        <p className="text-dense">
-          Since you decided, these now ask for a person:
-        </p>
-        <ul className="text-dense grid gap-1">
+      <AlertBox
+        tone="decision"
+        title="Check before writing"
+        action={
+          <div>
+            <Button
+              size="small"
+              isDisabled={busy}
+              onPress={() => {
+                setInteracted(true);
+                onWrite(held.map(({ id }) => id));
+              }}
+            >
+              Write anyway
+            </Button>
+          </div>
+        }
+      >
+        <ul className="grid gap-1">
           {held.map(({ id, key, check }) => (
             <li key={id}>
-              {key}: {check}
+              {id === CHANGED_SINCE_READ
+                ? `${key} changed after this run read it. The checks were run again on the new data.`
+                : `${key}: ${check} now needs your decision.`}
             </li>
           ))}
         </ul>
-        <div>
-          <Button
-            isDisabled={busy}
-            onPress={() => {
-              setInteracted(true);
-              onWrite(held.map(({ id }) => id));
-            }}
-          >
-            Write them anyway
-          </Button>
-        </div>
-      </div>
+      </AlertBox>
     );
   }
 

@@ -60,3 +60,23 @@ export function ordersAnnouncement(
       }
   }
 }
+
+/*
+  The Rules step's flag for a draft that stopped: a few fixed words, so the
+  pill keeps one size and says what to expect, whatever the service said.
+  The service's own words are in the alert under the step.
+*/
+const STOPPED: [RegExp, string][] = [
+  [/quota|rate.?limit|tokens per minute|too large|exceeded/i, 'out of quota'],
+  [/high demand|overloaded|busy|unavailable|\b50[0-9]\b/i, 'models busy'],
+  [
+    /cannot connect|other side closed|timed? ?out|network|fetch failed|socket/i,
+    'connection lost',
+  ],
+  [/interrupted|server stopped/i, 'interrupted'],
+];
+
+export function stoppedFlag(error: string): string {
+  const reason = STOPPED.find(([pattern]) => pattern.test(error))?.[1];
+  return `Stopped · ${reason ?? 'draft not usable'}`;
+}

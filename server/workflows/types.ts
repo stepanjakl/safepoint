@@ -16,6 +16,11 @@ export type JobRun = { job: JobKey; holder: string };
 export type Outcome<T> = { done: T } | { stopped: string };
 
 export type DraftRun = JobRun & {
+  // The instructions by their hash, and the run whose own rulebook it is
+  // drafting, if any. A job started before these were given has the hash
+  // as its key and no run.
+  instructions?: string;
+  rulebookRun?: string | null;
   readId: string;
   model: ModelPreference | null;
 };

@@ -213,14 +213,34 @@ export function whyNotWritable(read: KeptRead): string | null {
 
 // The sheet as a write sees it. Not kept: it only proves the run's read still
 // holds, and times the checks at the moment of writing.
-export const liveSheetOf = (of: RunReads): OutputSheet => ({
-  async readNow() {
-    const read = await readWholeSheet();
-    const failed = read.requests.find((r) => !r.successful);
-    if (failed) throw new Error(failed.error ?? 'The read failed.');
-    return asKept(of, read, `Live read through Composio at ${read.readAt}`);
-  },
-  readTab,
-  addTab,
-  writeRange,
-});
+/*
+  The sheet as one request sees it. A write is prepared by reading the sheet
+  whole (readNow) and then its output tab, which that read already holds:
+  the tab is taken from it rather than asked for again, since every request
+  counts against the service's reads a minute. Anything written forgets it,
+  so what is read back after a write is read afresh.
+*/
+export function liveSheetOf(of: RunReads): OutputSheet {
+  let last: SheetRead | null = null;
+  return {
+    async readNow() {
+      const read = await readWholeSheet();
+      const failed = read.requests.find((r) => !r.successful);
+      if (failed) throw new Error(failed.error ?? 'The read failed.');
+      last = read;
+      return asKept(of, read, `Live read through Composio at ${read.readAt}`);
+    },
+    async readTab(tab) {
+      if (last) return last.tabs.includes(tab) ? tabValues(last, tab) : null;
+      return readTab(tab);
+    },
+    async addTab(tab) {
+      last = null;
+      await addTab(tab);
+    },
+    async writeRange(tab, range, values) {
+      last = null;
+      await writeRange(tab, range, values);
+    },
+  };
+}

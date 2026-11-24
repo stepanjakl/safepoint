@@ -17,6 +17,7 @@ import { memorySheet } from './sheet.fixture';
 
 import {
   blockFor,
+  CHANGED_SINCE_READ,
   prepareWrite,
   type DecisionMade,
   type OutputSheet,
@@ -269,15 +270,23 @@ describe('writing a decided proposal', () => {
     expect(sheet.writes).toEqual([]);
   });
 
-  it('refuses when the data has changed since the read', async () => {
+  it('asks a person before writing on data changed since the read, and writes once they say so', async () => {
     const tabs = capturedTabs();
     tabs.find((t) => t.name === 'Stock')!.values[1]![1] = 5;
     sheet = memorySheet({ ...read(), tabs });
     const outcome = await write(sheet);
-    expect(outcome.kind === 'refused' && outcome.prepared.problems[0]).toBe(
-      'The sheet has changed since this run read it (Stock). Start a new run to propose from what it holds now.',
-    );
+    if (outcome.kind !== 'refused') throw new Error('Expected a refusal.');
+    expect(outcome.prepared.problems).toEqual([]);
+    expect(outcome.prepared.newlyFailing).toContainEqual({
+      id: CHANGED_SINCE_READ,
+      key: 'Stock',
+      check: 'changed in the sheet since this run read it',
+    });
     expect(sheet.writes).toEqual([]);
+    const acknowledged = outcome.prepared.newlyFailing.map((f) => f.id);
+    expect((await write(sheet, bothApproved, { acknowledged })).kind).toBe(
+      'written',
+    );
   });
 
   it('refuses a negative value, which every whole-case check would pass', async () => {

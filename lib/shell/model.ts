@@ -144,12 +144,15 @@ export type ProcessRun = {
   progress?: { at: number; of: number };
   // What a running run is doing, where the server can say: a job working for
   // it, or nothing, waiting for a person at the step named by its id.
-  activity?: { working: true } | { working: false; at: string };
+  activity?: { working: true } | { working: false; at: string; stopped?: true };
   // Who decided, once someone has.
   decidedBy?: string;
   instructionsVersion: string;
   // The rulebook revision it ran under, where the process keeps a rulebook.
   rulebookRevision?: string;
+  // The models it was started with, in a few words, and whether it drafts a
+  // rulebook of its own. Shown in development only, to compare models.
+  models?: { label: string; ownRulebook: boolean };
   current?: boolean;
 };
 

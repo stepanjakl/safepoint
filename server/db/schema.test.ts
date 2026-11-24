@@ -672,6 +672,7 @@ describe('the migrations', () => {
       'record_decisions_written_once',
       'rule_decisions_written_once',
       'rulebook_revisions_written_once',
+      'run_rulebooks_next_revision',
       'runs_keep_their_start',
       'source_reads_written_once',
     ]);

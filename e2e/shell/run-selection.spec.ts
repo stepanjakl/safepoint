@@ -70,6 +70,7 @@ test('a saved run waits for its pinned instruction text before loading a proposa
         trigger: 'manual',
         additionalInstructions: null,
         modelPlan: null,
+        ownRulebook: false,
         startedBy: null,
         startedAt: at,
         updatedAt: at,
@@ -109,9 +110,9 @@ test('a saved run waits for its pinned instruction text before loading a proposa
   await page.keyboard.press('Enter');
   await expect(page).not.toHaveURL(/run=/);
   await page.keyboard.press('Enter');
-  const loading = `Loading instructions ${pinned.version}…`;
-  await expect(page.getByRole('main')).toContainText(loading);
-  await expect(status).toHaveText(loading);
+  // Waiting for them is only a run loading: nothing of its own is drawn.
+  await expect(status).toHaveText('Loading run…');
+  await expect(page.locator('.run-view')).not.toContainText('instructions');
   await expect(row).toBeFocused();
   await expect.poll(() => lookup.inputs.length).toBe(2);
   expect(proposal.inputs).toEqual([]);
@@ -145,6 +146,7 @@ test('a saved run waits for its thread before fading in', async ({ page }) => {
       trigger: 'manual',
       additionalInstructions: id === previousId ? 'Previous run note.' : null,
       modelPlan: null,
+      ownRulebook: false,
       startedBy: null,
       startedAt: at,
       updatedAt: at,
@@ -245,6 +247,7 @@ async function openMockRun(
             instructions: { version: 'v1', hash: 'mock' },
             additionalInstructions: null,
             modelPlan: null,
+            ownRulebook: false,
             readId: null,
             rulebook: null,
           },
@@ -420,6 +423,58 @@ for (const [process, stage] of [
     await expect(row).toHaveAccessibleName(/^Mock run[.] Approved[.]/);
   });
 }
+
+test('Jump to stays anchored as the direct run reaches the bottom', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.setViewportSize({ width: 1440, height: 600 });
+  await openMockRun(page, 'brunch-orders-direct', 'intervention');
+  const scroller = page.locator('.process-runs-detail');
+  const jump = scroller.getByRole('button', { name: /^Jump to / });
+  await expect(jump).toBeVisible();
+  await expect(jump).toBeInViewport();
+
+  const shift = await jump.evaluate((button) => {
+    const scroller = button.closest('.process-runs-detail');
+    if (!scroller) throw new Error('Run scroller is missing');
+    const before = button.getBoundingClientRect().bottom;
+    scroller.scrollTop = scroller.scrollHeight;
+    return button.getBoundingClientRect().bottom - before;
+  });
+  expect(Math.abs(shift)).toBeLessThan(1);
+  await expect(jump).toHaveCount(0);
+
+  await scroller.evaluate((element) => {
+    element.scrollTop = 0;
+  });
+  await expect(jump).toBeInViewport();
+});
+
+test('Jump to reveals its label before the pointer reaches its click target', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 600 });
+  await openMockRun(page, 'brunch-orders-direct', 'intervention');
+  const jump = page.getByRole('button', { name: /^Jump to / });
+  const label = jump.locator('.thread-jump-label');
+  await expect(label).toHaveCSS('opacity', '0');
+
+  const box = await jump.boundingBox();
+  if (!box) throw new Error('Jump to button is missing');
+  const x = box.x + box.width / 2;
+  const y = box.y - 4;
+  await page.mouse.move(x, y);
+  await expect(label).toHaveCSS('opacity', '1');
+  await page.mouse.click(x, y);
+  await expect(jump).toBeVisible();
+  await expect(jump).not.toBeFocused();
+
+  await page.mouse.move(x, y - 24);
+  await expect(label).toHaveCSS('opacity', '0');
+  await jump.click();
+  await expect(jump).toHaveCount(0);
+});
 
 test('the runs column fades edges only while runs extend past them', async ({
   page,

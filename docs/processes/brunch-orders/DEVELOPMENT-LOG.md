@@ -887,3 +887,37 @@ Groq accepted a first tool call with parsed reasoning, then rejected
 tool result. Requesting hidden reasoning fixed the protocol error for
 GPT-OSS 20B. A useful provider trial needs to exercise schema output and a
 tool exchange across multiple turns.
+
+## Comparing models, one rulebook per run (24 November 2026)
+
+To compare models before release, a run can keep a rulebook of its own
+(`runs.own_rulebook`, offered in development only): its draft, decisions and
+accepted revision live beside the shared one (`run_rulebooks`,
+`rulebook_revisions.run_id`), move no head and are never exported. Nine
+candidates drafted v3 on one live read, each scored by code against the
+accepted v3 rulebook on every record at every order from 0 to 200.
+
+- **Every rule Gemini wrote behaved as the accepted one.** Flash-Lite's whole
+  rulebook gave the accepted verdict on all 11 products at every order. What
+  stopped Gemini was capacity: about half of Flash-Lite's calls were refused
+  as busy, and the Flash family ran out of the free tier's daily quota inside
+  one draft.
+- **Groq and OpenRouter cannot draft on free tiers.** GPT-OSS spent Groq's
+  default output budget on hidden reasoning and answered nothing
+  (`json_validate_failed` with an empty `failed_generation`); asking for
+  32,768 completion tokens fixed that. Then one write was larger than the
+  free tier's 8,000 tokens a minute, which no wait passes. Nemotron was
+  refused by the service; Ling misread the instructions, and accounting for
+  every sentence caught it.
+- **A busy model ended a draft.** Every model of a chain answering 5xx (or not
+  reached at all) now throws `ModelsBusy`, which the workflow waits on and
+  retries, as it does a quota rest.
+- **A rule named by its whole sentence could not be accepted.** Finding sets
+  no length on an id, but the rules routes took 80 characters, so Accept
+  answered "Invalid request". The routes now take what finding makes.
+- **A failure arrived as "Failed."** An error from a step reaches the
+  workflow rebuilt, not as an `Error` of its realm; `said` reads its message
+  and drops the SDK's account of its retries.
+
+**Lesson.** On free tiers the comparison measures quotas, not models; judge
+quality only on what a model actually wrote.

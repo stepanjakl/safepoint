@@ -50,10 +50,12 @@ import {
   loadSet,
   ownerFor,
   saveProfile,
+  textOf,
   updateProfile,
+  type RulebookAt,
 } from '@/server/storage/rules/rulebooks';
 
-import { modelForRun } from '@/server/storage/runs/runs';
+import { modelForRun, rulebookAtFor } from '@/server/storage/runs/runs';
 
 import { failed, gatedProcedure, router } from '../trpc';
 
@@ -79,7 +81,9 @@ const { definitions: owner, reads } = rulebookProcess().runs;
 const keptRead = (id: string) => keptReadOf(reads, id);
 
 const text = z.string().min(1).max(20_000);
-const id = z.string().max(80);
+// A definition's id is the model's own name for it, snake_cased by finding
+// (lib/engine/find.ts), which sets no length: a name a sentence long is kept.
+const id = z.string().max(400);
 // The model to ask, falling back within its family; the default otherwise.
 const model = draftingModelSchema.optional();
 const column = z.string().min(1).max(160);
@@ -126,8 +130,9 @@ async function changeProfile(
 }
 
 // The revisions, each with what it changed from its parent.
-async function historyOf(text: string) {
-  const history = await listRevisions(owner, text);
+async function historyOf(at: RulebookAt) {
+  const text = textOf(at);
+  const history = await listRevisions(owner, at);
   const revisions = await Promise.all(
     history.revisions.map(async (revision) => {
       const set = await loadRevision(owner, text, revision.id);
@@ -145,7 +150,7 @@ async function historyOf(text: string) {
 
 // The rules as they stand, beside how the draft and the profile do.
 async function reply(
-  text: string,
+  at: RulebookAt,
   readId: string | null,
   set: DefinitionSet | null,
   drafting: Awaited<ReturnType<typeof draftProgress>>,
@@ -170,20 +175,27 @@ async function reply(
     drafting,
     profile,
     // Every accepted revision, newest first, and the one in use.
-    history: await historyOf(text),
+    history: await historyOf(at),
   };
 }
 
 // Progress first: rules read after it are at least as new as it says, so
 // "finished" never arrives beside rules from before the end.
 async function replyWith(
-  text: string,
+  at: RulebookAt,
   readId: string | null,
   load: () => Promise<DefinitionSet | null>,
 ) {
-  const drafting = await draftProgress(owner, text);
-  return reply(text, readId, await load(), drafting);
+  const drafting = await draftProgress(owner, at);
+  return reply(at, readId, await load(), drafting);
 }
+
+// Where a procedure's rules are kept: the run's own, if it keeps one.
+const placeOf = (input: { text: string; runId?: string }) =>
+  rulebookAtFor(owner.id, input.runId, input.text);
+
+// Every procedure on the rules may name the run it is for.
+const runId = runIdSchema.optional();
 
 const readOf = async (readId: string) => {
   const read = await keptRead(readId);
@@ -195,12 +207,11 @@ const NO_RULES = 'No rules are kept for these instructions.';
 
 export const rulesRouter = router({
   get: rulesProcedure(
-    z.strictObject({ text, readId: readIdSchema.nullable().optional() }),
-  ).query(({ input }) =>
-    replyWith(input.text, input.readId ?? null, () =>
-      loadSet(owner, input.text),
-    ),
-  ),
+    z.strictObject({ text, runId, readId: readIdSchema.nullable().optional() }),
+  ).query(async ({ input }) => {
+    const at = await placeOf(input);
+    return replyWith(at, input.readId ?? null, () => loadSet(owner, at));
+  }),
 
   applied: rulesProcedure(
     z.strictObject({ text, rulebook: rulebookIdSchema.nullable() }),
@@ -211,25 +222,26 @@ export const rulesRouter = router({
   }),
 
   profile: rulesProcedure(
-    z.strictObject({ text, readId: readIdSchema }),
+    z.strictObject({ text, runId, readId: readIdSchema }),
   ).mutation(async ({ input }) => {
+    const at = await placeOf(input);
     const read = await readOf(input.readId);
     fitting(read, owner.subject.data);
     await saveProfile(owner, profileOf(read, owner.subject.data));
-    return replyWith(input.text, input.readId, () =>
-      loadSet(owner, input.text),
-    );
+    return replyWith(at, input.readId, () => loadSet(owner, at));
   }),
 
   profileColumn: rulesProcedure(
     z.strictObject({
       text,
+      runId,
       column,
       label: z.string().min(1).max(120).optional(),
       type: z.enum(['whole_number', 'decimal', 'yes_no', 'text']).optional(),
       blank: z.enum(['skip', 'fail']).nullable().optional(),
     }),
   ).mutation(async ({ ctx, input }) => {
+    const at = await placeOf(input);
     const { column, label, type, blank } = input;
     await changeProfile((profile) => {
       let changed = profile;
@@ -239,21 +251,22 @@ export const rulesRouter = router({
       if (blank !== undefined) changed = setColumnBlank(changed, column, blank);
       return changed;
     }, ctx.actor);
-    return replyWith(input.text, null, () => loadSet(owner, input.text));
+    return replyWith(at, null, () => loadSet(owner, at));
   }),
 
-  confirmProfile: rulesProcedure(z.strictObject({ text })).mutation(
+  confirmProfile: rulesProcedure(z.strictObject({ text, runId })).mutation(
     async ({ ctx, input }) => {
+      const at = await placeOf(input);
       const confirmed = await changeProfile(
         (kept) => (kept.confirmedAt ? kept : confirmProfile(kept)),
         ctx.actor,
       );
       // Rules under review move onto it, so an answer takes effect without
       // a redraft; accepted rules keep the profile they were accepted on.
-      const set = await loadSet(owner, input.text);
+      const set = await loadSet(owner, at);
       if (set && !complete(set) && set.readId)
-        await rebaseSet(owner, input.text, await readOf(set.readId), confirmed);
-      return replyWith(input.text, null, () => loadSet(owner, input.text));
+        await rebaseSet(owner, at, await readOf(set.readId), confirmed);
+      return replyWith(at, null, () => loadSet(owner, at));
     },
   ),
 
@@ -263,30 +276,26 @@ export const rulesRouter = router({
       version: z.string().max(20),
       readId: readIdSchema,
       model,
-      runId: runIdSchema.optional(),
+      runId,
     }),
   ).mutation(async ({ input }) => {
+    const at = await placeOf(input);
     // The engine drafts without a profile too; a person's draft does not.
     const profile = await loadProfile(owner);
     if (!profile?.confirmedAt) throw new Error(CONFIRM_FIRST);
-    await startDraft(
-      owner,
-      input.text,
-      input.version,
-      await readOf(input.readId),
-      {
-        model: await modelForRun(owner.id, input.runId, input.model),
-      },
-    );
-    return replyWith(input.text, input.readId, () =>
-      loadSet(owner, input.text),
-    );
+    await startDraft(owner, at, input.version, await readOf(input.readId), {
+      model: await modelForRun(owner.id, input.runId, input.model),
+    });
+    return replyWith(at, input.readId, () => loadSet(owner, at));
   }),
 
-  intent: rulesProcedure(z.strictObject({ text })).mutation(({ ctx, input }) =>
-    replyWith(input.text, null, () =>
-      confirmIntent(owner, input.text, keptRead, ctx.actor),
-    ),
+  intent: rulesProcedure(z.strictObject({ text, runId })).mutation(
+    async ({ ctx, input }) => {
+      const at = await placeOf(input);
+      return replyWith(at, null, () =>
+        confirmIntent(owner, at, keptRead, ctx.actor),
+      );
+    },
   ),
 
   write: rulesProcedure(
@@ -295,81 +304,73 @@ export const rulesRouter = router({
       readId: readIdSchema,
       id,
       model,
-      runId: runIdSchema.optional(),
+      runId,
     }),
   ).mutation(async ({ input }) => {
-    await startRewrite(
-      owner,
-      input.text,
-      await readOf(input.readId),
-      input.id,
-      {
-        model: await modelForRun(owner.id, input.runId, input.model),
-      },
-    );
-    return replyWith(input.text, input.readId, () =>
-      loadSet(owner, input.text),
-    );
+    const at = await placeOf(input);
+    await startRewrite(owner, at, await readOf(input.readId), input.id, {
+      model: await modelForRun(owner.id, input.runId, input.model),
+    });
+    return replyWith(at, input.readId, () => loadSet(owner, at));
   }),
 
   choose: rulesProcedure(
-    z.strictObject({ text, id, index: z.number().int().min(0).max(5) }),
-  ).mutation(({ ctx, input }) =>
-    replyWith(input.text, null, () =>
-      choose(owner, input.text, input.id, input.index, ctx.actor),
-    ),
-  ),
+    z.strictObject({ text, runId, id, index: z.number().int().min(0).max(5) }),
+  ).mutation(async ({ ctx, input }) => {
+    const at = await placeOf(input);
+    return replyWith(at, null, () =>
+      choose(owner, at, input.id, input.index, ctx.actor),
+    );
+  }),
 
   appliesTo: rulesProcedure(
-    z.strictObject({ text, id, value: z.enum(['every', 'some']) }),
-  ).mutation(({ ctx, input }) =>
-    replyWith(input.text, null, () =>
-      setAppliesTo(
-        owner,
-        input.text,
-        input.id,
-        input.value,
-        keptRead,
-        ctx.actor,
-      ),
-    ),
-  ),
+    z.strictObject({ text, runId, id, value: z.enum(['every', 'some']) }),
+  ).mutation(async ({ ctx, input }) => {
+    const at = await placeOf(input);
+    return replyWith(at, null, () =>
+      setAppliesTo(owner, at, input.id, input.value, keptRead, ctx.actor),
+    );
+  }),
 
   // Asks the model, so a mutation though it keeps nothing.
-  advise: rulesProcedure(
-    z.strictObject({ text, id, runId: runIdSchema.optional() }),
-  ).mutation(async ({ input }) => {
-    const set = await loadSet(owner, input.text);
-    if (!set) throw new Error(NO_RULES);
-    const read = set.readId ? await keptRead(set.readId) : null;
-    if (!read) throw new Error(READ_GONE);
-    const record = attemptRecorder({
-      process: owner.id,
-      instructionsHash: set.hash,
-      readId: read.id,
-    });
-    return {
-      kind: 'advice' as const,
-      advice: await advise(
-        await ownerFor(owner, set),
-        input.text,
-        set,
-        read,
-        input.id,
-        { model: await modelForRun(owner.id, input.runId), record },
-      ).finally(record.settled),
-    };
-  }),
+  advise: rulesProcedure(z.strictObject({ text, id, runId })).mutation(
+    async ({ input }) => {
+      const at = await placeOf(input);
+      const set = await loadSet(owner, at);
+      if (!set) throw new Error(NO_RULES);
+      const read = set.readId ? await keptRead(set.readId) : null;
+      if (!read) throw new Error(READ_GONE);
+      const record = attemptRecorder({
+        process: owner.id,
+        instructionsHash: set.hash,
+        readId: read.id,
+        ...(input.runId ? { runId: input.runId } : {}),
+      });
+      return {
+        kind: 'advice' as const,
+        advice: await advise(
+          await ownerFor(owner, set),
+          input.text,
+          set,
+          read,
+          input.id,
+          { model: await modelForRun(owner.id, input.runId), record },
+        ).finally(record.settled),
+      };
+    },
+  ),
 
   debug: rulesProcedure(
     z.strictObject({
       text,
+      runId,
       readId: readIdSchema.nullable(),
       id,
-      inputs: z.record(z.string().max(80), z.number().int().min(0)),
+      inputs: z.record(z.string().max(400), z.number().int().min(0)),
     }),
   ).query(async ({ input }) => {
-    const set = await loadSet(owner, input.text);
+    const at = await placeOf(input);
+    const set = await loadSet(owner, at);
     if (!set) throw new Error(NO_RULES);
     const readId = input.readId ?? set.readId;
     const read = readId ? await keptRead(readId) : null;
@@ -387,9 +388,10 @@ export const rulesRouter = router({
   }),
 
   debugDraft: rulesProcedure(
-    z.strictObject({ text, readId: readIdSchema.nullable() }),
+    z.strictObject({ text, runId, readId: readIdSchema.nullable() }),
   ).query(async ({ input }) => {
-    const set = await loadSet(owner, input.text);
+    const at = await placeOf(input);
+    const set = await loadSet(owner, at);
     if (!set) throw new Error(NO_RULES);
     return {
       kind: 'debugDraft' as const,
@@ -405,15 +407,17 @@ export const rulesRouter = router({
   decide: rulesProcedure(
     z.strictObject({
       text,
+      runId,
       id,
       decision: z.enum(['accept', 'deny']),
       note: z.string().max(500).optional(),
     }),
-  ).mutation(({ ctx, input }) =>
-    replyWith(input.text, null, () =>
+  ).mutation(async ({ ctx, input }) => {
+    const at = await placeOf(input);
+    return replyWith(at, null, () =>
       input.decision === 'accept'
-        ? accept(owner, input.text, input.id, keptRead, ctx.actor)
-        : deny(owner, input.text, input.id, input.note, ctx.actor),
-    ),
-  ),
+        ? accept(owner, at, input.id, keptRead, ctx.actor)
+        : deny(owner, at, input.id, input.note, ctx.actor),
+    );
+  }),
 });

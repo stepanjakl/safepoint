@@ -7,6 +7,7 @@ import {
   settleProposal,
 } from './proposal-steps';
 import type { ProposalRun } from './types';
+import { said } from './said';
 
 /*
   Server-only. A proposal as a Vercel Workflow run (server/jobs/proposal.ts
@@ -15,9 +16,6 @@ import type { ProposalRun } from './types';
   proposal a restart or a redeploy interrupted carries on from the last batch
   that finished. Only orchestration is here, as in draft.ts.
 */
-
-const said = (error: unknown) =>
-  error instanceof Error ? error.message.split('\n')[0]! : 'Failed.';
 
 export async function proposalWorkflow(run: ProposalRun) {
   'use workflow';

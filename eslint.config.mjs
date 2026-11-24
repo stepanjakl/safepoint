@@ -135,6 +135,9 @@ const config = [
   {
     ignores: [
       '.next/**',
+      // The Playwright server's own build output (playwright.config.ts).
+      '.next-e2e/**',
+      'data/**',
       'next-env.d.ts',
       '.agents/**',
       '.claude/**',

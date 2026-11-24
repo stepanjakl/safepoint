@@ -1793,9 +1793,13 @@ describe('a source that is not a sheet', () => {
       decisions,
       memoryTable(docksRead(changed)),
     );
-    expect(later.problems).toEqual([
-      'The database has changed since this run read it (usage). Start a new run to propose from what it holds now.',
-    ]);
+    // A person is asked, in the database's words; the checks ran on it.
+    expect(later.problems).toEqual([]);
+    expect(later.newlyFailing[0]).toMatchObject({
+      id: 'changed-since-read',
+      key: 'usage',
+      check: 'changed in the database since this run read it',
+    });
   });
 
   it('refuses a table with no key column, and names a key listed twice by its row', () => {

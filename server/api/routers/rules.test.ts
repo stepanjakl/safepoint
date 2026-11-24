@@ -393,6 +393,20 @@ describe('rules router', () => {
       expect(done?.examples[0]).toMatchObject({ actual: 59, agrees: true });
     });
 
+    it('accepts one the model named with a whole sentence', async () => {
+      // Finding sets no length on an id; a model that names a rule by its
+      // sentence must not leave it impossible to accept.
+      const id = `${'add_up_the_last_two_weekends_of_sales_'.repeat(3)}x`;
+      await keep([{ ...twoWeekends, id }]);
+      const got = await caller().rules.decide({
+        text: TEXT,
+        id,
+        decision: 'accept',
+      });
+      if (got.kind !== 'rules') throw new Error('Expected rules.');
+      expect(got.set.definitions[0]?.approvedAt).not.toBeNull();
+    });
+
     it('keeps the rulebook as a revision once every rule and the intent are accepted, and the reply carries the history', async () => {
       await keep([twoWeekends]);
       await caller().rules.intent({ text: TEXT });

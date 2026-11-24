@@ -99,6 +99,6 @@ export const findKept: typeof findDefinitions = async (
   text,
   ...rest
 ) => {
-  await keepText(text, process.id);
+  await keepText(typeof text === 'string' ? text : text.text, process.id);
   return findDefinitions(process, text, ...rest);
 };

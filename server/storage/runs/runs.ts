@@ -15,6 +15,8 @@ import {
   versionByHash,
 } from '@/server/storage/rules/instructions';
 import { Refused } from '@/server/storage/refused';
+import type { RulebookAt } from '@/server/storage/rules/rulebooks';
+import { hashOf } from '@/lib/engine/fingerprint';
 
 /*
   Server-only. A process's runs, in `runs`: one row a run, made by the
@@ -54,6 +56,8 @@ export type KeptRun = {
   trigger: string;
   additionalInstructions: string | null;
   modelPlan: ModelPlan | null;
+  // Drafts a rulebook of its own rather than the one its instructions share.
+  ownRulebook: boolean;
   startedBy: string | null;
   startedAt: string;
   updatedAt: string;
@@ -77,6 +81,7 @@ const COLUMNS = {
   trigger: runs.trigger,
   additionalInstructions: runs.additionalInstructions,
   modelPlan: runs.modelPlan,
+  ownRulebook: runs.ownRulebook,
   startedBy: runs.startedBy,
   startedAt: runs.startedAt,
   updatedAt: runs.updatedAt,
@@ -95,6 +100,7 @@ type Row = {
   trigger: string;
   additionalInstructions: string | null;
   modelPlan: ModelPlan | null;
+  ownRulebook: boolean;
   startedBy: string | null;
   startedAt: Date;
   updatedAt: Date;
@@ -112,6 +118,7 @@ const runOf = (row: Row): KeptRun => ({
   trigger: row.trigger,
   additionalInstructions: row.additionalInstructions,
   modelPlan: row.modelPlan,
+  ownRulebook: row.ownRulebook,
   startedBy: row.startedBy,
   startedAt: row.startedAt.toISOString(),
   updatedAt: row.updatedAt.toISOString(),
@@ -133,7 +140,7 @@ const selectRuns = (db: Database) =>
 const ofRun = (process: string, id: string) =>
   and(eq(runs.process, process), eq(runs.id, id));
 
-async function keptRun(
+export async function keptRun(
   process: string,
   id: string,
   db?: Database,
@@ -162,6 +169,23 @@ export async function modelForRun(
 }
 
 /*
+  Where the rules a run works on are kept: its own rulebook, for a run that
+  keeps one, otherwise the one its instructions share. No run, the shared.
+*/
+export async function rulebookAtFor(
+  process: string,
+  runId: string | undefined,
+  text: string,
+): Promise<RulebookAt> {
+  if (!runId) return text;
+  const run = await runOrRefuse(process, runId);
+  if (!run.ownRulebook) return text;
+  if (hashOf(text) !== run.instructions.hash)
+    throw new Refused('This run keeps rules for other instructions.');
+  return { text, run: run.id };
+}
+
+/*
   Starts a run under a kept version of the process's instructions, at its
   first step after them, and answers it with the id the server gave it. Two
   starts at once are two runs.
@@ -173,6 +197,7 @@ export async function startRun(
     trigger: 'manual' | 'rerun';
     additionalInstructions: string | null;
     modelPlan?: ModelPlan;
+    ownRulebook?: boolean;
     actor: string | null;
   },
 ): Promise<KeptRun> {
@@ -198,6 +223,7 @@ export async function startRun(
     trigger: start.trigger,
     additionalInstructions: start.additionalInstructions,
     modelPlan: start.modelPlan,
+    ownRulebook: start.ownRulebook ?? false,
     startedBy: start.actor,
     startedAt: sql`now()`,
   });

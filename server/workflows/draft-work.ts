@@ -5,7 +5,11 @@ import { hashOf } from '@/lib/engine/fingerprint';
 import { fitting } from '@/lib/engine/records';
 import { findDefinitions } from '@/server/operations/find';
 import { writeAgreed } from '@/server/operations/write';
-import { loadSet, ownerToDraft } from '@/server/storage/rules/rulebooks';
+import {
+  loadSet,
+  ownerToDraft,
+  type RulebookAt,
+} from '@/server/storage/rules/rulebooks';
 
 import { inStep, instructionsOf, readOf, settle } from './in-step';
 import { standInsFor } from './stand-ins';
@@ -23,17 +27,23 @@ import type { DraftFind, DraftRun, Found, Outcome } from './types';
 // Where a draft starts, should its row not say.
 const STARTING = { step: '', error: null, running: true, writing: null };
 
+const hashOfRun = (run: DraftRun) => run.instructions ?? run.job.key;
+
 async function opened(run: DraftRun) {
-  const { owner, text } = await instructionsOf(run.job.process, run.job.key);
+  const { owner, text } = await instructionsOf(run.job.process, hashOfRun(run));
   const read = await readOf(run.job.process, run.readId);
   fitting(read, owner.subject.data);
   const asking = { model: run.model, resolve: standInsFor(run.holder) };
-  return { owner, text, read, asking };
+  const at: RulebookAt = run.rulebookRun
+    ? { text, run: run.rulebookRun }
+    : text;
+  return { owner, at, read, asking };
 }
 
 const context = (run: DraftRun) => ({
-  instructionsHash: run.job.key,
+  instructionsHash: hashOfRun(run),
   readId: run.readId,
+  ...(run.rulebookRun ? { runId: run.rulebookRun } : {}),
 });
 
 export function find(run: DraftFind): Promise<Outcome<Found[]>> {
@@ -42,15 +52,15 @@ export function find(run: DraftFind): Promise<Outcome<Found[]>> {
     context(run),
     STARTING,
     async (_progress, _note, record) => {
-      const { owner, text, read, asking } = await opened(run);
+      const { owner, at, read, asking } = await opened(run);
       // Found by this draft already, and kept: its writes may have begun.
-      const kept = await loadSet(owner, text);
+      const kept = await loadSet(owner, at);
       const set =
         kept && Date.parse(kept.foundAt) >= run.since
           ? kept
           : await findDefinitions(
               await ownerToDraft(owner),
-              text,
+              at,
               run.version,
               read,
               { ...asking, record },
@@ -79,10 +89,10 @@ const writtenOf = (d: Definition | undefined) =>
 // What a definition is now, for a write to know whether it has been made.
 export async function writtenNow(
   owner: DefinitionProcess,
-  text: string,
+  at: RulebookAt,
   id: string,
 ): Promise<string> {
-  const set = await loadSet(owner, text);
+  const set = await loadSet(owner, at);
   return writtenOf(set?.definitions.find((d) => d.id === id));
 }
 
@@ -110,12 +120,12 @@ export function write(
 ): Promise<Outcome<null>> {
   return inStep(run, context(run), STARTING, async (progress, note, record) => {
     progress.writing = found.id;
-    const { owner, text, read, asking } = await opened(run);
-    if ((await writtenNow(owner, text, found.id)) !== (before ?? FOUND))
+    const { owner, at: place, read, asking } = await opened(run);
+    if ((await writtenNow(owner, place, found.id)) !== (before ?? FOUND))
       return null;
     await writeAgreed(
       at ? await ownerToDraft(owner) : owner,
-      text,
+      place,
       read,
       found.id,
       {

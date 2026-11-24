@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, isNull, sql } from 'drizzle-orm';
 
 import {
   hashOf,
@@ -28,6 +28,7 @@ import {
   ruleDecisions,
   rulebookHeads,
   rulebookRevisions,
+  runRulebooks,
 } from '@/server/db/schema';
 
 import { StoredFileError } from '@/server/storage/files';
@@ -57,6 +58,19 @@ import { parseStored } from '@/server/storage/stored';
   if nothing landed since, else it is worked out again.
 */
 
+/*
+  Where a rulebook under review is kept: by its instructions' text, the one
+  every run of them shares, or `{ text, run }`, the rulebook of one run that
+  keeps its own (runs.own_rulebook). A run's own is reviewed and accepted as
+  the shared one is; what it accepts is a revision for that run alone, which
+  moves no head and is never exported to fixtures/.
+*/
+export type RulebookAt = string | { text: string; run: string };
+export const textOf = (at: RulebookAt) =>
+  typeof at === 'string' ? at : at.text;
+export const runOf = (at: RulebookAt) =>
+  typeof at === 'string' ? null : at.run;
+
 // Kept under its old name for what catches it.
 export const StoredSetError = StoredFileError;
 
@@ -76,20 +90,39 @@ const ofRulebook = (process: string, hash: string) =>
     eq(currentRulebooks.instructionsHash, hash),
   );
 
-async function currentOf(db: Database, process: string, hash: string) {
-  const [row] = await db
-    .select({
-      body: currentRulebooks.body,
-      revision: currentRulebooks.revision,
-    })
-    .from(currentRulebooks)
-    .where(ofRulebook(process, hash));
+const ofRunRulebook = (process: string, hash: string, run: string) =>
+  and(
+    eq(runRulebooks.process, process),
+    eq(runRulebooks.runId, run),
+    eq(runRulebooks.instructionsHash, hash),
+  );
+
+async function currentOf(
+  db: Database,
+  process: string,
+  hash: string,
+  run: string | null = null,
+) {
+  const [row] = run
+    ? await db
+        .select({ body: runRulebooks.body, revision: runRulebooks.revision })
+        .from(runRulebooks)
+        .where(ofRunRulebook(process, hash, run))
+    : await db
+        .select({
+          body: currentRulebooks.body,
+          revision: currentRulebooks.revision,
+        })
+        .from(currentRulebooks)
+        .where(ofRulebook(process, hash));
   return row
     ? {
         set: parseStored(
           row.body,
           definitionSetSchema,
-          `The rulebook kept for instructions ${hash}`,
+          run
+            ? `The rulebook run ${run} keeps for instructions ${hash}`
+            : `The rulebook kept for instructions ${hash}`,
         ),
         revision: row.revision,
       }
@@ -99,10 +132,12 @@ async function currentOf(db: Database, process: string, hash: string) {
 // The rulebook being drafted and reviewed for these instructions.
 export async function loadSet(
   owner: DefinitionProcess,
-  text: string,
+  at: RulebookAt,
 ): Promise<DefinitionSet | null> {
   const db = await ready(owner);
-  return (await currentOf(db, owner.id, hashOf(text)))?.set ?? null;
+  return (
+    (await currentOf(db, owner.id, hashOf(textOf(at)), runOf(at)))?.set ?? null
+  );
 }
 
 // A rulebook belongs to a kept version of the instructions: declared ones
@@ -127,15 +162,38 @@ async function mustKeepInstructions(
     );
 }
 
-// Keeps a set as the rulebook under review for its instructions, replacing
-// any there: what drafting found.
+// Keeps a set as the rulebook under review for its instructions, or for
+// one run, replacing any there: what drafting found.
 export async function saveSet(
   owner: DefinitionProcess,
   set: DefinitionSet,
+  { run = null }: { run?: string | null } = {},
 ): Promise<DefinitionSet> {
   const db = await ready(owner);
   const body = definitionSetSchema.parse(set);
   await mustKeepInstructions(db, owner.id, body.hash);
+  if (run) {
+    await db
+      .insert(runRulebooks)
+      .values({
+        process: owner.id,
+        runId: run,
+        instructionsHash: body.hash,
+        body,
+        schemaVersion: RULEBOOK_SCHEMA,
+      })
+      .onConflictDoUpdate({
+        target: [runRulebooks.process, runRulebooks.runId],
+        set: {
+          instructionsHash: sql`excluded.instructions_hash`,
+          body: sql`excluded.body`,
+          schemaVersion: sql`excluded.schema_version`,
+          updatedAt: sql`now()`,
+          updatedBy: null,
+        },
+      });
+    return body;
+  }
   await db
     .insert(currentRulebooks)
     .values({
@@ -191,34 +249,47 @@ export const KEPT_CHANGING =
 */
 export async function updateSet(
   owner: DefinitionProcess,
-  text: string,
+  at: RulebookAt,
   change: (set: DefinitionSet) => DefinitionSet,
   deciding?: Deciding,
 ): Promise<DefinitionSet | null> {
   const db = await ready(owner);
-  const hash = hashOf(text);
+  const hash = hashOf(textOf(at));
+  const run = runOf(at);
   for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
-    const kept = await currentOf(db, owner.id, hash);
+    const kept = await currentOf(db, owner.id, hash, run);
     if (!kept) return null;
     const next = definitionSetSchema.parse(change(kept.set));
     if (next.hash !== hash)
       throw new Error('A change cannot move a rulebook to other instructions.');
     const landed = await db.transaction(async (tx) => {
-      const moved = await tx
-        .update(currentRulebooks)
-        .set({
-          body: next,
-          schemaVersion: RULEBOOK_SCHEMA,
-          updatedAt: sql`now()`,
-          updatedBy: deciding?.actor ?? null,
-        })
-        .where(
-          and(
-            ofRulebook(owner.id, hash),
-            eq(currentRulebooks.revision, kept.revision),
-          ),
-        )
-        .returning({ revision: currentRulebooks.revision });
+      const changes = {
+        body: next,
+        schemaVersion: RULEBOOK_SCHEMA,
+        updatedAt: sql`now()`,
+        updatedBy: deciding?.actor ?? null,
+      };
+      const moved = run
+        ? await tx
+            .update(runRulebooks)
+            .set(changes)
+            .where(
+              and(
+                ofRunRulebook(owner.id, hash, run),
+                eq(runRulebooks.revision, kept.revision),
+              ),
+            )
+            .returning({ revision: runRulebooks.revision })
+        : await tx
+            .update(currentRulebooks)
+            .set(changes)
+            .where(
+              and(
+                ofRulebook(owner.id, hash),
+                eq(currentRulebooks.revision, kept.revision),
+              ),
+            )
+            .returning({ revision: currentRulebooks.revision });
       if (!moved.length) return false;
       if (deciding) {
         const made = deciding.decision(kept.set, next);
@@ -239,6 +310,7 @@ export async function updateSet(
           versionIndex: made.versionIndex ?? null,
           appliesTo: made.appliesTo ?? null,
           refusal: made.refusal ?? null,
+          runId: run,
           actor: deciding.actor,
         });
       }
@@ -270,11 +342,14 @@ export async function putRevision(
     parent,
     note = null,
     actor = null,
+    run = null,
   }: {
     reason: Revision['reason'];
     parent?: string | null;
     note?: string | null;
     actor?: string | null;
+    // Accepted in a run's own rulebook: that run's alone, so no head moves.
+    run?: string | null;
   },
 ): Promise<string> {
   const db = await ready(owner);
@@ -285,10 +360,23 @@ export async function putRevision(
     await tx.execute(
       sql`select pg_advisory_xact_lock(hashtextextended(${`rulebook_revisions:${owner.id}:${body.hash}`}, 0))`,
     );
-    const [head] = await tx
-      .select({ id: rulebookHeads.revisionId })
-      .from(rulebookHeads)
-      .where(ofHead(owner.id, body.hash));
+    const [head] = run
+      ? await tx
+          .select({ id: rulebookRevisions.id })
+          .from(rulebookRevisions)
+          .where(
+            and(
+              eq(rulebookRevisions.process, owner.id),
+              eq(rulebookRevisions.instructionsHash, body.hash),
+              eq(rulebookRevisions.runId, run),
+            ),
+          )
+          .orderBy(desc(rulebookRevisions.seq))
+          .limit(1)
+      : await tx
+          .select({ id: rulebookHeads.revisionId })
+          .from(rulebookHeads)
+          .where(ofHead(owner.id, body.hash));
     const inserted = await tx
       .insert(rulebookRevisions)
       .values({
@@ -302,11 +390,12 @@ export async function putRevision(
         note,
         profileId: body.profileId ?? null,
         actor,
+        runId: run,
         body,
       })
       .onConflictDoNothing()
       .returning({ id: rulebookRevisions.id });
-    if (inserted.length)
+    if (inserted.length && !run)
       await tx
         .insert(rulebookHeads)
         .values({
@@ -355,13 +444,18 @@ export async function loadRevision(
   return set;
 }
 
-// Every revision for these instructions, newest first, and the head.
+/*
+  Every revision for these instructions, newest first, and the head. For a
+  run's own rulebook, the revisions accepted in that run, the latest its
+  head; the shared history leaves every run's own out.
+*/
 export async function listRevisions(
   owner: DefinitionProcess,
-  text: string,
+  at: RulebookAt,
 ): Promise<RevisionIndex> {
   const db = await ready(owner);
-  const hash = hashOf(text);
+  const hash = hashOf(textOf(at));
+  const run = runOf(at);
   const rows = await db
     .select({
       id: rulebookRevisions.id,
@@ -376,13 +470,18 @@ export async function listRevisions(
       and(
         eq(rulebookRevisions.process, owner.id),
         eq(rulebookRevisions.instructionsHash, hash),
+        run
+          ? eq(rulebookRevisions.runId, run)
+          : isNull(rulebookRevisions.runId),
       ),
     )
     .orderBy(desc(rulebookRevisions.seq));
-  const [head] = await db
-    .select({ id: rulebookHeads.revisionId })
-    .from(rulebookHeads)
-    .where(ofHead(owner.id, hash));
+  const [head] = run
+    ? [{ id: rows[0]?.id }]
+    : await db
+        .select({ id: rulebookHeads.revisionId })
+        .from(rulebookHeads)
+        .where(ofHead(owner.id, hash));
   return {
     head: head?.id ?? null,
     revisions: rows.map((row) => ({
@@ -393,8 +492,8 @@ export async function listRevisions(
   };
 }
 
-export const headOf = async (owner: DefinitionProcess, text: string) =>
-  (await listRevisions(owner, text)).head;
+export const headOf = async (owner: DefinitionProcess, at: RulebookAt) =>
+  (await listRevisions(owner, at)).head;
 
 // A profile whose id is not its content was changed after it was made.
 function sound<T extends DataProfile | null>(profile: T, where: string): T {

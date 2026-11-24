@@ -6,7 +6,7 @@ import { z } from 'zod';
 import type { DraftingModel } from '@/lib/models';
 
 import type { Attempt } from './attempts';
-import { ask } from './calls';
+import { ask, BUSY_WAIT_MS, ModelsBusy } from './calls';
 import { always, answer } from './models.fixture';
 
 // How a call moves through its models when the service refuses or fails.
@@ -97,6 +97,83 @@ describe('asking a model', () => {
     );
     expect((await asked).model).toBe('next-after-busy');
     expect(busy.doGenerateCalls).toHaveLength(1);
+  });
+
+  it('says to wait a little, not to stop, when every model is busy', async () => {
+    const busy = new MockLanguageModelV4({
+      doGenerate: async () => {
+        throw new APICallError({
+          message: 'This model is currently experiencing high demand.',
+          url: 'https://example.test',
+          requestBodyValues: {},
+          statusCode: 503,
+          isRetryable: true,
+        });
+      },
+    });
+    const before = Date.now();
+    const asked = ask(
+      ['busy-one', 'busy-two'] as unknown as DraftingModel[],
+      z.object({ ok: z.boolean() }),
+      'system',
+      'prompt',
+      'test',
+      () => busy,
+    );
+    const error = await asked.catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(ModelsBusy);
+    expect((error as ModelsBusy).message).toBe(
+      'This model is currently experiencing high demand.',
+    );
+    expect((error as ModelsBusy).until).toBeGreaterThanOrEqual(
+      before + BUSY_WAIT_MS,
+    );
+  });
+
+  it('moves on from a model it could not reach', async () => {
+    const unreached = new MockLanguageModelV4({
+      doGenerate: async () => {
+        throw new APICallError({
+          message: 'Cannot connect to API: other side closed',
+          url: 'https://example.test',
+          requestBodyValues: {},
+          isRetryable: true,
+        });
+      },
+    });
+    const next = answering();
+    const asked = await ask(
+      ['unreached', 'next-after-unreached'] as unknown as DraftingModel[],
+      z.object({ ok: z.boolean() }),
+      'system',
+      'prompt',
+      'test',
+      (id) => ((id as string) === 'unreached' ? unreached : next),
+    );
+    expect(asked.model).toBe('next-after-unreached');
+  });
+
+  it('stops at once where a model refused what it was asked', async () => {
+    const wrong = new MockLanguageModelV4({
+      doGenerate: async () => {
+        throw new APICallError({
+          message: 'Bad request.',
+          url: 'https://example.test',
+          requestBodyValues: {},
+          statusCode: 400,
+          isRetryable: false,
+        });
+      },
+    });
+    const error = await ask(
+      ['wrong-alone'] as unknown as DraftingModel[],
+      z.object({ ok: z.boolean() }),
+      'system',
+      'prompt',
+      'test',
+      () => wrong,
+    ).catch((e: unknown) => e);
+    expect(error).not.toBeInstanceOf(ModelsBusy);
   });
 
   it('moves on from a model too slow to answer in time, without asking it again', async () => {

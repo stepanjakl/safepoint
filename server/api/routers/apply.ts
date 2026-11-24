@@ -5,6 +5,7 @@ import { z } from 'zod';
 
 import { blockFor, prepareWrite, writesOf } from '@/lib/engine/apply';
 import type { DecisionMade, Prepared } from '@/lib/engine/apply';
+import { modelPlanShortLabel } from '@/lib/models';
 import { fingerprintOf } from '@/lib/engine/fingerprint';
 import { namesOf, type KeptRead } from '@/lib/engine/records';
 import type {
@@ -161,6 +162,31 @@ async function opened({ process, owner, set, read, published, text }: Run) {
   return { fingerprint, notWritable, shared };
 }
 
+/*
+  A run with a rulebook of its own writes under headers of its own, naming its
+  models and itself, so runs compared side by side never write over one
+  another's column. Any other run writes under each field's id.
+*/
+function headersOf({
+  owner,
+  kept,
+}: {
+  owner: DefinitionProcess;
+  kept: KeptRun;
+}): Record<string, string> {
+  if (!kept.ownRulebook) return {};
+  const models = kept.modelPlan
+    ? modelPlanShortLabel(kept.modelPlan)
+    : 'default models';
+  const run = kept.id.replace(/^run-/, '').slice(0, 6);
+  return Object.fromEntries(
+    owner.subject.proposal.map((field) => [
+      field.id,
+      `${field.id} · ${models} · ${run}`,
+    ]),
+  );
+}
+
 export const applyRouter = router({
   preview: keptRunProcedure(z.strictObject(keptRunFields)).mutation(
     async ({ ctx }) => {
@@ -171,8 +197,12 @@ export const applyRouter = router({
         return previewOf(shared, notWritable, {
           // Nothing was asked of the sheet, so every cell reads as new.
           tabExists: false,
-          changes: blockFor([], ctx.owner, writesOf(proposal, decisions))
-            .changes,
+          changes: blockFor(
+            [],
+            ctx.owner,
+            writesOf(proposal, decisions),
+            headersOf(ctx),
+          ).changes,
           problems: [],
           newlyFailing: [],
         });
@@ -186,6 +216,7 @@ export const applyRouter = router({
           proposal,
           decisions,
           liveSheetOf(ctx.process.runs.reads),
+          headersOf(ctx),
         ),
       );
     },
@@ -208,6 +239,7 @@ export const applyRouter = router({
       input.acknowledged,
       liveSheetOf(ctx.process.runs.reads),
       through,
+      headersOf(ctx),
     );
     // A refused write answers with what the preview would, so the screen
     // shows why (it was a 409 with the preview as its body).

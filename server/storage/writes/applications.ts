@@ -327,6 +327,8 @@ export async function applyDecisions(
     runId: string;
     unchanged: (db: Database) => Promise<boolean>;
   },
+  // The header each field is written under, where not its id.
+  headers: Record<string, string> = {},
 ): Promise<WriteOutcome> {
   owner = profiledFor(owner, set);
   const { output } = owner.subject.data;
@@ -341,6 +343,7 @@ export async function applyDecisions(
     proposal,
     decisions,
     sheet,
+    headers,
   );
   const inWay = inTheWay(owner, kept);
   if (inWay) prepared.problems.push(inWay);

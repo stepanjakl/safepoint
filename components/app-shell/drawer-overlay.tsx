@@ -72,17 +72,20 @@ export function DrawerOverlay({
       )}
     >
       <Modal className="drawer-modal flex h-full max-w-full" data-side={side}>
-        <Dialog
-          id={id}
-          className="h-full outline-none"
-          onKeyDown={(event) => {
-            if (event.key !== 'Escape' || event.defaultPrevented) return;
-            event.preventDefault();
-            event.stopPropagation();
-            onOpenChange(false);
-          }}
-        >
-          {children}
+        <Dialog id={id} className="h-full outline-none">
+          {/* Dialog takes no key handler: Escape closes this drawer alone,
+              before it reaches an overlay beneath. */}
+          <div
+            className="contents"
+            onKeyDown={(event) => {
+              if (event.key !== 'Escape' || event.defaultPrevented) return;
+              event.preventDefault();
+              event.stopPropagation();
+              onOpenChange(false);
+            }}
+          >
+            {children}
+          </div>
         </Dialog>
       </Modal>
     </ModalOverlay>

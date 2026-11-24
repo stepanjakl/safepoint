@@ -3,7 +3,12 @@ import 'server-only';
 import { foundDefinitions, type Asking } from '@/lib/engine/find';
 import type { KeptRead } from '@/lib/engine/records';
 import type { DefinitionProcess, DefinitionSet } from '@/lib/engine/types';
-import { saveSet } from '@/server/storage/rules/rulebooks';
+import {
+  runOf,
+  saveSet,
+  textOf,
+  type RulebookAt,
+} from '@/server/storage/rules/rulebooks';
 
 /*
   Server-only. Finding, kept: the engine reads the instructions
@@ -11,16 +16,17 @@ import { saveSet } from '@/server/storage/rules/rulebooks';
   them.
 */
 
-// Replaces any set kept for these instructions, approvals and all.
+// Replaces any set kept for these instructions (or that run), approvals and all.
 export async function findDefinitions(
   owner: DefinitionProcess,
-  text: string,
+  at: RulebookAt,
   version: string,
   read: KeptRead | null,
   asking: Asking = {},
 ): Promise<DefinitionSet> {
   return saveSet(
     owner,
-    await foundDefinitions(owner, text, version, read, asking),
+    await foundDefinitions(owner, textOf(at), version, read, asking),
+    { run: runOf(at) },
   );
 }

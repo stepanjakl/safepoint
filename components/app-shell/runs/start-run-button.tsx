@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { NonModalPopoverPanel } from '@/components/ui/non-modal-popover-panel';
 import { useScreenSettled } from '@/components/ui/screen-settled';
 import { Select } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { WalkthroughHint } from '@/components/ui/walkthrough-hint';
 import { useTRPC } from '@/components/trpc/provider';
 import {
@@ -52,9 +53,9 @@ export function StartRunButton() {
     !selected &&
     Boolean(start || startMock);
   const startAndAdvance = start
-    ? async (note?: string, modelPlan?: ModelPlan) => {
+    ? async (note?: string, modelPlan?: ModelPlan, ownRulebook?: boolean) => {
         walkthrough?.advance('start-run');
-        return start(note, modelPlan);
+        return start(note, modelPlan, ownRulebook);
       }
     : null;
   const startMockAndAdvance = startMock
@@ -137,7 +138,12 @@ function InstructionsPopover({
   tooltipDisabled,
 }: {
   start:
-    ((instructions?: string, modelPlan?: ModelPlan) => Promise<boolean>) | null;
+    | ((
+        instructions?: string,
+        modelPlan?: ModelPlan,
+        ownRulebook?: boolean,
+      ) => Promise<boolean>)
+    | null;
   startMock: ((instructions?: string) => boolean) | null;
   cannotStart: string | null;
   pill: RefObject<HTMLSpanElement | null>;
@@ -147,6 +153,8 @@ function InstructionsPopover({
 }) {
   const [text, setText] = useState('');
   const [modelPlan, setModelPlan] = useState<ModelPlan | ''>('');
+  // Development only: a run drafting its own rulebook, to compare models.
+  const [ownRulebook, setOwnRulebook] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
   const canOpen = Boolean(start || startMock);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -198,10 +206,15 @@ function InstructionsPopover({
               close();
               // The note is kept until the run is: a refused start leaves
               // it to try again.
-              void start?.(note, modelPlan || 'gemini').then((started) => {
+              void start?.(
+                note,
+                modelPlan || 'gemini',
+                OWN_RULEBOOKS && ownRulebook,
+              ).then((started) => {
                 if (started) {
                   setText('');
                   setModelPlan('');
+                  setOwnRulebook(false);
                 }
               });
             }}
@@ -219,6 +232,16 @@ function InstructionsPopover({
             />
             {start ? (
               <RunModelSelect modelPlan={modelPlan} onChange={setModelPlan} />
+            ) : null}
+            {start && OWN_RULEBOOKS ? (
+              <Switch
+                size="sm"
+                isSelected={ownRulebook}
+                onChange={setOwnRulebook}
+                className="justify-between"
+              >
+                Draft its own rulebook
+              </Switch>
             ) : null}
             <div className="flex flex-wrap items-center justify-end gap-1.5">
               {startMock ? (
@@ -255,6 +278,10 @@ function InstructionsPopover({
 }
 
 const GEMINI_MODELS = DRAFTING_MODELS.filter((id) => !isTrialModel(id));
+
+// A run with a rulebook of its own compares models side by side; offered in
+// development only, where the run list marks each run's models.
+const OWN_RULEBOOKS = process.env.NODE_ENV === 'development';
 
 function RunModelSelect({
   modelPlan,

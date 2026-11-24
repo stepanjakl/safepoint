@@ -206,34 +206,43 @@ export function Thread<S extends string>({
         {!restoring && behind && newest ? (
           <motion.div
             key="catch-up"
-            className="pointer-events-none sticky bottom-4 z-20 flex h-0 items-end justify-center"
-            initial={reduceMotion ? false : { opacity: 0, y: 8, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
+            className="thread-jump-anchor pointer-events-none sticky bottom-4 z-20 flex h-0 items-end justify-center"
+            initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
             exit={
-              reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.96 }
+              reduceMotion
+                ? { opacity: 0 }
+                : {
+                    opacity: 0,
+                    y: 8,
+                    transition: { inherit: true, ease: 'easeInOut' },
+                  }
             }
-            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: reduceMotion ? 0 : 0.18, ease: 'easeOut' }}
           >
-            <Button
-              aria-label={`Jump to ${newest.name}`}
-              className="thread-jump pointer-events-auto max-w-full"
-              shape="round"
-              size="touch"
-              variant={
-                newest.status === 'pending' || newest.status === 'complete'
-                  ? 'secondary'
-                  : 'primary'
-              }
-              data-status={newest.status}
-              onPress={catchUp}
-            >
-              <span className="thread-jump-content" aria-hidden>
-                <ArrowDown size={16} strokeWidth={2.5} />
-                <span className="thread-jump-label">
-                  <MorphingText text={`Jump to ${newest.name}`} />
+            <span className="relative inline-flex max-w-full">
+              <span className="thread-jump-hover-buffer" aria-hidden />
+              <Button
+                aria-label={`Jump to ${newest.name}`}
+                className="thread-jump pointer-events-auto relative max-w-full"
+                shape="round"
+                size="touch"
+                variant={
+                  newest.status === 'pending' || newest.status === 'complete'
+                    ? 'secondary'
+                    : 'primary'
+                }
+                data-status={newest.status}
+                onPress={catchUp}
+              >
+                <span className="thread-jump-content" aria-hidden>
+                  <ArrowDown size={16} strokeWidth={2.5} />
+                  <span className="thread-jump-label">
+                    <MorphingText text={`Jump to ${newest.name}`} />
+                  </span>
                 </span>
-              </span>
-            </Button>
+              </Button>
+            </span>
           </motion.div>
         ) : null}
       </AnimatePresence>

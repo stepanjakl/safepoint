@@ -53,7 +53,11 @@ import {
 
 import { OrdersMockRun } from './orders-mock-run';
 
-import { ordersAnnouncement, ordersRunStatus } from './orders-progress';
+import {
+  ordersAnnouncement,
+  ordersRunStatus,
+  stoppedFlag,
+} from './orders-progress';
 
 /*
   Everything a kept run's thread asks for when it opens, asked for at once:
@@ -83,11 +87,13 @@ function prefetchOrdersRun(
   const readId = kept.readId;
   if (mock || readId === null) return;
   const fresh = { staleTime: PREFETCH_FRESH_MS };
+  // A run's own rules are asked for by the run, as its steps ask.
+  const own = kept.ownRulebook ? { runId: kept.id } : {};
   void queryClient.prefetchQuery(
     trpc.read.summary.queryOptions({ id: readId }, fresh),
   );
   void queryClient.prefetchQuery(
-    trpc.rules.get.queryOptions({ text, readId }, fresh),
+    trpc.rules.get.queryOptions({ text, readId, ...own }, fresh),
   );
   const rulebook = kept.rulebook;
   if (rulebook === null) return;
@@ -95,11 +101,11 @@ function prefetchOrdersRun(
     trpc.rules.applied.queryOptions({ text, rulebook }, fresh),
   );
   void queryClient.prefetchQuery(
-    trpc.calculate.get.queryOptions({ text, readId, rulebook }, fresh),
+    trpc.calculate.get.queryOptions({ text, readId, rulebook, ...own }, fresh),
   );
   void queryClient.prefetchQuery(
     trpc.propose.get.queryOptions(
-      { text, readId, rulebook, evaluation: 'rules' },
+      { text, readId, rulebook, evaluation: 'rules', ...own },
       fresh,
     ),
   );
@@ -203,7 +209,19 @@ function OrdersThread({
     proposed.total > 0 &&
     decidedCount === proposed.total;
   const canCalculate = rulesDone && readId !== null;
-  const canApply = allDecided && read !== undefined && pinned !== null;
+  /*
+    A person confirms the decisions before the write is offered: the run's
+    step becomes Apply when they do (runs.stage), and stays there. A run that
+    reached Apply before this was asked has its status to say so.
+  */
+  const confirmed =
+    kept.stage === 'apply' ||
+    kept.status === 'approved' ||
+    kept.status === 'completed';
+  const confirmDecisions = () =>
+    void selection.record(kept.id, { stage: 'apply' }).catch(() => undefined);
+  const canApply =
+    allDecided && confirmed && read !== undefined && pinned !== null;
   if (
     restoring &&
     (saved.read !== undefined || saved.error !== null) &&
@@ -243,11 +261,11 @@ function OrdersThread({
                 ? 'pending'
                 : proposed?.running
                   ? 'running'
-                  : allDecided
+                  : allDecided && confirmed
                     ? 'complete'
                     : 'attention'
               : step.id === 'apply'
-                ? !allDecided
+                ? !canApply
                   ? 'pending'
                   : applied?.status === 'mismatch'
                     ? 'blocked'
@@ -263,7 +281,7 @@ function OrdersThread({
         ? 'rules'
         : !canPropose
           ? 'calculate'
-          : !allDecided
+          : !allDecided || !confirmed
             ? 'propose'
             : 'apply';
   // What each step has come to, in its heading, where it has a state yet.
@@ -313,7 +331,7 @@ function OrdersThread({
             : !proposed?.proposedAt
               ? 'Not proposed'
               : `${proposed.total} ${proposed.total === 1 ? 'item' : 'items'}`
-          : step.id === 'apply' && allDecided
+          : step.id === 'apply' && canApply
             ? applied?.status === 'verified'
               ? 'Written and read back'
               : applied?.status === 'mismatch'
@@ -326,7 +344,7 @@ function OrdersThread({
             : step.label;
   const flag = (step: ProcessStep) =>
     step.id === 'rules' && !rules?.running && rules?.error
-      ? `Stopped: ${rules.error.split(/[.:]/)[0]!.toLowerCase()}`
+      ? stoppedFlag(rules.error)
       : step.id === 'propose' &&
           canPropose &&
           !proposed?.running &&
@@ -429,6 +447,7 @@ function OrdersThread({
                   version={version}
                   readId={readId}
                   runId={kept.id}
+                  ownRulebook={kept.ownRulebook}
                   rulebook={pinned}
                   modelPlan={kept.modelPlan}
                   onProgress={setRules}
@@ -444,6 +463,7 @@ function OrdersThread({
                   readId={readId}
                   calculatedOn={kept.rulebook}
                   runId={kept.id}
+                  ownRulebook={kept.ownRulebook}
                   modelPlan={kept.modelPlan}
                   onProgress={pin}
                   onReadyChange={restoring ? setCalculateReady : undefined}
@@ -459,6 +479,9 @@ function OrdersThread({
                   readId={read.id}
                   rulebook={pinned}
                   run={{ process: 'brunch-orders', runId: kept.id }}
+                  ownRulebook={kept.ownRulebook}
+                  confirmed={confirmed}
+                  onConfirm={confirmDecisions}
                   modelPlan={kept.modelPlan}
                   onProgress={setProposed}
                   onReadyChange={restoring ? setProposeReady : undefined}

@@ -46,6 +46,7 @@ import {
 } from '@/components/engine/rules/rules-queries';
 import { Lede, plural, saidBy } from '@/components/engine/trial-parts';
 import { AlertBox } from '@/components/ui/alert-box';
+import { Reveal } from '@/components/ui/reveal';
 import { Button } from '@/components/ui/button';
 import { Fold } from '@/components/ui/fold';
 import { Pill, SEVERITY } from '@/components/ui/pill';
@@ -101,6 +102,7 @@ export function RulesStep({
   version,
   readId,
   runId,
+  ownRulebook = false,
   rulebook = null,
   modelPlan,
   onProgress,
@@ -114,6 +116,8 @@ export function RulesStep({
   version: string;
   readId: string | null;
   runId?: string;
+  // The run keeps a rulebook of its own: every rules call names it.
+  ownRulebook?: boolean;
   rulebook?: string | null;
   modelPlan?: ModelPlan | null;
   onProgress: (progress: RulesProgress) => void;
@@ -123,6 +127,7 @@ export function RulesStep({
 }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const rulebookRun = ownRulebook ? runId : undefined;
   const applied = useQuery(
     trpc.rules.applied.queryOptions(
       { text, rulebook },
@@ -139,7 +144,7 @@ export function RulesStep({
   // DRAFT_POLL_MS while a draft runs, even after a failed poll: a failed
   // request says nothing about the job.
   const rulesQuery = trpc.rules.get.queryOptions(
-    { text, readId },
+    { text, readId, runId: rulebookRun },
     {
       enabled: !mock,
       staleTime: mock ? Infinity : JUST_ASKED_MS,
@@ -177,9 +182,10 @@ export function RulesStep({
   // Every answer, the panel's entry for these instructions included.
   const body = asked.data ?? null;
   useEffect(() => {
-    if (body && !mock)
+    // A run's own rules are that run's: no other entry shares them.
+    if (body && !mock && !rulebookRun)
       queryClient.setQueriesData(trpc.rules.get.queryFilter({ text }), body);
-  }, [body, mock, queryClient, trpc, text]);
+  }, [body, mock, queryClient, trpc, text, rulebookRun]);
   // Each answer reaches the step's mark once, where it holds rules or a draft.
   useEffect(() => {
     if (body)
@@ -352,7 +358,7 @@ export function RulesStep({
                 });
                 return;
               }
-              confirmIntent.mutate({ text });
+              confirmIntent.mutate({ text, runId: rulebookRun });
             }}
           />
           {!set.intentConfirmedAt && sheet ? (
@@ -462,10 +468,22 @@ export function RulesStep({
                     });
                     return;
                   }
-                  decide.mutate({ text, id: item.id, decision, note });
+                  decide.mutate({
+                    text,
+                    runId: rulebookRun,
+                    id: item.id,
+                    decision,
+                    note,
+                  });
                 }}
                 onChoose={(index) =>
-                  !mock && choose.mutate({ text, id: item.id, index })
+                  !mock &&
+                  choose.mutate({
+                    text,
+                    runId: rulebookRun,
+                    id: item.id,
+                    index,
+                  })
                 }
                 onAdvise={() =>
                   advise.mutateAsync({ text, id: item.id, runId }).then(
@@ -477,7 +495,13 @@ export function RulesStep({
                 }
                 onShowProfile={profile ? showProfile : undefined}
                 onSetAppliesTo={(value) =>
-                  !mock && setAppliesTo.mutate({ text, id: item.id, value })
+                  !mock &&
+                  setAppliesTo.mutate({
+                    text,
+                    runId: rulebookRun,
+                    id: item.id,
+                    value,
+                  })
                 }
                 debug={
                   debug ? (
@@ -514,6 +538,7 @@ export function RulesStep({
         debugging={debugging}
         text={text}
         readId={readId}
+        runId={rulebookRun}
         onClose={() => setDebugging(null)}
       />
       {appliedRules ? (
@@ -549,7 +574,9 @@ export function RulesStep({
         <Lede>
           The model turns your instructions into calculations and checks, and
           tries each on records from the data. Accept the ones it got right;
-          every run under these instructions will use them.
+          {ownRulebook
+            ? ' this run alone will use them.'
+            : ' every run under these instructions will use them.'}
         </Lede>
       )}
 
@@ -602,12 +629,18 @@ export function RulesStep({
                     setProfileOpen(true);
                     // Only proposing one reads the data: the others take no read.
                     if (change.action === 'profile') {
-                      if (readId) proposeProfile.mutate({ text, readId });
+                      if (readId)
+                        proposeProfile.mutate({
+                          text,
+                          readId,
+                          runId: rulebookRun,
+                        });
                     } else if (change.action === 'confirmProfile')
-                      confirmProfile.mutate({ text });
+                      confirmProfile.mutate({ text, runId: rulebookRun });
                     else
                       changeProfile.mutate({
                         text,
+                        runId: rulebookRun,
                         column: change.column,
                         label: change.label,
                         type: change.type,
@@ -708,7 +741,11 @@ export function RulesStep({
         </section>
       ) : (
         <>
-          {!draftRunning && (said !== null || drafting?.error) ? (
+          <Reveal
+            show={Boolean(!draftRunning && (said !== null || drafting?.error))}
+            gap="pt-4"
+            className="-mt-4"
+          >
             <AlertBox
               title="Could not draft the rules"
               action={
@@ -727,7 +764,7 @@ export function RulesStep({
             >
               {said ?? drafting?.error}
             </AlertBox>
-          ) : null}
+          </Reveal>
           <p
             role="status"
             className={
