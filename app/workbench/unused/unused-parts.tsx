@@ -1,6 +1,7 @@
 'use client';
 
 import type { RunSelection } from '@/components/app-shell/runs/run-selection';
+import { ProcessStatusContent } from '@/components/app-shell/sidebar/process-status-content';
 import { DiscardRun } from '@/components/engine/run-parts';
 import { SectionBand } from '@/components/ui/section-band';
 
@@ -14,6 +15,16 @@ const standIn = {
   discard: () => Promise.resolve(false),
 } as unknown as RunSelection;
 
+const sampleStatus = {
+  label: '1 blocked',
+  description: '',
+  counts: { blocked: 1, needs_decision: 2, deferred: 0, will_apply: 8 },
+  totalLabel: '11 products',
+  modeLabel: 'Live',
+  modeDescription: 'Ready means ready for review, not approved.',
+  tone: 'blocked',
+} as const;
+
 export function UnusedParts() {
   return (
     <div className="grid max-w-3xl gap-10">
@@ -26,6 +37,17 @@ export function UnusedParts() {
         <div className="rounded-shell bg-surface-primary overflow-hidden border">
           <SectionBand title="Products" meta="11 rows" />
           <p className="text-dense px-4 py-3">Content under the band.</p>
+        </div>
+      </section>
+      <section className="grid gap-3">
+        <h2 className="text-dense font-semibold">ProcessStatusContent</h2>
+        <p className="text-meta text-muted">
+          components/app-shell/sidebar/process-status-content.tsx: the tooltip
+          on a process row&apos;s tag, summing up its latest plan. The tag now
+          counts runs waiting for a person instead.
+        </p>
+        <div className="bg-surface-floating rounded-shell w-72 border p-3">
+          <ProcessStatusContent status={sampleStatus} />
         </div>
       </section>
       <section className="grid gap-3">

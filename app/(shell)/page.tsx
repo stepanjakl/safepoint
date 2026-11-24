@@ -8,9 +8,10 @@ import {
 import { PROCESS_ROUTES, processHref } from '@/lib/shell/routes';
 
 /*
-  The root is not a page of its own: it opens the process the reader was last
-  in, or else the first one waiting on a review, so arriving never lands on an
-  empty screen that only repeats the sidebar. A query is carried across.
+  The root is not a page of its own. A first visit opens the workspace's
+  introduction; a reader coming back opens the process they were last in.
+  A query (a run, say) opens a process: the last one, or else the first
+  waiting on a review, with the query carried across.
 */
 export default async function LandingPage({ searchParams }: PageProps<'/'>) {
   const store = await cookies();
@@ -28,6 +29,9 @@ export default async function LandingPage({ searchParams }: PageProps<'/'>) {
   for (const [key, value] of Object.entries(await searchParams)) {
     for (const each of [value ?? []].flat()) query.append(key, each);
   }
+  const last = store.get(LAST_PROCESS_KEY)?.value;
+  const returning = PROCESS_ROUTES.some(({ process }) => process.id === last);
+  if (!returning && !query.size) redirect('/workspace');
   const href = processHref(id ?? PROCESS_ROUTES[0]!.process.id);
   redirect(query.size ? `${href}?${query}` : href);
 }

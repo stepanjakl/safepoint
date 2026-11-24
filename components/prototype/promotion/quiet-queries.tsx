@@ -16,9 +16,11 @@ import { useTRPC } from '@/components/trpc/provider';
 export function QuietQueries({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const trpc = useTRPC();
-  const key = trpc.instructions.list.queryKey();
+  // The sidebar's tags ask for each process's runs too: held back as well,
+  // so the workbench asks the server nothing.
+  const keys = [trpc.instructions.list.queryKey(), trpc.runs.list.queryKey()];
   const hold = (enabled: boolean) =>
-    queryClient.setQueryDefaults(key, { enabled });
+    keys.forEach((key) => queryClient.setQueryDefaults(key, { enabled }));
   useState(() => hold(false));
   useEffect(() => {
     hold(false);

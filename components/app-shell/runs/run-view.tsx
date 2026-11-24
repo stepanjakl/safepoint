@@ -372,25 +372,22 @@ function RunEmptyState({ note }: { note: string | null }) {
           variants={ARRIVE}
           className="flex flex-wrap justify-center gap-2"
         >
-          {start ? (
-            <Button
-              variant="primary"
-              size="medium"
-              aria-keyshortcuts="Meta+Enter Control+Enter"
-              onPress={() => void start()}
-            >
-              Start run
-              <KeyHint
-                keys={['mod', 'enter']}
-                on="button-primary"
-                className="-me-1 pointer-coarse:hidden"
-              />
-            </Button>
-          ) : (
-            <Button variant="primary" size="medium" aria-disabled="true">
-              Start run
-            </Button>
-          )}
+          {/* One button whether or not it can start yet, so its keys are
+              there from the first frame rather than arriving with `start`. */}
+          <Button
+            variant="primary"
+            size="medium"
+            aria-disabled={start ? undefined : 'true'}
+            aria-keyshortcuts={start ? 'Meta+Enter Control+Enter' : undefined}
+            onPress={start ? () => void start() : undefined}
+          >
+            Start run
+            <KeyHint
+              keys={['mod', 'enter']}
+              on="button-primary"
+              className="-me-1 pointer-coarse:hidden"
+            />
+          </Button>
           {actions ? (
             <Button size="medium" onPress={actions.showInstructions}>
               Review instructions

@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const E2E_PORT = 3001;
+// Another local project may hold 3001: SAFEPOINT_E2E_PORT moves the server.
+const E2E_PORT = Number(process.env.SAFEPOINT_E2E_PORT ?? 3001);
 const baseURL =
   process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${E2E_PORT}`;
 const TEST_DATABASE = 'data/pglite-e2e';

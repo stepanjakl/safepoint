@@ -50,6 +50,28 @@ export const processRunOf = (run: KeptRun): ProcessRun => ({
     : {}),
 });
 
+/*
+  What a process's runs ask of a person, for the sidebar's tag: how many wait
+  on one -- awaiting review, or running and stopped at a step for someone to
+  act -- and whether a job is working on any. A run a job stopped has failed,
+  as its row says, and waits on no one.
+*/
+export function runsTally(list: KeptRun[]): {
+  waiting: number;
+  working: boolean;
+} {
+  let waiting = 0;
+  let working = false;
+  for (const run of list) {
+    if (run.status === 'awaiting_review') waiting += 1;
+    else if (run.status === 'running' && run.activity) {
+      if (run.activity.working) working = true;
+      else if (!run.activity.stopped) waiting += 1;
+    }
+  }
+  return { waiting, working };
+}
+
 // Which models a run used is development's to compare, for now.
 const SHOW_MODELS = process.env.NODE_ENV === 'development';
 

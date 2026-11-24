@@ -55,6 +55,8 @@ test('the sidebar starts a fresh mock run on the model process', async ({
   const shortcut = page
     .getByRole('navigation', { name: 'Processes' })
     .getByRole('button', { name: /^Try a mock run/ });
+  // A guided mock plays by itself and stops where a person acts: it has no
+  // player bar.
   const player = page.locator('[aria-label="Mock run player"]');
 
   await expect
@@ -65,8 +67,11 @@ test('the sidebar starts a fresh mock run on the model process', async ({
     )
     .toBe(true);
   await shortcut.press('Enter');
-  await expect(page).toHaveURL(/\/processes\/brunch-orders-direct\?run=mock-/);
-  await expect(player).toBeVisible();
+  await expect(page).toHaveURL(
+    /\/processes\/brunch-orders-direct\?run=mock-guided-/,
+  );
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await expect(player).toHaveCount(0);
   const firstRun = new URL(page.url()).searchParams.get('run');
 
   await page
@@ -76,8 +81,11 @@ test('the sidebar starts a fresh mock run on the model process', async ({
   await expect(player).toBeHidden();
   await shortcut.press('Space');
   await expect(page).not.toHaveURL(`${DIRECT}?run=${firstRun}`);
-  await expect(page).toHaveURL(/\/processes\/brunch-orders-direct\?run=mock-/);
-  await expect(player).toBeVisible();
+  await expect(page).toHaveURL(
+    /\/processes\/brunch-orders-direct\?run=mock-guided-/,
+  );
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await expect(player).toHaveCount(0);
 });
 
 test('⌘K opens search, filters, and Escape unwinds in two steps', async ({
