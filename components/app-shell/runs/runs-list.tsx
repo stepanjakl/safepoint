@@ -10,6 +10,7 @@ import ShieldCheck from 'blode-icons-react/icons/shield-check-3-filled';
 import Lab from 'blode-icons-react/icons/lab-filled';
 import { RunRow } from './run-row';
 import { AlertBox } from '@/components/ui/alert-box';
+import { Reveal } from '@/components/ui/reveal';
 import { Tooltip } from '@/components/ui/tooltip';
 import { useEdgeScroll } from '@/components/ui/edge-scroll';
 import { useRunSelection } from './run-selection';
@@ -98,8 +99,18 @@ export function RunsList({
               on: revised.get(run.rulebookRevision),
               open: onShowRules,
             });
+          const arriving = run.id === selection?.arriving;
           return (
-            <li key={run.id}>
+            <Reveal
+              key={run.id}
+              as="li"
+              show
+              className={arriving ? 'transition-none' : undefined}
+              enterOnMount={arriving}
+              onEntered={
+                arriving ? () => selection?.finishArrival(run.id) : undefined
+              }
+            >
               <RunRow
                 run={run}
                 noun={process.itemNoun}
@@ -118,7 +129,7 @@ export function RunsList({
                   year={new Date(run.startedAt).getFullYear()}
                 />
               ) : null}
-            </li>
+            </Reveal>
           );
         })}
       </ol>

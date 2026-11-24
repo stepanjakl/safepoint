@@ -16,6 +16,7 @@ import {
 import { EVALUATION_LABELS } from '@/lib/shell/model';
 import type { ProcessNavigationItem } from '@/lib/shell/navigation';
 import { Glyph } from '@/components/ui/glyph';
+import { Reveal } from '@/components/ui/reveal';
 import { OverflowTooltip, Tooltip } from '@/components/ui/tooltip';
 import { WalkthroughHint } from '@/components/ui/walkthrough-hint';
 import { MENU_LEVEL_BUTTON, MENU_RAIL, MenuIcon } from './menu-parts';
@@ -132,6 +133,7 @@ export function ProcessList({
   const { destinationPath, leaveTo, leaving } = useShellPageNavigation();
   const walkthrough = useWalkthrough();
   const pickHintId = useId();
+  const mockRunButtonRef = useRef<HTMLButtonElement>(null);
   const firstLinkRef = useRef<HTMLAnchorElement>(null);
   const emptyAnchorRef = useRef<HTMLElement>(null);
   const {
@@ -164,10 +166,11 @@ export function ProcessList({
       (id) => items.find((entry) => entry.id === id)?.evaluation === 'model',
     ) ?? visibleOrder[0];
   const firstAnchor = firstId ? rowAnchor(firstId) : emptyAnchorRef;
+  const targetMockRun = Boolean(mockRunProcess) && !walkthrough?.legacy;
   const showPickHint =
     walkthrough?.step === 'pick-process' &&
     pickHintReady &&
-    firstId !== undefined &&
+    (targetMockRun || firstId !== undefined) &&
     !drag;
 
   return (
@@ -353,7 +356,7 @@ export function ProcessList({
                         className={cx(MENU_LABEL, 'process-menu-link')}
                         href={item.href}
                         aria-describedby={
-                          showPickHint && id === firstId
+                          showPickHint && !targetMockRun && id === firstId
                             ? pickHintId
                             : undefined
                         }
@@ -429,48 +432,58 @@ export function ProcessList({
               No matching processes.
             </p>
           ) : null}
-          {mockRunProcess ? (
-            <button
-              type="button"
-              className={cx(
-                MENU_LEVEL_BUTTON,
-                'process-mock-button relative isolate mt-2',
-              )}
-              onClick={() => {
-                if (leaving) return;
-                drawer?.close();
-                walkthrough?.advance('pick-process');
-                if (destinationPath === mockRunProcess.href)
-                  requestMockRunHere(mockRunProcess.id);
-                else leaveTo(mockRunHref(mockRunProcess.href));
-              }}
-            >
-              <span
-                aria-hidden="true"
-                className="control-face surface-process-mock rounded-control pointer-events-none absolute inset-0 -z-10"
-              />
-              <span className={MENU_RAIL}>
-                <BoltFilled aria-hidden size={16} />
-              </span>
-              <span className="min-w-0 flex-1 truncate text-center">
-                Try a mock run
-              </span>
-              <span className="w-menu-rail flex-none" aria-hidden="true" />
-            </button>
-          ) : null}
+          <div inert={!mockRunProcess}>
+            <Reveal show={Boolean(mockRunProcess)} gap="pt-2">
+              {mockRunProcess ? (
+                <button
+                  type="button"
+                  className={cx(
+                    MENU_LEVEL_BUTTON,
+                    'process-mock-button relative isolate',
+                  )}
+                  ref={mockRunButtonRef}
+                  aria-describedby={
+                    showPickHint && targetMockRun ? pickHintId : undefined
+                  }
+                  onClick={() => {
+                    if (leaving) return;
+                    drawer?.close();
+                    walkthrough?.advance('pick-process');
+                    if (destinationPath === mockRunProcess.href)
+                      requestMockRunHere(mockRunProcess.id);
+                    else leaveTo(mockRunHref(mockRunProcess.href));
+                  }}
+                >
+                  <span
+                    aria-hidden="true"
+                    className="control-face surface-process-mock rounded-control pointer-events-none absolute inset-0 -z-10"
+                  />
+                  <span className={MENU_RAIL}>
+                    <BoltFilled aria-hidden size={16} />
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-center">
+                    Try a mock run
+                  </span>
+                  <span className="w-menu-rail flex-none" aria-hidden="true" />
+                </button>
+              ) : null}
+            </Reveal>
+          </div>
         </div>
       </div>
       <WalkthroughHint
         isOpen={showPickHint}
         step="pick-process"
-        title="Choose a process"
+        title={targetMockRun ? 'Try a mock run' : 'Choose a process'}
         descriptionId={pickHintId}
-        targetRef={firstAnchor}
-        focusRef={firstLinkRef}
+        targetRef={targetMockRun ? mockRunButtonRef : firstAnchor}
+        focusRef={targetMockRun ? mockRunButtonRef : firstLinkRef}
         onDismiss={() => walkthrough?.dismiss()}
         onInteractOutside={() => walkthrough?.advance('pick-process')}
       >
-        Open a process to inspect its runs and see what the agent proposes.
+        {targetMockRun
+          ? 'Start a guided mock run to see what the agent proposes and review its suggestions.'
+          : 'Open a process to inspect its runs and see what the agent proposes.'}
       </WalkthroughHint>
     </>
   );

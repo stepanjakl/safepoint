@@ -22,6 +22,7 @@ const NEXT_STEP: Record<WalkthroughStep, WalkthroughStep | null> = {
 
 type WalkthroughContextValue = {
   step: WalkthroughStep | null;
+  legacy: boolean;
   advance: (from: WalkthroughStep) => void;
   dismiss: () => void;
 };
@@ -36,6 +37,15 @@ const WalkthroughContext = createContext<WalkthroughContextValue | null>(null);
 */
 export function WalkthroughProvider({ children }: { children: ReactNode }) {
   const path = usePathname();
+  const [legacy] = useState(() => {
+    try {
+      return (
+        window.localStorage.getItem('safepoint.walkthrough.v1') === 'legacy'
+      );
+    } catch {
+      return false;
+    }
+  });
   const [state, setState] = useState<{
     path: string;
     step: WalkthroughStep | null;
@@ -72,8 +82,8 @@ export function WalkthroughProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ step, advance, dismiss }),
-    [step, advance, dismiss],
+    () => ({ step, legacy, advance, dismiss }),
+    [step, legacy, advance, dismiss],
   );
 
   return <WalkthroughContext value={value}>{children}</WalkthroughContext>;

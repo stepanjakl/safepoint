@@ -12,6 +12,7 @@ import {
 } from 'motion/react';
 import {
   Fragment,
+  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -33,6 +34,8 @@ import {
 import { Fold } from '@/components/ui/fold';
 import { IconButton } from '@/components/ui/icon-button';
 import { Pill } from '@/components/ui/pill';
+import { useHeightSwap } from '@/components/ui/height-swap';
+import { SmoothHeight } from '@/components/ui/smooth-height';
 import { cx } from '@/lib/ui/cx';
 import { DURATION_PANE, DURATION_STATE, EASE_OUT_QUAD } from '@/lib/ui/motion';
 import type { CheckVerdict, ProposalRecord, Verdict } from '@/lib/engine/types';
@@ -162,6 +165,11 @@ export function ProposalRow({
     transition: { layout: { duration: DURATION_PANE, ease: EASE_OUT_QUAD } },
   };
   const decisionState = changing ? 'changing' : decision ? 'decided' : 'open';
+  const { version, hold, ready, measure, onSettled } = useHeightSwap(
+    decisionState,
+    Boolean(reduceMotion),
+  );
+
   return (
     <Fragment>
       <motion.tr {...rowMotion} className="calc-row align-top">
@@ -258,125 +266,134 @@ export function ProposalRow({
           <Pill tone={VERDICT[verdict].tone}>{VERDICT[verdict].label}</Pill>
         </td>
         <td className="py-1.5 pr-4 pl-3 text-right align-middle">
-          <AnimatePresence initial={false} mode="wait">
-            <DecisionControls key={decisionState} focusFallback={toggleRef}>
-              {changing ? (
-                <>
-                  <DecisionButton
-                    size="small"
-                    decision="accept"
-                    {...(icons
-                      ? { label: `Save ${key}` }
-                      : { children: 'Save' })}
-                    isDisabled={!checked || checked.verdict === 'blocked'}
-                    onPress={() => {
-                      onDecide(
-                        {
-                          [key]: madeNow('change', now(), {
-                            values: changing,
-                            checked: checked!,
-                          }),
-                        },
-                        `${key} changed to ${valuesWords(changing, fields)}`,
-                      );
-                      setChanging(null);
-                    }}
-                  />
-                  {icons ? (
-                    <IconButton
-                      label="Cancel"
-                      face="quiet"
-                      placement="top"
-                      onPress={() => setChanging(null)}
-                    >
-                      <Cross aria-hidden size={14} strokeWidth={2.5} />
-                    </IconButton>
-                  ) : (
-                    <Button size="small" onPress={() => setChanging(null)}>
-                      Cancel
-                    </Button>
-                  )}
-                </>
-              ) : decision ? (
-                <>
-                  <Pill tone={decision.kind === 'reject' ? 'neutral' : 'ready'}>
-                    {decision.kind === 'change'
-                      ? 'Changed'
-                      : decided(decision, fields)}
-                  </Pill>
-                  {icons ? (
-                    <IconButton
-                      label={`Undo the decision on ${key}`}
-                      face="quiet"
-                      placement="top"
-                      onPress={() =>
-                        onDecide({ [key]: null }, `${key} undecided`)
-                      }
-                    >
-                      <ArrowRotateCounterClockwise
-                        aria-hidden
-                        size={14}
-                        strokeWidth={2}
-                      />
-                    </IconButton>
-                  ) : (
-                    <Button
+          <SmoothHeight hold={hold} onSettled={onSettled}>
+            <AnimatePresence initial={false} mode="wait">
+              <DecisionControls
+                key={version}
+                focusFallback={toggleRef}
+                ready={ready}
+                measure={measure}
+              >
+                {changing ? (
+                  <>
+                    <DecisionButton
                       size="small"
+                      decision="accept"
+                      {...(icons
+                        ? { label: `Save ${key}` }
+                        : { children: 'Save' })}
+                      isDisabled={!checked || checked.verdict === 'blocked'}
+                      onPress={() => {
+                        onDecide(
+                          {
+                            [key]: madeNow('change', now(), {
+                              values: changing,
+                              checked: checked!,
+                            }),
+                          },
+                          `${key} changed to ${valuesWords(changing, fields)}`,
+                        );
+                        setChanging(null);
+                      }}
+                    />
+                    {icons ? (
+                      <IconButton
+                        label="Cancel"
+                        face="quiet"
+                        placement="top"
+                        onPress={() => setChanging(null)}
+                      >
+                        <Cross aria-hidden size={14} strokeWidth={2.5} />
+                      </IconButton>
+                    ) : (
+                      <Button size="small" onPress={() => setChanging(null)}>
+                        Cancel
+                      </Button>
+                    )}
+                  </>
+                ) : decision ? (
+                  <>
+                    <Pill
+                      tone={decision.kind === 'reject' ? 'neutral' : 'ready'}
+                    >
+                      {decision.kind === 'change'
+                        ? 'Changed'
+                        : decided(decision, fields)}
+                    </Pill>
+                    {icons ? (
+                      <IconButton
+                        label={`Undo the decision on ${key}`}
+                        face="quiet"
+                        placement="top"
+                        onPress={() =>
+                          onDecide({ [key]: null }, `${key} undecided`)
+                        }
+                      >
+                        <ArrowRotateCounterClockwise
+                          aria-hidden
+                          size={14}
+                          strokeWidth={2}
+                        />
+                      </IconButton>
+                    ) : (
+                      <Button
+                        size="small"
+                        onPress={() =>
+                          onDecide({ [key]: null }, `${key} undecided`)
+                        }
+                      >
+                        Undo
+                      </Button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <DecisionButton
+                      size="small"
+                      decision="accept"
+                      {...(icons
+                        ? { label: `Approve ${key}` }
+                        : { children: 'Approve' })}
+                      isDisabled={record.verdict === 'blocked'}
                       onPress={() =>
-                        onDecide({ [key]: null }, `${key} undecided`)
+                        onDecide(
+                          { [key]: madeNow('approve', now()) },
+                          `${key} approved`,
+                        )
                       }
-                    >
-                      Undo
-                    </Button>
-                  )}
-                </>
-              ) : (
-                <>
-                  <DecisionButton
-                    size="small"
-                    decision="accept"
-                    {...(icons
-                      ? { label: `Approve ${key}` }
-                      : { children: 'Approve' })}
-                    isDisabled={record.verdict === 'blocked'}
-                    onPress={() =>
-                      onDecide(
-                        { [key]: madeNow('approve', now()) },
-                        `${key} approved`,
-                      )
-                    }
-                  />
-                  {icons ? (
-                    <IconButton
-                      label={`Change ${key}`}
-                      face="quiet"
-                      placement="top"
-                      onPress={startChange}
-                    >
-                      <Pencil aria-hidden size={14} strokeWidth={2} />
-                    </IconButton>
-                  ) : (
-                    <Button size="small" onPress={startChange}>
-                      Change
-                    </Button>
-                  )}
-                  <DecisionButton
-                    size="small"
-                    decision="deny"
-                    {...(icons
-                      ? { label: `Reject ${key}` }
-                      : { children: 'Reject' })}
-                    onPress={() =>
-                      onDecide(
-                        { [key]: madeNow('reject', now()) },
-                        `${key} rejected`,
-                      )
-                    }
-                  />
-                </>
-              )}
-            </DecisionControls>
-          </AnimatePresence>
+                    />
+                    {icons ? (
+                      <IconButton
+                        label={`Change ${key}`}
+                        face="quiet"
+                        placement="top"
+                        onPress={startChange}
+                      >
+                        <Pencil aria-hidden size={14} strokeWidth={2} />
+                      </IconButton>
+                    ) : (
+                      <Button size="small" onPress={startChange}>
+                        Change
+                      </Button>
+                    )}
+                    <DecisionButton
+                      size="small"
+                      decision="deny"
+                      {...(icons
+                        ? { label: `Reject ${key}` }
+                        : { children: 'Reject' })}
+                      onPress={() =>
+                        onDecide(
+                          { [key]: madeNow('reject', now()) },
+                          `${key} rejected`,
+                        )
+                      }
+                    />
+                  </>
+                )}
+              </DecisionControls>
+            </AnimatePresence>
+          </SmoothHeight>
         </td>
       </motion.tr>
       <motion.tr {...rowMotion}>
@@ -513,28 +530,44 @@ const decided = (decision: Decision, fields: ProposalField[]) =>
 function DecisionControls({
   children,
   focusFallback,
+  ready,
+  measure,
 }: {
   children: ReactNode;
+  ready: boolean;
+  measure: (element: HTMLDivElement | null) => void;
   focusFallback: RefObject<HTMLButtonElement | null>;
 }) {
   const present = useIsPresent();
   const reduceMotion = useReducedMotion();
   const controls = useRef<HTMLDivElement>(null);
+  const attach = useCallback(
+    (element: HTMLDivElement | null) => {
+      controls.current = element;
+      measure(element);
+    },
+    [measure],
+  );
   useLayoutEffect(() => {
     const group = controls.current;
     if (!group) return;
     if (!present && group.contains(document.activeElement))
       focusFallback.current?.focus({ preventScroll: true });
-    group.inert = !present;
-  }, [present, focusFallback]);
+    group.inert = !present || !ready;
+  }, [present, ready, focusFallback]);
 
   return (
     <motion.div
-      ref={controls}
+      ref={attach}
       className="flex items-center justify-end gap-1.5"
-      initial={reduceMotion ? false : { opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      variants={{
+        hidden: { opacity: 0, transition: { duration: 0 } },
+        departing: { opacity: 0 },
+        shown: { opacity: 1 },
+      }}
+      initial={reduceMotion ? false : 'hidden'}
+      animate={ready ? 'shown' : 'hidden'}
+      exit="departing"
       transition={{
         duration: reduceMotion ? 0 : DURATION_STATE,
         ease: 'easeOut',

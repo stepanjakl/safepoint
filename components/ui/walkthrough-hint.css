@@ -87,10 +87,6 @@
       position-try-fallbacks: flip-block;
     }
 
-    .walkthrough-hint[data-anchored='true'][data-placement='bottom'][data-align='start'] {
-      left: clamp(12px, anchor(left), calc(100vw - min(19rem, calc(100vw - 1.5rem)) - 12px));
-    }
-
     .walkthrough-hint[data-anchored='true'][data-placement='right'] > .walkthrough-arrow {
       position: absolute;
       right: 100%;
@@ -101,11 +97,6 @@
       position: absolute;
       bottom: 100%;
       left: calc(50% - 8px);
-    }
-
-    .walkthrough-hint[data-anchored='true'][data-placement='bottom'][data-align='start']
-      > .walkthrough-arrow {
-      left: clamp(14px, calc(anchor-size(width) / 2 - 8px), calc(100% - 30px));
     }
   }
 

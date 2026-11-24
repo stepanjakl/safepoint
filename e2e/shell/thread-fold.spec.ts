@@ -1,5 +1,28 @@
 import { expect, test } from '@playwright/test';
 
+test('arriving steps receive pointer input after their open body fades in', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/workbench/run');
+  const player = page.getByRole('region', { name: 'Player' });
+  const steps = player.locator('.thread-step');
+  const existing = await steps.count();
+  await player.getByRole('button', { name: 'Next' }).click();
+
+  const step = steps.nth(existing);
+  const body = step.locator('.thread-step-body');
+  await expect(step).toHaveCSS('pointer-events', 'none');
+  await expect(body).toHaveCSS('pointer-events', 'none');
+  const opacityWhenInteractive = await body.evaluate(async (element) => {
+    const style = getComputedStyle(element);
+    while (style.pointerEvents === 'none')
+      await new Promise(requestAnimationFrame);
+    return style.opacity;
+  });
+  expect(opacityWhenInteractive).toBe('1');
+});
+
 test('long thread folds and open-body resizes have bounded motion', async ({
   page,
 }) => {
@@ -25,7 +48,7 @@ test('long thread folds and open-body resizes have bounded motion', async ({
     element.append(content);
   });
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await expect(fold).toHaveCSS('transition-duration', '0.35s');
+  await expect(fold).toHaveCSS('transition-duration', '0.4375s');
   await fold.evaluate((element) => {
     element.addEventListener('transitionrun', (event) => {
       if (event.target !== element) return;
@@ -82,7 +105,7 @@ test('long thread folds and open-body resizes have bounded motion', async ({
   await toggle.focus();
   await page.keyboard.press('Enter');
   await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-  await expect(fold).toHaveAttribute('data-measured-duration', '350');
+  await expect(fold).toHaveAttribute('data-measured-duration', '438');
   await expect
     .poll(() =>
       fold.evaluate((element) => element.getBoundingClientRect().height),

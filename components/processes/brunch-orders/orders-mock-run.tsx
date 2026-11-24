@@ -112,8 +112,8 @@ const mockKeptRead: KeptRead = {
   source: 'Google Sheets · Brunch store (mock copy)',
   spreadsheet: {
     title: 'Brunch store',
-    url: 'https://docs.google.com/spreadsheets/d/mock',
-    tabIds: { Orders: 0 },
+    url: snapshot.spreadsheet.url,
+    tabIds: snapshot.spreadsheet.tabIds,
   },
   tabs,
 };
@@ -212,20 +212,23 @@ const allDecisions: Record<string, Decision> = Object.fromEntries(
   ]),
 );
 
-const writes = writesOf(
-  proposalData.proposal,
-  Object.fromEntries(
-    Object.entries(allDecisions).map(([key, { kind, values, at }]) => [
-      key,
-      { kind, ...(values ? { values } : {}), at },
-    ]),
-  ),
-);
 const lastWeekend = [
   ['sku', 'order'],
   ...keys.map((key, index) => [key, index % 3 === 0 ? '' : 8 + index * 4]),
 ];
-const previewChanges = blockFor(lastWeekend, owner, writes).changes;
+
+function previewFor(decisions: Record<string, Decision>) {
+  const writes = writesOf(
+    proposalData.proposal,
+    Object.fromEntries(
+      Object.entries(decisions).map(([key, { kind, values, at }]) => [
+        key,
+        { kind, ...(values ? { values } : {}), at },
+      ]),
+    ),
+  );
+  return blockFor(lastWeekend, owner, writes).changes;
+}
 
 const QUOTA =
   'Out of quota: gemini-3.5-flash-lite until 14:20, gemini-3.1-flash-lite until 14:20. Choose a model of another family, or try again later.';
@@ -252,7 +255,7 @@ type OrdersStageKey =
   | 'branch-propose-quota'
   | 'branch-apply-mismatch';
 
-export const ORDERS_MOCK_STAGES: readonly (ThreadPlayerStep & {
+const ORDERS_MOCK_STAGES: readonly (ThreadPlayerStep & {
   key: OrdersStageKey;
 })[] = [
   { key: 'read-waiting', label: 'Read the sheet · waiting', group: 'main' },
@@ -505,6 +508,10 @@ export function OrdersMockRun({
   const [index, setIndex] = usePersistedMockStage(kept.id, ORDERS_MOCK_STAGES);
   const [runKey, setRunKey] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [confirmedDecisions, setConfirmedDecisions] = useState<Record<
+    string,
+    Decision
+  > | null>(null);
   const [rate, setRate] = useState(1);
   const container = useRef<HTMLDivElement>(null);
   useSlowMotion(container, rate);
@@ -515,6 +522,11 @@ export function OrdersMockRun({
   const isBranch = stage.group === 'branch';
   const atLastMain = !isBranch && index >= lastMainIndex;
   const running = playing && !isBranch && !atLastMain;
+
+  const confirmed =
+    stage.key === 'apply-preview' ||
+    stage.key === 'apply-written' ||
+    stage.key === 'branch-apply-mismatch';
 
   const hasRead = stage.key !== 'read-waiting';
   const read = hasRead ? mockRunRead : undefined;
@@ -681,26 +693,6 @@ export function OrdersMockRun({
         }),
         propReply,
       );
-
-      const stageDecisions =
-        stage.key === 'apply-preview' ||
-        stage.key === 'apply-written' ||
-        stage.key === 'branch-apply-mismatch'
-          ? allDecisions
-          : stage.key === 'propose-some'
-            ? someDecisions
-            : {};
-      queryClient.setQueryData(
-        trpc.decisions.current.queryKey({
-          process: 'brunch-orders',
-          runId: kept.id,
-        }),
-        {
-          kind: 'decisions' as const,
-          proposal: { id: 1, at: proposalData.proposal.at },
-          decisions: stageDecisions,
-        },
-      );
     }
   }, [
     stage.key,
@@ -713,7 +705,34 @@ export function OrdersMockRun({
     proposedShown,
     totalProposals,
     pinned,
+  ]);
+
+  useLayoutEffect(() => {
+    if (!reachedPropose) return;
+    const decisions = confirmed
+      ? (confirmedDecisions ?? allDecisions)
+      : stage.key === 'propose-some'
+        ? someDecisions
+        : {};
+    queryClient.setQueryData(
+      trpc.decisions.current.queryKey({
+        process: 'brunch-orders',
+        runId: kept.id,
+      }),
+      {
+        kind: 'decisions',
+        proposal: { id: 1, at: proposalData.proposal.at },
+        decisions,
+      },
+    );
+  }, [
+    confirmed,
+    confirmedDecisions,
     kept.id,
+    queryClient,
+    reachedPropose,
+    stage.key,
+    trpc,
   ]);
 
   useEffect(() => {
@@ -756,12 +775,15 @@ export function OrdersMockRun({
       rules.approved === rules.total);
   const canPropose = reachedPropose && read !== undefined && pinned !== null;
   const allDecided =
-    stage.key === 'apply-preview' ||
-    stage.key === 'apply-written' ||
-    stage.key === 'branch-apply-mismatch' ||
-    (proposed?.proposedAt != null &&
-      proposed.total > 0 &&
-      Object.keys(proposed.decisions).length === proposed.total);
+    proposed?.proposedAt != null &&
+    proposed.total === totalProposals &&
+    Object.keys(proposed.decisions).length === totalProposals;
+  const canApply = confirmed && allDecided;
+  const previewDecisions =
+    stage.key === 'apply-preview' && canApply
+      ? proposed.decisions
+      : (confirmedDecisions ?? allDecisions);
+  const previewChanges = previewFor(previewDecisions);
 
   const mockApplication: Application | null =
     stage.key === 'apply-written'
@@ -802,7 +824,7 @@ export function OrdersMockRun({
   // Each step drawn below has reported, which may draw the next.
   const showsCalculate = rulesDone && readId !== null;
   const showsPropose = canPropose && read !== undefined && pinned !== null;
-  const showsApply = allDecided && read !== undefined && pinned !== null;
+  const showsApply = canApply && read !== undefined && pinned !== null;
   if (
     restoring &&
     rulesReady &&
@@ -842,11 +864,11 @@ export function OrdersMockRun({
                 ? 'pending'
                 : proposed?.running
                   ? 'running'
-                  : allDecided
+                  : canApply
                     ? 'complete'
                     : 'attention'
               : step.id === 'apply'
-                ? !allDecided
+                ? !canApply
                   ? 'pending'
                   : effectiveApplied?.status === 'verified'
                     ? 'complete'
@@ -861,7 +883,7 @@ export function OrdersMockRun({
       ? 'rules'
       : !canPropose || stage.key === 'branch-calc-differ'
         ? 'calculate'
-        : !allDecided
+        : !canApply
           ? 'propose'
           : 'apply';
 
@@ -904,12 +926,14 @@ export function OrdersMockRun({
             : !proposed?.proposedAt
               ? 'Not proposed'
               : `${proposed.total} ${proposed.total === 1 ? 'item' : 'items'}`
-          : step.id === 'apply' && allDecided
+          : step.id === 'apply' && canApply
             ? effectiveApplied?.status === 'verified'
-              ? 'Written and read back'
+              ? 'Written'
               : effectiveApplied?.status === 'mismatch'
                 ? 'Check the sheet'
-                : `${previewChanges.length} to write`
+                : previewChanges.length
+                  ? `${previewChanges.length} to write`
+                  : 'Nothing to write'
             : step.label;
 
   const flag = (step: ProcessStep) =>
@@ -928,10 +952,14 @@ export function OrdersMockRun({
       ? { at: rules.written, of: rules.total }
       : undefined;
 
-  const steps = ORDER_STEPS.map((step) => ({
+  const steps = ORDER_STEPS.map<ProcessStep>((step) => ({
     ...step,
     status: status(step),
     label: label(step),
+    labelTone:
+      step.id === 'apply' && effectiveApplied?.status === 'verified'
+        ? 'ready'
+        : undefined,
     flag: flag(step),
     flagWhenClosed: step.id === 'propose',
     progress: progress(step),
@@ -946,11 +974,13 @@ export function OrdersMockRun({
         rate={rate}
         onSelect={(next) => {
           setPlaying(false);
+          setConfirmedDecisions(null);
           if (next === 0) setRunKey((key) => key + 1);
           setIndex(next);
         }}
         onTogglePlay={() => {
           if (isBranch || atLastMain) {
+            setConfirmedDecisions(null);
             setRunKey((key) => key + 1);
             setIndex(0);
             setPlaying(true);
@@ -1044,17 +1074,32 @@ export function OrdersMockRun({
                   rulebook={pinned}
                   run={{ process: 'brunch-orders', runId: kept.id }}
                   onProgress={setProposed}
+                  confirmed={confirmed}
+                  onConfirm={
+                    allDecided
+                      ? () => {
+                          if (!allDecided) return;
+                          setPlaying(false);
+                          setConfirmedDecisions(proposed.decisions);
+                          setIndex(
+                            ORDERS_MOCK_STAGES.findIndex(
+                              (s) => s.key === 'apply-preview',
+                            ),
+                          );
+                        }
+                      : undefined
+                  }
                   onReadyChange={restoring ? setProposeReady : undefined}
                   debug={debug}
                   mock
                 />
               </ResponseSection>
-            ) : step.id === 'apply' && allDecided && read && pinned ? (
+            ) : step.id === 'apply' && canApply && read && pinned ? (
               <ResponseSection>
                 <ApplyStep
                   subject={SUBJECT}
                   run={{ process: 'brunch-orders', runId: kept.id }}
-                  decisions={proposed?.decisions ?? allDecisions}
+                  decisions={previewDecisions}
                   onProgress={setApplied}
                   onReadyChange={restoring ? setApplyReady : undefined}
                   mock={{
@@ -1070,6 +1115,7 @@ export function OrdersMockRun({
                       application: mockApplication,
                     },
                     onWrite: () => {
+                      setConfirmedDecisions(previewDecisions);
                       const writtenIdx = ORDERS_MOCK_STAGES.findIndex(
                         (s) => s.key === 'apply-written',
                       );

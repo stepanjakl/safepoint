@@ -127,9 +127,7 @@ export function useEasedCards(
         const limit = topLimit();
         const anchor =
           cards.find((card) => card.getBoundingClientRect().top >= limit) ??
-          cards.findLast(
-            (card) => card.getBoundingClientRect().bottom > limit,
-          );
+          cards.findLast((card) => card.getBoundingClientRect().bottom > limit);
         return () =>
           (anchor
             ? anchor.getBoundingClientRect().top

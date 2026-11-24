@@ -315,7 +315,7 @@ export function ProposalTable({
                 className="proposal-table-summary ground-raised bg-surface-primary border-t-section sticky bottom-0 z-3 border-transparent"
               >
                 <SmoothHeight className="sm:grid sm:content-center">
-                  <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+                  <div className="relative flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                     <div className="flex flex-wrap items-center gap-2">
                       {counts.map(({ verdict, count }) => (
                         <Pill key={verdict} tone={VERDICT[verdict].tone}>
@@ -323,10 +323,11 @@ export function ProposalTable({
                         </Pill>
                       ))}
                     </div>
-                    <AnimatePresence initial={false}>
-                      {ready.length ? (
+                    <AnimatePresence initial={false} mode="popLayout">
+                      {ready.length ||
+                      (!needYou.length && onConfirm && !confirmed) ? (
                         <motion.div
-                          key="approve-ready"
+                          key="action"
                           className="ml-auto"
                           initial={reduceMotion ? false : { opacity: 0 }}
                           animate={{ opacity: 1 }}
@@ -338,30 +339,34 @@ export function ProposalTable({
                         >
                           <Button
                             size="medium"
-                            onPress={() => {
-                              const at = new Date().toISOString();
-                              decide(
-                                Object.fromEntries(
-                                  ready.map(([key]) => [
-                                    key,
-                                    madeNow('approve', at),
-                                  ]),
-                                ),
-                                `${ready.length} ${unchecked ? 'not checked' : 'ready'} approved`,
-                              );
-                            }}
+                            className="overflow-clip"
+                            variant={ready.length ? 'secondary' : 'primary'}
+                            onPress={
+                              ready.length
+                                ? () => {
+                                    const at = new Date().toISOString();
+                                    decide(
+                                      Object.fromEntries(
+                                        ready.map(([key]) => [
+                                          key,
+                                          madeNow('approve', at),
+                                        ]),
+                                      ),
+                                      `${ready.length} ${unchecked ? 'not checked' : 'ready'} approved`,
+                                    );
+                                  }
+                                : onConfirm
+                            }
                           >
-                            <span>
-                              Approve all{' '}
-                              <MorphingText text={String(ready.length)} />{' '}
-                              {unchecked ? 'not checked' : 'ready'}
-                            </span>
+                            {ready.length
+                              ? `Approve all ${ready.length} ${unchecked ? 'not checked' : 'ready'}`
+                              : 'Confirm decisions'}
                           </Button>
                         </motion.div>
-                      ) : !needYou.length && onConfirm && !confirmed ? (
-                        <motion.div
-                          key="confirm"
-                          className="ml-auto"
+                      ) : needYou.length ? (
+                        <motion.p
+                          key="remaining"
+                          className="text-dense text-muted ml-auto"
                           initial={reduceMotion ? false : { opacity: 0 }}
                           animate={{ opacity: 1 }}
                           exit={reduceMotion ? undefined : { opacity: 0 }}
@@ -370,14 +375,10 @@ export function ProposalTable({
                             ease: 'easeOut',
                           }}
                         >
-                          <Button
-                            size="medium"
-                            variant="primary"
-                            onPress={onConfirm}
-                          >
-                            Confirm decisions
-                          </Button>
-                        </motion.div>
+                          <MorphingText
+                            text={`Decide ${needYou.length} more ${needYou.length === 1 ? 'record' : 'records'} to continue.`}
+                          />
+                        </motion.p>
                       ) : null}
                     </AnimatePresence>
                   </div>

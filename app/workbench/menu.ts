@@ -155,6 +155,12 @@ export const WORKBENCH_GROUPS: readonly WorkbenchGroup[] = [
       'Single components and transitions, tried in candidate forms before one was chosen.',
     entries: [
       {
+        href: '/workbench/unused',
+        title: 'Unused parts',
+        summary:
+          'Components the app no longer draws, as they render, for a decision on whether each goes.',
+      },
+      {
         href: '/workbench/drawers',
         title: 'Drawers',
         summary:

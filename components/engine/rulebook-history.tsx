@@ -490,7 +490,7 @@ function Revision({
         {/* The revision's file name, for tracing it: a footnote, not content. */}
         <p className="rulebook-timeline-id">
           <span className="rulebook-timeline-readout text-muted">Revision</span>
-          <code className="rulebook-timeline-code value">{entry.id}</code>
+          <code className="metadata-chip">{entry.id}</code>
         </p>
       </Fold>
     </li>

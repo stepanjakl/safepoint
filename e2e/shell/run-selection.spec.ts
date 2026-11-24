@@ -1,12 +1,18 @@
+import { readFileSync } from 'node:fs';
+
 import { expect, test, type Page } from '@playwright/test';
 import { brunchOrdersDirectProcess } from '@/lib/processes/brunch-orders/process';
 import { listedInstructions } from '../support/kept-instructions';
+import { startKeptRun } from '../support/kept-runs';
 import { mockProcedure } from '../support/trpc';
 
 /*
   Which run the process page shows: nothing on arrival, the run started here or
   chosen in the rail. The choice is kept in ?run=, so a link opens the same run.
 */
+const sheetSnapshot = JSON.parse(
+  readFileSync('fixtures/brunch-orders/sheet-snapshot.json', 'utf8'),
+);
 const heading = (page: Page) => page.getByRole('heading', { level: 1 });
 
 test('a run can start with additional instructions that stay with it', async ({
@@ -261,6 +267,206 @@ async function openMockRun(
   return page.locator(`[data-run-id="${id}"]`);
 }
 
+test('a new run opens its row before fading in and taking selection', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  const previous = await openMockRun(page, 'brunch-orders', 'propose-some');
+  await expect(previous).toHaveAttribute('aria-pressed', 'true');
+  const newRow = page.locator(
+    '.sheet-list > li:first-child > [data-run-id^="run-"]',
+  );
+  const motion = await page.evaluateHandle(() => {
+    const selector = '.sheet-list > li:first-child > [data-run-id^="run-"]';
+    const original = document.querySelector(selector);
+    const frames: {
+      height: number;
+      opacity: number;
+      previousSelected: boolean;
+      selected: boolean;
+      inert: boolean;
+    }[] = [];
+    const sample = () => {
+      const row = document.querySelector(selector);
+      const item = row?.parentElement;
+      if (row && row !== original && item) {
+        frames.push({
+          height: item.getBoundingClientRect().height,
+          opacity: Number(getComputedStyle(item).opacity),
+          previousSelected: Boolean(
+            document.querySelector(
+              '[data-run-id^="mock-"][aria-pressed="true"]',
+            ),
+          ),
+          selected: row.getAttribute('aria-pressed') === 'true',
+          inert: item.inert,
+        });
+      }
+      if (!frames.at(-1)?.selected) requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+    return frames;
+  });
+
+  await page
+    .getByRole('button', { name: 'Start run', exact: true })
+    .press('Enter');
+  await expect(newRow).toHaveAttribute('aria-pressed', 'true');
+  await expect(previous).toHaveAttribute('aria-pressed', 'false');
+  await expect(page).toHaveURL(/run=run-/);
+
+  await expect
+    .poll(() => motion.evaluate((frames) => frames.at(-1)?.selected))
+    .toBe(true);
+  const frames = await motion.jsonValue();
+  const final = frames.at(-1)!;
+  const opening = frames.findIndex(
+    (frame) =>
+      frame.height > 0 && frame.height < final.height && frame.opacity === 0,
+  );
+  const fading = frames.findIndex(
+    (frame) =>
+      frame.height === final.height && frame.opacity > 0 && frame.opacity < 1,
+  );
+  expect(opening).toBeGreaterThanOrEqual(0);
+  expect(fading).toBeGreaterThan(opening);
+  expect(
+    frames.slice(0, -1).every((frame) => frame.previousSelected && frame.inert),
+  ).toBe(true);
+  expect(final).toMatchObject({
+    opacity: 1,
+    previousSelected: false,
+    selected: true,
+    inert: false,
+  });
+});
+
+test('the mock run links its read and approval to the captured sheet', async ({
+  page,
+}) => {
+  await openMockRun(page, 'brunch-orders-direct', 'committed');
+  const thread = page.locator('.run-view');
+  const inputs = thread.getByRole('button', { name: 'Inputs', exact: true });
+  if ((await inputs.getAttribute('aria-expanded')) !== 'true')
+    await inputs.press('Enter');
+  const sheet = thread.getByRole('button', { name: /^Google Sheets/ });
+  if ((await sheet.getAttribute('aria-expanded')) !== 'true')
+    await sheet.press('Enter');
+  await expect(
+    thread.getByRole('link', {
+      name: 'Open in Google Sheets (opens in a new tab)',
+    }),
+  ).toHaveAttribute('href', sheetSnapshot.spreadsheet.url);
+  const approval = thread.getByRole('button', {
+    name: 'Approval',
+    exact: true,
+  });
+  if ((await approval.getAttribute('aria-expanded')) !== 'true')
+    await approval.press('Enter');
+  const output = thread.locator('table.output-cells');
+  await expect(output).toHaveCount(1);
+  await expect(
+    thread.getByRole('link', {
+      name: 'Open Brunch store in Google Sheets (opens in a new tab)',
+    }),
+  ).toHaveAttribute('href', sheetSnapshot.spreadsheet.url);
+  await expect(output.getByRole('link')).toHaveCount(0);
+});
+
+test('the rulebook mock waits for decisions to be confirmed', async ({
+  page,
+}) => {
+  await openMockRun(page, 'brunch-orders', 'propose-some');
+  const thread = page.locator('.run-view');
+  const confirm = thread.getByRole('button', { name: 'Confirm decisions' });
+  await expect(confirm).toHaveCount(0);
+  const reject = thread.getByRole('button', { name: 'Reject', exact: true });
+  for (let remaining = 3; remaining > 0; remaining--) {
+    await expect(reject).toHaveCount(remaining);
+    await reject.first().click();
+  }
+  await expect(confirm).toBeVisible();
+  const apply = thread.getByRole('button', { name: 'Apply', exact: true });
+  await expect(apply).toHaveAttribute('aria-expanded', 'false');
+  await confirm.press('Enter');
+  await expect(apply).toHaveAttribute('aria-expanded', 'true');
+  await expect(
+    thread.getByText('Approved 8, changed 0, rejected 3.'),
+  ).toBeVisible();
+});
+
+test('the direct mock reveals thinking after the answer arrives', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await openMockRun(page, 'brunch-orders-direct', 'evaluating');
+  const log = page.getByRole('list', { name: 'What happened' });
+  const thought = page.locator('.model-thought-title');
+
+  await expect(log).toBeVisible();
+  await expect(thought).toHaveCount(0);
+  await expect(log.getByText(/^Answered /).first()).toBeAttached({
+    timeout: 20_000,
+  });
+  expect(await thought.count()).toBe(0);
+
+  await expect(thought).toBeVisible();
+  const previous = page.getByRole('button', { name: 'Previous thinking step' });
+  const next = page.getByRole('button', { name: 'Next thinking step' });
+  await previous.press('Enter');
+  await expect(thought).toHaveText('Re-checking flagged items');
+  await expect(previous).toBeDisabled();
+  await next.press('Enter');
+  await expect(thought).toHaveText('Verifying final order quantities');
+});
+
+test('bulk approval in the direct mock waits for review confirmation', async ({
+  page,
+}) => {
+  await openMockRun(page, 'brunch-orders-direct', 'awaiting_review');
+  const thread = page.locator('.run-view');
+  const confirm = thread.getByRole('button', { name: 'Confirm decisions' });
+  const prepare = thread.getByRole('button', { name: /^Write \d+ rows?$/ });
+  await thread.getByRole('button', { name: 'Reject SD-01' }).click();
+  await thread.getByRole('button', { name: 'Approve AV-RR' }).click();
+  await expect(confirm).toHaveCount(0);
+  const approve = thread.getByRole('button', {
+    name: 'Approve all 9 not checked',
+  });
+  const action = await approve.elementHandle();
+  await approve.press('Enter');
+  await expect(confirm).toBeFocused();
+  expect(
+    await action.evaluate((button) => button === document.activeElement),
+  ).toBe(true);
+  await expect(prepare).toHaveCount(0);
+  await confirm.press('Enter');
+  await prepare.press('Enter');
+  await expect(
+    thread.getByRole('button', { name: 'Confirm write' }),
+  ).toBeFocused();
+});
+
+test('the direct mock explains when all records are rejected', async ({
+  page,
+}) => {
+  await openMockRun(page, 'brunch-orders-direct', 'awaiting_review');
+  const thread = page.locator('.run-view');
+  const reject = thread.getByRole('button', { name: /^Reject / });
+  await expect(reject.first()).toBeVisible();
+  for (let remaining = await reject.count(); remaining > 0; remaining--) {
+    await reject.first().click();
+    await expect(reject).toHaveCount(remaining - 1);
+  }
+  await thread.getByRole('button', { name: 'Confirm decisions' }).click();
+  await expect(
+    thread.getByText('Nothing to write.', { exact: true }),
+  ).toBeVisible();
+  await expect(
+    thread.getByRole('button', { name: /^Write \d+ rows?$/ }),
+  ).toHaveCount(0);
+});
+
 test('a run summary updates and writing can be confirmed or cancelled from the keyboard', async ({
   page,
 }) => {
@@ -353,18 +559,82 @@ test('a run summary updates and writing can be confirmed or cancelled from the k
   await expect(thread.getByText('Brunch store · supplier copy')).toHaveCount(0);
   await expect(row).toHaveAccessibleName(/^Mock run\. Approved\./);
   const prepare = thread.getByRole('button', { name: /^Write \d+ rows?$/ });
-  const confirm = thread.getByRole('button', { name: 'Write to the sheet' });
+  const confirm = thread.getByRole('button', { name: 'Confirm write' });
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  const primary = await prepare.elementHandle();
   await prepare.press('Enter');
   await expect(confirm).toBeFocused();
+  expect(
+    await primary.evaluate((button) => button === document.activeElement),
+  ).toBe(true);
   await thread
     .getByRole('button', { name: 'Cancel', exact: true })
     .press('Enter');
   await expect(prepare).toBeFocused();
+  expect(
+    await primary.evaluate((button) => button === document.activeElement),
+  ).toBe(true);
   await expect(row).toHaveAccessibleName(/^Mock run\. Approved\./);
   await prepare.press('Enter');
-  await confirm.press('Enter');
   const undo = thread.getByRole('button', { name: 'Undo the write' });
+  await confirm.evaluate((button) => {
+    const layer = button
+      .closest('[data-height-swap-content]')
+      ?.closest('.overflow-y-clip');
+    if (!(layer instanceof HTMLElement))
+      throw new Error('Write section is missing');
+    layer.style.width = '12rem';
+    layer.style.setProperty('--fold-min', '350ms');
+    layer.setAttribute('data-test-write-section', '');
+  });
+  const writeSection = page.locator('[data-test-write-section]');
+  const frames = writeSection.evaluate(async (layer) => {
+    const initial = layer.getBoundingClientRect().height;
+    const until = performance.now() + 5000;
+    let heldThroughExit = true;
+    let sawHiddenResize = false;
+    let resizedBeforeEntrance = true;
+    while (performance.now() < until) {
+      await new Promise(requestAnimationFrame);
+      const content = layer.querySelector('[data-height-swap-content]');
+      if (!content) continue;
+      const height = layer.getBoundingClientRect().height;
+      const opacity = Number(getComputedStyle(content).opacity);
+      if (!content.textContent?.includes('Undo the write')) {
+        if (opacity > 0) heldThroughExit &&= Math.abs(height - initial) < 1;
+        continue;
+      }
+      const hasOutcome = content.textContent.includes('Written to the sheet');
+      if (opacity === 0 && hasOutcome) {
+        sawHiddenResize ||= layer
+          .getAnimations()
+          .some(
+            (animation) =>
+              animation.id === 'smooth-height' &&
+              animation.playState === 'running',
+          );
+      }
+      if (opacity > 0)
+        resizedBeforeEntrance &&=
+          Math.abs(height - content.getBoundingClientRect().height) < 1;
+      if (opacity === 1)
+        return {
+          hasOutcome,
+          heldThroughExit,
+          sawHiddenResize,
+          resizedBeforeEntrance,
+        };
+    }
+    throw new Error('The written section did not finish entering');
+  });
+  await confirm.press('Enter');
   await expect(undo).toBeFocused();
+  expect(await frames).toEqual({
+    hasOutcome: true,
+    heldThroughExit: true,
+    sawHiddenResize: true,
+    resizedBeforeEntrance: true,
+  });
   await expect(row).toHaveAccessibleName(/^Mock run\. Completed\./);
   await undo.press('Enter');
   await expect(prepare).toBeFocused();
@@ -424,31 +694,108 @@ for (const [process, stage] of [
   });
 }
 
-test('Jump to stays anchored as the direct run reaches the bottom', async ({
+for (const pinned of [true, false]) {
+  test(`an idle run ${pinned ? 'follows new content at the bottom' : 'keeps the reader’s place above new content'}`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.setViewportSize({ width: 1440, height: 600 });
+    await openMockRun(page, 'brunch-orders-direct', 'ready_to_commit');
+    const scroller = page.locator('.process-runs-detail');
+    const prepare = scroller.getByRole('button', { name: /^Write \d+ rows?$/ });
+    await expect(prepare).toBeVisible();
+    // Make the confirmation wrap beneath the button at a predictable width.
+    await prepare.evaluate((button) => {
+      if (!button.parentElement) throw new Error('Write controls are missing');
+      button.parentElement.style.maxWidth = '12rem';
+    });
+    const before = await scroller.evaluate(async (element, atBottom) => {
+      element.scrollTop = atBottom ? element.scrollHeight : 0;
+      await new Promise(requestAnimationFrame);
+      await new Promise(requestAnimationFrame);
+      return { height: element.scrollHeight, top: element.scrollTop };
+    }, pinned);
+    expect(before.height).toBeGreaterThan(600);
+    if (pinned) expect(before.top).toBeGreaterThan(0);
+
+    // Trigger the same button action without Playwright scrolling it into view.
+    await prepare.evaluate((button) => {
+      if (!(button instanceof HTMLButtonElement))
+        throw new Error('Write button is missing');
+      button.click();
+    });
+    await expect(
+      scroller.getByRole('button', { name: 'Cancel' }),
+    ).toBeVisible();
+    await expect
+      .poll(() => scroller.evaluate((element) => element.scrollHeight))
+      .toBeGreaterThan(before.height);
+    if (pinned) {
+      await expect
+        .poll(() =>
+          scroller.evaluate((element) =>
+            Math.abs(
+              element.scrollHeight - element.clientHeight - element.scrollTop,
+            ),
+          ),
+        )
+        .toBeLessThan(2);
+    } else {
+      expect(await scroller.evaluate((element) => element.scrollTop)).toBe(
+        before.top,
+      );
+    }
+  });
+}
+
+test('Jump to stays anchored and is offered once per actionable step', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.setViewportSize({ width: 1440, height: 600 });
-  await openMockRun(page, 'brunch-orders-direct', 'intervention');
+  await openMockRun(page, 'brunch-orders-direct', 'awaiting_review');
   const scroller = page.locator('.process-runs-detail');
-  const jump = scroller.getByRole('button', { name: /^Jump to / });
-  await expect(jump).toBeVisible();
+  const jump = scroller.getByRole('button', { name: 'Jump to Review' });
   await expect(jump).toBeInViewport();
 
-  const shift = await jump.evaluate((button) => {
+  const { shift, height, top } = await jump.evaluate((button) => {
     const scroller = button.closest('.process-runs-detail');
     if (!scroller) throw new Error('Run scroller is missing');
     const before = button.getBoundingClientRect().bottom;
-    scroller.scrollTop = scroller.scrollHeight;
-    return button.getBoundingClientRect().bottom - before;
+    const height = scroller.scrollHeight;
+    scroller.scrollTop = height;
+    return {
+      shift: button.getBoundingClientRect().bottom - before,
+      height,
+      top: scroller.scrollTop,
+    };
   });
   expect(Math.abs(shift)).toBeLessThan(1);
   await expect(jump).toHaveCount(0);
+  await expect
+    .poll(() =>
+      scroller.evaluate((element) => [element.scrollHeight, element.scrollTop]),
+    )
+    .toEqual([height, top]);
 
-  await scroller.evaluate((element) => {
+  const observedScroll = await scroller.evaluate(async (element) => {
     element.scrollTop = 0;
+    await new Promise(requestAnimationFrame);
+    await new Promise(requestAnimationFrame);
+    return element.scrollTop;
   });
-  await expect(jump).toBeInViewport();
+  expect(observedScroll).toBe(0);
+  await expect(jump).toHaveCount(0);
+
+  const stage = page.getByRole('combobox', { name: 'Mock run stage' });
+  const approval = stage.getByRole('option', {
+    name: /^\d+\. Awaiting approval$/,
+  });
+  await expect(approval).toHaveAttribute('value', /^\d+$/);
+  await stage.selectOption((await approval.getAttribute('value'))!);
+  await expect(
+    scroller.getByRole('button', { name: 'Jump to Approval' }),
+  ).toBeInViewport();
 });
 
 test('Jump to reveals its label before the pointer reaches its click target', async ({
@@ -479,6 +826,9 @@ test('Jump to reveals its label before the pointer reaches its click target', as
 test('the runs column fades edges only while runs extend past them', async ({
   page,
 }) => {
+  // Runs enough to run past the column, whatever other tests left: the
+  // database starts empty with each server.
+  for (let i = 0; i < 8; i++) await startKeptRun(page, 'brunch-orders');
   await page.setViewportSize({ width: 1280, height: 420 });
   await page.goto('/processes/brunch-orders');
   const aside = page.locator('.process-runs-list');

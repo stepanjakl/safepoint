@@ -129,6 +129,8 @@ export function WalkthroughHint({
   children: ReactNode;
 }) {
   const [supportsAnchor] = useState(hasAnchorPositioning);
+  // An aligned arrow needs the target's center and the callout's resolved side.
+  const cssAnchored = supportsAnchor && preferredPlacement !== 'bottom-start';
   const [visible, setVisible] = useState(false);
   const [responsivePlacement, setResponsivePlacement] =
     useState<WalkthroughPlacement | null>(null);
@@ -173,7 +175,7 @@ export function WalkthroughHint({
         parseFloat(getComputedStyle(target).borderRadius) || 0;
       const radius = Math.min(parsedRadius, rect.width / 2, rect.height / 2);
       setTargetRadius((current) => (current === radius ? current : radius));
-      if (!supportsAnchor) {
+      if (!cssAnchored) {
         const next: TargetBox = {
           x: rect.x,
           y: rect.y,
@@ -187,7 +189,7 @@ export function WalkthroughHint({
       }
     }
     setVisible(available);
-  }, [supportsAnchor, targetRef]);
+  }, [cssAnchored, targetRef]);
 
   const placement: Placement =
     preferredPlacement === 'responsive'
@@ -204,7 +206,7 @@ export function WalkthroughHint({
     isPositioned,
     update,
   } = useFloating({
-    open: open && !supportsAnchor,
+    open: open && !cssAnchored,
     placement,
     strategy: 'fixed',
     middleware: [
@@ -234,7 +236,7 @@ export function WalkthroughHint({
   // Attach an explicit CSS anchor-name on the target while the anchored hint or
   // backdrop is mounted, so both track scroll on the compositor thread.
   useLayoutEffect(() => {
-    if (!supportsAnchor || (!isOpen && !present && !backdropPresent)) return;
+    if (!cssAnchored || (!isOpen && !present && !backdropPresent)) return;
     const target = targetRef.current;
     if (!target) return;
     target.style.setProperty('anchor-name', anchorName);
@@ -243,13 +245,21 @@ export function WalkthroughHint({
         target.style.removeProperty('anchor-name');
       }
     };
-  }, [anchorName, backdropPresent, isOpen, present, supportsAnchor, targetRef]);
+  }, [anchorName, backdropPresent, isOpen, present, cssAnchored, targetRef]);
 
+  // A target drawn after the hint (in a drawer that opens, say) is looked
+  // for again each frame until it is there, then watched as any other.
+  const [looked, setLooked] = useState(0);
   useLayoutEffect(() => {
     if (!isOpen) return;
     const target = targetRef.current;
-    if (!target) return;
-    if (!supportsAnchor) refs.setReference(target);
+    if (!target) {
+      // About five seconds of frames: a target that never comes is let be.
+      if (looked >= 300) return;
+      const frame = requestAnimationFrame(() => setLooked((n) => n + 1));
+      return () => cancelAnimationFrame(frame);
+    }
+    if (!cssAnchored) refs.setReference(target);
     syncTarget();
     const observer = new MutationObserver(syncTarget);
     for (let node: Element | null = target; node; node = node.parentElement) {
@@ -273,7 +283,7 @@ export function WalkthroughHint({
       window.removeEventListener('resize', syncTarget);
       window.removeEventListener('scroll', syncTarget, true);
     };
-  }, [isOpen, refs, supportsAnchor, syncTarget, targetRef]);
+  }, [isOpen, refs, cssAnchored, syncTarget, targetRef, looked]);
 
   useLayoutEffect(() => {
     if (!open) return;
@@ -298,7 +308,7 @@ export function WalkthroughHint({
         const center = heading.offsetTop + heading.offsetHeight / 2;
         setTitleCenter((current) => (current === center ? current : center));
       }
-      if (!supportsAnchor) update();
+      if (!cssAnchored) update();
     }
     readMetrics();
     const resize = new ResizeObserver(readMetrics);
@@ -308,7 +318,7 @@ export function WalkthroughHint({
       resize.disconnect();
       window.removeEventListener('resize', readMetrics);
     };
-  }, [open, preferredPlacement, supportsAnchor, update]);
+  }, [open, preferredPlacement, cssAnchored, update]);
 
   useEffect(() => {
     if (!open) return;
@@ -335,10 +345,9 @@ export function WalkthroughHint({
     };
   }, [focusRef, onDismiss, onInteractOutside, open, targetRef]);
 
-  const activePlacement = supportsAnchor ? placement : resolvedPlacement;
+  const activePlacement = cssAnchored ? placement : resolvedPlacement;
   const side = activePlacement.split('-')[0] as
     'top' | 'bottom' | 'left' | 'right';
-  const align = activePlacement.includes('-start') ? 'start' : undefined;
   const arrowX = middlewareData.arrow?.x ?? 0;
   const arrowY = middlewareData.arrow?.y ?? 0;
   const fallbackArrowStyle: CSSProperties = {
@@ -351,12 +360,10 @@ export function WalkthroughHint({
           ? { right: '100%', top: arrowY }
           : { left: '100%', top: arrowY }),
   };
-  const anchorOrigin = supportsAnchor
+  const anchorOrigin = cssAnchored
     ? side === 'right'
       ? `0% ${titleCenter}px`
-      : side === 'bottom' && align === 'start'
-        ? '24px 0%'
-        : '50% 0%'
+      : '50% 0%'
     : side === 'bottom'
       ? `${arrowX + 8}px 0%`
       : side === 'top'
@@ -364,8 +371,8 @@ export function WalkthroughHint({
         : side === 'right'
           ? `0% ${arrowY + 8}px`
           : `100% ${arrowY + 8}px`;
-  const readyToShow = placementReady && (supportsAnchor || isPositioned);
-  const hintStyle: CSSProperties = supportsAnchor
+  const readyToShow = placementReady && (cssAnchored || isPositioned);
+  const hintStyle: CSSProperties = cssAnchored
     ? ({
         '--walkthrough-anchor': anchorName,
         '--walkthrough-title-center': `${titleCenter}px`,
@@ -387,7 +394,7 @@ export function WalkthroughHint({
         </span>
       )}
       {backdropPresent &&
-        (supportsAnchor
+        (cssAnchored
           ? createPortal(
               <div
                 className="walkthrough-backdrop walkthrough-backdrop-anchor walkthrough-cutout"
@@ -447,7 +454,7 @@ export function WalkthroughHint({
           <div
             ref={(node) => {
               floatingNodeRef.current = node;
-              if (!supportsAnchor) refs.setFloating(node);
+              if (!cssAnchored) refs.setFloating(node);
             }}
             role="dialog"
             aria-label={title}
@@ -456,9 +463,8 @@ export function WalkthroughHint({
             style={hintStyle}
             className="app-tooltip ground-tooltip walkthrough-hint"
             data-rich
-            data-anchored={supportsAnchor ? 'true' : undefined}
+            data-anchored={cssAnchored ? 'true' : undefined}
             data-placement={side}
-            data-align={align}
             data-entering={open && entering && readyToShow ? 'true' : undefined}
             data-exiting={!open ? 'true' : undefined}
             data-walkthrough-step={step}
@@ -473,10 +479,10 @@ export function WalkthroughHint({
             }}
           >
             <div
-              ref={supportsAnchor ? undefined : setArrowEl}
+              ref={cssAnchored ? undefined : setArrowEl}
               className="app-tooltip-arrow walkthrough-arrow"
               data-placement={side}
-              style={supportsAnchor ? undefined : fallbackArrowStyle}
+              style={cssAnchored ? undefined : fallbackArrowStyle}
             >
               <TooltipArrowShape />
             </div>

@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/button';
 import { Loader } from '@/components/ui/loader';
 import { MorphingText } from '@/components/ui/morphing-text';
 import { Reveal } from '@/components/ui/reveal';
-import { SmoothHeight } from '@/components/ui/smooth-height';
 import { useLoader } from '@/components/ui/working-mark';
 import {
   DATA_TABLE_BODY,
@@ -31,7 +30,7 @@ import type { DefinitionSubject } from '@/lib/engine/subject';
 import { sourceTermsOf } from '@/lib/sources/model';
 import type { AppRouter } from '@/server/api/root';
 
-import { WriteControls, writePreviewNote, writeResult } from './write-controls';
+import { WriteControls, writePreviewNote } from './write-controls';
 import type { Decision } from './propose/types';
 
 // What the procedures answer: the preview of what the decisions write (which
@@ -256,26 +255,6 @@ export function ApplyStep({
             written={Boolean(standing)}
           />
         </Reveal>
-        <div role="status" className="text-dense">
-          <Reveal
-            show={
-              writingLoader.phase === 'shown' || writingLoader.phase === 'slow'
-            }
-            gap="pt-4"
-          >
-            <Loader
-              phase={writingLoader.phase === 'slow' ? 'slow' : 'shown'}
-              label="Writing the approved changes…"
-              announce={false}
-            />
-          </Reveal>
-          <Reveal show={!writing.isPending && Boolean(application)} gap="pt-4">
-            {application ? writeResult(noun, application.status) : null}
-            {application?.error && application.status !== 'undone'
-              ? ` ${application.error}`
-              : null}
-          </Reveal>
-        </div>
         <Reveal show={Boolean(!standing && preview?.notWritable)} gap="pt-4">
           <p className="text-meta text-muted">{preview?.notWritable}</p>
         </Reveal>
@@ -291,33 +270,50 @@ export function ApplyStep({
             </ul>
           </AlertBox>
         </Reveal>
-        <Reveal
-          show={Boolean((canWrite && !standing && !unconfirmed) || standing)}
+        <WriteControls
           gap="pt-4"
-        >
-          <SmoothHeight>
-            <WriteControls
-              noun={noun}
-              rows={rows}
-              note={
-                preview
-                  ? writePreviewNote({
-                      rows,
-                      tab: preview.tab,
-                      tabExists: preview.tabExists,
-                      resource: resource.singular,
-                    })
-                  : undefined
-              }
-              held={held}
-              canWrite={Boolean(canWrite && !standing && !unconfirmed)}
-              canUndo={Boolean(standing)}
-              busy={acting}
-              onWrite={write}
-              onUndo={undo}
-            />
-          </SmoothHeight>
-        </Reveal>
+          outcome={
+            application
+              ? {
+                  noun,
+                  status: application.status,
+                  at:
+                    application.status === 'undone'
+                      ? application.undoneAt
+                      : application.at,
+                  error:
+                    application.status === 'undone' ? null : application.error,
+                }
+              : undefined
+          }
+          progress={
+            writingLoader.phase === 'shown' ||
+            writingLoader.phase === 'slow' ? (
+              <Loader
+                phase={writingLoader.phase}
+                label="Writing the approved changes…"
+                announce={false}
+              />
+            ) : null
+          }
+          rows={rows}
+          note={
+            preview
+              ? writePreviewNote({
+                  rows,
+                  tab: preview.tab,
+                  tabExists: preview.tabExists,
+                  resource: resource.singular,
+                })
+              : undefined
+          }
+          held={held}
+          canWrite={Boolean(canWrite && !standing && !unconfirmed)}
+          canUndo={Boolean(standing)}
+          busy={acting}
+          onWrite={write}
+          onUndo={undo}
+        />
       </div>
     </div>
   );

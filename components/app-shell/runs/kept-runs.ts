@@ -53,7 +53,11 @@ export const processRunOf = (run: KeptRun): ProcessRun => ({
 // Which models a run used is development's to compare, for now.
 const SHOW_MODELS = process.env.NODE_ENV === 'development';
 
-export function useKeptRuns(processId: string, enabled: boolean) {
+export function useKeptRuns(
+  processId: string,
+  enabled: boolean,
+  onStarted: (run: KeptRun) => void,
+) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const listing = trpc.runs.list.queryOptions(
@@ -75,6 +79,7 @@ export function useKeptRuns(processId: string, enabled: boolean) {
   const start = useMutation(
     trpc.runs.start.mutationOptions({
       onSuccess: (run) => {
+        onStarted(run);
         change((list) => [run, ...list.filter((one) => one.id !== run.id)]);
         settle(run);
       },

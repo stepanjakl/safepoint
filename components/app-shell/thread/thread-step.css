@@ -78,6 +78,7 @@
 
   .thread-jump-anchor {
     /* Carry the sticky anchor through the page gutter without adding scroll space. */
+    overflow-anchor: none;
     margin-block-start: var(--thread-page-bottom, 0px);
     margin-block-end: calc(-1 * var(--thread-page-bottom, 0px));
   }
@@ -151,7 +152,9 @@
   @media (hover: hover) and (pointer: fine) {
     .thread-jump-hover-buffer {
       position: absolute;
-      inset: calc(-1 * --spacing(4));
+      inset-inline: calc(-1 * --spacing(4));
+      inset-block-start: calc(-1 * --spacing(4));
+      inset-block-end: 0;
       pointer-events: auto;
     }
   }
@@ -246,13 +249,18 @@
   .thread-step[data-entering] {
     animation: thread-space var(--thread-space) var(--ease-in-out-quad);
   }
+  @media (prefers-reduced-motion: no-preference) {
+    .thread-step[data-entering],
+    .thread-step[data-entering] * {
+      pointer-events: none !important;
+    }
+  }
   @keyframes thread-space {
     from {
       margin-top: calc((var(--thread-rail) + var(--thread-gap)) * -1);
     }
   }
-  /* Its end clears data-entering, so it must be the arrival's last motion. */
-  .thread-step[data-entering] > .thread-step-row {
+  .thread-step[data-entering] > :is(.thread-step-row, .thread-step-heading-action) {
     animation: thread-row-in var(--thread-arrive) var(--ease-out-cubic) var(--thread-landed) both;
   }
   @keyframes thread-row-in {
@@ -1007,7 +1015,7 @@
   }
   /* A fact beside the heading's link lifts with the heading's wash, as facts
      do under a row's. */
-  .thread-step-heading-action:focus-visible .thread-step-fact {
+  .thread-step-heading-action:focus-visible .thread-step-fact:not([data-severity]) {
     color: var(--sp-thread-fact-ink-hover);
     background-color: var(--sp-thread-fact-face-hover);
   }
@@ -1032,7 +1040,7 @@
     .thread-step-heading-action:hover::before {
       opacity: 1;
     }
-    .thread-step-heading-action:hover .thread-step-fact {
+    .thread-step-heading-action:hover .thread-step-fact:not([data-severity]) {
       color: var(--sp-thread-fact-ink-hover);
       background-color: var(--sp-thread-fact-face-hover);
     }
@@ -1206,6 +1214,9 @@
       color var(--duration-state) ease-out,
       background-color var(--duration-state) ease-out;
   }
+  .thread-step-fact[data-severity] {
+    @apply bg-severity-pill text-severity-pill-ink;
+  }
   /* A flag in its step's tone moves, face and ink, by how far its ground
      sits from the pane, as every pill does (severity.css). */
   .thread-step-flag {
@@ -1256,7 +1267,7 @@
      still; only a foldable row lifts them. */
   .thread-step:not([data-fixed])
     > .thread-step-row:is(:hover, :has(> .thread-step-toggle:focus-visible))
-    .thread-step-fact {
+    .thread-step-fact:not([data-severity]) {
     /* A step more ink on the lifted face: muted reads 3.7:1 there in dark. */
     color: var(--sp-thread-fact-ink-hover);
     background-color: var(--sp-thread-fact-face-hover);
@@ -1423,10 +1434,12 @@
       calc(var(--thread-fold-height, 230) * var(--thread-fold-pace)),
       var(--thread-fold-max)
     );
-    transition: grid-template-rows var(--thread-fold-duration) var(--ease-fold) var(--thread-fade);
+    transition: grid-template-rows calc(var(--thread-fold-duration) * 1.25) var(--ease-fold)
+      var(--thread-fade);
   }
   .thread-step[data-open] > .thread-step-fold {
     grid-template-rows: 1fr;
+    transition-duration: var(--thread-fold-duration);
     transition-delay: 0s;
   }
   .thread-step-body {

@@ -219,7 +219,9 @@ export function ProcessSheet({
   });
   const walkthrough = useWalkthrough();
   const launchMockRun = useEffectEvent(() => {
-    if (selection.startMock?.()) {
+    // Started from the menu: it shows each step working and waits for the
+    // person wherever one acts, without the player.
+    if (selection.startMock?.('', { guided: true })) {
       chooseTab('runs');
       walkthrough?.advance('start-run');
     }

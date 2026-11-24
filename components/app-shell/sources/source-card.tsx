@@ -1,7 +1,6 @@
 'use client';
 
 import ArrowRotateClockwise from 'blode-icons-react/icons/arrow-rotate-clockwise';
-import ChainLink1Filled from 'blode-icons-react/icons/chain-link-1-filled';
 import CrossSmall from 'blode-icons-react/icons/cross-small';
 import PlusMedium from 'blode-icons-react/icons/plus-medium';
 import TrashCanSimple from 'blode-icons-react/icons/trash-can-simple';
@@ -26,7 +25,7 @@ import {
   DataTable,
 } from '@/components/ui/data-table';
 import { Fold } from '@/components/ui/fold';
-import { ICON_FILLED, IconButton } from '@/components/ui/icon-button';
+import { IconButton } from '@/components/ui/icon-button';
 import { MORPH_WORDS_MS, MorphingText } from '@/components/ui/morphing-text';
 import { useLoader } from '@/components/ui/working-mark';
 import { Tooltip } from '@/components/ui/tooltip';
@@ -42,7 +41,7 @@ import {
 } from '@/lib/sources/model';
 
 import { SourceDrawer } from './source-drawer';
-import { SourceHead } from './source-head';
+import { SourceHead, SourceOpenLink } from './source-head';
 import { useSources, type SourceEntry } from './source-queries';
 
 const capitalise = (text: string) =>
@@ -396,17 +395,7 @@ function SourceFile({
           {/* At the foot, and never nearer the figures than 30 (gap and pad). */}
           <div className="mt-auto flex items-center gap-1.5 pt-5">
             {summary?.url ? (
-              <Tooltip label={kind.open}>
-                <a
-                  href={summary.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`${kind.open} (opens in a new tab)`}
-                  className={cx(ROUND, ICON_FILLED)}
-                >
-                  <ChainLink1Filled aria-hidden size={14} />
-                </a>
-              </Tooltip>
+              <SourceOpenLink kind={declaration.kind} href={summary.url} />
             ) : null}
             {/* The ring travels round the button while a read is under way. */}
             <span className="source-read">

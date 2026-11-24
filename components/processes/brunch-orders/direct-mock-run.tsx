@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import type { RunSelection } from '@/components/app-shell/runs/run-selection';
+import {
+  isGuidedMockRunId,
+  type RunSelection,
+} from '@/components/app-shell/runs/run-selection';
 import {
   MODEL_RUN_PROGRESS,
   useRunProgress,
@@ -36,6 +39,12 @@ const NO_FRAMES: NonNullable<ScriptedStage['frames']> = [];
 const AFTER_FRAMES_MS = 2400;
 const COMMIT_MS = 1200;
 const UNDO_MS = 600;
+// Where a person acts: a guided run waits here for them rather than play on.
+const PERSON_STAGES = new Set([
+  'awaiting_review',
+  'reviewing',
+  'ready_to_commit',
+]);
 
 export function DirectMockRun({
   runId,
@@ -67,9 +76,15 @@ export function DirectMockRun({
     [allStages],
   );
 
+  /*
+    Started from the menu, a mock is guided: it plays by itself with no
+    player, and stops wherever a person acts, so each step is seen working
+    and then waits for them.
+  */
+  const guided = isGuidedMockRunId(runId);
   const [index, setIndex] = usePersistedMockStage(runId, steps);
   const [runKey, setRunKey] = useState(0);
-  const [playing, setPlaying] = useState(false);
+  const [playing, setPlaying] = useState(guided);
   const [rate, setRate] = useState(1);
   const [userDecisions, setUserDecisions] = useState<Record<
     string,
@@ -95,7 +110,11 @@ export function DirectMockRun({
   const scripted = allStages[index] ?? allStages[0]!;
   const isBranch = scripted.group === 'branch';
   const atLastMain = !isBranch && index >= lastMainIndex;
-  const running = playing && !isBranch && !atLastMain;
+  const running =
+    playing &&
+    !isBranch &&
+    !atLastMain &&
+    !(guided && PERSON_STAGES.has(scripted.view.stage));
   useWorkingFavicon(
     running ||
       scripted.view.stage === 'reading' ||
@@ -187,6 +206,11 @@ export function DirectMockRun({
       ? {
           ...activeView.write,
           outputs: computedOutputs ?? activeView.write.outputs,
+          noChanges:
+            computedWritesCount === null
+              ? activeView.write.noChanges
+              : computedWritesCount === 0 &&
+                activeView.write.problems.length === 0,
           writtenAt:
             activeView.stage === 'committed'
               ? (writtenAt ?? activeView.write.writtenAt)
@@ -217,25 +241,22 @@ export function DirectMockRun({
       setUserDecisions(next);
       setAnnounced(words);
 
-      const totalRecords = Object.keys(
-        activeView.review.proposal.records,
-      ).length;
       const decidedCount = Object.keys(next).length;
-      if (totalRecords > 0 && decidedCount === totalRecords) {
-        if (activeView.stage !== 'ready_to_commit') {
-          setWrittenAt(null);
-          jumpToStage('ready_to_commit');
-        }
-      } else if (decidedCount > 0) {
-        if (activeView.stage !== 'reviewing') {
-          setWrittenAt(null);
-          jumpToStage('reviewing');
-        }
-      } else if (activeView.stage !== 'awaiting_review') {
+      if (
+        activeView.stage === 'ready_to_commit' &&
+        decidedCount === Object.keys(activeView.review.proposal.records).length
+      )
+        return;
+      const reviewStage = decidedCount > 0 ? 'reviewing' : 'awaiting_review';
+      if (activeView.stage !== reviewStage) {
         setWrittenAt(null);
-        jumpToStage('awaiting_review');
+        jumpToStage(reviewStage);
       }
     },
+    onConfirmDecisions:
+      activeView.stage === 'reviewing'
+        ? () => jumpToStage('ready_to_commit')
+        : undefined,
     onCheck: async () => ({ kind: 'check', verdict: 'ready', checks: [] }),
     onRetry: activeView.facts.stopped
       ? () => {
@@ -282,35 +303,37 @@ export function DirectMockRun({
 
   return (
     <div ref={container}>
-      <ThreadPlayerBar
-        steps={steps}
-        index={index}
-        playing={running}
-        rate={rate}
-        onSelect={(next) => {
-          setPlaying(false);
-          clearPendingAction();
-          setUserDecisions(null);
-          setWrittenAt(null);
-          setFrame({ index: next, at: 0 });
-          if (next === 0) setRunKey((key) => key + 1);
-          setIndex(next);
-        }}
-        onTogglePlay={() => {
-          clearPendingAction();
-          if (isBranch || atLastMain) {
+      {guided ? null : (
+        <ThreadPlayerBar
+          steps={steps}
+          index={index}
+          playing={running}
+          rate={rate}
+          onSelect={(next) => {
+            setPlaying(false);
+            clearPendingAction();
             setUserDecisions(null);
             setWrittenAt(null);
-            setFrame({ index: 0, at: 0 });
-            setRunKey((key) => key + 1);
-            setIndex(0);
-            setPlaying(true);
-          } else {
-            setPlaying(!playing);
-          }
-        }}
-        onRateChange={setRate}
-      />
+            setFrame({ index: next, at: 0 });
+            if (next === 0) setRunKey((key) => key + 1);
+            setIndex(next);
+          }}
+          onTogglePlay={() => {
+            clearPendingAction();
+            if (isBranch || atLastMain) {
+              setUserDecisions(null);
+              setWrittenAt(null);
+              setFrame({ index: 0, at: 0 });
+              setRunKey((key) => key + 1);
+              setIndex(0);
+              setPlaying(true);
+            } else {
+              setPlaying(!playing);
+            }
+          }}
+          onRateChange={setRate}
+        />
+      )}
       <ModelRunThread
         key={runKey}
         run={view}

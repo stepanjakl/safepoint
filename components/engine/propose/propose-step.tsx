@@ -402,7 +402,7 @@ export function ProposeStep({
         readId={readId}
         announced={announced}
         onDecide={decide}
-        onConfirm={mock ? undefined : onConfirm}
+        onConfirm={onConfirm}
         confirmed={confirmed}
         onCheck={(key, values) => {
           if (mock)

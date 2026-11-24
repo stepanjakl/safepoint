@@ -4,6 +4,7 @@
 'use client';
 
 import { pacedDuration } from '@/lib/ui/motion';
+import { SEVERITY } from '@/components/ui/pill';
 import {
   createContext,
   useContext,
@@ -682,7 +683,19 @@ export function ThreadStep({
       // How its ring's loop is timed, which the name's shimmer follows.
       data-mark={travelled ? 'travelled' : arrived ? 'arrived' : undefined}
       onAnimationEnd={(event) => {
-        if (event.animationName === 'thread-row-in') setEntering(false);
+        if (
+          event.animationName === 'thread-row-in' &&
+          event.target instanceof HTMLElement &&
+          event.target.parentElement === event.currentTarget
+        ) {
+          const transitions = [
+            ...(foldRef.current?.getAnimations() ?? []),
+            ...(bodyRef.current?.getAnimations() ?? []),
+          ].filter((animation) => animation instanceof CSSTransition);
+          void Promise.allSettled(
+            transitions.map((transition) => transition.finished),
+          ).then(() => setEntering(false));
+        }
         if (event.animationName === 'thread-name-done') setFlourish(false);
       }}
       onPointerEnter={() => setReveal(true)}
@@ -701,7 +714,12 @@ export function ThreadStep({
             <StepLink label={headingAction.label} inHeading />
             {/* Its fact still stands beside the link: when it was asked. */}
             {row.label ? (
-              <span className="thread-step-fact">{factText(row.label)}</span>
+              <span
+                className="thread-step-fact"
+                data-severity={row.labelTone && SEVERITY[row.labelTone]}
+              >
+                {factText(row.label)}
+              </span>
             ) : null}
           </span>
         </button>
@@ -736,7 +754,12 @@ export function ThreadStep({
           {row.label || row.flag || flag || reference ? (
             <span className="thread-step-facts">
               {row.label ? (
-                <span className="thread-step-fact">{factText(row.label)}</span>
+                <span
+                  className="thread-step-fact"
+                  data-severity={row.labelTone && SEVERITY[row.labelTone]}
+                >
+                  {factText(row.label)}
+                </span>
               ) : null}
               {/* Its own pill, in the step's tone: the part of the fact that is
                 the problem, divided from the part that is not -- and, where

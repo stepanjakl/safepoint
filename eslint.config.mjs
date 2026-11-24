@@ -135,8 +135,8 @@ const config = [
   {
     ignores: [
       '.next/**',
-      // The Playwright server's own build output (playwright.config.ts).
-      '.next-e2e/**',
+      // Local build output: Playwright's server and any check's own distDir.
+      '.next-*/**',
       'data/**',
       'next-env.d.ts',
       '.agents/**',

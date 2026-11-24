@@ -1,6 +1,10 @@
+import ChainLink1Filled from 'blode-icons-react/icons/chain-link-1-filled';
 import TableFilled from 'blode-icons-react/icons/table-filled';
 import type { ComponentType, ReactNode } from 'react';
 
+import { ICON_BOX } from '@/components/ui/button';
+import { ICON_FILLED } from '@/components/ui/icon-button';
+import { Tooltip } from '@/components/ui/tooltip';
 import { cx } from '@/lib/ui/cx';
 import { SOURCE_KINDS, type SourceKind } from '@/lib/sources/model';
 
@@ -69,5 +73,39 @@ export function SourceHead({
       </div>
       {children}
     </header>
+  );
+}
+
+export function SourceOpenLink({
+  kind,
+  href,
+  title,
+  quiet = false,
+}: {
+  kind: SourceKind;
+  href: string;
+  title?: string;
+  quiet?: boolean;
+}) {
+  const source = SOURCE_KINDS[kind];
+  const label = title ? `Open ${title} in ${source.name}` : source.open;
+  return (
+    <Tooltip label={label}>
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`${label} (opens in a new tab)`}
+        className={cx(
+          ICON_BOX,
+          'size-7.5 rounded-full',
+          quiet
+            ? 'control-wash text-icon-quiet-ink hover:bg-surface-selected hover:text-icon-quiet-ink-hover focus-visible:bg-surface-selected focus-visible:text-icon-quiet-ink-hover'
+            : ICON_FILLED,
+        )}
+      >
+        <ChainLink1Filled aria-hidden size={14} />
+      </a>
+    </Tooltip>
   );
 }

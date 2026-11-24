@@ -222,7 +222,10 @@
       width var(--duration-pane) var(--ease-out-emphasized),
       opacity var(--duration-state) ease-out calc(var(--duration-pane) - var(--duration-state));
   }
+  /* Clipped to its track: a closed dock's panel would otherwise overhang the
+     shell, which any scroll into view then slides the whole app across. */
   .assistant-dock {
+    overflow-x: clip;
     visibility: hidden;
     transition: visibility 0s var(--duration-pane);
   }

@@ -330,6 +330,7 @@ for (const width of [1440, 390]) {
 test('a person decides every record, then writes what Apply shows and can undo it', async ({
   page,
 }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
   const table = await propose(page);
   await expect(
     page.getByRole('list', { name: 'Applied rules' }).getByRole('listitem'),
@@ -416,32 +417,112 @@ test('a person decides every record, then writes what Apply shows and can undo i
   ).toContainText('—');
 
   // Writing is asked for, then confirmed, with focus on the confirmation.
-  await page.getByRole('button', { name: 'Write 5 rows' }).click();
+  const write = page.getByRole('button', { name: 'Write 5 rows' });
+  const controls = page.locator('[data-height-swap-content]').filter({
+    has: page.getByRole('button', {
+      name: /^(Write 5 rows|Confirm write|Undo the write)$/,
+    }),
+  });
+  const heightBox = controls.locator('../..');
+  // At this width the undo note wraps below its button, so replacing it
+  // with the single write button must change the height.
+  await heightBox.evaluate((element) => (element.style.width = '12rem'));
+  await write.click();
   await expect(
     page.getByText('Adds the Orders tab, with 5 rows.'),
   ).toBeVisible();
-  const confirm = page.getByRole('button', { name: 'Write to the sheet' });
+  const confirm = page.getByRole('button', { name: 'Confirm write' });
   await expect(confirm).toBeFocused();
   await confirm.click();
   await expect(
-    page.getByRole('status').filter({ hasText: 'read back from the sheet' }),
+    page
+      .getByRole('status')
+      .filter({ hasText: 'Written to the sheet' })
+      .filter({ has: page.locator('time', { hasText: / · \d{2}:\d{2}/ }) }),
   ).toBeAttached();
   await expect(
     page.getByRole('table', { name: 'What was written, before and after' }),
   ).toBeVisible();
   await expect(
-    thread(page).getByText('Written and read back').first(),
+    thread(page).getByText('Written', { exact: true }).first(),
   ).toBeAttached();
 
   const undo = page.getByRole('button', { name: 'Undo the write' });
   await expect(undo).toBeFocused();
+  await expect
+    .poll(() =>
+      heightBox.evaluate((box) =>
+        Math.abs(
+          box.getBoundingClientRect().height -
+            box.firstElementChild!.getBoundingClientRect().height,
+        ),
+      ),
+    )
+    .toBeLessThan(1);
+  await heightBox.evaluate((box) => {
+    const start = box.getBoundingClientRect().height;
+    let sawEntering = false;
+    let heldThroughExit = true;
+    let resizedBeforeEntrance = true;
+    let sawHiddenResize = false;
+    const capture = () => {
+      const section = box.querySelector('[data-height-swap-content]');
+      const height = box.getBoundingClientRect().height;
+      if (
+        section?.querySelector('button')?.textContent?.includes('Write 5 rows')
+      ) {
+        const opacity = Number(getComputedStyle(section).opacity);
+        const end = section.getBoundingClientRect().height;
+        if (opacity > 0) {
+          sawEntering ||= opacity < 1;
+          resizedBeforeEntrance &&= Math.abs(height - end) < 1;
+        }
+        // Check the animation's endpoints even if the browser drops frames.
+        const resize = box
+          .getAnimations()
+          .find((animation) => animation.id === 'smooth-height');
+        if (opacity === 0 && resize?.effect instanceof KeyframeEffect) {
+          const keyframes = resize.effect.getKeyframes();
+          const from = Number.parseFloat(String(keyframes[0]?.height));
+          const to = Number.parseFloat(String(keyframes.at(-1)?.height));
+          sawHiddenResize ||=
+            resize.playState === 'running' &&
+            Math.abs(from - start) < 1 &&
+            Math.abs(to - end) < 1 &&
+            Math.abs(from - to) > 1;
+        }
+        if (opacity === 1 && Math.abs(height - end) < 1) {
+          box.setAttribute(
+            'data-test-height-swap',
+            JSON.stringify({
+              sawEntering,
+              heldThroughExit,
+              resizedBeforeEntrance,
+              sawHiddenResize,
+            }),
+          );
+          return;
+        }
+      } else if (section && Number(getComputedStyle(section).opacity) > 0) {
+        heldThroughExit &&= Math.abs(height - start) < 1;
+      }
+      requestAnimationFrame(capture);
+    };
+    requestAnimationFrame(capture);
+  });
   await undo.click();
   await expect(
     page.getByRole('status').filter({ hasText: 'back as they were' }),
   ).toBeAttached();
-  await expect(
-    page.getByRole('button', { name: 'Write 5 rows' }),
-  ).toBeFocused();
+  await expect(write).toBeFocused();
+  await expect(heightBox).toHaveAttribute('data-test-height-swap', /./);
+  const metrics = await heightBox.getAttribute('data-test-height-swap');
+  expect(JSON.parse(metrics ?? '{}')).toEqual({
+    sawEntering: true,
+    heldThroughExit: true,
+    resizedBeforeEntrance: true,
+    sawHiddenResize: true,
+  });
 
   // The screen names the run by the id the server gave it, and sends no
   // decisions, rulebook or text of its own.

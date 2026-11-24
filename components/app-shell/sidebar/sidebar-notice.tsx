@@ -41,7 +41,7 @@ export function SidebarNotice() {
         Demo application
       </p>
       <span className="text-notice-caption text-micro col-start-2 mt-0.75 font-medium">
-        Fictional data. No live changes.
+        Fictional data in a demo sheet.
       </span>
     </div>
   );

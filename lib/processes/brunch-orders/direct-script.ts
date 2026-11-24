@@ -88,7 +88,7 @@ const read = {
   readAt: AT,
   source: 'Google Sheets · Brunch store (workbench copy)',
   title: 'Brunch store',
-  url: 'https://docs.google.com/spreadsheets/d/workbench',
+  url: snapshot.spreadsheet.url,
   tabs: tabs.map((tab) => ({ name: tab.name, rows: tab.values.length })),
 };
 const needYou = Object.values(proposal.records).filter(
@@ -122,7 +122,7 @@ export function mockWriteOutputs(
       title: read.title,
       key: owner.subject.data.output?.key ?? 'Record',
       url: read.url,
-      resourceIds: { Orders: 0, 'Standing orders': 1834920517 },
+      resourceIds: snapshot.spreadsheet.tabIds,
       changes: nextChanges,
     },
   ];

@@ -108,9 +108,58 @@ test('the hint preserves focus and advances through keyboard activation', async 
   await expect(hint).toHaveAttribute('data-walkthrough-step', 'pick-process');
 });
 
-test('the full walkthrough runs across all four steps and restarts on /workspace', async ({
+test('step two highlights the mock run banner by default', async ({ page }) => {
+  await page.goto('/workspace');
+  const hint = page.locator('.walkthrough-hint');
+  await expect(hint).toHaveAttribute('data-walkthrough-step', 'open-processes');
+  await page.getByRole('button', { name: /^Processes/ }).press('Enter');
+
+  const banner = page.getByRole('button', { name: 'Try a mock run' });
+  await expect(hint).toHaveAttribute('data-walkthrough-step', 'pick-process');
+  await expect(banner).toHaveAccessibleDescription(/Start a guided mock run/);
+  await expect(page.locator('a.process-menu-link').first()).not.toHaveAttribute(
+    'aria-describedby',
+  );
+  await banner.click();
+  await expect(page).toHaveURL(/\/processes\/brunch-orders-direct\?run=mock-/, {
+    timeout: 15_000,
+  });
+  await page.evaluate(() => {
+    const runId = new URL(location.href).searchParams.get('run');
+    sessionStorage.setItem(
+      `safepoint.mock-stage.v1:${runId}`,
+      'awaiting_review',
+    );
+    window.dispatchEvent(new StorageEvent('storage'));
+  });
+  await expect(hint).toHaveAttribute(
+    'data-walkthrough-step',
+    'review-proposal',
+  );
+  await expect
+    .poll(() =>
+      hint.evaluate((element) => {
+        const arrow = element
+          .querySelector('.walkthrough-arrow')
+          ?.getBoundingClientRect();
+        const track = document
+          .querySelector('.field-track[aria-describedby]')
+          ?.getBoundingClientRect();
+        if (!arrow || !track) return Infinity;
+        return Math.abs(
+          arrow.left + arrow.width / 2 - track.left - track.width / 2,
+        );
+      }),
+    )
+    .toBeLessThanOrEqual(1);
+});
+
+test('the legacy walkthrough runs across all four steps and restarts on /workspace', async ({
   page,
 }) => {
+  await page.addInitScript(() =>
+    localStorage.setItem('safepoint.walkthrough.v1', 'legacy'),
+  );
   // Landing directly on a process route never starts the walkthrough.
   await page.goto('/processes/brunch-orders-direct');
   const hint = page.locator('.walkthrough-hint');
@@ -339,6 +388,8 @@ test('the pointer fits narrow layouts and follows resizing in both themes', asyn
     await page.reload();
     await expect(hint).toBeVisible();
     await page.setViewportSize({ width: 390, height: 844 });
+    // A phone keeps the menu in a drawer: the hint follows it there.
+    await page.getByRole('button', { name: 'Menu' }).click();
     await expect(hint).toHaveAttribute('data-placement', 'bottom');
     await expect
       .poll(async () =>

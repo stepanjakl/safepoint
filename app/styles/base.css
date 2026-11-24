@@ -82,6 +82,16 @@
   text-transform: uppercase;
 }
 
+@utility metadata-chip {
+  @apply value;
+  padding-inline: --spacing(1.5);
+  border-radius: var(--radius-control);
+  font-size: var(--sp-text-micro);
+  line-height: var(--sp-text-micro--lh);
+  color: var(--sp-thread-fact-ink);
+  background-color: var(--sp-thread-fact-face);
+}
+
 /* Tabular values: prices, quantities, percentages, identifiers, times. */
 @utility value {
   font-family: var(--font-mono);

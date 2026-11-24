@@ -119,7 +119,7 @@ export function loopsFromPath(d: string): Loop[] {
   return loops;
 }
 
-export function pointAt([p0, p1, p2, p3]: Cubic, t: number): Point {
+function pointAt([p0, p1, p2, p3]: Cubic, t: number): Point {
   const a = lerp(p0, p1, t);
   const b = lerp(p1, p2, t);
   const c = lerp(p2, p3, t);
@@ -203,7 +203,7 @@ const rotate = (deg: number) => {
 const dot = (a: Point, b: Point) => a[0] * b[0] + a[1] * b[1];
 
 /** A view as X = l·p, Y = m·p − rise·z for a plan point p at height z, before the roll. */
-export function projection(view: View) {
+function projection(view: View) {
   // X = x' + b·y' and Y = d·y', in the plan turned by yaw.
   let [b, d, rise] = [0, 1, 1];
   if (view.kind === 'oblique') {

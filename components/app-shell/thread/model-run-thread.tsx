@@ -1,7 +1,14 @@
 'use client';
 
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { useContext, useEffect, useId, useState, type ReactNode } from 'react';
+import {
+  useContext,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 
 import { ProcessSheetActions } from '@/components/app-shell/process/process-sheet';
 import {
@@ -25,6 +32,7 @@ import {
 import { Fold } from '@/components/ui/fold';
 import { MORPH_WORDS_MS, MorphingText } from '@/components/ui/morphing-text';
 import { Pill } from '@/components/ui/pill';
+import { useHeightSwap } from '@/components/ui/height-swap';
 import { SmoothHeight } from '@/components/ui/smooth-height';
 import { cx } from '@/lib/ui/cx';
 import {
@@ -52,11 +60,12 @@ import {
 import {
   WriteControls,
   writePreviewNote,
-  writeResult,
   type HeldWriteCheck,
 } from '@/components/engine/write-controls';
 import type { DataTabs } from '@/components/engine/data-drawer';
 import { SheetReadCard, type RunRead } from '@/components/engine/read-step';
+import { Reveal } from '@/components/ui/reveal';
+import { useScreenSettled } from '@/components/ui/screen-settled';
 import { useRunDebug } from '@/components/engine/run-parts';
 import type { ModelPlan } from '@/lib/models';
 import {
@@ -80,7 +89,10 @@ import BoltFilled from 'blode-icons-react/icons/bolt-filled';
 import ChainLink1Filled from 'blode-icons-react/icons/chain-link-1-filled';
 import ChevronLeft from 'blode-icons-react/icons/chevron-left';
 import ChevronRight from 'blode-icons-react/icons/chevron-right';
-import { SourceHead } from '@/components/app-shell/sources/source-head';
+import {
+  SourceHead,
+  SourceOpenLink,
+} from '@/components/app-shell/sources/source-head';
 import { plural } from '@/components/engine/trial-parts';
 
 // One source a run writes to, and the cells it changes there, in any of its
@@ -140,6 +152,7 @@ export type ModelRunView = {
 
 export type ModelRunActions = {
   onDecide: (changes: Record<string, Decision | null>, words: string) => void;
+  onConfirmDecisions?: () => void;
   onCheck: (
     key: string,
     values: Record<string, number>,
@@ -291,6 +304,7 @@ export function ModelRunThread({
           readId={run.read?.id ?? ''}
           announced={actions.announced ?? ''}
           onDecide={actions.onDecide}
+          onConfirm={actions.onConfirmDecisions}
           onCheck={actions.onCheck}
           icons
         />
@@ -358,9 +372,14 @@ export function ModelAt({
   const runDebug = useRunDebug();
   const showDebug = debug ?? runDebug;
   const reduceMotion = useReducedMotion();
-  const allLines = (activity?.events ?? []).flatMap((event) =>
-    describeEvent(event, facts, version),
-  );
+  const allLines = (activity?.events ?? []).flatMap((event) => {
+    const eventLines = describeEvent(event, facts, version);
+    return eventLines.map((line, index) => ({
+      ...line,
+      completesAnswer:
+        event.kind === 'answered' && index === eventLines.length - 1,
+    }));
+  });
   const [shownCount, setShownCount] = useState(allLines.length);
   const [prevTotal, setPrevTotal] = useState(allLines.length);
   if (prevTotal !== allLines.length) {
@@ -445,7 +464,51 @@ export function ModelAt({
       : Math.min(viewedThought, Math.max(0, thoughts.length - 1));
   const activeThought = thoughts[activeThoughtIndex] ?? null;
   const parsedThought = activeThought ? thoughtParts(activeThought) : null;
-  const thoughtOpen = Boolean(activeThought);
+  const logRef = useRef<HTMLOListElement>(null);
+  const screenSettled = useScreenSettled();
+  const [thoughtRevealed, setThoughtRevealed] = useState(
+    () => !working && Boolean(activeThought),
+  );
+  const thoughtReady =
+    Boolean(activeThought) &&
+    (!working || lines.some((line) => line.completesAnswer));
+  const thoughtOpen = thoughtReady && (reduceMotion || thoughtRevealed);
+
+  useEffect(() => {
+    const log = logRef.current;
+    if (!log || !thoughtReady || thoughtOpen || !screenSettled) return;
+
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    // The log's transitions include the staggered answer text and the waiting
+    // row's collapse. The pending pulse can run indefinitely.
+    const waitForLog = () => {
+      if (cancelled) return;
+      const transitions = log
+        .getAnimations({ subtree: true })
+        .filter(
+          (animation) =>
+            animation instanceof CSSTransition &&
+            (animation.pending || animation.playState === 'running'),
+        );
+      if (transitions.length) {
+        void Promise.allSettled(
+          transitions.map((animation) => animation.finished),
+        ).then(waitForLog);
+      } else {
+        timer = setTimeout(
+          () => setThoughtRevealed(true),
+          motionTime(150) / rate,
+        );
+      }
+    };
+    const frame = requestAnimationFrame(waitForLog);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frame);
+      clearTimeout(timer);
+    };
+  }, [thoughtReady, thoughtOpen, screenSettled, shownCount, showWaiting, rate]);
 
   const liveStatusText = activity?.writing
     ? 'Writing the answer'
@@ -471,7 +534,7 @@ export function ModelAt({
   const stream = activity?.stream ?? [];
   return (
     <div className="grid">
-      <ol aria-label="What happened" className="model-log">
+      <ol ref={logRef} aria-label="What happened" className="model-log">
         {lines.map((line, index) => {
           const key = `${index}-${line.at}`;
           const elapsed = elapsedSince(line.at, firstAt);
@@ -558,32 +621,21 @@ export function ModelAt({
           </li>
         ) : null}
       </ol>
-      <Fold open={thoughtOpen}>
+      <Reveal show={Boolean(thoughtOpen)}>
         {parsedThought ? (
           <div className="pt-3">
             <AlertBox
               tone="neutral"
               title={
-                parsedThought.title ? (
-                  <div className="model-thought-title">
-                    <AnimatePresence
-                      mode="wait"
-                      initial={false}
-                      custom={thoughtDir}
-                    >
-                      <motion.p
-                        key={activeThoughtIndex}
-                        custom={thoughtDir}
-                        className="text-meta font-medium text-pretty"
-                        variants={thoughtSlideVariants(Boolean(reduceMotion))}
-                        initial="enter"
-                        animate="center"
-                        exit="exit"
-                      >
-                        {parsedThought.title}
-                      </motion.p>
-                    </AnimatePresence>
-                  </div>
+                parsedThought.title || thoughts.length > 1 ? (
+                  <ThoughtSlide
+                    slideKey={activeThoughtIndex}
+                    direction={thoughtDir}
+                    reduceMotion={Boolean(reduceMotion)}
+                    className="model-thought-title"
+                    textClassName="text-meta font-medium text-pretty"
+                    text={parsedThought.title ?? ''}
+                  />
                 ) : undefined
               }
               trailing={
@@ -644,17 +696,19 @@ export function ModelAt({
               }
             >
               {parsedThought.body ? (
-                <ThoughtBodySlide
+                <ThoughtSlide
                   slideKey={activeThoughtIndex}
                   direction={thoughtDir}
                   reduceMotion={Boolean(reduceMotion)}
-                  body={parsedThought.body}
+                  className="model-thought-body"
+                  textClassName="text-meta leading-relaxed text-pretty whitespace-pre-line"
+                  text={parsedThought.body}
                 />
               ) : null}
             </AlertBox>
           </div>
         ) : null}
-      </Fold>
+      </Reveal>
       <Fold open={Boolean(tokens && tokens.input + tokens.output > 0)}>
         {tokens && tokens.input + tokens.output > 0 ? (
           <div className="model-log-meta flex flex-wrap items-center gap-2 pt-3.5">
@@ -828,7 +882,9 @@ function thoughtParts(text: string): { title: string | null; body: string } {
 function thoughtSlideVariants(reduceMotion: boolean) {
   return {
     enter: (dir: number) =>
-      reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: dir * 18 },
+      reduceMotion
+        ? { opacity: 1, x: 0 }
+        : { opacity: 0, x: dir * 18, transition: { duration: 0 } },
     center: {
       opacity: 1,
       x: 0,
@@ -851,30 +907,40 @@ function thoughtSlideVariants(reduceMotion: boolean) {
 // Exits cleanly before entering (no overlap/ghosting) and uses SmoothHeight so
 // the box itself eases smoothly between thoughts of different lengths without
 // fighting ThreadStep or clipping content below it.
-function ThoughtBodySlide({
+function ThoughtSlide({
   slideKey,
   direction,
   reduceMotion,
-  body,
+  className,
+  textClassName,
+  text,
 }: {
   slideKey: number;
   direction: 1 | -1;
   reduceMotion: boolean;
-  body: string;
+  className: string;
+  textClassName: string;
+  text: string;
 }) {
+  const { version, hold, ready, measure, onSettled } = useHeightSwap(
+    slideKey,
+    reduceMotion,
+  );
   return (
-    <SmoothHeight className="model-thought-body">
+    <SmoothHeight className={className} hold={hold} onSettled={onSettled}>
       <AnimatePresence mode="wait" initial={false} custom={direction}>
         <motion.p
-          key={slideKey}
+          key={version}
+          ref={measure}
           custom={direction}
-          className="text-meta leading-relaxed text-pretty whitespace-pre-line"
+          inert={!ready}
+          className={textClassName}
           variants={thoughtSlideVariants(reduceMotion)}
           initial="enter"
-          animate="center"
+          animate={ready ? 'center' : 'enter'}
           exit="exit"
         >
-          {body}
+          {text}
         </motion.p>
       </AnimatePresence>
     </SmoothHeight>
@@ -1022,45 +1088,38 @@ function Approval({
           written={written}
         />
       ))}
-      {status === 'verified' || status === 'mismatch' ? (
-        <p className="text-dense">
-          {writeResult(noun, status)}
-          {status === 'verified' && write.writtenAt
-            ? ` · ${clock(write.writtenAt)}`
-            : ''}
-        </p>
+      {write.noChanges && !status ? (
+        <p className="text-dense">Nothing to write.</p>
       ) : null}
-      {status === 'pending' || write.noChanges ? (
-        <p className="text-dense">
-          {status === 'pending'
-            ? writeResult(noun, status)
-            : 'Nothing to write.'}
-        </p>
-      ) : null}
-      <p className="text-dense" role="status">
-        {status === 'failed' || status === 'undone'
-          ? writeResult(noun, status)
-          : null}
-      </p>
-      <WriteControls
-        noun={noun}
-        rows={rows}
-        note={
-          preview &&
-          writePreviewNote({ ...preview, rows, resource: resource.singular })
-        }
-        held={write.held}
-        canWrite={
-          stage === 'ready_to_commit' &&
-          rows > 0 &&
-          status !== 'pending' &&
-          write.problems.length === 0
-        }
-        canUndo={written}
-        busy={busy}
-        onWrite={onWrite}
-        onUndo={onUndo}
-      />
+      <div>
+        <WriteControls
+          outcome={
+            status
+              ? {
+                  noun,
+                  status,
+                  at: status === 'verified' ? write.writtenAt : null,
+                }
+              : undefined
+          }
+          rows={rows}
+          note={
+            preview &&
+            writePreviewNote({ ...preview, rows, resource: resource.singular })
+          }
+          held={write.held}
+          canWrite={
+            (stage === 'ready_to_commit' || stage === 'committing') &&
+            rows > 0 &&
+            status !== 'pending' &&
+            write.problems.length === 0
+          }
+          canUndo={written}
+          busy={busy}
+          onWrite={onWrite}
+          onUndo={onUndo}
+        />
+      </div>
     </div>
   );
 }
@@ -1095,7 +1154,16 @@ function OutputCells({
   const figure = 'w-20 text-right tabular-nums';
   return (
     <DataTable as="article" aria-labelledby={titleId}>
-      <SourceHead kind={output.kind} title={output.title} titleId={titleId} />
+      <SourceHead kind={output.kind} title={output.title} titleId={titleId}>
+        {output.url ? (
+          <SourceOpenLink
+            kind={output.kind}
+            href={output.url}
+            title={output.title}
+            quiet
+          />
+        ) : null}
+      </SourceHead>
       <div className="min-w-0 overflow-x-auto">
         <table className={cx('output-cells', DATA_TABLE_BODY)}>
           <caption className="sr-only">
@@ -1155,6 +1223,7 @@ function OutputCells({
               </tr>
               {cells.map((cell, index) => {
                 const changed = decisions[cell.key]?.kind === 'change';
+                const resourceId = output.resourceIds?.[tab];
                 const rule = index > 0;
                 // Each tab's last row has room below it, before the next
                 // tab's heading or the card's edge.
@@ -1196,12 +1265,14 @@ function OutputCells({
                     <td
                       className={cx('px-3', rowY, rule && DATA_TABLE_RULE_ON)}
                     >
-                      {output.url ? (
+                      {output.url &&
+                      (output.kind !== 'google-sheets' ||
+                        resourceId !== undefined) ? (
                         <a
                           href={cellUrl(
                             output.kind,
                             output.url,
-                            output.resourceIds?.[cell.tab],
+                            resourceId,
                             cell.address,
                           )}
                           target="_blank"

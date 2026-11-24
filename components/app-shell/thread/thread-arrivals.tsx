@@ -156,10 +156,10 @@ export function Thread<S extends string>({
   const { behind, catchUp } = useFollowRun(
     thread,
     restoring ? undefined : newest?.id,
+    newest?.status,
     Boolean(end),
     shown.length,
     restoring ? 'restoring' : resetKey,
-    newest?.status === 'running',
   );
   const paused = useRestWhenUnseen(thread, !restoring);
   const reduceMotion = useReducedMotion();
@@ -200,27 +200,20 @@ export function Thread<S extends string>({
           {end}
         </p>
       ) : null}
-      {/* For a reader scrolled away when a step arrived. No height of its
-          own, so appearing moves nothing; the button rises out of it. */}
-      <AnimatePresence>
-        {!restoring && behind && newest ? (
-          <motion.div
-            key="catch-up"
-            className="thread-jump-anchor pointer-events-none sticky bottom-4 z-20 flex h-0 items-end justify-center"
-            initial={reduceMotion ? false : { opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={
-              reduceMotion
-                ? { opacity: 0 }
-                : {
-                    opacity: 0,
-                    y: 8,
-                    transition: { inherit: true, ease: 'easeInOut' },
-                  }
-            }
-            transition={{ duration: reduceMotion ? 0 : 0.18, ease: 'easeOut' }}
-          >
-            <span className="relative inline-flex max-w-full">
+      <div className="thread-jump-anchor pointer-events-none sticky bottom-4 z-20 flex h-0 items-end justify-center">
+        <AnimatePresence>
+          {!restoring && behind && newest ? (
+            <motion.span
+              key="catch-up"
+              className="relative inline-flex max-w-full"
+              initial={reduceMotion ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{
+                duration: reduceMotion ? 0 : 0.18,
+                ease: 'easeOut',
+              }}
+            >
               <span className="thread-jump-hover-buffer" aria-hidden />
               <Button
                 aria-label={`Jump to ${newest.name}`}
@@ -242,10 +235,10 @@ export function Thread<S extends string>({
                   </span>
                 </span>
               </Button>
-            </span>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+            </motion.span>
+          ) : null}
+        </AnimatePresence>
+      </div>
       {/* Mounted with the thread so it is in place before the first change
           it announces. A milestone per stage, never a running count. */}
       <p className="sr-only" role="status">

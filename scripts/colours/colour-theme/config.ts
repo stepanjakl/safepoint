@@ -877,10 +877,6 @@ const ANCHORED_BY_FILE = {
     },
   },
   'components/engine/rulebook-history.css': {
-    /* A quiet metadata chip: on dark surfaces, one rung below the shared
-       neutral pill in both face and ink, without changing its light balance. */
-    '--sp-timeline-code-face': { on: 'floating', light: 100, dark: -50 },
-    '--sp-timeline-code-ink': { on: 'floating', light: 575, dark: -500 },
     /* Half the shared hover: a timeline's rows are passed over far more
        often than opened, and the line runs over the wash. */
     '--sp-timeline-hover': {
@@ -1077,8 +1073,8 @@ export const ROLE_ASSIGNMENTS = {
   surfaceSelectedMid: relativeRole('--sp-surface-selected-mid'),
   surfaceDisabled: relativeRole('--sp-surface-disabled'),
   disabledRing: relativeRole('--sp-off-ring'),
-  timelineCodeFace: relativeRole('--sp-timeline-code-face'),
-  timelineCodeInk: relativeRole('--sp-timeline-code-ink'),
+  threadFactFace: relativeRole('--sp-thread-fact-face'),
+  threadFactInk: relativeRole('--sp-thread-fact-ink'),
   textPrimary: {
     cssVariable: '--sp-text-primary',
     light: 925,
@@ -1202,13 +1198,15 @@ export const CONTRAST_CONTRACTS: readonly ContrastContract[] = [
     rationale: 'Ordinary text in dialogs, tooltips, and floating panels.',
   },
   {
-    id: 'timeline-code-ink-on-face',
+    id: 'metadata-chip-ink-on-face',
+    contexts: ['primary', 'floating'],
     classification: 'required',
-    foreground: 'timelineCodeInk',
-    background: 'timelineCodeFace',
+    foreground: 'threadFactInk',
+    background: 'threadFactFace',
     minimum: 4.5,
     target: 4.5,
-    rationale: 'Revision identifiers remain readable in their subdued chip.',
+    rationale:
+      'Revision identifiers and timestamps remain readable in their metadata chip.',
   },
   {
     id: 'primary-on-inset-surface',

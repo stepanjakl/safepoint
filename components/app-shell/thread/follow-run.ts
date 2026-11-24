@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type RefObject } from 'react';
+import type { StepStatus } from '@/lib/shell/model';
 
 const BOTTOM_THRESHOLD_PX = 24;
 
@@ -33,43 +34,29 @@ function scrollToBottom(
   }
 }
 
-function scrollToCurrent(thread: HTMLOListElement | null) {
-  const current = thread?.querySelector(':scope > [data-current]');
-  if (current && current !== thread?.lastElementChild) {
-    current.scrollIntoView({ block: 'start', behavior: 'instant' });
-  } else {
-    scrollToBottom(scrollerOf(thread));
-  }
-}
-
 /*
   Keeps a live run's newest step and growing content in view for a reader who
-  is at the bottom of the container, and only for them. One who scrolls away to
-  read is left where they are and told a step has arrived instead: `behind` is
-  true until they return to the bottom, and `catchUp` takes them there.
+  is at the bottom of the container. A reader elsewhere gets one offer for
+  the latest unseen step when opening the run or when a step needs attention.
 */
 export function useFollowRun(
   list: RefObject<HTMLOListElement | null>,
   lastId: string | undefined,
+  lastStatus: StepStatus | undefined,
   hasEnd = false,
   stepCount?: number,
   resetKey: number | string = 0,
-  followGrowth = true,
 ) {
   const [behind, setBehind] = useState(false);
   const pinned = useRef(true);
   const catchingUp = useRef(false);
-  const followGrowthRef = useRef(followGrowth);
-  useEffect(() => {
-    followGrowthRef.current = followGrowth;
-  }, [followGrowth]);
-  // Once the reader has seen the newest section (at the bottom or via an arrival),
-  // scrolling away from it again brings the catch-up button back.
-  const canShowBehind = useRef(false);
+  const offerPending = useRef(false);
+  const updateOffer = useRef<(() => void) | null>(null);
   // The newest step last followed or passed over. Compared by id, not by
   // whether this has mounted: an effect run twice for the same step (React's
   // development check does exactly that) must not read as an arrival.
   const previousId = useRef<string | undefined>(undefined);
+  const previousStatus = useRef<StepStatus | undefined>(undefined);
   const previousCount = useRef<number | undefined>(undefined);
 
   useEffect(() => {
@@ -110,44 +97,35 @@ export function useFollowRun(
     // scrolled (including while content is still shorter than the container).
     pinned.current = true;
     catchingUp.current = false;
-    canShowBehind.current = false;
+    offerPending.current = false;
     const clearBehind = resetKey ? setTimeout(() => setBehind(false)) : null;
 
-    // A run opened already past the first screen (e.g. awaiting review) starts
-    // at scrollTop 0 with its latest step below the fold: offer the jump button
-    // straight away instead of waiting for a new step to arrive.
+    const checkOffer = (reached = atBottom() || atLatest()) => {
+      if (reached) offerPending.current = false;
+      setBehind(offerPending.current && !catchingUp.current);
+    };
+    updateOffer.current = checkOffer;
+
+    // A run opened past the first screen can offer its latest unseen step.
     const initialCheck = requestAnimationFrame(() => {
-      canShowBehind.current = true;
-      if (!atBottom()) {
-        pinned.current = false;
-        if (!atLatest()) setBehind(true);
-      }
+      pinned.current = atBottom();
+      offerPending.current = true;
+      checkOffer();
     });
 
     const onScroll = () => {
       const bottom = atBottom();
-      if (bottom || (catchingUp.current && atLatest())) {
-        pinned.current = true;
-      } else if (!catchingUp.current) {
-        pinned.current = false;
-      }
-
-      if (bottom || atLatest()) {
-        catchingUp.current = false;
-        canShowBehind.current = true;
-        setBehind(false);
-      } else if (!catchingUp.current && canShowBehind.current) {
-        setBehind(true);
-      }
+      const reached = bottom || atLatest();
+      pinned.current = bottom;
+      if (reached) catchingUp.current = false;
+      checkOffer(reached);
     };
 
     const onUserInput = () => {
       catchingUp.current = false;
     };
 
-    // Follow frame by frame as an active running step grows while pinned to
-    // the bottom. Never hijack scroll when the thread is idle (user expanding
-    // earlier steps or paging through thinking) or shrinking.
+    // Keep the bottom in view as sections open, including within idle steps.
     let initialized = false;
     let lastHeight = 0;
     const growth = new ResizeObserver(() => {
@@ -159,8 +137,7 @@ export function useFollowRun(
       }
       const grew = nextHeight > lastHeight;
       lastHeight = nextHeight;
-      if (grew && pinned.current && followGrowthRef.current)
-        scrollToBottom(scroller);
+      if (grew && pinned.current) scrollToBottom(scroller);
     });
     growth.observe(thread);
 
@@ -170,6 +147,7 @@ export function useFollowRun(
       window.addEventListener(type, onUserInput, { passive: true }),
     );
     return () => {
+      updateOffer.current = null;
       cancelAnimationFrame(initialCheck);
       if (clearBehind) clearTimeout(clearBehind);
       growth.disconnect();
@@ -189,32 +167,36 @@ export function useFollowRun(
       !restarted &&
       previousId.current !== undefined &&
       previousId.current !== lastId;
+    const becameActionable =
+      (lastStatus === 'attention' || lastStatus === 'blocked') &&
+      (arrived || previousStatus.current !== lastStatus);
+    const statusChanged = previousStatus.current !== lastStatus;
     previousId.current = lastId;
+    previousStatus.current = lastStatus;
 
     if (restarted) {
       pinned.current = true;
       catchingUp.current = false;
-      canShowBehind.current = false;
+      offerPending.current = false;
       const timer = setTimeout(() => setBehind(false));
       return () => clearTimeout(timer);
     }
 
-    if (arrived) {
-      canShowBehind.current = true;
-      if (pinned.current) {
-        scrollToCurrent(list.current);
-      } else {
-        const timer = setTimeout(() => setBehind(true));
-        return () => clearTimeout(timer);
-      }
-    } else if (hasEnd && pinned.current) {
-      scrollToCurrent(list.current);
+    // The end note sits outside the observed list and can appear on its own.
+    if (hasEnd && pinned.current && list.current) {
+      scrollToBottom(scrollerOf(list.current));
     }
-  }, [list, lastId, hasEnd, stepCount]);
+
+    if (arrived || statusChanged) {
+      offerPending.current = becameActionable && !pinned.current;
+      const frame = requestAnimationFrame(() => updateOffer.current?.());
+      return () => cancelAnimationFrame(frame);
+    }
+  }, [list, lastId, lastStatus, hasEnd, stepCount]);
 
   const catchUp = () => {
-    pinned.current = true;
-    canShowBehind.current = true;
+    pinned.current = false;
+    offerPending.current = false;
     const smooth = !reducedMotion();
     catchingUp.current = true;
     const current = list.current?.querySelector<HTMLElement>(

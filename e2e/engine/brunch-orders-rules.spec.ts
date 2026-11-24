@@ -330,10 +330,16 @@ test('a draft under way shows its last rule when it ends, through a failed reque
     .last()
     .click();
   await expect(page.getByText('Not written').first()).toBeVisible();
-  await expect(page.getByText('Not written')).toHaveCount(0, {
+  // The draft has ended, and its last rule is shown, only once the page has
+  // asked again past the failed request: the card being written says
+  // "Writing" meanwhile, so the words it no longer shows prove nothing.
+  await expect(
+    page.locator('ol.thread').getByText('0 of 5 accepted').first(),
+  ).toBeVisible({
     timeout: 15_000,
   });
   expect(asked).toBeGreaterThan(3);
+  await expect(page.getByText('Not written')).toHaveCount(0);
 });
 
 test('what the model read as context is there to question', async ({
@@ -596,13 +602,17 @@ test('a rule being written again says so, through a reload, then shows the new o
     .last();
   await card.getByRole('button', { name: 'Write again' }).click();
   // A morphing label is drawn twice: once to see, once to be read.
-  await expect(card.getByText('Writing…').first()).toBeVisible();
+  await expect(
+    card.getByText('Writing', { exact: true }).first(),
+  ).toBeVisible();
   await expect(card.getByText('Being written again')).toBeVisible();
 
   // The point of it: nothing is lost on a reload.
   await page.reload();
   // A morphing label is drawn twice: once to see, once to be read.
-  await expect(card.getByText('Writing…').first()).toBeVisible();
+  await expect(
+    card.getByText('Writing', { exact: true }).first(),
+  ).toBeVisible();
   await expect(card.getByText('Being written again')).toBeVisible();
   await expect(
     card.getByRole('button', { name: 'Write again' }),
@@ -612,7 +622,7 @@ test('a rule being written again says so, through a reload, then shows the new o
   await expect(card.getByText('The new version of it.')).toBeVisible({
     timeout: 10_000,
   });
-  await expect(card.getByText('Writing…')).toHaveCount(0);
+  await expect(card.getByText('Writing', { exact: true })).toHaveCount(0);
   await expect(card.getByText('Being written again')).toHaveCount(0);
   await expect(card.getByRole('button', { name: 'Write again' })).toBeEnabled();
 });

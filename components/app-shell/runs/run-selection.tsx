@@ -1,5 +1,6 @@
 'use client';
 
+import { useReducedMotion } from 'motion/react';
 import { skipToken, useQuery } from '@tanstack/react-query';
 import {
   createContext,
@@ -47,6 +48,10 @@ const mockRunsCache = new Map<
 const mockRunsFallback = new Map<string, KeptRun[]>();
 
 export const isMockRunId = (id: string) => id.startsWith(MOCK_PREFIX);
+// A mock started from the menu's "Try a mock run": it plays by itself, with no
+// player, and waits wherever a person acts. Said in its id, which is kept.
+const GUIDED_PREFIX = `${MOCK_PREFIX}guided-`;
+export const isGuidedMockRunId = (id: string) => id.startsWith(GUIDED_PREFIX);
 
 function mockRunsStorageKey(processId: string) {
   return `${MOCK_RUNS_STORAGE_PREFIX}${processId}`;
@@ -117,6 +122,8 @@ export type RunSelection = {
   // The process's runs, newest first.
   runs: ProcessRun[];
   selected: string | null;
+  arriving: string | null;
+  finishArrival: (id: string) => void;
   // A run is chosen, as a reload's address chooses one, but not yet found:
   // the list is still being asked for, or the browser's own runs have not
   // been read. Neither a run nor the empty page is drawn meanwhile.
@@ -137,7 +144,12 @@ export type RunSelection = {
       ) => Promise<boolean>)
     | null;
   // Starts a local mock run in memory only (no server call, no database write).
-  startMock: ((additionalInstructions?: string) => boolean) | null;
+  startMock:
+    | ((
+        additionalInstructions?: string,
+        options?: { guided?: boolean },
+      ) => boolean)
+    | null;
   // Why start is null, for the control that would have offered it.
   cannotStart: string | null;
   // A live run being started: the server has not answered yet.
@@ -188,8 +200,9 @@ function createMockRun(
   version: string,
   hash: string | null,
   additionalInstructions: string,
+  guided = false,
 ): KeptRun {
-  const id = `${MOCK_PREFIX}${Date.now()}`;
+  const id = `${guided ? GUIDED_PREFIX : MOCK_PREFIX}${Date.now()}`;
   const now = new Date().toISOString();
   return {
     id,
@@ -225,7 +238,21 @@ export function useRunSelectionState({
 }): RunSelection {
   const trpc = useTRPC();
   const walkthrough = useWalkthrough();
-  const [selected, setSelected] = useState(initialRunId);
+  const reduceMotion = useReducedMotion();
+  const [{ selected, arriving }, setChoice] = useState<{
+    selected: string | null;
+    arriving: string | null;
+  }>({
+    selected: initialRunId,
+    arriving: null,
+  });
+  const showNewRun = (id: string) => {
+    setChoice((choice) =>
+      reduceMotion
+        ? { selected: id, arriving: null }
+        : { ...choice, arriving: id },
+    );
+  };
   const mockRuns = useSyncExternalStore(
     subscribeMockRuns,
     () => (liveThread ? readStoredMockRuns(process.id) : NO_RUNS),
@@ -237,7 +264,7 @@ export function useRunSelectionState({
     if (next === current) return;
     writeStoredMockRuns(process.id, next);
   };
-  const kept = useKeptRuns(process.id, liveThread);
+  const kept = useKeptRuns(process.id, liveThread, (run) => showNewRun(run.id));
   // Mock runs live in this browser alone: unread until hydration.
   const hydrated = useSyncExternalStore(
     noSubscription,
@@ -312,7 +339,10 @@ export function useRunSelectionState({
     if (!asked.current.has(selected)) {
       asked.current.add(selected);
       void refetch();
-    } else setSelected((now) => (now === selected ? null : now));
+    } else
+      setChoice((choice) =>
+        choice.selected === selected ? { ...choice, selected: null } : choice,
+      );
   }, [liveThread, selected, isSuccess, isFetching, refetch, keptRuns]);
 
   // Kept in the address as it changes. Replaced with null state, so Next takes the address as its own: passing its old state
@@ -340,30 +370,33 @@ export function useRunSelectionState({
   ) => {
     if (cannotStart) return false;
     try {
-      const run = await kept.start.mutateAsync({
+      await kept.start.mutateAsync({
         process: process.id as RunProcessId,
         instructions: current.hash!,
         additionalInstructions: additionalInstructions || null,
         modelPlan,
         ownRulebook,
       });
-      setSelected(run.id);
       return true;
     } catch {
       return false;
     }
   };
 
-  const startMock = (additionalInstructions = '') => {
+  const startMock = (
+    additionalInstructions = '',
+    { guided = false }: { guided?: boolean } = {},
+  ) => {
     if (!liveThread) return false;
     const mockRun = createMockRun(
       process.id as RunProcessId,
       current.version,
       current.hash,
       additionalInstructions,
+      guided,
     );
+    showNewRun(mockRun.id);
     setMockRuns((list) => [mockRun, ...list]);
-    setSelected(mockRun.id);
     return true;
   };
 
@@ -373,6 +406,12 @@ export function useRunSelectionState({
       return diff !== 0 ? diff : b.id.localeCompare(a.id);
     }),
     selected,
+    arriving,
+    finishArrival: (id) => {
+      setChoice((choice) =>
+        choice.arriving === id ? { selected: id, arriving: null } : choice,
+      );
+    },
     pending,
     prefetch: (id) => {
       if (!prefetcher || id === selected || isMockRunId(id)) return;
@@ -387,7 +426,10 @@ export function useRunSelectionState({
     select: (id) => {
       kept.start.reset();
       if (selected !== id) walkthrough?.advance('start-run');
-      setSelected((current) => (current === id ? null : id));
+      setChoice((choice) => ({
+        selected: choice.selected === id ? null : id,
+        arriving: null,
+      }));
     },
     start: cannotStart ? null : start,
     startMock: liveThread ? startMock : null,
@@ -427,6 +469,11 @@ export function useRunSelectionState({
       });
     },
     discard: async (id) => {
+      const clearRun = () =>
+        setChoice((choice) => ({
+          selected: choice.selected === id ? null : choice.selected,
+          arriving: choice.arriving === id ? null : choice.arriving,
+        }));
       if (isMockRunId(id)) {
         try {
           window.sessionStorage.removeItem(mockStageStorageKey(id));
@@ -434,7 +481,7 @@ export function useRunSelectionState({
           // Ignore blocked storage.
         }
         setMockRuns((list) => list.filter((one) => one.id !== id));
-        setSelected((now) => (now === id ? null : now));
+        clearRun();
         return true;
       }
       try {
@@ -442,7 +489,7 @@ export function useRunSelectionState({
           process: process.id as RunProcessId,
           runId: id,
         });
-        setSelected((now) => (now === id ? null : now));
+        clearRun();
         return true;
       } catch {
         return false;

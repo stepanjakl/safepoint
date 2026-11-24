@@ -384,6 +384,12 @@ margin on the `Reveal` (as `-mt-4` with `pt-4`). Content that stays and
 changes height uses `SmoothHeight`; a panel arriving after a load uses
 `Arrival` (`working-mark.tsx`).
 
+**In-place replacements fade out, resize, then fade in.** Use `HeightSwap`
+when one section replaces another inside a run step. It holds the old height
+through the exit, measures the hidden replacement, and eases to its height
+on the fold curve before starting the entrance. A directional swap can use
+`SmoothHeight` with `useHeightSwap` to follow the same sequence.
+
 **Entrances stagger only when a screen arrives.** A load or a navigation brings
 fresh data, so its rows and empty state rise in after the screen settles; the
 detail column beside them comes with the list, never after it. A tab chosen afterwards, or a list swapped in place, shows

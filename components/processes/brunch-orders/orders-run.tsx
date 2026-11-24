@@ -333,7 +333,7 @@ function OrdersThread({
               : `${proposed.total} ${proposed.total === 1 ? 'item' : 'items'}`
           : step.id === 'apply' && canApply
             ? applied?.status === 'verified'
-              ? 'Written and read back'
+              ? 'Written'
               : applied?.status === 'mismatch'
                 ? 'Check the sheet'
                 : applied?.status === 'pending'
@@ -356,10 +356,14 @@ function OrdersThread({
     step.id === 'rules' && rules?.running && rules.found
       ? { at: rules.written, of: rules.total }
       : undefined;
-  const steps = ORDER_STEPS.map((step) => ({
+  const steps = ORDER_STEPS.map<ProcessStep>((step) => ({
     ...step,
     status: status(step),
     label: label(step),
+    labelTone:
+      step.id === 'apply' && applied?.status === 'verified'
+        ? 'ready'
+        : undefined,
     flag: flag(step),
     flagWhenClosed: step.id === 'propose',
     progress: progress(step),

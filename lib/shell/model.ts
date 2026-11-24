@@ -30,6 +30,7 @@ export type ProcessStep = {
   // A short fact that earns its place beside the name: how many, against
   // what. Never a restatement of the status, which the dot carries.
   label?: string;
+  labelTone?: 'ready';
   // The part of the fact that is the problem -- "1 not current" -- drawn in
   // the step's own tone after the label. Absent when nothing is wrong.
   flag?: string;

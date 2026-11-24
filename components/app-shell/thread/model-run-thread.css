@@ -124,18 +124,22 @@
   .model-log-item:not(:last-child):not(:has(+ [data-collapsed]))::after {
     content: '';
     position: absolute;
-    inset-inline-start: calc(var(--model-log-dot) / 2 - 0.5px);
+    inset-inline-start: calc((var(--model-log-dot) - var(--edge-rule)) / 2);
     top: calc(var(--model-log-top) + (1lh + var(--model-log-dot)) / 2 + var(--model-log-clear));
     bottom: calc(
       (var(--model-log-row-gap) + (1lh - var(--model-log-dot)) / 2 - var(--model-log-clear)) * -1
     );
-    width: 1px;
+    width: var(--edge-rule);
     background-image:
       linear-gradient(var(--sp-rule-default), var(--sp-rule-default)),
-      radial-gradient(circle, var(--sp-rule-strong) 0.75px, transparent 1px);
+      radial-gradient(
+        circle,
+        var(--sp-rule-strong) calc(var(--edge-rule) * 0.75),
+        transparent var(--edge-rule)
+      );
     background-size:
       100% var(--model-log-fill),
-      1px 4px;
+      100% 4px;
     background-repeat:
       no-repeat,
       no-repeat repeat;

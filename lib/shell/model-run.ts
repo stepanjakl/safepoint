@@ -209,7 +209,8 @@ export function modelRunStepsAt(
           : {
               id: 'commit',
               name: 'Approval',
-              label: `${rows} written · read back`,
+              label: `${rows} written`,
+              labelTone: 'ready',
               status: 'complete',
             },
   );
