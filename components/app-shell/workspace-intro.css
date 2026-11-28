@@ -55,7 +55,22 @@
 
   @media (width < 56.25rem) {
     .workspace-intro {
-      padding-block: clamp(3rem, 6vw, 5rem);
+      padding: 3rem 2.5rem 6rem;
+    }
+
+    .workspace-intro-mark {
+      margin-bottom: 2.75rem;
+    }
+
+    .workspace-intro-beat + .workspace-intro-beat,
+    .workspace-intro-beat[data-beat='3'] {
+      margin-top: 0.75em;
+    }
+
+    .workspace-intro-beat[data-beat='3'] {
+      font-size: inherit;
+      letter-spacing: inherit;
+      line-height: inherit;
     }
   }
 }
