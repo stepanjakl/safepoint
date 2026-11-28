@@ -146,6 +146,12 @@ export const WORKBENCH_GROUPS: readonly WorkbenchGroup[] = [
         summary:
           'A rounded control’s ring and sheen four ways, to compare in Chrome and Safari: fractional, layered, a 0.5px border, and both.',
       },
+      {
+        href: '/workbench/phone-edges',
+        title: 'Phone edges',
+        summary:
+          'A pane’s ring and sheen and a button’s ring five ways in whole device pixels, to compare on a 3× phone.',
+      },
     ],
   },
   {

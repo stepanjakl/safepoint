@@ -86,6 +86,7 @@
 @import '../workbench/section-rules/section-rules.css';
 @import '../workbench/rounded-edges/rounded-edges.css';
 @import '../workbench/floating-edges/floating-edges.css';
+@import '../workbench/phone-edges/phone-edges.css';
 
 /* The prototype history, after everything current (fenced; see eslint.config.mjs). */
 @import '../workbench/history/explore/review-explorer.css';

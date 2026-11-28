@@ -1,0 +1,103 @@
+/* /workbench/phone-edges: a ring and sheen five ways, counted in device
+   pixels. Drawn here rather than from the app's edge tokens. */
+@layer components {
+  .phone-edges {
+    display: grid;
+    align-content: start;
+    gap: 24px;
+    padding: 32px 16px 64px;
+  }
+  /* Fixed heights, so every specimen below lands on whole pixels. */
+  .phone-edges > h1 {
+    block-size: 40px;
+  }
+  .phone-edges-intro {
+    max-inline-size: 40rem;
+    block-size: 72px;
+  }
+  .phone-edges-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+    gap: 32px;
+  }
+  .phone-edges-option {
+    display: grid;
+    grid-template-rows: 96px 96px;
+    gap: 12px;
+  }
+  .phone-edges-specimens {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+  .phone-edges-caption {
+    display: grid;
+    align-content: start;
+    gap: 4px;
+  }
+
+  /* Solid rows outside in: ring, then its soft row mixed with the sheen, then
+     the sheen, then its soft row mixed with the face. */
+  .phone-edges-card,
+  .phone-edges-button {
+    --r: calc(var(--r-solid) * var(--dp));
+    --t: calc(var(--t-solid) * var(--dp));
+    box-shadow:
+      inset 0 0 0 var(--r) var(--control-ring-top),
+      inset 0 0 0 calc(var(--r) + var(--dp))
+        color-mix(in srgb, var(--control-ring-top) var(--r-cover), var(--phone-sheen)),
+      inset 0 0 0 var(--t) var(--phone-sheen),
+      inset 0 0 0 calc(var(--t) + var(--dp))
+        color-mix(in srgb, var(--phone-sheen) var(--t-cover), var(--control-face-top));
+  }
+  .phone-edges-card {
+    --phone-sheen: var(--control-highlight);
+    inline-size: 128px;
+    block-size: 80px;
+    border-radius: var(--radius-shell);
+    background: var(--control-face-top);
+  }
+  /* A button has no sheen: its ring's soft row mixes with the face. */
+  .phone-edges-button {
+    --phone-sheen: var(--control-face-top);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 88px;
+    block-size: 32px;
+    border-radius: 9999px;
+    background: linear-gradient(var(--control-face-top), var(--control-face-bottom));
+  }
+
+  /* Ring and ring-plus-sheen, as whole device pixels and the share of one more. */
+  [data-variant='before'] {
+    --r-solid: 2;
+    --r-cover: 25%;
+    --t-solid: 4;
+    --t-cover: 50%;
+  }
+  [data-variant='now'] {
+    --r-solid: 2;
+    --r-cover: 0%;
+    --t-solid: 4;
+    --t-cover: 0%;
+  }
+  [data-variant='pattern'] {
+    --r-solid: 2;
+    --r-cover: 50%;
+    --t-solid: 5;
+    --t-cover: 0%;
+  }
+  [data-variant='slim'] {
+    --r-solid: 2;
+    --r-cover: 50%;
+    --t-solid: 4;
+    --t-cover: 0%;
+  }
+  [data-variant='desktop'] {
+    --r-solid: 1;
+    --r-cover: 50%;
+    --t-solid: 3;
+    --t-cover: 0%;
+  }
+}
