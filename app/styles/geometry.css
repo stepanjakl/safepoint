@@ -54,6 +54,31 @@
   }
 }
 
+/* 0.75px is 2.25 device pixels at 3x, so ring and sheen each blend a quarter
+   row into the next; whole device pixels there (LINE-TESTING.md → Limits). */
+@media (min-resolution: 2.5dppx) {
+  :root[data-edges='retina'] {
+    --edge-control: calc(2 * var(--dp));
+    --edge-ring: calc(2 * var(--dp));
+    --edge-rule: var(--dp);
+    --edge-hairline: calc(2 * var(--dp));
+    --highlight-pane: calc(2 * var(--dp));
+    --highlight-hairline: var(--dp);
+    --highlight-sheet: calc(2 * var(--dp));
+    --highlight-outline: calc(2 * var(--dp));
+    --separator-strong: calc(2 * var(--dp));
+    --pane-inset: calc(4 * var(--dp));
+  }
+
+  :root[data-edges='highlights'] {
+    --highlight-pane: calc(2 * var(--dp));
+    --highlight-hairline: var(--dp);
+    --highlight-sheet: calc(2 * var(--dp));
+    --highlight-outline: calc(2 * var(--dp));
+    --separator-strong: calc(2 * var(--dp));
+  }
+}
+
 @media (forced-colors: active) {
   :root {
     --structural-divider-border: 1px;

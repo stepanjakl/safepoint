@@ -241,7 +241,9 @@
   /* The edge plus the lit ring inside it, which is as much the pane's edge as
      the border. Content stepped in by the border alone sits on top of the
      ring -- invisible until something in there is opaque and full-bleed. */
-  --spacing-pane-inset: var(--pane-inset);
+  /* Rounded up to a device pixel: retina's 1.5px is 4.5 at 3x, which puts
+     everything in the pane between device pixels on a phone. */
+  --spacing-pane-inset: round(up, var(--pane-inset), var(--dp));
   /* One step tighter than the pane: at the outer radius a fill inside paints
      over the edge in the corners. */
   --radius-shell-inner: calc(var(--radius-shell) - var(--spacing-pane-inset));

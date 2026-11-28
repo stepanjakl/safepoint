@@ -632,9 +632,8 @@
     box-shadow: var(--ring-sheen-shadow);
   }
 
-  /* Gradient-ring buttons keep control-face's real border at 0.5px (1 crisp
-     device px at 2x) so the vertical ring gradient and every corner radius
-     stay exact across subpixel widths. */
+  /* A real border keeps the ring gradient and radii exact: the ring's whole device
+     pixels, plus half of one floored away (LINE-TESTING.md → Causes found). */
   :root[data-edges='retina']
     .control-face:is(
       .control-button-primary,
@@ -645,7 +644,7 @@
       .header-button,
       .switch-track
     ):not(.slant) {
-    border: 0.5px solid transparent;
+    border: calc(var(--ring-solid) + var(--dp) / 2) solid transparent;
     background-image:
       linear-gradient(to bottom, var(--control-face-top), var(--control-face-bottom)),
       linear-gradient(to bottom, var(--control-ring-top), var(--control-ring-bottom));

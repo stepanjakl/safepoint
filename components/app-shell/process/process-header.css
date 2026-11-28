@@ -242,6 +242,9 @@
       --notch-corner-highlight: var(--sp-raised-edge);
       --narrow-notch-width: calc(var(--narrow-slant-width) + var(--narrow-notch-slope-inset));
       grid-template-columns: minmax(0, 1fr);
+      /* The rule's painted depth keeps the foot on a device pixel; the wide
+         header gets there by pulling its row up an edge instead. */
+      padding-block-end: max(0px, var(--edge-hairline-depth) - var(--structural-divider-border));
     }
 
     .process-header::after {
@@ -263,6 +266,11 @@
     .process-header-title {
       position: relative;
       block-size: var(--narrow-title-height);
+      /* The floor's rule is tuned on its fraction; what follows starts on the
+         next device pixel, or every ring below sits between two. */
+      margin-block-end: calc(
+        round(up, var(--narrow-title-height), var(--dp)) - var(--narrow-title-height)
+      );
       align-items: center;
       justify-content: center;
       padding-inline: calc(var(--narrow-notch-width) + 1rem);
