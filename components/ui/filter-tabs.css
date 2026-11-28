@@ -135,6 +135,11 @@
     transition:
       --control-face-top var(--duration-state) ease-out,
       --control-face-bottom var(--duration-state) ease-out;
+    /* Safari < 26 misreads rem while an @property transitions
+       (STYLING-SYSTEM.md → Motion). */
+    @supports not (anchor-name: --a) {
+      transition: none;
+    }
   }
   .review-tab-indicator[data-glide] {
     transition:
@@ -142,6 +147,11 @@
       width var(--duration-row) --theme(--ease-out-emphasized),
       --control-face-top var(--duration-state) ease-out,
       --control-face-bottom var(--duration-state) ease-out;
+    @supports not (anchor-name: --a) {
+      transition:
+        transform var(--duration-row) --theme(--ease-out-emphasized),
+        width var(--duration-row) --theme(--ease-out-emphasized);
+    }
   }
   /* A tab's count chip. Two digits wide at least, so 3 and 17 are one shape
      across the strip, and never narrower than it is tall; px-1 in markup. */
@@ -206,9 +216,6 @@
       oklch(from var(--filter-edge-step) calc(l + var(--filter-lift-light)) c h),
       oklch(from var(--filter-edge-step) calc(l + var(--filter-lift-dark)) c h)
     );
-  }
-  [data-review-filter-more] > select {
-    -webkit-tap-highlight-color: transparent;
   }
   /* Radix's dark rungs are not equally light across hues: at the same rung red
      is about 0.014 darker than the mean of the three, grass about 0.011 lighter

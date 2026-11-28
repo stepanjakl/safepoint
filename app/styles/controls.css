@@ -131,6 +131,12 @@
     --control-ring-top, --control-ring-bottom, --control-highlight;
   transition-duration: var(--duration-state);
   transition-timing-function: ease-out;
+
+  /* Safari < 26 misreads rem while an @property transitions: none of those
+     there (STYLING-SYSTEM.md → Motion). Every such list in the app does this. */
+  @supports not (anchor-name: --a) {
+    transition-property: color, background-color, box-shadow, opacity;
+  }
 }
 
 @utility mark-on {
@@ -166,6 +172,9 @@
   @apply control-wash;
   position: relative;
   transition-property: color, background-color, --control-face-top, --control-face-bottom;
+  @supports not (anchor-name: --a) {
+    transition-property: color, background-color;
+  }
 
   /* Mask out the centre so the ring can fade independently of the face. */
   &::after {
@@ -191,6 +200,9 @@
     transition:
       --control-ring-top var(--duration-state) ease-out,
       --control-ring-bottom var(--duration-state) ease-out;
+    @supports not (anchor-name: --a) {
+      transition: none;
+    }
   }
 
   @variant hover {

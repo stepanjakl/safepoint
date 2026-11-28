@@ -415,6 +415,11 @@
       no-repeat,
       no-repeat repeat;
     transition: --thread-fill var(--thread-fill-time) var(--ease-in-out-quad);
+    /* Safari < 26 misreads rem while an @property transitions
+       (STYLING-SYSTEM.md → Motion). */
+    @supports not (anchor-name: --a) {
+      transition: none;
+    }
   }
   /* The stretch into a running step is not travelled yet: round dots, one
      line-width across, so the dotted line keeps the solid one's round ends.
@@ -503,6 +508,9 @@
     transition:
       --thread-fill var(--thread-fill-time) var(--ease-in-out-quad),
       opacity var(--thread-arrive) ease-out;
+    @supports not (anchor-name: --a) {
+      transition: opacity var(--thread-arrive) ease-out;
+    }
   }
   .thread-step:last-child:is([data-status='running'], [data-settling], [data-filling])::before {
     opacity: 1;

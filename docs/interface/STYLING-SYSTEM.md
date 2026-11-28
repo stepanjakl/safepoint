@@ -374,6 +374,20 @@ detail columns, empty states and loading marks obey the same sequence. Keep
 reduced motion immediate. Interaction feedback and ongoing activity retain
 their own timing.
 
+**Safari before 26 does not transition registered properties.** While a
+registered custom property (`@property`, such as `--control-face-top`) is
+transitioning, Safari 18 resolves `rem` on that element as if it were `em`.
+`font-size: 0.8125rem` reads the parent's font size and every other `rem`
+length reads the element's own, so a control shrinks to about 0.7× for the
+length of its fade, on hover or on every tap. Measured on iOS 18.7; iOS 26.3
+and current WebKit are correct, and setting the root font size does not help.
+So every transition list that names a registered property restates itself
+without them under `@supports not (anchor-name: --a)` (anchor positioning
+shipped in Safari 26): there a face or fill changes instantly, while standard
+properties -- slides, fades, widths -- still transition. A new list that names
+one needs the same fallback. Do not drop every transition instead: drawers
+would vanish mid-fade and code waiting on `transitionend` would never hear it.
+
 **Content that comes and goes in place opens height first.** A status line,
 an alert, a box of controls or a loader that appears inside a step uses
 `Reveal` (`components/ui/reveal.tsx`): its space eases open on the fold curve,

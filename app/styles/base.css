@@ -15,6 +15,9 @@
     overscroll-behavior: none;
     background-color: var(--sp-canvas);
     color: var(--sp-text-primary);
+    /* iOS draws a grey box over a tapped control; every control has its own
+       pressed face. Inherited, so this covers the app. */
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {

@@ -30,6 +30,11 @@
     transition:
       --edge-fade-start var(--duration-state) ease-out,
       --edge-fade-end var(--duration-state) ease-out;
+    /* Safari < 26 misreads rem while an @property transitions
+       (STYLING-SYSTEM.md → Motion). */
+    @supports not (anchor-name: --a) {
+      transition: none;
+    }
   }
   .edge-scroll::-webkit-scrollbar {
     display: none;

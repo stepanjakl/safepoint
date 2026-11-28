@@ -163,6 +163,11 @@
       --control-face-bottom, --control-ring-top, --control-ring-bottom, --control-highlight;
     transition-duration: var(--duration-state);
     transition-timing-function: ease-out;
+    /* Safari < 26 misreads rem while an @property transitions
+       (STYLING-SYSTEM.md → Motion). */
+    @supports not (anchor-name: --a) {
+      transition-property: color, background-color, border-color, box-shadow, opacity;
+    }
   }
 
   /* Reordering moves the row and tints it at different speeds: the travel is
@@ -181,6 +186,15 @@
       --control-ring-top var(--duration-state) ease-out,
       --control-ring-bottom var(--duration-state) ease-out,
       --control-highlight var(--duration-state) ease-out;
+    @supports not (anchor-name: --a) {
+      transition:
+        transform var(--duration-row) --theme(--ease-out-emphasized),
+        color var(--duration-state) ease-out,
+        background-color var(--duration-state) ease-out,
+        border-color var(--duration-state) ease-out,
+        box-shadow var(--duration-state) ease-out,
+        opacity var(--duration-state) ease-out;
+    }
   }
 
   /* Face stops keep the wash inside the same bounds as selection; a background

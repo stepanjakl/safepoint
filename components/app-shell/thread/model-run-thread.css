@@ -145,6 +145,11 @@
       no-repeat repeat;
     animation: model-log-drift var(--model-log-drift) linear infinite paused;
     transition: --model-log-fill var(--model-log-fill-in) var(--ease-in-out-quad);
+    /* Safari < 26 misreads rem while an @property transitions
+       (STYLING-SYSTEM.md → Motion). */
+    @supports not (anchor-name: --a) {
+      transition: none;
+    }
   }
   .model-log-item:has(+ .model-log-item[data-pending]:not([data-collapsed]))::after {
     --model-log-fill: 0%;

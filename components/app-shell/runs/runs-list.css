@@ -355,6 +355,11 @@
       --sheet-fill var(--duration-state) ease-out,
       --sheet-fill-end var(--duration-state) ease-out;
     pointer-events: none;
+    /* Safari < 26 misreads rem while an @property transitions
+       (STYLING-SYSTEM.md → Motion). */
+    @supports not (anchor-name: --a) {
+      transition: none;
+    }
   }
   /* In the column only: in the strip every row lies under the head, and the
      strip reaches over the head's soft row itself (.sheet-strip). */
@@ -566,6 +571,9 @@
     transition:
       --sheet-fill var(--duration-state) ease-out,
       --sheet-fill-end var(--duration-state) ease-out;
+    @supports not (anchor-name: --a) {
+      transition: none;
+    }
   }
   /* One step and one curve for everything in the row: a part on its own
      timing arrives late to a change it is part of. color and background-color
@@ -927,6 +935,9 @@
       transition:
         --runs-fade-top var(--duration-state) ease-out,
         --runs-fade-bottom var(--duration-state) ease-out;
+      @supports not (anchor-name: --a) {
+        transition: none;
+      }
       mask-image: linear-gradient(
         to bottom,
         transparent,

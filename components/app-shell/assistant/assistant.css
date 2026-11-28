@@ -95,6 +95,11 @@
       --assistant-sheen;
     transition-duration: var(--duration-state);
     transition-timing-function: ease-out;
+    /* Safari < 26 misreads rem while an @property transitions
+       (STYLING-SYSTEM.md → Motion). */
+    @supports not (anchor-name: --a) {
+      transition-property: color, background-color, box-shadow, opacity;
+    }
     /* Ink on the label and icon, not the button, whose own text utility
        would outrank this layer. */
     --assistant-ink: var(--sp-text-primary);
